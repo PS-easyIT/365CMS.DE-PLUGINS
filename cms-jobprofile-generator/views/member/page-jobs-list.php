@@ -235,17 +235,19 @@ for ($i = 6; $i >= 0; $i--) {
             </td>
             <td style="padding:1rem;text-align:center;">
                 <div style="display:flex;gap:.3rem;justify-content:center;flex-wrap:wrap;">
-                    <a href="<?php echo $esc($baseUrl . '/edit/' . (int)$p->id); ?>"
+                    <?php $editUrl = str_contains($baseUrl, '?') ? $baseUrl . '&action=edit&id=' . (int)$p->id : $baseUrl . '/edit/' . (int)$p->id; ?>
+                    <a href="<?php echo $esc($editUrl); ?>"
                        class="btn btn-sm btn-secondary" title="Bearbeiten">✏️</a>
                     <?php if ($p->status === 'published'): ?>
                     <a href="/jobs/<?php echo $esc($p->slug ?? ''); ?>"
                        target="_blank" class="btn btn-sm btn-secondary" title="Ansehen">👁️</a>
                     <?php endif; ?>
                     <!-- Phase 14.2: 1-Click Duplizierer -->
-                    <a href="<?php echo $esc($baseUrl . '/duplicate/' . (int)$p->id); ?>"
+                    <?php $dupUrl = str_contains($baseUrl, '?') ? $baseUrl . '&action=duplicate&id=' . (int)$p->id : $baseUrl . '/duplicate/' . (int)$p->id; ?>
+                    <a href="<?php echo $esc($dupUrl); ?>"
                        class="btn btn-sm btn-secondary" title="Als Entwurf duplizieren"
                        onclick="return confirm('Stelle als Entwurf duplizieren?')">🔁</a>
-                    <form method="post" action="<?php echo $esc($baseUrl . '/edit/' . (int)$p->id); ?>" style="display:inline;">
+                    <form method="post" action="<?php echo $esc($editUrl); ?>" style="display:inline;">
                         <input type="hidden" name="_jpg_csrf" value="<?php echo $esc($csrf); ?>">
                         <input type="hidden" name="action"   value="delete">
                         <button type="submit" class="btn btn-sm btn-danger" title="Löschen"

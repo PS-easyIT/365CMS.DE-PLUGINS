@@ -33,8 +33,21 @@ trait CMS_JPG_Page_Generator_Trait
 
         $tab         = sanitize_key($_GET['tab'] ?? 'basic');
         $id          = (int) ($_GET['id'] ?? 0);
+        $actionParam = sanitize_key($_GET['action'] ?? '');
+
+        // Phase 14.2: 1-Click Duplizierer
+        if ($actionParam === 'duplicate' && $id > 0) {
+            $newId = self::duplicate_profile_admin($id);
+            if ($newId > 0) {
+                header('Location: /admin/plugins/jpg-dashboard/jpg-generator?id=' . $newId . '&duplicated=1');
+            } else {
+                header('Location: /admin/plugins/jpg-dashboard/jpg-dashboard?error=duplicate');
+            }
+            exit;
+        }
+
         $showPrivate = !empty($_GET['show_private']); // Phase 9: Privacy-Filter
-        $notice      = '';
+        $notice      = !empty($_GET['duplicated']) ? 'Profil erfolgreich dupliziert.' : '';
         $error       = '';
 
         // POST-Handler
@@ -129,6 +142,95 @@ trait CMS_JPG_Page_Generator_Trait
         include JPG_DIR . 'admin/views/page-generator.php';
     }
 
+    private static function duplicate_profile_admin(int $id): int
+    {
+        $src = CMS_JPG_Profiles::instance()->get($id);
+        if (!$src) {
+            return 0;
+        }
+        $newTitle = $src->title . ' (Kopie)';
+        $data     = [
+            'title'            => $newTitle,
+            'slug'             => self::generate_unique_slug_admin($newTitle, 0),
+            'company_id'       => $src->company_id ?? 0,
+            'job_category_id'  => $src->job_category_id ?? 0,
+            'status'           => 'draft',
+            'summary'          => $src->summary ?? '',
+            'description'      => $src->description ?? '',
+            'location'         => $src->location ?? '',
+            'employment_type'  => $src->employment_type ?? 'fulltime',
+            'experience_level' => $src->experience_level ?? 'mid',
+            'salary_min'       => $src->salary_min ?? null,
+            'salary_max'       => $src->salary_max ?? null,
+            'remote_option'    => $src->remote_option ?? 'onsite',
+            'is_private'       => $src->is_private ?? 0,
+            'show_in_listing'  => $src->show_in_listing ?? 0,
+            'created_by'       => method_exists(\CMS\Auth::instance(), 'getUserId') ? (int) \CMS\Auth::instance()->getUserId() : 0,
+        ];
+
+        try {
+            $newId = CMS_JPG_Profiles::instance()->save($data, 0);
+            if ($newId > 0) {
+                // Tasks kopieren
+                $tasks = CMS_JPG_Profiles::instance()->get_tasks($id);
+                if (!empty($tasks)) {
+                    $taskTexts = array_map(fn($t) => $t->task_text, $tasks);
+                    CMS_JPG_Profiles::instance()->save_tasks($newId, $taskTexts);
+                }
+                // Requirements kopieren
+                $reqs = CMS_JPG_Profiles::instance()->get_requirements($id);
+                if (!empty($reqs)) {
+                    $reqData = array_map(fn($r) => ['text' => $r->requirement_text, 'type' => $r->type], $reqs);
+                    CMS_JPG_Profiles::instance()->save_requirements($newId, $reqData);
+                }
+                // Benefits kopieren
+                $bids = CMS_JPG_Profiles::instance()->get_benefit_ids($id);
+                if (!empty($bids)) {
+                    CMS_JPG_Profiles::instance()->save_benefits($newId, $bids);
+                }
+                // Skills kopieren
+                $skills = CMS_JPG_Profiles::instance()->get_skills($id);
+                if (!empty($skills)) {
+                    $skillData = array_map(fn($s) => ['skill_id' => $s->skill_id, 'level' => $s->level], $skills);
+                    CMS_JPG_Profiles::instance()->save_skills($newId, $skillData);
+                }
+            }
+            return $newId;
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    private static function generate_unique_slug_admin(string $title, int $existingId): string
+    {
+        $base = strtolower((string)preg_replace('/[^a-zA-Z0-9]+/', '-', $title));
+        $base = trim($base, '-');
+        $base = substr($base, 0, 80);
+        if ($base === '') {
+            $base = 'stelle';
+        }
+        $slug    = $base;
+        $counter = 1;
+        $db = \CMS\Database::instance();
+        $p = $db->getPrefix();
+        while (true) {
+            try {
+                $conflict = $db->get_var(
+                    "SELECT id FROM {$p}jpg_profiles WHERE slug = ? AND id != ?",
+                    [$slug, $existingId]
+                );
+            } catch (\Throwable $e) {
+                break;
+            }
+            if (!$conflict) {
+                break;
+            }
+            $slug = $base . '-' . $counter;
+            $counter++;
+        }
+        return $slug;
+    }
+
     /** @return array{string, string, int} [notice, error, id] */
     private static function handle_generator_post(string $action, int $id): array
     {
@@ -145,6 +247,7 @@ trait CMS_JPG_Page_Generator_Trait
                 }
                 $data = [
                     'title'            => sanitize_text_field($_POST['title'] ?? ''),
+                    'slug'             => sanitize_text_field($_POST['slug'] ?? ''),
                     'company_id'       => (int) ($_POST['company_id'] ?? 0),
                     'job_category_id'  => (int) ($_POST['job_category_id'] ?? 0),
                     'status'           => sanitize_key($_POST['status'] ?? 'draft'),

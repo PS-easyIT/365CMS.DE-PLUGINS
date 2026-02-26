@@ -104,6 +104,19 @@ $v = fn(string $field, string $default = '') => htmlspecialchars((string) ($prof
         <div class="jpg-char-counter" data-target="jpg-title" data-min="10" data-max="150"></div>
     </div>
 
+    <!-- Phase 14.2: Inline-Slug-Editor -->
+    <div class="form-group">
+        <label class="form-label" for="jpg-slug">URL-Slug</label>
+        <div style="display:flex;gap:.5rem;align-items:center;">
+            <span style="color:#64748b;font-size:.875rem;white-space:nowrap;">/jobs/</span>
+            <input type="text" id="jpg-slug" name="slug" class="form-control"
+                   value="<?php echo $v('slug'); ?>"
+                   pattern="[a-z0-9\-]+" maxlength="100"
+                   placeholder="automatisch aus Titel generiert">
+        </div>
+        <small class="form-text">Optional. Leer lassen = automatisch generiert.</small>
+    </div>
+
     <?php /* Phase 6.1 – cms-companies Firmen-Dropdown */ ?>
     <?php if (!empty($companies)): ?>
     <div class="form-group">

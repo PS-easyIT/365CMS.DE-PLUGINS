@@ -62,9 +62,10 @@ trait CMS_JPG_Member_Inline_Trait
                 $action     = sanitize_key($params['action'] ?? $_GET['action'] ?? 'list');
                 $resourceId = (int) ($params['id'] ?? $_GET['id'] ?? 0);
                 match ($action) {
-                    'create' => $controller->render_create_inline($user),
-                    'edit'   => $controller->render_edit_inline((string) $resourceId, $user),
-                    default  => $controller->render_list_inline($user),
+                    'create'    => $controller->render_create_inline($user),
+                    'edit'      => $controller->render_edit_inline((string) $resourceId, $user),
+                    'duplicate' => $controller->render_duplicate_inline((string) $resourceId, $user),
+                    default     => $controller->render_list_inline($user),
                 };
             },
         ]);
@@ -269,6 +270,31 @@ trait CMS_JPG_Member_Inline_Trait
         $totalApps  = array_sum($appCountMap);
         $bulkNotice = '';
 
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_action'])) {
+            if ($this->verify_token('list_action')) {
+                $bulkAction = sanitize_key($_POST['bulk_action'] ?? '');
+                $rawIds     = array_filter(array_map('intval', (array)($_POST['profile_ids'] ?? [])));
+                if (!empty($rawIds)) {
+                    $ph = implode(',', array_fill(0, count($rawIds), '?'));
+                    try {
+                        if ($bulkAction === 'delete') {
+                            $this->db->query(
+                                "DELETE FROM {$this->p}jpg_profiles WHERE id IN ({$ph}) AND created_by = ?",
+                                [...$rawIds, $this->userId]
+                            );
+                            $bulkNotice = count($rawIds) . ' Stelle(n) gelöscht.';
+                        } elseif ($bulkAction === 'archive') {
+                            $this->db->query(
+                                "UPDATE {$this->p}jpg_profiles SET status = 'archived' WHERE id IN ({$ph}) AND created_by = ?",
+                                [...$rawIds, $this->userId]
+                            );
+                            $bulkNotice = count($rawIds) . ' Stelle(n) archiviert.';
+                        }
+                    } catch (\Throwable $e) { /* ignore */ }
+                }
+            }
+        }
+
         $csrf      = $this->generate_token('list_action');
         $baseUrl   = '/member/plugin/member-jobs';
         // Inline-Registry nutzt GET-Parameter für Aktionen, nicht Pfad-Segmente
@@ -297,6 +323,18 @@ trait CMS_JPG_Member_Inline_Trait
         $csrf          = $this->generate_token('create');
         $baseUrl       = '/member/plugin/member-jobs';
         include JPG_DIR . 'views/member/page-jobs-create.php';
+    }
+
+    public function render_duplicate_inline(string $id, object $user): void
+    {
+        $this->userId = (int) $user->id;
+        $newId = $this->duplicate_profile((int) $id);
+        if ($newId > 0) {
+            header('Location: /member/plugin/member-jobs?action=edit&id=' . $newId . '&duplicated=1');
+        } else {
+            header('Location: /member/plugin/member-jobs?error=duplicate');
+        }
+        exit;
     }
 
     public function render_edit_inline(string $id, object $user): void

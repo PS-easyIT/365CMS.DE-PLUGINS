@@ -161,9 +161,13 @@ $statDef  = [
                 </td>
                 <td>
                     <div style="display:flex;gap:.35rem;">
-                        <a href="<?php echo esc_url($editUrl); ?>" class="btn btn-sm btn-secondary">✏️</a>
+                        <a href="<?php echo esc_url($editUrl); ?>" class="btn btn-sm btn-secondary" title="Bearbeiten">✏️</a>
+                        <!-- Phase 14.2: 1-Click Duplizierer -->
+                        <a href="<?php echo esc_url('/admin/plugins/jpg-dashboard/jpg-generator?action=duplicate&id=' . (int)$profile->id); ?>"
+                           class="btn btn-sm btn-secondary" title="Als Entwurf duplizieren"
+                           onclick="return confirm('Stelle als Entwurf duplizieren?')">🔁</a>
                         <button class="btn btn-sm btn-danger"
-                                onclick="jpgConfirmDelete(<?php echo (int)$profile->id; ?>)">🗑️</button>
+                                onclick="jpgConfirmDelete(<?php echo (int)$profile->id; ?>)" title="Löschen">🗑️</button>
                     </div>
                 </td>
             </tr>
