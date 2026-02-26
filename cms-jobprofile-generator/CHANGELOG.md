@@ -16,7 +16,7 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ---
 
-## [0.9.2] – 2026-02-26
+## [0.9.2] – 2026-02
 
 ### Hinzugefügt
 - **Departments-Accordion (Member + Admin)** — Departments-Tab in Firmen-Einstellungen zeigt Abteilungen als inline Accordion ohne Page-Reload. `jpgMemberToggleDept()` / `jpgAdminToggleDept()` JS-Funktionen. Jede Abteilung zeigt Benefits + Anforderungen als vorausgefüllte Checkboxen.

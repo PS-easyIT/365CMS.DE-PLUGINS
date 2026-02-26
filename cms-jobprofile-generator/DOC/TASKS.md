@@ -670,3 +670,39 @@ Füge diese Punkte in deine bestehenden Listen ein:
 2. **Interne Genehmigung:** Mandanten verwalten ihre Genehmiger (`jpg_team_approvers`) selbst. Ein Profil gilt als veröffentlicht, sobald die mandanteninternen Hürden genommen sind, ohne dass ein System-Admin eingreifen muss.
 3. **Daten-Kapselung:** Jede Aktion im Member-Bereich muss die Integrität des Mandanten wahren (Filter auf `company_id` und `user_id`).
 4. **Audit-Trail:** Jeder administrative Zugriff auf Mandantendaten muss revisionssicher in `jpg_admin_access_log` mit Zeitstempel und IP dokumentiert werden.
+
+---
+
+## v0.9.3 – Trait-Split & CSRF-Fix ✅ Abgeschlossen (2026-02-26)
+
+### Admin-Controller-Split
+
+- [x] **`admin/class-admin-pages.php`** (~2600 Zeilen) in 10 eigenständige Trait-Dateien unter `admin/modules/` aufgeteilt.
+  - [x] `trait-page-dashboard.php` — Dashboard-Übersicht, KPI-Stats
+  - [x] `trait-page-generator.php` — Generator-Wizard, Firmen-Autofill
+  - [x] `trait-page-libraries.php` — Bibliotheken-Verwaltung (6 Tabs)
+  - [x] `trait-page-design.php` — Templates & Corporate Design
+  - [x] `trait-page-settings.php` — Einstellungen (5 Tabs)
+  - [x] `trait-page-workflow.php` — Workflow-Schritte Editor
+  - [x] `trait-page-approvals.php` — Admin-Genehmigungen (Dot-Progress)
+  - [x] `trait-page-companies.php` — Unternehmens-Übersicht + Benefits
+  - [x] `trait-page-subscription.php` — Abo-Rollen-Verwaltung
+  - [x] `trait-page-users.php` — Plugin-User-Verwaltung
+- [x] `class-admin-pages.php` Shell auf 137 Zeilen reduziert (10× `require_once` + 10× `use TraitName`)
+
+### Member-Controller-Split
+
+- [x] **`includes/class-member-controller.php`** (~2600 Zeilen) in 7 Trait-Dateien unter `includes/member/` aufgeteilt.
+  - [x] `trait-member-hooks.php` — Hooks, Routes, Stats, Dashboard-Menü
+  - [x] `trait-member-dsgvo.php` — Daten-Export (Art. 20), Account-Löschung
+  - [x] `trait-member-jobs.php` — Stellenanzeigen: List, Create, Edit, Duplicate
+  - [x] `trait-member-inline.php` — Plugin-Dashboard-Registrierung, Inline-Views
+  - [x] `trait-member-applications.php` — Bewerbungs-Postfach, Ajax-Status, Download
+  - [x] `trait-member-approvals.php` — Member-Genehmigungsbereich (Standalone + Inline)
+  - [x] `trait-member-settings.php` — Firmen-Einstellungen, Abteilungen, Jobs-Seite
+- [x] `class-member-controller.php` Shell auf 116 Zeilen reduziert (7× `require_once` + 7× `use TraitName`)
+
+### CSRF-Bug-Fix
+
+- [x] **`trait-page-subscription.php`:** `$nonce = self::nonce('jpg_subscription_save')` nach POST-Handler-Block verschoben (war vorher davor → überschrieb Token vor Verifikation)
+- [x] **`trait-page-users.php`:** `$nonce = self::nonce('jpg_users_save')` nach POST-Handler-Block verschoben (gleiches Problem)
