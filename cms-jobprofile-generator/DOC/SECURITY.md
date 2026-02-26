@@ -53,6 +53,38 @@ private function handle_save_profile(): void
 }
 ```
 
+### Wichtige Reihenfolge: Nonce erst nach POST-Handler erzeugen
+
+> **Betrifft v0.9.3-Fix:** `trait-page-subscription.php`, `trait-page-users.php`
+
+Die Nonce für das HTML-Formular **muss nach** dem POST-Handler-Block erzeugt werden:
+
+```php
+// KORREKT: Nonce NACH dem POST-Block generieren
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!self::verify_nonce($_POST['_jpg_nonce'] ?? '', 'jpg_subscription_save')) {
+        $error = 'Sicherheitscheck fehlgeschlagen';
+    } else {
+        // Verarbeitung...
+    }
+}
+// Erst jetzt: Nonce fuer das HTML-Formular erzeugen
+$nonce = self::nonce('jpg_subscription_save');
+```
+
+```php
+// FALSCH: Nonce VOR dem POST-Block (ueberschreibt den gespeicherten Token!)
+$nonce = self::nonce('jpg_subscription_save'); // zu frueh!
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    self::verify_nonce($_POST['_jpg_nonce'] ?? '', 'jpg_subscription_save');
+    // schlaegt immer fehl, weil generateToken() den Session-Token soeben neu gesetzt hat
+}
+```
+
+**Ursache:** `CMS\Security::generateToken()` schreibt `$_SESSION['csrf_tokens'][$action]` bei jedem Aufruf neu. Wird die Nonce vor dem POST-Handler generiert, ist der vom Browser übermittelte Token bereits in der Session überschrieben, wenn `verifyToken()` ihn abgleicht.
+
+---
+
 ### Nonce-Aktions-Tabelle
 
 | Aktion | Nonce-String |

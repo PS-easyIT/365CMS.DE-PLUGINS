@@ -80,7 +80,7 @@ if ($plugin === 'cms-jobprofile-generator') {
 
 ## Datenbankmigrationen
 
-`CMS_JPG_Installer::install()` legt beim ersten Aktivieren **16 Tabellen** an (mit dem CMS-Datenbankpräfix `$db->getPrefix()`):
+`CMS_JPG_Installer::install()` legt beim ersten Aktivieren **19 Tabellen** an (mit dem CMS-Datenbankpräfix `$db->getPrefix()`):
 
 | Tabelle | Verwendung |
 |---|---|
@@ -88,18 +88,21 @@ if ($plugin === 'cms-jobprofile-generator') {
 | `{prefix}jpg_profile_tasks` | Aufgaben je Profil (sortierbar) |
 | `{prefix}jpg_profile_requirements` | Anforderungen je Profil (must/nice) |
 | `{prefix}jpg_profile_benefits` | m:n Zuordnung Profil ↔ Benefit |
-| `{prefix}jpg_text_modules` | Wiederverwendbare Textbausteine |
-| `{prefix}jpg_skills` | Skill-Matrix-Einträge |
 | `{prefix}jpg_profile_skills` | m:n Zuordnung Profil ↔ Skill |
-| `{prefix}jpg_benefits` | Benefit-Katalog-Einträge |
-| `{prefix}jpg_job_categories` | Stellenkategorien |
-| `{prefix}jpg_templates` | PDF/Web/E-Mail-Templates |
-| `{prefix}jpg_settings` | Plugin-Key-Value-Einstellungen |
-| `{prefix}jpg_stats` | Page-View-Tracking pro Profil |
+| `{prefix}jpg_applications` | Bewerbungen mit CV-Upload |
 | `{prefix}jpg_workflow_steps` | Konfigurierbare Genehmigungsschritte |
 | `{prefix}jpg_workflow_history` | Audit-Log aller Workflow-Aktionen |
-| `{prefix}jpg_requirement_items` | Bibliothek: Anforderungs-Bausteine |
-| `{prefix}jpg_company_default_benefits` | Standard-Benefits pro Unternehmen |
+| `{prefix}jpg_team_approvers` | Team-Genehmiger (ergänzend zu Rollen) |
+| `{prefix}jpg_benefits_catalog` | Benefit-Katalog-Einträge |
+| `{prefix}jpg_requirement_items` | Anforderungs-Bausteine (60+ Seed-Einträge) |
+| `{prefix}jpg_skill_matrix` | Skill-Bibliothek |
+| `{prefix}jpg_job_categories` | Stellenkategorien |
+| `{prefix}jpg_text_modules` | Wiederverwendbare Textbausteine |
+| `{prefix}jpg_templates` | PDF/Web/E-Mail-Vorlagen |
+| `{prefix}jpg_departments` | Abteilungen pro Unternehmen |
+| `{prefix}jpg_department_benefits` | m:n Abteilung ↔ Benefit |
+| `{prefix}jpg_department_requirements` | m:n Abteilung ↔ Anforderung |
+| `{prefix}jpg_admin_access_log` | Audit-Log für Admin-Zugriffe |
 
 > Vollständiges Schema mit allen Spalten: [DATABASE.md](DATABASE.md)
 

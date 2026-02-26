@@ -6,7 +6,18 @@
 
 ---
 
-## [0.9.2] – 2026-02
+## [0.9.3] – 2026-02-26
+
+### Geändert
+- **Admin-Controller-Split:** `admin/class-admin-pages.php` (~2600 Zeilen) in 10 eigenständige Trait-Dateien unter `admin/modules/` aufgeteilt. Jeder Admin-Bereich hat einen eigenen Trait: `trait-page-dashboard.php`, `trait-page-generator.php`, `trait-page-libraries.php`, `trait-page-design.php`, `trait-page-settings.php`, `trait-page-workflow.php`, `trait-page-approvals.php`, `trait-page-companies.php`, `trait-page-subscription.php`, `trait-page-users.php`. Die `class-admin-pages.php` ist auf 137 Zeilen reduziert.
+- **Member-Controller-Split:** `includes/class-member-controller.php` (~2600 Zeilen) in 7 Trait-Dateien unter `includes/member/` aufgeteilt: `trait-member-hooks.php`, `trait-member-dsgvo.php`, `trait-member-jobs.php`, `trait-member-inline.php`, `trait-member-applications.php`, `trait-member-approvals.php`, `trait-member-settings.php`. Controller-Shell: 116 Zeilen.
+
+### Behoben
+- **CSRF-Bug Plugin-Rollen-Admin (Subscription + Users):** `$nonce = self::nonce(...)` wurde vor dem POST-Handler aufgerufen. Da `CMS\Security::generateToken()` den `$_SESSION['csrf_tokens'][$action]`-Eintrag bei jedem Aufruf überschreibt, wurde der für das Formular generierte Token ungültig, bevor `verifyToken()` ihn vergleichen konnte. Resultat: Jeder Speichern-Klick auf den Abo-Rollen- und User-Seiten scheiterte mit „Sicherheitscheck fehlgeschlagen". **Fix:** `$nonce`-Generierung in `trait-page-subscription.php` und `trait-page-users.php` nach den jeweiligen POST-Handler-Blöcken verschoben.
+
+---
+
+## [0.9.2] – 2026-02-26
 
 ### Hinzugefügt
 - **Departments-Accordion:** Firmen-Einstellungen zeigen Abteilungen als Inline-Accordion (kein Page-Reload). `jpgMemberToggleDept()` / `jpgAdminToggleDept()` in Member- und Admin-View.
@@ -22,7 +33,7 @@
 
 ---
 
-## [0.9.1] – 2026-07
+## [0.9.1] – 2026-02-26
 
 ### Hinzugefügt
 - Standalone-Route `/member/jobs/approvals` + `render_approvals()` Methode

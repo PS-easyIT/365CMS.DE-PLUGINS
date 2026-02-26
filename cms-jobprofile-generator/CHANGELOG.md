@@ -5,7 +5,18 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ---
 
-## [0.9.2] – 2026-02
+## [0.9.3] – 2026-02-26
+
+### Geändert
+- **Admin-Controller-Split:** `admin/class-admin-pages.php` in 10 Trait-Dateien unter `admin/modules/` aufgeteilt. Controller-Shell auf 137 Zeilen reduziert.
+- **Member-Controller-Split:** `includes/class-member-controller.php` in 7 Trait-Dateien unter `includes/member/` aufgeteilt. Controller-Shell auf 116 Zeilen reduziert.
+
+### Behoben
+- **CSRF-Bug Plugin-Rollen-Admin:** Nonce-Generierung in `trait-page-subscription.php` und `trait-page-users.php` nach POST-Handler verschoben. Vorher überschrieb `CMS\Security::generateToken()` den Session-Token vor der Verifikation → jeder Speichern-Klick scheiterte mit „Sicherheitscheck fehlgeschlagen".
+
+---
+
+## [0.9.2] – 2026-02-26
 
 ### Hinzugefügt
 - **Departments-Accordion (Member + Admin)** — Departments-Tab in Firmen-Einstellungen zeigt Abteilungen als inline Accordion ohne Page-Reload. `jpgMemberToggleDept()` / `jpgAdminToggleDept()` JS-Funktionen. Jede Abteilung zeigt Benefits + Anforderungen als vorausgefüllte Checkboxen.
@@ -21,7 +32,7 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ---
 
-## [0.9.1] – 2026-07
+## [0.9.1] – 2026-02-26
 
 ### Hinzugefügt
 - **Standalone-Route `/member/jobs/approvals`** — Genehmigungsbereich ist jetzt über eine eigene URL erreichbar (GET + POST). Zugriff für Admins und zugewiesene Genehmiger.
@@ -44,7 +55,7 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ---
 
-## [0.5.0] – 2025-07
+## [0.5.0] – 2026-02-25
 
 ### Hinzugefügt
 - **Admin: Untermenü „Genehmigungen"** — Ausstehende Stellenanzeigen-Genehmigungen werden jetzt als eigener Admin-Untermenüpunkt (`jpg-approvals`) geführt und nicht mehr im Workflow-Editor angezeigt.
@@ -72,7 +83,7 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ---
 
-## [0.4.0] – 2025-06
+## [0.4.0] – 2026-02-25
 
 ### Hinzugefügt
 - Workflow-Engine (`CMS_JPG_Workflow`) mit konfigurierbaren Genehmigungsschritten
@@ -90,6 +101,6 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ---
 
-## [0.3.x] – 2025-05 (ältere Versionen)
+## [0.3.x] – 2026-02-25
 
 Initiale Plugin-Struktur, Grundfunktionen für Job-Profile, Bewerbungen, Member-Routing, Admin-Grundseiten.
