@@ -1,0 +1,639 @@
+<?php
+/**
+ * Database Handler für CMS Speakers
+ *
+ * @package CMS_Speakers
+ * @since 2.1.0
+ */
+
+declare(strict_types=1);
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+final class CMS_Speakers_Database
+{
+    private static ?self $instance = null;
+
+    public static function instance(): self
+    {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    private function __construct() {}
+
+    // ═══════════════════════════════════════════════════════
+    // TABELLEN ANLEGEN
+    // ═══════════════════════════════════════════════════════
+
+    public function create_tables(): void
+    {
+        $db  = CMS\Database::instance();
+        $pdo = $db->getPdo();
+        $p   = $db->prefix();
+
+        try {
+            // ── Haupt-Speakers-Tabelle ──────────────────────────
+            $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}speakers (
+                id                  INT UNSIGNED     AUTO_INCREMENT PRIMARY KEY,
+                user_id             INT UNSIGNED     DEFAULT NULL,
+                first_name          VARCHAR(100)     NOT NULL DEFAULT '',
+                last_name           VARCHAR(100)     NOT NULL DEFAULT '',
+                title               VARCHAR(100)     DEFAULT NULL COMMENT 'Akad. Titel',
+                gender              ENUM('','m','f','d') DEFAULT '',
+                position            VARCHAR(200)     DEFAULT NULL,
+                company             VARCHAR(200)     DEFAULT NULL,
+                company_id          INT UNSIGNED     DEFAULT NULL COMMENT 'FK cms_companies',
+                email               VARCHAR(150)     NOT NULL DEFAULT '',
+                phone               VARCHAR(60)      DEFAULT NULL,
+                bio                 LONGTEXT         DEFAULT NULL,
+                short_bio           VARCHAR(600)     DEFAULT NULL,
+                photo_url           VARCHAR(600)     DEFAULT NULL,
+                location_city       VARCHAR(100)     DEFAULT NULL,
+                location_zip        VARCHAR(20)      DEFAULT NULL,
+                location_country    VARCHAR(100)     DEFAULT 'Deutschland',
+                website             VARCHAR(600)     DEFAULT NULL,
+                linkedin            VARCHAR(600)     DEFAULT NULL,
+                twitter             VARCHAR(200)     DEFAULT NULL,
+                xing                VARCHAR(600)     DEFAULT NULL,
+                instagram           VARCHAR(200)     DEFAULT NULL,
+                youtube             VARCHAR(600)     DEFAULT NULL,
+                github              VARCHAR(600)     DEFAULT NULL,
+                gitlab              VARCHAR(600)     DEFAULT NULL,
+                languages           VARCHAR(400)     DEFAULT NULL COMMENT 'JSON-Array',
+                formats             VARCHAR(400)     DEFAULT NULL COMMENT 'JSON-Array: keynote,workshop,...',
+                target_audience     VARCHAR(400)     DEFAULT NULL,
+                speaking_style      VARCHAR(200)     DEFAULT NULL,
+                awards              TEXT             DEFAULT NULL,
+                travel_radius       ENUM('local','regional','national','international','worldwide') DEFAULT 'national',
+                max_audience_size   INT UNSIGNED     DEFAULT NULL,
+                speaking_fee_min    DECIMAL(10,2)    DEFAULT NULL,
+                speaking_fee_max    DECIMAL(10,2)    DEFAULT NULL,
+                availability        ENUM('available','limited','booked') DEFAULT 'available',
+                status              ENUM('active','inactive','draft') DEFAULT 'active',
+                is_featured         TINYINT(1)       DEFAULT 0,
+                is_verified         TINYINT(1)       DEFAULT 0,
+                profile_views       INT UNSIGNED     DEFAULT 0,
+                created_at          DATETIME         DEFAULT CURRENT_TIMESTAMP,
+                updated_at          DATETIME         DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_status       (status),
+                INDEX idx_availability (availability),
+                INDEX idx_featured     (is_featured),
+                INDEX idx_city         (location_city),
+                INDEX idx_company_id   (company_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+            // ── Speaker-Themen/Topics ───────────────────────────
+            $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}speaker_topics (
+                id          INT UNSIGNED  AUTO_INCREMENT PRIMARY KEY,
+                speaker_id  INT UNSIGNED  NOT NULL,
+                topic_name  VARCHAR(200)  NOT NULL,
+                topic_desc  TEXT          DEFAULT NULL,
+                sort_order  INT           DEFAULT 0,
+                created_at  DATETIME      DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_speaker (speaker_id),
+                UNIQUE KEY unique_topic (speaker_id, topic_name(100))
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+            // ── Speaker-Events / Auftritte ──────────────────────
+            $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}speaker_events (
+                id              INT UNSIGNED   AUTO_INCREMENT PRIMARY KEY,
+                speaker_id      INT UNSIGNED   NOT NULL,
+                event_title     VARCHAR(300)   NOT NULL,
+                event_type      ENUM('keynote','workshop','panel','moderation','interview','webinar','conference','training','other') DEFAULT 'keynote',
+                event_date      DATE           DEFAULT NULL,
+                event_date_end  DATE           DEFAULT NULL,
+                event_location  VARCHAR(300)   DEFAULT NULL,
+                presence_type   ENUM('presence','online','hybrid') DEFAULT 'presence',
+                organizer_type  ENUM('company','cms_event','manual') DEFAULT 'manual',
+                company_id      INT UNSIGNED   DEFAULT NULL COMMENT 'FK cms_companies',
+                cms_event_id    INT UNSIGNED   DEFAULT NULL COMMENT 'FK cms_events',
+                organizer_name  VARCHAR(300)   DEFAULT NULL,
+                topic           VARCHAR(400)   DEFAULT NULL,
+                description     TEXT           DEFAULT NULL,
+                audience_size   INT UNSIGNED   DEFAULT NULL,
+                video_url       VARCHAR(600)   DEFAULT NULL,
+                slides_url      VARCHAR(600)   DEFAULT NULL,
+                event_url       VARCHAR(600)   DEFAULT NULL,
+                is_public       TINYINT(1)     DEFAULT 1,
+                created_at      DATETIME       DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_speaker    (speaker_id),
+                INDEX idx_event_date (event_date),
+                INDEX idx_company    (company_id),
+                INDEX idx_cms_event  (cms_event_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+            // ── Plugin-Einstellungen ────────────────────────────
+            $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}speaker_plugin_settings (
+                id            INT UNSIGNED  AUTO_INCREMENT PRIMARY KEY,
+                setting_key   VARCHAR(255)  NOT NULL UNIQUE,
+                setting_value LONGTEXT      DEFAULT NULL,
+                updated_at    DATETIME      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+            // ── Lila Standard-Einstellungen (versionsbasierte Migration) ──
+            $defaultSettings = [
+                'design_primary_color'       => '#8b5cf6',
+                'design_accent_color'        => '#7c3aed',
+                'design_card_bg'             => '#faf5ff',
+                'design_border_radius'       => '12',
+                'design_cta_label'           => 'Profil ansehen',
+                'design_show_availability'   => '1',
+                'design_show_mvp_badge'      => '1',
+                'design_show_formats'        => '1',
+                'design_show_topics'         => '1',
+                'design_grid_columns'        => 'auto',
+                'archive_title'              => 'Speaker Directory',
+                'archive_description'        => 'Finden Sie den passenden Redner für Ihr Event',
+                'archive_per_page'           => '12',
+                'archive_header_icon'        => '🎤',
+                'archive_header_bg_from'     => '#6d28d9',
+                'archive_header_bg_to'       => '#a855f7',
+                'archive_header_title_color' => '#ffffff',
+                'detail_header_bg_from'      => '#4c1d95',
+                'detail_header_bg_to'        => '#7c3aed',
+                'detail_header_title_color'  => '#ffffff',
+            ];
+            // Version prüfen – nur wenn nicht aktuell → alle Farb-Defaults erzwingen
+            $targetVersion = '2.1.0';
+            $stmtVer = $pdo->prepare(
+                "SELECT setting_value FROM {$p}speaker_plugin_settings WHERE setting_key = 'settings_version' LIMIT 1"
+            );
+            $stmtVer->execute();
+            $installedVersion = $stmtVer->fetchColumn() ?: '';
+
+            if ($installedVersion !== $targetVersion) {
+                // Erstinstallation oder Upgrade → REPLACE erzwingt lila Defaults
+                $stmtReplace = $pdo->prepare(
+                    "INSERT INTO {$p}speaker_plugin_settings (setting_key, setting_value) VALUES (?, ?) "
+                    . "ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+                );
+                foreach ($defaultSettings as $k => $v) {
+                    $stmtReplace->execute([$k, $v]);
+                }
+                // Versions-Marker setzen – verhindert erneutes Überschreiben
+                $stmtReplace->execute(['settings_version', $targetVersion]);
+            } else {
+                // Nur neu hinzugekommene Schlüssel einfügen (bestehende nicht anfassen)
+                $stmtSeed = $pdo->prepare(
+                    "INSERT IGNORE INTO {$p}speaker_plugin_settings (setting_key, setting_value) VALUES (?, ?)"
+                );
+                foreach ($defaultSettings as $k => $v) {
+                    $stmtSeed->execute([$k, $v]);
+                }
+            }
+
+            // ── ALTER bestehende Tabellen (Spalten ergänzen, falls nötig) ──
+            $this->maybe_alter_tables($pdo, $p);
+
+        } catch (\PDOException $e) {
+            error_log('CMS_Speakers DB Error: ' . $e->getMessage());
+        }
+    }
+
+    private function maybe_alter_tables(\PDO $pdo, string $p): void
+    {
+        $columns = [
+            "{$p}speakers" => [
+                'gender'          => "ENUM('','m','f','d') DEFAULT ''",
+                'target_audience' => 'VARCHAR(400) DEFAULT NULL',
+                'speaking_style'  => 'VARCHAR(200) DEFAULT NULL',
+                'awards'          => 'TEXT DEFAULT NULL',
+                'recognitions'    => 'TEXT DEFAULT NULL COMMENT \'JSON-Array vordefinierter Auszeichnungen\'',
+                'skills'          => 'TEXT DEFAULT NULL COMMENT \'JSON-Array Speaker-Skills\'',
+                'github'          => 'VARCHAR(600) DEFAULT NULL',
+                'gitlab'          => 'VARCHAR(600) DEFAULT NULL',
+            ],
+            "{$p}speaker_events" => [
+                'presence_type'  => "ENUM('presence','online','hybrid') DEFAULT 'presence'",
+                'cms_event_id'   => 'INT UNSIGNED DEFAULT NULL',
+            ],
+        ];
+        foreach ($columns as $table => $cols) {
+            foreach ($cols as $col => $def) {
+                try {
+                    $stmt = $pdo->query("SHOW COLUMNS FROM `{$table}` LIKE '{$col}'");
+                    if ($stmt && $stmt->rowCount() === 0) {
+                        $pdo->exec("ALTER TABLE `{$table}` ADD COLUMN `{$col}` {$def}");
+                    }
+                } catch (\Throwable $e) {}
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // SPEAKERS CRUD
+    // ═══════════════════════════════════════════════════════
+
+    public function get_speaker(int $id): ?object
+    {
+        $db = CMS\Database::instance();
+        try {
+            $stmt = $db->prepare("SELECT * FROM {$db->prefix()}speakers WHERE id = ? LIMIT 1");
+            $stmt->execute([$id]);
+            return $stmt->fetch() ?: null;
+        } catch (\Throwable $e) { return null; }
+    }
+
+    public function get_speakers(array $args = []): array
+    {
+        $db = CMS\Database::instance();
+        $p  = $db->prefix();
+        try {
+            $defaults = [
+                'status'        => 'active',
+                'availability'  => null,
+                'travel_radius' => null,
+                'city'          => null,
+                'search'        => null,
+                'is_featured'   => null,
+                'is_verified'   => null,
+                'format'        => null,
+                'limit'         => 12,
+                'offset'        => 0,
+                'order'         => 's.created_at DESC',
+            ];
+            $args   = array_merge($defaults, $args);
+            $where  = ['1=1'];
+            $params = [];
+
+            if ($args['status'] !== null) {
+                $where[] = 's.status = ?'; $params[] = $args['status'];
+            }
+            if ($args['availability']) {
+                $where[] = 's.availability = ?'; $params[] = $args['availability'];
+            }
+            if ($args['travel_radius']) {
+                $where[] = 's.travel_radius = ?'; $params[] = $args['travel_radius'];
+            }
+            if ($args['city']) {
+                $where[] = 's.location_city LIKE ?'; $params[] = '%' . $args['city'] . '%';
+            }
+            if ($args['is_featured'] !== null) {
+                $where[] = 's.is_featured = ?'; $params[] = (int)$args['is_featured'];
+            }
+            if ($args['is_verified'] !== null) {
+                $where[] = 's.is_verified = ?'; $params[] = (int)$args['is_verified'];
+            }
+            if ($args['format']) {
+                $where[] = 's.formats LIKE ?'; $params[] = '%' . $args['format'] . '%';
+            }
+            if ($args['search']) {
+                $like = '%' . $args['search'] . '%';
+                $where[] = '(s.first_name LIKE ? OR s.last_name LIKE ? OR s.position LIKE ? OR s.company LIKE ? OR s.location_city LIKE ? OR s.target_audience LIKE ?)';
+                $params  = array_merge($params, [$like, $like, $like, $like, $like, $like]);
+            }
+
+            $whereStr = implode(' AND ', $where);
+            $limit    = (int)$args['limit'];
+            $offset   = (int)$args['offset'];
+
+            $stmt = $db->prepare(
+                "SELECT s.*, c.name AS company_linked_name
+                 FROM {$p}speakers s
+                 LEFT JOIN {$p}companies c ON s.company_id = c.id
+                 WHERE {$whereStr}
+                 ORDER BY {$args['order']}
+                 LIMIT {$limit} OFFSET {$offset}"
+            );
+            $stmt->execute($params);
+            return $stmt->fetchAll();
+        } catch (\Throwable $e) {
+            error_log('CMS_Speakers get_speakers: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function count_speakers(array $args = []): int
+    {
+        $db = CMS\Database::instance();
+        $p  = $db->prefix();
+        try {
+            $defaults = ['status' => 'active', 'availability' => null, 'travel_radius' => null,
+                         'city' => null, 'search' => null, 'is_featured' => null, 'is_verified' => null, 'format' => null];
+            $args   = array_merge($defaults, $args);
+            $where  = ['1=1'];
+            $params = [];
+            if ($args['status'] !== null)    { $where[] = 's.status = ?';           $params[] = $args['status']; }
+            if ($args['availability'])        { $where[] = 's.availability = ?';     $params[] = $args['availability']; }
+            if ($args['travel_radius'])       { $where[] = 's.travel_radius = ?';    $params[] = $args['travel_radius']; }
+            if ($args['city'])                { $where[] = 's.location_city LIKE ?'; $params[] = '%' . $args['city'] . '%'; }
+            if ($args['is_featured'] !== null){ $where[] = 's.is_featured = ?';      $params[] = (int)$args['is_featured']; }
+            if ($args['is_verified'] !== null){ $where[] = 's.is_verified = ?';      $params[] = (int)$args['is_verified']; }
+            if ($args['format'])              { $where[] = 's.formats LIKE ?';       $params[] = '%' . $args['format'] . '%'; }
+            if ($args['search']) {
+                $like = '%' . $args['search'] . '%';
+                $where[] = '(s.first_name LIKE ? OR s.last_name LIKE ? OR s.position LIKE ? OR s.company LIKE ? OR s.location_city LIKE ?)';
+                $params  = array_merge($params, [$like, $like, $like, $like, $like]);
+            }
+            $whereStr = implode(' AND ', $where);
+            $stmt = $db->prepare("SELECT COUNT(*) FROM {$p}speakers s WHERE {$whereStr}");
+            $stmt->execute($params);
+            return (int)$stmt->fetchColumn();
+        } catch (\Throwable $e) { return 0; }
+    }
+
+    /**
+     * Speaker speichern / aktualisieren.
+     * Keys müssen den DB-Spalten entsprechen.
+     * $id optional als zweiter Parameter oder im Array als 'id'-Key.
+     */
+    public function save_speaker(array $data, int $id = 0): int|false
+    {
+        $db = CMS\Database::instance();
+        $p  = $db->prefix();
+        try {
+            $allowed = [
+                'user_id','first_name','last_name','title','gender',
+                'position','company','company_id',
+                'email','phone','bio','short_bio','photo_url',
+                'location_city','location_zip','location_country',
+                'website','linkedin','twitter','xing','instagram','youtube','github','gitlab',
+                'languages','formats','target_audience','speaking_style','awards','recognitions','skills',
+                'travel_radius','max_audience_size',
+                'speaking_fee_min','speaking_fee_max',
+                'availability','status','is_featured','is_verified',
+            ];
+            $dataId = $id > 0 ? $id : (int)($data['id'] ?? 0);
+            unset($data['id']);
+            $data = array_intersect_key($data, array_flip($allowed));
+
+            // Leere Numerics → NULL
+            foreach (['max_audience_size','speaking_fee_min','speaking_fee_max','company_id'] as $nf) {
+                if (array_key_exists($nf, $data) && (string)$data[$nf] === '') {
+                    $data[$nf] = null;
+                }
+            }
+
+            if ($dataId > 0) {
+                $set = implode(', ', array_map(fn($k) => "`{$k}` = ?", array_keys($data)));
+                $stmt = $db->prepare("UPDATE {$p}speakers SET {$set} WHERE id = ?");
+                $stmt->execute([...array_values($data), $dataId]);
+                return $dataId;
+            } else {
+                $keys   = implode(', ', array_map(fn($k) => "`{$k}`", array_keys($data)));
+                $places = implode(', ', array_fill(0, count($data), '?'));
+                $stmt   = $db->prepare("INSERT INTO {$p}speakers ({$keys}) VALUES ({$places})");
+                $stmt->execute(array_values($data));
+                return (int)$db->getPdo()->lastInsertId();
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS_Speakers save_speaker: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function delete_speaker(int $id): bool
+    {
+        $db = CMS\Database::instance();
+        try {
+            $p = $db->prefix();
+            $db->prepare("DELETE FROM {$p}speaker_events WHERE speaker_id = ?")->execute([$id]);
+            $db->prepare("DELETE FROM {$p}speaker_topics WHERE speaker_id = ?")->execute([$id]);
+            $db->prepare("DELETE FROM {$p}speakers WHERE id = ?")->execute([$id]);
+            return true;
+        } catch (\Throwable $e) { return false; }
+    }
+
+    public function increment_views(int $id): void
+    {
+        try {
+            $db = CMS\Database::instance();
+            $db->prepare("UPDATE {$db->prefix()}speakers SET profile_views = profile_views + 1 WHERE id = ?")->execute([$id]);
+        } catch (\Throwable $e) {}
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // TOPICS
+    // ═══════════════════════════════════════════════════════
+
+    public function get_topics(int $speaker_id): array
+    {
+        $db = CMS\Database::instance();
+        try {
+            $stmt = $db->prepare("SELECT * FROM {$db->prefix()}speaker_topics WHERE speaker_id = ? ORDER BY sort_order ASC, topic_name ASC");
+            $stmt->execute([$speaker_id]);
+            return $stmt->fetchAll();
+        } catch (\Throwable $e) { return []; }
+    }
+
+    public function save_topics(int $speaker_id, array $topics): void
+    {
+        $db = CMS\Database::instance();
+        $p  = $db->prefix();
+        try {
+            $db->prepare("DELETE FROM {$p}speaker_topics WHERE speaker_id = ?")->execute([$speaker_id]);
+            foreach ($topics as $i => $topic) {
+                $name = trim($topic['name'] ?? $topic);
+                if ($name === '') { continue; }
+                $desc = $topic['desc'] ?? null;
+                $db->prepare("INSERT INTO {$p}speaker_topics (speaker_id, topic_name, topic_desc, sort_order) VALUES (?,?,?,?)")
+                   ->execute([$speaker_id, $name, $desc, $i]);
+            }
+        } catch (\Throwable $e) { error_log('CMS_Speakers save_topics: ' . $e->getMessage()); }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // EVENTS / AUFTRITTE
+    // ═══════════════════════════════════════════════════════
+
+    public function get_events(int $speaker_id, bool $public_only = false): array
+    {
+        $db = CMS\Database::instance();
+        $p  = $db->prefix();
+        try {
+            $where = 'se.speaker_id = ?';
+            $params = [$speaker_id];
+            if ($public_only) { $where .= ' AND se.is_public = 1'; }
+
+            $stmt = $db->prepare(
+                "SELECT se.*, c.name AS company_name, c.logo_url AS company_logo
+                 FROM {$p}speaker_events se
+                 LEFT JOIN {$p}companies c ON se.company_id = c.id AND se.organizer_type = 'company'
+                 WHERE {$where}
+                 ORDER BY se.event_date DESC, se.created_at DESC"
+            );
+            $stmt->execute($params);
+            return $stmt->fetchAll();
+        } catch (\Throwable $e) { return []; }
+    }
+
+    /**
+     * Event speichern.
+     * speaker_id wird als erster Parameter übergeben.
+     */
+    public function save_event(int $speaker_id, array $data): int|false
+    {
+        $db = CMS\Database::instance();
+        $p  = $db->prefix();
+        try {
+            $allowed = [
+                'speaker_id','event_title','event_type','event_date','event_date_end',
+                'event_location','presence_type','organizer_type','company_id','cms_event_id',
+                'organizer_name','topic','description','audience_size',
+                'video_url','slides_url','event_url','is_public',
+            ];
+            $data['speaker_id'] = $speaker_id;
+            $id = (int)($data['id'] ?? 0);
+            unset($data['id']);
+            $data = array_intersect_key($data, array_flip($allowed));
+
+            // Leere Datumsfelder → NULL
+            foreach (['event_date','event_date_end'] as $df) {
+                if (isset($data[$df]) && trim((string)$data[$df]) === '') { $data[$df] = null; }
+            }
+            foreach (['company_id','cms_event_id','audience_size'] as $nf) {
+                if (isset($data[$nf]) && (int)$data[$nf] === 0) { $data[$nf] = null; }
+            }
+
+            if ($id > 0) {
+                $set  = implode(', ', array_map(fn($k) => "`{$k}` = ?", array_keys($data)));
+                $stmt = $db->prepare("UPDATE {$p}speaker_events SET {$set} WHERE id = ?");
+                $stmt->execute([...array_values($data), $id]);
+                return $id;
+            } else {
+                $keys   = implode(', ', array_map(fn($k) => "`{$k}`", array_keys($data)));
+                $places = implode(', ', array_fill(0, count($data), '?'));
+                $stmt   = $db->prepare("INSERT INTO {$p}speaker_events ({$keys}) VALUES ({$places})");
+                $stmt->execute(array_values($data));
+                return (int)$db->getPdo()->lastInsertId();
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS_Speakers save_event: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function delete_event(int $id): bool
+    {
+        try {
+            $db = CMS\Database::instance();
+            $db->prepare("DELETE FROM {$db->prefix()}speaker_events WHERE id = ?")->execute([$id]);
+            return true;
+        } catch (\Throwable $e) { return false; }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // PLUGIN SETTINGS
+    // ═══════════════════════════════════════════════════════
+
+    public function get_settings(): array
+    {
+        $db = CMS\Database::instance();
+        try {
+            $stmt = $db->prepare(
+                "SELECT setting_key, setting_value FROM {$db->prefix()}speaker_plugin_settings"
+            );
+            $stmt->execute([]);
+            $rows = $stmt->fetchAll();
+            $out  = [];
+            foreach ($rows as $row) { $out[$row->setting_key] = $row->setting_value; }
+            return $out;
+        } catch (\Throwable $e) { return []; }
+    }
+
+    public function save_settings(array $settings): void
+    {
+        $db = CMS\Database::instance();
+        $p  = $db->prefix();
+        try {
+            foreach ($settings as $key => $value) {
+                $db->prepare(
+                    "INSERT INTO {$p}speaker_plugin_settings (setting_key, setting_value)
+                     VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?"
+                )->execute([$key, $value, $value]);
+            }
+        } catch (\Throwable $e) { error_log('CMS_Speakers save_settings: ' . $e->getMessage()); }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // HILFSMETHODEN
+    // ═══════════════════════════════════════════════════════
+
+    /**
+     * Gibt alle active Speakers zurück (ohne Filterung) für Admin-Auswahl in Events.
+     */
+    public function get_all_active(): array
+    {
+        $db = CMS\Database::instance();
+        try {
+            $stmt = $db->prepare(
+                "SELECT id, first_name, last_name, position, company FROM {$db->prefix()}speakers
+                 WHERE status = 'active' ORDER BY last_name, first_name"
+            );
+            $stmt->execute([]);
+            return $stmt->fetchAll();
+        } catch (\Throwable $e) { return []; }
+    }
+
+    /** Unternehmen aus cms_companies für Auswahllisten */
+    public function get_companies_for_select(): array
+    {
+        $db = CMS\Database::instance();
+        try {
+            $stmt = $db->prepare(
+                "SELECT id, name, location_city FROM {$db->prefix()}companies
+                 WHERE status = 'active' ORDER BY name ASC"
+            );
+            $stmt->execute([]);
+            return $stmt->fetchAll();
+        } catch (\Throwable $e) { return []; }
+    }
+
+    /** Events aus cms_events für Auswahllisten (Speaker-Zuweisung) */
+    public function get_cms_events_for_select(): array
+    {
+        $db = CMS\Database::instance();
+        try {
+            $stmt = $db->prepare(
+                "SELECT id, title, event_date, location_city
+                 FROM {$db->prefix()}events
+                 WHERE status = 'active'
+                 ORDER BY event_date DESC LIMIT 200"
+            );
+            $stmt->execute([]);
+            return $stmt->fetchAll();
+        } catch (\Throwable $e) { return []; }
+    }
+
+    /** Distinkte Städte für Filter-Dropdown */
+    public function get_distinct_cities(): array
+    {
+        $db = CMS\Database::instance();
+        try {
+            $stmt = $db->prepare(
+                "SELECT DISTINCT location_city FROM {$db->prefix()}speakers
+                 WHERE status = 'active' AND location_city IS NOT NULL AND location_city <> ''
+                 ORDER BY location_city ASC"
+            );
+            $stmt->execute([]);
+            return array_column($stmt->fetchAll(\PDO::FETCH_ASSOC), 'location_city');
+        } catch (\Throwable $e) { return []; }
+    }
+
+    /** Slug generieren (vorname-nachname-{id}) */
+    public static function generate_slug(object $speaker): string
+    {
+        $normalize = static function (string $s): string {
+            $s = mb_strtolower($s, 'UTF-8');
+            $s = str_replace(
+                ['ä','ö','ü','ß','à','á','â','ã','å',
+                 'è','é','ê','ë','ì','í','î','ï',
+                 'ò','ó','ô','õ','ø','ù','ú','û','ý','ÿ','ñ','ç'],
+                ['ae','oe','ue','ss','a','a','a','a','a',
+                 'e','e','e','e','i','i','i','i',
+                 'o','o','o','o','o','u','u','u','y','y','n','c'],
+                $s
+            );
+            return trim(preg_replace('/[^a-z0-9]+/', '-', $s), '-');
+        };
+        $fn   = $normalize(trim($speaker->first_name ?? '')) ?: 'speaker';
+        $ln   = $normalize(trim($speaker->last_name  ?? ''));
+        $base = $ln !== '' ? "{$fn}-{$ln}" : $fn;
+        return $base . '-' . $speaker->id;
+    }
+}

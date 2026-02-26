@@ -1,0 +1,41 @@
+{
+  "version": "1",
+  "updated": "2026-02-21",
+  "plugins": [
+    {
+      "slug": "cms-companies",
+      "name": "CMS Companies",
+      "manifest": "PLUGINS/cms-companies/update.json"
+    },
+    {
+      "slug": "cms-events",
+      "name": "CMS Events",
+      "manifest": "PLUGINS/cms-events/update.json"
+    },
+    {
+      "slug": "cms-experts",
+      "name": "CMS Experts",
+      "manifest": "PLUGINS/cms-experts/update.json"
+    },
+    {
+      "slug": "cms-jobads",
+      "name": "CMS Job Ads",
+      "manifest": "PLUGINS/cms-jobads/update.json"
+    },
+    {
+      "slug": "cms-speakers",
+      "name": "CMS Speakers",
+      "manifest": "PLUGINS/cms-speakers/update.json"
+    },
+    {
+      "slug": "cms-importer",
+      "name": "CMS WordPress Importer",
+      "manifest": "PLUGINS/cms-importer/update.json"
+    },
+    {
+      "slug": "cms-jobprofile-generator",
+      "name": "CMS Job Profile Generator",
+      "manifest": "PLUGINS/cms-jobprofile-generator/update.json"
+    }
+  ]
+}

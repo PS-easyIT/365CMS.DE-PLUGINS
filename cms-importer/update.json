@@ -1,0 +1,15 @@
+{
+  "slug": "cms-importer",
+  "name": "CMS WordPress Importer",
+  "type": "plugin",
+  "license": "free",
+  "version": "1.0.0",
+  "min_cms_version": "0.26.0",
+  "min_php": "8.1",
+  "released": "2026-02-21",
+  "download_url": "",
+  "checksum_sha256": "",
+  "changelog": {
+    "1.0.0": "Erstveröffentlichung: Import von WordPress WXR-Exportdateien (Posts & Pages), Meta-Mapping (Yoast/RankMath/SEOPress), Markdown-Bericht für unbekannte Meta-Felder, Drag & Drop Upload-Interface, Import-Protokoll."
+  }
+}

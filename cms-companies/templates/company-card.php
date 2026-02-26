@@ -1,0 +1,135 @@
+<?php
+/**
+ * Template: Company Card Component
+ *
+ * @package CMS_Companies
+ * @since 1.0.0
+ */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+$company = $company ?? null;
+if (!$company) { return; }
+
+$sec = CMS\Security::instance();
+
+// Design-Einstellungen: übergeben oder aus DB laden
+if (!isset($s) || !is_array($s)) {
+    $s = array_merge([
+        'design_show_industry'  => '1',
+        'design_show_city'      => '1',
+        'design_show_employees' => '1',
+        'design_show_website'   => '1',
+        'design_partner_color'  => '#9ca3af',
+        'design_top_partner_color' => '#d97706',
+        'design_sponsor_color'  => '#7c3aed',
+    ], CMS_Companies_Database::instance()->get_settings());
+}
+$show_industry  = ($s['design_show_industry']  ?? '1') === '1';
+$show_city      = ($s['design_show_city']      ?? '1') === '1';
+$show_employees = ($s['design_show_employees'] ?? '1') === '1';
+$show_website   = ($s['design_show_website']   ?? '1') === '1';
+$ribbon_partner_color  = htmlspecialchars($s['design_partner_color']     ?? '#9ca3af');
+$ribbon_top_color      = htmlspecialchars($s['design_top_partner_color'] ?? '#d97706');
+$ribbon_sponsor_color  = htmlspecialchars($s['design_sponsor_color']     ?? '#7c3aed');
+
+// Initials (bis zu 2 Zeichen)
+$name_parts = preg_split('/\s+/', trim($company->name));
+$initials    = mb_strtoupper(mb_substr($name_parts[0], 0, 1) . (isset($name_parts[1]) ? mb_substr($name_parts[1], 0, 1) : ''));
+
+// Partner-Tier bestimmen
+$is_sponsor     = (bool)($company->is_sponsor     ?? false);
+$is_top_partner = (bool)($company->is_top_partner ?? false);
+$is_partner     = (bool)($company->is_partner     ?? false);
+
+// Avatar-Gradient (deterministisch per Name)
+$palettes = [
+    ['#0891b2','#0284c7'], ['#7c3aed','#a855f7'], ['#059669','#34d399'],
+    ['#d97706','#f59e0b'], ['#e11d48','#fb7185'], ['#1d4ed8','#3b82f6'],
+];
+$cp        = $palettes[abs(crc32($company->name)) % count($palettes)];
+$avatar_bg = "linear-gradient(135deg,{$cp[0]},{$cp[1]})";
+
+// Excerpt
+$excerpt = '';
+if ($company->description) {
+    $excerpt = mb_substr(strip_tags($company->description), 0, 110);
+}
+
+// Industrie-Label (slug → lesbarer Name, Fallback = slug selbst)
+$industry_label = $company->industry ?? '';
+
+// CSS-Variable für Rahmenfarbe = Badge-Farbe (aus Admin-Design-Einstellungen)
+$tier_color = '';
+if ($is_sponsor)         $tier_color = $ribbon_sponsor_color;
+elseif ($is_top_partner) $tier_color = $ribbon_top_color;
+elseif ($is_partner)     $tier_color = $ribbon_partner_color;
+$tier_style = $tier_color ? ' style="--co-tier-border:' . $tier_color . '"' : '';
+?>
+
+<div class="co-card<?= $is_sponsor ? ' co-card--sponsor' : ($is_top_partner ? ' co-card--top' : ($is_partner ? ' co-card--partner' : '')) ?>"<?= $tier_style ?>>
+
+    <!-- Status-Ribbon (Sponsor / Top-Partner / Partner) -->
+    <?php if ($is_sponsor): ?>
+        <div class="co-card-ribbon co-card-ribbon--sponsor" style="background:<?= $ribbon_sponsor_color ?>">★ Sponsor</div>
+    <?php elseif ($is_top_partner): ?>
+        <div class="co-card-ribbon co-card-ribbon--top" style="background:<?= $ribbon_top_color ?>">◆ Top-Partner</div>
+    <?php elseif ($is_partner): ?>
+        <div class="co-card-ribbon co-card-ribbon--partner" style="background:<?= $ribbon_partner_color ?>">● Partner</div>
+    <?php endif; ?>
+
+    <!-- Header: Avatar + Name + Branche -->
+    <div class="co-card-head">
+        <?php if (!empty($company->logo_url)): ?>
+            <div class="co-card-avatar co-card-avatar--logo">
+                <img src="<?= $sec->escape($company->logo_url) ?>" alt="<?= $sec->escape($company->name) ?>" loading="lazy">
+            </div>
+        <?php else: ?>
+            <div class="co-card-avatar" style="background:<?= $avatar_bg ?>;"><?= $sec->escape($initials) ?></div>
+        <?php endif; ?>
+        <div class="co-card-identity">
+            <h3 class="co-card-name">
+                <a href="<?= cms_company_url($company) ?>"><?= $sec->escape($company->name) ?></a>
+            </h3>
+            <?php if ($industry_label && $show_industry): ?>
+                <span class="co-card-industry"><?= $sec->escape($industry_label) ?></span>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Info-Pills -->
+    <?php
+    $pills = [];
+    if ($show_city     && !empty($company->location_city))   $pills[] = ['📍', $sec->escape($company->location_city)];
+    if ($show_employees && !empty($company->employee_count)) $pills[] = ['👥', number_format((int)$company->employee_count, 0, ',', '.') . ' Mitarb.'];
+    if ($show_employees && !empty($company->company_size))   $pills[] = ['🏢', $sec->escape($company->company_size)];
+    if (!empty($company->founded_year))                      $pills[] = ['📅', 'Seit ' . $company->founded_year];
+    if ($pills): ?>
+    <div class="co-card-pills">
+        <?php foreach ($pills as [$ico, $txt]): ?>
+            <span class="co-card-pill"><?= $ico ?> <?= $txt ?></span>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+
+    <!-- Excerpt -->
+    <?php if ($excerpt && trim($excerpt) !== ''): ?>
+        <p class="co-card-excerpt"><?= $sec->escape($excerpt) ?>…</p>
+    <?php endif; ?>
+
+    <!-- Footer: Actions -->
+    <div class="co-card-footer">
+        <a href="<?= cms_company_url($company) ?>" class="co-btn co-btn-primary co-btn-block">
+            Details ansehen
+        </a>
+        <?php if ($show_website && !empty($company->website)): ?>
+            <a href="<?= $sec->escape($company->website) ?>" target="_blank" rel="noopener noreferrer" class="co-btn co-btn-ghost">
+                🌐
+            </a>
+        <?php endif; ?>
+    </div>
+
+</div>
+

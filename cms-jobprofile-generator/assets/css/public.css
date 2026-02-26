@@ -1,0 +1,254 @@
+/**
+ * Job Profile Generator – Public Frontend Stylesheet
+ * Für die öffentlichen Job-Ansichten (/jobs/:slug, /career/:slug)
+ *
+ * @package CMS_JobProfileGenerator
+ * @since   0.0.1
+ */
+
+/* ═══════════════════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES (überschreibbar via Corporate Design)
+═══════════════════════════════════════════════════════════ */
+:root {
+    --jpg-primary:       #3b82f6;
+    --jpg-primary-dark:  #2563eb;
+    --jpg-secondary:     #1e293b;
+    --jpg-bg:            #f8fafc;
+    --jpg-card-bg:       #fff;
+    --jpg-text:          #1e293b;
+    --jpg-text-muted:    #64748b;
+    --jpg-border:        #e2e8f0;
+    --jpg-radius:        10px;
+    --jpg-font-body:     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --jpg-font-heading:  -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BASE RESET (scoped to .jpg-public)
+═══════════════════════════════════════════════════════════ */
+.jpg-public *,
+.jpg-public *::before,
+.jpg-public *::after {
+    box-sizing: border-box;
+}
+
+.jpg-public {
+    font-family: var(--jpg-font-body);
+    color: var(--jpg-text);
+    line-height: 1.6;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   JOB CARD LAYOUT
+═══════════════════════════════════════════════════════════ */
+.jpg-job-card {
+    background: var(--jpg-card-bg);
+    border-radius: var(--jpg-radius);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, .08);
+    overflow: hidden;
+}
+
+.jpg-job-header {
+    background: var(--jpg-primary);
+    color: #fff;
+    padding: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.jpg-job-header h1 {
+    font-family: var(--jpg-font-heading);
+    font-size: 1.6rem;
+    margin: 0 0 .5rem;
+    font-weight: 700;
+}
+
+.jpg-job-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: .85rem;
+    opacity: .9;
+}
+
+.jpg-job-body {
+    padding: 2rem;
+}
+
+.jpg-job-two-col {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SECTIONS
+═══════════════════════════════════════════════════════════ */
+.jpg-section {
+    margin-bottom: 1.5rem;
+}
+
+.jpg-section h2 {
+    font-size: 1rem;
+    color: var(--jpg-primary);
+    font-weight: 700;
+    margin: 0 0 .5rem;
+    padding-bottom: .25rem;
+    border-bottom: 2px solid var(--jpg-primary);
+}
+
+.jpg-section h3 {
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--jpg-text-muted);
+    margin: .75rem 0 .25rem;
+}
+
+.jpg-section ul {
+    padding-left: 1.25rem;
+    margin: 0;
+}
+
+.jpg-section li {
+    margin-bottom: .25rem;
+    font-size: .9rem;
+    line-height: 1.6;
+}
+
+.jpg-section p {
+    font-size: .9rem;
+    line-height: 1.7;
+    margin: 0 0 .75rem;
+    color: var(--jpg-text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SIDEBAR BOXES
+═══════════════════════════════════════════════════════════ */
+.jpg-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.jpg-aside-box {
+    background: var(--jpg-bg);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid var(--jpg-border);
+}
+
+.jpg-aside-box h2 {
+    font-size: .9rem;
+    color: var(--jpg-primary);
+    font-weight: 700;
+    margin: 0 0 .5rem;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.jpg-aside-box li {
+    list-style: none;
+    font-size: .85rem;
+    padding: .2rem 0;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SKILL TAGS
+═══════════════════════════════════════════════════════════ */
+.jpg-skill-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+}
+
+.jpg-skill-tag {
+    background: color-mix(in srgb, var(--jpg-primary) 15%, transparent);
+    color: var(--jpg-primary);
+    font-size: .78rem;
+    padding: .2rem .55rem;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   APPLY SECTION
+═══════════════════════════════════════════════════════════ */
+.jpg-apply-section {
+    background: var(--jpg-bg);
+    padding: 1.5rem 2rem;
+    border-top: 3px solid var(--jpg-primary);
+}
+
+.jpg-apply-section h2 {
+    color: var(--jpg-primary);
+    margin: 0 0 .5rem;
+    font-size: 1.1rem;
+}
+
+.jpg-apply-section p {
+    font-size: .9rem;
+    color: var(--jpg-text-muted);
+    line-height: 1.7;
+}
+
+.jpg-btn-apply {
+    display: inline-block;
+    background: var(--jpg-primary);
+    color: #fff;
+    padding: .75rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: .95rem;
+    margin-top: .75rem;
+    transition: background .15s;
+}
+
+.jpg-btn-apply:hover {
+    background: var(--jpg-primary-dark);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SALARY BADGE
+═══════════════════════════════════════════════════════════ */
+.jpg-salary-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    background: #d1fae5;
+    color: #065f46;
+    padding: .35rem .8rem;
+    border-radius: 999px;
+    font-size: .82rem;
+    font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   JSON-LD (invisible, semantic only)
+═══════════════════════════════════════════════════════════ */
+.jpg-jsonld {
+    display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+    .jpg-job-two-col {
+        grid-template-columns: 1fr;
+    }
+
+    .jpg-job-header {
+        flex-direction: column;
+    }
+
+    .jpg-job-body {
+        padding: 1.25rem;
+    }
+}

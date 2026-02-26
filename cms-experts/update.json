@@ -1,0 +1,16 @@
+{
+  "slug": "cms-experts",
+  "name": "CMS Experts",
+  "type": "plugin",
+  "license": "free",
+  "version": "2.0.0",
+  "min_cms_version": "0.20.0",
+  "min_php": "8.1",
+  "released": "2026-02-24",
+  "download_url": "",
+  "checksum_sha256": "",
+  "changelog": {
+    "2.0.0": "Großes Feature-Update: 50+ neue Meta-Felder (Technische Expertise, Berufliche Stationen, Referenzen, Services, Netzwerk), öffentliche Detailseite komplett neu (Badges, RSS-Feed, Level-Balken), SunEditor-Ausgabe-Fix, erweiterte Admin-Formulare, countExperts() und camelCase-Alias-Methoden in DB-Klasse, MemberDashboard-Bugfixes.",
+    "1.0.0": "Erstveröffentlichung: IT-Experten-Profile, Card-Ansicht, Detailseiten."
+  }
+}
