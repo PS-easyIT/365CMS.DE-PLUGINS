@@ -241,23 +241,57 @@ trait CMS_JPG_Page_Generator_Trait
 
         switch ($action) {
             case 'save_basic':
-                if (empty(trim($_POST['title'] ?? ''))) {
+                $rawTitle = sanitize_text_field(trim($_POST['title'] ?? ''));
+                if (empty($rawTitle)) {
                     $error = 'Titel ist erforderlich.';
                     break;
                 }
+                // Slug: manuell eingegeben > Eindeutigkeit prüfen; leer = auto aus Titel
+                $slugInput = sanitize_key(str_replace('_', '-', strtolower($_POST['slug'] ?? '')));
+                if ($slugInput === '') {
+                    // Leerer String: CMS_JPG_Profiles::save() generiert Slug automatisch aus Titel+ID
+                    $slugRaw = '';
+                } else {
+                    // Prüfen ob Wunsch-Slug bereits vergeben ist
+                    $db2 = \CMS\Database::instance();
+                    $p2  = $db2->getPrefix();
+                    $conflict = $db2->get_var(
+                        "SELECT id FROM {$p2}jpg_profiles WHERE slug = ? AND id != ?",
+                        [$slugInput, $id]
+                    );
+                    // Wenn belegt: eindeutigen Slug generieren; sonst Wunsch-Slug verwenden
+                    $slugRaw = $conflict ? self::generate_unique_slug_admin($rawTitle, $id) : $slugInput;
+                }
+                // HTML-Beschreibung sichern
+                if (class_exists('CMS\\Security') && method_exists(\CMS\Security::instance(), 'sanitizeHtml')) {
+                    $descSafe = \CMS\Security::instance()->sanitizeHtml($_POST['description'] ?? '');
+                } else {
+                    $descSafe = strip_tags(
+                        $_POST['description'] ?? '',
+                        '<p><br><strong><em><b><i><u><ul><ol><li><a><h1><h2><h3><h4><blockquote><img><table><tr><td><th><thead><tbody><tfoot><span><div>'
+                    );
+                }
+                // Zulässige Status-Werte
+                $allowedStatus = ['draft', 'published', 'archived'];
+                $statusVal     = sanitize_key($_POST['status'] ?? 'draft');
+                if (!in_array($statusVal, $allowedStatus, true)) {
+                    $statusVal = 'draft';
+                }
+                $salaryMin = $_POST['salary_min'] !== '' ? (float)($_POST['salary_min'] ?? 0) : '';
+                $salaryMax = $_POST['salary_max'] !== '' ? (float)($_POST['salary_max'] ?? 0) : '';
                 $data = [
-                    'title'            => sanitize_text_field($_POST['title'] ?? ''),
-                    'slug'             => sanitize_text_field($_POST['slug'] ?? ''),
+                    'title'            => $rawTitle,
+                    'slug'             => $slugRaw,
                     'company_id'       => (int) ($_POST['company_id'] ?? 0),
                     'job_category_id'  => (int) ($_POST['job_category_id'] ?? 0),
-                    'status'           => sanitize_key($_POST['status'] ?? 'draft'),
+                    'status'           => $statusVal,
                     'summary'          => sanitize_text_field($_POST['summary'] ?? ''),
-                    'description'      => $_POST['description'] ?? '',
+                    'description'      => $descSafe,
                     'location'         => sanitize_text_field($_POST['location'] ?? ''),
                     'employment_type'  => sanitize_key($_POST['employment_type'] ?? 'fulltime'),
                     'experience_level' => sanitize_key($_POST['experience_level'] ?? 'mid'),
-                    'salary_min'       => $_POST['salary_min'] ?? '',
-                    'salary_max'       => $_POST['salary_max'] ?? '',
+                    'salary_min'       => $salaryMin,
+                    'salary_max'       => $salaryMax,
                     'remote_option'    => sanitize_key($_POST['remote_option'] ?? 'onsite'),
                     'is_private'       => isset($_POST['is_private']) ? 1 : 0,
                     'show_in_listing'  => isset($_POST['show_in_listing']) ? 1 : 0,
