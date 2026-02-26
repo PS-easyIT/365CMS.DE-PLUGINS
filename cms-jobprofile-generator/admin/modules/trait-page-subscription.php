@@ -21,7 +21,6 @@ trait CMS_JPG_Page_Subscription_Trait
 
         $db     = \CMS\Database::instance();
         $p      = $db->getPrefix();
-        $nonce  = self::nonce('jpg_subscription_save');
         $notice = '';
         $error  = '';
 
@@ -62,6 +61,9 @@ trait CMS_JPG_Page_Subscription_Trait
                 }
             }
         }
+
+        // Nonce erst NACH dem POST-Handler generieren (verhindert Token-Überschreibung durch generateToken)
+        $nonce = self::nonce('jpg_subscription_save');
 
         $plans = [];
         try {

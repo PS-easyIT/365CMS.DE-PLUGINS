@@ -26,7 +26,6 @@ trait CMS_JPG_Page_Users_Trait
 
         $db     = \CMS\Database::instance();
         $p      = $db->getPrefix();
-        $nonce  = self::nonce('jpg_users_save');
         $notice = '';
         $error  = '';
 
@@ -103,6 +102,9 @@ trait CMS_JPG_Page_Users_Trait
                 }
             }
         }
+
+        // Nonce erst NACH dem POST-Handler generieren (verhindert Token-Überschreibung durch generateToken)
+        $nonce = self::nonce('jpg_users_save');
 
         $users = [];
         try {
