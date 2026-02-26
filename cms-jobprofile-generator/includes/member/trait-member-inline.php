@@ -21,8 +21,16 @@ trait CMS_JPG_Member_Inline_Trait
     // ── PluginDashboardRegistry ───────────────────────────────────────────────
 
     /**
-     * Registriert den Job-Bereich im Member-Dashboard via PluginDashboardRegistry.
+     * Registriert ALLE Job-Bereiche im Member-Dashboard via PluginDashboardRegistry.
      * Callback für `member_dashboard_init`.
+     *
+     * Designprinzip: Jeder Menüpunkt ist für ALLE eingeloggten Mitglieder sichtbar.
+     * Fehlt die Berechtigung für den Inhalt, wird render_no_permission() angezeigt –
+     * der Menüpunkt wird NICHT ausgeblendet (Transparenz-Prinzip für Mandanten).
+     *
+     * Reihenfolge: Stellenanzeigen → Neue Stelle → Unternehmens-Übersicht →
+     *              Workflow → Genehmigungen → Bewerbungen →
+     *              Bibliotheken → Vorlagen → Einstellungen
      *
      * @param \CMS\Member\PluginDashboardRegistry $registry
      */
@@ -33,6 +41,8 @@ trait CMS_JPG_Member_Inline_Trait
         }
 
         $controller = $this;
+
+        // ── 1. Hauptbereich: Stellenanzeigen (Job-Liste) ─────────────────────
         $registry->register([
             'plugin'    => 'cms-jobprofile-generator',
             'slug'      => 'member-jobs',
@@ -42,163 +52,142 @@ trait CMS_JPG_Member_Inline_Trait
             'priority'  => 20,
             'capability'=> null,
             'dashboard_widget' => [
-                'title'       => 'Stellenanzeigen',
-                'icon'        => '📄',
-                'description' => 'Erstelle, verwalte und veröffentliche deine Job-Profile – inklusive Genehmigungs-Workflow.',
-                'color'       => '#3b82f6',
+                'title'          => 'Stellenanzeigen',
+                'icon'           => '📄',
+                'description'    => 'Erstelle, verwalte und veröffentliche deine Job-Profile – inklusive Genehmigungs-Workflow.',
+                'color'          => '#3b82f6',
                 'stats_callback' => [$this, 'get_dashboard_stats'],
             ],
             'render_callback' => function(object $user, array $params) use ($controller): void {
-                // Sub-Routing: bevorzugt $params (URL-Segmente wie /edit/1), Fallback auf GET-Parameter
                 $action     = sanitize_key($params['action'] ?? $_GET['action'] ?? 'list');
                 $resourceId = (int) ($params['id'] ?? $_GET['id'] ?? 0);
-
                 match ($action) {
-                    'create'       => $controller->render_create_inline($user),
-                    'edit'         => $controller->render_edit_inline((string) $resourceId, $user),
-                    'applications' => $controller->render_applications_inline($user),
-                    default        => $controller->render_list_inline($user),
+                    'create' => $controller->render_create_inline($user),
+                    'edit'   => $controller->render_edit_inline((string) $resourceId, $user),
+                    default  => $controller->render_list_inline($user),
                 };
             },
         ]);
 
-        // Gemeinsame Variablen für bedingte Einträge
-        $currentUid = method_exists($this->auth, 'getUserId') ? (int) $this->auth->getUserId() : 0;
-        $isAdmin    = method_exists($this->auth, 'isAdmin')   ? $this->auth->isAdmin() : false;
+        // ── 2. Neue Stelle ────────────────────────────────────────────────────
+        $registry->register([
+            'plugin'      => 'cms-jobprofile-generator',
+            'slug'        => 'member-job-new',
+            'label'       => 'Neue Stelle',
+            'icon'        => '➕',
+            'category'    => 'plugins',
+            'priority'    => 21,
+            'capability'  => null,
+            'parent_slug' => 'plugin_member-jobs',
+            'render_callback' => function(object $user, array $params) use ($controller): void {
+                $controller->render_create_inline($user);
+            },
+        ]);
 
-        // Bewerbungen: für alle eingeloggten Nutzer sichtbar
-        if ($currentUid > 0) {
-            $registry->register([
-                'plugin'      => 'cms-jobprofile-generator',
-                'slug'        => 'member-job-applications',
-                'label'       => 'Bewerbungen',
-                'icon'        => '📬',
-                'category'    => 'plugins',
-                'priority'    => 21,
-                'capability'  => null,
-                'parent_slug' => 'plugin_member-jobs',
-                'render_callback' => function(object $user, array $params) use ($controller): void {
-                    $controller->render_applications_inline($user);
-                },
-            ]);
-        }
+        // ── 3. Unternehmens-Übersicht (KPI-Dashboard der Firma) ──────────────
+        $registry->register([
+            'plugin'      => 'cms-jobprofile-generator',
+            'slug'        => 'member-job-company',
+            'label'       => 'Unternehmens-Übersicht',
+            'icon'        => '🏢',
+            'category'    => 'plugins',
+            'priority'    => 22,
+            'capability'  => null,
+            'parent_slug' => 'plugin_member-jobs',
+            'render_callback' => function(object $user, array $params) use ($controller): void {
+                $controller->render_company_inline($user);
+            },
+        ]);
 
-        // Genehmigungen: Admins immer; Genehmiger sobald ihre Rolle einem Workflow-Schritt zugewiesen ist
-        $showApprovals = $isAdmin;
-        if (!$showApprovals && $currentUid > 0 && class_exists('CMS_JPG_Workflow')) {
-            try {
-                $wf       = CMS_JPG_Workflow::instance();
-                $authUser = method_exists($this->auth, 'currentUser') ? $this->auth->currentUser() : null;
-                $userRole = $authUser ? (string)($authUser->role ?? '') : '';
-                // Prüfen, ob die Benutzerrolle als Genehmiger in einem aktiven Schritt definiert ist
-                foreach ($wf->get_steps() as $step) {
-                    if (!empty($step->approver_role) && $step->approver_role === $userRole) {
-                        $showApprovals = true;
-                        break;
-                    }
-                }
-                // Fallback: ausstehende Einträge prüfen
-                if (!$showApprovals) {
-                    $showApprovals = !empty($wf->get_pending_for_user($currentUid));
-                }
-            } catch (\Throwable $e) { /* Workflow-Tabelle ggf. nicht vorhanden */ }
-        }
-        if ($currentUid > 0 && $showApprovals) {
-            $registry->register([
-                'plugin'      => 'cms-jobprofile-generator',
-                'slug'        => 'member-job-approvals',
-                'label'       => 'Genehmigungen',
-                'icon'        => '✅',
-                'category'    => 'plugins',
-                'priority'    => 22,
-                'capability'  => null,
-                'parent_slug' => 'plugin_member-jobs',
-                'render_callback' => function(object $user, array $params) use ($controller): void {
-                    $controller->render_approvals_inline($user);
-                },
-            ]);
-        }
+        // ── 4. Workflow (Status eigener Stellen, Einreichung zur Genehmigung) ─
+        $registry->register([
+            'plugin'      => 'cms-jobprofile-generator',
+            'slug'        => 'member-job-workflow',
+            'label'       => 'Workflow',
+            'icon'        => '🔄',
+            'category'    => 'plugins',
+            'priority'    => 23,
+            'capability'  => null,
+            'parent_slug' => 'plugin_member-jobs',
+            'render_callback' => function(object $user, array $params) use ($controller): void {
+                $controller->render_workflow_status_inline($user);
+            },
+        ]);
 
-        // Bibliotheken & Vorlagen: nur für Admins im Member-Dashboard
-        if ($isAdmin) {
-            $registry->register([
-                'plugin'      => 'cms-jobprofile-generator',
-                'slug'        => 'member-job-libraries',
-                'label'       => 'Bibliotheken',
-                'icon'        => '📚',
-                'category'    => 'plugins',
-                'priority'    => 22,
-                'capability'  => null,
-                'parent_slug' => 'plugin_member-jobs',
-                'render_callback' => function(object $user, array $params) use ($controller): void {
-                    $controller->render_libraries_inline($user);
-                },
-            ]);
-            $registry->register([
-                'plugin'      => 'cms-jobprofile-generator',
-                'slug'        => 'member-job-templates',
-                'label'       => 'Vorlagen',
-                'icon'        => '🎨',
-                'category'    => 'plugins',
-                'priority'    => 23,
-                'capability'  => null,
-                'parent_slug' => 'plugin_member-jobs',
-                'render_callback' => function(object $user, array $params) use ($controller): void {
-                    $controller->render_templates_inline($user);
-                },
-            ]);
-        }
+        // ── 5. Genehmigungen (immer sichtbar; Inhalt nur für Genehmiger/Admins)
+        $registry->register([
+            'plugin'      => 'cms-jobprofile-generator',
+            'slug'        => 'member-job-approvals',
+            'label'       => 'Genehmigungen',
+            'icon'        => '✅',
+            'category'    => 'plugins',
+            'priority'    => 24,
+            'capability'  => null,
+            'parent_slug' => 'plugin_member-jobs',
+            'render_callback' => function(object $user, array $params) use ($controller): void {
+                $controller->render_approvals_inline($user);
+            },
+        ]);
 
-        // Einstellungen: für alle eingeloggten Mitglieder sichtbar (Firmenprofil verwalten)
-        if ($currentUid > 0) {
-            $registry->register([
-                'plugin'      => 'cms-jobprofile-generator',
-                'slug'        => 'member-job-settings',
-                'label'       => 'Einstellungen',
-                'icon'        => '⚙️',
-                'category'    => 'plugins',
-                'priority'    => 29,
-                'capability'  => null,
-                'parent_slug' => 'plugin_member-jobs',
-                'render_callback' => function(object $user, array $params) use ($controller): void {
-                    $controller->render_settings_inline($user);
-                },
-            ]);
-        }
+        // ── 6. Bewerbungen ────────────────────────────────────────────────────
+        $registry->register([
+            'plugin'      => 'cms-jobprofile-generator',
+            'slug'        => 'member-job-applications',
+            'label'       => 'Bewerbungen',
+            'icon'        => '📬',
+            'category'    => 'plugins',
+            'priority'    => 25,
+            'capability'  => null,
+            'parent_slug' => 'plugin_member-jobs',
+            'render_callback' => function(object $user, array $params) use ($controller): void {
+                $controller->render_applications_inline($user);
+            },
+        ]);
 
-        // Unternehmens-Übersicht: Firmenprofil direkt sichtbar (eigener Menüpunkt)
-        if ($currentUid > 0) {
-            $registry->register([
-                'plugin'      => 'cms-jobprofile-generator',
-                'slug'        => 'member-job-company',
-                'label'       => 'Unternehmens-Übersicht',
-                'icon'        => '🏢',
-                'category'    => 'plugins',
-                'priority'    => 25,
-                'capability'  => null,
-                'parent_slug' => 'plugin_member-jobs',
-                'render_callback' => function(object $user, array $params) use ($controller): void {
-                    $controller->render_company_inline($user);
-                },
-            ]);
-        }
+        // ── 7. Bibliotheken (immer sichtbar; Inhalt nur für Admins) ──────────
+        $registry->register([
+            'plugin'      => 'cms-jobprofile-generator',
+            'slug'        => 'member-job-libraries',
+            'label'       => 'Bibliotheken',
+            'icon'        => '📚',
+            'category'    => 'plugins',
+            'priority'    => 26,
+            'capability'  => null,
+            'parent_slug' => 'plugin_member-jobs',
+            'render_callback' => function(object $user, array $params) use ($controller): void {
+                $controller->render_libraries_inline($user);
+            },
+        ]);
 
-        // Workflow-Status: Mandanten sehen den Status ihrer Stellen im Workflow
-        if ($currentUid > 0) {
-            $registry->register([
-                'plugin'      => 'cms-jobprofile-generator',
-                'slug'        => 'member-job-workflow',
-                'label'       => 'Workflow-Status',
-                'icon'        => '🔄',
-                'category'    => 'plugins',
-                'priority'    => 26,
-                'capability'  => null,
-                'parent_slug' => 'plugin_member-jobs',
-                'render_callback' => function(object $user, array $params) use ($controller): void {
-                    $controller->render_workflow_status_inline($user);
-                },
-            ]);
-        }
+        // ── 8. Vorlagen (immer sichtbar; Inhalt nur für Admins) ──────────────
+        $registry->register([
+            'plugin'      => 'cms-jobprofile-generator',
+            'slug'        => 'member-job-templates',
+            'label'       => 'Vorlagen',
+            'icon'        => '🎨',
+            'category'    => 'plugins',
+            'priority'    => 27,
+            'capability'  => null,
+            'parent_slug' => 'plugin_member-jobs',
+            'render_callback' => function(object $user, array $params) use ($controller): void {
+                $controller->render_templates_inline($user);
+            },
+        ]);
+
+        // ── 9. Einstellungen (Firmenprofil, Benefits, Team, Abteilungen) ──────
+        $registry->register([
+            'plugin'      => 'cms-jobprofile-generator',
+            'slug'        => 'member-job-settings',
+            'label'       => 'Einstellungen',
+            'icon'        => '⚙️',
+            'category'    => 'plugins',
+            'priority'    => 29,
+            'capability'  => null,
+            'parent_slug' => 'plugin_member-jobs',
+            'render_callback' => function(object $user, array $params) use ($controller): void {
+                $controller->render_settings_inline($user);
+            },
+        ]);
     }
 
     // ── Inline-Render-Methoden für PluginDashboardRegistry ───────────────────
@@ -336,5 +325,39 @@ trait CMS_JPG_Member_Inline_Trait
         $wfCsrf         = $this->generate_token('workflow_submit');
         $baseUrl        = '/member/plugin/member-jobs';
         include JPG_DIR . 'views/member/page-jobs-edit.php';
+    }
+
+    // ── Berechtigungs-Fallback ────────────────────────────────────────────────
+
+    /**
+     * Einheitliche "Keine Berechtigung"-Seite für geschützte Bereiche.
+     *
+     * Wird aufgerufen, wenn ein Menüpunkt immer sichtbar ist, der Inhalt aber
+     * eine höhere Berechtigungsstufe erfordert (Admin, Genehmiger-Rolle …).
+     * Alle render_*_inline()-Methoden rufen diese Methode auf, statt den
+     * Menüpunkt ganz auszublenden – so bleibt die Menüstruktur für alle
+     * Mandanten einheitlich und transparent.
+     *
+     * @param string $feature  Lesbare Bezeichnung des gesperrten Bereichs
+     */
+    public function render_no_permission(string $feature = ''): void
+    {
+        $featureText = $feature !== ''
+            ? htmlspecialchars($feature, ENT_QUOTES)
+            : 'diesen Bereich';
+        ?>
+        <div class="admin-card" style="text-align:center;padding:4rem 2rem;">
+            <p style="font-size:4rem;margin:0 0 1rem;line-height:1;">🔒</p>
+            <h3 style="margin:0 0 .5rem;color:#1e293b;font-size:1.3rem;font-weight:700;">
+                Keine Berechtigung
+            </h3>
+            <p style="color:#64748b;font-size:.95rem;max-width:440px;margin:.5rem auto 0;">
+                Du hast keinen Zugriff auf <strong><?php echo $featureText; ?></strong>.
+            </p>
+            <p style="color:#94a3b8;font-size:.82rem;margin-top:.85rem;">
+                Wende dich an deinen Administrator, um die notwendigen Rechte zu erhalten.
+            </p>
+        </div>
+        <?php
     }
 }

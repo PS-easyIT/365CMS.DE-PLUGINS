@@ -115,6 +115,10 @@ trait CMS_JPG_Member_Hooks_Trait
         $currentUid = method_exists($this->auth, 'getUserId') ? (int) $this->auth->getUserId() : 0;
         $uri        = $_SERVER['REQUEST_URI'] ?? '';
 
+        $isJobsArea = str_starts_with($uri, '/member/jobs') ||
+                     str_contains($uri, 'member-job-libraries') ||
+                     str_contains($uri, 'member-job-templates');
+
         $items[] = [
             'slug'     => 'member_jobs',
             'label'    => 'Stellenanzeigen',
@@ -126,6 +130,34 @@ trait CMS_JPG_Member_Hooks_Trait
                           !str_contains($uri, '/settings'),
             'category' => 'plugins',
         ];
+
+        // ── Sub-Items: alle als Kinder von member_jobs ──────────────────────
+        // Stellenanzeigen → Übersicht (direkte Unterseite)
+        if ($currentUid > 0) {
+            $items[] = [
+                'slug'        => 'member_jobs_list',
+                'label'       => 'Meine Stellen',
+                'icon'        => '📋',
+                'url'         => '/member/jobs',
+                'active'      => str_starts_with($uri, '/member/jobs') &&
+                                 !str_contains($uri, '/create') &&
+                                 !str_contains($uri, '/edit') &&
+                                 !str_contains($uri, '/approvals') &&
+                                 !str_contains($uri, '/applications') &&
+                                 !str_contains($uri, '/settings'),
+                'category'    => 'plugins',
+                'parent_slug' => 'member_jobs',
+            ];
+            $items[] = [
+                'slug'        => 'member_jobs_create',
+                'label'       => 'Neue Stelle',
+                'icon'        => '➕',
+                'url'         => '/member/jobs/create',
+                'active'      => str_starts_with($uri, '/member/jobs/create'),
+                'category'    => 'plugins',
+                'parent_slug' => 'member_jobs',
+            ];
+        }
 
         $showApprovals = $isAdmin;
         if (!$showApprovals && $currentUid > 0 && class_exists('CMS_JPG_Workflow')) {
@@ -147,53 +179,55 @@ trait CMS_JPG_Member_Hooks_Trait
 
         if ($showApprovals && $currentUid > 0) {
             $items[] = [
-                'slug'     => 'member_job_approvals',
-                'label'    => 'Genehmigungen',
-                'icon'     => '✅',
-                'url'      => '/member/jobs/approvals',
-                'active'   => str_starts_with($uri, '/member/jobs/approvals'),
-                'category' => 'plugins',
+                'slug'        => 'member_job_approvals',
+                'label'       => 'Genehmigungen',
+                'icon'        => '✅',
+                'url'         => '/member/jobs/approvals',
+                'active'      => str_starts_with($uri, '/member/jobs/approvals'),
+                'category'    => 'plugins',
+                'parent_slug' => 'member_jobs',
             ];
         }
 
         if ($currentUid > 0) {
             $items[] = [
-                'slug'     => 'member_job_applications',
-                'label'    => 'Bewerbungen',
-                'icon'     => '📬',
-                'url'      => '/member/jobs/applications',
-                'active'   => str_starts_with($uri, '/member/jobs/applications'),
-                'category' => 'plugins',
+                'slug'        => 'member_job_applications',
+                'label'       => 'Bewerbungen',
+                'icon'        => '📬',
+                'url'         => '/member/jobs/applications',
+                'active'      => str_starts_with($uri, '/member/jobs/applications'),
+                'category'    => 'plugins',
+                'parent_slug' => 'member_jobs',
             ];
-        }
-
-        if ($currentUid > 0) {
             $items[] = [
-                'slug'     => 'member_job_settings',
-                'label'    => 'Einstellungen',
-                'icon'     => '⚙️',
-                'url'      => '/member/jobs/settings',
-                'active'   => str_starts_with($uri, '/member/jobs/settings'),
-                'category' => 'plugins',
+                'slug'        => 'member_job_settings',
+                'label'       => 'Einstellungen',
+                'icon'        => '⚙️',
+                'url'         => '/member/jobs/settings',
+                'active'      => str_starts_with($uri, '/member/jobs/settings'),
+                'category'    => 'plugins',
+                'parent_slug' => 'member_jobs',
             ];
         }
 
         if ($isAdmin) {
             $items[] = [
-                'slug'     => 'member_job_libraries',
-                'label'    => 'Bibliotheken',
-                'icon'     => '📚',
-                'url'      => '/member/plugin/member-job-libraries',
-                'active'   => str_contains($uri, 'member-job-libraries'),
-                'category' => 'plugins',
+                'slug'        => 'member_job_libraries',
+                'label'       => 'Bibliotheken',
+                'icon'        => '📚',
+                'url'         => '/member/plugin/member-job-libraries',
+                'active'      => str_contains($uri, 'member-job-libraries'),
+                'category'    => 'plugins',
+                'parent_slug' => 'member_jobs',
             ];
             $items[] = [
-                'slug'     => 'member_job_templates',
-                'label'    => 'Vorlagen',
-                'icon'     => '🎨',
-                'url'      => '/member/plugin/member-job-templates',
-                'active'   => str_contains($uri, 'member-job-templates'),
-                'category' => 'plugins',
+                'slug'        => 'member_job_templates',
+                'label'       => 'Vorlagen',
+                'icon'        => '🎨',
+                'url'         => '/member/plugin/member-job-templates',
+                'active'      => str_contains($uri, 'member-job-templates'),
+                'category'    => 'plugins',
+                'parent_slug' => 'member_jobs',
             ];
         }
 
@@ -216,20 +250,33 @@ trait CMS_JPG_Member_Hooks_Trait
         $isApprovals    = str_starts_with($uri, '/member/jobs/approvals');
         $isApplications = str_starts_with($uri, '/member/jobs/applications');
         $isSettings     = str_starts_with($uri, '/member/jobs/settings');
-        $isMainJobs     = !$isApprovals && !$isApplications && !$isSettings;
+        $isCreate       = str_starts_with($uri, '/member/jobs/create');
+        $isEdit         = str_starts_with($uri, '/member/jobs/edit');
+        $isMainJobs     = !$isApprovals && !$isApplications && !$isSettings && !$isCreate && !$isEdit;
 
         foreach ($items as &$item) {
             switch ($item['slug'] ?? '') {
                 case 'plugin_member-jobs':
+                case 'member_jobs':
+                    // Parent gilt als aktiv wenn irgendeine Unterseite aktiv ist
+                    $item['active'] = str_starts_with($uri, '/member/jobs');
+                    break;
+                case 'member_jobs_list':
                     $item['active'] = $isMainJobs;
                     break;
+                case 'member_jobs_create':
+                    $item['active'] = $isCreate || $isEdit;
+                    break;
                 case 'plugin_member-job-approvals':
+                case 'member_job_approvals':
                     $item['active'] = $isApprovals;
                     break;
                 case 'plugin_member-job-applications':
+                case 'member_job_applications':
                     $item['active'] = $isApplications;
                     break;
                 case 'plugin_member-job-settings':
+                case 'member_job_settings':
                     $item['active'] = $isSettings;
                     break;
             }

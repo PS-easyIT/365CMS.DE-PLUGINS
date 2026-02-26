@@ -135,6 +135,33 @@ trait CMS_JPG_Member_Approvals_Trait
         $notice       = '';
         $error        = '';
 
+        // Zugriffsprüfung: Admins immer; Genehmiger nur wenn ihre Rolle einem
+        // Workflow-Schritt zugewiesen ist oder offene Einträge für sie vorliegen.
+        // Kein Zugriff → render_no_permission() statt gesperrte Seite ausblenden.
+        if (!$isAdmin) {
+            $hasAccess = false;
+            if (class_exists('CMS_JPG_Workflow')) {
+                try {
+                    $wf       = CMS_JPG_Workflow::instance();
+                    $authUser = method_exists($this->auth, 'currentUser') ? $this->auth->currentUser() : null;
+                    $userRole = $authUser ? (string)($authUser->role ?? '') : '';
+                    foreach ($wf->get_steps() as $step) {
+                        if (!empty($step->approver_role) && $step->approver_role === $userRole) {
+                            $hasAccess = true;
+                            break;
+                        }
+                    }
+                    if (!$hasAccess) {
+                        $hasAccess = !empty($wf->get_pending_for_user($this->userId));
+                    }
+                } catch (\Throwable $e) { /* non-fatal */ }
+            }
+            if (!$hasAccess) {
+                $this->render_no_permission('Genehmigungen');
+                return;
+            }
+        }
+
         // POST: Genehmigen / Ablehnen / Zurücksetzen
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && $this->verify_token('member_approvals')) {
             $action    = sanitize_key($_POST['approval_action'] ?? '');

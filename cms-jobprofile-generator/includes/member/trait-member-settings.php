@@ -514,7 +514,7 @@ trait CMS_JPG_Member_Settings_Trait
     public function render_libraries_inline(object $user): void
     {
         if (!method_exists($this->auth, 'isAdmin') || !$this->auth->isAdmin()) {
-            echo '<p style="color:#ef4444;">Kein Zugriff.</p>';
+            $this->render_no_permission('Bibliotheken');
             return;
         }
         $tab  = sanitize_key($_GET['tab'] ?? 'benefits');
@@ -602,7 +602,7 @@ trait CMS_JPG_Member_Settings_Trait
     public function render_templates_inline(object $user): void
     {
         if (!method_exists($this->auth, 'isAdmin') || !$this->auth->isAdmin()) {
-            echo '<p style="color:#ef4444;">Kein Zugriff.</p>';
+            $this->render_no_permission('Vorlagen');
             return;
         }
         $tab   = sanitize_key($_GET['tab'] ?? 'pdf-templates');
