@@ -183,6 +183,43 @@ private function load_company_experts(object $profile): array
 
 ---
 
+## 1d. Firma = Mandant – Automatische Plugin-Rollen-Zuweisung
+
+**Ziel:** Wenn ein User mit einer bestimmten Firma verknüpft ist (Mandant-Funktion), erhält er automatisch die Plugin-Rolle des zugehörigen Unternehmens, ohne dass ein Admin manuell zuweisen muss.
+
+**Implementierung:** `admin/modules/trait-page-users.php` und `trait-page-subscription.php`
+
+Beim Laden der Plugin-User-Seite (`jpg-users`) prüft der Controller, ob der eingeloggte User bereits einer Firma zugewiesen ist:
+
+```php
+// trait-page-users.php – render_users()
+$userCompany = $db->get_row(
+    "SELECT c.id, c.name FROM {$p}companies c
+     JOIN {$p}company_members cm ON cm.company_id = c.id
+     WHERE cm.user_id = :uid LIMIT 1",
+    [':uid' => $userId]
+);
+
+if ($userCompany) {
+    // Mandant erkannt: Plugin-Rolle der Firma automatisch zuweisen
+    $this->assign_plugin_role($userId, $userCompany->id);
+}
+```
+
+**Verhalten:**
+- Ist ein User Mitglied einer Firma in `cms-companies`, wird er als „Mandant" dieser Firma behandelt
+- Seine Plugin-Rollen-Einschränkungen gelten auf Unternehmensebene (Limits, Feature-Flags)
+- Admins können in der Plugin-Subscription-Verwaltung dennoch überschreiben
+
+**Guard:** Wie alle `cms-companies`-Integrationen nur aktiv wenn `cms-companies` aktiv ist:
+```php
+if (!in_array('cms-companies', \CMS\PluginManager::instance()->getActivePlugins(), true)) {
+    return; // silent fallback
+}
+```
+
+---
+
 ## 3. Updatepfade & Kompatibilitätsstrategie
 
 ### Warum kein direkter `require_once` / `class_exists`-Check auf Plugin-Klassen?

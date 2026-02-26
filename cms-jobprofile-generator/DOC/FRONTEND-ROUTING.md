@@ -19,11 +19,28 @@
 
 ## Überblick der Routen
 
+### Öffentliche Routen
+
 | Route | Template | Abo-Pflicht | Beschreibung |
 |---|---|---|---|
+| `/jobs` | `views/public/jobs-list.php` | Nein | Übersicht aller `show_in_listing = 1`-Stellen |
 | `/jobs/:slug` | `templates/public-single.php` | Nein | Standard: Im CMS-Theme eingebettet |
 | `/career/:slug` | `templates/whitelabel-single.php` | `feature_whitelabel_jobs` | Vollständig eigenständiges HTML5-Dokument |
 | `/api/jobs/:slug/pdf` | – (Response) | Nein | PDF-Download (on-the-fly) |
+
+### Member-Routen (eingeloggt)
+
+| Route | Methode | Trait | Beschreibung |
+|---|---|---|---|
+| `/member/jobs` | GET | `trait-member-jobs.php` | Eigene Stellenanzeigen-Liste |
+| `/member/jobs/create` | GET/POST | `trait-member-jobs.php` | Neue Stelle anlegen (5-Tab-Wizard) |
+| `/member/jobs/edit/:id` | GET/POST | `trait-member-jobs.php` | Stelle bearbeiten |
+| `/member/jobs/duplicate/:id` | GET/POST | `trait-member-jobs.php` | Stelle duplizieren (Clone + Draft) |
+| `/member/jobs/approvals` | GET/POST | `trait-member-approvals.php` | Genehmigungsbereich (Standalone) |
+| `/member/jobs/applications` | GET | `trait-member-applications.php` | Bewerbungs-Postfach |
+| `/member/jobs/download/:token` | GET | `trait-member-applications.php` | CV sicher herunterladen |
+| `/member/jobs/settings` | GET/POST | `trait-member-settings.php` | Unternehmens-Einstellungen |
+| `/member/jobs/workflow/submit/:id` | POST | `trait-member-jobs.php` | Stelle zum Workflow einreichen |
 
 > Die öffentlichen Frontend-Routen sind implementiert und über den CMS-Hook `routes_registered` registriert. Das Whitelabel-Routing erfordert das Feature-Flag `feature_whitelabel_jobs` im Abo-Plan des Profil-Erstellers.
 
