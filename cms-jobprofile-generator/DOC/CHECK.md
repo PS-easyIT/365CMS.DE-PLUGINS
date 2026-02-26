@@ -102,3 +102,27 @@ Diese Datei dient der systematischen Überprüfung, Analyse und Behebung von Feh
 - [x] **Jobs-Seite POST-Handler** — `elseif ($settingsTab === 'jobs-page')` in `render_settings_inline()` (Z. 1659). Validierung via `verify_token('member_company_departments')` vor Speichern (Z. 1661). CSRF-Schutz aktiv.
 - [x] **jobs_page_* DB-Migration** — `maybe_add_columns()` in `class-installer.php` fügt 5 Spalten in `jpg_company_settings` ein (Z. 541–562): `jobs_page_title`, `jobs_page_intro`, `jobs_page_contact_email`, `jobs_page_show_salary`, `jobs_page_enabled`. `ALTER TABLE IF NOT EXISTS`-Pattern mit Error-Log.
 - [x] **Jobs-Seite Tab (Admin)** — `page-company-overview.php` zeigt Jobs-Seite-Konfig-Formular mit Feld `jobs_page_title` (Z. 566). Daten aus `$companySettings`-Objekt via `get_company_settings()`.
+
+---
+
+## 🆕 13. v0.9.3 – Trait-Split & CSRF-Fix (QA-Check)
+
+### Admin-Controller-Split
+
+- [x] **10 Trait-Dateien vorhanden** — `admin/modules/` enthält alle 10 `trait-page-*.php`-Dateien: dashboard, generator, libraries, design, settings, workflow, approvals, companies, subscription, users.
+- [x] **class-admin-pages.php Shell** — Datei auf 137 Zeilen reduziert. Enthält ausschließlich: 10× `require_once` + 10× `use TraitName`, Konstruktor, statische Helper (`nonce()`, `verify_nonce()`, `redirect()`, `page_url()`).
+- [x] **Alle Trait-Klassen laden korrekt** — PHP `declare(strict_types=1)` in jeder Trait-Datei. Kein doppeltes Method-Declaration durch Trait-Konflikte.
+- [x] **Admin-Pages funktionieren** — Alle 8 Admin-Untermenüpunkte rendern ohne PHP-Fehler.
+
+### Member-Controller-Split
+
+- [x] **7 Trait-Dateien vorhanden** — `includes/member/` enthält: `trait-member-hooks.php`, `trait-member-dsgvo.php`, `trait-member-jobs.php`, `trait-member-inline.php`, `trait-member-applications.php`, `trait-member-approvals.php`, `trait-member-settings.php`.
+- [x] **class-member-controller.php Shell** — Datei auf 116 Zeilen reduziert. Enthält: 7× `require_once` + 7× `use TraitName`, Konstruktor, `require_auth()`, `generate_token()`, `verify_token()`, `getPost()`.
+- [x] **Member-Dashboard-Menü vollständig** — Alle Menüpunkte aus `trait-member-hooks.php::add_menu_item()` werden korrekt registriert.
+- [x] **Member-Seiten funktionieren** — Stellenanzeigen, Einstellungen, Genehmigungen, Bewerbungen laden ohne Fehler.
+
+### CSRF-Fix (Subscription + Users)
+
+- [x] **Fix: trait-page-subscription.php** — `$nonce = self::nonce('jpg_subscription_save')` ist nach dem `if ($_SERVER['REQUEST_METHOD'] === 'POST')` Block platziert (nach Z. 65). `verify_nonce()` steht vor dem Handler (Z. 30).
+- [x] **Fix: trait-page-users.php** — `$nonce = self::nonce('jpg_users_save')` ist nach dem POST-Handler-Block platziert (nach Z. 106). `verify_nonce()` steht vor dem Handler (Z. 33).
+- [x] **Kein CSRF-Regressionstest-Fehler** — Nonce-Generierung in keiner weiteren Trait-Datei vor dem POST-Handler durchgeführt. Grep-Prüfung der restlichen 8 Admin-Traits und 7 Member-Traits: korrekte Reihenfolge überall verifiziert.

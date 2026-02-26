@@ -27,9 +27,9 @@ Diese Core-Hooks werden vom Plugin registriert und reagieren auf CMS-Ereignisse:
 | `head` | `CMS_JobProfileGenerator::enqueue_styles()` | 20 | `jobprofile-admin.css` ausgeben |
 | `body_end` | `CMS_JobProfileGenerator::enqueue_scripts()` | 20 | `jobprofile-admin.js` ausgeben |
 | `company_deleted` | `CMS_JobProfileGenerator::on_company_deleted()` | 10 | Publizierte Profile der gelöschten Firma auf `draft` + `company_id=NULL` setzen |
-| `member_dashboard_init` | `CMS_JPG_MemberController::register_via_plugin_dashboard()` | 10 | Member-Menüpunkte registrieren |
-| `cms_member_data_export_requested` | `CMS_JobProfileGenerator::handle_data_export()` | 10 | DSGVO Art. 20 – Profil- und Bewerbungsdaten exportieren |
-| `cms_member_account_deletion_requested` | `CMS_JobProfileGenerator::handle_account_deletion()` | 10 | DSGVO Art. 17 – Profile trashен, CV-Dateien löschen, PII anonymisieren |
+| `member_dashboard_init` | `CMS_JPG_MemberController::register_via_plugin_dashboard()` (`trait-member-inline.php`) | 10 | Member-Menüpunkte im Plugin-Dashboard registrieren |
+| `cms_member_data_export_requested` | `CMS_JPG_MemberController::handle_data_export()` (`trait-member-dsgvo.php`) | 10 | DSGVO Art. 20 – Profil- und Bewerbungsdaten exportieren |
+| `cms_member_account_deletion_requested` | `CMS_JPG_MemberController::handle_account_deletion()` (`trait-member-dsgvo.php`) | 10 | DSGVO Art. 17 – Profile trashen, CV-Dateien löschen, PII anonymisieren |
 
 ### Registrierung im Code
 
