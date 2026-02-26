@@ -1694,7 +1694,7 @@ class CMS_JPG_Admin_Pages
                     switch ($action) {
                         case 'set_role':
                             $role = sanitize_key($_POST['jpg_role'] ?? '');
-                            $allowed = ['mandant', 'admin', 'blocked', ''];
+                            $allowed = ['mandant', 'editor', 'viewer', 'admin', 'blocked', ''];
                             if (in_array($role, $allowed, true)) {
                                 self::set_user_meta($uid, 'jpg_plugin_role', $role);
                                 $notice = 'Rolle gespeichert.';
@@ -1782,6 +1782,15 @@ class CMS_JPG_Admin_Pages
 
         // Plugin-Rollen-Definitionen für die View
         $pluginRoles = self::get_plugin_roles();
+
+        // CMS-Rollen aus users-Tabelle laden (für Info-Sektion)
+        $cmsRoles = [];
+        try {
+            $cmsRoles = $db->get_results(
+                "SELECT DISTINCT role FROM {$p}users WHERE role IS NOT NULL AND role != '' ORDER BY role ASC",
+                []
+            ) ?: [];
+        } catch (\Throwable $e) { /* ignore */ }
 
         require JPG_DIR . 'admin/views/page-users.php';
     }

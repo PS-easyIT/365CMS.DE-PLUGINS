@@ -16,10 +16,12 @@ if (!defined('ABSPATH')) exit;
 $esc = fn(string|null $v): string => htmlspecialchars((string)($v ?? ''), ENT_QUOTES);
 
 $roleLabels = [
-    ''        => ['label' => 'Standard',  'badge' => 'inactive'],
-    'mandant' => ['label' => 'Mandant',   'badge' => 'member'],
-    'admin'   => ['label' => 'Plugin-Admin','badge' => 'admin'],
-    'blocked' => ['label' => 'Gesperrt',  'badge' => 'danger'],
+    ''        => ['label' => 'Standard',      'badge' => 'inactive'],
+    'mandant' => ['label' => 'Mandant',       'badge' => 'member'],
+    'editor'  => ['label' => 'Redakteur',     'badge' => 'inactive'],
+    'viewer'  => ['label' => 'Betrachter',    'badge' => 'inactive'],
+    'admin'   => ['label' => 'Plugin-Admin',  'badge' => 'admin'],
+    'blocked' => ['label' => 'Gesperrt',      'badge' => 'danger'],
 ];
 ?>
 <!DOCTYPE html>
@@ -137,6 +139,32 @@ $roleLabels = [
         $pluginRoles = $pluginRoles ?? (class_exists('CMS_JPG_Admin_Pages')
             ? CMS_JPG_Admin_Pages::get_plugin_roles() : []);
         ?>
+        <!-- ══ CMS-Rollen Übersicht ═════════════════════════════════════ -->
+        <?php
+        $cmsRoles = $cmsRoles ?? [];
+        ?>
+        <?php if (!empty($cmsRoles)): ?>
+        <div class="admin-card" style="margin-top:1rem;">
+            <h3>🏠 Vorhandene CMS-Rollen</h3>
+            <p style="color:#64748b;font-size:.85rem;margin-bottom:1rem;">
+                Diese Rollen stammen direkt aus dem CMS-Kern (<code>users.role</code>) und können im CMS-Admin unter
+                <strong>Benutzer</strong> verwaltet werden. Sie dienen hier nur als Information.
+                Plugin-spezifische Berechtigungen werden über <strong>Plugin-Rollen</strong> gesteuert.
+            </p>
+            <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+                <?php foreach ($cmsRoles as $r): ?>
+                <span class="role-badge <?php echo $esc($r->role ?? ''); ?>">
+                    <?php echo $esc(ucfirst($r->role ?? '')); ?>
+                </span>
+                <?php endforeach; ?>
+            </div>
+            <p style="margin-top:.75rem;font-size:.8rem;color:#94a3b8;">
+                Vollständiges Rollen-Mapping CMS → Plugin-Rolle unter
+                <a href="?page=jpg-subscription" style="color:#3b82f6;">&#128230; Abosystem &amp; Pakete → CMS-Rollen</a>
+            </p>
+        </div>
+        <?php endif; ?>
+
         <?php if (!empty($pluginRoles)): ?>
         <div class="admin-card" style="margin-top:1rem;">
             <h3>🏷️ Plugin-Rollen</h3>
@@ -201,12 +229,16 @@ $roleLabels = [
                             <label class="form-label">Plugin-Rolle</label>
                             <select name="jpg_role" id="jpgRoleSelect" class="form-control">
                                 <option value="">Standard (kein spez. Zugriff)</option>
-                                <option value="mandant">👥 Mandant</option>
+                                <option value="mandant">🏢 Mandant</option>
+                                <option value="editor">✏️ Redakteur</option>
+                                <option value="viewer">👁️ Betrachter</option>
                                 <option value="admin">🔑 Plugin-Admin</option>
                                 <option value="blocked">🚫 Gesperrt</option>
                             </select>
                             <small class="form-text">
-                                <strong>Mandant:</strong> Kann eigene Stellen verwalten.<br>
+                                <strong>Mandant:</strong> Kann eigene Stellen erstellen &amp; Bewerbungen verwalten.<br>
+                                <strong>Redakteur:</strong> Kann Stellen erstellen, aber nicht veröffentlichen.<br>
+                                <strong>Betrachter:</strong> Nur-Lese-Zugriff auf eigene Profile.<br>
                                 <strong>Plugin-Admin:</strong> Vollzugriff (Admin-Bereich).<br>
                                 <strong>Gesperrt:</strong> Plugin-Bereich nicht zugänglich.
                             </small>

@@ -452,6 +452,12 @@ class CMS_JPG_Frontend
      */
     public function handle_apply(string $slug): void
     {
+        // Sicherstellen, dass kein gepuffertes HTML die JSON-Antwort verunreinigt
+        // (kann passieren wenn der CMS-Router ob_start() für Template-Ausgabe initiert hat)
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
         header('Content-Type: application/json; charset=utf-8');
 
         // ── 1. Rate-Limiting ──────────────────────────────────────────────────
