@@ -24,29 +24,13 @@ $roleLabels = [
     'blocked' => ['label' => 'Gesperrt',      'badge' => 'danger'],
 ];
 ?>
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Benutzer & Mandanten – <?php echo $esc(defined('SITE_NAME') ? SITE_NAME : 'CMS'); ?></title>
-    <link rel="stylesheet" href="<?php echo defined('SITE_URL') ? SITE_URL : ''; ?>/assets/css/main.css">
-    <link rel="stylesheet" href="<?php echo defined('SITE_URL') ? SITE_URL : ''; ?>/assets/css/admin.css?v=20260222b">
-    <?php renderAdminSidebarStyles(); ?>
-</head>
-<body class="admin-body">
 
-    <?php renderAdminSidebar('jpg-users'); ?>
-
-    <div class="admin-content">
-
-        <!-- Page Header -->
-        <div class="admin-page-header">
-            <div>
-                <h2>👥 Benutzer & Mandanten</h2>
-                <p>Weisen Sie CMS-Benutzern Plugin-Rollen und Unternehmen zu.</p>
-            </div>
-        </div>
+<div class="admin-page-header">
+    <div>
+        <h2>👥 Benutzer & Mandanten</h2>
+        <p>Weisen Sie CMS-Benutzern Plugin-Rollen und Unternehmen zu.</p>
+    </div>
+</div>
 
         <!-- Alerts -->
         <?php if (!empty($notice)): ?>
@@ -201,14 +185,12 @@ $roleLabels = [
         </div>
         <?php endif; ?>
 
-    </div><!-- /.admin-content -->
-
     <!-- ══ Benutzer-Bearbeitungs-Modal ══════════════════════════════════════ -->
-    <div id="jpgUserModal" class="modal" style="display:none;">
+    <div id="jpgUserModal" class="jpg-modal modal" style="display:none;">
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="jpgUserModalTitle">Benutzer bearbeiten</h3>
-                <button class="modal-close" onclick="closeModal('jpgUserModal')">&times;</button>
+                <button class="modal-close" onclick="jpgCloseModal('jpgUserModal')">&times;</button>
             </div>
             <div class="modal-body">
 
@@ -282,12 +264,11 @@ $roleLabels = [
 
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal('jpgUserModal')">Schließen</button>
+                <button type="button" class="btn btn-secondary" onclick="jpgCloseModal('jpgUserModal')">Schließen</button>
             </div>
         </div>
     </div>
 
-    <script src="<?php echo defined('SITE_URL') ? SITE_URL : ''; ?>/assets/js/admin.js"></script>
     <script>
     function jpgOpenUserModal(userId, userName, currentRole, companyId) {
         document.getElementById('jpgUserModalTitle').textContent = '✏️ ' + userName;
@@ -296,7 +277,7 @@ $roleLabels = [
         document.getElementById('jpgNewCompanyUserId').value = userId;
         const sel = document.getElementById('jpgRoleSelect');
         if (sel) sel.value = currentRole || '';
-        openModal('jpgUserModal');
+        jpgOpenModal('jpgUserModal');
     }
 
     function switchTab(tabId, btn) {
@@ -305,11 +286,4 @@ $roleLabels = [
         document.getElementById(tabId).classList.add('active');
         btn.classList.add('active');
     }
-
-    window.addEventListener('click', function(e) {
-        const modal = document.getElementById('jpgUserModal');
-        if (e.target === modal) closeModal('jpgUserModal');
-    });
     </script>
-</body>
-</html>

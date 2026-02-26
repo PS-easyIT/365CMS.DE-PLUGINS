@@ -25,46 +25,31 @@ $defLimits = [
     'feature_api'         => 0,
 ];
 ?>
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Abosystem – <?php echo $esc(defined('SITE_NAME') ? SITE_NAME : 'CMS'); ?></title>
-    <link rel="stylesheet" href="<?php echo defined('SITE_URL') ? SITE_URL : ''; ?>/assets/css/main.css">
-    <link rel="stylesheet" href="<?php echo defined('SITE_URL') ? SITE_URL : ''; ?>/assets/css/admin.css?v=20260222b">
-    <?php renderAdminSidebarStyles(); ?>
-    <style>
-        .plan-card { border:2px solid #e2e8f0; border-radius:10px; overflow:hidden; margin-bottom:1.5rem; }
-        .plan-card-header { background:#f8fafc; padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e2e8f0; }
-        .plan-card-header h4 { margin:0; font-size:1rem; font-weight:700; color:#1e293b; }
-        .plan-card-body { padding:1.5rem; }
-        .limits-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-        .feature-toggles { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:.5rem; margin-top:1rem; }
-        .feature-toggle { display:flex; align-items:center; gap:.5rem; padding:.5rem .75rem; background:#f8fafc; border-radius:6px; border:1px solid #e2e8f0; cursor:pointer; }
-        .feature-toggle input[type="checkbox"] { accent-color:#3b82f6; width:1rem; height:1rem; }
-        .role-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1rem; }
-        .role-card { border:1px solid #e2e8f0; border-radius:8px; padding:1rem; background:#fff; }
-        .role-card-header { display:flex; align-items:center; gap:.5rem; margin-bottom:.5rem; }
-        .role-caps { display:flex; flex-wrap:wrap; gap:.3rem; margin-top:.5rem; }
-        .cap-badge { background:#eff6ff; color:#1e40af; font-size:.72rem; padding:.2rem .45rem; border-radius:4px; font-family:monospace; }
-        .cms-role-list { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.75rem; }
-        @media (max-width:700px) { .limits-grid { grid-template-columns:1fr; } }
-    </style>
-</head>
-<body class="admin-body">
 
-    <?php renderAdminSidebar('jpg-subscription'); ?>
+<style>
+    .plan-card { border:2px solid #e2e8f0; border-radius:10px; overflow:hidden; margin-bottom:1.5rem; }
+    .plan-card-header { background:#f8fafc; padding:1rem 1.5rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e2e8f0; }
+    .plan-card-header h4 { margin:0; font-size:1rem; font-weight:700; color:#1e293b; }
+    .plan-card-body { padding:1.5rem; }
+    .limits-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+    .feature-toggles { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:.5rem; margin-top:1rem; }
+    .feature-toggle { display:flex; align-items:center; gap:.5rem; padding:.5rem .75rem; background:#f8fafc; border-radius:6px; border:1px solid #e2e8f0; cursor:pointer; }
+    .feature-toggle input[type="checkbox"] { accent-color:#3b82f6; width:1rem; height:1rem; }
+    .role-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1rem; }
+    .role-card { border:1px solid #e2e8f0; border-radius:8px; padding:1rem; background:#fff; }
+    .role-card-header { display:flex; align-items:center; gap:.5rem; margin-bottom:.5rem; }
+    .role-caps { display:flex; flex-wrap:wrap; gap:.3rem; margin-top:.5rem; }
+    .cap-badge { background:#eff6ff; color:#1e40af; font-size:.72rem; padding:.2rem .45rem; border-radius:4px; font-family:monospace; }
+    .cms-role-list { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.75rem; }
+    @media (max-width:700px) { .limits-grid { grid-template-columns:1fr; } }
+</style>
 
-    <div class="admin-content">
-
-        <!-- Page Header -->
-        <div class="admin-page-header">
-            <div>
-                <h2>📦 Abosystem & Pakete</h2>
-                <p>Plugin-spezifische Limits und Features je CMS-Abo-Paket konfigurieren sowie Plugin-Rollen verwalten.</p>
-            </div>
-        </div>
+<div class="admin-page-header">
+    <div>
+        <h2>📦 Abosystem & Pakete</h2>
+        <p>Plugin-spezifische Limits und Features je CMS-Abo-Paket konfigurieren sowie Plugin-Rollen verwalten.</p>
+    </div>
+</div>
 
         <!-- Alerts -->
         <?php if (!empty($notice)): ?>
@@ -337,9 +322,6 @@ $defLimits = [
             </div>
         </div>
 
-    </div><!-- /.admin-content -->
-
-    <script src="<?php echo defined('SITE_URL') ? SITE_URL : ''; ?>/assets/js/admin.js"></script>
     <script>
     function jpgTogglePlanForm(pid) {
         var form    = document.getElementById('jpgPlanForm-' + pid);
@@ -356,5 +338,3 @@ $defLimits = [
         btn.classList.add('active');
     }
     </script>
-</body>
-</html>
