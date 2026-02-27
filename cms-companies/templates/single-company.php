@@ -46,146 +46,13 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 ?>
 <style>
 :root {
-  --co-primary:   <?= htmlspecialchars($settings['design_primary_color'] ?? '#0891b2') ?>;
-  --co-primary-d: <?= htmlspecialchars($settings['design_accent_color']  ?? '#0284c7') ?>;
-  --co-radius:    <?= (int)($settings['design_border_radius'] ?? 14) ?>px;
-  --co-shadow:    0 1px 3px rgba(0,0,0,.04), 0 4px 14px rgba(0,0,0,.04);
-  --co-shadow-h:  0 4px 20px rgba(0,0,0,.10);
-}
-.co-single-v2 {
-  max-width: var(--max, 1140px); margin: 0 auto;
-  border-left: 1px solid var(--post-column-border,#e2e0d8);
-  border-right: 1px solid var(--post-column-border,#e2e0d8);
-  background: #f8fafc;
-}
-.co-breadcrumb {
-  display: flex; align-items: center; gap: .5rem;
-  padding: .7rem 2rem; background: #fff; border-bottom: 1px solid #f1f5f9; font-size: .8rem;
-}
-.co-breadcrumb a { color: var(--co-primary); text-decoration: none; font-weight: 600; }
-.co-breadcrumb a:hover { opacity: .7; }
-.co-breadcrumb__sep { color: #cbd5e1; }
-.co-breadcrumb__cur { color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 340px; }
-.co-hero-v2 {
-  position: relative; overflow: hidden;
-  min-height: 200px; max-height: 300px;
-  background: <?= htmlspecialchars($headerBgFrom) ?>;
-  border-bottom: 3px solid var(--co-primary);
-}
-.co-hero-v2__inner {
-  display: flex; gap: 1.75rem; align-items: center;
-  padding: 1.5rem 2rem 1.75rem; flex-wrap: wrap; position: relative; z-index: 1;
-  min-height: 200px;
-}
-.co-hero-v2__avatar {
-  flex-shrink: 0; width: 88px; height: 88px; border-radius: 16px; overflow: hidden;
-  box-shadow: 0 6px 20px rgba(0,0,0,.12), 0 0 0 4px rgba(255,255,255,.75);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 2rem; font-weight: 900; color: #fff; letter-spacing: -.02em;
-}
-.co-hero-v2__avatar img { width: 100%; height: 100%; object-fit: contain; padding: 8px; background: #fff; box-sizing: border-box; border-radius: 12px; }
-.co-hero-v2__meta { flex: 1; min-width: 0; }
-.co-hero-v2__title {
-  margin: 0 0 .35rem;
-  font-size: clamp(1.4rem, 3vw, 1.875rem); font-weight: 800; line-height: 1.2;
-  color: <?= htmlspecialchars($headerTitleColor) ?>;
-}
-.co-hero-v2__sub { font-size: .9rem; color: <?= htmlspecialchars($headerTitleColor) ?>; opacity: .7; margin: 0 0 .875rem; }
-.co-hero-v2__chips { display: flex; flex-wrap: wrap; gap: .4rem; }
-.co-hero-v2__chip {
-  display: inline-flex; align-items: center; gap: .3rem;
-  padding: .3rem .8rem; border-radius: 50px; font-size: .76rem; font-weight: 600;
-  background: rgba(255,255,255,.8); color: #334155; border: 1.5px solid rgba(255,255,255,.5);
-  backdrop-filter: blur(3px); box-shadow: 0 1px 3px rgba(0,0,0,.04);
-}
-.co-hero-v2__ribbon {
-  position: absolute; top: 1.25rem; right: 0;
-  padding: .25rem .875rem .25rem .625rem; border-radius: 6px 0 0 6px;
-  font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
-  color: #fff; box-shadow: -1px 1px 4px rgba(0,0,0,.18);
-}
-.co-body-v2 {
-  display: grid; grid-template-columns: 1fr 320px;
-  gap: 1.75rem; padding: 1.75rem 2rem 3rem; align-items: start;
-}
-.co-main-v2 { min-width: 0; }
-.co-sidebar-v2 { position: sticky; top: 1.5rem; display: flex; flex-direction: column; gap: .875rem; }
-.co-sec-v2 {
-  background: #fff; border-radius: var(--co-radius,14px);
-  padding: 1.5rem 1.75rem; margin-bottom: 1.125rem;
-  box-shadow: var(--co-shadow); transition: box-shadow .2s;
-}
-.co-sec-v2:hover { box-shadow: var(--co-shadow-h); }
-.co-sec-v2:last-child { margin-bottom: 0; }
-.co-sec-v2__title {
-  font-size: .92rem; font-weight: 700; color: #1e293b;
-  margin: 0 0 1.125rem; padding-bottom: .6rem; padding-left: .75rem;
-  display: flex; align-items: center; gap: .4rem;
-  border-left: 3px solid var(--co-primary); border-bottom: 1.5px solid #f1f5f9;
-}
-.co-section-count {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 20px; height: 20px; border-radius: 50%;
-  background: var(--co-primary); color: #fff; font-size: .73rem; font-weight: 700; margin-left: .35rem;
-}
-.co-expert-grid-v2 { display: flex; flex-direction: column; gap: .5rem; }
-.co-exp-row {
-  display: flex; gap: .875rem; align-items: center;
-  padding: .75rem .875rem; border-radius: 10px;
-  background: #fafbfc; border: 1px solid #f1f5f9;
-  transition: background .15s, border-color .15s;
-}
-.co-exp-row:hover { background: #f0f9ff; border-color: #bae6fd; }
-.co-exp-row__av {
-  width: 44px; height: 44px; border-radius: 10px; overflow: hidden; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 800; color: #fff; font-size: .9rem;
-}
-.co-exp-row__av img { width: 100%; height: 100%; object-fit: cover; }
-.co-exp-row__info { flex: 1; min-width: 0; }
-.co-exp-row__name { font-size: .9rem; font-weight: 700; color: #1e293b; }
-.co-exp-row__name a { color: inherit; text-decoration: none; }
-.co-exp-row__name a:hover { color: var(--co-primary); }
-.co-exp-row__sub  { font-size: .77rem; color: #94a3b8; margin-top: 2px; }
-.co-exp-row__avail{
-  font-size: .72rem; font-weight: 600; padding: .15rem .5rem;
-  border-radius: 50px; white-space: nowrap; margin-top: 3px; display: inline-block;
-}
-.co-sc-v2 { background: #fff; border-radius: var(--co-radius,14px); padding: 1.25rem 1.375rem; box-shadow: var(--co-shadow); }
-.co-sc-v2__title { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: #94a3b8; margin: 0 0 .875rem; }
-.co-info-rows { display: flex; flex-direction: column; }
-.co-info-row {
-  display: flex; justify-content: space-between; align-items: baseline;
-  gap: .75rem; padding: .45rem 0; border-bottom: 1px solid #f8fafc;
-}
-.co-info-row:last-child { border-bottom: none; }
-.co-info-row__lbl { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; flex-shrink: 0; }
-.co-info-row__val { font-size: .85rem; font-weight: 500; color: #1e293b; text-align: right; word-break: break-word; }
-.co-info-row__val a { color: var(--co-primary); text-decoration: none; }
-.co-info-row__val a:hover { text-decoration: underline; }
-.co-btn-v2 {
-  display: flex; align-items: center; justify-content: center; gap: .5rem;
-  padding: .875rem 1.5rem; width: 100%; box-sizing: border-box;
-  font-size: .9rem; font-weight: 700; border-radius: 10px; border: none;
-  cursor: pointer; text-decoration: none; color: #fff; margin-bottom: .5rem;
-  background: linear-gradient(135deg, var(--co-primary-d,var(--co-primary)), var(--co-primary));
-  box-shadow: 0 4px 16px color-mix(in srgb, var(--co-primary) 30%, transparent);
-  transition: all .2s cubic-bezier(.4,0,.2,1);
-}
-.co-btn-v2:last-child { margin-bottom: 0; }
-.co-btn-v2:hover { transform: translateY(-2px); box-shadow: 0 8px 24px color-mix(in srgb, var(--co-primary) 38%, transparent); }
-.co-btn-v2--ghost {
-  background: #f0f9ff; color: var(--co-primary); box-shadow: none; border: 1.5px solid #bae6fd;
-}
-.co-btn-v2--ghost:hover { background: #e0f2fe; box-shadow: none; }
-@media (max-width: 768px) {
-  .co-body-v2 { grid-template-columns: 1fr; padding: 1.25rem 1rem 2rem; gap: 1.25rem; }
-  .co-sidebar-v2 { position: static; }
-  .co-hero-v2 { min-height: auto; max-height: none; }
-  .co-hero-v2__inner { padding: 1.25rem 1rem; gap: 1.25rem; min-height: auto; }
-  .co-hero-v2__avatar { width: 72px; height: 72px; }
-  .co-hero-v2__title { font-size: 1.3rem; }
-  .co-breadcrumb { padding: .6rem 1rem; }
+  --co-primary:          <?= htmlspecialchars($settings['design_primary_color'] ?? '#0891b2') ?>;
+  --co-primary-d:        <?= htmlspecialchars($settings['design_accent_color']  ?? '#0284c7') ?>;
+  --co-radius:           <?= (int)($settings['design_border_radius'] ?? 14) ?>px;
+  --co-shadow:           0 1px 3px rgba(0,0,0,.04), 0 4px 14px rgba(0,0,0,.04);
+  --co-shadow-h:         0 4px 20px rgba(0,0,0,.10);
+  --co-detail-hdr-bg:    <?= htmlspecialchars($headerBgFrom) ?>;
+  --co-detail-hdr-color: <?= htmlspecialchars($headerTitleColor) ?>;
 }
 </style>
 
@@ -199,11 +66,11 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 
   <header class="co-hero-v2">
     <?php if ($is_sponsor): ?>
-      <span class="co-hero-v2__ribbon" style="background:<?= htmlspecialchars($partnerSponsorColor) ?>;">★ Sponsor</span>
+      <span class="co-hero-v2__ribbon" style="--co-ribbon-bg:<?= htmlspecialchars($partnerSponsorColor) ?>;">★ Sponsor</span>
     <?php elseif ($is_top_partner): ?>
-      <span class="co-hero-v2__ribbon" style="background:<?= htmlspecialchars($partnerTopColor) ?>;">◆ Top-Partner</span>
+      <span class="co-hero-v2__ribbon" style="--co-ribbon-bg:<?= htmlspecialchars($partnerTopColor) ?>;">◆ Top-Partner</span>
     <?php elseif ($is_partner): ?>
-      <span class="co-hero-v2__ribbon" style="background:<?= htmlspecialchars($partnerColor) ?>;">● Partner</span>
+      <span class="co-hero-v2__ribbon" style="--co-ribbon-bg:<?= htmlspecialchars($partnerColor) ?>;">● Partner</span>
     <?php endif; ?>
     <div class="co-hero-v2__inner">
       <?php if (!empty($company->logo_url)): ?>
@@ -240,7 +107,7 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       <?php if (!empty($company->description) && trim($company->description) !== ''): ?>
         <div class="co-sec-v2">
           <h2 class="co-sec-v2__title">🏢 Über das Unternehmen</h2>
-          <div class="co-wysiwyg-content" style="line-height:1.75;color:#334155;font-size:.95rem;">
+          <div class="co-wysiwyg-content">
             <?= $company->description ?>
           </div>
         </div>
@@ -285,10 +152,10 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
                   </div>
                   <?php if ($expRole): ?><div class="co-exp-row__sub">💼 <?= $expRole ?></div><?php endif; ?>
                   <?php if ($expCity): ?><div class="co-exp-row__sub">📍 <?= $expCity ?></div><?php endif; ?>
-                  <span class="co-exp-row__avail" style="background:<?= $avBg ?>;color:<?= $avTxt ?>;"><?= $avIco ?> <?= $avLbl ?></span>
+                  <span class="co-exp-row__avail" style="--avail-bg:<?= $avBg ?>;--avail-txt:<?= $avTxt ?>"><?= $avIco ?> <?= $avLbl ?></span>
                 </div>
                 <?php if ($expId > 0): ?>
-                  <a href="<?= SITE_URL ?>/experts/<?= $expId ?>" class="co-btn-v2 co-btn-v2--ghost" style="width:auto;padding:.4rem .875rem;font-size:.8rem;margin:0;">Profil →</a>
+                  <a href="<?= SITE_URL ?>/experts/<?= $expId ?>" class="co-btn-v2 co-btn-v2--ghost co-btn-v2--sm">Profil →</a>
                 <?php endif; ?>
               </div>
             <?php endforeach; ?>
@@ -343,7 +210,7 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       <?php endif; ?>
 
       <div class="co-sc-v2">
-        <a href="<?= $base_url ?>/companies" class="co-btn-v2 co-btn-v2--ghost" style="margin:0;">← Zur Unternehmensübersicht</a>
+        <a href="<?= $base_url ?>/companies" class="co-btn-v2 co-btn-v2--ghost co-btn-v2--sm">← Zur Unternehmensübersicht</a>
       </div>
 
     </aside>
