@@ -253,6 +253,7 @@ final class CMS_Speakers_Database
                 'is_featured'   => null,
                 'is_verified'   => null,
                 'format'        => null,
+                'user_id'       => null,
                 'limit'         => 12,
                 'offset'        => 0,
                 'order'         => 's.created_at DESC',
@@ -287,6 +288,9 @@ final class CMS_Speakers_Database
                 $where[] = '(s.first_name LIKE ? OR s.last_name LIKE ? OR s.position LIKE ? OR s.company LIKE ? OR s.location_city LIKE ? OR s.target_audience LIKE ?)';
                 $params  = array_merge($params, [$like, $like, $like, $like, $like, $like]);
             }
+            if (!empty($args['user_id'])) {
+                $where[] = 's.user_id = ?'; $params[] = (int) $args['user_id'];
+            }
 
             $whereStr = implode(' AND ', $where);
             $limit    = (int)$args['limit'];
@@ -314,7 +318,7 @@ final class CMS_Speakers_Database
         $p  = $db->prefix();
         try {
             $defaults = ['status' => 'active', 'availability' => null, 'travel_radius' => null,
-                         'city' => null, 'search' => null, 'is_featured' => null, 'is_verified' => null, 'format' => null];
+                         'city' => null, 'search' => null, 'is_featured' => null, 'is_verified' => null, 'format' => null, 'user_id' => null];
             $args   = array_merge($defaults, $args);
             $where  = ['1=1'];
             $params = [];
@@ -329,6 +333,9 @@ final class CMS_Speakers_Database
                 $like = '%' . $args['search'] . '%';
                 $where[] = '(s.first_name LIKE ? OR s.last_name LIKE ? OR s.position LIKE ? OR s.company LIKE ? OR s.location_city LIKE ?)';
                 $params  = array_merge($params, [$like, $like, $like, $like, $like]);
+            }
+            if (!empty($args['user_id'])) {
+                $where[] = 's.user_id = ?'; $params[] = (int) $args['user_id'];
             }
             $whereStr = implode(' AND ', $where);
             $stmt = $db->prepare("SELECT COUNT(*) FROM {$p}speakers s WHERE {$whereStr}");

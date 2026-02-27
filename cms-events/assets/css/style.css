@@ -140,99 +140,183 @@
 .ev-page-btn.active { background: var(--ev-primary); border-color: var(--ev-primary); color: #fff; }
 
 /* ═══════════════════════════════════════════════════════════════
-   EVENT CARD  (kompakt, wie co-card)
+   EVENT CARD  (Layout wie co-card, Blautöne)
    ═══════════════════════════════════════════════════════════════ */
 .ev-card {
-  background: var(--ev-card-bg);
-  border: 1px solid var(--ev-border);
-  border-radius: var(--ev-radius);
-  box-shadow: var(--ev-shadow);
-  transition: var(--ev-ease);
-  display: flex; flex-direction: column;
-  overflow: hidden; position: relative;
-}
-.ev-card:hover { transform: translateY(-3px); box-shadow: var(--ev-shadow-h); }
-.ev-card--featured { border-color: var(--ev-primary); border-top: 3px solid var(--ev-primary); }
-.ev-card--past { opacity: .75; }
-.ev-card--today { border-top: 3px solid #10b981; }
-
-/* Ribbon */
-.ev-card-ribbon {
-  padding: 4px 12px; font-size: .7rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .04em;
-  background: var(--ev-primary); color: #fff;   /* Standard: Primärfarbe, weiße Schrift */
-}
-.ev-ribbon-past      { background: #94a3b8;                                   color: #fff;    }
-.ev-ribbon-today     { background: #10b981;                                   color: #fff;    }
-.ev-ribbon-featured  { background: linear-gradient(90deg,#fbbf24,#f59e0b);   color: #1e293b; }
-.ev-ribbon-cancelled { background: var(--ev-cancelled-bg,  #ef4444);          color: var(--ev-cancelled-color, #fff); }
-
-/* Head: Date-Block + Identity + Pills (rechts) */
-.ev-card-head {
-  display: flex; gap: 10px; align-items: flex-start;
-  padding: 12px 14px;
-}
-.ev-date-block {
-  flex-shrink: 0; text-align: center; min-width: 46px;
-  background: var(--ev-primary); color: #fff;
-  border-radius: 8px; padding: 6px 8px;
-}
-.ev-date-day  { display: block; font-size: 1.3rem; font-weight: 800; line-height: 1; }
-.ev-date-mon  { display: block; font-size: .6rem; text-transform: uppercase; opacity: .85; }
-.ev-date-year { display: block; font-size: .6rem; opacity: .7; }
-.ev-card-identity { flex: 1; min-width: 0; }
-.ev-card-title {
-  margin: 0 0 4px; font-size: .95rem; font-weight: 700;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.ev-card-title a { color: var(--ev-text); text-decoration: none; }
-.ev-card-title a:hover { color: var(--ev-primary); }
-.ev-card-category {
-  font-size: .72rem; font-weight: 600; color: var(--ev-primary);
-  text-transform: uppercase; letter-spacing: .04em;
-}
-/* Pills-Säule rechts im Card-Head */
-.ev-card-head-pills {
-  flex-shrink: 0;
+  position: relative;
+  background: #ffffff;
+  border: 2px solid var(--ev-border, #bfdbfe);
+  border-radius: var(--ev-radius, 12px);
+  padding: 1.25rem 1.375rem 1.125rem;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 3px;
-  max-width: 110px;
+  gap: .875rem;
+  height: 100%;
+  transition: box-shadow .22s, transform .22s, border-color .22s;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(59,130,246,.07);
+}
+.ev-card:hover {
+  box-shadow: 0 8px 28px rgba(59,130,246,.18);
+  transform: translateY(-3px);
+  border-color: transparent;
+}
+.ev-card--featured {
+  border-color: var(--ev-primary);
+  background: linear-gradient(165deg, var(--ev-light, #eff6ff) 0%, #fff 60%);
+}
+.ev-card--past  { opacity: .75; }
+.ev-card--today {
+  border-color: #10b981;
+  background: linear-gradient(165deg, #ecfdf5 0%, #fff 60%);
 }
 
-/* Pills */
+/* Ribbon – absolut oben rechts (wie co-card-ribbon) */
+.ev-card-ribbon {
+  position: absolute;
+  top: .75rem;
+  right: -.1rem;
+  padding: .18rem .65rem .18rem .55rem;
+  font-size: .65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  border-radius: 4px 0 0 4px;
+  color: #fff;
+  background: var(--ev-primary);
+  box-shadow: -1px 1px 4px rgba(0,0,0,.18);
+}
+.ev-ribbon-past      { background: #94a3b8; }
+.ev-ribbon-today     { background: #10b981; }
+.ev-ribbon-featured  { background: linear-gradient(90deg, #fbbf24, #f59e0b); color: #1e293b; }
+.ev-ribbon-cancelled { background: #ef4444; }
+
+/* Head: Datum-Avatar + Identity (wie co-card-head) */
+.ev-card-head {
+  display: flex;
+  gap: .875rem;
+  align-items: flex-start;
+  padding-right: 4.5rem; /* Platz für Ribbon */
+}
+
+/* Datum-Block als Avatar (wie co-card-avatar, Blaugradient) */
+.ev-date-block {
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  border-radius: 11px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--ev-primary-h, #1d4ed8), var(--ev-primary, #3b82f6));
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(59,130,246,.3);
+}
+.ev-date-day  { display: block; font-size: 1.2rem; font-weight: 800; line-height: 1; }
+.ev-date-mon  { display: block; font-size: .58rem; text-transform: uppercase; opacity: .85; }
+.ev-date-year { display: block; font-size: .58rem; opacity: .7; }
+
+/* Identity (wie co-card-identity) */
+.ev-card-identity {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+.ev-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ev-card-title a { color: var(--ev-text, #1e293b); text-decoration: none; }
+.ev-card-title a:hover { color: var(--ev-primary); }
+.ev-card-category {
+  display: inline-block;
+  font-size: .75rem;
+  font-weight: 600;
+  color: var(--ev-primary);
+  background: var(--ev-light, #eff6ff);
+  padding: .1rem .45rem;
+  border-radius: 4px;
+  width: fit-content;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Pills-Zeile (wie co-card-pills) */
 .ev-card-pills {
-  display: flex; flex-wrap: wrap; gap: 4px;
-  padding: 0 14px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem;
 }
 .ev-pill {
-  display: inline-flex; align-items: center; gap: 3px;
-  padding: 2px 8px; border-radius: 50px;
-  font-size: .68rem; font-weight: 600;
-  background: var(--ev-light); color: var(--ev-primary);
-  border: 1px solid var(--ev-border);
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  padding: .2rem .6rem;
+  background: var(--ev-light, #eff6ff);
+  border: 1px solid var(--ev-border, #bfdbfe);
+  border-radius: 50px;
+  font-size: .73rem;
+  color: var(--ev-text-m, #475569);
+  white-space: nowrap;
 }
-.ev-pill-online   { background: var(--ev-online-badge-bg, #d1fae5); color: var(--ev-online-badge, #059669); border-color: #a7f3d0; }
-.ev-pill-speakers { background: #ede9fe; color: #6d28d9; border-color: #ddd6fe; }
-.ev-pill-capacity { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.ev-pill-online   { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+.ev-pill-speakers { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+.ev-pill-capacity { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
+.ev-pill-free     { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+.ev-pill-price    { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
 
-/* Excerpt */
+/* Tag-Pills */
+.ev-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem;
+}
+.ev-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: .15rem .5rem;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 50px;
+  font-size: .68rem;
+  font-weight: 500;
+  color: #0369a1;
+  white-space: nowrap;
+}
+
+/* Excerpt (wie co-card-excerpt) */
 .ev-card-excerpt {
-  flex: 1; padding: 0 14px 8px;
-  font-size: .82rem; color: var(--ev-text-m); line-height: 1.5;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  flex: 1;
+  font-size: .8rem;
+  color: var(--ev-text-l, #94a3b8);
+  line-height: 1.55;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-/* Footer */
+/* Footer (wie co-card-footer) */
 .ev-card-footer {
-  padding: 10px 14px;
-  border-top: 1px solid var(--ev-border-l);
-  display: flex; gap: 8px;
+  display: flex;
+  gap: .5rem;
+  padding-top: .875rem;
+  border-top: 1px solid var(--ev-border, #bfdbfe);
+  margin-top: auto;
+  align-items: center;
 }
-.ev-card-footer .ev-btn { flex: 1; justify-content: center; font-size: .78rem; padding: .35rem .6rem; }
+.ev-card-footer .ev-btn-primary { flex: 1; justify-content: center; }
+.ev-card-footer .ev-btn-ghost   { flex-shrink: 0; }
 
 /* ═══════════════════════════════════════════════════════════════
    SINGLE EVENT

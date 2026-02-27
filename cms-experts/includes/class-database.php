@@ -505,6 +505,11 @@ final class CMS_Experts_Database
             $params[] = $args['status'];
         }
 
+        if (!empty($args['user_id'])) {
+            $where[] = 'user_id = ?';
+            $params[] = (int) $args['user_id'];
+        }
+
         $where_clause = 'WHERE ' . implode(' AND ', $where);
         $limit  = $args['limit']  ?? 500;
         $offset = $args['offset'] ?? 0;

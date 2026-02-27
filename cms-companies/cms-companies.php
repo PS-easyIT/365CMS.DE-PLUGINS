@@ -64,6 +64,7 @@ final class CMS_Companies
             'class-template-loader.php',
             'class-shortcode.php',
             'class-admin.php',
+            'class-member-dashboard.php',
         ];
 
         foreach ($files as $file) {

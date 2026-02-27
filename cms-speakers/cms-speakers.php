@@ -64,6 +64,7 @@ final class CMS_Speakers
             'class-template-loader.php',
             'class-shortcode.php',
             'class-admin.php',
+            'class-member-dashboard.php',
         ];
 
         foreach ($files as $file) {

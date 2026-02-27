@@ -226,6 +226,10 @@ final class CMS_Events_Database
             $where[] = 'is_online = ?';
             $params[] = (int)$args['is_online'];
         }
+        if (!empty($args['user_id'])) {
+            $where[] = 'user_id = ?';
+            $params[] = (int) $args['user_id'];
+        }
 
         $where_clause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
         $order = 'ORDER BY event_date ASC, event_time ASC';
@@ -696,6 +700,10 @@ final class CMS_Events_Database
         if (isset($args['is_online'])) {
             $sql   .= ' AND is_online = ?';
             $bind[] = (int)$args['is_online'];
+        }
+        if (!empty($args['user_id'])) {
+            $sql   .= ' AND user_id = ?';
+            $bind[] = (int) $args['user_id'];
         }
 
         $stmt = $db->prepare($sql);

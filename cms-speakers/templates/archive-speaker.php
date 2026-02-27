@@ -63,11 +63,9 @@ $archive_desc      = htmlspecialchars($archive_desc_raw);
 $archive_icon  = htmlspecialchars($settings['archive_header_icon']  ?? '🎤');
 $cta_label     = htmlspecialchars($settings['design_cta_label']     ?? 'Profil ansehen');
 
-// Grid-Spalten (auto => responsive auto-fill)
-$grid_raw = $settings['design_grid_columns'] ?? 'auto';
-$grid_css = is_numeric($grid_raw)
-    ? 'repeat(' . (int)$grid_raw . ', 1fr)'
-    : 'repeat(auto-fill, minmax(290px, 1fr))';
+// Grid immer 3 Spalten – unabhängig von der Admin-Einstellung
+// (responsive Breakpoints sind im CSS definiert)
+$grid_css = 'repeat(3, 1fr)';
 
 /* ── Archive-URL ──────────────────────────────────────────────── */
 $archive_url = (defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/speakers/';

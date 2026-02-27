@@ -100,28 +100,32 @@ if ($status === 'cancelled') {
         <div class="ev-card-category"><?= $category ?></div>
       <?php endif; ?>
     </div>
-    <!-- Badges rechts -->
-    <div class="ev-card-head-pills">
-      <?php if ($is_online): ?>
-        <span class="ev-pill ev-pill-online">🌐 Online</span>
-      <?php elseif ($city): ?>
-        <span class="ev-pill">📍 <?= $city ?></span>
-      <?php endif; ?>
-      <?php if ($speaker_count > 0): ?>
-        <span class="ev-pill ev-pill-speakers">🎤 <?= $speaker_count ?></span>
-      <?php endif; ?>
-      <?php if ($capacity > 0): ?>
-        <span class="ev-pill ev-pill-capacity">🪑 <?= $capacity ?></span>
-      <?php endif; ?>
-      <?php if ($show_price): ?>
-        <?php if ($price_type === 'free'): ?>
-          <span class="ev-pill" style="background:#d1fae5;color:#065f46;border-color:#a7f3d0;">✅ Frei</span>
-        <?php elseif ($price > 0): ?>
-          <span class="ev-pill" style="background:#e0e7ff;color:#3730a3;border-color:#c7d2fe;">💶 <?= number_format($price, 0, ',', '.') ?>&nbsp;<?= $price_cur ?></span>
-        <?php endif; ?>
-      <?php endif; ?>
-    </div>
   </div>
+
+  <!-- Pills-Zeile (wie co-card-pills) -->
+  <?php $has_pills = $is_online || $city || $speaker_count > 0 || $capacity > 0 || ($show_price && ($price_type === 'free' || $price > 0)); ?>
+  <?php if ($has_pills): ?>
+  <div class="ev-card-pills">
+    <?php if ($is_online): ?>
+      <span class="ev-pill ev-pill-online">🌐 Online</span>
+    <?php elseif ($city): ?>
+      <span class="ev-pill">📍 <?= $city ?></span>
+    <?php endif; ?>
+    <?php if ($speaker_count > 0): ?>
+      <span class="ev-pill ev-pill-speakers">🎤 <?= $speaker_count ?></span>
+    <?php endif; ?>
+    <?php if ($capacity > 0): ?>
+      <span class="ev-pill ev-pill-capacity">🪑 <?= $capacity ?></span>
+    <?php endif; ?>
+    <?php if ($show_price): ?>
+      <?php if ($price_type === 'free'): ?>
+        <span class="ev-pill ev-pill-free">✅ Frei</span>
+      <?php elseif ($price > 0): ?>
+        <span class="ev-pill ev-pill-price">💶 <?= number_format($price, 0, ',', '.') ?>&nbsp;<?= $price_cur ?></span>
+      <?php endif; ?>
+    <?php endif; ?>
+  </div>
+  <?php endif; ?>
   <?php if ($show_tags && !empty($tags_raw)): ?>
   <div class="ev-card-tags">
     <?php foreach (array_slice($tags_raw, 0, 4) as $tag): ?>
@@ -137,10 +141,10 @@ if ($status === 'cancelled') {
 
   <!-- Footer -->
   <div class="ev-card-footer">
-    <a href="<?= htmlspecialchars($event_url) ?>" class="ev-btn ev-btn-primary ev-btn-sm">Details →</a>
+    <a href="<?= htmlspecialchars($event_url) ?>" class="ev-btn ev-btn-primary">Details →</a>
     <?php if ($reg_url && !$is_past && $status !== 'cancelled'): ?>
       <a href="<?= $reg_url ?>" target="_blank" rel="noopener"
-         class="ev-btn ev-btn-ghost ev-btn-sm">Anmelden</a>
+         class="ev-btn ev-btn-ghost">Anmelden</a>
     <?php endif; ?>
   </div>
 

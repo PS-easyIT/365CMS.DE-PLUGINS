@@ -232,6 +232,24 @@ trait CMS_JPG_Member_Hooks_Trait
             ];
         }
 
+        // Stellenanzeigen → Übersicht (direkte Unterseite) - am Ende
+        if ($currentUid > 0) {
+            $items[] = [
+                'slug'        => 'member_jobs_list',
+                'label'       => 'Meine Stellen',
+                'icon'        => '📋',
+                'url'         => '/member/jobs',
+                'active'      => str_starts_with($uri, '/member/jobs') &&
+                                 !str_contains($uri, '/create') &&
+                                 !str_contains($uri, '/edit') &&
+                                 !str_contains($uri, '/approvals') &&
+                                 !str_contains($uri, '/applications') &&
+                                 !str_contains($uri, '/settings'),
+                'category'    => 'plugins',
+                'parent_slug' => 'member_jobs',
+            ];
+        }
+
         return $items;
     }
 

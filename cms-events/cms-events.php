@@ -35,7 +35,7 @@ final class CMS_Events {
 
     private function load_dependencies(): void {
         $includes = $this->plugin_dir . 'includes/';
-        foreach (['class-database.php', 'class-post-type.php', 'class-meta-boxes.php', 'class-template-loader.php', 'class-shortcode.php', 'class-admin.php'] as $file) {
+        foreach (['class-database.php', 'class-post-type.php', 'class-meta-boxes.php', 'class-template-loader.php', 'class-shortcode.php', 'class-admin.php', 'class-member-dashboard.php'] as $file) {
             if (file_exists($includes . $file)) require_once $includes . $file;
         }
     }

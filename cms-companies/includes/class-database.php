@@ -203,6 +203,10 @@ final class CMS_Companies_Database
             $params[] = $like;
             $params[] = $like;
         }
+        if (!empty($args['user_id'])) {
+            $where[]  = 'user_id = ?';
+            $params[] = (int) $args['user_id'];
+        }
 
         $where_clause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
         $stmt = $db->prepare("SELECT COUNT(*) FROM {$db->prefix()}companies {$where_clause}");
@@ -266,6 +270,10 @@ final class CMS_Companies_Database
             $params[] = $like;
             $params[] = $like;
             $params[] = $like;
+        }
+        if (!empty($args['user_id'])) {
+            $where[]  = 'user_id = ?';
+            $params[] = (int) $args['user_id'];
         }
 
         $where_clause = $where ? 'WHERE ' . implode(' AND ', $where) : '';

@@ -143,7 +143,7 @@
     display: flex;
     gap: 16px;
     align-items: flex-start;
-    padding: 16px;
+    padding: 22px 16px 16px;
     border-bottom: 1px solid var(--sp-border-l);
     background: var(--sp-card-top-bg, #ede9fe);
 }
@@ -156,7 +156,6 @@
     background: var(--sp-bg-light);
     flex-shrink: 0;
     position: relative;
-    margin-top: 15px;
 }
 
 .sp-card-avatar img {
@@ -181,7 +180,6 @@
     flex-direction: column;
     gap: 4px;
     min-width: 0;
-    margin-top: -3px;
     text-align: left;
     width: 100%;
     padding-top: 14px;
@@ -315,6 +313,7 @@
     font-size: 0.68rem;
     font-weight: 600;
     border: 1px solid var(--sp-border, #ddd6fe);
+    white-space: nowrap;
 }
 
 /* Format-Row auf der Card */
@@ -669,9 +668,15 @@
 
 .sp-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 24px;
     padding: 0 1.5rem;
+}
+@media (max-width: 900px) {
+    .sp-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 580px) {
+    .sp-grid { grid-template-columns: 1fr; }
 }
 
 /* ========================================
