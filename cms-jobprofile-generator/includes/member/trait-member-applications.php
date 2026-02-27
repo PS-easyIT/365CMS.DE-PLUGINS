@@ -263,6 +263,7 @@ trait CMS_JPG_Member_Applications_Trait
 
     public function render_applications_inline(object $user): void
     {
+        $this->render_back_button();
         $this->userId = (int) $user->id;
         $jobId        = (int) ($_GET['job_id'] ?? 0);
         $isAdmin      = method_exists($this->auth, 'isAdmin') ? $this->auth->isAdmin() : false;

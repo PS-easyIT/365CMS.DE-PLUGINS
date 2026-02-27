@@ -452,6 +452,9 @@ class CMS_JPG_Frontend
      */
     public function handle_apply(string $slug): void
     {
+        // PHP-Warnings/Notices dürfen den JSON-Response-Body nicht korrumpieren
+        @ini_set('display_errors', '0');
+
         // Sicherstellen, dass kein gepuffertes HTML die JSON-Antwort verunreinigt
         // (kann passieren wenn der CMS-Router ob_start() für Template-Ausgabe initiert hat)
         while (ob_get_level() > 0) {
@@ -550,7 +553,7 @@ class CMS_JPG_Frontend
                     $cvFileToken,
                 ]
             );
-            $applicationId = $db->lastInsertId();
+            $applicationId = $db->insert_id();
         } catch (\Throwable $e) {
             error_log('CMS_JPG_Frontend::handle_apply() DB error: ' . $e->getMessage());
             http_response_code(500);

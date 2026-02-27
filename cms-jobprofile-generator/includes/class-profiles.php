@@ -115,15 +115,15 @@ class CMS_JPG_Profiles
     {
         $fields = [
             'title'           => trim($data['title'] ?? ''),
-            'job_category_id' => $data['job_category_id'] ? (int) $data['job_category_id'] : null,
+            'job_category_id' => !empty($data['job_category_id']) ? (int) $data['job_category_id'] : null,
             'status'          => $data['status'] ?? 'draft',
             'summary'         => trim($data['summary'] ?? ''),
             'description'     => $data['description'] ?? '',
             'location'        => trim($data['location'] ?? ''),
             'employment_type' => $data['employment_type'] ?? 'fulltime',
             'experience_level'=> $data['experience_level'] ?? 'mid',
-            'salary_min'      => $data['salary_min'] !== '' ? (float) $data['salary_min'] : null,
-            'salary_max'      => $data['salary_max'] !== '' ? (float) $data['salary_max'] : null,
+            'salary_min'      => ($data['salary_min'] ?? '') !== '' ? (float) $data['salary_min'] : null,
+            'salary_max'      => ($data['salary_max'] ?? '') !== '' ? (float) $data['salary_max'] : null,
             'remote_option'   => $data['remote_option'] ?? 'onsite',
             'updated_by'      => (int) ($data['updated_by'] ?? 0),
         ];

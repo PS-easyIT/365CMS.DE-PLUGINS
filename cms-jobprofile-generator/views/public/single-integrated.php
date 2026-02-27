@@ -328,7 +328,10 @@ $esc = function (string $v): string {
                 method: 'POST',
                 body: fd,
             });
-            var data = await res.json();
+            var text = await res.text();
+            var data;
+            try { data = JSON.parse(text); }
+            catch (_) { throw new Error('Ungültige Server-Antwort. Bitte versuche es erneut.'); }
             if (data.success) {
                 form.style.display    = 'none';
                 success.style.display = 'block';

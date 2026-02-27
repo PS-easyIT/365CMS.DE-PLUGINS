@@ -130,6 +130,7 @@ trait CMS_JPG_Member_Approvals_Trait
 
     public function render_approvals_inline(object $user): void
     {
+        $this->render_back_button();
         $this->userId = (int) $user->id;
         $isAdmin      = method_exists($this->auth, 'isAdmin') ? $this->auth->isAdmin() : false;
         $notice       = '';

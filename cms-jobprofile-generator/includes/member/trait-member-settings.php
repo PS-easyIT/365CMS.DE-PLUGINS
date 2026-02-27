@@ -93,6 +93,7 @@ trait CMS_JPG_Member_Settings_Trait
      */
     public function render_settings_inline(object $user, bool $standaloneRoute = false): void
     {
+        $this->render_back_button();
         $this->userId = (int) $user->id;
         $notice  = '';
         $error   = '';
@@ -461,6 +462,7 @@ trait CMS_JPG_Member_Settings_Trait
      */
     public function render_company_inline(object $user): void
     {
+        $this->render_back_button();
         $this->userId = (int) $user->id;
         $company      = null;
         $profiles     = [];
@@ -502,6 +504,7 @@ trait CMS_JPG_Member_Settings_Trait
      */
     public function render_workflow_status_inline(object $user): void
     {
+        $this->render_back_button();
         $this->userId = (int) $user->id;
         $isAdmin      = method_exists($this->auth, 'isAdmin') ? $this->auth->isAdmin() : false;
         $profiles     = [];
@@ -549,6 +552,7 @@ trait CMS_JPG_Member_Settings_Trait
      */
     public function render_libraries_inline(object $user): void
     {
+        $this->render_back_button();
         if (!method_exists($this->auth, 'isAdmin') || !$this->auth->isAdmin()) {
             $this->render_no_permission('Bibliotheken');
             return;
@@ -637,6 +641,7 @@ trait CMS_JPG_Member_Settings_Trait
      */
     public function render_templates_inline(object $user): void
     {
+        $this->render_back_button();
         if (!method_exists($this->auth, 'isAdmin') || !$this->auth->isAdmin()) {
             $this->render_no_permission('Vorlagen');
             return;
