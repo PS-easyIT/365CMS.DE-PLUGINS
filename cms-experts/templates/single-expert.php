@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Single Expert Template: Detail-Ansicht – vollständige Daten
  *
@@ -19,8 +19,8 @@ $sec      = CMS\Security::instance();
 $settings = $settings ?? [];
 
 // ── CSS-Variablen aus Settings ──────────────────────────────────────────────
-$detail_header_bg   = $settings['design_detail_header_bg']       ?? '#1e293b';
-$detail_header_col  = $settings['design_detail_header_color']    ?? '#ffffff';
+$detail_header_bg   = $settings['design_detail_header_bg']       ?? '#f8fafc';
+$detail_header_col  = $settings['design_detail_header_color']    ?? '#1e293b';
 $detail_accent      = $settings['design_detail_accent']          ?? ($settings['design_primary_color'] ?? '#5e72e4');
 $status_avail_color = $settings['design_status_available_color'] ?? '#14532d';
 $status_limit_color = $settings['design_status_limited_color']   ?? '#7c4a03';
@@ -176,919 +176,500 @@ $partner_badge_html = match ($partner_status) {
     'partner'    => '<span class="detail-partner-badge badge-partner">&#10003; Partner</span>',
     default      => '',
 };
+// Avatar Gradient + Initialen
+$_ex_first  = $expert->first_name ?? '';
+$_ex_last   = $expert->last_name  ?? '';
+$_ex_inits  = strtoupper(mb_substr($_ex_first, 0, 1) . mb_substr($_ex_last, 0, 1));
+$_ex_pals   = [['#5e72e4','#8965e0'],['#0891b2','#06b6d4'],['#16a34a','#22c55e'],['#7c3aed','#a855f7'],['#d97706','#f59e0b']];
+$_ex_cp     = $_ex_pals[abs(crc32($full_name)) % count($_ex_pals)];
+$_ex_agrad  = "linear-gradient(135deg,{$_ex_cp[0]},{$_ex_cp[1]})";
+$_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 ?>
-
-<main class="single-expert-view">
-
-    <!-- ═══════════════════════════════════════════
-         HERO HEADER
-    ═══════════════════════════════════════════ -->
-    <div class="single-expert-header">
-        <div class="expert-header-inner">
-
-            <!-- Avatar -->
-            <div class="expert-header-avatar-wrap<?php if ($partner_status) echo ' partner-border-' . $sec->escape($partner_status); ?>">
-                <?php if ($photo): ?>
-                    <img class="expert-header-avatar-img"
-                         src="<?php echo $sec->escape($photo); ?>"
-                         alt="<?php echo $sec->escape($full_name); ?>">
-                <?php else: ?>
-                    <div class="expert-avatar-initials">
-                        <?php echo $sec->escape(
-                            strtoupper(mb_substr($expert->first_name ?? 'E', 0, 1))
-                            . strtoupper(mb_substr($expert->last_name  ?? '', 0, 1))
-                        ); ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-
-            <!-- Kopf-Inhalt -->
-            <div class="expert-header-content">
-                <div class="expert-header-badges">
-                    <?php echo $partner_badge_html; ?>
-                    <?php if ($is_mvp): ?>
-                        <span class="detail-partner-badge badge-mvp">&#9889; MVP</span>
-                    <?php endif; ?>
-                    <?php if ($is_certified): ?>
-                        <span class="detail-partner-badge badge-certified">&#10003; Zertifiziert</span>
-                    <?php endif; ?>
-                    <?php if ($is_premium): ?>
-                        <span class="detail-partner-badge badge-premium">&#11088; Premium</span>
-                    <?php endif; ?>
-                    <span class="detail-avail-badge <?php echo $avail_info['css']; ?>">
-                        <?php echo $sec->escape($avail_info['label']); ?>
-                    </span>
-                </div>
-                <?php if ($custom_award): ?>
-                    <div class="expert-custom-award">&#127942; <?php echo $sec->escape($custom_award); ?></div>
-                <?php endif; ?>
-
-                <h1 class="expert-detail-name"><?php echo $sec->escape($full_name); ?></h1>
-                <?php if ($motto): ?>
-                    <p class="expert-detail-motto"><em>"<?php echo $sec->escape($motto); ?>"</em></p>
-                <?php endif; ?>
-                <?php if ($position): ?>
-                    <div class="expert-detail-position"><?php echo $sec->escape($position); ?></div>
-                <?php endif; ?>
-                <?php if ($company): ?>
-                    <div class="expert-detail-company">&#127970; <?php echo $sec->escape($company); ?></div>
-                <?php endif; ?>
-
-                <div class="expert-header-chips">
-                    <?php if (!empty($expert->location_city)): ?>
-                        <span class="detail-chip">&#128205; <?php echo $sec->escape($expert->location_city); ?><?php if (!empty($expert->location_country)): ?>, <?php echo $sec->escape($expert->location_country); ?><?php endif; ?></span>
-                    <?php endif; ?>
-                    <?php if (!empty($expert->experience_years)): ?>
-                        <span class="detail-chip">&#128188; <?php echo (int)$expert->experience_years; ?> Jahre Erfahrung</span>
-                    <?php endif; ?>
-                    <?php if ($remote_work): ?>
-                        <?php $rm_chip = ['yes' => 'Remote möglich', 'only' => 'Nur Remote', 'no' => 'Vor Ort', 'partial' => 'Hybrid', 'full' => 'Vollständig Remote', 'preferred' => 'Remote bevorzugt']; ?>
-                        <span class="detail-chip">&#127968; <?php echo $sec->escape($rm_chip[$remote_work] ?? ucfirst($remote_work)); ?></span>
-                    <?php endif; ?>
-                    <?php if ($work_type): ?>
-                        <?php $wt_map = ['freelancer' => 'Freelancer', 'employed' => 'Angestellt', 'agency' => 'Agentur', 'contractor' => 'Contractor']; ?>
-                        <span class="detail-chip">&#128084; <?php echo $sec->escape($wt_map[$work_type] ?? ucfirst($work_type)); ?></span>
-                    <?php endif; ?>
-                    <?php if ($timezone): ?>
-                        <span class="detail-chip">&#128347; <?php echo $sec->escape($timezone); ?></span>
-                    <?php endif; ?>
-                    <?php if ($total_projects_cnt): ?>
-                        <span class="detail-chip">&#128196; <?php echo (int)$total_projects_cnt; ?>+ Projekte</span>
-                    <?php endif; ?>
-                </div>
-
-                <?php if ($has_social): ?>
-                <div class="expert-header-social">
-                    <?php if ($social['linkedin']): ?>
-                        <a href="<?php echo $sec->escape($social['linkedin']); ?>" target="_blank" rel="noopener" class="detail-social-icon" aria-label="LinkedIn">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                        </a>
-                    <?php endif; ?>
-                    <?php if ($social['xing']): ?>
-                        <a href="<?php echo $sec->escape($social['xing']); ?>" target="_blank" rel="noopener" class="detail-social-icon" aria-label="XING">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.188 0c-.517 0-.741.325-.927.66 0 0-7.455 13.224-7.702 13.657.015.024 4.919 9.023 4.919 9.023.17.308.436.66.967.66h3.454c.211 0 .375-.078.463-.22.089-.151.089-.346-.009-.536l-4.879-8.916c-.004-.006-.004-.016 0-.022L22.139.756c.097-.191.097-.387.006-.535C22.056.078 21.894 0 21.686 0h-3.498zM3.648 4.74c-.211 0-.385.074-.473.216-.09.149-.078.339.02.531l2.34 4.05c.004.01.004.016 0 .021L1.86 16.051c-.099.188-.093.381 0 .529.085.142.247.22.455.22h3.514c.518 0 .731-.405.92-.73l3.671-6.471-2.342-4.052c-.17-.309-.436-.807-.978-.807H3.648z"/></svg>
-                        </a>
-                    <?php endif; ?>
-                    <?php if ($social['github']): ?>
-                        <a href="<?php echo $sec->escape($social['github']); ?>" target="_blank" rel="noopener" class="detail-social-icon" aria-label="GitHub">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
-                        </a>
-                    <?php endif; ?>
-                    <?php if ($social['twitter']): ?>
-                        <a href="<?php echo $sec->escape($social['twitter']); ?>" target="_blank" rel="noopener" class="detail-social-icon" aria-label="Twitter/X">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
-                        </a>
-                    <?php endif; ?>
-                    <?php if ($social['website']): ?>
-                        <a href="<?php echo $sec->escape($social['website']); ?>" target="_blank" rel="noopener" class="detail-social-icon" aria-label="Website">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-                        </a>
-                    <?php endif; ?>
-                    <?php if ($social['gitlab']): ?>
-                        <a href="<?php echo $sec->escape($social['gitlab']); ?>" target="_blank" rel="noopener" class="detail-social-icon" aria-label="GitLab">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 01-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 014.82 2a.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.49h8.1l2.44-7.49a.42.42 0 01.11-.18.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.51L23 13.45a.84.84 0 01-.35.94z"/></svg>
-                        </a>
-                    <?php endif; ?>
-                    <?php if ($social['stackoverflow']): ?>
-                        <a href="<?php echo $sec->escape($social['stackoverflow']); ?>" target="_blank" rel="noopener" class="detail-social-icon" aria-label="Stack Overflow">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.986 21.865v-6.404h2.134V24H1.844v-8.539h2.13v6.404h15.012zM6.111 19.731H16.85v-2.137H6.111v2.137zm.259-4.852l10.48 2.189.451-2.07-10.478-2.187-.453 2.068zm1.359-5.056l9.705 4.53.903-1.95-9.706-4.53-.902 1.95zm2.715-4.785l8.217 6.855 1.359-1.62-8.216-6.853-1.36 1.618zM15.751 0l-1.746 1.294 6.405 8.604 1.746-1.294L15.751 0z"/></svg>
-                        </a>
-                    <?php endif; ?>
-                    <?php if ($social['youtube']): ?>
-                        <a href="<?php echo $sec->escape($social['youtube']); ?>" target="_blank" rel="noopener" class="detail-social-icon" aria-label="YouTube">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M23.495 6.205a3.007 3.007 0 00-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 00.527 6.205a31.247 31.247 0 00-.522 5.805 31.247 31.247 0 00.522 5.783 3.007 3.007 0 002.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 002.088-2.088 31.247 31.247 0 00.5-5.783 31.247 31.247 0 00-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
-                        </a>
-                    <?php endif; ?>
-                    <?php if ($social['blog_rss']): ?>
-                        <a href="<?php echo $sec->escape($social['blog_rss']); ?>" target="_blank" rel="noopener" class="detail-social-icon" aria-label="Blog/RSS">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6.18 15.64a2.18 2.18 0 012.18 2.18C8.36 19.01 7.38 20 6.18 20C4.98 20 4 19.01 4 17.82a2.18 2.18 0 012.18-2.18M4 4.44A15.56 15.56 0 0119.56 20h-2.83A12.73 12.73 0 004 7.27V4.44m0 5.66a9.9 9.9 0 019.9 9.9h-2.83A7.07 7.07 0 004 12.93V10.1z"/></svg>
-                        </a>
-                    <?php endif; ?>
-                </div>
-                <?php endif; ?>
-
-            </div><!-- /.expert-header-content -->
-        </div><!-- /.expert-header-inner -->
-    </div><!-- /.single-expert-header -->
-
-    <!-- ═══════════════════════════════════════════
-         ZWEI-SPALTEN-LAYOUT
-    ═══════════════════════════════════════════ -->
-    <div class="expert-detail-layout">
-
-        <!-- ── MAIN CONTENT ──────────────────── -->
-        <div class="expert-detail-main">
-
-            <?php /* BIOGRAFIE */ ?>
-            <?php if (!empty($expert->biography) && trim((string)$expert->biography) !== ''): ?>
-            <section class="expert-detail-section">
-                <h2 class="expert-section-title">&#128100; Über mich</h2>
-                <div class="expert-detail-bio">
-                    <?php
-                    $bio = (string)$expert->biography;
-                    // SunEditor-HTML oder Plain-Text?
-                    $has_html_tags = (bool)preg_match('/<(p|ul|ol|h[1-6]|blockquote|table|div|br)[\s>]/i', $bio);
-                    if ($has_html_tags):
-                    ?>
-                    <div class="sun-editor-editable"><?php echo $bio; ?></div>
-                    <?php else:
-                        $paras = preg_split('/\n{2,}/', trim($bio));
-                        $paras = $paras ?: [$bio];
-                        foreach ($paras as $para) {
-                            echo '<p>' . nl2br($sec->escape(trim($para))) . '</p>';
-                        }
-                    endif; ?>
-                </div>
-            </section>
-            <?php endif; ?>
-
-            <?php /* FACHRICHTUNGEN */ ?>
-            <?php if (!empty($specializations)): ?>
-            <section class="expert-detail-section">
-                <h2 class="expert-section-title">&#127891; Fachrichtungen</h2>
-                <div class="expert-specializations-grid">
-                    <?php foreach ($specializations as $spec): ?>
-                        <div class="expert-spec-item">
-                            <span class="expert-spec-check">&#10003;</span>
-                            <?php echo $sec->escape($spec->name ?? ''); ?>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </section>
-            <?php endif; ?>
-
-            <?php /* KOMPETENZEN – nach Typ */ ?>
-            <?php $any_skills = !empty($skills_by_type['general']) || !empty($skills_by_type['tech']) || !empty($skills_by_type['soft']); ?>
-            <?php if ($any_skills): ?>
-            <section class="expert-detail-section">
-                <h2 class="expert-section-title">&#128295; Kompetenzen</h2>
-                <?php foreach (['general' => ['&#9728; Allgemein', 'skill-general'], 'tech' => ['&#128187; Technologie', 'skill-tech'], 'soft' => ['&#129309; Soft Skills', 'skill-soft']] as $type => [$label, $cls]): ?>
-                    <?php if (!empty($skills_by_type[$type])): ?>
-                    <div class="expert-skill-group">
-                        <h4 class="expert-skill-group-label"><?php echo $label; ?></h4>
-                        <div class="expert-skills-pills">
-                            <?php foreach ($skills_by_type[$type] as $sk): ?>
-                                <span class="expert-skill-pill <?php echo $cls; ?>"><?php echo $sec->escape($sk->skill_name ?? ''); ?></span>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            </section>
-            <?php endif; ?>
-
-            <?php /* PROJEKTE */ ?>
-            <?php if (!empty($projects)): ?>
-            <section class="expert-detail-section">
-                <h2 class="expert-section-title">&#128196; Projekte</h2>
-                <div class="expert-projects-list">
-                    <?php foreach ($projects as $proj): ?>
-                    <div class="expert-project-item">
-                        <div class="expert-project-header">
-                            <div>
-                                <div class="expert-project-name">
-                                    <?php if (!empty($proj->project_url)): ?>
-                                        <a href="<?php echo $sec->escape($proj->project_url); ?>" target="_blank" rel="noopener"><?php echo $sec->escape($proj->project_name ?? ''); ?></a>
-                                    <?php else: ?>
-                                        <?php echo $sec->escape($proj->project_name ?? ''); ?>
-                                    <?php endif; ?>
-                                </div>
-                                <?php if (!empty($proj->project_role)): ?>
-                                    <div class="expert-project-role"><?php echo $sec->escape($proj->project_role); ?></div>
-                                <?php endif; ?>
-                            </div>
-                            <?php if (!empty($proj->project_start) || !empty($proj->project_end)): ?>
-                            <div class="expert-project-period">
-                                <?php
-                                $ps = !empty($proj->project_start) ? date('m/Y', strtotime($proj->project_start)) : '';
-                                $pe = !empty($proj->project_end)   ? date('m/Y', strtotime($proj->project_end))   : 'heute';
-                                echo $sec->escape($ps ? "$ps – $pe" : $pe);
-                                ?>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                        <?php if (!empty($proj->project_description)): ?>
-                            <p class="expert-project-desc"><?php echo nl2br($sec->escape($proj->project_description)); ?></p>
-                        <?php endif; ?>
-                        <?php if (!empty($proj->technologies)): ?>
-                            <div class="expert-project-techs">
-                                <?php foreach (array_filter(array_map('trim', explode(',', $proj->technologies))) as $tech): ?>
-                                    <span class="expert-tech-tag"><?php echo $sec->escape($tech); ?></span>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            </section>
-            <?php endif; ?>
-
-            <?php /* AUSBILDUNG */ ?>
-            <?php if (!empty($education)): ?>
-            <section class="expert-detail-section">
-                <h2 class="expert-section-title">&#127979; Ausbildung</h2>
-                <div class="expert-education-list">
-                    <?php foreach ($education as $edu): ?>
-                    <div class="expert-edu-item">
-                        <div class="expert-edu-icon">&#127979;</div>
-                        <div class="expert-edu-content">
-                            <div class="expert-edu-degree"><?php echo $sec->escape($edu->degree ?? ''); ?></div>
-                            <div class="expert-edu-institution"><?php echo $sec->escape($edu->institution ?? ''); ?></div>
-                            <?php if (!empty($edu->field_of_study)): ?>
-                                <div class="expert-edu-field"><?php echo $sec->escape($edu->field_of_study); ?></div>
-                            <?php endif; ?>
-                            <?php if (!empty($edu->start_year) || !empty($edu->end_year)): ?>
-                                <div class="expert-edu-period"><?php echo $sec->escape(($edu->start_year ?? '') . ($edu->end_year ? ' – ' . $edu->end_year : '')); ?></div>
-                            <?php endif; ?>
-                            <?php if (!empty($edu->description)): ?>
-                                <p class="expert-edu-desc"><?php echo nl2br($sec->escape($edu->description)); ?></p>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            </section>
-            <?php endif; ?>
-
-            <?php /* ZERTIFIKATE */ ?>
-            <?php if (!empty($certifications)): ?>
-            <section class="expert-detail-section">
-                <h2 class="expert-section-title">&#127942; Zertifikate</h2>
-                <div class="expert-certs-list">
-                    <?php foreach ($certifications as $cert): ?>
-                    <div class="expert-cert-item">
-                        <div class="expert-cert-icon">&#127942;</div>
-                        <div class="expert-cert-content">
-                            <div class="expert-cert-name">
-                                <?php if (!empty($cert->cert_url)): ?>
-                                    <a href="<?php echo $sec->escape($cert->cert_url); ?>" target="_blank" rel="noopener"><?php echo $sec->escape($cert->cert_name ?? ''); ?></a>
-                                <?php else: ?>
-                                    <?php echo $sec->escape($cert->cert_name ?? ''); ?>
-                                <?php endif; ?>
-                            </div>
-                            <?php if (!empty($cert->cert_issuer)): ?>
-                                <div class="expert-cert-issuer"><?php echo $sec->escape($cert->cert_issuer); ?></div>
-                            <?php endif; ?>
-                            <?php if (!empty($cert->cert_date) || !empty($cert->cert_expiry)): ?>
-                                <div class="expert-cert-dates">
-                                    <?php if (!empty($cert->cert_date)):   ?><span>Ausgestellt: <?php echo $sec->escape(date('m/Y', strtotime($cert->cert_date))); ?></span><?php endif; ?>
-                                    <?php if (!empty($cert->cert_expiry)): ?><span>Gültig bis: <?php echo $sec->escape(date('m/Y', strtotime($cert->cert_expiry))); ?></span><?php endif; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            </section>
-            <?php endif; ?>
-
-        </div><!-- /.expert-detail-main -->
-
-        <?php /* TECHNISCHE EXPERTISE */ ?>
-        <?php
-        $has_tech_detail = !empty($prog_languages) || !empty($expert_frameworks) || !empty($expert_databases) || !empty($cloud_platforms) || !empty($industry_experience);
-        ?>
-        <?php if ($has_tech_detail || !empty($tools_preferred)): ?>
-        <section class="expert-detail-section expert-tech-expertise">
-            <h2 class="expert-section-title">&#128187; Technische Expertise</h2>
-            <?php if ($has_tech_detail): ?>
-            <div class="expert-tech-grid">
-                <?php
-                $level_labels = ['expert' => 'Experte', 'advanced' => 'Fortgeschritten', 'intermediate' => 'Mittel', 'beginner' => 'Einsteiger'];
-                $tech_cats = [
-                    ['icon' => '&#128187;', 'title' => 'Programmiersprachen', 'items' => $prog_languages,    'key' => 'language'],
-                    ['icon' => '&#9881;',   'title' => 'Frameworks',           'items' => $expert_frameworks, 'key' => 'name'],
-                    ['icon' => '&#128451;', 'title' => 'Datenbanken',          'items' => $expert_databases,  'key' => 'name'],
-                    ['icon' => '&#9729;',   'title' => 'Cloud-Expertise',      'items' => $cloud_platforms,   'key' => 'platform'],
-                ];
-                foreach ($tech_cats as $cat): ?>
-                <div class="expert-tech-cat-card">
-                    <div class="expert-tech-cat-header">
-                        <span class="expert-tech-cat-icon"><?php echo $cat['icon']; ?></span>
-                        <h5 class="expert-tech-cat-title"><?php echo $sec->escape($cat['title']); ?></h5>
-                    </div>
-                    <div class="expert-tech-skills-list">
-                        <?php if (!empty($cat['items']) && is_array($cat['items'])): ?>
-                            <?php foreach ($cat['items'] as $item):
-                                if (!is_array($item) || empty($item[$cat['key']])) continue;
-                                $lvl = $item['level'] ?? 'intermediate';
-                                $pct = ['expert' => 95, 'advanced' => 75, 'intermediate' => 50, 'beginner' => 25][$lvl] ?? 50;
-                            ?>
-                            <div class="expert-tech-skill-item expert-tech-level-<?php echo $sec->escape($lvl); ?>">
-                                <span class="expert-tech-skill-name"><?php echo $sec->escape($item[$cat['key']]); ?></span>
-                                <span class="expert-tech-skill-level"><?php echo $sec->escape($level_labels[$lvl] ?? ucfirst($lvl)); ?></span>
-                                <div class="expert-tech-skill-bar"><div class="expert-tech-skill-fill" style="width:<?php echo $pct; ?>%"></div></div>
-                            </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <p class="expert-tech-empty">Keine Angaben</p>
-                        <?php endif; ?>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
-            <?php if (!empty($tools_preferred)): ?>
-            <div class="expert-tools-section">
-                <h5 class="expert-tools-title">&#128736; Bevorzugte Tools</h5>
-                <div class="expert-tools-tags">
-                    <?php foreach ($tools_preferred as $tool): ?>
-                        <span class="expert-tool-tag"><?php echo $sec->escape(is_string($tool) ? $tool : ($tool['name'] ?? '')); ?></span>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php endif; ?>
-            <?php if (!empty($industry_experience)): ?>
-            <div class="expert-industry-section">
-                <h5 class="expert-industry-title">&#127970; Branchenerfahrung</h5>
-                <div class="expert-industry-tags">
-                    <?php foreach ($industry_experience as $ind): ?>
-                        <span class="expert-industry-tag"><?php echo $sec->escape(is_string($ind) ? $ind : ($ind['name'] ?? '')); ?></span>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php endif; ?>
-        </section>
-        <?php endif; ?>
-
-        <?php /* KARRIERESTATIONEN */ ?>
-        <?php if (!empty($career_stations_data)): ?>
-        <section class="expert-detail-section">
-            <h2 class="expert-section-title">&#128188; Berufliche Stationen</h2>
-            <div class="expert-career-list">
-                <?php foreach ($career_stations_data as $station):
-                    if (!is_array($station) || empty($station['company'])) continue;
-                ?>
-                <div class="expert-career-item">
-                    <div class="expert-career-header">
-                        <div>
-                            <div class="expert-career-company"><?php echo $sec->escape($station['company']); ?></div>
-                            <?php if (!empty($station['position'])): ?>
-                                <div class="expert-career-position"><?php echo $sec->escape($station['position']); ?></div>
-                            <?php endif; ?>
-                        </div>
-                        <?php if (!empty($station['from_date']) || !empty($station['location'])): ?>
-                        <div class="expert-career-meta">
-                            <?php if (!empty($station['from_date'])): ?>
-                                <span class="expert-career-period">
-                                    <?php echo $sec->escape($station['from_date']); ?>
-                                    <?php echo !empty($station['to_date']) ? ' – ' . $sec->escape($station['to_date']) : ' – heute'; ?>
-                                </span>
-                            <?php endif; ?>
-                            <?php if (!empty($station['location'])): ?>
-                                <span class="expert-career-location">&#128205; <?php echo $sec->escape($station['location']); ?></span>
-                            <?php endif; ?>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                    <?php if (!empty($station['achievements'])): ?>
-                        <div class="expert-career-achievements"><?php echo nl2br($sec->escape($station['achievements'])); ?></div>
-                    <?php endif; ?>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </section>
-        <?php endif; ?>
-
-        <?php /* REFERENZEN & PORTFOLIO */ ?>
-        <?php
-        $has_references = !empty($testimonials_data) || !empty($case_studies_data) || !empty($conference_talks);
-        ?>
-        <?php if ($has_references): ?>
-        <section class="expert-detail-section">
-            <h2 class="expert-section-title">&#11088; Referenzen & Portfolio</h2>
-
-            <?php if (!empty($testimonials_data)): ?>
-            <div class="expert-references-block">
-                <h4 class="expert-ref-subtitle">&#128172; Kundenstimmen</h4>
-                <div class="expert-testimonials-grid">
-                    <?php foreach ($testimonials_data as $t):
-                        if (!is_array($t) || (empty($t['text']) && empty($t['client_name']))) continue;
-                        $rating = (int)($t['rating'] ?? 5);
-                    ?>
-                    <div class="expert-testimonial-card">
-                        <div class="expert-testimonial-stars">
-                            <?php for ($i = 1; $i <= 5; $i++): ?>
-                                <?php echo $i <= $rating ? '&#9733;' : '&#9734;'; ?>
-                            <?php endfor; ?>
-                        </div>
-                        <?php if (!empty($t['text'])): ?>
-                            <blockquote class="expert-testimonial-text">"<?php echo $sec->escape($t['text']); ?>"</blockquote>
-                        <?php endif; ?>
-                        <div class="expert-testimonial-author">
-                            <strong><?php echo $sec->escape($t['client_name'] ?? ''); ?></strong>
-                            <?php if (!empty($t['position']) || !empty($t['company'])): ?>
-                                <span class="expert-testimonial-role"><?php echo $sec->escape($t['position'] ?? ''); ?><?php if (!empty($t['company'])) echo ', ' . $sec->escape($t['company']); ?></span>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php endif; ?>
-
-            <?php if (!empty($case_studies_data)): ?>
-            <div class="expert-references-block">
-                <h4 class="expert-ref-subtitle">&#128196; Case Studies</h4>
-                <ul class="expert-case-studies-list">
-                    <?php foreach ($case_studies_data as $cs):
-                        if (!is_array($cs) || empty($cs['title'])) continue;
-                    ?>
-                    <li class="expert-case-study-item">
-                        <div class="expert-case-study-title">
-                            <?php if (!empty($cs['link'])): ?>
-                                <a href="<?php echo $sec->escape($cs['link']); ?>" target="_blank" rel="noopener">
-                                    &#128209; <?php echo $sec->escape($cs['title']); ?> &#8599;
-                                </a>
-                            <?php else: ?>
-                                &#128209; <?php echo $sec->escape($cs['title']); ?>
-                            <?php endif; ?>
-                        </div>
-                        <?php if (!empty($cs['description'])): ?>
-                            <p class="expert-case-study-desc"><?php echo $sec->escape($cs['description']); ?></p>
-                        <?php endif; ?>
-                    </li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-            <?php endif; ?>
-
-            <?php if (!empty($conference_talks)): ?>
-            <div class="expert-references-block">
-                <h4 class="expert-ref-subtitle">&#127908; Vorträge & Konferenzen</h4>
-                <ul class="expert-talks-list">
-                    <?php foreach ($conference_talks as $talk):
-                        if (!is_array($talk) || (empty($talk['event']) && empty($talk['title']))) continue;
-                    ?>
-                    <li class="expert-talk-item">
-                        <strong><?php echo $sec->escape($talk['title'] ?? $talk['event']); ?></strong>
-                        <?php if (!empty($talk['event']) && !empty($talk['title'])): ?>
-                            <span class="expert-talk-event"> @ <?php echo $sec->escape($talk['event']); ?></span>
-                        <?php endif; ?>
-                        <?php if (!empty($talk['year'])): ?>
-                            <span class="expert-talk-year"><?php echo $sec->escape((string)$talk['year']); ?></span>
-                        <?php endif; ?>
-                        <?php if (!empty($talk['video_link'])): ?>
-                            <a href="<?php echo $sec->escape($talk['video_link']); ?>" target="_blank" rel="noopener" class="expert-talk-video">&#127916; Video</a>
-                        <?php endif; ?>
-                    </li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-            <?php endif; ?>
-        </section>
-        <?php endif; ?>
-
-        <!-- ── SIDEBAR ──────────────────────── -->
-        <aside class="expert-detail-sidebar">
-
-            <?php /* KONTAKT */ ?>
-            <div class="expert-sidebar-card expert-contact-card" id="contact">
-                <h3 class="expert-sidebar-card-title">&#129309; Kontakt aufnehmen</h3>
-                <p class="expert-sidebar-card-sub">Interessiert an einer Zusammenarbeit mit <?php echo $sec->escape($expert->first_name ?? 'dem Experten'); ?>?</p>
-                <?php if (!empty($expert->email)): ?>
-                    <a href="mailto:<?php echo $sec->escape($expert->email); ?>" class="expert-sidebar-cta">&#9993; Nachricht senden</a>
-                <?php endif; ?>
-                <?php if (!empty($expert->phone)): ?>
-                    <a href="tel:<?php echo $sec->escape($expert->phone); ?>" class="expert-sidebar-cta expert-sidebar-cta--secondary">&#128222; <?php echo $sec->escape($expert->phone); ?></a>
-                <?php endif; ?>
-                <?php if (!empty($expert->mobile)): ?>
-                    <a href="tel:<?php echo $sec->escape($expert->mobile); ?>" class="expert-sidebar-cta expert-sidebar-cta--secondary">&#128241; <?php echo $sec->escape($expert->mobile); ?></a>
-                <?php endif; ?>
-                <?php if ($contact_times): ?>
-                    <p class="expert-sidebar-contact-times">&#128336; <?php echo $sec->escape($contact_times); ?></p>
-                <?php endif; ?>
-            </div>
-
-            <?php /* VERFÜGBARKEIT & ARBEITSWEISE */ ?>
-            <?php if ($languages || $remote_work || $travel_willingness || $notice_period || $retainer || $team_size_led || $total_projects_cnt): ?>
-            <div class="expert-sidebar-card expert-avail-card">
-                <h3 class="expert-sidebar-card-title">&#128197; Profil & Arbeitsweise</h3>
-
-                <?php if ($remote_work): ?>
-                    <?php
-                    $rm_map = ['yes' => 'Remote möglich', 'only' => 'Nur Remote', 'no' => 'Vor Ort', 'partial' => 'Hybrid', 'full' => 'Vollständig Remote', 'preferred' => 'Remote bevorzugt', 'no' => 'Kein Remote'];
-                    $rm_icon = in_array($remote_work, ['full', 'only']) ? '&#9729;' : (($remote_work === 'partial' ? '&#128260;' : '&#127968;'));
-                    ?>
-                    <div class="expert-avail-row">
-                        <span class="expert-avail-icon"><?php echo $rm_icon; ?></span>
-                        <div><div class="expert-avail-label">Remote-Arbeit</div><div class="expert-avail-value"><?php echo $sec->escape($rm_map[$remote_work] ?? ucfirst($remote_work)); ?></div></div>
-                    </div>
-                <?php endif; ?>
-                <?php if ($travel_willingness): ?>
-                    <?php $tw_map = ['none' => 'Keine', 'regional' => 'Regional', 'national' => 'National', 'international' => 'International', 'local' => 'Nur lokal', 'europe' => 'Europa', 'worldwide' => 'Weltweit']; ?>
-                    <div class="expert-avail-row"><span class="expert-avail-icon">&#9992;</span><div><div class="expert-avail-label">Reisebereitschaft</div><div class="expert-avail-value"><?php echo $sec->escape($tw_map[$travel_willingness] ?? ucfirst($travel_willingness)); ?></div></div></div>
-                <?php endif; ?>
-                <?php if ($notice_period): ?>
-                    <?php $np_map = ['sofort' => 'Sofort', '2_wochen' => '2 Wochen', '4_wochen' => '4 Wochen', '3_monate' => '3 Monate', 'nach_absprache' => 'Nach Absprache']; ?>
-                    <div class="expert-avail-row"><span class="expert-avail-icon">&#128203;</span><div><div class="expert-avail-label">Verfügbar ab</div><div class="expert-avail-value"><?php echo $sec->escape($np_map[$notice_period] ?? $notice_period); ?></div></div></div>
-                <?php endif; ?>
-                <?php if ($next_avail_date && strtotime((string)$next_avail_date)): ?>
-                    <div class="expert-avail-row"><span class="expert-avail-icon">&#128197;</span><div><div class="expert-avail-label">Frei ab</div><div class="expert-avail-value"><?php echo $sec->escape(date('d.m.Y', strtotime((string)$next_avail_date))); ?></div></div></div>
-                <?php endif; ?>
-                <?php if ($retainer): ?>
-                    <div class="expert-avail-badge-wrap">
-                        <span class="expert-avail-badge-pill badge-retainer">&#10003; Retainer möglich</span>
-                    </div>
-                <?php endif; ?>
-                <?php if ($team_size_led || $total_projects_cnt): ?>
-                    <div class="expert-avail-stats">
-                        <?php if ($team_size_led): ?><span class="expert-avail-stat">&#128101; Team bis <?php echo (int)$team_size_led; ?> Pers.</span><?php endif; ?>
-                        <?php if ($total_projects_cnt): ?><span class="expert-avail-stat">&#128186; <?php echo (int)$total_projects_cnt; ?>+ Projekte</span><?php endif; ?>
-                    </div>
-                <?php endif; ?>
-
-                <?php if ($languages): ?>
-                    <?php
-                    $lang_colors = [
-                        'deutsch' => ['bg' => '#fef3c7', 'color' => '#92400e'], 'german'  => ['bg' => '#fef3c7', 'color' => '#92400e'],
-                        'englisch'=> ['bg' => '#dbeafe', 'color' => '#1e40af'], 'english' => ['bg' => '#dbeafe', 'color' => '#1e40af'],
-                        'französisch' => ['bg' => '#fce7f3', 'color' => '#9d174d'],
-                        'spanisch' => ['bg' => '#fee2e2', 'color' => '#991b1b'],
-                    ];
-                    $langs_arr = array_filter(array_map('trim', explode(',', (string)$languages)));
-                    ?>
-                    <div class="expert-languages-block">
-                        <div class="expert-avail-label" style="margin-bottom:.4rem;">&#127760; Sprachen</div>
-                        <div class="expert-languages-badges">
-                            <?php foreach ($langs_arr as $lang):
-                                $lclr = $lang_colors[strtolower($lang)] ?? ['bg' => '#f1f5f9', 'color' => '#475569'];
-                            ?>
-                                <span class="expert-language-badge-v2" style="background:<?php echo $lclr['bg']; ?>;color:<?php echo $lclr['color']; ?>;">
-                                    <?php echo $sec->escape($lang); ?>
-                                </span>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                <?php endif; ?>
-            </div>
-            <?php endif; ?>
-
-            <?php /* ERWEITERTE KONDITIONEN */ ?>
-            <?php
-            $has_ext_cond = $weekly_hours || $min_proj_dur || $max_proj_dur || $payment_terms || $min_booking || $fixed_price || $time_material_flag || $travel_cost_model || $max_travel_km || !empty($pref_sizes);
-            ?>
-            <?php if (($hourly_rate || $daily_rate) || $has_ext_cond): ?>
-            <div class="expert-sidebar-card expert-cond-card">
-                <h3 class="expert-sidebar-card-title">&#128178; Konditionen</h3>
-                <div class="expert-cond-grid">
-                    <?php if ($hourly_rate): ?>
-                    <div class="expert-cond-item">
-                        <span class="expert-cond-value"><?php echo number_format((float)$hourly_rate, 0, ',', '.'); ?> €</span>
-                        <span class="expert-cond-label">Stundensatz</span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if ($daily_rate): ?>
-                    <div class="expert-cond-item">
-                        <span class="expert-cond-value"><?php echo number_format((float)$daily_rate, 0, ',', '.'); ?> €</span>
-                        <span class="expert-cond-label">Tagessatz</span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if ($weekly_hours): ?>
-                    <div class="expert-cond-item">
-                        <span class="expert-cond-value"><?php echo (int)$weekly_hours; ?>h</span>
-                        <span class="expert-cond-label">pro Woche</span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if ($min_proj_dur || $max_proj_dur): ?>
-                    <div class="expert-cond-item">
-                        <span class="expert-cond-value">
-                            <?php
-                            if ($min_proj_dur && $max_proj_dur) echo $sec->escape($min_proj_dur) . '–' . $sec->escape($max_proj_dur);
-                            elseif ($min_proj_dur) echo 'ab ' . $sec->escape($min_proj_dur);
-                            else echo 'bis ' . $sec->escape($max_proj_dur);
-                            ?>
-                        </span>
-                        <span class="expert-cond-label">Projektdauer</span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if ($min_booking): ?>
-                    <div class="expert-cond-item">
-                        <span class="expert-cond-value"><?php echo $sec->escape($min_booking); ?></span>
-                        <span class="expert-cond-label">Min. Buchung</span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if ($payment_terms): ?>
-                        <?php $pt_map = ['netto_7' => '7 Tage', 'netto_14' => '14 Tage', 'netto_30' => '30 Tage', 'netto_60' => '60 Tage', 'vorkasse' => 'Vorkasse']; ?>
-                    <div class="expert-cond-item">
-                        <span class="expert-cond-value"><?php echo $sec->escape($pt_map[$payment_terms] ?? $payment_terms); ?></span>
-                        <span class="expert-cond-label">Zahlungsziel</span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if ($max_travel_km): ?>
-                    <div class="expert-cond-item">
-                        <span class="expert-cond-value"><?php echo (int)$max_travel_km; ?> km</span>
-                        <span class="expert-cond-label">Max. Reise</span>
-                    </div>
-                    <?php endif; ?>
-                    <?php if ($travel_cost_model): ?>
-                        <?php $tcm_map = ['included' => 'Inklusive', 'flat_rate' => 'Pauschale', 'actual_cost' => 'Nach Aufwand', 'negotiable' => 'Verhandelbar']; ?>
-                    <div class="expert-cond-item">
-                        <span class="expert-cond-value"><?php echo $sec->escape($tcm_map[$travel_cost_model] ?? $travel_cost_model); ?></span>
-                        <span class="expert-cond-label">Reisekosten</span>
-                    </div>
-                    <?php endif; ?>
-                </div>
-                <?php if ($fixed_price || $time_material_flag): ?>
-                <div class="expert-cond-badges">
-                    <?php if ($fixed_price): ?><span class="expert-cond-badge badge-fixed">&#10003; Fixed-Price</span><?php endif; ?>
-                    <?php if ($time_material_flag): ?><span class="expert-cond-badge badge-time">&#9200; Time & Material</span><?php endif; ?>
-                </div>
-                <?php endif; ?>
-                <?php if (!empty($pref_sizes)): ?>
-                <div class="expert-cond-sizes">
-                    <div class="expert-cond-sizes-label">Bevorzugte Kunden:</div>
-                    <?php $size_map = ['Startup' => 'Startup', 'SMB' => 'KMU/Mittelstand', 'Enterprise' => 'Enterprise']; ?>
-                    <?php foreach ($pref_sizes as $sz): ?>
-                        <span class="expert-size-badge"><?php echo $sec->escape($size_map[$sz] ?? $sz); ?></span>
-                    <?php endforeach; ?>
-                </div>
-                <?php endif; ?>
-            </div>
-            <?php endif; ?>
-
-            <?php /* SERVICE-ANGEBOT */ ?>
-            <?php if ($svc_consulting || $svc_impl || $svc_training || $svc_support || $svc_audit || $emergency_support || $workshop_offerings): ?>
-            <div class="expert-sidebar-card expert-services-card">
-                <h3 class="expert-sidebar-card-title">&#128736; Serviceangebot</h3>
-                <div class="expert-services-grid">
-                    <?php if ($svc_consulting): ?><span class="expert-service-item">&#128172; Beratung</span><?php endif; ?>
-                    <?php if ($svc_impl): ?><span class="expert-service-item">&#128296; Umsetzung</span><?php endif; ?>
-                    <?php if ($svc_training): ?><span class="expert-service-item">&#127891; Training</span><?php endif; ?>
-                    <?php if ($svc_support): ?><span class="expert-service-item">&#128506; Support</span><?php endif; ?>
-                    <?php if ($svc_audit): ?><span class="expert-service-item">&#128269; Audit</span><?php endif; ?>
-                    <?php if ($emergency_support): ?><span class="expert-service-item badge-emergency">&#9888; 24/7 Notfall</span><?php endif; ?>
-                    <?php if ($workshop_offerings): ?><span class="expert-service-item">&#127979; Workshops</span><?php endif; ?>
-                </div>
-            </div>
-            <?php endif; ?>
-
-            <?php /* NETZWERK & SKALIERUNG */ ?>
-            <?php if ($subcontractors || $team_expansion || $max_team_size || $partner_networks): ?>
-            <div class="expert-sidebar-card expert-network-card">
-                <h3 class="expert-sidebar-card-title">&#127757; Netzwerk & Skalierung</h3>
-                <div class="expert-network-grid">
-                    <div class="expert-network-item <?php echo $subcontractors ? 'active' : 'inactive'; ?>">
-                        <span class="expert-network-icon"><?php echo $subcontractors ? '&#10003;' : '&#8722;'; ?></span>
-                        <span class="expert-network-label">Subunternehmer</span>
-                    </div>
-                    <div class="expert-network-item <?php echo $team_expansion ? 'active' : 'inactive'; ?>">
-                        <span class="expert-network-icon"><?php echo $team_expansion ? '&#10003;' : '&#8722;'; ?></span>
-                        <span class="expert-network-label">Team-Erweiterung</span>
-                    </div>
-                    <?php if ($max_team_size): ?>
-                    <div class="expert-network-item highlight">
-                        <span class="expert-network-icon">&#128101;</span>
-                        <span class="expert-network-label">Max. <?php echo (int)$max_team_size; ?> Personen</span>
-                    </div>
-                    <?php endif; ?>
-                </div>
-                <?php if ($partner_networks): ?>
-                <div class="expert-partner-networks">
-                    <div class="expert-avail-label">Partner-Netzwerke</div>
-                    <p class="expert-partner-networks-text"><?php echo nl2br($sec->escape($partner_networks)); ?></p>
-                </div>
-                <?php endif; ?>
-            </div>
-            <?php endif; ?>
-
-            <?php /* SOCIAL LINKS */ ?>
-            <?php if ($has_social): ?>
-            <div class="expert-sidebar-card expert-social-card">
-                <h3 class="expert-sidebar-card-title">&#128279; Online-Profile</h3>
-                <?php if ($social['linkedin']): ?><a href="<?php echo $sec->escape($social['linkedin']); ?>" target="_blank" rel="noopener" class="expert-social-link"><span class="social-link-icon social-linkedin">in</span> LinkedIn</a><?php endif; ?>
-                <?php if ($social['xing']):    ?><a href="<?php echo $sec->escape($social['xing']); ?>"    target="_blank" rel="noopener" class="expert-social-link"><span class="social-link-icon social-xing">X</span> XING</a><?php endif; ?>
-                <?php if ($social['github']):  ?><a href="<?php echo $sec->escape($social['github']); ?>"  target="_blank" rel="noopener" class="expert-social-link"><span class="social-link-icon social-github">GH</span> GitHub</a><?php endif; ?>
-                <?php if ($social['gitlab']):  ?><a href="<?php echo $sec->escape($social['gitlab']); ?>"  target="_blank" rel="noopener" class="expert-social-link"><span class="social-link-icon social-gitlab">GL</span> GitLab</a><?php endif; ?>
-                <?php if ($social['stackoverflow']): ?><a href="<?php echo $sec->escape($social['stackoverflow']); ?>" target="_blank" rel="noopener" class="expert-social-link"><span class="social-link-icon social-so">SO</span> Stack Overflow</a><?php endif; ?>
-                <?php if ($social['twitter']): ?><a href="<?php echo $sec->escape($social['twitter']); ?>" target="_blank" rel="noopener" class="expert-social-link"><span class="social-link-icon social-twitter">X</span> Twitter / X</a><?php endif; ?>
-                <?php if ($social['youtube']): ?><a href="<?php echo $sec->escape($social['youtube']); ?>"  target="_blank" rel="noopener" class="expert-social-link"><span class="social-link-icon social-youtube">&#128249;</span> YouTube</a><?php endif; ?>
-                <?php if ($social['website']): ?><a href="<?php echo $sec->escape($social['website']); ?>" target="_blank" rel="noopener" class="expert-social-link"><span class="social-link-icon social-website">&#127760;</span> Website</a><?php endif; ?>
-                <?php if ($social['blog_rss']): ?><a href="<?php echo $sec->escape($social['blog_rss']); ?>" target="_blank" rel="noopener" class="expert-social-link"><span class="social-link-icon social-rss">&#128240;</span> Blog</a><?php endif; ?>
-            </div>
-            <?php endif; ?>
-
-        </aside><!-- /.expert-detail-sidebar -->
-
-    </div><!-- /.expert-detail-layout -->
-
-</main><!-- /.single-expert-view -->
-
-<?php /* RSS-FEED (Vollbreite) */ ?>
-<?php if (!empty($social['blog_rss'])): ?>
-<div class="single-expert-view">
-    <div class="expert-rss-section">
-        <div class="expert-rss-card">
-            <div class="expert-rss-header">
-                <span class="expert-rss-icon">&#128240;</span>
-                <h3 class="expert-rss-title">Aktuelle Blog-Beiträge</h3>
-            </div>
-            <div class="expert-rss-content">
-                <?php
-                $rss_url = (string)$social['blog_rss'];
-                $ctx     = stream_context_create(['http' => ['timeout' => 5]]);
-                $raw     = @file_get_contents($rss_url, false, $ctx);
-                $xml     = $raw ? @simplexml_load_string($raw, 'SimpleXMLElement', LIBXML_NOCDATA) : false;
-                if ($xml && isset($xml->channel->item)):
-                    $items = (array)$xml->channel->item;
-                    $count = 0;
-                ?>
-                <ul class="expert-rss-list">
-                    <?php foreach ($items as $item):
-                        if ($count >= 5) break; $count++;
-                        $title = (string)($item->title ?? '');
-                        $link  = (string)($item->link  ?? '');
-                        $pub   = (string)($item->pubDate ?? '');
-                        if (!$title || !$link) continue;
-                    ?>
-                    <li class="expert-rss-item">
-                        <a href="<?php echo $sec->escape($link); ?>" target="_blank" rel="noopener">
-                            <span class="expert-rss-item-title"><?php echo $sec->escape($title); ?></span>
-                            <?php if ($pub): ?><span class="expert-rss-item-date"><?php echo $sec->escape(date('d.m.Y', strtotime($pub))); ?></span><?php endif; ?>
-                        </a>
-                    </li>
-                    <?php endforeach; ?>
-                </ul>
-                <div class="expert-rss-footer">
-                    <a href="<?php echo $sec->escape(preg_replace('#/(feed|rss|atom)/?$#i', '', rtrim($rss_url, '/'))); ?>" target="_blank" rel="noopener" class="expert-rss-all-btn">Alle Beiträge anzeigen &#8599;</a>
-                </div>
-                <?php else: ?>
-                    <p class="expert-rss-empty">Blog-Feed konnte nicht geladen werden.</p>
-                <?php endif; ?>
-            </div>
-        </div>
-    </div>
-</div>
-<?php endif; ?>
-
 <style>
-/* ─── Erweiterte Styles: WP-kompatible neue Elemente ────────────────────── */
-
-/* Motto & Custom Award */
-.expert-detail-motto { font-size:.95rem; color:rgba(255,255,255,.75); font-style:italic; margin:.3rem 0 .5rem; }
-.expert-custom-award { font-size:.78rem; font-weight:700; color:#fbbf24; margin-bottom:.5rem; }
-
-/* Badges */
-.badge-mvp       { background:linear-gradient(135deg,#7c3aed,#5b21b6)!important; color:#fff!important; }
-.badge-certified { background:#d1fae5!important; color:#065f46!important; }
-.badge-premium   { background:linear-gradient(135deg,#d97706,#b45309)!important; color:#fff!important; }
-
-/* Tech Grid */
-.expert-tech-expertise { margin-top:1.5rem; }
-.expert-tech-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1rem; margin-bottom:1rem; }
-.expert-tech-cat-card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:1rem; }
-.expert-tech-cat-header { display:flex; align-items:center; gap:.5rem; margin-bottom:.75rem; }
-.expert-tech-cat-icon { font-size:1.1rem; }
-.expert-tech-cat-title { font-size:.85rem; font-weight:700; color:#475569; margin:0; }
-.expert-tech-skills-list { display:flex; flex-direction:column; gap:.5rem; }
-.expert-tech-skill-item { display:flex; flex-direction:column; gap:.2rem; }
-.expert-tech-skill-name { font-size:.875rem; font-weight:600; color:#1e293b; }
-.expert-tech-skill-level { font-size:.72rem; color:#6b7280; }
-.expert-tech-skill-bar { height:4px; background:#e2e8f0; border-radius:4px; overflow:hidden; }
-.expert-tech-skill-fill { height:100%; background:var(--detail-accent,#5e72e4); border-radius:4px; transition:width .3s; }
-.expert-tech-level-expert   .expert-tech-skill-fill { background:#10b981; }
-.expert-tech-level-advanced .expert-tech-skill-fill { background:#3b82f6; }
-.expert-tech-level-intermediate .expert-tech-skill-fill { background:#f59e0b; }
-.expert-tech-level-beginner .expert-tech-skill-fill { background:#94a3b8; }
-.expert-tech-empty { font-size:.8rem; color:#9ca3af; font-style:italic; }
-.expert-tools-section, .expert-industry-section { margin-top:.75rem; }
-.expert-tools-title, .expert-industry-title { font-size:.875rem; font-weight:700; color:#475569; margin:0 0 .5rem; }
-.expert-tools-tags, .expert-industry-tags { display:flex; flex-wrap:wrap; gap:.375rem; }
-.expert-tool-tag, .expert-industry-tag { display:inline-block; padding:.25rem .625rem; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:20px; font-size:.78rem; font-weight:500; }
-
-/* Karrierestationen */
-.expert-career-list { display:flex; flex-direction:column; gap:1rem; }
-.expert-career-item { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:1rem; }
-.expert-career-header { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:.5rem; margin-bottom:.5rem; }
-.expert-career-company { font-size:1rem; font-weight:700; color:#1e293b; }
-.expert-career-position { font-size:.875rem; color:#475569; margin-top:.2rem; }
-.expert-career-meta { display:flex; flex-direction:column; align-items:flex-end; gap:.25rem; }
-.expert-career-period { font-size:.8rem; color:#64748b; }
-.expert-career-location { font-size:.8rem; color:#64748b; }
-.expert-career-achievements { font-size:.875rem; color:#475569; line-height:1.6; }
-
-/* Referenzen */
-.expert-references-block { margin-bottom:1.5rem; }
-.expert-ref-subtitle { font-size:.95rem; font-weight:700; color:#475569; margin:0 0 .75rem; }
-.expert-testimonials-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:1rem; }
-.expert-testimonial-card { background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:1rem; }
-.expert-testimonial-stars { color:#f59e0b; font-size:1rem; margin-bottom:.5rem; }
-.expert-testimonial-text { font-size:.875rem; color:#374151; font-style:italic; margin:.5rem 0; border-left:3px solid var(--detail-accent,#5e72e4); padding-left:.75rem; }
-.expert-testimonial-author strong { font-size:.875rem; color:#1e293b; display:block; }
-.expert-testimonial-role { font-size:.78rem; color:#64748b; }
-.expert-case-studies-list, .expert-talks-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.625rem; }
-.expert-case-study-item, .expert-talk-item { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:.75rem 1rem; }
-.expert-case-study-title a { color:#2563eb; text-decoration:none; font-weight:600; }
-.expert-case-study-title a:hover { text-decoration:underline; }
-.expert-case-study-desc { font-size:.8rem; color:#64748b; margin:.25rem 0 0; }
-.expert-talk-item { font-size:.875rem; }
-.expert-talk-event { color:#64748b; }
-.expert-talk-year { background:#f1f5f9; color:#64748b; font-size:.75rem; padding:.15rem .4rem; border-radius:4px; margin-left:.5rem; }
-.expert-talk-video { color:#ef4444; margin-left:.5rem; font-size:.8rem; text-decoration:none; }
-
-/* Sidebar: Kontaktzeiten */
-.expert-sidebar-contact-times { font-size:.8rem; color:#64748b; margin:.5rem 0 0; }
-
-/* Sidebar: Profil & Arbeitsweise */
-.expert-avail-badge-wrap { margin:.5rem 0; }
-.expert-avail-badge-pill { display:inline-block; padding:.25rem .625rem; border-radius:20px; font-size:.78rem; font-weight:600; }
-.badge-retainer { background:#d1fae5; color:#065f46; }
-.expert-avail-stats { display:flex; flex-wrap:wrap; gap:.5rem; margin:.5rem 0; }
-.expert-avail-stat { font-size:.78rem; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; border-radius:20px; padding:.2rem .5rem; }
-.expert-languages-block { margin-top:.75rem; }
-.expert-languages-badges { display:flex; flex-wrap:wrap; gap:.375rem; margin-top:.375rem; }
-.expert-language-badge-v2 { display:inline-block; padding:.2rem .5rem; border-radius:20px; font-size:.78rem; font-weight:600; border:1px solid currentColor; }
-
-/* Sidebar: Konditionen */
-.expert-cond-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:.5rem; margin-bottom:.75rem; }
-.expert-cond-item { background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:.5rem .625rem; text-align:center; }
-.expert-cond-value { display:block; font-size:1rem; font-weight:700; color:#1e293b; }
-.expert-cond-label { display:block; font-size:.72rem; color:#64748b; }
-.expert-cond-badges { display:flex; flex-wrap:wrap; gap:.375rem; margin-bottom:.5rem; }
-.expert-cond-badge { display:inline-block; padding:.2rem .5rem; border-radius:4px; font-size:.78rem; font-weight:600; }
-.badge-fixed { background:#d1fae5; color:#065f46; }
-.badge-time  { background:#dbeafe; color:#1e40af; }
-.expert-cond-sizes { margin-top:.5rem; }
-.expert-cond-sizes-label { font-size:.75rem; color:#64748b; margin-bottom:.3rem; }
-.expert-size-badge { display:inline-block; margin:.15rem .2rem; padding:.2rem .5rem; background:#f1f5f9; color:#475569; border-radius:4px; font-size:.75rem; }
-
-/* Sidebar: Services */
-.expert-services-grid { display:flex; flex-wrap:wrap; gap:.375rem; }
-.expert-service-item { display:inline-flex; align-items:center; gap:.35rem; padding:.35rem .625rem; background:#f0fdf4; color:#166534; border:1px solid #bbf7d0; border-radius:6px; font-size:.8rem; font-weight:500; }
-.expert-service-item.badge-emergency { background:#fff1f2; color:#9f1239; border-color:#fecdd3; }
-
-/* Sidebar: Netzwerk */
-.expert-network-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:.5rem; margin-bottom:.5rem; }
-.expert-network-item { display:flex; align-items:center; gap:.5rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:.5rem .625rem; }
-.expert-network-item.active .expert-network-icon { color:#16a34a; }
-.expert-network-item.inactive .expert-network-icon { color:#94a3b8; }
-.expert-network-item.highlight { background:#eff6ff; border-color:#bfdbfe; }
-.expert-network-icon { font-size:1rem; }
-.expert-network-label { font-size:.8rem; color:#475569; }
-.expert-partner-networks { margin-top:.5rem; }
-.expert-partner-networks-text { font-size:.8rem; color:#475569; margin:.25rem 0 0; }
-
-/* RSS Feed */
-.expert-rss-section { padding:1.5rem; }
-.expert-rss-card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:1.5rem; }
-.expert-rss-header { display:flex; align-items:center; gap:.75rem; margin-bottom:1rem; }
-.expert-rss-icon { font-size:1.5rem; }
-.expert-rss-title { font-size:1.1rem; font-weight:700; color:#1e293b; margin:0; }
-.expert-rss-list { list-style:none; padding:0; margin:0; }
-.expert-rss-item { border-bottom:1px solid #f1f5f9; padding:.625rem 0; }
-.expert-rss-item:last-child { border-bottom:none; }
-.expert-rss-item a { display:flex; justify-content:space-between; align-items:baseline; gap:1rem; text-decoration:none; }
-.expert-rss-item-title { color:#1e293b; font-weight:500; font-size:.9rem; flex:1; }
-.expert-rss-item-date { font-size:.78rem; color:#94a3b8; white-space:nowrap; }
-.expert-rss-item a:hover .expert-rss-item-title { color:var(--detail-accent,#5e72e4); }
-.expert-rss-footer { margin-top:.75rem; text-align:center; }
-.expert-rss-all-btn { display:inline-block; padding:.45rem 1rem; background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; border-radius:6px; font-size:.8rem; font-weight:600; text-decoration:none; }
-.expert-rss-all-btn:hover { background:#dbeafe; }
-.expert-rss-empty { color:#94a3b8; font-size:.875rem; text-align:center; padding:1rem; }
-
-/* Social Link Icons: neue Plattformen */
-.social-gitlab { background:#fc6d26; }
-.social-so     { background:#f48024; }
-.social-youtube{ background:#ff0000; color:#fff!important; }
-.social-rss    { background:#ee802f; color:#fff!important; }
+/* ── Expert Single v2 ──────────────────────────────────── */
+.ex-v2{max-width:var(--max,1140px);margin:0 auto;background:#f8fafc;border-left:1px solid var(--post-column-border,#e2e0d8);border-right:1px solid var(--post-column-border,#e2e0d8);}
+.ex-bc{display:flex;align-items:center;gap:.5rem;padding:.7rem 2rem;background:#fff;border-bottom:1px solid #f1f5f9;font-size:.8rem;}
+.ex-bc a{color:var(--expert-primary,#5e72e4);text-decoration:none;font-weight:600;}
+.ex-bc a:hover{opacity:.7;}
+.ex-bc__sep{color:#cbd5e1;}
+.ex-bc__cur{color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:360px;}
+.ex-hero{position:relative;overflow:hidden;min-height:200px;max-height:300px;background:var(--detail-header-bg,#f8fafc);border-bottom:3px solid var(--expert-primary,#5e72e4);}
+.ex-hero__inner{display:flex;gap:1.75rem;align-items:center;padding:1.5rem 2rem 1.75rem;flex-wrap:wrap;position:relative;z-index:1;min-height:200px;}
+.ex-hero__av{flex-shrink:0;width:96px;height:96px;border-radius:50%;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.14),0 0 0 4px rgba(255,255,255,.8),0 0 0 7px color-mix(in srgb,var(--expert-primary,#5e72e4) 20%,transparent);display:flex;align-items:center;justify-content:center;font-size:2.25rem;font-weight:900;color:#fff;letter-spacing:-.02em;}
+.ex-hero__av img{width:100%;height:100%;object-fit:cover;}
+.ex-hero__meta{flex:1;min-width:0;}
+.ex-hero__badges{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.625rem;justify-content:flex-end;}
+.ex-hero__badge{display:inline-flex;align-items:center;gap:.25rem;padding:.22rem .65rem;border-radius:50px;font-size:.72rem;font-weight:700;backdrop-filter:blur(3px);}
+.ex-hero__badge--avail-available{background:#d1fae5;color:#065f46;}
+.ex-hero__badge--avail-limited{background:#fef3c7;color:#92400e;}
+.ex-hero__badge--avail-booked{background:#fee2e2;color:#991b1b;}
+.ex-hero__badge--mvp{background:rgba(251,191,36,.18);color:#d97706;border:1px solid rgba(251,191,36,.3);}
+.ex-hero__badge--cert{background:#dbeafe;color:#1e40af;}
+.ex-hero__badge--premium{background:#fef3c7;color:#7c2d12;}
+.ex-hero__badge--partner{background:#f3e8ff;color:#6b21a8;}
+.ex-hero__name{margin:0 0 .2rem;font-size:clamp(1.4rem,3vw,1.875rem);font-weight:800;line-height:1.2;color:var(--detail-header-color,#1e293b);}
+.ex-hero__motto{font-size:.88rem;font-style:italic;color:var(--detail-header-color,#1e293b);opacity:.6;margin:0 0 .25rem;}
+.ex-hero__pos{font-size:.92rem;color:var(--detail-header-color,#1e293b);opacity:.7;margin:0 0 .2rem;}
+.ex-hero__co{font-size:.88rem;color:var(--detail-header-color,#1e293b);opacity:.65;margin:0 0 .875rem;}
+.ex-hero__chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.875rem;}
+.ex-hero__chip{display:inline-flex;align-items:center;gap:.3rem;padding:.3rem .8rem;border-radius:50px;font-size:.76rem;font-weight:600;background:rgba(255,255,255,.75);color:#334155;border:1.5px solid rgba(255,255,255,.5);backdrop-filter:blur(3px);box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.ex-hero__social{display:flex;flex-wrap:wrap;gap:.5rem;}
+.ex-hero__si{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.8);color:#334155;text-decoration:none;backdrop-filter:blur(3px);transition:background .15s,transform .15s,box-shadow .15s;}
+.ex-hero__si:hover{background:#fff;transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.12);}
+.ex-body{display:grid;grid-template-columns:1fr 320px;gap:1.75rem;padding:1.75rem 2rem 3rem;align-items:start;}
+.ex-main{min-width:0;}
+.ex-aside{position:sticky;top:1.5rem;display:flex;flex-direction:column;gap:.875rem;}
+.ex-sec{background:#fff;border-radius:var(--expert-radius,12px);padding:1.5rem 1.75rem;margin-bottom:1.125rem;box-shadow:0 1px 3px rgba(0,0,0,.04),0 4px 14px rgba(0,0,0,.04);transition:box-shadow .2s;}
+.ex-sec:hover{box-shadow:0 4px 20px rgba(0,0,0,.10);}
+.ex-sec:last-child{margin-bottom:0;}
+.ex-sec__title{font-size:.92rem;font-weight:700;color:#1e293b;margin:0 0 1.125rem;padding-bottom:.6rem;padding-left:.75rem;display:flex;align-items:center;gap:.4rem;border-left:3px solid var(--expert-primary,#5e72e4);border-bottom:1.5px solid #f1f5f9;}
+.ex-pills{display:flex;flex-wrap:wrap;gap:.5rem;}
+.ex-pill{display:inline-flex;align-items:center;padding:.3rem .8rem;border-radius:50px;font-size:.8rem;font-weight:600;background:color-mix(in srgb,var(--expert-primary,#5e72e4) 9%,#fff);color:var(--expert-primary,#5e72e4);border:1px solid color-mix(in srgb,var(--expert-primary,#5e72e4) 18%,#fff);}
+.ex-pill--soft{background:#f0fdf4;color:#15803d;border-color:#bbf7d0;}
+.ex-pill--tech{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;}
+.ex-pill--spec{background:#faf5ff;color:#7c3aed;border-color:#e9d5ff;}
+.ex-skill-item{display:flex;flex-direction:column;gap:.3rem;padding:.625rem .875rem;background:#fafbfc;border-radius:8px;border:1px solid #f1f5f9;}
+.ex-skill-item__top{display:flex;justify-content:space-between;font-size:.82rem;}
+.ex-skill-item__name{font-weight:600;color:#334155;}
+.ex-skill-item__lvl{color:#94a3b8;font-size:.75rem;}
+.ex-skill-bar{height:4px;border-radius:2px;background:#e2e8f0;overflow:hidden;}
+.ex-skill-bar__fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--expert-primary,#5e72e4),var(--expert-accent,#8965e0));}
+.ex-proj-item{padding:.875rem 1rem;border-radius:10px;background:#fafbfc;border:1px solid #f1f5f9;margin-bottom:.625rem;transition:background .15s,border-color .15s;}
+.ex-proj-item:last-child{margin-bottom:0;}
+.ex-proj-item:hover{background:#f0f4ff;border-color:#c7d2fe;}
+.ex-proj-item__name{font-weight:700;color:#1e293b;font-size:.9rem;margin-bottom:.25rem;}
+.ex-proj-item__meta{font-size:.75rem;color:#94a3b8;margin-bottom:.375rem;}
+.ex-proj-item__desc{font-size:.82rem;color:#475569;line-height:1.65;}
+.ex-proj-item__tags{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.5rem;}
+.ex-proj-item__tag{padding:.15rem .5rem;border-radius:4px;font-size:.7rem;background:#eff6ff;color:#1d4ed8;font-weight:600;}
+.ex-edu-item{display:flex;flex-direction:column;gap:.2rem;padding:.75rem .875rem;border-radius:8px;background:#f8fafc;border-left:3px solid var(--expert-primary,#5e72e4);margin-bottom:.5rem;}
+.ex-edu-item:last-child{margin-bottom:0;}
+.ex-edu-item__deg{font-weight:700;font-size:.88rem;color:#1e293b;}
+.ex-edu-item__inst{font-size:.8rem;color:#475569;}
+.ex-edu-item__meta{font-size:.73rem;color:#94a3b8;}
+.ex-cert-item{display:flex;justify-content:space-between;align-items:center;padding:.625rem .875rem;border-radius:8px;background:#fafbfc;border:1px solid #f1f5f9;margin-bottom:.375rem;}
+.ex-cert-item:last-child{margin-bottom:0;}
+.ex-cert-item__name{font-weight:700;font-size:.85rem;color:#1e293b;}
+.ex-cert-item__meta{font-size:.73rem;color:#94a3b8;}
+.ex-career-item{position:relative;padding:.875rem 1.125rem .875rem 1.5rem;border-left:2px solid var(--expert-primary,#5e72e4);margin-bottom:.75rem;}
+.ex-career-item::before{content:'';position:absolute;left:-5px;top:.975rem;width:8px;height:8px;border-radius:50%;background:var(--expert-primary,#5e72e4);border:2px solid #fff;box-shadow:0 0 0 2px var(--expert-primary,#5e72e4);}
+.ex-career-item:last-child{margin-bottom:0;}
+.ex-career-item__role{font-weight:700;font-size:.9rem;color:#1e293b;}
+.ex-career-item__co{font-size:.82rem;color:#5e72e4;font-weight:600;}
+.ex-career-item__meta{font-size:.75rem;color:#94a3b8;margin:.2rem 0;}
+.ex-career-item__desc{font-size:.82rem;color:#475569;line-height:1.65;}
+.ex-testi-item{padding:1rem 1.125rem;background:#fafbfc;border-radius:10px;border-left:3px solid var(--expert-primary,#5e72e4);margin-bottom:.625rem;}
+.ex-testi-item:last-child{margin-bottom:0;}
+.ex-testi-item__text{font-size:.88rem;color:#334155;line-height:1.7;font-style:italic;margin-bottom:.5rem;}
+.ex-testi-item__by{font-size:.75rem;font-weight:700;color:#475569;}
+.ex-progress-list{display:flex;flex-direction:column;gap:.5rem;}
+.ex-progress-item{display:flex;flex-direction:column;gap:.25rem;}
+.ex-progress-item__label{font-size:.8rem;font-weight:600;color:#334155;display:flex;justify-content:space-between;}
+.ex-progress-item__bar{height:6px;border-radius:3px;background:#e2e8f0;overflow:hidden;}
+.ex-progress-item__fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--expert-primary,#5e72e4),var(--expert-accent,#8965e0));}
+.ex-conf-item{padding:.625rem .875rem;border-radius:8px;background:#fafbfc;border:1px solid #f1f5f9;margin-bottom:.375rem;}
+.ex-conf-item:last-child{margin-bottom:0;}
+.ex-conf-item__title{font-weight:700;font-size:.85rem;color:#1e293b;}
+.ex-conf-item__meta{font-size:.73rem;color:#94a3b8;margin-top:.2rem;}
+.ex-sc{background:#fff;border-radius:var(--expert-radius,12px);padding:1.25rem 1.375rem;box-shadow:0 1px 3px rgba(0,0,0,.04),0 4px 14px rgba(0,0,0,.04);}
+.ex-sc__title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;margin:0 0 .875rem;}
+.ex-info-rows{display:flex;flex-direction:column;}
+.ex-info-row{display:flex;justify-content:space-between;align-items:baseline;gap:.75rem;padding:.45rem 0;border-bottom:1px solid #f8fafc;}
+.ex-info-row:last-child{border-bottom:none;}
+.ex-info-row__lbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;flex-shrink:0;}
+.ex-info-row__val{font-size:.85rem;font-weight:500;color:#1e293b;text-align:right;word-break:break-word;}
+.ex-info-row__val a{color:var(--expert-primary,#5e72e4);text-decoration:none;}
+.ex-btn{display:flex;align-items:center;justify-content:center;gap:.5rem;padding:.875rem 1.5rem;width:100%;box-sizing:border-box;font-size:.9rem;font-weight:700;border-radius:10px;border:none;cursor:pointer;text-decoration:none;color:#fff;margin-bottom:.5rem;background:linear-gradient(135deg,var(--expert-accent,#8965e0),var(--expert-primary,#5e72e4));box-shadow:0 4px 16px color-mix(in srgb,var(--expert-primary,#5e72e4) 28%,transparent);transition:all .2s cubic-bezier(.4,0,.2,1);}
+.ex-btn:last-child{margin-bottom:0;}
+.ex-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px color-mix(in srgb,var(--expert-primary,#5e72e4) 36%,transparent);}
+.ex-btn--ghost{background:#f5f3ff;color:var(--expert-primary,#5e72e4);box-shadow:none;border:1.5px solid color-mix(in srgb,var(--expert-primary,#5e72e4) 25%,#fff);}
+.ex-btn--ghost:hover{background:#ede9fe;box-shadow:none;}
+.ex-social-row{display:flex;flex-wrap:wrap;gap:.5rem;}
+.ex-si{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background:#f8fafc;color:#334155;text-decoration:none;border:1px solid #e2e8f0;transition:background .15s,transform .15s;}
+.ex-si:hover{background:color-mix(in srgb,var(--expert-primary,#5e72e4) 10%,#fff);transform:translateY(-2px);}
+.ex-svc-check{display:flex;flex-direction:column;gap:.25rem;}
+.ex-svc-row{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:#334155;}
+.ex-svc-row::before{content:'✓';color:#16a34a;font-weight:700;flex-shrink:0;}
+@media(max-width:768px){
+  .ex-body{grid-template-columns:1fr;padding:1.25rem 1rem 2rem;gap:1.25rem;}
+  .ex-aside{position:static;}
+  .ex-hero{min-height:auto;max-height:none;}
+  .ex-hero__inner{padding:1.25rem 1rem;min-height:auto;}
+  .ex-hero__av{width:78px;height:78px;}
+  .ex-hero__name{font-size:1.3rem;}
+  .ex-bc{padding:.6rem 1rem;}
+}
 </style>
+
+<div class="ex-v2">
+
+  <nav class="ex-bc">
+    <a href="<?= $_base_url ?>/experts">← Experten</a>
+    <span class="ex-bc__sep">/</span>
+    <span class="ex-bc__cur"><?= $sec->escape(mb_strimwidth($full_name, 0, 60, '…')) ?></span>
+  </nav>
+
+  <header class="ex-hero">
+    <div class="ex-hero__inner">
+      <?php if ($photo): ?>
+        <div class="ex-hero__av"><img src="<?= $sec->escape($photo) ?>" alt="<?= $sec->escape($full_name) ?>"></div>
+      <?php else: ?>
+        <div class="ex-hero__av" style="background:<?= $_ex_agrad ?>;"><?= htmlspecialchars($_ex_inits ?: '?') ?></div>
+      <?php endif; ?>
+      <div class="ex-hero__meta">
+        <div class="ex-hero__badges">
+          <span class="ex-hero__badge ex-hero__badge--avail-<?= $sec->escape($avail) ?>"><?= $sec->escape($avail_info['label']) ?></span>
+          <?php if ($partner_status === 'sponsor'):    ?><span class="ex-hero__badge ex-hero__badge--partner">★ Sponsor</span><?php endif; ?>
+          <?php if ($partner_status === 'top_partner'):?><span class="ex-hero__badge ex-hero__badge--partner">◆ Top-Partner</span><?php endif; ?>
+          <?php if ($partner_status === 'partner'):    ?><span class="ex-hero__badge ex-hero__badge--partner">✓ Partner</span><?php endif; ?>
+          <?php if ($is_mvp):       ?><span class="ex-hero__badge ex-hero__badge--mvp">⚡ MVP</span><?php endif; ?>
+          <?php if ($is_certified): ?><span class="ex-hero__badge ex-hero__badge--cert">✅ Zertifiziert</span><?php endif; ?>
+          <?php if ($is_premium):   ?><span class="ex-hero__badge ex-hero__badge--premium">⭐ Premium</span><?php endif; ?>
+        </div>
+        <?php if ($custom_award): ?><div style="font-size:.82rem;color:#d97706;margin-bottom:.3rem;">🏆 <?= $sec->escape($custom_award) ?></div><?php endif; ?>
+        <h1 class="ex-hero__name"><?= $sec->escape($full_name) ?></h1>
+        <?php if ($motto): ?><p class="ex-hero__motto">"<?= $sec->escape($motto) ?>"</p><?php endif; ?>
+        <?php if ($position): ?><p class="ex-hero__pos"><?= $sec->escape($position) ?></p><?php endif; ?>
+        <?php if ($company): ?><p class="ex-hero__co">🏢 <?= $sec->escape($company) ?></p><?php endif; ?>
+        <div class="ex-hero__chips">
+          <?php if (!empty($expert->location_city)): ?>
+            <span class="ex-hero__chip">📍 <?= $sec->escape($expert->location_city) ?><?= !empty($expert->location_country) ? ', '.$sec->escape($expert->location_country) : '' ?></span>
+          <?php endif; ?>
+          <?php if (!empty($expert->experience_years)): ?>
+            <span class="ex-hero__chip">💼 <?= (int)$expert->experience_years ?> Jahre Erfahrung</span>
+          <?php endif; ?>
+          <?php if ($remote_work): ?>
+            <?php $rm_chip = ['yes'=>'Remote möglich','only'=>'Nur Remote','no'=>'Vor Ort','partial'=>'Hybrid','full'=>'Vollständig Remote','preferred'=>'Remote bevorzugt']; ?>
+            <span class="ex-hero__chip">🏠 <?= $sec->escape($rm_chip[$remote_work] ?? ucfirst($remote_work)) ?></span>
+          <?php endif; ?>
+          <?php if ($work_type): ?>
+            <?php $wt_map = ['freelancer'=>'Freelancer','employed'=>'Angestellt','agency'=>'Agentur','contractor'=>'Contractor']; ?>
+            <span class="ex-hero__chip">🎯 <?= $sec->escape($wt_map[$work_type] ?? ucfirst($work_type)) ?></span>
+          <?php endif; ?>
+          <?php if ($total_projects_cnt): ?><span class="ex-hero__chip">📁 <?= (int)$total_projects_cnt ?>+ Projekte</span><?php endif; ?>
+          <?php if ($timezone): ?><span class="ex-hero__chip">🕐 <?= $sec->escape($timezone) ?></span><?php endif; ?>
+        </div>
+        <?php if ($has_social): ?>
+          <div class="ex-hero__social">
+            <?php if ($social['linkedin']): ?><a href="<?= $sec->escape($social['linkedin']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a><?php endif; ?>
+            <?php if ($social['xing']):     ?><a href="<?= $sec->escape($social['xing']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="XING"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M18.188 0c-.517 0-.741.325-.927.66l-7.702 13.657 4.919 9.023c.17.308.436.66.967.66h3.454c.211 0 .375-.078.463-.22.089-.151.089-.346-.009-.536l-4.879-8.916L22.139.756c.097-.191.097-.387.006-.535C22.056.078 21.894 0 21.686 0h-3.498zM3.648 4.74a.62.62 0 00-.473.216c-.09.149-.078.339.02.531l2.34 4.05-3.675 6.714c-.099.188-.093.381 0 .529.085.142.247.22.455.22h3.514c.518 0 .731-.405.92-.73l3.671-6.471-2.342-4.052c-.17-.309-.436-.807-.978-.807H3.648z"/></svg></a><?php endif; ?>
+            <?php if ($social['github']):   ?><a href="<?= $sec->escape($social['github']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a><?php endif; ?>
+            <?php if ($social['twitter']):  ?><a href="<?= $sec->escape($social['twitter']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="X/Twitter"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a><?php endif; ?>
+            <?php if ($social['website']):  ?><a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="Website"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></a><?php endif; ?>
+            <?php if ($social['gitlab']):   ?><a href="<?= $sec->escape($social['gitlab']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="GitLab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 01-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 014.82 2a.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.49h8.1l2.44-7.49a.42.42 0 01.11-.18.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.51 1.22 3.78a.84.84 0 01-.3.94z"/></svg></a><?php endif; ?>
+            <?php if ($social['stackoverflow']): ?><a href="<?= $sec->escape($social['stackoverflow']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="Stack Overflow"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M18.986 21.865v-6.404h2.134V24H1.844v-8.539h2.13v6.404h15.012zM6.111 19.731H16.85v-2.137H6.111v2.137zm.259-4.852l10.48 2.189.451-2.07-10.478-2.187-.453 2.068zm1.359-5.056l9.705 4.53.903-1.95-9.706-4.53-.902 1.95zm2.715-4.785l8.217 6.855 1.359-1.62-8.216-6.853-1.36 1.618zM15.751 0l-1.746 1.294 6.405 8.604 1.746-1.294L15.751 0z"/></svg></a><?php endif; ?>
+            <?php if ($social['youtube']):  ?><a href="<?= $sec->escape($social['youtube']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="YouTube"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M23.495 6.205a3.007 3.007 0 00-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 00.527 6.205a31.247 31.247 0 00-.522 5.805 31.247 31.247 0 00.522 5.783 3.007 3.007 0 002.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 002.088-2.088A31.247 31.247 0 0024 12.01a31.247 31.247 0 00-.505-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg></a><?php endif; ?>
+            <?php if ($social['blog_rss']): ?><a href="<?= $sec->escape($social['blog_rss']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="RSS"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6.18 15.64a2.18 2.18 0 012.18 2.18C8.36 19.01 7.38 20 6.18 20C4.98 20 4 19.01 4 17.82a2.18 2.18 0 012.18-2.18M4 4.44A15.56 15.56 0 0119.56 20h-2.83A12.73 12.73 0 004 7.27V4.44m0 5.66a9.9 9.9 0 019.9 9.9h-2.83A7.07 7.07 0 004 12.93V10.1z"/></svg></a><?php endif; ?>
+          </div>
+        <?php endif; ?>
+      </div>
+    </div>
+  </header>
+
+  <div class="ex-body">
+    <main class="ex-main">
+
+      <?php if (!empty($expert->biography) && trim((string)$expert->biography) !== ''): ?>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">👤 Über mich</h2>
+          <div class="ex-wysiwyg-content" style="line-height:1.75;color:#334155;font-size:.95rem;">
+            <?php
+            $bio = (string)$expert->biography;
+            echo (bool)preg_match('/<(p|ul|ol|h[1-6]|blockquote|div|br)[\s>]/i', $bio) ? $bio : nl2br(htmlspecialchars($bio));
+            ?>
+          </div>
+        </div>
+      <?php endif; ?>
+
+      <?php if (!empty($specializations)): ?>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">🎯 Spezialisierungen</h2>
+          <div class="ex-pills">
+            <?php foreach ($specializations as $sp): ?>
+              <span class="ex-pill ex-pill--spec"><?= $sec->escape($sp->name ?? '') ?></span>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      <?php endif; ?>
+
+      <?php
+      $skill_section_cfg = [
+          'general' => ['🌟 Allgemeine Skills', ''],
+          'tech'    => ['⚙️ Technische Skills', 'ex-pill--tech'],
+          'soft'    => ['💬 Soft Skills',        'ex-pill--soft'],
+      ];
+      $has_any_skill = !empty(array_filter($skills_by_type));
+      if ($has_any_skill):
+          $skill_level_map = ['beginner'=>15,'basic'=>30,'intermediate'=>55,'advanced'=>80,'expert'=>95,'master'=>100];
+      ?>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">🛠️ Skills & Kompetenzen</h2>
+          <?php foreach ($skill_section_cfg as $type => [$label, $cls]):
+            if (empty($skills_by_type[$type])) continue;
+          ?>
+            <h4 style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:.875rem 0 .5rem;"><?= $label ?></h4>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem;margin-bottom:.75rem;">
+              <?php foreach ($skills_by_type[$type] as $sk):
+                $lvl_pct = $skill_level_map[$sk->skill_level ?? ''] ?? 0;
+              ?>
+                <div class="ex-skill-item">
+                  <div class="ex-skill-item__top">
+                    <span class="ex-skill-item__name"><?= $sec->escape($sk->skill_name ?? '') ?></span>
+                    <?php if ($lvl_pct): ?><span class="ex-skill-item__lvl"><?= $sec->escape(ucfirst($sk->skill_level)) ?></span><?php endif; ?>
+                  </div>
+                  <?php if ($lvl_pct): ?>
+                    <div class="ex-skill-bar"><div class="ex-skill-bar__fill" style="width:<?= $lvl_pct ?>%;"></div></div>
+                  <?php endif; ?>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+
+      <?php $has_tech = !empty($prog_languages) || !empty($expert_frameworks) || !empty($expert_databases) || !empty($cloud_platforms) || !empty($tools_preferred) || !empty($industry_experience); ?>
+      <?php if ($has_tech): ?>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">💻 Technische Expertise</h2>
+          <?php
+          $tech_sections = [
+              ['🖥️ Sprachen',      $prog_languages],
+              ['📦 Frameworks',    $expert_frameworks],
+              ['🗃️ Datenbanken',   $expert_databases],
+              ['☁️ Cloud',         $cloud_platforms],
+              ['🔧 Tools',         $tools_preferred],
+              ['🏭 Branchen',      $industry_experience],
+          ];
+          foreach ($tech_sections as [$lbl, $items]):
+            if (empty($items)) continue; ?>
+            <h4 style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:.875rem 0 .4rem;"><?= $lbl ?></h4>
+            <div class="ex-pills" style="margin-bottom:.5rem;">
+              <?php foreach ((array)$items as $it): ?><span class="ex-pill ex-pill--tech"><?= $sec->escape(is_string($it) ? $it : ($it->name ?? (string)$it)) ?></span><?php endforeach; ?>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+
+      <?php if (!empty($projects)): ?>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">📁 Projekte <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--expert-primary,#5e72e4);color:#fff;font-size:.72rem;font-weight:700;margin-left:.3rem;"><?= count($projects) ?></span></h2>
+          <?php foreach ($projects as $pj):
+            $p_start = (!empty($pj->project_start) && $pj->project_start !== '0000-00-00') ? date('m/Y', strtotime($pj->project_start)) : '';
+            $p_end   = (!empty($pj->project_end)   && $pj->project_end   !== '0000-00-00') ? date('m/Y', strtotime($pj->project_end))   : 'aktuell';
+            $p_techs = is_string($pj->technologies ?? '') ? array_filter(array_map('trim', explode(',', $pj->technologies ?? ''))) : [];
+          ?>
+            <div class="ex-proj-item">
+              <div class="ex-proj-item__name"><?= $sec->escape($pj->project_name ?? '') ?></div>
+              <div class="ex-proj-item__meta">
+                <?= $sec->escape($pj->project_role ?? '') ?><?= (!empty($pj->project_role) && ($p_start || $p_end)) ? ' · ' : '' ?><?= $p_start ? $p_start . ' – ' . $p_end : '' ?>
+                <?php if (!empty($pj->project_url)): ?> · <a href="<?= $sec->escape($pj->project_url) ?>" target="_blank" rel="noopener" style="color:var(--expert-primary,#5e72e4);">↗</a><?php endif; ?>
+              </div>
+              <?php if (!empty($pj->project_description)): ?>
+                <div class="ex-proj-item__desc"><?= nl2br($sec->escape($pj->project_description)) ?></div>
+              <?php endif; ?>
+              <?php if ($p_techs): ?>
+                <div class="ex-proj-item__tags">
+                  <?php foreach ($p_techs as $t): ?><span class="ex-proj-item__tag"><?= $sec->escape($t) ?></span><?php endforeach; ?>
+                </div>
+              <?php endif; ?>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+
+      <?php if (!empty($education)): ?>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">🎓 Ausbildung</h2>
+          <?php foreach ($education as $edu):
+            $e_from = !empty($edu->start_year) ? (int)$edu->start_year : null;
+            $e_to   = !empty($edu->end_year)   ? (int)$edu->end_year   : null;
+          ?>
+            <div class="ex-edu-item">
+              <div class="ex-edu-item__deg"><?= $sec->escape($edu->degree ?? '') ?><?= !empty($edu->field_of_study) ? ' – ' . $sec->escape($edu->field_of_study) : '' ?></div>
+              <div class="ex-edu-item__inst"><?= $sec->escape($edu->institution ?? '') ?></div>
+              <?php if ($e_from || $e_to): ?><div class="ex-edu-item__meta"><?= $e_from ?? '?' ?> – <?= $e_to ?? 'heute' ?></div><?php endif; ?>
+              <?php if (!empty($edu->description)): ?><div style="font-size:.8rem;color:#64748b;margin-top:.3rem;"><?= $sec->escape($edu->description) ?></div><?php endif; ?>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+
+      <?php if (!empty($certifications)): ?>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">📜 Zertifizierungen</h2>
+          <?php foreach ($certifications as $cert): ?>
+            <div class="ex-cert-item">
+              <div>
+                <div class="ex-cert-item__name"><?= $sec->escape($cert->cert_name ?? '') ?></div>
+                <?php if (!empty($cert->cert_issuer)): ?><div class="ex-cert-item__meta"><?= $sec->escape($cert->cert_issuer) ?></div><?php endif; ?>
+              </div>
+              <?php if (!empty($cert->cert_date)): ?>
+                <div class="ex-cert-item__meta"><?= date('Y', strtotime($cert->cert_date)) ?><?= (!empty($cert->cert_expiry) && $cert->cert_expiry !== '0000-00-00') ? ' – ' . date('Y', strtotime($cert->cert_expiry)) : '' ?></div>
+              <?php endif; ?>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+
+      <?php if (!empty($career_stations_data)): ?>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">📈 Karrierestationen</h2>
+          <?php foreach ($career_stations_data as $cs):
+            $cs_from = !empty($cs['from']) ? $cs['from'] : null;
+            $cs_to   = !empty($cs['to'])   ? $cs['to']   : null;
+          ?>
+            <div class="ex-career-item">
+              <div class="ex-career-item__role"><?= $sec->escape($cs['role'] ?? '') ?></div>
+              <?php if (!empty($cs['company'])): ?><div class="ex-career-item__co"><?= $sec->escape($cs['company']) ?></div><?php endif; ?>
+              <?php if ($cs_from || $cs_to): ?><div class="ex-career-item__meta"><?= htmlspecialchars(trim(($cs_from ?? '').' – '.($cs_to ?? 'heute'))) ?><?= !empty($cs['location']) ? ' · '.htmlspecialchars($cs['location']) : '' ?></div><?php endif; ?>
+              <?php if (!empty($cs['description'])): ?><div class="ex-career-item__desc"><?= $sec->escape($cs['description']) ?></div><?php endif; ?>
+            </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+
+      <?php $has_refs = !empty($testimonials_data) || !empty($case_studies_data) || !empty($conference_talks); ?>
+      <?php if ($has_refs): ?>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">🏅 Referenzen & Auftritte</h2>
+          <?php if (!empty($testimonials_data)): ?>
+            <h4 style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:0 0 .625rem;">💬 Testimonials</h4>
+            <?php foreach ($testimonials_data as $t): ?>
+              <div class="ex-testi-item">
+                <div class="ex-testi-item__text">"<?= $sec->escape($t['text'] ?? $t['quote'] ?? '') ?>"</div>
+                <div class="ex-testi-item__by">— <?= $sec->escape(trim(($t['name'] ?? '') . (!empty($t['company']) ? ', '.$t['company'] : ''))) ?></div>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
+          <?php if (!empty($case_studies_data)): ?>
+            <h4 style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:.875rem 0 .5rem;">📊 Case Studies</h4>
+            <?php foreach ($case_studies_data as $cs): ?>
+              <div class="ex-proj-item" style="margin-bottom:.5rem;">
+                <div class="ex-proj-item__name"><?= $sec->escape($cs['title'] ?? '') ?></div>
+                <?php if (!empty($cs['description'])): ?><div class="ex-proj-item__desc"><?= $sec->escape($cs['description']) ?></div><?php endif; ?>
+                <?php if (!empty($cs['result'])): ?><div style="font-size:.8rem;color:#16a34a;margin-top:.3rem;font-weight:600;">✅ <?= $sec->escape($cs['result']) ?></div><?php endif; ?>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
+          <?php if (!empty($conference_talks)): ?>
+            <h4 style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:.875rem 0 .5rem;">🎤 Konferenz-Vorträge</h4>
+            <?php foreach ($conference_talks as $ct): ?>
+              <div class="ex-conf-item">
+                <div class="ex-conf-item__title"><?= $sec->escape($ct['title'] ?? $ct['talk'] ?? '') ?></div>
+                <div class="ex-conf-item__meta">
+                  <?= $sec->escape($ct['event'] ?? '') ?><?= (!empty($ct['event']) && !empty($ct['year'])) ? ' · ' : '' ?><?= $sec->escape($ct['year'] ?? '') ?><?= (!empty($ct['location'])) ? ' · '.htmlspecialchars($ct['location']) : '' ?>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
+
+    </main>
+
+    <aside class="ex-aside">
+
+      <?php if (!empty($social['website']) || !empty($social['linkedin']) || !empty($social['xing'])): ?>
+        <div class="ex-sc">
+          <h3 class="ex-sc__title">📬 Kontakt</h3>
+          <?php if (!empty($social['website'])): ?>
+            <a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener" class="ex-btn">🌐 Website besuchen</a>
+          <?php endif; ?>
+          <?php if (!empty($social['linkedin'])): ?>
+            <a href="<?= $sec->escape($social['linkedin']) ?>" target="_blank" rel="noopener" class="ex-btn ex-btn--ghost">🔗 LinkedIn-Profil</a>
+          <?php endif; ?>
+          <?php if (!empty($social['xing'])): ?>
+            <a href="<?= $sec->escape($social['xing']) ?>" target="_blank" rel="noopener" class="ex-btn ex-btn--ghost">✖ XING-Profil</a>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
+
+      <?php
+      $ex_facts = [];
+      $rm_map = ['yes'=>'Ja','only'=>'Nur Remote','no'=>'Nein','partial'=>'Hybrid','full'=>'Vollständig','preferred'=>'Bevorzugt'];
+      $wt_map2 = ['freelancer'=>'Freelancer','employed'=>'Angestellt','agency'=>'Agentur','contractor'=>'Contractor'];
+      if ($avail):        $ex_facts[] = ['🟢','Status',        $sec->escape($avail_info['label'])]; endif;
+      if ($next_avail_date): $ex_facts[] = ['📅','Verfügbar ab', date('d.m.Y', strtotime($next_avail_date))]; endif;
+      if (!empty($expert->experience_years)): $ex_facts[] = ['💼','Erfahrung',    (int)$expert->experience_years.' Jahre']; endif;
+      if ($languages):    $ex_facts[] = ['🗣️','Sprachen',      $sec->escape($languages)]; endif;
+      if ($work_type):    $ex_facts[] = ['🎯','Work-Typ',      $sec->escape($wt_map2[$work_type] ?? ucfirst($work_type))]; endif;
+      if ($remote_work):  $ex_facts[] = ['🏠','Remote',        $sec->escape($rm_map[$remote_work] ?? ucfirst($remote_work))]; endif;
+      if ($travel_willingness): $ex_facts[] = ['✈️','Reise',  $sec->escape($travel_willingness)]; endif;
+      if ($notice_period): $ex_facts[] = ['⏱️','Verfügbar',   $sec->escape($notice_period)]; endif;
+      if ($timezone):     $ex_facts[] = ['🕐','Zeitzone',      $sec->escape($timezone)]; endif;
+      if ($ex_facts): ?>
+        <div class="ex-sc">
+          <h3 class="ex-sc__title">⚙️ Verfügbarkeit & Arbeitsweise</h3>
+          <div class="ex-info-rows">
+            <?php foreach ($ex_facts as [$ic,$lbl,$val]): ?>
+              <div class="ex-info-row">
+                <span class="ex-info-row__lbl"><?= $ic ?> <?= $lbl ?></span>
+                <span class="ex-info-row__val"><?= $val ?></span>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      <?php endif; ?>
+
+      <?php if ($hourly_rate || $daily_rate): ?>
+        <div class="ex-sc">
+          <h3 class="ex-sc__title">💶 Honorar</h3>
+          <div class="ex-info-rows">
+            <?php if ($hourly_rate): ?><div class="ex-info-row"><span class="ex-info-row__lbl">⏱ Stundensatz</span><span class="ex-info-row__val"><?= number_format($hourly_rate, 0, ',', '.') ?> €</span></div><?php endif; ?>
+            <?php if ($daily_rate):  ?><div class="ex-info-row"><span class="ex-info-row__lbl">📅 Tagessatz</span><span class="ex-info-row__val"><?= number_format($daily_rate, 0, ',', '.') ?> €</span></div><?php endif; ?>
+            <?php if ($weekly_hours): ?><div class="ex-info-row"><span class="ex-info-row__lbl">🕐 Std/Woche</span><span class="ex-info-row__val"><?= (int)$weekly_hours ?> h</span></div><?php endif; ?>
+            <?php if ($min_proj_dur): ?><div class="ex-info-row"><span class="ex-info-row__lbl">📌 Min. Dauer</span><span class="ex-info-row__val"><?= $sec->escape($min_proj_dur) ?></span></div><?php endif; ?>
+            <?php if ($payment_terms): ?><div class="ex-info-row"><span class="ex-info-row__lbl">📃 Zahlung</span><span class="ex-info-row__val"><?= $sec->escape($payment_terms) ?></span></div><?php endif; ?>
+          </div>
+        </div>
+      <?php endif; ?>
+
+      <?php $has_svc = $svc_consulting||$svc_impl||$svc_training||$svc_support||$svc_audit; ?>
+      <?php if ($has_svc || $emergency_support || $workshop_offerings): ?>
+        <div class="ex-sc">
+          <h3 class="ex-sc__title">🔧 Services</h3>
+          <div class="ex-svc-check">
+            <?php if ($svc_consulting): ?><div class="ex-svc-row">Beratung</div><?php endif; ?>
+            <?php if ($svc_impl):       ?><div class="ex-svc-row">Implementierung</div><?php endif; ?>
+            <?php if ($svc_training):   ?><div class="ex-svc-row">Training</div><?php endif; ?>
+            <?php if ($svc_support):    ?><div class="ex-svc-row">Support</div><?php endif; ?>
+            <?php if ($svc_audit):      ?><div class="ex-svc-row">Audit</div><?php endif; ?>
+            <?php if ($emergency_support): ?><div class="ex-svc-row">24/7 Notfall-Support</div><?php endif; ?>
+            <?php if ($workshop_offerings): ?><div class="ex-svc-row">Workshops</div><?php endif; ?>
+            <?php if ($subcontractors): ?><div class="ex-svc-row">Subunternehmer möglich</div><?php endif; ?>
+            <?php if ($fixed_price):    ?><div class="ex-svc-row">Festpreisprojekte</div><?php endif; ?>
+          </div>
+        </div>
+      <?php endif; ?>
+
+      <?php if ($partner_networks || $team_expansion || $max_team_size || $team_size_led): ?>
+        <div class="ex-sc">
+          <h3 class="ex-sc__title">🤝 Netzwerk & Team</h3>
+          <div class="ex-info-rows">
+            <?php if ($team_expansion): ?><div class="ex-info-row"><span class="ex-info-row__lbl">👥 Team-Ausbau</span><span class="ex-info-row__val">Möglich</span></div><?php endif; ?>
+            <?php if ($max_team_size):  ?><div class="ex-info-row"><span class="ex-info-row__lbl">👥 Max. Team</span><span class="ex-info-row__val"><?= (int)$max_team_size ?> Pers.</span></div><?php endif; ?>
+            <?php if ($team_size_led):  ?><div class="ex-info-row"><span class="ex-info-row__lbl">🎖 Geführt</span><span class="ex-info-row__val"><?= (int)$team_size_led ?> Pers.</span></div><?php endif; ?>
+            <?php if ($partner_networks): ?><div class="ex-info-row"><span class="ex-info-row__lbl">🔗 Netzwerk</span><span class="ex-info-row__val"><?= $sec->escape($partner_networks) ?></span></div><?php endif; ?>
+          </div>
+        </div>
+      <?php endif; ?>
+
+      <?php if ($has_social): ?>
+        <div class="ex-sc">
+          <h3 class="ex-sc__title">🔗 Profile & Social</h3>
+          <div class="ex-social-row">
+            <?php foreach (['linkedin','xing','github','twitter','website','gitlab','stackoverflow','youtube','blog_rss'] as $sn):
+              if (empty($social[$sn])) continue;
+              $sn_labels = ['linkedin'=>'LinkedIn','xing'=>'XING','github'=>'GitHub','twitter'=>'X/Twitter','website'=>'Website','gitlab'=>'GitLab','stackoverflow'=>'StackOverflow','youtube'=>'YouTube','blog_rss'=>'RSS'];
+            ?><a href="<?= $sec->escape($social[$sn]) ?>" target="_blank" rel="noopener" class="ex-si" title="<?= $sn_labels[$sn] ?? $sn ?>"><?= $sn_labels[$sn] ?? $sn ?></a><?php endforeach; ?>
+          </div>
+        </div>
+      <?php endif; ?>
+
+      <div class="ex-sc">
+        <a href="<?= $_base_url ?>/experts" class="ex-btn ex-btn--ghost" style="margin:0;">← Zur Experten-Übersicht</a>
+      </div>
+
+    </aside>
+  </div>
+</div>

@@ -648,9 +648,10 @@
 }
 
 .single-expert-header {
-    background: linear-gradient(135deg, #f5ecd5 0%, #fff7e6 100%);
-    border: 1px solid rgba(212,165,116,0.3);
-    border-radius: var(--expert-radius);
+    background: #f8fafc;
+    border: none;
+    border-bottom: 3px solid var(--detail-accent, #5e72e4);
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
     margin-bottom: 30px;
 }
 
@@ -779,9 +780,11 @@
 
 /* ── Hero Header ────────────────────────────────────────────── */
 .single-expert-header {
-    background: var(--detail-header-bg, #1e293b);
-    color: var(--detail-header-color, #fff);
-    padding: 48px 0;
+    background: var(--detail-header-bg, #f8fafc);
+    color: var(--detail-header-color, #1e293b);
+    padding: 2rem 0;
+    border-bottom: 3px solid var(--detail-accent, #5e72e4);
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
 }
 
 .expert-header-inner {
@@ -795,11 +798,12 @@
 }
 
 .expert-header-avatar-wrap {
-    width: 160px;
-    height: 160px;
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
     overflow: hidden;
-    border: 4px solid rgba(255,255,255,.2);
+    border: 3px solid var(--detail-accent, #5e72e4);
+    box-shadow: 0 4px 16px rgba(94,114,228,.2);
     flex-shrink: 0;
 }
 
@@ -867,7 +871,7 @@
     font-weight: 800;
     margin: 0 0 4px;
     line-height: 1.15;
-    color: var(--detail-header-color, #fff);
+    color: var(--detail-header-color, #1e293b);
 }
 
 .expert-detail-position {
@@ -895,11 +899,11 @@
     align-items: center;
     gap: 4px;
     padding: 4px 12px;
-    background: rgba(255,255,255,.12);
-    border: 1px solid rgba(255,255,255,.2);
+    background: #fff;
+    border: 1px solid rgba(0,0,0,.09);
     border-radius: 50px;
     font-size: 0.8rem;
-    color: inherit;
+    color: #475569;
 }
 
 /* ── Social Icons in Header ─────────────────────────────────── */
@@ -916,12 +920,13 @@
     width: 36px;
     height: 36px;
     border-radius: 8px;
-    background: rgba(255,255,255,.15);
-    border: 1px solid rgba(255,255,255,.25);
-    color: #fff;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,.09);
+    color: var(--detail-accent, #5e72e4);
     text-decoration: none;
-    transition: background 0.2s;
+    transition: background 0.2s, color 0.2s;
 }
+.detail-social-icon:hover { background: var(--detail-accent, #5e72e4); color: #fff; }
 
 .detail-social-icon:hover { background: rgba(255,255,255,.3); }
 .detail-social-icon svg { width: 16px; height: 16px; }

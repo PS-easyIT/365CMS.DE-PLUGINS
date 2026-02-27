@@ -365,14 +365,15 @@
   border-radius: var(--co-radius);
 }
 
-/* ─── Single – Hero Header ────────────────────────────────────────────────── */
+/* ─── Single – Hero Header (dezent) ──────────────────────────────────────── */
 .co-single-header {
   position: relative;
   border-radius: 0;
-  padding: 2.25rem 2rem 1.5rem;
+  padding: 2rem 2rem 1.5rem;
   margin-bottom: 0;
   overflow: hidden;
-  color: #fff;
+  border-bottom: 3px solid var(--co-primary, #0891b2);
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
 }
 
 .co-sh-ribbon {
@@ -407,8 +408,8 @@
   font-size: 2rem;
   font-weight: 800;
   color: #fff;
-  box-shadow: 0 4px 16px rgba(0,0,0,.22);
-  border: 3px solid rgba(255,255,255,.25);
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
+  border: 3px solid rgba(255,255,255,.4);
 }
 .co-sh-avatar--logo {
   background: #fff;
@@ -450,7 +451,7 @@
   gap: .5rem;
   margin-top: 1.25rem;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255,255,255,.2);
+  border-top: 1px solid var(--co-border, #e2e8f0);
 }
 
 .co-sh-chip {
@@ -458,12 +459,12 @@
   align-items: center;
   gap: .3rem;
   padding: .3rem .8rem;
-  background: rgba(255,255,255,.18);
-  border: 1px solid rgba(255,255,255,.28);
+  background: var(--co-accent, #e0f2fe);
+  border: 1px solid var(--co-border, #e2e8f0);
   border-radius: 50px;
   font-size: .8rem;
   font-weight: 600;
-  backdrop-filter: blur(4px);
+  color: var(--co-text-m, #475569);
 }
 
 /* ─── Single – Body Layout ────────────────────────────────────────────────── */

@@ -774,9 +774,11 @@
 
 /* ── Hero Header ──────────────────────────────────────────── */
 .sp-single-header {
-    background: linear-gradient(135deg, var(--sp-hdr-from, #4c1d95) 0%, var(--sp-hdr-to, #8b5cf6) 100%);
-    color: var(--sp-hdr-title, #fff);
-    padding: 48px 0;
+    background: linear-gradient(135deg, var(--sp-hdr-from, #f5f3ff) 0%, var(--sp-hdr-to, #faf5ff) 100%);
+    color: var(--sp-hdr-title, #1e293b);
+    padding: 2rem 0;
+    border-bottom: 3px solid var(--sp-primary, #8b5cf6);
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
 }
 
 .sp-sh-inner {
@@ -790,11 +792,12 @@
 }
 
 .sp-sh-avatar {
-    width: 160px;
-    height: 160px;
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
     overflow: hidden;
-    border: 4px solid rgba(255,255,255,.2);
+    border: 3px solid var(--sp-primary, #8b5cf6);
+    box-shadow: 0 4px 16px rgba(139,92,246,.2);
     flex-shrink: 0;
 }
 
@@ -852,12 +855,12 @@
     display: inline-flex;
     align-items: center;
     padding: 4px 12px;
-    background: rgba(255,255,255,.15);
-    border: 1px solid rgba(255,255,255,.25);
+    background: #fff;
+    border: 1px solid rgba(139,92,246,.2);
     border-radius: 50px;
     font-size: 0.8rem;
     font-weight: 600;
-    color: inherit;
+    color: #475569;
 }
 
 /* ── Header: Badges oben (wie expert-header) ─────────────────── */
@@ -885,12 +888,12 @@
     display: inline-flex;
     align-items: center;
     padding: 4px 12px;
-    background: var(--sp-badge-verified-bg, rgba(255,255,255,.15));
-    border: 1px solid rgba(255,255,255,.25);
+    background: var(--sp-badge-verified-bg, #ede9fe);
+    border: 1px solid rgba(139,92,246,.25);
     border-radius: 50px;
     font-size: 0.8rem;
     font-weight: 600;
-    color: var(--sp-badge-verified-color, inherit);
+    color: var(--sp-badge-verified-color, #5b21b6);
 }
 
 .sp-badge-mvp {
@@ -911,12 +914,12 @@
     display: inline-flex;
     align-items: center;
     padding: 5px 12px;
-    background: rgba(255,255,255,.10);
-    border: 1px solid rgba(255,255,255,.18);
+    background: #fff;
+    border: 1px solid rgba(139,92,246,.2);
     border-radius: 50px;
     font-size: 0.82rem;
     font-weight: 500;
-    color: rgba(255,255,255,.9);
+    color: #475569;
 }
 
 /* ── Social Icons im Header ──────────────────────────────────── */
