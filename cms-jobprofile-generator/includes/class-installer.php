@@ -20,6 +20,7 @@ class CMS_JPG_Installer
     public static function install(): void
     {
         self::create_tables();
+        self::maybe_alter_tables();
         self::seed_system_data();
         self::extend_subscription_plans();
         self::store_db_version();
@@ -137,6 +138,62 @@ class CMS_JPG_Installer
     }
 
     // ── Tabellen ──────────────────────────────────────────────────────────────
+
+    /**
+     * Idempotente ALTER TABLE Migrationen für bestehende Installationen.
+     * Wird sowohl beim Erst-Install als auch beim Update ausgeführt.
+     * Sichere Logik: prüft pro Spalte via information_schema, ob sie existiert.
+     *
+     * @since 0.9.3
+     */
+    private static function maybe_alter_tables(): void
+    {
+        try {
+            $db  = \CMS\Database::instance();
+            $p   = $db->getPrefix();
+            $pdo = $db->getPdo();
+
+            $helper = static function (
+                \PDO $pdo, string $table, string $column, string $definition
+            ): void {
+                $stmt = $pdo->prepare(
+                    "SELECT COUNT(*) FROM information_schema.columns
+                     WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?"
+                );
+                $stmt->execute([$table, $column]);
+                if ((int) $stmt->fetchColumn() === 0) {
+                    $pdo->exec("ALTER TABLE {$table} ADD COLUMN {$column} {$definition}");
+                }
+            };
+
+            // ── jpg_applications: Telefonnummer des Bewerbers ─────────────────
+            $helper(
+                $pdo, "{$p}jpg_applications", 'applicant_phone',
+                "VARCHAR(50) DEFAULT NULL COMMENT 'Telefonnummer des Bewerbers (optional)'"
+            );
+
+            // ── jpg_company_settings: E-Mail-Template-Spalten ─────────────────
+            // Stellt sicher, dass ALL jobs_page_* Spalten existieren (ältere Installationen)
+            $csFields = [
+                'jobs_page_title'            => "VARCHAR(255) NOT NULL DEFAULT ''",
+                'jobs_page_intro'            => "TEXT NULL",
+                'jobs_page_contact_email'    => "VARCHAR(255) NOT NULL DEFAULT ''",
+                'jobs_page_show_salary'      => "TINYINT(1) NOT NULL DEFAULT 1",
+                'jobs_page_enabled'          => "TINYINT(1) NOT NULL DEFAULT 1",
+                'email_tpl_accepted_subject' => "VARCHAR(500) DEFAULT NULL",
+                'email_tpl_accepted_body'    => "TEXT DEFAULT NULL",
+                'email_tpl_rejected_subject' => "VARCHAR(500) DEFAULT NULL",
+                'email_tpl_rejected_body'    => "TEXT DEFAULT NULL",
+                'email_sender_name'          => "VARCHAR(255) DEFAULT NULL",
+            ];
+            foreach ($csFields as $col => $def) {
+                $helper($pdo, "{$p}jpg_company_settings", $col, $def);
+            }
+
+        } catch (\Throwable $e) {
+            error_log('CMS_JPG_Installer::maybe_alter_tables() error: ' . $e->getMessage());
+        }
+    }
 
     private static function create_tables(): void
     {
@@ -329,6 +386,7 @@ class CMS_JPG_Installer
             cover_letter    TEXT,
             cv_file_path    VARCHAR(500) DEFAULT NULL,
             cv_file_token   VARCHAR(64)  DEFAULT NULL COMMENT 'Sicherer Download-Token',
+            applicant_phone VARCHAR(50)  DEFAULT NULL COMMENT 'Telefonnummer des Bewerbers (optional)',
             status          ENUM('new','reviewing','accepted','rejected') NOT NULL DEFAULT 'new',
             created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -438,9 +496,19 @@ class CMS_JPG_Installer
 
         // Firmen-Einstellungen (jobs_page_url etc.)
         $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}jpg_company_settings (
-            company_id    INT UNSIGNED NOT NULL,
-            jobs_page_url VARCHAR(500) NOT NULL DEFAULT '',
-            updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            company_id                  INT UNSIGNED NOT NULL,
+            jobs_page_url               VARCHAR(500) NOT NULL DEFAULT '',
+            jobs_page_title             VARCHAR(255) NOT NULL DEFAULT '',
+            jobs_page_intro             TEXT,
+            jobs_page_contact_email     VARCHAR(255) NOT NULL DEFAULT '',
+            jobs_page_show_salary       TINYINT(1) NOT NULL DEFAULT 1,
+            jobs_page_enabled           TINYINT(1) NOT NULL DEFAULT 1,
+            email_tpl_accepted_subject  VARCHAR(500) DEFAULT NULL COMMENT 'Betreff der Zusage-Mail',
+            email_tpl_accepted_body     TEXT         DEFAULT NULL COMMENT 'Text der Zusage-Mail (Platzhalter: {name},{stelle},{firma})',
+            email_tpl_rejected_subject  VARCHAR(500) DEFAULT NULL COMMENT 'Betreff der Absage-Mail',
+            email_tpl_rejected_body     TEXT         DEFAULT NULL COMMENT 'Text der Absage-Mail',
+            email_sender_name           VARCHAR(255) DEFAULT NULL COMMENT 'Absender-Name in Bewerbungs-Mails',
+            updated_at                  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (company_id)
         ) ENGINE=InnoDB {$charset};");
 

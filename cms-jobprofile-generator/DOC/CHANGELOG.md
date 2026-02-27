@@ -8,11 +8,24 @@
 
 ## [0.9.3] – 2026-02-26
 
+### Hinzugefügt
+- **Template-Editor (Phase 13.1):** Mandanten können im Member-Bereich (Tab „E-Mail Vorlagen") eigene Betreff- und Texttemplates für Zusage- und Absage-Mails hinterlegen. Platzhalter: `{name}`, `{stelle}`, `{firma}`. Gespeichert in `jpg_company_settings` (5 neue Spalten).
+- **Dashboard-Buttons (Phase 13.2):** Im Bewerbungs-Postfach erscheinen direkte 📧-Mailto- und 📞-Tel-Links je Bewerber-Zeile. Telefonnummer wird nur angezeigt, wenn vorhanden.
+- **Member-PDF (Phase 14.3):** Neuer 📄-Button in der Stellenliste öffnet das Profil als PDF (mPDF falls verfügbar, HTML-Fallback). Route: `GET /member/jobs/pdf/:id`, Methode `download_pdf()` in `trait-member-jobs.php`.
+- **Hooks (HOOKS-API.md):** Alle 8 dokumentierten Actions/Filter werden jetzt tatsächlich ausgelöst – `jpg_profile_saved`, `jpg_profile_published`, `jpg_profile_deleted` in `class-profiles.php`; `jpg_before_export`, `jpg_profile_data`, `jpg_task_list`, `jpg_profile_html`, `jpg_export_json` in `class-export.php`.
+
+### Behoben
+- **`applicant_phone` fehlte im DB-Schema:** INSERT in `handle_apply()` referenzierte die Spalte, aber das CREATE TABLE in `class-installer.php` enthielt sie nicht → Bewerbungen mit Telefon scheiterten lautlos. Spalte hinzugefügt + Migration via `maybe_alter_tables()`.
+- **`jpg_company_settings` fehlende Spalten:** `save_company_settings()` befüllte `jobs_page_title`, `jobs_page_intro` u. a., obwohl nur `jobs_page_url` im CREATE TABLE stand. CREATE TABLE und Migration korrigiert.
+- **Status-Mailer Templates:** Mailer in `ajax_update_status()` nutzt jetzt mandantenspezifische Templates aus `jpg_company_settings` (mit Fallback auf Standard-Text). Absender-Name, Firmenname und Platzhalter-Ersetzung implementiert.
+
 ### Geändert
 - **Admin-Controller-Split:** `admin/class-admin-pages.php` (~2600 Zeilen) in 10 eigenständige Trait-Dateien unter `admin/modules/` aufgeteilt. Jeder Admin-Bereich hat einen eigenen Trait: `trait-page-dashboard.php`, `trait-page-generator.php`, `trait-page-libraries.php`, `trait-page-design.php`, `trait-page-settings.php`, `trait-page-workflow.php`, `trait-page-approvals.php`, `trait-page-companies.php`, `trait-page-subscription.php`, `trait-page-users.php`. Die `class-admin-pages.php` ist auf 137 Zeilen reduziert.
 - **Member-Controller-Split:** `includes/class-member-controller.php` (~2600 Zeilen) in 7 Trait-Dateien unter `includes/member/` aufgeteilt: `trait-member-hooks.php`, `trait-member-dsgvo.php`, `trait-member-jobs.php`, `trait-member-inline.php`, `trait-member-applications.php`, `trait-member-approvals.php`, `trait-member-settings.php`. Controller-Shell: 116 Zeilen.
+- **DB-Version:** `6` → `7` (neue Spalten via `maybe_alter_tables()` idempotent migriert)
+- **Version:** `0.9.2` → `0.9.3`
 
-### Behoben
+### Behoben (CSRF)
 - **CSRF-Bug Plugin-Rollen-Admin (Subscription + Users):** `$nonce = self::nonce(...)` wurde vor dem POST-Handler aufgerufen. Da `CMS\Security::generateToken()` den `$_SESSION['csrf_tokens'][$action]`-Eintrag bei jedem Aufruf überschreibt, wurde der für das Formular generierte Token ungültig, bevor `verifyToken()` ihn vergleichen konnte. Resultat: Jeder Speichern-Klick auf den Abo-Rollen- und User-Seiten scheiterte mit „Sicherheitscheck fehlgeschlagen". **Fix:** `$nonce`-Generierung in `trait-page-subscription.php` und `trait-page-users.php` nach den jeweiligen POST-Handler-Blöcken verschoben.
 
 ---

@@ -60,6 +60,12 @@ class CMS_JPG_Export
             return '<p>Profil nicht gefunden.</p>';
         }
 
+        if (class_exists('CMS\\Hooks')) {
+            \CMS\Hooks::doAction('jpg_before_export', $id, 'html');
+            $data = \CMS\Hooks::applyFilters('jpg_profile_data', $data, $id);
+            $data['tasks'] = \CMS\Hooks::applyFilters('jpg_task_list', $data['tasks'] ?? [], $id);
+        }
+
         $p    = $data['profile'];
         $esc  = fn(string|null $v): string => htmlspecialchars((string)($v ?? ''));
 
@@ -184,7 +190,13 @@ class CMS_JPG_Export
 </body>
 </html>
         <?php
-        return ob_get_clean() ?: '';
+        $html = ob_get_clean() ?: '';
+
+        if (class_exists('CMS\\Hooks')) {
+            $html = \CMS\Hooks::applyFilters('jpg_profile_html', $html, $id);
+        }
+
+        return $html;
     }
 
     /**
@@ -193,7 +205,16 @@ class CMS_JPG_Export
     public function export_json(int $id): string
     {
         $data = $this->get_full_profile($id);
-        return $data ? json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : '{}';
+        if (!$data) {
+            return '{}';
+        }
+
+        if (class_exists('CMS\\Hooks')) {
+            \CMS\Hooks::doAction('jpg_before_export', $id, 'json');
+            $data = \CMS\Hooks::applyFilters('jpg_export_json', $data, $id);
+        }
+
+        return json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     }
 
     /**

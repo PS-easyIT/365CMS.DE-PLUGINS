@@ -64,6 +64,15 @@ $statusMap  = [
             <td style="padding:1rem;">
                 <strong><?php echo $esc($app->applicant_name); ?></strong>
                 <div style="font-size:.8rem;color:#94a3b8;"><?php echo $esc($app->applicant_email); ?></div>
+                <!-- Phase 13.2: Direkte Kontakt-Optionen -->
+                <div style="display:flex;gap:.3rem;margin-top:.35rem;flex-wrap:wrap;">
+                    <a href="mailto:<?php echo $esc($app->applicant_email); ?>"
+                       class="btn btn-sm btn-secondary" title="E-Mail senden" style="padding:.2rem .5rem;font-size:.75rem;">📧</a>
+                    <?php if (!empty($app->applicant_phone)): ?>
+                    <a href="tel:<?php echo $esc($app->applicant_phone); ?>"
+                       class="btn btn-sm btn-secondary" title="<?php echo $esc($app->applicant_phone); ?>" style="padding:.2rem .5rem;font-size:.75rem;">📞</a>
+                    <?php endif; ?>
+                </div>
             </td>
             <td style="padding:1rem;font-size:.875rem;color:#475569;"><?php echo $esc($app->job_title); ?></td>
             <td style="padding:1rem;font-size:.875rem;color:#64748b;"><?php echo $esc($date); ?></td>

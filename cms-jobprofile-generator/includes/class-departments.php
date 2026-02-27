@@ -290,31 +290,54 @@ class CMS_JPG_Departments
         $showSalary   = (int) (bool) ($data['jobs_page_show_salary']     ?? 1);
         $enabled      = (int) (bool) ($data['jobs_page_enabled']         ?? 1);
 
+        // Phase 13.1: E-Mail-Template-Felder
+        $tplAccSubject = mb_substr(trim($data['email_tpl_accepted_subject'] ?? ''), 0, 500) ?: null;
+        $tplAccBody    = trim($data['email_tpl_accepted_body']              ?? '') ?: null;
+        $tplRejSubject = mb_substr(trim($data['email_tpl_rejected_subject'] ?? ''), 0, 500) ?: null;
+        $tplRejBody    = trim($data['email_tpl_rejected_body']              ?? '') ?: null;
+        $senderName    = mb_substr(trim($data['email_sender_name']          ?? ''), 0, 255) ?: null;
+
         $pdo->prepare(
             "INSERT INTO {$p}jpg_company_settings
                 (company_id, jobs_page_url, jobs_page_title, jobs_page_intro,
-                 jobs_page_contact_email, jobs_page_show_salary, jobs_page_enabled)
-             VALUES (?, ?, ?, ?, ?, ?, ?)
+                 jobs_page_contact_email, jobs_page_show_salary, jobs_page_enabled,
+                 email_tpl_accepted_subject, email_tpl_accepted_body,
+                 email_tpl_rejected_subject, email_tpl_rejected_body,
+                 email_sender_name)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
-                jobs_page_url           = VALUES(jobs_page_url),
-                jobs_page_title         = VALUES(jobs_page_title),
-                jobs_page_intro         = VALUES(jobs_page_intro),
-                jobs_page_contact_email = VALUES(jobs_page_contact_email),
-                jobs_page_show_salary   = VALUES(jobs_page_show_salary),
-                jobs_page_enabled       = VALUES(jobs_page_enabled)"
-        )->execute([$companyId, $url, $title, $intro, $contactEmail, $showSalary, $enabled]);
+                jobs_page_url               = VALUES(jobs_page_url),
+                jobs_page_title             = VALUES(jobs_page_title),
+                jobs_page_intro             = VALUES(jobs_page_intro),
+                jobs_page_contact_email     = VALUES(jobs_page_contact_email),
+                jobs_page_show_salary       = VALUES(jobs_page_show_salary),
+                jobs_page_enabled           = VALUES(jobs_page_enabled),
+                email_tpl_accepted_subject  = VALUES(email_tpl_accepted_subject),
+                email_tpl_accepted_body     = VALUES(email_tpl_accepted_body),
+                email_tpl_rejected_subject  = VALUES(email_tpl_rejected_subject),
+                email_tpl_rejected_body     = VALUES(email_tpl_rejected_body),
+                email_sender_name           = VALUES(email_sender_name)"
+        )->execute([
+            $companyId, $url, $title, $intro, $contactEmail, $showSalary, $enabled,
+            $tplAccSubject, $tplAccBody, $tplRejSubject, $tplRejBody, $senderName,
+        ]);
     }
 
     private function default_company_settings(int $companyId): object
     {
         return (object) [
-            'company_id'              => $companyId,
-            'jobs_page_url'           => '',
-            'jobs_page_title'         => '',
-            'jobs_page_intro'         => '',
-            'jobs_page_contact_email' => '',
-            'jobs_page_show_salary'   => 1,
-            'jobs_page_enabled'       => 1,
+            'company_id'                 => $companyId,
+            'jobs_page_url'              => '',
+            'jobs_page_title'            => '',
+            'jobs_page_intro'            => '',
+            'jobs_page_contact_email'    => '',
+            'jobs_page_show_salary'      => 1,
+            'jobs_page_enabled'          => 1,
+            'email_tpl_accepted_subject' => null,
+            'email_tpl_accepted_body'    => null,
+            'email_tpl_rejected_subject' => null,
+            'email_tpl_rejected_body'    => null,
+            'email_sender_name'          => null,
         ];
     }
 }

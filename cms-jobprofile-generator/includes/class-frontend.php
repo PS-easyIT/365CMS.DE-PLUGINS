@@ -666,7 +666,9 @@ class CMS_JPG_Frontend
             return ['success' => false, 'error' => 'Datei konnte nicht gespeichert werden.'];
         }
 
-        return ['success' => true, 'path' => $destPath, 'token' => $token];
+        // Relativer Pfad (relativ zu UPLOADS_PATH / ABSPATH/uploads/) wird gespeichert,
+        // damit download_file() ihn korrekt mit dem Upload-Basisverzeichnis zusammensetzen kann.
+        return ['success' => true, 'path' => 'applications/' . $fileName, 'token' => $token];
     }
 
     /**

@@ -36,13 +36,22 @@ trait CMS_JPG_Page_Companies_Trait
                 } else {
                     $cid = (int) ($_POST['company_id'] ?? 0);
                     if ($cid > 0 && class_exists('CMS_JPG_Departments')) {
+                        // Bestehende Einstellungen laden – UPSERT schreibt alle 11 Felder;
+                        // E-Mail-Templates müssen bewahrt werden.
+                        $existing = CMS_JPG_Departments::instance()->get_company_settings($cid);
                         CMS_JPG_Departments::instance()->save_company_settings($cid, [
-                            'jobs_page_url'           => $_POST['jobs_page_url']           ?? '',
-                            'jobs_page_title'         => $_POST['jobs_page_title']         ?? '',
-                            'jobs_page_intro'         => $_POST['jobs_page_intro']         ?? '',
-                            'jobs_page_contact_email' => $_POST['jobs_page_contact_email'] ?? '',
+                            'jobs_page_url'           => sanitize_text_field($_POST['jobs_page_url']           ?? ''),
+                            'jobs_page_title'         => sanitize_text_field($_POST['jobs_page_title']         ?? ''),
+                            'jobs_page_intro'         => sanitize_text_field($_POST['jobs_page_intro']         ?? ''),
+                            'jobs_page_contact_email' => filter_var($_POST['jobs_page_contact_email'] ?? '', FILTER_SANITIZE_EMAIL),
                             'jobs_page_show_salary'   => isset($_POST['jobs_page_show_salary']) ? 1 : 0,
                             'jobs_page_enabled'       => isset($_POST['jobs_page_enabled'])     ? 1 : 0,
+                            // Bestehende E-Mail-Templates erhalten
+                            'email_sender_name'          => $existing->email_sender_name          ?? '',
+                            'email_tpl_accepted_subject' => $existing->email_tpl_accepted_subject ?? '',
+                            'email_tpl_accepted_body'    => $existing->email_tpl_accepted_body    ?? '',
+                            'email_tpl_rejected_subject' => $existing->email_tpl_rejected_subject ?? '',
+                            'email_tpl_rejected_body'    => $existing->email_tpl_rejected_body    ?? '',
                         ]);
                         $notice = 'Jobs-Seite Einstellungen gespeichert.';
                     }

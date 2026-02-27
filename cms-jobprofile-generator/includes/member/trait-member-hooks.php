@@ -55,6 +55,7 @@ trait CMS_JPG_Member_Hooks_Trait
         $router->addRoute('GET',  '/member/jobs/applications',         [$this, 'render_applications']);
         $router->addRoute('POST', '/member/jobs/applications/status',  [$this, 'ajax_update_status']);
         $router->addRoute('GET',  '/member/jobs/download/:token',      [$this, 'download_file']);
+        $router->addRoute('GET',  '/member/jobs/pdf/:id',              [$this, 'download_pdf']);
         $router->addRoute('GET',  '/member/jobs/settings',             [$this, 'render_settings']);
         $router->addRoute('POST', '/member/jobs/settings',             [$this, 'render_settings']);
         $router->addRoute('GET',  '/member/jobs/duplicate/:id',        [$this, 'render_duplicate']);
@@ -252,7 +253,11 @@ trait CMS_JPG_Member_Hooks_Trait
         $isSettings     = str_starts_with($uri, '/member/jobs/settings');
         $isCreate       = str_starts_with($uri, '/member/jobs/create');
         $isEdit         = str_starts_with($uri, '/member/jobs/edit');
-        $isMainJobs     = !$isApprovals && !$isApplications && !$isSettings && !$isCreate && !$isEdit;
+        $isPdf          = str_starts_with($uri, '/member/jobs/pdf');
+        $isDuplicate    = str_starts_with($uri, '/member/jobs/duplicate');
+        $isWorkflow     = str_starts_with($uri, '/member/jobs/workflow');
+        $isMainJobs     = !$isApprovals && !$isApplications && !$isSettings && !$isCreate && !$isEdit
+                          && !$isPdf && !$isDuplicate && !$isWorkflow;
 
         foreach ($items as &$item) {
             switch ($item['slug'] ?? '') {

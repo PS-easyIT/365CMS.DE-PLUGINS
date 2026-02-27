@@ -25,38 +25,44 @@ trait CMS_JPG_Member_Applications_Trait
     {
         $this->require_auth();
 
-        $jobId = (int) ($_GET['job_id'] ?? 0);
+        $jobId   = (int) ($_GET['job_id'] ?? 0);
+        $isAdmin = method_exists($this->auth, 'isAdmin') ? $this->auth->isAdmin() : false;
 
         try {
-            // Nur Bewerbungen zu eigenen Jobs laden (data silo)
-            $sql = "SELECT a.id, a.applicant_name, a.applicant_email, a.cover_letter,
+            // Admins sehen alle Bewerbungen; Member nur Bewerbungen zu ihren eigenen Jobs (data silo)
+            $sql = "SELECT a.id, a.applicant_name, a.applicant_email, a.applicant_phone, a.cover_letter,
                            a.cv_file_token, a.status, a.created_at,
                            p.title AS job_title, p.id AS job_id
                     FROM {$this->p}jpg_applications a
-                    INNER JOIN {$this->p}jpg_profiles p ON p.id = a.job_id
-                    WHERE p.created_by = ?";
-            $params = [$this->userId];
-
+                    INNER JOIN {$this->p}jpg_profiles p ON p.id = a.job_id";
+            $params = [];
+            if (!$isAdmin) {
+                $sql     .= ' WHERE p.created_by = ?';
+                $params[] = $this->userId;
+            }
             if ($jobId > 0) {
-                $sql    .= ' AND a.job_id = ?';
+                $sql     .= ($isAdmin ? ' WHERE' : ' AND') . ' a.job_id = ?';
                 $params[] = $jobId;
             }
-
             $sql .= ' ORDER BY a.created_at DESC';
-
             $applications = $this->db->get_results($sql, $params) ?: [];
         } catch (\Throwable $e) {
             $applications = [];
         }
 
-        // Eigene Jobs für Filter-Dropdown
+        // Jobs für Filter-Dropdown (Admins: alle; Member: eigene)
         try {
-            $myJobs = $this->db->get_results(
-                "SELECT id, title FROM {$this->p}jpg_profiles
-                 WHERE created_by = ? AND status = 'published'
-                 ORDER BY title ASC",
-                [$this->userId]
-            ) ?: [];
+            $myJobs = $isAdmin
+                ? ($this->db->get_results(
+                    "SELECT id, title FROM {$this->p}jpg_profiles
+                     WHERE status = 'published' ORDER BY title ASC"
+                  ) ?: [])
+                : ($this->db->get_results(
+                    "SELECT id, title FROM {$this->p}jpg_profiles
+                     WHERE created_by = ? AND status = 'published'
+                     ORDER BY title ASC",
+                    [$this->userId]
+                  ) ?: []);
         } catch (\Throwable $e) {
             $myJobs = [];
         }
@@ -89,23 +95,26 @@ trait CMS_JPG_Member_Applications_Trait
             exit;
         }
 
-        // Data-Silo: prüfen ob die Bewerbung zu einem eigenen Job gehört
-        try {
-            $ownerCheck = $this->db->get_var(
-                "SELECT a.id FROM {$this->p}jpg_applications a
-                 INNER JOIN {$this->p}jpg_profiles p ON p.id = a.job_id
-                 WHERE a.id = ? AND p.created_by = ?",
-                [$appId, $this->userId]
-            );
-        } catch (\Throwable $e) {
-            echo json_encode(['success' => false, 'error' => 'Datenbankfehler.']);
-            exit;
-        }
+        $isAdmin = method_exists($this->auth, 'isAdmin') ? $this->auth->isAdmin() : false;
 
-        if (!$ownerCheck) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Kein Zugriff.']);
-            exit;
+        // Data-Silo: Bewerbung muss zu eigenem Job gehören (Admins bypassen diesen Check)
+        if (!$isAdmin) {
+            try {
+                $ownerCheck = $this->db->get_var(
+                    "SELECT a.id FROM {$this->p}jpg_applications a
+                     INNER JOIN {$this->p}jpg_profiles p ON p.id = a.job_id
+                     WHERE a.id = ? AND p.created_by = ?",
+                    [$appId, $this->userId]
+                );
+            } catch (\Throwable $e) {
+                echo json_encode(['success' => false, 'error' => 'Datenbankfehler.']);
+                exit;
+            }
+            if (!$ownerCheck) {
+                http_response_code(403);
+                echo json_encode(['success' => false, 'error' => 'Kein Zugriff.']);
+                exit;
+            }
         }
 
         try {
@@ -120,7 +129,8 @@ trait CMS_JPG_Member_Applications_Trait
                 try {
                     $app = $this->db->get_row(
                         "SELECT a.applicant_name, a.applicant_email,
-                                p.title AS job_title, u.email AS owner_email
+                                p.title AS job_title, p.created_by,
+                                u.email AS owner_email
                          FROM {$this->p}jpg_applications a
                          INNER JOIN {$this->p}jpg_profiles p ON p.id = a.job_id
                          LEFT JOIN {$this->p}users u ON u.id = p.created_by
@@ -128,17 +138,47 @@ trait CMS_JPG_Member_Applications_Trait
                         [$appId]
                     );
                     if ($app && filter_var($app->applicant_email ?? '', FILTER_VALIDATE_EMAIL)) {
-                        $statusLabel = $newStatus === 'accepted' ? 'angenommen' : 'abgelehnt';
-                        $fromEmail   = filter_var($app->owner_email ?? '', FILTER_VALIDATE_EMAIL)
+                        $fromEmail = filter_var($app->owner_email ?? '', FILTER_VALIDATE_EMAIL)
                             ? $app->owner_email
                             : 'noreply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
-                        $subject = 'Update zu Ihrer Bewerbung: ' . ($app->job_title ?? '');
-                        $body    = "Sehr geehrte(r) " . ($app->applicant_name ?? 'Bewerber(in)') . ",\r\n\r\n"
-                                 . "wir möchten Sie über den aktuellen Stand Ihrer Bewerbung informieren.\r\n\r\n"
-                                 . "Stelle: " . ($app->job_title ?? '') . "\r\n"
-                                 . "Status: Ihre Bewerbung wurde " . $statusLabel . ".\r\n\r\n"
-                                 . "Mit freundlichen Grüßen";
-                        $headers = "From: " . $fromEmail . "\r\nContent-Type: text/plain; charset=UTF-8";
+
+                        // Firmenspezifische E-Mail-Templates laden (Phase 13.1)
+                        $settings            = null;
+                        $senderName          = '';
+                        $companyNameFallback = '';
+                        if (class_exists('CMS_JPG_Departments')) {
+                            try {
+                                $companyRow = $this->db->get_row(
+                                    "SELECT id, name FROM {$this->p}jpg_companies WHERE user_id = ?",
+                                    [(int)($app->created_by ?? 0)]
+                                );
+                                if ($companyRow) {
+                                    $settings            = CMS_JPG_Departments::instance()->get_company_settings((int)$companyRow->id);
+                                    $senderName          = $settings->email_sender_name ?? '';
+                                    $companyNameFallback = $companyRow->name ?? '';
+                                }
+                            } catch (\Throwable $e) { /* ignore */ }
+                        }
+
+                        $jobTitle     = $app->job_title ?? '';
+                        $appName      = $app->applicant_name ?? 'Bewerber(in)';
+                        $placeholders = ['{name}' => $appName, '{stelle}' => $jobTitle, '{firma}' => $companyNameFallback];
+
+                        $defaultSubject = 'Update zu Ihrer Bewerbung: ' . $jobTitle;
+                        if ($newStatus === 'accepted') {
+                            $rawSubject = $settings->email_tpl_accepted_subject ?? '';
+                            $rawBody    = $settings->email_tpl_accepted_body
+                                ?? "Sehr geehrte(r) {name},\r\n\r\nwir freuen uns, Ihnen mitteilen zu können, dass Ihre Bewerbung auf die Stelle \"{stelle}\" bei {firma} erfolgreich war.\r\n\r\nWir werden uns in Kürze mit Ihnen in Verbindung setzen.\r\n\r\nMit freundlichen Grüßen\r\n{firma}";
+                        } else {
+                            $rawSubject = $settings->email_tpl_rejected_subject ?? '';
+                            $rawBody    = $settings->email_tpl_rejected_body
+                                ?? "Sehr geehrte(r) {name},\r\n\r\nvielen Dank für Ihre Bewerbung auf die Stelle \"{stelle}\" bei {firma}.\r\n\r\nNach sorgfältiger Prüfung müssen wir Ihnen leider mitteilen, dass wir Ihre Bewerbung nicht weiter verfolgen werden.\r\n\r\nWir wünschen Ihnen viel Erfolg.\r\n\r\nMit freundlichen Grüßen\r\n{firma}";
+                        }
+                        $subject  = str_replace(array_keys($placeholders), array_values($placeholders), $rawSubject !== '' ? $rawSubject : $defaultSubject);
+                        $body     = str_replace(array_keys($placeholders), array_values($placeholders), $rawBody);
+                        $fromName = $senderName !== '' ? $senderName : $companyNameFallback;
+                        $headers  = ($fromName !== '' ? 'From: ' . $fromName . ' <' . $fromEmail . '>' : 'From: ' . $fromEmail)
+                                  . "\r\nContent-Type: text/plain; charset=UTF-8";
                         @mail($app->applicant_email, $subject, $body, $headers);
                     }
                 } catch (\Throwable $e) { /* Mailer ist nicht kritisch */ }
@@ -180,8 +220,9 @@ trait CMS_JPG_Member_Applications_Trait
             exit;
         }
 
-        // Data-Silo: nur eigene Jobs
-        if (!$application || (int) $application->created_by !== $this->userId) {
+        // Data-Silo: nur eigene Jobs – Admins überspringen diesen Check
+        $isAdmin = method_exists($this->auth, 'isAdmin') ? $this->auth->isAdmin() : false;
+        if (!$application || (!$isAdmin && (int) $application->created_by !== $this->userId)) {
             http_response_code(403);
             echo 'Kein Zugriff.';
             exit;
@@ -224,22 +265,35 @@ trait CMS_JPG_Member_Applications_Trait
     {
         $this->userId = (int) $user->id;
         $jobId        = (int) ($_GET['job_id'] ?? 0);
+        $isAdmin      = method_exists($this->auth, 'isAdmin') ? $this->auth->isAdmin() : false;
         try {
-            $sql    = "SELECT a.id, a.applicant_name, a.applicant_email, a.cover_letter,
+            // Admins sehen alle Bewerbungen; Member nur eigene
+            $sql    = "SELECT a.id, a.applicant_name, a.applicant_email, a.applicant_phone, a.cover_letter,
                               a.cv_file_token, a.status, a.created_at,
                               p.title AS job_title, p.id AS job_id
                        FROM {$this->p}jpg_applications a
-                       INNER JOIN {$this->p}jpg_profiles p ON p.id = a.job_id
-                       WHERE p.created_by = ?";
-            $params = [$this->userId];
-            if ($jobId > 0) { $sql .= ' AND a.job_id = ?'; $params[] = $jobId; }
+                       INNER JOIN {$this->p}jpg_profiles p ON p.id = a.job_id";
+            $params = [];
+            if (!$isAdmin) {
+                $sql    .= ' WHERE p.created_by = ?';
+                $params[] = $this->userId;
+            }
+            if ($jobId > 0) {
+                $sql    .= ($isAdmin ? ' WHERE' : ' AND') . ' a.job_id = ?';
+                $params[] = $jobId;
+            }
             $sql .= ' ORDER BY a.created_at DESC';
             $applications = $this->db->get_results($sql, $params) ?: [];
-            $myJobs = $this->db->get_results(
-                "SELECT id, title FROM {$this->p}jpg_profiles
-                 WHERE created_by = ? AND status = 'published' ORDER BY title ASC",
-                [$this->userId]
-            ) ?: [];
+            $myJobs = $isAdmin
+                ? ($this->db->get_results(
+                    "SELECT id, title FROM {$this->p}jpg_profiles
+                     WHERE status = 'published' ORDER BY title ASC"
+                  ) ?: [])
+                : ($this->db->get_results(
+                    "SELECT id, title FROM {$this->p}jpg_profiles
+                     WHERE created_by = ? AND status = 'published' ORDER BY title ASC",
+                    [$this->userId]
+                  ) ?: []);
         } catch (\Throwable $e) {
             $applications = [];
             $myJobs       = [];

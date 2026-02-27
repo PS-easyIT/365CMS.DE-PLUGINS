@@ -4,7 +4,7 @@ declare(strict_types=1);
  * Plugin Name: CMS Job Profile Generator
  * Plugin URI:  https://365network.de/cms-jobprofile-generator
  * Description: Vollständiger Job-Profil-Generator mit Bibliotheken, Vorlagen und Workflow
- * Version:     0.9.2
+ * Version:     0.9.6
  * Author:      365CMS
  * Author URI:  https://365network.de
  *
@@ -16,8 +16,8 @@ if (!defined('ABSPATH')) {
 }
 
 // ── Konstanten ────────────────────────────────────────────────────────────────
-define('JPG_VERSION',     '0.9.2');
-define('JPG_DB_VERSION',  '6');
+define('JPG_VERSION',     '0.9.6');
+define('JPG_DB_VERSION',  '7');
 define('JPG_DIR',         dirname(__FILE__) . '/');
 define('JPG_URL',         '/plugins/cms-jobprofile-generator/');
 define('JPG_TEXT_DOMAIN', 'cms-jobprofile-generator');
@@ -100,6 +100,7 @@ final class CMS_JobProfileGenerator
             CMS\Hooks::addAction('plugin_activated',   [$this, 'on_activation'],            10);
             CMS\Hooks::addAction('plugin_uninstalled', [$this, 'on_uninstall'],             10);
             CMS\Hooks::addAction('cms_admin_menu',     [CMS_JPG_Admin_Menu::class, 'register'], 10);
+            CMS\Hooks::addAction('register_routes',    [$this, 'register_admin_ajax_routes'],     9);
             CMS\Hooks::addAction('register_routes',    [CMS_JPG_Frontend::class, 'instance'],   10);
             CMS\Hooks::addAction('register_routes',    [CMS_JPG_Member_Controller::class, 'instance'], 11);
             CMS\Hooks::addAction('head',               [$this, 'enqueue_styles'],           20);
@@ -107,6 +108,20 @@ final class CMS_JobProfileGenerator
             // Verwaiste Daten: Jobs auf Draft setzen, wenn Firma gelöscht wird
             CMS\Hooks::addAction('company_deleted',    [$this, 'on_company_deleted'],       10);
         }
+    }
+
+    /**
+     * Admin-AJAX-Routen registrieren (laufen vor dem HTML-Layout-Rendering,
+     * damit JSON-Antworten sauber ohne HTML-Header möglich sind).
+     */
+    public function register_admin_ajax_routes(): void
+    {
+        if (!class_exists('CMS\Router')) {
+            return;
+        }
+        $r = \CMS\Router::instance();
+        // POST /api/jpg/admin/users-action → AJAX-Handler für Benutzer & Mandanten
+        $r->addRoute('POST', '/api/jpg/admin/users-action', [CMS_JPG_Admin_Pages::class, 'handle_users_ajax']);
     }
 
     public function on_activation(string $plugin): void

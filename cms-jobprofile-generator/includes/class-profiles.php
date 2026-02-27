@@ -135,6 +135,8 @@ class CMS_JPG_Profiles
             $fields['archived_at'] = date('Y-m-d H:i:s');
         }
 
+        $isNew = ($id === 0);
+
         if ($id > 0) {
             // Update: Slug NICHT neu generieren – bestehende öffentliche URLs bleiben erhalten.
             // Slug kann via $data['slug'] explizit überschrieben werden.
@@ -161,6 +163,14 @@ class CMS_JPG_Profiles
 
             // Subscription-Nutzung aktualisieren
             $this->update_subscription_usage($fields['created_by']);
+        }
+
+        // Hooks feuern
+        if ($id > 0 && class_exists('CMS\\Hooks')) {
+            \CMS\Hooks::doAction('jpg_profile_saved', $id, $data, $isNew);
+            if ($fields['status'] === 'published') {
+                \CMS\Hooks::doAction('jpg_profile_published', $id);
+            }
         }
 
         return $id;
@@ -190,6 +200,10 @@ class CMS_JPG_Profiles
         // Subscription-Nutzung aktualisieren
         if ($createdBy > 0) {
             $this->update_subscription_usage($createdBy);
+        }
+
+        if (class_exists('CMS\\Hooks')) {
+            \CMS\Hooks::doAction('jpg_profile_deleted', $id);
         }
 
         return true;

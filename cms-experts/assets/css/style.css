@@ -180,7 +180,7 @@
     display: flex;
     gap: 16px;
     align-items: flex-start;
-    padding: 16px;
+    padding: 22px 16px 16px;  /* padding-top: 22px hält Abstand zu den absolut-positionierten Badges */
     border-bottom: 1px solid var(--expert-border-light);
     background: #f2e7cd;
 }
@@ -193,7 +193,7 @@
     background: var(--expert-bg-light);
     flex-shrink: 0;
     position: relative;
-    margin-top: 15px;
+    margin-top: 0; /* war 15px: Verschiebung entfernt */
 }
 
 .expert-card--overview .expert-card-avatar img {
@@ -219,7 +219,7 @@
     flex-direction: column;
     gap: 6px;
     min-width: 0;
-    margin-top: -5px;
+    margin-top: 0; /* war -5px: negativer Versatz entfernt */
     text-align: left;
     width: 100%;
 }
@@ -604,9 +604,22 @@
 
 .experts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    /* Immer exakt 3 Spalten – auch bei weniger Einträgen bleiben Slots frei */
+    grid-template-columns: repeat(3, 1fr);
     gap: 24px;
     padding: 0 1.5rem;
+}
+
+/* Responsive: 2 Spalten ab 900 px, 1 Spalte ab 580 px */
+@media (max-width: 900px) {
+    .experts-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 580px) {
+    .experts-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* No Results */

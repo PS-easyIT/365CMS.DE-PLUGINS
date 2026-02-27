@@ -18,6 +18,7 @@ if (!defined('ABSPATH')) exit;
  * @var array<int>            $deptBenefitIds       Benefit-IDs der Abteilung
  * @var array<int>            $deptReqIds           Anforderungs-IDs der Abteilung
  * @var string                $csrfDepartments      CSRF-Token (action: member_company_departments)
+ * @var string                $csrfEmailTpl         CSRF-Token (action: member_company_email_tpl)
  * @var string                $baseUrl             Basis-URL (z. B. /member/plugin/member-jobs)
  * @var string                $notice
  * @var string                $error
@@ -40,6 +41,7 @@ $selectedDeptId      = $selectedDeptId ?? 0;
 $deptBenefitIds      = $deptBenefitIds ?? [];
 $deptReqIds          = $deptReqIds ?? [];
 $csrfDepartments     = $csrfDepartments ?? '';
+$csrfEmailTpl        = $csrfEmailTpl ?? '';
 $allDeptBenefitIds   = $allDeptBenefitIds ?? [];
 $allDeptReqIds       = $allDeptReqIds     ?? [];
 $companySettings     = $companySettings   ?? null;
@@ -84,11 +86,12 @@ $tabUrl     = $isInline
 <div style="display:flex;gap:.25rem;margin-bottom:1.5rem;border-bottom:2px solid #e2e8f0;">
     <?php
     $tabs = [
-        'info'        => ['icon' => '📋', 'label' => 'Firmeninformationen'],
-        'benefits'    => ['icon' => '🎁', 'label' => 'Standard-Benefits'],
-        'departments' => ['icon' => '🏢', 'label' => 'Abteilungen'],
-        'team'        => ['icon' => '👥', 'label' => 'Team-Genehmiger'],
-        'jobs-page'   => ['icon' => '🔗', 'label' => 'Jobs-Seite'],
+        'info'            => ['icon' => '📋', 'label' => 'Firmeninformationen'],
+        'benefits'        => ['icon' => '🎁', 'label' => 'Standard-Benefits'],
+        'departments'     => ['icon' => '🏢', 'label' => 'Abteilungen'],
+        'team'            => ['icon' => '👥', 'label' => 'Team-Genehmiger'],
+        'jobs-page'       => ['icon' => '🔗', 'label' => 'Jobs-Seite'],
+        'email-templates' => ['icon' => '✉️', 'label' => 'E-Mail Vorlagen'],
     ];
     foreach ($tabs as $tabKey => $tabDef):
         $isActive = $activeTab === $tabKey;
@@ -384,7 +387,7 @@ $tabUrl     = $isInline
 </form>
 
 <!-- ══ Tab: Team-Genehmiger (Phase 9) ══════════════════════════════ -->
-<?php if ($activeTab === 'team'): ?>
+<?php elseif ($activeTab === 'team'): ?>
 
 <div class="admin-card" style="background:#fffbeb;border-color:#fde68a;padding:1rem 1.25rem;margin-bottom:1.25rem;">
     <p style="margin:0;font-size:.875rem;color:#92400e;">
@@ -473,10 +476,8 @@ $tabUrl     = $isInline
 </div>
 <?php endif; ?>
 
-<?php endif; ?><!-- /activeTab team -->
-
 <!-- ══ Tab: Abteilungen ══════════════════════════════════ -->
-<?php if ($activeTab === 'departments'): ?>
+<?php elseif ($activeTab === 'departments'): ?>
 
 <div class="admin-card">
     <h3>🏢 Abteilungen deiner Firma</h3>
@@ -623,10 +624,8 @@ $tabUrl     = $isInline
 </div>
 <?php endforeach; ?>
 
-<?php endif; ?><!-- /activeTab departments -->
-
 <!-- ══ Tab: Jobs-Seite ══════════════════════════════════ -->
-<?php if ($activeTab === 'jobs-page'): ?>
+<?php elseif ($activeTab === 'jobs-page'): ?>
 <div class="admin-card">
     <h3>🔗 Karriere- / Jobs-Seite</h3>
     <p style="color:#64748b;font-size:.875rem;margin-bottom:1.25rem;">
@@ -692,8 +691,68 @@ $tabUrl     = $isInline
         <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
     </form>
 </div>
-<?php endif; ?><!-- /activeTab jobs-page -->
+<!-- ══ Tab: E-Mail Vorlagen ══════════════════════════════════════════ -->
+<?php elseif ($activeTab === 'email-templates'): ?>
+<div class="admin-card">
+    <h3>✉️ E-Mail Vorlagen</h3>
+    <p style="color:#64748b;font-size:.875rem;margin-bottom:1.25rem;">
+        Passe die automatischen E-Mails an, die an Bewerber gesendet werden.<br>
+        Verfügbare Platzhalter: <code>{name}</code> (Bewerber-Name), <code>{stelle}</code> (Stellentitel),
+        <code>{firma}</code> (Firmenname).
+    </p>
+    <form method="post" action="<?php echo $esc($tabUrl . '?tab=email-templates'); ?>" class="admin-form">
+        <input type="hidden" name="_jpg_csrf"    value="<?php echo $esc($csrfEmailTpl); ?>">
+        <input type="hidden" name="settings_tab" value="email-templates">
 
+        <div class="form-group">
+            <label class="form-label">Absender-Name</label>
+            <input type="text" name="email_sender_name" class="form-control"
+                   value="<?php echo $esc($companySettings->email_sender_name ?? ''); ?>"
+                   placeholder="z.B. HR Team bei Muster GmbH">
+            <small class="form-text">Wird als Absender-Name der E-Mail angezeigt (optional, Standard: Firmenname).</small>
+        </div>
+
+        <div class="admin-card" style="background:#f0fdf4;border:1px solid #bbf7d0;margin-bottom:1.5rem;">
+            <h4 style="margin-top:0;color:#065f46;">✅ Zusage-Mail (Status: Angenommen)</h4>
+
+            <div class="form-group">
+                <label class="form-label">Betreff <span style="color:#ef4444;">*</span></label>
+                <input type="text" name="email_tpl_accepted_subject" class="form-control"
+                       value="<?php echo $esc($companySettings->email_tpl_accepted_subject ?? ''); ?>"
+                       placeholder="Update zu Ihrer Bewerbung: {stelle}">
+                <small class="form-text">Leer lassen = Standard-Betreff wird verwendet.</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">E-Mail Text</label>
+                <textarea name="email_tpl_accepted_body" class="form-control" rows="6"
+                          placeholder="Sehr geehrte(r) {name},&#10;&#10;wir freuen uns, Ihnen mitteilen zu können, dass Ihre Bewerbung auf die Stelle &quot;{stelle}&quot; bei {firma} erfolgreich war.&#10;&#10;Wir werden uns in Kürze mit Ihnen in Verbindung setzen.&#10;&#10;Mit freundlichen Grüßen&#10;{firma}"><?php echo $esc($companySettings->email_tpl_accepted_body ?? ''); ?></textarea>
+                <small class="form-text">Leer lassen = Standard-Text wird verwendet. Nur Plain-Text, keine HTML-Tags.</small>
+            </div>
+        </div>
+
+        <div class="admin-card" style="background:#fef2f2;border:1px solid #fecaca;margin-bottom:1.5rem;">
+            <h4 style="margin-top:0;color:#991b1b;">❌ Absage-Mail (Status: Abgelehnt)</h4>
+
+            <div class="form-group">
+                <label class="form-label">Betreff</label>
+                <input type="text" name="email_tpl_rejected_subject" class="form-control"
+                       value="<?php echo $esc($companySettings->email_tpl_rejected_subject ?? ''); ?>"
+                       placeholder="Update zu Ihrer Bewerbung: {stelle}">
+                <small class="form-text">Leer lassen = Standard-Betreff wird verwendet.</small>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">E-Mail Text</label>
+                <textarea name="email_tpl_rejected_body" class="form-control" rows="6"
+                          placeholder="Sehr geehrte(r) {name},&#10;&#10;vielen Dank für Ihre Bewerbung auf die Stelle &quot;{stelle}&quot; bei {firma}.&#10;&#10;Nach sorgfältiger Prüfung müssen wir Ihnen leider mitteilen, dass wir Ihre Bewerbung nicht weiter verfolgen werden.&#10;&#10;Wir wünschen Ihnen für Ihre weiteren Bewerbungen viel Erfolg.&#10;&#10;Mit freundlichen Grüßen&#10;{firma}"><?php echo $esc($companySettings->email_tpl_rejected_body ?? ''); ?></textarea>
+                <small class="form-text">Leer lassen = Standard-Text wird verwendet.</small>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">💾 Vorlagen speichern</button>
+    </form>
+</div>
 <?php endif; ?><!-- /activeTab -->
 <?php endif; ?><!-- /company -->
 

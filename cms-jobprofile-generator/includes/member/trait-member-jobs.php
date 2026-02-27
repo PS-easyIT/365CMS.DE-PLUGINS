@@ -270,6 +270,7 @@ trait CMS_JPG_Member_Jobs_Trait
         echo '<meta name="viewport" content="width=device-width, initial-scale=1.0">' . "\n";
         echo '<title>Stellenanzeigen – ' . htmlspecialchars($siteName) . '</title>' . "\n";
         echo '<link rel="stylesheet" href="' . $siteUrl . '/assets/css/main.css">' . "\n";
+        echo '<link rel="stylesheet" href="' . $siteUrl . '/assets/css/admin.css?v=20260222b">' . "\n";
         echo '<link rel="stylesheet" href="' . $siteUrl . '/assets/css/member.css">' . "\n";
         if (function_exists('renderMemberSidebarStyles')) {
             renderMemberSidebarStyles();
@@ -488,7 +489,15 @@ trait CMS_JPG_Member_Jobs_Trait
         if ($id <= 0 || $this->userId === null) {
             return null;
         }
+        $isAdmin = method_exists($this->auth, 'isAdmin') ? $this->auth->isAdmin() : false;
         try {
+            if ($isAdmin) {
+                // Admins dürfen jedes Profil laden und bearbeiten
+                return $this->db->get_row(
+                    "SELECT * FROM {$this->p}jpg_profiles WHERE id = ?",
+                    [$id]
+                );
+            }
             return $this->db->get_row(
                 "SELECT * FROM {$this->p}jpg_profiles
                  WHERE id = ? AND created_by = ?",
@@ -507,5 +516,55 @@ trait CMS_JPG_Member_Jobs_Trait
             http_response_code(403);
             echo '<div class="alert alert-error">❌ Limit erreicht. Bitte upgraden Sie Ihr Abo.</div>';
         }
+    }
+
+    /**
+     * GET /member/jobs/pdf/:id – PDF-Export für Inserenten (Phase 14.3)
+     *
+     * Gibt das Stellenprofil als PDF aus (mPDF falls verfügbar, sonst HTML-Fallback).
+     */
+    public function download_pdf(string $id): void
+    {
+        $this->require_auth();
+
+        $profile = $this->load_own_profile((int)$id);
+        if (!$profile) {
+            http_response_code(403);
+            echo 'Kein Zugriff auf dieses Profil.';
+            exit;
+        }
+
+        if (!class_exists('CMS_JPG_Export')) {
+            http_response_code(500);
+            echo 'Export-Klasse nicht geladen.';
+            exit;
+        }
+
+        $html = CMS_JPG_Export::instance()->render_html((int)$id);
+
+        if (class_exists('\\Mpdf\\Mpdf')) {
+            try {
+                $mpdf = new \Mpdf\Mpdf([
+                    'mode'        => 'utf-8',
+                    'format'      => 'A4',
+                    'margin_top'  => 15,
+                    'margin_left' => 15,
+                    'margin_right'=> 15,
+                    'margin_bottom' => 15,
+                ]);
+                $mpdf->SetTitle($profile->title ?? 'Stellenprofil');
+                $mpdf->WriteHTML($html);
+                $filename = 'job-' . preg_replace('/[^a-z0-9\-_]/i', '-', $profile->title ?? 'profil') . '.pdf';
+                $mpdf->Output($filename, 'D');
+                exit;
+            } catch (\Throwable $e) {
+                // Fallthrough zu HTML-Ausgabe
+            }
+        }
+
+        // HTML-Fallback
+        header('Content-Type: text/html; charset=UTF-8');
+        echo $html;
+        exit;
     }
 }

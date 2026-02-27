@@ -5,6 +5,57 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ---
 
+## [0.9.6] – 2026-02-27
+
+### Behoben
+- **Member-Dashboard Einstellungen: Tabs „Team-Genehmiger", „Abteilungen", „Jobs-Seite" und „E-Mail Vorlagen" zeigen keinen Inhalt** — Die vier Tab-Blöcke in `views/member/page-company-settings.php` waren als eigenständige `if ($activeTab === 'xxx'):`-Blöcke angelegt, aber strukturell *innerhalb* des `elseif ($activeTab === 'benefits'):`-Zweigs verschachtelt (kein trennendes `endif;` nach dem Benefits-Formular). Sobald ein anderer Tab als `info` oder `benefits` aktiv war, schlug die äußere `elseif`-Bedingung fehl und die gesamten Inhalte blieben ungerendert – sichtbar war nur die Statistik-Leiste mit dem „➕ Neue Stelle"-Button. Fix: Alle vier Blöcke wurden in `elseif`-Zweige derselben Kette umgewandelt (`if info / elseif benefits / elseif team / elseif departments / elseif jobs-page / elseif email-templates / endif`).
+- **Member-Dashboard Einstellungen: Firmendaten wurden nicht geladen** — `render_settings_inline()` prüfte, ob `cms-companies` in `PluginManager::getActivePlugins()` enthalten ist. In Umgebungen, in denen `CMS/plugins/` leer ist oder das Plugin nicht in der `{prefix}settings`-Tabelle als aktiv eingetragen ist, blieb `$company = null` → alle Tabs zeigten den Empty-State „Kein Firmenprofil". `render_company_inline()` hatte diesen Guard nie → daher funktionierte nur die Firmenübersicht. Fix: PluginManager-Check entfernt; Firma wird analog zu `render_company_inline()` direkt per DB-Query geladen.
+- **Plugin-Sektionen im Member-Dashboard ungestylt** — `CMS/member/plugin-section.php` lud nur `main.css` + `member.css`. Der Settings-View nutzt `.admin-card`, `.form-control`, `.btn`, `.tab-btn`, `.alert` aus `admin.css` → Formulare und Cards waren vollständig ungestylt. `admin.css?v=20260222b` ergänzt.
+
+### Geändert
+- **Version:** `0.9.5` → `0.9.6`
+- **`views/member/page-company-settings.php`:** `if/elseif`-Kette für alle 6 Tabs korrigiert.
+- **`includes/member/trait-member-settings.php`:** PluginManager-Guard in `render_settings_inline()` entfernt.
+- **`CMS/member/plugin-section.php` (Core):** `admin.css` in `<head>` ergänzt.
+
+---
+
+## [0.9.5] – 2026-02-28
+
+### Behoben
+- **Benutzer & Mandanten: Modal öffnet sich weiterhin nicht** — `jpgOpenModal()` und `jpgCloseModal()` waren ausschließlich in `jobprofile-admin.js` definiert, das mit `defer`-Attribut erst *nach* dem vollständigen HTML-Parsing ausgeführt wird. Das Inline-`<script>` in `page-users.php` lief jedoch sofort beim Parsen, sodass beim Klick auf „Bearbeiten" (vor dem defer-Ladeabschluss) ein `ReferenceError: jpgOpenModal is not defined` entstand und das Modal sich nie öffnete. Fix: `jpgOpenModal`, `jpgCloseModal` sowie die Backdrop-click- und Escape-Handler werden jetzt direkt im Inline-Script von `page-users.php` definiert.
+- **AJAX-Fallback auf nativen POST** — Wenn `jpgSubmitUserAction` eine Nicht-JSON-Antwort (z. B. 404-HTML bei nicht registrierter Route) oder einen Netzwerkfehler erhält, fällt der Code nun auf einen nativen `formEl.submit()` zurück, sodass der bereits funktionierende POST-Handler in `render_users()` greift.
+- **Ausgabepuffer in `handle_users_ajax()`** — `ob_end_clean()` räumt etwaige vorherige Ausgaben auf, bevor der `Content-Type: application/json`-Header gesetzt wird. Verhindert „headers already sent"-Warnungen und kaputte JSON-Antworten.
+- **CSRF-Reload-Fallback** — Schlägt der CSRF-Check im AJAX-Endpoint fehl (z. B. abgelaufene Session), erhält der Benutzer im Modal die Meldung „Sicherheitscheck fehlgeschlagen → Seite wird neu geladen" und die Seite lädt nach 2 s automatisch nach.
+
+### Geändert
+- **Version:** `0.9.4` → `0.9.5`
+- **`admin/views/page-users.php`:** Modal-Helfer inline ergänzt; `jpgSubmitUserAction` mit JSON-Parse-Fehlerbehandlung und nativem POST-Fallback robuster gemacht.
+- **`admin/modules/trait-page-users.php`:** `ob_end_clean()` am Anfang von `handle_users_ajax()`.
+
+---
+
+## [0.9.4] – 2026-02-27
+
+### Behoben
+- **Benutzer & Mandanten: „Bearbeiten"-Button wirkungslos** — Alle Aktionen im Bearbeitungs-Modal (Rolle setzen, Unternehmen zuweisen/anlegen) erfolgten per normaler HTML-Formular-POST. Da `renderPluginPage()` den HTML-Layout-Header *vor* dem Plugin-Callback rendert, war ein PHP-Redirect nach dem Speichern unmöglich → Modal schloss sich, Erfolgs-/Fehlermeldung erschien oben auf der Seite und wurde übersehen. Benutzer glaubten, die Aktion sei fehlgeschlagen.
+- **Firmen-Dropdown nur für unzugewiesene Firmen** — Die Abfrage `WHERE user_id IS NULL OR user_id = 0` ließ alle bereits vergebenen Firmen aus dem Dropdown verschwinden. Das gesamte „Vorhandenes Unternehmen zuweisen"-Formular war nicht sichtbar, sobald alle Firmen einem Benutzer zugewiesen waren. Benutzer konnten kein Unternehmen neu zuweisen, nur neue anlegen.
+- **Verwaister `</div>` am Ende von `page-users.php`** — Ein abschließender `</div>` nach dem `</script>`-Tag schloss `<div class="admin-content">` des Layouts vorzeitig. `renderAdminLayoutEnd()` erzeugte dadurch ein weiteres ungematchtes `</div>` → ungültiges HTML.
+
+### Hinzugefügt
+- **AJAX-Endpoint `POST /api/jpg/admin/users-action`** — Neue Route, registriert via `register_admin_ajax_routes()` in `CMS_JobProfileGenerator::init_hooks()`. Alle Modal-Aktionen (set_role, assign_company, create_company) werden jetzt per AJAX verarbeitet und liefern JSON zurück.
+- **Inline-Feedback im Modal** — Neues `#jpgModalFeedback`-Element im Modal zeigt Erfolgs- oder Fehlermeldung direkt im Modal ohne Seiten-Reload (grünes `alert-success` / rotes `alert-error`).
+- **Sofortige Tabellen-Aktualisierung ohne Reload** — Nach einem erfolgreichen Rollen-Save wird der `status-badge` des betreffenden Benutzers in der Tabelle per JS direkt aktualisiert. Bei Firmenzuweisung wird die Firmen-Spalte sofort befüllt.
+- **Alle Firmen im Dropdown** — `$unassignedCompanies`-Query lädt jetzt via `LEFT JOIN {prefix}users` alle Firmen mit Angabe des aktuell zugewiesenen Benutzers. Eine Neuzuweisung ist damit für jede vorhandene Firma möglich.
+
+### Geändert
+- **Version:** `0.9.3` → `0.9.4`
+- **`cms-jobprofile-generator.php`:** `register_admin_ajax_routes()`-Methode + Hook-Registrierung.
+- **`admin/modules/trait-page-users.php`:** Firmen-Query erweitert; `handle_users_ajax()` als neuer `public static`-Endpoint ergänzt.
+- **`admin/views/page-users.php`:** Script-Section auf AJAX umgestellt; Feedback-Div; Data-Attribute auf Role-Badge und Company-Zelle; Firma-Dropdown immer sichtbar.
+
+---
+
 ## [0.9.3] – 2026-02-26
 
 ### Geändert
@@ -13,6 +64,15 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Behoben
 - **CSRF-Bug Plugin-Rollen-Admin:** Nonce-Generierung in `trait-page-subscription.php` und `trait-page-users.php` nach POST-Handler verschoben. Vorher überschrieb `CMS\Security::generateToken()` den Session-Token vor der Verifikation → jeder Speichern-Klick scheiterte mit „Sicherheitscheck fehlgeschlagen".
+- **Standalone-Routen ohne CSS:** `render_with_layout()` (`trait-member-jobs.php`) und `output_settings_with_layout()` (`trait-member-settings.php`) luden nur `main.css` + `member.css`. Alle Member-Views verwenden jedoch `.admin-card`, `.btn`, `.form-control`, `.tab-btn`, `.alert` aus `admin.css` → Standalone-Routen (`/member/jobs`, `/member/jobs/create`, `/member/jobs/edit/:id`, `/member/settings`) waren vollständig ungestylt. `admin.css?v=20260222b` in beiden Layout-Funktionen ergänzt.
+- **CSRF-Bug Jobs-Seite Tab:** Der POST-Handler für `settingsTab === 'jobs-page'` prüfte `verify_token('member_company_departments')`, das Formular sendete aber den Token für `'member_company_settings'`. Jedes Speichern der Jobs-Seiten-Konfiguration scheiterte silent mit „Sicherheitscheck fehlgeschlagen". Fix: Korrekter Token-Name `'member_company_settings'`.
+- **Datenverlust E-Mail-Templates beim Jobs-Seite-Speichern:** `save_company_settings()` führt einen UPSERT über alle 11 Felder aus. Der Jobs-Seite-Handler übergab keine Template-Felder → gespeicherte E-Mail-Vorlagen wurden auf NULL zurückgesetzt. Fix: Bestehende Einstellungen werden vor dem UPSERT per `get_company_settings()` geladen und die Template-Felder bewahrt.
+- **Admin kann fremde Profile nicht bearbeiten/als PDF laden:** `load_own_profile()` filterte immer `AND created_by = ?`, auch für Admins. `render_list_inline()` zeigte Admins alle Profile, aber Klick auf ✏️ Bearbeiten lieferte „Profil nicht gefunden". Fix: Admins bypassen den Ownership-Filter.
+- **CV-Download-Pfad-Bug:** `handle_cv_upload()` speicherte den absoluten Systempfad in der DB. `download_file()` baute daraus via `$uploadsBase . ltrim($filePath, '/')` einen doppelten Pfad (z. B. `/uploads/var/www/html/uploads/applications/…`) → alle CV-Downloads schlugen mit 404 fehl. Fix: `handle_cv_upload()` speichert jetzt den relativen Pfad (`applications/<token>.ext`).
+- **Admin kann fremde Bewerbungen nicht sehen/verwalten:** `render_applications()`, `ajax_update_status()`, `download_file()` und `render_applications_inline()` in `trait-member-applications.php` filterten Bewerbungen immer per `p.created_by = ?`, auch für Admins. Fix: Admins bypassen den Ownership-Filter in allen vier Stellen.
+- **`fix_active_menu_states()`: falsch-positiver aktiver Zustand bei `/pdf/`, `/duplicate/`, `/workflow/`:** Diese Routen geben PDF-Binary bzw. Redirect aus (kein HTML), wurden aber in `$isMainJobs` nicht ausgeschlossen → theoretisch wäre „Meine Stellen" als aktiv markiert. Fix: `$isPdf`, `$isDuplicate`, `$isWorkflow` aus `$isMainJobs` ausgeschlossen.
+- **Admin-Bereich: Jobs-Seite löscht E-Mail-Templates (selbes Muster wie Bug 4):** `trait-page-companies.php` Handler `save_jobs_url` / `save_jobs_page_settings` übergab nur 6 Felder an `save_company_settings()` → alle 5 E-Mail-Template-Felder wurden bei jedem Admin-Speichervorgang auf NULL gesetzt. Fix: Bestehende Einstellungen laden und Template-Felder bewahren.
+- **Admin-Bereich: Jobs-Seite POST-Felder unsanitiert:** Gleiche 6 Felder wurden ohne `sanitize_text_field()` / `filter_var()` gespeichert. Fix: Sanitierung ergänzt.
 
 ---
 

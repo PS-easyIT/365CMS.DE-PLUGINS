@@ -242,6 +242,9 @@ for ($i = 6; $i >= 0; $i--) {
                     <a href="/jobs/<?php echo $esc($p->slug ?? ''); ?>"
                        target="_blank" class="btn btn-sm btn-secondary" title="Ansehen">👁️</a>
                     <?php endif; ?>
+                    <!-- Phase 14.3: PDF-Export im Member-Bereich -->
+                    <a href="/member/jobs/pdf/<?php echo (int)$p->id; ?>"
+                       target="_blank" class="btn btn-sm btn-secondary" title="Als PDF exportieren">📄</a>
                     <!-- Phase 14.2: 1-Click Duplizierer -->
                     <?php $dupUrl = str_contains($baseUrl, '?') ? $baseUrl . '&action=duplicate&id=' . (int)$p->id : $baseUrl . '/duplicate/' . (int)$p->id; ?>
                     <a href="<?php echo $esc($dupUrl); ?>"

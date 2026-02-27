@@ -645,10 +645,10 @@ Füge diese Punkte in deine bestehenden Listen ein:
 
 - [x] **13.1 Automatisierte Bewerber-Kommunikation**
     - [x] **Status-Mailer:** Automatischer Versand von Vorlagen-Mails bei Statusänderung (z. B. Einladung).
-    - [ ] **Template-Editor:** Mandanten können eigene E-Mail-Templates für Absagen/Zusagen hinterlegen.
+    - [x] **Template-Editor:** Mandanten können eigene E-Mail-Templates für Absagen/Zusagen hinterlegen.
 - [x] **13.2 Bulk- & Quick-Actions**
     - [x] **Massen-Aktionen:** Bulk-Löschen und Status-Updates für die Stellenliste.
-    - [ ] **Dashboard-Buttons:** Direkte Kontakt-Optionen (Anruf/Mail) im Bewerber-Widget.
+    - [x] **Dashboard-Buttons:** Direkte Kontakt-Optionen (Anruf/Mail) im Bewerber-Widget.
 
 ---
 
@@ -663,7 +663,7 @@ Füge diese Punkte in deine bestehenden Listen ein:
     - [x] **Inline-Slug-Editor:** URL-Slug direkt im Basisdaten-Tab editierbar machen.
 - [x] **14.3 Frontend-Suche**
     - [x] **Job-Filter:** Öffentliche Filter für Kategorien, Remote-Optionen und Gehaltsspannen.
-    - [ ] **Member-PDF:** PDF-Export-Button für Inserenten direkt im Member-Bereich.
+    - [x] **Member-PDF:** PDF-Export-Button für Inserenten direkt im Member-Bereich.
 
 ## Phase 15: ⚠️ Mandanten-Vorgaben (Tenant-Rules)
 1. **Admin-Blindheit:** Der Gesamt-Admin sieht Mandantenprofile (`is_private = 1`) standardmäßig NICHT. Die SQL-Abfragen im Admin-Dashboard müssen diesen Filter strikt beachten, außer der Parameter `show_private=1` ist gesetzt.

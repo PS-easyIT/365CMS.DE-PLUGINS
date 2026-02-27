@@ -62,6 +62,7 @@ trait CMS_JPG_Member_Settings_Trait
         echo '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">' . "\n";
         echo '<title>Einstellungen – ' . htmlspecialchars($siteName) . '</title>' . "\n";
         echo '<link rel="stylesheet" href="' . $siteUrl . '/assets/css/main.css">' . "\n";
+        echo '<link rel="stylesheet" href="' . $siteUrl . '/assets/css/admin.css?v=20260222b">' . "\n";
         echo '<link rel="stylesheet" href="' . $siteUrl . '/assets/css/member.css">' . "\n";
         if (function_exists('renderMemberSidebarStyles')) {
             renderMemberSidebarStyles();
@@ -97,27 +98,26 @@ trait CMS_JPG_Member_Settings_Trait
         $error   = '';
         $company = null;
 
-        // Aktiver Tab (info | benefits | team | departments | jobs-page)
-        $activeTab = in_array($_GET['tab'] ?? '', ['info', 'benefits', 'team', 'departments', 'jobs-page'], true)
+        // Aktiver Tab (info | benefits | team | departments | jobs-page | email-templates)
+        $activeTab = in_array($_GET['tab'] ?? '', ['info', 'benefits', 'team', 'departments', 'jobs-page', 'email-templates'], true)
             ? ($_GET['tab'])
             : 'info';
 
-        // Aktuelle Firma des Mitglieds laden (cms-companies)
-        if (class_exists('CMS\PluginManager')
-            && in_array('cms-companies', \CMS\PluginManager::instance()->getActivePlugins(), true)) {
-            try {
-                $db      = \CMS\Database::instance();
-                $p       = $db->getPrefix();
-                $company = $db->get_row(
-                    "SELECT id, name, email, phone, industry, company_size, description,
-                            logo_url, website, location_city, location_zip, location_country,
-                            founded_year, employee_count
-                     FROM {$p}companies WHERE user_id = ? LIMIT 1",
-                    [$this->userId]
-                );
-            } catch (\Throwable $e) {
-                $company = null;
-            }
+        // Aktuelle Firma des Mitglieds laden.
+        // Kein Plugin-Check nötig: die companies-Tabelle ist ein Core-Feature.
+        // render_company_inline lädt auf demselben Weg – ohne CMS\PluginManager-Guard.
+        try {
+            $db      = \CMS\Database::instance();
+            $p       = $db->getPrefix();
+            $company = $db->get_row(
+                "SELECT id, name, email, phone, industry, company_size, description,
+                        logo_url, website, location_city, location_zip, location_country,
+                        founded_year, employee_count
+                 FROM {$p}companies WHERE user_id = ? LIMIT 1",
+                [$this->userId]
+            );
+        } catch (\Throwable $e) {
+            $company = null;
         }
 
         // ── POST: Tab-spezifische Verarbeitung ─────────────────────────────
@@ -235,23 +235,58 @@ trait CMS_JPG_Member_Settings_Trait
                     }
                 }
             } elseif ($settingsTab === 'jobs-page') {
-                if (!$this->verify_token('member_company_departments')) {
+                if (!$this->verify_token('member_company_settings')) {
                     $error = 'Sicherheitscheck fehlgeschlagen.';
                 } elseif ($company === null) {
                     $error = 'Kein Firmenprofil gefunden.';
                 } elseif (!class_exists('CMS_JPG_Departments')) {
                     $error = 'Abteilungs-Modul nicht verfügbar.';
                 } else {
+                    // Bestehende Einstellungen laden, damit E-Mail-Templates nicht überschrieben werden
+                    $existing = CMS_JPG_Departments::instance()->get_company_settings((int) $company->id);
                     CMS_JPG_Departments::instance()->save_company_settings((int) $company->id, [
-                        'jobs_page_url'           => $_POST['jobs_page_url']           ?? '',
-                        'jobs_page_title'         => $_POST['jobs_page_title']         ?? '',
-                        'jobs_page_intro'         => $_POST['jobs_page_intro']         ?? '',
-                        'jobs_page_contact_email' => $_POST['jobs_page_contact_email'] ?? '',
-                        'jobs_page_show_salary'   => isset($_POST['jobs_page_show_salary'])  ? 1 : 0,
-                        'jobs_page_enabled'       => isset($_POST['jobs_page_enabled'])      ? 1 : 0,
+                        'jobs_page_url'              => $_POST['jobs_page_url']           ?? '',
+                        'jobs_page_title'            => $_POST['jobs_page_title']         ?? '',
+                        'jobs_page_intro'            => $_POST['jobs_page_intro']         ?? '',
+                        'jobs_page_contact_email'    => $_POST['jobs_page_contact_email'] ?? '',
+                        'jobs_page_show_salary'      => isset($_POST['jobs_page_show_salary']) ? 1 : 0,
+                        'jobs_page_enabled'          => isset($_POST['jobs_page_enabled'])     ? 1 : 0,
+                        // E-Mail-Templates aus bestehenden Einstellungen bewahren
+                        'email_sender_name'          => $existing->email_sender_name          ?? '',
+                        'email_tpl_accepted_subject' => $existing->email_tpl_accepted_subject ?? '',
+                        'email_tpl_accepted_body'    => $existing->email_tpl_accepted_body    ?? '',
+                        'email_tpl_rejected_subject' => $existing->email_tpl_rejected_subject ?? '',
+                        'email_tpl_rejected_body'    => $existing->email_tpl_rejected_body    ?? '',
                     ]);
                     $notice    = 'Jobs-Seite Einstellungen gespeichert.';
                     $activeTab = 'jobs-page';
+                }
+            } elseif ($settingsTab === 'email-templates') {
+                // Phase 13.1: E-Mail-Templates speichern
+                if (!$this->verify_token('member_company_email_tpl')) {
+                    $error = 'Sicherheitscheck fehlgeschlagen.';
+                } elseif ($company === null) {
+                    $error = 'Kein Firmenprofil gefunden.';
+                } elseif (!class_exists('CMS_JPG_Departments')) {
+                    $error = 'Modul nicht verfügbar.';
+                } else {
+                    // Bestehende Einstellungen laden um andere Felder nicht zu überschreiben
+                    $existingSettings = CMS_JPG_Departments::instance()->get_company_settings((int) $company->id);
+                    CMS_JPG_Departments::instance()->save_company_settings((int) $company->id, [
+                        'jobs_page_url'              => $existingSettings->jobs_page_url          ?? '',
+                        'jobs_page_title'            => $existingSettings->jobs_page_title        ?? '',
+                        'jobs_page_intro'            => $existingSettings->jobs_page_intro        ?? '',
+                        'jobs_page_contact_email'    => $existingSettings->jobs_page_contact_email ?? '',
+                        'jobs_page_show_salary'      => $existingSettings->jobs_page_show_salary  ?? 1,
+                        'jobs_page_enabled'          => $existingSettings->jobs_page_enabled      ?? 1,
+                        'email_sender_name'          => sanitize_text_field($_POST['email_sender_name']          ?? ''),
+                        'email_tpl_accepted_subject' => sanitize_text_field($_POST['email_tpl_accepted_subject'] ?? ''),
+                        'email_tpl_accepted_body'    => strip_tags($_POST['email_tpl_accepted_body']             ?? ''),
+                        'email_tpl_rejected_subject' => sanitize_text_field($_POST['email_tpl_rejected_subject'] ?? ''),
+                        'email_tpl_rejected_body'    => strip_tags($_POST['email_tpl_rejected_body']             ?? ''),
+                    ]);
+                    $notice    = 'E-Mail-Vorlagen gespeichert.';
+                    $activeTab = 'email-templates';
                 }
             } else {
                 // Info-Tab speichern
@@ -389,6 +424,7 @@ trait CMS_JPG_Member_Settings_Trait
         $csrfBenefits     = $this->generate_token('member_company_benefits');
         $csrfTeam         = $this->generate_token('member_company_team');
         $csrfDepartments  = $this->generate_token('member_company_departments');
+        $csrfEmailTpl     = $this->generate_token('member_company_email_tpl');
         $csrf             = $csrfInfo; // legacy alias
 
         // ── Abteilungen + Firmen-Einstellungen ────────────────────────────────
