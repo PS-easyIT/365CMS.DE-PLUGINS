@@ -73,7 +73,7 @@
   align-items: center;
   gap: .25rem;
   padding: .22rem .6rem;
-  border-radius: 6px;
+  border-radius: 5px;
   font-size: .72rem;
   font-weight: 700;
   background: rgba(255,255,255,.95);
@@ -106,12 +106,12 @@
   align-items: center;
   gap: .3rem;
   padding: .2rem .55rem;
-  background: rgba(255,255,255,.18);
-  border: 1px solid rgba(255,255,255,.35);
+  background: rgba(236, 218, 243, 0.507);
+  border: 1px solid rgba(201, 147, 226, 0.35);
   border-radius: 50px;
   font-size: .76rem;
   font-weight: 700;
-  color: #fff;
+  color: #353535;
   white-space: nowrap;
   backdrop-filter: blur(4px);
   margin-top: .45rem;
@@ -126,7 +126,7 @@
   align-items: center;
   gap: .3rem;
   padding: .3rem .8rem;
-  border-radius: 6px;
+  border-radius: 5px;
   font-size: .76rem;
   font-weight: 600;
   background: #fff;
@@ -141,7 +141,7 @@
   justify-content: center;
   width: 30px;
   height: 30px;
-  border-radius: 8px;
+  border-radius: 5px;
   background: rgba(255,255,255,.8);
   color: #334155;
   text-decoration: none;
@@ -164,7 +164,7 @@
 .sp-bridge__about,
 .sp-bridge__contact {
   background: #fff;
-  border-radius: 8px;
+  border-radius: 5px;
   padding: 1.5rem 1.75rem;
   box-shadow: 0 1px 3px rgba(0,0,0,.04);
   border: 1px solid #e2e8f0;
@@ -232,7 +232,7 @@
   font-weight: 600;
   color: var(--sp-primary, #5e72e4);
   background: color-mix(in srgb, var(--sp-primary, #5e72e4) 8%, #fff);
-  border-radius: 6px;
+  border-radius: 5px;
   text-decoration: none;
   transition: all .2s ease;
   text-align: center;
@@ -267,7 +267,7 @@
   height: 36px;
   background: color-mix(in srgb, var(--sp-primary, #5e72e4) 8%, #fff);
   border: 1px solid color-mix(in srgb, var(--sp-primary, #5e72e4) 20%, #e2e8f0);
-  border-radius: 6px;
+  border-radius: 5px;
   color: var(--sp-primary, #5e72e4);
   transition: all .2s ease;
   text-decoration: none;
@@ -311,7 +311,7 @@
 /* ── Content Sections ────────────────────────────────────────── */
 .sp-sec-v2 {
   background: #fff;
-  border-radius: var(--sp-radius, 8px);
+  border-radius: var(--sp-radius, 5px);
   padding: 1.5rem 1.75rem;
   margin-bottom: 1.125rem;
   border: 1px solid #e2e8f0;
@@ -377,7 +377,7 @@
   align-items: center;
   padding: .6rem 1rem;
   background: #ffffff;
-  border-radius: 8px;
+  border-radius: 5px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 1px 2px rgba(0,0,0,.02);
   transition: transform .15s, box-shadow .15s;
@@ -406,7 +406,7 @@
   align-items: center;
   gap: .4rem;
   padding: .3rem .8rem;
-  border-radius: 6px;
+  border-radius: 5px;
   font-size: .8rem;
   font-weight: 500;
   background: #ffffff;
@@ -440,7 +440,7 @@
 .sp-ev-grid-v2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .75rem; }
 .sp-ev-v2 {
   background: #f8fafc;
-  border-radius: 10px;
+  border-radius: 5px;
   padding: 1rem;
   border: 1px solid #f1f5f9;
   transition: background .15s, border-color .15s;
@@ -481,7 +481,7 @@
 .sp-sc-v2 {
   background: #ffffff;
   border: 1px solid var(--network-border, #e2e8f0);
-  border-radius: 8px;
+  border-radius: 5px;
   padding: 1.25rem;
   box-shadow: 0 1px 3px rgba(0,0,0,.04);
 }
@@ -512,7 +512,7 @@
   box-sizing: border-box;
   font-size: .9rem;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: 5px;
   border: none;
   cursor: pointer;
   text-decoration: none;
@@ -535,7 +535,7 @@
   justify-content: center;
   width: 34px;
   height: 34px;
-  border-radius: 8px;
+  border-radius: 5px;
   background: #f8fafc;
   color: #334155;
   text-decoration: none;
@@ -561,7 +561,7 @@
 .sp-claim-banner__btn {
   white-space: nowrap;
   padding: .4rem 1rem;
-  border-radius: 6px;
+  border-radius: 5px;
   font-size: .76rem;
   font-weight: 700;
   background: #d97706;

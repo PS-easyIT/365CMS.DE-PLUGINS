@@ -479,6 +479,7 @@
   align-items: center;
   width: 100%;
   gap: 2px;
+  margin-bottom: -2px;
 }
 
 .sp-card-location {

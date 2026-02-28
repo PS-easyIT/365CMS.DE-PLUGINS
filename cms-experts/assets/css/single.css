@@ -694,6 +694,7 @@
 @media (max-width: 900px) {
   .ex-skills-grid                          { grid-template-columns: repeat(2, 1fr); }
   .ex-skills-grid.ex-skills-grid--soft     { grid-template-columns: repeat(2, 1fr); }
+  .ex-ev-grid-v2                           { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 768px) {
   .ex-bridge        { grid-template-columns: 1fr; margin-top: -40px; padding: 0 1rem; gap: 1rem; }
@@ -701,6 +702,7 @@
   .ex-bridge__text::after { background: linear-gradient(to bottom, transparent, #fff); }
   .ex-skills-grid                          { grid-template-columns: repeat(2, 1fr); }
   .ex-skills-grid.ex-skills-grid--soft     { grid-template-columns: repeat(2, 1fr); }
+  .ex-ev-grid-v2                           { grid-template-columns: 1fr 1fr; }
   .ex-aside         { position: static; }
   .ex-hero          { height: 300px; min-height: 300px; max-height: 300px; }
   .ex-hero__inner   { padding: 1.25rem 1rem; gap: 1.25rem; }
@@ -712,6 +714,7 @@
 }
 @media (max-width: 480px) {
   .ex-bridge        { margin-top: -30px; }
+  .ex-ev-grid-v2    { grid-template-columns: 1fr; }
   .ex-hero          { height: auto; min-height: 280px; max-height: none; }
   .ex-hero__inner   { flex-direction: column; align-items: flex-start; padding: 3rem 1rem 1.25rem; }
   .ex-hero__badges  { position: absolute; top: .5rem; right: .75rem; left: .75rem; max-width: none; }
