@@ -62,9 +62,9 @@
 }
 
 .expert-card--overview {
-    height: 350px;
-    max-height: 350px;
-    min-height: 350px;
+    height: 300px;
+    max-height: 300px;
+    min-height: 300px;
     background: var(--expert-card-bg, #fffdf4);
     border: 1px solid var(--expert-border);
     border-radius: var(--expert-radius);
@@ -149,6 +149,25 @@
     border-color: rgba(5,150,105,0.4);
 }
 
+/* Highlight-Badge – Links Oben (analog zu Verfügbarkeit rechts) */
+.expert-card-highlight-badge {
+    top: 0;
+    left: 16px;
+    right: auto;
+    border-radius: 0 0 8px 8px;
+}
+
+.badge-mvp {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    border-color: rgba(251,191,36,0.5);
+    box-shadow: 0 2px 8px rgba(251,191,36,0.25);
+}
+
+.badge-award {
+    background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+    border-color: rgba(234,88,12,0.4);
+}
+
 /* Availability Badge - Rechts */
 .expert-card-availability-badge {
     top: 0;
@@ -181,7 +200,7 @@
     gap: 16px;
     align-items: flex-start;
     padding: 22px 16px 16px;  /* padding-top: 22px hält Abstand zu den absolut-positionierten Badges */
-    border-bottom: 1px solid var(--expert-border-light);
+    border-bottom: none;
     background: #f2e7cd;
 }
 
@@ -224,11 +243,25 @@
     width: 100%;
 }
 
+/* Name-Zeile: Name links + Zertifikate rechts */
+.expert-card-name-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    width: 100%;
+    gap: 6px;
+}
+
 .expert-card--overview .expert-card-name {
     font-size: 1.05rem;
     font-weight: 700;
     margin: 0;
     color: var(--expert-text);
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .expert-card--overview .expert-card-name a {
@@ -240,43 +273,39 @@
     color: var(--expert-primary);
 }
 
+/* Titel-Zeile: Position links + Berufsjahre rechts */
 .expert-card-title-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
     gap: 4px;
+    margin-top: -1px;
 }
 
 .expert-card--overview .expert-card-title {
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     margin: 0;
     color: var(--expert-text-light);
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-/* Badges-Reihe (Berufsjahre + Zertifikate) */
-.expert-card-badges-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
+    min-width: 0;
 }
 
 .expert-badge-mini {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
-    color: #64748b;
-    font-size: 0.78rem;
+    gap: 2px;
+    color: #94a3b8;
+    font-size: 0.68rem;
     white-space: nowrap;
+    line-height: 1;
 }
 
 .expert-badge-mini .badge-icon {
-    font-size: 0.82rem;
+    font-size: 0.72rem;
     line-height: 1;
 }
 
@@ -357,33 +386,31 @@
    ======================================== */
 
 .expert-card--overview .expert-card-body {
-    padding: 12px 16px 0;
+    padding: 0 5px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
     flex: 1;
     background: #fffdf4;
-    justify-content: flex-end;
+    justify-content: center;
 }
 
 .expert-card--overview .expert-card-competencies {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-top: auto;
     width: 100%;
 }
 
 .expert-card--overview .expert-card-skills {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    display: flex;
+    flex-wrap: nowrap;
     gap: 6px;
     width: 100%;
+    overflow: hidden;
 }
 
 .skill-pill {
     font-size: 0.72rem;
-    padding: 4px 2px;
+    padding: 2px 6px;
     border-radius: 6px;
     background: #e2e8f0;
     color: #475569;
@@ -392,29 +419,35 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    display: block;
+    flex: 1;
+    min-width: 0;
+    max-width: 25%;
 }
 
-/* Social Icons Row */
+/* Social Icons Band (wie Themen-Banner) */
 .expert-card-social {
     display: flex;
     align-items: center;
+    justify-content: space-evenly;
+    padding: 6px 0;
+    margin-top: auto;
     background: linear-gradient(135deg, #fff6d1 0%, #fef9e7 100%);
-    justify-content: center;
-    gap: 12px;
-    padding-bottom: 8px;
+    border-top: 1px solid rgba(212,165,116,.15);
+    border-bottom: 1px solid rgba(212,165,116,.15);
+    min-height: 34px;
+    flex-shrink: 0;
 }
 
 .expert-card-social a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
-    background: var(--expert-bg-lighter);
-    color: var(--expert-text-light);
-    transition: var(--expert-transition-fast);
+    background: rgba(245,158,11,.10);
+    color: #92400e;
+    transition: all .15s cubic-bezier(0.4,0,0.2,1);
     text-decoration: none;
 }
 
@@ -424,7 +457,7 @@
 }
 
 .expert-card-social a.social-disabled {
-    opacity: 0.3;
+    opacity: .25;
     pointer-events: none;
     cursor: default;
 }

@@ -208,14 +208,14 @@ Alle Archivseiten folgen diesem einheitlichen Aufbau:
 
 ## 4. Gridcard-Anatomie
 
-### 4.1 People Cards – Expert (350 px) & Speaker (300 px)
+### 4.1 People Cards – Expert (300 px) & Speaker (300 px)
 
-#### Expert-Card (350 px)
+#### Expert-Card (300 px)
 
 Die Expert-Card bietet mehr Platz für Expertise und Auszeichnungen.
 
 ```
-┌──────────────────────────────────────────┐  ← 350px
+┌──────────────────────────────────────────┐  ← 300px
 │  [Ribbon oben-links: Partner/Certified]  │  ← abs. oder flow-Ribbon
 │  [Ribbon oben-rechts: Verfügbarkeit]     │  ← abs. oder flow-Ribbon
 │  ┌──────────────────────────────────────┐│
@@ -374,12 +374,12 @@ Ribbons (Company/Event): schräge oder horizontale Leiste, `font-size: 0.72rem`,
 │  Background: Gradient  oder  Bild + Overlay                 │
 │                                                             │
 │       Expert / Speaker            Company / Event           │
-│   ┌─────────────────────┐   ┌──────────────────────────┐  │
-│   │ [Avatar 96–120 px]  │   │ [Logo / Event-Visual]    │  │
-│   │  Name  (h1)         │   │  Name  (h1)              │  │
-│   │  Position (h2/p)    │   │  Ort / Datum (Badge)     │  │
-│   │  [Social-Icons]     │   │  Kategorie               │  │
-│   └─────────────────────┘   └──────────────────────────┘  │
+│   ┌─────────────────────┐   ┌──────────────────────────┐    │
+│---│ [Avatar 96–120 px]  │---│ [Logo / Event-Visual]    │----│   <- hier endet der Hero Header
+│   │  Name  (h1)         │   │  Name  (h1)              │    │
+│   │  Position (h2/p)    │   │  Ort / Datum (Badge)     │    │
+│   │  [Social-Icons]     │   │  Kategorie               │    │
+│   └─────────────────────┘   └──────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -624,7 +624,7 @@ echo '<link rel="stylesheet" href="' . CMS_EXPERTS_PLUGIN_URL . 'assets/css/styl
 | CSS-Präfix | `.expert-` | `.co-` | `.ev-` | `.sp-` |
 | Primärfarbe | `#f59e0b` Amber | `#0891b2` Cyan | `#3b82f6` Blau | `#8b5cf6` Violett |
 | Card-Hintergrund | `#fffdf4` | `#ffffff` | `#f0f7ff` | `#faf5ff` |
-| Card-Höhe | **350 px** | **300 px** | **300 px** | **300 px** |
+| Card-Höhe | **300 px** | **300 px** | **300 px** | **300 px** |
 | Card-Radius | `16px` | `12px` | `12px` | `16px` |
 | Header-Gradient | Warm-Amber | Cyan-Sky | Dunkelblau | Dunkelviolett |
 | Avatar | Rund, Foto/Initialen | Rund, Logo/Initialen | Datum-Block | Rund, Foto/Initialen |

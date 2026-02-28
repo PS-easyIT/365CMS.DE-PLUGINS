@@ -607,7 +607,7 @@
   display: flex;
   align-items: center;
   justify-content: space-evenly;
-  padding: 6px 16px;
+  padding: 6px 0;
   margin-top: auto;
   background: linear-gradient(135deg, #f3e8ff 0%, #faf5ff 100%);
   border-top: 1px solid rgba(139,92,246,.12);

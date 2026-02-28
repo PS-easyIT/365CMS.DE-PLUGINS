@@ -173,11 +173,25 @@ final class CMS_Experts_Post_Type
                 $certs_count[$row->expert_id] = (int)$row->cnt;
             }
 
+            // Social-Meta + company_id + Badge-Meta bulk-laden
+            $social_keys = ['social_linkedin', 'social_xing', 'social_github', 'social_twitter', 'social_website', 'social_gitlab', 'company_id', 'is_mvp', 'is_premium', 'custom_award'];
+            $key_placeholders = implode(',', array_fill(0, count($social_keys), '?'));
+            $stmt4 = $db_raw->prepare(
+                "SELECT expert_id, meta_key, meta_value FROM {$db_raw->prefix()}expert_meta
+                 WHERE expert_id IN ({$placeholders}) AND meta_key IN ({$key_placeholders})"
+            );
+            $stmt4->execute(array_merge($expert_ids, $social_keys));
+            $social_by_expert = [];
+            foreach ($stmt4->fetchAll() as $row) {
+                $social_by_expert[$row->expert_id][$row->meta_key] = $row->meta_value;
+            }
+
             // An Experten-Objekte anhängen
             foreach ($experts as $expert) {
                 $expert->_skills          = $skills_by_expert[$expert->id] ?? [];
                 $expert->_specializations = $specs_by_expert[$expert->id]  ?? [];
                 $expert->_cert_count      = $certs_count[$expert->id]      ?? 0;
+                $expert->_social          = $social_by_expert[$expert->id] ?? [];
             }
         }
 

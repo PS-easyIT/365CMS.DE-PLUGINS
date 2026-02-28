@@ -35,25 +35,26 @@
 .ex-hero {
   position: relative;
   overflow: hidden;
-  min-height: 200px;
+  height: 300px;
+  min-height: 300px;
   max-height: 300px;
-  background: var(--detail-header-bg, #f8fafc);
+  background: var(--expert-hdr-bg, linear-gradient(135deg, #f5ecd5 0%, #ebe0c8 100%));
   border-bottom: 3px solid var(--expert-primary, #5e72e4);
 }
 .ex-hero__inner {
   display: flex;
   gap: 1.75rem;
   align-items: center;
-  padding: 1.5rem 2rem 1.75rem;
-  flex-wrap: wrap;
+  padding: 1.5rem 2.5rem;
   position: relative;
   z-index: 1;
-  min-height: 200px;
+  height: 100%;
+  box-sizing: border-box;
 }
 .ex-hero__av {
   flex-shrink: 0;
-  width: 96px;
-  height: 96px;
+  width: 125px;
+  height: 125px;
   border-radius: 50%;
   overflow: hidden;
   box-shadow: 0 6px 20px rgba(0,0,0,.14), 0 0 0 4px rgba(255,255,255,.8), 0 0 0 7px color-mix(in srgb, var(--expert-primary, #5e72e4) 20%, transparent);
@@ -66,8 +67,8 @@
   letter-spacing: -.02em;
 }
 .ex-hero__av img        { width: 100%; height: 100%; object-fit: cover; }
-.ex-hero__meta          { flex: 1; min-width: 0; }
-.ex-hero__badges        { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .625rem; justify-content: flex-end; }
+.ex-hero__meta          { flex: 1; min-width: 0; padding-top: .25rem; }
+.ex-hero__badges        { position: absolute; top: .875rem; right: 15px; display: flex; flex-wrap: wrap; gap: .3rem; justify-content: flex-end; max-width: 55%; z-index: 2; }
 .ex-hero__badge {
   display: inline-flex;
   align-items: center;
@@ -85,11 +86,13 @@
 .ex-hero__badge--cert            { background: #dbeafe; color: #1e40af; }
 .ex-hero__badge--premium         { background: #fef3c7; color: #7c2d12; }
 .ex-hero__badge--partner         { background: #f3e8ff; color: #6b21a8; }
-.ex-hero__name   { margin: 0 0 .2rem; font-size: clamp(1.4rem, 3vw, 1.875rem); font-weight: 800; line-height: 1.2; color: var(--detail-header-color, #1e293b); }
-.ex-hero__motto  { font-size: .88rem; font-style: italic; color: var(--detail-header-color, #1e293b); opacity: .6; margin: 0 0 .25rem; }
-.ex-hero__pos    { font-size: .92rem; color: var(--detail-header-color, #1e293b); opacity: .7; margin: 0 0 .2rem; }
-.ex-hero__co     { font-size: .88rem; color: var(--detail-header-color, #1e293b); opacity: .65; margin: 0 0 .875rem; }
-.ex-hero__chips  { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .875rem; }
+.ex-hero__name   { margin: 0 0 .15rem; font-size: clamp(1.4rem, 3vw, 1.875rem); font-weight: 800; line-height: 1.2; color: var(--detail-header-color, #1e293b); }
+.ex-hero__motto  { font-size: .84rem; font-style: italic; color: var(--detail-header-color, #1e293b); opacity: .6; margin: 0 0 .15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ex-hero__pos    { font-size: .88rem; color: var(--detail-header-color, #1e293b); opacity: .7; margin: 0 0 .1rem; }
+.ex-hero__co     { font-size: .84rem; color: var(--detail-header-color, #1e293b); opacity: .65; margin: 3px 0 .7rem; }
+.ex-hero__co a   { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.ex-hero__co a:hover { opacity: .85; }
+.ex-hero__chips  { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .625rem; max-height: 3.6rem; overflow: hidden; }
 .ex-hero__chip {
   display: inline-flex;
   align-items: center;
@@ -444,9 +447,17 @@
 @media (max-width: 768px) {
   .ex-body          { grid-template-columns: 1fr; padding: 1.25rem 1rem 2rem; gap: 1.25rem; }
   .ex-aside         { position: static; }
-  .ex-hero          { min-height: auto; max-height: none; }
-  .ex-hero__inner   { padding: 1.25rem 1rem; min-height: auto; }
-  .ex-hero__av      { width: 78px; height: 78px; }
-  .ex-hero__name    { font-size: 1.3rem; }
+  .ex-hero          { height: 300px; min-height: 300px; max-height: 300px; }
+  .ex-hero__inner   { padding: 1.25rem 1rem; gap: 1.25rem; }
+  .ex-hero__av      { width: 96px; height: 96px; }
+  .ex-hero__badges  { top: .5rem; right: 0; max-width: 65%; }
+  .ex-hero__name    { font-size: 1.25rem; }
+  .ex-hero__chips   { max-height: 2.8rem; }
   .ex-bc            { padding: .6rem 1rem; }
+}
+@media (max-width: 480px) {
+  .ex-hero          { height: auto; min-height: 280px; max-height: none; }
+  .ex-hero__inner   { flex-direction: column; align-items: flex-start; padding: 3rem 1rem 1.25rem; }
+  .ex-hero__badges  { position: absolute; top: .5rem; right: .75rem; left: .75rem; max-width: none; }
+  .ex-hero__av      { width: 80px; height: 80px; }
 }

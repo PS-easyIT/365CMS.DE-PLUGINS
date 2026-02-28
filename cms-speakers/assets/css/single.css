@@ -35,7 +35,9 @@
 .sp-hero-v2 {
   position: relative;
   overflow: hidden;
+  height: 300px;
   min-height: 300px;
+  max-height: 300px;
   background: linear-gradient(135deg, var(--sp-hdr-from), var(--sp-hdr-to));
   border-bottom: 3px solid var(--sp-primary);
 }
@@ -43,16 +45,16 @@
   display: flex;
   gap: 1.75rem;
   align-items: center;
-  padding: 1.5rem 2rem 1.75rem;
-  flex-wrap: wrap;
+  padding: 1.5rem 2.5rem;
   position: relative;
   z-index: 1;
-  min-height: 200px;
+  height: 100%;
+  box-sizing: border-box;
 }
 .sp-hero-v2__av {
   flex-shrink: 0;
-  width: 96px;
-  height: 96px;
+  width: 125px;
+  height: 125px;
   border-radius: 50%;
   overflow: hidden;
   box-shadow: 0 6px 20px rgba(0,0,0,.14), 0 0 0 4px rgba(255,255,255,.8), 0 0 0 7px color-mix(in srgb, var(--sp-primary) 20%, transparent);
@@ -64,8 +66,8 @@
   color: #fff;
 }
 .sp-hero-v2__av img { width: 100%; height: 100%; object-fit: cover; }
-.sp-hero-v2__meta   { flex: 1; min-width: 0; }
-.sp-hero-v2__badges { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .625rem; }
+.sp-hero-v2__meta   { flex: 1; min-width: 0; padding-top: .25rem; }
+.sp-hero-v2__badges { position: absolute; top: .875rem; right: 15px; display: flex; flex-wrap: wrap; gap: .3rem; justify-content: flex-end; max-width: 55%; z-index: 2; }
 .sp-hero-v2__badge {
   display: inline-flex;
   align-items: center;
@@ -82,11 +84,11 @@
 .sp-hero-v2__badge--avail-booked    { background: var(--sp-avail-booked-bg, #fee2e2); color: var(--sp-avail-booked-color, #991b1b); }
 .sp-hero-v2__badge--verified        { background: var(--sp-badge-verified-bg, #ede9fe); color: var(--sp-badge-verified-color, #5b21b6); }
 .sp-hero-v2__badge--mvp             { background: var(--sp-badge-mvp-bg, rgba(251,191,36,.2)); color: var(--sp-badge-mvp-color, #fbbf24); border: 1px solid rgba(251,191,36,.4); }
-.sp-hero-v2__name { margin: 0 0 .2rem; font-size: clamp(1.5rem, 4vw, 2.25rem); font-weight: 800; line-height: 1.2; color: var(--sp-hdr-title, #1e293b); }
-.sp-hero-v2__pos  { font-size: .92rem; color: var(--sp-hdr-title, #1e293b); opacity: .7; margin: 0 0 .2rem; }
-.sp-hero-v2__co   { font-size: .88rem; color: var(--sp-hdr-title, #1e293b); opacity: .65; margin: 0 0 .875rem; }
+.sp-hero-v2__name { margin: 0 0 .15rem; font-size: clamp(1.5rem, 4vw, 2.25rem); font-weight: 800; line-height: 1.2; color: var(--sp-hdr-title, #1e293b); }
+.sp-hero-v2__pos  { font-size: .88rem; color: var(--sp-hdr-title, #1e293b); opacity: .7; margin: 0 0 .1rem; }
+.sp-hero-v2__co   { font-size: .84rem; color: var(--sp-hdr-title, #1e293b); opacity: .65; margin: 3px 0 .7rem; }
 .sp-hero-v2__co a { color: inherit; text-decoration: underline; }
-.sp-hero-v2__chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .875rem; }
+.sp-hero-v2__chips { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .625rem; max-height: 3.6rem; overflow: hidden; }
 .sp-hero-v2__chip {
   display: inline-flex;
   align-items: center;
@@ -292,13 +294,19 @@
 @media (max-width: 768px) {
   .sp-body-v2        { grid-template-columns: 1fr; padding: 1.25rem 1rem 2rem; gap: 1.25rem; }
   .sp-sidebar-v2     { position: static; }
-  .sp-hero-v2        { min-height: auto; }
-  .sp-hero-v2__inner { padding: 1.25rem 1rem; min-height: auto; }
-  .sp-hero-v2__av    { width: 78px; height: 78px; }
-  .sp-hero-v2__name  { font-size: 1.3rem; }
+  .sp-hero-v2        { height: 300px; min-height: 300px; max-height: 300px; }
+  .sp-hero-v2__inner { padding: 1.25rem 1rem; gap: 1.25rem; }
+  .sp-hero-v2__av    { width: 96px; height: 96px; }
+  .sp-hero-v2__badges { top: .5rem; right: 0; max-width: 65%; }
+  .sp-hero-v2__name  { font-size: 1.25rem; }
+  .sp-hero-v2__chips { max-height: 2.8rem; }
   .sp-breadcrumb     { padding: .6rem 1rem; }
   .sp-ev-grid-v2     { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 480px) {
-  .sp-ev-grid-v2 { grid-template-columns: 1fr; }
+  .sp-hero-v2        { height: auto; min-height: 280px; max-height: none; }
+  .sp-hero-v2__inner { flex-direction: column; align-items: flex-start; padding: 3rem 1rem 1.25rem; }
+  .sp-hero-v2__badges { position: absolute; top: .5rem; right: .75rem; left: .75rem; max-width: none; }
+  .sp-hero-v2__av    { width: 80px; height: 80px; }
+  .sp-ev-grid-v2     { grid-template-columns: 1fr; }
 }

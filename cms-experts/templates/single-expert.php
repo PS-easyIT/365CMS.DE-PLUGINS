@@ -196,26 +196,36 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 
   <header class="ex-hero">
     <div class="ex-hero__inner">
+      <div class="ex-hero__badges">
+        <span class="ex-hero__badge ex-hero__badge--avail-<?= $sec->escape($avail) ?>"><?= $sec->escape($avail_info['label']) ?></span>
+        <?php if ($partner_status === 'sponsor'):    ?><span class="ex-hero__badge ex-hero__badge--partner">★ Sponsor</span><?php endif; ?>
+        <?php if ($partner_status === 'top_partner'):?><span class="ex-hero__badge ex-hero__badge--partner">◆ Top-Partner</span><?php endif; ?>
+        <?php if ($partner_status === 'partner'):    ?><span class="ex-hero__badge ex-hero__badge--partner">✓ Partner</span><?php endif; ?>
+        <?php if ($is_mvp):       ?><span class="ex-hero__badge ex-hero__badge--mvp">⚡ MVP</span><?php endif; ?>
+        <?php if ($is_certified): ?><span class="ex-hero__badge ex-hero__badge--cert">✅ Zertifiziert</span><?php endif; ?>
+        <?php if ($is_premium):   ?><span class="ex-hero__badge ex-hero__badge--premium">⭐ Premium</span><?php endif; ?>
+      </div>
       <?php if ($photo): ?>
         <div class="ex-hero__av"><img src="<?= $sec->escape($photo) ?>" alt="<?= $sec->escape($full_name) ?>"></div>
       <?php else: ?>
         <div class="ex-hero__av" style="background:<?= $_ex_agrad ?>;"><?= htmlspecialchars($_ex_inits ?: '?') ?></div>
       <?php endif; ?>
       <div class="ex-hero__meta">
-        <div class="ex-hero__badges">
-          <span class="ex-hero__badge ex-hero__badge--avail-<?= $sec->escape($avail) ?>"><?= $sec->escape($avail_info['label']) ?></span>
-          <?php if ($partner_status === 'sponsor'):    ?><span class="ex-hero__badge ex-hero__badge--partner">★ Sponsor</span><?php endif; ?>
-          <?php if ($partner_status === 'top_partner'):?><span class="ex-hero__badge ex-hero__badge--partner">◆ Top-Partner</span><?php endif; ?>
-          <?php if ($partner_status === 'partner'):    ?><span class="ex-hero__badge ex-hero__badge--partner">✓ Partner</span><?php endif; ?>
-          <?php if ($is_mvp):       ?><span class="ex-hero__badge ex-hero__badge--mvp">⚡ MVP</span><?php endif; ?>
-          <?php if ($is_certified): ?><span class="ex-hero__badge ex-hero__badge--cert">✅ Zertifiziert</span><?php endif; ?>
-          <?php if ($is_premium):   ?><span class="ex-hero__badge ex-hero__badge--premium">⭐ Premium</span><?php endif; ?>
-        </div>
         <?php if ($custom_award): ?><div class="ex-award">🏆 <?= $sec->escape($custom_award) ?></div><?php endif; ?>
         <h1 class="ex-hero__name"><?= $sec->escape($full_name) ?></h1>
         <?php if ($motto): ?><p class="ex-hero__motto">"<?= $sec->escape($motto) ?>"</p><?php endif; ?>
         <?php if ($position): ?><p class="ex-hero__pos"><?= $sec->escape($position) ?></p><?php endif; ?>
-        <?php if ($company): ?><p class="ex-hero__co">🏢 <?= $sec->escape($company) ?></p><?php endif; ?>
+        <?php if ($company): ?>
+          <p class="ex-hero__co">🏢
+            <?php if (!empty($expert->company_id)): ?>
+              <a href="<?= $_base_url ?>/companies/<?= (int)$expert->company_id ?>"><?= $sec->escape($company) ?></a>
+            <?php elseif (!empty($social['website'])): ?>
+              <a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener"><?= $sec->escape($company) ?></a>
+            <?php else: ?>
+              <?= $sec->escape($company) ?>
+            <?php endif; ?>
+          </p>
+        <?php endif; ?>
         <div class="ex-hero__chips">
           <?php if (!empty($expert->location_city)): ?>
             <span class="ex-hero__chip">📍 <?= $sec->escape($expert->location_city) ?><?= !empty($expert->location_country) ? ', '.$sec->escape($expert->location_country) : '' ?></span>
@@ -234,19 +244,6 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
           <?php if ($total_projects_cnt): ?><span class="ex-hero__chip">📁 <?= (int)$total_projects_cnt ?>+ Projekte</span><?php endif; ?>
           <?php if ($timezone): ?><span class="ex-hero__chip">🕐 <?= $sec->escape($timezone) ?></span><?php endif; ?>
         </div>
-        <?php if ($has_social): ?>
-          <div class="ex-hero__social">
-            <?php if ($social['linkedin']): ?><a href="<?= $sec->escape($social['linkedin']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a><?php endif; ?>
-            <?php if ($social['xing']):     ?><a href="<?= $sec->escape($social['xing']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="XING"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M18.188 0c-.517 0-.741.325-.927.66l-7.702 13.657 4.919 9.023c.17.308.436.66.967.66h3.454c.211 0 .375-.078.463-.22.089-.151.089-.346-.009-.536l-4.879-8.916L22.139.756c.097-.191.097-.387.006-.535C22.056.078 21.894 0 21.686 0h-3.498zM3.648 4.74a.62.62 0 00-.473.216c-.09.149-.078.339.02.531l2.34 4.05-3.675 6.714c-.099.188-.093.381 0 .529.085.142.247.22.455.22h3.514c.518 0 .731-.405.92-.73l3.671-6.471-2.342-4.052c-.17-.309-.436-.807-.978-.807H3.648z"/></svg></a><?php endif; ?>
-            <?php if ($social['github']):   ?><a href="<?= $sec->escape($social['github']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="GitHub"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a><?php endif; ?>
-            <?php if ($social['twitter']):  ?><a href="<?= $sec->escape($social['twitter']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="X/Twitter"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a><?php endif; ?>
-            <?php if ($social['website']):  ?><a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="Website"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></a><?php endif; ?>
-            <?php if ($social['gitlab']):   ?><a href="<?= $sec->escape($social['gitlab']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="GitLab"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 01-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 014.82 2a.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.49h8.1l2.44-7.49a.42.42 0 01.11-.18.43.43 0 01.58 0 .42.42 0 01.11.18l2.44 7.51 1.22 3.78a.84.84 0 01-.3.94z"/></svg></a><?php endif; ?>
-            <?php if ($social['stackoverflow']): ?><a href="<?= $sec->escape($social['stackoverflow']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="Stack Overflow"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M18.986 21.865v-6.404h2.134V24H1.844v-8.539h2.13v6.404h15.012zM6.111 19.731H16.85v-2.137H6.111v2.137zm.259-4.852l10.48 2.189.451-2.07-10.478-2.187-.453 2.068zm1.359-5.056l9.705 4.53.903-1.95-9.706-4.53-.902 1.95zm2.715-4.785l8.217 6.855 1.359-1.62-8.216-6.853-1.36 1.618zM15.751 0l-1.746 1.294 6.405 8.604 1.746-1.294L15.751 0z"/></svg></a><?php endif; ?>
-            <?php if ($social['youtube']):  ?><a href="<?= $sec->escape($social['youtube']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="YouTube"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M23.495 6.205a3.007 3.007 0 00-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 00.527 6.205a31.247 31.247 0 00-.522 5.805 31.247 31.247 0 00.522 5.783 3.007 3.007 0 002.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 002.088-2.088A31.247 31.247 0 0024 12.01a31.247 31.247 0 00-.505-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg></a><?php endif; ?>
-            <?php if ($social['blog_rss']): ?><a href="<?= $sec->escape($social['blog_rss']) ?>" target="_blank" rel="noopener" class="ex-hero__si" aria-label="RSS"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6.18 15.64a2.18 2.18 0 012.18 2.18C8.36 19.01 7.38 20 6.18 20C4.98 20 4 19.01 4 17.82a2.18 2.18 0 012.18-2.18M4 4.44A15.56 15.56 0 0119.56 20h-2.83A12.73 12.73 0 004 7.27V4.44m0 5.66a9.9 9.9 0 019.9 9.9h-2.83A7.07 7.07 0 004 12.93V10.1z"/></svg></a><?php endif; ?>
-          </div>
-        <?php endif; ?>
       </div>
     </div>
   </header>
