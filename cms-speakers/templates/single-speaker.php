@@ -223,15 +223,6 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
             <?php else: echo $company; endif; ?>
           </p>
         <?php endif; ?>
-        <div class="sp-hero-v2__chips">
-          <?php if ($city): ?><span class="sp-hero-v2__chip">📍 <?= $city ?><?= ($city && $country) ? ', '.$country : '' ?></span><?php endif; ?>
-          <?php if ($travel): ?><span class="sp-hero-v2__chip"><?= htmlspecialchars($travel_label) ?></span><?php endif; ?>
-          <?php if ($max_audience): ?><span class="sp-hero-v2__chip">👥 max. <?= (int)$max_audience ?> Pers.</span><?php endif; ?>
-          <?php if ($languages): ?><span class="sp-hero-v2__chip">🗣 <?= htmlspecialchars($languages) ?></span><?php endif; ?>
-          <?php foreach (array_slice($formats, 0, 3) as $f): ?>
-            <span class="sp-hero-v2__chip"><?= htmlspecialchars($fmt_labels[$f] ?? $f) ?></span>
-          <?php endforeach; ?>
-        </div>
       </div>
     </div>
   </header>

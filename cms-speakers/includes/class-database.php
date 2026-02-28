@@ -232,8 +232,13 @@ final class CMS_Speakers_Database
     public function get_speaker(int $id): ?object
     {
         $db = CMS\Database::instance();
+        $p  = $db->prefix();
         try {
-            $stmt = $db->prepare("SELECT * FROM {$db->prefix()}speakers WHERE id = ? LIMIT 1");
+            $stmt = $db->prepare("
+                SELECT s.*, c.name AS company_linked_name
+                FROM {$p}speakers s
+                LEFT JOIN {$p}companies c ON s.company_id = c.id
+                WHERE s.id = ? LIMIT 1");
             $stmt->execute([$id]);
             return $stmt->fetch() ?: null;
         } catch (\Throwable $e) { return null; }
