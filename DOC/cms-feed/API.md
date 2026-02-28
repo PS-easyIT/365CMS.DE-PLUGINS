@@ -63,6 +63,7 @@
 | `get_channel(int $id): ?array` | Kanal per ID |
 | `save_channel(array $data): int` | Erstellen/Aktualisieren, gibt ID zurück |
 | `delete_channel(int $id): void` | Kanal + Beiträge löschen |
+| `channel_url_exists(string $feedUrl): bool` | Prüft, ob eine Feed-URL bereits existiert |
 | `update_channel_fetch(int $id, ?string $error, int $itemCount): void` | Fetch-Status aktualisieren |
 
 ### Items (Beiträge)
@@ -117,6 +118,24 @@
     'channels_errors' => int,  // Kanäle mit Fehlern
 ]
 ```
+
+### Bulk-Operationen
+
+| Methode | Beschreibung |
+|---------|-------------|
+| `bulk_delete_channels(array $ids): int` | Mehrere Kanäle + Beiträge + Queue-Einträge löschen |
+| `bulk_delete_categories(array $ids): int` | Mehrere Bereiche + Kanäle + Beiträge löschen |
+| `bulk_toggle_channels(array $ids, bool $active): int` | Mehrere Kanäle aktivieren/deaktivieren |
+
+### Fetch-Queue (Warteschlange)
+
+| Methode | Beschreibung |
+|---------|-------------|
+| `add_to_fetch_queue(array $channelIds): int` | Kanäle in Queue einreihen (keine Duplikate) |
+| `get_pending_queue_tasks(int $limit = 5): array` | Nächste Tasks holen und als 'processing' markieren |
+| `update_queue_task(int $id, string $status, ?string $error): void` | Task-Status aktualisieren |
+| `cleanup_queue(int $days = 7): int` | Alte erledigte/fehlgeschlagene Tasks löschen |
+| `get_queue_stats(): array` | Queue-Statistiken (pending, processing, done, failed, total) |
 
 ---
 
@@ -186,6 +205,51 @@
 
 ---
 
+## CMS_Feed_Catalog
+
+**Datei:** `includes/class-feed-catalog.php`  
+**Pattern:** Statische Klasse (kein Singleton)
+
+### Öffentliche Methoden
+
+| Methode | Beschreibung |
+|---------|-------------|
+| `get_catalog(): array` | Gesamter Katalog als `[key => category-array]` |
+| `get_categories_overview(): array` | Kurzübersicht aller Kategorien (Name, Icon, Beschreibung, Feed-Anzahl) |
+| `import_feeds(string $categoryKey, int $dbCategoryId, array $feedKeys = []): array` | Feeds importieren; gibt `['imported' => int, 'skipped' => int, 'errors' => int]` zurück |
+
+### Katalog-Kategorien
+
+| Key | Name | Icon | Feeds |
+|-----|------|------|-------|
+| `it_news` | IT-Nachrichten | 📰 | ~30 |
+| `security` | IT-Security | 🔒 | ~30 |
+| `development` | Softwareentwicklung | 💻 | ~30 |
+| `cloud_infra` | Cloud & Infrastruktur | ☁️ | ~30 |
+| `microsoft` | Microsoft-Ökosystem | 🪟 | ~30 |
+| `linux_opensource` | Linux & Open Source | 🐧 | ~30 |
+| `ai_data` | KI & Data Science | 🤖 | ~30 |
+| `networking` | Netzwerk & Kommunikation | 🌐 | ~30 |
+| `business_it` | Business-IT & Management | 💼 | ~30 |
+| `hardware` | Hardware & Gadgets | 🖥️ | ~30 |
+
+### Rückgabe von `import_feeds()`
+
+```php
+[
+    'imported' => int,  // Erfolgreich importierte Feeds
+    'skipped'  => int,  // Übersprungen (URL existiert bereits)
+    'errors'   => int,  // Fehlgeschlagene Importe
+]
+```
+
+### Duplikat-Erkennung
+
+Vor dem Import wird `CMS_Feed_Database::channel_url_exists($feedUrl)` aufgerufen.
+Bereits vorhandene Feeds (gleiche `feed_url` in beliebigem Bereich) werden übersprungen.
+
+---
+
 ## CMS_Feed_Admin
 
 **Datei:** `includes/class-admin.php`  
@@ -196,3 +260,30 @@
 | `admin_page(): void` | Router-Callback für `/admin/feeds` |
 | `add_menu_item(array $menuItems): array` | Admin-Menü-Filter |
 | `render_list(array $data): void` | Admin-Oberfläche rendern |
+
+---
+
+## CMS_Feed_Cron
+
+**Datei:** `includes/class-feed-cron.php`  
+**Pattern:** Singleton  
+**Seit:** 1.2.0
+
+Verarbeitet die Fetch-Queue im Hintergrund via `cms_cron_hourly`. Holt pro Durchlauf max. 5 ausstehende Tasks und führt den RSS-Abruf durch.
+
+| Methode | Beschreibung |
+|---------|-------------|
+| `process_queue(): array` | Queue-Tasks verarbeiten (max. 5 pro Durchlauf) |
+| `get_status(): array` | Aktuelle Queue-Statistiken abrufen |
+
+**Rückgabe von `process_queue()`:**
+```php
+[
+    'processed' => int,  // Verarbeitete Tasks
+    'success'   => int,  // Erfolgreich abgerufene Kanäle
+    'failed'    => int,  // Fehlgeschlagene Abrufe
+    'new_items' => int,  // Insgesamt neu importierte Beiträge
+]
+```
+
+**Batch-Logik:** Bei `bulk_fetch_channels` werden maximal 5 Kanäle sofort abgerufen. Alle weiteren werden in die `feed_fetch_queue`-Tabelle eingereiht und beim nächsten Cron-Durchlauf verarbeitet.

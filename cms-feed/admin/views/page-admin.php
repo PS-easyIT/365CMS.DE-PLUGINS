@@ -88,6 +88,16 @@ if ($tab === 'dashboard'):
             <div class="stat-label">Kanäle mit Fehlern</div>
         </div>
         <?php endif; ?>
+        <?php
+        $queueStats = CMS_Feed_Database::instance()->get_queue_stats();
+        if ($queueStats['pending'] > 0 || $queueStats['processing'] > 0):
+        ?>
+        <div class="stat-card" style="border-left:3px solid #3b82f6;">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-number" style="color:#3b82f6;"><?php echo $queueStats['pending'] + $queueStats['processing']; ?></div>
+            <div class="stat-label">In Warteschlange</div>
+        </div>
+        <?php endif; ?>
     </div>
 
     <!-- Schnellzugriff -->
@@ -140,10 +150,28 @@ elseif ($tab === 'channels'):
         <p style="color:#64748b;font-size:.875rem;">Erstelle den ersten RSS-Kanal über den Button oben rechts.</p>
     </div>
     <?php else: ?>
+
+    <!-- Bulk-Actions Bar (Kanäle) -->
+    <div id="channelBulkBar" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:.65rem 1rem;margin-bottom:1rem;align-items:center;gap:.75rem;flex-wrap:wrap;">
+        <span style="font-size:.85rem;font-weight:600;color:#1e40af;">
+            <span id="channelBulkCount">0</span> ausgewählt
+        </span>
+        <form method="POST" id="channelBulkForm" style="display:inline-flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
+            <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+            <input type="hidden" name="action" id="channelBulkAction" value="">
+            <div id="channelBulkIds"></div>
+            <button type="button" class="btn btn-sm btn-primary" onclick="submitChannelBulk('bulk_fetch_channels')" title="Ausgewählte abrufen (max. 5 sofort, Rest per Cron)">🔄 Abrufen</button>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="submitChannelBulk('bulk_activate_channels')">✅ Aktivieren</button>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="submitChannelBulk('bulk_deactivate_channels')">⏸️ Deaktivieren</button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="submitChannelBulk('bulk_delete_channels')">🗑️ Löschen</button>
+        </form>
+    </div>
+
     <div class="users-table-container">
         <table class="users-table">
             <thead>
                 <tr>
+                    <th style="width:36px;"><input type="checkbox" id="channelSelectAll" onchange="toggleAllChannels(this.checked)" title="Alle markieren"></th>
                     <th>Name</th>
                     <th>Bereich</th>
                     <th>Beiträge</th>
@@ -156,6 +184,7 @@ elseif ($tab === 'channels'):
             <tbody>
             <?php foreach ($channels as $ch): ?>
                 <tr>
+                    <td><input type="checkbox" class="channel-checkbox" value="<?php echo (int)$ch['id']; ?>" onchange="updateChannelBulk()"></td>
                     <td>
                         <a href="javascript:void(0)" onclick="editChannel(<?php echo (int)$ch['id']; ?>)"
                            style="font-weight:600;color:var(--admin-primary);">
@@ -221,10 +250,25 @@ elseif ($tab === 'categories'):
         <p style="color:#64748b;font-size:.875rem;">Erstelle den ersten Bereich, z.B. "Security" oder "Tech News".</p>
     </div>
     <?php else: ?>
+
+    <!-- Bulk-Actions Bar (Bereiche) -->
+    <div id="categoryBulkBar" style="display:none;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:.65rem 1rem;margin-bottom:1rem;align-items:center;gap:.75rem;flex-wrap:wrap;">
+        <span style="font-size:.85rem;font-weight:600;color:#92400e;">
+            <span id="categoryBulkCount">0</span> ausgewählt
+        </span>
+        <form method="POST" id="categoryBulkForm" style="display:inline-flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
+            <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+            <input type="hidden" name="action" id="categoryBulkAction" value="">
+            <div id="categoryBulkIds"></div>
+            <button type="button" class="btn btn-sm btn-danger" onclick="submitCategoryBulk('bulk_delete_categories')">🗑️ Ausgewählte löschen</button>
+        </form>
+    </div>
+
     <div class="users-table-container">
         <table class="users-table">
             <thead>
                 <tr>
+                    <th style="width:36px;"><input type="checkbox" id="categorySelectAll" onchange="toggleAllCategories(this.checked)" title="Alle markieren"></th>
                     <th>Icon</th>
                     <th>Name</th>
                     <th>Slug</th>
@@ -239,6 +283,7 @@ elseif ($tab === 'categories'):
                 $catChannels = array_filter($channels, fn($c) => (int)$c['category_id'] === (int)$cat['id']);
             ?>
                 <tr>
+                    <td><input type="checkbox" class="category-checkbox" value="<?php echo (int)$cat['id']; ?>" onchange="updateCategoryBulk()"></td>
                     <td style="font-size:1.5rem;"><?php echo htmlspecialchars($cat['icon']); ?></td>
                     <td>
                         <a href="javascript:void(0)" onclick="editCategory(<?php echo (int)$cat['id']; ?>)"
@@ -273,6 +318,72 @@ elseif ($tab === 'categories'):
         </table>
     </div>
     <?php endif; ?>
+
+<?php
+// ══════════════════════════════════════════════════════════════════════
+// TAB: Katalog
+// ══════════════════════════════════════════════════════════════════════
+elseif ($tab === 'catalog'):
+    $catalogInstance = CMS_Feed_Catalog::instance();
+    $catalogOverview = $catalogInstance->get_categories_overview();
+?>
+    <h3>📚 Feed-Katalog – Kuratierte Vorlagen</h3>
+    <p style="color:#64748b;font-size:.875rem;margin-bottom:1.5rem;">
+        Importiere professionell kuratierte Feed-Sammlungen mit einem Klick.
+        Bereits vorhandene Feed-URLs werden automatisch übersprungen.
+    </p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.25rem;">
+    <?php foreach ($catalogOverview as $catKey => $catInfo): ?>
+        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1.25rem;transition:box-shadow .2s ease;">
+            <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;">
+                <span style="font-size:2rem;"><?php echo $catInfo['icon']; ?></span>
+                <div>
+                    <h4 style="margin:0;font-size:1rem;font-weight:700;color:#1e293b;"><?php echo htmlspecialchars($catInfo['name']); ?></h4>
+                    <span style="font-size:.75rem;color:#94a3b8;"><?php echo $catInfo['count']; ?> Feeds verfügbar</span>
+                </div>
+            </div>
+            <p style="font-size:.82rem;color:#475569;margin:0 0 1rem;"><?php echo htmlspecialchars($catInfo['description']); ?></p>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+                <form method="POST" style="display:inline;">
+                    <input type="hidden" name="action" value="import_catalog">
+                    <input type="hidden" name="catalog_key" value="<?php echo htmlspecialchars($catKey); ?>">
+                    <input type="hidden" name="target_category_id" value="0">
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                    <button type="submit" class="btn btn-primary btn-sm"
+                            onclick="return confirm('<?php echo $catInfo['count']; ?> Feeds importieren und neuen Bereich \'<?php echo htmlspecialchars(addslashes($catInfo['name'])); ?>\' anlegen?')">
+                        📥 Komplett importieren
+                    </button>
+                </form>
+                <?php if (!empty($categories)): ?>
+                <div style="display:flex;align-items:center;gap:.3rem;">
+                    <form method="POST" style="display:inline-flex;align-items:center;gap:.3rem;">
+                        <input type="hidden" name="action" value="import_catalog">
+                        <input type="hidden" name="catalog_key" value="<?php echo htmlspecialchars($catKey); ?>">
+                        <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                        <select name="target_category_id" class="form-control" style="height:30px;font-size:.75rem;padding:.2rem .5rem;min-width:120px;">
+                            <?php foreach ($categories as $cat): ?>
+                            <option value="<?php echo (int)$cat['id']; ?>"><?php echo htmlspecialchars($cat['icon'] . ' ' . $cat['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="submit" class="btn btn-secondary btn-sm"
+                                onclick="return confirm('Feeds aus \'<?php echo htmlspecialchars(addslashes($catInfo['name'])); ?>\' in bestehenden Bereich importieren?')">
+                            ➕ In Bereich
+                        </button>
+                    </form>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php endforeach; ?>
+    </div>
+
+    <div style="margin-top:1.5rem;padding:1rem;background:#f1f5f9;border-radius:8px;">
+        <p style="margin:0;font-size:.82rem;color:#475569;">
+            ℹ️ <strong>Hinweis:</strong> Der Import erstellt nur Kanäle. Feed-Beiträge werden beim nächsten automatischen Abruf
+            oder über „🔄 Alle Feeds abrufen" auf dem Dashboard geladen. Bereits vorhandene Feed-URLs werden nicht doppelt angelegt.
+        </p>
+    </div>
 
 <?php
 // ══════════════════════════════════════════════════════════════════════

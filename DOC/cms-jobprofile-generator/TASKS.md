@@ -706,3 +706,98 @@ Füge diese Punkte in deine bestehenden Listen ein:
 
 - [x] **`trait-page-subscription.php`:** `$nonce = self::nonce('jpg_subscription_save')` nach POST-Handler-Block verschoben (war vorher davor → überschrieb Token vor Verifikation)
 - [x] **`trait-page-users.php`:** `$nonce = self::nonce('jpg_users_save')` nach POST-Handler-Block verschoben (gleiches Problem)
+---
+
+# 🔮 Zukünftige Features & Ideen
+
+> Alle bisherigen 15 Phasen sind abgeschlossen. Die folgenden Features sind Ideen für kommende Versionen.  
+> Priorität: 🔴 Hoch · 🟡 Mittel · 🟢 Niedrig · 🔵 Idee/Vision
+
+---
+
+## 🔴 Hohe Priorität
+
+### 16. Rate-Limiting & Security-Hardening
+- [ ] Rate-Limiting für API-Endpunkte und Bewerbungsformulare
+- [ ] Brute-Force-Schutz für Genehmigungsprozesse
+- [ ] Security-Audit aller AJAX-Endpunkte
+- [ ] Content-Security-Policy für Whitelabel-Seiten
+
+### 17. Erweiterte Analytics
+- [ ] Bewerbungs-Funnel: Views → Bewerbungen → Einstellungen
+- [ ] A/B-Testing: Verschiedene Stellenanzeigen-Versionen vergleichen
+- [ ] Kanal-Tracking: Woher kommen die Bewerber?
+- [ ] Zeitbasierte Reports: Bewerbungen pro Woche/Monat
+
+### 18. Bewerbermanagement erweitern
+- [ ] Kanban-Board für Bewerbungen (Pipeline: Eingang → Sichtung → Interview → Angebot → Einstellung)
+- [ ] Bewertungs-Matrix für Bewerber (Skills-Match-Score)
+- [ ] Team-Bewertung: Mehrere Personen bewerten Bewerber
+- [ ] Automatische Absage-E-Mails mit Vorlage
+- [ ] Interview-Kalender-Integration
+
+---
+
+## 🟡 Mittlere Priorität
+
+### 20. Multi-Language-Support
+- [ ] Stellenanzeigen in mehreren Sprachen (DE/EN)
+- [ ] Automatische Übersetzung (optional via API)
+- [ ] Sprachversion-Umschaltung auf Public-Seite
+
+### 21. Erweiterte Vorlagen
+- [ ] Template-Marketplace: Unternehmensübergreifende Templates
+- [ ] Branchen-spezifische Starter-Kits (IT, Marketing, Sales, etc.)
+- [ ] Stellenanzeigen-Import aus PDF/Word
+- [ ] Vergleichs-Ansicht: Aktuelles Profil vs. Template
+
+### 22. Performance & Skalierung
+- [ ] Cache-Layer für Public-Stellenanzeigen (Redis/Memcached)
+- [ ] Bulk-Operations: Mehrere Profile gleichzeitig status-ändern
+- [ ] Archiv-Funktion: Abgeschlossene Suchen archivieren (nicht löschen)
+- [ ] Lazy-Loading für lange Library-Listen
+
+---
+
+## 🟢 Niedrige Priorität
+
+### 23. Jobboard-Integration
+- [ ] Indeed/StepStone XML-Feed-Export
+- [ ] Google Jobs Schema.org-Markup
+- [ ] LinkedIn-Job-Posting via API
+- [ ] XING-Job-Posting via API
+- [ ] Multiposting: Eine Anzeige → mehrere Kanäle
+
+### 24. Erweiterte Public-Seite
+- [ ] Stellenanzeigen-Vergleich (2–3 nebeneinander)
+- [ ] Gehaltsrechner / Salary-Bands anzeigen
+- [ ] Benefits-Highlight auf der Firmenseite
+- [ ] Mitarbeiter-Stimmen einbinden (Testimonials)
+- [ ] Video-Job-Ads (YouTube/Vimeo-Embed)
+
+### 25. Workflow-Erweiterungen
+- [ ] Bedingte Genehmigungen (z.B. Gehalt > X → Extra-Stufe)
+- [ ] Eskalation: Automatischer Reminder nach X Tagen
+- [ ] Delegation: Genehmiger kann temporär vertreten werden
+- [ ] Audit-Trail: Vollständige Änderungshistorie pro Profil
+
+---
+
+## 🔵 Ideen / Vision
+
+### 26. Talent-Pool
+- [ ] Interessenten-DB: Initiativbewerbungen sammeln
+- [ ] Matching: Neue Stellenanzeigen → passende Talente benachrichtigen
+- [ ] Talent-Tags: Skills, Interessen, Verfügbarkeit
+- [ ] CRM-Light: Kontakthistorie pro Kandidat
+
+### 27. Employer-Branding
+- [ ] Kultur-Seite-Generator (Mission, Values, Team-Fotos)
+- [ ] Employer-Branding-Score (Profil-Vollständigkeit)
+- [ ] Social-Media-Grafik-Generator für Stellenanzeigen
+- [ ] Karriere-Blog-Integration
+
+### 28. Onboarding-Modul
+- [ ] Automatischer Onboarding-Plan bei Einstellung
+- [ ] Checkliste: Hardware, Zugänge, Schulungen
+- [ ] Integration mit Organigramm (neuer Node bei Einstellung)

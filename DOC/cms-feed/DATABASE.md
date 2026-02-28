@@ -14,6 +14,7 @@
 | `{prefix}feed_items` | Gecachte Feed-Beiträge |
 | `{prefix}feed_settings` | Key-Value-Einstellungen |
 | `{prefix}feed_digests` | E-Mail-Digest-Konfigurationen |
+| `{prefix}feed_fetch_queue` | Warteschlange für asynchrone Bulk-Abrufe |
 
 ---
 
@@ -150,15 +151,34 @@ Konfigurationen für automatische E-Mail-Zusammenfassungen.
 
 ---
 
+## feed_fetch_queue
+
+Warteschlange für Bulk-Feed-Abrufe. Wird befüllt, wenn mehr als 5 Kanäle gleichzeitig abgerufen werden sollen. Die Verarbeitung erfolgt per Cron (max. 5 pro Durchlauf).
+
+| Spalte | Typ | Default | Beschreibung |
+|--------|-----|---------|-------------|
+| `id` | `INT UNSIGNED` AI PK | – | Primärschlüssel |
+| `channel_id` | `INT UNSIGNED` NOT NULL | – | Referenz auf `feed_channels.id` |
+| `status` | `VARCHAR(20)` NOT NULL | `'pending'` | Status: `pending`, `processing`, `done`, `failed` |
+| `error` | `TEXT` | NULL | Fehlermeldung (bei `failed`) |
+| `created_at` | `TIMESTAMP` | `CURRENT_TIMESTAMP` | Einreihungszeitpunkt |
+| `processed_at` | `TIMESTAMP` | NULL | Verarbeitungszeitpunkt |
+
+**Indizes:** `idx_status (status)`, `idx_channel (channel_id)`, `idx_created (created_at)`
+
+---
+
 ## Relationale Beziehungen
 
 ```
 feed_categories 1 ─── N feed_channels
 feed_categories 1 ─── N feed_items
 feed_channels   1 ─── N feed_items
+feed_channels   1 ─── N feed_fetch_queue
 feed_digests.category_ids ──── N:M feed_categories (JSON)
 ```
 
-- Beim Löschen eines **Bereichs** werden auch alle zugehörigen **Kanäle** und **Beiträge** kaskadierend gelöscht.
-- Beim Löschen eines **Kanals** werden alle zugehörigen **Beiträge** kaskadierend gelöscht.
+- Beim Löschen eines **Bereichs** werden auch alle zugehörigen **Kanäle**, **Beiträge** und **Queue-Einträge** kaskadierend gelöscht.
+- Beim Löschen eines **Kanals** werden alle zugehörigen **Beiträge** und **Queue-Einträge** kaskadierend gelöscht.
 - Der **Cleanup** löscht Beiträge älter als X Tage, behält aber Featured-Beiträge.
+- Die **Queue** wird automatisch bereinigt: erledigte/fehlgeschlagene Tasks älter als 7 Tage werden per Cron entfernt.

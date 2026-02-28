@@ -4,6 +4,27 @@ Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
 ---
 
+## [1.2.0] – 2026-02-28
+
+### Hinzugefügt
+- **📚 Feed-Katalog** – 300+ kuratierte RSS-Feeds in 10 Kategorien (IT-News, Security, Development, Cloud/Infra, Microsoft, Linux/OpenSource, AI/Data, Networking, Business-IT, Hardware) mit Ein-Klick-Import
+- **Neue Klasse `CMS_Feed_Catalog`** – Statischer Feed-Katalog mit `get_catalog()`, `get_categories_overview()`, `import_feeds()` Methoden
+- **Katalog-Tab im Admin** – Neuer Tab „📚 Katalog" mit visueller Kartenübersicht aller Katalog-Kategorien, Komplett-Import und Import in bestehende Bereiche
+- **Duplikat-Erkennung** – `channel_url_exists()` prüft vor dem Import, ob ein Feed bereits existiert; Duplikate werden übersprungen
+- **Auto-Kategorie-Erstellung** – Beim Katalog-Import wird automatisch ein neuer Bereich erstellt, falls kein Zielbereich gewählt wird
+- **Bulk-Actions für Kanäle** – Mehrfachauswahl mit Checkboxen + Aktionen: Abrufen (max. 5 sofort, Rest per Cron-Queue), Aktivieren, Deaktivieren, Löschen
+- **Bulk-Actions für Bereiche** – Mehrfachauswahl mit Checkboxen + Bulk-Löschen (inkl. aller zugehörigen Kanäle und Beiträge)
+- **Fetch-Queue (Warteschlange)** – Neue DB-Tabelle `feed_fetch_queue` für asynchrone Verarbeitung großer Bulk-Abrufe; max. 5 Kanäle sofort, Rest wird per Cron verarbeitet
+- **Neue Klasse `CMS_Feed_Cron`** – Verarbeitet die Fetch-Queue im Hintergrund via `cms_cron_hourly` (max. 5 Tasks pro Durchlauf), räumt alte Queue-Einträge auf
+- **Bulk-Bestätigungsdialog** – Eigenes Modal statt `window.confirm()` für Bulk-Aktionen (konform mit Admin-Richtlinien)
+- **Queue-Status im Dashboard** – Ausstehende Tasks werden als Stat-Card auf dem Dashboard angezeigt
+
+### Behoben
+- **Modals funktionieren nicht** – `openModal()`/`closeModal()` JS-Funktionen fehlten komplett. Das CMS-Core `admin.js` definiert keine Modal-Funktionen. Alle Erstellungs-Dialoge (Kanal, Bereich, Digest) konnten nie geöffnet werden. → Vollständiges Modal-System in Plugin-`admin.js` implementiert (öffnen, schließen, Escape-Taste, Klick-außerhalb)
+- **Öffentliche Seiten ohne CMS-Theme** – `archive-feed.php` und `archive-category.php` renderten eigenes `<!DOCTYPE html>` statt das aktive Theme. → Auf `ThemeManager::getHeader()`/`getFooter()` umgestellt
+
+---
+
 ## [1.1.0] – 2026-02-28
 
 ### Behoben

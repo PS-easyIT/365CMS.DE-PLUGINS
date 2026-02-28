@@ -120,6 +120,19 @@ final class CMS_Feed_Database
             INDEX idx_active (is_active),
             INDEX idx_email  (email)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // ── Fetch-Queue (Warteschlange für Bulk-Abrufe) ───────────────────
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}feed_fetch_queue (
+            id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            channel_id      INT UNSIGNED  NOT NULL,
+            status          VARCHAR(20)   NOT NULL DEFAULT 'pending' COMMENT 'pending|processing|done|failed',
+            error           TEXT          DEFAULT NULL,
+            created_at      TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+            processed_at    TIMESTAMP     NULL DEFAULT NULL,
+            INDEX idx_status     (status),
+            INDEX idx_channel    (channel_id),
+            INDEX idx_created    (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -341,6 +354,18 @@ final class CMS_Feed_Database
             (int) ($data['max_items'] ?? 50),
         ]);
         return (int) $db->getPdo()->lastInsertId();
+    }
+
+    /**
+     * Prüft ob eine Feed-URL bereits als Channel existiert.
+     */
+    public function channel_url_exists(string $feedUrl): bool
+    {
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $stmt   = $db->prepare("SELECT COUNT(*) FROM {$prefix}feed_channels WHERE feed_url = ?");
+        $stmt->execute([$feedUrl]);
+        return (int) $stmt->fetchColumn() > 0;
     }
 
     public function delete_channel(int $id): void
@@ -591,6 +616,180 @@ final class CMS_Feed_Database
     }
 
     // ──────────────────────────────────────────────────────────────────────
+    // Bulk-Operationen
+    // ──────────────────────────────────────────────────────────────────────
+
+    /**
+     * Mehrere Kanäle auf einmal löschen (inkl. zugehöriger Items).
+     */
+    public function bulk_delete_channels(array $ids): int
+    {
+        if (empty($ids)) return 0;
+
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $ids    = array_map('intval', $ids);
+        $ph     = implode(',', array_fill(0, count($ids), '?'));
+
+        $db->prepare("DELETE FROM {$prefix}feed_items WHERE channel_id IN ({$ph})")->execute($ids);
+        $db->prepare("DELETE FROM {$prefix}feed_fetch_queue WHERE channel_id IN ({$ph})")->execute($ids);
+        $stmt = $db->prepare("DELETE FROM {$prefix}feed_channels WHERE id IN ({$ph})");
+        $stmt->execute($ids);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Mehrere Bereiche auf einmal löschen (inkl. Kanäle und Items).
+     */
+    public function bulk_delete_categories(array $ids): int
+    {
+        if (empty($ids)) return 0;
+
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $ids    = array_map('intval', $ids);
+        $ph     = implode(',', array_fill(0, count($ids), '?'));
+
+        $db->prepare("DELETE FROM {$prefix}feed_items WHERE category_id IN ({$ph})")->execute($ids);
+        $db->prepare("DELETE FROM {$prefix}feed_fetch_queue WHERE channel_id IN (SELECT id FROM {$prefix}feed_channels WHERE category_id IN ({$ph}))")->execute($ids);
+        $db->prepare("DELETE FROM {$prefix}feed_channels WHERE category_id IN ({$ph})")->execute($ids);
+        $stmt = $db->prepare("DELETE FROM {$prefix}feed_categories WHERE id IN ({$ph})");
+        $stmt->execute($ids);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Mehrere Kanäle aktivieren oder deaktivieren.
+     */
+    public function bulk_toggle_channels(array $ids, bool $active): int
+    {
+        if (empty($ids)) return 0;
+
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $ids    = array_map('intval', $ids);
+        $ph     = implode(',', array_fill(0, count($ids), '?'));
+
+        $stmt = $db->prepare("UPDATE {$prefix}feed_channels SET is_active = ? WHERE id IN ({$ph})");
+        $stmt->execute(array_merge([(int) $active], $ids));
+        return $stmt->rowCount();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Fetch-Queue (Warteschlange)
+    // ──────────────────────────────────────────────────────────────────────
+
+    /**
+     * Kanäle in die Abruf-Warteschlange einreihen.
+     * Bereits ausstehende Einträge für denselben Kanal werden nicht doppelt angelegt.
+     */
+    public function add_to_fetch_queue(array $channelIds): int
+    {
+        if (empty($channelIds)) return 0;
+
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $added  = 0;
+
+        $checkStmt  = $db->prepare(
+            "SELECT COUNT(*) FROM {$prefix}feed_fetch_queue WHERE channel_id = ? AND status IN ('pending', 'processing')"
+        );
+        $insertStmt = $db->prepare(
+            "INSERT INTO {$prefix}feed_fetch_queue (channel_id, status) VALUES (?, 'pending')"
+        );
+
+        foreach ($channelIds as $id) {
+            $id = (int) $id;
+            $checkStmt->execute([$id]);
+            if ((int) $checkStmt->fetchColumn() === 0) {
+                $insertStmt->execute([$id]);
+                $added++;
+            }
+        }
+
+        return $added;
+    }
+
+    /**
+     * Nächste ausstehende Aufgaben aus der Queue holen und als 'processing' markieren.
+     */
+    public function get_pending_queue_tasks(int $limit = 5): array
+    {
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+
+        $stmt = $db->prepare(
+            "SELECT q.*, c.name AS channel_name, c.feed_url
+             FROM {$prefix}feed_fetch_queue q
+             JOIN {$prefix}feed_channels c ON q.channel_id = c.id
+             WHERE q.status = 'pending'
+             ORDER BY q.created_at ASC
+             LIMIT ?"
+        );
+        $stmt->execute([$limit]);
+        $tasks = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // Direkt als processing markieren
+        if (!empty($tasks)) {
+            $ids = array_column($tasks, 'id');
+            $ph  = implode(',', array_fill(0, count($ids), '?'));
+            $db->prepare("UPDATE {$prefix}feed_fetch_queue SET status = 'processing' WHERE id IN ({$ph})")->execute($ids);
+        }
+
+        return $tasks;
+    }
+
+    /**
+     * Queue-Task-Status aktualisieren.
+     */
+    public function update_queue_task(int $id, string $status, ?string $error = null): void
+    {
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $stmt   = $db->prepare(
+            "UPDATE {$prefix}feed_fetch_queue SET status = ?, error = ?, processed_at = NOW() WHERE id = ?"
+        );
+        $stmt->execute([$status, $error, $id]);
+    }
+
+    /**
+     * Alte erledigte/fehlgeschlagene Queue-Einträge aufräumen.
+     */
+    public function cleanup_queue(int $days = 7): int
+    {
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $stmt   = $db->prepare(
+            "DELETE FROM {$prefix}feed_fetch_queue WHERE status IN ('done', 'failed') AND processed_at < DATE_SUB(NOW(), INTERVAL ? DAY)"
+        );
+        $stmt->execute([$days]);
+        return $stmt->rowCount();
+    }
+
+    /**
+     * Queue-Statistiken für Dashboard/System-Bereich.
+     */
+    public function get_queue_stats(): array
+    {
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+
+        $stmt = $db->prepare(
+            "SELECT status, COUNT(*) AS cnt FROM {$prefix}feed_fetch_queue GROUP BY status"
+        );
+        $stmt->execute();
+        $rows = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+
+        return [
+            'pending'    => (int) ($rows['pending'] ?? 0),
+            'processing' => (int) ($rows['processing'] ?? 0),
+            'done'       => (int) ($rows['done'] ?? 0),
+            'failed'     => (int) ($rows['failed'] ?? 0),
+            'total'      => array_sum(array_map('intval', $rows ?: [])),
+        ];
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
     // Stats
     // ──────────────────────────────────────────────────────────────────────
 
@@ -641,6 +840,7 @@ final class CMS_Feed_Database
             "{$prefix}feed_items",
             "{$prefix}feed_settings",
             "{$prefix}feed_digests",
+            "{$prefix}feed_fetch_queue",
         ];
     }
 }

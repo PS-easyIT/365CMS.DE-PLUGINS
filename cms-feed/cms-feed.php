@@ -46,6 +46,8 @@ final class CMS_Feed
         $files = [
             'class-database.php',
             'class-rss-fetcher.php',
+            'class-feed-catalog.php',
+            'class-feed-cron.php',
             'class-template-loader.php',
             'class-public-controller.php',
             'class-email-digest.php',
@@ -99,6 +101,7 @@ final class CMS_Feed
             'CMS_Feed_RSS_Fetcher',
             'CMS_Feed_Template_Loader',
             'CMS_Feed_Public_Controller',
+            'CMS_Feed_Cron',
             'CMS_Feed_Email_Digest',
             'CMS_Feed_Admin',
         ];

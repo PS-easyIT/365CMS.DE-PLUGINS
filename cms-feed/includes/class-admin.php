@@ -118,6 +118,7 @@ final class CMS_Feed_Admin
             'dashboard'  => '📊 Dashboard',
             'channels'   => '📡 Kanäle',
             'categories' => '📁 Bereiche',
+            'catalog'    => '📚 Katalog',
             'items'      => '📰 Beiträge',
             'digests'    => '📧 E-Mail-Digests',
             'settings'   => '⚙️ Einstellungen',
@@ -337,8 +338,126 @@ final class CMS_Feed_Admin
                 $days    = max(7, min(365, (int) ($_POST['cleanup_days'] ?? 90)));
                 $deleted = $db->cleanup_old_items($days);
                 return ['notice' => $deleted . ' alte Beiträge gelöscht.'];
-        }
+            // ── Katalog-Import ─────────────────────────────────
+            case 'import_catalog':
+                $catalogKey = sanitize_text_field($_POST['catalog_key'] ?? '');
+                $catalog    = CMS_Feed_Catalog::instance();
+                $catData    = $catalog->get_category($catalogKey);
 
+                if (!$catData) {
+                    return ['error' => 'Ungültige Katalog-Kategorie.'];
+                }
+
+                // Ziel-Kategorie: existierend oder neu anlegen
+                $targetCatId = (int) ($_POST['target_category_id'] ?? 0);
+                if ($targetCatId < 1) {
+                    // Neue Kategorie anlegen mit Katalog-Daten
+                    $slug = preg_replace('/[^a-z0-9\-]/', '', strtolower($catData['slug']));
+                    $targetCatId = $db->save_category([
+                        'id'             => null,
+                        'name'           => $catData['name'],
+                        'slug'           => $slug,
+                        'description'    => $catData['description'],
+                        'icon'           => $catData['icon'],
+                        'is_public'      => 1,
+                        'sort_order'     => 0,
+                        'layout'         => 'grid',
+                        'items_per_page' => 20,
+                    ]);
+                }
+
+                $result = $catalog->import_feeds($catalogKey, $targetCatId);
+
+                $msg = $result['imported'] . ' Kanäle importiert';
+                if ($result['skipped'] > 0) {
+                    $msg .= ', ' . $result['skipped'] . ' übersprungen (bereits vorhanden)';
+                }
+                if (!empty($result['errors'])) {
+                    $msg .= '. Fehler: ' . implode('; ', array_slice($result['errors'], 0, 3));
+                }
+
+                return ['notice' => $msg . '.'];
+
+            // ── Bulk: Kanäle löschen ──────────────────────────────────
+            case 'bulk_delete_channels':
+                $ids = array_map('intval', $_POST['bulk_ids'] ?? []);
+                $ids = array_filter($ids, fn($id) => $id > 0);
+                if (empty($ids)) {
+                    return ['error' => 'Keine Kanäle ausgewählt.'];
+                }
+                $count = $db->bulk_delete_channels($ids);
+                return ['notice' => $count . ' Kanal/Kanäle und zugehörige Beiträge gelöscht.'];
+
+            // ── Bulk: Kanäle aktivieren ────────────────────────────────
+            case 'bulk_activate_channels':
+                $ids = array_map('intval', $_POST['bulk_ids'] ?? []);
+                $ids = array_filter($ids, fn($id) => $id > 0);
+                if (empty($ids)) {
+                    return ['error' => 'Keine Kanäle ausgewählt.'];
+                }
+                $count = $db->bulk_toggle_channels($ids, true);
+                return ['notice' => $count . ' Kanal/Kanäle aktiviert.'];
+
+            // ── Bulk: Kanäle deaktivieren ──────────────────────────────
+            case 'bulk_deactivate_channels':
+                $ids = array_map('intval', $_POST['bulk_ids'] ?? []);
+                $ids = array_filter($ids, fn($id) => $id > 0);
+                if (empty($ids)) {
+                    return ['error' => 'Keine Kanäle ausgewählt.'];
+                }
+                $count = $db->bulk_toggle_channels($ids, false);
+                return ['notice' => $count . ' Kanal/Kanäle deaktiviert.'];
+
+            // ── Bulk: Kanäle abrufen (max. 5 sofort, Rest in Queue) ───
+            case 'bulk_fetch_channels':
+                $ids = array_map('intval', $_POST['bulk_ids'] ?? []);
+                $ids = array_filter($ids, fn($id) => $id > 0);
+                if (empty($ids)) {
+                    return ['error' => 'Keine Kanäle ausgewählt.'];
+                }
+
+                $maxImmediate = 5;
+                $immediate    = array_slice($ids, 0, $maxImmediate);
+                $queued       = array_slice($ids, $maxImmediate);
+                $fetcher      = CMS_Feed_RSS_Fetcher::instance();
+                $totalNew     = 0;
+                $errors       = [];
+
+                // Sofort abrufen (max. 5)
+                foreach ($immediate as $chId) {
+                    $fetchResult = $fetcher->fetch_channel($chId);
+                    if ($fetchResult['success']) {
+                        $totalNew += $fetchResult['new_items'] ?? 0;
+                    } else {
+                        $errors[] = $fetchResult['error'] ?? 'Unbekannt';
+                    }
+                }
+
+                // Rest in Queue einreihen
+                $queuedCount = 0;
+                if (!empty($queued)) {
+                    $queuedCount = $db->add_to_fetch_queue($queued);
+                }
+
+                $msg = count($immediate) . ' Kanäle sofort abgerufen, ' . $totalNew . ' neue Beiträge.';
+                if ($queuedCount > 0) {
+                    $msg .= ' ' . $queuedCount . ' weitere Kanäle in Warteschlange (Cron).';
+                }
+                if (!empty($errors)) {
+                    $msg .= ' Fehler: ' . implode('; ', array_slice($errors, 0, 3));
+                }
+                return ['notice' => $msg];
+
+            // ── Bulk: Bereiche löschen ─────────────────────────────────
+            case 'bulk_delete_categories':
+                $ids = array_map('intval', $_POST['bulk_ids'] ?? []);
+                $ids = array_filter($ids, fn($id) => $id > 0);
+                if (empty($ids)) {
+                    return ['error' => 'Keine Bereiche ausgewählt.'];
+                }
+                $count = $db->bulk_delete_categories($ids);
+                return ['notice' => $count . ' Bereich/Bereiche und zugehörige Daten gelöscht.'];
+        }
         return [];
     }
 }

@@ -51,6 +51,12 @@
 **Callback:** `CMS_Feed_Email_Digest::process_digests()`  
 **Beschreibung:** Prüft stündlich, welche Digests fällig sind, und versendet sie.
 
+### cms_cron_hourly (Feed-Queue)
+
+**Registriert in:** `CMS_Feed_Cron::__construct()` (Priorität 20)  
+**Callback:** `CMS_Feed_Cron::process_queue()`  
+**Beschreibung:** Verarbeitet ausstehende Fetch-Queue-Tasks (max. 5 Kanäle pro Durchlauf). Wird von Bulk-Fetch-Aktionen befüllt, wenn mehr als 5 Kanäle gleichzeitig abgerufen werden sollen. Räumt alte erledigte Tasks (> 7 Tage) automatisch auf.
+
 ---
 
 ## Filter
@@ -113,3 +119,9 @@ Alle POST-Actions werden in `CMS_Feed_Admin::handle_post()` verarbeitet und erfo
 | `save_design` | settings | Design-Einstellungen speichern |
 | `save_digest_settings` | digests | Digest-Grundeinstellungen speichern |
 | `cleanup` | settings/dashboard | Alte Beiträge aufräumen |
+| `import_catalog` | catalog | Feeds aus Katalog-Kategorie importieren |
+| `bulk_delete_channels` | channels | Mehrere Kanäle + Beiträge löschen |
+| `bulk_activate_channels` | channels | Mehrere Kanäle aktivieren |
+| `bulk_deactivate_channels` | channels | Mehrere Kanäle deaktivieren |
+| `bulk_fetch_channels` | channels | Mehrere Kanäle abrufen (max. 5 sofort, Rest in Queue) |
+| `bulk_delete_categories` | categories | Mehrere Bereiche + Kanäle + Beiträge löschen |

@@ -5,6 +5,8 @@
  * Zeigt alle öffentlichen Bereiche mit aktuellen Beiträgen.
  * Kann vom Theme überschrieben werden: themes/{theme}/cms-feed/archive-feed.php
  *
+ * Eingebettet im CMS-Theme via ThemeManager.
+ *
  * @package CMS_Feed
  */
 
@@ -17,18 +19,10 @@ $archiveTitle = $settings['archive_title'] ?? 'Feed-Übersicht';
 $archiveDesc  = $settings['archive_description'] ?? '';
 $slug         = $settings['archive_slug'] ?? 'feeds';
 $newTab       = !empty($settings['open_in_new_tab']);
-?>
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($archiveTitle); ?> – <?php echo htmlspecialchars(SITE_NAME); ?></title>
-    <?php \CMS\Hooks::doAction('head'); ?>
-</head>
-<body class="fd-body">
 
-<?php \CMS\Hooks::doAction('body_start'); ?>
+// Theme Header
+\CMS\ThemeManager::instance()->getHeader(['title' => $archiveTitle]);
+?>
 
 <!-- Header -->
 <header class="fd-header">
@@ -112,6 +106,4 @@ $newTab       = !empty($settings['open_in_new_tab']);
 
 </main>
 
-<?php \CMS\Hooks::doAction('body_end'); ?>
-</body>
-</html>
+<?php \CMS\ThemeManager::instance()->getFooter(); ?>
