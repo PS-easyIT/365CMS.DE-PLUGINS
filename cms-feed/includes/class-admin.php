@@ -89,6 +89,7 @@ final class CMS_Feed_Admin
 
         $notice = $data['notice'] ?? null;
         $error  = $data['error']  ?? null;
+        $settingsSubTab = null;
 
         // ── POST-Verarbeitung (VOR Token-Generierung, damit das alte Token geprüft wird) ──
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -96,8 +97,9 @@ final class CMS_Feed_Admin
                 $error = 'Sicherheitscheck fehlgeschlagen.';
             } else {
                 $result = $this->handle_post($tab);
-                $notice = $result['notice'] ?? null;
-                $error  = $result['error']  ?? null;
+                $notice         = $result['notice'] ?? null;
+                $error          = $result['error']  ?? null;
+                $settingsSubTab = $result['stab']   ?? null;
             }
         }
 
@@ -304,7 +306,8 @@ final class CMS_Feed_Admin
                     'show_excerpt'        => !empty($_POST['show_excerpt']) ? '1' : '0',
                     'excerpt_length'      => (string) max(50, min(500, (int) ($_POST['excerpt_length'] ?? 160))),
                 ]);
-                return ['notice' => 'Einstellungen gespeichert.'];
+                // Public-Routen neu registrieren, falls sich der Slug geändert hat
+                return ['notice' => 'Einstellungen gespeichert.', 'stab' => 'general'];
 
             case 'save_design':
                 $db->update_settings([
@@ -318,7 +321,7 @@ final class CMS_Feed_Admin
                     'border_radius'     => (string) max(0, min(24, (int) ($_POST['border_radius'] ?? 10))),
                     'grid_columns'      => in_array($_POST['grid_columns'] ?? '', ['auto', '2', '3', '4'], true) ? $_POST['grid_columns'] : 'auto',
                 ]);
-                return ['notice' => 'Design gespeichert.'];
+                return ['notice' => 'Design gespeichert.', 'stab' => 'design'];
 
             case 'save_digest_settings':
                 $db->update_settings([

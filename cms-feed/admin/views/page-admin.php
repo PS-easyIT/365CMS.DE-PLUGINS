@@ -282,7 +282,7 @@ elseif ($tab === 'items'):
     $itemPage   = max(1, (int)($_GET['page'] ?? 1));
     $perPage    = 25;
     $offset     = ($itemPage - 1) * $perPage;
-    $itemFilter = [];
+    $itemFilter = ['include_hidden' => true];
     if (!empty($_GET['cat'])) $itemFilter['category_id'] = (int)$_GET['cat'];
     if (!empty($_GET['ch']))  $itemFilter['channel_id']  = (int)$_GET['ch'];
     if (!empty($_GET['q']))   $itemFilter['search']      = sanitize_text_field($_GET['q']);
@@ -337,6 +337,9 @@ elseif ($tab === 'items'):
                         </a>
                         <?php if ((int)$item['is_featured']): ?>
                             <span style="background:#fef3c7;color:#92400e;padding:.1rem .3rem;border-radius:4px;font-size:.65rem;font-weight:700;margin-left:.3rem;">⭐ Featured</span>
+                        <?php endif; ?>
+                        <?php if ((int)($item['is_hidden'] ?? 0)): ?>
+                            <span style="background:#f1f5f9;color:#64748b;padding:.1rem .3rem;border-radius:4px;font-size:.65rem;font-weight:700;margin-left:.3rem;">👁️‍🗨️ Ausgeblendet</span>
                         <?php endif; ?>
                     </td>
                     <td style="font-size:.85rem;"><?php echo htmlspecialchars($item['channel_name'] ?? ''); ?></td>
@@ -509,7 +512,7 @@ elseif ($tab === 'digests'):
 // TAB: Einstellungen
 // ══════════════════════════════════════════════════════════════════════
 elseif ($tab === 'settings'):
-    $settingsTab = $_GET['stab'] ?? 'general';
+    $settingsTab = $settingsSubTab ?? ($_GET['stab'] ?? 'general');
 ?>
     <!-- Sub-Tabs -->
     <div style="display:flex;gap:.3rem;margin-bottom:1.25rem;border-bottom:2px solid #e2e8f0;flex-wrap:wrap;">

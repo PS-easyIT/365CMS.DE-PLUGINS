@@ -392,8 +392,13 @@ final class CMS_Feed_Database
     {
         $db     = \CMS\Database::instance();
         $prefix = $db->prefix();
-        $where  = ['i.is_hidden = 0'];
+        $where  = [];
         $params = [];
+
+        // Im Admin-Kontext auch versteckte Beiträge anzeigen
+        if (empty($filters['include_hidden'])) {
+            $where[] = 'i.is_hidden = 0';
+        }
 
         if (!empty($filters['category_id'])) {
             $where[]  = 'i.category_id = ?';
@@ -417,7 +422,7 @@ final class CMS_Feed_Database
             $params[] = (int) $filters['is_featured'];
         }
 
-        $whereClause = implode(' AND ', $where);
+        $whereClause = !empty($where) ? implode(' AND ', $where) : '1=1';
         $sql = "SELECT i.*, c.name AS channel_name, c.site_url AS channel_site_url, c.icon_url AS channel_icon_url, cat.name AS category_name, cat.slug AS category_slug
                 FROM {$prefix}feed_items i
                 LEFT JOIN {$prefix}feed_channels c ON i.channel_id = c.id
@@ -438,8 +443,13 @@ final class CMS_Feed_Database
     {
         $db     = \CMS\Database::instance();
         $prefix = $db->prefix();
-        $where  = ['i.is_hidden = 0'];
+        $where  = [];
         $params = [];
+
+        // Im Admin-Kontext auch versteckte Beiträge zählen
+        if (empty($filters['include_hidden'])) {
+            $where[] = 'i.is_hidden = 0';
+        }
 
         if (!empty($filters['category_id'])) {
             $where[]  = 'i.category_id = ?';
@@ -455,7 +465,7 @@ final class CMS_Feed_Database
             $params[] = '%' . $filters['search'] . '%';
         }
 
-        $whereClause = implode(' AND ', $where);
+        $whereClause = !empty($where) ? implode(' AND ', $where) : '1=1';
         $stmt = $db->prepare("SELECT COUNT(*) FROM {$prefix}feed_items i WHERE {$whereClause}");
         $stmt->execute($params);
         return (int) $stmt->fetchColumn();
