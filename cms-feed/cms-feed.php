@@ -63,9 +63,25 @@ final class CMS_Feed
         if (class_exists('CMS\Hooks')) {
             CMS\Hooks::addAction('cms_init', [$this, 'init_plugin'], 10);
             CMS\Hooks::addAction('plugin_activated', [$this, 'on_activation'], 10);
+            CMS\Hooks::addAction('register_routes', [$this, 'register_routes'], 10);
             CMS\Hooks::addAction('head', [$this, 'enqueue_styles'], 10);
             CMS\Hooks::addAction('body_end', [$this, 'enqueue_scripts'], 10);
         }
+    }
+
+    /**
+     * Alle Plugin-Routen am Router registrieren.
+     */
+    public function register_routes($router): void
+    {
+        // Admin-Routen
+        $admin = CMS_Feed_Admin::instance();
+        $router->addRoute('GET',  '/admin/feeds', [$admin, 'admin_page']);
+        $router->addRoute('POST', '/admin/feeds', [$admin, 'admin_page']);
+
+        // Public-Routen
+        $public = CMS_Feed_Public_Controller::instance();
+        $public->register_routes($router);
     }
 
     public function on_activation(string $plugin): void

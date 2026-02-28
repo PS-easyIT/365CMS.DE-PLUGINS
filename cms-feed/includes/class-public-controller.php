@@ -25,38 +25,46 @@ final class CMS_Feed_Public_Controller
 
     private function __construct()
     {
-        if (class_exists('CMS\Hooks')) {
-            CMS\Hooks::addAction('cms_frontend_route', [$this, 'handle_routes'], 10);
-        }
+        // Routen werden über register_routes() vom Hauptplugin registriert
     }
 
     /**
-     * Routen behandeln.
+     * Routen am Router registrieren (aufgerufen aus CMS_Feed::register_routes).
      */
-    public function handle_routes(): void
+    public function register_routes($router): void
     {
-        $path = trim(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '', '/');
         $db   = CMS_Feed_Database::instance();
         $s    = $db->get_settings();
         $slug = $s['archive_slug'] ?? 'feeds';
 
         // Hauptarchiv: /feeds
-        if ($path === $slug) {
-            $this->render_archive();
-            exit;
-        }
+        $router->addRoute('GET', '/' . $slug, [$this, 'route_archive']);
 
         // Kategorieseite: /feeds/{category-slug}
-        if (str_starts_with($path, $slug . '/')) {
-            $catSlug = substr($path, strlen($slug) + 1);
-            $catSlug = strtok($catSlug, '/'); // Nur erstes Segment
-            if ($catSlug) {
-                $category = $db->get_category_by_slug($catSlug);
-                if ($category && (int) $category['is_public']) {
-                    $this->render_category($category);
-                    exit;
-                }
-            }
+        $router->addRoute('GET', '/' . $slug . '/:catSlug', [$this, 'route_category']);
+    }
+
+    /**
+     * Router-Callback: Hauptarchiv.
+     */
+    public function route_archive(): void
+    {
+        $this->render_archive();
+    }
+
+    /**
+     * Router-Callback: Bereichsseite.
+     */
+    public function route_category(string $catSlug = ''): void
+    {
+        $db       = CMS_Feed_Database::instance();
+        $category = $db->get_category_by_slug($catSlug);
+
+        if ($category && (int) $category['is_public']) {
+            $this->render_category($category);
+        } else {
+            http_response_code(404);
+            \CMS\ThemeManager::instance()->render('404');
         }
     }
 

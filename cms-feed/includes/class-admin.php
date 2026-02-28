@@ -30,6 +30,28 @@ final class CMS_Feed_Admin
         }
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // Router-Callback: /admin/feeds
+    // ══════════════════════════════════════════════════════════════════════
+
+    public function admin_page(): void
+    {
+        if (!CMS\Auth::instance()->isAdmin()) {
+            CMS\Router::instance()->redirect('/login');
+            return;
+        }
+
+        $db   = CMS_Feed_Database::instance();
+        $sec  = CMS\Security::instance();
+        $csrf = $sec->generateToken('cms_feed_admin');
+        $tab  = $_GET['tab'] ?? 'dashboard';
+
+        $this->render_list([
+            'csrf' => $csrf,
+            'tab'  => $tab,
+        ]);
+    }
+
     private function loadAdminMenu(): void
     {
         $menu_file = ABSPATH . 'admin/partials/admin-menu.php';
