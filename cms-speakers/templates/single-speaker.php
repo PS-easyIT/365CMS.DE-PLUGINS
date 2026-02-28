@@ -75,7 +75,18 @@ $avail        = $s->availability  ?? 'available';
 $fee_min      = $s->speaking_fee_min ?? '';
 $fee_max      = $s->speaking_fee_max ?? '';
 $travel       = $s->travel_radius   ?? 'national';
-$languages    = $s->languages       ?? '';
+$languages_raw = $s->languages ?? '';
+if (is_string($languages_raw) && $languages_raw) {
+    $_lang_dec = json_decode($languages_raw, true);
+    if (is_array($_lang_dec)) {
+        $languages = implode(', ', array_filter(array_map('trim', $_lang_dec)));
+    } else {
+        // Komma- oder Semikolon-getrennte Werte bereinigen
+        $languages = implode(', ', array_filter(array_map('trim', preg_split('/[,;]+/', $languages_raw))));
+    }
+} else {
+    $languages = '';
+}
 $speaking_style   = $s->speaking_style   ?? '';
 $target_audience  = $s->target_audience  ?? '';
 $awards           = $s->awards           ?? '';
@@ -313,20 +324,32 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
         </div>
       <?php endif; ?>
 
-      <?php if (!empty($_skills)): ?>
+      <?php if (!empty($_skills)):
+        // Alphabetisch sortieren
+        $__skills_sorted = $_skills;
+        usort($__skills_sorted, fn($a, $b) => strcasecmp($_skill_labels[$a] ?? $a, $_skill_labels[$b] ?? $b));
+      ?>
         <div class="ex-sec">
           <h2 class="ex-sec__title">Skills & Technologien</h2>
-          <div class="ex-pills">
-            <?php foreach ($_skills as $sk): ?><span class="ex-pill ex-pill--tech"><?= htmlspecialchars($_skill_labels[$sk] ?? $sk) ?></span><?php endforeach; ?>
+          <div class="sp-skills-grid">
+            <?php foreach ($__skills_sorted as $sk): ?>
+              <div class="sp-skill-item"><span class="sp-skill-item__name"><?= htmlspecialchars($_skill_labels[$sk] ?? $sk) ?></span></div>
+            <?php endforeach; ?>
           </div>
         </div>
       <?php endif; ?>
 
-      <?php if (!empty($formats)): ?>
+      <?php if (!empty($formats)):
+        // Alphabetisch sortieren
+        $__formats_sorted = (array)$formats;
+        usort($__formats_sorted, fn($a, $b) => strcasecmp($fmt_labels[$a] ?? $a, $fmt_labels[$b] ?? $b));
+      ?>
         <div class="ex-sec">
           <h2 class="ex-sec__title">Vortragsformate</h2>
-          <div class="ex-pills">
-            <?php foreach ((array)$formats as $f): ?><span class="ex-pill ex-pill--soft"><?= htmlspecialchars($fmt_labels[$f] ?? $f) ?></span><?php endforeach; ?>
+          <div class="sp-skills-grid">
+            <?php foreach ($__formats_sorted as $f): ?>
+              <div class="sp-skill-item sp-skill-item--fmt"><span class="sp-skill-item__name"><?= htmlspecialchars($fmt_labels[$f] ?? $f) ?></span></div>
+            <?php endforeach; ?>
           </div>
         </div>
       <?php endif; ?>
@@ -397,7 +420,6 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
       if ($fee_min||$fee_max): $sp_facts[] = ['Honorar',($fee_min?number_format((float)$fee_min,0,',','.'):'').($fee_min&&$fee_max?'–':'').($fee_max?number_format((float)$fee_max,0,',','.').' €':'')]; endif;
       if ($languages): $sp_facts[] = ['Sprachen',htmlspecialchars($languages)]; endif;
       if ($max_audience): $sp_facts[] = ['Max. Audience',(int)$max_audience.' Pers.']; endif;
-      if ($acad_title||$gender): $sp_facts[] = ['Ansprache',htmlspecialchars(trim("$acad_title $gender"))]; endif;
       if ($sp_facts): ?>
         <div class="ex-sc">
           <h3 class="ex-sc__title">Details</h3>
@@ -425,3 +447,14 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
   </div>
   <?php endif; ?>
 </div>
+<script>
+(function(){
+  function checkBioOverflow(){
+    document.querySelectorAll('.sp-bridge__text').forEach(function(el){
+      el.classList.toggle('is-overflow', el.scrollHeight > el.clientHeight);
+    });
+  }
+  checkBioOverflow();
+  window.addEventListener('resize', checkBioOverflow);
+})();
+</script>

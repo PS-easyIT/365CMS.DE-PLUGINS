@@ -102,7 +102,7 @@
   white-space: nowrap;
 }
 .sp-hero-v2__pos  { font-size: .88rem; color: var(--sp-hdr-title, #1e293b); opacity: .7; margin: 0 0 .1rem; }
-.sp-hero-v2__co   { font-size: .84rem; color: var(--sp-hdr-title, #1e293b); opacity: .65; margin: 3px 0 .7rem; }
+.sp-hero-v2__co   { font-size: .84rem; color: var(--sp-hdr-title, #1e293b); opacity: .65; margin: 10px 0 .7rem; }
 .sp-hero-v2__co a { color: inherit; text-decoration: underline; }
 .sp-hero-v2__chips { display: flex; flex-wrap: wrap; gap: .35rem; margin-bottom: .625rem; max-height: 3.6rem; overflow: hidden; }
 .sp-hero-v2__chip {
@@ -153,6 +153,7 @@
   box-shadow: 0 1px 3px rgba(0,0,0,.04);
   border: 1px solid #e2e8f0;
   transition: box-shadow .2s;
+  overflow: hidden;
 }
 .sp-bridge__about:hover,
 .sp-bridge__contact:hover {
@@ -170,12 +171,24 @@
   font-size: .88rem;
   line-height: 1.65;
   color: #334155;
-  max-height: 7.5rem;
+  max-height: 8.25rem;   /* ~5 Zeilen */
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  line-clamp: 5;
-  -webkit-box-orient: vertical;
+  position: relative;
+}
+.sp-bridge__text::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2.5rem;
+  background: linear-gradient(to bottom, transparent, #fff);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s;
+}
+.sp-bridge__text.is-overflow::after {
+  opacity: 1;
 }
 .sp-bridge__text p       { margin: 0 0 .5rem; }
 .sp-bridge__text p:last-child { margin-bottom: 0; }
@@ -335,6 +348,41 @@
   margin-left: .3rem;
 }
 
+/* ── Skills Grid (4-spaltig, volle Breite) ───────────────────── */
+.sp-skills-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .75rem;
+  width: 100%;
+  margin-bottom: .25rem;
+}
+.sp-skill-item {
+  display: flex;
+  align-items: center;
+  padding: .6rem 1rem;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0,0,0,.02);
+  transition: transform .15s, box-shadow .15s;
+  overflow: hidden;          /* verhindert, dass der Inhalt den Rahmen sprengt */
+  min-width: 0;
+}
+.sp-skill-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0,0,0,.04);
+}
+.sp-skill-item__name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: .85rem;
+  white-space: nowrap;       /* kein Zeilenumbruch */
+  overflow: hidden;
+  text-overflow: ellipsis;   /* langer Text wird mit … abgeschnitten */
+}
+.sp-skill-item--fmt  { border-color: color-mix(in srgb, var(--sp-accent, #7c3aed) 25%, #e2e8f0); }
+.sp-skill-item--fmt .sp-skill-item__name { color: var(--sp-accent, #7c3aed); }
+
 /* ── Pills ───────────────────────────────────────────────────── */
 .sp-pills-v2 { display: flex; flex-wrap: wrap; gap: .5rem; }
 .sp-pill {
@@ -484,12 +532,16 @@
 .sp-claim-banner__btn:hover { background: #b45309; }
 
 /* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .sp-skills-grid    { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 768px) {
   .sp-bridge          { grid-template-columns: 1fr; margin-top: -40px; padding: 0 1rem; gap: 1rem; }
   .sp-body-v2        { grid-template-columns: 1fr; padding: 1.25rem 1rem 2rem; gap: 1.25rem; }
   .sp-sidebar-v2     { position: static; }
   .ex-body           { grid-template-columns: 1fr; padding: 1.25rem 1rem 2rem; }
   .ex-aside          { position: static; }
+  .sp-skills-grid    { grid-template-columns: repeat(2, 1fr); }
   .sp-hero-v2        { height: 300px; min-height: 300px; max-height: 300px; }
   .sp-hero-v2__inner { padding: 1.25rem 1rem; gap: 1.25rem; }
   .sp-hero-v2__av    { width: 96px; height: 96px; }

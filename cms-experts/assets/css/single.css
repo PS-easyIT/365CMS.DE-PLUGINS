@@ -141,6 +141,7 @@
   padding: 1.5rem 1.75rem;
   box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 4px 6px rgba(0,0,0,.02);
   border: 1px solid #e2e8f0;
+  overflow: hidden;
 }
 .ex-bridge__title {
   font-size: .95rem;
@@ -154,15 +155,30 @@
   font-size: .88rem;
   line-height: 1.65;
   color: #334155;
-  max-height: 7.5rem;
+  max-height: 8.25rem;   /* ~5 Zeilen */
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  line-clamp: 5;
-  -webkit-box-orient: vertical;
+  position: relative;
 }
-.ex-bridge__text p       { margin: 0 0 .5rem; }
+.ex-bridge__text::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2.5rem;
+  background: linear-gradient(to bottom, transparent, #fff);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s;
+}
+.ex-bridge__text.is-overflow::after {
+  opacity: 1;
+}
+.ex-bridge__text p       { margin: 0 0 .35rem; }
 .ex-bridge__text p:last-child { margin-bottom: 0; }
+.ex-bridge__text ul,
+.ex-bridge__text ol      { margin: 0 0 .35rem; padding-left: 1.25rem; }
+.ex-bridge__text li      { margin-bottom: .15rem; }
 .ex-bridge__contact-body {
   display: flex;
   flex-direction: column;
@@ -377,9 +393,14 @@
 /* ── Skills Grid ─────────────────────────────────────────────── */
 .ex-skills-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: .75rem;
   margin-bottom: .75rem;
+  width: 100%;
+}
+/* Persönliche Stärken: 2-spaltig */
+.ex-skills-grid--soft {
+  grid-template-columns: repeat(2, 1fr);
 }
 
 /* ── Skill Items ─────────────────────────────────────────────── */
@@ -624,9 +645,16 @@
 .ex-claim-banner__btn:hover { background: #b45309; }
 
 /* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .ex-skills-grid                          { grid-template-columns: repeat(2, 1fr); }
+  .ex-skills-grid.ex-skills-grid--soft     { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 768px) {
   .ex-bridge        { grid-template-columns: 1fr; margin-top: -40px; padding: 0 1rem; gap: 1rem; }
   .ex-body          { grid-template-columns: 1fr; padding: 1.25rem 1rem 2rem; gap: 1.25rem; }
+  .ex-bridge__text::after { background: linear-gradient(to bottom, transparent, #fff); }
+  .ex-skills-grid                          { grid-template-columns: repeat(2, 1fr); }
+  .ex-skills-grid.ex-skills-grid--soft     { grid-template-columns: repeat(2, 1fr); }
   .ex-aside         { position: static; }
   .ex-hero          { height: 300px; min-height: 300px; max-height: 300px; }
   .ex-hero__inner   { padding: 1.25rem 1rem; gap: 1.25rem; }

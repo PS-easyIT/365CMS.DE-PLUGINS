@@ -324,21 +324,27 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 
 
       <?php
+      // [label, pill-cls, grid-cls]
       $skill_section_cfg = [
-          'general' => ['Allgemeine Skills', ''],
-          'tech'    => ['Technische Skills', 'ex-pill--tech'],
-          'soft'    => ['Soft Skills',        'ex-pill--soft'],
+          'general' => ['Skills',               '',              'ex-skills-grid'],
+          'tech'    => ['Programmierung',        'ex-pill--tech', 'ex-skills-grid'],
+          'soft'    => ['Persönliche Stärken', 'ex-pill--soft', 'ex-skills-grid ex-skills-grid--soft'],
       ];
+      // Alphabetisch sortieren innerhalb jedes Typs
+      foreach ($skills_by_type as &$_sg) {
+          usort($_sg, fn($a, $b) => strcasecmp($a->skill_name ?? '', $b->skill_name ?? ''));
+      }
+      unset($_sg);
       $has_any_skill = !empty(array_filter($skills_by_type));
       if ($has_any_skill):
       ?>
         <div class="ex-sec">
           <h2 class="ex-sec__title">Skills & Kompetenzen</h2>
-          <?php foreach ($skill_section_cfg as $type => [$label, $cls]):
+          <?php foreach ($skill_section_cfg as $type => [$label, $cls, $gridCls]):
             if (empty($skills_by_type[$type])) continue;
           ?>
             <h4 class="ex-sub-heading"><?= $label ?></h4>
-            <div class="ex-skills-grid">
+            <div class="<?= $gridCls ?>">
               <?php foreach ($skills_by_type[$type] as $sk): ?>
                 <div class="ex-skill-item">
                   <span class="ex-skill-item__name"><?= $sec->escape($sk->skill_name ?? '') ?></span>
@@ -605,3 +611,14 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
   </div>
   <?php endif; ?>
 </div>
+<script>
+(function(){
+  function checkBioOverflow(){
+    document.querySelectorAll('.ex-bridge__text').forEach(function(el){
+      el.classList.toggle('is-overflow', el.scrollHeight > el.clientHeight);
+    });
+  }
+  checkBioOverflow();
+  window.addEventListener('resize', checkBioOverflow);
+})();
+</script>
