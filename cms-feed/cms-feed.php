@@ -111,18 +111,60 @@ final class CMS_Feed
 
     public function enqueue_styles(): void
     {
-        $css = $this->plugin_dir . 'assets/css/style.css';
-        if (file_exists($css)) {
-            echo '<link rel="stylesheet" href="' . $this->plugin_url . 'assets/css/style.css?v=' . filemtime($css) . '">' . "\n";
+        $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+        $isAdmin     = str_starts_with($currentPath, '/admin/feeds');
+
+        if ($isAdmin) {
+            $adminCss = $this->plugin_dir . 'assets/css/feed-admin.css';
+            if (file_exists($adminCss)) {
+                echo '<link rel="stylesheet" href="' . $this->plugin_url . 'assets/css/feed-admin.css?v=' . filemtime($adminCss) . '">' . "\n";
+            }
+        } else {
+            $css = $this->plugin_dir . 'assets/css/style.css';
+            if (file_exists($css)) {
+                echo '<link rel="stylesheet" href="' . $this->plugin_url . 'assets/css/style.css?v=' . filemtime($css) . '">' . "\n";
+            }
+            // Design-Tokens als CSS Custom Properties injizieren
+            $this->inject_design_tokens();
         }
     }
 
     public function enqueue_scripts(): void
     {
-        $js = $this->plugin_dir . 'assets/js/script.js';
-        if (file_exists($js)) {
-            echo '<script src="' . $this->plugin_url . 'assets/js/script.js?v=' . filemtime($js) . '" defer></script>' . "\n";
+        $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+        $isAdmin     = str_starts_with($currentPath, '/admin/feeds');
+
+        if ($isAdmin) {
+            $js = $this->plugin_dir . 'assets/js/admin.js';
+            if (file_exists($js)) {
+                echo '<script src="' . $this->plugin_url . 'assets/js/admin.js?v=' . filemtime($js) . '" defer></script>' . "\n";
+            }
+        } else {
+            $js = $this->plugin_dir . 'assets/js/script.js';
+            if (file_exists($js)) {
+                echo '<script src="' . $this->plugin_url . 'assets/js/script.js?v=' . filemtime($js) . '" defer></script>' . "\n";
+            }
         }
+    }
+
+    /**
+     * Design-Tokens als :root CSS Custom Properties für Public-Seiten injizieren.
+     */
+    private function inject_design_tokens(): void
+    {
+        if (!class_exists('CMS_Feed_Database')) return;
+        $s = CMS_Feed_Database::instance()->get_settings();
+
+        echo '<style>:root{'
+            . '--fd-primary:'       . htmlspecialchars($s['color_primary']     ?? '#0891b2') . ';'
+            . '--fd-accent:'        . htmlspecialchars($s['color_accent']      ?? '#e0f2fe') . ';'
+            . '--fd-hdr-from:'      . htmlspecialchars($s['color_hdr_from']    ?? '#0c4a6e') . ';'
+            . '--fd-hdr-to:'        . htmlspecialchars($s['color_hdr_to']      ?? '#0891b2') . ';'
+            . '--fd-hdr-title:'     . htmlspecialchars($s['color_hdr_title']   ?? '#ffffff') . ';'
+            . '--fd-card-bg:'       . htmlspecialchars($s['color_card_bg']     ?? '#ffffff') . ';'
+            . '--fd-card-border:'   . htmlspecialchars($s['color_card_border'] ?? '#e2e8f0') . ';'
+            . '--fd-radius:'        . ((int)($s['border_radius'] ?? 10)) . 'px;'
+            . '}</style>' . "\n";
     }
 
     public function get_version(): string
