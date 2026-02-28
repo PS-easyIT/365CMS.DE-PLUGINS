@@ -95,8 +95,9 @@ final class CMS_Companies_Admin
             'design_grid_columns'        => 'auto',
             'design_cta_color'           => '#0c4a6e',
             'design_card_bg'             => '#f0f9ff',
-            'design_detail_header_bg'    => '#0f172a',
-            'design_detail_header_color' => '#ffffff',
+            'design_detail_header_bg'    => '#e0f2fe',
+            'design_detail_header_bg_to' => '#bae6fd',
+            'design_detail_header_color' => '#0c4a6e',
             'design_detail_accent'       => '#0891b2',
             'design_partner_color'       => '#9ca3af',
             'design_top_partner_color'   => '#d97706',
@@ -379,8 +380,9 @@ final class CMS_Companies_Admin
                         'archive_header_bg_from'     => ['Archiv-Header Gradient Von',             '#e0f2fe'],
                         'archive_header_bg_to'       => ['Archiv-Header Gradient Bis',             '#bae6fd'],
                         'archive_header_title_color' => ['Archiv-Header Titelfarbe',               '#0c4a6e'],
-                        'design_detail_header_bg'    => ['Detailseite Header-Hintergrund',         '#0c4a6e'],
-                        'design_detail_header_color' => ['Detailseite Titelfarbe',                 '#ffffff'],
+                        'design_detail_header_bg'    => ['Detailseite Header Gradient Von',       '#e0f2fe'],
+                        'design_detail_header_bg_to' => ['Detailseite Header Gradient Bis',       '#bae6fd'],
+                        'design_detail_header_color' => ['Detailseite Titelfarbe',                 '#0c4a6e'],
                         'design_detail_accent'       => ['Detailseite Akzentfarbe (Links)',         '#0891b2'],
                     ];
                     foreach ($colorFields as $key => [$label, $default]):

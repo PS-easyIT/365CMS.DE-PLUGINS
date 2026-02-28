@@ -171,12 +171,28 @@ final class CMS_Companies_Post_Type
 
     private function render_single_company(object $company): void
     {
-        $experts = CMS_Companies_Database::instance()->get_company_experts((int)$company->id);
+        $experts  = CMS_Companies_Database::instance()->get_company_experts((int)$company->id);
+
+        $speakers = [];
+        if (class_exists('CMS_Speakers_Database')) {
+            try {
+                $db   = \CMS\Database::instance();
+                $stmt = $db->prepare(
+                    "SELECT * FROM {$db->prefix()}speakers WHERE company_id = ? AND status = 'active' ORDER BY last_name, first_name"
+                );
+                $stmt->execute([(int)$company->id]);
+                $speakers = $stmt->fetchAll();
+            } catch (\Throwable $e) {
+                error_log('CMS_Companies: Speaker-Query failed: ' . $e->getMessage());
+            }
+        }
+
         $tm = \CMS\ThemeManager::instance();
         $tm->getHeader();
         CMS_Companies_Template_Loader::instance()->render_template('single-company', [
-            'company' => $company,
-            'experts' => $experts,
+            'company'  => $company,
+            'experts'  => $experts,
+            'speakers' => $speakers,
         ]);
         $tm->getFooter();
     }
@@ -362,7 +378,7 @@ final class CMS_Companies_Post_Type
                 'archive_header_title_color',
                 'design_primary_color', 'design_accent_color', 'design_card_bg',
                 'design_border_radius', 'design_grid_columns', 'design_cta_color',
-                'design_detail_header_bg', 'design_detail_header_color', 'design_detail_accent',
+                'design_detail_header_bg', 'design_detail_header_bg_to', 'design_detail_header_color', 'design_detail_accent',
                 'design_partner_color', 'design_top_partner_color', 'design_sponsor_color',
             ];
             $design_checkboxes = [

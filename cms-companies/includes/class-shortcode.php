@@ -132,14 +132,29 @@ final class CMS_Companies_Shortcode
             return '<p class="error">Firma nicht gefunden.</p>';
         }
 
-        $experts = $db_manager->get_company_experts($company_id);
+        $experts  = $db_manager->get_company_experts($company_id);
+
+        $speakers = [];
+        if (class_exists('CMS_Speakers_Database')) {
+            try {
+                $db   = \CMS\Database::instance();
+                $stmt = $db->prepare(
+                    "SELECT * FROM {$db->prefix()}speakers WHERE company_id = ? AND status = 'active' ORDER BY last_name, first_name"
+                );
+                $stmt->execute([$company_id]);
+                $speakers = $stmt->fetchAll();
+            } catch (\Throwable $e) {
+                error_log('CMS_Companies: Speaker-Query failed: ' . $e->getMessage());
+            }
+        }
 
         ob_start();
-        
+
         $template_loader = CMS_Companies_Template_Loader::instance();
         $template_loader->render_template('single-company', [
-            'company' => $company,
-            'experts' => $experts,
+            'company'  => $company,
+            'experts'  => $experts,
+            'speakers' => $speakers,
         ]);
 
         return ob_get_clean();

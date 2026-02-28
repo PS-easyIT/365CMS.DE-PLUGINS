@@ -55,7 +55,7 @@ $avatar_bg = "linear-gradient(135deg,{$cp[0]},{$cp[1]})";
 // Excerpt
 $excerpt = '';
 if ($company->description) {
-    $excerpt = mb_substr(strip_tags($company->description), 0, 110);
+    $excerpt = mb_substr(strip_tags($company->description), 0, 155);
 }
 
 // Industrie-Label (slug → lesbarer Name, Fallback = slug selbst)
