@@ -215,4 +215,14 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 
     </aside>
   </div>
+
+  <?php if (!(int)($company->user_id ?? 0)): ?>
+  <div class="co-claim-banner">
+    <div class="co-claim-banner__text">
+      <strong>Dieses Unternehmensprofil wurde von der Redaktion angelegt.</strong>
+      Gehört es Ihnen? Registrieren Sie sich kostenlos und übernehmen Sie die Verwaltung.
+    </div>
+    <a href="<?= rtrim(SITE_URL, '/') ?>/register" class="co-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
+  </div>
+  <?php endif; ?>
 </div>

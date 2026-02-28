@@ -439,6 +439,34 @@
 }
 .sp-si-v2:hover { background: color-mix(in srgb, var(--sp-primary) 10%, #fff); transform: translateY(-2px); }
 
+/* ── Claim-Banner ───────────────────────────────────────────── */
+.sp-claim-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: .75rem 2rem;
+  background: #fffbeb;
+  border-top: 2px solid #fde68a;
+  font-size: .8rem;
+  color: #92400e;
+}
+.sp-claim-banner__text strong { display: block; font-weight: 700; margin-bottom: .1rem; }
+.sp-claim-banner__btn {
+  white-space: nowrap;
+  padding: .4rem 1rem;
+  border-radius: 6px;
+  font-size: .76rem;
+  font-weight: 700;
+  background: #d97706;
+  color: #fff;
+  text-decoration: none;
+  transition: background .15s;
+  flex-shrink: 0;
+}
+.sp-claim-banner__btn:hover { background: #b45309; }
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .sp-bridge          { grid-template-columns: 1fr; margin-top: -40px; padding: 0 1rem; gap: 1rem; }

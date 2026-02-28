@@ -428,10 +428,16 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
         </div>
       <?php endif; ?>
 
-      <div class="sp-sc-v2">
-        <a href="<?= $archive_url ?>" class="sp-btn-v2 sp-btn-v2--ghost sp-btn-v2--no-margin">← Zur Speaker-Übersicht</a>
-      </div>
-
     </aside>
   </div>
+
+  <?php if (!(int)($speaker->user_id ?? 0)): ?>
+  <div class="sp-claim-banner">
+    <div class="sp-claim-banner__text">
+      <strong>Dieses Profil wurde von der Redaktion angelegt.</strong>
+      Gehört es Ihnen? Registrieren Sie sich kostenlos und übernehmen Sie die Verwaltung Ihres Speaker-Profils.
+    </div>
+    <a href="<?= rtrim(SITE_URL, '/') ?>/register" class="sp-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
+  </div>
+  <?php endif; ?>
 </div>

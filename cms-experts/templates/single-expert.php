@@ -4,7 +4,7 @@
  *
  * @package CMS_Experts
  * @var object $expert
- * @var array  $skills          [{skill_name, skill_level, skill_type}]
+ * @var array  $skills          [{skill_name, skill_type}]
  * @var array  $certifications  [{cert_name, cert_issuer, cert_date, cert_expiry, cert_url}]
  * @var array  $projects        [{project_name, project_description, project_role, project_start, project_end, project_url, technologies}]
  * @var array  $education       [{degree, institution, field_of_study, start_year, end_year, description}]
@@ -65,6 +65,11 @@ $full_name      = trim(($expert->first_name ?? '') . ' ' . ($expert->last_name ?
 $photo          = $expert->photo_url ?? '';
 $position       = $expert->position ?? '';
 $company        = $expert->company  ?? '';
+$company_id     = (int)($meta['company_id'] ?? 0);
+$company_url    = '';
+if ($company_id > 0) {
+    $company_url = rtrim(SITE_URL, '/') . '/company/' . strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', str_replace(['ä','ö','ü','ß','Ä','Ö','Ü'], ['ae','oe','ue','ss','ae','oe','ue'], $company)), '-')) . '-' . $company_id;
+}
 $avail          = $expert->availability ?? 'available';
 $avail_map      = [
     'available' => ['label' => 'Verfügbar',          'css' => 'status-available'],
@@ -212,13 +217,20 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       <?php endif; ?>
       <div class="ex-hero__meta">
         <?php if ($custom_award): ?><div class="ex-award">🏆 <?= $sec->escape($custom_award) ?></div><?php endif; ?>
-        <h1 class="ex-hero__name"><?= $sec->escape($full_name) ?></h1>
+        <div class="ex-hero__name-row">
+          <h1 class="ex-hero__name"><?= $sec->escape($full_name) ?></h1>
+          <?php if (!empty($specializations)): ?>
+            <div class="ex-hero__spec-pills">
+              <?php foreach ($specializations as $sp): ?><span class="ex-hero__spec-pill"><?= $sec->escape($sp->name ?? '') ?></span><?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </div>
         <?php if ($motto): ?><p class="ex-hero__motto">"<?= $sec->escape($motto) ?>"</p><?php endif; ?>
         <?php if ($position): ?><p class="ex-hero__pos"><?= $sec->escape($position) ?></p><?php endif; ?>
         <?php if ($company): ?>
           <p class="ex-hero__co">🏢
-            <?php if (!empty($expert->company_id)): ?>
-              <a href="<?= $_base_url ?>/companies/<?= (int)$expert->company_id ?>"><?= $sec->escape($company) ?></a>
+            <?php if ($company_url): ?>
+              <a href="<?= $sec->escape($company_url) ?>"><?= $sec->escape($company) ?></a>
             <?php elseif (!empty($social['website'])): ?>
               <a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener"><?= $sec->escape($company) ?></a>
             <?php else: ?>
@@ -226,24 +238,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
             <?php endif; ?>
           </p>
         <?php endif; ?>
-        <div class="ex-hero__chips">
-          <?php if (!empty($expert->location_city)): ?>
-            <span class="ex-hero__chip">📍 <?= $sec->escape($expert->location_city) ?><?= !empty($expert->location_country) ? ', '.$sec->escape($expert->location_country) : '' ?></span>
-          <?php endif; ?>
-          <?php if (!empty($expert->experience_years)): ?>
-            <span class="ex-hero__chip">💼 <?= (int)$expert->experience_years ?> Jahre Erfahrung</span>
-          <?php endif; ?>
-          <?php if ($remote_work): ?>
-            <?php $rm_chip = ['yes'=>'Remote möglich','only'=>'Nur Remote','no'=>'Vor Ort','partial'=>'Hybrid','full'=>'Vollständig Remote','preferred'=>'Remote bevorzugt']; ?>
-            <span class="ex-hero__chip">🏠 <?= $sec->escape($rm_chip[$remote_work] ?? ucfirst($remote_work)) ?></span>
-          <?php endif; ?>
-          <?php if ($work_type): ?>
-            <?php $wt_map = ['freelancer'=>'Freelancer','employed'=>'Angestellt','agency'=>'Agentur','contractor'=>'Contractor']; ?>
-            <span class="ex-hero__chip">🎯 <?= $sec->escape($wt_map[$work_type] ?? ucfirst($work_type)) ?></span>
-          <?php endif; ?>
-          <?php if ($total_projects_cnt): ?><span class="ex-hero__chip">📁 <?= (int)$total_projects_cnt ?>+ Projekte</span><?php endif; ?>
-          <?php if ($timezone): ?><span class="ex-hero__chip">🕐 <?= $sec->escape($timezone) ?></span><?php endif; ?>
-        </div>
+
       </div>
     </div>
   </header>
@@ -326,16 +321,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
     <main class="ex-main">
 
 
-      <?php if (!empty($specializations)): ?>
-        <div class="ex-sec">
-          <h2 class="ex-sec__title">Spezialisierungen</h2>
-          <div class="ex-pills">
-            <?php foreach ($specializations as $sp): ?>
-              <span class="ex-pill ex-pill--spec"><?= $sec->escape($sp->name ?? '') ?></span>
-            <?php endforeach; ?>
-          </div>
-        </div>
-      <?php endif; ?>
+
 
       <?php
       $skill_section_cfg = [
@@ -345,7 +331,6 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       ];
       $has_any_skill = !empty(array_filter($skills_by_type));
       if ($has_any_skill):
-          $skill_level_map = ['beginner'=>15,'basic'=>30,'intermediate'=>55,'advanced'=>80,'expert'=>95,'master'=>100];
       ?>
         <div class="ex-sec">
           <h2 class="ex-sec__title">Skills & Kompetenzen</h2>
@@ -354,17 +339,9 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
           ?>
             <h4 class="ex-sub-heading"><?= $label ?></h4>
             <div class="ex-skills-grid">
-              <?php foreach ($skills_by_type[$type] as $sk):
-                $lvl_pct = $skill_level_map[$sk->skill_level ?? ''] ?? 0;
-              ?>
+              <?php foreach ($skills_by_type[$type] as $sk): ?>
                 <div class="ex-skill-item">
-                  <div class="ex-skill-item__top">
-                    <span class="ex-skill-item__name"><?= $sec->escape($sk->skill_name ?? '') ?></span>
-                    <?php if ($lvl_pct): ?><span class="ex-skill-item__lvl"><?= $sec->escape(ucfirst($sk->skill_level)) ?></span><?php endif; ?>
-                  </div>
-                  <?php if ($lvl_pct): ?>
-                    <div class="ex-skill-bar"><div class="ex-skill-bar__fill" style="width:<?= $lvl_pct ?>%;"></div></div>
-                  <?php endif; ?>
+                  <span class="ex-skill-item__name"><?= $sec->escape($sk->skill_name ?? '') ?></span>
                 </div>
               <?php endforeach; ?>
             </div>
@@ -442,17 +419,17 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       <?php if (!empty($certifications)): ?>
         <div class="ex-sec">
           <h2 class="ex-sec__title">Zertifizierungen</h2>
-          <?php foreach ($certifications as $cert): ?>
-            <div class="ex-cert-item">
-              <div>
+          <div class="ex-cert-grid">
+            <?php foreach ($certifications as $cert): ?>
+              <div class="ex-cert-item">
                 <div class="ex-cert-item__name"><?= $sec->escape($cert->cert_name ?? '') ?></div>
-                <?php if (!empty($cert->cert_issuer)): ?><div class="ex-cert-item__meta"><?= $sec->escape($cert->cert_issuer) ?></div><?php endif; ?>
+                <?php if (!empty($cert->cert_issuer)): ?><div class="ex-cert-item__issuer"><?= $sec->escape($cert->cert_issuer) ?></div><?php endif; ?>
+                <?php if (!empty($cert->cert_date)): ?>
+                  <div class="ex-cert-item__meta"><?= date('Y', strtotime($cert->cert_date)) ?><?= (!empty($cert->cert_expiry) && $cert->cert_expiry !== '0000-00-00') ? ' – ' . date('Y', strtotime($cert->cert_expiry)) : '' ?></div>
+                <?php endif; ?>
               </div>
-              <?php if (!empty($cert->cert_date)): ?>
-                <div class="ex-cert-item__meta"><?= date('Y', strtotime($cert->cert_date)) ?><?= (!empty($cert->cert_expiry) && $cert->cert_expiry !== '0000-00-00') ? ' – ' . date('Y', strtotime($cert->cert_expiry)) : '' ?></div>
-              <?php endif; ?>
-            </div>
-          <?php endforeach; ?>
+            <?php endforeach; ?>
+          </div>
         </div>
       <?php endif; ?>
 
@@ -516,7 +493,16 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 
       <?php
       $ex_details = [];
-      if ($company): $ex_details[] = ['Unternehmen', $sec->escape($company)]; endif;
+      if ($company):
+          if ($company_url):
+              $co_val = '<a href="'.$sec->escape($company_url).'">'.$sec->escape($company).'</a>';
+          elseif (!empty($social['website'])):
+              $co_val = '<a href="'.$sec->escape($social['website']).'" target="_blank" rel="noopener">'.$sec->escape($company).'</a>';
+          else:
+              $co_val = $sec->escape($company);
+          endif;
+          $ex_details[] = ['Unternehmen', $co_val];
+      endif;
       if (!empty($expert->location_city) || !empty($expert->location_country)):
           $loc = trim(($expert->location_city ?? '') . (!empty($expert->location_city) && !empty($expert->location_country) ? ', ' : '') . ($expert->location_country ?? ''));
           if ($loc) $ex_details[] = ['Standort', $sec->escape($loc)];
@@ -547,7 +533,6 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       if ($work_type):    $ex_facts[] = ['Work-Typ',      $sec->escape($wt_map2[$work_type] ?? ucfirst($work_type))]; endif;
       if ($remote_work):  $ex_facts[] = ['Remote',        $sec->escape($rm_map[$remote_work] ?? ucfirst($remote_work))]; endif;
       if ($travel_willingness): $ex_facts[] = ['Reise',  $sec->escape($travel_willingness)]; endif;
-      if ($notice_period): $ex_facts[] = ['Kündigungsfrist', $sec->escape($notice_period)]; endif;
       if ($timezone):     $ex_facts[] = ['Zeitzone',      $sec->escape($timezone)]; endif;
       if ($ex_facts): ?>
         <div class="ex-sc">
@@ -607,10 +592,16 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
         </div>
       <?php endif; ?>
 
-      <div class="ex-sc">
-        <a href="<?= $_base_url ?>/experts" class="ex-btn ex-btn--ghost ex-btn--no-margin">← Zur Experten-Übersicht</a>
-      </div>
-
     </aside>
   </div>
+
+  <?php if (!(int)($expert->user_id ?? 0)): ?>
+  <div class="ex-claim-banner">
+    <div class="ex-claim-banner__text">
+      <strong>Dieses Profil wurde von der Redaktion angelegt.</strong>
+      Gehört es Ihnen? Registrieren Sie sich kostenlos und übernehmen Sie die Verwaltung Ihres Profils.
+    </div>
+    <a href="<?= rtrim(SITE_URL, '/') ?>/register" class="ex-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
+  </div>
+  <?php endif; ?>
 </div>

@@ -335,6 +335,34 @@
 .ev-org__row         { font-size: .8rem; color: #64748b; margin-top: .25rem; }
 .ev-org__row a       { color: var(--ev-primary); text-decoration: none; }
 
+/* ── Claim-Banner ───────────────────────────────────────────── */
+.ev-claim-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: .75rem 2rem;
+  background: #fffbeb;
+  border-top: 2px solid #fde68a;
+  font-size: .8rem;
+  color: #92400e;
+}
+.ev-claim-banner__text strong { display: block; font-weight: 700; margin-bottom: .1rem; }
+.ev-claim-banner__btn {
+  white-space: nowrap;
+  padding: .4rem 1rem;
+  border-radius: 6px;
+  font-size: .76rem;
+  font-weight: 700;
+  background: #d97706;
+  color: #fff;
+  text-decoration: none;
+  transition: background .15s;
+  flex-shrink: 0;
+}
+.ev-claim-banner__btn:hover { background: #b45309; }
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .ev-single-v2 .ev-single-body  { grid-template-columns: 1fr; padding: 1.25rem 1rem 2rem; gap: 1.25rem; }

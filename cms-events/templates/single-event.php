@@ -307,4 +307,14 @@ $hero_bg_mid   = ev_hex_lighten($_p_raw, 0.96);
     </aside>
 
   </div><!-- /.ev-single-body -->
+
+  <?php if (!(int)($e->user_id ?? 0)): ?>
+  <div class="ev-claim-banner">
+    <div class="ev-claim-banner__text">
+      <strong>Dieser Event wurde von der Redaktion eingetragen.</strong>
+      Sind Sie der Veranstalter? Registrieren Sie sich kostenlos und verwalten Sie Ihren Event selbst.
+    </div>
+    <a href="<?= rtrim(SITE_URL, '/') ?>/register" class="ev-claim-banner__btn">Jetzt registrieren &amp; Event übernehmen →</a>
+  </div>
+  <?php endif; ?>
 </div><!-- /.ev-single-v2 -->

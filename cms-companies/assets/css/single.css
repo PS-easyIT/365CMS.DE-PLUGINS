@@ -448,6 +448,34 @@
   margin: 0;
 }
 
+/* ── Claim-Banner ───────────────────────────────────────────── */
+.co-claim-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: .75rem 2rem;
+  background: #fffbeb;
+  border-top: 2px solid #fde68a;
+  font-size: .8rem;
+  color: #92400e;
+}
+.co-claim-banner__text strong { display: block; font-weight: 700; margin-bottom: .1rem; }
+.co-claim-banner__btn {
+  white-space: nowrap;
+  padding: .4rem 1rem;
+  border-radius: 6px;
+  font-size: .76rem;
+  font-weight: 700;
+  background: #d97706;
+  color: #fff;
+  text-decoration: none;
+  transition: background .15s;
+  flex-shrink: 0;
+}
+.co-claim-banner__btn:hover { background: #b45309; }
+
 /* ============================================================
    RESPONSIVE
    ============================================================ */
