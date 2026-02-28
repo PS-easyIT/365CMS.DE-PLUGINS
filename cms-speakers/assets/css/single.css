@@ -101,6 +101,22 @@
   backdrop-filter: blur(3px);
   white-space: nowrap;
 }
+.sp-hero-v2__ev-count {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .2rem .55rem;
+  background: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: 50px;
+  font-size: .76rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+  margin-top: .45rem;
+  cursor: default;
+}
 .sp-hero-v2__pos  { font-size: .88rem; color: var(--sp-hdr-title, #1e293b); opacity: .7; margin: 0 0 .1rem; }
 .sp-hero-v2__co   { font-size: .84rem; color: var(--sp-hdr-title, #1e293b); opacity: .65; margin: 10px 0 .7rem; }
 .sp-hero-v2__co a { color: inherit; text-decoration: underline; }
@@ -435,6 +451,18 @@
 .sp-ev-v2__meta  { font-size: .75rem; color: #94a3b8; }
 .sp-ev-v2__badge { display: inline-block; padding: .15rem .5rem; border-radius: 50px; font-size: .7rem; font-weight: 600; margin-top: .35rem; }
 .sp-ev-v2__badge--online { background: #dbeafe; color: #1e40af; }
+.sp-ev-subhead {
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: #475569;
+  text-transform: uppercase;
+  margin: .15rem 0 .6rem;
+}
+.sp-ev-subhead--gap { margin-top: 1.25rem; }
+.sp-ev-v2--future { border-left: 3px solid var(--sp-primary, #3b82f6); }
+.sp-ev-v2--past   { opacity: .7; }
+.sp-ev-v2--past .sp-ev-v2__date { color: #94a3b8; }
 
 /* ── Sidebar Cards (sp-sc-v2) ────────────────────────────────── */
 .sp-sc-v2 {

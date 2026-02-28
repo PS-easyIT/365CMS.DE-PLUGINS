@@ -383,34 +383,77 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
         </div>
       <?php endif; ?>
 
-      <?php if (!empty($events)): ?>
+      <?php if (!empty($events)):
+        $ev_now    = time();
+        $ev_future = [];
+        $ev_past   = [];
+        foreach ((array)$events as $ev) {
+          if (!is_object($ev)) continue;
+          $ev_ts_cmp = !empty($ev->event_date) ? strtotime($ev->event_date) : 0;
+          if ($ev_ts_cmp >= $ev_now) { $ev_future[] = $ev; } else { $ev_past[] = $ev; }
+        }
+        usort($ev_future, fn($a, $b) => strtotime($a->event_date ?? '') <=> strtotime($b->event_date ?? ''));
+        usort($ev_past,   fn($a, $b) => strtotime($b->event_date ?? '') <=> strtotime($a->event_date ?? ''));
+      ?>
         <div class="ex-sec">
           <h2 class="ex-sec__title">Events & Auftritte <span class="ex-count-badge"><?= count($events) ?></span></h2>
-          <div class="sp-ev-grid-v2">
-            <?php foreach ((array)$events as $ev):
-              if (!is_object($ev)) continue;
-              $ev_title    = htmlspecialchars($ev->event_title    ?? '');
-              $ev_date_raw = $ev->event_date   ?? '';
-              $ev_location = htmlspecialchars($ev->event_location ?? '');
-              $ev_type     = htmlspecialchars($ev->event_type     ?? '');
-              $ev_presence = $ev->presence_type ?? 'presence';
-              $ev_ts       = $ev_date_raw ? strtotime($ev_date_raw) : 0;
-              $ev_date_fmt = $ev_ts ? date('d.m.Y', $ev_ts) : '';
-            ?>
-              <div class="sp-ev-v2">
-                <?php if ($ev_date_fmt): ?><div class="sp-ev-v2__date"><?= $ev_date_fmt ?></div><?php endif; ?>
-                <div class="sp-ev-v2__title"><?= $ev_title ?: 'Event' ?></div>
-                <div class="sp-ev-v2__meta">
-                  <?php if ($ev_location): ?><span>📍 <?= $ev_location ?></span><?php endif; ?>
-                  <?php if ($ev_type && $ev_location): ?><span>·</span><?php endif; ?>
-                  <?php if ($ev_type): ?><span><?= $ev_type ?></span><?php endif; ?>
+
+          <?php if (!empty($ev_future)): ?>
+            <h3 class="sp-ev-subhead">📅 Bevorstehende Events</h3>
+            <div class="sp-ev-grid-v2">
+              <?php foreach ($ev_future as $ev):
+                $ev_title    = htmlspecialchars($ev->event_title    ?? '');
+                $ev_date_raw = $ev->event_date   ?? '';
+                $ev_location = htmlspecialchars($ev->event_location ?? '');
+                $ev_type     = htmlspecialchars($ev->event_type     ?? '');
+                $ev_presence = $ev->presence_type ?? 'presence';
+                $ev_ts       = $ev_date_raw ? strtotime($ev_date_raw) : 0;
+                $ev_date_fmt = $ev_ts ? date('d.m.Y', $ev_ts) : '';
+              ?>
+                <div class="sp-ev-v2 sp-ev-v2--future">
+                  <?php if ($ev_date_fmt): ?><div class="sp-ev-v2__date"><?= $ev_date_fmt ?></div><?php endif; ?>
+                  <div class="sp-ev-v2__title"><?= $ev_title ?: 'Event' ?></div>
+                  <div class="sp-ev-v2__meta">
+                    <?php if ($ev_location): ?><span>📍 <?= $ev_location ?></span><?php endif; ?>
+                    <?php if ($ev_type && $ev_location): ?><span>·</span><?php endif; ?>
+                    <?php if ($ev_type): ?><span><?= $ev_type ?></span><?php endif; ?>
+                  </div>
+                  <?php if ($ev_presence !== 'presence'): ?>
+                    <span class="sp-ev-v2__badge sp-ev-v2__badge--online"><?= htmlspecialchars($presence_labels[$ev_presence] ?? $ev_presence) ?></span>
+                  <?php endif; ?>
                 </div>
-                <?php if ($ev_presence !== 'presence'): ?>
-                  <span class="sp-ev-v2__badge sp-ev-v2__badge--online"><?= htmlspecialchars($presence_labels[$ev_presence] ?? $ev_presence) ?></span>
-                <?php endif; ?>
-              </div>
-            <?php endforeach; ?>
-          </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+
+          <?php if (!empty($ev_past)): ?>
+            <h3 class="sp-ev-subhead<?= !empty($ev_future) ? ' sp-ev-subhead--gap' : '' ?>">🗓️ Vergangene Events</h3>
+            <div class="sp-ev-grid-v2 sp-ev-grid-v2--past">
+              <?php foreach ($ev_past as $ev):
+                $ev_title    = htmlspecialchars($ev->event_title    ?? '');
+                $ev_date_raw = $ev->event_date   ?? '';
+                $ev_location = htmlspecialchars($ev->event_location ?? '');
+                $ev_type     = htmlspecialchars($ev->event_type     ?? '');
+                $ev_presence = $ev->presence_type ?? 'presence';
+                $ev_ts       = $ev_date_raw ? strtotime($ev_date_raw) : 0;
+                $ev_date_fmt = $ev_ts ? date('d.m.Y', $ev_ts) : '';
+              ?>
+                <div class="sp-ev-v2 sp-ev-v2--past">
+                  <?php if ($ev_date_fmt): ?><div class="sp-ev-v2__date"><?= $ev_date_fmt ?></div><?php endif; ?>
+                  <div class="sp-ev-v2__title"><?= $ev_title ?: 'Event' ?></div>
+                  <div class="sp-ev-v2__meta">
+                    <?php if ($ev_location): ?><span>📍 <?= $ev_location ?></span><?php endif; ?>
+                    <?php if ($ev_type && $ev_location): ?><span>·</span><?php endif; ?>
+                    <?php if ($ev_type): ?><span><?= $ev_type ?></span><?php endif; ?>
+                  </div>
+                  <?php if ($ev_presence !== 'presence'): ?>
+                    <span class="sp-ev-v2__badge sp-ev-v2__badge--online"><?= htmlspecialchars($presence_labels[$ev_presence] ?? $ev_presence) ?></span>
+                  <?php endif; ?>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+
         </div>
       <?php endif; ?>
 
