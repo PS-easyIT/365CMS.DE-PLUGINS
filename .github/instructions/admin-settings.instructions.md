@@ -118,7 +118,7 @@ $tabs = [
     <input type="hidden" name="action"     value="save_design">
     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
 
-    <!-- Zweispaltiges Grid für Farbpaare -->
+    <!-- Zweispaltiges bis dreispaltiges Grid für Farbpaare -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
 
         <div class="form-group">

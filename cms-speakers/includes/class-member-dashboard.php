@@ -248,10 +248,7 @@ class CMS_Speakers_Member_Dashboard
             <p style="color:#64748b;font-size:.875rem;margin:0;">
                 <?php echo count($speakers); ?> Speaker verfügbar
             </p>
-            <a href="/member/plugin/speakers?action=new"
-               style="display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1.25rem;
-                      background:#7c3aed;color:#fff;border-radius:8px;font-weight:600;
-                      font-size:.875rem;text-decoration:none;">
+            <a href="/member/plugin/speakers?action=new" class="btn btn-primary">
                 ➕ Neuer Speaker
             </a>
         </div>
@@ -290,14 +287,13 @@ class CMS_Speakers_Member_Dashboard
         $isAdmin   = \CMS\Auth::instance()->isAdmin();
         ?>
         <div style="margin-bottom:1rem;">
-            <a href="/member/plugin/speakers" style="color:#7c3aed;font-size:.875rem;text-decoration:none;">
+            <a href="/member/plugin/speakers" class="btn btn-secondary btn-sm">
                 ← Zurück zur Übersicht
             </a>
         </div>
 
         <?php if (!$isAdmin): ?>
-        <div style="background:#f5f3ff;border-left:4px solid #7c3aed;padding:.875rem 1rem;
-                    border-radius:6px;margin-bottom:1.25rem;font-size:.875rem;color:#5b21b6;">
+        <div class="alert" style="background:#f5f3ff;color:#5b21b6;border-left:4px solid #7c3aed;">
             ℹ️ Ihr Profil wird nach dem Einreichen vom Admin geprüft und dann freigeschaltet.
         </div>
         <?php endif; ?>

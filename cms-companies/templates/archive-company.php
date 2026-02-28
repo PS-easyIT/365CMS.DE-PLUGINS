@@ -58,11 +58,14 @@ $all_industries = CMS_Companies_Database::instance()->get_all_industries();
 <?php /* ── CSS Custom Properties aus DB-Settings injizieren ── */ ?>
 <style>
 :root {
-  --co-primary:   <?= htmlspecialchars($s['design_primary_color']) ?>;
-  --co-primary-d: <?= htmlspecialchars($s['design_cta_color']) ?>;
-  --co-accent:    <?= htmlspecialchars($s['design_accent_color']) ?>;
-  --co-radius:    <?= (int)$s['design_border_radius'] ?>px;
-  --co-card-bg:   <?= htmlspecialchars($s['design_card_bg']) ?>;
+  --co-primary:    <?= htmlspecialchars($s['design_primary_color']) ?>;
+  --co-primary-d:  <?= htmlspecialchars($s['design_cta_color']) ?>;
+  --co-accent:     <?= htmlspecialchars($s['design_accent_color']) ?>;
+  --co-radius:     <?= (int)$s['design_border_radius'] ?>px;
+  --co-card-bg:    <?= htmlspecialchars($s['design_card_bg']) ?>;
+  --co-hdr-from:   <?= htmlspecialchars($s['archive_header_bg_from']) ?>;
+  --co-hdr-to:     <?= htmlspecialchars($s['archive_header_bg_to']) ?>;
+  --co-hdr-title:  <?= htmlspecialchars($s['archive_header_title_color']) ?>;
 }
 .co-grid { grid-template-columns: <?= $grid_cols ?>; }
 </style>
@@ -73,20 +76,20 @@ $all_industries = CMS_Companies_Database::instance()->get_all_industries();
     if ($has_title || $has_desc):
     ?>
     <!-- Gradient Header -->
-    <div class="co-archive-header" style="background:linear-gradient(135deg,<?= htmlspecialchars($s['archive_header_bg_from']) ?> 0%,<?= htmlspecialchars($s['archive_header_bg_to']) ?> 100%);">
+    <div class="co-archive-header">
         <div class="co-archive-header-inner">
             <div class="co-archive-header-icon"><?= htmlspecialchars($s['archive_header_icon']) ?></div>
             <div>
                 <?php if ($has_title): ?>
-                <h1 style="color:<?= htmlspecialchars($s['archive_header_title_color']) ?>"><?= htmlspecialchars($s['archive_title']) ?></h1>
+                <h1 class="co-archive-header-title"><?= htmlspecialchars($s['archive_title']) ?></h1>
                 <?php endif; ?>
                 <?php if ($has_desc): ?>
-                <p class="co-archive-subtitle" style="color:<?= htmlspecialchars($s['archive_header_title_color']) ?>">
+                <p class="co-archive-subtitle">
                     <?= htmlspecialchars($s['archive_description']) ?>
                 </p>
                 <?php endif; ?>
             </div>
-            <div class="co-archive-count" style="color:<?= htmlspecialchars($s['archive_header_title_color']) ?>">
+            <div class="co-archive-count">
                 <span class="co-archive-count-num"><?= $total_count ?></span>
                 <span class="co-archive-count-lbl">Einträge</span>
             </div>
@@ -105,7 +108,7 @@ $all_industries = CMS_Companies_Database::instance()->get_all_industries();
         </div>
 
         <!-- Stadt -->
-        <div class="co-filter-input" style="max-width:200px;">
+        <div class="co-filter-input co-filter-input--sm">
             <span class="co-filter-icon">📍</span>
             <input type="text" name="city" placeholder="Stadt…"
                    value="<?= CMS\Security::instance()->escape($filters['city'] ?? '') ?>">
@@ -159,11 +162,11 @@ $all_industries = CMS_Companies_Database::instance()->get_all_industries();
         <?php if ($current_page > 1 || count($companies) >= $per_page): ?>
         <div class="co-pagination">
             <?php if ($current_page > 1): ?>
-                <a href="?page=<?= $current_page - 1 ?>&industry=<?= urlencode($filters['industry'] ?? '') ?>&city=<?= urlencode($filters['city'] ?? '') ?>" class="co-btn co-btn-ghost">« Zurück</a>
+                <a href="?page=<?= $current_page - 1 ?>&industry=<?= urlencode($filters['industry'] ?? '') ?>&city=<?= urlencode($filters['city'] ?? '') ?>" class="co-page-btn">&larr; Zurück</a>
             <?php endif; ?>
             <span class="co-page-info">Seite <?= $current_page ?></span>
             <?php if (count($companies) >= $per_page): ?>
-                <a href="?page=<?= $current_page + 1 ?>&industry=<?= urlencode($filters['industry'] ?? '') ?>&city=<?= urlencode($filters['city'] ?? '') ?>" class="co-btn co-btn-ghost">Weiter »</a>
+                <a href="?page=<?= $current_page + 1 ?>&industry=<?= urlencode($filters['industry'] ?? '') ?>&city=<?= urlencode($filters['city'] ?? '') ?>" class="co-page-btn">Weiter &rarr;</a>
             <?php endif; ?>
         </div>
         <?php endif; ?>

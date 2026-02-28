@@ -116,9 +116,8 @@ $hasFilter      = $companyFilter !== '' || $typeFilter !== '' || $locationFilter
             </select>
 
             <!-- Phase 14.3: Gehalt-Filter -->
-            <input type="number" name="salary_min" class="jpg-filter-input"
+            <input type="number" name="salary_min" class="jpg-filter-input jpg-filter-input--salary"
                    placeholder="💰 Gehalt ab (€)" min="0" step="500"
-                   style="max-width:160px;"
                    value="<?php echo $salaryMin > 0 ? $salaryMin : ''; ?>">
 
             <button type="submit" class="jpg-filter-btn">🔍 Filtern</button>
@@ -132,7 +131,7 @@ $hasFilter      = $companyFilter !== '' || $typeFilter !== '' || $locationFilter
     <!-- Job-Liste -->
     <?php if (empty($profiles)): ?>
     <div class="jpg-jobs-list__empty">
-        <p style="font-size:2.5rem;margin:0;">📭</p>
+        <p class="jpg-empty-icon">📭</p>
         <p><strong>Keine passenden Stellen gefunden</strong></p>
         <p>Versuche es mit anderen Filtereinstellungen oder schau später wieder vorbei.</p>
         <?php if ($hasFilter): ?>
@@ -231,67 +230,3 @@ $hasFilter      = $companyFilter !== '' || $typeFilter !== '' || $locationFilter
     <?php endif; ?>
 
 </div><!-- /.jpg-jobs-list -->
-
-<style>
-/* ── öffentliche Stellen-Liste (jobs-list.php) ──────────────────────────── */
-.jpg-jobs-list { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
-
-.jpg-jobs-list__header { margin-bottom: 1.5rem; }
-.jpg-jobs-list__header h1 { font-size: 1.75rem; font-weight: 700; margin: 0 0 .25rem; }
-.jpg-jobs-list__subtitle  { color: #64748b; font-size: .95rem; margin: 0; }
-
-/* Filter-Leiste */
-.jpg-jobs-list__filters   { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
-.jpg-jobs-list__filter-row{ display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
-.jpg-filter-input, .jpg-filter-select {
-    padding: .5rem .875rem; border: 1.5px solid #e2e8f0; border-radius: 7px;
-    font-size: .9rem; background: #fff; color: #1e293b; flex: 1; min-width: 140px;
-}
-.jpg-filter-input:focus, .jpg-filter-select:focus {
-    outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.15);
-}
-.jpg-filter-btn  { padding: .5rem 1.25rem; background: #3b82f6; color: #fff; border: none; border-radius: 7px; font-size: .9rem; cursor: pointer; white-space: nowrap; }
-.jpg-filter-btn:hover { background: #2563eb; }
-.jpg-filter-reset{ color: #64748b; font-size: .875rem; text-decoration: none; white-space: nowrap; }
-.jpg-filter-reset:hover { color: #ef4444; }
-
-/* Job-Karten */
-.jpg-jobs-list__grid  { display: flex; flex-direction: column; gap: 1rem; }
-.jpg-job-card-list    { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 1.5rem; transition: box-shadow .15s; }
-.jpg-job-card-list:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); }
-.jpg-job-card-list__body{ flex: 1; min-width: 0; }
-.jpg-job-card-list__title { font-size: 1.1rem; font-weight: 700; margin: 0 0 .5rem; }
-.jpg-job-card-list__title a { color: #1e293b; text-decoration: none; }
-.jpg-job-card-list__title a:hover { color: #3b82f6; }
-.jpg-job-card-list__meta { display: flex; flex-wrap: wrap; gap: .5rem .875rem; margin-bottom: .6rem; }
-.jpg-meta-item   { font-size: .825rem; color: #475569; }
-.jpg-meta-type   { background: #eff6ff; color: #1d4ed8; padding: .15rem .5rem; border-radius: 4px; }
-.jpg-meta-remote { background: #f0fdf4; color: #166534; padding: .15rem .5rem; border-radius: 4px; }
-.jpg-meta-salary { background: #fef9c3; color: #713f12; padding: .15rem .5rem; border-radius: 4px; }
-.jpg-job-card-list__summary { color: #64748b; font-size: .875rem; margin: 0; line-height: 1.5; }
-.jpg-job-card-list__action  { flex-shrink: 0; }
-
-/* Buttons */
-.jpg-btn { display: inline-block; padding: .6rem 1.25rem; border-radius: 7px; font-size: .875rem; font-weight: 600; text-decoration: none; cursor: pointer; }
-.jpg-btn-primary   { background: #3b82f6; color: #fff; }
-.jpg-btn-primary:hover { background: #2563eb; }
-.jpg-btn-secondary { background: #f1f5f9; color: #475569; }
-.jpg-btn-secondary:hover { background: #e2e8f0; }
-
-/* Empty state */
-.jpg-jobs-list__empty { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 3rem; text-align: center; color: #64748b; }
-
-/* Pagination */
-.jpg-pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 2rem; }
-.jpg-pagination__btn  { padding: .5rem 1.125rem; background: #f1f5f9; color: #475569; border-radius: 7px; text-decoration: none; font-size: .875rem; }
-.jpg-pagination__btn:hover { background: #e2e8f0; }
-.jpg-pagination__info { color: #64748b; font-size: .875rem; }
-
-/* Responsive */
-@media (max-width: 640px) {
-    .jpg-job-card-list { flex-direction: column; }
-    .jpg-job-card-list__action { width: 100%; }
-    .jpg-btn { display: block; text-align: center; }
-    .jpg-filter-input, .jpg-filter-select { min-width: 100%; flex: none; }
-}
-</style>

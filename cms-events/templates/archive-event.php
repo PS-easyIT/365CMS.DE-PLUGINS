@@ -88,8 +88,6 @@ $s_featured_border = htmlspecialchars($settings['color_featured_border'] ?? '#f5
   --ev-ease:            all .2s cubic-bezier(.4,0,.2,1);
 }
 .ev-grid { grid-template-columns: repeat(<?= $grid_cols ?>,1fr); }
-@media(max-width:1024px){ .ev-grid{ grid-template-columns:repeat(2,1fr) !important; } }
-@media(max-width:640px){ .ev-grid{ grid-template-columns:1fr !important; } }
 </style>
 
 <div class="ev-archive">
@@ -172,8 +170,7 @@ $s_featured_border = htmlspecialchars($settings['color_featured_border'] ?? '#f5
         <span class="ev-empty-icon">📭</span>
         <p><strong>Keine Events gefunden.</strong></p>
         <?php if ($cur_search || $cur_city || $cur_cat || $cur_when): ?>
-          <p><a href="<?= $archive_url ?>" class="ev-btn ev-btn-ghost"
-               style="display:inline-flex;margin-top:.5rem;">Filter zurücksetzen</a></p>
+          <p><a href="<?= $archive_url ?>" class="ev-btn ev-btn-ghost ev-btn--inline">Filter zurücksetzen</a></p>
         <?php endif; ?>
       </div>
     <?php else: ?>

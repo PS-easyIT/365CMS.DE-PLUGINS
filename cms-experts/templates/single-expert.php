@@ -185,121 +185,6 @@ $_ex_cp     = $_ex_pals[abs(crc32($full_name)) % count($_ex_pals)];
 $_ex_agrad  = "linear-gradient(135deg,{$_ex_cp[0]},{$_ex_cp[1]})";
 $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 ?>
-<style>
-/* ── Expert Single v2 ──────────────────────────────────── */
-.ex-v2{max-width:var(--max,1140px);margin:0 auto;background:#f8fafc;border-left:1px solid var(--post-column-border,#e2e0d8);border-right:1px solid var(--post-column-border,#e2e0d8);}
-.ex-bc{display:flex;align-items:center;gap:.5rem;padding:.7rem 2rem;background:#fff;border-bottom:1px solid #f1f5f9;font-size:.8rem;}
-.ex-bc a{color:var(--expert-primary,#5e72e4);text-decoration:none;font-weight:600;}
-.ex-bc a:hover{opacity:.7;}
-.ex-bc__sep{color:#cbd5e1;}
-.ex-bc__cur{color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:360px;}
-.ex-hero{position:relative;overflow:hidden;min-height:200px;max-height:300px;background:var(--detail-header-bg,#f8fafc);border-bottom:3px solid var(--expert-primary,#5e72e4);}
-.ex-hero__inner{display:flex;gap:1.75rem;align-items:center;padding:1.5rem 2rem 1.75rem;flex-wrap:wrap;position:relative;z-index:1;min-height:200px;}
-.ex-hero__av{flex-shrink:0;width:96px;height:96px;border-radius:50%;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.14),0 0 0 4px rgba(255,255,255,.8),0 0 0 7px color-mix(in srgb,var(--expert-primary,#5e72e4) 20%,transparent);display:flex;align-items:center;justify-content:center;font-size:2.25rem;font-weight:900;color:#fff;letter-spacing:-.02em;}
-.ex-hero__av img{width:100%;height:100%;object-fit:cover;}
-.ex-hero__meta{flex:1;min-width:0;}
-.ex-hero__badges{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.625rem;justify-content:flex-end;}
-.ex-hero__badge{display:inline-flex;align-items:center;gap:.25rem;padding:.22rem .65rem;border-radius:50px;font-size:.72rem;font-weight:700;backdrop-filter:blur(3px);}
-.ex-hero__badge--avail-available{background:#d1fae5;color:#065f46;}
-.ex-hero__badge--avail-limited{background:#fef3c7;color:#92400e;}
-.ex-hero__badge--avail-booked{background:#fee2e2;color:#991b1b;}
-.ex-hero__badge--mvp{background:rgba(251,191,36,.18);color:#d97706;border:1px solid rgba(251,191,36,.3);}
-.ex-hero__badge--cert{background:#dbeafe;color:#1e40af;}
-.ex-hero__badge--premium{background:#fef3c7;color:#7c2d12;}
-.ex-hero__badge--partner{background:#f3e8ff;color:#6b21a8;}
-.ex-hero__name{margin:0 0 .2rem;font-size:clamp(1.4rem,3vw,1.875rem);font-weight:800;line-height:1.2;color:var(--detail-header-color,#1e293b);}
-.ex-hero__motto{font-size:.88rem;font-style:italic;color:var(--detail-header-color,#1e293b);opacity:.6;margin:0 0 .25rem;}
-.ex-hero__pos{font-size:.92rem;color:var(--detail-header-color,#1e293b);opacity:.7;margin:0 0 .2rem;}
-.ex-hero__co{font-size:.88rem;color:var(--detail-header-color,#1e293b);opacity:.65;margin:0 0 .875rem;}
-.ex-hero__chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.875rem;}
-.ex-hero__chip{display:inline-flex;align-items:center;gap:.3rem;padding:.3rem .8rem;border-radius:50px;font-size:.76rem;font-weight:600;background:rgba(255,255,255,.75);color:#334155;border:1.5px solid rgba(255,255,255,.5);backdrop-filter:blur(3px);box-shadow:0 1px 3px rgba(0,0,0,.04);}
-.ex-hero__social{display:flex;flex-wrap:wrap;gap:.5rem;}
-.ex-hero__si{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.8);color:#334155;text-decoration:none;backdrop-filter:blur(3px);transition:background .15s,transform .15s,box-shadow .15s;}
-.ex-hero__si:hover{background:#fff;transform:translateY(-2px);box-shadow:0 4px 10px rgba(0,0,0,.12);}
-.ex-body{display:grid;grid-template-columns:1fr 320px;gap:1.75rem;padding:1.75rem 2rem 3rem;align-items:start;}
-.ex-main{min-width:0;}
-.ex-aside{position:sticky;top:1.5rem;display:flex;flex-direction:column;gap:.875rem;}
-.ex-sec{background:#fff;border-radius:var(--expert-radius,12px);padding:1.5rem 1.75rem;margin-bottom:1.125rem;box-shadow:0 1px 3px rgba(0,0,0,.04),0 4px 14px rgba(0,0,0,.04);transition:box-shadow .2s;}
-.ex-sec:hover{box-shadow:0 4px 20px rgba(0,0,0,.10);}
-.ex-sec:last-child{margin-bottom:0;}
-.ex-sec__title{font-size:.92rem;font-weight:700;color:#1e293b;margin:0 0 1.125rem;padding-bottom:.6rem;padding-left:.75rem;display:flex;align-items:center;gap:.4rem;border-left:3px solid var(--expert-primary,#5e72e4);border-bottom:1.5px solid #f1f5f9;}
-.ex-pills{display:flex;flex-wrap:wrap;gap:.5rem;}
-.ex-pill{display:inline-flex;align-items:center;padding:.3rem .8rem;border-radius:50px;font-size:.8rem;font-weight:600;background:color-mix(in srgb,var(--expert-primary,#5e72e4) 9%,#fff);color:var(--expert-primary,#5e72e4);border:1px solid color-mix(in srgb,var(--expert-primary,#5e72e4) 18%,#fff);}
-.ex-pill--soft{background:#f0fdf4;color:#15803d;border-color:#bbf7d0;}
-.ex-pill--tech{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe;}
-.ex-pill--spec{background:#faf5ff;color:#7c3aed;border-color:#e9d5ff;}
-.ex-skill-item{display:flex;flex-direction:column;gap:.3rem;padding:.625rem .875rem;background:#fafbfc;border-radius:8px;border:1px solid #f1f5f9;}
-.ex-skill-item__top{display:flex;justify-content:space-between;font-size:.82rem;}
-.ex-skill-item__name{font-weight:600;color:#334155;}
-.ex-skill-item__lvl{color:#94a3b8;font-size:.75rem;}
-.ex-skill-bar{height:4px;border-radius:2px;background:#e2e8f0;overflow:hidden;}
-.ex-skill-bar__fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--expert-primary,#5e72e4),var(--expert-accent,#8965e0));}
-.ex-proj-item{padding:.875rem 1rem;border-radius:10px;background:#fafbfc;border:1px solid #f1f5f9;margin-bottom:.625rem;transition:background .15s,border-color .15s;}
-.ex-proj-item:last-child{margin-bottom:0;}
-.ex-proj-item:hover{background:#f0f4ff;border-color:#c7d2fe;}
-.ex-proj-item__name{font-weight:700;color:#1e293b;font-size:.9rem;margin-bottom:.25rem;}
-.ex-proj-item__meta{font-size:.75rem;color:#94a3b8;margin-bottom:.375rem;}
-.ex-proj-item__desc{font-size:.82rem;color:#475569;line-height:1.65;}
-.ex-proj-item__tags{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.5rem;}
-.ex-proj-item__tag{padding:.15rem .5rem;border-radius:4px;font-size:.7rem;background:#eff6ff;color:#1d4ed8;font-weight:600;}
-.ex-edu-item{display:flex;flex-direction:column;gap:.2rem;padding:.75rem .875rem;border-radius:8px;background:#f8fafc;border-left:3px solid var(--expert-primary,#5e72e4);margin-bottom:.5rem;}
-.ex-edu-item:last-child{margin-bottom:0;}
-.ex-edu-item__deg{font-weight:700;font-size:.88rem;color:#1e293b;}
-.ex-edu-item__inst{font-size:.8rem;color:#475569;}
-.ex-edu-item__meta{font-size:.73rem;color:#94a3b8;}
-.ex-cert-item{display:flex;justify-content:space-between;align-items:center;padding:.625rem .875rem;border-radius:8px;background:#fafbfc;border:1px solid #f1f5f9;margin-bottom:.375rem;}
-.ex-cert-item:last-child{margin-bottom:0;}
-.ex-cert-item__name{font-weight:700;font-size:.85rem;color:#1e293b;}
-.ex-cert-item__meta{font-size:.73rem;color:#94a3b8;}
-.ex-career-item{position:relative;padding:.875rem 1.125rem .875rem 1.5rem;border-left:2px solid var(--expert-primary,#5e72e4);margin-bottom:.75rem;}
-.ex-career-item::before{content:'';position:absolute;left:-5px;top:.975rem;width:8px;height:8px;border-radius:50%;background:var(--expert-primary,#5e72e4);border:2px solid #fff;box-shadow:0 0 0 2px var(--expert-primary,#5e72e4);}
-.ex-career-item:last-child{margin-bottom:0;}
-.ex-career-item__role{font-weight:700;font-size:.9rem;color:#1e293b;}
-.ex-career-item__co{font-size:.82rem;color:#5e72e4;font-weight:600;}
-.ex-career-item__meta{font-size:.75rem;color:#94a3b8;margin:.2rem 0;}
-.ex-career-item__desc{font-size:.82rem;color:#475569;line-height:1.65;}
-.ex-testi-item{padding:1rem 1.125rem;background:#fafbfc;border-radius:10px;border-left:3px solid var(--expert-primary,#5e72e4);margin-bottom:.625rem;}
-.ex-testi-item:last-child{margin-bottom:0;}
-.ex-testi-item__text{font-size:.88rem;color:#334155;line-height:1.7;font-style:italic;margin-bottom:.5rem;}
-.ex-testi-item__by{font-size:.75rem;font-weight:700;color:#475569;}
-.ex-progress-list{display:flex;flex-direction:column;gap:.5rem;}
-.ex-progress-item{display:flex;flex-direction:column;gap:.25rem;}
-.ex-progress-item__label{font-size:.8rem;font-weight:600;color:#334155;display:flex;justify-content:space-between;}
-.ex-progress-item__bar{height:6px;border-radius:3px;background:#e2e8f0;overflow:hidden;}
-.ex-progress-item__fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--expert-primary,#5e72e4),var(--expert-accent,#8965e0));}
-.ex-conf-item{padding:.625rem .875rem;border-radius:8px;background:#fafbfc;border:1px solid #f1f5f9;margin-bottom:.375rem;}
-.ex-conf-item:last-child{margin-bottom:0;}
-.ex-conf-item__title{font-weight:700;font-size:.85rem;color:#1e293b;}
-.ex-conf-item__meta{font-size:.73rem;color:#94a3b8;margin-top:.2rem;}
-.ex-sc{background:#fff;border-radius:var(--expert-radius,12px);padding:1.25rem 1.375rem;box-shadow:0 1px 3px rgba(0,0,0,.04),0 4px 14px rgba(0,0,0,.04);}
-.ex-sc__title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;margin:0 0 .875rem;}
-.ex-info-rows{display:flex;flex-direction:column;}
-.ex-info-row{display:flex;justify-content:space-between;align-items:baseline;gap:.75rem;padding:.45rem 0;border-bottom:1px solid #f8fafc;}
-.ex-info-row:last-child{border-bottom:none;}
-.ex-info-row__lbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;flex-shrink:0;}
-.ex-info-row__val{font-size:.85rem;font-weight:500;color:#1e293b;text-align:right;word-break:break-word;}
-.ex-info-row__val a{color:var(--expert-primary,#5e72e4);text-decoration:none;}
-.ex-btn{display:flex;align-items:center;justify-content:center;gap:.5rem;padding:.875rem 1.5rem;width:100%;box-sizing:border-box;font-size:.9rem;font-weight:700;border-radius:10px;border:none;cursor:pointer;text-decoration:none;color:#fff;margin-bottom:.5rem;background:linear-gradient(135deg,var(--expert-accent,#8965e0),var(--expert-primary,#5e72e4));box-shadow:0 4px 16px color-mix(in srgb,var(--expert-primary,#5e72e4) 28%,transparent);transition:all .2s cubic-bezier(.4,0,.2,1);}
-.ex-btn:last-child{margin-bottom:0;}
-.ex-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px color-mix(in srgb,var(--expert-primary,#5e72e4) 36%,transparent);}
-.ex-btn--ghost{background:#f5f3ff;color:var(--expert-primary,#5e72e4);box-shadow:none;border:1.5px solid color-mix(in srgb,var(--expert-primary,#5e72e4) 25%,#fff);}
-.ex-btn--ghost:hover{background:#ede9fe;box-shadow:none;}
-.ex-social-row{display:flex;flex-wrap:wrap;gap:.5rem;}
-.ex-si{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background:#f8fafc;color:#334155;text-decoration:none;border:1px solid #e2e8f0;transition:background .15s,transform .15s;}
-.ex-si:hover{background:color-mix(in srgb,var(--expert-primary,#5e72e4) 10%,#fff);transform:translateY(-2px);}
-.ex-svc-check{display:flex;flex-direction:column;gap:.25rem;}
-.ex-svc-row{display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:#334155;}
-.ex-svc-row::before{content:'✓';color:#16a34a;font-weight:700;flex-shrink:0;}
-@media(max-width:768px){
-  .ex-body{grid-template-columns:1fr;padding:1.25rem 1rem 2rem;gap:1.25rem;}
-  .ex-aside{position:static;}
-  .ex-hero{min-height:auto;max-height:none;}
-  .ex-hero__inner{padding:1.25rem 1rem;min-height:auto;}
-  .ex-hero__av{width:78px;height:78px;}
-  .ex-hero__name{font-size:1.3rem;}
-  .ex-bc{padding:.6rem 1rem;}
-}
-</style>
 
 <div class="ex-v2">
 
@@ -326,7 +211,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
           <?php if ($is_certified): ?><span class="ex-hero__badge ex-hero__badge--cert">✅ Zertifiziert</span><?php endif; ?>
           <?php if ($is_premium):   ?><span class="ex-hero__badge ex-hero__badge--premium">⭐ Premium</span><?php endif; ?>
         </div>
-        <?php if ($custom_award): ?><div style="font-size:.82rem;color:#d97706;margin-bottom:.3rem;">🏆 <?= $sec->escape($custom_award) ?></div><?php endif; ?>
+        <?php if ($custom_award): ?><div class="ex-award">🏆 <?= $sec->escape($custom_award) ?></div><?php endif; ?>
         <h1 class="ex-hero__name"><?= $sec->escape($full_name) ?></h1>
         <?php if ($motto): ?><p class="ex-hero__motto">"<?= $sec->escape($motto) ?>"</p><?php endif; ?>
         <?php if ($position): ?><p class="ex-hero__pos"><?= $sec->escape($position) ?></p><?php endif; ?>
@@ -372,7 +257,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       <?php if (!empty($expert->biography) && trim((string)$expert->biography) !== ''): ?>
         <div class="ex-sec">
           <h2 class="ex-sec__title">👤 Über mich</h2>
-          <div class="ex-wysiwyg-content" style="line-height:1.75;color:#334155;font-size:.95rem;">
+          <div class="ex-wysiwyg-content">
             <?php
             $bio = (string)$expert->biography;
             echo (bool)preg_match('/<(p|ul|ol|h[1-6]|blockquote|div|br)[\s>]/i', $bio) ? $bio : nl2br(htmlspecialchars($bio));
@@ -407,8 +292,8 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
           <?php foreach ($skill_section_cfg as $type => [$label, $cls]):
             if (empty($skills_by_type[$type])) continue;
           ?>
-            <h4 style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:.875rem 0 .5rem;"><?= $label ?></h4>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.5rem;margin-bottom:.75rem;">
+            <h4 class="ex-sub-heading"><?= $label ?></h4>
+            <div class="ex-skills-grid">
               <?php foreach ($skills_by_type[$type] as $sk):
                 $lvl_pct = $skill_level_map[$sk->skill_level ?? ''] ?? 0;
               ?>
@@ -442,8 +327,8 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
           ];
           foreach ($tech_sections as [$lbl, $items]):
             if (empty($items)) continue; ?>
-            <h4 style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:.875rem 0 .4rem;"><?= $lbl ?></h4>
-            <div class="ex-pills" style="margin-bottom:.5rem;">
+            <h4 class="ex-sub-heading"><?= $lbl ?></h4>
+            <div class="ex-pills ex-pills--mb">
               <?php foreach ((array)$items as $it): ?><span class="ex-pill ex-pill--tech"><?= $sec->escape(is_string($it) ? $it : ($it->name ?? (string)$it)) ?></span><?php endforeach; ?>
             </div>
           <?php endforeach; ?>
@@ -452,7 +337,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 
       <?php if (!empty($projects)): ?>
         <div class="ex-sec">
-          <h2 class="ex-sec__title">📁 Projekte <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--expert-primary,#5e72e4);color:#fff;font-size:.72rem;font-weight:700;margin-left:.3rem;"><?= count($projects) ?></span></h2>
+          <h2 class="ex-sec__title">📁 Projekte <span class="ex-count-badge"><?= count($projects) ?></span></h2>
           <?php foreach ($projects as $pj):
             $p_start = (!empty($pj->project_start) && $pj->project_start !== '0000-00-00') ? date('m/Y', strtotime($pj->project_start)) : '';
             $p_end   = (!empty($pj->project_end)   && $pj->project_end   !== '0000-00-00') ? date('m/Y', strtotime($pj->project_end))   : 'aktuell';
@@ -462,7 +347,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
               <div class="ex-proj-item__name"><?= $sec->escape($pj->project_name ?? '') ?></div>
               <div class="ex-proj-item__meta">
                 <?= $sec->escape($pj->project_role ?? '') ?><?= (!empty($pj->project_role) && ($p_start || $p_end)) ? ' · ' : '' ?><?= $p_start ? $p_start . ' – ' . $p_end : '' ?>
-                <?php if (!empty($pj->project_url)): ?> · <a href="<?= $sec->escape($pj->project_url) ?>" target="_blank" rel="noopener" style="color:var(--expert-primary,#5e72e4);">↗</a><?php endif; ?>
+                <?php if (!empty($pj->project_url)): ?> · <a href="<?= $sec->escape($pj->project_url) ?>" target="_blank" rel="noopener">↗</a><?php endif; ?>
               </div>
               <?php if (!empty($pj->project_description)): ?>
                 <div class="ex-proj-item__desc"><?= nl2br($sec->escape($pj->project_description)) ?></div>
@@ -488,7 +373,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
               <div class="ex-edu-item__deg"><?= $sec->escape($edu->degree ?? '') ?><?= !empty($edu->field_of_study) ? ' – ' . $sec->escape($edu->field_of_study) : '' ?></div>
               <div class="ex-edu-item__inst"><?= $sec->escape($edu->institution ?? '') ?></div>
               <?php if ($e_from || $e_to): ?><div class="ex-edu-item__meta"><?= $e_from ?? '?' ?> – <?= $e_to ?? 'heute' ?></div><?php endif; ?>
-              <?php if (!empty($edu->description)): ?><div style="font-size:.8rem;color:#64748b;margin-top:.3rem;"><?= $sec->escape($edu->description) ?></div><?php endif; ?>
+              <?php if (!empty($edu->description)): ?><div class="ex-edu-desc"><?= $sec->escape($edu->description) ?></div><?php endif; ?>
             </div>
           <?php endforeach; ?>
         </div>
@@ -533,7 +418,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
         <div class="ex-sec">
           <h2 class="ex-sec__title">🏅 Referenzen & Auftritte</h2>
           <?php if (!empty($testimonials_data)): ?>
-            <h4 style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:0 0 .625rem;">💬 Testimonials</h4>
+            <h4 class="ex-sub-heading">💬 Testimonials</h4>
             <?php foreach ($testimonials_data as $t): ?>
               <div class="ex-testi-item">
                 <div class="ex-testi-item__text">"<?= $sec->escape($t['text'] ?? $t['quote'] ?? '') ?>"</div>
@@ -542,17 +427,17 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
             <?php endforeach; ?>
           <?php endif; ?>
           <?php if (!empty($case_studies_data)): ?>
-            <h4 style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:.875rem 0 .5rem;">📊 Case Studies</h4>
+            <h4 class="ex-sub-heading">📊 Case Studies</h4>
             <?php foreach ($case_studies_data as $cs): ?>
-              <div class="ex-proj-item" style="margin-bottom:.5rem;">
+              <div class="ex-proj-item">
                 <div class="ex-proj-item__name"><?= $sec->escape($cs['title'] ?? '') ?></div>
                 <?php if (!empty($cs['description'])): ?><div class="ex-proj-item__desc"><?= $sec->escape($cs['description']) ?></div><?php endif; ?>
-                <?php if (!empty($cs['result'])): ?><div style="font-size:.8rem;color:#16a34a;margin-top:.3rem;font-weight:600;">✅ <?= $sec->escape($cs['result']) ?></div><?php endif; ?>
+                <?php if (!empty($cs['result'])): ?><div class="ex-cs-result">✅ <?= $sec->escape($cs['result']) ?></div><?php endif; ?>
               </div>
             <?php endforeach; ?>
           <?php endif; ?>
           <?php if (!empty($conference_talks)): ?>
-            <h4 style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin:.875rem 0 .5rem;">🎤 Konferenz-Vorträge</h4>
+            <h4 class="ex-sub-heading">🎤 Konferenz-Vorträge</h4>
             <?php foreach ($conference_talks as $ct): ?>
               <div class="ex-conf-item">
                 <div class="ex-conf-item__title"><?= $sec->escape($ct['title'] ?? $ct['talk'] ?? '') ?></div>
@@ -667,7 +552,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       <?php endif; ?>
 
       <div class="ex-sc">
-        <a href="<?= $_base_url ?>/experts" class="ex-btn ex-btn--ghost" style="margin:0;">← Zur Experten-Übersicht</a>
+        <a href="<?= $_base_url ?>/experts" class="ex-btn ex-btn--ghost ex-btn--no-margin">← Zur Experten-Übersicht</a>
       </div>
 
     </aside>

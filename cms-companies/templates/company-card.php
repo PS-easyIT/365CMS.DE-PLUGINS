@@ -73,11 +73,11 @@ $tier_style = $tier_color ? ' style="--co-tier-border:' . $tier_color . '"' : ''
 
     <!-- Status-Ribbon (Sponsor / Top-Partner / Partner) -->
     <?php if ($is_sponsor): ?>
-        <div class="co-card-ribbon co-card-ribbon--sponsor" style="background:<?= $ribbon_sponsor_color ?>">★ Sponsor</div>
+        <div class="co-card-ribbon co-card-ribbon--sponsor" style="--co-ribbon-bg:<?= $ribbon_sponsor_color ?>">★ Sponsor</div>
     <?php elseif ($is_top_partner): ?>
-        <div class="co-card-ribbon co-card-ribbon--top" style="background:<?= $ribbon_top_color ?>">◆ Top-Partner</div>
+        <div class="co-card-ribbon co-card-ribbon--top" style="--co-ribbon-bg:<?= $ribbon_top_color ?>">◆ Top-Partner</div>
     <?php elseif ($is_partner): ?>
-        <div class="co-card-ribbon co-card-ribbon--partner" style="background:<?= $ribbon_partner_color ?>">● Partner</div>
+        <div class="co-card-ribbon co-card-ribbon--partner" style="--co-ribbon-bg:<?= $ribbon_partner_color ?>">● Partner</div>
     <?php endif; ?>
 
     <!-- Header: Avatar + Name + Branche -->

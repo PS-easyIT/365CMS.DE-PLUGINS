@@ -157,22 +157,22 @@ $esc = function (string $v): string {
         <?php if (!empty($experts)): ?>
         <div class="jpg-section">
             <h2>👥 Lerne dein Team kennen</h2>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-top:1rem;">
+            <div class="jpg-team-grid">
                 <?php foreach ($experts as $expert): ?>
-                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:1.25rem;text-align:center;">
+                <div class="jpg-team-card">
                     <?php if (!empty($expert->avatar_url)): ?>
                     <img src="<?php echo $esc($expert->avatar_url); ?>"
                          alt="<?php echo $esc($expert->name); ?>"
-                         style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin-bottom:.75rem;">
+                         class="jpg-team-avatar__img">
                     <?php else: ?>
-                    <div style="width:72px;height:72px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;margin:0 auto .75rem;font-size:1.75rem;">👤</div>
+                    <div class="jpg-team-avatar--placeholder">👤</div>
                     <?php endif; ?>
-                    <div style="font-weight:700;font-size:.95rem;color:#1e293b;"><?php echo $esc($expert->name); ?></div>
+                    <div class="jpg-team-name"><?php echo $esc($expert->name); ?></div>
                     <?php if (!empty($expert->job_title)): ?>
-                    <div style="font-size:.82rem;color:#64748b;margin-top:.2rem;"><?php echo $esc($expert->job_title); ?></div>
+                    <div class="jpg-team-title"><?php echo $esc($expert->job_title); ?></div>
                     <?php endif; ?>
                     <?php if (!empty($expert->bio_short)): ?>
-                    <p style="font-size:.82rem;color:#475569;margin:.6rem 0 0;line-height:1.5;"><?php echo $esc($expert->bio_short); ?></p>
+                    <p class="jpg-team-bio"><?php echo $esc($expert->bio_short); ?></p>
                     <?php endif; ?>
                 </div>
                 <?php endforeach; ?>
@@ -184,7 +184,7 @@ $esc = function (string $v): string {
         <div class="jpg-apply-section" id="apply">
             <h2>Jetzt bewerben</h2>
             <?php if (!empty($profile->description)): ?>
-            <div style="margin-bottom:1.25rem;"><?php echo $profile->description; /* Already sanitized HTML */ ?></div>
+            <div class="jpg-apply-desc"><?php echo $profile->description; /* Already sanitized HTML */ ?></div>
             <?php endif; ?>
             <button type="button" class="jpg-btn-apply" onclick="jpgOpenApplyModal()">
                 📩 Jetzt bewerben
@@ -203,84 +203,84 @@ $esc = function (string $v): string {
 <!-- ====================================================
      Bewerbungs-Modal
      ==================================================== -->
-<div id="jpgApplyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;padding:1rem;">
-    <div style="background:#fff;border-radius:12px;max-width:580px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);">
-        <div style="padding:1.5rem;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
-            <h3 style="margin:0;font-size:1.1rem;font-weight:700;color:#1e293b;">📩 Bewerbung: <?php echo htmlspecialchars($profile->title, ENT_QUOTES); ?></h3>
-            <button type="button" onclick="jpgCloseApplyModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#64748b;line-height:1;">&times;</button>
+<div id="jpgApplyModal" class="jpg-modal">
+    <div class="jpg-modal__box">
+        <div class="jpg-modal__header">
+            <h3 class="jpg-modal__title">📩 Bewerbung: <?php echo htmlspecialchars($profile->title, ENT_QUOTES); ?></h3>
+            <button type="button" onclick="jpgCloseApplyModal()" class="jpg-modal__close" aria-label="Schließen">&times;</button>
         </div>
 
         <!-- Erfolgs-Banner -->
-        <div id="jpgApplySuccess" style="display:none;padding:1rem 1.5rem;background:#d1fae5;color:#065f46;border-bottom:1px solid #6ee7b7;">
+        <div id="jpgApplySuccess" class="jpg-modal__banner jpg-modal__banner--success">
             ✅ <strong>Bewerbung eingereicht!</strong> Wir melden uns so schnell wie möglich.
         </div>
         <!-- Fehler-Banner -->
-        <div id="jpgApplyError" style="display:none;padding:1rem 1.5rem;background:#fef2f2;color:#991b1b;border-bottom:1px solid #fecaca;"></div>
+        <div id="jpgApplyError" class="jpg-modal__banner jpg-modal__banner--error"></div>
 
-        <form id="jpgApplyForm" style="padding:1.5rem;" novalidate>
+        <form id="jpgApplyForm" class="jpg-modal__form" novalidate>
             <input type="hidden" name="_jpg_csrf" value="<?php echo htmlspecialchars($applyCsrf ?? '', ENT_QUOTES); ?>">
             <!-- Honeypot -->
-            <input type="text" name="_hp_name" style="display:none;position:absolute;left:-9999px;" tabindex="-1" autocomplete="off">
+            <input type="text" name="_hp_name" class="jpg-honeypot" aria-hidden="true" tabindex="-1" autocomplete="off">
 
-            <div style="margin-bottom:1rem;">
-                <label style="display:block;font-weight:600;font-size:.9rem;color:#1e293b;margin-bottom:.35rem;">
-                    Vollständiger Name <span style="color:#ef4444;">*</span>
+            <div class="jpg-form-group">
+                <label class="jpg-form-label">
+                    Vollständiger Name <span class="jpg-required">*</span>
                 </label>
                 <input type="text" name="applicant_name" required autocomplete="name"
-                       style="width:100%;padding:.65rem .85rem;border:2px solid #e2e8f0;border-radius:6px;font-size:.95rem;box-sizing:border-box;"
+                       class="jpg-form-input"
                        placeholder="Max Mustermann">
             </div>
 
-            <div style="margin-bottom:1rem;">
-                <label style="display:block;font-weight:600;font-size:.9rem;color:#1e293b;margin-bottom:.35rem;">
-                    E-Mail-Adresse <span style="color:#ef4444;">*</span>
+            <div class="jpg-form-group">
+                <label class="jpg-form-label">
+                    E-Mail-Adresse <span class="jpg-required">*</span>
                 </label>
                 <input type="email" name="applicant_email" required autocomplete="email"
-                       style="width:100%;padding:.65rem .85rem;border:2px solid #e2e8f0;border-radius:6px;font-size:.95rem;box-sizing:border-box;"
+                       class="jpg-form-input"
                        placeholder="max@beispiel.de">
             </div>
 
-            <div style="margin-bottom:1rem;">
-                <label style="display:block;font-weight:600;font-size:.9rem;color:#1e293b;margin-bottom:.35rem;">
+            <div class="jpg-form-group">
+                <label class="jpg-form-label">
                     Telefon (optional)
                 </label>
                 <input type="tel" name="applicant_phone" autocomplete="tel"
-                       style="width:100%;padding:.65rem .85rem;border:2px solid #e2e8f0;border-radius:6px;font-size:.95rem;box-sizing:border-box;"
+                       class="jpg-form-input"
                        placeholder="+49 123 456789">
             </div>
 
-            <div style="margin-bottom:1rem;">
-                <label style="display:block;font-weight:600;font-size:.9rem;color:#1e293b;margin-bottom:.35rem;">
-                    Anschreiben <span style="color:#ef4444;">*</span>
+            <div class="jpg-form-group">
+                <label class="jpg-form-label">
+                    Anschreiben <span class="jpg-required">*</span>
                 </label>
                 <textarea name="cover_letter" rows="5" required
-                          style="width:100%;padding:.65rem .85rem;border:2px solid #e2e8f0;border-radius:6px;font-size:.95rem;resize:vertical;box-sizing:border-box;"
+                          class="jpg-form-input jpg-form-textarea"
                           placeholder="Warum möchtest du bei uns arbeiten? Was bringst du mit?"></textarea>
             </div>
 
-            <div style="margin-bottom:1.5rem;">
-                <label style="display:block;font-weight:600;font-size:.9rem;color:#1e293b;margin-bottom:.35rem;">
+            <div class="jpg-form-group jpg-form-group--file">
+                <label class="jpg-form-label">
                     Lebenslauf / CV (PDF oder Word, max. 5 MB)
                 </label>
                 <input type="file" name="cv_file" accept=".pdf,.doc,.docx"
-                       style="width:100%;padding:.5rem 0;font-size:.9rem;">
-                <small style="color:#64748b;font-size:.8rem;">Optionale Datei – max. 5 MB, PDF oder Word</small>
+                       class="jpg-form-file">
+                <small class="jpg-form-hint">Optionale Datei – max. 5 MB, PDF oder Word</small>
             </div>
 
-            <div style="display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap;">
+            <div class="jpg-modal__footer">
                 <button type="button" onclick="jpgCloseApplyModal()"
-                        style="padding:.65rem 1.25rem;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;font-size:.9rem;cursor:pointer;color:#475569;">
+                        class="jpg-modal__btn jpg-modal__btn--cancel">
                     Abbrechen
                 </button>
                 <button type="submit" id="jpgApplySubmit"
-                        style="padding:.65rem 1.5rem;background:#3b82f6;color:#fff;border:none;border-radius:6px;font-size:.9rem;font-weight:600;cursor:pointer;">
+                        class="jpg-modal__btn jpg-modal__btn--submit">
                     📩 Bewerbung absenden
                 </button>
             </div>
 
-            <p style="margin-top:1rem;font-size:.78rem;color:#94a3b8;text-align:center;">
+            <p class="jpg-modal__privacy">
                 Mit dem Absenden stimmst du der Verarbeitung deiner Daten gemäß unserer
-                <a href="/datenschutz" style="color:#64748b;">Datenschutzerklärung</a> zu.
+                <a href="/datenschutz" class="jpg-modal__privacy-link">Datenschutzerklärung</a> zu.
                 Deine Daten werden ausschließlich zur Bearbeitung deiner Bewerbung verwendet.
             </p>
         </form>

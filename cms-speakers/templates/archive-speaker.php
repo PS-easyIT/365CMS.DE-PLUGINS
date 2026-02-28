@@ -86,7 +86,6 @@ $archive_url = (defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/speakers/';
   --sp-radius:        <?= $radius ?>;
 }
 .sp-grid { grid-template-columns: <?= $grid_css ?>; }
-@media(max-width:768px){ .sp-grid{ grid-template-columns:1fr !important; } }
 </style>
 
 <div class="sp-archive">
@@ -95,11 +94,17 @@ $archive_url = (defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/speakers/';
   <!-- Gradient-Header – nur wenn Titel UND Beschreibung gesetzt -->
   <div class="sp-archive-header">
     <div class="sp-archive-header-inner">
-      <span class="sp-archive-icon"><?= $archive_icon ?></span>
+      <span class="sp-archive-header-icon"><?= $archive_icon ?></span>
       <div>
-        <?php if ($archive_title !== ''): ?><h1><?= $archive_title ?></h1><?php endif; ?>
+        <?php if ($archive_title !== ''): ?><h1 class="sp-archive-header-title"><?= $archive_title ?></h1><?php endif; ?>
         <?php if ($archive_desc !== ''): ?><p class="sp-archive-subtitle"><?= $archive_desc ?></p><?php endif; ?>
       </div>
+      <?php if ($total > 0): ?>
+      <div class="sp-archive-count">
+        <span class="sp-archive-count-num"><?= (int)$total ?></span>
+        <span class="sp-archive-count-lbl">Speaker</span>
+      </div>
+      <?php endif; ?>
     </div>
   </div>
   <?php endif; ?>
@@ -156,12 +161,12 @@ $archive_url = (defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/speakers/';
   <!-- Speaker-Grid -->
   <div class="sp-grid">
     <?php if (empty($speakers)): ?>
-      <div class="sp-empty">
-        <span class="sp-empty-icon">🔍</span>
-        <p><strong>Keine Speaker gefunden.</strong></p>
+      <div class="sp-empty-state" style="grid-column:1/-1">
+        <div class="sp-empty-icon">🔍</div>
+        <h3>Keine Speaker gefunden</h3>
+        <p>Versuche es mit anderen Filterkriterien.</p>
         <?php if (!empty($search) || !empty($filter_city) || !empty($filter_availability)): ?>
-          <p><a href="<?= $archive_url ?>" class="sp-btn sp-btn-ghost"
-               style="display:inline-flex;margin-top:.5rem;">Filter zurücksetzen</a></p>
+          <a href="<?= $archive_url ?>" class="sp-btn-ghost">✕ Filter zurücksetzen</a>
         <?php endif; ?>
       </div>
     <?php else: ?>
@@ -181,30 +186,27 @@ $archive_url = (defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/speakers/';
   <!-- Pagination -->
   <?php $pages_total = $pages ?? 1; $cur_page = $page ?? 1; ?>
   <?php if ($pages_total > 1): ?>
-    <nav class="sp-pagination" aria-label="Seitennavigation">
-      <?php
-      $pq = http_build_query(array_filter([
-          'search'       => $search ?? '',
-          'city'         => $filter_city ?? '',
-          'availability' => $filter_availability ?? '',
-          'format'       => $filter_format ?? '',
-          'travel'       => $filter_travel ?? '',
-      ]));
-      $pq_sep = $pq ? '&' : '';
-      ?>
+    <?php
+    $pq = http_build_query(array_filter([
+        'search'       => $search ?? '',
+        'city'         => $filter_city ?? '',
+        'availability' => $filter_availability ?? '',
+        'format'       => $filter_format ?? '',
+        'travel'       => $filter_travel ?? '',
+    ]));
+    $pq_sep = $pq ? '&' : '';
+    ?>
+    <div class="sp-pagination">
       <?php if ($cur_page > 1): ?>
         <a class="sp-page-btn"
-           href="<?= $archive_url ?>?<?= $pq ?><?= $pq_sep ?>page=<?= $cur_page - 1 ?>">← Zurück</a>
+           href="<?= $archive_url ?>?<?= $pq ?><?= $pq_sep ?>page=<?= $cur_page - 1 ?>">&larr; Zurück</a>
       <?php endif; ?>
-      <?php for ($i = max(1, $cur_page - 2); $i <= min($pages_total, $cur_page + 2); $i++): ?>
-        <a class="sp-page-btn<?= $i === $cur_page ? ' active' : '' ?>"
-           href="<?= $archive_url ?>?<?= $pq ?><?= $pq_sep ?>page=<?= $i ?>"><?= $i ?></a>
-      <?php endfor; ?>
+      <span class="sp-page-info">Seite <?= $cur_page ?> von <?= $pages_total ?></span>
       <?php if ($cur_page < $pages_total): ?>
         <a class="sp-page-btn"
-           href="<?= $archive_url ?>?<?= $pq ?><?= $pq_sep ?>page=<?= $cur_page + 1 ?>">Weiter →</a>
+           href="<?= $archive_url ?>?<?= $pq ?><?= $pq_sep ?>page=<?= $cur_page + 1 ?>">Weiter &rarr;</a>
       <?php endif; ?>
-    </nav>
+    </div>
   <?php endif; ?>
 
 </div><!-- /.sp-archive -->

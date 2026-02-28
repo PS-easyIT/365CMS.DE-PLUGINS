@@ -29,6 +29,8 @@
   --ev-online-badge-bg:#d1fae5;    /* Hintergrund Online-Badge */
   --ev-cancelled-bg:   #fee2e2;    /* Hintergrund Abgesagt     */
   --ev-cancelled-color:#991b1b;    /* Text Abgesagt            */
+  /* ── Card-Höhe ─────────────────────────── */
+  --ev-card-height:    300px;
   /* ── Neutrale Farben ─────────────────────── */
   --ev-text:           #1e293b;
   --ev-text-m:         #475569;
@@ -144,31 +146,33 @@
    ═══════════════════════════════════════════════════════════════ */
 .ev-card {
   position: relative;
-  background: #ffffff;
+  background: var(--ev-card-bg, #f0f7ff);
   border: 2px solid var(--ev-border, #bfdbfe);
   border-radius: var(--ev-radius, 12px);
-  padding: 1.25rem 1.375rem 1.125rem;
+  padding: 1.25rem 1.375rem 0;
   display: flex;
   flex-direction: column;
-  gap: .875rem;
-  height: 100%;
-  transition: box-shadow .22s, transform .22s, border-color .22s;
+  gap: .75rem;
+  height: var(--ev-card-height, 300px);
+  min-height: var(--ev-card-height, 300px);
+  max-height: var(--ev-card-height, 300px);
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(59,130,246,.07);
+  transition: all .2s cubic-bezier(.4,0,.2,1);
+  box-shadow: var(--ev-shadow);
 }
 .ev-card:hover {
-  box-shadow: 0 8px 28px rgba(59,130,246,.18);
-  transform: translateY(-3px);
-  border-color: transparent;
+  transform: translateY(-4px);
+  box-shadow: var(--ev-shadow-h);
+  border-color: var(--ev-primary);
 }
 .ev-card--featured {
-  border-color: var(--ev-primary);
-  background: linear-gradient(165deg, var(--ev-light, #eff6ff) 0%, #fff 60%);
+  border-color: var(--ev-featured-border, #f59e0b);
+  background: linear-gradient(135deg, #fffbeb 0%, var(--ev-card-bg, #f0f7ff) 70%);
 }
 .ev-card--past  { opacity: .75; }
 .ev-card--today {
   border-color: #10b981;
-  background: linear-gradient(165deg, #ecfdf5 0%, #fff 60%);
+  background: linear-gradient(135deg, #ecfdf5 0%, #fff 60%);
 }
 
 /* Ribbon – absolut oben rechts (wie co-card-ribbon) */
@@ -296,12 +300,12 @@
 /* Excerpt (wie co-card-excerpt) */
 .ev-card-excerpt {
   flex: 1;
-  font-size: .8rem;
-  color: var(--ev-text-l, #94a3b8);
-  line-height: 1.55;
+  font-size: .82rem;
+  color: var(--ev-text-m, #475569);
+  line-height: 1.5;
   margin: 0;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -310,7 +314,7 @@
 .ev-card-footer {
   display: flex;
   gap: .5rem;
-  padding-top: .875rem;
+  padding: .875rem 0;
   border-top: 1px solid var(--ev-border, #bfdbfe);
   margin-top: auto;
   align-items: center;
@@ -477,11 +481,7 @@
 .ev-price-paid     { background: #eff6ff; color: #1d4ed8; font-size: 1.2rem; }
 .ev-price-donation { background: #fdf4ff; color: #7e22ce; }
 
-/* ── Featured-Karte ───────────────────────────────────────────── */
-.ev-card--featured {
-  border-color: var(--ev-featured-border, #f59e0b) !important;
-  background: linear-gradient(135deg, #fffbeb 0%, var(--ev-card-bg, #f0f7ff) 70%);
-}
+/* Featured-Karte: Definition oben bei den Card-Varianten */
 
 /* ── Card Bild (falls Banner-URL gesetzt) ─────────────────────── */
 .ev-card-img {
@@ -512,3 +512,10 @@
   .ev-filter-bar { margin: .75rem .75rem 1rem; }
   .ev-info-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Archive: Responsive Grid ─────────────────────────────────── */
+@media (max-width: 1024px) { .ev-grid { grid-template-columns: repeat(2,1fr) !important; } }
+@media (max-width: 640px)  { .ev-grid { grid-template-columns: 1fr !important; } }
+
+/* ── Archive: Reset-Link ──────────────────────────────────────── */
+.ev-btn--inline { display: inline-flex; margin-top: .5rem; }

@@ -54,10 +54,10 @@ $css_hdr_icon_raw = html_entity_decode($settings['archive_header_icon']       ??
     
     <!-- Title Area - WP Plugin Style: Title-Band + Description-Band -->
     <?php if (!empty($settings['archive_title'])): ?>
-    <div class="expert-archive-header" style="background:var(--expert-hdr-bg);">
+    <div class="expert-archive-header">
         <div class="header-title-band">
-            <div class="header-icon" style="color:var(--expert-hdr-title);"><?= $css_hdr_icon_raw ?></div>
-            <h1 class="header-title" style="color:var(--expert-hdr-title);"><?php echo CMS\Security::instance()->escape($settings['archive_title']); ?></h1>
+            <div class="header-icon"><?= $css_hdr_icon_raw ?></div>
+            <h1 class="header-title"><?php echo CMS\Security::instance()->escape($settings['archive_title']); ?></h1>
         </div>
         <?php if (!empty($settings['archive_description'])): ?>
         <div class="header-description-area">
@@ -77,7 +77,7 @@ $css_hdr_icon_raw = html_entity_decode($settings['archive_header_icon']       ??
         </div>
 
         <!-- City Filter -->
-        <div class="filter-input-wrapper" style="max-width: 200px;">
+        <div class="filter-input-wrapper filter-input-wrapper--sm">
             <span class="icon">📍</span>
             <input type="text" name="city" placeholder="Stadt..." value="<?php echo CMS\Security::instance()->escape($city); ?>">
         </div>
@@ -91,7 +91,7 @@ $css_hdr_icon_raw = html_entity_decode($settings['archive_header_icon']       ??
 
         <button type="submit" class="expert-btn">Suchen</button>
         <?php if (!empty($city) || !empty($availability)): ?>
-            <a href="<?php echo SITE_URL; ?>/experts" class="expert-btn expert-btn-outline" style="border:none;">Reset</a>
+            <a href="<?php echo SITE_URL; ?>/experts" class="expert-btn expert-btn-outline expert-btn--reset">Reset</a>
         <?php endif; ?>
     </form>
 
@@ -109,14 +109,14 @@ $css_hdr_icon_raw = html_entity_decode($settings['archive_header_icon']       ??
         
         <!-- Pagination (Basic) -->
         <?php if (isset($current_page) && $current_page > 1): ?>
-        <div class="expert-pagination" style="margin-top: 40px; text-align: center;">
+        <div class="expert-pagination">
             <!-- Placeholder for pagination logic -->
             <span class="page-numbers current">1</span>
         </div>
         <?php endif; ?>
 
     <?php else: ?>
-        <div class="no-results" style="text-align: center; padding: 50px; color: var(--expert-text-light);">
+        <div class="no-results">
             <h3>Keine Experten gefunden</h3>
             <p>Bitte versuchen Sie andere Suchbegriffe.</p>
         </div>

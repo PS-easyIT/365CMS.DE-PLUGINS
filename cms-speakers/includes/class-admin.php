@@ -46,6 +46,12 @@ final class CMS_Speakers_Admin
         }
         renderAdminLayoutStart('Speaker', 'speakers');
 
+        // Admin-CSS einbinden
+        $admin_css = CMS_SPEAKERS_PLUGIN_DIR . 'assets/css/speakers-admin.css';
+        if (file_exists($admin_css)) {
+            echo '<link rel="stylesheet" href="' . CMS_SPEAKERS_PLUGIN_URL . 'assets/css/speakers-admin.css?v=' . filemtime($admin_css) . '">' . "\n";
+        }
+
         $speakers  = $data['speakers']  ?? [];
         $tab       = $data['tab']       ?? 'overview';
         $filter    = $data['filter']    ?? 'all';
@@ -121,7 +127,7 @@ final class CMS_Speakers_Admin
                 'settings'  => ['⚙️', 'Einstellungen'],
             ];
             foreach ($tabs as $slug => [$icon, $label]): ?>
-                <a href="?tab=<?= $slug ?>" class="spk-tab <?= $tab === $slug ? 'spk-tab--active' : '' ?>">
+                <a href="?tab=<?= $slug ?>" class="spk-tab <?= $tab === $slug ? 'active' : '' ?>">
                     <?= $icon ?> <?= $label ?>
                 </a>
             <?php endforeach; ?>
@@ -129,12 +135,22 @@ final class CMS_Speakers_Admin
 
         <?php if ($tab === 'overview'): ?>
         <!-- Stats -->
-        <div class="dashboard-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));margin-bottom:1.5rem;">
-            <div class="stat-card"><h3 style="font-size:.8rem;color:#64748b;margin:0 0 .25rem;">Gesamt</h3><div class="stat-number"><?= $total ?></div></div>
-            <div class="stat-card"><h3 style="font-size:.8rem;color:#64748b;margin:0 0 .25rem;">Aktiv</h3><div class="stat-number" style="color:#16a34a;"><?= $active ?></div></div>
-            <div class="stat-card"><h3 style="font-size:.8rem;color:#64748b;margin:0 0 .25rem;">Verfügbar</h3><div class="stat-number" style="color:#8b5cf6;"><?= $avail ?></div></div>
-            <div class="stat-card"><h3 style="font-size:.8rem;color:#64748b;margin:0 0 .25rem;">Featured</h3><div class="stat-number" style="color:#d97706;"><?= $featured ?></div></div>
-            <div class="stat-card"><h3 style="font-size:.8rem;color:#64748b;margin:0 0 .25rem;">Verifiziert</h3><div class="stat-number" style="color:#7c3aed;"><?= $verified ?></div></div>
+        <div class="dashboard-grid">
+            <?php
+            $stat_items = [
+                ['🎤', 'Gesamt',     $total,    ''],
+                ['✅', 'Aktiv',      $active,   ''],
+                ['💜', 'Verfügbar',  $avail,    ''],
+                ['⭐', 'Featured',   $featured, ''],
+                ['✔',  'Verifiziert',$verified, ''],
+            ];
+            foreach ($stat_items as [$si_icon, $si_label, $si_value]): ?>
+            <div class="stat-card">
+                <div class="stat-icon"><?= $si_icon ?></div>
+                <div class="stat-number"><?= (int)$si_value ?></div>
+                <div class="stat-label"><?= $si_label ?></div>
+            </div>
+            <?php endforeach; ?>
         </div>
 
         <!-- Filter Bar -->
@@ -192,21 +208,21 @@ final class CMS_Speakers_Admin
             <div class="spk-adm-card">
                 <div class="spk-adm-top">
                     <?php if (!empty($sp->photo_url)): ?>
-                        <div class="spk-adm-avatar" style="background:#ede9fe;padding:0;overflow:hidden;">
-                            <img src="<?= htmlspecialchars($sp->photo_url) ?>" alt="" style="width:100%;height:100%;object-fit:cover;">
+                        <div class="spk-adm-avatar" style="background:#ede9fe;">
+                            <img src="<?= htmlspecialchars($sp->photo_url) ?>" alt="">
                         </div>
                     <?php else: ?>
                         <div class="spk-adm-avatar" style="background:<?= $bg ?>"><?= $initials ?></div>
                     <?php endif; ?>
                     <div class="spk-adm-identity">
-                        <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.2rem;">
-                            <?php if ($sp->is_verified ?? 0): ?><span class="status-badge active" style="font-size:.62rem;">✔ Verifiziert</span><?php endif; ?>
-                            <?php if ($sp->is_featured ?? 0): ?><span class="status-badge admin" style="font-size:.62rem;">⭐ Featured</span><?php endif; ?>
-                            <span style="font-size:.62rem;padding:.1rem .4rem;border-radius:4px;background:<?= $availBg[$spAvail]??'#f1f5f9' ?>;color:<?= $availColors[$spAvail]??'#374151' ?>;"><?= $availLabels[$spAvail]??$spAvail ?></span>
+                        <div class="spk-adm-badges">
+                            <?php if ($sp->is_verified ?? 0): ?><span class="status-badge active">✔ Verifiziert</span><?php endif; ?>
+                            <?php if ($sp->is_featured ?? 0): ?><span class="status-badge admin">⭐ Featured</span><?php endif; ?>
+                            <span class="status-badge" style="background:<?= $availBg[$spAvail]??'#f1f5f9' ?>;color:<?= $availColors[$spAvail]??'#374151' ?>;"><?= $availLabels[$spAvail]??$spAvail ?></span>
                         </div>
                         <p class="spk-adm-name"><?= $name ?></p>
                         <?php if (!empty($sp->position)): ?><p class="spk-adm-sub"><?= htmlspecialchars($sp->position) ?></p><?php endif; ?>
-                        <?php if ($company): ?><p class="spk-adm-sub" style="color:#94a3b8;"><?= $company ?></p><?php endif; ?>
+                        <?php if ($company): ?><p class="spk-adm-sub spk-adm-sub--muted"><?= $company ?></p><?php endif; ?>
                     </div>
                 </div>
                 <div class="spk-adm-pills">
@@ -215,20 +231,18 @@ final class CMS_Speakers_Admin
                     <?php endif; ?>
                     <span class="spk-adm-pill"><?= $travelLabel ?></span>
                     <?php foreach (array_slice($formats, 0, 2) as $fmt): ?>
-                        <span class="spk-adm-pill" style="background:#f5f3ff;color:#7c3aed;border-color:#ddd6fe;"><?= htmlspecialchars($fmtLabels[$fmt] ?? $fmt) ?></span>
+                        <span class="spk-adm-pill spk-adm-pill--accent"><?= htmlspecialchars($fmtLabels[$fmt] ?? $fmt) ?></span>
                     <?php endforeach; ?>
                     <?php if (!empty($sp->email)): ?><span class="spk-adm-pill">✉ <?= htmlspecialchars($sp->email) ?></span><?php endif; ?>
                     <?php if (!empty($sp->speaking_fee_min) || !empty($sp->speaking_fee_max)): ?>
-                        <span class="spk-adm-pill" style="background:#faf5ff;color:#6d28d9;border-color:#ddd6fe;">💶 <?= $sp->speaking_fee_min ? number_format((float)$sp->speaking_fee_min,0,',','.') : '' ?><?= ($sp->speaking_fee_min && $sp->speaking_fee_max) ? '–' : '' ?><?= $sp->speaking_fee_max ? number_format((float)$sp->speaking_fee_max,0,',','.') . ' €' : '' ?></span>
+                        <span class="spk-adm-pill spk-adm-pill--accent">💶 <?= $sp->speaking_fee_min ? number_format((float)$sp->speaking_fee_min,0,',','.') : '' ?><?= ($sp->speaking_fee_min && $sp->speaking_fee_max) ? '–' : '' ?><?= $sp->speaking_fee_max ? number_format((float)$sp->speaking_fee_max,0,',','.') . ' €' : '' ?></span>
                     <?php endif; ?>
                 </div>
                 <div class="spk-adm-footer">
                     <a href="<?= SITE_URL ?>/speakers/<?= $slug ?>" class="spk-adm-btn spk-adm-btn-ghost" target="_blank">🌐</a>
                     <a href="<?= SITE_URL ?>/admin/speakers/edit/<?= (int)$sp->id ?>" class="spk-adm-btn spk-adm-btn-primary">✏️ Bearbeiten</a>
-                    <form method="POST" action="<?= SITE_URL ?>/admin/speakers/delete/<?= (int)$sp->id ?>" style="margin:0;" onsubmit="return confirm('Speaker wirklich löschen?');">
-                        <input type="hidden" name="csrf_token" value="<?= CMS\Security::instance()->generateToken('delete_speaker') ?>">
-                        <button type="submit" class="spk-adm-btn spk-adm-btn-danger">🗑️</button>
-                    </form>
+                    <button type="button" class="spk-adm-btn spk-adm-btn-danger"
+                            onclick="openDeleteModal(<?= (int)$sp->id ?>, '<?= htmlspecialchars($name, ENT_QUOTES) ?>')">🗑️</button>
                 </div>
             </div>
             <?php endforeach; ?>
@@ -265,7 +279,7 @@ final class CMS_Speakers_Admin
                 <?php foreach ($topicGroups as $topicName => $entries): ?>
                     <span class="spk-topic-tag" title="<?= count($entries) ?> Speaker">
                         <?= htmlspecialchars($topicName) ?>
-                        <span style="background:rgba(139,92,246,.15);border-radius:10px;padding:.05rem .35rem;font-size:.68rem;margin-left:.3rem;"><?= count($entries) ?></span>
+                        <span class="spk-topic-tag__count"><?= count($entries) ?></span>
                     </span>
                 <?php endforeach; ?>
                 </div>
@@ -465,33 +479,34 @@ final class CMS_Speakers_Admin
         </form>
         <?php endif; ?>
 
-        <style>
-        .spk-tabs{display:flex;gap:.25rem;border-bottom:2px solid #e2e8f0;margin-bottom:1.5rem;overflow-x:auto;}
-        .spk-tab{padding:.6rem 1.1rem;border-radius:8px 8px 0 0;font-size:.875rem;font-weight:600;text-decoration:none;color:#475569;white-space:nowrap;transition:all .15s;}
-        .spk-tab:hover{background:#f5f3ff;color:#7c3aed;}
-        .spk-tab--active{background:#f5f3ff;color:#7c3aed;border-bottom:2px solid #8b5cf6;margin-bottom:-2px;}
-        .spk-adm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1.25rem;}
-        .spk-adm-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;display:flex;flex-direction:column;gap:.75rem;transition:box-shadow .2s;}
-        .spk-adm-card:hover{box-shadow:0 6px 20px rgba(139,92,246,.12);border-color:#ddd6fe;}
-        .spk-adm-top{display:flex;gap:.75rem;align-items:flex-start;}
-        .spk-adm-avatar{flex-shrink:0;width:52px;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:#fff;box-shadow:0 2px 8px rgba(139,92,246,.3);}
-        .spk-adm-identity{flex:1;min-width:0;display:flex;flex-direction:column;gap:.15rem;}
-        .spk-adm-name{font-size:.95rem;font-weight:700;color:#1e293b;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .spk-adm-sub{font-size:.75rem;color:#64748b;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .spk-adm-pills{display:flex;flex-wrap:wrap;gap:.3rem;}
-        .spk-adm-pill{display:inline-flex;align-items:center;gap:.2rem;padding:.2rem .5rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:50px;font-size:.72rem;color:#374151;white-space:nowrap;max-width:210px;overflow:hidden;text-overflow:ellipsis;}
-        .spk-adm-footer{display:flex;gap:.4rem;padding-top:.75rem;border-top:1px solid #f1f5f9;margin-top:auto;}
-        .spk-adm-btn{display:inline-flex;align-items:center;gap:.25rem;padding:.35rem .75rem;border-radius:7px;font-size:.78rem;font-weight:600;text-decoration:none;white-space:nowrap;cursor:pointer;border:none;transition:opacity .15s;}
-        .spk-adm-btn:hover{opacity:.82;}
-        .spk-adm-btn-primary{background:#8b5cf6;color:#fff;}
-        .spk-adm-btn-ghost{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;}
-        .spk-adm-btn-danger{background:#fee2e2;color:#991b1b;}
-        .spk-topic-tag{display:inline-flex;align-items:center;gap:4px;padding:.25rem .65rem;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:50px;font-size:.8rem;color:#7c3aed;font-weight:600;cursor:default;}
-        /* 2-Spalten Formular-Grid */
-        .spk-form-2col{display:grid;grid-template-columns:1fr 1fr;gap:0 1.5rem;align-items:start;}
-        .spk-form-2col__left,.spk-form-2col__right{display:flex;flex-direction:column;gap:0;}
-        @media(max-width:1100px){.spk-form-2col{grid-template-columns:1fr;}}
-        </style>
+        <!-- Delete Modal -->
+        <div id="deleteModal" class="modal" style="display:none;">
+            <div class="modal-content" style="max-width:480px;">
+                <div class="modal-header">
+                    <h3>🗑️ Speaker löschen</h3>
+                    <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Soll <strong id="deleteModalName"></strong> wirklich gelöscht werden?</p>
+                    <p style="color:#ef4444;font-size:.875rem;">⚠️ Diese Aktion kann nicht rückgängig gemacht werden.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('deleteModal')">Abbrechen</button>
+                    <form method="POST" id="deleteModalForm" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="<?= CMS\Security::instance()->generateToken('delete_speaker') ?>">
+                        <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        function openDeleteModal(id, name) {
+            document.getElementById('deleteModalName').textContent = name;
+            document.getElementById('deleteModalForm').action = '<?= SITE_URL ?>/admin/speakers/delete/' + id;
+            openModal('deleteModal');
+        }
+        </script>
         <?php
         renderAdminLayoutEnd();
     }
@@ -510,6 +525,12 @@ final class CMS_Speakers_Admin
         $sec       = CMS\Security::instance();
 
         renderAdminLayoutStart($is_edit ? 'Speaker bearbeiten' : 'Neuer Speaker', 'speakers');
+
+        // Admin-CSS einbinden
+        $admin_css = CMS_SPEAKERS_PLUGIN_DIR . 'assets/css/speakers-admin.css';
+        if (file_exists($admin_css)) {
+            echo '<link rel="stylesheet" href="' . CMS_SPEAKERS_PLUGIN_URL . 'assets/css/speakers-admin.css?v=' . filemtime($admin_css) . '">' . "\n";
+        }
 
         // Decode JSON fields
         $formats   = is_string($speaker->formats  ?? null) ? (json_decode($speaker->formats,  true) ?? []) : [];

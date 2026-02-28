@@ -51,7 +51,8 @@ if ($show_skills) {
 $is_partner   = !empty($expert->is_partner);
 $is_certified = !empty($expert->is_certified);
 
-// Availability labels
+// Zertifikat-Anzahl (bulk-geladen)
+$cert_count = $expert->_cert_count ?? 0;
 $avail_labels = [
     'available' => 'Verf&#252;gbar',
     'limited'   => 'Begrenzt',
@@ -99,29 +100,34 @@ $avail_label = $avail_labels[$availability] ?? ucfirst($availability);
                 <?php if ($job_title): ?>
                     <p class="expert-card-title"><?php echo $sec->escape($job_title); ?></p>
                 <?php endif; ?>
-                <?php if ($experience_years): ?>
-                    <div class="expert-exp-badge-inline" title="<?php echo (int)$experience_years; ?> Jahre Erfahrung">
-                        <span class="exp-icon">&#128188;</span>
-                        <span class="years"><?php echo (int)$experience_years; ?></span>
+                <div class="expert-card-badges-row">
+                    <?php if ($experience_years): ?>
+                        <div class="expert-badge-mini" title="<?php echo (int)$experience_years; ?> Jahre Erfahrung">
+                            <span class="badge-icon">&#128188;</span>
+                            <span class="badge-val"><?php echo (int)$experience_years; ?></span>
+                        </div>
+                    <?php endif; ?>
+                    <div class="expert-badge-mini" title="<?php echo $cert_count; ?> Zertifikat<?php echo $cert_count !== 1 ? 'e' : ''; ?>">
+                        <span class="badge-icon">&#127941;</span>
+                        <span class="badge-val"><?php echo $cert_count; ?></span>
                     </div>
-                <?php endif; ?>
-            </div>
-
-            <div class="expert-card-info-stack">
-                <div class="expert-card-location-row">
-                    <?php if ($city): ?>
-                        <span class="expert-card-location">
-                            <span class="loc-icon">&#128205;</span>
-                            <span><?php echo $sec->escape($city); ?></span>
-                        </span>
-                    <?php endif; ?>
-                    <?php if ($company_name): ?>
-                        <span class="expert-card-company">
-                            <?php echo $sec->escape($company_name); ?>
-                        </span>
-                    <?php endif; ?>
                 </div>
             </div>
+
+            <?php if ($company_name): ?>
+                <div class="expert-card-company-row">
+                    <span class="expert-card-company"><?php echo $sec->escape($company_name); ?></span>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($city): ?>
+                <div class="expert-card-location-row">
+                    <span class="expert-card-location">
+                        <span class="loc-icon">&#128205;</span>
+                        <span><?php echo $sec->escape($city); ?></span>
+                    </span>
+                </div>
+            <?php endif; ?>
         </div>
     </header>
 

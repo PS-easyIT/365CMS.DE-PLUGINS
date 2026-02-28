@@ -65,6 +65,8 @@ final class CMS_Events {
     public function enqueue_styles(): void {
         $css = $this->plugin_dir . 'assets/css/style.css';
         if (file_exists($css)) echo '<link rel="stylesheet" href="' . $this->plugin_url . 'assets/css/style.css?v=' . filemtime($css) . '">' . "\n";
+        $single_css = $this->plugin_dir . 'assets/css/single.css';
+        if (file_exists($single_css)) echo '<link rel="stylesheet" href="' . $this->plugin_url . 'assets/css/single.css?v=' . filemtime($single_css) . '">' . "\n";
     }
 
     public function enqueue_scripts(): void {

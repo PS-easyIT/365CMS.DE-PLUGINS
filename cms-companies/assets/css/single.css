@@ -63,8 +63,7 @@
 .co-hero-v2 {
   position: relative;
   overflow: hidden;
-  min-height: 200px;
-  max-height: 300px;
+  min-height: 300px;
   background: var(--co-detail-hdr-bg, #f8fafc);
   border-bottom: 3px solid var(--co-primary);
 }
@@ -113,7 +112,7 @@
 
 .co-hero-v2__title {
   margin: 0 0 .35rem;
-  font-size: clamp(1.4rem, 3vw, 1.875rem);
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
   font-weight: 800;
   line-height: 1.2;
   color: var(--co-detail-hdr-color, #1e293b);
@@ -174,9 +173,10 @@
 
 .co-body-v2 {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 1.75rem;
-  padding: 1.75rem 2rem 3rem;
+  grid-template-columns: 1fr 300px;
+  gap: 2rem;
+  padding: 2rem 1.5rem;
+  max-width: 1140px;
   align-items: start;
 }
 
@@ -184,10 +184,10 @@
 
 .co-sidebar-v2 {
   position: sticky;
-  top: 1.5rem;
+  top: 2rem;
   display: flex;
   flex-direction: column;
-  gap: .875rem;
+  gap: 1.25rem;
 }
 
 /* ============================================================
@@ -208,17 +208,15 @@
 .co-sec-v2:last-child { margin-bottom: 0; }
 
 .co-sec-v2__title {
-  font-size: .92rem;
+  font-size: 1.2rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--co-text, #1e293b);
   margin: 0 0 1.125rem;
-  padding-bottom: .6rem;
-  padding-left: .75rem;
+  padding-bottom: .5rem;
   display: flex;
   align-items: center;
-  gap: .4rem;
-  border-left: 3px solid var(--co-primary);
-  border-bottom: 1.5px solid #f1f5f9;
+  gap: .5rem;
+  border-bottom: 2px solid var(--co-primary);
 }
 
 .co-section-count {
@@ -339,18 +337,19 @@
 
 .co-sc-v2 {
   background: #fff;
-  border-radius: var(--co-radius, 14px);
-  padding: 1.25rem 1.375rem;
-  box-shadow: var(--co-shadow);
+  border: 1px solid var(--co-border, #e2e8f0);
+  border-radius: var(--co-radius, 12px);
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
 }
 
 .co-sc-v2__title {
-  font-size: .7rem;
+  font-size: .875rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .07em;
-  color: #94a3b8;
-  margin: 0 0 .875rem;
+  letter-spacing: .05em;
+  color: var(--co-text-l, #94a3b8);
+  margin: 0 0 .75rem;
 }
 
 /* ──────────────────────────────────────────────────────────

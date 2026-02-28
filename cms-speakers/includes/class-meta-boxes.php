@@ -17,6 +17,199 @@ final class CMS_Speakers_Meta_Boxes
     }
     private function __construct() {}
 
+    /**
+     * Flaches Key→Label Mapping aller Skills (wiederverwendbar in Templates).
+     */
+    public static function get_skill_labels(): array
+    {
+        static $labels = null;
+        if ($labels !== null) {
+            return $labels;
+        }
+        $temp = new self();
+        $labels = [];
+        // render_skills baut $groups – wir extrahieren die Items via Reflection
+        // Alternativ: die Gruppen direkt als statische Methode exponieren
+        $groups = self::get_skill_groups();
+        foreach ($groups as $g) {
+            foreach ($g['items'] as $key => $lbl) {
+                $labels[$key] = $lbl;
+            }
+        }
+        return $labels;
+    }
+
+    /**
+     * Skill-Gruppen mit Label und Items (verwendet von render_skills + get_skill_labels).
+     */
+    public static function get_skill_groups(): array
+    {
+        return [
+            'tech_general' => [
+                'label' => '💻 Technologie & Digital (Themen)',
+                'items' => [
+                    'ai_ml'              => 'KI / Machine Learning',
+                    'data_science'       => 'Data Science & Analytics',
+                    'cloud'              => 'Cloud Computing',
+                    'cybersecurity'      => 'Cybersecurity / InfoSec',
+                    'blockchain'         => 'Blockchain / Web3',
+                    'iot'                => 'IoT & Embedded Systems',
+                    'automation'         => 'Automation & Robotik',
+                    'devops'             => 'DevOps & Platform Engineering',
+                    'digital_transform'  => 'Digitale Transformation',
+                    'software_arch'      => 'Software-Architektur',
+                    'low_code'           => 'Low-Code / No-Code',
+                    'metaverse_ar_vr'    => 'Metaverse / AR & VR',
+                    'quantum'            => 'Quantum Computing',
+                    'open_source'        => 'Open Source',
+                    'api_integration'    => 'API & System-Integration',
+                    'data_engineering'   => 'Data Engineering & Pipelines',
+                ],
+            ],
+            'tech_languages' => [
+                'label' => '🐍 Programmiersprachen & Frameworks',
+                'items' => [
+                    'lang_php'           => 'PHP',
+                    'lang_python'        => 'Python',
+                    'lang_javascript'    => 'JavaScript / TypeScript',
+                    'lang_java'          => 'Java',
+                    'lang_go'            => 'Go (Golang)',
+                    'lang_rust'          => 'Rust',
+                    'lang_csharp'        => 'C# / .NET',
+                    'lang_cpp'           => 'C / C++',
+                    'lang_swift'         => 'Swift / Kotlin',
+                    'lang_r'             => 'R (Data Science)',
+                    'fw_react'           => 'React / Next.js',
+                    'fw_vue'             => 'Vue.js / Nuxt',
+                    'fw_angular'         => 'Angular',
+                    'fw_nodejs'          => 'Node.js / Express',
+                    'fw_laravel'         => 'Laravel / Symfony',
+                    'fw_django'          => 'Django / FastAPI',
+                    'fw_spring'          => 'Spring Boot',
+                    'fw_flutter'         => 'Flutter / React Native',
+                ],
+            ],
+            'tech_infra' => [
+                'label' => '⚙️ Infrastruktur & DevOps Tools',
+                'items' => [
+                    'infra_docker'       => 'Docker',
+                    'infra_k8s'          => 'Kubernetes',
+                    'infra_terraform'    => 'Terraform / IaC',
+                    'infra_ansible'      => 'Ansible / Puppet / Chef',
+                    'infra_ci_cd'        => 'CI/CD (Jenkins, GitHub Actions, GitLab CI)',
+                    'infra_git'          => 'Git / GitHub / GitLab',
+                    'db_sql'             => 'MySQL / PostgreSQL / MariaDB',
+                    'db_nosql'           => 'MongoDB / Redis / Cassandra',
+                    'db_search'          => 'Elasticsearch / OpenSearch',
+                    'db_dw'              => 'Data Warehouse (Snowflake, BigQuery, Redshift)',
+                    'cloud_aws'          => 'AWS',
+                    'cloud_azure'        => 'Microsoft Azure',
+                    'cloud_gcp'          => 'Google Cloud Platform',
+                    'ml_ops'             => 'MLOps / LLMOps',
+                    'observability'      => 'Observability (Grafana, Prometheus, Datadog)',
+                    'security_tools'     => 'Security Tools (SIEM, Pen Testing, SOC)',
+                ],
+            ],
+            'microsoft' => [
+                'label' => '📬 Microsoft 365 & Enterprise-Plattformen',
+                'items' => [
+                    'ms_exchange'        => 'Exchange Server / Exchange Online',
+                    'ms_teams'           => 'Microsoft Teams',
+                    'ms_sharepoint'      => 'SharePoint / SharePoint Online',
+                    'ms_m365'            => 'Microsoft 365 / Office 365',
+                    'ms_active_dir'      => 'Active Directory / Microsoft Entra ID',
+                    'ms_intune'          => 'Microsoft Intune / Endpoint Manager',
+                    'ms_power_platform'  => 'Power Platform (Power Apps, Power Automate)',
+                    'ms_power_bi'        => 'Power BI',
+                    'ms_dynamics'        => 'Dynamics 365 (CRM / ERP)',
+                    'ms_copilot'         => 'Microsoft Copilot / Copilot for M365',
+                    'ms_sql_server'      => 'SQL Server / SSRS / SSAS',
+                    'ms_defender'        => 'Microsoft Defender / Sentinel',
+                    'ms_onedrive'        => 'OneDrive / Teams Rooms',
+                    'ms_azure_devops'    => 'Azure DevOps / ADO',
+                    'ms_viva'            => 'Microsoft Viva / Employee Experience',
+                ],
+            ],
+            'enterprise_infra' => [
+                'label' => '🏛️ Enterprise Infrastructure & Virtualisierung',
+                'items' => [
+                    'vmware_vsphere'     => 'VMware vSphere / vCenter',
+                    'vmware_nsx'         => 'VMware NSX / vSAN / HCX',
+                    'vmware_horizon'     => 'VMware Horizon (VDI)',
+                    'nutanix'            => 'Nutanix HCI / AOS / AHV',
+                    'nutanix_nc2'        => 'Nutanix Cloud Clusters (NC2)',
+                    'citrix'             => 'Citrix DaaS / Virtual Apps & Desktops',
+                    'hyper_v'            => 'Hyper-V / Windows Server',
+                    'proxmox'            => 'Proxmox VE',
+                    'veeam'              => 'Veeam Backup & Replication',
+                    'zerto'              => 'Zerto / Disaster Recovery',
+                    'netapp'             => 'NetApp Storage (ONTAP, StorageGRID)',
+                    'dell_emc'           => 'Dell EMC PowerStore / PowerEdge',
+                    'hpe'                => 'HPE ProLiant / Synergy / SimpliVity',
+                    'cisco_net'          => 'Cisco Networking (ISE, Catalyst, Nexus)',
+                    'cisco_ucs'          => 'Cisco UCS / HyperFlex',
+                    'palo_alto'          => 'Palo Alto Networks (NGFW, Prisma)',
+                    'fortinet'           => 'Fortinet FortiGate / FortiSIEM',
+                    'f5'                 => 'F5 BIG-IP / NGINX',
+                    'juniper'            => 'Juniper Networks',
+                    'aruba'              => 'HPE Aruba / Aruba ClearPass',
+                    'sap'                => 'SAP (ERP, S/4HANA, BTP)',
+                    'oracle_db'          => 'Oracle Database / Oracle Cloud',
+                    'ibm_mainframe'      => 'IBM Z / Mainframe / AIX',
+                    'servicenow'         => 'ServiceNow (ITSM / ITOM)',
+                    'splunk'             => 'Splunk SIEM / SOAR',
+                    'crowdstrike'        => 'CrowdStrike Falcon',
+                    'zscaler'            => 'Zscaler / SASE / Zero Trust',
+                ],
+            ],
+            'business' => [
+                'label' => '📈 Business & Management',
+                'items' => [
+                    'leadership'         => 'Leadership & Führung',
+                    'change_mgmt'        => 'Change Management',
+                    'innovation'         => 'Innovationsmanagement',
+                    'entrepreneurship'   => 'Entrepreneurship & Startups',
+                    'digital_marketing'  => 'Digital Marketing & Growth',
+                    'sales'              => 'Vertrieb & Business Development',
+                    'agile_scrum'        => 'Agile / Scrum / OKR',
+                    'new_work'           => 'New Work & Future of Work',
+                    'hr_people'          => 'HR & People Management',
+                    'finance_fintech'    => 'Finance & FinTech',
+                    'esg'                => 'ESG & Nachhaltigkeit',
+                    'strategy'           => 'Strategie & Corporate Development',
+                ],
+            ],
+            'communication' => [
+                'label' => '🎤 Kommunikation & Soft Skills',
+                'items' => [
+                    'public_speaking'    => 'Public Speaking & Rhetorik',
+                    'storytelling'       => 'Storytelling',
+                    'coaching'           => 'Coaching & Mentoring',
+                    'moderation'         => 'Moderation & Facilitation',
+                    'train_trainer'      => 'Train-the-Trainer',
+                    'intercultural'      => 'Interkulturelle Kompetenz',
+                    'crisis_comm'        => 'Krisenkommunikation',
+                    'media_training'     => 'Medientraining / PR',
+                ],
+            ],
+            'industry' => [
+                'label' => '🏭 Branchen-Expertise',
+                'items' => [
+                    'healthcare'         => 'Gesundheitswesen & MedTech',
+                    'edu_elearning'      => 'Bildung & E-Learning',
+                    'real_estate'        => 'Immobilien & PropTech',
+                    'energy_climate'     => 'Energie & Klimaschutz',
+                    'automotive'         => 'Automobil & Mobilität',
+                    'logistics'          => 'Logistik & Supply Chain',
+                    'legal_regtech'      => 'Legal & RegTech',
+                    'ngo_social'         => 'NGO & Social Impact',
+                    'media_entertainment'=> 'Medien & Entertainment',
+                    'retail_ecommerce'   => 'Handel & E-Commerce',
+                ],
+            ],
+        ];
+    }
+
     private function v(?object $sp, string $f, string $d = ''): string
     {
         return htmlspecialchars((string)($sp->$f ?? $d));
@@ -359,170 +552,7 @@ final class CMS_Speakers_Meta_Boxes
             ? (json_decode($sp->skills, true) ?? [])
             : [];
 
-        $groups = [
-            'tech_general' => [
-                'label' => '💻 Technologie & Digital (Themen)',
-                'items' => [
-                    'ai_ml'              => 'KI / Machine Learning',
-                    'data_science'       => 'Data Science & Analytics',
-                    'cloud'              => 'Cloud Computing',
-                    'cybersecurity'      => 'Cybersecurity / InfoSec',
-                    'blockchain'         => 'Blockchain / Web3',
-                    'iot'                => 'IoT & Embedded Systems',
-                    'automation'         => 'Automation & Robotik',
-                    'devops'             => 'DevOps & Platform Engineering',
-                    'digital_transform'  => 'Digitale Transformation',
-                    'software_arch'      => 'Software-Architektur',
-                    'low_code'           => 'Low-Code / No-Code',
-                    'metaverse_ar_vr'    => 'Metaverse / AR & VR',
-                    'quantum'            => 'Quantum Computing',
-                    'open_source'        => 'Open Source',
-                    'api_integration'    => 'API & System-Integration',
-                    'data_engineering'   => 'Data Engineering & Pipelines',
-                ],
-            ],
-            'tech_languages' => [
-                'label' => '🐍 Programmiersprachen & Frameworks',
-                'items' => [
-                    'lang_php'           => 'PHP',
-                    'lang_python'        => 'Python',
-                    'lang_javascript'    => 'JavaScript / TypeScript',
-                    'lang_java'          => 'Java',
-                    'lang_go'            => 'Go (Golang)',
-                    'lang_rust'          => 'Rust',
-                    'lang_csharp'        => 'C# / .NET',
-                    'lang_cpp'           => 'C / C++',
-                    'lang_swift'         => 'Swift / Kotlin',
-                    'lang_r'             => 'R (Data Science)',
-                    'fw_react'           => 'React / Next.js',
-                    'fw_vue'             => 'Vue.js / Nuxt',
-                    'fw_angular'         => 'Angular',
-                    'fw_nodejs'          => 'Node.js / Express',
-                    'fw_laravel'         => 'Laravel / Symfony',
-                    'fw_django'          => 'Django / FastAPI',
-                    'fw_spring'          => 'Spring Boot',
-                    'fw_flutter'         => 'Flutter / React Native',
-                ],
-            ],
-            'tech_infra' => [
-                'label' => '⚙️ Infrastruktur & DevOps Tools',
-                'items' => [
-                    'infra_docker'       => 'Docker',
-                    'infra_k8s'          => 'Kubernetes',
-                    'infra_terraform'    => 'Terraform / IaC',
-                    'infra_ansible'      => 'Ansible / Puppet / Chef',
-                    'infra_ci_cd'        => 'CI/CD (Jenkins, GitHub Actions, GitLab CI)',
-                    'infra_git'          => 'Git / GitHub / GitLab',
-                    'db_sql'             => 'MySQL / PostgreSQL / MariaDB',
-                    'db_nosql'           => 'MongoDB / Redis / Cassandra',
-                    'db_search'          => 'Elasticsearch / OpenSearch',
-                    'db_dw'              => 'Data Warehouse (Snowflake, BigQuery, Redshift)',
-                    'cloud_aws'          => 'AWS',
-                    'cloud_azure'        => 'Microsoft Azure',
-                    'cloud_gcp'          => 'Google Cloud Platform',
-                    'ml_ops'             => 'MLOps / LLMOps',
-                    'observability'      => 'Observability (Grafana, Prometheus, Datadog)',
-                    'security_tools'     => 'Security Tools (SIEM, Pen Testing, SOC)',
-                ],
-            ],
-            'microsoft' => [
-                'label' => '📬 Microsoft 365 & Enterprise-Plattformen',
-                'items' => [
-                    'ms_exchange'        => 'Exchange Server / Exchange Online',
-                    'ms_teams'           => 'Microsoft Teams',
-                    'ms_sharepoint'      => 'SharePoint / SharePoint Online',
-                    'ms_m365'            => 'Microsoft 365 / Office 365',
-                    'ms_active_dir'      => 'Active Directory / Microsoft Entra ID',
-                    'ms_intune'          => 'Microsoft Intune / Endpoint Manager',
-                    'ms_power_platform'  => 'Power Platform (Power Apps, Power Automate)',
-                    'ms_power_bi'        => 'Power BI',
-                    'ms_dynamics'        => 'Dynamics 365 (CRM / ERP)',
-                    'ms_copilot'         => 'Microsoft Copilot / Copilot for M365',
-                    'ms_sql_server'      => 'SQL Server / SSRS / SSAS',
-                    'ms_defender'        => 'Microsoft Defender / Sentinel',
-                    'ms_onedrive'        => 'OneDrive / Teams Rooms',
-                    'ms_azure_devops'    => 'Azure DevOps / ADO',
-                    'ms_viva'            => 'Microsoft Viva / Employee Experience',
-                ],
-            ],
-            'enterprise_infra' => [
-                'label' => '🏛️ Enterprise Infrastructure & Virtualisierung',
-                'items' => [
-                    'vmware_vsphere'     => 'VMware vSphere / vCenter',
-                    'vmware_nsx'         => 'VMware NSX / vSAN / HCX',
-                    'vmware_horizon'     => 'VMware Horizon (VDI)',
-                    'nutanix'            => 'Nutanix HCI / AOS / AHV',
-                    'nutanix_nc2'        => 'Nutanix Cloud Clusters (NC2)',
-                    'citrix'             => 'Citrix DaaS / Virtual Apps & Desktops',
-                    'hyper_v'            => 'Hyper-V / Windows Server',
-                    'proxmox'            => 'Proxmox VE',
-                    'veeam'              => 'Veeam Backup & Replication',
-                    'zerto'              => 'Zerto / Disaster Recovery',
-                    'netapp'             => 'NetApp Storage (ONTAP, StorageGRID)',
-                    'dell_emc'           => 'Dell EMC PowerStore / PowerEdge',
-                    'hpe'                => 'HPE ProLiant / Synergy / SimpliVity',
-                    'cisco_net'          => 'Cisco Networking (ISE, Catalyst, Nexus)',
-                    'cisco_ucs'          => 'Cisco UCS / HyperFlex',
-                    'palo_alto'          => 'Palo Alto Networks (NGFW, Prisma)',
-                    'fortinet'           => 'Fortinet FortiGate / FortiSIEM',
-                    'f5'                 => 'F5 BIG-IP / NGINX',
-                    'juniper'            => 'Juniper Networks',
-                    'aruba'              => 'HPE Aruba / Aruba ClearPass',
-                    'sap'                => 'SAP (ERP, S/4HANA, BTP)',
-                    'oracle_db'          => 'Oracle Database / Oracle Cloud',
-                    'ibm_mainframe'      => 'IBM Z / Mainframe / AIX',
-                    'servicenow'         => 'ServiceNow (ITSM / ITOM)',
-                    'splunk'             => 'Splunk SIEM / SOAR',
-                    'crowdstrike'        => 'CrowdStrike Falcon',
-                    'zscaler'            => 'Zscaler / SASE / Zero Trust',
-                ],
-            ],
-            'business' => [
-                'label' => '📈 Business & Management',
-                'items' => [
-                    'leadership'         => 'Leadership & Führung',
-                    'change_mgmt'        => 'Change Management',
-                    'innovation'         => 'Innovationsmanagement',
-                    'entrepreneurship'   => 'Entrepreneurship & Startups',
-                    'digital_marketing'  => 'Digital Marketing & Growth',
-                    'sales'              => 'Vertrieb & Business Development',
-                    'agile_scrum'        => 'Agile / Scrum / OKR',
-                    'new_work'           => 'New Work & Future of Work',
-                    'hr_people'          => 'HR & People Management',
-                    'finance_fintech'    => 'Finance & FinTech',
-                    'esg'                => 'ESG & Nachhaltigkeit',
-                    'strategy'           => 'Strategie & Corporate Development',
-                ],
-            ],
-            'communication' => [
-                'label' => '🎤 Kommunikation & Soft Skills',
-                'items' => [
-                    'public_speaking'    => 'Public Speaking & Rhetorik',
-                    'storytelling'       => 'Storytelling',
-                    'coaching'           => 'Coaching & Mentoring',
-                    'moderation'         => 'Moderation & Facilitation',
-                    'train_trainer'      => 'Train-the-Trainer',
-                    'intercultural'      => 'Interkulturelle Kompetenz',
-                    'crisis_comm'        => 'Krisenkommunikation',
-                    'media_training'     => 'Medientraining / PR',
-                ],
-            ],
-            'industry' => [
-                'label' => '🏭 Branchen-Expertise',
-                'items' => [
-                    'healthcare'         => 'Gesundheitswesen & MedTech',
-                    'edu_elearning'      => 'Bildung & E-Learning',
-                    'real_estate'        => 'Immobilien & PropTech',
-                    'energy_climate'     => 'Energie & Klimaschutz',
-                    'automotive'         => 'Automobil & Mobilität',
-                    'logistics'          => 'Logistik & Supply Chain',
-                    'legal_regtech'      => 'Legal & RegTech',
-                    'ngo_social'         => 'NGO & Social Impact',
-                    'media_entertainment'=> 'Medien & Entertainment',
-                    'retail_ecommerce'   => 'Handel & E-Commerce',
-                ],
-            ],
-        ];
+        $groups = self::get_skill_groups();
         ?>
         <div class="admin-card">
             <h3>🛠️ Speaker Skills</h3>

@@ -214,10 +214,7 @@ class CMS_Companies_Member_Dashboard
             <p style="color:#64748b;font-size:.875rem;margin:0;">
                 <?php echo count($companies); ?> Unternehmen verfügbar
             </p>
-            <a href="/member/plugin/companies?action=new"
-               style="display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1.25rem;
-                      background:#0891b2;color:#fff;border-radius:8px;font-weight:600;
-                      font-size:.875rem;text-decoration:none;">
+            <a href="/member/plugin/companies?action=new" class="btn btn-primary">
                 ➕ Neues Unternehmen
             </a>
         </div>
@@ -258,14 +255,13 @@ class CMS_Companies_Member_Dashboard
         $isAdmin   = \CMS\Auth::instance()->isAdmin();
         ?>
         <div style="margin-bottom:1rem;">
-            <a href="/member/plugin/companies" style="color:#0891b2;font-size:.875rem;text-decoration:none;">
+            <a href="/member/plugin/companies" class="btn btn-secondary btn-sm">
                 ← Zurück zur Übersicht
             </a>
         </div>
 
         <?php if (!$isAdmin): ?>
-        <div style="background:#f0fdfa;border-left:4px solid #0891b2;color:#155e75;
-                    padding:1rem 1.25rem;border-radius:6px;margin-bottom:1.25rem;font-size:.9rem;">
+        <div class="alert" style="background:#f0fdfa;border-left:4px solid #0891b2;color:#155e75;">
             <strong>ℹ️ Hinweis:</strong> Ihr Profil wird nach dem Einreichen vom Admin geprüft und dann freigeschaltet.
         </div>
         <?php endif; ?>

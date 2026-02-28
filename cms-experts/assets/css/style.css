@@ -46,9 +46,9 @@
    ======================================== */
 
 .expert-card {
-    height: 375px;
-    max-height: 375px;
-    min-height: 375px;
+    height: 350px;
+    max-height: 350px;
+    min-height: 350px;
     background: var(--expert-card-bg, #fffdf4);
     padding: 0;
     border-radius: var(--expert-radius);
@@ -62,9 +62,9 @@
 }
 
 .expert-card--overview {
-    height: 325px;
-    max-height: 325px;
-    min-height: 325px;
+    height: 350px;
+    max-height: 350px;
+    min-height: 350px;
     background: var(--expert-card-bg, #fffdf4);
     border: 1px solid var(--expert-border);
     border-radius: var(--expert-radius);
@@ -258,17 +258,29 @@
     text-overflow: ellipsis;
 }
 
-.expert-exp-badge-inline {
-    color: #64748b;
-    font-size: 0.8rem;
+/* Badges-Reihe (Berufsjahre + Zertifikate) */
+.expert-card-badges-row {
     display: flex;
     align-items: center;
-    gap: 4px;
-    white-space: nowrap;
+    gap: 6px;
     flex-shrink: 0;
 }
 
-.expert-exp-badge-inline .years {
+.expert-badge-mini {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: #64748b;
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+.expert-badge-mini .badge-icon {
+    font-size: 0.82rem;
+    line-height: 1;
+}
+
+.expert-badge-mini .badge-val {
     font-weight: 700;
 }
 
@@ -387,6 +399,7 @@
 .expert-card-social {
     display: flex;
     align-items: center;
+    background: linear-gradient(135deg, #fff6d1 0%, #fef9e7 100%);
     justify-content: center;
     gap: 12px;
     padding-bottom: 8px;
@@ -1415,3 +1428,16 @@
         grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     }
 }
+
+/* ── Archive: Header ──────────────────────────────────────────── */
+.expert-archive-header { background: var(--expert-hdr-bg); }
+.header-icon           { color: var(--expert-hdr-title); }
+.header-title          { color: var(--expert-hdr-title); }
+
+/* ── Archive: Filter ──────────────────────────────────────────── */
+.filter-input-wrapper--sm { max-width: 200px; }
+.expert-btn--reset        { border: none; }
+
+/* ── Archive: Pagination & Empty State ────────────────────────── */
+.expert-pagination { margin-top: 40px; text-align: center; }
+.no-results        { text-align: center; padding: 50px; color: var(--expert-text-light, #94a3b8); }

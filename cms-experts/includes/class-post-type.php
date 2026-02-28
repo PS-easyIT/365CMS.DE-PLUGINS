@@ -162,10 +162,22 @@ final class CMS_Experts_Post_Type
                 $specs_by_expert[$row->expert_id][] = $row->name;
             }
 
+            // Zertifikat-Anzahl
+            $stmt3 = $db_raw->prepare(
+                "SELECT expert_id, COUNT(*) AS cnt FROM {$db_raw->prefix()}expert_certifications
+                 WHERE expert_id IN ({$placeholders}) GROUP BY expert_id"
+            );
+            $stmt3->execute($expert_ids);
+            $certs_count = [];
+            foreach ($stmt3->fetchAll() as $row) {
+                $certs_count[$row->expert_id] = (int)$row->cnt;
+            }
+
             // An Experten-Objekte anhängen
             foreach ($experts as $expert) {
                 $expert->_skills          = $skills_by_expert[$expert->id] ?? [];
                 $expert->_specializations = $specs_by_expert[$expert->id]  ?? [];
+                $expert->_cert_count      = $certs_count[$expert->id]      ?? 0;
             }
         }
 

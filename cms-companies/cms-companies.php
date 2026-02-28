@@ -132,6 +132,11 @@ final class CMS_Companies
             $css_version = filemtime($css_file);
             echo '<link rel="stylesheet" href="' . htmlspecialchars($css_url) . '?v=' . $css_version . '">' . "\n";
         }
+        $single_css_file = $this->plugin_dir . 'assets/css/single.css';
+        if (file_exists($single_css_file)) {
+            $single_css_url = $this->plugin_url . 'assets/css/single.css';
+            echo '<link rel="stylesheet" href="' . htmlspecialchars($single_css_url) . '?v=' . filemtime($single_css_file) . '">' . "\n";
+        }
     }
 
     public function enqueue_scripts(): void

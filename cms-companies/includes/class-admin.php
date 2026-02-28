@@ -64,6 +64,10 @@ final class CMS_Companies_Admin
         $this->loadAdminMenu();
         renderAdminLayoutStart('Unternehmen', 'companies');
 
+        // Admin-CSS laden
+        $adminCss = CMS_COMPANIES_PLUGIN_DIR . 'assets/css/companies-admin.css';
+        echo '<link rel="stylesheet" href="' . CMS_COMPANIES_PLUGIN_URL . 'assets/css/companies-admin.css?v=' . filemtime($adminCss) . '">' . "\n";
+
         $companies  = $data['companies']  ?? [];
         $tab        = $data['tab']        ?? 'overview';
         $filter     = $data['filter']     ?? 'all';
@@ -106,9 +110,14 @@ final class CMS_Companies_Admin
         ?>
 
         <!-- Page Header -->
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin-bottom:1.5rem;">
-            <h2 style="margin:0;">🏢 Unternehmen</h2>
-            <a href="<?= SITE_URL ?>/admin/companies/new" class="btn btn-primary">+ Unternehmen anlegen</a>
+        <div class="admin-page-header">
+            <div>
+                <h2>🏢 Unternehmen</h2>
+                <p>Unternehmensprofile, Branchen und Design verwalten</p>
+            </div>
+            <div class="header-actions">
+                <a href="<?= SITE_URL ?>/admin/companies/new" class="btn btn-primary">+ Unternehmen anlegen</a>
+            </div>
         </div>
 
         <?php if (isset($_GET['saved'])): ?><div class="alert alert-success" style="margin-bottom:1rem;">✓ Einstellungen gespeichert.</div><?php endif; ?>
@@ -126,7 +135,7 @@ final class CMS_Companies_Admin
                 'settings'   => ['⚙️', 'Einstellungen', ''],
             ];
             foreach ($tabs as $slug => [$icon, $label, $badge]): ?>
-                <a href="?tab=<?= $slug ?>" class="co-tab <?= $tab === $slug ? 'co-tab--active' : '' ?>">
+                <a href="?tab=<?= $slug ?>" class="co-tab <?= $tab === $slug ? 'active' : '' ?>">
                     <?= $icon ?> <?= $label ?>
                 </a>
             <?php endforeach; ?>
@@ -141,11 +150,22 @@ final class CMS_Companies_Admin
             elseif ($filter === 'partner') $filtered = array_values(array_filter($companies, fn($c) => !$c->is_sponsor && !$c->is_top_partner && (bool)$c->is_partner));
         ?>
 
+        <?php
+        $statItems = [
+            ['icon' => '🏢', 'value' => $total,      'label' => 'Gesamt',      'color' => ''],
+            ['icon' => '💜', 'value' => $sponsors,   'label' => 'Sponsoren',   'color' => 'color:#7c3aed'],
+            ['icon' => '🥇', 'value' => $topPartner, 'label' => 'Top-Partner', 'color' => 'color:#b45309'],
+            ['icon' => '🤝', 'value' => $partner,    'label' => 'Partner',     'color' => 'color:#6b7280'],
+        ];
+        ?>
         <div class="co-stats">
-            <div class="co-stat"><span class="co-stat-val"><?= $total ?></span><span class="co-stat-lbl">Gesamt</span></div>
-            <div class="co-stat"><span class="co-stat-val" style="color:#7c3aed"><?= $sponsors ?></span><span class="co-stat-lbl">Sponsoren</span></div>
-            <div class="co-stat"><span class="co-stat-val" style="color:#b45309"><?= $topPartner ?></span><span class="co-stat-lbl">Top-Partner</span></div>
-            <div class="co-stat"><span class="co-stat-val" style="color:#6b7280"><?= $partner ?></span><span class="co-stat-lbl">Partner</span></div>
+            <?php foreach ($statItems as $st): ?>
+            <div class="co-stat">
+                <span class="co-stat-icon"><?= $st['icon'] ?></span>
+                <span class="co-stat-val"<?= $st['color'] ? ' style="' . $st['color'] . '"' : '' ?>><?= $st['value'] ?></span>
+                <span class="co-stat-lbl"><?= $st['label'] ?></span>
+            </div>
+            <?php endforeach; ?>
         </div>
 
         <div class="co-filter-bar">
@@ -198,10 +218,10 @@ final class CMS_Companies_Admin
                         <?php elseif ($isPartner): ?>
                             <span class="co-adm-badge co-adm-badge--partner">Partner</span>
                         <?php else: ?>
-                            <span class="co-adm-badge" style="color:#374151;background:#f1f5f9;">Unternehmen</span>
+                            <span class="co-adm-badge co-adm-badge--default">Unternehmen</span>
                         <?php endif; ?>
                         <?php if ($isInactive): ?>
-                            <span class="co-adm-badge" style="color:#64748b;background:#f1f5f9;border:1px solid #cbd5e1;margin-left:.25rem;" title="Inaktiv – nicht öffentlich sichtbar">🔒 Inaktiv</span>
+                            <span class="co-adm-badge co-adm-badge--inactive" title="Inaktiv – nicht öffentlich sichtbar">🔒 Inaktiv</span>
                         <?php endif; ?>
                         <p class="co-adm-name"><?= $sec->escape($co->name) ?></p>
                         <?php if (!empty($co->industry)): ?>
@@ -226,13 +246,10 @@ final class CMS_Companies_Admin
                        class="co-adm-btn co-adm-btn-ghost">👁 Ansehen</a>
                     <a href="<?= SITE_URL ?>/admin/companies/edit/<?= (int)$co->id ?>"
                        class="co-adm-btn co-adm-btn-primary">✏️ Bearbeiten</a>
-                    <form method="POST" action="<?= SITE_URL ?>/admin/companies/delete/<?= (int)$co->id ?>" style="display:contents;">
-                        <input type="hidden" name="csrf_token" value="<?= CMS\Security::instance()->generateToken('delete_company') ?>">
-                        <button type="submit" class="co-adm-btn co-adm-btn-danger"
-                                onclick="return confirm('Unternehmen «<?= $sec->escape(addslashes($co->name)) ?>» wirklich löschen?')">
-                            🗑
-                        </button>
-                    </form>
+                    <button type="button" class="co-adm-btn co-adm-btn-danger"
+                            onclick="openCoDeleteModal(<?= (int)$co->id ?>, '<?= $sec->escape(addslashes($co->name)) ?>')">
+                        🗑
+                    </button>
                 </div>
             </div>
         <?php endforeach; ?>
@@ -247,7 +264,7 @@ final class CMS_Companies_Admin
             <div>
                 <h3 style="margin:0 0 1rem;">Vorhandene Branchen (<?= count($industries) ?>)</h3>
                 <?php if (empty($industries)): ?>
-                    <p style="color:#64748b;">Noch keine Branchen vorhanden.</p>
+                    <p class="text-muted">Noch keine Branchen vorhanden.</p>
                 <?php else: ?>
                     <div class="co-tax-list">
                     <?php foreach ($industries as $ind): ?>
@@ -260,7 +277,7 @@ final class CMS_Companies_Admin
                                             onclick="return confirm('Branche «<?= $sec->escape(addslashes($ind->name)) ?>» löschen?')">×</button>
                                 </form>
                             <?php else: ?>
-                                <span style="font-size:.7rem;color:#94a3b8;padding:.1rem .4rem;background:#f8fafc;border-radius:4px;">Standard</span>
+                                <span class="co-tax-std">Standard</span>
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
@@ -313,7 +330,7 @@ final class CMS_Companies_Admin
                                 </span>
                             <?php endforeach; ?>
                             <?php if (empty($presets[$type])): ?>
-                                <span style="font-size:.75rem;color:#94a3b8;">Noch keine Einträge.</span>
+                                <span class="text-muted" style="font-size:.75rem;">Noch keine Eintr\u00e4ge.</span>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -520,60 +537,42 @@ final class CMS_Companies_Admin
         </form>
         <?php endif; ?>
 
+        <!-- Dynamische Partner-Farben per CSS-Variable (aus DB) -->
         <style>
-        .co-tabs{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.75rem;border-bottom:2px solid #e2e8f0;}
-        .co-tab{display:inline-flex;align-items:center;gap:.35rem;padding:.55rem 1.1rem;border-radius:8px 8px 0 0;font-size:.8125rem;font-weight:600;color:#64748b;text-decoration:none;transition:all .15s;border-bottom:2px solid transparent;margin-bottom:-2px;}
-        .co-tab:hover{color:#0891b2;background:#f0f9ff;}
-        .co-tab--active{color:#0891b2;border-bottom-color:#0891b2;background:#f0f9ff;}
-        .co-stats{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem;}
-        .co-stat{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:.875rem 1.25rem;display:flex;flex-direction:column;gap:.15rem;min-width:90px;}
-        .co-stat-val{font-size:1.5rem;font-weight:800;color:#1e293b;}
-        .co-stat-lbl{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:#64748b;font-weight:600;}
-        .co-filter-bar{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1.5rem;}
-        .co-filter-btn{display:inline-block;padding:.35rem .9rem;border-radius:50px;font-size:.78rem;font-weight:600;color:#475569;background:#f1f5f9;text-decoration:none;border:1px solid #e2e8f0;transition:all .15s;}
-        .co-filter-btn:hover{background:#e2e8f0;}
-        .co-filter-btn--active{background:#0891b2;color:#fff;border-color:#0891b2;}
-        .co-empty{text-align:center;padding:3rem;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;color:#64748b;}
-        .co-adm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;}
-        .co-adm-card{background:#fff;border:2px solid #e2e8f0;border-radius:12px;padding:1.25rem;display:flex;flex-direction:column;gap:.75rem;transition:box-shadow .2s,transform .2s;overflow:hidden;}
-        .co-adm-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.09);transform:translateY(-2px);}
-        .co-adm-card--sponsor{border-color:<?= htmlspecialchars($s['design_sponsor_color'] ?? '#a855f7') ?>;background:linear-gradient(135deg,#faf5ff 0%,#fff 70%);}
-        .co-adm-card--top{border-color:<?= htmlspecialchars($s['design_top_partner_color'] ?? '#f59e0b') ?>;background:linear-gradient(135deg,#fffbeb 0%,#fff 70%);}
-        .co-adm-card--partner{border-color:<?= htmlspecialchars($s['design_partner_color'] ?? '#94a3b8') ?>;background:linear-gradient(135deg,#f8fafc 0%,#fff 70%);}
-        .co-adm-top{display:flex;gap:.75rem;align-items:flex-start;}
-        .co-adm-avatar{flex-shrink:0;width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:800;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.18);}
-        .co-adm-ident{flex:1;min-width:0;display:flex;flex-direction:column;gap:.2rem;}
-        .co-adm-badge{display:inline-block;padding:.15rem .5rem;border-radius:50px;font-size:.68rem;font-weight:700;width:fit-content;}
-        .co-adm-badge--sponsor{background:#f3e8ff;color:#6b21a8;border:1px solid #e9d5ff;}
-        .co-adm-badge--top{background:#fef3c7;color:#92400e;border:1px solid #fde68a;}
-        .co-adm-badge--partner{background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;}
-        .co-adm-name{font-size:.95rem;font-weight:700;color:#1e293b;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .co-adm-sub{font-size:.75rem;color:#64748b;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-        .co-adm-pills{display:flex;flex-wrap:wrap;gap:.3rem;}
-        .co-adm-pill{display:inline-flex;align-items:center;gap:.25rem;padding:.2rem .55rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:50px;font-size:.72rem;color:#374151;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        .co-adm-foot{display:flex;gap:.5rem;padding-top:.75rem;border-top:1px solid #f1f5f9;margin-top:auto;flex-wrap:wrap;}
-        .co-adm-btn{display:inline-flex;align-items:center;gap:.25rem;padding:.35rem .8rem;border-radius:7px;font-size:.78rem;font-weight:600;text-decoration:none;white-space:nowrap;transition:opacity .15s;cursor:pointer;border:none;}
-        .co-adm-btn:hover{opacity:.8;}
-        .co-adm-btn-primary{background:#0891b2;color:#fff;}
-        .co-adm-btn-ghost{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;}
-        .co-adm-btn-danger{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;}
-        .co-tax-list{display:flex;flex-direction:column;gap:.4rem;}
-        .co-tax-row{display:flex;align-items:center;justify-content:space-between;padding:.55rem .875rem;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:.875rem;color:#374151;}
-        .co-tax-name{font-weight:500;}
-        .co-del-btn{background:none;border:none;color:#dc2626;cursor:pointer;font-size:1rem;font-weight:700;padding:0 .3rem;opacity:.6;transition:opacity .15s;}
-        .co-del-btn:hover{opacity:1;}
-        .co-tag-list{display:flex;flex-wrap:wrap;gap:.3rem;}
-        .co-tag{display:inline-flex;align-items:center;gap:.2rem;padding:.2rem .5rem;background:#f0f9ff;border:1px solid #bae6fd;border-radius:50px;font-size:.75rem;color:#0c4a6e;}
-        .co-tag-del{background:none;border:none;color:#dc2626;cursor:pointer;font-size:.85rem;font-weight:700;padding:0 .1rem;opacity:.6;transition:opacity .15s;line-height:1;}
-        .co-tag-del:hover{opacity:1;}
-        .co-side-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;}
-        .co-form-group{margin-bottom:.875rem;}
-        .co-form-group label{display:block;font-size:.78rem;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.35rem;}
-        .co-form-group input[type=text],.co-form-group input[type=number],.co-form-group input[type=url],
-        .co-form-group input[type=email],.co-form-group select,.co-form-group textarea{width:100%;padding:.45rem .7rem;border:1px solid #e2e8f0;border-radius:7px;font-size:.875rem;box-sizing:border-box;}
-        .co-form-group input:focus,.co-form-group select:focus,.co-form-group textarea:focus{outline:none;border-color:#0891b2;box-shadow:0 0 0 3px rgba(8,145,178,.12);}
-        .co-form-group textarea{resize:vertical;}
+        :root {
+            --co-sponsor-color: <?= htmlspecialchars($s['design_sponsor_color'] ?? '#a855f7') ?>;
+            --co-top-color:     <?= htmlspecialchars($s['design_top_partner_color'] ?? '#f59e0b') ?>;
+            --co-partner-color: <?= htmlspecialchars($s['design_partner_color'] ?? '#94a3b8') ?>;
+        }
         </style>
+
+        <!-- Delete Modal -->
+        <div id="coDeleteModal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>🗑️ Unternehmen löschen</h3>
+                    <button class="modal-close" onclick="closeModal('coDeleteModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Möchten Sie das Unternehmen «<strong id="coDeleteName"></strong>» wirklich löschen?</p>
+                    <p style="color:#991b1b;font-size:.875rem;">Dieser Vorgang kann nicht rückgängig gemacht werden.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('coDeleteModal')">Abbrechen</button>
+                    <form id="coDeleteForm" method="POST" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="<?= CMS\Security::instance()->generateToken('delete_company') ?>">
+                        <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <script>
+        function openCoDeleteModal(id, name) {
+            document.getElementById('coDeleteName').textContent = name;
+            document.getElementById('coDeleteForm').action = '<?= SITE_URL ?>/admin/companies/delete/' + id;
+            openModal('coDeleteModal');
+        }
+        </script>
         <?php
         renderAdminLayoutEnd();
     }
@@ -595,6 +594,10 @@ final class CMS_Companies_Admin
         $assigned = $is_edit ? $db->get_company_experts((int)$company->id, false) : [];
 
         renderAdminLayoutStart($page_title, 'companies');
+
+        // Admin-CSS laden
+        $adminCss = CMS_COMPANIES_PLUGIN_DIR . 'assets/css/companies-admin.css';
+        echo '<link rel="stylesheet" href="' . CMS_COMPANIES_PLUGIN_URL . 'assets/css/companies-admin.css?v=' . filemtime($adminCss) . '">' . "\n";
         ?>
         <div class="admin-page-header">
             <div>
