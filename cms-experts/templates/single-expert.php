@@ -189,6 +189,7 @@ $_ex_pals   = [['#5e72e4','#8965e0'],['#0891b2','#06b6d4'],['#16a34a','#22c55e']
 $_ex_cp     = $_ex_pals[abs(crc32($full_name)) % count($_ex_pals)];
 $_ex_agrad  = "linear-gradient(135deg,{$_ex_cp[0]},{$_ex_cp[1]})";
 $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
+$events     = $events ?? [];
 ?>
 
 <div class="ex-v2">
@@ -223,6 +224,12 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
             <div class="ex-hero__spec-pills">
               <?php foreach ($specializations as $sp): ?><span class="ex-hero__spec-pill"><?= $sec->escape($sp->name ?? '') ?></span><?php endforeach; ?>
             </div>
+          <?php endif; ?>
+          <?php if (!empty($events)): ?>
+            <span class="ex-hero__ev-count" title="<?= count($events) ?> zugewiesene Events">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <?= count($events) ?>
+            </span>
           <?php endif; ?>
         </div>
         <?php if ($motto): ?><p class="ex-hero__motto">"<?= $sec->escape($motto) ?>"</p><?php endif; ?>
@@ -490,6 +497,80 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
               </div>
             <?php endforeach; ?>
           <?php endif; ?>
+        </div>
+      <?php endif; ?>
+
+      <?php if (!empty($events)):
+        $ev_now    = time();
+        $ev_future = [];
+        $ev_past   = [];
+        foreach ((array)$events as $ev) {
+          if (!is_object($ev)) continue;
+          $ev_ts_cmp = !empty($ev->event_date) ? strtotime($ev->event_date) : 0;
+          if ($ev_ts_cmp >= $ev_now) { $ev_future[] = $ev; } else { $ev_past[] = $ev; }
+        }
+        usort($ev_future, fn($a, $b) => strtotime($a->event_date ?? '') <=> strtotime($b->event_date ?? ''));
+        usort($ev_past,   fn($a, $b) => strtotime($b->event_date ?? '') <=> strtotime($a->event_date ?? ''));
+      ?>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">Events & Auftritte <span class="ex-count-badge"><?= count($events) ?></span></h2>
+
+          <?php if (!empty($ev_future)): ?>
+            <h3 class="ex-ev-subhead">📅 Bevorstehende Events</h3>
+            <div class="ex-ev-grid-v2">
+              <?php foreach ($ev_future as $ev):
+                $ev_title    = $sec->escape($ev->event_title ?? '');
+                $ev_date_raw = $ev->event_date ?? '';
+                $ev_location = $sec->escape($ev->event_location ?? '');
+                $ev_type     = $sec->escape($ev->event_type ?? '');
+                $ev_presence = $ev->presence_type ?? 'presence';
+                $ev_ts       = $ev_date_raw ? strtotime($ev_date_raw) : 0;
+                $ev_date_fmt = $ev_ts ? date('d.m.Y', $ev_ts) : '';
+              ?>
+                <div class="ex-ev-v2 ex-ev-v2--future">
+                  <?php if ($ev_date_fmt): ?><div class="ex-ev-v2__date"><?= $ev_date_fmt ?></div><?php endif; ?>
+                  <div class="ex-ev-v2__title"><?= $ev_title ?: 'Event' ?></div>
+                  <div class="ex-ev-v2__meta">
+                    <?php if ($ev_location): ?><span>📍 <?= $ev_location ?></span><?php endif; ?>
+                    <?php if ($ev_type && $ev_location): ?><span>·</span><?php endif; ?>
+                    <?php if ($ev_type): ?><span><?= $ev_type ?></span><?php endif; ?>
+                  </div>
+                  <?php if ($ev_presence !== 'presence'): ?>
+                    <span class="ex-ev-v2__badge ex-ev-v2__badge--online"><?= $ev_presence === 'online' ? '💻 Online' : '🔀 Hybrid' ?></span>
+                  <?php endif; ?>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+
+          <?php if (!empty($ev_past)): ?>
+            <h3 class="ex-ev-subhead<?= !empty($ev_future) ? ' ex-ev-subhead--gap' : '' ?>">🗓️ Vergangene Events</h3>
+            <div class="ex-ev-grid-v2">
+              <?php foreach ($ev_past as $ev):
+                $ev_title    = $sec->escape($ev->event_title ?? '');
+                $ev_date_raw = $ev->event_date ?? '';
+                $ev_location = $sec->escape($ev->event_location ?? '');
+                $ev_type     = $sec->escape($ev->event_type ?? '');
+                $ev_presence = $ev->presence_type ?? 'presence';
+                $ev_ts       = $ev_date_raw ? strtotime($ev_date_raw) : 0;
+                $ev_date_fmt = $ev_ts ? date('d.m.Y', $ev_ts) : '';
+              ?>
+                <div class="ex-ev-v2 ex-ev-v2--past">
+                  <?php if ($ev_date_fmt): ?><div class="ex-ev-v2__date"><?= $ev_date_fmt ?></div><?php endif; ?>
+                  <div class="ex-ev-v2__title"><?= $ev_title ?: 'Event' ?></div>
+                  <div class="ex-ev-v2__meta">
+                    <?php if ($ev_location): ?><span>📍 <?= $ev_location ?></span><?php endif; ?>
+                    <?php if ($ev_type && $ev_location): ?><span>·</span><?php endif; ?>
+                    <?php if ($ev_type): ?><span><?= $ev_type ?></span><?php endif; ?>
+                  </div>
+                  <?php if ($ev_presence !== 'presence'): ?>
+                    <span class="ex-ev-v2__badge ex-ev-v2__badge--online"><?= $ev_presence === 'online' ? '💻 Online' : '🔀 Hybrid' ?></span>
+                  <?php endif; ?>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+
         </div>
       <?php endif; ?>
 
