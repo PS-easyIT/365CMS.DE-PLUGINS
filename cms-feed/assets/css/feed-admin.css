@@ -1,0 +1,117 @@
+/**
+ * CMS Feed – Admin Stylesheet
+ *
+ * Ergänzende Styles für die Admin-Oberfläche.
+ * Nutzt die globalen admin.css-Klassen als Basis.
+ *
+ * @package CMS_Feed
+ */
+
+/* -------------------------------------------------------------------------
+ * Tab-Navigation
+ * ---------------------------------------------------------------------- */
+.feed-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 0;
+    flex-wrap: wrap;
+}
+
+.feed-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .625rem 1.125rem;
+    font-size: .875rem;
+    font-weight: 500;
+    color: #64748b;
+    text-decoration: none;
+    border: 2px solid transparent;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    transition: all .2s;
+    white-space: nowrap;
+    background: transparent;
+    position: relative;
+    bottom: -2px;
+}
+
+.feed-tab:hover {
+    color: #1e293b;
+    background: #f8fafc;
+}
+
+.feed-tab.active {
+    color: var(--admin-primary, #3b82f6);
+    background: #fff;
+    border-color: #e2e8f0;
+    font-weight: 600;
+}
+
+/* -------------------------------------------------------------------------
+ * Dashboard Stat-Cards
+ * ---------------------------------------------------------------------- */
+.stat-card {
+    position: relative;
+}
+
+.stat-icon {
+    font-size: 1.5rem;
+    margin-bottom: .25rem;
+}
+
+/* -------------------------------------------------------------------------
+ * Status-Badge: danger Variante
+ * ---------------------------------------------------------------------- */
+.status-badge.danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* -------------------------------------------------------------------------
+ * Settings Sub-Tabs
+ * ---------------------------------------------------------------------- */
+.tab-btn {
+    padding: .5rem 1rem;
+    border: none;
+    background: transparent;
+    font-size: .85rem;
+    font-weight: 500;
+    color: #64748b;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all .15s;
+}
+
+.tab-btn:hover {
+    color: #1e293b;
+}
+
+.tab-btn.active {
+    color: var(--admin-primary, #3b82f6);
+    border-bottom-color: var(--admin-primary, #3b82f6);
+    font-weight: 600;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* -------------------------------------------------------------------------
+ * Responsive Anpassungen
+ * ---------------------------------------------------------------------- */
+@media (max-width: 960px) {
+    .feed-tabs {
+        gap: .15rem;
+    }
+
+    .feed-tab {
+        padding: .5rem .75rem;
+        font-size: .8rem;
+    }
+}

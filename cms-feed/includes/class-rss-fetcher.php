@@ -134,7 +134,7 @@ final class CMS_Feed_RSS_Fetcher
             'http' => [
                 'method'          => 'GET',
                 'timeout'         => 15,
-                'user_agent'      => '365CMS Feed Aggregator/' . CMS_FEED_VERSION,
+                'user_agent'      => '365CMS.DE Feed Aggregator/' . CMS_FEED_VERSION,
                 'follow_location' => 1,
                 'max_redirects'   => 3,
             ],

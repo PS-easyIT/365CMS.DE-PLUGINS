@@ -164,7 +164,7 @@ HTML;
 
         <!-- Footer -->
         <div style="text-align:center;padding:16px;font-size:.75rem;color:#94a3b8;">
-            Dieser Digest wurde automatisch von 365 CMS Feed generiert.<br>
+            Dieser Digest wurde automatisch von 365CMS.DE Feed generiert.<br>
             Frequenz: {$this->get_frequency_label((int)$digest['frequency'])}
         </div>
 
