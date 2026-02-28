@@ -110,7 +110,10 @@ final class CMS_Speakers_Post_Type
         if (!$speaker) { $this->render_404(); return; }
         $db->increment_views($speaker_id);
         $topics   = $db->get_topics($speaker_id);
-        $events   = $db->get_events($speaker_id, true);
+        // Manuelle Speaker-Events (speaker_events Tabelle)
+        $events   = $db->get_events($speaker_id, false);
+        // Zusätzlich: über cms-events Plugin zugewiesene Events
+        $events   = array_merge($events, $this->get_speaker_cms_events($speaker_id));
         $raw_s    = $db->get_settings();
         $settings = array_merge([
             'design_primary_color'          => '#8b5cf6',
@@ -145,6 +148,33 @@ final class CMS_Speakers_Post_Type
         $tm->getHeader();
         CMS_Speakers_Template_Loader::instance()->render_template('single-speaker', compact('speaker','topics','events','settings'));
         $tm->getFooter();
+    }
+    /**
+     * Holt Events aus cms_event_speakers JOIN cms_events (cms-events Plugin).
+     */
+    private function get_speaker_cms_events(int $speaker_id): array
+    {
+        try {
+            $db = CMS\Database::instance();
+            $p  = $db->prefix();
+            $stmt = $db->prepare(
+                "SELECT
+                    e.title                                               AS event_title,
+                    e.event_date,
+                    COALESCE(NULLIF(e.location,''), NULLIF(e.city,''))   AS event_location,
+                    e.category                                            AS event_type,
+                    CASE WHEN e.is_online = 1 THEN 'online' ELSE 'presence' END AS presence_type
+                 FROM {$p}event_speakers es
+                 JOIN {$p}events e ON e.id = es.event_id
+                 WHERE es.speaker_id = ? AND es.speaker_type = 'speaker'
+                   AND e.status = 'published'
+                 ORDER BY e.event_date DESC"
+            );
+            $stmt->execute([$speaker_id]);
+            return $stmt->fetchAll();
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
     private function require_admin(): void
     {

@@ -275,6 +275,7 @@ final class CMS_Experts_Post_Type
         $specializations = class_exists('CMS_Experts_Taxonomies')
             ? CMS_Experts_Taxonomies::instance()->get_expert_specializations($expert_id)
             : [];
+        $events          = $this->get_expert_events($expert_id);
 
         $template_loader = CMS_Experts_Template_Loader::instance();
         $template_loader->render_template('single-expert', [
@@ -285,10 +286,40 @@ final class CMS_Experts_Post_Type
             'education'       => $education,
             'meta'            => $meta,
             'specializations' => $specializations,
+            'events'          => $events,
             'settings'        => $settings,
         ]);
 
         $themeManager->getFooter();
+    }
+
+    /**
+     * Events für einen Experten aus cms_event_speakers JOIN cms_events holen.
+     * Fallback: leeres Array, wenn cms-events nicht aktiv ist.
+     */
+    private function get_expert_events(int $expert_id): array
+    {
+        try {
+            $db = CMS\Database::instance();
+            $p  = $db->prefix();
+            $stmt = $db->prepare(
+                "SELECT
+                    e.title                                               AS event_title,
+                    e.event_date,
+                    COALESCE(NULLIF(e.location,''), NULLIF(e.city,''))   AS event_location,
+                    e.category                                            AS event_type,
+                    CASE WHEN e.is_online = 1 THEN 'online' ELSE 'presence' END AS presence_type
+                 FROM {$p}event_speakers es
+                 JOIN {$p}events e ON e.id = es.event_id
+                 WHERE es.speaker_id = ? AND es.speaker_type = 'expert'
+                   AND e.status = 'published'
+                 ORDER BY e.event_date DESC"
+            );
+            $stmt->execute([$expert_id]);
+            return $stmt->fetchAll();
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     /**
