@@ -205,7 +205,14 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
         <div class="sp-hero-v2__av" style="background:<?= $av_grad ?>;"><?= htmlspecialchars($initials ?: '🎤') ?></div>
       <?php endif; ?>
       <div class="sp-hero-v2__meta">
-        <h1 class="sp-hero-v2__name"><?= $full_name ?></h1>
+        <div class="sp-hero-v2__name-row">
+          <h1 class="sp-hero-v2__name"><?= $full_name ?></h1>
+          <?php if (!empty($topics)): ?>
+            <div class="sp-hero-v2__spec-pills">
+              <?php foreach ((array)$topics as $t): $tname = is_object($t) ? ($t->topic_name ?? '') : (string)$t; if (!$tname) continue; ?><span class="sp-hero-v2__spec-pill"><?= htmlspecialchars($tname) ?></span><?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </div>
         <?php if ($position): ?><p class="sp-hero-v2__pos"><?= $position ?></p><?php endif; ?>
         <?php if ($company): ?>
           <p class="sp-hero-v2__co">🏢
@@ -305,74 +312,60 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
     </div>
   </div>
 
-  <div class="sp-body-v2">
-    <main class="sp-main-v2">
+  <div class="ex-body">
+    <main class="ex-main">
 
       <?php if ($speaking_style): ?>
-        <div class="sp-sec-v2">
-          <h2 class="sp-sec-v2__title">Vortragsstil</h2>
-          <p class="sp-text-body"><?= nl2br(htmlspecialchars($speaking_style)) ?></p>
-        </div>
-      <?php endif; ?>
-
-      <?php if (!empty($topics)): ?>
-        <div class="sp-sec-v2">
-          <h2 class="sp-sec-v2__title">Themen & Schwerpunkte</h2>
-          <div class="sp-pills-v2">
-            <?php foreach ((array)$topics as $t):
-              $tname = is_object($t) ? ($t->topic_name ?? '') : (string)$t;
-              if (!$tname) continue;
-            ?><span class="sp-pill"><?= htmlspecialchars($tname) ?></span><?php endforeach; ?>
-          </div>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">Vortragsstil</h2>
+          <p style="line-height:1.7;color:#475569;font-size:.92rem;"><?= nl2br(htmlspecialchars($speaking_style)) ?></p>
         </div>
       <?php endif; ?>
 
       <?php if (!empty($_skills)): ?>
-        <div class="sp-sec-v2">
-          <h2 class="sp-sec-v2__title">Skills & Technologien</h2>
-          <div class="sp-pills-v2">
-            <?php foreach ($_skills as $sk): ?><span class="sp-pill sp-pill--skill"><?= htmlspecialchars($_skill_labels[$sk] ?? $sk) ?></span><?php endforeach; ?>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">Skills & Technologien</h2>
+          <div class="ex-pills">
+            <?php foreach ($_skills as $sk): ?><span class="ex-pill ex-pill--tech"><?= htmlspecialchars($_skill_labels[$sk] ?? $sk) ?></span><?php endforeach; ?>
           </div>
         </div>
       <?php endif; ?>
 
       <?php if (!empty($formats)): ?>
-        <div class="sp-sec-v2">
-          <h2 class="sp-sec-v2__title">Vortragsformate</h2>
-          <div class="sp-pills-v2">
-            <?php foreach ((array)$formats as $f): ?><span class="sp-pill sp-pill--fmt"><?= htmlspecialchars($fmt_labels[$f] ?? $f) ?></span><?php endforeach; ?>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">Vortragsformate</h2>
+          <div class="ex-pills">
+            <?php foreach ((array)$formats as $f): ?><span class="ex-pill ex-pill--soft"><?= htmlspecialchars($fmt_labels[$f] ?? $f) ?></span><?php endforeach; ?>
           </div>
         </div>
       <?php endif; ?>
 
       <?php if ($target_audience): ?>
-        <div class="sp-sec-v2">
-          <h2 class="sp-sec-v2__title">Zielgruppe</h2>
-          <p class="sp-text-body"><?= nl2br(htmlspecialchars($target_audience)) ?></p>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">Zielgruppe</h2>
+          <p style="line-height:1.7;color:#475569;font-size:.92rem;"><?= nl2br(htmlspecialchars($target_audience)) ?></p>
         </div>
       <?php endif; ?>
 
       <?php if ($awards || !empty($_recognitions)): ?>
-        <div class="sp-sec-v2">
-          <h2 class="sp-sec-v2__title">Auszeichnungen & Rankings</h2>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">Auszeichnungen & Rankings</h2>
           <?php if ($awards): ?>
-            <p class="sp-text-body sp-text-body--mb"><?= nl2br(htmlspecialchars($awards)) ?></p>
+            <p style="line-height:1.7;color:#475569;font-size:.92rem;margin-bottom:1rem;"><?= nl2br(htmlspecialchars($awards)) ?></p>
           <?php endif; ?>
           <?php foreach ($_recognitions as $grp => $items):
             if (empty($items) || !is_array($items)) continue; ?>
-            <div class="sp-rec-group">
-              <h4><?= htmlspecialchars($_rec_group_labels[$grp] ?? $grp) ?></h4>
-              <div class="sp-pills-v2">
-                <?php foreach ($items as $item): ?><span class="sp-pill sp-pill--fmt"><?= htmlspecialchars($item) ?></span><?php endforeach; ?>
-              </div>
+            <h4 class="ex-sub-heading"><?= htmlspecialchars($_rec_group_labels[$grp] ?? $grp) ?></h4>
+            <div class="ex-pills ex-pills--mb">
+              <?php foreach ($items as $item): ?><span class="ex-pill"><?= htmlspecialchars($item) ?></span><?php endforeach; ?>
             </div>
           <?php endforeach; ?>
         </div>
       <?php endif; ?>
 
       <?php if (!empty($events)): ?>
-        <div class="sp-sec-v2">
-          <h2 class="sp-sec-v2__title">Events & Auftritte <span class="sp-count-badge"><?= count($events) ?></span></h2>
+        <div class="ex-sec">
+          <h2 class="ex-sec__title">Events & Auftritte <span class="ex-count-badge"><?= count($events) ?></span></h2>
           <div class="sp-ev-grid-v2">
             <?php foreach ((array)$events as $ev):
               if (!is_object($ev)) continue;
@@ -403,7 +396,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
 
     </main>
 
-    <aside class="sp-sidebar-v2">
+    <aside class="ex-aside">
 
       <?php
       $sp_facts = [];
@@ -415,13 +408,13 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
       if ($max_audience): $sp_facts[] = ['Max. Audience',(int)$max_audience.' Pers.']; endif;
       if ($acad_title||$gender): $sp_facts[] = ['Ansprache',htmlspecialchars(trim("$acad_title $gender"))]; endif;
       if ($sp_facts): ?>
-        <div class="sp-sc-v2">
-          <h3 class="sp-sc-v2__title">Details</h3>
-          <div class="sp-info-rows-v2">
+        <div class="ex-sc">
+          <h3 class="ex-sc__title">Details</h3>
+          <div class="ex-info-rows">
             <?php foreach ($sp_facts as [$lbl,$val]): ?>
-              <div class="sp-info-row-v2">
-                <span class="sp-info-row-v2__lbl"><?= $lbl ?></span>
-                <span class="sp-info-row-v2__val"><?= $val ?></span>
+              <div class="ex-info-row">
+                <span class="ex-info-row__lbl"><?= $lbl ?></span>
+                <span class="ex-info-row__val"><?= $val ?></span>
               </div>
             <?php endforeach; ?>
           </div>

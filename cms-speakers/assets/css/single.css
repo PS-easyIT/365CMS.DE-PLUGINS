@@ -84,7 +84,23 @@
 .sp-hero-v2__badge--avail-booked    { background: var(--sp-avail-booked-bg, #fee2e2); color: var(--sp-avail-booked-color, #991b1b); }
 .sp-hero-v2__badge--verified        { background: var(--sp-badge-verified-bg, #ede9fe); color: var(--sp-badge-verified-color, #5b21b6); }
 .sp-hero-v2__badge--mvp             { background: var(--sp-badge-mvp-bg, rgba(251,191,36,.2)); color: var(--sp-badge-mvp-color, #fbbf24); border: 1px solid rgba(251,191,36,.4); }
-.sp-hero-v2__name { margin: 0 0 .15rem; font-size: clamp(1.5rem, 4vw, 2.25rem); font-weight: 800; line-height: 1.2; color: var(--sp-hdr-title, #1e293b); }
+.sp-hero-v2__name { margin: 0; font-size: clamp(1.5rem, 4vw, 2.25rem); font-weight: 800; line-height: 1.2; color: var(--sp-hdr-title, #1e293b); }
+.sp-hero-v2__name-row { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: .15rem; }
+.sp-hero-v2__name-row .sp-hero-v2__name { margin-bottom: 0; }
+.sp-hero-v2__spec-pills { display: flex; flex-wrap: wrap; gap: .3rem; padding-top: .45rem; }
+.sp-hero-v2__spec-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: .15rem .55rem;
+  border-radius: 50px;
+  font-size: .68rem;
+  font-weight: 700;
+  background: rgba(255,255,255,.75);
+  color: #334155;
+  border: 1px solid rgba(255,255,255,.5);
+  backdrop-filter: blur(3px);
+  white-space: nowrap;
+}
 .sp-hero-v2__pos  { font-size: .88rem; color: var(--sp-hdr-title, #1e293b); opacity: .7; margin: 0 0 .1rem; }
 .sp-hero-v2__co   { font-size: .84rem; color: var(--sp-hdr-title, #1e293b); opacity: .65; margin: 3px 0 .7rem; }
 .sp-hero-v2__co a { color: inherit; text-decoration: underline; }
@@ -472,6 +488,8 @@
   .sp-bridge          { grid-template-columns: 1fr; margin-top: -40px; padding: 0 1rem; gap: 1rem; }
   .sp-body-v2        { grid-template-columns: 1fr; padding: 1.25rem 1rem 2rem; gap: 1.25rem; }
   .sp-sidebar-v2     { position: static; }
+  .ex-body           { grid-template-columns: 1fr; padding: 1.25rem 1rem 2rem; }
+  .ex-aside          { position: static; }
   .sp-hero-v2        { height: 300px; min-height: 300px; max-height: 300px; }
   .sp-hero-v2__inner { padding: 1.25rem 1rem; gap: 1.25rem; }
   .sp-hero-v2__av    { width: 96px; height: 96px; }
