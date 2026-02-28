@@ -223,6 +223,12 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
               <?php foreach ((array)$topics as $t): $tname = is_object($t) ? ($t->topic_name ?? '') : (string)$t; if (!$tname) continue; ?><span class="sp-hero-v2__spec-pill"><?= htmlspecialchars($tname) ?></span><?php endforeach; ?>
             </div>
           <?php endif; ?>
+          <?php if (!empty($events)): ?>
+            <span class="sp-hero-v2__ev-count" title="<?= count($events) ?> zugewiesene Events">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <?= count($events) ?>
+            </span>
+          <?php endif; ?>
         </div>
         <?php if ($position): ?><p class="sp-hero-v2__pos"><?= $position ?></p><?php endif; ?>
         <?php if ($company): ?>
