@@ -233,45 +233,74 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
   <div class="sp-bridge">
     <?php if ($bio): ?>
       <div class="sp-bridge__about">
-        <h2 class="sp-bridge__title">👤 Über <?= htmlspecialchars($first ?: 'den Speaker') ?></h2>
+        <h2 class="sp-bridge__title">Über <?= htmlspecialchars($first ?: 'den Speaker') ?></h2>
         <div class="sp-bridge__text"><?= $bio ?></div>
       </div>
     <?php else: ?>
       <div class="sp-bridge__about">
-        <h2 class="sp-bridge__title">👤 Über <?= htmlspecialchars($first ?: 'den Speaker') ?></h2>
+        <h2 class="sp-bridge__title">Über <?= htmlspecialchars($first ?: 'den Speaker') ?></h2>
         <p class="sp-bridge__text" style="color:#94a3b8;font-style:italic;">Noch keine Beschreibung hinterlegt.</p>
       </div>
     <?php endif; ?>
 
     <div class="sp-bridge__contact">
-      <h2 class="sp-bridge__title">📬 Kontakt & Social</h2>
+      <h2 class="sp-bridge__title">Kontakt & Social</h2>
       <div class="sp-bridge__contact-body">
-        <?php if ($email): ?>
-          <a href="mailto:<?= htmlspecialchars($email) ?>" class="sp-btn-v2 sp-btn-v2--sm">✉️ Kontakt aufnehmen</a>
-        <?php endif; ?>
-        <?php if ($website): ?>
-          <a href="<?= htmlspecialchars($website) ?>" target="_blank" rel="noopener" class="sp-btn-v2 sp-btn-v2--ghost sp-btn-v2--sm">🌐 Website</a>
-        <?php endif; ?>
-        <?php if ($phone): ?>
-          <a href="tel:<?= htmlspecialchars($phone) ?>" class="sp-btn-v2 sp-btn-v2--ghost sp-btn-v2--sm">📞 <?= htmlspecialchars($phone) ?></a>
-        <?php endif; ?>
-        <?php if ($linkedin||$xing||$twitter||$instagram||$youtube||$github||$gitlab): ?>
-          <div class="sp-bridge__socials">
-            <?php if ($linkedin):  ?><a href="<?= htmlspecialchars($linkedin) ?>" target="_blank" rel="noopener" class="sp-si-v2" title="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S.02 4.88.02 3.5C.02 2.12 1.13 1 2.5 1s2.48 1.12 2.48 2.5zM.02 8.5H5V24H.02V8.5zm7.97 0h4.8v2.1h.07C13.7 9 15.44 8 17.6 8c5.2 0 6.16 3.43 6.16 7.88V24H19v-7.2c0-1.72-.03-3.93-2.4-3.93-2.4 0-2.78 1.87-2.78 3.81V24H8z"/></svg></a><?php endif; ?>
-            <?php if ($xing):     ?><a href="<?= htmlspecialchars($xing) ?>" target="_blank" rel="noopener" class="sp-si-v2" title="XING">✖</a><?php endif; ?>
-            <?php if ($twitter):  ?><a href="https://twitter.com/<?= htmlspecialchars(ltrim($twitter,'@')) ?>" target="_blank" rel="noopener" class="sp-si-v2" title="X/Twitter"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a><?php endif; ?>
-            <?php if ($instagram): ?><a href="https://instagram.com/<?= htmlspecialchars(ltrim($instagram,'@')) ?>" target="_blank" rel="noopener" class="sp-si-v2" title="Instagram">📸</a><?php endif; ?>
-            <?php if ($youtube):  ?><a href="<?= htmlspecialchars($youtube) ?>" target="_blank" rel="noopener" class="sp-si-v2" title="YouTube">▶</a><?php endif; ?>
-            <?php if ($github):   ?><a href="<?= htmlspecialchars($github) ?>" target="_blank" rel="noopener" class="sp-si-v2" title="GitHub"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a><?php endif; ?>
-            <?php if ($gitlab):   ?><a href="<?= htmlspecialchars($gitlab) ?>" target="_blank" rel="noopener" class="sp-si-v2" title="GitLab">🦊</a><?php endif; ?>
-          </div>
-        <?php endif; ?>
-        <?php if ($city): ?>
-          <div class="sp-bridge__detail">📍 <?= $city ?><?= ($city && $country) ? ', '.$country : '' ?></div>
-        <?php endif; ?>
-        <?php if ($languages): ?>
-          <div class="sp-bridge__detail">🗣️ <?= htmlspecialchars($languages) ?></div>
-        <?php endif; ?>
+        
+        <!-- Reihe 1: Kontakt / Buchung -->
+        <div class="sp-bridge__row">
+          <a href="<?= $base_url ?>/contact?speaker=<?= (int)$s->id ?>" class="sp-btn-v2 sp-btn-v2--sm sp-btn-v2--block">Kontakt / Buchung</a>
+        </div>
+
+        <!-- Reihe 2: Website · E-Mail · Telefon -->
+        <div class="sp-bridge__row sp-bridge__links">
+          <?php if (!empty($website)): ?>
+            <a href="<?= htmlspecialchars($website) ?>" target="_blank" rel="noopener" class="sp-bridge__link" title="Website ansehen">Website</a>
+          <?php else: ?>
+            <span class="sp-bridge__link sp-bridge__link--empty">Website</span>
+          <?php endif; ?>
+          
+          <?php if (!empty($email)): ?>
+            <a href="mailto:<?= htmlspecialchars($email) ?>" class="sp-bridge__link" title="E-Mail schreiben">E-Mail</a>
+          <?php else: ?>
+            <span class="sp-bridge__link sp-bridge__link--empty">E-Mail</span>
+          <?php endif; ?>
+          
+          <?php if (!empty($phone)): ?>
+            <a href="tel:<?= htmlspecialchars($phone) ?>" class="sp-bridge__link" title="Anrufen">Telefon</a>
+          <?php else: ?>
+            <span class="sp-bridge__link sp-bridge__link--empty">Telefon</span>
+          <?php endif; ?>
+        </div>
+
+        <!-- Reihe 3: Social Media Icons -->
+        <div class="sp-bridge__row sp-bridge__socials">
+          <?php
+          $speaker_social = [
+            'linkedin' => $linkedin ?? '',
+            'xing'     => $xing ?? '',
+            'twitter'  => $twitter ? "https://twitter.com/" . ltrim($twitter, '@') : '',
+            'github'   => $github ?? '',
+            'gitlab'   => $gitlab ?? '',
+            'youtube'  => $youtube ?? '',
+          ];
+          $social_icons = [
+            'linkedin' => ['label' => 'LinkedIn', 'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S.02 4.88.02 3.5C.02 2.12 1.13 1 2.5 1s2.48 1.12 2.48 2.5zM.02 8.5H5V24H.02V8.5zm7.97 0h4.8v2.1h.07C13.7 9 15.44 8 17.6 8c5.2 0 6.16 3.43 6.16 7.88V24H19v-7.2c0-1.72-.03-3.93-2.4-3.93-2.4 0-2.78 1.87-2.78 3.81V24H8z"/></svg>'],
+            'xing'     => ['label' => 'XING',     'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M18.188 0c-.517 0-.741.325-.927.66 0 0-7.455 13.224-7.702 13.657.015.024 4.919 9.023 4.919 9.023.17.308.436.66.967.66h3.454c.211 0 .375-.078.463-.22.089-.151.089-.346-.009-.536l-4.879-8.916c-.004-.006-.004-.016 0-.022L22.139.756c.095-.191.097-.387.006-.535C22.056.078 21.894 0 21.686 0h-3.498zM3.648 4.74c-.211 0-.385.074-.473.216-.09.149-.078.339.02.531l2.34 4.05c.004.01.004.016 0 .021L3.17 13.694c-.09.191-.097.383-.006.535.09.142.25.22.46.22h3.454c.521 0 .739-.322.928-.66l2.44-4.237c-.016-.025-2.395-4.14-2.395-4.14-.164-.308-.44-.672-.962-.672H3.648z"/></svg>'],
+            'twitter'  => ['label' => 'X',        'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'],
+            'youtube'  => ['label' => 'YouTube',  'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>'],
+            'github'   => ['label' => 'GitHub',   'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>'],
+            'gitlab'   => ['label' => 'GitLab',   'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M23.955 13.587l-1.342-4.135-2.664-8.189a.455.455 0 0 0-.867 0L16.418 9.45H7.582L4.918 1.263a.455.455 0 0 0-.867 0L1.386 9.452.044 13.587a.924.924 0 0 0 .331 1.023L12 23.054l11.625-8.443a.92.92 0 0 0 .33-1.024"/></svg>'],
+          ];
+          foreach ($social_icons as $sn => $icfg):
+            if (!empty($speaker_social[$sn])): ?>
+              <a href="<?= htmlspecialchars($speaker_social[$sn]) ?>" target="_blank" rel="noopener" class="sp-si" title="<?= $icfg['label'] ?>"><?= $icfg['svg'] ?></a>
+            <?php else: ?>
+              <span class="sp-si sp-si--empty" title="<?= $icfg['label'] ?>"><?= $icfg['svg'] ?></span>
+            <?php endif;
+          endforeach; ?>
+        </div>
+
       </div>
     </div>
   </div>
@@ -281,14 +310,14 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
 
       <?php if ($speaking_style): ?>
         <div class="sp-sec-v2">
-          <h2 class="sp-sec-v2__title">🎙️ Vortragsstil</h2>
+          <h2 class="sp-sec-v2__title">Vortragsstil</h2>
           <p class="sp-text-body"><?= nl2br(htmlspecialchars($speaking_style)) ?></p>
         </div>
       <?php endif; ?>
 
       <?php if (!empty($topics)): ?>
         <div class="sp-sec-v2">
-          <h2 class="sp-sec-v2__title">🏷️ Themen & Schwerpunkte</h2>
+          <h2 class="sp-sec-v2__title">Themen & Schwerpunkte</h2>
           <div class="sp-pills-v2">
             <?php foreach ((array)$topics as $t):
               $tname = is_object($t) ? ($t->topic_name ?? '') : (string)$t;
@@ -300,7 +329,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
 
       <?php if (!empty($_skills)): ?>
         <div class="sp-sec-v2">
-          <h2 class="sp-sec-v2__title">🛠️ Skills & Technologien</h2>
+          <h2 class="sp-sec-v2__title">Skills & Technologien</h2>
           <div class="sp-pills-v2">
             <?php foreach ($_skills as $sk): ?><span class="sp-pill sp-pill--skill"><?= htmlspecialchars($_skill_labels[$sk] ?? $sk) ?></span><?php endforeach; ?>
           </div>
@@ -309,7 +338,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
 
       <?php if (!empty($formats)): ?>
         <div class="sp-sec-v2">
-          <h2 class="sp-sec-v2__title">🎤 Vortragsformate</h2>
+          <h2 class="sp-sec-v2__title">Vortragsformate</h2>
           <div class="sp-pills-v2">
             <?php foreach ((array)$formats as $f): ?><span class="sp-pill sp-pill--fmt"><?= htmlspecialchars($fmt_labels[$f] ?? $f) ?></span><?php endforeach; ?>
           </div>
@@ -318,14 +347,14 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
 
       <?php if ($target_audience): ?>
         <div class="sp-sec-v2">
-          <h2 class="sp-sec-v2__title">🎯 Zielgruppe</h2>
+          <h2 class="sp-sec-v2__title">Zielgruppe</h2>
           <p class="sp-text-body"><?= nl2br(htmlspecialchars($target_audience)) ?></p>
         </div>
       <?php endif; ?>
 
       <?php if ($awards || !empty($_recognitions)): ?>
         <div class="sp-sec-v2">
-          <h2 class="sp-sec-v2__title">🏆 Auszeichnungen & Rankings</h2>
+          <h2 class="sp-sec-v2__title">Auszeichnungen & Rankings</h2>
           <?php if ($awards): ?>
             <p class="sp-text-body sp-text-body--mb"><?= nl2br(htmlspecialchars($awards)) ?></p>
           <?php endif; ?>
@@ -343,7 +372,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
 
       <?php if (!empty($events)): ?>
         <div class="sp-sec-v2">
-          <h2 class="sp-sec-v2__title">📅 Events & Auftritte <span class="sp-count-badge"><?= count($events) ?></span></h2>
+          <h2 class="sp-sec-v2__title">Events & Auftritte <span class="sp-count-badge"><?= count($events) ?></span></h2>
           <div class="sp-ev-grid-v2">
             <?php foreach ((array)$events as $ev):
               if (!is_object($ev)) continue;
@@ -376,52 +405,25 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
 
     <aside class="sp-sidebar-v2">
 
-      <div class="sp-sc-v2">
-        <h3 class="sp-sc-v2__title">📬 Kontakt & Buchung</h3>
-        <?php if ($email): ?>
-          <a href="mailto:<?= htmlspecialchars($email) ?>" class="sp-btn-v2">✉️ Kontakt aufnehmen</a>
-        <?php endif; ?>
-        <?php if ($website): ?>
-          <a href="<?= htmlspecialchars($website) ?>" target="_blank" rel="noopener" class="sp-btn-v2 sp-btn-v2--ghost">🌐 Website besuchen</a>
-        <?php endif; ?>
-        <?php if ($phone): ?>
-          <a href="tel:<?= htmlspecialchars($phone) ?>" class="sp-btn-v2 sp-btn-v2--ghost">📞 <?= htmlspecialchars($phone) ?></a>
-        <?php endif; ?>
-      </div>
-
       <?php
       $sp_facts = [];
-      if ($company):   $sp_facts[] = ['🏢','Unternehmen',$company]; endif;
-      if ($city||$country): $sp_facts[] = ['📍','Standort',trim("$city".($city&&$country?', ':'')."$country")]; endif;
-      if ($travel):    $sp_facts[] = ['🗺️','Reiche',htmlspecialchars($travel_label)]; endif;
-      if ($fee_min||$fee_max): $sp_facts[] = ['💶','Honorar',($fee_min?number_format((float)$fee_min,0,',','.'):'').($fee_min&&$fee_max?'–':'').($fee_max?number_format((float)$fee_max,0,',','.').' €':'')]; endif;
-      if ($languages): $sp_facts[] = ['🗣️','Sprachen',htmlspecialchars($languages)]; endif;
-      if ($max_audience): $sp_facts[] = ['👥','Max. Audience',(int)$max_audience.' Pers.']; endif;
-      if ($acad_title||$gender): $sp_facts[] = ['👤','Ansprache',htmlspecialchars(trim("$acad_title $gender"))]; endif;
+      if ($company):   $sp_facts[] = ['Unternehmen',$company]; endif;
+      if ($city||$country): $sp_facts[] = ['Standort',trim("$city".($city&&$country?', ':'')."$country")]; endif;
+      if ($travel):    $sp_facts[] = ['Reichweite',htmlspecialchars($travel_label)]; endif;
+      if ($fee_min||$fee_max): $sp_facts[] = ['Honorar',($fee_min?number_format((float)$fee_min,0,',','.'):'').($fee_min&&$fee_max?'–':'').($fee_max?number_format((float)$fee_max,0,',','.').' €':'')]; endif;
+      if ($languages): $sp_facts[] = ['Sprachen',htmlspecialchars($languages)]; endif;
+      if ($max_audience): $sp_facts[] = ['Max. Audience',(int)$max_audience.' Pers.']; endif;
+      if ($acad_title||$gender): $sp_facts[] = ['Ansprache',htmlspecialchars(trim("$acad_title $gender"))]; endif;
       if ($sp_facts): ?>
         <div class="sp-sc-v2">
-          <h3 class="sp-sc-v2__title">📋 Details</h3>
+          <h3 class="sp-sc-v2__title">Details</h3>
           <div class="sp-info-rows-v2">
-            <?php foreach ($sp_facts as [$ic,$lbl,$val]): ?>
+            <?php foreach ($sp_facts as [$lbl,$val]): ?>
               <div class="sp-info-row-v2">
-                <span class="sp-info-row-v2__lbl"><?= $ic ?> <?= $lbl ?></span>
+                <span class="sp-info-row-v2__lbl"><?= $lbl ?></span>
                 <span class="sp-info-row-v2__val"><?= $val ?></span>
               </div>
             <?php endforeach; ?>
-          </div>
-        </div>
-      <?php endif; ?>
-
-      <?php if ($linkedin||$xing||$twitter||$instagram||$youtube||$github||$gitlab): ?>
-        <div class="sp-sc-v2">
-          <h3 class="sp-sc-v2__title">🔗 Social & Profile</h3>
-          <div class="sp-social-row-v2">
-            <?php if ($linkedin):  ?><a href="<?= htmlspecialchars($linkedin) ?>" target="_blank" rel="noopener" class="sp-si-v2" title="LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S.02 4.88.02 3.5C.02 2.12 1.13 1 2.5 1s2.48 1.12 2.48 2.5zM.02 8.5H5V24H.02V8.5zm7.97 0h4.8v2.1h.07C13.7 9 15.44 8 17.6 8c5.2 0 6.16 3.43 6.16 7.88V24H19v-7.2c0-1.72-.03-3.93-2.4-3.93-2.4 0-2.78 1.87-2.78 3.81V24H8z"/></svg></a><?php endif; ?>
-            <?php if ($xing):     ?><a href="<?= htmlspecialchars($xing) ?>" target="_blank" rel="noopener" class="sp-si-v2" title="XING">✖</a><?php endif; ?>
-            <?php if ($twitter):  ?><a href="https://twitter.com/<?= htmlspecialchars(ltrim($twitter,'@')) ?>" target="_blank" rel="noopener" class="sp-si-v2" title="X/Twitter"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a><?php endif; ?>
-            <?php if ($instagram): ?><a href="https://instagram.com/<?= htmlspecialchars(ltrim($instagram,'@')) ?>" target="_blank" rel="noopener" class="sp-si-v2" title="Instagram">📸</a><?php endif; ?>
-            <?php if ($youtube):  ?><a href="<?= htmlspecialchars($youtube) ?>" target="_blank" rel="noopener" class="sp-si-v2" title="YouTube">▶</a><?php endif; ?>
-            <?php if ($github):   ?><a href="<?= htmlspecialchars($github) ?>" target="_blank" rel="noopener" class="sp-si-v2" title="GitHub"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a><?php endif; ?>
           </div>
         </div>
       <?php endif; ?>

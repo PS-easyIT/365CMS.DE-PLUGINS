@@ -252,7 +252,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
   <div class="ex-bridge">
     <?php if (!empty($expert->biography) && trim((string)$expert->biography) !== ''): ?>
       <div class="ex-bridge__about">
-        <h2 class="ex-bridge__title">👤 Über mich</h2>
+        <h2 class="ex-bridge__title">Über mich</h2>
         <div class="ex-bridge__text">
           <?php
           $bio = (string)$expert->biography;
@@ -262,38 +262,38 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       </div>
     <?php else: ?>
       <div class="ex-bridge__about">
-        <h2 class="ex-bridge__title">👤 Über <?= $sec->escape(explode(' ', $full_name)[0] ?? 'mich') ?></h2>
+        <h2 class="ex-bridge__title">Über <?= $sec->escape(explode(' ', $full_name)[0] ?? 'mich') ?></h2>
         <p class="ex-bridge__text" style="color:#94a3b8;font-style:italic;">Noch keine Beschreibung hinterlegt.</p>
       </div>
     <?php endif; ?>
 
     <div class="ex-bridge__contact">
-      <h2 class="ex-bridge__title">📬 Kontakt & Social</h2>
+      <h2 class="ex-bridge__title">Kontakt & Social</h2>
       <div class="ex-bridge__contact-body">
 
         <!-- Reihe 1: Kontakt / Buchung -->
         <div class="ex-bridge__row">
-          <a href="<?= $_base_url ?>/contact?expert=<?= (int)$expert->id ?>" class="ex-btn ex-btn--sm ex-btn--block">📩 Kontakt / Buchung</a>
+          <a href="<?= $_base_url ?>/contact?expert=<?= (int)$expert->id ?>" class="ex-btn ex-btn--sm ex-btn--block">Kontakt / Buchung</a>
         </div>
 
         <!-- Reihe 2: Website · E-Mail · Telefon -->
         <div class="ex-bridge__row ex-bridge__links">
           <?php if (!empty($social['website'])): ?>
-            <a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener" class="ex-bridge__link">🌐 Website</a>
+            <a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener" class="ex-bridge__link" title="Website ansehen">Website</a>
           <?php else: ?>
-            <span class="ex-bridge__link ex-bridge__link--empty">🌐 Website</span>
+            <span class="ex-bridge__link ex-bridge__link--empty">Website</span>
           <?php endif; ?>
           <?php $ex_email = $expert->email ?? ''; ?>
           <?php if ($ex_email): ?>
-            <a href="mailto:<?= $sec->escape($ex_email) ?>" class="ex-bridge__link">✉️ E-Mail</a>
+            <a href="mailto:<?= $sec->escape($ex_email) ?>" class="ex-bridge__link" title="E-Mail schreiben">E-Mail</a>
           <?php else: ?>
-            <span class="ex-bridge__link ex-bridge__link--empty">✉️ E-Mail</span>
+            <span class="ex-bridge__link ex-bridge__link--empty">E-Mail</span>
           <?php endif; ?>
           <?php $ex_phone = $expert->phone ?? ''; ?>
           <?php if ($ex_phone): ?>
-            <a href="tel:<?= $sec->escape($ex_phone) ?>" class="ex-bridge__link">📞 <?= $sec->escape($ex_phone) ?></a>
+            <a href="tel:<?= $sec->escape($ex_phone) ?>" class="ex-bridge__link" title="Anrufen">Telefon</a>
           <?php else: ?>
-            <span class="ex-bridge__link ex-bridge__link--empty">📞 Telefon</span>
+            <span class="ex-bridge__link ex-bridge__link--empty">Telefon</span>
           <?php endif; ?>
         </div>
 
@@ -308,7 +308,6 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
             'stackoverflow' => ['label' => 'SO',           'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M15.725 0l-1.72 1.277 6.39 8.588 1.716-1.277L15.725 0zm-3.94 3.418l-1.369 1.644 8.225 6.85 1.369-1.644-8.225-6.85zm-3.15 4.465l-.905 1.94 9.702 4.517.904-1.94-9.701-4.517zm-1.85 4.86l-.44 2.093 10.473 2.201.44-2.092-10.473-2.203zM1.89 15.47V24h19.19v-8.53h-2.133v6.397H4.021v-6.396H1.89zm4.265 2.133v2.13h10.66v-2.13H6.154z"/></svg>'],
             'github'        => ['label' => 'GitHub',       'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>'],
             'gitlab'        => ['label' => 'GitLab',       'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M23.955 13.587l-1.342-4.135-2.664-8.189a.455.455 0 0 0-.867 0L16.418 9.45H7.582L4.918 1.263a.455.455 0 0 0-.867 0L1.386 9.452.044 13.587a.924.924 0 0 0 .331 1.023L12 23.054l11.625-8.443a.92.92 0 0 0 .33-1.024"/></svg>'],
-            'blog_rss'      => ['label' => 'RSS',          'svg' => '📡'],
           ];
           foreach ($social_icons as $sn => $icfg):
             if (!empty($social[$sn])): ?>
@@ -329,7 +328,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 
       <?php if (!empty($specializations)): ?>
         <div class="ex-sec">
-          <h2 class="ex-sec__title">🎯 Spezialisierungen</h2>
+          <h2 class="ex-sec__title">Spezialisierungen</h2>
           <div class="ex-pills">
             <?php foreach ($specializations as $sp): ?>
               <span class="ex-pill ex-pill--spec"><?= $sec->escape($sp->name ?? '') ?></span>
@@ -340,16 +339,16 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 
       <?php
       $skill_section_cfg = [
-          'general' => ['🌟 Allgemeine Skills', ''],
-          'tech'    => ['⚙️ Technische Skills', 'ex-pill--tech'],
-          'soft'    => ['💬 Soft Skills',        'ex-pill--soft'],
+          'general' => ['Allgemeine Skills', ''],
+          'tech'    => ['Technische Skills', 'ex-pill--tech'],
+          'soft'    => ['Soft Skills',        'ex-pill--soft'],
       ];
       $has_any_skill = !empty(array_filter($skills_by_type));
       if ($has_any_skill):
           $skill_level_map = ['beginner'=>15,'basic'=>30,'intermediate'=>55,'advanced'=>80,'expert'=>95,'master'=>100];
       ?>
         <div class="ex-sec">
-          <h2 class="ex-sec__title">🛠️ Skills & Kompetenzen</h2>
+          <h2 class="ex-sec__title">Skills & Kompetenzen</h2>
           <?php foreach ($skill_section_cfg as $type => [$label, $cls]):
             if (empty($skills_by_type[$type])) continue;
           ?>
@@ -376,15 +375,15 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       <?php $has_tech = !empty($prog_languages) || !empty($expert_frameworks) || !empty($expert_databases) || !empty($cloud_platforms) || !empty($tools_preferred) || !empty($industry_experience); ?>
       <?php if ($has_tech): ?>
         <div class="ex-sec">
-          <h2 class="ex-sec__title">💻 Technische Expertise</h2>
+          <h2 class="ex-sec__title">Technische Expertise</h2>
           <?php
           $tech_sections = [
-              ['🖥️ Sprachen',      $prog_languages],
-              ['📦 Frameworks',    $expert_frameworks],
-              ['🗃️ Datenbanken',   $expert_databases],
-              ['☁️ Cloud',         $cloud_platforms],
-              ['🔧 Tools',         $tools_preferred],
-              ['🏭 Branchen',      $industry_experience],
+              ['Sprachen',      $prog_languages],
+              ['Frameworks',    $expert_frameworks],
+              ['Datenbanken',   $expert_databases],
+              ['Cloud',         $cloud_platforms],
+              ['Tools',         $tools_preferred],
+              ['Branchen',      $industry_experience],
           ];
           foreach ($tech_sections as [$lbl, $items]):
             if (empty($items)) continue; ?>
@@ -398,7 +397,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 
       <?php if (!empty($projects)): ?>
         <div class="ex-sec">
-          <h2 class="ex-sec__title">📁 Projekte <span class="ex-count-badge"><?= count($projects) ?></span></h2>
+          <h2 class="ex-sec__title">Projekte <span class="ex-count-badge"><?= count($projects) ?></span></h2>
           <?php foreach ($projects as $pj):
             $p_start = (!empty($pj->project_start) && $pj->project_start !== '0000-00-00') ? date('m/Y', strtotime($pj->project_start)) : '';
             $p_end   = (!empty($pj->project_end)   && $pj->project_end   !== '0000-00-00') ? date('m/Y', strtotime($pj->project_end))   : 'aktuell';
@@ -425,7 +424,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 
       <?php if (!empty($education)): ?>
         <div class="ex-sec">
-          <h2 class="ex-sec__title">🎓 Ausbildung</h2>
+          <h2 class="ex-sec__title">Ausbildung</h2>
           <?php foreach ($education as $edu):
             $e_from = !empty($edu->start_year) ? (int)$edu->start_year : null;
             $e_to   = !empty($edu->end_year)   ? (int)$edu->end_year   : null;
@@ -442,7 +441,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 
       <?php if (!empty($certifications)): ?>
         <div class="ex-sec">
-          <h2 class="ex-sec__title">📜 Zertifizierungen</h2>
+          <h2 class="ex-sec__title">Zertifizierungen</h2>
           <?php foreach ($certifications as $cert): ?>
             <div class="ex-cert-item">
               <div>
@@ -459,7 +458,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 
       <?php if (!empty($career_stations_data)): ?>
         <div class="ex-sec">
-          <h2 class="ex-sec__title">📈 Karrierestationen</h2>
+          <h2 class="ex-sec__title">Karrierestationen</h2>
           <?php foreach ($career_stations_data as $cs):
             $cs_from = !empty($cs['from']) ? $cs['from'] : null;
             $cs_to   = !empty($cs['to'])   ? $cs['to']   : null;
@@ -477,9 +476,9 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       <?php $has_refs = !empty($testimonials_data) || !empty($case_studies_data) || !empty($conference_talks); ?>
       <?php if ($has_refs): ?>
         <div class="ex-sec">
-          <h2 class="ex-sec__title">🏅 Referenzen & Auftritte</h2>
+          <h2 class="ex-sec__title">Referenzen & Auftritte</h2>
           <?php if (!empty($testimonials_data)): ?>
-            <h4 class="ex-sub-heading">💬 Testimonials</h4>
+            <h4 class="ex-sub-heading">Testimonials</h4>
             <?php foreach ($testimonials_data as $t): ?>
               <div class="ex-testi-item">
                 <div class="ex-testi-item__text">"<?= $sec->escape($t['text'] ?? $t['quote'] ?? '') ?>"</div>
@@ -488,7 +487,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
             <?php endforeach; ?>
           <?php endif; ?>
           <?php if (!empty($case_studies_data)): ?>
-            <h4 class="ex-sub-heading">📊 Case Studies</h4>
+            <h4 class="ex-sub-heading">Case Studies</h4>
             <?php foreach ($case_studies_data as $cs): ?>
               <div class="ex-proj-item">
                 <div class="ex-proj-item__name"><?= $sec->escape($cs['title'] ?? '') ?></div>
@@ -498,7 +497,7 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
             <?php endforeach; ?>
           <?php endif; ?>
           <?php if (!empty($conference_talks)): ?>
-            <h4 class="ex-sub-heading">🎤 Konferenz-Vorträge</h4>
+            <h4 class="ex-sub-heading">Konferenz-Vorträge</h4>
             <?php foreach ($conference_talks as $ct): ?>
               <div class="ex-conf-item">
                 <div class="ex-conf-item__title"><?= $sec->escape($ct['title'] ?? $ct['talk'] ?? '') ?></div>
@@ -515,18 +514,27 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 
     <aside class="ex-aside">
 
-      <?php if (!empty($social['website']) || !empty($social['linkedin']) || !empty($social['xing'])): ?>
+      <?php
+      $ex_details = [];
+      if ($company): $ex_details[] = ['Unternehmen', $sec->escape($company)]; endif;
+      if (!empty($expert->location_city) || !empty($expert->location_country)):
+          $loc = trim(($expert->location_city ?? '') . (!empty($expert->location_city) && !empty($expert->location_country) ? ', ' : '') . ($expert->location_country ?? ''));
+          if ($loc) $ex_details[] = ['Standort', $sec->escape($loc)];
+      endif;
+      if (!empty($expert->experience_years)): $ex_details[] = ['Erfahrung', (int)$expert->experience_years.' Jahre']; endif;
+      if ($languages): $ex_details[] = ['Sprachen', $sec->escape($languages)]; endif;
+
+      if ($ex_details): ?>
         <div class="ex-sc">
-          <h3 class="ex-sc__title">📬 Kontakt</h3>
-          <?php if (!empty($social['website'])): ?>
-            <a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener" class="ex-btn">🌐 Website besuchen</a>
-          <?php endif; ?>
-          <?php if (!empty($social['linkedin'])): ?>
-            <a href="<?= $sec->escape($social['linkedin']) ?>" target="_blank" rel="noopener" class="ex-btn ex-btn--ghost">🔗 LinkedIn-Profil</a>
-          <?php endif; ?>
-          <?php if (!empty($social['xing'])): ?>
-            <a href="<?= $sec->escape($social['xing']) ?>" target="_blank" rel="noopener" class="ex-btn ex-btn--ghost">✖ XING-Profil</a>
-          <?php endif; ?>
+          <h3 class="ex-sc__title">Details</h3>
+          <div class="ex-info-rows">
+            <?php foreach ($ex_details as [$lbl,$val]): ?>
+              <div class="ex-info-row">
+                <span class="ex-info-row__lbl"><?= $lbl ?></span>
+                <span class="ex-info-row__val"><?= $val ?></span>
+              </div>
+            <?php endforeach; ?>
+          </div>
         </div>
       <?php endif; ?>
 
@@ -534,22 +542,20 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       $ex_facts = [];
       $rm_map = ['yes'=>'Ja','only'=>'Nur Remote','no'=>'Nein','partial'=>'Hybrid','full'=>'Vollständig','preferred'=>'Bevorzugt'];
       $wt_map2 = ['freelancer'=>'Freelancer','employed'=>'Angestellt','agency'=>'Agentur','contractor'=>'Contractor'];
-      if ($avail):        $ex_facts[] = ['🟢','Status',        $sec->escape($avail_info['label'])]; endif;
-      if ($next_avail_date): $ex_facts[] = ['📅','Verfügbar ab', date('d.m.Y', strtotime($next_avail_date))]; endif;
-      if (!empty($expert->experience_years)): $ex_facts[] = ['💼','Erfahrung',    (int)$expert->experience_years.' Jahre']; endif;
-      if ($languages):    $ex_facts[] = ['🗣️','Sprachen',      $sec->escape($languages)]; endif;
-      if ($work_type):    $ex_facts[] = ['🎯','Work-Typ',      $sec->escape($wt_map2[$work_type] ?? ucfirst($work_type))]; endif;
-      if ($remote_work):  $ex_facts[] = ['🏠','Remote',        $sec->escape($rm_map[$remote_work] ?? ucfirst($remote_work))]; endif;
-      if ($travel_willingness): $ex_facts[] = ['✈️','Reise',  $sec->escape($travel_willingness)]; endif;
-      if ($notice_period): $ex_facts[] = ['⏱️','Verfügbar',   $sec->escape($notice_period)]; endif;
-      if ($timezone):     $ex_facts[] = ['🕐','Zeitzone',      $sec->escape($timezone)]; endif;
+      if ($avail):        $ex_facts[] = ['Status',        $sec->escape($avail_info['label'])]; endif;
+      if ($next_avail_date): $ex_facts[] = ['Verfügbar ab', date('d.m.Y', strtotime($next_avail_date))]; endif;
+      if ($work_type):    $ex_facts[] = ['Work-Typ',      $sec->escape($wt_map2[$work_type] ?? ucfirst($work_type))]; endif;
+      if ($remote_work):  $ex_facts[] = ['Remote',        $sec->escape($rm_map[$remote_work] ?? ucfirst($remote_work))]; endif;
+      if ($travel_willingness): $ex_facts[] = ['Reise',  $sec->escape($travel_willingness)]; endif;
+      if ($notice_period): $ex_facts[] = ['Kündigungsfrist', $sec->escape($notice_period)]; endif;
+      if ($timezone):     $ex_facts[] = ['Zeitzone',      $sec->escape($timezone)]; endif;
       if ($ex_facts): ?>
         <div class="ex-sc">
-          <h3 class="ex-sc__title">⚙️ Verfügbarkeit & Arbeitsweise</h3>
+          <h3 class="ex-sc__title">Verfügbarkeit & Arbeitsweise</h3>
           <div class="ex-info-rows">
-            <?php foreach ($ex_facts as [$ic,$lbl,$val]): ?>
+            <?php foreach ($ex_facts as [$lbl,$val]): ?>
               <div class="ex-info-row">
-                <span class="ex-info-row__lbl"><?= $ic ?> <?= $lbl ?></span>
+                <span class="ex-info-row__lbl"><?= $lbl ?></span>
                 <span class="ex-info-row__val"><?= $val ?></span>
               </div>
             <?php endforeach; ?>
@@ -559,13 +565,13 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 
       <?php if ($hourly_rate || $daily_rate): ?>
         <div class="ex-sc">
-          <h3 class="ex-sc__title">💶 Honorar</h3>
+          <h3 class="ex-sc__title">Honorar</h3>
           <div class="ex-info-rows">
-            <?php if ($hourly_rate): ?><div class="ex-info-row"><span class="ex-info-row__lbl">⏱ Stundensatz</span><span class="ex-info-row__val"><?= number_format($hourly_rate, 0, ',', '.') ?> €</span></div><?php endif; ?>
-            <?php if ($daily_rate):  ?><div class="ex-info-row"><span class="ex-info-row__lbl">📅 Tagessatz</span><span class="ex-info-row__val"><?= number_format($daily_rate, 0, ',', '.') ?> €</span></div><?php endif; ?>
-            <?php if ($weekly_hours): ?><div class="ex-info-row"><span class="ex-info-row__lbl">🕐 Std/Woche</span><span class="ex-info-row__val"><?= (int)$weekly_hours ?> h</span></div><?php endif; ?>
-            <?php if ($min_proj_dur): ?><div class="ex-info-row"><span class="ex-info-row__lbl">📌 Min. Dauer</span><span class="ex-info-row__val"><?= $sec->escape($min_proj_dur) ?></span></div><?php endif; ?>
-            <?php if ($payment_terms): ?><div class="ex-info-row"><span class="ex-info-row__lbl">📃 Zahlung</span><span class="ex-info-row__val"><?= $sec->escape($payment_terms) ?></span></div><?php endif; ?>
+            <?php if ($hourly_rate): ?><div class="ex-info-row"><span class="ex-info-row__lbl">Stundensatz</span><span class="ex-info-row__val"><?= number_format($hourly_rate, 0, ',', '.') ?> €</span></div><?php endif; ?>
+            <?php if ($daily_rate):  ?><div class="ex-info-row"><span class="ex-info-row__lbl">Tagessatz</span><span class="ex-info-row__val"><?= number_format($daily_rate, 0, ',', '.') ?> €</span></div><?php endif; ?>
+            <?php if ($weekly_hours): ?><div class="ex-info-row"><span class="ex-info-row__lbl">Std/Woche</span><span class="ex-info-row__val"><?= (int)$weekly_hours ?> h</span></div><?php endif; ?>
+            <?php if ($min_proj_dur): ?><div class="ex-info-row"><span class="ex-info-row__lbl">Min. Dauer</span><span class="ex-info-row__val"><?= $sec->escape($min_proj_dur) ?></span></div><?php endif; ?>
+            <?php if ($payment_terms): ?><div class="ex-info-row"><span class="ex-info-row__lbl">Zahlung</span><span class="ex-info-row__val"><?= $sec->escape($payment_terms) ?></span></div><?php endif; ?>
           </div>
         </div>
       <?php endif; ?>
@@ -573,7 +579,8 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       <?php $has_svc = $svc_consulting||$svc_impl||$svc_training||$svc_support||$svc_audit; ?>
       <?php if ($has_svc || $emergency_support || $workshop_offerings): ?>
         <div class="ex-sc">
-          <h3 class="ex-sc__title">🔧 Services</h3>
+          <h3 class="ex-sc__title">Services</h3>
+
           <div class="ex-svc-check">
             <?php if ($svc_consulting): ?><div class="ex-svc-row">Beratung</div><?php endif; ?>
             <?php if ($svc_impl):       ?><div class="ex-svc-row">Implementierung</div><?php endif; ?>
@@ -590,24 +597,12 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 
       <?php if ($partner_networks || $team_expansion || $max_team_size || $team_size_led): ?>
         <div class="ex-sc">
-          <h3 class="ex-sc__title">🤝 Netzwerk & Team</h3>
+          <h3 class="ex-sc__title">Netzwerk & Team</h3>
           <div class="ex-info-rows">
-            <?php if ($team_expansion): ?><div class="ex-info-row"><span class="ex-info-row__lbl">👥 Team-Ausbau</span><span class="ex-info-row__val">Möglich</span></div><?php endif; ?>
-            <?php if ($max_team_size):  ?><div class="ex-info-row"><span class="ex-info-row__lbl">👥 Max. Team</span><span class="ex-info-row__val"><?= (int)$max_team_size ?> Pers.</span></div><?php endif; ?>
-            <?php if ($team_size_led):  ?><div class="ex-info-row"><span class="ex-info-row__lbl">🎖 Geführt</span><span class="ex-info-row__val"><?= (int)$team_size_led ?> Pers.</span></div><?php endif; ?>
-            <?php if ($partner_networks): ?><div class="ex-info-row"><span class="ex-info-row__lbl">🔗 Netzwerk</span><span class="ex-info-row__val"><?= $sec->escape($partner_networks) ?></span></div><?php endif; ?>
-          </div>
-        </div>
-      <?php endif; ?>
-
-      <?php if ($has_social): ?>
-        <div class="ex-sc">
-          <h3 class="ex-sc__title">🔗 Profile & Social</h3>
-          <div class="ex-social-row">
-            <?php foreach (['linkedin','xing','github','twitter','website','gitlab','stackoverflow','youtube','blog_rss'] as $sn):
-              if (empty($social[$sn])) continue;
-              $sn_labels = ['linkedin'=>'LinkedIn','xing'=>'XING','github'=>'GitHub','twitter'=>'X/Twitter','website'=>'Website','gitlab'=>'GitLab','stackoverflow'=>'StackOverflow','youtube'=>'YouTube','blog_rss'=>'RSS'];
-            ?><a href="<?= $sec->escape($social[$sn]) ?>" target="_blank" rel="noopener" class="ex-si" title="<?= $sn_labels[$sn] ?? $sn ?>"><?= $sn_labels[$sn] ?? $sn ?></a><?php endforeach; ?>
+            <?php if ($team_expansion): ?><div class="ex-info-row"><span class="ex-info-row__lbl">Team-Ausbau</span><span class="ex-info-row__val">Möglich</span></div><?php endif; ?>
+            <?php if ($max_team_size):  ?><div class="ex-info-row"><span class="ex-info-row__lbl">Max. Team</span><span class="ex-info-row__val"><?= (int)$max_team_size ?> Pers.</span></div><?php endif; ?>
+            <?php if ($team_size_led):  ?><div class="ex-info-row"><span class="ex-info-row__lbl">Geführt</span><span class="ex-info-row__val"><?= (int)$team_size_led ?> Pers.</span></div><?php endif; ?>
+            <?php if ($partner_networks): ?><div class="ex-info-row"><span class="ex-info-row__lbl">Netzwerk</span><span class="ex-info-row__val"><?= $sec->escape($partner_networks) ?></span></div><?php endif; ?>
           </div>
         </div>
       <?php endif; ?>
