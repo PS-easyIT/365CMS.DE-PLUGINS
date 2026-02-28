@@ -323,14 +323,19 @@ final class CMS_Events_Database
         $db = CMS\Database::instance();
         
         $sql = "
-            SELECT es.*, 
-                   CASE 
+            SELECT es.*,
+                   COALESCE(s.first_name,    e.first_name)    AS first_name,
+                   COALESCE(s.last_name,     e.last_name)     AS last_name,
+                   COALESCE(s.photo_url,     e.photo_url)     AS photo_url,
+                   COALESCE(s.position,      e.position)      AS position,
+                   COALESCE(s.location_city, e.location_city) AS location_city,
+                   CASE
                        WHEN es.speaker_type = 'speaker' THEN CONCAT(s.first_name, ' ', s.last_name)
-                       WHEN es.speaker_type = 'expert' THEN CONCAT(e.first_name, ' ', e.last_name)
-                   END as speaker_name
+                       WHEN es.speaker_type = 'expert'  THEN CONCAT(e.first_name, ' ', e.last_name)
+                   END AS speaker_name
             FROM {$db->prefix()}event_speakers es
             LEFT JOIN {$db->prefix()}speakers s ON es.speaker_id = s.id AND es.speaker_type = 'speaker'
-            LEFT JOIN {$db->prefix()}experts e ON es.speaker_id = e.id AND es.speaker_type = 'expert'
+            LEFT JOIN {$db->prefix()}experts e  ON es.speaker_id = e.id AND es.speaker_type = 'expert'
             WHERE es.event_id = ?
             ORDER BY es.session_time ASC, es.id ASC
         ";
