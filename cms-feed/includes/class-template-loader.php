@@ -45,7 +45,7 @@ final class CMS_Feed_Template_Loader
         include $template_file;
     }
 
-    private function locate_template(string $template_name): ?string
+    public function locate_template(string $template_name): ?string
     {
         $template_name = str_replace('.php', '', $template_name) . '.php';
 
