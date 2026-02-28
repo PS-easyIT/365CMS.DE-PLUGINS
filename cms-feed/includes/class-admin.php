@@ -41,14 +41,10 @@ final class CMS_Feed_Admin
             return;
         }
 
-        $db   = CMS_Feed_Database::instance();
-        $sec  = CMS\Security::instance();
-        $csrf = $sec->generateToken('cms_feed_admin');
-        $tab  = $_GET['tab'] ?? 'dashboard';
+        $tab = $_GET['tab'] ?? 'dashboard';
 
         $this->render_list([
-            'csrf' => $csrf,
-            'tab'  => $tab,
+            'tab' => $tab,
         ]);
     }
 
@@ -88,14 +84,13 @@ final class CMS_Feed_Admin
 
         $db   = CMS_Feed_Database::instance();
         $sec  = \CMS\Security::instance();
-        $csrf = $data['csrf'] ?? $sec->generateToken('cms_feed_admin');
 
         $tab = $data['tab'] ?? ($_GET['tab'] ?? 'dashboard');
 
         $notice = $data['notice'] ?? null;
         $error  = $data['error']  ?? null;
 
-        // ── POST-Verarbeitung ─────────────────────────────────────────
+        // ── POST-Verarbeitung (VOR Token-Generierung, damit das alte Token geprüft wird) ──
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             if (!$sec->verifyToken($_POST['csrf_token'] ?? '', 'cms_feed_admin')) {
                 $error = 'Sicherheitscheck fehlgeschlagen.';
@@ -103,10 +98,11 @@ final class CMS_Feed_Admin
                 $result = $this->handle_post($tab);
                 $notice = $result['notice'] ?? null;
                 $error  = $result['error']  ?? null;
-                // CSRF-Token erneuern
-                $csrf = $sec->generateToken('cms_feed_admin');
             }
         }
+
+        // CSRF-Token für Formulare generieren (NACH der Verarbeitung)
+        $csrf = $sec->generateToken('cms_feed_admin');
 
         // ── Daten laden ───────────────────────────────────────────────
         $settings   = $db->get_settings();

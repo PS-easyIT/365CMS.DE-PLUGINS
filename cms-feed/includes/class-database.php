@@ -590,7 +590,7 @@ final class CMS_Feed_Database
         $prefix = $db->prefix();
 
         $stats = [];
-        $stats['categories']  = (int) $db->prepare("SELECT COUNT(*) FROM {$prefix}feed_categories")->execute([]) ? $db->prepare("SELECT COUNT(*) FROM {$prefix}feed_categories")->fetchColumn() : 0;
+
         $stmt = $db->prepare("SELECT COUNT(*) FROM {$prefix}feed_categories");
         $stmt->execute();
         $stats['categories'] = (int) $stmt->fetchColumn();
