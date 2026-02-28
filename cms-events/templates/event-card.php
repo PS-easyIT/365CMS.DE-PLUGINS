@@ -96,9 +96,6 @@ if ($status === 'cancelled') {
       <h3 class="ev-card-title">
         <a href="<?= htmlspecialchars($event_url) ?>"><?= $title ?></a>
       </h3>
-      <?php if ($category): ?>
-        <div class="ev-card-category"><?= $category ?></div>
-      <?php endif; ?>
     </div>
   </div>
 

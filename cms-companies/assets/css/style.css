@@ -18,9 +18,9 @@
   --co-accent:       #e0f2fe;
   --co-card-bg:      #ffffff;
   --co-hdr-from:     #e0f2fe;
-  --co-hdr-to:       #bae6fd;
+  --co-hdr-to:       #cde6c3;
   --co-hdr-title:    #0c4a6e;
-  --co-border:       #bae6fd;
+  --co-border:       #cde6c3;
   --co-text:         #1e293b;
   --co-text-m:       #475569;
   --co-text-l:       #94a3b8;
@@ -148,7 +148,7 @@
 .co-filter-input input:focus {
   outline: none;
   border-color: var(--co-primary);
-  box-shadow: 0 0 0 3px rgba(8,145,178,.15);
+  box-shadow: 0 0 0 3px rgba(8, 172, 178, 0.15);
 }
 
 .co-filter-icon {
@@ -271,17 +271,14 @@
 /* Partner-Varianten ────────────────────────────────────────────── */
 .co-card--sponsor {
   border-color: var(--co-tier-border, #a855f7);
-  background: linear-gradient(165deg, #faf5ff 0%, var(--co-white) 60%);
 }
 
 .co-card--top {
   border-color: var(--co-tier-border, #f59e0b);
-  background: linear-gradient(165deg, #fffbeb 0%, var(--co-white) 60%);
 }
 
 .co-card--partner {
   border-color: var(--co-tier-border, #94a3b8);
-  background: linear-gradient(165deg, #f8fafc 0%, var(--co-white) 60%);
 }
 
 /* Ribbon ───────────────────────────────────────────────────────── */
@@ -308,7 +305,7 @@
 .co-card-head {
   display: flex;
   gap: .875rem;
-  align-items: flex-start;
+  align-items: center;
   padding-right: 4.5rem;
 }
 
@@ -392,6 +389,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: .3rem;
+  margin-left:  -1.375rem;
+  margin-right: -1.375rem;
+  padding: .55rem 1.375rem;
+  background: linear-gradient(90deg, #e9fde0 0%, #edfde5 40%, #edfde5 70%, #e9fde0 100%);
+  border-top:    1px solid var(--co-border);
+  border-bottom: 1px solid var(--co-border);
 }
 
 .co-card-pill {

@@ -93,9 +93,6 @@ $tier_style = $tier_color ? ' style="--co-tier-border:' . $tier_color . '"' : ''
             <h3 class="co-card-name">
                 <a href="<?= cms_company_url($company) ?>"><?= $sec->escape($company->name) ?></a>
             </h3>
-            <?php if ($industry_label && $show_industry): ?>
-                <span class="co-card-industry"><?= $sec->escape($industry_label) ?></span>
-            <?php endif; ?>
         </div>
     </div>
 
