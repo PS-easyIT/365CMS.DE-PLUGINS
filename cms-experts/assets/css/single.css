@@ -38,14 +38,14 @@
   height: 300px;
   min-height: 300px;
   max-height: 300px;
-  background: var(--expert-hdr-bg, linear-gradient(135deg, #f5ecd5 0%, #ebe0c8 100%));
+  background: var(--expert-hdr-bg, linear-gradient(135deg, #fefbf5 0%, #f8f1e4 100%));
   border-bottom: 3px solid var(--expert-primary, #5e72e4);
 }
 .ex-hero__inner {
   display: flex;
   gap: 1.75rem;
   align-items: center;
-  padding: 1.5rem 2.5rem;
+  padding: 0.5rem 2.5rem 2.5rem;
   position: relative;
   z-index: 1;
   height: 100%;
@@ -122,6 +122,70 @@
   transition: background .15s, transform .15s, box-shadow .15s;
 }
 .ex-hero__si:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,.12); }
+
+/* ── Bridge Cards (Über mich + Kontakt) ──────────────────────── */
+.ex-bridge {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 1.5rem;
+  padding: 0 2rem;
+  margin-top: -60px;
+  position: relative;
+  z-index: 3;
+}
+.ex-bridge__about,
+.ex-bridge__contact {
+  background: #fff;
+  border-radius: 5px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05), 0 8px 28px rgba(0,0,0,.06);
+  border: 1px solid #f1f5f9;
+}
+.ex-bridge__about:hover,
+.ex-bridge__contact:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,.07), 0 12px 36px rgba(0,0,0,.08);
+}
+.ex-bridge__title {
+  font-size: .95rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 .75rem;
+  padding-bottom: .6rem;
+  border-bottom: 2px solid color-mix(in srgb, var(--expert-primary, #5e72e4) 18%, #f1f5f9);
+}
+.ex-bridge__text {
+  font-size: .88rem;
+  line-height: 1.65;
+  color: #334155;
+  max-height: 7.5rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  -webkit-box-orient: vertical;
+}
+.ex-bridge__text p       { margin: 0 0 .5rem; }
+.ex-bridge__text p:last-child { margin-bottom: 0; }
+.ex-bridge__contact-body {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+.ex-bridge__socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  padding-top: .35rem;
+}
+.ex-bridge__detail {
+  font-size: .8rem;
+  color: #64748b;
+  padding-top: .15rem;
+}
+.ex-btn--sm {
+  padding: .55rem 1rem;
+  font-size: .82rem;
+}
 
 /* ── Body Layout ─────────────────────────────────────────────── */
 .ex-body {
@@ -445,6 +509,7 @@
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 768px) {
+  .ex-bridge        { grid-template-columns: 1fr; margin-top: -40px; padding: 0 1rem; gap: 1rem; }
   .ex-body          { grid-template-columns: 1fr; padding: 1.25rem 1rem 2rem; gap: 1.25rem; }
   .ex-aside         { position: static; }
   .ex-hero          { height: 300px; min-height: 300px; max-height: 300px; }
@@ -456,6 +521,7 @@
   .ex-bc            { padding: .6rem 1rem; }
 }
 @media (max-width: 480px) {
+  .ex-bridge        { margin-top: -30px; }
   .ex-hero          { height: auto; min-height: 280px; max-height: none; }
   .ex-hero__inner   { flex-direction: column; align-items: flex-start; padding: 3rem 1rem 1.25rem; }
   .ex-hero__badges  { position: absolute; top: .5rem; right: .75rem; left: .75rem; max-width: none; }

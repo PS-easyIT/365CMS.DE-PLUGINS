@@ -32,8 +32,8 @@ $cta_color          = $settings['design_cta_color']              ?? '#c2410c';
 $primary_color      = $settings['design_primary_color']          ?? '#5e72e4';
 $accent_color       = $settings['design_accent_color']           ?? '#8965e0';
 $card_bg_color      = $settings['design_card_bg']                ?? '#fffdf4';
-$hdr_from           = $settings['archive_header_bg_from']        ?? '#f5ecd5';
-$hdr_to             = $settings['archive_header_bg_to']          ?? '#ebe0c8';
+$hdr_from           = $settings['detail_header_bg_from'] ?? $settings['archive_header_bg_from'] ?? '#fefbf5';
+$hdr_to             = $settings['detail_header_bg_to']   ?? $settings['archive_header_bg_to']   ?? '#f8f1e4';
 $hdr_title          = $settings['archive_header_title_color']    ?? '#7c4700';
 $border_radius      = (int)($settings['design_border_radius']    ?? 12);
 ?>
@@ -248,20 +248,84 @@ $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
     </div>
   </header>
 
+  <!-- ── Bridge Cards (overlap hero) ──────────────────────────── -->
+  <div class="ex-bridge">
+    <?php if (!empty($expert->biography) && trim((string)$expert->biography) !== ''): ?>
+      <div class="ex-bridge__about">
+        <h2 class="ex-bridge__title">👤 Über mich</h2>
+        <div class="ex-bridge__text">
+          <?php
+          $bio = (string)$expert->biography;
+          echo (bool)preg_match('/<(p|ul|ol|h[1-6]|blockquote|div|br)[\s>]/i', $bio) ? $bio : nl2br(htmlspecialchars($bio));
+          ?>
+        </div>
+      </div>
+    <?php else: ?>
+      <div class="ex-bridge__about">
+        <h2 class="ex-bridge__title">👤 Über <?= $sec->escape(explode(' ', $full_name)[0] ?? 'mich') ?></h2>
+        <p class="ex-bridge__text" style="color:#94a3b8;font-style:italic;">Noch keine Beschreibung hinterlegt.</p>
+      </div>
+    <?php endif; ?>
+
+    <div class="ex-bridge__contact">
+      <h2 class="ex-bridge__title">📬 Kontakt & Social</h2>
+      <div class="ex-bridge__contact-body">
+
+        <!-- Reihe 1: Kontakt / Buchung -->
+        <div class="ex-bridge__row">
+          <a href="<?= $_base_url ?>/contact?expert=<?= (int)$expert->id ?>" class="ex-btn ex-btn--sm ex-btn--block">📩 Kontakt / Buchung</a>
+        </div>
+
+        <!-- Reihe 2: Website · E-Mail · Telefon -->
+        <div class="ex-bridge__row ex-bridge__links">
+          <?php if (!empty($social['website'])): ?>
+            <a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener" class="ex-bridge__link">🌐 Website</a>
+          <?php else: ?>
+            <span class="ex-bridge__link ex-bridge__link--empty">🌐 Website</span>
+          <?php endif; ?>
+          <?php $ex_email = $expert->email ?? ''; ?>
+          <?php if ($ex_email): ?>
+            <a href="mailto:<?= $sec->escape($ex_email) ?>" class="ex-bridge__link">✉️ E-Mail</a>
+          <?php else: ?>
+            <span class="ex-bridge__link ex-bridge__link--empty">✉️ E-Mail</span>
+          <?php endif; ?>
+          <?php $ex_phone = $expert->phone ?? ''; ?>
+          <?php if ($ex_phone): ?>
+            <a href="tel:<?= $sec->escape($ex_phone) ?>" class="ex-bridge__link">📞 <?= $sec->escape($ex_phone) ?></a>
+          <?php else: ?>
+            <span class="ex-bridge__link ex-bridge__link--empty">📞 Telefon</span>
+          <?php endif; ?>
+        </div>
+
+        <!-- Reihe 3: Social Media Icons -->
+        <div class="ex-bridge__row ex-bridge__socials">
+          <?php
+          $social_icons = [
+            'linkedin'      => ['label' => 'LinkedIn',     'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S.02 4.88.02 3.5C.02 2.12 1.13 1 2.5 1s2.48 1.12 2.48 2.5zM.02 8.5H5V24H.02V8.5zm7.97 0h4.8v2.1h.07C13.7 9 15.44 8 17.6 8c5.2 0 6.16 3.43 6.16 7.88V24H19v-7.2c0-1.72-.03-3.93-2.4-3.93-2.4 0-2.78 1.87-2.78 3.81V24H8z"/></svg>'],
+            'xing'          => ['label' => 'XING',         'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M18.188 0c-.517 0-.741.325-.927.66 0 0-7.455 13.224-7.702 13.657.015.024 4.919 9.023 4.919 9.023.17.308.436.66.967.66h3.454c.211 0 .375-.078.463-.22.089-.151.089-.346-.009-.536l-4.879-8.916c-.004-.006-.004-.016 0-.022L22.139.756c.095-.191.097-.387.006-.535C22.056.078 21.894 0 21.686 0h-3.498zM3.648 4.74c-.211 0-.385.074-.473.216-.09.149-.078.339.02.531l2.34 4.05c.004.01.004.016 0 .021L3.17 13.694c-.09.191-.097.383-.006.535.09.142.25.22.46.22h3.454c.521 0 .739-.322.928-.66l2.44-4.237c-.016-.025-2.395-4.14-2.395-4.14-.164-.308-.44-.672-.962-.672H3.648z"/></svg>'],
+            'twitter'       => ['label' => 'X',            'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'],
+            'youtube'       => ['label' => 'YouTube',      'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>'],
+            'stackoverflow' => ['label' => 'SO',           'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M15.725 0l-1.72 1.277 6.39 8.588 1.716-1.277L15.725 0zm-3.94 3.418l-1.369 1.644 8.225 6.85 1.369-1.644-8.225-6.85zm-3.15 4.465l-.905 1.94 9.702 4.517.904-1.94-9.701-4.517zm-1.85 4.86l-.44 2.093 10.473 2.201.44-2.092-10.473-2.203zM1.89 15.47V24h19.19v-8.53h-2.133v6.397H4.021v-6.396H1.89zm4.265 2.133v2.13h10.66v-2.13H6.154z"/></svg>'],
+            'github'        => ['label' => 'GitHub',       'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>'],
+            'gitlab'        => ['label' => 'GitLab',       'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M23.955 13.587l-1.342-4.135-2.664-8.189a.455.455 0 0 0-.867 0L16.418 9.45H7.582L4.918 1.263a.455.455 0 0 0-.867 0L1.386 9.452.044 13.587a.924.924 0 0 0 .331 1.023L12 23.054l11.625-8.443a.92.92 0 0 0 .33-1.024"/></svg>'],
+            'blog_rss'      => ['label' => 'RSS',          'svg' => '📡'],
+          ];
+          foreach ($social_icons as $sn => $icfg):
+            if (!empty($social[$sn])): ?>
+              <a href="<?= $sec->escape($social[$sn]) ?>" target="_blank" rel="noopener" class="ex-si" title="<?= $icfg['label'] ?>"><?= $icfg['svg'] ?></a>
+            <?php else: ?>
+              <span class="ex-si ex-si--empty" title="<?= $icfg['label'] ?>"><?= $icfg['svg'] ?></span>
+            <?php endif;
+          endforeach; ?>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <div class="ex-body">
     <main class="ex-main">
 
-      <?php if (!empty($expert->biography) && trim((string)$expert->biography) !== ''): ?>
-        <div class="ex-sec">
-          <h2 class="ex-sec__title">👤 Über mich</h2>
-          <div class="ex-wysiwyg-content">
-            <?php
-            $bio = (string)$expert->biography;
-            echo (bool)preg_match('/<(p|ul|ol|h[1-6]|blockquote|div|br)[\s>]/i', $bio) ? $bio : nl2br(htmlspecialchars($bio));
-            ?>
-          </div>
-        </div>
-      <?php endif; ?>
 
       <?php if (!empty($specializations)): ?>
         <div class="ex-sec">
