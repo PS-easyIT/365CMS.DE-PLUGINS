@@ -463,6 +463,19 @@
 .sp-ev-v2--future { border-left: 3px solid var(--sp-primary, #3b82f6); }
 .sp-ev-v2--past   { opacity: .7; }
 .sp-ev-v2--past .sp-ev-v2__date { color: #94a3b8; }
+.ex-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--sp-primary, #3b82f6);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 700;
+  margin-left: .3rem;
+}
 
 /* ── Sidebar Cards (sp-sc-v2) ────────────────────────────────── */
 .sp-sc-v2 {
