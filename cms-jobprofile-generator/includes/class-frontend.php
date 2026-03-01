@@ -279,6 +279,11 @@ class CMS_JPG_Frontend
             'remote'  => 'Remote',
         ];
 
+        // Design-Einstellungen für die Listenansicht laden
+        $designSettings = class_exists('CMS_JPG_Admin_Pages')
+            ? \CMS_JPG_Admin_Pages::get_public_design_settings()
+            : [];
+
         // Public CSS für die Jobs-Übersicht via head-Hook einbinden
         $this->enqueue_jobs_list_css();
 
@@ -292,7 +297,8 @@ class CMS_JPG_Frontend
                     'profiles', 'totalCount', 'pages', 'page',
                     'companyFilter', 'typeFilter', 'locationFilter',
                     'categoryFilter', 'remoteFilter', 'salaryMin',
-                    'typeLabels', 'remoteLabels', 'allCategories'
+                    'typeLabels', 'remoteLabels', 'allCategories',
+                    'designSettings'
                 ));
             } else {
                 $tm->getHeader();
@@ -300,7 +306,8 @@ class CMS_JPG_Frontend
                     'profiles', 'totalCount', 'pages', 'page',
                     'companyFilter', 'typeFilter', 'locationFilter',
                     'categoryFilter', 'remoteFilter', 'salaryMin',
-                    'typeLabels', 'remoteLabels', 'allCategories'
+                    'typeLabels', 'remoteLabels', 'allCategories',
+                    'designSettings'
                 ), EXTR_SKIP);
                 include JPG_DIR . 'views/public/jobs-list.php';
                 $tm->getFooter();
@@ -310,7 +317,8 @@ class CMS_JPG_Frontend
                 'profiles', 'totalCount', 'pages', 'page',
                 'companyFilter', 'typeFilter', 'locationFilter',
                 'categoryFilter', 'remoteFilter', 'salaryMin',
-                'typeLabels', 'remoteLabels', 'allCategories'
+                'typeLabels', 'remoteLabels', 'allCategories',
+                'designSettings'
             ));
             include JPG_DIR . 'views/public/jobs-list.php';
         }
@@ -351,16 +359,19 @@ class CMS_JPG_Frontend
         if ($themeHasTemplate) {
             \CMS\ThemeManager::instance()->render('job-single', $data);
         } else {
+            // Layout-Auswahl aus Public Design-Einstellungen
+            $templateFile = $this->resolve_single_template($data['designSettings'] ?? []);
+
             // Eigenes Template mit Theme-Header/-Footer
             if (class_exists('CMS\ThemeManager')) {
                 $tm = \CMS\ThemeManager::instance();
                 $tm->getHeader();
                 extract($data, EXTR_SKIP);
-                include JPG_DIR . 'views/public/single-integrated.php';
+                include $templateFile;
                 $tm->getFooter();
             } else {
                 extract($data, EXTR_SKIP);
-                include JPG_DIR . 'views/public/single-integrated.php';
+                include $templateFile;
             }
         }
     }
@@ -899,18 +910,24 @@ class CMS_JPG_Frontend
     {
         $profiles = CMS_JPG_Profiles::instance();
 
+        // Public Design-Einstellungen laden
+        $designSettings = class_exists('CMS_JPG_Admin_Pages')
+            ? CMS_JPG_Admin_Pages::get_public_design_settings()
+            : [];
+
         return [
-            'profile'      => $profile,
-            'tasks'        => $profiles->get_tasks((int) $profile->id),
-            'requirements' => $profiles->get_requirements((int) $profile->id),
-            'benefits'     => $profiles->getResolvedBenefits((int) $profile->id),
-            'skills'       => $profiles->get_skills((int) $profile->id),
-            'company'      => $profile->company_name ?? '',
-            'jsonld'       => $this->build_jsonld($profile),
+            'profile'        => $profile,
+            'tasks'          => $profiles->get_tasks((int) $profile->id),
+            'requirements'   => $profiles->get_requirements((int) $profile->id),
+            'benefits'       => $profiles->getResolvedBenefits((int) $profile->id),
+            'skills'         => $profiles->get_skills((int) $profile->id),
+            'company'        => $profile->company_name ?? '',
+            'jsonld'         => $this->build_jsonld($profile),
+            'designSettings' => $designSettings,
             // Phase 6.3 – cms-experts Team-Sektion
-            'experts'      => $this->load_company_experts($profile),
+            'experts'        => $this->load_company_experts($profile),
             // Bewerbungsformular CSRF-Token (Task 5.3)
-            'applyCsrf'    => class_exists('CMS\\Security')
+            'applyCsrf'      => class_exists('CMS\\Security')
                 ? \CMS\Security::instance()->generateToken('jpg_apply_' . $profile->slug)
                 : bin2hex(random_bytes(16)),
         ];
@@ -1030,7 +1047,8 @@ class CMS_JPG_Frontend
     // ── Public CSS mit Custom Properties injizieren ──────────────────────────
 
     /**
-     * Registriert public.css über den head-Hook für die Jobs-Übersichtsseite.
+     * Registriert public.css + Public Design CSS über den head-Hook
+     * für die Jobs-Übersichtsseite.
      * Wird VOR getHeader() aufgerufen, damit der Hook im Theme-Header greift.
      */
     private function enqueue_jobs_list_css(): void
@@ -1047,6 +1065,14 @@ class CMS_JPG_Frontend
             echo '<link rel="stylesheet" href="'
                 . htmlspecialchars(JPG_URL . 'assets/css/public.css')
                 . '?v=' . filemtime($cssFile) . '">' . "\n";
+
+            // Public Design CSS aus Admin-Einstellungen
+            if (class_exists('CMS_JPG_Admin_Pages')) {
+                $css = CMS_JPG_Admin_Pages::build_public_design_css();
+                if (!empty($css) && $css !== ':root {}') {
+                    echo '<style id="jpg-public-design">' . $css . '</style>' . "\n";
+                }
+            }
         }, 20);
     }
 
@@ -1062,10 +1088,59 @@ class CMS_JPG_Frontend
             . htmlspecialchars(JPG_URL . 'assets/css/public.css')
             . '?v=' . filemtime($cssFile) . '">' . "\n";
 
+        // Public Design CSS aus Admin-Einstellungen injizieren
+        $this->inject_public_design_css();
+
         // Custom Branding Injection (Phase 4.3)
         if (function_exists('user_has_feature') && user_has_feature('custom_branding')) {
             $this->inject_custom_branding();
         }
+    }
+
+    /**
+     * Injiziert das dynamische CSS aus den Public Design-Einstellungen (pd_*).
+     * Wird auf allen öffentlichen Seiten (Single + Liste) in den <head> eingefügt.
+     *
+     * @since 0.9.7
+     */
+    private function inject_public_design_css(): void
+    {
+        if (!class_exists('CMS_JPG_Admin_Pages')) {
+            return;
+        }
+        $css = CMS_JPG_Admin_Pages::build_public_design_css();
+        if (!empty($css) && $css !== ':root {}') {
+            echo '<style id="jpg-public-design">' . $css . '</style>' . "\n";
+        }
+    }
+
+    /**
+     * Bestimmt die Template-Datei basierend auf der Layout-Auswahl in den Public Design-Settings.
+     *
+     * @param  array<string,string> $designSettings
+     * @return string  Absoluter Pfad zur Template-Datei
+     */
+    private function resolve_single_template(array $designSettings): string
+    {
+        $layout = $designSettings['pd_single_layout'] ?? 'classic';
+
+        // Mapping: Layout-Slug → Template-Datei
+        $templates = [
+            'classic' => 'views/public/single-classic.php',
+            'modern'  => 'views/public/single-modern.php',
+            'compact' => 'views/public/single-compact.php',
+            'sidebar' => 'views/public/single-sidebar.php',
+        ];
+
+        $templateFile = $templates[$layout] ?? $templates['classic'];
+        $fullPath     = JPG_DIR . $templateFile;
+
+        // Fallback: Falls Template nicht existiert, verwende integrated.php
+        if (!file_exists($fullPath)) {
+            $fullPath = JPG_DIR . 'views/public/single-integrated.php';
+        }
+
+        return $fullPath;
     }
 
     /**

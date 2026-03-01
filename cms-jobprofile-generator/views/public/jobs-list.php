@@ -57,12 +57,22 @@ $allCategories  = $allCategories  ?? [];
 $hasFilter      = $companyFilter !== '' || $typeFilter !== '' || $locationFilter !== ''
                || $categoryFilter !== '' || $remoteFilter !== '' || $salaryMin > 0;
 ?>
+<?php
+// Design-Settings Helfer
+$ds = $designSettings ?? [];
+$showTitle = ($ds['list_show_title'] ?? '1') === '1';
+$showCount = ($ds['list_show_count'] ?? '1') === '1';
+?>
 <div class="jpg-public jpg-jobs-list">
 
+    <?php if ($showTitle || $showCount): ?>
     <!-- Page-Titel -->
     <div class="jpg-jobs-list__header">
         <div>
+            <?php if ($showTitle): ?>
             <h1>💼 Offene Stellen</h1>
+            <?php endif; ?>
+            <?php if ($showCount): ?>
             <p class="jpg-jobs-list__subtitle">
                 <?php if ($totalCount > 0): ?>
                     <?php echo $totalCount; ?> <?php echo $totalCount === 1 ? 'Stelle gefunden' : 'Stellen gefunden'; ?>
@@ -70,8 +80,10 @@ $hasFilter      = $companyFilter !== '' || $typeFilter !== '' || $locationFilter
                     Keine Stellen gefunden
                 <?php endif; ?>
             </p>
+            <?php endif; ?>
         </div>
     </div>
+    <?php endif; ?>
 
     <!-- Filter -->
     <form method="GET" action="/jobs" class="jpg-jobs-list__filters">

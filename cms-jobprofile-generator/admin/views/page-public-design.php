@@ -450,6 +450,8 @@ $pd    = fn(string $k, string $d = '') => htmlspecialchars($settings['pd_' . $k]
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
         <?php
         $listToggles = [
+            'list_show_title'    => 'Seitentitel anzeigen',
+            'list_show_count'    => 'Stellenanzahl anzeigen',
             'list_show_salary'   => 'Gehalt in Karten anzeigen',
             'list_show_company'  => 'Firmenname in Karten anzeigen',
             'list_show_remote'   => 'Remote-Status anzeigen',

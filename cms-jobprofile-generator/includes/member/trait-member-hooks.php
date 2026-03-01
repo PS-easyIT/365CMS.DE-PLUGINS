@@ -54,6 +54,7 @@ trait CMS_JPG_Member_Hooks_Trait
         $router->addRoute('POST', '/member/jobs/approvals',            [$this, 'render_approvals']);
         $router->addRoute('GET',  '/member/jobs/applications',         [$this, 'render_applications']);
         $router->addRoute('POST', '/member/jobs/applications/status',  [$this, 'ajax_update_status']);
+        $router->addRoute('GET',  '/member/jobs/my-applications',      [$this, 'render_my_applications']);
         $router->addRoute('GET',  '/member/jobs/download/:token',      [$this, 'download_file']);
         $router->addRoute('GET',  '/member/jobs/pdf/:id',              [$this, 'download_pdf']);
         $router->addRoute('GET',  '/member/jobs/settings',             [$this, 'render_settings']);
@@ -200,6 +201,28 @@ trait CMS_JPG_Member_Hooks_Trait
                 'category'    => 'plugins',
                 'parent_slug' => 'member_jobs',
             ];
+
+            // Bewerber-Dashboard: Eigene Bewerbungen (sichtbar für jeden mit Bewerbungen)
+            try {
+                $myAppCount = (int) $this->db->get_var(
+                    "SELECT COUNT(*) FROM {$this->p}jpg_applications WHERE user_id = ?",
+                    [$currentUid]
+                );
+            } catch (\Throwable $e) {
+                $myAppCount = 0;
+            }
+            if ($myAppCount > 0) {
+                $items[] = [
+                    'slug'        => 'member_my_applications',
+                    'label'       => 'Meine Bewerbungen',
+                    'icon'        => '📋',
+                    'url'         => '/member/jobs/my-applications',
+                    'active'      => str_starts_with($uri, '/member/jobs/my-applications'),
+                    'category'    => 'plugins',
+                    'parent_slug' => 'member_jobs',
+                    'badge'       => $myAppCount > 0 ? (string) $myAppCount : '',
+                ];
+            }
             $items[] = [
                 'slug'        => 'member_job_settings',
                 'label'       => 'Einstellungen',
@@ -266,15 +289,16 @@ trait CMS_JPG_Member_Hooks_Trait
             return $items;
         }
 
-        $isApprovals    = str_starts_with($uri, '/member/jobs/approvals');
-        $isApplications = str_starts_with($uri, '/member/jobs/applications');
-        $isSettings     = str_starts_with($uri, '/member/jobs/settings');
-        $isCreate       = str_starts_with($uri, '/member/jobs/create');
-        $isEdit         = str_starts_with($uri, '/member/jobs/edit');
-        $isPdf          = str_starts_with($uri, '/member/jobs/pdf');
-        $isDuplicate    = str_starts_with($uri, '/member/jobs/duplicate');
-        $isWorkflow     = str_starts_with($uri, '/member/jobs/workflow');
-        $isMainJobs     = !$isApprovals && !$isApplications && !$isSettings && !$isCreate && !$isEdit
+        $isApprovals       = str_starts_with($uri, '/member/jobs/approvals');
+        $isApplications    = str_starts_with($uri, '/member/jobs/applications');
+        $isMyApplications  = str_starts_with($uri, '/member/jobs/my-applications');
+        $isSettings        = str_starts_with($uri, '/member/jobs/settings');
+        $isCreate          = str_starts_with($uri, '/member/jobs/create');
+        $isEdit            = str_starts_with($uri, '/member/jobs/edit');
+        $isPdf             = str_starts_with($uri, '/member/jobs/pdf');
+        $isDuplicate       = str_starts_with($uri, '/member/jobs/duplicate');
+        $isWorkflow        = str_starts_with($uri, '/member/jobs/workflow');
+        $isMainJobs        = !$isApprovals && !$isApplications && !$isMyApplications && !$isSettings && !$isCreate && !$isEdit
                           && !$isPdf && !$isDuplicate && !$isWorkflow;
 
         foreach ($items as &$item) {
@@ -297,6 +321,10 @@ trait CMS_JPG_Member_Hooks_Trait
                 case 'plugin_member-job-applications':
                 case 'member_job_applications':
                     $item['active'] = $isApplications;
+                    break;
+                case 'plugin_member-my-applications':
+                case 'member_my_applications':
+                    $item['active'] = $isMyApplications;
                     break;
                 case 'plugin_member-job-settings':
                 case 'member_job_settings':

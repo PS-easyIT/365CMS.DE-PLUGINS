@@ -21,6 +21,7 @@ require_once __DIR__ . '/member/trait-member-dsgvo.php';
 require_once __DIR__ . '/member/trait-member-jobs.php';
 require_once __DIR__ . '/member/trait-member-inline.php';
 require_once __DIR__ . '/member/trait-member-applications.php';
+require_once __DIR__ . '/member/trait-member-my-applications.php';
 require_once __DIR__ . '/member/trait-member-approvals.php';
 require_once __DIR__ . '/member/trait-member-settings.php';
 
@@ -31,6 +32,7 @@ class CMS_JPG_Member_Controller
     use CMS_JPG_Member_Jobs_Trait;
     use CMS_JPG_Member_Inline_Trait;
     use CMS_JPG_Member_Applications_Trait;
+    use CMS_JPG_Member_MyApplications_Trait;
     use CMS_JPG_Member_Approvals_Trait;
     use CMS_JPG_Member_Settings_Trait;
 

@@ -574,6 +574,454 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
+   LAYOUT: MODERN (single-modern.php)
+   Full-Width Hero, kartenbasierte Sektionen
+═══════════════════════════════════════════════════════════ */
+
+.jpg-layout-modern { max-width: none; }
+
+/* Hero */
+.jpg-modern-hero {
+    background: linear-gradient(135deg, var(--jpg-primary) 0%, var(--jpg-primary-dark) 100%);
+    color: #fff;
+    padding: 3.5rem 2rem 3rem;
+    text-align: center;
+}
+
+.jpg-modern-hero__inner {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.jpg-modern-hero__company {
+    display: inline-block;
+    background: rgba(255,255,255,.2);
+    padding: .25rem .75rem;
+    border-radius: 999px;
+    font-size: .82rem;
+    font-weight: 500;
+    margin-bottom: .75rem;
+    letter-spacing: .03em;
+}
+
+.jpg-modern-hero__title {
+    font-family: var(--jpg-font-heading);
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0 0 1rem;
+    line-height: 1.2;
+}
+
+.jpg-modern-hero__meta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .5rem;
+    margin-bottom: 1.25rem;
+}
+
+.jpg-modern-meta-chip {
+    background: rgba(255,255,255,.18);
+    padding: .3rem .7rem;
+    border-radius: 999px;
+    font-size: .82rem;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
+}
+
+.jpg-modern-hero__salary {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    background: rgba(255,255,255,.95);
+    color: #065f46;
+    padding: .5rem 1rem;
+    border-radius: 999px;
+    font-size: .9rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+.jpg-btn-apply--hero {
+    font-size: 1.05rem;
+    padding: .85rem 2.5rem;
+}
+
+/* Cards */
+.jpg-modern-content {
+    max-width: 800px;
+    margin: -1.5rem auto 0;
+    padding: 0 1.5rem 2rem;
+    position: relative;
+}
+
+.jpg-modern-card {
+    background: var(--jpg-card-bg);
+    border-radius: var(--jpg-radius);
+    box-shadow: 0 2px 12px rgba(0,0,0,.07);
+    padding: 1.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.jpg-modern-card h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--jpg-text);
+    margin: 0 0 .75rem;
+}
+
+.jpg-modern-card h3 {
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--jpg-text-muted);
+    margin: .5rem 0 .25rem;
+}
+
+.jpg-modern-card p {
+    font-size: .92rem;
+    line-height: 1.7;
+    color: var(--jpg-text-muted);
+    margin: 0 0 .5rem;
+}
+
+.jpg-modern-card--cta {
+    background: linear-gradient(135deg, var(--jpg-primary) 0%, var(--jpg-primary-dark) 100%);
+    color: #fff;
+    text-align: center;
+    padding: 2rem;
+}
+.jpg-modern-card--cta h2,
+.jpg-modern-card--cta p { color: #fff; }
+
+/* Listen */
+.jpg-modern-list {
+    padding-left: 1.25rem;
+    margin: 0;
+}
+.jpg-modern-list li {
+    margin-bottom: .35rem;
+    font-size: .9rem;
+    line-height: 1.6;
+    color: var(--jpg-text);
+}
+.jpg-modern-list--nice li {
+    color: var(--jpg-text-muted);
+}
+
+/* Benefits */
+.jpg-modern-benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: .75rem;
+}
+.jpg-modern-benefit-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .5rem .75rem;
+    background: var(--jpg-bg);
+    border-radius: 8px;
+    font-size: .88rem;
+}
+.jpg-modern-benefit-icon { font-size: 1.1rem; }
+
+/* Large Apply Button */
+.jpg-btn-apply--large {
+    font-size: 1rem;
+    padding: .85rem 2.5rem;
+    background: #fff;
+    color: var(--jpg-primary);
+    border: none;
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: 700;
+    transition: background .15s, transform .1s;
+}
+.jpg-btn-apply--large:hover {
+    background: rgba(255,255,255,.9);
+    transform: translateY(-1px);
+}
+
+/* Responsive Modern */
+@media (max-width: 640px) {
+    .jpg-modern-hero { padding: 2rem 1rem 1.5rem; }
+    .jpg-modern-hero__title { font-size: 1.5rem; }
+    .jpg-modern-content { padding: 0 1rem 1.5rem; margin-top: -1rem; }
+    .jpg-modern-card { padding: 1.25rem; }
+    .jpg-modern-benefits-grid { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LAYOUT: COMPACT (single-compact.php)
+   Minimalistisch, zeitungsartig, einspaltig
+═══════════════════════════════════════════════════════════ */
+
+.jpg-layout-compact { max-width: 720px; }
+
+.jpg-compact-article {
+    background: var(--jpg-card-bg);
+    border-radius: var(--jpg-radius);
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+    padding: 2rem 2.5rem;
+}
+
+/* Header */
+.jpg-compact-header { margin-bottom: 1rem; }
+
+.jpg-compact-company {
+    font-size: .82rem;
+    color: var(--jpg-text-muted);
+    font-weight: 500;
+    margin-bottom: .35rem;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+}
+
+.jpg-compact-title {
+    font-family: var(--jpg-font-heading);
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: var(--jpg-text);
+    margin: 0 0 .5rem;
+    line-height: 1.25;
+}
+
+.jpg-compact-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1rem;
+    font-size: .85rem;
+    color: var(--jpg-text-muted);
+}
+
+.jpg-compact-apply-inline { margin-top: 1rem; }
+
+.jpg-compact-divider {
+    border: none;
+    border-top: 1px solid var(--jpg-border);
+    margin: 1.25rem 0;
+}
+
+/* Sektionen */
+.jpg-compact-section      { margin-bottom: 1.25rem; }
+.jpg-compact-section h2   {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--jpg-primary);
+    margin: 0 0 .5rem;
+    padding-bottom: .25rem;
+    border-bottom: 2px solid var(--jpg-primary);
+}
+.jpg-compact-section h3   {
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--jpg-text-muted);
+    margin: .75rem 0 .25rem;
+}
+
+.jpg-compact-lead {
+    font-size: .95rem;
+    line-height: 1.7;
+    color: var(--jpg-text);
+    margin: 0 0 .5rem;
+}
+
+.jpg-compact-list {
+    padding-left: 1.25rem;
+    margin: 0;
+}
+.jpg-compact-list li {
+    font-size: .9rem;
+    line-height: 1.6;
+    margin-bottom: .25rem;
+}
+.jpg-compact-list--light li { color: var(--jpg-text-muted); }
+
+/* Benefits */
+.jpg-compact-benefits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+.jpg-compact-benefit-chip {
+    display: inline-block;
+    background: var(--jpg-bg);
+    border: 1px solid var(--jpg-border);
+    padding: .3rem .65rem;
+    border-radius: 999px;
+    font-size: .82rem;
+}
+
+/* Apply fullwidth */
+.jpg-compact-apply { text-align: center; }
+.jpg-btn-apply--fullwidth {
+    width: 100%;
+    text-align: center;
+    display: block;
+    box-sizing: border-box;
+}
+
+/* Responsive Compact */
+@media (max-width: 640px) {
+    .jpg-compact-article { padding: 1.25rem 1rem; }
+    .jpg-compact-title { font-size: 1.35rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LAYOUT: SIDEBAR (single-sidebar.php)
+   Content links, Sticky-Sidebar rechts mit CTA
+═══════════════════════════════════════════════════════════ */
+
+.jpg-layout-sidebar { max-width: 1100px; }
+
+/* Header */
+.jpg-sidebar-header {
+    background: var(--jpg-card-bg);
+    border-radius: var(--jpg-radius);
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.jpg-sidebar-header__company {
+    display: inline-block;
+    font-size: .85rem;
+    color: var(--jpg-text-muted);
+    margin-bottom: .25rem;
+}
+
+.jpg-sidebar-header h1 {
+    font-family: var(--jpg-font-heading);
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 0 0 .5rem;
+    color: var(--jpg-text);
+}
+
+/* Two-Column Layout */
+.jpg-sidebar-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+/* Main Content */
+.jpg-sidebar-main { min-width: 0; }
+
+/* Aside */
+.jpg-sidebar-aside { min-width: 0; }
+
+.jpg-sidebar-sticky {
+    position: sticky;
+    top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* CTA Card */
+.jpg-sidebar-cta-card {
+    background: var(--jpg-card-bg);
+    border: 2px solid var(--jpg-primary);
+    border-radius: var(--jpg-radius);
+    padding: 1.25rem;
+    text-align: center;
+}
+.jpg-sidebar-cta-card h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0 0 .35rem;
+    color: var(--jpg-text);
+}
+.jpg-sidebar-cta-card p {
+    font-size: .85rem;
+    color: var(--jpg-text-muted);
+    margin: 0 0 .75rem;
+}
+
+/* Info Cards */
+.jpg-sidebar-info-card {
+    background: var(--jpg-card-bg);
+    border: 1px solid var(--jpg-border);
+    border-radius: var(--jpg-radius);
+    padding: 1.25rem;
+}
+.jpg-sidebar-info-card h4 {
+    font-size: .92rem;
+    font-weight: 700;
+    margin: 0 0 .5rem;
+    color: var(--jpg-text);
+}
+
+/* Salary */
+.jpg-sidebar-salary {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--jpg-primary);
+}
+.jpg-sidebar-salary small {
+    display: block;
+    font-size: .78rem;
+    font-weight: 400;
+    color: var(--jpg-text-muted);
+}
+
+/* Benefits Grid */
+.jpg-sidebar-benefits-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .5rem;
+}
+.jpg-sidebar-benefit-item {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .85rem;
+    padding: .35rem .5rem;
+    background: var(--jpg-bg);
+    border-radius: 6px;
+}
+.jpg-sidebar-benefit-icon { font-size: 1rem; }
+
+/* Quick Facts */
+.jpg-sidebar-facts {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.jpg-sidebar-facts li {
+    padding: .4rem 0;
+    font-size: .85rem;
+    border-bottom: 1px solid var(--jpg-border);
+}
+.jpg-sidebar-facts li:last-child { border-bottom: none; }
+.jpg-sidebar-facts strong {
+    display: inline-block;
+    min-width: 90px;
+    color: var(--jpg-text-muted);
+    font-weight: 600;
+}
+
+/* Responsive Sidebar */
+@media (max-width: 768px) {
+    .jpg-sidebar-layout {
+        grid-template-columns: 1fr;
+    }
+    .jpg-sidebar-sticky {
+        position: static;
+    }
+    .jpg-sidebar-benefits-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .jpg-sidebar-header { padding: 1rem 1.25rem; }
+    .jpg-sidebar-header h1 { font-size: 1.3rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════
    RESPONSIVE (ergänzend)
 ═══════════════════════════════════════════════════════════ */
 @media (max-width: 640px) {
