@@ -333,8 +333,8 @@ $events     = $events ?? [];
       <?php
       // [label, pill-cls, grid-cls]
       $skill_section_cfg = [
-          'general' => ['Skills',               '',              'ex-skills-grid'],
-          'tech'    => ['Programmierung',        'ex-pill--tech', 'ex-skills-grid'],
+          'general' => ['Programmierung',       '',              'ex-skills-grid'],
+          'tech'    => ['Skills',               'ex-pill--tech', 'ex-skills-grid'],
           'soft'    => ['Persönliche Stärken', 'ex-pill--soft', 'ex-skills-grid ex-skills-grid--soft'],
       ];
       // Alphabetisch sortieren innerhalb jedes Typs

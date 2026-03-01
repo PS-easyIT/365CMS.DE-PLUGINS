@@ -58,6 +58,7 @@ final class CMS_Experts_Meta_Boxes
         $skills    = $is_edit ? CMS_Experts_Database::instance()->get_expert_skills_grouped($eid) : ['general' => [], 'tech' => [], 'soft' => []];
         $spec_ids  = $is_edit ? CMS_Experts_Database::instance()->get_expert_specialization_ids($eid) : [];
         $all_specs = class_exists('CMS_Experts_Taxonomies') ? CMS_Experts_Taxonomies::instance()->get_specializations() : [];
+        $skill_presets = class_exists('CMS_Experts_Taxonomies') ? CMS_Experts_Taxonomies::instance()->get_skill_presets_grouped() : ['general' => [], 'tech' => [], 'soft' => []];
 
         $certifications = $extras['certifications'] ?? [];
         $projects       = $extras['projects']       ?? [];
@@ -71,7 +72,7 @@ final class CMS_Experts_Meta_Boxes
         $this->render_biography($expert);
         $this->render_additional_info($meta);
         $this->render_fachrichtungen($all_specs, $spec_ids);
-        $this->render_skills($skills);
+        $this->render_skills($skills, $skill_presets);
         $this->render_social_links($meta);
         $this->render_partner_status($meta);
         $this->render_tech_expertise($meta);
@@ -438,9 +439,9 @@ final class CMS_Experts_Meta_Boxes
     {
         ?>
         <div class="form-section">
-            <h3>📄 Biografie / Kurzbeschreibung</h3>
+            <h3>📄 Über mich</h3>
             <div class="form-group">
-                <label>Über den Experten</label>
+                <label>Biografie / Kurzbeschreibung</label>
                 <?php
                 if (class_exists('\CMS\Services\EditorService')) {
                     echo \CMS\Services\EditorService::getInstance()->render(
@@ -527,47 +528,62 @@ final class CMS_Experts_Meta_Boxes
     }
 
     /**
-     * Skills – drei getrennte Tag-Eingaben
+     * Skills – drei getrennte Tag-Eingaben mit Vorlagen-Auswahl
      */
-    private function render_skills(array $skills): void
+    private function render_skills(array $skills, array $presets = []): void
     {
         $esc = CMS\Security::instance();
+
+        $sections = [
+            'general' => [
+                'label'       => 'Programmierung',
+                'placeholder' => 'z.B. PHP, Python, JavaScript, C# …',
+                'hint'        => 'Programmiersprachen & Grundlagen',
+            ],
+            'tech' => [
+                'label'       => 'Skills',
+                'placeholder' => 'z.B. Docker, React, AWS, VMware …',
+                'hint'        => 'Frameworks, Tools & Plattformen',
+            ],
+            'soft' => [
+                'label'       => 'Persönliche Stärken',
+                'placeholder' => 'z.B. Teamwork, Kommunikation, Führung …',
+                'hint'        => 'Soft Skills & methodische Kompetenzen',
+            ],
+        ];
         ?>
         <div class="form-section">
-            <h3>🛠️ Skills</h3>
+            <h3>🛠️ Skills & Kompetenzen</h3>
             <p class="field-hint" style="margin:0 0 1rem;">
-                Skills als Komma-getrennte Liste eingeben. Enter oder Komma zum Hinzufügen.
+                Klicke auf eine Vorlage, um sie hinzuzufügen, oder gib eigene Skills als Komma-getrennte Liste ein.
             </p>
 
-            <div class="form-group">
-                <label>Allgemeine Skills</label>
-                <div class="tag-input-wrapper" data-target="skills_general_hidden">
-                    <div class="tag-pills" id="tags_general"></div>
-                    <input type="text" class="tag-text-input" placeholder="z.B. Linux, Docker, Git …">
+            <?php foreach ($sections as $type => $cfg):
+                $currentSkills = $skills[$type] ?? [];
+                $typePresets   = $presets[$type] ?? [];
+            ?>
+            <div class="form-group" <?php echo $type !== 'general' ? 'style="margin-top:1.25rem;"' : ''; ?>>
+                <label><?php echo $cfg['label']; ?> <small style="font-weight:400;color:#6b7280;">(<?php echo $cfg['hint']; ?>)</small></label>
+                <div class="tag-input-wrapper" data-target="skills_<?php echo $type; ?>_hidden" data-skill-type="<?php echo $type; ?>">
+                    <div class="tag-pills" id="tags_<?php echo $type; ?>"></div>
+                    <input type="text" class="tag-text-input" placeholder="<?php echo htmlspecialchars($cfg['placeholder']); ?>">
                 </div>
-                <input type="hidden" name="skills_general" id="skills_general_hidden"
-                       value="<?php echo $esc->escape(implode(',', $skills['general'] ?? [])); ?>">
-            </div>
-
-            <div class="form-group" style="margin-top:1rem;">
-                <label>Tech Skills <small style="font-weight:400;color:#6b7280;">(Programmiersprachen, Frameworks, Tools)</small></label>
-                <div class="tag-input-wrapper" data-target="skills_tech_hidden">
-                    <div class="tag-pills" id="tags_tech"></div>
-                    <input type="text" class="tag-text-input" placeholder="z.B. PHP, JavaScript, React, MySQL …">
+                <input type="hidden" name="skills_<?php echo $type; ?>" id="skills_<?php echo $type; ?>_hidden"
+                       value="<?php echo $esc->escape(implode(',', $currentSkills)); ?>">
+                <?php if (!empty($typePresets)): ?>
+                <div class="skill-presets-box" data-preset-type="<?php echo $type; ?>">
+                    <small style="color:#64748b;font-weight:600;display:block;margin-bottom:.35rem;">📋 Vorlagen:</small>
+                    <div class="skill-presets-list">
+                        <?php foreach ($typePresets as $preset): ?>
+                        <button type="button" class="skill-preset-btn" data-preset-name="<?php echo htmlspecialchars($preset->skill_name, ENT_QUOTES); ?>" data-preset-target="skills_<?php echo $type; ?>_hidden">
+                            + <?php echo htmlspecialchars($preset->skill_name); ?>
+                        </button>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
-                <input type="hidden" name="skills_tech" id="skills_tech_hidden"
-                       value="<?php echo $esc->escape(implode(',', $skills['tech'] ?? [])); ?>">
+                <?php endif; ?>
             </div>
-
-            <div class="form-group" style="margin-top:1rem;">
-                <label>Soft Skills <small style="font-weight:400;color:#6b7280;">(persönliche Kompetenzen)</small></label>
-                <div class="tag-input-wrapper" data-target="skills_soft_hidden">
-                    <div class="tag-pills" id="tags_soft"></div>
-                    <input type="text" class="tag-text-input" placeholder="z.B. Teamwork, Kommunikation, Führung …">
-                </div>
-                <input type="hidden" name="skills_soft" id="skills_soft_hidden"
-                       value="<?php echo $esc->escape(implode(',', $skills['soft'] ?? [])); ?>">
-            </div>
+            <?php endforeach; ?>
         </div>
         <?php
     }
@@ -1207,6 +1223,48 @@ final class CMS_Experts_Meta_Boxes
             background: transparent !important; box-shadow: none !important;
         }
 
+        /* Skill-Preset-Vorlagen */
+        .skill-presets-box {
+            margin-top: 0.5rem;
+            padding: 0.625rem 0.75rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+        }
+        .skill-presets-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.375rem;
+        }
+        .skill-preset-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.22rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #4338ca;
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .skill-preset-btn:hover {
+            background: #dbeafe;
+            border-color: #818cf8;
+            color: #3730a3;
+        }
+        .skill-preset-btn.is-added {
+            background: #d1fae5;
+            border-color: #86efac;
+            color: #065f46;
+            opacity: 0.7;
+            cursor: default;
+            pointer-events: none;
+        }
+
         /* Social Links */
         .social-links-grid {
             display: grid;
@@ -1273,7 +1331,10 @@ final class CMS_Experts_Meta_Boxes
                     ? hiddenEl.value.split(',').map(t => t.trim()).filter(Boolean)
                     : [];
 
-                function sync() { hiddenEl.value = tags.join(','); }
+                function sync() {
+                    hiddenEl.value = tags.join(',');
+                    syncPresetButtons(wrapper.dataset.target);
+                }
 
                 function renderPills() {
                     pillsEl.innerHTML = '';
@@ -1302,6 +1363,10 @@ final class CMS_Experts_Meta_Boxes
                     textEl.value = '';
                 }
 
+                // Expose addTag on the wrapper for preset buttons
+                wrapper._addTag = addTag;
+                wrapper._getTags = () => tags;
+
                 textEl.addEventListener('keydown', e => {
                     if (e.key === 'Enter' || e.key === ',') {
                         e.preventDefault();
@@ -1320,6 +1385,44 @@ final class CMS_Experts_Meta_Boxes
             }
 
             document.querySelectorAll('.tag-input-wrapper').forEach(initTagInput);
+
+            /* Skill-Preset-Buttons (Vorlagen anklicken) ─────────────── */
+            function syncPresetButtons(targetId) {
+                const wrapper = document.querySelector('.tag-input-wrapper[data-target="' + targetId + '"]');
+                if (!wrapper || !wrapper._getTags) return;
+                const currentTags = wrapper._getTags().map(t => t.toLowerCase());
+                // Finde passende Preset-Box
+                const type = targetId.replace('skills_', '').replace('_hidden', '');
+                const presetBox = document.querySelector('.skill-presets-box[data-preset-type="' + type + '"]');
+                if (!presetBox) return;
+                presetBox.querySelectorAll('.skill-preset-btn').forEach(btn => {
+                    const name = btn.dataset.presetName;
+                    if (currentTags.includes(name.toLowerCase())) {
+                        btn.classList.add('is-added');
+                        btn.textContent = '✓ ' + name;
+                    } else {
+                        btn.classList.remove('is-added');
+                        btn.textContent = '+ ' + name;
+                    }
+                });
+            }
+
+            document.querySelectorAll('.skill-preset-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (this.classList.contains('is-added')) return;
+                    const targetId = this.dataset.presetTarget;
+                    const wrapper = document.querySelector('.tag-input-wrapper[data-target="' + targetId + '"]');
+                    if (wrapper && wrapper._addTag) {
+                        wrapper._addTag(this.dataset.presetName);
+                    }
+                });
+            });
+
+            // Initial sync of preset button states
+            document.querySelectorAll('.skill-presets-box').forEach(box => {
+                const type = box.dataset.presetType;
+                syncPresetButtons('skills_' + type + '_hidden');
+            });
 
             /* Partner-Status hervorheben ────────────────────────────── */
             document.querySelectorAll('.partner-status-option input[type="radio"]').forEach(r => {
@@ -1439,7 +1542,7 @@ final class CMS_Experts_Meta_Boxes
         $json_val = htmlspecialchars(json_encode($stations), ENT_QUOTES);
         ?>
         <div class="form-section">
-            <h3>🏢 Berufliche Stationen</h3>
+            <h3>🏢 Karrierestationen</h3>
             <p class="field-hint" style="margin-bottom:1rem;">Lebenslaufartige Auflistung bisheriger Positionen.</p>
             <input type="hidden" name="meta[career_stations]" id="career-stations-hidden" value="<?php echo $json_val; ?>">
             <div id="career-stations-list">
@@ -1578,7 +1681,7 @@ final class CMS_Experts_Meta_Boxes
         };
         ?>
         <div class="form-section">
-            <h3>🌟 Referenzen & Portfolio</h3>
+            <h3>🌟 Referenzen & Auftritte</h3>
 
             <!-- Testimonials -->
             <div style="margin-bottom:1.5rem;">

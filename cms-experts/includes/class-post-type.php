@@ -336,11 +336,27 @@ final class CMS_Experts_Post_Type
 
         $tab    = $_GET['tab']    ?? 'overview';
         $filter = $_GET['filter'] ?? 'all';
+        $search = trim($_GET['search'] ?? '');
 
         $db  = CMS_Experts_Database::instance();
         $tax = CMS_Experts_Taxonomies::instance();
 
-        $experts  = $db->get_experts_all($filter !== 'all' ? ['status' => $filter] : []);
+        $filters = $filter !== 'all' ? ['status' => $filter] : [];
+        $experts  = $db->get_experts_all($filters);
+
+        // Textsuche clientseitig filtern
+        if ($search !== '') {
+            $q = mb_strtolower($search);
+            $experts = array_filter($experts, function ($e) use ($q) {
+                $haystack = mb_strtolower(
+                    ($e->first_name ?? '') . ' ' . ($e->last_name ?? '') . ' '
+                    . ($e->position ?? '') . ' ' . ($e->company ?? '') . ' '
+                    . ($e->location_city ?? '') . ' ' . ($e->email ?? '')
+                );
+                return str_contains($haystack, $q);
+            });
+        }
+
         $specs    = $tax->get_specializations();
         $presets  = $tax->get_skill_presets_grouped();
         $settings = $db->get_all_plugin_settings();
@@ -350,6 +366,7 @@ final class CMS_Experts_Post_Type
             'experts'  => $experts,
             'tab'      => $tab,
             'filter'   => $filter,
+            'search'   => $search,
             'specs'    => $specs,
             'presets'  => $presets,
             'settings' => $settings,
@@ -462,26 +479,50 @@ final class CMS_Experts_Post_Type
         $sec      = CMS\Security::instance();
         $tab      = in_array($_POST['settings_tab'] ?? '', ['settings', 'design'], true)
                     ? $_POST['settings_tab'] : 'settings';
-        $allowed  = [
-            // Plugin-Einstellungen
-            'archive_title', 'archive_description', 'archive_per_page',
-            'archive_header_icon', 'archive_header_bg_from', 'archive_header_bg_to',
-            'archive_header_title_color',
-            // Design Karten
+        // ── Design-Tab: Text-Felder ──
+        $design_text_fields = [
             'design_primary_color', 'design_accent_color', 'design_card_style',
-            'design_show_availability', 'design_show_rate', 'design_show_city',
             'design_border_radius', 'design_grid_columns',
             'design_cta_color', 'design_card_bg',
-            'design_show_skills', 'design_show_specialization',
-            // Design Detail-Seite
-            'design_detail_header_bg', 'design_detail_header_color', 'design_detail_accent',
-            'design_status_available_color', 'design_status_limited_color', 'design_status_booked_color',
-            'design_partner_color', 'design_top_partner_color', 'design_sponsor_color',
+            'archive_header_icon', 'archive_header_bg_from', 'archive_header_bg_to',
+            'archive_header_title_color',
+            'detail_header_bg_from', 'detail_header_bg_to', 'detail_header_title_color',
+            // Badge-Farben
+            'design_badge_avail_bg', 'design_badge_avail_color',
+            'design_badge_limited_bg', 'design_badge_limited_color',
+            'design_badge_booked_bg', 'design_badge_booked_color',
+            'design_badge_partner_bg', 'design_badge_partner_color',
+            'design_badge_top_partner_bg', 'design_badge_top_partner_color',
+            'design_badge_mvp_bg', 'design_badge_mvp_color',
         ];
+
+        // ── Design-Tab: Checkboxen (0/1) ──
+        $design_checkboxes = [
+            'design_show_availability', 'design_show_rate', 'design_show_city',
+            'design_show_skills', 'design_show_specialization',
+        ];
+
+        // ── Einstellungen-Tab: Text-Felder ──
+        $settings_text_fields = [
+            'archive_title', 'archive_description', 'archive_per_page',
+        ];
+
         $save = [];
-        foreach ($allowed as $key) {
-            if (isset($_POST[$key])) {
-                $save[$key] = $sec->sanitize((string)$_POST[$key], 'text');
+
+        if ($tab === 'design') {
+            foreach ($design_text_fields as $key) {
+                if (isset($_POST[$key])) {
+                    $save[$key] = $sec->sanitize((string)$_POST[$key], 'text');
+                }
+            }
+            foreach ($design_checkboxes as $key) {
+                $save[$key] = isset($_POST[$key]) && $_POST[$key] !== '0' ? '1' : '0';
+            }
+        } elseif ($tab === 'settings') {
+            foreach ($settings_text_fields as $key) {
+                if (isset($_POST[$key])) {
+                    $save[$key] = $sec->sanitize((string)$_POST[$key], 'text');
+                }
             }
         }
         if (!empty($save)) {

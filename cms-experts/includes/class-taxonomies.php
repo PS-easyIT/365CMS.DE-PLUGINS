@@ -29,6 +29,7 @@ final class CMS_Experts_Taxonomies
         $this->create_taxonomy_tables();
         $this->seed_default_specializations();
         $this->create_skill_presets_table();
+        $this->update_skill_presets();
     }
 
     /**
@@ -194,6 +195,207 @@ final class CMS_Experts_Taxonomies
         }
     }
 
+    /**
+     * Standard-Skill-Presets – vollständige Liste.
+     * Wird sowohl beim Seed (leere Tabelle) als auch beim Update (INSERT IGNORE) verwendet.
+     *
+     * @return list<array{0: string, 1: string}>
+     */
+    private function get_default_presets(): array
+    {
+        return [
+            // ── Programmierung (general) – Programmiersprachen & Grundlagen ─
+            ['PHP', 'general'],
+            ['Python', 'general'],
+            ['Java', 'general'],
+            ['C#', 'general'],
+            ['JavaScript', 'general'],
+            ['TypeScript', 'general'],
+            ['Go', 'general'],
+            ['Rust', 'general'],
+            ['Swift', 'general'],
+            ['Kotlin', 'general'],
+            ['Ruby', 'general'],
+            ['C++', 'general'],
+            ['Bash/Shell', 'general'],
+            ['SQL', 'general'],
+            ['PowerShell', 'general'],
+            ['R', 'general'],
+            ['Scala', 'general'],
+            ['Perl', 'general'],
+            ['Dart', 'general'],
+            ['HTML/CSS', 'general'],
+            ['ABAP', 'general'],
+            ['COBOL', 'general'],
+
+            // ── Skills (tech) – Frameworks, Tools & Plattformen ──────────
+            // Frontend
+            ['React', 'tech'],
+            ['Vue.js', 'tech'],
+            ['Angular', 'tech'],
+            ['Svelte', 'tech'],
+            ['Next.js', 'tech'],
+            ['Nuxt.js', 'tech'],
+            ['Tailwind CSS', 'tech'],
+
+            // Backend
+            ['Node.js', 'tech'],
+            ['Laravel', 'tech'],
+            ['Symfony', 'tech'],
+            ['Django', 'tech'],
+            ['FastAPI', 'tech'],
+            ['Spring Boot', 'tech'],
+            ['ASP.NET', 'tech'],
+            ['Express.js', 'tech'],
+            ['Flask', 'tech'],
+
+            // DevOps & Container
+            ['Docker', 'tech'],
+            ['Kubernetes', 'tech'],
+            ['Terraform', 'tech'],
+            ['Ansible', 'tech'],
+            ['Puppet', 'tech'],
+            ['Chef', 'tech'],
+            ['CI/CD', 'tech'],
+            ['Jenkins', 'tech'],
+            ['GitHub Actions', 'tech'],
+            ['GitLab CI', 'tech'],
+            ['ArgoCD', 'tech'],
+
+            // Cloud
+            ['AWS', 'tech'],
+            ['Azure', 'tech'],
+            ['GCP', 'tech'],
+            ['Azure DevOps', 'tech'],
+            ['Azure AD / Entra ID', 'tech'],
+            ['Microsoft 365', 'tech'],
+            ['Microsoft Intune', 'tech'],
+            ['Microsoft Exchange', 'tech'],
+            ['Microsoft SharePoint', 'tech'],
+            ['Microsoft Teams', 'tech'],
+            ['Microsoft Power Platform', 'tech'],
+            ['Microsoft Power Automate', 'tech'],
+            ['Microsoft Dynamics 365', 'tech'],
+            ['Microsoft SQL Server', 'tech'],
+            ['Microsoft SCCM / MECM', 'tech'],
+            ['Windows Server', 'tech'],
+            ['Active Directory', 'tech'],
+            ['Group Policy (GPO)', 'tech'],
+            ['Hyper-V', 'tech'],
+
+            // Virtualisierung & Infrastruktur
+            ['VMware vSphere', 'tech'],
+            ['VMware ESXi', 'tech'],
+            ['VMware vCenter', 'tech'],
+            ['VMware NSX', 'tech'],
+            ['VMware vSAN', 'tech'],
+            ['VMware Horizon', 'tech'],
+            ['Nutanix', 'tech'],
+            ['Nutanix AHV', 'tech'],
+            ['Nutanix Prism', 'tech'],
+            ['Proxmox', 'tech'],
+            ['Citrix', 'tech'],
+            ['Veeam Backup', 'tech'],
+
+            // Netzwerk & Security
+            ['Linux', 'tech'],
+            ['Nginx', 'tech'],
+            ['Apache', 'tech'],
+            ['Palo Alto', 'tech'],
+            ['Fortinet / FortiGate', 'tech'],
+            ['Cisco', 'tech'],
+            ['pfSense / OPNsense', 'tech'],
+            ['SIEM / SOC', 'tech'],
+            ['Zero Trust', 'tech'],
+            ['VPN / IPsec', 'tech'],
+
+            // Datenbanken
+            ['MySQL', 'tech'],
+            ['PostgreSQL', 'tech'],
+            ['MongoDB', 'tech'],
+            ['Redis', 'tech'],
+            ['Elasticsearch', 'tech'],
+            ['MariaDB', 'tech'],
+            ['Oracle DB', 'tech'],
+            ['SQLite', 'tech'],
+            ['Cassandra', 'tech'],
+
+            // API & Architektur
+            ['Git', 'tech'],
+            ['GraphQL', 'tech'],
+            ['REST API', 'tech'],
+            ['gRPC', 'tech'],
+            ['Microservices', 'tech'],
+            ['Event-Driven Architecture', 'tech'],
+            ['RabbitMQ', 'tech'],
+            ['Apache Kafka', 'tech'],
+
+            // CMS & E-Commerce
+            ['WordPress', 'tech'],
+            ['Shopware', 'tech'],
+            ['Magento', 'tech'],
+            ['TYPO3', 'tech'],
+            ['Drupal', 'tech'],
+            ['WooCommerce', 'tech'],
+            ['Contentful', 'tech'],
+
+            // Data & AI
+            ['TensorFlow', 'tech'],
+            ['PyTorch', 'tech'],
+            ['Pandas', 'tech'],
+            ['Power BI', 'tech'],
+            ['Tableau', 'tech'],
+            ['Jupyter', 'tech'],
+            ['Apache Spark', 'tech'],
+            ['Databricks', 'tech'],
+
+            // Monitoring
+            ['Prometheus', 'tech'],
+            ['Grafana', 'tech'],
+            ['Zabbix', 'tech'],
+            ['Nagios', 'tech'],
+            ['Datadog', 'tech'],
+            ['ELK Stack', 'tech'],
+
+            // SAP
+            ['SAP ERP', 'tech'],
+            ['SAP S/4HANA', 'tech'],
+            ['SAP BW', 'tech'],
+            ['SAP Fiori', 'tech'],
+
+            // Sonstiges
+            ['Jira', 'tech'],
+            ['Confluence', 'tech'],
+            ['Slack', 'tech'],
+
+            // ── Persönliche Stärken (soft) ───────────────────────────────
+            ['Teamarbeit', 'soft'],
+            ['Kommunikation', 'soft'],
+            ['Eigeninitiative', 'soft'],
+            ['Lernbereitschaft', 'soft'],
+            ['Analytisches Denken', 'soft'],
+            ['Problemlösung', 'soft'],
+            ['Zeitmanagement', 'soft'],
+            ['Präsentation', 'soft'],
+            ['Agile Methoden', 'soft'],
+            ['Scrum', 'soft'],
+            ['Kanban', 'soft'],
+            ['Führung', 'soft'],
+            ['Kundenorientierung', 'soft'],
+            ['Konfliktmanagement', 'soft'],
+            ['Projektmanagement', 'soft'],
+            ['Mentoring', 'soft'],
+            ['Kreativität', 'soft'],
+            ['Entscheidungsstärke', 'soft'],
+            ['Verhandlungsführung', 'soft'],
+            ['Interkulturelle Kompetenz', 'soft'],
+            ['Stressresistenz', 'soft'],
+            ['Selbstorganisation', 'soft'],
+            ['Design Thinking', 'soft'],
+            ['ITIL', 'soft'],
+        ];
+    }
+
     private function seed_default_skill_presets(): void
     {
         $db = CMS\Database::instance();
@@ -202,37 +404,48 @@ final class CMS_Experts_Taxonomies
             if ($cnt > 0) {
                 return;
             }
-            $defaults = [
-                // Allgemein – Programmiersprachen
-                ['PHP','general'],['Python','general'],['Java','general'],['C#','general'],
-                ['JavaScript','general'],['TypeScript','general'],['Go','general'],['Rust','general'],
-                ['Swift','general'],['Kotlin','general'],['Ruby','general'],['C++','general'],
-                ['Bash/Shell','general'],['SQL','general'],
-                // Tech – Frameworks & Tools
-                ['React','tech'],['Vue.js','tech'],['Angular','tech'],['Node.js','tech'],
-                ['Next.js','tech'],['Nuxt.js','tech'],['Laravel','tech'],['Symfony','tech'],
-                ['Django','tech'],['FastAPI','tech'],['Spring Boot','tech'],['ASP.NET','tech'],
-                ['Docker','tech'],['Kubernetes','tech'],['AWS','tech'],['Azure','tech'],
-                ['GCP','tech'],['Linux','tech'],['MySQL','tech'],['PostgreSQL','tech'],
-                ['MongoDB','tech'],['Redis','tech'],['Elasticsearch','tech'],['Git','tech'],
-                ['CI/CD','tech'],['Terraform','tech'],['Ansible','tech'],['Nginx','tech'],
-                ['GraphQL','tech'],['REST API','tech'],['Microservices','tech'],
-                ['WordPress','tech'],['Shopware','tech'],['Magento','tech'],
-                // Soft Skills
-                ['Teamarbeit','soft'],['Kommunikation','soft'],['Eigeninitiative','soft'],
-                ['Lernbereitschaft','soft'],['Analytisches Denken','soft'],['Problemlösung','soft'],
-                ['Zeitmanagement','soft'],['Präsentation','soft'],['Agile Methoden','soft'],
-                ['Scrum','soft'],['Kanban','soft'],['Führung','soft'],
-                ['Kundenorientierung','soft'],['Konfliktmanagement','soft'],
-            ];
-            $pdo    = $db->getPdo();
-            $prefix = $db->prefix();
-            $stmt   = $pdo->prepare("INSERT IGNORE INTO {$prefix}expert_skill_presets (skill_name, skill_type) VALUES (?,?)");
-            foreach ($defaults as [$name, $type]) {
-                $stmt->execute([$name, $type]);
-            }
+            $this->insert_presets($this->get_default_presets());
         } catch (\Throwable $e) {
             error_log('seed_default_skill_presets: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Fehlende Presets nachträglich einfügen (INSERT IGNORE).
+     * Wird bei jedem Plugin-Init aufgerufen – ist idempotent.
+     */
+    public function update_skill_presets(): void
+    {
+        $db = CMS\Database::instance();
+        try {
+            // Prüfen ob Tabelle existiert
+            $tables = $db->getPdo()
+                ->query("SHOW TABLES LIKE '{$db->prefix()}expert_skill_presets'")
+                ->fetchAll();
+            if (empty($tables)) {
+                return;
+            }
+            $this->insert_presets($this->get_default_presets());
+        } catch (\Throwable $e) {
+            error_log('update_skill_presets: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * INSERT IGNORE für eine Liste von Presets.
+     *
+     * @param list<array{0: string, 1: string}> $presets
+     */
+    private function insert_presets(array $presets): void
+    {
+        $db     = CMS\Database::instance();
+        $pdo    = $db->getPdo();
+        $prefix = $db->prefix();
+        $stmt   = $pdo->prepare(
+            "INSERT IGNORE INTO {$prefix}expert_skill_presets (skill_name, skill_type) VALUES (?, ?)"
+        );
+        foreach ($presets as [$name, $type]) {
+            $stmt->execute([$name, $type]);
         }
     }
 
