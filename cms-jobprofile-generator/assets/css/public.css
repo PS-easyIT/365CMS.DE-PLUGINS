@@ -329,6 +329,41 @@
 .jpg-job-card-list__summary         { color: var(--jpg-text-muted); font-size: .875rem; margin: 0; line-height: 1.5; }
 .jpg-job-card-list__action          { flex-shrink: 0; }
 
+/* Kategorie-Badge */
+.jpg-meta-category                  { background: #f3e8ff; color: #6b21a8; padding: .15rem .5rem; border-radius: 4px; }
+
+/* ── Karten-Stil: Grid (Kacheln) ──────────────────────────────────── */
+.jpg-jobs-list__grid--grid          { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem; }
+.jpg-job-card-list--grid            { flex-direction: column; align-items: stretch; }
+.jpg-job-card-list--grid .jpg-job-card-list__action {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid var(--jpg-border);
+    text-align: center;
+}
+.jpg-job-card-list--grid .jpg-job-card-list__action .jpg-btn { width: 100%; text-align: center; }
+
+/* ── Karten-Stil: Minimal (Zeilen) ────────────────────────────────── */
+.jpg-jobs-list__grid--minimal       { gap: 0; }
+.jpg-job-card-list--minimal {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    padding: .875rem 1rem;
+    align-items: center;
+    gap: 1rem;
+}
+.jpg-job-card-list--minimal:first-child { border-top: 1px solid var(--jpg-border); }
+.jpg-job-card-list--minimal:hover   { box-shadow: none; background: var(--jpg-bg, #f8fafc); }
+.jpg-job-card-list--minimal .jpg-job-card-list__title { font-size: 1rem; margin-bottom: .25rem; }
+.jpg-job-card-list--minimal .jpg-job-card-list__meta  { margin-bottom: 0; }
+.jpg-job-card-list--minimal .jpg-job-card-list__summary { display: none; }
+.jpg-job-card-list--minimal .jpg-job-card-list__action .jpg-btn {
+    padding: .4rem .875rem;
+    font-size: .8rem;
+}
+
 /* Buttons (generisch) */
 .jpg-btn              { display: inline-block; padding: .6rem 1.25rem; border-radius: 7px; font-size: .875rem; font-weight: 600; text-decoration: none; cursor: pointer; border: none; }
 .jpg-btn-primary      { background: var(--jpg-primary);      color: #fff; }
@@ -1031,4 +1066,6 @@
     .jpg-filter-input,
     .jpg-filter-select           { min-width: 100%; flex: none; }
     .jpg-team-grid               { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    /* Grid-Kacheln auf Mobil einspaltig */
+    .jpg-jobs-list__grid--grid   { grid-template-columns: 1fr; }
 }

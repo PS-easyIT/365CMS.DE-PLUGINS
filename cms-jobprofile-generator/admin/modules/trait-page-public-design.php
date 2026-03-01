@@ -502,7 +502,7 @@ trait CMS_JPG_Page_Public_Design_Trait
         // Listen-Karten
         $listShadow = $g('list_card_shadow');
         if ($listShadow && $listShadow !== '0 1px 3px rgba(0,0,0,.06)') {
-            $css .= '.jpg-jobs-list .jpg-list-card { box-shadow: ' . $listShadow . '; }';
+            $css .= '.jpg-jobs-list .jpg-job-card-list { box-shadow: ' . $listShadow . '; }';
         }
 
         // Custom CSS

@@ -189,7 +189,12 @@ class CMS_JPG_Frontend
         $remoteFilter   = sanitize_text_field((string) ($_GET['remote']   ?? ''));
         $salaryMin      = (int) ($_GET['salary_min'] ?? 0);
         $page           = max(1, (int) ($_GET['page'] ?? 1));
-        $perPage        = 20;
+
+        // Jobs pro Seite aus Public-Design-Settings laden (Fallback: 20)
+        $pdSettings     = class_exists('CMS_JPG_Admin_Pages')
+            ? \CMS_JPG_Admin_Pages::get_public_design_settings()
+            : [];
+        $perPage        = max(5, min(100, (int) ($pdSettings['pd_list_per_page'] ?? 20)));
         $offset         = ($page - 1) * $perPage;
 
         try {
@@ -279,10 +284,8 @@ class CMS_JPG_Frontend
             'remote'  => 'Remote',
         ];
 
-        // Design-Einstellungen für die Listenansicht laden
-        $designSettings = class_exists('CMS_JPG_Admin_Pages')
-            ? \CMS_JPG_Admin_Pages::get_public_design_settings()
-            : [];
+        // Design-Einstellungen wurden oben bereits für per_page geladen
+        $designSettings = $pdSettings;
 
         // Public CSS für die Jobs-Übersicht via head-Hook einbinden
         $this->enqueue_jobs_list_css();

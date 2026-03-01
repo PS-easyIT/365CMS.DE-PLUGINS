@@ -60,8 +60,15 @@ $hasFilter      = $companyFilter !== '' || $typeFilter !== '' || $locationFilter
 <?php
 // Design-Settings Helfer (Keys in DB mit pd_-Prefix gespeichert)
 $ds = $designSettings ?? [];
-$showTitle = ($ds['pd_list_show_title'] ?? '1') === '1';
-$showCount = ($ds['pd_list_show_count'] ?? '1') === '1';
+$showTitle   = ($ds['pd_list_show_title']    ?? '1') === '1';
+$showCount   = ($ds['pd_list_show_count']    ?? '1') === '1';
+$showSalary  = ($ds['pd_list_show_salary']   ?? '1') === '1';
+$showCompany = ($ds['pd_list_show_company']  ?? '1') === '1';
+$showRemote  = ($ds['pd_list_show_remote']   ?? '1') === '1';
+$showCategory= ($ds['pd_list_show_category'] ?? '1') === '1';
+$showSummary = ($ds['pd_list_show_summary']  ?? '1') === '1';
+$showFilters = ($ds['pd_list_show_filters']  ?? '1') === '1';
+$cardStyle   = $ds['pd_list_card_style']     ?? 'horizontal';
 ?>
 <div class="jpg-public jpg-jobs-list">
 
@@ -86,6 +93,7 @@ $showCount = ($ds['pd_list_show_count'] ?? '1') === '1';
     <?php endif; ?>
 
     <!-- Filter -->
+    <?php if ($showFilters): ?>
     <form method="GET" action="/jobs" class="jpg-jobs-list__filters">
         <div class="jpg-jobs-list__filter-row">
             <input type="text" name="company" class="jpg-filter-input"
@@ -139,6 +147,7 @@ $showCount = ($ds['pd_list_show_count'] ?? '1') === '1';
             <?php endif; ?>
         </div>
     </form>
+    <?php endif; ?>
 
     <!-- Job-Liste -->
     <?php if (empty($profiles)): ?>
@@ -151,21 +160,21 @@ $showCount = ($ds['pd_list_show_count'] ?? '1') === '1';
         <?php endif; ?>
     </div>
     <?php else: ?>
-    <div class="jpg-jobs-list__grid">
+    <div class="jpg-jobs-list__grid jpg-jobs-list__grid--<?php echo $esc($cardStyle); ?>">
         <?php foreach ($profiles as $job): ?>
         <?php
             $jobUrl  = '/jobs/' . htmlspecialchars($job->slug ?? '', ENT_QUOTES);
             $typeLabel   = $typeLabels[$job->employment_type ?? ''] ?? ($job->employment_type ?? '');
             $remoteLabel = $remoteLabels[$job->remote_option ?? ''] ?? ($job->remote_option ?? '');
         ?>
-        <article class="jpg-job-card-list">
+        <article class="jpg-job-card-list jpg-job-card-list--<?php echo $esc($cardStyle); ?>">
             <div class="jpg-job-card-list__body">
                 <h2 class="jpg-job-card-list__title">
                     <a href="<?php echo $esc($jobUrl); ?>"><?php echo $esc($job->title ?? ''); ?></a>
                 </h2>
 
                 <div class="jpg-job-card-list__meta">
-                    <?php if (!empty($job->company_name)): ?>
+                    <?php if ($showCompany && !empty($job->company_name)): ?>
                     <span class="jpg-meta-item">
                         🏢&nbsp;<?php echo $esc($job->company_name); ?>
                     </span>
@@ -180,12 +189,12 @@ $showCount = ($ds['pd_list_show_count'] ?? '1') === '1';
                         💼&nbsp;<?php echo $esc($typeLabel); ?>
                     </span>
                     <?php endif; ?>
-                    <?php if ($remoteLabel !== ''): ?>
+                    <?php if ($showRemote && $remoteLabel !== ''): ?>
                     <span class="jpg-meta-item jpg-meta-remote">
                         🌐&nbsp;<?php echo $esc($remoteLabel); ?>
                     </span>
                     <?php endif; ?>
-                    <?php if (!empty($job->salary_min) || !empty($job->salary_max)): ?>
+                    <?php if ($showSalary && (!empty($job->salary_min) || !empty($job->salary_max))): ?>
                     <span class="jpg-meta-item jpg-meta-salary">
                         💰&nbsp;<?php
                             $salMin = (int) ($job->salary_min ?? 0);
@@ -200,9 +209,14 @@ $showCount = ($ds['pd_list_show_count'] ?? '1') === '1';
                         ?>
                     </span>
                     <?php endif; ?>
+                    <?php if ($showCategory && !empty($job->category_name)): ?>
+                    <span class="jpg-meta-item jpg-meta-category">
+                        🗂️&nbsp;<?php echo $esc($job->category_name); ?>
+                    </span>
+                    <?php endif; ?>
                 </div>
 
-                <?php if (!empty(trim($job->summary ?? ''))): ?>
+                <?php if ($showSummary && !empty(trim($job->summary ?? ''))): ?>
                 <p class="jpg-job-card-list__summary">
                     <?php echo $esc(mb_strimwidth(strip_tags($job->summary), 0, 200, '…')); ?>
                 </p>
