@@ -59,11 +59,11 @@ class CMS_JPG_Installer
         try {
             $db  = \CMS\Database::instance();
             $row = $db->get_row(
-                "SELECT setting_value FROM {$db->getPrefix()}settings
-                 WHERE setting_key = 'jpg_db_version'",
+                "SELECT option_value FROM {$db->getPrefix()}settings
+                 WHERE option_name = 'jpg_db_version'",
                 []
             );
-            return $row ? (string) $row->setting_value : '0';
+            return $row ? (string) $row->option_value : '0';
         } catch (\Throwable $e) {
             return '0';
         }
@@ -76,9 +76,9 @@ class CMS_JPG_Installer
             $p  = $db->getPrefix();
             $pdo = $db->getPdo();
             $pdo->exec(
-                "INSERT INTO {$p}settings (setting_key, setting_value)
+                "INSERT INTO {$p}settings (option_name, option_value)
                  VALUES ('jpg_db_version', '" . JPG_DB_VERSION . "')
-                 ON DUPLICATE KEY UPDATE setting_value = '" . JPG_DB_VERSION . "'"
+                 ON DUPLICATE KEY UPDATE option_value = '" . JPG_DB_VERSION . "'"
             );
         } catch (\Throwable $e) {
             error_log('CMS_JPG_Installer::store_db_version() error: ' . $e->getMessage());
