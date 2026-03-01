@@ -71,6 +71,7 @@ final class CMS_Companies_Admin
         $companies  = $data['companies']  ?? [];
         $tab        = $data['tab']        ?? 'overview';
         $filter     = $data['filter']     ?? 'all';
+        $search     = $data['search']     ?? '';
         $industries = $data['industries'] ?? [];
         $presets    = $data['presets']    ?? ['general' => [], 'special' => [], 'quality' => []];
         $settings   = $data['settings']   ?? [];
@@ -78,30 +79,45 @@ final class CMS_Companies_Admin
         $sec        = CMS\Security::instance();
 
         $s = array_merge([
-            'archive_title'              => 'Unternehmen & Partner',
-            'archive_description'        => 'Entdecken Sie Unternehmen und IT-Partner in unserem Netzwerk.',
-            'archive_per_page'           => '12',
-            'archive_header_icon'        => '🏢',
-            'archive_header_bg_from'     => '#e0f2fe',
-            'archive_header_bg_to'       => '#bae6fd',
-            'archive_header_title_color' => '#0c4a6e',
-            'design_primary_color'       => '#0891b2',
-            'design_accent_color'        => '#0284c7',
-            'design_show_industry'       => '1',
-            'design_show_city'           => '1',
-            'design_show_employees'      => '0',
-            'design_show_website'        => '1',
-            'design_border_radius'       => '12',
-            'design_grid_columns'        => 'auto',
-            'design_cta_color'           => '#0c4a6e',
-            'design_card_bg'             => '#f0f9ff',
-            'design_detail_header_bg'    => '#e0f2fe',
-            'design_detail_header_bg_to' => '#bae6fd',
-            'design_detail_header_color' => '#0c4a6e',
-            'design_detail_accent'       => '#0891b2',
-            'design_partner_color'       => '#9ca3af',
-            'design_top_partner_color'   => '#d97706',
-            'design_sponsor_color'       => '#7c3aed',
+            'archive_title'                 => 'Unternehmen & Partner',
+            'archive_description'           => 'Entdecken Sie Unternehmen und IT-Partner in unserem Netzwerk.',
+            'archive_per_page'              => '12',
+            'archive_header_icon'           => '🏢',
+            'archive_header_bg_from'        => '#e0f2fe',
+            'archive_header_bg_to'          => '#bae6fd',
+            'archive_header_title_color'    => '#0c4a6e',
+            'design_primary_color'          => '#0891b2',
+            'design_accent_color'           => '#0284c7',
+            'design_show_industry'          => '1',
+            'design_show_city'              => '1',
+            'design_show_employees'         => '0',
+            'design_show_website'           => '1',
+            'design_border_radius'          => '12',
+            'design_grid_columns'           => 'auto',
+            'design_cta_label'              => 'Profil ansehen',
+            'design_cta_color'              => '#0c4a6e',
+            'design_card_bg'                => '#f0f9ff',
+            'design_detail_header_bg'       => '#e0f2fe',
+            'design_detail_header_bg_to'    => '#bae6fd',
+            'design_detail_header_color'    => '#0c4a6e',
+            'design_detail_accent'          => '#0891b2',
+            'design_partner_color'          => '#9ca3af',
+            'design_top_partner_color'      => '#d97706',
+            'design_sponsor_color'          => '#7c3aed',
+            // Badge-Sichtbarkeit
+            'design_show_sponsor_badge'      => '1',
+            'design_show_top_partner_badge'  => '1',
+            'design_show_partner_badge'      => '1',
+            'design_show_inactive_badge'     => '1',
+            // Badge-Farben individuell
+            'design_badge_sponsor_bg'        => '#f3e8ff',
+            'design_badge_sponsor_color'     => '#6b21a8',
+            'design_badge_top_bg'            => '#fef3c7',
+            'design_badge_top_color'         => '#92400e',
+            'design_badge_partner_bg'        => '#f1f5f9',
+            'design_badge_partner_color'     => '#475569',
+            'design_badge_inactive_bg'       => '#f1f5f9',
+            'design_badge_inactive_color'    => '#64748b',
         ], $settings);
 
         $total      = count($companies);
@@ -117,13 +133,14 @@ final class CMS_Companies_Admin
                 <p>Unternehmensprofile, Branchen und Design verwalten</p>
             </div>
             <div class="header-actions">
-                <a href="<?= SITE_URL ?>/admin/companies/new" class="btn btn-primary">+ Unternehmen anlegen</a>
+                <a href="<?= SITE_URL ?>/companies" class="btn btn-secondary" target="_blank">🌐 Öffentlich</a>
+                <a href="<?= SITE_URL ?>/admin/companies/new" class="btn btn-primary">➕ Unternehmen anlegen</a>
             </div>
         </div>
 
-        <?php if (isset($_GET['saved'])): ?><div class="alert alert-success" style="margin-bottom:1rem;">✓ Einstellungen gespeichert.</div><?php endif; ?>
-        <?php if (isset($_GET['deleted'])): ?><div class="alert alert-success" style="margin-bottom:1rem;">✓ Eintrag gelöscht.</div><?php endif; ?>
-        <?php if (isset($_GET['error'])): ?><div class="alert alert-error" style="margin-bottom:1rem;">✕ Fehler aufgetreten.</div><?php endif; ?>
+        <?php if (isset($_GET['saved'])): ?><div class="alert alert-success">✅ Einstellungen gespeichert.</div><?php endif; ?>
+        <?php if (isset($_GET['deleted'])): ?><div class="alert alert-success">✅ Eintrag gelöscht.</div><?php endif; ?>
+        <?php if (isset($_GET['error'])): ?><div class="alert alert-error">❌ Fehler: <?= htmlspecialchars($_GET['error']) ?></div><?php endif; ?>
 
         <!-- Tabs -->
         <div class="co-tabs">
@@ -151,50 +168,55 @@ final class CMS_Companies_Admin
             elseif ($filter === 'partner') $filtered = array_values(array_filter($companies, fn($c) => !$c->is_sponsor && !$c->is_top_partner && (bool)$c->is_partner));
         ?>
 
-        <?php
-        $statItems = [
-            ['icon' => '🏢', 'value' => $total,      'label' => 'Gesamt',      'color' => ''],
-            ['icon' => '💜', 'value' => $sponsors,   'label' => 'Sponsoren',   'color' => 'color:#7c3aed'],
-            ['icon' => '🥇', 'value' => $topPartner, 'label' => 'Top-Partner', 'color' => 'color:#b45309'],
-            ['icon' => '🤝', 'value' => $partner,    'label' => 'Partner',     'color' => 'color:#6b7280'],
-        ];
-        ?>
-        <div class="co-stats">
-            <?php foreach ($statItems as $st): ?>
-            <div class="co-stat">
-                <span class="co-stat-icon"><?= $st['icon'] ?></span>
-                <span class="co-stat-val"<?= $st['color'] ? ' style="' . $st['color'] . '"' : '' ?>><?= $st['value'] ?></span>
-                <span class="co-stat-lbl"><?= $st['label'] ?></span>
+        <!-- Stats -->
+        <div class="dashboard-grid">
+            <?php
+            $statItems = [
+                ['🏢', 'Gesamt',      $total,      ''],
+                ['💜', 'Sponsoren',   $sponsors,   'color:#7c3aed'],
+                ['🥇', 'Top-Partner', $topPartner, 'color:#b45309'],
+                ['🤝', 'Partner',     $partner,    'color:#6b7280'],
+            ];
+            foreach ($statItems as [$si_icon, $si_label, $si_value, $si_style]): ?>
+            <div class="stat-card">
+                <div class="stat-icon"><?= $si_icon ?></div>
+                <div class="stat-number"<?= $si_style ? ' style="' . $si_style . '"' : '' ?>><?= (int)$si_value ?></div>
+                <div class="stat-label"><?= $si_label ?></div>
             </div>
             <?php endforeach; ?>
         </div>
 
-        <div class="co-filter-bar">
-            <?php
-            $filterOptions = [
-                'all'     => "Alle ({$total})",
-                'sponsor' => "💜 Sponsoren ({$sponsors})",
-                'top'     => "🥇 Top-Partner ({$topPartner})",
-                'partner' => "🤝 Partner ({$partner})",
-            ];
-            foreach ($filterOptions as $fk => $fl): ?>
-                <a href="?tab=overview&filter=<?= $fk ?>"
-                   class="co-filter-btn <?= $filter === $fk ? 'co-filter-btn--active' : '' ?>">
-                    <?= $fl ?>
-                </a>
-            <?php endforeach; ?>
+        <!-- Filter Bar -->
+        <div class="admin-card" style="margin-bottom:1.25rem;">
+            <form method="GET" style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;">
+                <input type="hidden" name="tab" value="overview">
+                <div class="form-group" style="margin:0;flex:2;min-width:220px;">
+                    <label class="form-label">Name / Stichwort</label>
+                    <input type="text" name="search" class="form-control" placeholder="Name, Stadt, Beschreibung…" value="<?= htmlspecialchars($search) ?>">
+                </div>
+                <div class="form-group" style="margin:0;flex:1;min-width:160px;">
+                    <label class="form-label">Typ / Stufe</label>
+                    <select name="filter" class="form-control">
+                        <option value="all"     <?= $filter==='all'     ?'selected':'' ?>>Alle (<?= $total ?>)</option>
+                        <option value="sponsor" <?= $filter==='sponsor' ?'selected':'' ?>>💜 Sponsoren (<?= $sponsors ?>)</option>
+                        <option value="top"     <?= $filter==='top'     ?'selected':'' ?>>🥇 Top-Partner (<?= $topPartner ?>)</option>
+                        <option value="partner" <?= $filter==='partner' ?'selected':'' ?>>🤝 Partner (<?= $partner ?>)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">🔍 Filtern</button>
+                <?php if ($search || $filter !== 'all'): ?><a href="?tab=overview" class="btn btn-secondary">✕ Reset</a><?php endif; ?>
+            </form>
         </div>
 
         <?php if (empty($filtered)): ?>
-            <div class="co-empty">
-                <div style="font-size:3rem;margin-bottom:1rem;">🏢</div>
-                <p>Keine Unternehmen<?= $filter !== 'all' ? ' in diesem Filter' : '' ?> gefunden.</p>
-                <?php if ($filter === 'all'): ?>
-                    <a href="<?= SITE_URL ?>/admin/companies/new" class="btn btn-primary" style="margin-top:1rem;">
-                        Erstes Unternehmen anlegen
-                    </a>
-                <?php endif; ?>
-            </div>
+        <div class="empty-state">
+            <p style="font-size:2.5rem;margin:0;">🏢</p>
+            <p><strong>Keine Unternehmen<?= $filter !== 'all' ? ' in diesem Filter' : '' ?> gefunden</strong></p>
+            <?php if ($search): ?><p class="text-muted">Keine Treffer für «<?= htmlspecialchars($search) ?>».</p><?php endif; ?>
+            <?php if ($filter === 'all' && !$search): ?>
+                <a href="<?= SITE_URL ?>/admin/companies/new" class="btn btn-primary" style="margin-top:1rem;">➕ Erstes Unternehmen anlegen</a>
+            <?php endif; ?>
+        </div>
         <?php else: ?>
         <div class="co-adm-grid">
         <?php foreach ($filtered as $co):
@@ -207,23 +229,32 @@ final class CMS_Companies_Admin
             $colors    = [['#0891b2','#0284c7'],['#7c3aed','#a855f7'],['#059669','#34d399'],['#d97706','#f59e0b'],['#e11d48','#fb7185']];
             $cp        = $colors[abs(crc32($co->name)) % count($colors)];
             $bg        = "linear-gradient(135deg,{$cp[0]},{$cp[1]})";
+            $showSponsorBadge  = ($s['design_show_sponsor_badge']     ?? '1') !== '0';
+            $showTopBadge      = ($s['design_show_top_partner_badge']  ?? '1') !== '0';
+            $showPartnerBadge  = ($s['design_show_partner_badge']      ?? '1') !== '0';
+            $showInactiveBadge = ($s['design_show_inactive_badge']     ?? '1') !== '0';
+            $showCity          = ($s['design_show_city']      ?? '1') !== '0';
+            $showEmployees     = ($s['design_show_employees']  ?? '0') !== '0';
+            $showWebsite       = ($s['design_show_website']    ?? '1') !== '0';
         ?>
             <div class="co-adm-card <?= $cardCls ?>">
                 <div class="co-adm-top">
                     <div class="co-adm-avatar" style="background:<?= $bg ?>"><?= $sec->escape($initials) ?></div>
                     <div class="co-adm-ident">
-                        <?php if ($isSponsor): ?>
-                            <span class="co-adm-badge co-adm-badge--sponsor">Sponsor</span>
-                        <?php elseif ($isTop): ?>
-                            <span class="co-adm-badge co-adm-badge--top">Top-Partner</span>
-                        <?php elseif ($isPartner): ?>
-                            <span class="co-adm-badge co-adm-badge--partner">Partner</span>
-                        <?php else: ?>
-                            <span class="co-adm-badge co-adm-badge--default">Unternehmen</span>
-                        <?php endif; ?>
-                        <?php if ($isInactive): ?>
-                            <span class="co-adm-badge co-adm-badge--inactive" title="Inaktiv – nicht öffentlich sichtbar">🔒 Inaktiv</span>
-                        <?php endif; ?>
+                        <div class="co-adm-badges">
+                            <?php if ($isSponsor && $showSponsorBadge): ?>
+                                <span class="co-adm-badge" style="background:<?= htmlspecialchars($s['design_badge_sponsor_bg']) ?>;color:<?= htmlspecialchars($s['design_badge_sponsor_color']) ?>;border:1px solid <?= htmlspecialchars($s['design_badge_sponsor_bg']) ?>;">💜 Sponsor</span>
+                            <?php elseif ($isTop && $showTopBadge): ?>
+                                <span class="co-adm-badge" style="background:<?= htmlspecialchars($s['design_badge_top_bg']) ?>;color:<?= htmlspecialchars($s['design_badge_top_color']) ?>;border:1px solid <?= htmlspecialchars($s['design_badge_top_bg']) ?>;">🥇 Top-Partner</span>
+                            <?php elseif ($isPartner && $showPartnerBadge): ?>
+                                <span class="co-adm-badge" style="background:<?= htmlspecialchars($s['design_badge_partner_bg']) ?>;color:<?= htmlspecialchars($s['design_badge_partner_color']) ?>;border:1px solid <?= htmlspecialchars($s['design_badge_partner_bg']) ?>;">🤝 Partner</span>
+                            <?php else: ?>
+                                <span class="co-adm-badge co-adm-badge--default">🏢 Unternehmen</span>
+                            <?php endif; ?>
+                            <?php if ($isInactive && $showInactiveBadge): ?>
+                                <span class="co-adm-badge" style="background:<?= htmlspecialchars($s['design_badge_inactive_bg']) ?>;color:<?= htmlspecialchars($s['design_badge_inactive_color']) ?>;">🔒 Inaktiv</span>
+                            <?php endif; ?>
+                        </div>
                         <p class="co-adm-name"><?= $sec->escape($co->name) ?></p>
                         <?php if (!empty($co->industry)): ?>
                             <p class="co-adm-sub"><?= $sec->escape($co->industry) ?></p>
@@ -232,24 +263,24 @@ final class CMS_Companies_Admin
                 </div>
                 <?php
                 $pills = [];
-                if (!empty($co->location_city)) $pills[] = ['📍', $sec->escape($co->location_city)];
-                if (!empty($co->employee_count)) $pills[] = ['👥', $co->employee_count . ' Mitarb.'];
-                if (!empty($co->website))       $pills[] = ['🌐', parse_url($co->website, PHP_URL_HOST) ?: $sec->escape($co->website)];
+                if ($showCity      && !empty($co->location_city)) $pills[] = ['📍', $sec->escape($co->location_city), ''];
+                if ($showEmployees && !empty($co->employee_count)) $pills[] = ['👥', $co->employee_count . ' Mitarb.', ''];
+                if ($showWebsite   && !empty($co->website))        $pills[] = ['🌐', parse_url($co->website, PHP_URL_HOST) ?: $sec->escape($co->website), 'accent'];
                 if ($pills): ?>
                 <div class="co-adm-pills">
-                    <?php foreach ($pills as [$ico, $txt]): ?>
-                        <span class="co-adm-pill"><?= $ico ?> <?= $txt ?></span>
+                    <?php foreach ($pills as [$ico, $txt, $cls]): ?>
+                        <span class="co-adm-pill<?= $cls ? ' co-adm-pill--accent' : '' ?>"><?= $ico ?> <?= $txt ?></span>
                     <?php endforeach; ?>
                 </div>
                 <?php endif; ?>
                 <div class="co-adm-foot">
                     <a href="<?= cms_company_url($co) ?>" target="_blank"
-                       class="co-adm-btn co-adm-btn-ghost">👁 Ansehen</a>
+                       class="co-adm-btn co-adm-btn-ghost">🌐</a>
                     <a href="<?= SITE_URL ?>/admin/companies/edit/<?= (int)$co->id ?>"
                        class="co-adm-btn co-adm-btn-primary">✏️ Bearbeiten</a>
                     <button type="button" class="co-adm-btn co-adm-btn-danger"
                             onclick="openCoDeleteModal(<?= (int)$co->id ?>, '<?= $sec->escape(addslashes($co->name)) ?>')">
-                        🗑
+                        🗑️
                     </button>
                 </div>
             </div>
