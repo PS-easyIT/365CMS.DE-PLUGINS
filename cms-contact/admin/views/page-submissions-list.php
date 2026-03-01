@@ -1,0 +1,154 @@
+<?php declare(strict_types=1); if (!defined('ABSPATH')) exit;
+$e = fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$statusMap = [
+    'unread'   => ['label' => 'Ungelesen', 'class' => 'inactive'],
+    'read'     => ['label' => 'Gelesen',   'class' => 'active'],
+    'replied'  => ['label' => 'Beantw.',   'class' => 'active'],
+    'archived' => ['label' => 'Archiviert','class' => 'inactive'],
+    'spam'     => ['label' => 'Spam',      'class' => 'danger'],
+];
+?>
+
+<!-- Page Header -->
+<div class="admin-page-header">
+    <div>
+        <h2>📩 Nachrichten</h2>
+        <p><?php echo (int)$total; ?> Nachricht<?php echo $total !== 1 ? 'en' : ''; ?> insgesamt</p>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="admin-card" style="margin-bottom:1rem;">
+    <form method="GET" style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;">
+        <input type="hidden" name="page" value="contact-submissions">
+        <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-size:.8rem;">Formular</label>
+            <select name="form_id" class="form-control" style="min-width:160px;">
+                <option value="">Alle Formulare</option>
+                <?php foreach ($forms as $f): ?>
+                <option value="<?php echo (int)$f['id']; ?>" <?php echo $filterFormId === (int)$f['id'] ? 'selected' : ''; ?>>
+                    <?php echo $e($f['title']); ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-size:.8rem;">Status</label>
+            <select name="status" class="form-control" style="min-width:130px;">
+                <option value="">Alle</option>
+                <?php foreach ($statusMap as $key => $s): ?>
+                <option value="<?php echo $key; ?>" <?php echo $filterStatus === $key ? 'selected' : ''; ?>><?php echo $s['label']; ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+            <label class="form-label" style="font-size:.8rem;">Suche</label>
+            <input type="text" name="search" class="form-control" style="min-width:180px;"
+                   value="<?php echo $e($filterSearch); ?>" placeholder="Name / E-Mail ...">
+        </div>
+        <button type="submit" class="btn btn-secondary btn-sm">🔍 Filtern</button>
+        <?php if ($filterFormId || $filterStatus || $filterSearch): ?>
+        <a href="?page=contact-submissions" class="btn btn-secondary btn-sm">✖ Zurücksetzen</a>
+        <?php endif; ?>
+    </form>
+</div>
+
+<!-- Bulk-Aktionen + Tabelle -->
+<?php if (empty($submissions)): ?>
+<div class="admin-card">
+    <div class="empty-state">
+        <p style="font-size:2.5rem;margin:0;">📭</p>
+        <p><strong>Keine Nachrichten gefunden</strong></p>
+        <p class="text-muted">Es wurden keine Nachrichten mit den gewählten Filtern gefunden.</p>
+    </div>
+</div>
+<?php else: ?>
+<form method="POST" id="bulkForm">
+    <input type="hidden" name="form_action" value="bulk_action">
+    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+
+    <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;">
+        <select name="bulk_type" class="form-control" style="max-width:200px;">
+            <option value="">Aktion wählen …</option>
+            <option value="mark_read">✅ Als gelesen markieren</option>
+            <option value="mark_spam">🚫 Als Spam markieren</option>
+            <option value="delete">🗑️ Löschen</option>
+        </select>
+        <button type="submit" class="btn btn-secondary btn-sm">Ausführen</button>
+    </div>
+
+    <div class="admin-card" style="padding:0;overflow:hidden;">
+        <div class="users-table-container">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th style="width:40px;"><input type="checkbox" id="selectAll"></th>
+                        <th>Absender</th>
+                        <th>Betreff</th>
+                        <th>Formular</th>
+                        <th>Status</th>
+                        <th>Datum</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($submissions as $sub): ?>
+                    <?php
+                        $meta = [];
+                        foreach (($sub['_meta'] ?? []) as $m) {
+                            $meta[$m['field_name']] = $m['field_value'];
+                        }
+                        $senderName  = $meta['name']    ?? $meta['sender_name'] ?? '—';
+                        $senderEmail = $meta['email']   ?? $meta['sender_email'] ?? '';
+                        $subject     = $meta['subject'] ?? $meta['betreff'] ?? '(kein Betreff)';
+                        $st = $statusMap[$sub['status']] ?? $statusMap['unread'];
+                    ?>
+                    <tr style="<?php echo $sub['status'] === 'unread' ? 'font-weight:600;' : ''; ?>">
+                        <td><input type="checkbox" name="submission_ids[]" value="<?php echo (int)$sub['id']; ?>"></td>
+                        <td>
+                            <?php echo $e($senderName); ?>
+                            <?php if ($senderEmail): ?>
+                            <br><small style="color:#64748b;"><?php echo $e($senderEmail); ?></small>
+                            <?php endif; ?>
+                        </td>
+                        <td><?php echo $e(mb_strimwidth($subject, 0, 50, '…')); ?></td>
+                        <td><span style="font-size:.8rem;"><?php echo $e($sub['form_title'] ?? '—'); ?></span></td>
+                        <td><span class="status-badge <?php echo $st['class']; ?>"><?php echo $st['label']; ?></span></td>
+                        <td style="white-space:nowrap;font-size:.85rem;"><?php echo date('d.m.Y H:i', strtotime($sub['created_at'])); ?></td>
+                        <td>
+                            <div style="display:flex;gap:.35rem;">
+                                <a href="?page=contact-submissions&action=view&id=<?php echo (int)$sub['id']; ?>"
+                                   class="btn btn-sm btn-secondary" title="Anzeigen">👁️</a>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</form>
+
+<!-- Paginierung -->
+<?php if ($pages > 1): ?>
+<div style="display:flex;gap:.5rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap;">
+    <?php if ($page > 1): ?>
+    <a href="?page=contact-submissions&p=<?php echo $page - 1; ?>&form_id=<?php echo $filterFormId; ?>&status=<?php echo $e($filterStatus); ?>&search=<?php echo urlencode($filterSearch); ?>"
+       class="btn btn-secondary btn-sm">← Zurück</a>
+    <?php endif; ?>
+    <span style="padding:.375rem .875rem;color:#64748b;font-size:.875rem;">
+        Seite <?php echo $page; ?> von <?php echo $pages; ?>
+    </span>
+    <?php if ($page < $pages): ?>
+    <a href="?page=contact-submissions&p=<?php echo $page + 1; ?>&form_id=<?php echo $filterFormId; ?>&status=<?php echo $e($filterStatus); ?>&search=<?php echo urlencode($filterSearch); ?>"
+       class="btn btn-secondary btn-sm">Weiter →</a>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
+<?php endif; ?>
+
+<script>
+document.getElementById('selectAll')?.addEventListener('change', function() {
+    document.querySelectorAll('input[name="submission_ids[]"]').forEach(cb => cb.checked = this.checked);
+});
+</script>

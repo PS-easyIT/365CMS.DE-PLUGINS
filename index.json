@@ -36,6 +36,11 @@
       "slug": "cms-jobprofile-generator",
       "name": "CMS Job Profile Generator",
       "manifest": "PLUGINS/cms-jobprofile-generator/update.json"
+    },
+    {
+      "slug": "cms-contact",
+      "name": "CMS Contact",
+      "manifest": "PLUGINS/cms-contact/update.json"
     }
   ]
 }

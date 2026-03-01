@@ -1,0 +1,45 @@
+/**
+ * CMS Contact – Admin Stylesheet
+ * Ergänzende Styles für Admin-Seiten des Contact-Plugins.
+ *
+ * @package CMS_Contact
+ * @version 1.0.0
+ */
+
+/* Template-Auswahl-Karten */
+.contact-template-card {
+    transition: all .2s ease;
+}
+
+.contact-template-card:hover {
+    border-color: #93c5fd !important;
+    background: #f0f7ff;
+}
+
+/* Feld-Drag-Rows */
+.contact-field-row.dragging {
+    opacity: .4;
+    box-shadow: 0 0 0 2px #3b82f6;
+}
+
+.contact-field-row:hover {
+    background: #f0f7ff !important;
+    border-color: #93c5fd !important;
+}
+
+.contact-field-row .drag-handle:hover {
+    color: #3b82f6 !important;
+}
+
+/* Stat Trend Indicator */
+.contact-trend-up {
+    color: #10b981;
+    font-size: .8rem;
+    font-weight: 600;
+}
+
+.contact-trend-down {
+    color: #ef4444;
+    font-size: .8rem;
+    font-weight: 600;
+}
