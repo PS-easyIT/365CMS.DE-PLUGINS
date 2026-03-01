@@ -213,7 +213,7 @@ $pd    = fn(string $k, string $d = '') => htmlspecialchars($settings['pd_' . $k]
             <select name="font_body" class="form-control">
                 <?php
                 $fonts = [
-                    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' => 'System (Standard)',
+                    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' => 'Standard-Systemschrift',
                     '"Inter", sans-serif'     => 'Inter',
                     '"Open Sans", sans-serif'  => 'Open Sans',
                     '"Lato", sans-serif'       => 'Lato',
@@ -521,18 +521,22 @@ $pd    = fn(string $k, string $d = '') => htmlspecialchars($settings['pd_' . $k]
             <label class="form-label">Button-Hintergrund (leer = Primärfarbe)</label>
             <div style="display:flex;gap:.5rem;align-items:center;">
                 <input type="color" name="btn_primary_bg" value="<?php echo $pd('btn_primary_bg', '#3b82f6'); ?>"
-                       style="width:48px;height:36px;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;">
+                       style="width:48px;height:36px;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;"
+                       oninput="this.nextElementSibling.value=this.value">
                 <input type="text" name="btn_primary_bg" class="form-control" value="<?php echo $pd('btn_primary_bg', ''); ?>"
-                       style="max-width:120px;font-family:monospace;" placeholder="auto">
+                       style="max-width:120px;font-family:monospace;" placeholder="auto"
+                       oninput="if(this.value) this.previousElementSibling.value=this.value">
             </div>
         </div>
         <div class="form-group">
             <label class="form-label">Button-Textfarbe</label>
             <div style="display:flex;gap:.5rem;align-items:center;">
                 <input type="color" name="btn_primary_text" value="<?php echo $pd('btn_primary_text', '#ffffff'); ?>"
-                       style="width:48px;height:36px;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;">
+                       style="width:48px;height:36px;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;"
+                       oninput="this.nextElementSibling.value=this.value">
                 <input type="text" name="btn_primary_text" class="form-control" value="<?php echo $pd('btn_primary_text', '#ffffff'); ?>"
-                       style="max-width:120px;font-family:monospace;">
+                       style="max-width:120px;font-family:monospace;"
+                       oninput="this.previousElementSibling.value=this.value">
             </div>
         </div>
     </div>

@@ -120,14 +120,14 @@ $applyText   = $ds('btn_apply_text', '📩 Jetzt bewerben');
         <div class="jpg-modern-card">
             <h2>🎓 Ihr Profil</h2>
             <?php
-            $must = array_filter($requirements, fn($r) => ($r->type ?? 'must') === 'must');
-            $nice = array_filter($requirements, fn($r) => ($r->type ?? 'must') === 'nice');
+            $must = array_filter($requirements, fn($r) => ($r->req_type ?? 'must') === 'must');
+            $nice = array_filter($requirements, fn($r) => ($r->req_type ?? 'must') === 'nice');
             ?>
             <?php if ($must): ?>
             <h3>Anforderungen</h3>
             <ul class="jpg-modern-list">
             <?php foreach ($must as $r): ?>
-                <li><?php echo $esc($r->description ?? $r->requirement_text ?? ''); ?></li>
+                <li><?php echo $esc($r->req_text ?? ''); ?></li>
             <?php endforeach; ?>
             </ul>
             <?php endif; ?>
@@ -135,7 +135,7 @@ $applyText   = $ds('btn_apply_text', '📩 Jetzt bewerben');
             <h3 style="margin-top:1rem;">Von Vorteil</h3>
             <ul class="jpg-modern-list jpg-modern-list--nice">
             <?php foreach ($nice as $r): ?>
-                <li><?php echo $esc($r->description ?? $r->requirement_text ?? ''); ?></li>
+                <li><?php echo $esc($r->req_text ?? ''); ?></li>
             <?php endforeach; ?>
             </ul>
             <?php endif; ?>

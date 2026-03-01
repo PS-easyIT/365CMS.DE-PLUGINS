@@ -103,11 +103,17 @@ trait CMS_JPG_Page_Public_Design_Trait
         // Checkbox-Felder erkennen (Standard-Wert '1' oder '0')
         $checkboxFields = self::get_checkbox_fields_for_tab($tab);
 
+        // Felder die NICHT durch strip_tags laufen dürfen (HTML/CSS-Inhalt)
+        $rawFields = ['custom_css', 'custom_head_code'];
+
         $data = [];
         foreach ($fields as $key => $default) {
             if (in_array($key, $checkboxFields, true)) {
                 // Unchecked Checkboxen senden keinen POST-Wert → '0' speichern
                 $data[$key] = isset($_POST[$key]) ? '1' : '0';
+            } elseif (in_array($key, $rawFields, true)) {
+                // HTML/CSS-Felder: nur trimmen, nicht strip_tags
+                $data[$key] = trim((string) ($_POST[$key] ?? $default));
             } else {
                 $data[$key] = sanitize_text_field($_POST[$key] ?? $default);
             }

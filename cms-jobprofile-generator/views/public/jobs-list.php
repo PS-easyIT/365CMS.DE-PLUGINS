@@ -58,10 +58,10 @@ $hasFilter      = $companyFilter !== '' || $typeFilter !== '' || $locationFilter
                || $categoryFilter !== '' || $remoteFilter !== '' || $salaryMin > 0;
 ?>
 <?php
-// Design-Settings Helfer
+// Design-Settings Helfer (Keys in DB mit pd_-Prefix gespeichert)
 $ds = $designSettings ?? [];
-$showTitle = ($ds['list_show_title'] ?? '1') === '1';
-$showCount = ($ds['list_show_count'] ?? '1') === '1';
+$showTitle = ($ds['pd_list_show_title'] ?? '1') === '1';
+$showCount = ($ds['pd_list_show_count'] ?? '1') === '1';
 ?>
 <div class="jpg-public jpg-jobs-list">
 

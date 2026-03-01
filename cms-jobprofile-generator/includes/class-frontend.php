@@ -1083,17 +1083,29 @@ class CMS_JPG_Frontend
             return;
         }
 
-        // Basis-CSS
-        echo '<link rel="stylesheet" href="'
-            . htmlspecialchars(JPG_URL . 'assets/css/public.css')
-            . '?v=' . filemtime($cssFile) . '">' . "\n";
+        // CSS über head-Hook einbinden (nicht direkt echo'en!)
+        // Muss VOR getHeader() registriert werden, aber innerhalb <head> ausgegeben werden.
+        if (class_exists('CMS\\Hooks')) {
+            \CMS\Hooks::addAction('head', function () use ($cssFile): void {
+                // Basis-CSS
+                echo '<link rel="stylesheet" href="'
+                    . htmlspecialchars(JPG_URL . 'assets/css/public.css')
+                    . '?v=' . filemtime($cssFile) . '">' . "\n";
 
-        // Public Design CSS aus Admin-Einstellungen injizieren
-        $this->inject_public_design_css();
+                // Public Design CSS aus Admin-Einstellungen injizieren
+                $this->inject_public_design_css();
 
-        // Custom Branding Injection (Phase 4.3)
-        if (function_exists('user_has_feature') && user_has_feature('custom_branding')) {
-            $this->inject_custom_branding();
+                // Custom Branding Injection (Phase 4.3)
+                if (function_exists('user_has_feature') && user_has_feature('custom_branding')) {
+                    $this->inject_custom_branding();
+                }
+            }, 20);
+        } else {
+            // Fallback ohne Hooks: direktes Echo
+            echo '<link rel="stylesheet" href="'
+                . htmlspecialchars(JPG_URL . 'assets/css/public.css')
+                . '?v=' . filemtime($cssFile) . '">' . "\n";
+            $this->inject_public_design_css();
         }
     }
 
@@ -1111,6 +1123,13 @@ class CMS_JPG_Frontend
         $css = CMS_JPG_Admin_Pages::build_public_design_css();
         if (!empty($css) && $css !== ':root {}') {
             echo '<style id="jpg-public-design">' . $css . '</style>' . "\n";
+        }
+
+        // Custom Head Code injizieren (z.B. Google Fonts <link>)
+        $settings = CMS_JPG_Admin_Pages::get_public_design_settings();
+        $headCode = $settings['pd_custom_head_code'] ?? '';
+        if (!empty(trim($headCode))) {
+            echo "\n<!-- JPG Custom Head Code -->\n" . $headCode . "\n";
         }
     }
 
