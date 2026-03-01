@@ -131,12 +131,17 @@ trait CMS_Contact_Page_Submissions_Trait
         // Null-Werte entfernen
         $filters = array_filter($filters, fn($v) => $v !== null && $v !== '' && $v !== 0);
 
-        $submissions = CMS_Contact_Submissions::instance();
-        $items       = $submissions->get_all($filters, $offset, $perPage);
-        $total       = $submissions->count($filters);
-        $pages       = (int) ceil($total / $perPage);
+        $submissionsSvc = CMS_Contact_Submissions::instance();
+        $submissions    = $submissionsSvc->get_all($filters, $offset, $perPage);
+        $total          = $submissionsSvc->count($filters);
+        $pages          = (int) ceil($total / $perPage);
 
-        $allForms = CMS_Contact_Forms::instance()->get_all();
+        $forms          = CMS_Contact_Forms::instance()->get_all();
+
+        // View-kompatible Filter-Variablen
+        $filterFormId = (int) ($_GET['form_id'] ?? 0);
+        $filterStatus = sanitize_text_field($_GET['status'] ?? '');
+        $filterSearch = sanitize_text_field($_GET['search'] ?? '');
 
         include CMS_CONTACT_PLUGIN_DIR . 'admin/views/page-submissions-list.php';
     }

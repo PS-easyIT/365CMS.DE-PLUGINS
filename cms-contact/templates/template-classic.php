@@ -8,7 +8,7 @@
 declare(strict_types=1);
 if (!defined('ABSPATH')) exit;
 
-$e = fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
 $themeUrl = CMS\ThemeManager::instance()->getThemeUrl();
 $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
 ?>

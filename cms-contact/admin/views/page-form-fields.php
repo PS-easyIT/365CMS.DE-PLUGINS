@@ -1,5 +1,5 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit;
-$e = fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
 $fieldTypes  = CMS_Contact_Fields::get_field_types();
 $fieldWidths = CMS_Contact_Fields::get_field_widths();
 ?>
@@ -40,7 +40,7 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
              style="display:flex;align-items:center;gap:1rem;padding:.75rem 1rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;cursor:grab;transition:all .2s;">
             <span class="drag-handle" style="cursor:grab;font-size:1.2rem;color:#94a3b8;">⠿</span>
             <div style="flex:1;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
-                <strong style="min-width:120px;"><?php echo $e($field['label']); ?></strong>
+                <strong style="min-width:120px;"><?php echo $e($field['field_label'] ?? ''); ?></strong>
                 <span style="font-size:.8rem;color:#64748b;background:#e2e8f0;padding:.15rem .5rem;border-radius:4px;">
                     <?php echo $e($fieldTypes[$field['field_type']]['label'] ?? $field['field_type']); ?>
                 </span>
@@ -52,7 +52,7 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
                 <span style="font-size:.75rem;color:#3b82f6;">🔒 System</span>
                 <?php endif; ?>
             </div>
-            <span style="font-size:.8rem;color:#64748b;"><?php echo $e($fieldWidths[$field['width']]['label'] ?? $field['width']); ?></span>
+            <span style="font-size:.8rem;color:#64748b;"><?php echo $e($fieldWidths[$field['field_width'] ?? 'full'] ?? $field['field_width'] ?? 'full'); ?></span>
             <div style="display:flex;gap:.35rem;">
                 <button class="btn btn-sm btn-secondary" type="button"
                         onclick='editField(<?php echo json_encode($field, JSON_HEX_APOS | JSON_HEX_QUOT); ?>)'>✏️</button>
@@ -120,7 +120,7 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
                         <label class="form-label" for="field_width">Breite</label>
                         <select id="field_width" name="field_width" class="form-control">
                             <?php foreach ($fieldWidths as $key => $fw): ?>
-                            <option value="<?php echo $e($key); ?>"><?php echo $e($fw['label']); ?></option>
+                            <option value="<?php echo $e($key); ?>"><?php echo $e($fw); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -212,13 +212,13 @@ function editField(field) {
     document.getElementById('fieldModalTitle').textContent = '✏️ Feld bearbeiten';
     document.getElementById('fieldFormAction').value = 'update_field';
     document.getElementById('fieldFormId').value = field.id;
-    document.getElementById('field_label').value = field.label || '';
+    document.getElementById('field_label').value = field.field_label || '';
     document.getElementById('field_name').value = field.field_name || '';
     document.getElementById('field_type').value = field.field_type || 'text';
-    document.getElementById('field_width').value = field.width || 'full';
+    document.getElementById('field_width').value = field.field_width || 'full';
     document.getElementById('field_placeholder').value = field.placeholder || '';
-    document.getElementById('field_options').value = field.options || '';
-    document.getElementById('field_validation').value = field.validation_rule || '';
+    document.getElementById('field_options').value = field.options_json || '';
+    document.getElementById('field_validation').value = field.validation || '';
     document.getElementById('field_required').checked = !!parseInt(field.is_required);
     document.getElementById('field_system').checked = !!parseInt(field.is_system);
     toggleOptionsField();

@@ -371,8 +371,6 @@ final class CMS_Booking_Bookings
         $db = \CMS\Database::instance();
         $p  = $db->getPrefix();
 
-        $total     = (int) $db->prepare("SELECT COUNT(*) FROM {$p}bookings")->execute([]) ? $db->prepare("SELECT COUNT(*) FROM {$p}bookings")->fetchColumn() : 0;
-
         $stmt = $db->prepare("SELECT COUNT(*) FROM {$p}bookings");
         $stmt->execute();
         $total = (int) $stmt->fetchColumn();

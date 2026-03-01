@@ -47,30 +47,30 @@ final class CMS_Booking_Frontend
         $router = \CMS\Router::instance();
 
         // Slots-API (AJAX)
-        $router->get('/api/booking/slots/{providerId}/{date}', function ($providerId, $date) {
+        $router->addRoute('GET', '/api/booking/slots/:providerId/:date', function (string $providerId, string $date): void {
             $this->api_get_slots((int) $providerId, $date);
         });
 
         // ICS-Download
-        $router->get('/booking/ical/{bookingId}', function ($bookingId) {
+        $router->addRoute('GET', '/booking/ical/:bookingId', function (string $bookingId): void {
             $this->serve_ical((int) $bookingId);
         });
 
         // Bestätigungsseite
-        $router->get('/booking/confirm/{bookingId}', function ($bookingId) {
+        $router->addRoute('GET', '/booking/confirm/:bookingId', function (string $bookingId): void {
             $this->render_confirmation((int) $bookingId);
         });
 
         // Service-Buchungsformular
-        $router->get('/booking/{providerSlug}/{serviceSlug}', function ($providerSlug, $serviceSlug) {
+        $router->addRoute('GET', '/booking/:providerSlug/:serviceSlug', function (string $providerSlug, string $serviceSlug): void {
             $this->render_service_booking($providerSlug, $serviceSlug);
         });
-        $router->post('/booking/{providerSlug}/{serviceSlug}', function ($providerSlug, $serviceSlug) {
+        $router->addRoute('POST', '/booking/:providerSlug/:serviceSlug', function (string $providerSlug, string $serviceSlug): void {
             $this->process_booking($providerSlug, $serviceSlug);
         });
 
         // Provider-Übersicht (Services-Liste)
-        $router->get('/booking/{providerSlug}', function ($providerSlug) {
+        $router->addRoute('GET', '/booking/:providerSlug', function (string $providerSlug): void {
             $this->render_provider_page($providerSlug);
         });
     }

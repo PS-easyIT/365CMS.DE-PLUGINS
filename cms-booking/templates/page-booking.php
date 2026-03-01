@@ -11,7 +11,7 @@
 declare(strict_types=1);
 if (!defined('ABSPATH')) exit;
 
-$e = fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
 $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
 $old      = $old ?? [];
 $val      = fn(string $key, string $default = ''): string => $e($old[$key] ?? $default);

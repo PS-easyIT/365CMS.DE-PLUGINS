@@ -21,7 +21,7 @@ trait CMS_Booking_Page_Settings_Trait
         $p       = $db->getPrefix();
 
         // POST-Handler
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['settings_action'])) {
             if (!class_exists('CMS\Security') || !\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'booking_settings')) {
                 $error = 'Sicherheitscheck fehlgeschlagen.';
             } else {

@@ -1,5 +1,5 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit;
-$e = fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 
 <!-- Page Header -->
@@ -25,7 +25,7 @@ $e = fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 </div>
 
 <form method="POST" class="admin-form">
-    <input type="hidden" name="form_action" value="save_settings">
+    <input type="hidden" name="settings_action" value="save_settings">
     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
 
     <!-- Tab: Allgemein -->
@@ -128,7 +128,7 @@ $e = fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
                 <h4 style="margin:0 0 .5rem;">📭 Alte Nachrichten löschen</h4>
                 <p style="font-size:.85rem;color:#64748b;">Entfernt alle Nachrichten, die älter als der gewählte Zeitraum sind.</p>
                 <form method="POST" style="display:flex;gap:.5rem;align-items:flex-end;margin-top:.75rem;">
-                    <input type="hidden" name="form_action" value="cleanup_submissions">
+                    <input type="hidden" name="settings_action" value="cleanup_submissions">
                     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                     <select name="older_than_days" class="form-control" style="max-width:180px;">
                         <option value="30">Älter als 30 Tage</option>
@@ -144,7 +144,7 @@ $e = fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
                 <h4 style="margin:0 0 .5rem;">🚫 Spam löschen</h4>
                 <p style="font-size:.85rem;color:#64748b;">Entfernt alle als Spam markierten Nachrichten.</p>
                 <form method="POST" style="margin-top:.75rem;">
-                    <input type="hidden" name="form_action" value="cleanup_spam">
+                    <input type="hidden" name="settings_action" value="cleanup_spam">
                     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                     <button type="submit" class="btn btn-danger btn-sm">🚫 Spam leeren</button>
                 </form>

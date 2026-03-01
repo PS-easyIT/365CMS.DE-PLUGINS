@@ -298,6 +298,18 @@ final class CMS_Contact_Submissions
         return $stmt->rowCount();
     }
 
+    /**
+     * Alle als Spam markierten Submissions löschen
+     */
+    public function cleanup_spam(): int
+    {
+        $stmt = $this->pdo->prepare(
+            "DELETE FROM {$this->prefix}contact_submissions WHERE status = 'spam'"
+        );
+        $stmt->execute();
+        return $stmt->rowCount();
+    }
+
     // ── E-Mail-Versand ────────────────────────────────────────────────────────
 
     /**
