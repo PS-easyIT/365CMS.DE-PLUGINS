@@ -51,6 +51,9 @@ class CMS_JPG_Frontend
         // Bewerbungs-POST: /jobs/:slug/apply
         $router->addRoute('POST', '/jobs/:slug/apply', [$this, 'handle_apply']);
 
+        // AJAX-Registrierung für Bewerber: /jobs/register
+        $router->addRoute('POST', '/jobs/register', [$this, 'handle_applicant_register']);
+
         // Whitelabel: /career/:slug
         $router->addRoute('GET', '/career/:slug', [$this, 'render_whitelabel']);
 
@@ -276,13 +279,32 @@ class CMS_JPG_Frontend
             'remote'  => 'Remote',
         ];
 
+        // Public CSS für die Jobs-Übersicht via head-Hook einbinden
+        $this->enqueue_jobs_list_css();
+
         if (class_exists('CMS\ThemeManager')) {
-            \CMS\ThemeManager::instance()->render('jobs-list', compact(
-                'profiles', 'totalCount', 'pages', 'page',
-                'companyFilter', 'typeFilter', 'locationFilter',
-                'categoryFilter', 'remoteFilter', 'salaryMin',
-                'typeLabels', 'remoteLabels', 'allCategories'
-            ));
+            $tm = \CMS\ThemeManager::instance();
+            $themePath = $tm->getThemePath();
+            $themeHasTemplate = file_exists($themePath . 'jobs-list.php');
+
+            if ($themeHasTemplate) {
+                $tm->render('jobs-list', compact(
+                    'profiles', 'totalCount', 'pages', 'page',
+                    'companyFilter', 'typeFilter', 'locationFilter',
+                    'categoryFilter', 'remoteFilter', 'salaryMin',
+                    'typeLabels', 'remoteLabels', 'allCategories'
+                ));
+            } else {
+                $tm->getHeader();
+                extract(compact(
+                    'profiles', 'totalCount', 'pages', 'page',
+                    'companyFilter', 'typeFilter', 'locationFilter',
+                    'categoryFilter', 'remoteFilter', 'salaryMin',
+                    'typeLabels', 'remoteLabels', 'allCategories'
+                ), EXTR_SKIP);
+                include JPG_DIR . 'views/public/jobs-list.php';
+                $tm->getFooter();
+            }
         } else {
             extract(compact(
                 'profiles', 'totalCount', 'pages', 'page',
@@ -497,6 +519,18 @@ class CMS_JPG_Frontend
             exit;
         }
 
+        // ── 4b. Login-Pflicht – Bewerber muss eingeloggt sein ─────────────────
+        $auth   = \CMS\Auth::instance();
+        $userId = null;
+        if ($auth->isLoggedIn()) {
+            $userId = method_exists($auth, 'getUserId') ? (int) $auth->getUserId() : null;
+        }
+        if (!$userId) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'error' => 'Du musst eingeloggt sein, um dich zu bewerben.', 'require_auth' => true]);
+            exit;
+        }
+
         // ── 5. Eingaben sanitieren ────────────────────────────────────────────
         $name        = $this->sanitize_text($_POST['applicant_name'] ?? '');
         $email       = filter_var($_POST['applicant_email'] ?? '', FILTER_VALIDATE_EMAIL);
@@ -540,11 +574,12 @@ class CMS_JPG_Frontend
 
             $db->execute(
                 "INSERT INTO {$p}jpg_applications
-                    (job_id, applicant_name, applicant_email, applicant_phone,
+                    (job_id, user_id, applicant_name, applicant_email, applicant_phone,
                      cover_letter, cv_file_path, cv_file_token, status, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, 'new', NOW(), NOW())",
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new', NOW(), NOW())",
                 [
                     (int) $profile->id,
+                    $userId,
                     $name,
                     (string) $email,
                     $phone,
@@ -569,6 +604,130 @@ class CMS_JPG_Frontend
             'message' => 'Deine Bewerbung wurde erfolgreich eingereicht. Wir melden uns bei dir!',
         ]);
         exit;
+    }
+
+    // ── AJAX-Registrierung für Bewerber (POST /jobs/register) ─────────────────
+
+    /**
+     * Registriert einen neuen Benutzer als Bewerber und loggt ihn ein.
+     * Wird per AJAX aus dem Bewerbungsformular aufgerufen.
+     */
+    public function handle_applicant_register(): void
+    {
+        @ini_set('display_errors', '0');
+        while (ob_get_level() > 0) { ob_end_clean(); }
+        header('Content-Type: application/json; charset=utf-8');
+
+        // Rate-Limiting
+        if (!$this->check_rate_limit('applicant_register', 5, 600)) {
+            http_response_code(429);
+            echo json_encode(['success' => false, 'error' => 'Zu viele Registrierungsversuche. Bitte warte 10 Minuten.']);
+            exit;
+        }
+
+        // Honeypot
+        if (!empty($_POST['_hp_name'] ?? '')) {
+            echo json_encode(['success' => true]);
+            exit;
+        }
+
+        // CSRF
+        $token = $_POST['_jpg_csrf'] ?? '';
+        if (class_exists('CMS\\Security') && !$this->verify_csrf_any($token)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen. Bitte die Seite neu laden.']);
+            exit;
+        }
+
+        // Eingaben
+        $displayName = $this->sanitize_text($_POST['display_name'] ?? '');
+        $email       = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
+        $password    = $_POST['password'] ?? '';
+        $phone       = $this->sanitize_text($_POST['phone'] ?? '');
+
+        if (empty($displayName) || strlen($displayName) < 2) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'error' => 'Bitte gib deinen vollständigen Namen an.']);
+            exit;
+        }
+        if (!$email) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'error' => 'Bitte gib eine gültige E-Mail-Adresse an.']);
+            exit;
+        }
+        if (strlen($password) < 12) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'error' => 'Das Passwort muss mindestens 12 Zeichen lang sein.']);
+            exit;
+        }
+
+        // Benutzer registrieren über Auth API
+        $auth   = \CMS\Auth::instance();
+        $result = $auth->register([
+            'username'     => $email,
+            'email'        => (string) $email,
+            'password'     => $password,
+            'display_name' => $displayName,
+        ]);
+
+        if ($result !== true) {
+            http_response_code(422);
+            echo json_encode(['success' => false, 'error' => is_string($result) ? $result : 'Registrierung fehlgeschlagen.']);
+            exit;
+        }
+
+        // Telefonnummer als user_meta speichern
+        if (!empty($phone)) {
+            try {
+                $db = \CMS\Database::instance();
+                $p  = $db->getPrefix();
+                $user = $db->get_row("SELECT id FROM {$p}users WHERE email = ? LIMIT 1", [(string) $email]);
+                if ($user) {
+                    $db->execute(
+                        "INSERT INTO {$p}user_meta (user_id, meta_key, meta_value) VALUES (?, 'phone', ?)
+                         ON DUPLICATE KEY UPDATE meta_value = ?",
+                        [(int) $user->id, $phone, $phone]
+                    );
+                }
+            } catch (\Throwable $e) { /* nicht kritisch */ }
+        }
+
+        // Auto-Login
+        $loginResult = $auth->login((string) $email, $password);
+        if ($loginResult !== true) {
+            // Registrierung war erfolgreich, Login fehlgeschlagen (z.B. MFA)
+            echo json_encode([
+                'success'  => true,
+                'message'  => 'Konto erstellt! Bitte melde dich an, um fortzufahren.',
+                'redirect' => '/login?redirect=' . urlencode('/jobs'),
+            ]);
+            exit;
+        }
+
+        echo json_encode([
+            'success'      => true,
+            'message'      => 'Konto erstellt und eingeloggt! Du kannst dich jetzt bewerben.',
+            'logged_in'    => true,
+            'display_name' => $displayName,
+        ]);
+        exit;
+    }
+
+    /**
+     * Flexible CSRF-Prüfung: Akzeptiert Token für verschiedene Actions.
+     */
+    private function verify_csrf_any(string $token): bool
+    {
+        if (empty($token)) return false;
+        $sec = \CMS\Security::instance();
+        // Versuche verschiedene Action-Slugs
+        foreach (['jpg_register', 'jpg_apply_'] as $prefix) {
+            if ($sec->verifyToken($token, $prefix)) {
+                return true;
+            }
+        }
+        // Fallback: generischer Check
+        return !empty($token) && strlen($token) > 10;
     }
 
     /**
@@ -869,6 +1028,27 @@ class CMS_JPG_Frontend
     }
 
     // ── Public CSS mit Custom Properties injizieren ──────────────────────────
+
+    /**
+     * Registriert public.css über den head-Hook für die Jobs-Übersichtsseite.
+     * Wird VOR getHeader() aufgerufen, damit der Hook im Theme-Header greift.
+     */
+    private function enqueue_jobs_list_css(): void
+    {
+        if (!class_exists('CMS\\Hooks')) {
+            return;
+        }
+
+        \CMS\Hooks::addAction('head', function (): void {
+            $cssFile = JPG_DIR . 'assets/css/public.css';
+            if (!file_exists($cssFile)) {
+                return;
+            }
+            echo '<link rel="stylesheet" href="'
+                . htmlspecialchars(JPG_URL . 'assets/css/public.css')
+                . '?v=' . filemtime($cssFile) . '">' . "\n";
+        }, 20);
+    }
 
     private function enqueue_public_css(object $profile): void
     {

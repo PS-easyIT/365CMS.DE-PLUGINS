@@ -16,6 +16,7 @@ require_once __DIR__ . '/modules/trait-page-approvals.php';
 require_once __DIR__ . '/modules/trait-page-companies.php';
 require_once __DIR__ . '/modules/trait-page-subscription.php';
 require_once __DIR__ . '/modules/trait-page-users.php';
+require_once __DIR__ . '/modules/trait-page-public-design.php';
 
 /**
  * Admin-Seiten Renderer & POST-Handler
@@ -39,6 +40,7 @@ class CMS_JPG_Admin_Pages
     use CMS_JPG_Page_Companies_Trait;
     use CMS_JPG_Page_Subscription_Trait;
     use CMS_JPG_Page_Users_Trait;
+    use CMS_JPG_Page_Public_Design_Trait;
 
     // ── Konstanten ────────────────────────────────────────────────────────────
     public const  NONCE_FIELD_PUBLIC = '_jpg_nonce';

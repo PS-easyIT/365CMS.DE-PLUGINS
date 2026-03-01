@@ -11,25 +11,28 @@
 /* ─── Tabs ────────────────────────────────────────────────────────────────── */
 .co-tabs {
   display: flex;
-  gap: .4rem;
   flex-wrap: wrap;
-  margin-bottom: 1.75rem;
+  gap: 0;
   border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
 }
 
 .co-tab {
   display: inline-flex;
   align-items: center;
   gap: .35rem;
-  padding: .55rem 1.1rem;
-  border-radius: 8px 8px 0 0;
-  font-size: .8125rem;
-  font-weight: 600;
-  color: #64748b;
+  padding: .6rem 1.1rem;
+  font-size: .875rem;
+  font-weight: 500;
+  color: #475569;
   text-decoration: none;
-  transition: all .15s;
+  border: 1px solid transparent;
   border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
   margin-bottom: -2px;
+  white-space: nowrap;
+  transition: color .15s, background .15s;
 }
 
 .co-tab:hover {
@@ -39,8 +42,9 @@
 
 .co-tab.active {
   color: #0891b2;
-  border-bottom-color: #0891b2;
-  background: #f0f9ff;
+  border-color: #e2e8f0 #e2e8f0 #fff #e2e8f0;
+  background: #fff;
+  font-weight: 600;
 }
 
 /* ─── Stat Cards ──────────────────────────────────────────────────────────── */
@@ -81,8 +85,15 @@
   font-weight: 600;
 }
 
+/* stat-icon used by dashboard-grid/stat-card pattern */
+.stat-icon {
+  font-size: 1.75rem;
+  margin-bottom: .25rem;
+}
+
 /* ─── Admin Filter Bar ────────────────────────────────────────────────────── */
-.co-adm-filter-bar {
+.co-adm-filter-bar,
+.co-filter-bar {
   display: flex;
   flex-wrap: wrap;
   gap: .4rem;
@@ -195,6 +206,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: .25rem;
+  margin-bottom: .2rem;
 }
 
 .co-adm-badge {
@@ -275,6 +287,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.co-adm-pill--accent {
+  background: #f0f9ff;
+  color: #0891b2;
+  border-color: #bae6fd;
 }
 
 /* Footer */

@@ -382,13 +382,21 @@ final class CMS_Companies_Post_Type
                 'archive_header_icon', 'archive_header_bg_from', 'archive_header_bg_to',
                 'archive_header_title_color',
                 'design_primary_color', 'design_accent_color', 'design_card_bg',
-                'design_border_radius', 'design_grid_columns', 'design_cta_color',
+                'design_border_radius', 'design_grid_columns', 'design_cta_color', 'design_cta_label',
                 'design_detail_header_bg', 'design_detail_header_bg_to', 'design_detail_header_color', 'design_detail_accent',
                 'design_partner_color', 'design_top_partner_color', 'design_sponsor_color',
+                // Badge-Farben
+                'design_badge_sponsor_bg', 'design_badge_sponsor_color',
+                'design_badge_top_bg', 'design_badge_top_color',
+                'design_badge_partner_bg', 'design_badge_partner_color',
+                'design_badge_inactive_bg', 'design_badge_inactive_color',
             ];
             $design_checkboxes = [
                 'design_show_industry', 'design_show_city',
                 'design_show_employees', 'design_show_website',
+                // Badge-Sichtbarkeit
+                'design_show_sponsor_badge', 'design_show_top_partner_badge',
+                'design_show_partner_badge', 'design_show_inactive_badge',
             ];
             foreach ($design_text_fields as $k) {
                 $db->save_setting($k, $sec->sanitize($_POST[$k] ?? '', 'text'));

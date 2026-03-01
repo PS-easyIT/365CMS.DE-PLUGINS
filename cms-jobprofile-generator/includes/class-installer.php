@@ -172,6 +172,23 @@ class CMS_JPG_Installer
                 "VARCHAR(50) DEFAULT NULL COMMENT 'Telefonnummer des Bewerbers (optional)'"
             );
 
+            // ── jpg_applications: user_id – Verknüpfung mit registriertem Benutzer ──
+            $helper(
+                $pdo, "{$p}jpg_applications", 'user_id',
+                "INT UNSIGNED DEFAULT NULL COMMENT 'Verknüpfter CMS-Benutzer' AFTER job_id"
+            );
+            // Index für user_id
+            try {
+                $idxCheck = $pdo->prepare(
+                    "SELECT COUNT(*) FROM information_schema.statistics
+                     WHERE table_schema = DATABASE() AND table_name = ? AND index_name = 'idx_user'"
+                );
+                $idxCheck->execute(["{$p}jpg_applications"]);
+                if ((int) $idxCheck->fetchColumn() === 0) {
+                    $pdo->exec("ALTER TABLE {$p}jpg_applications ADD KEY idx_user (user_id)");
+                }
+            } catch (\Throwable $e) { /* Index existiert möglicherweise bereits */ }
+
             // ── jpg_company_settings: E-Mail-Template-Spalten ─────────────────
             // Stellt sicher, dass ALL jobs_page_* Spalten existieren (ältere Installationen)
             $csFields = [
@@ -381,6 +398,7 @@ class CMS_JPG_Installer
         $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}jpg_applications (
             id              INT UNSIGNED NOT NULL AUTO_INCREMENT,
             job_id          INT UNSIGNED NOT NULL,
+            user_id         INT UNSIGNED DEFAULT NULL COMMENT 'Verknüpfter CMS-Benutzer',
             applicant_name  VARCHAR(255) NOT NULL DEFAULT '',
             applicant_email VARCHAR(255) NOT NULL DEFAULT '',
             cover_letter    TEXT,
@@ -392,6 +410,7 @@ class CMS_JPG_Installer
             updated_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY idx_job (job_id),
+            KEY idx_user (user_id),
             KEY idx_status (status),
             KEY idx_token (cv_file_token)
         ) ENGINE=InnoDB {$charset};");

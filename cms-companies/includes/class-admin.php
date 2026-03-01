@@ -404,17 +404,17 @@ final class CMS_Companies_Admin
                 <div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.25rem;">
                     <?php
                     $colorFields = [
-                        'design_primary_color'       => ['Primärfarbe (Buttons, Akzente)',       '#0891b2'],
-                        'design_accent_color'        => ['Akzentfarbe (Hover, Links)',            '#0284c7'],
-                        'design_card_bg'             => ['Karten-Hintergrund',                    '#f0f9ff'],
-                        'design_cta_color'           => ['CTA-Button-Farbe',                      '#0c4a6e'],
-                        'archive_header_bg_from'     => ['Archiv-Header Gradient Von',             '#e0f2fe'],
-                        'archive_header_bg_to'       => ['Archiv-Header Gradient Bis',             '#bae6fd'],
-                        'archive_header_title_color' => ['Archiv-Header Titelfarbe',               '#0c4a6e'],
-                        'design_detail_header_bg'    => ['Detailseite Header Gradient Von',       '#e0f2fe'],
-                        'design_detail_header_bg_to' => ['Detailseite Header Gradient Bis',       '#bae6fd'],
-                        'design_detail_header_color' => ['Detailseite Titelfarbe',                 '#0c4a6e'],
-                        'design_detail_accent'       => ['Detailseite Akzentfarbe (Links)',         '#0891b2'],
+                        'design_primary_color'       => ['Primärfarbe (Buttons, Akzente)',     '#0891b2'],
+                        'design_accent_color'         => ['Akzentfarbe (Hover, Links)',          '#0284c7'],
+                        'design_card_bg'              => ['Card-Hintergrund',                    '#f0f9ff'],
+                        'design_cta_color'            => ['CTA-Button-Farbe',                    '#0c4a6e'],
+                        'archive_header_bg_from'      => ['Archiv-Header Gradient Von',          '#e0f2fe'],
+                        'archive_header_bg_to'        => ['Archiv-Header Gradient Bis',          '#bae6fd'],
+                        'archive_header_title_color'  => ['Archiv-Header Titelfarbe',            '#0c4a6e'],
+                        'design_detail_header_bg'     => ['Detailseite Header Gradient Von',     '#e0f2fe'],
+                        'design_detail_header_bg_to'  => ['Detailseite Header Gradient Bis',     '#bae6fd'],
+                        'design_detail_header_color'  => ['Detailseite Titelfarbe',              '#0c4a6e'],
+                        'design_detail_accent'        => ['Detailseite Akzentfarbe',             '#0891b2'],
                     ];
                     foreach ($colorFields as $key => [$label, $default]):
                         $val = htmlspecialchars($s[$key] ?? $default);
@@ -431,16 +431,24 @@ final class CMS_Companies_Admin
             </div>
 
             <div class="admin-card">
-                <h3>🏷️ Badge- &amp; Rahmenfarben</h3>
-                <p style="color:#64748b;font-size:.875rem;margin-bottom:1rem;">Diese Farbe gilt jeweils für den Status-Ribbon <strong>und</strong> den Karten-Rahmen auf der öffentlichen Seite.</p>
+                <h3>🏅 Badge-Farben (Partner-Stufen)</h3>
+                <p style="color:#64748b;font-size:.875rem;margin-bottom:1rem;">Hintergrund- und Textfarben der Status-Badges auf den Karten und der Detailseite.</p>
                 <div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.25rem;">
                     <?php
-                    $badgeFields = [
-                        'design_partner_color'     => ['🤝 Partner',     '#9ca3af'],
-                        'design_top_partner_color' => ['🥇 Top-Partner',  '#d97706'],
-                        'design_sponsor_color'     => ['💜 Sponsor',      '#7c3aed'],
+                    $badgeColorFields = [
+                        'design_badge_sponsor_bg'     => ['💜 Sponsor – Hintergrund',       '#f3e8ff'],
+                        'design_badge_sponsor_color'   => ['💜 Sponsor – Textfarbe',         '#6b21a8'],
+                        'design_badge_top_bg'          => ['🥇 Top-Partner – Hintergrund',   '#fef3c7'],
+                        'design_badge_top_color'       => ['🥇 Top-Partner – Textfarbe',     '#92400e'],
+                        'design_badge_partner_bg'      => ['🤝 Partner – Hintergrund',       '#f1f5f9'],
+                        'design_badge_partner_color'   => ['🤝 Partner – Textfarbe',         '#475569'],
+                        'design_badge_inactive_bg'     => ['🔒 Inaktiv – Hintergrund',       '#f1f5f9'],
+                        'design_badge_inactive_color'  => ['🔒 Inaktiv – Textfarbe',         '#64748b'],
+                        'design_partner_color'         => ['🤝 Karten-Rahmen: Partner',      '#9ca3af'],
+                        'design_top_partner_color'     => ['🥇 Karten-Rahmen: Top-Partner',  '#d97706'],
+                        'design_sponsor_color'         => ['💜 Karten-Rahmen: Sponsor',      '#7c3aed'],
                     ];
-                    foreach ($badgeFields as $key => [$label, $default]):
+                    foreach ($badgeColorFields as $key => [$label, $default]):
                         $val = htmlspecialchars($s[$key] ?? $default);
                     ?>
                     <div class="form-group">
@@ -449,28 +457,8 @@ final class CMS_Companies_Admin
                             <input type="color" id="clr_<?= $key ?>" value="<?= $val ?>" style="width:48px;height:36px;border:2px solid #e2e8f0;border-radius:6px;padding:2px;cursor:pointer;" oninput="document.getElementById('txt_<?= $key ?>').value=this.value">
                             <input type="text" id="txt_<?= $key ?>" name="<?= $key ?>" class="form-control" value="<?= $val ?>" style="flex:1;font-family:monospace;font-size:.82rem;" oninput="document.getElementById('clr_<?= $key ?>').value=this.value">
                         </div>
-                        <small class="form-text">Ribbon-Badge &amp; Karten-Rahmen</small>
                     </div>
                     <?php endforeach; ?>
-                </div>
-            </div>
-
-            <div class="admin-card">
-                <h3>🖼️ Archiv-Header</h3>
-                <div class="form-group" style="max-width:120px;">
-                    <label class="form-label">Header-Icon (Emoji)</label>
-                    <input type="text" name="archive_header_icon" id="txt_archive_header_icon" class="form-control"
-                           value="<?= htmlspecialchars(html_entity_decode($s['archive_header_icon'] ?? '🏢', ENT_HTML5, 'UTF-8')) ?>"
-                           maxlength="8" style="font-size:1.4rem;text-align:center;"
-                           oninput="updateCoHdrPreview()">
-                    <small class="form-text">z.B. 🏢 🌐 💼</small>
-                </div>
-                <div id="co_hdr_preview" style="margin-top:1rem;padding:1rem 1.5rem;border-radius:10px;display:inline-flex;align-items:center;gap:.75rem;font-weight:800;font-size:1rem;">
-                    <span id="co_hdr_icon" style="font-size:2rem;"></span>
-                    <div>
-                        <div id="co_hdr_title" style="font-weight:800;font-size:1.1rem;"></div>
-                        <div style="font-size:.8rem;opacity:.8;">Vorschau</div>
-                    </div>
                 </div>
             </div>
 
@@ -478,9 +466,20 @@ final class CMS_Companies_Admin
                 <h3>📐 Layout &amp; Anzeige</h3>
                 <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
                     <div class="form-group">
+                        <label class="form-label">Header-Icon (Emoji)</label>
+                        <input type="text" name="archive_header_icon" id="txt_archive_header_icon" class="form-control"
+                               value="<?= htmlspecialchars(html_entity_decode($s['archive_header_icon'] ?? '🏢', ENT_HTML5, 'UTF-8')) ?>"
+                               maxlength="8" style="font-size:1.2rem;text-align:center;" oninput="updateCoPreview()">
+                        <small class="form-text">z.B. 🏢 🌐 💼</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">CTA-Button-Text</label>
+                        <input type="text" name="design_cta_label" class="form-control" value="<?= htmlspecialchars($s['design_cta_label'] ?? 'Profil ansehen') ?>" placeholder="Profil ansehen" oninput="updateCoPreview()">
+                    </div>
+                    <div class="form-group">
                         <label class="form-label">Ecken-Radius (px)</label>
                         <input type="number" name="design_border_radius" class="form-control"
-                               value="<?= (int)($s['design_border_radius'] ?? 12) ?>" min="0" max="32">
+                               value="<?= (int)($s['design_border_radius'] ?? 12) ?>" min="0" max="32" oninput="updateCoPreview()">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Grid-Spalten</label>
@@ -491,7 +490,24 @@ final class CMS_Companies_Admin
                         </select>
                     </div>
                 </div>
-                <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:.75rem;">
+
+                <p style="font-weight:600;font-size:.875rem;color:#374151;margin:.75rem 0 .5rem;">🏷️ Badges auf den Karten</p>
+                <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:.75rem;">
+                    <?php foreach ([
+                        'design_show_sponsor_badge'     => '💜 Sponsor-Badge',
+                        'design_show_top_partner_badge' => '🥇 Top-Partner-Badge',
+                        'design_show_partner_badge'     => '🤝 Partner-Badge',
+                        'design_show_inactive_badge'    => '🔒 Inaktiv-Badge',
+                    ] as $key => $label): ?>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="<?= $key ?>" value="1" <?= !empty($s[$key]) && $s[$key] !== '0' ? 'checked' : '' ?>>
+                        <?= $label ?>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+
+                <p style="font-weight:600;font-size:.875rem;color:#374151;margin:.75rem 0 .5rem;">💊 Pills auf den Karten</p>
+                <div style="display:flex;flex-wrap:wrap;gap:1rem;">
                     <?php foreach ([
                         'design_show_industry'  => '🏭 Branche',
                         'design_show_city'      => '📍 Stadt / Standort',
@@ -507,6 +523,22 @@ final class CMS_Companies_Admin
                 </div>
             </div>
 
+            <div class="admin-card">
+                <h3>👁️ Vorschau</h3>
+                <div style="max-width:340px;">
+                    <div id="prev-header" style="background:linear-gradient(135deg,<?= htmlspecialchars($s['archive_header_bg_from']) ?>,<?= htmlspecialchars($s['archive_header_bg_to']) ?>);padding:1.5rem;border-radius:<?= (int)$s['design_border_radius'] ?>px <?= (int)$s['design_border_radius'] ?>px 0 0;display:flex;align-items:center;gap:.75rem;">
+                        <span id="prev-icon" style="font-size:2rem;"><?= htmlspecialchars(html_entity_decode($s['archive_header_icon'] ?? '🏢', ENT_HTML5, 'UTF-8')) ?></span>
+                        <div>
+                            <div id="prev-title" style="color:<?= htmlspecialchars($s['archive_header_title_color']) ?>;font-weight:800;font-size:1.1rem;"><?= htmlspecialchars($s['archive_title'] ?? 'Unternehmen') ?></div>
+                            <div style="color:<?= htmlspecialchars($s['archive_header_title_color']) ?>;font-size:.8rem;opacity:.85;">Vorschau</div>
+                        </div>
+                    </div>
+                    <div id="prev-body" style="background:<?= htmlspecialchars($s['design_card_bg']) ?>;padding:1rem;border:1px solid #bae6fd;border-top:none;border-radius:0 0 <?= (int)$s['design_border_radius'] ?>px <?= (int)$s['design_border_radius'] ?>px;">
+                        <span id="prev-cta" style="display:inline-block;padding:.3rem .8rem;background:<?= htmlspecialchars($s['design_cta_color']) ?>;color:#fff;border-radius:6px;font-size:.8rem;font-weight:700;"><?= htmlspecialchars($s['design_cta_label'] ?? 'Profil ansehen') ?> →</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="admin-card form-actions-card">
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">💾 Design speichern</button>
@@ -515,20 +547,36 @@ final class CMS_Companies_Admin
         </form>
         <script>
         (function(){
-            function updateCoHdrPreview(){
+            function updateCoPreview(){
                 var from  = (document.getElementById('txt_archive_header_bg_from')    ||{value:'#e0f2fe'}).value;
                 var to    = (document.getElementById('txt_archive_header_bg_to')      ||{value:'#bae6fd'}).value;
                 var color = (document.getElementById('txt_archive_header_title_color')||{value:'#0c4a6e'}).value;
+                var cta   = (document.getElementById('txt_design_cta_color')          ||{value:'#0c4a6e'}).value;
                 var icon  = (document.getElementById('txt_archive_header_icon')       ||{value:'🏢'}).value;
-                var prev  = document.getElementById('co_hdr_preview');
-                var icoEl = document.getElementById('co_hdr_icon');
-                var ttlEl = document.getElementById('co_hdr_title');
-                if(prev){ prev.style.background='linear-gradient(135deg,'+from+','+to+')'; prev.style.color=color; }
+                var prev  = document.getElementById('prev-header');
+                var body  = document.getElementById('prev-body');
+                var icoEl = document.getElementById('prev-icon');
+                var ttlEl = document.getElementById('prev-title');
+                var ctaEl = document.getElementById('prev-cta');
+                if(prev){ prev.style.background='linear-gradient(135deg,'+from+','+to+')'; }
                 if(icoEl) icoEl.textContent = icon;
-                if(ttlEl){ ttlEl.textContent='<?= addslashes(htmlspecialchars($s['archive_title'] ?? 'Unternehmen')) ?>'; ttlEl.style.color=color; }
+                if(ttlEl){ ttlEl.style.color=color; }
+                if(body){ body.style.background=(document.getElementById('txt_design_card_bg')||{value:'#f0f9ff'}).value; }
+                if(ctaEl){ ctaEl.style.background=cta; }
+                var radEl = document.querySelector('[name="design_border_radius"]');
+                if(radEl && prev){
+                    var r=parseInt(radEl.value)||12;
+                    prev.style.borderRadius=r+'px '+r+'px 0 0';
+                    if(body) body.style.borderRadius='0 0 '+r+'px '+r+'px';
+                }
+                var ctaLblEl = document.querySelector('[name="design_cta_label"]');
+                if(ctaEl && ctaLblEl) ctaEl.textContent = (ctaLblEl.value||'Profil ansehen')+' →';
             }
-            window.updateCoHdrPreview = updateCoHdrPreview;
-            updateCoHdrPreview();
+            window.updateCoPreview = updateCoPreview;
+            // Alle txt_-Inputs triggern Preview
+            document.querySelectorAll('[id^="txt_"]').forEach(function(el){
+                el.addEventListener('input', updateCoPreview);
+            });
         })();
         </script>
 
@@ -560,6 +608,19 @@ final class CMS_Companies_Admin
                     <input type="number" name="archive_per_page" class="form-control"
                            value="<?= (int)($s['archive_per_page'] ?? 12) ?>"
                            min="4" max="100" step="4" style="width:120px;">
+                </div>
+            </div>
+            <div class="admin-card">
+                <h3>ℹ️ Shortcode-Nutzung</h3>
+                <p style="color:#64748b;font-size:.875rem;margin-bottom:.5rem;">Unternehmens-Liste per Shortcode in Seiteninhalte einbinden:</p>
+                <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:.75rem 1rem;font-family:monospace;font-size:.875rem;color:#0c4a6e;">
+                    [cms_companies limit="12" partner="1" sponsor="0"]
+                </div>
+                <div style="margin-top:.75rem;display:flex;flex-direction:column;gap:.35rem;">
+                    <small style="color:#64748b;"><strong>limit</strong> – Anzahl Unternehmen (Standard: 12)</small>
+                    <small style="color:#64748b;"><strong>partner</strong> – Nur Partner-Unternehmen anzeigen (1/0)</small>
+                    <small style="color:#64748b;"><strong>sponsor</strong> – Nur Sponsoren anzeigen (1/0)</small>
+                    <small style="color:#64748b;"><strong>industry</strong> – Nach Branche filtern (Branchenname)</small>
                 </div>
             </div>
             <div class="admin-card form-actions-card">

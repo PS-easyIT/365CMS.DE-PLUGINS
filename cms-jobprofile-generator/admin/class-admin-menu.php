@@ -110,6 +110,15 @@ class CMS_JPG_Admin_Menu
 
         add_submenu_page(
             'jpg-dashboard',
+            'Public Design',
+            '🌐 Public Design',
+            'manage_options',
+            'jpg-public-design',
+            [CMS_JPG_Admin_Pages::class, 'render_public_design']
+        );
+
+        add_submenu_page(
+            'jpg-dashboard',
             'Einstellungen',
             '⚙️ Einstellungen',
             'manage_options',
