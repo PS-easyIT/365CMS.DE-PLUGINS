@@ -65,6 +65,12 @@ final class CMS_Events_Admin
         $this->loadAdminMenu();
         renderAdminLayoutStart('Events', 'events');
 
+        // Admin-CSS laden
+        $admin_css = CMS_EVENTS_PLUGIN_DIR . 'assets/css/events-admin.css';
+        if (file_exists($admin_css)) {
+            echo '<link rel="stylesheet" href="' . CMS_EVENTS_PLUGIN_URL . 'assets/css/events-admin.css?v=' . filemtime($admin_css) . '">' . "\n";
+        }
+
         // Daten aus dem assoziativen Array lesen
         $events      = $data['events']      ?? [];
         $tab         = $data['tab']         ?? 'overview';
@@ -105,6 +111,23 @@ final class CMS_Events_Admin
             'show_price'            => '1',
             'show_organizer'        => '1',
             'show_tags'             => '1',
+            'show_status_badge'     => '1',
+            'show_featured_badge'   => '1',
+            'show_online_badge'     => '1',
+            'show_date_pill'        => '1',
+            'show_time_pill'        => '1',
+            'color_badge_published_bg'    => '#d1fae5',
+            'color_badge_published_color' => '#065f46',
+            'color_badge_draft_bg'        => '#fef3c7',
+            'color_badge_draft_color'     => '#92400e',
+            'color_badge_cancelled_bg'    => '#fee2e2',
+            'color_badge_cancelled_color' => '#991b1b',
+            'color_badge_completed_bg'    => '#dbeafe',
+            'color_badge_completed_color' => '#1e40af',
+            'color_badge_featured_bg'     => '#fef3c7',
+            'color_badge_featured_color'  => '#92400e',
+            'color_badge_online_bg'       => '#d1fae5',
+            'color_badge_online_color'    => '#065f46',
         ], $settings);
 
         // Statistiken
@@ -156,7 +179,7 @@ final class CMS_Events_Admin
                 'settings'   => ['⚙️', 'Einstellungen'],
             ];
             foreach ($tabs as $slug => [$icon, $label]): ?>
-                <a href="?tab=<?= $slug ?>" class="ev-tab <?= $tab === $slug ? 'ev-tab--active' : '' ?>">
+                <a href="?tab=<?= $slug ?>" class="ev-tab <?= $tab === $slug ? 'active' : '' ?>">
                     <?= $icon ?> <?= $label ?>
                 </a>
             <?php endforeach; ?>
@@ -167,38 +190,63 @@ final class CMS_Events_Admin
         if ($tab === 'overview'):
 
             $filtered = $events;
-            if ($filter === 'upcoming') $filtered = array_values(array_filter($events, fn($e) => !empty($e->event_date) && strtotime($e->event_date) >= strtotime('today')));
-            elseif ($filter === 'past') $filtered = array_values(array_filter($events, fn($e) => !empty($e->event_date) && strtotime($e->event_date) < strtotime('today')));
-            elseif ($filter === 'featured') $filtered = array_values(array_filter($events, fn($e) => !empty($e->is_featured)));
-            elseif ($filter === 'online') $filtered = array_values(array_filter($events, fn($e) => !empty($e->is_online)));
+            $search = trim($data['search'] ?? '');
+            if ($search) {
+                $q = mb_strtolower($search);
+                $filtered = array_values(array_filter($filtered, fn($e) =>
+                    str_contains(mb_strtolower($e->title ?? ''), $q) ||
+                    str_contains(mb_strtolower($e->city ?? ''), $q) ||
+                    str_contains(mb_strtolower($e->category ?? ''), $q) ||
+                    str_contains(mb_strtolower($e->organizer_name ?? ''), $q)
+                ));
+            }
+            if ($filter === 'upcoming') $filtered = array_values(array_filter($filtered, fn($e) => !empty($e->event_date) && strtotime($e->event_date) >= strtotime('today')));
+            elseif ($filter === 'past') $filtered = array_values(array_filter($filtered, fn($e) => !empty($e->event_date) && strtotime($e->event_date) < strtotime('today')));
+            elseif ($filter === 'featured') $filtered = array_values(array_filter($filtered, fn($e) => !empty($e->is_featured)));
+            elseif ($filter === 'online') $filtered = array_values(array_filter($filtered, fn($e) => !empty($e->is_online)));
         ?>
 
         <!-- Stats -->
-        <div class="ev-stats">
-            <div class="ev-stat"><span class="ev-stat-val"><?= $total ?></span><span class="ev-stat-lbl">Gesamt</span></div>
-            <div class="ev-stat"><span class="ev-stat-val" style="color:#16a34a;"><?= $published ?></span><span class="ev-stat-lbl">Veröffentlicht</span></div>
-            <div class="ev-stat"><span class="ev-stat-val" style="color:#2563eb;"><?= $upcoming ?></span><span class="ev-stat-lbl">Bevorstehend</span></div>
-            <div class="ev-stat"><span class="ev-stat-val" style="color:#d97706;"><?= $draft ?></span><span class="ev-stat-lbl">Entwürfe</span></div>
-            <div class="ev-stat"><span class="ev-stat-val" style="color:#f59e0b;"><?= $featured ?></span><span class="ev-stat-lbl">Featured</span></div>
-            <div class="ev-stat"><span class="ev-stat-val" style="color:#dc2626;"><?= $cancelled ?></span><span class="ev-stat-lbl">Abgesagt</span></div>
+        <div class="dashboard-grid">
+            <?php
+            $stat_items = [
+                ['📅', 'Gesamt',          $total,     ''],
+                ['✅', 'Veröffentlicht',  $published, ''],
+                ['📆', 'Bevorstehend',    $upcoming,  ''],
+                ['📝', 'Entwürfe',        $draft,     ''],
+                ['⭐', 'Featured',        $featured,  ''],
+                ['❌', 'Abgesagt',        $cancelled, ''],
+            ];
+            foreach ($stat_items as [$si_icon, $si_label, $si_value]): ?>
+            <div class="stat-card">
+                <div class="stat-icon"><?= $si_icon ?></div>
+                <div class="stat-number"><?= (int)$si_value ?></div>
+                <div class="stat-label"><?= $si_label ?></div>
+            </div>
+            <?php endforeach; ?>
         </div>
 
-        <!-- Filter-Bar -->
-        <div class="ev-filter-bar">
-            <?php
-            $filterOptions = [
-                'all'      => "Alle ({$total})",
-                'upcoming' => "📆 Bevorstehend ({$upcoming})",
-                'past'     => "⌛ Vergangen",
-                'featured' => "⭐ Featured ({$featured})",
-                'online'   => "🌐 Online",
-            ];
-            foreach ($filterOptions as $fk => $fl): ?>
-                <a href="?tab=overview&filter=<?= $fk ?>"
-                   class="ev-filter-btn <?= $filter === $fk ? 'ev-filter-btn--active' : '' ?>">
-                    <?= $fl ?>
-                </a>
-            <?php endforeach; ?>
+        <!-- Filter Bar -->
+        <div class="admin-card" style="margin-bottom:1.25rem;">
+            <form method="GET" style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;">
+                <input type="hidden" name="tab" value="overview">
+                <div class="form-group" style="margin:0;flex:2;min-width:220px;">
+                    <label class="form-label">Titel / Stichwort</label>
+                    <input type="text" name="search" class="form-control" placeholder="Titel, Ort, Kategorie…" value="<?= htmlspecialchars($data['search'] ?? '') ?>">
+                </div>
+                <div class="form-group" style="margin:0;flex:1;min-width:160px;">
+                    <label class="form-label">Status / Typ</label>
+                    <select name="filter" class="form-control">
+                        <option value="all"      <?= $filter==='all'      ?'selected':'' ?>>Alle (<?= $total ?>)</option>
+                        <option value="upcoming" <?= $filter==='upcoming' ?'selected':'' ?>>📆 Bevorstehend (<?= $upcoming ?>)</option>
+                        <option value="past"     <?= $filter==='past'     ?'selected':'' ?>>⌛ Vergangen</option>
+                        <option value="featured" <?= $filter==='featured' ?'selected':'' ?>>⭐ Featured (<?= $featured ?>)</option>
+                        <option value="online"   <?= $filter==='online'   ?'selected':'' ?>>🌐 Online</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">🔍 Filtern</button>
+                <?php if (($data['search'] ?? '') || $filter !== 'all'): ?><a href="?tab=overview" class="btn btn-secondary">✕ Reset</a><?php endif; ?>
+            </form>
         </div>
 
         <?php if (empty($filtered)): ?>
@@ -245,13 +293,15 @@ final class CMS_Events_Admin
                     </div>
                     <?php endif; ?>
                     <div class="ev-adm-ident">
-                        <div style="display:flex;gap:.3rem;flex-wrap:wrap;">
+                        <div class="ev-adm-badges">
+                            <?php if (!empty($s['show_status_badge']) && $s['show_status_badge'] !== '0'): ?>
                             <span class="ev-adm-badge" style="color:<?= $stColor ?>;background:<?= $stBg ?>;"><?= $stLabel ?></span>
-                            <?php if (!empty($ev->is_featured)): ?>
-                                <span class="ev-adm-badge" style="color:#92400e;background:#fef3c7;">⭐ Featured</span>
                             <?php endif; ?>
-                            <?php if (!empty($ev->is_online)): ?>
-                                <span class="ev-adm-badge" style="color:#065f46;background:#d1fae5;">🌐 Online</span>
+                            <?php if (!empty($ev->is_featured) && !empty($s['show_featured_badge']) && $s['show_featured_badge'] !== '0'): ?>
+                                <span class="ev-adm-badge" style="color:<?= htmlspecialchars($s['color_badge_featured_color']) ?>;background:<?= htmlspecialchars($s['color_badge_featured_bg']) ?>;">⭐ Featured</span>
+                            <?php endif; ?>
+                            <?php if (!empty($ev->is_online) && !empty($s['show_online_badge']) && $s['show_online_badge'] !== '0'): ?>
+                                <span class="ev-adm-badge" style="color:<?= htmlspecialchars($s['color_badge_online_color']) ?>;background:<?= htmlspecialchars($s['color_badge_online_bg']) ?>;">🌐 Online</span>
                             <?php endif; ?>
                             <?php if ($isToday): ?>
                                 <span class="ev-adm-badge" style="color:#065f46;background:#bbf7d0;">🔴 Heute</span>
@@ -267,13 +317,16 @@ final class CMS_Events_Admin
                 <?php
                 $pills = [];
                 if (!empty($ev->is_online) && !empty($ev->online_url)) $pills[] = ['🔗', 'Online-Link vorhanden'];
-                elseif ($city)                    $pills[] = ['📍', $city];
-                if (!empty($ev->event_time))      $pills[] = ['🕐', substr($ev->event_time, 0, 5) . ' Uhr'];
-                if (!empty($ev->capacity))        $pills[] = ['👥', (int)$ev->capacity . ' Plätze'];
-                if (!empty($ev->registration_url))$pills[] = ['🎟', 'Anmeldung'];
-                if (!empty($ev->price) && (float)$ev->price > 0) $pills[] = ['💶', number_format((float)$ev->price, 2, ',', '.') . ' ' . ($ev->price_currency ?? 'EUR')];
-                elseif (($ev->price_type ?? 'free') === 'free')   $pills[] = ['✅', 'Kostenlos'];
+                elseif ($city && !empty($s['show_city']) && $s['show_city'] !== '0') $pills[] = ['📍', $city];
+                if (!empty($ev->event_time) && !empty($s['show_date_pill']) && $s['show_date_pill'] !== '0') $pills[] = ['🕐', substr($ev->event_time, 0, 5) . ' Uhr'];
+                if (!empty($ev->capacity) && !empty($s['show_capacity']) && $s['show_capacity'] !== '0') $pills[] = ['👥', (int)$ev->capacity . ' Plätze'];
+                if (!empty($ev->registration_url)) $pills[] = ['🎟', 'Anmeldung'];
+                if (!empty($s['show_price']) && $s['show_price'] !== '0') {
+                    if (!empty($ev->price) && (float)$ev->price > 0) $pills[] = ['💶', number_format((float)$ev->price, 2, ',', '.') . ' ' . ($ev->price_currency ?? 'EUR')];
+                    elseif (($ev->price_type ?? 'free') === 'free') $pills[] = ['✅', 'Kostenlos'];
+                }
                 if (!empty($ev->end_date) && $ev->end_date !== $ev->event_date) $pills[] = ['📆', 'bis ' . date('d.m.Y', strtotime($ev->end_date))];
+                if ($category && !empty($s['show_category']) && $s['show_category'] !== '0') $pills[] = ['📂', $category];
                 ?>
                 <?php if ($pills): ?>
                 <div class="ev-adm-pills">
@@ -285,15 +338,11 @@ final class CMS_Events_Admin
 
                 <div class="ev-adm-foot">
                     <a href="<?= function_exists('cms_event_url') ? cms_event_url($ev) : SITE_URL . '/event/event-' . $id ?>"
-                       target="_blank" class="ev-adm-btn ev-adm-btn-ghost">&#128065; Ansehen</a>
+                       target="_blank" class="ev-adm-btn ev-adm-btn-ghost">🌐</a>
                     <a href="<?= SITE_URL ?>/admin/events/edit/<?= $id ?>"
                        class="ev-adm-btn ev-adm-btn-primary">✏️ Bearbeiten</a>
-                    <form method="POST" action="<?= SITE_URL ?>/admin/events/delete/<?= $id ?>" style="display:contents;">
-                        <input type="hidden" name="csrf_token"
-                               value="<?= CMS\Security::instance()->generateToken('delete_event') ?>">
-                        <button type="submit" class="ev-adm-btn ev-adm-btn-danger"
-                                onclick="return confirm('Event «<?= $sec->escape(addslashes($ev->title ?? '')) ?>» wirklich löschen?')">🗑</button>
-                    </form>
+                    <button type="button" class="ev-adm-btn ev-adm-btn-danger"
+                            onclick="openEvDeleteModal(<?= $id ?>, '<?= $sec->escape(addslashes($ev->title ?? '')) ?>')">🗑️</button>
                 </div>
             </div>
         <?php endforeach; ?>
@@ -475,6 +524,39 @@ final class CMS_Events_Admin
             </div>
 
             <div class="admin-card">
+                <h3>🏅 Badge-Farben (Status-Badges)</h3>
+                <p style="color:#64748b;font-size:.875rem;margin-bottom:1rem;">Hintergrund- und Textfarben der Status-Badges auf der Event-Karte und Detailseite.</p>
+                <div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.25rem;">
+                    <?php
+                    $badgeColorFields = [
+                        'color_badge_published_bg'    => ['Veröffentlicht – Hintergrund', '#d1fae5'],
+                        'color_badge_published_color' => ['Veröffentlicht – Textfarbe',   '#065f46'],
+                        'color_badge_draft_bg'        => ['Entwurf – Hintergrund',        '#fef3c7'],
+                        'color_badge_draft_color'     => ['Entwurf – Textfarbe',          '#92400e'],
+                        'color_badge_cancelled_bg'    => ['Abgesagt – Hintergrund',       '#fee2e2'],
+                        'color_badge_cancelled_color' => ['Abgesagt – Textfarbe',         '#991b1b'],
+                        'color_badge_completed_bg'    => ['Abgeschlossen – Hintergrund',  '#dbeafe'],
+                        'color_badge_completed_color' => ['Abgeschlossen – Textfarbe',    '#1e40af'],
+                        'color_badge_featured_bg'     => ['⭐ Featured – Hintergrund',    '#fef3c7'],
+                        'color_badge_featured_color'  => ['⭐ Featured – Textfarbe',      '#92400e'],
+                        'color_badge_online_bg'       => ['🌐 Online – Hintergrund',      '#d1fae5'],
+                        'color_badge_online_color'    => ['🌐 Online – Textfarbe',        '#065f46'],
+                    ];
+                    foreach ($badgeColorFields as $key => [$label, $default]):
+                        $val = htmlspecialchars($s[$key] ?? $default);
+                    ?>
+                    <div class="form-group">
+                        <label class="form-label"><?= $label ?></label>
+                        <div style="display:flex;gap:.5rem;align-items:center;">
+                            <input type="color" id="clr_<?= $key ?>" value="<?= $val ?>" style="width:48px;height:36px;border:2px solid #e2e8f0;border-radius:6px;padding:2px;cursor:pointer;" oninput="document.getElementById('txt_<?= $key ?>').value=this.value">
+                            <input type="text" id="txt_<?= $key ?>" name="<?= $key ?>" class="form-control" value="<?= $val ?>" style="flex:1;font-family:monospace;font-size:.82rem;" oninput="document.getElementById('clr_<?= $key ?>').value=this.value">
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="admin-card">
                 <h3>📐 Layout &amp; Anzeige</h3>
                 <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
                     <div class="form-group">
@@ -491,13 +573,29 @@ final class CMS_Events_Admin
                         </select>
                     </div>
                 </div>
-                <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:.75rem;">
+                <h4 style="margin:1rem 0 .5rem;font-size:.9rem;color:#1e293b;">🏷️ Badges auf der Karte</h4>
+                <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:.75rem;">
+                    <?php foreach ([
+                        'show_status_badge'   => '📋 Status-Badge',
+                        'show_featured_badge' => '⭐ Featured-Badge',
+                        'show_online_badge'   => '🌐 Online-Badge',
+                    ] as $key => $label): ?>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="<?= $key ?>" value="1"
+                               <?= !empty($s[$key]) && $s[$key] !== '0' ? 'checked' : '' ?>>
+                        <?= $label ?>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+                <h4 style="margin:1rem 0 .5rem;font-size:.9rem;color:#1e293b;">💊 Pills auf der Karte</h4>
+                <div style="display:flex;flex-wrap:wrap;gap:1rem;">
                     <?php foreach ([
                         'show_category'  => '📂 Kategorie',
                         'show_city'      => '📍 Ort / Stadt',
                         'show_capacity'  => '👥 Kapazität',
-                        'show_speakers'  => '🎤 Speaker-Anzahl',
+                        'show_date_pill' => '🕐 Uhrzeit',
                         'show_price'     => '💶 Preis',
+                        'show_speakers'  => '🎤 Speaker-Anzahl',
                         'show_organizer' => '🏢 Veranstalter',
                         'show_tags'      => '🏷️ Tags',
                     ] as $key => $label): ?>
@@ -507,6 +605,25 @@ final class CMS_Events_Admin
                         <?= $label ?>
                     </label>
                     <?php endforeach; ?>
+                </div>
+                <p style="margin-top:.75rem;padding:.5rem .75rem;background:#f0fdf4;border-left:3px solid #86efac;border-radius:4px;font-size:.8rem;color:#166534;">
+                    ℹ️ <strong>Deaktivierte Badges/Pills</strong> werden auf der öffentlichen Übersichtskarte ausgeblendet.
+                </p>
+            </div>
+
+            <div class="admin-card">
+                <h3>👁️ Vorschau</h3>
+                <div style="max-width:340px;">
+                    <div id="prev-header" style="background:linear-gradient(135deg,<?= htmlspecialchars($s['color_hdr_from']) ?>,<?= htmlspecialchars($s['color_hdr_to']) ?>);padding:1.5rem;border-radius:<?= (int)$s['border_radius'] ?>px <?= (int)$s['border_radius'] ?>px 0 0;display:flex;align-items:center;gap:.75rem;">
+                        <span id="prev-icon" style="font-size:2rem;"><?= htmlspecialchars($s['archive_header_icon']) ?></span>
+                        <div>
+                            <div id="prev-title" style="color:<?= htmlspecialchars($s['color_hdr_title']) ?>;font-weight:800;font-size:1.1rem;"><?= htmlspecialchars($s['archive_title'] ?? 'Events') ?></div>
+                            <div style="color:<?= htmlspecialchars($s['color_hdr_title']) ?>;font-size:.8rem;opacity:.85;">Vorschau</div>
+                        </div>
+                    </div>
+                    <div id="prev-body" style="background:<?= htmlspecialchars($s['color_card_bg']) ?>;padding:1rem;border:1px solid <?= htmlspecialchars($s['color_card_border'] ?? '#bfdbfe') ?>;border-top:none;border-radius:0 0 <?= (int)$s['border_radius'] ?>px <?= (int)$s['border_radius'] ?>px;">
+                        <span id="prev-cta" style="display:inline-block;padding:.3rem .8rem;background:<?= htmlspecialchars($s['color_primary']) ?>;color:#fff;border-radius:6px;font-size:.8rem;font-weight:700;">Details ansehen →</span>
+                    </div>
                 </div>
             </div>
 
@@ -532,6 +649,10 @@ final class CMS_Events_Admin
                 if (ttlEl) { ttlEl.textContent = '<?= addslashes(htmlspecialchars($s['archive_title'] ?? 'Events')) ?>'; ttlEl.style.color = color; }
             }
             window.updateEvHdrPreview = updateEvHdrPreview;
+            ['txt_color_hdr_from','txt_color_hdr_to','txt_color_hdr_title','txt_archive_header_icon'].forEach(function(id){
+                var el = document.getElementById(id);
+                if(el) el.addEventListener('input', updateEvHdrPreview);
+            });
             updateEvHdrPreview();
         })();
         </script>
@@ -574,7 +695,20 @@ final class CMS_Events_Admin
                     </div>
                 </div>
             </div>
-
+            <div class="admin-card">
+                <h3>ℹ️ Shortcode-Nutzung</h3>
+                <p style="color:#64748b;font-size:.875rem;margin-bottom:.5rem;">Event-Liste per Shortcode in Seiteninhalte einbinden:</p>
+                <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:.75rem 1rem;font-family:monospace;font-size:.875rem;color:#1d4ed8;">
+                    [cms_events limit="12" featured="1" category="Konferenz"]
+                </div>
+                <div style="margin-top:.75rem;display:flex;flex-direction:column;gap:.35rem;">
+                    <small style="color:#64748b;"><strong>limit</strong> – Anzahl Events (Standard: 12)</small>
+                    <small style="color:#64748b;"><strong>featured</strong> – Nur Featured-Events (1/0)</small>
+                    <small style="color:#64748b;"><strong>category</strong> – Filter nach Kategorie-Name</small>
+                    <small style="color:#64748b;"><strong>upcoming</strong> – Nur zukünftige Events (1/0)</small>
+                    <small style="color:#64748b;"><strong>online</strong> – Nur Online-Events (1/0)</small>
+                </div>
+            </div>
             <div class="admin-card form-actions-card">
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
@@ -583,68 +717,34 @@ final class CMS_Events_Admin
         </form>
         <?php endif; ?>
 
-        <style>
-        /* ── Tabs ─────────────────────────────────────────────────────── */
-        .ev-tabs{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.75rem;border-bottom:2px solid #e2e8f0;}
-        .ev-tab{display:inline-flex;align-items:center;gap:.35rem;padding:.55rem 1.1rem;border-radius:8px 8px 0 0;font-size:.8125rem;font-weight:600;color:#64748b;text-decoration:none;transition:all .15s;border-bottom:2px solid transparent;margin-bottom:-2px;}
-        .ev-tab:hover{color:#3b82f6;background:#eff6ff;}
-        .ev-tab--active{color:#3b82f6;border-bottom-color:#3b82f6;background:#eff6ff;}
-        /* ── Stats ────────────────────────────────────────────────────── */
-        .ev-stats{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem;}
-        .ev-stat{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:.875rem 1.25rem;display:flex;flex-direction:column;gap:.15rem;min-width:90px;}
-        .ev-stat-val{font-size:1.5rem;font-weight:800;color:#1e293b;}
-        .ev-stat-lbl{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:#64748b;font-weight:600;}
-        /* ── Filter-Bar ───────────────────────────────────────────────── */
-        .ev-filter-bar{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1.5rem;}
-        .ev-filter-btn{display:inline-block;padding:.35rem .9rem;border-radius:50px;font-size:.78rem;font-weight:600;color:#475569;background:#f1f5f9;text-decoration:none;border:1px solid #e2e8f0;transition:all .15s;}
-        .ev-filter-btn:hover{background:#e2e8f0;}
-        .ev-filter-btn--active{background:#3b82f6;color:#fff;border-color:#3b82f6;}
-        /* ── Empty ────────────────────────────────────────────────────── */
-        .ev-empty{text-align:center;padding:3rem;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;color:#64748b;}
-        /* ── Admin-Grid ───────────────────────────────────────────────── */
-        .ev-adm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;}
-        .ev-adm-card{background:#fff;border:2px solid #e2e8f0;border-radius:12px;padding:1.25rem;display:flex;flex-direction:column;gap:.75rem;transition:box-shadow .2s,transform .2s;overflow:hidden;}
-        .ev-adm-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.09);transform:translateY(-2px);}
-        .ev-adm-card--past{opacity:.7;}
-        .ev-adm-card--featured{border-color:#f59e0b;background:linear-gradient(135deg,#fffbeb 0%,#fff 70%);}
-        /* ── Admin-Card Inhalte ───────────────────────────────────────── */
-        .ev-adm-head{display:flex;gap:.75rem;align-items:flex-start;}
-        .ev-adm-date{flex-shrink:0;text-align:center;min-width:50px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border-radius:10px;padding:.5rem .4rem;display:flex;flex-direction:column;gap:.1rem;}
-        .ev-adm-date--nodate{background:#e2e8f0;align-items:center;justify-content:center;height:52px;}
-        .ev-adm-day{font-size:1.3rem;font-weight:800;line-height:1;}
-        .ev-adm-mo{font-size:.58rem;text-transform:uppercase;letter-spacing:.04em;opacity:.88;}
-        .ev-adm-yr{font-size:.55rem;opacity:.7;}
-        .ev-adm-ident{flex:1;min-width:0;display:flex;flex-direction:column;gap:.25rem;}
-        .ev-adm-badge{display:inline-block;padding:.15rem .5rem;border-radius:50px;font-size:.68rem;font-weight:700;width:fit-content;}
-        .ev-adm-title{font-size:.95rem;font-weight:700;color:#1e293b;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
-        .ev-adm-sub{font-size:.75rem;color:#64748b;margin:0;}
-        .ev-adm-pills{display:flex;flex-wrap:wrap;gap:.3rem;}
-        .ev-adm-pill{display:inline-flex;align-items:center;gap:.2rem;padding:.2rem .55rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:50px;font-size:.72rem;color:#374151;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        .ev-adm-foot{display:flex;gap:.5rem;padding-top:.75rem;border-top:1px solid #f1f5f9;margin-top:auto;flex-wrap:wrap;}
-        .ev-adm-btn{display:inline-flex;align-items:center;gap:.25rem;padding:.35rem .8rem;border-radius:7px;font-size:.78rem;font-weight:600;text-decoration:none;white-space:nowrap;transition:opacity .15s;cursor:pointer;border:none;}
-        .ev-adm-btn:hover{opacity:.8;}
-        .ev-adm-btn-primary{background:#3b82f6;color:#fff;}
-        .ev-adm-btn-ghost{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;}
-        .ev-adm-btn-danger{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;}
-        /* ── Taxonomie-Liste ──────────────────────────────────────────── */
-        .ev-tax-list{display:flex;flex-direction:column;gap:.4rem;}
-        .ev-tax-row{display:flex;align-items:center;gap:.5rem;padding:.55rem .875rem;background:#fff;border:1px solid #e2e8f0;border-radius:8px;font-size:.875rem;color:#374151;}
-        .ev-tax-name{font-weight:500;}
-        .ev-del-btn{background:none;border:none;color:#dc2626;cursor:pointer;font-size:1rem;font-weight:700;padding:0 .3rem;opacity:.6;transition:opacity .15s;margin-left:auto;}
-        .ev-del-btn:hover{opacity:1;}
-        /* ── Tag-Liste ────────────────────────────────────────────────── */
-        .ev-tag-list{display:flex;flex-wrap:wrap;gap:.3rem;}
-        .ev-tag{display:inline-flex;align-items:center;gap:.2rem;padding:.2rem .5rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:50px;font-size:.75rem;color:#1e40af;}
-        .ev-tag-del{background:none;border:none;color:#dc2626;cursor:pointer;font-size:.85rem;font-weight:700;padding:0 .1rem;opacity:.6;transition:opacity .15s;line-height:1;}
-        .ev-tag-del:hover{opacity:1;}
-        /* ── Side Cards / Form Groups ─────────────────────────────────── */
-        .ev-side-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.25rem;}
-        .ev-form-group{margin-bottom:.875rem;}
-        .ev-form-group label{display:block;font-size:.78rem;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.35rem;}
-        .ev-form-group input[type=text],.ev-form-group input[type=number],.ev-form-group input[type=url],
-        .ev-form-group input[type=email],.ev-form-group select,.ev-form-group textarea{width:100%;padding:.45rem .7rem;border:1px solid #e2e8f0;border-radius:7px;font-size:.875rem;box-sizing:border-box;}
-        .ev-form-group input:focus,.ev-form-group select:focus,.ev-form-group textarea:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.12);}
-        </style>
+        <!-- Delete Modal -->
+        <div id="evDeleteModal" class="modal" style="display:none;">
+            <div class="modal-content" style="max-width:480px;">
+                <div class="modal-header">
+                    <h3>🗑️ Event löschen</h3>
+                    <button class="modal-close" onclick="closeModal('evDeleteModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Soll das Event <strong id="evDeleteName"></strong> wirklich gelöscht werden?</p>
+                    <p style="color:#ef4444;font-size:.875rem;">⚠️ Diese Aktion kann nicht rückgängig gemacht werden.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('evDeleteModal')">Abbrechen</button>
+                    <form method="POST" id="evDeleteForm" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="<?= CMS\Security::instance()->generateToken('delete_event') ?>">
+                        <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        function openEvDeleteModal(id, name) {
+            document.getElementById('evDeleteName').textContent = name;
+            document.getElementById('evDeleteForm').action = '<?= SITE_URL ?>/admin/events/delete/' + id;
+            openModal('evDeleteModal');
+        }
+        </script>
         <?php
         renderAdminLayoutEnd();
     }
