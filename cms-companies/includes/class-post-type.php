@@ -206,11 +206,15 @@ final class CMS_Companies_Post_Type
 
         $tab    = $_GET['tab']    ?? 'overview';
         $filter = $_GET['filter'] ?? 'all';
+        $search = trim($_GET['search'] ?? '');
 
         $db  = CMS_Companies_Database::instance();
 
         // Alle nicht-gelöschten Firmen laden (aktiv UND inaktiv) für Admin-Übersicht
         $args = ['limit' => 200, 'status' => 'any'];
+        if ($search !== '') {
+            $args['q'] = $search;
+        }
         $companies = $db->get_companies($args);
 
         $industries = $db->get_all_industries();
@@ -226,6 +230,7 @@ final class CMS_Companies_Post_Type
             'companies'  => $companies,
             'tab'        => $tab,
             'filter'     => $filter,
+            'search'     => $search,
             'industries' => $industries,
             'presets'    => $presets,
             'settings'   => $settings,
