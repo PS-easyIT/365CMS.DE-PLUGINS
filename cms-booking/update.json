@@ -1,0 +1,13 @@
+{
+    "name": "CMS Booking",
+    "slug": "cms-booking",
+    "version": "1.0.0",
+    "requires_cms": "2.0.0",
+    "tested_cms": "2.0.0",
+    "author": "365 Network",
+    "author_url": "https://365network.de",
+    "description": "Universelles Buchungssystem – andere Plugins (Experts, Speakers, Events, Companies) können sich als Anbieter registrieren.",
+    "download_url": "",
+    "last_updated": "2025-06-28",
+    "changelog": "Initial release: Provider-Architektur, Buchungsworkflow, Verfügbarkeits-Engine, E-Mail-Benachrichtigungen, Kalender-Integration"
+}

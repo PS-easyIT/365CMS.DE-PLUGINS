@@ -35,7 +35,7 @@ final class CMS_Contact_Forms
 
     public static function get_available_templates(): array
     {
-        return [
+        $templates = [
             'classic'   => ['name' => 'Classic',       'icon' => '📋', 'description' => 'Klassisches Kontaktformular mit klarer Struktur'],
             'modern'    => ['name' => 'Modern',        'icon' => '✨', 'description' => 'Modernes Card-basiertes Design mit Animationen'],
             'split'     => ['name' => 'Split Screen',  'icon' => '📐', 'description' => 'Zweispaltig: Info-Bereich links, Formular rechts'],
@@ -43,6 +43,16 @@ final class CMS_Contact_Forms
             'business'  => ['name' => 'Business',      'icon' => '🏢', 'description' => 'Professionelles Business-Layout mit Kartenbereich'],
             'fullwidth' => ['name' => 'Fullwidth',     'icon' => '🖥️', 'description' => 'Breitbild-Hero mit zentriertem Formular'],
         ];
+
+        // Booking-Templates (von CMS-Booking bereitgestellt, aber eigenständig nutzbar)
+        if (file_exists(CMS_CONTACT_PLUGIN_DIR . 'templates/template-booking-simple.php')) {
+            $templates['booking-simple']  = ['name' => 'Buchung – Einfach',  'icon' => '📅', 'description' => 'Schlichtes Buchungs-Kontaktformular'];
+            $templates['booking-expert']  = ['name' => 'Buchung – Experte',  'icon' => '🎓', 'description' => 'Experten-Beratung mit Info-Sidebar'];
+            $templates['booking-event']   = ['name' => 'Buchung – Event',    'icon' => '🎤', 'description' => 'Event-/Speaker-Buchungsformular'];
+            $templates['booking-service'] = ['name' => 'Buchung – Service',  'icon' => '🏢', 'description' => 'Dienstleistungs-/Firmenbuchung'];
+        }
+
+        return $templates;
     }
 
     // ── CRUD ──────────────────────────────────────────────────────────────────

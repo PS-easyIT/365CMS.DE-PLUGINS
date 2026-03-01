@@ -41,6 +41,11 @@
       "slug": "cms-contact",
       "name": "CMS Contact",
       "manifest": "PLUGINS/cms-contact/update.json"
+    },
+    {
+      "slug": "cms-booking",
+      "name": "CMS Booking",
+      "manifest": "PLUGINS/cms-booking/update.json"
     }
   ]
 }
