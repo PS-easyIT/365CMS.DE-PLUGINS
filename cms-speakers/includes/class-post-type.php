@@ -30,6 +30,7 @@ final class CMS_Speakers_Post_Type
         $router->addRoute('GET',  '/admin/speakers/edit/:id',   [$this, 'admin_edit']);
         $router->addRoute('POST', '/admin/speakers/save',       [$this, 'admin_save']);
         $router->addRoute('POST', '/admin/speakers/delete/:id', [$this, 'admin_delete']);
+        $router->addRoute('POST', '/admin/speakers/approve/:id', [$this, 'admin_approve']);
         $router->addRoute('POST', '/admin/speakers/event/add',        [$this, 'admin_event_add']);
         $router->addRoute('POST', '/admin/speakers/event/delete/:id', [$this, 'admin_event_delete']);
         $router->addRoute('POST', '/admin/speakers/settings/save',    [$this, 'admin_settings_save']);
@@ -187,10 +188,11 @@ final class CMS_Speakers_Post_Type
         $tab    = $_GET['tab']    ?? 'overview';
         $filter = $_GET['filter'] ?? 'all';
         $search = trim($_GET['search'] ?? '');
-        $args = ['limit' => 200];
+        $args = ['limit' => 200, 'status' => null];
         if ($filter === 'featured')  $args['is_featured']  = 1;
         if ($filter === 'verified')  $args['is_verified']  = 1;
         if ($filter === 'available') $args['availability'] = 'available';
+        if ($filter === 'pending')   $args['status'] = 'pending';
         if ($search) $args['search'] = $search;
         $speakers  = $db->get_speakers($args);
         $settings  = $db->get_settings();
@@ -284,6 +286,20 @@ final class CMS_Speakers_Post_Type
             CMS\Router::instance()->redirect('/admin/speakers?error=save');
         }
     }
+    /** Speaker genehmigen (pending → active) */
+    public function admin_approve(string $id_param = ''): void
+    {
+        $this->require_admin();
+        $speaker_id  = $id_param !== '' ? (int)$id_param : (int)($_POST['id'] ?? 0);
+        $csrf_token  = $_POST['csrf_token'] ?? '';
+        if (!CMS\Security::instance()->verifyToken($csrf_token, 'speaker_settings')) {
+            CMS\Router::instance()->redirect('/admin/speakers?tab=overview&error=csrf');
+            return;
+        }
+        CMS_Speakers_Database::instance()->set_speaker_status($speaker_id, 'active');
+        CMS\Router::instance()->redirect('/admin/speakers?tab=overview&approved=1');
+    }
+
     public function admin_delete(int $id = 0): void
     {
         $this->require_admin();

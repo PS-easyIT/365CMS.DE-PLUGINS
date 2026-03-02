@@ -155,6 +155,35 @@ class CMS_Experts_Member_Dashboard
                     'daily_rate'       => is_numeric($_POST['daily_rate']  ?? '') ? (float)$_POST['daily_rate']  : null,
                     'status'           => $isAdminSave ? 'active' : 'pending',
                 ]);
+
+                // Skills speichern
+                if ($id > 0) {
+                    $parse_tags = static fn(string $raw): array =>
+                        array_values(array_filter(array_map('trim', explode(',', $raw))));
+
+                    CMS_Experts_Database::instance()->save_expert_skills($id, [
+                        'general' => $parse_tags($_POST['skills_general'] ?? ''),
+                        'tech'    => $parse_tags($_POST['skills_tech'] ?? ''),
+                        'soft'    => $parse_tags($_POST['skills_soft'] ?? ''),
+                    ]);
+
+                    // Fachrichtungen speichern
+                    $spec_ids = array_map('intval', (array)($_POST['spec_ids'] ?? []));
+                    CMS_Experts_Database::instance()->save_expert_specializations($id, $spec_ids);
+
+                    // Social-Links als Meta speichern
+                    $social_keys = [
+                        'social_linkedin', 'social_xing', 'social_github', 'social_twitter',
+                        'social_website', 'social_gitlab', 'social_stackoverflow',
+                        'social_youtube', 'social_blog_rss',
+                    ];
+                    foreach ($social_keys as $sKey) {
+                        $sVal = filter_var($_POST['meta'][$sKey] ?? '', FILTER_VALIDATE_URL) ?: '';
+                        if ($sVal !== '') {
+                            CMS_Experts_Database::instance()->save_meta($id, $sKey, $sVal);
+                        }
+                    }
+                }
                 if ($isAdminSave) {
                     $_SESSION['success'] = 'Experte wurde erfolgreich angelegt.';
                 } else {
@@ -277,6 +306,29 @@ class CMS_Experts_Member_Dashboard
     {
         $csrfToken = \CMS\Security::instance()->generateToken('member_expert_create');
         $isAdmin   = \CMS\Auth::instance()->isAdmin();
+
+        // Skill-Presets und Fachrichtungen laden
+        $skillPresets    = [];
+        $specializations = [];
+        if (class_exists('CMS_Experts_Taxonomies')) {
+            try {
+                $skillPresets    = CMS_Experts_Taxonomies::instance()->get_skill_presets_grouped();
+                $specializations = CMS_Experts_Taxonomies::instance()->get_specializations();
+            } catch (\Throwable $e) {
+                // Fallback: leere Arrays
+            }
+        }
+
+        // Fachrichtungen nach Parent gruppieren
+        $specRoots    = [];
+        $specChildren = [];
+        foreach ($specializations as $sp) {
+            if (!$sp->parent_id) {
+                $specRoots[] = $sp;
+            } else {
+                $specChildren[(int)$sp->parent_id][] = $sp;
+            }
+        }
         ?>
         <div style="margin-bottom:1rem;">
             <a href="/member/plugin/experts" style="color:#4f46e5;font-size:.875rem;text-decoration:none;">
@@ -409,6 +461,105 @@ class CMS_Experts_Member_Dashboard
                     </div>
                 </div>
 
+                <!-- Skills & Kompetenzen -->
+                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
+                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">🛠️ Skills & Kompetenzen</h4>
+                <p style="color:#64748b;font-size:.8rem;margin:0 0 1rem;">
+                    Klicke auf eine Vorlage, um sie hinzuzufügen, oder gib eigene Skills als Komma-getrennte Liste ein.
+                </p>
+
+                <?php
+                $skillSections = [
+                    'general' => ['label' => 'Programmierung', 'placeholder' => 'z.B. PHP, Python, JavaScript …', 'hint' => 'Programmiersprachen & Grundlagen'],
+                    'tech'    => ['label' => 'Skills',         'placeholder' => 'z.B. Docker, React, AWS …',       'hint' => 'Frameworks, Tools & Plattformen'],
+                    'soft'    => ['label' => 'Persönliche Stärken', 'placeholder' => 'z.B. Teamwork, Führung …',  'hint' => 'Soft Skills & Methoden'],
+                ];
+                foreach ($skillSections as $sType => $sCfg):
+                    $typePresets = $skillPresets[$sType] ?? [];
+                ?>
+                <div class="form-group" <?php echo $sType !== 'general' ? 'style="margin-top:1rem;"' : ''; ?>>
+                    <label class="form-label"><?php echo $sCfg['label']; ?> <small style="font-weight:400;color:#6b7280;">(<?php echo $sCfg['hint']; ?>)</small></label>
+                    <div style="display:flex;flex-wrap:wrap;gap:.35rem;padding:.5rem;border:2px solid #e2e8f0;border-radius:8px;min-height:42px;cursor:text;" 
+                         id="tagWrap_<?php echo $sType; ?>" onclick="document.getElementById('tagInput_<?php echo $sType; ?>').focus()">
+                        <input type="text" id="tagInput_<?php echo $sType; ?>" 
+                               placeholder="<?php echo htmlspecialchars($sCfg['placeholder']); ?>"
+                               style="border:none;outline:none;flex:1;min-width:160px;font-size:.875rem;padding:.2rem 0;"
+                               onkeydown="handleSkillKeydown(event, '<?php echo $sType; ?>')">
+                    </div>
+                    <input type="hidden" name="skills_<?php echo $sType; ?>" id="skillsHidden_<?php echo $sType; ?>" value="">
+                    <?php if (!empty($typePresets)): ?>
+                    <div style="margin-top:.5rem;">
+                        <small style="color:#64748b;font-weight:600;">📋 Vorlagen:</small>
+                        <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.25rem;">
+                            <?php foreach ($typePresets as $preset): ?>
+                            <button type="button" 
+                                    style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:2px 8px;font-size:.75rem;color:#475569;cursor:pointer;"
+                                    onclick="addSkillTag('<?php echo htmlspecialchars($preset->skill_name, ENT_QUOTES); ?>', '<?php echo $sType; ?>')">
+                                + <?php echo htmlspecialchars($preset->skill_name); ?>
+                            </button>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+
+                <!-- Fachrichtungen -->
+                <?php if (!empty($specRoots)): ?>
+                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
+                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">🎯 Fachrichtungen</h4>
+                <p style="color:#64748b;font-size:.8rem;margin:0 0 .75rem;">
+                    Wähle deine Spezialisierungen aus. Die erste Auswahl wird als primäre Fachrichtung gesetzt.
+                </p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.75rem;">
+                    <?php foreach ($specRoots as $root):
+                        $children = $specChildren[(int)$root->id] ?? [];
+                    ?>
+                    <div style="border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;">
+                        <div style="padding:.4rem .75rem;background:#f8fafc;font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e2e8f0;">
+                            <?php echo htmlspecialchars($root->name); ?>
+                        </div>
+                        <div style="padding:.25rem 0;">
+                            <label style="display:flex;align-items:center;gap:.5rem;padding:.35rem .75rem;font-size:.875rem;cursor:pointer;font-weight:600;color:#374151;">
+                                <input type="checkbox" name="spec_ids[]" value="<?php echo (int)$root->id; ?>" style="accent-color:#3b82f6;">
+                                <?php echo htmlspecialchars($root->name); ?>
+                            </label>
+                            <?php foreach ($children as $child): ?>
+                            <label style="display:flex;align-items:center;gap:.5rem;padding:.3rem .75rem .3rem 1.5rem;font-size:.85rem;cursor:pointer;color:#475569;">
+                                <input type="checkbox" name="spec_ids[]" value="<?php echo (int)$child->id; ?>" style="accent-color:#3b82f6;">
+                                <?php echo htmlspecialchars($child->name); ?>
+                            </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
+                <!-- Social Links -->
+                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
+                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">🌐 Online-Präsenz</h4>
+                <?php
+                $socialFields = [
+                    'social_linkedin'  => ['label' => 'LinkedIn',   'icon' => '🔗', 'ph' => 'https://linkedin.com/in/…'],
+                    'social_xing'      => ['label' => 'Xing',       'icon' => '🔗', 'ph' => 'https://xing.com/profile/…'],
+                    'social_github'    => ['label' => 'GitHub',     'icon' => '🐙', 'ph' => 'https://github.com/…'],
+                    'social_twitter'   => ['label' => 'Twitter / X','icon' => '🐦', 'ph' => 'https://twitter.com/…'],
+                    'social_website'   => ['label' => 'Website',    'icon' => '🌐', 'ph' => 'https://…'],
+                    'social_youtube'   => ['label' => 'YouTube',    'icon' => '▶️', 'ph' => 'https://youtube.com/@…'],
+                ];
+                ?>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                    <?php foreach ($socialFields as $sKey => $sCfg): ?>
+                    <div class="form-group">
+                        <label class="form-label"><?php echo $sCfg['icon']; ?> <?php echo htmlspecialchars($sCfg['label']); ?></label>
+                        <input type="url" name="meta[<?php echo $sKey; ?>]" class="form-control" 
+                               placeholder="<?php echo htmlspecialchars($sCfg['ph']); ?>"
+                               value="<?php echo htmlspecialchars($_POST['meta'][$sKey] ?? ''); ?>">
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+
                 <!-- Über mich -->
                 <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
                            padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">📝 Über mich</h4>
@@ -425,6 +576,60 @@ class CMS_Experts_Member_Dashboard
                 </div>
             </form>
         </div>
+
+        <script>
+        // Skill-Tag-System für Member-Dashboard
+        const _skillTags = {general: [], tech: [], soft: []};
+
+        function syncSkillHidden(type) {
+            const hidden = document.getElementById('skillsHidden_' + type);
+            if (hidden) hidden.value = _skillTags[type].join(',');
+        }
+
+        function renderSkillTags(type) {
+            const wrap = document.getElementById('tagWrap_' + type);
+            if (!wrap) return;
+            wrap.querySelectorAll('.mem-skill-pill').forEach(el => el.remove());
+            const input = document.getElementById('tagInput_' + type);
+            _skillTags[type].forEach(function(tag, idx) {
+                const pill = document.createElement('span');
+                pill.className = 'mem-skill-pill';
+                pill.style.cssText = 'display:inline-flex;align-items:center;gap:.25rem;background:#eff6ff;color:#1e40af;border-radius:4px;padding:2px 8px;font-size:.8rem;';
+                pill.textContent = tag;
+                const x = document.createElement('span');
+                x.textContent = '×';
+                x.style.cssText = 'cursor:pointer;font-weight:700;color:#93c5fd;margin-left:2px;';
+                x.onclick = function() { removeSkillTag(idx, type); };
+                pill.appendChild(x);
+                wrap.insertBefore(pill, input);
+            });
+            syncSkillHidden(type);
+        }
+
+        function addSkillTag(name, type) {
+            name = name.trim();
+            if (!name || _skillTags[type].includes(name)) return;
+            _skillTags[type].push(name);
+            renderSkillTags(type);
+        }
+
+        function removeSkillTag(idx, type) {
+            _skillTags[type].splice(idx, 1);
+            renderSkillTags(type);
+        }
+
+        function handleSkillKeydown(e, type) {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                var val = e.target.value.replace(/,/g, '').trim();
+                if (val) { addSkillTag(val, type); e.target.value = ''; }
+            }
+            if (e.key === 'Backspace' && e.target.value === '' && _skillTags[type].length) {
+                _skillTags[type].pop();
+                renderSkillTags(type);
+            }
+        }
+        </script>
         <?php
     }
 

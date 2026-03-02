@@ -96,6 +96,7 @@ final class CMS_Speakers_Admin
         // Stats
         $total    = count($speakers);
         $active   = count(array_filter($speakers, fn($e) => ($e->status ?? '') === 'active'));
+        $pending  = count(array_filter($speakers, fn($e) => ($e->status ?? '') === 'pending'));
         $featured = count(array_filter($speakers, fn($e) => ($e->is_featured ?? 0)));
         $verified = count(array_filter($speakers, fn($e) => ($e->is_verified ?? 0)));
         $avail    = count(array_filter($speakers, fn($e) => ($e->availability ?? '') === 'available'));
@@ -114,6 +115,7 @@ final class CMS_Speakers_Admin
 
         <!-- Flash Messages -->
         <?php if (isset($_GET['saved'])): ?><div class="alert alert-success">✅ Änderungen gespeichert.</div><?php endif; ?>
+        <?php if (isset($_GET['approved'])): ?><div class="alert alert-success">✅ Speaker genehmigt und aktiviert.</div><?php endif; ?>
         <?php if (isset($_GET['deleted'])): ?><div class="alert alert-success">✅ Speaker gelöscht.</div><?php endif; ?>
         <?php if (isset($_GET['error'])): ?><div class="alert alert-error">❌ Fehler: <?= htmlspecialchars($_GET['error']) ?></div><?php endif; ?>
 
@@ -129,6 +131,9 @@ final class CMS_Speakers_Admin
             foreach ($tabs as $slug => [$icon, $label]): ?>
                 <a href="?tab=<?= $slug ?>" class="spk-tab <?= $tab === $slug ? 'active' : '' ?>">
                     <?= $icon ?> <?= $label ?>
+                    <?php if ($slug === 'overview' && $pending > 0): ?>
+                        <span class="nav-badge" style="background:#f59e0b;color:#fff;font-size:.7rem;padding:1px 6px;border-radius:9px;margin-left:4px;"><?= $pending ?></span>
+                    <?php endif; ?>
                 </a>
             <?php endforeach; ?>
         </div>
@@ -164,8 +169,7 @@ final class CMS_Speakers_Admin
                 <div class="form-group" style="margin:0;flex:1;min-width:160px;">
                     <label class="form-label">Status / Typ</label>
                     <select name="filter" class="form-control">
-                        <option value="all"       <?= $filter==='all'       ?'selected':'' ?>>Alle (<?= $total ?>)</option>
-                        <option value="available" <?= $filter==='available' ?'selected':'' ?>>Verfügbar (<?= $avail ?>)</option>
+                        <option value="all"       <?= $filter==='all'       ?'selected':'' ?>>Alle (<?= $total ?>)</option>                        <option value="pending"   <?= $filter==='pending'   ?'selected':'' ?>>Ausstehend (<?= $pending ?>)</option>                        <option value="available" <?= $filter==='available' ?'selected':'' ?>>Verfügbar (<?= $avail ?>)</option>
                         <option value="featured"  <?= $filter==='featured'  ?'selected':'' ?>>Featured (<?= $featured ?>)</option>
                         <option value="verified"  <?= $filter==='verified'  ?'selected':'' ?>>Verifiziert (<?= $verified ?>)</option>
                     </select>
@@ -194,6 +198,8 @@ final class CMS_Speakers_Admin
                 $pcolors  = [['#8b5cf6','#a855f7'],['#7c3aed','#8b5cf6'],['#a855f7','#c084fc'],['#6d28d9','#8b5cf6'],['#9333ea','#a855f7']];
                 $cp  = $pcolors[abs(crc32($name)) % count($pcolors)];
                 $bg  = "linear-gradient(135deg,{$cp[0]},{$cp[1]})";
+                $spStatus  = $sp->status ?? 'active';
+                $isPending = $spStatus === 'pending';
                 $spAvail = $sp->availability ?? 'available';
                 $availLabels = ['available'=>'✅ Verfügbar','limited'=>'⚠️ Begrenzt','booked'=>'🔴 Ausgebucht'];
                 $availColors = ['available'=>'#065f46','limited'=>'#78350f','booked'=>'#7f1d1d'];
@@ -205,7 +211,10 @@ final class CMS_Speakers_Admin
                 $company = htmlspecialchars($sp->company_linked_name ?? $sp->company ?? '');
                 $slug = CMS_Speakers_Database::generate_slug($sp);
             ?>
-            <div class="spk-adm-card">
+            <div class="spk-adm-card <?= $isPending ? 'spk-adm-card--pending' : '' ?>">
+                <?php if ($isPending): ?>
+                    <div class="spk-adm-pending-bar" style="background:#fef3c7;color:#92400e;text-align:center;padding:.5rem;font-size:.85rem;font-weight:600;border-radius:10px 10px 0 0;">⏳ Wartet auf Genehmigung</div>
+                <?php endif; ?>
                 <div class="spk-adm-top">
                     <?php if (!empty($sp->photo_url)): ?>
                         <div class="spk-adm-avatar" style="background:#ede9fe;">
@@ -216,9 +225,13 @@ final class CMS_Speakers_Admin
                     <?php endif; ?>
                     <div class="spk-adm-identity">
                         <div class="spk-adm-badges">
+                            <?php if ($isPending): ?>
+                                <span class="status-badge" style="background:#fef3c7;color:#92400e;">⏳ Zur Prüfung</span>
+                            <?php else: ?>
                             <?php if ($sp->is_verified ?? 0): ?><span class="status-badge active">✔ Verifiziert</span><?php endif; ?>
                             <?php if ($sp->is_featured ?? 0): ?><span class="status-badge admin">⭐ Featured</span><?php endif; ?>
                             <span class="status-badge" style="background:<?= $availBg[$spAvail]??'#f1f5f9' ?>;color:<?= $availColors[$spAvail]??'#374151' ?>;"><?= $availLabels[$spAvail]??$spAvail ?></span>
+                            <?php endif; ?>
                         </div>
                         <p class="spk-adm-name"><?= $name ?></p>
                         <?php if (!empty($sp->position)): ?><p class="spk-adm-sub"><?= htmlspecialchars($sp->position) ?></p><?php endif; ?>
@@ -239,7 +252,15 @@ final class CMS_Speakers_Admin
                     <?php endif; ?>
                 </div>
                 <div class="spk-adm-footer">
-                    <a href="<?= SITE_URL ?>/speakers/<?= $slug ?>" class="spk-adm-btn spk-adm-btn-ghost" target="_blank">🌐</a>
+                    <?php if ($isPending): ?>
+                        <form method="POST" action="<?= SITE_URL ?>/admin/speakers/approve/<?= (int)$sp->id ?>" style="display:contents;">
+                            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                            <button type="button" class="spk-adm-btn spk-adm-btn-primary" style="background:#16a34a;border-color:#16a34a;"
+                                    onclick="openSpkApproveModal(<?= (int)$sp->id ?>, '<?= htmlspecialchars($name, ENT_QUOTES) ?>', this.closest('form'))">✓ Genehmigen</button>
+                        </form>
+                    <?php else: ?>
+                        <a href="<?= SITE_URL ?>/speakers/<?= $slug ?>" class="spk-adm-btn spk-adm-btn-ghost" target="_blank">🌐</a>
+                    <?php endif; ?>
                     <a href="<?= SITE_URL ?>/admin/speakers/edit/<?= (int)$sp->id ?>" class="spk-adm-btn spk-adm-btn-primary">✏️ Bearbeiten</a>
                     <button type="button" class="spk-adm-btn spk-adm-btn-danger"
                             onclick="openDeleteModal(<?= (int)$sp->id ?>, '<?= htmlspecialchars($name, ENT_QUOTES) ?>')">🗑️</button>
@@ -506,7 +527,35 @@ final class CMS_Speakers_Admin
             document.getElementById('deleteModalForm').action = '<?= SITE_URL ?>/admin/speakers/delete/' + id;
             openModal('deleteModal');
         }
+
+        let _spkApproveForm = null;
+        function openSpkApproveModal(id, name, form) {
+            document.getElementById('approveSpkModalName').textContent = name;
+            _spkApproveForm = form;
+            openModal('approveSpkModal');
+        }
+        document.getElementById('approveSpkModalConfirm')?.addEventListener('click', function() {
+            if (_spkApproveForm) _spkApproveForm.submit();
+        });
         </script>
+
+        <!-- Approve Modal -->
+        <div id="approveSpkModal" class="modal" style="display:none;">
+            <div class="modal-content" style="max-width:480px;">
+                <div class="modal-header">
+                    <h3>✅ Speaker genehmigen</h3>
+                    <button class="modal-close" onclick="closeModal('approveSpkModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Soll <strong id="approveSpkModalName"></strong> genehmigt und aktiviert werden?</p>
+                    <p style="color:#166534;font-size:.875rem;">Das Profil wird sofort öffentlich sichtbar.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('approveSpkModal')">Abbrechen</button>
+                    <button type="button" class="btn btn-primary" id="approveSpkModalConfirm">✅ Genehmigen</button>
+                </div>
+            </div>
+        </div>
         <?php
         renderAdminLayoutEnd();
     }

@@ -399,6 +399,19 @@ final class CMS_Speakers_Database
         }
     }
 
+    /**
+     * Setzt den Status eines Speakers direkt (z.B. pending → active)
+     */
+    public function set_speaker_status(int $id, string $status): bool
+    {
+        $allowed = ['active', 'inactive', 'pending', 'deleted'];
+        if (!in_array($status, $allowed, true)) {
+            return false;
+        }
+        $db = CMS\Database::instance();
+        return $db->update('speakers', ['status' => $status], ['id' => $id]) !== false;
+    }
+
     public function delete_speaker(int $id): bool
     {
         $db = CMS\Database::instance();
