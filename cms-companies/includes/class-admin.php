@@ -124,6 +124,7 @@ final class CMS_Companies_Admin
         $sponsors   = count(array_filter($companies, fn($c) => (bool)$c->is_sponsor));
         $topPartner = count(array_filter($companies, fn($c) => !$c->is_sponsor && (bool)$c->is_top_partner));
         $partner    = count(array_filter($companies, fn($c) => !$c->is_sponsor && !$c->is_top_partner && (bool)$c->is_partner));
+        $pending    = count(array_filter($companies, fn($c) => ($c->status ?? 'active') === 'pending'));
         ?>
 
         <!-- Page Header -->
@@ -139,6 +140,7 @@ final class CMS_Companies_Admin
         </div>
 
         <?php if (isset($_GET['saved'])): ?><div class="alert alert-success">✅ Einstellungen gespeichert.</div><?php endif; ?>
+        <?php if (isset($_GET['approved'])): ?><div class="alert alert-success">✅ Unternehmen genehmigt und aktiviert.</div><?php endif; ?>
         <?php if (isset($_GET['deleted'])): ?><div class="alert alert-success">✅ Eintrag gelöscht.</div><?php endif; ?>
         <?php if (isset($_GET['error'])): ?><div class="alert alert-error">❌ Fehler: <?= htmlspecialchars($_GET['error']) ?></div><?php endif; ?>
 
@@ -155,6 +157,9 @@ final class CMS_Companies_Admin
             foreach ($tabs as $slug => [$icon, $label, $badge]): ?>
                 <a href="?tab=<?= $slug ?>" class="co-tab <?= $tab === $slug ? 'active' : '' ?>">
                     <?= $icon ?> <?= $label ?>
+                    <?php if ($slug === 'overview' && $pending > 0): ?>
+                        <span class="nav-badge" style="background:#f59e0b;color:#fff;font-size:.7rem;padding:1px 6px;border-radius:9px;margin-left:4px;"><?= $pending ?></span>
+                    <?php endif; ?>
                 </a>
             <?php endforeach; ?>
         </div>
@@ -166,6 +171,7 @@ final class CMS_Companies_Admin
             if ($filter === 'sponsor')     $filtered = array_values(array_filter($companies, fn($c) => (bool)$c->is_sponsor));
             elseif ($filter === 'top')     $filtered = array_values(array_filter($companies, fn($c) => !$c->is_sponsor && (bool)$c->is_top_partner));
             elseif ($filter === 'partner') $filtered = array_values(array_filter($companies, fn($c) => !$c->is_sponsor && !$c->is_top_partner && (bool)$c->is_partner));
+            elseif ($filter === 'pending') $filtered = array_values(array_filter($companies, fn($c) => ($c->status ?? 'active') === 'pending'));
         ?>
 
         <!-- Stats -->
@@ -173,6 +179,7 @@ final class CMS_Companies_Admin
             <?php
             $statItems = [
                 ['🏢', 'Gesamt',      $total,      ''],
+                ['⏳', 'Ausstehend',  $pending,    'color:#d97706'],
                 ['💜', 'Sponsoren',   $sponsors,   'color:#7c3aed'],
                 ['🥇', 'Top-Partner', $topPartner, 'color:#b45309'],
                 ['🤝', 'Partner',     $partner,    'color:#6b7280'],
@@ -200,6 +207,7 @@ final class CMS_Companies_Admin
                         <option value="all"     <?= $filter==='all'     ?'selected':'' ?>>Alle (<?= $total ?>)</option>
                         <option value="sponsor" <?= $filter==='sponsor' ?'selected':'' ?>>💜 Sponsoren (<?= $sponsors ?>)</option>
                         <option value="top"     <?= $filter==='top'     ?'selected':'' ?>>🥇 Top-Partner (<?= $topPartner ?>)</option>
+                        <option value="pending" <?= $filter==='pending' ?'selected':'' ?>>⏳ Ausstehend (<?= $pending ?>)</option>
                         <option value="partner" <?= $filter==='partner' ?'selected':'' ?>>🤝 Partner (<?= $partner ?>)</option>
                     </select>
                 </div>
@@ -221,10 +229,11 @@ final class CMS_Companies_Admin
         <div class="co-adm-grid">
         <?php foreach ($filtered as $co):
             $initials  = mb_strtoupper(mb_substr($co->name, 0, 1));
-            $isSponsor = (bool)$co->is_sponsor;
-            $isTop     = !$isSponsor && (bool)$co->is_top_partner;
-            $isPartner = !$isSponsor && !$isTop && (bool)$co->is_partner;
+            $isSponsor  = (bool)$co->is_sponsor;
+            $isTop      = !$isSponsor && (bool)$co->is_top_partner;
+            $isPartner  = !$isSponsor && !$isTop && (bool)$co->is_partner;
             $isInactive = ($co->status ?? 'active') === 'inactive';
+            $isPending  = ($co->status ?? 'active') === 'pending';
             $cardCls   = $isSponsor ? 'co-adm-card--sponsor' : ($isTop ? 'co-adm-card--top' : ($isPartner ? 'co-adm-card--partner' : ''));
             $colors    = [['#0891b2','#0284c7'],['#7c3aed','#a855f7'],['#059669','#34d399'],['#d97706','#f59e0b'],['#e11d48','#fb7185']];
             $cp        = $colors[abs(crc32($co->name)) % count($colors)];
@@ -237,7 +246,10 @@ final class CMS_Companies_Admin
             $showEmployees     = ($s['design_show_employees']  ?? '0') !== '0';
             $showWebsite       = ($s['design_show_website']    ?? '1') !== '0';
         ?>
-            <div class="co-adm-card <?= $cardCls ?>">
+            <div class="co-adm-card <?= $cardCls ?><?= $isPending ? ' co-adm-card--pending' : '' ?>">
+                <?php if ($isPending): ?>
+                    <div style="background:#fef3c7;color:#92400e;text-align:center;padding:.5rem;font-size:.85rem;font-weight:600;border-radius:10px 10px 0 0;">⏳ Wartet auf Genehmigung</div>
+                <?php endif; ?>
                 <div class="co-adm-top">
                     <div class="co-adm-avatar" style="background:<?= $bg ?>"><?= $sec->escape($initials) ?></div>
                     <div class="co-adm-ident">
@@ -251,7 +263,9 @@ final class CMS_Companies_Admin
                             <?php else: ?>
                                 <span class="co-adm-badge co-adm-badge--default">🏢 Unternehmen</span>
                             <?php endif; ?>
-                            <?php if ($isInactive && $showInactiveBadge): ?>
+                            <?php if ($isPending): ?>
+                                <span class="co-adm-badge" style="background:#fef3c7;color:#92400e;">⏳ Zur Prüfung</span>
+                            <?php elseif ($isInactive && $showInactiveBadge): ?>
                                 <span class="co-adm-badge" style="background:<?= htmlspecialchars($s['design_badge_inactive_bg']) ?>;color:<?= htmlspecialchars($s['design_badge_inactive_color']) ?>;">🔒 Inaktiv</span>
                             <?php endif; ?>
                         </div>
@@ -274,8 +288,16 @@ final class CMS_Companies_Admin
                 </div>
                 <?php endif; ?>
                 <div class="co-adm-foot">
-                    <a href="<?= cms_company_url($co) ?>" target="_blank"
-                       class="co-adm-btn co-adm-btn-ghost">🌐</a>
+                    <?php if ($isPending): ?>
+                        <form method="POST" action="<?= SITE_URL ?>/admin/companies/approve/<?= (int)$co->id ?>" style="display:contents;">
+                            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                            <button type="button" class="co-adm-btn co-adm-btn-primary" style="background:#16a34a;border-color:#16a34a;"
+                                    onclick="openCoApproveModal(<?= (int)$co->id ?>, '<?= $sec->escape(addslashes($co->name)) ?>', this.closest('form'))">✓ Genehmigen</button>
+                        </form>
+                    <?php else: ?>
+                        <a href="<?= cms_company_url($co) ?>" target="_blank"
+                           class="co-adm-btn co-adm-btn-ghost">🌐</a>
+                    <?php endif; ?>
                     <a href="<?= SITE_URL ?>/admin/companies/edit/<?= (int)$co->id ?>"
                        class="co-adm-btn co-adm-btn-primary">✏️ Bearbeiten</a>
                     <button type="button" class="co-adm-btn co-adm-btn-danger"
@@ -666,7 +688,35 @@ final class CMS_Companies_Admin
             document.getElementById('coDeleteForm').action = '<?= SITE_URL ?>/admin/companies/delete/' + id;
             openModal('coDeleteModal');
         }
+
+        let _coApproveForm = null;
+        function openCoApproveModal(id, name, form) {
+            document.getElementById('coApproveModalName').textContent = name;
+            _coApproveForm = form;
+            openModal('coApproveModal');
+        }
+        document.getElementById('coApproveModalConfirm')?.addEventListener('click', function() {
+            if (_coApproveForm) _coApproveForm.submit();
+        });
         </script>
+
+        <!-- Approve Modal -->
+        <div id="coApproveModal" class="modal" style="display:none;">
+            <div class="modal-content" style="max-width:480px;">
+                <div class="modal-header">
+                    <h3>✅ Unternehmen genehmigen</h3>
+                    <button class="modal-close" onclick="closeModal('coApproveModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Soll <strong id="coApproveModalName"></strong> genehmigt und aktiviert werden?</p>
+                    <p style="color:#166534;font-size:.875rem;">Das Profil wird sofort öffentlich sichtbar.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('coApproveModal')">Abbrechen</button>
+                    <button type="button" class="btn btn-primary" id="coApproveModalConfirm">✅ Genehmigen</button>
+                </div>
+            </div>
+        </div>
         <?php
         renderAdminLayoutEnd();
     }

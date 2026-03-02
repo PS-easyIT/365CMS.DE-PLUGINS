@@ -129,7 +129,9 @@ class CMS_Events_Member_Dashboard
                     'country'           => sanitize_text_field($_POST['country']    ?? 'Deutschland'),
                     'description'       => strip_tags($_POST['description']         ?? ''),
                     'category'          => sanitize_text_field($_POST['category']   ?? ''),
-                    'tags'              => sanitize_text_field($_POST['tags']        ?? '') ?: null,
+                    'tags'              => isset($_POST['tags']) && is_array($_POST['tags'])
+                                            ? array_values(array_filter(array_map('sanitize_text_field', $_POST['tags'])))
+                                            : [],
                     'capacity'          => is_numeric($_POST['capacity'] ?? '') ? (int)$_POST['capacity'] : null,
                     'price_type'        => in_array($_POST['price_type'] ?? '', ['free', 'paid'], true) ? $_POST['price_type'] : 'free',
                     'price'             => is_numeric($_POST['price'] ?? '') ? (float)$_POST['price'] : 0.0,
@@ -257,8 +259,11 @@ class CMS_Events_Member_Dashboard
 
     private function renderCreateForm(object $user): void
     {
-        $csrfToken = \CMS\Security::instance()->generateToken('member_event_create');
-        $isAdmin   = \CMS\Auth::instance()->isAdmin();
+        $csrfToken  = \CMS\Security::instance()->generateToken('member_event_create');
+        $isAdmin    = \CMS\Auth::instance()->isAdmin();
+        $evDb       = CMS_Events_Database::instance();
+        $categories = $evDb->get_event_categories();
+        $tagGroups  = $evDb->get_event_tag_presets_grouped();
         ?>
         <div style="margin-bottom:1rem;">
             <a href="/member/plugin/events" style="color:#dc2626;font-size:.875rem;text-decoration:none;">
@@ -382,29 +387,58 @@ class CMS_Events_Member_Dashboard
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
                     <div class="form-group">
                         <label class="form-label">Kategorie</label>
-                        <input type="text" name="category" class="form-control"
-                               placeholder="Messe, Konferenz, Workshop …"
-                               value="<?php echo htmlspecialchars($_POST['category'] ?? ''); ?>">
+                        <select name="category" class="form-control">
+                            <option value="">– bitte wählen –</option>
+                            <?php foreach ($categories as $cat): ?>
+                                <option value="<?php echo htmlspecialchars($cat->name); ?>"
+                                    <?php echo (($_POST['category'] ?? '') === $cat->name) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars(($cat->icon ?? '') . ' ' . $cat->name); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Tags</label>
-                        <input type="text" name="tags" class="form-control"
-                               placeholder="Kommagetrennt: KI, Business, Marketing"
-                               value="<?php echo htmlspecialchars($_POST['tags'] ?? ''); ?>">
-                    </div>
-                </div>
-
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
                     <div class="form-group">
                         <label class="form-label">Kapazität (Plätze)</label>
                         <input type="number" name="capacity" class="form-control" min="0"
                                value="<?php echo htmlspecialchars($_POST['capacity'] ?? ''); ?>">
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Anmeldungslink</label>
-                        <input type="url" name="registration_url" class="form-control" placeholder="https://"
-                               value="<?php echo htmlspecialchars($_POST['registration_url'] ?? ''); ?>">
+                </div>
+
+                <!-- Tags / Merkmale -->
+                <?php
+                $hasPresets = false;
+                foreach ($tagGroups as $g) { if (!empty($g)) { $hasPresets = true; break; } }
+                if ($hasPresets):
+                    $typeLabels = ['general' => 'Allgemein', 'special' => 'Spezialisierung', 'format' => 'Format'];
+                    $postedTags = $_POST['tags'] ?? [];
+                ?>
+                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
+                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">🏷️ Tags / Merkmale</h4>
+                <p style="font-size:.85rem;color:#64748b;margin-bottom:.75rem;">Wähle passende Tags für dein Event aus den Vorlagen.</p>
+                <?php foreach ($tagGroups as $type => $presets):
+                    if (empty($presets)) continue; ?>
+                    <div style="margin-bottom:.75rem;">
+                        <strong style="font-size:.85rem;color:#475569;"><?php echo htmlspecialchars($typeLabels[$type] ?? ucfirst($type)); ?></strong>
+                        <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.35rem;">
+                            <?php foreach ($presets as $preset): ?>
+                                <label style="display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .7rem;
+                                              background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;
+                                              font-size:.85rem;transition:all .15s ease;">
+                                    <input type="checkbox" name="tags[]" value="<?php echo htmlspecialchars($preset->tag_name); ?>"
+                                           <?php echo is_array($postedTags) && in_array($preset->tag_name, $postedTags) ? 'checked' : ''; ?>
+                                           style="accent-color:#3b82f6;">
+                                    <?php echo htmlspecialchars($preset->tag_name); ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
+                <?php endforeach; ?>
+                <?php endif; ?>
+
+                <div class="form-group">
+                    <label class="form-label">Anmeldungslink</label>
+                    <input type="url" name="registration_url" class="form-control" placeholder="https://"
+                           value="<?php echo htmlspecialchars($_POST['registration_url'] ?? ''); ?>">
                 </div>
 
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;">

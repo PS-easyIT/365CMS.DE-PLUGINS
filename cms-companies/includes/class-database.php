@@ -668,4 +668,25 @@ final class CMS_Companies_Database
         $db = CMS\Database::instance();
         return $db->delete('company_tag_presets', ['id' => $id]) !== false;
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Status-Änderung
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Setzt den Status eines Unternehmens.
+     *
+     * @param int    $id     Company-ID
+     * @param string $status Erlaubte Werte: active, inactive, pending, deleted
+     */
+    public function set_company_status(int $id, string $status): bool
+    {
+        $allowed = ['active', 'inactive', 'pending', 'deleted'];
+        if (!in_array($status, $allowed, true)) {
+            return false;
+        }
+
+        $db = CMS\Database::instance();
+        return $db->update('companies', ['status' => $status], ['id' => $id]) !== false;
+    }
 }

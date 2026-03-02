@@ -48,6 +48,7 @@ final class CMS_Companies_Post_Type
         $router->addRoute('POST', '/admin/companies/save',              [$this, 'admin_save']);
         $router->addRoute('GET',  '/admin/companies/edit/:id',          [$this, 'admin_edit']);
         $router->addRoute('POST', '/admin/companies/delete/:id',        [$this, 'admin_delete']);
+        $router->addRoute('POST', '/admin/companies/approve/:id',       [$this, 'admin_approve']);
         $router->addRoute('POST', '/admin/companies/settings/save',     [$this, 'admin_settings_save']);
         $router->addRoute('POST', '/admin/companies/industry/add',      [$this, 'admin_industry_add']);
         $router->addRoute('POST', '/admin/companies/industry/delete/:id', [$this, 'admin_industry_delete']);
@@ -356,6 +357,35 @@ final class CMS_Companies_Post_Type
             CMS\Router::instance()->redirect('/admin/companies?deleted=1');
         } else {
             CMS\Router::instance()->redirect('/admin/companies?error=1');
+        }
+    }
+
+    public function admin_approve(string $id = ''): void
+    {
+        if (!CMS\Auth::instance()->isAdmin()) {
+            http_response_code(403);
+            return;
+        }
+
+        $company_id = (int)$id;
+        $csrf_token = $_POST['csrf_token'] ?? '';
+
+        if (!CMS\Security::instance()->verifyToken($csrf_token, 'company_admin')) {
+            CMS\Router::instance()->redirect('/admin/companies?error=csrf');
+            return;
+        }
+
+        if ($company_id <= 0) {
+            CMS\Router::instance()->redirect('/admin/companies?error=invalid_id');
+            return;
+        }
+
+        $result = CMS_Companies_Database::instance()->set_company_status($company_id, 'active');
+
+        if ($result) {
+            CMS\Router::instance()->redirect('/admin/companies?approved=1');
+        } else {
+            CMS\Router::instance()->redirect('/admin/companies?error=approve');
         }
     }
 

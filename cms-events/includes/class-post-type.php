@@ -50,6 +50,7 @@ final class CMS_Events_Post_Type
         $router->addRoute('POST', '/admin/events/save',                     [$this, 'admin_save']);
         $router->addRoute('GET',  '/admin/events/edit/:id',                 [$this, 'admin_edit']);
         $router->addRoute('POST', '/admin/events/delete/:id',               [$this, 'admin_delete']);
+        $router->addRoute('POST', '/admin/events/approve/:id',              [$this, 'admin_approve']);
         $router->addRoute('POST', '/admin/events/settings/save',            [$this, 'admin_settings_save']);
         $router->addRoute('POST', '/admin/events/category/add',             [$this, 'admin_category_add']);
         $router->addRoute('POST', '/admin/events/category/delete/:id',      [$this, 'admin_category_delete']);
@@ -422,6 +423,40 @@ final class CMS_Events_Post_Type
         } catch (\Throwable $e) {
             error_log('Event delete error: ' . $e->getMessage());
             CMS\Router::instance()->redirect('/admin/events?error=delete');
+        }
+    }
+
+    public function admin_approve(string $id = ''): void
+    {
+        if (!CMS\Auth::instance()->isAdmin()) {
+            CMS\Router::instance()->redirect('/login');
+            return;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            CMS\Router::instance()->redirect('/admin/events');
+            return;
+        }
+
+        $event_id   = (int)$id;
+        $csrf_token = $_POST['csrf_token'] ?? '';
+
+        if (!CMS\Security::instance()->verifyToken($csrf_token, 'event_settings')) {
+            CMS\Router::instance()->redirect('/admin/events?error=csrf');
+            return;
+        }
+
+        if ($event_id <= 0) {
+            CMS\Router::instance()->redirect('/admin/events?error=invalid_id');
+            return;
+        }
+
+        $result = CMS_Events_Database::instance()->set_event_status($event_id, 'published');
+
+        if ($result) {
+            CMS\Router::instance()->redirect('/admin/events?approved=1');
+        } else {
+            CMS\Router::instance()->redirect('/admin/events?error=approve');
         }
     }
 

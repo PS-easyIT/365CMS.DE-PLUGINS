@@ -446,6 +446,23 @@ final class CMS_Events_Database
         }
     }
 
+    /**
+     * Setzt den Status eines Events.
+     *
+     * @param int    $id     Event-ID
+     * @param string $status Erlaubte Werte: published, draft, cancelled, completed
+     */
+    public function set_event_status(int $id, string $status): bool
+    {
+        $allowed = ['published', 'draft', 'cancelled', 'completed'];
+        if (!in_array($status, $allowed, true)) {
+            return false;
+        }
+
+        $db = CMS\Database::instance();
+        return $db->update('events', ['status' => $status], ['id' => $id]) !== false;
+    }
+
     // ── Event Categories ─────────────────────────────────────────────
 
     public function get_event_categories(): array

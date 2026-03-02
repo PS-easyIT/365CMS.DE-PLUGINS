@@ -153,6 +153,9 @@ final class CMS_Events_Admin
         <?php if (isset($_GET['saved'])): ?>
             <div class="alert alert-success">✅ Einstellungen gespeichert.</div>
         <?php endif; ?>
+        <?php if (isset($_GET['approved'])): ?>
+            <div class="alert alert-success">✅ Event genehmigt und veröffentlicht.</div>
+        <?php endif; ?>
         <?php if (isset($_GET['deleted'])): ?>
             <div class="alert alert-success">✅ Event gelöscht.</div>
         <?php endif; ?>
@@ -181,6 +184,9 @@ final class CMS_Events_Admin
             foreach ($tabs as $slug => [$icon, $label]): ?>
                 <a href="?tab=<?= $slug ?>" class="ev-tab <?= $tab === $slug ? 'active' : '' ?>">
                     <?= $icon ?> <?= $label ?>
+                    <?php if ($slug === 'overview' && $draft > 0): ?>
+                        <span class="nav-badge" style="background:#f59e0b;color:#fff;font-size:.7rem;padding:1px 6px;border-radius:9px;margin-left:4px;"><?= $draft ?></span>
+                    <?php endif; ?>
                 </a>
             <?php endforeach; ?>
         </div>
@@ -204,6 +210,7 @@ final class CMS_Events_Admin
             elseif ($filter === 'past') $filtered = array_values(array_filter($filtered, fn($e) => !empty($e->event_date) && strtotime($e->event_date) < strtotime('today')));
             elseif ($filter === 'featured') $filtered = array_values(array_filter($filtered, fn($e) => !empty($e->is_featured)));
             elseif ($filter === 'online') $filtered = array_values(array_filter($filtered, fn($e) => !empty($e->is_online)));
+            elseif ($filter === 'draft') $filtered = array_values(array_filter($filtered, fn($e) => ($e->status ?? 'draft') === 'draft'));
         ?>
 
         <!-- Stats -->
@@ -241,6 +248,7 @@ final class CMS_Events_Admin
                         <option value="upcoming" <?= $filter==='upcoming' ?'selected':'' ?>>📆 Bevorstehend (<?= $upcoming ?>)</option>
                         <option value="past"     <?= $filter==='past'     ?'selected':'' ?>>⌛ Vergangen</option>
                         <option value="featured" <?= $filter==='featured' ?'selected':'' ?>>⭐ Featured (<?= $featured ?>)</option>
+                        <option value="draft"    <?= $filter==='draft'    ?'selected':'' ?>>📝 Entwürfe (<?= $draft ?>)</option>
                         <option value="online"   <?= $filter==='online'   ?'selected':'' ?>>🌐 Online</option>
                     </select>
                 </div>
@@ -278,8 +286,12 @@ final class CMS_Events_Admin
                 'completed' => ['Abgeschlossen',  '#1e40af', '#dbeafe'],
             ];
             [$stLabel, $stColor, $stBg] = $statusCfg[$status] ?? ['Unbekannt', '#374151', '#f3f4f6'];
+            $isDraft = $status === 'draft';
         ?>
-            <div class="ev-adm-card<?= $isPast ? ' ev-adm-card--past' : '' ?><?= !empty($ev->is_featured) ? ' ev-adm-card--featured' : '' ?>">
+            <div class="ev-adm-card<?= $isPast ? ' ev-adm-card--past' : '' ?><?= !empty($ev->is_featured) ? ' ev-adm-card--featured' : '' ?><?= $isDraft ? ' ev-adm-card--draft' : '' ?>">
+                <?php if ($isDraft): ?>
+                    <div style="background:#fef3c7;color:#92400e;text-align:center;padding:.5rem;font-size:.85rem;font-weight:600;border-radius:10px 10px 0 0;">⏳ Wartet auf Genehmigung</div>
+                <?php endif; ?>
                 <div class="ev-adm-head">
                     <?php if ($dateTs): ?>
                     <div class="ev-adm-date">
@@ -337,8 +349,16 @@ final class CMS_Events_Admin
                 <?php endif; ?>
 
                 <div class="ev-adm-foot">
-                    <a href="<?= function_exists('cms_event_url') ? cms_event_url($ev) : SITE_URL . '/event/event-' . $id ?>"
-                       target="_blank" class="ev-adm-btn ev-adm-btn-ghost">🌐</a>
+                    <?php if ($isDraft): ?>
+                        <form method="POST" action="<?= SITE_URL ?>/admin/events/approve/<?= $id ?>" style="display:contents;">
+                            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                            <button type="button" class="ev-adm-btn ev-adm-btn-primary" style="background:#16a34a;border-color:#16a34a;"
+                                    onclick="openEvApproveModal(<?= $id ?>, '<?= $sec->escape(addslashes($ev->title ?? '')) ?>', this.closest('form'))">✓ Genehmigen</button>
+                        </form>
+                    <?php else: ?>
+                        <a href="<?= function_exists('cms_event_url') ? cms_event_url($ev) : SITE_URL . '/event/event-' . $id ?>"
+                           target="_blank" class="ev-adm-btn ev-adm-btn-ghost">🌐</a>
+                    <?php endif; ?>
                     <a href="<?= SITE_URL ?>/admin/events/edit/<?= $id ?>"
                        class="ev-adm-btn ev-adm-btn-primary">✏️ Bearbeiten</a>
                     <button type="button" class="ev-adm-btn ev-adm-btn-danger"
@@ -738,7 +758,34 @@ final class CMS_Events_Admin
             </div>
         </div>
 
+        <!-- Approve Modal -->
+        <div id="evApproveModal" class="modal" style="display:none;">
+            <div class="modal-content" style="max-width:500px;">
+                <div class="modal-header">
+                    <h3>✅ Event genehmigen</h3>
+                    <button class="modal-close" onclick="closeModal('evApproveModal')">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Soll das Event <strong id="evApproveName"></strong> genehmigt und veröffentlicht werden?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('evApproveModal')">Abbrechen</button>
+                    <button type="button" id="evApproveConfirm" class="btn btn-primary" style="background:#16a34a;border-color:#16a34a;">✅ Genehmigen</button>
+                </div>
+            </div>
+        </div>
+
         <script>
+        let _evApproveForm = null;
+        function openEvApproveModal(id, name, form) {
+            document.getElementById('evApproveName').textContent = name;
+            _evApproveForm = form;
+            openModal('evApproveModal');
+        }
+        document.getElementById('evApproveConfirm').addEventListener('click', function() {
+            if (_evApproveForm) _evApproveForm.submit();
+        });
+
         function openEvDeleteModal(id, name) {
             document.getElementById('evDeleteName').textContent = name;
             document.getElementById('evDeleteForm').action = '<?= SITE_URL ?>/admin/events/delete/' + id;

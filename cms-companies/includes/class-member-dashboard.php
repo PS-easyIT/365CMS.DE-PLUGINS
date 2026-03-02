@@ -114,7 +114,8 @@ class CMS_Companies_Member_Dashboard
             }
             try {
                 $isAdminSave = \CMS\Auth::instance()->isAdmin();
-                $id = CMS_Companies_Database::instance()->save_company([
+                $companyDb = CMS_Companies_Database::instance();
+                $id = $companyDb->save_company([
                     'user_id'          => (int) $user->id,
                     'name'             => sanitize_text_field($_POST['name']         ?? ''),
                     'email'            => filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL),
@@ -131,6 +132,11 @@ class CMS_Companies_Member_Dashboard
                     'employee_count'   => (int)($_POST['employee_count'] ?? 0) ?: null,
                     'status'           => $isAdminSave ? 'active' : 'pending',
                 ]);
+                // Tags (Merkmale) als Meta speichern
+                if ($id > 0 && !empty($_POST['tags']) && is_array($_POST['tags'])) {
+                    $tags = array_values(array_filter(array_map('sanitize_text_field', $_POST['tags'])));
+                    $companyDb->save_meta($id, 'tags', $tags);
+                }
                 if ($isAdminSave) {
                     $_SESSION['success'] = 'Unternehmen wurde erfolgreich angelegt.';
                 } else {
@@ -251,8 +257,11 @@ class CMS_Companies_Member_Dashboard
 
     private function renderCreateForm(object $user): void
     {
-        $csrfToken = \CMS\Security::instance()->generateToken('member_company_create');
-        $isAdmin   = \CMS\Auth::instance()->isAdmin();
+        $csrfToken  = \CMS\Security::instance()->generateToken('member_company_create');
+        $isAdmin    = \CMS\Auth::instance()->isAdmin();
+        $companyDb  = CMS_Companies_Database::instance();
+        $industries = $companyDb->get_all_industries();
+        $tagPresets = $companyDb->get_tag_presets();
         ?>
         <div style="margin-bottom:1rem;">
             <a href="/member/plugin/companies" class="btn btn-secondary btn-sm">
@@ -286,9 +295,15 @@ class CMS_Companies_Member_Dashboard
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
                     <div class="form-group">
                         <label class="form-label">Branche</label>
-                        <input type="text" name="industry" class="form-control"
-                               placeholder="z. B. IT, Beratung, Handel"
-                               value="<?php echo htmlspecialchars($_POST['industry'] ?? ''); ?>">
+                        <select name="industry" class="form-control">
+                            <option value="">– bitte wählen –</option>
+                            <?php foreach ($industries as $ind): ?>
+                                <option value="<?php echo htmlspecialchars($ind->name); ?>"
+                                    <?php echo (($_POST['industry'] ?? '') === $ind->name) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($ind->name); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Unternehmensgröße</label>
@@ -317,6 +332,37 @@ class CMS_Companies_Member_Dashboard
                     <textarea name="description" class="form-control" rows="4"
                               style="resize:vertical;"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
                 </div>
+
+                <!-- Merkmale / Tags -->
+                <?php if (!empty($tagPresets)): ?>
+                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
+                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">🏷️ Merkmale / Tags</h4>
+                <p style="font-size:.85rem;color:#64748b;margin-bottom:.75rem;">Wähle passende Merkmale für dein Unternehmen aus den Vorlagen.</p>
+                <?php
+                    $typeLabels = ['general' => 'Allgemein', 'special' => 'Spezialisierung', 'quality' => 'Qualität'];
+                    $grouped = [];
+                    foreach ($tagPresets as $tp) {
+                        $grouped[$tp->tag_type ?? 'general'][] = $tp;
+                    }
+                    $postedTags = $_POST['tags'] ?? [];
+                    foreach ($grouped as $type => $presets): ?>
+                    <div style="margin-bottom:.75rem;">
+                        <strong style="font-size:.85rem;color:#475569;"><?php echo htmlspecialchars($typeLabels[$type] ?? ucfirst($type)); ?></strong>
+                        <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.35rem;">
+                            <?php foreach ($presets as $preset): ?>
+                                <label style="display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .7rem;
+                                              background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;
+                                              font-size:.85rem;transition:all .15s ease;">
+                                    <input type="checkbox" name="tags[]" value="<?php echo htmlspecialchars($preset->tag_name); ?>"
+                                           <?php echo in_array($preset->tag_name, $postedTags) ? 'checked' : ''; ?>
+                                           style="accent-color:#3b82f6;">
+                                    <?php echo htmlspecialchars($preset->tag_name); ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+                <?php endif; ?>
 
                 <!-- Kontakt -->
                 <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
