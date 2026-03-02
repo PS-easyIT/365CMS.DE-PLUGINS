@@ -139,6 +139,8 @@ class CMS_Events_Member_Dashboard
                     'is_online'         => isset($_POST['is_online']) ? 1 : 0,
                     'online_url'        => filter_var($_POST['online_url']        ?? '', FILTER_SANITIZE_URL) ?: null,
                     'registration_url'  => filter_var($_POST['registration_url']  ?? '', FILTER_SANITIZE_URL) ?: null,
+                    'image_url'         => filter_var($_POST['image_url']          ?? '', FILTER_SANITIZE_URL) ?: null,
+                    'banner_url'        => filter_var($_POST['banner_url']         ?? '', FILTER_SANITIZE_URL) ?: null,
                     'organizer_name'    => sanitize_text_field($_POST['organizer_name']    ?? ''),
                     'organizer_email'   => filter_var($_POST['organizer_email']   ?? '', FILTER_SANITIZE_EMAIL),
                     'organizer_phone'   => sanitize_text_field($_POST['organizer_phone']   ?? ''),
@@ -462,6 +464,25 @@ class CMS_Events_Member_Dashboard
                                    placeholder="EUR" maxlength="3"
                                    value="<?php echo htmlspecialchars($_POST['price_currency'] ?? 'EUR'); ?>">
                         </div>
+                    </div>
+                </div>
+
+                <!-- Medien -->
+                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
+                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">🖼️ Medien</h4>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+                    <div class="form-group">
+                        <label class="form-label">Event-Bild (URL)</label>
+                        <input type="url" name="image_url" class="form-control" placeholder="https://..."
+                               value="<?php echo htmlspecialchars($_POST['image_url'] ?? ''); ?>">
+                        <small class="form-text">Vorschaubild auf der Event-Karte</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Banner-Bild (URL)</label>
+                        <input type="url" name="banner_url" class="form-control" placeholder="https://..."
+                               value="<?php echo htmlspecialchars($_POST['banner_url'] ?? ''); ?>">
+                        <small class="form-text">Großes Headerbild auf der Detailseite</small>
                     </div>
                 </div>
 
