@@ -37,6 +37,10 @@ final class CMS_Contact_Frontend
 
         $router = \CMS\Router::instance();
 
+        // Basis-Route: /contact (ohne Slug) – erstes aktives Formular als Fallback
+        $router->addRoute('GET',  '/contact',              [$this, 'render_default_form']);
+        $router->addRoute('POST', '/contact',              [$this, 'handle_default_submit']);
+
         // Dynamische Route: /contact/:slug
         $router->addRoute('GET',  '/contact/:slug',        [$this, 'render_form']);
         $router->addRoute('POST', '/contact/:slug',        [$this, 'handle_submit']);
@@ -46,6 +50,77 @@ final class CMS_Contact_Frontend
     }
 
     // ── Formular rendern ──────────────────────────────────────────────────────
+
+    /**
+     * Ermittelt den passenden Formular-Slug für /contact (ohne Slug).
+     * 
+     * Prüft Query-Parameter (expert, speaker, company) und sucht ein
+     * passendes Booking-Template. Fallback: erstes aktives Formular.
+     *
+     * @return string|null Slug des Formulars oder null
+     */
+    private function resolve_default_slug(): ?string
+    {
+        $forms = CMS_Contact_Forms::instance();
+
+        // Versuche passendes Booking-Template anhand Query-Parameter
+        $templateMap = [
+            'expert'  => 'booking-expert',
+            'speaker' => 'booking-event',
+            'company' => 'booking-service',
+        ];
+
+        foreach ($templateMap as $param => $template) {
+            if (!empty($_GET[$param])) {
+                // Suche ein aktives Formular mit diesem Template
+                $all = $forms->get_all('active');
+                foreach ($all as $f) {
+                    if (($f['template'] ?? '') === $template) {
+                        return $f['slug'];
+                    }
+                }
+            }
+        }
+
+        // Fallback: erstes aktives Formular
+        $all = $forms->get_all('active');
+        if (!empty($all)) {
+            return $all[0]['slug'];
+        }
+
+        return null;
+    }
+
+    /**
+     * /contact (ohne Slug) – GET: Standard-Formular rendern
+     */
+    public function render_default_form(): void
+    {
+        $slug = $this->resolve_default_slug();
+        if ($slug) {
+            $this->render_form($slug);
+        } else {
+            http_response_code(404);
+            if (function_exists('render_404')) {
+                render_404();
+            } else {
+                echo '<h1>404 – Kein Kontaktformular vorhanden</h1>';
+            }
+        }
+    }
+
+    /**
+     * /contact (ohne Slug) – POST: Standard-Formular verarbeiten
+     */
+    public function handle_default_submit(): void
+    {
+        $slug = $this->resolve_default_slug();
+        if ($slug) {
+            $this->handle_submit($slug);
+        } else {
+            http_response_code(404);
+        }
+    }
 
     /**
      * Kontaktformular-Seite rendern

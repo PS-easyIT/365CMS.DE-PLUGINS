@@ -166,6 +166,14 @@ class CMS_Speakers_Member_Dashboard
                     'bio'               => strip_tags($_POST['bio']       ?? ''),
                     'status'            => $isAdminSave ? 'active' : 'pending',
                 ]);
+
+                // Topics speichern
+                if ($id > 0) {
+                    $topicNames = array_values(array_filter(array_map('trim', explode(',', $_POST['speaker_topics'] ?? ''))));
+                    if (!empty($topicNames)) {
+                        CMS_Speakers_Database::instance()->save_topics($id, $topicNames);
+                    }
+                }
                 if ($isAdminSave) {
                     $_SESSION['success'] = 'Speaker-Profil wurde erfolgreich angelegt.';
                 } else {
@@ -483,6 +491,24 @@ class CMS_Speakers_Member_Dashboard
                     </div>
                 </div>
 
+                <!-- Themen / Topics -->
+                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
+                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">🏷️ Themen / Topics</h4>
+                <p style="color:#64748b;font-size:.8rem;margin:0 0 .75rem;">
+                    Gib deine Vortragsthemen als Komma-getrennte Liste ein oder nutze die Tag-Eingabe.
+                </p>
+                <div class="form-group">
+                    <label class="form-label">Themen-Tags</label>
+                    <div style="display:flex;flex-wrap:wrap;gap:.35rem;padding:.5rem;border:2px solid #e2e8f0;border-radius:8px;min-height:42px;cursor:text;"
+                         id="spkTopicWrap" onclick="document.getElementById('spkTopicInput').focus()">
+                        <input type="text" id="spkTopicInput" placeholder="z.B. Digitalisierung, KI, Führung …"
+                               style="border:none;outline:none;flex:1;min-width:200px;font-size:.875rem;padding:.2rem 0;"
+                               onkeydown="handleTopicKeydown(event)">
+                    </div>
+                    <input type="hidden" name="speaker_topics" id="spkTopicsHidden" value="">
+                    <small class="form-text">Drücke Enter oder Komma, um ein Thema hinzuzufügen.</small>
+                </div>
+
                 <!-- Biografie -->
                 <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
                            padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">📝 Biografie</h4>
@@ -503,6 +529,55 @@ class CMS_Speakers_Member_Dashboard
                 </div>
             </form>
         </div>
+
+        <script>
+        // Topic-Tag-System für Speaker Member-Dashboard
+        const _spkTopics = [];
+
+        function syncTopicHidden() {
+            const hidden = document.getElementById('spkTopicsHidden');
+            if (hidden) hidden.value = _spkTopics.join(',');
+        }
+
+        function renderTopicTags() {
+            const wrap = document.getElementById('spkTopicWrap');
+            if (!wrap) return;
+            wrap.querySelectorAll('.spk-topic-pill').forEach(el => el.remove());
+            const input = document.getElementById('spkTopicInput');
+            _spkTopics.forEach(function(tag, idx) {
+                const pill = document.createElement('span');
+                pill.className = 'spk-topic-pill';
+                pill.style.cssText = 'display:inline-flex;align-items:center;gap:.25rem;background:#f5f3ff;color:#6d28d9;border-radius:4px;padding:2px 8px;font-size:.8rem;';
+                pill.textContent = tag;
+                const x = document.createElement('span');
+                x.textContent = '×';
+                x.style.cssText = 'cursor:pointer;font-weight:700;color:#c4b5fd;margin-left:2px;';
+                x.onclick = function() { _spkTopics.splice(idx, 1); renderTopicTags(); };
+                pill.appendChild(x);
+                wrap.insertBefore(pill, input);
+            });
+            syncTopicHidden();
+        }
+
+        function addTopicTag(name) {
+            name = name.trim();
+            if (!name || _spkTopics.includes(name)) return;
+            _spkTopics.push(name);
+            renderTopicTags();
+        }
+
+        function handleTopicKeydown(e) {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                var val = e.target.value.replace(/,/g, '').trim();
+                if (val) { addTopicTag(val); e.target.value = ''; }
+            }
+            if (e.key === 'Backspace' && e.target.value === '' && _spkTopics.length) {
+                _spkTopics.pop();
+                renderTopicTags();
+            }
+        }
+        </script>
         <?php
     }
 
