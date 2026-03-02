@@ -21,6 +21,7 @@ trait CMS_Contact_Page_Forms_Trait
     public static function render_forms(): void
     {
         self::check_access();
+        self::enqueue_admin_assets();
 
         $action = $_GET['action'] ?? 'list';
         $formId = (int) ($_GET['id'] ?? 0);
@@ -36,7 +37,7 @@ trait CMS_Contact_Page_Forms_Trait
                 case 'create_form':
                     $result = self::handle_create_form();
                     if (is_int($result)) {
-                        header('Location: ?page=contact-forms&action=edit&id=' . $result . '&notice=created');
+                        header('Location: ' . self::ADMIN_BASE_URL . '?section=forms&action=edit&id=' . $result . '&notice=created');
                         exit;
                     }
                     $error = $result;
@@ -55,7 +56,7 @@ trait CMS_Contact_Page_Forms_Trait
                     $deleteId = (int) ($_POST['id'] ?? 0);
                     $result = self::handle_delete_form($deleteId);
                     if ($result === true) {
-                        header('Location: ?page=contact-forms&notice=deleted');
+                        header('Location: ' . self::ADMIN_BASE_URL . '?section=forms&notice=deleted');
                         exit;
                     }
                     $error = $result;
@@ -64,7 +65,7 @@ trait CMS_Contact_Page_Forms_Trait
                 case 'save_field':
                     $result = self::handle_save_field($formId);
                     if ($result === true) {
-                        header('Location: ?page=contact-forms&action=fields&id=' . $formId . '&notice=field_saved');
+                        header('Location: ' . self::ADMIN_BASE_URL . '?section=forms&action=fields&id=' . $formId . '&notice=field_saved');
                         exit;
                     }
                     $error = $result;
@@ -73,15 +74,20 @@ trait CMS_Contact_Page_Forms_Trait
                 case 'delete_field':
                     $fieldId = (int) ($_POST['field_id'] ?? 0);
                     CMS_Contact_Fields::instance()->delete($fieldId);
-                    header('Location: ?page=contact-forms&action=fields&id=' . $formId . '&notice=field_deleted');
+                    header('Location: ' . self::ADMIN_BASE_URL . '?section=forms&action=fields&id=' . $formId . '&notice=field_deleted');
                     exit;
 
                 case 'reorder_fields':
                     $orderedIds = $_POST['field_order'] ?? [];
-                    if (is_array($orderedIds)) {
+                    // Komma-separierter String von JS → Array umwandeln
+                    if (is_string($orderedIds)) {
+                        $orderedIds = array_filter(explode(',', $orderedIds), fn($v) => $v !== '');
+                    }
+                    if (is_array($orderedIds) && !empty($orderedIds)) {
+                        $orderedIds = array_map('intval', $orderedIds);
                         CMS_Contact_Fields::instance()->update_order($formId, $orderedIds);
                     }
-                    header('Location: ?page=contact-forms&action=fields&id=' . $formId . '&notice=reordered');
+                    header('Location: ' . self::ADMIN_BASE_URL . '?section=forms&action=fields&id=' . $formId . '&notice=reordered');
                     exit;
             }
         }
@@ -103,6 +109,7 @@ trait CMS_Contact_Page_Forms_Trait
         switch ($action) {
             case 'new':
                 $templates = CMS_Contact_Forms::get_available_templates();
+                $activeSection = 'forms';
                 include CMS_CONTACT_PLUGIN_DIR . 'admin/views/page-form-new.php';
                 break;
 
@@ -111,10 +118,12 @@ trait CMS_Contact_Page_Forms_Trait
                 if (!$form) {
                     $error = 'Formular nicht gefunden.';
                     $allForms = CMS_Contact_Forms::instance()->get_all();
+                    $activeSection = 'forms';
                     include CMS_CONTACT_PLUGIN_DIR . 'admin/views/page-forms-list.php';
                     return;
                 }
                 $templates = CMS_Contact_Forms::get_available_templates();
+                $activeSection = 'forms';
                 include CMS_CONTACT_PLUGIN_DIR . 'admin/views/page-form-edit.php';
                 break;
 
@@ -123,6 +132,7 @@ trait CMS_Contact_Page_Forms_Trait
                 if (!$form) {
                     $error = 'Formular nicht gefunden.';
                     $allForms = CMS_Contact_Forms::instance()->get_all();
+                    $activeSection = 'forms';
                     include CMS_CONTACT_PLUGIN_DIR . 'admin/views/page-forms-list.php';
                     return;
                 }
@@ -133,11 +143,13 @@ trait CMS_Contact_Page_Forms_Trait
                 $editFieldId = (int) ($_GET['edit_field'] ?? 0);
                 $editField   = $editFieldId > 0 ? CMS_Contact_Fields::instance()->get_by_id($editFieldId) : null;
 
+                $activeSection = 'forms';
                 include CMS_CONTACT_PLUGIN_DIR . 'admin/views/page-form-fields.php';
                 break;
 
             default:
                 $allForms = CMS_Contact_Forms::instance()->get_all();
+                $activeSection = 'forms';
                 include CMS_CONTACT_PLUGIN_DIR . 'admin/views/page-forms-list.php';
         }
     }
@@ -218,7 +230,7 @@ trait CMS_Contact_Page_Forms_Trait
             'rate_limit'      => max(0, (int) ($_POST['rate_limit'] ?? 3)),
             'status'          => in_array($_POST['status'] ?? '', ['active', 'inactive'], true)
                 ? $_POST['status'] : 'active',
-            'custom_css'      => $_POST['custom_css'] ?? '',
+            'custom_css'      => str_replace(['</style>', '<script', '</script>'], '', $_POST['custom_css'] ?? ''),
         ]);
 
         return true;
@@ -275,14 +287,24 @@ trait CMS_Contact_Page_Forms_Trait
         if (in_array($data['field_type'], ['select', 'radio'], true)) {
             $optionLabels = $_POST['option_labels'] ?? [];
             $optionValues = $_POST['option_values'] ?? [];
+
+            // Wenn Optionen als Textarea (ein Eintrag pro Zeile) gesendet werden
+            if (!is_array($optionLabels) && isset($_POST['field_options'])) {
+                $lines = array_filter(array_map('trim', explode("\n", (string)$_POST['field_options'])), fn($l) => $l !== '');
+                $optionLabels = $lines;
+                $optionValues = $lines;
+            }
+
             $options = [];
-            foreach ($optionLabels as $i => $label) {
-                $label = trim($label);
-                if ($label !== '') {
-                    $options[] = [
-                        'label' => $label,
-                        'value' => trim($optionValues[$i] ?? $label),
-                    ];
+            if (is_array($optionLabels)) {
+                foreach ($optionLabels as $i => $label) {
+                    $label = trim((string) $label);
+                    if ($label !== '') {
+                        $options[] = [
+                            'label' => $label,
+                            'value' => trim((string) ($optionValues[$i] ?? $label)),
+                        ];
+                    }
                 }
             }
             $data['options_json'] = $options;

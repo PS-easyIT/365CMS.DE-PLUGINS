@@ -69,7 +69,7 @@ final class CMS_Forum_Database
         }
 
         // Versionsinfo entfernen
-        $stmt = $db->prepare("DELETE FROM {$p}settings WHERE setting_key = ?");
+        $stmt = $db->prepare("DELETE FROM {$p}settings WHERE option_name = ?");
         $stmt->execute(['cmsforum_db_version']);
     }
 
@@ -419,7 +419,7 @@ final class CMS_Forum_Database
         try {
             $db   = \CMS\Database::instance();
             $p    = $db->prefix();
-            $stmt = $db->prepare("SELECT setting_value FROM {$p}settings WHERE setting_key = ?");
+            $stmt = $db->prepare("SELECT option_value FROM {$p}settings WHERE option_name = ?");
             $stmt->execute(['cmsforum_db_version']);
             return $stmt->fetchColumn() ?: '';
         } catch (\PDOException) {
@@ -435,14 +435,14 @@ final class CMS_Forum_Database
         $db = \CMS\Database::instance();
         $p  = $db->prefix();
 
-        $stmt = $db->prepare("SELECT COUNT(*) FROM {$p}settings WHERE setting_key = ?");
+        $stmt = $db->prepare("SELECT COUNT(*) FROM {$p}settings WHERE option_name = ?");
         $stmt->execute(['cmsforum_db_version']);
 
         if ((int) $stmt->fetchColumn() > 0) {
-            $update = $db->prepare("UPDATE {$p}settings SET setting_value = ? WHERE setting_key = ?");
+            $update = $db->prepare("UPDATE {$p}settings SET option_value = ? WHERE option_name = ?");
             $update->execute([$version, 'cmsforum_db_version']);
         } else {
-            $insert = $db->prepare("INSERT INTO {$p}settings (setting_key, setting_value) VALUES (?, ?)");
+            $insert = $db->prepare("INSERT INTO {$p}settings (option_name, option_value) VALUES (?, ?)");
             $insert->execute(['cmsforum_db_version', $version]);
         }
     }

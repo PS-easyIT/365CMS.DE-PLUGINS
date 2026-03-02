@@ -2,6 +2,8 @@
 $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 
+<?php include CMS_CONTACT_PLUGIN_DIR . 'admin/views/partial-section-nav.php'; ?>
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -9,9 +11,9 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
         <p>Einstellungen, Template und Optionen für dieses Kontaktformular</p>
     </div>
     <div class="header-actions">
-        <a href="?page=contact-forms&action=fields&id=<?php echo (int)$form['id']; ?>" class="btn btn-secondary btn-sm">📝 Felder bearbeiten</a>
+        <a href="?section=forms&action=fields&id=<?php echo (int)$form['id']; ?>" class="btn btn-secondary btn-sm">📝 Felder bearbeiten</a>
         <a href="/contact/<?php echo $e($form['slug']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">👁️ Vorschau</a>
-        <a href="?page=contact-forms" class="btn btn-secondary">↩️ Zurück</a>
+        <a href="?section=forms" class="btn btn-secondary">↩️ Zurück</a>
     </div>
 </div>
 
@@ -186,8 +188,18 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
     <div class="admin-card" style="margin-top:1rem;">
         <div style="display:flex;justify-content:flex-end;gap:.6rem;align-items:center;">
             <span style="color:#64748b;font-size:.85rem;">Änderungen werden sofort übernommen</span>
-            <a href="?page=contact-forms" class="btn btn-secondary">Abbrechen</a>
+            <a href="?section=forms" class="btn btn-secondary">Abbrechen</a>
             <button type="submit" class="btn btn-primary">💾 Speichern</button>
         </div>
     </div>
 </form>
+
+<script>
+function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    var el = document.getElementById(tabId);
+    if (el) { el.classList.add('active'); }
+    if (btn) { btn.classList.add('active'); }
+}
+</script>

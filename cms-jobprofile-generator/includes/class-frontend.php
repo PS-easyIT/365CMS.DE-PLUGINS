@@ -740,8 +740,7 @@ class CMS_JPG_Frontend
                 return true;
             }
         }
-        // Fallback: generischer Check
-        return !empty($token) && strlen($token) > 10;
+        return false;
     }
 
     /**
@@ -1129,9 +1128,14 @@ class CMS_JPG_Frontend
         }
 
         // Custom Head Code injizieren (z.B. Google Fonts <link>)
+        // Sicherheit: nur <link>, <meta>, <style> und Kommentare erlaubt
         $settings = CMS_JPG_Admin_Pages::get_public_design_settings();
         $headCode = $settings['pd_custom_head_code'] ?? '';
         if (!empty(trim($headCode))) {
+            // Script-Tags und Event-Handler entfernen
+            $headCode = preg_replace('/<script\b[^>]*>.*?<\/script>/si', '', $headCode);
+            $headCode = preg_replace('/\bon\w+\s*=\s*["\'][^"\']*["\']/i', '', $headCode);
+            $headCode = str_replace(['javascript:', 'vbscript:', 'data:text/html'], '', $headCode);
             echo "\n<!-- JPG Custom Head Code -->\n" . $headCode . "\n";
         }
     }

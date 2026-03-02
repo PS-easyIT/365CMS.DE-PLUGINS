@@ -2,6 +2,8 @@
 $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 
+<?php include CMS_CONTACT_PLUGIN_DIR . 'admin/views/partial-section-nav.php'; ?>
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>

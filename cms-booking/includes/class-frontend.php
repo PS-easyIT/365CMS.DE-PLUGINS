@@ -199,16 +199,31 @@ final class CMS_Booking_Frontend
             $durationMin = (int) $service['duration_min'];
             $bufferMin   = (int) $service['buffer_min'];
 
-            $isAvailable = CMS_Booking_Availability::instance()->is_slot_available(
-                (int) $provider['id'],
-                $bookingDate,
-                $startTime,
-                $durationMin,
-                $bufferMin
-            );
+            // Booking-Advance-Window prüfen (Min/Max Vorlaufzeit)
+            $advanceMinDays = (int) $this->get_setting('booking_advance_min', '1');
+            $advanceMaxDays = (int) $this->get_setting('booking_advance_max', '90');
+            $bookingTs      = strtotime($bookingDate);
+            $todayTs        = strtotime('today');
+            $diffDays       = (int) round(($bookingTs - $todayTs) / 86400);
 
-            if (!$isAvailable) {
-                $error = 'Der gewählte Zeitpunkt ist leider nicht mehr verfügbar.';
+            if ($diffDays < $advanceMinDays) {
+                $error = "Buchungen sind frühestens {$advanceMinDays} Tag(e) im Voraus möglich.";
+            } elseif ($diffDays > $advanceMaxDays) {
+                $error = "Buchungen sind maximal {$advanceMaxDays} Tage im Voraus möglich.";
+            }
+
+            if ($error === '') {
+                $isAvailable = CMS_Booking_Availability::instance()->is_slot_available(
+                    (int) $provider['id'],
+                    $bookingDate,
+                    $startTime,
+                    $durationMin,
+                    $bufferMin
+                );
+
+                if (!$isAvailable) {
+                    $error = 'Der gewählte Zeitpunkt ist leider nicht mehr verfügbar.';
+                }
             }
         }
 
@@ -236,8 +251,28 @@ final class CMS_Booking_Frontend
                     'notes'          => $notes,
                 ]);
 
+                // booking_type / auto_confirm auswerten
+                $bookingType = $service['booking_type'] ?? 'confirmation';
+                $autoConfirm = $this->get_setting('auto_confirm', '0') === '1';
+
+                if ($bookingType === 'instant' || $autoConfirm) {
+                    CMS_Booking_Bookings::instance()->confirm($bookingId);
+                }
+
+                // Benachrichtigungen senden
+                if (class_exists('CMS_Booking_Notifications')) {
+                    $booking = CMS_Booking_Bookings::instance()->get($bookingId);
+                    if ($booking) {
+                        CMS_Booking_Notifications::instance()->send_booking_created($booking);
+                    }
+                }
+
+                // Zugangs-Token für Bestätigungsseite generieren
+                $booking     = $booking ?? CMS_Booking_Bookings::instance()->get($bookingId);
+                $accessToken = $this->generate_access_token($bookingId, $booking['ical_uid'] ?? '');
+
                 // Weiterleitung zur Bestätigungsseite
-                $confirmUrl = (defined('SITE_URL') ? SITE_URL : '') . "/booking/confirm/{$bookingId}";
+                $confirmUrl = (defined('SITE_URL') ? SITE_URL : '') . "/booking/confirm/{$bookingId}?token={$accessToken}";
                 header("Location: {$confirmUrl}");
                 exit;
             } catch (\Throwable $e) {
@@ -271,6 +306,15 @@ final class CMS_Booking_Frontend
             return;
         }
 
+        // Token-basierter Zugangsschutz (DSGVO)
+        $token = $_GET['token'] ?? '';
+        $expectedToken = $this->generate_access_token($bookingId, $booking['ical_uid'] ?? '');
+        if ($token !== $expectedToken) {
+            http_response_code(403);
+            echo '<h1>Zugriff verweigert</h1><p>Ungültiger oder fehlender Zugangs-Token.</p>';
+            exit;
+        }
+
         $calExport = CMS_Booking_Calendar_Export::instance();
         $googleUrl = $calExport->google_calendar_url($booking);
 
@@ -293,6 +337,16 @@ final class CMS_Booking_Frontend
             echo 'Buchung nicht gefunden.';
             exit;
         }
+
+        // Token-basierter Zugangsschutz (DSGVO)
+        $token = $_GET['token'] ?? '';
+        $expectedToken = $this->generate_access_token($bookingId, $booking['ical_uid'] ?? '');
+        if ($token !== $expectedToken) {
+            http_response_code(403);
+            echo 'Zugriff verweigert.';
+            exit;
+        }
+
         CMS_Booking_Calendar_Export::instance()->serve_ics($booking);
     }
 
@@ -380,5 +434,29 @@ final class CMS_Booking_Frontend
             }
         }
         return null;
+    }
+
+    /**
+     * Generiert einen nicht-erratbaren Zugangs-Token für eine Buchung.
+     */
+    private function generate_access_token(int $bookingId, string $icalUid): string
+    {
+        $secret = defined('CMS_SECRET_KEY') ? CMS_SECRET_KEY : 'cms-booking-fallback-key';
+        return hash('sha256', $bookingId . ':' . $icalUid . ':' . $secret);
+    }
+
+    /**
+     * Liest einen Booking-Setting-Wert aus der DB.
+     */
+    private function get_setting(string $key, string $default = ''): string
+    {
+        static $cache = null;
+        if ($cache === null) {
+            $db   = \CMS\Database::instance();
+            $stmt = $db->prepare("SELECT setting_key, setting_value FROM {$db->getPrefix()}booking_settings");
+            $stmt->execute();
+            $cache = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+        }
+        return $cache[$key] ?? $default;
     }
 }

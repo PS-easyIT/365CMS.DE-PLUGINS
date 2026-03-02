@@ -4,6 +4,8 @@ $fieldTypes  = CMS_Contact_Fields::get_field_types();
 $fieldWidths = CMS_Contact_Fields::get_field_widths();
 ?>
 
+<?php include CMS_CONTACT_PLUGIN_DIR . 'admin/views/partial-section-nav.php'; ?>
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -12,7 +14,7 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
     </div>
     <div class="header-actions">
         <button class="btn btn-primary" onclick="openFieldModal()">➕ Feld hinzufügen</button>
-        <a href="?page=contact-forms&action=edit&id=<?php echo (int)$form['id']; ?>" class="btn btn-secondary">↩️ Zurück</a>
+        <a href="?section=forms&action=edit&id=<?php echo (int)$form['id']; ?>" class="btn btn-secondary">↩️ Zurück</a>
     </div>
 </div>
 
@@ -90,7 +92,7 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
         </div>
         <div class="modal-body">
             <form id="fieldForm" method="POST">
-                <input type="hidden" name="form_action" id="fieldFormAction" value="add_field">
+                <input type="hidden" name="form_action" id="fieldFormAction" value="save_field">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                 <input type="hidden" name="field_id" id="fieldFormId" value="">
 
@@ -128,7 +130,7 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
 
                 <div class="form-group">
                     <label class="form-label" for="field_placeholder">Platzhaltertext</label>
-                    <input type="text" id="field_placeholder" name="field_placeholder" class="form-control">
+                    <input type="text" id="field_placeholder" name="placeholder" class="form-control">
                 </div>
 
                 <div class="form-group" id="optionsGroup" style="display:none;">
@@ -200,7 +202,7 @@ function toggleOptionsField() {
 /* Open modal for new field */
 function openFieldModal() {
     document.getElementById('fieldModalTitle').textContent = '➕ Neues Feld';
-    document.getElementById('fieldFormAction').value = 'add_field';
+    document.getElementById('fieldFormAction').value = 'save_field';
     document.getElementById('fieldFormId').value = '';
     document.getElementById('fieldForm').reset();
     document.getElementById('optionsGroup').style.display = 'none';
@@ -210,7 +212,7 @@ function openFieldModal() {
 /* Open modal for editing */
 function editField(field) {
     document.getElementById('fieldModalTitle').textContent = '✏️ Feld bearbeiten';
-    document.getElementById('fieldFormAction').value = 'update_field';
+    document.getElementById('fieldFormAction').value = 'save_field';
     document.getElementById('fieldFormId').value = field.id;
     document.getElementById('field_label').value = field.field_label || '';
     document.getElementById('field_name').value = field.field_name || '';

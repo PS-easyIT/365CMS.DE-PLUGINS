@@ -92,11 +92,9 @@ final class CMS_Forum
         // Sprache
         require_once CMS_FORUM_DIR . 'lang/de_DE.php';
 
-        // Admin-Bereich (nur für Admins)
-        if (is_admin_area()) {
-            require_once CMS_FORUM_DIR . 'admin/class-admin-menu.php';
-            require_once CMS_FORUM_DIR . 'admin/class-admin-pages.php';
-        }
+        // Admin-Bereich
+        require_once CMS_FORUM_DIR . 'admin/class-admin-menu.php';
+        require_once CMS_FORUM_DIR . 'admin/class-admin-pages.php';
     }
 
     /**

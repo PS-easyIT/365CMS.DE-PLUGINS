@@ -7,21 +7,19 @@ $statusMap = [
     'archived' => ['label' => 'Archiviert', 'class' => 'inactive', 'icon' => '📦'],
     'spam'     => ['label' => 'Spam',       'class' => 'danger',   'icon' => '🚫'],
 ];
-$meta = [];
-foreach ($submissionMeta as $m) {
-    $meta[$m['field_name']] = $m['field_value'];
-}
 $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
 ?>
+
+<?php include CMS_CONTACT_PLUGIN_DIR . 'admin/views/partial-section-nav.php'; ?>
 
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
         <h2>📨 Nachricht #<?php echo (int)$submission['id']; ?></h2>
-        <p>Formular: <?php echo $e($form['title'] ?? '—'); ?> | <?php echo date('d.m.Y H:i', strtotime($submission['created_at'])); ?></p>
+        <p>Formular-ID: <?php echo (int)($submission['form_id'] ?? 0); ?> | <?php echo date('d.m.Y H:i', strtotime($submission['created_at'])); ?></p>
     </div>
     <div class="header-actions">
-        <a href="?page=contact-submissions" class="btn btn-secondary">↩️ Zurück</a>
+        <a href="?section=submissions" class="btn btn-secondary">↩️ Zurück</a>
     </div>
 </div>
 
@@ -62,9 +60,10 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
                 <span class="status-badge <?php echo $st['class']; ?>"><?php echo $st['icon'] . ' ' . $st['label']; ?></span>
             </div>
             <form method="POST" style="display:flex;gap:.5rem;flex-wrap:wrap;">
-                <input type="hidden" name="form_action" value="update_status">
+                <input type="hidden" name="sub_action" value="update_status">
+                <input type="hidden" name="id" value="<?php echo (int)$submission['id']; ?>">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
-                <select name="new_status" class="form-control" style="flex:1;">
+                <select name="status" class="form-control" style="flex:1;">
                     <?php foreach ($statusMap as $key => $s): ?>
                     <option value="<?php echo $key; ?>" <?php echo $submission['status'] === $key ? 'selected' : ''; ?>>
                         <?php echo $s['icon'] . ' ' . $s['label']; ?>

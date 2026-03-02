@@ -33,8 +33,8 @@ $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
             <!-- Provider-Header -->
             <div class="booking-provider-header">
                 <h1><?php echo $e($provider['display_name']); ?></h1>
-                <?php if (!empty($provider['description'])): ?>
-                <p class="booking-provider-description"><?php echo $e($provider['description']); ?></p>
+                <?php if (!empty($provider['bio'])): ?>
+                <p class="booking-provider-description"><?php echo $e($provider['bio']); ?></p>
                 <?php endif; ?>
                 <?php if (!empty($provider['email'])): ?>
                 <p class="booking-provider-meta">

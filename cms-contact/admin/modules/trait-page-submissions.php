@@ -21,6 +21,7 @@ trait CMS_Contact_Page_Submissions_Trait
     public static function render_submissions(): void
     {
         self::check_access();
+        self::enqueue_admin_assets();
 
         $action = $_GET['action'] ?? 'list';
         $notice = '';
@@ -46,7 +47,7 @@ trait CMS_Contact_Page_Submissions_Trait
                     if (self::verify_nonce('contact_submissions')) {
                         $id = (int) ($_POST['id'] ?? 0);
                         CMS_Contact_Submissions::instance()->delete($id);
-                        header('Location: ?page=contact-submissions&notice=deleted');
+                        header('Location: ' . self::ADMIN_BASE_URL . '?section=submissions&notice=deleted');
                         exit;
                     }
                     break;
@@ -109,6 +110,7 @@ trait CMS_Contact_Page_Submissions_Trait
             }
 
             $meta = CMS_Contact_Submissions::instance()->get_meta($id);
+            $activeSection = 'submissions';
             include CMS_CONTACT_PLUGIN_DIR . 'admin/views/page-submission-view.php';
         } else {
             self::render_submissions_list($csrfToken, $notice, $error);
@@ -143,6 +145,7 @@ trait CMS_Contact_Page_Submissions_Trait
         $filterStatus = sanitize_text_field($_GET['status'] ?? '');
         $filterSearch = sanitize_text_field($_GET['search'] ?? '');
 
+        $activeSection = 'submissions';
         include CMS_CONTACT_PLUGIN_DIR . 'admin/views/page-submissions-list.php';
     }
 }

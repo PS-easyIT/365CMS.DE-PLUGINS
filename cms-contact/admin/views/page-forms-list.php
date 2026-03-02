@@ -1,5 +1,7 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
+<?php include CMS_CONTACT_PLUGIN_DIR . 'admin/views/partial-section-nav.php'; ?>
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -7,7 +9,7 @@
         <p>Alle Kontaktformulare verwalten und neue erstellen</p>
     </div>
     <div class="header-actions">
-        <a href="?page=contact-forms&action=new" class="btn btn-primary">➕ Neues Formular</a>
+        <a href="?section=forms&action=new" class="btn btn-primary">➕ Neues Formular</a>
     </div>
 </div>
 
@@ -28,7 +30,7 @@
         <p style="font-size:2.5rem;margin:0;">📭</p>
         <p><strong>Noch keine Formulare vorhanden</strong></p>
         <p style="color:#64748b;font-size:.875rem;">Erstelle dein erstes Kontaktformular.</p>
-        <a href="?page=contact-forms&action=new" class="btn btn-primary" style="margin-top:1rem;">➕ Jetzt erstellen</a>
+        <a href="?section=forms&action=new" class="btn btn-primary" style="margin-top:1rem;">➕ Jetzt erstellen</a>
     </div>
     <?php else: ?>
     <div class="users-table-container">
@@ -54,7 +56,7 @@
             ?>
             <tr>
                 <td>
-                    <a href="?page=contact-forms&action=edit&id=<?php echo (int)$f['id']; ?>" style="font-weight:600;color:var(--admin-primary);">
+                    <a href="?section=forms&action=edit&id=<?php echo (int)$f['id']; ?>" style="font-weight:600;color:var(--admin-primary);">
                         <?php echo htmlspecialchars($f['title']); ?>
                     </a>
                 </td>
@@ -63,7 +65,7 @@
                 </td>
                 <td><?php echo htmlspecialchars(($tplList[$f['template']]['icon'] ?? '') . ' ' . ($tplList[$f['template']]['name'] ?? $f['template'])); ?></td>
                 <td>
-                    <a href="?page=contact-forms&action=fields&id=<?php echo (int)$f['id']; ?>" style="color:var(--admin-primary);">
+                    <a href="?section=forms&action=fields&id=<?php echo (int)$f['id']; ?>" style="color:var(--admin-primary);">
                         <?php echo $fieldCount; ?> Felder
                     </a>
                 </td>
@@ -75,8 +77,8 @@
                 <td><?php echo date('d.m.Y', strtotime($f['created_at'])); ?></td>
                 <td>
                     <div style="display:flex;gap:.4rem;">
-                        <a href="?page=contact-forms&action=fields&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Felder bearbeiten">📝</a>
-                        <a href="?page=contact-forms&action=edit&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Einstellungen">✏️</a>
+                        <a href="?section=forms&action=fields&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Felder bearbeiten">📝</a>
+                        <a href="?section=forms&action=edit&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Einstellungen">✏️</a>
                         <a href="/contact/<?php echo htmlspecialchars($f['slug']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary" title="Frontend-Vorschau">👁️</a>
                         <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteModal(<?php echo (int)$f['id']; ?>, '<?php echo htmlspecialchars($f['title'], ENT_QUOTES); ?>')" title="Löschen">🗑️</button>
                     </div>

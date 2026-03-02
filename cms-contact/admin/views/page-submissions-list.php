@@ -9,6 +9,8 @@ $statusMap = [
 ];
 ?>
 
+<?php include CMS_CONTACT_PLUGIN_DIR . 'admin/views/partial-section-nav.php'; ?>
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -20,7 +22,7 @@ $statusMap = [
 <!-- Filter -->
 <div class="admin-card" style="margin-bottom:1rem;">
     <form method="GET" style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;">
-        <input type="hidden" name="page" value="contact-submissions">
+        <input type="hidden" name="section" value="submissions">
         <div class="form-group" style="margin:0;">
             <label class="form-label" style="font-size:.8rem;">Formular</label>
             <select name="form_id" class="form-control" style="min-width:160px;">
@@ -48,7 +50,7 @@ $statusMap = [
         </div>
         <button type="submit" class="btn btn-secondary btn-sm">🔍 Filtern</button>
         <?php if ($filterFormId || $filterStatus || $filterSearch): ?>
-        <a href="?page=contact-submissions" class="btn btn-secondary btn-sm">✖ Zurücksetzen</a>
+        <a href="?section=submissions" class="btn btn-secondary btn-sm">✖ Zurücksetzen</a>
         <?php endif; ?>
     </form>
 </div>
@@ -64,11 +66,11 @@ $statusMap = [
 </div>
 <?php else: ?>
 <form method="POST" id="bulkForm">
-    <input type="hidden" name="form_action" value="bulk_action">
+    <input type="hidden" name="sub_action" value="bulk_action">
     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
 
     <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.75rem;">
-        <select name="bulk_type" class="form-control" style="max-width:200px;">
+        <select name="bulk" class="form-control" style="max-width:200px;">
             <option value="">Aktion wählen …</option>
             <option value="mark_read">✅ Als gelesen markieren</option>
             <option value="mark_spam">🚫 Als Spam markieren</option>
@@ -117,7 +119,7 @@ $statusMap = [
                         <td style="white-space:nowrap;font-size:.85rem;"><?php echo date('d.m.Y H:i', strtotime($sub['created_at'])); ?></td>
                         <td>
                             <div style="display:flex;gap:.35rem;">
-                                <a href="?page=contact-submissions&action=view&id=<?php echo (int)$sub['id']; ?>"
+                                <a href="?section=submissions&action=view&id=<?php echo (int)$sub['id']; ?>"
                                    class="btn btn-sm btn-secondary" title="Anzeigen">👁️</a>
                             </div>
                         </td>
@@ -133,14 +135,14 @@ $statusMap = [
 <?php if ($pages > 1): ?>
 <div style="display:flex;gap:.5rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap;">
     <?php if ($page > 1): ?>
-    <a href="?page=contact-submissions&p=<?php echo $page - 1; ?>&form_id=<?php echo $filterFormId; ?>&status=<?php echo $e($filterStatus); ?>&search=<?php echo urlencode($filterSearch); ?>"
+    <a href="?section=submissions&paged=<?php echo $page - 1; ?>&form_id=<?php echo $filterFormId; ?>&status=<?php echo $e($filterStatus); ?>&search=<?php echo urlencode($filterSearch); ?>"
        class="btn btn-secondary btn-sm">← Zurück</a>
     <?php endif; ?>
     <span style="padding:.375rem .875rem;color:#64748b;font-size:.875rem;">
         Seite <?php echo $page; ?> von <?php echo $pages; ?>
     </span>
     <?php if ($page < $pages): ?>
-    <a href="?page=contact-submissions&p=<?php echo $page + 1; ?>&form_id=<?php echo $filterFormId; ?>&status=<?php echo $e($filterStatus); ?>&search=<?php echo urlencode($filterSearch); ?>"
+    <a href="?section=submissions&paged=<?php echo $page + 1; ?>&form_id=<?php echo $filterFormId; ?>&status=<?php echo $e($filterStatus); ?>&search=<?php echo urlencode($filterSearch); ?>"
        class="btn btn-secondary btn-sm">Weiter →</a>
     <?php endif; ?>
 </div>

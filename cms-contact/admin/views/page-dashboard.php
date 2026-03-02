@@ -1,5 +1,7 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
+<?php include CMS_CONTACT_PLUGIN_DIR . 'admin/views/partial-section-nav.php'; ?>
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -7,8 +9,8 @@
         <p>Übersicht aller Kontaktformulare und eingehenden Nachrichten</p>
     </div>
     <div class="header-actions">
-        <a href="?page=contact-submissions&status=unread" class="btn btn-secondary btn-sm">📩 Ungelesen</a>
-        <a href="?page=contact-forms&action=new" class="btn btn-primary">➕ Neues Formular</a>
+        <a href="?section=submissions&status=unread" class="btn btn-secondary btn-sm">📩 Ungelesen</a>
+        <a href="?section=forms&action=new" class="btn btn-primary">➕ Neues Formular</a>
     </div>
 </div>
 
@@ -42,11 +44,11 @@
 <div class="admin-card" style="padding:1rem 1.25rem;margin-bottom:1.5rem;">
     <h3 style="margin:0 0 .75rem;font-size:.85rem;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">⚡ Schnellzugriff</h3>
     <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
-        <a href="?page=contact-forms&action=new" class="btn btn-secondary btn-sm">➕ Neues Formular</a>
-        <a href="?page=contact-submissions" class="btn btn-secondary btn-sm">📩 Alle Nachrichten</a>
-        <a href="?page=contact-settings" class="btn btn-secondary btn-sm">⚙️ Einstellungen</a>
+        <a href="?section=forms&action=new" class="btn btn-secondary btn-sm">➕ Neues Formular</a>
+        <a href="?section=submissions" class="btn btn-secondary btn-sm">📩 Alle Nachrichten</a>
+        <a href="?section=settings" class="btn btn-secondary btn-sm">⚙️ Einstellungen</a>
         <?php if ($globalStats['unread'] > 0): ?>
-        <a href="?page=contact-submissions&status=unread" class="btn btn-secondary btn-sm">
+        <a href="?section=submissions&status=unread" class="btn btn-secondary btn-sm">
             🔔 Ungelesene
             <span style="background:#fee2e2;color:#991b1b;padding:.1rem .4rem;border-radius:10px;font-size:.7rem;font-weight:700;margin-left:.2rem;">
                 <?php echo $globalStats['unread']; ?>
@@ -65,7 +67,7 @@
         <p style="font-size:2.5rem;margin:0;">📭</p>
         <p><strong>Noch keine Formulare vorhanden</strong></p>
         <p style="color:#64748b;font-size:.875rem;">Erstelle dein erstes Kontaktformular über den Button oben.</p>
-        <a href="?page=contact-forms&action=new" class="btn btn-primary" style="margin-top:1rem;">➕ Jetzt erstellen</a>
+        <a href="?section=forms&action=new" class="btn btn-primary" style="margin-top:1rem;">➕ Jetzt erstellen</a>
     </div>
     <?php else: ?>
     <div class="users-table-container">
@@ -89,7 +91,7 @@
             ?>
             <tr>
                 <td>
-                    <a href="?page=contact-forms&action=edit&id=<?php echo (int)$f['id']; ?>" style="font-weight:600;color:var(--admin-primary);">
+                    <a href="?section=forms&action=edit&id=<?php echo (int)$f['id']; ?>" style="font-weight:600;color:var(--admin-primary);">
                         <?php echo htmlspecialchars($f['title']); ?>
                     </a>
                 </td>
@@ -112,8 +114,8 @@
                 </td>
                 <td>
                     <div style="display:flex;gap:.4rem;">
-                        <a href="?page=contact-forms&action=fields&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Felder bearbeiten">📝</a>
-                        <a href="?page=contact-forms&action=edit&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Bearbeiten">✏️</a>
+                        <a href="?section=forms&action=fields&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Felder bearbeiten">📝</a>
+                        <a href="?section=forms&action=edit&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Bearbeiten">✏️</a>
                         <a href="/contact/<?php echo htmlspecialchars($f['slug']); ?>" target="_blank" class="btn btn-sm btn-secondary" title="Vorschau">👁️</a>
                     </div>
                 </td>
@@ -144,7 +146,7 @@
             <?php foreach ($recentSubmissions as $sub): ?>
             <tr>
                 <td>
-                    <a href="?page=contact-submissions&action=view&id=<?php echo (int)$sub['id']; ?>" style="font-weight:<?php echo $sub['status'] === 'unread' ? '700' : '400'; ?>;color:var(--admin-primary);">
+                    <a href="?section=submissions&action=view&id=<?php echo (int)$sub['id']; ?>" style="font-weight:<?php echo $sub['status'] === 'unread' ? '700' : '400'; ?>;color:var(--admin-primary);">
                         <?php echo htmlspecialchars($sub['sender_name'] ?: $sub['sender_email'] ?: 'Unbekannt'); ?>
                     </a>
                 </td>
@@ -178,7 +180,7 @@
         </table>
     </div>
     <div style="text-align:center;margin-top:1rem;">
-        <a href="?page=contact-submissions" class="btn btn-secondary btn-sm">📩 Alle Nachrichten anzeigen</a>
+        <a href="?section=submissions" class="btn btn-secondary btn-sm">📩 Alle Nachrichten anzeigen</a>
     </div>
 </div>
 <?php endif; ?>

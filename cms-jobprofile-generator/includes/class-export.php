@@ -178,13 +178,13 @@ class CMS_JPG_Export
   <?php if (!empty($benefits)): ?>
   <h2>Benefits</h2>
   <?php foreach ($benefits as $b): ?>
-  <span class="pill"><span class="benefit-icon"><?php echo $b->icon; ?></span><?php echo $esc($b->title); ?></span>
+  <span class="pill"><span class="benefit-icon"><?php echo $esc($b->icon ?? ''); ?></span><?php echo $esc($b->title); ?></span>
   <?php endforeach; ?>
   <?php endif; ?>
 
   <?php if (!empty($p['description'])): ?>
   <h2>Über uns / Weitere Informationen</h2>
-  <?php echo $p['description']; // bereits durch SunEditor erzeugt – muss sanitized sein ?>
+  <?php echo strip_tags($p['description'], '<p><br><strong><em><b><i><u><ul><ol><li><a><h1><h2><h3><h4><blockquote><table><tr><td><th><thead><tbody><span><div>'); ?>
   <?php endif; ?>
 </div>
 </body>

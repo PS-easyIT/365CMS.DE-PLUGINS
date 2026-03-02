@@ -150,7 +150,7 @@ $applyText   = $ds('btn_apply_text', '📩 Jetzt bewerben');
             <h2>Benefits</h2>
             <div class="jpg-compact-benefits">
             <?php foreach ($benefits as $b): ?>
-                <span class="jpg-compact-benefit-chip"><?php echo (!empty($b->icon) ? $b->icon . ' ' : '✅ '); echo $esc($b->title ?? ''); ?></span>
+                <span class="jpg-compact-benefit-chip"><?php echo (!empty($b->icon) ? $esc($b->icon) . ' ' : '✅ '); echo $esc($b->title ?? ''); ?></span>
             <?php endforeach; ?>
             </div>
         </section>

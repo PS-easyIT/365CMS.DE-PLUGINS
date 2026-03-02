@@ -1,6 +1,6 @@
 # cms-jobprofile-generator
 
-**Version:** 0.9.3 · **Status:** Beta · **PHP:** 8.2+ · **365CMS:** ≥ 0.20.0
+**Version:** 0.9.6 · **Status:** Beta · **PHP:** 8.2+ · **365CMS:** ≥ 0.20.0
 
 Vollständiges Plugin für **365CMS** zum Erstellen, Verwalten und Veröffentlichen von Stellenanzeigen mit konfigurierbarem Workflow-Genehmigungsprozess.
 
@@ -185,7 +185,7 @@ Alle unter `/{admin-slug}/plugins/jpg-dashboard/`:
 
 ## Datenbank
 
-**DB-Version:** 6 · **Tabellen:** 19 (Präfix `jpg_`)
+**DB-Version:** 7 · **Tabellen:** 19 (Präfix `jpg_`)
 
 | Tabelle | Beschreibung |
 |---|---|

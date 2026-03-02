@@ -478,6 +478,11 @@ final class CMS_Booking_Bookings
         $db = \CMS\Database::instance();
         $p  = $db->getPrefix();
 
+        // Booking-IDs des Users sammeln BEVOR wir anonymisieren
+        $stmt = $db->prepare("SELECT id FROM {$p}bookings WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        $bookingIds = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+
         // Buchungen des Users anonymisieren
         $db->prepare(
             "UPDATE {$p}bookings SET
@@ -489,12 +494,13 @@ final class CMS_Booking_Bookings
              WHERE user_id = ?"
         )->execute([$userId]);
 
-        // Meta löschen
-        $db->prepare(
-            "DELETE bm FROM {$p}booking_meta bm
-             INNER JOIN {$p}bookings b ON b.id = bm.booking_id
-             WHERE b.customer_email = '' AND b.customer_name = '[gelöscht]'"
-        )->execute();
+        // Meta gezielt für die Buchungen des Users löschen
+        if (!empty($bookingIds)) {
+            $placeholders = implode(',', array_fill(0, count($bookingIds), '?'));
+            $db->prepare(
+                "DELETE FROM {$p}booking_meta WHERE booking_id IN ({$placeholders})"
+            )->execute($bookingIds);
+        }
     }
 
     /* ================================================================== */

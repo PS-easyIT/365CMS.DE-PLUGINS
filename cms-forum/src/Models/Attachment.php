@@ -95,4 +95,23 @@ final class Attachment
         $stmt = $this->db()->prepare("UPDATE {$this->table()} SET download_count = download_count + 1 WHERE id = ?");
         $stmt->execute([$id]);
     }
+
+    /**
+     * Anhänge für mehrere Posts laden.
+     *
+     * @param  array<int> $postIds
+     * @return array<int, object>
+     */
+    public function findByPostIds(array $postIds): array
+    {
+        if (empty($postIds)) {
+            return [];
+        }
+        $placeholders = implode(',', array_fill(0, count($postIds), '?'));
+        $stmt = $this->db()->prepare(
+            "SELECT * FROM {$this->table()} WHERE post_id IN ({$placeholders}) ORDER BY created_at ASC"
+        );
+        $stmt->execute(array_values($postIds));
+        return $stmt->fetchAll(\PDO::FETCH_OBJ);
+    }
 }

@@ -37,12 +37,12 @@ final class CMS_Contact_Frontend
 
         $router = \CMS\Router::instance();
 
-        // Dynamische Route: /contact/{slug}
-        $router->addRoute('GET',  '/contact/{slug}',        [$this, 'render_form']);
-        $router->addRoute('POST', '/contact/{slug}',        [$this, 'handle_submit']);
+        // Dynamische Route: /contact/:slug
+        $router->addRoute('GET',  '/contact/:slug',        [$this, 'render_form']);
+        $router->addRoute('POST', '/contact/:slug',        [$this, 'handle_submit']);
 
         // AJAX-Submit-Endpoint
-        $router->addRoute('POST', '/api/contact/{slug}/submit', [$this, 'handle_ajax_submit']);
+        $router->addRoute('POST', '/api/contact/:slug/submit', [$this, 'handle_ajax_submit']);
     }
 
     // ── Formular rendern ──────────────────────────────────────────────────────
@@ -86,11 +86,8 @@ final class CMS_Contact_Frontend
             $theme = \CMS\ThemeManager::instance();
         }
 
-        // SEO
-        if (class_exists('CMS\Services\SEOService')) {
-            \CMS\Services\SEOService::instance()->setTitle($form['title'] . ' – ' . (defined('SITE_NAME') ? SITE_NAME : ''));
-            \CMS\Services\SEOService::instance()->setDescription($form['description'] ?? '');
-        }
+        // SEO – Titel und Beschreibung werden direkt im Template via <title> gesetzt
+        // SEOService bietet keine setTitle()/setDescription()-Methoden
 
         // Template laden
         include $templateFile;
@@ -181,8 +178,18 @@ final class CMS_Contact_Frontend
         }
 
         // Honeypot-Check
-        if (!empty($form['enable_honeypot']) && !empty($_POST['_website_url'])) {
+        if (!empty($form['enable_honeypot']) && !empty($_POST['website_url'])) {
             return ['success' => false, 'error' => 'Spam erkannt.'];
+        }
+
+        // CAPTCHA-Check (session-basiert)
+        if (!empty($form['enable_captcha'])) {
+            $answer   = (int) ($_POST['captcha_answer'] ?? 0);
+            $expected = (int) ($_SESSION['captcha_expected_' . $slug] ?? -1);
+            unset($_SESSION['captcha_expected_' . $slug]);
+            if ($answer !== $expected || $expected < 0) {
+                return ['success' => false, 'error' => 'Die Captcha-Antwort ist falsch. Bitte versuchen Sie es erneut.'];
+            }
         }
 
         // Rate-Limiting

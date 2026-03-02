@@ -46,6 +46,11 @@
       "slug": "cms-booking",
       "name": "CMS Booking",
       "manifest": "PLUGINS/cms-booking/update.json"
+    },
+    {
+      "slug": "cms-forum",
+      "name": "CMS Forum",
+      "manifest": "PLUGINS/cms-forum/update.json"
     }
   ]
 }

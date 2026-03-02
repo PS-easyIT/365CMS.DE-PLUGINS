@@ -19,6 +19,7 @@ trait CMS_Contact_Page_Dashboard_Trait
     public static function render_dashboard(): void
     {
         self::check_access();
+        self::enqueue_admin_assets();
 
         $csrfToken   = self::generate_nonce('contact_dashboard');
         $forms       = CMS_Contact_Forms::instance();
@@ -37,6 +38,7 @@ trait CMS_Contact_Page_Dashboard_Trait
         // Letzte Nachrichten
         $recentSubmissions = $submissions->get_all(['is_spam' => 0], 0, 5);
 
+        $activeSection = 'dashboard';
         include CMS_CONTACT_PLUGIN_DIR . 'admin/views/page-dashboard.php';
     }
 }

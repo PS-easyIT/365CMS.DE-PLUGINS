@@ -148,7 +148,7 @@ $applyText   = $ds('btn_apply_text', '📩 Jetzt bewerben');
             <div class="jpg-modern-benefits-grid">
             <?php foreach ($benefits as $b): ?>
                 <div class="jpg-modern-benefit-item">
-                    <span class="jpg-modern-benefit-icon"><?php echo !empty($b->icon) ? $b->icon : '✅'; ?></span>
+                    <span class="jpg-modern-benefit-icon"><?php echo !empty($b->icon) ? $esc($b->icon) : '✅'; ?></span>
                     <span><?php echo $esc($b->title ?? ''); ?></span>
                 </div>
             <?php endforeach; ?>

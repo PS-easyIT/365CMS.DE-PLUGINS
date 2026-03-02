@@ -1,7 +1,7 @@
 # CMS Job Profile Generator – Plugin-Dokumentation
 
 > **Plugin-Slug:** `cms-jobprofile-generator`  
-> **Version:** 0.9.3 | **Mindest-CMS:** 0.20.0 | **PHP:** 8.2+  
+> **Version:** 0.9.6 | **Mindest-CMS:** 0.20.0 | **PHP:** 8.2+  
 > **Lizenz:** Free
 
 ---
@@ -201,8 +201,8 @@ $list     = $profiles->get_list(['status' => 'published']);
 
 | Konstante | Wert | Beschreibung |
 |---|---|---|
-| `JPG_VERSION` | `'0.9.3'` | Plugin-Version |
-| `JPG_DB_VERSION` | `'6'` | Datenbankschema-Version |
+| `JPG_VERSION` | `'0.9.6'` | Plugin-Version |
+| `JPG_DB_VERSION` | `'7'` | Datenbankschema-Version |
 | `JPG_DIR` | `dirname(__FILE__) . '/'` | Absoluter Pfad |
 | `JPG_URL` | `'/plugins/cms-jobprofile-generator/'` | Relativer URL-Pfad |
 | `JPG_TEXT_DOMAIN` | `'cms-jobprofile-generator'` | i18n-Textdomain |

@@ -13,14 +13,10 @@ if (!defined('ABSPATH')) exit;
 
 $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
 $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
+
+$theme = CMS\ThemeManager::instance();
+$theme->getHeader();
 ?>
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $e($form['title']); ?> – <?php echo $e($siteName); ?></title>
-    <?php CMS\Hooks::doAction('head'); ?>
     <link rel="stylesheet" href="<?php echo CMS_CONTACT_PLUGIN_URL; ?>assets/css/contact-public.css?v=<?php echo CMS_CONTACT_VERSION; ?>">
     <style>
         .booking-service-wrap { max-width: 750px; margin: 2rem auto; }
@@ -37,11 +33,6 @@ $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
     <?php if (!empty($form['custom_css'])): ?>
     <style><?php echo $form['custom_css']; ?></style>
     <?php endif; ?>
-</head>
-<body class="contact-page contact-template-booking-service">
-    <?php CMS\Hooks::doAction('body_start'); ?>
-    <?php CMS\ThemeManager::instance()->render('header'); ?>
-    <?php CMS\Hooks::doAction('after_header'); ?>
 
     <main class="contact-main">
         <div class="booking-service-wrap">
@@ -78,18 +69,17 @@ $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
 
                     <div class="contact-fields">
                         <?php foreach ($fields as $field): ?>
-                        <div class="contact-field contact-field-<?php echo $e($field['width']); ?>">
-                            <?php CMS_Contact_Frontend::render_field($field, $old, $e); ?>
+                        <div class="contact-field contact-field-<?php echo $e($field['field_width'] ?? 'full'); ?>">
+                            <?php echo CMS_Contact_Frontend::render_field($field, '', $old); ?>
                         </div>
                         <?php endforeach; ?>
                     </div>
 
                     <?php if (!empty($form['enable_captcha'])): ?>
                     <div class="contact-field contact-field-full contact-captcha">
-                        <?php $a = rand(1, 10); $b = rand(1, 10); ?>
+                        <?php $a = rand(1, 10); $b = rand(1, 10); $_SESSION['captcha_expected_' . $form['slug']] = $a + $b; ?>
                         <label class="contact-label">Spamschutz: <?php echo $a; ?> + <?php echo $b; ?> = ? <span class="contact-required">*</span></label>
                         <input type="number" name="captcha_answer" class="contact-input" required>
-                        <input type="hidden" name="captcha_expected" value="<?php echo $a + $b; ?>">
                     </div>
                     <?php endif; ?>
 
@@ -108,9 +98,5 @@ $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
         </div>
     </main>
 
-    <?php CMS\Hooks::doAction('before_footer'); ?>
-    <?php CMS\ThemeManager::instance()->render('footer'); ?>
+    <?php CMS\ThemeManager::instance()->getFooter(); ?>
     <script src="<?php echo CMS_CONTACT_PLUGIN_URL; ?>assets/js/contact-public.js?v=<?php echo CMS_CONTACT_VERSION; ?>" defer></script>
-    <?php CMS\Hooks::doAction('body_end'); ?>
-</body>
-</html>

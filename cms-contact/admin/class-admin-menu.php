@@ -14,7 +14,8 @@ if (!defined('ABSPATH')) {
 final class CMS_Contact_Admin_Menu
 {
     /**
-     * Menüpunkte registrieren
+     * Einzelnen Menüpunkt registrieren (keine Untermenüs).
+     * Navigation innerhalb des Plugins erfolgt über Section-Nav-Tabs.
      */
     public static function register(): void
     {
@@ -26,46 +27,10 @@ final class CMS_Contact_Admin_Menu
             'Kontakt',
             'Kontakt',
             'manage_options',
-            'contact-dashboard',
-            [CMS_Contact_Admin_Pages::class, 'render_dashboard'],
+            'contact',
+            [CMS_Contact_Admin_Pages::class, 'render_dispatch'],
             '📬',
             35
-        );
-
-        add_submenu_page(
-            'contact-dashboard',
-            'Dashboard',
-            '📊 Dashboard',
-            'manage_options',
-            'contact-dashboard',
-            [CMS_Contact_Admin_Pages::class, 'render_dashboard']
-        );
-
-        add_submenu_page(
-            'contact-dashboard',
-            'Formulare',
-            '📋 Formulare',
-            'manage_options',
-            'contact-forms',
-            [CMS_Contact_Admin_Pages::class, 'render_forms']
-        );
-
-        add_submenu_page(
-            'contact-dashboard',
-            'Nachrichten',
-            '📩 Nachrichten',
-            'manage_options',
-            'contact-submissions',
-            [CMS_Contact_Admin_Pages::class, 'render_submissions']
-        );
-
-        add_submenu_page(
-            'contact-dashboard',
-            'Einstellungen',
-            '⚙️ Einstellungen',
-            'manage_options',
-            'contact-settings',
-            [CMS_Contact_Admin_Pages::class, 'render_settings']
         );
     }
 }

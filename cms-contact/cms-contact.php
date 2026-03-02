@@ -74,6 +74,7 @@ final class CMS_Contact
         \CMS\Hooks::addAction('cms_init',            [$this, 'init_plugin'],                10);
         \CMS\Hooks::addAction('plugin_activated',     [$this, 'on_activation'],              10);
         \CMS\Hooks::addAction('plugin_uninstalled',   [$this, 'on_uninstall'],               10);
+        \CMS\Hooks::addAction('cms_admin_menu',       [$this, 'start_admin_output_buffer'], 1);
         \CMS\Hooks::addAction('cms_admin_menu',       [CMS_Contact_Admin_Menu::class, 'register'], 10);
         \CMS\Hooks::addAction('register_routes',      [CMS_Contact_Frontend::class, 'instance'],   10);
         \CMS\Hooks::addAction('head',                 [$this, 'enqueue_styles'],             20);
@@ -82,6 +83,24 @@ final class CMS_Contact
         // DSGVO-Hooks
         \CMS\Hooks::addAction('dsgvo_export_data',    [$this, 'export_user_data'],           10);
         \CMS\Hooks::addAction('dsgvo_delete_data',    [$this, 'delete_user_data'],           10);
+    }
+
+    /**
+     * Output-Buffering für Admin-POST-Requests starten.
+     *
+     * Muss VOR renderAdminLayoutStart() laufen (cms_admin_menu Priorität 1),
+     * damit header()-Redirects in den Trait-POST-Handlern funktionieren,
+     * auch nachdem der Router bereits HTML ausgegeben hat.
+     */
+    public function start_admin_output_buffer(): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return;
+        }
+        $uri = $_SERVER['REQUEST_URI'] ?? '';
+        if (strpos($uri, '/admin/plugins/contact/') !== false) {
+            ob_start();
+        }
     }
 
     public function on_activation(string $plugin): void

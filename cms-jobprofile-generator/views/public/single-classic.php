@@ -144,7 +144,7 @@ $applyText   = $ds('btn_apply_text', '📩 Jetzt bewerben');
                         <h2>Das bieten wir</h2>
                         <ul>
                         <?php foreach ($benefits as $b): ?>
-                            <li class="jpg-benefit jpg-benefit-<?php echo $esc($b->source ?? 'job'); ?>"><?php echo (!empty($b->icon) ? $b->icon . ' ' : ''); echo $esc($b->title ?? ''); ?></li>
+                            <li class="jpg-benefit jpg-benefit-<?php echo $esc($b->source ?? 'job'); ?>"><?php echo (!empty($b->icon) ? $esc($b->icon) . ' ' : ''); echo $esc($b->title ?? ''); ?></li>
                         <?php endforeach; ?>
                         </ul>
                     </div>

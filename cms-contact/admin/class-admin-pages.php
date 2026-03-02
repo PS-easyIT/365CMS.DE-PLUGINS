@@ -33,7 +33,74 @@ final class CMS_Contact_Admin_Pages
     use CMS_Contact_Page_Submissions_Trait;
     use CMS_Contact_Page_Settings_Trait;
 
+    /** Admin-Basis-URL für alle Kontakt-Seiten */
+    public const ADMIN_BASE_URL = '/admin/plugins/contact/contact';
+
+    /**
+     * Zentrale Dispatch: leitet anhand ?section= an den richtigen Trait weiter.
+     *
+     * Output-Buffering erlaubt header()-Redirects in POST-Handlern,
+     * auch wenn renderAdminLayoutStart() bereits HTML ausgegeben hat.
+     */
+    public static function render_dispatch(): void
+    {
+        ob_start();
+        $section = sanitize_text_field($_GET['section'] ?? 'dashboard');
+
+        match ($section) {
+            'forms'       => self::render_forms(),
+            'submissions' => self::render_submissions(),
+            'settings'    => self::render_settings(),
+            default       => self::render_dashboard(),
+        };
+        ob_end_flush();
+    }
+
+    /**
+     * URL-Helper für Contact-Admin-Seiten
+     */
+    public static function admin_url(string $section = 'dashboard', array $params = []): string
+    {
+        $url = self::ADMIN_BASE_URL . '?section=' . urlencode($section);
+        foreach ($params as $k => $v) {
+            $url .= '&' . urlencode($k) . '=' . urlencode((string) $v);
+        }
+        return $url;
+    }
+
     // ── Gemeinsame Hilfsmethoden ──────────────────────────────────────────────
+
+    /**
+     * Admin-CSS und -JS einbinden (einmal pro Request)
+     */
+    protected static function enqueue_admin_assets(): void
+    {
+        static $loaded = false;
+        if ($loaded) {
+            return;
+        }
+        $loaded = true;
+
+        $css = CMS_CONTACT_PLUGIN_DIR . 'assets/css/contact-admin.css';
+        if (file_exists($css)) {
+            echo '<link rel="stylesheet" href="'
+                . htmlspecialchars(CMS_CONTACT_PLUGIN_URL . 'assets/css/contact-admin.css', ENT_QUOTES, 'UTF-8')
+                . '?v=' . filemtime($css) . '">' . "\n";
+        }
+    }
+
+    /**
+     * Admin-JS am Seitenende einbinden
+     */
+    protected static function enqueue_admin_scripts(): void
+    {
+        $js = CMS_CONTACT_PLUGIN_DIR . 'assets/js/contact-admin.js';
+        if (file_exists($js)) {
+            echo '<script src="'
+                . htmlspecialchars(CMS_CONTACT_PLUGIN_URL . 'assets/js/contact-admin.js', ENT_QUOTES, 'UTF-8')
+                . '?v=' . filemtime($js) . '" defer></script>' . "\n";
+        }
+    }
 
     /**
      * Admin-Zugangs-Check

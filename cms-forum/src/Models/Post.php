@@ -199,6 +199,17 @@ final class Post
     }
 
     /**
+     * Beitrag genehmigen (Moderation).
+     */
+    public function approve(int $id): bool
+    {
+        $stmt = $this->db()->prepare(
+            "UPDATE {$this->table()} SET is_approved = 1, updated_at = NOW() WHERE id = ?"
+        );
+        return $stmt->execute([$id]);
+    }
+
+    /**
      * Gesamtanzahl Beiträge.
      */
     public function countAll(): int

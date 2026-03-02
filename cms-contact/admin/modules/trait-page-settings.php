@@ -19,6 +19,7 @@ trait CMS_Contact_Page_Settings_Trait
     public static function render_settings(): void
     {
         self::check_access();
+        self::enqueue_admin_assets();
 
         $notice = '';
         $error  = '';
@@ -76,6 +77,7 @@ trait CMS_Contact_Page_Settings_Trait
 
         $templates = CMS_Contact_Forms::get_available_templates();
 
+        $activeSection = 'settings';
         include CMS_CONTACT_PLUGIN_DIR . 'admin/views/page-settings.php';
     }
 }

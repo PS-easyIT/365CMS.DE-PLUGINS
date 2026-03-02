@@ -1,5 +1,7 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
+<?php include CMS_CONTACT_PLUGIN_DIR . 'admin/views/partial-section-nav.php'; ?>
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -7,7 +9,7 @@
         <p>Erstelle ein neues Kontaktformular mit individuellem Template</p>
     </div>
     <div class="header-actions">
-        <a href="?page=contact-forms" class="btn btn-secondary">↩️ Zurück</a>
+        <a href="?section=forms" class="btn btn-secondary">↩️ Zurück</a>
     </div>
 </div>
 
@@ -81,7 +83,7 @@
 
     <div class="admin-card">
         <div style="display:flex;justify-content:flex-end;gap:.6rem;">
-            <a href="?page=contact-forms" class="btn btn-secondary">Abbrechen</a>
+            <a href="?section=forms" class="btn btn-secondary">Abbrechen</a>
             <button type="submit" class="btn btn-primary">💾 Formular erstellen</button>
         </div>
     </div>

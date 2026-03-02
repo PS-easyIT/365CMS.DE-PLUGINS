@@ -33,6 +33,14 @@ trait CMS_Booking_Page_Settings_Trait
                     'reminder_hours', 'primary_color',
                 ];
 
+                // Checkbox-Defaults: Wert '0' wenn nicht gesendet
+                $checkboxKeys = ['auto_confirm', 'send_reminders'];
+                foreach ($checkboxKeys as $cbKey) {
+                    if (!array_key_exists($cbKey, $_POST)) {
+                        $_POST[$cbKey] = '0';
+                    }
+                }
+
                 $stmt = $db->prepare(
                     "INSERT INTO {$p}booking_settings (setting_key, setting_value) VALUES (?, ?)
                      ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"

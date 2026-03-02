@@ -196,6 +196,7 @@ final class CMS_Booking_Installer
             booking_id      INT UNSIGNED  NOT NULL,
             meta_key        VARCHAR(100)  NOT NULL,
             meta_value      TEXT          DEFAULT NULL,
+            UNIQUE KEY idx_bm_unique (booking_id, meta_key),
             INDEX idx_booking (booking_id),
             INDEX idx_key     (meta_key),
             CONSTRAINT fk_bm_booking FOREIGN KEY (booking_id)
@@ -228,7 +229,7 @@ final class CMS_Booking_Installer
             'default_buffer'       => '15',
             'default_timezone'     => 'Europe/Berlin',
             'default_currency'     => 'EUR',
-            'booking_advance_min'  => '60',
+            'booking_advance_min'  => '1',
             'booking_advance_max'  => '90',
             'cancellation_hours'   => '24',
             'auto_confirm'         => '0',
