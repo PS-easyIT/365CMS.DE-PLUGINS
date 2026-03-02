@@ -134,7 +134,7 @@ final class ForumController
         // Gelesen-Status
         if (\CMS\Auth::instance()->isLoggedIn()) {
             $threads = ReadTracker::instance()->enrichThreads(
-                \CMS\Auth::instance()->getUserId(),
+                (int)\CMS\Auth::instance()->currentUser()->id,
                 $threads
             );
         }
@@ -332,7 +332,7 @@ final class ForumController
     }
 
     /**
-     * View rendern.
+     * View rendern – in Theme-Header/-Footer eingebettet.
      */
     private function render(string $viewName, array $data = []): void
     {
@@ -340,9 +340,13 @@ final class ForumController
         $viewFile = CMS_FORUM_DIR . "views/frontend/{$viewName}.php";
 
         if (file_exists($viewFile)) {
+            \CMS\ThemeManager::instance()->getHeader();
             include $viewFile;
+            \CMS\ThemeManager::instance()->getFooter();
         } else {
+            \CMS\ThemeManager::instance()->getHeader();
             echo '<!-- Forum View not found: ' . htmlspecialchars($viewName) . ' -->';
+            \CMS\ThemeManager::instance()->getFooter();
         }
     }
 

@@ -30,7 +30,7 @@ use CMS_Forum\Helpers\AvatarHelper;
 
 $auth = \CMS\Auth::instance();
 $isLoggedIn = $auth->isLoggedIn();
-$userId = $isLoggedIn ? $auth->getUserId() : 0;
+$userId = $isLoggedIn ? (int)$auth->currentUser()->id : 0;
 
 // Attachments nach Post-ID gruppieren
 $attachmentsByPost = [];

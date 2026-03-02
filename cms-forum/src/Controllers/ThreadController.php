@@ -80,19 +80,19 @@ final class ThreadController
         // Als gelesen markieren
         $auth = \CMS\Auth::instance();
         if ($auth->isLoggedIn()) {
-            ReadTracker::instance()->markRead($auth->getUserId(), $threadId);
+            ReadTracker::instance()->markRead((int)$auth->currentUser()->id, $threadId);
         }
 
         // Umfrage laden falls vorhanden
         $poll = Poll::instance()->findByThread($threadId);
         $pollOptions = $poll ? Poll::instance()->getOptions((int) $poll->id) : [];
         $userVotes = ($poll && $auth->isLoggedIn())
-            ? Poll::instance()->getUserVotes((int) $poll->id, $auth->getUserId())
+            ? Poll::instance()->getUserVotes((int) $poll->id, (int)$auth->currentUser()->id)
             : [];
 
         // Abo-Status
         $isSubscribed = $auth->isLoggedIn()
-            ? Subscription::instance()->isSubscribed($auth->getUserId(), 'thread', $threadId)
+            ? Subscription::instance()->isSubscribed((int)$auth->currentUser()->id, 'thread', $threadId)
             : false;
 
         // Attachments laden
@@ -134,7 +134,7 @@ final class ThreadController
     public function create(int $forumId, object $forum): void
     {
         $auth    = \CMS\Auth::instance();
-        $userId  = $auth->getUserId();
+        $userId  = (int)$auth->currentUser()->id;
         $error   = null;
         $success = null;
 
@@ -253,7 +253,7 @@ final class ThreadController
             exit;
         }
 
-        $userId = $auth->getUserId();
+        $userId = (int)$auth->currentUser()->id;
         $sub    = Subscription::instance();
 
         if ($sub->isSubscribed($userId, $type, $itemId)) {
@@ -295,7 +295,7 @@ final class ThreadController
             exit;
         }
 
-        $userId = $auth->getUserId();
+        $userId = (int)$auth->currentUser()->id;
         $poll   = Poll::instance();
 
         if ($poll->hasVoted($pollId, $userId)) {
@@ -334,7 +334,7 @@ final class ThreadController
             return ['Du hast keine Berechtigung, hier zu schreiben.', null];
         }
 
-        $userId = $auth->getUserId();
+        $userId = (int)$auth->currentUser()->id;
 
         // Flood-Control
         $wait = FloodControl::instance()->checkPost($userId);

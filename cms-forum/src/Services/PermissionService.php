@@ -95,7 +95,7 @@ final class PermissionService
             return false;
         }
 
-        $userId = $auth->getUserId();
+        $userId = (int)$auth->currentUser()->id;
 
         // Admin oder Moderator darf alles bearbeiten
         if ($auth->isAdmin() || $this->canModerate($forumId)) {
@@ -135,7 +135,7 @@ final class PermissionService
             return true;
         }
 
-        if ($auth->getUserId() !== $postUserId) {
+        if ((int)$auth->currentUser()->id !== $postUserId) {
             return false;
         }
 
@@ -151,7 +151,7 @@ final class PermissionService
 
         // 1. Gebannt?
         if ($auth->isLoggedIn()) {
-            $userId = $auth->getUserId();
+            $userId = (int)$auth->currentUser()->id;
             if (UserMeta::instance()->isBanned($userId)) {
                 return false;
             }

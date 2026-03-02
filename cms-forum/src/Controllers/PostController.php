@@ -84,7 +84,7 @@ final class PostController
                         $postId,
                         $content,
                         $parser->parse($content),
-                        (int) $auth->getUserId()
+                        (int)$auth->currentUser()->id
                     );
 
                     header('Location: ' . SITE_URL . '/forum/thread/' . $thread->id . '#post-' . $postId);
@@ -135,7 +135,7 @@ final class PostController
             exit;
         }
 
-        $userId = $auth->getUserId();
+        $userId = (int)$auth->currentUser()->id;
         $result = Like::instance()->toggle($postId, $userId);
 
         // Like-Zähler aktualisieren
@@ -181,7 +181,7 @@ final class PostController
 
         $reportId = Report::instance()->create([
             'post_id'     => $postId,
-            'user_id'     => $auth->getUserId(),
+            'user_id'     => (int)$auth->currentUser()->id,
             'reason'      => $reason,
             'description' => $detail,
         ]);

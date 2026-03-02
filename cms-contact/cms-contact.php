@@ -77,6 +77,7 @@ final class CMS_Contact
         \CMS\Hooks::addAction('cms_admin_menu',       [$this, 'start_admin_output_buffer'], 1);
         \CMS\Hooks::addAction('cms_admin_menu',       [CMS_Contact_Admin_Menu::class, 'register'], 10);
         \CMS\Hooks::addAction('register_routes',      [CMS_Contact_Frontend::class, 'instance'],   10);
+        \CMS\Hooks::addAction('member_dashboard_init', [$this, 'register_member_section'],          20);
         \CMS\Hooks::addAction('head',                 [$this, 'enqueue_styles'],             20);
         \CMS\Hooks::addAction('body_end',             [$this, 'enqueue_scripts'],            20);
 
@@ -142,6 +143,68 @@ final class CMS_Contact
                 . htmlspecialchars($this->plugin_url . 'assets/js/contact-public.js')
                 . '?v=' . filemtime($js) . '" defer></script>' . "\n";
         }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Member Dashboard                                                    */
+    /* ------------------------------------------------------------------ */
+
+    public function register_member_section(\CMS\Member\PluginDashboardRegistry $registry): void
+    {
+        $registry->register([
+            'plugin'          => 'cms-contact',
+            'slug'            => 'contact',
+            'label'           => 'Kontaktanfragen',
+            'icon'            => '📩',
+            'color'           => '#2563eb',
+            'category'        => 'plugins',
+            'priority'        => 80,
+            'render_callback' => [$this, 'render_member_page'],
+        ]);
+    }
+
+    public function render_member_page(object $user, array $params = []): void
+    {
+        $submissions = class_exists('CMS_Contact_Submissions')
+            ? CMS_Contact_Submissions::instance()->get_user_submissions((int) $user->id)
+            : [];
+        ?>
+        <div class="cms-member-section">
+            <?php if (empty($submissions)): ?>
+                <div class="empty-state">
+                    <p style="font-size:2rem;margin:0;">📭</p>
+                    <p><strong>Keine Kontaktanfragen vorhanden</strong></p>
+                </div>
+            <?php else: ?>
+                <div class="users-table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Formular</th>
+                                <th>Betreff</th>
+                                <th>Status</th>
+                                <th>Datum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($submissions as $row): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($row['form_name'] ?? '—'); ?></td>
+                                <td><?php echo htmlspecialchars($row['subject'] ?? '—'); ?></td>
+                                <td>
+                                    <span class="status-badge <?php echo htmlspecialchars($row['status'] ?? 'new'); ?>">
+                                        <?php echo htmlspecialchars($row['status'] ?? 'Neu'); ?>
+                                    </span>
+                                </td>
+                                <td><?php echo htmlspecialchars($row['created_at'] ?? '—'); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php
     }
 
     /**

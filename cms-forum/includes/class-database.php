@@ -89,8 +89,10 @@ final class CMS_Forum_Database
             return;
         }
 
-        // Hier werden zukünftige Migrationen eingefügt:
-        // if (version_compare($current, '1.1.0', '<')) { $this->migrate_to_110(); }
+        // Migrationen
+        if (version_compare($current, '1.0.1', '<')) {
+            $this->migrate_to_101();
+        }
 
         $this->store_db_version(CMS_FORUM_DB_VERSION);
     }
@@ -196,8 +198,8 @@ final class CMS_Forum_Database
             user_id       INT UNSIGNED NOT NULL,
             post_count    INT UNSIGNED NOT NULL DEFAULT 0,
             thread_count  INT UNSIGNED NOT NULL DEFAULT 0,
-            like_received INT UNSIGNED NOT NULL DEFAULT 0,
-            like_given    INT UNSIGNED NOT NULL DEFAULT 0,
+            likes_received INT UNSIGNED NOT NULL DEFAULT 0,
+            likes_given    INT UNSIGNED NOT NULL DEFAULT 0,
             rank_id       INT UNSIGNED DEFAULT NULL,
             custom_title  VARCHAR(100) DEFAULT NULL,
             signature     TEXT         DEFAULT NULL,
@@ -408,6 +410,27 @@ final class CMS_Forum_Database
                 ('Veteran',        1000, '#ef4444', 6)");
 
             $stmtInsert->execute(['_seed_complete', '1']);
+        }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Migrations                                                         */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * v1.0.1 – Spalten like_received/like_given → likes_received/likes_given umbenennen.
+     */
+    private function migrate_to_101(): void
+    {
+        $db  = \CMS\Database::instance();
+        $pdo = $db->getPdo();
+        $tbl = $db->prefix() . 'cmsforum_user_meta';
+
+        $cols = $pdo->query("SHOW COLUMNS FROM `{$tbl}` LIKE 'like_received'")->fetchAll();
+        if (!empty($cols)) {
+            $pdo->exec("ALTER TABLE `{$tbl}`
+                CHANGE `like_received` `likes_received` INT UNSIGNED NOT NULL DEFAULT 0,
+                CHANGE `like_given`    `likes_given`    INT UNSIGNED NOT NULL DEFAULT 0");
         }
     }
 

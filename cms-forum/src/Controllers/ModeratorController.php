@@ -211,7 +211,7 @@ final class ModeratorController
             return ['success' => false, 'error' => 'Keine Berechtigung.'];
         }
 
-        Report::instance()->resolve($reportId, $auth->getUserId(), $resolution);
+        Report::instance()->resolve($reportId, (int)$auth->currentUser()->id, $resolution);
 
         return ['success' => true];
     }
@@ -244,7 +244,7 @@ final class ModeratorController
         $targetType = $postId ? 'post' : 'thread';
         $targetId   = $postId ?? $threadId ?? 0;
         ModLog::instance()->log(
-            (int) $auth->getUserId(),
+            (int)$auth->currentUser()->id,
             $action,
             $targetType,
             $targetId,

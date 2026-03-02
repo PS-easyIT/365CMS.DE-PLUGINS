@@ -87,6 +87,8 @@ final class CMS_Booking
 
         // Frontend-Routen
         \CMS\Hooks::addAction('register_routes',      [CMS_Booking_Frontend::class, 'instance'],   10);
+        // Member-Dashboard
+        \CMS\Hooks::addAction('member_dashboard_init', [$this, 'register_member_section'],          20);
 
         // Assets
         \CMS\Hooks::addAction('head',                 [$this, 'enqueue_styles'],                   20);
@@ -147,6 +149,77 @@ final class CMS_Booking
                 . htmlspecialchars(CMS_BOOKING_PLUGIN_URL . 'assets/js/booking-public.js')
                 . '?v=' . filemtime($js) . '" defer></script>' . "\n";
         }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Member Dashboard                                                    */
+    /* ------------------------------------------------------------------ */
+
+    public function register_member_section(\CMS\Member\PluginDashboardRegistry $registry): void
+    {
+        $registry->register([
+            'plugin'          => 'cms-booking',
+            'slug'            => 'booking',
+            'label'           => 'Buchungen',
+            'icon'            => '🗓️',
+            'color'           => '#16a34a',
+            'category'        => 'plugins',
+            'priority'        => 60,
+            'admin_url'       => '/admin/plugins/booking/bookings',
+            'render_callback' => [$this, 'render_member_page'],
+        ]);
+    }
+
+    public function render_member_page(object $user, array $params = []): void
+    {
+        $bookings = class_exists('CMS_Booking_Bookings')
+            ? CMS_Booking_Bookings::instance()->get_by_user((int) $user->id, 0, 20)
+            : [];
+
+        $statusColors = [
+            'pending'   => 'inactive',
+            'confirmed' => 'active',
+            'cancelled' => 'danger',
+            'completed' => 'active',
+        ];
+        ?>
+        <div class="cms-member-section">
+            <?php if (empty($bookings)): ?>
+                <div class="empty-state">
+                    <p style="font-size:2rem;margin:0;">🗓️</p>
+                    <p><strong>Keine Buchungen vorhanden</strong></p>
+                </div>
+            <?php else: ?>
+                <div class="users-table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th>Anbieter</th>
+                                <th>Datum</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($bookings as $row): ?>
+                            <?php $statusClass = $statusColors[$row['status'] ?? ''] ?? 'inactive'; ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($row['service_name'] ?? '—'); ?></td>
+                                <td><?php echo htmlspecialchars($row['provider_name'] ?? '—'); ?></td>
+                                <td><?php echo htmlspecialchars($row['booking_date'] ?? '—'); ?></td>
+                                <td>
+                                    <span class="status-badge <?php echo htmlspecialchars($statusClass); ?>">
+                                        <?php echo htmlspecialchars($row['status'] ?? '—'); ?>
+                                    </span>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+        <?php
     }
 
     /* ------------------------------------------------------------------ */

@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 define('CMS_FORUM_VERSION',    '1.0.0');
-define('CMS_FORUM_DB_VERSION', '1.0.0');
+define('CMS_FORUM_DB_VERSION', '1.0.1');
 define('CMS_FORUM_DIR',        dirname(__FILE__) . '/');
 define('CMS_FORUM_URL',        '/plugins/cms-forum/');
 
@@ -117,8 +117,8 @@ final class CMS_Forum
         \CMS\Hooks::addAction('head', [$this, 'enqueue_styles'], 10);
         \CMS\Hooks::addAction('body_end', [$this, 'enqueue_scripts'], 10);
 
-        // Member-Dashboard
-        \CMS\Hooks::addAction('cms_member_dashboard', [$this, 'render_member_widget'], 20);
+        // Member-Dashboard (PluginDashboardRegistry)
+        \CMS\Hooks::addAction('member_dashboard_init', [$this, 'register_member_section'], 20);
 
         // DSGVO
         \CMS\Hooks::addAction('dsgvo_export_data', [$this, 'dsgvo_export'], 10);
@@ -195,13 +195,39 @@ final class CMS_Forum
     }
 
     /**
-     * Member-Dashboard-Widget rendern.
+     * Forum-Bereich im Member-Dashboard registrieren.
      */
-    public function render_member_widget(): void
+    public function register_member_section(\CMS\Member\PluginDashboardRegistry $registry): void
     {
-        if (!\CMS\Auth::instance()->isLoggedIn()) {
-            return;
-        }
+        $registry->register([
+            'plugin'           => 'cms-forum',
+            'slug'             => 'forum',
+            'label'            => 'Forum',
+            'icon'             => '\xf0\x9f\x92\xac',
+            'category'         => 'plugins',
+            'priority'         => 50,
+            'capability'       => null,
+            'dashboard_widget' => [
+                'title'       => 'Forum',
+                'description' => 'Deine Forumaktivit\u00e4ten, Threads und Beitr\u00e4ge.',
+                'color'       => '#7c3aed',
+                'link_label'  => 'Zum Forum',
+                'admin_url'   => '/admin/plugins/forum/dashboard',
+                'admin_label' => '\xe2\x9a\x99\xef\xb8\x8f Admin',
+            ],
+            'render_callback' => [$this, 'render_member_widget'],
+        ]);
+    }
+
+    /**
+     * Forum-Inhalt im Member-Dashboard rendern.
+     */
+    public function render_member_widget(object $user, array $params = []): void
+    {
+        $userId      = (int)$user->id;
+        $meta        = \CMS_Forum\Models\UserMeta::instance()->findOrCreate($userId);
+        $recentPosts = \CMS_Forum\Models\Post::instance()->findByUser($userId, 0, 5);
+        $unreadCount = 0; // ReadTracker hat keine gesamt-unread-Methode – Fallback
         include CMS_FORUM_DIR . 'views/member/page-overview.php';
     }
 

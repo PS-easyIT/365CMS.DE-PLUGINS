@@ -346,7 +346,8 @@ final class CMS_Contact_Frontend
         // User-ID ermitteln
         $userId = null;
         if (class_exists('CMS\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
-            $userId = (int) \CMS\Auth::instance()->getUserId();
+            $currentUser = \CMS\Auth::instance()->currentUser();
+            $userId = $currentUser ? (int)$currentUser->id : null;
         }
 
         // Submission speichern
