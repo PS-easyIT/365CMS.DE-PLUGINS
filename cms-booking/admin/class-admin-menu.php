@@ -27,7 +27,7 @@ final class CMS_Booking_Admin_Menu
 
         add_menu_page(
             'Buchungen',
-            '📅 Buchungen',
+            'Buchungen',
             'manage_options',
             'booking-dashboard',
             [$pages, 'render_dashboard'],
