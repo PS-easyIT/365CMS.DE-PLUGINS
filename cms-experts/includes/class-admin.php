@@ -260,11 +260,8 @@ final class CMS_Experts_Admin
                 </div>
                 <div class="exp-adm-footer">
                     <?php if ($isPending): ?>
-                        <form method="POST" action="<?= SITE_URL ?>/admin/experts/approve/<?= (int)$ex->id ?>" style="display:contents;">
-                            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                            <button type="button" class="exp-adm-btn exp-adm-btn-approve"
-                                    onclick="openApproveModal(<?= (int)$ex->id ?>, '<?= htmlspecialchars($name, ENT_QUOTES) ?>', this.closest('form'))">✓ Genehmigen</button>
-                        </form>
+                        <button type="button" class="exp-adm-btn exp-adm-btn-approve"
+                                onclick="openApproveModal(<?= (int)$ex->id ?>, '<?= htmlspecialchars($name, ENT_QUOTES) ?>')">✓ Genehmigen</button>
                     <?php else: ?>
                         <a href="<?= SITE_URL ?>/experts/<?= $slug ?>" class="exp-adm-btn exp-adm-btn-ghost" target="_blank">🌐</a>
                     <?php endif; ?>
@@ -645,7 +642,10 @@ final class CMS_Experts_Admin
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('approveModal')">Abbrechen</button>
-                    <button type="button" class="btn btn-primary" id="approveModalConfirm">✅ Genehmigen</button>
+                    <form method="POST" id="approveModalForm" action="" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                        <button type="submit" class="btn btn-primary">✅ Genehmigen</button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -657,15 +657,11 @@ final class CMS_Experts_Admin
             openModal('deleteModal');
         }
 
-        let _approveForm = null;
-        function openApproveModal(id, name, form) {
+        function openApproveModal(id, name) {
             document.getElementById('approveModalName').textContent = name;
-            _approveForm = form;
+            document.getElementById('approveModalForm').action = '<?= SITE_URL ?>/admin/experts/approve/' + id;
             openModal('approveModal');
         }
-        document.getElementById('approveModalConfirm')?.addEventListener('click', function() {
-            if (_approveForm) _approveForm.submit();
-        });
 
         // Live-Vorschau für Design-Tab
         (function() {

@@ -154,10 +154,12 @@ class CMS_Speakers_Member_Dashboard
                     'twitter'           => filter_var($_POST['twitter']   ?? '', FILTER_SANITIZE_URL) ?: null,
                     'xing'              => filter_var($_POST['xing']      ?? '', FILTER_SANITIZE_URL) ?: null,
                     'languages'         => sanitize_text_field($_POST['languages']   ?? ''),
-                    'formats'           => sanitize_text_field($_POST['formats']     ?? ''),
+                    'formats'           => json_encode(array_values(array_filter(array_map('sanitize_text_field', (array)($_POST['formats'] ?? []))))),
+                    'skills'            => json_encode(array_values(array_filter(array_map('sanitize_text_field', (array)($_POST['skills'] ?? []))))),
+                    'recognitions'      => json_encode(array_values(array_filter(array_map('sanitize_text_field', (array)($_POST['recognitions'] ?? []))))),
                     'target_audience'   => sanitize_text_field($_POST['target_audience'] ?? ''),
                     'speaking_style'    => sanitize_text_field($_POST['speaking_style']  ?? ''),
-                    'travel_radius'     => is_numeric($_POST['travel_radius'] ?? '') ? (int)$_POST['travel_radius'] : null,
+                    'travel_radius'     => sanitize_text_field($_POST['travel_radius'] ?? 'national'),
                     'max_audience_size' => is_numeric($_POST['max_audience'] ?? '')  ? (int)$_POST['max_audience']  : null,
                     'availability'      => sanitize_text_field($_POST['availability'] ?? 'available'),
                     'speaking_fee_min'  => is_numeric($_POST['fee_min'] ?? '') ? (float)$_POST['fee_min'] : null,
@@ -438,30 +440,65 @@ class CMS_Speakers_Member_Dashboard
                 <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
                            padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">🎤 Vortragsprofil</h4>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
-                    <div class="form-group">
-                        <label class="form-label">Vortragsformate <small style="color:#94a3b8;">(Keynote, Workshop, ...)</small></label>
-                        <input type="text" name="formats" class="form-control" placeholder="Keynote, Workshop, Moderation"
-                               value="<?php echo htmlspecialchars($_POST['formats'] ?? ''); ?>">
+                <!-- Vortragsformate als Checkboxen -->
+                <div class="form-group">
+                    <label class="form-label">Vortragsformate</label>
+                    <div style="display:flex;flex-wrap:wrap;gap:.5rem;padding:.5rem;border:1px solid #e2e8f0;border-radius:8px;background:#fafcff;">
+                        <?php
+                        $spkFormats = [
+                            'keynote'    => '🎤 Keynote',
+                            'workshop'   => '🛠️ Workshop',
+                            'panel'      => '💬 Podiumsdiskussion',
+                            'moderation' => '🎤 Moderation',
+                            'training'   => '📚 Training',
+                            'consulting' => '🤝 Beratung',
+                            'interview'  => '🎥 Interview',
+                            'webinar'    => '💻 Webinar',
+                        ];
+                        $postedFmts = (array)($_POST['formats'] ?? []);
+                        foreach ($spkFormats as $val => $lbl): ?>
+                        <label style="display:inline-flex;align-items:center;gap:.35rem;padding:.3rem .7rem;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;font-size:.875rem;">
+                            <input type="checkbox" name="formats[]" value="<?php echo $val; ?>"
+                                   <?php echo in_array($val, $postedFmts) ? 'checked' : ''; ?> style="accent-color:#7c3aed;">
+                            <?php echo $lbl; ?>
+                        </label>
+                        <?php endforeach; ?>
                     </div>
+                    <small class="form-text">Mehrfachauswahl möglich.</small>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
                     <div class="form-group">
                         <label class="form-label">Vortragsstil</label>
                         <input type="text" name="speaking_style" class="form-control" placeholder="inspirierend, interaktiv, ..."
                                value="<?php echo htmlspecialchars($_POST['speaking_style'] ?? ''); ?>">
                     </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Zielgruppe</label>
-                    <input type="text" name="target_audience" class="form-control" placeholder="Führungskräfte, Entwickler, ..."
-                           value="<?php echo htmlspecialchars($_POST['target_audience'] ?? ''); ?>">
+                    <div class="form-group">
+                        <label class="form-label">Zielgruppe</label>
+                        <input type="text" name="target_audience" class="form-control" placeholder="Führungskräfte, Entwickler, ..."
+                               value="<?php echo htmlspecialchars($_POST['target_audience'] ?? ''); ?>">
+                    </div>
                 </div>
 
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;">
                     <div class="form-group">
-                        <label class="form-label">Reiseradius (km)</label>
-                        <input type="number" name="travel_radius" class="form-control" min="0" step="50"
-                               value="<?php echo htmlspecialchars($_POST['travel_radius'] ?? ''); ?>">
+                        <label class="form-label">Reisebereitschaft</label>
+                        <select name="travel_radius" class="form-control">
+                            <?php
+                            $travelOpts = [
+                                'local'         => '📍 Lokal (50 km)',
+                                'regional'      => '🗺️ Regional (Bundesland)',
+                                'national'      => '🇪🇨 National (DACH)',
+                                'international' => '🌍 International (Europa)',
+                                'worldwide'     => '🌐 Weltweit',
+                            ];
+                            $postedTravel = $_POST['travel_radius'] ?? 'national';
+                            foreach ($travelOpts as $tv => $tl): ?>
+                                <option value="<?php echo $tv; ?>" <?php echo $postedTravel === $tv ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($tl); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Max. Publikumsgröße</label>
@@ -471,9 +508,9 @@ class CMS_Speakers_Member_Dashboard
                     <div class="form-group">
                         <label class="form-label">Verfügbarkeit</label>
                         <select name="availability" class="form-control">
-                            <option value="available"  <?php echo ($_POST['availability'] ?? 'available') === 'available'  ? 'selected' : ''; ?>>Verfügbar</option>
-                            <option value="partially"  <?php echo ($_POST['availability'] ?? '') === 'partially'            ? 'selected' : ''; ?>>Teilweise</option>
-                            <option value="unavailable" <?php echo ($_POST['availability'] ?? '') === 'unavailable'         ? 'selected' : ''; ?>>Nicht verfügbar</option>
+                            <option value="available" <?php echo ($_POST['availability'] ?? 'available') === 'available' ? 'selected' : ''; ?>>Verfügbar</option>
+                            <option value="limited"   <?php echo ($_POST['availability'] ?? '') === 'limited'            ? 'selected' : ''; ?>>Begrenzt verfügbar</option>
+                            <option value="booked"    <?php echo ($_POST['availability'] ?? '') === 'booked'             ? 'selected' : ''; ?>>Ausgebucht</option>
                         </select>
                     </div>
                 </div>
@@ -489,6 +526,89 @@ class CMS_Speakers_Member_Dashboard
                         <input type="number" name="fee_max" class="form-control" min="0" step="100"
                                value="<?php echo htmlspecialchars($_POST['fee_max'] ?? ''); ?>">
                     </div>
+                </div>
+
+                <!-- Skills -->
+                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
+                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">🛠️ Speaker Skills</h4>
+                <p style="color:#64748b;font-size:.8rem;margin:0 0 .75rem;">Technische Schwerpunkte und Kompetenzen auswählen – erscheinen als Pills auf der Speaker-Card.</p>
+                <?php
+                $spkSkillGroups = [
+                    'tech' => [
+                        'label' => '💻 Technologie & Digitalisierung',
+                        'items' => [
+                            'ai_ml' => 'KI & Machine Learning', 'cloud' => 'Cloud Computing',
+                            'cybersecurity' => 'Cybersecurity', 'blockchain' => 'Blockchain',
+                            'iot' => 'Internet of Things', 'data_analytics' => 'Data Analytics',
+                            'devops' => 'DevOps & Agile', 'software_dev' => 'Software-Entwicklung',
+                        ],
+                    ],
+                    'business' => [
+                        'label' => '💼 Business & Führung',
+                        'items' => [
+                            'leadership' => 'Führung & Leadership', 'strategy' => 'Strategie',
+                            'innovation' => 'Innovation', 'transformation' => 'Digitale Transformation',
+                            'entrepreneurship' => 'Entrepreneurship', 'sales' => 'Vertrieb & Marketing',
+                            'hr' => 'HR & People Management', 'finance' => 'Finance & Controlling',
+                        ],
+                    ],
+                    'personal' => [
+                        'label' => '🌱 Persönlichkeit & Gesellschaft',
+                        'items' => [
+                            'communication' => 'Kommunikation', 'mindfulness' => 'Achtsamkeit',
+                            'diversity' => 'Diversity & Inclusion', 'sustainability' => 'Nachhaltigkeit',
+                            'future_work' => 'Future of Work', 'health' => 'Gesundheit & Work-Life-Balance',
+                        ],
+                    ],
+                ];
+                $postedSkills = (array)($_POST['skills'] ?? []);
+                foreach ($spkSkillGroups as $sgKey => $sg):
+                ?>
+                <div style="margin-bottom:.875rem;">
+                    <strong style="font-size:.82rem;color:#475569;text-transform:uppercase;letter-spacing:.04em;"><?php echo $sg['label']; ?></strong>
+                    <div style="display:flex;flex-wrap:wrap;gap:.4rem .875rem;margin-top:.4rem;">
+                        <?php foreach ($sg['items'] as $sVal => $sLbl): ?>
+                        <label style="display:inline-flex;align-items:center;gap:.35rem;font-size:.875rem;cursor:pointer;min-width:180px;">
+                            <input type="checkbox" name="skills[]" value="<?php echo $sVal; ?>"
+                                   <?php echo in_array($sVal, $postedSkills) ? 'checked' : ''; ?> style="accent-color:#5e72e4;">
+                            <?php echo htmlspecialchars($sLbl); ?>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+
+                <!-- Auszeichnungen & Programme -->
+                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
+                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">🏅 Auszeichnungen & Programme</h4>
+                <p style="color:#64748b;font-size:.8rem;margin:0 0 .75rem;">Offizielle Community-Programme und Ehrungen auswählen.</p>
+                <?php
+                $spkRecognitions = [
+                    'microsoft_mvp'         => 'Microsoft MVP',
+                    'google_gde'            => 'Google Developer Expert (GDE)',
+                    'aws_community_hero'    => 'AWS Community Hero',
+                    'aws_community_builder' => 'AWS Community Builder',
+                    'docker_captain'        => 'Docker Captain',
+                    'github_star'           => 'GitHub Star',
+                    'cncf_ambassador'       => 'CNCF Ambassador',
+                    'tedx_speaker'          => 'TEDx Speaker',
+                    'ted_speaker'           => 'TED Speaker',
+                    'speaker_of_year'       => 'Speaker of the Year',
+                    'linkedin_top_voice'    => 'LinkedIn Top Voice',
+                    'forbes_30u30'          => 'Forbes 30 under 30',
+                    'forbes_40u40'          => 'Forbes 40 under 40',
+                    'honorary_professor'    => 'Honorarprofessor/-in',
+                ];
+                $postedRec = (array)($_POST['recognitions'] ?? []);
+                ?>
+                <div style="display:flex;flex-wrap:wrap;gap:.4rem .875rem;">
+                    <?php foreach ($spkRecognitions as $rVal => $rLbl): ?>
+                    <label style="display:inline-flex;align-items:center;gap:.35rem;font-size:.875rem;cursor:pointer;min-width:220px;">
+                        <input type="checkbox" name="recognitions[]" value="<?php echo $rVal; ?>"
+                               <?php echo in_array($rVal, $postedRec) ? 'checked' : ''; ?> style="accent-color:#8b5cf6;">
+                        <?php echo htmlspecialchars($rLbl); ?>
+                    </label>
+                    <?php endforeach; ?>
                 </div>
 
                 <!-- Themen / Topics -->
