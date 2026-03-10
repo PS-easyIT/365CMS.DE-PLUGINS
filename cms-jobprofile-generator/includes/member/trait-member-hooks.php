@@ -491,7 +491,10 @@ trait CMS_JPG_Member_Hooks_Trait
             return;
         }
         $siteUrl = defined('SITE_URL') ? SITE_URL : '';
-        echo '<link rel="stylesheet" href="' . $siteUrl . '/assets/css/admin.css?v=20260222b">' . "\n";
+        $coreAdminCssUrl = function_exists('cms_asset_url')
+            ? cms_asset_url('css/admin.css')
+            : $siteUrl . '/assets/css/admin.css?v=20260222b';
+        echo '<link rel="stylesheet" href="' . htmlspecialchars($coreAdminCssUrl, ENT_QUOTES) . '">' . "\n";
         $cssFile = JPG_DIR . 'assets/css/jobprofile-admin.css';
         if (file_exists($cssFile)) {
             echo '<link rel="stylesheet" href="' . JPG_URL . 'assets/css/jobprofile-admin.css?v='

@@ -148,7 +148,9 @@ final class CMS_Experts
     public function enqueue_styles(): void
     {
         // SunEditor-Stylesheet für korrekte Formatierung von WYSIWYG-Inhalten auf Public-Seiten
-        $sun_css = defined('SITE_URL') ? SITE_URL . '/assets/suneditor/css/suneditor.min.css' : '';
+        $sun_css = function_exists('cms_asset_url')
+            ? cms_asset_url('suneditor/css/suneditor.min.css')
+            : (defined('SITE_URL') ? SITE_URL . '/assets/suneditor/css/suneditor.min.css' : '');
         if ($sun_css) {
             echo '<link rel="stylesheet" href="' . htmlspecialchars($sun_css) . '">' . "\n";
         }

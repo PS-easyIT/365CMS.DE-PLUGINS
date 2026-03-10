@@ -260,6 +260,15 @@ trait CMS_JPG_Member_Jobs_Trait
 
         $siteUrl  = defined('SITE_URL')  ? SITE_URL  : '';
         $siteName = defined('SITE_NAME') ? SITE_NAME : 'CMS';
+        $coreMainCssUrl = function_exists('cms_asset_url')
+            ? cms_asset_url('css/main.css')
+            : $siteUrl . '/assets/css/main.css';
+        $coreAdminCssUrl = function_exists('cms_asset_url')
+            ? cms_asset_url('css/admin.css')
+            : $siteUrl . '/assets/css/admin.css?v=20260222b';
+        $coreMemberCssUrl = function_exists('cms_asset_url')
+            ? cms_asset_url('css/member.css')
+            : $siteUrl . '/assets/css/member.css';
 
         $flashSuccess = $_SESSION['success'] ?? null;
         $flashError   = $_SESSION['error']   ?? null;
@@ -269,9 +278,9 @@ trait CMS_JPG_Member_Jobs_Trait
         echo '<meta charset="UTF-8">' . "\n";
         echo '<meta name="viewport" content="width=device-width, initial-scale=1.0">' . "\n";
         echo '<title>Stellenanzeigen – ' . htmlspecialchars($siteName) . '</title>' . "\n";
-        echo '<link rel="stylesheet" href="' . $siteUrl . '/assets/css/main.css">' . "\n";
-        echo '<link rel="stylesheet" href="' . $siteUrl . '/assets/css/admin.css?v=20260222b">' . "\n";
-        echo '<link rel="stylesheet" href="' . $siteUrl . '/assets/css/member.css">' . "\n";
+        echo '<link rel="stylesheet" href="' . htmlspecialchars($coreMainCssUrl, ENT_QUOTES) . '">' . "\n";
+        echo '<link rel="stylesheet" href="' . htmlspecialchars($coreAdminCssUrl, ENT_QUOTES) . '">' . "\n";
+        echo '<link rel="stylesheet" href="' . htmlspecialchars($coreMemberCssUrl, ENT_QUOTES) . '">' . "\n";
         if (function_exists('renderMemberSidebarStyles')) {
             renderMemberSidebarStyles();
         }
