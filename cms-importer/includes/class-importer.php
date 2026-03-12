@@ -74,6 +74,27 @@ class CMS_Importer_DB
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         ");
 
+        $db->query("
+            CREATE TABLE IF NOT EXISTS {$p}import_items (
+                id               BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                log_id           INT UNSIGNED DEFAULT NULL,
+                source_type      VARCHAR(50) NOT NULL,
+                source_wp_id     BIGINT UNSIGNED DEFAULT NULL,
+                source_reference VARCHAR(191) DEFAULT NULL,
+                source_slug      VARCHAR(255) DEFAULT NULL,
+                source_url       VARCHAR(500) DEFAULT NULL,
+                target_type      VARCHAR(50) NOT NULL,
+                target_id        BIGINT UNSIGNED DEFAULT NULL,
+                target_slug      VARCHAR(255) DEFAULT NULL,
+                target_url       VARCHAR(500) DEFAULT NULL,
+                created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_log (log_id),
+                INDEX idx_source_wp (source_type, source_wp_id),
+                INDEX idx_source_ref (source_type, source_reference),
+                INDEX idx_target (target_type, target_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        ");
+
         // Upload-Ordner für Import-Dateien anlegen
         if (defined('UPLOAD_PATH')) {
             $import_dir = rtrim(UPLOAD_PATH, '/') . '/import/';
@@ -109,8 +130,19 @@ class CMS_Importer_Service
     private int    $errors            = 0;
     private int    $images_downloaded = 0;
     private array  $unknown_meta      = [];
+    private array  $skip_reasons      = [];
     private string $filename          = '';
     private array  $options           = [];
+    private array  $attachment_lookup = [];
+    private array  $attachment_by_url = [];
+    private array  $table_reference_map = [];
+    private array  $import_breakdown  = [
+        'posts'  => 0,
+        'pages'  => 0,
+        'tables' => 0,
+        'others' => 0,
+    ];
+    private ?\CMS\Services\SEO\SeoMetaRepository $seoRepository = null;
 
     // ── Public API ────────────────────────────────────────────────────────────
 
@@ -137,18 +169,29 @@ class CMS_Importer_Service
             'import_custom_types' => true,
             'generate_report'     => true,
             'download_images'     => true,
+            'convert_table_shortcodes' => true,
         ], $options);
 
         $this->reset_counters();
 
         $db = CMS\Database::instance();
         $p  = $db->getPrefix();
+        $this->attachment_lookup = $parsed['attachments'] ?? [];
+        $this->attachment_by_url = $this->index_attachments_by_url($this->attachment_lookup);
+        $this->seoRepository = class_exists('CMS\\Services\\SEO\\SeoMetaRepository')
+            ? new \CMS\Services\SEO\SeoMetaRepository($db, $p)
+            : null;
 
         $this->log_id = $this->create_log_entry($db, $p, $filename, $user_id);
 
+        foreach ($parsed['tables'] as $item) {
+            $this->total++;
+            $this->import_as_table($db, $p, $item);
+        }
+
         foreach ($parsed['posts'] as $item) {
             $this->total++;
-            $this->import_as_post($db, $p, $item);
+            $this->import_as_post($db, $p, $item, false);
         }
 
         foreach ($parsed['pages'] as $item) {
@@ -159,7 +202,7 @@ class CMS_Importer_Service
         if ($this->options['import_custom_types']) {
             foreach ($parsed['others'] as $item) {
                 $this->total++;
-                $this->import_as_post($db, $p, $item);
+                $this->import_as_post($db, $p, $item, true);
             }
         }
 
@@ -179,84 +222,213 @@ class CMS_Importer_Service
             'total'             => $this->total,
             'imported'          => $this->imported,
             'skipped'           => $this->skipped,
+            'skip_reasons'      => $this->skip_reasons,
             'errors'            => $this->errors,
             'images_downloaded' => $this->images_downloaded,
             'meta_keys'         => count(array_unique(array_column($this->unknown_meta, 'meta_key'))),
             'meta_report'       => $report_path,
+            'posts_imported'    => $this->import_breakdown['posts'],
+            'pages_imported'    => $this->import_breakdown['pages'],
+            'tables_imported'   => $this->import_breakdown['tables'],
+            'others_imported'   => $this->import_breakdown['others'],
+        ];
+    }
+
+    /**
+     * Simuliert einen Importlauf ohne Schreibzugriffe.
+     *
+     * @return array<string, mixed>
+     */
+    public function preview(array $parsed, string $filename, array $options = []): array
+    {
+        if (!class_exists('CMS\Database')) {
+            return ['error' => 'CMS\\Database nicht verfügbar'];
+        }
+
+        $this->filename = $filename;
+        $this->options  = array_merge([
+            'skip_duplicates'     => true,
+            'import_drafts'       => true,
+            'import_trashed'      => false,
+            'import_custom_types' => true,
+            'generate_report'     => true,
+            'download_images'     => true,
+            'convert_table_shortcodes' => true,
+        ], $options);
+
+        $this->reset_counters();
+
+        $db = CMS\Database::instance();
+        $p  = $db->getPrefix();
+        $this->attachment_lookup = $parsed['attachments'] ?? [];
+        $this->attachment_by_url = $this->index_attachments_by_url($this->attachment_lookup);
+
+        $context = [
+            'reserved_slugs' => [
+                'post' => [],
+                'page' => [],
+                'site_table' => [],
+            ],
+            'preview_items' => [],
+            'preview_limit' => 25,
+            'would_import' => 0,
+            'would_skip' => 0,
+            'images_detected' => 0,
+            'table_shortcodes_found' => 0,
+            'table_shortcodes_resolved' => 0,
+            'breakdown' => [
+                'posts' => 0,
+                'pages' => 0,
+                'tables' => 0,
+                'others' => 0,
+            ],
+            'skip_reasons' => [],
+            'table_preview_map' => [],
+            'items_total' => 0,
+        ];
+
+        foreach ($parsed['tables'] as $item) {
+            $this->collect_preview_item($this->build_table_preview($db, $p, $item, $context), $context);
+        }
+
+        foreach ($parsed['posts'] as $item) {
+            $this->collect_preview_item($this->build_post_preview($db, $p, $item, false, $context), $context);
+        }
+
+        foreach ($parsed['pages'] as $item) {
+            $this->collect_preview_item($this->build_page_preview($db, $p, $item, $context), $context);
+        }
+
+        foreach ($parsed['others'] as $item) {
+            $this->collect_preview_item($this->build_post_preview($db, $p, $item, true, $context), $context);
+        }
+
+        return [
+            'mode' => 'preview',
+            'filename' => $filename,
+            'total' => $context['items_total'],
+            'would_import' => $context['would_import'],
+            'would_skip' => $context['would_skip'],
+            'images_detected' => $context['images_detected'],
+            'table_shortcodes_found' => $context['table_shortcodes_found'],
+            'table_shortcodes_resolved' => $context['table_shortcodes_resolved'],
+            'meta_keys' => count(array_unique(array_column($this->unknown_meta, 'meta_key'))),
+            'attachments' => count($parsed['attachments'] ?? []),
+            'source_counts' => [
+                'posts' => count($parsed['posts'] ?? []),
+                'pages' => count($parsed['pages'] ?? []),
+                'tables' => count($parsed['tables'] ?? []),
+                'others' => count($parsed['others'] ?? []),
+            ],
+            'preview_counts' => $context['breakdown'],
+            'skip_reasons' => $context['skip_reasons'],
+            'items' => $context['preview_items'],
+            'items_total' => $context['items_total'],
+            'items_shown' => count($context['preview_items']),
+            'items_truncated' => $context['items_total'] > count($context['preview_items']),
         ];
     }
 
     // ── Private: Posts ────────────────────────────────────────────────────────
 
-    private function import_as_post(\CMS\Database $db, string $p, array $item): void
+    private function import_as_post(\CMS\Database $db, string $p, array $item, bool $isCustomType): void
     {
         $status = self::STATUS_MAP[$item['post_status']] ?? 'draft';
 
         if ($status === 'trash' && !$this->options['import_trashed']) {
-            $this->skipped++;
+            $this->skip_item('Papierkorb-Elemente deaktiviert');
             return;
         }
         if ($status === 'draft' && !$this->options['import_drafts']) {
-            $this->skipped++;
+            $this->skip_item('Entwürfe deaktiviert');
             return;
         }
 
-        $base_slug = $item['slug'] !== ''
-            ? $this->sanitize_slug($item['slug'])
-            : $this->slugify($item['title']);
+        $sourceType = (string) ($item['post_type'] ?? 'post');
+        if ($this->options['skip_duplicates'] && $this->find_existing_mapping($db, $p, $sourceType, (int) ($item['wp_id'] ?? 0), null, 'post', true) !== null) {
+            $this->skip_item('Bereits per Import-Mapping vorhanden');
+            return;
+        }
+
+        $base_slug = $this->resolve_import_slug($item, (string) ($item['title'] ?? ''));
 
         if ($this->options['skip_duplicates']) {
-            $exists = (int) $db->get_var(
-                "SELECT COUNT(*) FROM {$p}posts WHERE slug = ?",
+            $existingPostId = (int) ($db->get_var(
+                "SELECT id FROM {$p}posts WHERE slug = ? ORDER BY id ASC LIMIT 1",
                 [$base_slug]
-            );
-            if ($exists > 0) {
-                $this->skipped++;
+            ) ?? 0);
+            if ($existingPostId > 0) {
+                $this->store_import_item($db, $p, [
+                    'log_id'           => $this->log_id,
+                    'source_type'      => $sourceType,
+                    'source_wp_id'     => (int) ($item['wp_id'] ?? 0),
+                    'source_reference' => null,
+                    'source_slug'      => (string) ($item['slug'] ?? ''),
+                    'source_url'       => (string) ($item['link'] ?? ''),
+                    'target_type'      => 'post',
+                    'target_id'        => $existingPostId,
+                    'target_slug'      => $base_slug,
+                    'target_url'       => $this->build_target_url('post', $base_slug, $existingPostId, (string) ($item['date'] ?? '')),
+                ]);
+                $this->skip_item('Slug bereits vorhanden');
                 return;
             }
             $slug = $base_slug;
         } else {
-            $slug = $this->unique_slug($db, $p . 'posts', $base_slug);
+            $slug = $this->unique_slug($db, $p . 'posts', $base_slug, !empty($item['slug']));
         }
 
         $author_id = $this->resolve_author_id($db, $p, $item['author_login']);
-        $tags      = implode(',', array_map('trim', array_merge($item['tags'] ?? [], $item['categories'] ?? [])));
+        $categories = $this->normalize_tag_names($item['categories'] ?? []);
+        $tagNames   = $this->normalize_tag_names($item['tags'] ?? []);
+        $categoryId = $this->ensure_category_id($db, $p, (string) ($categories[0] ?? ''));
+        $prepared   = $this->prepare_content_payload($db, $p, $item, 'post', $slug);
+        $createdAt  = $this->resolve_original_created_at($item);
+        $updatedAt  = $this->resolve_original_updated_at($item, $createdAt);
+        $publishedAt = $status === 'published' ? $createdAt : null;
 
         $data = [
             'title'            => $this->sanitize_title($item['title']),
             'slug'             => $slug,
-            'content'          => $item['content'],
-            'excerpt'          => $item['excerpt'],
-            'featured_image'   => $item['featured_image'] ?? '',
+            'content'          => $prepared['content'],
+            'excerpt'          => $prepared['excerpt'],
+            'featured_image'   => $prepared['featured_image'],
             'status'           => $status,
             'author_id'        => $author_id,
-            'tags'             => mb_substr($tags, 0, 500),
-            'meta_title'       => mb_substr($item['meta_title'] ?? '', 0, 255),
-            'meta_description' => $item['meta_description'] ?? '',
-            'created_at'       => $this->safe_date($item['date']),
-            'published_at'     => $status === 'published' ? $this->safe_date($item['date']) : null,
+            'category_id'      => $categoryId,
+            'tags'             => $this->safe_substr(implode(',', $tagNames), 0, 500),
+            'meta_title'       => $this->safe_substr((string) ($item['meta_title'] ?? ''), 0, 255),
+            'meta_description' => (string) ($item['meta_description'] ?? ''),
+            'created_at'       => $createdAt,
+            'updated_at'       => $updatedAt,
+            'published_at'     => $publishedAt,
         ];
 
         try {
-            // WICHTIG: insert() fügt intern den Prefix hinzu → KEIN Prefix übergeben!
-            $db->insert('posts', $data);
-            $post_id = $db->insert_id();
-            $this->imported++;
-
-            if ($this->options['download_images'] && !empty($item['image_urls'])) {
-                $downloaded = $this->download_post_images($db, $p, $slug, $item['image_urls']);
-                if (!empty($downloaded)) {
-                    $this->images_downloaded += count($downloaded);
-                    if (empty($data['featured_image']) && defined('UPLOAD_URL')) {
-                        $featured_url = rtrim(UPLOAD_URL, '/') . '/images/' . $slug . '/' . basename($downloaded[0]);
-                        $db->execute(
-                            "UPDATE {$p}posts SET featured_image = ? WHERE id = ?",
-                            [$featured_url, $post_id]
-                        );
-                    }
-                }
+            $post_id = $db->insert('posts', $data);
+            if ($post_id === false) {
+                throw new \RuntimeException($db->last_error !== '' ? $db->last_error : 'Insert in posts fehlgeschlagen.');
             }
 
+            $post_id = (int) $post_id;
+            $this->imported++;
+            $this->import_breakdown[$isCustomType ? 'others' : 'posts']++;
+
+            $this->sync_post_tags($db, $p, $post_id, $tagNames);
+            $this->save_seo_meta('post', $post_id, $prepared['seo']);
+            $this->store_import_item($db, $p, [
+                'log_id'           => $this->log_id,
+                'source_type'      => $sourceType,
+                'source_wp_id'     => (int) ($item['wp_id'] ?? 0),
+                'source_reference' => null,
+                'source_slug'      => (string) ($item['slug'] ?? ''),
+                'source_url'       => (string) ($item['link'] ?? ''),
+                'target_type'      => 'post',
+                'target_id'        => $post_id,
+                'target_slug'      => $slug,
+                'target_url'       => $this->build_target_url('post', $slug, $post_id, (string) ($item['date'] ?? '')),
+            ]);
+            $this->collect_taxonomy_fallback_meta($item, 'post');
             $this->collect_unknown_meta($item);
 
         } catch (\Exception $e) {
@@ -270,61 +442,193 @@ class CMS_Importer_Service
         $status = self::STATUS_MAP[$item['post_status']] ?? 'draft';
 
         if ($status === 'trash' && !$this->options['import_trashed']) {
-            $this->skipped++;
+            $this->skip_item('Papierkorb-Elemente deaktiviert');
             return;
         }
         if ($status === 'draft' && !$this->options['import_drafts']) {
-            $this->skipped++;
+            $this->skip_item('Entwürfe deaktiviert');
             return;
         }
 
-        $base_slug = $item['slug'] !== ''
-            ? $this->sanitize_slug($item['slug'])
-            : $this->slugify($item['title']);
+        if ($this->options['skip_duplicates'] && $this->find_existing_mapping($db, $p, 'page', (int) ($item['wp_id'] ?? 0), null, 'page', true) !== null) {
+            $this->skip_item('Bereits per Import-Mapping vorhanden');
+            return;
+        }
+
+        $base_slug = $this->resolve_import_slug($item, (string) ($item['title'] ?? ''));
 
         if ($this->options['skip_duplicates']) {
-            $exists = (int) $db->get_var(
-                "SELECT COUNT(*) FROM {$p}pages WHERE slug = ?",
+            $existingPageId = (int) ($db->get_var(
+                "SELECT id FROM {$p}pages WHERE slug = ? ORDER BY id ASC LIMIT 1",
                 [$base_slug]
-            );
-            if ($exists > 0) {
-                $this->skipped++;
+            ) ?? 0);
+            if ($existingPageId > 0) {
+                $this->store_import_item($db, $p, [
+                    'log_id'           => $this->log_id,
+                    'source_type'      => 'page',
+                    'source_wp_id'     => (int) ($item['wp_id'] ?? 0),
+                    'source_reference' => null,
+                    'source_slug'      => (string) ($item['slug'] ?? ''),
+                    'source_url'       => (string) ($item['link'] ?? ''),
+                    'target_type'      => 'page',
+                    'target_id'        => $existingPageId,
+                    'target_slug'      => $base_slug,
+                    'target_url'       => $this->build_target_url('page', $base_slug, $existingPageId, (string) ($item['date'] ?? '')),
+                ]);
+                $this->skip_item('Slug bereits vorhanden');
                 return;
             }
             $slug = $base_slug;
         } else {
-            $slug = $this->unique_slug($db, $p . 'pages', $base_slug);
+            $slug = $this->unique_slug($db, $p . 'pages', $base_slug, !empty($item['slug']));
         }
 
         $author_id = $this->resolve_author_id($db, $p, $item['author_login']);
+        $prepared  = $this->prepare_content_payload($db, $p, $item, 'page', $slug);
+        $createdAt = $this->resolve_original_created_at($item);
+        $updatedAt = $this->resolve_original_updated_at($item, $createdAt);
+        $publishedAt = $status === 'published' ? $createdAt : null;
 
         $data = [
             'slug'         => $slug,
             'title'        => $this->sanitize_title($item['title']),
-            'content'      => $item['content'],
-            'excerpt'      => $item['excerpt'],
+            'content'      => $prepared['content'],
+            'excerpt'      => $prepared['excerpt'],
             'status'       => $status,
             'hide_title'   => 0,
+            'featured_image' => $prepared['featured_image'],
+            'meta_title'     => $this->safe_substr((string) ($item['meta_title'] ?? ''), 0, 255),
+            'meta_description' => (string) ($item['meta_description'] ?? ''),
             'author_id'    => $author_id,
-            'created_at'   => $this->safe_date($item['date']),
-            'published_at' => $status === 'published' ? $this->safe_date($item['date']) : null,
+            'created_at'   => $createdAt,
+            'updated_at'   => $updatedAt,
+            'published_at' => $publishedAt,
         ];
 
         try {
-            // WICHTIG: insert() fügt intern den Prefix hinzu → KEIN Prefix übergeben!
-            $db->insert('pages', $data);
-            $this->imported++;
-
-            if ($this->options['download_images'] && !empty($item['image_urls'])) {
-                $downloaded = $this->download_post_images($db, $p, $slug, $item['image_urls']);
-                $this->images_downloaded += count($downloaded);
+            $page_id = $db->insert('pages', $data);
+            if ($page_id === false) {
+                throw new \RuntimeException($db->last_error !== '' ? $db->last_error : 'Insert in pages fehlgeschlagen.');
             }
 
+            $this->imported++;
+            $this->import_breakdown['pages']++;
+            $this->save_seo_meta('page', (int) $page_id, $prepared['seo']);
+            $this->store_import_item($db, $p, [
+                'log_id'           => $this->log_id,
+                'source_type'      => 'page',
+                'source_wp_id'     => (int) ($item['wp_id'] ?? 0),
+                'source_reference' => null,
+                'source_slug'      => (string) ($item['slug'] ?? ''),
+                'source_url'       => (string) ($item['link'] ?? ''),
+                'target_type'      => 'page',
+                'target_id'        => (int) $page_id,
+                'target_slug'      => $slug,
+                'target_url'       => $this->build_target_url('page', $slug, (int) $page_id, (string) ($item['date'] ?? '')),
+            ]);
+            $this->collect_taxonomy_fallback_meta($item, 'page');
             $this->collect_unknown_meta($item);
 
         } catch (\Exception $e) {
             $this->errors++;
             error_log('CMS_Importer: Page-Import fehlgeschlagen: ' . $e->getMessage() . ' – Titel: ' . $item['title']);
+        }
+    }
+
+    private function import_as_table(\CMS\Database $db, string $p, array $item): void
+    {
+        $table = $item['table'] ?? null;
+        if (!is_array($table) || empty($table['columns']) || !isset($table['rows'])) {
+            $this->skip_item('Keine gültige Tabellenstruktur erkannt');
+            return;
+        }
+
+        $legacyTableId = trim((string) ($item['legacy_table_id'] ?? ''));
+
+        if ($this->options['skip_duplicates']) {
+            $existingByMapping = $this->find_existing_mapping($db, $p, 'tablepress_table', (int) ($item['wp_id'] ?? 0), $legacyTableId !== '' ? $legacyTableId : null, 'site_table', true);
+            if ($existingByMapping !== null) {
+                if ($legacyTableId !== '') {
+                    $this->table_reference_map[$legacyTableId] = $existingByMapping['target_id'];
+                }
+                $this->skip_item('Bereits per Import-Mapping vorhanden');
+                return;
+            }
+        }
+
+        $tableName    = trim((string) ($table['name'] ?? 'Importierte Tabelle'));
+        $description  = trim((string) ($table['description'] ?? ''));
+        $columnsJson  = json_encode($table['columns'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $rowsJson     = json_encode($table['rows'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $settingsJson = json_encode($table['settings'] ?? [], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $tableSlug    = $this->build_unique_table_slug($db, $p, (string) ($table['slug'] ?? $tableName));
+        $createdAt    = $this->resolve_original_created_at($item);
+        $updatedAt    = $this->resolve_original_updated_at($item, $createdAt);
+
+        if ($this->options['skip_duplicates']) {
+            $existingId = $this->find_existing_table_id_by_slug($db, $p, $tableSlug);
+            if ($existingId > 0) {
+                if ($legacyTableId !== '') {
+                    $this->table_reference_map[$legacyTableId] = $existingId;
+                    $this->store_import_item($db, $p, [
+                        'log_id'           => $this->log_id,
+                        'source_type'      => 'tablepress_table',
+                        'source_wp_id'     => (int) ($item['wp_id'] ?? 0),
+                        'source_reference' => $legacyTableId,
+                        'source_slug'      => (string) ($item['slug'] ?? ''),
+                        'source_url'       => (string) ($item['link'] ?? ''),
+                        'target_type'      => 'site_table',
+                        'target_id'        => $existingId,
+                        'target_slug'      => $tableSlug,
+                        'target_url'       => '[site-table id="' . $existingId . '"]',
+                    ]);
+                }
+                $this->skip_item('Tabellenslug bereits vorhanden');
+                return;
+            }
+        }
+
+        try {
+            $params = [$tableName, $description, $columnsJson ?: '[]', $rowsJson ?: '[]', $settingsJson ?: '{}', $createdAt, $updatedAt];
+            $columns = ['table_name', 'description', 'columns_json', 'rows_json', 'settings_json', 'created_at', 'updated_at'];
+            $placeholders = ['?', '?', '?', '?', '?', '?', '?'];
+
+            if ($this->has_table_slug_column($db, $p)) {
+                $columns[] = 'table_slug';
+                $placeholders[] = '?';
+                $params[] = $tableSlug;
+            }
+
+            $db->execute(
+                'INSERT INTO ' . $p . 'site_tables (' . implode(', ', $columns) . ') VALUES (' . implode(', ', $placeholders) . ')',
+                $params
+            );
+
+            $tableId = (int) $db->lastInsertId();
+            $this->imported++;
+            $this->import_breakdown['tables']++;
+
+            if ($legacyTableId !== '') {
+                $this->table_reference_map[$legacyTableId] = $tableId;
+            }
+
+            $this->store_import_item($db, $p, [
+                'log_id'           => $this->log_id,
+                'source_type'      => 'tablepress_table',
+                'source_wp_id'     => (int) ($item['wp_id'] ?? 0),
+                'source_reference' => $legacyTableId !== '' ? $legacyTableId : null,
+                'source_slug'      => (string) ($item['slug'] ?? ''),
+                'source_url'       => (string) ($item['link'] ?? ''),
+                'target_type'      => 'site_table',
+                'target_id'        => $tableId,
+                'target_slug'      => $tableSlug,
+                'target_url'       => '[site-table id="' . $tableId . '"]',
+            ]);
+
+            $this->collect_unknown_meta($item);
+        } catch (\Throwable $e) {
+            $this->errors++;
+            error_log('CMS_Importer: Tabellen-Import fehlgeschlagen: ' . $e->getMessage() . ' – Titel: ' . $tableName);
         }
     }
 
@@ -337,31 +641,43 @@ class CMS_Importer_Service
      * @param  string[] $urls  Absolute Bild-URLs
      * @return string[]        Lokale Dateipfade der erfolgreich geladenen Bilder
      */
-    private function download_post_images(\CMS\Database $db, string $p, string $slug, array $urls): array
+    private function download_media_assets(\CMS\Database $db, string $p, string $contextType, string $slug, array $candidates, string $featuredUrl): array
     {
-        if (empty($urls) || !defined('UPLOAD_PATH')) {
-            return [];
+        if (empty($candidates) || !defined('UPLOAD_PATH') || !defined('UPLOAD_URL')) {
+            return ['url_map' => [], 'featured_local_url' => ''];
         }
 
-        $dir = rtrim(UPLOAD_PATH, '/') . '/images/' . $slug . '/';
+        $dir = rtrim(UPLOAD_PATH, '/') . '/images/importer/' . $contextType . '/' . $this->sanitize_slug($slug) . '/';
         if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
             error_log('CMS_Importer: Konnte Verzeichnis nicht anlegen: ' . $dir);
-            return [];
+            return ['url_map' => [], 'featured_local_url' => ''];
         }
 
-        $downloaded = [];
+        $relativeDir = 'images/importer/' . $contextType . '/' . $this->sanitize_slug($slug) . '/';
+        $urlMap = [];
+        $featuredLocalUrl = '';
+        $usedNames = [];
 
-        foreach ($urls as $url) {
-            $url = trim($url);
+        foreach ($candidates as $candidate) {
+            $url = trim((string) ($candidate['url'] ?? ''));
             if ($url === '') {
                 continue;
             }
 
-            $filename   = $this->url_to_filename($url);
+            if (!$this->looks_like_image_url($url)) {
+                continue;
+            }
+
+            $filename   = $this->ensure_unique_filename($this->url_to_filename($url), $url, $usedNames);
             $local_path = $dir . $filename;
+            $public_url = rtrim(UPLOAD_URL, '/') . '/' . $relativeDir . $filename;
 
             if (file_exists($local_path)) {
-                $downloaded[] = $local_path;
+                $urlMap[$url] = $public_url;
+                if ($featuredLocalUrl === '' && $this->urls_match($featuredUrl, $url)) {
+                    $featuredLocalUrl = $public_url;
+                }
+                $this->register_media($db, $p, $local_path, $relativeDir . $filename, $filename, $candidate);
                 continue;
             }
 
@@ -374,11 +690,18 @@ class CMS_Importer_Service
                 continue;
             }
 
-            $downloaded[] = $local_path;
-            $this->register_media($db, $local_path, $filename, $slug);
+            $urlMap[$url] = $public_url;
+            $this->images_downloaded++;
+            if ($featuredLocalUrl === '' && $this->urls_match($featuredUrl, $url)) {
+                $featuredLocalUrl = $public_url;
+            }
+            $this->register_media($db, $p, $local_path, $relativeDir . $filename, $filename, $candidate);
         }
 
-        return $downloaded;
+        return [
+            'url_map' => $urlMap,
+            'featured_local_url' => $featuredLocalUrl,
+        ];
     }
 
     /**
@@ -429,18 +752,25 @@ class CMS_Importer_Service
     /**
      * Registriert eine heruntergeladene Datei in der cms_media-Tabelle.
      */
-    private function register_media(\CMS\Database $db, string $local_path, string $filename, string $slug): void
+    private function register_media(\CMS\Database $db, string $p, string $local_path, string $relativePath, string $filename, array $candidate): void
     {
         try {
-            // WICHTIG: insert() fügt intern den Prefix hinzu → KEIN Prefix übergeben!
+            $existingId = $db->get_var(
+                "SELECT id FROM {$p}media WHERE filepath = ? LIMIT 1",
+                [$relativePath]
+            );
+            if ($existingId !== null) {
+                return;
+            }
+
             $db->insert('media', [
                 'filename'    => $filename,
-                'filepath'    => 'images/' . $slug . '/' . $filename,
+                'filepath'    => $relativePath,
                 'filetype'    => mime_content_type($local_path) ?: 'image/jpeg',
                 'filesize'    => (int) (filesize($local_path) ?: 0),
-                'title'       => pathinfo($filename, PATHINFO_FILENAME),
-                'alt_text'    => '',
-                'caption'     => '',
+                'title'       => $this->safe_substr((string) (($candidate['title'] ?? '') !== '' ? $candidate['title'] : pathinfo($filename, PATHINFO_FILENAME)), 0, 255),
+                'alt_text'    => $this->safe_substr((string) ($candidate['alt'] ?? ''), 0, 255),
+                'caption'     => (string) ($candidate['caption'] ?? ''),
                 'uploaded_by' => 0,
             ]);
         } catch (\Exception $e) {
@@ -455,10 +785,15 @@ class CMS_Importer_Service
         if (empty($item['meta'])) {
             return;
         }
+
+        $mappedKeys = array_fill_keys($item['mapped_meta_keys'] ?? [], true);
         foreach ($item['meta'] as $key => $value) {
+            if (isset($mappedKeys[$key])) {
+                continue;
+            }
             $this->unknown_meta[] = [
                 'source_id'  => (string) $item['wp_id'],
-                'post_title' => mb_substr($item['title'], 0, 255),
+                'post_title' => $this->safe_substr($item['title'], 0, 255),
                 'post_type'  => $item['post_type'],
                 'meta_key'   => $key,
                 'meta_value' => $value,
@@ -495,7 +830,9 @@ class CMS_Importer_Service
         }
 
         $safe_name   = preg_replace('/[^a-z0-9_-]/', '_', strtolower(pathinfo($this->filename, PATHINFO_FILENAME)));
-        $report_file = $report_dir . date('Y-m-d_His') . '_' . $safe_name . '_meta-report.md';
+        $report_base = $report_dir . date('Y-m-d_His') . '_' . $safe_name . '_meta-report';
+        $report_file = $report_base . '.md';
+        $html_file   = $report_base . '.html';
 
         $grouped = [];
         foreach ($this->unknown_meta as $row) {
@@ -509,7 +846,7 @@ class CMS_Importer_Service
                     'source_id'  => $row['source_id'],
                     'post_title' => $row['post_title'],
                     'post_type'  => $row['post_type'],
-                    'value'      => mb_substr((string) $row['meta_value'], 0, 200),
+                    'value'      => $this->safe_substr((string) $row['meta_value'], 0, 200),
                 ];
             }
         }
@@ -559,7 +896,69 @@ class CMS_Importer_Service
         $md .= "*Automatisch generiert vom CMS WordPress Importer v" . CMS_IMPORTER_VERSION . "*\n";
 
         file_put_contents($report_file, $md);
+        file_put_contents($html_file, $this->build_meta_report_html($site_info, $grouped, $report_file));
         return $report_file;
+    }
+
+    private function build_meta_report_html(array $site_info, array $grouped, string $markdownPath): string
+    {
+        $title = htmlspecialchars((string) ($site_info['title'] ?? 'Unbekannt'), ENT_QUOTES, 'UTF-8');
+        $siteUrl = htmlspecialchars((string) ($site_info['base_site_url'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $generated = htmlspecialchars(date('d.m.Y H:i:s'), ENT_QUOTES, 'UTF-8');
+        $markdownName = htmlspecialchars(basename($markdownPath), ENT_QUOTES, 'UTF-8');
+
+        $rows = '';
+        foreach ($grouped as $key => $info) {
+            $rows .= '<tr>'
+                . '<td><code>' . htmlspecialchars((string) $key, ENT_QUOTES, 'UTF-8') . '</code></td>'
+                . '<td>' . (int) ($info['count'] ?? 0) . '</td>'
+                . '<td>' . htmlspecialchars($this->get_meta_hint((string) $key), ENT_QUOTES, 'UTF-8') . '</td>'
+                . '</tr>';
+        }
+
+        $details = '';
+        foreach ($grouped as $key => $info) {
+            $details .= '<section class="report-section">';
+            $details .= '<h2><code>' . htmlspecialchars((string) $key, ENT_QUOTES, 'UTF-8') . '</code></h2>';
+            $details .= '<p><strong>Vorkommen:</strong> ' . (int) ($info['count'] ?? 0) . '<br>';
+            $details .= '<strong>Hinweis:</strong> ' . htmlspecialchars($this->get_meta_hint((string) $key), ENT_QUOTES, 'UTF-8') . '</p>';
+            $details .= '<ul>';
+
+            foreach (($info['examples'] ?? []) as $example) {
+                $details .= '<li><strong>Post ' . htmlspecialchars((string) ($example['source_id'] ?? ''), ENT_QUOTES, 'UTF-8') . '</strong>'
+                    . ' (' . htmlspecialchars((string) ($example['post_title'] ?? ''), ENT_QUOTES, 'UTF-8')
+                    . ', Typ: ' . htmlspecialchars((string) ($example['post_type'] ?? ''), ENT_QUOTES, 'UTF-8') . ')<br>'
+                    . '<code>' . htmlspecialchars((string) ($example['value'] ?? ''), ENT_QUOTES, 'UTF-8') . '</code></li>';
+            }
+
+            $details .= '</ul></section>';
+        }
+
+        return '<!DOCTYPE html>'
+            . '<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
+            . '<title>WordPress-Import Meta-Bericht</title>'
+            . '<style>'
+            . 'body{font-family:Segoe UI,Arial,sans-serif;background:#f5f7fb;color:#1f2937;margin:0;padding:32px;line-height:1.5}'
+            . '.wrap{max-width:1100px;margin:0 auto;background:#fff;border-radius:16px;box-shadow:0 10px 30px rgba(15,23,42,.08);padding:32px}'
+            . 'h1,h2{margin:0 0 12px}h1{font-size:28px}h2{font-size:20px;margin-top:28px}'
+            . '.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:24px 0}'
+            . '.meta div{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px}'
+            . 'table{width:100%;border-collapse:collapse;margin-top:16px}th,td{padding:12px;border-bottom:1px solid #e5e7eb;text-align:left;vertical-align:top}'
+            . 'th{background:#f8fafc}code{background:#f3f4f6;padding:2px 6px;border-radius:6px}'
+            . '.report-section{border-top:1px solid #e5e7eb;padding-top:20px;margin-top:20px}.footer{margin-top:32px;color:#6b7280;font-size:14px}'
+            . '</style></head><body><div class="wrap">'
+            . '<h1>WordPress-Import – Meta-Bericht</h1>'
+            . '<p>Lesbare HTML-Version des Import-Berichts. Die Rohfassung liegt zusätzlich als <code>' . $markdownName . '</code> vor.</p>'
+            . '<div class="meta">'
+            . '<div><strong>Quelle</strong><br>' . $title . '</div>'
+            . '<div><strong>Website</strong><br>' . $siteUrl . '</div>'
+            . '<div><strong>Erstellt</strong><br>' . $generated . '</div>'
+            . '<div><strong>Unbekannte Keys</strong><br>' . count($grouped) . '</div>'
+            . '</div>'
+            . '<table><thead><tr><th>Meta-Key</th><th>Anzahl</th><th>Hinweis</th></tr></thead><tbody>' . $rows . '</tbody></table>'
+            . $details
+            . '<div class="footer">Automatisch generiert vom CMS WordPress Importer v' . htmlspecialchars((string) CMS_IMPORTER_VERSION, ENT_QUOTES, 'UTF-8') . '</div>'
+            . '</div></body></html>';
     }
 
     private function get_meta_hint(string $key): string
@@ -605,7 +1004,6 @@ class CMS_Importer_Service
     private function create_log_entry(\CMS\Database $db, string $p, string $filename, int $user_id): int
     {
         try {
-            // WICHTIG: insert() fügt intern den Prefix hinzu → KEIN Prefix übergeben!
             $db->insert('import_log', [
                 'filename'    => $filename,
                 'import_type' => 'mixed',
@@ -628,7 +1026,6 @@ class CMS_Importer_Service
             return;
         }
         try {
-            // WICHTIG: execute() für parametrisierte DML-Statements (query() nimmt KEINE Params!)
             $db->execute(
                 "UPDATE {$p}import_log
                  SET total = ?, imported = ?, skipped = ?, errors = ?,
@@ -659,7 +1056,28 @@ class CMS_Importer_Service
         $this->errors            = 0;
         $this->images_downloaded = 0;
         $this->unknown_meta      = [];
+        $this->skip_reasons      = [];
         $this->log_id            = 0;
+        $this->table_reference_map = [];
+        $this->import_breakdown = [
+            'posts'  => 0,
+            'pages'  => 0,
+            'tables' => 0,
+            'others' => 0,
+        ];
+    }
+
+    private function skip_item(string $reason): void
+    {
+        $reason = $this->normalize_skip_reason($reason);
+        $this->skipped++;
+        $this->skip_reasons[$reason] = (int) ($this->skip_reasons[$reason] ?? 0) + 1;
+    }
+
+    private function normalize_skip_reason(?string $reason): string
+    {
+        $reason = trim((string) $reason);
+        return $reason !== '' ? $reason : 'Unbekannter Überspring-Grund';
     }
 
     /**
@@ -667,9 +1085,9 @@ class CMS_Importer_Service
      *
      * @param string $table  Vollständiger Tabellenname inkl. Prefix (z. B. 'cms_posts')
      */
-    private function unique_slug(\CMS\Database $db, string $table, string $base): string
+    private function unique_slug(\CMS\Database $db, string $table, string $base, bool $preserveBase = false): string
     {
-        $slug   = $this->sanitize_slug($base);
+        $slug   = $preserveBase ? $this->preserve_source_slug($base) : $this->sanitize_slug($base);
         $try    = $slug;
         $suffix = 2;
 
@@ -689,15 +1107,86 @@ class CMS_Importer_Service
     }
 
     /**
+     * Nutzt vorhandene WordPress-Slugs unverändert, damit SEO-relevante URLs
+     * möglichst 1:1 übernommen werden. Nur wenn kein Slug vorhanden ist oder
+     * er ungültige Zeichen enthält, wird auf eine bereinigte Variante bzw.
+     * den Titel-Fallback zurückgegriffen.
+     */
+    private function resolve_import_slug(array $item, string $fallbackTitle): string
+    {
+        $fallbackSlug = $this->slugify($fallbackTitle);
+
+        if (class_exists('CMS\Services\PermalinkService')) {
+            return \CMS\Services\PermalinkService::resolveImportedSourceSlug(
+                (string) ($item['slug'] ?? ''),
+                (string) ($item['link'] ?? ''),
+                $fallbackSlug
+            );
+        }
+
+        $sourceSlug = $this->preserve_source_slug((string) ($item['slug'] ?? ''));
+        if ($sourceSlug !== '') {
+            return $sourceSlug;
+        }
+
+        $sourceUrlSlug = $this->preserve_source_slug($this->extract_slug_from_url((string) ($item['link'] ?? '')));
+        return $sourceUrlSlug !== '' ? $sourceUrlSlug : $fallbackSlug;
+    }
+
+    /**
+     * Erhält einen vorhandenen WP-Slug so weit wie möglich unverändert.
+     */
+    private function preserve_source_slug(string $slug): string
+    {
+        if (class_exists('CMS\Services\PermalinkService')) {
+            return \CMS\Services\PermalinkService::preserveImportedSlug($slug);
+        }
+
+        $slug = html_entity_decode(trim($slug), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $slug = trim($slug, "/ \t\n\r\0\x0B");
+        $slug = preg_replace('/[\x00-\x1F\x7F]+/u', '', $slug) ?? $slug;
+
+        if ($slug === '') {
+            return '';
+        }
+
+        if (preg_match('/^[\p{L}\p{N}\-._~%]+$/u', $slug) === 1) {
+            return $this->safe_substr($slug, 0, 190);
+        }
+
+        return $this->sanitize_slug($slug);
+    }
+
+    private function extract_slug_from_url(string $url): string
+    {
+        $url = trim(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($url === '' || filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return '';
+        }
+
+        $path = trim((string) parse_url($url, PHP_URL_PATH), '/');
+        if ($path === '') {
+            return '';
+        }
+
+        $segments = array_values(array_filter(explode('/', $path), static fn(string $segment): bool => $segment !== ''));
+        if ($segments === []) {
+            return '';
+        }
+
+        return urldecode((string) end($segments));
+    }
+
+    /**
      * Bereinigt einen Slug: Unicode-Buchstaben/Ziffern + Bindestriche, max. 190 Zeichen.
      */
     private function sanitize_slug(string $slug): string
     {
-        $slug = mb_strtolower(trim($slug));
+        $slug = $this->safe_lower(trim($slug));
         $slug = preg_replace('/[^\p{L}\p{N}\-]/u', '-', $slug) ?? $slug;
         $slug = preg_replace('/-{2,}/', '-', $slug) ?? $slug;
         $slug = trim($slug, '-');
-        return mb_substr($slug !== '' ? $slug : 'imported', 0, 190);
+        return $this->safe_substr($slug !== '' ? $slug : 'imported', 0, 190);
     }
 
     /**
@@ -723,7 +1212,7 @@ class CMS_Importer_Service
             'ù' => 'u', 'ú' => 'u', 'û' => 'u',
             'ñ' => 'n', 'ç' => 'c',
         ];
-        $text = strtr(mb_strtolower($text), $map);
+        $text = strtr($this->safe_lower($text), $map);
         return $this->sanitize_slug($text ?: 'imported-' . time());
     }
 
@@ -747,6 +1236,30 @@ class CMS_Importer_Service
         return $ts !== false ? date('Y-m-d H:i:s', $ts) : null;
     }
 
+    private function resolve_original_created_at(array $item): ?string
+    {
+        foreach (['date', 'date_gmt', 'modified', 'modified_gmt'] as $field) {
+            $resolved = $this->safe_date((string) ($item[$field] ?? ''));
+            if ($resolved !== null) {
+                return $resolved;
+            }
+        }
+
+        return null;
+    }
+
+    private function resolve_original_updated_at(array $item, ?string $fallback): ?string
+    {
+        foreach (['modified', 'modified_gmt', 'date', 'date_gmt'] as $field) {
+            $resolved = $this->safe_date((string) ($item[$field] ?? ''));
+            if ($resolved !== null) {
+                return $resolved;
+            }
+        }
+
+        return $fallback;
+    }
+
     /**
      * Ermittelt die CMS-User-ID anhand des WP-Author-Logins (Username oder E-Mail).
      */
@@ -764,5 +1277,1163 @@ class CMS_Importer_Service
         } catch (\Exception $e) {
             return 0;
         }
+    }
+
+    private function prepare_content_payload(\CMS\Database $db, string $p, array $item, string $contextType, string $slug): array
+    {
+        $content = (string) ($item['content'] ?? '');
+        if (!empty($this->options['convert_table_shortcodes'])) {
+            $content = $this->replace_table_shortcodes($db, $p, $content);
+        }
+
+        $excerpt = (string) ($item['excerpt'] ?? '');
+        $seo = is_array($item['seo'] ?? null) ? $item['seo'] : $this->default_seo_payload();
+        $featuredImage = trim((string) ($item['featured_image'] ?? ''));
+        $candidates = $this->collect_media_candidates($item, $featuredImage);
+
+        if (!empty($this->options['download_images'])) {
+            $downloads = $this->download_media_assets($db, $p, $contextType, $slug, $candidates, $featuredImage);
+            $urlMap = $downloads['url_map'] ?? [];
+
+            if ($urlMap !== []) {
+                $content = $this->rewrite_url_map($content, $urlMap);
+                $excerpt = $this->rewrite_url_map($excerpt, $urlMap);
+                $featuredImage = $this->resolve_featured_image($featuredImage, $urlMap, (string) ($downloads['featured_local_url'] ?? ''));
+                $seo = $this->rewrite_seo_image_urls($seo, $urlMap, $featuredImage);
+            }
+        }
+
+        if ($featuredImage === '' && !empty($item['image_urls'][0])) {
+            $featuredImage = (string) $item['image_urls'][0];
+        }
+
+        return [
+            'content' => $content,
+            'excerpt' => $excerpt,
+            'featured_image' => $featuredImage,
+            'seo' => $seo,
+        ];
+    }
+
+    private function collect_media_candidates(array $item, string $featuredImage): array
+    {
+        $candidates = [];
+
+        if ($featuredImage !== '') {
+            $meta = $this->find_attachment_meta_for_url($featuredImage, (int) ($item['featured_image_wp_id'] ?? 0));
+            $candidates[] = [
+                'url' => $featuredImage,
+                'alt' => $meta['alt_text'] ?? '',
+                'caption' => $meta['caption'] ?? '',
+                'title' => $meta['title'] ?? '',
+            ];
+        }
+
+        foreach ($item['image_urls'] ?? [] as $url) {
+            $meta = $this->find_attachment_meta_for_url((string) $url, 0);
+            $candidates[] = [
+                'url' => (string) $url,
+                'alt' => $meta['alt_text'] ?? '',
+                'caption' => $meta['caption'] ?? '',
+                'title' => $meta['title'] ?? '',
+            ];
+        }
+
+        $unique = [];
+        foreach ($candidates as $candidate) {
+            $key = $this->normalize_url_key((string) ($candidate['url'] ?? ''));
+            if ($key === '' || isset($unique[$key])) {
+                continue;
+            }
+            $unique[$key] = $candidate;
+        }
+
+        return array_values($unique);
+    }
+
+    private function find_attachment_meta_for_url(string $url, int $attachmentId): array
+    {
+        if ($attachmentId > 0 && isset($this->attachment_lookup[$attachmentId]) && is_array($this->attachment_lookup[$attachmentId])) {
+            return $this->attachment_lookup[$attachmentId];
+        }
+
+        $key = $this->normalize_url_key($url);
+        return $key !== '' && isset($this->attachment_by_url[$key]) && is_array($this->attachment_by_url[$key])
+            ? $this->attachment_by_url[$key]
+            : [];
+    }
+
+    private function index_attachments_by_url(array $attachments): array
+    {
+        $indexed = [];
+        foreach ($attachments as $attachment) {
+            if (!is_array($attachment)) {
+                continue;
+            }
+            $key = $this->normalize_url_key((string) ($attachment['url'] ?? ''));
+            if ($key === '') {
+                continue;
+            }
+            $indexed[$key] = $attachment;
+        }
+
+        return $indexed;
+    }
+
+    private function normalize_url_key(string $url): string
+    {
+        return trim(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    }
+
+    private function rewrite_url_map(string $content, array $urlMap): string
+    {
+        if ($content === '' || $urlMap === []) {
+            return $content;
+        }
+
+        foreach ($urlMap as $sourceUrl => $targetUrl) {
+            $content = str_replace($sourceUrl, $targetUrl, $content);
+        }
+
+        return $content;
+    }
+
+    private function resolve_featured_image(string $featuredImage, array $urlMap, string $featuredLocalUrl): string
+    {
+        if ($featuredLocalUrl !== '') {
+            return $featuredLocalUrl;
+        }
+
+        if ($featuredImage !== '' && isset($urlMap[$featuredImage])) {
+            return (string) $urlMap[$featuredImage];
+        }
+
+        return $featuredImage;
+    }
+
+    private function rewrite_seo_image_urls(array $seo, array $urlMap, string $featuredImage): array
+    {
+        foreach (['og_image', 'twitter_image'] as $key) {
+            $value = trim((string) ($seo[$key] ?? ''));
+            if ($value !== '' && isset($urlMap[$value])) {
+                $seo[$key] = $urlMap[$value];
+            }
+        }
+
+        if (trim((string) ($seo['og_image'] ?? '')) === '' && $featuredImage !== '') {
+            $seo['og_image'] = $featuredImage;
+        }
+
+        if (trim((string) ($seo['twitter_image'] ?? '')) === '' && $featuredImage !== '') {
+            $seo['twitter_image'] = $featuredImage;
+        }
+
+        return $seo;
+    }
+
+    private function replace_table_shortcodes(\CMS\Database $db, string $p, string $content): string
+    {
+        if ($content === '' || !preg_match('/\[(?:table|tablepress)\s+id\s*=\s*["\']?(\d+)["\']?\s*\/?\]/i', $content)) {
+            return $content;
+        }
+
+        return (string) preg_replace_callback(
+            '/\[(?:table|tablepress)\s+id\s*=\s*["\']?(\d+)["\']?\s*\/?\]/i',
+            function (array $matches) use ($db, $p): string {
+                $legacyId = (string) ($matches[1] ?? '');
+                if ($legacyId === '') {
+                    return (string) ($matches[0] ?? '');
+                }
+
+                $tableId = $this->resolve_site_table_id($db, $p, $legacyId);
+                return $tableId > 0 ? '[site-table id="' . $tableId . '"]' : (string) ($matches[0] ?? '');
+            },
+            $content
+        );
+    }
+
+    private function resolve_site_table_id(\CMS\Database $db, string $p, string $legacyId): int
+    {
+        if (isset($this->table_reference_map[$legacyId])) {
+            return (int) $this->table_reference_map[$legacyId];
+        }
+
+        $targetId = $db->get_var(
+            "SELECT target_id
+             FROM {$p}import_items
+             WHERE source_type = ?
+               AND source_reference = ?
+               AND target_type = ?
+             ORDER BY id DESC
+             LIMIT 1",
+            ['tablepress_table', $legacyId, 'site_table']
+        );
+
+        if ($targetId === null) {
+            $targetId = $db->get_var(
+                "SELECT target_id
+                 FROM {$p}import_items
+                 WHERE source_type = ?
+                   AND source_wp_id = ?
+                   AND target_type = ?
+                 ORDER BY id DESC
+                 LIMIT 1",
+                ['tablepress_table', (int) $legacyId, 'site_table']
+            );
+        }
+
+        $resolved = (int) ($targetId ?? 0);
+        if ($resolved > 0) {
+            $this->table_reference_map[$legacyId] = $resolved;
+        }
+
+        return $resolved;
+    }
+
+    private function find_existing_mapping(\CMS\Database $db, string $p, string $sourceType, int $sourceWpId, ?string $sourceReference, string $targetType, bool $cleanupStale = false): ?array
+    {
+        if ($sourceWpId > 0) {
+            $mapping = $this->resolve_existing_mapping_rows($db, $p, $db->get_results(
+                "SELECT id, target_id, target_slug
+                 FROM {$p}import_items
+                 WHERE source_type = ? AND source_wp_id = ? AND target_type = ?
+                 ORDER BY id DESC
+                ",
+                [$sourceType, $sourceWpId, $targetType]
+            ), $targetType, $cleanupStale);
+            if ($mapping !== null) {
+                return $mapping;
+            }
+        }
+
+        if ($sourceReference !== null && $sourceReference !== '') {
+            $mapping = $this->resolve_existing_mapping_rows($db, $p, $db->get_results(
+                "SELECT id, target_id, target_slug
+                 FROM {$p}import_items
+                 WHERE source_type = ? AND source_reference = ? AND target_type = ?
+                 ORDER BY id DESC
+                ",
+                [$sourceType, $sourceReference, $targetType]
+            ), $targetType, $cleanupStale);
+            if ($mapping !== null) {
+                return $mapping;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<int, object> $rows
+     * @return array{target_id:int,target_slug:string}|null
+     */
+    private function resolve_existing_mapping_rows(\CMS\Database $db, string $p, array $rows, string $targetType, bool $cleanupStale): ?array
+    {
+        foreach ($rows as $row) {
+            $resolved = $this->resolve_mapping_target($db, $p, $targetType, (int) ($row->target_id ?? 0), (string) ($row->target_slug ?? ''));
+            if ($resolved !== null) {
+                if (
+                    $cleanupStale
+                    && ((int) ($row->target_id ?? 0) !== $resolved['target_id']
+                    || (string) ($row->target_slug ?? '') !== $resolved['target_slug'])
+                ) {
+                    $db->update('import_items', [
+                        'target_id' => $resolved['target_id'],
+                        'target_slug' => $resolved['target_slug'],
+                    ], [
+                        'id' => (int) ($row->id ?? 0),
+                    ]);
+                }
+
+                return $resolved;
+            }
+
+            if ($cleanupStale && !empty($row->id)) {
+                $db->delete('import_items', ['id' => (int) $row->id]);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{target_id:int,target_slug:string}|null
+     */
+    private function resolve_mapping_target(\CMS\Database $db, string $p, string $targetType, int $targetId, string $targetSlug): ?array
+    {
+        return match ($targetType) {
+            'post' => $this->resolve_content_target($db, $p . 'posts', 'slug', $targetId, $targetSlug),
+            'page' => $this->resolve_content_target($db, $p . 'pages', 'slug', $targetId, $targetSlug),
+            'site_table' => $this->resolve_site_table_target($db, $p, $targetId, $targetSlug),
+            default => null,
+        };
+    }
+
+    /**
+     * @return array{target_id:int,target_slug:string}|null
+     */
+    private function resolve_content_target(\CMS\Database $db, string $table, string $slugColumn, int $targetId, string $targetSlug): ?array
+    {
+        if ($targetId > 0) {
+            $row = $db->get_row(
+                "SELECT id, {$slugColumn} AS target_slug FROM {$table} WHERE id = ? LIMIT 1",
+                [$targetId]
+            );
+            if ($row !== null) {
+                return [
+                    'target_id' => (int) ($row->id ?? 0),
+                    'target_slug' => (string) ($row->target_slug ?? ''),
+                ];
+            }
+        }
+
+        if ($targetSlug !== '') {
+            $row = $db->get_row(
+                "SELECT id, {$slugColumn} AS target_slug FROM {$table} WHERE {$slugColumn} = ? LIMIT 1",
+                [$targetSlug]
+            );
+            if ($row !== null) {
+                return [
+                    'target_id' => (int) ($row->id ?? 0),
+                    'target_slug' => (string) ($row->target_slug ?? ''),
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{target_id:int,target_slug:string}|null
+     */
+    private function resolve_site_table_target(\CMS\Database $db, string $p, int $targetId, string $targetSlug): ?array
+    {
+        if ($targetId > 0) {
+            $row = $db->get_row(
+                "SELECT id FROM {$p}site_tables WHERE id = ? LIMIT 1",
+                [$targetId]
+            );
+            if ($row !== null) {
+                return [
+                    'target_id' => (int) ($row->id ?? 0),
+                    'target_slug' => $targetSlug,
+                ];
+            }
+        }
+
+        if ($targetSlug !== '' && $this->has_table_slug_column($db, $p)) {
+            $row = $db->get_row(
+                "SELECT id, table_slug AS target_slug FROM {$p}site_tables WHERE table_slug = ? LIMIT 1",
+                [$targetSlug]
+            );
+            if ($row !== null) {
+                return [
+                    'target_id' => (int) ($row->id ?? 0),
+                    'target_slug' => (string) ($row->target_slug ?? ''),
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    private function store_import_item(\CMS\Database $db, string $p, array $payload): void
+    {
+        $existing = null;
+        if (!empty($payload['source_wp_id'])) {
+            $existing = $db->get_var(
+                "SELECT id FROM {$p}import_items WHERE source_type = ? AND source_wp_id = ? AND target_type = ? ORDER BY id DESC LIMIT 1",
+                [(string) ($payload['source_type'] ?? ''), (int) ($payload['source_wp_id'] ?? 0), (string) ($payload['target_type'] ?? '')]
+            );
+        }
+
+        if ($existing === null && !empty($payload['source_reference'])) {
+            $existing = $db->get_var(
+                "SELECT id FROM {$p}import_items WHERE source_type = ? AND source_reference = ? AND target_type = ? ORDER BY id DESC LIMIT 1",
+                [(string) ($payload['source_type'] ?? ''), (string) ($payload['source_reference'] ?? ''), (string) ($payload['target_type'] ?? '')]
+            );
+        }
+
+        $data = [
+            'log_id' => $payload['log_id'] ?? null,
+            'source_type' => (string) ($payload['source_type'] ?? ''),
+            'source_wp_id' => !empty($payload['source_wp_id']) ? (int) $payload['source_wp_id'] : null,
+            'source_reference' => $payload['source_reference'] ?? null,
+            'source_slug' => $payload['source_slug'] ?? null,
+            'source_url' => $payload['source_url'] ?? null,
+            'target_type' => (string) ($payload['target_type'] ?? ''),
+            'target_id' => !empty($payload['target_id']) ? (int) $payload['target_id'] : null,
+            'target_slug' => $payload['target_slug'] ?? null,
+            'target_url' => $payload['target_url'] ?? null,
+        ];
+
+        if ($existing !== null) {
+            $updated = $db->update('import_items', $data, ['id' => (int) $existing]);
+            if ($updated === false) {
+                $this->errors++;
+                error_log('CMS_Importer: Import-Mapping konnte nicht aktualisiert werden: ' . $db->last_error);
+            }
+            return;
+        }
+
+        $insertedId = $db->insert('import_items', $data);
+        if ($insertedId === false) {
+            $this->errors++;
+            error_log('CMS_Importer: Import-Mapping konnte nicht gespeichert werden: ' . $db->last_error);
+        }
+    }
+
+    private function save_seo_meta(string $contentType, int $contentId, array $seo): void
+    {
+        if ($contentId <= 0 || $this->seoRepository === null) {
+            return;
+        }
+
+        $this->seoRepository->saveContentMeta($contentType, $contentId, $seo);
+    }
+
+    private function ensure_category_id(\CMS\Database $db, string $p, string $name): ?int
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return null;
+        }
+
+        $slug = $this->slugify($name);
+        $existing = $db->get_var(
+            "SELECT id FROM {$p}post_categories WHERE slug = ? LIMIT 1",
+            [$slug]
+        );
+
+        if ($existing !== null) {
+            return (int) $existing;
+        }
+
+        $created = $db->insert('post_categories', [
+            'name' => $name,
+            'slug' => $slug,
+        ]);
+
+        return $created !== false ? (int) $created : null;
+    }
+
+    private function normalize_tag_names(array $tags): array
+    {
+        $normalized = [];
+        foreach ($tags as $tag) {
+            $tag = trim(strip_tags((string) $tag));
+            if ($tag === '') {
+                continue;
+            }
+            $normalized[$this->safe_lower($tag)] = $tag;
+        }
+
+        return array_values($normalized);
+    }
+
+    private function sync_post_tags(\CMS\Database $db, string $p, int $postId, array $tags): void
+    {
+        if ($postId <= 0 || $tags === []) {
+            return;
+        }
+
+        foreach ($tags as $tagName) {
+            $slug = $this->slugify($tagName);
+            $tagId = $db->get_var(
+                "SELECT id FROM {$p}post_tags WHERE slug = ? LIMIT 1",
+                [$slug]
+            );
+
+            if ($tagId === null) {
+                $created = $db->insert('post_tags', [
+                    'name' => $tagName,
+                    'slug' => $slug,
+                ]);
+                if ($created === false) {
+                    continue;
+                }
+                $tagId = (int) $created;
+            }
+
+            $relationExists = $db->get_var(
+                "SELECT id FROM {$p}post_tag_rel WHERE post_id = ? AND tag_id = ? LIMIT 1",
+                [$postId, (int) $tagId]
+            );
+
+            if ($relationExists === null) {
+                $db->insert('post_tag_rel', [
+                    'post_id' => $postId,
+                    'tag_id' => (int) $tagId,
+                ]);
+            }
+
+            $db->execute(
+                "UPDATE {$p}post_tags
+                 SET post_count = (
+                     SELECT COUNT(*) FROM {$p}post_tag_rel WHERE tag_id = ?
+                 )
+                 WHERE id = ?",
+                [(int) $tagId, (int) $tagId]
+            );
+        }
+    }
+
+    private function build_target_url(string $targetType, string $slug, int $targetId, string $date = ''): ?string
+    {
+        if (!defined('SITE_URL')) {
+            return null;
+        }
+
+        return match ($targetType) {
+            'post' => class_exists('CMS\\Services\\PermalinkService')
+                ? \CMS\Services\PermalinkService::getInstance()->buildPostUrlFromValues($slug, $date, $date)
+                : rtrim(SITE_URL, '/') . '/blog/' . ltrim($slug, '/'),
+            'page' => rtrim(SITE_URL, '/') . '/' . ltrim($slug, '/'),
+            'site_table' => '[site-table id="' . $targetId . '"]',
+            default => null,
+        };
+    }
+
+    private function find_existing_table_id_by_slug(\CMS\Database $db, string $p, string $tableSlug): int
+    {
+        if (!$this->has_table_slug_column($db, $p)) {
+            return 0;
+        }
+
+        return (int) ($db->get_var(
+            "SELECT id FROM {$p}site_tables WHERE table_slug = ? LIMIT 1",
+            [$tableSlug]
+        ) ?? 0);
+    }
+
+    private function build_unique_table_slug(\CMS\Database $db, string $p, string $base): string
+    {
+        $baseSlug = $this->sanitize_slug($base !== '' ? $base : 'site-table');
+        $slug = $baseSlug;
+        $suffix = 2;
+
+        while ($slug !== '' && $this->find_existing_table_id_by_slug($db, $p, $slug) > 0) {
+            $slug = $baseSlug . '-' . $suffix;
+            $suffix++;
+        }
+
+        return $slug !== '' ? $slug : 'site-table';
+    }
+
+    private function has_table_slug_column(\CMS\Database $db, string $p): bool
+    {
+        try {
+            return $db->get_var("SHOW COLUMNS FROM {$p}site_tables LIKE 'table_slug'") !== null;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function ensure_unique_filename(string $filename, string $url, array &$usedNames): string
+    {
+        $filename = $filename !== '' ? $filename : 'image-' . substr(md5($url), 0, 8) . '.jpg';
+        $name = pathinfo($filename, PATHINFO_FILENAME);
+        $ext = pathinfo($filename, PATHINFO_EXTENSION);
+        $candidate = $filename;
+        $suffix = 2;
+
+        while (isset($usedNames[$candidate])) {
+            $candidate = $name . '-' . $suffix . ($ext !== '' ? '.' . $ext : '');
+            $suffix++;
+        }
+
+        $usedNames[$candidate] = true;
+        return $candidate;
+    }
+
+    private function urls_match(string $left, string $right): bool
+    {
+        return $left !== '' && $right !== '' && $this->normalize_url_key($left) === $this->normalize_url_key($right);
+    }
+
+    private function looks_like_image_url(string $url): bool
+    {
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+
+        $path = strtolower((string) parse_url($url, PHP_URL_PATH));
+        return preg_match('/\.(jpe?g|png|gif|webp|bmp|svg|avif)(?:$|\?)/i', $path) === 1;
+    }
+
+    private function default_seo_payload(): array
+    {
+        return [
+            'canonical_url' => '',
+            'robots_index' => true,
+            'robots_follow' => true,
+            'og_title' => '',
+            'og_description' => '',
+            'og_image' => '',
+            'og_type' => 'article',
+            'twitter_card' => 'summary_large_image',
+            'twitter_title' => '',
+            'twitter_description' => '',
+            'twitter_image' => '',
+            'focus_keyphrase' => '',
+            'schema_type' => 'WebPage',
+            'sitemap_priority' => '',
+            'sitemap_changefreq' => '',
+            'hreflang_group' => '',
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $preview
+     * @param array<string, mixed> $context
+     */
+    private function collect_preview_item(array $preview, array &$context): void
+    {
+        $context['items_total']++;
+
+        if (($preview['action'] ?? '') === 'import') {
+            $context['would_import']++;
+            $type = (string) ($preview['target_group'] ?? 'others');
+            if (isset($context['breakdown'][$type])) {
+                $context['breakdown'][$type]++;
+            }
+            $context['images_detected'] += (int) ($preview['image_candidates'] ?? 0);
+            $context['table_shortcodes_found'] += (int) ($preview['table_shortcodes_found'] ?? 0);
+            $context['table_shortcodes_resolved'] += (int) ($preview['table_shortcodes_resolved'] ?? 0);
+        } else {
+            $context['would_skip']++;
+            $reason = $this->normalize_skip_reason((string) ($preview['reason'] ?? ''));
+            $context['skip_reasons'][$reason] = (int) ($context['skip_reasons'][$reason] ?? 0) + 1;
+        }
+
+        if (count($context['preview_items']) < (int) ($context['preview_limit'] ?? 25)) {
+            $context['preview_items'][] = $preview;
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     * @return array<string, mixed>
+     */
+    private function build_post_preview(\CMS\Database $db, string $p, array $item, bool $isCustomType, array &$context): array
+    {
+        $status = self::STATUS_MAP[$item['post_status']] ?? 'draft';
+        $sourceType = (string) ($item['post_type'] ?? 'post');
+        $reason = '';
+        $action = 'import';
+        $existingMapping = null;
+
+        if ($isCustomType && !$this->options['import_custom_types']) {
+            $action = 'skip';
+            $reason = 'Custom Post Types deaktiviert';
+        } elseif ($status === 'trash' && !$this->options['import_trashed']) {
+            $action = 'skip';
+            $reason = 'Papierkorb-Elemente deaktiviert';
+        } elseif ($status === 'draft' && !$this->options['import_drafts']) {
+            $action = 'skip';
+            $reason = 'Entwürfe deaktiviert';
+        } elseif ($this->options['skip_duplicates']) {
+            $existingMapping = $this->find_existing_mapping($db, $p, $sourceType, (int) ($item['wp_id'] ?? 0), null, 'post');
+            if ($existingMapping !== null) {
+                $action = 'skip';
+                $reason = 'Bereits per Import-Mapping vorhanden';
+            }
+        }
+
+        $baseSlug = $this->resolve_import_slug($item, (string) ($item['title'] ?? ''));
+
+        $targetSlug = $baseSlug;
+        if ($action === 'import') {
+            if ($this->options['skip_duplicates']) {
+                if ($this->preview_slug_exists($db, $p . 'posts', $baseSlug, 'post', $context)) {
+                    $action = 'skip';
+                    $reason = 'Slug bereits vorhanden';
+                } else {
+                    $this->reserve_preview_slug('post', $baseSlug, $context);
+                    $targetSlug = $baseSlug;
+                }
+            } else {
+                $targetSlug = $this->preview_unique_slug($db, $p . 'posts', $baseSlug, 'post', $context, !empty($item['slug']));
+            }
+        }
+
+        $contentPreview = $this->preview_content_payload($db, $p, $item, $context);
+        $categories = $this->normalize_tag_names($item['categories'] ?? []);
+        $categoryName = trim((string) ($categories[0] ?? ''));
+        $tagNames = $this->normalize_tag_names($item['tags'] ?? []);
+        $fallbackTaxonomies = $this->get_taxonomy_fallback_meta_entries($item, 'post');
+        $targetHint = $isCustomType
+            ? 'Wird als CMS-Beitrag importiert'
+            : 'Wird in cms_posts geschrieben';
+        if ($fallbackTaxonomies !== []) {
+            $targetHint .= ' · Zusätzliche WordPress-Kategorien werden im Meta-Bericht gesichert';
+        }
+        $this->collect_unknown_meta($item);
+
+        if ($action === 'skip') {
+            $reason = $this->normalize_skip_reason($reason);
+        }
+
+        return [
+            'action' => $action,
+            'reason' => $reason,
+            'source_type' => $sourceType,
+            'source_label' => $isCustomType ? 'Custom Type' : 'Beitrag',
+            'source_wp_id' => (int) ($item['wp_id'] ?? 0),
+            'source_title' => (string) ($item['title'] ?? ''),
+            'source_status' => (string) ($item['post_status'] ?? ''),
+            'target_group' => $isCustomType ? 'others' : 'posts',
+            'target_type' => 'post',
+            'target_slug' => $existingMapping['target_slug'] ?? $targetSlug,
+            'target_url' => $this->build_target_url('post', (string) ($existingMapping['target_slug'] ?? $targetSlug), (int) ($existingMapping['target_id'] ?? 0)),
+            'target_hint' => $targetHint,
+            'category' => $categoryName,
+            'tags' => $tagNames,
+            'image_candidates' => (int) ($contentPreview['image_candidates'] ?? 0),
+            'featured_image' => (string) ($contentPreview['featured_image'] ?? ''),
+            'table_shortcodes_found' => (int) ($contentPreview['table_shortcodes_found'] ?? 0),
+            'table_shortcodes_resolved' => (int) ($contentPreview['table_shortcodes_resolved'] ?? 0),
+            'table_targets' => $contentPreview['table_targets'] ?? [],
+            'unknown_meta_count' => $this->count_unknown_meta_for_item($item, 'post'),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     * @return array<string, mixed>
+     */
+    private function build_page_preview(\CMS\Database $db, string $p, array $item, array &$context): array
+    {
+        $status = self::STATUS_MAP[$item['post_status']] ?? 'draft';
+        $reason = '';
+        $action = 'import';
+        $existingMapping = null;
+
+        if ($status === 'trash' && !$this->options['import_trashed']) {
+            $action = 'skip';
+            $reason = 'Papierkorb-Elemente deaktiviert';
+        } elseif ($status === 'draft' && !$this->options['import_drafts']) {
+            $action = 'skip';
+            $reason = 'Entwürfe deaktiviert';
+        } elseif ($this->options['skip_duplicates']) {
+            $existingMapping = $this->find_existing_mapping($db, $p, 'page', (int) ($item['wp_id'] ?? 0), null, 'page');
+            if ($existingMapping !== null) {
+                $action = 'skip';
+                $reason = 'Bereits per Import-Mapping vorhanden';
+            }
+        }
+
+        $baseSlug = $this->resolve_import_slug($item, (string) ($item['title'] ?? ''));
+
+        $targetSlug = $baseSlug;
+        if ($action === 'import') {
+            if ($this->options['skip_duplicates']) {
+                if ($this->preview_slug_exists($db, $p . 'pages', $baseSlug, 'page', $context)) {
+                    $action = 'skip';
+                    $reason = 'Slug bereits vorhanden';
+                } else {
+                    $this->reserve_preview_slug('page', $baseSlug, $context);
+                    $targetSlug = $baseSlug;
+                }
+            } else {
+                $targetSlug = $this->preview_unique_slug($db, $p . 'pages', $baseSlug, 'page', $context, !empty($item['slug']));
+            }
+        }
+
+        $contentPreview = $this->preview_content_payload($db, $p, $item, $context);
+        $pageCategories = $this->normalize_tag_names($item['categories'] ?? []);
+        $pageTags = $this->normalize_tag_names($item['tags'] ?? []);
+        $pageFallbackMeta = $this->get_taxonomy_fallback_meta_entries($item, 'page');
+        $this->collect_unknown_meta($item);
+
+        if ($action === 'skip') {
+            $reason = $this->normalize_skip_reason($reason);
+        }
+
+        return [
+            'action' => $action,
+            'reason' => $reason,
+            'source_type' => 'page',
+            'source_label' => 'Seite',
+            'source_wp_id' => (int) ($item['wp_id'] ?? 0),
+            'source_title' => (string) ($item['title'] ?? ''),
+            'source_status' => (string) ($item['post_status'] ?? ''),
+            'target_group' => 'pages',
+            'target_type' => 'page',
+            'target_slug' => $existingMapping['target_slug'] ?? $targetSlug,
+            'target_url' => $this->build_target_url('page', (string) ($existingMapping['target_slug'] ?? $targetSlug), (int) ($existingMapping['target_id'] ?? 0)),
+            'target_hint' => $pageFallbackMeta !== []
+                ? 'Wird in cms_pages geschrieben · WordPress-Kategorien/Tags werden im Meta-Bericht gesichert'
+                : 'Wird in cms_pages geschrieben',
+            'category' => implode(', ', $pageCategories),
+            'tags' => $pageTags,
+            'image_candidates' => (int) ($contentPreview['image_candidates'] ?? 0),
+            'featured_image' => (string) ($contentPreview['featured_image'] ?? ''),
+            'table_shortcodes_found' => (int) ($contentPreview['table_shortcodes_found'] ?? 0),
+            'table_shortcodes_resolved' => (int) ($contentPreview['table_shortcodes_resolved'] ?? 0),
+            'table_targets' => $contentPreview['table_targets'] ?? [],
+            'unknown_meta_count' => $this->count_unknown_meta_for_item($item, 'page'),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     * @return array<string, mixed>
+     */
+    private function build_table_preview(\CMS\Database $db, string $p, array $item, array &$context): array
+    {
+        $table = $item['table'] ?? null;
+        $legacyTableId = trim((string) ($item['legacy_table_id'] ?? ''));
+        if (!is_array($table) || empty($table['columns']) || !isset($table['rows'])) {
+            return [
+                'action' => 'skip',
+                'reason' => 'Keine gültige Tabellenstruktur erkannt',
+                'source_type' => 'tablepress_table',
+                'source_label' => 'Tabelle',
+                'source_wp_id' => (int) ($item['wp_id'] ?? 0),
+                'source_title' => (string) ($item['title'] ?? ''),
+                'source_status' => (string) ($item['post_status'] ?? ''),
+                'target_group' => 'tables',
+                'target_type' => 'site_table',
+                'target_slug' => '',
+                'target_url' => '',
+                'target_hint' => '',
+                'image_candidates' => 0,
+                'featured_image' => '',
+                'table_shortcodes_found' => 0,
+                'table_shortcodes_resolved' => 0,
+                'table_targets' => [],
+                'unknown_meta_count' => $this->count_unknown_meta_for_item($item),
+                'category' => '',
+                'tags' => [],
+            ];
+        }
+
+        $reason = '';
+        $action = 'import';
+        $existingMapping = null;
+
+        if ($this->options['skip_duplicates']) {
+            $existingMapping = $this->find_existing_mapping($db, $p, 'tablepress_table', (int) ($item['wp_id'] ?? 0), $legacyTableId !== '' ? $legacyTableId : null, 'site_table');
+            if ($existingMapping !== null) {
+                $action = 'skip';
+                $reason = 'Bereits per Import-Mapping vorhanden';
+            }
+        }
+
+        $baseSlug = $this->sanitize_slug((string) ($table['slug'] ?? $table['name'] ?? 'site-table'));
+        $targetSlug = $baseSlug;
+
+        if ($action === 'import') {
+            if ($this->options['skip_duplicates']) {
+                if ($this->preview_table_slug_exists($db, $p, $baseSlug, $context)) {
+                    $action = 'skip';
+                    $reason = 'Tabellenslug bereits vorhanden';
+                } else {
+                    $this->reserve_preview_slug('site_table', $baseSlug, $context);
+                    $targetSlug = $baseSlug;
+                }
+            } else {
+                $targetSlug = $this->preview_unique_table_slug($db, $p, $baseSlug, $context);
+            }
+        }
+
+        $targetShortcode = '[site-table id="neu:' . $targetSlug . '"]';
+        if ($action === 'import' && $legacyTableId !== '') {
+            $context['table_preview_map'][$legacyTableId] = $targetShortcode;
+        }
+
+        $this->collect_unknown_meta($item);
+
+        if ($action === 'skip') {
+            $reason = $this->normalize_skip_reason($reason);
+        }
+
+        return [
+            'action' => $action,
+            'reason' => $reason,
+            'source_type' => 'tablepress_table',
+            'source_label' => 'Tabelle',
+            'source_wp_id' => (int) ($item['wp_id'] ?? 0),
+            'source_title' => (string) (($table['name'] ?? '') !== '' ? $table['name'] : ($item['title'] ?? '')),
+            'source_status' => (string) ($item['post_status'] ?? ''),
+            'target_group' => 'tables',
+            'target_type' => 'site_table',
+            'target_slug' => $existingMapping['target_slug'] ?? $targetSlug,
+            'target_url' => $existingMapping !== null
+                ? '[site-table id="' . (int) ($existingMapping['target_id'] ?? 0) . '"]'
+                : $targetShortcode,
+            'target_hint' => 'Wird in cms_site_tables geschrieben',
+            'image_candidates' => 0,
+            'featured_image' => '',
+            'table_shortcodes_found' => 0,
+            'table_shortcodes_resolved' => 0,
+            'table_targets' => [],
+            'unknown_meta_count' => $this->count_unknown_meta_for_item($item, 'table'),
+            'category' => '',
+            'tags' => [],
+            'table_rows' => count($table['rows'] ?? []),
+            'table_columns' => count($table['columns'] ?? []),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     * @return array<string, mixed>
+     */
+    private function preview_content_payload(\CMS\Database $db, string $p, array $item, array $context): array
+    {
+        $featuredImage = trim((string) ($item['featured_image'] ?? ''));
+        $candidates = $this->collect_media_candidates($item, $featuredImage);
+
+        if ($featuredImage === '' && !empty($item['image_urls'][0])) {
+            $featuredImage = (string) $item['image_urls'][0];
+        }
+
+        $tablePreview = $this->preview_table_shortcodes(
+            $db,
+            $p,
+            (string) ($item['content'] ?? ''),
+            $context['table_preview_map'] ?? []
+        );
+
+        return [
+            'featured_image' => $featuredImage,
+            'image_candidates' => !empty($this->options['download_images']) ? count($candidates) : 0,
+            'table_shortcodes_found' => (int) ($tablePreview['found'] ?? 0),
+            'table_shortcodes_resolved' => !empty($this->options['convert_table_shortcodes']) ? (int) ($tablePreview['resolved'] ?? 0) : 0,
+            'table_targets' => !empty($this->options['convert_table_shortcodes']) ? ($tablePreview['targets'] ?? []) : [],
+        ];
+    }
+
+    /**
+     * @param array<string, string> $previewTableMap
+     * @return array{found:int,resolved:int,targets:array<int, string>}
+     */
+    private function preview_table_shortcodes(\CMS\Database $db, string $p, string $content, array $previewTableMap): array
+    {
+        if ($content === '' || !preg_match_all('/\[(?:table|tablepress)\s+id\s*=\s*["\']?(\d+)["\']?\s*\/?\]/i', $content, $matches)) {
+            return ['found' => 0, 'resolved' => 0, 'targets' => []];
+        }
+
+        $found = 0;
+        $resolved = 0;
+        $targets = [];
+
+        foreach ($matches[1] as $legacyId) {
+            $found++;
+            $target = $this->lookup_preview_table_target($db, $p, (string) $legacyId, $previewTableMap);
+            if ($target === null) {
+                continue;
+            }
+
+            $resolved++;
+            if (!in_array($target, $targets, true) && count($targets) < 5) {
+                $targets[] = $target;
+            }
+        }
+
+        return ['found' => $found, 'resolved' => $resolved, 'targets' => $targets];
+    }
+
+    /**
+     * @param array<string, string> $previewTableMap
+     */
+    private function lookup_preview_table_target(\CMS\Database $db, string $p, string $legacyId, array $previewTableMap): ?string
+    {
+        if (isset($previewTableMap[$legacyId])) {
+            return $previewTableMap[$legacyId];
+        }
+
+        $targetId = $db->get_var(
+            "SELECT target_id
+             FROM {$p}import_items
+             WHERE source_type = ?
+               AND source_reference = ?
+               AND target_type = ?
+             ORDER BY id DESC
+             LIMIT 1",
+            ['tablepress_table', $legacyId, 'site_table']
+        );
+
+        if ($targetId === null) {
+            $targetId = $db->get_var(
+                "SELECT target_id
+                 FROM {$p}import_items
+                 WHERE source_type = ?
+                   AND source_wp_id = ?
+                   AND target_type = ?
+                 ORDER BY id DESC
+                 LIMIT 1",
+                ['tablepress_table', (int) $legacyId, 'site_table']
+            );
+        }
+
+        return $targetId !== null ? '[site-table id="' . (int) $targetId . '"]' : null;
+    }
+
+    private function count_unknown_meta_for_item(array $item, string $targetType = ''): int
+    {
+        if (empty($item['meta'])) {
+            return count($this->get_taxonomy_fallback_meta_entries($item, $targetType));
+        }
+
+        $mappedKeys = array_fill_keys($item['mapped_meta_keys'] ?? [], true);
+        $count = 0;
+        foreach ($item['meta'] as $key => $value) {
+            if (!isset($mappedKeys[$key])) {
+                $count++;
+            }
+        }
+
+        return $count + count($this->get_taxonomy_fallback_meta_entries($item, $targetType));
+    }
+
+    private function collect_taxonomy_fallback_meta(array $item, string $targetType): void
+    {
+        foreach ($this->get_taxonomy_fallback_meta_entries($item, $targetType) as $entry) {
+            $this->unknown_meta[] = $entry;
+        }
+    }
+
+    /**
+     * @return array<int, array<string, string>>
+     */
+    private function get_taxonomy_fallback_meta_entries(array $item, string $targetType): array
+    {
+        $entries = [];
+        $categories = $this->normalize_tag_names($item['categories'] ?? []);
+        $tags = $this->normalize_tag_names($item['tags'] ?? []);
+
+        if ($targetType === 'post') {
+            $secondaryCategories = array_values(array_slice($categories, 1));
+            if ($secondaryCategories !== []) {
+                $entries[] = $this->build_import_meta_entry($item, '_wp_import_additional_categories', implode(' | ', $secondaryCategories));
+            }
+
+            return $entries;
+        }
+
+        if ($targetType === 'page') {
+            if ($categories !== []) {
+                $entries[] = $this->build_import_meta_entry($item, '_wp_import_page_categories', implode(' | ', $categories));
+            }
+            if ($tags !== []) {
+                $entries[] = $this->build_import_meta_entry($item, '_wp_import_page_tags', implode(' | ', $tags));
+            }
+        }
+
+        return $entries;
+    }
+
+    private function build_import_meta_entry(array $item, string $metaKey, string $metaValue): array
+    {
+        return [
+            'source_id'  => (string) ($item['wp_id'] ?? ''),
+            'post_title' => $this->safe_substr((string) ($item['title'] ?? ''), 0, 255),
+            'post_type'  => (string) ($item['post_type'] ?? ''),
+            'meta_key'   => $metaKey,
+            'meta_value' => $metaValue,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function preview_slug_exists(\CMS\Database $db, string $table, string $slug, string $bucket, array $context): bool
+    {
+        if ($slug === '' || !empty($context['reserved_slugs'][$bucket][$slug])) {
+            return true;
+        }
+
+        return (int) $db->get_var("SELECT COUNT(*) FROM {$table} WHERE slug = ?", [$slug]) > 0;
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function reserve_preview_slug(string $bucket, string $slug, array &$context): void
+    {
+        $context['reserved_slugs'][$bucket][$slug] = true;
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function preview_unique_slug(\CMS\Database $db, string $table, string $base, string $bucket, array &$context, bool $preserveBase = false): string
+    {
+        $slug   = $preserveBase ? $this->preserve_source_slug($base) : $this->sanitize_slug($base);
+        $try    = $slug;
+        $suffix = 2;
+
+        for ($i = 0; $i <= 25; $i++) {
+            if (!$this->preview_slug_exists($db, $table, $try, $bucket, $context)) {
+                $this->reserve_preview_slug($bucket, $try, $context);
+                return $try;
+            }
+            $try = $slug . '-' . $suffix;
+            $suffix++;
+        }
+
+        $fallback = $slug . '-preview-' . substr(bin2hex(random_bytes(3)), 0, 6);
+        $this->reserve_preview_slug($bucket, $fallback, $context);
+        return $fallback;
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function preview_table_slug_exists(\CMS\Database $db, string $p, string $slug, array $context): bool
+    {
+        if ($slug === '' || !empty($context['reserved_slugs']['site_table'][$slug])) {
+            return true;
+        }
+
+        if (!$this->has_table_slug_column($db, $p)) {
+            return false;
+        }
+
+        return $this->find_existing_table_id_by_slug($db, $p, $slug) > 0;
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function preview_unique_table_slug(\CMS\Database $db, string $p, string $base, array &$context): string
+    {
+        $slug = $this->sanitize_slug($base !== '' ? $base : 'site-table');
+        $try = $slug;
+        $suffix = 2;
+
+        for ($i = 0; $i <= 25; $i++) {
+            if (!$this->preview_table_slug_exists($db, $p, $try, $context)) {
+                $this->reserve_preview_slug('site_table', $try, $context);
+                return $try;
+            }
+            $try = $slug . '-' . $suffix;
+            $suffix++;
+        }
+
+        $fallback = $slug . '-preview-' . substr(bin2hex(random_bytes(3)), 0, 6);
+        $this->reserve_preview_slug('site_table', $fallback, $context);
+        return $fallback;
+    }
+
+    private function safe_substr(string $value, int $start, int $length): string
+    {
+        if (function_exists('mb_substr')) {
+            return (string) mb_substr($value, $start, $length);
+        }
+
+        return substr($value, $start, $length);
+    }
+
+    private function safe_lower(string $value): string
+    {
+        if (function_exists('mb_strtolower')) {
+            return (string) mb_strtolower($value);
+        }
+
+        return strtolower($value);
     }
 }

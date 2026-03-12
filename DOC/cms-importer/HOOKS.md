@@ -1,64 +1,45 @@
 # CMS WordPress Importer – Hooks-Referenz
 
-## Actions
+Der Importer registriert aktuell **keine eigenen öffentlichen Erweiterungs-Hooks** für Drittplugins. Die Integration erfolgt über reguläre 365CMS-Plugin-Hooks zur Admin-Seite und zu AJAX-Endpunkten.
 
-### `import_started`
-Ausgelöst wenn ein Import-Run beginnt.
+## Verwendete 365CMS-Hooks
+
+### `cms_init`
+Initialisiert die Import-Tabellen beim regulären Plugin-Start.
+
 ```php
-CMS\Hooks::doAction('import_started', int $log_id, string $filename);
+CMS\Hooks::addAction('cms_init', [$plugin, 'init'], 10);
 ```
 
-### `import_completed`
-Ausgelöst wenn ein Import-Run abgeschlossen ist.
+### `plugin_activated`
+Legt Import-Tabellen beim Aktivieren des Plugins an.
+
 ```php
-CMS\Hooks::doAction('import_completed', int $log_id, array $stats);
-// $stats: ['posts_ok' => N, 'posts_fail' => N, 'pages_ok' => N, 'pages_fail' => N]
+CMS\Hooks::addAction('plugin_activated', [$plugin, 'on_activation'], 10);
 ```
 
-### `import_failed`
-Ausgelöst wenn ein Import-Run fehlschlägt.
+### `cms_admin_menu`
+Registriert das Admin-Menü des Importers.
+
 ```php
-CMS\Hooks::doAction('import_failed', int $log_id, string $error_message);
+CMS\Hooks::addAction('cms_admin_menu', [$plugin, 'register_admin_pages'], 20);
 ```
 
-### `post_imported`
-Ausgelöst nach dem erfolgreichen Import eines Beitrags.
-```php
-CMS\Hooks::doAction('post_imported', int $new_post_id, array $wp_post_data);
-```
+### `admin_ajax_cms_importer_upload`
+Verarbeitet den kombinierten Upload-/Import-AJAX-Request.
 
-### `page_imported`
-```php
-CMS\Hooks::doAction('page_imported', int $new_page_id, array $wp_page_data);
-```
+### `admin_ajax_cms_importer_folder_import`
+Importiert eine vorhandene XML-Datei aus einer bekannten Import-Quelle.
 
----
+### `admin_ajax_cms_importer_preview`
+Erstellt eine Dry-Run-Vorschau für eine hochgeladene oder bereits vorhandene XML-Datei ohne Schreibzugriff auf die Datenbank.
 
-## Filters
+### `admin_ajax_cms_importer_scan_folder`
+Liefert die XML-Dateien aus `uploads/import/` und `wp_import_files/`.
 
-### `import_post_data`
-Ermöglicht das Modifizieren der Daten vor dem Einfügen in `cms_posts`.
-```php
-CMS\Hooks::applyFilters('import_post_data', array $data, array $wp_raw): array;
-```
+### `admin_ajax_cms_importer_download_report`
+Stellt den Markdown-Bericht für unbekannte Metadaten zum Download bereit.
 
-### `import_meta_mapping`
-Ermöglicht das Hinzufügen eigener Meta-Key-Mappings.
-```php
-CMS\Hooks::applyFilters('import_meta_mapping', array $mapping): array;
-// $mapping = ['wp_meta_key' => 'cms_field_name', ...]
-```
+## Hinweis
 
-**Beispiel:**
-```php
-CMS\Hooks::addFilter('import_meta_mapping', function(array $m): array {
-    $m['_my_custom_field'] = 'custom_data';
-    return $m;
-});
-```
-
-### `import_should_skip_post`
-Ermöglicht das Überspringen bestimmter Posts beim Import.
-```php
-CMS\Hooks::applyFilters('import_should_skip_post', bool $skip, array $wp_post): bool;
-```
+Wenn künftig eigene Erweiterungspunkte für Mapping, Validierung oder Nachbearbeitung benötigt werden, sollten diese explizit in `CMS_Importer_Service` ergänzt und hier dokumentiert werden.

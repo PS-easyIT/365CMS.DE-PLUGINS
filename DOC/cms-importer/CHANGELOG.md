@@ -1,5 +1,24 @@
 # CMS WordPress Importer – Changelog
 
+## [1.3.0] – 2026-03-12
+
+### Hinzugefügt
+
+- **Dry Run / Vorschau:** Simuliert Upload- und Ordnerimporte ohne Schreibzugriff
+- **Vorschau-Panel:** Zeigt Zieltyp, Slug, Zielhinweis/-URL, Skip-Gründe und Detailinfos pro Element
+- **Preview-Analyse:** Bildkandidaten, unbekannte Meta-Felder und Tabellen-Shortcode-Auflösung direkt vor dem Import sichtbar
+- **Admin-Workflow:** Eigene Vorschau-Aktionen für Uploads und XML-Dateien aus bekannten Import-Quellen
+
+## [1.2.0] – 2026-03-12
+
+### Hinzugefügt
+
+- **TablePress-Migration:** `tablepress_table` → `cms_site_tables`
+- **SEO-Persistenz:** Strukturierte SEO-Daten zusätzlich in `cms_seo_meta`
+- **Bild-Import:** Download von Originalbildern, lokale Registrierung und URL-Umschreibung
+- **Shortcode-Mapping:** WordPress-Tabellen-Shortcodes werden auf `site-table` umgestellt
+- **Import-Mapping:** Persistentes Quell-/Ziel-Mapping in `cms_import_items`
+
 ## [1.0.0] – 2026-02-21
 
 ### Hinzugefügt

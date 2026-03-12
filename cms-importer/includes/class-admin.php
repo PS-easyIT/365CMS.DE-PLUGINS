@@ -5,11 +5,11 @@
  * Registriert die Admin-Seite und verarbeitet Upload + AJAX-Import.
  * Unterstützt:
  * - Direkten Datei-Upload (AJAX + Sync-Fallback)
- * - Auswahl vorhandener Dateien aus uploads/import/
- * - Bilddownload per Slug-Ordner
+ * - Auswahl vorhandener Dateien aus uploads/import/ und wp_import_files/
+ * - Bilddownload per Inhalts-Slug mit URL-Umschreibung
  *
  * @package CMS_Importer
- * @since   1.0.0
+ * @since   1.2.0
  */
 
 declare(strict_types=1);
@@ -79,6 +79,7 @@ class CMS_Importer_Admin
 
         // AJAX-Handler
         CMS\Hooks::addAction('admin_ajax_cms_importer_upload',        [$this, 'handle_ajax_upload']);
+        CMS\Hooks::addAction('admin_ajax_cms_importer_preview',       [$this, 'handle_ajax_preview']);
         CMS\Hooks::addAction('admin_ajax_cms_importer_folder_import', [$this, 'handle_ajax_folder_import']);
         CMS\Hooks::addAction('admin_ajax_cms_importer_scan_folder',   [$this, 'handle_ajax_scan_folder']);
         CMS\Hooks::addAction('admin_ajax_cms_importer_download_report', [$this, 'handle_download_report']);
@@ -111,6 +112,9 @@ class CMS_Importer_Admin
                     exit;
                 case 'cms_importer_upload_only':
                     $this->handle_ajax_upload_only();
+                    exit;
+                case 'cms_importer_preview':
+                    $this->handle_ajax_preview();
                     exit;
                 case 'cms_importer_folder_import':
                     $this->handle_ajax_folder_import();
@@ -152,6 +156,7 @@ class CMS_Importer_Admin
         $log_entries = $this->get_recent_logs(50);
         $security    = class_exists('CMS\Security') ? CMS\Security::instance() : null;
         $nonce       = $security ? $security->createNonce('cms-importer-upload') : '';
+        $nonce_download = $security ? $security->createNonce('cms-importer-download') : '';
         include CMS_IMPORTER_PLUGIN_DIR . 'admin/log.php';
     }
 
@@ -161,10 +166,9 @@ class CMS_Importer_Admin
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        $security = class_exists('CMS\Security') ? CMS\Security::instance() : null;
-        $nonce    = $_POST['_nonce'] ?? '';
+        $nonce = (string) ($_POST['_nonce'] ?? '');
 
-        if ($security && !$security->verifyNonce($nonce, 'cms-importer-upload')) {
+        if (!$this->is_valid_request_token($nonce, 'cms-importer-upload')) {
             http_response_code(403);
             echo json_encode(['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen.']);
             exit;
@@ -184,31 +188,47 @@ class CMS_Importer_Admin
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        $security = class_exists('CMS\Security') ? CMS\Security::instance() : null;
-        $nonce    = $_POST['_nonce'] ?? '';
+        $nonce = (string) ($_POST['_nonce'] ?? '');
 
-        if ($security && !$security->verifyNonce($nonce, 'cms-importer-upload')) {
+        if (!$this->is_valid_request_token($nonce, 'cms-importer-upload')) {
             http_response_code(403);
             echo json_encode(['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen.']);
             exit;
         }
 
-        $raw_name = $_POST['import_file'] ?? '';
-        if ($raw_name === '') {
-            echo json_encode(['success' => false, 'error' => 'Kein Dateiname angegeben.']);
+        [$file_path, $filename, $error] = $this->resolve_requested_import_file($_POST);
+        if ($error !== null) {
+            echo json_encode(['success' => false, 'error' => $error]);
             exit;
         }
 
-        // Nur Dateiname, kein Pfad-Traversal
-        $filename  = basename($raw_name);
-        $file_path = $this->get_import_dir() . $filename;
+        [$message, $type, $result] = $this->process_xml_file($file_path, $filename, 'import');
 
-        if (!file_exists($file_path)) {
-            echo json_encode(['success' => false, 'error' => 'Datei nicht gefunden: ' . htmlspecialchars($filename)]);
+        echo json_encode($type === 'error'
+            ? ['success' => false, 'error' => $message]
+            : ['success' => true, 'message' => $message, 'result' => $result]);
+        exit;
+    }
+
+    public function handle_ajax_preview(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $nonce = (string) ($_POST['_nonce'] ?? '');
+
+        if (!$this->is_valid_request_token($nonce, 'cms-importer-upload')) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen.']);
             exit;
         }
 
-        [$message, $type, $result] = $this->process_xml_file($file_path, $filename);
+        [$file_path, $filename, $error] = $this->resolve_requested_import_file($_POST);
+        if ($error !== null) {
+            echo json_encode(['success' => false, 'error' => $error]);
+            exit;
+        }
+
+        [$message, $type, $result] = $this->process_xml_file($file_path, $filename, 'preview');
 
         echo json_encode($type === 'error'
             ? ['success' => false, 'error' => $message]
@@ -222,10 +242,9 @@ class CMS_Importer_Admin
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        $security = class_exists('CMS\Security') ? CMS\Security::instance() : null;
-        $nonce    = $_POST['_nonce'] ?? '';
+        $nonce = (string) ($_POST['_nonce'] ?? '');
 
-        if ($security && !$security->verifyNonce($nonce, 'cms-importer-upload')) {
+        if (!$this->is_valid_request_token($nonce, 'cms-importer-upload')) {
             http_response_code(403);
             echo json_encode(['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen.']);
             exit;
@@ -289,10 +308,9 @@ class CMS_Importer_Admin
     {
         header('Content-Type: application/json; charset=utf-8');
 
-        $security = class_exists('CMS\Security') ? CMS\Security::instance() : null;
-        $nonce    = $_GET['_nonce'] ?? $_POST['_nonce'] ?? '';
+        $nonce = (string) ($_GET['_nonce'] ?? $_POST['_nonce'] ?? '');
 
-        if ($security && !$security->verifyNonce($nonce, 'cms-importer-upload')) {
+        if (!$this->is_valid_request_token($nonce, 'cms-importer-upload')) {
             http_response_code(403);
             echo json_encode(['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen.']);
             exit;
@@ -306,10 +324,9 @@ class CMS_Importer_Admin
 
     public function handle_download_report(): void
     {
-        $security = class_exists('CMS\Security') ? CMS\Security::instance() : null;
-        $nonce    = $_GET['_nonce'] ?? '';
+        $nonce = (string) ($_GET['_nonce'] ?? '');
 
-        if ($security && !$security->verifyNonce($nonce, 'cms-importer-download')) {
+        if (!$this->is_valid_request_token($nonce, 'cms-importer-download')) {
             http_response_code(403);
             echo 'Sicherheitscheck fehlgeschlagen.';
             exit;
@@ -321,7 +338,8 @@ class CMS_Importer_Admin
             exit;
         }
 
-        $path = $this->get_report_path($log_id);
+        $format = strtolower((string) ($_GET['format'] ?? 'html'));
+        $path = $this->get_report_path($log_id, $format);
         if (!$path || !file_exists($path)) {
             http_response_code(404);
             echo 'Bericht nicht gefunden.';
@@ -329,8 +347,13 @@ class CMS_Importer_Admin
         }
 
         $filename = basename($path);
-        header('Content-Type: text/markdown; charset=utf-8');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        if ($format === 'md') {
+            header('Content-Type: text/markdown; charset=utf-8');
+            header('Content-Disposition: attachment; filename="' . $filename . '"');
+        } else {
+            header('Content-Type: text/html; charset=utf-8');
+            header('Content-Disposition: inline; filename="' . $filename . '"');
+        }
         header('Content-Length: ' . filesize($path));
         readfile($path);
         exit;
@@ -389,12 +412,10 @@ class CMS_Importer_Admin
      *
      * @return array{0: string, 1: string, 2: array|null}  [message, type, result]
      */
-    private function process_xml_file(string $file_path, string $display_name): array
+    private function process_xml_file(string $file_path, string $display_name, string $mode = 'import'): array
     {
-        // WXR-Signatur prüfen
-        $snippet = file_get_contents($file_path, false, null, 0, 1024);
-        if ($snippet === false || strpos($snippet, 'wxr_version') === false) {
-            return ['Keine gültige WordPress-Exportdatei (kein WXR-Format erkannt).', 'error', null];
+        if (class_exists('CMS_Importer_DB')) {
+            CMS_Importer_DB::create_tables();
         }
 
         $parser = new CMS_Importer_XML_Parser();
@@ -404,9 +425,13 @@ class CMS_Importer_Admin
             return ['XML-Fehler: ' . implode('; ', $parsed['errors']), 'error', null];
         }
 
-        $total_items = count($parsed['posts']) + count($parsed['pages']) + count($parsed['others']);
+        if (!$this->looks_like_wordpress_export($file_path, $parsed)) {
+            return ['Keine gültige WordPress-Exportdatei (kein WXR-Format erkannt).', 'error', null];
+        }
+
+        $total_items = count($parsed['posts']) + count($parsed['pages']) + count($parsed['tables']) + count($parsed['others']);
         if ($total_items === 0) {
-            return ['Keine importierbaren Inhalte (Posts, Pages) gefunden.', 'warning', null];
+            return ['Keine importierbaren Inhalte (Beiträge, Seiten, Tabellen oder weitere Post-Types) gefunden.', 'warning', null];
         }
 
         // Import-Optionen aus POST lesen
@@ -416,7 +441,8 @@ class CMS_Importer_Admin
             'import_trashed'      => isset($_POST['import_trashed']),
             'import_custom_types' => isset($_POST['import_custom_types']),
             'generate_report'     => isset($_POST['generate_report']),
-            'download_images'     => true,
+            'download_images'     => isset($_POST['download_images']),
+            'convert_table_shortcodes' => isset($_POST['convert_table_shortcodes']),
         ];
 
         // WICHTIG: CMS\Auth::getCurrentUser() ist eine statische Methode
@@ -424,7 +450,61 @@ class CMS_Importer_Admin
         $user_id = $user ? (int) ($user->id ?? 0) : 0;
 
         $service = new CMS_Importer_Service();
-        $result  = $service->import($parsed, $display_name, $user_id, $options);
+        $result  = $mode === 'preview'
+            ? $service->preview($parsed, $display_name, $options)
+            : $service->import($parsed, $display_name, $user_id, $options);
+
+        if (!empty($result['error'])) {
+            return [(string) $result['error'], 'error', $result];
+        }
+
+        if ($mode === 'preview') {
+            $msg = sprintf(
+                'Vorschau erstellt: %d von %d Elementen würden importiert, %d würden übersprungen.',
+                (int) ($result['would_import'] ?? 0),
+                (int) ($result['total'] ?? 0),
+                (int) ($result['would_skip'] ?? 0)
+            );
+
+            $details = [];
+            if (($result['preview_counts']['posts'] ?? 0) > 0) {
+                $details[] = (int) $result['preview_counts']['posts'] . ' Beiträge';
+            }
+            if (($result['preview_counts']['pages'] ?? 0) > 0) {
+                $details[] = (int) $result['preview_counts']['pages'] . ' Seiten';
+            }
+            if (($result['preview_counts']['tables'] ?? 0) > 0) {
+                $details[] = (int) $result['preview_counts']['tables'] . ' Tabellen';
+            }
+            if (($result['preview_counts']['others'] ?? 0) > 0) {
+                $details[] = (int) $result['preview_counts']['others'] . ' weitere Typen';
+            }
+            if ($details !== []) {
+                $msg .= ' | ' . implode(', ', $details) . '.';
+            }
+
+            if (($result['table_shortcodes_found'] ?? 0) > 0) {
+                $msg .= sprintf(
+                    ' | %d Tabellen-Shortcodes gefunden, %d davon auflösbar.',
+                    (int) ($result['table_shortcodes_found'] ?? 0),
+                    (int) ($result['table_shortcodes_resolved'] ?? 0)
+                );
+            }
+
+            if (($result['meta_keys'] ?? 0) > 0) {
+                $msg .= sprintf(' | %d unbekannte Meta-Keys würden protokolliert.', (int) $result['meta_keys']);
+            }
+
+            return [$msg, 'success', $result];
+        }
+
+        $security = class_exists('CMS\Security') ? CMS\Security::instance() : null;
+        $downloadNonce = $security ? $security->createNonce('cms-importer-download') : '';
+        if (!empty($result['meta_report'])) {
+            $baseUrl = '/admin/plugins/cms-importer/cms-importer?action=download_report&log_id=' . (int) ($result['log_id'] ?? 0) . '&_nonce=' . rawurlencode($downloadNonce);
+            $result['meta_report_download_url'] = $baseUrl . '&format=html';
+            $result['meta_report_markdown_url'] = $baseUrl . '&format=md';
+        }
 
         $msg = sprintf(
             'Import abgeschlossen: %d importiert, %d übersprungen, %d Fehler%s.',
@@ -436,11 +516,75 @@ class CMS_Importer_Admin
                 : ''
         );
 
+        $details = [];
+        if (($result['posts_imported'] ?? 0) > 0) {
+            $details[] = (int) $result['posts_imported'] . ' Beiträge';
+        }
+        if (($result['pages_imported'] ?? 0) > 0) {
+            $details[] = (int) $result['pages_imported'] . ' Seiten';
+        }
+        if (($result['tables_imported'] ?? 0) > 0) {
+            $details[] = (int) $result['tables_imported'] . ' Tabellen';
+        }
+        if (($result['others_imported'] ?? 0) > 0) {
+            $details[] = (int) $result['others_imported'] . ' weitere Typen';
+        }
+        if ($details !== []) {
+            $msg .= ' | ' . implode(', ', $details) . '.';
+        }
+
+        if (!empty($result['skip_reasons']) && is_array($result['skip_reasons'])) {
+            $normalizedSkipReasons = [];
+            foreach ($result['skip_reasons'] as $reason => $count) {
+                $normalizedReason = trim((string) $reason);
+                if ($normalizedReason === '') {
+                    $normalizedReason = 'Unbekannter Überspring-Grund';
+                }
+                $normalizedSkipReasons[$normalizedReason] = (int) ($normalizedSkipReasons[$normalizedReason] ?? 0) + (int) $count;
+            }
+
+            $result['skip_reasons'] = $normalizedSkipReasons;
+            arsort($result['skip_reasons']);
+            $skipSummary = [];
+            foreach (array_slice($result['skip_reasons'], 0, 3, true) as $reason => $count) {
+                $skipSummary[] = (int) $count . '× ' . (string) $reason;
+            }
+            if ($skipSummary !== []) {
+                $msg .= ' | Übersprungen wegen: ' . implode(', ', $skipSummary) . '.';
+            }
+        }
+
         if ($result['meta_keys'] > 0) {
             $msg .= sprintf(' | %d unbekannte Meta-Keys → Bericht gespeichert.', $result['meta_keys']);
         }
 
         return [$msg, $result['errors'] > 0 ? 'warning' : 'success', $result];
+    }
+
+    /**
+     * @param array<string, mixed> $request
+     * @return array{0:string,1:string,2:?string}
+     */
+    private function resolve_requested_import_file(array $request): array
+    {
+        $raw_name = (string) ($request['import_file'] ?? '');
+        if ($raw_name === '') {
+            return ['', '', 'Kein Dateiname angegeben.'];
+        }
+
+        $sourceKey = (string) ($request['import_source'] ?? 'uploads');
+        $source = $this->get_import_source($sourceKey);
+        if ($source === null) {
+            return ['', '', 'Ungültige Import-Quelle.'];
+        }
+
+        $filename = basename($raw_name);
+        $filePath = rtrim((string) $source['path'], DIRECTORY_SEPARATOR . '/') . '/' . $filename;
+        if (!file_exists($filePath)) {
+            return ['', '', 'Datei nicht gefunden: ' . htmlspecialchars($filename)];
+        }
+
+        return [$filePath, $filename, null];
     }
 
     // ── Import-Ordner ─────────────────────────────────────────────────────────
@@ -474,41 +618,94 @@ class CMS_Importer_Admin
      */
     public function scan_import_folder(): array
     {
-        $dir = $this->get_import_dir();
-        if ($dir === '' || !is_dir($dir)) {
-            return [];
-        }
-
         $files = [];
-        foreach (glob($dir . '*.xml') as $path) {
-            $size  = (int) filesize($path);
-            $files[] = [
-                'name'       => basename($path),
-                'size'       => $size,
-                'size_human' => $this->format_bytes($size),
-                'date'       => date('d.m.Y H:i', (int) filemtime($path)),
-            ];
+
+        foreach ($this->get_import_sources() as $sourceKey => $source) {
+            $dir = (string) ($source['path'] ?? '');
+            if ($dir === '' || !is_dir($dir)) {
+                continue;
+            }
+
+            foreach (glob(rtrim($dir, DIRECTORY_SEPARATOR . '/') . DIRECTORY_SEPARATOR . '*.xml') as $path) {
+                $size = (int) filesize($path);
+                $mtime = (int) filemtime($path);
+                $files[] = [
+                    'name'         => basename($path),
+                    'size'         => $size,
+                    'size_human'   => $this->format_bytes($size),
+                    'date'         => date('d.m.Y H:i', $mtime),
+                    'timestamp'    => $mtime,
+                    'source_key'   => $sourceKey,
+                    'source_label' => (string) ($source['label'] ?? $sourceKey),
+                    'source_hint'  => (string) ($source['hint'] ?? ''),
+                ];
+            }
         }
 
         // Neueste zuerst
-        usort($files, static fn ($a, $b) => strcmp($b['date'], $a['date']));
+        usort($files, static fn ($a, $b) => ((int) ($b['timestamp'] ?? 0)) <=> ((int) ($a['timestamp'] ?? 0)));
 
         return $files;
     }
 
+    /**
+     * @return array<string, array{path:string,label:string,hint:string}>
+     */
+    private function get_import_sources(): array
+    {
+        $sources = [];
+
+        $uploadDir = $this->get_import_dir();
+        if ($uploadDir !== '') {
+            $sources['uploads'] = [
+                'path' => $uploadDir,
+                'label' => 'Uploads / import',
+                'hint' => 'Standard-Importordner im Upload-Verzeichnis',
+            ];
+        }
+
+        $bundledDir = CMS_IMPORTER_PLUGIN_DIR . 'wp_import_files/';
+        if (is_dir($bundledDir)) {
+            $sources['bundled'] = [
+                'path' => $bundledDir,
+                'label' => 'Plugin / wp_import_files',
+                'hint' => 'Mitgelieferter XML-Ordner im Plugin',
+            ];
+        }
+
+        return $sources;
+    }
+
+    private function get_import_source(string $sourceKey): ?array
+    {
+        $sources = $this->get_import_sources();
+        return $sources[$sourceKey] ?? null;
+    }
+
     // ── DB-Hilfsmethoden ──────────────────────────────────────────────────────
 
-    private function get_report_path(int $log_id): ?string
+    private function get_report_path(int $log_id, string $format = 'html'): ?string
     {
         if (!class_exists('CMS\Database')) {
             return null;
         }
         $db = CMS\Database::instance();
         $p  = $db->getPrefix();
-        return $db->get_var(
+        $path = $db->get_var(
             "SELECT meta_report_path FROM {$p}import_log WHERE id = ?",
             [$log_id]
         ) ?: null;
+
+        if (!$path) {
+            return null;
+        }
+
+        if ($format === 'md') {
+            return $path;
+        }
+
+        $htmlPath = preg_replace('/\.md$/i', '.html', $path) ?? $path;
+        return file_exists($htmlPath) ? $htmlPath : $path;
     }
 
     private function get_recent_logs(int $limit = 10): array
@@ -553,5 +750,61 @@ class CMS_Importer_Admin
             return round($bytes / 1024, 1) . ' KB';
         }
         return round($bytes / 1048576, 1) . ' MB';
+    }
+
+    private function is_valid_request_token(string $token, string $action): bool
+    {
+        if (!class_exists('CMS\Security')) {
+            return true;
+        }
+
+        $security = CMS\Security::instance();
+        if ($token === '') {
+            return false;
+        }
+
+        if (method_exists($security, 'verifyPersistentToken')) {
+            return $security->verifyPersistentToken($token, $action);
+        }
+
+        return $security->verifyNonce($token, $action);
+    }
+
+    private function looks_like_wordpress_export(string $file_path, array $parsed): bool
+    {
+        $wxrVersion = trim((string) ($parsed['site']['wxr_version'] ?? ''));
+        if ($wxrVersion !== '') {
+            return true;
+        }
+
+        $structuredCounts = [
+            count($parsed['authors'] ?? []),
+            count($parsed['attachments'] ?? []),
+            count($parsed['posts'] ?? []),
+            count($parsed['pages'] ?? []),
+            count($parsed['tables'] ?? []),
+            count($parsed['others'] ?? []),
+        ];
+
+        foreach ($structuredCounts as $count) {
+            if ($count > 0) {
+                return true;
+            }
+        }
+
+        $contents = @file_get_contents($file_path);
+        if ($contents === false) {
+            return false;
+        }
+
+        $contents = ltrim($contents, "\xEF\xBB\xBF\x00\x09\x0A\x0D ");
+        if ($contents === '') {
+            return false;
+        }
+
+        return str_contains($contents, 'wordpress.org/export/')
+            || str_contains($contents, '<wp:wxr_version>')
+            || str_contains($contents, 'xmlns:wp="http://wordpress.org/export/')
+            || str_contains($contents, "xmlns:wp='http://wordpress.org/export/");
     }
 }

@@ -1,11 +1,10 @@
 <?php
 /**
  * Plugin Name: CMS WordPress Importer
- * Description: Importiert WordPress WXR-Export-Dateien (XML) in die CMS Posts- und Pages-Struktur. Unbekannte Meta-Felder werden protokolliert und als Markdown-Bericht gespeichert.
- * Version:      1.0.0
+ * Description: Importiert WordPress-WXR-Exportdateien samt Beiträgen, Seiten, Tabellen, SEO-Metadaten und Bildern passend nach 365CMS. Unbekannte Meta-Felder werden protokolliert und als Markdown-Bericht gespeichert.
+ * Version:      1.3.0
  * Author:       365 Network
  * Author URI:   https://365network.de
- * Requires:     0.26.0
  *
  * @package CMS_Importer
  */
@@ -17,7 +16,7 @@ if (!defined('ABSPATH')) {
 }
 
 // ── Plugin Constants ─────────────────────────────────────────────────────────
-define('CMS_IMPORTER_VERSION',    '1.0.0');
+define('CMS_IMPORTER_VERSION',    '1.3.0');
 define('CMS_IMPORTER_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_IMPORTER_PLUGIN_URL', '/plugins/cms-importer/');
 define('CMS_IMPORTER_TEXT_DOMAIN', 'cms-importer');
@@ -55,8 +54,8 @@ final class CMS_Importer
             CMS\Hooks::addAction('cms_init',        [$this, 'init'],          10);
             CMS\Hooks::addAction('plugin_activated', [$this, 'on_activation'], 10);
             CMS\Hooks::addAction('cms_admin_menu',   [$this, 'register_admin_pages'], 20);
-            CMS\Hooks::addAction('head',             [$this, 'enqueue_styles'], 10);
-            CMS\Hooks::addAction('body_end',         [$this, 'enqueue_scripts'], 10);
+            CMS\Hooks::addAction('admin_head',       [$this, 'enqueue_styles'], 10);
+            CMS\Hooks::addAction('admin_body_end',   [$this, 'enqueue_scripts'], 10);
         }
     }
 
@@ -80,6 +79,10 @@ final class CMS_Importer
 
     public function enqueue_styles(): void
     {
+        if (!$this->is_importer_admin_request()) {
+            return;
+        }
+
         $css_file = CMS_IMPORTER_PLUGIN_DIR . 'assets/css/importer.css';
         if (file_exists($css_file)) {
             echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_IMPORTER_PLUGIN_URL . 'assets/css/importer.css')
@@ -89,11 +92,26 @@ final class CMS_Importer
 
     public function enqueue_scripts(): void
     {
+        if (!$this->is_importer_admin_request()) {
+            return;
+        }
+
         $js_file = CMS_IMPORTER_PLUGIN_DIR . 'assets/js/importer.js';
         if (file_exists($js_file)) {
             echo '<script src="' . htmlspecialchars(CMS_IMPORTER_PLUGIN_URL . 'assets/js/importer.js')
                 . '?v=' . filemtime($js_file) . '" defer></script>' . "\n";
         }
+    }
+
+    private function is_importer_admin_request(): bool
+    {
+        $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        if ($requestUri === '') {
+            return false;
+        }
+
+        return str_contains($requestUri, '/admin/plugins/cms-importer/')
+            || str_contains($requestUri, '/admin/plugins/cms-importer');
     }
 }
 

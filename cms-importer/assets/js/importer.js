@@ -1,130 +1,156 @@
-﻿/**
- * CMS WordPress Importer – Admin JS  v2.0
- * Drag&Drop, AJAX-Upload, Tabs, Folder-Import, Progress
+/**
+ * CMS WordPress Importer – Admin JS
+ * Upload, Dry-Run, Import, Tabs, Ordner-Import und Preview-Rendering
  */
 (function () {
     'use strict';
 
-    // ── Tabs ───────────────────────────────────────────────────────────────
     document.querySelectorAll('.ci-tab[data-tab]').forEach(function (tab) {
         tab.addEventListener('click', function () {
-            var target = tab.dataset.tab;
-            document.querySelectorAll('.ci-tab').forEach(function (t) {
-                t.classList.toggle('ci-tab--active', t.dataset.tab === target);
-            });
-            document.querySelectorAll('.ci-tab-panel').forEach(function (p) {
-                p.classList.toggle('ci-tab-panel--active', p.id === 'tab-' + target);
-            });
+            activateTab(tab.dataset.tab || 'upload');
         });
     });
 
-    // ── Upload-Formular ────────────────────────────────────────────────────
-    var form         = document.getElementById('js-import-form');
-    var fileInput    = document.getElementById('wxr_file');
-    var nameEl       = document.getElementById('js-filename');
-    var submitBtn    = document.getElementById('js-submit-btn');
-    var btnText      = document.getElementById('js-btn-text');
-    var btnSpin      = document.getElementById('js-btn-spin');
-    var noticeEl     = document.getElementById('js-import-notice');
-    var progressEl   = document.getElementById('js-progress');
-    var progFill     = document.getElementById('js-prog-fill');
-    var progLabel    = document.getElementById('js-prog-label');
-    var btnSelect    = document.getElementById('js-btn-select');
-    var btnUpload    = document.getElementById('js-btn-upload');
+    var form = document.getElementById('js-import-form');
+    var fileInput = document.getElementById('wxr_file');
+    var nameEl = document.getElementById('js-filename');
+    var previewBtn = document.getElementById('js-preview-btn');
+    var submitBtn = document.getElementById('js-submit-btn');
+    var previewText = document.getElementById('js-preview-text');
+    var previewSpin = document.getElementById('js-preview-spin');
+    var submitText = document.getElementById('js-btn-text');
+    var submitSpin = document.getElementById('js-btn-spin');
+    var noticeEl = document.getElementById('js-import-notice');
+    var progressEl = document.getElementById('js-progress');
+    var progFill = document.getElementById('js-prog-fill');
+    var progLabel = document.getElementById('js-prog-label');
+    var btnSelect = document.getElementById('js-btn-select');
+    var btnUpload = document.getElementById('js-btn-upload');
     var uploadStatus = document.getElementById('js-upload-status');
     var uploadedFile = document.getElementById('js-uploaded-file');
+    var previewPanel = document.getElementById('js-preview-panel');
+    var previewSummary = document.getElementById('js-preview-summary');
+    var previewReasons = document.getElementById('js-preview-reasons');
+    var previewTableWrap = document.getElementById('js-preview-table-wrap');
+    var previewTableBody = document.getElementById('js-preview-table-body');
+    var previewNote = document.getElementById('js-preview-note');
 
-    if (!form || !fileInput) { return; }
+    if (!form || !fileInput) {
+        return;
+    }
 
-    // ── Schritt 1: Datei auswählen ──────────────────────────────────────
     if (btnSelect) {
-        btnSelect.addEventListener('click', function () { fileInput.click(); });
+        btnSelect.addEventListener('click', function () {
+            fileInput.click();
+        });
     }
 
     fileInput.addEventListener('change', function () {
         var file = fileInput.files[0] || null;
-        if (file) {
-            if (nameEl)       { nameEl.textContent = '\u2713 ' + file.name + ' (' + fmtBytes(file.size) + ')'; }
-            if (btnUpload)    { btnUpload.disabled = false; }
-            if (submitBtn)    { submitBtn.disabled = true; }
-            if (uploadedFile) { uploadedFile.value = ''; }
-            if (uploadStatus) { uploadStatus.textContent = ''; uploadStatus.className = 'ci-wizard-step__status'; }
-            setStepState(2, 'active');
-            setStepState(3, 'pending');
-        } else {
-            if (nameEl)    { nameEl.textContent = ''; }
+        hidePreview();
+
+        if (!file) {
+            if (nameEl) { nameEl.textContent = ''; }
             if (btnUpload) { btnUpload.disabled = true; }
+            if (previewBtn) { previewBtn.disabled = true; }
             if (submitBtn) { submitBtn.disabled = true; }
             setStepState(2, 'pending');
             setStepState(3, 'pending');
+            return;
         }
+
+        if (nameEl) {
+            nameEl.textContent = '✓ ' + file.name + ' (' + fmtBytes(file.size) + ')';
+        }
+        if (btnUpload) { btnUpload.disabled = false; }
+        if (previewBtn) { previewBtn.disabled = true; }
+        if (submitBtn) { submitBtn.disabled = true; }
+        if (uploadedFile) { uploadedFile.value = ''; }
+        if (uploadStatus) {
+            uploadStatus.textContent = '';
+            uploadStatus.className = 'ci-wizard-step__status';
+        }
+        setStepState(2, 'active');
+        setStepState(3, 'pending');
     });
 
-    // ── Schritt 2: Hochladen ──────────────────────────────────────────
     if (btnUpload) {
         btnUpload.addEventListener('click', function () {
             var file = fileInput.files[0];
-            if (!file) { return; }
+            if (!file) {
+                return;
+            }
+
             if (!file.name.toLowerCase().endsWith('.xml')) {
                 showNotice('Nur .xml-Dateien sind erlaubt.', 'error');
                 return;
             }
+
             if (file.size > 52428800) {
-                showNotice('Datei zu gro\u00df (max. 50\u202fMB). Gew\u00e4hlt: ' + fmtBytes(file.size), 'error');
+                showNotice('Datei zu groß (max. 50 MB). Gewählt: ' + fmtBytes(file.size), 'error');
                 return;
             }
 
+            hidePreview();
             btnUpload.disabled = true;
-            if (uploadStatus) { uploadStatus.textContent = '\u23f3 Hochladen\u2026'; uploadStatus.className = 'ci-wizard-step__status ci-wizard-step__status--busy'; }
-            setProgress(0, 'Hochladen\u2026');
-            if (progressEl) { progressEl.hidden = false; }
+            if (uploadStatus) {
+                uploadStatus.textContent = '⏳ Hochladen…';
+                uploadStatus.className = 'ci-wizard-step__status ci-wizard-step__status--busy';
+            }
+            showProgress('Hochladen…', 0);
 
-            var fd  = new FormData(form);
+            var fd = new FormData(form);
             var xhr = new XMLHttpRequest();
             xhr.open('POST', window.location.pathname, true);
             xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
-            xhr.upload.addEventListener('progress', function (ev) {
-                if (ev.lengthComputable) {
-                    setProgress(Math.round((ev.loaded / ev.total) * 100),
-                        'Hochladen\u2026 ' + fmtBytes(ev.loaded) + ' / ' + fmtBytes(ev.total));
+            xhr.upload.addEventListener('progress', function (event) {
+                if (event.lengthComputable) {
+                    showProgress('Hochladen… ' + fmtBytes(event.loaded) + ' / ' + fmtBytes(event.total), Math.round((event.loaded / event.total) * 100));
                 }
             });
 
             xhr.addEventListener('load', function () {
-                if (progressEl) { progressEl.hidden = true; }
+                hideProgress();
+
                 if (xhr.status !== 200) {
                     btnUpload.disabled = false;
-                    if (uploadStatus) { uploadStatus.textContent = ''; uploadStatus.className = 'ci-wizard-step__status'; }
-                    showNotice('Server-Fehler: HTTP\u00a0' + xhr.status, 'error');
+                    resetUploadStatus();
+                    showNotice('Server-Fehler: HTTP ' + xhr.status, 'error');
                     return;
                 }
-                var resp;
-                try { resp = JSON.parse(xhr.responseText); } catch (_) {
+
+                var response = parseJson(xhr.responseText);
+                if (!response) {
                     btnUpload.disabled = false;
-                    showNotice('Ung\u00fcltige Server-Antwort.', 'error');
+                    resetUploadStatus();
+                    showNotice('Ungültige Server-Antwort.', 'error');
                     return;
                 }
-                if (resp.success) {
-                    if (uploadedFile) { uploadedFile.value = resp.filename || ''; }
-                    if (uploadStatus) {
-                        uploadStatus.textContent = '\u2713 ' + resp.filename + (resp.size ? ' (' + resp.size + ')' : '');
-                        uploadStatus.className   = 'ci-wizard-step__status ci-wizard-step__status--ok';
-                    }
-                    if (submitBtn) { submitBtn.disabled = false; }
-                    setStepState(2, 'done');
-                    setStepState(3, 'active');
-                } else {
+
+                if (!response.success) {
                     btnUpload.disabled = false;
-                    if (uploadStatus) { uploadStatus.textContent = ''; uploadStatus.className = 'ci-wizard-step__status'; }
-                    showNotice(resp.error || 'Upload fehlgeschlagen.', 'error');
+                    resetUploadStatus();
+                    showNotice(response.error || 'Upload fehlgeschlagen.', 'error');
+                    return;
                 }
+
+                if (uploadedFile) { uploadedFile.value = response.filename || ''; }
+                if (uploadStatus) {
+                    uploadStatus.textContent = '✓ ' + (response.filename || '') + (response.size ? ' (' + response.size + ')' : '');
+                    uploadStatus.className = 'ci-wizard-step__status ci-wizard-step__status--ok';
+                }
+
+                if (previewBtn) { previewBtn.disabled = false; }
+                if (submitBtn) { submitBtn.disabled = false; }
+                setStepState(2, 'done');
+                setStepState(3, 'active');
             });
 
             xhr.addEventListener('error', function () {
                 btnUpload.disabled = false;
-                if (progressEl) { progressEl.hidden = true; }
-                if (uploadStatus) { uploadStatus.textContent = ''; uploadStatus.className = 'ci-wizard-step__status'; }
+                hideProgress();
+                resetUploadStatus();
                 showNotice('Netzwerkfehler beim Upload.', 'error');
             });
 
@@ -132,164 +158,399 @@
         });
     }
 
-    // ── Schritt 3: Import starten ─────────────────────────────────────
+    if (previewBtn) {
+        previewBtn.addEventListener('click', function () {
+            runUploadedAction('preview');
+        });
+    }
+
     if (submitBtn) {
         submitBtn.addEventListener('click', function () {
-            var filename = uploadedFile ? uploadedFile.value : '';
-            if (!filename) {
-                showNotice('Bitte zun\u00e4chst eine Datei hochladen (Schritt\u00a02).', 'error');
+            runUploadedAction('import');
+        });
+    }
+
+    document.querySelectorAll('.js-folder-import-form').forEach(function (folderForm) {
+        folderForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+            runFolderAction(folderForm, 'import');
+        });
+
+        var folderPreviewBtn = folderForm.querySelector('.js-folder-preview-btn');
+        if (folderPreviewBtn) {
+            folderPreviewBtn.addEventListener('click', function () {
+                runFolderAction(folderForm, 'preview');
+            });
+        }
+    });
+
+    function runUploadedAction(mode) {
+        var filename = uploadedFile ? uploadedFile.value : '';
+        if (!filename) {
+            showNotice('Bitte zunächst eine Datei hochladen.', 'error');
+            return;
+        }
+
+        var fd = new FormData();
+        var nonceEl = form.querySelector('[name="_nonce"]');
+        fd.append('_nonce', nonceEl ? nonceEl.value : '');
+        fd.append('cms_action', mode === 'preview' ? 'cms_importer_preview' : 'cms_importer_folder_import');
+        fd.append('import_file', filename);
+        fd.append('import_source', 'uploads');
+        appendCheckedOptions(fd, form);
+
+        setPrimaryBusy(mode, true);
+        showProgress(mode === 'preview' ? 'Dry Run wird erstellt…' : 'Importiere…', 10);
+        sendActionRequest(fd, mode, noticeEl, function () {
+            if (mode === 'preview') {
+                setPrimaryBusy(mode, false);
+            }
+        });
+    }
+
+    function runFolderAction(folderForm, mode) {
+        var importBtn = folderForm.querySelector('.js-folder-import-btn');
+        var previewBtnLocal = folderForm.querySelector('.js-folder-preview-btn');
+        var notice = document.getElementById('js-folder-notice');
+
+        if (importBtn) { importBtn.disabled = true; }
+        if (previewBtnLocal) { previewBtnLocal.disabled = true; }
+        if (mode === 'import' && importBtn) { importBtn.textContent = '↻ Importiere…'; }
+        if (mode === 'preview' && previewBtnLocal) { previewBtnLocal.textContent = '⏳ Vorschau…'; }
+
+        var fd = new FormData(folderForm);
+        fd.set('cms_action', mode === 'preview' ? 'cms_importer_preview' : 'cms_importer_folder_import');
+
+        sendActionRequest(fd, mode, notice, function () {
+            if (importBtn) {
+                importBtn.disabled = false;
+                importBtn.textContent = '▶ Importieren';
+            }
+            if (previewBtnLocal) {
+                previewBtnLocal.disabled = false;
+                previewBtnLocal.textContent = '👁 Vorschau';
+            }
+        });
+    }
+
+    function sendActionRequest(formData, mode, noticeTarget, onDone) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', window.location.pathname, true);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+        xhr.addEventListener('load', function () {
+            hideProgress();
+
+            if (xhr.status !== 200) {
+                showScopedNotice(noticeTarget, 'Server-Fehler: HTTP ' + xhr.status, 'error');
+                if (mode === 'import') { setPrimaryBusy(mode, false); }
+                if (typeof onDone === 'function') { onDone(); }
                 return;
             }
 
-            setBusy(true);
-            setProgress(0, 'Importiere\u2026');
-            if (progressEl) { progressEl.hidden = false; }
+            var response = parseJson(xhr.responseText);
+            if (!response) {
+                showScopedNotice(noticeTarget, 'Ungültige Server-Antwort.', 'error');
+                if (mode === 'import') { setPrimaryBusy(mode, false); }
+                if (typeof onDone === 'function') { onDone(); }
+                return;
+            }
 
-            var fd = new FormData();
-            var nonceEl = form.querySelector('[name="_nonce"]');
-            fd.append('_nonce',      nonceEl ? nonceEl.value : '');
-            fd.append('cms_action',  'cms_importer_folder_import');
-            fd.append('import_file', filename);
-            form.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
-                if (cb.checked) { fd.append(cb.name, cb.value); }
-            });
+            if (!response.success) {
+                showScopedNotice(noticeTarget, response.error || (mode === 'preview' ? 'Vorschau fehlgeschlagen.' : 'Import fehlgeschlagen.'), 'error');
+                if (mode === 'import') { setPrimaryBusy(mode, false); }
+                if (typeof onDone === 'function') { onDone(); }
+                return;
+            }
 
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', window.location.pathname, true);
-            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            var result = response.result || {};
+            var message = response.message || (mode === 'preview' ? 'Vorschau erstellt.' : 'Import abgeschlossen.');
+            var noticeType = mode === 'preview' ? 'success' : ((result.errors || 0) > 0 ? 'warning' : 'success');
+            showScopedNotice(noticeTarget, message, noticeType, result.meta_report_download_url || '', result.meta_report_markdown_url || '');
 
-            xhr.addEventListener('load', function () {
-                setProgress(100, 'Fertig!');
-                if (progressEl) { progressEl.hidden = true; }
-                if (xhr.status !== 200) {
-                    setBusy(false);
-                    showNotice('Server-Fehler: HTTP\u00a0' + xhr.status, 'error');
-                    return;
+            if (mode === 'preview') {
+                renderPreview(result);
+                if (previewPanel) {
+                    previewPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
-                var resp;
-                try { resp = JSON.parse(xhr.responseText); } catch (_) {
-                    setBusy(false);
-                    showNotice('Ung\u00fcltige Server-Antwort.', 'error');
-                    return;
+            } else {
+                hidePreview();
+                if (result.total !== undefined) {
+                    updateStats(result);
                 }
-                if (resp.success) {
-                    var r   = resp.result || {};
-                    var msg = resp.message || 'Import abgeschlossen.';
-                    showNotice(msg, r.errors > 0 ? 'warning' : 'success');
-                    if (r.total !== undefined) { updateStats(r); }
-                    setTimeout(function () { window.location.reload(); }, 2000);
-                } else {
-                    setBusy(false);
-                    showNotice(resp.error || 'Import fehlgeschlagen.', 'error');
-                }
-            });
+                setTimeout(function () {
+                    window.location.reload();
+                }, 1800);
+            }
 
-            xhr.addEventListener('error', function () {
-                setBusy(false);
-                if (progressEl) { progressEl.hidden = true; }
-                showNotice('Netzwerkfehler beim Import.', 'error');
-            });
+            if (mode === 'import') {
+                setPrimaryBusy(mode, false);
+            }
+            if (typeof onDone === 'function') { onDone(); }
+        });
 
-            xhr.send(fd);
+        xhr.addEventListener('error', function () {
+            hideProgress();
+            showScopedNotice(noticeTarget, mode === 'preview' ? 'Netzwerkfehler bei der Vorschau.' : 'Netzwerkfehler beim Import.', 'error');
+            if (mode === 'import') { setPrimaryBusy(mode, false); }
+            if (typeof onDone === 'function') { onDone(); }
+        });
+
+        xhr.send(formData);
+    }
+
+    function appendCheckedOptions(targetFormData, sourceForm) {
+        sourceForm.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+            if (checkbox.checked) {
+                targetFormData.append(checkbox.name, checkbox.value);
+            }
         });
     }
 
-    // ── Ordner-Import-Formulare ────────────────────────────────────────────
-    document.querySelectorAll('.js-folder-import-form').forEach(function (ff) {
-        ff.addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            var btn    = ff.querySelector('.js-folder-import-btn');
-            var notice = document.getElementById('js-folder-notice');
-
-            if (btn) { btn.disabled = true; btn.textContent = '\u8635 Importiere\u2026'; }
-
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', window.location.pathname, true);
-            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-
-            xhr.addEventListener('load', function () {
-                if (btn) { btn.disabled = false; btn.textContent = '\u25b6 Importieren'; }
-
-                var resp;
-                try { resp = JSON.parse(xhr.responseText); }
-                catch (_) {
-                    showFolderNotice('Ung\u00fcltige Server-Antwort.', 'error', notice);
-                    return;
-                }
-
-                if (resp.success) {
-                    var r   = resp.result || {};
-                    var msg = resp.message || 'Import abgeschlossen.';
-                    showFolderNotice(msg, r.errors > 0 ? 'warning' : 'success', notice);
-                    if (r.total !== undefined) { updateStats(r); }
-                    setTimeout(function () { window.location.reload(); }, 2200);
-                } else {
-                    showFolderNotice(resp.error || 'Fehler beim Import.', 'error', notice);
-                }
-            });
-
-            xhr.addEventListener('error', function () {
-                if (btn) { btn.disabled = false; btn.textContent = '\u25b6 Importieren'; }
-                showFolderNotice('Netzwerkfehler.', 'error', notice);
-            });
-
-            xhr.send(new FormData(ff));
-        });
-    });
-
-    // ── Hilfsfunktionen ────────────────────────────────────────────────────
-
-    function setBusy(busy) {
+    function setPrimaryBusy(mode, busy) {
+        if (previewBtn) { previewBtn.disabled = busy; }
         if (submitBtn) { submitBtn.disabled = busy; }
-        if (btnText) btnText.hidden =  busy;
-        if (btnSpin) btnSpin.hidden = !busy;
+        if (previewText) { previewText.hidden = busy && mode === 'preview'; }
+        if (previewSpin) { previewSpin.hidden = !(busy && mode === 'preview'); }
+        if (submitText) { submitText.hidden = busy && mode === 'import'; }
+        if (submitSpin) { submitSpin.hidden = !(busy && mode === 'import'); }
     }
 
-    function setStepState(num, state) {
-        var steps = { 1: document.getElementById('ci-step-1'), 2: document.getElementById('ci-step-2'), 3: document.getElementById('ci-step-3') };
-        var seps  = { 1: document.getElementById('ci-sep-1'),  2: document.getElementById('ci-sep-2') };
-        var el    = steps[num];
-        if (!el) { return; }
-        el.className = 'ci-wizard-step' +
+    function setStepState(stepNumber, state) {
+        var steps = {
+            1: document.getElementById('ci-step-1'),
+            2: document.getElementById('ci-step-2'),
+            3: document.getElementById('ci-step-3')
+        };
+        var separators = {
+            1: document.getElementById('ci-sep-1'),
+            2: document.getElementById('ci-sep-2')
+        };
+
+        var step = steps[stepNumber];
+        if (!step) {
+            return;
+        }
+
+        step.className = 'ci-wizard-step' +
             (state === 'active' ? ' ci-wizard-step--active' : state === 'done' ? ' ci-wizard-step--done' : '');
-        var sep = seps[num];
-        if (sep) { sep.className = 'ci-wizard-sep' + (state === 'done' ? ' ci-wizard-sep--done' : ''); }
+
+        var separator = separators[stepNumber];
+        if (separator) {
+            separator.className = 'ci-wizard-sep' + (state === 'done' ? ' ci-wizard-sep--done' : '');
+        }
     }
 
-    function setProgress(pct, label) {
-        if (progFill)  progFill.style.width   = pct + '%';
-        if (progLabel && label) progLabel.textContent = label;
+    function activateTab(target) {
+        document.querySelectorAll('.ci-tab').forEach(function (tab) {
+            tab.classList.toggle('ci-tab--active', tab.dataset.tab === target);
+        });
+        document.querySelectorAll('.ci-tab-panel').forEach(function (panel) {
+            panel.classList.toggle('ci-tab-panel--active', panel.id === 'tab-' + target);
+        });
     }
 
-    function showNotice(msg, type) {
-        if (!noticeEl) { return; }
-        noticeEl.className   = 'ci-notice ci-notice--' + type;
-        noticeEl.textContent = msg;
-        noticeEl.hidden      = false;
+    function showProgress(label, percent) {
+        if (progressEl) { progressEl.hidden = false; }
+        if (progFill) { progFill.style.width = percent + '%'; }
+        if (progLabel) { progLabel.textContent = label; }
+    }
+
+    function hideProgress() {
+        if (progressEl) { progressEl.hidden = true; }
+        if (progFill) { progFill.style.width = '0%'; }
+    }
+
+    function resetUploadStatus() {
+        if (!uploadStatus) {
+            return;
+        }
+        uploadStatus.textContent = '';
+        uploadStatus.className = 'ci-wizard-step__status';
+    }
+
+    function showNotice(msg, type, reportUrl, markdownUrl) {
+        if (!noticeEl) {
+            return;
+        }
+        noticeEl.className = 'ci-notice ci-notice--' + type;
+        noticeEl.innerHTML = buildNoticeHtml(msg, reportUrl, markdownUrl);
+        noticeEl.hidden = false;
         noticeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    function showFolderNotice(msg, type, el) {
-        if (!el) { return; }
-        el.className   = 'ci-notice ci-notice--' + type;
-        el.textContent = msg;
-        el.hidden      = false;
+    function showFolderNotice(msg, type, element, reportUrl, markdownUrl) {
+        if (!element) {
+            return;
+        }
+        element.className = 'ci-notice ci-notice--' + type;
+        element.innerHTML = buildNoticeHtml(msg, reportUrl, markdownUrl);
+        element.hidden = false;
     }
 
-    function updateStats(r) {
+    function showScopedNotice(target, msg, type, reportUrl, markdownUrl) {
+        if (target === noticeEl) {
+            showNotice(msg, type, reportUrl, markdownUrl);
+            return;
+        }
+
+        showFolderNotice(msg, type, target, reportUrl, markdownUrl);
+    }
+
+    function buildNoticeHtml(msg, reportUrl, markdownUrl) {
+        var html = escapeHtml(msg || '');
+        if (reportUrl) {
+            html += ' <a class="ci-notice__link" href="' + escapeHtml(reportUrl) + '">📄 Bericht öffnen</a>';
+        }
+        if (markdownUrl) {
+            html += ' <a class="ci-notice__link" href="' + escapeHtml(markdownUrl) + '">📝 Markdown (.md)</a>';
+        }
+        return html;
+    }
+
+    function updateStats(result) {
         var box = document.getElementById('js-stats-box');
-        if (!box) { return; }
+        if (!box) {
+            return;
+        }
+
         box.hidden = false;
-        var vals = box.querySelectorAll('.ci-stat__val');
-        var data = [r.total || 0, r.imported || 0, r.skipped || 0, r.errors || 0, r.images_downloaded || 0, r.meta_keys || 0];
-        vals.forEach(function (el, i) { if (data[i] !== undefined) el.textContent = data[i]; });
+        var values = box.querySelectorAll('.ci-stat__val');
+        var data = [
+            result.total || 0,
+            result.imported || 0,
+            result.skipped || 0,
+            result.errors || 0,
+            result.images_downloaded || 0,
+            result.meta_keys || 0
+        ];
+        values.forEach(function (value, index) {
+            if (data[index] !== undefined) {
+                value.textContent = data[index];
+            }
+        });
     }
 
-    function fmtBytes(b) {
-        if (b < 1024)    { return b + ' B'; }
-        if (b < 1048576) { return (b / 1024).toFixed(1) + ' KB'; }
-        return (b / 1048576).toFixed(1) + ' MB';
+    function renderPreview(result) {
+        if (!previewPanel || !previewSummary || !previewReasons || !previewTableWrap || !previewTableBody || !previewNote) {
+            return;
+        }
+
+        previewPanel.hidden = false;
+        previewSummary.innerHTML = [
+            buildPreviewStat('Gesamt', result.total || 0, ''),
+            buildPreviewStat('Würde importieren', result.would_import || 0, 'ci-preview-stat--ok'),
+            buildPreviewStat('Würde überspringen', result.would_skip || 0, 'ci-preview-stat--warn'),
+            buildPreviewStat('Anhänge erkannt', result.attachments || 0, ''),
+            buildPreviewStat('Bildkandidaten', result.images_detected || 0, 'ci-preview-stat--img'),
+            buildPreviewStat('Meta-Keys offen', result.meta_keys || 0, 'ci-preview-stat--meta')
+        ].join('');
+
+        renderPreviewReasons(result.skip_reasons || {});
+        renderPreviewItems(result.items || []);
+
+        var notes = [];
+        if ((result.table_shortcodes_found || 0) > 0) {
+            notes.push((result.table_shortcodes_found || 0) + ' WordPress-Tabellen-Shortcodes gefunden, ' + (result.table_shortcodes_resolved || 0) + ' davon aktuell auflösbar');
+        }
+        if (result.items_truncated) {
+            notes.push('Es werden nur die ersten ' + (result.items_shown || 0) + ' von ' + (result.items_total || 0) + ' Elementen gezeigt');
+        }
+        previewNote.textContent = notes.join(' | ');
+        previewNote.hidden = notes.length === 0;
     }
 
+    function renderPreviewReasons(reasons) {
+        var normalizedReasons = {};
+        Object.keys(reasons || {}).forEach(function (key) {
+            var normalizedKey = (key || '').trim() || 'Unbekannter Überspring-Grund';
+            normalizedReasons[normalizedKey] = (normalizedReasons[normalizedKey] || 0) + Number(reasons[key] || 0);
+        });
+
+        var keys = Object.keys(normalizedReasons);
+        if (!keys.length) {
+            previewReasons.hidden = true;
+            previewReasons.innerHTML = '';
+            return;
+        }
+
+        var html = '<h4 class="ci-preview-reasons__title">Überspring-Gründe</h4><ul class="ci-preview-reasons__list">';
+        keys.forEach(function (key) {
+            html += '<li><span>' + escapeHtml(key) + '</span><strong>' + escapeHtml(normalizedReasons[key]) + '</strong></li>';
+        });
+        html += '</ul>';
+        previewReasons.innerHTML = html;
+        previewReasons.hidden = false;
+    }
+
+    function renderPreviewItems(items) {
+        if (!items.length) {
+            previewTableBody.innerHTML = '';
+            previewTableWrap.hidden = true;
+            return;
+        }
+
+        var rows = [];
+        items.forEach(function (item) {
+            var tagText = Array.isArray(item.tags) ? item.tags.join(', ') : '';
+            var reasonText = ((item.reason || '').trim() || (item.action === 'skip' ? 'Unbekannter Überspring-Grund' : (item.target_hint || '')));
+            var details = [];
+            if (item.category) { details.push('Kategorie: ' + escapeHtml(item.category)); }
+            if (tagText) { details.push('Tags: ' + escapeHtml(tagText)); }
+            if (item.image_candidates) { details.push('Bildkandidaten: ' + escapeHtml(item.image_candidates)); }
+            if (item.featured_image) { details.push('Featured: ' + escapeHtml(item.featured_image)); }
+            if (item.table_shortcodes_found) { details.push('Tabellen-Shortcodes: ' + escapeHtml(item.table_shortcodes_found) + ' / auflösbar: ' + escapeHtml(item.table_shortcodes_resolved || 0)); }
+            if (item.table_rows || item.table_columns) { details.push('Tabellenstruktur: ' + escapeHtml(item.table_columns || 0) + ' Spalten, ' + escapeHtml(item.table_rows || 0) + ' Zeilen'); }
+            if (item.unknown_meta_count) { details.push('Unbekannte Meta-Felder: ' + escapeHtml(item.unknown_meta_count)); }
+            if (Array.isArray(item.table_targets) && item.table_targets.length) { details.push('Kurzcode-Ziele: ' + escapeHtml(item.table_targets.join(', '))); }
+
+            rows.push(
+                '<tr>' +
+                    '<td><strong>' + escapeHtml(item.source_title || '(ohne Titel)') + '</strong><div class="ci-preview-meta">' + escapeHtml(item.source_label || item.source_type || '') + ' · WP-ID ' + escapeHtml(item.source_wp_id || 0) + ' · Status ' + escapeHtml(item.source_status || '') + '</div></td>' +
+                    '<td><strong>' + escapeHtml(item.target_type || '') + '</strong><div class="ci-preview-meta">Slug: ' + escapeHtml(item.target_slug || '—') + '</div><div class="ci-preview-meta">' + escapeHtml(item.target_url || item.target_hint || '') + '</div></td>' +
+                    '<td><span class="ci-preview-pill ' + (item.action === 'import' ? 'ci-preview-pill--ok' : 'ci-preview-pill--warn') + '">' + (item.action === 'import' ? 'Würde importieren' : 'Würde überspringen') + '</span><div class="ci-preview-meta">' + escapeHtml(reasonText) + '</div></td>' +
+                    '<td>' + (details.length ? '<ul class="ci-preview-details"><li>' + details.join('</li><li>') + '</li></ul>' : '<span class="ci-muted">Keine Zusatzdetails</span>') + '</td>' +
+                '</tr>'
+            );
+        });
+
+        previewTableBody.innerHTML = rows.join('');
+        previewTableWrap.hidden = false;
+    }
+
+    function hidePreview() {
+        if (previewPanel) { previewPanel.hidden = true; }
+        if (previewSummary) { previewSummary.innerHTML = ''; }
+        if (previewReasons) { previewReasons.innerHTML = ''; previewReasons.hidden = true; }
+        if (previewTableBody) { previewTableBody.innerHTML = ''; }
+        if (previewTableWrap) { previewTableWrap.hidden = true; }
+        if (previewNote) { previewNote.textContent = ''; previewNote.hidden = true; }
+    }
+
+    function buildPreviewStat(label, value, extraClass) {
+        return '<div class="ci-preview-stat ' + (extraClass || '') + '"><span class="ci-preview-stat__value">' + escapeHtml(value) + '</span><span class="ci-preview-stat__label">' + escapeHtml(label) + '</span></div>';
+    }
+
+    function parseJson(text) {
+        try {
+            return JSON.parse(text);
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function fmtBytes(bytes) {
+        if (bytes < 1024) { return bytes + ' B'; }
+        if (bytes < 1048576) { return (bytes / 1024).toFixed(1) + ' KB'; }
+        return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 })();

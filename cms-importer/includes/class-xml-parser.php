@@ -6,7 +6,7 @@
  * strukturierte Daten für den Import zurück.
  *
  * @package CMS_Importer
- * @since   1.0.0
+ * @since   1.1.0
  */
 
 declare(strict_types=1);
@@ -29,31 +29,19 @@ class CMS_Importer_XML_Parser
     /** Maximale Dateigröße (50 MB) */
     private const MAX_FILE_SIZE = 52_428_800;
 
-    /**
-     * Parst eine WXR-XML-Datei und gibt die Daten als Array zurück.
-     *
-     * @param  string $file_path Absoluter Pfad zur XML-Datei
-     * @return array{
-     *   site:    array,
-     *   authors: array,
-     *   posts:   array,
-     *   pages:   array,
-     *   others:  array,
-     *   errors:  string[]
-     * }
-     */
     public function parse(string $file_path): array
     {
         $result = [
-            'site'    => [],
-            'authors' => [],
-            'posts'   => [],
-            'pages'   => [],
-            'others'  => [],
-            'errors'  => [],
+            'site'        => [],
+            'authors'     => [],
+            'attachments' => [],
+            'posts'       => [],
+            'pages'       => [],
+            'tables'      => [],
+            'others'      => [],
+            'errors'      => [],
         ];
 
-        // ── Datei-Sicherheitschecks ────────────────────────────────────────
         if (!file_exists($file_path)) {
             $result['errors'][] = 'Datei nicht gefunden: ' . $file_path;
             return $result;
@@ -70,19 +58,12 @@ class CMS_Importer_XML_Parser
             return $result;
         }
 
-        // ── XML-Laden ──────────────────────────────────────────────────────
-        // C-09: XXE-Schutz – keine externen Entities, kein Netzwerkzugriff
-        // PHP 8.0+ deaktiviert externe Entities standardmäßig; für PHP < 8 explizit:
         if (PHP_VERSION_ID < 80000) {
             /** @phpstan-ignore-next-line */
-            libxml_disable_entity_loader(true); // @deprecated seit PHP 8.0
+            libxml_disable_entity_loader(true);
         }
 
         $prev_errors = libxml_use_internal_errors(true);
-        // LIBXML_NONET   → blockiert Netzwerkzugriffe (XXE via HTTP/FTP)
-        // LIBXML_NOCDATA → wandelt CDATA in Textknoten (kein Raw-XML-Injection)
-        // LIBXML_DTDATTR → DTD-Attribute nicht laden
-        // LIBXML_NOENT   wird NICHT gesetzt – verhindert rekursive Entity-Expansion (Billion Laughs)
         $xml = simplexml_load_file(
             $file_path,
             'SimpleXMLElement',
@@ -99,40 +80,49 @@ class CMS_Importer_XML_Parser
             return $result;
         }
 
-        // ── Namespace-Register ─────────────────────────────────────────────
-        $xml->registerXPathNamespace('wp',      self::NS_WP);
+        $xml->registerXPathNamespace('wp', self::NS_WP);
         $xml->registerXPathNamespace('content', self::NS_CONTENT);
         $xml->registerXPathNamespace('excerpt', self::NS_EXCERPT);
-        $xml->registerXPathNamespace('dc',      self::NS_DC);
+        $xml->registerXPathNamespace('dc', self::NS_DC);
 
         $channel = $xml->channel;
 
-        // ── Site-Info ──────────────────────────────────────────────────────
         $result['site'] = [
-            'title'        => (string) ($channel->title ?? ''),
-            'link'         => (string) ($channel->link ?? ''),
-            'description'  => (string) ($channel->description ?? ''),
-            'language'     => (string) ($channel->language ?? ''),
-            'wxr_version'  => (string) ($channel->children(self::NS_WP)->wxr_version ?? ''),
-            'base_site_url'=> (string) ($channel->children(self::NS_WP)->base_site_url ?? ''),
+            'title'         => (string) ($channel->title ?? ''),
+            'link'          => (string) ($channel->link ?? ''),
+            'description'   => (string) ($channel->description ?? ''),
+            'language'      => (string) ($channel->language ?? ''),
+            'wxr_version'   => (string) ($channel->children(self::NS_WP)->wxr_version ?? ''),
+            'base_site_url' => (string) ($channel->children(self::NS_WP)->base_site_url ?? ''),
+            'base_blog_url' => (string) ($channel->children(self::NS_WP)->base_blog_url ?? ''),
         ];
 
-        // ── Autoren ────────────────────────────────────────────────────────
         $result['authors'] = $this->parse_authors($channel, self::NS_WP);
 
-        // ── Items (Posts, Pages, sonstige CPTs) ───────────────────────────
         foreach ($channel->item as $item) {
             $parsed = $this->parse_item($item);
-            if (empty($parsed)) {
+            if ($parsed === null) {
                 continue;
             }
 
-            switch ($parsed['post_type']) {
+            if (($parsed['kind'] ?? 'content') === 'attachment') {
+                $attachment = $parsed['attachment'] ?? null;
+                $wpId = (int) ($attachment['wp_id'] ?? 0);
+                if (is_array($attachment) && $wpId > 0) {
+                    $result['attachments'][$wpId] = $attachment;
+                }
+                continue;
+            }
+
+            switch ((string) ($parsed['post_type'] ?? '')) {
                 case 'post':
                     $result['posts'][] = $parsed;
                     break;
                 case 'page':
                     $result['pages'][] = $parsed;
+                    break;
+                case 'tablepress_table':
+                    $result['tables'][] = $parsed;
                     break;
                 default:
                     $result['others'][] = $parsed;
@@ -140,16 +130,11 @@ class CMS_Importer_XML_Parser
             }
         }
 
+        $result = $this->resolve_attachment_references($result);
+
         return $result;
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    //  Private Helper
-    // ──────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Parst alle <wp:author>-Knoten aus dem Channel.
-     */
     private function parse_authors(\SimpleXMLElement $channel, string $ns): array
     {
         $authors = [];
@@ -158,6 +143,7 @@ class CMS_Importer_XML_Parser
             if ($login === '') {
                 continue;
             }
+
             $authors[$login] = [
                 'wp_id'        => (string) $author->author_id,
                 'login'        => $login,
@@ -167,152 +153,386 @@ class CMS_Importer_XML_Parser
                 'last_name'    => (string) $author->author_last_name,
             ];
         }
+
         return $authors;
     }
 
-    /**
-     * Parst ein einzelnes <item>-Element.
-     *
-     * @return array|null null = überspringen (Attachment, Nav-Menü etc.)
-     */
     private function parse_item(\SimpleXMLElement $item): ?array
     {
         $wp = $item->children(self::NS_WP);
+        $post_type = trim((string) $wp->post_type);
+        $post_status = trim((string) $wp->status);
 
-        $post_type   = (string) $wp->post_type;
-        $post_status = (string) $wp->status;
+        if ($post_type === 'attachment') {
+            return $this->parse_attachment($item, $wp);
+        }
 
-        // Attachments und nav_menu_items grundsätzlich überspringen
-        if (in_array($post_type, ['attachment', 'nav_menu_item', 'custom_css', 'user_request'], true)) {
+        if (in_array($post_type, ['nav_menu_item', 'custom_css', 'user_request'], true)) {
             return null;
         }
 
-        // Gelöschte/Auto-Draft-Einträge überspringen
         if (in_array($post_status, ['auto-draft', 'inherit'], true)) {
             return null;
         }
 
         $content_ns = $item->children(self::NS_CONTENT);
         $excerpt_ns = $item->children(self::NS_EXCERPT);
-        $dc_ns      = $item->children(self::NS_DC);
-
-        // ── Basis-Felder ───────────────────────────────────────────────────
+        $dc_ns = $item->children(self::NS_DC);
+        $meta = $this->extract_meta($wp);
         $raw_content = (string) ($content_ns->encoded ?? '');
+        $resolvedDate = $this->resolve_item_datetime($item, $wp, ['post_date', 'post_date_gmt'], ['pubDate']);
+        $resolvedModified = $this->resolve_item_datetime($item, $wp, ['post_modified', 'post_modified_gmt'], ['pubDate'], $resolvedDate);
+
+        $resolvedSlug = $this->resolve_item_slug($wp, $item, $post_type);
 
         $parsed = [
-            'wp_id'         => (int)    (string) $wp->post_id,
-            'title'         => (string) $item->title,
-            'slug'          => (string) $wp->post_name,
-            'link'          => (string) $item->link,
-            'content'       => $raw_content,
-            'excerpt'       => (string) ($excerpt_ns->encoded ?? ''),
-            'author_login'  => (string) ($dc_ns->creator ?? ''),
-            'post_type'     => $post_type,
-            'post_status'   => $post_status,
-            'date'          => (string) $wp->post_date,
-            'date_gmt'      => (string) $wp->post_date_gmt,
-            'modified'      => (string) $wp->post_modified,
-            'modified_gmt'  => (string) $wp->post_modified_gmt,
-            'parent_id'     => (int)    (string) $wp->post_parent,
-            'menu_order'    => (int)    (string) $wp->menu_order,
-            'comment_status'=> (string) $wp->comment_status,
-            'ping_status'   => (string) $wp->ping_status,
-            'is_sticky'     => (bool)   ((string) $wp->is_sticky === '1'),
-            // Kategorien & Tags
-            'categories'    => [],
-            'tags'          => [],
-            // Alle Meta-Felder roh
-            'meta'          => [],
-            // Gemappte CMS-Felder (aus Meta extrahiert)
-            'meta_title'       => '',
-            'meta_description' => '',
-            'featured_image'   => '',
-            // Bild-URLs aus Content extrahiert
-            'image_urls'       => $this->extract_image_urls($raw_content),
+            'kind'                 => 'content',
+            'wp_id'                => (int) (string) $wp->post_id,
+            'title'                => trim((string) ($item->title ?? '')),
+            'slug'                 => $resolvedSlug,
+            'link'                 => trim((string) ($item->link ?? '')),
+            'content'              => $raw_content,
+            'excerpt'              => trim((string) ($excerpt_ns->encoded ?? '')),
+            'author_login'         => trim((string) ($dc_ns->creator ?? '')),
+            'post_type'            => $post_type,
+            'post_status'          => $post_status,
+            'date'                 => $resolvedDate,
+            'date_gmt'             => trim((string) $wp->post_date_gmt),
+            'modified'             => $resolvedModified,
+            'modified_gmt'         => trim((string) $wp->post_modified_gmt),
+            'parent_id'            => (int) (string) $wp->post_parent,
+            'menu_order'           => (int) (string) $wp->menu_order,
+            'comment_status'       => (string) $wp->comment_status,
+            'ping_status'          => (string) $wp->ping_status,
+            'is_sticky'            => ((string) $wp->is_sticky === '1'),
+            'categories'           => [],
+            'tags'                 => [],
+            'meta'                 => $meta,
+            'mapped_meta_keys'     => [],
+            'meta_title'           => '',
+            'meta_description'     => '',
+            'featured_image'       => '',
+            'featured_image_wp_id' => 0,
+            'featured_image_alt'   => '',
+            'featured_image_caption' => '',
+            'seo'                  => $this->default_seo_payload(),
+            'image_urls'           => [],
+            'table'                => null,
+            'legacy_table_id'      => '',
         ];
 
-        // ── Kategorien & Tags ──────────────────────────────────────────────
         foreach ($item->category as $cat) {
             $domain = (string) $cat->attributes()->domain;
-            $value  = (string) $cat;
+            $value = trim((string) $cat);
             if ($value === '') {
                 continue;
             }
+
             if ($domain === 'post_tag') {
                 $parsed['tags'][] = $value;
-            } else {
-                $parsed['categories'][] = $value;
-            }
-        }
-
-        // ── Post-Meta ──────────────────────────────────────────────────────
-        foreach ($wp->postmeta as $meta) {
-            $key   = (string) $meta->meta_key;
-            $value = (string) $meta->meta_value;
-
-            // Interne WP-Keys ohne Nutzen rausfiltern
-            if ($this->is_internal_wp_meta($key)) {
                 continue;
             }
 
-            $parsed['meta'][$key] = $value;
+            $parsed['categories'][] = $value;
         }
 
-        // ── Bekannte Meta-Keys direkt mappen ──────────────────────────────
         $parsed = $this->map_known_meta($parsed);
+        $parsed['image_urls'] = $this->collect_image_urls($raw_content, $parsed['meta'], $parsed['seo']);
+
+        if ($post_type === 'tablepress_table') {
+            $parsed['table'] = $this->build_table_payload($parsed);
+            $parsed['legacy_table_id'] = trim((string) ($parsed['meta']['_tablepress_export_table_id'] ?? ''));
+            $parsed['mapped_meta_keys'] = array_values(array_unique(array_merge(
+                $parsed['mapped_meta_keys'],
+                ['_tablepress_table_options', '_tablepress_table_visibility', '_tablepress_export_table_id']
+            )));
+        }
 
         return $parsed;
     }
 
+    private function parse_attachment(\SimpleXMLElement $item, \SimpleXMLElement $wp): ?array
+    {
+        $meta = $this->extract_meta($wp);
+        $attachmentUrl = trim((string) ($wp->attachment_url ?? ''));
+        if ($attachmentUrl === '') {
+            return null;
+        }
+
+        $excerptNs = $item->children(self::NS_EXCERPT);
+        $contentNs = $item->children(self::NS_CONTENT);
+        $resolvedDate = $this->resolve_item_datetime($item, $wp, ['post_date', 'post_date_gmt'], ['pubDate']);
+
+        return [
+            'kind' => 'attachment',
+            'attachment' => [
+                'wp_id'        => (int) (string) $wp->post_id,
+                'title'        => trim((string) ($item->title ?? '')),
+                'slug'         => $this->resolve_item_slug($wp, $item, 'attachment'),
+                'link'         => trim((string) ($item->link ?? '')),
+                'url'          => $attachmentUrl,
+                'mime_type'    => trim((string) ($wp->post_mime_type ?? '')),
+                'alt_text'     => trim((string) ($meta['_wp_attachment_image_alt'] ?? '')),
+                'caption'      => trim((string) ($excerptNs->encoded ?? '')),
+                'description'  => trim((string) ($contentNs->encoded ?? '')),
+                'post_status'  => trim((string) $wp->status),
+                'date'         => $resolvedDate,
+                'meta'         => $meta,
+                'filename'     => basename((string) parse_url($attachmentUrl, PHP_URL_PATH)),
+            ],
+        ];
+    }
+
     /**
-     * Mappt bekannte WordPress-Meta-Keys auf CMS-Felder.
-     * Gemappte Keys werden aus dem rohen meta-Array entfernt.
+     * @param list<string> $wpFields
+     * @param list<string> $itemFields
      */
+    private function resolve_item_datetime(
+        \SimpleXMLElement $item,
+        \SimpleXMLElement $wp,
+        array $wpFields,
+        array $itemFields = [],
+        string $fallback = ''
+    ): string {
+        foreach ($wpFields as $field) {
+            $value = trim((string) ($wp->{$field} ?? ''));
+            if ($this->looks_like_valid_datetime($value)) {
+                return $value;
+            }
+        }
+
+        foreach ($itemFields as $field) {
+            $value = trim((string) ($item->{$field} ?? ''));
+            if ($this->looks_like_valid_datetime($value)) {
+                $timestamp = strtotime($value);
+                if ($timestamp !== false) {
+                    return date('Y-m-d H:i:s', $timestamp);
+                }
+            }
+        }
+
+        return $this->looks_like_valid_datetime($fallback) ? $fallback : '';
+    }
+
+    private function looks_like_valid_datetime(string $value): bool
+    {
+        $value = trim($value);
+        if ($value === '' || $value === '0000-00-00 00:00:00') {
+            return false;
+        }
+
+        return strtotime($value) !== false;
+    }
+
+    private function resolve_item_slug(\SimpleXMLElement $wp, \SimpleXMLElement $item, string $postType): string
+    {
+        $postName = trim((string) ($wp->post_name ?? ''));
+        if ($postName !== '') {
+            return $postName;
+        }
+
+        $linkSlug = $this->extract_slug_from_url((string) ($item->link ?? ''));
+        if ($linkSlug !== '') {
+            return $linkSlug;
+        }
+
+        $guidSlug = $this->extract_slug_from_url((string) ($item->guid ?? ''));
+        if ($guidSlug !== '') {
+            return $guidSlug;
+        }
+
+        foreach ($wp->postmeta as $metaItem) {
+            $metaKey = trim((string) ($metaItem->meta_key ?? ''));
+            if ($metaKey !== '_wp_old_slug') {
+                continue;
+            }
+
+            $metaValue = trim((string) ($metaItem->meta_value ?? ''));
+            if ($metaValue !== '') {
+                return $metaValue;
+            }
+        }
+
+        return '';
+    }
+
+    private function extract_slug_from_url(string $url): string
+    {
+        $url = trim(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($url === '' || filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return '';
+        }
+
+        $path = trim((string) parse_url($url, PHP_URL_PATH), '/');
+        if ($path === '') {
+            return '';
+        }
+
+        $segments = array_values(array_filter(explode('/', $path), static fn(string $segment): bool => $segment !== ''));
+        if ($segments === []) {
+            return '';
+        }
+
+        return urldecode((string) end($segments));
+    }
+
+    private function resolve_attachment_references(array $result): array
+    {
+        foreach (['posts', 'pages', 'others', 'tables'] as $group) {
+            foreach ($result[$group] as $index => $item) {
+                $attachmentId = (int) ($item['featured_image_wp_id'] ?? 0);
+                if ($attachmentId <= 0 || !isset($result['attachments'][$attachmentId])) {
+                    continue;
+                }
+
+                $attachment = $result['attachments'][$attachmentId];
+                $attachmentUrl = trim((string) ($attachment['url'] ?? ''));
+                if ($attachmentUrl === '') {
+                    continue;
+                }
+
+                $result[$group][$index]['featured_image'] = $attachmentUrl;
+                $result[$group][$index]['featured_image_alt'] = (string) ($attachment['alt_text'] ?? '');
+                $result[$group][$index]['featured_image_caption'] = (string) ($attachment['caption'] ?? '');
+
+                $imageUrls = $result[$group][$index]['image_urls'] ?? [];
+                if (!in_array($attachmentUrl, $imageUrls, true)) {
+                    array_unshift($imageUrls, $attachmentUrl);
+                    $result[$group][$index]['image_urls'] = array_values(array_unique($imageUrls));
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    private function extract_meta(\SimpleXMLElement $wp): array
+    {
+        $meta = [];
+        foreach ($wp->postmeta as $meta_item) {
+            $key = trim((string) $meta_item->meta_key);
+            if ($key === '' || $this->is_internal_wp_meta($key)) {
+                continue;
+            }
+
+            $meta[$key] = (string) $meta_item->meta_value;
+        }
+
+        return $meta;
+    }
+
     private function map_known_meta(array $parsed): array
     {
-        $mapping = [
-            // SEO-Titel
-            '_yoast_wpseo_title'        => 'meta_title',
-            'rank_math_title'           => 'meta_title',
-            '_seopress_titles_title'    => 'meta_title',
-            // SEO-Beschreibung
-            '_yoast_wpseo_metadesc'     => 'meta_description',
-            'rank_math_description'     => 'meta_description',
-            '_seopress_titles_desc'     => 'meta_description',
-            // Featured Image (bleibt URL/Pfad aus anderem Meta)
-            '_thumbnail_id'             => '_thumbnail_id', // Sonderbehandlung
-        ];
+        $meta = $parsed['meta'];
 
-        foreach ($mapping as $wp_key => $cms_field) {
-            if (!isset($parsed['meta'][$wp_key])) {
-                continue;
-            }
-
-            if ($wp_key === '_thumbnail_id') {
-                // Wir merken uns die WP-Attachment-ID als Hinweis
-                $parsed['featured_image_wp_id'] = (int) $parsed['meta'][$wp_key];
-                unset($parsed['meta'][$wp_key]);
-                continue;
-            }
-
-            // Nur übernehmen wenn Zielfeld noch leer ist
-            if ($parsed[$cms_field] === '' && $parsed['meta'][$wp_key] !== '') {
-                $parsed[$cms_field] = $parsed['meta'][$wp_key];
-            }
-            unset($parsed['meta'][$wp_key]);
+        $titleMatch = $this->first_non_empty_meta($meta, ['_yoast_wpseo_title', 'rank_math_title', '_seopress_titles_title']);
+        if ($titleMatch !== null) {
+            $parsed['meta_title'] = $this->sanitize_text_value($titleMatch['value'], 255);
+            $parsed['mapped_meta_keys'][] = $titleMatch['key'];
         }
+
+        $descMatch = $this->first_non_empty_meta($meta, ['_yoast_wpseo_metadesc', 'rank_math_description', '_seopress_titles_desc']);
+        if ($descMatch !== null) {
+            $parsed['meta_description'] = $this->sanitize_text_value($descMatch['value'], 1000);
+            $parsed['mapped_meta_keys'][] = $descMatch['key'];
+        }
+
+        $thumbnailMatch = $this->first_non_empty_meta($meta, ['_thumbnail_id']);
+        if ($thumbnailMatch !== null) {
+            $parsed['featured_image_wp_id'] = (int) $thumbnailMatch['value'];
+            $parsed['mapped_meta_keys'][] = $thumbnailMatch['key'];
+        }
+
+        $seo = $this->default_seo_payload();
+        $canonicalMatch = $this->first_non_empty_meta($meta, ['_yoast_wpseo_canonical', 'rank_math_canonical_url', '_seopress_robots_canonical']);
+        if ($canonicalMatch !== null) {
+            $seo['canonical_url'] = trim($canonicalMatch['value']);
+            $parsed['mapped_meta_keys'][] = $canonicalMatch['key'];
+        }
+
+        [$robotsIndex, $robotsIndexKeys] = $this->extract_robots_index($meta);
+        if ($robotsIndex !== null) {
+            $seo['robots_index'] = $robotsIndex;
+            $parsed['mapped_meta_keys'] = array_merge($parsed['mapped_meta_keys'], $robotsIndexKeys);
+        }
+
+        [$robotsFollow, $robotsFollowKeys] = $this->extract_robots_follow($meta);
+        if ($robotsFollow !== null) {
+            $seo['robots_follow'] = $robotsFollow;
+            $parsed['mapped_meta_keys'] = array_merge($parsed['mapped_meta_keys'], $robotsFollowKeys);
+        }
+
+        foreach ([
+            'og_title' => ['_yoast_wpseo_opengraph-title', 'rank_math_facebook_title', '_seopress_social_fb_title'],
+            'og_description' => ['_yoast_wpseo_opengraph-description', 'rank_math_facebook_description', '_seopress_social_fb_desc'],
+            'og_image' => ['_yoast_wpseo_opengraph-image', 'rank_math_facebook_image', '_seopress_social_fb_img'],
+            'twitter_title' => ['_yoast_wpseo_twitter-title', 'rank_math_twitter_title', '_seopress_social_twitter_title'],
+            'twitter_description' => ['_yoast_wpseo_twitter-description', 'rank_math_twitter_description', '_seopress_social_twitter_desc'],
+            'twitter_image' => ['_yoast_wpseo_twitter-image', 'rank_math_twitter_image', '_seopress_social_twitter_img'],
+            'focus_keyphrase' => ['_yoast_wpseo_focuskw', 'rank_math_focus_keyword', '_seopress_analysis_target_kw'],
+            'schema_type' => ['rank_math_schema_type', '_yoast_wpseo_schema_page_type', '_yoast_wpseo_schema_article_type'],
+            'sitemap_priority' => ['rank_math_sitemap_priority'],
+            'sitemap_changefreq' => ['rank_math_sitemap_changefreq'],
+            'hreflang_group' => ['_wpml_translation_group'],
+        ] as $seoField => $keys) {
+            $match = $this->first_non_empty_meta($meta, $keys);
+            if ($match === null) {
+                continue;
+            }
+
+            $seo[$seoField] = trim($match['value']);
+            $parsed['mapped_meta_keys'][] = $match['key'];
+        }
+
+        if ($seo['schema_type'] === '') {
+            $seo['schema_type'] = ($parsed['post_type'] ?? '') === 'post' ? 'Article' : 'WebPage';
+        }
+        if ($seo['og_title'] === '') {
+            $seo['og_title'] = $parsed['meta_title'] !== '' ? $parsed['meta_title'] : $parsed['title'];
+        }
+        if ($seo['twitter_title'] === '') {
+            $seo['twitter_title'] = $seo['og_title'];
+        }
+        if ($seo['og_description'] === '') {
+            $seo['og_description'] = $parsed['meta_description'];
+        }
+        if ($seo['twitter_description'] === '') {
+            $seo['twitter_description'] = $seo['og_description'];
+        }
+
+        $parsed['seo'] = $seo;
+        $parsed['mapped_meta_keys'] = array_values(array_unique($parsed['mapped_meta_keys']));
 
         return $parsed;
     }
 
-    /**
-     * Extrahiert alle absoluten Bild-URLs aus HTML-Content.
-     *
-     * Erkennt <img src="...">, background-image: url(...) und WP-Block-Syntax.
-     *
-     * @param  string   $content HTML-Inhalt (content:encoded)
-     * @return string[]          Unique-Liste absoluter Bild-URLs
-     */
+    private function collect_image_urls(string $content, array $meta, array $seo): array
+    {
+        $urls = $this->extract_image_urls($content);
+
+        foreach ($meta as $key => $value) {
+            $candidateKey = strtolower($key);
+            if (!str_contains($candidateKey, 'image') && !str_contains($candidateKey, 'thumbnail') && !str_contains($candidateKey, 'featured')) {
+                continue;
+            }
+
+            foreach ($this->extract_urls_from_text((string) $value) as $candidateUrl) {
+                if ($this->looks_like_image_url($candidateUrl)) {
+                    $urls[] = $candidateUrl;
+                }
+            }
+        }
+
+        foreach (['og_image', 'twitter_image'] as $seoKey) {
+            $candidate = trim((string) ($seo[$seoKey] ?? ''));
+            if ($candidate !== '' && $this->looks_like_image_url($candidate)) {
+                $urls[] = $candidate;
+            }
+        }
+
+        return array_values(array_unique(array_filter($urls, static fn(string $url): bool => filter_var($url, FILTER_VALIDATE_URL) !== false)));
+    }
+
     public function extract_image_urls(string $content): array
     {
         if ($content === '') {
@@ -321,47 +541,338 @@ class CMS_Importer_XML_Parser
 
         $urls = [];
 
-        // <img src="..."> und <img src='...'>
-        if (preg_match_all('/<img[^>]+src=["\']([^"\'>\s]+)["\'][^>]*>/i', $content, $m)) {
-            foreach ($m[1] as $u) {
-                $urls[] = trim($u);
+        if (preg_match_all('/<img[^>]+src=["\']([^"\'>\s]+)["\'][^>]*>/i', $content, $matches)) {
+            foreach ($matches[1] as $url) {
+                $urls[] = trim($url);
             }
         }
 
-        // WordPress-Block-Syntax: "url":"https://..."  (JSON inside HTML comments)
-        if (preg_match_all('/"url"\s*:\s*"(https?:\/\/[^"]+\.(?:jpg|jpeg|png|gif|webp|svg)[^"]*)"/i', $content, $m)) {
-            foreach ($m[1] as $u) {
-                $urls[] = trim($u);
+        if (preg_match_all('/(?:srcset|data-src|data-lazy-src|poster)=["\']([^"\']+)["\']/i', $content, $matches)) {
+            foreach ($matches[1] as $srcset) {
+                foreach (preg_split('/\s*,\s*/', (string) $srcset) ?: [] as $segment) {
+                    $part = trim((string) preg_replace('/\s+\d+[wx]$/', '', $segment));
+                    if ($part !== '') {
+                        $urls[] = $part;
+                    }
+                }
             }
         }
 
-        // Nur absolute URLs behalten, Query-String entfernen für Dateiname-Zwecke (URL selbst bleibt voll)
-        $urls = array_values(array_unique(array_filter($urls, static function (string $u): bool {
-            return filter_var($u, FILTER_VALIDATE_URL) !== false
-                && str_starts_with($u, 'http');
-        })));
+        if (preg_match_all('/url\((https?:\/\/[^)"\']+)\)/i', $content, $matches)) {
+            foreach ($matches[1] as $url) {
+                $urls[] = trim($url, '"\' ');
+            }
+        }
 
-        return $urls;
+        if (preg_match_all('/"url"\s*:\s*"(https?:\/\/[^\"]+)"/i', $content, $matches)) {
+            foreach ($matches[1] as $url) {
+                $urls[] = trim($url);
+            }
+        }
+
+        return array_values(array_unique(array_filter($urls, fn(string $url): bool => $this->looks_like_image_url($url))));
     }
 
-    /**
-     * Prüft ob ein Meta-Key ein interner WordPress-Systemkey ist,
-     * der für den Import irrelevant ist.
-     */
+    private function build_table_payload(array $parsed): array
+    {
+        $meta = $parsed['meta'];
+        $rawRows = $this->decode_table_rows((string) ($parsed['content'] ?? ''));
+        $options = $this->decode_structured_value((string) ($meta['_tablepress_table_options'] ?? ''));
+        $visibility = $this->decode_structured_value((string) ($meta['_tablepress_table_visibility'] ?? ''));
+
+        $tableHead = !empty($options['table_head']);
+        $headerRow = $tableHead && $rawRows !== [] ? array_shift($rawRows) : [];
+        $columnCount = $this->resolve_column_count($headerRow, $rawRows);
+
+        $columns = [];
+        for ($index = 0; $index < $columnCount; $index++) {
+            $label = $this->normalize_table_cell((string) ($headerRow[$index] ?? ''));
+            if ($label === '') {
+                $label = 'Spalte ' . ($index + 1);
+            }
+
+            $columns[] = [
+                'label' => $this->safe_substr($label, 0, 120),
+                'type' => 'text',
+            ];
+        }
+
+        $rows = [];
+        foreach ($rawRows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $normalizedRow = [];
+            foreach ($columns as $index => $column) {
+                $label = (string) ($column['label'] ?? ('Spalte ' . ($index + 1)));
+                $normalizedRow[$label] = $this->safe_substr($this->normalize_table_cell((string) ($row[$index] ?? '')), 0, 5000);
+            }
+            $rows[] = $normalizedRow;
+        }
+
+        $description = trim((string) ($parsed['excerpt'] ?? ''));
+        $sourceFilename = '';
+        if (preg_match('/\.(csv|xlsx?|ods|tsv)$/i', $description)) {
+            $sourceFilename = $description;
+            $description = '';
+        }
+
+        return [
+            'name' => (string) (($parsed['title'] ?? '') !== '' ? $parsed['title'] : ($sourceFilename !== '' ? $sourceFilename : 'Importierte Tabelle')),
+            'slug' => (string) ($parsed['slug'] ?? ''),
+            'description' => $description,
+            'columns' => $columns,
+            'rows' => $rows,
+            'settings' => [
+                'responsive' => true,
+                'style_theme' => !empty($options['alternating_row_colors']) ? 'stripe' : 'default',
+                'caption' => trim((string) (!empty($options['print_name']) ? ($parsed['title'] ?? '') : '')),
+                'aria_label' => (string) ($parsed['title'] ?? ''),
+                'allow_export_csv' => true,
+                'allow_export_json' => false,
+                'allow_export_excel' => false,
+                'enable_search' => !empty($options['datatables_filter']),
+                'enable_sorting' => !empty($options['datatables_sort']),
+                'enable_pagination' => !empty($options['datatables_paginate']),
+                'page_size' => max(1, (int) ($options['datatables_paginate_entries'] ?? 10)),
+                'highlight_rows' => !empty($options['row_hover']),
+                'custom_css' => trim((string) ($options['extra_css_classes'] ?? '')),
+                'content_mode' => 'table',
+                'source_post_type' => 'tablepress_table',
+                'source_wp_id' => (int) ($parsed['wp_id'] ?? 0),
+                'legacy_table_id' => trim((string) ($parsed['meta']['_tablepress_export_table_id'] ?? '')),
+                'source_url' => (string) ($parsed['link'] ?? ''),
+                'source_filename' => $sourceFilename,
+                'tablepress_options' => $options,
+                'tablepress_visibility' => $visibility,
+            ],
+        ];
+    }
+
+    private function decode_table_rows(string $content): array
+    {
+        $decoded = json_decode(trim($content), true);
+        return is_array($decoded) ? array_values(array_filter($decoded, static fn($row): bool => is_array($row))) : [];
+    }
+
+    private function resolve_column_count(array $headerRow, array $rows): int
+    {
+        $count = count($headerRow);
+        foreach ($rows as $row) {
+            if (is_array($row)) {
+                $count = max($count, count($row));
+            }
+        }
+
+        return max(1, $count);
+    }
+
+    private function normalize_table_cell(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        $value = preg_replace_callback(
+            '/<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)<\/a>/is',
+            static function (array $matches): string {
+                $url = trim(html_entity_decode((string) ($matches[1] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+                $label = trim(strip_tags((string) ($matches[2] ?? '')));
+                if ($label !== '' && $url !== '') {
+                    return $label . ' (' . $url . ')';
+                }
+
+                return $label !== '' ? $label : $url;
+            },
+            $value
+        ) ?? $value;
+
+        $value = html_entity_decode(strip_tags($value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
+        return trim($value);
+    }
+
+    private function extract_robots_index(array $meta): array
+    {
+        $keys = [];
+        if (isset($meta['_yoast_wpseo_meta-robots-noindex'])) {
+            $keys[] = '_yoast_wpseo_meta-robots-noindex';
+            $value = strtolower(trim((string) $meta['_yoast_wpseo_meta-robots-noindex']));
+            return [!in_array($value, ['1', 'true', 'noindex'], true), $keys];
+        }
+
+        if (isset($meta['rank_math_robots'])) {
+            $keys[] = 'rank_math_robots';
+            $robots = $this->normalize_robot_list((string) $meta['rank_math_robots']);
+            if (in_array('noindex', $robots, true)) {
+                return [false, $keys];
+            }
+            if (in_array('index', $robots, true)) {
+                return [true, $keys];
+            }
+        }
+
+        if (isset($meta['_seopress_robots_index'])) {
+            $keys[] = '_seopress_robots_index';
+            $value = strtolower(trim((string) $meta['_seopress_robots_index']));
+            return [!in_array($value, ['1', 'true', 'noindex'], true), $keys];
+        }
+
+        return [null, $keys];
+    }
+
+    private function extract_robots_follow(array $meta): array
+    {
+        $keys = [];
+        if (isset($meta['_yoast_wpseo_meta-robots-nofollow'])) {
+            $keys[] = '_yoast_wpseo_meta-robots-nofollow';
+            $value = strtolower(trim((string) $meta['_yoast_wpseo_meta-robots-nofollow']));
+            return [!in_array($value, ['1', 'true', 'nofollow'], true), $keys];
+        }
+
+        if (isset($meta['rank_math_robots'])) {
+            $keys[] = 'rank_math_robots';
+            $robots = $this->normalize_robot_list((string) $meta['rank_math_robots']);
+            if (in_array('nofollow', $robots, true)) {
+                return [false, $keys];
+            }
+            if (in_array('follow', $robots, true)) {
+                return [true, $keys];
+            }
+        }
+
+        if (isset($meta['_seopress_robots_follow'])) {
+            $keys[] = '_seopress_robots_follow';
+            $value = strtolower(trim((string) $meta['_seopress_robots_follow']));
+            return [!in_array($value, ['0', 'false', 'nofollow'], true), $keys];
+        }
+
+        return [null, $keys];
+    }
+
+    private function normalize_robot_list(string $value): array
+    {
+        $decoded = $this->decode_structured_value($value);
+        if (is_array($decoded)) {
+            $robots = [];
+            array_walk_recursive($decoded, static function ($item) use (&$robots): void {
+                if (is_string($item)) {
+                    $robots[] = strtolower(trim($item));
+                }
+            });
+            return array_values(array_unique(array_filter($robots)));
+        }
+
+        $items = preg_split('/[,|;]/', strtolower(trim($value))) ?: [];
+        return array_values(array_unique(array_filter(array_map('trim', $items))));
+    }
+
+    private function decode_structured_value(string $value): array
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return [];
+        }
+
+        $json = json_decode($value, true);
+        if (is_array($json)) {
+            return $json;
+        }
+
+        if (preg_match('/^(a|s|i|b|d|N|O):/i', $value) === 1) {
+            $unserialized = @unserialize($value, ['allowed_classes' => false]);
+            if (is_array($unserialized)) {
+                return $unserialized;
+            }
+        }
+
+        return [];
+    }
+
+    private function first_non_empty_meta(array $meta, array $keys): ?array
+    {
+        foreach ($keys as $key) {
+            if (!array_key_exists($key, $meta)) {
+                continue;
+            }
+
+            $value = trim((string) $meta[$key]);
+            if ($value === '') {
+                continue;
+            }
+
+            return ['key' => $key, 'value' => $value];
+        }
+
+        return null;
+    }
+
+    private function extract_urls_from_text(string $value): array
+    {
+        if ($value === '') {
+            return [];
+        }
+
+        if (!preg_match_all('/https?:\/\/[^\s"\'<>]+/i', $value, $matches)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_map(static fn(string $url): string => html_entity_decode(rtrim($url, '.,);'), ENT_QUOTES | ENT_HTML5, 'UTF-8'), $matches[0])));
+    }
+
+    private function looks_like_image_url(string $url): bool
+    {
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+
+        $path = strtolower((string) parse_url($url, PHP_URL_PATH));
+        return preg_match('/\.(jpe?g|png|gif|webp|bmp|svg|avif)(?:$|\?)/i', $path) === 1;
+    }
+
+    private function sanitize_text_value(string $value, int $maxLength): string
+    {
+        $value = html_entity_decode(strip_tags($value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
+        return $this->safe_substr(trim($value), 0, $maxLength);
+    }
+
+    private function safe_substr(string $value, int $start, int $length): string
+    {
+        if (function_exists('mb_substr')) {
+            return (string) mb_substr($value, $start, $length);
+        }
+
+        return substr($value, $start, $length);
+    }
+
+    private function default_seo_payload(): array
+    {
+        return [
+            'canonical_url' => '',
+            'robots_index' => true,
+            'robots_follow' => true,
+            'og_title' => '',
+            'og_description' => '',
+            'og_image' => '',
+            'og_type' => 'article',
+            'twitter_card' => 'summary_large_image',
+            'twitter_title' => '',
+            'twitter_description' => '',
+            'twitter_image' => '',
+            'focus_keyphrase' => '',
+            'schema_type' => 'WebPage',
+            'sitemap_priority' => '',
+            'sitemap_changefreq' => '',
+            'hreflang_group' => '',
+        ];
+    }
+
     private function is_internal_wp_meta(string $key): bool
     {
-        // Rein technische WP-Interna und Plugin-Cache-Keys ausblenden
-        $internal_prefixes = [
-            '_edit_lock',
-            '_edit_last',
-            '_oembed_',
-            '_pingme',
-            '_encloseme',
-            '_wp_old_slug',
-            '_wp_old_date',
-        ];
-
-        foreach ($internal_prefixes as $prefix) {
+        foreach (['_edit_lock', '_edit_last', '_oembed_', '_pingme', '_encloseme', '_wp_old_slug', '_wp_old_date'] as $prefix) {
             if (str_starts_with($key, $prefix)) {
                 return true;
             }

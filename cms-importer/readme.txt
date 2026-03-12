@@ -2,9 +2,9 @@ CMS WordPress Importer
 ======================
 
 Importiert WordPress WXR-Export-Dateien (.xml) in die 365 CMS Struktur
-(cms_posts und cms_pages).
+(cms_posts, cms_pages, cms_site_tables und cms_seo_meta).
 
-**Version:** 1.0.0
+**Version:** 1.3.0
 **Autor:** 365 Network
 **Mindest-CMS-Version:** 0.26.0
 
@@ -14,18 +14,21 @@ Importiert WordPress WXR-Export-Dateien (.xml) in die 365 CMS Struktur
 
 - Beiträge (post) → cms_posts
 - Seiten (page) → cms_pages
+- TablePress-Tabellen → cms_site_tables
 - Benutzerdefinierte Post-Types → cms_posts
-- Kategorien & Tags (kommagetrennt im tags-Feld)
-- SEO-Metadaten (Yoast SEO, Rank Math, SEOPress → meta_title / meta_description)
-- Featured-Image-Referenz (WP Attachment-ID als Hinweis, kein automatischer Download)
+- Kategorien → cms_post_categories
+- Tags + Relationen → cms_post_tags / cms_post_tag_rel
+- SEO-Metadaten (Yoast SEO, Rank Math, SEOPress → Felder + cms_seo_meta)
+- Featured Images via `_thumbnail_id` und Attachment-URL-Auflösung
+- Inhaltsbilder per Original-URL mit lokaler Registrierung in `cms_media`
+- WordPress-Tabellen-Shortcodes `[table id=...]` → `[site-table id="X"]`
 
 ## Was wird NICHT importiert?
 
-- Medien/Anhänge (Bilddateien werden nicht heruntergeladen)
 - Kommentare
 - Benutzerkonten (Author-IDs werden per E-Mail aufgelöst, sonst author_id = 0)
 - Navigationsmenüs
-- Custom CSS, User-Requests u.ä. WP-interne Typen
+- Komplexe Plugin-Daten ohne vorhandenes Mapping (werden als unbekannte Metadaten protokolliert)
 
 ## Unbekannte Meta-Felder
 
@@ -36,15 +39,44 @@ Alle Meta-Keys die nicht auf ein CMS-Feld gemappt werden können, werden:
 
 ## Tabellen
 
-- `cms_import_log`  – Ein Eintrag pro Import-Run
-- `cms_import_meta` – Alle nicht gemappten Meta-Felder
+- `cms_import_log`   – Ein Eintrag pro Import-Run
+- `cms_import_meta`  – Alle nicht gemappten Meta-Felder
+- `cms_import_items` – Quell-/Ziel-Mapping für Posts, Pages, Tabellen und Folgeimporte
 
 ## Reports
 
 Die Markdown-Berichte werden unter `plugins/cms-importer/reports/` gespeichert
 und sind im Admin-Bereich unter "Import-Protokoll" zum Download verfügbar.
 
+## Bild- und Tabellenmigration
+
+- Attachment-Referenzen aus WordPress werden über `_thumbnail_id` gegen exportierte Attachments aufgelöst.
+- Bilder aus Inhalt, SEO-Metadaten und Featured-Image-Referenzen können direkt von der Original-URL geladen werden.
+- Importierte Seiten und Beiträge schreiben Bild-URLs auf lokale 365CMS-Dateien um, sofern der Download erfolgreich war.
+- TablePress-Exporte werden in native 365CMS-Site-Tabellen überführt.
+- Inhalte mit `[table id=...]` werden – sofern eine passende Tabelle importiert wurde – automatisch auf `[site-table id="X"]` umgestellt.
+
+## Dry Run / Vorschau
+
+- Vor jedem echten Import kann eine Vorschau ausgeführt werden.
+- Die Vorschau zeigt, welche Elemente importiert oder übersprungen würden.
+- Angezeigt werden Zieltyp, Ziel-Slug, Ziel-URL/Hinweis, erkannte Bildkandidaten, Tabellen-Shortcodes und offene Meta-Felder.
+- Es werden keine Datenbank-Schreibzugriffe ausgeführt.
+
 ## Changelog
+
+### 1.3.0 (2026-03-12)
+- Dry-Run-/Preview-Funktion für Uploads und Import-Ordner ergänzt
+- Vorschau zeigt Zielobjekte, Skip-Gründe, Bildkandidaten, Tabellen-Shortcodes und offene Meta-Felder vor dem echten Import
+- Admin-JavaScript und UI für Vorschau-Rendering erweitert
+
+### 1.2.0 (2026-03-12)
+- Import für TablePress-Tabellen nach `cms_site_tables`
+- Rich-SEO-Speicherung in `cms_seo_meta`
+- `_thumbnail_id`-Auflösung über WordPress-Attachments
+- Download und Registrierung von Originalbildern in `cms_media`
+- Shortcode-Konvertierung von WordPress-Tabellen zu 365CMS-Site-Tables
+- Quell-/Ziel-Mapping für Folgeimporte und sauberes Rewriting bereits importierter Tabellen
 
 ### 1.0.0 (2026-02-21)
 - Erstveröffentlichung

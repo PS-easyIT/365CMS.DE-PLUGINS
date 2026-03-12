@@ -2,7 +2,8 @@
 /**
  * Admin-Template: Import-Protokoll
  *
- * @var array $log_entries  Import-Log-Einträge
+ * @var array  $log_entries      Import-Log-Einträge
+ * @var string $nonce_download   CSRF-Nonce für Bericht-Download
  */
 
 if (!defined('ABSPATH')) {
@@ -17,7 +18,7 @@ if (!defined('ABSPATH')) {
             Import-Protokoll
         </h1>
         <p class="cms-importer-subtitle">
-            Übersicht aller durchgeführten WordPress-Imports.
+            Übersicht aller durchgeführten WordPress-Imports inklusive Berichte für unbekannte Metadaten.
         </p>
     </div>
 
@@ -45,6 +46,7 @@ if (!defined('ABSPATH')) {
                     <th>Fehler</th>
                     <th>Gestartet</th>
                     <th>Beendet</th>
+                    <th>Bilder</th>
                     <th>Meta-Bericht</th>
                 </tr>
             </thead>
@@ -72,12 +74,16 @@ if (!defined('ABSPATH')) {
                             <span class="cms-importer-muted">Läuft…</span>
                         <?php endif; ?>
                     </td>
+                    <td><?php echo (int) ($log->images_downloaded ?? 0); ?></td>
                     <td>
                         <?php if (!empty($log->meta_report_path)): ?>
-                            <a href="?page=cms-importer&action=download_report&log_id=<?php echo (int) $log->id; ?>"
+                            <a href="/admin/plugins/cms-importer/cms-importer?action=download_report&amp;log_id=<?php echo (int) $log->id; ?>&amp;_nonce=<?php echo htmlspecialchars($nonce_download ?? ''); ?>&amp;format=html"
                                class="cms-importer-link">
-                                📄 Herunterladen
+                                📄 Bericht
                             </a>
+                            <span class="cms-importer-muted"> / </span>
+                            <a href="/admin/plugins/cms-importer/cms-importer?action=download_report&amp;log_id=<?php echo (int) $log->id; ?>&amp;_nonce=<?php echo htmlspecialchars($nonce_download ?? ''); ?>&amp;format=md"
+                               class="cms-importer-link">.md</a>
                         <?php else: ?>
                             <span class="cms-importer-muted">Keine Metas</span>
                         <?php endif; ?>

@@ -8,7 +8,7 @@
  * @var string      $nonce           CSRF-Nonce (cms-importer-upload)
  * @var string      $nonce_download  CSRF-Nonce (cms-importer-download)
  * @var array       $log_entries     Letzte Import-Logs
- * @var array       $import_files    XML-Dateien im Import-Ordner
+ * @var array       $import_files    XML-Dateien aus allen Import-Quellen
  * @var string      $import_dir_url  URL zum Import-Ordner
  */
 
@@ -26,7 +26,7 @@ $esc_nonce_download = htmlspecialchars($nonce_download ?? '');
         <div class="ci-header__icon">&#8681;</div>
         <div class="ci-header__text">
             <h1 class="ci-header__title">WordPress Import</h1>
-            <p class="ci-header__sub">WordPress WXR-Exportdateien (.xml) in die CMS-Struktur importieren &mdash; Beitr&auml;ge, Seiten &amp; Bilder.</p>
+            <p class="ci-header__sub">WordPress-WXR-Dateien (.xml) f&uuml;r Beitr&auml;ge, Seiten, Tabellen, SEO-Metadaten und Bilder passend nach 365CMS importieren.</p>
         </div>
         <a href="/admin/plugins/cms-importer/cms-importer-log" class="ci-btn ci-btn--ghost ci-btn--sm">&#128203; Protokoll</a>
     </div>
@@ -36,11 +36,17 @@ $esc_nonce_download = htmlspecialchars($nonce_download ?? '');
          class="ci-notice ci-notice--<?php echo htmlspecialchars($msg_type ?? 'success'); ?>"
          <?php if (!($message ?? null)): ?>hidden<?php endif; ?>>
         <?php echo htmlspecialchars($message ?? ''); ?>
-        <?php if (($result ?? null) && !empty($result['meta_report'])): ?>
+        <?php if (($result ?? null) && !empty($result['meta_report_download_url'])): ?>
             &nbsp;<a class="ci-notice__link"
-               href="/admin/plugins/cms-importer/cms-importer?action=download_report&amp;log_id=<?php echo (int)($result['log_id'] ?? 0); ?>&amp;_nonce=<?php echo $esc_nonce_download; ?>">
-                &#128196; Meta-Bericht herunterladen (.md)
+               href="<?php echo htmlspecialchars((string) $result['meta_report_download_url']); ?>">
+                &#128196; Bericht &ouml;ffnen
             </a>
+            <?php if (!empty($result['meta_report_markdown_url'])): ?>
+                &nbsp;<a class="ci-notice__link"
+                   href="<?php echo htmlspecialchars((string) $result['meta_report_markdown_url']); ?>">
+                    &#128221; Markdown (.md)
+                </a>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 
@@ -87,165 +93,292 @@ $esc_nonce_download = htmlspecialchars($nonce_download ?? '');
 
     <!-- Tab: Upload -->
     <div class="ci-tab-panel ci-tab-panel--active" id="tab-upload">
-        <div class="ci-card">
-            <h2 class="ci-card__title">WordPress-Exportdatei hochladen</h2>
+        <div class="ci-layout-grid">
+            <div class="ci-card ci-card--hero">
+                <div class="ci-card__eyebrow">Direktimport</div>
+                <h2 class="ci-card__title">WordPress-Exportdatei hochladen</h2>
 
-            <form id="js-import-form" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="_nonce"     value="<?php echo $esc_nonce; ?>">
-                <input type="hidden" name="cms_action" value="cms_importer_upload_only">
-                <input type="hidden" id="js-uploaded-file" name="import_file" value="">
+                <form id="js-import-form" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="_nonce"     value="<?php echo $esc_nonce; ?>">
+                    <input type="hidden" name="cms_action" value="cms_importer_upload_only">
+                    <input type="hidden" id="js-uploaded-file" name="import_file" value="">
 
-                <!-- Verstecktes File-Input -->
-                <input type="file" name="wxr_file" id="wxr_file"
-                       accept=".xml,text/xml,application/xml"
-                       style="display:none">
+                    <!-- Verstecktes File-Input -->
+                    <input type="file" name="wxr_file" id="wxr_file"
+                           accept=".xml,text/xml,application/xml"
+                           style="display:none">
 
-                <!-- 3-Schritt-Assistent ──────────────────────────────────────── -->
-                <div class="ci-wizard">
+                    <div class="ci-wizard-wrap">
+                        <div class="ci-wizard-intro">
+                            <p class="ci-wizard-intro__title">In drei Schritten zum Import</p>
+                            <p class="ci-wizard-intro__text">Datei ausw&auml;hlen, hochladen, erst Vorschau pr&uuml;fen und dann sicher importieren.</p>
+                        </div>
 
-                    <!-- Schritt 1: Datei auswählen -->
-                    <div class="ci-wizard-step ci-wizard-step--active" id="ci-step-1">
-                        <div class="ci-wizard-step__badge"><span>1</span></div>
-                        <div class="ci-wizard-step__content">
-                            <p class="ci-wizard-step__title">Datei&nbsp;ausw&auml;hlen</p>
-                            <button type="button" class="ci-btn ci-btn--ghost" id="js-btn-select">
-                                &#128193;&nbsp;XML&nbsp;ausw&auml;hlen
-                            </button>
-                            <span class="ci-upload-filename" id="js-filename"></span>
+                        <div class="ci-wizard">
+
+                            <!-- Schritt 1: Datei auswählen -->
+                            <div class="ci-wizard-step ci-wizard-step--active" id="ci-step-1">
+                                <div class="ci-wizard-step__badge"><span>1</span></div>
+                                <div class="ci-wizard-step__content">
+                                    <p class="ci-wizard-step__title">Datei&nbsp;ausw&auml;hlen</p>
+                                    <button type="button" class="ci-btn ci-btn--ghost" id="js-btn-select">
+                                        &#128193;&nbsp;XML&nbsp;ausw&auml;hlen
+                                    </button>
+                                    <span class="ci-upload-filename" id="js-filename"></span>
+                                </div>
+                            </div>
+
+                            <div class="ci-wizard-sep" id="ci-sep-1"></div>
+
+                            <!-- Schritt 2: Hochladen -->
+                            <div class="ci-wizard-step" id="ci-step-2">
+                                <div class="ci-wizard-step__badge"><span>2</span></div>
+                                <div class="ci-wizard-step__content">
+                                    <p class="ci-wizard-step__title">Hochladen</p>
+                                    <button type="button" class="ci-btn ci-btn--ghost" id="js-btn-upload" disabled>
+                                        &#8679;&nbsp;Hochladen
+                                    </button>
+                                    <span id="js-upload-status" class="ci-wizard-step__status"></span>
+                                </div>
+                            </div>
+
+                            <div class="ci-wizard-sep" id="ci-sep-2"></div>
+
+                            <!-- Schritt 3: Import starten -->
+                            <div class="ci-wizard-step" id="ci-step-3">
+                                <div class="ci-wizard-step__badge"><span>3</span></div>
+                                <div class="ci-wizard-step__content">
+                                    <p class="ci-wizard-step__title">Vorschau&nbsp;&amp;&nbsp;Import</p>
+                                    <div class="ci-action-row">
+                                        <button type="button" class="ci-btn ci-btn--ghost" id="js-preview-btn" disabled>
+                                            <span id="js-preview-text">&#128065;&nbsp;Dry&nbsp;Run</span>
+                                            <span id="js-preview-spin" hidden>&#8635;&nbsp;Pr&uuml;fe&hellip;</span>
+                                        </button>
+                                        <button type="button" class="ci-btn ci-btn--primary" id="js-submit-btn" disabled>
+                                            <span id="js-btn-text">&#9654;&nbsp;Import&nbsp;starten</span>
+                                            <span id="js-btn-spin" hidden>&#8635;&nbsp;Importiere&hellip;</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
 
-                    <div class="ci-wizard-sep" id="ci-sep-1"></div>
-
-                    <!-- Schritt 2: Hochladen -->
-                    <div class="ci-wizard-step" id="ci-step-2">
-                        <div class="ci-wizard-step__badge"><span>2</span></div>
-                        <div class="ci-wizard-step__content">
-                            <p class="ci-wizard-step__title">Hochladen</p>
-                            <button type="button" class="ci-btn ci-btn--ghost" id="js-btn-upload" disabled>
-                                &#8679;&nbsp;Hochladen
-                            </button>
-                            <span id="js-upload-status" class="ci-wizard-step__status"></span>
+                    <div class="ci-options">
+                        <p class="ci-options__title">Import-Optionen</p>
+                        <div class="ci-options__grid">
+                            <label class="ci-option">
+                                <input type="checkbox" name="skip_duplicates"     value="1" checked>
+                                <span>Duplikate &uuml;berspringen (gleicher Slug)</span>
+                            </label>
+                            <label class="ci-option">
+                                <input type="checkbox" name="import_drafts"       value="1" checked>
+                                <span>Entw&uuml;rfe importieren</span>
+                            </label>
+                            <label class="ci-option">
+                                <input type="checkbox" name="import_trashed"      value="1">
+                                <span>Gel&ouml;schte Beitr&auml;ge importieren</span>
+                            </label>
+                            <label class="ci-option">
+                                <input type="checkbox" name="import_custom_types" value="1" checked>
+                                <span>Benutzerdefinierte Post-Types importieren</span>
+                            </label>
+                            <label class="ci-option">
+                                <input type="checkbox" name="generate_report"     value="1" checked>
+                                <span>Bericht f&uuml;r unbekannte Meta-Felder erstellen (HTML + Markdown)</span>
+                            </label>
+                            <label class="ci-option">
+                                <input type="checkbox" name="download_images"     value="1" checked>
+                                <span>Original-Bilddateien herunterladen und lokale URLs eintragen</span>
+                            </label>
+                            <label class="ci-option">
+                                <input type="checkbox" name="convert_table_shortcodes" value="1" checked>
+                                <span>WordPress-Tabellen-Shortcodes zu 365CMS-Shortcodes umwandeln</span>
+                            </label>
                         </div>
+                        <p class="ci-options__hint">Empfohlen f&uuml;r komplette Migrationen: Bilder aktiv lassen und Tabellen-Shortcodes umwandeln.</p>
                     </div>
 
-                    <div class="ci-wizard-sep" id="ci-sep-2"></div>
-
-                    <!-- Schritt 3: Import starten -->
-                    <div class="ci-wizard-step" id="ci-step-3">
-                        <div class="ci-wizard-step__badge"><span>3</span></div>
-                        <div class="ci-wizard-step__content">
-                            <p class="ci-wizard-step__title">Import&nbsp;starten</p>
-                            <button type="button" class="ci-btn ci-btn--primary" id="js-submit-btn" disabled>
-                                <span id="js-btn-text">&#9654;&nbsp;Import&nbsp;starten</span>
-                                <span id="js-btn-spin" hidden>&#8635;&nbsp;Importiere&hellip;</span>
-                            </button>
+                    <div class="ci-progress" id="js-progress" hidden>
+                        <div class="ci-progress__bar">
+                            <div class="ci-progress__fill" id="js-prog-fill"></div>
                         </div>
+                        <p class="ci-progress__label" id="js-prog-label">Wird verarbeitet&hellip;</p>
                     </div>
 
-                </div><!-- /.ci-wizard -->
+                </form>
+            </div>
 
-                <!-- Import-Optionen ──────────────────────────────────────────── -->
-                <div class="ci-options">
-                    <p class="ci-options__title">Import-Optionen</p>
-                    <div class="ci-options__grid">
-                        <label class="ci-option">
-                            <input type="checkbox" name="skip_duplicates"     value="1" checked>
-                            <span>Duplikate &uuml;berspringen (gleicher Slug)</span>
-                        </label>
-                        <label class="ci-option">
-                            <input type="checkbox" name="import_drafts"       value="1" checked>
-                            <span>Entw&uuml;rfe importieren</span>
-                        </label>
-                        <label class="ci-option">
-                            <input type="checkbox" name="import_trashed"      value="1">
-                            <span>Gel&ouml;schte Beitr&auml;ge importieren</span>
-                        </label>
-                        <label class="ci-option">
-                            <input type="checkbox" name="import_custom_types" value="1" checked>
-                            <span>Benutzerdefinierte Post-Types importieren</span>
-                        </label>
-                        <label class="ci-option">
-                            <input type="checkbox" name="generate_report"     value="1" checked>
-                            <span>Markdown-Bericht f&uuml;r unbekannte Meta-Felder erstellen</span>
-                        </label>
+            <aside class="ci-card ci-card--side">
+                <div class="ci-card__eyebrow">Kurz &amp; klar</div>
+                <h3 class="ci-card__title">Import-Checkliste</h3>
+                <div class="ci-side-stack">
+                    <div class="ci-mini-card">
+                        <span class="ci-mini-card__icon">&#128221;</span>
+                        <div>
+                            <strong>XML aus WordPress</strong>
+                            <p>Nutze eine echte WXR-Datei aus dem WordPress-Export, idealerweise getrennt nach Inhaltstypen.</p>
+                        </div>
+                    </div>
+                    <div class="ci-mini-card">
+                        <span class="ci-mini-card__icon">&#128065;</span>
+                        <div>
+                            <strong>Immer erst Dry Run</strong>
+                            <p>Pr&uuml;fe vor dem Schreiben, welche Slugs, Bilder, Tabellen und Metas &uuml;bernommen werden.</p>
+                        </div>
+                    </div>
+                    <div class="ci-mini-card">
+                        <span class="ci-mini-card__icon">&#128206;</span>
+                        <div>
+                            <strong>Meta-Bericht aktiv lassen</strong>
+                            <p>So bleiben Sonderdaten und nicht direkt gemappte WordPress-Felder nachvollziehbar.</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Fortschrittsbalken ───────────────────────────────────────── -->
-                <div class="ci-progress" id="js-progress" hidden>
-                    <div class="ci-progress__bar">
-                        <div class="ci-progress__fill" id="js-prog-fill"></div>
-                    </div>
-                    <p class="ci-progress__label" id="js-prog-label">Wird verarbeitet&hellip;</p>
+                <div class="ci-side-callout">
+                    <h4>Empfohlener Ablauf</h4>
+                    <ol class="ci-ordered-list">
+                        <li>Datei hochladen</li>
+                        <li>Dry Run und Ziele kontrollieren</li>
+                        <li>Erst danach importieren</li>
+                    </ol>
                 </div>
-
-            </form>
+            </aside>
         </div>
     </div>
 
     <!-- Tab: Import-Ordner -->
     <div class="ci-tab-panel" id="tab-folder">
-        <div class="ci-card">
-            <div class="ci-card__head">
-                <h2 class="ci-card__title">
-                    Dateien aus Import-Ordner
-                    <?php if (!empty($import_files)): ?>
-                        <span class="ci-badge"><?php echo count($import_files); ?></span>
-                    <?php endif; ?>
-                </h2>
-                <span class="ci-muted">Pfad: <code>uploads/import/</code></span>
+        <div class="ci-layout-grid">
+            <div class="ci-card ci-card--hero">
+                <div class="ci-card__head">
+                    <h2 class="ci-card__title">
+                        Dateien aus Import-Quellen
+                        <?php if (!empty($import_files)): ?>
+                            <span class="ci-badge"><?php echo count($import_files); ?></span>
+                        <?php endif; ?>
+                    </h2>
+                    <span class="ci-muted">Quellen: <code>uploads/import/</code> &amp; <code>wp_import_files/</code></span>
+                </div>
+
+                <div id="js-folder-notice" hidden></div>
+
+                <?php if (empty($import_files)): ?>
+                    <div class="ci-empty">
+                        <div class="ci-empty__icon">&#128194;</div>
+                        <p>Keine XML-Dateien in den bekannten Import-Quellen vorhanden.</p>
+                        <p class="ci-muted">Nutze Uploads unter <code>uploads/import/</code> oder lege Test-/Exportdateien unter <code>wp_import_files/</code> im Plugin ab.</p>
+                    </div>
+                <?php else: ?>
+                    <div class="ci-table-wrap">
+                        <table class="ci-table">
+                            <thead>
+                                <tr>
+                                    <th>Quelle</th>
+                                    <th>Dateiname</th>
+                                    <th>Gr&ouml;&szlig;e</th>
+                                    <th>Datum</th>
+                                    <th>Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach ($import_files as $f): ?>
+                                <tr id="row-<?php echo htmlspecialchars($f['name']); ?>">
+                                    <td>
+                                        <span class="ci-source-badge"><?php echo htmlspecialchars((string) ($f['source_label'] ?? 'Import')); ?></span>
+                                        <?php if (!empty($f['source_hint'])): ?>
+                                            <div class="ci-source-hint"><?php echo htmlspecialchars((string) $f['source_hint']); ?></div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><code><?php echo htmlspecialchars($f['name']); ?></code></td>
+                                    <td><?php echo htmlspecialchars($f['size_human']); ?></td>
+                                    <td><?php echo htmlspecialchars($f['date']); ?></td>
+                                    <td>
+                                        <form class="js-folder-import-form"
+                                              method="POST"
+                                              data-filename="<?php echo htmlspecialchars($f['name']); ?>">
+                                            <input type="hidden" name="_nonce"               value="<?php echo $esc_nonce; ?>">
+                                            <input type="hidden" name="cms_action"           value="cms_importer_folder_import">
+                                            <input type="hidden" name="import_file"          value="<?php echo htmlspecialchars($f['name']); ?>">
+                                            <input type="hidden" name="import_source"        value="<?php echo htmlspecialchars((string) ($f['source_key'] ?? 'uploads')); ?>">
+                                            <input type="hidden" name="skip_duplicates"      value="1">
+                                            <input type="hidden" name="import_drafts"        value="1">
+                                            <input type="hidden" name="import_custom_types"  value="1">
+                                            <input type="hidden" name="generate_report"      value="1">
+                                            <input type="hidden" name="download_images"      value="1">
+                                            <input type="hidden" name="convert_table_shortcodes" value="1">
+                                            <div class="ci-inline-actions">
+                                                <button type="button"
+                                                        class="ci-btn ci-btn--ghost ci-btn--sm js-folder-preview-btn">
+                                                    &#128065; Vorschau
+                                                </button>
+                                                <button type="submit"
+                                                        class="ci-btn ci-btn--primary ci-btn--sm js-folder-import-btn">
+                                                    &#9654; Importieren
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
             </div>
 
-            <div id="js-folder-notice" hidden></div>
+            <aside class="ci-card ci-card--side">
+                <div class="ci-card__eyebrow">Import-Ordner</div>
+                <h3 class="ci-card__title">Quellen &amp; Hinweise</h3>
 
-            <?php if (empty($import_files)): ?>
-                <div class="ci-empty">
-                    <div class="ci-empty__icon">&#128194;</div>
-                    <p>Keine XML-Dateien im Import-Ordner vorhanden.</p>
-                    <p class="ci-muted">Lade eine Datei mit der Option &bdquo;Im Import-Ordner speichern&ldquo; hoch oder kopiere sie direkt per (S)FTP.</p>
+                <div class="ci-side-stack">
+                    <div class="ci-mini-card">
+                        <span class="ci-mini-card__icon">&#128193;</span>
+                        <div>
+                            <strong>Uploads / import</strong>
+                            <p>Ideal f&uuml;r neue Dateien, die du direkt im CMS oder per Dateiupload ablegst.</p>
+                        </div>
+                    </div>
+                    <div class="ci-mini-card">
+                        <span class="ci-mini-card__icon">&#128230;</span>
+                        <div>
+                            <strong>Plugin / wp_import_files</strong>
+                            <p>Perfekt f&uuml;r wiederkehrende Tests, Migrationspakete und feste Demo-Exporte.</p>
+                        </div>
+                    </div>
                 </div>
-            <?php else: ?>
-                <div class="ci-table-wrap">
-                    <table class="ci-table">
-                        <thead>
-                            <tr>
-                                <th>Dateiname</th>
-                                <th>Gr&ouml;&szlig;e</th>
-                                <th>Datum</th>
-                                <th>Aktion</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($import_files as $f): ?>
-                            <tr id="row-<?php echo htmlspecialchars($f['name']); ?>">
-                                <td><code><?php echo htmlspecialchars($f['name']); ?></code></td>
-                                <td><?php echo htmlspecialchars($f['size_human']); ?></td>
-                                <td><?php echo htmlspecialchars($f['date']); ?></td>
-                                <td>
-                                    <form class="js-folder-import-form"
-                                          method="POST"
-                                          data-filename="<?php echo htmlspecialchars($f['name']); ?>">
-                                        <input type="hidden" name="_nonce"               value="<?php echo $esc_nonce; ?>">
-                                        <input type="hidden" name="cms_action"           value="cms_importer_folder_import">
-                                        <input type="hidden" name="import_file"          value="<?php echo htmlspecialchars($f['name']); ?>">
-                                        <input type="hidden" name="skip_duplicates"      value="1">
-                                        <input type="hidden" name="import_drafts"        value="1">
-                                        <input type="hidden" name="import_custom_types"  value="1">
-                                        <input type="hidden" name="generate_report"      value="1">
-                                        <button type="submit"
-                                                class="ci-btn ci-btn--primary ci-btn--sm js-folder-import-btn">
-                                            &#9654; Importieren
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
+
+                <div class="ci-side-callout">
+                    <h4>Gut f&uuml;r Stapelarbeit</h4>
+                    <p>Nutze zuerst die Vorschau pro Datei. So erkennst du doppelte Slugs, Bilder und Tabellen-Mappings vor dem Import.</p>
                 </div>
-            <?php endif; ?>
+            </aside>
         </div>
+    </div>
+
+    <div class="ci-card ci-card--full ci-preview-panel" id="js-preview-panel" hidden>
+        <div class="ci-preview-panel__head">
+            <h3 class="ci-preview-panel__title">Dry-Run Vorschau</h3>
+            <p class="ci-preview-panel__sub">So w&uuml;rde der Import aktuell in 365CMS landen &ndash; noch ohne Schreibzugriff.</p>
+        </div>
+        <div class="ci-preview-summary" id="js-preview-summary"></div>
+        <div class="ci-preview-reasons" id="js-preview-reasons" hidden></div>
+        <div class="ci-table-wrap" id="js-preview-table-wrap" hidden>
+            <table class="ci-table ci-preview-table">
+                <thead>
+                    <tr>
+                        <th>Quelle</th>
+                        <th>Ziel</th>
+                        <th>Status</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody id="js-preview-table-body"></tbody>
+            </table>
+        </div>
+        <p class="ci-preview-note" id="js-preview-note" hidden></p>
     </div>
 
     <!-- Info-Grid -->
@@ -255,9 +388,9 @@ $esc_nonce_download = htmlspecialchars($nonce_download ?? '');
             <ul>
                 <li>Beitr&auml;ge (<code>post</code>) &amp; Seiten (<code>page</code>)</li>
                 <li>Benutzerdefinierte Post-Types (optional)</li>
-                <li>Kategorien &amp; Tags (kommagetrennt)</li>
-                <li>SEO-Meta: Yoast, Rank Math, SEOPress</li>
-                <li>Bilder &rarr; <code>uploads/images/{slug}/</code></li>
+                <li>TablePress-Tabellen &rarr; <code>cms_site_tables</code></li>
+                <li>Kategorien, Tags und SEO-Meta (Yoast, Rank Math, SEOPress)</li>
+                <li>Bilder &rarr; lokale Import-Pfade inkl. Featured-Image-Zuordnung</li>
             </ul>
         </div>
         <div class="ci-info-card">
@@ -266,25 +399,24 @@ $esc_nonce_download = htmlspecialchars($nonce_download ?? '');
                 <li>Kommentare</li>
                 <li>Benutzerkonten</li>
                 <li>Men&uuml;s &amp; Navigation</li>
-                <li>Plugin-spezifische Daten (werden dokumentiert)</li>
+                <li>Exotische Plugin-Daten ohne Mapping (werden dokumentiert)</li>
             </ul>
         </div>
         <div class="ci-info-card">
             <h3>&#128247; Bild-Download</h3>
-            <p>Alle <code>&lt;img&gt;</code>-URLs werden heruntergeladen und in
-            <code>uploads/images/<em>slug</em>/</code> gespeichert.
-            Das erste Bild wird als <strong>Featured Image</strong> gesetzt.</p>
+            <p>Attachment- und Inhaltsbilder werden nach M&ouml;glichkeit von der Original-URL geladen,
+            lokal registriert und im Inhalt auf die neue 365CMS-URL umgeschrieben.</p>
         </div>
         <div class="ci-info-card">
-            <h3>&#128196; Meta-Bericht</h3>
-            <p>Unbekannte Meta-Felder werden in <code>cms_import_meta</code> gespeichert
-            und als <strong>Markdown-Datei</strong> zum Download bereitgestellt.</p>
+            <h3>&#128203; Tabellen-Migration</h3>
+            <p>WordPress-Shortcodes wie <code>[table id=5 /]</code> werden beim Import zu
+            <code>[site-table id=&quot;X&quot;]</code> umgeschrieben, sobald die Tabelle vorhanden ist.</p>
         </div>
     </div>
 
     <!-- Letzte Imports -->
     <?php if (!empty($log_entries)): ?>
-    <div class="ci-card">
+    <div class="ci-card ci-card--full">
         <h2 class="ci-card__title">Zuletzt importiert</h2>
         <div class="ci-table-wrap">
             <table class="ci-table">
@@ -314,8 +446,11 @@ $esc_nonce_download = htmlspecialchars($nonce_download ?? '');
                         <td><?php echo htmlspecialchars(substr($log->started_at ?? '', 0, 16)); ?></td>
                         <td>
                             <?php if (!empty($log->meta_report_path)): ?>
-                                <a href="/admin/plugins/cms-importer/cms-importer?action=download_report&amp;log_id=<?php echo (int)$log->id; ?>&amp;_nonce=<?php echo $esc_nonce_download; ?>"
-                                   class="ci-link">&#128196; .md</a>
+                                          <a href="/admin/plugins/cms-importer/cms-importer?action=download_report&amp;log_id=<?php echo (int)$log->id; ?>&amp;_nonce=<?php echo $esc_nonce_download; ?>&amp;format=html"
+                                              class="ci-link">&#128196; Bericht</a>
+                                          <span class="ci-muted"> / </span>
+                                          <a href="/admin/plugins/cms-importer/cms-importer?action=download_report&amp;log_id=<?php echo (int)$log->id; ?>&amp;_nonce=<?php echo $esc_nonce_download; ?>&amp;format=md"
+                                              class="ci-link">.md</a>
                             <?php else: ?>
                                 <span class="ci-muted">&mdash;</span>
                             <?php endif; ?>
