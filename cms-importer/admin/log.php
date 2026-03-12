@@ -2,13 +2,19 @@
 /**
  * Admin-Template: Import-Protokoll
  *
+ * @var string|null $message         Feedback-Meldung
+ * @var string      $msg_type        success|error|warning
  * @var array  $log_entries      Import-Log-Einträge
  * @var string $nonce_download   CSRF-Nonce für Bericht-Download
+ * @var string $nonce_cleanup    CSRF-Nonce für Bereinigung
+ * @var array  $cleanup_stats    Zähler für Bereinigung
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
+
+$esc_nonce_cleanup = htmlspecialchars($nonce_cleanup ?? '');
 ?>
 <div class="cms-importer-wrap admin-content">
 
@@ -22,12 +28,34 @@ if (!defined('ABSPATH')) {
         </p>
     </div>
 
+    <?php if (!empty($message)): ?>
+        <div class="ci-notice ci-notice--<?php echo htmlspecialchars($msg_type ?? 'success'); ?>">
+            <?php echo htmlspecialchars((string) $message); ?>
+        </div>
+    <?php endif; ?>
+
     <div class="cms-importer-card">
         <div class="cms-importer-card__actions">
             <a href="?page=cms-importer" class="cms-importer-btn cms-importer-btn--secondary">
                 ← Zurück zum Import
             </a>
+            <button type="button"
+                    class="ci-btn ci-btn--ghost-danger js-cleanup-trigger"
+                    data-cleanup-action="cleanup_history"
+                    data-cleanup-title="Importer-Verlauf l&ouml;schen"
+                    data-cleanup-body="Es werden alle Import-Protokolle, Import-Mappings, Import-Meta-Daten und gespeicherten Bericht-Dateien des Plugins entfernt. Dateien in den Import-Ordnern bleiben erhalten.">
+                🗑️ Verlauf l&ouml;schen
+            </button>
         </div>
+
+        <div class="ci-cleanup-inline-stats">
+            <span><strong><?php echo (int) ($cleanup_stats['logs'] ?? 0); ?></strong> Protokolle</span>
+            <span><strong><?php echo (int) ($cleanup_stats['mappings'] ?? 0); ?></strong> Mappings</span>
+            <span><strong><?php echo (int) ($cleanup_stats['meta'] ?? 0); ?></strong> Meta-Eintr&auml;ge</span>
+            <span><strong><?php echo (int) ($cleanup_stats['reports'] ?? 0); ?></strong> Berichte</span>
+        </div>
+
+        <p class="ci-muted" style="margin:0 0 18px;">Hinweis: Auf der Import-Seite l&ouml;scht der Reset jetzt bewusst <strong>alle</strong> Beitr&auml;ge und Seiten im CMS &ndash; nicht nur importierte Inhalte.</p>
 
         <?php if (empty($log_entries)): ?>
             <div class="cms-importer-empty">
@@ -93,5 +121,26 @@ if (!defined('ABSPATH')) {
             </tbody>
         </table>
         <?php endif; ?>
+    </div>
+</div>
+
+<div class="ci-modal" id="js-cleanup-modal" hidden>
+    <div class="ci-modal__backdrop" data-close-cleanup-modal></div>
+    <div class="ci-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="js-cleanup-modal-title">
+        <div class="ci-modal__header">
+            <h3 id="js-cleanup-modal-title">Bereinigung best&auml;tigen</h3>
+            <button type="button" class="ci-modal__close" data-close-cleanup-modal aria-label="Modal schlie&szlig;en">&times;</button>
+        </div>
+        <div class="ci-modal__body">
+            <p id="js-cleanup-modal-text">Diese Aktion kann nicht r&uuml;ckg&auml;ngig gemacht werden.</p>
+        </div>
+        <div class="ci-modal__footer">
+            <button type="button" class="ci-btn ci-btn--ghost" data-close-cleanup-modal>Abbrechen</button>
+            <form method="POST" id="js-cleanup-form">
+                <input type="hidden" name="cms_admin_action" id="js-cleanup-action" value="">
+                <input type="hidden" name="_cleanup_nonce" value="<?php echo $esc_nonce_cleanup; ?>">
+                <button type="submit" class="ci-btn ci-btn--danger" id="js-cleanup-submit">Jetzt ausf&uuml;hren</button>
+            </form>
+        </div>
     </div>
 </div>

@@ -15,6 +15,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (defined('CMS_IMPORTER_XML_PARSER_CLASS_LOADED') || class_exists('CMS_Importer_XML_Parser', false)) {
+    return;
+}
+
+define('CMS_IMPORTER_XML_PARSER_CLASS_LOADED', true);
+
 /**
  * Parsed WordPress WXR-Exportdateien (XML).
  */
@@ -191,6 +197,7 @@ class CMS_Importer_XML_Parser
             'title'                => trim((string) ($item->title ?? '')),
             'slug'                 => $resolvedSlug,
             'link'                 => trim((string) ($item->link ?? '')),
+            'guid'                 => trim((string) ($item->guid ?? '')),
             'content'              => $raw_content,
             'excerpt'              => trim((string) ($excerpt_ns->encoded ?? '')),
             'author_login'         => trim((string) ($dc_ns->creator ?? '')),
@@ -205,6 +212,8 @@ class CMS_Importer_XML_Parser
             'comment_status'       => (string) $wp->comment_status,
             'ping_status'          => (string) $wp->ping_status,
             'is_sticky'            => ((string) $wp->is_sticky === '1'),
+            'translation_priority' => '',
+            'locale'               => 'de',
             'categories'           => [],
             'tags'                 => [],
             'meta'                 => $meta,
@@ -223,8 +232,14 @@ class CMS_Importer_XML_Parser
 
         foreach ($item->category as $cat) {
             $domain = (string) $cat->attributes()->domain;
+            $nicename = trim((string) ($cat->attributes()->nicename ?? ''));
             $value = trim((string) $cat);
             if ($value === '') {
+                continue;
+            }
+
+            if ($domain === 'translation_priority') {
+                $parsed['translation_priority'] = $nicename !== '' ? $nicename : $value;
                 continue;
             }
 
@@ -237,6 +252,12 @@ class CMS_Importer_XML_Parser
         }
 
         $parsed = $this->map_known_meta($parsed);
+        $parsed['locale'] = $this->resolve_item_locale($parsed);
+
+        if ($this->should_ignore_english_item($parsed)) {
+            return null;
+        }
+
         $parsed['image_urls'] = $this->collect_image_urls($raw_content, $parsed['meta'], $parsed['seo']);
 
         if ($post_type === 'tablepress_table') {
@@ -425,13 +446,13 @@ class CMS_Importer_XML_Parser
     {
         $meta = $parsed['meta'];
 
-        $titleMatch = $this->first_non_empty_meta($meta, ['_yoast_wpseo_title', 'rank_math_title', '_seopress_titles_title']);
+        $titleMatch = $this->first_non_empty_meta($meta, ['_yoast_wpseo_title', 'rank_math_title', '_seopress_titles_title', '_aioseo_title', 'aioseo_title', '_aioseop_title']);
         if ($titleMatch !== null) {
             $parsed['meta_title'] = $this->sanitize_text_value($titleMatch['value'], 255);
             $parsed['mapped_meta_keys'][] = $titleMatch['key'];
         }
 
-        $descMatch = $this->first_non_empty_meta($meta, ['_yoast_wpseo_metadesc', 'rank_math_description', '_seopress_titles_desc']);
+        $descMatch = $this->first_non_empty_meta($meta, ['_yoast_wpseo_metadesc', 'rank_math_description', '_seopress_titles_desc', '_aioseo_description', 'aioseo_description', '_aioseop_description']);
         if ($descMatch !== null) {
             $parsed['meta_description'] = $this->sanitize_text_value($descMatch['value'], 1000);
             $parsed['mapped_meta_keys'][] = $descMatch['key'];
@@ -444,7 +465,7 @@ class CMS_Importer_XML_Parser
         }
 
         $seo = $this->default_seo_payload();
-        $canonicalMatch = $this->first_non_empty_meta($meta, ['_yoast_wpseo_canonical', 'rank_math_canonical_url', '_seopress_robots_canonical']);
+        $canonicalMatch = $this->first_non_empty_meta($meta, ['_yoast_wpseo_canonical', 'rank_math_canonical_url', '_seopress_robots_canonical', '_aioseo_canonical_url', 'aioseo_canonical_url', '_aioseop_custom_link', '_aioseop_canonical_link']);
         if ($canonicalMatch !== null) {
             $seo['canonical_url'] = trim($canonicalMatch['value']);
             $parsed['mapped_meta_keys'][] = $canonicalMatch['key'];
@@ -463,16 +484,18 @@ class CMS_Importer_XML_Parser
         }
 
         foreach ([
-            'og_title' => ['_yoast_wpseo_opengraph-title', 'rank_math_facebook_title', '_seopress_social_fb_title'],
-            'og_description' => ['_yoast_wpseo_opengraph-description', 'rank_math_facebook_description', '_seopress_social_fb_desc'],
-            'og_image' => ['_yoast_wpseo_opengraph-image', 'rank_math_facebook_image', '_seopress_social_fb_img'],
-            'twitter_title' => ['_yoast_wpseo_twitter-title', 'rank_math_twitter_title', '_seopress_social_twitter_title'],
-            'twitter_description' => ['_yoast_wpseo_twitter-description', 'rank_math_twitter_description', '_seopress_social_twitter_desc'],
-            'twitter_image' => ['_yoast_wpseo_twitter-image', 'rank_math_twitter_image', '_seopress_social_twitter_img'],
-            'focus_keyphrase' => ['_yoast_wpseo_focuskw', 'rank_math_focus_keyword', '_seopress_analysis_target_kw'],
-            'schema_type' => ['rank_math_schema_type', '_yoast_wpseo_schema_page_type', '_yoast_wpseo_schema_article_type'],
-            'sitemap_priority' => ['rank_math_sitemap_priority'],
-            'sitemap_changefreq' => ['rank_math_sitemap_changefreq'],
+            'og_title' => ['_yoast_wpseo_opengraph-title', 'rank_math_facebook_title', '_seopress_social_fb_title', '_aioseo_og_title', 'aioseo_og_title', '_aioseop_opengraph_settings_title'],
+            'og_description' => ['_yoast_wpseo_opengraph-description', 'rank_math_facebook_description', '_seopress_social_fb_desc', '_aioseo_og_description', 'aioseo_og_description', '_aioseop_opengraph_settings_desc'],
+            'og_image' => ['_yoast_wpseo_opengraph-image', 'rank_math_facebook_image', '_seopress_social_fb_img', '_aioseo_og_image', 'aioseo_og_image', '_aioseo_facebook_image', 'aioseo_facebook_image'],
+            'og_type' => ['_aioseo_og_type', 'aioseo_og_type', '_yoast_wpseo_opengraph-type', '_seopress_social_fb_type'],
+            'twitter_card' => ['_yoast_wpseo_twitter-card', 'rank_math_twitter_card_type', '_seopress_social_twitter_card', '_aioseo_twitter_card', 'aioseo_twitter_card'],
+            'twitter_title' => ['_yoast_wpseo_twitter-title', 'rank_math_twitter_title', '_seopress_social_twitter_title', '_aioseo_twitter_title', 'aioseo_twitter_title'],
+            'twitter_description' => ['_yoast_wpseo_twitter-description', 'rank_math_twitter_description', '_seopress_social_twitter_desc', '_aioseo_twitter_description', 'aioseo_twitter_description'],
+            'twitter_image' => ['_yoast_wpseo_twitter-image', 'rank_math_twitter_image', '_seopress_social_twitter_img', '_aioseo_twitter_image', 'aioseo_twitter_image'],
+            'focus_keyphrase' => ['_yoast_wpseo_focuskw', 'rank_math_focus_keyword', '_seopress_analysis_target_kw', '_aioseo_focus_keyphrase', 'aioseo_focus_keyphrase', '_aioseop_keywords'],
+            'schema_type' => ['rank_math_schema_type', '_yoast_wpseo_schema_page_type', '_yoast_wpseo_schema_article_type', '_aioseo_schema_type', 'aioseo_schema_type'],
+            'sitemap_priority' => ['rank_math_sitemap_priority', '_aioseo_sitemap_priority', 'aioseo_sitemap_priority'],
+            'sitemap_changefreq' => ['rank_math_sitemap_changefreq', '_aioseo_sitemap_frequency', 'aioseo_sitemap_frequency'],
             'hreflang_group' => ['_wpml_translation_group'],
         ] as $seoField => $keys) {
             $match = $this->first_non_empty_meta($meta, $keys);
@@ -480,12 +503,31 @@ class CMS_Importer_XML_Parser
                 continue;
             }
 
-            $seo[$seoField] = trim($match['value']);
+            $seo[$seoField] = $this->normalize_seo_field_value($seoField, trim($match['value']), $parsed, $seo);
             $parsed['mapped_meta_keys'][] = $match['key'];
         }
 
+        if ($seo['canonical_url'] === '') {
+            $fallbackCanonical = trim((string) ($parsed['link'] ?? ''));
+            if ($fallbackCanonical !== '' && filter_var($fallbackCanonical, FILTER_VALIDATE_URL) !== false) {
+                $seo['canonical_url'] = $fallbackCanonical;
+            }
+        }
+
         if ($seo['schema_type'] === '') {
-            $seo['schema_type'] = ($parsed['post_type'] ?? '') === 'post' ? 'Article' : 'WebPage';
+            $seo['schema_type'] = $this->default_schema_type_for_post_type((string) ($parsed['post_type'] ?? ''));
+        } else {
+            $seo['schema_type'] = $this->normalize_schema_type($seo['schema_type'], (string) ($parsed['post_type'] ?? ''));
+        }
+        if ($seo['og_type'] === '') {
+            $seo['og_type'] = $this->default_og_type_for_post_type((string) ($parsed['post_type'] ?? ''));
+        } else {
+            $seo['og_type'] = $this->normalize_og_type($seo['og_type'], (string) ($parsed['post_type'] ?? ''));
+        }
+        if ($seo['twitter_card'] === '') {
+            $seo['twitter_card'] = $this->default_twitter_card($seo);
+        } else {
+            $seo['twitter_card'] = $this->normalize_twitter_card($seo['twitter_card'], $seo);
         }
         if ($seo['og_title'] === '') {
             $seo['og_title'] = $parsed['meta_title'] !== '' ? $parsed['meta_title'] : $parsed['title'];
@@ -499,6 +541,16 @@ class CMS_Importer_XML_Parser
         if ($seo['twitter_description'] === '') {
             $seo['twitter_description'] = $seo['og_description'];
         }
+        if ($seo['og_image'] === '' && !empty($parsed['featured_image']) && filter_var((string) $parsed['featured_image'], FILTER_VALIDATE_URL) !== false) {
+            $seo['og_image'] = (string) $parsed['featured_image'];
+        }
+        if ($seo['twitter_image'] === '') {
+            $seo['twitter_image'] = $seo['og_image'];
+        }
+
+        $seo['sitemap_priority'] = $this->normalize_sitemap_priority((string) $seo['sitemap_priority']);
+        $seo['sitemap_changefreq'] = $this->normalize_sitemap_changefreq((string) $seo['sitemap_changefreq']);
+        $seo['focus_keyphrase'] = $this->sanitize_text_value((string) $seo['focus_keyphrase'], 255);
 
         $parsed['seo'] = $seo;
         $parsed['mapped_meta_keys'] = array_values(array_unique($parsed['mapped_meta_keys']));
@@ -720,6 +772,16 @@ class CMS_Importer_XML_Parser
             return [!in_array($value, ['1', 'true', 'noindex'], true), $keys];
         }
 
+        foreach (['_aioseop_noindex', '_aioseo_noindex', 'aioseo_noindex'] as $key) {
+            if (!isset($meta[$key])) {
+                continue;
+            }
+
+            $keys[] = $key;
+            $value = strtolower(trim((string) $meta[$key]));
+            return [!in_array($value, ['1', 'true', 'yes', 'on', 'noindex'], true), $keys];
+        }
+
         return [null, $keys];
     }
 
@@ -747,6 +809,16 @@ class CMS_Importer_XML_Parser
             $keys[] = '_seopress_robots_follow';
             $value = strtolower(trim((string) $meta['_seopress_robots_follow']));
             return [!in_array($value, ['0', 'false', 'nofollow'], true), $keys];
+        }
+
+        foreach (['_aioseop_nofollow', '_aioseo_nofollow', 'aioseo_nofollow'] as $key) {
+            if (!isset($meta[$key])) {
+                continue;
+            }
+
+            $keys[] = $key;
+            $value = strtolower(trim((string) $meta[$key]));
+            return [!in_array($value, ['1', 'true', 'yes', 'on', 'nofollow'], true), $keys];
         }
 
         return [null, $keys];
@@ -807,6 +879,114 @@ class CMS_Importer_XML_Parser
         }
 
         return null;
+    }
+
+    private function normalize_seo_field_value(string $field, string $value, array $parsed, array $seo): string
+    {
+        return match ($field) {
+            'og_title', 'twitter_title' => $this->sanitize_text_value($value, 255),
+            'og_description', 'twitter_description' => $this->sanitize_text_value($value, 1000),
+            'focus_keyphrase' => $this->sanitize_text_value($value, 255),
+            'canonical_url' => trim($value),
+            'og_image', 'twitter_image' => trim($value),
+            'og_type' => $this->normalize_og_type($value, (string) ($parsed['post_type'] ?? '')),
+            'twitter_card' => $this->normalize_twitter_card($value, $seo),
+            'schema_type' => $this->normalize_schema_type($value, (string) ($parsed['post_type'] ?? '')),
+            'sitemap_priority' => $this->normalize_sitemap_priority($value),
+            'sitemap_changefreq' => $this->normalize_sitemap_changefreq($value),
+            default => trim($value),
+        };
+    }
+
+    private function normalize_schema_type(string $value, string $postType): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return $this->default_schema_type_for_post_type($postType);
+        }
+
+        $normalized = strtolower(str_replace(['-', '_', ' '], '', $value));
+
+        return match ($normalized) {
+            'article', 'blogposting', 'newsarticle', 'posting' => 'Article',
+            'webpage', 'page', 'website' => 'WebPage',
+            'faqpage' => 'FAQPage',
+            'contactpage' => 'ContactPage',
+            'aboutpage' => 'AboutPage',
+            default => $value,
+        };
+    }
+
+    private function normalize_og_type(string $value, string $postType): string
+    {
+        $value = strtolower(trim($value));
+        if ($value === '') {
+            return $this->default_og_type_for_post_type($postType);
+        }
+
+        return match ($value) {
+            'post', 'article', 'blog', 'blogposting', 'newsarticle' => 'article',
+            'page', 'website', 'webpage', 'site' => 'website',
+            'profile', 'book', 'music.song', 'music.album', 'video.movie', 'video.episode', 'video.tv_show' => $value,
+            default => $this->default_og_type_for_post_type($postType),
+        };
+    }
+
+    private function normalize_twitter_card(string $value, array $seo): string
+    {
+        $value = strtolower(trim($value));
+        if ($value === '') {
+            return $this->default_twitter_card($seo);
+        }
+
+        return match ($value) {
+            'summary', 'summary_large_image', 'app', 'player' => $value,
+            'large', 'large_image', 'summarylargeimage' => 'summary_large_image',
+            default => $this->default_twitter_card($seo),
+        };
+    }
+
+    private function default_twitter_card(array $seo): string
+    {
+        return trim((string) ($seo['og_image'] ?? '')) !== '' || trim((string) ($seo['twitter_image'] ?? '')) !== ''
+            ? 'summary_large_image'
+            : 'summary';
+    }
+
+    private function normalize_sitemap_priority(string $value): string
+    {
+        $value = str_replace(',', '.', trim($value));
+        if ($value === '' || !is_numeric($value)) {
+            return '';
+        }
+
+        $priority = max(0.0, min(1.0, (float) $value));
+        $formatted = number_format($priority, 1, '.', '');
+        return rtrim(rtrim($formatted, '0'), '.');
+    }
+
+    private function normalize_sitemap_changefreq(string $value): string
+    {
+        $value = strtolower(trim($value));
+        if ($value === '') {
+            return '';
+        }
+
+        return match ($value) {
+            'always', 'hourly', 'daily', 'weekly', 'monthly', 'yearly', 'never' => $value,
+            'annually', 'annual' => 'yearly',
+            default => '',
+        };
+    }
+
+    private function default_schema_type_for_post_type(string $postType): string
+    {
+        return $postType === 'post' ? 'Article' : 'WebPage';
+    }
+
+    private function default_og_type_for_post_type(string $postType): string
+    {
+        return $postType === 'post' ? 'article' : 'website';
     }
 
     private function extract_urls_from_text(string $value): array
@@ -879,5 +1059,72 @@ class CMS_Importer_XML_Parser
         }
 
         return false;
+    }
+
+    private function resolve_item_locale(array $parsed): string
+    {
+        $translationPriority = strtolower(trim((string) ($parsed['translation_priority'] ?? '')));
+        if ($translationPriority !== '' && str_ends_with($translationPriority, '-en')) {
+            return 'en';
+        }
+
+        foreach ([(string) ($parsed['link'] ?? ''), (string) ($parsed['guid'] ?? '')] as $candidateUrl) {
+            $locale = $this->extract_locale_from_url($candidateUrl);
+            if ($locale !== '') {
+                return $locale;
+            }
+        }
+
+        return 'de';
+    }
+
+    private function should_ignore_english_item(array $parsed): bool
+    {
+        if (strtolower(trim((string) ($parsed['locale'] ?? ''))) === 'en') {
+            return true;
+        }
+
+        $translationPriority = strtolower(trim((string) ($parsed['translation_priority'] ?? '')));
+        if ($translationPriority !== '' && str_ends_with($translationPriority, '-en')) {
+            return true;
+        }
+
+        foreach ([(string) ($parsed['link'] ?? ''), (string) ($parsed['guid'] ?? ''), (string) ($parsed['slug'] ?? '')] as $candidateUrl) {
+            if ($this->extract_locale_from_url($candidateUrl) === 'en') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function extract_locale_from_url(string $url): string
+    {
+        $url = trim(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($url === '') {
+            return '';
+        }
+
+        $path = filter_var($url, FILTER_VALIDATE_URL) !== false
+            ? (string) parse_url($url, PHP_URL_PATH)
+            : $url;
+
+        $segments = array_values(array_filter(
+            explode('/', trim($path, '/')),
+            static fn(string $segment): bool => trim($segment) !== ''
+        ));
+
+        if ($segments === []) {
+            return '';
+        }
+
+        $firstSegment = strtolower((string) ($segments[0] ?? ''));
+        $lastSegment = strtolower((string) ($segments[count($segments) - 1] ?? ''));
+
+        if ($firstSegment === 'en' || $lastSegment === 'en') {
+            return 'en';
+        }
+
+        return '';
     }
 }

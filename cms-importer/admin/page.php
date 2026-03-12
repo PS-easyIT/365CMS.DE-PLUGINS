@@ -7,9 +7,11 @@
  * @var array|null  $result          Import-Ergebnis-Array
  * @var string      $nonce           CSRF-Nonce (cms-importer-upload)
  * @var string      $nonce_download  CSRF-Nonce (cms-importer-download)
+ * @var string      $nonce_cleanup   CSRF-Nonce (cms-importer-cleanup)
  * @var array       $log_entries     Letzte Import-Logs
  * @var array       $import_files    XML-Dateien aus allen Import-Quellen
  * @var string      $import_dir_url  URL zum Import-Ordner
+ * @var array       $cleanup_stats   Zähler für Bereinigung
  */
 
 if (!defined('ABSPATH')) {
@@ -18,6 +20,7 @@ if (!defined('ABSPATH')) {
 
 $esc_nonce          = htmlspecialchars($nonce ?? '');
 $esc_nonce_download = htmlspecialchars($nonce_download ?? '');
+$esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
 ?>
 <div class="cms-importer-wrap">
 
@@ -29,6 +32,59 @@ $esc_nonce_download = htmlspecialchars($nonce_download ?? '');
             <p class="ci-header__sub">WordPress-WXR-Dateien (.xml) f&uuml;r Beitr&auml;ge, Seiten, Tabellen, SEO-Metadaten und Bilder passend nach 365CMS importieren.</p>
         </div>
         <a href="/admin/plugins/cms-importer/cms-importer-log" class="ci-btn ci-btn--ghost ci-btn--sm">&#128203; Protokoll</a>
+    </div>
+
+    <div class="ci-card ci-card--danger">
+        <div class="ci-card__head ci-card__head--stack-mobile">
+            <div>
+                <div class="ci-card__eyebrow ci-card__eyebrow--danger">Vorbereitung</div>
+                <h2 class="ci-card__title ci-card__title--danger">Alle Beitr&auml;ge und Seiten vor dem Neuimport l&ouml;schen</h2>
+                <p class="ci-muted">Achtung: Dieser Reset arbeitet jetzt bewusst kompromisslos. Er l&ouml;scht <strong>alle</strong> Beitr&auml;ge und Seiten im CMS &ndash; unabh&auml;ngig davon, ob sie importiert oder manuell angelegt wurden.</p>
+            </div>
+            <div class="ci-inline-actions ci-inline-actions--wrap">
+                <button type="button"
+                        class="ci-btn ci-btn--danger js-cleanup-trigger"
+                        data-cleanup-action="cleanup_content"
+                        data-cleanup-title="Alle Beitr&auml;ge und Seiten l&ouml;schen"
+                        data-cleanup-body="Es werden jetzt wirklich alle Beitr&auml;ge und alle Seiten im CMS gel&ouml;scht. Zus&auml;tzlich entfernt der Importer vorhandene SEO-Metadaten, Tag-Zuordnungen und Import-Mappings f&uuml;r diese Inhalte. Diese Aktion ist destruktiv und kann nicht r&uuml;ckg&auml;ngig gemacht werden.">
+                    🧨 Alle Beitr&auml;ge &amp; Seiten l&ouml;schen
+                </button>
+                <button type="button"
+                        class="ci-btn ci-btn--ghost-danger js-cleanup-trigger"
+                        data-cleanup-action="cleanup_history"
+                        data-cleanup-title="Importer-Verlauf l&ouml;schen"
+                        data-cleanup-body="Es werden das komplette Import-Protokoll, alle Import-Mappings, Import-Meta-Daten und gespeicherten Berichte des Plugins entfernt. Dateien in den Import-Ordnern bleiben erhalten.">
+                    🗑️ Importer-Verlauf l&ouml;schen
+                </button>
+            </div>
+        </div>
+
+        <div class="ci-cleanup-stats">
+            <div class="ci-cleanup-stat">
+                <span class="ci-cleanup-stat__value"><?php echo (int) ($cleanup_stats['posts'] ?? 0); ?></span>
+                <span class="ci-cleanup-stat__label">Beitr&auml;ge gesamt</span>
+            </div>
+            <div class="ci-cleanup-stat">
+                <span class="ci-cleanup-stat__value"><?php echo (int) ($cleanup_stats['pages'] ?? 0); ?></span>
+                <span class="ci-cleanup-stat__label">Seiten gesamt</span>
+            </div>
+            <div class="ci-cleanup-stat">
+                <span class="ci-cleanup-stat__value"><?php echo (int) ($cleanup_stats['logs'] ?? 0); ?></span>
+                <span class="ci-cleanup-stat__label">Import-Protokolle</span>
+            </div>
+            <div class="ci-cleanup-stat">
+                <span class="ci-cleanup-stat__value"><?php echo (int) ($cleanup_stats['mappings'] ?? 0); ?></span>
+                <span class="ci-cleanup-stat__label">Mappings</span>
+            </div>
+            <div class="ci-cleanup-stat">
+                <span class="ci-cleanup-stat__value"><?php echo (int) ($cleanup_stats['meta'] ?? 0); ?></span>
+                <span class="ci-cleanup-stat__label">Meta-Eintr&auml;ge</span>
+            </div>
+            <div class="ci-cleanup-stat">
+                <span class="ci-cleanup-stat__value"><?php echo (int) ($cleanup_stats['reports'] ?? 0); ?></span>
+                <span class="ci-cleanup-stat__label">Berichte</span>
+            </div>
+        </div>
     </div>
 
     <!-- Feedback -->
@@ -464,3 +520,24 @@ $esc_nonce_download = htmlspecialchars($nonce_download ?? '');
     <?php endif; ?>
 
 </div><!-- /.cms-importer-wrap -->
+
+<div class="ci-modal" id="js-cleanup-modal" hidden>
+    <div class="ci-modal__backdrop" data-close-cleanup-modal></div>
+    <div class="ci-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="js-cleanup-modal-title">
+        <div class="ci-modal__header">
+            <h3 id="js-cleanup-modal-title">Bereinigung best&auml;tigen</h3>
+            <button type="button" class="ci-modal__close" data-close-cleanup-modal aria-label="Modal schlie&szlig;en">&times;</button>
+        </div>
+        <div class="ci-modal__body">
+            <p id="js-cleanup-modal-text">Diese Aktion kann nicht r&uuml;ckg&auml;ngig gemacht werden.</p>
+        </div>
+        <div class="ci-modal__footer">
+            <button type="button" class="ci-btn ci-btn--ghost" data-close-cleanup-modal>Abbrechen</button>
+            <form method="POST" id="js-cleanup-form">
+                <input type="hidden" name="cms_admin_action" id="js-cleanup-action" value="">
+                <input type="hidden" name="_cleanup_nonce" value="<?php echo $esc_nonce_cleanup; ?>">
+                <button type="submit" class="ci-btn ci-btn--danger" id="js-cleanup-submit">Jetzt ausf&uuml;hren</button>
+            </form>
+        </div>
+    </div>
+</div>

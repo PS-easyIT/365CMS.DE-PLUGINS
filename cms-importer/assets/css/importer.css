@@ -229,6 +229,12 @@
     margin-top: 20px;
 }
 
+.ci-card--danger {
+    margin-top: 0;
+    border-color: #fecaca;
+    background: linear-gradient(180deg, #fff7f7 0%, #ffffff 100%);
+}
+
 .ci-card--hero {
     position: relative;
     overflow: hidden;
@@ -257,6 +263,11 @@
     text-transform: uppercase;
 }
 
+.ci-card__eyebrow--danger {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
 .ci-card__title {
     font-size: 1.05rem;
     font-weight: 600;
@@ -269,6 +280,13 @@
     gap: 8px;
 }
 
+.ci-card__title--danger {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 10px;
+    color: #991b1b;
+}
+
 .ci-card__head {
     display: flex;
     align-items: center;
@@ -276,6 +294,10 @@
     gap: 12px;
     margin-bottom: 18px;
     flex-wrap: wrap;
+}
+
+.ci-card__head--stack-mobile {
+    align-items: flex-start;
 }
 
 .ci-card__head .ci-card__title {
@@ -738,6 +760,25 @@
     cursor: not-allowed;
 }
 
+.ci-btn--danger {
+    background: #dc2626;
+    color: #fff;
+}
+
+.ci-btn--danger:hover:not(:disabled) {
+    background: #b91c1c;
+}
+
+.ci-btn--ghost-danger {
+    background: transparent;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+}
+
+.ci-btn--ghost-danger:hover {
+    background: #fff1f2;
+}
+
 .ci-btn--ghost {
     background: transparent;
     color: var(--ci-primary);
@@ -763,6 +804,136 @@
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+}
+
+.ci-inline-actions--wrap {
+    justify-content: flex-end;
+}
+
+.ci-cleanup-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.ci-cleanup-stat {
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    background: #fff;
+    padding: 14px 12px;
+    text-align: center;
+}
+
+.ci-cleanup-stat__value {
+    display: block;
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #b91c1c;
+}
+
+.ci-cleanup-stat__label {
+    display: block;
+    margin-top: 6px;
+    font-size: .76rem;
+    line-height: 1.4;
+    color: var(--ci-muted);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.ci-cleanup-inline-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+    margin: 0 0 18px;
+    font-size: .84rem;
+    color: var(--ci-muted);
+}
+
+.ci-cleanup-inline-stats strong {
+    color: #991b1b;
+}
+
+.ci-modal[hidden] {
+    display: none;
+}
+
+.ci-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.ci-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, .55);
+}
+
+.ci-modal__dialog {
+    position: relative;
+    width: min(560px, 100%);
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 24px 64px rgba(15, 23, 42, .28);
+    border: 1px solid #fecaca;
+    overflow: hidden;
+}
+
+.ci-modal__header,
+.ci-modal__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 20px;
+}
+
+.ci-modal__header {
+    border-bottom: 1px solid #fee2e2;
+}
+
+.ci-modal__header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #991b1b;
+}
+
+.ci-modal__body {
+    padding: 18px 20px;
+    color: #374151;
+    font-size: .92rem;
+    line-height: 1.7;
+}
+
+.ci-modal__body p {
+    margin: 0;
+}
+
+.ci-modal__footer {
+    border-top: 1px solid #fee2e2;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.ci-modal__close {
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+}
+
+body.ci-modal-open {
+    overflow: hidden;
 }
 
 /* ── Tables ───────────────────────────────────────────────── */
@@ -1050,6 +1221,25 @@
     .ci-inline-actions .ci-btn {
         width: 100%;
         justify-content: center;
+    }
+
+    .ci-card__head--stack-mobile {
+        flex-direction: column;
+    }
+
+    .ci-cleanup-inline-stats {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .ci-modal {
+        padding: 14px;
+    }
+
+    .ci-modal__header,
+    .ci-modal__footer,
+    .ci-modal__body {
+        padding: 16px;
     }
 
     .ci-preview-reasons__list li {

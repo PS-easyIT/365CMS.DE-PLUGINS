@@ -5,6 +5,15 @@
 (function () {
     'use strict';
 
+    var cleanupModal = document.getElementById('js-cleanup-modal');
+    var cleanupActionInput = document.getElementById('js-cleanup-action');
+    var cleanupModalTitle = document.getElementById('js-cleanup-modal-title');
+    var cleanupModalText = document.getElementById('js-cleanup-modal-text');
+    var cleanupSubmit = document.getElementById('js-cleanup-submit');
+    var cleanupForm = document.getElementById('js-cleanup-form');
+
+    initCleanupModal();
+
     document.querySelectorAll('.ci-tab[data-tab]').forEach(function (tab) {
         tab.addEventListener('click', function () {
             activateTab(tab.dataset.tab || 'upload');
@@ -552,5 +561,51 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
+    }
+
+    function initCleanupModal() {
+        if (!cleanupModal || !cleanupActionInput || !cleanupModalTitle || !cleanupModalText || !cleanupSubmit) {
+            return;
+        }
+
+        document.querySelectorAll('.js-cleanup-trigger').forEach(function (trigger) {
+            trigger.addEventListener('click', function () {
+                cleanupActionInput.value = trigger.getAttribute('data-cleanup-action') || '';
+                cleanupModalTitle.innerHTML = trigger.getAttribute('data-cleanup-title') || 'Bereinigung bestätigen';
+                cleanupModalText.innerHTML = trigger.getAttribute('data-cleanup-body') || 'Diese Aktion kann nicht rückgängig gemacht werden.';
+                cleanupSubmit.textContent = trigger.getAttribute('data-cleanup-action') === 'cleanup_history'
+                    ? 'Verlauf jetzt löschen'
+                    : 'Bereinigung jetzt ausführen';
+                openCleanupModal();
+            });
+        });
+
+        cleanupModal.querySelectorAll('[data-close-cleanup-modal]').forEach(function (button) {
+            button.addEventListener('click', closeCleanupModal);
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !cleanupModal.hidden) {
+                closeCleanupModal();
+            }
+        });
+
+        if (cleanupForm) {
+            cleanupForm.addEventListener('submit', function () {
+                cleanupSubmit.disabled = true;
+                cleanupSubmit.textContent = 'Wird ausgeführt…';
+            });
+        }
+    }
+
+    function openCleanupModal() {
+        cleanupModal.hidden = false;
+        document.body.classList.add('ci-modal-open');
+    }
+
+    function closeCleanupModal() {
+        cleanupModal.hidden = true;
+        document.body.classList.remove('ci-modal-open');
+        cleanupSubmit.disabled = false;
     }
 })();

@@ -20,6 +20,16 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (
+    defined('CMS_IMPORTER_SERVICE_CLASSES_LOADED')
+    || class_exists('CMS_Importer_DB', false)
+    || class_exists('CMS_Importer_Service', false)
+) {
+    return;
+}
+
+define('CMS_IMPORTER_SERVICE_CLASSES_LOADED', true);
+
 // ── Datenbankschicht ──────────────────────────────────────────────────────────
 
 /**
@@ -85,6 +95,7 @@ class CMS_Importer_DB
                 source_url       VARCHAR(500) DEFAULT NULL,
                 target_type      VARCHAR(50) NOT NULL,
                 target_id        BIGINT UNSIGNED DEFAULT NULL,
+                target_created   TINYINT(1) NOT NULL DEFAULT 1,
                 target_slug      VARCHAR(255) DEFAULT NULL,
                 target_url       VARCHAR(500) DEFAULT NULL,
                 created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -95,12 +106,26 @@ class CMS_Importer_DB
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         ");
 
+        self::ensure_import_item_columns($db, $p);
+
         // Upload-Ordner für Import-Dateien anlegen
         if (defined('UPLOAD_PATH')) {
             $import_dir = rtrim(UPLOAD_PATH, '/') . '/import/';
             if (!is_dir($import_dir)) {
                 mkdir($import_dir, 0755, true);
             }
+        }
+    }
+
+    private static function ensure_import_item_columns(\CMS\Database $db, string $p): void
+    {
+        try {
+            $targetCreated = $db->query("SHOW COLUMNS FROM {$p}import_items LIKE 'target_created'");
+            if ($targetCreated instanceof \PDOStatement && !$targetCreated->fetch()) {
+                $db->query("ALTER TABLE {$p}import_items ADD COLUMN target_created TINYINT(1) NOT NULL DEFAULT 1 AFTER target_id");
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS_Importer_DB::ensure_import_item_columns() warning: ' . $e->getMessage());
         }
     }
 }
@@ -189,18 +214,18 @@ class CMS_Importer_Service
             $this->import_as_table($db, $p, $item);
         }
 
-        foreach ($parsed['posts'] as $item) {
+        foreach ($this->prioritize_items_by_locale($parsed['posts']) as $item) {
             $this->total++;
             $this->import_as_post($db, $p, $item, false);
         }
 
-        foreach ($parsed['pages'] as $item) {
+        foreach ($this->prioritize_items_by_locale($parsed['pages']) as $item) {
             $this->total++;
             $this->import_as_page($db, $p, $item);
         }
 
         if ($this->options['import_custom_types']) {
-            foreach ($parsed['others'] as $item) {
+            foreach ($this->prioritize_items_by_locale($parsed['others']) as $item) {
                 $this->total++;
                 $this->import_as_post($db, $p, $item, true);
             }
@@ -291,15 +316,15 @@ class CMS_Importer_Service
             $this->collect_preview_item($this->build_table_preview($db, $p, $item, $context), $context);
         }
 
-        foreach ($parsed['posts'] as $item) {
+        foreach ($this->prioritize_items_by_locale($parsed['posts']) as $item) {
             $this->collect_preview_item($this->build_post_preview($db, $p, $item, false, $context), $context);
         }
 
-        foreach ($parsed['pages'] as $item) {
+        foreach ($this->prioritize_items_by_locale($parsed['pages']) as $item) {
             $this->collect_preview_item($this->build_page_preview($db, $p, $item, $context), $context);
         }
 
-        foreach ($parsed['others'] as $item) {
+        foreach ($this->prioritize_items_by_locale($parsed['others']) as $item) {
             $this->collect_preview_item($this->build_post_preview($db, $p, $item, true, $context), $context);
         }
 
@@ -334,6 +359,14 @@ class CMS_Importer_Service
     private function import_as_post(\CMS\Database $db, string $p, array $item, bool $isCustomType): void
     {
         $status = self::STATUS_MAP[$item['post_status']] ?? 'draft';
+        $sourceType = (string) ($item['post_type'] ?? 'post');
+        $sourceReference = $this->resolve_content_source_reference($item);
+        $locale = $this->resolve_item_locale($item);
+
+        if ($this->should_ignore_item_by_en_slug($item)) {
+            $this->skip_item('Englische /en/-Slugs werden ignoriert');
+            return;
+        }
 
         if ($status === 'trash' && !$this->options['import_trashed']) {
             $this->skip_item('Papierkorb-Elemente deaktiviert');
@@ -344,10 +377,65 @@ class CMS_Importer_Service
             return;
         }
 
-        $sourceType = (string) ($item['post_type'] ?? 'post');
-        if ($this->options['skip_duplicates'] && $this->find_existing_mapping($db, $p, $sourceType, (int) ($item['wp_id'] ?? 0), null, 'post', true) !== null) {
+        $existingSourceMapping = $this->find_existing_mapping_by_wp_id($db, $p, $sourceType, (int) ($item['wp_id'] ?? 0), 'post', true);
+        if ($this->options['skip_duplicates'] && $existingSourceMapping !== null) {
             $this->skip_item('Bereits per Import-Mapping vorhanden');
             return;
+        }
+
+        if ($locale !== 'de') {
+            $localizedTarget = $this->find_localized_content_target(
+                $db,
+                $p,
+                'post',
+                $sourceType,
+                $sourceReference,
+                $this->resolve_import_slug($item, (string) ($item['title'] ?? ''))
+            );
+            if ($localizedTarget !== null) {
+                $this->ensure_localized_content_columns($db, $p, 'post');
+                $prepared = $this->prepare_content_payload($db, $p, $item, 'post', (string) ($localizedTarget['target_slug'] ?? $this->resolve_import_slug($item, (string) ($item['title'] ?? ''))));
+
+                try {
+                    $db->execute(
+                        "UPDATE {$p}posts
+                         SET title_en = ?, content_en = ?, excerpt_en = ?, updated_at = NOW(),
+                             featured_image = CASE WHEN (featured_image IS NULL OR featured_image = '') AND ? <> '' THEN ? ELSE featured_image END
+                         WHERE id = ?",
+                        [
+                            $this->sanitize_title((string) ($item['title'] ?? '')),
+                            (string) ($prepared['content'] ?? ''),
+                            (string) ($prepared['excerpt'] ?? ''),
+                            (string) ($prepared['featured_image'] ?? ''),
+                            (string) ($prepared['featured_image'] ?? ''),
+                            (int) $localizedTarget['target_id'],
+                        ]
+                    );
+
+                    $this->imported++;
+                    $this->import_breakdown[$isCustomType ? 'others' : 'posts']++;
+                    $this->store_import_item($db, $p, [
+                        'log_id'           => $this->log_id,
+                        'source_type'      => $sourceType,
+                        'source_wp_id'     => (int) ($item['wp_id'] ?? 0),
+                        'source_reference' => $sourceReference,
+                        'source_slug'      => (string) ($item['slug'] ?? ''),
+                        'source_url'       => (string) ($item['link'] ?? ''),
+                        'target_type'      => 'post',
+                        'target_id'        => (int) $localizedTarget['target_id'],
+                        'target_created'   => 0,
+                        'target_slug'      => (string) ($localizedTarget['target_slug'] ?? ''),
+                        'target_url'       => $this->build_target_url('post', (string) ($localizedTarget['target_slug'] ?? ''), (int) $localizedTarget['target_id'], (string) ($item['date'] ?? '')),
+                    ]);
+                    $this->collect_taxonomy_fallback_meta($item, 'post');
+                    $this->collect_unknown_meta($item);
+                    return;
+                } catch (\Throwable $e) {
+                    $this->errors++;
+                    error_log('CMS_Importer: EN-Post-Merge fehlgeschlagen: ' . $e->getMessage() . ' – Titel: ' . ($item['title'] ?? '')); 
+                    return;
+                }
+            }
         }
 
         $base_slug = $this->resolve_import_slug($item, (string) ($item['title'] ?? ''));
@@ -362,11 +450,12 @@ class CMS_Importer_Service
                     'log_id'           => $this->log_id,
                     'source_type'      => $sourceType,
                     'source_wp_id'     => (int) ($item['wp_id'] ?? 0),
-                    'source_reference' => null,
+                    'source_reference' => $sourceReference,
                     'source_slug'      => (string) ($item['slug'] ?? ''),
                     'source_url'       => (string) ($item['link'] ?? ''),
                     'target_type'      => 'post',
                     'target_id'        => $existingPostId,
+                    'target_created'   => 0,
                     'target_slug'      => $base_slug,
                     'target_url'       => $this->build_target_url('post', $base_slug, $existingPostId, (string) ($item['date'] ?? '')),
                 ]);
@@ -389,9 +478,12 @@ class CMS_Importer_Service
 
         $data = [
             'title'            => $this->sanitize_title($item['title']),
+            'title_en'         => $locale === 'en' ? $this->sanitize_title((string) ($item['title'] ?? '')) : '',
             'slug'             => $slug,
-            'content'          => $prepared['content'],
-            'excerpt'          => $prepared['excerpt'],
+            'content'          => $locale === 'en' ? '' : $prepared['content'],
+            'content_en'       => $locale === 'en' ? $prepared['content'] : '',
+            'excerpt'          => $locale === 'en' ? '' : $prepared['excerpt'],
+            'excerpt_en'       => $locale === 'en' ? $prepared['excerpt'] : '',
             'featured_image'   => $prepared['featured_image'],
             'status'           => $status,
             'author_id'        => $author_id,
@@ -405,6 +497,7 @@ class CMS_Importer_Service
         ];
 
         try {
+            $this->ensure_localized_content_columns($db, $p, 'post');
             $post_id = $db->insert('posts', $data);
             if ($post_id === false) {
                 throw new \RuntimeException($db->last_error !== '' ? $db->last_error : 'Insert in posts fehlgeschlagen.');
@@ -420,11 +513,12 @@ class CMS_Importer_Service
                 'log_id'           => $this->log_id,
                 'source_type'      => $sourceType,
                 'source_wp_id'     => (int) ($item['wp_id'] ?? 0),
-                'source_reference' => null,
+                'source_reference' => $sourceReference,
                 'source_slug'      => (string) ($item['slug'] ?? ''),
                 'source_url'       => (string) ($item['link'] ?? ''),
                 'target_type'      => 'post',
                 'target_id'        => $post_id,
+                'target_created'   => 1,
                 'target_slug'      => $slug,
                 'target_url'       => $this->build_target_url('post', $slug, $post_id, (string) ($item['date'] ?? '')),
             ]);
@@ -440,6 +534,13 @@ class CMS_Importer_Service
     private function import_as_page(\CMS\Database $db, string $p, array $item): void
     {
         $status = self::STATUS_MAP[$item['post_status']] ?? 'draft';
+        $sourceReference = $this->resolve_content_source_reference($item);
+        $locale = $this->resolve_item_locale($item);
+
+        if ($this->should_ignore_item_by_en_slug($item)) {
+            $this->skip_item('Englische /en/-Slugs werden ignoriert');
+            return;
+        }
 
         if ($status === 'trash' && !$this->options['import_trashed']) {
             $this->skip_item('Papierkorb-Elemente deaktiviert');
@@ -450,9 +551,64 @@ class CMS_Importer_Service
             return;
         }
 
-        if ($this->options['skip_duplicates'] && $this->find_existing_mapping($db, $p, 'page', (int) ($item['wp_id'] ?? 0), null, 'page', true) !== null) {
+        $existingSourceMapping = $this->find_existing_mapping_by_wp_id($db, $p, 'page', (int) ($item['wp_id'] ?? 0), 'page', true);
+        if ($this->options['skip_duplicates'] && $existingSourceMapping !== null) {
             $this->skip_item('Bereits per Import-Mapping vorhanden');
             return;
+        }
+
+        if ($locale !== 'de') {
+            $localizedTarget = $this->find_localized_content_target(
+                $db,
+                $p,
+                'page',
+                'page',
+                $sourceReference,
+                $this->resolve_import_slug($item, (string) ($item['title'] ?? ''))
+            );
+            if ($localizedTarget !== null) {
+                $this->ensure_localized_content_columns($db, $p, 'page');
+                $prepared = $this->prepare_content_payload($db, $p, $item, 'page', (string) ($localizedTarget['target_slug'] ?? $this->resolve_import_slug($item, (string) ($item['title'] ?? ''))));
+
+                try {
+                    $db->execute(
+                        "UPDATE {$p}pages
+                         SET title_en = ?, content_en = ?, updated_at = NOW(),
+                             featured_image = CASE WHEN (featured_image IS NULL OR featured_image = '') AND ? <> '' THEN ? ELSE featured_image END
+                         WHERE id = ?",
+                        [
+                            $this->sanitize_title((string) ($item['title'] ?? '')),
+                            (string) ($prepared['content'] ?? ''),
+                            (string) ($prepared['featured_image'] ?? ''),
+                            (string) ($prepared['featured_image'] ?? ''),
+                            (int) $localizedTarget['target_id'],
+                        ]
+                    );
+
+                    $this->imported++;
+                    $this->import_breakdown['pages']++;
+                    $this->store_import_item($db, $p, [
+                        'log_id'           => $this->log_id,
+                        'source_type'      => 'page',
+                        'source_wp_id'     => (int) ($item['wp_id'] ?? 0),
+                        'source_reference' => $sourceReference,
+                        'source_slug'      => (string) ($item['slug'] ?? ''),
+                        'source_url'       => (string) ($item['link'] ?? ''),
+                        'target_type'      => 'page',
+                        'target_id'        => (int) $localizedTarget['target_id'],
+                        'target_created'   => 0,
+                        'target_slug'      => (string) ($localizedTarget['target_slug'] ?? ''),
+                        'target_url'       => $this->build_target_url('page', (string) ($localizedTarget['target_slug'] ?? ''), (int) $localizedTarget['target_id'], (string) ($item['date'] ?? '')),
+                    ]);
+                    $this->collect_taxonomy_fallback_meta($item, 'page');
+                    $this->collect_unknown_meta($item);
+                    return;
+                } catch (\Throwable $e) {
+                    $this->errors++;
+                    error_log('CMS_Importer: EN-Page-Merge fehlgeschlagen: ' . $e->getMessage() . ' – Titel: ' . ($item['title'] ?? ''));
+                    return;
+                }
+            }
         }
 
         $base_slug = $this->resolve_import_slug($item, (string) ($item['title'] ?? ''));
@@ -467,11 +623,12 @@ class CMS_Importer_Service
                     'log_id'           => $this->log_id,
                     'source_type'      => 'page',
                     'source_wp_id'     => (int) ($item['wp_id'] ?? 0),
-                    'source_reference' => null,
+                    'source_reference' => $sourceReference,
                     'source_slug'      => (string) ($item['slug'] ?? ''),
                     'source_url'       => (string) ($item['link'] ?? ''),
                     'target_type'      => 'page',
                     'target_id'        => $existingPageId,
+                    'target_created'   => 0,
                     'target_slug'      => $base_slug,
                     'target_url'       => $this->build_target_url('page', $base_slug, $existingPageId, (string) ($item['date'] ?? '')),
                 ]);
@@ -491,8 +648,10 @@ class CMS_Importer_Service
 
         $data = [
             'slug'         => $slug,
-            'title'        => $this->sanitize_title($item['title']),
-            'content'      => $prepared['content'],
+            'title'        => $locale === 'en' ? '' : $this->sanitize_title($item['title']),
+            'title_en'     => $locale === 'en' ? $this->sanitize_title((string) ($item['title'] ?? '')) : '',
+            'content'      => $locale === 'en' ? '' : $prepared['content'],
+            'content_en'   => $locale === 'en' ? $prepared['content'] : '',
             'excerpt'      => $prepared['excerpt'],
             'status'       => $status,
             'hide_title'   => 0,
@@ -506,6 +665,7 @@ class CMS_Importer_Service
         ];
 
         try {
+            $this->ensure_localized_content_columns($db, $p, 'page');
             $page_id = $db->insert('pages', $data);
             if ($page_id === false) {
                 throw new \RuntimeException($db->last_error !== '' ? $db->last_error : 'Insert in pages fehlgeschlagen.');
@@ -518,11 +678,12 @@ class CMS_Importer_Service
                 'log_id'           => $this->log_id,
                 'source_type'      => 'page',
                 'source_wp_id'     => (int) ($item['wp_id'] ?? 0),
-                'source_reference' => null,
+                'source_reference' => $sourceReference,
                 'source_slug'      => (string) ($item['slug'] ?? ''),
                 'source_url'       => (string) ($item['link'] ?? ''),
                 'target_type'      => 'page',
                 'target_id'        => (int) $page_id,
+                'target_created'   => 1,
                 'target_slug'      => $slug,
                 'target_url'       => $this->build_target_url('page', $slug, (int) $page_id, (string) ($item['date'] ?? '')),
             ]);
@@ -579,6 +740,7 @@ class CMS_Importer_Service
                         'source_url'       => (string) ($item['link'] ?? ''),
                         'target_type'      => 'site_table',
                         'target_id'        => $existingId,
+                        'target_created'   => 0,
                         'target_slug'      => $tableSlug,
                         'target_url'       => '[site-table id="' . $existingId . '"]',
                     ]);
@@ -621,6 +783,7 @@ class CMS_Importer_Service
                 'source_url'       => (string) ($item['link'] ?? ''),
                 'target_type'      => 'site_table',
                 'target_id'        => $tableId,
+                'target_created'   => 1,
                 'target_slug'      => $tableSlug,
                 'target_url'       => '[site-table id="' . $tableId . '"]',
             ]);
@@ -1133,6 +1296,101 @@ class CMS_Importer_Service
         return $sourceUrlSlug !== '' ? $sourceUrlSlug : $fallbackSlug;
     }
 
+    private function resolve_content_source_reference(array $item): ?string
+    {
+        foreach ([(string) ($item['guid'] ?? ''), (string) ($item['link'] ?? '')] as $candidate) {
+            $reference = $this->normalize_content_reference_from_url($candidate);
+            if ($reference !== null) {
+                return $reference;
+            }
+        }
+
+        $slugReference = $this->normalize_content_reference_path((string) ($item['slug'] ?? ''));
+        return $slugReference !== '' ? $slugReference : null;
+    }
+
+    private function normalize_content_reference_from_url(string $url): ?string
+    {
+        $url = trim(html_entity_decode($url, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($url === '') {
+            return null;
+        }
+
+        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+            $normalizedPath = $this->normalize_content_reference_path($url);
+            return $normalizedPath !== '' ? $normalizedPath : null;
+        }
+
+        $normalizedPath = $this->normalize_content_reference_path((string) parse_url($url, PHP_URL_PATH));
+        if ($normalizedPath !== '') {
+            return $normalizedPath;
+        }
+
+        $query = (string) parse_url($url, PHP_URL_QUERY);
+        if ($query === '') {
+            return null;
+        }
+
+        parse_str($query, $queryArgs);
+        foreach (['page_id', 'p', 'post'] as $queryKey) {
+            $queryValue = (int) ($queryArgs[$queryKey] ?? 0);
+            if ($queryValue > 0) {
+                return 'id:' . $queryValue;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalize_content_reference_path(string $path): string
+    {
+        $path = trim(html_entity_decode($path, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        $path = trim($path, "/ \t\n\r\0\x0B");
+        if ($path === '') {
+            return '';
+        }
+
+        $segments = array_values(array_filter(
+            explode('/', $path),
+            static fn(string $segment): bool => trim($segment) !== ''
+        ));
+
+        if ($segments === []) {
+            return '';
+        }
+
+        while ($segments !== [] && $this->is_language_path_segment((string) ($segments[0] ?? ''))) {
+            array_shift($segments);
+        }
+
+        while ($segments !== [] && $this->is_language_path_segment((string) ($segments[count($segments) - 1] ?? ''))) {
+            array_pop($segments);
+        }
+
+        if (
+            count($segments) > 1
+            && $this->safe_lower((string) ($segments[0] ?? '')) === 'blog'
+            && preg_match('/^\d{4}$/', (string) ($segments[1] ?? '')) === 1
+        ) {
+            array_shift($segments);
+        }
+
+        $normalizedSegments = [];
+        foreach ($segments as $segment) {
+            $normalizedSegment = $this->preserve_source_slug(rawurldecode((string) $segment));
+            if ($normalizedSegment !== '') {
+                $normalizedSegments[] = $normalizedSegment;
+            }
+        }
+
+        return implode('/', $normalizedSegments);
+    }
+
+    private function is_language_path_segment(string $segment): bool
+    {
+        return in_array($this->safe_lower(trim($segment)), ['en'], true);
+    }
+
     /**
      * Erhält einen vorhandenen WP-Slug so weit wie möglich unverändert.
      */
@@ -1307,11 +1565,804 @@ class CMS_Importer_Service
             $featuredImage = (string) $item['image_urls'][0];
         }
 
+        if (in_array($contextType, ['post', 'page'], true)) {
+            $content = $this->normalize_content_for_active_editor($content);
+        }
+
         return [
             'content' => $content,
             'excerpt' => $excerpt,
             'featured_image' => $featuredImage,
             'seo' => $seo,
+        ];
+    }
+
+    private function normalize_content_for_active_editor(string $content): string
+    {
+        if ($content === '' || !$this->is_editorjs_active() || $this->is_editorjs_payload($content)) {
+            return $content;
+        }
+
+        $blocks = $this->convert_html_to_editorjs_blocks($content);
+        if ($blocks === []) {
+            return $content;
+        }
+
+        $payload = [
+            'time' => time() * 1000,
+            'blocks' => $blocks,
+            'version' => '2.30.8',
+        ];
+
+        $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        return is_string($json) && $json !== '' ? $json : $content;
+    }
+
+    private function is_editorjs_active(): bool
+    {
+        if (class_exists('CMS\Services\EditorService') && method_exists('CMS\Services\EditorService', 'isEditorJs')) {
+            return \CMS\Services\EditorService::isEditorJs();
+        }
+
+        if (function_exists('get_option')) {
+            return (string) get_option('setting_editor_type', 'editorjs') === 'editorjs';
+        }
+
+        return false;
+    }
+
+    private function is_editorjs_payload(string $content): bool
+    {
+        $trimmed = trim($content);
+        if ($trimmed === '' || ($trimmed[0] ?? '') !== '{') {
+            return false;
+        }
+
+        $decoded = json_decode($trimmed, true);
+        return is_array($decoded) && isset($decoded['blocks']) && is_array($decoded['blocks']);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function convert_html_to_editorjs_blocks(string $html): array
+    {
+        $html = trim($html);
+        if ($html === '') {
+            return [];
+        }
+
+        if (!class_exists('DOMDocument')) {
+            return [[
+                'type' => 'raw',
+                'data' => ['html' => $html],
+            ]];
+        }
+
+        $document = new \DOMDocument('1.0', 'UTF-8');
+        $previousState = libxml_use_internal_errors(true);
+
+        $wrappedHtml = '<!DOCTYPE html><html><body>' . $html . '</body></html>';
+        $loaded = $document->loadHTML('<?xml encoding="utf-8" ?>' . $wrappedHtml, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previousState);
+
+        if ($loaded === false) {
+            return [[
+                'type' => 'raw',
+                'data' => ['html' => $html],
+            ]];
+        }
+
+        $body = $document->getElementsByTagName('body')->item(0);
+        if (!$body instanceof \DOMElement) {
+            return [[
+                'type' => 'raw',
+                'data' => ['html' => $html],
+            ]];
+        }
+
+        return $this->convert_dom_nodes_to_editorjs_blocks($body->childNodes);
+    }
+
+    /**
+     * @param \DOMNodeList<int>|array<int, \DOMNode> $nodes
+     * @return array<int, array<string, mixed>>
+     */
+    private function convert_dom_nodes_to_editorjs_blocks(\DOMNodeList|array $nodes): array
+    {
+        $nodeList = [];
+        foreach ($nodes as $node) {
+            if ($node instanceof \DOMNode) {
+                $nodeList[] = $node;
+            }
+        }
+
+        $blocks = [];
+
+        for ($index = 0, $total = count($nodeList); $index < $total; $index++) {
+            $node = $nodeList[$index];
+
+            [$galleryUrls, $lastGalleryIndex] = $this->consume_gallery_sequence($nodeList, $index);
+            if (count($galleryUrls) > 1) {
+                $blocks[] = [
+                    'type' => 'imageGallery',
+                    'data' => ['urls' => $galleryUrls],
+                ];
+                $index = $lastGalleryIndex;
+                continue;
+            }
+
+            if ($node instanceof \DOMText) {
+                $text = trim($node->textContent ?? '');
+                if ($text !== '') {
+                    $blocks[] = [
+                        'type' => 'paragraph',
+                        'data' => [
+                            'text' => nl2br(htmlspecialchars($text, ENT_QUOTES, 'UTF-8'), false),
+                        ],
+                    ];
+                }
+                continue;
+            }
+
+            if (!$node instanceof \DOMElement) {
+                continue;
+            }
+
+            if ($this->is_gallery_element($node)) {
+                $galleryBlock = $this->build_gallery_block($node);
+                if ($galleryBlock !== null) {
+                    $blocks[] = $galleryBlock;
+                    continue;
+                }
+            }
+
+            $tag = strtolower($node->tagName);
+            $block = match ($tag) {
+                'h1', 'h2', 'h3', 'h4', 'h5', 'h6' => $this->build_header_block($node, (int) substr($tag, 1)),
+                'p' => $this->build_paragraph_like_block($node),
+                'blockquote' => $this->build_quote_block($node),
+                'pre' => $this->build_code_block($node),
+                'hr' => ['type' => 'delimiter', 'data' => new \stdClass()],
+                'ul', 'ol' => $this->build_list_block($node),
+                'table' => $this->build_table_block($node),
+                'figure' => $this->build_figure_block($node),
+                'img' => $this->build_image_block($node),
+                'iframe' => $this->build_embed_block_from_url((string) $node->getAttribute('src'), ''),
+                'video' => $this->build_raw_block($this->get_outer_html($node)),
+                'audio' => $this->build_raw_block($this->get_outer_html($node)),
+                'div', 'section' => $this->build_container_block($node),
+                default => $this->build_fallback_block($node),
+            };
+
+            if ($block !== null) {
+                $blocks[] = $block;
+            }
+        }
+
+        return $blocks;
+    }
+
+    /**
+     * @param array<int, \DOMNode> $nodes
+     * @return array{0: array<int, string>, 1: int}
+     */
+    private function consume_gallery_sequence(array $nodes, int $startIndex): array
+    {
+        $urls = [];
+        $lastGalleryIndex = $startIndex;
+        $foundGalleryNode = false;
+
+        for ($index = $startIndex, $total = count($nodes); $index < $total; $index++) {
+            $node = $nodes[$index];
+
+            if ($node instanceof \DOMText) {
+                if (trim($node->textContent ?? '') === '') {
+                    continue;
+                }
+
+                break;
+            }
+
+            if (!$node instanceof \DOMElement) {
+                break;
+            }
+
+            $candidateUrls = $this->extract_gallery_candidate_urls($node);
+            if ($candidateUrls === []) {
+                break;
+            }
+
+            foreach ($candidateUrls as $url) {
+                $urls[$url] = $url;
+            }
+
+            $foundGalleryNode = true;
+            $lastGalleryIndex = $index;
+        }
+
+        if (!$foundGalleryNode || count($urls) <= 1) {
+            return [[], $startIndex];
+        }
+
+        return [array_values($urls), $lastGalleryIndex];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function build_header_block(\DOMElement $element, int $level): ?array
+    {
+        $text = trim($this->get_inner_html($element));
+        if ($text === '') {
+            return null;
+        }
+
+        return [
+            'type' => 'header',
+            'data' => [
+                'text' => $text,
+                'level' => max(1, min(6, $level)),
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function build_paragraph_like_block(\DOMElement $element): ?array
+    {
+        $images = $this->collect_image_urls_from_element($element);
+        if (count($images) > 1) {
+            return [
+                'type' => 'imageGallery',
+                'data' => ['urls' => array_values($images)],
+            ];
+        }
+
+        if (count($images) === 1 && trim(strip_tags($this->get_inner_html_without_media($element))) === '') {
+            $img = $this->find_first_descendant_tag($element, 'img');
+            return $img instanceof \DOMElement ? $this->build_image_block($img) : null;
+        }
+
+        $link = $this->resolve_single_file_link($element);
+        if ($link !== null) {
+            return $link;
+        }
+
+        $iframe = $this->find_first_descendant_tag($element, 'iframe');
+        if ($iframe instanceof \DOMElement) {
+            $caption = trim($this->extract_caption_from_element($element));
+            return $this->build_embed_block_from_url((string) $iframe->getAttribute('src'), $caption);
+        }
+
+        $html = trim($this->get_inner_html($element));
+        if ($html === '') {
+            return null;
+        }
+
+        return [
+            'type' => 'paragraph',
+            'data' => [
+                'text' => $html,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function build_quote_block(\DOMElement $element): ?array
+    {
+        $text = trim($this->get_inner_html($element));
+        if ($text === '') {
+            return null;
+        }
+
+        $caption = '';
+        foreach ($element->getElementsByTagName('cite') as $cite) {
+            if ($cite instanceof \DOMElement) {
+                $caption = trim($this->get_inner_html($cite));
+                break;
+            }
+        }
+
+        return [
+            'type' => 'quote',
+            'data' => [
+                'text' => $text,
+                'caption' => $caption,
+                'alignment' => 'left',
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function build_code_block(\DOMElement $element): ?array
+    {
+        $code = trim($element->textContent ?? '');
+        if ($code === '') {
+            return null;
+        }
+
+        return [
+            'type' => 'code',
+            'data' => [
+                'code' => $code,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function build_list_block(\DOMElement $element): ?array
+    {
+        $style = strtolower($element->tagName) === 'ol' ? 'ordered' : 'unordered';
+        $items = [];
+
+        foreach ($element->childNodes as $child) {
+            if ($child instanceof \DOMElement && strtolower($child->tagName) === 'li') {
+                $items[] = $this->normalize_list_item($child);
+            }
+        }
+
+        if ($items === []) {
+            return null;
+        }
+
+        return [
+            'type' => 'list',
+            'data' => [
+                'style' => $style,
+                'meta' => $style === 'ordered' ? ['start' => 1, 'counterType' => 'numeric'] : new \stdClass(),
+                'items' => $items,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function normalize_list_item(\DOMElement $element): array
+    {
+        $content = '';
+        $children = [];
+
+        foreach ($element->childNodes as $child) {
+            if ($child instanceof \DOMElement && in_array(strtolower($child->tagName), ['ul', 'ol'], true)) {
+                foreach ($child->childNodes as $nestedChild) {
+                    if ($nestedChild instanceof \DOMElement && strtolower($nestedChild->tagName) === 'li') {
+                        $children[] = $this->normalize_list_item($nestedChild);
+                    }
+                }
+                continue;
+            }
+
+            $content .= $this->serialize_node_html($child);
+        }
+
+        return [
+            'content' => trim($content),
+            'meta' => new \stdClass(),
+            'items' => $children,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function build_table_block(\DOMElement $element): ?array
+    {
+        $rows = [];
+        $withHeadings = false;
+
+        foreach ($element->getElementsByTagName('tr') as $row) {
+            if (!$row instanceof \DOMElement) {
+                continue;
+            }
+
+            $cells = [];
+            foreach ($row->childNodes as $cell) {
+                if (!$cell instanceof \DOMElement) {
+                    continue;
+                }
+
+                $tag = strtolower($cell->tagName);
+                if (!in_array($tag, ['th', 'td'], true)) {
+                    continue;
+                }
+
+                if ($tag === 'th') {
+                    $withHeadings = true;
+                }
+
+                $cells[] = trim($this->get_inner_html($cell));
+            }
+
+            if ($cells !== []) {
+                $rows[] = $cells;
+            }
+        }
+
+        if ($rows === []) {
+            return null;
+        }
+
+        return [
+            'type' => 'table',
+            'data' => [
+                'withHeadings' => $withHeadings,
+                'content' => $rows,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function build_figure_block(\DOMElement $element): ?array
+    {
+        if ($this->is_gallery_element($element)) {
+            return $this->build_gallery_block($element);
+        }
+
+        $iframe = $this->find_first_descendant_tag($element, 'iframe');
+        if ($iframe instanceof \DOMElement) {
+            return $this->build_embed_block_from_url(
+                (string) $iframe->getAttribute('src'),
+                $this->extract_caption_from_element($element)
+            );
+        }
+
+        $img = $this->find_first_descendant_tag($element, 'img');
+        if ($img instanceof \DOMElement) {
+            $caption = $this->extract_caption_from_element($element);
+            return $this->build_image_block($img, $caption);
+        }
+
+        return $this->build_fallback_block($element);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function build_image_block(\DOMElement $element, string $caption = ''): ?array
+    {
+        $url = trim((string) $element->getAttribute('src'));
+        if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+
+        $resolvedCaption = trim($caption !== '' ? $caption : (string) $element->getAttribute('alt'));
+
+        return [
+            'type' => 'image',
+            'data' => [
+                'file' => ['url' => $url],
+                'caption' => $resolvedCaption,
+                'withBorder' => false,
+                'withBackground' => false,
+                'stretched' => false,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function build_gallery_block(\DOMElement $element): ?array
+    {
+        $urls = array_values($this->collect_image_urls_from_element($element));
+        if ($urls === []) {
+            return null;
+        }
+
+        if (count($urls) === 1) {
+            $img = $this->find_first_descendant_tag($element, 'img');
+            return $img instanceof \DOMElement ? $this->build_image_block($img, $this->extract_caption_from_element($element)) : null;
+        }
+
+        return [
+            'type' => 'imageGallery',
+            'data' => [
+                'urls' => $urls,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function extract_gallery_candidate_urls(\DOMElement $element): array
+    {
+        if ($this->is_gallery_element($element)) {
+            return array_values($this->collect_image_urls_from_element($element));
+        }
+
+        $tag = strtolower($element->tagName);
+        if (!in_array($tag, ['figure', 'div', 'p'], true)) {
+            return [];
+        }
+
+        $urls = array_values($this->collect_image_urls_from_element($element));
+        if ($urls === []) {
+            return [];
+        }
+
+        $remainingText = trim(strip_tags($this->get_inner_html_without_media($element)));
+        if ($remainingText !== '') {
+            return [];
+        }
+
+        return $urls;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function build_embed_block_from_url(string $url, string $caption = ''): ?array
+    {
+        $url = trim($url);
+        if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+
+        return [
+            'type' => 'embed',
+            'data' => [
+                'service' => '',
+                'source' => $url,
+                'embed' => $url,
+                'caption' => trim($caption),
+                'width' => 640,
+                'height' => 360,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function build_container_block(\DOMElement $element): ?array
+    {
+        if ($this->is_gallery_element($element)) {
+            return $this->build_gallery_block($element);
+        }
+
+        $iframe = $this->find_first_descendant_tag($element, 'iframe');
+        if ($iframe instanceof \DOMElement && count($this->collect_non_empty_child_elements($element)) <= 2) {
+            return $this->build_embed_block_from_url(
+                (string) $iframe->getAttribute('src'),
+                $this->extract_caption_from_element($element)
+            );
+        }
+
+        $images = $this->collect_image_urls_from_element($element);
+        if (count($images) > 1 && trim(strip_tags($this->get_inner_html_without_media($element))) === '') {
+            return [
+                'type' => 'imageGallery',
+                'data' => ['urls' => array_values($images)],
+            ];
+        }
+
+        if ($this->has_meaningful_nested_blocks($element)) {
+            $nested = $this->convert_dom_nodes_to_editorjs_blocks($element->childNodes);
+            return count($nested) === 1 ? $nested[0] : $this->build_raw_block($this->get_outer_html($element));
+        }
+
+        return $this->build_fallback_block($element);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function build_fallback_block(\DOMElement $element): ?array
+    {
+        $html = trim($this->get_outer_html($element));
+        if ($html === '') {
+            return null;
+        }
+
+        return $this->build_raw_block($html);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function build_raw_block(string $html): array
+    {
+        return [
+            'type' => 'raw',
+            'data' => [
+                'html' => $html,
+            ],
+        ];
+    }
+
+    private function is_gallery_element(\DOMElement $element): bool
+    {
+        $class = ' ' . strtolower(trim((string) $element->getAttribute('class'))) . ' ';
+        if (
+            str_contains($class, ' wp-block-gallery ')
+            || str_contains($class, ' blocks-gallery-grid ')
+            || str_contains($class, ' gallery ')
+            || str_contains($class, ' gallery-grid ')
+            || str_contains($class, ' tiled-gallery ')
+        ) {
+            return count($this->collect_image_urls_from_element($element)) > 0;
+        }
+
+        $tag = strtolower($element->tagName);
+        return in_array($tag, ['figure', 'div'], true) && count($this->collect_image_urls_from_element($element)) > 1;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function collect_image_urls_from_element(\DOMElement $element): array
+    {
+        $urls = [];
+        foreach ($element->getElementsByTagName('img') as $img) {
+            if (!$img instanceof \DOMElement) {
+                continue;
+            }
+
+            $url = trim((string) $img->getAttribute('src'));
+            if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+                continue;
+            }
+
+            $urls[$url] = $url;
+        }
+
+        return array_values($urls);
+    }
+
+    private function extract_caption_from_element(\DOMElement $element): string
+    {
+        foreach ($element->getElementsByTagName('figcaption') as $caption) {
+            if ($caption instanceof \DOMElement) {
+                return trim($this->get_inner_html($caption));
+            }
+        }
+
+        return '';
+    }
+
+    private function get_inner_html(\DOMElement $element): string
+    {
+        $html = '';
+        foreach ($element->childNodes as $child) {
+            $html .= $this->serialize_node_html($child);
+        }
+
+        return $html;
+    }
+
+    private function get_outer_html(\DOMNode $node): string
+    {
+        return $this->serialize_node_html($node);
+    }
+
+    private function serialize_node_html(?\DOMNode $node): string
+    {
+        if (!$node instanceof \DOMNode || !$node->ownerDocument instanceof \DOMDocument) {
+            return '';
+        }
+
+        return $node->ownerDocument->saveHTML($node) ?: '';
+    }
+
+    private function get_inner_html_without_media(\DOMElement $element): string
+    {
+        $clone = $element->cloneNode(true);
+        if (!$clone instanceof \DOMElement) {
+            return '';
+        }
+
+        $tagsToRemove = ['img', 'figure', 'iframe', 'video', 'audio'];
+        foreach ($tagsToRemove as $tag) {
+            while (true) {
+                $nodes = $clone->getElementsByTagName($tag);
+                $target = $nodes->item(0);
+                if (!$target instanceof \DOMNode || !$target->parentNode instanceof \DOMNode) {
+                    break;
+                }
+                $target->parentNode->removeChild($target);
+            }
+        }
+
+        return $this->get_inner_html($clone);
+    }
+
+    private function find_first_descendant_tag(\DOMElement $element, string $tagName): ?\DOMElement
+    {
+        foreach ($element->getElementsByTagName($tagName) as $node) {
+            if ($node instanceof \DOMElement) {
+                return $node;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<int, \DOMElement>
+     */
+    private function collect_non_empty_child_elements(\DOMElement $element): array
+    {
+        $children = [];
+        foreach ($element->childNodes as $child) {
+            if (!$child instanceof \DOMElement) {
+                continue;
+            }
+
+            if (trim(strip_tags($this->get_outer_html($child))) === '' && !$this->find_first_descendant_tag($child, 'img') instanceof \DOMElement && !$this->find_first_descendant_tag($child, 'iframe') instanceof \DOMElement) {
+                continue;
+            }
+
+            $children[] = $child;
+        }
+
+        return $children;
+    }
+
+    private function has_meaningful_nested_blocks(\DOMElement $element): bool
+    {
+        foreach ($element->childNodes as $child) {
+            if (!$child instanceof \DOMElement) {
+                continue;
+            }
+
+            if (in_array(strtolower($child->tagName), ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'blockquote', 'pre', 'table', 'figure'], true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function resolve_single_file_link(\DOMElement $element): ?array
+    {
+        $anchors = $element->getElementsByTagName('a');
+        if ($anchors->length !== 1) {
+            return null;
+        }
+
+        $anchor = $anchors->item(0);
+        if (!$anchor instanceof \DOMElement) {
+            return null;
+        }
+
+        $href = trim((string) $anchor->getAttribute('href'));
+        if ($href === '' || !filter_var($href, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+
+        $path = strtolower((string) parse_url($href, PHP_URL_PATH));
+        if (!preg_match('/\.(pdf|docx?|xlsx?|pptx?|zip|rar|txt)$/i', $path)) {
+            return null;
+        }
+
+        $name = trim($anchor->textContent ?? '') ?: basename($path);
+
+        return [
+            'type' => 'attaches',
+            'data' => [
+                'file' => [
+                    'url' => $href,
+                    'name' => $name,
+                    'size' => 0,
+                ],
+                'title' => $name,
+            ],
         ];
     }
 
@@ -1493,34 +2544,50 @@ class CMS_Importer_Service
     private function find_existing_mapping(\CMS\Database $db, string $p, string $sourceType, int $sourceWpId, ?string $sourceReference, string $targetType, bool $cleanupStale = false): ?array
     {
         if ($sourceWpId > 0) {
-            $mapping = $this->resolve_existing_mapping_rows($db, $p, $db->get_results(
-                "SELECT id, target_id, target_slug
-                 FROM {$p}import_items
-                 WHERE source_type = ? AND source_wp_id = ? AND target_type = ?
-                 ORDER BY id DESC
-                ",
-                [$sourceType, $sourceWpId, $targetType]
-            ), $targetType, $cleanupStale);
+            $mapping = $this->find_existing_mapping_by_wp_id($db, $p, $sourceType, $sourceWpId, $targetType, $cleanupStale);
             if ($mapping !== null) {
                 return $mapping;
             }
         }
 
         if ($sourceReference !== null && $sourceReference !== '') {
-            $mapping = $this->resolve_existing_mapping_rows($db, $p, $db->get_results(
-                "SELECT id, target_id, target_slug
-                 FROM {$p}import_items
-                 WHERE source_type = ? AND source_reference = ? AND target_type = ?
-                 ORDER BY id DESC
-                ",
-                [$sourceType, $sourceReference, $targetType]
-            ), $targetType, $cleanupStale);
+            $mapping = $this->find_existing_mapping_by_reference($db, $p, $sourceType, $sourceReference, $targetType, $cleanupStale);
             if ($mapping !== null) {
                 return $mapping;
             }
         }
 
         return null;
+    }
+
+    private function find_existing_mapping_by_wp_id(\CMS\Database $db, string $p, string $sourceType, int $sourceWpId, string $targetType, bool $cleanupStale = false): ?array
+    {
+        if ($sourceWpId <= 0) {
+            return null;
+        }
+
+        return $this->resolve_existing_mapping_rows($db, $p, $db->get_results(
+            "SELECT id, target_id, target_slug
+             FROM {$p}import_items
+             WHERE source_type = ? AND source_wp_id = ? AND target_type = ?
+             ORDER BY id DESC",
+            [$sourceType, $sourceWpId, $targetType]
+        ), $targetType, $cleanupStale);
+    }
+
+    private function find_existing_mapping_by_reference(\CMS\Database $db, string $p, string $sourceType, string $sourceReference, string $targetType, bool $cleanupStale = false): ?array
+    {
+        if ($sourceReference === '') {
+            return null;
+        }
+
+        return $this->resolve_existing_mapping_rows($db, $p, $db->get_results(
+            "SELECT id, target_id, target_slug
+             FROM {$p}import_items
+             WHERE source_type = ? AND source_reference = ? AND target_type = ?
+             ORDER BY id DESC",
+            [$sourceType, $sourceReference, $targetType]
+        ), $targetType, $cleanupStale);
     }
 
     /**
@@ -1640,19 +2707,31 @@ class CMS_Importer_Service
     private function store_import_item(\CMS\Database $db, string $p, array $payload): void
     {
         $existing = null;
+        $existingTargetCreated = null;
         if (!empty($payload['source_wp_id'])) {
-            $existing = $db->get_var(
-                "SELECT id FROM {$p}import_items WHERE source_type = ? AND source_wp_id = ? AND target_type = ? ORDER BY id DESC LIMIT 1",
+            $existingRow = $db->get_row(
+                "SELECT id, target_created FROM {$p}import_items WHERE source_type = ? AND source_wp_id = ? AND target_type = ? ORDER BY id DESC LIMIT 1",
                 [(string) ($payload['source_type'] ?? ''), (int) ($payload['source_wp_id'] ?? 0), (string) ($payload['target_type'] ?? '')]
             );
+            if ($existingRow !== null) {
+                $existing = (int) ($existingRow->id ?? 0);
+                $existingTargetCreated = isset($existingRow->target_created) ? (int) $existingRow->target_created : null;
+            }
         }
 
-        if ($existing === null && !empty($payload['source_reference'])) {
-            $existing = $db->get_var(
-                "SELECT id FROM {$p}import_items WHERE source_type = ? AND source_reference = ? AND target_type = ? ORDER BY id DESC LIMIT 1",
-                [(string) ($payload['source_type'] ?? ''), (string) ($payload['source_reference'] ?? ''), (string) ($payload['target_type'] ?? '')]
+        if ($existing === null && empty($payload['source_wp_id']) && !empty($payload['source_reference'])) {
+            $existingRow = $db->get_row(
+                "SELECT id, target_created FROM {$p}import_items WHERE source_type = ? AND source_reference = ? AND target_type = ? AND target_id <=> ? ORDER BY id DESC LIMIT 1",
+                [(string) ($payload['source_type'] ?? ''), (string) ($payload['source_reference'] ?? ''), (string) ($payload['target_type'] ?? ''), $payload['target_id'] ?? null]
             );
+            if ($existingRow !== null) {
+                $existing = (int) ($existingRow->id ?? 0);
+                $existingTargetCreated = isset($existingRow->target_created) ? (int) $existingRow->target_created : null;
+            }
         }
+
+        $requestedTargetCreated = isset($payload['target_created']) ? (int) $payload['target_created'] : 1;
+        $targetCreated = $existingTargetCreated === 1 ? 1 : $requestedTargetCreated;
 
         $data = [
             'log_id' => $payload['log_id'] ?? null,
@@ -1663,6 +2742,7 @@ class CMS_Importer_Service
             'source_url' => $payload['source_url'] ?? null,
             'target_type' => (string) ($payload['target_type'] ?? ''),
             'target_id' => !empty($payload['target_id']) ? (int) $payload['target_id'] : null,
+            'target_created' => $targetCreated,
             'target_slug' => $payload['target_slug'] ?? null,
             'target_url' => $payload['target_url'] ?? null,
         ];
@@ -1912,6 +2992,199 @@ class CMS_Importer_Service
     }
 
     /**
+     * @param array<int, array<string, mixed>> $items
+     * @return array<int, array<string, mixed>>
+     */
+    private function prioritize_items_by_locale(array $items): array
+    {
+        $primary = [];
+        $localized = [];
+
+        foreach ($items as $item) {
+            if ($this->resolve_item_locale($item) === 'de') {
+                $primary[] = $item;
+                continue;
+            }
+
+            $localized[] = $item;
+        }
+
+        return array_merge($primary, $localized);
+    }
+
+    private function resolve_item_locale(array $item): string
+    {
+        $locale = strtolower(trim((string) ($item['locale'] ?? '')));
+        if ($locale !== '') {
+            return $locale;
+        }
+
+        $translationPriority = strtolower(trim((string) ($item['translation_priority'] ?? '')));
+        if ($translationPriority !== '' && str_ends_with($translationPriority, '-en')) {
+            return 'en';
+        }
+
+        foreach ([(string) ($item['link'] ?? ''), (string) ($item['guid'] ?? '')] as $candidateUrl) {
+            $path = filter_var($candidateUrl, FILTER_VALIDATE_URL) !== false
+                ? (string) parse_url($candidateUrl, PHP_URL_PATH)
+                : $candidateUrl;
+            $segments = array_values(array_filter(explode('/', trim($path, '/')), static fn(string $segment): bool => trim($segment) !== ''));
+            if ($segments === []) {
+                continue;
+            }
+
+            $firstSegment = strtolower((string) ($segments[0] ?? ''));
+            $lastSegment = strtolower((string) ($segments[count($segments) - 1] ?? ''));
+            if ($firstSegment === 'en' || $lastSegment === 'en') {
+                return 'en';
+            }
+        }
+
+        return 'de';
+    }
+
+    private function should_ignore_item_by_en_slug(array $item): bool
+    {
+        if ($this->resolve_item_locale($item) === 'en') {
+            return true;
+        }
+
+        $translationPriority = strtolower(trim((string) ($item['translation_priority'] ?? '')));
+        if ($translationPriority !== '' && str_ends_with($translationPriority, '-en')) {
+            return true;
+        }
+
+        foreach ([(string) ($item['link'] ?? ''), (string) ($item['guid'] ?? ''), (string) ($item['slug'] ?? '')] as $candidate) {
+            if ($this->contains_en_path_segment($candidate)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function contains_en_path_segment(string $candidate): bool
+    {
+        $candidate = trim(html_entity_decode($candidate, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($candidate === '') {
+            return false;
+        }
+
+        $path = filter_var($candidate, FILTER_VALIDATE_URL) !== false
+            ? (string) parse_url($candidate, PHP_URL_PATH)
+            : $candidate;
+
+        $segments = array_values(array_filter(
+            explode('/', trim($path, '/')),
+            static fn(string $segment): bool => trim($segment) !== ''
+        ));
+
+        foreach ($segments as $segment) {
+            if (strtolower(trim($segment)) === 'en') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function find_localized_content_target(\CMS\Database $db, string $p, string $targetType, string $sourceType, ?string $sourceReference, string $fallbackSlug = ''): ?array
+    {
+        if ($sourceReference !== null && $sourceReference !== '') {
+            $mapping = $this->find_existing_mapping_by_reference($db, $p, $sourceType, $sourceReference, $targetType, true);
+            if ($mapping !== null) {
+                return $mapping;
+            }
+        }
+
+        foreach ($this->build_localized_merge_slug_candidates((string) $sourceReference, $fallbackSlug) as $candidateSlug) {
+            $resolved = $this->resolve_mapping_target($db, $p, $targetType, 0, $candidateSlug);
+            if ($resolved !== null) {
+                return $resolved;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function build_localized_merge_slug_candidates(string $sourceReference, string $fallbackSlug = ''): array
+    {
+        $candidates = [];
+
+        $referenceSlug = $this->extract_reference_slug($sourceReference);
+        foreach ([$referenceSlug, trim($fallbackSlug)] as $candidate) {
+            $candidate = trim($candidate);
+            if ($candidate === '') {
+                continue;
+            }
+
+            $variants = [$candidate];
+
+            if (preg_match('/^(.*?)[-_]en$/i', $candidate, $matches) === 1 && trim((string) ($matches[1] ?? '')) !== '') {
+                $variants[] = trim((string) $matches[1]);
+            }
+
+            if (preg_match('/^en[-_](.+)$/i', $candidate, $matches) === 1 && trim((string) ($matches[1] ?? '')) !== '') {
+                $variants[] = trim((string) $matches[1]);
+            }
+
+            foreach ($variants as $variant) {
+                $normalized = $this->preserve_source_slug($variant);
+                if ($normalized !== '') {
+                    $candidates[$normalized] = $normalized;
+                }
+            }
+        }
+
+        return array_values($candidates);
+    }
+
+    private function extract_reference_slug(string $sourceReference): string
+    {
+        $sourceReference = trim($sourceReference, '/');
+        if ($sourceReference === '') {
+            return '';
+        }
+
+        $segments = array_values(array_filter(explode('/', $sourceReference), static fn(string $segment): bool => trim($segment) !== ''));
+        if ($segments === []) {
+            return '';
+        }
+
+        return (string) end($segments);
+    }
+
+    private function ensure_localized_content_columns(\CMS\Database $db, string $p, string $targetType): void
+    {
+        $definitions = $targetType === 'post'
+            ? [
+                'title_en' => "ALTER TABLE {$p}posts ADD COLUMN title_en VARCHAR(255) DEFAULT NULL AFTER title",
+                'content_en' => "ALTER TABLE {$p}posts ADD COLUMN content_en LONGTEXT DEFAULT NULL AFTER content",
+                'excerpt_en' => "ALTER TABLE {$p}posts ADD COLUMN excerpt_en TEXT DEFAULT NULL AFTER excerpt",
+            ]
+            : [
+                'title_en' => "ALTER TABLE {$p}pages ADD COLUMN title_en VARCHAR(255) DEFAULT NULL AFTER title",
+                'content_en' => "ALTER TABLE {$p}pages ADD COLUMN content_en LONGTEXT DEFAULT NULL AFTER content",
+            ];
+
+        $table = $targetType === 'post' ? $p . 'posts' : $p . 'pages';
+
+        foreach ($definitions as $column => $sql) {
+            try {
+                $stmt = $db->query("SHOW COLUMNS FROM {$table} LIKE '{$column}'");
+                if ($stmt instanceof \PDOStatement && !$stmt->fetch()) {
+                    $db->query($sql);
+                }
+            } catch (\Throwable $e) {
+                error_log(sprintf('CMS_Importer: ensure_localized_content_columns(%s.%s) warning: %s', $table, $column, $e->getMessage()));
+            }
+        }
+    }
+
+    /**
      * @param array<string, mixed> $context
      * @return array<string, mixed>
      */
@@ -1919,11 +3192,16 @@ class CMS_Importer_Service
     {
         $status = self::STATUS_MAP[$item['post_status']] ?? 'draft';
         $sourceType = (string) ($item['post_type'] ?? 'post');
+        $sourceReference = $this->resolve_content_source_reference($item);
+        $locale = $this->resolve_item_locale($item);
         $reason = '';
         $action = 'import';
         $existingMapping = null;
 
-        if ($isCustomType && !$this->options['import_custom_types']) {
+        if ($this->should_ignore_item_by_en_slug($item)) {
+            $action = 'skip';
+            $reason = 'Englische /en/-Slugs werden ignoriert';
+        } elseif ($isCustomType && !$this->options['import_custom_types']) {
             $action = 'skip';
             $reason = 'Custom Post Types deaktiviert';
         } elseif ($status === 'trash' && !$this->options['import_trashed']) {
@@ -1933,10 +3211,23 @@ class CMS_Importer_Service
             $action = 'skip';
             $reason = 'Entwürfe deaktiviert';
         } elseif ($this->options['skip_duplicates']) {
-            $existingMapping = $this->find_existing_mapping($db, $p, $sourceType, (int) ($item['wp_id'] ?? 0), null, 'post');
+            $existingMapping = $this->find_existing_mapping_by_wp_id($db, $p, $sourceType, (int) ($item['wp_id'] ?? 0), 'post');
             if ($existingMapping !== null) {
                 $action = 'skip';
                 $reason = 'Bereits per Import-Mapping vorhanden';
+            } elseif ($locale !== 'de') {
+                $existingMapping = $this->find_localized_content_target(
+                    $db,
+                    $p,
+                    'post',
+                    $sourceType,
+                    $sourceReference,
+                    $this->resolve_import_slug($item, (string) ($item['title'] ?? ''))
+                );
+                if ($existingMapping !== null) {
+                    $action = 'import';
+                    $reason = 'Wird als englische Variante in bestehenden Beitrag übernommen';
+                }
             }
         }
 
@@ -1944,7 +3235,9 @@ class CMS_Importer_Service
 
         $targetSlug = $baseSlug;
         if ($action === 'import') {
-            if ($this->options['skip_duplicates']) {
+            if ($existingMapping !== null && $locale !== 'de') {
+                $targetSlug = (string) ($existingMapping['target_slug'] ?? $baseSlug);
+            } elseif ($this->options['skip_duplicates']) {
                 if ($this->preview_slug_exists($db, $p . 'posts', $baseSlug, 'post', $context)) {
                     $action = 'skip';
                     $reason = 'Slug bereits vorhanden';
@@ -1965,6 +3258,9 @@ class CMS_Importer_Service
         $targetHint = $isCustomType
             ? 'Wird als CMS-Beitrag importiert'
             : 'Wird in cms_posts geschrieben';
+        if ($locale !== 'de' && $existingMapping !== null && $reason === 'Wird als englische Variante in bestehenden Beitrag übernommen') {
+            $targetHint = 'Wird in vorhandenen CMS-Beitrag als EN-Inhalt übernommen';
+        }
         if ($fallbackTaxonomies !== []) {
             $targetHint .= ' · Zusätzliche WordPress-Kategorien werden im Meta-Bericht gesichert';
         }
@@ -2005,21 +3301,39 @@ class CMS_Importer_Service
     private function build_page_preview(\CMS\Database $db, string $p, array $item, array &$context): array
     {
         $status = self::STATUS_MAP[$item['post_status']] ?? 'draft';
+        $sourceReference = $this->resolve_content_source_reference($item);
+        $locale = $this->resolve_item_locale($item);
         $reason = '';
         $action = 'import';
         $existingMapping = null;
 
-        if ($status === 'trash' && !$this->options['import_trashed']) {
+        if ($this->should_ignore_item_by_en_slug($item)) {
+            $action = 'skip';
+            $reason = 'Englische /en/-Slugs werden ignoriert';
+        } elseif ($status === 'trash' && !$this->options['import_trashed']) {
             $action = 'skip';
             $reason = 'Papierkorb-Elemente deaktiviert';
         } elseif ($status === 'draft' && !$this->options['import_drafts']) {
             $action = 'skip';
             $reason = 'Entwürfe deaktiviert';
         } elseif ($this->options['skip_duplicates']) {
-            $existingMapping = $this->find_existing_mapping($db, $p, 'page', (int) ($item['wp_id'] ?? 0), null, 'page');
+            $existingMapping = $this->find_existing_mapping_by_wp_id($db, $p, 'page', (int) ($item['wp_id'] ?? 0), 'page');
             if ($existingMapping !== null) {
                 $action = 'skip';
                 $reason = 'Bereits per Import-Mapping vorhanden';
+            } elseif ($locale !== 'de') {
+                $existingMapping = $this->find_localized_content_target(
+                    $db,
+                    $p,
+                    'page',
+                    'page',
+                    $sourceReference,
+                    $this->resolve_import_slug($item, (string) ($item['title'] ?? ''))
+                );
+                if ($existingMapping !== null) {
+                    $action = 'import';
+                    $reason = 'Wird als englische Variante in bestehende Seite übernommen';
+                }
             }
         }
 
@@ -2027,7 +3341,9 @@ class CMS_Importer_Service
 
         $targetSlug = $baseSlug;
         if ($action === 'import') {
-            if ($this->options['skip_duplicates']) {
+            if ($existingMapping !== null && $locale !== 'de') {
+                $targetSlug = (string) ($existingMapping['target_slug'] ?? $baseSlug);
+            } elseif ($this->options['skip_duplicates']) {
                 if ($this->preview_slug_exists($db, $p . 'pages', $baseSlug, 'page', $context)) {
                     $action = 'skip';
                     $reason = 'Slug bereits vorhanden';
@@ -2062,9 +3378,11 @@ class CMS_Importer_Service
             'target_type' => 'page',
             'target_slug' => $existingMapping['target_slug'] ?? $targetSlug,
             'target_url' => $this->build_target_url('page', (string) ($existingMapping['target_slug'] ?? $targetSlug), (int) ($existingMapping['target_id'] ?? 0)),
-            'target_hint' => $pageFallbackMeta !== []
-                ? 'Wird in cms_pages geschrieben · WordPress-Kategorien/Tags werden im Meta-Bericht gesichert'
-                : 'Wird in cms_pages geschrieben',
+            'target_hint' => $existingMapping !== null && $locale !== 'de' && $reason === 'Wird als englische Variante in bestehende Seite übernommen'
+                ? 'Wird in vorhandene cms_pages-Seite als EN-Inhalt übernommen'
+                : ($pageFallbackMeta !== []
+                    ? 'Wird in cms_pages geschrieben · WordPress-Kategorien/Tags werden im Meta-Bericht gesichert'
+                    : 'Wird in cms_pages geschrieben'),
             'category' => implode(', ', $pageCategories),
             'tags' => $pageTags,
             'image_candidates' => (int) ($contentPreview['image_candidates'] ?? 0),

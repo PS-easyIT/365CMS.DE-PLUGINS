@@ -15,22 +15,37 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (defined('CMS_IMPORTER_BOOTSTRAPPED')) {
+    return;
+}
+
+define('CMS_IMPORTER_BOOTSTRAPPED', true);
+
 // ── Plugin Constants ─────────────────────────────────────────────────────────
-define('CMS_IMPORTER_VERSION',    '1.3.0');
-define('CMS_IMPORTER_PLUGIN_DIR', dirname(__FILE__) . '/');
-define('CMS_IMPORTER_PLUGIN_URL', '/plugins/cms-importer/');
-define('CMS_IMPORTER_TEXT_DOMAIN', 'cms-importer');
+defined('CMS_IMPORTER_VERSION') || define('CMS_IMPORTER_VERSION', '1.3.0');
+defined('CMS_IMPORTER_PLUGIN_DIR') || define('CMS_IMPORTER_PLUGIN_DIR', dirname(__FILE__) . '/');
+defined('CMS_IMPORTER_PLUGIN_URL') || define('CMS_IMPORTER_PLUGIN_URL', '/plugins/cms-importer/');
+defined('CMS_IMPORTER_TEXT_DOMAIN') || define('CMS_IMPORTER_TEXT_DOMAIN', 'cms-importer');
 
 // ── Autoload ──────────────────────────────────────────────────────────────────
-require_once CMS_IMPORTER_PLUGIN_DIR . 'includes/class-xml-parser.php';
-require_once CMS_IMPORTER_PLUGIN_DIR . 'includes/class-importer.php';
-require_once CMS_IMPORTER_PLUGIN_DIR . 'includes/class-admin.php';
+if (!class_exists('CMS_Importer_XML_Parser', false)) {
+    require_once CMS_IMPORTER_PLUGIN_DIR . 'includes/class-xml-parser.php';
+}
+
+if (!class_exists('CMS_Importer_DB', false) || !class_exists('CMS_Importer_Service', false)) {
+    require_once CMS_IMPORTER_PLUGIN_DIR . 'includes/class-importer.php';
+}
+
+if (!class_exists('CMS_Importer_Admin', false)) {
+    require_once CMS_IMPORTER_PLUGIN_DIR . 'includes/class-admin.php';
+}
 
 /**
  * Haupt-Klasse des CMS WordPress Importer Plugins.
  *
  * @since 1.0.0
  */
+if (!class_exists('CMS_Importer', false)) {
 final class CMS_Importer
 {
     private static ?self $instance = null;
@@ -113,6 +128,7 @@ final class CMS_Importer
         return str_contains($requestUri, '/admin/plugins/cms-importer/')
             || str_contains($requestUri, '/admin/plugins/cms-importer');
     }
+}
 }
 
 // ── Start ─────────────────────────────────────────────────────────────────────
