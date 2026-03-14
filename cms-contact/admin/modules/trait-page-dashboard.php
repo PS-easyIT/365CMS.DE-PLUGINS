@@ -19,7 +19,6 @@ trait CMS_Contact_Page_Dashboard_Trait
     public static function render_dashboard(): void
     {
         self::check_access();
-        self::enqueue_admin_assets();
 
         $csrfToken   = self::generate_nonce('contact_dashboard');
         $forms       = CMS_Contact_Forms::instance();

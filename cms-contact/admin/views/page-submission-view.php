@@ -12,6 +12,8 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
 
 <?php include CMS_CONTACT_PLUGIN_DIR . 'admin/views/partial-section-nav.php'; ?>
 
+<div class="contact-admin-shell">
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -27,21 +29,26 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
 <div class="alert alert-success">✅ <?php echo $e($notice); ?></div>
 <?php endif; ?>
 
-<div style="display:grid;grid-template-columns:2fr 1fr;gap:1.5rem;">
+<div class="contact-detail-grid" style="grid-template-columns:minmax(0, 1.65fr) minmax(300px, 0.85fr);">
     <!-- Nachrichteninhalt -->
     <div>
         <div class="admin-card">
-            <h3>📝 Eingabedaten</h3>
+            <div class="contact-panel-header">
+                <div>
+                    <h3>📝 Eingabedaten</h3>
+                    <p>Alle gespeicherten Feldwerte der Anfrage kompakt dargestellt.</p>
+                </div>
+            </div>
             <?php if (empty($meta)): ?>
-            <p style="color:#64748b;">Keine Felder gespeichert.</p>
+            <p class="contact-muted-text">Keine Felder gespeichert.</p>
             <?php else: ?>
-            <table style="width:100%;border-collapse:collapse;">
+            <table class="contact-field-table">
                 <?php foreach ($meta as $key => $val): ?>
-                <tr style="border-bottom:1px solid #f1f5f9;">
-                    <td style="padding:.6rem .75rem;font-weight:600;color:#475569;width:160px;vertical-align:top;">
+                <tr>
+                    <td>
                         <?php echo $e(ucfirst(str_replace('_', ' ', $key))); ?>
                     </td>
-                    <td style="padding:.6rem .75rem;color:#1e293b;">
+                    <td>
                         <?php echo nl2br($e($val)); ?>
                     </td>
                 </tr>
@@ -52,14 +59,14 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
     </div>
 
     <!-- Seitenleiste -->
-    <div>
+    <div class="contact-side-stack">
         <!-- Status -->
         <div class="admin-card">
             <h3>📊 Status</h3>
-            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1rem;">
+            <div class="contact-inline-actions" style="align-items:center;margin-bottom:1rem;">
                 <span class="status-badge <?php echo $st['class']; ?>"><?php echo $st['icon'] . ' ' . $st['label']; ?></span>
             </div>
-            <form method="POST" style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <form method="POST" class="contact-inline-actions">
                 <input type="hidden" name="sub_action" value="update_status">
                 <input type="hidden" name="id" value="<?php echo (int)$submission['id']; ?>">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
@@ -77,22 +84,22 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
         <!-- Metadaten -->
         <div class="admin-card">
             <h3>ℹ️ Informationen</h3>
-            <ul class="info-list" style="list-style:none;padding:0;margin:0;">
-                <li style="padding:.4rem 0;border-bottom:1px solid #f1f5f9;">
-                    <strong>ID:</strong> <?php echo (int)$submission['id']; ?>
+            <ul class="contact-info-list">
+                <li>
+                    <strong>ID</strong> <span><?php echo (int)$submission['id']; ?></span>
                 </li>
-                <li style="padding:.4rem 0;border-bottom:1px solid #f1f5f9;">
-                    <strong>Formular:</strong> <?php echo $e($form['title'] ?? '—'); ?>
+                <li>
+                    <strong>Formular</strong> <span><?php echo $e($form['title'] ?? '—'); ?></span>
                 </li>
-                <li style="padding:.4rem 0;border-bottom:1px solid #f1f5f9;">
-                    <strong>IP-Adresse:</strong> <?php echo $e($submission['ip_address'] ?? '—'); ?>
+                <li>
+                    <strong>IP-Adresse</strong> <span><?php echo $e($submission['ip_address'] ?? '—'); ?></span>
                 </li>
-                <li style="padding:.4rem 0;border-bottom:1px solid #f1f5f9;">
-                    <strong>Erstellt:</strong> <?php echo date('d.m.Y H:i:s', strtotime($submission['created_at'])); ?>
+                <li>
+                    <strong>Erstellt</strong> <span><?php echo date('d.m.Y H:i:s', strtotime($submission['created_at'])); ?></span>
                 </li>
                 <?php if (!empty($submission['updated_at'])): ?>
-                <li style="padding:.4rem 0;">
-                    <strong>Aktualisiert:</strong> <?php echo date('d.m.Y H:i:s', strtotime($submission['updated_at'])); ?>
+                <li>
+                    <strong>Aktualisiert</strong> <span><?php echo date('d.m.Y H:i:s', strtotime($submission['updated_at'])); ?></span>
                 </li>
                 <?php endif; ?>
             </ul>
@@ -101,7 +108,7 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
         <!-- Aktionen -->
         <div class="admin-card">
             <h3>⚡ Aktionen</h3>
-            <div style="display:flex;flex-direction:column;gap:.5rem;">
+            <div class="contact-side-stack">
                 <?php
                 $senderEmail = $meta['email'] ?? $meta['sender_email'] ?? '';
                 if ($senderEmail):
@@ -114,6 +121,8 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
             </div>
         </div>
     </div>
+</div>
+
 </div>
 
 <!-- Lösch-Modal -->

@@ -1,5 +1,11 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
+<?php
+$queueStats = CMS_Feed_Database::instance()->get_queue_stats();
+?>
+
+<div class="feed-admin-shell-wrap">
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -54,7 +60,12 @@
 // ══════════════════════════════════════════════════════════════════════
 if ($tab === 'dashboard'):
 ?>
-    <h3>📊 Übersicht</h3>
+    <div class="feed-panel-header">
+        <div>
+            <h3>📊 Übersicht</h3>
+            <p>Feeds, Bereiche, Warteschlange und E-Mail-Digests auf einen Blick.</p>
+        </div>
+    </div>
 
     <div class="dashboard-grid">
         <div class="stat-card">
@@ -94,10 +105,7 @@ if ($tab === 'dashboard'):
             <div class="stat-label">Kanäle mit Fehlern</div>
         </div>
         <?php endif; ?>
-        <?php
-        $queueStats = CMS_Feed_Database::instance()->get_queue_stats();
-        if ($queueStats['pending'] > 0 || $queueStats['processing'] > 0):
-        ?>
+        <?php if ($queueStats['pending'] > 0 || $queueStats['processing'] > 0): ?>
         <div class="stat-card" style="border-left:3px solid #3b82f6;">
             <div class="stat-icon">⏳</div>
             <div class="stat-number" style="color:#3b82f6;"><?php echo $queueStats['pending'] + $queueStats['processing']; ?></div>
@@ -106,7 +114,52 @@ if ($tab === 'dashboard'):
         <?php endif; ?>
     </div>
 
-    <!-- Schnellzugriff -->
+    <div class="feed-summary-grid">
+        <div class="feed-info-card">
+            <span class="feed-info-card__eyebrow">Abrufstatus</span>
+            <span class="feed-info-card__value"><?php echo ($stats['channels_errors'] ?? 0) > 0 ? 'Achtung' : 'Stabil'; ?></span>
+            <span class="feed-info-card__text"><?php echo ($stats['channels_errors'] ?? 0) > 0 ? number_format((int) $stats['channels_errors']) . ' Kanäle benötigen Aufmerksamkeit.' : 'Aktuell keine bekannten Feed-Fehler.'; ?></span>
+        </div>
+        <div class="feed-info-card">
+            <span class="feed-info-card__eyebrow">Queue</span>
+            <span class="feed-info-card__value"><?php echo number_format((int) ($queueStats['pending'] + $queueStats['processing'])); ?></span>
+            <span class="feed-info-card__text">Feeds in Warteschlange oder aktuell in Verarbeitung.</span>
+        </div>
+        <div class="feed-info-card">
+            <span class="feed-info-card__eyebrow">Heute neu</span>
+            <span class="feed-info-card__value"><?php echo number_format((int) ($stats['items_today'] ?? 0)); ?></span>
+            <span class="feed-info-card__text">Neu importierte Beiträge innerhalb der letzten 24 Stunden.</span>
+        </div>
+    </div>
+
+    <div class="feed-action-grid">
+        <a href="?tab=channels" class="feed-action-card">
+            <span class="feed-action-card__icon">📡</span>
+            <span>
+                <span class="feed-action-card__eyebrow">Verwaltung</span>
+                <span class="feed-action-card__title">Kanäle organisieren</span>
+                <span class="feed-action-card__text">Quellen pflegen, Abrufintervalle setzen und Fehler schneller finden.</span>
+            </span>
+        </a>
+        <a href="?tab=categories" class="feed-action-card">
+            <span class="feed-action-card__icon">📁</span>
+            <span>
+                <span class="feed-action-card__eyebrow">Public-Struktur</span>
+                <span class="feed-action-card__title">Bereiche ausbauen</span>
+                <span class="feed-action-card__text">Öffentliche Feed-Hubs mit eigenem Slug, Layout und Darstellung anlegen.</span>
+            </span>
+        </a>
+        <a href="?tab=digests" class="feed-action-card">
+            <span class="feed-action-card__icon">📧</span>
+            <span>
+                <span class="feed-action-card__eyebrow">Kommunikation</span>
+                <span class="feed-action-card__title">Digests steuern</span>
+                <span class="feed-action-card__text">Teams, Verteiler und Postfächer automatisch mit Feed-Zusammenfassungen versorgen.</span>
+            </span>
+        </a>
+    </div>
+
+    <div class="feed-panel-grid">
     <div class="feed-admin-subcard">
         <h4 class="feed-section-title">⚡ Schnellzugriff</h4>
         <div class="feed-inline-actions">
@@ -122,24 +175,32 @@ if ($tab === 'dashboard'):
         </div>
     </div>
 
-    <!-- Letzte Fehler -->
-    <?php
-    $errorChannels = array_filter($channels, fn($c) => !empty($c['last_error']));
-    if (!empty($errorChannels)):
-    ?>
-    <div class="feed-admin-subcard feed-admin-subcard--danger">
-        <h4 class="feed-section-title feed-section-title--danger">⚠️ Feed-Fehler</h4>
-        <?php foreach ($errorChannels as $ch): ?>
-        <div class="alert alert-error feed-alert-compact">
-            <strong><?php echo htmlspecialchars($ch['name']); ?>:</strong>
-            <?php echo htmlspecialchars($ch['last_error']); ?>
-            <span class="feed-meta-inline">
-                <?php echo $ch['last_fetched_at'] ? date('d.m.Y H:i', strtotime($ch['last_fetched_at'])) : 'Nie'; ?>
-            </span>
+    <div class="feed-side-stack">
+        <?php
+        $errorChannels = array_filter($channels, fn($c) => !empty($c['last_error']));
+        if (!empty($errorChannels)):
+        ?>
+        <div class="feed-admin-subcard feed-admin-subcard--danger">
+            <h4 class="feed-section-title feed-section-title--danger">⚠️ Feed-Fehler</h4>
+            <?php foreach ($errorChannels as $ch): ?>
+            <div class="alert alert-error feed-alert-compact">
+                <strong><?php echo htmlspecialchars($ch['name']); ?>:</strong>
+                <?php echo htmlspecialchars($ch['last_error']); ?>
+                <span class="feed-meta-inline">
+                    <?php echo $ch['last_fetched_at'] ? date('d.m.Y H:i', strtotime($ch['last_fetched_at'])) : 'Nie'; ?>
+                </span>
+            </div>
+            <?php endforeach; ?>
         </div>
-        <?php endforeach; ?>
+        <?php endif; ?>
+
+        <div class="feed-note-card">
+            <span class="feed-note-card__eyebrow">Routing</span>
+            <span class="feed-note-card__title">Öffentliche Feed-Struktur</span>
+            <span class="feed-note-card__text">Der globale Feed bleibt auf <code>/feed</code>, die kuratierten Bereichsseiten laufen separat auf <code>/feed/{slug}</code> und das Archiv auf dem konfigurierten Archiv-Slug.</span>
+        </div>
     </div>
-    <?php endif; ?>
+    </div>
 
 <?php
 // ══════════════════════════════════════════════════════════════════════
@@ -694,6 +755,24 @@ elseif ($tab === 'digests'):
 elseif ($tab === 'settings'):
     $settingsTab = $settingsSubTab ?? ($_GET['stab'] ?? 'general');
 ?>
+    <div class="feed-settings-overview">
+        <div class="feed-info-card">
+            <span class="feed-info-card__eyebrow">Archiv-Slug</span>
+            <span class="feed-info-card__value">/<?php echo htmlspecialchars(($settings['archive_slug'] ?? 'feeds') === 'feed' ? 'feeds' : ($settings['archive_slug'] ?? 'feeds')); ?></span>
+            <span class="feed-info-card__text">Öffentliches Archiv für alle kuratierten Feed-Inhalte.</span>
+        </div>
+        <div class="feed-info-card">
+            <span class="feed-info-card__eyebrow">Einträge pro Seite</span>
+            <span class="feed-info-card__value"><?php echo (int) ($settings['per_page'] ?? 20); ?></span>
+            <span class="feed-info-card__text">Standardgröße des öffentlichen Feed-Grids.</span>
+        </div>
+        <div class="feed-info-card">
+            <span class="feed-info-card__eyebrow">Digest-Limit</span>
+            <span class="feed-info-card__value"><?php echo (int) ($settings['digest_max_items'] ?? 20); ?></span>
+            <span class="feed-info-card__text">Maximale Anzahl Beiträge pro Digest-Mail.</span>
+        </div>
+    </div>
+
     <!-- Sub-Tabs -->
     <div class="feed-settings-tabs">
         <button class="tab-btn <?php echo $settingsTab === 'general' ? 'active' : ''; ?>" onclick="switchTab('stab-general', this)" type="button">⚙️ Allgemein</button>
@@ -703,11 +782,17 @@ elseif ($tab === 'settings'):
 
     <!-- Allgemein -->
     <div id="stab-general" class="tab-content <?php echo $settingsTab === 'general' ? 'active' : ''; ?>">
-        <h3>⚙️ Allgemeine Einstellungen</h3>
-
-        <form method="POST" class="admin-form feed-settings-form">
+        <div class="feed-settings-layout">
+        <form method="POST" class="admin-form feed-settings-form admin-card feed-settings-panel">
             <input type="hidden" name="action" value="save_settings">
             <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+
+            <div class="feed-panel-header">
+                <div>
+                    <h3>⚙️ Allgemeine Einstellungen</h3>
+                    <p>Archiv-Titel, Slug, Seitengröße und sichtbare Metadaten zentral steuern.</p>
+                </div>
+            </div>
 
             <div class="form-group">
                 <label class="form-label">Seitentitel <span style="color:#ef4444;">*</span></label>
@@ -761,15 +846,29 @@ elseif ($tab === 'settings'):
 
             <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
         </form>
+        <div class="feed-side-stack">
+            <div class="feed-note-card">
+                <span class="feed-note-card__eyebrow">Hinweis</span>
+                <span class="feed-note-card__title">Archiv und Bereichsseiten getrennt halten</span>
+                <span class="feed-note-card__text">Das Plugin-Archiv und die öffentlichen Bereichsseiten sind bewusst getrennt, damit globale Feed-Routen nicht mit kuratierten Hubs kollidieren.</span>
+            </div>
+        </div>
+        </div>
     </div>
 
     <!-- Design -->
     <div id="stab-design" class="tab-content <?php echo $settingsTab === 'design' ? 'active' : ''; ?>">
-        <h3>🎨 Design-Einstellungen</h3>
-
-        <form method="POST" class="admin-form feed-settings-form feed-settings-form--wide">
+        <div class="feed-settings-layout">
+        <form method="POST" class="admin-form feed-settings-form feed-settings-form--wide admin-card feed-settings-panel">
             <input type="hidden" name="action" value="save_design">
             <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+
+            <div class="feed-panel-header">
+                <div>
+                    <h3>🎨 Design-Einstellungen</h3>
+                    <p>Farben, Radius und Grid-Dichte passend zum 365CMS-Frontend konfigurieren.</p>
+                </div>
+            </div>
 
             <div class="feed-settings-color-grid">
                 <?php
@@ -827,11 +926,26 @@ elseif ($tab === 'settings'):
 
             <button type="submit" class="btn btn-primary">💾 Design speichern</button>
         </form>
+        <div class="feed-side-stack">
+            <div class="feed-note-card">
+                <span class="feed-note-card__eyebrow">Design-Tipp</span>
+                <span class="feed-note-card__title">Weniger Farben, mehr Lesbarkeit</span>
+                <span class="feed-note-card__text">Mit einer klaren Primärfarbe, ruhigen Card-Hintergründen und moderatem Radius wirkt der Feed-Bereich deutlich näher am Standard-365CMS.</span>
+            </div>
+        </div>
+        </div>
     </div>
 
     <!-- System -->
     <div id="stab-system" class="tab-content <?php echo $settingsTab === 'system' ? 'active' : ''; ?>">
-        <h3>🖥️ System-Informationen</h3>
+        <div class="feed-info-grid">
+        <div class="admin-card feed-settings-panel">
+        <div class="feed-panel-header">
+            <div>
+                <h3>🖥️ System-Informationen</h3>
+                <p>Plugin-Version, Routing und Datenbank-Struktur im Blick behalten.</p>
+            </div>
+        </div>
 
         <div class="info-grid">
             <div class="info-card">
@@ -865,6 +979,15 @@ elseif ($tab === 'settings'):
                 <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
                 <button type="submit" class="btn btn-danger">🧹 Beiträge älter 30 Tage entfernen</button>
             </form>
+        </div>
+        </div>
+        <div class="feed-side-stack">
+            <div class="feed-note-card">
+                <span class="feed-note-card__eyebrow">Wartung</span>
+                <span class="feed-note-card__title">Regelmäßig aufräumen</span>
+                <span class="feed-note-card__text">Gerade bei vielen Aggregator-Quellen lohnt sich eine Routine für Cleanup und Queue-Kontrolle, damit Admin und Frontend schnell bleiben.</span>
+            </div>
+        </div>
         </div>
     </div>
 
@@ -1244,3 +1367,5 @@ if (digestModalBtn) {
     });
 }
 </script>
+
+</div>

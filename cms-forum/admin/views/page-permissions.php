@@ -1,5 +1,7 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
+<div class="forum-admin-shell">
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -14,6 +16,19 @@
 <?php if (isset($error) && $error): ?>
     <div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
+
+<div class="forum-card-grid">
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Foren</span>
+        <span class="forum-info-card__value"><?php echo number_format(count($forums)); ?></span>
+        <span class="forum-info-card__text">Für diese Foren werden Gruppenrechte gepflegt.</span>
+    </div>
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Gruppen</span>
+        <span class="forum-info-card__value"><?php echo number_format(count($groupTypes)); ?></span>
+        <span class="forum-info-card__text">Gast, Mitglied und Moderator im Berechtigungsmatrix-Setup.</span>
+    </div>
+</div>
 
 <?php if (empty($forums)): ?>
 <div class="admin-card">
@@ -45,7 +60,7 @@
     <div class="admin-card">
         <h3>📁 <?php echo htmlspecialchars($forum->name); ?></h3>
         <div class="users-table-container">
-            <table class="users-table">
+            <table class="users-table forum-permissions-matrix">
                 <thead>
                     <tr>
                         <th>Berechtigung</th>
@@ -89,3 +104,5 @@
     </div>
 </form>
 <?php endif; ?>
+
+</div>

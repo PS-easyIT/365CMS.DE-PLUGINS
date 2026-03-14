@@ -83,6 +83,54 @@ final class CMS_Forum_Admin_Pages
     }
 
     /**
+     * Admin-CSS einmalig laden.
+     */
+    protected static function enqueue_admin_assets(): void
+    {
+        static $loaded = false;
+        if ($loaded) {
+            return;
+        }
+        $loaded = true;
+
+        $css = CMS_FORUM_DIR . 'assets/css/cms-forum-admin.css';
+        if (file_exists($css)) {
+            echo '<link rel="stylesheet" href="'
+                . htmlspecialchars(CMS_FORUM_URL . 'assets/css/cms-forum-admin.css?v=' . filemtime($css), ENT_QUOTES, 'UTF-8')
+                . '">' . "\n";
+        }
+    }
+
+    /**
+     * Admin-Menü/Layout-Funktionen laden.
+     */
+    protected static function load_admin_menu(): void
+    {
+        $menuFile = ABSPATH . 'admin/partials/admin-menu.php';
+        if (file_exists($menuFile) && !function_exists('renderAdminLayoutStart')) {
+            require_once $menuFile;
+        }
+    }
+
+    /**
+     * Einheitliches Admin-Layout nach CMS-Experts-Muster.
+     */
+    protected static function render_admin_page(string $title, callable $renderer): void
+    {
+        self::load_admin_menu();
+        if (function_exists('renderAdminLayoutStart')) {
+            renderAdminLayoutStart($title, 'forum-dashboard');
+        }
+
+        self::enqueue_admin_assets();
+        $renderer();
+
+        if (function_exists('renderAdminLayoutEnd')) {
+            renderAdminLayoutEnd();
+        }
+    }
+
+    /**
      * Settings-Wert lesen.
      */
     protected static function get_setting(string $key, string $default = ''): string

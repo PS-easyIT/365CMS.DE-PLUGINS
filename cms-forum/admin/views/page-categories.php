@@ -1,5 +1,11 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
+<?php
+$activeCategories = count(array_filter($categories, static fn($cat) => !empty($cat->is_active)));
+?>
+
+<div class="forum-admin-shell">
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -19,9 +25,27 @@
     <div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
 
+<div class="forum-card-grid">
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Kategorien gesamt</span>
+        <span class="forum-info-card__value"><?php echo number_format(count($categories)); ?></span>
+        <span class="forum-info-card__text">Hauptbereiche deiner Forumstruktur.</span>
+    </div>
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Aktiv</span>
+        <span class="forum-info-card__value"><?php echo number_format($activeCategories); ?></span>
+        <span class="forum-info-card__text">Derzeit sichtbare und aktive Kategorien.</span>
+    </div>
+</div>
+
 <!-- Kategorien-Liste -->
 <div class="admin-card">
-    <h3>🗂️ Alle Kategorien</h3>
+    <div class="forum-panel-header">
+        <div>
+            <h3>🗂️ Alle Kategorien</h3>
+            <p>Kategorien anlegen, aktivieren und nach Priorität sortieren.</p>
+        </div>
+    </div>
     <?php if (empty($categories)): ?>
         <div class="empty-state">
             <p style="font-size:2.5rem;margin:0;">📭</p>
@@ -44,7 +68,7 @@
                     <?php foreach ($categories as $cat): ?>
                     <tr>
                         <td><strong><?php echo htmlspecialchars($cat->name); ?></strong></td>
-                        <td style="color:#64748b;font-size:.85rem;"><?php echo htmlspecialchars($cat->slug); ?></td>
+                        <td><span class="forum-code"><?php echo htmlspecialchars($cat->slug); ?></span></td>
                         <td><?php echo (int)$cat->sort_order; ?></td>
                         <td>
                             <span class="status-badge <?php echo $cat->is_active ? 'active' : 'inactive'; ?>">
@@ -52,7 +76,7 @@
                             </span>
                         </td>
                         <td>
-                            <div style="display:flex;gap:.5rem;">
+                            <div class="forum-inline-actions">
                                 <button class="btn btn-sm btn-secondary" onclick="editCategory(<?php echo (int)$cat->id; ?>, '<?php echo htmlspecialchars($cat->name, ENT_QUOTES); ?>', <?php echo (int)$cat->sort_order; ?>, <?php echo $cat->is_active ? 'true' : 'false'; ?>)">✏️</button>
                                 <form method="POST" style="margin:0;">
                                     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
@@ -68,6 +92,8 @@
             </table>
         </div>
     <?php endif; ?>
+</div>
+
 </div>
 
 <!-- Create Modal -->

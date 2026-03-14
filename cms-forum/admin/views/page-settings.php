@@ -1,5 +1,7 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
+<div class="forum-admin-shell">
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -15,18 +17,41 @@
     <div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
 
+<div class="forum-card-grid">
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Forum-Name</span>
+        <span class="forum-info-card__value"><?php echo htmlspecialchars(mb_strimwidth((string) $settings['forum_name'], 0, 14, '…')); ?></span>
+        <span class="forum-info-card__text">Der globale Name deiner Community-Plattform.</span>
+    </div>
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Threads pro Seite</span>
+        <span class="forum-info-card__value"><?php echo (int)$settings['threads_per_page']; ?></span>
+        <span class="forum-info-card__text">Listing-Größe für die Themenübersichten.</span>
+    </div>
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Beiträge pro Seite</span>
+        <span class="forum-info-card__value"><?php echo (int)$settings['posts_per_page']; ?></span>
+        <span class="forum-info-card__text">Pagination-Größe in den Thread-Ansichten.</span>
+    </div>
+</div>
+
 <form method="POST" class="admin-form">
     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
     <input type="hidden" name="forum_action" value="save_settings">
 
     <!-- Allgemein -->
     <div class="admin-card">
-        <h3>📋 Allgemein</h3>
+        <div class="forum-panel-header">
+            <div>
+                <h3>📋 Allgemein</h3>
+                <p>Grundaufbau, Seitengrößen und globale Darstellung des Forums.</p>
+            </div>
+        </div>
         <div class="form-group">
             <label class="form-label">Forum-Name</label>
             <input type="text" name="forum_name" class="form-control" value="<?php echo htmlspecialchars($settings['forum_name']); ?>">
         </div>
-        <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+        <div class="form-grid forum-card-grid" style="grid-template-columns:1fr 1fr;">
             <div class="form-group">
                 <label class="form-label">Threads pro Seite</label>
                 <input type="number" name="threads_per_page" class="form-control" value="<?php echo (int)$settings['threads_per_page']; ?>" min="5" max="100">
@@ -40,8 +65,13 @@
 
     <!-- Spam-Schutz -->
     <div class="admin-card">
-        <h3>🛡️ Spam-Schutz</h3>
-        <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+        <div class="forum-panel-header">
+            <div>
+                <h3>🛡️ Spam-Schutz</h3>
+                <p>Flood-Control und Moderationsfreigaben gegen Missbrauch.</p>
+            </div>
+        </div>
+        <div class="form-grid forum-card-grid" style="grid-template-columns:1fr 1fr;">
             <div class="form-group">
                 <label class="form-label">Flood-Intervall für Beiträge (Sek.)</label>
                 <input type="number" name="flood_interval_post" class="form-control" value="<?php echo (int)$settings['flood_interval_post']; ?>" min="0">
@@ -62,8 +92,13 @@
 
     <!-- Beiträge -->
     <div class="admin-card">
-        <h3>✏️ Beiträge</h3>
-        <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;">
+        <div class="forum-panel-header">
+            <div>
+                <h3>✏️ Beiträge</h3>
+                <p>Grenzen, Bearbeitungsfenster und Content-Regeln definieren.</p>
+            </div>
+        </div>
+        <div class="form-grid forum-card-grid" style="grid-template-columns:1fr 1fr 1fr;">
             <div class="form-group">
                 <label class="form-label">Max. Titel-Länge</label>
                 <input type="number" name="max_title_length" class="form-control" value="<?php echo (int)$settings['max_title_length']; ?>" min="10">
@@ -85,8 +120,13 @@
 
     <!-- Features -->
     <div class="admin-card">
-        <h3>🧩 Features</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+        <div class="forum-panel-header">
+            <div>
+                <h3>🧩 Features</h3>
+                <p>Schalte Foren-Funktionen passend zur Community-Größe und Moderation frei.</p>
+            </div>
+        </div>
+        <div class="forum-settings-features">
             <label class="checkbox-label"><input type="checkbox" name="enable_bbcode" value="1" <?php echo $settings['enable_bbcode'] === '1' ? 'checked' : ''; ?>> BBCode aktivieren</label>
             <label class="checkbox-label"><input type="checkbox" name="enable_polls" value="1" <?php echo $settings['enable_polls'] === '1' ? 'checked' : ''; ?>> Umfragen aktivieren</label>
             <label class="checkbox-label"><input type="checkbox" name="enable_attachments" value="1" <?php echo $settings['enable_attachments'] === '1' ? 'checked' : ''; ?>> Datei-Anhänge aktivieren</label>
@@ -100,8 +140,13 @@
 
     <!-- Datei-Upload -->
     <div class="admin-card">
-        <h3>📎 Datei-Upload</h3>
-        <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+        <div class="forum-panel-header">
+            <div>
+                <h3>📎 Datei-Upload</h3>
+                <p>Anhangsgrößen und erlaubte Dateitypen für Beiträge steuern.</p>
+            </div>
+        </div>
+        <div class="form-grid forum-card-grid" style="grid-template-columns:1fr 1fr;">
             <div class="form-group">
                 <label class="form-label">Max. Dateigröße (Bytes)</label>
                 <input type="number" name="max_attachment_size" class="form-control" value="<?php echo (int)$settings['max_attachment_size']; ?>" min="0">
@@ -117,10 +162,15 @@
 
     <!-- Design -->
     <div class="admin-card">
-        <h3>🎨 Design</h3>
+        <div class="forum-panel-header">
+            <div>
+                <h3>🎨 Design</h3>
+                <p>Grundfarbe des Forums passend zum restlichen 365CMS-Design abstimmen.</p>
+            </div>
+        </div>
         <div class="form-group">
             <label class="form-label">Primärfarbe</label>
-            <div style="display:flex;gap:.75rem;align-items:center;">
+            <div class="forum-inline-actions" style="align-items:center;">
                 <input type="color" name="primary_color" value="<?php echo htmlspecialchars($settings['primary_color']); ?>" style="width:50px;height:40px;border:none;padding:0;cursor:pointer;">
                 <input type="text" class="form-control" value="<?php echo htmlspecialchars($settings['primary_color']); ?>" style="max-width:150px;" readonly>
             </div>
@@ -138,12 +188,19 @@
 
 <!-- Wartungs-Aktionen -->
 <div class="admin-card">
-    <h3>🔧 Wartung</h3>
-    <div style="display:flex;flex-wrap:wrap;gap:.75rem;">
+    <div class="forum-panel-header">
+        <div>
+            <h3>🔧 Wartung</h3>
+            <p>Zählerstände und interne Kennzahlen bei Bedarf neu aufbauen.</p>
+        </div>
+    </div>
+    <div class="forum-inline-actions">
         <form method="POST">
             <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
             <input type="hidden" name="forum_action" value="recalculate_counters">
             <button type="submit" class="btn btn-secondary btn-sm">🔄 Zähler neu berechnen</button>
         </form>
     </div>
+</div>
+
 </div>

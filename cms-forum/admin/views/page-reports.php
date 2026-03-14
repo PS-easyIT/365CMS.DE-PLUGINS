@@ -1,5 +1,11 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
+<?php
+$resolvedCount = count(array_filter($reports, static fn($report) => ($report->status ?? '') === 'resolved'));
+?>
+
+<div class="forum-admin-shell">
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -19,8 +25,31 @@
     <div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
 
+<div class="forum-card-grid">
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Offene Meldungen</span>
+        <span class="forum-info-card__value"><?php echo number_format((int) $openCount); ?></span>
+        <span class="forum-info-card__text">Zu bearbeitende Moderationsfälle im Forum.</span>
+    </div>
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Aktuelle Ansicht</span>
+        <span class="forum-info-card__value"><?php echo htmlspecialchars($status === 'open' ? 'Offen' : 'Erledigt'); ?></span>
+        <span class="forum-info-card__text">Du siehst aktuell <?php echo count($reports); ?> Meldung<?php echo count($reports) === 1 ? '' : 'en'; ?> in dieser Liste.</span>
+    </div>
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Erledigt geladen</span>
+        <span class="forum-info-card__value"><?php echo number_format($resolvedCount); ?></span>
+        <span class="forum-info-card__text">Bereits bearbeitete Reports in der aktuellen Datenmenge.</span>
+    </div>
+</div>
+
 <div class="admin-card">
-    <h3>🚩 <?php echo $status === 'open' ? 'Offene' : 'Erledigte'; ?> Meldungen</h3>
+    <div class="forum-panel-header">
+        <div>
+            <h3>🚩 <?php echo $status === 'open' ? 'Offene' : 'Erledigte'; ?> Meldungen</h3>
+            <p>Reports, gemeldete Inhalte und direkte Moderationsaktionen im Überblick.</p>
+        </div>
+    </div>
     <?php if (empty($reports)): ?>
         <div class="empty-state">
             <p style="font-size:2.5rem;margin:0;">✅</p>
@@ -28,8 +57,8 @@
         </div>
     <?php else: ?>
         <?php foreach ($reports as $r): ?>
-        <div style="border:1px solid #e2e8f0;border-radius:8px;padding:1.25rem;margin-bottom:1rem;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem;">
+        <div class="forum-report-card <?php echo $r->status !== 'open' ? 'forum-report-card--resolved' : ''; ?>">
+            <div class="forum-panel-header" style="margin-bottom:.75rem;">
                 <div>
                     <span class="status-badge" style="background:#fee2e2;color:#991b1b;"><?php echo htmlspecialchars($r->reason); ?></span>
                     <span style="color:#64748b;font-size:.85rem;margin-left:.5rem;">
@@ -43,18 +72,18 @@
             </div>
 
             <?php if (!empty($r->description)): ?>
-                <p style="color:#475569;font-size:.9rem;margin:0 0 .75rem;"><em><?php echo htmlspecialchars($r->description); ?></em></p>
+                <p class="forum-muted-text" style="margin:0 0 .75rem;"><em><?php echo htmlspecialchars($r->description); ?></em></p>
             <?php endif; ?>
 
             <?php if (!empty($r->post_content)): ?>
-                <div style="background:#f8fafc;border-radius:6px;padding:1rem;margin-bottom:.75rem;font-size:.9rem;color:#1e293b;border-left:3px solid #e2e8f0;">
+                <div class="forum-empty-card" style="margin-bottom:.75rem;border-left:3px solid #e2e8f0;box-shadow:none;">
                     <?php echo htmlspecialchars(mb_substr($r->post_content, 0, 300)); ?>
                     <?php if (mb_strlen($r->post_content) > 300): ?>…<?php endif; ?>
                 </div>
             <?php endif; ?>
 
             <?php if ($r->status === 'open'): ?>
-            <div style="display:flex;gap:.5rem;">
+            <div class="forum-inline-actions">
                 <form method="POST" style="margin:0;">
                     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                     <input type="hidden" name="forum_action" value="resolve_report">
@@ -71,7 +100,7 @@
                 </form>
             </div>
             <?php else: ?>
-                <p style="color:#64748b;font-size:.85rem;margin:0;">
+                <p class="forum-muted-text" style="margin:0;">
                     Erledigt von <strong><?php echo htmlspecialchars($r->resolved_by_name ?? '–'); ?></strong>
                     <?php if (!empty($r->handled_at)): ?> am <?php echo date('d.m.Y H:i', strtotime($r->handled_at)); ?><?php endif; ?>
                 </p>
@@ -115,3 +144,5 @@ window.addEventListener('click', function(e) {
     document.querySelectorAll('.modal').forEach(function(m) { if (e.target === m) closeModal(m.id); });
 });
 </script>
+
+</div>

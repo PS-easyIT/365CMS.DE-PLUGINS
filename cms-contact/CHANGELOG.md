@@ -2,6 +2,13 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [1.1.1] – 2026-03-14
+
+### Geändert
+
+- Installer und Versionsverwaltung an die aktuellen 365CMS-Settings-Spalten `option_name` / `option_value` angepasst
+- Plugin-Metadaten für das 365CMS-Kompatibilitätsupdate aktualisiert
+
 ## [1.1.0] – 2025-06-28
 
 ### Hinzugefügt

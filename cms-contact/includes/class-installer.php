@@ -70,7 +70,7 @@ final class CMS_Contact_Installer
 
         // DB-Version entfernen
         try {
-            $stmt = $db->prepare("DELETE FROM {$p}settings WHERE setting_key = ?");
+            $stmt = $db->prepare("DELETE FROM {$p}settings WHERE option_name = ?");
             $stmt->execute(['contact_db_version']);
         } catch (\Throwable $e) {
             // Ignorieren falls settings-Tabelle nicht existiert
@@ -286,10 +286,10 @@ final class CMS_Contact_Installer
         try {
             $db   = \CMS\Database::instance();
             $p    = $db->getPrefix();
-            $stmt = $db->prepare("SELECT setting_value FROM {$p}settings WHERE setting_key = ?");
+            $stmt = $db->prepare("SELECT option_value FROM {$p}settings WHERE option_name = ?");
             $stmt->execute(['contact_db_version']);
             $row = $stmt->fetch();
-            return $row ? (string) $row['setting_value'] : '0';
+            return $row ? (string) $row['option_value'] : '0';
         } catch (\Throwable $e) {
             return '0';
         }
@@ -305,14 +305,14 @@ final class CMS_Contact_Installer
             $db = \CMS\Database::instance();
             $p  = $db->getPrefix();
 
-            $exists = $db->prepare("SELECT id FROM {$p}settings WHERE setting_key = ?");
+            $exists = $db->prepare("SELECT option_value FROM {$p}settings WHERE option_name = ?");
             $exists->execute(['contact_db_version']);
 
             if ($exists->fetch()) {
-                $db->prepare("UPDATE {$p}settings SET setting_value = ? WHERE setting_key = ?")
+                $db->prepare("UPDATE {$p}settings SET option_value = ? WHERE option_name = ?")
                    ->execute([$version, 'contact_db_version']);
             } else {
-                $db->prepare("INSERT INTO {$p}settings (setting_key, setting_value) VALUES (?, ?)")
+                $db->prepare("INSERT INTO {$p}settings (option_name, option_value) VALUES (?, ?)")
                    ->execute(['contact_db_version', $version]);
             }
         } catch (\Throwable $e) {

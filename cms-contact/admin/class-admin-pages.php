@@ -47,12 +47,25 @@ final class CMS_Contact_Admin_Pages
         ob_start();
         $section = sanitize_text_field($_GET['section'] ?? 'dashboard');
 
+        self::load_admin_menu();
+        if (function_exists('renderAdminLayoutStart')) {
+            renderAdminLayoutStart(self::get_page_title($section), 'contact');
+        }
+
+        self::enqueue_admin_assets();
+
         match ($section) {
             'forms'       => self::render_forms(),
             'submissions' => self::render_submissions(),
             'settings'    => self::render_settings(),
             default       => self::render_dashboard(),
         };
+
+        self::enqueue_admin_scripts();
+        if (function_exists('renderAdminLayoutEnd')) {
+            renderAdminLayoutEnd();
+        }
+
         ob_end_flush();
     }
 
@@ -87,6 +100,30 @@ final class CMS_Contact_Admin_Pages
                 . htmlspecialchars(CMS_CONTACT_PLUGIN_URL . 'assets/css/contact-admin.css', ENT_QUOTES, 'UTF-8')
                 . '?v=' . filemtime($css) . '">' . "\n";
         }
+    }
+
+    /**
+     * Admin-Menü/Layout-Funktionen laden.
+     */
+    protected static function load_admin_menu(): void
+    {
+        $menuFile = ABSPATH . 'admin/partials/admin-menu.php';
+        if (file_exists($menuFile) && !function_exists('renderAdminLayoutStart')) {
+            require_once $menuFile;
+        }
+    }
+
+    /**
+     * Titel je Abschnitt für das Admin-Layout.
+     */
+    protected static function get_page_title(string $section): string
+    {
+        return match ($section) {
+            'forms' => 'Kontaktformulare',
+            'submissions' => 'Kontakt-Nachrichten',
+            'settings' => 'Kontakt-Einstellungen',
+            default => 'Kontakt',
+        };
     }
 
     /**

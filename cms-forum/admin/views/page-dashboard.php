@@ -1,5 +1,7 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
+<div class="forum-admin-shell">
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -15,6 +17,51 @@
             <?php endif; ?>
         </a>
     </div>
+</div>
+
+<div class="forum-card-grid">
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Community-Status</span>
+        <span class="forum-info-card__value"><?php echo $stats->open_reports > 0 ? 'Aufpassen' : 'Sauber'; ?></span>
+        <span class="forum-info-card__text"><?php echo $stats->open_reports > 0 ? (int) $stats->open_reports . ' Meldungen benötigen Moderation.' : 'Aktuell keine offenen Moderationsmeldungen.'; ?></span>
+    </div>
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Aktivität</span>
+        <span class="forum-info-card__value"><?php echo number_format((int)$stats->posts + (int)$stats->threads); ?></span>
+        <span class="forum-info-card__text">Threads und Beiträge bilden zusammen den aktuellen Foren-Puls.</span>
+    </div>
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Aktive Mitglieder</span>
+        <span class="forum-info-card__value"><?php echo (int)$stats->users; ?></span>
+        <span class="forum-info-card__text">Benutzer mit Forum-Metadaten und Aktivität.</span>
+    </div>
+</div>
+
+<div class="forum-action-grid">
+    <a href="?page=forum-categories" class="forum-action-card">
+        <span class="forum-action-card__icon">🗂️</span>
+        <span>
+            <span class="forum-action-card__eyebrow">Struktur</span>
+            <span class="forum-action-card__title">Kategorien pflegen</span>
+            <span class="forum-action-card__text">Ordnung für Themenwelten, Hauptbereiche und Forenstruktur schaffen.</span>
+        </span>
+    </a>
+    <a href="?page=forum-threads" class="forum-action-card">
+        <span class="forum-action-card__icon">📝</span>
+        <span>
+            <span class="forum-action-card__eyebrow">Moderation</span>
+            <span class="forum-action-card__title">Threads verwalten</span>
+            <span class="forum-action-card__text">Threads schließen, anheften oder problematische Inhalte bereinigen.</span>
+        </span>
+    </a>
+    <a href="?page=forum-settings" class="forum-action-card">
+        <span class="forum-action-card__icon">⚙️</span>
+        <span>
+            <span class="forum-action-card__eyebrow">Setup</span>
+            <span class="forum-action-card__title">Forum konfigurieren</span>
+            <span class="forum-action-card__text">Features, Limits und Rechte passend zur Community ausrichten.</span>
+        </span>
+    </a>
 </div>
 
 <!-- Stat-Cards -->
@@ -51,10 +98,15 @@
     </div>
 </div>
 
-<!-- Schnellzugriff -->
-<div class="admin-card" style="padding:1rem 1.25rem;margin-bottom:1.5rem;">
-    <h3 style="margin:0 0 .75rem;font-size:.85rem;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">⚡ Schnellzugriff</h3>
-    <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+<div class="forum-panel-grid">
+<div class="admin-card">
+    <div class="forum-panel-header">
+        <div>
+            <h3>⚡ Schnellzugriff</h3>
+            <p>Die wichtigsten Verwaltungsbereiche direkt erreichbar.</p>
+        </div>
+    </div>
+    <div class="forum-inline-actions">
         <a href="?page=forum-categories" class="btn btn-secondary btn-sm">🗂️ Kategorien</a>
         <a href="?page=forum-forums" class="btn btn-secondary btn-sm">📁 Foren</a>
         <a href="?page=forum-ranks" class="btn btn-secondary btn-sm">🏅 Ränge</a>
@@ -63,9 +115,21 @@
     </div>
 </div>
 
+<div class="forum-note-card">
+    <span class="forum-note-card__eyebrow">Moderation</span>
+    <span class="forum-note-card__title">Community gesund halten</span>
+    <span class="forum-note-card__text">Klar gepflegte Kategorien, konsistente Rechte und zügige Bearbeitung offener Meldungen halten das Forum übersichtlich und vertrauenswürdig.</span>
+</div>
+</div>
+
 <!-- Neueste Threads -->
 <div class="admin-card">
-    <h3>📝 Neueste Threads</h3>
+    <div class="forum-panel-header">
+        <div>
+            <h3>📝 Neueste Threads</h3>
+            <p>Frische Diskussionen, Thread-Typen und aktuelle Status direkt im Blick.</p>
+        </div>
+    </div>
     <?php if (empty($recentThreads)): ?>
         <div class="empty-state">
             <p style="font-size:2.5rem;margin:0;">📭</p>
@@ -114,7 +178,12 @@
 <!-- Aktivste Benutzer -->
 <?php if (!empty($topUsers)): ?>
 <div class="admin-card">
-    <h3>🏆 Aktivste Benutzer (30 Tage)</h3>
+    <div class="forum-panel-header">
+        <div>
+            <h3>🏆 Aktivste Benutzer (30 Tage)</h3>
+            <p>Wer in der Community aktuell am meisten schreibt.</p>
+        </div>
+    </div>
     <div class="users-table-container">
         <table class="users-table">
             <thead>
@@ -135,3 +204,5 @@
     </div>
 </div>
 <?php endif; ?>
+
+</div>

@@ -1,5 +1,12 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
+<?php
+$activeForums = count(array_filter($forums, static fn($forum) => !empty($forum->is_active)));
+$subForums = count(array_filter($forums, static fn($forum) => (int) $forum->parent_id > 0));
+?>
+
+<div class="forum-admin-shell">
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -17,6 +24,24 @@
 <?php if (isset($error) && $error): ?>
     <div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
+
+<div class="forum-card-grid">
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Foren gesamt</span>
+        <span class="forum-info-card__value"><?php echo number_format(count($forums)); ?></span>
+        <span class="forum-info-card__text">Alle Foren und Unterforen im System.</span>
+    </div>
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Aktiv</span>
+        <span class="forum-info-card__value"><?php echo number_format($activeForums); ?></span>
+        <span class="forum-info-card__text">Sichtbare Foren für die Community.</span>
+    </div>
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Unterforen</span>
+        <span class="forum-info-card__value"><?php echo number_format($subForums); ?></span>
+        <span class="forum-info-card__text">Hierarchische Unterbereiche innerhalb der Hauptforen.</span>
+    </div>
+</div>
 
 <!-- Foren-Liste nach Kategorie -->
 <?php
@@ -40,7 +65,12 @@ foreach ($categories as $c) { $catMap[(int)$c->id] = $c; }
 <?php else: ?>
     <?php foreach ($grouped as $catId => $catForums): ?>
     <div class="admin-card">
-        <h3>🗂️ <?php echo htmlspecialchars($catMap[$catId]->name ?? "Kategorie #{$catId}"); ?></h3>
+        <div class="forum-panel-header">
+            <div>
+                <h3>🗂️ <?php echo htmlspecialchars($catMap[$catId]->name ?? "Kategorie #{$catId}"); ?></h3>
+                <p><?php echo count($catForums); ?> Forum/Foren in diesem Bereich.</p>
+            </div>
+        </div>
         <div class="users-table-container">
             <table class="users-table">
                 <thead>
@@ -60,7 +90,7 @@ foreach ($categories as $c) { $catMap[(int)$c->id] = $c; }
                             <?php if ((int)$f->parent_id > 0): ?><span style="color:#94a3b8;margin-right:.25rem;">↳</span><?php endif; ?>
                             <strong><?php echo htmlspecialchars($f->name); ?></strong>
                         </td>
-                        <td style="color:#64748b;font-size:.85rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;"><?php echo htmlspecialchars($f->description ?? ''); ?></td>
+                        <td><span class="forum-muted-text"><?php echo htmlspecialchars($f->description ?? ''); ?></span></td>
                         <td><?php echo (int)$f->thread_count; ?></td>
                         <td><?php echo (int)$f->post_count; ?></td>
                         <td>
@@ -69,7 +99,7 @@ foreach ($categories as $c) { $catMap[(int)$c->id] = $c; }
                             </span>
                         </td>
                         <td>
-                            <div style="display:flex;gap:.5rem;">
+                            <div class="forum-inline-actions">
                                 <button class="btn btn-sm btn-secondary" onclick="editForum(<?php echo (int)$f->id; ?>)">✏️</button>
                                 <form method="POST" style="margin:0;">
                                     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
@@ -87,6 +117,8 @@ foreach ($categories as $c) { $catMap[(int)$c->id] = $c; }
     </div>
     <?php endforeach; ?>
 <?php endif; ?>
+
+</div>
 
 <!-- Create Modal -->
 <div id="createForumModal" class="modal" style="display:none;">

@@ -109,6 +109,11 @@ final class CMS_Feed_Admin
             renderAdminLayoutStart('Feeds', self::MENU_SLUG);
         }
 
+        $adminCss = CMS_FEED_PLUGIN_DIR . 'assets/css/feed-admin.css';
+        if (file_exists($adminCss)) {
+            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_FEED_PLUGIN_URL . 'assets/css/feed-admin.css', ENT_QUOTES, 'UTF-8') . '?v=' . filemtime($adminCss) . '">' . "\n";
+        }
+
         $db   = CMS_Feed_Database::instance();
         $sec  = \CMS\Security::instance();
 

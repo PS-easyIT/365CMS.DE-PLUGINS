@@ -43,6 +43,11 @@
       "manifest": "PLUGINS/cms-contact/update.json"
     },
     {
+      "slug": "cms-downloads",
+      "name": "CMS Downloads",
+      "manifest": "PLUGINS/cms-downloads/update.json"
+    },
+    {
       "slug": "cms-booking",
       "name": "CMS Booking",
       "manifest": "PLUGINS/cms-booking/update.json"

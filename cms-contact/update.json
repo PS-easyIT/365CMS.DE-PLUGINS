@@ -1,12 +1,12 @@
 {
     "name": "CMS Contact",
     "slug": "cms-contact",
-    "version": "1.0.0",
+    "version": "1.1.1",
     "requires_cms": "2.0.0",
     "tested_cms": "2.0.0",
     "author": "365 Network",
     "author_uri": "https://365network.de",
-    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-1.0.0.zip",
-    "last_updated": "2025-07-15",
-    "changelog": "Erstes Release: 6 Templates, benutzerdefinierte Felder, Mehrfach-Formulare, Spam-Schutz, DSGVO-Hooks."
+    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-1.1.1.zip",
+    "last_updated": "2026-03-14",
+    "changelog": "365CMS-Kompatibilitätsupdate für die aktuelle Settings-Tabelle und Installer-Versionierung."
 }

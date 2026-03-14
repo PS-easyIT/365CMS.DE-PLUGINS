@@ -1,5 +1,12 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
+<?php
+$openThreads = count(array_filter($threads, static fn($thread) => ($thread->status ?? '') === 'open'));
+$closedThreads = count(array_filter($threads, static fn($thread) => ($thread->status ?? '') === 'closed'));
+?>
+
+<div class="forum-admin-shell">
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -15,9 +22,27 @@
     <div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
 
+<div class="forum-card-grid">
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Treffer gesamt</span>
+        <span class="forum-info-card__value"><?php echo number_format((int) $total); ?></span>
+        <span class="forum-info-card__text">Threads passend zum aktuellen Filter.</span>
+    </div>
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Offen</span>
+        <span class="forum-info-card__value"><?php echo number_format($openThreads); ?></span>
+        <span class="forum-info-card__text">Aktiv diskutierbare Threads in dieser Ansicht.</span>
+    </div>
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Geschlossen</span>
+        <span class="forum-info-card__value"><?php echo number_format($closedThreads); ?></span>
+        <span class="forum-info-card__text">Bereits moderierte oder abgeschlossene Themen.</span>
+    </div>
+</div>
+
 <!-- Filter -->
-<div class="admin-card" style="padding:1rem 1.25rem;margin-bottom:1.5rem;">
-    <form method="GET" style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;">
+<div class="forum-filter-card">
+    <form method="GET" class="forum-filter-row">
         <input type="hidden" name="page" value="forum-threads">
         <div class="form-group" style="margin:0;min-width:200px;">
             <label class="form-label" style="font-size:.8rem;">Forum</label>
@@ -47,7 +72,12 @@
 
 <!-- Thread-Tabelle -->
 <div class="admin-card">
-    <h3>📝 Threads (<?php echo $total; ?>)</h3>
+    <div class="forum-panel-header">
+        <div>
+            <h3>📝 Threads (<?php echo $total; ?>)</h3>
+            <p>Moderation, Status und Relevanz aller Diskussionen in einer Ansicht.</p>
+        </div>
+    </div>
     <?php if (empty($threads)): ?>
         <div class="empty-state">
             <p style="font-size:2.5rem;margin:0;">📭</p>
@@ -74,8 +104,8 @@
                             <?php if ($t->type === 'sticky'): ?>📌 <?php elseif ($t->type === 'announcement'): ?>📢 <?php endif; ?>
                             <?php echo htmlspecialchars($t->title); ?>
                         </td>
-                        <td style="font-size:.85rem;color:#64748b;"><?php echo htmlspecialchars($t->forum_name ?? '–'); ?></td>
-                        <td style="font-size:.85rem;"><?php echo htmlspecialchars($t->username ?? 'Gelöscht'); ?></td>
+                        <td><span class="forum-muted-text"><?php echo htmlspecialchars($t->forum_name ?? '–'); ?></span></td>
+                        <td><span class="forum-muted-text"><?php echo htmlspecialchars($t->username ?? 'Gelöscht'); ?></span></td>
                         <td><?php echo (int)$t->reply_count; ?></td>
                         <td><?php echo (int)$t->view_count; ?></td>
                         <td>
@@ -84,7 +114,7 @@
                             </span>
                         </td>
                         <td>
-                            <div style="display:flex;gap:.35rem;flex-wrap:wrap;">
+                            <div class="forum-inline-actions">
                                 <form method="POST" style="margin:0;">
                                     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                                     <input type="hidden" name="forum_action" value="lock_thread">
@@ -115,7 +145,7 @@
 
         <!-- Paginierung -->
         <?php if ($pages > 1): ?>
-        <div class="pagination" style="display:flex;gap:.5rem;justify-content:center;margin-top:1.5rem;">
+        <div class="pagination forum-inline-actions" style="justify-content:center;margin-top:1.5rem;">
             <?php if ($page > 1): ?>
                 <a href="?page=forum-threads&page=<?php echo $page - 1; ?>" class="btn btn-secondary btn-sm">← Zurück</a>
             <?php endif; ?>
@@ -162,3 +192,5 @@ window.addEventListener('click', function(e) {
     document.querySelectorAll('.modal').forEach(function(m) { if (e.target === m) closeModal(m.id); });
 });
 </script>
+
+</div>

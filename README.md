@@ -17,6 +17,8 @@
 | [cms-events](cms-events/) | 1.0.0 | ✅ Stabil | Event-Verwaltung mit Speaker-Anbindung & Kalenderansicht |
 | [cms-experts](cms-experts/) | 2.0.0 | ✅ Stabil | IT-Experten-Verzeichnis mit umfangreichen Meta-Daten |
 | [cms-importer](cms-importer/) | 1.0.0 | ✅ Stabil | WordPress WXR-Importer für Posts & Pages |
+| [cms-contact](cms-contact/) | 1.1.1 | ✅ Stabil | Kontaktformulare mit Mehrfach-Formularen, Templates und DSGVO-Hooks |
+| [cms-downloads](cms-downloads/) | 1.0.0 | 🚀 Neu | Öffentliches Download-Management mit Kategorien, Typ-Presets und Archiv |
 | [cms-jobprofile-generator](cms-jobprofile-generator/) | 0.9.6 | 🧪 Beta | Stellenanzeigen-Generator mit Workflow-Genehmigung |
 | [cms-organigramm](cms-organigramm/) | 0.1.0 | 🚧 In Entwicklung | Interaktives Organigramm mit Cross-Plugin-Integration |
 | [cms-speakers](cms-speakers/) | 1.0.0 | ✅ Stabil | Speaker-Profile mit Topics & Präsentations-Historie |

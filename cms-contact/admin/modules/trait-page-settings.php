@@ -19,7 +19,6 @@ trait CMS_Contact_Page_Settings_Trait
     public static function render_settings(): void
     {
         self::check_access();
-        self::enqueue_admin_assets();
 
         $notice = '';
         $error  = '';

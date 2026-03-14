@@ -1,5 +1,11 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
+<?php
+$bannedUsers = count(array_filter($users, static fn($user) => !empty($user->is_banned)));
+?>
+
+<div class="forum-admin-shell">
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -15,9 +21,22 @@
     <div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
 
+<div class="forum-card-grid">
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Treffer gesamt</span>
+        <span class="forum-info-card__value"><?php echo number_format((int) $total); ?></span>
+        <span class="forum-info-card__text">Benutzer passend zur aktuellen Suche.</span>
+    </div>
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Gesperrt</span>
+        <span class="forum-info-card__value"><?php echo number_format($bannedUsers); ?></span>
+        <span class="forum-info-card__text">In der aktuellen Liste gebannte Accounts.</span>
+    </div>
+</div>
+
 <!-- Suche -->
-<div class="admin-card" style="padding:1rem 1.25rem;margin-bottom:1.5rem;">
-    <form method="GET" style="display:flex;gap:.75rem;align-items:flex-end;">
+<div class="forum-filter-card">
+    <form method="GET" class="forum-filter-row">
         <input type="hidden" name="page" value="forum-users">
         <div class="form-group" style="margin:0;flex:1;">
             <input type="text" name="q" class="form-control" value="<?php echo htmlspecialchars($search); ?>" placeholder="Benutzername suchen...">
@@ -28,7 +47,12 @@
 
 <!-- Benutzer-Tabelle -->
 <div class="admin-card">
-    <h3>👥 Benutzer (<?php echo $total; ?>)</h3>
+    <div class="forum-panel-header">
+        <div>
+            <h3>👥 Benutzer (<?php echo $total; ?>)</h3>
+            <p>Benutzerstatus, Rang und Aktivität zentral im Blick behalten.</p>
+        </div>
+    </div>
     <?php if (empty($users)): ?>
         <div class="empty-state">
             <p style="font-size:2.5rem;margin:0;">📭</p>
@@ -52,7 +76,7 @@
                     <?php foreach ($users as $u): ?>
                     <tr>
                         <td><strong><?php echo htmlspecialchars($u->username); ?></strong></td>
-                        <td style="font-size:.85rem;color:#64748b;"><?php echo htmlspecialchars($u->email ?? ''); ?></td>
+                        <td><span class="forum-muted-text"><?php echo htmlspecialchars($u->email ?? ''); ?></span></td>
                         <td>
                             <?php if (!empty($u->rank_title)): ?>
                                 <span class="status-badge" style="background:#dbeafe;color:#1e40af;"><?php echo htmlspecialchars($u->rank_title); ?></span>
@@ -88,7 +112,7 @@
         </div>
 
         <?php if ($pages > 1): ?>
-        <div class="pagination" style="display:flex;gap:.5rem;justify-content:center;margin-top:1.5rem;">
+        <div class="pagination forum-inline-actions" style="justify-content:center;margin-top:1.5rem;">
             <?php if ($page > 1): ?>
                 <a href="?page=forum-users&page=<?php echo $page - 1; ?>&q=<?php echo urlencode($search); ?>" class="btn btn-secondary btn-sm">← Zurück</a>
             <?php endif; ?>
@@ -143,3 +167,5 @@ window.addEventListener('click', function(e) {
     document.querySelectorAll('.modal').forEach(function(m) { if (e.target === m) closeModal(m.id); });
 });
 </script>
+
+</div>

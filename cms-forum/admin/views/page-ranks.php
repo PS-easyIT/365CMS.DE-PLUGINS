@@ -1,5 +1,11 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
+<?php
+$specialRanks = count(array_filter($ranks, static fn($rank) => !empty($rank->is_special)));
+?>
+
+<div class="forum-admin-shell">
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -23,9 +29,27 @@
     <div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
 
+<div class="forum-card-grid">
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Ränge gesamt</span>
+        <span class="forum-info-card__value"><?php echo number_format(count($ranks)); ?></span>
+        <span class="forum-info-card__text">Automatische und manuelle Auszeichnungen im Forum.</span>
+    </div>
+    <div class="forum-info-card">
+        <span class="forum-info-card__eyebrow">Spezialränge</span>
+        <span class="forum-info-card__value"><?php echo number_format($specialRanks); ?></span>
+        <span class="forum-info-card__text">Nicht automatisch vergebene Sonderrollen.</span>
+    </div>
+</div>
+
 <!-- Ränge-Tabelle -->
 <div class="admin-card">
-    <h3>🏅 Alle Ränge</h3>
+    <div class="forum-panel-header">
+        <div>
+            <h3>🏅 Alle Ränge</h3>
+            <p>Titel, Mindestbeiträge und Sonderrollen sauber verwalten.</p>
+        </div>
+    </div>
     <?php if (empty($ranks)): ?>
         <div class="empty-state">
             <p style="font-size:2.5rem;margin:0;">📭</p>
@@ -49,7 +73,7 @@
                     <tr>
                         <td><strong><?php echo htmlspecialchars($r->name); ?></strong></td>
                         <td><?php echo (int)$r->min_posts; ?></td>
-                        <td style="font-size:.85rem;color:#64748b;"><?php echo htmlspecialchars($r->color ?? ''); ?></td>
+                        <td><span class="forum-muted-text"><?php echo htmlspecialchars($r->color ?? ''); ?></span></td>
                         <td><?php echo htmlspecialchars($r->icon ?? ''); ?></td>
                         <td>
                             <?php if ($r->is_special): ?>
@@ -59,7 +83,7 @@
                             <?php endif; ?>
                         </td>
                         <td>
-                            <div style="display:flex;gap:.5rem;">
+                            <div class="forum-inline-actions">
                                 <button class="btn btn-sm btn-secondary" onclick="editRank(<?php echo (int)$r->id; ?>, '<?php echo htmlspecialchars($r->name, ENT_QUOTES); ?>', <?php echo (int)$r->min_posts; ?>, '<?php echo htmlspecialchars($r->color ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($r->icon ?? '', ENT_QUOTES); ?>', <?php echo $r->is_special ? 'true' : 'false'; ?>)">✏️</button>
                                 <form method="POST" style="margin:0;">
                                     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
@@ -75,6 +99,8 @@
             </table>
         </div>
     <?php endif; ?>
+</div>
+
 </div>
 
 <!-- Create Modal -->

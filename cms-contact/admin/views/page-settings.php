@@ -4,6 +4,8 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 
 <?php include CMS_CONTACT_PLUGIN_DIR . 'admin/views/partial-section-nav.php'; ?>
 
+<div class="contact-admin-shell">
+
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -19,11 +21,29 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 <div class="alert alert-error">❌ <?php echo $e($error); ?></div>
 <?php endif; ?>
 
+<div class="contact-card-grid">
+    <div class="contact-mini-card">
+        <span class="contact-mini-card__label">Mail-Versand</span>
+        <span class="contact-mini-card__value"><?php echo !empty($settings['admin_email']) ? 'Aktiv' : 'Offen'; ?></span>
+        <span class="contact-mini-card__text"><?php echo !empty($settings['admin_email']) ? $e($settings['admin_email']) : 'Globaler Empfänger noch nicht gesetzt.'; ?></span>
+    </div>
+    <div class="contact-mini-card">
+        <span class="contact-mini-card__label">Template-Standard</span>
+        <span class="contact-mini-card__value"><?php echo $e($templates[$settings['default_template'] ?? 'classic']['icon'] ?? '🧩'); ?></span>
+        <span class="contact-mini-card__text"><?php echo $e($templates[$settings['default_template'] ?? 'classic']['name'] ?? 'Classic'); ?></span>
+    </div>
+    <div class="contact-mini-card">
+        <span class="contact-mini-card__label">Bestätigungs-Mail</span>
+        <span class="contact-mini-card__value"><?php echo !empty($settings['send_confirmation']) ? 'Ein' : 'Aus'; ?></span>
+        <span class="contact-mini-card__text">Automatische Rückmeldung an Einsender.</span>
+    </div>
+</div>
+
 <!-- Tabs -->
-<div class="tabs" style="margin-bottom:0;display:flex;gap:.3rem;border-bottom:2px solid #e2e8f0;">
-    <button class="tab-btn active" onclick="switchTab('tab-general', this)" type="button">📧 Allgemein</button>
-    <button class="tab-btn" onclick="switchTab('tab-design', this)" type="button">🎨 Design</button>
-    <button class="tab-btn" onclick="switchTab('tab-cleanup', this)" type="button">🧹 Wartung</button>
+<div class="contact-tab-bar">
+    <button class="contact-tab-btn active" onclick="switchTab('tab-general', this)" type="button">📧 Allgemein</button>
+    <button class="contact-tab-btn" onclick="switchTab('tab-design', this)" type="button">🎨 Design</button>
+    <button class="contact-tab-btn" onclick="switchTab('tab-cleanup', this)" type="button">🧹 Wartung</button>
 </div>
 
 <form method="POST" class="admin-form">
@@ -32,30 +52,42 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 
     <!-- Tab: Allgemein -->
     <div id="tab-general" class="tab-content active">
-        <div class="admin-card" style="border-radius:0 10px 10px 10px;margin-top:0;">
-            <h3>📧 E-Mail-Einstellungen</h3>
-
-            <div class="form-group">
-                <label class="form-label" for="admin_email">Globaler Empfänger</label>
-                <input type="email" id="admin_email" name="admin_email" class="form-control"
-                       value="<?php echo $e($settings['admin_email'] ?? ''); ?>"
-                       placeholder="admin@example.com" style="max-width:400px;">
-                <small class="form-text">Wird verwendet, wenn ein Formular keinen eigenen Empfänger hat.</small>
+        <div class="admin-card contact-tab-panel">
+            <div class="contact-panel-header">
+                <div>
+                    <h3>📧 E-Mail-Einstellungen</h3>
+                    <p>Globale Versanddaten als Fallback für alle Formulare definieren.</p>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label" for="from_name">Absendername</label>
-                <input type="text" id="from_name" name="from_name" class="form-control"
-                       value="<?php echo $e($settings['from_name'] ?? ''); ?>"
-                       placeholder="<?php echo $e(defined('SITE_NAME') ? SITE_NAME : 'CMS'); ?>"
-                       style="max-width:350px;">
-            </div>
+            <div class="contact-settings-grid">
+                <div class="form-group">
+                    <label class="form-label" for="admin_email">Globaler Empfänger</label>
+                    <input type="email" id="admin_email" name="admin_email" class="form-control"
+                           value="<?php echo $e($settings['admin_email'] ?? ''); ?>"
+                           placeholder="admin@example.com">
+                    <small class="form-text">Wird verwendet, wenn ein Formular keinen eigenen Empfänger hat.</small>
+                </div>
 
-            <div class="form-group">
-                <label class="form-label" for="from_email">Absender-E-Mail</label>
-                <input type="email" id="from_email" name="from_email" class="form-control"
-                       value="<?php echo $e($settings['from_email'] ?? ''); ?>"
-                       placeholder="noreply@example.com" style="max-width:400px;">
+                <div class="form-group">
+                    <label class="form-label" for="from_name">Absendername</label>
+                    <input type="text" id="from_name" name="from_name" class="form-control"
+                           value="<?php echo $e($settings['from_name'] ?? ''); ?>"
+                           placeholder="<?php echo $e(defined('SITE_NAME') ? SITE_NAME : 'CMS'); ?>">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="from_email">Absender-E-Mail</label>
+                    <input type="email" id="from_email" name="from_email" class="form-control"
+                           value="<?php echo $e($settings['from_email'] ?? ''); ?>"
+                           placeholder="noreply@example.com">
+                </div>
+
+                <div class="contact-info-card">
+                    <span class="contact-info-card__eyebrow">Hinweis</span>
+                    <strong class="contact-action-card__title">Fallback-Logik</strong>
+                    <div class="contact-info-card__text">Wenn ein Formular keinen eigenen Empfänger hat, greift automatisch dieser globale Versand-Stack.</div>
+                </div>
             </div>
 
             <div class="form-group">
@@ -70,11 +102,11 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 
     <!-- Tab: Design -->
     <div id="tab-design" class="tab-content">
-        <div class="admin-card" style="border-radius:0 10px 10px 10px;margin-top:0;">
+        <div class="admin-card contact-tab-panel">
             <h3>🎨 Standard-Design</h3>
-            <p style="color:#64748b;font-size:.85rem;margin-bottom:1rem;">Diese Werte gelten als Fallback, wenn ein Formular keine eigenen Einstellungen hat.</p>
+            <p class="contact-muted-text" style="margin-bottom:1rem;">Diese Werte gelten als Fallback, wenn ein Formular keine eigenen Einstellungen hat.</p>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;">
+            <div class="contact-form-grid-3">
                 <div class="form-group">
                     <label class="form-label" for="default_template">Standard-Template</label>
                     <select id="default_template" name="default_template" class="form-control">
@@ -88,7 +120,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="primary_color">Primärfarbe</label>
-                    <div style="display:flex;gap:.5rem;align-items:center;">
+                    <div class="contact-inline-actions" style="align-items:center;">
                         <input type="color" id="primary_color" name="primary_color"
                                value="<?php echo $e($settings['primary_color'] ?? '#3b82f6'); ?>"
                                style="width:44px;height:38px;border:2px solid #e2e8f0;border-radius:6px;cursor:pointer;">
@@ -108,25 +140,37 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
                     </select>
                 </div>
             </div>
+
+            <div class="contact-template-note" style="margin-top:1rem;">
+                <span class="contact-template-note__eyebrow">Design-Tipp</span>
+                <strong class="contact-action-card__title">Konsequente Defaults sparen Zeit</strong>
+                <div class="contact-template-note__text">Wenn Farbe, Radius und Template hier sauber gesetzt sind, benötigen neue Formulare oft nur noch Titel, Slug und Empfänger.</div>
+            </div>
         </div>
     </div>
 
     <!-- Speichern -->
-    <div class="admin-card" style="margin-top:1rem;">
-        <div style="display:flex;justify-content:flex-end;gap:.6rem;align-items:center;">
-            <span style="color:#64748b;font-size:.85rem;">Änderungen werden sofort übernommen</span>
+    <div class="admin-card">
+        <div class="contact-panel-header">
+            <div>
+                <h3>💾 Änderungen übernehmen</h3>
+                <p>Globale Konfiguration wird direkt für neue Formulare und als Fallback für bestehende Formulare verwendet.</p>
+            </div>
+            <div class="contact-inline-actions">
+            <span class="contact-muted-text">Änderungen werden sofort übernommen</span>
             <button type="submit" class="btn btn-primary">💾 Speichern</button>
+            </div>
         </div>
     </div>
 </form>
 
 <!-- Tab: Wartung (separate Aktionen, nicht im Hauptformular) -->
 <div id="tab-cleanup" class="tab-content">
-    <div class="admin-card" style="border-radius:0 10px 10px 10px;margin-top:0;">
+    <div class="admin-card contact-tab-panel">
         <h3>🧹 Wartung & Bereinigung</h3>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
-            <div style="background:#f8fafc;padding:1.25rem;border-radius:8px;border:1px solid #e2e8f0;">
+        <div class="contact-settings-grid">
+            <div class="contact-info-card">
                 <h4 style="margin:0 0 .5rem;">📭 Alte Nachrichten löschen</h4>
                 <p style="font-size:.85rem;color:#64748b;">Entfernt alle Nachrichten, die älter als der gewählte Zeitraum sind.</p>
                 <form method="POST" style="display:flex;gap:.5rem;align-items:flex-end;margin-top:.75rem;">
@@ -142,7 +186,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
                 </form>
             </div>
 
-            <div style="background:#f8fafc;padding:1.25rem;border-radius:8px;border:1px solid #e2e8f0;">
+            <div class="contact-info-card">
                 <h4 style="margin:0 0 .5rem;">🚫 Spam löschen</h4>
                 <p style="font-size:.85rem;color:#64748b;">Entfernt alle als Spam markierten Nachrichten.</p>
                 <form method="POST" style="margin-top:.75rem;">
@@ -155,10 +199,12 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
     </div>
 </div>
 
+</div>
+
 <script>
 function switchTab(tabId, btn) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.contact-tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(tabId)?.classList.add('active');
     btn.classList.add('active');
 }
