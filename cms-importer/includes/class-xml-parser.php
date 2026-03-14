@@ -39,11 +39,13 @@ class CMS_Importer_XML_Parser
     {
         $result = [
             'site'        => [],
+            'source_format' => 'wxr',
             'authors'     => [],
             'attachments' => [],
             'posts'       => [],
             'pages'       => [],
             'tables'      => [],
+            'redirects'   => [],
             'others'      => [],
             'errors'      => [],
         ];
@@ -62,6 +64,10 @@ class CMS_Importer_XML_Parser
         if ($file_size === false || $file_size > self::MAX_FILE_SIZE) {
             $result['errors'][] = 'Datei zu groß (max. 50 MB). Größe: ' . round(($file_size ?: 0) / 1048576, 2) . ' MB';
             return $result;
+        }
+
+        if ($this->looks_like_json_file($file_path)) {
+            return $this->parse_rank_math_json_file($file_path, $result);
         }
 
         if (PHP_VERSION_ID < 80000) {
@@ -139,6 +145,168 @@ class CMS_Importer_XML_Parser
         $result = $this->resolve_attachment_references($result);
 
         return $result;
+    }
+
+    private function looks_like_json_file(string $file_path): bool
+    {
+        $extension = strtolower((string) pathinfo($file_path, PATHINFO_EXTENSION));
+        if ($extension === 'json') {
+            return true;
+        }
+
+        $handle = @fopen($file_path, 'rb');
+        if ($handle === false) {
+            return false;
+        }
+
+        $chunk = (string) fread($handle, 512);
+        fclose($handle);
+
+        $chunk = ltrim($chunk, "\xEF\xBB\xBF\x00\x09\x0A\x0D ");
+        return $chunk !== '' && (($chunk[0] ?? '') === '{' || ($chunk[0] ?? '') === '[');
+    }
+
+    private function parse_rank_math_json_file(string $file_path, array $result): array
+    {
+        $content = @file_get_contents($file_path);
+        if ($content === false) {
+            $result['errors'][] = 'JSON-Datei konnte nicht gelesen werden: ' . $file_path;
+            return $result;
+        }
+
+        $decoded = json_decode($content, true);
+        if (!is_array($decoded)) {
+            $result['errors'][] = 'Ungültige JSON-Datei: ' . (json_last_error_msg() ?: 'Dekodierung fehlgeschlagen');
+            return $result;
+        }
+
+        if (!isset($decoded['redirections']) || !is_array($decoded['redirections'])) {
+            $result['errors'][] = 'Keine unterstützte Rank-Math-JSON-Datei erkannt (Schlüssel "redirections" fehlt).';
+            return $result;
+        }
+
+        $result['source_format'] = 'rank_math_json';
+        $result['site'] = [
+            'title' => 'Rank Math JSON Export',
+            'link' => '',
+            'description' => 'Rank Math Einstellungen / Weiterleitungen',
+            'language' => 'de',
+            'wxr_version' => '',
+            'base_site_url' => trim((string) ($decoded['general']['breadcrumbs_home_link'] ?? '')),
+            'base_blog_url' => trim((string) ($decoded['general']['breadcrumbs_home_link'] ?? '')),
+        ];
+        $result['redirects'] = $this->parse_rank_math_redirects($decoded);
+
+        return $result;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function parse_rank_math_redirects(array $payload): array
+    {
+        $redirects = [];
+        $defaultType = $this->normalize_rank_math_redirect_type((string) ($payload['general']['redirections_header_code'] ?? '301'));
+
+        foreach (($payload['redirections'] ?? []) as $redirectIndex => $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            $rankMathId = (int) ($entry['id'] ?? 0);
+            $targetUrl = trim((string) ($entry['url_to'] ?? ''));
+            $redirectType = $this->normalize_rank_math_redirect_type((string) ($entry['header_code'] ?? (string) $defaultType));
+            $isActive = strtolower(trim((string) ($entry['status'] ?? 'active'))) === 'active';
+            $sources = $this->decode_rank_math_sources($entry['sources'] ?? []);
+
+            foreach ($sources as $sourceIndex => $source) {
+                $pattern = trim((string) ($source['pattern'] ?? ''));
+                $comparison = strtolower(trim((string) ($source['comparison'] ?? 'exact')));
+
+                $redirects[] = [
+                    'kind' => 'redirect',
+                    'post_type' => 'rank_math_redirection',
+                    'wp_id' => 0,
+                    'rank_math_id' => $rankMathId,
+                    'source_reference' => $this->build_rank_math_source_reference($rankMathId, $pattern, (int) $sourceIndex, (int) $redirectIndex),
+                    'title' => $pattern !== '' ? $pattern : ('Rank Math Redirect #' . ($rankMathId > 0 ? $rankMathId : ($redirectIndex + 1))),
+                    'slug' => $pattern,
+                    'link' => $targetUrl,
+                    'guid' => '',
+                    'post_status' => $isActive ? 'publish' : 'draft',
+                    'redirect_type' => $redirectType,
+                    'redirect_target' => $targetUrl,
+                    'redirect_source' => $pattern,
+                    'redirect_comparison' => $comparison !== '' ? $comparison : 'exact',
+                    'redirect_ignore_case' => $this->normalize_rank_math_bool($source['ignore'] ?? false),
+                    'redirect_hits' => max(0, (int) ($entry['hits'] ?? 0)),
+                    'status' => strtolower(trim((string) ($entry['status'] ?? 'active'))),
+                    'date' => $this->normalize_rank_math_datetime((string) ($entry['created'] ?? '')),
+                    'modified' => $this->normalize_rank_math_datetime((string) ($entry['updated'] ?? '')),
+                    'last_accessed' => $this->normalize_rank_math_datetime((string) ($entry['last_accessed'] ?? '')),
+                    'notes' => 'Rank Math Redirect #' . ($rankMathId > 0 ? $rankMathId : ($redirectIndex + 1)),
+                    'meta' => [],
+                    'mapped_meta_keys' => [],
+                ];
+            }
+        }
+
+        return $redirects;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function decode_rank_math_sources(mixed $value): array
+    {
+        if (is_array($value)) {
+            return array_values(array_filter($value, static fn(mixed $row): bool => is_array($row)));
+        }
+
+        if (!is_string($value)) {
+            return [];
+        }
+
+        $decoded = $this->decode_structured_value($value);
+        return array_values(array_filter($decoded, static fn(mixed $row): bool => is_array($row)));
+    }
+
+    private function normalize_rank_math_redirect_type(string $value): int
+    {
+        $type = (int) trim($value);
+        return in_array($type, [301, 302], true) ? $type : 301;
+    }
+
+    private function normalize_rank_math_bool(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        $normalized = strtolower(trim((string) $value));
+        return in_array($normalized, ['1', 'true', 'yes', 'on'], true);
+    }
+
+    private function normalize_rank_math_datetime(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '' || strtotime($value) === false) {
+            return '';
+        }
+
+        return date('Y-m-d H:i:s', strtotime($value));
+    }
+
+    private function build_rank_math_source_reference(int $rankMathId, string $pattern, int $sourceIndex, int $redirectIndex): string
+    {
+        $base = $rankMathId > 0 ? 'rankmath:' . $rankMathId : 'rankmath:auto:' . $redirectIndex;
+        $pattern = trim($pattern);
+
+        if ($pattern === '') {
+            return $base . ':source:' . $sourceIndex;
+        }
+
+        return $base . ':' . md5($pattern . '|' . $sourceIndex);
     }
 
     private function parse_authors(\SimpleXMLElement $channel, string $ns): array

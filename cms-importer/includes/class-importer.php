@@ -165,6 +165,7 @@ class CMS_Importer_Service
         'posts'  => 0,
         'pages'  => 0,
         'tables' => 0,
+        'redirects' => 0,
         'others' => 0,
     ];
     private ?\CMS\Services\SEO\SeoMetaRepository $seoRepository = null;
@@ -214,6 +215,11 @@ class CMS_Importer_Service
             $this->import_as_table($db, $p, $item);
         }
 
+        foreach ($parsed['redirects'] ?? [] as $item) {
+            $this->total++;
+            $this->import_as_redirect($db, $p, $item);
+        }
+
         foreach ($this->prioritize_items_by_locale($parsed['posts']) as $item) {
             $this->total++;
             $this->import_as_post($db, $p, $item, false);
@@ -255,6 +261,7 @@ class CMS_Importer_Service
             'posts_imported'    => $this->import_breakdown['posts'],
             'pages_imported'    => $this->import_breakdown['pages'],
             'tables_imported'   => $this->import_breakdown['tables'],
+            'redirects_imported' => $this->import_breakdown['redirects'],
             'others_imported'   => $this->import_breakdown['others'],
         ];
     }
@@ -293,6 +300,7 @@ class CMS_Importer_Service
                 'post' => [],
                 'page' => [],
                 'site_table' => [],
+                'redirect' => [],
             ],
             'preview_items' => [],
             'preview_limit' => 25,
@@ -305,6 +313,7 @@ class CMS_Importer_Service
                 'posts' => 0,
                 'pages' => 0,
                 'tables' => 0,
+                'redirects' => 0,
                 'others' => 0,
             ],
             'skip_reasons' => [],
@@ -314,6 +323,10 @@ class CMS_Importer_Service
 
         foreach ($parsed['tables'] as $item) {
             $this->collect_preview_item($this->build_table_preview($db, $p, $item, $context), $context);
+        }
+
+        foreach (($parsed['redirects'] ?? []) as $item) {
+            $this->collect_preview_item($this->build_redirect_preview($db, $p, $item, $context), $context);
         }
 
         foreach ($this->prioritize_items_by_locale($parsed['posts']) as $item) {
@@ -343,6 +356,7 @@ class CMS_Importer_Service
                 'posts' => count($parsed['posts'] ?? []),
                 'pages' => count($parsed['pages'] ?? []),
                 'tables' => count($parsed['tables'] ?? []),
+                'redirects' => count($parsed['redirects'] ?? []),
                 'others' => count($parsed['others'] ?? []),
             ],
             'preview_counts' => $context['breakdown'],
@@ -795,6 +809,104 @@ class CMS_Importer_Service
         }
     }
 
+    private function import_as_redirect(\CMS\Database $db, string $p, array $item): void
+    {
+        $sourceReference = trim((string) ($item['source_reference'] ?? ''));
+        $sourcePath = $this->normalize_import_redirect_source_path((string) ($item['redirect_source'] ?? ''));
+        $targetUrl = $this->normalize_import_redirect_target((string) ($item['redirect_target'] ?? ''));
+        $comparison = strtolower(trim((string) ($item['redirect_comparison'] ?? 'exact')));
+        $redirectType = $this->normalize_import_redirect_type((int) ($item['redirect_type'] ?? 301));
+        $isActive = strtolower(trim((string) ($item['status'] ?? 'active'))) === 'active' ? 1 : 0;
+
+        if ($comparison !== 'exact') {
+            $this->skip_item('Rank-Math-Regeln mit Vergleich "' . $comparison . '" werden nicht unterstützt');
+            return;
+        }
+
+        if ($sourcePath === '' || $sourcePath === '/') {
+            $this->skip_item('Ungültiger Redirect-Quellpfad');
+            return;
+        }
+
+        if ($targetUrl === '') {
+            $this->skip_item('Ungültiges Redirect-Ziel');
+            return;
+        }
+
+        $this->ensure_redirect_rule_tables($db, $p);
+
+        $existingRule = $db->get_row(
+            "SELECT id, hits FROM {$p}redirect_rules WHERE source_path = ? LIMIT 1",
+            [$sourcePath]
+        );
+
+        $notes = trim((string) ($item['notes'] ?? 'Importiert aus Rank Math JSON'));
+        $hits = max(0, (int) ($item['redirect_hits'] ?? 0));
+        $lastHitAt = $this->safe_date((string) ($item['last_accessed'] ?? ''));
+        $createdAt = $this->safe_date((string) ($item['date'] ?? ''));
+        $updatedAt = $this->safe_date((string) ($item['modified'] ?? ''));
+
+        try {
+            if ($existingRule !== null) {
+                $db->execute(
+                    "UPDATE {$p}redirect_rules
+                     SET target_url = ?, redirect_type = ?, is_active = ?, notes = ?, hits = ?, last_hit_at = ?, updated_at = ?
+                     WHERE id = ?",
+                    [
+                        $targetUrl,
+                        $redirectType,
+                        $isActive,
+                        $notes,
+                        $hits,
+                        $lastHitAt,
+                        $updatedAt ?? date('Y-m-d H:i:s'),
+                        (int) ($existingRule->id ?? 0),
+                    ]
+                );
+
+                $ruleId = (int) ($existingRule->id ?? 0);
+                $targetCreated = 0;
+            } else {
+                $ruleId = (int) $db->insert('redirect_rules', [
+                    'source_path' => $sourcePath,
+                    'target_url' => $targetUrl,
+                    'redirect_type' => $redirectType,
+                    'is_active' => $isActive,
+                    'notes' => $notes,
+                    'hits' => $hits,
+                    'last_hit_at' => $lastHitAt,
+                    'created_at' => $createdAt,
+                    'updated_at' => $updatedAt,
+                ]);
+                $targetCreated = 1;
+            }
+
+            if ($ruleId <= 0) {
+                throw new \RuntimeException('Redirect-Regel konnte nicht gespeichert werden.');
+            }
+
+            $this->store_import_item($db, $p, [
+                'log_id' => $this->log_id,
+                'source_type' => 'rank_math_redirection',
+                'source_wp_id' => null,
+                'source_reference' => $sourceReference !== '' ? $sourceReference : $sourcePath,
+                'source_slug' => $sourcePath,
+                'source_url' => $sourcePath,
+                'target_type' => 'redirect',
+                'target_id' => $ruleId,
+                'target_created' => $targetCreated,
+                'target_slug' => $sourcePath,
+                'target_url' => $targetUrl,
+            ]);
+
+            $this->imported++;
+            $this->import_breakdown['redirects']++;
+        } catch (\Throwable $e) {
+            $this->errors++;
+            error_log('CMS_Importer: Redirect-Import fehlgeschlagen: ' . $e->getMessage() . ' – Quelle: ' . $sourcePath);
+        }
+    }
+
     // ── Private: Bild-Downloader ──────────────────────────────────────────────
 
     /**
@@ -1226,6 +1338,7 @@ class CMS_Importer_Service
             'posts'  => 0,
             'pages'  => 0,
             'tables' => 0,
+            'redirects' => 0,
             'others' => 0,
         ];
     }
@@ -2632,6 +2745,7 @@ class CMS_Importer_Service
             'post' => $this->resolve_content_target($db, $p . 'posts', 'slug', $targetId, $targetSlug),
             'page' => $this->resolve_content_target($db, $p . 'pages', 'slug', $targetId, $targetSlug),
             'site_table' => $this->resolve_site_table_target($db, $p, $targetId, $targetSlug),
+            'redirect' => $this->resolve_redirect_target($db, $p, $targetId, $targetSlug),
             default => null,
         };
     }
@@ -2691,6 +2805,40 @@ class CMS_Importer_Service
         if ($targetSlug !== '' && $this->has_table_slug_column($db, $p)) {
             $row = $db->get_row(
                 "SELECT id, table_slug AS target_slug FROM {$p}site_tables WHERE table_slug = ? LIMIT 1",
+                [$targetSlug]
+            );
+            if ($row !== null) {
+                return [
+                    'target_id' => (int) ($row->id ?? 0),
+                    'target_slug' => (string) ($row->target_slug ?? ''),
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{target_id:int,target_slug:string}|null
+     */
+    private function resolve_redirect_target(\CMS\Database $db, string $p, int $targetId, string $targetSlug): ?array
+    {
+        if ($targetId > 0) {
+            $row = $db->get_row(
+                "SELECT id, source_path AS target_slug FROM {$p}redirect_rules WHERE id = ? LIMIT 1",
+                [$targetId]
+            );
+            if ($row !== null) {
+                return [
+                    'target_id' => (int) ($row->id ?? 0),
+                    'target_slug' => (string) ($row->target_slug ?? ''),
+                ];
+            }
+        }
+
+        if ($targetSlug !== '') {
+            $row = $db->get_row(
+                "SELECT id, source_path AS target_slug FROM {$p}redirect_rules WHERE source_path = ? LIMIT 1",
                 [$targetSlug]
             );
             if ($row !== null) {
@@ -2907,6 +3055,73 @@ class CMS_Importer_Service
         } catch (\Throwable) {
             return false;
         }
+    }
+
+    private function ensure_redirect_rule_tables(\CMS\Database $db, string $p): void
+    {
+        if (class_exists('CMS\\Services\\RedirectService')) {
+            \CMS\Services\RedirectService::getInstance()->ensureTables();
+            return;
+        }
+
+        $db->query(
+            "CREATE TABLE IF NOT EXISTS {$p}redirect_rules (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                source_path VARCHAR(255) NOT NULL,
+                target_url VARCHAR(500) NOT NULL,
+                redirect_type SMALLINT NOT NULL DEFAULT 301,
+                is_active TINYINT(1) NOT NULL DEFAULT 1,
+                notes TEXT DEFAULT NULL,
+                hits INT UNSIGNED NOT NULL DEFAULT 0,
+                last_hit_at DATETIME DEFAULT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY idx_source_path (source_path),
+                INDEX idx_active (is_active)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+        );
+    }
+
+    private function normalize_import_redirect_source_path(string $source): string
+    {
+        $source = trim(html_entity_decode($source, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($source === '') {
+            return '';
+        }
+
+        if (($pos = strpos($source, '?')) !== false) {
+            $source = substr($source, 0, $pos);
+        }
+
+        if (filter_var($source, FILTER_VALIDATE_URL) !== false) {
+            $source = (string) parse_url($source, PHP_URL_PATH);
+        }
+
+        $source = '/' . ltrim($source, '/');
+        if ($source !== '/') {
+            $source = rtrim($source, '/');
+        }
+
+        return $source;
+    }
+
+    private function normalize_import_redirect_target(string $target): string
+    {
+        $target = trim(html_entity_decode($target, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($target === '') {
+            return '';
+        }
+
+        if (filter_var($target, FILTER_VALIDATE_URL) !== false) {
+            return $target;
+        }
+
+        return $this->normalize_import_redirect_source_path($target);
+    }
+
+    private function normalize_import_redirect_type(int $type): int
+    {
+        return in_array($type, [301, 302], true) ? $type : 301;
     }
 
     private function ensure_unique_filename(string $filename, string $url, array &$usedNames): string
@@ -3492,6 +3707,81 @@ class CMS_Importer_Service
             'tags' => [],
             'table_rows' => count($table['rows'] ?? []),
             'table_columns' => count($table['columns'] ?? []),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     * @return array<string, mixed>
+     */
+    private function build_redirect_preview(\CMS\Database $db, string $p, array $item, array &$context): array
+    {
+        $this->ensure_redirect_rule_tables($db, $p);
+
+        $sourceReference = trim((string) ($item['source_reference'] ?? ''));
+        $sourcePath = $this->normalize_import_redirect_source_path((string) ($item['redirect_source'] ?? ''));
+        $targetUrl = $this->normalize_import_redirect_target((string) ($item['redirect_target'] ?? ''));
+        $comparison = strtolower(trim((string) ($item['redirect_comparison'] ?? 'exact')));
+        $status = strtolower(trim((string) ($item['status'] ?? 'active')));
+        $redirectType = $this->normalize_import_redirect_type((int) ($item['redirect_type'] ?? 301));
+        $action = 'import';
+        $reason = '';
+
+        if ($comparison !== 'exact') {
+            $action = 'skip';
+            $reason = 'Rank-Math-Regeln mit Vergleich "' . $comparison . '" werden nicht unterstützt';
+        } elseif ($sourcePath === '' || $sourcePath === '/') {
+            $action = 'skip';
+            $reason = 'Ungültiger Redirect-Quellpfad';
+        } elseif ($targetUrl === '') {
+            $action = 'skip';
+            $reason = 'Ungültiges Redirect-Ziel';
+        }
+
+        $existingMapping = $sourceReference !== ''
+            ? $this->find_existing_mapping_by_reference($db, $p, 'rank_math_redirection', $sourceReference, 'redirect')
+            : null;
+        $existingRule = $db->get_row(
+            "SELECT id FROM {$p}redirect_rules WHERE source_path = ? LIMIT 1",
+            [$sourcePath]
+        );
+
+        if ($action === 'import' && empty($context['reserved_slugs']['redirect'][$sourcePath])) {
+            $this->reserve_preview_slug('redirect', $sourcePath, $context);
+        }
+
+        if ($action === 'skip') {
+            $reason = $this->normalize_skip_reason($reason);
+        }
+
+        return [
+            'action' => $action,
+            'reason' => $reason,
+            'source_type' => 'rank_math_redirection',
+            'source_label' => 'Weiterleitung',
+            'source_wp_id' => (int) ($item['rank_math_id'] ?? 0),
+            'source_title' => (string) (($item['title'] ?? '') !== '' ? $item['title'] : $sourcePath),
+            'source_status' => $status !== '' ? $status : 'active',
+            'target_group' => 'redirects',
+            'target_type' => 'redirect',
+            'target_slug' => $existingMapping['target_slug'] ?? $sourcePath,
+            'target_url' => $targetUrl,
+            'target_hint' => $existingRule !== null
+                ? 'Bestehende 365CMS-Weiterleitung wird aktualisiert'
+                : 'Wird in cms_redirect_rules angelegt',
+            'image_candidates' => 0,
+            'featured_image' => '',
+            'table_shortcodes_found' => 0,
+            'table_shortcodes_resolved' => 0,
+            'table_targets' => [],
+            'unknown_meta_count' => 0,
+            'category' => '',
+            'tags' => [],
+            'source_comparison' => $comparison,
+            'redirect_type' => $redirectType,
+            'redirect_state' => $status === 'active' ? 'aktiv' : 'inaktiv',
+            'redirect_hits' => max(0, (int) ($item['redirect_hits'] ?? 0)),
+            'last_hit_at' => (string) ($item['last_accessed'] ?? ''),
         ];
     }
 
