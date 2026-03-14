@@ -4,6 +4,27 @@ Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
 ---
 
+## [1.3.0] – 2026-03-14
+
+### Hinzugefügt
+- **👤 Member-Feed-Abos** – Neues persönliches Abo-Modell für `/member/feeds` im `cms-phinit` Theme
+- **Mehrfachauswahl von Feed-Kanälen** – Mitglieder können einen oder mehrere Feeds in einer gemeinsamen Mail abonnieren
+- **Neue Versandregeln für Member**
+	- täglich um `09:00 Uhr`
+	- täglich um `15:00 Uhr`
+	- täglich `2×` um `09:00 Uhr` und `15:00 Uhr`
+	- wöchentlich an frei wählbarem Wochentag um `09:00 Uhr` oder `15:00 Uhr`
+- **Neue Tabelle `feed_member_subscriptions`** – Speichert Feed-Auswahl, Zieladresse, Versandrhythmus und letzten Versand-Slot je Member
+- **Admin-Dashboard-Stat** – Anzahl aktiver Member-Feed-Abos sichtbar
+
+### Geändert
+- **Route-sensitives Asset-Loading** – Public CSS/JS von `cms-feed` wird nur noch auf echten Feed-Archiv-Routen geladen und nicht mehr global auf allen Frontend-Seiten
+- **`cms_phinit/member/feeds.php` modernisiert** – Aus einem einfachen Kanal-Toggle wurde ein echtes Abo-Center mit Versandplan, Zusammenfassung und gruppierter Feed-Auswahl
+- **`CMS_Feed_Email_Digest` erweitert** – Verarbeitet zusätzlich persönliche Member-Abos im stündlichen Cron-Lauf
+
+### Dokumentation
+- README, DATABASE, API und HOOKS um Member-Feed-Abos und Versand-Slots ergänzt
+
 ## [1.2.0] – 2026-02-28
 
 ### Hinzugefügt

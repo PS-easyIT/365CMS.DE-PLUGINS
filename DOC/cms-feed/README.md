@@ -10,7 +10,9 @@
 - **3 Layout-Optionen** – Grid, Liste, Magazin (pro Bereich konfigurierbar)
 - **Design-Anpassung** – Farben, Border-Radius, Spalten im Admin konfigurierbar
 - **Feed-Katalog** – 300+ kuratierte RSS-Feeds in 10 Kategorien (IT-News, Security, Development, Cloud, Microsoft, Linux, AI, Networking, Business-IT, Hardware) – Import mit einem Klick
+- **Teilimport aus Katalogen** – Kataloge können komplett oder als gezielte Auswahl einzelner Feed-Quellen importiert werden
 - **E-Mail-Digest** – Ausgewählte Feeds 1×–4× täglich als E-Mail versenden
+- **Member Feed-Abos** – Mitglieder wählen mehrere Feeds und erhalten tägliche oder wöchentliche Mail-Digests direkt aus dem `cms-phinit` Memberbereich
 - **Suche** – Volltextsuche über alle gesammelten Beiträge
 - **Featured & Hidden** – Beiträge hervorheben oder ausblenden
 - **Auto-Cleanup** – Alte Beiträge automatisch oder manuell entfernen
@@ -29,7 +31,7 @@
 
 ```
 cms-feed/
-├── cms-feed.php                    # Hauptdatei (v1.1.0)
+├── cms-feed.php                    # Hauptdatei (v1.3.0)
 ├── update.json                     # Plugin-Manifest
 ├── includes/
 │   ├── class-database.php          # DB-Tabellen + CRUD (659 Zeilen)
@@ -37,7 +39,7 @@ cms-feed/
 │   ├── class-feed-catalog.php      # Kuratierter Feed-Katalog (300+ Feeds)
 │   ├── class-template-loader.php   # Template-Loader (Theme-Override)
 │   ├── class-public-controller.php # Öffentliche Routen (142 Zeilen)
-│   ├── class-email-digest.php      # E-Mail-Digest (231 Zeilen)
+│   ├── class-email-digest.php      # E-Mail-Digest + Member-Abo-Versand
 │   └── class-admin.php             # Admin-Backend (7 Tabs)
 ├── admin/views/
 │   └── page-admin.php              # Admin-View (alle Tabs)
@@ -68,6 +70,23 @@ cms-feed/
 | 📰 Beiträge | Alle Feeds durchsuchen, filtern, hervorheben/ausblenden |
 | 📧 E-Mail-Digests | Digest-Empfänger, Frequenz, Test-Versand |
 | ⚙️ Einstellungen | Allgemein, Design, Digest-Einstellungen, Cleanup |
+
+## Memberbereich (`cms-phinit`)
+
+- Unter `/member/feeds` können Mitglieder ihr persönliches Feed-Abo konfigurieren
+- Auswahl von **einem oder mehreren Feed-Kanälen** in einer gemeinsamen Mail-Zustellung
+- Zeitpläne:
+    - **Täglich** um `09:00 Uhr`
+    - **Täglich** um `15:00 Uhr`
+    - **Täglich 2×** um `09:00 Uhr` und `15:00 Uhr`
+    - **Wöchentlich** an einem frei wählbaren Wochentag um `09:00 Uhr` oder `15:00 Uhr`
+- Die Zustellung läuft über den bestehenden `cms_cron_hourly`-Hook und sendet nur fällige Slots
+
+## Wichtige Architektur-Hinweise
+
+- Public CSS/JS wird nur noch auf echten Feed-Archiv-Routen geladen, nicht mehr global auf allen Frontend-Seiten
+- Member-Feed-Abos werden separat von den Admin-Digests gespeichert
+- Admin-Digests bleiben für manuelle/global konfigurierte Empfänger erhalten; Member-Abos gehören dem jeweiligen Benutzerkonto
 
 ## Systemanforderungen
 

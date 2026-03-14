@@ -9,7 +9,7 @@
  * @var string      $nonce_download  CSRF-Nonce (cms-importer-download)
  * @var string      $nonce_cleanup   CSRF-Nonce (cms-importer-cleanup)
  * @var array       $log_entries     Letzte Import-Logs
- * @var array       $import_files    XML-Dateien aus allen Import-Quellen
+ * @var array       $import_files    XML-/JSON-Dateien aus allen Import-Quellen
  * @var string      $import_dir_url  URL zum Import-Ordner
  * @var array       $cleanup_stats   Zähler für Bereinigung
  */
@@ -29,7 +29,7 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
         <div class="ci-header__icon">&#8681;</div>
         <div class="ci-header__text">
             <h1 class="ci-header__title">WordPress Import</h1>
-            <p class="ci-header__sub">WordPress-WXR-Dateien (.xml) f&uuml;r Beitr&auml;ge, Seiten, Tabellen, SEO-Metadaten und Bilder passend nach 365CMS importieren.</p>
+            <p class="ci-header__sub">WordPress-WXR-Dateien (.xml) sowie Rank-Math-Settings (.json) f&uuml;r Beitr&auml;ge, Seiten, Tabellen, SEO-Metadaten, Bilder und Weiterleitungen passend nach 365CMS importieren.</p>
         </div>
         <a href="/admin/plugins/cms-importer/cms-importer-log" class="ci-btn ci-btn--ghost ci-btn--sm">&#128203; Protokoll</a>
     </div>
@@ -160,8 +160,8 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
                     <input type="hidden" id="js-uploaded-file" name="import_file" value="">
 
                     <!-- Verstecktes File-Input -->
-                    <input type="file" name="wxr_file" id="wxr_file"
-                           accept=".xml,text/xml,application/xml"
+                          <input type="file" name="wxr_file" id="wxr_file"
+                              accept=".xml,.json,text/xml,application/xml,application/json,text/json"
                            style="display:none">
 
                     <div class="ci-wizard-wrap">
@@ -273,8 +273,8 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
                     <div class="ci-mini-card">
                         <span class="ci-mini-card__icon">&#128221;</span>
                         <div>
-                            <strong>XML aus WordPress</strong>
-                            <p>Nutze eine echte WXR-Datei aus dem WordPress-Export, idealerweise getrennt nach Inhaltstypen.</p>
+                            <strong>XML oder Rank-Math JSON</strong>
+                            <p>Nutze eine echte WXR-Datei aus dem WordPress-Export oder eine Rank-Math-Settings-JSON mit Weiterleitungen.</p>
                         </div>
                     </div>
                     <div class="ci-mini-card">
@@ -316,7 +316,7 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
                             <span class="ci-badge"><?php echo count($import_files); ?></span>
                         <?php endif; ?>
                     </h2>
-                    <span class="ci-muted">Quellen: <code>uploads/import/</code> &amp; <code>wp_import_files/</code></span>
+                    <span class="ci-muted">Quellen: <code>uploads/import/</code>, <code>wp_import_files/</code> &amp; <code>wp_import/</code></span>
                 </div>
 
                 <div id="js-folder-notice" hidden></div>
@@ -324,8 +324,8 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
                 <?php if (empty($import_files)): ?>
                     <div class="ci-empty">
                         <div class="ci-empty__icon">&#128194;</div>
-                        <p>Keine XML-Dateien in den bekannten Import-Quellen vorhanden.</p>
-                        <p class="ci-muted">Nutze Uploads unter <code>uploads/import/</code> oder lege Test-/Exportdateien unter <code>wp_import_files/</code> im Plugin ab.</p>
+                        <p>Keine XML-/JSON-Dateien in den bekannten Import-Quellen vorhanden.</p>
+                        <p class="ci-muted">Nutze Uploads unter <code>uploads/import/</code> oder lege Test-/Exportdateien unter <code>wp_import_files/</code> bzw. <code>wp_import/</code> im Plugin ab.</p>
                     </div>
                 <?php else: ?>
                     <div class="ci-table-wrap">
@@ -400,8 +400,8 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
                     <div class="ci-mini-card">
                         <span class="ci-mini-card__icon">&#128230;</span>
                         <div>
-                            <strong>Plugin / wp_import_files</strong>
-                            <p>Perfekt f&uuml;r wiederkehrende Tests, Migrationspakete und feste Demo-Exporte.</p>
+                            <strong>Plugin / wp_import_files &amp; wp_import</strong>
+                            <p>Perfekt f&uuml;r wiederkehrende Tests, Migrationspakete, Rank-Math-JSONs und feste Demo-Exporte.</p>
                         </div>
                     </div>
                 </div>
@@ -442,11 +442,12 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
         <div class="ci-info-card">
             <h3>&#9989; Was wird importiert?</h3>
             <ul>
-                <li>Beitr&auml;ge (<code>post</code>) &amp; Seiten (<code>page</code>)</li>
+                        <li>Beitr&auml;ge (<code>post</code>) &amp; Seiten (<code>page</code>)</li>
                 <li>Benutzerdefinierte Post-Types (optional)</li>
                 <li>TablePress-Tabellen &rarr; <code>cms_site_tables</code></li>
                 <li>Kategorien, Tags und SEO-Meta (Yoast, Rank Math, SEOPress)</li>
                 <li>Bilder &rarr; lokale Import-Pfade inkl. Featured-Image-Zuordnung</li>
+                        <li>Rank Math JSON &rarr; Eintr&auml;ge aus <code>redirections</code> nach <code>cms_redirect_rules</code></li>
             </ul>
         </div>
         <div class="ci-info-card">
@@ -455,6 +456,7 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
                 <li>Kommentare</li>
                 <li>Benutzerkonten</li>
                 <li>Men&uuml;s &amp; Navigation</li>
+                <li>Andere Rank-Math-JSON-Bereiche au&szlig;er <code>redirections</code></li>
                 <li>Exotische Plugin-Daten ohne Mapping (werden dokumentiert)</li>
             </ul>
         </div>
@@ -467,6 +469,10 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
             <h3>&#128203; Tabellen-Migration</h3>
             <p>WordPress-Shortcodes wie <code>[table id=5 /]</code> werden beim Import zu
             <code>[site-table id=&quot;X&quot;]</code> umgeschrieben, sobald die Tabelle vorhanden ist.</p>
+        </div>
+        <div class="ci-info-card">
+            <h3>&#10145;&#65039; Redirect-Import</h3>
+            <p>Bei Rank-Math-JSON werden ausschlie&szlig;lich die Eintr&auml;ge aus <code>redirections</code> importiert. Aktuell werden exakte Quellpfade &uuml;bernommen; komplexe Vergleichstypen werden in der Vorschau bzw. beim Import sauber &uuml;bersprungen.</p>
         </div>
     </div>
 

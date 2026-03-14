@@ -14,6 +14,8 @@
 | `{prefix}feed_items` | Gecachte Feed-Beiträge |
 | `{prefix}feed_settings` | Key-Value-Einstellungen |
 | `{prefix}feed_digests` | E-Mail-Digest-Konfigurationen |
+| `{prefix}feed_member_subscriptions` | Persönliche Feed-Abos aus dem Memberbereich |
+| `{prefix}feed_subscriptions` | Legacy-Kompatibilität für ältere Theme-Versionen |
 | `{prefix}feed_fetch_queue` | Warteschlange für asynchrone Bulk-Abrufe |
 
 ---
@@ -151,6 +153,50 @@ Konfigurationen für automatische E-Mail-Zusammenfassungen.
 
 ---
 
+## feed_member_subscriptions
+
+Persönliche Mail-Abos für eingeloggte Mitglieder. Ein Datensatz entspricht einem Benutzer mit eigener Feed-Auswahl und Versandregel.
+
+| Spalte | Typ | Default | Beschreibung |
+|--------|-----|---------|-------------|
+| `id` | `INT UNSIGNED` AI PK | – | Primärschlüssel |
+| `user_id` | `INT UNSIGNED` NOT NULL | – | Zugehöriger Member-User |
+| `email` | `VARCHAR(255)` NOT NULL | – | Zieladresse für den Versand |
+| `channel_ids` | `LONGTEXT` NOT NULL | – | JSON-Array der ausgewählten `feed_channels.id` |
+| `frequency` | `VARCHAR(20)` NOT NULL | `'daily'` | `daily` oder `weekly` |
+| `daily_mode` | `VARCHAR(20)` NOT NULL | `'09'` | `09`, `15`, `09_15` |
+| `weekly_day` | `TINYINT UNSIGNED` NOT NULL | `1` | Wochentag `1=Montag` bis `7=Sonntag` |
+| `weekly_time` | `VARCHAR(5)` NOT NULL | `'09'` | Wochen-Slot `09` oder `15` |
+| `is_active` | `TINYINT(1)` NOT NULL | `1` | Versand aktiv/pausiert |
+| `last_sent_at` | `DATETIME` | `NULL` | Letzter erfolgreich abgearbeiteter Versand-Slot |
+| `created_at` | `TIMESTAMP` | `CURRENT_TIMESTAMP` | Erstellzeitpunkt |
+| `updated_at` | `TIMESTAMP` | auto-update | Letzte Änderung |
+
+**Indizes:** `unique_user (user_id)`, `idx_active (is_active)`, `idx_frequency (frequency)`
+
+---
+
+## feed_subscriptions
+
+Legacy-Kompatibilitätstabelle für ältere `cms-phinit`-/Theme-Stände, die noch ein row-per-feed-Modell erwarten. Neue Implementierungen sollen `feed_member_subscriptions` verwenden.
+
+| Spalte | Typ | Beschreibung |
+|--------|-----|-------------|
+| `user_id` | `INT UNSIGNED` | Member-ID |
+| `channel_id` | `INT UNSIGNED` | Legacy-Kanal-ID für ältere Theme-Abfragen |
+| `feed_id` | `INT UNSIGNED` | Einzelner abonnierter Kanal |
+| `email` | `VARCHAR(255)` | Zieladresse |
+| `frequency` | `VARCHAR(20)` | `daily` oder `weekly` |
+| `daily_mode` | `VARCHAR(20)` | `09`, `15`, `09_15` |
+| `weekly_day` | `TINYINT` | `1..7` |
+| `weekly_time` | `VARCHAR(5)` | `09` oder `15` |
+| `is_active` | `TINYINT(1)` | Aktiv/pausiert |
+| `last_sent_at` | `DATETIME` | Letzter verarbeiteter Slot |
+
+Die Tabelle wird vom Plugin automatisch mit dem neuen Abo-Modell synchronisiert und zusätzlich als Fallback gelesen, falls eine alte Theme-Datei noch darauf zugreift. Aus Kompatibilitätsgründen werden sowohl `channel_id` als auch `feed_id` gepflegt.
+
+---
+
 ## feed_fetch_queue
 
 Warteschlange für Bulk-Feed-Abrufe. Wird befüllt, wenn mehr als 5 Kanäle gleichzeitig abgerufen werden sollen. Die Verarbeitung erfolgt per Cron (max. 5 pro Durchlauf).
@@ -176,6 +222,7 @@ feed_categories 1 ─── N feed_items
 feed_channels   1 ─── N feed_items
 feed_channels   1 ─── N feed_fetch_queue
 feed_digests.category_ids ──── N:M feed_categories (JSON)
+feed_member_subscriptions.channel_ids ──── N:M feed_channels (JSON)
 ```
 
 - Beim Löschen eines **Bereichs** werden auch alle zugehörigen **Kanäle**, **Beiträge** und **Queue-Einträge** kaskadierend gelöscht.

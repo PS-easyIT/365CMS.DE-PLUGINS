@@ -25,6 +25,20 @@ final class CMS_Feed_Database
     {
     }
 
+    public function ensure_schema(): void
+    {
+        static $ensured = false;
+
+        if ($ensured) {
+            return;
+        }
+
+        $ensured = true;
+        $this->create_tables();
+        $this->migrate_legacy_schema();
+        $this->seed_defaults();
+    }
+
     // ──────────────────────────────────────────────────────────────────────
     // Tabellen anlegen
     // ──────────────────────────────────────────────────────────────────────
@@ -119,6 +133,47 @@ final class CMS_Feed_Database
             updated_at      TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             INDEX idx_active (is_active),
             INDEX idx_email  (email)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // ── Member-Feed-Abos ────────────────────────────────────────────────
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}feed_member_subscriptions (
+            id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id         INT UNSIGNED NOT NULL,
+            email           VARCHAR(255) NOT NULL,
+            channel_ids     LONGTEXT     NOT NULL COMMENT 'JSON array of feed_channel IDs',
+            frequency       VARCHAR(20)  NOT NULL DEFAULT 'daily' COMMENT 'daily|weekly',
+            daily_mode      VARCHAR(20)  NOT NULL DEFAULT '09' COMMENT '09|15|09_15',
+            weekly_day      TINYINT UNSIGNED NOT NULL DEFAULT 1 COMMENT '1=Montag ... 7=Sonntag',
+            weekly_time     VARCHAR(5)   NOT NULL DEFAULT '09' COMMENT '09|15',
+            is_active       TINYINT(1)   NOT NULL DEFAULT 1,
+            last_sent_at    DATETIME     DEFAULT NULL,
+            created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+            updated_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_user (user_id),
+            INDEX idx_active (is_active),
+            INDEX idx_frequency (frequency)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // ── Legacy-Kompatibilität für ältere Theme-Versionen ───────────────
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}feed_subscriptions (
+            id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id         INT UNSIGNED NOT NULL,
+            channel_id      INT UNSIGNED NOT NULL,
+            feed_id         INT UNSIGNED NOT NULL,
+            email           VARCHAR(255) NOT NULL,
+            frequency       VARCHAR(20)  NOT NULL DEFAULT 'daily',
+            daily_mode      VARCHAR(20)  NOT NULL DEFAULT '09',
+            weekly_day      TINYINT UNSIGNED NOT NULL DEFAULT 1,
+            weekly_time     VARCHAR(5)   NOT NULL DEFAULT '09',
+            is_active       TINYINT(1)   NOT NULL DEFAULT 1,
+            last_sent_at    DATETIME     DEFAULT NULL,
+            created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+            updated_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_user_channel (user_id, channel_id),
+            UNIQUE KEY unique_user_feed (user_id, feed_id),
+            INDEX idx_user (user_id),
+            INDEX idx_channel (channel_id),
+            INDEX idx_active (is_active)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         // ── Fetch-Queue (Warteschlange für Bulk-Abrufe) ───────────────────
@@ -615,6 +670,391 @@ final class CMS_Feed_Database
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
+    public function get_member_subscription(int $userId): ?array
+    {
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $stmt   = $db->prepare("SELECT * FROM {$prefix}feed_member_subscriptions WHERE user_id = ? LIMIT 1");
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        if ($row) {
+            return $row;
+        }
+
+        return $this->get_legacy_member_subscription($userId);
+    }
+
+    public function get_active_member_subscriptions(): array
+    {
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $stmt   = $db->prepare(
+            "SELECT *
+             FROM {$prefix}feed_member_subscriptions
+             WHERE is_active = 1
+               AND email != ''
+               AND channel_ids IS NOT NULL
+               AND channel_ids != ''
+               AND channel_ids != '[]'
+             ORDER BY updated_at ASC"
+        );
+        $stmt->execute();
+
+        $subscriptions = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $excludeUserIds = array_values(array_unique(array_map(
+            static fn (array $subscription): int => (int) ($subscription['user_id'] ?? 0),
+            $subscriptions
+        )));
+
+        return array_merge($subscriptions, $this->get_active_legacy_member_subscriptions($excludeUserIds));
+    }
+
+    public function save_member_subscription(array $data): int
+    {
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+
+        $userId = (int) ($data['user_id'] ?? 0);
+        if ($userId <= 0) {
+            return 0;
+        }
+
+        $channelIds = array_values(array_unique(array_filter(
+            array_map('intval', (array) ($data['channel_ids'] ?? [])),
+            static fn (int $channelId): bool => $channelId > 0
+        )));
+
+        $frequency  = ($data['frequency'] ?? 'daily') === 'weekly' ? 'weekly' : 'daily';
+        $dailyMode  = in_array($data['daily_mode'] ?? '09', ['09', '15', '09_15'], true) ? (string) $data['daily_mode'] : '09';
+        $weeklyDay  = max(1, min(7, (int) ($data['weekly_day'] ?? 1)));
+        $weeklyTime = in_array($data['weekly_time'] ?? '09', ['09', '15'], true) ? (string) $data['weekly_time'] : '09';
+        $isActive   = !empty($data['is_active']) ? 1 : 0;
+        $email      = trim((string) ($data['email'] ?? ''));
+        $channelJson = json_encode($channelIds, JSON_UNESCAPED_UNICODE) ?: '[]';
+
+        $stmt = $db->prepare(
+            "INSERT INTO {$prefix}feed_member_subscriptions
+                (user_id, email, channel_ids, frequency, daily_mode, weekly_day, weekly_time, is_active)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                email = VALUES(email),
+                channel_ids = VALUES(channel_ids),
+                frequency = VALUES(frequency),
+                daily_mode = VALUES(daily_mode),
+                weekly_day = VALUES(weekly_day),
+                weekly_time = VALUES(weekly_time),
+                is_active = VALUES(is_active)"
+        );
+
+        $stmt->execute([
+            $userId,
+            $email,
+            $channelJson,
+            $frequency,
+            $dailyMode,
+            $weeklyDay,
+            $weeklyTime,
+            $isActive,
+        ]);
+
+        $this->sync_legacy_member_subscriptions($userId, [
+            'email' => $email,
+            'channel_ids' => $channelIds,
+            'frequency' => $frequency,
+            'daily_mode' => $dailyMode,
+            'weekly_day' => $weeklyDay,
+            'weekly_time' => $weeklyTime,
+            'is_active' => $isActive,
+        ]);
+
+        $existing = $this->get_member_subscription($userId);
+
+        return (int) ($existing['id'] ?? 0);
+    }
+
+    public function update_member_subscription_sent(int $id, ?string $sentAt = null): void
+    {
+        if ($id <= 0) {
+            return;
+        }
+
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $stmt   = $db->prepare(
+            "UPDATE {$prefix}feed_member_subscriptions
+             SET last_sent_at = ?
+             WHERE id = ?"
+        );
+        $stmt->execute([$sentAt ?? date('Y-m-d H:i:s'), $id]);
+    }
+
+    public function mark_member_subscription_sent(array $subscription, ?string $sentAt = null): void
+    {
+        $sentAt ??= date('Y-m-d H:i:s');
+        $source = (string) ($subscription['source'] ?? 'member');
+
+        if ($source === 'legacy') {
+            $userId = (int) ($subscription['user_id'] ?? 0);
+            if ($userId <= 0) {
+                return;
+            }
+
+            $db     = \CMS\Database::instance();
+            $prefix = $db->prefix();
+            $stmt   = $db->prepare(
+                "UPDATE {$prefix}feed_subscriptions
+                 SET last_sent_at = ?
+                 WHERE user_id = ?"
+            );
+            $stmt->execute([$sentAt, $userId]);
+            return;
+        }
+
+        $this->update_member_subscription_sent((int) ($subscription['id'] ?? 0), $sentAt);
+    }
+
+    public function get_member_subscription_channel_ids(array $subscription): array
+    {
+        $decoded = json_decode((string) ($subscription['channel_ids'] ?? '[]'), true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_filter(
+            array_map('intval', $decoded),
+            static fn (int $channelId): bool => $channelId > 0
+        )));
+    }
+
+    public function get_recent_items_for_channels(array $channelIds, string $since, int $limit = 20): array
+    {
+        $channelIds = array_values(array_unique(array_filter(
+            array_map('intval', $channelIds),
+            static fn (int $channelId): bool => $channelId > 0
+        )));
+
+        if ($channelIds === []) {
+            return [];
+        }
+
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $ph     = implode(',', array_fill(0, count($channelIds), '?'));
+
+        $sql = "SELECT i.*, c.name AS channel_name, c.site_url AS channel_site_url, c.icon_url AS channel_icon_url,
+                       cat.name AS category_name, cat.slug AS category_slug
+                FROM {$prefix}feed_items i
+                LEFT JOIN {$prefix}feed_channels c ON i.channel_id = c.id
+                LEFT JOIN {$prefix}feed_categories cat ON i.category_id = cat.id
+                WHERE i.is_hidden = 0
+                  AND i.channel_id IN ({$ph})
+                  AND i.pub_date >= ?
+                ORDER BY i.pub_date DESC
+                LIMIT ?";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute(array_merge($channelIds, [$since, max(1, $limit)]));
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    public function count_member_subscriptions(): int
+    {
+        return count($this->get_active_member_subscriptions());
+    }
+
+    private function migrate_legacy_schema(): void
+    {
+        $db     = \CMS\Database::instance();
+        $pdo    = $db->getPdo();
+        $prefix = $db->prefix();
+        $table  = $prefix . 'feed_subscriptions';
+
+        try {
+            $columns = $pdo->query("SHOW COLUMNS FROM {$table}")->fetchAll(\PDO::FETCH_COLUMN);
+        } catch (\Throwable) {
+            return;
+        }
+
+        $hasChannelId = in_array('channel_id', $columns, true);
+        $hasFeedId    = in_array('feed_id', $columns, true);
+
+        if (!$hasChannelId) {
+            $pdo->exec("ALTER TABLE {$table} ADD COLUMN channel_id INT UNSIGNED NOT NULL DEFAULT 0 AFTER user_id");
+        }
+
+        if (!$hasFeedId) {
+            $pdo->exec("ALTER TABLE {$table} ADD COLUMN feed_id INT UNSIGNED NOT NULL DEFAULT 0 AFTER channel_id");
+        }
+
+        $pdo->exec("UPDATE {$table} SET channel_id = feed_id WHERE channel_id = 0 AND feed_id > 0");
+        $pdo->exec("UPDATE {$table} SET feed_id = channel_id WHERE feed_id = 0 AND channel_id > 0");
+
+        try {
+            $pdo->exec("ALTER TABLE {$table} ADD UNIQUE KEY unique_user_channel (user_id, channel_id)");
+        } catch (\Throwable) {
+        }
+
+        try {
+            $pdo->exec("ALTER TABLE {$table} ADD UNIQUE KEY unique_user_feed (user_id, feed_id)");
+        } catch (\Throwable) {
+        }
+
+        try {
+            $pdo->exec("ALTER TABLE {$table} ADD INDEX idx_channel (channel_id)");
+        } catch (\Throwable) {
+        }
+    }
+
+    private function get_legacy_member_subscription(int $userId): ?array
+    {
+        if ($userId <= 0) {
+            return null;
+        }
+
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $stmt   = $db->prepare(
+            "SELECT *
+             FROM {$prefix}feed_subscriptions
+             WHERE user_id = ?
+             ORDER BY updated_at DESC, id DESC"
+        );
+        $stmt->execute([$userId]);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        return $this->hydrate_legacy_member_subscription($rows);
+    }
+
+    private function get_active_legacy_member_subscriptions(array $excludeUserIds = []): array
+    {
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $params = [];
+        $where  = [
+            'is_active = 1',
+            "email != ''",
+        ];
+
+        if ($excludeUserIds !== []) {
+            $excludeUserIds = array_values(array_filter(array_map('intval', $excludeUserIds), static fn (int $userId): bool => $userId > 0));
+            if ($excludeUserIds !== []) {
+                $ph = implode(',', array_fill(0, count($excludeUserIds), '?'));
+                $where[] = "user_id NOT IN ({$ph})";
+                $params = array_merge($params, $excludeUserIds);
+            }
+        }
+
+        $sql = "SELECT *
+                FROM {$prefix}feed_subscriptions
+                WHERE " . implode(' AND ', $where) . "
+                ORDER BY user_id ASC, updated_at DESC, id DESC";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        if ($rows === []) {
+            return [];
+        }
+
+        $grouped = [];
+        foreach ($rows as $row) {
+            $grouped[(int) ($row['user_id'] ?? 0)][] = $row;
+        }
+
+        $subscriptions = [];
+        foreach ($grouped as $userRows) {
+            $subscription = $this->hydrate_legacy_member_subscription($userRows);
+            if ($subscription !== null && !empty($subscription['is_active'])) {
+                $subscriptions[] = $subscription;
+            }
+        }
+
+        return $subscriptions;
+    }
+
+    private function hydrate_legacy_member_subscription(array $rows): ?array
+    {
+        if ($rows === []) {
+            return null;
+        }
+
+        $first = $rows[0];
+        $activeFeedIds = [];
+        $lastSentAt = null;
+        $isActive = false;
+
+        foreach ($rows as $row) {
+            if (!empty($row['is_active'])) {
+                $feedId = (int) (($row['channel_id'] ?? 0) ?: ($row['feed_id'] ?? 0));
+                if ($feedId > 0) {
+                    $activeFeedIds[] = $feedId;
+                }
+                $isActive = true;
+            }
+
+            if (!empty($row['last_sent_at']) && ($lastSentAt === null || strcmp((string) $row['last_sent_at'], $lastSentAt) > 0)) {
+                $lastSentAt = (string) $row['last_sent_at'];
+            }
+        }
+
+        $activeFeedIds = array_values(array_unique($activeFeedIds));
+
+        return [
+            'id' => -(int) ($first['user_id'] ?? 0),
+            'user_id' => (int) ($first['user_id'] ?? 0),
+            'email' => (string) ($first['email'] ?? ''),
+            'channel_ids' => json_encode($activeFeedIds, JSON_UNESCAPED_UNICODE) ?: '[]',
+            'frequency' => (($first['frequency'] ?? 'daily') === 'weekly') ? 'weekly' : 'daily',
+            'daily_mode' => in_array($first['daily_mode'] ?? '09', ['09', '15', '09_15'], true) ? (string) $first['daily_mode'] : '09',
+            'weekly_day' => max(1, min(7, (int) ($first['weekly_day'] ?? 1))),
+            'weekly_time' => in_array($first['weekly_time'] ?? '09', ['09', '15'], true) ? (string) $first['weekly_time'] : '09',
+            'is_active' => $isActive ? 1 : 0,
+            'last_sent_at' => $lastSentAt,
+            'source' => 'legacy',
+        ];
+    }
+
+    private function sync_legacy_member_subscriptions(int $userId, array $data): void
+    {
+        if ($userId <= 0) {
+            return;
+        }
+
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $delete = $db->prepare("DELETE FROM {$prefix}feed_subscriptions WHERE user_id = ?");
+        $delete->execute([$userId]);
+
+        $channelIds = array_values(array_unique(array_filter(
+            array_map('intval', (array) ($data['channel_ids'] ?? [])),
+            static fn (int $channelId): bool => $channelId > 0
+        )));
+
+        if ($channelIds === []) {
+            return;
+        }
+
+        $insert = $db->prepare(
+            "INSERT INTO {$prefix}feed_subscriptions
+                (user_id, channel_id, feed_id, email, frequency, daily_mode, weekly_day, weekly_time, is_active)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        );
+
+        $email = trim((string) ($data['email'] ?? ''));
+        $frequency = (($data['frequency'] ?? 'daily') === 'weekly') ? 'weekly' : 'daily';
+        $dailyMode = in_array($data['daily_mode'] ?? '09', ['09', '15', '09_15'], true) ? (string) $data['daily_mode'] : '09';
+        $weeklyDay = max(1, min(7, (int) ($data['weekly_day'] ?? 1)));
+        $weeklyTime = in_array($data['weekly_time'] ?? '09', ['09', '15'], true) ? (string) $data['weekly_time'] : '09';
+        $isActive = !empty($data['is_active']) ? 1 : 0;
+
+        foreach ($channelIds as $channelId) {
+            $insert->execute([$userId, $channelId, $channelId, $email, $frequency, $dailyMode, $weeklyDay, $weeklyTime, $isActive]);
+        }
+    }
+
     // ──────────────────────────────────────────────────────────────────────
     // Bulk-Operationen
     // ──────────────────────────────────────────────────────────────────────
@@ -824,6 +1264,8 @@ final class CMS_Feed_Database
         $stmt->execute();
         $stats['digests'] = (int) $stmt->fetchColumn();
 
+        $stats['member_subscriptions'] = $this->count_member_subscriptions();
+
         $stmt = $db->prepare("SELECT COUNT(*) FROM {$prefix}feed_channels WHERE last_error IS NOT NULL AND last_error != ''");
         $stmt->execute();
         $stats['channels_errors'] = (int) $stmt->fetchColumn();
@@ -840,6 +1282,8 @@ final class CMS_Feed_Database
             "{$prefix}feed_items",
             "{$prefix}feed_settings",
             "{$prefix}feed_digests",
+            "{$prefix}feed_member_subscriptions",
+            "{$prefix}feed_subscriptions",
             "{$prefix}feed_fetch_queue",
         ];
     }

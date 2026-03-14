@@ -1,5 +1,18 @@
 # CMS WordPress Importer – Changelog
 
+## [1.4.0] – 2026-03-14
+
+### Hinzugefügt
+
+- **Rank-Math-JSON-Import:** Erkennt Rank-Math-Settings-Dateien (`.json`) und importiert daraus ausschließlich die Einträge aus `redirections`
+- **Redirect-Zielsystem:** Schreibt exakte Redirect-Regeln nach `cms_redirect_rules` inklusive Status, Ziel-URL, HTTP-Code und Hit-Zähler
+- **Dry Run für Redirects:** Vorschau zeigt Redirect-Ziel, Vergleichstyp, Status und Update/Create-Hinweise vor dem echten Import
+- **Dateiquellen erweitert:** Upload, Ordner-Scan und Plugin-Importquellen akzeptieren jetzt XML und JSON
+
+### Hinweise
+
+- Aktuell werden nur Rank-Math-Quellregeln mit Vergleichstyp `exact` übernommen; komplexere Vergleichstypen werden bewusst übersprungen
+
 ## [1.3.0] – 2026-03-12
 
 ### Hinzugefügt

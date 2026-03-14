@@ -15,9 +15,11 @@ if (!defined('ABSPATH')) exit;
 
 // $category, $items, $settings, $pagination, $search werden vom Public-Controller bereitgestellt
 
-$archiveSlug = $settings['archive_slug'] ?? 'feeds';
-$layout      = $category['layout'] ?? 'grid';
-$newTab      = !empty($settings['open_in_new_tab']);
+$archiveSlug        = $settings['archive_slug'] ?? 'feeds';
+$archivePath        = $archivePath ?? '/' . trim((string) $archiveSlug, '/');
+$publicCategoryPath = $publicCategoryPath ?? '/feed/' . rawurlencode((string) ($category['slug'] ?? ''));
+$layout             = $category['layout'] ?? 'grid';
+$newTab             = !empty($settings['open_in_new_tab']);
 
 // Theme Header
 \CMS\ThemeManager::instance()->getHeader(['title' => $category['name']]);
@@ -27,7 +29,7 @@ $newTab      = !empty($settings['open_in_new_tab']);
 <header class="fd-header">
     <div class="fd-header__inner">
         <div class="fd-header__breadcrumb">
-            <a href="/<?php echo htmlspecialchars($archiveSlug); ?>">← Alle Feeds</a>
+            <a href="<?php echo htmlspecialchars($archivePath); ?>">← Alle Feeds</a>
         </div>
         <h1 class="fd-header__title">
             <span class="fd-header__icon"><?php echo htmlspecialchars($category['icon']); ?></span>
@@ -38,7 +40,7 @@ $newTab      = !empty($settings['open_in_new_tab']);
         <?php endif; ?>
 
         <!-- Suche -->
-        <form method="GET" action="/<?php echo htmlspecialchars($archiveSlug . '/' . $category['slug']); ?>" class="fd-search">
+        <form method="GET" action="<?php echo htmlspecialchars($publicCategoryPath); ?>" class="fd-search">
             <input type="text" name="q" class="fd-search__input"
                    value="<?php echo htmlspecialchars($search ?? ''); ?>"
                    placeholder="In <?php echo htmlspecialchars($category['name']); ?> suchen…">
@@ -53,7 +55,7 @@ $newTab      = !empty($settings['open_in_new_tab']);
     <?php if (!empty($search)): ?>
     <div class="fd-search-hint">
         Ergebnisse für „<strong><?php echo htmlspecialchars($search); ?></strong>"
-        <a href="/<?php echo htmlspecialchars($archiveSlug . '/' . $category['slug']); ?>" style="margin-left:.5rem;">✕ Zurücksetzen</a>
+        <a href="<?php echo htmlspecialchars($publicCategoryPath); ?>" style="margin-left:.5rem;">✕ Zurücksetzen</a>
     </div>
     <?php endif; ?>
 

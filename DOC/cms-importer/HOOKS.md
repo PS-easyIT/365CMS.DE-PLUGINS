@@ -29,13 +29,13 @@ CMS\Hooks::addAction('cms_admin_menu', [$plugin, 'register_admin_pages'], 20);
 Verarbeitet den kombinierten Upload-/Import-AJAX-Request.
 
 ### `admin_ajax_cms_importer_folder_import`
-Importiert eine vorhandene XML-Datei aus einer bekannten Import-Quelle.
+Importiert eine vorhandene XML- oder JSON-Datei aus einer bekannten Import-Quelle.
 
 ### `admin_ajax_cms_importer_preview`
-Erstellt eine Dry-Run-Vorschau für eine hochgeladene oder bereits vorhandene XML-Datei ohne Schreibzugriff auf die Datenbank.
+Erstellt eine Dry-Run-Vorschau für eine hochgeladene oder bereits vorhandene XML-/JSON-Datei ohne Schreibzugriff auf die Datenbank.
 
 ### `admin_ajax_cms_importer_scan_folder`
-Liefert die XML-Dateien aus `uploads/import/` und `wp_import_files/`.
+Liefert die XML-/JSON-Dateien aus `uploads/import/`, `wp_import_files/` und `wp_import/`.
 
 ### `admin_ajax_cms_importer_download_report`
 Stellt den Markdown-Bericht für unbekannte Metadaten zum Download bereit.

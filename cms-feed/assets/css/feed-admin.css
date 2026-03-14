@@ -8,6 +8,161 @@
  */
 
 /* -------------------------------------------------------------------------
+ * Grundlayout
+ * ---------------------------------------------------------------------- */
+.feed-admin-shell {
+    padding: 1.5rem 1.75rem !important;
+}
+
+.feed-admin-view {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.feed-admin-view > h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.1rem;
+}
+
+.feed-admin-lead {
+    margin: -.25rem 0 0;
+    max-width: 72ch;
+    color: #475569;
+    font-size: .92rem;
+    line-height: 1.6;
+}
+
+.feed-admin-subcard {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+}
+
+.feed-admin-subcard--danger {
+    background: #fff7f7;
+    border-color: #fecaca;
+}
+
+.feed-section-title {
+    margin: 0 0 .85rem;
+    font-size: .82rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #475569;
+}
+
+.feed-section-title--danger {
+    color: #b91c1c;
+}
+
+.feed-inline-actions,
+.feed-inline-stack,
+.feed-table-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+}
+
+.feed-table-actions {
+    gap: .4rem;
+}
+
+.feed-table-actions--tight {
+    gap: .3rem;
+}
+
+.feed-meta-inline {
+    color: #94a3b8;
+    font-size: .75rem;
+    margin-left: .5rem;
+}
+
+.feed-alert-compact {
+    margin-bottom: .5rem;
+    font-size: .875rem;
+}
+
+.feed-divider {
+    border: none;
+    border-top: 1px solid #e2e8f0;
+    margin: 1.5rem 0;
+}
+
+/* -------------------------------------------------------------------------
+ * Hinweise / Info-Boxen
+ * ---------------------------------------------------------------------- */
+.feed-admin-note {
+    margin: 0;
+    border-left: 4px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+}
+
+.feed-admin-note p {
+    margin: 0;
+    color: inherit;
+    line-height: 1.55;
+}
+
+.feed-admin-note--info {
+    background: #dbeafe;
+    border-left-color: #3b82f6;
+    color: #1e40af;
+}
+
+.feed-admin-note--accent {
+    background: #ecfeff;
+    border-left-color: #0d9488;
+    color: #155e75;
+}
+
+.feed-admin-note--soft {
+    background: #f1f5f9;
+    border-left-color: #cbd5e1;
+    color: #475569;
+}
+
+/* -------------------------------------------------------------------------
+ * Bulkbars
+ * ---------------------------------------------------------------------- */
+.feed-bulk-bar {
+    margin-bottom: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: .75rem 1rem;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+
+.feed-bulk-bar--info {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.feed-bulk-bar--warn {
+    background: #fef3c7;
+    border-color: #fde68a;
+}
+
+.feed-bulk-bar__count {
+    font-size: .85rem;
+    font-weight: 600;
+}
+
+.feed-bulk-bar--info .feed-bulk-bar__count {
+    color: #1e40af;
+}
+
+.feed-bulk-bar--warn .feed-bulk-bar__count {
+    color: #92400e;
+}
+
+/* -------------------------------------------------------------------------
  * Tab-Navigation
  * ---------------------------------------------------------------------- */
 .feed-tabs {
@@ -50,7 +205,7 @@
 }
 
 /* -------------------------------------------------------------------------
- * Dashboard Stat-Cards
+ * Dashboard / Status
  * ---------------------------------------------------------------------- */
 .stat-card {
     position: relative;
@@ -61,16 +216,13 @@
     margin-bottom: .25rem;
 }
 
-/* -------------------------------------------------------------------------
- * Status-Badge: danger Variante
- * ---------------------------------------------------------------------- */
 .status-badge.danger {
     background: #fee2e2;
     color: #991b1b;
 }
 
 /* -------------------------------------------------------------------------
- * Settings Sub-Tabs
+ * Settings-Ansicht
  * ---------------------------------------------------------------------- */
 .tab-btn {
     padding: .5rem 1rem;
@@ -102,10 +254,270 @@
     display: block;
 }
 
+.feed-settings-tabs {
+    display: flex;
+    gap: .3rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.feed-settings-form {
+    max-width: 600px;
+}
+
+.feed-settings-form--narrow {
+    max-width: 500px;
+}
+
+.feed-settings-form--wide {
+    max-width: 700px;
+}
+
+.feed-settings-color-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.feed-color-row {
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+}
+
+.feed-color-input {
+    width: 56px;
+    height: 40px;
+    padding: .125rem;
+}
+
+.feed-range-row {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+
+.feed-range-row__input {
+    flex: 1;
+}
+
+.feed-range-row__value {
+    min-width: 40px;
+    text-align: right;
+    font-weight: 700;
+    color: #3b82f6;
+}
+
+.feed-input-xs {
+    max-width: 120px;
+}
+
+.feed-input-narrow {
+    max-width: 220px;
+}
+
+.feed-input-medium {
+    max-width: 250px;
+}
+
+.feed-input-wide {
+    max-width: 340px;
+}
+
+.feed-input-compact {
+    min-width: 140px;
+    height: 32px;
+    padding: .2rem .55rem;
+    font-size: .78rem;
+}
+
+.feed-input-mono {
+    font-family: Consolas, 'Courier New', monospace;
+}
+
 /* -------------------------------------------------------------------------
- * Responsive Anpassungen
+ * Filter / Pagination
+ * ---------------------------------------------------------------------- */
+.feed-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: 1.25rem;
+    padding: .9rem 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+}
+
+.feed-pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: .5rem;
+    margin-top: 1.5rem;
+}
+
+.feed-pagination__meta {
+    padding: .375rem .875rem;
+    color: #64748b;
+    font-size: .875rem;
+}
+
+/* -------------------------------------------------------------------------
+ * Katalog-Auswahl
+ * ---------------------------------------------------------------------- */
+.feed-catalog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+}
+
+.feed-catalog-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+    transition: box-shadow .2s ease, transform .15s ease;
+}
+
+.feed-catalog-card:hover {
+    box-shadow: 0 10px 30px rgba(15, 23, 42, .08);
+    transform: translateY(-2px);
+}
+
+.feed-catalog-card__header {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: .75rem;
+}
+
+.feed-catalog-card__icon {
+    font-size: 2rem;
+}
+
+.feed-catalog-card__title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.feed-catalog-card__meta {
+    font-size: .75rem;
+    color: #94a3b8;
+}
+
+.feed-catalog-card__description {
+    margin: 0 0 1rem;
+    color: #475569;
+    font-size: .82rem;
+    line-height: 1.55;
+}
+
+.feed-catalog-details {
+    margin-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+    padding-top: .9rem;
+}
+
+.feed-catalog-details summary {
+    cursor: pointer;
+    list-style: none;
+    font-size: .875rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.feed-catalog-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.feed-catalog-selection-form {
+    margin-top: .85rem;
+}
+
+.feed-form-group-compact {
+    margin-bottom: .85rem;
+}
+
+.feed-catalog-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: .85rem;
+    font-size: .8rem;
+    color: #64748b;
+}
+
+.feed-catalog-toolbar__actions {
+    display: inline-flex;
+    gap: .4rem;
+}
+
+.feed-catalog-list {
+    display: grid;
+    gap: .55rem;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: .25rem;
+}
+
+.feed-catalog-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .65rem;
+    align-items: start;
+    padding: .75rem .85rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    cursor: pointer;
+}
+
+.feed-catalog-item:hover {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+}
+
+.feed-catalog-item input {
+    margin-top: .2rem;
+}
+
+.feed-catalog-item strong {
+    display: block;
+    color: #1e293b;
+    font-size: .875rem;
+    line-height: 1.35;
+}
+
+.feed-catalog-item small {
+    display: block;
+    margin-top: .2rem;
+    color: #64748b;
+    font-size: .76rem;
+    line-height: 1.45;
+}
+
+.feed-catalog-selection-form__actions {
+    margin-top: .9rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* -------------------------------------------------------------------------
+ * Responsive
  * ---------------------------------------------------------------------- */
 @media (max-width: 960px) {
+    .feed-admin-shell {
+        padding: 1.1rem !important;
+    }
+
     .feed-tabs {
         gap: .15rem;
     }
@@ -113,5 +525,63 @@
     .feed-tab {
         padding: .5rem .75rem;
         font-size: .8rem;
+    }
+
+    .feed-settings-color-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .feed-admin-shell {
+        padding: .9rem !important;
+    }
+
+    .feed-admin-subcard,
+    .feed-admin-note,
+    .feed-filter-bar,
+    .feed-catalog-card {
+        padding: .9rem;
+    }
+
+    .feed-inline-actions,
+    .feed-inline-stack,
+    .feed-table-actions,
+    .feed-pagination {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .feed-filter-bar .btn,
+    .feed-inline-actions .btn,
+    .feed-inline-stack .btn,
+    .feed-table-actions .btn,
+    .feed-pagination .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .feed-input-medium,
+    .feed-input-narrow,
+    .feed-input-xs,
+    .feed-input-wide,
+    .feed-input-compact {
+        max-width: none;
+        width: 100%;
+    }
+
+    .feed-catalog-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .feed-catalog-toolbar__actions,
+    .feed-catalog-selection-form__actions {
+        justify-content: stretch;
+    }
+
+    .feed-catalog-toolbar__actions .btn,
+    .feed-catalog-selection-form__actions .btn {
+        flex: 1;
     }
 }

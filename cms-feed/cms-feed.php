@@ -2,8 +2,8 @@
 /**
  * Plugin Name: CMS Feed
  * Plugin URI: https://365network.de/cms-feed
- * Description: RSS-Feed-Aggregator mit Kategorie-Bereichen, Public Pages, Design-Einstellungen und E-Mail-Digest
- * Version: 1.0.0
+ * Description: RSS-Feed-Aggregator mit Kategorie-Bereichen, Public Pages, Design-Einstellungen, Member-Feed-Abos und E-Mail-Digest
+ * Version: 1.3.0
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,14 +16,14 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_FEED_VERSION',    '1.0.0');
+define('CMS_FEED_VERSION',    '1.3.0');
 define('CMS_FEED_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_FEED_PLUGIN_URL', '/plugins/cms-feed/');
 
 final class CMS_Feed
 {
     private static ?self $instance = null;
-    private string $version = '1.0.0';
+    private string $version = '1.3.0';
     private string $plugin_dir;
     private string $plugin_url;
 
@@ -67,6 +67,7 @@ final class CMS_Feed
             CMS\Hooks::addAction('plugin_activated', [$this, 'on_activation'], 10);
             CMS\Hooks::addAction('register_routes', [$this, 'register_routes'], 10);
             CMS\Hooks::addAction('head', [$this, 'enqueue_styles'], 10);
+            CMS\Hooks::addAction('admin_head', [$this, 'enqueue_styles'], 10);
             CMS\Hooks::addAction('body_end', [$this, 'enqueue_scripts'], 10);
         }
     }
@@ -96,6 +97,10 @@ final class CMS_Feed
 
     public function init_plugin(): void
     {
+        if (class_exists('CMS_Feed_Database')) {
+            CMS_Feed_Database::instance()->ensure_schema();
+        }
+
         $classes = [
             'CMS_Feed_Database',
             'CMS_Feed_RSS_Fetcher',
@@ -115,14 +120,16 @@ final class CMS_Feed
     public function enqueue_styles(): void
     {
         $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
-        $isAdmin     = str_starts_with($currentPath, '/admin/feeds');
+        $isAdmin     = str_starts_with($currentPath, '/admin/feeds')
+            || str_starts_with($currentPath, '/admin/plugins/feeds');
+        $isFeedRoute = $this->is_feed_public_route($currentPath);
 
         if ($isAdmin) {
             $adminCss = $this->plugin_dir . 'assets/css/feed-admin.css';
             if (file_exists($adminCss)) {
                 echo '<link rel="stylesheet" href="' . $this->plugin_url . 'assets/css/feed-admin.css?v=' . filemtime($adminCss) . '">' . "\n";
             }
-        } else {
+        } elseif ($isFeedRoute) {
             $css = $this->plugin_dir . 'assets/css/style.css';
             if (file_exists($css)) {
                 echo '<link rel="stylesheet" href="' . $this->plugin_url . 'assets/css/style.css?v=' . filemtime($css) . '">' . "\n";
@@ -135,14 +142,16 @@ final class CMS_Feed
     public function enqueue_scripts(): void
     {
         $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
-        $isAdmin     = str_starts_with($currentPath, '/admin/feeds');
+        $isAdmin     = str_starts_with($currentPath, '/admin/feeds')
+            || str_starts_with($currentPath, '/admin/plugins/feeds');
+        $isFeedRoute = $this->is_feed_public_route($currentPath);
 
         if ($isAdmin) {
             $js = $this->plugin_dir . 'assets/js/admin.js';
             if (file_exists($js)) {
                 echo '<script src="' . $this->plugin_url . 'assets/js/admin.js?v=' . filemtime($js) . '" defer></script>' . "\n";
             }
-        } else {
+        } elseif ($isFeedRoute) {
             $js = $this->plugin_dir . 'assets/js/script.js';
             if (file_exists($js)) {
                 echo '<script src="' . $this->plugin_url . 'assets/js/script.js?v=' . filemtime($js) . '" defer></script>' . "\n";
@@ -168,6 +177,31 @@ final class CMS_Feed
             . '--fd-card-border:'   . htmlspecialchars($s['color_card_border'] ?? '#e2e8f0') . ';'
             . '--fd-radius:'        . ((int)($s['border_radius'] ?? 10)) . 'px;'
             . '}</style>' . "\n";
+    }
+
+    private function is_feed_public_route(string $currentPath): bool
+    {
+        if ($currentPath === '') {
+            return false;
+        }
+
+        $archiveSlug = 'feeds';
+        if (class_exists('CMS_Feed_Database')) {
+            $archiveSlug = CMS_Feed_Database::instance()->get_setting('archive_slug', 'feeds') ?: 'feeds';
+        }
+
+        $archiveSlug = trim($archiveSlug, '/');
+        if ($archiveSlug === '' || $archiveSlug === 'feed') {
+            $archiveSlug = 'feeds';
+        }
+
+        $archivePath = '/' . ltrim($archiveSlug, '/');
+
+        if (str_starts_with($currentPath, '/feed/')) {
+            return true;
+        }
+
+        return $currentPath === $archivePath || str_starts_with($currentPath, $archivePath . '/');
     }
 
     public function get_version(): string

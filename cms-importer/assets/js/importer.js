@@ -90,8 +90,8 @@
                 return;
             }
 
-            if (!file.name.toLowerCase().endsWith('.xml')) {
-                showNotice('Nur .xml-Dateien sind erlaubt.', 'error');
+            if (!/\.(xml|json)$/i.test(file.name)) {
+                showNotice('Nur WordPress-WXR (.xml) oder Rank-Math-JSON (.json) sind erlaubt.', 'error');
                 return;
             }
 
@@ -462,6 +462,9 @@
         if ((result.table_shortcodes_found || 0) > 0) {
             notes.push((result.table_shortcodes_found || 0) + ' WordPress-Tabellen-Shortcodes gefunden, ' + (result.table_shortcodes_resolved || 0) + ' davon aktuell auflösbar');
         }
+            if ((result.preview_counts && result.preview_counts.redirects) || 0) {
+                notes.push((result.preview_counts.redirects || 0) + ' Redirect-Regeln würden verarbeitet');
+            }
         if (result.items_truncated) {
             notes.push('Es werden nur die ersten ' + (result.items_shown || 0) + ' von ' + (result.items_total || 0) + ' Elementen gezeigt');
         }
@@ -512,6 +515,11 @@
             if (item.table_rows || item.table_columns) { details.push('Tabellenstruktur: ' + escapeHtml(item.table_columns || 0) + ' Spalten, ' + escapeHtml(item.table_rows || 0) + ' Zeilen'); }
             if (item.unknown_meta_count) { details.push('Unbekannte Meta-Felder: ' + escapeHtml(item.unknown_meta_count)); }
             if (Array.isArray(item.table_targets) && item.table_targets.length) { details.push('Kurzcode-Ziele: ' + escapeHtml(item.table_targets.join(', '))); }
+            if (item.source_comparison) { details.push('Vergleich: ' + escapeHtml(item.source_comparison)); }
+            if (item.redirect_type) { details.push('HTTP-Status: ' + escapeHtml(item.redirect_type)); }
+            if (item.redirect_state) { details.push('Status: ' + escapeHtml(item.redirect_state)); }
+            if (item.redirect_hits) { details.push('Hits: ' + escapeHtml(item.redirect_hits)); }
+            if (item.last_hit_at) { details.push('Letzter Treffer: ' + escapeHtml(item.last_hit_at)); }
 
             rows.push(
                 '<tr>' +

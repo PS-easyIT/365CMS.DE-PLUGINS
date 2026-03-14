@@ -45,7 +45,8 @@
 </div>
 
 <!-- Content -->
-<div class="admin-card" style="border-radius:0 10px 10px 10px;margin-top:0;">
+<div class="admin-card feed-admin-shell" style="border-radius:0 10px 10px 10px;margin-top:0;">
+<div class="feed-admin-view">
 
 <?php
 // ══════════════════════════════════════════════════════════════════════
@@ -81,6 +82,11 @@ if ($tab === 'dashboard'):
             <div class="stat-number"><?php echo number_format($stats['digests'] ?? 0); ?></div>
             <div class="stat-label">Aktive Digests</div>
         </div>
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-number"><?php echo number_format($stats['member_subscriptions'] ?? 0); ?></div>
+            <div class="stat-label">Member-Feed-Abos</div>
+        </div>
         <?php if (($stats['channels_errors'] ?? 0) > 0): ?>
         <div class="stat-card" style="border-left:3px solid #ef4444;">
             <div class="stat-icon">⚠️</div>
@@ -101,9 +107,9 @@ if ($tab === 'dashboard'):
     </div>
 
     <!-- Schnellzugriff -->
-    <div style="margin-top:1.5rem;">
-        <h4 style="font-size:.85rem;color:#475569;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:0 0 .75rem;">⚡ Schnellzugriff</h4>
-        <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+    <div class="feed-admin-subcard">
+        <h4 class="feed-section-title">⚡ Schnellzugriff</h4>
+        <div class="feed-inline-actions">
             <a href="?tab=channels" class="btn btn-secondary btn-sm">📡 Kanäle verwalten</a>
             <a href="?tab=categories" class="btn btn-secondary btn-sm">📁 Bereiche verwalten</a>
             <a href="?tab=settings" class="btn btn-secondary btn-sm">⚙️ Einstellungen</a>
@@ -121,13 +127,13 @@ if ($tab === 'dashboard'):
     $errorChannels = array_filter($channels, fn($c) => !empty($c['last_error']));
     if (!empty($errorChannels)):
     ?>
-    <div style="margin-top:1.5rem;">
-        <h4 style="font-size:.85rem;color:#ef4444;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:0 0 .75rem;">⚠️ Feed-Fehler</h4>
+    <div class="feed-admin-subcard feed-admin-subcard--danger">
+        <h4 class="feed-section-title feed-section-title--danger">⚠️ Feed-Fehler</h4>
         <?php foreach ($errorChannels as $ch): ?>
-        <div class="alert alert-error" style="font-size:.875rem;margin-bottom:.5rem;">
+        <div class="alert alert-error feed-alert-compact">
             <strong><?php echo htmlspecialchars($ch['name']); ?>:</strong>
             <?php echo htmlspecialchars($ch['last_error']); ?>
-            <span style="color:#94a3b8;font-size:.75rem;margin-left:.5rem;">
+            <span class="feed-meta-inline">
                 <?php echo $ch['last_fetched_at'] ? date('d.m.Y H:i', strtotime($ch['last_fetched_at'])) : 'Nie'; ?>
             </span>
         </div>
@@ -152,11 +158,11 @@ elseif ($tab === 'channels'):
     <?php else: ?>
 
     <!-- Bulk-Actions Bar (Kanäle) -->
-    <div id="channelBulkBar" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:.65rem 1rem;margin-bottom:1rem;align-items:center;gap:.75rem;flex-wrap:wrap;">
-        <span style="font-size:.85rem;font-weight:600;color:#1e40af;">
+    <div id="channelBulkBar" class="feed-bulk-bar feed-bulk-bar--info" style="display:none;">
+        <span class="feed-bulk-bar__count">
             <span id="channelBulkCount">0</span> ausgewählt
         </span>
-        <form method="POST" id="channelBulkForm" style="display:inline-flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
+        <form method="POST" id="channelBulkForm" class="feed-inline-actions">
             <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
             <input type="hidden" name="action" id="channelBulkAction" value="">
             <div id="channelBulkIds"></div>
@@ -214,7 +220,7 @@ elseif ($tab === 'channels'):
                         <?php endif; ?>
                     </td>
                     <td>
-                        <div style="display:flex;gap:.4rem;">
+                        <div class="feed-table-actions">
                             <form method="POST" style="display:inline;">
                                 <input type="hidden" name="action" value="fetch_now">
                                 <input type="hidden" name="channel_id" value="<?php echo (int)$ch['id']; ?>">
@@ -239,8 +245,8 @@ elseif ($tab === 'channels'):
 elseif ($tab === 'categories'):
 ?>
     <h3>📁 Bereiche / Kategorien</h3>
-    <div class="alert" style="background:#dbeafe;color:#1e40af;border-left:4px solid #3b82f6;margin-bottom:1.25rem;">
-        ℹ️ Jeder Bereich bekommt eine eigene öffentliche Seite unter <code>/<?php echo htmlspecialchars($settings['archive_slug'] ?? 'feeds'); ?>/{slug}</code>
+    <div class="alert feed-admin-note feed-admin-note--info">
+        ℹ️ Jeder öffentliche Bereich bekommt seine eigene Seite unter <code>/feed/{slug}</code>. Das Plugin-Archiv bleibt separat unter <code>/<?php echo htmlspecialchars(($settings['archive_slug'] ?? 'feeds') === 'feed' ? 'feeds' : ($settings['archive_slug'] ?? 'feeds')); ?></code> erreichbar.
     </div>
 
     <?php if (empty($categories)): ?>
@@ -252,11 +258,11 @@ elseif ($tab === 'categories'):
     <?php else: ?>
 
     <!-- Bulk-Actions Bar (Bereiche) -->
-    <div id="categoryBulkBar" style="display:none;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:.65rem 1rem;margin-bottom:1rem;align-items:center;gap:.75rem;flex-wrap:wrap;">
-        <span style="font-size:.85rem;font-weight:600;color:#92400e;">
+    <div id="categoryBulkBar" class="feed-bulk-bar feed-bulk-bar--warn" style="display:none;">
+        <span class="feed-bulk-bar__count">
             <span id="categoryBulkCount">0</span> ausgewählt
         </span>
-        <form method="POST" id="categoryBulkForm" style="display:inline-flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
+        <form method="POST" id="categoryBulkForm" class="feed-inline-actions">
             <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
             <input type="hidden" name="action" id="categoryBulkAction" value="">
             <div id="categoryBulkIds"></div>
@@ -281,6 +287,8 @@ elseif ($tab === 'categories'):
             <tbody>
             <?php foreach ($categories as $cat):
                 $catChannels = array_filter($channels, fn($c) => (int)$c['category_id'] === (int)$cat['id']);
+                $categorySlug = trim((string) ($cat['slug'] ?? ''), '/');
+                $publicViewUrl = SITE_URL . '/feed/' . rawurlencode($categorySlug);
             ?>
                 <tr>
                     <td><input type="checkbox" class="category-checkbox" value="<?php echo (int)$cat['id']; ?>" onchange="updateCategoryBulk()"></td>
@@ -307,7 +315,12 @@ elseif ($tab === 'categories'):
                         <?php endif; ?>
                     </td>
                     <td>
-                        <div style="display:flex;gap:.4rem;">
+                        <div class="feed-table-actions">
+                            <?php if ((int)$cat['is_public'] && $categorySlug !== ''): ?>
+                            <a href="<?php echo htmlspecialchars($publicViewUrl, ENT_QUOTES); ?>" class="btn btn-sm btn-secondary" target="_blank" rel="noopener noreferrer" title="Public View öffnen">🌐</a>
+                            <?php else: ?>
+                            <button type="button" class="btn btn-sm btn-secondary" disabled title="Nur für öffentliche Bereiche verfügbar">🌐</button>
+                            <?php endif; ?>
                             <button type="button" class="btn btn-sm btn-secondary" onclick="editCategory(<?php echo (int)$cat['id']; ?>)" title="Bearbeiten">✏️</button>
                             <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteModal(<?php echo (int)$cat['id']; ?>, '<?php echo htmlspecialchars($cat['name'], ENT_QUOTES); ?>', 'delete_category')" title="Löschen">🗑️</button>
                         </div>
@@ -328,23 +341,24 @@ elseif ($tab === 'catalog'):
     $catalogOverview = $catalogInstance->get_categories_overview();
 ?>
     <h3>📚 Feed-Katalog – Kuratierte Vorlagen</h3>
-    <p style="color:#64748b;font-size:.875rem;margin-bottom:1.5rem;">
-        Importiere professionell kuratierte Feed-Sammlungen mit einem Klick.
+    <p class="feed-admin-lead">
+        Importiere professionell kuratierte Feed-Sammlungen komplett oder wähle gezielt nur die Quellen aus, die du wirklich brauchst.
         Bereits vorhandene Feed-URLs werden automatisch übersprungen.
     </p>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.25rem;">
+    <div class="feed-catalog-grid">
     <?php foreach ($catalogOverview as $catKey => $catInfo): ?>
-        <div style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1.25rem;transition:box-shadow .2s ease;">
-            <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;">
-                <span style="font-size:2rem;"><?php echo $catInfo['icon']; ?></span>
+        <?php $catalogFeeds = $catalogInstance->get_feeds($catKey); ?>
+        <div class="feed-catalog-card">
+            <div class="feed-catalog-card__header">
+                <span class="feed-catalog-card__icon"><?php echo $catInfo['icon']; ?></span>
                 <div>
-                    <h4 style="margin:0;font-size:1rem;font-weight:700;color:#1e293b;"><?php echo htmlspecialchars($catInfo['name']); ?></h4>
-                    <span style="font-size:.75rem;color:#94a3b8;"><?php echo $catInfo['count']; ?> Feeds verfügbar</span>
+                    <h4 class="feed-catalog-card__title"><?php echo htmlspecialchars($catInfo['name']); ?></h4>
+                    <span class="feed-catalog-card__meta"><?php echo $catInfo['count']; ?> Feeds verfügbar</span>
                 </div>
             </div>
-            <p style="font-size:.82rem;color:#475569;margin:0 0 1rem;"><?php echo htmlspecialchars($catInfo['description']); ?></p>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <p class="feed-catalog-card__description"><?php echo htmlspecialchars($catInfo['description']); ?></p>
+            <div class="feed-inline-actions">
                 <form method="POST" style="display:inline;">
                     <input type="hidden" name="action" value="import_catalog">
                     <input type="hidden" name="catalog_key" value="<?php echo htmlspecialchars($catKey); ?>">
@@ -356,12 +370,12 @@ elseif ($tab === 'catalog'):
                     </button>
                 </form>
                 <?php if (!empty($categories)): ?>
-                <div style="display:flex;align-items:center;gap:.3rem;">
-                    <form method="POST" style="display:inline-flex;align-items:center;gap:.3rem;">
+                <div class="feed-inline-stack">
+                    <form method="POST" class="feed-inline-actions">
                         <input type="hidden" name="action" value="import_catalog">
                         <input type="hidden" name="catalog_key" value="<?php echo htmlspecialchars($catKey); ?>">
                         <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
-                        <select name="target_category_id" class="form-control" style="height:30px;font-size:.75rem;padding:.2rem .5rem;min-width:120px;">
+                        <select name="target_category_id" class="form-control feed-input-compact">
                             <?php foreach ($categories as $cat): ?>
                             <option value="<?php echo (int)$cat['id']; ?>"><?php echo htmlspecialchars($cat['icon'] . ' ' . $cat['name']); ?></option>
                             <?php endforeach; ?>
@@ -374,12 +388,63 @@ elseif ($tab === 'catalog'):
                 </div>
                 <?php endif; ?>
             </div>
+
+            <details class="feed-catalog-details">
+                <summary>🧩 Auswahl importieren</summary>
+                <form method="POST" class="feed-catalog-selection-form">
+                    <input type="hidden" name="action" value="import_catalog">
+                    <input type="hidden" name="catalog_key" value="<?php echo htmlspecialchars($catKey); ?>">
+                    <input type="hidden" name="catalog_import_mode" value="selected">
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+
+                    <div class="feed-catalog-toolbar">
+                        <span><?php echo count($catalogFeeds); ?> Quellen verfügbar</span>
+                        <div class="feed-catalog-toolbar__actions">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="toggleCatalogSelection('<?php echo htmlspecialchars($catKey, ENT_QUOTES); ?>', true)">Alle</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="toggleCatalogSelection('<?php echo htmlspecialchars($catKey, ENT_QUOTES); ?>', false)">Keine</button>
+                        </div>
+                    </div>
+
+                    <?php if (!empty($categories)): ?>
+                    <div class="form-group feed-form-group-compact">
+                        <label class="form-label">Zielbereich</label>
+                        <select name="target_category_id" class="form-control">
+                            <option value="0">Neuen Bereich „<?php echo htmlspecialchars($catInfo['name']); ?>“ anlegen</option>
+                            <?php foreach ($categories as $cat): ?>
+                            <option value="<?php echo (int) $cat['id']; ?>"><?php echo htmlspecialchars($cat['icon'] . ' ' . $cat['name']); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php else: ?>
+                    <input type="hidden" name="target_category_id" value="0">
+                    <?php endif; ?>
+
+                    <div class="feed-catalog-list" id="catalog-list-<?php echo htmlspecialchars($catKey); ?>">
+                        <?php foreach ($catalogFeeds as $feedIndex => $feed): ?>
+                        <label class="feed-catalog-item">
+                            <input type="checkbox" name="catalog_feeds[]" value="<?php echo (int) $feedIndex; ?>">
+                            <span>
+                                <strong><?php echo htmlspecialchars((string) ($feed['name'] ?? 'Feed')); ?></strong>
+                                <small><?php echo htmlspecialchars((string) ($feed['description'] ?? ''), ENT_QUOTES); ?></small>
+                            </span>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <div class="feed-catalog-selection-form__actions">
+                        <button type="submit" class="btn btn-primary btn-sm"
+                                onclick="return confirm('Ausgewählte Feeds aus <?php echo htmlspecialchars(addslashes($catInfo['name'])); ?> importieren?')">
+                            ✅ Auswahl importieren
+                        </button>
+                    </div>
+                </form>
+            </details>
         </div>
     <?php endforeach; ?>
     </div>
 
-    <div style="margin-top:1.5rem;padding:1rem;background:#f1f5f9;border-radius:8px;">
-        <p style="margin:0;font-size:.82rem;color:#475569;">
+    <div class="feed-admin-note feed-admin-note--soft">
+        <p>
             ℹ️ <strong>Hinweis:</strong> Der Import erstellt nur Kanäle. Feed-Beiträge werden beim nächsten automatischen Abruf
             oder über „🔄 Alle Feeds abrufen" auf dem Dashboard geladen. Bereits vorhandene Feed-URLs werden nicht doppelt angelegt.
         </p>
@@ -404,9 +469,9 @@ elseif ($tab === 'items'):
     <h3>📰 Beiträge (<?php echo number_format($totalItems); ?>)</h3>
 
     <!-- Filter -->
-    <form method="GET" style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem;">
+    <form method="GET" class="feed-filter-bar">
         <input type="hidden" name="tab" value="items">
-        <select name="cat" class="form-control" style="max-width:200px;">
+        <select name="cat" class="form-control feed-input-narrow">
             <option value="">Alle Bereiche</option>
             <?php foreach ($categories as $cat): ?>
             <option value="<?php echo (int)$cat['id']; ?>" <?php echo ((int)($_GET['cat'] ?? 0)) === (int)$cat['id'] ? 'selected' : ''; ?>>
@@ -414,7 +479,7 @@ elseif ($tab === 'items'):
             </option>
             <?php endforeach; ?>
         </select>
-        <input type="text" name="q" class="form-control" style="max-width:250px;"
+        <input type="text" name="q" class="form-control feed-input-medium"
                value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>"
                placeholder="Suche...">
         <button type="submit" class="btn btn-secondary btn-sm">🔍 Filtern</button>
@@ -457,7 +522,7 @@ elseif ($tab === 'items'):
                     <td style="font-size:.85rem;"><?php echo htmlspecialchars($item['category_name'] ?? ''); ?></td>
                     <td style="font-size:.85rem;"><?php echo date('d.m.Y H:i', strtotime($item['pub_date'])); ?></td>
                     <td>
-                        <div style="display:flex;gap:.3rem;">
+                        <div class="feed-table-actions feed-table-actions--tight">
                             <form method="POST" style="display:inline;">
                                 <input type="hidden" name="action" value="toggle_featured">
                                 <input type="hidden" name="id" value="<?php echo (int)$item['id']; ?>">
@@ -485,11 +550,11 @@ elseif ($tab === 'items'):
     </div>
 
     <?php if ($totalPages > 1): ?>
-    <div style="display:flex;gap:.5rem;justify-content:center;margin-top:1.5rem;">
+    <div class="feed-pagination">
         <?php if ($itemPage > 1): ?>
             <a href="?tab=items&page=<?php echo $itemPage - 1; ?>&cat=<?php echo (int)($_GET['cat'] ?? 0); ?>&q=<?php echo urlencode($_GET['q'] ?? ''); ?>" class="btn btn-secondary btn-sm">← Zurück</a>
         <?php endif; ?>
-        <span style="padding:.375rem .875rem;color:#64748b;font-size:.875rem;">
+        <span class="feed-pagination__meta">
             Seite <?php echo $itemPage; ?> von <?php echo $totalPages; ?>
         </span>
         <?php if ($itemPage < $totalPages): ?>
@@ -507,8 +572,12 @@ elseif ($tab === 'digests'):
     $mailer = CMS_Feed_Email_Digest::instance();
 ?>
     <h3>📧 E-Mail-Digests</h3>
-    <div class="alert" style="background:#dbeafe;color:#1e40af;border-left:4px solid #3b82f6;margin-bottom:1.25rem;">
+    <div class="alert feed-admin-note feed-admin-note--info">
         ℹ️ Digests werden automatisch gemäß der gewählten Frequenz versendet. Du kannst auch manuell Test-Mails senden.
+    </div>
+    <div class="alert feed-admin-note feed-admin-note--accent">
+        👤 Mitglieder verwalten ihre persönlichen Feed-Abos direkt im <strong>Memberbereich unter „Feed-Abos“</strong>.
+        Hier im Admin bleiben die globalen/manuellen Digest-Empfänger für Teams, Postfächer oder Verteilerlisten.
     </div>
 
     <?php if (empty($digests)): ?>
@@ -565,7 +634,7 @@ elseif ($tab === 'digests'):
                         <?php endif; ?>
                     </td>
                     <td>
-                        <div style="display:flex;gap:.3rem;">
+                        <div class="feed-table-actions feed-table-actions--tight">
                             <form method="POST" style="display:inline;">
                                 <input type="hidden" name="action" value="test_digest">
                                 <input type="hidden" name="digest_id" value="<?php echo (int)$dg['id']; ?>">
@@ -584,10 +653,10 @@ elseif ($tab === 'digests'):
     <?php endif; ?>
 
     <!-- Digest E-Mail-Einstellungen -->
-    <hr style="border:none;border-top:1px solid #f1f5f9;margin:1.5rem 0;">
+    <hr class="feed-divider">
     <h4 style="font-size:.95rem;font-weight:700;color:#1e293b;margin:0 0 1rem;">📧 Digest-Grundeinstellungen</h4>
 
-    <form method="POST" class="admin-form" style="max-width:500px;">
+    <form method="POST" class="admin-form feed-settings-form feed-settings-form--narrow">
         <input type="hidden" name="action" value="save_digest_settings">
         <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
 
@@ -612,7 +681,7 @@ elseif ($tab === 'digests'):
             <label class="form-label">Max. Beiträge pro Digest</label>
             <input type="number" name="digest_max_items" class="form-control"
                    value="<?php echo (int)($settings['digest_max_items'] ?? 20); ?>"
-                   min="5" max="100" style="max-width:120px;">
+                   min="5" max="100" class="feed-input-xs">
         </div>
 
         <button type="submit" class="btn btn-primary">💾 Digest-Einstellungen speichern</button>
@@ -626,7 +695,7 @@ elseif ($tab === 'settings'):
     $settingsTab = $settingsSubTab ?? ($_GET['stab'] ?? 'general');
 ?>
     <!-- Sub-Tabs -->
-    <div style="display:flex;gap:.3rem;margin-bottom:1.25rem;border-bottom:2px solid #e2e8f0;flex-wrap:wrap;">
+    <div class="feed-settings-tabs">
         <button class="tab-btn <?php echo $settingsTab === 'general' ? 'active' : ''; ?>" onclick="switchTab('stab-general', this)" type="button">⚙️ Allgemein</button>
         <button class="tab-btn <?php echo $settingsTab === 'design' ? 'active' : ''; ?>" onclick="switchTab('stab-design', this)" type="button">🎨 Design</button>
         <button class="tab-btn <?php echo $settingsTab === 'system' ? 'active' : ''; ?>" onclick="switchTab('stab-system', this)" type="button">🖥️ System</button>
@@ -636,7 +705,7 @@ elseif ($tab === 'settings'):
     <div id="stab-general" class="tab-content <?php echo $settingsTab === 'general' ? 'active' : ''; ?>">
         <h3>⚙️ Allgemeine Einstellungen</h3>
 
-        <form method="POST" class="admin-form" style="max-width:600px;">
+        <form method="POST" class="admin-form feed-settings-form">
             <input type="hidden" name="action" value="save_settings">
             <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
 
@@ -654,20 +723,20 @@ elseif ($tab === 'settings'):
                 <label class="form-label">URL-Slug <span style="color:#ef4444;">*</span></label>
                 <input type="text" name="archive_slug" class="form-control"
                        value="<?php echo htmlspecialchars($settings['archive_slug'] ?? 'feeds'); ?>"
-                       pattern="[a-z0-9\-]+" required style="max-width:250px;">
-                <small class="form-text">Öffentliche URL: <code>/<?php echo htmlspecialchars($settings['archive_slug'] ?? 'feeds'); ?></code></small>
+                       pattern="[a-z0-9\-]+" required class="feed-input-medium">
+                  <small class="form-text">Archiv-URL: <code>/<?php echo htmlspecialchars(($settings['archive_slug'] ?? 'feeds') === 'feed' ? 'feeds' : ($settings['archive_slug'] ?? 'feeds')); ?></code> · Öffentliche Bereichsseiten bleiben fest unter <code>/feed/{bereich-slug}</code>.</small>
             </div>
             <div class="form-group">
                 <label class="form-label">Einträge pro Seite</label>
                 <input type="number" name="per_page" class="form-control"
                        value="<?php echo (int)($settings['per_page'] ?? 20); ?>"
-                       min="4" max="100" style="max-width:120px;">
+                       min="4" max="100" class="feed-input-xs">
             </div>
             <div class="form-group">
                 <label class="form-label">Zusammenfassung (Zeichen)</label>
                 <input type="number" name="excerpt_length" class="form-control"
                        value="<?php echo (int)($settings['excerpt_length'] ?? 160); ?>"
-                       min="50" max="500" style="max-width:120px;">
+                       min="50" max="500" class="feed-input-xs">
             </div>
 
             <div class="form-group">
@@ -698,11 +767,11 @@ elseif ($tab === 'settings'):
     <div id="stab-design" class="tab-content <?php echo $settingsTab === 'design' ? 'active' : ''; ?>">
         <h3>🎨 Design-Einstellungen</h3>
 
-        <form method="POST" class="admin-form" style="max-width:700px;">
+        <form method="POST" class="admin-form feed-settings-form feed-settings-form--wide">
             <input type="hidden" name="action" value="save_design">
             <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+            <div class="feed-settings-color-grid">
                 <?php
                 $colorFields = [
                     'color_primary'     => ['Primärfarbe', '#0891b2', 'Buttons, Links, Akzente'],
@@ -717,15 +786,14 @@ elseif ($tab === 'settings'):
                 ?>
                 <div class="form-group">
                     <label class="form-label"><?php echo $label; ?></label>
-                    <div style="display:flex;gap:.625rem;align-items:center;">
-                        <input type="color" name="<?php echo $key; ?>"
-                               class="form-control" style="width:56px;height:40px;padding:.125rem;"
+                          <div class="feed-color-row">
+                           <input type="color" name="<?php echo $key; ?>"
+                               class="form-control feed-color-input"
                                value="<?php echo htmlspecialchars($settings[$key] ?? $default); ?>">
                         <input type="text" name="<?php echo $key; ?>_text"
-                               class="form-control"
+                               class="form-control feed-input-xs feed-input-mono"
                                value="<?php echo htmlspecialchars($settings[$key] ?? $default); ?>"
                                pattern="^#[0-9A-Fa-f]{6}$" maxlength="7"
-                               style="max-width:110px;font-family:monospace;"
                                onchange="this.previousElementSibling.value=this.value">
                     </div>
                     <small class="form-text"><?php echo $hint; ?></small>
@@ -733,14 +801,14 @@ elseif ($tab === 'settings'):
                 <?php endforeach; ?>
             </div>
 
-            <div class="form-group" style="max-width:340px;">
+            <div class="form-group feed-input-wide">
                 <label class="form-label">Border-Radius (Karten)</label>
-                <div style="display:flex;align-items:center;gap:.75rem;">
+                <div class="feed-range-row">
                     <input type="range" name="border_radius" min="0" max="24" step="2"
                            value="<?php echo (int)($settings['border_radius'] ?? 10); ?>"
                            oninput="document.getElementById('radiusPreview').textContent=this.value+'px'"
-                           style="flex:1;">
-                    <span id="radiusPreview" style="font-weight:700;min-width:36px;text-align:right;color:#3b82f6;">
+                           class="feed-range-row__input">
+                    <span id="radiusPreview" class="feed-range-row__value">
                         <?php echo (int)($settings['border_radius'] ?? 10); ?>px
                     </span>
                 </div>
@@ -748,7 +816,7 @@ elseif ($tab === 'settings'):
 
             <div class="form-group">
                 <label class="form-label">Spalten (Archiv-Grid)</label>
-                <select name="grid_columns" class="form-control" style="max-width:220px;">
+                <select name="grid_columns" class="form-control feed-input-narrow">
                     <?php foreach (['auto' => 'Automatisch (empfohlen)', '2' => '2 Spalten', '3' => '3 Spalten', '4' => '4 Spalten'] as $val => $lbl): ?>
                     <option value="<?php echo $val; ?>" <?php echo ($settings['grid_columns'] ?? 'auto') === $val ? 'selected' : ''; ?>>
                         <?php echo $lbl; ?>
@@ -770,7 +838,8 @@ elseif ($tab === 'settings'):
                 <h4>Plugin</h4>
                 <ul class="info-list">
                     <li><strong>Version:</strong> <?php echo CMS_FEED_VERSION; ?></li>
-                    <li><strong>Archiv-URL:</strong> /<?php echo htmlspecialchars($settings['archive_slug'] ?? 'feeds'); ?></li>
+                    <li><strong>Archiv-URL:</strong> /<?php echo htmlspecialchars(($settings['archive_slug'] ?? 'feeds') === 'feed' ? 'feeds' : ($settings['archive_slug'] ?? 'feeds')); ?></li>
+                    <li><strong>Public-Feeds:</strong> /feed/{slug}</li>
                 </ul>
             </div>
             <div class="info-card">
@@ -783,7 +852,7 @@ elseif ($tab === 'settings'):
             </div>
         </div>
 
-        <div style="margin-top:1.25rem;">
+        <div class="feed-inline-actions">
             <form method="POST" style="display:inline-block;margin-right:.5rem;">
                 <input type="hidden" name="action" value="cleanup">
                 <input type="hidden" name="cleanup_days" value="90">
@@ -800,6 +869,8 @@ elseif ($tab === 'settings'):
     </div>
 
 <?php endif; // end tab switch ?>
+
+</div>
 
 </div><!-- /.admin-card -->
 
@@ -902,7 +973,7 @@ elseif ($tab === 'settings'):
                     <label class="form-label">Slug <span style="color:#ef4444;">*</span></label>
                     <input type="text" name="cat_slug" id="cat_slug" class="form-control" required
                            pattern="[a-z0-9\-]+" style="max-width:250px;">
-                    <small class="form-text">URL: /<?php echo htmlspecialchars($settings['archive_slug'] ?? 'feeds'); ?>/<strong id="slugPreview">…</strong></small>
+                          <small class="form-text">URL: /feed/<strong id="slugPreview">…</strong></small>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Beschreibung</label>
@@ -1058,6 +1129,14 @@ const digestsData = <?php echo json_encode(array_map(fn($d) => [
     'frequency'    => (int)$d['frequency'],
     'is_active'    => (int)$d['is_active'],
 ], $digests)); ?>;
+
+function toggleCatalogSelection(catalogKey, checked) {
+    const wrapper = document.getElementById('catalog-list-' + catalogKey);
+    if (!wrapper) return;
+    wrapper.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+        checkbox.checked = checked;
+    });
+}
 
 function editChannel(id) {
     const ch = channelsData.find(c => c.id === id);

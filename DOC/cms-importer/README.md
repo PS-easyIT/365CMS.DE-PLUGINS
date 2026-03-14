@@ -1,7 +1,7 @@
 # CMS WordPress Importer – Dokumentation
 
 **Plugin:** `cms-importer`  
-**Version:** 1.3.0  
+**Version:** 1.4.0  
 **Namespace:** `CMS_Importer`  
 **Mindest-CMS-Version:** 365CMS 0.26.0+  
 **PHP:** 8.1+
@@ -10,7 +10,7 @@
 
 ## Übersicht
 
-Das **CMS WordPress Importer**-Plugin importiert WordPress-Export-Dateien (WXR-Format, `.xml`) in die 365CMS-Datenbankstruktur. Es verarbeitet Beiträge, Seiten, TablePress-Tabellen, Taxonomien, SEO-Metadaten, Featured Images sowie Inhaltsbilder und protokolliert alle nicht gemappten Felder für spätere Analyse.
+Das **CMS WordPress Importer**-Plugin importiert WordPress-Export-Dateien (WXR-Format, `.xml`) sowie Rank-Math-Settings-Dateien (`.json`) in die 365CMS-Datenbankstruktur. Es verarbeitet Beiträge, Seiten, TablePress-Tabellen, Taxonomien, SEO-Metadaten, Featured Images, Inhaltsbilder sowie Rank-Math-Weiterleitungen und protokolliert alle nicht gemappten Felder für spätere Analyse.
 
 ### Kernfunktionen
 
@@ -24,12 +24,13 @@ Das **CMS WordPress Importer**-Plugin importiert WordPress-Export-Dateien (WXR-F
 | **SEO-Mapping** | Yoast SEO, Rank Math, SEOPress → Felder + `cms_seo_meta` |
 | **Taxonomien** | Kategorien, Tags und Tag-Relationen |
 | **Bilder** | Download von Original-URLs inkl. URL-Umschreibung im Content |
+| **Redirects** | Rank Math `redirections` → `cms_redirect_rules` |
 | **Shortcode-Migration** | `[table id=...]` → `[site-table id="X"]` |
 | **Import-Log** | Vollständiges Protokoll in `cms_import_log` |
 | **Meta-Report** | Alle ungenutzten Meta-Keys als Markdown-Bericht |
 | **Import-Mapping** | Persistentes Quell-/Ziel-Mapping für Folgeimporte |
 | **Dry Run** | Vorschau ohne Schreibzugriff mit Ziel-/Skip-Analyse |
-| **Admin-Oberfläche** | Upload + Import aus `uploads/import/` oder `wp_import_files/` |
+| **Admin-Oberfläche** | Upload + Import aus `uploads/import/`, `wp_import_files/` oder `wp_import/` |
 
 ---
 
@@ -79,6 +80,7 @@ cms-importer/
 | Yoast / Rank Math / SEOPress | `meta_title`, `meta_description`, `cms_seo_meta` | SEO-Mapping |
 | `_thumbnail_id` + Attachments | `featured_image`, `cms_media` | Attachment-Auflösung + Download |
 | `[table id=...]` | `[site-table id="X"]` | Mapping über `cms_import_items` |
+| Rank Math `redirections` (JSON) | `cms_redirect_rules` | Nur exakte Quellpfade werden übernommen |
 
 ## Was wird NICHT importiert?
 
@@ -94,7 +96,7 @@ cms-importer/
 
 ### Admin-Interface
 1. Admin-Backend → **Plugins → WP Importer**
-2. WXR-Datei hochladen oder vorhandene XML-Datei aus einer Import-Quelle auswählen
+2. WXR-Datei hochladen oder vorhandene XML-/JSON-Datei aus einer Import-Quelle auswählen
 3. Optional Bilddownload und Tabellen-Shortcode-Konvertierung aktiv lassen
 4. Optional zuerst **Dry Run** ausführen und Zielobjekte prüfen
 5. Import starten
@@ -127,6 +129,7 @@ Alle Meta-Keys die nicht auf ein CMS-Feld gemappt werden:
 - TablePress-Tabellen sollten idealerweise vor oder zusammen mit Seiten importiert werden, damit Shortcodes direkt sauber umgeschrieben werden können.
 - Bereits importierte Tabellen werden über `cms_import_items` wiedergefunden, sodass Folgeimporte auf bestehende Site-Table-IDs auflösen können.
 - Bild-URLs bleiben erhalten, wenn ein Download fehlschlägt; erfolgreiche Downloads werden auf lokale 365CMS-Dateien umgebogen.
+- Rank-Math-Weiterleitungen werden derzeit nur für Vergleichstyp `exact` importiert, weil 365CMS intern mit exakten Quellpfaden arbeitet.
 
 ### Report-Format
 

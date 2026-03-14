@@ -5,7 +5,7 @@
  * Registriert die Admin-Seite und verarbeitet Upload + AJAX-Import.
  * Unterstützt:
  * - Direkten Datei-Upload (AJAX + Sync-Fallback)
- * - Auswahl vorhandener Dateien aus uploads/import/ und wp_import_files/
+ * - Auswahl vorhandener Dateien aus uploads/import/, wp_import_files/ und wp_import/
  * - Bilddownload per Inhalts-Slug mit URL-Umschreibung
  *
  * @package CMS_Importer
@@ -31,8 +31,8 @@ class CMS_Importer_Admin
     /** Maximale Upload-Größe (50 MB) */
     private const MAX_UPLOAD_MB = 50;
 
-    /** Erlaubte MIME-Typen für XML-Uploads */
-    private const ALLOWED_MIMES = ['text/xml', 'application/xml', 'application/rss+xml'];
+    /** Erlaubte MIME-Typen für XML-/JSON-Uploads */
+    private const ALLOWED_MIMES = ['text/xml', 'application/xml', 'application/rss+xml', 'application/json', 'text/json', 'text/plain'];
 
     public static function instance(): self
     {
@@ -297,8 +297,8 @@ class CMS_Importer_Admin
         finfo_close($finfo);
 
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if ($ext !== 'xml' && !in_array($detected, self::ALLOWED_MIMES, true)) {
-            echo json_encode(['success' => false, 'error' => 'Ungültiger Dateityp. Nur XML-Dateien erlaubt.']);
+        if (!in_array($ext, ['xml', 'json'], true) && !in_array($detected, self::ALLOWED_MIMES, true)) {
+            echo json_encode(['success' => false, 'error' => 'Ungültiger Dateityp. Nur WordPress-WXR (.xml) oder Rank-Math-JSON (.json) sind erlaubt.']);
             exit;
         }
 
@@ -412,8 +412,8 @@ class CMS_Importer_Admin
         finfo_close($finfo);
 
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if ($ext !== 'xml' && !in_array($detected, self::ALLOWED_MIMES, true)) {
-            return ['Ungültiger Dateityp. Nur XML-Dateien erlaubt. (Erkannt: ' . $detected . ')', 'error', null];
+        if (!in_array($ext, ['xml', 'json'], true) && !in_array($detected, self::ALLOWED_MIMES, true)) {
+            return ['Ungültiger Dateityp. Nur WordPress-WXR (.xml) oder Rank-Math-JSON (.json) sind erlaubt. (Erkannt: ' . $detected . ')', 'error', null];
         }
 
         // Optional: Datei in uploads/import/ speichern
@@ -463,16 +463,16 @@ class CMS_Importer_Admin
         $parsed = $parser->parse($file_path);
 
         if (!empty($parsed['errors'])) {
-            return ['XML-Fehler: ' . implode('; ', $parsed['errors']), 'error', null];
+            return ['Import-Dateifehler: ' . implode('; ', $parsed['errors']), 'error', null];
         }
 
-        if (!$this->looks_like_wordpress_export($file_path, $parsed)) {
-            return ['Keine gültige WordPress-Exportdatei (kein WXR-Format erkannt).', 'error', null];
+        if (!$this->looks_like_supported_import($file_path, $parsed)) {
+            return ['Keine unterstützte Importdatei erkannt. Erlaubt sind WordPress-WXR (.xml) oder Rank-Math-Settings (.json).', 'error', null];
         }
 
-        $total_items = count($parsed['posts']) + count($parsed['pages']) + count($parsed['tables']) + count($parsed['others']);
+        $total_items = count($parsed['posts']) + count($parsed['pages']) + count($parsed['tables']) + count($parsed['redirects'] ?? []) + count($parsed['others']);
         if ($total_items === 0) {
-            return ['Keine importierbaren Inhalte (Beiträge, Seiten, Tabellen oder weitere Post-Types) gefunden.', 'warning', null];
+            return ['Keine importierbaren Inhalte (Beiträge, Seiten, Tabellen, Weiterleitungen oder weitere Post-Types) gefunden.', 'warning', null];
         }
 
         // Import-Optionen aus POST lesen
@@ -516,6 +516,9 @@ class CMS_Importer_Admin
             }
             if (($result['preview_counts']['tables'] ?? 0) > 0) {
                 $details[] = (int) $result['preview_counts']['tables'] . ' Tabellen';
+            }
+            if (($result['preview_counts']['redirects'] ?? 0) > 0) {
+                $details[] = (int) ($result['preview_counts']['redirects'] ?? 0) . ' Weiterleitungen';
             }
             if (($result['preview_counts']['others'] ?? 0) > 0) {
                 $details[] = (int) $result['preview_counts']['others'] . ' weitere Typen';
@@ -566,6 +569,9 @@ class CMS_Importer_Admin
         }
         if (($result['tables_imported'] ?? 0) > 0) {
             $details[] = (int) $result['tables_imported'] . ' Tabellen';
+        }
+        if (($result['redirects_imported'] ?? 0) > 0) {
+            $details[] = (int) $result['redirects_imported'] . ' Weiterleitungen';
         }
         if (($result['others_imported'] ?? 0) > 0) {
             $details[] = (int) $result['others_imported'] . ' weitere Typen';
@@ -653,7 +659,7 @@ class CMS_Importer_Admin
     }
 
     /**
-     * Listet alle XML-Dateien im Import-Ordner auf.
+     * Listet alle XML-/JSON-Dateien im Import-Ordner auf.
      *
      * @return array  Array von ['name' => string, 'size' => int, 'date' => string, 'size_human' => string]
      */
@@ -667,19 +673,21 @@ class CMS_Importer_Admin
                 continue;
             }
 
-            foreach (glob(rtrim($dir, DIRECTORY_SEPARATOR . '/') . DIRECTORY_SEPARATOR . '*.xml') as $path) {
-                $size = (int) filesize($path);
-                $mtime = (int) filemtime($path);
-                $files[] = [
-                    'name'         => basename($path),
-                    'size'         => $size,
-                    'size_human'   => $this->format_bytes($size),
-                    'date'         => date('d.m.Y H:i', $mtime),
-                    'timestamp'    => $mtime,
-                    'source_key'   => $sourceKey,
-                    'source_label' => (string) ($source['label'] ?? $sourceKey),
-                    'source_hint'  => (string) ($source['hint'] ?? ''),
-                ];
+            foreach (['*.xml', '*.json'] as $pattern) {
+                foreach (glob(rtrim($dir, DIRECTORY_SEPARATOR . '/') . DIRECTORY_SEPARATOR . $pattern) ?: [] as $path) {
+                    $size = (int) filesize($path);
+                    $mtime = (int) filemtime($path);
+                    $files[] = [
+                        'name'         => basename($path),
+                        'size'         => $size,
+                        'size_human'   => $this->format_bytes($size),
+                        'date'         => date('d.m.Y H:i', $mtime),
+                        'timestamp'    => $mtime,
+                        'source_key'   => $sourceKey,
+                        'source_label' => (string) ($source['label'] ?? $sourceKey),
+                        'source_hint'  => (string) ($source['hint'] ?? ''),
+                    ];
+                }
             }
         }
 
@@ -710,7 +718,16 @@ class CMS_Importer_Admin
             $sources['bundled'] = [
                 'path' => $bundledDir,
                 'label' => 'Plugin / wp_import_files',
-                'hint' => 'Mitgelieferter XML-Ordner im Plugin',
+                'hint' => 'Mitgelieferter XML-/JSON-Ordner im Plugin',
+            ];
+        }
+
+        $legacyBundledDir = CMS_IMPORTER_PLUGIN_DIR . 'wp_import/';
+        if (is_dir($legacyBundledDir)) {
+            $sources['wp_import'] = [
+                'path' => $legacyBundledDir,
+                'label' => 'Plugin / wp_import',
+                'hint' => 'Bestehender Import-Ordner für XML-/JSON-Dateien im Plugin',
             ];
         }
 
@@ -1164,15 +1181,27 @@ class CMS_Importer_Admin
 
         $pluginDir = $this->resolve_importer_plugin_dir();
         if ($pluginDir !== '' && is_dir($pluginDir . 'wp_import_files/')) {
-            foreach (glob($pluginDir . 'wp_import_files/*.xml') ?: [] as $path) {
-                $files[basename($path)] = str_replace('\\', '/', $path);
+            foreach (['*.xml', '*.json'] as $pattern) {
+                foreach (glob($pluginDir . 'wp_import_files/' . $pattern) ?: [] as $path) {
+                    $files[basename($path)] = str_replace('\\', '/', $path);
+                }
+            }
+        }
+
+        if ($pluginDir !== '' && is_dir($pluginDir . 'wp_import/')) {
+            foreach (['*.xml', '*.json'] as $pattern) {
+                foreach (glob($pluginDir . 'wp_import/' . $pattern) ?: [] as $path) {
+                    $files[basename($path)] = str_replace('\\', '/', $path);
+                }
             }
         }
 
         $importDir = $this->get_import_dir();
         if ($importDir !== '' && is_dir($importDir)) {
-            foreach (glob($importDir . '*.xml') ?: [] as $path) {
-                $files[basename($path)] = str_replace('\\', '/', $path);
+            foreach (['*.xml', '*.json'] as $pattern) {
+                foreach (glob($importDir . $pattern) ?: [] as $path) {
+                    $files[basename($path)] = str_replace('\\', '/', $path);
+                }
             }
         }
 
@@ -1579,8 +1608,12 @@ class CMS_Importer_Admin
         return $security->verifyNonce($token, $action);
     }
 
-    private function looks_like_wordpress_export(string $file_path, array $parsed): bool
+    private function looks_like_supported_import(string $file_path, array $parsed): bool
     {
+        if (($parsed['source_format'] ?? '') === 'rank_math_json') {
+            return isset($parsed['redirects']) && is_array($parsed['redirects']);
+        }
+
         $wxrVersion = trim((string) ($parsed['site']['wxr_version'] ?? ''));
         if ($wxrVersion !== '') {
             return true;
@@ -1592,6 +1625,7 @@ class CMS_Importer_Admin
             count($parsed['posts'] ?? []),
             count($parsed['pages'] ?? []),
             count($parsed['tables'] ?? []),
+            count($parsed['redirects'] ?? []),
             count($parsed['others'] ?? []),
         ];
 
@@ -1611,6 +1645,9 @@ class CMS_Importer_Admin
             return false;
         }
 
+        if (str_contains($contents, '"redirections"')) {
+            return true;
+        }
         return str_contains($contents, 'wordpress.org/export/')
             || str_contains($contents, '<wp:wxr_version>')
             || str_contains($contents, 'xmlns:wp="http://wordpress.org/export/')

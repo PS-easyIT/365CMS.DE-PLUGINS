@@ -15,10 +15,12 @@ if (!defined('ABSPATH')) exit;
 
 // $categories, $items, $settings, $pagination, $search werden vom Public-Controller bereitgestellt
 
-$archiveTitle = $settings['archive_title'] ?? 'Feed-Übersicht';
-$archiveDesc  = $settings['archive_description'] ?? '';
-$slug         = $settings['archive_slug'] ?? 'feeds';
-$newTab       = !empty($settings['open_in_new_tab']);
+$archiveTitle          = $settings['archive_title'] ?? 'Feed-Übersicht';
+$archiveDesc           = $settings['archive_description'] ?? '';
+$slug                  = $settings['archive_slug'] ?? 'feeds';
+$archivePath           = $archivePath ?? '/' . trim((string) $slug, '/');
+$publicCategoryBasePath = $publicCategoryBasePath ?? '/feed';
+$newTab                = !empty($settings['open_in_new_tab']);
 
 // Theme Header
 \CMS\ThemeManager::instance()->getHeader(['title' => $archiveTitle]);
@@ -33,7 +35,7 @@ $newTab       = !empty($settings['open_in_new_tab']);
         <?php endif; ?>
 
         <!-- Suche -->
-        <form method="GET" action="/<?php echo htmlspecialchars($slug); ?>" class="fd-search">
+        <form method="GET" action="<?php echo htmlspecialchars($archivePath); ?>" class="fd-search">
             <input type="text" name="q" class="fd-search__input"
                    value="<?php echo htmlspecialchars($search ?? ''); ?>"
                    placeholder="Feeds durchsuchen…">
@@ -47,12 +49,12 @@ $newTab       = !empty($settings['open_in_new_tab']);
     <!-- Bereich-Navigation -->
     <?php if (!empty($categories) && count($categories) > 1): ?>
     <nav class="fd-cat-nav" aria-label="Feed-Bereiche">
-        <a href="/<?php echo htmlspecialchars($slug); ?>"
+        <a href="<?php echo htmlspecialchars($archivePath); ?>"
            class="fd-cat-nav__item fd-cat-nav__item--active">
             Alle
         </a>
         <?php foreach ($categories as $cat): ?>
-        <a href="/<?php echo htmlspecialchars($slug . '/' . $cat['slug']); ?>"
+        <a href="<?php echo htmlspecialchars(rtrim($publicCategoryBasePath, '/') . '/' . (string) ($cat['slug'] ?? '')); ?>"
            class="fd-cat-nav__item">
             <span class="fd-cat-nav__icon"><?php echo htmlspecialchars($cat['icon']); ?></span>
             <?php echo htmlspecialchars($cat['name']); ?>
@@ -65,7 +67,7 @@ $newTab       = !empty($settings['open_in_new_tab']);
     <?php if (!empty($search)): ?>
     <div class="fd-search-hint">
         Ergebnisse für „<strong><?php echo htmlspecialchars($search); ?></strong>"
-        <a href="/<?php echo htmlspecialchars($slug); ?>" style="margin-left:.5rem;">✕ Zurücksetzen</a>
+        <a href="<?php echo htmlspecialchars($archivePath); ?>" style="margin-left:.5rem;">✕ Zurücksetzen</a>
     </div>
     <?php endif; ?>
 

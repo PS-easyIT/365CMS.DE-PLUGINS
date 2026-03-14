@@ -16,6 +16,7 @@ if (!defined('ABSPATH')) {
 final class CMS_Feed_Admin
 {
     private static ?self $instance = null;
+    public const MENU_SLUG = 'feeds';
 
     public static function instance(): self
     {
@@ -26,8 +27,31 @@ final class CMS_Feed_Admin
     {
         $this->loadAdminMenu();
         if (class_exists('CMS\Hooks')) {
+            CMS\Hooks::addAction('cms_admin_menu', [$this, 'register_menu'], 10);
             CMS\Hooks::addFilter('admin_menu_items', [$this, 'add_menu_item'], 10);
         }
+    }
+
+    public function register_menu(): void
+    {
+        if (!function_exists('add_menu_page')) {
+            return;
+        }
+
+        add_menu_page(
+            'Feeds',
+            'Feeds',
+            'manage_options',
+            self::MENU_SLUG,
+            [self::class, 'render_dispatch'],
+            '📡',
+            38
+        );
+    }
+
+    public static function render_dispatch(): void
+    {
+        self::instance()->render_view(false);
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -41,11 +65,7 @@ final class CMS_Feed_Admin
             return;
         }
 
-        $tab = $_GET['tab'] ?? 'dashboard';
-
-        $this->render_list([
-            'tab' => $tab,
-        ]);
+        $this->render_view(true);
     }
 
     private function loadAdminMenu(): void
@@ -79,8 +99,15 @@ final class CMS_Feed_Admin
 
     public function render_list(array $data): void
     {
+        $this->render_view(true, $data);
+    }
+
+    private function render_view(bool $withLayout, array $data = []): void
+    {
         $this->loadAdminMenu();
-        renderAdminLayoutStart('Feeds', 'feeds');
+        if ($withLayout) {
+            renderAdminLayoutStart('Feeds', self::MENU_SLUG);
+        }
 
         $db   = CMS_Feed_Database::instance();
         $sec  = \CMS\Security::instance();
@@ -126,7 +153,9 @@ final class CMS_Feed_Admin
 
         include CMS_FEED_PLUGIN_DIR . 'admin/views/page-admin.php';
 
-        renderAdminLayoutEnd();
+        if ($withLayout) {
+            renderAdminLayoutEnd();
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -343,9 +372,18 @@ final class CMS_Feed_Admin
                 $catalogKey = sanitize_text_field($_POST['catalog_key'] ?? '');
                 $catalog    = CMS_Feed_Catalog::instance();
                 $catData    = $catalog->get_category($catalogKey);
+                $importMode = ($_POST['catalog_import_mode'] ?? 'all') === 'selected' ? 'selected' : 'all';
+                $selectedFeedKeys = array_values(array_unique(array_filter(
+                    array_map('intval', $_POST['catalog_feeds'] ?? []),
+                    static fn (int $feedKey): bool => $feedKey >= 0
+                )));
 
                 if (!$catData) {
                     return ['error' => 'Ungültige Katalog-Kategorie.'];
+                }
+
+                if ($importMode === 'selected' && $selectedFeedKeys === []) {
+                    return ['error' => 'Bitte wähle mindestens einen Feed aus dem Katalog aus.'];
                 }
 
                 // Ziel-Kategorie: existierend oder neu anlegen
@@ -366,11 +404,18 @@ final class CMS_Feed_Admin
                     ]);
                 }
 
-                $result = $catalog->import_feeds($catalogKey, $targetCatId);
+                $result = $catalog->import_feeds(
+                    $catalogKey,
+                    $targetCatId,
+                    $importMode === 'selected' ? $selectedFeedKeys : []
+                );
 
                 $msg = $result['imported'] . ' Kanäle importiert';
                 if ($result['skipped'] > 0) {
                     $msg .= ', ' . $result['skipped'] . ' übersprungen (bereits vorhanden)';
+                }
+                if ($importMode === 'selected') {
+                    $msg .= ' (Teilimport aus Auswahl)';
                 }
                 if (!empty($result['errors'])) {
                     $msg .= '. Fehler: ' . implode('; ', array_slice($result['errors'], 0, 3));

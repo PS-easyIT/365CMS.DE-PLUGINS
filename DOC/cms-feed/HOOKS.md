@@ -30,8 +30,15 @@
 | Methode | Pfad | Handler |
 |---------|------|---------|
 | GET/POST | `/admin/feeds` | `CMS_Feed_Admin::admin_page()` |
+| GET/POST | `/admin/plugins/feeds/feeds` | `CMS_Feed_Admin::render_dispatch()` via `cms_admin_menu` / `add_menu_page()` |
 | GET | `/{archive_slug}` | `CMS_Feed_Public_Controller::route_archive()` |
 | GET | `/{archive_slug}/:catSlug` | `CMS_Feed_Public_Controller::route_category()` |
+
+### cms_admin_menu
+
+**Registriert in:** `CMS_Feed_Admin::__construct()`  
+**Callback:** `CMS_Feed_Admin::register_menu()`  
+**Beschreibung:** Registriert `CMS Feed` als Plugin-Seite für die aktuelle 365CMS-Admin-Sidebar über `add_menu_page()`.
 
 ### head
 
@@ -43,13 +50,13 @@
 
 **Registriert in:** `CMS_Feed::init_hooks()`  
 **Callback:** `CMS_Feed::enqueue_scripts()`  
-**Beschreibung:** Lädt JavaScript je nach Kontext (Admin: `admin.js`, Public: `script.js`).
+**Beschreibung:** Lädt JavaScript je nach Kontext (Admin: `admin.js`, Public: `script.js`). Public-Assets werden nur auf echten Feed-Archiv-Routen geladen.
 
 ### cms_cron_hourly
 
 **Registriert in:** `CMS_Feed_Email_Digest::__construct()`  
 **Callback:** `CMS_Feed_Email_Digest::process_digests()`  
-**Beschreibung:** Prüft stündlich, welche Digests fällig sind, und versendet sie.
+**Beschreibung:** Prüft stündlich, welche Digests fällig sind, und versendet sie. Seit `1.3.0` verarbeitet derselbe Lauf zusätzlich persönliche Member-Feed-Abos (`daily`, `daily 2×`, `weekly`).
 
 ### cms_cron_hourly (Feed-Queue)
 
@@ -59,13 +66,13 @@
 
 ---
 
-## Filter
+## Filter / Legacy
 
 ### admin_menu_items
 
 **Registriert in:** `CMS_Feed_Admin::__construct()`  
 **Callback:** `CMS_Feed_Admin::add_menu_item(array $menuItems): array`  
-**Beschreibung:** Fügt den „📡 Feeds"-Eintrag zum Admin-Menü hinzu.
+**Beschreibung:** Legacy-Fallback für ältere Admin-Menüs. Die aktuelle Sidebar nutzt primär `cms_admin_menu` + `add_menu_page()`.
 
 **Rückgabe:** Array mit zusätzlichem Menüeintrag:
 ```php
@@ -119,9 +126,22 @@ Alle POST-Actions werden in `CMS_Feed_Admin::handle_post()` verarbeitet und erfo
 | `save_design` | settings | Design-Einstellungen speichern |
 | `save_digest_settings` | digests | Digest-Grundeinstellungen speichern |
 | `cleanup` | settings/dashboard | Alte Beiträge aufräumen |
-| `import_catalog` | catalog | Feeds aus Katalog-Kategorie importieren |
+| `import_catalog` | catalog | Feeds aus Katalog-Kategorie komplett oder als Auswahl importieren |
 | `bulk_delete_channels` | channels | Mehrere Kanäle + Beiträge löschen |
 | `bulk_activate_channels` | channels | Mehrere Kanäle aktivieren |
 | `bulk_deactivate_channels` | channels | Mehrere Kanäle deaktivieren |
 | `bulk_fetch_channels` | channels | Mehrere Kanäle abrufen (max. 5 sofort, Rest in Queue) |
 | `bulk_delete_categories` | categories | Mehrere Bereiche + Kanäle + Beiträge löschen |
+
+---
+
+## Member-Integration (`cms-phinit`)
+
+- Theme-Seite: `/member/feeds`
+- Benötigt aktive Klassen `CMS_Feed_Database` und `CMS_Feed_Email_Digest`
+- Speichert persönliche Abos in `{prefix}feed_member_subscriptions`
+- Versand-Slots werden stündlich ausgewertet:
+    - täglich `09:00`
+    - täglich `15:00`
+    - täglich `09:00 + 15:00`
+    - wöchentlich an frei gewähltem Wochentag um `09:00` oder `15:00`

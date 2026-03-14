@@ -35,12 +35,18 @@ final class CMS_Feed_Public_Controller
     {
         $db   = CMS_Feed_Database::instance();
         $s    = $db->get_settings();
-        $slug = $s['archive_slug'] ?? 'feeds';
+        $slug = trim((string) ($s['archive_slug'] ?? 'feeds'), '/');
+        if ($slug === '' || $slug === 'feed') {
+            $slug = 'feeds';
+        }
 
-        // Hauptarchiv: /feeds
+        // Hauptarchiv: /feeds (oder konfigurierter konfliktfreier Archiv-Slug)
         $router->addRoute('GET', '/' . $slug, [$this, 'route_archive']);
 
-        // Kategorieseite: /feeds/{category-slug}
+        // Öffentliche Bereiche immer unter /feed/{category-slug}
+        $router->addRoute('GET', '/feed/:catSlug', [$this, 'route_category']);
+
+        // Rückwärtskompatibler Alias für bestehende Archiv-Links
         $router->addRoute('GET', '/' . $slug . '/:catSlug', [$this, 'route_category']);
     }
 
@@ -100,6 +106,8 @@ final class CMS_Feed_Public_Controller
             'page'       => $page,
             'pages'      => $pages,
             'total'      => $total,
+            'archivePath' => $this->get_archive_path($s),
+            'publicCategoryBasePath' => '/feed',
         ]);
     }
 
@@ -136,6 +144,18 @@ final class CMS_Feed_Public_Controller
             'page'     => $page,
             'pages'    => $pages,
             'total'    => $total,
+            'archivePath' => $this->get_archive_path($s),
+            'publicCategoryPath' => '/feed/' . rawurlencode((string) ($category['slug'] ?? '')),
         ]);
+    }
+
+    private function get_archive_path(array $settings): string
+    {
+        $slug = trim((string) ($settings['archive_slug'] ?? 'feeds'), '/');
+        if ($slug === '' || $slug === 'feed') {
+            $slug = 'feeds';
+        }
+
+        return '/' . $slug;
     }
 }

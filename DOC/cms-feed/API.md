@@ -33,6 +33,7 @@
 | Methode | Beschreibung |
 |---------|-------------|
 | `create_tables(): void` | Erstellt alle DB-Tabellen (idempotent) |
+| `ensure_schema(): void` | Stellt Schema + Standardwerte auch ohne Reaktivierung sicher |
 | `seed_defaults(): void` | Füllt Standard-Einstellungen (INSERT IGNORE) |
 | `get_table_names(): array` | Liste aller Tabellennamen mit Prefix |
 
@@ -99,6 +100,18 @@
 | `delete_digest(int $id): void` | Digest löschen |
 | `update_digest_sent(int $id): void` | Sendezeitpunkt aktualisieren |
 | `get_active_digests_due(): array` | Fällige Digests laden |
+
+### Member-Feed-Abos
+
+| Methode | Beschreibung |
+|---------|-------------|
+| `get_member_subscription(int $userId): ?array` | Persönliches Feed-Abo eines Members laden |
+| `get_active_member_subscriptions(): array` | Alle aktiven Member-Abos laden |
+| `save_member_subscription(array $data): int` | Persönliches Feed-Abo erstellen/aktualisieren |
+| `update_member_subscription_sent(int $id, ?string $sentAt = null): void` | Letzten abgearbeiteten Versand-Slot speichern |
+| `get_member_subscription_channel_ids(array $subscription): array` | Aus `channel_ids` ein bereinigtes ID-Array erzeugen |
+| `get_recent_items_for_channels(array $channelIds, string $since, int $limit = 20): array` | Neue Beiträge für ausgewählte Feed-Kanäle seit Zeitpunkt X laden |
+| `count_member_subscriptions(): int` | Anzahl aktiver Member-Abos |
 
 ### Statistiken
 
@@ -202,6 +215,7 @@
 | `send_digest(array $digest): bool` | Einzelnen Digest versenden |
 | `send_test_digest(int $digestId): bool` | Test-E-Mail senden |
 | `get_frequency_label(int $frequency): string` | Frequenz als Text |
+| `get_member_schedule_label(array $subscription): string` | Menschlich lesbarer Versandplan für Member-Abos |
 
 ---
 
@@ -216,7 +230,7 @@
 |---------|-------------|
 | `get_catalog(): array` | Gesamter Katalog als `[key => category-array]` |
 | `get_categories_overview(): array` | Kurzübersicht aller Kategorien (Name, Icon, Beschreibung, Feed-Anzahl) |
-| `import_feeds(string $categoryKey, int $dbCategoryId, array $feedKeys = []): array` | Feeds importieren; gibt `['imported' => int, 'skipped' => int, 'errors' => int]` zurück |
+| `import_feeds(string $categoryKey, int $dbCategoryId, array $feedKeys = []): array` | Feeds importieren; mit leerem `feedKeys`-Array komplett, sonst nur die ausgewählten Indizes |
 
 ### Katalog-Kategorien
 
