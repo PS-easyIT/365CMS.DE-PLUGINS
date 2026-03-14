@@ -32,6 +32,31 @@
     color: var(--ci-text);
 }
 
+.ci-admin-shell .admin-page-header {
+    margin-bottom: 1.5rem;
+}
+
+.ci-admin-shell .admin-page-header h2 {
+    margin-bottom: .35rem;
+}
+
+.ci-import-notice[hidden] {
+    display: none;
+}
+
+.ci-result-grid {
+    margin: 0 0 1.5rem;
+}
+
+.ci-result-grid .stat-icon {
+    font-size: 1.75rem;
+    margin-bottom: .25rem;
+}
+
+.ci-table--embedded {
+    border: 0;
+}
+
 /* ── Header ───────────────────────────────────────────────── */
 .ci-header {
     display: flex;

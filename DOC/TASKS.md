@@ -40,6 +40,8 @@
 
 ### CMS-Newsletter (`cms-newsletter`)
 
+> **Status-Update (2026-03-14):** Eine erste vollständige Plugin-Basis mit Admin-Dashboard, Subscriber-Verwaltung, Templates, Kampagnen, Settings und öffentlicher Anmeldeseite ist inzwischen umgesetzt. Die folgenden Punkte bleiben als Ausbau-/Produktions-Roadmap relevant.
+
 **Beschreibung:** Vollständiger Newsletter-Dienst mit Template-Builder, Subscriber-Management und Statistiken.
 
 **Kernfunktionen:**

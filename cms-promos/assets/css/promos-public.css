@@ -1,0 +1,204 @@
+:root {
+    --pr-primary: #ea580c;
+    --pr-primary-dark: #c2410c;
+    --pr-accent: #fff7ed;
+    --pr-text: #0f172a;
+    --pr-muted: #64748b;
+    --pr-border: #fed7aa;
+    --pr-bg: #fffaf5;
+    --pr-card: #ffffff;
+    --pr-radius: 18px;
+    --pr-shadow: 0 14px 36px rgba(15, 23, 42, .08);
+}
+
+.promos-archive {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem 4rem;
+}
+
+.promos-hero {
+    background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
+    border: 1px solid var(--pr-border);
+    border-radius: var(--pr-radius);
+    padding: 1.8rem;
+    box-shadow: var(--pr-shadow);
+    margin-bottom: 1.4rem;
+}
+
+.promos-kicker {
+    display: inline-flex;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--pr-primary);
+    margin-bottom: .8rem;
+}
+
+.promos-title {
+    margin: 0 0 .65rem;
+    font-size: clamp(1.7rem, 4vw, 2.8rem);
+    line-height: 1.1;
+    color: var(--pr-text);
+}
+
+.promos-lead,
+.promos-card p,
+.promos-card li {
+    color: var(--pr-muted);
+    line-height: 1.7;
+}
+
+.promos-placement-nav,
+.promos-grid {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.promos-placement-nav {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.promos-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.promos-placement-link,
+.promos-card {
+    display: block;
+    background: var(--pr-card);
+    border: 1px solid #fde3cf;
+    border-radius: 16px;
+    padding: 1.2rem;
+    box-shadow: var(--pr-shadow);
+    text-decoration: none;
+    color: inherit;
+}
+
+.promos-placement-link:hover,
+.promos-card:hover {
+    border-color: #fdba74;
+}
+
+.promos-card__eyebrow {
+    display: inline-flex;
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--pr-primary);
+    margin-bottom: .6rem;
+}
+
+.promos-card__title {
+    margin: 0 0 .5rem;
+    font-size: 1.2rem;
+    color: var(--pr-text);
+}
+
+.promos-card__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: .75rem 1rem;
+    border-radius: 12px;
+    background: var(--pr-primary);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.promos-card__button:hover {
+    background: var(--pr-primary-dark);
+}
+
+.promos-hook-zone {
+    padding: 1rem 1.25rem 0;
+}
+
+.promos-hook-zone__inner {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 1.35rem;
+    background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
+    border: 1px solid var(--pr-border);
+    border-radius: var(--pr-radius);
+    box-shadow: var(--pr-shadow);
+}
+
+.promos-hook-zone--body_start {
+    padding-top: 1.25rem;
+}
+
+.promos-hook-zone__header {
+    margin-bottom: 1rem;
+}
+
+.promos-hook-zone__title {
+    margin: 0 0 .45rem;
+    font-size: clamp(1.35rem, 3vw, 2rem);
+    color: var(--pr-text);
+}
+
+.promos-hook-zone__lead {
+    margin: 0;
+    color: var(--pr-muted);
+    line-height: 1.7;
+}
+
+.promos-hook-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+}
+
+.promos-hook-card {
+    display: grid;
+    gap: 0;
+    overflow: hidden;
+    background: var(--pr-card);
+    border: 1px solid #fde3cf;
+    border-radius: 16px;
+    box-shadow: var(--pr-shadow);
+}
+
+.promos-hook-card--featured {
+    border-color: #fb923c;
+}
+
+.promos-hook-card__media img {
+    display: block;
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+}
+
+.promos-hook-card__content {
+    padding: 1.2rem;
+}
+
+.promos-hook-card__body {
+    color: var(--pr-muted);
+    line-height: 1.7;
+    margin-bottom: 1rem;
+}
+
+.promos-hook-card__body > *:first-child {
+    margin-top: 0;
+}
+
+.promos-hook-card__body > *:last-child {
+    margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .promos-hook-zone {
+        padding-inline: .9rem;
+    }
+
+    .promos-hook-zone__inner {
+        padding: 1rem;
+    }
+}

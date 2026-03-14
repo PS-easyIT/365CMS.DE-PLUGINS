@@ -27,16 +27,16 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
 $selectedAuthorId = (int) ($selected_author_id ?? 0);
 $selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '', ENT_QUOTES);
 ?>
-<div class="cms-importer-wrap">
+<div class="cms-importer-wrap ci-admin-shell">
 
-    <!-- Header -->
-    <div class="ci-header">
-        <div class="ci-header__icon">&#8681;</div>
-        <div class="ci-header__text">
-            <h1 class="ci-header__title">WordPress Import</h1>
-            <p class="ci-header__sub">WordPress-WXR-Dateien (.xml) sowie Rank-Math-Settings (.json) f&uuml;r Beitr&auml;ge, Seiten, Kommentare, Tabellen, SEO-Metadaten, Bilder und Weiterleitungen passend nach 365CMS importieren.</p>
+    <div class="admin-page-header">
+        <div>
+            <h2>📥 WordPress Importer</h2>
+            <p>Importiere WXR-Exporte, Kommentare, Tabellen, SEO-Daten, Bilder und Rank-Math-Weiterleitungen nach 365CMS.</p>
         </div>
-        <a href="/admin/plugins/cms-importer/cms-importer-log" class="ci-btn ci-btn--ghost ci-btn--sm">&#128203; Protokoll</a>
+        <div class="header-actions">
+            <a href="/admin/plugins/cms-importer/cms-importer-log" class="btn btn-secondary">📋 Protokoll</a>
+        </div>
     </div>
 
     <div class="ci-card ci-card--danger">
@@ -92,10 +92,9 @@ $selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '
         </div>
     </div>
 
-    <!-- Feedback -->
-    <div id="js-import-notice"
-         class="ci-notice ci-notice--<?php echo htmlspecialchars($msg_type ?? 'success'); ?>"
-         <?php if (!($message ?? null)): ?>hidden<?php endif; ?>>
+        <div id="js-import-notice"
+            class="alert alert-<?php echo htmlspecialchars(($msg_type ?? 'success') === 'error' ? 'error' : (($msg_type ?? 'success') === 'warning' ? 'warning' : 'success')); ?> ci-import-notice"
+            <?php if (!($message ?? null)): ?>hidden<?php endif; ?>>
         <?php echo htmlspecialchars($message ?? ''); ?>
         <?php if (($result ?? null) && !empty($result['meta_report_download_url'])): ?>
             &nbsp;<a class="ci-notice__link"
@@ -157,32 +156,13 @@ $selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '
         </div>
     </div>
 
-    <!-- Stats -->
-    <div class="ci-stats" id="js-stats-box" <?php if (!($result ?? null)): ?>hidden<?php endif; ?>>
-        <div class="ci-stat">
-            <span class="ci-stat__val"><?php echo (int)($result['total']            ?? 0); ?></span>
-            <span class="ci-stat__lbl">Gesamt</span>
-        </div>
-        <div class="ci-stat ci-stat--ok">
-            <span class="ci-stat__val"><?php echo (int)($result['imported']         ?? 0); ?></span>
-            <span class="ci-stat__lbl">Importiert</span>
-        </div>
-        <div class="ci-stat ci-stat--warn">
-            <span class="ci-stat__val"><?php echo (int)($result['skipped']          ?? 0); ?></span>
-            <span class="ci-stat__lbl">&Uuml;bersprungen</span>
-        </div>
-        <div class="ci-stat ci-stat--err">
-            <span class="ci-stat__val"><?php echo (int)($result['errors']           ?? 0); ?></span>
-            <span class="ci-stat__lbl">Fehler</span>
-        </div>
-        <div class="ci-stat ci-stat--img">
-            <span class="ci-stat__val"><?php echo (int)($result['images_downloaded'] ?? 0); ?></span>
-            <span class="ci-stat__lbl">Bilder</span>
-        </div>
-        <div class="ci-stat ci-stat--meta">
-            <span class="ci-stat__val"><?php echo (int)($result['meta_keys']        ?? 0); ?></span>
-            <span class="ci-stat__lbl">Unbekannte Metas</span>
-        </div>
+    <div class="dashboard-grid ci-result-grid" id="js-stats-box" <?php if (!($result ?? null)): ?>hidden<?php endif; ?>>
+        <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-number"><?php echo (int)($result['total'] ?? 0); ?></div><div class="stat-label">Gesamt</div></div>
+        <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-number"><?php echo (int)($result['imported'] ?? 0); ?></div><div class="stat-label">Importiert</div></div>
+        <div class="stat-card"><div class="stat-icon">⏭️</div><div class="stat-number"><?php echo (int)($result['skipped'] ?? 0); ?></div><div class="stat-label">Übersprungen</div></div>
+        <div class="stat-card"><div class="stat-icon">⚠️</div><div class="stat-number"><?php echo (int)($result['errors'] ?? 0); ?></div><div class="stat-label">Fehler</div></div>
+        <div class="stat-card"><div class="stat-icon">🖼️</div><div class="stat-number"><?php echo (int)($result['images_downloaded'] ?? 0); ?></div><div class="stat-label">Bilder</div></div>
+        <div class="stat-card"><div class="stat-icon">🧬</div><div class="stat-number"><?php echo (int)($result['meta_keys'] ?? 0); ?></div><div class="stat-label">Meta-Keys</div></div>
     </div>
 
     <!-- Tabs -->
@@ -536,8 +516,8 @@ $selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '
     <?php if (!empty($log_entries)): ?>
     <div class="ci-card ci-card--full">
         <h2 class="ci-card__title">Zuletzt importiert</h2>
-        <div class="ci-table-wrap">
-            <table class="ci-table">
+        <div class="users-table-container">
+            <table class="users-table ci-table ci-table--embedded">
                 <thead>
                     <tr>
                         <th>#</th>

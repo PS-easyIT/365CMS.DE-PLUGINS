@@ -16,16 +16,16 @@ if (!defined('ABSPATH')) {
 
 $esc_nonce_cleanup = htmlspecialchars($nonce_cleanup ?? '');
 ?>
-<div class="cms-importer-wrap admin-content">
+<div class="cms-importer-wrap ci-admin-shell">
 
-    <div class="cms-importer-header">
-        <h1 class="cms-importer-title">
-            <span class="cms-importer-icon">📋</span>
-            Import-Protokoll
-        </h1>
-        <p class="cms-importer-subtitle">
-            Übersicht aller durchgeführten WordPress-Imports inklusive Berichte für unbekannte Metadaten.
-        </p>
+    <div class="admin-page-header">
+        <div>
+            <h2>📋 Import-Protokoll</h2>
+            <p>Übersicht aller WordPress-Imports inklusive Meta-Berichte, Laufzeiten und Ergebniszahlen.</p>
+        </div>
+        <div class="header-actions">
+            <a href="/admin/plugins/cms-importer/cms-importer" class="btn btn-secondary">← Zurück zum Import</a>
+        </div>
     </div>
 
     <?php if (!empty($message)): ?>
@@ -34,11 +34,8 @@ $esc_nonce_cleanup = htmlspecialchars($nonce_cleanup ?? '');
         </div>
     <?php endif; ?>
 
-    <div class="cms-importer-card">
+    <div class="admin-card cms-importer-card">
         <div class="cms-importer-card__actions">
-            <a href="?page=cms-importer" class="cms-importer-btn cms-importer-btn--secondary">
-                ← Zurück zum Import
-            </a>
             <button type="button"
                     class="ci-btn ci-btn--ghost-danger js-cleanup-trigger"
                     data-cleanup-action="cleanup_history"
@@ -62,7 +59,8 @@ $esc_nonce_cleanup = htmlspecialchars($nonce_cleanup ?? '');
                 <p>Noch keine Imports durchgeführt.</p>
             </div>
         <?php else: ?>
-        <table class="cms-importer-table cms-importer-table--full">
+        <div class="users-table-container">
+        <table class="users-table cms-importer-table cms-importer-table--full">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -120,6 +118,7 @@ $esc_nonce_cleanup = htmlspecialchars($nonce_cleanup ?? '');
             <?php endforeach; ?>
             </tbody>
         </table>
+        </div>
         <?php endif; ?>
     </div>
 </div>

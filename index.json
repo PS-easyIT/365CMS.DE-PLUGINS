@@ -61,6 +61,16 @@
       "slug": "cms-forum",
       "name": "CMS Forum",
       "manifest": "PLUGINS/cms-forum/update.json"
+    },
+    {
+      "slug": "cms-newsletter",
+      "name": "CMS Newsletter",
+      "manifest": "PLUGINS/cms-newsletter/update.json"
+    },
+    {
+      "slug": "cms-promos",
+      "name": "CMS Promos",
+      "manifest": "PLUGINS/cms-promos/update.json"
     }
   ]
 }

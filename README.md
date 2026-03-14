@@ -19,6 +19,8 @@
 | [cms-importer](cms-importer/) | 1.0.0 | ✅ Stabil | WordPress WXR-Importer für Posts & Pages |
 | [cms-contact](cms-contact/) | 1.1.1 | ✅ Stabil | Kontaktformulare mit Mehrfach-Formularen, Templates und DSGVO-Hooks |
 | [cms-downloads](cms-downloads/) | 1.0.0 | 🚀 Neu | Öffentliches Download-Management mit Kategorien, Typ-Presets und Archiv |
+| [cms-newsletter](cms-newsletter/) | 1.0.0 | 🚀 Neu | Newsletter-Management mit Subscribern, Templates, Kampagnen und öffentlicher Anmeldung |
+| [cms-promos](cms-promos/) | 1.0.0 | 🚀 Neu | Promo-Management für CTA-Flächen, Platzierungen, Banner und Klickziele |
 | [cms-jobprofile-generator](cms-jobprofile-generator/) | 0.9.6 | 🧪 Beta | Stellenanzeigen-Generator mit Workflow-Genehmigung |
 | [cms-organigramm](cms-organigramm/) | 0.1.0 | 🚧 In Entwicklung | Interaktives Organigramm mit Cross-Plugin-Integration |
 | [cms-speakers](cms-speakers/) | 1.0.0 | ✅ Stabil | Speaker-Profile mit Topics & Präsentations-Historie |
@@ -134,6 +136,8 @@ DOC/
 ├── cms-events/
 ├── cms-experts/
 ├── cms-importer/
+├── cms-newsletter/
+├── cms-promos/
 ├── cms-jobprofile-generator/
 ├── cms-organigramm/
 ├── cms-speakers/
@@ -151,6 +155,7 @@ DOC/
 - **Admin-Seiten:** Nutzen das Layout aus `CMS/assets/css/admin.css`
 - **Member-Seiten:** Views in `member/`
 - **Bootstrap:** Jedes Plugin registriert sich via `cms_init`-Hook
+- **Öffentliche Archiv-/Landingpages:** Werden typischerweise über `register_routes` + `ThemeManager`-Header/Footer eingebunden
 
 ---
 

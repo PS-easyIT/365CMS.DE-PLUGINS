@@ -1,0 +1,77 @@
+<?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
+
+<div class="newsletter-archive">
+    <?php if ($message !== ''): ?>
+        <div class="newsletter-alert<?php echo $messageType === 'error' ? ' newsletter-alert--error' : ''; ?>">
+            <?php echo htmlspecialchars($message); ?>
+        </div>
+    <?php endif; ?>
+
+    <section class="newsletter-hero">
+        <div class="newsletter-hero__panel newsletter-hero__panel--brand">
+            <span class="newsletter-kicker">365CMS Newsletter</span>
+            <h1 class="newsletter-title"><?php echo htmlspecialchars((string) ($settings['archive_title'] ?? 'Newsletter')); ?></h1>
+            <p class="newsletter-lead"><?php echo htmlspecialchars((string) ($settings['archive_description'] ?? 'Bleib über neue Inhalte, Events und Produkt-Updates auf dem Laufenden.')); ?></p>
+            <p class="newsletter-lead"><?php echo htmlspecialchars((string) ($settings['subscribe_intro'] ?? 'Melde dich für Produkt-News, Event-Hinweise und neue Fachbeiträge an.')); ?></p>
+        </div>
+
+        <div class="newsletter-hero__panel">
+            <h2 style="margin-top:0;">Jetzt anmelden</h2>
+            <form method="post" action="/newsletter/subscribe" class="newsletter-form">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                <div class="newsletter-form__grid">
+                    <label class="newsletter-label">
+                        Vorname
+                        <input class="newsletter-input" type="text" name="first_name" placeholder="Max">
+                    </label>
+                    <label class="newsletter-label">
+                        Nachname
+                        <input class="newsletter-input" type="text" name="last_name" placeholder="Muster">
+                    </label>
+                </div>
+                <label class="newsletter-label">
+                    E-Mail-Adresse
+                    <input class="newsletter-input" type="email" name="email" required placeholder="max@example.com">
+                </label>
+                <label class="newsletter-label">
+                    Segment
+                    <input class="newsletter-input" type="text" name="segment_slug" value="<?php echo htmlspecialchars((string) ($settings['default_segment'] ?? 'general'), ENT_QUOTES, 'UTF-8'); ?>">
+                </label>
+                <button class="newsletter-submit" type="submit">✉️ Newsletter abonnieren</button>
+            </form>
+            <p class="newsletter-lead" style="margin-top:1rem;"><?php echo htmlspecialchars((string) ($settings['footer_note'] ?? 'Du kannst dich jederzeit wieder mit einem Klick abmelden.')); ?></p>
+        </div>
+    </section>
+
+    <section class="newsletter-stat-grid">
+        <div class="newsletter-stat"><strong><?php echo number_format((int) ($stats['active_subscribers'] ?? 0)); ?></strong><span>aktive Abonnenten</span></div>
+        <div class="newsletter-stat"><strong><?php echo number_format((int) ($stats['campaigns'] ?? 0)); ?></strong><span>angelegte Kampagnen</span></div>
+        <div class="newsletter-stat"><strong><?php echo number_format((int) ($stats['templates'] ?? 0)); ?></strong><span>verfügbare Templates</span></div>
+    </section>
+
+    <section class="newsletter-card-grid">
+        <article class="newsletter-card">
+            <h3 style="margin-top:0;">Was du erhältst</h3>
+            <ul class="newsletter-list">
+                <li>Produkt- und Plugin-Updates aus dem 365CMS-Ökosystem</li>
+                <li>Hinweise zu Events, Releases und neuen Funktionen</li>
+                <li>Kurze, fokussierte Fachinhalte statt Inbox-Lawinen</li>
+            </ul>
+        </article>
+        <article class="newsletter-card">
+            <h3 style="margin-top:0;">Aktuelle Versandplanung</h3>
+            <?php if (empty($campaigns)): ?>
+                <p>Aktuell sind noch keine Kampagnen öffentlich sichtbar vorbereitet.</p>
+            <?php else: ?>
+                <ul class="newsletter-list">
+                    <?php foreach ($campaigns as $campaign): ?>
+                        <li>
+                            <strong><?php echo htmlspecialchars((string) ($campaign['name'] ?? 'Kampagne')); ?></strong>
+                            – <?php echo htmlspecialchars((string) ($campaign['subject'] ?? '')); ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </article>
+    </section>
+</div>

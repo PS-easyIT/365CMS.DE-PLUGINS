@@ -1,0 +1,217 @@
+/* CMS Promos – Admin Styles */
+
+.pr-admin-shell {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.pr-admin-shell .stat-icon {
+    font-size: 1.75rem;
+    margin-bottom: .25rem;
+}
+
+.pr-card-grid,
+.pr-feature-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.pr-card-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.pr-feature-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.pr-panel-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.pr-panel-grid--wide {
+    grid-template-columns: minmax(0, 1.6fr) minmax(360px, 1fr);
+}
+
+.pr-side-stack {
+    display: grid;
+    gap: 1rem;
+}
+
+.pr-info-card,
+.pr-note-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .05), 0 8px 20px rgba(15, 23, 42, .04);
+}
+
+.pr-info-card__eyebrow,
+.pr-note-card__eyebrow,
+.pr-feature-card__eyebrow {
+    display: inline-flex;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: .5rem;
+}
+
+.pr-info-card__value,
+.pr-note-card__title,
+.pr-feature-card__title {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.pr-info-card__text,
+.pr-note-card__text,
+.pr-feature-card__text,
+.pr-panel-header p,
+.pr-empty-text {
+    color: #64748b;
+    font-size: .9rem;
+    line-height: 1.6;
+}
+
+.pr-feature-card {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: .9rem;
+    padding: 1rem 1.1rem;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform .15s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.pr-feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(249, 115, 22, .08);
+    border-color: #fed7aa;
+}
+
+.pr-feature-card__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    background: #fff7ed;
+    color: #ea580c;
+}
+
+.pr-panel-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.pr-panel-header h3 {
+    margin: 0 0 .25rem;
+}
+
+.pr-admin-link {
+    font-weight: 600;
+    color: var(--admin-primary, #3b82f6);
+    text-decoration: none;
+}
+
+.pr-compact-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: .75rem;
+}
+
+.pr-compact-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    padding: .75rem .9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.pr-empty-icon {
+    font-size: 2rem;
+    margin: 0;
+}
+
+.pr-soft-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 78px;
+    padding: .3rem .6rem;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 700;
+    background: #e2e8f0;
+    color: #334155;
+    text-transform: capitalize;
+}
+
+.pr-soft-badge--active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.pr-soft-badge--draft,
+.pr-soft-badge--paused,
+.pr-soft-badge--archived {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.pr-table-meta {
+    display: block;
+    margin-top: .2rem;
+    font-size: .76rem;
+    color: #64748b;
+}
+
+.pr-action-group {
+    display: flex;
+    gap: .4rem;
+}
+
+.pr-action-group form {
+    margin: 0;
+}
+
+.pr-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.pr-checkbox-stack {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 980px) {
+    .pr-panel-grid,
+    .pr-panel-grid--wide,
+    .pr-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
