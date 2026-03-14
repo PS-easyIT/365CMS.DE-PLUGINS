@@ -32,7 +32,7 @@ $selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '
     <div class="admin-page-header">
         <div>
             <h2>📥 WordPress Importer</h2>
-            <p>Importiere WXR-Exporte, Kommentare, Tabellen, SEO-Daten, Bilder und Rank-Math-Weiterleitungen nach 365CMS.</p>
+            <p>Importiere WXR-Exporte, Kommentare, Tabellen, SEO-Daten, Bilder sowie Rank-Math-SEO-Settings und Weiterleitungen nach 365CMS.</p>
         </div>
         <div class="header-actions">
             <a href="/admin/plugins/cms-importer/cms-importer-log" class="btn btn-secondary">📋 Protokoll</a>
@@ -307,7 +307,7 @@ $selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '
                         <span class="ci-mini-card__icon">&#128221;</span>
                         <div>
                             <strong>XML oder Rank-Math JSON</strong>
-                            <p>Nutze eine echte WXR-Datei aus dem WordPress-Export oder eine Rank-Math-Settings-JSON mit Weiterleitungen.</p>
+                            <p>Nutze eine echte WXR-Datei aus dem WordPress-Export oder eine Rank-Math-Settings-JSON mit SEO-Defaults und Weiterleitungen.</p>
                         </div>
                     </div>
                     <div class="ci-mini-card">
@@ -483,7 +483,7 @@ $selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '
                 <li>TablePress-Tabellen &rarr; <code>cms_site_tables</code></li>
                 <li>Kategorien, Tags und SEO-Meta (Yoast, Rank Math, SEOPress)</li>
                 <li>Bilder &rarr; lokale Import-Pfade inkl. Featured-Image-Zuordnung</li>
-                        <li>Rank Math JSON &rarr; Eintr&auml;ge aus <code>redirections</code> nach <code>cms_redirect_rules</code></li>
+                        <li>Rank Math JSON &rarr; globale SEO-Defaults nach <code>cms_settings</code> und Eintr&auml;ge aus <code>redirections</code> nach <code>cms_redirect_rules</code></li>
             </ul>
         </div>
         <div class="ci-info-card">
@@ -492,7 +492,7 @@ $selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '
                 <li>Kommentare an WordPress-Seiten (365CMS-Kommentare sind beitragsbasiert)</li>
                 <li>Benutzerkonten</li>
                 <li>Men&uuml;s &amp; Navigation</li>
-                <li>Andere Rank-Math-JSON-Bereiche au&szlig;er <code>redirections</code></li>
+                <li>Rank-Math-Bereiche ohne 365CMS-Ziel, z. B. Analytics-, Role-Manager- oder geheime App-Credentials</li>
                 <li>Exotische Plugin-Daten ohne Mapping (werden dokumentiert)</li>
             </ul>
         </div>
@@ -508,7 +508,7 @@ $selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '
         </div>
         <div class="ci-info-card">
             <h3>&#10145;&#65039; Redirect-Import</h3>
-            <p>Bei Rank-Math-JSON werden ausschlie&szlig;lich die Eintr&auml;ge aus <code>redirections</code> importiert. Aktuell werden exakte Quellpfade &uuml;bernommen; komplexe Vergleichstypen werden in der Vorschau bzw. beim Import sauber &uuml;bersprungen.</p>
+            <p>Bei Rank-Math-JSON &uuml;bernimmt der Importer die sinnvollen globalen SEO-Defaults f&uuml;r 365CMS und importiert zus&auml;tzlich Eintr&auml;ge aus <code>redirections</code>. Exakte Quellpfade werden &uuml;bernommen; komplexe Vergleichstypen werden in der Vorschau bzw. beim Import sauber &uuml;bersprungen.</p>
         </div>
     </div>
 

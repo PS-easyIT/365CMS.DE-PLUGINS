@@ -1,7 +1,7 @@
 # CMS WordPress Importer – Dokumentation
 
 **Plugin:** `cms-importer`  
-**Version:** 1.4.0  
+**Version:** 1.6.0  
 **Namespace:** `CMS_Importer`  
 **Mindest-CMS-Version:** 365CMS 0.26.0+  
 **PHP:** 8.1+
@@ -10,7 +10,7 @@
 
 ## Übersicht
 
-Das **CMS WordPress Importer**-Plugin importiert WordPress-Export-Dateien (WXR-Format, `.xml`) sowie Rank-Math-Settings-Dateien (`.json`) in die 365CMS-Datenbankstruktur. Es verarbeitet Beiträge, Seiten, TablePress-Tabellen, Taxonomien, SEO-Metadaten, Featured Images, Inhaltsbilder sowie Rank-Math-Weiterleitungen und protokolliert alle nicht gemappten Felder für spätere Analyse.
+Das **CMS WordPress Importer**-Plugin importiert WordPress-Export-Dateien (WXR-Format, `.xml`) sowie Rank-Math-Settings-Dateien (`.json`) in die 365CMS-Datenbankstruktur. Es verarbeitet Beiträge, Seiten, TablePress-Tabellen, Taxonomien, SEO-Metadaten, Featured Images, Inhaltsbilder sowie sinnvolle Rank-Math-SEO-Defaults und Weiterleitungen und protokolliert alle nicht gemappten Felder für spätere Analyse.
 
 ### Kernfunktionen
 
@@ -22,6 +22,7 @@ Das **CMS WordPress Importer**-Plugin importiert WordPress-Export-Dateien (WXR-F
 | **Tabellen-Import** | `tablepress_table` → `cms_site_tables` |
 | **Custom Post Types** | Beliebige CPTs → `cms_posts` |
 | **SEO-Mapping** | Yoast SEO, Rank Math, SEOPress → Felder + `cms_seo_meta` |
+| **SEO-Defaults** | Rank Math JSON → globale `cms_settings`-SEO-Schlüssel |
 | **Taxonomien** | Kategorien, Tags und Tag-Relationen |
 | **Bilder** | Download von Original-URLs inkl. URL-Umschreibung im Content |
 | **Redirects** | Rank Math `redirections` → `cms_redirect_rules` |
@@ -80,6 +81,7 @@ cms-importer/
 | Yoast / Rank Math / SEOPress | `meta_title`, `meta_description`, `cms_seo_meta` | SEO-Mapping |
 | `_thumbnail_id` + Attachments | `featured_image`, `cms_media` | Attachment-Auflösung + Download |
 | `[table id=...]` | `[site-table id="X"]` | Mapping über `cms_import_items` |
+| Rank Math SEO-Defaults (JSON) | `cms_settings` | Nur sinnvoll mapbare globale SEO-Optionen |
 | Rank Math `redirections` (JSON) | `cms_redirect_rules` | Nur exakte Quellpfade werden übernommen |
 
 ## Was wird NICHT importiert?
@@ -89,6 +91,7 @@ cms-importer/
 - Navigationsmenüs
 - WP-interne Meta-Typen (Custom CSS, User-Requests, …)
 - Plugin-/Theme-Sonderdaten ohne festes Mapping (werden im Meta-Report dokumentiert)
+- Rank-Math-Bereiche ohne 365CMS-Ziel wie Analytics, Role-Manager oder App-Secrets
 
 ---
 
@@ -111,6 +114,7 @@ Die Vorschau verwendet dieselbe Ziel- und Duplikatlogik wie der echte Import, sc
 - erkannte Bildkandidaten und Featured-Image-Referenzen
 - auflösbare WordPress-Tabellen-Shortcodes
 - Anzahl unbekannter Meta-Felder pro Eintrag
+- SEO-Settings-Bundles inklusive Anzahl und Bezeichner der Ziel-Settings
 
 ---
 
@@ -130,6 +134,7 @@ Alle Meta-Keys die nicht auf ein CMS-Feld gemappt werden:
 - Bereits importierte Tabellen werden über `cms_import_items` wiedergefunden, sodass Folgeimporte auf bestehende Site-Table-IDs auflösen können.
 - Bild-URLs bleiben erhalten, wenn ein Download fehlschlägt; erfolgreiche Downloads werden auf lokale 365CMS-Dateien umgebogen.
 - Rank-Math-Weiterleitungen werden derzeit nur für Vergleichstyp `exact` importiert, weil 365CMS intern mit exakten Quellpfaden arbeitet.
+- Rank-Math-JSON importiert nur Settings mit echtem 365CMS-Ziel, z. B. Homepage-Meta, Robots-Defaults, Social-Defaults, Breadcrumb-/Sitemap-Optionen und Schema-Grundeinstellungen.
 
 ### Report-Format
 

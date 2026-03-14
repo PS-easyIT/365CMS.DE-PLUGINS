@@ -498,6 +498,7 @@
             buildPreviewStat('Würde überspringen', result.would_skip || 0, 'ci-preview-stat--warn'),
             buildPreviewStat('Anhänge erkannt', result.attachments || 0, ''),
             buildPreviewStat('Kommentare', result.comments_detected || 0, ''),
+            buildPreviewStat('SEO-Settings', ((result.preview_counts && result.preview_counts.settings) || 0), ''),
             buildPreviewStat('Bildkandidaten', result.images_detected || 0, 'ci-preview-stat--img'),
             buildPreviewStat('Meta-Keys offen', result.meta_keys || 0, 'ci-preview-stat--meta')
         ].join('');
@@ -512,9 +513,12 @@
         if ((result.table_shortcodes_found || 0) > 0) {
             notes.push((result.table_shortcodes_found || 0) + ' WordPress-Tabellen-Shortcodes gefunden, ' + (result.table_shortcodes_resolved || 0) + ' davon aktuell auflösbar');
         }
-            if ((result.preview_counts && result.preview_counts.redirects) || 0) {
-                notes.push((result.preview_counts.redirects || 0) + ' Redirect-Regeln würden verarbeitet');
-            }
+        if (((result.preview_counts && result.preview_counts.settings) || 0) > 0) {
+            notes.push((result.preview_counts.settings || 0) + ' SEO-Settings-Bundle würde in die globalen 365CMS-SEO-Einstellungen geschrieben');
+        }
+        if (((result.preview_counts && result.preview_counts.redirects) || 0) > 0) {
+            notes.push((result.preview_counts.redirects || 0) + ' Redirect-Regeln würden verarbeitet');
+        }
         if (result.items_truncated) {
             notes.push('Es werden nur die ersten ' + (result.items_shown || 0) + ' von ' + (result.items_total || 0) + ' Elementen gezeigt');
         }
@@ -556,6 +560,14 @@
         items.forEach(function (item) {
             var tagText = Array.isArray(item.tags) ? item.tags.join(', ') : '';
             var reasonText = ((item.reason || '').trim() || (item.action === 'skip' ? 'Unbekannter Überspring-Grund' : (item.target_hint || '')));
+            var sourceMetaParts = [escapeHtml(item.source_label || item.source_type || '')];
+            var sourceWpId = Number(item.source_wp_id || 0);
+            if (sourceWpId > 0) {
+                sourceMetaParts.push('WP-ID ' + escapeHtml(sourceWpId));
+            }
+            if ((item.source_status || '').trim() !== '') {
+                sourceMetaParts.push('Status ' + escapeHtml(item.source_status || ''));
+            }
             var details = [];
             if (item.category) { details.push('Kategorie: ' + escapeHtml(item.category)); }
             if (tagText) { details.push('Tags: ' + escapeHtml(tagText)); }
@@ -573,10 +585,12 @@
             if (item.redirect_state) { details.push('Status: ' + escapeHtml(item.redirect_state)); }
             if (item.redirect_hits) { details.push('Hits: ' + escapeHtml(item.redirect_hits)); }
             if (item.last_hit_at) { details.push('Letzter Treffer: ' + escapeHtml(item.last_hit_at)); }
+            if (item.settings_keys_count) { details.push('Settings-Schlüssel: ' + escapeHtml(item.settings_keys_count)); }
+            if (Array.isArray(item.settings_labels) && item.settings_labels.length) { details.push('Settings-Felder: ' + escapeHtml(item.settings_labels.join(', '))); }
 
             rows.push(
                 '<tr>' +
-                    '<td><strong>' + escapeHtml(item.source_title || '(ohne Titel)') + '</strong><div class="ci-preview-meta">' + escapeHtml(item.source_label || item.source_type || '') + ' · WP-ID ' + escapeHtml(item.source_wp_id || 0) + ' · Status ' + escapeHtml(item.source_status || '') + '</div></td>' +
+                    '<td><strong>' + escapeHtml(item.source_title || '(ohne Titel)') + '</strong><div class="ci-preview-meta">' + sourceMetaParts.join(' · ') + '</div></td>' +
                     '<td><strong>' + escapeHtml(item.target_type || '') + '</strong><div class="ci-preview-meta">Slug: ' + escapeHtml(item.target_slug || '—') + '</div><div class="ci-preview-meta">' + escapeHtml(item.target_url || item.target_hint || '') + '</div></td>' +
                     '<td><span class="ci-preview-pill ' + (item.action === 'import' ? 'ci-preview-pill--ok' : 'ci-preview-pill--warn') + '">' + (item.action === 'import' ? 'Würde importieren' : 'Würde überspringen') + '</span><div class="ci-preview-meta">' + escapeHtml(reasonText) + '</div></td>' +
                     '<td>' + (details.length ? '<ul class="ci-preview-details"><li>' + details.join('</li><li>') + '</li></ul>' : '<span class="ci-muted">Keine Zusatzdetails</span>') + '</td>' +

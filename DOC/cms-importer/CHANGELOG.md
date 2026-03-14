@@ -1,5 +1,17 @@
 # CMS WordPress Importer – Changelog
 
+## [1.6.0] – 2026-03-14
+
+### Hinzugefügt
+
+- **Rank-Math-SEO-Defaults:** Importiert sinnvolle globale SEO-Standards aus Rank-Math-JSON nach `cms_settings`, z. B. Homepage-Meta, Robots-Defaults, Social-Defaults, Breadcrumbs, Schema- und Sitemap-Optionen
+- **Settings-only-JSON:** Vorschau und Import akzeptieren jetzt auch Rank-Math-Dateien ohne Redirects, sofern importierbare SEO-Settings enthalten sind
+- **Preview-Details:** Dry Run zeigt SEO-Settings-Bundles samt Feldanzahl und betroffenen SEO-Bereichen
+
+### Geändert
+
+- **Rank-Math-Metadaten:** `rank_math_og_content_image` kann jetzt über serialisierte Attachment-Referenzen oder direkte URLs als OG-Bild aufgelöst werden
+
 ## [1.4.0] – 2026-03-14
 
 ### Hinzugefügt

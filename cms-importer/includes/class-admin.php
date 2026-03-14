@@ -473,9 +473,10 @@ class CMS_Importer_Admin
             return ['Keine unterstützte Importdatei erkannt. Erlaubt sind WordPress-WXR (.xml) oder Rank-Math-Settings (.json).', 'error', null];
         }
 
-        $total_items = count($parsed['posts']) + count($parsed['pages']) + count($parsed['tables']) + count($parsed['redirects'] ?? []) + count($parsed['others']);
+        $settings_items = !empty($parsed['seo_settings']['settings']) && is_array($parsed['seo_settings']['settings']) ? 1 : 0;
+        $total_items = $settings_items + count($parsed['posts']) + count($parsed['pages']) + count($parsed['tables']) + count($parsed['redirects'] ?? []) + count($parsed['others']);
         if ($total_items === 0) {
-            return ['Keine importierbaren Inhalte (Beiträge, Seiten, Tabellen, Weiterleitungen oder weitere Post-Types) gefunden.', 'warning', null];
+            return ['Keine importierbaren Inhalte (SEO-Settings, Beiträge, Seiten, Tabellen, Weiterleitungen oder weitere Post-Types) gefunden.', 'warning', null];
         }
 
         // Import-Optionen aus POST lesen
@@ -516,6 +517,9 @@ class CMS_Importer_Admin
             if (($result['preview_counts']['posts'] ?? 0) > 0) {
                 $details[] = (int) $result['preview_counts']['posts'] . ' Beiträge';
             }
+            if (($result['preview_counts']['settings'] ?? 0) > 0) {
+                $details[] = (int) $result['preview_counts']['settings'] . ' SEO-Settings-Bundle';
+            }
             if (($result['preview_counts']['pages'] ?? 0) > 0) {
                 $details[] = (int) $result['preview_counts']['pages'] . ' Seiten';
             }
@@ -553,6 +557,10 @@ class CMS_Importer_Admin
                 $msg .= sprintf(' | %d unbekannte Meta-Keys würden protokolliert.', (int) $result['meta_keys']);
             }
 
+            if (($result['source_counts']['settings'] ?? 0) > 0) {
+                $msg .= ' | Rank-Math-SEO-Defaults würden in die globalen 365CMS-SEO-Einstellungen übernommen.';
+            }
+
             return [$msg, 'success', $result];
         }
 
@@ -575,6 +583,12 @@ class CMS_Importer_Admin
         );
 
         $details = [];
+        if (($result['settings_imported'] ?? 0) > 0) {
+            $settingsLabel = (int) ($result['settings_keys_imported'] ?? 0) > 0
+                ? (int) ($result['settings_keys_imported'] ?? 0) . ' SEO-Settings'
+                : '1 SEO-Settings-Bundle';
+            $details[] = $settingsLabel;
+        }
         if (($result['posts_imported'] ?? 0) > 0) {
             $details[] = (int) $result['posts_imported'] . ' Beiträge';
         }
@@ -1667,7 +1681,8 @@ class CMS_Importer_Admin
     private function looks_like_supported_import(string $file_path, array $parsed): bool
     {
         if (($parsed['source_format'] ?? '') === 'rank_math_json') {
-            return isset($parsed['redirects']) && is_array($parsed['redirects']);
+            return (isset($parsed['redirects']) && is_array($parsed['redirects']))
+                || (!empty($parsed['seo_settings']['settings']) && is_array($parsed['seo_settings']['settings']));
         }
 
         $wxrVersion = trim((string) ($parsed['site']['wxr_version'] ?? ''));

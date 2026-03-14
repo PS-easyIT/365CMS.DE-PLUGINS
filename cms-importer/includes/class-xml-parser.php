@@ -42,6 +42,7 @@ class CMS_Importer_XML_Parser
             'source_format' => 'wxr',
             'authors'     => [],
             'attachments' => [],
+            'seo_settings' => [],
             'posts'       => [],
             'pages'       => [],
             'tables'      => [],
@@ -180,8 +181,8 @@ class CMS_Importer_XML_Parser
             return $result;
         }
 
-        if (!isset($decoded['redirections']) || !is_array($decoded['redirections'])) {
-            $result['errors'][] = 'Keine unterstützte Rank-Math-JSON-Datei erkannt (Schlüssel "redirections" fehlt).';
+        if (!$this->looks_like_rank_math_payload($decoded)) {
+            $result['errors'][] = 'Keine unterstützte Rank-Math-JSON-Datei erkannt (keine nutzbaren SEO- oder Redirect-Bereiche gefunden).';
             return $result;
         }
 
@@ -195,9 +196,252 @@ class CMS_Importer_XML_Parser
             'base_site_url' => trim((string) ($decoded['general']['breadcrumbs_home_link'] ?? '')),
             'base_blog_url' => trim((string) ($decoded['general']['breadcrumbs_home_link'] ?? '')),
         ];
+        $result['seo_settings'] = $this->parse_rank_math_seo_settings($decoded, $result['site']);
         $result['redirects'] = $this->parse_rank_math_redirects($decoded);
 
         return $result;
+    }
+
+    private function looks_like_rank_math_payload(array $payload): bool
+    {
+        foreach (['general', 'titles', 'sitemap', 'redirections'] as $key) {
+            if (isset($payload[$key]) && is_array($payload[$key])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function parse_rank_math_seo_settings(array $payload, array $site): array
+    {
+        $settings = [];
+        $mappedFields = [];
+
+        $general = is_array($payload['general'] ?? null) ? $payload['general'] : [];
+        $titles = is_array($payload['titles'] ?? null) ? $payload['titles'] : [];
+        $sitemap = is_array($payload['sitemap'] ?? null) ? $payload['sitemap'] : [];
+        $modules = is_array($payload['modules'] ?? null) ? $payload['modules'] : [];
+
+        $this->append_rank_math_setting($settings, $mappedFields, 'seo_title_separator', $this->normalize_rank_math_separator((string) ($titles['title_separator'] ?? '')), 'titles.title_separator', 'Titel-Trenner');
+        $this->append_rank_math_setting($settings, $mappedFields, 'seo_homepage_title', trim((string) ($titles['homepage_title'] ?? '')), 'titles.homepage_title', 'Homepage-Titel');
+
+        $homepageDescription = trim((string) ($titles['homepage_description'] ?? ''));
+        $this->append_rank_math_setting($settings, $mappedFields, 'seo_homepage_description', $homepageDescription, 'titles.homepage_description', 'Homepage-Beschreibung');
+        $this->append_rank_math_setting($settings, $mappedFields, 'seo_meta_description', $homepageDescription, 'titles.homepage_description', 'Standard-Meta-Beschreibung');
+
+        $globalRobots = $this->normalize_rank_math_robot_flags($titles['robots_global'] ?? []);
+        if ($globalRobots !== null) {
+            $this->append_rank_math_setting($settings, $mappedFields, 'seo_default_robots_index', $globalRobots['index'] ? '1' : '0', 'titles.robots_global', 'Robots Index', true);
+            $this->append_rank_math_setting($settings, $mappedFields, 'seo_default_robots_follow', $globalRobots['follow'] ? '1' : '0', 'titles.robots_global', 'Robots Follow', true);
+        }
+
+        $this->append_rank_math_setting(
+            $settings,
+            $mappedFields,
+            'seo_social_default_twitter_card',
+            $this->normalize_twitter_card((string) ($titles['twitter_card_type'] ?? ''), $this->default_seo_payload()),
+            'titles.twitter_card_type',
+            'Twitter Card'
+        );
+
+        $brandName = trim((string) ($titles['knowledgegraph_name'] ?? $titles['website_name'] ?? ''));
+        $brandSource = trim((string) ($titles['knowledgegraph_name'] ?? '')) !== '' ? 'titles.knowledgegraph_name' : 'titles.website_name';
+        $this->append_rank_math_setting($settings, $mappedFields, 'seo_social_brand_name', $brandName, $brandSource, 'Brand-Name');
+        $this->append_rank_math_setting($settings, $mappedFields, 'seo_schema_org_name', $brandName, $brandSource, 'Schema-Name');
+
+        $logoUrl = trim((string) ($titles['knowledgegraph_logo'] ?? ''));
+        $fallbackSocialImage = trim((string) ($titles['open_graph_image'] ?? ''));
+        $this->append_rank_math_setting($settings, $mappedFields, 'seo_schema_org_logo', $logoUrl !== '' ? $logoUrl : $fallbackSocialImage, $logoUrl !== '' ? 'titles.knowledgegraph_logo' : 'titles.open_graph_image', 'Schema-Logo');
+        $this->append_rank_math_setting($settings, $mappedFields, 'seo_social_default_image', $fallbackSocialImage !== '' ? $fallbackSocialImage : $logoUrl, $fallbackSocialImage !== '' ? 'titles.open_graph_image' : 'titles.knowledgegraph_logo', 'Social Standardbild');
+
+        $knowledgeGraphType = strtolower(trim((string) ($titles['knowledgegraph_type'] ?? '')));
+        if ($knowledgeGraphType !== '') {
+            $isPerson = $knowledgeGraphType === 'person';
+            $this->append_rank_math_setting($settings, $mappedFields, 'seo_schema_person_enabled', $isPerson ? '1' : '0', 'titles.knowledgegraph_type', 'Schema Person', true);
+            $this->append_rank_math_setting($settings, $mappedFields, 'seo_schema_organization_enabled', $isPerson ? '0' : '1', 'titles.knowledgegraph_type', 'Schema Organisation', true);
+            $this->append_rank_math_setting(
+                $settings,
+                $mappedFields,
+                'seo_social_default_og_type',
+                $this->normalize_rank_math_default_og_type($knowledgeGraphType),
+                'titles.knowledgegraph_type',
+                'Open-Graph-Typ'
+            );
+        }
+
+        $facebookPage = $this->first_non_empty_rank_math_value($titles, ['social_url_facebook', 'facebook_author_urls']);
+        $this->append_rank_math_setting($settings, $mappedFields, 'seo_social_facebook_page', $facebookPage['value'] ?? '', $facebookPage['source'] ?? 'titles.social_url_facebook', 'Facebook-Seite');
+
+        $twitterProfile = $this->first_non_empty_rank_math_value($titles, ['social_url_twitter', 'social_url_x', 'twitter_author_names']);
+        $this->append_rank_math_setting($settings, $mappedFields, 'seo_social_twitter_profile', $twitterProfile['value'] ?? '', $twitterProfile['source'] ?? 'titles.social_url_twitter', 'Twitter/X-Profil');
+
+        $this->append_rank_math_setting(
+            $settings,
+            $mappedFields,
+            'seo_schema_breadcrumb_enabled',
+            $this->normalize_rank_math_bool($general['breadcrumbs'] ?? false) ? '1' : '0',
+            'general.breadcrumbs',
+            'Breadcrumb-Schema',
+            true
+        );
+        $this->append_rank_math_setting(
+            $settings,
+            $mappedFields,
+            'seo_technical_breadcrumbs_enabled',
+            $this->normalize_rank_math_bool($general['breadcrumbs'] ?? false) ? '1' : '0',
+            'general.breadcrumbs',
+            'Breadcrumb-Ausgabe',
+            true
+        );
+        $this->append_rank_math_setting(
+            $settings,
+            $mappedFields,
+            'seo_technical_image_alt_required',
+            $this->normalize_rank_math_bool($general['add_img_alt'] ?? false) ? '1' : '0',
+            'general.add_img_alt',
+            'Bild-Alt-Texte',
+            true
+        );
+
+        $this->append_rank_math_setting(
+            $settings,
+            $mappedFields,
+            'seo_sitemap_image_enabled',
+            $this->normalize_rank_math_bool($sitemap['include_images'] ?? false) ? '1' : '0',
+            'sitemap.include_images',
+            'Bild-Sitemap',
+            true
+        );
+
+        $newsEnabled = $this->normalize_rank_math_news_sitemap_enabled($sitemap, $modules);
+        $this->append_rank_math_setting($settings, $mappedFields, 'seo_sitemap_news_enabled', $newsEnabled ? '1' : '0', 'sitemap.news_sitemap_post_type', 'News-Sitemap', true);
+        $newsPublication = trim((string) ($sitemap['news_sitemap_publication_name'] ?? ''));
+        if ($newsPublication === '') {
+            $newsPublication = trim((string) ($site['title'] ?? ''));
+        }
+        $this->append_rank_math_setting($settings, $mappedFields, 'seo_sitemap_news_publication_name', $newsPublication, 'sitemap.news_sitemap_publication_name', 'News-Publikationsname');
+        $this->append_rank_math_setting($settings, $mappedFields, 'seo_sitemap_news_language', $this->normalize_rank_math_language((string) ($site['language'] ?? 'de')), 'site.language', 'News-Sprache', true);
+
+        return [
+            'settings' => $settings,
+            'mapped_fields' => $mappedFields,
+        ];
+    }
+
+    /**
+     * @param array<string, string> $settings
+     * @param array<int, array<string, string>> $mappedFields
+     */
+    private function append_rank_math_setting(array &$settings, array &$mappedFields, string $option, string $value, string $source, string $label, bool $allowEmpty = false): void
+    {
+        $value = trim($value);
+        if (!$allowEmpty && $value === '') {
+            return;
+        }
+
+        $settings[$option] = $value;
+        $mappedFields[] = [
+            'option' => $option,
+            'source' => $source,
+            'label' => $label,
+        ];
+    }
+
+    /**
+     * @return array{value:string,source:string}|array{}
+     */
+    private function first_non_empty_rank_math_value(array $section, array $keys): array
+    {
+        foreach ($keys as $key) {
+            $value = trim((string) ($section[$key] ?? ''));
+            if ($value !== '') {
+                return [
+                    'value' => $value,
+                    'source' => 'titles.' . $key,
+                ];
+            }
+        }
+
+        return [];
+    }
+
+    private function normalize_rank_math_separator(string $value): string
+    {
+        $value = trim(html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($value === '') {
+            return '';
+        }
+
+        return $this->safe_substr($value, 0, 12);
+    }
+
+    /**
+     * @return array{index:bool,follow:bool}|null
+     */
+    private function normalize_rank_math_robot_flags(mixed $value): ?array
+    {
+        $robots = [];
+
+        if (is_array($value)) {
+            array_walk_recursive($value, static function (mixed $item) use (&$robots): void {
+                if (is_string($item)) {
+                    $robots[] = strtolower(trim($item));
+                }
+            });
+        } elseif (is_string($value)) {
+            $robots = $this->normalize_robot_list($value);
+        }
+
+        if ($robots === []) {
+            return null;
+        }
+
+        return [
+            'index' => !in_array('noindex', $robots, true),
+            'follow' => !in_array('nofollow', $robots, true),
+        ];
+    }
+
+    private function normalize_rank_math_default_og_type(string $knowledgeGraphType): string
+    {
+        return match ($knowledgeGraphType) {
+            'person' => 'profile',
+            'website', 'organization', 'company', 'business' => 'website',
+            default => 'website',
+        };
+    }
+
+    private function normalize_rank_math_news_sitemap_enabled(array $sitemap, array $modules): bool
+    {
+        $moduleList = array_map(static fn(mixed $module): string => strtolower(trim((string) $module)), $modules);
+        if (in_array('news-sitemap', $moduleList, true)) {
+            return true;
+        }
+
+        $newsPostTypes = $sitemap['news_sitemap_post_type'] ?? [];
+        return is_array($newsPostTypes) && $newsPostTypes !== [];
+    }
+
+    private function normalize_rank_math_language(string $value): string
+    {
+        $value = strtolower(trim($value));
+        if ($value === '') {
+            return 'de';
+        }
+
+        if (str_contains($value, '_')) {
+            $value = explode('_', $value)[0] ?? $value;
+        }
+
+        if (str_contains($value, '-')) {
+            $value = explode('-', $value)[0] ?? $value;
+        }
+
+        return preg_match('/^[a-z]{2}$/', $value) === 1 ? $value : 'de';
     }
 
     /**
@@ -393,6 +637,10 @@ class CMS_Importer_XML_Parser
             'featured_image_alt'   => '',
             'featured_image_caption' => '',
             'seo'                  => $this->default_seo_payload(),
+            'seo_attachment_refs'  => [
+                'og_image' => 0,
+                'twitter_image' => 0,
+            ],
             'image_urls'           => [],
             'comments'             => $this->extract_comments($wp),
             'table'                => null,
@@ -585,11 +833,43 @@ class CMS_Importer_XML_Parser
                 $result[$group][$index]['featured_image_alt'] = (string) ($attachment['alt_text'] ?? '');
                 $result[$group][$index]['featured_image_caption'] = (string) ($attachment['caption'] ?? '');
 
+                $seo = is_array($result[$group][$index]['seo'] ?? null)
+                    ? $result[$group][$index]['seo']
+                    : $this->default_seo_payload();
+                $seoAttachmentRefs = is_array($result[$group][$index]['seo_attachment_refs'] ?? null)
+                    ? $result[$group][$index]['seo_attachment_refs']
+                    : [];
                 $imageUrls = $result[$group][$index]['image_urls'] ?? [];
+
+                foreach (['og_image', 'twitter_image'] as $seoField) {
+                    $seoAttachmentId = (int) ($seoAttachmentRefs[$seoField] ?? 0);
+                    if ($seoAttachmentId > 0 && isset($result['attachments'][$seoAttachmentId])) {
+                        $seoAttachment = $result['attachments'][$seoAttachmentId];
+                        $seoAttachmentUrl = trim((string) ($seoAttachment['url'] ?? ''));
+                        if ($seoAttachmentUrl !== '' && trim((string) ($seo[$seoField] ?? '')) === '') {
+                            $seo[$seoField] = $seoAttachmentUrl;
+                            if (!in_array($seoAttachmentUrl, $imageUrls, true)) {
+                                $imageUrls[] = $seoAttachmentUrl;
+                            }
+                        }
+                    }
+                }
+
+                if (trim((string) ($seo['og_image'] ?? '')) === '') {
+                    $seo['og_image'] = $attachmentUrl;
+                }
+                if (trim((string) ($seo['twitter_image'] ?? '')) === '') {
+                    $seo['twitter_image'] = trim((string) ($seo['og_image'] ?? '')) !== ''
+                        ? (string) $seo['og_image']
+                        : $attachmentUrl;
+                }
+
+                $result[$group][$index]['seo'] = $seo;
+
                 if (!in_array($attachmentUrl, $imageUrls, true)) {
                     array_unshift($imageUrls, $attachmentUrl);
-                    $result[$group][$index]['image_urls'] = array_values(array_unique($imageUrls));
                 }
+                $result[$group][$index]['image_urls'] = array_values(array_unique($imageUrls));
             }
         }
 
@@ -750,6 +1030,19 @@ class CMS_Importer_XML_Parser
 
             $seo[$seoField] = $this->normalize_seo_field_value($seoField, trim($match['value']), $parsed, $seo);
             $parsed['mapped_meta_keys'][] = $match['key'];
+        }
+
+        if ($seo['og_image'] === '' && isset($meta['rank_math_og_content_image'])) {
+            $rankMathOgImage = $this->extract_rank_math_attachment_reference((string) $meta['rank_math_og_content_image']);
+            if ($rankMathOgImage['url'] !== '') {
+                $seo['og_image'] = $rankMathOgImage['url'];
+            } elseif ($rankMathOgImage['attachment_id'] > 0) {
+                $parsed['seo_attachment_refs']['og_image'] = $rankMathOgImage['attachment_id'];
+            }
+
+            if ($rankMathOgImage['url'] !== '' || $rankMathOgImage['attachment_id'] > 0) {
+                $parsed['mapped_meta_keys'][] = 'rank_math_og_content_image';
+            }
         }
 
         if ($seo['canonical_url'] === '') {
@@ -1106,6 +1399,46 @@ class CMS_Importer_XML_Parser
         }
 
         return [];
+    }
+
+    /**
+     * @return array{attachment_id:int,url:string}
+     */
+    private function extract_rank_math_attachment_reference(string $value): array
+    {
+        $decoded = $this->decode_structured_value($value);
+        $attachmentId = 0;
+        $url = '';
+
+        if ($decoded !== []) {
+            array_walk_recursive($decoded, static function (mixed $item) use (&$attachmentId, &$url): void {
+                if (is_numeric($item) && $attachmentId <= 0) {
+                    $attachmentId = max(0, (int) $item);
+                    return;
+                }
+
+                if (is_string($item) && $url === '') {
+                    $candidate = trim(html_entity_decode($item, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+                    if (filter_var($candidate, FILTER_VALIDATE_URL) !== false) {
+                        $url = $candidate;
+                    }
+                }
+            });
+        }
+
+        if ($url === '') {
+            foreach ($this->extract_urls_from_text($value) as $candidateUrl) {
+                if ($this->looks_like_image_url($candidateUrl)) {
+                    $url = $candidateUrl;
+                    break;
+                }
+            }
+        }
+
+        return [
+            'attachment_id' => $attachmentId,
+            'url' => $url,
+        ];
     }
 
     private function first_non_empty_meta(array $meta, array $keys): ?array

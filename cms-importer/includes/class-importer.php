@@ -170,6 +170,7 @@ class CMS_Importer_Service
     private int    $comments_total    = 0;
     private int    $comments_imported = 0;
     private int    $comments_skipped  = 0;
+    private int    $settings_imported = 0;
     private array  $unknown_meta      = [];
     private array  $skip_reasons      = [];
     private string $filename          = '';
@@ -178,6 +179,7 @@ class CMS_Importer_Service
     private array  $attachment_by_url = [];
     private array  $table_reference_map = [];
     private array  $import_breakdown  = [
+        'settings' => 0,
         'posts'  => 0,
         'pages'  => 0,
         'tables' => 0,
@@ -228,6 +230,11 @@ class CMS_Importer_Service
             : null;
 
         $this->log_id = $this->create_log_entry($db, $p, $filename, $user_id);
+
+        if (!empty($parsed['seo_settings']['settings']) && is_array($parsed['seo_settings']['settings'])) {
+            $this->total++;
+            $this->import_rank_math_seo_settings($db, $p, $parsed['seo_settings']);
+        }
 
         foreach ($parsed['tables'] as $item) {
             $this->total++;
@@ -280,6 +287,8 @@ class CMS_Importer_Service
             'comments_skipped'  => $this->comments_skipped,
             'meta_keys'         => count(array_unique(array_column($this->unknown_meta, 'meta_key'))),
             'meta_report'       => $report_path,
+            'settings_imported' => $this->import_breakdown['settings'],
+            'settings_keys_imported' => $this->settings_imported,
             'posts_imported'    => $this->import_breakdown['posts'],
             'pages_imported'    => $this->import_breakdown['pages'],
             'tables_imported'   => $this->import_breakdown['tables'],
@@ -335,6 +344,7 @@ class CMS_Importer_Service
             'table_shortcodes_found' => 0,
             'table_shortcodes_resolved' => 0,
             'breakdown' => [
+                'settings' => 0,
                 'posts' => 0,
                 'pages' => 0,
                 'tables' => 0,
@@ -349,6 +359,10 @@ class CMS_Importer_Service
             'comments_would_import' => 0,
             'comments_would_skip' => 0,
         ];
+
+        if (!empty($parsed['seo_settings']['settings']) && is_array($parsed['seo_settings']['settings'])) {
+            $this->collect_preview_item($this->build_settings_preview($parsed['seo_settings']), $context);
+        }
 
         foreach ($parsed['tables'] as $item) {
             $this->collect_preview_item($this->build_table_preview($db, $p, $item, $context), $context);
@@ -385,6 +399,7 @@ class CMS_Importer_Service
             'comments_would_import' => $context['comments_would_import'],
             'comments_would_skip' => $context['comments_would_skip'],
             'source_counts' => [
+                'settings' => !empty($parsed['seo_settings']['settings']) ? 1 : 0,
                 'posts' => count($parsed['posts'] ?? []),
                 'pages' => count($parsed['pages'] ?? []),
                 'tables' => count($parsed['tables'] ?? []),
@@ -1047,6 +1062,77 @@ class CMS_Importer_Service
         }
     }
 
+    /**
+     * @param array<string, mixed> $settingsBundle
+     */
+    private function import_rank_math_seo_settings(\CMS\Database $db, string $p, array $settingsBundle): void
+    {
+        $settings = is_array($settingsBundle['settings'] ?? null) ? $settingsBundle['settings'] : [];
+        if ($settings === []) {
+            $this->skip_item('Keine importierbaren SEO-Settings erkannt');
+            return;
+        }
+
+        $savedCount = 0;
+        foreach ($settings as $optionName => $value) {
+            if (!is_string($optionName) || !str_starts_with($optionName, 'seo_')) {
+                continue;
+            }
+
+            try {
+                $existing = $db->get_var(
+                    "SELECT option_value FROM {$p}settings WHERE option_name = ? LIMIT 1",
+                    [$optionName]
+                );
+
+                if ($existing === null) {
+                    $created = $db->insert('settings', [
+                        'option_name' => $optionName,
+                        'option_value' => (string) $value,
+                        'autoload' => 1,
+                    ]);
+
+                    if ($created === false) {
+                        throw new \RuntimeException($db->last_error !== '' ? $db->last_error : 'Insert in settings fehlgeschlagen.');
+                    }
+                } elseif ((string) $existing !== (string) $value) {
+                    $updated = $db->update('settings', ['option_value' => (string) $value], ['option_name' => $optionName]);
+                    if ($updated === false) {
+                        throw new \RuntimeException($db->last_error !== '' ? $db->last_error : 'Update in settings fehlgeschlagen.');
+                    }
+                }
+
+                $savedCount++;
+            } catch (\Throwable $e) {
+                $this->errors++;
+                error_log('CMS_Importer: SEO-Setting-Import fehlgeschlagen: ' . $e->getMessage() . ' – Option: ' . $optionName);
+            }
+        }
+
+        if ($savedCount <= 0) {
+            $this->skip_item('Rank-Math-SEO-Settings konnten nicht gespeichert werden');
+            return;
+        }
+
+        $this->settings_imported += $savedCount;
+        $this->imported++;
+        $this->import_breakdown['settings']++;
+
+        $this->store_import_item($db, $p, [
+            'log_id' => $this->log_id,
+            'source_type' => 'rank_math_settings',
+            'source_wp_id' => null,
+            'source_reference' => 'rank_math:seo_settings',
+            'source_slug' => 'seo-settings',
+            'source_url' => null,
+            'target_type' => 'setting_bundle',
+            'target_id' => null,
+            'target_created' => 1,
+            'target_slug' => 'seo-settings',
+            'target_url' => null,
+        ]);
+    }
+
     // ── Private: Bild-Downloader ──────────────────────────────────────────────
 
     /**
@@ -1473,11 +1559,13 @@ class CMS_Importer_Service
         $this->comments_total    = 0;
         $this->comments_imported = 0;
         $this->comments_skipped  = 0;
+        $this->settings_imported = 0;
         $this->unknown_meta      = [];
         $this->skip_reasons      = [];
         $this->log_id            = 0;
         $this->table_reference_map = [];
         $this->import_breakdown = [
+            'settings' => 0,
             'posts'  => 0,
             'pages'  => 0,
             'tables' => 0,
@@ -3522,6 +3610,57 @@ class CMS_Importer_Service
             'sitemap_priority' => '',
             'sitemap_changefreq' => '',
             'hreflang_group' => '',
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $settingsBundle
+     * @return array<string, mixed>
+     */
+    private function build_settings_preview(array $settingsBundle): array
+    {
+        $settings = is_array($settingsBundle['settings'] ?? null) ? $settingsBundle['settings'] : [];
+        $mappedFields = is_array($settingsBundle['mapped_fields'] ?? null) ? $settingsBundle['mapped_fields'] : [];
+
+        $labels = [];
+        foreach ($mappedFields as $field) {
+            if (!is_array($field)) {
+                continue;
+            }
+
+            $label = trim((string) ($field['label'] ?? ''));
+            if ($label !== '') {
+                $labels[] = $label;
+            }
+        }
+
+        if ($labels === []) {
+            $labels = array_keys($settings);
+        }
+
+        return [
+            'action' => $settings !== [] ? 'import' : 'skip',
+            'reason' => $settings !== [] ? '' : 'Keine importierbaren SEO-Settings erkannt',
+            'source_type' => 'rank_math_settings',
+            'source_label' => 'SEO-Settings',
+            'source_wp_id' => 0,
+            'source_title' => 'Rank Math SEO-Defaults',
+            'source_status' => 'bereit',
+            'target_group' => 'settings',
+            'target_type' => 'setting_bundle',
+            'target_slug' => 'seo-settings',
+            'target_url' => '',
+            'target_hint' => 'Wird in globale 365CMS-SEO-Einstellungen geschrieben',
+            'image_candidates' => 0,
+            'featured_image' => '',
+            'table_shortcodes_found' => 0,
+            'table_shortcodes_resolved' => 0,
+            'table_targets' => [],
+            'unknown_meta_count' => 0,
+            'category' => '',
+            'tags' => [],
+            'settings_keys_count' => count($settings),
+            'settings_labels' => $labels,
         ];
     }
 
