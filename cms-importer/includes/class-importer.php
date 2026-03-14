@@ -154,6 +154,9 @@ class CMS_Importer_Service
     private int    $skipped           = 0;
     private int    $errors            = 0;
     private int    $images_downloaded = 0;
+    private int    $comments_total    = 0;
+    private int    $comments_imported = 0;
+    private int    $comments_skipped  = 0;
     private array  $unknown_meta      = [];
     private array  $skip_reasons      = [];
     private string $filename          = '';
@@ -166,6 +169,7 @@ class CMS_Importer_Service
         'pages'  => 0,
         'tables' => 0,
         'redirects' => 0,
+        'comments' => 0,
         'others' => 0,
     ];
     private ?\CMS\Services\SEO\SeoMetaRepository $seoRepository = null;
@@ -256,12 +260,16 @@ class CMS_Importer_Service
             'skip_reasons'      => $this->skip_reasons,
             'errors'            => $this->errors,
             'images_downloaded' => $this->images_downloaded,
+            'comments_total'    => $this->comments_total,
+            'comments_imported' => $this->comments_imported,
+            'comments_skipped'  => $this->comments_skipped,
             'meta_keys'         => count(array_unique(array_column($this->unknown_meta, 'meta_key'))),
             'meta_report'       => $report_path,
             'posts_imported'    => $this->import_breakdown['posts'],
             'pages_imported'    => $this->import_breakdown['pages'],
             'tables_imported'   => $this->import_breakdown['tables'],
             'redirects_imported' => $this->import_breakdown['redirects'],
+            'comments_imported_breakdown' => $this->import_breakdown['comments'],
             'others_imported'   => $this->import_breakdown['others'],
         ];
     }
@@ -314,11 +322,15 @@ class CMS_Importer_Service
                 'pages' => 0,
                 'tables' => 0,
                 'redirects' => 0,
+                'comments' => 0,
                 'others' => 0,
             ],
             'skip_reasons' => [],
             'table_preview_map' => [],
             'items_total' => 0,
+            'comments_total' => 0,
+            'comments_would_import' => 0,
+            'comments_would_skip' => 0,
         ];
 
         foreach ($parsed['tables'] as $item) {
@@ -352,6 +364,9 @@ class CMS_Importer_Service
             'table_shortcodes_resolved' => $context['table_shortcodes_resolved'],
             'meta_keys' => count(array_unique(array_column($this->unknown_meta, 'meta_key'))),
             'attachments' => count($parsed['attachments'] ?? []),
+            'comments_detected' => $context['comments_total'],
+            'comments_would_import' => $context['comments_would_import'],
+            'comments_would_skip' => $context['comments_would_skip'],
             'source_counts' => [
                 'posts' => count($parsed['posts'] ?? []),
                 'pages' => count($parsed['pages'] ?? []),
@@ -393,6 +408,7 @@ class CMS_Importer_Service
 
         $existingSourceMapping = $this->find_existing_mapping_by_wp_id($db, $p, $sourceType, (int) ($item['wp_id'] ?? 0), 'post', true);
         if ($this->options['skip_duplicates'] && $existingSourceMapping !== null) {
+            $this->import_comments_for_post($db, $p, $item, (int) ($existingSourceMapping['target_id'] ?? 0), (string) ($existingSourceMapping['target_slug'] ?? ''), (string) ($item['date'] ?? ''));
             $this->skip_item('Bereits per Import-Mapping vorhanden');
             return;
         }
@@ -443,6 +459,7 @@ class CMS_Importer_Service
                     ]);
                     $this->collect_taxonomy_fallback_meta($item, 'post');
                     $this->collect_unknown_meta($item);
+                    $this->import_comments_for_post($db, $p, $item, (int) $localizedTarget['target_id'], (string) ($localizedTarget['target_slug'] ?? ''), (string) ($item['date'] ?? ''));
                     return;
                 } catch (\Throwable $e) {
                     $this->errors++;
@@ -473,6 +490,7 @@ class CMS_Importer_Service
                     'target_slug'      => $base_slug,
                     'target_url'       => $this->build_target_url('post', $base_slug, $existingPostId, (string) ($item['date'] ?? '')),
                 ]);
+                $this->import_comments_for_post($db, $p, $item, $existingPostId, $base_slug, (string) ($item['date'] ?? ''));
                 $this->skip_item('Slug bereits vorhanden');
                 return;
             }
@@ -538,6 +556,7 @@ class CMS_Importer_Service
             ]);
             $this->collect_taxonomy_fallback_meta($item, 'post');
             $this->collect_unknown_meta($item);
+            $this->import_comments_for_post($db, $p, $item, $post_id, $slug, (string) ($item['date'] ?? ''));
 
         } catch (\Exception $e) {
             $this->errors++;
@@ -567,6 +586,7 @@ class CMS_Importer_Service
 
         $existingSourceMapping = $this->find_existing_mapping_by_wp_id($db, $p, 'page', (int) ($item['wp_id'] ?? 0), 'page', true);
         if ($this->options['skip_duplicates'] && $existingSourceMapping !== null) {
+            $this->skip_item_comments($item);
             $this->skip_item('Bereits per Import-Mapping vorhanden');
             return;
         }
@@ -616,6 +636,7 @@ class CMS_Importer_Service
                     ]);
                     $this->collect_taxonomy_fallback_meta($item, 'page');
                     $this->collect_unknown_meta($item);
+                    $this->skip_item_comments($item);
                     return;
                 } catch (\Throwable $e) {
                     $this->errors++;
@@ -646,6 +667,7 @@ class CMS_Importer_Service
                     'target_slug'      => $base_slug,
                     'target_url'       => $this->build_target_url('page', $base_slug, $existingPageId, (string) ($item['date'] ?? '')),
                 ]);
+                $this->skip_item_comments($item);
                 $this->skip_item('Slug bereits vorhanden');
                 return;
             }
@@ -703,11 +725,110 @@ class CMS_Importer_Service
             ]);
             $this->collect_taxonomy_fallback_meta($item, 'page');
             $this->collect_unknown_meta($item);
+            $this->skip_item_comments($item);
 
         } catch (\Exception $e) {
             $this->errors++;
             error_log('CMS_Importer: Page-Import fehlgeschlagen: ' . $e->getMessage() . ' – Titel: ' . $item['title']);
         }
+    }
+
+    private function import_comments_for_post(\CMS\Database $db, string $p, array $item, int $targetPostId, string $targetSlug = '', string $targetDate = ''): void
+    {
+        $comments = $this->get_comment_candidates($item);
+        if ($comments === []) {
+            return;
+        }
+
+        $targetUrl = $targetSlug !== ''
+            ? $this->build_target_url('post', $targetSlug, $targetPostId, $targetDate)
+            : null;
+
+        foreach ($comments as $comment) {
+            $this->comments_total++;
+
+            if ($targetPostId <= 0) {
+                $this->comments_skipped++;
+                continue;
+            }
+
+            $sourceReference = $this->build_comment_source_reference($item, $comment);
+            $existingComment = $this->find_existing_mapping(
+                $db,
+                $p,
+                'wp_comment',
+                (int) ($comment['comment_id'] ?? 0),
+                $sourceReference,
+                'comment',
+                true
+            );
+
+            if ($existingComment !== null) {
+                $this->comments_skipped++;
+                continue;
+            }
+
+            $content = $this->sanitize_imported_comment_content((string) ($comment['content'] ?? ''));
+            if ($content === '') {
+                $this->comments_skipped++;
+                continue;
+            }
+
+            $data = [
+                'post_id' => $targetPostId,
+                'user_id' => $this->resolve_comment_user_id($db, $p, $comment),
+                'author' => $this->sanitize_imported_comment_author((string) ($comment['author'] ?? '')),
+                'author_email' => $this->sanitize_imported_comment_email((string) ($comment['author_email'] ?? '')),
+                'author_ip' => $this->safe_substr(trim((string) ($comment['author_ip'] ?? '')), 0, 45),
+                'content' => $content,
+                'status' => $this->normalize_imported_comment_status((string) ($comment['status'] ?? 'pending')),
+            ];
+
+            $commentDate = $this->safe_date((string) ($comment['date'] ?? ''));
+            if ($commentDate !== null) {
+                $data['post_date'] = $commentDate;
+            }
+
+            try {
+                $commentId = $db->insert('comments', $data);
+                if ($commentId === false) {
+                    throw new \RuntimeException($db->last_error !== '' ? $db->last_error : 'Insert in comments fehlgeschlagen.');
+                }
+
+                $commentId = (int) $commentId;
+                $this->comments_imported++;
+                $this->import_breakdown['comments']++;
+
+                $this->store_import_item($db, $p, [
+                    'log_id' => $this->log_id,
+                    'source_type' => 'wp_comment',
+                    'source_wp_id' => (int) ($comment['comment_id'] ?? 0),
+                    'source_reference' => $sourceReference,
+                    'source_slug' => (string) ($item['slug'] ?? ''),
+                    'source_url' => (string) ($item['link'] ?? ''),
+                    'target_type' => 'comment',
+                    'target_id' => $commentId,
+                    'target_created' => 1,
+                    'target_slug' => null,
+                    'target_url' => $targetUrl !== null ? $targetUrl . '#comment-' . $commentId : null,
+                ]);
+            } catch (\Throwable $e) {
+                $this->comments_skipped++;
+                $this->errors++;
+                error_log('CMS_Importer: Kommentar-Import fehlgeschlagen: ' . $e->getMessage() . ' – Kommentar-ID: ' . (int) ($comment['comment_id'] ?? 0));
+            }
+        }
+    }
+
+    private function skip_item_comments(array $item): void
+    {
+        $count = count($this->get_comment_candidates($item));
+        if ($count <= 0) {
+            return;
+        }
+
+        $this->comments_total += $count;
+        $this->comments_skipped += $count;
     }
 
     private function import_as_table(\CMS\Database $db, string $p, array $item): void
@@ -1330,6 +1451,9 @@ class CMS_Importer_Service
         $this->skipped           = 0;
         $this->errors            = 0;
         $this->images_downloaded = 0;
+        $this->comments_total    = 0;
+        $this->comments_imported = 0;
+        $this->comments_skipped  = 0;
         $this->unknown_meta      = [];
         $this->skip_reasons      = [];
         $this->log_id            = 0;
@@ -1339,6 +1463,7 @@ class CMS_Importer_Service
             'pages'  => 0,
             'tables' => 0,
             'redirects' => 0,
+            'comments' => 0,
             'others' => 0,
         ];
     }
@@ -2744,6 +2869,7 @@ class CMS_Importer_Service
         return match ($targetType) {
             'post' => $this->resolve_content_target($db, $p . 'posts', 'slug', $targetId, $targetSlug),
             'page' => $this->resolve_content_target($db, $p . 'pages', 'slug', $targetId, $targetSlug),
+            'comment' => $this->resolve_comment_target($db, $p, $targetId),
             'site_table' => $this->resolve_site_table_target($db, $p, $targetId, $targetSlug),
             'redirect' => $this->resolve_redirect_target($db, $p, $targetId, $targetSlug),
             default => null,
@@ -2852,6 +2978,30 @@ class CMS_Importer_Service
         return null;
     }
 
+    /**
+     * @return array{target_id:int,target_slug:string}|null
+     */
+    private function resolve_comment_target(\CMS\Database $db, string $p, int $targetId): ?array
+    {
+        if ($targetId <= 0) {
+            return null;
+        }
+
+        $row = $db->get_row(
+            "SELECT id FROM {$p}comments WHERE id = ? LIMIT 1",
+            [$targetId]
+        );
+
+        if ($row === null) {
+            return null;
+        }
+
+        return [
+            'target_id' => (int) ($row->id ?? 0),
+            'target_slug' => '',
+        ];
+    }
+
     private function store_import_item(\CMS\Database $db, string $p, array $payload): void
     {
         $existing = null;
@@ -2918,6 +3068,119 @@ class CMS_Importer_Service
         }
 
         $this->seoRepository->saveContentMeta($contentType, $contentId, $seo);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function get_comment_candidates(array $item): array
+    {
+        $comments = $item['comments'] ?? [];
+        if (!is_array($comments)) {
+            return [];
+        }
+
+        return array_values(array_filter($comments, static fn(mixed $comment): bool => is_array($comment)));
+    }
+
+    private function build_comment_source_reference(array $item, array $comment): string
+    {
+        $commentId = (int) ($comment['comment_id'] ?? 0);
+        if ($commentId > 0) {
+            return 'wp-comment:' . (int) ($item['wp_id'] ?? 0) . ':' . $commentId;
+        }
+
+        return 'wp-comment:'
+            . (int) ($item['wp_id'] ?? 0)
+            . ':' . md5(
+                (string) ($comment['author_email'] ?? '')
+                . '|'
+                . (string) ($comment['author'] ?? '')
+                . '|'
+                . (string) ($comment['date'] ?? '')
+                . '|'
+                . (string) ($comment['content'] ?? '')
+            );
+    }
+
+    private function sanitize_imported_comment_author(string $author): string
+    {
+        $author = trim(strip_tags($author));
+        $author = $author !== '' ? $author : 'Gast';
+        return $this->safe_substr($author, 0, 100);
+    }
+
+    private function sanitize_imported_comment_email(string $email): string
+    {
+        $email = trim($email);
+        $validated = filter_var($email, FILTER_VALIDATE_EMAIL);
+
+        if ($validated !== false) {
+            return $this->safe_substr((string) $validated, 0, 150);
+        }
+
+        return $this->safe_substr($email, 0, 150);
+    }
+
+    private function sanitize_imported_comment_content(string $content): string
+    {
+        $originalContent = trim($content);
+        if ($originalContent === '') {
+            return '';
+        }
+
+        $cleanContent = $originalContent;
+        if (class_exists('CMS\\Services\\PurifierService')) {
+            try {
+                $cleanContent = trim(\CMS\Services\PurifierService::getInstance()->purify($originalContent, 'strict'));
+            } catch (\Throwable) {
+                $cleanContent = $originalContent;
+            }
+        }
+
+        if ($cleanContent === '') {
+            $cleanContent = trim(strip_tags($originalContent));
+        }
+
+        return $cleanContent;
+    }
+
+    private function normalize_imported_comment_status(string $status): string
+    {
+        $status = strtolower(trim($status));
+
+        return in_array($status, ['pending', 'approved', 'spam', 'trash'], true)
+            ? $status
+            : 'pending';
+    }
+
+    private function resolve_comment_user_id(\CMS\Database $db, string $p, array $comment): ?int
+    {
+        $email = trim((string) ($comment['author_email'] ?? ''));
+        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) !== false) {
+            $userId = $db->get_var(
+                "SELECT id FROM {$p}users WHERE email = ? LIMIT 1",
+                [$email]
+            );
+
+            if ($userId !== null) {
+                return (int) $userId;
+            }
+        }
+
+        $author = trim((string) ($comment['author'] ?? ''));
+        if ($author !== '') {
+            $userId = $db->get_var(
+                "SELECT id FROM {$p}users WHERE username = ? OR display_name = ? LIMIT 1",
+                [$author, $author]
+            );
+
+            if ($userId !== null) {
+                return (int) $userId;
+            }
+        }
+
+        return null;
     }
 
     private function ensure_category_id(\CMS\Database $db, string $p, string $name): ?int
@@ -3201,6 +3464,10 @@ class CMS_Importer_Service
             $context['skip_reasons'][$reason] = (int) ($context['skip_reasons'][$reason] ?? 0) + 1;
         }
 
+        $context['comments_total'] += (int) ($preview['comments_total'] ?? 0);
+        $context['comments_would_import'] += (int) ($preview['comments_importable'] ?? 0);
+        $context['comments_would_skip'] += (int) ($preview['comments_skipped'] ?? 0);
+
         if (count($context['preview_items']) < (int) ($context['preview_limit'] ?? 25)) {
             $context['preview_items'][] = $preview;
         }
@@ -3466,6 +3733,13 @@ class CMS_Importer_Service
         }
 
         $contentPreview = $this->preview_content_payload($db, $p, $item, $context);
+        $commentPreview = $this->preview_comment_summary(
+            $db,
+            $p,
+            $item,
+            $action === 'import' || $existingMapping !== null || $reason === 'Slug bereits vorhanden',
+            true
+        );
         $categories = $this->normalize_tag_names($item['categories'] ?? []);
         $categoryName = trim((string) ($categories[0] ?? ''));
         $tagNames = $this->normalize_tag_names($item['tags'] ?? []);
@@ -3505,6 +3779,9 @@ class CMS_Importer_Service
             'table_shortcodes_found' => (int) ($contentPreview['table_shortcodes_found'] ?? 0),
             'table_shortcodes_resolved' => (int) ($contentPreview['table_shortcodes_resolved'] ?? 0),
             'table_targets' => $contentPreview['table_targets'] ?? [],
+            'comments_total' => (int) ($commentPreview['total'] ?? 0),
+            'comments_importable' => (int) ($commentPreview['importable'] ?? 0),
+            'comments_skipped' => (int) ($commentPreview['skipped'] ?? 0),
             'unknown_meta_count' => $this->count_unknown_meta_for_item($item, 'post'),
         ];
     }
@@ -3572,6 +3849,7 @@ class CMS_Importer_Service
         }
 
         $contentPreview = $this->preview_content_payload($db, $p, $item, $context);
+        $commentPreview = $this->preview_comment_summary($db, $p, $item, false, false);
         $pageCategories = $this->normalize_tag_names($item['categories'] ?? []);
         $pageTags = $this->normalize_tag_names($item['tags'] ?? []);
         $pageFallbackMeta = $this->get_taxonomy_fallback_meta_entries($item, 'page');
@@ -3605,8 +3883,51 @@ class CMS_Importer_Service
             'table_shortcodes_found' => (int) ($contentPreview['table_shortcodes_found'] ?? 0),
             'table_shortcodes_resolved' => (int) ($contentPreview['table_shortcodes_resolved'] ?? 0),
             'table_targets' => $contentPreview['table_targets'] ?? [],
+            'comments_total' => (int) ($commentPreview['total'] ?? 0),
+            'comments_importable' => (int) ($commentPreview['importable'] ?? 0),
+            'comments_skipped' => (int) ($commentPreview['skipped'] ?? 0),
             'unknown_meta_count' => $this->count_unknown_meta_for_item($item, 'page'),
         ];
+    }
+
+    /**
+     * @return array{total:int,importable:int,skipped:int}
+     */
+    private function preview_comment_summary(\CMS\Database $db, string $p, array $item, bool $targetAvailable, bool $supportedTarget): array
+    {
+        $summary = [
+            'total' => 0,
+            'importable' => 0,
+            'skipped' => 0,
+        ];
+
+        foreach ($this->get_comment_candidates($item) as $comment) {
+            $summary['total']++;
+
+            if (!$supportedTarget || !$targetAvailable) {
+                $summary['skipped']++;
+                continue;
+            }
+
+            $sourceReference = $this->build_comment_source_reference($item, $comment);
+            $existingComment = $this->find_existing_mapping(
+                $db,
+                $p,
+                'wp_comment',
+                (int) ($comment['comment_id'] ?? 0),
+                $sourceReference,
+                'comment'
+            );
+
+            if ($existingComment !== null || $this->sanitize_imported_comment_content((string) ($comment['content'] ?? '')) === '') {
+                $summary['skipped']++;
+                continue;
+            }
+
+            $summary['importable']++;
+        }
+
+        return $summary;
     }
 
     /**

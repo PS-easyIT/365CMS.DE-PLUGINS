@@ -451,6 +451,7 @@
             buildPreviewStat('Würde importieren', result.would_import || 0, 'ci-preview-stat--ok'),
             buildPreviewStat('Würde überspringen', result.would_skip || 0, 'ci-preview-stat--warn'),
             buildPreviewStat('Anhänge erkannt', result.attachments || 0, ''),
+            buildPreviewStat('Kommentare', result.comments_detected || 0, ''),
             buildPreviewStat('Bildkandidaten', result.images_detected || 0, 'ci-preview-stat--img'),
             buildPreviewStat('Meta-Keys offen', result.meta_keys || 0, 'ci-preview-stat--meta')
         ].join('');
@@ -459,6 +460,9 @@
         renderPreviewItems(result.items || []);
 
         var notes = [];
+        if ((result.comments_detected || 0) > 0) {
+            notes.push((result.comments_would_import || 0) + ' Kommentare würden übernommen, ' + (result.comments_would_skip || 0) + ' übersprungen');
+        }
         if ((result.table_shortcodes_found || 0) > 0) {
             notes.push((result.table_shortcodes_found || 0) + ' WordPress-Tabellen-Shortcodes gefunden, ' + (result.table_shortcodes_resolved || 0) + ' davon aktuell auflösbar');
         }
@@ -513,6 +517,7 @@
             if (item.featured_image) { details.push('Featured: ' + escapeHtml(item.featured_image)); }
             if (item.table_shortcodes_found) { details.push('Tabellen-Shortcodes: ' + escapeHtml(item.table_shortcodes_found) + ' / auflösbar: ' + escapeHtml(item.table_shortcodes_resolved || 0)); }
             if (item.table_rows || item.table_columns) { details.push('Tabellenstruktur: ' + escapeHtml(item.table_columns || 0) + ' Spalten, ' + escapeHtml(item.table_rows || 0) + ' Zeilen'); }
+            if (item.comments_total) { details.push('Kommentare: ' + escapeHtml(item.comments_total) + ' / importierbar: ' + escapeHtml(item.comments_importable || 0) + ' / übersprungen: ' + escapeHtml(item.comments_skipped || 0)); }
             if (item.unknown_meta_count) { details.push('Unbekannte Meta-Felder: ' + escapeHtml(item.unknown_meta_count)); }
             if (Array.isArray(item.table_targets) && item.table_targets.length) { details.push('Kurzcode-Ziele: ' + escapeHtml(item.table_targets.join(', '))); }
             if (item.source_comparison) { details.push('Vergleich: ' + escapeHtml(item.source_comparison)); }

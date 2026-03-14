@@ -394,6 +394,7 @@ class CMS_Importer_XML_Parser
             'featured_image_caption' => '',
             'seo'                  => $this->default_seo_payload(),
             'image_urls'           => [],
+            'comments'             => $this->extract_comments($wp),
             'table'                => null,
             'legacy_table_id'      => '',
         ];
@@ -608,6 +609,82 @@ class CMS_Importer_XML_Parser
         }
 
         return $meta;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function extract_comments(\SimpleXMLElement $wp): array
+    {
+        $comments = [];
+
+        foreach ($wp->comment as $comment) {
+            if (!$comment instanceof \SimpleXMLElement) {
+                continue;
+            }
+
+            $commentType = strtolower(trim((string) ($comment->comment_type ?? '')));
+            if ($commentType !== '' && $commentType !== 'comment') {
+                continue;
+            }
+
+            $comments[] = [
+                'comment_id' => (int) ($comment->comment_id ?? 0),
+                'parent_id' => (int) ($comment->comment_parent ?? 0),
+                'user_id' => (int) ($comment->comment_user_id ?? 0),
+                'author' => trim((string) ($comment->comment_author ?? '')),
+                'author_email' => trim((string) ($comment->comment_author_email ?? '')),
+                'author_url' => trim((string) ($comment->comment_author_url ?? '')),
+                'author_ip' => trim((string) ($comment->comment_author_ip ?? '')),
+                'content' => trim((string) ($comment->comment_content ?? '')),
+                'status' => $this->normalize_comment_status((string) ($comment->comment_approved ?? '')),
+                'date' => $this->resolve_comment_datetime($comment),
+                'type' => $commentType !== '' ? $commentType : 'comment',
+            ];
+        }
+
+        usort($comments, function (array $left, array $right): int {
+            $leftParent = (int) ($left['parent_id'] ?? 0);
+            $rightParent = (int) ($right['parent_id'] ?? 0);
+
+            if (($leftParent === 0) !== ($rightParent === 0)) {
+                return $leftParent === 0 ? -1 : 1;
+            }
+
+            $leftDate = strtotime((string) ($left['date'] ?? '')) ?: 0;
+            $rightDate = strtotime((string) ($right['date'] ?? '')) ?: 0;
+            if ($leftDate !== $rightDate) {
+                return $leftDate <=> $rightDate;
+            }
+
+            return (int) ($left['comment_id'] ?? 0) <=> (int) ($right['comment_id'] ?? 0);
+        });
+
+        return $comments;
+    }
+
+    private function resolve_comment_datetime(\SimpleXMLElement $comment): string
+    {
+        foreach (['comment_date', 'comment_date_gmt'] as $field) {
+            $value = trim((string) ($comment->{$field} ?? ''));
+            if ($this->looks_like_valid_datetime($value)) {
+                return $value;
+            }
+        }
+
+        return '';
+    }
+
+    private function normalize_comment_status(string $value): string
+    {
+        $value = strtolower(trim($value));
+
+        return match ($value) {
+            '1', 'approve', 'approved' => 'approved',
+            'spam' => 'spam',
+            'trash', 'post-trashed' => 'trash',
+            default => 'pending',
+        };
     }
 
     private function map_known_meta(array $parsed): array

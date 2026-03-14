@@ -527,6 +527,15 @@ class CMS_Importer_Admin
                 $msg .= ' | ' . implode(', ', $details) . '.';
             }
 
+            if (($result['comments_detected'] ?? 0) > 0) {
+                $msg .= sprintf(
+                    ' | Kommentare: %d erkannt, %d würden importiert, %d würden übersprungen.',
+                    (int) ($result['comments_detected'] ?? 0),
+                    (int) ($result['comments_would_import'] ?? 0),
+                    (int) ($result['comments_would_skip'] ?? 0)
+                );
+            }
+
             if (($result['table_shortcodes_found'] ?? 0) > 0) {
                 $msg .= sprintf(
                     ' | %d Tabellen-Shortcodes gefunden, %d davon auflösbar.',
@@ -578,6 +587,14 @@ class CMS_Importer_Admin
         }
         if ($details !== []) {
             $msg .= ' | ' . implode(', ', $details) . '.';
+        }
+
+        if (($result['comments_total'] ?? 0) > 0) {
+            $msg .= sprintf(
+                ' | Kommentare: %d importiert, %d übersprungen.',
+                (int) ($result['comments_imported'] ?? 0),
+                (int) ($result['comments_skipped'] ?? 0)
+            );
         }
 
         if (!empty($result['skip_reasons']) && is_array($result['skip_reasons'])) {

@@ -29,7 +29,7 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
         <div class="ci-header__icon">&#8681;</div>
         <div class="ci-header__text">
             <h1 class="ci-header__title">WordPress Import</h1>
-            <p class="ci-header__sub">WordPress-WXR-Dateien (.xml) sowie Rank-Math-Settings (.json) f&uuml;r Beitr&auml;ge, Seiten, Tabellen, SEO-Metadaten, Bilder und Weiterleitungen passend nach 365CMS importieren.</p>
+            <p class="ci-header__sub">WordPress-WXR-Dateien (.xml) sowie Rank-Math-Settings (.json) f&uuml;r Beitr&auml;ge, Seiten, Kommentare, Tabellen, SEO-Metadaten, Bilder und Weiterleitungen passend nach 365CMS importieren.</p>
         </div>
         <a href="/admin/plugins/cms-importer/cms-importer-log" class="ci-btn ci-btn--ghost ci-btn--sm">&#128203; Protokoll</a>
     </div>
@@ -443,6 +443,7 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
             <h3>&#9989; Was wird importiert?</h3>
             <ul>
                         <li>Beitr&auml;ge (<code>post</code>) &amp; Seiten (<code>page</code>)</li>
+                <li>Kommentare aus WordPress-Beitr&auml;gen &rarr; <code>cms_comments</code></li>
                 <li>Benutzerdefinierte Post-Types (optional)</li>
                 <li>TablePress-Tabellen &rarr; <code>cms_site_tables</code></li>
                 <li>Kategorien, Tags und SEO-Meta (Yoast, Rank Math, SEOPress)</li>
@@ -453,7 +454,7 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
         <div class="ci-info-card">
             <h3>&#9888;&#65039; Was wird NICHT importiert?</h3>
             <ul>
-                <li>Kommentare</li>
+                <li>Kommentare an WordPress-Seiten (365CMS-Kommentare sind beitragsbasiert)</li>
                 <li>Benutzerkonten</li>
                 <li>Men&uuml;s &amp; Navigation</li>
                 <li>Andere Rank-Math-JSON-Bereiche au&szlig;er <code>redirections</code></li>
