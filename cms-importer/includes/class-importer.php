@@ -107,6 +107,7 @@ class CMS_Importer_DB
         ");
 
         self::ensure_import_item_columns($db, $p);
+        self::ensure_post_author_display_name_column($db, $p);
 
         // Upload-Ordner für Import-Dateien anlegen
         if (defined('UPLOAD_PATH')) {
@@ -126,6 +127,18 @@ class CMS_Importer_DB
             }
         } catch (\Throwable $e) {
             error_log('CMS_Importer_DB::ensure_import_item_columns() warning: ' . $e->getMessage());
+        }
+    }
+
+    private static function ensure_post_author_display_name_column(\CMS\Database $db, string $p): void
+    {
+        try {
+            $authorDisplay = $db->query("SHOW COLUMNS FROM {$p}posts LIKE 'author_display_name'");
+            if ($authorDisplay instanceof \PDOStatement && !$authorDisplay->fetch()) {
+                $db->query("ALTER TABLE {$p}posts ADD COLUMN author_display_name VARCHAR(150) DEFAULT NULL AFTER author_id");
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS_Importer_DB::ensure_post_author_display_name_column() warning: ' . $e->getMessage());
         }
     }
 }
@@ -200,6 +213,8 @@ class CMS_Importer_Service
             'generate_report'     => true,
             'download_images'     => true,
             'convert_table_shortcodes' => true,
+            'assigned_author_id'  => 0,
+            'author_display_name' => '',
         ], $options);
 
         $this->reset_counters();
@@ -294,6 +309,8 @@ class CMS_Importer_Service
             'generate_report'     => true,
             'download_images'     => true,
             'convert_table_shortcodes' => true,
+            'assigned_author_id'  => 0,
+            'author_display_name' => '',
         ], $options);
 
         $this->reset_counters();
@@ -499,7 +516,8 @@ class CMS_Importer_Service
             $slug = $this->unique_slug($db, $p . 'posts', $base_slug, !empty($item['slug']));
         }
 
-        $author_id = $this->resolve_author_id($db, $p, $item['author_login']);
+        $author_id = $this->resolve_import_author_id($db, $p, $item);
+        $authorDisplayName = $this->resolve_import_author_display_name();
         $categories = $this->normalize_tag_names($item['categories'] ?? []);
         $tagNames   = $this->normalize_tag_names($item['tags'] ?? []);
         $categoryId = $this->ensure_category_id($db, $p, (string) ($categories[0] ?? ''));
@@ -519,6 +537,7 @@ class CMS_Importer_Service
             'featured_image'   => $prepared['featured_image'],
             'status'           => $status,
             'author_id'        => $author_id,
+            'author_display_name' => $authorDisplayName,
             'category_id'      => $categoryId,
             'tags'             => $this->safe_substr(implode(',', $tagNames), 0, 500),
             'meta_title'       => $this->safe_substr((string) ($item['meta_title'] ?? ''), 0, 255),
@@ -676,7 +695,7 @@ class CMS_Importer_Service
             $slug = $this->unique_slug($db, $p . 'pages', $base_slug, !empty($item['slug']));
         }
 
-        $author_id = $this->resolve_author_id($db, $p, $item['author_login']);
+        $author_id = $this->resolve_import_author_id($db, $p, $item);
         $prepared  = $this->prepare_content_payload($db, $p, $item, 'page', $slug);
         $createdAt = $this->resolve_original_created_at($item);
         $updatedAt = $this->resolve_original_updated_at($item, $createdAt);
@@ -1773,6 +1792,71 @@ class CMS_Importer_Service
         } catch (\Exception $e) {
             return 0;
         }
+    }
+
+    private function resolve_import_author_id(\CMS\Database $db, string $p, array $item): int
+    {
+        $assignedAuthorId = max(0, (int) ($this->options['assigned_author_id'] ?? 0));
+        if ($assignedAuthorId > 0) {
+            try {
+                $existingId = $db->get_var(
+                    "SELECT id FROM {$p}users WHERE id = ? LIMIT 1",
+                    [$assignedAuthorId]
+                );
+
+                if ((int) ($existingId ?? 0) > 0) {
+                    return $assignedAuthorId;
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        return $this->resolve_author_id($db, $p, (string) ($item['author_login'] ?? ''));
+    }
+
+    private function resolve_import_author_display_name(): ?string
+    {
+        $displayName = trim(strip_tags((string) ($this->options['author_display_name'] ?? '')));
+        if ($displayName === '') {
+            return null;
+        }
+
+        return function_exists('mb_substr')
+            ? mb_substr($displayName, 0, 150)
+            : substr($displayName, 0, 150);
+    }
+
+    /**
+     * @return array{author_id:int,author_label:string,author_display_name:string}
+     */
+    private function resolve_import_author_preview(\CMS\Database $db, string $p, array $item): array
+    {
+        $authorId = $this->resolve_import_author_id($db, $p, $item);
+        $authorLabel = '';
+
+        if ($authorId > 0) {
+            try {
+                $row = $db->get_row(
+                    "SELECT display_name, username FROM {$p}users WHERE id = ? LIMIT 1",
+                    [$authorId]
+                );
+                if ($row !== null) {
+                    $displayName = trim((string) ($row->display_name ?? ''));
+                    $username = trim((string) ($row->username ?? ''));
+                    $authorLabel = $displayName !== '' ? $displayName : $username;
+                    if ($username !== '' && $username !== $authorLabel) {
+                        $authorLabel .= ' (@' . $username . ')';
+                    }
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        return [
+            'author_id' => $authorId,
+            'author_label' => $authorLabel,
+            'author_display_name' => (string) ($this->resolve_import_author_display_name() ?? ''),
+        ];
     }
 
     private function prepare_content_payload(\CMS\Database $db, string $p, array $item, string $contextType, string $slug): array
@@ -3743,6 +3827,7 @@ class CMS_Importer_Service
         $categories = $this->normalize_tag_names($item['categories'] ?? []);
         $categoryName = trim((string) ($categories[0] ?? ''));
         $tagNames = $this->normalize_tag_names($item['tags'] ?? []);
+        $authorPreview = $this->resolve_import_author_preview($db, $p, $item);
         $fallbackTaxonomies = $this->get_taxonomy_fallback_meta_entries($item, 'post');
         $targetHint = $isCustomType
             ? 'Wird als CMS-Beitrag importiert'
@@ -3774,6 +3859,8 @@ class CMS_Importer_Service
             'target_hint' => $targetHint,
             'category' => $categoryName,
             'tags' => $tagNames,
+            'author_label' => (string) ($authorPreview['author_label'] ?? ''),
+            'author_display_name' => (string) ($authorPreview['author_display_name'] ?? ''),
             'image_candidates' => (int) ($contentPreview['image_candidates'] ?? 0),
             'featured_image' => (string) ($contentPreview['featured_image'] ?? ''),
             'table_shortcodes_found' => (int) ($contentPreview['table_shortcodes_found'] ?? 0),

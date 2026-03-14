@@ -160,6 +160,9 @@ class CMS_Importer_Admin
         $import_files    = $this->scan_import_folder();
         $import_dir_url  = defined('UPLOAD_URL') ? rtrim(UPLOAD_URL, '/') . '/import/' : '';
         $cleanup_stats   = $this->get_cleanup_stats();
+        $available_authors = $this->get_available_authors();
+        $selected_author_id = max(0, (int) ($_POST['assigned_author_id'] ?? 0));
+        $selected_author_display_name = trim((string) ($_POST['author_display_name'] ?? ''));
 
         include CMS_IMPORTER_PLUGIN_DIR . 'admin/page.php';
     }
@@ -484,6 +487,8 @@ class CMS_Importer_Admin
             'generate_report'     => isset($_POST['generate_report']),
             'download_images'     => isset($_POST['download_images']),
             'convert_table_shortcodes' => isset($_POST['convert_table_shortcodes']),
+            'assigned_author_id'  => max(0, (int) ($_POST['assigned_author_id'] ?? 0)),
+            'author_display_name' => trim((string) ($_POST['author_display_name'] ?? '')),
         ];
 
         // WICHTIG: CMS\Auth::getCurrentUser() ist eine statische Methode
@@ -827,6 +832,40 @@ class CMS_Importer_Admin
             'meta' => $this->count_table_rows($db, $p . 'import_meta'),
             'reports' => $this->count_report_files(),
         ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function get_available_authors(): array
+    {
+        if (!class_exists('CMS\Database')) {
+            return [];
+        }
+
+        $db = CMS\Database::instance();
+        $p = $db->getPrefix();
+
+        try {
+            $rows = $db->get_results(
+                "SELECT id, username, display_name, email, role, status
+                 FROM {$p}users
+                 WHERE status = 'active'
+                 ORDER BY display_name ASC, username ASC"
+            ) ?: [];
+
+            return array_map(static function (object $row): array {
+                return [
+                    'id' => (int) ($row->id ?? 0),
+                    'username' => (string) ($row->username ?? ''),
+                    'display_name' => (string) ($row->display_name ?? ''),
+                    'email' => (string) ($row->email ?? ''),
+                    'role' => (string) ($row->role ?? ''),
+                ];
+            }, $rows);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     /**

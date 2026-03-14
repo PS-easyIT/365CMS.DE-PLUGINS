@@ -55,6 +55,11 @@ final class CMS_Feed_Public_Controller
      */
     public function route_archive(): void
     {
+        if (!$this->has_feed_access()) {
+            $this->render_consent_required();
+            return;
+        }
+
         $this->render_archive();
     }
 
@@ -63,6 +68,11 @@ final class CMS_Feed_Public_Controller
      */
     public function route_category(string $catSlug = ''): void
     {
+        if (!$this->has_feed_access()) {
+            $this->render_consent_required();
+            return;
+        }
+
         $db       = CMS_Feed_Database::instance();
         $category = $db->get_category_by_slug($catSlug);
 
@@ -157,5 +167,25 @@ final class CMS_Feed_Public_Controller
         }
 
         return '/' . $slug;
+    }
+
+    private function has_feed_access(): bool
+    {
+        if (!class_exists('CMS_Feed')) {
+            return true;
+        }
+
+        return CMS_Feed::instance()->has_public_feed_consent();
+    }
+
+    private function render_consent_required(): void
+    {
+        http_response_code(403);
+
+        $tpl = CMS_Feed_Template_Loader::instance();
+        $tpl->render_template('consent-required', [
+            'preferencesUrl' => SITE_URL . '/cookie-einstellungen',
+            'homeUrl' => SITE_URL,
+        ]);
     }
 }

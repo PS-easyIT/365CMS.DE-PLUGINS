@@ -151,7 +151,7 @@ final class CMS_Feed
             if (file_exists($js)) {
                 echo '<script src="' . $this->plugin_url . 'assets/js/admin.js?v=' . filemtime($js) . '" defer></script>' . "\n";
             }
-        } elseif ($isFeedRoute) {
+        } elseif ($isFeedRoute && $this->has_public_feed_consent()) {
             $js = $this->plugin_dir . 'assets/js/script.js';
             if (file_exists($js)) {
                 echo '<script src="' . $this->plugin_url . 'assets/js/script.js?v=' . filemtime($js) . '" defer></script>' . "\n";
@@ -202,6 +202,15 @@ final class CMS_Feed
         }
 
         return $currentPath === $archivePath || str_starts_with($currentPath, $archivePath . '/');
+    }
+
+    public function has_public_feed_consent(): bool
+    {
+        if (!class_exists('\\CMS\\Services\\CookieConsentService')) {
+            return true;
+        }
+
+        return \CMS\Services\CookieConsentService::getInstance()->hasConsentForService('cms_feed', 'external_media', true);
     }
 
     public function get_version(): string

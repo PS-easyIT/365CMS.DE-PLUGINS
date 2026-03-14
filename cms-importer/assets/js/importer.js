@@ -37,6 +37,8 @@
     var btnUpload = document.getElementById('js-btn-upload');
     var uploadStatus = document.getElementById('js-upload-status');
     var uploadedFile = document.getElementById('js-uploaded-file');
+    var assignedAuthorSelect = document.getElementById('js-assigned-author-id');
+    var authorDisplayNameInput = document.getElementById('js-author-display-name');
     var previewPanel = document.getElementById('js-preview-panel');
     var previewSummary = document.getElementById('js-preview-summary');
     var previewReasons = document.getElementById('js-preview-reasons');
@@ -46,6 +48,16 @@
 
     if (!form || !fileInput) {
         return;
+    }
+
+    syncSharedAuthorFields();
+
+    if (assignedAuthorSelect) {
+        assignedAuthorSelect.addEventListener('change', syncSharedAuthorFields);
+    }
+
+    if (authorDisplayNameInput) {
+        authorDisplayNameInput.addEventListener('input', syncSharedAuthorFields);
     }
 
     if (btnSelect) {
@@ -207,6 +219,7 @@
         fd.append('import_file', filename);
         fd.append('import_source', 'uploads');
         appendCheckedOptions(fd, form);
+        appendSharedAuthorFields(fd);
 
         setPrimaryBusy(mode, true);
         showProgress(mode === 'preview' ? 'Dry Run wird erstellt…' : 'Importiere…', 10);
@@ -218,6 +231,8 @@
     }
 
     function runFolderAction(folderForm, mode) {
+        syncSharedAuthorFields();
+
         var importBtn = folderForm.querySelector('.js-folder-import-btn');
         var previewBtnLocal = folderForm.querySelector('.js-folder-preview-btn');
         var notice = document.getElementById('js-folder-notice');
@@ -229,6 +244,7 @@
 
         var fd = new FormData(folderForm);
         fd.set('cms_action', mode === 'preview' ? 'cms_importer_preview' : 'cms_importer_folder_import');
+        appendSharedAuthorFields(fd);
 
         sendActionRequest(fd, mode, notice, function () {
             if (importBtn) {
@@ -313,6 +329,36 @@
             if (checkbox.checked) {
                 targetFormData.append(checkbox.name, checkbox.value);
             }
+        });
+    }
+
+    function appendSharedAuthorFields(targetFormData) {
+        if (!targetFormData) {
+            return;
+        }
+
+        var assignedAuthorId = assignedAuthorSelect ? String(assignedAuthorSelect.value || '').trim() : '';
+        var authorDisplayName = authorDisplayNameInput ? String(authorDisplayNameInput.value || '').trim() : '';
+
+        if (assignedAuthorId !== '') {
+            targetFormData.set('assigned_author_id', assignedAuthorId);
+        }
+
+        if (authorDisplayName !== '') {
+            targetFormData.set('author_display_name', authorDisplayName);
+        }
+    }
+
+    function syncSharedAuthorFields() {
+        var assignedAuthorId = assignedAuthorSelect ? String(assignedAuthorSelect.value || '') : '';
+        var authorDisplayName = authorDisplayNameInput ? String(authorDisplayNameInput.value || '') : '';
+
+        document.querySelectorAll('[data-shared-author-id-target]').forEach(function (input) {
+            input.value = assignedAuthorId;
+        });
+
+        document.querySelectorAll('[data-shared-author-display-target]').forEach(function (input) {
+            input.value = authorDisplayName;
         });
     }
 
@@ -513,6 +559,8 @@
             var details = [];
             if (item.category) { details.push('Kategorie: ' + escapeHtml(item.category)); }
             if (tagText) { details.push('Tags: ' + escapeHtml(tagText)); }
+            if (item.author_label) { details.push('365CMS-Autor: ' + escapeHtml(item.author_label)); }
+            if (item.author_display_name) { details.push('Anzeigename im Artikel: ' + escapeHtml(item.author_display_name)); }
             if (item.image_candidates) { details.push('Bildkandidaten: ' + escapeHtml(item.image_candidates)); }
             if (item.featured_image) { details.push('Featured: ' + escapeHtml(item.featured_image)); }
             if (item.table_shortcodes_found) { details.push('Tabellen-Shortcodes: ' + escapeHtml(item.table_shortcodes_found) + ' / auflösbar: ' + escapeHtml(item.table_shortcodes_resolved || 0)); }

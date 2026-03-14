@@ -12,6 +12,9 @@
  * @var array       $import_files    XML-/JSON-Dateien aus allen Import-Quellen
  * @var string      $import_dir_url  URL zum Import-Ordner
  * @var array       $cleanup_stats   Zähler für Bereinigung
+ * @var array       $available_authors Verfügbare 365CMS-Autoren
+ * @var int         $selected_author_id Vorausgewählter Zielautor
+ * @var string      $selected_author_display_name Optionaler Autoren-Anzeigename
  */
 
 if (!defined('ABSPATH')) {
@@ -21,6 +24,8 @@ if (!defined('ABSPATH')) {
 $esc_nonce          = htmlspecialchars($nonce ?? '');
 $esc_nonce_download = htmlspecialchars($nonce_download ?? '');
 $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
+$selectedAuthorId = (int) ($selected_author_id ?? 0);
+$selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '', ENT_QUOTES);
 ?>
 <div class="cms-importer-wrap">
 
@@ -106,6 +111,52 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
         <?php endif; ?>
     </div>
 
+    <div class="ci-card ci-card--full">
+        <div class="ci-card__head ci-card__head--stack-mobile">
+            <div>
+                <div class="ci-card__eyebrow">Autor-Zuordnung</div>
+                <h2 class="ci-card__title">365CMS-Autor und Anzeige-Name festlegen</h2>
+                <p class="ci-muted">Du kannst alle importierten Artikel einem vorhandenen 365CMS-Account zuweisen. Optional legst du zus&auml;tzlich fest, unter welchem Namen dieser Autor im Artikel angezeigt wird. Wenn das Feld leer bleibt, nutzt 365CMS wie gewohnt den normalen Anzeigenamen des gew&auml;hlten Accounts.</p>
+            </div>
+        </div>
+
+        <div class="ci-options__grid">
+            <label class="ci-option ci-option--stack" for="js-assigned-author-id">
+                <span class="ci-option__label">Zugewiesener 365CMS-Autor</span>
+                <select class="ci-form-control" id="js-assigned-author-id">
+                    <option value="0">Automatisch aus dem WordPress-Autor ableiten</option>
+                    <?php foreach (($available_authors ?? []) as $author): ?>
+                        <?php
+                        $authorId = (int) ($author['id'] ?? 0);
+                        $authorName = trim((string) ($author['display_name'] ?? ''));
+                        $authorUsername = trim((string) ($author['username'] ?? ''));
+                        $authorRole = trim((string) ($author['role'] ?? ''));
+                        $authorLabel = $authorName !== '' ? $authorName : $authorUsername;
+                        if ($authorUsername !== '' && $authorUsername !== $authorLabel) {
+                            $authorLabel .= ' (@' . $authorUsername . ')';
+                        }
+                        if ($authorRole !== '') {
+                            $authorLabel .= ' – ' . $authorRole;
+                        }
+                        ?>
+                        <option value="<?php echo $authorId; ?>" <?php echo $selectedAuthorId === $authorId ? 'selected' : ''; ?>><?php echo htmlspecialchars($authorLabel, ENT_QUOTES); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+
+            <label class="ci-option ci-option--stack" for="js-author-display-name">
+                <span class="ci-option__label">Anzeigename im Artikel (optional)</span>
+                <input type="text"
+                       class="ci-form-control"
+                       id="js-author-display-name"
+                       value="<?php echo $selectedAuthorDisplayName; ?>"
+                       maxlength="150"
+                       placeholder="z. B. Redaktion 365, Max Musterautor oder Team Knowledge Base">
+                <span class="ci-options__hint">Leer lassen = 365CMS-Anzeigename des gew&auml;hlten Autors verwenden.</span>
+            </label>
+        </div>
+    </div>
+
     <!-- Stats -->
     <div class="ci-stats" id="js-stats-box" <?php if (!($result ?? null)): ?>hidden<?php endif; ?>>
         <div class="ci-stat">
@@ -158,6 +209,8 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
                     <input type="hidden" name="_nonce"     value="<?php echo $esc_nonce; ?>">
                     <input type="hidden" name="cms_action" value="cms_importer_upload_only">
                     <input type="hidden" id="js-uploaded-file" name="import_file" value="">
+                    <input type="hidden" name="assigned_author_id" value="<?php echo $selectedAuthorId; ?>" data-shared-author-id-target>
+                    <input type="hidden" name="author_display_name" value="<?php echo $selectedAuthorDisplayName; ?>" data-shared-author-display-target>
 
                     <!-- Verstecktes File-Input -->
                           <input type="file" name="wxr_file" id="wxr_file"
@@ -365,6 +418,8 @@ $esc_nonce_cleanup  = htmlspecialchars($nonce_cleanup ?? '');
                                             <input type="hidden" name="generate_report"      value="1">
                                             <input type="hidden" name="download_images"      value="1">
                                             <input type="hidden" name="convert_table_shortcodes" value="1">
+                                            <input type="hidden" name="assigned_author_id" value="<?php echo $selectedAuthorId; ?>" data-shared-author-id-target>
+                                            <input type="hidden" name="author_display_name" value="<?php echo $selectedAuthorDisplayName; ?>" data-shared-author-display-target>
                                             <div class="ci-inline-actions">
                                                 <button type="button"
                                                         class="ci-btn ci-btn--ghost ci-btn--sm js-folder-preview-btn">

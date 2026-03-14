@@ -49,11 +49,36 @@
         });
     }
 
+    function hasFeedConsent(detail) {
+        if (!detail || typeof detail !== 'object') {
+            return true;
+        }
+
+        const acceptedCategories = Array.isArray(detail.acceptedCategories) ? detail.acceptedCategories : [];
+        const acceptedServicesMap = detail.acceptedServices && typeof detail.acceptedServices === 'object'
+            ? detail.acceptedServices
+            : {};
+        const acceptedServices = Object.values(acceptedServicesMap).flatMap(function(services) {
+            return Array.isArray(services) ? services : [];
+        });
+
+        return acceptedCategories.includes('external_media') || acceptedServices.includes('cms_feed');
+    }
+
+    function initConsentGuard() {
+        window.addEventListener('cms-cookie-consent-change', function(event) {
+            if (!hasFeedConsent(event.detail)) {
+                window.location.reload();
+            }
+        });
+    }
+
     // Init
     document.addEventListener('DOMContentLoaded', function() {
         initLazyImages();
         initImageErrorHandler();
         initSearchEsc();
+        initConsentGuard();
     });
 
 })();
