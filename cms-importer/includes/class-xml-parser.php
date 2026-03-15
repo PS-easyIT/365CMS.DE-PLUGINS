@@ -1176,13 +1176,10 @@ class CMS_Importer_XML_Parser
 
         $columns = [];
         for ($index = 0; $index < $columnCount; $index++) {
-            $label = $this->normalize_table_cell((string) ($headerRow[$index] ?? ''));
-            if ($label === '') {
-                $label = 'Spalte ' . ($index + 1);
-            }
+            $label = $this->normalize_table_header_cell((string) ($headerRow[$index] ?? ''), $index);
 
             $columns[] = [
-                'label' => $this->safe_substr($label, 0, 120),
+                'label' => $label,
                 'type' => 'text',
             ];
         }
@@ -1196,12 +1193,12 @@ class CMS_Importer_XML_Parser
             $normalizedRow = [];
             foreach ($columns as $index => $column) {
                 $label = (string) ($column['label'] ?? ('Spalte ' . ($index + 1)));
-                $normalizedRow[$label] = $this->safe_substr($this->normalize_table_cell((string) ($row[$index] ?? '')), 0, 5000);
+                $normalizedRow[$label] = $this->normalize_table_rich_cell((string) ($row[$index] ?? ''));
             }
             $rows[] = $normalizedRow;
         }
 
-        $description = trim((string) ($parsed['excerpt'] ?? ''));
+        $description = $this->normalize_table_rich_cell((string) ($parsed['excerpt'] ?? ''));
         $sourceFilename = '';
         if (preg_match('/\.(csv|xlsx?|ods|tsv)$/i', $description)) {
             $sourceFilename = $description;
@@ -1258,29 +1255,27 @@ class CMS_Importer_XML_Parser
         return max(1, $count);
     }
 
-    private function normalize_table_cell(string $value): string
+    private function normalize_table_header_cell(string $value, int $index): string
+    {
+        $value = $this->normalize_table_rich_cell($value);
+        $plainLabel = $this->sanitize_text_value($value, 120);
+
+        if ($plainLabel === '') {
+            return 'Spalte ' . ($index + 1);
+        }
+
+        return $value;
+    }
+
+    private function normalize_table_rich_cell(string $value): string
     {
         $value = trim($value);
         if ($value === '') {
             return '';
         }
 
-        $value = preg_replace_callback(
-            '/<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)<\/a>/is',
-            static function (array $matches): string {
-                $url = trim(html_entity_decode((string) ($matches[1] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-                $label = trim(strip_tags((string) ($matches[2] ?? '')));
-                if ($label !== '' && $url !== '') {
-                    return $label . ' (' . $url . ')';
-                }
-
-                return $label !== '' ? $label : $url;
-            },
-            $value
-        ) ?? $value;
-
-        $value = html_entity_decode(strip_tags($value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
+        $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $value = str_replace(["\r\n", "\r"], "\n", $value);
         return trim($value);
     }
 

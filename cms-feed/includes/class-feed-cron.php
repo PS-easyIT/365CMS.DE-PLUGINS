@@ -50,11 +50,14 @@ final class CMS_Feed_Cron
         $fetcher = CMS_Feed_RSS_Fetcher::instance();
 
         $result = [
+            'queued'    => 0,
             'processed' => 0,
             'success'   => 0,
             'failed'    => 0,
             'new_items' => 0,
         ];
+
+        $result['queued'] = $fetcher->enqueue_due_channels();
 
         // Ausstehende Tasks holen (max. BATCH_SIZE)
         $tasks = $db->get_pending_queue_tasks(self::BATCH_SIZE);

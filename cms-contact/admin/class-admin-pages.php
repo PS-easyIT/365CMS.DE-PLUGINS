@@ -81,6 +81,12 @@ final class CMS_Contact_Admin_Pages
         return $url;
     }
 
+    protected static function redirect_to_admin(string $section = 'dashboard', array $params = []): never
+    {
+        header('Location: ' . self::admin_url($section, $params));
+        exit;
+    }
+
     // ── Gemeinsame Hilfsmethoden ──────────────────────────────────────────────
 
     /**

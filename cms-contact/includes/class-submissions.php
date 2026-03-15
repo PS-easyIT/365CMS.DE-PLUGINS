@@ -91,6 +91,8 @@ final class CMS_Contact_Submissions
      */
     public function get_all(array $filters = [], int $offset = 0, int $limit = 20): array
     {
+        $offset = max(0, $offset);
+        $limit = max(1, $limit);
         $where  = [];
         $params = [];
 
@@ -135,10 +137,15 @@ final class CMS_Contact_Submissions
                 LEFT JOIN {$this->prefix}contact_forms f ON f.id = s.form_id
                 {$whereSQL}
                 ORDER BY s.created_at DESC
-                LIMIT {$limit} OFFSET {$offset}";
+                LIMIT ? OFFSET ?";
 
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
+        foreach ($params as $index => $value) {
+            $stmt->bindValue($index + 1, $value);
+        }
+        $stmt->bindValue(count($params) + 1, $limit, \PDO::PARAM_INT);
+        $stmt->bindValue(count($params) + 2, $offset, \PDO::PARAM_INT);
+        $stmt->execute();
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
@@ -327,9 +334,6 @@ final class CMS_Contact_Submissions
             return false;
         }
 
-        $fromName  = $this->get_setting('from_name') ?: '365CMS Kontakt';
-        $fromEmail = $this->get_setting('from_email') ?: 'noreply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
-
         $subjectPrefix = $form['subject_prefix'] ?? '[Kontakt]';
         $subject       = $subjectPrefix . ' ' . ($submission['subject'] ?? 'Neue Kontaktanfrage');
 
@@ -351,21 +355,36 @@ final class CMS_Contact_Submissions
         $body .= "\n---\nGesendet am: " . date('d.m.Y H:i') . "\n";
         $body .= "IP: " . ($submission['ip_address'] ?? '-') . "\n";
 
-        $headers  = "From: {$fromName} <{$fromEmail}>\r\n";
-        $headers .= "Reply-To: " . ($submission['sender_email'] ?? $fromEmail) . "\r\n";
-        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+        $headers = [
+            'X-365CMS-Source' => 'cms-contact-notification',
+        ];
+
+        $fromHeader = $this->build_from_header();
+        if ($fromHeader !== null) {
+            $headers['From'] = $fromHeader;
+        }
+
+        $replyTo = $submission['sender_email'] ?? '';
+        if (filter_var($replyTo, FILTER_VALIDATE_EMAIL)) {
+            $headers['Reply-To'] = $replyTo;
+        }
 
         // CC-Empfänger
         if (!empty($form['cc_recipients'])) {
             $ccList = array_map('trim', explode(',', $form['cc_recipients']));
+            $validCc = [];
             foreach ($ccList as $cc) {
                 if (filter_var($cc, FILTER_VALIDATE_EMAIL)) {
-                    $headers .= "Cc: {$cc}\r\n";
+                    $validCc[] = $cc;
                 }
+            }
+
+            if ($validCc !== []) {
+                $headers['Cc'] = implode(', ', $validCc);
             }
         }
 
-        return @mail($recipient, $subject, $body, $headers);
+        return $this->send_plain_mail($recipient, $subject, $body, $headers);
     }
 
     /**
@@ -379,7 +398,6 @@ final class CMS_Contact_Submissions
         }
 
         $fromName  = $this->get_setting('from_name') ?: '365CMS Kontakt';
-        $fromEmail = $this->get_setting('from_email') ?: 'noreply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
 
         $subject = 'Ihre Kontaktanfrage wurde empfangen';
         $body    = "Hallo " . ($submission['sender_name'] ?? '') . ",\n\n";
@@ -387,10 +405,16 @@ final class CMS_Contact_Submissions
         $body   .= "Mit freundlichen Grüßen\n";
         $body   .= ($fromName) . "\n";
 
-        $headers  = "From: {$fromName} <{$fromEmail}>\r\n";
-        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+        $headers = [
+            'X-365CMS-Source' => 'cms-contact-confirmation',
+        ];
 
-        return @mail($senderEmail, $subject, $body, $headers);
+        $fromHeader = $this->build_from_header();
+        if ($fromHeader !== null) {
+            $headers['From'] = $fromHeader;
+        }
+
+        return $this->send_plain_mail($senderEmail, $subject, $body, $headers);
     }
 
     // ── Statistiken ───────────────────────────────────────────────────────────
@@ -460,5 +484,34 @@ final class CMS_Contact_Submissions
         } catch (\Throwable $e) {
             return '';
         }
+    }
+
+    private function build_from_header(): ?string
+    {
+        $fromEmail = trim($this->get_setting('from_email'));
+        if (!filter_var($fromEmail, FILTER_VALIDATE_EMAIL)) {
+            return null;
+        }
+
+        $fromName = trim($this->get_setting('from_name'));
+        if ($fromName === '') {
+            return $fromEmail;
+        }
+
+        return $fromName . ' <' . $fromEmail . '>';
+    }
+
+    private function send_plain_mail(string $to, string $subject, string $body, array $headers = []): bool
+    {
+        if (class_exists('\\CMS\\Services\\MailService')) {
+            return \CMS\Services\MailService::getInstance()->sendPlain($to, $subject, $body, $headers);
+        }
+
+        if (function_exists('cms_mail')) {
+            $headers['Content-Type'] = 'text/plain; charset=UTF-8';
+            return cms_mail($to, $subject, $body, $headers);
+        }
+
+        return false;
     }
 }

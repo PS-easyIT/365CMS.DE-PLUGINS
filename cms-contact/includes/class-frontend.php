@@ -139,7 +139,7 @@ final class CMS_Contact_Frontend
             return;
         }
 
-        $fields   = CMS_Contact_Fields::instance()->get_by_form((int) $form['id']);
+        $fields   = $this->filter_public_fields(CMS_Contact_Fields::instance()->get_by_form((int) $form['id']));
         $csrfToken = \CMS\Security::instance()->generateToken('contact_' . $form['slug']);
 
         // Flash-Messages
@@ -188,17 +188,20 @@ final class CMS_Contact_Frontend
             $_SESSION['contact_success'] = $form['success_message']
                 ?? 'Vielen Dank für Ihre Nachricht!';
 
-            // Redirect
-            $redirectUrl = $form['redirect_url'] ?? null;
-            if (!empty($redirectUrl)) {
-                header('Location: ' . $redirectUrl);
+            $redirectUrl = $this->resolve_form_redirect($form, '/contact/' . $slug . '?sent=1');
+            if (function_exists('safe_redirect')) {
+                safe_redirect($redirectUrl);
             } else {
-                header('Location: /contact/' . $slug . '?sent=1');
+                header('Location: ' . $redirectUrl, true, 302);
             }
         } else {
             $_SESSION['contact_error'] = $result['error'];
             $_SESSION['contact_old']   = $result['old_data'] ?? [];
-            header('Location: /contact/' . $slug);
+            if (function_exists('safe_redirect')) {
+                safe_redirect('/contact/' . $slug);
+            } else {
+                header('Location: /contact/' . $slug, true, 302);
+            }
         }
         exit;
     }
@@ -273,7 +276,7 @@ final class CMS_Contact_Frontend
         }
 
         // Felder laden und validieren
-        $fields      = CMS_Contact_Fields::instance()->get_by_form($formId);
+        $fields      = $this->filter_public_fields(CMS_Contact_Fields::instance()->get_by_form($formId));
         $fieldErrors = [];
         $oldData     = [];
         $meta        = [];
@@ -384,6 +387,27 @@ final class CMS_Contact_Frontend
         }
 
         return ['success' => true];
+    }
+
+    private function resolve_form_redirect(array $form, string $fallback): string
+    {
+        $redirectUrl = trim((string) ($form['redirect_url'] ?? ''));
+        if ($redirectUrl === '') {
+            return $fallback;
+        }
+
+        if (function_exists('cms_normalize_redirect_target')) {
+            return cms_normalize_redirect_target($redirectUrl, false) ?? $fallback;
+        }
+
+        return $fallback;
+    }
+
+    private function filter_public_fields(array $fields): array
+    {
+        return array_values(array_filter($fields, static function (array $field): bool {
+            return (string) ($field['field_type'] ?? '') !== 'file';
+        }));
     }
 
     // ── Validierung ───────────────────────────────────────────────────────────
@@ -587,10 +611,7 @@ final class CMS_Contact_Frontend
                 break;
 
             case 'file':
-                $html .= "  <input type=\"file\" id=\"cf-{$name}\" name=\"{$name}\" class=\"contact-input contact-file\"";
-                if ($required) { $html .= ' required'; }
-                $html .= " accept=\".pdf,.doc,.docx,.jpg,.png\">\n";
-                break;
+                return '';
 
             case 'hidden':
                 $html .= "  <input type=\"hidden\" name=\"{$name}\" value=\"{$value}\">\n";

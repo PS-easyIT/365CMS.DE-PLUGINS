@@ -31,65 +31,9 @@ trait CMS_Contact_Page_Forms_Trait
 
         // POST-Aktionen verarbeiten
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $postAction = $_POST['form_action'] ?? '';
-
-            switch ($postAction) {
-                case 'create_form':
-                    $result = self::handle_create_form();
-                    if (is_int($result)) {
-                        header('Location: ' . self::ADMIN_BASE_URL . '?section=forms&action=edit&id=' . $result . '&notice=created');
-                        exit;
-                    }
-                    $error = $result;
-                    break;
-
-                case 'update_form':
-                    $result = self::handle_update_form($formId);
-                    if ($result === true) {
-                        $notice = 'Formular erfolgreich gespeichert.';
-                    } else {
-                        $error = $result;
-                    }
-                    break;
-
-                case 'delete_form':
-                    $deleteId = (int) ($_POST['id'] ?? 0);
-                    $result = self::handle_delete_form($deleteId);
-                    if ($result === true) {
-                        header('Location: ' . self::ADMIN_BASE_URL . '?section=forms&notice=deleted');
-                        exit;
-                    }
-                    $error = $result;
-                    break;
-
-                case 'save_field':
-                    $result = self::handle_save_field($formId);
-                    if ($result === true) {
-                        header('Location: ' . self::ADMIN_BASE_URL . '?section=forms&action=fields&id=' . $formId . '&notice=field_saved');
-                        exit;
-                    }
-                    $error = $result;
-                    break;
-
-                case 'delete_field':
-                    $fieldId = (int) ($_POST['field_id'] ?? 0);
-                    CMS_Contact_Fields::instance()->delete($fieldId);
-                    header('Location: ' . self::ADMIN_BASE_URL . '?section=forms&action=fields&id=' . $formId . '&notice=field_deleted');
-                    exit;
-
-                case 'reorder_fields':
-                    $orderedIds = $_POST['field_order'] ?? [];
-                    // Komma-separierter String von JS → Array umwandeln
-                    if (is_string($orderedIds)) {
-                        $orderedIds = array_filter(explode(',', $orderedIds), fn($v) => $v !== '');
-                    }
-                    if (is_array($orderedIds) && !empty($orderedIds)) {
-                        $orderedIds = array_map('intval', $orderedIds);
-                        CMS_Contact_Fields::instance()->update_order($formId, $orderedIds);
-                    }
-                    header('Location: ' . self::ADMIN_BASE_URL . '?section=forms&action=fields&id=' . $formId . '&notice=reordered');
-                    exit;
-            }
+            $postResult = self::process_forms_post($formId);
+            $notice = $postResult['notice'] ?? '';
+            $error = $postResult['error'] ?? '';
         }
 
         // GET-Notices
@@ -154,6 +98,121 @@ trait CMS_Contact_Page_Forms_Trait
         }
     }
 
+    /**
+     * @return array{notice?: string, error?: string}
+     */
+    private static function process_forms_post(int $formId): array
+    {
+        $postAction = (string) ($_POST['form_action'] ?? '');
+        $handlers = [
+            'create_form' => 'handle_create_form_post',
+            'update_form' => 'handle_update_form_post',
+            'delete_form' => 'handle_delete_form_post',
+            'save_field' => 'handle_save_field_post',
+            'delete_field' => 'handle_delete_field_post',
+            'reorder_fields' => 'handle_reorder_fields_post',
+        ];
+
+        if (!isset($handlers[$postAction])) {
+            return [];
+        }
+
+        $handler = $handlers[$postAction];
+        return self::{$handler}($formId);
+    }
+
+    /**
+     * @return array{notice?: string, error?: string}
+     */
+    private static function handle_create_form_post(int $formId): array
+    {
+        unset($formId);
+        $result = self::handle_create_form();
+        if (is_int($result)) {
+            self::redirect_to_admin('forms', ['action' => 'edit', 'id' => $result, 'notice' => 'created']);
+        }
+
+        return ['error' => $result];
+    }
+
+    /**
+     * @return array{notice?: string, error?: string}
+     */
+    private static function handle_update_form_post(int $formId): array
+    {
+        $result = self::handle_update_form($formId);
+        return $result === true
+            ? ['notice' => 'Formular erfolgreich gespeichert.']
+            : ['error' => $result];
+    }
+
+    /**
+     * @return array{notice?: string, error?: string}
+     */
+    private static function handle_delete_form_post(int $formId): array
+    {
+        $deleteId = (int) ($_POST['id'] ?? $formId);
+        $result = self::handle_delete_form($deleteId);
+        if ($result === true) {
+            self::redirect_to_admin('forms', ['notice' => 'deleted']);
+        }
+
+        return ['error' => $result];
+    }
+
+    /**
+     * @return array{notice?: string, error?: string}
+     */
+    private static function handle_save_field_post(int $formId): array
+    {
+        $result = self::handle_save_field($formId);
+        if ($result === true) {
+            self::redirect_to_admin('forms', ['action' => 'fields', 'id' => $formId, 'notice' => 'field_saved']);
+        }
+
+        return ['error' => $result];
+    }
+
+    /**
+     * @return array{notice?: string, error?: string}
+     */
+    private static function handle_delete_field_post(int $formId): array
+    {
+        if (!self::verify_nonce('contact_forms')) {
+            return ['error' => 'Sicherheitscheck fehlgeschlagen.'];
+        }
+
+        $fieldId = (int) ($_POST['field_id'] ?? 0);
+        if ($fieldId <= 0) {
+            return ['error' => 'Ungültige Feld-ID.'];
+        }
+
+        CMS_Contact_Fields::instance()->delete($fieldId);
+        self::redirect_to_admin('forms', ['action' => 'fields', 'id' => $formId, 'notice' => 'field_deleted']);
+    }
+
+    /**
+     * @return array{notice?: string, error?: string}
+     */
+    private static function handle_reorder_fields_post(int $formId): array
+    {
+        if (!self::verify_nonce('contact_forms')) {
+            return ['error' => 'Sicherheitscheck fehlgeschlagen.'];
+        }
+
+        $orderedIds = $_POST['field_order'] ?? [];
+        if (is_string($orderedIds)) {
+            $orderedIds = array_filter(explode(',', $orderedIds), static fn ($value): bool => $value !== '');
+        }
+
+        if (is_array($orderedIds) && $orderedIds !== []) {
+            $orderedIds = array_map('intval', $orderedIds);
+            CMS_Contact_Fields::instance()->update_order($formId, $orderedIds);
+        }
+
+        self::redirect_to_admin('forms', ['action' => 'fields', 'id' => $formId, 'notice' => 'reordered']);
+    }
+
     // ── Formular-Handler ──────────────────────────────────────────────────────
 
     private static function handle_create_form(): int|string
@@ -215,6 +274,19 @@ trait CMS_Contact_Page_Forms_Trait
             return 'Dieser Slug ist bereits vergeben.';
         }
 
+        $redirectUrl = trim((string) ($_POST['redirect_url'] ?? ''));
+        $normalizedRedirectUrl = null;
+        if ($redirectUrl !== '') {
+            if (function_exists('cms_normalize_redirect_target')) {
+                $normalizedRedirectUrl = cms_normalize_redirect_target($redirectUrl, false);
+                if ($normalizedRedirectUrl === null) {
+                    return 'Weiterleitungs-URL muss eine gültige interne URL der Website sein.';
+                }
+            } else {
+                $normalizedRedirectUrl = filter_var($redirectUrl, FILTER_VALIDATE_URL) ?: null;
+            }
+        }
+
         CMS_Contact_Forms::instance()->update($formId, [
             'title'           => $title,
             'slug'            => $slug,
@@ -224,7 +296,7 @@ trait CMS_Contact_Page_Forms_Trait
             'cc_recipients'   => sanitize_text_field($_POST['cc_recipients'] ?? ''),
             'subject_prefix'  => sanitize_text_field($_POST['subject_prefix'] ?? ''),
             'success_message' => sanitize_text_field($_POST['success_message'] ?? ''),
-            'redirect_url'    => filter_var($_POST['redirect_url'] ?? '', FILTER_VALIDATE_URL) ?: null,
+            'redirect_url'    => $normalizedRedirectUrl,
             'enable_captcha'  => (int) ($_POST['enable_captcha'] ?? 0),
             'enable_honeypot' => (int) ($_POST['enable_honeypot'] ?? 1),
             'rate_limit'      => max(0, (int) ($_POST['rate_limit'] ?? 3)),

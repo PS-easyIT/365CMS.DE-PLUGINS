@@ -17,6 +17,10 @@ if (!defined('ABSPATH')) {
 final class CMS_Feed_RSS_Fetcher
 {
     private static ?self $instance = null;
+    private const FETCH_TIMEOUT = 15;
+    private const MAX_REDIRECTS = 3;
+    private const MAX_CHANNELS_PER_RUN = 10;
+    private const ERROR_BACKOFF_SECONDS = 1800;
 
     public static function instance(): self
     {
@@ -28,32 +32,90 @@ final class CMS_Feed_RSS_Fetcher
     }
 
     /**
+     * Validiert Feed-URLs gegen SSRF-/interne Ziele.
+     *
+     * @return array{success: bool, url?: string, error?: string}
+     */
+    public function validate_feed_url(string $url): array
+    {
+        $normalizedUrl = trim($url);
+        if ($normalizedUrl === '') {
+            return ['success' => false, 'error' => 'Feed-URL fehlt.'];
+        }
+
+        if (!filter_var($normalizedUrl, FILTER_VALIDATE_URL)) {
+            return ['success' => false, 'error' => 'Feed-URL ist ungültig.'];
+        }
+
+        $parts = parse_url($normalizedUrl);
+        if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return ['success' => false, 'error' => 'Feed-URL muss Schema und Host enthalten.'];
+        }
+
+        $scheme = strtolower((string) $parts['scheme']);
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return ['success' => false, 'error' => 'Es sind nur http- und https-Feeds erlaubt.'];
+        }
+
+        $host = (string) $parts['host'];
+        if ($this->is_private_host_name($host)) {
+            return ['success' => false, 'error' => 'Interne oder lokale Hosts sind nicht erlaubt.'];
+        }
+
+        $ipAddresses = $this->resolve_host_addresses($host);
+        if ($ipAddresses === []) {
+            return ['success' => false, 'error' => 'Feed-Host konnte nicht sicher aufgelöst werden.'];
+        }
+
+        foreach ($ipAddresses as $ipAddress) {
+            if (!$this->is_public_ip_address($ipAddress)) {
+                return ['success' => false, 'error' => 'Feed-Ziel zeigt auf ein internes oder reserviertes Netzwerk.'];
+            }
+        }
+
+        return ['success' => true, 'url' => $normalizedUrl];
+    }
+
+    /**
      * Alle fälligen Channels fetchen.
      */
     public function fetch_all_due(): array
     {
-        $db       = CMS_Feed_Database::instance();
-        $channels = $db->get_channels();
-        $results  = [];
+        $db = CMS_Feed_Database::instance();
+        $dueChannelIds = $this->get_due_channel_ids();
+        $immediateChannelIds = array_slice($dueChannelIds, 0, self::MAX_CHANNELS_PER_RUN);
+        $queuedChannelIds = array_slice($dueChannelIds, self::MAX_CHANNELS_PER_RUN);
+        $results = [];
 
-        foreach ($channels as $channel) {
-            if (!(int) $channel['is_active']) {
-                continue;
-            }
-
-            // Prüfen ob Fetch fällig ist
-            if ($channel['last_fetched_at'] !== null) {
-                $lastFetch  = strtotime($channel['last_fetched_at']);
-                $intervalSec = (int) $channel['fetch_interval'] * 60;
-                if (time() - $lastFetch < $intervalSec) {
-                    continue;
-                }
-            }
-
-            $results[$channel['id']] = $this->fetch_channel((int) $channel['id']);
+        foreach ($immediateChannelIds as $channelId) {
+            $results[$channelId] = $this->fetch_channel($channelId);
         }
 
-        return $results;
+        $queuedCount = 0;
+        if ($queuedChannelIds !== []) {
+            $queuedCount = $db->add_to_fetch_queue($queuedChannelIds);
+        }
+
+        return [
+            'due' => count($dueChannelIds),
+            'processed' => count($immediateChannelIds),
+            'queued' => $queuedCount,
+            'new_items' => array_sum(array_map(
+                static fn (array $result): int => (int) ($result['new_items'] ?? 0),
+                $results
+            )),
+            'results' => $results,
+        ];
+    }
+
+    public function enqueue_due_channels(int $limit = 0): int
+    {
+        $dueChannelIds = $this->get_due_channel_ids($limit);
+        if ($dueChannelIds === []) {
+            return 0;
+        }
+
+        return CMS_Feed_Database::instance()->add_to_fetch_queue($dueChannelIds);
     }
 
     /**
@@ -68,8 +130,15 @@ final class CMS_Feed_RSS_Fetcher
             return ['success' => false, 'error' => 'Channel nicht gefunden', 'new_items' => 0];
         }
 
+        $feedValidation = $this->validate_feed_url((string) ($channel['feed_url'] ?? ''));
+        if (!$feedValidation['success']) {
+            $error = $feedValidation['error'] ?? 'Feed-URL ist nicht erlaubt';
+            $db->update_channel_fetch($channelId, $error, (int) ($channel['item_count'] ?? 0));
+            return ['success' => false, 'error' => $error, 'new_items' => 0];
+        }
+
         try {
-            $xml = $this->fetch_xml($channel['feed_url']);
+            $xml = $this->fetch_xml($feedValidation['url'] ?? (string) $channel['feed_url']);
 
             if ($xml === null) {
                 $error = 'Feed konnte nicht geladen werden';
@@ -130,34 +199,56 @@ final class CMS_Feed_RSS_Fetcher
      */
     private function fetch_xml(string $url): ?\SimpleXMLElement
     {
-        $context = stream_context_create([
-            'http' => [
-                'method'          => 'GET',
-                'timeout'         => 15,
-                'user_agent'      => '365CMS.DE Feed Aggregator/' . CMS_FEED_VERSION,
-                'follow_location' => 1,
-                'max_redirects'   => 3,
-            ],
-            'ssl' => [
-                'verify_peer'      => true,
-                'verify_peer_name' => true,
-            ],
-        ]);
+        $currentUrl = $url;
 
-        $content = @file_get_contents($url, false, $context);
+        for ($redirectCount = 0; $redirectCount <= self::MAX_REDIRECTS; $redirectCount++) {
+            $validation = $this->validate_feed_url($currentUrl);
+            if (!$validation['success']) {
+                error_log('CMS Feed: Blocked feed URL "' . $currentUrl . '": ' . ($validation['error'] ?? 'Unbekannter Validierungsfehler'));
+                return null;
+            }
 
-        if ($content === false) {
-            return null;
+            $responseHeaders = [];
+            $content = $this->fetch_raw_content($validation['url'] ?? $currentUrl, $responseHeaders);
+            if ($content === null) {
+                return null;
+            }
+
+            $statusCode = $this->extract_status_code($responseHeaders);
+            if ($statusCode >= 300 && $statusCode < 400) {
+                $redirectTarget = $this->extract_redirect_location($responseHeaders);
+                if ($redirectTarget === null) {
+                    error_log('CMS Feed: Redirect without Location header for ' . $currentUrl);
+                    return null;
+                }
+
+                $resolvedRedirect = $this->resolve_redirect_url($validation['url'] ?? $currentUrl, $redirectTarget);
+                if ($resolvedRedirect === null) {
+                    error_log('CMS Feed: Invalid redirect target "' . $redirectTarget . '" for ' . $currentUrl);
+                    return null;
+                }
+
+                $currentUrl = $resolvedRedirect;
+                continue;
+            }
+
+            if ($statusCode >= 400) {
+                error_log('CMS Feed: HTTP ' . $statusCode . ' while fetching ' . $currentUrl);
+                return null;
+            }
+
+            // BOM entfernen
+            $content = preg_replace('/^\xEF\xBB\xBF/', '', $content);
+
+            libxml_use_internal_errors(true);
+            $xml = simplexml_load_string($content, 'SimpleXMLElement', LIBXML_NOCDATA);
+            libxml_clear_errors();
+
+            return $xml ?: null;
         }
 
-        // BOM entfernen
-        $content = preg_replace('/^\xEF\xBB\xBF/', '', $content);
-
-        libxml_use_internal_errors(true);
-        $xml = simplexml_load_string($content, 'SimpleXMLElement', LIBXML_NOCDATA);
-        libxml_clear_errors();
-
-        return $xml ?: null;
+        error_log('CMS Feed: Too many redirects while fetching ' . $url);
+        return null;
     }
 
     /**
@@ -472,5 +563,225 @@ final class CMS_Feed_RSS_Fetcher
     {
         $ext = strtolower(pathinfo(parse_url($url, PHP_URL_PATH) ?: '', PATHINFO_EXTENSION));
         return in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true);
+    }
+
+    /**
+     * @param array<int,string> $responseHeaders
+     */
+    private function fetch_raw_content(string $url, array &$responseHeaders): ?string
+    {
+        $context = stream_context_create([
+            'http' => [
+                'method'          => 'GET',
+                'timeout'         => self::FETCH_TIMEOUT,
+                'user_agent'      => '365CMS.DE Feed Aggregator/' . CMS_FEED_VERSION,
+                'follow_location' => 0,
+                'max_redirects'   => 0,
+                'ignore_errors'   => true,
+            ],
+            'ssl' => [
+                'verify_peer'      => true,
+                'verify_peer_name' => true,
+            ],
+        ]);
+
+        $content = @file_get_contents($url, false, $context);
+        $responseHeaders = $http_response_header ?? [];
+
+        if ($content === false && $responseHeaders === []) {
+            error_log('CMS Feed: Request failed for ' . $url);
+            return null;
+        }
+
+        return $content === false ? '' : $content;
+    }
+
+    /**
+     * @param array<int,string> $responseHeaders
+     */
+    private function extract_status_code(array $responseHeaders): int
+    {
+        $statusLine = $responseHeaders[0] ?? '';
+        if (preg_match('/\s(\d{3})\s/', $statusLine, $matches) === 1) {
+            return (int) $matches[1];
+        }
+
+        return 200;
+    }
+
+    /**
+     * @param array<int,string> $responseHeaders
+     */
+    private function extract_redirect_location(array $responseHeaders): ?string
+    {
+        foreach ($responseHeaders as $header) {
+            if (stripos($header, 'Location:') === 0) {
+                $location = trim(substr($header, 9));
+                return $location !== '' ? $location : null;
+            }
+        }
+
+        return null;
+    }
+
+    private function resolve_redirect_url(string $baseUrl, string $location): ?string
+    {
+        if ($location === '') {
+            return null;
+        }
+
+        if (filter_var($location, FILTER_VALIDATE_URL)) {
+            return $location;
+        }
+
+        $baseParts = parse_url($baseUrl);
+        if (!is_array($baseParts) || empty($baseParts['scheme']) || empty($baseParts['host'])) {
+            return null;
+        }
+
+        $scheme = (string) $baseParts['scheme'];
+        $host = (string) $baseParts['host'];
+        $port = isset($baseParts['port']) ? ':' . (int) $baseParts['port'] : '';
+
+        if (str_starts_with($location, '//')) {
+            return $scheme . ':' . $location;
+        }
+
+        if (str_starts_with($location, '/')) {
+            return $scheme . '://' . $host . $port . $location;
+        }
+
+        $basePath = (string) ($baseParts['path'] ?? '/');
+        $directory = preg_replace('~/[^/]*$~', '/', $basePath) ?: '/';
+
+        return $scheme . '://' . $host . $port . $directory . ltrim($location, '/');
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private function resolve_host_addresses(string $host): array
+    {
+        $normalizedHost = trim($host, '[]');
+        if ($normalizedHost === '') {
+            return [];
+        }
+
+        if (filter_var($normalizedHost, FILTER_VALIDATE_IP)) {
+            return [$normalizedHost];
+        }
+
+        $asciiHost = $normalizedHost;
+        if (function_exists('idn_to_ascii')) {
+            $convertedHost = idn_to_ascii($normalizedHost, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
+            if (is_string($convertedHost) && $convertedHost !== '') {
+                $asciiHost = $convertedHost;
+            }
+        }
+
+        $addresses = [];
+        if (function_exists('dns_get_record')) {
+            $dnsRecords = @dns_get_record($asciiHost, DNS_A + DNS_AAAA);
+            if (is_array($dnsRecords)) {
+                foreach ($dnsRecords as $record) {
+                    if (!empty($record['ip']) && filter_var($record['ip'], FILTER_VALIDATE_IP)) {
+                        $addresses[] = $record['ip'];
+                    }
+                    if (!empty($record['ipv6']) && filter_var($record['ipv6'], FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+                        $addresses[] = $record['ipv6'];
+                    }
+                }
+            }
+        }
+
+        if ($addresses === []) {
+            $ipv4Hosts = @gethostbynamel($asciiHost);
+            if (is_array($ipv4Hosts)) {
+                foreach ($ipv4Hosts as $ipAddress) {
+                    if (filter_var($ipAddress, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                        $addresses[] = $ipAddress;
+                    }
+                }
+            }
+        }
+
+        return array_values(array_unique($addresses));
+    }
+
+    private function is_private_host_name(string $host): bool
+    {
+        $normalizedHost = strtolower(trim($host, '[]'));
+        if ($normalizedHost === '') {
+            return true;
+        }
+
+        return $normalizedHost === 'localhost'
+            || str_ends_with($normalizedHost, '.localhost')
+            || str_ends_with($normalizedHost, '.local')
+            || str_ends_with($normalizedHost, '.internal');
+    }
+
+    private function is_public_ip_address(string $ipAddress): bool
+    {
+        if (!filter_var($ipAddress, FILTER_VALIDATE_IP)) {
+            return false;
+        }
+
+        if (filter_var($ipAddress, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return false;
+        }
+
+        $normalizedIp = strtolower($ipAddress);
+        if ($normalizedIp === '::1') {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @return array<int,int>
+     */
+    private function get_due_channel_ids(int $limit = 0): array
+    {
+        $channels = CMS_Feed_Database::instance()->get_channels();
+        $dueChannelIds = [];
+
+        foreach ($channels as $channel) {
+            if (!(int) ($channel['is_active'] ?? 0)) {
+                continue;
+            }
+
+            if (!$this->is_channel_due($channel)) {
+                continue;
+            }
+
+            $dueChannelIds[] = (int) $channel['id'];
+
+            if ($limit > 0 && count($dueChannelIds) >= $limit) {
+                break;
+            }
+        }
+
+        return $dueChannelIds;
+    }
+
+    private function is_channel_due(array $channel): bool
+    {
+        if (($channel['last_fetched_at'] ?? null) === null) {
+            return true;
+        }
+
+        $lastFetch = strtotime((string) $channel['last_fetched_at']);
+        if ($lastFetch === false) {
+            return true;
+        }
+
+        $intervalSec = max(60, (int) ($channel['fetch_interval'] ?? 0) * 60);
+        $requiredWait = !empty($channel['last_error'])
+            ? max($intervalSec, self::ERROR_BACKOFF_SECONDS)
+            : $intervalSec;
+
+        return time() - $lastFetch >= $requiredWait;
     }
 }

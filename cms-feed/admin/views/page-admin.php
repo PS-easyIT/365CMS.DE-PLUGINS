@@ -2,6 +2,8 @@
 
 <?php
 $queueStats = CMS_Feed_Database::instance()->get_queue_stats();
+$healthSummary = CMS_Feed_Database::instance()->get_channel_health_summary();
+$attentionChannels = CMS_Feed_Database::instance()->get_attention_channels(6);
 ?>
 
 <div class="feed-admin-shell-wrap">
@@ -126,6 +128,16 @@ if ($tab === 'dashboard'):
             <span class="feed-info-card__text">Feeds in Warteschlange oder aktuell in Verarbeitung.</span>
         </div>
         <div class="feed-info-card">
+            <span class="feed-info-card__eyebrow">Überfällige Abrufe</span>
+            <span class="feed-info-card__value"><?php echo number_format((int) ($healthSummary['overdue'] ?? 0)); ?></span>
+            <span class="feed-info-card__text">Aktive Kanäle ohne frischen Abruf innerhalb des erwartbaren Zeitfensters.</span>
+        </div>
+        <div class="feed-info-card">
+            <span class="feed-info-card__eyebrow">Nie gelaufen</span>
+            <span class="feed-info-card__value"><?php echo number_format((int) ($healthSummary['never_fetched'] ?? 0)); ?></span>
+            <span class="feed-info-card__text">Aktive Kanäle ohne ersten protokollierten Abruf.</span>
+        </div>
+        <div class="feed-info-card">
             <span class="feed-info-card__eyebrow">Heute neu</span>
             <span class="feed-info-card__value"><?php echo number_format((int) ($stats['items_today'] ?? 0)); ?></span>
             <span class="feed-info-card__text">Neu importierte Beiträge innerhalb der letzten 24 Stunden.</span>
@@ -175,6 +187,30 @@ if ($tab === 'dashboard'):
         </div>
     </div>
 
+    <div class="feed-admin-subcard">
+        <h4 class="feed-section-title">🩺 Technische Feed-Gesundheit</h4>
+        <div class="info-grid">
+            <div class="info-card">
+                <h4>Aktive Kanäle</h4>
+                <ul class="info-list">
+                    <li><strong>Aktiv:</strong> <?php echo number_format((int) ($healthSummary['active'] ?? 0)); ?></li>
+                    <li><strong>Mit Fehler:</strong> <?php echo number_format((int) ($healthSummary['with_errors'] ?? 0)); ?></li>
+                    <li><strong>Überfällig:</strong> <?php echo number_format((int) ($healthSummary['overdue'] ?? 0)); ?></li>
+                    <li><strong>Nie gelaufen:</strong> <?php echo number_format((int) ($healthSummary['never_fetched'] ?? 0)); ?></li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h4>Queue</h4>
+                <ul class="info-list">
+                    <li><strong>Pending:</strong> <?php echo number_format((int) ($queueStats['pending'] ?? 0)); ?></li>
+                    <li><strong>Processing:</strong> <?php echo number_format((int) ($queueStats['processing'] ?? 0)); ?></li>
+                    <li><strong>Failed:</strong> <?php echo number_format((int) ($queueStats['failed'] ?? 0)); ?></li>
+                    <li><strong>Done:</strong> <?php echo number_format((int) ($queueStats['done'] ?? 0)); ?></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
     <div class="feed-side-stack">
         <?php
         $errorChannels = array_filter($channels, fn($c) => !empty($c['last_error']));
@@ -193,6 +229,34 @@ if ($tab === 'dashboard'):
             <?php endforeach; ?>
         </div>
         <?php endif; ?>
+
+            <?php if (!empty($attentionChannels)): ?>
+            <div class="feed-admin-subcard">
+                <h4 class="feed-section-title">🔎 Kanäle mit Aufmerksamkeit</h4>
+                <?php foreach ($attentionChannels as $ch): ?>
+                <?php
+                    $hasError = !empty($ch['last_error']);
+                    $neverFetched = empty($ch['last_fetched_at']);
+                    $minutesSinceFetch = isset($ch['minutes_since_fetch']) ? (int) $ch['minutes_since_fetch'] : null;
+                    $statusLabel = $hasError ? 'Fehler' : ($neverFetched ? 'Noch nie abgerufen' : 'Überfällig');
+                    $metaText = $neverFetched
+                        ? 'Noch kein Abruf protokolliert'
+                        : ('Letzter Abruf vor ' . number_format(max(0, $minutesSinceFetch ?? 0)) . ' Min.');
+                ?>
+                <div class="alert <?php echo $hasError ? 'alert-error' : 'feed-admin-note feed-admin-note--soft'; ?> feed-alert-compact">
+                    <strong><?php echo htmlspecialchars((string) ($ch['name'] ?? 'Kanal')); ?></strong>
+                    <span class="feed-meta-inline"><?php echo htmlspecialchars((string) ($ch['category_name'] ?? 'Ohne Bereich')); ?> · <?php echo htmlspecialchars($statusLabel); ?></span>
+                    <div style="margin-top:.2rem;">
+                        <?php if ($hasError): ?>
+                            <?php echo htmlspecialchars((string) $ch['last_error']); ?>
+                        <?php else: ?>
+                            <?php echo htmlspecialchars($metaText); ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
 
         <div class="feed-note-card">
             <span class="feed-note-card__eyebrow">Routing</span>
@@ -962,6 +1026,24 @@ elseif ($tab === 'settings'):
                     <?php foreach ($db->get_table_names() as $table): ?>
                     <li><?php echo htmlspecialchars($table); ?></li>
                     <?php endforeach; ?>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h4>Feed-Gesundheit</h4>
+                <ul class="info-list">
+                    <li><strong>Aktive Kanäle:</strong> <?php echo number_format((int) ($healthSummary['active'] ?? 0)); ?></li>
+                    <li><strong>Mit Fehler:</strong> <?php echo number_format((int) ($healthSummary['with_errors'] ?? 0)); ?></li>
+                    <li><strong>Überfällig:</strong> <?php echo number_format((int) ($healthSummary['overdue'] ?? 0)); ?></li>
+                    <li><strong>Nie gelaufen:</strong> <?php echo number_format((int) ($healthSummary['never_fetched'] ?? 0)); ?></li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h4>Queue-Zustand</h4>
+                <ul class="info-list">
+                    <li><strong>Pending:</strong> <?php echo number_format((int) ($queueStats['pending'] ?? 0)); ?></li>
+                    <li><strong>Processing:</strong> <?php echo number_format((int) ($queueStats['processing'] ?? 0)); ?></li>
+                    <li><strong>Failed:</strong> <?php echo number_format((int) ($queueStats['failed'] ?? 0)); ?></li>
+                    <li><strong>Done:</strong> <?php echo number_format((int) ($queueStats['done'] ?? 0)); ?></li>
                 </ul>
             </div>
         </div>

@@ -132,6 +132,11 @@ $esc_nonce_cleanup = htmlspecialchars($nonce_cleanup ?? '');
         </div>
         <div class="ci-modal__body">
             <p id="js-cleanup-modal-text">Diese Aktion kann nicht r&uuml;ckg&auml;ngig gemacht werden.</p>
+            <label class="ci-option ci-option--stack" style="margin-top:1rem;">
+                <input type="checkbox" name="reset_cleanup_sequences" id="js-cleanup-reset-sequences" value="1">
+                <span>Import-Log-/Mapping-IDs optional mit zur&uuml;cksetzen, wenn die jeweilige Import-Tabelle nach der Bereinigung leer ist</span>
+            </label>
+            <p class="ci-options__hint" style="margin:0.5rem 0 0;">Vor allem beim Verlauf l&ouml;schen werden damit Log-, Mapping- und Meta-Z&auml;hler wieder auf die erste ID gesetzt.</p>
         </div>
         <div class="ci-modal__footer">
             <button type="button" class="ci-btn ci-btn--ghost" data-close-cleanup-modal>Abbrechen</button>

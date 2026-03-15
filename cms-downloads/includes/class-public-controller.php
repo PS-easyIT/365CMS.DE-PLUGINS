@@ -76,7 +76,9 @@ final class CMS_Downloads_Public_Controller
 
     public function download_file(string $slug): void
     {
-        $download = CMS_Downloads_Repository::instance()->get_download_by_slug($slug);
+        $repository = CMS_Downloads_Repository::instance();
+        $settings = $repository->get_settings();
+        $download = $repository->get_download_by_slug($slug);
         if ($download === null) {
             http_response_code(404);
             echo '<h1>404 – Download nicht gefunden</h1>';
@@ -88,10 +90,22 @@ final class CMS_Downloads_Public_Controller
             exit;
         }
 
-        CMS_Downloads_Repository::instance()->increment_download_count((int) $download['id']);
-
         $externalUrl = trim((string) ($download['external_url'] ?? ''));
         if ($externalUrl !== '') {
+            if (!$this->is_allowed_external_url($externalUrl, $settings)) {
+                error_log('CMS Downloads: Blocked invalid external download URL for slug ' . $slug . ': ' . $externalUrl);
+                http_response_code(404);
+                echo '<h1>404 – Datei nicht verfügbar</h1>';
+                return;
+            }
+
+            $confirmExternal = isset($_GET['external']) && (string) $_GET['external'] === 'continue';
+            if (($settings['show_external_notice'] ?? '1') === '1' && !$confirmExternal) {
+                $this->render_external_redirect_notice($download, $externalUrl, $settings);
+                return;
+            }
+
+            $repository->increment_download_count((int) $download['id']);
             header('Location: ' . $externalUrl, true, 302);
             exit;
         }
@@ -103,12 +117,14 @@ final class CMS_Downloads_Public_Controller
             return;
         }
 
-        $absolutePath = rtrim((string) UPLOAD_PATH, '/\\') . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
-        if (!is_file($absolutePath) || !is_readable($absolutePath)) {
+        $absolutePath = $this->resolve_download_path($relativePath);
+        if ($absolutePath === null || !is_file($absolutePath) || !is_readable($absolutePath)) {
             http_response_code(404);
             echo '<h1>404 – Datei nicht verfügbar</h1>';
             return;
         }
+
+        $repository->increment_download_count((int) $download['id']);
 
         $mime = function_exists('mime_content_type') ? (string) mime_content_type($absolutePath) : 'application/octet-stream';
         $filename = (string) ($download['file_name'] ?? basename($absolutePath));
@@ -121,5 +137,111 @@ final class CMS_Downloads_Public_Controller
         header('Pragma: public');
         readfile($absolutePath);
         exit;
+    }
+
+    private function resolve_download_path(string $relativePath): ?string
+    {
+        $baseDirectory = realpath((string) UPLOAD_PATH);
+        if ($baseDirectory === false) {
+            error_log('CMS Downloads: UPLOAD_PATH could not be resolved.');
+            return null;
+        }
+
+        $normalizedRelativePath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, ltrim($relativePath, '/\\'));
+        $candidatePath = $baseDirectory . DIRECTORY_SEPARATOR . $normalizedRelativePath;
+        $resolvedPath = realpath($candidatePath);
+
+        if ($resolvedPath === false) {
+            return null;
+        }
+
+        $allowedPrefix = rtrim($baseDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if ($resolvedPath !== $baseDirectory && !str_starts_with($resolvedPath, $allowedPrefix)) {
+            error_log('CMS Downloads: Blocked path traversal attempt for relative path ' . $relativePath);
+            return null;
+        }
+
+        return $resolvedPath;
+    }
+
+    private function is_allowed_external_url(string $url, array $settings = []): bool
+    {
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return false;
+        }
+
+        if (!in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true)) {
+            return false;
+        }
+
+        return $this->is_allowed_external_host((string) $parts['host'], $settings);
+    }
+
+    private function is_allowed_external_host(string $host, array $settings): bool
+    {
+        $normalizedHost = mb_strtolower(trim($host), 'UTF-8');
+        if ($normalizedHost === '') {
+            return false;
+        }
+
+        $allowlist = $this->parse_allowlist((string) ($settings['external_allowed_domains'] ?? ''));
+        if ($allowlist === []) {
+            return true;
+        }
+
+        foreach ($allowlist as $allowedDomain) {
+            if ($normalizedHost === $allowedDomain || str_ends_with($normalizedHost, '.' . $allowedDomain)) {
+                return true;
+            }
+        }
+
+        error_log('CMS Downloads: Blocked external download host ' . $normalizedHost . ' because it is not in the allowlist.');
+        return false;
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private function parse_allowlist(string $raw): array
+    {
+        $items = preg_split('/[\r\n,]+/', $raw) ?: [];
+        $domains = [];
+
+        foreach ($items as $item) {
+            $domain = mb_strtolower(trim($item), 'UTF-8');
+            if ($domain === '') {
+                continue;
+            }
+
+            $domains[] = $domain;
+        }
+
+        return array_values(array_unique($domains));
+    }
+
+    private function render_external_redirect_notice(array $download, string $externalUrl, array $settings): void
+    {
+        $continueUrl = SITE_URL . '/downloads/file/' . rawurlencode((string) ($download['slug'] ?? '')) . '?external=continue';
+        $backUrl = SITE_URL . '/downloads';
+        if (!empty($download['category_slug'])) {
+            $backUrl = SITE_URL . '/downloads/category/' . rawurlencode((string) $download['category_slug']);
+        }
+
+        $theme = class_exists('CMS\\ThemeManager') ? \CMS\ThemeManager::instance() : null;
+
+        if ($theme !== null) {
+            $theme->getHeader();
+        }
+
+        include CMS_DOWNLOADS_PLUGIN_DIR . 'templates/external-redirect.php';
+
+        if ($theme !== null) {
+            $theme->getFooter();
+        }
     }
 }

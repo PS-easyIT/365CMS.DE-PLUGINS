@@ -470,6 +470,8 @@ final class CMS_Feed_Database
 
     public function get_items(array $filters = [], int $offset = 0, int $limit = 20): array
     {
+        $offset = max(0, $offset);
+        $limit = max(1, $limit);
         $db     = \CMS\Database::instance();
         $prefix = $db->prefix();
         $where  = [];
@@ -511,11 +513,13 @@ final class CMS_Feed_Database
                 ORDER BY i.pub_date DESC
                 LIMIT ? OFFSET ?";
 
-        $params[] = $limit;
-        $params[] = $offset;
-
         $stmt = $db->prepare($sql);
-        $stmt->execute($params);
+        foreach ($params as $index => $value) {
+            $stmt->bindValue($index + 1, $value);
+        }
+        $stmt->bindValue(count($params) + 1, $limit, \PDO::PARAM_INT);
+        $stmt->bindValue(count($params) + 2, $offset, \PDO::PARAM_INT);
+        $stmt->execute();
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
@@ -829,6 +833,7 @@ final class CMS_Feed_Database
 
     public function get_recent_items_for_channels(array $channelIds, string $since, int $limit = 20): array
     {
+        $limit = max(1, $limit);
         $channelIds = array_values(array_unique(array_filter(
             array_map('intval', $channelIds),
             static fn (int $channelId): bool => $channelId > 0
@@ -854,7 +859,14 @@ final class CMS_Feed_Database
                 LIMIT ?";
 
         $stmt = $db->prepare($sql);
-        $stmt->execute(array_merge($channelIds, [$since, max(1, $limit)]));
+        $bindIndex = 1;
+        foreach ($channelIds as $channelId) {
+            $stmt->bindValue($bindIndex, $channelId, \PDO::PARAM_INT);
+            $bindIndex++;
+        }
+        $stmt->bindValue($bindIndex, $since);
+        $stmt->bindValue($bindIndex + 1, $limit, \PDO::PARAM_INT);
+        $stmt->execute();
 
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
@@ -1155,6 +1167,7 @@ final class CMS_Feed_Database
      */
     public function get_pending_queue_tasks(int $limit = 5): array
     {
+        $limit = max(1, $limit);
         $db     = \CMS\Database::instance();
         $prefix = $db->prefix();
 
@@ -1166,7 +1179,8 @@ final class CMS_Feed_Database
              ORDER BY q.created_at ASC
              LIMIT ?"
         );
-        $stmt->execute([$limit]);
+        $stmt->bindValue(1, $limit, \PDO::PARAM_INT);
+        $stmt->execute();
         $tasks = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         // Direkt als processing markieren
@@ -1227,6 +1241,66 @@ final class CMS_Feed_Database
             'failed'     => (int) ($rows['failed'] ?? 0),
             'total'      => array_sum(array_map('intval', $rows ?: [])),
         ];
+    }
+
+    /**
+     * Technische Feed-Gesundheit für Dashboard/System-Bereich.
+     *
+     * @return array{active:int, with_errors:int, never_fetched:int, overdue:int}
+     */
+    public function get_channel_health_summary(): array
+    {
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $stmt   = $db->prepare(
+            "SELECT
+                SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS active,
+                SUM(CASE WHEN is_active = 1 AND last_error IS NOT NULL AND last_error != '' THEN 1 ELSE 0 END) AS with_errors,
+                SUM(CASE WHEN is_active = 1 AND last_fetched_at IS NULL THEN 1 ELSE 0 END) AS never_fetched,
+                SUM(CASE WHEN is_active = 1 AND (
+                    last_fetched_at IS NULL
+                    OR TIMESTAMPDIFF(MINUTE, last_fetched_at, NOW()) > GREATEST(fetch_interval * 2, 60)
+                ) THEN 1 ELSE 0 END) AS overdue
+             FROM {$prefix}feed_channels"
+        );
+        $stmt->execute();
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'active'        => (int) ($row['active'] ?? 0),
+            'with_errors'   => (int) ($row['with_errors'] ?? 0),
+            'never_fetched' => (int) ($row['never_fetched'] ?? 0),
+            'overdue'       => (int) ($row['overdue'] ?? 0),
+        ];
+    }
+
+    public function get_attention_channels(int $limit = 5): array
+    {
+        $limit = max(1, $limit);
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $stmt   = $db->prepare(
+            "SELECT c.*, cat.name AS category_name,
+                    TIMESTAMPDIFF(MINUTE, c.last_fetched_at, NOW()) AS minutes_since_fetch
+             FROM {$prefix}feed_channels c
+             LEFT JOIN {$prefix}feed_categories cat ON c.category_id = cat.id
+             WHERE c.is_active = 1
+               AND (
+                    (c.last_error IS NOT NULL AND c.last_error != '')
+                    OR c.last_fetched_at IS NULL
+                    OR TIMESTAMPDIFF(MINUTE, c.last_fetched_at, NOW()) > GREATEST(c.fetch_interval * 2, 60)
+               )
+             ORDER BY
+                CASE WHEN c.last_error IS NOT NULL AND c.last_error != '' THEN 0 ELSE 1 END ASC,
+                CASE WHEN c.last_fetched_at IS NULL THEN 0 ELSE 1 END ASC,
+                c.last_fetched_at ASC,
+                c.name ASC
+             LIMIT ?"
+        );
+        $stmt->bindValue(1, $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     // ──────────────────────────────────────────────────────────────────────

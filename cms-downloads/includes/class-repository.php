@@ -33,6 +33,8 @@ final class CMS_Downloads_Repository
         'downloads_per_page' => '24',
         'show_search' => '1',
         'show_category_overview' => '1',
+        'show_external_notice' => '1',
+        'external_allowed_domains' => '',
     ];
 
     public static function instance(): self
@@ -97,6 +99,8 @@ final class CMS_Downloads_Repository
             'downloads_per_page' => (string) max(6, min(120, (int) ($post['downloads_per_page'] ?? 24))),
             'show_search' => !empty($post['show_search']) ? '1' : '0',
             'show_category_overview' => !empty($post['show_category_overview']) ? '1' : '0',
+            'show_external_notice' => !empty($post['show_external_notice']) ? '1' : '0',
+            'external_allowed_domains' => $this->normalize_domain_allowlist($post['external_allowed_domains'] ?? ''),
         ];
 
         foreach ($settings as $key => $value) {
@@ -507,5 +511,38 @@ final class CMS_Downloads_Repository
         $validated = filter_var($normalized, FILTER_VALIDATE_URL);
 
         return $validated !== false ? (string) $validated : '';
+    }
+
+    private function normalize_domain_allowlist(mixed $value): string
+    {
+        $raw = str_replace(["\r\n", "\r", ';'], ["\n", "\n", ','], (string) $value);
+        $parts = preg_split('/[\n,]+/', $raw) ?: [];
+        $domains = [];
+
+        foreach ($parts as $part) {
+            $domain = trim(mb_strtolower($part, 'UTF-8'));
+            if ($domain === '') {
+                continue;
+            }
+
+            if (str_contains($domain, '://')) {
+                $parsedHost = parse_url($domain, PHP_URL_HOST);
+                $domain = is_string($parsedHost) ? $parsedHost : '';
+            }
+
+            $domain = trim($domain, "/\\ ");
+            $domain = ltrim($domain, '.');
+
+            if ($domain === '' || preg_match('/[^a-z0-9.-]/', $domain) === 1) {
+                continue;
+            }
+
+            $domains[] = $domain;
+        }
+
+        $domains = array_values(array_unique($domains));
+        sort($domains);
+
+        return implode("\n", $domains);
     }
 }

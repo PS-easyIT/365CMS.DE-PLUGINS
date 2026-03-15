@@ -43,16 +43,37 @@ $selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '
         <div class="ci-card__head ci-card__head--stack-mobile">
             <div>
                 <div class="ci-card__eyebrow ci-card__eyebrow--danger">Vorbereitung</div>
-                <h2 class="ci-card__title ci-card__title--danger">Alle Beitr&auml;ge und Seiten vor dem Neuimport l&ouml;schen</h2>
-                <p class="ci-muted">Achtung: Dieser Reset arbeitet jetzt bewusst kompromisslos. Er l&ouml;scht <strong>alle</strong> Beitr&auml;ge und Seiten im CMS &ndash; unabh&auml;ngig davon, ob sie importiert oder manuell angelegt wurden.</p>
+                <h2 class="ci-card__title ci-card__title--danger">Importer-Bereinigung gezielt ausf&uuml;hren</h2>
+                <p class="ci-muted">Du kannst jetzt gezielt nur <strong>Beitr&auml;ge</strong>, nur <strong>Seiten</strong>, nur <strong>SEO-Daten</strong> oder nur <strong>Tabellen</strong> bereinigen. Die L&ouml;schaktionen arbeiten absichtlich global auf dem jeweiligen Bereich.</p>
             </div>
             <div class="ci-inline-actions ci-inline-actions--wrap">
                 <button type="button"
                         class="ci-btn ci-btn--danger js-cleanup-trigger"
-                        data-cleanup-action="cleanup_content"
-                        data-cleanup-title="Alle Beitr&auml;ge und Seiten l&ouml;schen"
-                        data-cleanup-body="Es werden jetzt wirklich alle Beitr&auml;ge und alle Seiten im CMS gel&ouml;scht. Zus&auml;tzlich entfernt der Importer vorhandene SEO-Metadaten, Tag-Zuordnungen und Import-Mappings f&uuml;r diese Inhalte. Diese Aktion ist destruktiv und kann nicht r&uuml;ckg&auml;ngig gemacht werden.">
-                    🧨 Alle Beitr&auml;ge &amp; Seiten l&ouml;schen
+                        data-cleanup-action="cleanup_posts"
+                        data-cleanup-title="Alle Beitr&auml;ge l&ouml;schen"
+                        data-cleanup-body="Es werden alle Beitr&auml;ge im CMS gel&ouml;scht. Zus&auml;tzlich entfernt der Importer zugeh&ouml;rige Kommentare, Tag-Zuordnungen, SEO-Metadaten und Import-Mappings f&uuml;r Beitr&auml;ge. Diese Aktion ist destruktiv und kann nicht r&uuml;ckg&auml;ngig gemacht werden.">
+                    🧨 Nur Beitr&auml;ge l&ouml;schen
+                </button>
+                <button type="button"
+                        class="ci-btn ci-btn--danger js-cleanup-trigger"
+                        data-cleanup-action="cleanup_pages"
+                        data-cleanup-title="Alle Seiten l&ouml;schen"
+                        data-cleanup-body="Es werden alle Seiten im CMS gel&ouml;scht. Zus&auml;tzlich entfernt der Importer zugeh&ouml;rige SEO-Metadaten und Import-Mappings f&uuml;r Seiten. Diese Aktion ist destruktiv und kann nicht r&uuml;ckg&auml;ngig gemacht werden.">
+                    🧱 Nur Seiten l&ouml;schen
+                </button>
+                <button type="button"
+                        class="ci-btn ci-btn--danger js-cleanup-trigger"
+                        data-cleanup-action="cleanup_seo"
+                        data-cleanup-title="SEO-Daten bereinigen"
+                        data-cleanup-body="Es werden die globalen 365CMS-SEO-Settings aus Importen sowie alle gespeicherten SEO-Metadaten entfernt. Redirect-Regeln bleiben erhalten. Diese Aktion ist destruktiv und kann nicht r&uuml;ckg&auml;ngig gemacht werden.">
+                    🧹 Nur SEO bereinigen
+                </button>
+                <button type="button"
+                        class="ci-btn ci-btn--danger js-cleanup-trigger"
+                        data-cleanup-action="cleanup_tables"
+                        data-cleanup-title="Alle Tabellen l&ouml;schen"
+                        data-cleanup-body="Es werden alle Tabellen im CMS gel&ouml;scht. Zus&auml;tzlich entfernt der Importer zugeh&ouml;rige Tabellen-Mappings. Diese Aktion ist destruktiv und kann nicht r&uuml;ckg&auml;ngig gemacht werden.">
+                    🗂️ Nur Tabellen l&ouml;schen
                 </button>
                 <button type="button"
                         class="ci-btn ci-btn--ghost-danger js-cleanup-trigger"
@@ -74,8 +95,20 @@ $selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '
                 <span class="ci-cleanup-stat__label">Seiten gesamt</span>
             </div>
             <div class="ci-cleanup-stat">
+                <span class="ci-cleanup-stat__value"><?php echo (int) ($cleanup_stats['tables'] ?? 0); ?></span>
+                <span class="ci-cleanup-stat__label">Tabellen gesamt</span>
+            </div>
+            <div class="ci-cleanup-stat">
+                <span class="ci-cleanup-stat__value"><?php echo (int) ($cleanup_stats['seo_total'] ?? 0); ?></span>
+                <span class="ci-cleanup-stat__label">SEO-Datens&auml;tze</span>
+            </div>
+            <div class="ci-cleanup-stat">
                 <span class="ci-cleanup-stat__value"><?php echo (int) ($cleanup_stats['logs'] ?? 0); ?></span>
                 <span class="ci-cleanup-stat__label">Import-Protokolle</span>
+            </div>
+            <div class="ci-cleanup-stat">
+                <span class="ci-cleanup-stat__value"><?php echo (int) ($cleanup_stats['seo_settings'] ?? 0); ?></span>
+                <span class="ci-cleanup-stat__label">SEO-Settings</span>
             </div>
             <div class="ci-cleanup-stat">
                 <span class="ci-cleanup-stat__value"><?php echo (int) ($cleanup_stats['mappings'] ?? 0); ?></span>
@@ -84,6 +117,10 @@ $selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '
             <div class="ci-cleanup-stat">
                 <span class="ci-cleanup-stat__value"><?php echo (int) ($cleanup_stats['meta'] ?? 0); ?></span>
                 <span class="ci-cleanup-stat__label">Meta-Eintr&auml;ge</span>
+            </div>
+            <div class="ci-cleanup-stat">
+                <span class="ci-cleanup-stat__value"><?php echo (int) ($cleanup_stats['seo_meta'] ?? 0); ?></span>
+                <span class="ci-cleanup-stat__label">SEO-Meta</span>
             </div>
             <div class="ci-cleanup-stat">
                 <span class="ci-cleanup-stat__value"><?php echo (int) ($cleanup_stats['reports'] ?? 0); ?></span>
@@ -572,6 +609,11 @@ $selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '
         </div>
         <div class="ci-modal__body">
             <p id="js-cleanup-modal-text">Diese Aktion kann nicht r&uuml;ckg&auml;ngig gemacht werden.</p>
+            <label class="ci-option ci-option--stack" style="margin-top:1rem;">
+                <input type="checkbox" name="reset_cleanup_sequences" id="js-cleanup-reset-sequences" value="1">
+                <span>Import-Log-/Mapping-IDs optional mit zur&uuml;cksetzen, wenn die jeweilige Import-Tabelle nach der Bereinigung leer ist</span>
+            </label>
+            <p class="ci-options__hint" style="margin:0.5rem 0 0;">Bei Verlaufsbereinigungen betrifft das die Import-Logs, Mappings und Meta-Eintr&auml;ge. Bei Bereichsbereinigungen werden leere Mapping-Tabellen wieder auf die erste ID gesetzt.</p>
         </div>
         <div class="ci-modal__footer">
             <button type="button" class="ci-btn ci-btn--ghost" data-close-cleanup-modal>Abbrechen</button>

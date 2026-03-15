@@ -444,9 +444,15 @@ class CMS_Importer_Admin
             return ['Sicherheitscheck fehlgeschlagen.', 'error', null];
         }
 
+        $resetSequences = !empty($_POST['reset_cleanup_sequences']);
+
         return match ($action) {
-            'cleanup_content' => $this->cleanup_content_entries(),
-            'cleanup_history' => $this->cleanup_import_history(),
+            'cleanup_posts' => $this->cleanup_posts_entries($resetSequences),
+            'cleanup_pages' => $this->cleanup_pages_entries($resetSequences),
+            'cleanup_seo' => $this->cleanup_seo_entries($resetSequences),
+            'cleanup_tables' => $this->cleanup_tables_entries($resetSequences),
+            'cleanup_content' => $this->cleanup_content_entries($resetSequences),
+            'cleanup_history' => $this->cleanup_import_history($resetSequences),
             default => ['Unbekannte Admin-Aktion.', 'error', null],
         };
     }
@@ -820,7 +826,7 @@ class CMS_Importer_Admin
     }
 
     /**
-     * @return array{posts:int,pages:int,logs:int,mappings:int,meta:int,reports:int}
+     * @return array{posts:int,pages:int,tables:int,seo_total:int,seo_settings:int,seo_meta:int,logs:int,mappings:int,meta:int,reports:int}
      */
     private function get_cleanup_stats(): array
     {
@@ -828,6 +834,10 @@ class CMS_Importer_Admin
             return [
                 'posts' => 0,
                 'pages' => 0,
+                'tables' => 0,
+                'seo_total' => 0,
+                'seo_settings' => 0,
+                'seo_meta' => 0,
                 'logs' => 0,
                 'mappings' => 0,
                 'meta' => 0,
@@ -838,9 +848,16 @@ class CMS_Importer_Admin
         $db = CMS\Database::instance();
         $p = $db->getPrefix();
 
+        $seoSettings = $this->count_setting_rows_like($db, $p . 'settings', 'seo\\_%');
+        $seoMeta = $this->count_table_rows($db, $p . 'seo_meta');
+
         return [
             'posts' => $this->count_table_rows($db, $p . 'posts'),
             'pages' => $this->count_table_rows($db, $p . 'pages'),
+            'tables' => $this->count_table_rows($db, $p . 'site_tables'),
+            'seo_total' => $seoSettings + $seoMeta,
+            'seo_settings' => $seoSettings,
+            'seo_meta' => $seoMeta,
             'logs' => $this->count_table_rows($db, $p . 'import_log'),
             'mappings' => $this->count_table_rows($db, $p . 'import_items'),
             'meta' => $this->count_table_rows($db, $p . 'import_meta'),
@@ -885,7 +902,7 @@ class CMS_Importer_Admin
     /**
      * @return array{0:string,1:string,2:array<string,int>|null}
      */
-    private function cleanup_content_entries(): array
+    private function cleanup_content_entries(bool $resetSequences = false): array
     {
         if (!class_exists('CMS\Database')) {
             return ['CMS\\Database nicht verfügbar.', 'error', null];
@@ -978,6 +995,15 @@ class CMS_Importer_Admin
             );
         }
 
+        if ($resetSequences) {
+            $sequenceNotice = $this->buildSequenceResetNotice($db, [
+                $p . 'import_items' => 'Import-Mappings',
+            ]);
+            if ($sequenceNotice !== '') {
+                $message .= ' ' . $sequenceNotice;
+            }
+        }
+
         return [$message, $statusType, [
             'planned_posts' => $plannedPosts,
             'planned_pages' => $plannedPages,
@@ -994,7 +1020,338 @@ class CMS_Importer_Admin
     /**
      * @return array{0:string,1:string,2:array<string,int>|null}
      */
-    private function cleanup_import_history(): array
+    private function cleanup_posts_entries(bool $resetSequences = false): array
+    {
+        if (!class_exists('CMS\Database')) {
+            return ['CMS\\Database nicht verfügbar.', 'error', null];
+        }
+
+        $db = CMS\Database::instance();
+        $p = $db->getPrefix();
+
+        $plannedPosts = $this->count_table_rows($db, $p . 'posts');
+        if ($plannedPosts === 0) {
+            return ['Es sind aktuell keine Beiträge vorhanden. Es wurden keine Beiträge bereinigt.', 'warning', [
+                'planned_posts' => 0,
+                'deleted_posts' => 0,
+                'comments' => 0,
+                'tag_relations' => 0,
+                'seo_meta' => 0,
+                'mappings' => 0,
+                'remaining_posts' => 0,
+            ]];
+        }
+
+        $deletedComments = 0;
+        $deletedTagRelations = 0;
+        $deletedSeoMeta = 0;
+        $deletedMappings = 0;
+
+        try {
+            if ($this->has_table($db, $p . 'comments') && $this->has_table($db, $p . 'posts')) {
+                $deletedComments = (int) ($db->execute(
+                    "DELETE c FROM {$p}comments c INNER JOIN {$p}posts p ON c.post_id = p.id"
+                )?->rowCount() ?? 0);
+            }
+
+            if ($this->has_table($db, $p . 'post_tag_rel')) {
+                $deletedTagRelations = (int) ($db->execute("DELETE FROM {$p}post_tag_rel")?->rowCount() ?? 0);
+            }
+
+            if ($this->has_table($db, $p . 'posts')) {
+                $db->execute("DELETE FROM {$p}posts");
+            }
+
+            if ($this->has_table($db, $p . 'post_tags')) {
+                $db->execute("UPDATE {$p}post_tags SET post_count = 0");
+            }
+
+            if ($this->has_table($db, $p . 'seo_meta')) {
+                $deletedSeoMeta = (int) ($db->execute("DELETE FROM {$p}seo_meta WHERE content_type = ?", ['post'])?->rowCount() ?? 0);
+            }
+
+            if ($this->has_table($db, $p . 'import_items')) {
+                $deletedMappings += (int) ($db->execute("DELETE FROM {$p}import_items WHERE target_type = ?", ['post'])?->rowCount() ?? 0);
+                $deletedMappings += (int) ($db->execute("DELETE FROM {$p}import_items WHERE target_type = ?", ['comment'])?->rowCount() ?? 0);
+            }
+        } catch (\Throwable $e) {
+            return ['Bereinigung der Beiträge fehlgeschlagen: ' . $e->getMessage(), 'error', null];
+        }
+
+        $remainingPosts = $this->count_table_rows($db, $p . 'posts');
+        $deletedPosts = max(0, $plannedPosts - $remainingPosts);
+        $message = sprintf('Beitrags-Bereinigung abgeschlossen: %d/%d Beiträge entfernt.', $deletedPosts, $plannedPosts);
+
+        $extras = [];
+        if ($deletedComments > 0) {
+            $extras[] = $deletedComments . ' Kommentare';
+        }
+        if ($deletedTagRelations > 0) {
+            $extras[] = $deletedTagRelations . ' Tag-Zuordnungen';
+        }
+        if ($deletedSeoMeta > 0) {
+            $extras[] = $deletedSeoMeta . ' SEO-Metadaten';
+        }
+        if ($deletedMappings > 0) {
+            $extras[] = $deletedMappings . ' Import-Mappings';
+        }
+        if ($extras !== []) {
+            $message .= ' Zusätzlich bereinigt: ' . implode(', ', $extras) . '.';
+        }
+
+        if ($remainingPosts > 0) {
+            $message .= ' Achtung: Es sind weiterhin ' . $remainingPosts . ' Beiträge vorhanden.';
+        }
+
+        if ($resetSequences) {
+            $sequenceNotice = $this->buildSequenceResetNotice($db, [
+                $p . 'import_items' => 'Import-Mappings',
+            ]);
+            if ($sequenceNotice !== '') {
+                $message .= ' ' . $sequenceNotice;
+            }
+        }
+
+        return [$message, $remainingPosts === 0 ? 'success' : 'warning', [
+            'planned_posts' => $plannedPosts,
+            'deleted_posts' => $deletedPosts,
+            'comments' => $deletedComments,
+            'tag_relations' => $deletedTagRelations,
+            'seo_meta' => $deletedSeoMeta,
+            'mappings' => $deletedMappings,
+            'remaining_posts' => $remainingPosts,
+        ]];
+    }
+
+    /**
+     * @return array{0:string,1:string,2:array<string,int>|null}
+     */
+    private function cleanup_pages_entries(bool $resetSequences = false): array
+    {
+        if (!class_exists('CMS\Database')) {
+            return ['CMS\\Database nicht verfügbar.', 'error', null];
+        }
+
+        $db = CMS\Database::instance();
+        $p = $db->getPrefix();
+
+        $plannedPages = $this->count_table_rows($db, $p . 'pages');
+        if ($plannedPages === 0) {
+            return ['Es sind aktuell keine Seiten vorhanden. Es wurden keine Seiten bereinigt.', 'warning', [
+                'planned_pages' => 0,
+                'deleted_pages' => 0,
+                'seo_meta' => 0,
+                'mappings' => 0,
+                'remaining_pages' => 0,
+            ]];
+        }
+
+        $deletedSeoMeta = 0;
+        $deletedMappings = 0;
+
+        try {
+            if ($this->has_table($db, $p . 'pages')) {
+                $db->execute("DELETE FROM {$p}pages");
+            }
+
+            if ($this->has_table($db, $p . 'seo_meta')) {
+                $deletedSeoMeta = (int) ($db->execute("DELETE FROM {$p}seo_meta WHERE content_type = ?", ['page'])?->rowCount() ?? 0);
+            }
+
+            if ($this->has_table($db, $p . 'import_items')) {
+                $deletedMappings = (int) ($db->execute("DELETE FROM {$p}import_items WHERE target_type = ?", ['page'])?->rowCount() ?? 0);
+            }
+        } catch (\Throwable $e) {
+            return ['Bereinigung der Seiten fehlgeschlagen: ' . $e->getMessage(), 'error', null];
+        }
+
+        $remainingPages = $this->count_table_rows($db, $p . 'pages');
+        $deletedPages = max(0, $plannedPages - $remainingPages);
+        $message = sprintf('Seiten-Bereinigung abgeschlossen: %d/%d Seiten entfernt.', $deletedPages, $plannedPages);
+
+        $extras = [];
+        if ($deletedSeoMeta > 0) {
+            $extras[] = $deletedSeoMeta . ' SEO-Metadaten';
+        }
+        if ($deletedMappings > 0) {
+            $extras[] = $deletedMappings . ' Import-Mappings';
+        }
+        if ($extras !== []) {
+            $message .= ' Zusätzlich bereinigt: ' . implode(', ', $extras) . '.';
+        }
+
+        if ($remainingPages > 0) {
+            $message .= ' Achtung: Es sind weiterhin ' . $remainingPages . ' Seiten vorhanden.';
+        }
+
+        if ($resetSequences) {
+            $sequenceNotice = $this->buildSequenceResetNotice($db, [
+                $p . 'import_items' => 'Import-Mappings',
+            ]);
+            if ($sequenceNotice !== '') {
+                $message .= ' ' . $sequenceNotice;
+            }
+        }
+
+        return [$message, $remainingPages === 0 ? 'success' : 'warning', [
+            'planned_pages' => $plannedPages,
+            'deleted_pages' => $deletedPages,
+            'seo_meta' => $deletedSeoMeta,
+            'mappings' => $deletedMappings,
+            'remaining_pages' => $remainingPages,
+        ]];
+    }
+
+    /**
+     * @return array{0:string,1:string,2:array<string,int>|null}
+     */
+    private function cleanup_tables_entries(bool $resetSequences = false): array
+    {
+        if (!class_exists('CMS\Database')) {
+            return ['CMS\\Database nicht verfügbar.', 'error', null];
+        }
+
+        $db = CMS\Database::instance();
+        $p = $db->getPrefix();
+
+        $plannedTables = $this->count_table_rows($db, $p . 'site_tables');
+        if ($plannedTables === 0) {
+            return ['Es sind aktuell keine Tabellen vorhanden. Es wurden keine Tabellen bereinigt.', 'warning', [
+                'planned_tables' => 0,
+                'deleted_tables' => 0,
+                'mappings' => 0,
+                'remaining_tables' => 0,
+            ]];
+        }
+
+        $deletedMappings = 0;
+
+        try {
+            if ($this->has_table($db, $p . 'site_tables')) {
+                $db->execute("DELETE FROM {$p}site_tables");
+                $this->reset_auto_increment($db, $p . 'site_tables');
+            }
+
+            if ($this->has_table($db, $p . 'import_items')) {
+                $deletedMappings = (int) ($db->execute("DELETE FROM {$p}import_items WHERE target_type = ?", ['site_table'])?->rowCount() ?? 0);
+            }
+        } catch (\Throwable $e) {
+            return ['Bereinigung der Tabellen fehlgeschlagen: ' . $e->getMessage(), 'error', null];
+        }
+
+        $remainingTables = $this->count_table_rows($db, $p . 'site_tables');
+        $deletedTables = max(0, $plannedTables - $remainingTables);
+        $message = sprintf('Tabellen-Bereinigung abgeschlossen: %d/%d Tabellen entfernt.', $deletedTables, $plannedTables);
+        if ($deletedMappings > 0) {
+            $message .= ' Zusätzlich bereinigt: ' . $deletedMappings . ' Import-Mappings.';
+        }
+        if ($remainingTables > 0) {
+            $message .= ' Achtung: Es sind weiterhin ' . $remainingTables . ' Tabellen vorhanden.';
+        }
+
+        if ($resetSequences) {
+            $sequenceNotice = $this->buildSequenceResetNotice($db, [
+                $p . 'import_items' => 'Import-Mappings',
+            ]);
+            if ($sequenceNotice !== '') {
+                $message .= ' ' . $sequenceNotice;
+            }
+        }
+
+        return [$message, $remainingTables === 0 ? 'success' : 'warning', [
+            'planned_tables' => $plannedTables,
+            'deleted_tables' => $deletedTables,
+            'mappings' => $deletedMappings,
+            'remaining_tables' => $remainingTables,
+        ]];
+    }
+
+    /**
+     * @return array{0:string,1:string,2:array<string,int>|null}
+     */
+    private function cleanup_seo_entries(bool $resetSequences = false): array
+    {
+        if (!class_exists('CMS\Database')) {
+            return ['CMS\\Database nicht verfügbar.', 'error', null];
+        }
+
+        $db = CMS\Database::instance();
+        $p = $db->getPrefix();
+
+        $plannedSettings = $this->count_setting_rows_like($db, $p . 'settings', 'seo\\_%');
+        $plannedSeoMeta = $this->count_table_rows($db, $p . 'seo_meta');
+        $plannedMappings = $this->count_target_type_rows($db, $p . 'import_items', 'setting_bundle');
+
+        if ($plannedSettings === 0 && $plannedSeoMeta === 0 && $plannedMappings === 0) {
+            return ['Es sind aktuell keine SEO-Datensätze vorhanden. Es wurden keine SEO-Daten bereinigt.', 'warning', [
+                'planned_settings' => 0,
+                'planned_seo_meta' => 0,
+                'planned_mappings' => 0,
+                'deleted_settings' => 0,
+                'deleted_seo_meta' => 0,
+                'deleted_mappings' => 0,
+            ]];
+        }
+
+        $deletedSettings = 0;
+        $deletedSeoMeta = 0;
+        $deletedMappings = 0;
+
+        try {
+            if ($this->has_table($db, $p . 'settings')) {
+                $deletedSettings = (int) ($db->execute("DELETE FROM {$p}settings WHERE option_name LIKE ? ESCAPE '\\\\'", ['seo\\_%'])?->rowCount() ?? 0);
+            }
+
+            if ($this->has_table($db, $p . 'seo_meta')) {
+                $deletedSeoMeta = (int) ($db->execute("DELETE FROM {$p}seo_meta")?->rowCount() ?? 0);
+            }
+
+            if ($this->has_table($db, $p . 'import_items')) {
+                $deletedMappings = (int) ($db->execute("DELETE FROM {$p}import_items WHERE target_type = ?", ['setting_bundle'])?->rowCount() ?? 0);
+            }
+        } catch (\Throwable $e) {
+            return ['Bereinigung der SEO-Daten fehlgeschlagen: ' . $e->getMessage(), 'error', null];
+        }
+
+        $message = 'SEO-Bereinigung abgeschlossen.';
+        $details = [];
+        if ($deletedSettings > 0) {
+            $details[] = $deletedSettings . ' globale SEO-Settings';
+        }
+        if ($deletedSeoMeta > 0) {
+            $details[] = $deletedSeoMeta . ' SEO-Metadaten';
+        }
+        if ($deletedMappings > 0) {
+            $details[] = $deletedMappings . ' Import-Mappings';
+        }
+        if ($details !== []) {
+            $message .= ' Entfernt: ' . implode(', ', $details) . '.';
+        }
+        $message .= ' Redirect-Regeln bleiben dabei unberührt.';
+
+        if ($resetSequences) {
+            $sequenceNotice = $this->buildSequenceResetNotice($db, [
+                $p . 'import_items' => 'Import-Mappings',
+            ]);
+            if ($sequenceNotice !== '') {
+                $message .= ' ' . $sequenceNotice;
+            }
+        }
+
+        return [$message, 'success', [
+            'planned_settings' => $plannedSettings,
+            'planned_seo_meta' => $plannedSeoMeta,
+            'planned_mappings' => $plannedMappings,
+            'deleted_settings' => $deletedSettings,
+            'deleted_seo_meta' => $deletedSeoMeta,
+            'deleted_mappings' => $deletedMappings,
+        ]];
+    }
+
+    /**
+     * @return array{0:string,1:string,2:array<string,int>|null}
+     */
+    private function cleanup_import_history(bool $resetSequences = false): array
     {
         if (!class_exists('CMS\Database')) {
             return ['CMS\\Database nicht verfügbar.', 'error', null];
@@ -1036,6 +1393,17 @@ class CMS_Importer_Admin
             $message .= ' Zusätzlich wurden ' . $removedReports . ' Bericht-Dateien entfernt.';
         }
 
+        if ($resetSequences) {
+            $sequenceNotice = $this->buildSequenceResetNotice($db, [
+                $p . 'import_log' => 'Import-Logs',
+                $p . 'import_items' => 'Import-Mappings',
+                $p . 'import_meta' => 'Import-Meta',
+            ]);
+            if ($sequenceNotice !== '') {
+                $message .= ' ' . $sequenceNotice;
+            }
+        }
+
         return [$message, 'success', [
             'logs' => $removedLogs,
             'mappings' => $removedMappings,
@@ -1067,6 +1435,79 @@ class CMS_Importer_Admin
         } catch (\Throwable) {
             return 0;
         }
+    }
+
+    private function count_setting_rows_like(\CMS\Database $db, string $tableName, string $pattern): int
+    {
+        if (!$this->has_table($db, $tableName)) {
+            return 0;
+        }
+
+        try {
+            return (int) ($db->get_var("SELECT COUNT(*) FROM {$tableName} WHERE option_name LIKE ? ESCAPE '\\\\'", [$pattern]) ?? 0);
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    private function count_target_type_rows(\CMS\Database $db, string $tableName, string $targetType): int
+    {
+        if (!$this->has_table($db, $tableName)) {
+            return 0;
+        }
+
+        try {
+            return (int) ($db->get_var("SELECT COUNT(*) FROM {$tableName} WHERE target_type = ?", [$targetType]) ?? 0);
+        } catch (\Throwable) {
+            return 0;
+        }
+    }
+
+    private function reset_auto_increment(\CMS\Database $db, string $tableName, int $nextValue = 1): bool
+    {
+        if (!$this->has_table($db, $tableName)) {
+            return false;
+        }
+
+        try {
+            $db->execute("ALTER TABLE {$tableName} AUTO_INCREMENT = " . max(1, $nextValue));
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * @param array<string,string> $tableLabels
+     */
+    private function buildSequenceResetNotice(\CMS\Database $db, array $tableLabels): string
+    {
+        $reset = [];
+        $skipped = [];
+
+        foreach ($tableLabels as $tableName => $label) {
+            if (!$this->has_table($db, $tableName)) {
+                continue;
+            }
+
+            if ($this->count_table_rows($db, $tableName) === 0) {
+                if ($this->reset_auto_increment($db, $tableName)) {
+                    $reset[] = $label;
+                }
+            } else {
+                $skipped[] = $label;
+            }
+        }
+
+        $parts = [];
+        if ($reset !== []) {
+            $parts[] = 'ID-Zähler zurückgesetzt für: ' . implode(', ', $reset) . '.';
+        }
+        if ($skipped !== []) {
+            $parts[] = 'Nicht zurückgesetzt (noch Einträge vorhanden): ' . implode(', ', $skipped) . '.';
+        }
+
+        return implode(' ', $parts);
     }
 
     /**

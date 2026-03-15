@@ -11,6 +11,7 @@
     var cleanupModalText = document.getElementById('js-cleanup-modal-text');
     var cleanupSubmit = document.getElementById('js-cleanup-submit');
     var cleanupForm = document.getElementById('js-cleanup-form');
+    var cleanupResetCheckbox = document.getElementById('js-cleanup-reset-sequences');
 
     initCleanupModal();
 
@@ -648,6 +649,9 @@
                 cleanupActionInput.value = trigger.getAttribute('data-cleanup-action') || '';
                 cleanupModalTitle.innerHTML = trigger.getAttribute('data-cleanup-title') || 'Bereinigung bestätigen';
                 cleanupModalText.innerHTML = trigger.getAttribute('data-cleanup-body') || 'Diese Aktion kann nicht rückgängig gemacht werden.';
+                if (cleanupResetCheckbox) {
+                    cleanupResetCheckbox.checked = false;
+                }
                 cleanupSubmit.textContent = trigger.getAttribute('data-cleanup-action') === 'cleanup_history'
                     ? 'Verlauf jetzt löschen'
                     : 'Bereinigung jetzt ausführen';
@@ -682,5 +686,8 @@
         cleanupModal.hidden = true;
         document.body.classList.remove('ci-modal-open');
         cleanupSubmit.disabled = false;
+        if (cleanupResetCheckbox) {
+            cleanupResetCheckbox.checked = false;
+        }
     }
 })();

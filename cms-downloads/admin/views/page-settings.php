@@ -63,11 +63,18 @@
                 <div class="form-group">
                     <label class="checkbox-label dl-checkbox-stack"><input type="checkbox" name="show_search" value="1" <?php echo !empty($settings['show_search']) ? 'checked' : ''; ?>> Suchfeld im Archiv anzeigen</label>
                     <label class="checkbox-label dl-checkbox-stack"><input type="checkbox" name="show_category_overview" value="1" <?php echo !empty($settings['show_category_overview']) ? 'checked' : ''; ?>> Kategorien-Übersicht im Archiv anzeigen</label>
+                    <label class="checkbox-label dl-checkbox-stack"><input type="checkbox" name="show_external_notice" value="1" <?php echo !empty($settings['show_external_notice']) ? 'checked' : ''; ?>> Zwischenseite vor externen Downloads anzeigen</label>
                 </div>
             </div>
 
+            <div class="form-group">
+                <label class="form-label">Erlaubte Domains für externe Downloads</label>
+                <textarea name="external_allowed_domains" class="form-control" rows="5" placeholder="downloads.example.com&#10;cdn.example.org"><?php echo htmlspecialchars((string) ($settings['external_allowed_domains'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea>
+                <small class="form-text">Eine Domain pro Zeile oder komma-separiert. Leer = alle gültigen externen Hosts erlauben. Subdomains eines erlaubten Hosts sind ebenfalls zulässig.</small>
+            </div>
+
             <div class="alert alert-success">
-                💡 Die PowerShell-, Webprojekt-, Dokument- und eBook-Typen kommen als vordefinierte Download-Templates direkt aus dem Plugin und stehen bei jedem Download-Eintrag zur Auswahl bereit.
+                💡 Die PowerShell-, Webprojekt-, Dokument- und eBook-Typen kommen als vordefinierte Download-Templates direkt aus dem Plugin und stehen bei jedem Download-Eintrag zur Auswahl bereit. Externe Ziele kannst du hier zusätzlich auf definierte Domains eingrenzen.
             </div>
 
             <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
