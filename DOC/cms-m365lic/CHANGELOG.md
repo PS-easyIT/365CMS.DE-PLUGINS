@@ -1,5 +1,10 @@
 # Plugin-Dokumentations-Changelog
 
+## 1.1.1
+
+- EUR als einheitliche Währung für Seed-Katalog, Auswertung, PDF und Adminpflege dokumentiert
+- Frontend- und Admin-Feinschliff für bessere Scannability und klarere Preisführung ergänzt
+
 ## 1.1.0
 
 - Spezial-User-Zuweisung, Spezialseiten-Freigabe und Bereichs-Defaults dokumentiert

@@ -18,6 +18,7 @@ Das Plugin `cms-m365lic` liefert einen konfigurierbaren Microsoft-365-Lizenzbera
 - Publicsite nutzt Header/Footer des aktiven Themes
 - Member- und Spezialrechner laufen ausschließlich im geschützten 365CMS-Mitgliederbereich
 - Seed-Katalog ist vollständig editierbar
-- Alle Seed-SKUs werden mit Startpreisen vorbelegt; Fixpreis-SKUs wie Copilot Studio/Security Copilot sind als monatlicher Tenantpreis markiert
+- Alle Seed-SKUs werden mit EUR-Startpreisen vorbelegt; Fixpreis-SKUs wie Copilot Studio/Security Copilot sind als monatlicher Tenantpreis markiert
 - Seed-Preisupdates werden bei Bestandsinstallationen übernommen, solange lokal noch kein eigener Preis gepflegt wurde
 - Spezialbereich wird nur für im Plugin zugewiesene Benutzer registriert
+- Publicsite, Memberbereich und Adminbereich wurden für bessere Lesbarkeit und schnellere Orientierung UI-seitig nachgeschärft

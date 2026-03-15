@@ -29,7 +29,7 @@ trait CMS_M365LIC_Page_Settings_Trait
                     'page_title' => trim((string) ($_POST['page_title'] ?? 'Microsoft 365 Lizenzberater')),
                     'page_intro' => trim((string) ($_POST['page_intro'] ?? '')),
                     'route_slug' => trim((string) ($_POST['route_slug'] ?? 'm365-lizenzberater')),
-                    'default_currency' => trim((string) ($_POST['default_currency'] ?? 'USD')),
+                    'default_currency' => 'EUR',
                     'default_group_key' => trim((string) ($_POST['default_group_key'] ?? 'partner')),
                     'default_group_label' => trim((string) ($_POST['default_group_label'] ?? 'Partner / Spezialgruppe')),
                     'public_default_billing_cycle' => array_key_exists((string) ($_POST['public_default_billing_cycle'] ?? ''), $billingOptions) ? (string) $_POST['public_default_billing_cycle'] : 'annual_upfront',
@@ -98,7 +98,9 @@ trait CMS_M365LIC_Page_Settings_Trait
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="default_currency">Standardwährung</label>
-                            <input class="form-control" id="default_currency" type="text" name="default_currency" value="<?php echo self::esc((string) ($settings['default_currency'] ?? 'USD')); ?>">
+                            <input type="hidden" name="default_currency" value="EUR">
+                            <input class="form-control" id="default_currency" type="text" value="EUR / €" readonly>
+                            <small class="m365lic-help-text">Das Plugin führt alle Paketpreise und Auswertungen konsistent in Euro.</small>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="default_group_key">Default Spezialgruppen-Key</label>

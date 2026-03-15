@@ -1,7 +1,7 @@
 {
     "name": "CMS M365 License",
     "slug": "cms-m365lic",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "requires_cms": "2.0.0",
     "tested_cms": "2.0.0",
     "author": "365 Network",
@@ -9,5 +9,5 @@
     "description": "Microsoft-365-Lizenzberater mit Bedarfsanalyse, Paketverwaltung, Copilot-Lizenzlogik und PDF-Export.",
     "download_url": "",
     "last_updated": "2026-03-15",
-    "changelog": "1.1.0: Spezial-User-Zuweisung, vollständige Seed-Preise, Billing-Modelle mit +5%/+20% sowie Fixpreis-SKUs für tenantweite Copilot-Kapazitäten ergänzt."
+    "changelog": "1.1.1: Preise und Standardwährung konsequent auf EUR vereinheitlicht sowie Public-, Member- und Admin-UI visuell geschärft."
 }

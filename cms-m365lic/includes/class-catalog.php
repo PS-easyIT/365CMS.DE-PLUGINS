@@ -105,7 +105,7 @@ final class CMS_M365LIC_Catalog
             'page_title' => 'Microsoft 365 Lizenzberater',
             'page_intro' => 'Bedarf erfassen, passende Lizenzen automatisch vorschlagen und die Auswertung als PDF exportieren.',
             'route_slug' => 'm365-lizenzberater',
-            'default_currency' => 'USD',
+            'default_currency' => 'EUR',
             'default_group_key' => 'partner',
             'default_group_label' => 'Partner / Spezialgruppe',
             'public_default_billing_cycle' => 'annual_upfront',
@@ -175,6 +175,11 @@ final class CMS_M365LIC_Catalog
             ['slug' => 'exchange-online-archiving', 'name' => 'Exchange Online Archiving', 'kind' => 'addon', 'category' => 'exchange', 'audience' => 'knowledge', 'pricing_basis' => 'per_user', 'description' => 'Archivierungs-Add-on für Exchange-Postfächer und Compliance-Anforderungen.', 'features' => ['archive'], 'tags' => ['exchange', 'archive'], 'prerequisite_tags' => ['exchange'], 'public_price' => null, 'member_price' => null, 'group_price' => null, 'currency' => 'USD', 'pricing_note' => '', 'source_note' => 'Nützlich für Mail-only- und Compliance-Szenarien.', 'sort_order' => 292, 'is_active' => 1],
         ];
 
+        foreach ($packages as &$package) {
+            $package['currency'] = 'EUR';
+        }
+        unset($package);
+
         return self::apply_seed_pricing($packages);
     }
 
@@ -211,15 +216,15 @@ final class CMS_M365LIC_Catalog
      */
     private static function seed_price_map(): array
     {
-        $yearly = 'Listenpreis bei Jahresbindung / jährlicher Zahlung. Monatliche Jahreszahlung = +5%, Monatslaufzeit = +20%.';
+        $yearly = 'EUR-Basispreis bei Jahresbindung / jährlicher Zahlung. Monatliche Jahreszahlung = +5%, Monatslaufzeit = +20%.';
 
         $perUser = static fn(float $price, string $source): array => [
             'public' => $price,
             'member' => $price,
             'group' => $price,
-            'currency' => 'USD',
+            'currency' => 'EUR',
             'pricing_note' => $yearly,
-            'source_note' => $source,
+            'source_note' => self::normalize_source_note_currency($source),
             'pricing_basis' => 'per_user',
         ];
 
@@ -227,9 +232,9 @@ final class CMS_M365LIC_Catalog
             'public' => $price,
             'member' => $price,
             'group' => $price,
-            'currency' => 'USD',
-            'pricing_note' => 'Fixpreis pro Monat/Tenant. Jahreszahlung = Basis, monatliche Jahreszahlung +5%, Monatslaufzeit +20%.',
-            'source_note' => $source,
+            'currency' => 'EUR',
+            'pricing_note' => 'Fixpreis pro Monat/Tenant in EUR. Jahreszahlung = Basis, monatliche Jahreszahlung +5%, Monatslaufzeit +20%.',
+            'source_note' => self::normalize_source_note_currency($source),
             'pricing_basis' => 'flat_monthly',
         ];
 
@@ -276,5 +281,20 @@ final class CMS_M365LIC_Catalog
             'power-automate-premium' => $perUser(15.00, 'Microsoft Power Automate Pricing Snippet: Premium 15 USD pro Benutzer/Monat.'),
             'exchange-online-archiving' => $perUser(3.00, 'Öffentliche Exchange Online Archiving Preisübersichten: typischer Listenwert 3 USD pro Benutzer/Monat.'),
         ];
+    }
+
+    private static function normalize_source_note_currency(string $source): string
+    {
+        $normalized = str_replace(
+            [' USD ', ' USD', 'usd', 'paid yearly'],
+            [' EUR ', ' EUR', 'EUR', 'bei Jahresbindung'],
+            $source
+        );
+
+        if (stripos($normalized, 'EUR-Basispreis') === false) {
+            $normalized .= ' Im Plugin als EUR-Basispreis gepflegt.';
+        }
+
+        return $normalized;
     }
 }

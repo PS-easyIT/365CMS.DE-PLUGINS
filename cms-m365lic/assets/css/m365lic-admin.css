@@ -13,6 +13,11 @@
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
 }
 
+.m365lic-stat-card--accent {
+    background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+    border-color: #bfdbfe;
+}
+
 .m365lic-stat-card__value {
     font-size: 2rem;
     font-weight: 700;
@@ -47,6 +52,78 @@
 
 .m365lic-admin-list li {
     margin-bottom: 0.5rem;
+}
+
+.m365lic-admin-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.m365lic-admin-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.42rem 0.75rem;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: var(--admin-primary, #2563eb);
+    font-size: 0.78rem;
+    font-weight: 700;
+    border: 1px solid #bfdbfe;
+}
+
+.m365lic-metric-list {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.m365lic-metric-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.8rem 0.95rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.m365lic-metric-row strong {
+    display: block;
+    color: #0f172a;
+}
+
+.m365lic-metric-row span {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.m365lic-price-stack {
+    display: grid;
+    gap: 0.3rem;
+}
+
+.m365lic-price-stack strong {
+    color: #0f172a;
+}
+
+.m365lic-admin-note {
+    padding: 0.95rem 1rem;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 0.9rem;
+}
+
+.m365lic-section-kicker {
+    margin: 0 0 0.55rem;
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
 
 .m365lic-form-grid {
@@ -118,7 +195,8 @@
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 1rem;
-    background: #fff;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
 }
 
 .m365lic-special-user-card__head {
@@ -172,6 +250,15 @@
     border-color: #e2e8f0 #e2e8f0 #ffffff #e2e8f0;
     background: #ffffff;
     font-weight: 600;
+}
+
+.m365lic-toolbar {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
 }
 
 @media (max-width: 1100px) {

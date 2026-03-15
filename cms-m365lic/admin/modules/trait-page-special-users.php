@@ -67,9 +67,14 @@ trait CMS_M365LIC_Page_Special_Users_Trait
         <div class="m365lic-admin-grid m365lic-admin-grid--wide">
             <div class="admin-card">
                 <div class="m365lic-inline-head">
-                    <h3>Aktive Spezialzugänge</h3>
+                    <div>
+                        <p class="m365lic-section-kicker">Zugriffe</p>
+                        <h3>Aktive Spezialzugänge</h3>
+                    </div>
                     <span class="status-badge active"><?php echo (int) count($assignedUsers); ?> Einträge</span>
                 </div>
+
+                <div class="m365lic-admin-note">Spezial-User erhalten zusätzlich zum Memberbereich einen geschützten Spezialbereich mit eigenem Preis-Kontext und individuellen Konditionshinweisen.</div>
 
                 <?php if (empty($assignedUsers)): ?>
                     <div class="empty-state">
@@ -124,7 +129,10 @@ trait CMS_M365LIC_Page_Special_Users_Trait
 
             <div class="admin-card">
                 <div class="m365lic-inline-head">
-                    <h3>Benutzer zuweisen</h3>
+                    <div>
+                        <p class="m365lic-section-kicker">Pflege</p>
+                        <h3>Benutzer zuweisen</h3>
+                    </div>
                     <form method="GET" class="m365lic-search-form">
                         <input type="hidden" name="page" value="m365lic-special-users">
                         <input class="form-control" type="search" name="s" value="<?php echo self::esc($search); ?>" placeholder="Benutzer suchen …">

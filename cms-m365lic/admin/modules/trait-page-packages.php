@@ -52,7 +52,7 @@ trait CMS_M365LIC_Page_Packages_Trait
                             'public_price' => $_POST['public_price'] ?? null,
                             'member_price' => $_POST['member_price'] ?? null,
                             'group_price' => $_POST['group_price'] ?? null,
-                            'currency' => trim((string) ($_POST['currency'] ?? 'USD')),
+                            'currency' => 'EUR',
                             'pricing_note' => trim((string) ($_POST['pricing_note'] ?? '')),
                             'source_note' => trim((string) ($_POST['source_note'] ?? '')),
                             'sort_order' => (int) ($_POST['sort_order'] ?? 0),
@@ -87,7 +87,7 @@ trait CMS_M365LIC_Page_Packages_Trait
                 'public_price' => null,
                 'member_price' => null,
                 'group_price' => null,
-                'currency' => 'USD',
+                'currency' => 'EUR',
                 'pricing_note' => '',
                 'source_note' => '',
                 'sort_order' => 0,
@@ -118,10 +118,12 @@ trait CMS_M365LIC_Page_Packages_Trait
             <div class="admin-card">
                 <h3><?php echo (int) $editPackage['id'] > 0 ? '✏️ Paket bearbeiten' : '➕ Paket anlegen'; ?></h3>
                 <p class="m365lic-help-text">Alle Preise hier sind der Basiswert für <strong>1 Jahr Laufzeit mit jährlicher Zahlung</strong>. Die Auswahl im Frontend rechnet daraus +5% bzw. +20% hoch.</p>
+                <div class="m365lic-admin-note">Alle Preisfelder dieses Plugins werden in Euro gepflegt. Ein separates Währungsfeld ist daher bewusst entfernt.</div>
                 <form method="POST" class="admin-form">
                     <input type="hidden" name="action" value="save_package">
                     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                     <input type="hidden" name="id" value="<?php echo (int) $editPackage['id']; ?>">
+                    <input type="hidden" name="currency" value="EUR">
 
                     <div class="m365lic-form-grid m365lic-form-grid--2">
                         <div class="form-group">
@@ -183,7 +185,7 @@ trait CMS_M365LIC_Page_Packages_Trait
                     <div class="m365lic-form-grid m365lic-form-grid--2">
                         <div class="form-group">
                             <label class="form-label" for="pkg_currency">Währung</label>
-                            <input class="form-control" id="pkg_currency" type="text" name="currency" value="<?php echo self::esc((string) ($editPackage['currency'] ?? 'USD')); ?>">
+                            <input class="form-control" id="pkg_currency" type="text" value="EUR / €" readonly>
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="pkg_sort">Sortierung</label>
@@ -272,9 +274,11 @@ trait CMS_M365LIC_Page_Packages_Trait
                                 </td>
                                 <td><?php echo self::esc((string) (($package['pricing_basis'] ?? 'per_user') === 'flat_monthly' ? 'Fixpreis' : 'pro Benutzer')); ?></td>
                                 <td>
-                                    Public: <?php echo $package['public_price'] !== null ? self::esc(number_format((float) $package['public_price'], 2, ',', '.')) : '—'; ?><br>
-                                    Member: <?php echo $package['member_price'] !== null ? self::esc(number_format((float) $package['member_price'], 2, ',', '.')) : '—'; ?><br>
-                                    Spezial: <?php echo $package['group_price'] !== null ? self::esc(number_format((float) $package['group_price'], 2, ',', '.')) : '—'; ?>
+                                    <div class="m365lic-price-stack">
+                                        <span>Public: <strong><?php echo $package['public_price'] !== null ? self::esc(number_format((float) $package['public_price'], 2, ',', '.')) . ' €' : '—'; ?></strong></span>
+                                        <span>Member: <strong><?php echo $package['member_price'] !== null ? self::esc(number_format((float) $package['member_price'], 2, ',', '.')) . ' €' : '—'; ?></strong></span>
+                                        <span>Spezial: <strong><?php echo $package['group_price'] !== null ? self::esc(number_format((float) $package['group_price'], 2, ',', '.')) . ' €' : '—'; ?></strong></span>
+                                    </div>
                                 </td>
                                 <td>
                                     <a href="?page=m365lic-packages&edit=<?php echo (int) $package['id']; ?>" class="btn btn-secondary btn-sm">✏️</a>

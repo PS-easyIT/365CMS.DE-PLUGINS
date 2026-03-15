@@ -23,7 +23,14 @@ final class CMS_M365LIC_Pdf_Export
     public static function render_html(array $evaluation, array $requirements, array $settings, array $pricingContext, array $billingContext): string
     {
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        $currency = $settings['default_currency'] ?? 'USD';
+        $currency = strtoupper((string) ($settings['default_currency'] ?? 'EUR'));
+        $formatMoney = static function ($value) use ($esc): string {
+            if ($value === null || $value === '') {
+                return '<span class="warn">offen</span>';
+            }
+
+            return $esc(number_format((float) $value, 2, ',', '.')) . ' €';
+        };
         $generatedAt = date('d.m.Y H:i');
 
         ob_start();
@@ -82,7 +89,7 @@ final class CMS_M365LIC_Pdf_Export
                 <div class="m365lic-pdf__card">
                     <strong>Monatssumme</strong>
                     <?php if (($evaluation['grand_total'] ?? null) !== null): ?>
-                        <?php echo number_format((float) $evaluation['grand_total'], 2, ',', '.'); ?> <?php echo $esc($currency); ?>
+                        <?php echo $formatMoney($evaluation['grand_total']); ?>
                     <?php else: ?>
                         <span class="warn">Teilweise ohne Preis</span>
                     <?php endif; ?>
@@ -104,7 +111,7 @@ final class CMS_M365LIC_Pdf_Export
                         <?php echo $esc((string) ($item['name'] ?? '')); ?>
                         (<?php echo $esc((string) ($item['pricing_basis_label'] ?? 'pro Benutzer')); ?>, <?php echo $esc((string) ($item['quantity_label'] ?? '')); ?>)
                         <?php if (($item['line_total'] ?? null) !== null): ?>
-                            – <?php echo number_format((float) $item['line_total'], 2, ',', '.'); ?> <?php echo $esc($currency); ?>
+                            – <?php echo $formatMoney($item['line_total']); ?>
                         <?php else: ?>
                             – <span class="warn">Preis offen</span>
                         <?php endif; ?>
@@ -138,18 +145,10 @@ final class CMS_M365LIC_Pdf_Export
                         <td><?php echo $esc((string) ($item['type_label'] ?? '')); ?></td>
                         <td><?php echo $esc((string) ($item['quantity_label'] ?? '')); ?></td>
                         <td>
-                            <?php if (($item['unit_price'] ?? null) !== null): ?>
-                                <?php echo number_format((float) $item['unit_price'], 2, ',', '.'); ?> <?php echo $esc($currency); ?>
-                            <?php else: ?>
-                                <span class="warn">offen</span>
-                            <?php endif; ?>
+                            <?php echo $formatMoney($item['unit_price'] ?? null); ?>
                         </td>
                         <td>
-                            <?php if (($item['line_total'] ?? null) !== null): ?>
-                                <?php echo number_format((float) $item['line_total'], 2, ',', '.'); ?> <?php echo $esc($currency); ?>
-                            <?php else: ?>
-                                <span class="warn">offen</span>
-                            <?php endif; ?>
+                            <?php echo $formatMoney($item['line_total'] ?? null); ?>
                         </td>
                     </tr>
                     <?php endforeach; ?>

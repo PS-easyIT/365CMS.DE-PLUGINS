@@ -12,7 +12,14 @@ if (!defined('ABSPATH')) {
 }
 
 $esc = static fn(?string $value): string => htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8');
-$currency = (string) ($settings['default_currency'] ?? 'USD');
+$currency = strtoupper((string) ($settings['default_currency'] ?? 'EUR'));
+$formatMoney = static function ($value) use ($esc, $currency): string {
+    if ($value === null || $value === '') {
+        return 'offen';
+    }
+
+    return $esc(number_format((float) $value, 2, ',', '.')) . ' €';
+};
 $themeTitle = (string) ($viewContext['title'] ?? $settings['page_title'] ?? 'Microsoft 365 Lizenzberater');
 $exportToken = class_exists('CMS\Security') ? \CMS\Security::instance()->generateToken('m365lic_export') : bin2hex(random_bytes(16));
 $theme = \CMS\ThemeManager::instance();
@@ -84,6 +91,11 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
             <span class="m365lic-eyebrow">Microsoft 365 · Lizenzplanung</span>
             <h1><?php echo $esc($themeTitle); ?></h1>
             <p><?php echo $esc($introText); ?></p>
+            <div class="m365lic-hero-pills">
+                <span class="m365lic-pill">Preise in Euro</span>
+                <span class="m365lic-pill"><?php echo $esc((string) ($pricingContext['label'] ?? 'Öffentlich')); ?></span>
+                <span class="m365lic-pill"><?php echo $esc((string) ($selectedBilling['label'] ?? '1 Jahr · jährliche Zahlung')); ?></span>
+            </div>
         </div>
     </header>
 
@@ -103,6 +115,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                             <h2>Bedarf erfassen</h2>
                             <p>Mehrere Benutzergruppen kombinieren, Copilot-Anforderungen berücksichtigen und je Bereich die gewünschte Laufzeit/Zahlungsart serverseitig auswerten.</p>
                         </div>
+                        <div class="m365lic-card-badge">EUR · Netto-Richtwerte</div>
                     </div>
 
                     <form method="POST" id="m365licForm" class="m365lic-form">
@@ -144,15 +157,32 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                 </section>
 
                 <aside class="m365lic-aside">
-                    <div class="m365lic-card">
+                    <div class="m365lic-card m365lic-card--sticky">
                         <h2>Kontext</h2>
+                        <div class="m365lic-kpi-grid">
+                            <div class="m365lic-kpi-card">
+                                <span>Währung</span>
+                                <strong>€ Euro</strong>
+                            </div>
+                            <div class="m365lic-kpi-card">
+                                <span>Presets</span>
+                                <strong><?php echo (int) count($presets); ?></strong>
+                            </div>
+                            <div class="m365lic-kpi-card">
+                                <span>Optionen</span>
+                                <strong><?php echo (int) count($featureDefinitions); ?></strong>
+                            </div>
+                            <div class="m365lic-kpi-card">
+                                <span>Modell</span>
+                                <strong><?php echo $esc((string) ($selectedBilling['short_label'] ?? 'Jahr / jährlich')); ?></strong>
+                            </div>
+                        </div>
                         <ul class="m365lic-note-list">
                             <li><strong>Zugriff:</strong> <?php echo $esc((string) ($pricingContext['label'] ?? 'Öffentlich')); ?></li>
                             <li><strong>Preismodell:</strong> <?php echo $esc((string) ($viewContext['summary_label'] ?? 'Öffentliche Preise')); ?></li>
                             <li><strong>Laufzeit:</strong> <?php echo $esc((string) ($selectedBilling['label'] ?? '1 Jahr · jährliche Zahlung')); ?></li>
-                            <li><strong>Währung:</strong> <?php echo $esc($currency); ?></li>
-                            <li><strong>Presets:</strong> <?php echo (int) count($presets); ?></li>
-                            <li><strong>Optionen:</strong> <?php echo (int) count($featureDefinitions); ?></li>
+                            <li><strong>Währung:</strong> Euro (EUR)</li>
+                            <li><strong>Hinweis:</strong> Alle Werte werden direkt im Plugin als EUR-Basispreise geführt.</li>
                         </ul>
                     </div>
                     <div class="m365lic-card">
@@ -179,7 +209,22 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     <div class="m365lic-totals">
                         <span class="m365lic-total-chip">SKUs: <?php echo (int) count($evaluation['totals'] ?? []); ?></span>
                         <span class="m365lic-total-chip"><?php echo $esc((string) (($evaluation['billing']['short_label'] ?? ($selectedBilling['short_label'] ?? 'Jahr / jährlich')))); ?></span>
-                        <span class="m365lic-total-chip">Monat: <?php echo ($evaluation['grand_total'] ?? null) !== null ? $esc(number_format((float) $evaluation['grand_total'], 2, ',', '.')) . ' ' . $esc($currency) : 'teilweise offen'; ?></span>
+                        <span class="m365lic-total-chip">Monat: <?php echo ($evaluation['grand_total'] ?? null) !== null ? $formatMoney($evaluation['grand_total']) : 'teilweise offen'; ?></span>
+                    </div>
+                </div>
+
+                <div class="m365lic-summary-grid">
+                    <div class="m365lic-summary-card">
+                        <span>Monatssumme</span>
+                        <strong><?php echo ($evaluation['grand_total'] ?? null) !== null ? $formatMoney($evaluation['grand_total']) : 'teilweise offen'; ?></strong>
+                    </div>
+                    <div class="m365lic-summary-card">
+                        <span>Empfehlungen</span>
+                        <strong><?php echo (int) count($evaluation['rows'] ?? []); ?> Gruppen</strong>
+                    </div>
+                    <div class="m365lic-summary-card">
+                        <span>Abrechnungsmodell</span>
+                        <strong><?php echo $esc((string) ($selectedBilling['label'] ?? '1 Jahr · jährliche Zahlung')); ?></strong>
                     </div>
                 </div>
 
@@ -215,8 +260,8 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                                         </td>
                                         <td><?php echo $esc((string) ($item['type_label'] ?? '')); ?></td>
                                         <td><?php echo $esc((string) ($item['quantity_label'] ?? '')); ?></td>
-                                        <td><?php echo ($item['unit_price'] ?? null) !== null ? $esc(number_format((float) $item['unit_price'], 2, ',', '.')) . ' ' . $esc($currency) : 'offen'; ?></td>
-                                        <td><?php echo ($item['line_total'] ?? null) !== null ? $esc(number_format((float) $item['line_total'], 2, ',', '.')) . ' ' . $esc($currency) : 'offen'; ?></td>
+                                        <td><?php echo $formatMoney($item['unit_price'] ?? null); ?></td>
+                                        <td><?php echo $formatMoney($item['line_total'] ?? null); ?></td>
                                     </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -247,8 +292,8 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                                 </td>
                                 <td><?php echo $esc((string) ($item['type_label'] ?? '')); ?></td>
                                 <td><?php echo $esc((string) ($item['quantity_label'] ?? '')); ?></td>
-                                <td><?php echo ($item['unit_price'] ?? null) !== null ? $esc(number_format((float) $item['unit_price'], 2, ',', '.')) . ' ' . $esc($currency) : 'offen'; ?></td>
-                                <td><?php echo ($item['line_total'] ?? null) !== null ? $esc(number_format((float) $item['line_total'], 2, ',', '.')) . ' ' . $esc($currency) : 'offen'; ?></td>
+                                <td><?php echo $formatMoney($item['unit_price'] ?? null); ?></td>
+                                <td><?php echo $formatMoney($item['line_total'] ?? null); ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1 – 2026-03-15
+
+- Standardwährung, Seed-Katalog und Darstellung durchgängig auf Euro (EUR / €) vereinheitlicht
+- Public-/Member-Frontend mit Hero-Pills, KPI-Karten, klarerer Ergebnishierarchie und besser lesbarer Preispräsentation verfeinert
+- Admin-Dashboard, Spezial-User-Ansicht sowie Paket-/Settings-Formulare visuell gestrafft und auf EUR-only-Verwaltung ausgerichtet
+
 ## 1.1.0 – 2026-03-15
 
 - Spezial-User-Verwaltung im Admin ergänzt und Spezialseite nur noch für explizit zugewiesene 365CMS-Benutzer freigeschaltet

@@ -8,6 +8,7 @@
 - Vordefinierte Presets wie `Nur Mail`, `Mail + Teams`, `Web Office + Mail + OneDrive`, `Knowledge Worker`, `Frontline`
 - Seed-Katalog mit Microsoft-365-Basislizenzen, Frontline-SKUs, Copilot-Optionen und Add-ons
 - Vollständig vorbelegte Basispreise für alle Seed-SKUs inklusive Power BI, Teams Phone, Visio, Project, Exchange, SharePoint und Copilot-Optionen
+- Alle Preisangaben und Auswertungen konsistent in Euro (EUR / €)
 - Getrennte Zugriffsflächen für `public`, `member` und `group`
 - Eigene Admin-Seite für Spezial-User-Zuweisungen direkt auf 365CMS-Benutzer
 - Auswahl von Laufzeit & Zahlungsart je Bereich: `1 Jahr jährlich`, `1 Jahr monatlich (+5%)`, `1 Monat (+20%)`
@@ -44,12 +45,12 @@ Preisfelder sind absichtlich editierbar und unterstützen drei Ebenen:
 - `member_price`
 - `group_price`
 
-Alle Seed-Pakete werden jetzt mit Startpreisen aus öffentlichen Microsoft-/Partner-Snippets vorbelegt. Zusätzlich kennt der Katalog zwei Preisarten:
+Alle Seed-Pakete werden jetzt mit Startpreisen aus öffentlichen Microsoft-/Partner-Snippets als EUR-Basiswerte vorbelegt. Zusätzlich kennt der Katalog zwei Preisarten:
 
 - `per_user`: Preis pro Benutzer/Monat
 - `flat_monthly`: monatlicher Fixpreis, z. B. für tenantweite Copilot-Studio-/Security-Copilot-Kapazitäten
 
-Die im Admin gepflegten Preise sind immer der Basiswert für `1 Jahr Laufzeit mit jährlicher Zahlung`. Im Frontend und PDF wird daraus abhängig vom ausgewählten Modell gerechnet:
+Die im Admin gepflegten Preise sind immer der Basiswert in Euro für `1 Jahr Laufzeit mit jährlicher Zahlung`. Im Frontend und PDF wird daraus abhängig vom ausgewählten Modell gerechnet:
 
 - `1 Jahr · jährliche Zahlung` → Basispreis
 - `1 Jahr · monatliche Zahlung` → Basispreis $\times 1{,}05$

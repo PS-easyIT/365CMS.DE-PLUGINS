@@ -57,6 +57,8 @@ final class CMS_M365LIC_Repository
             // ignore and use defaults
         }
 
+        $defaults['default_currency'] = $this->normalize_currency($defaults['default_currency'] ?? 'EUR');
+
         return $defaults;
     }
 
@@ -139,7 +141,7 @@ final class CMS_M365LIC_Repository
             'public_price' => $this->normalize_price($data['public_price'] ?? null),
             'member_price' => $this->normalize_price($data['member_price'] ?? null),
             'group_price' => $this->normalize_price($data['group_price'] ?? null),
-            'currency' => (string) ($data['currency'] ?? 'USD'),
+            'currency' => $this->normalize_currency($data['currency'] ?? 'EUR'),
             'pricing_note' => (string) ($data['pricing_note'] ?? ''),
             'source_note' => (string) ($data['source_note'] ?? ''),
             'is_active' => !empty($data['is_active']) ? 1 : 0,
@@ -560,6 +562,7 @@ final class CMS_M365LIC_Repository
         $row['public_price'] = $row['public_price'] !== null ? (float) $row['public_price'] : null;
         $row['member_price'] = $row['member_price'] !== null ? (float) $row['member_price'] : null;
         $row['group_price'] = $row['group_price'] !== null ? (float) $row['group_price'] : null;
+        $row['currency'] = $this->normalize_currency($row['currency'] ?? 'EUR');
         $row['features'] = $this->decode_json_list($row['features_json'] ?? '[]');
         $row['tags'] = $this->decode_json_list($row['tags_json'] ?? '[]');
         $row['prerequisite_tags'] = $this->decode_json_list($row['prerequisite_tags_json'] ?? '[]');
@@ -596,6 +599,13 @@ final class CMS_M365LIC_Repository
             : 'per_user';
     }
 
+    private function normalize_currency(mixed $value): string
+    {
+        $currency = strtoupper(trim((string) $value));
+
+        return $currency === 'EUR' ? 'EUR' : 'EUR';
+    }
+
     /**
      * @param array<string,mixed> $seed
      */
@@ -617,7 +627,7 @@ final class CMS_M365LIC_Repository
         $seed['group_price'] = $existing['group_price'] !== null
             ? $existing['group_price']
             : ($seed['group_price'] ?? null);
-        $seed['currency'] = (string) ($existing['currency'] ?? $seed['currency'] ?? 'USD');
+        $seed['currency'] = $this->normalize_currency($existing['currency'] ?? $seed['currency'] ?? 'EUR');
         $seed['pricing_note'] = trim((string) ($existing['pricing_note'] ?? '')) !== ''
             ? (string) $existing['pricing_note']
             : (string) ($seed['pricing_note'] ?? '');
