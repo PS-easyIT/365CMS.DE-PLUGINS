@@ -218,6 +218,10 @@ final class CMS_M365LIC_Frontend
         }
 
         $normalizedRequirements = $this->normalize_requirements($requirements);
+        if (count($normalizedRequirements) > self::MAX_REQUIREMENT_ROWS) {
+            $normalizedRequirements = array_slice($normalizedRequirements, 0, self::MAX_REQUIREMENT_ROWS);
+        }
+
         $evaluation = CMS_M365LIC_Calculator::evaluate(
             $normalizedRequirements,
             $repo->get_packages(false),

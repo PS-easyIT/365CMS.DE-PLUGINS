@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 – 2026-03-15
+
+- PDF-Export auf echten PDF-Download über den 365CMS-PDF-/Dompdf-Stack umgestellt; der frühere HTML-Fallback wird nicht mehr als Scheindownload ausgeliefert
+- Public-Wizard von 2 auf 3 Schritte erweitert: `Quick Check`, `Advanced / Expertenoptionen` und `Add-ons & Security`
+- Add-on-Katalog um `Microsoft Entra ID P1/P2`, `Defender for Business`, `Defender for Office 365 Plan 1/2` sowie `Defender for Endpoint Plan 1/2` ergänzt und mit EUR-Referenzwerten vorbelegt
+- Ergebnis-Erklärungen für Terminalserver-/RDS-Anforderungen präzisiert, damit die Wahl einer Shared-Activation-fähigen Lizenz nachvollziehbar begründet wird
+- Public-Frontend räumlicher, freundlicher und guideline-näher gestaltet, ohne die kompakte Bedarfsanalyse aufzugeben
+
 ## 1.1.1 – 2026-03-15
 
 - Standardwährung, Seed-Katalog und Darstellung durchgängig auf Euro (EUR / €) vereinheitlicht

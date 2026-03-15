@@ -26,9 +26,61 @@ $theme = \CMS\ThemeManager::instance();
 $isEmbedded = !empty($viewContext['embedded']);
 $introText = (string) ($viewContext['intro'] ?? $settings['page_intro'] ?? '');
 $stepOneFeatureKeys = ['mail', 'teams', 'office_web', 'office_desktop', 'terminalserver', 'onedrive', 'sharepoint', 'frontline'];
-$stepTwoFeatureKeys = array_values(array_filter(array_keys($featureDefinitions), static fn(string $key): bool => !in_array($key, $stepOneFeatureKeys, true)));
+$stepThreeFeatureKeys = array_values(array_filter(array_keys($featureDefinitions), static function (string $key) use ($featureDefinitions): bool {
+    return empty($featureDefinitions[$key]['base']);
+}));
+$stepTwoFeatureKeys = array_values(array_filter(array_keys($featureDefinitions), static function (string $key) use ($stepOneFeatureKeys, $stepThreeFeatureKeys): bool {
+    return !in_array($key, $stepOneFeatureKeys, true) && !in_array($key, $stepThreeFeatureKeys, true);
+}));
 
-$renderRequirementRow = static function (array $requirement, int $index) use ($featureDefinitions, $presets, $esc, $stepOneFeatureKeys, $stepTwoFeatureKeys): void {
+$addonFeatureMeta = [];
+foreach ($stepThreeFeatureKeys as $featureKey) {
+    $relatedPackages = array_values(array_filter($packages, static function (array $package) use ($featureKey): bool {
+        return !empty($package['is_active'])
+            && ($package['kind'] ?? '') === 'addon'
+            && in_array($featureKey, array_map('strval', $package['features'] ?? []), true);
+    }));
+
+    if ($relatedPackages === []) {
+        continue;
+    }
+
+    usort($relatedPackages, static function (array $left, array $right): int {
+        $leftPrice = $left['public_price'] ?? null;
+        $rightPrice = $right['public_price'] ?? null;
+
+        if ($leftPrice === null && $rightPrice === null) {
+            return strcmp((string) ($left['name'] ?? ''), (string) ($right['name'] ?? ''));
+        }
+        if ($leftPrice === null) {
+            return 1;
+        }
+        if ($rightPrice === null) {
+            return -1;
+        }
+
+        return ((float) $leftPrice <=> (float) $rightPrice);
+    });
+
+    $addonFeatureMeta[$featureKey] = [
+        'packages' => $relatedPackages,
+        'min_price' => $relatedPackages[0]['public_price'] ?? null,
+        'pricing_basis_label' => ((string) ($relatedPackages[0]['pricing_basis'] ?? 'per_user')) === 'flat_monthly' ? 'Fixpreis / Monat' : 'ab pro Benutzer',
+        'source_note' => (string) ($relatedPackages[0]['source_note'] ?? ''),
+    ];
+}
+
+$addonGroupClassMap = [
+    'security-addon' => 'security',
+    'security' => 'security',
+    'identity' => 'identity',
+    'addons' => 'productivity',
+    'productivity' => 'productivity',
+    'power-platform' => 'productivity',
+    'copilot' => 'copilot',
+];
+
+$renderRequirementRow = static function (array $requirement, int $index) use ($featureDefinitions, $presets, $esc, $stepOneFeatureKeys, $stepTwoFeatureKeys, $stepThreeFeatureKeys, $addonFeatureMeta, $addonGroupClassMap, $formatMoney): void {
     ?>
     <article class="m365lic-requirement" data-index="<?php echo $index; ?>" data-step="1">
         <div class="m365lic-requirement__head">
@@ -48,11 +100,16 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                 <span class="m365lic-stepper__num">2</span>
                 <span>Advanced / Expertenoptionen</span>
             </button>
+            <button type="button" class="m365lic-stepper__item" data-step-target="3">
+                <span class="m365lic-stepper__num">3</span>
+                <span>Add-ons & Security</span>
+            </button>
         </div>
 
-        <section class="m365lic-step-panel is-active" data-step-panel="1">
+        <section class="m365lic-step-panel is-active m365lic-step-card" data-step-panel="1">
             <div class="m365lic-step-panel__head">
                 <div>
+                    <span class="m365lic-step-panel__eyebrow">Schritt 1</span>
                     <strong>Quick Check</strong>
                     <p>Erfasse Benutzergruppe, Einsatzmodell und die wichtigsten Plattformfunktionen für eine schnelle Erstempfehlung.</p>
                 </div>
@@ -102,13 +159,14 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
             </div>
 
             <div class="m365lic-step-actions">
-                <button type="button" class="m365lic-btn m365lic-btn--primary m365lic-next-step">Weiter zu Advanced / Expertenoptionen</button>
+                <button type="button" class="m365lic-btn m365lic-btn--primary" data-step-next="2">Weiter zu Advanced / Expertenoptionen</button>
             </div>
         </section>
 
-        <section class="m365lic-step-panel" data-step-panel="2">
+        <section class="m365lic-step-panel m365lic-step-card" data-step-panel="2">
             <div class="m365lic-step-panel__head">
                 <div>
+                    <span class="m365lic-step-panel__eyebrow">Schritt 2</span>
                     <strong>Advanced / Expertenoptionen</strong>
                     <p>Ergänze Security, Copilot, Collaboration und weitere Zusatzdienste für anspruchsvollere oder spezialisierte Szenarien.</p>
                 </div>
@@ -130,8 +188,55 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
             </div>
 
             <div class="m365lic-step-actions m365lic-step-actions--split">
-                <button type="button" class="m365lic-btn m365lic-btn--ghost m365lic-prev-step">Zurück</button>
-                <button type="button" class="m365lic-btn m365lic-btn--ghost m365lic-finish-step">Fertig</button>
+                <button type="button" class="m365lic-btn m365lic-btn--ghost" data-step-prev="1">Zurück</button>
+                <button type="button" class="m365lic-btn m365lic-btn--primary" data-step-next="3">Weiter zu Add-ons & Security</button>
+            </div>
+        </section>
+
+        <section class="m365lic-step-panel m365lic-step-card" data-step-panel="3">
+            <div class="m365lic-step-panel__head">
+                <div>
+                    <span class="m365lic-step-panel__eyebrow">Schritt 3</span>
+                    <strong>Add-ons & Security</strong>
+                    <p>Wähle gezielte Erweiterungen wie Defender, Entra ID P2, Copilot, Telefonie oder Power Platform, wenn diese zusätzlich benötigt werden.</p>
+                </div>
+                <span class="m365lic-pill">Optional</span>
+            </div>
+
+            <div class="m365lic-feature-grid m365lic-feature-grid--dense">
+                <?php foreach ($stepThreeFeatureKeys as $featureKey): ?>
+                    <?php if (!isset($featureDefinitions[$featureKey])) { continue; } ?>
+                    <?php $feature = $featureDefinitions[$featureKey]; ?>
+                    <?php $groupKey = (string) ($feature['group'] ?? 'productivity'); ?>
+                    <?php $groupClass = $addonGroupClassMap[$groupKey] ?? 'productivity'; ?>
+                    <label class="m365lic-feature-toggle m365lic-feature-toggle--addon m365lic-feature-toggle--<?php echo $esc($groupClass); ?>">
+                        <input type="checkbox" data-feature="<?php echo $esc($featureKey); ?>" name="requirements[<?php echo $index; ?>][features][<?php echo $esc($featureKey); ?>]" value="1" <?php echo in_array($featureKey, $requirement['features'] ?? [], true) ? 'checked' : ''; ?>>
+                        <span>
+                            <b class="m365lic-feature-group"><?php echo $esc(ucfirst($groupClass)); ?></b>
+                            <strong><?php echo $esc((string) $feature['label']); ?></strong>
+                            <small><?php echo $esc((string) $feature['description']); ?></small>
+                            <?php if (!empty($addonFeatureMeta[$featureKey])): ?>
+                            <em class="m365lic-feature-hint">
+                                <?php echo $esc(implode(' · ', array_slice(array_map(static fn(array $package): string => (string) ($package['name'] ?? ''), $addonFeatureMeta[$featureKey]['packages']), 0, 2))); ?>
+                                <?php if (count($addonFeatureMeta[$featureKey]['packages']) > 2): ?>
+                                    + weitere Optionen
+                                <?php endif; ?>
+                            </em>
+                            <em class="m365lic-feature-price">
+                                <?php echo ($addonFeatureMeta[$featureKey]['min_price'] ?? null) !== null ? $esc((string) ($addonFeatureMeta[$featureKey]['pricing_basis_label'] ?? 'ab')) . ' · ' . $formatMoney($addonFeatureMeta[$featureKey]['min_price']) : 'Preis auf Anfrage'; ?>
+                            </em>
+                            <?php if (($addonFeatureMeta[$featureKey]['source_note'] ?? '') !== ''): ?>
+                            <em class="m365lic-feature-source"><?php echo $esc((string) $addonFeatureMeta[$featureKey]['source_note']); ?></em>
+                            <?php endif; ?>
+                            <?php endif; ?>
+                        </span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="m365lic-step-actions m365lic-step-actions--split">
+                <button type="button" class="m365lic-btn m365lic-btn--ghost" data-step-prev="2">Zurück</button>
+                <button type="button" class="m365lic-btn m365lic-btn--ghost" data-step-next="1">Fertig</button>
             </div>
         </section>
     </article>
@@ -165,6 +270,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     <ul class="m365lic-hero-list">
                         <li>Copilot-Voraussetzungen</li>
                         <li>Terminalserver / Shared Activation</li>
+                        <li>Add-ons wie Defender & Entra ID P2</li>
                         <li>Public-, Member- und Spezialpreise</li>
                     </ul>
                 </div>
@@ -181,29 +287,14 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
             <div class="m365lic-alert m365lic-alert--error">❌ <?php echo $esc($error); ?></div>
             <?php endif; ?>
 
-            <div class="m365lic-layout">
-                <section class="m365lic-card">
+            <div class="m365lic-layout m365lic-layout--stacked">
+                <section class="m365lic-card m365lic-card--intro">
                     <div class="m365lic-card__head">
                         <div>
                             <h2>Bedarf erfassen</h2>
-                            <p>Mehrere Benutzergruppen kombinieren, Copilot-Anforderungen berücksichtigen und je Bereich die gewünschte Laufzeit/Zahlungsart serverseitig auswerten.</p>
+                            <p>Mehrere Benutzergruppen kombinieren, Terminalserver sauber berücksichtigen und im dritten Schritt gezielte Add-ons wie Defender oder Entra ID P2 ergänzen.</p>
                         </div>
                         <div class="m365lic-card-badge">EUR · Netto-Richtwerte</div>
-                    </div>
-
-                    <div class="m365lic-kpi-grid m365lic-kpi-grid--compact">
-                        <div class="m365lic-kpi-card">
-                            <span>Presets</span>
-                            <strong><?php echo (int) count($presets); ?></strong>
-                        </div>
-                        <div class="m365lic-kpi-card">
-                            <span>Optionen</span>
-                            <strong><?php echo (int) count($featureDefinitions); ?></strong>
-                        </div>
-                        <div class="m365lic-kpi-card">
-                            <span>Spezialfall</span>
-                            <strong>RDS / Terminalserver</strong>
-                        </div>
                     </div>
 
                     <form method="POST" id="m365licForm" class="m365lic-form">
@@ -212,8 +303,16 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                         <input type="hidden" name="context_scope" value="<?php echo $esc((string) ($pricingContext['scope'] ?? 'public')); ?>">
                         <input type="hidden" name="requirements_payload" id="m365licRequirementsPayload" value="">
 
-                        <div class="m365lic-form-grid m365lic-form-grid--2 m365lic-billing-grid">
-                            <div class="m365lic-field">
+                        <section class="m365lic-subcard m365lic-subcard--billing">
+                            <div class="m365lic-subcard__head">
+                                <div>
+                                    <h3>Laufzeit & Preislogik</h3>
+                                    <p>Lege zuerst fest, wie gerechnet werden soll. Danach erfasst du die Bedarfsgruppen Schritt für Schritt.</p>
+                                </div>
+                            </div>
+
+                            <div class="m365lic-form-grid m365lic-form-grid--2 m365lic-billing-grid">
+                                <div class="m365lic-field">
                                 <label for="billing_cycle">Laufzeit & Zahlung</label>
                                 <select id="billing_cycle" name="billing_cycle">
                                     <?php foreach ($billingOptions as $billingKey => $billingOption): ?>
@@ -221,22 +320,32 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                                     <?php endforeach; ?>
                                 </select>
                                 <small class="m365lic-help-text"><?php echo $esc((string) ($selectedBilling['note'] ?? '')); ?></small>
-                            </div>
-                            <div class="m365lic-field m365lic-field--info">
+                                </div>
+                                <div class="m365lic-field m365lic-field--info">
                                 <label>Preislogik</label>
                                 <div class="m365lic-context-chip-wrap">
                                     <span class="m365lic-total-chip"><?php echo $esc((string) ($pricingContext['label'] ?? 'Öffentlich')); ?></span>
                                     <span class="m365lic-total-chip"><?php echo $esc((string) ($selectedBilling['short_label'] ?? 'Jahr / jährlich')); ?></span>
                                 </div>
                                 <small class="m365lic-help-text">Basispreise stammen aus dem Paketkatalog und werden pro Bereich mit dem gewählten Modell hochgerechnet.</small>
+                                </div>
                             </div>
-                        </div>
+                        </section>
 
-                        <div class="m365lic-requirements" id="m365licRequirements">
-                            <?php foreach ($requirements as $index => $requirement): ?>
-                                <?php $renderRequirementRow($requirement, (int) $index); ?>
-                            <?php endforeach; ?>
-                        </div>
+                        <section class="m365lic-subcard m365lic-subcard--requirements">
+                            <div class="m365lic-subcard__head">
+                                <div>
+                                    <h3>Bedarfsgruppen</h3>
+                                    <p>Erfasse je Bereich die wichtigsten Basisanforderungen, dann Spezialfunktionen und zum Schluss die gewünschten Add-ons.</p>
+                                </div>
+                            </div>
+
+                            <div class="m365lic-requirements" id="m365licRequirements">
+                                <?php foreach ($requirements as $index => $requirement): ?>
+                                    <?php $renderRequirementRow($requirement, (int) $index); ?>
+                                <?php endforeach; ?>
+                            </div>
+                        </section>
 
                         <div class="m365lic-actions">
                             <button type="button" class="m365lic-btn m365lic-btn--ghost" id="m365licAddRow">➕ Weitere Bedarfsgruppe</button>
@@ -246,7 +355,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     </form>
                 </section>
 
-                <aside class="m365lic-aside">
+                <aside class="m365lic-aside m365lic-aside--stacked">
                     <div class="m365lic-card m365lic-card--sticky">
                         <h2>Kontext</h2>
                         <div class="m365lic-kpi-grid">
@@ -281,6 +390,22 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                         <?php if (!empty($settings['upgrade_url'])): ?>
                         <a href="<?php echo $esc((string) $settings['upgrade_url']); ?>" class="m365lic-btn m365lic-btn--ghost">Mehr Volumen / Beratung</a>
                         <?php endif; ?>
+                    </div>
+                    <div class="m365lic-card">
+                        <h2>Add-on-Quick-Info</h2>
+                        <ul class="m365lic-addon-overview" role="list">
+                            <?php foreach ($stepThreeFeatureKeys as $featureKey): ?>
+                                <?php if (!isset($featureDefinitions[$featureKey], $addonFeatureMeta[$featureKey])) { continue; } ?>
+                                <?php $overviewGroupKey = (string) ($featureDefinitions[$featureKey]['group'] ?? 'productivity'); ?>
+                                <?php $overviewGroupClass = $addonGroupClassMap[$overviewGroupKey] ?? 'productivity'; ?>
+                                <li class="m365lic-addon-overview__item m365lic-addon-overview__item--<?php echo $esc($overviewGroupClass); ?>">
+                                    <b class="m365lic-feature-group"><?php echo $esc(ucfirst($overviewGroupClass)); ?></b>
+                                    <strong><?php echo $esc((string) ($featureDefinitions[$featureKey]['label'] ?? $featureKey)); ?></strong>
+                                    <span><?php echo ($addonFeatureMeta[$featureKey]['min_price'] ?? null) !== null ? $formatMoney($addonFeatureMeta[$featureKey]['min_price']) : 'Preis offen'; ?></span>
+                                    <small><?php echo $esc((string) ($featureDefinitions[$featureKey]['description'] ?? '')); ?></small>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
                     </div>
                 </aside>
             </div>

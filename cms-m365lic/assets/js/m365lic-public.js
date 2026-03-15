@@ -112,26 +112,17 @@
             });
         });
 
-        const nextButton = row.querySelector('.m365lic-next-step');
-        if (nextButton) {
-            nextButton.addEventListener('click', function () {
-                setStep(row, 2);
+        row.querySelectorAll('[data-step-next]').forEach((button) => {
+            button.addEventListener('click', function () {
+                setStep(row, Number(button.dataset.stepNext || '1'));
             });
-        }
+        });
 
-        const prevButton = row.querySelector('.m365lic-prev-step');
-        if (prevButton) {
-            prevButton.addEventListener('click', function () {
-                setStep(row, 1);
+        row.querySelectorAll('[data-step-prev]').forEach((button) => {
+            button.addEventListener('click', function () {
+                setStep(row, Number(button.dataset.stepPrev || '1'));
             });
-        }
-
-        const finishButton = row.querySelector('.m365lic-finish-step');
-        if (finishButton) {
-            finishButton.addEventListener('click', function () {
-                setStep(row, 1);
-            });
-        }
+        });
 
         setStep(row, Number(row.dataset.step || '1'));
     }

@@ -1,5 +1,12 @@
 # Plugin-Dokumentations-Changelog
 
+## 1.2.0
+
+- Echten PDF-Export über den 365CMS-PDF-Stack dokumentiert
+- 3-Schritt-Wizard mit separatem Add-on-/Security-Schritt dokumentiert
+- Neue Entra- und Defender-Erweiterungen im Seed-Katalog dokumentiert
+- Präzisere Terminalserver-Begründung und aufgelockerte Public-UI dokumentiert
+
 ## 1.1.1
 
 - EUR als einheitliche Währung für Seed-Katalog, Auswertung, PDF und Adminpflege dokumentiert

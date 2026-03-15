@@ -5,11 +5,12 @@ Das Plugin `cms-m365lic` liefert einen konfigurierbaren Microsoft-365-Lizenzbera
 ## Kernfunktionen
 
 - Bedarf in mehreren Benutzergruppen erfassen
+- 3-stufige Bedarfserfassung mit separatem Schritt für Add-ons & Security
 - Paketempfehlung auf Basis einer Feature-Matrix
 - Copilot-Voraussetzungen und Copilot-Add-ons berücksichtigen
 - Preise pro Tier (`public`, `member`, `group`) pflegen und getrennt ausspielen
 - Laufzeit- und Zahlungsart je Bereich auswählen und serverseitig hochrechnen
-- PDF-Export der Auswertung
+- Echter PDF-Export der Auswertung über den 365CMS-Dompdf-Stack
 - Tageslimits je Kontext über gehashte Actor-Keys
 - Spezial-User direkt auf 365CMS-Benutzer zuweisen
 
@@ -23,3 +24,4 @@ Das Plugin `cms-m365lic` liefert einen konfigurierbaren Microsoft-365-Lizenzbera
 - Spezialbereich wird nur für im Plugin zugewiesene Benutzer registriert
 - Publicsite, Memberbereich und Adminbereich wurden für bessere Lesbarkeit und schnellere Orientierung UI-seitig nachgeschärft
 - Die Bedarfsmatrix berücksichtigt jetzt auch Terminalserver-/RDS-Szenarien über das Merkmal `Terminalserver / Shared Activation`
+- Add-on-Katalog umfasst jetzt zusätzlich Microsoft Entra ID P1/P2 sowie Defender-for-Business-, Defender-for-Office-365- und Defender-for-Endpoint-Erweiterungen

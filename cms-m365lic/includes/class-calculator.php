@@ -22,6 +22,13 @@ final class CMS_M365LIC_Calculator
         'planner',
         'automation',
         'teams_premium',
+        'entra_id_p1',
+        'entra_id_p2',
+        'defender_business',
+        'defender_office_p1',
+        'defender_office_p2',
+        'defender_endpoint_p1',
+        'defender_endpoint_p2',
         'copilot_chat',
         'copilot_m365',
         'copilot_studio',
@@ -313,16 +320,26 @@ final class CMS_M365LIC_Calculator
      */
     private static function build_explanation(?array $basePackage, array $addons, array $baseFeatures, array $addonFeatures): string
     {
+        $featureDefinitions = CMS_M365LIC_Catalog::feature_definitions();
         $parts = [];
 
         if ($basePackage !== null) {
-            $parts[] = 'Basis: ' . $basePackage['name'] . ' deckt ' . implode(', ', $baseFeatures) . ' ab.';
+            $parts[] = 'Basis: ' . $basePackage['name'] . ' deckt ' . implode(', ', self::feature_labels($baseFeatures, $featureDefinitions)) . ' ab.';
+
+            if (in_array('terminalserver', $baseFeatures, true)) {
+                $baseTags = array_values(array_map('strval', $basePackage['tags'] ?? []));
+                if (in_array('shared_computer_activation', $baseTags, true) || in_array('rds', $baseTags, true)) {
+                    $parts[] = $basePackage['name'] . ' wurde speziell gewählt, weil für Terminalserver-/RDS-Szenarien Shared Computer Activation benötigt wird und viele Standardpläne ohne diese Berechtigung dafür nicht geeignet sind.';
+                } else {
+                    $parts[] = 'Terminalserver wurde angefragt; deshalb waren reine Web- oder Standardpläne ohne Shared-Activation-Recht keine passende Wahl.';
+                }
+            }
         }
 
         if (!empty($addons)) {
             $parts[] = 'Add-ons: ' . implode(', ', array_map(static fn(array $addon): string => (string) $addon['name'], $addons)) . '.';
         } elseif (!empty($addonFeatures)) {
-            $parts[] = 'Für einzelne Zusatzfunktionen wurden keine kompatiblen aktiven Add-ons gefunden.';
+            $parts[] = 'Für einzelne Zusatzfunktionen (' . implode(', ', self::feature_labels($addonFeatures, $featureDefinitions)) . ') wurden keine kompatiblen aktiven Add-ons gefunden.';
         }
 
         if (empty($parts)) {
@@ -330,5 +347,17 @@ final class CMS_M365LIC_Calculator
         }
 
         return implode(' ', $parts);
+    }
+
+    /**
+     * @param array<int,string> $features
+     * @param array<string,array<string,mixed>> $definitions
+     * @return array<int,string>
+     */
+    private static function feature_labels(array $features, array $definitions): array
+    {
+        return array_values(array_map(static function (string $feature) use ($definitions): string {
+            return (string) ($definitions[$feature]['label'] ?? $feature);
+        }, $features));
     }
 }

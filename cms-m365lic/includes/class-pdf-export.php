@@ -170,22 +170,55 @@ final class CMS_M365LIC_Pdf_Export
 
     public static function stream_pdf(string $html, string $filename): void
     {
+        $normalizedFilename = self::normalize_pdf_filename($filename);
+
+        if (class_exists('CMS\Services\PdfService')) {
+            try {
+                $pdfService = \CMS\Services\PdfService::getInstance();
+                if ($pdfService->isAvailable()) {
+                    $pdfService->setPaper('A4', 'portrait')->streamFromHtml($html, $normalizedFilename, false);
+                    exit;
+                }
+            } catch (\Throwable) {
+                // Fallback auf direkte Dompdf-Initialisierung.
+            }
+        }
+
+        if (class_exists('CMS\VendorRegistry')) {
+            \CMS\VendorRegistry::instance()->loadPackage('dompdf');
+        }
+
         if (class_exists('Dompdf\Dompdf')) {
             $options = new \Dompdf\Options();
-            $options->set('isRemoteEnabled', true);
+            $options->setIsRemoteEnabled(false);
+            $options->setIsPhpEnabled(false);
+            $options->setIsJavascriptEnabled(false);
             $options->set('defaultFont', 'DejaVu Sans');
+            if (defined('ABSPATH')) {
+                $options->setChroot(ABSPATH);
+            }
 
             $dompdf = new \Dompdf\Dompdf($options);
             $dompdf->loadHtml($html, 'UTF-8');
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
-            $dompdf->stream($filename, ['Attachment' => true]);
+            $dompdf->stream($normalizedFilename, ['Attachment' => true]);
             exit;
         }
 
-        header('Content-Type: text/html; charset=utf-8');
-        header('Content-Disposition: attachment; filename="' . $filename . '.html"');
-        echo $html;
+        http_response_code(503);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'PDF-Renderer ist aktuell nicht verfügbar. Bitte die 365CMS-Dompdf-Installation prüfen.';
         exit;
+    }
+
+    private static function normalize_pdf_filename(string $filename): string
+    {
+        $trimmed = trim($filename);
+        if ($trimmed === '') {
+            return 'export.pdf';
+        }
+
+        return str_ends_with(strtolower($trimmed), '.pdf') ? $trimmed : $trimmed . '.pdf';
     }
 }

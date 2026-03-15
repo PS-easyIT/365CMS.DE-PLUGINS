@@ -7,15 +7,16 @@
 - Mehrzeilige Bedarfsanalyse für verschiedene Benutzergruppen
 - Vordefinierte Presets wie `Nur Mail`, `Mail + Teams`, `Web Office + Mail + OneDrive`, `Knowledge Worker`, `Frontline`
 - Seed-Katalog mit Microsoft-365-Basislizenzen, Frontline-SKUs, Copilot-Optionen und Add-ons
-- Vollständig vorbelegte Basispreise für alle Seed-SKUs inklusive Power BI, Teams Phone, Visio, Project, Exchange, SharePoint und Copilot-Optionen
+- Vollständig vorbelegte Basispreise für alle Seed-SKUs inklusive Power BI, Teams Phone, Visio, Project, Exchange, SharePoint, Entra-/Defender-Erweiterungen und Copilot-Optionen
 - Alle Preisangaben und Auswertungen konsistent in Euro (EUR / €)
 - Bedarfsmerkmal für `Terminalserver / Shared Computer Activation`, damit RDS-/Terminalserver-Szenarien gezielt auf passende Microsoft-365-/Office-SKUs gelenkt werden
+- 3-stufiger Wizard mit getrenntem Add-on-/Security-Schritt für gezielte Erweiterungen wie Defender, Entra ID P2 oder Copilot
 - Getrennte Zugriffsflächen für `public`, `member` und `group`
 - Eigene Admin-Seite für Spezial-User-Zuweisungen direkt auf 365CMS-Benutzer
 - Auswahl von Laufzeit & Zahlungsart je Bereich: `1 Jahr jährlich`, `1 Jahr monatlich (+5%)`, `1 Monat (+20%)`
 - Tageslimits für Auswertung und PDF-Export je Kontext
 - Publicsite, die Header/Footer des aktiven Themes verwendet
-- PDF-Export der Ergebnisübersicht
+- Echter PDF-Export der Ergebnisübersicht über den 365CMS-PDF-Stack
 - Adminverwaltung für Pakete, Feature-Matrix, Spezial-User, Preise und Settings
 
 ## Routen
@@ -34,11 +35,13 @@
 Das Plugin unterscheidet zwischen:
 
 - **Basislizenzen**: z. B. Business Basic, Business Standard, Business Premium, Office 365 E3, Microsoft 365 E5, F1/F3
-- **Add-ons**: z. B. Microsoft 365 Copilot, Copilot Business, Copilot Chat, Teams Premium, Power BI Pro, Project, Visio, Planner
+- **Add-ons**: z. B. Microsoft 365 Copilot, Copilot Business, Copilot Chat, Teams Premium, Power BI Pro, Project, Visio, Planner, Entra ID P1/P2 und mehrere Defender-Produkte
 
 Copilot-Lizenzvoraussetzungen wurden anhand offizieller Microsoft-Informationen als Seed-Tags modelliert, damit kompatible Add-ons bevorzugt zu passenden Basispaketen empfohlen werden.
 
 Zusätzlich berücksichtigt die Bedarfsmatrix jetzt auch **Terminalserver-/RDS-Anforderungen**. Wird `Terminalserver / Shared Activation` ausgewählt, bevorzugt der Rechner passende SKUs mit Shared-Computer-Activation-Unterstützung wie `Microsoft 365 Apps for enterprise`, `Office 365 E3/E5`, `Microsoft 365 E3/E5` sowie – für kleinere Setups – `Microsoft 365 Business Premium`.
+
+Für Sicherheits- und Identitäts-Themen gibt es nun außerdem einen dedizierten dritten Wizard-Schritt für gezielte Erweiterungen, z. B. `Microsoft Entra ID P2`, `Defender for Business`, `Defender for Office 365` oder `Defender for Endpoint`.
 
 ## Preise
 
