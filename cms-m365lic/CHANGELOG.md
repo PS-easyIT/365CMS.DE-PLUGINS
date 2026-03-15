@@ -5,6 +5,7 @@
 - Standardwährung, Seed-Katalog und Darstellung durchgängig auf Euro (EUR / €) vereinheitlicht
 - Public-/Member-Frontend mit Hero-Pills, KPI-Karten, klarerer Ergebnishierarchie und besser lesbarer Preispräsentation verfeinert
 - Admin-Dashboard, Spezial-User-Ansicht sowie Paket-/Settings-Formulare visuell gestrafft und auf EUR-only-Verwaltung ausgerichtet
+- Public-Rechner um das Bedarfsmerkmal `Terminalserver / Shared Activation` erweitert, damit RDS-/Terminalserver-Szenarien gezielt auf passende Enterprise-/SCA-fähige SKUs gematcht werden
 
 ## 1.1.0 – 2026-03-15
 

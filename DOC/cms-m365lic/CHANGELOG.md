@@ -4,6 +4,7 @@
 
 - EUR als einheitliche Währung für Seed-Katalog, Auswertung, PDF und Adminpflege dokumentiert
 - Frontend- und Admin-Feinschliff für bessere Scannability und klarere Preisführung ergänzt
+- Neues Bedarfsmerkmal für Terminalserver-/RDS-Anforderungen inklusive Matching auf passende Shared-Activation-SKUs dokumentiert
 
 ## 1.1.0
 

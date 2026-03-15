@@ -1,6 +1,8 @@
 (function () {
     'use strict';
 
+    const MAX_REQUIREMENT_ROWS = 25;
+
     function reindexRows() {
         const rows = document.querySelectorAll('.m365lic-requirement');
         rows.forEach((row, index) => {
@@ -25,6 +27,7 @@
     }
 
     function clearRow(row) {
+        row.dataset.step = '1';
         row.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach((input) => {
             if (input.name && input.name.indexOf('[quantity]') !== -1) {
                 input.value = '1';
@@ -44,6 +47,8 @@
         row.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
             checkbox.checked = false;
         });
+
+        setStep(row, 1);
     }
 
     function applyPreset(select) {
@@ -68,6 +73,18 @@
         });
     }
 
+    function setStep(row, step) {
+        row.dataset.step = String(step);
+
+        row.querySelectorAll('[data-step-panel]').forEach((panel) => {
+            panel.classList.toggle('is-active', panel.dataset.stepPanel === String(step));
+        });
+
+        row.querySelectorAll('[data-step-target]').forEach((trigger) => {
+            trigger.classList.toggle('is-active', trigger.dataset.stepTarget === String(step));
+        });
+    }
+
     function bindRow(row) {
         const removeBtn = row.querySelector('.m365lic-remove-row');
         if (removeBtn) {
@@ -88,12 +105,71 @@
                 applyPreset(presetSelect);
             });
         }
+
+        row.querySelectorAll('[data-step-target]').forEach((trigger) => {
+            trigger.addEventListener('click', function () {
+                setStep(row, Number(trigger.dataset.stepTarget || '1'));
+            });
+        });
+
+        const nextButton = row.querySelector('.m365lic-next-step');
+        if (nextButton) {
+            nextButton.addEventListener('click', function () {
+                setStep(row, 2);
+            });
+        }
+
+        const prevButton = row.querySelector('.m365lic-prev-step');
+        if (prevButton) {
+            prevButton.addEventListener('click', function () {
+                setStep(row, 1);
+            });
+        }
+
+        const finishButton = row.querySelector('.m365lic-finish-step');
+        if (finishButton) {
+            finishButton.addEventListener('click', function () {
+                setStep(row, 1);
+            });
+        }
+
+        setStep(row, Number(row.dataset.step || '1'));
+    }
+
+    function collectRequirements(container) {
+        return Array.from(container.querySelectorAll('.m365lic-requirement')).map((row) => {
+            const checkedFeatures = Array.from(row.querySelectorAll('input[type="checkbox"][data-feature]:checked')).map((checkbox) => checkbox.dataset.feature);
+            const labelInput = row.querySelector('input[name$="[label]"]');
+            const quantityInput = row.querySelector('input[name$="[quantity]"]');
+            const audienceSelect = row.querySelector('select[name$="[audience]"]');
+            const presetSelect = row.querySelector('select[name$="[preset]"]');
+
+            return {
+                label: labelInput ? labelInput.value : '',
+                quantity: quantityInput ? quantityInput.value : '1',
+                audience: audienceSelect ? audienceSelect.value : 'knowledge',
+                preset: presetSelect ? presetSelect.value : '',
+                features: checkedFeatures
+            };
+        });
+    }
+
+    function compactRequirementInputs(container) {
+        container.querySelectorAll('[name]').forEach((element) => {
+            if (element.name && element.name.indexOf('requirements[') === 0) {
+                element.dataset.originalName = element.name;
+                element.removeAttribute('name');
+            }
+        });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
         const container = document.getElementById('m365licRequirements');
         const addButton = document.getElementById('m365licAddRow');
-        if (!container || !addButton) {
+        const form = document.getElementById('m365licForm');
+        const payloadField = document.getElementById('m365licRequirementsPayload');
+
+        if (!container || !addButton || !form || !payloadField) {
             return;
         }
 
@@ -104,11 +180,30 @@
             if (!firstRow) {
                 return;
             }
+
+            const existingRows = container.querySelectorAll('.m365lic-requirement').length;
+            if (existingRows >= MAX_REQUIREMENT_ROWS) {
+                alert('Bitte maximal ' + MAX_REQUIREMENT_ROWS + ' Bedarfsgruppen gleichzeitig anlegen.');
+                return;
+            }
+
             const clone = firstRow.cloneNode(true);
             clearRow(clone);
             container.appendChild(clone);
             reindexRows();
             bindRow(clone);
+        });
+
+        form.addEventListener('submit', function (event) {
+            const requirements = collectRequirements(container);
+            if (requirements.length > MAX_REQUIREMENT_ROWS) {
+                event.preventDefault();
+                alert('Bitte maximal ' + MAX_REQUIREMENT_ROWS + ' Bedarfsgruppen gleichzeitig auswerten.');
+                return;
+            }
+
+            payloadField.value = JSON.stringify(requirements);
+            compactRequirementInputs(container);
         });
     });
 })();

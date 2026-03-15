@@ -25,54 +25,115 @@ $exportToken = class_exists('CMS\Security') ? \CMS\Security::instance()->generat
 $theme = \CMS\ThemeManager::instance();
 $isEmbedded = !empty($viewContext['embedded']);
 $introText = (string) ($viewContext['intro'] ?? $settings['page_intro'] ?? '');
+$stepOneFeatureKeys = ['mail', 'teams', 'office_web', 'office_desktop', 'terminalserver', 'onedrive', 'sharepoint', 'frontline'];
+$stepTwoFeatureKeys = array_values(array_filter(array_keys($featureDefinitions), static fn(string $key): bool => !in_array($key, $stepOneFeatureKeys, true)));
 
-$renderRequirementRow = static function (array $requirement, int $index) use ($featureDefinitions, $presets, $esc): void {
+$renderRequirementRow = static function (array $requirement, int $index) use ($featureDefinitions, $presets, $esc, $stepOneFeatureKeys, $stepTwoFeatureKeys): void {
     ?>
-    <article class="m365lic-requirement" data-index="<?php echo $index; ?>">
+    <article class="m365lic-requirement" data-index="<?php echo $index; ?>" data-step="1">
         <div class="m365lic-requirement__head">
-            <h3>Bedarfsgruppe <?php echo $index + 1; ?></h3>
+            <div>
+                <h3>Bedarfsgruppe <?php echo $index + 1; ?></h3>
+                <div class="m365lic-requirement__meta">Schrittweise Bedarfserfassung für Basis, Plattform und Add-ons.</div>
+            </div>
             <button type="button" class="m365lic-btn m365lic-btn--ghost m365lic-remove-row">Entfernen</button>
         </div>
 
-        <div class="m365lic-form-grid m365lic-form-grid--3">
-            <div class="m365lic-field">
-                <label for="req_label_<?php echo $index; ?>">Bezeichnung</label>
-                <input id="req_label_<?php echo $index; ?>" type="text" name="requirements[<?php echo $index; ?>][label]" value="<?php echo $esc((string) ($requirement['label'] ?? '')); ?>" placeholder="z. B. Vertrieb / Backoffice / Frontline">
+        <div class="m365lic-stepper" role="tablist" aria-label="Bedarfserfassung">
+            <button type="button" class="m365lic-stepper__item is-active" data-step-target="1">
+                <span class="m365lic-stepper__num">1</span>
+                <span>Quick Check</span>
+            </button>
+            <button type="button" class="m365lic-stepper__item" data-step-target="2">
+                <span class="m365lic-stepper__num">2</span>
+                <span>Advanced / Expertenoptionen</span>
+            </button>
+        </div>
+
+        <section class="m365lic-step-panel is-active" data-step-panel="1">
+            <div class="m365lic-step-panel__head">
+                <div>
+                    <strong>Quick Check</strong>
+                    <p>Erfasse Benutzergruppe, Einsatzmodell und die wichtigsten Plattformfunktionen für eine schnelle Erstempfehlung.</p>
+                </div>
+                <span class="m365lic-pill">Pflichtschritt</span>
             </div>
-            <div class="m365lic-field">
-                <label for="req_qty_<?php echo $index; ?>">Anzahl Benutzer</label>
-                <input id="req_qty_<?php echo $index; ?>" type="number" min="1" name="requirements[<?php echo $index; ?>][quantity]" value="<?php echo (int) ($requirement['quantity'] ?? 1); ?>">
+
+            <div class="m365lic-form-grid m365lic-form-grid--3">
+                <div class="m365lic-field">
+                    <label for="req_label_<?php echo $index; ?>">Bezeichnung</label>
+                    <input id="req_label_<?php echo $index; ?>" type="text" name="requirements[<?php echo $index; ?>][label]" value="<?php echo $esc((string) ($requirement['label'] ?? '')); ?>" placeholder="z. B. Vertrieb / Backoffice / Frontline">
+                </div>
+                <div class="m365lic-field">
+                    <label for="req_qty_<?php echo $index; ?>">Anzahl Benutzer</label>
+                    <input id="req_qty_<?php echo $index; ?>" type="number" min="1" name="requirements[<?php echo $index; ?>][quantity]" value="<?php echo (int) ($requirement['quantity'] ?? 1); ?>">
+                </div>
+                <div class="m365lic-field">
+                    <label for="req_audience_<?php echo $index; ?>">Zielgruppe</label>
+                    <select id="req_audience_<?php echo $index; ?>" name="requirements[<?php echo $index; ?>][audience]">
+                        <option value="knowledge" <?php echo ($requirement['audience'] ?? 'knowledge') === 'knowledge' ? 'selected' : ''; ?>>Knowledge Worker</option>
+                        <option value="frontline" <?php echo ($requirement['audience'] ?? '') === 'frontline' ? 'selected' : ''; ?>>Frontline / Kiosk</option>
+                    </select>
+                </div>
             </div>
+
             <div class="m365lic-field">
-                <label for="req_audience_<?php echo $index; ?>">Zielgruppe</label>
-                <select id="req_audience_<?php echo $index; ?>" name="requirements[<?php echo $index; ?>][audience]">
-                    <option value="knowledge" <?php echo ($requirement['audience'] ?? 'knowledge') === 'knowledge' ? 'selected' : ''; ?>>Knowledge Worker</option>
-                    <option value="frontline" <?php echo ($requirement['audience'] ?? '') === 'frontline' ? 'selected' : ''; ?>>Frontline / Kiosk</option>
+                <label for="req_preset_<?php echo $index; ?>">Preset</label>
+                <select id="req_preset_<?php echo $index; ?>" class="m365lic-preset-select" name="requirements[<?php echo $index; ?>][preset]">
+                    <option value="">— frei konfigurieren —</option>
+                    <?php foreach ($presets as $presetKey => $preset): ?>
+                    <option value="<?php echo $esc($presetKey); ?>" <?php echo ($requirement['preset'] ?? '') === $presetKey ? 'selected' : ''; ?>><?php echo $esc((string) $preset['label']); ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
-        </div>
 
-        <div class="m365lic-field">
-            <label for="req_preset_<?php echo $index; ?>">Preset</label>
-            <select id="req_preset_<?php echo $index; ?>" class="m365lic-preset-select" name="requirements[<?php echo $index; ?>][preset]">
-                <option value="">— frei konfigurieren —</option>
-                <?php foreach ($presets as $presetKey => $preset): ?>
-                <option value="<?php echo $esc($presetKey); ?>" <?php echo ($requirement['preset'] ?? '') === $presetKey ? 'selected' : ''; ?>><?php echo $esc((string) $preset['label']); ?></option>
+            <div class="m365lic-feature-grid m365lic-feature-grid--dense">
+                <?php foreach ($stepOneFeatureKeys as $featureKey): ?>
+                    <?php if (!isset($featureDefinitions[$featureKey])) { continue; } ?>
+                    <?php $feature = $featureDefinitions[$featureKey]; ?>
+                    <label class="m365lic-feature-toggle">
+                        <input type="checkbox" data-feature="<?php echo $esc($featureKey); ?>" name="requirements[<?php echo $index; ?>][features][<?php echo $esc($featureKey); ?>]" value="1" <?php echo in_array($featureKey, $requirement['features'] ?? [], true) ? 'checked' : ''; ?>>
+                        <span>
+                            <strong><?php echo $esc((string) $feature['label']); ?></strong>
+                            <small><?php echo $esc((string) $feature['description']); ?></small>
+                        </span>
+                    </label>
                 <?php endforeach; ?>
-            </select>
-        </div>
+            </div>
 
-        <div class="m365lic-feature-grid">
-            <?php foreach ($featureDefinitions as $featureKey => $feature): ?>
-            <label class="m365lic-feature-toggle">
-                <input type="checkbox" data-feature="<?php echo $esc($featureKey); ?>" name="requirements[<?php echo $index; ?>][features][<?php echo $esc($featureKey); ?>]" value="1" <?php echo in_array($featureKey, $requirement['features'] ?? [], true) ? 'checked' : ''; ?>>
-                <span>
-                    <strong><?php echo $esc((string) $feature['label']); ?></strong>
-                    <small><?php echo $esc((string) $feature['description']); ?></small>
-                </span>
-            </label>
-            <?php endforeach; ?>
-        </div>
+            <div class="m365lic-step-actions">
+                <button type="button" class="m365lic-btn m365lic-btn--primary m365lic-next-step">Weiter zu Advanced / Expertenoptionen</button>
+            </div>
+        </section>
+
+        <section class="m365lic-step-panel" data-step-panel="2">
+            <div class="m365lic-step-panel__head">
+                <div>
+                    <strong>Advanced / Expertenoptionen</strong>
+                    <p>Ergänze Security, Copilot, Collaboration und weitere Zusatzdienste für anspruchsvollere oder spezialisierte Szenarien.</p>
+                </div>
+                <span class="m365lic-pill">Optional</span>
+            </div>
+
+            <div class="m365lic-feature-grid m365lic-feature-grid--dense">
+                <?php foreach ($stepTwoFeatureKeys as $featureKey): ?>
+                    <?php if (!isset($featureDefinitions[$featureKey])) { continue; } ?>
+                    <?php $feature = $featureDefinitions[$featureKey]; ?>
+                    <label class="m365lic-feature-toggle">
+                        <input type="checkbox" data-feature="<?php echo $esc($featureKey); ?>" name="requirements[<?php echo $index; ?>][features][<?php echo $esc($featureKey); ?>]" value="1" <?php echo in_array($featureKey, $requirement['features'] ?? [], true) ? 'checked' : ''; ?>>
+                        <span>
+                            <strong><?php echo $esc((string) $feature['label']); ?></strong>
+                            <small><?php echo $esc((string) $feature['description']); ?></small>
+                        </span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="m365lic-step-actions m365lic-step-actions--split">
+                <button type="button" class="m365lic-btn m365lic-btn--ghost m365lic-prev-step">Zurück</button>
+                <button type="button" class="m365lic-btn m365lic-btn--ghost m365lic-finish-step">Fertig</button>
+            </div>
+        </section>
     </article>
     <?php
 };
@@ -88,13 +149,25 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
 <main class="m365lic-main<?php echo $isEmbedded ? ' m365lic-main--embedded' : ''; ?>">
     <header class="m365lic-hero">
         <div class="m365lic-container">
-            <span class="m365lic-eyebrow">Microsoft 365 · Lizenzplanung</span>
-            <h1><?php echo $esc($themeTitle); ?></h1>
-            <p><?php echo $esc($introText); ?></p>
-            <div class="m365lic-hero-pills">
-                <span class="m365lic-pill">Preise in Euro</span>
-                <span class="m365lic-pill"><?php echo $esc((string) ($pricingContext['label'] ?? 'Öffentlich')); ?></span>
-                <span class="m365lic-pill"><?php echo $esc((string) ($selectedBilling['label'] ?? '1 Jahr · jährliche Zahlung')); ?></span>
+            <div class="m365lic-hero-grid">
+                <div>
+                    <span class="m365lic-eyebrow">Microsoft 365 · Lizenzplanung</span>
+                    <h1><?php echo $esc($themeTitle); ?></h1>
+                    <p><?php echo $esc($introText); ?></p>
+                    <div class="m365lic-hero-pills">
+                        <span class="m365lic-pill">Preise in Euro</span>
+                        <span class="m365lic-pill"><?php echo $esc((string) ($pricingContext['label'] ?? 'Öffentlich')); ?></span>
+                        <span class="m365lic-pill"><?php echo $esc((string) ($selectedBilling['short_label'] ?? 'Jahr / jährlich')); ?></span>
+                    </div>
+                </div>
+                <div class="m365lic-hero-panel">
+                    <div class="m365lic-hero-panel__kicker">Tech-Checks</div>
+                    <ul class="m365lic-hero-list">
+                        <li>Copilot-Voraussetzungen</li>
+                        <li>Terminalserver / Shared Activation</li>
+                        <li>Public-, Member- und Spezialpreise</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </header>
@@ -118,10 +191,26 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                         <div class="m365lic-card-badge">EUR · Netto-Richtwerte</div>
                     </div>
 
+                    <div class="m365lic-kpi-grid m365lic-kpi-grid--compact">
+                        <div class="m365lic-kpi-card">
+                            <span>Presets</span>
+                            <strong><?php echo (int) count($presets); ?></strong>
+                        </div>
+                        <div class="m365lic-kpi-card">
+                            <span>Optionen</span>
+                            <strong><?php echo (int) count($featureDefinitions); ?></strong>
+                        </div>
+                        <div class="m365lic-kpi-card">
+                            <span>Spezialfall</span>
+                            <strong>RDS / Terminalserver</strong>
+                        </div>
+                    </div>
+
                     <form method="POST" id="m365licForm" class="m365lic-form">
                         <input type="hidden" name="csrf_token" value="<?php echo $esc($csrfToken); ?>">
                         <input type="hidden" name="evaluation_csrf_token" value="<?php echo $esc($evaluationToken); ?>">
                         <input type="hidden" name="context_scope" value="<?php echo $esc((string) ($pricingContext['scope'] ?? 'public')); ?>">
+                        <input type="hidden" name="requirements_payload" id="m365licRequirementsPayload" value="">
 
                         <div class="m365lic-form-grid m365lic-form-grid--2 m365lic-billing-grid">
                             <div class="m365lic-field">
@@ -153,6 +242,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                             <button type="button" class="m365lic-btn m365lic-btn--ghost" id="m365licAddRow">➕ Weitere Bedarfsgruppe</button>
                             <button type="submit" class="m365lic-btn m365lic-btn--primary">🧮 Auswerten</button>
                         </div>
+                        <small class="m365lic-help-text">Für eine stabile Auswertung werden maximal 25 Bedarfsgruppen pro Anfrage verarbeitet.</small>
                     </form>
                 </section>
 

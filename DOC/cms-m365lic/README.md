@@ -22,3 +22,4 @@ Das Plugin `cms-m365lic` liefert einen konfigurierbaren Microsoft-365-Lizenzbera
 - Seed-Preisupdates werden bei Bestandsinstallationen übernommen, solange lokal noch kein eigener Preis gepflegt wurde
 - Spezialbereich wird nur für im Plugin zugewiesene Benutzer registriert
 - Publicsite, Memberbereich und Adminbereich wurden für bessere Lesbarkeit und schnellere Orientierung UI-seitig nachgeschärft
+- Die Bedarfsmatrix berücksichtigt jetzt auch Terminalserver-/RDS-Szenarien über das Merkmal `Terminalserver / Shared Activation`

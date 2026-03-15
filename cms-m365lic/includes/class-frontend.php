@@ -18,6 +18,7 @@ final class CMS_M365LIC_Frontend
     private const SCOPE_SPECIAL = 'special';
     private const MEMBER_SECTION_SLUG = 'm365-license';
     private const SPECIAL_SECTION_SLUG = 'm365-license-special';
+    private const MAX_REQUIREMENT_ROWS = 25;
 
     private static ?self $instance = null;
 
@@ -125,12 +126,6 @@ final class CMS_M365LIC_Frontend
         $featureDefinitions = CMS_M365LIC_Catalog::feature_definitions();
         $presets = CMS_M365LIC_Catalog::presets();
         $billingOptions = CMS_M365LIC_Catalog::billing_options();
-        $csrfToken = class_exists('CMS\Security')
-            ? \CMS\Security::instance()->generateToken('form_guard')
-            : bin2hex(random_bytes(16));
-        $evaluationToken = class_exists('CMS\Security')
-            ? \CMS\Security::instance()->generateToken('m365lic_evaluate')
-            : bin2hex(random_bytes(16));
 
         $requirements = [$this->default_requirement_row()];
         $evaluation = null;
@@ -145,29 +140,44 @@ final class CMS_M365LIC_Frontend
             if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken($_POST['evaluation_csrf_token'] ?? '', 'm365lic_evaluate')) {
                 $error = 'Sicherheitscheck fehlgeschlagen. Bitte die Seite neu laden.';
             } else {
-                $requirements = $this->normalize_requirements($_POST['requirements'] ?? []);
+                $requirements = $this->parse_posted_requirements();
+
+                if (count($requirements) > self::MAX_REQUIREMENT_ROWS) {
+                    $requirements = array_slice($requirements, 0, self::MAX_REQUIREMENT_ROWS);
+                    $error = 'Bitte maximal ' . self::MAX_REQUIREMENT_ROWS . ' Bedarfsgruppen gleichzeitig auswerten.';
+                }
+
                 $selectedBilling = $repo->resolve_billing_cycle(
                     (string) ($_POST['billing_cycle'] ?? ''),
                     (string) ($pricingContext['tier'] ?? 'public'),
                     $settings
                 );
-                $limitInfo = $repo->enforce_daily_limit('evaluation', (string) ($pricingContext['tier'] ?? 'public'));
 
-                if (empty($limitInfo['allowed'])) {
-                    $error = (string) ($limitInfo['message'] ?? 'Tageslimit erreicht.');
-                } else {
-                    $evaluation = CMS_M365LIC_Calculator::evaluate(
-                        $requirements,
-                        $packages,
-                        (string) ($pricingContext['tier'] ?? 'public'),
-                        (string) ($selectedBilling['key'] ?? 'annual_upfront')
-                    );
-                    $notice = 'Die Auswertung wurde erfolgreich erstellt.';
+                if ($error === '') {
+                    $limitInfo = $repo->enforce_daily_limit('evaluation', (string) ($pricingContext['tier'] ?? 'public'));
+
+                    if (empty($limitInfo['allowed'])) {
+                        $error = (string) ($limitInfo['message'] ?? 'Tageslimit erreicht.');
+                    } else {
+                        $evaluation = CMS_M365LIC_Calculator::evaluate(
+                            $requirements,
+                            $packages,
+                            (string) ($pricingContext['tier'] ?? 'public'),
+                            (string) ($selectedBilling['key'] ?? 'annual_upfront')
+                        );
+                        $notice = 'Die Auswertung wurde erfolgreich erstellt.';
+                    }
                 }
             }
         }
 
         $viewContext = $this->build_view_context($pricingContext, $embedded, $settings, $selectedBilling);
+        $csrfToken = class_exists('CMS\Security')
+            ? \CMS\Security::instance()->generateToken('form_guard')
+            : bin2hex(random_bytes(16));
+        $evaluationToken = class_exists('CMS\Security')
+            ? \CMS\Security::instance()->generateToken('m365lic_evaluate')
+            : bin2hex(random_bytes(16));
         $this->set_seo((string) ($settings['page_title'] ?? 'Microsoft 365 Lizenzberater'), (string) ($settings['page_intro'] ?? ''));
         include CMS_M365LIC_PLUGIN_DIR . 'templates/page-calculator.php';
         if (!$embedded) {
@@ -432,6 +442,24 @@ final class CMS_M365LIC_Frontend
         }
 
         return !empty($normalized) ? $normalized : [$this->default_requirement_row()];
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private function parse_posted_requirements(): array
+    {
+        $payload = $_POST['requirements_payload'] ?? '';
+
+        if (is_string($payload) && trim($payload) !== '') {
+            $decoded = json_decode($payload, true);
+            if (is_array($decoded)) {
+                return $this->normalize_requirements($decoded);
+            }
+        }
+
+        $raw = $_POST['requirements'] ?? [];
+        return is_array($raw) ? $this->normalize_requirements($raw) : [$this->default_requirement_row()];
     }
 
     /**

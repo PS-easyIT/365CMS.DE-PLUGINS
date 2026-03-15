@@ -9,6 +9,7 @@
 - Seed-Katalog mit Microsoft-365-Basislizenzen, Frontline-SKUs, Copilot-Optionen und Add-ons
 - Vollständig vorbelegte Basispreise für alle Seed-SKUs inklusive Power BI, Teams Phone, Visio, Project, Exchange, SharePoint und Copilot-Optionen
 - Alle Preisangaben und Auswertungen konsistent in Euro (EUR / €)
+- Bedarfsmerkmal für `Terminalserver / Shared Computer Activation`, damit RDS-/Terminalserver-Szenarien gezielt auf passende Microsoft-365-/Office-SKUs gelenkt werden
 - Getrennte Zugriffsflächen für `public`, `member` und `group`
 - Eigene Admin-Seite für Spezial-User-Zuweisungen direkt auf 365CMS-Benutzer
 - Auswahl von Laufzeit & Zahlungsart je Bereich: `1 Jahr jährlich`, `1 Jahr monatlich (+5%)`, `1 Monat (+20%)`
@@ -36,6 +37,8 @@ Das Plugin unterscheidet zwischen:
 - **Add-ons**: z. B. Microsoft 365 Copilot, Copilot Business, Copilot Chat, Teams Premium, Power BI Pro, Project, Visio, Planner
 
 Copilot-Lizenzvoraussetzungen wurden anhand offizieller Microsoft-Informationen als Seed-Tags modelliert, damit kompatible Add-ons bevorzugt zu passenden Basispaketen empfohlen werden.
+
+Zusätzlich berücksichtigt die Bedarfsmatrix jetzt auch **Terminalserver-/RDS-Anforderungen**. Wird `Terminalserver / Shared Activation` ausgewählt, bevorzugt der Rechner passende SKUs mit Shared-Computer-Activation-Unterstützung wie `Microsoft 365 Apps for enterprise`, `Office 365 E3/E5`, `Microsoft 365 E3/E5` sowie – für kleinere Setups – `Microsoft 365 Business Premium`.
 
 ## Preise
 
