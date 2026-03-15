@@ -1,0 +1,146 @@
+.m365lic-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.m365lic-stat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1.1rem 1.2rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+
+.m365lic-stat-card__value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--admin-primary, #3b82f6);
+}
+
+.m365lic-stat-card__label {
+    margin-top: 0.25rem;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+
+.m365lic-admin-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+.m365lic-admin-grid--wide {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.2fr);
+    align-items: start;
+}
+
+.m365lic-admin-list {
+    margin: 0;
+    padding-left: 1rem;
+    color: #475569;
+}
+
+.m365lic-admin-list li {
+    margin-bottom: 0.5rem;
+}
+
+.m365lic-form-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.m365lic-form-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.m365lic-form-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.m365lic-feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.m365lic-feature-grid .checkbox-label {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.8rem;
+    background: #fff;
+}
+
+.m365lic-feature-grid .checkbox-label small {
+    display: block;
+    margin-top: 0.2rem;
+    color: #64748b;
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.m365lic-inline-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.m365lic-help-text,
+.m365lic-muted {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.m365lic-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 0;
+}
+
+.m365lic-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.65rem 1.15rem;
+    color: #475569;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-bottom: 2px solid transparent;
+    border-radius: 8px 8px 0 0;
+    margin-bottom: -2px;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.m365lic-tab:hover {
+    color: var(--admin-primary, #3b82f6);
+    background: #f8fafc;
+}
+
+.m365lic-tab.active {
+    color: var(--admin-primary, #3b82f6);
+    border-color: #e2e8f0 #e2e8f0 #ffffff #e2e8f0;
+    background: #ffffff;
+    font-weight: 600;
+}
+
+@media (max-width: 1100px) {
+    .m365lic-admin-grid,
+    .m365lic-admin-grid--wide,
+    .m365lic-form-grid--3,
+    .m365lic-form-grid--2,
+    .m365lic-feature-grid {
+        grid-template-columns: 1fr;
+    }
+}

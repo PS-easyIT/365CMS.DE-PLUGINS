@@ -1,0 +1,13 @@
+{
+    "name": "CMS M365 License",
+    "slug": "cms-m365lic",
+    "version": "1.0.2",
+    "requires_cms": "2.0.0",
+    "tested_cms": "2.0.0",
+    "author": "365 Network",
+    "author_url": "https://365network.de",
+    "description": "Microsoft-365-Lizenzberater mit Bedarfsanalyse, Paketverwaltung, Copilot-Lizenzlogik und PDF-Export.",
+    "download_url": "",
+    "last_updated": "2026-03-15",
+    "changelog": "1.0.2: Public-CSRF-Flow korrigiert, Seed-Preis-Synchronisierung für Bestandsinstallationen repariert, Startpreise für häufige Business-/Teams-Pakete ergänzt und Frontend-Warnung für fehlende Preise verbessert."
+}

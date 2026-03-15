@@ -125,8 +125,17 @@ final class CMS_Contact
         }
     }
 
+    private function should_enqueue_public_assets(): bool
+    {
+        return false;
+    }
+
     public function enqueue_styles(): void
     {
+        if (!$this->should_enqueue_public_assets()) {
+            return;
+        }
+
         $css = $this->plugin_dir . 'assets/css/contact-public.css';
         if (file_exists($css)) {
             echo '<link rel="stylesheet" href="'
@@ -137,6 +146,10 @@ final class CMS_Contact
 
     public function enqueue_scripts(): void
     {
+        if (!$this->should_enqueue_public_assets()) {
+            return;
+        }
+
         $js = $this->plugin_dir . 'assets/js/contact-public.js';
         if (file_exists($js)) {
             echo '<script src="'

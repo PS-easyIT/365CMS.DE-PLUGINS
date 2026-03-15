@@ -71,6 +71,11 @@
       "slug": "cms-promos",
       "name": "CMS Promos",
       "manifest": "PLUGINS/cms-promos/update.json"
+    },
+    {
+      "slug": "cms-m365lic",
+      "name": "CMS M365 License",
+      "manifest": "PLUGINS/cms-m365lic/update.json"
     }
   ]
 }

@@ -21,6 +21,7 @@
 | [cms-downloads](cms-downloads/) | 1.0.0 | 🚀 Neu | Öffentliches Download-Management mit Kategorien, Typ-Presets und Archiv |
 | [cms-newsletter](cms-newsletter/) | 1.0.0 | 🚀 Neu | Newsletter-Management mit Subscribern, Templates, Kampagnen und öffentlicher Anmeldung |
 | [cms-promos](cms-promos/) | 1.0.0 | 🚀 Neu | Promo-Management für CTA-Flächen, Platzierungen, Banner und Klickziele |
+| [cms-m365lic](cms-m365lic/) | 1.0.2 | 🚀 Neu | Microsoft-365-Lizenzberater mit Bedarfsanalyse, Copilot-SKU-Logik, PDF-Export und editierbarem Paketkatalog |
 | [cms-jobprofile-generator](cms-jobprofile-generator/) | 0.9.6 | 🧪 Beta | Stellenanzeigen-Generator mit Workflow-Genehmigung |
 | [cms-organigramm](cms-organigramm/) | 0.1.0 | 🚧 In Entwicklung | Interaktives Organigramm mit Cross-Plugin-Integration |
 | [cms-speakers](cms-speakers/) | 1.0.0 | ✅ Stabil | Speaker-Profile mit Topics & Präsentations-Historie |
