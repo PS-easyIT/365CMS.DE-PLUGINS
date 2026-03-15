@@ -22,7 +22,7 @@ trait CMS_M365LIC_Page_Dashboard_Trait
         <div class="admin-page-header">
             <div>
                 <h2>📊 M365 Lizenzberater</h2>
-                <p>Überblick über Paketkatalog, Limits, Pricing-Tiers und Seeds.</p>
+                <p>Überblick über Paketkatalog, Bereichslogik, Spezialzugänge und Preisabdeckung.</p>
             </div>
             <div class="header-actions">
                 <a href="?page=m365lic-packages" class="btn btn-primary">📦 Pakete verwalten</a>
@@ -39,16 +39,16 @@ trait CMS_M365LIC_Page_Dashboard_Trait
                 <div class="m365lic-stat-card__label">Aktive Pakete</div>
             </div>
             <div class="m365lic-stat-card">
-                <div class="m365lic-stat-card__value"><?php echo (int) $stats['packages_base']; ?></div>
-                <div class="m365lic-stat-card__label">Basislizenzen</div>
+                <div class="m365lic-stat-card__value"><?php echo (int) $stats['packages_with_prices']; ?></div>
+                <div class="m365lic-stat-card__label">Mit Preis</div>
             </div>
             <div class="m365lic-stat-card">
-                <div class="m365lic-stat-card__value"><?php echo (int) $stats['packages_addon']; ?></div>
-                <div class="m365lic-stat-card__label">Add-ons</div>
+                <div class="m365lic-stat-card__value"><?php echo (int) $stats['packages_without_prices']; ?></div>
+                <div class="m365lic-stat-card__label">Ohne Preis</div>
             </div>
             <div class="m365lic-stat-card">
-                <div class="m365lic-stat-card__value"><?php echo (int) $stats['feature_total']; ?></div>
-                <div class="m365lic-stat-card__label">Feature-Optionen</div>
+                <div class="m365lic-stat-card__value"><?php echo (int) $stats['special_users_total']; ?></div>
+                <div class="m365lic-stat-card__label">Spezial-User</div>
             </div>
             <div class="m365lic-stat-card">
                 <div class="m365lic-stat-card__value"><?php echo (int) $stats['preset_total']; ?></div>
@@ -58,22 +58,24 @@ trait CMS_M365LIC_Page_Dashboard_Trait
 
         <div class="m365lic-admin-grid">
             <div class="admin-card">
-                <h3>🧭 Publicsite & Limits</h3>
+                <h3>🧭 Bereiche & Default-Abrechnung</h3>
                 <ul class="m365lic-admin-list">
                     <li><strong>Route:</strong> /<?php echo self::esc((string) ($settings['route_slug'] ?? 'm365-lizenzberater')); ?></li>
-                    <li><strong>Public Tageslimit:</strong> <?php echo (int) ($settings['public_daily_limit'] ?? 2); ?></li>
-                    <li><strong>Member Tageslimit:</strong> <?php echo (int) ($settings['member_daily_limit'] ?? 10); ?></li>
-                    <li><strong>Gruppen Tageslimit:</strong> <?php echo (int) ($settings['group_daily_limit'] ?? 25); ?></li>
-                    <li><strong>Pricing-Tier Wechsel:</strong> <?php echo !empty($settings['allow_pricing_tier_switch']) ? 'Aktiv' : 'Inaktiv'; ?></li>
+                    <li><strong>Public Default:</strong> <?php echo self::esc((string) ($settings['public_default_billing_cycle'] ?? 'annual_upfront')); ?></li>
+                    <li><strong>Member Default:</strong> <?php echo self::esc((string) ($settings['member_default_billing_cycle'] ?? 'annual_monthly')); ?></li>
+                    <li><strong>Spezial Default:</strong> <?php echo self::esc((string) ($settings['group_default_billing_cycle'] ?? 'annual_monthly')); ?></li>
+                    <li><strong>Spezial-Label:</strong> <?php echo self::esc((string) ($settings['default_group_label'] ?? 'Partner / Spezialgruppe')); ?></li>
                 </ul>
             </div>
             <div class="admin-card">
-                <h3>🪄 Seed-Logik</h3>
-                <p>Der Katalog ist mit Microsoft-365-Basislizenzen, Frontline-SKUs, Copilot-Optionen und gängigen Add-ons vorbefüllt.</p>
+                <h3>🚦 Limits</h3>
                 <ul class="m365lic-admin-list">
-                    <li>Copilot Chat als enthaltene Option bei berechtigten Subscriptions.</li>
-                    <li>Copilot Business und Microsoft 365 Copilot als Add-on-SKUs.</li>
-                    <li>Preisfelder sind bewusst editierbar und können je Tier gepflegt werden.</li>
+                    <li><strong>Public Tageslimit:</strong> <?php echo (int) ($settings['public_daily_limit'] ?? 2); ?></li>
+                    <li><strong>Member Tageslimit:</strong> <?php echo (int) ($settings['member_daily_limit'] ?? 10); ?></li>
+                    <li><strong>Spezial Tageslimit:</strong> <?php echo (int) ($settings['group_daily_limit'] ?? 25); ?></li>
+                    <li><strong>Public PDF:</strong> <?php echo (int) ($settings['public_pdf_daily_limit'] ?? 2); ?></li>
+                    <li><strong>Member PDF:</strong> <?php echo (int) ($settings['member_pdf_daily_limit'] ?? 10); ?></li>
+                    <li><strong>Spezial PDF:</strong> <?php echo (int) ($settings['group_pdf_daily_limit'] ?? 25); ?></li>
                 </ul>
             </div>
         </div>
@@ -93,8 +95,8 @@ trait CMS_M365LIC_Page_Dashboard_Trait
                             <tr>
                                 <th>Name</th>
                                 <th>Typ</th>
-                                <th>Kategorie</th>
-                                <th>Audience</th>
+                                <th>Abrechnung</th>
+                                <th>Preis Public</th>
                                 <th>Aktion</th>
                             </tr>
                         </thead>
@@ -103,8 +105,8 @@ trait CMS_M365LIC_Page_Dashboard_Trait
                             <tr>
                                 <td><?php echo self::esc((string) $package['name']); ?></td>
                                 <td><?php echo self::esc((string) $package['kind']); ?></td>
-                                <td><?php echo self::esc((string) $package['category']); ?></td>
-                                <td><?php echo self::esc((string) $package['audience']); ?></td>
+                                <td><?php echo self::esc((string) (($package['pricing_basis'] ?? 'per_user') === 'flat_monthly' ? 'Fixpreis' : 'pro Benutzer')); ?></td>
+                                <td><?php echo $package['public_price'] !== null ? self::esc(number_format((float) $package['public_price'], 2, ',', '.')) . ' ' . self::esc((string) ($package['currency'] ?? 'USD')) : '—'; ?></td>
                                 <td>
                                     <a href="?page=m365lic-packages&edit=<?php echo (int) $package['id']; ?>" class="btn btn-secondary btn-sm">✏️ Bearbeiten</a>
                                 </td>

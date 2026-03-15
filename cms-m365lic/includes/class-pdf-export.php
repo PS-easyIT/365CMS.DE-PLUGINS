@@ -17,11 +17,13 @@ final class CMS_M365LIC_Pdf_Export
      * @param array<string,mixed> $evaluation
      * @param array<int,array<string,mixed>> $requirements
      * @param array<string,string> $settings
+     * @param array<string,mixed> $pricingContext
+     * @param array<string,mixed> $billingContext
      */
-    public static function render_html(array $evaluation, array $requirements, array $settings, array $pricingContext): string
+    public static function render_html(array $evaluation, array $requirements, array $settings, array $pricingContext, array $billingContext): string
     {
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
-        $currency = $settings['default_currency'] ?? 'EUR';
+        $currency = $settings['default_currency'] ?? 'USD';
         $generatedAt = date('d.m.Y H:i');
 
         ob_start();
@@ -40,7 +42,7 @@ final class CMS_M365LIC_Pdf_Export
         .m365lic-pdf__body{padding:24px 28px;}
         .m365lic-pdf__section{margin-bottom:24px;}
         .m365lic-pdf__section h2{font-size:16px;margin:0 0 10px;color:#0f172a;border-bottom:2px solid #e2e8f0;padding-bottom:6px;}
-        .m365lic-pdf__grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px;}
+        .m365lic-pdf__grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px;}
         .m365lic-pdf__card{border:1px solid #e2e8f0;border-radius:8px;padding:12px;background:#f8fafc;}
         .m365lic-pdf__card strong{display:block;font-size:11px;text-transform:uppercase;color:#475569;margin-bottom:4px;}
         table{width:100%;border-collapse:collapse;margin-top:10px;}
@@ -58,7 +60,7 @@ final class CMS_M365LIC_Pdf_Export
     <div class="m365lic-pdf__header">
         <h1><?php echo $esc($settings['page_title'] ?? 'Microsoft 365 Lizenzberater'); ?></h1>
         <div class="m365lic-pdf__meta">
-            Pricing-Tier: <?php echo $esc($pricingContext['label'] ?? 'Öffentlich'); ?> · Erstellt am <?php echo $esc($generatedAt); ?>
+            Zugriff: <?php echo $esc((string) ($pricingContext['label'] ?? 'Öffentlich')); ?> · Abrechnung: <?php echo $esc((string) ($billingContext['label'] ?? '1 Jahr · jährliche Zahlung')); ?> · Erstellt am <?php echo $esc($generatedAt); ?>
         </div>
     </div>
     <div class="m365lic-pdf__body">
@@ -72,6 +74,10 @@ final class CMS_M365LIC_Pdf_Export
                 <div class="m365lic-pdf__card">
                     <strong>Empfohlene SKUs</strong>
                     <?php echo (int) count($evaluation['totals'] ?? []); ?>
+                </div>
+                <div class="m365lic-pdf__card">
+                    <strong>Abrechnung</strong>
+                    <?php echo $esc((string) ($billingContext['short_label'] ?? 'Jahr / jährlich')); ?>
                 </div>
                 <div class="m365lic-pdf__card">
                     <strong>Monatssumme</strong>
@@ -96,6 +102,7 @@ final class CMS_M365LIC_Pdf_Export
                     <?php foreach (($row['items'] ?? []) as $item): ?>
                     <li>
                         <?php echo $esc((string) ($item['name'] ?? '')); ?>
+                        (<?php echo $esc((string) ($item['pricing_basis_label'] ?? 'pro Benutzer')); ?>, <?php echo $esc((string) ($item['quantity_label'] ?? '')); ?>)
                         <?php if (($item['line_total'] ?? null) !== null): ?>
                             – <?php echo number_format((float) $item['line_total'], 2, ',', '.'); ?> <?php echo $esc($currency); ?>
                         <?php else: ?>
@@ -116,7 +123,7 @@ final class CMS_M365LIC_Pdf_Export
                     <tr>
                         <th>SKU</th>
                         <th>Typ</th>
-                        <th>Menge</th>
+                        <th>Abrechnung</th>
                         <th>Einzelpreis</th>
                         <th>Gesamt</th>
                     </tr>
@@ -124,9 +131,12 @@ final class CMS_M365LIC_Pdf_Export
                 <tbody>
                     <?php foreach (($evaluation['totals'] ?? []) as $item): ?>
                     <tr>
-                        <td><?php echo $esc((string) ($item['name'] ?? '')); ?></td>
+                        <td>
+                            <?php echo $esc((string) ($item['name'] ?? '')); ?><br>
+                            <span class="muted"><?php echo $esc((string) ($item['pricing_basis_label'] ?? 'pro Benutzer')); ?></span>
+                        </td>
                         <td><?php echo $esc((string) ($item['type_label'] ?? '')); ?></td>
-                        <td><?php echo (int) ($item['quantity'] ?? 0); ?></td>
+                        <td><?php echo $esc((string) ($item['quantity_label'] ?? '')); ?></td>
                         <td>
                             <?php if (($item['unit_price'] ?? null) !== null): ?>
                                 <?php echo number_format((float) $item['unit_price'], 2, ',', '.'); ?> <?php echo $esc($currency); ?>
@@ -161,7 +171,7 @@ final class CMS_M365LIC_Pdf_Export
 
     public static function stream_pdf(string $html, string $filename): void
     {
-        if (class_exists('Dompdf\\Dompdf')) {
+        if (class_exists('Dompdf\Dompdf')) {
             $options = new \Dompdf\Options();
             $options->set('isRemoteEnabled', true);
             $options->set('defaultFont', 'DejaVu Sans');

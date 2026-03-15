@@ -51,6 +51,15 @@ final class CMS_M365LIC_Admin_Menu
 
         add_submenu_page(
             'm365lic-dashboard',
+            'Spezial-User',
+            '🔐 Spezial-User',
+            'manage_options',
+            'm365lic-special-users',
+            [$pages, 'render_special_users']
+        );
+
+        add_submenu_page(
+            'm365lic-dashboard',
             'Einstellungen',
             '⚙️ Einstellungen',
             'manage_options',

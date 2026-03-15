@@ -12,9 +12,9 @@ if (!defined('ABSPATH')) {
 }
 
 $esc = static fn(?string $value): string => htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8');
-$currency = (string) ($settings['default_currency'] ?? 'EUR');
+$currency = (string) ($settings['default_currency'] ?? 'USD');
 $themeTitle = (string) ($viewContext['title'] ?? $settings['page_title'] ?? 'Microsoft 365 Lizenzberater');
-$exportToken = class_exists('CMS\\Security') ? \CMS\Security::instance()->generateToken('m365lic_export') : bin2hex(random_bytes(16));
+$exportToken = class_exists('CMS\Security') ? \CMS\Security::instance()->generateToken('m365lic_export') : bin2hex(random_bytes(16));
 $theme = \CMS\ThemeManager::instance();
 $isEmbedded = !empty($viewContext['embedded']);
 $introText = (string) ($viewContext['intro'] ?? $settings['page_intro'] ?? '');
@@ -101,7 +101,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     <div class="m365lic-card__head">
                         <div>
                             <h2>Bedarf erfassen</h2>
-                            <p>Mehrere Benutzergruppen kombinieren, Copilot-Anforderungen berücksichtigen und eine serverseitig abgesicherte Preislogik auswerten.</p>
+                            <p>Mehrere Benutzergruppen kombinieren, Copilot-Anforderungen berücksichtigen und je Bereich die gewünschte Laufzeit/Zahlungsart serverseitig auswerten.</p>
                         </div>
                     </div>
 
@@ -109,6 +109,26 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                         <input type="hidden" name="csrf_token" value="<?php echo $esc($csrfToken); ?>">
                         <input type="hidden" name="evaluation_csrf_token" value="<?php echo $esc($evaluationToken); ?>">
                         <input type="hidden" name="context_scope" value="<?php echo $esc((string) ($pricingContext['scope'] ?? 'public')); ?>">
+
+                        <div class="m365lic-form-grid m365lic-form-grid--2 m365lic-billing-grid">
+                            <div class="m365lic-field">
+                                <label for="billing_cycle">Laufzeit & Zahlung</label>
+                                <select id="billing_cycle" name="billing_cycle">
+                                    <?php foreach ($billingOptions as $billingKey => $billingOption): ?>
+                                    <option value="<?php echo $esc($billingKey); ?>" <?php echo (($selectedBilling['key'] ?? '') === $billingKey) ? 'selected' : ''; ?>><?php echo $esc((string) ($billingOption['label'] ?? $billingKey)); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="m365lic-help-text"><?php echo $esc((string) ($selectedBilling['note'] ?? '')); ?></small>
+                            </div>
+                            <div class="m365lic-field m365lic-field--info">
+                                <label>Preislogik</label>
+                                <div class="m365lic-context-chip-wrap">
+                                    <span class="m365lic-total-chip"><?php echo $esc((string) ($pricingContext['label'] ?? 'Öffentlich')); ?></span>
+                                    <span class="m365lic-total-chip"><?php echo $esc((string) ($selectedBilling['short_label'] ?? 'Jahr / jährlich')); ?></span>
+                                </div>
+                                <small class="m365lic-help-text">Basispreise stammen aus dem Paketkatalog und werden pro Bereich mit dem gewählten Modell hochgerechnet.</small>
+                            </div>
+                        </div>
 
                         <div class="m365lic-requirements" id="m365licRequirements">
                             <?php foreach ($requirements as $index => $requirement): ?>
@@ -129,6 +149,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                         <ul class="m365lic-note-list">
                             <li><strong>Zugriff:</strong> <?php echo $esc((string) ($pricingContext['label'] ?? 'Öffentlich')); ?></li>
                             <li><strong>Preismodell:</strong> <?php echo $esc((string) ($viewContext['summary_label'] ?? 'Öffentliche Preise')); ?></li>
+                            <li><strong>Laufzeit:</strong> <?php echo $esc((string) ($selectedBilling['label'] ?? '1 Jahr · jährliche Zahlung')); ?></li>
                             <li><strong>Währung:</strong> <?php echo $esc($currency); ?></li>
                             <li><strong>Presets:</strong> <?php echo (int) count($presets); ?></li>
                             <li><strong>Optionen:</strong> <?php echo (int) count($featureDefinitions); ?></li>
@@ -157,6 +178,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     </div>
                     <div class="m365lic-totals">
                         <span class="m365lic-total-chip">SKUs: <?php echo (int) count($evaluation['totals'] ?? []); ?></span>
+                        <span class="m365lic-total-chip"><?php echo $esc((string) (($evaluation['billing']['short_label'] ?? ($selectedBilling['short_label'] ?? 'Jahr / jährlich')))); ?></span>
                         <span class="m365lic-total-chip">Monat: <?php echo ($evaluation['grand_total'] ?? null) !== null ? $esc(number_format((float) $evaluation['grand_total'], 2, ',', '.')) . ' ' . $esc($currency) : 'teilweise offen'; ?></span>
                     </div>
                 </div>
@@ -176,8 +198,8 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                                     <tr>
                                         <th>Lizenz</th>
                                         <th>Typ</th>
-                                        <th>Menge</th>
-                                        <th>Preis/Benutzer</th>
+                                        <th>Abrechnung</th>
+                                        <th>Preis</th>
                                         <th>Monat</th>
                                     </tr>
                                 </thead>
@@ -186,12 +208,13 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                                     <tr>
                                         <td>
                                             <strong><?php echo $esc((string) ($item['name'] ?? '')); ?></strong>
+                                            <div class="m365lic-muted"><?php echo $esc((string) ($item['pricing_basis_label'] ?? 'pro Benutzer')); ?> · <?php echo $esc((string) ($item['billing_cycle_label'] ?? '')); ?></div>
                                             <?php if (!empty($settings['show_source_notes']) && !empty($item['source_note'])): ?>
                                             <div class="m365lic-muted"><?php echo $esc((string) $item['source_note']); ?></div>
                                             <?php endif; ?>
                                         </td>
                                         <td><?php echo $esc((string) ($item['type_label'] ?? '')); ?></td>
-                                        <td><?php echo (int) ($item['quantity'] ?? 0); ?></td>
+                                        <td><?php echo $esc((string) ($item['quantity_label'] ?? '')); ?></td>
                                         <td><?php echo ($item['unit_price'] ?? null) !== null ? $esc(number_format((float) $item['unit_price'], 2, ',', '.')) . ' ' . $esc($currency) : 'offen'; ?></td>
                                         <td><?php echo ($item['line_total'] ?? null) !== null ? $esc(number_format((float) $item['line_total'], 2, ',', '.')) . ' ' . $esc($currency) : 'offen'; ?></td>
                                     </tr>
@@ -210,7 +233,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                             <tr>
                                 <th>SKU</th>
                                 <th>Typ</th>
-                                <th>Gesamtmenge</th>
+                                <th>Abrechnung</th>
                                 <th>Einzelpreis</th>
                                 <th>Gesamtsumme</th>
                             </tr>
@@ -218,9 +241,12 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                         <tbody>
                             <?php foreach (($evaluation['totals'] ?? []) as $item): ?>
                             <tr>
-                                <td><?php echo $esc((string) ($item['name'] ?? '')); ?></td>
+                                <td>
+                                    <strong><?php echo $esc((string) ($item['name'] ?? '')); ?></strong>
+                                    <div class="m365lic-muted"><?php echo $esc((string) ($item['pricing_basis_label'] ?? 'pro Benutzer')); ?> · <?php echo $esc((string) ($item['billing_cycle_label'] ?? '')); ?></div>
+                                </td>
                                 <td><?php echo $esc((string) ($item['type_label'] ?? '')); ?></td>
-                                <td><?php echo (int) ($item['quantity'] ?? 0); ?></td>
+                                <td><?php echo $esc((string) ($item['quantity_label'] ?? '')); ?></td>
                                 <td><?php echo ($item['unit_price'] ?? null) !== null ? $esc(number_format((float) $item['unit_price'], 2, ',', '.')) . ' ' . $esc($currency) : 'offen'; ?></td>
                                 <td><?php echo ($item['line_total'] ?? null) !== null ? $esc(number_format((float) $item['line_total'], 2, ',', '.')) . ' ' . $esc($currency) : 'offen'; ?></td>
                             </tr>
@@ -242,6 +268,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                 <form method="POST" action="/api/m365lic/export" class="m365lic-export-form">
                     <input type="hidden" name="csrf_token" value="<?php echo $esc($exportToken); ?>">
                     <input type="hidden" name="context_scope" value="<?php echo $esc((string) ($pricingContext['scope'] ?? 'public')); ?>">
+                    <input type="hidden" name="billing_cycle" value="<?php echo $esc((string) ($selectedBilling['key'] ?? 'annual_upfront')); ?>">
                     <input type="hidden" name="requirements_json" value="<?php echo $esc(json_encode($requirements, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)); ?>">
                     <button type="submit" class="m365lic-btn m365lic-btn--primary">📄 PDF exportieren</button>
                 </form>

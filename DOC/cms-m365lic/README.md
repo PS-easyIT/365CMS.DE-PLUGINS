@@ -7,13 +7,17 @@ Das Plugin `cms-m365lic` liefert einen konfigurierbaren Microsoft-365-Lizenzbera
 - Bedarf in mehreren Benutzergruppen erfassen
 - Paketempfehlung auf Basis einer Feature-Matrix
 - Copilot-Voraussetzungen und Copilot-Add-ons berücksichtigen
-- Preise pro Tier (`public`, `member`, `group`) pflegen
+- Preise pro Tier (`public`, `member`, `group`) pflegen und getrennt ausspielen
+- Laufzeit- und Zahlungsart je Bereich auswählen und serverseitig hochrechnen
 - PDF-Export der Auswertung
 - Tageslimits je Kontext über gehashte Actor-Keys
+- Spezial-User direkt auf 365CMS-Benutzer zuweisen
 
 ## Besonderheiten
 
 - Publicsite nutzt Header/Footer des aktiven Themes
+- Member- und Spezialrechner laufen ausschließlich im geschützten 365CMS-Mitgliederbereich
 - Seed-Katalog ist vollständig editierbar
-- Häufige Business-/Teams-SKUs werden mit Startpreisen vorbelegt; CSP-/regionsabhängige Preise können weiterhin leer bleiben und werden im Ergebnis als offen gekennzeichnet
+- Alle Seed-SKUs werden mit Startpreisen vorbelegt; Fixpreis-SKUs wie Copilot Studio/Security Copilot sind als monatlicher Tenantpreis markiert
 - Seed-Preisupdates werden bei Bestandsinstallationen übernommen, solange lokal noch kein eigener Preis gepflegt wurde
+- Spezialbereich wird nur für im Plugin zugewiesene Benutzer registriert

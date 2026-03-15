@@ -33,7 +33,7 @@ final class CMS_M365LIC_Frontend
 
     private function __construct()
     {
-        if (class_exists('CMS\\Hooks')) {
+        if (class_exists('CMS\Hooks')) {
             \CMS\Hooks::addAction('head', [$this, 'enqueue_public_styles'], 20);
             \CMS\Hooks::addAction('body_end', [$this, 'enqueue_public_scripts'], 20);
         }
@@ -41,7 +41,7 @@ final class CMS_M365LIC_Frontend
 
     private function register_routes(): void
     {
-        if (!class_exists('CMS\\Router')) {
+        if (!class_exists('CMS\Router')) {
             return;
         }
 
@@ -92,6 +92,10 @@ final class CMS_M365LIC_Frontend
             },
         ]);
 
+        if (!CMS_M365LIC_Repository::instance()->current_user_has_special_access()) {
+            return;
+        }
+
         $registry->register([
             'plugin' => 'cms-m365lic',
             'slug' => self::SPECIAL_SECTION_SLUG,
@@ -120,10 +124,11 @@ final class CMS_M365LIC_Frontend
         $packages = $repo->get_packages(false);
         $featureDefinitions = CMS_M365LIC_Catalog::feature_definitions();
         $presets = CMS_M365LIC_Catalog::presets();
-        $csrfToken = class_exists('CMS\\Security')
+        $billingOptions = CMS_M365LIC_Catalog::billing_options();
+        $csrfToken = class_exists('CMS\Security')
             ? \CMS\Security::instance()->generateToken('form_guard')
             : bin2hex(random_bytes(16));
-        $evaluationToken = class_exists('CMS\\Security')
+        $evaluationToken = class_exists('CMS\Security')
             ? \CMS\Security::instance()->generateToken('m365lic_evaluate')
             : bin2hex(random_bytes(16));
 
@@ -131,27 +136,39 @@ final class CMS_M365LIC_Frontend
         $evaluation = null;
         $notice = '';
         $error = '';
-        $pricingContext = $this->build_access_context($scope, $settings);
         $limitInfo = null;
-        $viewContext = $this->build_view_context($scope, $embedded, $settings);
+        $pricingContext = $this->build_access_context($scope, $settings);
+        $selectedBilling = $repo->resolve_billing_cycle(null, (string) ($pricingContext['tier'] ?? 'public'), $settings);
+        $viewContext = $this->build_view_context($pricingContext, $embedded, $settings, $selectedBilling);
 
         if ($method === 'POST') {
-            if (class_exists('CMS\\Security') && !\CMS\Security::instance()->verifyToken($_POST['evaluation_csrf_token'] ?? '', 'm365lic_evaluate')) {
+            if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken($_POST['evaluation_csrf_token'] ?? '', 'm365lic_evaluate')) {
                 $error = 'Sicherheitscheck fehlgeschlagen. Bitte die Seite neu laden.';
             } else {
                 $requirements = $this->normalize_requirements($_POST['requirements'] ?? []);
-                $limitInfo = $repo->enforce_daily_limit('evaluation', $pricingContext['tier']);
+                $selectedBilling = $repo->resolve_billing_cycle(
+                    (string) ($_POST['billing_cycle'] ?? ''),
+                    (string) ($pricingContext['tier'] ?? 'public'),
+                    $settings
+                );
+                $limitInfo = $repo->enforce_daily_limit('evaluation', (string) ($pricingContext['tier'] ?? 'public'));
 
                 if (empty($limitInfo['allowed'])) {
                     $error = (string) ($limitInfo['message'] ?? 'Tageslimit erreicht.');
                 } else {
-                    $evaluation = CMS_M365LIC_Calculator::evaluate($requirements, $packages, $pricingContext['tier']);
+                    $evaluation = CMS_M365LIC_Calculator::evaluate(
+                        $requirements,
+                        $packages,
+                        (string) ($pricingContext['tier'] ?? 'public'),
+                        (string) ($selectedBilling['key'] ?? 'annual_upfront')
+                    );
                     $notice = 'Die Auswertung wurde erfolgreich erstellt.';
                 }
             }
         }
 
-        $this->set_seo((string) ($settings['page_title'] ?? 'Microsoft 365 Lizenzberater'), (string) ($settings['page_intro'] ?? '')); 
+        $viewContext = $this->build_view_context($pricingContext, $embedded, $settings, $selectedBilling);
+        $this->set_seo((string) ($settings['page_title'] ?? 'Microsoft 365 Lizenzberater'), (string) ($settings['page_intro'] ?? ''));
         include CMS_M365LIC_PLUGIN_DIR . 'templates/page-calculator.php';
         if (!$embedded) {
             exit;
@@ -163,7 +180,7 @@ final class CMS_M365LIC_Frontend
         $repo = CMS_M365LIC_Repository::instance();
         $settings = $repo->get_settings();
 
-        if (class_exists('CMS\\Security') && !\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'm365lic_export')) {
+        if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'm365lic_export')) {
             http_response_code(403);
             echo 'Sicherheitscheck fehlgeschlagen.';
             exit;
@@ -171,7 +188,12 @@ final class CMS_M365LIC_Frontend
 
         $scope = $this->sanitize_scope($_POST['context_scope'] ?? self::SCOPE_PUBLIC);
         $pricingContext = $this->build_access_context($scope, $settings, true);
-        $limitInfo = $repo->enforce_daily_limit('pdf_export', $pricingContext['tier']);
+        $billingContext = $repo->resolve_billing_cycle(
+            (string) ($_POST['billing_cycle'] ?? ''),
+            (string) ($pricingContext['tier'] ?? 'public'),
+            $settings
+        );
+        $limitInfo = $repo->enforce_daily_limit('pdf_export', (string) ($pricingContext['tier'] ?? 'public'));
         if (empty($limitInfo['allowed'])) {
             http_response_code(429);
             echo htmlspecialchars((string) ($limitInfo['message'] ?? 'Tageslimit erreicht.'), ENT_QUOTES, 'UTF-8');
@@ -186,14 +208,19 @@ final class CMS_M365LIC_Frontend
         }
 
         $normalizedRequirements = $this->normalize_requirements($requirements);
-        $evaluation = CMS_M365LIC_Calculator::evaluate($normalizedRequirements, $repo->get_packages(false), $pricingContext['tier']);
-        $html = CMS_M365LIC_Pdf_Export::render_html($evaluation, $normalizedRequirements, $settings, $pricingContext);
+        $evaluation = CMS_M365LIC_Calculator::evaluate(
+            $normalizedRequirements,
+            $repo->get_packages(false),
+            (string) ($pricingContext['tier'] ?? 'public'),
+            (string) ($billingContext['key'] ?? 'annual_upfront')
+        );
+        $html = CMS_M365LIC_Pdf_Export::render_html($evaluation, $normalizedRequirements, $settings, $pricingContext, $billingContext);
         CMS_M365LIC_Pdf_Export::stream_pdf($html, 'm365-lizenz-auswertung');
     }
 
     private function set_seo(string $title, string $description): void
     {
-        if (!class_exists('CMS\\Services\\SEOService')) {
+        if (!class_exists('CMS\Services\SEOService')) {
             return;
         }
 
@@ -256,11 +283,12 @@ final class CMS_M365LIC_Frontend
 
     /**
      * @param array<string,string> $settings
-     * @return array<string,string>
+     * @return array<string,mixed>
      */
     private function build_access_context(string $scope, array $settings, bool $strict = false): array
     {
         $scope = $this->sanitize_scope($scope);
+        $repo = CMS_M365LIC_Repository::instance();
 
         if ($scope !== self::SCOPE_PUBLIC && !$this->is_member_logged_in()) {
             if ($strict) {
@@ -272,48 +300,72 @@ final class CMS_M365LIC_Frontend
             $scope = self::SCOPE_PUBLIC;
         }
 
-        return match ($scope) {
-            self::SCOPE_MEMBER => [
+        if ($scope === self::SCOPE_SPECIAL) {
+            $specialUser = $repo->get_current_special_user();
+            if ($specialUser === null) {
+                if ($strict) {
+                    http_response_code(403);
+                    echo 'Dieser Spezialbereich ist nur für zugewiesene Benutzer verfügbar.';
+                    exit;
+                }
+
+                $scope = self::SCOPE_MEMBER;
+            } else {
+                return [
+                    'scope' => self::SCOPE_SPECIAL,
+                    'tier' => 'group',
+                    'group_key' => trim((string) ($specialUser['group_key'] ?? $settings['default_group_key'] ?? 'partner')),
+                    'label' => trim((string) ($specialUser['group_label'] ?? $settings['default_group_label'] ?? 'Spezialbereich')),
+                    'special_user' => $specialUser,
+                ];
+            }
+        }
+
+        if ($scope === self::SCOPE_MEMBER) {
+            return [
                 'scope' => self::SCOPE_MEMBER,
                 'tier' => 'member',
                 'group_key' => '',
                 'label' => 'Mitgliederbereich',
-            ],
-            self::SCOPE_SPECIAL => [
-                'scope' => self::SCOPE_SPECIAL,
-                'tier' => 'group',
-                'group_key' => trim((string) ($settings['default_group_key'] ?? 'partner')),
-                'label' => (string) ($settings['default_group_label'] ?? 'Spezialbereich'),
-            ],
-            default => [
-                'scope' => self::SCOPE_PUBLIC,
-                'tier' => 'public',
-                'group_key' => '',
-                'label' => 'Öffentlicher Bereich',
-            ],
-        };
+                'special_user' => null,
+            ];
+        }
+
+        return [
+            'scope' => self::SCOPE_PUBLIC,
+            'tier' => 'public',
+            'group_key' => '',
+            'label' => 'Öffentlicher Bereich',
+            'special_user' => null,
+        ];
     }
 
     /**
+     * @param array<string,mixed> $pricingContext
      * @param array<string,string> $settings
+     * @param array<string,mixed> $billingContext
      * @return array<string,mixed>
      */
-    private function build_view_context(string $scope, bool $embedded, array $settings): array
+    private function build_view_context(array $pricingContext, bool $embedded, array $settings, array $billingContext): array
     {
-        return match ($this->sanitize_scope($scope)) {
+        $scope = (string) ($pricingContext['scope'] ?? self::SCOPE_PUBLIC);
+
+        return match ($scope) {
             self::SCOPE_MEMBER => [
                 'scope' => self::SCOPE_MEMBER,
                 'embedded' => $embedded,
                 'title' => 'Microsoft 365 Lizenzberater',
                 'intro' => 'Geschützter Member-Bereich mit Mitgliedskonditionen für deine Microsoft-365-Bedarfsanalyse.',
                 'summary_label' => 'Mitgliederpreise',
+                'billing_label' => (string) ($billingContext['label'] ?? ''),
             ],
             self::SCOPE_SPECIAL => [
                 'scope' => self::SCOPE_SPECIAL,
                 'embedded' => $embedded,
                 'title' => 'Microsoft 365 Spezialpreise',
                 'intro' => 'Geschützter Spezialbereich für Rahmenkonditionen, Partnerpreise und individuelle Gruppenmodelle.',
-                'summary_label' => (string) ($settings['default_group_label'] ?? 'Spezialpreise'),
+                'summary_label' => (string) ($pricingContext['label'] ?? $settings['default_group_label'] ?? 'Spezialpreise'),
+                'billing_label' => (string) ($billingContext['label'] ?? ''),
             ],
             default => [
                 'scope' => self::SCOPE_PUBLIC,
@@ -321,6 +373,7 @@ final class CMS_M365LIC_Frontend
                 'title' => (string) ($settings['page_title'] ?? 'Microsoft 365 Lizenzberater'),
                 'intro' => (string) ($settings['page_intro'] ?? ''),
                 'summary_label' => 'Öffentliche Preise',
+                'billing_label' => (string) ($billingContext['label'] ?? ''),
             ],
         };
     }
@@ -334,8 +387,8 @@ final class CMS_M365LIC_Frontend
 
     private function is_member_logged_in(): bool
     {
-        return class_exists('CMS\\Auth')
-            && method_exists('CMS\\Auth', 'instance')
+        return class_exists('CMS\Auth')
+            && method_exists('CMS\Auth', 'instance')
             && \CMS\Auth::instance()->isLoggedIn();
     }
 

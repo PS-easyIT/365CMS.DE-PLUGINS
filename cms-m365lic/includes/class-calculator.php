@@ -33,11 +33,12 @@ final class CMS_M365LIC_Calculator
      * @param array<int,array<string,mixed>> $packages
      * @return array<string,mixed>
      */
-    public static function evaluate(array $requirements, array $packages, string $pricingTier): array
+    public static function evaluate(array $requirements, array $packages, string $pricingTier, string $billingCycle): array
     {
         $basePackages = array_values(array_filter($packages, static fn(array $pkg): bool => !empty($pkg['is_active']) && ($pkg['kind'] ?? '') === 'base'));
         $addonPackages = array_values(array_filter($packages, static fn(array $pkg): bool => !empty($pkg['is_active']) && ($pkg['kind'] ?? '') === 'addon'));
         $repo = CMS_M365LIC_Repository::instance();
+        $billingContext = $repo->resolve_billing_cycle($billingCycle, $pricingTier);
 
         $rows = [];
         $totals = [];
@@ -54,18 +55,19 @@ final class CMS_M365LIC_Calculator
             $baseFeatureSet = array_values(array_filter($features, static fn(string $feature): bool => !in_array($feature, self::ADDON_FEATURES, true)));
             $addonFeatureSet = array_values(array_filter($features, static fn(string $feature): bool => in_array($feature, self::ADDON_FEATURES, true)));
 
-            $chosenBase = self::find_best_base_package($basePackages, $baseFeatureSet, $audience, $pricingTier);
-            $addons = self::find_matching_addons($addonPackages, $addonFeatureSet, $chosenBase, $pricingTier);
+            $chosenBase = self::find_best_base_package($basePackages, $baseFeatureSet, $audience, $pricingTier, $billingCycle);
+            $addons = self::find_matching_addons($addonPackages, $addonFeatureSet, $chosenBase, $pricingTier, $billingCycle);
             $rowItems = [];
             $rowTotal = 0.0;
             $rowHasMissingPrice = false;
 
             if ($chosenBase !== null) {
                 $basePrice = $repo->get_price_for_package($chosenBase, $pricingTier);
-                $rowItems[] = self::build_item($chosenBase, $quantity, $basePrice, $pricingTier, 'Basislizenz');
-                self::merge_total($totals, $chosenBase, $quantity, $basePrice, $pricingTier, 'Basislizenz');
-                if ($basePrice !== null) {
-                    $rowTotal += $basePrice * $quantity;
+                $builtBase = self::build_item($chosenBase, $quantity, $basePrice, $pricingTier, $billingContext, 'Basislizenz');
+                $rowItems[] = $builtBase;
+                self::merge_total($totals, $chosenBase, $builtBase, $pricingTier, $billingContext, 'Basislizenz');
+                if ($builtBase['line_total'] !== null) {
+                    $rowTotal += (float) $builtBase['line_total'];
                 } else {
                     $rowHasMissingPrice = true;
                     $hasMissingPrices = true;
@@ -75,10 +77,11 @@ final class CMS_M365LIC_Calculator
 
             foreach ($addons as $addon) {
                 $addonPrice = $repo->get_price_for_package($addon, $pricingTier);
-                $rowItems[] = self::build_item($addon, $quantity, $addonPrice, $pricingTier, 'Add-on');
-                self::merge_total($totals, $addon, $quantity, $addonPrice, $pricingTier, 'Add-on');
-                if ($addonPrice !== null) {
-                    $rowTotal += $addonPrice * $quantity;
+                $builtAddon = self::build_item($addon, $quantity, $addonPrice, $pricingTier, $billingContext, 'Add-on');
+                $rowItems[] = $builtAddon;
+                self::merge_total($totals, $addon, $builtAddon, $pricingTier, $billingContext, 'Add-on');
+                if ($builtAddon['line_total'] !== null) {
+                    $rowTotal += (float) $builtAddon['line_total'];
                 } else {
                     $rowHasMissingPrice = true;
                     $hasMissingPrices = true;
@@ -124,6 +127,7 @@ final class CMS_M365LIC_Calculator
             'grand_total' => $hasMissingPrices ? null : round($grandTotal, 2),
             'has_missing_prices' => $hasMissingPrices,
             'missing_price_packages' => array_values($missingPricePackages),
+            'billing' => $billingContext,
         ];
     }
 
@@ -132,7 +136,7 @@ final class CMS_M365LIC_Calculator
      * @param array<int,string> $requiredFeatures
      * @return array<string,mixed>|null
      */
-    private static function find_best_base_package(array $packages, array $requiredFeatures, string $audience, string $pricingTier): ?array
+    private static function find_best_base_package(array $packages, array $requiredFeatures, string $audience, string $pricingTier, string $billingCycle): ?array
     {
         if (empty($requiredFeatures)) {
             return null;
@@ -156,7 +160,8 @@ final class CMS_M365LIC_Calculator
             }
 
             $extraCount = count(array_diff($packageFeatures, $requiredFeatures));
-            $price = $repo->get_price_for_package($package, $pricingTier);
+            $basePrice = $repo->get_price_for_package($package, $pricingTier);
+            $price = $repo->apply_billing_cycle($basePrice, $billingCycle);
             $priceScore = $price !== null ? $price : 999999;
 
             $candidates[] = [
@@ -179,7 +184,7 @@ final class CMS_M365LIC_Calculator
      * @param array<string,mixed>|null $basePackage
      * @return array<int,array<string,mixed>>
      */
-    private static function find_matching_addons(array $packages, array $addonFeatures, ?array $basePackage, string $pricingTier): array
+    private static function find_matching_addons(array $packages, array $addonFeatures, ?array $basePackage, string $pricingTier, string $billingCycle): array
     {
         $repo = CMS_M365LIC_Repository::instance();
         $selected = [];
@@ -208,9 +213,9 @@ final class CMS_M365LIC_Calculator
                 continue;
             }
 
-            usort($matching, function (array $left, array $right) use ($repo, $pricingTier): int {
-                $leftPrice = $repo->get_price_for_package($left, $pricingTier) ?? 999999.0;
-                $rightPrice = $repo->get_price_for_package($right, $pricingTier) ?? 999999.0;
+            usort($matching, function (array $left, array $right) use ($repo, $pricingTier, $billingCycle): int {
+                $leftPrice = $repo->apply_billing_cycle($repo->get_price_for_package($left, $pricingTier), $billingCycle) ?? 999999.0;
+                $rightPrice = $repo->apply_billing_cycle($repo->get_price_for_package($right, $pricingTier), $billingCycle) ?? 999999.0;
                 if ($leftPrice === $rightPrice) {
                     return strcmp((string) $left['name'], (string) $right['name']);
                 }
@@ -225,18 +230,34 @@ final class CMS_M365LIC_Calculator
 
     /**
      * @param array<string,mixed> $package
+     * @param array<string,mixed> $billingContext
      * @return array<string,mixed>
      */
-    private static function build_item(array $package, int $quantity, ?float $price, string $pricingTier, string $typeLabel): array
+    private static function build_item(array $package, int $quantity, ?float $basePrice, string $pricingTier, array $billingContext, string $typeLabel): array
     {
+        $repo = CMS_M365LIC_Repository::instance();
+        $pricingBasis = (string) ($package['pricing_basis'] ?? 'per_user');
+        $adjustedPrice = $repo->apply_billing_cycle($basePrice, (string) ($billingContext['key'] ?? 'annual_upfront'));
+        $billingQuantity = $pricingBasis === 'flat_monthly' ? 1 : $quantity;
+        $quantityLabel = $pricingBasis === 'flat_monthly'
+            ? '1 Fixpreis / Monat'
+            : $quantity . ' Benutzer';
+
         return [
             'slug' => $package['slug'],
             'name' => $package['name'],
             'type_label' => $typeLabel,
             'quantity' => $quantity,
+            'quantity_label' => $quantityLabel,
+            'billing_quantity' => $billingQuantity,
             'pricing_tier' => $pricingTier,
-            'unit_price' => $price,
-            'line_total' => $price !== null ? round($price * $quantity, 2) : null,
+            'pricing_basis' => $pricingBasis,
+            'pricing_basis_label' => $pricingBasis === 'flat_monthly' ? 'Fixpreis' : 'pro Benutzer',
+            'billing_cycle_key' => (string) ($billingContext['key'] ?? 'annual_upfront'),
+            'billing_cycle_label' => (string) ($billingContext['label'] ?? '1 Jahr · jährliche Zahlung'),
+            'base_unit_price' => $basePrice,
+            'unit_price' => $adjustedPrice,
+            'line_total' => $adjustedPrice !== null ? round($adjustedPrice * $billingQuantity, 2) : null,
             'pricing_note' => (string) ($package['pricing_note'] ?? ''),
             'source_note' => (string) ($package['source_note'] ?? ''),
             'description' => (string) ($package['description'] ?? ''),
@@ -246,8 +267,10 @@ final class CMS_M365LIC_Calculator
     /**
      * @param array<string,array<string,mixed>> $totals
      * @param array<string,mixed> $package
+     * @param array<string,mixed> $item
+     * @param array<string,mixed> $billingContext
      */
-    private static function merge_total(array &$totals, array $package, int $quantity, ?float $price, string $pricingTier, string $typeLabel): void
+    private static function merge_total(array &$totals, array $package, array $item, string $pricingTier, array $billingContext, string $typeLabel): void
     {
         $slug = (string) $package['slug'];
         if (!isset($totals[$slug])) {
@@ -256,17 +279,27 @@ final class CMS_M365LIC_Calculator
                 'name' => $package['name'],
                 'type_label' => $typeLabel,
                 'quantity' => 0,
-                'unit_price' => $price,
+                'quantity_label' => '',
+                'billing_quantity' => 0,
+                'unit_price' => $item['unit_price'],
                 'line_total' => 0.0,
                 'pricing_tier' => $pricingTier,
+                'pricing_basis' => $item['pricing_basis'],
+                'pricing_basis_label' => $item['pricing_basis_label'],
+                'billing_cycle_label' => (string) ($billingContext['label'] ?? '1 Jahr · jährliche Zahlung'),
                 'pricing_note' => (string) ($package['pricing_note'] ?? ''),
                 'source_note' => (string) ($package['source_note'] ?? ''),
             ];
         }
 
-        $totals[$slug]['quantity'] += $quantity;
-        if ($price !== null) {
-            $totals[$slug]['line_total'] = round(((float) $totals[$slug]['line_total']) + ($price * $quantity), 2);
+        $totals[$slug]['quantity'] += (int) ($item['quantity'] ?? 0);
+        $totals[$slug]['billing_quantity'] += (int) ($item['billing_quantity'] ?? 0);
+        $totals[$slug]['quantity_label'] = ($item['pricing_basis'] ?? 'per_user') === 'flat_monthly'
+            ? ($totals[$slug]['billing_quantity'] . ' Fixpreis')
+            : ($totals[$slug]['quantity'] . ' Benutzer');
+
+        if ($item['line_total'] !== null) {
+            $totals[$slug]['line_total'] = round(((float) $totals[$slug]['line_total']) + (float) $item['line_total'], 2);
         } else {
             $totals[$slug]['line_total'] = null;
         }

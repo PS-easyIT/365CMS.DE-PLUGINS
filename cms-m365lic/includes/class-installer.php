@@ -43,6 +43,7 @@ final class CMS_M365LIC_Installer
         $p   = $db->getPrefix();
 
         $tables = [
+            'm365lic_special_users',
             'm365lic_usage_limits',
             'm365lic_settings',
             'm365lic_packages',
@@ -77,6 +78,7 @@ final class CMS_M365LIC_Installer
             kind                  VARCHAR(20)  NOT NULL DEFAULT 'base',
             category              VARCHAR(80)  NOT NULL DEFAULT 'general',
             audience              VARCHAR(30)  NOT NULL DEFAULT 'knowledge',
+            pricing_basis         VARCHAR(20)  NOT NULL DEFAULT 'per_user',
             description           TEXT         DEFAULT NULL,
             features_json         LONGTEXT     DEFAULT NULL,
             tags_json             LONGTEXT     DEFAULT NULL,
@@ -118,6 +120,40 @@ final class CMS_M365LIC_Installer
             INDEX idx_action_key (action_key),
             INDEX idx_date_key (date_key)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}m365lic_special_users (
+            id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id         INT UNSIGNED NOT NULL,
+            group_key       VARCHAR(120) NOT NULL DEFAULT 'special',
+            group_label     VARCHAR(190) NOT NULL DEFAULT 'Spezialzugang',
+            note            TEXT         DEFAULT NULL,
+            is_active       TINYINT(1)   NOT NULL DEFAULT 1,
+            created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
+            updated_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY idx_user_id (user_id),
+            INDEX idx_group_key (group_key),
+            INDEX idx_active (is_active)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        self::ensure_column_exists(
+            $pdo,
+            "{$p}m365lic_packages",
+            'pricing_basis',
+            "ALTER TABLE {$p}m365lic_packages ADD COLUMN pricing_basis VARCHAR(20) NOT NULL DEFAULT 'per_user' AFTER audience"
+        );
+    }
+
+    private static function ensure_column_exists(\PDO $pdo, string $table, string $column, string $alterSql): void
+    {
+        try {
+            $stmt = $pdo->query("SHOW COLUMNS FROM {$table} LIKE " . $pdo->quote($column));
+            $exists = $stmt !== false ? $stmt->fetch(\PDO::FETCH_ASSOC) : false;
+            if (!$exists) {
+                $pdo->exec($alterSql);
+            }
+        } catch (\Throwable $e) {
+            // ignore migration edge cases
+        }
     }
 
     private static function get_stored_version(): string

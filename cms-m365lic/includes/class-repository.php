@@ -131,6 +131,7 @@ final class CMS_M365LIC_Repository
             'kind' => (string) ($data['kind'] ?? 'base'),
             'category' => (string) ($data['category'] ?? 'general'),
             'audience' => (string) ($data['audience'] ?? 'knowledge'),
+            'pricing_basis' => $this->normalize_pricing_basis($data['pricing_basis'] ?? 'per_user'),
             'description' => (string) ($data['description'] ?? ''),
             'features_json' => json_encode(array_values(array_unique($data['features'] ?? [])), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'tags_json' => json_encode(array_values(array_unique($data['tags'] ?? [])), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
@@ -138,7 +139,7 @@ final class CMS_M365LIC_Repository
             'public_price' => $this->normalize_price($data['public_price'] ?? null),
             'member_price' => $this->normalize_price($data['member_price'] ?? null),
             'group_price' => $this->normalize_price($data['group_price'] ?? null),
-            'currency' => (string) ($data['currency'] ?? 'EUR'),
+            'currency' => (string) ($data['currency'] ?? 'USD'),
             'pricing_note' => (string) ($data['pricing_note'] ?? ''),
             'source_note' => (string) ($data['source_note'] ?? ''),
             'is_active' => !empty($data['is_active']) ? 1 : 0,
@@ -149,7 +150,7 @@ final class CMS_M365LIC_Repository
 
         if ($id > 0) {
             $sql = "UPDATE {$this->prefix()}m365lic_packages
-                    SET slug = ?, name = ?, kind = ?, category = ?, audience = ?, description = ?,
+                    SET slug = ?, name = ?, kind = ?, category = ?, audience = ?, pricing_basis = ?, description = ?,
                         features_json = ?, tags_json = ?, prerequisite_tags_json = ?,
                         public_price = ?, member_price = ?, group_price = ?, currency = ?,
                         pricing_note = ?, source_note = ?, is_active = ?, sort_order = ?
@@ -161,9 +162,9 @@ final class CMS_M365LIC_Repository
         }
 
         $sql = "INSERT INTO {$this->prefix()}m365lic_packages
-                (slug, name, kind, category, audience, description, features_json, tags_json, prerequisite_tags_json,
+                (slug, name, kind, category, audience, pricing_basis, description, features_json, tags_json, prerequisite_tags_json,
                  public_price, member_price, group_price, currency, pricing_note, source_note, is_active, sort_order)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $this->db()->prepare($sql)->execute(array_values($record));
     }
 
@@ -217,6 +218,8 @@ final class CMS_M365LIC_Repository
             'packages_base' => count($basePackages),
             'packages_addon' => count($addonPackages),
             'packages_with_prices' => count($withPrices),
+            'packages_without_prices' => max(0, count($activePackages) - count($withPrices)),
+            'special_users_total' => count($this->get_special_users()),
             'feature_total' => count(CMS_M365LIC_Catalog::feature_definitions()),
             'preset_total' => count(CMS_M365LIC_Catalog::presets()),
         ];
@@ -230,7 +233,7 @@ final class CMS_M365LIC_Repository
         $settings = $this->get_settings();
         $tier = in_array((string) $requestedTier, ['public', 'member', 'group'], true)
             ? (string) $requestedTier
-            : (string) ($settings['default_pricing_tier'] ?? 'public');
+            : 'public';
 
         $groupKey = trim((string) ($requestedGroupKey ?? $settings['default_group_key'] ?? ''));
         $label = match ($tier) {
@@ -273,6 +276,40 @@ final class CMS_M365LIC_Repository
     /**
      * @return array<string,mixed>
      */
+    public function resolve_billing_cycle(?string $requestedCycle, string $tier, ?array $settings = null): array
+    {
+        $settings ??= $this->get_settings();
+        $options = CMS_M365LIC_Catalog::billing_options();
+
+        $defaultKey = match ($tier) {
+            'member' => (string) ($settings['member_default_billing_cycle'] ?? 'annual_upfront'),
+            'group' => (string) ($settings['group_default_billing_cycle'] ?? 'annual_monthly'),
+            default => (string) ($settings['public_default_billing_cycle'] ?? 'annual_upfront'),
+        };
+
+        $key = (string) ($requestedCycle ?: $defaultKey);
+        if (!isset($options[$key])) {
+            $key = isset($options[$defaultKey]) ? $defaultKey : 'annual_upfront';
+        }
+
+        return $options[$key];
+    }
+
+    public function apply_billing_cycle(?float $basePrice, string $billingCycle): ?float
+    {
+        if ($basePrice === null) {
+            return null;
+        }
+
+        $options = CMS_M365LIC_Catalog::billing_options();
+        $multiplier = (float) ($options[$billingCycle]['multiplier'] ?? 1.0);
+
+        return round($basePrice * $multiplier, 2);
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
     public function enforce_daily_limit(string $action, string $tier): array
     {
         $settings = $this->get_settings();
@@ -310,6 +347,183 @@ final class CMS_M365LIC_Repository
         ];
     }
 
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function get_special_users(): array
+    {
+        try {
+            $stmt = $this->db()->prepare(
+                "SELECT su.*, u.username, u.email, u.display_name, u.role, u.status
+                 FROM {$this->prefix()}m365lic_special_users su
+                 INNER JOIN {$this->prefix()}users u ON u.id = su.user_id
+                 ORDER BY su.is_active DESC, COALESCE(NULLIF(u.display_name, ''), u.username) ASC"
+            );
+            $stmt->execute();
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        return array_map([$this, 'hydrate_special_user'], $rows);
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function find_users_for_special_assignment(string $search = ''): array
+    {
+        $params = [];
+        $where = ["u.status = 'active'"];
+
+        if ($search !== '') {
+            $where[] = '(u.username LIKE ? OR u.display_name LIKE ? OR u.email LIKE ?)';
+            $like = '%' . $search . '%';
+            $params[] = $like;
+            $params[] = $like;
+            $params[] = $like;
+        }
+
+        try {
+            $stmt = $this->db()->prepare(
+                "SELECT u.id, u.username, u.email, u.display_name, u.role, u.status,
+                        su.group_key, su.group_label, su.note, su.is_active AS special_is_active
+                 FROM {$this->prefix()}users u
+                 LEFT JOIN {$this->prefix()}m365lic_special_users su ON su.user_id = u.id
+                 WHERE " . implode(' AND ', $where) . "
+                 ORDER BY COALESCE(NULLIF(u.display_name, ''), u.username) ASC
+                 LIMIT 150"
+            );
+            $stmt->execute($params);
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * @return array<string,mixed>|null
+     */
+    public function get_special_user_by_user_id(int $userId): ?array
+    {
+        if ($userId <= 0) {
+            return null;
+        }
+
+        try {
+            $stmt = $this->db()->prepare(
+                "SELECT su.*, u.username, u.email, u.display_name, u.role, u.status
+                 FROM {$this->prefix()}m365lic_special_users su
+                 INNER JOIN {$this->prefix()}users u ON u.id = su.user_id
+                 WHERE su.user_id = ?
+                 LIMIT 1"
+            );
+            $stmt->execute([$userId]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        return is_array($row) ? $this->hydrate_special_user($row) : null;
+    }
+
+    /**
+     * @param array<string,mixed> $data
+     */
+    public function save_special_user(int $userId, array $data): void
+    {
+        if ($userId <= 0) {
+            return;
+        }
+
+        $groupKey = trim((string) ($data['group_key'] ?? 'special'));
+        $groupLabel = trim((string) ($data['group_label'] ?? 'Spezialzugang'));
+
+        if ($groupKey === '') {
+            $groupKey = 'special';
+        }
+
+        if ($groupLabel === '') {
+            $groupLabel = 'Spezialzugang';
+        }
+
+        $stmt = $this->db()->prepare(
+            "INSERT INTO {$this->prefix()}m365lic_special_users (user_id, group_key, group_label, note, is_active)
+             VALUES (?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                group_key = VALUES(group_key),
+                group_label = VALUES(group_label),
+                note = VALUES(note),
+                is_active = VALUES(is_active)"
+        );
+
+        $stmt->execute([
+            $userId,
+            strtolower(preg_replace('/[^a-z0-9\-_]+/i', '-', $groupKey) ?: 'special'),
+            $groupLabel,
+            trim((string) ($data['note'] ?? '')),
+            !empty($data['is_active']) ? 1 : 0,
+        ]);
+    }
+
+    public function remove_special_user(int $userId): void
+    {
+        if ($userId <= 0) {
+            return;
+        }
+
+        $stmt = $this->db()->prepare("DELETE FROM {$this->prefix()}m365lic_special_users WHERE user_id = ?");
+        $stmt->execute([$userId]);
+    }
+
+    public function current_user_id(): int
+    {
+        if (!class_exists('CMS\\Auth')) {
+            return 0;
+        }
+
+        $auth = \CMS\Auth::instance();
+
+        if (method_exists($auth, 'getUserId')) {
+            return (int) $auth->getUserId();
+        }
+
+        if (method_exists($auth, 'getCurrentUser')) {
+            $user = $auth->getCurrentUser();
+            return is_object($user) ? (int) ($user->id ?? 0) : 0;
+        }
+
+        if (method_exists($auth, 'getUser')) {
+            $user = $auth->getUser();
+            return is_array($user) ? (int) ($user['id'] ?? 0) : (int) ($user->id ?? 0);
+        }
+
+        return 0;
+    }
+
+    /**
+     * @return array<string,mixed>|null
+     */
+    public function get_current_special_user(): ?array
+    {
+        $userId = $this->current_user_id();
+        if ($userId <= 0) {
+            return null;
+        }
+
+        $record = $this->get_special_user_by_user_id($userId);
+        if (!is_array($record) || empty($record['is_active'])) {
+            return null;
+        }
+
+        return $record;
+    }
+
+    public function current_user_has_special_access(): bool
+    {
+        return $this->get_current_special_user() !== null;
+    }
+
     public function export_user_data(int $userId): void
     {
         if ($userId <= 0) {
@@ -328,6 +542,9 @@ final class CMS_M365LIC_Repository
         $userHash = hash('sha256', 'user:' . $userId);
         $stmt = $this->db()->prepare("DELETE FROM {$this->prefix()}m365lic_usage_limits WHERE actor_hash = ?");
         $stmt->execute([$userHash]);
+
+        $stmt = $this->db()->prepare("DELETE FROM {$this->prefix()}m365lic_special_users WHERE user_id = ?");
+        $stmt->execute([$userId]);
     }
 
     /**
@@ -339,6 +556,7 @@ final class CMS_M365LIC_Repository
         $row['id'] = (int) ($row['id'] ?? 0);
         $row['is_active'] = (int) ($row['is_active'] ?? 0);
         $row['sort_order'] = (int) ($row['sort_order'] ?? 0);
+        $row['pricing_basis'] = $this->normalize_pricing_basis($row['pricing_basis'] ?? 'per_user');
         $row['public_price'] = $row['public_price'] !== null ? (float) $row['public_price'] : null;
         $row['member_price'] = $row['member_price'] !== null ? (float) $row['member_price'] : null;
         $row['group_price'] = $row['group_price'] !== null ? (float) $row['group_price'] : null;
@@ -371,6 +589,13 @@ final class CMS_M365LIC_Repository
         return is_numeric($stringValue) ? round((float) $stringValue, 2) : null;
     }
 
+    private function normalize_pricing_basis(mixed $value): string
+    {
+        return in_array((string) $value, ['per_user', 'flat_monthly'], true)
+            ? (string) $value
+            : 'per_user';
+    }
+
     /**
      * @param array<string,mixed> $seed
      */
@@ -392,7 +617,7 @@ final class CMS_M365LIC_Repository
         $seed['group_price'] = $existing['group_price'] !== null
             ? $existing['group_price']
             : ($seed['group_price'] ?? null);
-        $seed['currency'] = (string) ($existing['currency'] ?? $seed['currency'] ?? 'EUR');
+        $seed['currency'] = (string) ($existing['currency'] ?? $seed['currency'] ?? 'USD');
         $seed['pricing_note'] = trim((string) ($existing['pricing_note'] ?? '')) !== ''
             ? (string) $existing['pricing_note']
             : (string) ($seed['pricing_note'] ?? '');
@@ -402,10 +627,31 @@ final class CMS_M365LIC_Repository
         $seed['description'] = trim((string) ($existing['description'] ?? '')) !== ''
             ? (string) $existing['description']
             : (string) ($seed['description'] ?? '');
+        $seed['pricing_basis'] = $this->normalize_pricing_basis($existing['pricing_basis'] ?? ($seed['pricing_basis'] ?? 'per_user'));
         $seed['is_active'] = (int) ($existing['is_active'] ?? $seed['is_active'] ?? 1);
         $seed['sort_order'] = (int) ($existing['sort_order'] ?? $seed['sort_order'] ?? 0);
 
         $this->save_package($seed);
+    }
+
+    /**
+     * @param array<string,mixed> $row
+     * @return array<string,mixed>
+     */
+    private function hydrate_special_user(array $row): array
+    {
+        $row['id'] = (int) ($row['id'] ?? 0);
+        $row['user_id'] = (int) ($row['user_id'] ?? 0);
+        $row['is_active'] = (int) ($row['is_active'] ?? 0);
+        $row['group_key'] = trim((string) ($row['group_key'] ?? 'special'));
+        $row['group_label'] = trim((string) ($row['group_label'] ?? 'Spezialzugang'));
+        $row['note'] = trim((string) ($row['note'] ?? ''));
+        $row['username'] = (string) ($row['username'] ?? '');
+        $row['email'] = (string) ($row['email'] ?? '');
+        $row['display_name'] = (string) ($row['display_name'] ?? '');
+        $row['role'] = (string) ($row['role'] ?? 'member');
+        $row['status'] = (string) ($row['status'] ?? 'active');
+        return $row;
     }
 
     private function resolve_actor_hash(): string
@@ -413,16 +659,9 @@ final class CMS_M365LIC_Repository
         if (class_exists('CMS\\Auth')) {
             $auth = \CMS\Auth::instance();
             if (method_exists($auth, 'isLoggedIn') && $auth->isLoggedIn()) {
-                if (method_exists($auth, 'getUserId')) {
-                    return hash('sha256', 'user:' . (int) $auth->getUserId());
-                }
-
-                if (method_exists($auth, 'getUser')) {
-                    $user = $auth->getUser();
-                    $userId = is_array($user) ? (int) ($user['id'] ?? 0) : (int) ($user->id ?? 0);
-                    if ($userId > 0) {
-                        return hash('sha256', 'user:' . $userId);
-                    }
+                $userId = $this->current_user_id();
+                if ($userId > 0) {
+                    return hash('sha256', 'user:' . $userId);
                 }
             }
         }

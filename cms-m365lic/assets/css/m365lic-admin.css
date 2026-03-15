@@ -101,6 +101,45 @@
     font-size: 0.85rem;
 }
 
+.m365lic-search-form {
+    min-width: min(280px, 100%);
+}
+
+.m365lic-inline-form {
+    margin: 0;
+}
+
+.m365lic-special-users-stack {
+    display: grid;
+    gap: 1rem;
+}
+
+.m365lic-special-user-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem;
+    background: #fff;
+}
+
+.m365lic-special-user-card__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.m365lic-special-user-card__head h4 {
+    margin: 0 0 0.2rem;
+}
+
+.m365lic-special-user-card__head p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
 .m365lic-tabs {
     display: flex;
     flex-wrap: wrap;

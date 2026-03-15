@@ -22,6 +22,7 @@ final class CMS_M365LIC_Admin_Pages
 {
     use CMS_M365LIC_Page_Dashboard_Trait;
     use CMS_M365LIC_Page_Packages_Trait;
+    use CMS_M365LIC_Page_Special_Users_Trait;
     use CMS_M365LIC_Page_Settings_Trait;
 
     private static ?self $instance = null;
@@ -110,5 +111,12 @@ final class CMS_M365LIC_Admin_Pages
         self::check_access();
         self::enqueue_admin_assets();
         self::instance()->render_settings_page();
+    }
+
+    public static function render_special_users(): void
+    {
+        self::check_access();
+        self::enqueue_admin_assets();
+        self::instance()->render_special_users_page();
     }
 }

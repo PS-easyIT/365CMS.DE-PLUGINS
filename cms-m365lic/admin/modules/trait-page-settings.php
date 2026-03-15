@@ -18,6 +18,7 @@ trait CMS_M365LIC_Page_Settings_Trait
         $notice = '';
         $error = '';
         $tab = sanitize_text_field($_GET['tab'] ?? 'general');
+        $billingOptions = CMS_M365LIC_Catalog::billing_options();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!self::verify_nonce('m365lic_settings')) {
@@ -28,11 +29,12 @@ trait CMS_M365LIC_Page_Settings_Trait
                     'page_title' => trim((string) ($_POST['page_title'] ?? 'Microsoft 365 Lizenzberater')),
                     'page_intro' => trim((string) ($_POST['page_intro'] ?? '')),
                     'route_slug' => trim((string) ($_POST['route_slug'] ?? 'm365-lizenzberater')),
-                    'default_currency' => trim((string) ($_POST['default_currency'] ?? 'EUR')),
-                    'allow_pricing_tier_switch' => !empty($_POST['allow_pricing_tier_switch']) ? '1' : '0',
-                    'default_pricing_tier' => in_array((string) ($_POST['default_pricing_tier'] ?? 'public'), ['public', 'member', 'group'], true) ? (string) $_POST['default_pricing_tier'] : 'public',
+                    'default_currency' => trim((string) ($_POST['default_currency'] ?? 'USD')),
                     'default_group_key' => trim((string) ($_POST['default_group_key'] ?? 'partner')),
                     'default_group_label' => trim((string) ($_POST['default_group_label'] ?? 'Partner / Spezialgruppe')),
+                    'public_default_billing_cycle' => array_key_exists((string) ($_POST['public_default_billing_cycle'] ?? ''), $billingOptions) ? (string) $_POST['public_default_billing_cycle'] : 'annual_upfront',
+                    'member_default_billing_cycle' => array_key_exists((string) ($_POST['member_default_billing_cycle'] ?? ''), $billingOptions) ? (string) $_POST['member_default_billing_cycle'] : 'annual_monthly',
+                    'group_default_billing_cycle' => array_key_exists((string) ($_POST['group_default_billing_cycle'] ?? ''), $billingOptions) ? (string) $_POST['group_default_billing_cycle'] : 'annual_monthly',
                     'public_daily_limit' => (string) max(1, (int) ($_POST['public_daily_limit'] ?? 2)),
                     'member_daily_limit' => (string) max(1, (int) ($_POST['member_daily_limit'] ?? 10)),
                     'group_daily_limit' => (string) max(1, (int) ($_POST['group_daily_limit'] ?? 25)),
@@ -61,7 +63,7 @@ trait CMS_M365LIC_Page_Settings_Trait
         <div class="admin-page-header">
             <div>
                 <h2>⚙️ Einstellungen</h2>
-                <p>Publicsite, Tageslimits, Pricing-Kontext und PDF-Ausgabe konfigurieren.</p>
+                <p>Publicsite, Tageslimits, Bereichs-Defaults und PDF-Ausgabe konfigurieren.</p>
             </div>
         </div>
 
@@ -78,7 +80,7 @@ trait CMS_M365LIC_Page_Settings_Trait
             <?php endforeach; ?>
         </div>
 
-        <div class="admin-card" style="border-radius:0 10px 10px 10px;margin-top:0;max-width:920px;">
+        <div class="admin-card" style="border-radius:0 10px 10px 10px;margin-top:0;max-width:980px;">
             <form method="POST" class="admin-form">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                 <input type="hidden" name="tab" value="<?php echo self::esc($tab); ?>">
@@ -96,15 +98,11 @@ trait CMS_M365LIC_Page_Settings_Trait
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="default_currency">Standardwährung</label>
-                            <input class="form-control" id="default_currency" type="text" name="default_currency" value="<?php echo self::esc((string) ($settings['default_currency'] ?? 'EUR')); ?>">
+                            <input class="form-control" id="default_currency" type="text" name="default_currency" value="<?php echo self::esc((string) ($settings['default_currency'] ?? 'USD')); ?>">
                         </div>
                         <div class="form-group">
-                            <label class="form-label" for="default_pricing_tier">Default Pricing-Tier</label>
-                            <select class="form-control" id="default_pricing_tier" name="default_pricing_tier">
-                                <option value="public" <?php echo ($settings['default_pricing_tier'] ?? 'public') === 'public' ? 'selected' : ''; ?>>Öffentlich</option>
-                                <option value="member" <?php echo ($settings['default_pricing_tier'] ?? 'public') === 'member' ? 'selected' : ''; ?>>Mitglied</option>
-                                <option value="group" <?php echo ($settings['default_pricing_tier'] ?? 'public') === 'group' ? 'selected' : ''; ?>>Spezialgruppe</option>
-                            </select>
+                            <label class="form-label" for="default_group_key">Default Spezialgruppen-Key</label>
+                            <input class="form-control" id="default_group_key" type="text" name="default_group_key" value="<?php echo self::esc((string) ($settings['default_group_key'] ?? 'partner')); ?>">
                         </div>
                     </div>
 
@@ -115,20 +113,37 @@ trait CMS_M365LIC_Page_Settings_Trait
 
                     <div class="m365lic-form-grid m365lic-form-grid--2">
                         <div class="form-group">
-                            <label class="form-label" for="default_group_key">Default Spezialgruppen-Key</label>
-                            <input class="form-control" id="default_group_key" type="text" name="default_group_key" value="<?php echo self::esc((string) ($settings['default_group_key'] ?? 'partner')); ?>">
-                        </div>
-                        <div class="form-group">
                             <label class="form-label" for="default_group_label">Default Spezialgruppen-Label</label>
                             <input class="form-control" id="default_group_label" type="text" name="default_group_label" value="<?php echo self::esc((string) ($settings['default_group_label'] ?? 'Partner / Spezialgruppe')); ?>">
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" name="allow_pricing_tier_switch" value="1" <?php echo !empty($settings['allow_pricing_tier_switch']) ? 'checked' : ''; ?>>
-                            User dürfen den Pricing-Tier im Frontend wechseln
-                        </label>
+                    <h3>💳 Default Abrechnung je Bereich</h3>
+                    <div class="m365lic-form-grid m365lic-form-grid--3">
+                        <div class="form-group">
+                            <label class="form-label" for="public_default_billing_cycle">Public</label>
+                            <select class="form-control" id="public_default_billing_cycle" name="public_default_billing_cycle">
+                                <?php foreach ($billingOptions as $key => $option): ?>
+                                <option value="<?php echo self::esc($key); ?>" <?php echo (($settings['public_default_billing_cycle'] ?? 'annual_upfront') === $key) ? 'selected' : ''; ?>><?php echo self::esc((string) $option['label']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="member_default_billing_cycle">Member</label>
+                            <select class="form-control" id="member_default_billing_cycle" name="member_default_billing_cycle">
+                                <?php foreach ($billingOptions as $key => $option): ?>
+                                <option value="<?php echo self::esc($key); ?>" <?php echo (($settings['member_default_billing_cycle'] ?? 'annual_monthly') === $key) ? 'selected' : ''; ?>><?php echo self::esc((string) $option['label']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="group_default_billing_cycle">Spezial</label>
+                            <select class="form-control" id="group_default_billing_cycle" name="group_default_billing_cycle">
+                                <?php foreach ($billingOptions as $key => $option): ?>
+                                <option value="<?php echo self::esc($key); ?>" <?php echo (($settings['group_default_billing_cycle'] ?? 'annual_monthly') === $key) ? 'selected' : ''; ?>><?php echo self::esc((string) $option['label']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
                     </div>
                 <?php elseif ($tab === 'limits'): ?>
                     <h3>🚦 Limits & Upsell</h3>
@@ -145,7 +160,7 @@ trait CMS_M365LIC_Page_Settings_Trait
                             <input class="form-control" type="number" min="1" name="member_daily_limit" value="<?php echo (int) ($settings['member_daily_limit'] ?? 10); ?>">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Gruppen Auswertungen/Tag</label>
+                            <label class="form-label">Spezial Auswertungen/Tag</label>
                             <input class="form-control" type="number" min="1" name="group_daily_limit" value="<?php echo (int) ($settings['group_daily_limit'] ?? 25); ?>">
                         </div>
                         <div class="form-group">
@@ -157,7 +172,7 @@ trait CMS_M365LIC_Page_Settings_Trait
                             <input class="form-control" type="number" min="1" name="member_pdf_daily_limit" value="<?php echo (int) ($settings['member_pdf_daily_limit'] ?? 10); ?>">
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Gruppen PDF/Tag</label>
+                            <label class="form-label">Spezial PDF/Tag</label>
                             <input class="form-control" type="number" min="1" name="group_pdf_daily_limit" value="<?php echo (int) ($settings['group_pdf_daily_limit'] ?? 25); ?>">
                         </div>
                     </div>

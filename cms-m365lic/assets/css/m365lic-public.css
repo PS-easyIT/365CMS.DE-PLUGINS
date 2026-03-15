@@ -132,6 +132,10 @@
     gap: 0.45rem;
 }
 
+.m365lic-field--info {
+    justify-content: center;
+}
+
 .m365lic-field label {
     font-weight: 600;
     font-size: 0.92rem;
@@ -281,6 +285,12 @@
 
 .m365lic-note-list li {
     margin-bottom: 0.45rem;
+}
+
+.m365lic-context-chip-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
 .m365lic-totals {
