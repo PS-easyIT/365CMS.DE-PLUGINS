@@ -46,6 +46,8 @@ final class CMS_M365LIC_Installer
         $p   = $db->getPrefix();
 
         $tables = [
+            'm365lic_user_package_costs',
+            'm365lic_user_profiles',
             'm365lic_special_users',
             'm365lic_usage_limits',
             'm365lic_settings',
@@ -134,6 +136,7 @@ final class CMS_M365LIC_Installer
             user_id         INT UNSIGNED NOT NULL,
             group_key       VARCHAR(120) NOT NULL DEFAULT 'special',
             group_label     VARCHAR(190) NOT NULL DEFAULT 'Spezialzugang',
+            special_markup_percent DECIMAL(6,2) NOT NULL DEFAULT 0.00,
             note            TEXT         DEFAULT NULL,
             is_active       TINYINT(1)   NOT NULL DEFAULT 1,
             created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
@@ -143,11 +146,45 @@ final class CMS_M365LIC_Installer
             INDEX idx_active (is_active)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}m365lic_user_profiles (
+            id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id                 INT UNSIGNED NOT NULL,
+            partner_name            VARCHAR(190) DEFAULT NULL,
+            partner_logo_path       VARCHAR(255) DEFAULT NULL,
+            whitelabel_title        VARCHAR(190) DEFAULT NULL,
+            whitelabel_intro        TEXT DEFAULT NULL,
+            base_markup_percent     DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+            addon_markup_percent    DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+            copilot_markup_percent  DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+            created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY idx_user_id (user_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}m365lic_user_package_costs (
+            id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id         INT UNSIGNED NOT NULL,
+            package_id      INT UNSIGNED NOT NULL,
+            ek_price        DECIMAL(10,2) DEFAULT NULL,
+            created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY idx_user_package (user_id, package_id),
+            INDEX idx_user_id (user_id),
+            INDEX idx_package_id (package_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
         self::ensure_column_exists(
             $pdo,
             "{$p}m365lic_packages",
             'pricing_basis',
             "ALTER TABLE {$p}m365lic_packages ADD COLUMN pricing_basis VARCHAR(20) NOT NULL DEFAULT 'per_user' AFTER audience"
+        );
+
+        self::ensure_column_exists(
+            $pdo,
+            "{$p}m365lic_special_users",
+            'special_markup_percent',
+            "ALTER TABLE {$p}m365lic_special_users ADD COLUMN special_markup_percent DECIMAL(6,2) NOT NULL DEFAULT 0.00 AFTER group_label"
         );
     }
 
@@ -214,6 +251,8 @@ final class CMS_M365LIC_Installer
                 'm365lic_settings',
                 'm365lic_usage_limits',
                 'm365lic_special_users',
+                'm365lic_user_profiles',
+                'm365lic_user_package_costs',
             ];
 
             foreach ($tables as $table) {

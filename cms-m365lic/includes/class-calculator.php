@@ -48,7 +48,7 @@ final class CMS_M365LIC_Calculator
      * @param array<int,array<string,mixed>> $packages
      * @return array<string,mixed>
      */
-    public static function evaluate(array $requirements, array $packages, string $pricingTier, string $billingCycle): array
+    public static function evaluate(array $requirements, array $packages, string $pricingTier, string $billingCycle, ?array $pricingProfile = null, bool $applyMarkup = true): array
     {
         $basePackages = array_values(array_filter($packages, static fn(array $pkg): bool => !empty($pkg['is_active']) && ($pkg['kind'] ?? '') === 'base'));
         $addonPackages = array_values(array_filter($packages, static fn(array $pkg): bool => !empty($pkg['is_active']) && ($pkg['kind'] ?? '') === 'addon'));
@@ -80,7 +80,8 @@ final class CMS_M365LIC_Calculator
                 $audience,
                 $quantity,
                 $pricingTier,
-                $billingCycle
+                $billingCycle,
+                $pricingProfile
             );
             $chosenBase = $bundle['base'];
             $addons = $bundle['addons'];
@@ -89,8 +90,9 @@ final class CMS_M365LIC_Calculator
             $rowHasMissingPrice = false;
 
             if ($chosenBase !== null) {
-                $basePrice = $repo->get_price_for_package($chosenBase, $pricingTier);
-                $builtBase = self::build_item($chosenBase, $quantity, $basePrice, $pricingTier, $billingContext, 'Basislizenz');
+                $baseCostPrice = $repo->get_price_for_package($chosenBase, $pricingTier, $pricingProfile, false);
+                $baseDisplayPrice = $repo->get_price_for_package($chosenBase, $pricingTier, $pricingProfile, $applyMarkup);
+                $builtBase = self::build_item($chosenBase, $quantity, $baseCostPrice, $baseDisplayPrice, $pricingTier, $billingContext, 'Basislizenz', $pricingProfile, $applyMarkup);
                 $rowItems[] = $builtBase;
                 self::merge_total($totals, $chosenBase, $builtBase, $pricingTier, $billingContext, 'Basislizenz');
                 if ($builtBase['line_total'] !== null) {
@@ -103,8 +105,9 @@ final class CMS_M365LIC_Calculator
             }
 
             foreach ($addons as $addon) {
-                $addonPrice = $repo->get_price_for_package($addon, $pricingTier);
-                $builtAddon = self::build_item($addon, $quantity, $addonPrice, $pricingTier, $billingContext, 'Add-on');
+                $addonCostPrice = $repo->get_price_for_package($addon, $pricingTier, $pricingProfile, false);
+                $addonDisplayPrice = $repo->get_price_for_package($addon, $pricingTier, $pricingProfile, $applyMarkup);
+                $builtAddon = self::build_item($addon, $quantity, $addonCostPrice, $addonDisplayPrice, $pricingTier, $billingContext, 'Add-on', $pricingProfile, $applyMarkup);
                 $rowItems[] = $builtAddon;
                 self::merge_total($totals, $addon, $builtAddon, $pricingTier, $billingContext, 'Add-on');
                 if ($builtAddon['line_total'] !== null) {
@@ -175,7 +178,8 @@ final class CMS_M365LIC_Calculator
         string $audience,
         int $quantity,
         string $pricingTier,
-        string $billingCycle
+        string $billingCycle,
+        ?array $pricingProfile = null
     ): array {
         $candidates = [];
 
@@ -185,7 +189,7 @@ final class CMS_M365LIC_Calculator
                 continue;
             }
 
-            $addons = self::find_matching_addons($addonPackages, $addonFeatureSet, $package, $pricingTier, $billingCycle);
+            $addons = self::find_matching_addons($addonPackages, $addonFeatureSet, $package, $pricingTier, $billingCycle, $pricingProfile);
             if (!self::covers_requested_addon_features($addonFeatureSet, $package, $addons)) {
                 continue;
             }
@@ -193,17 +197,17 @@ final class CMS_M365LIC_Calculator
             $candidates[] = [
                 'base' => $package,
                 'addons' => $addons,
-                'score' => self::score_bundle($package, $addons, $features, $audience, $quantity, $pricingTier, $billingCycle),
+                'score' => self::score_bundle($package, $addons, $features, $audience, $quantity, $pricingTier, $billingCycle, $pricingProfile),
             ];
         }
 
         if ($baseFeatureSet === []) {
-            $addonsWithoutBase = self::find_matching_addons($addonPackages, $addonFeatureSet, null, $pricingTier, $billingCycle);
+            $addonsWithoutBase = self::find_matching_addons($addonPackages, $addonFeatureSet, null, $pricingTier, $billingCycle, $pricingProfile);
             if (self::covers_requested_addon_features($addonFeatureSet, null, $addonsWithoutBase)) {
                 $candidates[] = [
                     'base' => null,
                     'addons' => $addonsWithoutBase,
-                    'score' => self::score_bundle(null, $addonsWithoutBase, $features, $audience, $quantity, $pricingTier, $billingCycle),
+                    'score' => self::score_bundle(null, $addonsWithoutBase, $features, $audience, $quantity, $pricingTier, $billingCycle, $pricingProfile),
                 ];
             }
         }
@@ -258,7 +262,7 @@ final class CMS_M365LIC_Calculator
      * @param array<int,array<string,mixed>> $addons
      * @param array<int,string> $requestedFeatures
      */
-    private static function score_bundle(?array $basePackage, array $addons, array $requestedFeatures, string $audience, int $quantity, string $pricingTier, string $billingCycle): float
+    private static function score_bundle(?array $basePackage, array $addons, array $requestedFeatures, string $audience, int $quantity, string $pricingTier, string $billingCycle, ?array $pricingProfile = null): float
     {
         $repo = CMS_M365LIC_Repository::instance();
         $bundleCost = 0.0;
@@ -267,7 +271,7 @@ final class CMS_M365LIC_Calculator
         $audiencePenalty = 0;
 
         if ($basePackage !== null) {
-            $bundleCost += self::estimate_package_total($basePackage, $quantity, $pricingTier, $billingCycle);
+            $bundleCost += self::estimate_package_total($basePackage, $quantity, $pricingTier, $billingCycle, $pricingProfile);
             $packageFeatures = array_values(array_map('strval', $basePackage['features'] ?? []));
             $extraCount += count(array_diff($packageFeatures, $requestedFeatures));
             $sortOrder += (int) ($basePackage['sort_order'] ?? 0);
@@ -281,7 +285,7 @@ final class CMS_M365LIC_Calculator
         }
 
         foreach ($addons as $addon) {
-            $bundleCost += self::estimate_package_total($addon, $quantity, $pricingTier, $billingCycle);
+            $bundleCost += self::estimate_package_total($addon, $quantity, $pricingTier, $billingCycle, $pricingProfile);
             $addonFeatures = array_values(array_map('strval', $addon['features'] ?? []));
             $extraCount += count(array_diff($addonFeatures, $requestedFeatures));
             $sortOrder += (int) ($addon['sort_order'] ?? 0);
@@ -293,10 +297,10 @@ final class CMS_M365LIC_Calculator
     /**
      * @param array<string,mixed> $package
      */
-    private static function estimate_package_total(array $package, int $quantity, string $pricingTier, string $billingCycle): float
+    private static function estimate_package_total(array $package, int $quantity, string $pricingTier, string $billingCycle, ?array $pricingProfile = null): float
     {
         $repo = CMS_M365LIC_Repository::instance();
-        $basePrice = $repo->get_price_for_package($package, $pricingTier);
+        $basePrice = $repo->get_price_for_package($package, $pricingTier, $pricingProfile, false);
         $adjustedPrice = $repo->apply_billing_cycle($basePrice, $billingCycle);
         if ($adjustedPrice === null) {
             return 999999.0;
@@ -372,7 +376,7 @@ final class CMS_M365LIC_Calculator
      * @param array<string,mixed>|null $basePackage
      * @return array<int,array<string,mixed>>
      */
-    private static function find_matching_addons(array $packages, array $addonFeatures, ?array $basePackage, string $pricingTier, string $billingCycle): array
+    private static function find_matching_addons(array $packages, array $addonFeatures, ?array $basePackage, string $pricingTier, string $billingCycle, ?array $pricingProfile = null): array
     {
         $repo = CMS_M365LIC_Repository::instance();
         $selected = [];
@@ -406,9 +410,9 @@ final class CMS_M365LIC_Calculator
                 continue;
             }
 
-            usort($matching, function (array $left, array $right) use ($repo, $pricingTier, $billingCycle): int {
-                $leftPrice = $repo->apply_billing_cycle($repo->get_price_for_package($left, $pricingTier), $billingCycle) ?? 999999.0;
-                $rightPrice = $repo->apply_billing_cycle($repo->get_price_for_package($right, $pricingTier), $billingCycle) ?? 999999.0;
+            usort($matching, function (array $left, array $right) use ($repo, $pricingTier, $billingCycle, $pricingProfile): int {
+                $leftPrice = $repo->apply_billing_cycle($repo->get_price_for_package($left, $pricingTier, $pricingProfile, false), $billingCycle) ?? 999999.0;
+                $rightPrice = $repo->apply_billing_cycle($repo->get_price_for_package($right, $pricingTier, $pricingProfile, false), $billingCycle) ?? 999999.0;
                 if ($leftPrice === $rightPrice) {
                     return strcmp((string) $left['name'], (string) $right['name']);
                 }
@@ -426,21 +430,31 @@ final class CMS_M365LIC_Calculator
      * @param array<string,mixed> $billingContext
      * @return array<string,mixed>
      */
-    private static function build_item(array $package, int $quantity, ?float $basePrice, string $pricingTier, array $billingContext, string $typeLabel): array
+    private static function build_item(array $package, int $quantity, ?float $costBasePrice, ?float $displayBasePrice, string $pricingTier, array $billingContext, string $typeLabel, ?array $pricingProfile = null, bool $applyMarkup = true): array
     {
         $repo = CMS_M365LIC_Repository::instance();
         $featureDefinitions = CMS_M365LIC_Catalog::feature_definitions();
         $pricingBasis = (string) ($package['pricing_basis'] ?? 'per_user');
-        $adjustedPrice = $repo->apply_billing_cycle($basePrice, (string) ($billingContext['key'] ?? 'annual_upfront'));
+        $adjustedCostPrice = $repo->apply_billing_cycle($costBasePrice, (string) ($billingContext['key'] ?? 'annual_upfront'));
+        $adjustedDisplayPrice = $repo->apply_billing_cycle($displayBasePrice, (string) ($billingContext['key'] ?? 'annual_upfront'));
         $billingQuantity = $pricingBasis === 'flat_monthly' ? 1 : $quantity;
         $quantityLabel = $pricingBasis === 'flat_monthly'
             ? '1 Fixpreis / Monat'
             : $quantity . ' Benutzer';
+        $markupPercent = 0.0;
+        if ($pricingProfile !== null && $applyMarkup) {
+            $markupPercent = match (true) {
+                ((string) ($package['category'] ?? '')) === 'copilot', str_contains((string) ($package['slug'] ?? ''), 'copilot') => (float) ($pricingProfile['copilot_markup_percent'] ?? 0),
+                ((string) ($package['kind'] ?? 'base')) === 'addon' => (float) ($pricingProfile['addon_markup_percent'] ?? 0),
+                default => (float) ($pricingProfile['base_markup_percent'] ?? 0),
+            };
+        }
 
         return [
             'slug' => $package['slug'],
             'name' => $package['name'],
             'type_label' => $typeLabel,
+            'category' => (string) ($package['category'] ?? 'general'),
             'quantity' => $quantity,
             'quantity_label' => $quantityLabel,
             'billing_quantity' => $billingQuantity,
@@ -449,9 +463,12 @@ final class CMS_M365LIC_Calculator
             'pricing_basis_label' => $pricingBasis === 'flat_monthly' ? 'Fixpreis' : 'pro Benutzer',
             'billing_cycle_key' => (string) ($billingContext['key'] ?? 'annual_upfront'),
             'billing_cycle_label' => (string) ($billingContext['label'] ?? '1 Jahr · jährliche Zahlung'),
-            'base_unit_price' => $basePrice,
-            'unit_price' => $adjustedPrice,
-            'line_total' => $adjustedPrice !== null ? round($adjustedPrice * $billingQuantity, 2) : null,
+            'base_unit_price' => $displayBasePrice,
+            'cost_base_unit_price' => $costBasePrice,
+            'cost_unit_price' => $adjustedCostPrice,
+            'unit_price' => $adjustedDisplayPrice,
+            'line_total' => $adjustedDisplayPrice !== null ? round($adjustedDisplayPrice * $billingQuantity, 2) : null,
+            'markup_percent' => round($markupPercent, 2),
             'pricing_note' => (string) ($package['pricing_note'] ?? ''),
             'source_note' => (string) ($package['source_note'] ?? ''),
             'description' => (string) ($package['description'] ?? ''),
@@ -477,10 +494,13 @@ final class CMS_M365LIC_Calculator
                 'quantity_label' => '',
                 'billing_quantity' => 0,
                 'unit_price' => $item['unit_price'],
+                'cost_unit_price' => $item['cost_unit_price'] ?? null,
                 'line_total' => 0.0,
                 'pricing_tier' => $pricingTier,
                 'pricing_basis' => $item['pricing_basis'],
                 'pricing_basis_label' => $item['pricing_basis_label'],
+                'category' => (string) ($package['category'] ?? 'general'),
+                'markup_percent' => (float) ($item['markup_percent'] ?? 0),
                 'billing_cycle_label' => (string) ($billingContext['label'] ?? '1 Jahr · jährliche Zahlung'),
                 'pricing_note' => (string) ($package['pricing_note'] ?? ''),
                 'source_note' => (string) ($package['source_note'] ?? ''),

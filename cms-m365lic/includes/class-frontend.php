@@ -17,8 +17,12 @@ final class CMS_M365LIC_Frontend
     private const SCOPE_MEMBER = 'member';
     private const SCOPE_SPECIAL = 'special';
     private const MEMBER_SECTION_SLUG = 'm365-license';
+    private const MEMBER_SETTINGS_SECTION_SLUG = 'm365-license-settings';
     private const SPECIAL_SECTION_SLUG = 'm365-license-special';
     private const MAX_REQUIREMENT_ROWS = 25;
+    private const EXPORT_VARIANT_STANDARD = 'standard';
+    private const EXPORT_VARIANT_WHITELABEL = 'whitelabel';
+    private const EXPORT_VARIANT_PARTNER = 'partner';
 
     private static ?self $instance = null;
 
@@ -73,41 +77,44 @@ final class CMS_M365LIC_Frontend
             return;
         }
 
+        $hasSpecialAccess = CMS_M365LIC_Repository::instance()->current_user_has_special_access();
+
         $registry->register([
             'plugin' => 'cms-m365lic',
             'slug' => self::MEMBER_SECTION_SLUG,
-            'label' => 'M365 Lizenzberater',
-            'icon' => '🧮',
+            'label' => $hasSpecialAccess ? 'M365 Resellerpreise' : 'M365 Lizenzberater',
+            'icon' => $hasSpecialAccess ? '🔐' : '🧮',
             'category' => 'plugins',
             'priority' => 35,
             'dashboard_widget' => false,
             'render_callback' => function (object $user, array $params): void {
-                $this->render_calculator('GET', self::SCOPE_MEMBER, true);
+                $this->render_calculator('GET', $hasSpecialAccess ? self::SCOPE_SPECIAL : self::SCOPE_MEMBER, true);
             },
             'post_callback' => function (object $user, array $params): void {
-                $this->render_calculator('POST', self::SCOPE_MEMBER, true);
+                $this->render_calculator('POST', $hasSpecialAccess ? self::SCOPE_SPECIAL : self::SCOPE_MEMBER, true);
             },
         ]);
 
-        if (!CMS_M365LIC_Repository::instance()->current_user_has_special_access()) {
+        if ($hasSpecialAccess) {
             return;
         }
 
         $registry->register([
             'plugin' => 'cms-m365lic',
-            'slug' => self::SPECIAL_SECTION_SLUG,
-            'label' => 'M365 Spezialpreise',
-            'icon' => '🔐',
+            'slug' => self::MEMBER_SETTINGS_SECTION_SLUG,
+            'label' => 'Meine Konditionen',
+            'icon' => '💶',
             'category' => 'plugins',
             'priority' => 36,
             'dashboard_widget' => false,
             'render_callback' => function (object $user, array $params): void {
-                $this->render_calculator('GET', self::SCOPE_SPECIAL, true);
+                $this->render_member_settings('GET');
             },
             'post_callback' => function (object $user, array $params): void {
-                $this->render_calculator('POST', self::SCOPE_SPECIAL, true);
+                $this->render_member_settings('POST');
             },
         ]);
+
     }
 
     private function render_calculator(string $method, string $scope, bool $embedded): void
@@ -125,8 +132,9 @@ final class CMS_M365LIC_Frontend
         $error = '';
         $limitInfo = null;
         $pricingContext = $this->build_access_context($scope, $settings);
+        $userPricingProfile = $this->resolve_user_pricing_profile($scope);
         $selectedBilling = $repo->resolve_billing_cycle(null, (string) ($pricingContext['tier'] ?? 'public'), $settings);
-        $viewContext = $this->build_view_context($pricingContext, $embedded, $settings, $selectedBilling);
+        $viewContext = $this->build_view_context($pricingContext, $embedded, $settings, $selectedBilling, $userPricingProfile);
 
         if ($method === 'POST') {
             if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken($_POST['evaluation_csrf_token'] ?? '', 'm365lic_evaluate')) {
@@ -155,7 +163,9 @@ final class CMS_M365LIC_Frontend
                             $requirements,
                             $packages,
                             (string) ($pricingContext['tier'] ?? 'public'),
-                            (string) ($selectedBilling['key'] ?? 'annual_upfront')
+                            (string) ($selectedBilling['key'] ?? 'annual_upfront'),
+                            $userPricingProfile,
+                            true
                         );
                         $notice = 'Die Auswertung wurde erfolgreich erstellt.';
                     }
@@ -163,7 +173,7 @@ final class CMS_M365LIC_Frontend
             }
         }
 
-        $viewContext = $this->build_view_context($pricingContext, $embedded, $settings, $selectedBilling);
+        $viewContext = $this->build_view_context($pricingContext, $embedded, $settings, $selectedBilling, $userPricingProfile);
         $csrfToken = class_exists('CMS\Security')
             ? \CMS\Security::instance()->generateToken('form_guard')
             : bin2hex(random_bytes(16));
@@ -189,7 +199,17 @@ final class CMS_M365LIC_Frontend
         }
 
         $scope = $this->sanitize_scope($_POST['context_scope'] ?? self::SCOPE_PUBLIC);
+        $variant = $this->sanitize_export_variant($_POST['export_variant'] ?? ($scope === self::SCOPE_PUBLIC ? self::EXPORT_VARIANT_STANDARD : self::EXPORT_VARIANT_WHITELABEL));
+        if ($scope === self::SCOPE_PUBLIC) {
+            $variant = self::EXPORT_VARIANT_STANDARD;
+        }
         $pricingContext = $this->build_access_context($scope, $settings, true);
+        $userPricingProfile = $this->resolve_user_pricing_profile($scope);
+
+        if (($pricingContext['scope'] ?? self::SCOPE_PUBLIC) === self::SCOPE_SPECIAL) {
+            $variant = self::EXPORT_VARIANT_WHITELABEL;
+        }
+
         $billingContext = $repo->resolve_billing_cycle(
             (string) ($_POST['billing_cycle'] ?? ''),
             (string) ($pricingContext['tier'] ?? 'public'),
@@ -218,10 +238,19 @@ final class CMS_M365LIC_Frontend
             $normalizedRequirements,
             $repo->get_packages(false),
             (string) ($pricingContext['tier'] ?? 'public'),
-            (string) ($billingContext['key'] ?? 'annual_upfront')
+            (string) ($billingContext['key'] ?? 'annual_upfront'),
+            $userPricingProfile,
+            $variant !== self::EXPORT_VARIANT_PARTNER
         );
-        $html = CMS_M365LIC_Pdf_Export::render_html($evaluation, $normalizedRequirements, $settings, $pricingContext, $billingContext);
-        CMS_M365LIC_Pdf_Export::stream_pdf($html, 'm365-lizenz-auswertung');
+        $pdfSettings = $this->build_pdf_settings($settings, $variant, $userPricingProfile, $pricingContext);
+        $pdfContext = $this->build_pdf_context($variant, $userPricingProfile, $pricingContext);
+        $html = CMS_M365LIC_Pdf_Export::render_html($evaluation, $normalizedRequirements, $pdfSettings, $pricingContext, $billingContext, $pdfContext);
+        $filename = match ($variant) {
+            self::EXPORT_VARIANT_PARTNER => 'm365-partner-report',
+            self::EXPORT_VARIANT_WHITELABEL => 'm365-whitelabel-report',
+            default => 'm365-lizenz-auswertung',
+        };
+        CMS_M365LIC_Pdf_Export::stream_pdf($html, $filename);
     }
 
     private function set_seo(string $title, string $description): void
@@ -284,6 +313,7 @@ final class CMS_M365LIC_Frontend
         }
 
         return str_starts_with($requestPath, 'member/plugin/' . self::MEMBER_SECTION_SLUG)
+            || str_starts_with($requestPath, 'member/plugin/' . self::MEMBER_SETTINGS_SECTION_SLUG)
             || str_starts_with($requestPath, 'member/plugin/' . self::SPECIAL_SECTION_SLUG);
     }
 
@@ -352,9 +382,10 @@ final class CMS_M365LIC_Frontend
      * @param array<string,mixed> $billingContext
      * @return array<string,mixed>
      */
-    private function build_view_context(array $pricingContext, bool $embedded, array $settings, array $billingContext): array
+    private function build_view_context(array $pricingContext, bool $embedded, array $settings, array $billingContext, ?array $userPricingProfile = null): array
     {
         $scope = (string) ($pricingContext['scope'] ?? self::SCOPE_PUBLIC);
+        $settingsUrl = '/member/plugin/' . self::MEMBER_SETTINGS_SECTION_SLUG;
 
         return match ($scope) {
             self::SCOPE_MEMBER => [
@@ -364,6 +395,8 @@ final class CMS_M365LIC_Frontend
                 'intro' => 'Microsoft 365 Lizenzberater – findet in wenigen Schritten die passende Lizenz für deinen Bedarf.',
                 'summary_label' => 'Mitgliederpreise',
                 'billing_label' => (string) ($billingContext['label'] ?? ''),
+                'settings_url' => $settingsUrl,
+                'user_pricing_profile' => $userPricingProfile,
             ],
             self::SCOPE_SPECIAL => [
                 'scope' => self::SCOPE_SPECIAL,
@@ -372,6 +405,9 @@ final class CMS_M365LIC_Frontend
                 'intro' => 'Geschützter Spezialbereich für Rahmenkonditionen, Partnerpreise und individuelle Gruppenmodelle.',
                 'summary_label' => (string) ($pricingContext['label'] ?? $settings['default_group_label'] ?? 'Spezialpreise'),
                 'billing_label' => (string) ($billingContext['label'] ?? ''),
+                'settings_url' => '',
+                'user_pricing_profile' => $userPricingProfile,
+                'special_user' => $pricingContext['special_user'] ?? null,
             ],
             default => [
                 'scope' => self::SCOPE_PUBLIC,
@@ -380,8 +416,53 @@ final class CMS_M365LIC_Frontend
                 'intro' => (string) ($settings['page_intro'] ?? ''),
                 'summary_label' => 'Öffentliche Preise',
                 'billing_label' => (string) ($billingContext['label'] ?? ''),
+                'settings_url' => '',
+                'user_pricing_profile' => null,
             ],
         };
+    }
+
+    private function render_member_settings(string $method): void
+    {
+        if (!$this->is_member_logged_in()) {
+            http_response_code(403);
+            echo 'Dieser Bereich ist nur für eingeloggte 365CMS-Mitglieder verfügbar.';
+            return;
+        }
+
+        $repo = CMS_M365LIC_Repository::instance();
+        $userId = $repo->current_user_id();
+        $packages = $repo->get_packages(false);
+        $settings = $repo->get_settings();
+        $profile = $repo->get_user_pricing_profile($userId);
+        $notice = '';
+        $error = '';
+
+        if ($method === 'POST') {
+            if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken($_POST['member_settings_csrf_token'] ?? '', 'm365lic_member_settings')) {
+                $error = 'Sicherheitscheck fehlgeschlagen. Bitte die Seite neu laden.';
+            } else {
+                $repo->save_user_pricing_profile($userId, [
+                    'partner_name' => trim((string) ($_POST['partner_name'] ?? '')),
+                    'partner_logo_path' => trim((string) ($_POST['partner_logo_path'] ?? '')),
+                    'whitelabel_title' => trim((string) ($_POST['whitelabel_title'] ?? '')),
+                    'whitelabel_intro' => trim((string) ($_POST['whitelabel_intro'] ?? '')),
+                    'base_markup_percent' => $_POST['base_markup_percent'] ?? 0,
+                    'addon_markup_percent' => $_POST['addon_markup_percent'] ?? 0,
+                    'copilot_markup_percent' => $_POST['copilot_markup_percent'] ?? 0,
+                ]);
+                $repo->save_user_package_costs($userId, is_array($_POST['ek_prices'] ?? null) ? $_POST['ek_prices'] : []);
+                $profile = $repo->get_user_pricing_profile($userId);
+                $notice = 'Deine persönlichen EK- und Report-Einstellungen wurden gespeichert.';
+            }
+        }
+
+        $csrfToken = class_exists('CMS\Security')
+            ? \CMS\Security::instance()->generateToken('m365lic_member_settings')
+            : bin2hex(random_bytes(16));
+
+        $this->set_seo('Meine M365 Konditionen', 'Pflege eigene EKs, Aufschläge und Whitelabel-Einstellungen für deinen M365 Report.');
+        include CMS_M365LIC_PLUGIN_DIR . 'templates/member-settings.php';
     }
 
     private function sanitize_scope(mixed $scope): string
@@ -396,6 +477,111 @@ final class CMS_M365LIC_Frontend
         return class_exists('CMS\Auth')
             && method_exists('CMS\Auth', 'instance')
             && \CMS\Auth::instance()->isLoggedIn();
+    }
+
+    private function sanitize_export_variant(mixed $variant): string
+    {
+        return in_array((string) $variant, [self::EXPORT_VARIANT_STANDARD, self::EXPORT_VARIANT_WHITELABEL, self::EXPORT_VARIANT_PARTNER], true)
+            ? (string) $variant
+            : self::EXPORT_VARIANT_STANDARD;
+    }
+
+    /**
+     * @param array<string,string> $settings
+     * @param array<string,mixed>|null $userPricingProfile
+     * @param array<string,mixed> $pricingContext
+     * @return array<string,string>
+     */
+    private function build_pdf_settings(array $settings, string $variant, ?array $userPricingProfile, array $pricingContext): array
+    {
+        if ($variant === self::EXPORT_VARIANT_WHITELABEL && is_array($userPricingProfile)) {
+            $partnerName = trim((string) ($userPricingProfile['partner_name'] ?? ''));
+            $whitelabelTitle = trim((string) ($userPricingProfile['whitelabel_title'] ?? ''));
+            $whitelabelIntro = trim((string) ($userPricingProfile['whitelabel_intro'] ?? ''));
+
+            $settings['page_title'] = $whitelabelTitle !== ''
+                ? $whitelabelTitle
+                : ($partnerName !== '' ? $partnerName . ' · Lizenzreport' : ($settings['page_title'] ?? 'Lizenzreport'));
+            if ($whitelabelIntro !== '') {
+                $settings['page_intro'] = $whitelabelIntro;
+            }
+            if ($partnerName !== '') {
+                $settings['pdf_footer'] = 'Whitelabel-Report für ' . $partnerName . '. ' . (string) ($settings['pdf_footer'] ?? '');
+            }
+        }
+
+        if ($variant === self::EXPORT_VARIANT_PARTNER) {
+            $settings['page_title'] = 'Partner Report – Einkaufskonditionen';
+            $settings['page_intro'] = 'Interner Partnerreport auf EK-Basis ohne kundenseitige Aufschläge.';
+            $settings['pdf_footer'] = 'Partner Report auf EK-Basis. Nicht zur direkten Weitergabe an Endkunden vorgesehen.';
+        }
+
+        if ($variant === self::EXPORT_VARIANT_STANDARD && ($pricingContext['scope'] ?? self::SCOPE_PUBLIC) !== self::SCOPE_PUBLIC) {
+            $settings['pdf_footer'] = 'Mitgliederreport mit persönlichen Konditionen. ' . (string) ($settings['pdf_footer'] ?? '');
+        }
+
+        return $settings;
+    }
+
+    /**
+     * @param array<string,mixed>|null $userPricingProfile
+     * @param array<string,mixed> $pricingContext
+     * @return array<string,mixed>
+     */
+    private function build_pdf_context(string $variant, ?array $userPricingProfile, array $pricingContext): array
+    {
+        return [
+            'variant' => $variant,
+            'variant_label' => match ($variant) {
+                self::EXPORT_VARIANT_WHITELABEL => 'Whitelabel Report',
+                self::EXPORT_VARIANT_PARTNER => 'Partner Report',
+                default => 'Standard Report',
+            },
+            'price_mode_label' => $variant === self::EXPORT_VARIANT_PARTNER
+                ? 'EK / Partnerpreise ohne Aufschlag'
+                : 'Verkaufspreise inkl. persönlicher Aufschläge',
+            'partner_name' => is_array($userPricingProfile) ? trim((string) ($userPricingProfile['partner_name'] ?? '')) : '',
+            'logo_path' => is_array($userPricingProfile) ? trim((string) ($userPricingProfile['partner_logo_path'] ?? '')) : '',
+            'scope_label' => (string) ($pricingContext['label'] ?? ''),
+        ];
+    }
+
+    /**
+     * @return array<string,mixed>|null
+     */
+    private function resolve_user_pricing_profile(string $scope): ?array
+    {
+        if ($scope === self::SCOPE_PUBLIC) {
+            return null;
+        }
+
+        $repo = CMS_M365LIC_Repository::instance();
+        $userId = $repo->current_user_id();
+        if ($userId <= 0) {
+            return null;
+        }
+
+        $profile = $repo->get_user_pricing_profile($userId);
+
+        if ($scope !== self::SCOPE_SPECIAL) {
+            return $profile;
+        }
+
+        $specialUser = $repo->get_current_special_user();
+        if (!is_array($specialUser)) {
+            return $profile;
+        }
+
+        $specialMarkupPercent = (float) ($specialUser['special_markup_percent'] ?? 0);
+        $profile['base_markup_percent'] = $specialMarkupPercent;
+        $profile['addon_markup_percent'] = $specialMarkupPercent;
+        $profile['copilot_markup_percent'] = $specialMarkupPercent;
+        $profile['cost_overrides'] = [];
+        $profile['special_markup_percent'] = $specialMarkupPercent;
+        $profile['pricing_origin'] = 'special_group';
+        $profile['partner_name'] = trim((string) ($profile['partner_name'] ?? ''));
+
+        return $profile;
     }
 
     /**

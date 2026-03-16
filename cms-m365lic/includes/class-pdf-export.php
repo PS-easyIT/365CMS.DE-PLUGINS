@@ -20,7 +20,7 @@ final class CMS_M365LIC_Pdf_Export
      * @param array<string,mixed> $pricingContext
      * @param array<string,mixed> $billingContext
      */
-    public static function render_html(array $evaluation, array $requirements, array $settings, array $pricingContext, array $billingContext): string
+    public static function render_html(array $evaluation, array $requirements, array $settings, array $pricingContext, array $billingContext, array $pdfContext = []): string
     {
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
         $formatMoney = static function ($value) use ($esc): string {
@@ -57,6 +57,10 @@ final class CMS_M365LIC_Pdf_Export
             };
         };
         $generatedAt = date('d.m.Y H:i');
+        $variantLabel = trim((string) ($pdfContext['variant_label'] ?? ''));
+        $priceModeLabel = trim((string) ($pdfContext['price_mode_label'] ?? ''));
+        $partnerName = trim((string) ($pdfContext['partner_name'] ?? ''));
+        $logoDataUri = self::resolve_logo_data_uri((string) ($pdfContext['logo_path'] ?? ''));
         $rows = array_values($evaluation['rows'] ?? []);
         $totals = array_values($evaluation['totals'] ?? []);
         $totalUsers = 0;
@@ -188,6 +192,10 @@ final class CMS_M365LIC_Pdf_Export
         body{font-family:DejaVu Sans,Arial,sans-serif;color:#0f172a;font-size:9.6px;line-height:1.48;margin:0;padding:0;background:#ffffff;}
         .m365lic-pdf{width:100%;max-width:none;margin:0;background:#ffffff;border:1px solid #dbe5f4;border-radius:12px;overflow:hidden;}
         .m365lic-pdf__header{background:linear-gradient(135deg,#0f172a 0%,#1d4ed8 100%);color:#ffffff;padding:18px 18px 16px;}
+        .header-brand-table{width:100%;border-collapse:collapse;}
+        .header-brand-table td{border:none;vertical-align:top;padding:0;}
+        .header-brand-table__logo{width:110px;padding-right:14px;}
+        .header-brand-table__logo img{max-width:96px;max-height:48px;display:block;}
         .header-eyebrow{display:inline-block;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,0.14);font-size:7.7px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
         .m365lic-pdf__header h1{margin:9px 0 6px;font-size:19px;line-height:1.12;}
         .m365lic-pdf__intro{margin:0;max-width:700px;font-size:10px;line-height:1.55;color:rgba(255,255,255,0.92);}
@@ -270,14 +278,31 @@ final class CMS_M365LIC_Pdf_Export
 <body>
 <div class="m365lic-pdf">
     <div class="m365lic-pdf__header">
-        <span class="header-eyebrow">Microsoft 365 · Lizenzplanung</span>
-        <h1><?php echo $esc($settings['page_title'] ?? 'Microsoft 365 Lizenzberater'); ?></h1>
-        <p class="m365lic-pdf__intro"><?php echo $esc((string) ($settings['page_intro'] ?? 'Verdichtete Management-Auswertung mit Bedarfsbild, Budgetwirkung und Entscheidungsrelevanz je empfohlener Lizenz.')); ?></p>
-        <div class="header-pill-wrap">
-            <span class="header-pill">Zugriff: <?php echo $esc((string) ($pricingContext['label'] ?? 'Öffentlich')); ?></span>
-            <span class="header-pill">Abrechnung: <?php echo $esc((string) ($billingContext['short_label'] ?? ($billingContext['label'] ?? 'Jahr / jährlich'))); ?></span>
-            <span class="header-pill">Erstellt am <?php echo $esc($generatedAt); ?></span>
-        </div>
+        <table class="header-brand-table">
+            <tr>
+                <?php if ($logoDataUri !== null): ?>
+                <td class="header-brand-table__logo">
+                    <img src="<?php echo $esc($logoDataUri); ?>" alt="Partnerlogo">
+                </td>
+                <?php endif; ?>
+                <td>
+                    <span class="header-eyebrow"><?php echo $esc($variantLabel !== '' ? $variantLabel : 'Microsoft 365 · Lizenzplanung'); ?></span>
+                    <h1><?php echo $esc($settings['page_title'] ?? 'Microsoft 365 Lizenzberater'); ?></h1>
+                    <p class="m365lic-pdf__intro"><?php echo $esc((string) ($settings['page_intro'] ?? 'Verdichtete Management-Auswertung mit Bedarfsbild, Budgetwirkung und Entscheidungsrelevanz je empfohlener Lizenz.')); ?></p>
+                    <div class="header-pill-wrap">
+                        <?php if ($partnerName !== ''): ?>
+                        <span class="header-pill">Partner: <?php echo $esc($partnerName); ?></span>
+                        <?php endif; ?>
+                        <span class="header-pill">Zugriff: <?php echo $esc((string) ($pricingContext['label'] ?? 'Öffentlich')); ?></span>
+                        <span class="header-pill">Abrechnung: <?php echo $esc((string) ($billingContext['short_label'] ?? ($billingContext['label'] ?? 'Jahr / jährlich'))); ?></span>
+                        <?php if ($priceModeLabel !== ''): ?>
+                        <span class="header-pill"><?php echo $esc($priceModeLabel); ?></span>
+                        <?php endif; ?>
+                        <span class="header-pill">Erstellt am <?php echo $esc($generatedAt); ?></span>
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>
     <div class="m365lic-pdf__body">
         <section class="m365lic-pdf__section">
@@ -646,5 +671,41 @@ final class CMS_M365LIC_Pdf_Export
         }
 
         return str_ends_with(strtolower($trimmed), '.pdf') ? $trimmed : $trimmed . '.pdf';
+    }
+
+    private static function resolve_logo_data_uri(string $logoPath): ?string
+    {
+        $logoPath = trim($logoPath);
+        if ($logoPath === '') {
+            return null;
+        }
+
+        if (str_starts_with($logoPath, 'data:image/')) {
+            return $logoPath;
+        }
+
+        if (!defined('ABSPATH')) {
+            return null;
+        }
+
+        $pathOnly = (string) (parse_url($logoPath, PHP_URL_PATH) ?: $logoPath);
+        $normalized = ltrim(str_replace(['\\', '//'], '/', $pathOnly), '/');
+        $absolutePath = rtrim((string) ABSPATH, '/\\') . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $normalized);
+
+        if (!is_file($absolutePath) || !is_readable($absolutePath)) {
+            return null;
+        }
+
+        $mimeType = function_exists('mime_content_type') ? (string) mime_content_type($absolutePath) : 'image/png';
+        if (!str_starts_with($mimeType, 'image/')) {
+            return null;
+        }
+
+        $binary = @file_get_contents($absolutePath);
+        if ($binary === false) {
+            return null;
+        }
+
+        return 'data:' . $mimeType . ';base64,' . base64_encode($binary);
     }
 }

@@ -117,6 +117,12 @@
     font-size: 0.9rem;
 }
 
+.m365lic-admin-note--compact {
+    margin: 0;
+    padding: 0.8rem 0.9rem;
+    min-height: calc(100% - 2px);
+}
+
 .m365lic-alert-info {
     background: #dbeafe;
     color: #1e40af;

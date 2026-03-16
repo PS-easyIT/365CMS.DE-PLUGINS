@@ -30,6 +30,7 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                     self::repo()->save_special_user($userId, [
                         'group_key' => trim((string) ($_POST['group_key'] ?? 'special')),
                         'group_label' => trim((string) ($_POST['group_label'] ?? 'Spezialzugang')),
+                        'special_markup_percent' => $_POST['special_markup_percent'] ?? 0,
                         'note' => trim((string) ($_POST['note'] ?? '')),
                         'is_active' => !empty($_POST['is_active']) ? 1 : 0,
                     ]);
@@ -74,7 +75,7 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                     <span class="status-badge active"><?php echo (int) count($assignedUsers); ?> Einträge</span>
                 </div>
 
-                <div class="m365lic-admin-note">Spezial-User erhalten zusätzlich zum Memberbereich einen geschützten Spezialbereich mit eigenem Preis-Kontext und individuellen Konditionshinweisen.</div>
+                <div class="m365lic-admin-note">Spezial-User erhalten zusätzlich zum Memberbereich einen geschützten Spezialbereich mit eigenem Preis-Kontext und individuellen Konditionshinweisen. Neue Gruppen legst du direkt an, indem du bei einem Benutzer einen neuen <strong>Gruppen-Key</strong> und ein neues <strong>Gruppen-Label</strong> speicherst.</div>
 
                 <?php if (empty($assignedUsers)): ?>
                     <div class="empty-state">
@@ -89,6 +90,7 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                                 <tr>
                                     <th>Benutzer</th>
                                     <th>Gruppe</th>
+                                    <th>Aufschlag</th>
                                     <th>Hinweis</th>
                                     <th>Status</th>
                                     <th>Aktion</th>
@@ -105,6 +107,7 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                                         <strong><?php echo self::esc((string) ($user['group_label'] ?? 'Spezialzugang')); ?></strong><br>
                                         <span class="m365lic-muted"><?php echo self::esc((string) ($user['group_key'] ?? 'special')); ?></span>
                                     </td>
+                                    <td><strong><?php echo self::esc(number_format((float) ($user['special_markup_percent'] ?? 0), 2, ',', '.')); ?>%</strong></td>
                                     <td><?php echo self::esc((string) (($user['note'] ?? '') !== '' ? $user['note'] : '—')); ?></td>
                                     <td>
                                         <span class="status-badge <?php echo !empty($user['is_active']) ? 'active' : 'inactive'; ?>">
@@ -140,7 +143,7 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                     </form>
                 </div>
 
-                <p class="m365lic-help-text">Normale Mitglieder sehen nur die Member-Seite. Ein hier aktivierter Benutzer erhält zusätzlich die Spezial-Seite mit Gruppenlabel und Spezialpreisen.</p>
+                <p class="m365lic-help-text">Normale Mitglieder sehen nur die Member-Seite. Ein hier aktivierter Benutzer erhält zusätzlich genau die Spezial-Seite seiner Gruppe. Dort wird ausschließlich der Special-Preis plus der hier gepflegte Benutzer-Aufschlag angezeigt.</p>
 
                 <div class="m365lic-special-users-stack">
                     <?php if (empty($candidates)): ?>
@@ -180,6 +183,19 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                                 <div class="form-group">
                                     <label class="form-label">Gruppen-Label</label>
                                     <input class="form-control" type="text" name="group_label" value="<?php echo self::esc((string) ($candidate['group_label'] ?? 'Spezialzugang')); ?>" placeholder="z. B. Partner Plus">
+                                </div>
+                            </div>
+
+                            <div class="m365lic-form-grid m365lic-form-grid--2">
+                                <div class="form-group">
+                                    <label class="form-label">Aufschlag auf Special-Preis in %</label>
+                                    <input class="form-control" type="number" step="0.01" min="0" name="special_markup_percent" value="<?php echo self::esc(number_format((float) ($candidate['special_markup_percent'] ?? 0), 2, '.', '')); ?>" placeholder="z. B. 12.50">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Preislogik</label>
+                                    <div class="m365lic-admin-note m365lic-admin-note--compact">
+                                        Spezialpreis = <strong>Group/Special Preis</strong> aus dem Paketkatalog + <strong>dieser Benutzer-Aufschlag</strong>.
+                                    </div>
                                 </div>
                             </div>
 

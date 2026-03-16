@@ -25,6 +25,21 @@ $exportToken = class_exists('CMS\Security') ? \CMS\Security::instance()->generat
 $theme = \CMS\ThemeManager::instance();
 $isEmbedded = !empty($viewContext['embedded']);
 $introText = (string) ($viewContext['intro'] ?? $settings['page_intro'] ?? '');
+$userPricingProfile = is_array($userPricingProfile ?? null)
+    ? $userPricingProfile
+    : (is_array($viewContext['user_pricing_profile'] ?? null) ? $viewContext['user_pricing_profile'] : null);
+$settingsUrl = (string) ($viewContext['settings_url'] ?? '');
+$scope = (string) ($viewContext['scope'] ?? 'public');
+$specialUser = is_array($viewContext['special_user'] ?? null) ? $viewContext['special_user'] : null;
+$specialMarkupPercent = (float) ($specialUser['special_markup_percent'] ?? $userPricingProfile['special_markup_percent'] ?? 0);
+$hasPersonalPricing = is_array($userPricingProfile)
+    && (
+        !empty($userPricingProfile['cost_overrides'])
+        || (float) ($userPricingProfile['base_markup_percent'] ?? 0) > 0
+        || (float) ($userPricingProfile['addon_markup_percent'] ?? 0) > 0
+        || (float) ($userPricingProfile['copilot_markup_percent'] ?? 0) > 0
+        || trim((string) ($userPricingProfile['partner_name'] ?? '')) !== ''
+    );
 $showHeroPanel = !empty($settings['show_hero_panel']);
 $showHeroBadges = !empty($settings['show_hero_badges']);
 $showContextSummary = !empty($settings['show_context_summary']);
@@ -365,6 +380,67 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                         <div class="m365lic-card-badge">EUR · Netto-Richtwerte</div>
                     </div>
 
+                    <?php if ($scope === 'member' && $settingsUrl !== ''): ?>
+                    <section class="m365lic-subcard m365lic-subcard--pricing-profile">
+                        <div class="m365lic-subcard__head m365lic-subcard__head--split">
+                            <div>
+                                <h3>Eigene EK & Report-Einstellungen</h3>
+                                <p>Pflege hier deine EK-Logik, Aufschläge und Whitelabel-Daten für Member- und Partnerreports.</p>
+                            </div>
+                            <a href="<?php echo $esc($settingsUrl); ?>" class="m365lic-btn m365lic-btn--ghost">⚙️ Einstellungen öffnen</a>
+                        </div>
+                        <div class="m365lic-kpi-grid m365lic-kpi-grid--compact">
+                            <div class="m365lic-kpi-card">
+                                <span>Basis-Aufschlag</span>
+                                <strong><?php echo $esc(number_format((float) ($userPricingProfile['base_markup_percent'] ?? 0), 2, ',', '.')); ?>%</strong>
+                            </div>
+                            <div class="m365lic-kpi-card">
+                                <span>Add-on-Aufschlag</span>
+                                <strong><?php echo $esc(number_format((float) ($userPricingProfile['addon_markup_percent'] ?? 0), 2, ',', '.')); ?>%</strong>
+                            </div>
+                            <div class="m365lic-kpi-card">
+                                <span>Copilot-Aufschlag</span>
+                                <strong><?php echo $esc(number_format((float) ($userPricingProfile['copilot_markup_percent'] ?? 0), 2, ',', '.')); ?>%</strong>
+                            </div>
+                        </div>
+                        <p class="m365lic-help-text m365lic-help-text--flush">
+                            <?php if ($hasPersonalPricing): ?>
+                                Aktuell fließen deine persönlichen EK-/Aufschlagsdaten in die Member-Auswertung ein.
+                            <?php else: ?>
+                                Aktuell werden noch die Standard-Memberpreise genutzt. Hinterlege eigene EKs und Aufschläge für personalisierte Reports.
+                            <?php endif; ?>
+                        </p>
+                    </section>
+                    <?php endif; ?>
+
+                    <?php if ($scope === 'special'): ?>
+                    <section class="m365lic-subcard m365lic-subcard--pricing-profile">
+                        <div class="m365lic-subcard__head">
+                            <div>
+                                <h3>Ihre zugewiesene Gruppenkondition</h3>
+                                <p>Dieser Bereich ist exklusiv für Ihre zugewiesene Spezialgruppe sichtbar. Andere Benutzer erhalten diese Preise nicht.</p>
+                            </div>
+                        </div>
+                        <div class="m365lic-kpi-grid m365lic-kpi-grid--compact">
+                            <div class="m365lic-kpi-card">
+                                <span>Gruppe</span>
+                                <strong><?php echo $esc((string) ($specialUser['group_label'] ?? ($pricingContext['label'] ?? 'Spezialgruppe'))); ?></strong>
+                            </div>
+                            <div class="m365lic-kpi-card">
+                                <span>Gruppen-Key</span>
+                                <strong><?php echo $esc((string) ($specialUser['group_key'] ?? 'special')); ?></strong>
+                            </div>
+                            <div class="m365lic-kpi-card">
+                                <span>Ihr Aufschlag</span>
+                                <strong><?php echo $esc(number_format($specialMarkupPercent, 2, ',', '.')); ?>%</strong>
+                            </div>
+                        </div>
+                        <p class="m365lic-help-text m365lic-help-text--flush">
+                            Berechnungsbasis ist immer der gepflegte <strong>Special-/Gruppenpreis</strong> je Paket. Darauf wird nur für Ihren zugewiesenen Benutzer der hinterlegte Prozentaufschlag angewendet.
+                        </p>
+                    </section>
+                    <?php endif; ?>
+
                     <form method="POST" id="m365licForm" class="m365lic-form">
                         <input type="hidden" name="csrf_token" value="<?php echo $esc($csrfToken); ?>">
                         <input type="hidden" name="evaluation_csrf_token" value="<?php echo $esc($evaluationToken); ?>">
@@ -632,7 +708,20 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     <input type="hidden" name="context_scope" value="<?php echo $esc((string) ($pricingContext['scope'] ?? 'public')); ?>">
                     <input type="hidden" name="billing_cycle" value="<?php echo $esc((string) ($selectedBilling['key'] ?? 'annual_upfront')); ?>">
                     <input type="hidden" name="requirements_json" value="<?php echo $esc(json_encode($requirements, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)); ?>">
-                    <button type="submit" class="m365lic-btn m365lic-btn--primary">📄 PDF exportieren</button>
+                    <?php if (($viewContext['scope'] ?? 'public') === 'public'): ?>
+                    <button type="submit" name="export_variant" value="standard" class="m365lic-btn m365lic-btn--primary">📄 PDF exportieren</button>
+                    <?php elseif (($viewContext['scope'] ?? 'public') === 'special'): ?>
+                    <div class="m365lic-export-actions">
+                        <button type="submit" name="export_variant" value="whitelabel" class="m365lic-btn m365lic-btn--primary">🏷️ Reseller-Report exportieren</button>
+                    </div>
+                    <small class="m365lic-help-text">Reseller-User erhalten ausschließlich Reports mit ihren zugewiesenen Verkaufspreisen inklusive Aufschlag.</small>
+                    <?php else: ?>
+                    <div class="m365lic-export-actions">
+                        <button type="submit" name="export_variant" value="whitelabel" class="m365lic-btn m365lic-btn--primary">🏷️ Whitelabel Report</button>
+                        <button type="submit" name="export_variant" value="partner" class="m365lic-btn m365lic-btn--ghost">🤝 Partner Report (EK)</button>
+                    </div>
+                    <small class="m365lic-help-text">Whitelabel nutzt deine Aufschläge und optional dein Logo. Der Partner Report zeigt EK-/Partnerpreise ohne Aufschläge.</small>
+                    <?php endif; ?>
                 </form>
             </div>
         </div>

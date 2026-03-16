@@ -93,6 +93,148 @@ final class CMS_M365LIC_Repository
     }
 
     /**
+     * @return array<string,mixed>
+     */
+    public function get_user_pricing_profile(int $userId): array
+    {
+        $profile = $this->default_user_pricing_profile($userId);
+        if ($userId <= 0) {
+            return $profile;
+        }
+
+        try {
+            $stmt = $this->db()->prepare(
+                "SELECT partner_name, partner_logo_path, whitelabel_title, whitelabel_intro,
+                        base_markup_percent, addon_markup_percent, copilot_markup_percent
+                 FROM {$this->prefix()}m365lic_user_profiles
+                 WHERE user_id = ?
+                 LIMIT 1"
+            );
+            $stmt->execute([$userId]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: [];
+
+            if (is_array($row) && $row !== []) {
+                $profile['partner_name'] = trim((string) ($row['partner_name'] ?? ''));
+                $profile['partner_logo_path'] = trim((string) ($row['partner_logo_path'] ?? ''));
+                $profile['whitelabel_title'] = trim((string) ($row['whitelabel_title'] ?? ''));
+                $profile['whitelabel_intro'] = trim((string) ($row['whitelabel_intro'] ?? ''));
+                $profile['base_markup_percent'] = $this->normalize_percent($row['base_markup_percent'] ?? 0);
+                $profile['addon_markup_percent'] = $this->normalize_percent($row['addon_markup_percent'] ?? 0);
+                $profile['copilot_markup_percent'] = $this->normalize_percent($row['copilot_markup_percent'] ?? 0);
+            }
+        } catch (\Throwable $e) {
+            // ignore and use defaults
+        }
+
+        $profile['cost_overrides'] = $this->get_user_package_cost_map($userId);
+
+        return $profile;
+    }
+
+    /**
+     * @param array<string,mixed> $profile
+     */
+    public function save_user_pricing_profile(int $userId, array $profile): void
+    {
+        if ($userId <= 0) {
+            return;
+        }
+
+        $stmt = $this->db()->prepare(
+            "INSERT INTO {$this->prefix()}m365lic_user_profiles
+                (user_id, partner_name, partner_logo_path, whitelabel_title, whitelabel_intro, base_markup_percent, addon_markup_percent, copilot_markup_percent)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                partner_name = VALUES(partner_name),
+                partner_logo_path = VALUES(partner_logo_path),
+                whitelabel_title = VALUES(whitelabel_title),
+                whitelabel_intro = VALUES(whitelabel_intro),
+                base_markup_percent = VALUES(base_markup_percent),
+                addon_markup_percent = VALUES(addon_markup_percent),
+                copilot_markup_percent = VALUES(copilot_markup_percent)"
+        );
+
+        $stmt->execute([
+            $userId,
+            trim((string) ($profile['partner_name'] ?? '')),
+            trim((string) ($profile['partner_logo_path'] ?? '')),
+            trim((string) ($profile['whitelabel_title'] ?? '')),
+            trim((string) ($profile['whitelabel_intro'] ?? '')),
+            $this->normalize_percent($profile['base_markup_percent'] ?? 0),
+            $this->normalize_percent($profile['addon_markup_percent'] ?? 0),
+            $this->normalize_percent($profile['copilot_markup_percent'] ?? 0),
+        ]);
+    }
+
+    /**
+     * @return array<int,float>
+     */
+    public function get_user_package_cost_map(int $userId): array
+    {
+        if ($userId <= 0) {
+            return [];
+        }
+
+        try {
+            $stmt = $this->db()->prepare(
+                "SELECT package_id, ek_price
+                 FROM {$this->prefix()}m365lic_user_package_costs
+                 WHERE user_id = ?"
+            );
+            $stmt->execute([$userId]);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        $costs = [];
+        foreach ($rows as $row) {
+            $packageId = (int) ($row['package_id'] ?? 0);
+            $ekPrice = $row['ek_price'] !== null ? (float) $row['ek_price'] : null;
+            if ($packageId > 0 && $ekPrice !== null) {
+                $costs[$packageId] = $ekPrice;
+            }
+        }
+
+        return $costs;
+    }
+
+    /**
+     * @param array<int|string,mixed> $costs
+     */
+    public function save_user_package_costs(int $userId, array $costs): void
+    {
+        if ($userId <= 0) {
+            return;
+        }
+
+        $normalizedCosts = [];
+        foreach ($costs as $packageId => $value) {
+            $id = (int) $packageId;
+            $price = $this->normalize_price($value);
+            if ($id > 0 && $price !== null) {
+                $normalizedCosts[$id] = $price;
+            }
+        }
+
+        $deleteStmt = $this->db()->prepare("DELETE FROM {$this->prefix()}m365lic_user_package_costs WHERE user_id = ?");
+        $deleteStmt->execute([$userId]);
+
+        if ($normalizedCosts === []) {
+            return;
+        }
+
+        $insertStmt = $this->db()->prepare(
+            "INSERT INTO {$this->prefix()}m365lic_user_package_costs (user_id, package_id, ek_price)
+             VALUES (?, ?, ?)"
+        );
+
+        foreach ($normalizedCosts as $packageId => $price) {
+            $insertStmt->execute([$userId, $packageId, $price]);
+        }
+    }
+
+    /**
      * @return array<int,array<string,mixed>>
      */
     public function get_packages(bool $includeInactive = true): array
@@ -294,7 +436,7 @@ final class CMS_M365LIC_Repository
     /**
      * @param array<string,mixed> $package
      */
-    public function get_price_for_package(array $package, string $tier): ?float
+    public function get_price_for_package(array $package, string $tier, ?array $pricingProfile = null, bool $applyMarkup = true): ?float
     {
         $effectivePrices = $this->get_effective_price_map($package);
         $field = match ($tier) {
@@ -303,7 +445,25 @@ final class CMS_M365LIC_Repository
             default => 'public_price',
         };
 
-        return $effectivePrices[$field]['value'];
+        $price = $effectivePrices[$field]['value'];
+
+        if ($pricingProfile === null || $tier === 'public') {
+            return $price;
+        }
+
+        $overridePrice = $this->resolve_user_cost_override($package, $pricingProfile);
+        $resolvedCost = $overridePrice ?? $price;
+        if ($resolvedCost === null) {
+            return null;
+        }
+
+        if (!$applyMarkup) {
+            return $resolvedCost;
+        }
+
+        $markupPercent = $this->determine_user_markup_percent($package, $pricingProfile);
+
+        return round($resolvedCost * (1 + ($markupPercent / 100)), 2);
     }
 
     /**
@@ -454,7 +614,7 @@ final class CMS_M365LIC_Repository
         try {
             $stmt = $this->db()->prepare(
                 "SELECT u.id, u.username, u.email, u.display_name, u.role, u.status,
-                        su.group_key, su.group_label, su.note, su.is_active AS special_is_active
+                        su.group_key, su.group_label, su.special_markup_percent, su.note, su.is_active AS special_is_active
                  FROM {$this->prefix()}users u
                  LEFT JOIN {$this->prefix()}m365lic_special_users su ON su.user_id = u.id
                  WHERE " . implode(' AND ', $where) . "
@@ -505,6 +665,7 @@ final class CMS_M365LIC_Repository
 
         $groupKey = trim((string) ($data['group_key'] ?? 'special'));
         $groupLabel = trim((string) ($data['group_label'] ?? 'Spezialzugang'));
+        $specialMarkupPercent = $this->normalize_percent($data['special_markup_percent'] ?? 0);
 
         if ($groupKey === '') {
             $groupKey = 'special';
@@ -515,11 +676,12 @@ final class CMS_M365LIC_Repository
         }
 
         $stmt = $this->db()->prepare(
-            "INSERT INTO {$this->prefix()}m365lic_special_users (user_id, group_key, group_label, note, is_active)
-             VALUES (?, ?, ?, ?, ?)
+            "INSERT INTO {$this->prefix()}m365lic_special_users (user_id, group_key, group_label, special_markup_percent, note, is_active)
+             VALUES (?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                 group_key = VALUES(group_key),
                 group_label = VALUES(group_label),
+                special_markup_percent = VALUES(special_markup_percent),
                 note = VALUES(note),
                 is_active = VALUES(is_active)"
         );
@@ -528,6 +690,7 @@ final class CMS_M365LIC_Repository
             $userId,
             strtolower(preg_replace('/[^a-z0-9\-_]+/i', '-', $groupKey) ?: 'special'),
             $groupLabel,
+            $specialMarkupPercent,
             trim((string) ($data['note'] ?? '')),
             !empty($data['is_active']) ? 1 : 0,
         ]);
@@ -612,6 +775,12 @@ final class CMS_M365LIC_Repository
 
         $stmt = $this->db()->prepare("DELETE FROM {$this->prefix()}m365lic_special_users WHERE user_id = ?");
         $stmt->execute([$userId]);
+
+        $stmt = $this->db()->prepare("DELETE FROM {$this->prefix()}m365lic_user_profiles WHERE user_id = ?");
+        $stmt->execute([$userId]);
+
+        $stmt = $this->db()->prepare("DELETE FROM {$this->prefix()}m365lic_user_package_costs WHERE user_id = ?");
+        $stmt->execute([$userId]);
     }
 
     /**
@@ -671,6 +840,20 @@ final class CMS_M365LIC_Repository
         return $currency === 'EUR' ? 'EUR' : 'EUR';
     }
 
+    private function normalize_percent(mixed $value): float
+    {
+        if ($value === null || $value === '') {
+            return 0.0;
+        }
+
+        $stringValue = str_replace(',', '.', trim((string) $value));
+        if (!is_numeric($stringValue)) {
+            return 0.0;
+        }
+
+        return round(max(0.0, min(999.0, (float) $stringValue)), 2);
+    }
+
     /**
      * @param array<string,?float> $prices
      * @return array<string,?float>
@@ -714,6 +897,62 @@ final class CMS_M365LIC_Repository
         }
 
         return null;
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function default_user_pricing_profile(int $userId): array
+    {
+        return [
+            'user_id' => $userId,
+            'partner_name' => '',
+            'partner_logo_path' => '',
+            'whitelabel_title' => '',
+            'whitelabel_intro' => '',
+            'base_markup_percent' => 0.0,
+            'addon_markup_percent' => 0.0,
+            'copilot_markup_percent' => 0.0,
+            'cost_overrides' => [],
+        ];
+    }
+
+    /**
+     * @param array<string,mixed> $package
+     * @param array<string,mixed> $pricingProfile
+     */
+    private function resolve_user_cost_override(array $package, array $pricingProfile): ?float
+    {
+        $packageId = (int) ($package['id'] ?? 0);
+        $overrides = is_array($pricingProfile['cost_overrides'] ?? null)
+            ? $pricingProfile['cost_overrides']
+            : [];
+
+        if ($packageId <= 0 || !isset($overrides[$packageId])) {
+            return null;
+        }
+
+        return (float) $overrides[$packageId];
+    }
+
+    /**
+     * @param array<string,mixed> $package
+     * @param array<string,mixed> $pricingProfile
+     */
+    private function determine_user_markup_percent(array $package, array $pricingProfile): float
+    {
+        $category = (string) ($package['category'] ?? '');
+        $slug = (string) ($package['slug'] ?? '');
+
+        if ($category === 'copilot' || str_contains($slug, 'copilot')) {
+            return $this->normalize_percent($pricingProfile['copilot_markup_percent'] ?? 0);
+        }
+
+        if (($package['kind'] ?? 'base') === 'addon') {
+            return $this->normalize_percent($pricingProfile['addon_markup_percent'] ?? 0);
+        }
+
+        return $this->normalize_percent($pricingProfile['base_markup_percent'] ?? 0);
     }
 
     /**
@@ -765,6 +1004,7 @@ final class CMS_M365LIC_Repository
         $row['is_active'] = (int) ($row['is_active'] ?? 0);
         $row['group_key'] = trim((string) ($row['group_key'] ?? 'special'));
         $row['group_label'] = trim((string) ($row['group_label'] ?? 'Spezialzugang'));
+        $row['special_markup_percent'] = $this->normalize_percent($row['special_markup_percent'] ?? 0);
         $row['note'] = trim((string) ($row['note'] ?? ''));
         $row['username'] = (string) ($row['username'] ?? '');
         $row['email'] = (string) ($row['email'] ?? '');

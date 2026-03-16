@@ -206,12 +206,26 @@
     border-color: var(--m365lic-requirements-border);
 }
 
+.m365lic-subcard--pricing-profile {
+    background: linear-gradient(180deg, #eef6ff 0%, #ffffff 100%);
+    border-color: #d7e6ff;
+    margin-bottom: 1rem;
+}
+
 .m365lic-subcard + .m365lic-subcard {
     margin-top: 0.35rem;
 }
 
 .m365lic-subcard__head {
     margin-bottom: 0.9rem;
+}
+
+.m365lic-subcard__head--split {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .m365lic-subcard__head h3 {
@@ -273,6 +287,10 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.m365lic-help-text--flush {
+    margin: 0;
+}
+
 .m365lic-kpi-card,
 .m365lic-summary-card {
     border: 1px solid var(--m365lic-border);
@@ -303,6 +321,12 @@
     display: flex;
     flex-direction: column;
     gap: 1.1rem;
+}
+
+.m365lic-export-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
 }
 
 .m365lic-form-grid {
@@ -1053,6 +1077,26 @@
     display: block;
 }
 
+.m365lic-table--ek-settings td:last-child {
+    min-width: 180px;
+}
+
+.m365lic-ek-input {
+    width: 100%;
+    border: 1px solid var(--m365lic-border);
+    border-radius: calc(var(--m365lic-radius) - 4px);
+    padding: 0.65rem 0.75rem;
+    background: #ffffff;
+    font: inherit;
+    color: var(--m365lic-text);
+}
+
+.m365lic-ek-input:focus {
+    outline: none;
+    border-color: var(--m365lic-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
 .m365lic-sku-summary__footer {
     display: flex;
     justify-content: space-between;
@@ -1183,5 +1227,11 @@
     .m365lic-sku-summary__footer {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .m365lic-export-actions,
+    .m365lic-subcard__head--split {
+        flex-direction: column;
+        align-items: stretch;
     }
 }
