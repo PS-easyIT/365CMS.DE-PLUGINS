@@ -30,11 +30,16 @@ $settingsUrl = '/member/plugin/m365-license-settings';
                 <section class="m365lic-card m365lic-card--intro">
                     <div class="m365lic-card__head">
                         <div>
-                            <h2>Meine Konditionen & Whitelabel</h2>
-                            <p>Hinterlege deine EKs pro Paket, definiere automatische Aufschläge und bereite eigene Whitelabel-Reports für Kunden oder Partner vor.</p>
+                            <h2>M365 Lizenzberater – Einstellungen</h2>
+                            <p>Hinterlege eigene Preise je Paket, dein Logo sowie individuelle Report-Texte für persönliche Kunden- und Whitelabel-Auswertungen.</p>
                         </div>
                         <a href="/member/plugin/m365-license" class="m365lic-btn m365lic-btn--ghost">← Zur Auswertung</a>
                     </div>
+
+                    <nav class="m365lic-local-nav" aria-label="M365 Lizenzberater Menü">
+                        <a href="/member/plugin/m365-license" class="m365lic-local-nav__link">🧮 Auswertung</a>
+                        <a href="<?php echo $esc($settingsUrl); ?>" class="m365lic-local-nav__link m365lic-local-nav__link--active" aria-current="page">⚙️ Einstellungen</a>
+                    </nav>
 
                     <form method="POST" action="<?php echo $esc($settingsUrl); ?>" class="m365lic-form">
                         <input type="hidden" name="member_settings_csrf_token" value="<?php echo $esc($csrfToken); ?>">
@@ -43,7 +48,7 @@ $settingsUrl = '/member/plugin/m365-license-settings';
                             <div class="m365lic-subcard__head">
                                 <div>
                                     <h3>Report-Branding</h3>
-                                    <p>Diese Angaben werden für den Whitelabel-Export verwendet. Für Logos am besten einen lokalen Pfad oder eine lokale URL aus deinem 365CMS-System verwenden.</p>
+                                    <p>Diese Angaben werden für den Whitelabel-Export verwendet. Für Logos sind aus Sicherheitsgründen nur lokale Pfade oder URLs derselben 365CMS-Domain vorgesehen.</p>
                                 </div>
                             </div>
 
@@ -53,7 +58,7 @@ $settingsUrl = '/member/plugin/m365-license-settings';
                                     <input id="partner_name" type="text" name="partner_name" value="<?php echo $esc((string) ($profile['partner_name'] ?? '')); ?>" placeholder="z. B. easyIT Consulting">
                                 </div>
                                 <div class="m365lic-field">
-                                    <label for="partner_logo_path">Logo-Pfad / Logo-URL</label>
+                                    <label for="partner_logo_path">Logo-Pfad / gleiche Domain-URL</label>
                                     <input id="partner_logo_path" type="text" name="partner_logo_path" value="<?php echo $esc((string) ($profile['partner_logo_path'] ?? '')); ?>" placeholder="/uploads/partner/logo.png oder /ASSETS/images/logo.png">
                                 </div>
                                 <div class="m365lic-field">

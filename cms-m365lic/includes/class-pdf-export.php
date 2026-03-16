@@ -690,7 +690,27 @@ final class CMS_M365LIC_Pdf_Export
 
         $pathOnly = (string) (parse_url($logoPath, PHP_URL_PATH) ?: $logoPath);
         $normalized = ltrim(str_replace(['\\', '//'], '/', $pathOnly), '/');
-        $absolutePath = rtrim((string) ABSPATH, '/\\') . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $normalized);
+        if ($normalized === '' || str_contains($normalized, '..')) {
+            return null;
+        }
+
+        $basePath = realpath(rtrim((string) ABSPATH, '/\\'));
+        if ($basePath === false) {
+            return null;
+        }
+
+        $absolutePath = realpath($basePath . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $normalized));
+
+        if ($absolutePath === false) {
+            return null;
+        }
+
+        $basePrefix = rtrim(str_replace('\\', '/', $basePath), '/');
+        $resolvedPath = str_replace('\\', '/', $absolutePath);
+
+        if ($resolvedPath !== $basePrefix && !str_starts_with($resolvedPath, $basePrefix . '/')) {
+            return null;
+        }
 
         if (!is_file($absolutePath) || !is_readable($absolutePath)) {
             return null;

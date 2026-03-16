@@ -114,6 +114,14 @@ trait CMS_M365LIC_Page_Settings_Trait
                         </div>
                     </div>
 
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="allow_member_self_service" value="1" <?php echo !empty($settings['allow_member_self_service']) ? 'checked' : ''; ?>>
+                            Mitglieder dürfen eigene EK-, Aufschlags- und Whitelabel-Einstellungen pflegen
+                        </label>
+                        <small class="m365lic-help-text">Wenn deaktiviert, bleibt die Preis- und Branding-Steuerung vollständig im Adminbereich.</small>
+                    </div>
+
                     <h3>💳 Default Abrechnung je Bereich</h3>
                     <div class="m365lic-form-grid m365lic-form-grid--3">
                         <div class="form-group">
@@ -303,6 +311,16 @@ trait CMS_M365LIC_Page_Settings_Trait
                             </ul>
                         </div>
                         <div class="info-card">
+                            <h4>Admin-Kontrolle</h4>
+                            <ul class="info-list">
+                                <li><strong>Mitglieder-Selbstservice:</strong> <?php echo !empty($settings['allow_member_self_service']) ? 'aktiv' : 'deaktiviert'; ?></li>
+                                <li><strong>Spezialgruppen:</strong> <?php echo (int) ($stats['special_groups_total'] ?? 0); ?></li>
+                                <li><strong>Spezialbenutzer:</strong> <?php echo (int) ($stats['special_users_total'] ?? 0); ?></li>
+                                <li><strong>Profile mit EK/Branding:</strong> <?php echo (int) ($systemInfo['user_profiles_count'] ?? 0); ?></li>
+                                <li><strong>Individuelle Paket-EKs:</strong> <?php echo (int) ($systemInfo['user_package_costs_count'] ?? 0); ?></li>
+                            </ul>
+                        </div>
+                        <div class="info-card">
                             <h4>Persistenz</h4>
                             <ul class="info-list">
                                 <li><strong>Settings-Einträge:</strong> <?php echo (int) ($systemInfo['settings_count'] ?? 0); ?></li>
@@ -364,7 +382,10 @@ trait CMS_M365LIC_Page_Settings_Trait
             'm365lic_packages',
             'm365lic_settings',
             'm365lic_usage_limits',
+            'm365lic_special_groups',
             'm365lic_special_users',
+            'm365lic_user_profiles',
+            'm365lic_user_package_costs',
         ];
 
         $status = [];
@@ -396,6 +417,8 @@ trait CMS_M365LIC_Page_Settings_Trait
         $info = [
             'public_url' => '/' . trim((string) ($settings['route_slug'] ?? 'm365-lizenzberater'), '/'),
             'settings_count' => 0,
+            'user_profiles_count' => 0,
+            'user_package_costs_count' => 0,
             'core_settings_table' => 'n/a',
             'core_settings_key' => 'n/a',
             'core_settings_value' => 'n/a',
@@ -411,6 +434,18 @@ trait CMS_M365LIC_Page_Settings_Trait
             $countStmt = $db->prepare("SELECT COUNT(*) FROM {$prefix}m365lic_settings");
             $countStmt->execute();
             $info['settings_count'] = (int) ($countStmt->fetchColumn() ?: 0);
+
+            if (!empty($tableStatus[$prefix . 'm365lic_user_profiles'])) {
+                $profileCountStmt = $db->prepare("SELECT COUNT(*) FROM {$prefix}m365lic_user_profiles");
+                $profileCountStmt->execute();
+                $info['user_profiles_count'] = (int) ($profileCountStmt->fetchColumn() ?: 0);
+            }
+
+            if (!empty($tableStatus[$prefix . 'm365lic_user_package_costs'])) {
+                $costCountStmt = $db->prepare("SELECT COUNT(*) FROM {$prefix}m365lic_user_package_costs");
+                $costCountStmt->execute();
+                $info['user_package_costs_count'] = (int) ($costCountStmt->fetchColumn() ?: 0);
+            }
 
             $columnsStmt = $db->getPdo()->query("SHOW COLUMNS FROM {$prefix}settings");
             $columns = $columnsStmt !== false
@@ -448,6 +483,7 @@ trait CMS_M365LIC_Page_Settings_Trait
                 'default_currency' => 'EUR',
                 'default_group_key' => trim((string) ($_POST['default_group_key'] ?? ($settings['default_group_key'] ?? 'partner'))),
                 'default_group_label' => trim((string) ($_POST['default_group_label'] ?? ($settings['default_group_label'] ?? 'Partner / Spezialgruppe'))),
+                'allow_member_self_service' => !empty($_POST['allow_member_self_service']) ? '1' : '0',
                 'public_default_billing_cycle' => $this->normalize_billing_cycle((string) ($_POST['public_default_billing_cycle'] ?? ($settings['public_default_billing_cycle'] ?? 'annual_upfront')), $billingOptions, 'annual_upfront'),
                 'member_default_billing_cycle' => $this->normalize_billing_cycle((string) ($_POST['member_default_billing_cycle'] ?? ($settings['member_default_billing_cycle'] ?? 'annual_monthly')), $billingOptions, 'annual_monthly'),
                 'group_default_billing_cycle' => $this->normalize_billing_cycle((string) ($_POST['group_default_billing_cycle'] ?? ($settings['group_default_billing_cycle'] ?? 'annual_monthly')), $billingOptions, 'annual_monthly'),

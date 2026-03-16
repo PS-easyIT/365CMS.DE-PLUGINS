@@ -132,6 +132,7 @@ final class CMS_M365LIC_Catalog
             'design_border_radius' => '14',
             'default_group_key' => 'partner',
             'default_group_label' => 'Partner / Spezialgruppe',
+            'allow_member_self_service' => '1',
             'public_default_billing_cycle' => 'annual_upfront',
             'member_default_billing_cycle' => 'annual_monthly',
             'group_default_billing_cycle' => 'annual_monthly',

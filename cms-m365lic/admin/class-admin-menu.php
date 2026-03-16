@@ -51,6 +51,15 @@ final class CMS_M365LIC_Admin_Menu
 
         add_submenu_page(
             'm365lic-dashboard',
+            'Spezialgruppen',
+            '👥 Spezialgruppen',
+            'manage_options',
+            'm365lic-special-groups',
+            [$pages, 'render_special_groups']
+        );
+
+        add_submenu_page(
+            'm365lic-dashboard',
             'Spezial-User',
             '🔐 Spezial-User',
             'manage_options',

@@ -78,7 +78,6 @@ final class CMS_M365LIC_Frontend
         }
 
         $hasSpecialAccess = CMS_M365LIC_Repository::instance()->current_user_has_special_access();
-
         $registry->register([
             'plugin' => 'cms-m365lic',
             'slug' => self::MEMBER_SECTION_SLUG,
@@ -102,9 +101,10 @@ final class CMS_M365LIC_Frontend
         $registry->register([
             'plugin' => 'cms-m365lic',
             'slug' => self::MEMBER_SETTINGS_SECTION_SLUG,
-            'label' => 'Meine Konditionen',
-            'icon' => '💶',
+            'label' => 'Einstellungen',
+            'icon' => '↳',
             'category' => 'plugins',
+            'parent_slug' => 'plugin_' . self::MEMBER_SECTION_SLUG,
             'priority' => 36,
             'dashboard_widget' => false,
             'render_callback' => function (object $user, array $params): void {
@@ -444,7 +444,7 @@ final class CMS_M365LIC_Frontend
             } else {
                 $repo->save_user_pricing_profile($userId, [
                     'partner_name' => trim((string) ($_POST['partner_name'] ?? '')),
-                    'partner_logo_path' => trim((string) ($_POST['partner_logo_path'] ?? '')),
+                    'partner_logo_path' => $this->normalize_logo_path((string) ($_POST['partner_logo_path'] ?? '')),
                     'whitelabel_title' => trim((string) ($_POST['whitelabel_title'] ?? '')),
                     'whitelabel_intro' => trim((string) ($_POST['whitelabel_intro'] ?? '')),
                     'base_markup_percent' => $_POST['base_markup_percent'] ?? 0,
@@ -461,7 +461,7 @@ final class CMS_M365LIC_Frontend
             ? \CMS\Security::instance()->generateToken('m365lic_member_settings')
             : bin2hex(random_bytes(16));
 
-        $this->set_seo('Meine M365 Konditionen', 'Pflege eigene EKs, Aufschläge und Whitelabel-Einstellungen für deinen M365 Report.');
+        $this->set_seo('M365 Lizenzberater – Einstellungen', 'Pflege eigene EKs, Aufschläge, Logos und Texte für deine persönlichen M365 Reports.');
         include CMS_M365LIC_PLUGIN_DIR . 'templates/member-settings.php';
     }
 
@@ -484,6 +484,41 @@ final class CMS_M365LIC_Frontend
         return in_array((string) $variant, [self::EXPORT_VARIANT_STANDARD, self::EXPORT_VARIANT_WHITELABEL, self::EXPORT_VARIANT_PARTNER], true)
             ? (string) $variant
             : self::EXPORT_VARIANT_STANDARD;
+    }
+
+    private function is_member_self_service_enabled(): bool
+    {
+        $settings = CMS_M365LIC_Repository::instance()->get_settings();
+
+        return !empty($settings['allow_member_self_service']);
+    }
+
+    private function normalize_logo_path(string $logoPath): string
+    {
+        $logoPath = trim($logoPath);
+        if ($logoPath === '') {
+            return '';
+        }
+
+        $path = $logoPath;
+        if (preg_match('#^https?://#i', $logoPath) === 1) {
+            $host = (string) parse_url($logoPath, PHP_URL_HOST);
+            $currentHost = (string) ($_SERVER['HTTP_HOST'] ?? '');
+
+            if ($host === '' || $currentHost === '' || !hash_equals(strtolower($currentHost), strtolower($host))) {
+                return '';
+            }
+
+            $path = (string) (parse_url($logoPath, PHP_URL_PATH) ?: '');
+        }
+
+        $path = '/' . ltrim(str_replace('\\', '/', $path), '/');
+
+        if ($path === '/' || str_contains($path, '..')) {
+            return '';
+        }
+
+        return $path;
     }
 
     /**
@@ -572,14 +607,16 @@ final class CMS_M365LIC_Frontend
             return $profile;
         }
 
-        $specialMarkupPercent = (float) ($specialUser['special_markup_percent'] ?? 0);
+        $specialMarkupPercent = (float) ($specialUser['effective_markup_percent'] ?? $specialUser['special_markup_percent'] ?? 0);
         $profile['base_markup_percent'] = $specialMarkupPercent;
         $profile['addon_markup_percent'] = $specialMarkupPercent;
         $profile['copilot_markup_percent'] = $specialMarkupPercent;
         $profile['cost_overrides'] = [];
         $profile['special_markup_percent'] = $specialMarkupPercent;
         $profile['pricing_origin'] = 'special_group';
-        $profile['partner_name'] = trim((string) ($profile['partner_name'] ?? ''));
+        $profile['partner_name'] = trim((string) ($specialUser['group_label'] ?? $profile['partner_name'] ?? ''));
+        $profile['whitelabel_title'] = trim((string) ($specialUser['group_report_title'] ?? $profile['whitelabel_title'] ?? ''));
+        $profile['whitelabel_intro'] = trim((string) ($specialUser['group_report_intro'] ?? $profile['whitelabel_intro'] ?? ''));
 
         return $profile;
     }

@@ -17,6 +17,7 @@ final class CMS_M365LIC_Installer
     {
         self::create_tables();
         CMS_M365LIC_Repository::instance()->seed_defaults(false);
+        CMS_M365LIC_Repository::instance()->sync_special_groups();
         self::store_db_version(CMS_M365LIC_DB_VERSION);
     }
 
@@ -32,6 +33,7 @@ final class CMS_M365LIC_Installer
         }
 
         CMS_M365LIC_Repository::instance()->seed_defaults(false);
+        CMS_M365LIC_Repository::instance()->sync_special_groups();
         self::store_db_version(CMS_M365LIC_DB_VERSION);
     }
 
@@ -49,6 +51,7 @@ final class CMS_M365LIC_Installer
             'm365lic_user_package_costs',
             'm365lic_user_profiles',
             'm365lic_special_users',
+            'm365lic_special_groups',
             'm365lic_usage_limits',
             'm365lic_settings',
             'm365lic_packages',
@@ -131,17 +134,35 @@ final class CMS_M365LIC_Installer
             INDEX idx_date_key (date_key)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}m365lic_special_groups (
+            id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            group_key               VARCHAR(120) NOT NULL,
+            group_label             VARCHAR(190) NOT NULL,
+            description             TEXT DEFAULT NULL,
+            default_markup_percent  DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+            report_title            VARCHAR(190) DEFAULT NULL,
+            report_intro            TEXT DEFAULT NULL,
+            is_active               TINYINT(1) NOT NULL DEFAULT 1,
+            created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY idx_group_key (group_key),
+            INDEX idx_active (is_active)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
         $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}m365lic_special_users (
             id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             user_id         INT UNSIGNED NOT NULL,
+            group_id        INT UNSIGNED DEFAULT NULL,
             group_key       VARCHAR(120) NOT NULL DEFAULT 'special',
             group_label     VARCHAR(190) NOT NULL DEFAULT 'Spezialzugang',
             special_markup_percent DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+            user_markup_override_percent DECIMAL(6,2) DEFAULT NULL,
             note            TEXT         DEFAULT NULL,
             is_active       TINYINT(1)   NOT NULL DEFAULT 1,
             created_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
             updated_at      TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             UNIQUE KEY idx_user_id (user_id),
+            INDEX idx_group_id (group_id),
             INDEX idx_group_key (group_key),
             INDEX idx_active (is_active)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
@@ -185,6 +206,20 @@ final class CMS_M365LIC_Installer
             "{$p}m365lic_special_users",
             'special_markup_percent',
             "ALTER TABLE {$p}m365lic_special_users ADD COLUMN special_markup_percent DECIMAL(6,2) NOT NULL DEFAULT 0.00 AFTER group_label"
+        );
+
+        self::ensure_column_exists(
+            $pdo,
+            "{$p}m365lic_special_users",
+            'group_id',
+            "ALTER TABLE {$p}m365lic_special_users ADD COLUMN group_id INT UNSIGNED DEFAULT NULL AFTER user_id"
+        );
+
+        self::ensure_column_exists(
+            $pdo,
+            "{$p}m365lic_special_users",
+            'user_markup_override_percent',
+            "ALTER TABLE {$p}m365lic_special_users ADD COLUMN user_markup_override_percent DECIMAL(6,2) DEFAULT NULL AFTER special_markup_percent"
         );
     }
 
@@ -250,6 +285,7 @@ final class CMS_M365LIC_Installer
                 'm365lic_packages',
                 'm365lic_settings',
                 'm365lic_usage_limits',
+                'm365lic_special_groups',
                 'm365lic_special_users',
                 'm365lic_user_profiles',
                 'm365lic_user_package_costs',

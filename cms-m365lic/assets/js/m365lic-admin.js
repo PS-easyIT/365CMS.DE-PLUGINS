@@ -172,6 +172,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            if (modalId === 'm365licDeleteSpecialGroupModal') {
+                const groupIdInput = document.getElementById('m365licDeleteSpecialGroupId');
+                const groupNameLabel = document.getElementById('m365licDeleteSpecialGroupName');
+
+                if (groupIdInput) {
+                    groupIdInput.value = trigger.getAttribute('data-group-id') ?? '0';
+                }
+
+                if (groupNameLabel) {
+                    groupNameLabel.textContent = trigger.getAttribute('data-group-name') ?? 'diese Gruppe';
+                }
+            }
+
             openModal(modalId);
         });
     });

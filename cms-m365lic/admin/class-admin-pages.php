@@ -22,6 +22,7 @@ final class CMS_M365LIC_Admin_Pages
 {
     use CMS_M365LIC_Page_Dashboard_Trait;
     use CMS_M365LIC_Page_Packages_Trait;
+    use CMS_M365LIC_Page_Special_Groups_Trait;
     use CMS_M365LIC_Page_Special_Users_Trait;
     use CMS_M365LIC_Page_Settings_Trait;
 
@@ -159,6 +160,13 @@ final class CMS_M365LIC_Admin_Pages
     {
         self::render_with_layout('M365 Spezial-User', 'm365lic-special-users', static function (): void {
             self::instance()->render_special_users_page();
+        });
+    }
+
+    public static function render_special_groups(): void
+    {
+        self::render_with_layout('M365 Spezialgruppen', 'm365lic-special-groups', static function (): void {
+            self::instance()->render_special_groups_page();
         });
     }
 }

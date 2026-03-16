@@ -306,6 +306,13 @@
     margin: 0;
 }
 
+.m365lic-action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+}
+
 .m365lic-special-users-stack {
     display: grid;
     gap: 1rem;

@@ -29,6 +29,8 @@ trait CMS_M365LIC_Page_Packages_Trait
                     $slug = preg_replace('/[^a-z0-9\-]+/', '-', $slug) ?: '';
                     if ($slug === '' || trim((string) ($_POST['name'] ?? '')) === '') {
                         $error = 'Name und Slug sind Pflichtfelder.';
+                    } elseif ($this->is_duplicate_package_slug($slug, (int) ($_POST['id'] ?? 0))) {
+                        $error = 'Der Slug ist bereits vergeben. Bitte einen eindeutigen Slug verwenden.';
                     } else {
                         $features = [];
                         foreach (array_keys($featureDefinitions) as $featureKey) {
@@ -413,5 +415,12 @@ trait CMS_M365LIC_Page_Packages_Trait
             'group_price' => 'Spezial',
             default => 'Public',
         };
+    }
+
+    private function is_duplicate_package_slug(string $slug, int $currentId): bool
+    {
+        $existing = self::repo()->get_package_by_slug($slug);
+
+        return is_array($existing) && (int) ($existing['id'] ?? 0) !== $currentId;
     }
 }

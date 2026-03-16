@@ -31,7 +31,7 @@ $userPricingProfile = is_array($userPricingProfile ?? null)
 $settingsUrl = (string) ($viewContext['settings_url'] ?? '');
 $scope = (string) ($viewContext['scope'] ?? 'public');
 $specialUser = is_array($viewContext['special_user'] ?? null) ? $viewContext['special_user'] : null;
-$specialMarkupPercent = (float) ($specialUser['special_markup_percent'] ?? $userPricingProfile['special_markup_percent'] ?? 0);
+$specialMarkupPercent = (float) ($specialUser['effective_markup_percent'] ?? $specialUser['special_markup_percent'] ?? $userPricingProfile['special_markup_percent'] ?? 0);
 $hasPersonalPricing = is_array($userPricingProfile)
     && (
         !empty($userPricingProfile['cost_overrides'])
@@ -55,6 +55,11 @@ $stepTwoFeatureKeys = array_values(array_filter(array_keys($featureDefinitions),
     return !in_array($key, $stepOneFeatureKeys, true) && !in_array($key, $stepThreeFeatureKeys, true);
 }));
 $repo = CMS_M365LIC_Repository::instance();
+$publicPackagePriceMap = [];
+
+foreach ($packages as $package) {
+    $publicPackagePriceMap[(string) ($package['slug'] ?? '')] = $repo->get_price_for_package($package, 'public');
+}
 
 $addonFeatureMeta = [];
 foreach ($stepThreeFeatureKeys as $featureKey) {
@@ -68,10 +73,9 @@ foreach ($stepThreeFeatureKeys as $featureKey) {
         continue;
     }
 
-    usort($relatedPackages, static function (array $left, array $right): int {
-        $repo = CMS_M365LIC_Repository::instance();
-        $leftPrice = $repo->get_price_for_package($left, 'public');
-        $rightPrice = $repo->get_price_for_package($right, 'public');
+    usort($relatedPackages, static function (array $left, array $right) use ($publicPackagePriceMap): int {
+        $leftPrice = $publicPackagePriceMap[(string) ($left['slug'] ?? '')] ?? null;
+        $rightPrice = $publicPackagePriceMap[(string) ($right['slug'] ?? '')] ?? null;
 
         if ($leftPrice === null && $rightPrice === null) {
             return strcmp((string) ($left['name'] ?? ''), (string) ($right['name'] ?? ''));
@@ -88,7 +92,7 @@ foreach ($stepThreeFeatureKeys as $featureKey) {
 
     $addonFeatureMeta[$featureKey] = [
         'packages' => $relatedPackages,
-        'min_price' => $repo->get_price_for_package($relatedPackages[0], 'public'),
+        'min_price' => $publicPackagePriceMap[(string) ($relatedPackages[0]['slug'] ?? '')] ?? null,
         'pricing_basis_label' => ((string) ($relatedPackages[0]['pricing_basis'] ?? 'per_user')) === 'flat_monthly' ? 'Fixpreis / Monat' : 'ab pro Benutzer',
         'source_note' => (string) ($relatedPackages[0]['source_note'] ?? ''),
     ];
@@ -380,6 +384,13 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                         <div class="m365lic-card-badge">EUR · Netto-Richtwerte</div>
                     </div>
 
+                    <?php if ($scope === 'member'): ?>
+                    <nav class="m365lic-local-nav" aria-label="M365 Lizenzberater Menü">
+                        <a href="/member/plugin/m365-license" class="m365lic-local-nav__link m365lic-local-nav__link--active" aria-current="page">🧮 Auswertung</a>
+                        <a href="<?php echo $esc($settingsUrl !== '' ? $settingsUrl : '/member/plugin/m365-license-settings'); ?>" class="m365lic-local-nav__link">⚙️ Einstellungen</a>
+                    </nav>
+                    <?php endif; ?>
+
                     <?php if ($scope === 'member' && $settingsUrl !== ''): ?>
                     <section class="m365lic-subcard m365lic-subcard--pricing-profile">
                         <div class="m365lic-subcard__head m365lic-subcard__head--split">
@@ -431,13 +442,16 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                                 <strong><?php echo $esc((string) ($specialUser['group_key'] ?? 'special')); ?></strong>
                             </div>
                             <div class="m365lic-kpi-card">
-                                <span>Ihr Aufschlag</span>
+                                <span>Aktiver Aufschlag</span>
                                 <strong><?php echo $esc(number_format($specialMarkupPercent, 2, ',', '.')); ?>%</strong>
                             </div>
                         </div>
                         <p class="m365lic-help-text m365lic-help-text--flush">
                             Berechnungsbasis ist immer der gepflegte <strong>Special-/Gruppenpreis</strong> je Paket. Darauf wird nur für Ihren zugewiesenen Benutzer der hinterlegte Prozentaufschlag angewendet.
                         </p>
+                        <?php if ((string) ($specialUser['group_description'] ?? '') !== ''): ?>
+                        <p class="m365lic-help-text m365lic-help-text--flush"><?php echo $esc((string) $specialUser['group_description']); ?></p>
+                        <?php endif; ?>
                     </section>
                     <?php endif; ?>
 

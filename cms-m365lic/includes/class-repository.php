@@ -92,6 +92,70 @@ final class CMS_M365LIC_Repository
         $this->settingsCache = null;
     }
 
+    public function sync_special_groups(): void
+    {
+        $settings = $this->get_settings();
+        $defaultGroup = $this->get_special_group_by_key((string) ($settings['default_group_key'] ?? 'partner'));
+
+        if ($defaultGroup === null) {
+            $this->save_special_group([
+                'group_key' => (string) ($settings['default_group_key'] ?? 'partner'),
+                'group_label' => (string) ($settings['default_group_label'] ?? 'Partner / Spezialgruppe'),
+                'description' => 'Standardgruppe für Spezial-/Reseller-Zugänge.',
+                'default_markup_percent' => 0,
+                'report_title' => 'Microsoft 365 Reseller-Report',
+                'report_intro' => 'Geschützter Report für die zugewiesene Reseller-/Spezialgruppe.',
+                'is_active' => 1,
+            ]);
+        }
+
+        try {
+            $stmt = $this->db()->prepare(
+                "SELECT DISTINCT group_key, group_label, special_markup_percent
+                 FROM {$this->prefix()}m365lic_special_users
+                 WHERE (group_id IS NULL OR group_id = 0) AND group_key <> ''"
+            );
+            $stmt->execute();
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            return;
+        }
+
+        foreach ($rows as $row) {
+            $groupKey = $this->normalize_group_key($row['group_key'] ?? 'special');
+            $groupLabel = trim((string) ($row['group_label'] ?? 'Spezialzugang'));
+            $group = $this->get_special_group_by_key($groupKey);
+
+            if ($group === null) {
+                $this->save_special_group([
+                    'group_key' => $groupKey,
+                    'group_label' => $groupLabel,
+                    'description' => '',
+                    'default_markup_percent' => $row['special_markup_percent'] ?? 0,
+                    'report_title' => '',
+                    'report_intro' => '',
+                    'is_active' => 1,
+                ]);
+                $group = $this->get_special_group_by_key($groupKey);
+            }
+
+            if ($group === null) {
+                continue;
+            }
+
+            try {
+                $updateStmt = $this->db()->prepare(
+                    "UPDATE {$this->prefix()}m365lic_special_users
+                     SET group_id = ?
+                     WHERE (group_id IS NULL OR group_id = 0) AND group_key = ?"
+                );
+                $updateStmt->execute([(int) ($group['id'] ?? 0), $groupKey]);
+            } catch (\Throwable $e) {
+                // ignore migration edge cases
+            }
+        }
+    }
+
     /**
      * @return array<string,mixed>
      */
@@ -403,10 +467,158 @@ final class CMS_M365LIC_Repository
             'packages_addon' => count($addonPackages),
             'packages_with_prices' => count($withPrices),
             'packages_without_prices' => max(0, count($activePackages) - count($withPrices)),
+            'special_groups_total' => count($this->get_special_groups()),
             'special_users_total' => count($this->get_special_users()),
             'feature_total' => count(CMS_M365LIC_Catalog::feature_definitions()),
             'preset_total' => count(CMS_M365LIC_Catalog::presets()),
         ];
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function get_special_groups(bool $includeInactive = true): array
+    {
+        $params = [];
+        $where = '';
+
+        if (!$includeInactive) {
+            $where = 'WHERE sg.is_active = ?';
+            $params[] = 1;
+        }
+
+        try {
+            $stmt = $this->db()->prepare(
+                "SELECT sg.*, COUNT(su.user_id) AS assigned_users
+                 FROM {$this->prefix()}m365lic_special_groups sg
+                 LEFT JOIN {$this->prefix()}m365lic_special_users su ON su.group_id = sg.id AND su.is_active = 1
+                 {$where}
+                 GROUP BY sg.id
+                 ORDER BY sg.is_active DESC, sg.group_label ASC"
+            );
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        return array_map([$this, 'hydrate_special_group'], $rows);
+    }
+
+    /**
+     * @return array<string,mixed>|null
+     */
+    public function get_special_group(int $groupId): ?array
+    {
+        if ($groupId <= 0) {
+            return null;
+        }
+
+        try {
+            $stmt = $this->db()->prepare(
+                "SELECT sg.*, COUNT(su.user_id) AS assigned_users
+                 FROM {$this->prefix()}m365lic_special_groups sg
+                 LEFT JOIN {$this->prefix()}m365lic_special_users su ON su.group_id = sg.id AND su.is_active = 1
+                 WHERE sg.id = ?
+                 GROUP BY sg.id
+                 LIMIT 1"
+            );
+            $stmt->execute([$groupId]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        return is_array($row) ? $this->hydrate_special_group($row) : null;
+    }
+
+    /**
+     * @return array<string,mixed>|null
+     */
+    public function get_special_group_by_key(string $groupKey): ?array
+    {
+        $groupKey = $this->normalize_group_key($groupKey);
+        if ($groupKey === '') {
+            return null;
+        }
+
+        try {
+            $stmt = $this->db()->prepare(
+                "SELECT sg.*, COUNT(su.user_id) AS assigned_users
+                 FROM {$this->prefix()}m365lic_special_groups sg
+                 LEFT JOIN {$this->prefix()}m365lic_special_users su ON su.group_id = sg.id AND su.is_active = 1
+                 WHERE sg.group_key = ?
+                 GROUP BY sg.id
+                 LIMIT 1"
+            );
+            $stmt->execute([$groupKey]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        return is_array($row) ? $this->hydrate_special_group($row) : null;
+    }
+
+    /**
+     * @param array<string,mixed> $data
+     */
+    public function save_special_group(array $data): void
+    {
+        $groupId = (int) ($data['id'] ?? 0);
+        $groupKey = $this->normalize_group_key($data['group_key'] ?? 'special');
+        $groupLabel = trim((string) ($data['group_label'] ?? 'Spezialgruppe'));
+        $description = trim((string) ($data['description'] ?? ''));
+        $defaultMarkup = $this->normalize_percent($data['default_markup_percent'] ?? 0);
+        $reportTitle = trim((string) ($data['report_title'] ?? ''));
+        $reportIntro = trim((string) ($data['report_intro'] ?? ''));
+        $isActive = !empty($data['is_active']) ? 1 : 0;
+
+        if ($groupKey === '') {
+            $groupKey = 'special';
+        }
+
+        if ($groupLabel === '') {
+            $groupLabel = 'Spezialgruppe';
+        }
+
+        if ($groupId > 0) {
+            $stmt = $this->db()->prepare(
+                "UPDATE {$this->prefix()}m365lic_special_groups
+                 SET group_key = ?, group_label = ?, description = ?, default_markup_percent = ?, report_title = ?, report_intro = ?, is_active = ?
+                 WHERE id = ?"
+            );
+            $stmt->execute([$groupKey, $groupLabel, $description, $defaultMarkup, $reportTitle, $reportIntro, $isActive, $groupId]);
+        } else {
+            $stmt = $this->db()->prepare(
+                "INSERT INTO {$this->prefix()}m365lic_special_groups
+                    (group_key, group_label, description, default_markup_percent, report_title, report_intro, is_active)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)"
+            );
+            $stmt->execute([$groupKey, $groupLabel, $description, $defaultMarkup, $reportTitle, $reportIntro, $isActive]);
+            $groupId = (int) $this->pdo()->lastInsertId();
+        }
+
+        if ($groupId > 0) {
+            $this->sync_special_group_to_users($groupId);
+        }
+    }
+
+    public function delete_special_group(int $groupId): bool
+    {
+        if ($groupId <= 0) {
+            return false;
+        }
+
+        $group = $this->get_special_group($groupId);
+        if ($group === null || (int) ($group['assigned_users'] ?? 0) > 0) {
+            return false;
+        }
+
+        $stmt = $this->db()->prepare("DELETE FROM {$this->prefix()}m365lic_special_groups WHERE id = ?");
+        $stmt->execute([$groupId]);
+
+        return true;
     }
 
     /**
@@ -581,9 +793,18 @@ final class CMS_M365LIC_Repository
     {
         try {
             $stmt = $this->db()->prepare(
-                "SELECT su.*, u.username, u.email, u.display_name, u.role, u.status
+                "SELECT su.*, u.username, u.email, u.display_name, u.role, u.status,
+                        sg.group_key AS assigned_group_key,
+                        sg.group_label AS assigned_group_label,
+                        sg.description AS group_description,
+                        sg.default_markup_percent,
+                        sg.report_title AS group_report_title,
+                        sg.report_intro AS group_report_intro,
+                        sg.is_active AS group_is_active,
+                        COALESCE(su.user_markup_override_percent, sg.default_markup_percent, su.special_markup_percent, 0) AS effective_markup_percent
                  FROM {$this->prefix()}m365lic_special_users su
                  INNER JOIN {$this->prefix()}users u ON u.id = su.user_id
+                 LEFT JOIN {$this->prefix()}m365lic_special_groups sg ON sg.id = su.group_id
                  ORDER BY su.is_active DESC, COALESCE(NULLIF(u.display_name, ''), u.username) ASC"
             );
             $stmt->execute();
@@ -614,9 +835,16 @@ final class CMS_M365LIC_Repository
         try {
             $stmt = $this->db()->prepare(
                 "SELECT u.id, u.username, u.email, u.display_name, u.role, u.status,
-                        su.group_key, su.group_label, su.special_markup_percent, su.note, su.is_active AS special_is_active
+                        su.group_id, su.group_key, su.group_label, su.special_markup_percent, su.user_markup_override_percent,
+                        su.note, su.is_active AS special_is_active,
+                        sg.group_key AS assigned_group_key,
+                        sg.group_label AS assigned_group_label,
+                        sg.default_markup_percent,
+                        sg.is_active AS group_is_active,
+                        COALESCE(su.user_markup_override_percent, sg.default_markup_percent, su.special_markup_percent, 0) AS effective_markup_percent
                  FROM {$this->prefix()}users u
                  LEFT JOIN {$this->prefix()}m365lic_special_users su ON su.user_id = u.id
+                 LEFT JOIN {$this->prefix()}m365lic_special_groups sg ON sg.id = su.group_id
                  WHERE " . implode(' AND ', $where) . "
                  ORDER BY COALESCE(NULLIF(u.display_name, ''), u.username) ASC
                  LIMIT 150"
@@ -639,9 +867,18 @@ final class CMS_M365LIC_Repository
 
         try {
             $stmt = $this->db()->prepare(
-                "SELECT su.*, u.username, u.email, u.display_name, u.role, u.status
+                "SELECT su.*, u.username, u.email, u.display_name, u.role, u.status,
+                        sg.group_key AS assigned_group_key,
+                        sg.group_label AS assigned_group_label,
+                        sg.description AS group_description,
+                        sg.default_markup_percent,
+                        sg.report_title AS group_report_title,
+                        sg.report_intro AS group_report_intro,
+                        sg.is_active AS group_is_active,
+                        COALESCE(su.user_markup_override_percent, sg.default_markup_percent, su.special_markup_percent, 0) AS effective_markup_percent
                  FROM {$this->prefix()}m365lic_special_users su
                  INNER JOIN {$this->prefix()}users u ON u.id = su.user_id
+                 LEFT JOIN {$this->prefix()}m365lic_special_groups sg ON sg.id = su.group_id
                  WHERE su.user_id = ?
                  LIMIT 1"
             );
@@ -663,34 +900,37 @@ final class CMS_M365LIC_Repository
             return;
         }
 
-        $groupKey = trim((string) ($data['group_key'] ?? 'special'));
-        $groupLabel = trim((string) ($data['group_label'] ?? 'Spezialzugang'));
-        $specialMarkupPercent = $this->normalize_percent($data['special_markup_percent'] ?? 0);
-
-        if ($groupKey === '') {
-            $groupKey = 'special';
+        $groupId = max(0, (int) ($data['group_id'] ?? 0));
+        $group = $this->get_special_group($groupId);
+        if ($group === null) {
+            return;
         }
 
-        if ($groupLabel === '') {
-            $groupLabel = 'Spezialzugang';
-        }
+        $groupKey = (string) ($group['group_key'] ?? 'special');
+        $groupLabel = (string) ($group['group_label'] ?? 'Spezialzugang');
+        $userMarkupOverride = $this->normalize_nullable_percent($data['user_markup_override_percent'] ?? null);
+        $effectiveMarkupPercent = $userMarkupOverride ?? (float) ($group['default_markup_percent'] ?? 0);
 
         $stmt = $this->db()->prepare(
-            "INSERT INTO {$this->prefix()}m365lic_special_users (user_id, group_key, group_label, special_markup_percent, note, is_active)
-             VALUES (?, ?, ?, ?, ?, ?)
+            "INSERT INTO {$this->prefix()}m365lic_special_users (user_id, group_id, group_key, group_label, special_markup_percent, user_markup_override_percent, note, is_active)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
+                group_id = VALUES(group_id),
                 group_key = VALUES(group_key),
                 group_label = VALUES(group_label),
                 special_markup_percent = VALUES(special_markup_percent),
+                user_markup_override_percent = VALUES(user_markup_override_percent),
                 note = VALUES(note),
                 is_active = VALUES(is_active)"
         );
 
         $stmt->execute([
             $userId,
+            $groupId,
             strtolower(preg_replace('/[^a-z0-9\-_]+/i', '-', $groupKey) ?: 'special'),
             $groupLabel,
-            $specialMarkupPercent,
+            $effectiveMarkupPercent,
+            $userMarkupOverride,
             trim((string) ($data['note'] ?? '')),
             !empty($data['is_active']) ? 1 : 0,
         ]);
@@ -743,6 +983,10 @@ final class CMS_M365LIC_Repository
 
         $record = $this->get_special_user_by_user_id($userId);
         if (!is_array($record) || empty($record['is_active'])) {
+            return null;
+        }
+
+        if ((int) ($record['group_id'] ?? 0) > 0 && empty($record['group_is_active'])) {
             return null;
         }
 
@@ -852,6 +1096,15 @@ final class CMS_M365LIC_Repository
         }
 
         return round(max(0.0, min(999.0, (float) $stringValue)), 2);
+    }
+
+    private function normalize_nullable_percent(mixed $value): ?float
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return null;
+        }
+
+        return $this->normalize_percent($value);
     }
 
     /**
@@ -1001,10 +1254,18 @@ final class CMS_M365LIC_Repository
     {
         $row['id'] = (int) ($row['id'] ?? 0);
         $row['user_id'] = (int) ($row['user_id'] ?? 0);
+        $row['group_id'] = (int) ($row['group_id'] ?? 0);
         $row['is_active'] = (int) ($row['is_active'] ?? 0);
-        $row['group_key'] = trim((string) ($row['group_key'] ?? 'special'));
-        $row['group_label'] = trim((string) ($row['group_label'] ?? 'Spezialzugang'));
+        $row['group_key'] = trim((string) ($row['assigned_group_key'] ?? $row['group_key'] ?? 'special'));
+        $row['group_label'] = trim((string) ($row['assigned_group_label'] ?? $row['group_label'] ?? 'Spezialzugang'));
+        $row['group_description'] = trim((string) ($row['group_description'] ?? ''));
+        $row['group_report_title'] = trim((string) ($row['group_report_title'] ?? ''));
+        $row['group_report_intro'] = trim((string) ($row['group_report_intro'] ?? ''));
+        $row['group_is_active'] = (int) ($row['group_is_active'] ?? 0);
+        $row['default_markup_percent'] = $this->normalize_percent($row['default_markup_percent'] ?? 0);
+        $row['user_markup_override_percent'] = $this->normalize_nullable_percent($row['user_markup_override_percent'] ?? null);
         $row['special_markup_percent'] = $this->normalize_percent($row['special_markup_percent'] ?? 0);
+        $row['effective_markup_percent'] = $this->normalize_percent($row['effective_markup_percent'] ?? $row['special_markup_percent'] ?? 0);
         $row['note'] = trim((string) ($row['note'] ?? ''));
         $row['username'] = (string) ($row['username'] ?? '');
         $row['email'] = (string) ($row['email'] ?? '');
@@ -1012,6 +1273,59 @@ final class CMS_M365LIC_Repository
         $row['role'] = (string) ($row['role'] ?? 'member');
         $row['status'] = (string) ($row['status'] ?? 'active');
         return $row;
+    }
+
+    /**
+     * @param array<string,mixed> $row
+     * @return array<string,mixed>
+     */
+    private function hydrate_special_group(array $row): array
+    {
+        $row['id'] = (int) ($row['id'] ?? 0);
+        $row['group_key'] = $this->normalize_group_key($row['group_key'] ?? 'special');
+        $row['group_label'] = trim((string) ($row['group_label'] ?? 'Spezialgruppe'));
+        $row['description'] = trim((string) ($row['description'] ?? ''));
+        $row['default_markup_percent'] = $this->normalize_percent($row['default_markup_percent'] ?? 0);
+        $row['report_title'] = trim((string) ($row['report_title'] ?? ''));
+        $row['report_intro'] = trim((string) ($row['report_intro'] ?? ''));
+        $row['is_active'] = (int) ($row['is_active'] ?? 0);
+        $row['assigned_users'] = (int) ($row['assigned_users'] ?? 0);
+        return $row;
+    }
+
+    private function normalize_group_key(mixed $value): string
+    {
+        $groupKey = strtolower(trim((string) $value));
+        $groupKey = preg_replace('/[^a-z0-9\-_]+/i', '-', $groupKey) ?: '';
+        $groupKey = trim($groupKey, '-_');
+
+        return $groupKey !== '' ? $groupKey : 'special';
+    }
+
+    private function sync_special_group_to_users(int $groupId): void
+    {
+        $group = $this->get_special_group($groupId);
+        if ($group === null) {
+            return;
+        }
+
+        try {
+            $stmt = $this->db()->prepare(
+                "UPDATE {$this->prefix()}m365lic_special_users
+                 SET group_key = ?,
+                     group_label = ?,
+                     special_markup_percent = COALESCE(user_markup_override_percent, ?, special_markup_percent)
+                 WHERE group_id = ?"
+            );
+            $stmt->execute([
+                (string) ($group['group_key'] ?? 'special'),
+                (string) ($group['group_label'] ?? 'Spezialgruppe'),
+                (float) ($group['default_markup_percent'] ?? 0),
+                $groupId,
+            ]);
+        } catch (\Throwable $e) {
+            // ignore sync edge cases
+        }
     }
 
     private function resolve_actor_hash(): string

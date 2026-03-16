@@ -189,6 +189,40 @@
     padding-bottom: 1.5rem;
 }
 
+.m365lic-local-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin: 0 0 1rem;
+}
+
+.m365lic-local-nav__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.6rem 0.95rem;
+    border-radius: 999px;
+    border: 1px solid var(--m365lic-border);
+    background: #ffffff;
+    color: var(--m365lic-text);
+    font-size: 0.92rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: var(--transition-fast, all 0.15s ease);
+}
+
+.m365lic-local-nav__link:hover {
+    border-color: rgba(37, 99, 235, 0.28);
+    color: var(--m365lic-primary-dark);
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.08);
+}
+
+.m365lic-local-nav__link--active {
+    background: rgba(37, 99, 235, 0.1);
+    border-color: rgba(37, 99, 235, 0.22);
+    color: var(--m365lic-primary-dark);
+}
+
 .m365lic-subcard {
     border: 1px solid var(--m365lic-border);
     border-radius: var(--m365lic-radius);
