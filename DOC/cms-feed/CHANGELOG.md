@@ -4,6 +4,14 @@ Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
 ---
 
+## [1.3.1] – 2026-03-16
+
+### Geändert
+- **Stündlicher Feed-Cron priorisiert `cms-phinit`-Homepage-Feeds** – Die in `feed1_channel_id` und `feed2_channel_id` gewählten Startseiten-Kanäle werden bei jedem `cms_cron_hourly`-Lauf bevorzugt in die Fetch-Queue eingereiht, solange die Feed-Sektion aktiv ist
+- **Automatische Prüfung aller fälligen Kanäle bleibt aktiv** – Zusätzlich zu den Homepage-Kanälen werden weiterhin alle regulär nach `fetch_interval` fälligen Feed-Kanäle verarbeitet
+- **Automatisches 7-Tage-Cleanup** – Nicht hervorgehobene Feed-Beiträge älter als 7 Tage werden jetzt bei jedem stündlichen Cron-Lauf automatisch gelöscht
+- **Admin-Cleanup an 7-Tage-Policy angepasst** – Schnellaktionen und Standardwerte im Admin nutzen jetzt 7 Tage statt 90 Tage als Default
+
 ## [1.3.0] – 2026-03-14
 
 ### Hinzugefügt

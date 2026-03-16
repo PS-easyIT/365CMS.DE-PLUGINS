@@ -157,6 +157,12 @@ final class CMS_M365LIC_Repository
      */
     public function save_package(array $data): void
     {
+        $normalizedPrices = $this->normalize_package_prices([
+            'public_price' => $this->normalize_price($data['public_price'] ?? null),
+            'member_price' => $this->normalize_price($data['member_price'] ?? null),
+            'group_price' => $this->normalize_price($data['group_price'] ?? null),
+        ]);
+
         $record = [
             'slug' => (string) ($data['slug'] ?? ''),
             'name' => (string) ($data['name'] ?? ''),
@@ -168,9 +174,9 @@ final class CMS_M365LIC_Repository
             'features_json' => json_encode(array_values(array_unique($data['features'] ?? [])), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'tags_json' => json_encode(array_values(array_unique($data['tags'] ?? [])), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
             'prerequisite_tags_json' => json_encode(array_values(array_unique($data['prerequisite_tags'] ?? [])), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            'public_price' => $this->normalize_price($data['public_price'] ?? null),
-            'member_price' => $this->normalize_price($data['member_price'] ?? null),
-            'group_price' => $this->normalize_price($data['group_price'] ?? null),
+            'public_price' => $normalizedPrices['public_price'],
+            'member_price' => $normalizedPrices['member_price'],
+            'group_price' => $normalizedPrices['group_price'],
             'currency' => $this->normalize_currency($data['currency'] ?? 'EUR'),
             'pricing_note' => (string) ($data['pricing_note'] ?? ''),
             'source_note' => (string) ($data['source_note'] ?? ''),
@@ -290,23 +296,48 @@ final class CMS_M365LIC_Repository
      */
     public function get_price_for_package(array $package, string $tier): ?float
     {
+        $effectivePrices = $this->get_effective_price_map($package);
         $field = match ($tier) {
             'member' => 'member_price',
             'group' => 'group_price',
             default => 'public_price',
         };
 
-        if (!isset($package[$field]) || $package[$field] === null || $package[$field] === '') {
-            if ($tier === 'group' && $package['member_price'] !== null) {
-                return (float) $package['member_price'];
+        return $effectivePrices[$field]['value'];
+    }
+
+    /**
+     * @param array<string,mixed> $package
+     * @return array<string,array{value:?float,inherited:bool,source:string}>
+     */
+    public function get_effective_price_map(array $package): array
+    {
+        $rawPrices = [
+            'public_price' => isset($package['public_price']) && $package['public_price'] !== '' ? ($package['public_price'] !== null ? (float) $package['public_price'] : null) : null,
+            'member_price' => isset($package['member_price']) && $package['member_price'] !== '' ? ($package['member_price'] !== null ? (float) $package['member_price'] : null) : null,
+            'group_price' => isset($package['group_price']) && $package['group_price'] !== '' ? ($package['group_price'] !== null ? (float) $package['group_price'] : null) : null,
+        ];
+
+        $effective = [];
+        foreach (['public_price', 'member_price', 'group_price'] as $field) {
+            if ($rawPrices[$field] !== null) {
+                $effective[$field] = [
+                    'value' => $rawPrices[$field],
+                    'inherited' => false,
+                    'source' => $field,
+                ];
+                continue;
             }
-            if ($tier !== 'public' && $package['public_price'] !== null) {
-                return (float) $package['public_price'];
-            }
-            return null;
+
+            $fallbackField = $this->find_first_available_price_field($rawPrices, [$field]);
+            $effective[$field] = [
+                'value' => $fallbackField !== null ? $rawPrices[$fallbackField] : null,
+                'inherited' => $fallbackField !== null,
+                'source' => $fallbackField ?? $field,
+            ];
         }
 
-        return (float) $package[$field];
+        return $effective;
     }
 
     /**
@@ -638,6 +669,51 @@ final class CMS_M365LIC_Repository
         $currency = strtoupper(trim((string) $value));
 
         return $currency === 'EUR' ? 'EUR' : 'EUR';
+    }
+
+    /**
+     * @param array<string,?float> $prices
+     * @return array<string,?float>
+     */
+    private function normalize_package_prices(array $prices): array
+    {
+        $firstField = $this->find_first_available_price_field($prices);
+        if ($firstField === null) {
+            return $prices;
+        }
+
+        $filledCount = count(array_filter($prices, static fn(?float $price): bool => $price !== null));
+        if ($filledCount !== 1) {
+            return $prices;
+        }
+
+        $fallbackValue = $prices[$firstField];
+        foreach (array_keys($prices) as $field) {
+            if ($prices[$field] === null) {
+                $prices[$field] = $fallbackValue;
+            }
+        }
+
+        return $prices;
+    }
+
+    /**
+     * @param array<string,?float> $prices
+     * @param array<int,string> $excludeFields
+     */
+    private function find_first_available_price_field(array $prices, array $excludeFields = []): ?string
+    {
+        foreach (['public_price', 'member_price', 'group_price'] as $field) {
+            if (in_array($field, $excludeFields, true)) {
+                continue;
+            }
+
+            if (($prices[$field] ?? null) !== null) {
+                return $field;
+            }
+        }
+
+        return null;
     }
 
     /**

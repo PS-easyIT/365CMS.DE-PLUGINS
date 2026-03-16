@@ -15,7 +15,7 @@
 - **Member Feed-Abos** – Mitglieder wählen mehrere Feeds und erhalten tägliche oder wöchentliche Mail-Digests direkt aus dem `cms-phinit` Memberbereich
 - **Suche** – Volltextsuche über alle gesammelten Beiträge
 - **Featured & Hidden** – Beiträge hervorheben oder ausblenden
-- **Auto-Cleanup** – Alte Beiträge automatisch oder manuell entfernen
+- **Auto-Cleanup** – Alte Beiträge automatisch stündlich auf 7 Tage begrenzen oder manuell entfernen
 - **Theme-Override** – Templates können im aktiven Theme überschrieben werden
 - **Whitelabel** – Standalone-Seite ohne CMS-Theme für Einbettung
 
@@ -87,6 +87,8 @@ cms-feed/
 - Public CSS/JS wird nur noch auf echten Feed-Archiv-Routen geladen, nicht mehr global auf allen Frontend-Seiten
 - Member-Feed-Abos werden separat von den Admin-Digests gespeichert
 - Admin-Digests bleiben für manuelle/global konfigurierte Empfänger erhalten; Member-Abos gehören dem jeweiligen Benutzerkonto
+- Der stündliche Cron priorisiert die in `cms-phinit` auf der Startseite gewählten Feed-Kanäle und prüft zusätzlich alle nach `fetch_interval` fälligen Kanäle
+- Feed-Beiträge älter als 7 Tage werden stündlich automatisch bereinigt
 
 ## Systemanforderungen
 

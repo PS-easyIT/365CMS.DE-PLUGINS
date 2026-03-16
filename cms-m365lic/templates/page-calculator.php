@@ -31,6 +31,7 @@ $showContextSummary = !empty($settings['show_context_summary']);
 $showAddonOverview = !empty($settings['show_addon_overview']);
 $showLegalCard = !empty($settings['show_legal_card']);
 $stickySidebar = !empty($settings['sticky_sidebar']);
+$hasPublicSidebarContent = !$isEmbedded && ($showContextSummary || $showLegalCard || $showAddonOverview);
 $stepOneFeatureKeys = ['mail', 'teams', 'office_web', 'office_desktop', 'terminalserver', 'onedrive', 'sharepoint', 'frontline'];
 $stepThreeFeatureKeys = array_values(array_filter(array_keys($featureDefinitions), static function (string $key) use ($featureDefinitions): bool {
     return empty($featureDefinitions[$key]['base']);
@@ -38,6 +39,7 @@ $stepThreeFeatureKeys = array_values(array_filter(array_keys($featureDefinitions
 $stepTwoFeatureKeys = array_values(array_filter(array_keys($featureDefinitions), static function (string $key) use ($stepOneFeatureKeys, $stepThreeFeatureKeys): bool {
     return !in_array($key, $stepOneFeatureKeys, true) && !in_array($key, $stepThreeFeatureKeys, true);
 }));
+$repo = CMS_M365LIC_Repository::instance();
 
 $addonFeatureMeta = [];
 foreach ($stepThreeFeatureKeys as $featureKey) {
@@ -52,8 +54,9 @@ foreach ($stepThreeFeatureKeys as $featureKey) {
     }
 
     usort($relatedPackages, static function (array $left, array $right): int {
-        $leftPrice = $left['public_price'] ?? null;
-        $rightPrice = $right['public_price'] ?? null;
+        $repo = CMS_M365LIC_Repository::instance();
+        $leftPrice = $repo->get_price_for_package($left, 'public');
+        $rightPrice = $repo->get_price_for_package($right, 'public');
 
         if ($leftPrice === null && $rightPrice === null) {
             return strcmp((string) ($left['name'] ?? ''), (string) ($right['name'] ?? ''));
@@ -70,7 +73,7 @@ foreach ($stepThreeFeatureKeys as $featureKey) {
 
     $addonFeatureMeta[$featureKey] = [
         'packages' => $relatedPackages,
-        'min_price' => $relatedPackages[0]['public_price'] ?? null,
+        'min_price' => $repo->get_price_for_package($relatedPackages[0], 'public'),
         'pricing_basis_label' => ((string) ($relatedPackages[0]['pricing_basis'] ?? 'per_user')) === 'flat_monthly' ? 'Fixpreis / Monat' : 'ab pro Benutzer',
         'source_note' => (string) ($relatedPackages[0]['source_note'] ?? ''),
     ];
@@ -85,6 +88,48 @@ $addonGroupClassMap = [
     'power-platform' => 'productivity',
     'copilot' => 'copilot',
 ];
+
+$featureGroupClassMap = [
+    'core' => 'quick',
+    'collaboration' => 'advanced',
+    'security' => 'security',
+    'security-addon' => 'security',
+    'identity' => 'identity',
+    'addons' => 'productivity',
+    'productivity' => 'productivity',
+    'power-platform' => 'productivity',
+    'worker' => 'quick',
+    'copilot' => 'copilot',
+];
+
+$renderLicenseFeatures = static function (array $item) use ($esc, $featureGroupClassMap): void {
+    $featureDetails = is_array($item['feature_details'] ?? null) ? $item['feature_details'] : [];
+    if ($featureDetails === []) {
+        return;
+    }
+    ?>
+    <details class="m365lic-license-features">
+        <summary>
+            <span>Features anzeigen</span>
+            <span class="m365lic-license-features__count"><?php echo (int) count($featureDetails); ?> Features</span>
+        </summary>
+        <ul class="m365lic-license-features__list" role="list">
+            <?php foreach ($featureDetails as $featureDetail): ?>
+                <?php $featureGroupClass = $featureGroupClassMap[(string) ($featureDetail['group'] ?? 'productivity')] ?? 'productivity'; ?>
+                <li class="m365lic-license-features__item m365lic-license-features__item--<?php echo $esc($featureGroupClass); ?>">
+                    <span class="m365lic-license-features__meta">
+                        <b class="m365lic-feature-group"><?php echo $esc((string) ($featureDetail['group_label'] ?? 'Feature')); ?></b>
+                    </span>
+                    <strong><?php echo $esc((string) ($featureDetail['label'] ?? 'Feature')); ?></strong>
+                    <?php if ((string) ($featureDetail['description'] ?? '') !== ''): ?>
+                    <small><?php echo $esc((string) $featureDetail['description']); ?></small>
+                    <?php endif; ?>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+    </details>
+    <?php
+};
 
 $renderRequirementRow = static function (array $requirement, int $index) use ($featureDefinitions, $presets, $esc, $stepOneFeatureKeys, $stepTwoFeatureKeys, $stepThreeFeatureKeys, $addonFeatureMeta, $addonGroupClassMap, $formatMoney): void {
     ?>
@@ -125,15 +170,15 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
             <div class="m365lic-form-grid m365lic-form-grid--3">
                 <div class="m365lic-field">
                     <label for="req_label_<?php echo $index; ?>">Bezeichnung</label>
-                    <input id="req_label_<?php echo $index; ?>" type="text" name="requirements[<?php echo $index; ?>][label]" value="<?php echo $esc((string) ($requirement['label'] ?? '')); ?>" placeholder="z. B. Vertrieb / Backoffice / Frontline">
+                    <input id="req_label_<?php echo $index; ?>" type="text" name="requirements[<?php echo $index; ?>][label]" value="<?php echo $esc((string) ($requirement['label'] ?? '')); ?>" placeholder="z. B. Vertrieb / Backoffice / Frontline" data-requirement-label>
                 </div>
                 <div class="m365lic-field">
                     <label for="req_qty_<?php echo $index; ?>">Anzahl Benutzer</label>
-                    <input id="req_qty_<?php echo $index; ?>" type="number" min="1" name="requirements[<?php echo $index; ?>][quantity]" value="<?php echo (int) ($requirement['quantity'] ?? 1); ?>">
+                    <input id="req_qty_<?php echo $index; ?>" type="number" min="1" name="requirements[<?php echo $index; ?>][quantity]" value="<?php echo (int) ($requirement['quantity'] ?? 1); ?>" data-requirement-quantity>
                 </div>
                 <div class="m365lic-field">
                     <label for="req_audience_<?php echo $index; ?>">Zielgruppe</label>
-                    <select id="req_audience_<?php echo $index; ?>" name="requirements[<?php echo $index; ?>][audience]">
+                    <select id="req_audience_<?php echo $index; ?>" name="requirements[<?php echo $index; ?>][audience]" data-requirement-audience>
                         <option value="knowledge" <?php echo ($requirement['audience'] ?? 'knowledge') === 'knowledge' ? 'selected' : ''; ?>>Knowledge Worker</option>
                         <option value="frontline" <?php echo ($requirement['audience'] ?? '') === 'frontline' ? 'selected' : ''; ?>>Frontline / Kiosk</option>
                     </select>
@@ -142,7 +187,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
 
             <div class="m365lic-field">
                 <label for="req_preset_<?php echo $index; ?>">Preset</label>
-                <select id="req_preset_<?php echo $index; ?>" class="m365lic-preset-select" name="requirements[<?php echo $index; ?>][preset]">
+                <select id="req_preset_<?php echo $index; ?>" class="m365lic-preset-select" name="requirements[<?php echo $index; ?>][preset]" data-requirement-preset>
                     <option value="">— frei konfigurieren —</option>
                     <?php foreach ($presets as $presetKey => $preset): ?>
                     <option value="<?php echo $esc($presetKey); ?>" <?php echo ($requirement['preset'] ?? '') === $presetKey ? 'selected' : ''; ?>><?php echo $esc((string) $preset['label']); ?></option>
@@ -310,7 +355,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
             <div class="m365lic-alert m365lic-alert--error">❌ <?php echo $esc($error); ?></div>
             <?php endif; ?>
 
-            <div class="m365lic-layout m365lic-layout--stacked">
+            <div class="m365lic-layout m365lic-layout--stacked<?php echo !$hasPublicSidebarContent ? ' m365lic-layout--single-column' : ''; ?>">
                 <section class="m365lic-card m365lic-card--intro">
                     <div class="m365lic-card__head">
                         <div>
@@ -378,6 +423,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     </form>
                 </section>
 
+                <?php if ($hasPublicSidebarContent): ?>
                 <aside class="m365lic-aside m365lic-aside--stacked<?php echo $stickySidebar ? ' m365lic-aside--sticky-enabled' : ''; ?>">
                     <?php if ($showContextSummary): ?>
                     <div class="m365lic-card<?php echo $stickySidebar ? ' m365lic-card--sticky' : ''; ?>">
@@ -437,6 +483,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     </div>
                     <?php endif; ?>
                 </aside>
+                <?php endif; ?>
             </div>
         </div>
     </section>
@@ -476,8 +523,14 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     <?php foreach (($evaluation['rows'] ?? []) as $row): ?>
                     <article class="m365lic-result-row">
                         <div class="m365lic-result-row__head">
-                            <h3><?php echo $esc((string) ($row['label'] ?? 'Bedarf')); ?></h3>
-                            <span class="m365lic-total-chip">Anzahl: <?php echo (int) ($row['quantity'] ?? 0); ?></span>
+                            <div>
+                                <h3><?php echo $esc((string) ($row['label'] ?? 'Bedarf')); ?></h3>
+                                <div class="m365lic-result-row__meta">
+                                    <span class="m365lic-total-chip">Anzahl: <?php echo (int) ($row['quantity'] ?? 0); ?></span>
+                                    <span class="m365lic-total-chip"><?php echo $esc((string) (($row['audience'] ?? 'knowledge') === 'frontline' ? 'Frontline / Kiosk' : 'Knowledge Worker')); ?></span>
+                                    <span class="m365lic-total-chip">Monat: <?php echo ($row['row_total'] ?? null) !== null ? $formatMoney($row['row_total']) : 'teilweise offen'; ?></span>
+                                </div>
+                            </div>
                         </div>
                         <p class="m365lic-result-row__explanation"><?php echo $esc((string) ($row['explanation'] ?? '')); ?></p>
                         <?php if (!empty($row['items'])): ?>
@@ -498,9 +551,13 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                                         <td>
                                             <strong><?php echo $esc((string) ($item['name'] ?? '')); ?></strong>
                                             <div class="m365lic-muted"><?php echo $esc((string) ($item['pricing_basis_label'] ?? 'pro Benutzer')); ?> · <?php echo $esc((string) ($item['billing_cycle_label'] ?? '')); ?></div>
+                                            <?php if (!empty($item['description'])): ?>
+                                            <div class="m365lic-muted"><?php echo $esc((string) $item['description']); ?></div>
+                                            <?php endif; ?>
                                             <?php if (!empty($settings['show_source_notes']) && !empty($item['source_note'])): ?>
                                             <div class="m365lic-muted"><?php echo $esc((string) $item['source_note']); ?></div>
                                             <?php endif; ?>
+                                            <?php $renderLicenseFeatures($item); ?>
                                         </td>
                                         <td><?php echo $esc((string) ($item['type_label'] ?? '')); ?></td>
                                         <td><?php echo $esc((string) ($item['quantity_label'] ?? '')); ?></td>
@@ -516,33 +573,49 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     <?php endforeach; ?>
                 </div>
 
-                <div class="users-table-container">
-                    <table class="m365lic-table">
-                        <thead>
-                            <tr>
-                                <th>SKU</th>
-                                <th>Typ</th>
-                                <th>Abrechnung</th>
-                                <th>Einzelpreis</th>
-                                <th>Gesamtsumme</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach (($evaluation['totals'] ?? []) as $item): ?>
-                            <tr>
-                                <td>
-                                    <strong><?php echo $esc((string) ($item['name'] ?? '')); ?></strong>
-                                    <div class="m365lic-muted"><?php echo $esc((string) ($item['pricing_basis_label'] ?? 'pro Benutzer')); ?> · <?php echo $esc((string) ($item['billing_cycle_label'] ?? '')); ?></div>
-                                </td>
-                                <td><?php echo $esc((string) ($item['type_label'] ?? '')); ?></td>
-                                <td><?php echo $esc((string) ($item['quantity_label'] ?? '')); ?></td>
-                                <td><?php echo $formatMoney($item['unit_price'] ?? null); ?></td>
-                                <td><?php echo $formatMoney($item['line_total'] ?? null); ?></td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
+                <section class="m365lic-sku-summary">
+                    <div class="m365lic-sku-summary__head">
+                        <div>
+                            <h3>SKU-Gesamtsumme</h3>
+                            <p>Konsolidierte Lizenzübersicht aller empfohlenen SKUs im aktuellen Modell.</p>
+                        </div>
+                    </div>
+
+                    <div class="m365lic-sku-summary__table-wrap users-table-container">
+                        <table class="m365lic-table m365lic-table--sku-summary">
+                            <thead>
+                                <tr>
+                                    <th>Anzahl</th>
+                                    <th>Lizenz</th>
+                                    <th>Kosten einzel</th>
+                                    <th>Kosten gesamt</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach (($evaluation['totals'] ?? []) as $item): ?>
+                                <tr>
+                                    <td>
+                                        <strong><?php echo (int) ($item['billing_quantity'] ?? $item['quantity'] ?? 0); ?></strong>
+                                        <div class="m365lic-muted"><?php echo $esc((string) ($item['quantity_label'] ?? '')); ?></div>
+                                    </td>
+                                    <td>
+                                        <strong><?php echo $esc((string) ($item['name'] ?? '')); ?></strong>
+                                        <div class="m365lic-muted"><?php echo $esc((string) ($item['type_label'] ?? 'Lizenz')); ?> · <?php echo $esc((string) ($item['pricing_basis_label'] ?? 'pro Benutzer')); ?></div>
+                                        <div class="m365lic-muted"><?php echo $esc((string) ($item['billing_cycle_label'] ?? '')); ?></div>
+                                    </td>
+                                    <td><?php echo $formatMoney($item['unit_price'] ?? null); ?></td>
+                                    <td><?php echo $formatMoney($item['line_total'] ?? null); ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="m365lic-sku-summary__footer">
+                        <span>Gesamtkosten alle</span>
+                        <strong><?php echo ($evaluation['grand_total'] ?? null) !== null ? $formatMoney($evaluation['grand_total']) : 'teilweise offen'; ?></strong>
+                    </div>
+                </section>
 
                 <?php if (!empty($evaluation['has_missing_prices']) && !empty($settings['show_missing_price_hint'])): ?>
                 <div class="m365lic-alert m365lic-alert--warning">

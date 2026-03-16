@@ -62,7 +62,7 @@
 
 **Registriert in:** `CMS_Feed_Cron::__construct()` (Priorität 20)  
 **Callback:** `CMS_Feed_Cron::process_queue()`  
-**Beschreibung:** Verarbeitet ausstehende Fetch-Queue-Tasks (max. 5 Kanäle pro Durchlauf). Wird von Bulk-Fetch-Aktionen befüllt, wenn mehr als 5 Kanäle gleichzeitig abgerufen werden sollen. Räumt alte erledigte Tasks (> 7 Tage) automatisch auf.
+**Beschreibung:** Verarbeitet ausstehende Fetch-Queue-Tasks (max. 5 Kanäle pro Durchlauf). Priorisiert bei aktivem `cms-phinit` die auf der Startseite ausgewählten Feed-Kanäle, reiht zusätzlich alle regulär fälligen Kanäle ein und bereinigt nicht hervorgehobene Beiträge älter als 7 Tage automatisch.
 
 ---
 

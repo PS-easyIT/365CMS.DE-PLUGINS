@@ -80,11 +80,7 @@ final class CMS_M365LIC_Frontend
             'icon' => '🧮',
             'category' => 'plugins',
             'priority' => 35,
-            'dashboard_widget' => [
-                'title' => 'M365 Lizenzberater',
-                'description' => 'Lizenzanalyse mit Member-Konditionen für eingeloggte Nutzer.',
-                'color' => '#2563eb',
-            ],
+            'dashboard_widget' => false,
             'render_callback' => function (object $user, array $params): void {
                 $this->render_calculator('GET', self::SCOPE_MEMBER, true);
             },
@@ -104,11 +100,7 @@ final class CMS_M365LIC_Frontend
             'icon' => '🔐',
             'category' => 'plugins',
             'priority' => 36,
-            'dashboard_widget' => [
-                'title' => 'M365 Spezialpreise',
-                'description' => 'Geschützter Bereich für Spezialgruppen- und Rahmenkonditionen.',
-                'color' => '#7c3aed',
-            ],
+            'dashboard_widget' => false,
             'render_callback' => function (object $user, array $params): void {
                 $this->render_calculator('GET', self::SCOPE_SPECIAL, true);
             },
@@ -369,7 +361,7 @@ final class CMS_M365LIC_Frontend
                 'scope' => self::SCOPE_MEMBER,
                 'embedded' => $embedded,
                 'title' => 'Microsoft 365 Lizenzberater',
-                'intro' => 'Geschützter Member-Bereich mit Mitgliedskonditionen für deine Microsoft-365-Bedarfsanalyse.',
+                'intro' => 'Microsoft 365 Lizenzberater – findet in wenigen Schritten die passende Lizenz für deinen Bedarf.',
                 'summary_label' => 'Mitgliederpreise',
                 'billing_label' => (string) ($billingContext['label'] ?? ''),
             ],

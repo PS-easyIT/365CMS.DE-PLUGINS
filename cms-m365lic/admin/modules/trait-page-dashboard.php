@@ -141,11 +141,12 @@ trait CMS_M365LIC_Page_Dashboard_Trait
                         </thead>
                         <tbody>
                             <?php foreach ($packages as $package): ?>
+                            <?php $effectivePrices = self::repo()->get_effective_price_map($package); ?>
                             <tr>
                                 <td><?php echo self::esc((string) $package['name']); ?></td>
                                 <td><?php echo self::esc((string) $package['kind']); ?></td>
                                 <td><?php echo self::esc((string) (($package['pricing_basis'] ?? 'per_user') === 'flat_monthly' ? 'Fixpreis' : 'pro Benutzer')); ?></td>
-                                <td><?php echo $package['public_price'] !== null ? self::esc(number_format((float) $package['public_price'], 2, ',', '.')) . ' €' : '—'; ?></td>
+                                <td><?php echo ($effectivePrices['public_price']['value'] ?? null) !== null ? self::esc(number_format((float) $effectivePrices['public_price']['value'], 2, ',', '.')) . ' €' : '—'; ?></td>
                                 <td>
                                     <a href="?page=m365lic-packages&edit=<?php echo (int) $package['id']; ?>" class="btn btn-secondary btn-sm">✏️ Bearbeiten</a>
                                 </td>

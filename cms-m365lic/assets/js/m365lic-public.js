@@ -63,7 +63,7 @@
         }
 
         const preset = presets[presetKey];
-        const audienceSelect = row.querySelector('select[name$="[audience]"]');
+        const audienceSelect = row.querySelector('[data-requirement-audience]');
         if (audienceSelect && preset.audience) {
             audienceSelect.value = preset.audience;
         }
@@ -130,10 +130,10 @@
     function collectRequirements(container) {
         return Array.from(container.querySelectorAll('.m365lic-requirement')).map((row) => {
             const checkedFeatures = Array.from(row.querySelectorAll('input[type="checkbox"][data-feature]:checked')).map((checkbox) => checkbox.dataset.feature);
-            const labelInput = row.querySelector('input[name$="[label]"]');
-            const quantityInput = row.querySelector('input[name$="[quantity]"]');
-            const audienceSelect = row.querySelector('select[name$="[audience]"]');
-            const presetSelect = row.querySelector('select[name$="[preset]"]');
+            const labelInput = row.querySelector('[data-requirement-label]');
+            const quantityInput = row.querySelector('[data-requirement-quantity]');
+            const audienceSelect = row.querySelector('[data-requirement-audience]');
+            const presetSelect = row.querySelector('[data-requirement-preset]');
             const parsedQuantity = quantityInput ? Number.parseInt(quantityInput.value, 10) : 1;
             const quantity = Number.isFinite(parsedQuantity) && parsedQuantity > 0 ? parsedQuantity : 1;
 
@@ -153,7 +153,11 @@
 
     function compactRequirementInputs(container) {
         container.querySelectorAll('[name]').forEach((element) => {
-            if (element.name && element.name.indexOf('requirements[') === 0) {
+            if (
+                element.name
+                && element.name.indexOf('requirements[') === 0
+                && element.matches('input[type="checkbox"][data-feature]')
+            ) {
                 element.dataset.originalName = element.name;
                 element.removeAttribute('name');
             }

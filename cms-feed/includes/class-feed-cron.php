@@ -23,6 +23,8 @@ final class CMS_Feed_Cron
 
     /** Max. Kanäle pro Cron-Durchlauf */
     private const BATCH_SIZE = 5;
+    private const AUTO_CLEANUP_DAYS = 7;
+    private const HOMEPAGE_THEME_SLUG = 'cms-phinit';
 
     public static function instance(): self
     {
@@ -55,9 +57,11 @@ final class CMS_Feed_Cron
             'success'   => 0,
             'failed'    => 0,
             'new_items' => 0,
+            'cleaned_up' => 0,
         ];
 
-        $result['queued'] = $fetcher->enqueue_due_channels();
+        $result['queued'] += $db->add_to_fetch_queue($this->get_priority_channel_ids());
+        $result['queued'] += $fetcher->enqueue_due_channels();
 
         // Ausstehende Tasks holen (max. BATCH_SIZE)
         $tasks = $db->get_pending_queue_tasks(self::BATCH_SIZE);
@@ -65,6 +69,7 @@ final class CMS_Feed_Cron
         if (empty($tasks)) {
             // Nebenbei alte Einträge aufräumen
             $db->cleanup_queue(7);
+            $result['cleaned_up'] = $db->cleanup_old_items(self::AUTO_CLEANUP_DAYS);
             return $result;
         }
 
@@ -99,8 +104,58 @@ final class CMS_Feed_Cron
 
         // Alte erledigte Einträge aufräumen (älter als 7 Tage)
         $db->cleanup_queue(7);
+        $result['cleaned_up'] = $db->cleanup_old_items(self::AUTO_CLEANUP_DAYS);
 
         return $result;
+    }
+
+    /**
+     * Bevorzugte Kanäle aus der aktiven cms-phinit-Startseite laden.
+     *
+     * Diese Kanäle werden bei jedem stündlichen Cron-Lauf erneut geprüft,
+     * damit die Homepage-Feeds frischer sind als "irgendwann bei nächster Gelegenheit".
+     *
+     * @return array<int>
+     */
+    private function get_priority_channel_ids(): array
+    {
+        if (!class_exists('\CMS\Services\ThemeCustomizer')) {
+            return [];
+        }
+
+        try {
+            $customizer = \CMS\Services\ThemeCustomizer::instance();
+            if ($customizer->getTheme() !== self::HOMEPAGE_THEME_SLUG) {
+                return [];
+            }
+
+            $showFeeds = filter_var($customizer->get('homepage', 'show_feed_section', true), FILTER_VALIDATE_BOOLEAN);
+            if (!$showFeeds) {
+                return [];
+            }
+
+            $candidateIds = array_values(array_unique(array_filter([
+                (int) $customizer->get('homepage', 'feed1_channel_id', 0),
+                (int) $customizer->get('homepage', 'feed2_channel_id', 0),
+            ], static fn (int $channelId): bool => $channelId > 0)));
+
+            if ($candidateIds === []) {
+                return [];
+            }
+
+            $db = CMS_Feed_Database::instance();
+
+            return array_values(array_filter(
+                $candidateIds,
+                static function (int $channelId) use ($db): bool {
+                    $channel = $db->get_channel($channelId);
+                    return is_array($channel) && !empty($channel['is_active']);
+                }
+            ));
+        } catch (\Throwable $e) {
+            error_log('CMS Feed Cron: Homepage-Feed-Priorisierung fehlgeschlagen – ' . $e->getMessage());
+            return [];
+        }
     }
 
     /**

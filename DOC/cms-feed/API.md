@@ -283,20 +283,22 @@ Bereits vorhandene Feeds (gleiche `feed_url` in beliebigem Bereich) werden über
 **Pattern:** Singleton  
 **Seit:** 1.2.0
 
-Verarbeitet die Fetch-Queue im Hintergrund via `cms_cron_hourly`. Holt pro Durchlauf max. 5 ausstehende Tasks und führt den RSS-Abruf durch.
+Verarbeitet die Fetch-Queue im Hintergrund via `cms_cron_hourly`. Priorisiert dabei die `cms-phinit`-Homepage-Kanäle, reiht zusätzlich alle fälligen Kanäle ein und bereinigt Beiträge älter als 7 Tage.
 
 | Methode | Beschreibung |
 |---------|-------------|
-| `process_queue(): array` | Queue-Tasks verarbeiten (max. 5 pro Durchlauf) |
+| `process_queue(): array` | Queue-Tasks verarbeiten (max. 5 pro Durchlauf), Homepage-Kanäle priorisieren und 7-Tage-Cleanup ausführen |
 | `get_status(): array` | Aktuelle Queue-Statistiken abrufen |
 
 **Rückgabe von `process_queue()`:**
 ```php
 [
+    'queued'     => int,  // Neu eingereihte Kanäle (Homepage + regulär fällige)
     'processed' => int,  // Verarbeitete Tasks
     'success'   => int,  // Erfolgreich abgerufene Kanäle
     'failed'    => int,  // Fehlgeschlagene Abrufe
     'new_items' => int,  // Insgesamt neu importierte Beiträge
+    'cleaned_up' => int, // Automatisch gelöschte Beiträge älter als 7 Tage
 ]
 ```
 

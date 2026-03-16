@@ -432,7 +432,7 @@ final class CMS_Feed_Admin
 
     private function handle_cleanup_post(): array
     {
-        $days = max(7, min(365, (int) ($_POST['cleanup_days'] ?? 90)));
+        $days = max(7, min(365, (int) ($_POST['cleanup_days'] ?? 7)));
         $deleted = CMS_Feed_Database::instance()->cleanup_old_items($days);
 
         return ['notice' => $deleted . ' alte Beiträge gelöscht.'];

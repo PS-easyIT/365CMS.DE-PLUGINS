@@ -8,7 +8,7 @@
 ## 🔴 Hohe Priorität
 
 ### 1. Cron-Integration vervollständigen
-- [ ] Automatischer Feed-Abruf via `cms_cron_hourly` Hook sicherstellen
+- [x] Automatischer Feed-Abruf via `cms_cron_hourly` Hook sicherstellen
 - [ ] Konfigurierbare Abruf-Intervalle pro Kanal (aktuell nur `fetch_interval` in DB, aber Cron nutzt feste Stunde)
 - [ ] Admin-Dashboard: Nächster geplanter Abruf anzeigen
 - [ ] Fehler-Benachrichtigung per E-Mail bei X aufeinanderfolgenden Fehlern

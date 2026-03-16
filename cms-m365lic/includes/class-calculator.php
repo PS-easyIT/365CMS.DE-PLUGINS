@@ -429,6 +429,7 @@ final class CMS_M365LIC_Calculator
     private static function build_item(array $package, int $quantity, ?float $basePrice, string $pricingTier, array $billingContext, string $typeLabel): array
     {
         $repo = CMS_M365LIC_Repository::instance();
+        $featureDefinitions = CMS_M365LIC_Catalog::feature_definitions();
         $pricingBasis = (string) ($package['pricing_basis'] ?? 'per_user');
         $adjustedPrice = $repo->apply_billing_cycle($basePrice, (string) ($billingContext['key'] ?? 'annual_upfront'));
         $billingQuantity = $pricingBasis === 'flat_monthly' ? 1 : $quantity;
@@ -454,6 +455,7 @@ final class CMS_M365LIC_Calculator
             'pricing_note' => (string) ($package['pricing_note'] ?? ''),
             'source_note' => (string) ($package['source_note'] ?? ''),
             'description' => (string) ($package['description'] ?? ''),
+            'feature_details' => self::build_feature_details($package, $featureDefinitions),
         ];
     }
 
@@ -482,6 +484,8 @@ final class CMS_M365LIC_Calculator
                 'billing_cycle_label' => (string) ($billingContext['label'] ?? '1 Jahr · jährliche Zahlung'),
                 'pricing_note' => (string) ($package['pricing_note'] ?? ''),
                 'source_note' => (string) ($package['source_note'] ?? ''),
+                'description' => (string) ($package['description'] ?? ''),
+                'feature_details' => $item['feature_details'] ?? [],
             ];
         }
 
@@ -553,6 +557,47 @@ final class CMS_M365LIC_Calculator
         }
 
         return implode(' ', $parts);
+    }
+
+    /**
+     * @param array<string,mixed> $package
+     * @param array<string,array<string,mixed>> $definitions
+     * @return array<int,array<string,string>>
+     */
+    private static function build_feature_details(array $package, array $definitions): array
+    {
+        $details = [];
+
+        foreach (array_values(array_map('strval', $package['features'] ?? [])) as $featureKey) {
+            $definition = $definitions[$featureKey] ?? [];
+            $group = (string) ($definition['group'] ?? 'general');
+            $details[] = [
+                'key' => $featureKey,
+                'label' => (string) ($definition['label'] ?? $featureKey),
+                'description' => (string) ($definition['description'] ?? ''),
+                'group' => $group,
+                'group_label' => self::humanize_feature_group($group),
+            ];
+        }
+
+        return $details;
+    }
+
+    private static function humanize_feature_group(string $group): string
+    {
+        return match ($group) {
+            'core' => 'Basis',
+            'collaboration' => 'Zusammenarbeit',
+            'security' => 'Security',
+            'security-addon' => 'Security Add-on',
+            'addons' => 'Add-ons',
+            'identity' => 'Identität',
+            'worker' => 'Frontline',
+            'copilot' => 'Copilot',
+            'productivity' => 'Produktivität',
+            'power-platform' => 'Power Platform',
+            default => ucwords(str_replace(['-', '_'], ' ', $group)),
+        };
     }
 
     /**

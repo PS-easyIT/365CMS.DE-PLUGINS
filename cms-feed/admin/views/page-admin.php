@@ -180,7 +180,7 @@ if ($tab === 'dashboard'):
             <a href="?tab=settings" class="btn btn-secondary btn-sm">⚙️ Einstellungen</a>
             <form method="POST" style="display:inline;">
                 <input type="hidden" name="action" value="cleanup">
-                <input type="hidden" name="cleanup_days" value="90">
+                <input type="hidden" name="cleanup_days" value="7">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
                 <button type="submit" class="btn btn-secondary btn-sm">🧹 Alte Beiträge aufräumen</button>
             </form>
@@ -1051,9 +1051,9 @@ elseif ($tab === 'settings'):
         <div class="feed-inline-actions">
             <form method="POST" style="display:inline-block;margin-right:.5rem;">
                 <input type="hidden" name="action" value="cleanup">
-                <input type="hidden" name="cleanup_days" value="90">
+                <input type="hidden" name="cleanup_days" value="7">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
-                <button type="submit" class="btn btn-secondary">🧹 Beiträge älter 90 Tage entfernen</button>
+                <button type="submit" class="btn btn-secondary">🧹 Beiträge älter 7 Tage entfernen</button>
             </form>
             <form method="POST" style="display:inline-block;">
                 <input type="hidden" name="action" value="cleanup">

@@ -1,4 +1,137 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const priceInputs = Array.from(document.querySelectorAll('[data-m365lic-price-input]'));
+    const priceFeedback = document.querySelector('[data-m365lic-copy-price-feedback]');
+    const priceCopyButton = document.querySelector('[data-m365lic-copy-price]');
+    const areaLabels = {
+        public_price: 'Public',
+        member_price: 'Member',
+        group_price: 'Spezial',
+    };
+
+    const normalizePriceValue = (value) => value.trim().replace(',', '.');
+
+    const getFirstFilledPriceField = (excludeField = '') => {
+        for (const input of priceInputs) {
+            const field = input.getAttribute('data-m365lic-price-input') ?? '';
+            if (field === excludeField) {
+                continue;
+            }
+
+            if (normalizePriceValue(input.value) !== '') {
+                return field;
+            }
+        }
+
+        return '';
+    };
+
+    const getStatusMeta = (field) => {
+        const currentInput = priceInputs.find((input) => input.getAttribute('data-m365lic-price-input') === field);
+        const currentValue = currentInput ? normalizePriceValue(currentInput.value) : '';
+
+        if (currentValue !== '') {
+            return {
+                type: 'direct',
+                label: 'direkt gepflegt',
+                detail: `Eigener Preis für ${areaLabels[field] ?? 'diesen Bereich'}.`,
+            };
+        }
+
+        const sourceField = getFirstFilledPriceField(field);
+        if (sourceField !== '') {
+            return {
+                type: 'inherited',
+                label: 'geerbt',
+                detail: `Verwendet aktuell den Preis aus ${areaLabels[sourceField] ?? 'einem anderen Bereich'}.`,
+            };
+        }
+
+        return {
+            type: 'empty',
+            label: 'kein Preis',
+            detail: 'Noch kein Preis hinterlegt.',
+        };
+    };
+
+    const updatePriceStatuses = () => {
+        priceInputs.forEach((input) => {
+            const field = input.getAttribute('data-m365lic-price-input') ?? '';
+            if (field === '') {
+                return;
+            }
+
+            const statusNode = document.querySelector(`[data-m365lic-price-status="${field}"]`);
+            if (!statusNode) {
+                return;
+            }
+
+            const badge = statusNode.querySelector('[data-m365lic-price-badge]');
+            const text = statusNode.querySelector('[data-m365lic-price-text]');
+            const status = getStatusMeta(field);
+
+            if (badge) {
+                badge.textContent = status.label;
+                badge.classList.remove('m365lic-status-pill--direct', 'm365lic-status-pill--inherited', 'm365lic-status-pill--empty');
+                badge.classList.add(`m365lic-status-pill--${status.type}`);
+            }
+
+            if (text) {
+                text.textContent = status.detail;
+            }
+        });
+
+        if (priceCopyButton instanceof HTMLButtonElement) {
+            priceCopyButton.disabled = getFirstFilledPriceField() === '';
+        }
+    };
+
+    const setPriceFeedback = (message) => {
+        if (priceFeedback) {
+            priceFeedback.textContent = message;
+        }
+    };
+
+    if (priceInputs.length > 0) {
+        priceInputs.forEach((input) => {
+            input.addEventListener('input', () => {
+                setPriceFeedback('');
+                updatePriceStatuses();
+            });
+        });
+
+        updatePriceStatuses();
+    }
+
+    if (priceCopyButton instanceof HTMLButtonElement) {
+        priceCopyButton.addEventListener('click', () => {
+            const activeField = document.activeElement instanceof HTMLElement
+                ? document.activeElement.getAttribute('data-m365lic-price-input') ?? ''
+                : '';
+            const activeInput = activeField !== ''
+                ? priceInputs.find((input) => input.getAttribute('data-m365lic-price-input') === activeField)
+                : null;
+            const sourceInput = activeInput && normalizePriceValue(activeInput.value) !== ''
+                ? activeInput
+                : priceInputs.find((input) => normalizePriceValue(input.value) !== '') ?? null;
+
+            if (!sourceInput) {
+                setPriceFeedback('Bitte zuerst einen Preis eintragen.');
+                updatePriceStatuses();
+                return;
+            }
+
+            const sourceField = sourceInput.getAttribute('data-m365lic-price-input') ?? '';
+            const sourceValue = sourceInput.value;
+
+            priceInputs.forEach((input) => {
+                input.value = sourceValue;
+            });
+
+            setPriceFeedback(`Preis aus ${areaLabels[sourceField] ?? 'dem aktiven Bereich'} in alle Bereiche übernommen.`);
+            updatePriceStatuses();
+        });
+    }
+
     const openModal = (modalId) => {
         const modal = document.getElementById(modalId);
         if (!modal) {

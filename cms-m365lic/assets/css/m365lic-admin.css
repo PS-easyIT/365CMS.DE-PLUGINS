@@ -201,6 +201,97 @@
     font-size: 0.85rem;
 }
 
+.m365lic-inline-head--pricing {
+    align-items: flex-end;
+    margin-bottom: 1rem;
+}
+
+.m365lic-inline-head--pricing .m365lic-section-kicker {
+    margin-bottom: 0.3rem;
+}
+
+.m365lic-inline-head--pricing .m365lic-help-text {
+    margin: 0;
+}
+
+.m365lic-price-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+}
+
+.m365lic-price-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.45rem;
+}
+
+.m365lic-price-status__text {
+    color: #64748b;
+    font-size: 0.82rem;
+}
+
+.m365lic-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.26rem 0.62rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.m365lic-status-pill--direct {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #86efac;
+}
+
+.m365lic-status-pill--inherited {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border-color: #93c5fd;
+}
+
+.m365lic-status-pill--empty {
+    background: #f1f5f9;
+    color: #475569;
+    border-color: #cbd5e1;
+}
+
+.m365lic-effective-price-list {
+    display: grid;
+    gap: 0.55rem;
+    margin-top: 0.75rem;
+}
+
+.m365lic-effective-price-row,
+.m365lic-price-stack__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.m365lic-price-stack__meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.m365lic-price-stack__meta small {
+    color: #64748b;
+    font-size: 0.78rem;
+}
+
 .m365lic-search-form {
     min-width: min(280px, 100%);
 }
@@ -295,5 +386,9 @@
     .m365lic-form-grid--2,
     .m365lic-feature-grid {
         grid-template-columns: 1fr;
+    }
+
+    .m365lic-price-actions {
+        align-items: stretch;
     }
 }
