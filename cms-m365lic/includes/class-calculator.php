@@ -299,9 +299,7 @@ final class CMS_M365LIC_Calculator
      */
     private static function estimate_package_total(array $package, int $quantity, string $pricingTier, string $billingCycle, ?array $pricingProfile = null): float
     {
-        $repo = CMS_M365LIC_Repository::instance();
-        $basePrice = $repo->get_price_for_package($package, $pricingTier, $pricingProfile, false);
-        $adjustedPrice = $repo->apply_billing_cycle($basePrice, $billingCycle);
+        $adjustedPrice = self::get_cached_billed_price($package, $pricingTier, $billingCycle, $pricingProfile);
         if ($adjustedPrice === null) {
             return 999999.0;
         }
@@ -378,7 +376,6 @@ final class CMS_M365LIC_Calculator
      */
     private static function find_matching_addons(array $packages, array $addonFeatures, ?array $basePackage, string $pricingTier, string $billingCycle, ?array $pricingProfile = null): array
     {
-        $repo = CMS_M365LIC_Repository::instance();
         $selected = [];
         $basePackageFeatures = array_values(array_map('strval', $basePackage['features'] ?? []));
 
@@ -410,9 +407,9 @@ final class CMS_M365LIC_Calculator
                 continue;
             }
 
-            usort($matching, function (array $left, array $right) use ($repo, $pricingTier, $billingCycle, $pricingProfile): int {
-                $leftPrice = $repo->apply_billing_cycle($repo->get_price_for_package($left, $pricingTier, $pricingProfile, false), $billingCycle) ?? 999999.0;
-                $rightPrice = $repo->apply_billing_cycle($repo->get_price_for_package($right, $pricingTier, $pricingProfile, false), $billingCycle) ?? 999999.0;
+            usort($matching, function (array $left, array $right) use ($pricingTier, $billingCycle, $pricingProfile): int {
+                $leftPrice = self::get_cached_billed_price($left, $pricingTier, $billingCycle, $pricingProfile) ?? 999999.0;
+                $rightPrice = self::get_cached_billed_price($right, $pricingTier, $billingCycle, $pricingProfile) ?? 999999.0;
                 if ($leftPrice === $rightPrice) {
                     return strcmp((string) $left['name'], (string) $right['name']);
                 }
@@ -630,5 +627,26 @@ final class CMS_M365LIC_Calculator
         return array_values(array_map(static function (string $feature) use ($definitions): string {
             return (string) ($definitions[$feature]['label'] ?? $feature);
         }, $features));
+    }
+
+    private static function get_cached_billed_price(array $package, string $pricingTier, string $billingCycle, ?array $pricingProfile = null): ?float
+    {
+        static $cache = [];
+
+        $cacheKey = implode('|', [
+            (string) ($package['slug'] ?? ''),
+            $pricingTier,
+            $billingCycle,
+            md5((string) json_encode($pricingProfile, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR)),
+        ]);
+
+        if (array_key_exists($cacheKey, $cache)) {
+            return $cache[$cacheKey];
+        }
+
+        $repo = CMS_M365LIC_Repository::instance();
+        $basePrice = $repo->get_price_for_package($package, $pricingTier, $pricingProfile, false);
+
+        return $cache[$cacheKey] = $repo->apply_billing_cycle($basePrice, $billingCycle);
     }
 }

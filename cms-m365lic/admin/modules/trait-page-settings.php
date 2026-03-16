@@ -114,12 +114,8 @@ trait CMS_M365LIC_Page_Settings_Trait
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" name="allow_member_self_service" value="1" <?php echo !empty($settings['allow_member_self_service']) ? 'checked' : ''; ?>>
-                            Mitglieder dürfen eigene EK-, Aufschlags- und Whitelabel-Einstellungen pflegen
-                        </label>
-                        <small class="m365lic-help-text">Wenn deaktiviert, bleibt die Preis- und Branding-Steuerung vollständig im Adminbereich.</small>
+                    <div class="alert m365lic-alert-info">
+                        ℹ️ Die persönlichen Member-Einstellungen für EK, Aufschläge, Logo und Report-Texte sind immer pro eingeloggtem Benutzer verfügbar – auch bei Spezialgruppen- oder Reseller-Zuweisung. Die Daten bleiben dabei strikt benutzerbezogen gespeichert.
                     </div>
 
                     <h3>💳 Default Abrechnung je Bereich</h3>
@@ -313,7 +309,7 @@ trait CMS_M365LIC_Page_Settings_Trait
                         <div class="info-card">
                             <h4>Admin-Kontrolle</h4>
                             <ul class="info-list">
-                                <li><strong>Mitglieder-Selbstservice:</strong> <?php echo !empty($settings['allow_member_self_service']) ? 'aktiv' : 'deaktiviert'; ?></li>
+                                <li><strong>Member-Einstellungen:</strong> immer aktiv · pro Benutzer getrennt</li>
                                 <li><strong>Spezialgruppen:</strong> <?php echo (int) ($stats['special_groups_total'] ?? 0); ?></li>
                                 <li><strong>Spezialbenutzer:</strong> <?php echo (int) ($stats['special_users_total'] ?? 0); ?></li>
                                 <li><strong>Profile mit EK/Branding:</strong> <?php echo (int) ($systemInfo['user_profiles_count'] ?? 0); ?></li>
@@ -483,7 +479,7 @@ trait CMS_M365LIC_Page_Settings_Trait
                 'default_currency' => 'EUR',
                 'default_group_key' => trim((string) ($_POST['default_group_key'] ?? ($settings['default_group_key'] ?? 'partner'))),
                 'default_group_label' => trim((string) ($_POST['default_group_label'] ?? ($settings['default_group_label'] ?? 'Partner / Spezialgruppe'))),
-                'allow_member_self_service' => !empty($_POST['allow_member_self_service']) ? '1' : '0',
+                'allow_member_self_service' => '1',
                 'public_default_billing_cycle' => $this->normalize_billing_cycle((string) ($_POST['public_default_billing_cycle'] ?? ($settings['public_default_billing_cycle'] ?? 'annual_upfront')), $billingOptions, 'annual_upfront'),
                 'member_default_billing_cycle' => $this->normalize_billing_cycle((string) ($_POST['member_default_billing_cycle'] ?? ($settings['member_default_billing_cycle'] ?? 'annual_monthly')), $billingOptions, 'annual_monthly'),
                 'group_default_billing_cycle' => $this->normalize_billing_cycle((string) ($_POST['group_default_billing_cycle'] ?? ($settings['group_default_billing_cycle'] ?? 'annual_monthly')), $billingOptions, 'annual_monthly'),

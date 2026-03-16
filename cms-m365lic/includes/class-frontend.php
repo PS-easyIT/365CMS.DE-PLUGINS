@@ -94,10 +94,6 @@ final class CMS_M365LIC_Frontend
             },
         ]);
 
-        if ($hasSpecialAccess) {
-            return;
-        }
-
         $registry->register([
             'plugin' => 'cms-m365lic',
             'slug' => self::MEMBER_SETTINGS_SECTION_SLUG,
@@ -405,7 +401,7 @@ final class CMS_M365LIC_Frontend
                 'intro' => 'Geschützter Spezialbereich für Rahmenkonditionen, Partnerpreise und individuelle Gruppenmodelle.',
                 'summary_label' => (string) ($pricingContext['label'] ?? $settings['default_group_label'] ?? 'Spezialpreise'),
                 'billing_label' => (string) ($billingContext['label'] ?? ''),
-                'settings_url' => '',
+                'settings_url' => $settingsUrl,
                 'user_pricing_profile' => $userPricingProfile,
                 'special_user' => $pricingContext['special_user'] ?? null,
             ],
@@ -484,13 +480,6 @@ final class CMS_M365LIC_Frontend
         return in_array((string) $variant, [self::EXPORT_VARIANT_STANDARD, self::EXPORT_VARIANT_WHITELABEL, self::EXPORT_VARIANT_PARTNER], true)
             ? (string) $variant
             : self::EXPORT_VARIANT_STANDARD;
-    }
-
-    private function is_member_self_service_enabled(): bool
-    {
-        $settings = CMS_M365LIC_Repository::instance()->get_settings();
-
-        return !empty($settings['allow_member_self_service']);
     }
 
     private function normalize_logo_path(string $logoPath): string

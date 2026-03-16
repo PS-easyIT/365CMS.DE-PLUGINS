@@ -15,6 +15,16 @@ $esc = static fn(?string $value): string => htmlspecialchars((string) ($value ??
 $repo = CMS_M365LIC_Repository::instance();
 $costOverrides = is_array($profile['cost_overrides'] ?? null) ? $profile['cost_overrides'] : [];
 $settingsUrl = '/member/plugin/m365-license-settings';
+$defaultEkMap = [];
+
+foreach ($packages as $package) {
+    $packageId = (int) ($package['id'] ?? 0);
+    if ($packageId <= 0) {
+        continue;
+    }
+
+    $defaultEkMap[$packageId] = $repo->get_price_for_package($package, 'member', null, false);
+}
 ?>
 <div class="m365lic-main m365lic-main--embedded">
     <section class="m365lic-section">
@@ -116,8 +126,9 @@ $settingsUrl = '/member/plugin/m365-license-settings';
                                     </thead>
                                     <tbody>
                                         <?php foreach ($packages as $package): ?>
-                                        <?php $defaultEk = $repo->get_price_for_package($package, 'member', null, false); ?>
-                                        <?php $overrideEk = $costOverrides[(int) ($package['id'] ?? 0)] ?? null; ?>
+                                        <?php $packageId = (int) ($package['id'] ?? 0); ?>
+                                        <?php $defaultEk = $defaultEkMap[$packageId] ?? null; ?>
+                                        <?php $overrideEk = $costOverrides[$packageId] ?? null; ?>
                                         <tr>
                                             <td>
                                                 <strong><?php echo $esc((string) ($package['name'] ?? '')); ?></strong>
@@ -126,7 +137,7 @@ $settingsUrl = '/member/plugin/m365-license-settings';
                                             <td><?php echo $esc((string) (($package['kind'] ?? 'base') === 'addon' ? 'Add-on' : 'Basislizenz')); ?></td>
                                             <td><?php echo $defaultEk !== null ? $esc(number_format((float) $defaultEk, 2, ',', '.')) . ' €' : 'offen'; ?></td>
                                             <td>
-                                                <input class="m365lic-ek-input" type="number" step="0.01" min="0" name="ek_prices[<?php echo (int) ($package['id'] ?? 0); ?>]" value="<?php echo $overrideEk !== null ? $esc(number_format((float) $overrideEk, 2, '.', '')) : ''; ?>" placeholder="z. B. 11.50">
+                                                <input class="m365lic-ek-input" type="number" step="0.01" min="0" name="ek_prices[<?php echo $packageId; ?>]" value="<?php echo $overrideEk !== null ? $esc(number_format((float) $overrideEk, 2, '.', '')) : ''; ?>" placeholder="z. B. 11.50">
                                             </td>
                                         </tr>
                                         <?php endforeach; ?>
