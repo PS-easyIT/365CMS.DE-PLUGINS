@@ -36,6 +36,32 @@ final class CMS_M365LIC_Admin_Pages
     {
     }
 
+    protected static function load_admin_menu(): void
+    {
+        $menuFile = ABSPATH . 'admin/partials/admin-menu.php';
+        if (file_exists($menuFile) && !function_exists('renderAdminLayoutStart')) {
+            require_once $menuFile;
+        }
+    }
+
+    protected static function render_with_layout(string $title, string $slug, callable $renderer): void
+    {
+        self::check_access();
+        self::load_admin_menu();
+
+        if (function_exists('renderAdminLayoutStart')) {
+            renderAdminLayoutStart($title, $slug);
+        }
+
+        self::enqueue_admin_assets();
+        self::enqueue_admin_scripts();
+        $renderer();
+
+        if (function_exists('renderAdminLayoutEnd')) {
+            renderAdminLayoutEnd();
+        }
+    }
+
     protected static function check_access(): void
     {
         if (!class_exists('CMS\\Auth') || !\CMS\Auth::instance()->isAdmin()) {
@@ -57,6 +83,22 @@ final class CMS_M365LIC_Admin_Pages
             echo '<link rel="stylesheet" href="'
                 . htmlspecialchars(CMS_M365LIC_PLUGIN_URL . 'assets/css/m365lic-admin.css', ENT_QUOTES, 'UTF-8')
                 . '?v=' . filemtime($css) . '">' . "\n";
+        }
+    }
+
+    protected static function enqueue_admin_scripts(): void
+    {
+        static $loaded = false;
+        if ($loaded) {
+            return;
+        }
+        $loaded = true;
+
+        $js = CMS_M365LIC_PLUGIN_DIR . 'assets/js/m365lic-admin.js';
+        if (file_exists($js)) {
+            echo '<script src="'
+                . htmlspecialchars(CMS_M365LIC_PLUGIN_URL . 'assets/js/m365lic-admin.js', ENT_QUOTES, 'UTF-8')
+                . '?v=' . filemtime($js) . '" defer></script>' . "\n";
         }
     }
 
@@ -94,29 +136,29 @@ final class CMS_M365LIC_Admin_Pages
 
     public static function render_dashboard(): void
     {
-        self::check_access();
-        self::enqueue_admin_assets();
-        self::instance()->render_dashboard_page();
+        self::render_with_layout('M365 Lizenzberater', 'm365lic-dashboard', static function (): void {
+            self::instance()->render_dashboard_page();
+        });
     }
 
     public static function render_packages(): void
     {
-        self::check_access();
-        self::enqueue_admin_assets();
-        self::instance()->render_packages_page();
+        self::render_with_layout('M365 Lizenz-Pakete', 'm365lic-packages', static function (): void {
+            self::instance()->render_packages_page();
+        });
     }
 
     public static function render_settings(): void
     {
-        self::check_access();
-        self::enqueue_admin_assets();
-        self::instance()->render_settings_page();
+        self::render_with_layout('M365 Lizenz-Einstellungen', 'm365lic-settings', static function (): void {
+            self::instance()->render_settings_page();
+        });
     }
 
     public static function render_special_users(): void
     {
-        self::check_access();
-        self::enqueue_admin_assets();
-        self::instance()->render_special_users_page();
+        self::render_with_layout('M365 Spezial-User', 'm365lic-special-users', static function (): void {
+            self::instance()->render_special_users_page();
+        });
     }
 }

@@ -134,10 +134,16 @@
             const quantityInput = row.querySelector('input[name$="[quantity]"]');
             const audienceSelect = row.querySelector('select[name$="[audience]"]');
             const presetSelect = row.querySelector('select[name$="[preset]"]');
+            const parsedQuantity = quantityInput ? Number.parseInt(quantityInput.value, 10) : 1;
+            const quantity = Number.isFinite(parsedQuantity) && parsedQuantity > 0 ? parsedQuantity : 1;
+
+            if (quantityInput) {
+                quantityInput.value = String(quantity);
+            }
 
             return {
                 label: labelInput ? labelInput.value : '',
-                quantity: quantityInput ? quantityInput.value : '1',
+                quantity: quantity,
                 audience: audienceSelect ? audienceSelect.value : 'knowledge',
                 preset: presetSelect ? presetSelect.value : '',
                 features: checkedFeatures

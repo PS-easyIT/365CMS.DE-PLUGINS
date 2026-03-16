@@ -14,9 +14,11 @@ if (!defined('ABSPATH')) {
 final class CMS_M365LIC_Calculator
 {
     private const ADDON_FEATURES = [
+        'intune',
         'phone_system',
         'audio_conf',
         'power_bi',
+        'power_apps',
         'visio',
         'project',
         'planner',
@@ -24,11 +26,17 @@ final class CMS_M365LIC_Calculator
         'teams_premium',
         'entra_id_p1',
         'entra_id_p2',
+        'entra_governance',
+        'entra_suite',
+        'intune_device',
+        'exchange_protection',
         'defender_business',
         'defender_office_p1',
         'defender_office_p2',
         'defender_endpoint_p1',
         'defender_endpoint_p2',
+        'defender_identity',
+        'defender_cloud_apps',
         'copilot_chat',
         'copilot_m365',
         'copilot_studio',
@@ -44,6 +52,7 @@ final class CMS_M365LIC_Calculator
     {
         $basePackages = array_values(array_filter($packages, static fn(array $pkg): bool => !empty($pkg['is_active']) && ($pkg['kind'] ?? '') === 'base'));
         $addonPackages = array_values(array_filter($packages, static fn(array $pkg): bool => !empty($pkg['is_active']) && ($pkg['kind'] ?? '') === 'addon'));
+        $featureDefinitions = CMS_M365LIC_Catalog::feature_definitions();
         $repo = CMS_M365LIC_Repository::instance();
         $billingContext = $repo->resolve_billing_cycle($billingCycle, $pricingTier);
 
@@ -59,11 +68,22 @@ final class CMS_M365LIC_Calculator
             $features = array_values(array_unique(array_filter(array_map('strval', $row['features'] ?? []))));
             $audience = (string) ($row['audience'] ?? 'knowledge');
 
-            $baseFeatureSet = array_values(array_filter($features, static fn(string $feature): bool => !in_array($feature, self::ADDON_FEATURES, true)));
-            $addonFeatureSet = array_values(array_filter($features, static fn(string $feature): bool => in_array($feature, self::ADDON_FEATURES, true)));
+            $baseFeatureSet = array_values(array_filter($features, static fn(string $feature): bool => !self::is_addon_feature($feature, $featureDefinitions)));
+            $addonFeatureSet = array_values(array_filter($features, static fn(string $feature): bool => self::is_addon_feature($feature, $featureDefinitions)));
 
-            $chosenBase = self::find_best_base_package($basePackages, $baseFeatureSet, $audience, $pricingTier, $billingCycle);
-            $addons = self::find_matching_addons($addonPackages, $addonFeatureSet, $chosenBase, $pricingTier, $billingCycle);
+            $bundle = self::select_recommendation_bundle(
+                $basePackages,
+                $addonPackages,
+                $features,
+                $baseFeatureSet,
+                $addonFeatureSet,
+                $audience,
+                $quantity,
+                $pricingTier,
+                $billingCycle
+            );
+            $chosenBase = $bundle['base'];
+            $addons = $bundle['addons'];
             $rowItems = [];
             $rowTotal = 0.0;
             $rowHasMissingPrice = false;
@@ -139,6 +159,167 @@ final class CMS_M365LIC_Calculator
     }
 
     /**
+     * @param array<int,array<string,mixed>> $basePackages
+     * @param array<int,array<string,mixed>> $addonPackages
+     * @param array<int,string> $features
+     * @param array<int,string> $baseFeatureSet
+     * @param array<int,string> $addonFeatureSet
+     * @return array{base: array<string,mixed>|null, addons: array<int,array<string,mixed>>}
+     */
+    private static function select_recommendation_bundle(
+        array $basePackages,
+        array $addonPackages,
+        array $features,
+        array $baseFeatureSet,
+        array $addonFeatureSet,
+        string $audience,
+        int $quantity,
+        string $pricingTier,
+        string $billingCycle
+    ): array {
+        $candidates = [];
+
+        foreach ($basePackages as $package) {
+            $packageFeatures = array_values(array_map('strval', $package['features'] ?? []));
+            if ($baseFeatureSet !== [] && array_diff($baseFeatureSet, $packageFeatures) !== []) {
+                continue;
+            }
+
+            $addons = self::find_matching_addons($addonPackages, $addonFeatureSet, $package, $pricingTier, $billingCycle);
+            if (!self::covers_requested_addon_features($addonFeatureSet, $package, $addons)) {
+                continue;
+            }
+
+            $candidates[] = [
+                'base' => $package,
+                'addons' => $addons,
+                'score' => self::score_bundle($package, $addons, $features, $audience, $quantity, $pricingTier, $billingCycle),
+            ];
+        }
+
+        if ($baseFeatureSet === []) {
+            $addonsWithoutBase = self::find_matching_addons($addonPackages, $addonFeatureSet, null, $pricingTier, $billingCycle);
+            if (self::covers_requested_addon_features($addonFeatureSet, null, $addonsWithoutBase)) {
+                $candidates[] = [
+                    'base' => null,
+                    'addons' => $addonsWithoutBase,
+                    'score' => self::score_bundle(null, $addonsWithoutBase, $features, $audience, $quantity, $pricingTier, $billingCycle),
+                ];
+            }
+        }
+
+        if ($candidates === []) {
+            return [
+                'base' => null,
+                'addons' => [],
+            ];
+        }
+
+        usort($candidates, static fn(array $left, array $right): int => $left['score'] <=> $right['score']);
+
+        return [
+            'base' => $candidates[0]['base'],
+            'addons' => $candidates[0]['addons'],
+        ];
+    }
+
+    /**
+     * @param array<int,string> $requestedAddonFeatures
+     * @param array<int,array<string,mixed>> $addons
+     */
+    private static function covers_requested_addon_features(array $requestedAddonFeatures, ?array $basePackage, array $addons): bool
+    {
+        if ($requestedAddonFeatures === []) {
+            return true;
+        }
+
+        $covered = [];
+
+        if ($basePackage !== null) {
+            foreach (array_values(array_map('strval', $basePackage['features'] ?? [])) as $feature) {
+                if (in_array($feature, $requestedAddonFeatures, true)) {
+                    $covered[$feature] = true;
+                }
+            }
+        }
+
+        foreach ($addons as $addon) {
+            foreach (array_values(array_map('strval', $addon['features'] ?? [])) as $feature) {
+                if (in_array($feature, $requestedAddonFeatures, true)) {
+                    $covered[$feature] = true;
+                }
+            }
+        }
+
+        return array_diff($requestedAddonFeatures, array_keys($covered)) === [];
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $addons
+     * @param array<int,string> $requestedFeatures
+     */
+    private static function score_bundle(?array $basePackage, array $addons, array $requestedFeatures, string $audience, int $quantity, string $pricingTier, string $billingCycle): float
+    {
+        $repo = CMS_M365LIC_Repository::instance();
+        $bundleCost = 0.0;
+        $extraCount = 0;
+        $sortOrder = 0;
+        $audiencePenalty = 0;
+
+        if ($basePackage !== null) {
+            $bundleCost += self::estimate_package_total($basePackage, $quantity, $pricingTier, $billingCycle);
+            $packageFeatures = array_values(array_map('strval', $basePackage['features'] ?? []));
+            $extraCount += count(array_diff($packageFeatures, $requestedFeatures));
+            $sortOrder += (int) ($basePackage['sort_order'] ?? 0);
+
+            if ($audience === 'frontline' && !in_array((string) ($basePackage['audience'] ?? ''), ['frontline', 'all'], true)) {
+                $audiencePenalty = 5000;
+            }
+            if ($audience === 'knowledge' && (string) ($basePackage['audience'] ?? '') === 'frontline') {
+                $audiencePenalty = 10000;
+            }
+        }
+
+        foreach ($addons as $addon) {
+            $bundleCost += self::estimate_package_total($addon, $quantity, $pricingTier, $billingCycle);
+            $addonFeatures = array_values(array_map('strval', $addon['features'] ?? []));
+            $extraCount += count(array_diff($addonFeatures, $requestedFeatures));
+            $sortOrder += (int) ($addon['sort_order'] ?? 0);
+        }
+
+        return ($bundleCost * 1000) + ($extraCount * 10) + $audiencePenalty + ($sortOrder / 1000);
+    }
+
+    /**
+     * @param array<string,mixed> $package
+     */
+    private static function estimate_package_total(array $package, int $quantity, string $pricingTier, string $billingCycle): float
+    {
+        $repo = CMS_M365LIC_Repository::instance();
+        $basePrice = $repo->get_price_for_package($package, $pricingTier);
+        $adjustedPrice = $repo->apply_billing_cycle($basePrice, $billingCycle);
+        if ($adjustedPrice === null) {
+            return 999999.0;
+        }
+
+        return ((string) ($package['pricing_basis'] ?? 'per_user')) === 'flat_monthly'
+            ? $adjustedPrice
+            : ($adjustedPrice * $quantity);
+    }
+
+    /**
+     * @param array<string,array<string,mixed>> $featureDefinitions
+     */
+    private static function is_addon_feature(string $feature, array $featureDefinitions): bool
+    {
+        if (isset($featureDefinitions[$feature]['base'])) {
+            return empty($featureDefinitions[$feature]['base']);
+        }
+
+        return in_array($feature, self::ADDON_FEATURES, true);
+    }
+
+    /**
      * @param array<int,array<string,mixed>> $packages
      * @param array<int,string> $requiredFeatures
      * @return array<string,mixed>|null
@@ -195,8 +376,13 @@ final class CMS_M365LIC_Calculator
     {
         $repo = CMS_M365LIC_Repository::instance();
         $selected = [];
+        $basePackageFeatures = array_values(array_map('strval', $basePackage['features'] ?? []));
 
         foreach ($addonFeatures as $feature) {
+            if ($basePackage !== null && in_array($feature, $basePackageFeatures, true)) {
+                continue;
+            }
+
             $matching = array_values(array_filter($packages, function (array $package) use ($feature, $basePackage): bool {
                 $packageFeatures = array_values(array_map('strval', $package['features'] ?? []));
                 if (!in_array($feature, $packageFeatures, true)) {
@@ -322,9 +508,13 @@ final class CMS_M365LIC_Calculator
     {
         $featureDefinitions = CMS_M365LIC_Catalog::feature_definitions();
         $parts = [];
+        $coveredAddonFeatures = [];
 
         if ($basePackage !== null) {
             $parts[] = 'Basis: ' . $basePackage['name'] . ' deckt ' . implode(', ', self::feature_labels($baseFeatures, $featureDefinitions)) . ' ab.';
+
+            $basePackageFeatures = array_values(array_map('strval', $basePackage['features'] ?? []));
+            $coveredAddonFeatures = array_values(array_intersect($addonFeatures, $basePackageFeatures));
 
             if (in_array('terminalserver', $baseFeatures, true)) {
                 $baseTags = array_values(array_map('strval', $basePackage['tags'] ?? []));
@@ -338,8 +528,24 @@ final class CMS_M365LIC_Calculator
 
         if (!empty($addons)) {
             $parts[] = 'Add-ons: ' . implode(', ', array_map(static fn(array $addon): string => (string) $addon['name'], $addons)) . '.';
-        } elseif (!empty($addonFeatures)) {
-            $parts[] = 'Für einzelne Zusatzfunktionen (' . implode(', ', self::feature_labels($addonFeatures, $featureDefinitions)) . ') wurden keine kompatiblen aktiven Add-ons gefunden.';
+        }
+
+        if (!empty($coveredAddonFeatures)) {
+            $parts[] = 'Bereits enthalten in der Basislizenz: ' . implode(', ', self::feature_labels($coveredAddonFeatures, $featureDefinitions)) . '.';
+        }
+
+        $addonNames = [];
+        foreach ($addons as $addon) {
+            foreach (array_values(array_map('strval', $addon['features'] ?? [])) as $feature) {
+                if (in_array($feature, $addonFeatures, true)) {
+                    $addonNames[$feature] = true;
+                }
+            }
+        }
+
+        $uncoveredAddonFeatures = array_values(array_diff($addonFeatures, $coveredAddonFeatures, array_keys($addonNames)));
+        if (!empty($uncoveredAddonFeatures)) {
+            $parts[] = 'Für einzelne Zusatzfunktionen (' . implode(', ', self::feature_labels($uncoveredAddonFeatures, $featureDefinitions)) . ') wurden keine kompatiblen aktiven Add-ons gefunden.';
         }
 
         if (empty($parts)) {

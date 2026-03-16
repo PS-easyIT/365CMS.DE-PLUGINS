@@ -123,9 +123,9 @@ trait CMS_M365LIC_Page_Dashboard_Trait
                 </div>
             <?php if (empty($packages)): ?>
                 <div class="empty-state">
-                    <p style="font-size:2.5rem;margin:0;">📭</p>
+                    <p class="m365lic-empty-state__icon">📭</p>
                     <p><strong>Keine Pakete gefunden</strong></p>
-                    <p style="color:#64748b;font-size:.875rem;">Bitte den Seed-Katalog in der Paketverwaltung neu aufbauen.</p>
+                    <p class="m365lic-empty-state__text">Bitte den Seed-Katalog in der Paketverwaltung neu aufbauen.</p>
                 </div>
             <?php else: ?>
                 <div class="users-table-container">

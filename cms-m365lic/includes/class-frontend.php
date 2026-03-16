@@ -412,6 +412,7 @@ final class CMS_M365LIC_Frontend
      */
     private function normalize_requirements(array $requirements): array
     {
+        $validFeatures = array_fill_keys(array_keys(CMS_M365LIC_Catalog::feature_definitions()), true);
         $normalized = [];
         foreach ($requirements as $requirement) {
             if (!is_array($requirement)) {
@@ -423,17 +424,23 @@ final class CMS_M365LIC_Frontend
             if (is_array($rawFeatures)) {
                 foreach ($rawFeatures as $key => $value) {
                     if (is_int($key)) {
-                        $features[] = (string) $value;
+                        $featureKey = (string) $value;
+                        if (isset($validFeatures[$featureKey])) {
+                            $features[] = $featureKey;
+                        }
                         continue;
                     }
                     if (!empty($value)) {
-                        $features[] = (string) $key;
+                        $featureKey = (string) $key;
+                        if (isset($validFeatures[$featureKey])) {
+                            $features[] = $featureKey;
+                        }
                     }
                 }
             }
 
             $features = array_values(array_unique(array_filter(array_map('strval', $features))));
-            $label = trim((string) ($requirement['label'] ?? ''));
+            $label = mb_substr(trim((string) ($requirement['label'] ?? '')), 0, 120);
             $normalized[] = [
                 'quantity' => max(1, (int) ($requirement['quantity'] ?? 1)),
                 'label' => $label !== '' ? $label : 'Bedarfsgruppe',

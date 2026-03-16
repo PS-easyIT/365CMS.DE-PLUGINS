@@ -14,6 +14,13 @@ if (!defined('ABSPATH')) {
 final class CMS_M365LIC_Repository
 {
     private static ?self $instance = null;
+    private const PACKAGE_SELECT_COLUMNS = 'id, slug, name, kind, category, audience, pricing_basis, description, features_json, tags_json, prerequisite_tags_json, public_price, member_price, group_price, currency, pricing_note, source_note, is_active, sort_order';
+
+    /** @var array<string,string>|null */
+    private ?array $settingsCache = null;
+
+    /** @var array<string,array<int,array<string,mixed>>> */
+    private array $packagesCache = [];
 
     public static function instance(): self
     {
@@ -44,6 +51,10 @@ final class CMS_M365LIC_Repository
      */
     public function get_settings(): array
     {
+        if ($this->settingsCache !== null) {
+            return $this->settingsCache;
+        }
+
         $defaults = CMS_M365LIC_Catalog::default_settings();
 
         try {
@@ -58,6 +69,8 @@ final class CMS_M365LIC_Repository
         }
 
         $defaults['default_currency'] = $this->normalize_currency($defaults['default_currency'] ?? 'EUR');
+
+        $this->settingsCache = $defaults;
 
         return $defaults;
     }
@@ -75,6 +88,8 @@ final class CMS_M365LIC_Repository
         foreach ($settings as $key => $value) {
             $stmt->execute([$key, $value]);
         }
+
+        $this->settingsCache = null;
     }
 
     /**
@@ -82,7 +97,12 @@ final class CMS_M365LIC_Repository
      */
     public function get_packages(bool $includeInactive = true): array
     {
-        $sql = "SELECT * FROM {$this->prefix()}m365lic_packages";
+        $cacheKey = $includeInactive ? 'all' : 'active';
+        if (isset($this->packagesCache[$cacheKey])) {
+            return $this->packagesCache[$cacheKey];
+        }
+
+        $sql = 'SELECT ' . self::PACKAGE_SELECT_COLUMNS . " FROM {$this->prefix()}m365lic_packages";
         $params = [];
 
         if (!$includeInactive) {
@@ -95,7 +115,9 @@ final class CMS_M365LIC_Repository
         $stmt->execute($params);
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
 
-        return array_map([$this, 'hydrate_package'], $rows);
+        $this->packagesCache[$cacheKey] = array_map([$this, 'hydrate_package'], $rows);
+
+        return $this->packagesCache[$cacheKey];
     }
 
     /**
@@ -103,7 +125,7 @@ final class CMS_M365LIC_Repository
      */
     public function get_package(int $id): ?array
     {
-        $stmt = $this->db()->prepare("SELECT * FROM {$this->prefix()}m365lic_packages WHERE id = ? LIMIT 1");
+        $stmt = $this->db()->prepare('SELECT ' . self::PACKAGE_SELECT_COLUMNS . " FROM {$this->prefix()}m365lic_packages WHERE id = ? LIMIT 1");
         $stmt->execute([$id]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
@@ -115,7 +137,15 @@ final class CMS_M365LIC_Repository
      */
     public function get_package_by_slug(string $slug): ?array
     {
-        $stmt = $this->db()->prepare("SELECT * FROM {$this->prefix()}m365lic_packages WHERE slug = ? LIMIT 1");
+        foreach ($this->packagesCache as $packages) {
+            foreach ($packages as $package) {
+                if (($package['slug'] ?? '') === $slug) {
+                    return $package;
+                }
+            }
+        }
+
+        $stmt = $this->db()->prepare('SELECT ' . self::PACKAGE_SELECT_COLUMNS . " FROM {$this->prefix()}m365lic_packages WHERE slug = ? LIMIT 1");
         $stmt->execute([$slug]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
 
@@ -160,6 +190,7 @@ final class CMS_M365LIC_Repository
             $params = array_values($record);
             $params[] = $id;
             $this->db()->prepare($sql)->execute($params);
+            $this->packagesCache = [];
             return;
         }
 
@@ -168,11 +199,13 @@ final class CMS_M365LIC_Repository
                  public_price, member_price, group_price, currency, pricing_note, source_note, is_active, sort_order)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $this->db()->prepare($sql)->execute(array_values($record));
+        $this->packagesCache = [];
     }
 
     public function reset_catalog_to_defaults(): void
     {
         $this->pdo()->exec("TRUNCATE TABLE {$this->prefix()}m365lic_packages");
+        $this->packagesCache = [];
         $this->seed_defaults(true);
     }
 
@@ -181,7 +214,7 @@ final class CMS_M365LIC_Repository
         $settings = CMS_M365LIC_Catalog::default_settings();
         $sqlSetting = "INSERT INTO {$this->prefix()}m365lic_settings (setting_key, setting_value)
                        VALUES (?, ?)
-                       ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)";
+                       ON DUPLICATE KEY UPDATE setting_value = setting_value";
         $stmtSetting = $this->db()->prepare($sqlSetting);
         foreach ($settings as $key => $value) {
             $stmtSetting->execute([$key, $value]);
@@ -189,6 +222,7 @@ final class CMS_M365LIC_Repository
 
         if ($force) {
             $this->pdo()->exec("TRUNCATE TABLE {$this->prefix()}m365lic_packages");
+            $this->packagesCache = [];
         }
 
         foreach (CMS_M365LIC_Catalog::package_seeds() as $package) {

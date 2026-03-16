@@ -78,9 +78,9 @@ trait CMS_M365LIC_Page_Special_Users_Trait
 
                 <?php if (empty($assignedUsers)): ?>
                     <div class="empty-state">
-                        <p style="font-size:2.5rem;margin:0;">🕵️</p>
+                        <p class="m365lic-empty-state__icon">🕵️</p>
                         <p><strong>Noch keine Spezial-User zugewiesen</strong></p>
-                        <p style="color:#64748b;font-size:.875rem;">Sobald du unten einen Benutzer speicherst, erscheint hier der geschützte Spezialzugang.</p>
+                        <p class="m365lic-empty-state__text">Sobald du unten einen Benutzer speicherst, erscheint hier der geschützte Spezialzugang.</p>
                     </div>
                 <?php else: ?>
                     <div class="users-table-container">
@@ -112,12 +112,13 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                                         </span>
                                     </td>
                                     <td>
-                                        <form method="POST" class="m365lic-inline-form">
-                                            <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
-                                            <input type="hidden" name="action" value="remove_special_user">
-                                            <input type="hidden" name="user_id" value="<?php echo (int) ($user['user_id'] ?? 0); ?>">
-                                            <button type="submit" class="btn btn-danger btn-sm">Entfernen</button>
-                                        </form>
+                                        <button
+                                            type="button"
+                                            class="btn btn-danger btn-sm"
+                                            data-m365lic-open-modal="m365licRemoveSpecialUserModal"
+                                            data-user-id="<?php echo (int) ($user['user_id'] ?? 0); ?>"
+                                            data-user-name="<?php echo self::esc((string) (($user['display_name'] ?? '') !== '' ? $user['display_name'] : $user['username'])); ?>"
+                                        >Entfernen</button>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -142,6 +143,13 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                 <p class="m365lic-help-text">Normale Mitglieder sehen nur die Member-Seite. Ein hier aktivierter Benutzer erhält zusätzlich die Spezial-Seite mit Gruppenlabel und Spezialpreisen.</p>
 
                 <div class="m365lic-special-users-stack">
+                    <?php if (empty($candidates)): ?>
+                        <div class="empty-state">
+                            <p class="m365lic-empty-state__icon">🔎</p>
+                            <p><strong>Keine passenden Benutzer gefunden</strong></p>
+                            <p class="m365lic-empty-state__text">Passe die Suche an oder lege zuerst einen aktiven 365CMS-Benutzer an.</p>
+                        </div>
+                    <?php endif; ?>
                     <?php foreach ($candidates as $candidate): ?>
                         <?php
                         $displayName = trim((string) ($candidate['display_name'] ?? ''));
@@ -186,6 +194,28 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                             </div>
                         </form>
                     <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+
+        <div id="m365licRemoveSpecialUserModal" class="modal" style="display:none;">
+            <div class="modal-content m365lic-modal-content">
+                <div class="modal-header">
+                    <h3>🔐 Spezial-User entfernen</h3>
+                    <button type="button" class="modal-close" aria-label="Modal schließen" data-m365lic-close-modal="m365licRemoveSpecialUserModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Soll der Spezialzugang für <strong id="m365licRemoveSpecialUserName">diesen Benutzer</strong> wirklich entfernt werden?</p>
+                    <p class="m365lic-danger-note">⚠️ Der Benutzer verliert damit sofort den Spezial-Preis-Kontext im geschützten Bereich.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-m365lic-close-modal="m365licRemoveSpecialUserModal">Abbrechen</button>
+                    <form method="POST" id="m365licRemoveSpecialUserForm" class="m365lic-inline-form">
+                        <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                        <input type="hidden" name="action" value="remove_special_user">
+                        <input type="hidden" name="user_id" id="m365licRemoveSpecialUserId" value="0">
+                        <button type="submit" class="btn btn-danger">Entfernen</button>
+                    </form>
                 </div>
             </div>
         </div>

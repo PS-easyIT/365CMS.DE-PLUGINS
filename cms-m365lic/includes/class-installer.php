@@ -22,12 +22,15 @@ final class CMS_M365LIC_Installer
 
     public static function maybe_install(): void
     {
+        $schemaHealthy = self::required_tables_exist();
+
+        self::create_tables();
+
         $storedVersion = self::get_stored_version();
-        if ($storedVersion === CMS_M365LIC_DB_VERSION) {
+        if ($storedVersion === CMS_M365LIC_DB_VERSION && $schemaHealthy) {
             return;
         }
 
-        self::create_tables();
         CMS_M365LIC_Repository::instance()->seed_defaults(false);
         self::store_db_version(CMS_M365LIC_DB_VERSION);
     }
@@ -53,8 +56,13 @@ final class CMS_M365LIC_Installer
             $pdo->exec("DROP TABLE IF EXISTS {$p}{$table}");
         }
 
+        $columns = self::resolve_core_settings_columns();
+        if ($columns === null) {
+            return;
+        }
+
         try {
-            $stmt = $db->prepare("DELETE FROM {$p}settings WHERE setting_key = ?");
+            $stmt = $db->prepare("DELETE FROM {$columns['table']} WHERE {$columns['key']} = ?");
             $stmt->execute(['m365lic_db_version']);
         } catch (\Throwable $e) {
             // ignore
@@ -159,8 +167,13 @@ final class CMS_M365LIC_Installer
     private static function get_stored_version(): string
     {
         try {
-            $db   = \CMS\Database::instance();
-            $stmt = $db->prepare("SELECT setting_value FROM {$db->getPrefix()}settings WHERE setting_key = ?");
+            $db = \CMS\Database::instance();
+            $columns = self::resolve_core_settings_columns();
+            if ($columns === null) {
+                return '0';
+            }
+
+            $stmt = $db->prepare("SELECT {$columns['value']} FROM {$columns['table']} WHERE {$columns['key']} = ?");
             $stmt->execute(['m365lic_db_version']);
             return (string) ($stmt->fetchColumn() ?: '0');
         } catch (\Throwable $e) {
@@ -172,14 +185,94 @@ final class CMS_M365LIC_Installer
     {
         try {
             $db = \CMS\Database::instance();
-            $p  = $db->getPrefix();
+            $columns = self::resolve_core_settings_columns();
+            if ($columns === null) {
+                return;
+            }
+
             $db->prepare(
-                "INSERT INTO {$p}settings (setting_key, setting_value)
+                "INSERT INTO {$columns['table']} ({$columns['key']}, {$columns['value']})
                  VALUES (?, ?)
-                 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+                 ON DUPLICATE KEY UPDATE {$columns['value']} = VALUES({$columns['value']})"
             )->execute(['m365lic_db_version', $version]);
         } catch (\Throwable $e) {
             // ignore
+        }
+    }
+
+    private static function required_tables_exist(): bool
+    {
+        if (!class_exists('CMS\\Database')) {
+            return false;
+        }
+
+        try {
+            $db = \CMS\Database::instance();
+            $prefix = $db->getPrefix();
+            $tables = [
+                'm365lic_packages',
+                'm365lic_settings',
+                'm365lic_usage_limits',
+                'm365lic_special_users',
+            ];
+
+            foreach ($tables as $table) {
+                $stmt = $db->prepare('SHOW TABLES LIKE ?');
+                $stmt->execute([$prefix . $table]);
+
+                if (!$stmt->fetchColumn()) {
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /**
+     * @return array{table:string,key:string,value:string}|null
+     */
+    private static function resolve_core_settings_columns(): ?array
+    {
+        if (!class_exists('CMS\\Database')) {
+            return null;
+        }
+
+        try {
+            $db = \CMS\Database::instance();
+            $table = $db->getPrefix() . 'settings';
+
+            $tableStmt = $db->prepare('SHOW TABLES LIKE ?');
+            $tableStmt->execute([$table]);
+            if (!$tableStmt->fetchColumn()) {
+                return null;
+            }
+
+            $columnsStmt = $db->getPdo()->query("SHOW COLUMNS FROM {$table}");
+            $columns = $columnsStmt !== false
+                ? array_map(static fn(array $column): string => (string) ($column['Field'] ?? ''), $columnsStmt->fetchAll(\PDO::FETCH_ASSOC) ?: [])
+                : [];
+
+            $keyColumn = in_array('option_name', $columns, true)
+                ? 'option_name'
+                : (in_array('setting_key', $columns, true) ? 'setting_key' : null);
+            $valueColumn = in_array('option_value', $columns, true)
+                ? 'option_value'
+                : (in_array('setting_value', $columns, true) ? 'setting_value' : null);
+
+            if ($keyColumn === null || $valueColumn === null) {
+                return null;
+            }
+
+            return [
+                'table' => $table,
+                'key' => $keyColumn,
+                'value' => $valueColumn,
+            ];
+        } catch (\Throwable $e) {
+            return null;
         }
     }
 }

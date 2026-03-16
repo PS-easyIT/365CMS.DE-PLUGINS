@@ -241,11 +241,7 @@ trait CMS_M365LIC_Page_Packages_Trait
             <div class="admin-card">
                 <div class="m365lic-inline-head">
                     <h3>🧪 Seed-Katalog</h3>
-                    <form method="POST">
-                        <input type="hidden" name="action" value="reset_catalog">
-                        <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
-                        <button type="submit" class="btn btn-danger btn-sm">↺ Seed resetten</button>
-                    </form>
+                    <button type="button" class="btn btn-danger btn-sm" data-m365lic-open-modal="m365licResetCatalogModal">↺ Seed resetten</button>
                 </div>
                 <p class="m365lic-help-text">Setzt alle Pakete auf den mitgelieferten Katalog zurück. Manuell gepflegte Preise und Änderungen werden dadurch überschrieben.</p>
 
@@ -287,6 +283,27 @@ trait CMS_M365LIC_Page_Packages_Trait
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="m365licResetCatalogModal" class="modal" style="display:none;">
+            <div class="modal-content m365lic-modal-content">
+                <div class="modal-header">
+                    <h3>🗑️ Seed-Katalog zurücksetzen</h3>
+                    <button type="button" class="modal-close" aria-label="Modal schließen" data-m365lic-close-modal="m365licResetCatalogModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Der komplette Paketkatalog wird auf die Standardwerte zurückgesetzt.</p>
+                    <p class="m365lic-danger-note">⚠️ Manuell gepflegte Preise, Hinweise und Aktiv-Status können dabei überschrieben werden.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-m365lic-close-modal="m365licResetCatalogModal">Abbrechen</button>
+                    <form method="POST" class="m365lic-inline-form">
+                        <input type="hidden" name="action" value="reset_catalog">
+                        <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                        <button type="submit" class="btn btn-danger">↺ Jetzt zurücksetzen</button>
+                    </form>
                 </div>
             </div>
         </div>

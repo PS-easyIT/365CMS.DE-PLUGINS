@@ -25,6 +25,12 @@ $exportToken = class_exists('CMS\Security') ? \CMS\Security::instance()->generat
 $theme = \CMS\ThemeManager::instance();
 $isEmbedded = !empty($viewContext['embedded']);
 $introText = (string) ($viewContext['intro'] ?? $settings['page_intro'] ?? '');
+$showHeroPanel = !empty($settings['show_hero_panel']);
+$showHeroBadges = !empty($settings['show_hero_badges']);
+$showContextSummary = !empty($settings['show_context_summary']);
+$showAddonOverview = !empty($settings['show_addon_overview']);
+$showLegalCard = !empty($settings['show_legal_card']);
+$stickySidebar = !empty($settings['sticky_sidebar']);
 $stepOneFeatureKeys = ['mail', 'teams', 'office_web', 'office_desktop', 'terminalserver', 'onedrive', 'sharepoint', 'frontline'];
 $stepThreeFeatureKeys = array_values(array_filter(array_keys($featureDefinitions), static function (string $key) use ($featureDefinitions): bool {
     return empty($featureDefinitions[$key]['base']);
@@ -251,7 +257,20 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
     window.cmsM365LicPresets = <?php echo json_encode($presets, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 </script>
 
-<main class="m365lic-main<?php echo $isEmbedded ? ' m365lic-main--embedded' : ''; ?>">
+<style>
+:root {
+    --m365lic-primary: <?php echo $esc((string) ($settings['design_primary_color'] ?? '#2563eb')); ?>;
+    --m365lic-primary-dark: <?php echo $esc((string) ($settings['design_primary_dark'] ?? '#1d4ed8')); ?>;
+    --m365lic-hero-bg: <?php echo $esc((string) ($settings['design_accent_color'] ?? '#f3f7fd')); ?>;
+    --m365lic-bg: <?php echo $esc((string) ($settings['design_page_background'] ?? '#f8fafc')); ?>;
+    --m365lic-surface: <?php echo $esc((string) ($settings['design_surface_color'] ?? '#ffffff')); ?>;
+    --m365lic-text: <?php echo $esc((string) ($settings['design_text_color'] ?? '#0f172a')); ?>;
+    --m365lic-text-muted: <?php echo $esc((string) ($settings['design_text_muted_color'] ?? '#64748b')); ?>;
+    --m365lic-radius: <?php echo (int) ($settings['design_border_radius'] ?? 14); ?>px;
+}
+</style>
+
+<main class="m365lic-main m365lic-page<?php echo $isEmbedded ? ' m365lic-main--embedded' : ''; ?>">
     <header class="m365lic-hero">
         <div class="m365lic-container">
             <div class="m365lic-hero-grid">
@@ -259,12 +278,15 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     <span class="m365lic-eyebrow">Microsoft 365 · Lizenzplanung</span>
                     <h1><?php echo $esc($themeTitle); ?></h1>
                     <p><?php echo $esc($introText); ?></p>
+                    <?php if ($showHeroBadges): ?>
                     <div class="m365lic-hero-pills">
                         <span class="m365lic-pill">Preise in Euro</span>
                         <span class="m365lic-pill"><?php echo $esc((string) ($pricingContext['label'] ?? 'Öffentlich')); ?></span>
                         <span class="m365lic-pill"><?php echo $esc((string) ($selectedBilling['short_label'] ?? 'Jahr / jährlich')); ?></span>
                     </div>
+                    <?php endif; ?>
                 </div>
+                <?php if ($showHeroPanel): ?>
                 <div class="m365lic-hero-panel">
                     <div class="m365lic-hero-panel__kicker">Tech-Checks</div>
                     <ul class="m365lic-hero-list">
@@ -274,6 +296,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                         <li>Public-, Member- und Spezialpreise</li>
                     </ul>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
     </header>
@@ -355,8 +378,9 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     </form>
                 </section>
 
-                <aside class="m365lic-aside m365lic-aside--stacked">
-                    <div class="m365lic-card m365lic-card--sticky">
+                <aside class="m365lic-aside m365lic-aside--stacked<?php echo $stickySidebar ? ' m365lic-aside--sticky-enabled' : ''; ?>">
+                    <?php if ($showContextSummary): ?>
+                    <div class="m365lic-card<?php echo $stickySidebar ? ' m365lic-card--sticky' : ''; ?>">
                         <h2>Kontext</h2>
                         <div class="m365lic-kpi-grid">
                             <div class="m365lic-kpi-card">
@@ -384,6 +408,8 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                             <li><strong>Hinweis:</strong> Alle Werte werden direkt im Plugin als EUR-Basispreise geführt.</li>
                         </ul>
                     </div>
+                    <?php endif; ?>
+                    <?php if ($showLegalCard): ?>
                     <div class="m365lic-card">
                         <h2>Hinweise</h2>
                         <p><?php echo $esc((string) ($settings['legal_note'] ?? '')); ?></p>
@@ -391,6 +417,8 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                         <a href="<?php echo $esc((string) $settings['upgrade_url']); ?>" class="m365lic-btn m365lic-btn--ghost">Mehr Volumen / Beratung</a>
                         <?php endif; ?>
                     </div>
+                    <?php endif; ?>
+                    <?php if ($showAddonOverview): ?>
                     <div class="m365lic-card">
                         <h2>Add-on-Quick-Info</h2>
                         <ul class="m365lic-addon-overview" role="list">
@@ -407,6 +435,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                             <?php endforeach; ?>
                         </ul>
                     </div>
+                    <?php endif; ?>
                 </aside>
             </div>
         </div>
