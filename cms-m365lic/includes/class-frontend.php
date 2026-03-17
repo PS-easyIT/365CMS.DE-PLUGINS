@@ -19,6 +19,7 @@ final class CMS_M365LIC_Frontend
     private const MEMBER_SECTION_SLUG = 'm365-license';
     private const MEMBER_SETTINGS_SECTION_SLUG = 'm365-license-settings';
     private const SPECIAL_SECTION_SLUG = 'm365-license-special';
+    private const EU_COMPARE_SUFFIX = '/eu-vergleich';
     private const MAX_REQUIREMENT_ROWS = 25;
     private const EXPORT_VARIANT_STANDARD = 'standard';
     private const EXPORT_VARIANT_WHITELABEL = 'whitelabel';
@@ -59,6 +60,14 @@ final class CMS_M365LIC_Frontend
 
         $router->addRoute('POST', '/' . $slug, function (): void {
             $this->render_calculator('POST', self::SCOPE_PUBLIC, false);
+        });
+
+        $router->addRoute('GET', '/' . $slug . self::EU_COMPARE_SUFFIX, function (): void {
+            $this->render_eu_comparison('GET');
+        });
+
+        $router->addRoute('POST', '/' . $slug . self::EU_COMPARE_SUFFIX, function (): void {
+            $this->render_eu_comparison('POST');
         });
 
         $router->addRoute('POST', '/api/m365lic/export', function (): void {
@@ -124,6 +133,8 @@ final class CMS_M365LIC_Frontend
 
         $requirements = [$this->default_requirement_row()];
         $evaluation = null;
+        $alternativeOffers = [];
+        $showAlternatives = !empty($_POST['show_alternatives']);
         $notice = '';
         $error = '';
         $limitInfo = null;
@@ -163,6 +174,9 @@ final class CMS_M365LIC_Frontend
                             $userPricingProfile,
                             true
                         );
+                        if ($showAlternatives) {
+                            $alternativeOffers = $repo->get_alternative_offers_for_billing((string) ($selectedBilling['key'] ?? 'annual_upfront'));
+                        }
                         $notice = 'Die Auswertung wurde erfolgreich erstellt.';
                     }
                 }
@@ -181,6 +195,197 @@ final class CMS_M365LIC_Frontend
         if (!$embedded) {
             exit;
         }
+    }
+
+    private function render_eu_comparison(string $method): void
+    {
+        $repo = CMS_M365LIC_Repository::instance();
+        $settings = $repo->get_settings();
+        $billingOptions = CMS_M365LIC_Catalog::billing_options();
+        $planProfiles = CMS_M365LIC_Catalog::eu_comparison_plan_profiles();
+        $euCategories = CMS_M365LIC_Catalog::eu_comparison_categories();
+        $euOffers = CMS_M365LIC_Catalog::eu_comparison_offers();
+        $defaultSelection = CMS_M365LIC_Catalog::eu_comparison_default_selection();
+
+        $selectedPlanSlug = array_key_first($planProfiles) ?: 'm365-business-premium';
+        $selectedBilling = $repo->resolve_billing_cycle(null, 'public', $settings);
+        $strategy = 'best_of_breed';
+        $quantity = 25;
+        $selectedEuProviders = $defaultSelection;
+        $includedCategories = [];
+        $comparisonResult = null;
+        $notice = '';
+        $error = '';
+        $euPageTitle = 'EU-Vergleich · Microsoft 365 vs. europäische Anbieter';
+        $euPageIntro = 'Vergleiche typische Microsoft-365-Pläne mit europäischen All-in-One- oder Best-of-Breed-Stacks – inklusive Summen und Preisdelta.';
+
+        if ($method === 'POST') {
+            $selectedPlanSlug = isset($planProfiles[(string) ($_POST['m365_plan_slug'] ?? '')])
+                ? (string) $_POST['m365_plan_slug']
+                : $selectedPlanSlug;
+            $selectedBilling = $repo->resolve_billing_cycle((string) ($_POST['billing_cycle'] ?? ''), 'public', $settings);
+            $strategy = in_array((string) ($_POST['eu_strategy'] ?? 'best_of_breed'), ['all_in_one', 'best_of_breed'], true)
+                ? (string) $_POST['eu_strategy']
+                : 'best_of_breed';
+            $quantity = max(1, min(5000, (int) ($_POST['quantity'] ?? 25)));
+
+            $postedSelection = is_array($_POST['eu_selection'] ?? null) ? $_POST['eu_selection'] : [];
+            foreach ($defaultSelection as $categoryKey => $defaultSlug) {
+                $candidateSlug = trim((string) ($postedSelection[$categoryKey] ?? $defaultSlug));
+                $selectedEuProviders[$categoryKey] = $candidateSlug !== '' ? $candidateSlug : $defaultSlug;
+            }
+
+            $postedIncludes = is_array($_POST['eu_include'] ?? null) ? $_POST['eu_include'] : [];
+            foreach (array_keys($euCategories) as $categoryKey) {
+                $includedCategories[$categoryKey] = !empty($postedIncludes[$categoryKey]);
+            }
+        }
+
+        $planProfile = $planProfiles[$selectedPlanSlug] ?? reset($planProfiles);
+        if (!is_array($planProfile)) {
+            $planProfile = [
+                'label' => 'Microsoft 365 Business Premium',
+                'included_categories' => ['core_workspace', 'office_productivity', 'collaboration_intranet', 'security_device_management'],
+                'description' => '',
+            ];
+        }
+
+        foreach (array_keys($euCategories) as $categoryKey) {
+            if (!isset($includedCategories[$categoryKey])) {
+                $includedCategories[$categoryKey] = $categoryKey === 'core_workspace'
+                    || in_array($categoryKey, $planProfile['included_categories'] ?? [], true);
+            }
+        }
+
+        $m365Package = $repo->get_package_by_slug($selectedPlanSlug);
+        if ($m365Package === null) {
+            $error = 'Der gewählte Microsoft-365-Plan ist im Paketkatalog derzeit nicht aktiv verfügbar.';
+        } else {
+            $comparisonResult = $this->build_eu_comparison_result(
+                $m365Package,
+                $planProfile,
+                $selectedBilling,
+                $quantity,
+                $strategy,
+                $euCategories,
+                $euOffers,
+                $selectedEuProviders,
+                $includedCategories
+            );
+
+            if ($comparisonResult['m365']['line_total'] === null) {
+                $error = 'Für den gewählten M365-Plan fehlt aktuell ein gepflegter Preis im Public-Kontext.';
+            } else {
+                $notice = 'Der EU-Vergleich wurde erfolgreich erstellt.';
+            }
+        }
+
+        $this->set_seo($euPageTitle, $euPageIntro);
+        include CMS_M365LIC_PLUGIN_DIR . 'templates/page-eu-comparison.php';
+        exit;
+    }
+
+    /**
+     * @param array<string,mixed> $m365Package
+     * @param array<string,mixed> $planProfile
+     * @param array<string,mixed> $billingContext
+     * @param array<string,array<string,string>> $euCategories
+     * @param array<string,array<int,array<string,mixed>>> $euOffers
+     * @param array<string,string> $selectedEuProviders
+     * @param array<string,bool> $includedCategories
+     * @return array<string,mixed>
+     */
+    private function build_eu_comparison_result(
+        array $m365Package,
+        array $planProfile,
+        array $billingContext,
+        int $quantity,
+        string $strategy,
+        array $euCategories,
+        array $euOffers,
+        array $selectedEuProviders,
+        array $includedCategories
+    ): array {
+        $repo = CMS_M365LIC_Repository::instance();
+        $m365BasePrice = $repo->get_price_for_package($m365Package, self::SCOPE_PUBLIC, null, false);
+        $m365UnitPrice = $repo->apply_billing_cycle($m365BasePrice, (string) ($billingContext['key'] ?? 'annual_upfront'));
+        $m365LineTotal = $m365UnitPrice !== null ? round($m365UnitPrice * $quantity, 2) : null;
+        $isMonthly = (string) ($billingContext['key'] ?? 'annual_upfront') === 'monthly_flex';
+        $alternativeRows = [];
+        $alternativeTotal = 0.0;
+        $hasMissingAlternativePrice = false;
+
+        foreach ($euCategories as $categoryKey => $categoryMeta) {
+            if ($strategy === 'all_in_one' && $categoryKey !== 'core_workspace') {
+                continue;
+            }
+
+            if ($strategy === 'best_of_breed' && $categoryKey !== 'core_workspace' && empty($includedCategories[$categoryKey])) {
+                continue;
+            }
+
+            $offersForCategory = $euOffers[$categoryKey] ?? [];
+            $selectedSlug = (string) ($selectedEuProviders[$categoryKey] ?? '');
+            $selectedOffer = null;
+            foreach ($offersForCategory as $offer) {
+                if ((string) ($offer['slug'] ?? '') === $selectedSlug) {
+                    $selectedOffer = $offer;
+                    break;
+                }
+            }
+
+            if ($selectedOffer === null && $offersForCategory !== []) {
+                $selectedOffer = $offersForCategory[0];
+            }
+
+            if (!is_array($selectedOffer)) {
+                continue;
+            }
+
+            $unitPrice = $isMonthly
+                ? ((isset($selectedOffer['monthly_price']) && $selectedOffer['monthly_price'] !== null && $selectedOffer['monthly_price'] !== '') ? (float) $selectedOffer['monthly_price'] : null)
+                : ((isset($selectedOffer['annual_price']) && $selectedOffer['annual_price'] !== null && $selectedOffer['annual_price'] !== '') ? (float) $selectedOffer['annual_price'] : null);
+            $lineTotal = $unitPrice !== null ? round($unitPrice * $quantity, 2) : null;
+
+            if ($lineTotal === null) {
+                $hasMissingAlternativePrice = true;
+            } else {
+                $alternativeTotal += $lineTotal;
+            }
+
+            $alternativeRows[] = [
+                'category_key' => $categoryKey,
+                'category_label' => (string) ($categoryMeta['label'] ?? $categoryKey),
+                'category_description' => (string) ($categoryMeta['description'] ?? ''),
+                'provider' => (string) ($selectedOffer['provider'] ?? ''),
+                'focus' => (string) ($selectedOffer['focus'] ?? ''),
+                'unit_price' => $unitPrice,
+                'line_total' => $lineTotal,
+            ];
+        }
+
+        return [
+            'm365' => [
+                'name' => (string) ($m365Package['name'] ?? ($planProfile['label'] ?? 'Microsoft 365')), 
+                'description' => (string) ($planProfile['description'] ?? ''),
+                'quantity' => $quantity,
+                'pricing_basis_label' => 'pro Benutzer',
+                'billing_cycle_label' => (string) ($billingContext['label'] ?? ''),
+                'included_categories' => array_values(array_map(static function (string $categoryKey) use ($euCategories): string {
+                    return (string) ($euCategories[$categoryKey]['label'] ?? $categoryKey);
+                }, array_values(array_filter($planProfile['included_categories'] ?? [], 'is_string')))),
+                'unit_price' => $m365UnitPrice,
+                'line_total' => $m365LineTotal,
+            ],
+            'alternative' => [
+                'strategy' => $strategy,
+                'strategy_label' => $strategy === 'all_in_one' ? 'All-in-One Workspace' : 'Best-of-Breed Stack',
+                'rows' => $alternativeRows,
+                'line_total' => $hasMissingAlternativePrice ? null : round($alternativeTotal, 2),
+                'has_missing_prices' => $hasMissingAlternativePrice,
+            ],
+            'delta' => ($m365LineTotal !== null && !$hasMissingAlternativePrice) ? round($alternativeTotal - $m365LineTotal, 2) : null,
+        ];
     }
 
     private function export_pdf(): void
@@ -305,6 +510,11 @@ final class CMS_M365LIC_Frontend
 
         $publicSlug = trim((string) (CMS_M365LIC_Repository::instance()->get_settings()['route_slug'] ?? 'm365-lizenzberater'), '/');
         if ($publicSlug !== '' && ($requestPath === $publicSlug || str_ends_with($requestPath, '/' . $publicSlug))) {
+            return true;
+        }
+
+        $euComparePath = trim($publicSlug . self::EU_COMPARE_SUFFIX, '/');
+        if ($publicSlug !== '' && ($requestPath === $euComparePath || str_ends_with($requestPath, '/' . $euComparePath))) {
             return true;
         }
 

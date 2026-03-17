@@ -292,10 +292,7 @@ final class CMS_M365LIC_Installer
             ];
 
             foreach ($tables as $table) {
-                $stmt = $db->prepare('SHOW TABLES LIKE ?');
-                $stmt->execute([$prefix . $table]);
-
-                if (!$stmt->fetchColumn()) {
+                if (!self::table_exists($db, $prefix . $table)) {
                     return false;
                 }
             }
@@ -319,9 +316,7 @@ final class CMS_M365LIC_Installer
             $db = \CMS\Database::instance();
             $table = $db->getPrefix() . 'settings';
 
-            $tableStmt = $db->prepare('SHOW TABLES LIKE ?');
-            $tableStmt->execute([$table]);
-            if (!$tableStmt->fetchColumn()) {
+            if (!self::table_exists($db, $table)) {
                 return null;
             }
 
@@ -348,6 +343,20 @@ final class CMS_M365LIC_Installer
             ];
         } catch (\Throwable $e) {
             return null;
+        }
+    }
+
+    private static function table_exists(\CMS\Database $db, string $tableName): bool
+    {
+        try {
+            $stmt = $db->prepare(
+                'SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?'
+            );
+            $stmt->execute([$tableName]);
+
+            return (int) ($stmt->fetchColumn() ?: 0) > 0;
+        } catch (\Throwable $e) {
+            return false;
         }
     }
 }

@@ -379,6 +379,19 @@
     font-weight: 600;
 }
 
+.m365lic-tab-card {
+    margin-top: 0;
+}
+
+.m365lic-tab-card--settings {
+    border-radius: 0 10px 10px 10px;
+    max-width: 980px;
+}
+
+.m365lic-form-group--compact {
+    max-width: 320px;
+}
+
 .m365lic-toolbar {
     display: flex;
     justify-content: space-between;
@@ -390,6 +403,45 @@
 
 .m365lic-modal-content {
     max-width: 520px;
+}
+
+.m365lic-modal {
+    display: none;
+}
+
+.m365lic-system-card {
+    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+}
+
+.m365lic-danger-note--layout {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.m365lic-btn-ghost-danger {
+    border: 1px solid #fecaca;
+    background: #fff5f5;
+    color: #b91c1c;
+}
+
+.m365lic-btn-ghost-danger:hover,
+.m365lic-btn-ghost-danger:focus-visible {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #991b1b;
+}
+
+.m365lic-alternatives-table input.form-control {
+    min-width: 120px;
+}
+
+.m365lic-alternatives-table td {
+    vertical-align: middle;
 }
 
 @media (max-width: 1100px) {

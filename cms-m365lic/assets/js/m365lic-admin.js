@@ -217,4 +217,73 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    const alternativesTable = document.getElementById('m365licAlternativesTable');
+    const addAlternativeButton = document.getElementById('m365licAddAlternativeRow');
+
+    const reindexAlternativeRows = () => {
+        if (!alternativesTable) {
+            return;
+        }
+
+        const rows = alternativesTable.querySelectorAll('tbody tr[data-alternative-row]');
+        rows.forEach((row, index) => {
+            row.querySelectorAll('input').forEach((input) => {
+                if (!input.name) {
+                    return;
+                }
+
+                input.name = input.name.replace(/alternatives\[\d+\]/g, 'alternatives[' + index + ']');
+            });
+        });
+    };
+
+    const bindAlternativeRow = (row) => {
+        const removeButton = row.querySelector('.m365lic-remove-alternative-row');
+        if (!removeButton) {
+            return;
+        }
+
+        removeButton.addEventListener('click', () => {
+            const rows = alternativesTable ? alternativesTable.querySelectorAll('tbody tr[data-alternative-row]') : [];
+            if (rows.length <= 1) {
+                row.querySelectorAll('input[type="text"]').forEach((input) => {
+                    input.value = '';
+                });
+                row.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+                    input.checked = true;
+                });
+                return;
+            }
+
+            row.remove();
+            reindexAlternativeRows();
+        });
+    };
+
+    if (alternativesTable) {
+        alternativesTable.querySelectorAll('tbody tr[data-alternative-row]').forEach(bindAlternativeRow);
+    }
+
+    if (alternativesTable && addAlternativeButton) {
+        addAlternativeButton.addEventListener('click', () => {
+            const tbody = alternativesTable.querySelector('tbody');
+            const firstRow = tbody ? tbody.querySelector('tr[data-alternative-row]') : null;
+            if (!tbody || !firstRow) {
+                return;
+            }
+
+            const clone = firstRow.cloneNode(true);
+            clone.querySelectorAll('input[type="text"]').forEach((input) => {
+                input.value = '';
+            });
+            clone.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+                input.checked = true;
+            });
+
+            tbody.appendChild(clone);
+            reindexAlternativeRows();
+            bindAlternativeRow(clone);
+        });
+    }
 });

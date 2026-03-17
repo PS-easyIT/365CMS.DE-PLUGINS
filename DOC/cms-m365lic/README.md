@@ -13,6 +13,7 @@ Das Plugin `cms-m365lic` liefert einen konfigurierbaren Microsoft-365-Lizenzbera
 - Echter PDF-Export der Auswertung über den 365CMS-Dompdf-Stack
 - Tageslimits je Kontext über gehashte Actor-Keys
 - Spezial-User direkt auf 365CMS-Benutzer zuweisen
+- Eigene Public-Seite für den Vergleich von M365 mit europäischen Alternativ-Stacks
 
 ## Besonderheiten
 
@@ -25,3 +26,11 @@ Das Plugin `cms-m365lic` liefert einen konfigurierbaren Microsoft-365-Lizenzbera
 - Publicsite, Memberbereich und Adminbereich wurden für bessere Lesbarkeit und schnellere Orientierung UI-seitig nachgeschärft
 - Die Bedarfsmatrix berücksichtigt jetzt auch Terminalserver-/RDS-Szenarien über das Merkmal `Terminalserver / Shared Activation`
 - Add-on-Katalog umfasst jetzt zusätzlich Microsoft Entra ID P1/P2 sowie Defender-for-Business-, Defender-for-Office-365- und Defender-for-Endpoint-Erweiterungen
+
+## Weiterführende Doku
+
+- `ALTERNATIVEN.md` – alle im Plugin gepflegten Alternativanbieter mit Jahres- und Monatspreisen
+- EU-Vergleich im Public-Bereich – eigene Vergleichsseite mit M365 links, EU-Stack rechts und Summenvergleich
+- `DATABASE.md` – Tabellen und Persistenz
+- `HOOKS.md` – relevante Plugin-Hooks
+- `API.md` – Klassen, Methoden und Kernlogik

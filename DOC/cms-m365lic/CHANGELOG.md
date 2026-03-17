@@ -1,5 +1,20 @@
 # Plugin-Dokumentations-Changelog
 
+## 1.4.5
+
+- Neue Public-Dokumentation für die Seite `EU-Vergleich` ergänzt
+- Vergleichsstrecke zwischen M365-Plänen und europäischen Alternativ-Stacks beschrieben
+
+## 1.4.4
+
+- `ALTERNATIVEN.md` um korrigierte Monats-/Jahrespreise für Dropbox, Slack, Zoho Mail und Zoho Projects ergänzt
+- Storage-Kapitel um `Hetzner Storage Share NX11` und `IONOS Managed Nextcloud 3 TB+` als dokumentierte Nextcloud-/Storage-Alternativen erweitert
+
+## 1.4.3
+
+- Neue Datei `ALTERNATIVEN.md` mit allen im Plugin gepflegten Alternativanbietern und Preisen ergänzt
+- README um einen Verweis auf die neue Alternativen-Dokumentation erweitert
+
 ## 1.2.0
 
 - Echten PDF-Export über den 365CMS-PDF-Stack dokumentiert

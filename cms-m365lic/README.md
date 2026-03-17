@@ -14,6 +14,8 @@
 - Getrennte Zugriffsflächen für `public`, `member` und `group`
 - Eigene Admin-Seite für Spezial-User-Zuweisungen direkt auf 365CMS-Benutzer
 - Auswahl von Laufzeit & Zahlungsart je Bereich: `1 Jahr jährlich`, `1 Jahr monatlich (+5%)`, `1 Monat (+20%)`
+- Optionale Alternativanbieter-Tabelle unter der Auswertung mit separaten Jahres-/Monatspreisen je Kategorie und Anbieter
+- Eigene Public-Site `EU-Vergleich`, um Microsoft-365-Pläne mit europäischen All-in-One- und Best-of-Breed-Anbietern zu vergleichen
 - Tageslimits für Auswertung und PDF-Export je Kontext
 - Publicsite, die Header/Footer des aktiven Themes verwendet
 - Echter PDF-Export der Ergebnisübersicht über den 365CMS-PDF-Stack
@@ -24,6 +26,7 @@
 | Route | Methode | Zweck |
 |---|---|---|
 | `/m365-lizenzberater` | GET/POST | Public Calculator mit Auswertung |
+| `/m365-lizenzberater/eu-vergleich` | GET/POST | Public-Vergleich von M365 mit europäischen Alternativen |
 | `/member/plugin/m365-license` | GET/POST | Geschützter Member-Calculator |
 | `/member/plugin/m365-license-special` | GET/POST | Geschützter Spezial-Calculator für zugewiesene Benutzer |
 | `/api/m365lic/export` | POST | PDF-Export der aktuellen Auswertung |
@@ -65,6 +68,64 @@ Die im Admin gepflegten Preise sind immer der Basiswert in Euro für `1 Jahr Lau
 Bestandsinstallationen übernehmen neue Seed-Preise nun automatisch, solange beim vorhandenen Paket noch kein eigener Preis gepflegt wurde.
 
 Die öffentliche Seite verwendet immer ausschließlich den Public-Kontext. Member- und Spezialpreise werden serverseitig nur in den geschützten Login-Bereichen freigegeben. Die Spezialseite erscheint nur für Benutzer, die im Plugin explizit als Spezial-User zugewiesen wurden.
+
+## Alternativen
+
+Im Admin gibt es unter `Einstellungen -> Alternativen` eine frei pflegbare Liste für alternative Anbieter. Pro Eintrag werden gespeichert:
+
+- `Kategorie` – z. B. `Mail`, `Storage`, `Office`, `Security`
+- `Anbieter` – z. B. `Google Workspace`, `Dropbox`, `Zoho`
+- `Preis 1 Jahr`
+- `Preis monatlich`
+
+Ab Werk ist die Liste jetzt bereits mit mehreren Vergleichsanbietern vorbefüllt. Die Seed-Daten decken diese Bereiche ab:
+
+- `Mail`
+- `Office & Produktivität`
+- `Storage & Dateien`
+- `Zusammenarbeit & Meetings`
+- `Projektmanagement`
+- `Identität & Sicherheit`
+
+Je Bereich sind kuratierte Vergleichseinträge hinterlegt, typischerweise aus 3 bis 6 Angeboten/Plänen, unter anderem von:
+
+- `Google Workspace`
+- `Zoho`
+- `Proton`
+- `Dropbox`
+- `Slack`
+- `Asana`
+- `MeisterTask`
+
+Im Frontend kann der Benutzer neben der Laufzeit die Option **„Nach der Auswertung Alternativen anzeigen“** aktivieren. Nach der M365-Auswertung erscheint dann eine Tabelle im Format:
+
+`Kategorie | Anbieter | Preis`
+
+Wichtig: Für Alternativen wird **keine** prozentuale Laufzeitlogik aus den Microsoft-365-Preisen angewendet. Es werden immer die im Admin direkt gepflegten Werte verwendet:
+
+- `annual_upfront` und `annual_monthly` → `Preis 1 Jahr`
+- `monthly_flex` → `Preis monatlich`
+
+Fehlt für das gewählte Modell der passende Alternativpreis, wird der Eintrag im Frontend nicht angezeigt.
+
+Bestehende Installationen behalten bereits manuell gepflegte Alternativen. Nur wenn die Liste noch leer ist, wird sie automatisch mit den Standardvergleichen initial befüllt.
+
+## EU-Vergleich
+
+Zusätzlich zur normalen Public-Auswertung gibt es jetzt eine eigene Seite `EU-Vergleich`. Dort kann ein öffentlicher Besucher typische Microsoft-365-Pläne wie `Business Basic`, `Business Standard`, `Business Premium`, `Office 365 E3` oder `Microsoft 365 E3` direkt mit europäischen Alternativen vergleichen.
+
+Die Seite unterstützt zwei Modi:
+
+- `All-in-One Workspace` – vergleicht einen M365-Plan mit einem europäischen Komplettanbieter aus der Kategorie `All-in-One Workspaces`
+- `Best-of-Breed Stack` – kombiniert einen europäischen Core-Workspace mit optionalen Spezialkategorien für `Office & Produktivität`, `Zusammenarbeit & Intranet`, `IT-Sicherheit & Endgeräteverwaltung` und `Projektmanagement`
+
+Die Auswertung wird als Tabellenvergleich dargestellt:
+
+- links der gewählte M365-Plan
+- rechts der ausgewählte europäische Stack
+- darunter `Gesamtkosten M365`, `Gesamtkosten Alternativen` und das Preisdelta
+
+Die europäischen Vergleichsanbieter sind im Code kuratiert und orientieren sich an typischen Netto-Monatspreisen pro Nutzer (Stand 2026), wie für den Use Case „europäische Alternative zu Microsoft 365“ vorgegeben.
 
 ## Verzeichnisstruktur
 

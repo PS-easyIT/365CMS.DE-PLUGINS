@@ -347,7 +347,7 @@ trait CMS_M365LIC_Page_Packages_Trait
             </div>
         </div>
 
-        <div id="m365licResetCatalogModal" class="modal" style="display:none;">
+        <div id="m365licResetCatalogModal" class="modal m365lic-modal" aria-hidden="true">
             <div class="modal-content m365lic-modal-content">
                 <div class="modal-header">
                     <h3>🗑️ Seed-Katalog zurücksetzen</h3>

@@ -154,6 +154,169 @@ final class CMS_M365LIC_Catalog
             'sticky_sidebar' => '1',
             'show_missing_price_hint' => '1',
             'show_source_notes' => '1',
+            'alternatives_json' => json_encode(self::default_alternative_offers(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ];
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public static function default_alternative_offers(): array
+    {
+        return [
+            // Recherche-Stand 2026-03-17 auf Basis offizieller Pricing-Seiten der Anbieter.
+            ['category' => 'Identität & Sicherheit', 'provider' => 'Dropbox Advanced', 'annual_price' => '18.00', 'monthly_price' => '24.00', 'is_active' => 1],
+            ['category' => 'Identität & Sicherheit', 'provider' => 'Google Workspace Business Plus', 'annual_price' => '21.10', 'monthly_price' => '25.30', 'is_active' => 1],
+            ['category' => 'Identität & Sicherheit', 'provider' => 'Proton Business Suite', 'annual_price' => '12.99', 'monthly_price' => '14.99', 'is_active' => 1],
+            ['category' => 'Identität & Sicherheit', 'provider' => 'Slack Business+', 'annual_price' => '15.00', 'monthly_price' => '18.00', 'is_active' => 1],
+            ['category' => 'Identität & Sicherheit', 'provider' => 'Zoho Workplace Professional', 'annual_price' => '5.40', 'monthly_price' => '6.30', 'is_active' => 1],
+
+            ['category' => 'Mail', 'provider' => 'Google Workspace Business Starter', 'annual_price' => '6.80', 'monthly_price' => '8.10', 'is_active' => 1],
+            ['category' => 'Mail', 'provider' => 'Proton Mail Essentials', 'annual_price' => '6.99', 'monthly_price' => '7.99', 'is_active' => 1],
+            ['category' => 'Mail', 'provider' => 'Proton Mail Professional', 'annual_price' => '9.99', 'monthly_price' => '10.99', 'is_active' => 1],
+            ['category' => 'Mail', 'provider' => 'Zoho Mail Lite', 'annual_price' => '0.90', 'monthly_price' => '1.20', 'is_active' => 1],
+            ['category' => 'Mail', 'provider' => 'Zoho Mail Premium', 'annual_price' => '3.60', 'monthly_price' => '4.80', 'is_active' => 1],
+
+            ['category' => 'Office & Produktivität', 'provider' => 'Google Workspace Business Plus', 'annual_price' => '21.10', 'monthly_price' => '25.30', 'is_active' => 1],
+            ['category' => 'Office & Produktivität', 'provider' => 'Google Workspace Business Standard', 'annual_price' => '13.60', 'monthly_price' => '16.20', 'is_active' => 1],
+            ['category' => 'Office & Produktivität', 'provider' => 'Proton Business Suite', 'annual_price' => '12.99', 'monthly_price' => '14.99', 'is_active' => 1],
+            ['category' => 'Office & Produktivität', 'provider' => 'Zoho Workplace Professional', 'annual_price' => '5.40', 'monthly_price' => '6.30', 'is_active' => 1],
+            ['category' => 'Office & Produktivität', 'provider' => 'Zoho Workplace Standard', 'annual_price' => '2.70', 'monthly_price' => '3.60', 'is_active' => 1],
+
+            ['category' => 'Projektmanagement', 'provider' => 'Asana Advanced', 'annual_price' => '24.99', 'monthly_price' => '30.49', 'is_active' => 1],
+            ['category' => 'Projektmanagement', 'provider' => 'Asana Starter', 'annual_price' => '10.99', 'monthly_price' => '13.49', 'is_active' => 1],
+            ['category' => 'Projektmanagement', 'provider' => 'MeisterTask Business', 'annual_price' => '24.00', 'monthly_price' => '31.00', 'is_active' => 1],
+            ['category' => 'Projektmanagement', 'provider' => 'MeisterTask Pro', 'annual_price' => '13.50', 'monthly_price' => '17.50', 'is_active' => 1],
+            ['category' => 'Projektmanagement', 'provider' => 'Zoho Projects Enterprise', 'annual_price' => '9.00', 'monthly_price' => '10.00', 'is_active' => 1],
+            ['category' => 'Projektmanagement', 'provider' => 'Zoho Projects Premium', 'annual_price' => '4.00', 'monthly_price' => '5.00', 'is_active' => 1],
+
+            ['category' => 'Storage & Dateien', 'provider' => 'Dropbox Advanced', 'annual_price' => '18.00', 'monthly_price' => '24.00', 'is_active' => 1],
+            ['category' => 'Storage & Dateien', 'provider' => 'Dropbox Standard', 'annual_price' => '12.00', 'monthly_price' => '15.00', 'is_active' => 1],
+            ['category' => 'Storage & Dateien', 'provider' => 'Google Workspace Business Standard', 'annual_price' => '13.60', 'monthly_price' => '16.20', 'is_active' => 1],
+            ['category' => 'Storage & Dateien', 'provider' => 'Hetzner Storage Share NX11 (1 TB / 3 Nutzer)', 'annual_price' => '4.29', 'monthly_price' => '4.29', 'is_active' => 1],
+            ['category' => 'Storage & Dateien', 'provider' => 'IONOS Managed Nextcloud 3 TB+ (25 Nutzer)', 'annual_price' => '30.00', 'monthly_price' => '30.00', 'is_active' => 1],
+            ['category' => 'Storage & Dateien', 'provider' => 'Proton Business Suite', 'annual_price' => '12.99', 'monthly_price' => '14.99', 'is_active' => 1],
+            ['category' => 'Storage & Dateien', 'provider' => 'Zoho Workplace Professional', 'annual_price' => '5.40', 'monthly_price' => '6.30', 'is_active' => 1],
+
+            ['category' => 'Zusammenarbeit & Meetings', 'provider' => 'Google Workspace Business Standard', 'annual_price' => '13.60', 'monthly_price' => '16.20', 'is_active' => 1],
+            ['category' => 'Zusammenarbeit & Meetings', 'provider' => 'Slack Business+', 'annual_price' => '15.00', 'monthly_price' => '18.00', 'is_active' => 1],
+            ['category' => 'Zusammenarbeit & Meetings', 'provider' => 'Slack Pro', 'annual_price' => '6.75', 'monthly_price' => '8.25', 'is_active' => 1],
+            ['category' => 'Zusammenarbeit & Meetings', 'provider' => 'Zoho Workplace Professional', 'annual_price' => '5.40', 'monthly_price' => '6.30', 'is_active' => 1],
+            ['category' => 'Zusammenarbeit & Meetings', 'provider' => 'Zoho Workplace Standard', 'annual_price' => '2.70', 'monthly_price' => '3.60', 'is_active' => 1],
+        ];
+    }
+
+    /**
+     * @return array<string,array<string,mixed>>
+     */
+    public static function eu_comparison_plan_profiles(): array
+    {
+        return [
+            'm365-business-basic' => [
+                'label' => 'Microsoft 365 Business Basic',
+                'included_categories' => ['core_workspace', 'collaboration_intranet'],
+                'description' => 'Mail, Teams, Web-Apps, OneDrive und SharePoint für den Einstieg.',
+            ],
+            'm365-business-standard' => [
+                'label' => 'Microsoft 365 Business Standard',
+                'included_categories' => ['core_workspace', 'office_productivity', 'collaboration_intranet'],
+                'description' => 'Business Basic plus installierbare Office-Apps.',
+            ],
+            'm365-business-premium' => [
+                'label' => 'Microsoft 365 Business Premium',
+                'included_categories' => ['core_workspace', 'office_productivity', 'collaboration_intranet', 'security_device_management'],
+                'description' => 'Business Standard plus Security- und Geräteverwaltungsfunktionen.',
+            ],
+            'office-365-e3' => [
+                'label' => 'Office 365 E3',
+                'included_categories' => ['core_workspace', 'office_productivity', 'collaboration_intranet'],
+                'description' => 'Enterprise-Suite mit Mail, Teams, Office und Collaboration.',
+            ],
+            'm365-e3' => [
+                'label' => 'Microsoft 365 E3',
+                'included_categories' => ['core_workspace', 'office_productivity', 'collaboration_intranet', 'security_device_management'],
+                'description' => 'Office 365 E3 plus Windows-, Intune- und Security-Rechte.',
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string,array<string,string>>
+     */
+    public static function eu_comparison_categories(): array
+    {
+        return [
+            'core_workspace' => [
+                'label' => 'All-in-One Workspaces',
+                'description' => 'Kernersatz für Mail, Kalender, Dateien, Office und Collaboration.',
+            ],
+            'office_productivity' => [
+                'label' => 'Office & Produktivität',
+                'description' => 'Alternativen für Word, Excel, PowerPoint und Desktop-/Web-Editoren.',
+            ],
+            'collaboration_intranet' => [
+                'label' => 'Zusammenarbeit & Intranet',
+                'description' => 'Chat, Videokonferenzen, Intranet und teamübergreifende Zusammenarbeit.',
+            ],
+            'security_device_management' => [
+                'label' => 'IT-Sicherheit & Endgeräteverwaltung',
+                'description' => 'Defender-/Intune-Ersatz für Endpoint Security und Geräteverwaltung.',
+            ],
+            'project_management' => [
+                'label' => 'Projektmanagement',
+                'description' => 'Planner-/Project-Ersatz für Projekte, Aufgaben und Roadmaps.',
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string,array<int,array<string,mixed>>>
+     */
+    public static function eu_comparison_offers(): array
+    {
+        return [
+            'core_workspace' => [
+                ['slug' => 'icewarp-business', 'provider' => 'IceWarp Business (CZ)', 'annual_price' => '6.00', 'monthly_price' => '7.50', 'focus' => 'Stärkster direkter M365-Klon, inkl. Desktop-Apps'],
+                ['slug' => 'infomaniak-ksuite-enterprise', 'provider' => 'Infomaniak kSuite Enterprise (CH)', 'annual_price' => '7.90', 'monthly_price' => '7.90', 'focus' => 'Mail, Drive, Meet und Office mit starkem Datenschutz-Fokus'],
+                ['slug' => 'nextcloud-hub-enterprise', 'provider' => 'Nextcloud Hub Enterprise (DE)*', 'annual_price' => '5.00', 'monthly_price' => '6.00', 'focus' => 'Maximale Datensouveränität über europäische Managed-Partner'],
+                ['slug' => 'open-xchange-ox-cloud', 'provider' => 'Open-Xchange OX Cloud (DE)', 'annual_price' => '3.50', 'monthly_price' => '4.50', 'focus' => 'Sehr stark bei Mail, Groupware und Collaboration'],
+            ],
+            'office_productivity' => [
+                ['slug' => 'softmaker-nx-universal', 'provider' => 'SoftMaker NX Universal (DE)', 'annual_price' => '5.90', 'monthly_price' => '6.90', 'focus' => 'Nativ installierbare Desktop-Apps für Windows, macOS und Linux'],
+                ['slug' => 'collabora-online-enterprise', 'provider' => 'Collabora Online Enterprise (UK)', 'annual_price' => '1.50', 'monthly_price' => null, 'focus' => 'Browserbasierte Office-Suite, häufig direkt mit Nextcloud kombiniert'],
+                ['slug' => 'onlyoffice-workspace-enterprise', 'provider' => 'OnlyOffice Workspace Enterprise (LV)', 'annual_price' => '6.00', 'monthly_price' => null, 'focus' => 'Web- und Desktop-Editoren mit sehr hoher MS-Format-Kompatibilität'],
+            ],
+            'collaboration_intranet' => [
+                ['slug' => 'stackfield-enterprise', 'provider' => 'Stackfield Enterprise (DE)', 'annual_price' => '24.00', 'monthly_price' => '29.00', 'focus' => 'Ende-zu-Ende verschlüsselt, Chat, Aufgaben und Dateien in einer Oberfläche'],
+                ['slug' => 'element-enterprise', 'provider' => 'Element Enterprise (UK/FR)', 'annual_price' => '5.00', 'monthly_price' => '6.00', 'focus' => 'Matrix-basiert, dezentral und von Behörden genutzt'],
+                ['slug' => 'alfaview-professional', 'provider' => 'Alfaview Professional (DE)', 'annual_price' => '9.99', 'monthly_price' => '12.99', 'focus' => 'DSGVO-konforme, hochskalierbare Videokonferenzen'],
+            ],
+            'security_device_management' => [
+                ['slug' => 'cortado-mdm-pro', 'provider' => 'Cortado MDM Pro (DE)', 'annual_price' => '5.50', 'monthly_price' => '6.50', 'focus' => 'Mobile Device Management und Geräteverwaltung'],
+                ['slug' => 'relution-enterprise', 'provider' => 'Relution Enterprise (DE)', 'annual_price' => '4.50', 'monthly_price' => '5.50', 'focus' => 'MDM mit starkem Fokus auf Bildung und Behörden'],
+                ['slug' => 'eset-protect-advanced', 'provider' => 'ESET Protect Advanced (SK)', 'annual_price' => '4.20', 'monthly_price' => null, 'focus' => 'Endpoint Security mit Cloud-Sandboxing'],
+                ['slug' => 'withsecure-elements', 'provider' => 'WithSecure Elements (FI)', 'annual_price' => '5.00', 'monthly_price' => null, 'focus' => 'Endpoint Protection und Cloud-Sicherheit, ehemals F-Secure'],
+                ['slug' => 'gdata-endpoint-protection', 'provider' => 'G DATA Endpoint Protection (DE)', 'annual_price' => '3.40', 'monthly_price' => null, 'focus' => 'Deutscher Endpoint- und Antivirus-Pionier'],
+            ],
+            'project_management' => [
+                ['slug' => 'awork-enterprise', 'provider' => 'awork Enterprise (DE)', 'annual_price' => '15.99', 'monthly_price' => null, 'focus' => 'Modernes, visuelles Projektmanagement'],
+                ['slug' => 'meistertask-business', 'provider' => 'MeisterTask Business (AT)', 'annual_price' => '24.00', 'monthly_price' => '31.00', 'focus' => 'Kanban-Fokus und sehr intuitive Bedienung'],
+                ['slug' => 'openproject-enterprise', 'provider' => 'OpenProject Enterprise (DE)', 'annual_price' => '5.95', 'monthly_price' => null, 'focus' => 'Klassisches und agiles Projektmanagement auf Open-Source-Basis'],
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function eu_comparison_default_selection(): array
+    {
+        return [
+            'core_workspace' => 'infomaniak-ksuite-enterprise',
+            'office_productivity' => 'softmaker-nx-universal',
+            'collaboration_intranet' => 'element-enterprise',
+            'security_device_management' => 'relution-enterprise',
+            'project_management' => 'openproject-enterprise',
         ];
     }
 
@@ -285,62 +448,62 @@ final class CMS_M365LIC_Catalog
         ];
 
         return [
-            'exchange-online-kiosk' => $perUser(2.00, 'Öffentliche Microsoft-/Partner-Snippets für Exchange Online Kiosk: 2 USD pro Benutzer/Monat bei Jahresbindung.'),
-            'exchange-online-plan-1' => $perUser(4.00, 'Microsoft Exchange Online Pricing Snippet: Exchange Online Plan 1 startet bei 4 USD pro Benutzer/Monat, paid yearly.'),
-            'exchange-online-plan-2' => $perUser(8.00, 'Microsoft Exchange Online Pricing Snippet: Exchange Online Plan 2 startet bei 8 USD pro Benutzer/Monat, paid yearly.'),
-            'teams-essentials' => $perUser(4.00, 'Öffentliche Microsoft-Teams-Preisübersichten für Teams Essentials: 4 USD pro Benutzer/Monat, paid yearly.'),
-            'sharepoint-plan-1' => $perUser(5.00, 'Microsoft SharePoint Pricing Snippet: SharePoint Plan 1 startet bei 5 USD pro Benutzer/Monat, paid yearly.'),
-            'sharepoint-kiosk' => $perUser(4.00, 'Kiosk-Referenzwert aus öffentlichen Microsoft-/Partnervergleichen für leichte SharePoint/Frontline-Szenarien.'),
-            'sharepoint-plan-2' => $perUser(10.00, 'Öffentliche SharePoint-Planvergleiche: Plan 2 typischer Listenwert 10 USD pro Benutzer/Monat.'),
-            'onedrive-plan-1' => $perUser(5.00, 'Öffentliche Microsoft-/Partner-Preisübersichten: OneDrive Plan 1 typischer Listenwert 5 USD pro Benutzer/Monat.'),
-            'onedrive-plan-2' => $perUser(10.00, 'Öffentliche OneDrive-Preisübersichten: OneDrive Plan 2 typischer Listenwert 10 USD pro Benutzer/Monat.'),
+            'exchange-online-kiosk' => $perUser(3.16, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Exchange Online Kiosk 3,16 EUR pro Benutzer/Monat.'),
+            'exchange-online-plan-1' => $perUser(3.50, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Exchange Online Plan 1 3,50 EUR pro Benutzer/Monat.'),
+            'exchange-online-plan-2' => $perUser(6.90, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Exchange Online Plan 2 6,90 EUR pro Benutzer/Monat.'),
+            'teams-essentials' => $perUser(3.50, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Teams Essentials 3,50 EUR pro Benutzer/Monat.'),
+            'sharepoint-plan-1' => $perUser(3.50, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): SharePoint Plan 1 3,50 EUR pro Benutzer/Monat.'),
+            'sharepoint-kiosk' => $perUser(4.00, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): SharePoint Kiosk 4,00 EUR pro Benutzer/Monat.'),
+            'sharepoint-plan-2' => $perUser(9.30, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): SharePoint Plan 2 9,30 EUR pro Benutzer/Monat.'),
+            'onedrive-plan-1' => $perUser(4.30, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): OneDrive Plan 1 4,30 EUR pro Benutzer/Monat.'),
+            'onedrive-plan-2' => $perUser(9.50, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): OneDrive Plan 2 9,50 EUR pro Benutzer/Monat.'),
             'm365-apps-business' => $perUser(8.25, 'Microsoft 365 Pricing Updates Snippet: Apps for Business 8.25 USD pro Benutzer/Monat.'),
-            'm365-apps-enterprise' => $perUser(12.00, 'Microsoft 365 Apps for enterprise unterstützt Shared Computer Activation für RDS-/Terminalserver-Szenarien und startet öffentlich bei 12 USD pro Benutzer/Monat.'),
-            'm365-business-basic' => $perUser(6.00, 'Microsoft 365 Pricing Updates Snippet: Business Basic 6 USD pro Benutzer/Monat.'),
-            'm365-business-standard' => $perUser(12.50, 'Microsoft 365 Pricing Updates Snippet: Business Standard 12.50 USD pro Benutzer/Monat.'),
-            'm365-business-premium' => $perUser(22.00, 'Microsoft 365 Business Premium 22 USD pro Benutzer/Monat; Shared Computer Activation für kleinere RDS-/Terminalserver-Szenarien ist möglich.'),
-            'office-365-e1' => $perUser(10.00, 'Microsoft 365 Pricing Updates Snippet: Office 365 E1 10 USD pro Benutzer/Monat.'),
-            'office-365-e3' => $perUser(23.00, 'Office 365 E3 23 USD pro Benutzer/Monat; geeignet für Terminalserver-/RDS-Betrieb mit Shared Computer Activation.'),
-            'office-365-e5' => $perUser(38.00, 'Office 365 E5 38 USD pro Benutzer/Monat; geeignet für Terminalserver-/RDS-Betrieb mit Shared Computer Activation.'),
-            'm365-e3' => $perUser(36.00, 'Microsoft 365 E3 36 USD pro Benutzer/Monat; geeignet für Terminalserver-/RDS-Betrieb mit Shared Computer Activation.'),
+            'm365-apps-enterprise' => $perUser(13.20, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft 365 Apps for Enterprise 13,20 EUR pro Benutzer/Monat.'),
+            'm365-business-basic' => $perUser(5.20, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft 365 Business Basic 5,20 EUR pro Benutzer/Monat.'),
+            'm365-business-standard' => $perUser(10.80, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft 365 Business Standard 10,80 EUR pro Benutzer/Monat.'),
+            'm365-business-premium' => $perUser(19.10, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft 365 Business Premium 19,10 EUR pro Benutzer/Monat.'),
+            'office-365-e1' => $perUser(8.70, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Office 365 E1 8,70 EUR pro Benutzer/Monat.'),
+            'office-365-e3' => $perUser(23.20, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Office 365 E3 23,20 EUR pro Benutzer/Monat.'),
+            'office-365-e5' => $perUser(38.40, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Office 365 E5 38,40 EUR pro Benutzer/Monat.'),
+            'm365-e3' => $perUser(34.90, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft 365 E3 34,90 EUR pro Benutzer/Monat.'),
             'm365-e5' => $perUser(57.00, 'Microsoft 365 E5 57 USD pro Benutzer/Monat; geeignet für Terminalserver-/RDS-Betrieb mit Shared Computer Activation.'),
-            'm365-f1' => $perUser(2.25, 'Microsoft 365 Pricing Updates Snippet: Microsoft 365 F1 2.25 USD pro Benutzer/Monat.'),
-            'm365-f3' => $perUser(8.00, 'Microsoft 365 Pricing Updates Snippet: Microsoft 365 F3 8 USD pro Benutzer/Monat.'),
-            'office-365-f3' => $perUser(8.00, 'Öffentliche Frontline-/F3-Preisübersichten: Office 365 F3 8 USD pro Benutzer/Monat.'),
-            'teams-enterprise' => $perUser(5.25, 'Öffentliche Teams-Preisübersichten für No-Teams-Suiten: Teams Enterprise Add-on 5.25 USD pro Benutzer/Monat.'),
-            'teams-eea' => $perUser(5.25, 'EEA-Teamlizenz als Referenzwert analog Microsoft Teams Enterprise Add-on laut öffentlichen Preisübersichten.'),
+            'm365-f1' => $perUser(1.90, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft 365 F1 1,90 EUR pro Benutzer/Monat.'),
+            'm365-f3' => $perUser(6.90, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft 365 F3 6,90 EUR pro Benutzer/Monat.'),
+            'office-365-f3' => $perUser(6.90, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Office 365 F3 6,90 EUR pro Benutzer/Monat.'),
+            'teams-enterprise' => $perUser(7.40, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Teams Enterprise 7,40 EUR pro Benutzer/Monat.'),
+            'teams-eea' => $perUser(7.80, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Teams EEA 7,80 EUR pro Benutzer/Monat.'),
             'copilot-chat-included' => $perUser(0.00, 'Microsoft Copilot Pricing: Copilot Chat für berechtigte Entra-ID-Nutzer ohne Zusatzkosten.'),
-            'm365-copilot-business' => $perUser(30.00, 'Microsoft 365 Copilot Pricing Snippets: Copilot Add-on 30 USD pro Benutzer/Monat.'),
-            'm365-copilot' => $perUser(30.00, 'Microsoft 365 Copilot Pricing Snippets: Copilot Add-on 30 USD pro Benutzer/Monat.'),
+            'm365-copilot-business' => $perUser(18.20, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft 365 Copilot Business 18,20 EUR pro Benutzer/Monat.'),
+            'm365-copilot' => $perUser(26.00, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft 365 Copilot 26,00 EUR pro Benutzer/Monat.'),
             'copilot-studio' => $flat(200.00, 'Microsoft Copilot Studio Pricing: Prepaid Pack 25.000 Credits für 200 USD pro Monat pro Tenant.'),
             'security-copilot' => $flat(2920.00, 'Öffentliche Security Copilot Preis-/SCU-Snippets: 1 SCU ca. 2.920 USD pro Monat.'),
-            'teams-premium' => $perUser(10.00, 'Öffentliche Microsoft-Teams-Premium-Snippets: 10 USD pro Benutzer/Monat.'),
+            'teams-premium' => $perUser(8.70, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Teams Premium 8,70 EUR pro Benutzer/Monat.'),
             'audio-conferencing' => $perUser(4.00, 'Öffentliche Microsoft-/Partner-Preisübersichten für Audio Conferencing: 4 USD pro Benutzer/Monat.'),
-            'teams-phone' => $perUser(10.00, 'Öffentliche Teams Phone Standard Preisübersichten: 10 USD pro Benutzer/Monat.'),
-            'intune-plan-1' => $perUser(7.68, 'Öffentliche Microsoft-Intune-Preisreferenzen: Intune Plan 1 liegt bei 7,68 EUR pro Benutzer/Monat bei Jahresbindung.'),
+            'teams-phone' => $perUser(8.70, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Teams Phone Standard 8,70 EUR pro Benutzer/Monat.'),
+            'intune-plan-1' => $perUser(6.90, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Intune Plan 1 6,90 EUR pro Benutzer/Monat.'),
             'intune-device' => $flat(2.56, 'Öffentliche Microsoft-Intune-Preisreferenzen: Intune Device liegt bei 2,56 EUR pro Gerät/Monat bei Jahresbindung.'),
-            'power-bi-pro' => $perUser(14.00, 'Microsoft Power BI Pricing Snippet: Power BI Pro 14 USD pro Benutzer/Monat, paid yearly.'),
-            'power-apps-premium' => $perUser(18.70, 'Öffentliche Power-Platform-Preisreferenzen: Power Apps Premium typischer Listenwert ca. 18,70 EUR pro Benutzer/Monat bei Jahresbindung.'),
-            'visio-plan-1' => $perUser(5.00, 'Microsoft Visio Pricing Snippet: Visio Plan 1 5 USD pro Benutzer/Monat.'),
-            'visio-plan-2' => $perUser(15.00, 'Microsoft Visio Pricing Snippet: Visio Plan 2 15 USD pro Benutzer/Monat.'),
-            'planner-plan-1' => $perUser(10.00, 'Öffentliche Microsoft Planner / Project Pricing Snippets: Planner Plan 1 10 USD pro Benutzer/Monat.'),
-            'project-plan-3' => $perUser(30.00, 'Öffentliche Microsoft Project Pricing Snippets: Project Plan 3 30 USD pro Benutzer/Monat.'),
+            'power-bi-pro' => $perUser(12.10, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Power BI Pro 12,10 EUR pro Benutzer/Monat.'),
+            'power-apps-premium' => $perUser(17.30, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Power Apps Premium 17,30 EUR pro Benutzer/Monat.'),
+            'visio-plan-1' => $perUser(4.30, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Visio Plan 1 4,30 EUR pro Benutzer/Monat.'),
+            'visio-plan-2' => $perUser(13.00, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Visio Plan 2 13,00 EUR pro Benutzer/Monat.'),
+            'planner-plan-1' => $perUser(8.70, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Planner Plan 1 8,70 EUR pro Benutzer/Monat.'),
+            'project-plan-3' => $perUser(26.00, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Project Plan 3 26,00 EUR pro Benutzer/Monat.'),
             'project-online-essentials' => $perUser(7.00, 'Öffentliche CSP-/Partner-Snippets: Project Online Essentials 7 USD pro Benutzer/Monat.'),
-            'project-plan-5' => $perUser(55.00, 'Öffentliche Microsoft Project Pricing Snippets: Project Plan 5 55 USD pro Benutzer/Monat.'),
-            'power-automate-premium' => $perUser(15.00, 'Microsoft Power Automate Pricing Snippet: Premium 15 USD pro Benutzer/Monat.'),
+            'project-plan-5' => $perUser(47.70, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Project Plan 5 47,70 EUR pro Benutzer/Monat.'),
+            'power-automate-premium' => $perUser(13.00, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Power Automate Premium 13,00 EUR pro Benutzer/Monat.'),
             'exchange-online-archiving' => $perUser(3.00, 'Öffentliche Exchange Online Archiving Preisübersichten: typischer Listenwert 3 USD pro Benutzer/Monat.'),
-            'exchange-online-protection' => $perUser(1.60, 'Öffentliche Exchange-Security-Preisreferenzen: Exchange Online Protection typischer Listenwert ca. 1,60 EUR pro Benutzer/Monat.'),
-            'entra-id-p1' => $perUser(6.00, 'Öffentliche Microsoft-Entra-/Azure-AD-Pricing-Referenzen: Entra ID P1 typischer Listenwert 6 USD pro Benutzer/Monat.'),
-            'entra-id-p2' => $perUser(9.00, 'Öffentliche Microsoft-Entra-/Azure-AD-Pricing-Referenzen: Entra ID P2 typischer Listenwert 9 USD pro Benutzer/Monat.'),
-            'entra-id-governance' => $perUser(6.70, 'Öffentliche Entra-Preisreferenzen: Entra ID Governance typischer Listenwert ca. 6,70 EUR pro Benutzer/Monat.'),
-            'entra-suite' => $perUser(11.20, 'Öffentliche Entra-Preisreferenzen: Entra Suite typischer Listenwert ca. 11,20 EUR pro Benutzer/Monat.'),
-            'defender-for-business' => $perUser(3.00, 'Öffentliche Microsoft-Security-/Partner-Preisübersichten: Defender for Business typischer Listenwert 3 USD pro Benutzer/Monat.'),
-            'defender-for-office-365-plan-1' => $perUser(2.00, 'Öffentliche Microsoft-/Partner-Preisübersichten: Defender for Office 365 Plan 1 typischer Listenwert 2 USD pro Benutzer/Monat.'),
-            'defender-for-office-365-plan-2' => $perUser(5.00, 'Öffentliche Microsoft-/Partner-Preisübersichten: Defender for Office 365 Plan 2 typischer Listenwert 5 USD pro Benutzer/Monat.'),
-            'defender-for-endpoint-plan-1' => $perUser(3.00, 'Öffentliche Microsoft-/Partner-Preisübersichten: Defender for Endpoint Plan 1 typischer Listenwert 3 USD pro Benutzer/Monat.'),
-            'defender-for-endpoint-plan-2' => $perUser(5.20, 'Öffentliche Microsoft-/Partner-Preisübersichten: Defender for Endpoint Plan 2 typischer Listenwert 5.20 USD pro Benutzer/Monat.'),
-            'defender-for-identity' => $perUser(8.40, 'Öffentliche Security-Preisreferenzen: Defender for Identity typischer Listenwert ca. 8,40 EUR pro Benutzer/Monat.'),
-            'defender-for-cloud-apps' => $perUser(3.20, 'Öffentliche Security-Preisreferenzen: Defender for Cloud Apps typischer Listenwert ca. 3,20 EUR pro Benutzer/Monat.'),
+            'exchange-online-protection' => $perUser(0.90, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Exchange Online Protection 0,90 EUR pro Benutzer/Monat.'),
+            'entra-id-p1' => $perUser(5.20, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Entra ID P1 5,20 EUR pro Benutzer/Monat.'),
+            'entra-id-p2' => $perUser(7.80, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Entra ID P2 7,80 EUR pro Benutzer/Monat.'),
+            'entra-id-governance' => $perUser(6.10, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Entra ID Governance 6,10 EUR pro Benutzer/Monat.'),
+            'entra-suite' => $perUser(10.40, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Entra Suite 10,40 EUR pro Benutzer/Monat.'),
+            'defender-for-business' => $perUser(2.60, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Defender for Business 2,60 EUR pro Benutzer/Monat.'),
+            'defender-for-office-365-plan-1' => $perUser(1.73, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Defender for Office 365 Plan 1 1,73 EUR pro Benutzer/Monat.'),
+            'defender-for-office-365-plan-2' => $perUser(4.30, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Defender for Office 365 Plan 2 4,30 EUR pro Benutzer/Monat.'),
+            'defender-for-endpoint-plan-1' => $perUser(3.50, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Defender for Endpoint Plan 1 3,50 EUR pro Benutzer/Monat.'),
+            'defender-for-endpoint-plan-2' => $perUser(5.50, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Defender for Endpoint Plan 2 5,50 EUR pro Benutzer/Monat.'),
+            'defender-for-identity' => $perUser(5.60, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Defender for Identity 5,60 EUR pro Benutzer/Monat.'),
+            'defender-for-cloud-apps' => $perUser(3.60, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft Defender for Cloud Apps 3,60 EUR pro Benutzer/Monat.'),
         ];
     }
 

@@ -47,6 +47,8 @@ $showAddonOverview = !empty($settings['show_addon_overview']);
 $showLegalCard = !empty($settings['show_legal_card']);
 $stickySidebar = !empty($settings['sticky_sidebar']);
 $hasPublicSidebarContent = !$isEmbedded && ($showContextSummary || $showLegalCard || $showAddonOverview);
+$showAlternatives = !empty($showAlternatives ?? false);
+$alternativeOffers = is_array($alternativeOffers ?? null) ? $alternativeOffers : [];
 $stepOneFeatureKeys = ['mail', 'teams', 'office_web', 'office_desktop', 'terminalserver', 'onedrive', 'sharepoint', 'frontline'];
 $stepThreeFeatureKeys = array_values(array_filter(array_keys($featureDefinitions), static function (string $key) use ($featureDefinitions): bool {
     return empty($featureDefinitions[$key]['base']);
@@ -384,6 +386,13 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                         <div class="m365lic-card-badge">EUR · Netto-Richtwerte</div>
                     </div>
 
+                    <?php if ($scope === 'public'): ?>
+                    <nav class="m365lic-local-nav" aria-label="Public M365 Menü">
+                        <a href="/<?php echo $esc(trim((string) ($settings['route_slug'] ?? 'm365-lizenzberater'), '/')); ?>" class="m365lic-local-nav__link m365lic-local-nav__link--active" aria-current="page">🧮 Auswertung</a>
+                        <a href="/<?php echo $esc(trim((string) ($settings['route_slug'] ?? 'm365-lizenzberater'), '/')); ?>/eu-vergleich" class="m365lic-local-nav__link">🇪🇺 EU-Vergleich</a>
+                    </nav>
+                    <?php endif; ?>
+
                     <?php if ($scope === 'member'): ?>
                     <nav class="m365lic-local-nav" aria-label="M365 Lizenzberater Menü">
                         <a href="/member/plugin/m365-license" class="m365lic-local-nav__link m365lic-local-nav__link--active" aria-current="page">🧮 Auswertung</a>
@@ -487,6 +496,14 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                                 </div>
                                 <small class="m365lic-help-text">Basispreise stammen aus dem Paketkatalog und werden pro Bereich mit dem gewählten Modell hochgerechnet.</small>
                                 </div>
+                            </div>
+
+                            <div class="m365lic-field m365lic-field--checkbox-row">
+                                <label class="m365lic-checkbox-inline">
+                                    <input type="checkbox" name="show_alternatives" value="1" <?php echo $showAlternatives ? 'checked' : ''; ?>>
+                                    <span>Nach der Auswertung Alternativen anzeigen</span>
+                                </label>
+                                <small class="m365lic-help-text">Zeigt unter der M365-Auswertung gepflegte Alternativanbieter mit exakt hinterlegten Preisen für 1 Jahr oder monatliche Laufzeit – ohne Prozentaufschläge.</small>
                             </div>
                         </section>
 
@@ -715,6 +732,44 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     <?php endif; ?>
                     Bitte den Paketkatalog prüfen.
                 </div>
+                <?php endif; ?>
+
+                <?php if ($showAlternatives): ?>
+                <section class="m365lic-sku-summary m365lic-sku-summary--alternatives">
+                    <div class="m365lic-sku-summary__head">
+                        <div>
+                            <h3>Alternative Anbieter</h3>
+                            <p>Alternative Angebote für das aktuell gewählte Laufzeitmodell. Es werden ausschließlich die im Admin explizit gepflegten Jahres- bzw. Monatswerte verwendet.</p>
+                        </div>
+                    </div>
+
+                    <?php if ($alternativeOffers !== []): ?>
+                    <div class="m365lic-sku-summary__table-wrap users-table-container">
+                        <table class="m365lic-table m365lic-table--alternatives">
+                            <thead>
+                                <tr>
+                                    <th>Kategorie</th>
+                                    <th>Anbieter</th>
+                                    <th>Preis</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($alternativeOffers as $offer): ?>
+                                <tr>
+                                    <td><strong><?php echo $esc((string) ($offer['category'] ?? 'Allgemein')); ?></strong></td>
+                                    <td><?php echo $esc((string) ($offer['provider'] ?? '')); ?></td>
+                                    <td><?php echo $formatMoney($offer['price'] ?? null); ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php else: ?>
+                    <div class="m365lic-alert m365lic-alert--warning">
+                        ⚠️ Für das aktuell gewählte Laufzeitmodell sind keine aktiven Alternativen mit passender Preisangabe gepflegt.
+                    </div>
+                    <?php endif; ?>
+                </section>
                 <?php endif; ?>
 
                 <form method="POST" action="/api/m365lic/export" class="m365lic-export-form">

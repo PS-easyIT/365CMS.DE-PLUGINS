@@ -49,10 +49,12 @@ trait CMS_M365LIC_Page_Settings_Trait
         $tabs = [
             'general' => '⚙️ Allgemein',
             'design' => '🎨 Design & Sichtbarkeit',
+            'alternatives' => '🔁 Alternativen',
             'limits' => '🚦 Limits',
             'export' => '📄 Export & Recht',
             'system' => '🖥️ System',
         ];
+        $alternativeOffers = $this->decode_alternative_settings((string) ($settings['alternatives_json'] ?? '[]'));
         ?>
         <div class="admin-page-header">
             <div>
@@ -74,7 +76,7 @@ trait CMS_M365LIC_Page_Settings_Trait
             <?php endforeach; ?>
         </div>
 
-        <div class="admin-card" style="border-radius:0 10px 10px 10px;margin-top:0;max-width:980px;">
+        <div class="admin-card m365lic-tab-card m365lic-tab-card--settings">
             <form method="POST" class="admin-form">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                 <input type="hidden" name="tab" value="<?php echo self::esc($tab); ?>">
@@ -189,7 +191,7 @@ trait CMS_M365LIC_Page_Settings_Trait
                         </div>
                     </div>
 
-                    <div class="form-group" style="max-width:320px;">
+                    <div class="form-group m365lic-form-group--compact">
                         <label class="form-label" for="design_border_radius">Kartenradius</label>
                         <input class="form-control" id="design_border_radius" type="number" min="8" max="24" step="2" name="design_border_radius" value="<?php echo (int) ($settings['design_border_radius'] ?? 14); ?>">
                         <small class="m365lic-help-text">Steuert die Rundung der Haupt-Cards und UI-Elemente.</small>
@@ -222,6 +224,58 @@ trait CMS_M365LIC_Page_Settings_Trait
                             Sidebar auf Desktop sticky halten
                         </label>
                     </div>
+                <?php elseif ($tab === 'alternatives'): ?>
+                    <h3>🔁 Alternativen</h3>
+                    <div class="alert m365lic-alert-info">
+                        ℹ️ Diese Liste wird optional unter der M365-Auswertung angezeigt, wenn im Rechner bei der Laufzeit die Checkbox für Alternativen aktiviert wurde. Für Alternativen werden keine Prozentaufschläge aus den M365-Laufzeiten gerechnet – stattdessen werden immer die hier direkt gepflegten Werte für <strong>1 Jahr</strong> oder <strong>monatliche Laufzeit</strong> verwendet.
+                    </div>
+
+                    <div class="m365lic-inline-head">
+                        <div>
+                            <p class="m365lic-section-kicker">Alternative Angebote</p>
+                            <p class="m365lic-help-text">Beispiele für Kategorien: Mail, Storage, Office, Security, Telefonie, Collaboration.</p>
+                        </div>
+                        <button type="button" class="btn btn-secondary" id="m365licAddAlternativeRow">➕ Alternative hinzufügen</button>
+                    </div>
+
+                    <div class="users-table-container">
+                        <table class="users-table m365lic-alternatives-table" id="m365licAlternativesTable">
+                            <thead>
+                                <tr>
+                                    <th>Aktiv</th>
+                                    <th>Kategorie</th>
+                                    <th>Anbieter</th>
+                                    <th>Preis 1 Jahr</th>
+                                    <th>Preis monatlich</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if ($alternativeOffers === []): ?>
+                                <tr data-alternative-row>
+                                    <td><input type="checkbox" name="alternatives[0][is_active]" value="1" checked></td>
+                                    <td><input class="form-control" type="text" name="alternatives[0][category]" value="" placeholder="z. B. Mail"></td>
+                                    <td><input class="form-control" type="text" name="alternatives[0][provider]" value="" placeholder="z. B. Google Workspace"></td>
+                                    <td><input class="form-control" type="text" name="alternatives[0][annual_price]" value="" placeholder="z. B. 5,90"></td>
+                                    <td><input class="form-control" type="text" name="alternatives[0][monthly_price]" value="" placeholder="z. B. 7,20"></td>
+                                    <td><button type="button" class="btn m365lic-btn-ghost-danger m365lic-remove-alternative-row">Entfernen</button></td>
+                                </tr>
+                                <?php else: ?>
+                                    <?php foreach ($alternativeOffers as $index => $offer): ?>
+                                    <tr data-alternative-row>
+                                        <td><input type="checkbox" name="alternatives[<?php echo (int) $index; ?>][is_active]" value="1" <?php echo !empty($offer['is_active']) ? 'checked' : ''; ?>></td>
+                                        <td><input class="form-control" type="text" name="alternatives[<?php echo (int) $index; ?>][category]" value="<?php echo self::esc((string) ($offer['category'] ?? '')); ?>" placeholder="z. B. Mail"></td>
+                                        <td><input class="form-control" type="text" name="alternatives[<?php echo (int) $index; ?>][provider]" value="<?php echo self::esc((string) ($offer['provider'] ?? '')); ?>" placeholder="z. B. Google Workspace"></td>
+                                        <td><input class="form-control" type="text" name="alternatives[<?php echo (int) $index; ?>][annual_price]" value="<?php echo self::esc((string) ($offer['annual_price'] ?? '')); ?>" placeholder="z. B. 5,90"></td>
+                                        <td><input class="form-control" type="text" name="alternatives[<?php echo (int) $index; ?>][monthly_price]" value="<?php echo self::esc((string) ($offer['monthly_price'] ?? '')); ?>" placeholder="z. B. 7,20"></td>
+                                        <td><button type="button" class="btn m365lic-btn-ghost-danger m365lic-remove-alternative-row">Entfernen</button></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <small class="m365lic-help-text">Wenn nur der Jahrespreis gepflegt ist, erscheint die Alternative nur bei Jahres-Laufzeiten. Wenn nur der Monatspreis gepflegt ist, erscheint sie nur bei monatlicher Laufzeit.</small>
                 <?php elseif ($tab === 'limits'): ?>
                     <h3>🚦 Limits & Upsell</h3>
                     <div class="alert m365lic-alert-info">
@@ -328,7 +382,7 @@ trait CMS_M365LIC_Page_Settings_Trait
                         </div>
                     </div>
 
-                    <div class="admin-card" style="margin-top:1rem;padding:1rem 1.25rem;">
+                    <div class="admin-card m365lic-system-card">
                         <h4>🗃️ Tabellenstatus</h4>
                         <div class="users-table-container">
                             <table class="users-table">
@@ -349,7 +403,7 @@ trait CMS_M365LIC_Page_Settings_Trait
                             </table>
                         </div>
 
-                        <div class="m365lic-danger-note" style="margin-top:1rem;display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap;">
+                        <div class="m365lic-danger-note m365lic-danger-note--layout">
                             <div>
                                 <strong>Reparaturfunktion</strong><br>
                                 Erstellt fehlende Plugin-Tabellen neu, ergänzt Defaults ohne bestehende Admin-Werte zu überschreiben und synchronisiert den DB-Version-Key.
@@ -390,9 +444,11 @@ trait CMS_M365LIC_Page_Settings_Trait
             $db = \CMS\Database::instance();
             $prefix = $db->getPrefix();
             foreach ($tables as $table) {
-                $stmt = $db->prepare('SHOW TABLES LIKE ?');
+                $stmt = $db->prepare(
+                    'SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?'
+                );
                 $stmt->execute([$prefix . $table]);
-                $status[$prefix . $table] = (bool) $stmt->fetchColumn();
+                $status[$prefix . $table] = (int) ($stmt->fetchColumn() ?: 0) > 0;
             }
         } catch (\Throwable $e) {
             foreach ($tables as $table) {
@@ -500,6 +556,9 @@ trait CMS_M365LIC_Page_Settings_Trait
                 'show_legal_card' => !empty($_POST['show_legal_card']) ? '1' : '0',
                 'sticky_sidebar' => !empty($_POST['sticky_sidebar']) ? '1' : '0',
             ],
+            'alternatives' => [
+                'alternatives_json' => json_encode($this->normalize_alternative_settings($_POST['alternatives'] ?? []), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            ],
             'limits' => [
                 'public_daily_limit' => (string) max(1, (int) ($_POST['public_daily_limit'] ?? ($settings['public_daily_limit'] ?? 2))),
                 'member_daily_limit' => (string) max(1, (int) ($_POST['member_daily_limit'] ?? ($settings['member_daily_limit'] ?? 10))),
@@ -584,5 +643,71 @@ trait CMS_M365LIC_Page_Settings_Trait
         }
 
         return filter_var($value, FILTER_VALIDATE_URL) ? $value : '/kontakt';
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private function decode_alternative_settings(string $json): array
+    {
+        $decoded = json_decode($json, true);
+        return is_array($decoded) ? $this->normalize_alternative_settings($decoded) : [];
+    }
+
+    /**
+     * @param mixed $offers
+     * @return array<int,array<string,mixed>>
+     */
+    private function normalize_alternative_settings(mixed $offers): array
+    {
+        if (!is_array($offers)) {
+            return [];
+        }
+
+        $normalized = [];
+        foreach ($offers as $offer) {
+            if (!is_array($offer)) {
+                continue;
+            }
+
+            $category = trim((string) ($offer['category'] ?? ''));
+            $provider = trim((string) ($offer['provider'] ?? ''));
+            $annualPrice = $this->normalize_nullable_money_value($offer['annual_price'] ?? null);
+            $monthlyPrice = $this->normalize_nullable_money_value($offer['monthly_price'] ?? null);
+            $isActive = !empty($offer['is_active']) ? 1 : 0;
+
+            if ($category === '' || $provider === '' || ($annualPrice === null && $monthlyPrice === null)) {
+                continue;
+            }
+
+            $normalized[] = [
+                'category' => $category,
+                'provider' => $provider,
+                'annual_price' => $annualPrice,
+                'monthly_price' => $monthlyPrice,
+                'is_active' => $isActive,
+            ];
+        }
+
+        return $normalized;
+    }
+
+    private function normalize_nullable_money_value(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $stringValue = trim((string) $value);
+        if ($stringValue === '') {
+            return null;
+        }
+
+        $normalized = str_replace(',', '.', $stringValue);
+        if (!is_numeric($normalized)) {
+            return null;
+        }
+
+        return number_format((float) $normalized, 2, '.', '');
     }
 }

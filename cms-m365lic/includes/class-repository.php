@@ -432,6 +432,8 @@ final class CMS_M365LIC_Repository
             $stmtSetting->execute([$key, $value]);
         }
 
+        $this->seed_default_alternatives_if_needed($force);
+
         if ($force) {
             $this->pdo()->exec("TRUNCATE TABLE {$this->prefix()}m365lic_packages");
             $this->packagesCache = [];
@@ -744,6 +746,81 @@ final class CMS_M365LIC_Repository
         $multiplier = (float) ($options[$billingCycle]['multiplier'] ?? 1.0);
 
         return round($basePrice * $multiplier, 2);
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function get_alternative_offers(): array
+    {
+        $settings = $this->get_settings();
+        $raw = (string) ($settings['alternatives_json'] ?? '[]');
+        $decoded = json_decode($raw, true);
+
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $offers = [];
+        foreach ($decoded as $offer) {
+            if (!is_array($offer)) {
+                continue;
+            }
+
+            $category = trim((string) ($offer['category'] ?? ''));
+            $provider = trim((string) ($offer['provider'] ?? ''));
+            $annualPrice = $this->normalize_price($offer['annual_price'] ?? null);
+            $monthlyPrice = $this->normalize_price($offer['monthly_price'] ?? null);
+            $isActive = !array_key_exists('is_active', $offer) || !empty($offer['is_active']);
+
+            if (!$isActive || $category === '' || $provider === '') {
+                continue;
+            }
+
+            $offers[] = [
+                'category' => $category,
+                'provider' => $provider,
+                'annual_price' => $annualPrice,
+                'monthly_price' => $monthlyPrice,
+                'is_active' => 1,
+            ];
+        }
+
+        usort($offers, static function (array $left, array $right): int {
+            $categoryCompare = strcasecmp((string) ($left['category'] ?? ''), (string) ($right['category'] ?? ''));
+            if ($categoryCompare !== 0) {
+                return $categoryCompare;
+            }
+
+            return strcasecmp((string) ($left['provider'] ?? ''), (string) ($right['provider'] ?? ''));
+        });
+
+        return $offers;
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function get_alternative_offers_for_billing(string $billingCycle): array
+    {
+        $isMonthlyRuntime = $billingCycle === 'monthly_flex';
+        $offers = [];
+
+        foreach ($this->get_alternative_offers() as $offer) {
+            $price = $isMonthlyRuntime
+                ? ($offer['monthly_price'] ?? null)
+                : ($offer['annual_price'] ?? null);
+
+            if ($price === null) {
+                continue;
+            }
+
+            $offer['price'] = $price;
+            $offer['billing_mode'] = $isMonthlyRuntime ? 'monthly_flex' : 'annual';
+            $offers[] = $offer;
+        }
+
+        return $offers;
     }
 
     /**
@@ -1342,6 +1419,40 @@ final class CMS_M365LIC_Repository
 
         $ip = trim((string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'));
         return hash('sha256', 'ip:' . $ip);
+    }
+
+    private function seed_default_alternatives_if_needed(bool $force): void
+    {
+        $defaultJson = json_encode(CMS_M365LIC_Catalog::default_alternative_offers(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!is_string($defaultJson) || $defaultJson === '') {
+            return;
+        }
+
+        $currentValue = null;
+
+        try {
+            $stmt = $this->db()->prepare("SELECT setting_value FROM {$this->prefix()}m365lic_settings WHERE setting_key = ? LIMIT 1");
+            $stmt->execute(['alternatives_json']);
+            $result = $stmt->fetchColumn();
+            $currentValue = $result !== false ? (string) $result : null;
+        } catch (\Throwable $e) {
+            $currentValue = null;
+        }
+
+        $trimmedValue = trim((string) $currentValue);
+        $shouldSeed = $force || $trimmedValue === '' || $trimmedValue === '[]' || strtolower($trimmedValue) === 'null';
+
+        if (!$shouldSeed) {
+            return;
+        }
+
+        $stmt = $this->db()->prepare(
+            "INSERT INTO {$this->prefix()}m365lic_settings (setting_key, setting_value)
+             VALUES (?, ?)
+             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+        );
+        $stmt->execute(['alternatives_json', $defaultJson]);
+        $this->settingsCache = null;
     }
 
     /**
