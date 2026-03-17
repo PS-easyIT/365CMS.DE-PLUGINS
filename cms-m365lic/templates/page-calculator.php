@@ -31,6 +31,8 @@ $userPricingProfile = is_array($userPricingProfile ?? null)
 $settingsUrl = (string) ($viewContext['settings_url'] ?? '');
 $scope = (string) ($viewContext['scope'] ?? 'public');
 $specialUser = is_array($viewContext['special_user'] ?? null) ? $viewContext['special_user'] : null;
+$specialPricingTier = (string) ($specialUser['group_pricing_tier'] ?? $userPricingProfile['group_pricing_tier'] ?? 'group');
+$specialPricingTierLabel = $specialPricingTier === 'member' ? 'Memberpreis' : 'Spezialpreis';
 $specialMarkupPercent = (float) ($specialUser['effective_markup_percent'] ?? $specialUser['special_markup_percent'] ?? $userPricingProfile['special_markup_percent'] ?? 0);
 $hasPersonalPricing = is_array($userPricingProfile)
     && (
@@ -52,6 +54,7 @@ $showEuAlternatives = !empty($showEuAlternatives ?? false);
 $alternativeOffers = is_array($alternativeOffers ?? null) ? $alternativeOffers : [];
 $euAlternativeOffers = is_array($euAlternativeOffers ?? null) ? $euAlternativeOffers : [];
 $alternativeLimit = max(1, min(10, (int) ($alternativeLimit ?? 1)));
+$showInlineAlternativeControls = $scope !== 'public';
 $stepOneFeatureKeys = ['mail', 'teams', 'office_web', 'office_desktop', 'terminalserver', 'onedrive', 'sharepoint', 'frontline'];
 $stepThreeFeatureKeys = array_values(array_filter(array_keys($featureDefinitions), static function (string $key) use ($featureDefinitions): bool {
     return empty($featureDefinitions[$key]['base']);
@@ -99,7 +102,6 @@ foreach ($stepThreeFeatureKeys as $featureKey) {
         'packages' => $relatedPackages,
         'min_price' => $publicPackagePriceMap[(string) ($relatedPackages[0]['slug'] ?? '')] ?? null,
         'pricing_basis_label' => ((string) ($relatedPackages[0]['pricing_basis'] ?? 'per_user')) === 'flat_monthly' ? 'Fixpreis / Monat' : 'ab pro Benutzer',
-        'source_note' => (string) ($relatedPackages[0]['source_note'] ?? ''),
     ];
 }
 
@@ -300,9 +302,6 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                             <em class="m365lic-feature-price">
                                 <?php echo ($addonFeatureMeta[$featureKey]['min_price'] ?? null) !== null ? $esc((string) ($addonFeatureMeta[$featureKey]['pricing_basis_label'] ?? 'ab')) . ' · ' . $formatMoney($addonFeatureMeta[$featureKey]['min_price']) : 'Preis auf Anfrage'; ?>
                             </em>
-                            <?php if (($addonFeatureMeta[$featureKey]['source_note'] ?? '') !== ''): ?>
-                            <em class="m365lic-feature-source"><?php echo $esc((string) $addonFeatureMeta[$featureKey]['source_note']); ?></em>
-                            <?php endif; ?>
                             <?php endif; ?>
                         </span>
                     </label>
@@ -362,7 +361,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                         <li>Copilot-Voraussetzungen</li>
                         <li>Terminalserver / Shared Activation</li>
                         <li>Add-ons wie Defender & Entra ID P2</li>
-                        <li>Public-, Member- und Spezialpreise</li>
+                        <li><?php echo $scope === 'public' ? 'Öffentliche Richtpreise' : 'Bereichsspezifische Preismodelle'; ?></li>
                     </ul>
                 </div>
                 <?php endif; ?>
@@ -459,7 +458,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                             </div>
                         </div>
                         <p class="m365lic-help-text m365lic-help-text--flush">
-                            Berechnungsbasis ist immer der gepflegte <strong>Special-/Gruppenpreis</strong> je Paket. Darauf wird nur für Ihren zugewiesenen Benutzer der hinterlegte Prozentaufschlag angewendet.
+                            Berechnungsbasis ist immer der gepflegte <strong><?php echo $esc($specialPricingTierLabel); ?></strong> je Paket. Darauf wird nur für Ihren zugewiesenen Benutzer der hinterlegte Prozentaufschlag angewendet.
                         </p>
                         <?php if ((string) ($specialUser['group_description'] ?? '') !== ''): ?>
                         <p class="m365lic-help-text m365lic-help-text--flush"><?php echo $esc((string) $specialUser['group_description']); ?></p>
@@ -501,20 +500,19 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                                 </div>
                             </div>
 
+                            <?php if ($showInlineAlternativeControls): ?>
                             <div class="m365lic-form-grid m365lic-form-grid--2">
                                 <div class="m365lic-field m365lic-field--checkbox-row">
                                     <label class="m365lic-checkbox-inline">
                                         <input type="checkbox" name="show_alternatives" value="1" <?php echo $showAlternatives ? 'checked' : ''; ?>>
                                         <span>Normale Alternativen anzeigen</span>
                                     </label>
-                                    <small class="m365lic-help-text">Zeigt im Ergebnis pro Kategorie die gepflegten Alternativanbieter mit exakt hinterlegten Jahres- bzw. Monatswerten – ohne Prozentaufschläge.</small>
                                 </div>
                                 <div class="m365lic-field m365lic-field--checkbox-row">
                                     <label class="m365lic-checkbox-inline">
                                         <input type="checkbox" name="show_eu_alternatives" value="1" <?php echo $showEuAlternatives ? 'checked' : ''; ?>>
                                         <span>EU-Alternativen anzeigen</span>
                                     </label>
-                                    <small class="m365lic-help-text">Leitet aus den ausgewählten Anforderungen passende europäische Kategorien ab und zeigt diese getrennt nach Bedarfsgruppe.</small>
                                 </div>
                             </div>
 
@@ -531,9 +529,18 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                                         <span class="m365lic-total-chip">EU-Alternativen: <?php echo $showEuAlternatives ? 'an' : 'aus'; ?></span>
                                         <span class="m365lic-total-chip">Limit: <?php echo $alternativeLimit; ?></span>
                                     </div>
-                                    <small class="m365lic-help-text">So landet im Ergebnis nur die gewünschte Anzahl an Alternativen je Kategorie statt die komplette Provider-Armada.</small>
                                 </div>
                             </div>
+                            <?php elseif ($scope === 'public'): ?>
+                            <div class="m365lic-field m365lic-field--info">
+                                <label>EU-Alternativen</label>
+                                <div class="m365lic-context-chip-wrap">
+                                    <span class="m365lic-total-chip">Separater Tab verfügbar</span>
+                                    <a href="/<?php echo $esc(trim((string) ($settings['route_slug'] ?? 'm365-lizenzberater'), '/')); ?>/eu-vergleich" class="m365lic-btn m365lic-btn--ghost">🇪🇺 Zum EU-Vergleich</a>
+                                </div>
+                                <small class="m365lic-help-text">Die öffentliche Standard-Auswertung bleibt bewusst schlank. Europäische Alternativen findest du im separaten Tab.</small>
+                            </div>
+                            <?php endif; ?>
                         </section>
 
                         <section class="m365lic-subcard m365lic-subcard--requirements">
@@ -690,9 +697,6 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                                             <?php if (!empty($item['description'])): ?>
                                             <div class="m365lic-muted"><?php echo $esc((string) $item['description']); ?></div>
                                             <?php endif; ?>
-                                            <?php if (!empty($settings['show_source_notes']) && !empty($item['source_note'])): ?>
-                                            <div class="m365lic-muted"><?php echo $esc((string) $item['source_note']); ?></div>
-                                            <?php endif; ?>
                                             <?php $renderLicenseFeatures($item); ?>
                                         </td>
                                         <td><?php echo $esc((string) ($item['type_label'] ?? '')); ?></td>
@@ -763,7 +767,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                 </div>
                 <?php endif; ?>
 
-                <?php if ($showAlternatives): ?>
+                <?php if ($showInlineAlternativeControls && $showAlternatives): ?>
                 <section class="m365lic-sku-summary m365lic-sku-summary--alternatives">
                     <div class="m365lic-sku-summary__head">
                         <div>
@@ -813,7 +817,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                 </section>
                 <?php endif; ?>
 
-                <?php if ($showEuAlternatives): ?>
+                <?php if ($showInlineAlternativeControls && $showEuAlternatives): ?>
                 <section class="m365lic-sku-summary m365lic-sku-summary--alternatives">
                     <div class="m365lic-sku-summary__head">
                         <div>
@@ -881,7 +885,8 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                 <?php endif; ?>
 
                 <form method="POST" action="/api/m365lic/export" class="m365lic-export-form">
-                    <input type="hidden" name="csrf_token" value="<?php echo $esc($exportToken); ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo $esc($csrfToken); ?>">
+                    <input type="hidden" name="export_csrf_token" value="<?php echo $esc($exportToken); ?>">
                     <input type="hidden" name="context_scope" value="<?php echo $esc((string) ($pricingContext['scope'] ?? 'public')); ?>">
                     <input type="hidden" name="billing_cycle" value="<?php echo $esc((string) ($selectedBilling['key'] ?? 'annual_upfront')); ?>">
                     <input type="hidden" name="requirements_json" value="<?php echo $esc(json_encode($requirements, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)); ?>">

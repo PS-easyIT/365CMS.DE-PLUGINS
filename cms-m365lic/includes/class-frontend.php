@@ -142,12 +142,18 @@ final class CMS_M365LIC_Frontend
         $error = '';
         $limitInfo = null;
         $pricingContext = $this->build_access_context($scope, $settings);
+        $allowInlineAlternatives = $scope !== self::SCOPE_PUBLIC;
+        if (!$allowInlineAlternatives) {
+            $showAlternatives = false;
+            $showEuAlternatives = false;
+            $alternativeLimit = 1;
+        }
         $userPricingProfile = $this->resolve_user_pricing_profile($scope);
         $selectedBilling = $repo->resolve_billing_cycle(null, (string) ($pricingContext['tier'] ?? 'public'), $settings);
         $viewContext = $this->build_view_context($pricingContext, $embedded, $settings, $selectedBilling, $userPricingProfile);
 
         if ($method === 'POST') {
-            if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken($_POST['evaluation_csrf_token'] ?? '', 'm365lic_evaluate')) {
+            if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyPersistentToken($_POST['evaluation_csrf_token'] ?? '', 'm365lic_evaluate')) {
                 $error = 'Sicherheitscheck fehlgeschlagen. Bitte die Seite neu laden.';
             } else {
                 $requirements = $this->parse_posted_requirements();
@@ -177,13 +183,13 @@ final class CMS_M365LIC_Frontend
                             $userPricingProfile,
                             true
                         );
-                        if ($showAlternatives) {
+                        if ($allowInlineAlternatives && $showAlternatives) {
                             $alternativeOffers = $this->build_standard_alternative_summary(
                                 $repo->get_alternative_offers_for_billing((string) ($selectedBilling['key'] ?? 'annual_upfront')),
                                 $alternativeLimit
                             );
                         }
-                        if ($showEuAlternatives) {
+                        if ($allowInlineAlternatives && $showEuAlternatives) {
                             $euAlternativeOffers = $this->build_standard_eu_alternative_summary(
                                 $requirements,
                                 $selectedBilling,
@@ -230,7 +236,7 @@ final class CMS_M365LIC_Frontend
         $euPageIntro = 'Erfasse mehrere Bedarfsgruppen wie in der Standard-Auswertung und vergleiche die empfohlene Microsoft-365-Kombination direkt mit einem europäischen Alternativ-Stack.';
 
         if ($method === 'POST') {
-            if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken($_POST['evaluation_csrf_token'] ?? '', 'm365lic_evaluate')) {
+            if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyPersistentToken($_POST['evaluation_csrf_token'] ?? '', 'm365lic_evaluate')) {
                 $error = 'Sicherheitscheck fehlgeschlagen. Bitte die Seite neu laden.';
             } else {
                 $requirements = $this->parse_posted_requirements();
@@ -302,13 +308,9 @@ final class CMS_M365LIC_Frontend
         $defaultSelection = CMS_M365LIC_Catalog::eu_comparison_default_selection();
         $isMonthly = (string) ($billingContext['key'] ?? 'annual_upfront') === 'monthly_flex';
 
-        $m365Rows = [];
-        foreach (($m365Evaluation['rows'] ?? []) as $row) {
-            if (!is_array($row)) {
-                continue;
-            }
-            $m365Rows[] = $row;
-        }
+        $m365Rows = $this->sanitize_public_eu_comparison_rows(
+            is_array($m365Evaluation['rows'] ?? null) ? $m365Evaluation['rows'] : []
+        );
 
         $euRows = [];
         $euTotal = 0.0;
@@ -397,6 +399,45 @@ final class CMS_M365LIC_Frontend
             ],
             'delta' => ($m365Total !== null && !$euHasMissingPrices) ? round($euTotal - (float) $m365Total, 2) : null,
         ];
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $rows
+     * @return array<int,array<string,mixed>>
+     */
+    private function sanitize_public_eu_comparison_rows(array $rows): array
+    {
+        $sanitizedRows = [];
+
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $sanitizedItems = [];
+            foreach (($row['items'] ?? []) as $item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+
+                $item['pricing_tier'] = 'public';
+                unset(
+                    $item['source_note'],
+                    $item['pricing_note'],
+                    $item['base_unit_price'],
+                    $item['cost_base_unit_price'],
+                    $item['cost_unit_price'],
+                    $item['markup_percent']
+                );
+
+                $sanitizedItems[] = $item;
+            }
+
+            $row['items'] = $sanitizedItems;
+            $sanitizedRows[] = $row;
+        }
+
+        return $sanitizedRows;
     }
 
     /**
@@ -611,7 +652,7 @@ final class CMS_M365LIC_Frontend
         $repo = CMS_M365LIC_Repository::instance();
         $settings = $repo->get_settings();
 
-        if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'm365lic_export')) {
+        if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken($_POST['export_csrf_token'] ?? '', 'm365lic_export')) {
             http_response_code(403);
             echo 'Sicherheitscheck fehlgeschlagen.';
             exit;
@@ -829,7 +870,9 @@ final class CMS_M365LIC_Frontend
                 'embedded' => $embedded,
                 'title' => 'Microsoft 365 Spezialpreise',
                 'intro' => 'Geschützter Spezialbereich für Rahmenkonditionen, Partnerpreise und individuelle Gruppenmodelle.',
-                'summary_label' => (string) ($pricingContext['label'] ?? $settings['default_group_label'] ?? 'Spezialpreise'),
+                'summary_label' => ((string) ($pricingContext['tier'] ?? 'group')) === 'member'
+                    ? 'Memberpreise'
+                    : 'Spezialpreise',
                 'billing_label' => (string) ($billingContext['label'] ?? ''),
                 'settings_url' => $settingsUrl,
                 'user_pricing_profile' => $userPricingProfile,
@@ -862,20 +905,9 @@ final class CMS_M365LIC_Frontend
         $settings = $repo->get_settings();
         $profile = $repo->get_user_pricing_profile($userId);
         $specialUser = $repo->get_current_special_user();
+        $profile = $this->apply_special_user_context_to_profile($profile, $specialUser, false, false);
         $notice = '';
         $error = '';
-
-        if (is_array($specialUser)) {
-            $specialMarkup = (float) ($specialUser['effective_markup_percent'] ?? $specialUser['special_markup_percent'] ?? 0);
-            $profile['base_markup_percent'] = $specialMarkup;
-            $profile['addon_markup_percent'] = $specialMarkup;
-            $profile['copilot_markup_percent'] = $specialMarkup;
-            $profile['partner_name'] = trim((string) ($specialUser['group_label'] ?? $profile['partner_name'] ?? ''));
-            $profile['whitelabel_title'] = trim((string) ($specialUser['group_report_title'] ?? $profile['whitelabel_title'] ?? ''));
-            $profile['whitelabel_intro'] = trim((string) ($specialUser['group_report_intro'] ?? $profile['whitelabel_intro'] ?? ''));
-            $profile['group_pricing_tier'] = (string) ($specialUser['group_pricing_tier'] ?? 'group');
-            $profile['special_user'] = $specialUser;
-        }
 
         if ($method === 'POST') {
             if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken($_POST['member_settings_csrf_token'] ?? '', 'm365lic_member_settings')) {
@@ -892,6 +924,8 @@ final class CMS_M365LIC_Frontend
                 ]);
                 $repo->save_user_package_costs($userId, is_array($_POST['ek_prices'] ?? null) ? $_POST['ek_prices'] : []);
                 $profile = $repo->get_user_pricing_profile($userId);
+                $specialUser = $repo->get_current_special_user();
+                $profile = $this->apply_special_user_context_to_profile($profile, $specialUser, false, false);
                 $notice = 'Deine persönlichen EK- und Report-Einstellungen wurden gespeichert.';
             }
         }
@@ -1039,16 +1073,41 @@ final class CMS_M365LIC_Frontend
             return $profile;
         }
 
+        return $this->apply_special_user_context_to_profile($profile, $specialUser, true, true);
+    }
+
+    /**
+     * @param array<string,mixed> $profile
+     * @param array<string,mixed>|null $specialUser
+     * @return array<string,mixed>
+     */
+    private function apply_special_user_context_to_profile(
+        array $profile,
+        ?array $specialUser,
+        bool $applySpecialMarkup = true,
+        bool $clearCostOverrides = false
+    ): array
+    {
+        if (!is_array($specialUser)) {
+            return $profile;
+        }
+
         $specialMarkupPercent = (float) ($specialUser['effective_markup_percent'] ?? $specialUser['special_markup_percent'] ?? 0);
-        $profile['base_markup_percent'] = $specialMarkupPercent;
-        $profile['addon_markup_percent'] = $specialMarkupPercent;
-        $profile['copilot_markup_percent'] = $specialMarkupPercent;
-        $profile['cost_overrides'] = [];
+        if ($applySpecialMarkup) {
+            $profile['base_markup_percent'] = $specialMarkupPercent;
+            $profile['addon_markup_percent'] = $specialMarkupPercent;
+            $profile['copilot_markup_percent'] = $specialMarkupPercent;
+        }
+        if ($clearCostOverrides) {
+            $profile['cost_overrides'] = [];
+        }
         $profile['special_markup_percent'] = $specialMarkupPercent;
         $profile['pricing_origin'] = 'special_group';
+        $profile['group_pricing_tier'] = (string) ($specialUser['group_pricing_tier'] ?? 'group');
         $profile['partner_name'] = trim((string) ($specialUser['group_label'] ?? $profile['partner_name'] ?? ''));
         $profile['whitelabel_title'] = trim((string) ($specialUser['group_report_title'] ?? $profile['whitelabel_title'] ?? ''));
         $profile['whitelabel_intro'] = trim((string) ($specialUser['group_report_intro'] ?? $profile['whitelabel_intro'] ?? ''));
+        $profile['special_user'] = $specialUser;
 
         return $profile;
     }

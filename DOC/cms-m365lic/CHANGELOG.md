@@ -1,5 +1,11 @@
 # Plugin-Dokumentations-Changelog
 
+## 1.4.9
+
+- Zusätzliche EU-Alternativen für Defender/XDR, Intune/MDM, IAM, Enterprise-Projektmanagement, Low-Code, BI, DMS/Archivierung und Cloud-Telefonie dokumentiert
+- KI-/Copilot-Gegenstücke um `Aleph Alpha`, `Mistral AI` und `DeepL Enterprise / Pro` erweitert
+- Merge-Logik für Bestandsinstallationen dokumentiert, damit neue EU-Defaults nicht nur auf Neuinstallationen erscheinen
+
 ## 1.4.8
 
 - Adminbereich um getrennte Pflegebereiche für normale Alternativen, `EU-Alternativen` und `Europäische KI- & Copilot-Alternativen` erweitert

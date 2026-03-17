@@ -119,6 +119,18 @@ Fehlt für das gewählte Modell der passende Alternativpreis, wird der Eintrag i
 
 Für `EU-Alternativen` und `Europäische KI- & Copilot-Alternativen` kommen zusätzlich `EU-Kategorie` bzw. `Fokus / Nutzen` dazu. KI-Alternativen dürfen bewusst auch ohne Preis gepflegt werden und erscheinen dann im Frontend mit Preisstatus `offen`.
 
+Die EU-Alternativen decken jetzt zusätzlich auch Enterprise-Add-ons und Services ab, unter anderem:
+
+- `Endpoint Security & XDR`
+- `MDM & UEM`
+- `Identity & Access (IAM)`
+- `Enterprise Projektmanagement`
+- `Low-Code & Automatisierung`
+- `Datenanalyse & BI`
+- `DMS, Archivierung & Compliance`
+- `Enterprise Cloud-Telefonie`
+- `KI & Copilot`
+
 Bestehende Installationen behalten bereits manuell gepflegte Alternativen. Nur wenn die jeweilige Liste noch leer ist, wird sie automatisch mit den Standardvergleichen initial befüllt.
 
 ## EU-Vergleich

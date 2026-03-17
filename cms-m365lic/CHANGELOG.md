@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.9 – 2026-03-17
+
+- EU-Alternativen für zusätzliche Add-on- und Service-Kategorien ergänzt: `Endpoint Security & XDR`, `MDM & UEM`, `Identity & Access`, `Enterprise Projektmanagement`, `Low-Code & Automatisierung`, `Datenanalyse & BI`, `DMS/Archivierung/Compliance`, `Enterprise Cloud-Telefonie`
+- Generative-KI-Liste gegenüber Copilot mit `Aleph Alpha`, `Mistral AI` und `DeepL Enterprise / Pro` nachgeschärft
+- Seed-Logik für Alternativen erweitert, damit Bestandsinstallationen fehlende Default-Einträge automatisch dazubekommen statt nur leere Listen zu befüllen
+
 ## 1.4.8 – 2026-03-17
 
 - Admin-Tab `Alternativen` um zwei eigene Bereiche erweitert: `EU-Alternativen` und `Europäische KI- & Copilot-Alternativen`

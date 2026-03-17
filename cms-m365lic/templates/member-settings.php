@@ -16,8 +16,10 @@ $repo = CMS_M365LIC_Repository::instance();
 $costOverrides = is_array($profile['cost_overrides'] ?? null) ? $profile['cost_overrides'] : [];
 $settingsUrl = '/member/plugin/m365-license-settings';
 $defaultEkMap = [];
-$specialUser = is_array($profile['special_user'] ?? null) ? $profile['special_user'] : null;
-$pricingTier = is_array($specialUser) ? (string) ($specialUser['group_pricing_tier'] ?? 'group') : 'member';
+$specialUserContext = isset($specialUser) && is_array($specialUser) ? $specialUser : (is_array($profile['special_user'] ?? null) ? $profile['special_user'] : null);
+$pricingTier = is_array($specialUserContext)
+    ? (string) ($specialUserContext['group_pricing_tier'] ?? ($profile['group_pricing_tier'] ?? 'group'))
+    : 'member';
 $pricingTierLabel = $pricingTier === 'group' ? 'Spezialpreise' : 'Memberpreise';
 
 foreach ($packages as $package) {
@@ -54,9 +56,9 @@ foreach ($packages as $package) {
                         <a href="<?php echo $esc($settingsUrl); ?>" class="m365lic-local-nav__link m365lic-local-nav__link--active" aria-current="page">⚙️ Einstellungen</a>
                     </nav>
 
-                    <?php if ($specialUser !== null): ?>
+                    <?php if ($specialUserContext !== null): ?>
                     <div class="m365lic-alert m365lic-alert--success">
-                        ✅ Zugewiesene Gruppe: <strong><?php echo $esc((string) ($specialUser['group_label'] ?? 'Gruppe')); ?></strong> · Preisquelle: <strong><?php echo $esc($pricingTierLabel); ?></strong> · Standard-Aufschlag: <strong><?php echo $esc(number_format((float) ($specialUser['effective_markup_percent'] ?? 0), 2, ',', '.')); ?>%</strong>
+                        ✅ Zugewiesene Gruppe: <strong><?php echo $esc((string) ($specialUserContext['group_label'] ?? 'Gruppe')); ?></strong> · Preisquelle: <strong><?php echo $esc($pricingTierLabel); ?></strong> · Standard-Aufschlag: <strong><?php echo $esc(number_format((float) ($specialUserContext['effective_markup_percent'] ?? 0), 2, ',', '.')); ?>%</strong>
                     </div>
                     <?php endif; ?>
 

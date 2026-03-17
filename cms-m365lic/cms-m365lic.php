@@ -3,7 +3,7 @@
  * Plugin Name: CMS M365 License
  * Plugin URI: https://365network.de/cms-m365license
  * Description: Microsoft-365-Lizenzberater mit Bedarfsanalyse, Paketverwaltung, PDF-Export und Publicsite im aktiven Theme.
- * Version: 1.4.8
+ * Version: 1.4.9
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_M365LIC_VERSION', '1.4.8');
+define('CMS_M365LIC_VERSION', '1.4.9');
 define('CMS_M365LIC_DB_VERSION', '9');
 define('CMS_M365LIC_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_M365LIC_PLUGIN_URL', '/plugins/cms-m365lic/');

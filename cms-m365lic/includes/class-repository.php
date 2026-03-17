@@ -659,13 +659,14 @@ final class CMS_M365LIC_Repository
      */
     public function get_price_for_package(array $package, string $tier, ?array $pricingProfile = null, bool $applyMarkup = true): ?float
     {
-        $effectivePrices = $this->get_effective_price_map($package);
-        $field = match ($tier) {
-            'member' => 'member_price',
-            'group' => 'group_price',
-            default => 'public_price',
-        };
+        if ($tier === 'public') {
+            return isset($package['public_price']) && $package['public_price'] !== ''
+                ? ($package['public_price'] !== null ? (float) $package['public_price'] : null)
+                : null;
+        }
 
+        $effectivePrices = $this->get_effective_price_map($package);
+        $field = $tier === 'member' ? 'member_price' : 'group_price';
         $price = $effectivePrices[$field]['value'];
 
         if ($pricingProfile === null || $tier === 'public') {
@@ -899,6 +900,16 @@ final class CMS_M365LIC_Repository
      */
     public function enforce_daily_limit(string $action, string $tier): array
     {
+        if ($this->should_bypass_daily_limit($tier)) {
+            return [
+                'allowed' => true,
+                'used' => 0,
+                'limit' => PHP_INT_MAX,
+                'remaining' => PHP_INT_MAX,
+                'message' => '',
+            ];
+        }
+
         $settings = $this->get_settings();
         $dateKey = date('Ymd');
         $actorHash = $this->resolve_actor_hash();
@@ -1502,6 +1513,29 @@ final class CMS_M365LIC_Repository
 
         $ip = trim((string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'));
         return hash('sha256', 'ip:' . $ip);
+    }
+
+    private function should_bypass_daily_limit(string $tier): bool
+    {
+        if ($tier !== 'public') {
+            return false;
+        }
+
+        if (PHP_SAPI === 'cli') {
+            return true;
+        }
+
+        if (!class_exists('CMS\\Auth')) {
+            return false;
+        }
+
+        $auth = \CMS\Auth::instance();
+
+        if (method_exists($auth, 'isAdmin') && $auth->isAdmin()) {
+            return true;
+        }
+
+        return method_exists($auth, 'isLoggedIn') && $auth->isLoggedIn();
     }
 
     private function seed_default_alternatives_if_needed(bool $force): void

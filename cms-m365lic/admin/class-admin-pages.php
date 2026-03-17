@@ -56,7 +56,9 @@ final class CMS_M365LIC_Admin_Pages
 
         self::enqueue_admin_assets();
         self::enqueue_admin_scripts();
+        echo '<div class="m365lic-admin-shell">';
         $renderer();
+        echo '</div>';
 
         if (function_exists('renderAdminLayoutEnd')) {
             renderAdminLayoutEnd();

@@ -188,73 +188,73 @@ final class CMS_M365LIC_Pdf_Export
     <meta charset="UTF-8">
     <title><?php echo $esc($settings['page_title'] ?? 'M365 Lizenz-Auswertung'); ?></title>
     <style>
-        @page{size:A4 portrait;margin:10mm 9mm 12mm;}
-        body{font-family:DejaVu Sans,Arial,sans-serif;color:#0f172a;font-size:9.6px;line-height:1.48;margin:0;padding:0;background:#ffffff;}
-        .m365lic-pdf{width:100%;max-width:none;margin:0;background:#ffffff;border:1px solid #dbe5f4;border-radius:12px;overflow:hidden;}
-        .m365lic-pdf__header{background:linear-gradient(135deg,#0f172a 0%,#1d4ed8 100%);color:#ffffff;padding:18px 18px 16px;}
+        @page{size:A4 portrait;margin:7mm 7mm 8mm;}
+        body{font-family:DejaVu Sans,Arial,sans-serif;color:#0f172a;font-size:9.1px;line-height:1.4;margin:0;padding:0;background:#ffffff;}
+        .m365lic-pdf{width:100%;max-width:none;margin:0;background:#ffffff;border:1px solid #dbe5f4;border-radius:8px;overflow:hidden;}
+        .m365lic-pdf__header{background:linear-gradient(135deg,#0f172a 0%,#1d4ed8 100%);color:#ffffff;padding:14px 14px 12px;}
         .header-brand-table{width:100%;border-collapse:collapse;}
         .header-brand-table td{border:none;vertical-align:top;padding:0;}
-        .header-brand-table__logo{width:110px;padding-right:14px;}
-        .header-brand-table__logo img{max-width:96px;max-height:48px;display:block;}
+        .header-brand-table__logo{width:96px;padding-right:10px;}
+        .header-brand-table__logo img{max-width:82px;max-height:40px;display:block;}
         .header-eyebrow{display:inline-block;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,0.14);font-size:7.7px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
-        .m365lic-pdf__header h1{margin:9px 0 6px;font-size:19px;line-height:1.12;}
-        .m365lic-pdf__intro{margin:0;max-width:700px;font-size:10px;line-height:1.55;color:rgba(255,255,255,0.92);}
-        .header-pill-wrap{margin-top:10px;}
-        .header-pill{display:inline-block;padding:3px 8px;margin:0 6px 6px 0;border-radius:999px;background:rgba(255,255,255,0.12);font-size:7.8px;font-weight:700;}
-        .m365lic-pdf__body{padding:14px 16px 10px;background:#f8fbff;}
-        .m365lic-pdf__section{margin-bottom:14px;}
+        .m365lic-pdf__header h1{margin:7px 0 4px;font-size:17px;line-height:1.08;}
+        .m365lic-pdf__intro{margin:0;max-width:700px;font-size:9.2px;line-height:1.42;color:rgba(255,255,255,0.92);}
+        .header-pill-wrap{margin-top:7px;}
+        .header-pill{display:inline-block;padding:2px 7px;margin:0 4px 4px 0;border-radius:999px;background:rgba(255,255,255,0.12);font-size:7.3px;font-weight:700;}
+        .m365lic-pdf__body{padding:10px 11px 8px;background:#f8fbff;}
+        .m365lic-pdf__section{margin-bottom:10px;}
         .section-kicker{display:block;margin-bottom:4px;color:#2563eb;font-size:7.8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
-        .m365lic-pdf__section h2{margin:0 0 6px;font-size:13px;line-height:1.2;color:#0f172a;}
-        .section-copy{margin:0 0 8px;color:#64748b;line-height:1.55;}
-        .summary-grid,.executive-grid,.signal-grid,.result-grid,.license-grid{width:100%;border-collapse:separate;border-spacing:7px 7px;table-layout:fixed;}
+        .m365lic-pdf__section h2{margin:0 0 4px;font-size:12px;line-height:1.15;color:#0f172a;}
+        .section-copy{margin:0 0 6px;color:#64748b;line-height:1.42;}
+        .summary-grid,.executive-grid,.signal-grid,.result-grid,.license-grid{width:100%;border-collapse:separate;border-spacing:5px 5px;table-layout:fixed;}
         .summary-grid td,.executive-grid td,.signal-grid td,.result-grid td,.license-grid td{vertical-align:top;border:none;padding:0;}
         .summary-grid td{width:25%;}
         .executive-grid td,.signal-grid td{width:50%;}
         .license-grid td{width:50%;}
-        .summary-card,.executive-card,.signal-card,.result-card,.license-card{border:1px solid #dbe5f4;border-radius:12px;background:#ffffff;overflow:hidden;page-break-inside:avoid;box-shadow:0 2px 10px rgba(15,23,42,0.04);}
-        .summary-card{padding:9px 10px;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);}
+        .summary-card,.executive-card,.signal-card,.result-card,.license-card{border:1px solid #dbe5f4;border-radius:9px;background:#ffffff;overflow:hidden;page-break-inside:avoid;box-shadow:0 1px 6px rgba(15,23,42,0.04);}
+        .summary-card{padding:7px 8px;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);}
         .summary-card strong{display:block;margin-bottom:3px;color:#64748b;font-size:7.8px;letter-spacing:.06em;text-transform:uppercase;}
-        .summary-card span{display:block;color:#0f172a;font-size:11.5px;font-weight:700;line-height:1.35;}
-        .executive-card__head,.result-card__head,.license-card__head{padding:9px 10px;border-bottom:1px solid #e2e8f0;background:#ffffff;}
-        .executive-card__body,.result-card__body,.license-card__body{padding:9px 10px;}
-        .executive-card__title,.result-card__title,.license-card__title{margin:0;font-size:11px;font-weight:700;color:#0f172a;}
-        .executive-card__body p,.result-card__body p,.license-card__body p{margin:0 0 7px;color:#475569;}
+        .summary-card span{display:block;color:#0f172a;font-size:10.8px;font-weight:700;line-height:1.28;}
+        .executive-card__head,.result-card__head,.license-card__head{padding:7px 8px;border-bottom:1px solid #e2e8f0;background:#ffffff;}
+        .executive-card__body,.result-card__body,.license-card__body{padding:7px 8px;}
+        .executive-card__title,.result-card__title,.license-card__title{margin:0;font-size:10.2px;font-weight:700;color:#0f172a;}
+        .executive-card__body p,.result-card__body p,.license-card__body p{margin:0 0 5px;color:#475569;}
         .note-list,.sku-note-list,.feature-list{margin:0;padding-left:16px;color:#334155;}
-        .note-list li,.sku-note-list li,.feature-list li{margin-bottom:5px;}
-        .signal-card{padding:9px 10px;}
+        .note-list li,.sku-note-list li,.feature-list li{margin-bottom:3px;}
+        .signal-card{padding:7px 8px;}
         .signal-card strong{display:block;margin-bottom:4px;color:#0f172a;font-size:9.8px;}
         .signal-card p{margin:0;color:#475569;}
         .signal-card--warning{background:#fff7ed;border-color:#fdba74;}
         .signal-card--info{background:#eff6ff;border-color:#bfdbfe;}
         .metric-list{width:100%;border-collapse:collapse;table-layout:fixed;}
-        .metric-list td{padding:5px 0;border-bottom:1px solid #edf2f7;vertical-align:top;}
+        .metric-list td{padding:4px 0;border-bottom:1px solid #edf2f7;vertical-align:top;}
         .metric-list tr:last-child td{border-bottom:none;}
         .metric-label{color:#64748b;width:48%;}
         .metric-value{color:#0f172a;font-weight:700;text-align:right;}
-        .chip{display:inline-block;padding:3px 7px;margin:0 5px 5px 0;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:7.8px;font-weight:700;}
+        .chip{display:inline-block;padding:2px 6px;margin:0 4px 4px 0;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:7.2px;font-weight:700;}
         .chip--base{background:#dbeafe;color:#1d4ed8;}
         .chip--addon{background:#ecfeff;color:#0f766e;}
         .result-card{background:#ffffff;}
         .result-card__head{background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);}
-        .result-meta{margin-top:6px;}
-        .result-explanation{margin:0 0 8px;color:#475569;}
-        .analysis-empty{border:1px dashed #cbd5e1;border-radius:10px;padding:10px;background:#ffffff;color:#64748b;}
+        .result-meta{margin-top:4px;}
+        .result-explanation{margin:0 0 6px;color:#475569;}
+        .analysis-empty{border:1px dashed #cbd5e1;border-radius:8px;padding:8px;background:#ffffff;color:#64748b;}
         .m365-table{width:100%;border-collapse:collapse;table-layout:fixed;background:#ffffff;}
-        .m365-table th,.m365-table td{padding:6px 7px;border-bottom:1px solid #dbe3ee;text-align:left;vertical-align:top;word-wrap:break-word;}
+        .m365-table th,.m365-table td{padding:4px 5px;border-bottom:1px solid #dbe3ee;text-align:left;vertical-align:top;word-wrap:break-word;line-height:1.32;}
         .m365-table th{background:linear-gradient(180deg,#f8fafc 0%,#eef2f7 100%);color:#475569;font-size:7.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid #cbd5e1;}
         .m365-table tbody tr:nth-child(even){background:#f8fbff;}
         .m365-table td.numeric{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
         .muted{color:#64748b;}
         .warn{color:#b45309;font-weight:700;}
-        .sku-summary-wrap{border:1px solid #dbe5f4;border-radius:12px;overflow:hidden;background:#ffffff;page-break-inside:avoid;}
-        .sku-summary-footer{padding:10px 11px;border-top:1px solid #cbd5e1;background:linear-gradient(180deg,#eef4ff 0%,#e4ecff 100%);}
+        .sku-summary-wrap{border:1px solid #dbe5f4;border-radius:9px;overflow:hidden;background:#ffffff;page-break-inside:avoid;}
+        .sku-summary-footer{padding:7px 8px;border-top:1px solid #cbd5e1;background:linear-gradient(180deg,#eef4ff 0%,#e4ecff 100%);}
         .sku-summary-footer-table{width:100%;border-collapse:collapse;}
         .sku-summary-footer-table td{border:none;padding:0;}
         .sku-summary-footer__label{color:#334155;font-size:7.9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;}
-        .sku-summary-footer__value{text-align:right;color:#0f172a;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums;}
+        .sku-summary-footer__value{text-align:right;color:#0f172a;font-size:11px;font-weight:800;font-variant-numeric:tabular-nums;}
         .license-card__head{background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);}
-        .license-card__chips{margin-top:6px;}
-        .license-card__description{margin:0 0 7px;color:#64748b;}
+        .license-card__chips{margin-top:4px;}
+        .license-card__description{margin:0 0 5px;color:#64748b;}
         .feature-pill{display:inline-block;padding:2px 6px;margin:0 5px 5px 0;border-radius:999px;font-size:7.4px;font-weight:700;}
         .feature-pill--quick{background:#dbeafe;color:#1d4ed8;}
         .feature-pill--advanced{background:#ede9fe;color:#6d28d9;}
@@ -262,7 +262,7 @@ final class CMS_M365LIC_Pdf_Export
         .feature-pill--identity{background:#ede9fe;color:#6d28d9;}
         .feature-pill--productivity{background:#eff6ff;color:#1d4ed8;}
         .feature-pill--copilot{background:#cffafe;color:#0f766e;}
-        .feature-box{border:1px solid #e2e8f0;border-radius:9px;padding:7px 8px;margin-bottom:6px;background:#ffffff;}
+        .feature-box{border:1px solid #e2e8f0;border-radius:8px;padding:5px 6px;margin-bottom:4px;background:#ffffff;}
         .feature-box--quick{background:#f8fbff;border-color:#dbeafe;}
         .feature-box--advanced{background:#faf7ff;border-color:#e9d5ff;}
         .feature-box--security{background:#fef2f2;border-color:#fecaca;}
@@ -270,9 +270,9 @@ final class CMS_M365LIC_Pdf_Export
         .feature-box--productivity{background:#eff6ff;border-color:#bfdbfe;}
         .feature-box--copilot{background:#ecfeff;border-color:#a5f3fc;}
         .feature-box strong{display:block;margin-bottom:2px;color:#0f172a;}
-        .feature-box span{display:block;color:#64748b;line-height:1.45;}
-        .page-break{page-break-before:always;}
-        .footer{padding:9px 16px 11px;border-top:1px solid #e2e8f0;background:#ffffff;font-size:8px;color:#64748b;line-height:1.5;}
+        .feature-box span{display:block;color:#64748b;line-height:1.32;}
+        .page-break{page-break-before:auto;}
+        .footer{padding:7px 11px 8px;border-top:1px solid #e2e8f0;background:#ffffff;font-size:7.6px;color:#64748b;line-height:1.35;}
     </style>
 </head>
 <body>
@@ -541,7 +541,7 @@ final class CMS_M365LIC_Pdf_Export
         </section>
 
         <?php if (!empty($totals)): ?>
-        <section class="m365lic-pdf__section page-break">
+        <section class="m365lic-pdf__section">
             <span class="section-kicker">Lizenzprofil</span>
             <h2>Lizenz- und Nutzenprofile für Entscheider</h2>
             <p class="section-copy">Diese Detailansicht ergänzt die Budgetübersicht um fachliche Schwerpunkte, damit Fachbereich, IT und Management mit derselben Entscheidungsgrundlage arbeiten können.</p>
@@ -570,9 +570,6 @@ final class CMS_M365LIC_Pdf_Export
 
                                     <?php if ((string) ($item['pricing_note'] ?? '') !== ''): ?>
                                     <p><strong>Preis-/Beschaffungshinweis:</strong> <?php echo $esc((string) $item['pricing_note']); ?></p>
-                                    <?php endif; ?>
-                                    <?php if ((string) ($item['source_note'] ?? '') !== ''): ?>
-                                    <p><strong>Quelle / Kontext:</strong> <?php echo $esc((string) $item['source_note']); ?></p>
                                     <?php endif; ?>
 
                                     <?php if ($featureDetails !== []): ?>

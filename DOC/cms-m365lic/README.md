@@ -34,6 +34,7 @@ Das Plugin `cms-m365lic` liefert einen konfigurierbaren Microsoft-365-Lizenzbera
 - `ALTERNATIVEN.md` – alle im Plugin gepflegten Alternativanbieter mit Jahres- und Monatspreisen
 - EU-Vergleich im Public-Bereich – eigene Vergleichsseite mit M365 links, EU-Stack rechts und Summenvergleich
 - EU-Kategorie `KI & Copilot` – europäische Alternativen für Copilot-, Chat- und Assistenz-Szenarien
+- EU-Add-on-Kategorien für `Endpoint Security & XDR`, `MDM & UEM`, `IAM`, `Enterprise Projektmanagement`, `Low-Code`, `BI`, `DMS/Archivierung` und `Cloud-Telefonie`
 - `DATABASE.md` – Tabellen und Persistenz
 - `HOOKS.md` – relevante Plugin-Hooks
 - `API.md` – Klassen, Methoden und Kernlogik

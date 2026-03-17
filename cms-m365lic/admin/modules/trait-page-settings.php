@@ -59,6 +59,9 @@ trait CMS_M365LIC_Page_Settings_Trait
         $alternativeOffers = $this->decode_alternative_settings((string) ($settings['alternatives_json'] ?? '[]'));
         $euAlternativeOffers = $this->decode_eu_alternative_settings((string) ($settings['eu_alternatives_json'] ?? '[]'));
         $euAiAlternativeOffers = $this->decode_eu_alternative_settings((string) ($settings['eu_ai_alternatives_json'] ?? '[]'), 'ai_assistants');
+        $alternativeOfferCount = count($alternativeOffers);
+        $euAlternativeOfferCount = count($euAlternativeOffers);
+        $euAiAlternativeOfferCount = count($euAiAlternativeOffers);
         ?>
         <div class="admin-page-header">
             <div>
@@ -234,171 +237,199 @@ trait CMS_M365LIC_Page_Settings_Trait
                         ℹ️ Hier pflegst du getrennt <strong>normale Alternativen</strong>, <strong>EU-Alternativen</strong> und <strong>europäische KI-/Copilot-Alternativen</strong>. Die EU-Daten fließen sowohl in den Public-`EU-Vergleich` als auch in die optionalen `EU-Alternativen` unter der Standard-Auswertung.
                     </div>
 
-                    <div class="m365lic-inline-head">
-                        <div>
-                            <p class="m365lic-section-kicker">Normale Alternativen</p>
-                            <p class="m365lic-help-text">Beispiele für Kategorien: Mail, Storage, Office, Security, Telefonie, Collaboration.</p>
-                        </div>
-                        <button type="button" class="btn btn-secondary" id="m365licAddAlternativeRow">➕ Alternative hinzufügen</button>
-                    </div>
+                    <div class="m365lic-accordion-stack">
+                        <details class="m365lic-accordion" open>
+                            <summary class="m365lic-accordion__summary">
+                                <span>
+                                    <span class="m365lic-section-kicker">Normale Alternativen</span>
+                                    <strong class="m365lic-accordion__title">Standard-Vergleichsanbieter verwalten</strong>
+                                </span>
+                                <span class="m365lic-accordion__meta"><?php echo (int) $alternativeOfferCount; ?> Einträge</span>
+                            </summary>
+                            <div class="m365lic-accordion__body">
+                                <div class="m365lic-inline-head">
+                                    <div>
+                                        <p class="m365lic-help-text">Beispiele für Kategorien: Mail, Storage, Office, Security, Telefonie, Collaboration.</p>
+                                    </div>
+                                    <button type="button" class="btn btn-secondary" id="m365licAddAlternativeRow">➕ Alternative hinzufügen</button>
+                                </div>
 
-                    <div class="users-table-container">
-                        <table class="users-table m365lic-alternatives-table" id="m365licAlternativesTable">
-                            <thead>
-                                <tr>
-                                    <th>Aktiv</th>
-                                    <th>Kategorie</th>
-                                    <th>Anbieter</th>
-                                    <th>Preis 1 Jahr</th>
-                                    <th>Preis monatlich</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if ($alternativeOffers === []): ?>
-                                <tr data-alternative-row>
-                                    <td><input type="checkbox" name="alternatives[0][is_active]" value="1" checked></td>
-                                    <td><input class="form-control" type="text" name="alternatives[0][category]" value="" placeholder="z. B. Mail"></td>
-                                    <td><input class="form-control" type="text" name="alternatives[0][provider]" value="" placeholder="z. B. Google Workspace"></td>
-                                    <td><input class="form-control" type="text" name="alternatives[0][annual_price]" value="" placeholder="z. B. 5,90"></td>
-                                    <td><input class="form-control" type="text" name="alternatives[0][monthly_price]" value="" placeholder="z. B. 7,20"></td>
-                                    <td><button type="button" class="btn m365lic-btn-ghost-danger m365lic-remove-alternative-row">Entfernen</button></td>
-                                </tr>
-                                <?php else: ?>
-                                    <?php foreach ($alternativeOffers as $index => $offer): ?>
-                                    <tr data-alternative-row>
-                                        <td><input type="checkbox" name="alternatives[<?php echo (int) $index; ?>][is_active]" value="1" <?php echo !empty($offer['is_active']) ? 'checked' : ''; ?>></td>
-                                        <td><input class="form-control" type="text" name="alternatives[<?php echo (int) $index; ?>][category]" value="<?php echo self::esc((string) ($offer['category'] ?? '')); ?>" placeholder="z. B. Mail"></td>
-                                        <td><input class="form-control" type="text" name="alternatives[<?php echo (int) $index; ?>][provider]" value="<?php echo self::esc((string) ($offer['provider'] ?? '')); ?>" placeholder="z. B. Google Workspace"></td>
-                                        <td><input class="form-control" type="text" name="alternatives[<?php echo (int) $index; ?>][annual_price]" value="<?php echo self::esc((string) ($offer['annual_price'] ?? '')); ?>" placeholder="z. B. 5,90"></td>
-                                        <td><input class="form-control" type="text" name="alternatives[<?php echo (int) $index; ?>][monthly_price]" value="<?php echo self::esc((string) ($offer['monthly_price'] ?? '')); ?>" placeholder="z. B. 7,20"></td>
-                                        <td><button type="button" class="btn m365lic-btn-ghost-danger m365lic-remove-alternative-row">Entfernen</button></td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <small class="m365lic-help-text">Wenn nur der Jahrespreis gepflegt ist, erscheint die Alternative nur bei Jahres-Laufzeiten. Wenn nur der Monatspreis gepflegt ist, erscheint sie nur bei monatlicher Laufzeit.</small>
-
-                    <hr>
-
-                    <div class="m365lic-inline-head">
-                        <div>
-                            <p class="m365lic-section-kicker">EU-Alternativen</p>
-                            <p class="m365lic-help-text">Diese Anbieter werden im Public-`EU-Vergleich` und unter `EU-Alternativen anzeigen` genutzt.</p>
-                        </div>
-                        <button type="button" class="btn btn-secondary" id="m365licAddEuAlternativeRow">➕ EU-Alternative hinzufügen</button>
-                    </div>
-
-                    <div class="users-table-container">
-                        <table class="users-table m365lic-alternatives-table" id="m365licEuAlternativesTable">
-                            <thead>
-                                <tr>
-                                    <th>Aktiv</th>
-                                    <th>EU-Kategorie</th>
-                                    <th>Anbieter</th>
-                                    <th>Fokus / Nutzen</th>
-                                    <th>Preis 1 Jahr</th>
-                                    <th>Preis monatlich</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if ($euAlternativeOffers === []): ?>
-                                <tr data-alternative-row>
-                                    <td><input type="checkbox" name="eu_alternatives[0][is_active]" value="1" checked></td>
-                                    <td>
-                                        <select class="form-control" name="eu_alternatives[0][category_key]">
-                                            <?php foreach ($euAlternativeCategories as $categoryKey => $category): ?>
-                                            <option value="<?php echo self::esc((string) $categoryKey); ?>"><?php echo self::esc((string) ($category['label'] ?? $categoryKey)); ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </td>
-                                    <td><input class="form-control" type="text" name="eu_alternatives[0][provider]" value="" placeholder="z. B. Infomaniak"></td>
-                                    <td><input class="form-control" type="text" name="eu_alternatives[0][focus]" value="" placeholder="z. B. Datenschutz-Fokus"></td>
-                                    <td><input class="form-control" type="text" name="eu_alternatives[0][annual_price]" value="" placeholder="z. B. 7,90"></td>
-                                    <td><input class="form-control" type="text" name="eu_alternatives[0][monthly_price]" value="" placeholder="z. B. 7,90"></td>
-                                    <td><button type="button" class="btn m365lic-btn-ghost-danger m365lic-remove-alternative-row">Entfernen</button></td>
-                                </tr>
-                                <?php else: ?>
-                                    <?php foreach ($euAlternativeOffers as $index => $offer): ?>
-                                    <tr data-alternative-row>
-                                        <td><input type="checkbox" name="eu_alternatives[<?php echo (int) $index; ?>][is_active]" value="1" <?php echo !empty($offer['is_active']) ? 'checked' : ''; ?>></td>
-                                        <td>
-                                            <select class="form-control" name="eu_alternatives[<?php echo (int) $index; ?>][category_key]">
-                                                <?php foreach ($euAlternativeCategories as $categoryKey => $category): ?>
-                                                <option value="<?php echo self::esc((string) $categoryKey); ?>" <?php echo (($offer['category_key'] ?? 'core_workspace') === $categoryKey) ? 'selected' : ''; ?>><?php echo self::esc((string) ($category['label'] ?? $categoryKey)); ?></option>
+                                <div class="users-table-container">
+                                    <table class="users-table m365lic-alternatives-table" id="m365licAlternativesTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Aktiv</th>
+                                                <th>Kategorie</th>
+                                                <th>Anbieter</th>
+                                                <th>Preis 1 Jahr</th>
+                                                <th>Preis monatlich</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php if ($alternativeOffers === []): ?>
+                                            <tr data-alternative-row>
+                                                <td><input type="checkbox" name="alternatives[0][is_active]" value="1" checked></td>
+                                                <td><input class="form-control" type="text" name="alternatives[0][category]" value="" placeholder="z. B. Mail"></td>
+                                                <td><input class="form-control" type="text" name="alternatives[0][provider]" value="" placeholder="z. B. Google Workspace"></td>
+                                                <td><input class="form-control" type="text" name="alternatives[0][annual_price]" value="" placeholder="z. B. 5,90"></td>
+                                                <td><input class="form-control" type="text" name="alternatives[0][monthly_price]" value="" placeholder="z. B. 7,20"></td>
+                                                <td><button type="button" class="btn m365lic-btn-ghost-danger m365lic-remove-alternative-row">Entfernen</button></td>
+                                            </tr>
+                                            <?php else: ?>
+                                                <?php foreach ($alternativeOffers as $index => $offer): ?>
+                                                <tr data-alternative-row>
+                                                    <td><input type="checkbox" name="alternatives[<?php echo (int) $index; ?>][is_active]" value="1" <?php echo !empty($offer['is_active']) ? 'checked' : ''; ?>></td>
+                                                    <td><input class="form-control" type="text" name="alternatives[<?php echo (int) $index; ?>][category]" value="<?php echo self::esc((string) ($offer['category'] ?? '')); ?>" placeholder="z. B. Mail"></td>
+                                                    <td><input class="form-control" type="text" name="alternatives[<?php echo (int) $index; ?>][provider]" value="<?php echo self::esc((string) ($offer['provider'] ?? '')); ?>" placeholder="z. B. Google Workspace"></td>
+                                                    <td><input class="form-control" type="text" name="alternatives[<?php echo (int) $index; ?>][annual_price]" value="<?php echo self::esc((string) ($offer['annual_price'] ?? '')); ?>" placeholder="z. B. 5,90"></td>
+                                                    <td><input class="form-control" type="text" name="alternatives[<?php echo (int) $index; ?>][monthly_price]" value="<?php echo self::esc((string) ($offer['monthly_price'] ?? '')); ?>" placeholder="z. B. 7,20"></td>
+                                                    <td><button type="button" class="btn m365lic-btn-ghost-danger m365lic-remove-alternative-row">Entfernen</button></td>
+                                                </tr>
                                                 <?php endforeach; ?>
-                                            </select>
-                                        </td>
-                                        <td><input class="form-control" type="text" name="eu_alternatives[<?php echo (int) $index; ?>][provider]" value="<?php echo self::esc((string) ($offer['provider'] ?? '')); ?>" placeholder="z. B. Infomaniak"></td>
-                                        <td><input class="form-control" type="text" name="eu_alternatives[<?php echo (int) $index; ?>][focus]" value="<?php echo self::esc((string) ($offer['focus'] ?? '')); ?>" placeholder="z. B. Datenschutz-Fokus"></td>
-                                        <td><input class="form-control" type="text" name="eu_alternatives[<?php echo (int) $index; ?>][annual_price]" value="<?php echo self::esc((string) ($offer['annual_price'] ?? '')); ?>" placeholder="z. B. 7,90"></td>
-                                        <td><input class="form-control" type="text" name="eu_alternatives[<?php echo (int) $index; ?>][monthly_price]" value="<?php echo self::esc((string) ($offer['monthly_price'] ?? '')); ?>" placeholder="z. B. 7,90"></td>
-                                        <td><button type="button" class="btn m365lic-btn-ghost-danger m365lic-remove-alternative-row">Entfernen</button></td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <small class="m365lic-help-text">EU-Alternativen dürfen auch ohne Preis gespeichert werden. Im Frontend erscheinen sie dann mit Preisstatus <strong>offen</strong>.</small>
+                                            <?php endif; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <small class="m365lic-help-text">Wenn nur der Jahrespreis gepflegt ist, erscheint die Alternative nur bei Jahres-Laufzeiten. Wenn nur der Monatspreis gepflegt ist, erscheint sie nur bei monatlicher Laufzeit.</small>
+                            </div>
+                        </details>
 
-                    <hr>
+                        <details class="m365lic-accordion">
+                            <summary class="m365lic-accordion__summary">
+                                <span>
+                                    <span class="m365lic-section-kicker">EU-Alternativen</span>
+                                    <strong class="m365lic-accordion__title">Europäische Anbieter für den Public-Vergleich</strong>
+                                </span>
+                                <span class="m365lic-accordion__meta"><?php echo (int) $euAlternativeOfferCount; ?> Einträge</span>
+                            </summary>
+                            <div class="m365lic-accordion__body">
+                                <div class="m365lic-inline-head">
+                                    <div>
+                                        <p class="m365lic-help-text">Diese Anbieter werden im Public-`EU-Vergleich` und unter `EU-Alternativen anzeigen` genutzt.</p>
+                                    </div>
+                                    <button type="button" class="btn btn-secondary" id="m365licAddEuAlternativeRow">➕ EU-Alternative hinzufügen</button>
+                                </div>
 
-                    <div class="m365lic-inline-head">
-                        <div>
-                            <p class="m365lic-section-kicker">Europäische KI- & Copilot-Alternativen</p>
-                            <p class="m365lic-help-text">Diese Liste erscheint, sobald in einer Bedarfsgruppe Copilot-/KI-Funktionen ausgewählt wurden.</p>
-                        </div>
-                        <button type="button" class="btn btn-secondary" id="m365licAddEuAiAlternativeRow">➕ KI-Alternative hinzufügen</button>
-                    </div>
+                                <div class="users-table-container">
+                                    <table class="users-table m365lic-alternatives-table" id="m365licEuAlternativesTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Aktiv</th>
+                                                <th>EU-Kategorie</th>
+                                                <th>Anbieter</th>
+                                                <th>Fokus / Nutzen</th>
+                                                <th>Preis 1 Jahr</th>
+                                                <th>Preis monatlich</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php if ($euAlternativeOffers === []): ?>
+                                            <tr data-alternative-row>
+                                                <td><input type="checkbox" name="eu_alternatives[0][is_active]" value="1" checked></td>
+                                                <td>
+                                                    <select class="form-control" name="eu_alternatives[0][category_key]">
+                                                        <?php foreach ($euAlternativeCategories as $categoryKey => $category): ?>
+                                                        <option value="<?php echo self::esc((string) $categoryKey); ?>"><?php echo self::esc((string) ($category['label'] ?? $categoryKey)); ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </td>
+                                                <td><input class="form-control" type="text" name="eu_alternatives[0][provider]" value="" placeholder="z. B. Infomaniak"></td>
+                                                <td><input class="form-control" type="text" name="eu_alternatives[0][focus]" value="" placeholder="z. B. Datenschutz-Fokus"></td>
+                                                <td><input class="form-control" type="text" name="eu_alternatives[0][annual_price]" value="" placeholder="z. B. 7,90"></td>
+                                                <td><input class="form-control" type="text" name="eu_alternatives[0][monthly_price]" value="" placeholder="z. B. 7,90"></td>
+                                                <td><button type="button" class="btn m365lic-btn-ghost-danger m365lic-remove-alternative-row">Entfernen</button></td>
+                                            </tr>
+                                            <?php else: ?>
+                                                <?php foreach ($euAlternativeOffers as $index => $offer): ?>
+                                                <tr data-alternative-row>
+                                                    <td><input type="checkbox" name="eu_alternatives[<?php echo (int) $index; ?>][is_active]" value="1" <?php echo !empty($offer['is_active']) ? 'checked' : ''; ?>></td>
+                                                    <td>
+                                                        <select class="form-control" name="eu_alternatives[<?php echo (int) $index; ?>][category_key]">
+                                                            <?php foreach ($euAlternativeCategories as $categoryKey => $category): ?>
+                                                            <option value="<?php echo self::esc((string) $categoryKey); ?>" <?php echo (($offer['category_key'] ?? 'core_workspace') === $categoryKey) ? 'selected' : ''; ?>><?php echo self::esc((string) ($category['label'] ?? $categoryKey)); ?></option>
+                                                            <?php endforeach; ?>
+                                                        </select>
+                                                    </td>
+                                                    <td><input class="form-control" type="text" name="eu_alternatives[<?php echo (int) $index; ?>][provider]" value="<?php echo self::esc((string) ($offer['provider'] ?? '')); ?>" placeholder="z. B. Infomaniak"></td>
+                                                    <td><input class="form-control" type="text" name="eu_alternatives[<?php echo (int) $index; ?>][focus]" value="<?php echo self::esc((string) ($offer['focus'] ?? '')); ?>" placeholder="z. B. Datenschutz-Fokus"></td>
+                                                    <td><input class="form-control" type="text" name="eu_alternatives[<?php echo (int) $index; ?>][annual_price]" value="<?php echo self::esc((string) ($offer['annual_price'] ?? '')); ?>" placeholder="z. B. 7,90"></td>
+                                                    <td><input class="form-control" type="text" name="eu_alternatives[<?php echo (int) $index; ?>][monthly_price]" value="<?php echo self::esc((string) ($offer['monthly_price'] ?? '')); ?>" placeholder="z. B. 7,90"></td>
+                                                    <td><button type="button" class="btn m365lic-btn-ghost-danger m365lic-remove-alternative-row">Entfernen</button></td>
+                                                </tr>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <small class="m365lic-help-text">EU-Alternativen dürfen auch ohne Preis gespeichert werden. Im Frontend erscheinen sie dann mit Preisstatus <strong>offen</strong>.</small>
+                            </div>
+                        </details>
 
-                    <div class="users-table-container">
-                        <table class="users-table m365lic-alternatives-table" id="m365licEuAiAlternativesTable">
-                            <thead>
-                                <tr>
-                                    <th>Aktiv</th>
-                                    <th>Anbieter</th>
-                                    <th>Fokus / Nutzen</th>
-                                    <th>Preis 1 Jahr</th>
-                                    <th>Preis monatlich</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if ($euAiAlternativeOffers === []): ?>
-                                <tr data-alternative-row>
-                                    <td>
-                                        <input type="checkbox" name="eu_ai_alternatives[0][is_active]" value="1" checked>
-                                        <input type="hidden" name="eu_ai_alternatives[0][category_key]" value="ai_assistants">
-                                    </td>
-                                    <td><input class="form-control" type="text" name="eu_ai_alternatives[0][provider]" value="" placeholder="z. B. Mistral Le Chat Enterprise"></td>
-                                    <td><input class="form-control" type="text" name="eu_ai_alternatives[0][focus]" value="" placeholder="z. B. Europäischer KI-Assistent für Wissensarbeit"></td>
-                                    <td><input class="form-control" type="text" name="eu_ai_alternatives[0][annual_price]" value="" placeholder="optional"></td>
-                                    <td><input class="form-control" type="text" name="eu_ai_alternatives[0][monthly_price]" value="" placeholder="optional"></td>
-                                    <td><button type="button" class="btn m365lic-btn-ghost-danger m365lic-remove-alternative-row">Entfernen</button></td>
-                                </tr>
-                                <?php else: ?>
-                                    <?php foreach ($euAiAlternativeOffers as $index => $offer): ?>
-                                    <tr data-alternative-row>
-                                        <td>
-                                            <input type="checkbox" name="eu_ai_alternatives[<?php echo (int) $index; ?>][is_active]" value="1" <?php echo !empty($offer['is_active']) ? 'checked' : ''; ?>>
-                                            <input type="hidden" name="eu_ai_alternatives[<?php echo (int) $index; ?>][category_key]" value="ai_assistants">
-                                        </td>
-                                        <td><input class="form-control" type="text" name="eu_ai_alternatives[<?php echo (int) $index; ?>][provider]" value="<?php echo self::esc((string) ($offer['provider'] ?? '')); ?>" placeholder="z. B. Mistral Le Chat Enterprise"></td>
-                                        <td><input class="form-control" type="text" name="eu_ai_alternatives[<?php echo (int) $index; ?>][focus]" value="<?php echo self::esc((string) ($offer['focus'] ?? '')); ?>" placeholder="z. B. Europäischer KI-Assistent für Wissensarbeit"></td>
-                                        <td><input class="form-control" type="text" name="eu_ai_alternatives[<?php echo (int) $index; ?>][annual_price]" value="<?php echo self::esc((string) ($offer['annual_price'] ?? '')); ?>" placeholder="optional"></td>
-                                        <td><input class="form-control" type="text" name="eu_ai_alternatives[<?php echo (int) $index; ?>][monthly_price]" value="<?php echo self::esc((string) ($offer['monthly_price'] ?? '')); ?>" placeholder="optional"></td>
-                                        <td><button type="button" class="btn m365lic-btn-ghost-danger m365lic-remove-alternative-row">Entfernen</button></td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
+                        <details class="m365lic-accordion">
+                            <summary class="m365lic-accordion__summary">
+                                <span>
+                                    <span class="m365lic-section-kicker">Europäische KI- & Copilot-Alternativen</span>
+                                    <strong class="m365lic-accordion__title">Copilot-Gegenstücke separat pflegen</strong>
+                                </span>
+                                <span class="m365lic-accordion__meta"><?php echo (int) $euAiAlternativeOfferCount; ?> Einträge</span>
+                            </summary>
+                            <div class="m365lic-accordion__body">
+                                <div class="m365lic-inline-head">
+                                    <div>
+                                        <p class="m365lic-help-text">Diese Liste erscheint, sobald in einer Bedarfsgruppe Copilot-/KI-Funktionen ausgewählt wurden.</p>
+                                    </div>
+                                    <button type="button" class="btn btn-secondary" id="m365licAddEuAiAlternativeRow">➕ KI-Alternative hinzufügen</button>
+                                </div>
+
+                                <div class="users-table-container">
+                                    <table class="users-table m365lic-alternatives-table" id="m365licEuAiAlternativesTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Aktiv</th>
+                                                <th>Anbieter</th>
+                                                <th>Fokus / Nutzen</th>
+                                                <th>Preis 1 Jahr</th>
+                                                <th>Preis monatlich</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php if ($euAiAlternativeOffers === []): ?>
+                                            <tr data-alternative-row>
+                                                <td>
+                                                    <input type="checkbox" name="eu_ai_alternatives[0][is_active]" value="1" checked>
+                                                    <input type="hidden" name="eu_ai_alternatives[0][category_key]" value="ai_assistants">
+                                                </td>
+                                                <td><input class="form-control" type="text" name="eu_ai_alternatives[0][provider]" value="" placeholder="z. B. Mistral Le Chat Enterprise"></td>
+                                                <td><input class="form-control" type="text" name="eu_ai_alternatives[0][focus]" value="" placeholder="z. B. Europäischer KI-Assistent für Wissensarbeit"></td>
+                                                <td><input class="form-control" type="text" name="eu_ai_alternatives[0][annual_price]" value="" placeholder="optional"></td>
+                                                <td><input class="form-control" type="text" name="eu_ai_alternatives[0][monthly_price]" value="" placeholder="optional"></td>
+                                                <td><button type="button" class="btn m365lic-btn-ghost-danger m365lic-remove-alternative-row">Entfernen</button></td>
+                                            </tr>
+                                            <?php else: ?>
+                                                <?php foreach ($euAiAlternativeOffers as $index => $offer): ?>
+                                                <tr data-alternative-row>
+                                                    <td>
+                                                        <input type="checkbox" name="eu_ai_alternatives[<?php echo (int) $index; ?>][is_active]" value="1" <?php echo !empty($offer['is_active']) ? 'checked' : ''; ?>>
+                                                        <input type="hidden" name="eu_ai_alternatives[<?php echo (int) $index; ?>][category_key]" value="ai_assistants">
+                                                    </td>
+                                                    <td><input class="form-control" type="text" name="eu_ai_alternatives[<?php echo (int) $index; ?>][provider]" value="<?php echo self::esc((string) ($offer['provider'] ?? '')); ?>" placeholder="z. B. Mistral Le Chat Enterprise"></td>
+                                                    <td><input class="form-control" type="text" name="eu_ai_alternatives[<?php echo (int) $index; ?>][focus]" value="<?php echo self::esc((string) ($offer['focus'] ?? '')); ?>" placeholder="z. B. Europäischer KI-Assistent für Wissensarbeit"></td>
+                                                    <td><input class="form-control" type="text" name="eu_ai_alternatives[<?php echo (int) $index; ?>][annual_price]" value="<?php echo self::esc((string) ($offer['annual_price'] ?? '')); ?>" placeholder="optional"></td>
+                                                    <td><input class="form-control" type="text" name="eu_ai_alternatives[<?php echo (int) $index; ?>][monthly_price]" value="<?php echo self::esc((string) ($offer['monthly_price'] ?? '')); ?>" placeholder="optional"></td>
+                                                    <td><button type="button" class="btn m365lic-btn-ghost-danger m365lic-remove-alternative-row">Entfernen</button></td>
+                                                </tr>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <small class="m365lic-help-text">Für KI-Alternativen sind Preise optional. So können Copilot-Gegenoptionen schon sichtbar sein, auch wenn die Konditionen noch offen sind.</small>
+                            </div>
+                        </details>
                     </div>
-                    <small class="m365lic-help-text">Für KI-Alternativen sind Preise optional. So können Copilot-Gegenoptionen schon sichtbar sein, auch wenn die Konditionen noch offen sind.</small>
                 <?php elseif ($tab === 'limits'): ?>
                     <h3>🚦 Limits & Upsell</h3>
                     <div class="alert m365lic-alert-info">
