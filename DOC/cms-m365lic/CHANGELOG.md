@@ -1,5 +1,11 @@
 # Plugin-Dokumentations-Changelog
 
+## 1.4.6
+
+- EU-Vergleich auf denselben 3-Schritt-Wizard mit mehreren Bedarfsgruppen wie die Standard-Auswertung dokumentiert
+- Öffentlichen CSRF-Flow für den EU-Vergleich dokumentiert, damit POST-Auswertungen nicht mehr am globalen `form_guard` scheitern
+- Standard-Auswertung um getrennte normale/EU-Alternativen und ein Limit pro Kategorie/Bereich dokumentiert
+
 ## 1.4.5
 
 - Neue Public-Dokumentation für die Seite `EU-Vergleich` ergänzt

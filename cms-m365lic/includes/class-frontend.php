@@ -134,7 +134,10 @@ final class CMS_M365LIC_Frontend
         $requirements = [$this->default_requirement_row()];
         $evaluation = null;
         $alternativeOffers = [];
+        $euAlternativeOffers = [];
         $showAlternatives = !empty($_POST['show_alternatives']);
+        $showEuAlternatives = !empty($_POST['show_eu_alternatives']);
+        $alternativeLimit = $this->clamp_alternative_limit($_POST['alternative_limit'] ?? 1);
         $notice = '';
         $error = '';
         $limitInfo = null;
@@ -175,7 +178,17 @@ final class CMS_M365LIC_Frontend
                             true
                         );
                         if ($showAlternatives) {
-                            $alternativeOffers = $repo->get_alternative_offers_for_billing((string) ($selectedBilling['key'] ?? 'annual_upfront'));
+                            $alternativeOffers = $this->build_standard_alternative_summary(
+                                $repo->get_alternative_offers_for_billing((string) ($selectedBilling['key'] ?? 'annual_upfront')),
+                                $alternativeLimit
+                            );
+                        }
+                        if ($showEuAlternatives) {
+                            $euAlternativeOffers = $this->build_standard_eu_alternative_summary(
+                                $requirements,
+                                $selectedBilling,
+                                $alternativeLimit
+                            );
                         }
                         $notice = 'Die Auswertung wurde erfolgreich erstellt.';
                     }
@@ -201,84 +214,70 @@ final class CMS_M365LIC_Frontend
     {
         $repo = CMS_M365LIC_Repository::instance();
         $settings = $repo->get_settings();
+        $packages = $repo->get_packages(false);
+        $featureDefinitions = CMS_M365LIC_Catalog::feature_definitions();
+        $presets = CMS_M365LIC_Catalog::presets();
         $billingOptions = CMS_M365LIC_Catalog::billing_options();
-        $planProfiles = CMS_M365LIC_Catalog::eu_comparison_plan_profiles();
-        $euCategories = CMS_M365LIC_Catalog::eu_comparison_categories();
-        $euOffers = CMS_M365LIC_Catalog::eu_comparison_offers();
-        $defaultSelection = CMS_M365LIC_Catalog::eu_comparison_default_selection();
 
-        $selectedPlanSlug = array_key_first($planProfiles) ?: 'm365-business-premium';
+        $requirements = [$this->default_requirement_row()];
         $selectedBilling = $repo->resolve_billing_cycle(null, 'public', $settings);
         $strategy = 'best_of_breed';
-        $quantity = 25;
-        $selectedEuProviders = $defaultSelection;
-        $includedCategories = [];
         $comparisonResult = null;
         $notice = '';
         $error = '';
+        $limitInfo = null;
         $euPageTitle = 'EU-Vergleich · Microsoft 365 vs. europäische Anbieter';
-        $euPageIntro = 'Vergleiche typische Microsoft-365-Pläne mit europäischen All-in-One- oder Best-of-Breed-Stacks – inklusive Summen und Preisdelta.';
+        $euPageIntro = 'Erfasse mehrere Bedarfsgruppen wie in der Standard-Auswertung und vergleiche die empfohlene Microsoft-365-Kombination direkt mit einem europäischen Alternativ-Stack.';
 
         if ($method === 'POST') {
-            $selectedPlanSlug = isset($planProfiles[(string) ($_POST['m365_plan_slug'] ?? '')])
-                ? (string) $_POST['m365_plan_slug']
-                : $selectedPlanSlug;
-            $selectedBilling = $repo->resolve_billing_cycle((string) ($_POST['billing_cycle'] ?? ''), 'public', $settings);
-            $strategy = in_array((string) ($_POST['eu_strategy'] ?? 'best_of_breed'), ['all_in_one', 'best_of_breed'], true)
-                ? (string) $_POST['eu_strategy']
-                : 'best_of_breed';
-            $quantity = max(1, min(5000, (int) ($_POST['quantity'] ?? 25)));
-
-            $postedSelection = is_array($_POST['eu_selection'] ?? null) ? $_POST['eu_selection'] : [];
-            foreach ($defaultSelection as $categoryKey => $defaultSlug) {
-                $candidateSlug = trim((string) ($postedSelection[$categoryKey] ?? $defaultSlug));
-                $selectedEuProviders[$categoryKey] = $candidateSlug !== '' ? $candidateSlug : $defaultSlug;
-            }
-
-            $postedIncludes = is_array($_POST['eu_include'] ?? null) ? $_POST['eu_include'] : [];
-            foreach (array_keys($euCategories) as $categoryKey) {
-                $includedCategories[$categoryKey] = !empty($postedIncludes[$categoryKey]);
-            }
-        }
-
-        $planProfile = $planProfiles[$selectedPlanSlug] ?? reset($planProfiles);
-        if (!is_array($planProfile)) {
-            $planProfile = [
-                'label' => 'Microsoft 365 Business Premium',
-                'included_categories' => ['core_workspace', 'office_productivity', 'collaboration_intranet', 'security_device_management'],
-                'description' => '',
-            ];
-        }
-
-        foreach (array_keys($euCategories) as $categoryKey) {
-            if (!isset($includedCategories[$categoryKey])) {
-                $includedCategories[$categoryKey] = $categoryKey === 'core_workspace'
-                    || in_array($categoryKey, $planProfile['included_categories'] ?? [], true);
-            }
-        }
-
-        $m365Package = $repo->get_package_by_slug($selectedPlanSlug);
-        if ($m365Package === null) {
-            $error = 'Der gewählte Microsoft-365-Plan ist im Paketkatalog derzeit nicht aktiv verfügbar.';
-        } else {
-            $comparisonResult = $this->build_eu_comparison_result(
-                $m365Package,
-                $planProfile,
-                $selectedBilling,
-                $quantity,
-                $strategy,
-                $euCategories,
-                $euOffers,
-                $selectedEuProviders,
-                $includedCategories
-            );
-
-            if ($comparisonResult['m365']['line_total'] === null) {
-                $error = 'Für den gewählten M365-Plan fehlt aktuell ein gepflegter Preis im Public-Kontext.';
+            if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken($_POST['evaluation_csrf_token'] ?? '', 'm365lic_evaluate')) {
+                $error = 'Sicherheitscheck fehlgeschlagen. Bitte die Seite neu laden.';
             } else {
-                $notice = 'Der EU-Vergleich wurde erfolgreich erstellt.';
+                $requirements = $this->parse_posted_requirements();
+
+                if (count($requirements) > self::MAX_REQUIREMENT_ROWS) {
+                    $requirements = array_slice($requirements, 0, self::MAX_REQUIREMENT_ROWS);
+                    $error = 'Bitte maximal ' . self::MAX_REQUIREMENT_ROWS . ' Bedarfsgruppen gleichzeitig auswerten.';
+                }
+
+                $selectedBilling = $repo->resolve_billing_cycle((string) ($_POST['billing_cycle'] ?? ''), 'public', $settings);
+                $strategy = in_array((string) ($_POST['eu_strategy'] ?? 'best_of_breed'), ['all_in_one', 'best_of_breed'], true)
+                    ? (string) $_POST['eu_strategy']
+                    : 'best_of_breed';
+
+                if ($error === '') {
+                    $limitInfo = $repo->enforce_daily_limit('evaluation', 'public');
+
+                    if (empty($limitInfo['allowed'])) {
+                        $error = (string) ($limitInfo['message'] ?? 'Tageslimit erreicht.');
+                    } else {
+                        $m365Evaluation = CMS_M365LIC_Calculator::evaluate(
+                            $requirements,
+                            $packages,
+                            self::SCOPE_PUBLIC,
+                            (string) ($selectedBilling['key'] ?? 'annual_upfront'),
+                            null,
+                            true
+                        );
+
+                        $comparisonResult = $this->build_eu_comparison_result_from_evaluation(
+                            $requirements,
+                            $m365Evaluation,
+                            $selectedBilling,
+                            $strategy
+                        );
+                        $notice = 'Der EU-Vergleich wurde erfolgreich erstellt.';
+                    }
+                }
             }
         }
+
+        $csrfToken = class_exists('CMS\Security')
+            ? \CMS\Security::instance()->generateToken('form_guard')
+            : bin2hex(random_bytes(16));
+        $evaluationToken = class_exists('CMS\Security')
+            ? \CMS\Security::instance()->generateToken('m365lic_evaluate')
+            : bin2hex(random_bytes(16));
 
         $this->set_seo($euPageTitle, $euPageIntro);
         include CMS_M365LIC_PLUGIN_DIR . 'templates/page-eu-comparison.php';
@@ -286,106 +285,312 @@ final class CMS_M365LIC_Frontend
     }
 
     /**
-     * @param array<string,mixed> $m365Package
-     * @param array<string,mixed> $planProfile
+     * @param array<int,array<string,mixed>> $requirements
+     * @param array<string,mixed> $m365Evaluation
      * @param array<string,mixed> $billingContext
-     * @param array<string,array<string,string>> $euCategories
-     * @param array<string,array<int,array<string,mixed>>> $euOffers
-     * @param array<string,string> $selectedEuProviders
-     * @param array<string,bool> $includedCategories
      * @return array<string,mixed>
      */
-    private function build_eu_comparison_result(
-        array $m365Package,
-        array $planProfile,
+    private function build_eu_comparison_result_from_evaluation(
+        array $requirements,
+        array $m365Evaluation,
         array $billingContext,
-        int $quantity,
-        string $strategy,
-        array $euCategories,
-        array $euOffers,
-        array $selectedEuProviders,
-        array $includedCategories
+        string $strategy
     ): array {
-        $repo = CMS_M365LIC_Repository::instance();
-        $m365BasePrice = $repo->get_price_for_package($m365Package, self::SCOPE_PUBLIC, null, false);
-        $m365UnitPrice = $repo->apply_billing_cycle($m365BasePrice, (string) ($billingContext['key'] ?? 'annual_upfront'));
-        $m365LineTotal = $m365UnitPrice !== null ? round($m365UnitPrice * $quantity, 2) : null;
+        $euCategories = CMS_M365LIC_Catalog::eu_comparison_categories();
+        $euOffers = CMS_M365LIC_Catalog::eu_comparison_offers();
+        $defaultSelection = CMS_M365LIC_Catalog::eu_comparison_default_selection();
         $isMonthly = (string) ($billingContext['key'] ?? 'annual_upfront') === 'monthly_flex';
-        $alternativeRows = [];
-        $alternativeTotal = 0.0;
-        $hasMissingAlternativePrice = false;
 
-        foreach ($euCategories as $categoryKey => $categoryMeta) {
-            if ($strategy === 'all_in_one' && $categoryKey !== 'core_workspace') {
+        $m365Rows = [];
+        foreach (($m365Evaluation['rows'] ?? []) as $row) {
+            if (!is_array($row)) {
                 continue;
             }
+            $m365Rows[] = $row;
+        }
 
-            if ($strategy === 'best_of_breed' && $categoryKey !== 'core_workspace' && empty($includedCategories[$categoryKey])) {
-                continue;
-            }
+        $euRows = [];
+        $euTotal = 0.0;
+        $euHasMissingPrices = false;
 
-            $offersForCategory = $euOffers[$categoryKey] ?? [];
-            $selectedSlug = (string) ($selectedEuProviders[$categoryKey] ?? '');
-            $selectedOffer = null;
-            foreach ($offersForCategory as $offer) {
-                if ((string) ($offer['slug'] ?? '') === $selectedSlug) {
-                    $selectedOffer = $offer;
-                    break;
+        foreach ($requirements as $index => $requirement) {
+            $requirementFeatures = array_values(array_filter(array_map('strval', $requirement['features'] ?? [])));
+            $requirementLabel = trim((string) ($requirement['label'] ?? ('Bedarfsgruppe ' . ($index + 1))));
+            $requirementQuantity = max(1, (int) ($requirement['quantity'] ?? 1));
+            $requiredCategories = $this->determine_eu_categories_for_features($requirementFeatures, $strategy);
+
+            $items = [];
+            $rowTotal = 0.0;
+            $rowHasMissingPrice = false;
+
+            foreach ($requiredCategories as $categoryKey) {
+                $categoryMeta = $euCategories[$categoryKey] ?? ['label' => $categoryKey, 'description' => ''];
+                $defaultSlug = (string) ($defaultSelection[$categoryKey] ?? '');
+                $selectedOffer = null;
+
+                foreach (($euOffers[$categoryKey] ?? []) as $offer) {
+                    if ((string) ($offer['slug'] ?? '') === $defaultSlug) {
+                        $selectedOffer = $offer;
+                        break;
+                    }
                 }
+
+                if (!is_array($selectedOffer)) {
+                    $offersForCategory = $euOffers[$categoryKey] ?? [];
+                    $selectedOffer = is_array($offersForCategory[0] ?? null) ? $offersForCategory[0] : null;
+                }
+
+                if (!is_array($selectedOffer)) {
+                    continue;
+                }
+
+                $unitPrice = $isMonthly
+                    ? ((isset($selectedOffer['monthly_price']) && $selectedOffer['monthly_price'] !== null && $selectedOffer['monthly_price'] !== '') ? (float) $selectedOffer['monthly_price'] : null)
+                    : ((isset($selectedOffer['annual_price']) && $selectedOffer['annual_price'] !== null && $selectedOffer['annual_price'] !== '') ? (float) $selectedOffer['annual_price'] : null);
+                $lineTotal = $unitPrice !== null ? round($unitPrice * $requirementQuantity, 2) : null;
+
+                if ($lineTotal === null) {
+                    $rowHasMissingPrice = true;
+                    $euHasMissingPrices = true;
+                } else {
+                    $rowTotal += $lineTotal;
+                }
+
+                $items[] = [
+                    'category_key' => $categoryKey,
+                    'category_label' => (string) ($categoryMeta['label'] ?? $categoryKey),
+                    'category_description' => (string) ($categoryMeta['description'] ?? ''),
+                    'provider' => (string) ($selectedOffer['provider'] ?? ''),
+                    'focus' => (string) ($selectedOffer['focus'] ?? ''),
+                    'unit_price' => $unitPrice,
+                    'line_total' => $lineTotal,
+                ];
             }
 
-            if ($selectedOffer === null && $offersForCategory !== []) {
-                $selectedOffer = $offersForCategory[0];
+            if (!$rowHasMissingPrice) {
+                $euTotal += $rowTotal;
             }
 
-            if (!is_array($selectedOffer)) {
-                continue;
-            }
-
-            $unitPrice = $isMonthly
-                ? ((isset($selectedOffer['monthly_price']) && $selectedOffer['monthly_price'] !== null && $selectedOffer['monthly_price'] !== '') ? (float) $selectedOffer['monthly_price'] : null)
-                : ((isset($selectedOffer['annual_price']) && $selectedOffer['annual_price'] !== null && $selectedOffer['annual_price'] !== '') ? (float) $selectedOffer['annual_price'] : null);
-            $lineTotal = $unitPrice !== null ? round($unitPrice * $quantity, 2) : null;
-
-            if ($lineTotal === null) {
-                $hasMissingAlternativePrice = true;
-            } else {
-                $alternativeTotal += $lineTotal;
-            }
-
-            $alternativeRows[] = [
-                'category_key' => $categoryKey,
-                'category_label' => (string) ($categoryMeta['label'] ?? $categoryKey),
-                'category_description' => (string) ($categoryMeta['description'] ?? ''),
-                'provider' => (string) ($selectedOffer['provider'] ?? ''),
-                'focus' => (string) ($selectedOffer['focus'] ?? ''),
-                'unit_price' => $unitPrice,
-                'line_total' => $lineTotal,
+            $euRows[] = [
+                'label' => $requirementLabel !== '' ? $requirementLabel : ('Bedarfsgruppe ' . ($index + 1)),
+                'quantity' => $requirementQuantity,
+                'items' => $items,
+                'row_total' => $rowHasMissingPrice ? null : round($rowTotal, 2),
             ];
         }
 
+        $m365Total = array_key_exists('grand_total', $m365Evaluation) ? $m365Evaluation['grand_total'] : null;
+
         return [
             'm365' => [
-                'name' => (string) ($m365Package['name'] ?? ($planProfile['label'] ?? 'Microsoft 365')), 
-                'description' => (string) ($planProfile['description'] ?? ''),
-                'quantity' => $quantity,
-                'pricing_basis_label' => 'pro Benutzer',
-                'billing_cycle_label' => (string) ($billingContext['label'] ?? ''),
-                'included_categories' => array_values(array_map(static function (string $categoryKey) use ($euCategories): string {
-                    return (string) ($euCategories[$categoryKey]['label'] ?? $categoryKey);
-                }, array_values(array_filter($planProfile['included_categories'] ?? [], 'is_string')))),
-                'unit_price' => $m365UnitPrice,
-                'line_total' => $m365LineTotal,
+                'rows' => $m365Rows,
+                'line_total' => $m365Total,
+                'has_missing_prices' => !empty($m365Evaluation['has_missing_prices']),
             ],
             'alternative' => [
                 'strategy' => $strategy,
                 'strategy_label' => $strategy === 'all_in_one' ? 'All-in-One Workspace' : 'Best-of-Breed Stack',
-                'rows' => $alternativeRows,
-                'line_total' => $hasMissingAlternativePrice ? null : round($alternativeTotal, 2),
-                'has_missing_prices' => $hasMissingAlternativePrice,
+                'rows' => $euRows,
+                'line_total' => $euHasMissingPrices ? null : round($euTotal, 2),
+                'has_missing_prices' => $euHasMissingPrices,
             ],
-            'delta' => ($m365LineTotal !== null && !$hasMissingAlternativePrice) ? round($alternativeTotal - $m365LineTotal, 2) : null,
+            'delta' => ($m365Total !== null && !$euHasMissingPrices) ? round($euTotal - (float) $m365Total, 2) : null,
         ];
+    }
+
+    /**
+     * @param array<int,string> $features
+     * @return array<int,string>
+     */
+    private function determine_eu_categories_for_features(array $features, string $strategy): array
+    {
+        if ($strategy === 'all_in_one') {
+            return ['core_workspace'];
+        }
+
+        $categories = ['core_workspace' => true];
+        foreach ($features as $featureKey) {
+            foreach ($this->map_feature_to_eu_categories($featureKey) as $categoryKey) {
+                $categories[$categoryKey] = true;
+            }
+        }
+
+        return array_keys($categories);
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private function map_feature_to_eu_categories(string $featureKey): array
+    {
+        return match ($featureKey) {
+            'office_web', 'office_desktop', 'terminalserver', 'visio', 'power_bi', 'power_apps', 'automation', 'copilot_chat', 'copilot_m365', 'copilot_studio', 'security_copilot' => ['office_productivity'],
+            'teams', 'sharepoint', 'forms', 'bookings', 'stream', 'viva_engage', 'frontline', 'phone_system', 'audio_conf', 'teams_premium' => ['collaboration_intranet'],
+            'project', 'planner' => ['project_management'],
+            'intune', 'archive', 'defender', 'windows_rights', 'entra_id_p1', 'entra_id_p2', 'entra_governance', 'entra_suite', 'intune_device', 'exchange_protection', 'defender_business', 'defender_office_p1', 'defender_office_p2', 'defender_endpoint_p1', 'defender_endpoint_p2', 'defender_identity', 'defender_cloud_apps' => ['security_device_management'],
+            default => [],
+        };
+    }
+
+    private function clamp_alternative_limit(mixed $value): int
+    {
+        $limit = (int) $value;
+
+        if ($limit < 1) {
+            return 1;
+        }
+
+        if ($limit > 10) {
+            return 10;
+        }
+
+        return $limit;
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $offers
+     * @return array<int,array<string,mixed>>
+     */
+    private function build_standard_alternative_summary(array $offers, int $limit): array
+    {
+        $grouped = [];
+
+        foreach ($offers as $offer) {
+            if (!is_array($offer)) {
+                continue;
+            }
+
+            $category = trim((string) ($offer['category'] ?? 'Allgemein'));
+            if ($category === '') {
+                $category = 'Allgemein';
+            }
+
+            if (!isset($grouped[$category])) {
+                $grouped[$category] = [
+                    'category' => $category,
+                    'offers' => [],
+                ];
+            }
+
+            $grouped[$category]['offers'][] = [
+                'provider' => (string) ($offer['provider'] ?? ''),
+                'price' => isset($offer['price']) && $offer['price'] !== '' && $offer['price'] !== null ? (float) $offer['price'] : null,
+            ];
+        }
+
+        foreach ($grouped as &$group) {
+            usort($group['offers'], static function (array $left, array $right): int {
+                $leftPrice = $left['price'] ?? null;
+                $rightPrice = $right['price'] ?? null;
+
+                if ($leftPrice === null && $rightPrice === null) {
+                    return strcmp((string) ($left['provider'] ?? ''), (string) ($right['provider'] ?? ''));
+                }
+                if ($leftPrice === null) {
+                    return 1;
+                }
+                if ($rightPrice === null) {
+                    return -1;
+                }
+
+                $priceComparison = ((float) $leftPrice <=> (float) $rightPrice);
+                if ($priceComparison !== 0) {
+                    return $priceComparison;
+                }
+
+                return strcmp((string) ($left['provider'] ?? ''), (string) ($right['provider'] ?? ''));
+            });
+
+            $group['offers'] = array_slice($group['offers'], 0, $limit);
+        }
+        unset($group);
+
+        ksort($grouped);
+
+        return array_values($grouped);
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $requirements
+     * @return array<int,array<string,mixed>>
+     */
+    private function build_standard_eu_alternative_summary(array $requirements, array $billingContext, int $limit): array
+    {
+        $euCategories = CMS_M365LIC_Catalog::eu_comparison_categories();
+        $euOffers = CMS_M365LIC_Catalog::eu_comparison_offers();
+        $isMonthly = (string) ($billingContext['key'] ?? 'annual_upfront') === 'monthly_flex';
+        $summary = [];
+
+        foreach ($requirements as $index => $requirement) {
+            $label = trim((string) ($requirement['label'] ?? ''));
+            $quantity = max(1, (int) ($requirement['quantity'] ?? 1));
+            $features = array_values(array_filter(array_map('strval', $requirement['features'] ?? [])));
+            $requiredCategories = $this->determine_eu_categories_for_features($features, 'best_of_breed');
+            $categoryRows = [];
+
+            foreach ($requiredCategories as $categoryKey) {
+                $offersForCategory = [];
+                foreach (($euOffers[$categoryKey] ?? []) as $offer) {
+                    if (!is_array($offer)) {
+                        continue;
+                    }
+
+                    $unitPrice = $isMonthly
+                        ? ((isset($offer['monthly_price']) && $offer['monthly_price'] !== '' && $offer['monthly_price'] !== null) ? (float) $offer['monthly_price'] : null)
+                        : ((isset($offer['annual_price']) && $offer['annual_price'] !== '' && $offer['annual_price'] !== null) ? (float) $offer['annual_price'] : null);
+
+                    $offersForCategory[] = [
+                        'provider' => (string) ($offer['provider'] ?? ''),
+                        'focus' => (string) ($offer['focus'] ?? ''),
+                        'unit_price' => $unitPrice,
+                        'line_total' => $unitPrice !== null ? round($unitPrice * $quantity, 2) : null,
+                    ];
+                }
+
+                usort($offersForCategory, static function (array $left, array $right): int {
+                    $leftPrice = $left['unit_price'] ?? null;
+                    $rightPrice = $right['unit_price'] ?? null;
+
+                    if ($leftPrice === null && $rightPrice === null) {
+                        return strcmp((string) ($left['provider'] ?? ''), (string) ($right['provider'] ?? ''));
+                    }
+                    if ($leftPrice === null) {
+                        return 1;
+                    }
+                    if ($rightPrice === null) {
+                        return -1;
+                    }
+
+                    $priceComparison = ((float) $leftPrice <=> (float) $rightPrice);
+                    if ($priceComparison !== 0) {
+                        return $priceComparison;
+                    }
+
+                    return strcmp((string) ($left['provider'] ?? ''), (string) ($right['provider'] ?? ''));
+                });
+
+                $offersForCategory = array_slice($offersForCategory, 0, $limit);
+                if ($offersForCategory === []) {
+                    continue;
+                }
+
+                $categoryMeta = $euCategories[$categoryKey] ?? ['label' => $categoryKey, 'description' => ''];
+                $categoryRows[] = [
+                    'category_key' => $categoryKey,
+                    'category_label' => (string) ($categoryMeta['label'] ?? $categoryKey),
+                    'category_description' => (string) ($categoryMeta['description'] ?? ''),
+                    'offers' => $offersForCategory,
+                ];
+            }
+
+            $summary[] = [
+                'label' => $label !== '' ? $label : ('Bedarfsgruppe ' . ($index + 1)),
+                'quantity' => $quantity,
+                'categories' => $categoryRows,
+            ];
+        }
+
+        return $summary;
     }
 
     private function export_pdf(): void

@@ -81,4 +81,4 @@ Die Werte stammen aktuell aus `CMS_M365LIC_Catalog::default_alternative_offers()
 ## Stand
 
 - Dokumentationsstand: `2026-03-17`
-- Bezogen auf Plugin-Version: `1.4.5`
+- Bezogen auf Plugin-Version: `1.4.6`

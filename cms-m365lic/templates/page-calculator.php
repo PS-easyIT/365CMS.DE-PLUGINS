@@ -48,7 +48,10 @@ $showLegalCard = !empty($settings['show_legal_card']);
 $stickySidebar = !empty($settings['sticky_sidebar']);
 $hasPublicSidebarContent = !$isEmbedded && ($showContextSummary || $showLegalCard || $showAddonOverview);
 $showAlternatives = !empty($showAlternatives ?? false);
+$showEuAlternatives = !empty($showEuAlternatives ?? false);
 $alternativeOffers = is_array($alternativeOffers ?? null) ? $alternativeOffers : [];
+$euAlternativeOffers = is_array($euAlternativeOffers ?? null) ? $euAlternativeOffers : [];
+$alternativeLimit = max(1, min(10, (int) ($alternativeLimit ?? 1)));
 $stepOneFeatureKeys = ['mail', 'teams', 'office_web', 'office_desktop', 'terminalserver', 'onedrive', 'sharepoint', 'frontline'];
 $stepThreeFeatureKeys = array_values(array_filter(array_keys($featureDefinitions), static function (string $key) use ($featureDefinitions): bool {
     return empty($featureDefinitions[$key]['base']);
@@ -498,12 +501,38 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                                 </div>
                             </div>
 
-                            <div class="m365lic-field m365lic-field--checkbox-row">
-                                <label class="m365lic-checkbox-inline">
-                                    <input type="checkbox" name="show_alternatives" value="1" <?php echo $showAlternatives ? 'checked' : ''; ?>>
-                                    <span>Nach der Auswertung Alternativen anzeigen</span>
-                                </label>
-                                <small class="m365lic-help-text">Zeigt unter der M365-Auswertung gepflegte Alternativanbieter mit exakt hinterlegten Preisen für 1 Jahr oder monatliche Laufzeit – ohne Prozentaufschläge.</small>
+                            <div class="m365lic-form-grid m365lic-form-grid--2">
+                                <div class="m365lic-field m365lic-field--checkbox-row">
+                                    <label class="m365lic-checkbox-inline">
+                                        <input type="checkbox" name="show_alternatives" value="1" <?php echo $showAlternatives ? 'checked' : ''; ?>>
+                                        <span>Normale Alternativen anzeigen</span>
+                                    </label>
+                                    <small class="m365lic-help-text">Zeigt im Ergebnis pro Kategorie die gepflegten Alternativanbieter mit exakt hinterlegten Jahres- bzw. Monatswerten – ohne Prozentaufschläge.</small>
+                                </div>
+                                <div class="m365lic-field m365lic-field--checkbox-row">
+                                    <label class="m365lic-checkbox-inline">
+                                        <input type="checkbox" name="show_eu_alternatives" value="1" <?php echo $showEuAlternatives ? 'checked' : ''; ?>>
+                                        <span>EU-Alternativen anzeigen</span>
+                                    </label>
+                                    <small class="m365lic-help-text">Leitet aus den ausgewählten Anforderungen passende europäische Kategorien ab und zeigt diese getrennt nach Bedarfsgruppe.</small>
+                                </div>
+                            </div>
+
+                            <div class="m365lic-form-grid m365lic-form-grid--2">
+                                <div class="m365lic-field">
+                                    <label for="alternative_limit">Alternativen pro Kategorie / Bereich</label>
+                                    <input id="alternative_limit" type="number" min="1" max="10" name="alternative_limit" value="<?php echo $alternativeLimit; ?>">
+                                    <small class="m365lic-help-text">Standard ist 1, maximal 10. Gilt für normale Alternativen und EU-Alternativen.</small>
+                                </div>
+                                <div class="m365lic-field m365lic-field--info">
+                                    <label>Aktuelle Ausgabe</label>
+                                    <div class="m365lic-context-chip-wrap">
+                                        <span class="m365lic-total-chip">Normale Alternativen: <?php echo $showAlternatives ? 'an' : 'aus'; ?></span>
+                                        <span class="m365lic-total-chip">EU-Alternativen: <?php echo $showEuAlternatives ? 'an' : 'aus'; ?></span>
+                                        <span class="m365lic-total-chip">Limit: <?php echo $alternativeLimit; ?></span>
+                                    </div>
+                                    <small class="m365lic-help-text">So landet im Ergebnis nur die gewünschte Anzahl an Alternativen je Kategorie statt die komplette Provider-Armada.</small>
+                                </div>
                             </div>
                         </section>
 
@@ -739,34 +768,113 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     <div class="m365lic-sku-summary__head">
                         <div>
                             <h3>Alternative Anbieter</h3>
-                            <p>Alternative Angebote für das aktuell gewählte Laufzeitmodell. Es werden ausschließlich die im Admin explizit gepflegten Jahres- bzw. Monatswerte verwendet.</p>
+                            <p>Alternative Angebote für das aktuell gewählte Laufzeitmodell. Pro Kategorie werden maximal <?php echo $alternativeLimit; ?> gepflegte Anbieter ausgegeben.</p>
                         </div>
                     </div>
 
                     <?php if ($alternativeOffers !== []): ?>
-                    <div class="m365lic-sku-summary__table-wrap users-table-container">
-                        <table class="m365lic-table m365lic-table--alternatives">
-                            <thead>
-                                <tr>
-                                    <th>Kategorie</th>
-                                    <th>Anbieter</th>
-                                    <th>Preis</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($alternativeOffers as $offer): ?>
-                                <tr>
-                                    <td><strong><?php echo $esc((string) ($offer['category'] ?? 'Allgemein')); ?></strong></td>
-                                    <td><?php echo $esc((string) ($offer['provider'] ?? '')); ?></td>
-                                    <td><?php echo $formatMoney($offer['price'] ?? null); ?></td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                    <div class="m365lic-result-rows">
+                        <?php foreach ($alternativeOffers as $group): ?>
+                        <article class="m365lic-result-row">
+                            <div class="m365lic-result-row__head">
+                                <div>
+                                    <h3><?php echo $esc((string) ($group['category'] ?? 'Allgemein')); ?></h3>
+                                    <div class="m365lic-result-row__meta">
+                                        <span class="m365lic-total-chip">Top <?php echo (int) count($group['offers'] ?? []); ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="users-table-container">
+                                <table class="m365lic-table m365lic-table--alternatives">
+                                    <thead>
+                                        <tr>
+                                            <th>Anbieter</th>
+                                            <th>Preis</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach (($group['offers'] ?? []) as $offer): ?>
+                                        <tr>
+                                            <td><?php echo $esc((string) ($offer['provider'] ?? '')); ?></td>
+                                            <td><?php echo $formatMoney($offer['price'] ?? null); ?></td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </article>
+                        <?php endforeach; ?>
                     </div>
                     <?php else: ?>
                     <div class="m365lic-alert m365lic-alert--warning">
                         ⚠️ Für das aktuell gewählte Laufzeitmodell sind keine aktiven Alternativen mit passender Preisangabe gepflegt.
+                    </div>
+                    <?php endif; ?>
+                </section>
+                <?php endif; ?>
+
+                <?php if ($showEuAlternatives): ?>
+                <section class="m365lic-sku-summary m365lic-sku-summary--alternatives">
+                    <div class="m365lic-sku-summary__head">
+                        <div>
+                            <h3>EU-Alternativen</h3>
+                            <p>Automatisch aus den gewählten Anforderungen abgeleitete europäische Alternativen. Pro Bereich und Kategorie werden maximal <?php echo $alternativeLimit; ?> Anbieter gezeigt.</p>
+                        </div>
+                    </div>
+
+                    <?php if ($euAlternativeOffers !== []): ?>
+                    <div class="m365lic-result-rows">
+                        <?php foreach ($euAlternativeOffers as $group): ?>
+                        <article class="m365lic-result-row">
+                            <div class="m365lic-result-row__head">
+                                <div>
+                                    <h3><?php echo $esc((string) ($group['label'] ?? 'Bedarfsgruppe')); ?></h3>
+                                    <div class="m365lic-result-row__meta">
+                                        <span class="m365lic-total-chip">Anzahl: <?php echo (int) ($group['quantity'] ?? 0); ?></span>
+                                        <span class="m365lic-total-chip">EU-Alternativen</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <?php if (!empty($group['categories'])): ?>
+                                <?php foreach (($group['categories'] ?? []) as $category): ?>
+                                <div class="m365lic-sku-summary__table-wrap users-table-container">
+                                    <table class="m365lic-table m365lic-table--alternatives">
+                                        <thead>
+                                            <tr>
+                                                <th colspan="4"><?php echo $esc((string) ($category['category_label'] ?? 'Kategorie')); ?></th>
+                                            </tr>
+                                            <tr>
+                                                <th>Anbieter</th>
+                                                <th>Fokus</th>
+                                                <th>Preis</th>
+                                                <th>Gesamt</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php foreach (($category['offers'] ?? []) as $offer): ?>
+                                            <tr>
+                                                <td><?php echo $esc((string) ($offer['provider'] ?? '')); ?></td>
+                                                <td><?php echo $esc((string) ($offer['focus'] ?? '')); ?></td>
+                                                <td><?php echo $formatMoney($offer['unit_price'] ?? null); ?></td>
+                                                <td><?php echo $formatMoney($offer['line_total'] ?? null); ?></td>
+                                            </tr>
+                                            <?php endforeach; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                            <div class="m365lic-alert m365lic-alert--warning">
+                                ⚠️ Für diese Bedarfsgruppe konnten aus den ausgewählten Features aktuell keine passenden EU-Kategorien abgeleitet werden.
+                            </div>
+                            <?php endif; ?>
+                        </article>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php else: ?>
+                    <div class="m365lic-alert m365lic-alert--warning">
+                        ⚠️ Für die aktuelle Auswertung konnten keine EU-Alternativen aufgebaut werden.
                     </div>
                     <?php endif; ?>
                 </section>

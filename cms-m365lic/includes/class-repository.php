@@ -15,6 +15,8 @@ final class CMS_M365LIC_Repository
 {
     private static ?self $instance = null;
     private const PACKAGE_SELECT_COLUMNS = 'id, slug, name, kind, category, audience, pricing_basis, description, features_json, tags_json, prerequisite_tags_json, public_price, member_price, group_price, currency, pricing_note, source_note, is_active, sort_order';
+    private const ANNUAL_MONTHLY_FACTOR = 1.05;
+    private const MONTHLY_FLEX_FACTOR = 1.20;
 
     /** @var array<string,string>|null */
     private ?array $settingsCache = null;
@@ -736,16 +738,45 @@ final class CMS_M365LIC_Repository
         return $options[$key];
     }
 
+    /**
+     * @return array<string,?float>
+     */
+    public function get_billing_cycle_breakdown(?float $storedPrice): array
+    {
+        if ($storedPrice === null) {
+            return [
+                'annual_upfront' => null,
+                'annual_upfront_yearly' => null,
+                'annual_monthly' => null,
+                'annual_monthly_yearly' => null,
+                'monthly_flex' => null,
+                'monthly_flex_yearly' => null,
+            ];
+        }
+
+        $annualMonthly = round($storedPrice, 2);
+        $annualUpfront = round($annualMonthly / self::ANNUAL_MONTHLY_FACTOR, 2);
+        $monthlyFlex = round($annualUpfront * self::MONTHLY_FLEX_FACTOR, 2);
+
+        return [
+            'annual_upfront' => $annualUpfront,
+            'annual_upfront_yearly' => round($annualUpfront * 12, 2),
+            'annual_monthly' => $annualMonthly,
+            'annual_monthly_yearly' => round($annualMonthly * 12, 2),
+            'monthly_flex' => $monthlyFlex,
+            'monthly_flex_yearly' => round($monthlyFlex * 12, 2),
+        ];
+    }
+
     public function apply_billing_cycle(?float $basePrice, string $billingCycle): ?float
     {
         if ($basePrice === null) {
             return null;
         }
 
-        $options = CMS_M365LIC_Catalog::billing_options();
-        $multiplier = (float) ($options[$billingCycle]['multiplier'] ?? 1.0);
+        $breakdown = $this->get_billing_cycle_breakdown($basePrice);
 
-        return round($basePrice * $multiplier, 2);
+        return $breakdown[$billingCycle] ?? $breakdown['annual_monthly'];
     }
 
     /**

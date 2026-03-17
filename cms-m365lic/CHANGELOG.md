@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.6 – 2026-03-17
+
+- Öffentliche Seite `EU-Vergleich` von der manuellen Vorauswahl auf denselben 3-Schritt-Wizard wie die Standard-Auswertung umgestellt, inklusive mehrerer Bedarfsgruppen pro Anfrage
+- Fehlende Public-CSRF-Tokens im EU-Vergleich ergänzt, damit `form_guard` und der plugin-spezifische Auswertungstoken sauber zusammenspielen und der 403-Fehler verschwindet
+- Standard-Auswertung um getrennte Schalter für normale Alternativen und `EU-Alternativen` erweitert; zusätzlich lässt sich nun steuern, wie viele Treffer pro Kategorie/Bereich angezeigt werden (Standard 1, maximal 10)
+
 ## 1.4.5 – 2026-03-17
 
 - Neue Public-Site `EU-Vergleich` ergänzt, um Microsoft-365-Pläne mit europäischen All-in-One- und Best-of-Breed-Anbietern zu vergleichen
