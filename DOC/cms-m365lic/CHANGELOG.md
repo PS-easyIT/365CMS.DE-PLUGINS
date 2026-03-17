@@ -1,5 +1,17 @@
 # Plugin-Dokumentations-Changelog
 
+## 1.4.8
+
+- Adminbereich um getrennte Pflegebereiche für normale Alternativen, `EU-Alternativen` und `Europäische KI- & Copilot-Alternativen` erweitert
+- EU-Vergleich und optionale EU-Ausgabe in der Standard-Auswertung auf konfigurierbare Plugin-Settings statt auf starre Code-Listen umgestellt
+- Neue EU-Kategorie `KI & Copilot` dokumentiert, damit Copilot-Bedarfe passende europäische Alternativen erhalten
+
+## 1.4.7
+
+- Neue Preissemantik dokumentiert: gepflegte Paketpreise gelten jetzt als Referenz-Monatspreis für `1 Jahr / monatlich (+5%)`
+- Admin-Paketübersicht mit zusätzlichen Jahreswerten je Bereich dokumentiert
+- Aus gelieferten Jahrespreislisten heruntergerechnete Spezialpreise für vorhandene Katalogprodukte dokumentiert
+
 ## 1.4.6
 
 - EU-Vergleich auf denselben 3-Schritt-Wizard mit mehreren Bedarfsgruppen wie die Standard-Auswertung dokumentiert

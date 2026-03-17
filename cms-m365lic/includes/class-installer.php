@@ -139,6 +139,7 @@ final class CMS_M365LIC_Installer
             group_key               VARCHAR(120) NOT NULL,
             group_label             VARCHAR(190) NOT NULL,
             description             TEXT DEFAULT NULL,
+            pricing_tier            VARCHAR(20) NOT NULL DEFAULT 'group',
             default_markup_percent  DECIMAL(6,2) NOT NULL DEFAULT 0.00,
             report_title            VARCHAR(190) DEFAULT NULL,
             report_intro            TEXT DEFAULT NULL,
@@ -220,6 +221,13 @@ final class CMS_M365LIC_Installer
             "{$p}m365lic_special_users",
             'user_markup_override_percent',
             "ALTER TABLE {$p}m365lic_special_users ADD COLUMN user_markup_override_percent DECIMAL(6,2) DEFAULT NULL AFTER special_markup_percent"
+        );
+
+        self::ensure_column_exists(
+            $pdo,
+            "{$p}m365lic_special_groups",
+            'pricing_tier',
+            "ALTER TABLE {$p}m365lic_special_groups ADD COLUMN pricing_tier VARCHAR(20) NOT NULL DEFAULT 'group' AFTER description"
         );
     }
 

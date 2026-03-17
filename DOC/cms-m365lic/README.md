@@ -9,11 +9,12 @@ Das Plugin `cms-m365lic` liefert einen konfigurierbaren Microsoft-365-Lizenzbera
 - Paketempfehlung auf Basis einer Feature-Matrix
 - Copilot-Voraussetzungen und Copilot-Add-ons berücksichtigen
 - Preise pro Tier (`public`, `member`, `group`) pflegen und getrennt ausspielen
-- Laufzeit- und Zahlungsart je Bereich auswählen und serverseitig hochrechnen
+- Laufzeit- und Zahlungsart je Bereich auswählen; gepflegte Preise werden als `Jahr / monatlich (+5%)` interpretiert und serverseitig auf Jahreszahlung bzw. flexible Monatslaufzeit umgerechnet
 - Echter PDF-Export der Auswertung über den 365CMS-Dompdf-Stack
 - Tageslimits je Kontext über gehashte Actor-Keys
 - Spezial-User direkt auf 365CMS-Benutzer zuweisen
 - Eigene Public-Seite für den Vergleich von M365 mit europäischen Alternativ-Stacks
+- Eigene Admin-Bereiche für `EU-Alternativen` und `Europäische KI- & Copilot-Alternativen`
 
 ## Besonderheiten
 
@@ -21,6 +22,7 @@ Das Plugin `cms-m365lic` liefert einen konfigurierbaren Microsoft-365-Lizenzbera
 - Member- und Spezialrechner laufen ausschließlich im geschützten 365CMS-Mitgliederbereich
 - Seed-Katalog ist vollständig editierbar
 - Alle Seed-SKUs werden mit EUR-Startpreisen vorbelegt; Fixpreis-SKUs wie Copilot Studio/Security Copilot sind als monatlicher Tenantpreis markiert
+- Die Admin-Paketübersicht zeigt jetzt zusätzlich die daraus abgeleiteten Jahreswerte pro Bereich, damit Public-, Member- und Spezialpreise direkt nachvollziehbar bleiben
 - Seed-Preisupdates werden bei Bestandsinstallationen übernommen, solange lokal noch kein eigener Preis gepflegt wurde
 - Spezialbereich wird nur für im Plugin zugewiesene Benutzer registriert
 - Publicsite, Memberbereich und Adminbereich wurden für bessere Lesbarkeit und schnellere Orientierung UI-seitig nachgeschärft
@@ -31,6 +33,7 @@ Das Plugin `cms-m365lic` liefert einen konfigurierbaren Microsoft-365-Lizenzbera
 
 - `ALTERNATIVEN.md` – alle im Plugin gepflegten Alternativanbieter mit Jahres- und Monatspreisen
 - EU-Vergleich im Public-Bereich – eigene Vergleichsseite mit M365 links, EU-Stack rechts und Summenvergleich
+- EU-Kategorie `KI & Copilot` – europäische Alternativen für Copilot-, Chat- und Assistenz-Szenarien
 - `DATABASE.md` – Tabellen und Persistenz
 - `HOOKS.md` – relevante Plugin-Hooks
 - `API.md` – Klassen, Methoden und Kernlogik

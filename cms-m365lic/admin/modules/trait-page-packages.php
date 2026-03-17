@@ -103,7 +103,7 @@ trait CMS_M365LIC_Page_Packages_Trait
         <div class="admin-page-header">
             <div>
                 <h2>📦 Paketverwaltung</h2>
-                <p>Pflege Basislizenzen, Copilot-Add-ons, Abrechnungsbasis und die Basispreise für Jahresbindung.</p>
+                <p>Pflege Basislizenzen, Copilot-Add-ons, Referenz-Monatspreise und die daraus abgeleiteten Jahreswerte.</p>
             </div>
             <div class="header-actions">
                 <a href="?page=m365lic-packages" class="btn btn-secondary">➕ Neues Paket</a>
@@ -120,7 +120,7 @@ trait CMS_M365LIC_Page_Packages_Trait
         <div class="m365lic-admin-grid m365lic-admin-grid--wide">
             <div class="admin-card">
                 <h3><?php echo (int) $editPackage['id'] > 0 ? '✏️ Paket bearbeiten' : '➕ Paket anlegen'; ?></h3>
-                <p class="m365lic-help-text">Alle Preise hier sind der Basiswert für <strong>1 Jahr Laufzeit mit jährlicher Zahlung</strong>. Die Auswahl im Frontend rechnet daraus +5% bzw. +20% hoch.</p>
+                <p class="m365lic-help-text">Alle Preise hier werden als <strong>Monatspreis für 1 Jahr Laufzeit mit monatlicher Zahlung (+5%)</strong> gepflegt. Jahreszahlung und flexible Monatslaufzeit werden daraus automatisch abgeleitet.</p>
                 <div class="m365lic-admin-note">Alle Preisfelder dieses Plugins werden in Euro gepflegt. Ein separates Währungsfeld ist daher bewusst entfernt.</div>
                 <div class="m365lic-admin-note">Wenn du nur <strong>einen</strong> Preis pflegst, wird dieser automatisch als Standard für Public, Member und Spezialbereich übernommen. Sobald mehrere Felder gepflegt sind, gelten die Bereiche wieder separat.</div>
                 <form method="POST" class="admin-form">
@@ -179,7 +179,7 @@ trait CMS_M365LIC_Page_Packages_Trait
                     <div class="m365lic-inline-head m365lic-inline-head--pricing">
                         <div>
                             <p class="m365lic-section-kicker">Preislogik</p>
-                            <p class="m365lic-help-text">Pflege bei Bedarf drei getrennte Bereichspreise – oder kopiere einen gepflegten Wert mit einem Klick in alle Bereiche.</p>
+                            <p class="m365lic-help-text">Pflege bei Bedarf drei getrennte Bereichspreise – jeweils als Referenzwert für <strong>Jahr / monatlich</strong>. Die Übersicht zeigt dir zusätzlich sofort die abgeleiteten Jahreswerte.</p>
                         </div>
                         <div class="m365lic-price-actions">
                             <button type="button" class="btn btn-secondary btn-sm" data-m365lic-copy-price>↔ Preis für alle Bereiche übernehmen</button>
@@ -189,31 +189,34 @@ trait CMS_M365LIC_Page_Packages_Trait
 
                     <div class="m365lic-form-grid m365lic-form-grid--3">
                         <div class="form-group" data-m365lic-price-field="public_price">
-                            <label class="form-label" for="pkg_price_public">Public Basispreis / Monat</label>
+                            <label class="form-label" for="pkg_price_public">Public Referenzpreis / Monat (Jahr · monatlich)</label>
                             <input class="form-control" id="pkg_price_public" type="text" name="public_price" value="<?php echo self::esc((string) ($editPackage['public_price'] ?? '')); ?>" placeholder="z. B. 12.50" data-m365lic-price-input="public_price" data-m365lic-price-label="Public">
-                            <small class="m365lic-help-text">Leer lassen, wenn der gleiche Preis wie in einem anderen Bereich gelten soll.</small>
+                            <small class="m365lic-help-text">Leer lassen, wenn der gleiche Preis wie in einem anderen Bereich gelten soll. Jahreszahlung wird automatisch niedriger berechnet.</small>
                             <div class="m365lic-price-status" data-m365lic-price-status="public_price">
                                 <span class="m365lic-status-pill m365lic-status-pill--<?php echo self::esc($publicStatus['type']); ?>" data-m365lic-price-badge><?php echo self::esc($publicStatus['label']); ?></span>
                                 <span class="m365lic-price-status__text" data-m365lic-price-text><?php echo self::esc($publicStatus['detail']); ?></span>
                             </div>
+                            <small class="m365lic-help-text"><?php echo self::esc(self::billing_breakdown_summary($editPackage['public_price'] ?? null, (string) ($editPackage['pricing_basis'] ?? 'per_user'))); ?></small>
                         </div>
                         <div class="form-group" data-m365lic-price-field="member_price">
-                            <label class="form-label" for="pkg_price_member">Member Basispreis / Monat</label>
+                            <label class="form-label" for="pkg_price_member">Member Referenzpreis / Monat (Jahr · monatlich)</label>
                             <input class="form-control" id="pkg_price_member" type="text" name="member_price" value="<?php echo self::esc((string) ($editPackage['member_price'] ?? '')); ?>" placeholder="z. B. 11.90" data-m365lic-price-input="member_price" data-m365lic-price-label="Member">
                             <small class="m365lic-help-text">Ohne eigenen Memberpreis greift automatisch der einzige gepflegte Paketpreis.</small>
                             <div class="m365lic-price-status" data-m365lic-price-status="member_price">
                                 <span class="m365lic-status-pill m365lic-status-pill--<?php echo self::esc($memberStatus['type']); ?>" data-m365lic-price-badge><?php echo self::esc($memberStatus['label']); ?></span>
                                 <span class="m365lic-price-status__text" data-m365lic-price-text><?php echo self::esc($memberStatus['detail']); ?></span>
                             </div>
+                            <small class="m365lic-help-text"><?php echo self::esc(self::billing_breakdown_summary($editPackage['member_price'] ?? null, (string) ($editPackage['pricing_basis'] ?? 'per_user'))); ?></small>
                         </div>
                         <div class="form-group" data-m365lic-price-field="group_price">
-                            <label class="form-label" for="pkg_price_group">Spezial Basispreis / Monat</label>
+                            <label class="form-label" for="pkg_price_group">Spezial Referenzpreis / Monat (Jahr · monatlich)</label>
                             <input class="form-control" id="pkg_price_group" type="text" name="group_price" value="<?php echo self::esc((string) ($editPackage['group_price'] ?? '')); ?>" placeholder="z. B. 10.90" data-m365lic-price-input="group_price" data-m365lic-price-label="Spezial">
-                            <small class="m365lic-help-text">Auch Spezialpreise erben automatisch, solange nur ein einzelner Preis hinterlegt ist.</small>
+                            <small class="m365lic-help-text">Auch Spezialpreise erben automatisch, solange nur ein einzelner Preis hinterlegt ist. Jahreswerte aus gelieferten Jahreslisten werden dafür passend heruntergerechnet.</small>
                             <div class="m365lic-price-status" data-m365lic-price-status="group_price">
                                 <span class="m365lic-status-pill m365lic-status-pill--<?php echo self::esc($groupStatus['type']); ?>" data-m365lic-price-badge><?php echo self::esc($groupStatus['label']); ?></span>
                                 <span class="m365lic-price-status__text" data-m365lic-price-text><?php echo self::esc($groupStatus['detail']); ?></span>
                             </div>
+                            <small class="m365lic-help-text"><?php echo self::esc(self::billing_breakdown_summary($editPackage['group_price'] ?? null, (string) ($editPackage['pricing_basis'] ?? 'per_user'))); ?></small>
                         </div>
                     </div>
 
@@ -224,7 +227,10 @@ trait CMS_M365LIC_Page_Packages_Trait
                             <?php foreach (['public_price' => 'Public', 'member_price' => 'Member', 'group_price' => 'Spezial'] as $priceField => $priceLabel): ?>
                             <?php $priceStatus = self::get_price_status_meta($editPackageEffectivePrices[$priceField] ?? ['value' => null, 'inherited' => false, 'source' => $priceField], $priceField); ?>
                             <div class="m365lic-effective-price-row">
-                                <span><?php echo self::esc($priceLabel); ?> <strong><?php echo ($editPackageEffectivePrices[$priceField]['value'] ?? null) !== null ? self::esc(number_format((float) $editPackageEffectivePrices[$priceField]['value'], 2, ',', '.')) . ' €' : '—'; ?></strong></span>
+                                <span>
+                                    <?php echo self::esc($priceLabel); ?> <strong><?php echo self::esc(self::format_price(($editPackageEffectivePrices[$priceField]['value'] ?? null))); ?></strong><br>
+                                    <small class="m365lic-help-text"><?php echo self::esc(self::billing_breakdown_summary($editPackageEffectivePrices[$priceField]['value'] ?? null, (string) ($editPackage['pricing_basis'] ?? 'per_user'))); ?></small>
+                                </span>
                                 <span class="m365lic-status-pill m365lic-status-pill--<?php echo self::esc($priceStatus['type']); ?>"><?php echo self::esc($priceStatus['label']); ?></span>
                             </div>
                             <?php endforeach; ?>
@@ -302,7 +308,7 @@ trait CMS_M365LIC_Page_Packages_Trait
                                 <th>Name</th>
                                 <th>Typ</th>
                                 <th>Preisart</th>
-                                <th>Preise</th>
+                                <th>Preisübersicht</th>
                                 <th>Aktionen</th>
                             </tr>
                         </thead>
@@ -325,7 +331,10 @@ trait CMS_M365LIC_Page_Packages_Trait
                                         <?php foreach (['public_price' => 'Public', 'member_price' => 'Member', 'group_price' => 'Spezial'] as $priceField => $priceLabel): ?>
                                         <?php $priceStatus = self::get_price_status_meta($effectivePrices[$priceField] ?? ['value' => null, 'inherited' => false, 'source' => $priceField], $priceField); ?>
                                         <span class="m365lic-price-stack__row">
-                                            <span><?php echo self::esc($priceLabel); ?>: <strong><?php echo ($effectivePrices[$priceField]['value'] ?? null) !== null ? self::esc(number_format((float) $effectivePrices[$priceField]['value'], 2, ',', '.')) . ' €' : '—'; ?></strong></span>
+                                            <span>
+                                                <?php echo self::esc($priceLabel); ?>: <strong><?php echo self::esc(self::format_price(($effectivePrices[$priceField]['value'] ?? null))); ?></strong><br>
+                                                <small><?php echo self::esc(self::billing_breakdown_summary($effectivePrices[$priceField]['value'] ?? null, (string) ($package['pricing_basis'] ?? 'per_user'))); ?></small>
+                                            </span>
                                             <span class="m365lic-price-stack__meta">
                                                 <span class="m365lic-status-pill m365lic-status-pill--<?php echo self::esc($priceStatus['type']); ?>"><?php echo self::esc($priceStatus['label']); ?></span>
                                                 <?php if ($priceStatus['source_detail'] !== ''): ?>
@@ -415,6 +424,35 @@ trait CMS_M365LIC_Page_Packages_Trait
             'group_price' => 'Spezial',
             default => 'Public',
         };
+    }
+
+    private static function format_price(?float $price): string
+    {
+        return $price !== null
+            ? number_format($price, 2, ',', '.') . ' €'
+            : '—';
+    }
+
+    private static function billing_breakdown_summary(?float $storedPrice, string $pricingBasis): string
+    {
+        if ($storedPrice === null) {
+            return 'Keine Preisbasis vorhanden.';
+        }
+
+        $breakdown = self::repo()->get_billing_cycle_breakdown($storedPrice);
+        $unit = $pricingBasis === 'flat_monthly' ? ' / Tenant' : ' / Benutzer';
+
+        return sprintf(
+            'Jahr/jährlich: %s%s · %s / Jahr · Jahr/monatlich: %s%s · %s / Jahr · Monat/flexibel: %s%s',
+            self::format_price($breakdown['annual_upfront']),
+            $unit,
+            self::format_price($breakdown['annual_upfront_yearly']),
+            self::format_price($breakdown['annual_monthly']),
+            $unit,
+            self::format_price($breakdown['annual_monthly_yearly']),
+            self::format_price($breakdown['monthly_flex']),
+            $unit
+        );
     }
 
     private function is_duplicate_package_slug(string $slug, int $currentId): bool

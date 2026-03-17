@@ -39,13 +39,13 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                             'note' => trim((string) ($_POST['note'] ?? '')),
                             'is_active' => !empty($_POST['is_active']) ? 1 : 0,
                         ]);
-                        $notice = 'Spezialzugang gespeichert.';
+                        $notice = 'User-Zuweisung gespeichert.';
                     }
                 } elseif ($action === 'remove_special_user' && $userId > 0) {
                     self::repo()->remove_special_user($userId);
-                    $notice = 'Spezialzugang entfernt.';
+                    $notice = 'User-Zuweisung entfernt.';
                 } else {
-                    $error = 'Ungültige Spezial-User-Aktion.';
+                    $error = 'Ungültige User-Aktion.';
                 }
             }
         }
@@ -56,8 +56,8 @@ trait CMS_M365LIC_Page_Special_Users_Trait
         ?>
         <div class="admin-page-header">
             <div>
-                <h2>🔐 Spezial-User</h2>
-                <p>Weise eingeloggten 365CMS-Benutzern einen geschützten Spezialbereich mit eigenem Preis-Kontext zu.</p>
+                <h2>🔐 User</h2>
+                <p>Weise eingeloggten 365CMS-Benutzern eine Gruppe mit passender Preislogik zu.</p>
             </div>
             <div class="header-actions">
                 <a href="?page=m365lic-special-groups" class="btn btn-secondary">👥 Gruppen verwalten</a>
@@ -77,18 +77,18 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                 <div class="m365lic-inline-head">
                     <div>
                         <p class="m365lic-section-kicker">Zugriffe</p>
-                        <h3>Aktive Spezialzugänge</h3>
+                        <h3>Aktive User-Zuweisungen</h3>
                     </div>
                     <span class="status-badge active"><?php echo (int) count($assignedUsers); ?> Einträge</span>
                 </div>
 
-                <div class="m365lic-admin-note">Spezial-User erhalten zusätzlich zum Memberbereich einen geschützten Spezialbereich mit eigenem Preis-Kontext und individuellen Konditionshinweisen. Benutzer werden jetzt ausschließlich bestehenden Spezialgruppen zugewiesen.</div>
+                <div class="m365lic-admin-note">Zugewiesene User erhalten zusätzlich zum Memberbereich einen Gruppen-Kontext mit eigener Preisquelle, Aufschlägen und Report-Defaults. Benutzer werden bestehenden Gruppen zugewiesen.</div>
 
                 <?php if (empty($assignedUsers)): ?>
                     <div class="empty-state">
                         <p class="m365lic-empty-state__icon">🕵️</p>
-                        <p><strong>Noch keine Spezial-User zugewiesen</strong></p>
-                        <p class="m365lic-empty-state__text">Sobald du unten einen Benutzer speicherst, erscheint hier der geschützte Spezialzugang.</p>
+                        <p><strong>Noch keine User zugewiesen</strong></p>
+                        <p class="m365lic-empty-state__text">Sobald du unten einen Benutzer speicherst, erscheint hier die Gruppen-Zuweisung.</p>
                     </div>
                 <?php else: ?>
                     <div class="users-table-container">
@@ -97,6 +97,7 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                                 <tr>
                                     <th>Benutzer</th>
                                     <th>Gruppe</th>
+                                    <th>Preisquelle</th>
                                     <th>Aufschlag</th>
                                     <th>Hinweis</th>
                                     <th>Status</th>
@@ -111,9 +112,10 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                                         <span class="m365lic-muted"><?php echo self::esc((string) ($user['email'] ?? '')); ?></span>
                                     </td>
                                     <td>
-                                        <strong><?php echo self::esc((string) ($user['group_label'] ?? 'Spezialzugang')); ?></strong><br>
+                                        <strong><?php echo self::esc((string) ($user['group_label'] ?? 'Gruppe')); ?></strong><br>
                                         <span class="m365lic-muted"><?php echo self::esc((string) ($user['group_key'] ?? 'special')); ?></span>
                                     </td>
+                                    <td><?php echo self::esc(($user['group_pricing_tier'] ?? 'group') === 'member' ? 'Memberpreise' : 'Spezialpreise'); ?></td>
                                     <td>
                                         <strong><?php echo self::esc(number_format((float) ($user['effective_markup_percent'] ?? 0), 2, ',', '.')); ?>%</strong><br>
                                         <span class="m365lic-muted">
@@ -155,10 +157,10 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                     </form>
                 </div>
 
-                <p class="m365lic-help-text">Normale Mitglieder sehen nur die Member-Seite. Ein hier aktivierter Benutzer erhält zusätzlich genau die Spezial-Seite seiner Gruppe. Dort wird ausschließlich der Gruppenpreis plus Gruppenstandard oder optionaler Benutzer-Override angezeigt.</p>
+                <p class="m365lic-help-text">Normale Mitglieder sehen nur die Member-Seite. Ein hier aktivierter Benutzer erhält zusätzlich genau die Gruppenseite seiner Gruppe. Dort wird – je Gruppe – entweder mit Memberpreisen oder mit Spezialpreisen gerechnet.</p>
 
                 <?php if ($groups === []): ?>
-                    <div class="alert alert-error">❌ Bitte zuerst unter <a href="?page=m365lic-special-groups">Spezialgruppen</a> mindestens eine aktive Gruppe anlegen.</div>
+                    <div class="alert alert-error">❌ Bitte zuerst unter <a href="?page=m365lic-special-groups">Gruppen</a> mindestens eine aktive Gruppe anlegen.</div>
                 <?php endif; ?>
 
                 <div class="m365lic-special-users-stack">
@@ -198,7 +200,7 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                                         <option value="0">— Gruppe wählen —</option>
                                         <?php foreach ($groups as $group): ?>
                                         <option value="<?php echo (int) ($group['id'] ?? 0); ?>" <?php echo (int) ($candidate['group_id'] ?? 0) === (int) ($group['id'] ?? 0) ? 'selected' : ''; ?>>
-                                            <?php echo self::esc((string) ($group['group_label'] ?? 'Spezialgruppe')); ?> · <?php echo self::esc((string) ($group['group_key'] ?? 'special')); ?>
+                                            <?php echo self::esc((string) ($group['group_label'] ?? 'Gruppe')); ?> · <?php echo self::esc((string) ($group['group_key'] ?? 'special')); ?>
                                         </option>
                                         <?php endforeach; ?>
                                     </select>
@@ -207,10 +209,11 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                                     <label class="form-label">Aktiver Preisstandard</label>
                                     <div class="m365lic-admin-note m365lic-admin-note--compact">
                                         <?php if ((int) ($candidate['group_id'] ?? 0) > 0): ?>
-                                            Gruppe: <strong><?php echo self::esc((string) ($candidate['assigned_group_label'] ?? $candidate['group_label'] ?? 'Spezialgruppe')); ?></strong><br>
+                                            Gruppe: <strong><?php echo self::esc((string) ($candidate['assigned_group_label'] ?? $candidate['group_label'] ?? 'Gruppe')); ?></strong><br>
+                                            Preisquelle: <strong><?php echo self::esc(($candidate['group_pricing_tier'] ?? 'group') === 'member' ? 'Memberpreise' : 'Spezialpreise'); ?></strong><br>
                                             Standard: <strong><?php echo self::esc(number_format((float) ($candidate['default_markup_percent'] ?? 0), 2, ',', '.')); ?>%</strong>
                                         <?php else: ?>
-                                            Wähle links eine vorhandene Gruppe. Deren Standardwerte gelten automatisch für den Benutzer.
+                                            Wähle links eine vorhandene Gruppe. Deren Preisquelle und Standardwerte gelten automatisch für den Benutzer.
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -224,7 +227,7 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                                 <div class="form-group">
                                     <label class="form-label">Preislogik</label>
                                     <div class="m365lic-admin-note m365lic-admin-note--compact">
-                                        Spezialpreis = <strong>Group/Special Preis</strong> aus dem Paketkatalog + <strong>User-Override</strong> oder, wenn leer, <strong>Gruppenstandard-Aufschlag</strong>.
+                                        Preis = <strong><?php echo self::esc(((string) ($candidate['group_pricing_tier'] ?? 'group')) === 'member' ? 'Memberpreis' : 'Spezialpreis'); ?></strong> aus dem Paketkatalog + <strong>User-Override</strong> oder, wenn leer, <strong>Gruppenstandard-Aufschlag</strong>.
                                     </div>
                                 </div>
                             </div>
@@ -235,7 +238,7 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                             </div>
 
                             <div class="m365lic-inline-head">
-                                <span class="m365lic-muted"><?php echo $isAssigned ? 'Bestehender Eintrag wird aktualisiert.' : 'Neuen Spezialzugang anlegen.'; ?></span>
+                                <span class="m365lic-muted"><?php echo $isAssigned ? 'Bestehender Eintrag wird aktualisiert.' : 'Neue User-Zuweisung anlegen.'; ?></span>
                                 <button type="submit" class="btn btn-primary btn-sm" <?php echo $groups === [] ? 'disabled' : ''; ?>>Speichern</button>
                             </div>
                         </form>
@@ -247,12 +250,12 @@ trait CMS_M365LIC_Page_Special_Users_Trait
         <div id="m365licRemoveSpecialUserModal" class="modal m365lic-modal" aria-hidden="true">
             <div class="modal-content m365lic-modal-content">
                 <div class="modal-header">
-                    <h3>🔐 Spezial-User entfernen</h3>
+                    <h3>🔐 User entfernen</h3>
                     <button type="button" class="modal-close" aria-label="Modal schließen" data-m365lic-close-modal="m365licRemoveSpecialUserModal">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p>Soll der Spezialzugang für <strong id="m365licRemoveSpecialUserName">diesen Benutzer</strong> wirklich entfernt werden?</p>
-                    <p class="m365lic-danger-note">⚠️ Der Benutzer verliert damit sofort den Spezial-Preis-Kontext im geschützten Bereich.</p>
+                    <p>Soll die Gruppen-Zuweisung für <strong id="m365licRemoveSpecialUserName">diesen Benutzer</strong> wirklich entfernt werden?</p>
+                    <p class="m365lic-danger-note">⚠️ Der Benutzer verliert damit sofort den zusätzlichen Gruppen-Kontext im geschützten Bereich.</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-m365lic-close-modal="m365licRemoveSpecialUserModal">Abbrechen</button>

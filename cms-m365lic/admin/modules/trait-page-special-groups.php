@@ -36,19 +36,20 @@ trait CMS_M365LIC_Page_Special_Groups_Trait
                         self::repo()->save_special_group([
                             'id' => $groupId,
                             'group_key' => $groupKey,
-                            'group_label' => trim((string) ($_POST['group_label'] ?? 'Spezialgruppe')),
+                            'group_label' => trim((string) ($_POST['group_label'] ?? 'Gruppe')),
                             'description' => trim((string) ($_POST['description'] ?? '')),
+                            'pricing_tier' => (string) ($_POST['pricing_tier'] ?? 'group'),
                             'default_markup_percent' => $_POST['default_markup_percent'] ?? 0,
                             'report_title' => trim((string) ($_POST['report_title'] ?? '')),
                             'report_intro' => trim((string) ($_POST['report_intro'] ?? '')),
                             'is_active' => !empty($_POST['is_active']) ? 1 : 0,
                         ]);
-                        $notice = $groupId > 0 ? 'Spezialgruppe aktualisiert.' : 'Spezialgruppe angelegt.';
+                        $notice = $groupId > 0 ? 'Gruppe aktualisiert.' : 'Gruppe angelegt.';
                         $editId = 0;
                     }
                 } elseif ($action === 'delete_special_group' && $groupId > 0) {
                     if (self::repo()->delete_special_group($groupId)) {
-                        $notice = 'Spezialgruppe gelöscht.';
+                        $notice = 'Gruppe gelöscht.';
                         $editId = 0;
                     } else {
                         $error = 'Die Gruppe konnte nicht gelöscht werden. Bitte zuerst zugewiesene Benutzer entfernen oder umhängen.';
@@ -65,11 +66,11 @@ trait CMS_M365LIC_Page_Special_Groups_Trait
         ?>
         <div class="admin-page-header">
             <div>
-                <h2>👥 Spezialgruppen</h2>
-                <p>Lege Reseller- und Spezialgruppen mit Standardwerten und Aufschlägen zentral an.</p>
+                <h2>👥 Gruppen</h2>
+                <p>Lege Gruppen mit Preisquelle, Standardwerten und Aufschlägen zentral an.</p>
             </div>
             <div class="header-actions">
-                <a href="?page=m365lic-special-users" class="btn btn-secondary">🔐 Benutzerzuweisungen</a>
+                <a href="?page=m365lic-special-users" class="btn btn-secondary">🔐 User-Zuweisungen</a>
             </div>
         </div>
 
@@ -90,12 +91,12 @@ trait CMS_M365LIC_Page_Special_Groups_Trait
                     <span class="status-badge active"><?php echo (int) count($groups); ?> Gruppen</span>
                 </div>
 
-                <div class="m365lic-admin-note">Jede Gruppe bündelt Beschreibung, Standard-Aufschlag und optionale Report-Defaults. Benutzer können später genau einer vorhandenen Gruppe zugewiesen werden.</div>
+                <div class="m365lic-admin-note">Jede Gruppe bündelt Preisquelle, Standard-Aufschlag und optionale Report-Defaults. Benutzer können später genau einer vorhandenen Gruppe zugewiesen werden.</div>
 
                 <?php if ($groups === []): ?>
                     <div class="empty-state">
                         <p class="m365lic-empty-state__icon">👥</p>
-                        <p><strong>Noch keine Spezialgruppe vorhanden</strong></p>
+                        <p><strong>Noch keine Gruppe vorhanden</strong></p>
                         <p class="m365lic-empty-state__text">Lege rechts die erste Gruppe an, bevor du Benutzer zuweist.</p>
                     </div>
                 <?php else: ?>
@@ -105,6 +106,7 @@ trait CMS_M365LIC_Page_Special_Groups_Trait
                                 <tr>
                                     <th>Gruppe</th>
                                     <th>Beschreibung</th>
+                                    <th>Preisquelle</th>
                                     <th>Standard-Aufschlag</th>
                                     <th>Zugewiesene User</th>
                                     <th>Status</th>
@@ -115,10 +117,13 @@ trait CMS_M365LIC_Page_Special_Groups_Trait
                                 <?php foreach ($groups as $group): ?>
                                 <tr>
                                     <td>
-                                        <strong><?php echo self::esc((string) ($group['group_label'] ?? 'Spezialgruppe')); ?></strong><br>
+                                        <strong><?php echo self::esc((string) ($group['group_label'] ?? 'Gruppe')); ?></strong><br>
                                         <span class="m365lic-muted"><?php echo self::esc((string) ($group['group_key'] ?? 'special')); ?></span>
                                     </td>
                                     <td><?php echo self::esc((string) (($group['description'] ?? '') !== '' ? $group['description'] : '—')); ?></td>
+                                    <td>
+                                        <strong><?php echo self::esc(($group['pricing_tier'] ?? 'group') === 'member' ? 'Memberpreise' : 'Spezialpreise'); ?></strong>
+                                    </td>
                                     <td><strong><?php echo self::esc(number_format((float) ($group['default_markup_percent'] ?? 0), 2, ',', '.')); ?>%</strong></td>
                                     <td><?php echo (int) ($group['assigned_users'] ?? 0); ?></td>
                                     <td>
@@ -134,7 +139,7 @@ trait CMS_M365LIC_Page_Special_Groups_Trait
                                                 class="btn btn-danger btn-sm"
                                                 data-m365lic-open-modal="m365licDeleteSpecialGroupModal"
                                                 data-group-id="<?php echo (int) ($group['id'] ?? 0); ?>"
-                                                data-group-name="<?php echo self::esc((string) ($group['group_label'] ?? 'Spezialgruppe')); ?>"
+                                                data-group-name="<?php echo self::esc((string) ($group['group_label'] ?? 'Gruppe')); ?>"
                                             >Löschen</button>
                                         </div>
                                     </td>
@@ -166,7 +171,7 @@ trait CMS_M365LIC_Page_Special_Groups_Trait
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="group_label">Gruppen-Label</label>
-                            <input class="form-control" id="group_label" type="text" name="group_label" value="<?php echo self::esc((string) ($editingGroup['group_label'] ?? 'Spezialgruppe')); ?>" maxlength="190" required>
+                            <input class="form-control" id="group_label" type="text" name="group_label" value="<?php echo self::esc((string) ($editingGroup['group_label'] ?? 'Gruppe')); ?>" maxlength="190" required>
                         </div>
                     </div>
 
@@ -177,9 +182,20 @@ trait CMS_M365LIC_Page_Special_Groups_Trait
 
                     <div class="m365lic-form-grid m365lic-form-grid--2">
                         <div class="form-group">
+                            <label class="form-label" for="pricing_tier">Preisquelle für diese Gruppe</label>
+                            <select class="form-control" id="pricing_tier" name="pricing_tier">
+                                <option value="group" <?php echo (($editingGroup['pricing_tier'] ?? 'group') === 'group') ? 'selected' : ''; ?>>Spezialpreise aus dem Paketkatalog</option>
+                                <option value="member" <?php echo (($editingGroup['pricing_tier'] ?? '') === 'member') ? 'selected' : ''; ?>>Memberpreise aus dem Paketkatalog</option>
+                            </select>
+                            <small class="m365lic-help-text">Damit legst du fest, ob User dieser Gruppe mit `group_price` oder mit `member_price` rechnen.</small>
+                        </div>
+                        <div class="form-group">
                             <label class="form-label" for="default_markup_percent">Gruppenstandard-Aufschlag in %</label>
                             <input class="form-control" id="default_markup_percent" type="number" step="0.01" min="0" name="default_markup_percent" value="<?php echo self::esc(number_format((float) ($editingGroup['default_markup_percent'] ?? 0), 2, '.', '')); ?>">
                         </div>
+                    </div>
+
+                    <div class="m365lic-form-grid m365lic-form-grid--2">
                         <div class="form-group">
                             <label class="form-label">Status</label>
                             <label class="checkbox-label">
@@ -216,7 +232,7 @@ trait CMS_M365LIC_Page_Special_Groups_Trait
         <div id="m365licDeleteSpecialGroupModal" class="modal m365lic-modal" aria-hidden="true">
             <div class="modal-content m365lic-modal-content">
                 <div class="modal-header">
-                    <h3>👥 Spezialgruppe löschen</h3>
+                    <h3>👥 Gruppe löschen</h3>
                     <button type="button" class="modal-close" aria-label="Modal schließen" data-m365lic-close-modal="m365licDeleteSpecialGroupModal">&times;</button>
                 </div>
                 <div class="modal-body">

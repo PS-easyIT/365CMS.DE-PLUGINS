@@ -218,72 +218,100 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    const alternativesTable = document.getElementById('m365licAlternativesTable');
-    const addAlternativeButton = document.getElementById('m365licAddAlternativeRow');
+    const alternativeTableConfigs = [
+        {
+            table: document.getElementById('m365licAlternativesTable'),
+            addButton: document.getElementById('m365licAddAlternativeRow'),
+            baseName: 'alternatives',
+        },
+        {
+            table: document.getElementById('m365licEuAlternativesTable'),
+            addButton: document.getElementById('m365licAddEuAlternativeRow'),
+            baseName: 'eu_alternatives',
+        },
+        {
+            table: document.getElementById('m365licEuAiAlternativesTable'),
+            addButton: document.getElementById('m365licAddEuAiAlternativeRow'),
+            baseName: 'eu_ai_alternatives',
+        },
+    ];
 
-    const reindexAlternativeRows = () => {
-        if (!alternativesTable) {
+    alternativeTableConfigs.forEach((config) => {
+        const { table, addButton, baseName } = config;
+        if (!table) {
             return;
         }
 
-        const rows = alternativesTable.querySelectorAll('tbody tr[data-alternative-row]');
-        rows.forEach((row, index) => {
-            row.querySelectorAll('input').forEach((input) => {
-                if (!input.name) {
+        const reindexRows = () => {
+            const rows = table.querySelectorAll('tbody tr[data-alternative-row]');
+            rows.forEach((row, index) => {
+                row.querySelectorAll('input, select, textarea').forEach((field) => {
+                    if (!field.name) {
+                        return;
+                    }
+
+                    const matcher = new RegExp(baseName + '\\[\\d+\\]', 'g');
+                    field.name = field.name.replace(matcher, `${baseName}[${index}]`);
+                });
+            });
+        };
+
+        const resetRow = (row) => {
+            row.querySelectorAll('input, select, textarea').forEach((field) => {
+                if (field instanceof HTMLInputElement) {
+                    if (field.type === 'checkbox') {
+                        field.checked = true;
+                    } else if (field.type !== 'hidden') {
+                        field.value = '';
+                    }
                     return;
                 }
 
-                input.name = input.name.replace(/alternatives\[\d+\]/g, 'alternatives[' + index + ']');
-            });
-        });
-    };
+                if (field instanceof HTMLSelectElement) {
+                    field.selectedIndex = 0;
+                    return;
+                }
 
-    const bindAlternativeRow = (row) => {
-        const removeButton = row.querySelector('.m365lic-remove-alternative-row');
-        if (!removeButton) {
-            return;
+                if (field instanceof HTMLTextAreaElement) {
+                    field.value = '';
+                }
+            });
+        };
+
+        const bindRow = (row) => {
+            const removeButton = row.querySelector('.m365lic-remove-alternative-row');
+            if (!removeButton) {
+                return;
+            }
+
+            removeButton.addEventListener('click', () => {
+                const rows = table.querySelectorAll('tbody tr[data-alternative-row]');
+                if (rows.length <= 1) {
+                    resetRow(row);
+                    return;
+                }
+
+                row.remove();
+                reindexRows();
+            });
+        };
+
+        table.querySelectorAll('tbody tr[data-alternative-row]').forEach(bindRow);
+
+        if (addButton) {
+            addButton.addEventListener('click', () => {
+                const tbody = table.querySelector('tbody');
+                const firstRow = tbody ? tbody.querySelector('tr[data-alternative-row]') : null;
+                if (!tbody || !firstRow) {
+                    return;
+                }
+
+                const clone = firstRow.cloneNode(true);
+                resetRow(clone);
+                tbody.appendChild(clone);
+                reindexRows();
+                bindRow(clone);
+            });
         }
-
-        removeButton.addEventListener('click', () => {
-            const rows = alternativesTable ? alternativesTable.querySelectorAll('tbody tr[data-alternative-row]') : [];
-            if (rows.length <= 1) {
-                row.querySelectorAll('input[type="text"]').forEach((input) => {
-                    input.value = '';
-                });
-                row.querySelectorAll('input[type="checkbox"]').forEach((input) => {
-                    input.checked = true;
-                });
-                return;
-            }
-
-            row.remove();
-            reindexAlternativeRows();
-        });
-    };
-
-    if (alternativesTable) {
-        alternativesTable.querySelectorAll('tbody tr[data-alternative-row]').forEach(bindAlternativeRow);
-    }
-
-    if (alternativesTable && addAlternativeButton) {
-        addAlternativeButton.addEventListener('click', () => {
-            const tbody = alternativesTable.querySelector('tbody');
-            const firstRow = tbody ? tbody.querySelector('tr[data-alternative-row]') : null;
-            if (!tbody || !firstRow) {
-                return;
-            }
-
-            const clone = firstRow.cloneNode(true);
-            clone.querySelectorAll('input[type="text"]').forEach((input) => {
-                input.value = '';
-            });
-            clone.querySelectorAll('input[type="checkbox"]').forEach((input) => {
-                input.checked = true;
-            });
-
-            tbody.appendChild(clone);
-            reindexAlternativeRows();
-            bindAlternativeRow(clone);
-        });
-    }
+    });
 });

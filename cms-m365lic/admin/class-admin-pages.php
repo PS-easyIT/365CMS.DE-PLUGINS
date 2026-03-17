@@ -158,14 +158,14 @@ final class CMS_M365LIC_Admin_Pages
 
     public static function render_special_users(): void
     {
-        self::render_with_layout('M365 Spezial-User', 'm365lic-special-users', static function (): void {
+        self::render_with_layout('M365 User', 'm365lic-special-users', static function (): void {
             self::instance()->render_special_users_page();
         });
     }
 
     public static function render_special_groups(): void
     {
-        self::render_with_layout('M365 Spezialgruppen', 'm365lic-special-groups', static function (): void {
+        self::render_with_layout('M365 Gruppen', 'm365lic-special-groups', static function (): void {
             self::instance()->render_special_groups_page();
         });
     }

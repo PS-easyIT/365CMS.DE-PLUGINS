@@ -155,6 +155,8 @@ final class CMS_M365LIC_Catalog
             'show_missing_price_hint' => '1',
             'show_source_notes' => '1',
             'alternatives_json' => json_encode(self::default_alternative_offers(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'eu_alternatives_json' => json_encode(self::default_eu_alternative_offers(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+            'eu_ai_alternatives_json' => json_encode(self::default_eu_ai_alternative_offers(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
         ];
     }
 
@@ -203,6 +205,87 @@ final class CMS_M365LIC_Catalog
             ['category' => 'Zusammenarbeit & Meetings', 'provider' => 'Slack Pro', 'annual_price' => '6.75', 'monthly_price' => '8.25', 'is_active' => 1],
             ['category' => 'Zusammenarbeit & Meetings', 'provider' => 'Zoho Workplace Professional', 'annual_price' => '5.40', 'monthly_price' => '6.30', 'is_active' => 1],
             ['category' => 'Zusammenarbeit & Meetings', 'provider' => 'Zoho Workplace Standard', 'annual_price' => '2.70', 'monthly_price' => '3.60', 'is_active' => 1],
+        ];
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public static function default_eu_alternative_offers(): array
+    {
+        return [
+            ['category_key' => 'core_workspace', 'provider' => 'IceWarp Business (CZ)', 'focus' => 'Stärkster direkter M365-Klon, inkl. Desktop-Apps', 'annual_price' => '6.00', 'monthly_price' => '7.50', 'is_active' => 1],
+            ['category_key' => 'core_workspace', 'provider' => 'Infomaniak kSuite Enterprise (CH)', 'focus' => 'Mail, Drive, Meet und Office mit starkem Datenschutz-Fokus', 'annual_price' => '7.90', 'monthly_price' => '7.90', 'is_active' => 1],
+            ['category_key' => 'core_workspace', 'provider' => 'Nextcloud Hub Enterprise (DE)*', 'focus' => 'Maximale Datensouveränität über europäische Managed-Partner', 'annual_price' => '5.00', 'monthly_price' => '6.00', 'is_active' => 1],
+            ['category_key' => 'core_workspace', 'provider' => 'Open-Xchange OX Cloud (DE)', 'focus' => 'Sehr stark bei Mail, Groupware und Collaboration', 'annual_price' => '3.50', 'monthly_price' => '4.50', 'is_active' => 1],
+            ['category_key' => 'office_productivity', 'provider' => 'SoftMaker NX Universal (DE)', 'focus' => 'Nativ installierbare Desktop-Apps für Windows, macOS und Linux', 'annual_price' => '5.90', 'monthly_price' => '6.90', 'is_active' => 1],
+            ['category_key' => 'office_productivity', 'provider' => 'Collabora Online Enterprise (UK)', 'focus' => 'Browserbasierte Office-Suite, häufig direkt mit Nextcloud kombiniert', 'annual_price' => '1.50', 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'office_productivity', 'provider' => 'OnlyOffice Workspace Enterprise (LV)', 'focus' => 'Web- und Desktop-Editoren mit hoher MS-Format-Kompatibilität', 'annual_price' => '6.00', 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'collaboration_intranet', 'provider' => 'Stackfield Enterprise (DE)', 'focus' => 'Ende-zu-Ende verschlüsselt, Chat, Aufgaben und Dateien in einer Oberfläche', 'annual_price' => '24.00', 'monthly_price' => '29.00', 'is_active' => 1],
+            ['category_key' => 'collaboration_intranet', 'provider' => 'Element Enterprise (UK/FR)', 'focus' => 'Matrix-basiert, dezentral und von Behörden genutzt', 'annual_price' => '5.00', 'monthly_price' => '6.00', 'is_active' => 1],
+            ['category_key' => 'collaboration_intranet', 'provider' => 'Alfaview Professional (DE)', 'focus' => 'DSGVO-konforme, hochskalierbare Videokonferenzen', 'annual_price' => '9.99', 'monthly_price' => '12.99', 'is_active' => 1],
+            ['category_key' => 'security_device_management', 'provider' => 'Cortado MDM Pro (DE)', 'focus' => 'Mobile Device Management und Geräteverwaltung', 'annual_price' => '5.50', 'monthly_price' => '6.50', 'is_active' => 1],
+            ['category_key' => 'security_device_management', 'provider' => 'Relution Enterprise (DE)', 'focus' => 'MDM mit starkem Fokus auf Bildung und Behörden', 'annual_price' => '4.50', 'monthly_price' => '5.50', 'is_active' => 1],
+            ['category_key' => 'security_device_management', 'provider' => 'ESET Protect Advanced (SK)', 'focus' => 'Endpoint Security mit Cloud-Sandboxing', 'annual_price' => '4.20', 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'security_device_management', 'provider' => 'WithSecure Elements (FI)', 'focus' => 'Endpoint Protection und Cloud-Sicherheit', 'annual_price' => '5.00', 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'security_device_management', 'provider' => 'G DATA Endpoint Protection (DE)', 'focus' => 'Deutscher Endpoint- und Antivirus-Pionier', 'annual_price' => '3.40', 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'project_management', 'provider' => 'awork Enterprise (DE)', 'focus' => 'Modernes, visuelles Projektmanagement', 'annual_price' => '15.99', 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'project_management', 'provider' => 'MeisterTask Business (AT)', 'focus' => 'Kanban-Fokus und sehr intuitive Bedienung', 'annual_price' => '24.00', 'monthly_price' => '31.00', 'is_active' => 1],
+            ['category_key' => 'project_management', 'provider' => 'OpenProject Enterprise (DE)', 'focus' => 'Klassisches und agiles Projektmanagement auf Open-Source-Basis', 'annual_price' => '5.95', 'monthly_price' => null, 'is_active' => 1],
+
+            ['category_key' => 'endpoint_security_xdr', 'provider' => 'Bitdefender GravityZone Ultra (RO)', 'focus' => 'Tiefe XDR-Integration, starkes Machine Learning, eigene On-Prem-Management-Server möglich.', 'annual_price' => '6.50', 'monthly_price' => '6.50', 'is_active' => 1],
+            ['category_key' => 'endpoint_security_xdr', 'provider' => 'ESET Protect Enterprise (SK)', 'focus' => 'Voller XDR-Umfang, MDR-Services für Konzerne, exzellente Heuristik.', 'annual_price' => '7.50', 'monthly_price' => '7.50', 'is_active' => 1],
+            ['category_key' => 'endpoint_security_xdr', 'provider' => 'WithSecure Elements (FI)', 'focus' => 'Ehemals F-Secure Business. Sehr starkes Vulnerability Management und EDR für europäische Konzerne.', 'annual_price' => '5.50', 'monthly_price' => '5.50', 'is_active' => 1],
+            ['category_key' => 'endpoint_security_xdr', 'provider' => 'G DATA Endpoint Protection Business (DE)', 'focus' => '„No Backdoor“-Garantie, starker Fokus auf deutsche Datenschutzstandards und KRITIS.', 'annual_price' => '4.00', 'monthly_price' => '4.00', 'is_active' => 1],
+            ['category_key' => 'endpoint_security_xdr', 'provider' => 'Stormshield Endpoint Security (FR)', 'focus' => 'Airbus-Tochtergesellschaft; hochsichere Umgebungen (Militär/Behörden/KRITIS), extrem tiefe OS-Kontrolle.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+
+            ['category_key' => 'mdm_uem', 'provider' => 'Matrix42 UEM (DE)', 'focus' => 'Verbindet Endpoint Management nahtlos mit ITSM und Asset-Management.', 'annual_price' => '8.00', 'monthly_price' => '8.00', 'is_active' => 1],
+            ['category_key' => 'mdm_uem', 'provider' => 'Baramundi Management Suite (DE)', 'focus' => 'Sehr verbreitet im DACH-Mittelstand, verwaltet PCs, Server, Mobilgeräte und Industrie-PCs.', 'annual_price' => '5.50', 'monthly_price' => '5.50', 'is_active' => 1],
+            ['category_key' => 'mdm_uem', 'provider' => 'AppTec360 Enterprise (CH/DE)', 'focus' => 'Sehr aggressives Pricing, Schweizer Server, volle Containerisierung (BYOD) für Enterprise-Kunden.', 'annual_price' => '1.45', 'monthly_price' => '1.45', 'is_active' => 1],
+            ['category_key' => 'mdm_uem', 'provider' => 'Relution Enterprise (DE)', 'focus' => 'Multi-Mandantenfähigkeit, vollständige DSGVO-Konformität, Private-Cloud-Fokus.', 'annual_price' => '4.25', 'monthly_price' => '4.25', 'is_active' => 1],
+
+            ['category_key' => 'identity_access_iam', 'provider' => 'cidaas (DE)', 'focus' => 'Führendes europäisches Cloud-IAM mit Biometrie, MFA und starkem API-Fokus.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'identity_access_iam', 'provider' => 'Pointsharp (SE)', 'focus' => 'Spezialist für hochsichere Authentifizierung, oft als Entra-ID-Ersatz in der europäischen Industrie genutzt.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'identity_access_iam', 'provider' => 'Nexus Smart ID (SE)', 'focus' => 'Fokus auf PKI, Smartcards und physische/logische Zutrittskontrolle.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'identity_access_iam', 'provider' => 'Univention (UCS) (DE)', 'focus' => 'Die Open-Source-Alternative zu Active Directory / Entra ID. Standard im Bildungs- und Behördensektor.', 'annual_price' => '2.50', 'monthly_price' => '2.50', 'is_active' => 1],
+
+            ['category_key' => 'enterprise_project_management', 'provider' => 'Planisware (FR)', 'focus' => 'Weltweiter Top-Player für Projektportfoliomanagement, Ressourcenplanung und R&D-Steuerung.', 'annual_price' => '40.00', 'monthly_price' => '40.00', 'is_active' => 1],
+            ['category_key' => 'enterprise_project_management', 'provider' => 'Projektron BCS (DE)', 'focus' => 'Komplexe Multiprojektplanung, Zeiterfassung, Ressourcenmanagement und integriertes CRM.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'enterprise_project_management', 'provider' => 'Sciforma (FR)', 'focus' => 'Stark in agiler und klassischer Projektsteuerung, fokussiert auf Strategie-Execution in Konzernen.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'enterprise_project_management', 'provider' => 'InLoox Enterprise (DE)', 'focus' => 'Integriert sich extrem tief in Outlook oder läuft als reine Web-Plattform.', 'annual_price' => '24.95', 'monthly_price' => '24.95', 'is_active' => 1],
+            ['category_key' => 'enterprise_project_management', 'provider' => 'OpenProject Enterprise (DE)', 'focus' => 'Open-Source-Kern, hybrides Projektmanagement, volle Datenkontrolle auf eigenen Servern.', 'annual_price' => '5.95', 'monthly_price' => '5.95', 'is_active' => 1],
+
+            ['category_key' => 'low_code_automation', 'provider' => 'Camunda 8 Enterprise (DE)', 'focus' => 'Weltweiter Standard für BPMN-Prozess-Orchestrierung. Skaliert bei Millionen Transaktionen.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'low_code_automation', 'provider' => 'WEBCON BPS (PL)', 'focus' => 'Enterprise-Plattform für App-Bau und Workflows, extrem flexibel bei Änderungen.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'low_code_automation', 'provider' => 'Axon Ivy (CH/AT)', 'focus' => 'Extrem starke Plattform für digitale Prozessautomatisierung und komplexe B2B-Workflows.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'low_code_automation', 'provider' => 'Simplifier (DE)', 'focus' => 'Industrial Low-Code mit Fokus auf Werker-Apps, UI-Generierung und tiefe SAP/ERP-Anbindung.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+
+            ['category_key' => 'data_analysis_bi', 'provider' => 'Jedox (DE)', 'focus' => 'Fokus auf Enterprise Performance Management, Finanzplanung, Forecasting und tiefe Excel-Anbindung.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'data_analysis_bi', 'provider' => 'Bissantz (DeltaMaster) (DE)', 'focus' => 'Spezialist für hochverdichtete, visuelle Datenanalyse und Management-Dashboards.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'data_analysis_bi', 'provider' => 'Board (CH)', 'focus' => 'Kombiniert BI, Simulation und prädiktive Analysen in einer zentralen Enterprise-Plattform.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'data_analysis_bi', 'provider' => 'TARGIT (DK)', 'focus' => 'Sehr stark im Bereich BI für Handel, Produktion und Maschinenbau.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+
+            ['category_key' => 'dms_archiving_compliance', 'provider' => 'ELO Digital Office (DE)', 'focus' => 'Eines der führenden ECM-Systeme Europas; revisionssichere Archivierung, Workflows und Vertragsmanagement.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'dms_archiving_compliance', 'provider' => 'DocuWare (DE)', 'focus' => 'Sehr etabliertes Cloud-DMS mit starken Automatisierungsfunktionen für Rechnungen und Personalakten.', 'annual_price' => '75.00', 'monthly_price' => '75.00', 'is_active' => 1],
+            ['category_key' => 'dms_archiving_compliance', 'provider' => 'd.velop documents (DE)', 'focus' => 'Tiefgreifendes Enterprise Content Management, zertifizierte Archivierung (GoBD/Compliance).', 'annual_price' => '20.00', 'monthly_price' => '20.00', 'is_active' => 1],
+            ['category_key' => 'dms_archiving_compliance', 'provider' => 'EMA (ARTEC IT) (DE)', 'focus' => 'Hochspezialisiert auf rechtssichere eDiscovery, 10-Jahres-E-Mail-Archivierung und DSGVO-Audits.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+
+            ['category_key' => 'enterprise_cloud_telephony', 'provider' => 'NFON Cloudya Premium (DE)', 'focus' => 'Führende europäische Cloud-PBX, hochverfügbar, inkl. CRM-Integrationen und Callcenter-Funktionen.', 'annual_price' => '15.00', 'monthly_price' => '15.00', 'is_active' => 1],
+            ['category_key' => 'enterprise_cloud_telephony', 'provider' => 'Enreach Contact / Swyx (NL/DE)', 'focus' => 'Sehr starke UCaaS-Plattform, exzellentes Call-Routing, Presence-Management und Integrationen.', 'annual_price' => '12.50', 'monthly_price' => '12.50', 'is_active' => 1],
+            ['category_key' => 'enterprise_cloud_telephony', 'provider' => 'Starface Enterprise (DE)', 'focus' => 'On-Premises, VM oder Cloud. Sehr flexibel bei der SIP-Trunk-Wahl und starker Desktop-Client.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'enterprise_cloud_telephony', 'provider' => 'Dstny (BE)', 'focus' => 'Großer paneuropäischer Anbieter für Business-Kommunikation und Mobile-First-PBX.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+        ];
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public static function default_eu_ai_alternative_offers(): array
+    {
+        return [
+            ['category_key' => 'ai_assistants', 'provider' => 'Aleph Alpha (Pharia) (DE)', 'focus' => 'B2B-/Regierungs-Fokus, absolute Datensouveränität und Air-Gapped-Betrieb in eigener Cloud möglich.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'ai_assistants', 'provider' => 'Mistral AI (La Plateforme) (FR)', 'focus' => 'Europas stärkstes LLM. Lokal oder in eigener Plattform für KI-Tools, Chatbots und Assistenten nutzbar.', 'annual_price' => null, 'monthly_price' => null, 'is_active' => 1],
+            ['category_key' => 'ai_assistants', 'provider' => 'DeepL Enterprise / Pro (DE)', 'focus' => 'Goldstandard für Übersetzungen und Textoptimierung (DeepL Write), strikter Datenschutz ohne Modell-Training durch Kundendaten.', 'annual_price' => '8.99', 'monthly_price' => '8.99', 'is_active' => 1],
         ];
     }
 
@@ -266,6 +349,42 @@ final class CMS_M365LIC_Catalog
                 'label' => 'Projektmanagement',
                 'description' => 'Planner-/Project-Ersatz für Projekte, Aufgaben und Roadmaps.',
             ],
+            'endpoint_security_xdr' => [
+                'label' => 'Endpoint Security & XDR',
+                'description' => 'Europäische Alternativen zu Defender for Endpoint/Business und XDR-nahen Schutzstacks.',
+            ],
+            'mdm_uem' => [
+                'label' => 'MDM & UEM',
+                'description' => 'Alternativen zu Intune für Unified Endpoint Management und Geräteverwaltung.',
+            ],
+            'identity_access_iam' => [
+                'label' => 'Identity & Access (IAM)',
+                'description' => 'Alternativen zu Entra ID P1/P2/Governance für IAM, PKI und starke Authentifizierung.',
+            ],
+            'enterprise_project_management' => [
+                'label' => 'Enterprise Projektmanagement',
+                'description' => 'Europäische PPM- und Enterprise-Projektmanagement-Alternativen zu Project und Planner.',
+            ],
+            'low_code_automation' => [
+                'label' => 'Low-Code & Automatisierung',
+                'description' => 'Alternativen zu Power Apps, Power Automate und Workflow-/Prozessplattformen.',
+            ],
+            'data_analysis_bi' => [
+                'label' => 'Datenanalyse & BI',
+                'description' => 'Europäische BI- und Analyseplattformen als Alternativen zu Power BI.',
+            ],
+            'dms_archiving_compliance' => [
+                'label' => 'DMS, Archivierung & Compliance',
+                'description' => 'Alternativen zu SharePoint/Purview/Archiving für DMS, Archivierung und eDiscovery.',
+            ],
+            'enterprise_cloud_telephony' => [
+                'label' => 'Enterprise Cloud-Telefonie',
+                'description' => 'Europäische Cloud-PBX- und UCaaS-Alternativen zu Teams Phone und Calling Plans.',
+            ],
+            'ai_assistants' => [
+                'label' => 'KI & Copilot',
+                'description' => 'Europäische Alternativen für Copilot-, Chat-, Assistenz- und Agenten-Szenarien.',
+            ],
         ];
     }
 
@@ -317,6 +436,14 @@ final class CMS_M365LIC_Catalog
             'collaboration_intranet' => 'element-enterprise',
             'security_device_management' => 'relution-enterprise',
             'project_management' => 'openproject-enterprise',
+            'endpoint_security_xdr' => 'bitdefender-gravityzone-ultra-ro',
+            'mdm_uem' => 'apptec360-enterprise-ch-de',
+            'identity_access_iam' => 'univention-ucs-de',
+            'enterprise_project_management' => 'openproject-enterprise-de',
+            'low_code_automation' => 'camunda-8-enterprise-de',
+            'data_analysis_bi' => 'jedox-de',
+            'dms_archiving_compliance' => 'd-velop-documents-de',
+            'enterprise_cloud_telephony' => 'enreach-contact-swyx-nl-de',
         ];
     }
 
@@ -466,7 +593,6 @@ final class CMS_M365LIC_Catalog
             'office-365-e3' => $perUser(23.20, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Office 365 E3 23,20 EUR pro Benutzer/Monat.', 19.68),
             'office-365-e5' => $perUser(38.40, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Office 365 E5 38,40 EUR pro Benutzer/Monat.', 32.58),
             'm365-e3' => $perUser(34.90, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft 365 E3 34,90 EUR pro Benutzer/Monat.', 29.61),
-            'm365-e5' => $perUser(57.00, 'Microsoft 365 E5 57 USD pro Benutzer/Monat; geeignet für Terminalserver-/RDS-Betrieb mit Shared Computer Activation.'),
             'm365-e5' => $perUser(57.00, 'Microsoft 365 E5 57 USD pro Benutzer/Monat; geeignet für Terminalserver-/RDS-Betrieb mit Shared Computer Activation.', 46.83),
             'm365-f1' => $perUser(1.90, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft 365 F1 1,90 EUR pro Benutzer/Monat.', 1.61),
             'm365-f3' => $perUser(6.90, 'Preis laut bereitgestellter Referenzliste des Nutzers (Stand 2026-03-17): Microsoft 365 F3 6,90 EUR pro Benutzer/Monat.', 5.85),
@@ -516,8 +642,8 @@ final class CMS_M365LIC_Catalog
             $source
         );
 
-        if (stripos($normalized, 'EUR-Basispreis') === false) {
-            $normalized .= ' Im Plugin als EUR-Basispreis gepflegt.';
+        if (stripos($normalized, 'EUR-Referenzpreis') === false) {
+            $normalized .= ' Im Plugin als EUR-Referenzpreis für Jahr / monatlich gepflegt.';
         }
 
         return $normalized;

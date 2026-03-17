@@ -104,6 +104,7 @@ final class CMS_M365LIC_Repository
                 'group_key' => (string) ($settings['default_group_key'] ?? 'partner'),
                 'group_label' => (string) ($settings['default_group_label'] ?? 'Partner / Spezialgruppe'),
                 'description' => 'Standardgruppe für Spezial-/Reseller-Zugänge.',
+                'pricing_tier' => 'group',
                 'default_markup_percent' => 0,
                 'report_title' => 'Microsoft 365 Reseller-Report',
                 'report_intro' => 'Geschützter Report für die zugewiesene Reseller-/Spezialgruppe.',
@@ -133,6 +134,7 @@ final class CMS_M365LIC_Repository
                     'group_key' => $groupKey,
                     'group_label' => $groupLabel,
                     'description' => '',
+                    'pricing_tier' => 'group',
                     'default_markup_percent' => $row['special_markup_percent'] ?? 0,
                     'report_title' => '',
                     'report_intro' => '',
@@ -435,6 +437,8 @@ final class CMS_M365LIC_Repository
         }
 
         $this->seed_default_alternatives_if_needed($force);
+        $this->seed_default_json_setting_if_needed('eu_alternatives_json', CMS_M365LIC_Catalog::default_eu_alternative_offers(), $force);
+        $this->seed_default_json_setting_if_needed('eu_ai_alternatives_json', CMS_M365LIC_Catalog::default_eu_ai_alternative_offers(), $force);
 
         if ($force) {
             $this->pdo()->exec("TRUNCATE TABLE {$this->prefix()}m365lic_packages");
@@ -573,6 +577,7 @@ final class CMS_M365LIC_Repository
         $groupKey = $this->normalize_group_key($data['group_key'] ?? 'special');
         $groupLabel = trim((string) ($data['group_label'] ?? 'Spezialgruppe'));
         $description = trim((string) ($data['description'] ?? ''));
+        $pricingTier = $this->normalize_group_pricing_tier($data['pricing_tier'] ?? 'group');
         $defaultMarkup = $this->normalize_percent($data['default_markup_percent'] ?? 0);
         $reportTitle = trim((string) ($data['report_title'] ?? ''));
         $reportIntro = trim((string) ($data['report_intro'] ?? ''));
@@ -589,17 +594,17 @@ final class CMS_M365LIC_Repository
         if ($groupId > 0) {
             $stmt = $this->db()->prepare(
                 "UPDATE {$this->prefix()}m365lic_special_groups
-                 SET group_key = ?, group_label = ?, description = ?, default_markup_percent = ?, report_title = ?, report_intro = ?, is_active = ?
+                 SET group_key = ?, group_label = ?, description = ?, pricing_tier = ?, default_markup_percent = ?, report_title = ?, report_intro = ?, is_active = ?
                  WHERE id = ?"
             );
-            $stmt->execute([$groupKey, $groupLabel, $description, $defaultMarkup, $reportTitle, $reportIntro, $isActive, $groupId]);
+            $stmt->execute([$groupKey, $groupLabel, $description, $pricingTier, $defaultMarkup, $reportTitle, $reportIntro, $isActive, $groupId]);
         } else {
             $stmt = $this->db()->prepare(
                 "INSERT INTO {$this->prefix()}m365lic_special_groups
-                    (group_key, group_label, description, default_markup_percent, report_title, report_intro, is_active)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    (group_key, group_label, description, pricing_tier, default_markup_percent, report_title, report_intro, is_active)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
             );
-            $stmt->execute([$groupKey, $groupLabel, $description, $defaultMarkup, $reportTitle, $reportIntro, $isActive]);
+            $stmt->execute([$groupKey, $groupLabel, $description, $pricingTier, $defaultMarkup, $reportTitle, $reportIntro, $isActive]);
             $groupId = (int) $this->pdo()->lastInsertId();
         }
 
@@ -855,6 +860,41 @@ final class CMS_M365LIC_Repository
     }
 
     /**
+     * @return array<string,array<int,array<string,mixed>>>
+     */
+    public function get_eu_comparison_offers(): array
+    {
+        $settings = $this->get_settings();
+        $categories = CMS_M365LIC_Catalog::eu_comparison_categories();
+        $offers = [];
+
+        foreach (array_merge(
+            $this->decode_eu_alternative_settings((string) ($settings['eu_alternatives_json'] ?? '[]')),
+            $this->decode_eu_alternative_settings((string) ($settings['eu_ai_alternatives_json'] ?? '[]'))
+        ) as $offer) {
+            $categoryKey = (string) ($offer['category_key'] ?? 'core_workspace');
+            if (!isset($categories[$categoryKey])) {
+                continue;
+            }
+
+            $offers[$categoryKey] ??= [];
+            $offers[$categoryKey][] = [
+                'slug' => strtolower(trim((string) preg_replace('/[^a-z0-9]+/i', '-', (string) ($offer['provider'] ?? 'eu-offer')), '-')),
+                'provider' => (string) ($offer['provider'] ?? ''),
+                'annual_price' => $offer['annual_price'] ?? null,
+                'monthly_price' => $offer['monthly_price'] ?? null,
+                'focus' => (string) ($offer['focus'] ?? ''),
+            ];
+        }
+
+        foreach (array_keys($categories) as $categoryKey) {
+            $offers[$categoryKey] ??= [];
+        }
+
+        return $offers;
+    }
+
+    /**
      * @return array<string,mixed>
      */
     public function enforce_daily_limit(string $action, string $tier): array
@@ -905,6 +945,7 @@ final class CMS_M365LIC_Repository
                         sg.group_key AS assigned_group_key,
                         sg.group_label AS assigned_group_label,
                         sg.description AS group_description,
+                    sg.pricing_tier AS group_pricing_tier,
                         sg.default_markup_percent,
                         sg.report_title AS group_report_title,
                         sg.report_intro AS group_report_intro,
@@ -947,6 +988,7 @@ final class CMS_M365LIC_Repository
                         su.note, su.is_active AS special_is_active,
                         sg.group_key AS assigned_group_key,
                         sg.group_label AS assigned_group_label,
+                    sg.pricing_tier AS group_pricing_tier,
                         sg.default_markup_percent,
                         sg.is_active AS group_is_active,
                         COALESCE(su.user_markup_override_percent, sg.default_markup_percent, su.special_markup_percent, 0) AS effective_markup_percent
@@ -979,6 +1021,7 @@ final class CMS_M365LIC_Repository
                         sg.group_key AS assigned_group_key,
                         sg.group_label AS assigned_group_label,
                         sg.description AS group_description,
+                    sg.pricing_tier AS group_pricing_tier,
                         sg.default_markup_percent,
                         sg.report_title AS group_report_title,
                         sg.report_intro AS group_report_intro,
@@ -1367,6 +1410,7 @@ final class CMS_M365LIC_Repository
         $row['group_key'] = trim((string) ($row['assigned_group_key'] ?? $row['group_key'] ?? 'special'));
         $row['group_label'] = trim((string) ($row['assigned_group_label'] ?? $row['group_label'] ?? 'Spezialzugang'));
         $row['group_description'] = trim((string) ($row['group_description'] ?? ''));
+        $row['group_pricing_tier'] = $this->normalize_group_pricing_tier($row['group_pricing_tier'] ?? 'group');
         $row['group_report_title'] = trim((string) ($row['group_report_title'] ?? ''));
         $row['group_report_intro'] = trim((string) ($row['group_report_intro'] ?? ''));
         $row['group_is_active'] = (int) ($row['group_is_active'] ?? 0);
@@ -1393,6 +1437,7 @@ final class CMS_M365LIC_Repository
         $row['group_key'] = $this->normalize_group_key($row['group_key'] ?? 'special');
         $row['group_label'] = trim((string) ($row['group_label'] ?? 'Spezialgruppe'));
         $row['description'] = trim((string) ($row['description'] ?? ''));
+        $row['pricing_tier'] = $this->normalize_group_pricing_tier($row['pricing_tier'] ?? 'group');
         $row['default_markup_percent'] = $this->normalize_percent($row['default_markup_percent'] ?? 0);
         $row['report_title'] = trim((string) ($row['report_title'] ?? ''));
         $row['report_intro'] = trim((string) ($row['report_intro'] ?? ''));
@@ -1408,6 +1453,13 @@ final class CMS_M365LIC_Repository
         $groupKey = trim($groupKey, '-_');
 
         return $groupKey !== '' ? $groupKey : 'special';
+    }
+
+    private function normalize_group_pricing_tier(mixed $value): string
+    {
+        return in_array((string) $value, ['member', 'group'], true)
+            ? (string) $value
+            : 'group';
     }
 
     private function sync_special_group_to_users(int $groupId): void
@@ -1454,7 +1506,15 @@ final class CMS_M365LIC_Repository
 
     private function seed_default_alternatives_if_needed(bool $force): void
     {
-        $defaultJson = json_encode(CMS_M365LIC_Catalog::default_alternative_offers(), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $this->seed_default_json_setting_if_needed('alternatives_json', CMS_M365LIC_Catalog::default_alternative_offers(), $force);
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $defaultValue
+     */
+    private function seed_default_json_setting_if_needed(string $settingKey, array $defaultValue, bool $force): void
+    {
+        $defaultJson = json_encode($defaultValue, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if (!is_string($defaultJson) || $defaultJson === '') {
             return;
         }
@@ -1463,7 +1523,7 @@ final class CMS_M365LIC_Repository
 
         try {
             $stmt = $this->db()->prepare("SELECT setting_value FROM {$this->prefix()}m365lic_settings WHERE setting_key = ? LIMIT 1");
-            $stmt->execute(['alternatives_json']);
+            $stmt->execute([$settingKey]);
             $result = $stmt->fetchColumn();
             $currentValue = $result !== false ? (string) $result : null;
         } catch (\Throwable $e) {
@@ -1472,6 +1532,17 @@ final class CMS_M365LIC_Repository
 
         $trimmedValue = trim((string) $currentValue);
         $shouldSeed = $force || $trimmedValue === '' || $trimmedValue === '[]' || strtolower($trimmedValue) === 'null';
+
+        if (!$shouldSeed && !$force) {
+            $existingDecoded = json_decode((string) $currentValue, true);
+            if (is_array($existingDecoded)) {
+                $mergedValue = $this->merge_default_json_setting_entries($existingDecoded, $defaultValue);
+                if ($mergedValue !== null) {
+                    $defaultJson = json_encode($mergedValue, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                    $shouldSeed = is_string($defaultJson) && $defaultJson !== '';
+                }
+            }
+        }
 
         if (!$shouldSeed) {
             return;
@@ -1482,8 +1553,115 @@ final class CMS_M365LIC_Repository
              VALUES (?, ?)
              ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
         );
-        $stmt->execute(['alternatives_json', $defaultJson]);
+        $stmt->execute([$settingKey, $defaultJson]);
         $this->settingsCache = null;
+    }
+
+    /**
+     * @param array<int,mixed> $existingEntries
+     * @param array<int,array<string,mixed>> $defaultEntries
+     * @return array<int,array<string,mixed>>|null
+     */
+    private function merge_default_json_setting_entries(array $existingEntries, array $defaultEntries): ?array
+    {
+        $merged = [];
+        $seenKeys = [];
+
+        foreach ($existingEntries as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            $merged[] = $entry;
+            $identity = $this->default_json_entry_identity($entry);
+            if ($identity !== null) {
+                $seenKeys[$identity] = true;
+            }
+        }
+
+        $changed = false;
+
+        foreach ($defaultEntries as $entry) {
+            $identity = $this->default_json_entry_identity($entry);
+            if ($identity === null || isset($seenKeys[$identity])) {
+                continue;
+            }
+
+            $merged[] = $entry;
+            $seenKeys[$identity] = true;
+            $changed = true;
+        }
+
+        return $changed ? $merged : null;
+    }
+
+    /**
+     * @param array<string,mixed> $entry
+     */
+    private function default_json_entry_identity(array $entry): ?string
+    {
+        $provider = strtolower(trim((string) ($entry['provider'] ?? '')));
+        if ($provider === '') {
+            return null;
+        }
+
+        if (isset($entry['category_key'])) {
+            $categoryKey = strtolower(trim((string) ($entry['category_key'] ?? '')));
+            return $categoryKey !== '' ? 'category_key:' . $categoryKey . '|provider:' . $provider : null;
+        }
+
+        if (isset($entry['category'])) {
+            $category = strtolower(trim((string) ($entry['category'] ?? '')));
+            return $category !== '' ? 'category:' . $category . '|provider:' . $provider : null;
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private function decode_eu_alternative_settings(string $json): array
+    {
+        $decoded = json_decode($json, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $categories = CMS_M365LIC_Catalog::eu_comparison_categories();
+        $normalized = [];
+
+        foreach ($decoded as $offer) {
+            if (!is_array($offer)) {
+                continue;
+            }
+
+            $categoryKey = trim((string) ($offer['category_key'] ?? 'core_workspace'));
+            if (!isset($categories[$categoryKey])) {
+                continue;
+            }
+
+            $provider = trim((string) ($offer['provider'] ?? ''));
+            $focus = trim((string) ($offer['focus'] ?? ''));
+            $annualPrice = $this->normalize_price($offer['annual_price'] ?? null);
+            $monthlyPrice = $this->normalize_price($offer['monthly_price'] ?? null);
+            $isActive = !array_key_exists('is_active', $offer) || !empty($offer['is_active']);
+
+            if (!$isActive || $provider === '') {
+                continue;
+            }
+
+            $normalized[] = [
+                'category_key' => $categoryKey,
+                'provider' => $provider,
+                'focus' => $focus,
+                'annual_price' => $annualPrice,
+                'monthly_price' => $monthlyPrice,
+                'is_active' => 1,
+            ];
+        }
+
+        return $normalized;
     }
 
     /**

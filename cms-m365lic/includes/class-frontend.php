@@ -296,8 +296,9 @@ final class CMS_M365LIC_Frontend
         array $billingContext,
         string $strategy
     ): array {
+        $repo = CMS_M365LIC_Repository::instance();
         $euCategories = CMS_M365LIC_Catalog::eu_comparison_categories();
-        $euOffers = CMS_M365LIC_Catalog::eu_comparison_offers();
+        $euOffers = $repo->get_eu_comparison_offers();
         $defaultSelection = CMS_M365LIC_Catalog::eu_comparison_default_selection();
         $isMonthly = (string) ($billingContext['key'] ?? 'annual_upfront') === 'monthly_flex';
 
@@ -424,10 +425,21 @@ final class CMS_M365LIC_Frontend
     private function map_feature_to_eu_categories(string $featureKey): array
     {
         return match ($featureKey) {
-            'office_web', 'office_desktop', 'terminalserver', 'visio', 'power_bi', 'power_apps', 'automation', 'copilot_chat', 'copilot_m365', 'copilot_studio', 'security_copilot' => ['office_productivity'],
-            'teams', 'sharepoint', 'forms', 'bookings', 'stream', 'viva_engage', 'frontline', 'phone_system', 'audio_conf', 'teams_premium' => ['collaboration_intranet'],
-            'project', 'planner' => ['project_management'],
-            'intune', 'archive', 'defender', 'windows_rights', 'entra_id_p1', 'entra_id_p2', 'entra_governance', 'entra_suite', 'intune_device', 'exchange_protection', 'defender_business', 'defender_office_p1', 'defender_office_p2', 'defender_endpoint_p1', 'defender_endpoint_p2', 'defender_identity', 'defender_cloud_apps' => ['security_device_management'],
+            'office_web', 'office_desktop', 'terminalserver', 'visio' => ['office_productivity'],
+            'copilot_chat', 'copilot_m365' => ['ai_assistants'],
+            'copilot_studio' => ['ai_assistants', 'low_code_automation'],
+            'security_copilot' => ['ai_assistants', 'endpoint_security_xdr'],
+            'teams', 'forms', 'bookings', 'stream', 'viva_engage', 'frontline', 'teams_premium' => ['collaboration_intranet'],
+            'sharepoint' => ['collaboration_intranet', 'dms_archiving_compliance'],
+            'phone_system', 'audio_conf' => ['enterprise_cloud_telephony'],
+            'project', 'planner' => ['project_management', 'enterprise_project_management'],
+            'power_apps', 'automation' => ['low_code_automation'],
+            'power_bi' => ['data_analysis_bi'],
+            'intune', 'intune_device', 'windows_rights' => ['mdm_uem'],
+            'archive', 'exchange_protection' => ['dms_archiving_compliance'],
+            'entra_id_p1', 'entra_id_p2', 'entra_governance', 'entra_suite', 'defender_identity' => ['identity_access_iam'],
+            'defender', 'defender_business', 'defender_office_p1', 'defender_office_p2', 'defender_endpoint_p1', 'defender_endpoint_p2', 'defender_cloud_apps' => ['endpoint_security_xdr'],
+            'defender_endpoint_p1', 'defender_endpoint_p2', 'defender_business', 'intune', 'intune_device' => ['security_device_management'],
             default => [],
         };
     }
@@ -516,8 +528,9 @@ final class CMS_M365LIC_Frontend
      */
     private function build_standard_eu_alternative_summary(array $requirements, array $billingContext, int $limit): array
     {
+        $repo = CMS_M365LIC_Repository::instance();
         $euCategories = CMS_M365LIC_Catalog::eu_comparison_categories();
-        $euOffers = CMS_M365LIC_Catalog::eu_comparison_offers();
+        $euOffers = $repo->get_eu_comparison_offers();
         $isMonthly = (string) ($billingContext['key'] ?? 'annual_upfront') === 'monthly_flex';
         $summary = [];
 
@@ -760,7 +773,9 @@ final class CMS_M365LIC_Frontend
             } else {
                 return [
                     'scope' => self::SCOPE_SPECIAL,
-                    'tier' => 'group',
+                    'tier' => in_array((string) ($specialUser['group_pricing_tier'] ?? 'group'), ['member', 'group'], true)
+                        ? (string) $specialUser['group_pricing_tier']
+                        : 'group',
                     'group_key' => trim((string) ($specialUser['group_key'] ?? $settings['default_group_key'] ?? 'partner')),
                     'label' => trim((string) ($specialUser['group_label'] ?? $settings['default_group_label'] ?? 'Spezialbereich')),
                     'special_user' => $specialUser,
@@ -846,8 +861,21 @@ final class CMS_M365LIC_Frontend
         $packages = $repo->get_packages(false);
         $settings = $repo->get_settings();
         $profile = $repo->get_user_pricing_profile($userId);
+        $specialUser = $repo->get_current_special_user();
         $notice = '';
         $error = '';
+
+        if (is_array($specialUser)) {
+            $specialMarkup = (float) ($specialUser['effective_markup_percent'] ?? $specialUser['special_markup_percent'] ?? 0);
+            $profile['base_markup_percent'] = $specialMarkup;
+            $profile['addon_markup_percent'] = $specialMarkup;
+            $profile['copilot_markup_percent'] = $specialMarkup;
+            $profile['partner_name'] = trim((string) ($specialUser['group_label'] ?? $profile['partner_name'] ?? ''));
+            $profile['whitelabel_title'] = trim((string) ($specialUser['group_report_title'] ?? $profile['whitelabel_title'] ?? ''));
+            $profile['whitelabel_intro'] = trim((string) ($specialUser['group_report_intro'] ?? $profile['whitelabel_intro'] ?? ''));
+            $profile['group_pricing_tier'] = (string) ($specialUser['group_pricing_tier'] ?? 'group');
+            $profile['special_user'] = $specialUser;
+        }
 
         if ($method === 'POST') {
             if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken($_POST['member_settings_csrf_token'] ?? '', 'm365lic_member_settings')) {

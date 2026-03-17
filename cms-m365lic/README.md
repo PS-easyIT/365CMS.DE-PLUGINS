@@ -15,6 +15,7 @@
 - Eigene Admin-Seite für Spezial-User-Zuweisungen direkt auf 365CMS-Benutzer
 - Auswahl von Laufzeit & Zahlungsart je Bereich: `1 Jahr jährlich`, `1 Jahr monatlich (+5%)`, `1 Monat (+20%)`
 - Optionale Alternativanbieter-Tabelle unter der Auswertung mit separaten Jahres-/Monatspreisen je Kategorie und Anbieter
+- Eigene pflegbare Admin-Bereiche für `EU-Alternativen` und `europäische KI-/Copilot-Alternativen`
 - Eigene Public-Site `EU-Vergleich`, um Microsoft-365-Pläne mit europäischen All-in-One- und Best-of-Breed-Anbietern zu vergleichen
 - Tageslimits für Auswertung und PDF-Export je Kontext
 - Publicsite, die Header/Footer des aktiven Themes verwendet
@@ -59,11 +60,13 @@ Alle Seed-Pakete werden jetzt mit Startpreisen aus öffentlichen Microsoft-/Part
 - `per_user`: Preis pro Benutzer/Monat
 - `flat_monthly`: monatlicher Fixpreis, z. B. für tenantweite Copilot-Studio-/Security-Copilot-Kapazitäten
 
-Die im Admin gepflegten Preise sind immer der Basiswert in Euro für `1 Jahr Laufzeit mit jährlicher Zahlung`. Im Frontend und PDF wird daraus abhängig vom ausgewählten Modell gerechnet:
+Die im Admin gepflegten Preise sind immer der Referenz-Monatspreis in Euro für `1 Jahr Laufzeit mit monatlicher Zahlung (+5%)`. Im Frontend, PDF und jetzt auch in der Admin-Paketübersicht werden daraus die weiteren Modelle abgeleitet:
 
-- `1 Jahr · jährliche Zahlung` → Basispreis
-- `1 Jahr · monatliche Zahlung` → Basispreis $\times 1{,}05$
-- `1 Monat · monatlich` → Basispreis $\times 1{,}20$
+- `1 Jahr · monatliche Zahlung` → gepflegter Referenzpreis
+- `1 Jahr · jährliche Zahlung` → Referenzpreis $\div 1{,}05$
+- `1 Monat · monatlich` → `(Referenzpreis \div 1{,}05) \times 1{,}20`
+
+Für die nachgereichten Spezialpreise aus Jahreslisten (`1J1J`) rechnet das Plugin die Werte beim Seed-Katalog entsprechend auf den gespeicherten Referenz-Monatspreis herunter. Dadurch bleiben Spezialpreise in der Auswertung für `Jahr / jährlich`, `Jahr / monatlich` und `Monat / monatlich` konsistent.
 
 Bestandsinstallationen übernehmen neue Seed-Preise nun automatisch, solange beim vorhandenen Paket noch kein eigener Preis gepflegt wurde.
 
@@ -71,7 +74,13 @@ Die öffentliche Seite verwendet immer ausschließlich den Public-Kontext. Membe
 
 ## Alternativen
 
-Im Admin gibt es unter `Einstellungen -> Alternativen` eine frei pflegbare Liste für alternative Anbieter. Pro Eintrag werden gespeichert:
+Im Admin gibt es unter `Einstellungen -> Alternativen` jetzt drei getrennte Pflegebereiche:
+
+- `Normale Alternativen`
+- `EU-Alternativen`
+- `Europäische KI- & Copilot-Alternativen`
+
+Für normale Alternativen werden pro Eintrag gespeichert:
 
 - `Kategorie` – z. B. `Mail`, `Storage`, `Office`, `Security`
 - `Anbieter` – z. B. `Google Workspace`, `Dropbox`, `Zoho`
@@ -108,7 +117,9 @@ Wichtig: Für Alternativen wird **keine** prozentuale Laufzeitlogik aus den Micr
 
 Fehlt für das gewählte Modell der passende Alternativpreis, wird der Eintrag im Frontend nicht angezeigt.
 
-Bestehende Installationen behalten bereits manuell gepflegte Alternativen. Nur wenn die Liste noch leer ist, wird sie automatisch mit den Standardvergleichen initial befüllt.
+Für `EU-Alternativen` und `Europäische KI- & Copilot-Alternativen` kommen zusätzlich `EU-Kategorie` bzw. `Fokus / Nutzen` dazu. KI-Alternativen dürfen bewusst auch ohne Preis gepflegt werden und erscheinen dann im Frontend mit Preisstatus `offen`.
+
+Bestehende Installationen behalten bereits manuell gepflegte Alternativen. Nur wenn die jeweilige Liste noch leer ist, wird sie automatisch mit den Standardvergleichen initial befüllt.
 
 ## EU-Vergleich
 
@@ -125,7 +136,7 @@ Die Auswertung wird als Tabellenvergleich dargestellt:
 - rechts der ausgewählte europäische Stack
 - darunter `Gesamtkosten M365`, `Gesamtkosten Alternativen` und das Preisdelta
 
-Die europäischen Vergleichsanbieter sind im Code kuratiert und orientieren sich an typischen Netto-Monatspreisen pro Nutzer (Stand 2026), wie für den Use Case „europäische Alternative zu Microsoft 365“ vorgegeben.
+Die europäischen Vergleichsanbieter werden jetzt aus den Plugin-Einstellungen gelesen. Der Admin kann damit die komplette EU-Liste inklusive KI-/Copilot-Pendants direkt pflegen, ohne den Code anzufassen.
 
 ## Verzeichnisstruktur
 

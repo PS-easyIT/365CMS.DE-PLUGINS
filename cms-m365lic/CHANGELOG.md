@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.4.8 – 2026-03-17
+
+- Admin-Tab `Alternativen` um zwei eigene Bereiche erweitert: `EU-Alternativen` und `Europäische KI- & Copilot-Alternativen`
+- Public-`EU-Vergleich` und die optionalen `EU-Alternativen` unter der Standard-Auswertung beziehen ihre Anbieter jetzt aus den Plugin-Einstellungen statt aus fest im Code verdrahteten Listen
+- Neue EU-Kategorie `KI & Copilot` ergänzt, damit Copilot-/KI-Bedarfe auch europäische Gegenoptionen anzeigen können
+
+## 1.4.7 – 2026-03-17
+
+- Paketverwaltung im Admin so umgestellt, dass gepflegte Preise nun als Referenzwert für `1 Jahr · monatliche Zahlung (+5%)` interpretiert werden; Jahreszahlung und flexible Monatslaufzeit werden daraus abgeleitet
+- Paketübersicht im Admin um eine direkte Monats-/Jahresübersicht pro Bereich (`Public`, `Member`, `Spezial`) erweitert
+- Spezialpreise für alle aktuell im Katalog vorhandenen Produkte aus der gelieferten Jahrespreisliste heruntergerechnet und als `group_price` im Seed-Katalog hinterlegt
+
 ## 1.4.6 – 2026-03-17
 
 - Öffentliche Seite `EU-Vergleich` von der manuellen Vorauswahl auf denselben 3-Schritt-Wizard wie die Standard-Auswertung umgestellt, inklusive mehrerer Bedarfsgruppen pro Anfrage

@@ -16,6 +16,9 @@ $repo = CMS_M365LIC_Repository::instance();
 $costOverrides = is_array($profile['cost_overrides'] ?? null) ? $profile['cost_overrides'] : [];
 $settingsUrl = '/member/plugin/m365-license-settings';
 $defaultEkMap = [];
+$specialUser = is_array($profile['special_user'] ?? null) ? $profile['special_user'] : null;
+$pricingTier = is_array($specialUser) ? (string) ($specialUser['group_pricing_tier'] ?? 'group') : 'member';
+$pricingTierLabel = $pricingTier === 'group' ? 'Spezialpreise' : 'Memberpreise';
 
 foreach ($packages as $package) {
     $packageId = (int) ($package['id'] ?? 0);
@@ -23,7 +26,7 @@ foreach ($packages as $package) {
         continue;
     }
 
-    $defaultEkMap[$packageId] = $repo->get_price_for_package($package, 'member', null, false);
+    $defaultEkMap[$packageId] = $repo->get_price_for_package($package, $pricingTier === 'group' ? 'group' : 'member', null, false);
 }
 ?>
 <div class="m365lic-main m365lic-main--embedded">
@@ -50,6 +53,12 @@ foreach ($packages as $package) {
                         <a href="/member/plugin/m365-license" class="m365lic-local-nav__link">🧮 Auswertung</a>
                         <a href="<?php echo $esc($settingsUrl); ?>" class="m365lic-local-nav__link m365lic-local-nav__link--active" aria-current="page">⚙️ Einstellungen</a>
                     </nav>
+
+                    <?php if ($specialUser !== null): ?>
+                    <div class="m365lic-alert m365lic-alert--success">
+                        ✅ Zugewiesene Gruppe: <strong><?php echo $esc((string) ($specialUser['group_label'] ?? 'Gruppe')); ?></strong> · Preisquelle: <strong><?php echo $esc($pricingTierLabel); ?></strong> · Standard-Aufschlag: <strong><?php echo $esc(number_format((float) ($specialUser['effective_markup_percent'] ?? 0), 2, ',', '.')); ?>%</strong>
+                    </div>
+                    <?php endif; ?>
 
                     <form method="POST" action="<?php echo $esc($settingsUrl); ?>" class="m365lic-form">
                         <input type="hidden" name="member_settings_csrf_token" value="<?php echo $esc($csrfToken); ?>">
@@ -110,7 +119,7 @@ foreach ($packages as $package) {
                             <div class="m365lic-subcard__head">
                                 <div>
                                     <h3>Eigene EK je Paket</h3>
-                                    <p>Leer gelassene Felder verwenden automatisch den gepflegten Memberpreis aus dem Paketkatalog. Eigene Werte gelten nur für deinen Benutzer.</p>
+                                    <p>Leer gelassene Felder verwenden automatisch den gepflegten <?php echo $esc($pricingTierLabel); ?> aus dem Paketkatalog. Eigene Werte gelten nur für deinen Benutzer.</p>
                                 </div>
                             </div>
 
@@ -120,7 +129,7 @@ foreach ($packages as $package) {
                                         <tr>
                                             <th>Paket</th>
                                             <th>Typ</th>
-                                            <th>Standard-EK</th>
+                                            <th>Standard-EK (<?php echo $esc($pricingTierLabel); ?>)</th>
                                             <th>Eigener EK</th>
                                         </tr>
                                     </thead>
