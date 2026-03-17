@@ -652,7 +652,7 @@ final class CMS_M365LIC_Frontend
         $repo = CMS_M365LIC_Repository::instance();
         $settings = $repo->get_settings();
 
-        if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken($_POST['export_csrf_token'] ?? '', 'm365lic_export')) {
+        if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyPersistentToken($_POST['export_csrf_token'] ?? '', 'm365lic_export')) {
             http_response_code(403);
             echo 'Sicherheitscheck fehlgeschlagen.';
             exit;
