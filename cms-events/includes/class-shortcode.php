@@ -154,6 +154,10 @@ final class CMS_Events_Shortcode
             'category' => '',
         ], $atts);
 
+        if (!empty($_GET['month']) && preg_match('/^\d{4}-\d{2}$/', (string)$_GET['month'])) {
+            $atts['month'] = (string)$_GET['month'];
+        }
+
         $db_manager = CMS_Events_Database::instance();
         
         $args = [
@@ -166,14 +170,17 @@ final class CMS_Events_Shortcode
         }
 
         $events = $db_manager->get_events($args);
+        $currentMonth = new DateTime($atts['month'] . '-01');
+        $previousMonth = (clone $currentMonth)->modify('-1 month')->format('Y-m');
+        $nextMonth = (clone $currentMonth)->modify('+1 month')->format('Y-m');
 
         ob_start();
         ?>
         <div class="events-calendar-widget">
             <div class="calendar-header">
-                <button class="btn-prev" onclick="changeMonth(-1)">‹</button>
+                <a class="btn-prev calendar-nav-btn" href="<?= htmlspecialchars($this->buildCalendarNavigationUrl($previousMonth, (string)$atts['view'], (string)$atts['category']), ENT_QUOTES) ?>" aria-label="Vorheriger Monat">‹</a>
                 <h3><?= date('F Y', strtotime($atts['month'] . '-01')) ?></h3>
-                <button class="btn-next" onclick="changeMonth(1)">›</button>
+                <a class="btn-next calendar-nav-btn" href="<?= htmlspecialchars($this->buildCalendarNavigationUrl($nextMonth, (string)$atts['view'], (string)$atts['category']), ENT_QUOTES) ?>" aria-label="Nächster Monat">›</a>
             </div>
             
             <div class="calendar-view-<?= $atts['view'] ?>">
@@ -186,6 +193,25 @@ final class CMS_Events_Shortcode
         </div>
         <?php
         return ob_get_clean();
+    }
+
+    private function buildCalendarNavigationUrl(string $month, string $view, string $category): string
+    {
+        $params = $_GET;
+        $params['month'] = $month;
+
+        if ($view !== '') {
+            $params['view'] = $view;
+        }
+
+        if ($category !== '') {
+            $params['category'] = $category;
+        }
+
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $query = http_build_query($params);
+
+        return (string)$path . ($query !== '' ? '?' . $query : '');
     }
 
     public function render_upcoming_events(array $atts = []): string

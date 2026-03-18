@@ -28,12 +28,12 @@ $homeUrl = (string)($homeUrl ?? SITE_URL);
 </header>
 
 <main class="fd-main">
-    <section class="fd-empty" aria-labelledby="fd-consent-required-title">
+    <section class="fd-empty" aria-labelledby="fd-consent-required-title" data-feed-consent-required="1">
         <p class="fd-empty__icon" aria-hidden="true">🔒</p>
         <p id="fd-consent-required-title" class="fd-empty__text">
             Öffne deine Cookie-Einstellungen und erlaube „Externe Medien“, wenn du CMS-Feed nutzen möchtest.
         </p>
-        <div style="display:flex; justify-content:center; gap:.75rem; flex-wrap:wrap; margin-top:1rem;">
+        <div class="fd-consent-actions">
             <a class="fd-pagination__btn" href="<?php echo htmlspecialchars($preferencesUrl, ENT_QUOTES, 'UTF-8'); ?>">
                 Cookie-Einstellungen öffnen
             </a>
@@ -43,33 +43,5 @@ $homeUrl = (string)($homeUrl ?? SITE_URL);
         </div>
     </section>
 </main>
-
-<script>
-(function () {
-    'use strict';
-
-    function hasFeedConsent(detail) {
-        if (!detail || typeof detail !== 'object') {
-            return false;
-        }
-
-        var acceptedCategories = Array.isArray(detail.acceptedCategories) ? detail.acceptedCategories : [];
-        var acceptedServicesMap = detail.acceptedServices && typeof detail.acceptedServices === 'object'
-            ? detail.acceptedServices
-            : {};
-        var acceptedServices = Object.values(acceptedServicesMap).flatMap(function (services) {
-            return Array.isArray(services) ? services : [];
-        });
-
-        return acceptedCategories.indexOf('external_media') !== -1 || acceptedServices.indexOf('cms_feed') !== -1;
-    }
-
-    window.addEventListener('cms-cookie-consent-change', function (event) {
-        if (hasFeedConsent(event.detail)) {
-            window.location.reload();
-        }
-    });
-})();
-</script>
 
 <?php \CMS\ThemeManager::instance()->getFooter(); ?>

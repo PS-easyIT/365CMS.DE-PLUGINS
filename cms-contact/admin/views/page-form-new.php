@@ -24,9 +24,9 @@
     <div class="admin-card">
         <h3>📋 Grundeinstellungen</h3>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+        <div class="contact-form-intro-grid">
             <div class="form-group">
-                <label class="form-label" for="title">Titel <span style="color:#ef4444;">*</span></label>
+                <label class="form-label" for="title">Titel <span class="contact-required">*</span></label>
                 <input type="text" id="title" name="title" class="form-control"
                        value="<?php echo htmlspecialchars($_POST['title'] ?? ''); ?>"
                        placeholder="z. B. Kontakt, Anfrage, Bewerbung" required>
@@ -47,7 +47,7 @@
                       placeholder="Optionale Beschreibung, die über dem Formular angezeigt wird"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+        <div class="contact-form-intro-grid">
             <div class="form-group">
                 <label class="form-label" for="recipient">Empfänger E-Mail</label>
                 <input type="email" id="recipient" name="recipient" class="form-control"
@@ -66,33 +66,26 @@
     <!-- Template-Auswahl -->
     <div class="admin-card">
         <h3>🎨 Template wählen</h3>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+        <div class="contact-template-grid">
             <?php foreach ($templates as $key => $tpl): ?>
-            <label class="contact-template-card" style="cursor:pointer;display:block;border:2px solid #e2e8f0;border-radius:10px;padding:1.25rem;text-align:center;transition:all .2s;">
+            <label class="contact-template-card">
                 <input type="radio" name="template" value="<?php echo htmlspecialchars($key); ?>"
                        <?php echo ($key === ($_POST['template'] ?? 'classic')) ? 'checked' : ''; ?>
-                       style="display:none;"
-                       onchange="document.querySelectorAll('.contact-template-card').forEach(c=>c.style.borderColor='#e2e8f0');this.closest('label').style.borderColor='#3b82f6';">
-                <div style="font-size:2rem;margin-bottom:.5rem;"><?php echo $tpl['icon']; ?></div>
-                <div style="font-weight:600;font-size:.95rem;color:#1e293b;"><?php echo htmlspecialchars($tpl['name']); ?></div>
-                <div style="font-size:.8rem;color:#64748b;margin-top:.25rem;"><?php echo htmlspecialchars($tpl['description']); ?></div>
+                       class="contact-template-card__input">
+                <span class="contact-template-card__body">
+                    <span class="contact-template-card__icon"><?php echo $tpl['icon']; ?></span>
+                    <span class="contact-template-card__title"><?php echo htmlspecialchars($tpl['name']); ?></span>
+                    <span class="contact-template-card__text"><?php echo htmlspecialchars($tpl['description']); ?></span>
+                </span>
             </label>
             <?php endforeach; ?>
         </div>
     </div>
 
     <div class="admin-card">
-        <div style="display:flex;justify-content:flex-end;gap:.6rem;">
+        <div class="contact-form-actions">
             <a href="?section=forms" class="btn btn-secondary">Abbrechen</a>
             <button type="submit" class="btn btn-primary">💾 Formular erstellen</button>
         </div>
     </div>
 </form>
-
-<script>
-// Template-Auswahl visuell markieren
-document.addEventListener('DOMContentLoaded', function() {
-    const checked = document.querySelector('.contact-template-card input:checked');
-    if (checked) checked.closest('label').style.borderColor = '#3b82f6';
-});
-</script>

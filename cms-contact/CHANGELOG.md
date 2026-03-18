@@ -2,6 +2,17 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [1.1.2] – 2026-03-17
+
+### Geändert
+
+- Die restlichen Admin-Views (`Neues Formular`, Formularliste, Nachrichtenliste, Nachrichten-Detail) verwenden jetzt ebenfalls konsequent `contact-admin.css` und `contact-admin.js` statt zusätzlicher Inline-Styles oder Inline-Skripte.
+- Template-Auswahl, Lösch-Modal, Bulk-Checkboxen und Status-/Detail-Aktionen wurden auf zentrale Datenattribute und wiederverwendbare Admin-JavaScript-Initialisierung umgestellt.
+
+### Verbessert
+
+- Konsistentere Admin-Layouts für Formulare, Listen, Pagination und Modale vereinfachen Wartung, reduzieren Markup-Rauschen und halten die Plugin-Views näher an den 365CMS-Admin-Konventionen.
+
 ## [1.1.1] – 2026-03-14
 
 ### Geändert

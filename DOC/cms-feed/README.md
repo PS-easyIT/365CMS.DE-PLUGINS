@@ -31,7 +31,7 @@
 
 ```
 cms-feed/
-├── cms-feed.php                    # Hauptdatei (v1.3.0)
+├── cms-feed.php                    # Hauptdatei (v1.3.3)
 ├── update.json                     # Plugin-Manifest
 ├── includes/
 │   ├── class-database.php          # DB-Tabellen + CRUD (659 Zeilen)
@@ -84,7 +84,8 @@ cms-feed/
 
 ## Wichtige Architektur-Hinweise
 
-- Public CSS/JS wird nur noch auf echten Feed-Archiv-Routen geladen, nicht mehr global auf allen Frontend-Seiten
+- Public CSS/JS wird nur noch auf echten Feed-Routen geladen, nicht mehr global auf allen Frontend-Seiten
+- Auch die Consent-Seite nutzt dabei dieselben Public-Assets, damit Änderungen an der Cookie-Einwilligung ohne Template-Sonderskript sauber auf die Ansicht zurückwirken
 - Member-Feed-Abos werden separat von den Admin-Digests gespeichert
 - Admin-Digests bleiben für manuelle/global konfigurierte Empfänger erhalten; Member-Abos gehören dem jeweiligen Benutzerkonto
 - Der stündliche Cron priorisiert die in `cms-phinit` auf der Startseite gewählten Feed-Kanäle und prüft zusätzlich alle nach `fetch_interval` fälligen Kanäle

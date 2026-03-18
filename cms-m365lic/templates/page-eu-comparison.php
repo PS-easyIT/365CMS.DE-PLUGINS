@@ -196,19 +196,6 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
     window.cmsM365LicPresets = <?php echo json_encode($presets, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
 </script>
 
-<style>
-:root {
-    --m365lic-primary: <?php echo $esc((string) ($settings['design_primary_color'] ?? '#2563eb')); ?>;
-    --m365lic-primary-dark: <?php echo $esc((string) ($settings['design_primary_dark'] ?? '#1d4ed8')); ?>;
-    --m365lic-hero-bg: <?php echo $esc((string) ($settings['design_accent_color'] ?? '#f3f7fd')); ?>;
-    --m365lic-bg: <?php echo $esc((string) ($settings['design_page_background'] ?? '#f8fafc')); ?>;
-    --m365lic-surface: <?php echo $esc((string) ($settings['design_surface_color'] ?? '#ffffff')); ?>;
-    --m365lic-text: <?php echo $esc((string) ($settings['design_text_color'] ?? '#0f172a')); ?>;
-    --m365lic-text-muted: <?php echo $esc((string) ($settings['design_text_muted_color'] ?? '#64748b')); ?>;
-    --m365lic-radius: <?php echo (int) ($settings['design_border_radius'] ?? 14); ?>px;
-}
-</style>
-
 <main class="m365lic-main m365lic-page m365lic-page--eu-compare">
     <header class="m365lic-hero">
         <div class="m365lic-container">

@@ -172,7 +172,7 @@ final class CMS_Events_Meta_Boxes
                         value="1" 
                         <?= $is_online ? 'checked' : '' ?>
                         class="form-check-input"
-                        onchange="toggleLocationFields()"
+                        data-ev-meta-toggle="location"
                     />
                     <label for="is_online" class="form-check-label">
                         Online-Event
@@ -180,7 +180,7 @@ final class CMS_Events_Meta_Boxes
                 </div>
             </div>
 
-            <div id="online-fields" style="<?= $is_online ? '' : 'display:none;' ?>">
+            <div id="online-fields"<?= $is_online ? '' : ' hidden' ?>>
                 <div class="form-group">
                     <label for="online_url">Online-URL</label>
                     <input 
@@ -194,7 +194,7 @@ final class CMS_Events_Meta_Boxes
                 </div>
             </div>
 
-            <div id="physical-fields" style="<?= !$is_online ? '' : 'display:none;' ?>">
+            <div id="physical-fields"<?= !$is_online ? '' : ' hidden' ?>>
                 <div class="form-group">
                     <label for="location">Veranstaltungsort</label>
                     <input 
@@ -219,14 +219,6 @@ final class CMS_Events_Meta_Boxes
                     />
                 </div>
             </div>
-
-            <script>
-            function toggleLocationFields() {
-                const isOnline = document.getElementById('is_online').checked;
-                document.getElementById('online-fields').style.display = isOnline ? 'block' : 'none';
-                document.getElementById('physical-fields').style.display = isOnline ? 'none' : 'block';
-            }
-            </script>
         </div>
         <?php
     }
@@ -292,7 +284,7 @@ final class CMS_Events_Meta_Boxes
     public function render_speaker_assignment($event = null): void
     {
         if (!$event || !isset($event->id)) {
-            echo '<div class="admin-card" style="background:#f0f9ff;border-color:#bae6fd;"><p style="margin:0;color:#0369a1;font-size:.875rem;">\u{1f4a1} <strong>Speaker-Zuordnung</strong> ist nach dem ersten Speichern verf\u{00fc}gbar.</p></div>';
+            echo '<div class="admin-card ev-info-box"><p>\u{1f4a1} <strong>Speaker-Zuordnung</strong> ist nach dem ersten Speichern verf\u{00fc}gbar.</p></div>';
             return;
         }
         $event_id   = (int)$event->id;
@@ -301,12 +293,17 @@ final class CMS_Events_Meta_Boxes
         $available  = $db->get_available_speakers();
         $csrf       = CMS\Security::instance()->generateToken('event_speaker');
         ?>
-        <div class="admin-card" id="ev-speaker-box">
+        <div class="admin-card" id="ev-speaker-box"
+             data-ev-speaker-endpoint-add="<?= SITE_URL ?>/admin/events/speaker/add"
+             data-ev-speaker-endpoint-remove-base="<?= SITE_URL ?>/admin/events/speaker/remove/"
+             data-ev-speaker-csrf="<?= htmlspecialchars($csrf, ENT_QUOTES) ?>"
+             data-ev-speaker-event-id="<?= $event_id ?>"
+             data-ev-speaker-empty-message="Noch keine Person zugeordnet.">
             <h3>&#128100; Speaker &amp; Experten</h3>
 
             <div id="ev-assigned-speakers">
                 <?php if (empty($assigned)): ?>
-                    <p class="form-text" style="color:#64748b;">Noch keine Person zugeordnet.</p>
+                    <p class="form-text ev-text-muted">Noch keine Person zugeordnet.</p>
                 <?php else: ?>
                     <?php foreach ($assigned as $sp): ?>
                     <?php $this->render_speaker_row($sp); ?>
@@ -314,90 +311,46 @@ final class CMS_Events_Meta_Boxes
                 <?php endif; ?>
             </div>
 
-            <div style="margin-top:1.25rem;border-top:1px solid #f1f5f9;padding-top:1.25rem;">
-                <h4 style="margin:0 0 .875rem;font-size:.9rem;font-weight:700;color:#374151;">&#10133; Hinzuf&uuml;gen</h4>
-                <div style="display:grid;grid-template-columns:130px 1fr 1fr 140px auto;gap:.75rem;align-items:end;flex-wrap:wrap;">
-                    <div class="form-group" style="margin:0;">
+            <div class="ev-speaker-form-shell">
+                <h4 class="ev-speaker-form-title">&#10133; Hinzuf&uuml;gen</h4>
+                <div class="ev-speaker-form-grid">
+                    <div class="form-group ev-form-group--inline-reset">
                         <label class="form-label">Typ</label>
-                        <select id="ev_sp_type" class="form-control" onchange="evLoadSpOptions()">
+                        <select id="ev_sp_type" class="form-control" data-ev-speaker-type>
                             <option value="speaker">Speaker</option>
                             <option value="expert">Experte</option>
                         </select>
                     </div>
-                    <div class="form-group" style="margin:0;">
+                    <div class="form-group ev-form-group--inline-reset">
                         <label class="form-label">Person</label>
-                        <select id="ev_sp_person" class="form-control">
+                        <select id="ev_sp_person" class="form-control" data-ev-speaker-person>
                             <option value="">-- w&auml;hlen --</option>
                             <?php foreach ($available['speakers'] as $sp): ?>
-                                <option value="<?= (int)$sp->id ?>">
+                                <option value="<?= (int)$sp->id ?>" data-ev-speaker-option="speaker">
+                                    <?= CMS\Security::instance()->escape($sp->last_name . ', ' . $sp->first_name) ?>
+                                </option>
+                            <?php endforeach; ?>
+                            <?php foreach ($available['experts'] as $sp): ?>
+                                <option value="<?= (int)$sp->id ?>" data-ev-speaker-option="expert" hidden>
                                     <?= CMS\Security::instance()->escape($sp->last_name . ', ' . $sp->first_name) ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="form-group" style="margin:0;">
+                    <div class="form-group ev-form-group--inline-reset">
                         <label class="form-label">Vortragstitel</label>
-                        <input type="text" id="ev_sp_title" class="form-control" placeholder="z.B. Cloud-Native">
+                        <input type="text" id="ev_sp_title" class="form-control" placeholder="z.B. Cloud-Native" data-ev-speaker-title>
                     </div>
-                    <div class="form-group" style="margin:0;">
+                    <div class="form-group ev-form-group--inline-reset">
                         <label class="form-label">Session-Zeit</label>
-                        <input type="time" id="ev_sp_time" class="form-control">
+                        <input type="time" id="ev_sp_time" class="form-control" data-ev-speaker-time>
                     </div>
                     <div>
-                        <button type="button" class="btn btn-primary" onclick="evAddSpeaker()">Hinzuf&uuml;gen</button>
+                        <button type="button" class="btn btn-primary" data-ev-speaker-add>Hinzuf&uuml;gen</button>
                     </div>
                 </div>
             </div>
         </div>
-
-        <script>
-        const EV_SP_DATA = {
-            speakers: <?= json_encode(array_map(fn($s) => ['id' => (int)$s->id, 'name' => $s->last_name . ', ' . $s->first_name], $available['speakers'])) ?>,
-            experts:  <?= json_encode(array_map(fn($s) => ['id' => (int)$s->id, 'name' => $s->last_name . ', ' . $s->first_name], $available['experts'])) ?>,
-        };
-        function evLoadSpOptions() {
-            const type = document.getElementById('ev_sp_type').value;
-            const sel  = document.getElementById('ev_sp_person');
-            const list = type === 'expert' ? EV_SP_DATA.experts : EV_SP_DATA.speakers;
-            sel.innerHTML = '<option value="">-- w\u{00e4}hlen --</option>';
-            list.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.name; sel.appendChild(o); });
-        }
-        async function evAddSpeaker() {
-            const type  = document.getElementById('ev_sp_type').value;
-            const spId  = document.getElementById('ev_sp_person').value;
-            const title = document.getElementById('ev_sp_title').value;
-            const time  = document.getElementById('ev_sp_time').value;
-            if (!spId) { alert('Bitte eine Person w\u{00e4}hlen.'); return; }
-            const fd = new FormData();
-            fd.append('csrf_token', '<?= $csrf ?>');
-            fd.append('event_id', '<?= $event_id ?>');
-            fd.append('speaker_id', spId);
-            fd.append('speaker_type', type);
-            fd.append('presentation_title', title);
-            fd.append('session_time', time);
-            try {
-                const res = await fetch('<?= SITE_URL ?>/admin/events/speaker/add', { method: 'POST', body: fd });
-                const d = await res.json();
-                if (d.success) { location.reload(); }
-                else { alert('Fehler: ' + (d.error ?? 'Unbekannt')); }
-            } catch(e) { alert('Netzwerkfehler: ' + e.message); }
-        }
-        async function evRemoveSpeaker(assignmentId) {
-            if (!confirm('Speaker entfernen?')) return;
-            const fd = new FormData();
-            fd.append('csrf_token', '<?= $csrf ?>');
-            try {
-                const res = await fetch('<?= SITE_URL ?>/admin/events/speaker/remove/' + assignmentId, { method: 'POST', body: fd });
-                const d = await res.json();
-                if (d.success) {
-                    document.getElementById('ev-sp-row-' + assignmentId)?.remove();
-                    if (!document.querySelector('#ev-assigned-speakers .ev-sp-row')) {
-                        document.getElementById('ev-assigned-speakers').innerHTML = '<p class="form-text" style="color:#64748b;">Noch keine Person zugeordnet.</p>';
-                    }
-                } else { alert('Fehler beim Entfernen'); }
-            } catch(e) { alert('Netzwerkfehler'); }
-        }
-        </script>
         <?php
     }
 
@@ -411,21 +364,18 @@ final class CMS_Events_Meta_Boxes
         $title = CMS\Security::instance()->escape($sp->presentation_title ?? '');
         $time  = htmlspecialchars(substr($sp->session_time ?? '', 0, 5));
         ?>
-        <div class="ev-sp-row" id="ev-sp-row-<?= $id ?>"
-             style="display:flex;align-items:center;gap:.75rem;padding:.55rem .25rem;
-                    border-bottom:1px solid #f1f5f9;flex-wrap:wrap;">
+        <div class="ev-sp-row" id="ev-sp-row-<?= $id ?>">
             <span class="<?= $bgCls ?>"><?= $label ?></span>
-            <strong style="flex:1;min-width:120px;"><?= $name ?></strong>
+            <strong class="ev-sp-row-name"><?= $name ?></strong>
             <?php if ($title): ?>
-                <span style="color:#64748b;font-size:.875rem;"><?= $title ?></span>
+                <span class="ev-sp-row-title"><?= $title ?></span>
             <?php endif; ?>
             <?php if ($time): ?>
                 <span class="status-badge inactive">&#128336; <?= $time ?></span>
             <?php endif; ?>
             <button type="button"
-                    style="padding:.25rem .6rem;font-size:.78rem;background:#fee2e2;color:#991b1b;
-                           border:1px solid #fca5a5;border-radius:6px;cursor:pointer;"
-                    onclick="evRemoveSpeaker(<?= $id ?>)">&#128465;</button>
+                    class="ev-sp-row-remove"
+                    data-ev-speaker-remove="<?= $id ?>">&#128465;</button>
         </div>
         <?php
     }

@@ -40,10 +40,10 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 </div>
 
 <!-- Tabs -->
-<div class="contact-tab-bar">
-    <button class="contact-tab-btn active" onclick="switchTab('tab-general', this)" type="button">📧 Allgemein</button>
-    <button class="contact-tab-btn" onclick="switchTab('tab-design', this)" type="button">🎨 Design</button>
-    <button class="contact-tab-btn" onclick="switchTab('tab-cleanup', this)" type="button">🧹 Wartung</button>
+<div class="contact-tab-bar" data-tab-scope data-tab-content-selector=".tab-content" data-tab-button-selector="[data-contact-tab-target]">
+    <button class="contact-tab-btn active" data-contact-tab-target="tab-general" type="button">📧 Allgemein</button>
+    <button class="contact-tab-btn" data-contact-tab-target="tab-design" type="button">🎨 Design</button>
+    <button class="contact-tab-btn" data-contact-tab-target="tab-cleanup" type="button">🧹 Wartung</button>
 </div>
 
 <form method="POST" class="admin-form">
@@ -91,7 +91,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
             </div>
 
             <div class="form-group">
-                <label class="checkbox-label" style="display:flex;align-items:center;gap:.5rem;cursor:pointer;">
+                  <label class="checkbox-label contact-checkbox-inline">
                     <input type="checkbox" name="send_confirmation" value="1"
                            <?php echo !empty($settings['send_confirmation']) ? 'checked' : ''; ?>>
                     Bestätigungs-E-Mail an Absender senden
@@ -104,7 +104,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
     <div id="tab-design" class="tab-content">
         <div class="admin-card contact-tab-panel">
             <h3>🎨 Standard-Design</h3>
-            <p class="contact-muted-text" style="margin-bottom:1rem;">Diese Werte gelten als Fallback, wenn ein Formular keine eigenen Einstellungen hat.</p>
+            <p class="contact-muted-text contact-note-spacing">Diese Werte gelten als Fallback, wenn ein Formular keine eigenen Einstellungen hat.</p>
 
             <div class="contact-form-grid-3">
                 <div class="form-group">
@@ -120,13 +120,12 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="primary_color">Primärfarbe</label>
-                    <div class="contact-inline-actions" style="align-items:center;">
+                      <div class="contact-inline-actions">
                         <input type="color" id="primary_color" name="primary_color"
                                value="<?php echo $e($settings['primary_color'] ?? '#3b82f6'); ?>"
-                               style="width:44px;height:38px;border:2px solid #e2e8f0;border-radius:6px;cursor:pointer;">
-                        <input type="text" class="form-control" style="max-width:110px;font-family:monospace;"
+                           class="contact-input-color">
+                       <input type="text" class="form-control contact-input-color-text"
                                value="<?php echo $e($settings['primary_color'] ?? '#3b82f6'); ?>"
-                               oninput="document.getElementById('primary_color').value=this.value"
                                pattern="^#[0-9a-fA-F]{6}$">
                     </div>
                 </div>
@@ -141,7 +140,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
                 </div>
             </div>
 
-            <div class="contact-template-note" style="margin-top:1rem;">
+            <div class="contact-template-note contact-note-spacing">
                 <span class="contact-template-note__eyebrow">Design-Tipp</span>
                 <strong class="contact-action-card__title">Konsequente Defaults sparen Zeit</strong>
                 <div class="contact-template-note__text">Wenn Farbe, Radius und Template hier sauber gesetzt sind, benötigen neue Formulare oft nur noch Titel, Slug und Empfänger.</div>
@@ -171,12 +170,12 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 
         <div class="contact-settings-grid">
             <div class="contact-info-card">
-                <h4 style="margin:0 0 .5rem;">📭 Alte Nachrichten löschen</h4>
-                <p style="font-size:.85rem;color:#64748b;">Entfernt alle Nachrichten, die älter als der gewählte Zeitraum sind.</p>
-                <form method="POST" style="display:flex;gap:.5rem;align-items:flex-end;margin-top:.75rem;">
+                <h4 class="contact-info-title">📭 Alte Nachrichten löschen</h4>
+                <p class="contact-info-copy">Entfernt alle Nachrichten, die älter als der gewählte Zeitraum sind.</p>
+                <form method="POST" class="contact-maintenance-form">
                     <input type="hidden" name="settings_action" value="cleanup_submissions">
                     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
-                    <select name="older_than_days" class="form-control" style="max-width:180px;">
+                    <select name="older_than_days" class="form-control contact-maintenance-select">
                         <option value="30">Älter als 30 Tage</option>
                         <option value="90" selected>Älter als 90 Tage</option>
                         <option value="180">Älter als 180 Tage</option>
@@ -187,9 +186,9 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
             </div>
 
             <div class="contact-info-card">
-                <h4 style="margin:0 0 .5rem;">🚫 Spam löschen</h4>
-                <p style="font-size:.85rem;color:#64748b;">Entfernt alle als Spam markierten Nachrichten.</p>
-                <form method="POST" style="margin-top:.75rem;">
+                <h4 class="contact-info-title">🚫 Spam löschen</h4>
+                <p class="contact-info-copy">Entfernt alle als Spam markierten Nachrichten.</p>
+                <form method="POST" class="contact-note-spacing">
                     <input type="hidden" name="settings_action" value="cleanup_spam">
                     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                     <button type="submit" class="btn btn-danger btn-sm">🚫 Spam leeren</button>
@@ -201,11 +200,3 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 
 </div>
 
-<script>
-function switchTab(tabId, btn) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.contact-tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(tabId)?.classList.add('active');
-    btn.classList.add('active');
-}
-</script>

@@ -29,7 +29,7 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
 <div class="alert alert-success">✅ <?php echo $e($notice); ?></div>
 <?php endif; ?>
 
-<div class="contact-detail-grid" style="grid-template-columns:minmax(0, 1.65fr) minmax(300px, 0.85fr);">
+<div class="contact-detail-grid contact-detail-grid--wide">
     <!-- Nachrichteninhalt -->
     <div>
         <div class="admin-card">
@@ -63,14 +63,14 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
         <!-- Status -->
         <div class="admin-card">
             <h3>📊 Status</h3>
-            <div class="contact-inline-actions" style="align-items:center;margin-bottom:1rem;">
+            <div class="contact-inline-actions contact-status-row">
                 <span class="status-badge <?php echo $st['class']; ?>"><?php echo $st['icon'] . ' ' . $st['label']; ?></span>
             </div>
-            <form method="POST" class="contact-inline-actions">
+            <form method="POST" class="contact-status-form">
                 <input type="hidden" name="sub_action" value="update_status">
                 <input type="hidden" name="id" value="<?php echo (int)$submission['id']; ?>">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
-                <select name="status" class="form-control" style="flex:1;">
+                <select name="status" class="form-control contact-status-select">
                     <?php foreach ($statusMap as $key => $s): ?>
                     <option value="<?php echo $key; ?>" <?php echo $submission['status'] === $key ? 'selected' : ''; ?>>
                         <?php echo $s['icon'] . ' ' . $s['label']; ?>
@@ -108,7 +108,7 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
         <!-- Aktionen -->
         <div class="admin-card">
             <h3>⚡ Aktionen</h3>
-            <div class="contact-side-stack">
+            <div class="contact-button-stack">
                 <?php
                 $senderEmail = $meta['email'] ?? $meta['sender_email'] ?? '';
                 if ($senderEmail):
@@ -117,7 +117,7 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
                     ✉️ Absender anschreiben
                 </a>
                 <?php endif; ?>
-                <button class="btn btn-danger btn-sm" onclick="openModal('deleteModal')">🗑️ Nachricht löschen</button>
+                <button type="button" class="btn btn-danger btn-sm contact-modal-trigger" data-contact-open-delete-modal="deleteModal">🗑️ Nachricht löschen</button>
             </div>
         </div>
     </div>
@@ -126,18 +126,18 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
 </div>
 
 <!-- Lösch-Modal -->
-<div id="deleteModal" class="modal" style="display:none;">
-    <div class="modal-content" style="max-width:440px;">
+<div id="deleteModal" class="modal contact-modal">
+    <div class="modal-content contact-modal-content--compact">
         <div class="modal-header">
             <h3>🗑️ Nachricht löschen?</h3>
-            <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
+            <button class="modal-close" data-close-modal="deleteModal">&times;</button>
         </div>
         <div class="modal-body">
             <p>Möchtest du diese Nachricht wirklich unwiderruflich löschen?</p>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-secondary" onclick="closeModal('deleteModal')">Abbrechen</button>
-            <form method="POST" style="display:inline;">
+            <button type="button" class="btn btn-secondary" data-close-modal="deleteModal">Abbrechen</button>
+            <form method="POST" class="contact-inline-form">
                 <input type="hidden" name="form_action" value="delete_submission">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                 <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
@@ -145,11 +145,3 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
         </div>
     </div>
 </div>
-
-<script>
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-window.addEventListener('click', function(e) {
-    document.querySelectorAll('.modal').forEach(m => { if (e.target === m) closeModal(m.id); });
-});
-</script>

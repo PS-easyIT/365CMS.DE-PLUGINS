@@ -16,17 +16,17 @@ $attentionChannels = CMS_Feed_Database::instance()->get_attention_channels(6);
     </div>
     <div class="header-actions">
         <?php if ($tab === 'dashboard'): ?>
-            <form method="POST" style="display:inline;">
+            <form method="POST" class="feed-inline-form">
                 <input type="hidden" name="action" value="fetch_now">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
                 <button type="submit" class="btn btn-primary">🔄 Alle Feeds abrufen</button>
             </form>
         <?php elseif ($tab === 'channels'): ?>
-            <button type="button" class="btn btn-primary" onclick="openModal('channelModal')">➕ Neuer Kanal</button>
+            <button type="button" class="btn btn-primary" id="openChannelModalBtn">➕ Neuer Kanal</button>
         <?php elseif ($tab === 'categories'): ?>
-            <button type="button" class="btn btn-primary" onclick="openModal('categoryModal')">➕ Neuer Bereich</button>
+            <button type="button" class="btn btn-primary" id="openCategoryModalBtn">➕ Neuer Bereich</button>
         <?php elseif ($tab === 'digests'): ?>
-            <button type="button" class="btn btn-primary" onclick="openModal('digestModal')">➕ Neuer Digest</button>
+            <button type="button" class="btn btn-primary" id="openDigestModalBtn">➕ Neuer Digest</button>
         <?php endif; ?>
     </div>
 </div>
@@ -46,14 +46,14 @@ $attentionChannels = CMS_Feed_Database::instance()->get_attention_channels(6);
        class="feed-tab<?php echo $tab === $key ? ' active' : ''; ?>">
         <?php echo htmlspecialchars($label); ?>
         <?php if ($key === 'channels' && ($stats['channels_errors'] ?? 0) > 0): ?>
-            <span style="background:#fee2e2;color:#991b1b;padding:.1rem .4rem;border-radius:10px;font-size:.7rem;font-weight:700;margin-left:.2rem;"><?php echo $stats['channels_errors']; ?></span>
+            <span class="feed-tab-badge"><?php echo $stats['channels_errors']; ?></span>
         <?php endif; ?>
     </a>
     <?php endforeach; ?>
 </div>
 
 <!-- Content -->
-<div class="admin-card feed-admin-shell" style="border-radius:0 10px 10px 10px;margin-top:0;">
+<div class="admin-card feed-admin-shell feed-admin-shell--tabbed">
 <div class="feed-admin-view">
 
 <?php
@@ -101,16 +101,16 @@ if ($tab === 'dashboard'):
             <div class="stat-label">Member-Feed-Abos</div>
         </div>
         <?php if (($stats['channels_errors'] ?? 0) > 0): ?>
-        <div class="stat-card" style="border-left:3px solid #ef4444;">
+        <div class="stat-card feed-stat-card--danger">
             <div class="stat-icon">⚠️</div>
-            <div class="stat-number" style="color:#ef4444;"><?php echo $stats['channels_errors']; ?></div>
+            <div class="stat-number feed-stat-number--danger"><?php echo $stats['channels_errors']; ?></div>
             <div class="stat-label">Kanäle mit Fehlern</div>
         </div>
         <?php endif; ?>
         <?php if ($queueStats['pending'] > 0 || $queueStats['processing'] > 0): ?>
-        <div class="stat-card" style="border-left:3px solid #3b82f6;">
+        <div class="stat-card feed-stat-card--info">
             <div class="stat-icon">⏳</div>
-            <div class="stat-number" style="color:#3b82f6;"><?php echo $queueStats['pending'] + $queueStats['processing']; ?></div>
+            <div class="stat-number feed-stat-number--info"><?php echo $queueStats['pending'] + $queueStats['processing']; ?></div>
             <div class="stat-label">In Warteschlange</div>
         </div>
         <?php endif; ?>
@@ -178,7 +178,7 @@ if ($tab === 'dashboard'):
             <a href="?tab=channels" class="btn btn-secondary btn-sm">📡 Kanäle verwalten</a>
             <a href="?tab=categories" class="btn btn-secondary btn-sm">📁 Bereiche verwalten</a>
             <a href="?tab=settings" class="btn btn-secondary btn-sm">⚙️ Einstellungen</a>
-            <form method="POST" style="display:inline;">
+            <form method="POST" class="feed-inline-form">
                 <input type="hidden" name="action" value="cleanup">
                 <input type="hidden" name="cleanup_days" value="7">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
@@ -246,7 +246,7 @@ if ($tab === 'dashboard'):
                 <div class="alert <?php echo $hasError ? 'alert-error' : 'feed-admin-note feed-admin-note--soft'; ?> feed-alert-compact">
                     <strong><?php echo htmlspecialchars((string) ($ch['name'] ?? 'Kanal')); ?></strong>
                     <span class="feed-meta-inline"><?php echo htmlspecialchars((string) ($ch['category_name'] ?? 'Ohne Bereich')); ?> · <?php echo htmlspecialchars($statusLabel); ?></span>
-                    <div style="margin-top:.2rem;">
+                    <div class="feed-alert-detail">
                         <?php if ($hasError): ?>
                             <?php echo htmlspecialchars((string) $ch['last_error']); ?>
                         <?php else: ?>
@@ -276,14 +276,14 @@ elseif ($tab === 'channels'):
 
     <?php if (empty($channels)): ?>
     <div class="empty-state">
-        <p style="font-size:2.5rem;margin:0;">📡</p>
+        <p class="feed-empty-icon">📡</p>
         <p><strong>Noch keine Kanäle vorhanden</strong></p>
-        <p style="color:#64748b;font-size:.875rem;">Erstelle den ersten RSS-Kanal über den Button oben rechts.</p>
+        <p class="feed-empty-text">Erstelle den ersten RSS-Kanal über den Button oben rechts.</p>
     </div>
     <?php else: ?>
 
     <!-- Bulk-Actions Bar (Kanäle) -->
-    <div id="channelBulkBar" class="feed-bulk-bar feed-bulk-bar--info" style="display:none;">
+    <div id="channelBulkBar" class="feed-bulk-bar feed-bulk-bar--info" hidden>
         <span class="feed-bulk-bar__count">
             <span id="channelBulkCount">0</span> ausgewählt
         </span>
@@ -291,10 +291,10 @@ elseif ($tab === 'channels'):
             <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
             <input type="hidden" name="action" id="channelBulkAction" value="">
             <div id="channelBulkIds"></div>
-            <button type="button" class="btn btn-sm btn-primary" onclick="submitChannelBulk('bulk_fetch_channels')" title="Ausgewählte abrufen (max. 5 sofort, Rest per Cron)">🔄 Abrufen</button>
-            <button type="button" class="btn btn-sm btn-secondary" onclick="submitChannelBulk('bulk_activate_channels')">✅ Aktivieren</button>
-            <button type="button" class="btn btn-sm btn-secondary" onclick="submitChannelBulk('bulk_deactivate_channels')">⏸️ Deaktivieren</button>
-            <button type="button" class="btn btn-sm btn-danger" onclick="submitChannelBulk('bulk_delete_channels')">🗑️ Löschen</button>
+            <button type="button" class="btn btn-sm btn-primary" data-feed-bulk-channel-action="bulk_fetch_channels" title="Ausgewählte abrufen (max. 5 sofort, Rest per Cron)">🔄 Abrufen</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-feed-bulk-channel-action="bulk_activate_channels">✅ Aktivieren</button>
+            <button type="button" class="btn btn-sm btn-secondary" data-feed-bulk-channel-action="bulk_deactivate_channels">⏸️ Deaktivieren</button>
+            <button type="button" class="btn btn-sm btn-danger" data-feed-bulk-channel-action="bulk_delete_channels">🗑️ Löschen</button>
         </form>
     </div>
 
@@ -302,7 +302,7 @@ elseif ($tab === 'channels'):
         <table class="users-table">
             <thead>
                 <tr>
-                    <th style="width:36px;"><input type="checkbox" id="channelSelectAll" onchange="toggleAllChannels(this.checked)" title="Alle markieren"></th>
+                    <th class="feed-table-check"><input type="checkbox" id="channelSelectAll" title="Alle markieren"></th>
                     <th>Name</th>
                     <th>Bereich</th>
                     <th>Beiträge</th>
@@ -315,13 +315,13 @@ elseif ($tab === 'channels'):
             <tbody>
             <?php foreach ($channels as $ch): ?>
                 <tr>
-                    <td><input type="checkbox" class="channel-checkbox" value="<?php echo (int)$ch['id']; ?>" onchange="updateChannelBulk()"></td>
+                    <td><input type="checkbox" class="channel-checkbox" value="<?php echo (int)$ch['id']; ?>"></td>
                     <td>
-                        <a href="javascript:void(0)" onclick="editChannel(<?php echo (int)$ch['id']; ?>)"
-                           style="font-weight:600;color:var(--admin-primary);">
+                                <a href="#" data-feed-edit-channel="<?php echo (int)$ch['id']; ?>"
+                           class="feed-table-link feed-table-link--plain">
                             <?php echo htmlspecialchars($ch['name']); ?>
                         </a>
-                        <div style="font-size:.75rem;color:#94a3b8;margin-top:.15rem;">
+                        <div class="feed-table-meta">
                             <?php echo htmlspecialchars($ch['feed_url']); ?>
                         </div>
                     </td>
@@ -332,7 +332,7 @@ elseif ($tab === 'channels'):
                         <?php if ($ch['last_fetched_at']): ?>
                             <?php echo date('d.m.Y H:i', strtotime($ch['last_fetched_at'])); ?>
                         <?php else: ?>
-                            <span style="color:#94a3b8;">Nie</span>
+                            <span class="feed-text-muted">Nie</span>
                         <?php endif; ?>
                     </td>
                     <td>
@@ -346,14 +346,14 @@ elseif ($tab === 'channels'):
                     </td>
                     <td>
                         <div class="feed-table-actions">
-                            <form method="POST" style="display:inline;">
+                            <form method="POST" class="feed-inline-form">
                                 <input type="hidden" name="action" value="fetch_now">
                                 <input type="hidden" name="channel_id" value="<?php echo (int)$ch['id']; ?>">
                                 <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
                                 <button type="submit" class="btn btn-sm btn-secondary" title="Jetzt abrufen">🔄</button>
                             </form>
-                            <button type="button" class="btn btn-sm btn-secondary" onclick="editChannel(<?php echo (int)$ch['id']; ?>)" title="Bearbeiten">✏️</button>
-                            <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteModal(<?php echo (int)$ch['id']; ?>, '<?php echo htmlspecialchars($ch['name'], ENT_QUOTES); ?>', 'delete_channel')" title="Löschen">🗑️</button>
+                            <button type="button" class="btn btn-sm btn-secondary" data-feed-edit-channel="<?php echo (int)$ch['id']; ?>" title="Bearbeiten">✏️</button>
+                            <button type="button" class="btn btn-sm btn-danger" data-feed-delete-id="<?php echo (int)$ch['id']; ?>" data-feed-delete-name="<?php echo htmlspecialchars($ch['name'], ENT_QUOTES); ?>" data-feed-delete-action="delete_channel" title="Löschen">🗑️</button>
                         </div>
                     </td>
                 </tr>
@@ -376,14 +376,14 @@ elseif ($tab === 'categories'):
 
     <?php if (empty($categories)): ?>
     <div class="empty-state">
-        <p style="font-size:2.5rem;margin:0;">📁</p>
+        <p class="feed-empty-icon">📁</p>
         <p><strong>Noch keine Bereiche vorhanden</strong></p>
-        <p style="color:#64748b;font-size:.875rem;">Erstelle den ersten Bereich, z.B. "Security" oder "Tech News".</p>
+        <p class="feed-empty-text">Erstelle den ersten Bereich, z.B. "Security" oder "Tech News".</p>
     </div>
     <?php else: ?>
 
     <!-- Bulk-Actions Bar (Bereiche) -->
-    <div id="categoryBulkBar" class="feed-bulk-bar feed-bulk-bar--warn" style="display:none;">
+    <div id="categoryBulkBar" class="feed-bulk-bar feed-bulk-bar--warn" hidden>
         <span class="feed-bulk-bar__count">
             <span id="categoryBulkCount">0</span> ausgewählt
         </span>
@@ -391,7 +391,7 @@ elseif ($tab === 'categories'):
             <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
             <input type="hidden" name="action" id="categoryBulkAction" value="">
             <div id="categoryBulkIds"></div>
-            <button type="button" class="btn btn-sm btn-danger" onclick="submitCategoryBulk('bulk_delete_categories')">🗑️ Ausgewählte löschen</button>
+            <button type="button" class="btn btn-sm btn-danger" data-feed-bulk-category-action="bulk_delete_categories">🗑️ Ausgewählte löschen</button>
         </form>
     </div>
 
@@ -399,7 +399,7 @@ elseif ($tab === 'categories'):
         <table class="users-table">
             <thead>
                 <tr>
-                    <th style="width:36px;"><input type="checkbox" id="categorySelectAll" onchange="toggleAllCategories(this.checked)" title="Alle markieren"></th>
+                    <th class="feed-table-check"><input type="checkbox" id="categorySelectAll" title="Alle markieren"></th>
                     <th>Icon</th>
                     <th>Name</th>
                     <th>Slug</th>
@@ -416,15 +416,15 @@ elseif ($tab === 'categories'):
                 $publicViewUrl = SITE_URL . '/feed/' . rawurlencode($categorySlug);
             ?>
                 <tr>
-                    <td><input type="checkbox" class="category-checkbox" value="<?php echo (int)$cat['id']; ?>" onchange="updateCategoryBulk()"></td>
-                    <td style="font-size:1.5rem;"><?php echo htmlspecialchars($cat['icon']); ?></td>
+                    <td><input type="checkbox" class="category-checkbox" value="<?php echo (int)$cat['id']; ?>"></td>
+                    <td class="feed-empty-icon"><?php echo htmlspecialchars($cat['icon']); ?></td>
                     <td>
-                        <a href="javascript:void(0)" onclick="editCategory(<?php echo (int)$cat['id']; ?>)"
-                           style="font-weight:600;color:var(--admin-primary);">
+                                <a href="#" data-feed-edit-category="<?php echo (int)$cat['id']; ?>"
+                           class="feed-table-link feed-table-link--plain">
                             <?php echo htmlspecialchars($cat['name']); ?>
                         </a>
                         <?php if (!empty($cat['description'])): ?>
-                        <div style="font-size:.75rem;color:#94a3b8;margin-top:.15rem;">
+                        <div class="feed-table-meta">
                             <?php echo htmlspecialchars($cat['description']); ?>
                         </div>
                         <?php endif; ?>
@@ -446,8 +446,8 @@ elseif ($tab === 'categories'):
                             <?php else: ?>
                             <button type="button" class="btn btn-sm btn-secondary" disabled title="Nur für öffentliche Bereiche verfügbar">🌐</button>
                             <?php endif; ?>
-                            <button type="button" class="btn btn-sm btn-secondary" onclick="editCategory(<?php echo (int)$cat['id']; ?>)" title="Bearbeiten">✏️</button>
-                            <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteModal(<?php echo (int)$cat['id']; ?>, '<?php echo htmlspecialchars($cat['name'], ENT_QUOTES); ?>', 'delete_category')" title="Löschen">🗑️</button>
+                            <button type="button" class="btn btn-sm btn-secondary" data-feed-edit-category="<?php echo (int)$cat['id']; ?>" title="Bearbeiten">✏️</button>
+                            <button type="button" class="btn btn-sm btn-danger" data-feed-delete-id="<?php echo (int)$cat['id']; ?>" data-feed-delete-name="<?php echo htmlspecialchars($cat['name'], ENT_QUOTES); ?>" data-feed-delete-action="delete_category" title="Löschen">🗑️</button>
                         </div>
                     </td>
                 </tr>
@@ -484,19 +484,18 @@ elseif ($tab === 'catalog'):
             </div>
             <p class="feed-catalog-card__description"><?php echo htmlspecialchars($catInfo['description']); ?></p>
             <div class="feed-inline-actions">
-                <form method="POST" style="display:inline;">
+                <form method="POST" class="feed-inline-form" data-feed-confirm-message="<?php echo htmlspecialchars($catInfo['count'] . ' Feeds importieren und neuen Bereich „' . $catInfo['name'] . '“ anlegen?', ENT_QUOTES); ?>" data-feed-confirm-danger="0">
                     <input type="hidden" name="action" value="import_catalog">
                     <input type="hidden" name="catalog_key" value="<?php echo htmlspecialchars($catKey); ?>">
                     <input type="hidden" name="target_category_id" value="0">
                     <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
-                    <button type="submit" class="btn btn-primary btn-sm"
-                            onclick="return confirm('<?php echo $catInfo['count']; ?> Feeds importieren und neuen Bereich \'<?php echo htmlspecialchars(addslashes($catInfo['name'])); ?>\' anlegen?')">
+                    <button type="submit" class="btn btn-primary btn-sm">
                         📥 Komplett importieren
                     </button>
                 </form>
                 <?php if (!empty($categories)): ?>
                 <div class="feed-inline-stack">
-                    <form method="POST" class="feed-inline-actions">
+                    <form method="POST" class="feed-inline-actions" data-feed-confirm-message="<?php echo htmlspecialchars('Feeds aus „' . $catInfo['name'] . '“ in bestehenden Bereich importieren?', ENT_QUOTES); ?>" data-feed-confirm-danger="0">
                         <input type="hidden" name="action" value="import_catalog">
                         <input type="hidden" name="catalog_key" value="<?php echo htmlspecialchars($catKey); ?>">
                         <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
@@ -505,8 +504,7 @@ elseif ($tab === 'catalog'):
                             <option value="<?php echo (int)$cat['id']; ?>"><?php echo htmlspecialchars($cat['icon'] . ' ' . $cat['name']); ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <button type="submit" class="btn btn-secondary btn-sm"
-                                onclick="return confirm('Feeds aus \'<?php echo htmlspecialchars(addslashes($catInfo['name'])); ?>\' in bestehenden Bereich importieren?')">
+                        <button type="submit" class="btn btn-secondary btn-sm">
                             ➕ In Bereich
                         </button>
                     </form>
@@ -516,7 +514,7 @@ elseif ($tab === 'catalog'):
 
             <details class="feed-catalog-details">
                 <summary>🧩 Auswahl importieren</summary>
-                <form method="POST" class="feed-catalog-selection-form">
+                <form method="POST" class="feed-catalog-selection-form" data-feed-confirm-message="<?php echo htmlspecialchars('Ausgewählte Feeds aus ' . $catInfo['name'] . ' importieren?', ENT_QUOTES); ?>" data-feed-confirm-danger="0">
                     <input type="hidden" name="action" value="import_catalog">
                     <input type="hidden" name="catalog_key" value="<?php echo htmlspecialchars($catKey); ?>">
                     <input type="hidden" name="catalog_import_mode" value="selected">
@@ -525,8 +523,8 @@ elseif ($tab === 'catalog'):
                     <div class="feed-catalog-toolbar">
                         <span><?php echo count($catalogFeeds); ?> Quellen verfügbar</span>
                         <div class="feed-catalog-toolbar__actions">
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="toggleCatalogSelection('<?php echo htmlspecialchars($catKey, ENT_QUOTES); ?>', true)">Alle</button>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="toggleCatalogSelection('<?php echo htmlspecialchars($catKey, ENT_QUOTES); ?>', false)">Keine</button>
+                            <button type="button" class="btn btn-secondary btn-sm" data-feed-toggle-catalog-selection="<?php echo htmlspecialchars($catKey, ENT_QUOTES); ?>" data-feed-toggle-catalog-state="1">Alle</button>
+                            <button type="button" class="btn btn-secondary btn-sm" data-feed-toggle-catalog-selection="<?php echo htmlspecialchars($catKey, ENT_QUOTES); ?>" data-feed-toggle-catalog-state="0">Keine</button>
                         </div>
                     </div>
 
@@ -557,8 +555,7 @@ elseif ($tab === 'catalog'):
                     </div>
 
                     <div class="feed-catalog-selection-form__actions">
-                        <button type="submit" class="btn btn-primary btn-sm"
-                                onclick="return confirm('Ausgewählte Feeds aus <?php echo htmlspecialchars(addslashes($catInfo['name'])); ?> importieren?')">
+                        <button type="submit" class="btn btn-primary btn-sm">
                             ✅ Auswahl importieren
                         </button>
                     </div>
@@ -612,9 +609,9 @@ elseif ($tab === 'items'):
 
     <?php if (empty($feedItems)): ?>
     <div class="empty-state">
-        <p style="font-size:2.5rem;margin:0;">📰</p>
+        <p class="feed-empty-icon">📰</p>
         <p><strong>Keine Beiträge gefunden</strong></p>
-        <p style="color:#64748b;font-size:.875rem;">Feeds abrufen oder Filter anpassen.</p>
+        <p class="feed-empty-text">Feeds abrufen oder Filter anpassen.</p>
     </div>
     <?php else: ?>
     <div class="users-table-container">
@@ -631,36 +628,36 @@ elseif ($tab === 'items'):
             <tbody>
             <?php foreach ($feedItems as $item): ?>
                 <tr>
-                    <td style="max-width:350px;">
+                    <td class="feed-item-title-cell">
                         <a href="<?php echo htmlspecialchars($item['link']); ?>" target="_blank"
-                           style="font-weight:600;color:var(--admin-primary);text-decoration:none;">
+                           class="feed-table-link">
                             <?php echo htmlspecialchars(mb_substr($item['title'], 0, 80)); ?>
                         </a>
                         <?php if ((int)$item['is_featured']): ?>
-                            <span style="background:#fef3c7;color:#92400e;padding:.1rem .3rem;border-radius:4px;font-size:.65rem;font-weight:700;margin-left:.3rem;">⭐ Featured</span>
+                            <span class="feed-item-badge feed-item-badge--featured">⭐ Featured</span>
                         <?php endif; ?>
                         <?php if ((int)($item['is_hidden'] ?? 0)): ?>
-                            <span style="background:#f1f5f9;color:#64748b;padding:.1rem .3rem;border-radius:4px;font-size:.65rem;font-weight:700;margin-left:.3rem;">👁️‍🗨️ Ausgeblendet</span>
+                            <span class="feed-item-badge feed-item-badge--hidden">👁️‍🗨️ Ausgeblendet</span>
                         <?php endif; ?>
                     </td>
-                    <td style="font-size:.85rem;"><?php echo htmlspecialchars($item['channel_name'] ?? ''); ?></td>
-                    <td style="font-size:.85rem;"><?php echo htmlspecialchars($item['category_name'] ?? ''); ?></td>
-                    <td style="font-size:.85rem;"><?php echo date('d.m.Y H:i', strtotime($item['pub_date'])); ?></td>
+                    <td class="feed-item-meta-cell"><?php echo htmlspecialchars($item['channel_name'] ?? ''); ?></td>
+                    <td class="feed-item-meta-cell"><?php echo htmlspecialchars($item['category_name'] ?? ''); ?></td>
+                    <td class="feed-item-meta-cell"><?php echo date('d.m.Y H:i', strtotime($item['pub_date'])); ?></td>
                     <td>
                         <div class="feed-table-actions feed-table-actions--tight">
-                            <form method="POST" style="display:inline;">
+                            <form method="POST" class="feed-inline-form">
                                 <input type="hidden" name="action" value="toggle_featured">
                                 <input type="hidden" name="id" value="<?php echo (int)$item['id']; ?>">
                                 <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
                                 <button type="submit" class="btn btn-sm btn-secondary" title="<?php echo (int)$item['is_featured'] ? 'Featured entfernen' : 'Als Featured markieren'; ?>">⭐</button>
                             </form>
-                            <form method="POST" style="display:inline;">
+                            <form method="POST" class="feed-inline-form">
                                 <input type="hidden" name="action" value="toggle_hidden">
                                 <input type="hidden" name="id" value="<?php echo (int)$item['id']; ?>">
                                 <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
                                 <button type="submit" class="btn btn-sm btn-secondary" title="Ausblenden">👁️</button>
                             </form>
-                            <form method="POST" style="display:inline;">
+                            <form method="POST" class="feed-inline-form" data-feed-confirm-message="Diesen Beitrag wirklich löschen?">
                                 <input type="hidden" name="action" value="delete_item">
                                 <input type="hidden" name="id" value="<?php echo (int)$item['id']; ?>">
                                 <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
@@ -707,9 +704,9 @@ elseif ($tab === 'digests'):
 
     <?php if (empty($digests)): ?>
     <div class="empty-state">
-        <p style="font-size:2.5rem;margin:0;">📧</p>
+        <p class="feed-empty-icon">📧</p>
         <p><strong>Noch keine Digests konfiguriert</strong></p>
-        <p style="color:#64748b;font-size:.875rem;">Erstelle einen Digest um Feed-Beiträge per E-Mail zu versenden.</p>
+        <p class="feed-empty-text">Erstelle einen Digest um Feed-Beiträge per E-Mail zu versenden.</p>
     </div>
     <?php else: ?>
     <div class="users-table-container">
@@ -738,9 +735,9 @@ elseif ($tab === 'digests'):
                 }
             ?>
                 <tr>
-                    <td style="font-weight:600;"><?php echo htmlspecialchars($dg['name']); ?></td>
+                    <td class="feed-digest-name"><?php echo htmlspecialchars($dg['name']); ?></td>
                     <td><?php echo htmlspecialchars($dg['email']); ?></td>
-                    <td style="font-size:.85rem;">
+                    <td class="feed-item-meta-cell">
                         <?php echo htmlspecialchars(implode(', ', $dgCatNames) ?: '–'); ?>
                     </td>
                     <td><?php echo $mailer->get_frequency_label((int)$dg['frequency']); ?></td>
@@ -748,7 +745,7 @@ elseif ($tab === 'digests'):
                         <?php if ($dg['last_sent_at']): ?>
                             <?php echo date('d.m.Y H:i', strtotime($dg['last_sent_at'])); ?>
                         <?php else: ?>
-                            <span style="color:#94a3b8;">Noch nie</span>
+                            <span class="feed-text-muted">Noch nie</span>
                         <?php endif; ?>
                     </td>
                     <td>
@@ -760,14 +757,14 @@ elseif ($tab === 'digests'):
                     </td>
                     <td>
                         <div class="feed-table-actions feed-table-actions--tight">
-                            <form method="POST" style="display:inline;">
+                            <form method="POST" class="feed-inline-form">
                                 <input type="hidden" name="action" value="test_digest">
                                 <input type="hidden" name="digest_id" value="<?php echo (int)$dg['id']; ?>">
                                 <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
                                 <button type="submit" class="btn btn-sm btn-secondary" title="Test senden">📤</button>
                             </form>
-                            <button type="button" class="btn btn-sm btn-secondary" onclick="editDigest(<?php echo (int)$dg['id']; ?>)" title="Bearbeiten">✏️</button>
-                            <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteModal(<?php echo (int)$dg['id']; ?>, '<?php echo htmlspecialchars($dg['name'], ENT_QUOTES); ?>', 'delete_digest')" title="Löschen">🗑️</button>
+                            <button type="button" class="btn btn-sm btn-secondary" data-feed-edit-digest="<?php echo (int)$dg['id']; ?>" title="Bearbeiten">✏️</button>
+                            <button type="button" class="btn btn-sm btn-danger" data-feed-delete-id="<?php echo (int)$dg['id']; ?>" data-feed-delete-name="<?php echo htmlspecialchars($dg['name'], ENT_QUOTES); ?>" data-feed-delete-action="delete_digest" title="Löschen">🗑️</button>
                         </div>
                     </td>
                 </tr>
@@ -779,7 +776,7 @@ elseif ($tab === 'digests'):
 
     <!-- Digest E-Mail-Einstellungen -->
     <hr class="feed-divider">
-    <h4 style="font-size:.95rem;font-weight:700;color:#1e293b;margin:0 0 1rem;">📧 Digest-Grundeinstellungen</h4>
+    <h4 class="feed-section-title--compact">📧 Digest-Grundeinstellungen</h4>
 
     <form method="POST" class="admin-form feed-settings-form feed-settings-form--narrow">
         <input type="hidden" name="action" value="save_digest_settings">
@@ -839,9 +836,9 @@ elseif ($tab === 'settings'):
 
     <!-- Sub-Tabs -->
     <div class="feed-settings-tabs">
-        <button class="tab-btn <?php echo $settingsTab === 'general' ? 'active' : ''; ?>" onclick="switchTab('stab-general', this)" type="button">⚙️ Allgemein</button>
-        <button class="tab-btn <?php echo $settingsTab === 'design' ? 'active' : ''; ?>" onclick="switchTab('stab-design', this)" type="button">🎨 Design</button>
-        <button class="tab-btn <?php echo $settingsTab === 'system' ? 'active' : ''; ?>" onclick="switchTab('stab-system', this)" type="button">🖥️ System</button>
+        <button class="tab-btn <?php echo $settingsTab === 'general' ? 'active' : ''; ?>" data-feed-tab-target="stab-general" type="button">⚙️ Allgemein</button>
+        <button class="tab-btn <?php echo $settingsTab === 'design' ? 'active' : ''; ?>" data-feed-tab-target="stab-design" type="button">🎨 Design</button>
+        <button class="tab-btn <?php echo $settingsTab === 'system' ? 'active' : ''; ?>" data-feed-tab-target="stab-system" type="button">🖥️ System</button>
     </div>
 
     <!-- Allgemein -->
@@ -859,7 +856,7 @@ elseif ($tab === 'settings'):
             </div>
 
             <div class="form-group">
-                <label class="form-label">Seitentitel <span style="color:#ef4444;">*</span></label>
+                <label class="form-label">Seitentitel <span class="feed-required">*</span></label>
                 <input type="text" name="archive_title" class="form-control"
                        value="<?php echo htmlspecialchars($settings['archive_title'] ?? 'Feed-Übersicht'); ?>" required>
                 <small class="form-text">Überschrift der öffentlichen Feed-Seite</small>
@@ -869,10 +866,10 @@ elseif ($tab === 'settings'):
                 <textarea name="archive_description" class="form-control" rows="2"><?php echo htmlspecialchars($settings['archive_description'] ?? ''); ?></textarea>
             </div>
             <div class="form-group">
-                <label class="form-label">URL-Slug <span style="color:#ef4444;">*</span></label>
+                  <label class="form-label">URL-Slug <span class="feed-required">*</span></label>
                 <input type="text" name="archive_slug" class="form-control"
                        value="<?php echo htmlspecialchars($settings['archive_slug'] ?? 'feeds'); ?>"
-                       pattern="[a-z0-9\-]+" required class="feed-input-medium">
+                      pattern="[a-z0-9\-]+" required>
                   <small class="form-text">Archiv-URL: <code>/<?php echo htmlspecialchars(($settings['archive_slug'] ?? 'feeds') === 'feed' ? 'feeds' : ($settings['archive_slug'] ?? 'feeds')); ?></code> · Öffentliche Bereichsseiten bleiben fest unter <code>/feed/{bereich-slug}</code>.</small>
             </div>
             <div class="form-group">
@@ -957,7 +954,7 @@ elseif ($tab === 'settings'):
                                class="form-control feed-input-xs feed-input-mono"
                                value="<?php echo htmlspecialchars($settings[$key] ?? $default); ?>"
                                pattern="^#[0-9A-Fa-f]{6}$" maxlength="7"
-                               onchange="this.previousElementSibling.value=this.value">
+                               >
                     </div>
                     <small class="form-text"><?php echo $hint; ?></small>
                 </div>
@@ -969,7 +966,6 @@ elseif ($tab === 'settings'):
                 <div class="feed-range-row">
                     <input type="range" name="border_radius" min="0" max="24" step="2"
                            value="<?php echo (int)($settings['border_radius'] ?? 10); ?>"
-                           oninput="document.getElementById('radiusPreview').textContent=this.value+'px'"
                            class="feed-range-row__input">
                     <span id="radiusPreview" class="feed-range-row__value">
                         <?php echo (int)($settings['border_radius'] ?? 10); ?>px
@@ -1049,13 +1045,13 @@ elseif ($tab === 'settings'):
         </div>
 
         <div class="feed-inline-actions">
-            <form method="POST" style="display:inline-block;margin-right:.5rem;">
+            <form method="POST" class="feed-inline-form-block">
                 <input type="hidden" name="action" value="cleanup">
                 <input type="hidden" name="cleanup_days" value="7">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
                 <button type="submit" class="btn btn-secondary">🧹 Beiträge älter 7 Tage entfernen</button>
             </form>
-            <form method="POST" style="display:inline-block;">
+            <form method="POST" class="feed-inline-form-block">
                 <input type="hidden" name="action" value="cleanup">
                 <input type="hidden" name="cleanup_days" value="30">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
@@ -1085,11 +1081,11 @@ elseif ($tab === 'settings'):
 <!-- ══════════════════════════════════════════════════════════════════════ -->
 
 <!-- Kanal-Modal -->
-<div id="channelModal" class="modal" style="display:none;">
-    <div class="modal-content" style="max-width:600px;">
+<div id="channelModal" class="modal feed-modal">
+    <div class="modal-content feed-modal-content--wide">
         <div class="modal-header">
             <h3 id="channelModalTitle">📡 Neuer Kanal</h3>
-            <button class="modal-close" onclick="closeModal('channelModal')">&times;</button>
+            <button class="modal-close" type="button" data-feed-close-modal="channelModal">&times;</button>
         </div>
         <div class="modal-body">
             <form id="channelForm" method="POST" class="admin-form">
@@ -1098,11 +1094,11 @@ elseif ($tab === 'settings'):
                 <input type="hidden" name="channel_id" id="channel_id" value="">
 
                 <div class="form-group">
-                    <label class="form-label">Name <span style="color:#ef4444;">*</span></label>
+                    <label class="form-label">Name <span class="feed-required">*</span></label>
                     <input type="text" name="channel_name" id="channel_name" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Feed-URL <span style="color:#ef4444;">*</span></label>
+                    <label class="form-label">Feed-URL <span class="feed-required">*</span></label>
                     <input type="url" name="feed_url" id="channel_feed_url" class="form-control" required
                            placeholder="https://example.com/rss.xml">
                 </div>
@@ -1112,7 +1108,7 @@ elseif ($tab === 'settings'):
                            placeholder="https://example.com">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Bereich <span style="color:#ef4444;">*</span></label>
+                    <label class="form-label">Bereich <span class="feed-required">*</span></label>
                     <select name="category_id" id="channel_category_id" class="form-control" required>
                         <option value="">– Bereich wählen –</option>
                         <?php foreach ($categories as $cat): ?>
@@ -1124,7 +1120,7 @@ elseif ($tab === 'settings'):
                     <label class="form-label">Beschreibung</label>
                     <textarea name="channel_description" id="channel_description" class="form-control" rows="2"></textarea>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                <div class="feed-form-grid-2">
                     <div class="form-group">
                         <label class="form-label">Abruf-Intervall (Minuten)</label>
                         <input type="number" name="fetch_interval" id="channel_fetch_interval" class="form-control"
@@ -1143,18 +1139,18 @@ elseif ($tab === 'settings'):
             </form>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('channelModal')">Abbrechen</button>
+            <button type="button" class="btn btn-secondary" data-feed-close-modal="channelModal">Abbrechen</button>
             <button type="submit" form="channelForm" class="btn btn-primary">💾 Speichern</button>
         </div>
     </div>
 </div>
 
 <!-- Bereich-Modal -->
-<div id="categoryModal" class="modal" style="display:none;">
-    <div class="modal-content" style="max-width:600px;">
+<div id="categoryModal" class="modal feed-modal">
+    <div class="modal-content feed-modal-content--wide">
         <div class="modal-header">
             <h3 id="categoryModalTitle">📁 Neuer Bereich</h3>
-            <button class="modal-close" onclick="closeModal('categoryModal')">&times;</button>
+            <button class="modal-close" type="button" data-feed-close-modal="categoryModal">&times;</button>
         </div>
         <div class="modal-body">
             <form id="categoryForm" method="POST" class="admin-form">
@@ -1162,29 +1158,28 @@ elseif ($tab === 'settings'):
                 <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
                 <input type="hidden" name="cat_id" id="cat_id" value="">
 
-                <div style="display:grid;grid-template-columns:1fr auto;gap:1rem;">
+                <div class="feed-form-grid-auto-icon">
                     <div class="form-group">
-                        <label class="form-label">Name <span style="color:#ef4444;">*</span></label>
-                        <input type="text" name="cat_name" id="cat_name" class="form-control" required
-                               oninput="if(!document.getElementById('cat_id').value)document.getElementById('cat_slug').value=this.value.toLowerCase().replace(/[^a-z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'')">
+                        <label class="form-label">Name <span class="feed-required">*</span></label>
+                        <input type="text" name="cat_name" id="cat_name" class="form-control" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Icon</label>
                         <input type="text" name="cat_icon" id="cat_icon" class="form-control"
-                               value="📰" style="max-width:60px;text-align:center;font-size:1.5rem;">
+                               value="📰" class="feed-input-icon">
                     </div>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Slug <span style="color:#ef4444;">*</span></label>
+                    <label class="form-label">Slug <span class="feed-required">*</span></label>
                     <input type="text" name="cat_slug" id="cat_slug" class="form-control" required
-                           pattern="[a-z0-9\-]+" style="max-width:250px;">
+                           pattern="[a-z0-9\-]+" class="feed-input-slug">
                           <small class="form-text">URL: /feed/<strong id="slugPreview">…</strong></small>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Beschreibung</label>
                     <textarea name="cat_description" id="cat_description" class="form-control" rows="2"></textarea>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+                <div class="feed-form-grid-3">
                     <div class="form-group">
                         <label class="form-label">Layout</label>
                         <select name="cat_layout" id="cat_layout" class="form-control">
@@ -1211,18 +1206,18 @@ elseif ($tab === 'settings'):
             </form>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('categoryModal')">Abbrechen</button>
+            <button type="button" class="btn btn-secondary" data-feed-close-modal="categoryModal">Abbrechen</button>
             <button type="submit" form="categoryForm" class="btn btn-primary">💾 Speichern</button>
         </div>
     </div>
 </div>
 
 <!-- Digest-Modal -->
-<div id="digestModal" class="modal" style="display:none;">
-    <div class="modal-content" style="max-width:600px;">
+<div id="digestModal" class="modal feed-modal">
+    <div class="modal-content feed-modal-content--wide">
         <div class="modal-header">
             <h3 id="digestModalTitle">📧 Neuer Digest</h3>
-            <button class="modal-close" onclick="closeModal('digestModal')">&times;</button>
+            <button class="modal-close" type="button" data-feed-close-modal="digestModal">&times;</button>
         </div>
         <div class="modal-body">
             <form id="digestForm" method="POST" class="admin-form">
@@ -1231,16 +1226,16 @@ elseif ($tab === 'settings'):
                 <input type="hidden" name="digest_id" id="digest_id" value="">
 
                 <div class="form-group">
-                    <label class="form-label">Name <span style="color:#ef4444;">*</span></label>
+                    <label class="form-label">Name <span class="feed-required">*</span></label>
                     <input type="text" name="digest_name" id="digest_name" class="form-control" required
                            placeholder="z.B. Security Daily">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">E-Mail-Adresse <span style="color:#ef4444;">*</span></label>
+                    <label class="form-label">E-Mail-Adresse <span class="feed-required">*</span></label>
                     <input type="email" name="digest_email" id="digest_email" class="form-control" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Bereiche <span style="color:#ef4444;">*</span></label>
+                    <label class="form-label">Bereiche <span class="feed-required">*</span></label>
                     <?php foreach ($categories as $cat): ?>
                     <label class="checkbox-label">
                         <input type="checkbox" name="digest_categories[]" value="<?php echo (int)$cat['id']; ?>"
@@ -1249,12 +1244,12 @@ elseif ($tab === 'settings'):
                     </label>
                     <?php endforeach; ?>
                     <?php if (empty($categories)): ?>
-                    <p style="color:#94a3b8;font-size:.875rem;">Erstelle zuerst Bereiche.</p>
+                    <p class="feed-empty-text">Erstelle zuerst Bereiche.</p>
                     <?php endif; ?>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Frequenz</label>
-                    <select name="digest_frequency" id="digest_frequency" class="form-control" style="max-width:220px;">
+                    <select name="digest_frequency" id="digest_frequency" class="form-control feed-input-select-sm">
                         <option value="1">1× täglich</option>
                         <option value="2">2× täglich</option>
                         <option value="3">3× täglich</option>
@@ -1268,26 +1263,26 @@ elseif ($tab === 'settings'):
             </form>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('digestModal')">Abbrechen</button>
+            <button type="button" class="btn btn-secondary" data-feed-close-modal="digestModal">Abbrechen</button>
             <button type="submit" form="digestForm" class="btn btn-primary">💾 Speichern</button>
         </div>
     </div>
 </div>
 
 <!-- Lösch-Modal -->
-<div id="deleteModal" class="modal" style="display:none;">
-    <div class="modal-content" style="max-width:480px;">
+<div id="deleteModal" class="modal feed-modal">
+    <div class="modal-content feed-modal-content--compact">
         <div class="modal-header">
             <h3>🗑️ Eintrag löschen</h3>
-            <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
+            <button class="modal-close" type="button" data-feed-close-modal="deleteModal">&times;</button>
         </div>
         <div class="modal-body">
             <p>Soll <strong id="deleteModalName"></strong> wirklich gelöscht werden?</p>
-            <p style="color:#ef4444;font-size:.875rem;">⚠️ Diese Aktion kann nicht rückgängig gemacht werden.</p>
+            <p class="feed-warning-text">⚠️ Diese Aktion kann nicht rückgängig gemacht werden.</p>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('deleteModal')">Abbrechen</button>
-            <form method="POST" id="deleteModalForm" style="display:inline;">
+            <button type="button" class="btn btn-secondary" data-feed-close-modal="deleteModal">Abbrechen</button>
+            <form method="POST" id="deleteModalForm" class="feed-inline-form">
                 <input type="hidden" name="action" id="deleteModalAction" value="">
                 <input type="hidden" name="id" id="deleteModalId">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
@@ -1297,12 +1292,7 @@ elseif ($tab === 'settings'):
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════════════════ -->
-<!-- JavaScript -->
-<!-- ══════════════════════════════════════════════════════════════════════ -->
-<script>
-// Kanal-Daten für Edit-Modal (inline, kein extra AJAX nötig)
-const channelsData = <?php echo json_encode(array_map(fn($c) => [
+<textarea id="feed-channels-data" class="feed-data-payload" hidden><?php echo htmlspecialchars(json_encode(array_map(fn($c) => [
     'id'             => (int)$c['id'],
     'name'           => $c['name'],
     'feed_url'       => $c['feed_url'],
@@ -1312,9 +1302,9 @@ const channelsData = <?php echo json_encode(array_map(fn($c) => [
     'fetch_interval' => (int)$c['fetch_interval'],
     'max_items'      => (int)$c['max_items'],
     'is_active'      => (int)$c['is_active'],
-], $channels)); ?>;
+], $channels)), ENT_QUOTES); ?></textarea>
 
-const categoriesData = <?php echo json_encode(array_map(fn($c) => [
+<textarea id="feed-categories-data" class="feed-data-payload" hidden><?php echo htmlspecialchars(json_encode(array_map(fn($c) => [
     'id'             => (int)$c['id'],
     'name'           => $c['name'],
     'slug'           => $c['slug'],
@@ -1324,130 +1314,17 @@ const categoriesData = <?php echo json_encode(array_map(fn($c) => [
     'sort_order'     => (int)$c['sort_order'],
     'layout'         => $c['layout'] ?? 'grid',
     'items_per_page' => (int)$c['items_per_page'],
-], $categories)); ?>;
+], $categories)), ENT_QUOTES); ?></textarea>
 
-const digestsData = <?php echo json_encode(array_map(fn($d) => [
+<textarea id="feed-digests-data" class="feed-data-payload" hidden><?php echo htmlspecialchars(json_encode(array_map(fn($d) => [
     'id'           => (int)$d['id'],
     'name'         => $d['name'],
     'email'        => $d['email'],
     'category_ids' => json_decode($d['category_ids'] ?? '[]', true) ?? [],
     'frequency'    => (int)$d['frequency'],
     'is_active'    => (int)$d['is_active'],
-], $digests)); ?>;
+], $digests)), ENT_QUOTES); ?></textarea>
 
-function toggleCatalogSelection(catalogKey, checked) {
-    const wrapper = document.getElementById('catalog-list-' + catalogKey);
-    if (!wrapper) return;
-    wrapper.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
-        checkbox.checked = checked;
-    });
-}
 
-function editChannel(id) {
-    const ch = channelsData.find(c => c.id === id);
-    if (!ch) return;
-    document.getElementById('channelModalTitle').textContent = '📡 Kanal bearbeiten';
-    document.getElementById('channel_id').value = ch.id;
-    document.getElementById('channel_name').value = ch.name;
-    document.getElementById('channel_feed_url').value = ch.feed_url;
-    document.getElementById('channel_site_url').value = ch.site_url;
-    document.getElementById('channel_category_id').value = ch.category_id;
-    document.getElementById('channel_description').value = ch.description;
-    document.getElementById('channel_fetch_interval').value = ch.fetch_interval;
-    document.getElementById('channel_max_items').value = ch.max_items;
-    document.getElementById('channel_is_active').checked = !!ch.is_active;
-    openModal('channelModal');
-}
-
-function editCategory(id) {
-    const cat = categoriesData.find(c => c.id === id);
-    if (!cat) return;
-    document.getElementById('categoryModalTitle').textContent = '📁 Bereich bearbeiten';
-    document.getElementById('cat_id').value = cat.id;
-    document.getElementById('cat_name').value = cat.name;
-    document.getElementById('cat_slug').value = cat.slug;
-    document.getElementById('cat_description').value = cat.description;
-    document.getElementById('cat_icon').value = cat.icon;
-    document.getElementById('cat_is_public').checked = !!cat.is_public;
-    document.getElementById('cat_sort_order').value = cat.sort_order;
-    document.getElementById('cat_layout').value = cat.layout;
-    document.getElementById('cat_items_per_page').value = cat.items_per_page;
-    openModal('categoryModal');
-}
-
-function editDigest(id) {
-    const dg = digestsData.find(d => d.id === id);
-    if (!dg) return;
-    document.getElementById('digestModalTitle').textContent = '📧 Digest bearbeiten';
-    document.getElementById('digest_id').value = dg.id;
-    document.getElementById('digest_name').value = dg.name;
-    document.getElementById('digest_email').value = dg.email;
-    document.getElementById('digest_frequency').value = dg.frequency;
-    document.getElementById('digest_is_active').checked = !!dg.is_active;
-    // Checkboxen setzen
-    document.querySelectorAll('.digest-cat-checkbox').forEach(cb => {
-        cb.checked = dg.category_ids.includes(parseInt(cb.value));
-    });
-    openModal('digestModal');
-}
-
-function openDeleteModal(id, name, action) {
-    document.getElementById('deleteModalId').value = id;
-    document.getElementById('deleteModalName').textContent = name;
-    document.getElementById('deleteModalAction').value = action;
-    openModal('deleteModal');
-}
-
-// Slug-Preview aktualisieren
-const slugInput = document.getElementById('cat_slug');
-if (slugInput) {
-    slugInput.addEventListener('input', function() {
-        document.getElementById('slugPreview').textContent = this.value || '…';
-    });
-}
-
-// Modal-Reset bei Öffnen eines neuen Eintrags
-document.querySelectorAll('.modal').forEach(modal => {
-    const observer = new MutationObserver(() => {
-        if (modal.style.display === 'none') {
-            // Form zurücksetzen wenn Modal geschlossen
-            const form = modal.querySelector('form');
-            if (form && !form.querySelector('[name="id"]')?.value) {
-                // Nur resetten wenn kein Edit
-            }
-        }
-    });
-});
-
-// Neuen Kanal Modal resetten
-const channelModalBtn = document.querySelector('[onclick*="openModal(\'channelModal\')"]');
-if (channelModalBtn) {
-    channelModalBtn.addEventListener('click', () => {
-        document.getElementById('channelModalTitle').textContent = '📡 Neuer Kanal';
-        document.getElementById('channelForm').reset();
-        document.getElementById('channel_id').value = '';
-        document.getElementById('channel_is_active').checked = true;
-    });
-}
-const categoryModalBtn = document.querySelector('[onclick*="openModal(\'categoryModal\')"]');
-if (categoryModalBtn) {
-    categoryModalBtn.addEventListener('click', () => {
-        document.getElementById('categoryModalTitle').textContent = '📁 Neuer Bereich';
-        document.getElementById('categoryForm').reset();
-        document.getElementById('cat_id').value = '';
-        document.getElementById('cat_is_public').checked = true;
-        document.getElementById('cat_icon').value = '📰';
-    });
-}
-const digestModalBtn = document.querySelector('[onclick*="openModal(\'digestModal\')"]');
-if (digestModalBtn) {
-    digestModalBtn.addEventListener('click', () => {
-        document.getElementById('digestModalTitle').textContent = '📧 Neuer Digest';
-        document.getElementById('digestForm').reset();
-        document.getElementById('digest_id').value = '';
-        document.getElementById('digest_is_active').checked = true;
-    });
-}
-</script>
 
 </div>

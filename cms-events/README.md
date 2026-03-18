@@ -1,6 +1,6 @@
 ﻿# CMS Events Manager Plugin
 
-**Version:** 1.0.0  
+**Version:** 1.0.1  
 **Requires:** 365CMS 2.0+
 
 ## Description
@@ -19,6 +19,7 @@ The CMS Events Manager plugin manages events with calendar view and detail pages
 - ✅ Online and physical event support
 - ✅ Meta data support
 - ✅ Shortcode support: `[cms_events]`
+- ✅ Inline-freier Admin-/Member-Workflow für Modale, Bestätigungen, Formular-Toggles und Kalendernavigation
 
 ## Database Tables
 

@@ -35,7 +35,7 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
     </div>
     <div class="stat-card">
         <div class="stat-icon">🔔</div>
-        <div class="stat-number" style="color:<?php echo $globalStats['unread'] > 0 ? '#ef4444' : '#3b82f6'; ?>">
+        <div class="stat-number <?php echo $globalStats['unread'] > 0 ? 'contact-stat-number--alert' : 'contact-stat-number--info'; ?>">
             <?php echo number_format($globalStats['unread']); ?>
         </div>
         <div class="stat-label">Ungelesen</div>
@@ -114,10 +114,10 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
 
     <?php if (empty($allForms)): ?>
     <div class="empty-state">
-        <p style="font-size:2.5rem;margin:0;">📭</p>
+        <p class="dl-empty-icon">📭</p>
         <p><strong>Noch keine Formulare vorhanden</strong></p>
-        <p style="color:#64748b;font-size:.875rem;">Erstelle dein erstes Kontaktformular über den Button oben.</p>
-        <a href="?section=forms&action=new" class="btn btn-primary" style="margin-top:1rem;">➕ Jetzt erstellen</a>
+        <p class="contact-empty-state__text">Erstelle dein erstes Kontaktformular über den Button oben.</p>
+        <a href="?section=forms&action=new" class="btn btn-primary contact-empty-state__cta">➕ Jetzt erstellen</a>
     </div>
     <?php else: ?>
     <div class="users-table-container">
@@ -151,11 +151,11 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
                 <td><?php echo number_format($stats['total']); ?></td>
                 <td>
                     <?php if ($stats['unread'] > 0): ?>
-                    <span style="background:#fee2e2;color:#991b1b;padding:.15rem .5rem;border-radius:10px;font-size:.8rem;font-weight:600;">
+                    <span class="contact-count-badge">
                         <?php echo $stats['unread']; ?>
                     </span>
                     <?php else: ?>
-                    <span style="color:#94a3b8;">0</span>
+                    <span class="contact-count-zero">0</span>
                     <?php endif; ?>
                 </td>
                 <td>
@@ -203,7 +203,7 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
             <?php foreach ($recentSubmissions as $sub): ?>
             <tr>
                 <td>
-                    <a href="?section=submissions&action=view&id=<?php echo (int)$sub['id']; ?>" class="dl-admin-link" style="font-weight:<?php echo $sub['status'] === 'unread' ? '700' : '400'; ?>;">
+                    <a href="?section=submissions&action=view&id=<?php echo (int)$sub['id']; ?>" class="dl-admin-link <?php echo $sub['status'] === 'unread' ? 'contact-link--strong' : 'contact-link--normal'; ?>">
                         <?php echo htmlspecialchars($sub['sender_name'] ?: $sub['sender_email'] ?: 'Unbekannt'); ?>
                     </a>
                 </td>
@@ -213,10 +213,10 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
                 <td>
                     <?php
                     $badgeClass = match ($sub['status']) {
-                        'unread'   => 'style="background:#fee2e2;color:#991b1b;"',
-                        'read'     => 'style="background:#dbeafe;color:#1e40af;"',
-                        'replied'  => 'style="background:#d1fae5;color:#065f46;"',
-                        'archived' => 'style="background:#f1f5f9;color:#64748b;"',
+                        'unread'   => 'contact-status-badge--unread',
+                        'read'     => 'contact-status-badge--read',
+                        'replied'  => 'contact-status-badge--replied',
+                        'archived' => 'contact-status-badge--archived',
                         default    => '',
                     };
                     $statusLabel = match ($sub['status']) {
@@ -227,7 +227,7 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
                         default    => $sub['status'],
                     };
                     ?>
-                    <span class="status-badge" <?php echo $badgeClass; ?>>
+                    <span class="status-badge <?php echo $badgeClass; ?>">
                         <?php echo $statusLabel; ?>
                     </span>
                 </td>

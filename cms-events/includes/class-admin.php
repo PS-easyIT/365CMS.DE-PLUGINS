@@ -39,6 +39,19 @@ final class CMS_Events_Admin
         }
     }
 
+    private function outputAdminAssets(): void
+    {
+        $adminCss = CMS_EVENTS_PLUGIN_DIR . 'assets/css/events-admin.css';
+        if (file_exists($adminCss)) {
+            echo '<link rel="stylesheet" href="' . CMS_EVENTS_PLUGIN_URL . 'assets/css/events-admin.css?v=' . filemtime($adminCss) . '">' . "\n";
+        }
+
+        $adminJs = CMS_EVENTS_PLUGIN_DIR . 'assets/js/admin.js';
+        if (file_exists($adminJs)) {
+            echo '<script src="' . CMS_EVENTS_PLUGIN_URL . 'assets/js/admin.js?v=' . filemtime($adminJs) . '" defer></script>' . "\n";
+        }
+    }
+
     public function add_menu_item(array $menuItems): array
     {
         $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
@@ -64,12 +77,7 @@ final class CMS_Events_Admin
     {
         $this->loadAdminMenu();
         renderAdminLayoutStart('Events', 'events');
-
-        // Admin-CSS laden
-        $admin_css = CMS_EVENTS_PLUGIN_DIR . 'assets/css/events-admin.css';
-        if (file_exists($admin_css)) {
-            echo '<link rel="stylesheet" href="' . CMS_EVENTS_PLUGIN_URL . 'assets/css/events-admin.css?v=' . filemtime($admin_css) . '">' . "\n";
-        }
+        $this->outputAdminAssets();
 
         // Daten aus dem assoziativen Array lesen
         $events      = $data['events']      ?? [];
@@ -185,7 +193,7 @@ final class CMS_Events_Admin
                 <a href="?tab=<?= $slug ?>" class="ev-tab <?= $tab === $slug ? 'active' : '' ?>">
                     <?= $icon ?> <?= $label ?>
                     <?php if ($slug === 'overview' && $draft > 0): ?>
-                        <span class="nav-badge" style="background:#f59e0b;color:#fff;font-size:.7rem;padding:1px 6px;border-radius:9px;margin-left:4px;"><?= $draft ?></span>
+                        <span class="nav-badge ev-tab-badge"><?= $draft ?></span>
                     <?php endif; ?>
                 </a>
             <?php endforeach; ?>
@@ -234,14 +242,14 @@ final class CMS_Events_Admin
         </div>
 
         <!-- Filter Bar -->
-        <div class="admin-card" style="margin-bottom:1.25rem;">
-            <form method="GET" style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;">
+        <div class="admin-card ev-admin-assets-gap">
+            <form method="GET" class="ev-admin-filter-form">
                 <input type="hidden" name="tab" value="overview">
-                <div class="form-group" style="margin:0;flex:2;min-width:220px;">
+                <div class="form-group ev-form-group--inline-reset ev-form-group--grow-2">
                     <label class="form-label">Titel / Stichwort</label>
                     <input type="text" name="search" class="form-control" placeholder="Titel, Ort, Kategorie…" value="<?= htmlspecialchars($data['search'] ?? '') ?>">
                 </div>
-                <div class="form-group" style="margin:0;flex:1;min-width:160px;">
+                <div class="form-group ev-form-group--inline-reset ev-form-group--grow-1">
                     <label class="form-label">Status / Typ</label>
                     <select name="filter" class="form-control">
                         <option value="all"      <?= $filter==='all'      ?'selected':'' ?>>Alle (<?= $total ?>)</option>
@@ -259,10 +267,10 @@ final class CMS_Events_Admin
 
         <?php if (empty($filtered)): ?>
             <div class="ev-empty">
-                <div style="font-size:3rem;margin-bottom:1rem;">📅</div>
+                <div class="ev-empty-icon">📅</div>
                 <p>Keine Events <?= $filter !== 'all' ? 'in diesem Filter' : '' ?> gefunden.</p>
                 <?php if ($filter === 'all'): ?>
-                    <a href="<?= SITE_URL ?>/admin/events/new" class="btn btn-primary" style="margin-top:1rem;">
+                    <a href="<?= SITE_URL ?>/admin/events/new" class="btn btn-primary ev-admin-assets-gap">
                         Erstes Event anlegen
                     </a>
                 <?php endif; ?>
@@ -290,7 +298,7 @@ final class CMS_Events_Admin
         ?>
             <div class="ev-adm-card<?= $isPast ? ' ev-adm-card--past' : '' ?><?= !empty($ev->is_featured) ? ' ev-adm-card--featured' : '' ?><?= $isDraft ? ' ev-adm-card--draft' : '' ?>">
                 <?php if ($isDraft): ?>
-                    <div style="background:#fef3c7;color:#92400e;text-align:center;padding:.5rem;font-size:.85rem;font-weight:600;border-radius:10px 10px 0 0;">⏳ Wartet auf Genehmigung</div>
+                    <div class="ev-draft-banner">⏳ Wartet auf Genehmigung</div>
                 <?php endif; ?>
                 <div class="ev-adm-head">
                     <?php if ($dateTs): ?>
@@ -301,22 +309,28 @@ final class CMS_Events_Admin
                     </div>
                     <?php else: ?>
                     <div class="ev-adm-date ev-adm-date--nodate">
-                        <span style="font-size:1.5rem;">📅</span>
+                        <span class="ev-adm-date-icon">📅</span>
                     </div>
                     <?php endif; ?>
                     <div class="ev-adm-ident">
                         <div class="ev-adm-badges">
                             <?php if (!empty($s['show_status_badge']) && $s['show_status_badge'] !== '0'): ?>
-                            <span class="ev-adm-badge" style="color:<?= $stColor ?>;background:<?= $stBg ?>;"><?= $stLabel ?></span>
+                                <span class="ev-adm-badge"
+                                    data-ev-badge-fg="<?= htmlspecialchars($stColor, ENT_QUOTES) ?>"
+                                    data-ev-badge-bg="<?= htmlspecialchars($stBg, ENT_QUOTES) ?>"><?= $stLabel ?></span>
                             <?php endif; ?>
                             <?php if (!empty($ev->is_featured) && !empty($s['show_featured_badge']) && $s['show_featured_badge'] !== '0'): ?>
-                                <span class="ev-adm-badge" style="color:<?= htmlspecialchars($s['color_badge_featured_color']) ?>;background:<?= htmlspecialchars($s['color_badge_featured_bg']) ?>;">⭐ Featured</span>
+                                  <span class="ev-adm-badge"
+                                      data-ev-badge-fg="<?= htmlspecialchars((string)$s['color_badge_featured_color'], ENT_QUOTES) ?>"
+                                      data-ev-badge-bg="<?= htmlspecialchars((string)$s['color_badge_featured_bg'], ENT_QUOTES) ?>">⭐ Featured</span>
                             <?php endif; ?>
                             <?php if (!empty($ev->is_online) && !empty($s['show_online_badge']) && $s['show_online_badge'] !== '0'): ?>
-                                <span class="ev-adm-badge" style="color:<?= htmlspecialchars($s['color_badge_online_color']) ?>;background:<?= htmlspecialchars($s['color_badge_online_bg']) ?>;">🌐 Online</span>
+                                  <span class="ev-adm-badge"
+                                      data-ev-badge-fg="<?= htmlspecialchars((string)$s['color_badge_online_color'], ENT_QUOTES) ?>"
+                                      data-ev-badge-bg="<?= htmlspecialchars((string)$s['color_badge_online_bg'], ENT_QUOTES) ?>">🌐 Online</span>
                             <?php endif; ?>
                             <?php if ($isToday): ?>
-                                <span class="ev-adm-badge" style="color:#065f46;background:#bbf7d0;">🔴 Heute</span>
+                                <span class="ev-adm-badge ev-adm-badge--today">🔴 Heute</span>
                             <?php endif; ?>
                         </div>
                         <p class="ev-adm-title" title="<?= $title ?>"><?= $title ?></p>
@@ -350,10 +364,12 @@ final class CMS_Events_Admin
 
                 <div class="ev-adm-foot">
                     <?php if ($isDraft): ?>
-                        <form method="POST" action="<?= SITE_URL ?>/admin/events/approve/<?= $id ?>" style="display:contents;">
+                        <form method="POST" action="<?= SITE_URL ?>/admin/events/approve/<?= $id ?>" id="ev-approve-form-<?= $id ?>" class="ev-inline-form">
                             <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                            <button type="button" class="ev-adm-btn ev-adm-btn-primary" style="background:#16a34a;border-color:#16a34a;"
-                                    onclick="openEvApproveModal(<?= $id ?>, '<?= $sec->escape(addslashes($ev->title ?? '')) ?>', this.closest('form'))">✓ Genehmigen</button>
+                            <button type="button" class="ev-adm-btn ev-adm-btn-primary ev-btn-inline-success"
+                                    data-ev-approve-event
+                                    data-ev-event-name="<?= htmlspecialchars((string)($ev->title ?? ''), ENT_QUOTES) ?>"
+                                    data-ev-submit-target="ev-approve-form-<?= $id ?>">✓ Genehmigen</button>
                         </form>
                     <?php else: ?>
                         <a href="<?= function_exists('cms_event_url') ? cms_event_url($ev) : SITE_URL . '/event/event-' . $id ?>"
@@ -361,8 +377,10 @@ final class CMS_Events_Admin
                     <?php endif; ?>
                     <a href="<?= SITE_URL ?>/admin/events/edit/<?= $id ?>"
                        class="ev-adm-btn ev-adm-btn-primary">✏️ Bearbeiten</a>
-                    <button type="button" class="ev-adm-btn ev-adm-btn-danger"
-                            onclick="openEvDeleteModal(<?= $id ?>, '<?= $sec->escape(addslashes($ev->title ?? '')) ?>')">🗑️</button>
+                        <button type="button" class="ev-adm-btn ev-adm-btn-danger"
+                            data-ev-delete-event
+                            data-ev-event-name="<?= htmlspecialchars((string)($ev->title ?? ''), ENT_QUOTES) ?>"
+                            data-ev-delete-action="<?= SITE_URL ?>/admin/events/delete/<?= $id ?>">🗑️</button>
                 </div>
             </div>
         <?php endforeach; ?>
@@ -373,24 +391,27 @@ final class CMS_Events_Admin
         // ══════════════════════════════════════════════════════════════════
         elseif ($tab === 'categories'):
         ?>
-        <div style="display:grid;grid-template-columns:1fr 320px;gap:1.5rem;align-items:start;">
+        <div class="ev-layout-split-320">
             <div>
-                <h3 style="margin:0 0 1rem;">Vorhandene Kategorien (<?= count($categories) ?>)</h3>
+                <h3 class="ev-heading-reset">Vorhandene Kategorien (<?= count($categories) ?>)</h3>
                 <?php if (empty($categories)): ?>
-                    <p style="color:#64748b;">Noch keine Kategorien vorhanden.</p>
+                    <p class="ev-note">Noch keine Kategorien vorhanden.</p>
                 <?php else: ?>
                 <div class="ev-tax-list">
                     <?php foreach ($categories as $cat): ?>
                     <div class="ev-tax-row">
                         <span class="ev-tax-name"><?= $sec->escape($cat->icon ?? '📂') ?> <?= $sec->escape($cat->name) ?></span>
-                        <span style="font-size:.72rem;color:#94a3b8;padding:.1rem .4rem;background:#f8fafc;border-radius:4px;margin-right:auto;">
+                        <span class="ev-tax-slug">
                             <?= $sec->escape($cat->slug ?? '') ?>
                         </span>
                         <?php if (($cat->id ?? 0) > 0): ?>
-                            <form method="POST" action="<?= SITE_URL ?>/admin/events/category/delete/<?= (int)$cat->id ?>" style="display:inline;">
+                            <form method="POST" action="<?= SITE_URL ?>/admin/events/category/delete/<?= (int)$cat->id ?>" class="ev-inline-form-compact"
+                                  data-ev-confirm-title="Kategorie löschen?"
+                                  data-ev-confirm-message="Kategorie „<?= htmlspecialchars((string)($cat->name ?? ''), ENT_QUOTES) ?>” wirklich löschen?"
+                                  data-ev-confirm-button="Löschen"
+                                  data-ev-confirm-class="btn-danger">
                                 <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                                <button type="submit" class="ev-del-btn"
-                                        onclick="return confirm('Kategorie «<?= $sec->escape(addslashes($cat->name)) ?>» löschen?')">×</button>
+                                <button type="submit" class="ev-del-btn">×</button>
                             </form>
                         <?php endif; ?>
                     </div>
@@ -399,19 +420,19 @@ final class CMS_Events_Admin
                 <?php endif; ?>
             </div>
             <div class="ev-side-card">
-                <h3 style="margin:0 0 1rem;">➕ Neue Kategorie</h3>
+                <h3 class="ev-heading-reset">➕ Neue Kategorie</h3>
                 <form method="POST" action="<?= SITE_URL ?>/admin/events/category/add">
                     <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
                     <div class="ev-form-group">
                         <label>Icon (Emoji)</label>
                         <input type="text" name="category_icon" value="📂" maxlength="4"
-                               style="font-size:1.4rem;text-align:center;width:60px;">
+                               class="ev-emoji-input">
                     </div>
                     <div class="ev-form-group">
                         <label>Kategorie-Name *</label>
                         <input type="text" name="category_name" required placeholder="z.B. Konferenz">
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width:100%;">➕ Anlegen</button>
+                    <button type="submit" class="btn btn-primary ev-btn-block">➕ Anlegen</button>
                 </form>
             </div>
         </div>
@@ -425,31 +446,34 @@ final class CMS_Events_Admin
                 'format'  => ['📋', 'Format & Niveau', 'Zielgruppe und Format'],
             ];
         ?>
-        <div style="display:grid;grid-template-columns:1fr 280px;gap:1.5rem;align-items:start;">
+        <div class="ev-layout-split-280">
             <div>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.25rem;">
+                <div class="ev-layout-card-grid">
                 <?php foreach ($typeLabels as $type => [$icon, $label, $desc]): ?>
                     <div class="ev-side-card">
-                        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;">
-                            <span style="font-size:1.25rem;"><?= $icon ?></span>
+                        <div class="ev-inline-stack ev-admin-assets-gap">
+                            <span class="stat-icon"><?= $icon ?></span>
                             <div>
-                                <strong style="font-size:.875rem;"><?= $label ?></strong>
-                                <div style="font-size:.72rem;color:#64748b;"><?= $desc ?></div>
+                                <strong><?= $label ?></strong>
+                                <div class="ev-tax-slug"><?= $desc ?></div>
                             </div>
                         </div>
                         <div class="ev-tag-list">
                             <?php foreach ($tag_presets[$type] ?? [] as $tg): ?>
                                 <span class="ev-tag">
                                     <?= $sec->escape($tg->tag_name) ?>
-                                    <form method="POST" action="<?= SITE_URL ?>/admin/events/tagpreset/delete/<?= (int)$tg->id ?>" style="display:inline;">
+                                    <form method="POST" action="<?= SITE_URL ?>/admin/events/tagpreset/delete/<?= (int)$tg->id ?>" class="ev-inline-form-compact"
+                                          data-ev-confirm-title="Tag löschen?"
+                                          data-ev-confirm-message="Tag „<?= htmlspecialchars((string)($tg->tag_name ?? ''), ENT_QUOTES) ?>” wirklich löschen?"
+                                          data-ev-confirm-button="Löschen"
+                                          data-ev-confirm-class="btn-danger">
                                         <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                                        <button type="submit" class="ev-tag-del"
-                                                onclick="return confirm('«<?= $sec->escape(addslashes($tg->tag_name)) ?>» löschen?')">×</button>
+                                        <button type="submit" class="ev-tag-del">×</button>
                                     </form>
                                 </span>
                             <?php endforeach; ?>
                             <?php if (empty($tag_presets[$type])): ?>
-                                <span style="font-size:.75rem;color:#94a3b8;">Noch keine Einträge.</span>
+                                <span class="ev-note">Noch keine Einträge.</span>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -457,7 +481,7 @@ final class CMS_Events_Admin
                 </div>
             </div>
             <div class="ev-side-card">
-                <h3 style="margin:0 0 1rem;">➕ Neues Tag</h3>
+                <h3 class="ev-heading-reset">➕ Neues Tag</h3>
                 <form method="POST" action="<?= SITE_URL ?>/admin/events/tagpreset/add">
                     <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
                     <div class="ev-form-group">
@@ -472,7 +496,7 @@ final class CMS_Events_Admin
                             <option value="format">📋 Format & Niveau</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-primary" style="width:100%;">Hinzufügen</button>
+                    <button type="submit" class="btn btn-primary ev-btn-block">Hinzufügen</button>
                 </form>
             </div>
         </div>
@@ -487,7 +511,7 @@ final class CMS_Events_Admin
 
             <div class="admin-card">
                 <h3>🎨 Farbpalette</h3>
-                <div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.25rem;">
+                <div class="form-grid ev-color-grid">
                     <?php
                     $colorFields = [
                         'color_primary'         => ['Primärfarbe (Buttons, Akzente)',      '#3b82f6'],
@@ -510,13 +534,15 @@ final class CMS_Events_Admin
                     ?>
                     <div class="form-group">
                         <label class="form-label"><?= $label ?></label>
-                        <div style="display:flex;gap:.5rem;align-items:center;">
+                           <div class="ev-color-row">
                             <input type="color" id="clr_<?= $key ?>" value="<?= $val ?>"
-                                   style="width:48px;height:36px;border:2px solid #e2e8f0;border-radius:6px;padding:2px;cursor:pointer;"
-                                   oninput="document.getElementById('txt_<?= $key ?>').value=this.value">
-                            <input type="text" id="txt_<?= $key ?>" name="<?= $key ?>" class="form-control"
-                                   value="<?= $val ?>" style="flex:1;font-family:monospace;font-size:.82rem;"
-                                   oninput="document.getElementById('clr_<?= $key ?>').value=this.value">
+                                class="ev-color-picker"
+                                data-ev-color-picker
+                                data-ev-color-text="txt_<?= $key ?>">
+                            <input type="text" id="txt_<?= $key ?>" name="<?= $key ?>" class="form-control ev-color-text"
+                                value="<?= $val ?>"
+                                data-ev-color-text
+                                data-ev-color-picker="clr_<?= $key ?>">
                         </div>
                     </div>
                     <?php endforeach; ?>
@@ -525,28 +551,27 @@ final class CMS_Events_Admin
 
             <div class="admin-card">
                 <h3>🖼️ Archiv-Header</h3>
-                <div class="form-group" style="max-width:120px;">
+                <div class="form-group ev-header-icon-field">
                     <label class="form-label">Header-Icon (Emoji)</label>
-                    <input type="text" name="archive_header_icon" id="txt_archive_header_icon"
-                           class="form-control"
+                          <input type="text" name="archive_header_icon" id="txt_archive_header_icon"
+                              class="form-control ev-header-icon-input"
                            value="<?= htmlspecialchars(html_entity_decode($s['archive_header_icon'] ?? '📅', ENT_HTML5, 'UTF-8')) ?>"
-                           maxlength="8" style="font-size:1.4rem;text-align:center;"
-                           oninput="updateEvHdrPreview()">
+                              maxlength="8">
                     <small class="form-text">z.B. 📅 🎉 🎤</small>
                 </div>
-                <div id="ev_hdr_preview" style="margin-top:1rem;padding:1rem 1.5rem;border-radius:10px;display:inline-flex;align-items:center;gap:.75rem;font-weight:800;font-size:1rem;">
-                    <span id="ev_hdr_icon" style="font-size:2rem;"></span>
+                <div id="ev_hdr_preview" class="ev-header-preview" data-ev-preview-title="<?= htmlspecialchars((string)($s['archive_title'] ?? 'Events'), ENT_QUOTES) ?>">
+                    <span id="ev_hdr_icon" class="ev-header-preview-icon"></span>
                     <div>
-                        <div id="ev_hdr_title" style="font-weight:800;font-size:1.1rem;"></div>
-                        <div style="font-size:.8rem;opacity:.8;">Vorschau</div>
+                        <div id="ev_hdr_title" class="ev-header-preview-title"></div>
+                        <div class="ev-header-preview-note">Vorschau</div>
                     </div>
                 </div>
             </div>
 
             <div class="admin-card">
                 <h3>🏅 Badge-Farben (Status-Badges)</h3>
-                <p style="color:#64748b;font-size:.875rem;margin-bottom:1rem;">Hintergrund- und Textfarben der Status-Badges auf der Event-Karte und Detailseite.</p>
-                <div class="form-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.25rem;">
+                <p class="ev-note">Hintergrund- und Textfarben der Status-Badges auf der Event-Karte und Detailseite.</p>
+                <div class="form-grid ev-color-grid">
                     <?php
                     $badgeColorFields = [
                         'color_badge_published_bg'    => ['Veröffentlicht – Hintergrund', '#d1fae5'],
@@ -567,9 +592,9 @@ final class CMS_Events_Admin
                     ?>
                     <div class="form-group">
                         <label class="form-label"><?= $label ?></label>
-                        <div style="display:flex;gap:.5rem;align-items:center;">
-                            <input type="color" id="clr_<?= $key ?>" value="<?= $val ?>" style="width:48px;height:36px;border:2px solid #e2e8f0;border-radius:6px;padding:2px;cursor:pointer;" oninput="document.getElementById('txt_<?= $key ?>').value=this.value">
-                            <input type="text" id="txt_<?= $key ?>" name="<?= $key ?>" class="form-control" value="<?= $val ?>" style="flex:1;font-family:monospace;font-size:.82rem;" oninput="document.getElementById('clr_<?= $key ?>').value=this.value">
+                        <div class="ev-color-row">
+                            <input type="color" id="clr_<?= $key ?>" value="<?= $val ?>" class="ev-color-picker" data-ev-color-picker data-ev-color-text="txt_<?= $key ?>">
+                            <input type="text" id="txt_<?= $key ?>" name="<?= $key ?>" class="form-control ev-color-text" value="<?= $val ?>" data-ev-color-text data-ev-color-picker="clr_<?= $key ?>">
                         </div>
                     </div>
                     <?php endforeach; ?>
@@ -578,7 +603,7 @@ final class CMS_Events_Admin
 
             <div class="admin-card">
                 <h3>📐 Layout &amp; Anzeige</h3>
-                <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+                <div class="form-grid ev-grid-two">
                     <div class="form-group">
                         <label class="form-label">Ecken-Radius (px)</label>
                         <input type="number" name="border_radius" class="form-control"
@@ -593,8 +618,8 @@ final class CMS_Events_Admin
                         </select>
                     </div>
                 </div>
-                <h4 style="margin:1rem 0 .5rem;font-size:.9rem;color:#1e293b;">🏷️ Badges auf der Karte</h4>
-                <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-bottom:.75rem;">
+                <h4 class="ev-heading-reset">🏷️ Badges auf der Karte</h4>
+                <div class="ev-stack-gap ev-admin-assets-gap">
                     <?php foreach ([
                         'show_status_badge'   => '📋 Status-Badge',
                         'show_featured_badge' => '⭐ Featured-Badge',
@@ -607,8 +632,8 @@ final class CMS_Events_Admin
                     </label>
                     <?php endforeach; ?>
                 </div>
-                <h4 style="margin:1rem 0 .5rem;font-size:.9rem;color:#1e293b;">💊 Pills auf der Karte</h4>
-                <div style="display:flex;flex-wrap:wrap;gap:1rem;">
+                <h4 class="ev-heading-reset">💊 Pills auf der Karte</h4>
+                <div class="ev-stack-gap">
                     <?php foreach ([
                         'show_category'  => '📂 Kategorie',
                         'show_city'      => '📍 Ort / Stadt',
@@ -626,23 +651,23 @@ final class CMS_Events_Admin
                     </label>
                     <?php endforeach; ?>
                 </div>
-                <p style="margin-top:.75rem;padding:.5rem .75rem;background:#f0fdf4;border-left:3px solid #86efac;border-radius:4px;font-size:.8rem;color:#166534;">
+                <p class="ev-note-highlight">
                     ℹ️ <strong>Deaktivierte Badges/Pills</strong> werden auf der öffentlichen Übersichtskarte ausgeblendet.
                 </p>
             </div>
 
             <div class="admin-card">
                 <h3>👁️ Vorschau</h3>
-                <div style="max-width:340px;">
-                    <div id="prev-header" style="background:linear-gradient(135deg,<?= htmlspecialchars($s['color_hdr_from']) ?>,<?= htmlspecialchars($s['color_hdr_to']) ?>);padding:1.5rem;border-radius:<?= (int)$s['border_radius'] ?>px <?= (int)$s['border_radius'] ?>px 0 0;display:flex;align-items:center;gap:.75rem;">
-                        <span id="prev-icon" style="font-size:2rem;"><?= htmlspecialchars($s['archive_header_icon']) ?></span>
+                <div class="ev-preview-shell" id="ev_design_preview">
+                    <div id="prev-header" class="ev-preview-header">
+                        <span id="prev-icon" class="ev-preview-icon-live"><?= htmlspecialchars($s['archive_header_icon']) ?></span>
                         <div>
-                            <div id="prev-title" style="color:<?= htmlspecialchars($s['color_hdr_title']) ?>;font-weight:800;font-size:1.1rem;"><?= htmlspecialchars($s['archive_title'] ?? 'Events') ?></div>
-                            <div style="color:<?= htmlspecialchars($s['color_hdr_title']) ?>;font-size:.8rem;opacity:.85;">Vorschau</div>
+                            <div id="prev-title" class="ev-preview-title"><?= htmlspecialchars($s['archive_title'] ?? 'Events') ?></div>
+                            <div class="ev-preview-subtitle ev-preview-subtitle-light">Vorschau</div>
                         </div>
                     </div>
-                    <div id="prev-body" style="background:<?= htmlspecialchars($s['color_card_bg']) ?>;padding:1rem;border:1px solid <?= htmlspecialchars($s['color_card_border'] ?? '#bfdbfe') ?>;border-top:none;border-radius:0 0 <?= (int)$s['border_radius'] ?>px <?= (int)$s['border_radius'] ?>px;">
-                        <span id="prev-cta" style="display:inline-block;padding:.3rem .8rem;background:<?= htmlspecialchars($s['color_primary']) ?>;color:#fff;border-radius:6px;font-size:.8rem;font-weight:700;">Details ansehen →</span>
+                    <div id="prev-body" class="ev-preview-body">
+                        <span id="prev-cta" class="ev-preview-cta">Details ansehen →</span>
                     </div>
                 </div>
             </div>
@@ -653,29 +678,6 @@ final class CMS_Events_Admin
                 </div>
             </div>
         </form>
-
-        <script>
-        (function(){
-            function updateEvHdrPreview(){
-                var from  = (document.getElementById('txt_color_hdr_from')  || {value:'#1d4ed8'}).value;
-                var to    = (document.getElementById('txt_color_hdr_to')    || {value:'#3b82f6'}).value;
-                var color = (document.getElementById('txt_color_hdr_title') || {value:'#ffffff'}).value;
-                var icon  = (document.getElementById('txt_archive_header_icon') || {value:'📅'}).value;
-                var prev  = document.getElementById('ev_hdr_preview');
-                var icoEl = document.getElementById('ev_hdr_icon');
-                var ttlEl = document.getElementById('ev_hdr_title');
-                if (prev)  { prev.style.background = 'linear-gradient(135deg,'+from+','+to+')'; prev.style.color = color; }
-                if (icoEl) { icoEl.textContent = icon; }
-                if (ttlEl) { ttlEl.textContent = '<?= addslashes(htmlspecialchars($s['archive_title'] ?? 'Events')) ?>'; ttlEl.style.color = color; }
-            }
-            window.updateEvHdrPreview = updateEvHdrPreview;
-            ['txt_color_hdr_from','txt_color_hdr_to','txt_color_hdr_title','txt_archive_header_icon'].forEach(function(id){
-                var el = document.getElementById(id);
-                if(el) el.addEventListener('input', updateEvHdrPreview);
-            });
-            updateEvHdrPreview();
-        })();
-        </script>
 
         <?php
         // ══════════════════════════════════════════════════════════════════
@@ -699,7 +701,7 @@ final class CMS_Events_Admin
                               placeholder="Kurze Beschreibung für Besucher..."><?= htmlspecialchars($s['archive_description']) ?></textarea>
                     <small class="form-text">Einleitungstext auf der Übersichtsseite.</small>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-top:.5rem;">
+                <div class="ev-grid-two ev-settings-grid">
                     <div class="form-group">
                         <label class="form-label">URL-Slug</label>
                         <input type="text" name="archive_slug" class="form-control"
@@ -709,24 +711,24 @@ final class CMS_Events_Admin
                     </div>
                     <div class="form-group">
                         <label class="form-label">Events pro Seite</label>
-                        <input type="number" name="per_page" class="form-control"
+                           <input type="number" name="per_page" class="form-control ev-width-120"
                                value="<?= (int)($s['per_page'] ?? 12) ?>"
-                               min="4" max="100" step="4" style="width:120px;">
+                               min="4" max="100" step="4">
                     </div>
                 </div>
             </div>
             <div class="admin-card">
                 <h3>ℹ️ Shortcode-Nutzung</h3>
-                <p style="color:#64748b;font-size:.875rem;margin-bottom:.5rem;">Event-Liste per Shortcode in Seiteninhalte einbinden:</p>
-                <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:.75rem 1rem;font-family:monospace;font-size:.875rem;color:#1d4ed8;">
+                <p class="ev-note">Event-Liste per Shortcode in Seiteninhalte einbinden:</p>
+                <div class="ev-shortcode-box">
                     [cms_events limit="12" featured="1" category="Konferenz"]
                 </div>
-                <div style="margin-top:.75rem;display:flex;flex-direction:column;gap:.35rem;">
-                    <small style="color:#64748b;"><strong>limit</strong> – Anzahl Events (Standard: 12)</small>
-                    <small style="color:#64748b;"><strong>featured</strong> – Nur Featured-Events (1/0)</small>
-                    <small style="color:#64748b;"><strong>category</strong> – Filter nach Kategorie-Name</small>
-                    <small style="color:#64748b;"><strong>upcoming</strong> – Nur zukünftige Events (1/0)</small>
-                    <small style="color:#64748b;"><strong>online</strong> – Nur Online-Events (1/0)</small>
+                <div class="ev-stack-gap--column ev-shortcode-meta">
+                    <small><strong>limit</strong> – Anzahl Events (Standard: 12)</small>
+                    <small><strong>featured</strong> – Nur Featured-Events (1/0)</small>
+                    <small><strong>category</strong> – Filter nach Kategorie-Name</small>
+                    <small><strong>upcoming</strong> – Nur zukünftige Events (1/0)</small>
+                    <small><strong>online</strong> – Nur Online-Events (1/0)</small>
                 </div>
             </div>
             <div class="admin-card form-actions-card">
@@ -738,19 +740,19 @@ final class CMS_Events_Admin
         <?php endif; ?>
 
         <!-- Delete Modal -->
-        <div id="evDeleteModal" class="modal" style="display:none;">
-            <div class="modal-content" style="max-width:480px;">
+        <div id="evDeleteModal" class="modal" hidden data-ev-managed-modal aria-hidden="true">
+            <div class="modal-content ev-modal-dialog-sm">
                 <div class="modal-header">
                     <h3>🗑️ Event löschen</h3>
-                    <button class="modal-close" onclick="closeModal('evDeleteModal')">&times;</button>
+                    <button class="modal-close" type="button" data-ev-modal-close="evDeleteModal">&times;</button>
                 </div>
                 <div class="modal-body">
                     <p>Soll das Event <strong id="evDeleteName"></strong> wirklich gelöscht werden?</p>
-                    <p style="color:#ef4444;font-size:.875rem;">⚠️ Diese Aktion kann nicht rückgängig gemacht werden.</p>
+                    <p class="ev-danger-note">⚠️ Diese Aktion kann nicht rückgängig gemacht werden.</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('evDeleteModal')">Abbrechen</button>
-                    <form method="POST" id="evDeleteForm" style="display:inline;">
+                    <button type="button" class="btn btn-secondary" data-ev-modal-close="evDeleteModal">Abbrechen</button>
+                    <form method="POST" id="evDeleteForm" class="ev-inline-form-compact">
                         <input type="hidden" name="csrf_token" value="<?= CMS\Security::instance()->generateToken('delete_event') ?>">
                         <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
                     </form>
@@ -759,39 +761,21 @@ final class CMS_Events_Admin
         </div>
 
         <!-- Approve Modal -->
-        <div id="evApproveModal" class="modal" style="display:none;">
-            <div class="modal-content" style="max-width:500px;">
+        <div id="evApproveModal" class="modal" hidden data-ev-managed-modal aria-hidden="true">
+            <div class="modal-content ev-modal-dialog-md">
                 <div class="modal-header">
                     <h3>✅ Event genehmigen</h3>
-                    <button class="modal-close" onclick="closeModal('evApproveModal')">&times;</button>
+                    <button class="modal-close" type="button" data-ev-modal-close="evApproveModal">&times;</button>
                 </div>
                 <div class="modal-body">
                     <p>Soll das Event <strong id="evApproveName"></strong> genehmigt und veröffentlicht werden?</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('evApproveModal')">Abbrechen</button>
-                    <button type="button" id="evApproveConfirm" class="btn btn-primary" style="background:#16a34a;border-color:#16a34a;">✅ Genehmigen</button>
+                    <button type="button" class="btn btn-secondary" data-ev-modal-close="evApproveModal">Abbrechen</button>
+                    <button type="button" id="evApproveConfirm" class="btn btn-primary ev-btn-inline-success">✅ Genehmigen</button>
                 </div>
             </div>
         </div>
-
-        <script>
-        let _evApproveForm = null;
-        function openEvApproveModal(id, name, form) {
-            document.getElementById('evApproveName').textContent = name;
-            _evApproveForm = form;
-            openModal('evApproveModal');
-        }
-        document.getElementById('evApproveConfirm').addEventListener('click', function() {
-            if (_evApproveForm) _evApproveForm.submit();
-        });
-
-        function openEvDeleteModal(id, name) {
-            document.getElementById('evDeleteName').textContent = name;
-            document.getElementById('evDeleteForm').action = '<?= SITE_URL ?>/admin/events/delete/' + id;
-            openModal('evDeleteModal');
-        }
-        </script>
         <?php
         renderAdminLayoutEnd();
     }
@@ -819,6 +803,7 @@ final class CMS_Events_Admin
         }
 
         renderAdminLayoutStart($page_title, 'events');
+        $this->outputAdminAssets();
         ?>
         <div class="admin-page-header">
             <div>
@@ -851,7 +836,7 @@ final class CMS_Events_Admin
             </div>
         <?php endif; ?>
 
-        <div style="max-width:940px;">
+        <div class="ev-content-max">
         <form method="POST" action="<?= SITE_URL ?>/admin/events/save" id="ev-main-form">
             <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
             <input type="hidden" name="event_id"   value="<?= $is_edit ? (int)$event->id : 0 ?>">
@@ -862,7 +847,7 @@ final class CMS_Events_Admin
 
                 <div class="form-group">
                     <label class="form-label" for="ev_title">
-                        Titel <span style="color:#ef4444;">*</span>
+                        Titel <span class="ev-required">*</span>
                     </label>
                     <input type="text" id="ev_title" name="title" class="form-control"
                            value="<?= htmlspecialchars($event->title ?? '') ?>"
@@ -893,7 +878,7 @@ final class CMS_Events_Admin
                     <?php } ?>
                 </div>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+                <div class="ev-grid-two">
                     <div class="form-group">
                         <label class="form-label">Kategorie</label>
                         <?php if (!empty($categories_db)): ?>
@@ -930,7 +915,7 @@ final class CMS_Events_Admin
                 </div>
 
                 <div class="form-group">
-                    <label class="checkbox-label" style="display:inline-flex;align-items:center;gap:.5rem;cursor:pointer;">
+                    <label class="checkbox-label ev-checkbox-inline">
                         <input type="checkbox" name="is_featured" value="1"
                                <?= !empty($event->is_featured) ? 'checked' : '' ?>>
                         ⭐ Als Featured-Event markieren (erscheint prominent)
@@ -941,10 +926,10 @@ final class CMS_Events_Admin
             <!-- ── Block 2: Datum & Uhrzeit ───────────────────────────── -->
             <div class="admin-card">
                 <h3>🕐 Datum &amp; Uhrzeit</h3>
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1.25rem;">
+                <div class="ev-grid-auto-date">
                     <div class="form-group">
                         <label class="form-label" for="ev_date">
-                            Startdatum <span style="color:#ef4444;">*</span>
+                            Startdatum <span class="ev-required">*</span>
                         </label>
                         <input type="date" id="ev_date" name="event_date" class="form-control"
                                value="<?= htmlspecialchars($event->event_date ?? '') ?>" required>
@@ -972,15 +957,14 @@ final class CMS_Events_Admin
             <div class="admin-card">
                 <h3>📍 Veranstaltungsort</h3>
                 <div class="form-group">
-                    <label class="checkbox-label" style="display:inline-flex;align-items:center;gap:.5rem;cursor:pointer;">
+                    <label class="checkbox-label ev-checkbox-inline">
                         <input type="checkbox" id="ev_is_online" name="is_online" value="1"
-                               <?= !empty($event->is_online) ? 'checked' : '' ?>
-                               onchange="evToggleLocation()">
+                               <?= !empty($event->is_online) ? 'checked' : '' ?>>
                         🌐 Online-Event (kein physischer Veranstaltungsort)
                     </label>
                 </div>
 
-                <div id="ev_online_fields" style="<?= !empty($event->is_online) ? '' : 'display:none;' ?>">
+                <div id="ev_online_fields"<?= !empty($event->is_online) ? '' : ' hidden' ?>>
                     <div class="form-group">
                         <label class="form-label">Online-URL (Zoom, Teams, etc.)</label>
                         <input type="url" name="online_url" class="form-control"
@@ -989,7 +973,7 @@ final class CMS_Events_Admin
                     </div>
                 </div>
 
-                <div id="ev_location_fields" style="<?= !empty($event->is_online) ? 'display:none;' : '' ?>">
+                <div id="ev_location_fields"<?= !empty($event->is_online) ? ' hidden' : '' ?>>
                     <div class="form-group">
                         <label class="form-label">Veranstaltungsort / Location-Name</label>
                         <input type="text" name="location" class="form-control"
@@ -1002,7 +986,7 @@ final class CMS_Events_Admin
                                value="<?= htmlspecialchars($event->address ?? '') ?>"
                                placeholder="z.B. Messedamm 22">
                     </div>
-                    <div style="display:grid;grid-template-columns:120px 1fr 1fr;gap:1rem;">
+                    <div class="ev-grid-three-location">
                         <div class="form-group">
                             <label class="form-label">PLZ</label>
                             <input type="text" name="zip" class="form-control"
@@ -1028,7 +1012,7 @@ final class CMS_Events_Admin
             <!-- ── Block 4: Kapazität & Anmeldung ────────────────────── -->
             <div class="admin-card">
                 <h3>🎟 Kapazität &amp; Anmeldung</h3>
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.25rem;">
+                <div class="ev-grid-auto-capacity">
                     <div class="form-group">
                         <label class="form-label">Max. Teilnehmer</label>
                         <input type="number" name="capacity" class="form-control"
@@ -1043,23 +1027,22 @@ final class CMS_Events_Admin
                     </div>
                 </div>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr 120px;gap:1rem;margin-top:.5rem;">
+                <div class="ev-price-grid">
                     <div class="form-group">
                         <label class="form-label">Preis-Typ</label>
-                        <select name="price_type" id="ev_price_type" class="form-control"
-                                onchange="evTogglePrice()">
+                        <select name="price_type" id="ev_price_type" class="form-control">
                             <?php foreach (['free' => '✅ Kostenlos', 'paid' => '💶 Kostenpflichtig', 'donation' => '💝 Spende'] as $v => $l): ?>
                                 <option value="<?= $v ?>" <?= ($event->price_type ?? 'free') === $v ? 'selected' : '' ?>><?= $l ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="form-group" id="ev_price_field" style="<?= ($event->price_type ?? 'free') === 'free' ? 'display:none;' : '' ?>">
+                    <div class="form-group" id="ev_price_field"<?= ($event->price_type ?? 'free') === 'free' ? ' hidden' : '' ?>>
                         <label class="form-label">Preis</label>
                         <input type="number" name="price" class="form-control"
                                value="<?= htmlspecialchars((string)($event->price ?? '')) ?>"
                                min="0" step="0.01" placeholder="0.00">
                     </div>
-                    <div class="form-group" id="ev_currency_field" style="<?= ($event->price_type ?? 'free') === 'free' ? 'display:none;' : '' ?>">
+                    <div class="form-group" id="ev_currency_field"<?= ($event->price_type ?? 'free') === 'free' ? ' hidden' : '' ?>>
                         <label class="form-label">Währung</label>
                         <select name="price_currency" class="form-control">
                             <?php foreach (['EUR' => '€ EUR', 'USD' => '$ USD', 'CHF' => 'CHF'] as $v => $l): ?>
@@ -1073,7 +1056,7 @@ final class CMS_Events_Admin
             <!-- ── Block 5: Medien ───────────────────────────────────── -->
             <div class="admin-card">
                 <h3>🖼️ Medien</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+                <div class="ev-grid-two">
                     <div class="form-group">
                         <label class="form-label">Event-Bild (URL)</label>
                         <input type="url" name="image_url" class="form-control"
@@ -1094,7 +1077,7 @@ final class CMS_Events_Admin
             <!-- ── Block 6: Veranstalter ───────────────────────────── -->
             <div class="admin-card">
                 <h3>🏢 Veranstalter</h3>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+                <div class="ev-grid-two">
                     <div class="form-group">
                         <label class="form-label">Name / Organisation</label>
                         <input type="text" name="organizer_name" class="form-control"
@@ -1126,25 +1109,24 @@ final class CMS_Events_Admin
             <?php if (!empty($tag_presets)): ?>
             <div class="admin-card">
                 <h3>🏷️ Tags &amp; Merkmale</h3>
-                <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+                <div class="ev-tag-toggle-list">
                     <?php foreach ($tag_presets as $tg): ?>
-                        <label class="ev-tag-toggle"
-                               style="display:inline-flex;align-items:center;gap:.35rem;padding:.3rem .65rem;border:1.5px solid #bfdbfe;border-radius:50px;cursor:pointer;font-size:.8rem;background:#f8fafc;transition:all .15s;">
+                        <label class="ev-tag-toggle">
                             <input type="checkbox" name="tags[]" value="<?= htmlspecialchars($tg->tag_name) ?>"
                                    <?= in_array($tg->tag_name, $current_tags) ? 'checked' : '' ?>
-                                   style="display:none;">
+                                   class="ev-tag-toggle-input">
                             <span><?= htmlspecialchars($tg->tag_name) ?></span>
                         </label>
                     <?php endforeach; ?>
                 </div>
-                <small class="form-text" style="margin-top:.5rem;display:block;">Tags klicken zum Auswählen</small>
+                <small class="form-text ev-form-help">Tags klicken zum Auswählen</small>
             </div>
             <?php endif; ?>
 
             <!-- ── Speichern-Leiste ──────────────────────────────────── -->
             <div class="admin-card">
-                <div style="display:flex;align-items:center;gap:.75rem;justify-content:space-between;flex-wrap:wrap;">
-                    <div style="display:flex;gap:.75rem;">
+                <div class="ev-form-actions-row">
+                    <div class="ev-form-actions-buttons">
                         <button type="submit" class="btn btn-primary">
                             <?= $is_edit ? '💾 Änderungen speichern' : '➕ Event anlegen' ?>
                         </button>
@@ -1160,33 +1142,14 @@ final class CMS_Events_Admin
         <?php if ($is_edit): ?>
             <?php CMS_Events_Meta_Boxes::instance()->render_speaker_assignment($event); ?>
         <?php else: ?>
-            <div class="admin-card" style="background:#f0f9ff;border-color:#bae6fd;">
-                <p style="margin:0;color:#0369a1;font-size:.875rem;">
+            <div class="admin-card ev-info-box">
+                <p>
                     💡 <strong>Speaker-Zuordnung</strong> ist nach dem ersten Speichern verfügbar.
                 </p>
             </div>
         <?php endif; ?>
 
         </div><!-- /max-width -->
-
-        <script>
-        function evToggleLocation() {
-            var online = document.getElementById('ev_is_online').checked;
-            document.getElementById('ev_online_fields').style.display   = online ? '' : 'none';
-            document.getElementById('ev_location_fields').style.display = online ? 'none' : '';
-        }
-        function evTogglePrice() {
-            var t = document.getElementById('ev_price_type').value;
-            var show = t !== 'free';
-            document.getElementById('ev_price_field').style.display    = show ? '' : 'none';
-            document.getElementById('ev_currency_field').style.display = show ? '' : 'none';
-        }
-        document.querySelectorAll('.ev-tag-toggle').forEach(function(lbl){
-            var inp = lbl.querySelector('input');
-            function sync(){ lbl.style.background = inp.checked ? '#eff6ff' : '#f8fafc'; lbl.style.borderColor = inp.checked ? '#3b82f6' : '#bfdbfe'; lbl.style.color = inp.checked ? '#1d4ed8' : ''; lbl.style.fontWeight = inp.checked ? '600' : ''; }
-            sync(); lbl.addEventListener('change', sync);
-        });
-        </script>
         <?php
         renderAdminLayoutEnd();
     }

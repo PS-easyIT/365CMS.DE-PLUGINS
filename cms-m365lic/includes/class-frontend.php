@@ -40,6 +40,7 @@ final class CMS_M365LIC_Frontend
     private function __construct()
     {
         if (class_exists('CMS\Hooks')) {
+            \CMS\Hooks::addAction('head', [$this, 'output_public_theme_tokens'], 19);
             \CMS\Hooks::addAction('head', [$this, 'enqueue_public_styles'], 20);
             \CMS\Hooks::addAction('body_end', [$this, 'enqueue_public_scripts'], 20);
         }
@@ -744,6 +745,39 @@ final class CMS_M365LIC_Frontend
             . '?v=' . filemtime($css) . '">' . "\n";
     }
 
+    public function output_public_theme_tokens(): void
+    {
+        if (!$this->is_calculator_request()) {
+            return;
+        }
+
+        $settings = CMS_M365LIC_Repository::instance()->get_settings();
+
+        $primary = $this->sanitize_css_color((string) ($settings['design_primary_color'] ?? '#1e3a5f'), '#1e3a5f');
+        $primaryDark = $this->sanitize_css_color((string) ($settings['design_primary_dark'] ?? '#0f2240'), '#0f2240');
+        $heroBg = $this->sanitize_css_color((string) ($settings['design_accent_color'] ?? '#162030'), '#162030');
+        $pageBg = $this->sanitize_css_color((string) ($settings['design_page_background'] ?? '#f1f5f9'), '#f1f5f9');
+        $surface = $this->sanitize_css_color((string) ($settings['design_surface_color'] ?? '#ffffff'), '#ffffff');
+        $text = $this->sanitize_css_color((string) ($settings['design_text_color'] ?? '#1e293b'), '#1e293b');
+        $textMuted = $this->sanitize_css_color((string) ($settings['design_text_muted_color'] ?? '#64748b'), '#64748b');
+        $radius = max(6, min(24, (int) ($settings['design_border_radius'] ?? 10)));
+
+        echo "<style>\n:root {\n"
+            . '  --m365lic-primary: ' . htmlspecialchars($primary, ENT_QUOTES, 'UTF-8') . ";\n"
+            . '  --m365lic-primary-dark: ' . htmlspecialchars($primaryDark, ENT_QUOTES, 'UTF-8') . ";\n"
+            . "  --m365lic-accent-gold: #e8a838;\n"
+            . "  --m365lic-accent-gold-dark: #d4922a;\n"
+            . "  --m365lic-accent-teal: #0d9488;\n"
+            . "  --m365lic-accent-teal-light: #14b8a6;\n"
+            . '  --m365lic-hero-bg: ' . htmlspecialchars($heroBg, ENT_QUOTES, 'UTF-8') . ";\n"
+            . '  --m365lic-bg: ' . htmlspecialchars($pageBg, ENT_QUOTES, 'UTF-8') . ";\n"
+            . '  --m365lic-surface: ' . htmlspecialchars($surface, ENT_QUOTES, 'UTF-8') . ";\n"
+            . '  --m365lic-text: ' . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . ";\n"
+            . '  --m365lic-text-muted: ' . htmlspecialchars($textMuted, ENT_QUOTES, 'UTF-8') . ";\n"
+            . '  --m365lic-radius: ' . $radius . "px;\n"
+            . "}\n</style>\n";
+    }
+
     public function enqueue_public_scripts(): void
     {
         if (!$this->is_calculator_request()) {
@@ -780,6 +814,24 @@ final class CMS_M365LIC_Frontend
         return str_starts_with($requestPath, 'member/plugin/' . self::MEMBER_SECTION_SLUG)
             || str_starts_with($requestPath, 'member/plugin/' . self::MEMBER_SETTINGS_SECTION_SLUG)
             || str_starts_with($requestPath, 'member/plugin/' . self::SPECIAL_SECTION_SLUG);
+    }
+
+    private function sanitize_css_color(string $value, string $fallback): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return $fallback;
+        }
+
+        if (preg_match('/^#[0-9a-fA-F]{3,8}$/', $value) === 1) {
+            return $value;
+        }
+
+        if (preg_match('/^(rgb|rgba|hsl|hsla)\([^\)]+\)$/', $value) === 1) {
+            return $value;
+        }
+
+        return $fallback;
     }
 
     /**

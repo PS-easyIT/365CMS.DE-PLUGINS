@@ -55,7 +55,7 @@ $newTab             = !empty($settings['open_in_new_tab']);
     <?php if (!empty($search)): ?>
     <div class="fd-search-hint">
         Ergebnisse für „<strong><?php echo htmlspecialchars($search); ?></strong>"
-        <a href="<?php echo htmlspecialchars($publicCategoryPath); ?>" style="margin-left:.5rem;">✕ Zurücksetzen</a>
+        <a href="<?php echo htmlspecialchars($publicCategoryPath); ?>" class="fd-search-hint__reset">✕ Zurücksetzen</a>
     </div>
     <?php endif; ?>
 

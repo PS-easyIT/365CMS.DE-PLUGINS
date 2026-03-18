@@ -67,8 +67,8 @@ foreach ($submissions as $submissionItem) {
     <form method="GET" class="contact-filter-row">
         <input type="hidden" name="section" value="submissions">
         <div class="form-group">
-            <label class="form-label" style="font-size:.8rem;">Formular</label>
-            <select name="form_id" class="form-control" style="min-width:160px;">
+            <label class="form-label contact-filter-label">Formular</label>
+            <select name="form_id" class="form-control contact-filter-select contact-filter-select--form">
                 <option value="">Alle Formulare</option>
                 <?php foreach ($forms as $f): ?>
                 <option value="<?php echo (int)$f['id']; ?>" <?php echo $filterFormId === (int)$f['id'] ? 'selected' : ''; ?>>
@@ -78,8 +78,8 @@ foreach ($submissions as $submissionItem) {
             </select>
         </div>
         <div class="form-group">
-            <label class="form-label" style="font-size:.8rem;">Status</label>
-            <select name="status" class="form-control" style="min-width:130px;">
+            <label class="form-label contact-filter-label">Status</label>
+            <select name="status" class="form-control contact-filter-select contact-filter-select--status">
                 <option value="">Alle</option>
                 <?php foreach ($statusMap as $key => $s): ?>
                 <option value="<?php echo $key; ?>" <?php echo $filterStatus === $key ? 'selected' : ''; ?>><?php echo $s['label']; ?></option>
@@ -87,8 +87,8 @@ foreach ($submissions as $submissionItem) {
             </select>
         </div>
         <div class="form-group">
-            <label class="form-label" style="font-size:.8rem;">Suche</label>
-            <input type="text" name="search" class="form-control" style="min-width:180px;"
+            <label class="form-label contact-filter-label">Suche</label>
+            <input type="text" name="search" class="form-control contact-filter-input contact-filter-input--search"
                    value="<?php echo $e($filterSearch); ?>" placeholder="Name / E-Mail ...">
         </div>
         <button type="submit" class="btn btn-secondary btn-sm">🔍 Filtern</button>
@@ -102,7 +102,7 @@ foreach ($submissions as $submissionItem) {
 <?php if (empty($submissions)): ?>
 <div class="admin-card">
     <div class="empty-state">
-        <p style="font-size:2.5rem;margin:0;">📭</p>
+        <p class="contact-empty-state__icon">📭</p>
         <p><strong>Keine Nachrichten gefunden</strong></p>
         <p class="text-muted">Es wurden keine Nachrichten mit den gewählten Filtern gefunden.</p>
     </div>
@@ -118,22 +118,22 @@ foreach ($submissions as $submissionItem) {
             <div class="contact-muted-text">Mehrere Nachrichten gleichzeitig markieren, prüfen oder löschen.</div>
         </div>
         <div class="contact-bulk-row">
-        <select name="bulk" class="form-control" style="max-width:200px;">
-            <option value="">Aktion wählen …</option>
-            <option value="mark_read">✅ Als gelesen markieren</option>
-            <option value="mark_spam">🚫 Als Spam markieren</option>
-            <option value="delete">🗑️ Löschen</option>
-        </select>
-        <button type="submit" class="btn btn-secondary btn-sm">Ausführen</button>
+            <select name="bulk" class="form-control contact-bulk-select">
+                <option value="">Aktion wählen …</option>
+                <option value="mark_read">✅ Als gelesen markieren</option>
+                <option value="mark_spam">🚫 Als Spam markieren</option>
+                <option value="delete">🗑️ Löschen</option>
+            </select>
+            <button type="submit" class="btn btn-secondary btn-sm">Ausführen</button>
         </div>
     </div>
 
-    <div class="admin-card" style="padding:0;overflow:hidden;">
+    <div class="admin-card contact-admin-card--flush">
         <div class="users-table-container">
             <table class="users-table">
                 <thead>
                     <tr>
-                        <th style="width:40px;"><input type="checkbox" id="selectAll"></th>
+                        <th class="contact-table-checkbox-col"><input type="checkbox" id="selectAll" data-contact-select-all="submission_ids[]"></th>
                         <th>Absender</th>
                         <th>Betreff</th>
                         <th>Formular</th>
@@ -154,7 +154,7 @@ foreach ($submissions as $submissionItem) {
                         $subject     = $meta['subject'] ?? $meta['betreff'] ?? '(kein Betreff)';
                         $st = $statusMap[$sub['status']] ?? $statusMap['unread'];
                     ?>
-                    <tr style="<?php echo $sub['status'] === 'unread' ? 'font-weight:600;' : ''; ?>">
+                    <tr class="<?php echo $sub['status'] === 'unread' ? 'contact-submission-row--unread' : ''; ?>">
                         <td><input type="checkbox" name="submission_ids[]" value="<?php echo (int)$sub['id']; ?>"></td>
                         <td>
                             <?php echo $e($senderName); ?>
@@ -165,7 +165,7 @@ foreach ($submissions as $submissionItem) {
                         <td><?php echo $e(mb_strimwidth($subject, 0, 50, '…')); ?></td>
                         <td><span class="contact-muted-text"><?php echo $e($sub['form_title'] ?? '—'); ?></span></td>
                         <td><span class="status-badge <?php echo $st['class']; ?>"><?php echo $st['label']; ?></span></td>
-                        <td style="white-space:nowrap;font-size:.85rem;"><?php echo date('d.m.Y H:i', strtotime($sub['created_at'])); ?></td>
+                        <td class="contact-table-date"><?php echo date('d.m.Y H:i', strtotime($sub['created_at'])); ?></td>
                         <td>
                             <div class="contact-inline-actions">
                                 <a href="?section=submissions&action=view&id=<?php echo (int)$sub['id']; ?>"
@@ -182,12 +182,12 @@ foreach ($submissions as $submissionItem) {
 
 <!-- Paginierung -->
 <?php if ($pages > 1): ?>
-<div style="display:flex;gap:.5rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap;">
+<div class="contact-pagination">
     <?php if ($page > 1): ?>
     <a href="?section=submissions&paged=<?php echo $page - 1; ?>&form_id=<?php echo $filterFormId; ?>&status=<?php echo $e($filterStatus); ?>&search=<?php echo urlencode($filterSearch); ?>"
        class="btn btn-secondary btn-sm">← Zurück</a>
     <?php endif; ?>
-    <span style="padding:.375rem .875rem;color:#64748b;font-size:.875rem;">
+    <span class="contact-pagination__status">
         Seite <?php echo $page; ?> von <?php echo $pages; ?>
     </span>
     <?php if ($page < $pages): ?>
@@ -199,9 +199,3 @@ foreach ($submissions as $submissionItem) {
 <?php endif; ?>
 
 </div>
-
-<script>
-document.getElementById('selectAll')?.addEventListener('change', function() {
-    document.querySelectorAll('input[name="submission_ids[]"]').forEach(cb => cb.checked = this.checked);
-});
-</script>

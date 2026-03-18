@@ -525,3 +525,209 @@
 
 /* ── Archive: Reset-Link ──────────────────────────────────────── */
 .ev-btn--inline { display: inline-flex; margin-top: .5rem; }
+
+.events-calendar-widget {
+  background: #fff;
+  border: 1px solid var(--ev-border-l);
+  border-radius: var(--ev-radius);
+  padding: 1rem;
+  box-shadow: var(--ev-shadow);
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.calendar-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ev-text);
+}
+
+.calendar-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+  text-decoration: none;
+  background: var(--ev-light);
+  color: var(--ev-primary);
+  border: 1px solid var(--ev-border);
+  font-size: 1.25rem;
+  font-weight: 700;
+  transition: var(--ev-ease);
+}
+
+.calendar-nav-btn:hover {
+  background: var(--ev-primary);
+  color: #fff;
+}
+
+/* ── Member Dashboard / Formular ─────────────────────────────── */
+.ev-member-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: .75rem;
+}
+
+.ev-member-toolbar-note {
+  color: #64748b;
+  font-size: .875rem;
+  margin: 0;
+}
+
+.ev-member-new-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .5rem 1.25rem;
+  background: #dc2626;
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: .875rem;
+  text-decoration: none;
+}
+
+.ev-member-empty-icon {
+  font-size: 2.5rem;
+  margin: 0 0 .75rem;
+}
+
+.ev-member-empty-text {
+  color: #64748b;
+  margin: .25rem 0 0;
+}
+
+.ev-member-empty-cta {
+  margin-top: 1rem;
+}
+
+.ev-member-back-wrap {
+  margin-bottom: 1rem;
+}
+
+.ev-member-back-link {
+  color: #dc2626;
+  font-size: .875rem;
+  text-decoration: none;
+}
+
+.ev-member-warning-box {
+  background: #fef2f2;
+  border-left: 4px solid #dc2626;
+  color: #991b1b;
+  padding: 1rem 1.25rem;
+  border-radius: 6px;
+  margin-bottom: 1.25rem;
+  font-size: .9rem;
+}
+
+.ev-member-section-title {
+  color: #475569;
+  font-size: .95rem;
+  margin: 1.25rem 0 .75rem;
+  padding-bottom: .5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ev-member-required {
+  color: #ef4444;
+}
+
+.ev-member-grid-2,
+.ev-member-grid-3,
+.ev-member-grid-4 {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.ev-member-grid-2 { grid-template-columns: 1fr 1fr; }
+.ev-member-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.ev-member-grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+.ev-member-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  cursor: pointer;
+}
+
+.ev-member-tag-note {
+  font-size: .85rem;
+  color: #64748b;
+  margin-bottom: .75rem;
+}
+
+.ev-member-tag-group {
+  margin-bottom: .75rem;
+}
+
+.ev-member-tag-group-title {
+  font-size: .85rem;
+  color: #475569;
+}
+
+.ev-member-tag-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: .35rem;
+}
+
+.ev-member-tag-option {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .35rem .7rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: .85rem;
+  transition: all .15s ease;
+}
+
+.ev-member-tag-option input {
+  accent-color: #3b82f6;
+}
+
+.ev-member-price-wrap {
+  display: grid;
+  grid-column: span 2;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.ev-member-description {
+  resize: vertical;
+}
+
+.ev-member-actions {
+  display: flex;
+  gap: .75rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .ev-member-grid-4,
+  .ev-member-grid-3,
+  .ev-member-grid-2,
+  .ev-member-price-wrap {
+    grid-template-columns: 1fr;
+  }
+
+  .ev-member-price-wrap {
+    grid-column: auto;
+  }
+}

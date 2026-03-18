@@ -231,8 +231,20 @@
     text-decoration: none;
 }
 
+.fd-search-hint__reset {
+    margin-left: .5rem;
+}
+
 .fd-search-hint a:hover {
     color: var(--fd-primary);
+}
+
+.fd-consent-actions {
+    display: flex;
+    justify-content: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
 }
 
 /* -------------------------------------------------------------------------

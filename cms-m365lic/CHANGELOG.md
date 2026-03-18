@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.0 – 2026-03-18
+
+- Public- und EU-Vergleichs-Frontend visuell näher an das Theme `cms-phinit` gezogen: dunkler Hero, Navy-/Gold-/Teal-Akzente, prägnantere Tabellenköpfe und editorialere Karten-/Button-Stile
+- Dynamische Design-Tokens werden jetzt zentral über den Frontend-Controller in den Head injiziert; die früheren Inline-`<style>`-Blöcke in den Public-Templates entfallen
+
 ## 1.4.9 – 2026-03-17
 
 - EU-Alternativen für zusätzliche Add-on- und Service-Kategorien ergänzt: `Endpoint Security & XDR`, `MDM & UEM`, `Identity & Access`, `Enterprise Projektmanagement`, `Low-Code & Automatisierung`, `Datenanalyse & BI`, `DMS/Archivierung/Compliance`, `Enterprise Cloud-Telefonie`

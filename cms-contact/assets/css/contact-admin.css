@@ -386,12 +386,388 @@
     font-weight: 600;
 }
 
+.contact-stat-number--alert {
+    color: #ef4444;
+}
+
+.contact-stat-number--info {
+    color: #3b82f6;
+}
+
+.contact-empty-state__text {
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.contact-empty-state__cta {
+    margin-top: 1rem;
+}
+
+.contact-count-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.5rem;
+    border-radius: 10px;
+    background: #fee2e2;
+    color: #991b1b;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.contact-count-zero {
+    color: #94a3b8;
+}
+
+.contact-required {
+    color: #ef4444;
+}
+
+.contact-link--strong {
+    font-weight: 700;
+}
+
+.contact-link--normal {
+    font-weight: 400;
+}
+
+.contact-status-badge--unread {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.contact-status-badge--read {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.contact-status-badge--replied {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.contact-status-badge--archived {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.contact-inline-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-bottom: 0;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.contact-inline-tab-btn {
+    border: 0;
+    border-radius: 10px 10px 0 0;
+    background: transparent;
+    color: #475569;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.65rem 0.9rem;
+    transition: all 0.18s ease;
+}
+
+.contact-inline-tab-btn:hover,
+.contact-inline-tab-btn.active {
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+.contact-form-grid-2-wide {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+.contact-input-compact {
+    max-width: 300px;
+}
+
+.contact-input-number-sm {
+    max-width: 120px;
+}
+
+.contact-input-color {
+    width: 44px;
+    height: 38px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.contact-input-color-text {
+    max-width: 110px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.contact-textarea-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.85rem;
+}
+
+.contact-checkbox-inline {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.contact-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.contact-form-actions__meta {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.contact-hidden-input {
+    display: none;
+}
+
+.contact-field-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.contact-field-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: grab;
+    transition: all 0.2s ease;
+}
+
+.contact-field-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.contact-field-title {
+    min-width: 120px;
+}
+
+.contact-field-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.contact-field-chip--type {
+    background: #e2e8f0;
+    color: #64748b;
+}
+
+.contact-field-chip--required {
+    color: #ef4444;
+}
+
+.contact-field-chip--system {
+    color: #3b82f6;
+}
+
+.contact-field-meta-code {
+    color: #94a3b8;
+    font-size: 0.75rem;
+}
+
+.contact-field-width {
+    color: #64748b;
+    font-size: 0.8rem;
+}
+
+.contact-actions-tight {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.contact-spacing-top {
+    margin-top: 1rem;
+}
+
+.contact-modal {
+    display: none;
+}
+
+.contact-modal-content--wide {
+    max-width: 650px;
+}
+
+.contact-modal-content--compact {
+    max-width: 440px;
+}
+
+.contact-note-spacing {
+    margin-top: 1rem;
+}
+
+.contact-info-title {
+    margin: 0 0 0.5rem;
+}
+
+.contact-info-copy {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.contact-maintenance-form {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+    margin-top: 0.75rem;
+}
+
+.contact-maintenance-select {
+    max-width: 180px;
+}
+
+.contact-form-intro-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+.contact-template-card__input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.contact-template-card {
+    position: relative;
+}
+
+.contact-template-card__body {
+    display: block;
+}
+
+.contact-empty-state__icon {
+    font-size: 2.5rem;
+    margin: 0;
+}
+
+.contact-modal-warning {
+    color: #ef4444;
+    font-size: 0.875rem;
+}
+
+.contact-inline-form {
+    display: inline;
+}
+
+.contact-filter-label,
+.contact-filter-input,
+.contact-filter-select,
+.contact-bulk-select,
+.contact-status-select {
+    min-width: 0;
+}
+
+.contact-filter-label {
+    font-size: 0.8rem;
+}
+
+.contact-filter-select--form {
+    min-width: 160px;
+}
+
+.contact-filter-select--status {
+    min-width: 130px;
+}
+
+.contact-filter-input--search {
+    min-width: 180px;
+}
+
+.contact-bulk-select {
+    max-width: 200px;
+}
+
+.contact-admin-card--flush {
+    padding: 0;
+    overflow: hidden;
+}
+
+.contact-table-checkbox-col {
+    width: 40px;
+}
+
+.contact-submission-row--unread {
+    font-weight: 600;
+}
+
+.contact-table-date {
+    white-space: nowrap;
+    font-size: 0.85rem;
+}
+
+.contact-pagination {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.contact-pagination__status {
+    padding: 0.375rem 0.875rem;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.contact-detail-grid--wide {
+    grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.85fr);
+}
+
+.contact-status-row {
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.contact-status-form {
+    display: flex;
+    gap: 0.45rem;
+    align-items: center;
+}
+
+.contact-status-select {
+    flex: 1;
+}
+
+.contact-button-stack {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.contact-modal-trigger {
+    width: 100%;
+}
+
 @media (max-width: 1120px) {
     .contact-split-grid,
     .contact-settings-grid,
     .contact-detail-grid,
     .contact-form-grid-2,
-    .contact-form-grid-3 {
+    .contact-form-grid-3,
+    .contact-form-grid-2-wide,
+    .contact-form-intro-grid,
+    .contact-detail-grid--wide {
         grid-template-columns: 1fr;
     }
 }

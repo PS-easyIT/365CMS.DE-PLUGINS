@@ -64,6 +64,8 @@
 **Callback:** `CMS_Feed_Cron::process_queue()`  
 **Beschreibung:** Verarbeitet ausstehende Fetch-Queue-Tasks (max. 5 Kanäle pro Durchlauf). Priorisiert bei aktivem `cms-phinit` die auf der Startseite ausgewählten Feed-Kanäle, reiht zusätzlich alle regulär fälligen Kanäle ein und bereinigt nicht hervorgehobene Beiträge älter als 7 Tage automatisch.
 
+**Wichtig:** Seit dem Core-Fix vom `2026-03-17` wird `cms_cron_hourly` über `CMS/cron.php` auch bei bestehenden Aufrufen von `task=mail-queue` automatisch mit ausgelöst, aber intern auf höchstens einen echten Lauf pro Stunde gedrosselt. Zusätzlich sind die Tasks `hourly` und `all` verfügbar.
+
 ---
 
 ## Filter / Legacy

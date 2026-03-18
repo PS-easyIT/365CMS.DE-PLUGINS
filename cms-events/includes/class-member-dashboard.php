@@ -214,29 +214,27 @@ class CMS_Events_Member_Dashboard
         </div>
         <?php else: ?>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem;">
-            <p style="color:#64748b;font-size:.875rem;margin:0;">
+        <div class="ev-member-toolbar">
+            <p class="ev-member-toolbar-note">
                 <?php echo count($events); ?> Event(s) verfügbar
             </p>
             <a href="/member/plugin/events?action=new"
-               style="display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1.25rem;
-                      background:#dc2626;color:#fff;border-radius:8px;font-weight:600;
-                      font-size:.875rem;text-decoration:none;">
+               class="ev-member-new-link">
                 ➕ Neues Event
             </a>
         </div>
 
         <?php if (empty($events)): ?>
         <div class="empty-state">
-            <p style="font-size:2.5rem;margin:0 0 .75rem;">📅</p>
+            <p class="ev-member-empty-icon">📅</p>
             <p><strong>Keine Events vorhanden</strong></p>
-            <p style="color:#64748b;margin:.25rem 0 0;">Es sind noch keine Events vorhanden.</p>
-            <a href="/member/plugin/events?action=new" class="btn btn-primary" style="margin-top:1rem;">
+            <p class="ev-member-empty-text">Es sind noch keine Events vorhanden.</p>
+            <a href="/member/plugin/events?action=new" class="btn btn-primary ev-member-empty-cta">
                 ➕ Erstes Event anlegen
             </a>
         </div>
         <?php else: ?>
-        <div class="ev-grid" style="grid-template-columns:repeat(3,1fr);">
+        <div class="ev-grid">
             <?php foreach ($events as $event): ?>
                 <?php
                 if (class_exists('CMS_Events_Template_Loader')) {
@@ -265,15 +263,14 @@ class CMS_Events_Member_Dashboard
         $categories = $evDb->get_event_categories();
         $tagGroups  = $evDb->get_event_tag_presets_grouped();
         ?>
-        <div style="margin-bottom:1rem;">
-            <a href="/member/plugin/events" style="color:#dc2626;font-size:.875rem;text-decoration:none;">
+        <div class="ev-member-back-wrap">
+            <a href="/member/plugin/events" class="ev-member-back-link">
                 ← Zurück zur Übersicht
             </a>
         </div>
 
         <?php if (!$isAdmin): ?>
-        <div style="background:#fef2f2;border-left:4px solid #dc2626;color:#991b1b;
-                    padding:1rem 1.25rem;border-radius:6px;margin-bottom:1.25rem;font-size:.9rem;">
+        <div class="ev-member-warning-box">
             <strong>ℹ️ Hinweis:</strong> Ihr Profil wird nach dem Einreichen vom Admin geprüft und dann freigeschaltet.
         </div>
         <?php endif; ?>
@@ -286,11 +283,10 @@ class CMS_Events_Member_Dashboard
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
 
                 <!-- Veranstaltung -->
-                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
-                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">📅 Veranstaltung</h4>
+                <h4 class="ev-member-section-title">📅 Veranstaltung</h4>
 
                 <div class="form-group">
-                    <label class="form-label">Titel <span style="color:#ef4444;">*</span></label>
+                    <label class="form-label">Titel <span class="ev-member-required">*</span></label>
                     <input type="text" name="title" class="form-control" required
                            value="<?php echo htmlspecialchars($_POST['title'] ?? ''); ?>">
                 </div>
@@ -303,12 +299,11 @@ class CMS_Events_Member_Dashboard
                 </div>
 
                 <!-- Datum & Zeit -->
-                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
-                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">🕐 Datum & Zeit</h4>
+                <h4 class="ev-member-section-title">🕐 Datum & Zeit</h4>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1.25rem;">
+                <div class="ev-member-grid-4">
                     <div class="form-group">
-                        <label class="form-label">Startdatum <span style="color:#ef4444;">*</span></label>
+                        <label class="form-label">Startdatum <span class="ev-member-required">*</span></label>
                         <input type="date" name="event_date" class="form-control" required
                                value="<?php echo htmlspecialchars($_POST['event_date'] ?? ''); ?>">
                     </div>
@@ -330,26 +325,24 @@ class CMS_Events_Member_Dashboard
                 </div>
 
                 <!-- Ort -->
-                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
-                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">📍 Ort</h4>
+                <h4 class="ev-member-section-title">📍 Ort</h4>
 
                 <div class="form-group">
-                    <label class="form-label" style="display:flex;align-items:center;gap:.5rem;cursor:pointer;">
+                    <label class="form-label ev-member-checkbox-label">
                         <input type="checkbox" name="is_online" value="1"
                                <?php echo isset($_POST['is_online']) ? 'checked' : ''; ?>
-                               onchange="document.getElementById('ev-online-wrap').style.display=this.checked?'block':'none';
-                                         document.getElementById('ev-location-wrap').style.display=this.checked?'none':'block';">
+                               data-ev-member-online-toggle>
                         Online-Event (kein physischer Veranstaltungsort)
                     </label>
                 </div>
 
-                <div id="ev-online-wrap" class="form-group" style="display:<?php echo isset($_POST['is_online']) ? 'block' : 'none'; ?>;">
+                <div id="ev-online-wrap" class="form-group"<?php echo isset($_POST['is_online']) ? '' : ' hidden'; ?>>
                     <label class="form-label">Online-Link</label>
                     <input type="url" name="online_url" class="form-control" placeholder="https://"
                            value="<?php echo htmlspecialchars($_POST['online_url'] ?? ''); ?>">
                 </div>
 
-                <div id="ev-location-wrap" style="display:<?php echo isset($_POST['is_online']) ? 'none' : 'block'; ?>;">
+                <div id="ev-location-wrap"<?php echo isset($_POST['is_online']) ? ' hidden' : ''; ?>>
                     <div class="form-group">
                         <label class="form-label">Veranstaltungsort (Name)</label>
                         <input type="text" name="location" class="form-control"
@@ -361,7 +354,7 @@ class CMS_Events_Member_Dashboard
                         <input type="text" name="address" class="form-control"
                                value="<?php echo htmlspecialchars($_POST['address'] ?? ''); ?>">
                     </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;">
+                    <div class="ev-member-grid-3">
                         <div class="form-group">
                             <label class="form-label">Stadt</label>
                             <input type="text" name="city" class="form-control"
@@ -381,10 +374,9 @@ class CMS_Events_Member_Dashboard
                 </div>
 
                 <!-- Details -->
-                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
-                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">ℹ️ Details</h4>
+                <h4 class="ev-member-section-title">ℹ️ Details</h4>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+                <div class="ev-member-grid-2">
                     <div class="form-group">
                         <label class="form-label">Kategorie</label>
                         <select name="category" class="form-control">
@@ -412,21 +404,17 @@ class CMS_Events_Member_Dashboard
                     $typeLabels = ['general' => 'Allgemein', 'special' => 'Spezialisierung', 'format' => 'Format'];
                     $postedTags = $_POST['tags'] ?? [];
                 ?>
-                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
-                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">🏷️ Tags / Merkmale</h4>
-                <p style="font-size:.85rem;color:#64748b;margin-bottom:.75rem;">Wähle passende Tags für dein Event aus den Vorlagen.</p>
+                <h4 class="ev-member-section-title">🏷️ Tags / Merkmale</h4>
+                <p class="ev-member-tag-note">Wähle passende Tags für dein Event aus den Vorlagen.</p>
                 <?php foreach ($tagGroups as $type => $presets):
                     if (empty($presets)) continue; ?>
-                    <div style="margin-bottom:.75rem;">
-                        <strong style="font-size:.85rem;color:#475569;"><?php echo htmlspecialchars($typeLabels[$type] ?? ucfirst($type)); ?></strong>
-                        <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.35rem;">
+                    <div class="ev-member-tag-group">
+                        <strong class="ev-member-tag-group-title"><?php echo htmlspecialchars($typeLabels[$type] ?? ucfirst($type)); ?></strong>
+                        <div class="ev-member-tag-wrap">
                             <?php foreach ($presets as $preset): ?>
-                                <label style="display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .7rem;
-                                              background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;
-                                              font-size:.85rem;transition:all .15s ease;">
+                                <label class="ev-member-tag-option">
                                     <input type="checkbox" name="tags[]" value="<?php echo htmlspecialchars($preset->tag_name); ?>"
-                                           <?php echo is_array($postedTags) && in_array($preset->tag_name, $postedTags) ? 'checked' : ''; ?>
-                                           style="accent-color:#3b82f6;">
+                                           <?php echo is_array($postedTags) && in_array($preset->tag_name, $postedTags) ? 'checked' : ''; ?>>
                                     <?php echo htmlspecialchars($preset->tag_name); ?>
                                 </label>
                             <?php endforeach; ?>
@@ -441,16 +429,15 @@ class CMS_Events_Member_Dashboard
                            value="<?php echo htmlspecialchars($_POST['registration_url'] ?? ''); ?>">
                 </div>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;">
+                <div class="ev-member-grid-3">
                     <div class="form-group">
                         <label class="form-label">Preis-Typ</label>
-                        <select name="price_type" class="form-control" id="ev-price-type"
-                                onchange="document.getElementById('ev-price-wrap').style.display=this.value==='paid'?'grid':'none'">
+                        <select name="price_type" class="form-control" id="ev-price-type" data-ev-member-price-type>
                             <option value="free" <?php echo ($_POST['price_type'] ?? 'free') === 'free' ? 'selected' : ''; ?>>Kostenlos</option>
                             <option value="paid" <?php echo ($_POST['price_type'] ?? '') === 'paid' ? 'selected' : ''; ?>>Kostenpflichtig</option>
                         </select>
                     </div>
-                    <div id="ev-price-wrap" style="display:<?php echo ($_POST['price_type'] ?? 'free') === 'paid' ? 'grid' : 'none'; ?>;grid-column:span 2;grid-template-columns:1fr 1fr;gap:1.25rem;">
+                    <div id="ev-price-wrap" class="ev-member-price-wrap"<?php echo ($_POST['price_type'] ?? 'free') === 'paid' ? '' : ' hidden'; ?>>
                         <div class="form-group">
                             <label class="form-label">Preis</label>
                             <input type="number" name="price" class="form-control" min="0" step="0.01"
@@ -466,10 +453,9 @@ class CMS_Events_Member_Dashboard
                 </div>
 
                 <!-- Veranstalter -->
-                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
-                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">👤 Veranstalter</h4>
+                <h4 class="ev-member-section-title">👤 Veranstalter</h4>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+                <div class="ev-member-grid-2">
                     <div class="form-group">
                         <label class="form-label">Name</label>
                         <input type="text" name="organizer_name" class="form-control"
@@ -482,7 +468,7 @@ class CMS_Events_Member_Dashboard
                     </div>
                 </div>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+                <div class="ev-member-grid-2">
                     <div class="form-group">
                         <label class="form-label">Telefon</label>
                         <input type="tel" name="organizer_phone" class="form-control"
@@ -496,15 +482,13 @@ class CMS_Events_Member_Dashboard
                 </div>
 
                 <!-- Beschreibung -->
-                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
-                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">📝 Beschreibung</h4>
+                <h4 class="ev-member-section-title">📝 Beschreibung</h4>
 
                 <div class="form-group">
-                    <textarea name="description" class="form-control" rows="6"
-                              style="resize:vertical;"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
+                    <textarea name="description" class="form-control ev-member-description" rows="6"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
                 </div>
 
-                <div style="display:flex;gap:.75rem;margin-top:1.5rem;">
+                <div class="ev-member-actions">
                     <button type="submit" class="btn btn-primary">💾 Event einreichen</button>
                     <a href="/member/plugin/events" class="btn btn-secondary">Abbrechen</a>
                 </div>

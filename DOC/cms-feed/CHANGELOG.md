@@ -4,6 +4,32 @@ Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
 ---
 
+## [1.3.4] – 2026-03-18
+
+### Geändert
+- **Admin-Interaktionen vollständig datengetrieben** – `page-admin.php` nutzt für Bulk-Aktionen, Bearbeiten-/Löschen-Buttons, Katalog-Auswahl und Settings-Tabs jetzt `data-*`-Hooks statt direkter `onclick`-Aufrufe oder `javascript:void(0)`-Links.
+- **Zentrales Confirm-/Modal-Handling weiterverwendet** – `assets/js/admin.js` bindet Import-, Lösch- und Modal-Aktionen jetzt zentral, inklusive neutraler Bestätigungen für Imports und destruktiver Warnungen für Löschaktionen.
+
+### Verbessert
+- **Admin-View deutlich wartbarer** – Der veraltete Inline-Skriptblock am Ende von `admin/views/page-admin.php` entfällt; Modal-Resets, Tab-Wechsel, Katalog-Selektion und Delete-Dialoge leben jetzt vollständig im bestehenden Admin-JavaScript.
+
+## [1.3.3] – 2026-03-18
+
+### Geändert
+- **Consent-Handling auf öffentlichen Feed-Seiten zentralisiert** – Das Public-Skript wird jetzt auf allen Feed-Routen geladen, sodass sowohl Archiv- als auch Consent-Seiten unmittelbar auf Änderungen der Cookie-Einwilligung reagieren können.
+- **Template-Inlines weiter reduziert** – Verbleibende Inline-Styles und das Sonder-Skript in `consent-required.php`, `archive-feed.php`, `archive-category.php` und `whitelabel-feed.php` wurden in die bestehenden Public-Assets ausgelagert.
+
+### Verbessert
+- **Wartbarkeit der Public-Templates** – Consent-CTA, Zurücksetzen-Links und Reload-Logik folgen jetzt konsistent dem bestehenden `assets/css/style.css` / `assets/js/script.js`-Pfad statt eigenen Template-Sonderwegen.
+
+## [1.3.2] – 2026-03-17
+
+### Behoben
+- **Automatisches Nachladen der Feeds funktioniert wieder** – Das Plugin hing korrekt am Hook `cms_cron_hourly`, aber der bisherige Core-Cron-Endpunkt `CMS/cron.php` löste diesen Hook nie aus. Bestehende Cron-Aufrufe für `task=mail-queue` triggern den stündlichen Feed-/Digest-Lauf jetzt automatisch mit.
+
+### Technisch
+- **Kompatibler Core-Cron-Bridge-Fix** – Der Core unterstützt jetzt zusätzlich `task=hourly` und `task=all`; der stündliche Hook wird intern auf höchstens einen echten Lauf pro Stunde gedrosselt, damit häufigere Mail-Queue-Crons keine Feed-Doppelverarbeitung verursachen.
+
 ## [1.3.1] – 2026-03-16
 
 ### Geändert

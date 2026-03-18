@@ -66,8 +66,11 @@
     }
 
     function initConsentGuard() {
+        const consentRequiredPage = document.querySelector('[data-feed-consent-required="1"]');
+
         window.addEventListener('cms-cookie-consent-change', function(event) {
-            if (!hasFeedConsent(event.detail)) {
+            const consentGranted = hasFeedConsent(event.detail);
+            if ((consentRequiredPage && consentGranted) || (!consentRequiredPage && !consentGranted)) {
                 window.location.reload();
             }
         });

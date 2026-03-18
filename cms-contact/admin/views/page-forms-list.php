@@ -84,10 +84,10 @@ foreach ($allForms as $formItem) {
 
     <?php if (empty($allForms)): ?>
     <div class="empty-state">
-        <p style="font-size:2.5rem;margin:0;">📭</p>
+        <p class="contact-empty-state__icon">📭</p>
         <p><strong>Noch keine Formulare vorhanden</strong></p>
-        <p style="color:#64748b;font-size:.875rem;">Erstelle dein erstes Kontaktformular.</p>
-        <a href="?section=forms&action=new" class="btn btn-primary" style="margin-top:1rem;">➕ Jetzt erstellen</a>
+        <p class="contact-empty-state__text">Erstelle dein erstes Kontaktformular.</p>
+        <a href="?section=forms&action=new" class="btn btn-primary contact-empty-state__cta">➕ Jetzt erstellen</a>
     </div>
     <?php else: ?>
     <div class="users-table-container">
@@ -135,7 +135,12 @@ foreach ($allForms as $formItem) {
                         <a href="?section=forms&action=fields&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Felder bearbeiten">📝</a>
                         <a href="?section=forms&action=edit&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Einstellungen">✏️</a>
                         <a href="/contact/<?php echo htmlspecialchars($f['slug']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary" title="Frontend-Vorschau">👁️</a>
-                        <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteModal(<?php echo (int)$f['id']; ?>, '<?php echo htmlspecialchars($f['title'], ENT_QUOTES); ?>')" title="Löschen">🗑️</button>
+                        <button type="button"
+                                class="btn btn-sm btn-danger"
+                                data-contact-open-delete-modal="deleteModal"
+                                data-delete-id="<?php echo (int)$f['id']; ?>"
+                                data-delete-name="<?php echo htmlspecialchars($f['title'], ENT_QUOTES); ?>"
+                                title="Löschen">🗑️</button>
                     </div>
                 </td>
             </tr>
@@ -149,32 +154,24 @@ foreach ($allForms as $formItem) {
 </div>
 
 <!-- Lösch-Modal -->
-<div id="deleteModal" class="modal" style="display:none;">
-    <div class="modal-content" style="max-width:480px;">
+<div id="deleteModal" class="modal contact-modal">
+    <div class="modal-content contact-modal-content--compact">
         <div class="modal-header">
             <h3>🗑️ Formular löschen</h3>
-            <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
+            <button class="modal-close" data-close-modal="deleteModal">&times;</button>
         </div>
         <div class="modal-body">
-            <p>Soll das Formular <strong id="deleteModalName"></strong> wirklich gelöscht werden?</p>
-            <p style="color:#ef4444;font-size:.875rem;">⚠️ Alle zugehörigen Felder und Nachrichten werden ebenfalls gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</p>
+            <p>Soll das Formular <strong data-delete-modal-name id="deleteModalName"></strong> wirklich gelöscht werden?</p>
+            <p class="contact-modal-warning">⚠️ Alle zugehörigen Felder und Nachrichten werden ebenfalls gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.</p>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeModal('deleteModal')">Abbrechen</button>
-            <form method="POST" id="deleteModalForm" style="display:inline;">
+            <button type="button" class="btn btn-secondary" data-close-modal="deleteModal">Abbrechen</button>
+            <form method="POST" id="deleteModalForm" class="contact-inline-form">
                 <input type="hidden" name="form_action" value="delete_form">
-                <input type="hidden" name="id" id="deleteModalId">
+                <input type="hidden" name="id" id="deleteModalId" data-delete-modal-id>
                 <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                 <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
             </form>
         </div>
     </div>
 </div>
-
-<script>
-function openDeleteModal(id, name) {
-    document.getElementById('deleteModalId').value = id;
-    document.getElementById('deleteModalName').textContent = name;
-    openModal('deleteModal');
-}
-</script>

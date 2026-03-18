@@ -29,27 +29,27 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
 
     <!-- Tabs -->
-    <div class="tabs" style="margin-bottom:0;display:flex;gap:.3rem;border-bottom:2px solid #e2e8f0;flex-wrap:wrap;">
-        <button class="tab-btn active" onclick="switchTab('tab-general', this)" type="button">⚙️ Allgemein</button>
-        <button class="tab-btn" onclick="switchTab('tab-template', this)" type="button">🎨 Template</button>
-        <button class="tab-btn" onclick="switchTab('tab-email', this)" type="button">📧 E-Mail</button>
-        <button class="tab-btn" onclick="switchTab('tab-security', this)" type="button">🔒 Sicherheit</button>
-        <button class="tab-btn" onclick="switchTab('tab-advanced', this)" type="button">🔧 Erweitert</button>
+    <div class="contact-inline-tabs" data-tab-scope data-tab-content-selector=".tab-content" data-tab-button-selector="[data-contact-tab-target]">
+        <button class="contact-inline-tab-btn active" data-contact-tab-target="tab-general" type="button">⚙️ Allgemein</button>
+        <button class="contact-inline-tab-btn" data-contact-tab-target="tab-template" type="button">🎨 Template</button>
+        <button class="contact-inline-tab-btn" data-contact-tab-target="tab-email" type="button">📧 E-Mail</button>
+        <button class="contact-inline-tab-btn" data-contact-tab-target="tab-security" type="button">🔒 Sicherheit</button>
+        <button class="contact-inline-tab-btn" data-contact-tab-target="tab-advanced" type="button">🔧 Erweitert</button>
     </div>
 
     <!-- Tab: Allgemein -->
     <div id="tab-general" class="tab-content active">
-        <div class="admin-card" style="border-radius:0 10px 10px 10px;margin-top:0;">
+        <div class="admin-card contact-tab-panel">
             <h3>⚙️ Allgemeine Einstellungen</h3>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+            <div class="contact-form-grid-2-wide">
                 <div class="form-group">
-                    <label class="form-label" for="title">Titel <span style="color:#ef4444;">*</span></label>
+                    <label class="form-label" for="title">Titel <span class="contact-required">*</span></label>
                     <input type="text" id="title" name="title" class="form-control"
                            value="<?php echo $e($form['title']); ?>" required>
                 </div>
                 <div class="form-group">
-                    <label class="form-label" for="slug">URL-Slug <span style="color:#ef4444;">*</span></label>
+                    <label class="form-label" for="slug">URL-Slug <span class="contact-required">*</span></label>
                     <input type="text" id="slug" name="slug" class="form-control"
                            value="<?php echo $e($form['slug']); ?>"
                            pattern="[a-z0-9\-]+" required>
@@ -68,7 +68,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
                        value="<?php echo $e($form['success_message'] ?? ''); ?>">
             </div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+            <div class="contact-form-grid-2-wide">
                 <div class="form-group">
                     <label class="form-label" for="redirect_url">Weiterleitung nach Absenden</label>
                     <input type="url" id="redirect_url" name="redirect_url" class="form-control"
@@ -88,18 +88,19 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 
     <!-- Tab: Template -->
     <div id="tab-template" class="tab-content">
-        <div class="admin-card" style="border-radius:0 10px 10px 10px;margin-top:0;">
+        <div class="admin-card contact-tab-panel">
             <h3>🎨 Template wählen</h3>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+            <div class="contact-template-grid">
                 <?php foreach ($templates as $key => $tpl): ?>
-                <label class="contact-template-card" style="cursor:pointer;display:block;border:2px solid <?php echo $form['template'] === $key ? '#3b82f6' : '#e2e8f0'; ?>;border-radius:10px;padding:1.25rem;text-align:center;transition:all .2s;">
+                <label class="contact-template-card<?php echo $form['template'] === $key ? ' is-selected' : ''; ?>">
                     <input type="radio" name="template" value="<?php echo $e($key); ?>"
                            <?php echo $form['template'] === $key ? 'checked' : ''; ?>
-                           style="display:none;"
-                           onchange="document.querySelectorAll('.contact-template-card').forEach(c=>c.style.borderColor='#e2e8f0');this.closest('label').style.borderColor='#3b82f6';">
-                    <div style="font-size:2rem;margin-bottom:.5rem;"><?php echo $tpl['icon']; ?></div>
-                    <div style="font-weight:600;color:#1e293b;"><?php echo $e($tpl['name']); ?></div>
-                    <div style="font-size:.8rem;color:#64748b;margin-top:.25rem;"><?php echo $e($tpl['description']); ?></div>
+                           class="contact-hidden-input">
+                    <div class="contact-template-card__body">
+                        <div class="contact-template-card__icon"><?php echo $tpl['icon']; ?></div>
+                        <div class="contact-template-card__title"><?php echo $e($tpl['name']); ?></div>
+                        <div class="contact-template-card__text"><?php echo $e($tpl['description']); ?></div>
+                    </div>
                 </label>
                 <?php endforeach; ?>
             </div>
@@ -108,10 +109,10 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 
     <!-- Tab: E-Mail -->
     <div id="tab-email" class="tab-content">
-        <div class="admin-card" style="border-radius:0 10px 10px 10px;margin-top:0;">
+        <div class="admin-card contact-tab-panel">
             <h3>📧 E-Mail-Einstellungen</h3>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+            <div class="contact-form-grid-2-wide">
                 <div class="form-group">
                     <label class="form-label" for="recipient">Empfänger E-Mail</label>
                     <input type="email" id="recipient" name="recipient" class="form-control"
@@ -131,18 +132,18 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
                 <label class="form-label" for="subject_prefix">Betreff-Präfix</label>
                 <input type="text" id="subject_prefix" name="subject_prefix" class="form-control"
                        value="<?php echo $e($form['subject_prefix'] ?? '[Kontakt]'); ?>"
-                       placeholder="[Kontakt]" style="max-width:300px;">
+                       placeholder="[Kontakt]" class="contact-input-compact">
             </div>
         </div>
     </div>
 
     <!-- Tab: Sicherheit -->
     <div id="tab-security" class="tab-content">
-        <div class="admin-card" style="border-radius:0 10px 10px 10px;margin-top:0;">
+        <div class="admin-card contact-tab-panel">
             <h3>🔒 Sicherheitseinstellungen</h3>
 
             <div class="form-group">
-                <label class="checkbox-label" style="display:flex;align-items:center;gap:.5rem;cursor:pointer;">
+                <label class="checkbox-label contact-checkbox-inline">
                     <input type="checkbox" name="enable_honeypot" value="1"
                            <?php echo !empty($form['enable_honeypot']) ? 'checked' : ''; ?>>
                     🍯 Honeypot-Spamschutz aktivieren
@@ -151,7 +152,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
             </div>
 
             <div class="form-group">
-                <label class="checkbox-label" style="display:flex;align-items:center;gap:.5rem;cursor:pointer;">
+                <label class="checkbox-label contact-checkbox-inline">
                     <input type="checkbox" name="enable_captcha" value="1"
                            <?php echo !empty($form['enable_captcha']) ? 'checked' : ''; ?>>
                     🤖 CAPTCHA aktivieren
@@ -163,7 +164,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
                 <label class="form-label" for="rate_limit">Rate-Limit (pro Stunde/IP)</label>
                 <input type="number" id="rate_limit" name="rate_limit" class="form-control"
                        value="<?php echo (int)($form['rate_limit'] ?? 3); ?>"
-                       min="0" max="100" style="max-width:120px;">
+                       min="0" max="100" class="contact-input-number-sm">
                 <small class="form-text">0 = kein Limit. Standard: 3 Nachrichten pro Stunde pro IP.</small>
             </div>
         </div>
@@ -171,13 +172,13 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 
     <!-- Tab: Erweitert -->
     <div id="tab-advanced" class="tab-content">
-        <div class="admin-card" style="border-radius:0 10px 10px 10px;margin-top:0;">
+        <div class="admin-card contact-tab-panel">
             <h3>🔧 Erweiterte Einstellungen</h3>
 
             <div class="form-group">
                 <label class="form-label" for="custom_css">Benutzerdefiniertes CSS</label>
                 <textarea id="custom_css" name="custom_css" class="form-control" rows="6"
-                          style="font-family:monospace;font-size:.85rem;"
+                          class="contact-textarea-code"
                           placeholder="/* Eigene Styles für dieses Formular */"><?php echo $e($form['custom_css'] ?? ''); ?></textarea>
                 <small class="form-text">Wird nur auf der Seite dieses Formulars geladen.</small>
             </div>
@@ -185,21 +186,11 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
     </div>
 
     <!-- Speichern -->
-    <div class="admin-card" style="margin-top:1rem;">
-        <div style="display:flex;justify-content:flex-end;gap:.6rem;align-items:center;">
-            <span style="color:#64748b;font-size:.85rem;">Änderungen werden sofort übernommen</span>
+    <div class="admin-card contact-spacing-top">
+        <div class="contact-form-actions">
+            <span class="contact-form-actions__meta">Änderungen werden sofort übernommen</span>
             <a href="?section=forms" class="btn btn-secondary">Abbrechen</a>
             <button type="submit" class="btn btn-primary">💾 Speichern</button>
         </div>
     </div>
 </form>
-
-<script>
-function switchTab(tabId, btn) {
-    document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
-    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-    var el = document.getElementById(tabId);
-    if (el) { el.classList.add('active'); }
-    if (btn) { btn.classList.add('active'); }
-}
-</script>

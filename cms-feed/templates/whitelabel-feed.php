@@ -71,7 +71,7 @@ $newTab       = !empty($settings['open_in_new_tab']);
     <?php if (!empty($search)): ?>
     <div class="fd-search-hint">
         Ergebnisse für „<strong><?php echo htmlspecialchars($search); ?></strong>"
-        <a href="/<?php echo htmlspecialchars($slug); ?>" style="margin-left:.5rem;">✕ Zurücksetzen</a>
+        <a href="/<?php echo htmlspecialchars($slug); ?>" class="fd-search-hint__reset">✕ Zurücksetzen</a>
     </div>
     <?php endif; ?>
 
