@@ -7,7 +7,49 @@ $statusMap = [
     'archived' => ['label' => 'Archiviert', 'class' => 'inactive', 'icon' => '📦'],
     'spam'     => ['label' => 'Spam',       'class' => 'danger',   'icon' => '🚫'],
 ];
+$senderName = trim((string) ($submission['sender_name'] ?? ''));
+$senderEmail = trim((string) ($submission['sender_email'] ?? ''));
+$subjectLine = trim((string) ($submission['subject'] ?? ''));
 $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
+$primaryMessage = trim((string) ($submission['message'] ?? ''));
+if ($primaryMessage === '') {
+    $primaryMessage = trim((string) ($meta['message'] ?? $meta['nachricht'] ?? ''));
+}
+$privacyConsentAccepted = in_array(strtolower(trim((string) ($meta['privacy_consent'] ?? ''))), ['1', 'true', 'yes', 'ja'], true);
+$privacyConsentConfirmedAt = trim((string) ($meta['privacy_consent_confirmed_at'] ?? ''));
+$privacyPolicyUrl = trim((string) ($meta['privacy_policy_url'] ?? ''));
+$coreFields = [];
+if ($senderName !== '') {
+    $coreFields['Absender'] = $senderName;
+}
+if ($senderEmail !== '') {
+    $coreFields['E-Mail'] = $senderEmail;
+}
+if ($subjectLine !== '') {
+    $coreFields['Betreff'] = $subjectLine;
+}
+
+$hiddenMetaKeys = ['message', 'nachricht', 'privacy_consent', 'privacy_consent_confirmed_at', 'privacy_policy_url'];
+if ($senderName !== '') {
+    $hiddenMetaKeys[] = 'name';
+    $hiddenMetaKeys[] = 'sender_name';
+}
+if ($senderEmail !== '') {
+    $hiddenMetaKeys[] = 'email';
+    $hiddenMetaKeys[] = 'sender_email';
+}
+if ($subjectLine !== '') {
+    $hiddenMetaKeys[] = 'subject';
+    $hiddenMetaKeys[] = 'betreff';
+}
+
+$displayMeta = [];
+foreach ($meta as $key => $value) {
+    if (in_array($key, $hiddenMetaKeys, true)) {
+        continue;
+    }
+    $displayMeta[$key] = $value;
+}
 ?>
 
 <?php include CMS_CONTACT_PLUGIN_DIR . 'admin/views/partial-section-nav.php'; ?>
@@ -35,15 +77,57 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
         <div class="admin-card">
             <div class="contact-panel-header">
                 <div>
-                    <h3>📝 Eingabedaten</h3>
-                    <p>Alle gespeicherten Feldwerte der Anfrage kompakt dargestellt.</p>
+                    <h3>💬 Nachricht</h3>
+                    <p>Der eigentliche Inhalt der gesendeten Anfrage.</p>
                 </div>
             </div>
-            <?php if (empty($meta)): ?>
+            <?php if (!empty($coreFields)): ?>
+            <div class="contact-message-meta-grid">
+                <?php foreach ($coreFields as $label => $value): ?>
+                <div class="contact-message-meta-item">
+                    <span class="contact-message-meta-label"><?php echo $e($label); ?></span>
+                    <?php if ($label === 'E-Mail'): ?>
+                    <a href="mailto:<?php echo $e($value); ?>" class="contact-message-meta-value contact-link--strong">
+                        <?php echo $e($value); ?>
+                    </a>
+                    <?php else: ?>
+                    <span class="contact-message-meta-value"><?php echo $e($value); ?></span>
+                    <?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+            <?php if ($primaryMessage !== ''): ?>
+            <div class="contact-message-body"><?php echo nl2br($e($primaryMessage)); ?></div>
+            <?php else: ?>
+            <p class="contact-muted-text">Für diese Nachricht wurde kein separater Nachrichtentext gespeichert.</p>
+            <?php endif; ?>
+        </div>
+
+        <div class="admin-card">
+            <div class="contact-panel-header">
+                <div>
+                    <h3>📝 Formularfelder</h3>
+                    <p>Kernfelder und zusätzliche Eingaben der Anfrage im Überblick.</p>
+                </div>
+            </div>
+            <?php if (empty($coreFields) && empty($displayMeta)): ?>
             <p class="contact-muted-text">Keine Felder gespeichert.</p>
             <?php else: ?>
             <table class="contact-field-table">
-                <?php foreach ($meta as $key => $val): ?>
+                <?php foreach ($coreFields as $label => $value): ?>
+                <tr>
+                    <td><?php echo $e($label); ?></td>
+                    <td>
+                        <?php if ($label === 'E-Mail'): ?>
+                        <a href="mailto:<?php echo $e($value); ?>" class="contact-link--strong"><?php echo $e($value); ?></a>
+                        <?php else: ?>
+                        <?php echo nl2br($e($value)); ?>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                <?php foreach ($displayMeta as $key => $val): ?>
                 <tr>
                     <td>
                         <?php echo $e(ucfirst(str_replace('_', ' ', $key))); ?>
@@ -89,11 +173,22 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
                     <strong>ID</strong> <span><?php echo (int)$submission['id']; ?></span>
                 </li>
                 <li>
-                    <strong>Formular</strong> <span><?php echo $e($form['title'] ?? '—'); ?></span>
+                    <strong>Formular</strong> <span><?php echo $e($submission['form_title'] ?? '—'); ?></span>
                 </li>
                 <li>
-                    <strong>IP-Adresse</strong> <span><?php echo $e($submission['ip_address'] ?? '—'); ?></span>
+                    <strong>Datenschutz</strong> <span><?php echo $privacyConsentAccepted ? '✅ Bestätigt' : '⚠️ Offen'; ?></span>
                 </li>
+                <?php if ($privacyConsentConfirmedAt !== ''): ?>
+                <li>
+                    <strong>Bestätigt am</strong> <span><?php echo date('d.m.Y H:i:s', strtotime($privacyConsentConfirmedAt)); ?></span>
+                </li>
+                <?php endif; ?>
+                <?php if ($privacyPolicyUrl !== ''): ?>
+                <li>
+                    <strong>Datenschutz-Link</strong>
+                    <span><a href="<?php echo $e($privacyPolicyUrl); ?>" class="contact-link--strong" target="_blank" rel="noopener noreferrer">Öffnen</a></span>
+                </li>
+                <?php endif; ?>
                 <li>
                     <strong>Erstellt</strong> <span><?php echo date('d.m.Y H:i:s', strtotime($submission['created_at'])); ?></span>
                 </li>
@@ -110,7 +205,6 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
             <h3>⚡ Aktionen</h3>
             <div class="contact-button-stack">
                 <?php
-                $senderEmail = $meta['email'] ?? $meta['sender_email'] ?? '';
                 if ($senderEmail):
                 ?>
                 <a href="mailto:<?php echo $e($senderEmail); ?>" class="btn btn-secondary btn-sm">
@@ -138,7 +232,8 @@ $st = $statusMap[$submission['status']] ?? $statusMap['unread'];
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-close-modal="deleteModal">Abbrechen</button>
             <form method="POST" class="contact-inline-form">
-                <input type="hidden" name="form_action" value="delete_submission">
+                <input type="hidden" name="sub_action" value="delete">
+                <input type="hidden" name="id" value="<?php echo (int)$submission['id']; ?>">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                 <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
             </form>

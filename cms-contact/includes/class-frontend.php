@@ -141,6 +141,7 @@ final class CMS_Contact_Frontend
 
         $fields   = $this->filter_public_fields(CMS_Contact_Fields::instance()->get_by_form((int) $form['id']));
         $csrfToken = \CMS\Security::instance()->generateToken('contact_' . $form['slug']);
+        $privacySettings = $this->get_privacy_settings();
 
         // Flash-Messages
         $success = $_SESSION['contact_success'] ?? null;
@@ -280,11 +281,14 @@ final class CMS_Contact_Frontend
         $fieldErrors = [];
         $oldData     = [];
         $meta        = [];
+        $privacySettings = $this->get_privacy_settings();
 
         $senderName  = '';
         $senderEmail = '';
         $subject     = '';
         $message     = '';
+
+        $oldData['privacy_consent'] = !empty($_POST['privacy_consent']) ? '1' : '';
 
         foreach ($fields as $field) {
             $name  = $field['field_name'];
@@ -346,6 +350,22 @@ final class CMS_Contact_Frontend
             ];
         }
 
+        if (!empty($privacySettings['required']) && empty($_POST['privacy_consent'])) {
+            return [
+                'success'  => false,
+                'error'    => 'Bitte bestätigen Sie die Verarbeitung Ihrer personenbezogenen Daten und lesen Sie die Datenschutzerklärung.',
+                'old_data' => $oldData,
+            ];
+        }
+
+        if (!empty($privacySettings['required'])) {
+            $meta['privacy_consent'] = '1';
+            $meta['privacy_consent_confirmed_at'] = date('Y-m-d H:i:s');
+            if (!empty($privacySettings['url'])) {
+                $meta['privacy_policy_url'] = (string) $privacySettings['url'];
+            }
+        }
+
         // User-ID ermitteln
         $userId = null;
         if (class_exists('CMS\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
@@ -362,9 +382,10 @@ final class CMS_Contact_Frontend
             'sender_email' => $senderEmail,
             'subject'      => $subject,
             'message'      => $message,
-            'ip_address'   => $_SERVER['REMOTE_ADDR'] ?? null,
             'user_agent'   => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500),
         ], $meta);
+
+        $this->register_rate_limit_hit($formId);
 
         // E-Mail-Benachrichtigung
         $submissions->send_notification($form, [
@@ -372,7 +393,6 @@ final class CMS_Contact_Frontend
             'sender_email' => $senderEmail,
             'subject'      => $subject,
             'message'      => $message,
-            'ip_address'   => $_SERVER['REMOTE_ADDR'] ?? null,
         ], $meta);
 
         // Bestätigungs-E-Mail
@@ -495,7 +515,7 @@ final class CMS_Contact_Frontend
     // ── Rate-Limiting ─────────────────────────────────────────────────────────
 
     /**
-     * Prüft ob die IP-Rate nicht überschritten wurde
+     * Prüft das sessionbasierte Rate-Limit pro Formular.
      */
     private function check_rate_limit(int $formId, int $maxPerHour): bool
     {
@@ -503,23 +523,40 @@ final class CMS_Contact_Frontend
             return true;
         }
 
-        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
-        if (empty($ip)) {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
             return true;
         }
 
-        try {
-            $db   = \CMS\Database::instance();
-            $p    = $db->getPrefix();
-            $stmt = $db->prepare(
-                "SELECT COUNT(*) FROM {$p}contact_submissions
-                 WHERE form_id = ? AND ip_address = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)"
-            );
-            $stmt->execute([$formId, $ip]);
-            return (int) $stmt->fetchColumn() < $maxPerHour;
-        } catch (\Throwable $e) {
-            return true;
+        $bucketKey = 'contact_rate_limit_' . $formId;
+        $entries = $_SESSION[$bucketKey] ?? [];
+        if (!is_array($entries)) {
+            $entries = [];
         }
+
+        $threshold = time() - 3600;
+        $entries = array_values(array_filter($entries, static function ($timestamp) use ($threshold): bool {
+            return is_int($timestamp) && $timestamp >= $threshold;
+        }));
+
+        $_SESSION[$bucketKey] = $entries;
+
+        return count($entries) < $maxPerHour;
+    }
+
+    private function register_rate_limit_hit(int $formId): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return;
+        }
+
+        $bucketKey = 'contact_rate_limit_' . $formId;
+        $entries = $_SESSION[$bucketKey] ?? [];
+        if (!is_array($entries)) {
+            $entries = [];
+        }
+
+        $entries[] = time();
+        $_SESSION[$bucketKey] = $entries;
     }
 
     // ── Template-Hilfsmethoden ────────────────────────────────────────────────
@@ -634,5 +671,63 @@ final class CMS_Contact_Frontend
         $html .= "</div>\n";
 
         return $html;
+    }
+
+    public static function render_privacy_consent(array $form = [], array $old = []): string
+    {
+        $settings = self::instance()->get_privacy_settings();
+        if (empty($settings['required'])) {
+            return '';
+        }
+
+        $checked = !empty($old['privacy_consent']) ? ' checked' : '';
+        $policyUrl = htmlspecialchars((string) ($settings['url'] ?? ''), ENT_QUOTES, 'UTF-8');
+
+        $html = "<div class=\"contact-field contact-field-full contact-privacy-field\">\n";
+        $html .= "  <div class=\"contact-privacy-box\">\n";
+        $html .= "    <label class=\"contact-checkbox-label contact-privacy-checkbox\">";
+        $html .= "<input type=\"checkbox\" id=\"cf-privacy-consent\" name=\"privacy_consent\" value=\"1\" required{$checked}>";
+        $html .= "<span class=\"contact-privacy-text\">Ich stimme der Verarbeitung meiner personenbezogenen Daten zum Zweck der Bearbeitung meiner Anfrage zu.";
+        if ($policyUrl !== '') {
+            $html .= " <a href=\"{$policyUrl}\" class=\"contact-privacy-link\" target=\"_blank\" rel=\"noopener noreferrer\">Datenschutzerklärung ansehen</a>.";
+        }
+        $html .= "</span></label>\n";
+        $html .= "    <small class=\"contact-hint\">Ohne diese Bestätigung kann das Formular nicht abgesendet werden.</small>\n";
+        $html .= "  </div>\n";
+        $html .= "</div>\n";
+
+        return $html;
+    }
+
+    private function get_privacy_settings(): array
+    {
+        $url = trim($this->get_contact_setting('privacy_policy_url', ''));
+        if ($url === '') {
+            if (function_exists('home_url')) {
+                $url = (string) home_url('/datenschutz');
+            } elseif (defined('SITE_URL')) {
+                $url = rtrim((string) SITE_URL, '/') . '/datenschutz';
+            }
+        }
+
+        return [
+            'required' => $this->get_contact_setting('require_privacy_consent', '1') === '1',
+            'url' => $url,
+        ];
+    }
+
+    private function get_contact_setting(string $key, string $default = ''): string
+    {
+        try {
+            $db = \CMS\Database::instance();
+            $p  = $db->getPrefix();
+            $stmt = $db->prepare("SELECT setting_value FROM {$p}contact_settings WHERE setting_key = ?");
+            $stmt->execute([$key]);
+            $value = $stmt->fetchColumn();
+
+            return $value !== false ? (string) $value : $default;
+        } catch (\Throwable $e) {
+            return $default;
+        }
     }
 }

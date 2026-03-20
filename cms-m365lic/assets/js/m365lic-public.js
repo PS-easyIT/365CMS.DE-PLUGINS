@@ -130,12 +130,34 @@
     function collectRequirements(container) {
         return Array.from(container.querySelectorAll('.m365lic-requirement')).map((row) => {
             const checkedFeatures = Array.from(row.querySelectorAll('input[type="checkbox"][data-feature]:checked')).map((checkbox) => checkbox.dataset.feature);
+            const euServices = {};
             const labelInput = row.querySelector('[data-requirement-label]');
             const quantityInput = row.querySelector('[data-requirement-quantity]');
             const audienceSelect = row.querySelector('[data-requirement-audience]');
             const presetSelect = row.querySelector('[data-requirement-preset]');
             const parsedQuantity = quantityInput ? Number.parseInt(quantityInput.value, 10) : 1;
-            const quantity = Number.isFinite(parsedQuantity) && parsedQuantity > 0 ? parsedQuantity : 1;
+            const quantity = Number.isFinite(parsedQuantity) && parsedQuantity >= 0 ? parsedQuantity : 1;
+
+            row.querySelectorAll('input[data-eu-service-current], input[data-eu-service-required]').forEach((checkbox) => {
+                const serviceKey = checkbox.dataset.euServiceCurrent || checkbox.dataset.euServiceRequired;
+                if (!serviceKey) {
+                    return;
+                }
+
+                if (!euServices[serviceKey]) {
+                    euServices[serviceKey] = {
+                        current: false,
+                        required: false
+                    };
+                }
+
+                if (checkbox.dataset.euServiceCurrent) {
+                    euServices[serviceKey].current = checkbox.checked;
+                }
+                if (checkbox.dataset.euServiceRequired) {
+                    euServices[serviceKey].required = checkbox.checked;
+                }
+            });
 
             if (quantityInput) {
                 quantityInput.value = String(quantity);
@@ -146,7 +168,8 @@
                 quantity: quantity,
                 audience: audienceSelect ? audienceSelect.value : 'knowledge',
                 preset: presetSelect ? presetSelect.value : '',
-                features: checkedFeatures
+                features: checkedFeatures,
+                eu_services: euServices
             };
         });
     }

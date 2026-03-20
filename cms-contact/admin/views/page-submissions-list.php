@@ -145,25 +145,66 @@ foreach ($submissions as $submissionItem) {
                 <tbody>
                     <?php foreach ($submissions as $sub): ?>
                     <?php
-                        $meta = [];
-                        foreach (($sub['_meta'] ?? []) as $m) {
-                            $meta[$m['field_name']] = $m['field_value'];
+                        $senderName  = trim((string) ($sub['sender_name'] ?? '')) ?: '—';
+                        $senderEmail = trim((string) ($sub['sender_email'] ?? ''));
+                        $subjectRaw  = trim((string) ($sub['subject'] ?? ''));
+                        $messageRaw  = trim((string) ($sub['message'] ?? ''));
+                        $subject     = $subjectRaw !== '' ? $subjectRaw : '(kein Betreff)';
+                        $messagePreview = $messageRaw !== ''
+                            ? preg_replace('/\s+/u', ' ', $messageRaw)
+                            : '';
+                        $listHighlights = is_array($sub['_list_highlights'] ?? null) ? $sub['_list_highlights'] : [];
+                        $metaHighlights = array_values(array_filter(
+                            $listHighlights,
+                            static fn(array $item): bool => ($item['type'] ?? '') !== 'form'
+                        ));
+                        $formHighlight = null;
+                        foreach ($listHighlights as $highlightItem) {
+                            if (($highlightItem['type'] ?? '') === 'form') {
+                                $formHighlight = $highlightItem;
+                                break;
+                            }
                         }
-                        $senderName  = $meta['name']    ?? $meta['sender_name'] ?? '—';
-                        $senderEmail = $meta['email']   ?? $meta['sender_email'] ?? '';
-                        $subject     = $meta['subject'] ?? $meta['betreff'] ?? '(kein Betreff)';
                         $st = $statusMap[$sub['status']] ?? $statusMap['unread'];
                     ?>
                     <tr class="<?php echo $sub['status'] === 'unread' ? 'contact-submission-row--unread' : ''; ?>">
                         <td><input type="checkbox" name="submission_ids[]" value="<?php echo (int)$sub['id']; ?>"></td>
                         <td>
-                            <?php echo $e($senderName); ?>
+                            <div class="contact-table-primary"><?php echo $e($senderName); ?></div>
                             <?php if ($senderEmail): ?>
                             <div class="contact-table-meta"><?php echo $e($senderEmail); ?></div>
                             <?php endif; ?>
+                            <?php if (!empty($metaHighlights)): ?>
+                            <div class="contact-inline-meta-list">
+                                <?php foreach ($metaHighlights as $highlight): ?>
+                                <?php $highlightValue = (string) ($highlight['value'] ?? ''); ?>
+                                <span class="contact-inline-meta-pill<?php echo ($highlight['type'] ?? '') === 'consent' ? ' contact-inline-meta-pill--consent' : ''; ?>">
+                                    <span aria-hidden="true"><?php echo $e($highlight['icon'] ?? '•'); ?></span>
+                                    <span class="contact-inline-meta-pill__label"><?php echo $e($highlight['label'] ?? ''); ?>:</span>
+                                    <?php if (($highlight['type'] ?? '') === 'phone'): ?>
+                                    <a href="tel:<?php echo $e(preg_replace('/[^+0-9]/', '', $highlightValue)); ?>" class="contact-inline-meta-pill__link">
+                                        <?php echo $e($highlightValue); ?>
+                                    </a>
+                                    <?php else: ?>
+                                    <span><?php echo $e($highlightValue); ?></span>
+                                    <?php endif; ?>
+                                </span>
+                                <?php endforeach; ?>
+                            </div>
+                            <?php endif; ?>
                         </td>
-                        <td><?php echo $e(mb_strimwidth($subject, 0, 50, '…')); ?></td>
-                        <td><span class="contact-muted-text"><?php echo $e($sub['form_title'] ?? '—'); ?></span></td>
+                        <td>
+                            <div class="contact-table-primary"><?php echo $e(mb_strimwidth($subject, 0, 70, '…')); ?></div>
+                            <?php if ($messagePreview !== ''): ?>
+                            <div class="contact-message-preview"><?php echo $e(mb_strimwidth((string) $messagePreview, 0, 120, '…')); ?></div>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <div class="contact-form-badge">
+                                <span class="contact-form-badge__label">Formular</span>
+                                <span class="contact-form-badge__value"><?php echo $e($formHighlight['value'] ?? ($sub['form_title'] ?? '—')); ?></span>
+                            </div>
+                        </td>
                         <td><span class="status-badge <?php echo $st['class']; ?>"><?php echo $st['label']; ?></span></td>
                         <td class="contact-table-date"><?php echo date('d.m.Y H:i', strtotime($sub['created_at'])); ?></td>
                         <td>

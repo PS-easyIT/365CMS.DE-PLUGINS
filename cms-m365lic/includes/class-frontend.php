@@ -40,6 +40,7 @@ final class CMS_M365LIC_Frontend
     private function __construct()
     {
         if (class_exists('CMS\Hooks')) {
+            \CMS\Hooks::addFilter('body_class', [$this, 'filter_body_class'], 20);
             \CMS\Hooks::addAction('head', [$this, 'output_public_theme_tokens'], 19);
             \CMS\Hooks::addAction('head', [$this, 'enqueue_public_styles'], 20);
             \CMS\Hooks::addAction('body_end', [$this, 'enqueue_public_scripts'], 20);
@@ -319,9 +320,14 @@ final class CMS_M365LIC_Frontend
 
         foreach ($requirements as $index => $requirement) {
             $requirementFeatures = array_values(array_filter(array_map('strval', $requirement['features'] ?? [])));
+            $euServiceState = $this->collect_eu_service_state(is_array($requirement['eu_services'] ?? null) ? $requirement['eu_services'] : []);
             $requirementLabel = trim((string) ($requirement['label'] ?? ('Bedarfsgruppe ' . ($index + 1))));
-            $requirementQuantity = max(1, (int) ($requirement['quantity'] ?? 1));
-            $requiredCategories = $this->determine_eu_categories_for_features($requirementFeatures, $strategy);
+            $requirementQuantity = max(0, (int) ($requirement['quantity'] ?? 1));
+            $requiredCategories = $this->determine_eu_categories_for_requirement(
+                $requirementFeatures,
+                is_array($requirement['eu_services'] ?? null) ? $requirement['eu_services'] : [],
+                $strategy
+            );
 
             $items = [];
             $rowTotal = 0.0;
@@ -330,23 +336,20 @@ final class CMS_M365LIC_Frontend
             foreach ($requiredCategories as $categoryKey) {
                 $categoryMeta = $euCategories[$categoryKey] ?? ['label' => $categoryKey, 'description' => ''];
                 $defaultSlug = (string) ($defaultSelection[$categoryKey] ?? '');
-                $selectedOffer = null;
-
-                foreach (($euOffers[$categoryKey] ?? []) as $offer) {
-                    if ((string) ($offer['slug'] ?? '') === $defaultSlug) {
-                        $selectedOffer = $offer;
-                        break;
-                    }
-                }
-
-                if (!is_array($selectedOffer)) {
-                    $offersForCategory = $euOffers[$categoryKey] ?? [];
-                    $selectedOffer = is_array($offersForCategory[0] ?? null) ? $offersForCategory[0] : null;
-                }
+                $selectedOffer = $this->select_eu_offer_for_category(
+                    $categoryKey,
+                    is_array($euOffers[$categoryKey] ?? null) ? $euOffers[$categoryKey] : [],
+                    $defaultSlug,
+                    $euServiceState,
+                    $strategy,
+                    $isMonthly
+                );
 
                 if (!is_array($selectedOffer)) {
                     continue;
                 }
+
+                $coverageDetails = $this->build_eu_offer_coverage_details($categoryKey, $selectedOffer, $euServiceState);
 
                 $unitPrice = $isMonthly
                     ? ((isset($selectedOffer['monthly_price']) && $selectedOffer['monthly_price'] !== null && $selectedOffer['monthly_price'] !== '') ? (float) $selectedOffer['monthly_price'] : null)
@@ -366,6 +369,10 @@ final class CMS_M365LIC_Frontend
                     'category_description' => (string) ($categoryMeta['description'] ?? ''),
                     'provider' => (string) ($selectedOffer['provider'] ?? ''),
                     'focus' => (string) ($selectedOffer['focus'] ?? ''),
+                    'matched_service_labels' => $coverageDetails['matched_service_labels'],
+                    'missing_service_labels' => $coverageDetails['missing_service_labels'],
+                    'strength_note' => $coverageDetails['strength_note'],
+                    'limitation_note' => $coverageDetails['limitation_note'],
                     'unit_price' => $unitPrice,
                     'line_total' => $lineTotal,
                 ];
@@ -400,6 +407,246 @@ final class CMS_M365LIC_Frontend
             ],
             'delta' => ($m365Total !== null && !$euHasMissingPrices) ? round($euTotal - (float) $m365Total, 2) : null,
         ];
+    }
+
+    /**
+     * @param array<int,string> $features
+     * @param array<string,array<string,bool>> $euServices
+     * @return array<int,string>
+     */
+    private function determine_eu_categories_for_requirement(array $features, array $euServices, string $strategy): array
+    {
+        $categories = ['core_workspace' => true];
+        $featureCategories = [];
+
+        foreach ($features as $featureKey) {
+            foreach ($this->map_feature_to_eu_categories($featureKey) as $categoryKey) {
+                $featureCategories[$categoryKey] = true;
+            }
+        }
+
+        if ($strategy !== 'all_in_one') {
+            foreach (array_keys($featureCategories) as $categoryKey) {
+                $categories[$categoryKey] = true;
+            }
+        } else {
+            foreach (array_keys($featureCategories) as $categoryKey) {
+                if (!in_array($categoryKey, ['office_productivity', 'collaboration_intranet'], true)) {
+                    $categories[$categoryKey] = true;
+                }
+            }
+        }
+
+        $serviceDefinitions = CMS_M365LIC_Catalog::eu_service_profiles();
+        foreach ($this->collect_eu_service_state($euServices)['active'] as $serviceKey) {
+            $serviceMeta = $serviceDefinitions[$serviceKey] ?? null;
+            if (!is_array($serviceMeta)) {
+                continue;
+            }
+
+            foreach ((array) ($serviceMeta['categories'] ?? []) as $categoryKey) {
+                $categoryKey = (string) $categoryKey;
+                if ($categoryKey === '') {
+                    continue;
+                }
+
+                if ($strategy === 'all_in_one' && $serviceKey === 'workplace_core' && $categoryKey === 'collaboration_intranet') {
+                    continue;
+                }
+
+                $categories[$categoryKey] = true;
+            }
+        }
+
+        return array_keys($categories);
+    }
+
+    /**
+     * @param array<string,array<string,bool>> $euServices
+     * @return array{current: array<int,string>, required: array<int,string>, active: array<int,string>}
+     */
+    private function collect_eu_service_state(array $euServices): array
+    {
+        $definitions = CMS_M365LIC_Catalog::eu_service_profiles();
+        $current = [];
+        $required = [];
+        $active = [];
+
+        foreach (array_keys($definitions) as $serviceKey) {
+            $serviceState = is_array($euServices[$serviceKey] ?? null) ? $euServices[$serviceKey] : [];
+            $isCurrent = !empty($serviceState['current']);
+            $isRequired = !empty($serviceState['required']);
+
+            if ($isCurrent) {
+                $current[] = $serviceKey;
+            }
+            if ($isRequired) {
+                $required[] = $serviceKey;
+            }
+            if ($isCurrent || $isRequired) {
+                $active[] = $serviceKey;
+            }
+        }
+
+        return [
+            'current' => $current,
+            'required' => $required,
+            'active' => $active,
+        ];
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $offers
+     * @param array{current: array<int,string>, required: array<int,string>, active: array<int,string>} $euServiceState
+     * @return array<string,mixed>|null
+     */
+    private function select_eu_offer_for_category(
+        string $categoryKey,
+        array $offers,
+        string $defaultSlug,
+        array $euServiceState,
+        string $strategy,
+        bool $isMonthly
+    ): ?array {
+        $offers = array_values(array_filter($offers, static fn(mixed $offer): bool => is_array($offer)));
+        if ($offers === []) {
+            return null;
+        }
+
+        usort($offers, function (array $left, array $right) use ($categoryKey, $defaultSlug, $euServiceState, $strategy, $isMonthly): int {
+            $leftScore = $this->score_eu_offer_for_category($left, $categoryKey, $defaultSlug, $euServiceState, $strategy, $isMonthly);
+            $rightScore = $this->score_eu_offer_for_category($right, $categoryKey, $defaultSlug, $euServiceState, $strategy, $isMonthly);
+
+            foreach (['required_matches', 'current_matches', 'default_match'] as $metric) {
+                if ($leftScore[$metric] !== $rightScore[$metric]) {
+                    return $rightScore[$metric] <=> $leftScore[$metric];
+                }
+            }
+
+            if ($leftScore['missing_required'] !== $rightScore['missing_required']) {
+                return $leftScore['missing_required'] <=> $rightScore['missing_required'];
+            }
+
+            if ($leftScore['price_rank'] !== $rightScore['price_rank']) {
+                return $leftScore['price_rank'] <=> $rightScore['price_rank'];
+            }
+
+            return strcmp((string) ($left['provider'] ?? ''), (string) ($right['provider'] ?? ''));
+        });
+
+        return $offers[0] ?? null;
+    }
+
+    /**
+     * @param array<string,mixed> $offer
+     * @param array{current: array<int,string>, required: array<int,string>, active: array<int,string>} $euServiceState
+     * @return array<string,int|float>
+     */
+    private function score_eu_offer_for_category(
+        array $offer,
+        string $categoryKey,
+        string $defaultSlug,
+        array $euServiceState,
+        string $strategy,
+        bool $isMonthly
+    ): array {
+        $profile = $this->resolve_eu_offer_capability_profile($offer);
+        $offerServices = array_values(array_filter(array_map('strval', $profile['service_keys'] ?? [])));
+        $requiredServices = $this->service_keys_for_category($categoryKey, $euServiceState['required']);
+        $currentServices = $this->service_keys_for_category($categoryKey, $euServiceState['current']);
+        $requiredMatches = count(array_intersect($requiredServices, $offerServices));
+        $currentMatches = count(array_intersect($currentServices, $offerServices));
+        $missingRequired = count(array_diff($requiredServices, $offerServices));
+        $price = $isMonthly
+            ? ((isset($offer['monthly_price']) && $offer['monthly_price'] !== null && $offer['monthly_price'] !== '') ? (float) $offer['monthly_price'] : 999999.0)
+            : ((isset($offer['annual_price']) && $offer['annual_price'] !== null && $offer['annual_price'] !== '') ? (float) $offer['annual_price'] : 999999.0);
+
+        if ($strategy === 'all_in_one' && $categoryKey === 'core_workspace' && in_array('workplace_core', $offerServices, true)) {
+            $requiredMatches += 1;
+        }
+
+        return [
+            'required_matches' => $requiredMatches,
+            'current_matches' => $currentMatches,
+            'missing_required' => $missingRequired,
+            'default_match' => (string) ($offer['slug'] ?? '') === $defaultSlug ? 1 : 0,
+            'price_rank' => $price,
+        ];
+    }
+
+    /**
+     * @param array<string,mixed> $offer
+     * @return array<string,mixed>
+     */
+    private function resolve_eu_offer_capability_profile(array $offer): array
+    {
+        $profiles = CMS_M365LIC_Catalog::eu_offer_capability_profiles();
+        $providerKey = $this->normalize_provider_lookup_key((string) ($offer['provider'] ?? ''));
+
+        return is_array($profiles[$providerKey] ?? null) ? $profiles[$providerKey] : [];
+    }
+
+    private function normalize_provider_lookup_key(string $provider): string
+    {
+        return trim(mb_strtolower($provider));
+    }
+
+    /**
+     * @param array{current: array<int,string>, required: array<int,string>, active: array<int,string>} $euServiceState
+     * @return array<string,mixed>
+     */
+    private function build_eu_offer_coverage_details(string $categoryKey, array $offer, array $euServiceState): array
+    {
+        $serviceDefinitions = CMS_M365LIC_Catalog::eu_service_profiles();
+        $profile = $this->resolve_eu_offer_capability_profile($offer);
+        $offerServices = array_values(array_filter(array_map('strval', $profile['service_keys'] ?? [])));
+        $relevantRequired = $this->service_keys_for_category($categoryKey, $euServiceState['required']);
+        $matchedServiceLabels = [];
+        $missingServiceLabels = [];
+
+        foreach ($relevantRequired as $serviceKey) {
+            $label = (string) (($serviceDefinitions[$serviceKey]['label'] ?? $serviceKey));
+            if (in_array($serviceKey, $offerServices, true)) {
+                $matchedServiceLabels[] = $label;
+            } else {
+                $missingServiceLabels[] = $label;
+            }
+        }
+
+        $limitationNote = trim((string) ($profile['limitation_note'] ?? ''));
+        if ($missingServiceLabels !== []) {
+            $generatedLimitation = 'Zusatzbedarf offen bei: ' . implode(', ', $missingServiceLabels) . '.';
+            $limitationNote = $limitationNote !== '' ? $limitationNote . ' ' . $generatedLimitation : $generatedLimitation;
+        }
+
+        return [
+            'matched_service_labels' => $matchedServiceLabels,
+            'missing_service_labels' => $missingServiceLabels,
+            'strength_note' => trim((string) ($profile['strength_note'] ?? '')),
+            'limitation_note' => $limitationNote,
+        ];
+    }
+
+    /**
+     * @param array<int,string> $serviceKeys
+     * @return array<int,string>
+     */
+    private function service_keys_for_category(string $categoryKey, array $serviceKeys): array
+    {
+        $definitions = CMS_M365LIC_Catalog::eu_service_profiles();
+        $matches = [];
+
+        foreach ($serviceKeys as $serviceKey) {
+            $categories = is_array($definitions[$serviceKey]['categories'] ?? null)
+                ? $definitions[$serviceKey]['categories']
+                : [];
+
+            if (in_array($categoryKey, array_map('strval', $categories), true)) {
+                $matches[] = $serviceKey;
+            }
+        }
+
+        return array_values(array_unique($matches));
     }
 
     /**
@@ -578,7 +825,7 @@ final class CMS_M365LIC_Frontend
 
         foreach ($requirements as $index => $requirement) {
             $label = trim((string) ($requirement['label'] ?? ''));
-            $quantity = max(1, (int) ($requirement['quantity'] ?? 1));
+            $quantity = max(0, (int) ($requirement['quantity'] ?? 1));
             $features = array_values(array_filter(array_map('strval', $requirement['features'] ?? [])));
             $requiredCategories = $this->determine_eu_categories_for_features($features, 'best_of_breed');
             $categoryRows = [];
@@ -792,6 +1039,24 @@ final class CMS_M365LIC_Frontend
         echo '<script src="'
             . htmlspecialchars(CMS_M365LIC_PLUGIN_URL . 'assets/js/m365lic-public.js', ENT_QUOTES, 'UTF-8')
             . '?v=' . filemtime($js) . '" defer></script>' . "\n";
+    }
+
+    public function filter_body_class(mixed $bodyClass): string
+    {
+        $classes = trim((string) $bodyClass);
+
+        if (!$this->is_calculator_request()) {
+            return $classes;
+        }
+
+        $classList = preg_split('/\s+/', $classes, -1, PREG_SPLIT_NO_EMPTY);
+        if (!is_array($classList)) {
+            $classList = [];
+        }
+
+        $classList[] = 'm365lic-theme-embed';
+
+        return implode(' ', array_values(array_unique($classList)));
     }
 
     private function is_calculator_request(): bool
@@ -1171,6 +1436,7 @@ final class CMS_M365LIC_Frontend
     private function normalize_requirements(array $requirements): array
     {
         $validFeatures = array_fill_keys(array_keys(CMS_M365LIC_Catalog::feature_definitions()), true);
+        $validServiceProfiles = array_fill_keys(array_keys(CMS_M365LIC_Catalog::eu_service_profiles()), true);
         $normalized = [];
         foreach ($requirements as $requirement) {
             if (!is_array($requirement)) {
@@ -1198,15 +1464,37 @@ final class CMS_M365LIC_Frontend
             }
 
             $features = array_values(array_unique(array_filter(array_map('strval', $features))));
+            $euServices = [];
+            $rawEuServices = $requirement['eu_services'] ?? [];
+            if (is_array($rawEuServices)) {
+                foreach ($rawEuServices as $serviceKey => $serviceState) {
+                    $normalizedServiceKey = (string) $serviceKey;
+                    if (!isset($validServiceProfiles[$normalizedServiceKey]) || !is_array($serviceState)) {
+                        continue;
+                    }
+
+                    $isCurrent = !empty($serviceState['current']);
+                    $isRequired = !empty($serviceState['required']);
+                    if (!$isCurrent && !$isRequired) {
+                        continue;
+                    }
+
+                    $euServices[$normalizedServiceKey] = [
+                        'current' => $isCurrent,
+                        'required' => $isRequired,
+                    ];
+                }
+            }
             $label = mb_substr(trim((string) ($requirement['label'] ?? '')), 0, 120);
             $normalized[] = [
-                'quantity' => max(1, (int) ($requirement['quantity'] ?? 1)),
+                'quantity' => max(0, (int) ($requirement['quantity'] ?? 1)),
                 'label' => $label !== '' ? $label : 'Bedarfsgruppe',
                 'audience' => in_array((string) ($requirement['audience'] ?? 'knowledge'), ['knowledge', 'frontline'], true)
                     ? (string) $requirement['audience']
                     : 'knowledge',
                 'preset' => (string) ($requirement['preset'] ?? ''),
                 'features' => $features,
+                'eu_services' => $euServices,
             ];
         }
 
@@ -1242,6 +1530,7 @@ final class CMS_M365LIC_Frontend
             'audience' => 'knowledge',
             'preset' => 'knowledge_worker',
             'features' => ['mail', 'teams', 'office_web', 'office_desktop', 'onedrive', 'sharepoint', 'forms', 'stream', 'viva_engage'],
+            'eu_services' => [],
         ];
     }
 }

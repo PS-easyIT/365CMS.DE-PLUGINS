@@ -491,6 +491,7 @@ class CMS_Importer_Admin
             'import_drafts'       => isset($_POST['import_drafts']),
             'import_trashed'      => isset($_POST['import_trashed']),
             'import_custom_types' => isset($_POST['import_custom_types']),
+            'import_only_en'      => isset($_POST['import_only_en']),
             'generate_report'     => isset($_POST['generate_report']),
             'download_images'     => isset($_POST['download_images']),
             'convert_table_shortcodes' => isset($_POST['convert_table_shortcodes']),
@@ -1774,9 +1775,17 @@ class CMS_Importer_Admin
         $hasTitleEn = $this->has_column($db, $p . $table, 'title_en');
 
         if ($desiredSlug !== '' && $this->has_table($db, $p . $table)) {
+            $slugCondition = 'slug = ?';
+            $params = [$desiredSlug];
+
+            if ($this->has_column($db, $p . $table, 'slug_en')) {
+                $slugCondition .= ' OR slug_en = ?';
+                $params[] = $desiredSlug;
+            }
+
             $row = $db->get_row(
-                "SELECT id, slug, created_at, published_at FROM {$p}{$table} WHERE slug = ? LIMIT 1",
-                [$desiredSlug]
+                "SELECT id, slug, created_at, published_at FROM {$p}{$table} WHERE {$slugCondition} LIMIT 1",
+                $params
             );
             if ($row !== null) {
                 return (array) $row;

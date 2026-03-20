@@ -212,6 +212,7 @@ class CMS_Importer_Service
             'import_drafts'       => true,
             'import_trashed'      => false,
             'import_custom_types' => true,
+            'import_only_en'      => false,
             'generate_report'     => true,
             'download_images'     => true,
             'convert_table_shortcodes' => true,
@@ -315,6 +316,7 @@ class CMS_Importer_Service
             'import_drafts'       => true,
             'import_trashed'      => false,
             'import_custom_types' => true,
+            'import_only_en'      => false,
             'generate_report'     => true,
             'download_images'     => true,
             'convert_table_shortcodes' => true,
@@ -424,8 +426,8 @@ class CMS_Importer_Service
         $sourceReference = $this->resolve_content_source_reference($item);
         $locale = $this->resolve_item_locale($item);
 
-        if ($this->should_ignore_item_by_en_slug($item)) {
-            $this->skip_item('Englische /en/-Slugs werden ignoriert');
+        if ($this->should_skip_item_by_locale_filter($item)) {
+            $this->skip_item($this->get_locale_filter_skip_reason($item));
             return;
         }
 
@@ -438,70 +440,31 @@ class CMS_Importer_Service
             return;
         }
 
+        $base_slug = $this->resolve_target_slug($item, (string) ($item['title'] ?? ''));
+
+        if ($locale !== 'de') {
+            $localizedTarget = $this->find_preferred_localized_content_target($db, $p, 'post', $sourceType, $sourceReference, $base_slug);
+            if ($localizedTarget !== null) {
+                $this->import_into_localized_post($db, $p, $item, $sourceType, $sourceReference, $localizedTarget, $base_slug, $locale, $isCustomType);
+                return;
+            }
+        }
+
         $existingSourceMapping = $this->find_existing_mapping_by_wp_id($db, $p, $sourceType, (int) ($item['wp_id'] ?? 0), 'post', true);
+        if ($this->should_ignore_existing_source_mapping($existingSourceMapping, $base_slug, $sourceReference)) {
+            $existingSourceMapping = null;
+        }
+
         if ($this->options['skip_duplicates'] && $existingSourceMapping !== null) {
+            if ($locale !== 'de') {
+                $this->import_into_localized_post($db, $p, $item, $sourceType, $sourceReference, $existingSourceMapping, $base_slug, $locale, $isCustomType);
+                return;
+            }
+
             $this->import_comments_for_post($db, $p, $item, (int) ($existingSourceMapping['target_id'] ?? 0), (string) ($existingSourceMapping['target_slug'] ?? ''), (string) ($item['date'] ?? ''));
             $this->skip_item('Bereits per Import-Mapping vorhanden');
             return;
         }
-
-        if ($locale !== 'de') {
-            $localizedTarget = $this->find_localized_content_target(
-                $db,
-                $p,
-                'post',
-                $sourceType,
-                $sourceReference,
-                $this->resolve_import_slug($item, (string) ($item['title'] ?? ''))
-            );
-            if ($localizedTarget !== null) {
-                $this->ensure_localized_content_columns($db, $p, 'post');
-                $prepared = $this->prepare_content_payload($db, $p, $item, 'post', (string) ($localizedTarget['target_slug'] ?? $this->resolve_import_slug($item, (string) ($item['title'] ?? ''))));
-
-                try {
-                    $db->execute(
-                        "UPDATE {$p}posts
-                         SET title_en = ?, content_en = ?, excerpt_en = ?, updated_at = NOW(),
-                             featured_image = CASE WHEN (featured_image IS NULL OR featured_image = '') AND ? <> '' THEN ? ELSE featured_image END
-                         WHERE id = ?",
-                        [
-                            $this->sanitize_title((string) ($item['title'] ?? '')),
-                            (string) ($prepared['content'] ?? ''),
-                            (string) ($prepared['excerpt'] ?? ''),
-                            (string) ($prepared['featured_image'] ?? ''),
-                            (string) ($prepared['featured_image'] ?? ''),
-                            (int) $localizedTarget['target_id'],
-                        ]
-                    );
-
-                    $this->imported++;
-                    $this->import_breakdown[$isCustomType ? 'others' : 'posts']++;
-                    $this->store_import_item($db, $p, [
-                        'log_id'           => $this->log_id,
-                        'source_type'      => $sourceType,
-                        'source_wp_id'     => (int) ($item['wp_id'] ?? 0),
-                        'source_reference' => $sourceReference,
-                        'source_slug'      => (string) ($item['slug'] ?? ''),
-                        'source_url'       => (string) ($item['link'] ?? ''),
-                        'target_type'      => 'post',
-                        'target_id'        => (int) $localizedTarget['target_id'],
-                        'target_created'   => 0,
-                        'target_slug'      => (string) ($localizedTarget['target_slug'] ?? ''),
-                        'target_url'       => $this->build_target_url('post', (string) ($localizedTarget['target_slug'] ?? ''), (int) $localizedTarget['target_id'], (string) ($item['date'] ?? '')),
-                    ]);
-                    $this->collect_taxonomy_fallback_meta($item, 'post');
-                    $this->collect_unknown_meta($item);
-                    $this->import_comments_for_post($db, $p, $item, (int) $localizedTarget['target_id'], (string) ($localizedTarget['target_slug'] ?? ''), (string) ($item['date'] ?? ''));
-                    return;
-                } catch (\Throwable $e) {
-                    $this->errors++;
-                    error_log('CMS_Importer: EN-Post-Merge fehlgeschlagen: ' . $e->getMessage() . ' – Titel: ' . ($item['title'] ?? '')); 
-                    return;
-                }
-            }
-        }
-
-        $base_slug = $this->resolve_import_slug($item, (string) ($item['title'] ?? ''));
 
         if ($this->options['skip_duplicates']) {
             $existingPostId = (int) ($db->get_var(
@@ -509,6 +472,14 @@ class CMS_Importer_Service
                 [$base_slug]
             ) ?? 0);
             if ($existingPostId > 0) {
+                if ($locale !== 'de') {
+                    $this->import_into_localized_post($db, $p, $item, $sourceType, $sourceReference, [
+                        'target_id' => $existingPostId,
+                        'target_slug' => $base_slug,
+                    ], $base_slug, $locale, $isCustomType);
+                    return;
+                }
+
                 $this->store_import_item($db, $p, [
                     'log_id'           => $this->log_id,
                     'source_type'      => $sourceType,
@@ -520,7 +491,7 @@ class CMS_Importer_Service
                     'target_id'        => $existingPostId,
                     'target_created'   => 0,
                     'target_slug'      => $base_slug,
-                    'target_url'       => $this->build_target_url('post', $base_slug, $existingPostId, (string) ($item['date'] ?? '')),
+                    'target_url'       => $this->build_target_url('post', $base_slug, $existingPostId, (string) ($item['date'] ?? ''), $locale),
                 ]);
                 $this->import_comments_for_post($db, $p, $item, $existingPostId, $base_slug, (string) ($item['date'] ?? ''));
                 $this->skip_item('Slug bereits vorhanden');
@@ -542,13 +513,14 @@ class CMS_Importer_Service
         $publishedAt = $status === 'published' ? $createdAt : null;
 
         $data = [
-            'title'            => $this->sanitize_title($item['title']),
-            'title_en'         => $locale === 'en' ? $this->sanitize_title((string) ($item['title'] ?? '')) : '',
+            'title'            => $locale === 'de' ? $this->sanitize_title($item['title']) : '',
+            'title_en'         => $locale !== 'de' ? $this->sanitize_title((string) ($item['title'] ?? '')) : '',
             'slug'             => $slug,
-            'content'          => $locale === 'en' ? '' : $prepared['content'],
-            'content_en'       => $locale === 'en' ? $prepared['content'] : '',
-            'excerpt'          => $locale === 'en' ? '' : $prepared['excerpt'],
-            'excerpt_en'       => $locale === 'en' ? $prepared['excerpt'] : '',
+            'slug_en'          => $locale !== 'de' ? $slug : null,
+            'content'          => $locale === 'de' ? $prepared['content'] : '',
+            'content_en'       => $locale !== 'de' ? $prepared['content'] : '',
+            'excerpt'          => $locale === 'de' ? $prepared['excerpt'] : '',
+            'excerpt_en'       => $locale !== 'de' ? $prepared['excerpt'] : '',
             'featured_image'   => $prepared['featured_image'],
             'status'           => $status,
             'author_id'        => $author_id,
@@ -586,11 +558,11 @@ class CMS_Importer_Service
                 'target_id'        => $post_id,
                 'target_created'   => 1,
                 'target_slug'      => $slug,
-                'target_url'       => $this->build_target_url('post', $slug, $post_id, (string) ($item['date'] ?? '')),
+                'target_url'       => $this->build_target_url('post', $slug, $post_id, (string) ($item['date'] ?? ''), $locale),
             ]);
             $this->collect_taxonomy_fallback_meta($item, 'post');
             $this->collect_unknown_meta($item);
-            $this->import_comments_for_post($db, $p, $item, $post_id, $slug, (string) ($item['date'] ?? ''));
+            $this->import_comments_for_post($db, $p, $item, $post_id, $slug, (string) ($item['date'] ?? ''), $locale);
 
         } catch (\Exception $e) {
             $this->errors++;
@@ -604,8 +576,8 @@ class CMS_Importer_Service
         $sourceReference = $this->resolve_content_source_reference($item);
         $locale = $this->resolve_item_locale($item);
 
-        if ($this->should_ignore_item_by_en_slug($item)) {
-            $this->skip_item('Englische /en/-Slugs werden ignoriert');
+        if ($this->should_skip_item_by_locale_filter($item)) {
+            $this->skip_item($this->get_locale_filter_skip_reason($item));
             return;
         }
 
@@ -618,69 +590,31 @@ class CMS_Importer_Service
             return;
         }
 
+        $base_slug = $this->resolve_target_slug($item, (string) ($item['title'] ?? ''));
+
+        if ($locale !== 'de') {
+            $localizedTarget = $this->find_preferred_localized_content_target($db, $p, 'page', 'page', $sourceReference, $base_slug);
+            if ($localizedTarget !== null) {
+                $this->import_into_localized_page($db, $p, $item, $sourceReference, $localizedTarget, $base_slug, $locale);
+                return;
+            }
+        }
+
         $existingSourceMapping = $this->find_existing_mapping_by_wp_id($db, $p, 'page', (int) ($item['wp_id'] ?? 0), 'page', true);
+        if ($this->should_ignore_existing_source_mapping($existingSourceMapping, $base_slug, $sourceReference)) {
+            $existingSourceMapping = null;
+        }
+
         if ($this->options['skip_duplicates'] && $existingSourceMapping !== null) {
+            if ($locale !== 'de') {
+                $this->import_into_localized_page($db, $p, $item, $sourceReference, $existingSourceMapping, $base_slug, $locale);
+                return;
+            }
+
             $this->skip_item_comments($item);
             $this->skip_item('Bereits per Import-Mapping vorhanden');
             return;
         }
-
-        if ($locale !== 'de') {
-            $localizedTarget = $this->find_localized_content_target(
-                $db,
-                $p,
-                'page',
-                'page',
-                $sourceReference,
-                $this->resolve_import_slug($item, (string) ($item['title'] ?? ''))
-            );
-            if ($localizedTarget !== null) {
-                $this->ensure_localized_content_columns($db, $p, 'page');
-                $prepared = $this->prepare_content_payload($db, $p, $item, 'page', (string) ($localizedTarget['target_slug'] ?? $this->resolve_import_slug($item, (string) ($item['title'] ?? ''))));
-
-                try {
-                    $db->execute(
-                        "UPDATE {$p}pages
-                         SET title_en = ?, content_en = ?, updated_at = NOW(),
-                             featured_image = CASE WHEN (featured_image IS NULL OR featured_image = '') AND ? <> '' THEN ? ELSE featured_image END
-                         WHERE id = ?",
-                        [
-                            $this->sanitize_title((string) ($item['title'] ?? '')),
-                            (string) ($prepared['content'] ?? ''),
-                            (string) ($prepared['featured_image'] ?? ''),
-                            (string) ($prepared['featured_image'] ?? ''),
-                            (int) $localizedTarget['target_id'],
-                        ]
-                    );
-
-                    $this->imported++;
-                    $this->import_breakdown['pages']++;
-                    $this->store_import_item($db, $p, [
-                        'log_id'           => $this->log_id,
-                        'source_type'      => 'page',
-                        'source_wp_id'     => (int) ($item['wp_id'] ?? 0),
-                        'source_reference' => $sourceReference,
-                        'source_slug'      => (string) ($item['slug'] ?? ''),
-                        'source_url'       => (string) ($item['link'] ?? ''),
-                        'target_type'      => 'page',
-                        'target_id'        => (int) $localizedTarget['target_id'],
-                        'target_created'   => 0,
-                        'target_slug'      => (string) ($localizedTarget['target_slug'] ?? ''),
-                        'target_url'       => $this->build_target_url('page', (string) ($localizedTarget['target_slug'] ?? ''), (int) $localizedTarget['target_id'], (string) ($item['date'] ?? '')),
-                    ]);
-                    $this->collect_taxonomy_fallback_meta($item, 'page');
-                    $this->collect_unknown_meta($item);
-                    $this->skip_item_comments($item);
-                    return;
-                } catch (\Throwable $e) {
-                    $this->errors++;
-                    error_log('CMS_Importer: EN-Page-Merge fehlgeschlagen: ' . $e->getMessage() . ' – Titel: ' . ($item['title'] ?? ''));
-                    return;
-                }
-            }
-        }
-
-        $base_slug = $this->resolve_import_slug($item, (string) ($item['title'] ?? ''));
 
         if ($this->options['skip_duplicates']) {
             $existingPageId = (int) ($db->get_var(
@@ -688,6 +622,14 @@ class CMS_Importer_Service
                 [$base_slug]
             ) ?? 0);
             if ($existingPageId > 0) {
+                if ($locale !== 'de') {
+                    $this->import_into_localized_page($db, $p, $item, $sourceReference, [
+                        'target_id' => $existingPageId,
+                        'target_slug' => $base_slug,
+                    ], $base_slug, $locale);
+                    return;
+                }
+
                 $this->store_import_item($db, $p, [
                     'log_id'           => $this->log_id,
                     'source_type'      => 'page',
@@ -699,7 +641,7 @@ class CMS_Importer_Service
                     'target_id'        => $existingPageId,
                     'target_created'   => 0,
                     'target_slug'      => $base_slug,
-                    'target_url'       => $this->build_target_url('page', $base_slug, $existingPageId, (string) ($item['date'] ?? '')),
+                    'target_url'       => $this->build_target_url('page', $base_slug, $existingPageId, (string) ($item['date'] ?? ''), $locale),
                 ]);
                 $this->skip_item_comments($item);
                 $this->skip_item('Slug bereits vorhanden');
@@ -718,11 +660,12 @@ class CMS_Importer_Service
 
         $data = [
             'slug'         => $slug,
-            'title'        => $locale === 'en' ? '' : $this->sanitize_title($item['title']),
-            'title_en'     => $locale === 'en' ? $this->sanitize_title((string) ($item['title'] ?? '')) : '',
-            'content'      => $locale === 'en' ? '' : $prepared['content'],
-            'content_en'   => $locale === 'en' ? $prepared['content'] : '',
-            'excerpt'      => $prepared['excerpt'],
+            'slug_en'      => $locale !== 'de' ? $slug : null,
+            'title'        => $locale === 'de' ? $this->sanitize_title($item['title']) : '',
+            'title_en'     => $locale !== 'de' ? $this->sanitize_title((string) ($item['title'] ?? '')) : '',
+            'content'      => $locale === 'de' ? $prepared['content'] : '',
+            'content_en'   => $locale !== 'de' ? $prepared['content'] : '',
+            'excerpt'      => $locale === 'de' ? $prepared['excerpt'] : '',
             'status'       => $status,
             'hide_title'   => 0,
             'featured_image' => $prepared['featured_image'],
@@ -755,7 +698,7 @@ class CMS_Importer_Service
                 'target_id'        => (int) $page_id,
                 'target_created'   => 1,
                 'target_slug'      => $slug,
-                'target_url'       => $this->build_target_url('page', $slug, (int) $page_id, (string) ($item['date'] ?? '')),
+                'target_url'       => $this->build_target_url('page', $slug, (int) $page_id, (string) ($item['date'] ?? ''), $locale),
             ]);
             $this->collect_taxonomy_fallback_meta($item, 'page');
             $this->collect_unknown_meta($item);
@@ -767,7 +710,7 @@ class CMS_Importer_Service
         }
     }
 
-    private function import_comments_for_post(\CMS\Database $db, string $p, array $item, int $targetPostId, string $targetSlug = '', string $targetDate = ''): void
+    private function import_comments_for_post(\CMS\Database $db, string $p, array $item, int $targetPostId, string $targetSlug = '', string $targetDate = '', string $targetLocale = 'de'): void
     {
         $comments = $this->get_comment_candidates($item);
         if ($comments === []) {
@@ -775,7 +718,7 @@ class CMS_Importer_Service
         }
 
         $targetUrl = $targetSlug !== ''
-            ? $this->build_target_url('post', $targetSlug, $targetPostId, $targetDate)
+            ? $this->build_target_url('post', $targetSlug, $targetPostId, $targetDate, $targetLocale)
             : null;
 
         foreach ($comments as $comment) {
@@ -3039,8 +2982,8 @@ class CMS_Importer_Service
     private function resolve_mapping_target(\CMS\Database $db, string $p, string $targetType, int $targetId, string $targetSlug): ?array
     {
         return match ($targetType) {
-            'post' => $this->resolve_content_target($db, $p . 'posts', 'slug', $targetId, $targetSlug),
-            'page' => $this->resolve_content_target($db, $p . 'pages', 'slug', $targetId, $targetSlug),
+            'post' => $this->resolve_content_target($db, $p . 'posts', 'slug', $targetId, $targetSlug, 'slug_en'),
+            'page' => $this->resolve_content_target($db, $p . 'pages', 'slug', $targetId, $targetSlug, 'slug_en'),
             'comment' => $this->resolve_comment_target($db, $p, $targetId),
             'site_table' => $this->resolve_site_table_target($db, $p, $targetId, $targetSlug),
             'redirect' => $this->resolve_redirect_target($db, $p, $targetId, $targetSlug),
@@ -3051,35 +2994,101 @@ class CMS_Importer_Service
     /**
      * @return array{target_id:int,target_slug:string}|null
      */
-    private function resolve_content_target(\CMS\Database $db, string $table, string $slugColumn, int $targetId, string $targetSlug): ?array
+    private function resolve_content_target(\CMS\Database $db, string $table, string $slugColumn, int $targetId, string $targetSlug, ?string $localizedSlugColumn = null): ?array
     {
+        $localizedSlugColumn = $this->normalize_optional_slug_column($db, $table, $localizedSlugColumn);
+        $slugSelect = $this->build_content_target_slug_select($slugColumn, $localizedSlugColumn);
+
         if ($targetId > 0) {
             $row = $db->get_row(
-                "SELECT id, {$slugColumn} AS target_slug FROM {$table} WHERE id = ? LIMIT 1",
+                "SELECT {$slugSelect} FROM {$table} WHERE id = ? LIMIT 1",
                 [$targetId]
             );
             if ($row !== null) {
+                $resolvedTargetSlug = $this->resolve_content_target_slug_from_row($row, $slugColumn, $localizedSlugColumn, $targetSlug);
                 return [
                     'target_id' => (int) ($row->id ?? 0),
-                    'target_slug' => (string) ($row->target_slug ?? ''),
+                    'target_slug' => $resolvedTargetSlug,
                 ];
             }
         }
 
         if ($targetSlug !== '') {
-            $row = $db->get_row(
-                "SELECT id, {$slugColumn} AS target_slug FROM {$table} WHERE {$slugColumn} = ? LIMIT 1",
-                [$targetSlug]
-            );
+            $query = "SELECT {$slugSelect} FROM {$table} WHERE {$slugColumn} = ?";
+            $params = [$targetSlug];
+
+            if ($localizedSlugColumn !== null) {
+                $query .= " OR {$localizedSlugColumn} = ?";
+                $params[] = $targetSlug;
+            }
+
+            $query .= ' LIMIT 1';
+
+            $row = $db->get_row($query, $params);
             if ($row !== null) {
+                $resolvedTargetSlug = $this->resolve_content_target_slug_from_row($row, $slugColumn, $localizedSlugColumn, $targetSlug);
                 return [
                     'target_id' => (int) ($row->id ?? 0),
-                    'target_slug' => (string) ($row->target_slug ?? ''),
+                    'target_slug' => $resolvedTargetSlug,
                 ];
             }
         }
 
         return null;
+    }
+
+    private function normalize_optional_slug_column(\CMS\Database $db, string $table, ?string $localizedSlugColumn): ?string
+    {
+        $localizedSlugColumn = trim((string) $localizedSlugColumn);
+        if ($localizedSlugColumn === '') {
+            return null;
+        }
+
+        try {
+            $stmt = $db->query("SHOW COLUMNS FROM {$table} LIKE '{$localizedSlugColumn}'");
+            if ($stmt instanceof \PDOStatement && $stmt->fetch()) {
+                return $localizedSlugColumn;
+            }
+        } catch (\Throwable) {
+        }
+
+        return null;
+    }
+
+    private function build_content_target_slug_select(string $slugColumn, ?string $localizedSlugColumn = null): string
+    {
+        $select = "id, {$slugColumn} AS target_slug";
+
+        if ($localizedSlugColumn !== null) {
+            $select .= ", {$localizedSlugColumn} AS target_localized_slug";
+        }
+
+        return $select;
+    }
+
+    private function resolve_content_target_slug_from_row(object $row, string $slugColumn, ?string $localizedSlugColumn, string $desiredSlug = ''): string
+    {
+        $primarySlug = trim((string) ($row->target_slug ?? $row->{$slugColumn} ?? ''));
+        $localizedSlug = $localizedSlugColumn !== null
+            ? trim((string) ($row->target_localized_slug ?? $row->{$localizedSlugColumn} ?? ''))
+            : '';
+        $desiredSlug = trim($desiredSlug);
+
+        if ($desiredSlug !== '') {
+            if ($localizedSlug !== '' && strcasecmp($localizedSlug, $desiredSlug) === 0) {
+                return $localizedSlug;
+            }
+
+            if ($primarySlug !== '' && strcasecmp($primarySlug, $desiredSlug) === 0) {
+                return $primarySlug;
+            }
+        }
+
+        if ($primarySlug !== '') {
+            return $primarySlug;
+        }
+
+        return $localizedSlug;
     }
 
     /**
@@ -3441,7 +3450,7 @@ class CMS_Importer_Service
         }
     }
 
-    private function build_target_url(string $targetType, string $slug, int $targetId, string $date = ''): ?string
+    private function build_target_url(string $targetType, string $slug, int $targetId, string $date = '', string $locale = 'de'): ?string
     {
         if (!defined('SITE_URL')) {
             return null;
@@ -3449,9 +3458,11 @@ class CMS_Importer_Service
 
         return match ($targetType) {
             'post' => class_exists('CMS\\Services\\PermalinkService')
-                ? \CMS\Services\PermalinkService::getInstance()->buildPostUrlFromValues($slug, $date, $date)
+                ? \CMS\Services\PermalinkService::getInstance()->buildPostUrlFromValues($slug, $date, $date, $locale)
                 : rtrim(SITE_URL, '/') . '/blog/' . ltrim($slug, '/'),
-            'page' => rtrim(SITE_URL, '/') . '/' . ltrim($slug, '/'),
+            'page' => class_exists('CMS\\Services\\ContentLocalizationService')
+                ? rtrim(SITE_URL, '/') . \CMS\Services\ContentLocalizationService::getInstance()->buildLocalizedPath('/' . ltrim($slug, '/'), $locale)
+                : rtrim(SITE_URL, '/') . '/' . ltrim($slug, '/'),
             'site_table' => '[site-table id="' . $targetId . '"]',
             default => null,
         };
@@ -3748,6 +3759,217 @@ class CMS_Importer_Service
         return 'de';
     }
 
+    private function should_skip_item_by_locale_filter(array $item): bool
+    {
+        if (empty($this->options['import_only_en'])) {
+            return false;
+        }
+
+        return $this->resolve_item_locale($item) !== 'en';
+    }
+
+    private function get_locale_filter_skip_reason(array $item): string
+    {
+        if (!empty($this->options['import_only_en']) && $this->resolve_item_locale($item) !== 'en') {
+            return 'Nur /en/-Inhalte ausgewählt';
+        }
+
+        return 'Element entspricht nicht dem aktiven Sprachfilter';
+    }
+
+    private function is_locale_filter_skip(string $action, string $reason, string $locale): bool
+    {
+        return $action === 'skip'
+            && $reason === 'Nur /en/-Inhalte ausgewählt'
+            && strtolower(trim($locale)) !== 'en';
+    }
+
+    private function build_locale_filter_skip_hint(string $locale): string
+    {
+        $locale = strtolower(trim($locale));
+        $label = $locale !== '' ? strtoupper($locale) : 'DE';
+
+        return 'Kein Importziel – vom /en/-Filter ausgeschlossen (erkannte Sprache: ' . $label . ')';
+    }
+
+    private function resolve_target_slug(array $item, string $fallbackTitle): string
+    {
+        return $this->resolve_import_slug($item, $fallbackTitle);
+    }
+
+    /**
+     * @return array{target_id:int,target_slug:string}|null
+     */
+    private function find_preferred_localized_content_target(\CMS\Database $db, string $p, string $targetType, string $sourceType, ?string $sourceReference, string $desiredSlug): ?array
+    {
+        if ($sourceReference !== null && $sourceReference !== '') {
+            $mapping = $this->find_existing_mapping_by_reference($db, $p, $sourceType, $sourceReference, $targetType, true);
+            if ($mapping !== null && !$this->should_ignore_existing_source_mapping($mapping, $desiredSlug, $sourceReference)) {
+                return $mapping;
+            }
+        }
+
+        foreach ($this->build_localized_merge_slug_candidates((string) ($sourceReference ?? ''), $desiredSlug) as $candidateSlug) {
+            $resolved = $this->resolve_mapping_target($db, $p, $targetType, 0, $candidateSlug);
+            if ($resolved !== null) {
+                return $resolved;
+            }
+        }
+
+        return null;
+    }
+
+    private function should_ignore_existing_source_mapping(?array $mapping, string $desiredSlug, ?string $sourceReference = null): bool
+    {
+        if (!is_array($mapping)) {
+            return false;
+        }
+
+        $mappedSlug = trim((string) ($mapping['target_slug'] ?? ''));
+        $desiredSlug = trim($desiredSlug);
+
+        if ($mappedSlug === '' || $desiredSlug === '' || strcasecmp($mappedSlug, $desiredSlug) === 0) {
+            return false;
+        }
+
+        foreach ($this->build_localized_merge_slug_candidates((string) ($sourceReference ?? ''), $mappedSlug) as $candidate) {
+            if (strcasecmp($candidate, $desiredSlug) === 0) {
+                return true;
+            }
+        }
+
+        foreach ($this->build_localized_merge_slug_candidates((string) ($sourceReference ?? ''), $desiredSlug) as $candidate) {
+            if (strcasecmp($candidate, $mappedSlug) === 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array{target_id:int,target_slug:string} $localizedTarget
+     */
+    private function import_into_localized_post(\CMS\Database $db, string $p, array $item, string $sourceType, ?string $sourceReference, array $localizedTarget, string $baseSlug, string $locale, bool $isCustomType): void
+    {
+        $targetId = (int) ($localizedTarget['target_id'] ?? 0);
+        $targetSlug = trim((string) ($localizedTarget['target_slug'] ?? $baseSlug));
+        if ($targetId <= 0 || $targetSlug === '') {
+            return;
+        }
+
+        $prepared = $this->prepare_content_payload($db, $p, $item, 'post', $targetSlug);
+        $updatedAt = $this->resolve_original_updated_at($item, $this->resolve_original_created_at($item));
+
+        try {
+            $this->ensure_localized_content_columns($db, $p, 'post');
+            $updated = $db->update('posts', [
+                'slug_en' => $baseSlug,
+                'title_en' => $this->sanitize_title((string) ($item['title'] ?? '')),
+                'content_en' => $prepared['content'],
+                'excerpt_en' => $prepared['excerpt'],
+                'updated_at' => $updatedAt,
+            ], [
+                'id' => $targetId,
+            ]);
+
+            if ($updated === false) {
+                throw new \RuntimeException($db->last_error !== '' ? $db->last_error : 'Update lokalisierter Post-Inhalte fehlgeschlagen.');
+            }
+
+            $this->imported++;
+            $this->import_breakdown[$isCustomType ? 'others' : 'posts']++;
+            $this->store_import_item($db, $p, [
+                'log_id' => $this->log_id,
+                'source_type' => $sourceType,
+                'source_wp_id' => (int) ($item['wp_id'] ?? 0),
+                'source_reference' => $sourceReference,
+                'source_slug' => (string) ($item['slug'] ?? ''),
+                'source_url' => (string) ($item['link'] ?? ''),
+                'target_type' => 'post',
+                'target_id' => $targetId,
+                'target_created' => 0,
+                'target_slug' => $baseSlug,
+                'target_url' => $this->build_target_url('post', $baseSlug, $targetId, (string) ($item['date'] ?? ''), $locale),
+            ]);
+            $this->collect_taxonomy_fallback_meta($item, 'post');
+            $this->collect_unknown_meta($item);
+            $this->import_comments_for_post($db, $p, $item, $targetId, $baseSlug, (string) ($item['date'] ?? ''), $locale);
+        } catch (\Throwable $e) {
+            $this->errors++;
+            error_log('CMS_Importer: Lokalisierter Post-Import fehlgeschlagen: ' . $e->getMessage() . ' – Titel: ' . (string) ($item['title'] ?? ''));
+        }
+    }
+
+    /**
+     * @param array{target_id:int,target_slug:string} $localizedTarget
+     */
+    private function import_into_localized_page(\CMS\Database $db, string $p, array $item, ?string $sourceReference, array $localizedTarget, string $baseSlug, string $locale): void
+    {
+        $targetId = (int) ($localizedTarget['target_id'] ?? 0);
+        $targetSlug = trim((string) ($localizedTarget['target_slug'] ?? $baseSlug));
+        if ($targetId <= 0 || $targetSlug === '') {
+            return;
+        }
+
+        $prepared = $this->prepare_content_payload($db, $p, $item, 'page', $targetSlug);
+        $updatedAt = $this->resolve_original_updated_at($item, $this->resolve_original_created_at($item));
+
+        try {
+            $this->ensure_localized_content_columns($db, $p, 'page');
+            $updated = $db->update('pages', [
+                'slug_en' => $baseSlug,
+                'title_en' => $this->sanitize_title((string) ($item['title'] ?? '')),
+                'content_en' => $prepared['content'],
+                'updated_at' => $updatedAt,
+            ], [
+                'id' => $targetId,
+            ]);
+
+            if ($updated === false) {
+                throw new \RuntimeException($db->last_error !== '' ? $db->last_error : 'Update lokalisierter Seiten-Inhalte fehlgeschlagen.');
+            }
+
+            $this->imported++;
+            $this->import_breakdown['pages']++;
+            $this->store_import_item($db, $p, [
+                'log_id' => $this->log_id,
+                'source_type' => 'page',
+                'source_wp_id' => (int) ($item['wp_id'] ?? 0),
+                'source_reference' => $sourceReference,
+                'source_slug' => (string) ($item['slug'] ?? ''),
+                'source_url' => (string) ($item['link'] ?? ''),
+                'target_type' => 'page',
+                'target_id' => $targetId,
+                'target_created' => 0,
+                'target_slug' => $baseSlug,
+                'target_url' => $this->build_target_url('page', $baseSlug, $targetId, (string) ($item['date'] ?? ''), $locale),
+            ]);
+            $this->collect_taxonomy_fallback_meta($item, 'page');
+            $this->collect_unknown_meta($item);
+            $this->skip_item_comments($item);
+        } catch (\Throwable $e) {
+            $this->errors++;
+            error_log('CMS_Importer: Lokalisierter Seiten-Import fehlgeschlagen: ' . $e->getMessage() . ' – Titel: ' . (string) ($item['title'] ?? ''));
+        }
+    }
+
+    private function build_locale_specific_slug(string $slug, string $locale): string
+    {
+        $slug = $this->preserve_source_slug($slug);
+        $locale = strtolower(trim($locale));
+
+        if ($slug === '' || $locale === '' || $locale === 'de') {
+            return $slug;
+        }
+
+        if (preg_match('/(?:-|_)' . preg_quote($locale, '/') . '$/i', $slug) === 1) {
+            return $slug;
+        }
+
+        return $this->preserve_source_slug($slug . '-' . $locale);
+    }
+
     private function should_ignore_item_by_en_slug(array $item): bool
     {
         if ($this->resolve_item_locale($item) === 'en') {
@@ -3795,21 +4017,7 @@ class CMS_Importer_Service
 
     private function find_localized_content_target(\CMS\Database $db, string $p, string $targetType, string $sourceType, ?string $sourceReference, string $fallbackSlug = ''): ?array
     {
-        if ($sourceReference !== null && $sourceReference !== '') {
-            $mapping = $this->find_existing_mapping_by_reference($db, $p, $sourceType, $sourceReference, $targetType, true);
-            if ($mapping !== null) {
-                return $mapping;
-            }
-        }
-
-        foreach ($this->build_localized_merge_slug_candidates((string) $sourceReference, $fallbackSlug) as $candidateSlug) {
-            $resolved = $this->resolve_mapping_target($db, $p, $targetType, 0, $candidateSlug);
-            if ($resolved !== null) {
-                return $resolved;
-            }
-        }
-
-        return null;
+        return $this->find_preferred_localized_content_target($db, $p, $targetType, $sourceType, $sourceReference, $fallbackSlug);
     }
 
     /**
@@ -3866,11 +4074,13 @@ class CMS_Importer_Service
     {
         $definitions = $targetType === 'post'
             ? [
+                'slug_en' => "ALTER TABLE {$p}posts ADD COLUMN slug_en VARCHAR(255) DEFAULT NULL AFTER slug",
                 'title_en' => "ALTER TABLE {$p}posts ADD COLUMN title_en VARCHAR(255) DEFAULT NULL AFTER title",
                 'content_en' => "ALTER TABLE {$p}posts ADD COLUMN content_en LONGTEXT DEFAULT NULL AFTER content",
                 'excerpt_en' => "ALTER TABLE {$p}posts ADD COLUMN excerpt_en TEXT DEFAULT NULL AFTER excerpt",
             ]
             : [
+                'slug_en' => "ALTER TABLE {$p}pages ADD COLUMN slug_en VARCHAR(200) DEFAULT NULL AFTER slug",
                 'title_en' => "ALTER TABLE {$p}pages ADD COLUMN title_en VARCHAR(255) DEFAULT NULL AFTER title",
                 'content_en' => "ALTER TABLE {$p}pages ADD COLUMN content_en LONGTEXT DEFAULT NULL AFTER content",
             ];
@@ -3902,10 +4112,12 @@ class CMS_Importer_Service
         $reason = '';
         $action = 'import';
         $existingMapping = null;
+        $localizedTarget = null;
+        $localizedMerge = false;
 
-        if ($this->should_ignore_item_by_en_slug($item)) {
+        if ($this->should_skip_item_by_locale_filter($item)) {
             $action = 'skip';
-            $reason = 'Englische /en/-Slugs werden ignoriert';
+            $reason = $this->get_locale_filter_skip_reason($item);
         } elseif ($isCustomType && !$this->options['import_custom_types']) {
             $action = 'skip';
             $reason = 'Custom Post Types deaktiviert';
@@ -3915,33 +4127,32 @@ class CMS_Importer_Service
         } elseif ($status === 'draft' && !$this->options['import_drafts']) {
             $action = 'skip';
             $reason = 'Entwürfe deaktiviert';
-        } elseif ($this->options['skip_duplicates']) {
+        }
+
+        $baseSlug = $this->resolve_target_slug($item, (string) ($item['title'] ?? ''));
+
+        if ($action === 'import' && $this->options['skip_duplicates']) {
             $existingMapping = $this->find_existing_mapping_by_wp_id($db, $p, $sourceType, (int) ($item['wp_id'] ?? 0), 'post');
+            if ($this->should_ignore_existing_source_mapping($existingMapping, $baseSlug, $sourceReference)) {
+                $existingMapping = null;
+            }
+
             if ($existingMapping !== null) {
                 $action = 'skip';
                 $reason = 'Bereits per Import-Mapping vorhanden';
-            } elseif ($locale !== 'de') {
-                $existingMapping = $this->find_localized_content_target(
-                    $db,
-                    $p,
-                    'post',
-                    $sourceType,
-                    $sourceReference,
-                    $this->resolve_import_slug($item, (string) ($item['title'] ?? ''))
-                );
-                if ($existingMapping !== null) {
-                    $action = 'import';
-                    $reason = 'Wird als englische Variante in bestehenden Beitrag übernommen';
-                }
             }
         }
 
-        $baseSlug = $this->resolve_import_slug($item, (string) ($item['title'] ?? ''));
+        if ($action === 'import' && $locale !== 'de') {
+            $localizedTarget = $this->find_preferred_localized_content_target($db, $p, 'post', $sourceType, $sourceReference, $baseSlug);
+            $localizedMerge = $localizedTarget !== null || !empty($context['reserved_slugs']['post'][$baseSlug]);
+        }
 
         $targetSlug = $baseSlug;
         if ($action === 'import') {
-            if ($existingMapping !== null && $locale !== 'de') {
-                $targetSlug = (string) ($existingMapping['target_slug'] ?? $baseSlug);
+            if ($localizedMerge) {
+                $targetSlug = $baseSlug;
+                $this->reserve_preview_slug('post', $targetSlug, $context);
             } elseif ($this->options['skip_duplicates']) {
                 if ($this->preview_slug_exists($db, $p . 'posts', $baseSlug, 'post', $context)) {
                     $action = 'skip';
@@ -3971,8 +4182,8 @@ class CMS_Importer_Service
         $targetHint = $isCustomType
             ? 'Wird als CMS-Beitrag importiert'
             : 'Wird in cms_posts geschrieben';
-        if ($locale !== 'de' && $existingMapping !== null && $reason === 'Wird als englische Variante in bestehenden Beitrag übernommen') {
-            $targetHint = 'Wird in vorhandenen CMS-Beitrag als EN-Inhalt übernommen';
+        if ($localizedMerge && $locale !== 'de') {
+            $targetHint = 'Aktualisiert vorhandenen CMS-Beitrag als /' . $locale . '/-Variante';
         }
         if ($fallbackTaxonomies !== []) {
             $targetHint .= ' · Zusätzliche WordPress-Kategorien werden im Meta-Bericht gesichert';
@@ -3983,9 +4194,17 @@ class CMS_Importer_Service
             $reason = $this->normalize_skip_reason($reason);
         }
 
+        $targetUrl = $this->build_target_url('post', $targetSlug, 0, (string) ($item['date'] ?? ''), $locale);
+        if ($this->is_locale_filter_skip($action, $reason, $locale)) {
+            $targetSlug = '';
+            $targetUrl = null;
+            $targetHint = $this->build_locale_filter_skip_hint($locale);
+        }
+
         return [
             'action' => $action,
             'reason' => $reason,
+            'detected_locale' => $locale,
             'source_type' => $sourceType,
             'source_label' => $isCustomType ? 'Custom Type' : 'Beitrag',
             'source_wp_id' => (int) ($item['wp_id'] ?? 0),
@@ -3993,8 +4212,8 @@ class CMS_Importer_Service
             'source_status' => (string) ($item['post_status'] ?? ''),
             'target_group' => $isCustomType ? 'others' : 'posts',
             'target_type' => 'post',
-            'target_slug' => $existingMapping['target_slug'] ?? $targetSlug,
-            'target_url' => $this->build_target_url('post', (string) ($existingMapping['target_slug'] ?? $targetSlug), (int) ($existingMapping['target_id'] ?? 0)),
+            'target_slug' => $targetSlug,
+            'target_url' => $targetUrl,
             'target_hint' => $targetHint,
             'category' => $categoryName,
             'tags' => $tagNames,
@@ -4024,43 +4243,44 @@ class CMS_Importer_Service
         $reason = '';
         $action = 'import';
         $existingMapping = null;
+        $localizedTarget = null;
+        $localizedMerge = false;
 
-        if ($this->should_ignore_item_by_en_slug($item)) {
+        if ($this->should_skip_item_by_locale_filter($item)) {
             $action = 'skip';
-            $reason = 'Englische /en/-Slugs werden ignoriert';
+            $reason = $this->get_locale_filter_skip_reason($item);
         } elseif ($status === 'trash' && !$this->options['import_trashed']) {
             $action = 'skip';
             $reason = 'Papierkorb-Elemente deaktiviert';
         } elseif ($status === 'draft' && !$this->options['import_drafts']) {
             $action = 'skip';
             $reason = 'Entwürfe deaktiviert';
-        } elseif ($this->options['skip_duplicates']) {
+        }
+
+        $baseSlug = $this->resolve_target_slug($item, (string) ($item['title'] ?? ''));
+
+        if ($action === 'import' && $this->options['skip_duplicates']) {
             $existingMapping = $this->find_existing_mapping_by_wp_id($db, $p, 'page', (int) ($item['wp_id'] ?? 0), 'page');
+            if ($this->should_ignore_existing_source_mapping($existingMapping, $baseSlug, $sourceReference)) {
+                $existingMapping = null;
+            }
+
             if ($existingMapping !== null) {
                 $action = 'skip';
                 $reason = 'Bereits per Import-Mapping vorhanden';
-            } elseif ($locale !== 'de') {
-                $existingMapping = $this->find_localized_content_target(
-                    $db,
-                    $p,
-                    'page',
-                    'page',
-                    $sourceReference,
-                    $this->resolve_import_slug($item, (string) ($item['title'] ?? ''))
-                );
-                if ($existingMapping !== null) {
-                    $action = 'import';
-                    $reason = 'Wird als englische Variante in bestehende Seite übernommen';
-                }
             }
         }
 
-        $baseSlug = $this->resolve_import_slug($item, (string) ($item['title'] ?? ''));
+        if ($action === 'import' && $locale !== 'de') {
+            $localizedTarget = $this->find_preferred_localized_content_target($db, $p, 'page', 'page', $sourceReference, $baseSlug);
+            $localizedMerge = $localizedTarget !== null || !empty($context['reserved_slugs']['page'][$baseSlug]);
+        }
 
         $targetSlug = $baseSlug;
         if ($action === 'import') {
-            if ($existingMapping !== null && $locale !== 'de') {
-                $targetSlug = (string) ($existingMapping['target_slug'] ?? $baseSlug);
+            if ($localizedMerge) {
+                $targetSlug = $baseSlug;
+                $this->reserve_preview_slug('page', $targetSlug, $context);
             } elseif ($this->options['skip_duplicates']) {
                 if ($this->preview_slug_exists($db, $p . 'pages', $baseSlug, 'page', $context)) {
                     $action = 'skip';
@@ -4085,9 +4305,23 @@ class CMS_Importer_Service
             $reason = $this->normalize_skip_reason($reason);
         }
 
+        $targetHint = $localizedMerge && $locale !== 'de'
+            ? ('Aktualisiert vorhandene CMS-Seite als /' . $locale . '/-Variante' . ($pageFallbackMeta !== [] ? ' · WordPress-Kategorien/Tags werden im Meta-Bericht gesichert' : ''))
+            : ($pageFallbackMeta !== []
+                ? 'Wird in cms_pages geschrieben · WordPress-Kategorien/Tags werden im Meta-Bericht gesichert'
+                : 'Wird in cms_pages geschrieben');
+
+        $targetUrl = $this->build_target_url('page', $targetSlug, 0, (string) ($item['date'] ?? ''), $locale);
+        if ($this->is_locale_filter_skip($action, $reason, $locale)) {
+            $targetSlug = '';
+            $targetUrl = null;
+            $targetHint = $this->build_locale_filter_skip_hint($locale);
+        }
+
         return [
             'action' => $action,
             'reason' => $reason,
+            'detected_locale' => $locale,
             'source_type' => 'page',
             'source_label' => 'Seite',
             'source_wp_id' => (int) ($item['wp_id'] ?? 0),
@@ -4095,13 +4329,9 @@ class CMS_Importer_Service
             'source_status' => (string) ($item['post_status'] ?? ''),
             'target_group' => 'pages',
             'target_type' => 'page',
-            'target_slug' => $existingMapping['target_slug'] ?? $targetSlug,
-            'target_url' => $this->build_target_url('page', (string) ($existingMapping['target_slug'] ?? $targetSlug), (int) ($existingMapping['target_id'] ?? 0)),
-            'target_hint' => $existingMapping !== null && $locale !== 'de' && $reason === 'Wird als englische Variante in bestehende Seite übernommen'
-                ? 'Wird in vorhandene cms_pages-Seite als EN-Inhalt übernommen'
-                : ($pageFallbackMeta !== []
-                    ? 'Wird in cms_pages geschrieben · WordPress-Kategorien/Tags werden im Meta-Bericht gesichert'
-                    : 'Wird in cms_pages geschrieben'),
+            'target_slug' => $targetSlug,
+            'target_url' => $targetUrl,
+            'target_hint' => $targetHint,
             'category' => implode(', ', $pageCategories),
             'tags' => $pageTags,
             'image_candidates' => (int) ($contentPreview['image_candidates'] ?? 0),

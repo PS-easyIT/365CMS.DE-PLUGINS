@@ -370,7 +370,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     <div class="m365lic-card__head">
                         <div>
                             <h2>Bedarf erfassen</h2>
-                            <p>Mehrere Benutzergruppen kombinieren, Terminalserver sauber berücksichtigen und im dritten Schritt gezielte Add-ons wie Defender oder Entra ID P2 ergänzen.</p>
+                            <p>Mehrere Bedarfsgruppen kombinieren, Terminalserver sauber berücksichtigen und im dritten Schritt gezielte Add-ons ergänzen.</p>
                         </div>
                         <div class="m365lic-card-badge">EUR · Netto-Richtwerte</div>
                     </div>
@@ -483,7 +483,6 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                                     <span class="m365lic-total-chip"><?php echo $esc((string) ($pricingContext['label'] ?? 'Öffentlich')); ?></span>
                                     <span class="m365lic-total-chip"><?php echo $esc((string) ($selectedBilling['short_label'] ?? 'Jahr / jährlich')); ?></span>
                                 </div>
-                                <small class="m365lic-help-text">Basispreise stammen aus dem Paketkatalog und werden pro Bereich mit dem gewählten Modell hochgerechnet.</small>
                                 </div>
                             </div>
 
@@ -520,12 +519,6 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                             </div>
                             <?php elseif ($scope === 'public'): ?>
                             <div class="m365lic-field m365lic-field--info">
-                                <label>EU-Alternativen</label>
-                                <div class="m365lic-context-chip-wrap">
-                                    <span class="m365lic-total-chip">Separater Tab verfügbar</span>
-                                    <a href="/<?php echo $esc(trim((string) ($settings['route_slug'] ?? 'm365-lizenzberater'), '/')); ?>/eu-vergleich" class="m365lic-btn m365lic-btn--ghost">🇪🇺 Zum EU-Vergleich</a>
-                                </div>
-                                <small class="m365lic-help-text">Die öffentliche Standard-Auswertung bleibt bewusst schlank. Europäische Alternativen findest du im separaten Tab.</small>
                             </div>
                             <?php endif; ?>
                         </section>

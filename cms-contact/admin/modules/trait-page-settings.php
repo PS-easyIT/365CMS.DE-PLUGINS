@@ -40,6 +40,8 @@ trait CMS_Contact_Page_Settings_Trait
             'from_name'          => self::get_setting('from_name', '365CMS Kontakt'),
             'from_email'         => self::get_setting('from_email'),
             'send_confirmation'  => self::get_setting('send_confirmation', '0'),
+            'privacy_policy_url' => self::get_setting('privacy_policy_url', '/datenschutz'),
+            'require_privacy_consent' => self::get_setting('require_privacy_consent', '1'),
             'default_template'   => self::get_setting('default_template', 'classic'),
             'primary_color'      => self::get_setting('primary_color', '#3b82f6'),
             'border_radius'      => self::get_setting('border_radius', '8'),
@@ -84,6 +86,12 @@ trait CMS_Contact_Page_Settings_Trait
         self::save_setting('from_name', sanitize_text_field($_POST['from_name'] ?? ''));
         self::save_setting('from_email', filter_var($_POST['from_email'] ?? '', FILTER_VALIDATE_EMAIL) ?: '');
         self::save_setting('send_confirmation', isset($_POST['send_confirmation']) ? '1' : '0');
+        $privacyPolicyUrl = trim((string) ($_POST['privacy_policy_url'] ?? ''));
+        if ($privacyPolicyUrl !== '' && !filter_var($privacyPolicyUrl, FILTER_VALIDATE_URL) && !str_starts_with($privacyPolicyUrl, '/')) {
+            $privacyPolicyUrl = '/datenschutz';
+        }
+        self::save_setting('privacy_policy_url', $privacyPolicyUrl !== '' ? $privacyPolicyUrl : '/datenschutz');
+        self::save_setting('require_privacy_consent', isset($_POST['require_privacy_consent']) ? '1' : '0');
         self::save_setting('default_template', sanitize_text_field($_POST['default_template'] ?? 'classic'));
         self::save_setting('primary_color', sanitize_text_field($_POST['primary_color'] ?? '#3b82f6'));
         self::save_setting('border_radius', (string) max(0, (int) ($_POST['border_radius'] ?? 8)));

@@ -40,8 +40,8 @@ final class CMS_Contact_Submissions
     {
         $stmt = $this->pdo->prepare(
             "INSERT INTO {$this->prefix}contact_submissions
-             (form_id, user_id, sender_name, sender_email, subject, message, ip_address, user_agent, status, is_spam)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+             (form_id, user_id, sender_name, sender_email, subject, message, user_agent, status, is_spam)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
 
         $stmt->execute([
@@ -51,7 +51,6 @@ final class CMS_Contact_Submissions
             $data['sender_email'] ?? null,
             $data['subject']      ?? null,
             $data['message']      ?? null,
-            $data['ip_address']   ?? ($_SERVER['REMOTE_ADDR'] ?? null),
             $data['user_agent']   ?? (substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500)),
             'unread',
             (int) ($data['is_spam'] ?? 0),
@@ -207,6 +206,24 @@ final class CMS_Contact_Submissions
     }
 
     /**
+     * Einzelne Submission eines Users per ID.
+     */
+    public function get_user_submission_by_id(int $userId, int $id): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT s.*, f.title AS form_title, f.slug AS form_slug
+             FROM {$this->prefix}contact_submissions s
+             LEFT JOIN {$this->prefix}contact_forms f ON f.id = s.form_id
+             WHERE s.id = ? AND s.user_id = ?
+             LIMIT 1"
+        );
+        $stmt->execute([$id, $userId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
+    /**
      * Meta-Daten einer Submission laden
      */
     public function get_meta(int $submissionId): array
@@ -259,6 +276,20 @@ final class CMS_Contact_Submissions
         return $this->update_status($id, 'read');
     }
 
+    /**
+     * Submission eines Users als gelesen markieren.
+     */
+    public function mark_user_submission_read(int $userId, int $id): bool
+    {
+        $stmt = $this->pdo->prepare(
+            "UPDATE {$this->prefix}contact_submissions
+             SET status = 'read', read_at = NOW()
+             WHERE id = ? AND user_id = ? AND status = 'unread'"
+        );
+
+        return $stmt->execute([$id, $userId]);
+    }
+
     // ── Löschen ───────────────────────────────────────────────────────────────
 
     /**
@@ -268,6 +299,18 @@ final class CMS_Contact_Submissions
     {
         $stmt = $this->pdo->prepare("DELETE FROM {$this->prefix}contact_submissions WHERE id = ?");
         return $stmt->execute([$id]);
+    }
+
+    /**
+     * Eine Submission eines Users löschen.
+     */
+    public function delete_user_submission(int $userId, int $id): bool
+    {
+        $stmt = $this->pdo->prepare(
+            "DELETE FROM {$this->prefix}contact_submissions WHERE id = ? AND user_id = ?"
+        );
+
+        return $stmt->execute([$id, $userId]);
     }
 
     /**
@@ -352,8 +395,7 @@ final class CMS_Contact_Submissions
             }
         }
 
-        $body .= "\n---\nGesendet am: " . date('d.m.Y H:i') . "\n";
-        $body .= "IP: " . ($submission['ip_address'] ?? '-') . "\n";
+    $body .= "\n---\nGesendet am: " . date('d.m.Y H:i') . "\n";
 
         $headers = [
             'X-365CMS-Source' => 'cms-contact-notification',

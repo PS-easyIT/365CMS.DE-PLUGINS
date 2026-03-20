@@ -20,10 +20,11 @@ $formatMoney = static function ($value) use ($esc): string {
     return $esc(number_format((float) $value, 2, ',', '.')) . ' €';
 };
 $theme = \CMS\ThemeManager::instance();
-$themeTitle = (string) ($euPageTitle ?? 'EU-Vergleich · Microsoft 365 vs. europäische Anbieter');
+$themeTitle = (string) ($euPageTitle ?? 'Vergleich · M365 vs. EU Anbieter');
 $introText = (string) ($euPageIntro ?? '');
 $publicBaseUrl = '/' . trim((string) ($settings['route_slug'] ?? 'm365-lizenzberater'), '/');
 $euPageUrl = $publicBaseUrl . '/eu-vergleich';
+$euServiceProfiles = CMS_M365LIC_Catalog::eu_service_profiles();
 $stepOneFeatureKeys = ['mail', 'teams', 'office_web', 'office_desktop', 'terminalserver', 'onedrive', 'sharepoint', 'frontline'];
 $stepThreeFeatureKeys = array_values(array_filter(array_keys($featureDefinitions), static function (string $key) use ($featureDefinitions): bool {
     return empty($featureDefinitions[$key]['base']);
@@ -41,7 +42,8 @@ $addonGroupClassMap = [
     'copilot' => 'copilot',
 ];
 
-$renderRequirementRow = static function (array $requirement, int $index) use ($featureDefinitions, $presets, $esc, $stepOneFeatureKeys, $stepTwoFeatureKeys, $stepThreeFeatureKeys, $addonGroupClassMap): void {
+$renderRequirementRow = static function (array $requirement, int $index) use ($featureDefinitions, $presets, $esc, $stepOneFeatureKeys, $stepTwoFeatureKeys, $stepThreeFeatureKeys, $addonGroupClassMap, $euServiceProfiles): void {
+    $requirementEuServices = is_array($requirement['eu_services'] ?? null) ? $requirement['eu_services'] : [];
     ?>
     <article class="m365lic-requirement" data-index="<?php echo $index; ?>" data-step="1">
         <div class="m365lic-requirement__head">
@@ -65,6 +67,10 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                 <span class="m365lic-stepper__num">3</span>
                 <span>Add-ons & Security</span>
             </button>
+            <button type="button" class="m365lic-stepper__item" data-step-target="4">
+                <span class="m365lic-stepper__num">4</span>
+                <span>EU Alternativen</span>
+            </button>
         </div>
 
         <section class="m365lic-step-panel is-active m365lic-step-card" data-step-panel="1">
@@ -72,7 +78,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                 <div>
                     <span class="m365lic-step-panel__eyebrow">Schritt 1</span>
                     <strong>Quick Check</strong>
-                    <p>Erfasse Benutzergruppe, Einsatzmodell und die wichtigsten Basisfunktionen. Die europäischen Alternativen werden erst nach der Auswertung automatisch dazu vorgeschlagen.</p>
+                    <p>Erfasse Benutzergruppe, Einsatzmodell und die wichtigsten Basisfunktionen. Die europäischen Alternativen werden danach in insgesamt vier Schritten präzisiert.</p>
                 </div>
                 <span class="m365lic-pill">Pflichtschritt</span>
             </div>
@@ -84,7 +90,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                 </div>
                 <div class="m365lic-field">
                     <label for="req_qty_<?php echo $index; ?>">Anzahl Benutzer</label>
-                    <input id="req_qty_<?php echo $index; ?>" type="number" min="1" name="requirements[<?php echo $index; ?>][quantity]" value="<?php echo (int) ($requirement['quantity'] ?? 1); ?>" data-requirement-quantity>
+                    <input id="req_qty_<?php echo $index; ?>" type="number" min="0" name="requirements[<?php echo $index; ?>][quantity]" value="<?php echo (int) ($requirement['quantity'] ?? 1); ?>" data-requirement-quantity>
                 </div>
                 <div class="m365lic-field">
                     <label for="req_audience_<?php echo $index; ?>">Zielgruppe</label>
@@ -159,7 +165,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                 <div>
                     <span class="m365lic-step-panel__eyebrow">Schritt 3</span>
                     <strong>Add-ons & Security</strong>
-                    <p>Wähle gezielte Zusatzanforderungen. In der Auswertung werden daraus sowohl Microsoft-Add-ons als auch passende europäische Sicherheits- und Projektmanagement-Alternativen abgeleitet.</p>
+                    <p>Wähle gezielte Zusatzanforderungen. Im letzten Schritt legst du zusätzlich fest, welche M365-Services heute schon genutzt werden oder künftig wirklich abgedeckt sein müssen.</p>
                 </div>
                 <span class="m365lic-pill">Optional</span>
             </div>
@@ -183,6 +189,52 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
 
             <div class="m365lic-step-actions m365lic-step-actions--split">
                 <button type="button" class="m365lic-btn m365lic-btn--ghost" data-step-prev="2">Zurück</button>
+                <button type="button" class="m365lic-btn m365lic-btn--primary" data-step-next="4">Weiter zu EU Alternativen</button>
+            </div>
+        </section>
+
+        <section class="m365lic-step-panel m365lic-step-card" data-step-panel="4">
+            <div class="m365lic-step-panel__head">
+                <div>
+                    <span class="m365lic-step-panel__eyebrow">Schritt 4</span>
+                    <strong>EU Alternativen</strong>
+                    <p>Markiere, welche M365-Services heute bereits im Einsatz sind und welche im Zielbild zwingend abgedeckt werden müssen. So landen nicht nur hübsche Workspaces im Ergebnis, sondern auch passende Spezialanbieter für Intune, Identity, KI, Compliance und mehr.</p>
+                </div>
+                <span class="m365lic-pill">Empfohlen</span>
+            </div>
+
+            <div class="m365lic-eu-service-grid">
+                <?php foreach ($euServiceProfiles as $serviceKey => $serviceProfile): ?>
+                    <?php $serviceState = is_array($requirementEuServices[$serviceKey] ?? null) ? $requirementEuServices[$serviceKey] : []; ?>
+                    <article class="m365lic-eu-service-card">
+                        <div class="m365lic-eu-service-card__head">
+                            <strong><?php echo $esc((string) ($serviceProfile['label'] ?? $serviceKey)); ?></strong>
+                            <p><?php echo $esc((string) ($serviceProfile['description'] ?? '')); ?></p>
+                        </div>
+                        <div class="m365lic-eu-service-card__choices">
+                            <label class="m365lic-choice-toggle">
+                                <input type="checkbox" name="requirements[<?php echo $index; ?>][eu_services][<?php echo $esc($serviceKey); ?>][current]" value="1" <?php echo !empty($serviceState['current']) ? 'checked' : ''; ?> data-eu-service-current="<?php echo $esc($serviceKey); ?>">
+                                <span>
+                                    <strong>Heute im Einsatz</strong>
+                                    <small>Die Auswahl soll bestehende M365-Nutzung realistisch spiegeln.</small>
+                                </span>
+                            </label>
+                            <label class="m365lic-choice-toggle m365lic-choice-toggle--required">
+                                <input type="checkbox" name="requirements[<?php echo $index; ?>][eu_services][<?php echo $esc($serviceKey); ?>][required]" value="1" <?php echo !empty($serviceState['required']) ? 'checked' : ''; ?> data-eu-service-required="<?php echo $esc($serviceKey); ?>">
+                                <span>
+                                    <strong>Im Zielbild erforderlich</strong>
+                                    <small>Diese Fähigkeit muss im EU-Vorschlag direkt oder ergänzend abgedeckt sein.</small>
+                                </span>
+                            </label>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+
+            <p class="m365lic-help-text m365lic-help-text--flush">Tipp: Wenn du nur einen All-in-One-Workspace vergleichst, aber zusätzlich Identity, Compliance oder KI markierst, ergänzt die Auswertung automatisch passende europäische Spezialanbieter.</p>
+
+            <div class="m365lic-step-actions m365lic-step-actions--split">
+                <button type="button" class="m365lic-btn m365lic-btn--ghost" data-step-prev="3">Zurück</button>
                 <button type="button" class="m365lic-btn m365lic-btn--ghost" data-step-next="1">Fertig</button>
             </div>
         </section>
@@ -201,7 +253,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
         <div class="m365lic-container">
             <div class="m365lic-hero-grid">
                 <div>
-                    <span class="m365lic-eyebrow">EU-Alternativen · Microsoft 365 Vergleich</span>
+                    <span class="m365lic-eyebrow">EU-Alternativen · M365 Vergleich</span>
                     <h1><?php echo $esc($themeTitle); ?></h1>
                     <p><?php echo $esc($introText); ?></p>
                     <div class="m365lic-hero-pills">
@@ -209,14 +261,6 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                         <span class="m365lic-pill"><?php echo $esc((string) ($selectedBilling['short_label'] ?? 'Jahr / jährlich')); ?></span>
                         <span class="m365lic-pill">Mehrere Bedarfsgruppen</span>
                     </div>
-                </div>
-                <div class="m365lic-hero-panel">
-                    <div class="m365lic-hero-panel__kicker">So funktioniert’s</div>
-                    <ul class="m365lic-hero-list">
-                        <li>Bedarf wie in der Standard-Auswertung in 3 Schritten erfassen</li>
-                        <li>M365-Empfehlung automatisch aus dem Katalog ermitteln</li>
-                        <li>Erst nach dem Submit den passenden EU-Stack anzeigen</li>
-                    </ul>
                 </div>
             </div>
         </div>
@@ -234,10 +278,10 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
             <div class="m365lic-card m365lic-card--intro">
                 <div class="m365lic-card__head">
                     <div>
-                        <h2>EU-Vergleich vorbereiten</h2>
-                        <p>Lege zunächst Laufzeit und Vergleichsmodus fest. Danach erfasst du den Bedarf je Benutzergruppe im bekannten 3-Schritt-Schema.</p>
+                        <h2>Bedarf erfassen</h2>
+                        <p>Mehrere Benutzergruppen kombinieren, Laufzeit und Vergleichsmodus festlegen und daraus den passenden Microsoft-365-Stack direkt mit europäischen Alternativen vergleichen.</p>
                     </div>
-                    <div class="m365lic-card-badge">Ergebnis erst nach Auswertung</div>
+                    <div class="m365lic-card-badge">EUR · Vergleich vorbereiten</div>
                 </div>
 
                 <nav class="m365lic-local-nav" aria-label="Public M365 Menü">
@@ -283,7 +327,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                         <div class="m365lic-subcard__head">
                             <div>
                                 <h3>Bedarfsgruppen</h3>
-                                <p>Erfasse mehrere Benutzergruppen im gleichen Schema wie die Standard-Auswertung. Daraus leiten wir links die M365-Empfehlung und rechts die passenden EU-Alternativen ab.</p>
+                                <p>Erfasse mehrere Bedarfsgruppen. Daraus leiten wir die M365-Empfehlung und die passenden EU-Alternativen ab.</p>
                             </div>
                         </div>
 
@@ -319,7 +363,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                     </div>
                 </div>
 
-                <div class="m365lic-compare-grid">
+                <div class="m365lic-compare-grid m365lic-compare-grid--stacked">
                     <section class="m365lic-compare-panel">
                         <div class="m365lic-compare-panel__head">
                             <h3>M365-Auswertung</h3>
@@ -398,7 +442,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                                             <tr>
                                                 <th>Kategorie</th>
                                                 <th>Anbieter</th>
-                                                <th>Fokus</th>
+                                                <th>Fokus &amp; Abdeckung</th>
                                                 <th>Preis</th>
                                                 <th>Gesamt</th>
                                             </tr>
@@ -408,7 +452,20 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                                             <tr>
                                                 <td><strong><?php echo $esc((string) ($item['category_label'] ?? '')); ?></strong></td>
                                                 <td><?php echo $esc((string) ($item['provider'] ?? '')); ?></td>
-                                                <td><?php echo $esc((string) ($item['focus'] ?? '')); ?></td>
+                                                <td>
+                                                    <div class="m365lic-result-fit">
+                                                        <strong><?php echo $esc((string) ($item['focus'] ?? '')); ?></strong>
+                                                        <?php if (!empty($item['matched_service_labels'])): ?>
+                                                        <div class="m365lic-result-fit__note m365lic-result-fit__note--ok">Passt zu: <?php echo $esc(implode(', ', array_map('strval', $item['matched_service_labels']))); ?></div>
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($item['strength_note'])): ?>
+                                                        <div class="m365lic-result-fit__note"><?php echo $esc((string) $item['strength_note']); ?></div>
+                                                        <?php endif; ?>
+                                                        <?php if (!empty($item['limitation_note'])): ?>
+                                                        <div class="m365lic-result-fit__note m365lic-result-fit__note--warn"><?php echo $esc((string) $item['limitation_note']); ?></div>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </td>
                                                 <td><?php echo $formatMoney($item['unit_price'] ?? null); ?></td>
                                                 <td><?php echo $formatMoney($item['line_total'] ?? null); ?></td>
                                             </tr>

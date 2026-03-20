@@ -311,6 +311,10 @@ $selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '
                                 <span>Benutzerdefinierte Post-Types importieren</span>
                             </label>
                             <label class="ci-option">
+                                <input type="checkbox" name="import_only_en" value="1" data-shared-en-filter-source>
+                                <span>Nur englische <code>/en/</code>-Beitr&auml;ge und -Seiten importieren</span>
+                            </label>
+                            <label class="ci-option">
                                 <input type="checkbox" name="generate_report"     value="1" checked>
                                 <span>Bericht f&uuml;r unbekannte Meta-Felder erstellen (HTML + Markdown)</span>
                             </label>
@@ -432,6 +436,7 @@ $selectedAuthorDisplayName = htmlspecialchars($selected_author_display_name ?? '
                                             <input type="hidden" name="skip_duplicates"      value="1">
                                             <input type="hidden" name="import_drafts"        value="1">
                                             <input type="hidden" name="import_custom_types"  value="1">
+                                            <input type="hidden" name="import_only_en" value="0" data-shared-en-filter-target>
                                             <input type="hidden" name="generate_report"      value="1">
                                             <input type="hidden" name="download_images"      value="1">
                                             <input type="hidden" name="convert_table_shortcodes" value="1">

@@ -252,6 +252,38 @@
     font-size: .9rem;
 }
 
+.contact-privacy-field {
+    margin-top: .4rem;
+}
+
+.contact-privacy-box {
+    padding: .9rem 1rem;
+    border: 1px solid var(--contact-border);
+    border-radius: var(--contact-radius);
+    background: var(--contact-bg-secondary);
+}
+
+.contact-privacy-checkbox {
+    align-items: flex-start;
+    padding: 0;
+}
+
+.contact-privacy-text {
+    display: inline;
+    color: var(--contact-text);
+    line-height: 1.6;
+}
+
+.contact-privacy-link {
+    color: var(--contact-primary-dark);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.contact-privacy-link:hover {
+    text-decoration: underline;
+}
+
 /* =====================================================
    8. Submit Button
    ===================================================== */
@@ -724,6 +756,16 @@ body.dark-mode .contact-label {
 
 body.dark-mode .contact-split-form {
     background: #1e293b;
+}
+
+body.dark-mode .contact-privacy-box {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+body.dark-mode .contact-privacy-text,
+body.dark-mode .contact-privacy-link {
+    color: #f1f5f9;
 }
 
 /* =====================================================

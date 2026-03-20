@@ -37,6 +37,11 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
         <span class="contact-mini-card__value"><?php echo !empty($settings['send_confirmation']) ? 'Ein' : 'Aus'; ?></span>
         <span class="contact-mini-card__text">Automatische Rückmeldung an Einsender.</span>
     </div>
+    <div class="contact-mini-card">
+        <span class="contact-mini-card__label">Datenschutz</span>
+        <span class="contact-mini-card__value"><?php echo !empty($settings['require_privacy_consent']) ? 'Aktiv' : 'Aus'; ?></span>
+        <span class="contact-mini-card__text"><?php echo $e($settings['privacy_policy_url'] ?? '/datenschutz'); ?></span>
+    </div>
 </div>
 
 <!-- Tabs -->
@@ -95,6 +100,39 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
                     <input type="checkbox" name="send_confirmation" value="1"
                            <?php echo !empty($settings['send_confirmation']) ? 'checked' : ''; ?>>
                     Bestätigungs-E-Mail an Absender senden
+                </label>
+            </div>
+
+            <hr style="border:none;border-top:1px solid #f1f5f9;margin:1.5rem 0;">
+
+            <div class="contact-panel-header">
+                <div>
+                    <h3>🛡️ Datenschutz</h3>
+                    <p>Einwilligung und Verlinkung zur Datenschutzerklärung für alle Kontaktformulare.</p>
+                </div>
+            </div>
+
+            <div class="contact-settings-grid">
+                <div class="form-group">
+                    <label class="form-label" for="privacy_policy_url">Datenschutz-URL</label>
+                    <input type="text" id="privacy_policy_url" name="privacy_policy_url" class="form-control"
+                           value="<?php echo $e($settings['privacy_policy_url'] ?? '/datenschutz'); ?>"
+                           placeholder="/datenschutz oder https://example.com/datenschutz">
+                    <small class="form-text">Interne oder absolute URL zur Datenschutzerklärung.</small>
+                </div>
+
+                <div class="contact-info-card">
+                    <span class="contact-info-card__eyebrow">DSGVO-Hinweis</span>
+                    <strong class="contact-action-card__title">Pflichtbestätigung im Formular</strong>
+                    <div class="contact-info-card__text">Wenn aktiviert, kann das Formular nur mit gesetztem Haken und sichtbarem Datenschutzhinweis abgesendet werden.</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label contact-checkbox-inline">
+                    <input type="checkbox" name="require_privacy_consent" value="1"
+                           <?php echo !empty($settings['require_privacy_consent']) ? 'checked' : ''; ?>>
+                    Datenschutz-Einwilligung im Formular verpflichtend anzeigen
                 </label>
             </div>
         </div>

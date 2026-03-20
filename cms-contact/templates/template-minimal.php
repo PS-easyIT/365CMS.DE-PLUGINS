@@ -57,6 +57,8 @@ $theme->getHeader();
                     </div>
                     <?php endif; ?>
 
+                    <?php echo CMS_Contact_Frontend::render_privacy_consent($form, $old); ?>
+
                     <button type="submit" class="contact-btn contact-btn-minimal">Senden →</button>
                 </form>
                 <?php endif; ?>

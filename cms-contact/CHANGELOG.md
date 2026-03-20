@@ -2,6 +2,19 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [1.1.3] – 2026-03-19
+
+### Geändert
+
+- Die Speicherung von IP-Adressen in `cms-contact` wurde vollständig entfernt; bestehende Installationen räumen die veraltete Spalte per Migration auf.
+- Das bisherige IP-basierte Rate-Limiting wurde auf eine sessionbasierte Begrenzung erfolgreicher Einsendungen umgestellt.
+- Alle Frontend-Formulare verlangen jetzt standardmäßig eine ausdrückliche Datenschutz-Einwilligung mit Link zur Datenschutzerklärung.
+- Die Admin-Ansicht zeigt bei Nachrichten jetzt sichtbar an, ob und wann die Datenschutz-Einwilligung bestätigt wurde.
+
+### Hinzugefügt
+
+- Neue globale Einstellungen für `Datenschutz-URL` und `Datenschutz-Einwilligung verpflichtend`.
+
 ## [1.1.2] – 2026-03-17
 
 ### Geändert

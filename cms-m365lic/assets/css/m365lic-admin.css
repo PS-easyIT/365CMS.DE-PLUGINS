@@ -421,6 +421,302 @@
     margin-bottom: 1rem;
 }
 
+.m365lic-toolbar__cluster {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.m365lic-usage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.m365lic-usage-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 1rem 1.05rem;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.m365lic-usage-card--accent {
+    border-color: #bfdbfe;
+    background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+}
+
+.m365lic-usage-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.9rem;
+    flex-wrap: wrap;
+}
+
+.m365lic-usage-card__head h4 {
+    margin: 0;
+    color: #0f172a;
+}
+
+.m365lic-usage-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.m365lic-usage-metric {
+    padding: 0.75rem 0.8rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+}
+
+.m365lic-usage-metric span {
+    display: block;
+    margin-bottom: 0.3rem;
+    color: #64748b;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.m365lic-usage-metric strong {
+    color: #0f172a;
+    font-size: 1.25rem;
+    line-height: 1.1;
+}
+
+.m365lic-usage-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.m365lic-usage-table td,
+.m365lic-usage-table th {
+    white-space: nowrap;
+}
+
+.m365lic-usage-empty {
+    padding: 1.25rem 0.5rem;
+}
+
+.m365lic-usage-controls {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.m365lic-usage-toggle-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.m365lic-usage-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.52rem 0.9rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #475569;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.16s ease;
+}
+
+.m365lic-usage-toggle:hover,
+.m365lic-usage-toggle:focus-visible {
+    border-color: #93c5fd;
+    color: var(--admin-primary, #2563eb);
+    background: #f8fbff;
+}
+
+.m365lic-usage-toggle.is-active {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: var(--admin-primary, #2563eb);
+    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.08);
+}
+
+.m365lic-usage-chart-card {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem 1.05rem;
+    margin-bottom: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #fcfdff 0%, #f8fafc 100%);
+}
+
+.m365lic-usage-chart-card__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.m365lic-usage-chart-card__head h4 {
+    margin: 0 0 0.2rem;
+    color: #0f172a;
+}
+
+.m365lic-usage-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    align-items: center;
+}
+
+.m365lic-usage-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: #475569;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.m365lic-usage-legend__swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    display: inline-block;
+}
+
+.m365lic-usage-legend__swatch--public {
+    background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+}
+
+.m365lic-usage-legend__swatch--member {
+    background: linear-gradient(90deg, #0891b2 0%, #22d3ee 100%);
+}
+
+.m365lic-usage-legend__swatch--group {
+    background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%);
+}
+
+.m365lic-usage-panel {
+    display: grid;
+    gap: 1rem;
+}
+
+.m365lic-usage-period-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.m365lic-usage-period-summary__item {
+    padding: 0.85rem 0.95rem;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+}
+
+.m365lic-usage-period-summary__item span {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #64748b;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.m365lic-usage-period-summary__item strong {
+    color: #0f172a;
+    font-size: 1.25rem;
+}
+
+.m365lic-usage-period-summary__item--total {
+    background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+    border-color: #bfdbfe;
+}
+
+.m365lic-usage-chart {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.m365lic-usage-chart__row {
+    display: grid;
+    grid-template-columns: 68px minmax(0, 1fr);
+    gap: 0.9rem;
+    align-items: start;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.m365lic-usage-chart__label {
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 0.84rem;
+    padding-top: 0.35rem;
+}
+
+.m365lic-usage-chart__bars {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.m365lic-usage-chart__bar-row {
+    display: grid;
+    grid-template-columns: 60px minmax(0, 1fr) 42px;
+    gap: 0.65rem;
+    align-items: center;
+}
+
+.m365lic-usage-chart__bar-name {
+    color: #64748b;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.m365lic-usage-chart__track {
+    position: relative;
+    height: 10px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+}
+
+.m365lic-usage-chart__bar {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: 999px;
+    min-width: 0;
+}
+
+.m365lic-usage-chart__bar--public {
+    background: linear-gradient(90deg, #2563eb 0%, #60a5fa 100%);
+}
+
+.m365lic-usage-chart__bar--member {
+    background: linear-gradient(90deg, #0891b2 0%, #22d3ee 100%);
+}
+
+.m365lic-usage-chart__bar--group {
+    background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%);
+}
+
+.m365lic-usage-chart__value {
+    color: #0f172a;
+    font-size: 0.8rem;
+    text-align: right;
+}
+
 .m365lic-modal-content {
     max-width: 520px;
 }
@@ -543,7 +839,8 @@
     .m365lic-admin-grid--wide,
     .m365lic-form-grid--3,
     .m365lic-form-grid--2,
-    .m365lic-feature-grid {
+    .m365lic-feature-grid,
+    .m365lic-usage-period-summary {
         grid-template-columns: 1fr;
     }
 
@@ -564,6 +861,31 @@
 
     .m365lic-inline-head {
         align-items: stretch;
+    }
+
+    .m365lic-usage-controls,
+    .m365lic-usage-chart-card__head {
+        align-items: stretch;
+    }
+
+    .m365lic-usage-chart__row {
+        grid-template-columns: 1fr;
+    }
+
+    .m365lic-usage-chart__label {
+        padding-top: 0;
+    }
+
+    .m365lic-usage-chart__bar-row {
+        grid-template-columns: 1fr;
+    }
+
+    .m365lic-usage-chart__value {
+        text-align: left;
+    }
+
+    .m365lic-usage-metrics {
+        grid-template-columns: 1fr;
     }
 
     .m365lic-inline-head .btn {

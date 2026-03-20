@@ -184,6 +184,7 @@ trait CMS_Contact_Page_Submissions_Trait
 
         $submissionsSvc = CMS_Contact_Submissions::instance();
         $submissions    = $submissionsSvc->get_all($filters, $offset, $perPage);
+    $submissions    = self::enrich_submissions_for_list($submissions, $submissionsSvc);
         $total          = $submissionsSvc->count($filters);
         $pages          = (int) ceil($total / $perPage);
 
@@ -196,5 +197,105 @@ trait CMS_Contact_Page_Submissions_Trait
 
         $activeSection = 'submissions';
         include CMS_CONTACT_PLUGIN_DIR . 'admin/views/page-submissions-list.php';
+    }
+
+    private static function enrich_submissions_for_list(array $submissions, CMS_Contact_Submissions $submissionsSvc): array
+    {
+        foreach ($submissions as &$submission) {
+            $meta = $submissionsSvc->get_meta((int) ($submission['id'] ?? 0));
+            $submission['_list_highlights'] = self::extract_submission_highlights($submission, $meta);
+        }
+        unset($submission);
+
+        return $submissions;
+    }
+
+    private static function extract_submission_highlights(array $submission, array $meta): array
+    {
+        $highlights = [];
+
+        $phone = self::find_submission_meta_value($meta, [
+            'phone',
+            'telefon',
+            'tel',
+            'phone_number',
+            'telephone',
+            'mobile',
+            'mobil',
+            'sender_phone',
+        ]);
+        if ($phone !== '') {
+            $highlights[] = [
+                'label' => 'Telefon',
+                'value' => $phone,
+                'icon' => '📞',
+                'type' => 'phone',
+            ];
+        }
+
+        $company = self::find_submission_meta_value($meta, [
+            'company',
+            'company_name',
+            'firma',
+            'firmenname',
+            'unternehmen',
+            'unternehmen_name',
+            'organisation',
+            'organization',
+            'business_name',
+        ]);
+        if ($company !== '') {
+            $highlights[] = [
+                'label' => 'Firma',
+                'value' => $company,
+                'icon' => '🏢',
+                'type' => 'text',
+            ];
+        }
+
+        $formTitle = trim((string) ($submission['form_title'] ?? ''));
+        if ($formTitle !== '') {
+            $highlights[] = [
+                'label' => 'Formular',
+                'value' => $formTitle,
+                'icon' => '🧾',
+                'type' => 'form',
+            ];
+        }
+
+        if (self::find_truthy_submission_meta($meta, ['privacy_consent'])) {
+            $highlights[] = [
+                'label' => 'Datenschutz',
+                'value' => 'bestätigt',
+                'icon' => '🛡️',
+                'type' => 'consent',
+            ];
+        }
+
+        return $highlights;
+    }
+
+    private static function find_submission_meta_value(array $meta, array $candidateKeys): string
+    {
+        foreach ($candidateKeys as $key) {
+            $value = trim((string) ($meta[$key] ?? ''));
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return '';
+    }
+
+    private static function find_truthy_submission_meta(array $meta, array $candidateKeys): bool
+    {
+        foreach ($candidateKeys as $key) {
+            $value = strtolower(trim((string) ($meta[$key] ?? '')));
+            if (in_array($value, ['1', 'true', 'yes', 'ja'], true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

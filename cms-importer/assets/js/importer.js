@@ -40,6 +40,7 @@
     var uploadedFile = document.getElementById('js-uploaded-file');
     var assignedAuthorSelect = document.getElementById('js-assigned-author-id');
     var authorDisplayNameInput = document.getElementById('js-author-display-name');
+    var importOnlyEnCheckbox = document.querySelector('[data-shared-en-filter-source]');
     var previewPanel = document.getElementById('js-preview-panel');
     var previewSummary = document.getElementById('js-preview-summary');
     var previewReasons = document.getElementById('js-preview-reasons');
@@ -59,6 +60,10 @@
 
     if (authorDisplayNameInput) {
         authorDisplayNameInput.addEventListener('input', syncSharedAuthorFields);
+    }
+
+    if (importOnlyEnCheckbox) {
+        importOnlyEnCheckbox.addEventListener('change', syncSharedAuthorFields);
     }
 
     if (btnSelect) {
@@ -353,6 +358,7 @@
     function syncSharedAuthorFields() {
         var assignedAuthorId = assignedAuthorSelect ? String(assignedAuthorSelect.value || '') : '';
         var authorDisplayName = authorDisplayNameInput ? String(authorDisplayNameInput.value || '') : '';
+        var importOnlyEn = importOnlyEnCheckbox && importOnlyEnCheckbox.checked ? '1' : '0';
 
         document.querySelectorAll('[data-shared-author-id-target]').forEach(function (input) {
             input.value = assignedAuthorId;
@@ -360,6 +366,10 @@
 
         document.querySelectorAll('[data-shared-author-display-target]').forEach(function (input) {
             input.value = authorDisplayName;
+        });
+
+        document.querySelectorAll('[data-shared-en-filter-target]').forEach(function (input) {
+            input.value = importOnlyEn;
         });
     }
 
@@ -562,6 +572,7 @@
             var tagText = Array.isArray(item.tags) ? item.tags.join(', ') : '';
             var reasonText = ((item.reason || '').trim() || (item.action === 'skip' ? 'Unbekannter Überspring-Grund' : (item.target_hint || '')));
             var sourceMetaParts = [escapeHtml(item.source_label || item.source_type || '')];
+            var detectedLocale = ((item.detected_locale || '').trim() || '').toLowerCase();
             var sourceWpId = Number(item.source_wp_id || 0);
             if (sourceWpId > 0) {
                 sourceMetaParts.push('WP-ID ' + escapeHtml(sourceWpId));
@@ -569,6 +580,14 @@
             if ((item.source_status || '').trim() !== '') {
                 sourceMetaParts.push('Status ' + escapeHtml(item.source_status || ''));
             }
+            if (detectedLocale) {
+                sourceMetaParts.push('Sprache ' + escapeHtml(detectedLocale.toUpperCase()));
+            }
+            var hideTargetForLocaleSkip = item.action === 'skip' && reasonText === 'Nur /en/-Inhalte ausgewählt';
+            var targetSlugText = hideTargetForLocaleSkip ? '—' : (item.target_slug || '—');
+            var targetInfoText = hideTargetForLocaleSkip
+                ? (item.target_hint || 'Kein Importziel – vom /en/-Filter ausgeschlossen')
+                : (item.target_url || item.target_hint || '');
             var details = [];
             if (item.category) { details.push('Kategorie: ' + escapeHtml(item.category)); }
             if (tagText) { details.push('Tags: ' + escapeHtml(tagText)); }
@@ -592,7 +611,7 @@
             rows.push(
                 '<tr>' +
                     '<td><strong>' + escapeHtml(item.source_title || '(ohne Titel)') + '</strong><div class="ci-preview-meta">' + sourceMetaParts.join(' · ') + '</div></td>' +
-                    '<td><strong>' + escapeHtml(item.target_type || '') + '</strong><div class="ci-preview-meta">Slug: ' + escapeHtml(item.target_slug || '—') + '</div><div class="ci-preview-meta">' + escapeHtml(item.target_url || item.target_hint || '') + '</div></td>' +
+                    '<td><strong>' + escapeHtml(item.target_type || '') + '</strong><div class="ci-preview-meta">Slug: ' + escapeHtml(targetSlugText) + '</div><div class="ci-preview-meta">' + escapeHtml(targetInfoText) + '</div></td>' +
                     '<td><span class="ci-preview-pill ' + (item.action === 'import' ? 'ci-preview-pill--ok' : 'ci-preview-pill--warn') + '">' + (item.action === 'import' ? 'Würde importieren' : 'Würde überspringen') + '</span><div class="ci-preview-meta">' + escapeHtml(reasonText) + '</div></td>' +
                     '<td>' + (details.length ? '<ul class="ci-preview-details"><li>' + details.join('</li><li>') + '</li></ul>' : '<span class="ci-muted">Keine Zusatzdetails</span>') + '</td>' +
                 '</tr>'

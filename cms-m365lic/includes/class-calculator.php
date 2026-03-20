@@ -63,7 +63,7 @@ final class CMS_M365LIC_Calculator
         $missingPricePackages = [];
 
         foreach ($requirements as $index => $row) {
-            $quantity = max(1, (int) ($row['quantity'] ?? 1));
+            $quantity = max(0, (int) ($row['quantity'] ?? 1));
             $label = trim((string) ($row['label'] ?? ('Bedarf ' . ($index + 1))));
             $features = array_values(array_unique(array_filter(array_map('strval', $row['features'] ?? []))));
             $audience = (string) ($row['audience'] ?? 'knowledge');
@@ -434,9 +434,11 @@ final class CMS_M365LIC_Calculator
         $pricingBasis = (string) ($package['pricing_basis'] ?? 'per_user');
         $adjustedCostPrice = $repo->apply_billing_cycle($costBasePrice, (string) ($billingContext['key'] ?? 'annual_upfront'));
         $adjustedDisplayPrice = $repo->apply_billing_cycle($displayBasePrice, (string) ($billingContext['key'] ?? 'annual_upfront'));
-        $billingQuantity = $pricingBasis === 'flat_monthly' ? 1 : $quantity;
+        $billingQuantity = $pricingBasis === 'flat_monthly'
+            ? ($quantity > 0 ? 1 : 0)
+            : $quantity;
         $quantityLabel = $pricingBasis === 'flat_monthly'
-            ? '1 Fixpreis / Monat'
+            ? ($quantity > 0 ? '1 Fixpreis / Monat' : '0 Fixpreis / Monat')
             : $quantity . ' Benutzer';
         $markupPercent = 0.0;
         if ($pricingProfile !== null && $applyMarkup) {

@@ -671,10 +671,6 @@ class CMS_Importer_XML_Parser
         $parsed = $this->map_known_meta($parsed);
         $parsed['locale'] = $this->resolve_item_locale($parsed);
 
-        if ($this->should_ignore_english_item($parsed)) {
-            return null;
-        }
-
         $parsed['image_urls'] = $this->collect_image_urls($raw_content, $parsed['meta'], $parsed['seo']);
 
         if ($post_type === 'tablepress_table') {
@@ -811,7 +807,24 @@ class CMS_Importer_XML_Parser
             return '';
         }
 
+        while ($segments !== [] && $this->is_locale_segment((string) ($segments[0] ?? ''))) {
+            array_shift($segments);
+        }
+
+        while ($segments !== [] && $this->is_locale_segment((string) ($segments[count($segments) - 1] ?? ''))) {
+            array_pop($segments);
+        }
+
+        if ($segments === []) {
+            return '';
+        }
+
         return urldecode((string) end($segments));
+    }
+
+    private function is_locale_segment(string $segment): bool
+    {
+        return strtolower(trim($segment)) === 'en';
     }
 
     private function resolve_attachment_references(array $result): array

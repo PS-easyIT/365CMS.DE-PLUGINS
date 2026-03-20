@@ -1,4 +1,51 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const usagePeriodButtons = Array.from(document.querySelectorAll('[data-usage-period-trigger]'));
+    const usageModeButtons = Array.from(document.querySelectorAll('[data-usage-mode-trigger]'));
+    const usagePanels = Array.from(document.querySelectorAll('[data-usage-period-panel][data-usage-mode-panel]'));
+    let activeUsagePeriod = usagePeriodButtons.find((button) => button.classList.contains('is-active'))?.getAttribute('data-usage-period-trigger') ?? '14';
+    let activeUsageMode = usageModeButtons.find((button) => button.classList.contains('is-active'))?.getAttribute('data-usage-mode-trigger') ?? 'evaluation';
+
+    const updateUsagePanels = () => {
+        usagePeriodButtons.forEach((button) => {
+            const isActive = (button.getAttribute('data-usage-period-trigger') ?? '') === activeUsagePeriod;
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        usageModeButtons.forEach((button) => {
+            const isActive = (button.getAttribute('data-usage-mode-trigger') ?? '') === activeUsageMode;
+            button.classList.toggle('is-active', isActive);
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        usagePanels.forEach((panel) => {
+            const panelPeriod = panel.getAttribute('data-usage-period-panel') ?? '';
+            const panelMode = panel.getAttribute('data-usage-mode-panel') ?? '';
+            const isActive = panelPeriod === activeUsagePeriod && panelMode === activeUsageMode;
+
+            panel.classList.toggle('is-active', isActive);
+            panel.hidden = !isActive;
+        });
+    };
+
+    if (usagePanels.length > 0) {
+        usagePeriodButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                activeUsagePeriod = button.getAttribute('data-usage-period-trigger') ?? activeUsagePeriod;
+                updateUsagePanels();
+            });
+        });
+
+        usageModeButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                activeUsageMode = button.getAttribute('data-usage-mode-trigger') ?? activeUsageMode;
+                updateUsagePanels();
+            });
+        });
+
+        updateUsagePanels();
+    }
+
     const priceInputs = Array.from(document.querySelectorAll('[data-m365lic-price-input]'));
     const priceFeedback = document.querySelector('[data-m365lic-copy-price-feedback]');
     const priceCopyButton = document.querySelector('[data-m365lic-copy-price]');

@@ -145,7 +145,6 @@ final class CMS_Contact_Installer
             sender_email  VARCHAR(255)  DEFAULT NULL,
             subject       VARCHAR(500)  DEFAULT NULL,
             message       TEXT          DEFAULT NULL,
-            ip_address    VARCHAR(45)   DEFAULT NULL,
             user_agent    VARCHAR(500)  DEFAULT NULL,
             status        VARCHAR(20)   NOT NULL DEFAULT 'unread',
             is_spam       TINYINT(1)    NOT NULL DEFAULT 0,
@@ -184,8 +183,33 @@ final class CMS_Contact_Installer
 
     private static function maybe_alter_tables(): void
     {
-        // Platzhalter für zukünftige Migrationen
-        self::create_tables(); // Stellt sicher, dass alle Tabellen existieren
+        self::create_tables();
+        self::seed_default_settings();
+        self::remove_submission_ip_column();
+    }
+
+    private static function remove_submission_ip_column(): void
+    {
+        if (!class_exists('CMS\Database')) {
+            return;
+        }
+
+        try {
+            $db = \CMS\Database::instance();
+            $p  = $db->getPrefix();
+            $tableName = $p . 'contact_submissions';
+
+            $stmt = $db->prepare(
+                'SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+            );
+            $stmt->execute([$tableName, 'ip_address']);
+
+            if ($stmt->fetch()) {
+                $db->getPdo()->exec("ALTER TABLE {$tableName} DROP COLUMN ip_address");
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS_Contact_Installer::remove_submission_ip_column() error: ' . $e->getMessage());
+        }
     }
 
     // ── Seed-Daten ────────────────────────────────────────────────────────────
@@ -214,6 +238,8 @@ final class CMS_Contact_Installer
             'auto_delete_days'    => '90',
             'default_template'    => 'classic',
             'primary_color'       => '#3b82f6',
+            'privacy_policy_url'  => '/datenschutz',
+            'require_privacy_consent' => '1',
             'success_color'       => '#10b981',
             'error_color'         => '#ef4444',
         ];

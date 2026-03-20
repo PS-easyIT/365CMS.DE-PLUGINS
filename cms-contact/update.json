@@ -1,12 +1,12 @@
 {
     "name": "CMS Contact",
     "slug": "cms-contact",
-    "version": "1.1.1",
+    "version": "1.1.3",
     "requires_cms": "2.0.0",
     "tested_cms": "2.0.0",
     "author": "365 Network",
     "author_uri": "https://365network.de",
-    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-1.1.1.zip",
-    "last_updated": "2026-03-14",
-    "changelog": "365CMS-Kompatibilitätsupdate für die aktuelle Settings-Tabelle und Installer-Versionierung."
+    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-1.1.3.zip",
+    "last_updated": "2026-03-19",
+    "changelog": "Datenschutz-Update mit verpflichtender Einwilligung, Datenschutz-Link und Entfernung der IP-Speicherung."
 }

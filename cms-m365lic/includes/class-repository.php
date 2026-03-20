@@ -483,6 +483,146 @@ final class CMS_M365LIC_Repository
     }
 
     /**
+     * @return array<string,mixed>
+     */
+    public function get_usage_statistics(int $timelineDays = 14): array
+    {
+        $timelineDays = max(7, min(30, $timelineDays));
+        $tiers = ['public', 'member', 'group'];
+        $actions = ['evaluation', 'pdf_export'];
+        $availablePeriods = [7, 14, 30];
+        $summary = [];
+
+        foreach ($tiers as $tier) {
+            $summary[$tier] = [
+                'label' => match ($tier) {
+                    'member' => 'Member',
+                    'group' => 'Spezial',
+                    default => 'Public',
+                },
+                'evaluation_total' => 0,
+                'evaluation_last_30_days' => 0,
+                'evaluation_today' => 0,
+                'pdf_total' => 0,
+                'pdf_last_30_days' => 0,
+                'pdf_today' => 0,
+            ];
+        }
+
+        $todayKey = date('Ymd');
+        $lastThirtyDaysKey = date('Ymd', strtotime('-29 days'));
+        $baseTimeline = [];
+
+        for ($offset = 29; $offset >= 0; $offset--) {
+            $dateKey = date('Ymd', strtotime('-' . $offset . ' days'));
+            $baseTimeline[$dateKey] = [
+                'date_key' => $dateKey,
+                'date_label' => date('d.m.', strtotime(substr($dateKey, 0, 4) . '-' . substr($dateKey, 4, 2) . '-' . substr($dateKey, 6, 2))),
+                'evaluation' => [
+                    'public' => 0,
+                    'member' => 0,
+                    'group' => 0,
+                    'total' => 0,
+                ],
+                'pdf_export' => [
+                    'public' => 0,
+                    'member' => 0,
+                    'group' => 0,
+                    'total' => 0,
+                ],
+            ];
+        }
+
+        try {
+            $stmt = $this->db()->prepare(
+                "SELECT pricing_tier, action_key,
+                        SUM(hits) AS total_hits,
+                        SUM(CASE WHEN date_key = ? THEN hits ELSE 0 END) AS hits_today,
+                        SUM(CASE WHEN date_key >= ? THEN hits ELSE 0 END) AS hits_last_30_days
+                 FROM {$this->prefix()}m365lic_usage_limits
+                 WHERE action_key IN (?, ?)
+                 GROUP BY pricing_tier, action_key"
+            );
+            $stmt->execute([$todayKey, $lastThirtyDaysKey, $actions[0], $actions[1]]);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+
+            foreach ($rows as $row) {
+                $tier = (string) ($row['pricing_tier'] ?? 'public');
+                $action = (string) ($row['action_key'] ?? 'evaluation');
+
+                if (!isset($summary[$tier])) {
+                    continue;
+                }
+
+                if ($action === 'evaluation') {
+                    $summary[$tier]['evaluation_total'] = (int) ($row['total_hits'] ?? 0);
+                    $summary[$tier]['evaluation_today'] = (int) ($row['hits_today'] ?? 0);
+                    $summary[$tier]['evaluation_last_30_days'] = (int) ($row['hits_last_30_days'] ?? 0);
+                    continue;
+                }
+
+                if ($action === 'pdf_export') {
+                    $summary[$tier]['pdf_total'] = (int) ($row['total_hits'] ?? 0);
+                    $summary[$tier]['pdf_today'] = (int) ($row['hits_today'] ?? 0);
+                    $summary[$tier]['pdf_last_30_days'] = (int) ($row['hits_last_30_days'] ?? 0);
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore and keep zero-state
+        }
+
+        try {
+            $timelineStmt = $this->db()->prepare(
+                "SELECT date_key, pricing_tier, action_key, SUM(hits) AS total_hits
+                 FROM {$this->prefix()}m365lic_usage_limits
+                 WHERE action_key IN (?, ?) AND date_key >= ?
+                 GROUP BY date_key, pricing_tier, action_key
+                 ORDER BY date_key ASC"
+            );
+            $timelineStmt->execute([$actions[0], $actions[1], $lastThirtyDaysKey]);
+            $rows = $timelineStmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+
+            foreach ($rows as $row) {
+                $dateKey = (string) ($row['date_key'] ?? '');
+                $tier = (string) ($row['pricing_tier'] ?? 'public');
+                $action = (string) ($row['action_key'] ?? 'evaluation');
+                $hits = (int) ($row['total_hits'] ?? 0);
+
+                if (!isset($baseTimeline[$dateKey], $baseTimeline[$dateKey][$action][$tier])) {
+                    continue;
+                }
+
+                $baseTimeline[$dateKey][$action][$tier] = $hits;
+                $baseTimeline[$dateKey][$action]['total'] += $hits;
+            }
+        } catch (\Throwable $e) {
+            // ignore and keep zero-state
+        }
+
+        $periods = [];
+        foreach ($availablePeriods as $period) {
+            $periods[(string) $period] = array_slice(array_values($baseTimeline), -$period);
+        }
+
+        return [
+            'summary' => $summary,
+            'timeline_days' => $timelineDays,
+            'default_period' => $timelineDays,
+            'available_periods' => $availablePeriods,
+            'timeline' => $periods[(string) $timelineDays] ?? [],
+            'periods' => $periods,
+            'totals' => [
+                'evaluation_total' => array_sum(array_map(static fn(array $item): int => (int) ($item['evaluation_total'] ?? 0), $summary)),
+                'evaluation_last_30_days' => array_sum(array_map(static fn(array $item): int => (int) ($item['evaluation_last_30_days'] ?? 0), $summary)),
+                'evaluation_today' => array_sum(array_map(static fn(array $item): int => (int) ($item['evaluation_today'] ?? 0), $summary)),
+                'pdf_total' => array_sum(array_map(static fn(array $item): int => (int) ($item['pdf_total'] ?? 0), $summary)),
+                'pdf_last_30_days' => array_sum(array_map(static fn(array $item): int => (int) ($item['pdf_last_30_days'] ?? 0), $summary)),
+                'pdf_today' => array_sum(array_map(static fn(array $item): int => (int) ($item['pdf_today'] ?? 0), $summary)),
+            ],
+        ];
+    }
+
+    /**
      * @return array<int,array<string,mixed>>
      */
     public function get_special_groups(bool $includeInactive = true): array

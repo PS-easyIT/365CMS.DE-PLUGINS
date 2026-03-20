@@ -93,14 +93,14 @@ final class CMS_M365LIC_Catalog
                 'label' => '1 Jahr · jährliche Zahlung',
                 'short_label' => 'Jahr / jährlich',
                 'multiplier' => 1.00,
-                'note' => 'Wird aus dem gepflegten Monatspreis für Jahresvertrag mit monatlicher Zahlung zurückgerechnet.',
+                'note' => 'Stand der Preise vom 17.03.2026 – tatsächliche Preise können je nach Vertrag und Konditionen abweichen.',
             ],
             'annual_monthly' => [
                 'key' => 'annual_monthly',
                 'label' => '1 Jahr · monatliche Zahlung (+5%)',
                 'short_label' => 'Jahr / monatlich',
                 'multiplier' => 1.05,
-                'note' => 'Das ist der im Admin gepflegte Referenz-Monatspreis.',
+                'note' => 'Stand der Preise vom 17.03.2026 – tatsächliche Preise können je nach Vertrag und Konditionen abweichen.',
             ],
             'monthly_flex' => [
                 'key' => 'monthly_flex',
@@ -389,6 +389,292 @@ final class CMS_M365LIC_Catalog
     }
 
     /**
+     * @return array<string,array<string,mixed>>
+     */
+    public static function eu_service_profiles(): array
+    {
+        return [
+            'workplace_core' => [
+                'label' => 'Workplace, Mail & Dateien',
+                'description' => 'Mail, Kalender, Dateifreigaben, Teamräume und allgemeine Zusammenarbeit.',
+                'categories' => ['core_workspace', 'collaboration_intranet'],
+            ],
+            'office_apps' => [
+                'label' => 'Desktop- & Web-Apps',
+                'description' => 'Office-Editoren, Browser-Apps und lokale Desktop-Anwendungen.',
+                'categories' => ['office_productivity'],
+            ],
+            'endpoint_management' => [
+                'label' => 'Intune / Geräteverwaltung',
+                'description' => 'MDM, UEM, Richtlinien, BYOD, Shared Devices und Gerätekonfiguration.',
+                'categories' => ['mdm_uem', 'security_device_management'],
+            ],
+            'identity_access' => [
+                'label' => 'Identity / MFA / Zugriff',
+                'description' => 'IAM, SSO, MFA, Conditional Access, PKI und Identity Governance.',
+                'categories' => ['identity_access_iam'],
+            ],
+            'endpoint_security' => [
+                'label' => 'Endpoint Security / XDR',
+                'description' => 'Endpoint Protection, EDR, XDR, CASB und Security Operations.',
+                'categories' => ['endpoint_security_xdr', 'security_device_management'],
+            ],
+            'compliance_governance' => [
+                'label' => 'Compliance / Archivierung',
+                'description' => 'Aufbewahrung, DMS, Archiv, eDiscovery und rechtssichere Dokumentation.',
+                'categories' => ['dms_archiving_compliance'],
+            ],
+            'ai_assistants' => [
+                'label' => 'KI / Copilot / Assistants',
+                'description' => 'Assistenzsysteme, Chat-KI, Agenten und souveräne KI-Plattformen.',
+                'categories' => ['ai_assistants'],
+            ],
+            'project_portfolio' => [
+                'label' => 'Projekt- & Portfoliomanagement',
+                'description' => 'Planner-, Project-, PMO- und Multiprojekt-Szenarien.',
+                'categories' => ['project_management', 'enterprise_project_management'],
+            ],
+            'automation_low_code' => [
+                'label' => 'Low-Code & Automatisierung',
+                'description' => 'Workflow-Engines, App-Baukästen, BPMN und Prozessautomatisierung.',
+                'categories' => ['low_code_automation'],
+            ],
+            'bi_analytics' => [
+                'label' => 'BI / Reporting / Analyse',
+                'description' => 'Dashboards, Reports, Planung und Management-Analyse.',
+                'categories' => ['data_analysis_bi'],
+            ],
+            'telephony_voice' => [
+                'label' => 'Telefonie / PBX / Voice',
+                'description' => 'Cloud-Telefonie, UCaaS, Rufsteuerung und Contact-Center-nahe Szenarien.',
+                'categories' => ['enterprise_cloud_telephony'],
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string,array<string,mixed>>
+     */
+    public static function eu_offer_capability_profiles(): array
+    {
+        return [
+            'icewarp business (cz)' => [
+                'service_keys' => ['workplace_core', 'office_apps'],
+                'strength_note' => 'Sehr nah an einem klassischen M365-Workspace mit Mail, Groupware und Office-Fokus.',
+                'limitation_note' => 'Kein echter Ersatz für Entra, Intune, XDR oder tiefe Compliance-Suiten.',
+            ],
+            'infomaniak ksuite enterprise (ch)' => [
+                'service_keys' => ['workplace_core'],
+                'strength_note' => 'Souveräner Komplett-Workspace mit starkem Datenschutz-Fokus.',
+                'limitation_note' => 'Identity-, Endpoint- und Enterprise-Compliance-Funktionen brauchen meist Zusatzanbieter.',
+            ],
+            'nextcloud hub enterprise (de)*' => [
+                'service_keys' => ['workplace_core', 'compliance_governance'],
+                'strength_note' => 'Stark für Dateihoheit, Kollaboration und europäische Datenkontrolle.',
+                'limitation_note' => 'Mail, Voice, IAM und MDM werden in der Regel über ergänzende Lösungen gelöst.',
+            ],
+            'open-xchange ox cloud (de)' => [
+                'service_keys' => ['workplace_core', 'compliance_governance'],
+                'strength_note' => 'Solide europäische Groupware-Basis mit starkem Mail- und Collaboration-Fokus.',
+                'limitation_note' => 'Office-Apps, IAM, MDM und Security-XDR müssen meist separat ergänzt werden.',
+            ],
+            'softmaker nx universal (de)' => [
+                'service_keys' => ['office_apps'],
+                'strength_note' => 'Starke Alternative für installierbare Desktop-Office-Apps.',
+            ],
+            'collabora online enterprise (uk)' => [
+                'service_keys' => ['office_apps'],
+                'strength_note' => 'Gut für browserbasierte Office-Bearbeitung im souveränen Stack.',
+            ],
+            'onlyoffice workspace enterprise (lv)' => [
+                'service_keys' => ['office_apps', 'workplace_core'],
+                'strength_note' => 'Hohe MS-Format-Kompatibilität für Web- und Desktop-Editing.',
+            ],
+            'stackfield enterprise (de)' => [
+                'service_keys' => ['workplace_core', 'project_portfolio', 'compliance_governance'],
+                'strength_note' => 'Kombiniert Collaboration, Aufgaben und Dateien in einer europäischen Oberfläche.',
+            ],
+            'element enterprise (uk/fr)' => [
+                'service_keys' => ['workplace_core'],
+                'strength_note' => 'Sehr gut für sichere Chat- und Raum-Kommunikation.',
+                'limitation_note' => 'Deckt Office, IAM, DMS und Geräteverwaltung nicht eigenständig ab.',
+            ],
+            'alfaview professional (de)' => [
+                'service_keys' => ['workplace_core', 'telephony_voice'],
+                'strength_note' => 'Starke Ergänzung für Videokonferenzen und Kommunikationsräume.',
+            ],
+            'cortado mdm pro (de)' => [
+                'service_keys' => ['endpoint_management'],
+                'strength_note' => 'Fokus auf Mobile Device Management und Richtlinien.',
+            ],
+            'relution enterprise (de)' => [
+                'service_keys' => ['endpoint_management'],
+                'strength_note' => 'Starker europäischer Intune-Ersatz für Bildung, Behörden und Private Cloud.',
+            ],
+            'eset protect advanced (sk)' => [
+                'service_keys' => ['endpoint_security', 'endpoint_management'],
+                'strength_note' => 'Kombiniert Endpoint-Schutz mit Verwaltungsnähe.',
+            ],
+            'withsecure elements (fi)' => [
+                'service_keys' => ['endpoint_security'],
+                'strength_note' => 'Starkes europäisches Security-Portfolio für Endpunkte und Cloud.',
+            ],
+            'g data endpoint protection (de)' => [
+                'service_keys' => ['endpoint_security'],
+                'strength_note' => 'Deutscher Endpoint-Security-Spezialist mit Datenschutz-Fokus.',
+            ],
+            'bitdefender gravityzone ultra (ro)' => [
+                'service_keys' => ['endpoint_security'],
+                'strength_note' => 'Starke XDR-/EDR-Abdeckung für Security-lastige Anforderungen.',
+            ],
+            'eset protect enterprise (sk)' => [
+                'service_keys' => ['endpoint_security'],
+                'strength_note' => 'Sehr gutes Fit für XDR, Hunting und Security Operations.',
+            ],
+            'g data endpoint protection business (de)' => [
+                'service_keys' => ['endpoint_security'],
+                'strength_note' => 'Gut für datenschutzsensible und deutsche Security-Szenarien.',
+            ],
+            'stormshield endpoint security (fr)' => [
+                'service_keys' => ['endpoint_security'],
+                'strength_note' => 'Geeignet für hochsichere Umgebungen und KRITIS-nahe Deployments.',
+            ],
+            'matrix42 uem (de)' => [
+                'service_keys' => ['endpoint_management'],
+                'strength_note' => 'Sehr stark für Enterprise-UEM plus ITSM-Kontext.',
+            ],
+            'baramundi management suite (de)' => [
+                'service_keys' => ['endpoint_management'],
+                'strength_note' => 'Breite Endgeräteverwaltung im DACH-Mittelstand.',
+            ],
+            'apptec360 enterprise (ch/de)' => [
+                'service_keys' => ['endpoint_management'],
+                'strength_note' => 'Preislich starke UEM-/MDM-Lösung mit europäischer Hosting-Ausrichtung.',
+            ],
+            'cidaas (de)' => [
+                'service_keys' => ['identity_access'],
+                'strength_note' => 'Cloud-IAM mit MFA, Biometrie und API-Fokus.',
+            ],
+            'pointsharp (se)' => [
+                'service_keys' => ['identity_access'],
+                'strength_note' => 'Starker Fit für MFA und hochsichere Authentifizierung.',
+            ],
+            'nexus smart id (se)' => [
+                'service_keys' => ['identity_access'],
+                'strength_note' => 'Stark bei PKI, Smartcards und komplexen Identitätsmodellen.',
+            ],
+            'univention (ucs) (de)' => [
+                'service_keys' => ['identity_access'],
+                'strength_note' => 'Europäischer AD-/Entra-Ersatz mit Open-Source-Kern.',
+            ],
+            'planisware (fr)' => [
+                'service_keys' => ['project_portfolio'],
+                'strength_note' => 'Top-Fit für PMO- und Portfolio-Management im Enterprise-Kontext.',
+            ],
+            'projektron bcs (de)' => [
+                'service_keys' => ['project_portfolio'],
+                'strength_note' => 'Sehr passend für Multiprojekt-, Ressourcen- und Professional-Services-Szenarien.',
+            ],
+            'sciforma (fr)' => [
+                'service_keys' => ['project_portfolio'],
+                'strength_note' => 'Gut für Strategie-Execution und klassisches Enterprise-PMO.',
+            ],
+            'inloox enterprise (de)' => [
+                'service_keys' => ['project_portfolio'],
+                'strength_note' => 'Hilfreich für Outlook-nahe Projektorganisation.',
+            ],
+            'openproject enterprise (de)' => [
+                'service_keys' => ['project_portfolio'],
+                'strength_note' => 'Souveräner Projektmanagement-Stack mit Open-Source-Kern.',
+            ],
+            'awork enterprise (de)' => [
+                'service_keys' => ['project_portfolio'],
+                'strength_note' => 'Visuell moderne PM-Alternative für Teams und Fachbereiche.',
+            ],
+            'meistertask business (at)' => [
+                'service_keys' => ['project_portfolio'],
+                'strength_note' => 'Sehr einfach zugängliches Work-Management und Kanban.',
+            ],
+            'camunda 8 enterprise (de)' => [
+                'service_keys' => ['automation_low_code'],
+                'strength_note' => 'Starker Fit für Prozessautomation und orchestrierte Enterprise-Workflows.',
+            ],
+            'webcon bps (pl)' => [
+                'service_keys' => ['automation_low_code'],
+                'strength_note' => 'Geeignet für flexible Formular- und Prozessplattformen.',
+            ],
+            'axon ivy (ch/at)' => [
+                'service_keys' => ['automation_low_code'],
+                'strength_note' => 'Sehr gut für komplexe B2B- und BPM-Szenarien.',
+            ],
+            'simplifier (de)' => [
+                'service_keys' => ['automation_low_code'],
+                'strength_note' => 'Starker Low-Code-Fit für industrielle Apps und ERP-nahe Workflows.',
+            ],
+            'jedox (de)' => [
+                'service_keys' => ['bi_analytics'],
+                'strength_note' => 'Starker Fit für Finanzplanung, BI und Excel-nahe Analyse.',
+            ],
+            'bissantz (deltamaster) (de)' => [
+                'service_keys' => ['bi_analytics'],
+                'strength_note' => 'Gut für Management-Dashboards und verdichtete Analysen.',
+            ],
+            'board (ch)' => [
+                'service_keys' => ['bi_analytics'],
+                'strength_note' => 'Geeignet für Planung, Simulation und Enterprise-Analyse.',
+            ],
+            'targit (dk)' => [
+                'service_keys' => ['bi_analytics'],
+                'strength_note' => 'Stark für BI in Handel, Produktion und Mittelstand.',
+            ],
+            'elo digital office (de)' => [
+                'service_keys' => ['compliance_governance'],
+                'strength_note' => 'Sehr gutes Fit für ECM, Archivierung und revisionssichere Ablage.',
+            ],
+            'docuware (de)' => [
+                'service_keys' => ['compliance_governance'],
+                'strength_note' => 'Stark für Cloud-DMS, Rechnungen, HR und strukturierte Compliance-Prozesse.',
+            ],
+            'd.velop documents (de)' => [
+                'service_keys' => ['compliance_governance'],
+                'strength_note' => 'Passend für zertifizierte Archivierung und Content Management.',
+            ],
+            'ema (artec it) (de)' => [
+                'service_keys' => ['compliance_governance'],
+                'strength_note' => 'Spezialisiert auf rechtssichere Mail-Archivierung und eDiscovery.',
+            ],
+            'nfon cloudya premium (de)' => [
+                'service_keys' => ['telephony_voice'],
+                'strength_note' => 'Starker europäischer Ersatz für Teams Phone und UCaaS.',
+            ],
+            'enreach contact / swyx (nl/de)' => [
+                'service_keys' => ['telephony_voice'],
+                'strength_note' => 'Guter Fit für Business-Kommunikation, Call-Routing und Presence.',
+            ],
+            'starface enterprise (de)' => [
+                'service_keys' => ['telephony_voice'],
+                'strength_note' => 'Flexibler PBX-Stack für Cloud, VM und On-Prem.',
+            ],
+            'dstny (be)' => [
+                'service_keys' => ['telephony_voice'],
+                'strength_note' => 'Großer paneuropäischer UCaaS-Anbieter für Voice-Workloads.',
+            ],
+            'aleph alpha (pharia) (de)' => [
+                'service_keys' => ['ai_assistants'],
+                'strength_note' => 'Souveräne europäische KI für Behörden- und Enterprise-Szenarien.',
+            ],
+            'mistral ai (la plateforme) (fr)' => [
+                'service_keys' => ['ai_assistants'],
+                'strength_note' => 'Starker Fit für generative KI, Assistants und API-basierte KI-Produkte.',
+            ],
+            'deepl enterprise / pro (de)' => [
+                'service_keys' => ['ai_assistants'],
+                'strength_note' => 'Sehr passend für Textassistenz, Übersetzung und Schreibhilfe.',
+            ],
+        ];
+    }
+
+    /**
      * @return array<string,array<int,array<string,mixed>>>
      */
     public static function eu_comparison_offers(): array
@@ -552,7 +838,7 @@ final class CMS_M365LIC_Catalog
      */
     private static function seed_price_map(): array
     {
-        $yearly = 'Gepflegter EUR-Monatspreis für 1 Jahr Laufzeit mit monatlicher Zahlung (+5%). Jahreszahlung wird daraus zurückgerechnet, Monatslaufzeit mit +20% hochgerechnet.';
+        $yearly = 'Stand der Preise vom 17.03.2026 – tatsächliche Preise können je nach Vertrag und Konditionen abweichen.';
 
         $perUser = static fn(float $price, string $source, ?float $groupPrice = null): array => [
             'public' => $price,
@@ -569,7 +855,7 @@ final class CMS_M365LIC_Catalog
             'member' => $price,
             'group' => $groupPrice ?? $price,
             'currency' => 'EUR',
-            'pricing_note' => 'Gepflegter EUR-Monatspreis für 1 Jahr Laufzeit mit monatlicher Zahlung (+5%). Jahreszahlung wird daraus zurückgerechnet, Monatslaufzeit mit +20% hochgerechnet.',
+            'pricing_note' => 'Stand der Preise vom 17.03.2026 – tatsächliche Preise können je nach Vertrag und Konditionen abweichen.',
             'source_note' => self::normalize_source_note_currency($source),
             'pricing_basis' => 'flat_monthly',
         ];

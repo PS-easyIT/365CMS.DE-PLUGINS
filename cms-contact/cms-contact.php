@@ -3,7 +3,7 @@
  * Plugin Name: CMS Contact
  * Plugin URI:  https://365network.de/cms-contact
  * Description: Kontaktformular-Plugin mit bis zu 6 Templates, benutzerdefinierten Metafeldern und mehreren Formularen unter verschiedenen Slugs
- * Version:     1.1.1
+ * Version:     1.1.3
  * Author:      365 Network
  * Author URI:  https://365network.de
  *
@@ -17,8 +17,8 @@ if (!defined('ABSPATH')) {
 }
 
 // ── Konstanten ────────────────────────────────────────────────────────────────
-define('CMS_CONTACT_VERSION',    '1.1.1');
-define('CMS_CONTACT_DB_VERSION', '1');
+define('CMS_CONTACT_VERSION',    '1.1.3');
+define('CMS_CONTACT_DB_VERSION', '2');
 define('CMS_CONTACT_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_CONTACT_PLUGIN_URL', '/plugins/cms-contact/');
 
@@ -172,44 +172,295 @@ final class CMS_Contact
             'color'           => '#2563eb',
             'category'        => 'plugins',
             'priority'        => 80,
+            'admin_url'       => '/admin/plugins/contact/submissions',
+            'stats_callback'  => [$this, 'get_member_stats'],
+            'post_callback'   => [$this, 'handle_member_post'],
             'render_callback' => [$this, 'render_member_page'],
         ]);
     }
 
+    public function get_member_stats(object $user): array
+    {
+        $count = class_exists('CMS_Contact_Submissions')
+            ? count(CMS_Contact_Submissions::instance()->get_user_submissions((int) $user->id))
+            : 0;
+
+        return [
+            'count' => $count,
+            'label' => $count === 1 ? 'Anfrage' : 'Anfragen',
+        ];
+    }
+
+    public function handle_member_post(object $user, array $params = []): void
+    {
+        $submissionService = class_exists('CMS_Contact_Submissions')
+            ? CMS_Contact_Submissions::instance()
+            : null;
+
+        if ($submissionService === null) {
+            $this->set_member_flash('error', 'Der Kontaktbereich ist aktuell nicht verfügbar.');
+            $this->redirect_member_section();
+        }
+
+        $action = (string) ($_POST['member_contact_action'] ?? '');
+        if ($action === '') {
+            $this->render_member_page($user, $params);
+            return;
+        }
+
+        if (!class_exists('CMS\\Security')
+            || !\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'contact_member_actions')) {
+            $this->set_member_flash('error', 'Sicherheitscheck fehlgeschlagen. Bitte versuche es erneut.');
+            $this->redirect_member_section();
+        }
+
+        $submissionId = (int) ($_POST['submission_id'] ?? 0);
+        if ($submissionId <= 0
+            || $submissionService->get_user_submission_by_id((int) $user->id, $submissionId) === null) {
+            $this->set_member_flash('error', 'Die gewünschte Kontaktanfrage wurde nicht gefunden.');
+            $this->redirect_member_section();
+        }
+
+        if ($action === 'delete_submission') {
+            $deleted = $submissionService->delete_user_submission((int) $user->id, $submissionId);
+            $this->set_member_flash(
+                $deleted ? 'success' : 'error',
+                $deleted
+                    ? 'Die Kontaktanfrage wurde erfolgreich gelöscht.'
+                    : 'Die Kontaktanfrage konnte nicht gelöscht werden.'
+            );
+            $this->redirect_member_section(['view' => null]);
+        }
+
+        $this->set_member_flash('error', 'Die gewünschte Aktion ist nicht verfügbar.');
+        $this->redirect_member_section(['view' => $submissionId]);
+    }
+
     public function render_member_page(object $user, array $params = []): void
     {
-        $submissions = class_exists('CMS_Contact_Submissions')
-            ? CMS_Contact_Submissions::instance()->get_user_submissions((int) $user->id)
+        $submissionService = class_exists('CMS_Contact_Submissions')
+            ? CMS_Contact_Submissions::instance()
+            : null;
+
+        $submissions = $submissionService !== null
+            ? $submissionService->get_user_submissions((int) $user->id)
             : [];
+
+        $selectedSubmission = null;
+        $selectedMeta = [];
+        $selectedId = isset($_GET['view']) ? max(0, (int) $_GET['view']) : 0;
+        if ($selectedId > 0 && $submissionService !== null) {
+            $selectedSubmission = $submissionService->get_user_submission_by_id((int) $user->id, $selectedId);
+            if ($selectedSubmission !== null) {
+                $selectedMeta = $submissionService->get_meta((int) $selectedSubmission['id']);
+                if (($selectedSubmission['status'] ?? '') === 'unread') {
+                    $submissionService->mark_user_submission_read((int) $user->id, (int) $selectedSubmission['id']);
+                    $selectedSubmission['status'] = 'read';
+                    foreach ($submissions as &$submissionRow) {
+                        if ((int) ($submissionRow['id'] ?? 0) === (int) $selectedSubmission['id']) {
+                            $submissionRow['status'] = 'read';
+                            break;
+                        }
+                    }
+                    unset($submissionRow);
+                }
+            }
+        }
+
+        $flash = $this->consume_member_flash();
+        $csrfToken = class_exists('CMS\\Security')
+            ? \CMS\Security::instance()->generateToken('contact_member_actions')
+            : '';
+
+        $statusMap = $this->get_member_status_map();
+        $totalSubmissions = count($submissions);
+        $unreadSubmissions = count(array_filter($submissions, static function (array $submission): bool {
+            return ($submission['status'] ?? 'unread') === 'unread';
+        }));
+        $formsUsed = count(array_unique(array_filter(array_map(static function (array $submission): string {
+            return trim((string) ($submission['form_name'] ?? $submission['form_title'] ?? ''));
+        }, $submissions))));
+        $latestDate = !empty($submissions[0]['created_at'])
+            ? $this->format_member_date((string) $submissions[0]['created_at'])
+            : 'Noch keine';
         ?>
         <div class="cms-member-section">
+            <?php if (!empty($flash['message'])): ?>
+                <div class="member-alert <?php echo ($flash['type'] ?? 'success') === 'error' ? 'member-alert-error' : 'member-alert-success'; ?>">
+                    <?php echo htmlspecialchars((string) $flash['message'], ENT_QUOTES); ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="member-dashboard-overview member-dashboard-overview--analytics contact-member-overview" aria-label="Kontaktstatistik">
+                <article class="member-overview-card">
+                    <span class="member-overview-card__icon" aria-hidden="true">📩</span>
+                    <strong><?php echo (int) $totalSubmissions; ?></strong>
+                    <span class="contact-member-overview__label">Gesamte Kontaktanfragen</span>
+                </article>
+                <article class="member-overview-card">
+                    <span class="member-overview-card__icon" aria-hidden="true">🆕</span>
+                    <strong><?php echo (int) $unreadSubmissions; ?></strong>
+                    <span class="contact-member-overview__label">Neue, noch ungelesene Anfragen</span>
+                </article>
+                <article class="member-overview-card">
+                    <span class="member-overview-card__icon" aria-hidden="true">🗂️</span>
+                    <strong><?php echo (int) $formsUsed; ?></strong>
+                    <span class="contact-member-overview__label">Formulare mit Einsendungen</span>
+                </article>
+                <article class="member-overview-card">
+                    <span class="member-overview-card__icon" aria-hidden="true">🕒</span>
+                    <strong><?php echo htmlspecialchars($latestDate, ENT_QUOTES); ?></strong>
+                    <span class="contact-member-overview__label">Letzte Anfrage</span>
+                </article>
+            </div>
+
+            <?php if ($selectedId > 0 && $selectedSubmission === null): ?>
+                <div class="member-alert member-alert-error">
+                    Die ausgewählte Kontaktanfrage konnte nicht geladen werden oder gehört nicht zu deinem Account.
+                </div>
+            <?php endif; ?>
+
+            <?php if ($selectedSubmission !== null): ?>
+                <?php
+                $selectedStatus = $statusMap[$selectedSubmission['status'] ?? 'unread'] ?? $statusMap['unread'];
+                $messageText = trim((string) ($selectedSubmission['message'] ?? ''));
+                $subjectText = trim((string) ($selectedSubmission['subject'] ?? ''));
+                $senderName = trim((string) ($selectedSubmission['sender_name'] ?? ''));
+                $senderEmail = trim((string) ($selectedSubmission['sender_email'] ?? ''));
+                $formName = trim((string) ($selectedSubmission['form_name'] ?? $selectedSubmission['form_title'] ?? 'Kontaktformular'));
+                ?>
+                <section class="contact-member-detail" aria-labelledby="contact-member-detail-title">
+                    <header class="contact-member-detail__header">
+                        <div class="contact-member-detail__intro">
+                            <span class="contact-member-detail__eyebrow">Anfrage #<?php echo (int) $selectedSubmission['id']; ?></span>
+                            <h4 id="contact-member-detail-title"><?php echo htmlspecialchars($subjectText !== '' ? $subjectText : 'Kontaktanfrage ohne Betreff', ENT_QUOTES); ?></h4>
+                            <p>
+                                <?php echo htmlspecialchars($senderName !== '' ? $senderName : 'Unbekannter Absender', ENT_QUOTES); ?>
+                                <?php if ($senderEmail !== ''): ?>
+                                    · <a href="mailto:<?php echo htmlspecialchars($senderEmail, ENT_QUOTES); ?>"><?php echo htmlspecialchars($senderEmail, ENT_QUOTES); ?></a>
+                                <?php endif; ?>
+                                · über <?php echo htmlspecialchars($formName, ENT_QUOTES); ?>
+                            </p>
+                        </div>
+
+                        <div class="contact-member-actions">
+                            <a href="<?php echo htmlspecialchars($this->build_member_section_url(['view' => null]), ENT_QUOTES); ?>" class="contact-member-action">
+                                Zur Liste
+                            </a>
+                            <form method="post" class="member-inline-form">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES); ?>">
+                                <input type="hidden" name="submission_id" value="<?php echo (int) $selectedSubmission['id']; ?>">
+                                <button type="submit" name="member_contact_action" value="delete_submission" class="contact-member-action contact-member-action--danger">
+                                    Löschen
+                                </button>
+                            </form>
+                        </div>
+                    </header>
+
+                    <div class="contact-member-detail__meta">
+                        <div>
+                            <span>Status</span>
+                            <strong><span class="contact-member-status <?php echo htmlspecialchars($selectedStatus['class'], ENT_QUOTES); ?>"><?php echo htmlspecialchars($selectedStatus['label'], ENT_QUOTES); ?></span></strong>
+                        </div>
+                        <div>
+                            <span>Formular</span>
+                            <strong><?php echo htmlspecialchars($formName, ENT_QUOTES); ?></strong>
+                        </div>
+                        <div>
+                            <span>Eingegangen</span>
+                            <strong><?php echo htmlspecialchars($this->format_member_date((string) ($selectedSubmission['created_at'] ?? '')), ENT_QUOTES); ?></strong>
+                        </div>
+                        <div>
+                            <span>Absender</span>
+                            <strong><?php echo htmlspecialchars($senderName !== '' ? $senderName : '—', ENT_QUOTES); ?></strong>
+                        </div>
+                    </div>
+
+                    <div class="contact-member-detail__block contact-member-detail__message">
+                        <h5>Nachricht</h5>
+                        <p><?php echo nl2br(htmlspecialchars($messageText !== '' ? $messageText : 'Für diese Anfrage wurde keine Nachricht hinterlegt.', ENT_QUOTES)); ?></p>
+                    </div>
+
+                    <?php if (!empty($selectedMeta)): ?>
+                        <div class="contact-member-detail__block">
+                            <h5>Zusätzliche Angaben</h5>
+                            <dl class="contact-member-detail__fields">
+                                <?php foreach ($selectedMeta as $metaKey => $metaValue): ?>
+                                    <div class="contact-member-detail__field">
+                                        <dt><?php echo htmlspecialchars($this->format_member_meta_label((string) $metaKey), ENT_QUOTES); ?></dt>
+                                        <dd><?php echo nl2br(htmlspecialchars((string) $metaValue, ENT_QUOTES)); ?></dd>
+                                    </div>
+                                <?php endforeach; ?>
+                            </dl>
+                        </div>
+                    <?php endif; ?>
+                </section>
+            <?php endif; ?>
+
             <?php if (empty($submissions)): ?>
-                <div class="empty-state">
-                    <p style="font-size:2rem;margin:0;">📭</p>
+                <div class="member-empty-state" role="status" aria-live="polite">
+                    <p class="member-empty-state__icon member-empty-state__icon--compact" aria-hidden="true">📭</p>
                     <p><strong>Keine Kontaktanfragen vorhanden</strong></p>
+                    <p>Neue Nachrichten aus deinen Formularen erscheinen automatisch hier im Memberbereich.</p>
                 </div>
             <?php else: ?>
                 <div class="users-table-container">
-                    <table class="users-table">
+                    <table class="users-table contact-member-table">
                         <thead>
                             <tr>
                                 <th>Formular</th>
-                                <th>Betreff</th>
+                                <th>Anfrage</th>
                                 <th>Status</th>
                                 <th>Datum</th>
+                                <th>Aktionen</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($submissions as $row): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($row['form_name'] ?? '—'); ?></td>
-                                <td><?php echo htmlspecialchars($row['subject'] ?? '—'); ?></td>
+                            <?php
+                                $rowId = (int) ($row['id'] ?? 0);
+                                $rowStatus = $statusMap[$row['status'] ?? 'unread'] ?? $statusMap['unread'];
+                                $rowSubject = trim((string) ($row['subject'] ?? ''));
+                                $rowSenderName = trim((string) ($row['sender_name'] ?? ''));
+                                $rowSenderEmail = trim((string) ($row['sender_email'] ?? ''));
+                                $rowFormName = trim((string) ($row['form_name'] ?? $row['form_title'] ?? '—'));
+                                $rowActiveClass = $selectedSubmission !== null && $rowId === (int) ($selectedSubmission['id'] ?? 0)
+                                    ? ' is-active'
+                                    : '';
+                            ?>
+                            <tr class="contact-member-row<?php echo $rowActiveClass; ?>">
+                                <td><?php echo htmlspecialchars($rowFormName !== '' ? $rowFormName : '—', ENT_QUOTES); ?></td>
                                 <td>
-                                    <span class="status-badge <?php echo htmlspecialchars($row['status'] ?? 'new'); ?>">
-                                        <?php echo htmlspecialchars($row['status'] ?? 'Neu'); ?>
+                                    <div class="contact-member-table__subject">
+                                        <strong><?php echo htmlspecialchars($rowSubject !== '' ? $rowSubject : 'Kontaktanfrage ohne Betreff', ENT_QUOTES); ?></strong>
+                                        <span>
+                                            <?php echo htmlspecialchars($rowSenderName !== '' ? $rowSenderName : 'Unbekannter Absender', ENT_QUOTES); ?>
+                                            <?php if ($rowSenderEmail !== ''): ?>
+                                                · <?php echo htmlspecialchars($rowSenderEmail, ENT_QUOTES); ?>
+                                            <?php endif; ?>
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="contact-member-status <?php echo htmlspecialchars($rowStatus['class'], ENT_QUOTES); ?>">
+                                        <?php echo htmlspecialchars($rowStatus['label'], ENT_QUOTES); ?>
                                     </span>
                                 </td>
-                                <td><?php echo htmlspecialchars($row['created_at'] ?? '—'); ?></td>
+                                <td><?php echo htmlspecialchars($this->format_member_date((string) ($row['created_at'] ?? '')), ENT_QUOTES); ?></td>
+                                <td>
+                                    <div class="contact-member-table__actions">
+                                        <a href="<?php echo htmlspecialchars($this->build_member_section_url(['view' => $rowId]), ENT_QUOTES); ?>" class="contact-member-action contact-member-action--primary">
+                                            Ansicht
+                                        </a>
+                                        <form method="post" class="member-inline-form">
+                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES); ?>">
+                                            <input type="hidden" name="submission_id" value="<?php echo $rowId; ?>">
+                                            <button type="submit" name="member_contact_action" value="delete_submission" class="contact-member-action contact-member-action--danger">
+                                                Löschen
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -245,6 +496,103 @@ final class CMS_Contact
     public function get_version(): string    { return $this->version; }
     public function get_plugin_dir(): string { return $this->plugin_dir; }
     public function get_plugin_url(): string { return $this->plugin_url; }
+
+    private function build_member_section_url(array $overrides = []): string
+    {
+        $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '/member/plugin/contact');
+        $path = (string) (parse_url($requestUri, PHP_URL_PATH) ?? '/member/plugin/contact');
+
+        $query = [];
+        $rawQuery = parse_url($requestUri, PHP_URL_QUERY);
+        if (is_string($rawQuery) && $rawQuery !== '') {
+            parse_str($rawQuery, $query);
+        }
+
+        foreach ($overrides as $key => $value) {
+            if ($value === null || $value === '') {
+                unset($query[$key]);
+                continue;
+            }
+
+            $query[$key] = $value;
+        }
+
+        $queryString = http_build_query($query);
+
+        return $path . ($queryString !== '' ? '?' . $queryString : '');
+    }
+
+    private function redirect_member_section(array $overrides = []): void
+    {
+        $target = $this->build_member_section_url($overrides);
+
+        if (function_exists('safe_redirect')) {
+            safe_redirect($target);
+        } else {
+            header('Location: ' . $target, true, 302);
+        }
+
+        exit;
+    }
+
+    private function set_member_flash(string $type, string $message): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return;
+        }
+
+        $_SESSION['cms_contact_member_flash'] = [
+            'type' => $type,
+            'message' => $message,
+        ];
+    }
+
+    private function consume_member_flash(): array
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE || !isset($_SESSION['cms_contact_member_flash'])) {
+            return [];
+        }
+
+        $flash = $_SESSION['cms_contact_member_flash'];
+        unset($_SESSION['cms_contact_member_flash']);
+
+        return is_array($flash) ? $flash : [];
+    }
+
+    private function get_member_status_map(): array
+    {
+        return [
+            'unread' => ['label' => 'Neu', 'class' => 'contact-member-status--unread'],
+            'read' => ['label' => 'Gelesen', 'class' => 'contact-member-status--read'],
+            'replied' => ['label' => 'Beantwortet', 'class' => 'contact-member-status--replied'],
+            'archived' => ['label' => 'Archiviert', 'class' => 'contact-member-status--archived'],
+            'spam' => ['label' => 'Spam', 'class' => 'contact-member-status--spam'],
+        ];
+    }
+
+    private function format_member_date(string $value): string
+    {
+        if ($value === '') {
+            return '—';
+        }
+
+        $timestamp = strtotime($value);
+        if ($timestamp === false) {
+            return $value;
+        }
+
+        return date('d.m.Y H:i', $timestamp);
+    }
+
+    private function format_member_meta_label(string $key): string
+    {
+        $label = trim(str_replace(['_', '-'], ' ', $key));
+        if ($label === '') {
+            return 'Zusatzfeld';
+        }
+
+        return ucfirst($label);
+    }
 }
 
 CMS_Contact::instance();

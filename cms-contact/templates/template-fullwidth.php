@@ -73,6 +73,8 @@ $theme->getHeader();
                         </div>
                         <?php endif; ?>
 
+                        <?php echo CMS_Contact_Frontend::render_privacy_consent($form, $old); ?>
+
                         <div class="contact-submit contact-submit-centered">
                             <button type="submit" class="contact-btn contact-btn-primary contact-btn-lg">
                                 📧 Nachricht senden
