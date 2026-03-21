@@ -18,7 +18,7 @@ final class Defaults
         return [
             'enable_autolink' => '1',
             'enable_tooltips' => '1',
-            'enable_output_buffer' => '1',
+            'enable_output_buffer' => '0',
             'max_links_per_page' => '6',
             'nofollow_links' => '0',
             'open_links_new_tab' => '0',

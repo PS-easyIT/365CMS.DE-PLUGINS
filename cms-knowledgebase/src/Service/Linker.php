@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace CmsKnowledgebase\Service;
 
+use DOMDocument;
+use DOMElement;
+use DOMNode;
+use DOMXPath;
 use CmsKnowledgebase\Repository\EntryRepository;
 use CmsKnowledgebase\Support\LoggerFactory;
 
@@ -13,6 +17,16 @@ if (!defined('ABSPATH')) {
 
 final class Linker
 {
+    private const MAX_BUFFER_ENTRY_COUNT = 80;
+    private const MAX_BUFFER_HTML_BYTES = 250000;
+    private const BUFFER_TARGET_CLASSES = [
+        'page-content',
+        'post-body',
+        'article-body',
+        'entry-content',
+        'content-body',
+    ];
+
     private static ?self $instance = null;
 
     private bool $bufferStarted = false;
@@ -35,6 +49,10 @@ final class Linker
             return $content;
         }
 
+        if ($this->isKnowledgebaseRequest()) {
+            return $content;
+        }
+
         if (!$this->isAutolinkEnabled()) {
             return $content;
         }
@@ -48,17 +66,28 @@ final class Linker
             return;
         }
 
-        $settings = EntryRepository::instance()->getSettings();
-        if (($settings['enable_output_buffer'] ?? '0') !== '1') {
+        if ($this->isKnowledgebaseRequest()) {
             return;
         }
 
-        ob_start(function (string $html): string {
+        $settings = EntryRepository::instance()->getSettings();
+        if (($settings['enable_autolink'] ?? '0') !== '1') {
+            return;
+        }
+
+        $entryCount = EntryRepository::instance()->countActiveEntries();
+        $enableFullBuffer = ($settings['enable_output_buffer'] ?? '0') === '1';
+
+        ob_start(function (string $html) use ($entryCount, $enableFullBuffer): string {
             if (!$this->looksLikeHtmlDocument($html)) {
                 return $html;
             }
 
-            return $this->linkHtml($html);
+            if ($enableFullBuffer && $entryCount <= self::MAX_BUFFER_ENTRY_COUNT && strlen($html) <= self::MAX_BUFFER_HTML_BYTES) {
+                return $this->linkHtml($html);
+            }
+
+            return $this->linkDocumentRegions($html);
         });
 
         $this->bufferStarted = true;
@@ -303,6 +332,107 @@ final class Linker
         }
 
         return true;
+    }
+
+    private function isKnowledgebaseRequest(): bool
+    {
+        $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+        return $path === '/kb' || str_starts_with($path, '/kb/');
+    }
+
+    private function linkDocumentRegions(string $html): string
+    {
+        if (!class_exists(DOMDocument::class)) {
+            return $html;
+        }
+
+        $internalErrors = libxml_use_internal_errors(true);
+        $dom = new DOMDocument('1.0', 'UTF-8');
+        $loaded = $dom->loadHTML(
+            '<?xml encoding="utf-8" ?>' . $html,
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR | LIBXML_NOWARNING
+        );
+
+        if ($loaded !== true) {
+            libxml_clear_errors();
+            libxml_use_internal_errors($internalErrors);
+            return $html;
+        }
+
+        $xpath = new DOMXPath($dom);
+        $conditions = array_map(
+            static fn(string $class): string => "contains(concat(' ', normalize-space(@class), ' '), ' {$class} ')",
+            self::BUFFER_TARGET_CLASSES
+        );
+        $query = '//*[self::div or self::section or self::article][' . implode(' or ', $conditions) . ']';
+        $nodes = $xpath->query($query);
+
+        if ($nodes === false || $nodes->length === 0) {
+            libxml_clear_errors();
+            libxml_use_internal_errors($internalErrors);
+            return $html;
+        }
+
+        $updated = false;
+        /** @var DOMElement $node */
+        foreach ($nodes as $node) {
+            $innerHtml = $this->getInnerHtml($node);
+            if ($innerHtml === '' || strpos($innerHtml, 'cms-kb-link') !== false) {
+                continue;
+            }
+
+            $linkedHtml = $this->linkHtml($innerHtml);
+            if ($linkedHtml === $innerHtml) {
+                continue;
+            }
+
+            $this->replaceInnerHtml($node, $linkedHtml);
+            $updated = true;
+        }
+
+        $output = $updated ? $dom->saveHTML() : $html;
+        libxml_clear_errors();
+        libxml_use_internal_errors($internalErrors);
+
+        if (!is_string($output) || $output === '') {
+            return $html;
+        }
+
+        return preg_replace('/^<\?xml.+?\?>/i', '', $output) ?? $html;
+    }
+
+    private function getInnerHtml(DOMNode $node): string
+    {
+        $html = '';
+        foreach ($node->childNodes as $child) {
+            $html .= $node->ownerDocument?->saveHTML($child) ?? '';
+        }
+
+        return $html;
+    }
+
+    private function replaceInnerHtml(DOMElement $node, string $html): void
+    {
+        while ($node->firstChild !== null) {
+            $node->removeChild($node->firstChild);
+        }
+
+        $fragmentDocument = new DOMDocument('1.0', 'UTF-8');
+        $fragmentDocument->loadHTML(
+            '<?xml encoding="utf-8" ?><div id="kb-fragment-root">' . $html . '</div>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR | LIBXML_NOWARNING
+        );
+
+        $wrapper = $fragmentDocument->documentElement;
+        if (!$wrapper instanceof DOMElement) {
+            $node->appendChild($node->ownerDocument->createTextNode($html));
+            return;
+        }
+
+        foreach (iterator_to_array($wrapper->childNodes) as $child) {
+            $imported = $node->ownerDocument->importNode($child, true);
+            $node->appendChild($imported);
+        }
     }
 
     private function looksLikeHtmlDocument(string $html): bool

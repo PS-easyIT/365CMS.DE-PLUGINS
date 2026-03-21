@@ -1,58 +1,93 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
+<?php
+$synonymItems = array_values(array_filter(array_map(
+    static fn(string $item): string => trim($item),
+    preg_split('/[\r\n,]+/', (string) ($entry['synonyms'] ?? '')) ?: []
+)));
+$showRelatedEntries = ($settings['show_related_entries'] ?? '1') === '1';
+$showKeywordBadges = ($settings['show_keyword_badges'] ?? '1') === '1';
+$renderedContent = (string) ($entry['content'] ?? '');
+$renderedContent = preg_replace(
+    '/<h([2-4])>\s*Metadaten\s*<\/h\1>\s*<ul>.*?<\/ul>/isu',
+    '',
+    $renderedContent,
+    1
+) ?? $renderedContent;
+$showSidebar = $showKeywordBadges || !empty($entry['tooltip_text']);
+?>
+
 <main class="cms-kb-content cms-kb-content--single">
     <article class="cms-kb-article">
         <nav class="cms-kb-breadcrumbs" aria-label="Breadcrumb">
-            <a href="<?php echo htmlspecialchars(SITE_URL, ENT_QUOTES, 'UTF-8'); ?>">Start</a>
-            <span>/</span>
-            <a href="<?php echo htmlspecialchars(SITE_URL . '/kb', ENT_QUOTES, 'UTF-8'); ?>">Knowledgebase</a>
-            <span>/</span>
-            <span aria-current="page"><?php echo htmlspecialchars((string) $entry['title'], ENT_QUOTES, 'UTF-8'); ?></span>
+            <ol class="cms-kb-breadcrumbs__list">
+                <li><a href="<?php echo htmlspecialchars(SITE_URL, ENT_QUOTES, 'UTF-8'); ?>">Start</a></li>
+                <li aria-hidden="true">/</li>
+                <li><a href="<?php echo htmlspecialchars(SITE_URL . '/kb', ENT_QUOTES, 'UTF-8'); ?>">Knowledgebase</a></li>
+                <li aria-hidden="true">/</li>
+                <li><span aria-current="page"><?php echo htmlspecialchars((string) $entry['title'], ENT_QUOTES, 'UTF-8'); ?></span></li>
+            </ol>
         </nav>
 
-        <header class="cms-kb-header cms-kb-header--single">
-            <?php if (!empty($entry['category'])): ?>
-                <p class="cms-kb-entry__meta"><?php echo htmlspecialchars((string) $entry['category'], ENT_QUOTES, 'UTF-8'); ?></p>
-            <?php endif; ?>
-
-            <h1><?php echo htmlspecialchars((string) $entry['title'], ENT_QUOTES, 'UTF-8'); ?></h1>
-
-            <?php if (!empty($entry['excerpt'])): ?>
-                <p><?php echo htmlspecialchars((string) $entry['excerpt'], ENT_QUOTES, 'UTF-8'); ?></p>
-            <?php endif; ?>
-        </header>
-
-        <section class="cms-kb-body">
-            <?php if (($settings['show_keyword_badges'] ?? '1') === '1'): ?>
-            <p class="cms-kb-entry__keyword">
-                <strong>Fokusbegriff:</strong>
-                <?php echo htmlspecialchars((string) $entry['keyword'], ENT_QUOTES, 'UTF-8'); ?>
-            </p>
-            <?php endif; ?>
-
-            <?php if (($settings['show_keyword_badges'] ?? '1') === '1' && !empty($entry['synonyms'])): ?>
-                <p class="cms-kb-entry__synonyms"><strong>Synonyme:</strong> vorhanden</p>
-            <?php endif; ?>
-
-            <div class="cms-kb-richtext">
-                <?php echo (string) ($entry['content'] ?? ''); ?>
-            </div>
-        </section>
-
-        <?php $showRelatedEntries = ($settings['show_related_entries'] ?? '1') === '1'; ?>
-        <?php if (!empty($entry['tooltip_text']) || ($showRelatedEntries && !empty($relatedEntries))): ?>
-            <aside class="cms-kb-sidebar">
-                <?php if (!empty($entry['tooltip_text'])): ?>
-                    <section class="cms-kb-sidebar__section">
-                        <h2>Kurz erklärt</h2>
-                        <p><?php echo htmlspecialchars((string) $entry['tooltip_text'], ENT_QUOTES, 'UTF-8'); ?></p>
-                    </section>
+        <header class="cms-kb-hero cms-kb-hero--single">
+            <div class="cms-kb-hero__content">
+                <?php if (!empty($entry['category'])): ?>
+                    <p class="cms-kb-entry__meta"><?php echo htmlspecialchars((string) $entry['category'], ENT_QUOTES, 'UTF-8'); ?></p>
                 <?php endif; ?>
 
+                <h1><?php echo htmlspecialchars((string) $entry['title'], ENT_QUOTES, 'UTF-8'); ?></h1>
+
+                <?php if (!empty($entry['excerpt'])): ?>
+                    <p class="cms-kb-hero__intro"><?php echo htmlspecialchars((string) $entry['excerpt'], ENT_QUOTES, 'UTF-8'); ?></p>
+                <?php endif; ?>
+
+                <?php if ($showKeywordBadges): ?>
+                    <div class="cms-kb-chip-row" aria-label="Begriffsinfos">
+                        <span class="cms-kb-chip">Fokusbegriff: <?php echo htmlspecialchars((string) $entry['keyword'], ENT_QUOTES, 'UTF-8'); ?></span>
+                        <?php foreach (array_slice($synonymItems, 0, 3) as $synonym): ?>
+                            <span class="cms-kb-chip cms-kb-chip--muted"><?php echo htmlspecialchars($synonym, ENT_QUOTES, 'UTF-8'); ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="cms-kb-stats" aria-label="Artikel-Highlights">
+                <div class="cms-kb-stat">
+                    <strong><?php echo number_format(count($synonymItems) + 1); ?></strong>
+                    <span>Begriffe</span>
+                </div>
+                <div class="cms-kb-stat">
+                    <strong><?php echo $showRelatedEntries ? number_format(count($relatedEntries)) : '—'; ?></strong>
+                    <span>Verwandt</span>
+                </div>
+                <div class="cms-kb-stat">
+                    <strong><?php echo htmlspecialchars((string) ($entry['category'] ?? 'Allgemein'), ENT_QUOTES, 'UTF-8'); ?></strong>
+                    <span>Bereich</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="cms-kb-single-layout<?php echo $showSidebar ? ' has-sidebar' : ''; ?>">
+            <section class="cms-kb-body">
+                <?php if ($showKeywordBadges): ?>
+                    <div class="cms-kb-inline-note">
+                        <strong>Fokusbegriff:</strong>
+                        <span><?php echo htmlspecialchars((string) $entry['keyword'], ENT_QUOTES, 'UTF-8'); ?></span>
+                        <?php if ($synonymItems !== []): ?>
+                            <span class="cms-kb-inline-note__sep">•</span>
+                            <span><?php echo number_format(count($synonymItems)); ?> Synonyme hinterlegt</span>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+
+                <div class="cms-kb-richtext">
+                    <?php echo $renderedContent; ?>
+                </div>
+
                 <?php if ($showRelatedEntries && !empty($relatedEntries)): ?>
-                    <section class="cms-kb-sidebar__section">
-                        <h2>Passende Einträge</h2>
-                        <ul class="cms-kb-sidebar__list">
+                    <section class="cms-kb-related-block cms-kb-sidebar__section" aria-labelledby="cms-kb-related-heading">
+                        <h2 id="cms-kb-related-heading">Verwandte Artikel</h2>
+                        <ul class="cms-kb-sidebar__list cms-kb-related-block__list">
                             <?php foreach ($relatedEntries as $related): ?>
                                 <li>
                                     <a href="<?php echo htmlspecialchars(SITE_URL . '/kb/' . rawurlencode((string) $related['slug']), ENT_QUOTES, 'UTF-8'); ?>">
@@ -63,7 +98,35 @@
                         </ul>
                     </section>
                 <?php endif; ?>
+            </section>
+
+            <?php if ($showSidebar): ?>
+            <aside class="cms-kb-sidebar">
+                <?php if ($showKeywordBadges): ?>
+                    <section class="cms-kb-sidebar__section">
+                        <h2>Begriffsdetails</h2>
+                        <ul class="cms-kb-sidebar__facts">
+                            <li><strong>Keyword</strong><span><?php echo htmlspecialchars((string) $entry['keyword'], ENT_QUOTES, 'UTF-8'); ?></span></li>
+                            <li><strong>Bereich</strong><span><?php echo htmlspecialchars((string) ($entry['category'] ?? 'Allgemein'), ENT_QUOTES, 'UTF-8'); ?></span></li>
+                            <?php if ($synonymItems !== []): ?>
+                                <li><strong>Synonyme</strong><span><?php echo htmlspecialchars(implode(', ', array_slice($synonymItems, 0, 4)), ENT_QUOTES, 'UTF-8'); ?></span></li>
+                            <?php endif; ?>
+                        </ul>
+                    </section>
+                <?php endif; ?>
+
+                <?php if (!empty($entry['tooltip_text'])): ?>
+                    <section class="cms-kb-sidebar__section">
+                        <h2>Kurz erklärt</h2>
+                        <p><?php echo htmlspecialchars((string) $entry['tooltip_text'], ENT_QUOTES, 'UTF-8'); ?></p>
+                    </section>
+                <?php endif; ?>
             </aside>
-        <?php endif; ?>
+            <?php endif; ?>
+        </div>
+
+        <footer class="cms-kb-article__footer">
+            <a class="cms-kb-entry__cta" href="<?php echo htmlspecialchars(SITE_URL . '/kb', ENT_QUOTES, 'UTF-8'); ?>">← Zurück zur Übersicht</a>
+        </footer>
     </article>
 </main>

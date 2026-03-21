@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CmsKnowledgebase\Repository;
 
 use CMS\Database;
+use PDO;
 use CmsKnowledgebase\Support\Defaults;
 use CmsKnowledgebase\Support\LoggerFactory;
 
@@ -51,7 +52,7 @@ final class EntryRepository
 
         $stmt = $db->prepare($query);
         $stmt->execute();
-        $row = $stmt->fetch();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (is_array($row)) {
             foreach ($stats as $key => $value) {
                 $stats[$key] = (int) ($row[$key] ?? $value);
@@ -66,42 +67,18 @@ final class EntryRepository
      */
     public function getEntries(array $filters = []): array
     {
-        $db = Database::instance();
-        $table = $this->entriesTable();
-        $conditions = [];
-        $params = [];
+        return $this->getEntriesByColumns('*', $filters);
+    }
 
-        if (($filters['status'] ?? '') === 'active') {
-            $conditions[] = 'is_active = 1';
-        }
-
-        $search = trim((string) ($filters['search'] ?? ''));
-        if ($search !== '') {
-            $conditions[] = '(title LIKE ? OR keyword LIKE ? OR synonyms LIKE ? OR excerpt LIKE ?)';
-            $needle = '%' . $search . '%';
-            $params[] = $needle;
-            $params[] = $needle;
-            $params[] = $needle;
-            $params[] = $needle;
-        }
-
-        $category = trim((string) ($filters['category'] ?? ''));
-        if ($category !== '') {
-            $conditions[] = 'category = ?';
-            $params[] = $category;
-        }
-
-        $sql = "SELECT * FROM {$table}";
-        if ($conditions !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $conditions);
-        }
-        $sql .= ' ORDER BY is_active DESC, priority ASC, title ASC';
-
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
-        $rows = $stmt->fetchAll();
-
-        return is_array($rows) ? $rows : [];
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function getEntryList(array $filters = []): array
+    {
+        return $this->getEntriesByColumns(
+            'id, title, keyword, slug, excerpt, tooltip_text, synonyms, category, priority, is_active, is_case_sensitive, is_whole_word, max_links_per_page, created_at, updated_at',
+            $filters
+        );
     }
 
     public function getEntry(int $id): ?array
@@ -109,7 +86,7 @@ final class EntryRepository
         $db = Database::instance();
         $stmt = $db->prepare('SELECT * FROM ' . $this->entriesTable() . ' WHERE id = ? LIMIT 1');
         $stmt->execute([$id]);
-        $entry = $stmt->fetch();
+        $entry = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return is_array($entry) ? $entry : null;
     }
@@ -119,7 +96,7 @@ final class EntryRepository
         $db = Database::instance();
         $stmt = $db->prepare('SELECT * FROM ' . $this->entriesTable() . ' WHERE slug = ? AND is_active = 1 LIMIT 1');
         $stmt->execute([$slug]);
-        $entry = $stmt->fetch();
+        $entry = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return is_array($entry) ? $entry : null;
     }
@@ -129,7 +106,10 @@ final class EntryRepository
      */
     public function getActiveEntriesForLinking(): array
     {
-        $entries = $this->getEntries(['status' => 'active']);
+        $entries = $this->getEntriesByColumns(
+            'id, title, keyword, slug, excerpt, tooltip_text, synonyms, is_case_sensitive, is_whole_word, max_links_per_page',
+            ['status' => 'active']
+        );
 
         foreach ($entries as &$entry) {
             $terms = [$entry['keyword'] ?? ''];
@@ -151,6 +131,16 @@ final class EntryRepository
         return $entries;
     }
 
+    public function countActiveEntries(): int
+    {
+        $db = Database::instance();
+        $stmt = $db->prepare('SELECT COUNT(*) FROM ' . $this->entriesTable() . ' WHERE is_active = 1');
+        $stmt->execute();
+        $count = $stmt->fetchColumn();
+
+        return (int) $count;
+    }
+
     /**
      * @return array<int, array<string, mixed>>
      */
@@ -159,7 +149,7 @@ final class EntryRepository
         $db = Database::instance();
         $stmt = $db->prepare('SELECT category, COUNT(*) AS entry_count FROM ' . $this->entriesTable() . " WHERE is_active = 1 AND category IS NOT NULL AND category <> '' GROUP BY category ORDER BY category ASC");
         $stmt->execute();
-        $rows = $stmt->fetchAll();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return is_array($rows) ? $rows : [];
     }
@@ -181,7 +171,7 @@ final class EntryRepository
             $stmt->execute([(int) ($entry['id'] ?? 0)]);
         }
 
-        $rows = $stmt->fetchAll();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return is_array($rows) ? $rows : [];
     }
 
@@ -196,7 +186,7 @@ final class EntryRepository
 
         $stmt = $db->prepare("SELECT setting_key, setting_value FROM {$table}");
         $stmt->execute();
-        $rows = $stmt->fetchAll();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if (is_array($rows)) {
             foreach ($rows as $row) {
                 if (!is_array($row) || empty($row['setting_key'])) {
@@ -448,9 +438,136 @@ final class EntryRepository
         return ['success' => true, 'message' => 'Knowledgebase-Eintrag gelöscht.'];
     }
 
+    /**
+     * @param array<int, array<string, mixed>> $entries
+     * @return array<string, int>
+     */
+    public function importPresetEntries(array $entries, string $packageKey = ''): array
+    {
+        if ($entries === []) {
+            return ['created' => 0, 'updated' => 0, 'skipped' => 0, 'errors' => 0];
+        }
+
+        $normalizedEntries = [];
+        $slugs = [];
+
+        foreach ($entries as $index => $entry) {
+            $slugSource = (string) ($entry['slug'] ?? $entry['title'] ?? $entry['keyword'] ?? ('knowledgebase-entry-' . ($index + 1)));
+            $slug = $this->slugify($slugSource);
+            if ($slug === '') {
+                $slug = 'knowledgebase-entry-' . ($index + 1);
+            }
+
+            $entry['slug'] = $slug;
+            $normalizedEntries[] = $entry;
+            $slugs[] = $slug;
+        }
+
+        $existingEntries = $this->getExistingEntriesBySlug($slugs);
+        $created = 0;
+        $updated = 0;
+        $skipped = 0;
+        $errors = 0;
+
+        foreach ($normalizedEntries as $entry) {
+            $slug = (string) ($entry['slug'] ?? '');
+            $existingEntry = $slug !== '' ? ($existingEntries[$slug] ?? null) : null;
+            if (is_array($existingEntry)) {
+                if ($this->isGeneratedPlaceholderEntry($existingEntry)) {
+                    $result = $this->saveEntry([
+                        ...$entry,
+                        'entry_id' => (string) ($existingEntry['id'] ?? 0),
+                        'is_active' => (string) ($existingEntry['is_active'] ?? $entry['is_active'] ?? '1'),
+                        'priority' => (string) ($existingEntry['priority'] ?? $entry['priority'] ?? '100'),
+                        'is_case_sensitive' => (string) ($existingEntry['is_case_sensitive'] ?? $entry['is_case_sensitive'] ?? '0'),
+                        'is_whole_word' => (string) ($existingEntry['is_whole_word'] ?? $entry['is_whole_word'] ?? '1'),
+                        'max_links_per_page' => (string) ($existingEntry['max_links_per_page'] ?? $entry['max_links_per_page'] ?? '1'),
+                    ]);
+
+                    if ((bool) ($result['success'] ?? false)) {
+                        ++$updated;
+                        continue;
+                    }
+
+                    ++$errors;
+                    continue;
+                }
+
+                ++$skipped;
+                continue;
+            }
+
+            $result = $this->saveEntry($entry);
+            if ((bool) ($result['success'] ?? false)) {
+                ++$created;
+                continue;
+            }
+
+            ++$errors;
+        }
+
+        $this->logger->info('Knowledgebase-Preset-Import verarbeitet.', [
+            'package' => $packageKey,
+            'created' => $created,
+            'updated' => $updated,
+            'skipped' => $skipped,
+            'errors' => $errors,
+        ]);
+
+        return [
+            'created' => $created,
+            'updated' => $updated,
+            'skipped' => $skipped,
+            'errors' => $errors,
+        ];
+    }
+
     private function entriesTable(): string
     {
         return Database::instance()->prefix() . 'kb_entries';
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function getEntriesByColumns(string $columns, array $filters = []): array
+    {
+        $db = Database::instance();
+        $table = $this->entriesTable();
+        $conditions = [];
+        $params = [];
+
+        if (($filters['status'] ?? '') === 'active') {
+            $conditions[] = 'is_active = 1';
+        }
+
+        $search = trim((string) ($filters['search'] ?? ''));
+        if ($search !== '') {
+            $conditions[] = '(title LIKE ? OR keyword LIKE ? OR synonyms LIKE ? OR excerpt LIKE ?)';
+            $needle = '%' . $search . '%';
+            $params[] = $needle;
+            $params[] = $needle;
+            $params[] = $needle;
+            $params[] = $needle;
+        }
+
+        $category = trim((string) ($filters['category'] ?? ''));
+        if ($category !== '') {
+            $conditions[] = 'category = ?';
+            $params[] = $category;
+        }
+
+        $sql = "SELECT {$columns} FROM {$table}";
+        if ($conditions !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $conditions);
+        }
+        $sql .= ' ORDER BY is_active DESC, priority ASC, title ASC';
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return is_array($rows) ? $rows : [];
     }
 
     private function settingsTable(): string
@@ -481,7 +598,7 @@ final class EntryRepository
 
             $stmt = $db->prepare($query);
             $stmt->execute($params);
-            $exists = $stmt->fetch();
+            $exists = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!is_array($exists)) {
                 return $candidate;
             }
@@ -497,6 +614,76 @@ final class EntryRepository
         $value = preg_replace('/[^\p{L}\p{N}]+/u', '-', $value) ?? '';
         $value = trim($value, '-');
         return substr($value, 0, 190);
+    }
+
+    /**
+     * @param array<int, string> $slugs
+     * @return array<string, bool>
+     */
+    private function getExistingEntriesBySlug(array $slugs): array
+    {
+        $slugs = array_values(array_unique(array_filter(array_map(
+            fn(string $slug): string => $this->slugify($slug),
+            $slugs
+        ))));
+
+        if ($slugs === []) {
+            return [];
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($slugs), '?'));
+        $stmt = Database::instance()->prepare('SELECT * FROM ' . $this->entriesTable() . " WHERE slug IN ({$placeholders})");
+        $stmt->execute($slugs);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $lookup = [];
+        if (is_array($rows)) {
+            foreach ($rows as $row) {
+                if (!is_array($row) || empty($row['slug'])) {
+                    continue;
+                }
+
+                $lookup[(string) $row['slug']] = $row;
+            }
+        }
+
+        return $lookup;
+    }
+
+    /**
+     * @param array<string, mixed> $entry
+     */
+    private function isGeneratedPlaceholderEntry(array $entry): bool
+    {
+        $excerpt = trim((string) ($entry['excerpt'] ?? ''));
+        $tooltip = trim((string) ($entry['tooltip_text'] ?? ''));
+        $content = trim((string) ($entry['content'] ?? ''));
+
+        if ($excerpt === '' && $tooltip === '' && $content === '') {
+            return true;
+        }
+
+        $markers = [
+            'kompakt erklärt – als Startpunkt für interne Verlinkung',
+            'ist ein Standardbegriff aus dem Bereich',
+            'kurz erklärt – ein Standardbegriff',
+            'Nutze diesen Standardartikel als Startpunkt',
+            '<h2>Typischer Einsatz</h2>',
+            '<h2>Worauf sollte man achten?</h2>',
+            '<h2>Praxis-Hinweis</h2>',
+            '<h2>Lizenz &amp; Verfügbarkeit</h2>',
+            'Standardpaket-Generator',
+            'allgemeine Einordnung, Lizenz- und Verfügbarkeitsinfos',
+        ];
+
+        $haystack = $excerpt . "\n" . $tooltip . "\n" . $content;
+        foreach ($markers as $marker) {
+            if (str_contains($haystack, $marker)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function sanitizeText(string $value, int $maxLength = 255): string

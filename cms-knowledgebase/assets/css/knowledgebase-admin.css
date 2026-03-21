@@ -30,6 +30,10 @@
     align-items: start;
 }
 
+.kb-preset-card {
+    grid-column: 1 / -1;
+}
+
 .kb-note-card,
 .kb-settings-card {
     background: #fff;
@@ -345,6 +349,12 @@
     box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
 }
 
+.kb-entry-card__excerpt {
+    margin: 0;
+    color: #475569;
+    line-height: 1.6;
+}
+
 .kb-entry-card--compact {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
@@ -378,6 +388,10 @@
     gap: 0.5rem;
 }
 
+.kb-meta-pills--wrap {
+    row-gap: 0.55rem;
+}
+
 .kb-meta-pill {
     display: inline-flex;
     align-items: center;
@@ -393,6 +407,73 @@
 .kb-meta-pill strong {
     color: #0f172a;
     font-size: 0.78rem;
+}
+
+.kb-meta-pill--soft {
+    background: #f8fafc;
+    color: #334155;
+}
+
+.kb-package-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.kb-package-card {
+    display: grid;
+    gap: 0.95rem;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-top: 4px solid var(--kb-package-accent, #0d9488);
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+}
+
+.kb-package-card__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.kb-package-card__head h4 {
+    margin: 0.25rem 0 0;
+    color: #0f172a;
+    font-size: 1.02rem;
+}
+
+.kb-package-card__eyebrow {
+    margin: 0;
+    color: var(--kb-package-accent, #0d9488);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.kb-package-card__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 54px;
+    padding: 0.35rem 0.6rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--kb-package-accent, #0d9488) 12%, #ffffff);
+    color: var(--kb-package-accent, #0d9488);
+    font-weight: 800;
+    font-size: 0.84rem;
+}
+
+.kb-package-card__text {
+    margin: 0;
+    color: #475569;
+    line-height: 1.6;
+}
+
+.kb-package-card__action {
+    margin: 0;
 }
 
 .kb-action-row {
@@ -427,7 +508,8 @@
     .kb-color-grid,
     .kb-design-preview,
     .kb-system-grid,
-    .kb-entry-card--compact {
+    .kb-entry-card--compact,
+    .kb-package-grid {
         grid-template-columns: 1fr;
     }
 

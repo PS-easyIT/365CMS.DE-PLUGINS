@@ -7,6 +7,7 @@ namespace CmsKnowledgebase\Admin;
 use CMS\Auth;
 use CMS\Security;
 use CmsKnowledgebase\Repository\EntryRepository;
+use CmsKnowledgebase\Service\StandardPackages;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -19,7 +20,7 @@ final class Pages
         self::renderWithLayout('Knowledgebase', static function (): void {
             $repository = EntryRepository::instance();
             $stats = $repository->getDashboardStats();
-            $entries = array_slice($repository->getEntries(), 0, 8);
+            $entries = array_slice($repository->getEntryList(), 0, 8);
             $settings = $repository->getSettings();
             $csrfToken = Security::instance()->generateToken('knowledgebase_admin');
             $notice = self::pullNotice();
@@ -32,7 +33,8 @@ final class Pages
     {
         self::renderWithLayout('Knowledgebase-Einträge', static function (): void {
             $repository = EntryRepository::instance();
-            $entries = $repository->getEntries();
+            $entries = $repository->getEntryList();
+            $standardPackages = StandardPackages::instance()->getPackages();
             $entry = isset($_GET['edit']) ? $repository->getEntry((int) $_GET['edit']) : null;
             $csrfToken = Security::instance()->generateToken('knowledgebase_admin');
             $notice = self::pullNotice();
@@ -109,6 +111,8 @@ final class Pages
             'save_entry' => $repository->saveEntry($_POST),
             'delete_entry' => $repository->deleteEntry((int) ($_POST['entry_id'] ?? 0)),
             'save_settings' => $repository->saveSettings($_POST),
+            'create_standard_package' => StandardPackages::instance()->importPackage((string) ($_POST['package_key'] ?? '')),
+            'create_all_standard_packages' => StandardPackages::instance()->importAllPackages(),
             default => ['success' => false, 'error' => 'Unbekannte Aktion.'],
         };
 

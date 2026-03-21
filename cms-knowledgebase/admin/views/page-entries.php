@@ -1,5 +1,10 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
+<?php
+$packageCount = count($standardPackages ?? []);
+$starterEntryCount = array_sum(array_map(static fn(array $package): int => (int) ($package['entry_count'] ?? 0), $standardPackages ?? []));
+?>
+
 <div class="kb-admin-shell">
     <div class="admin-page-header">
         <div>
@@ -19,11 +24,57 @@
 
     <div class="dashboard-grid kb-admin-dashboard-grid kb-admin-dashboard-grid--compact">
         <div class="stat-card"><div class="stat-icon">📚</div><div class="stat-number"><?php echo number_format(count($entries)); ?></div><div class="stat-label">Einträge geladen</div></div>
-        <div class="stat-card"><div class="stat-icon">✏️</div><div class="stat-number"><?php echo $entry !== null ? '1' : '0'; ?></div><div class="stat-label">Bearbeitung aktiv</div></div>
         <div class="stat-card"><div class="stat-icon">🌍</div><div class="stat-number"><?php echo number_format(count(array_filter($entries, static fn(array $item): bool => ((int) ($item['is_active'] ?? 0)) === 1))); ?></div><div class="stat-label">Aktiv im Frontend</div></div>
+        <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-number"><?php echo number_format($packageCount); ?></div><div class="stat-label">Standardpakete</div></div>
+        <div class="stat-card"><div class="stat-icon">🧩</div><div class="stat-number"><?php echo number_format($starterEntryCount); ?></div><div class="stat-label">Starter-Einträge</div></div>
     </div>
 
     <div class="kb-entry-layout">
+        <div class="admin-card kb-preset-card">
+            <div class="kb-panel-header">
+                <div>
+                    <h3>📦 Standardpakete</h3>
+                    <p>Starterpakete mit je mindestens 25 Einträgen aus 6 Bereichen – inklusive M365. Vorhandene Platzhalter werden dabei mit besseren Inhalten aktualisiert.</p>
+                </div>
+                <form method="post">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="action" value="create_all_standard_packages">
+                    <button type="submit" class="btn btn-primary btn-sm">⚡ Alle Pakete anlegen / aktualisieren</button>
+                </form>
+            </div>
+
+            <div class="kb-package-grid">
+                <?php foreach ($standardPackages as $package): ?>
+                    <article class="kb-package-card" style="--kb-package-accent: <?php echo htmlspecialchars((string) ($package['accent'] ?? '#0d9488'), ENT_QUOTES, 'UTF-8'); ?>;">
+                        <div class="kb-package-card__head">
+                            <div>
+                                <p class="kb-package-card__eyebrow">Bereich</p>
+                                <h4><?php echo htmlspecialchars((string) ($package['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></h4>
+                            </div>
+                            <span class="kb-package-card__count"><?php echo (int) ($package['entry_count'] ?? 0); ?>+</span>
+                        </div>
+
+                        <p class="kb-package-card__text"><?php echo htmlspecialchars((string) ($package['description'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
+
+                        <?php if (!empty($package['sample_terms']) && is_array($package['sample_terms'])): ?>
+                            <div class="kb-meta-pills kb-meta-pills--wrap">
+                                <?php foreach ($package['sample_terms'] as $term): ?>
+                                    <span class="kb-meta-pill kb-meta-pill--soft"><?php echo htmlspecialchars((string) $term, ENT_QUOTES, 'UTF-8'); ?></span>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <form method="post" class="kb-package-card__action">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                            <input type="hidden" name="action" value="create_standard_package">
+                            <input type="hidden" name="package_key" value="<?php echo htmlspecialchars((string) ($package['key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                            <button type="submit" class="btn btn-secondary btn-sm">➕ Paket anlegen / aktualisieren</button>
+                        </form>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
         <div class="admin-card kb-form-card">
             <div class="kb-panel-header">
                 <div>
@@ -121,7 +172,7 @@
             <div class="kb-panel-header">
                 <div>
                     <h3>📚 Vorhandene Einträge</h3>
-                    <p>Alle Begriffe mit Status, Keyword und Schnellzugriff auf Bearbeitung oder öffentliche Seite.</p>
+                    <p>Alle Begriffe mit Status, Kategorie und Schnellzugriff auf Bearbeitung oder öffentliche Seite.</p>
                 </div>
             </div>
 
@@ -150,6 +201,10 @@
                                 <span class="kb-meta-pill"><strong>Kategorie</strong><?php echo htmlspecialchars((string) ($item['category'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?></span>
                                 <span class="kb-meta-pill"><strong>Priorität</strong><?php echo (int) ($item['priority'] ?? 100); ?></span>
                             </div>
+
+                            <?php if (!empty($item['excerpt'])): ?>
+                                <p class="kb-entry-card__excerpt"><?php echo htmlspecialchars((string) $item['excerpt'], ENT_QUOTES, 'UTF-8'); ?></p>
+                            <?php endif; ?>
 
                             <div class="kb-action-row">
                                 <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entries?edit=<?php echo (int) $item['id']; ?>" class="btn btn-secondary btn-sm">Bearbeiten</a>

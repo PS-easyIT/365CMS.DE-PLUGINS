@@ -25,7 +25,7 @@ final class PublicController
         $router->addRoute('GET', '/kb/:slug', [$this, 'singlePage']);
     }
 
-    public function renderNavItem(): void
+    public function renderNavItem(string $context = 'desktop'): void
     {
         $settings = EntryRepository::instance()->getSettings();
         if (($settings['show_nav_link'] ?? '0') !== '1') {
@@ -35,8 +35,14 @@ final class PublicController
         $currentPath = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
         $active = str_starts_with($currentPath, '/kb') ? 'active' : '';
         $label = htmlspecialchars((string) ($settings['nav_label'] ?? 'Knowledgebase'), ENT_QUOTES, 'UTF-8');
+        $href = htmlspecialchars(SITE_URL . '/kb', ENT_QUOTES, 'UTF-8');
 
-        echo '<a href="' . SITE_URL . '/kb" class="nav-link ' . htmlspecialchars($active, ENT_QUOTES, 'UTF-8') . '">' . $label . '</a>';
+        if ($context === 'mobile') {
+            echo '<a href="' . $href . '" class="mobile-menu__kb-link">' . $label . '</a>';
+            return;
+        }
+
+        echo '<a href="' . $href . '" class="main-nav__link ' . htmlspecialchars($active, ENT_QUOTES, 'UTF-8') . '">' . $label . '</a>';
     }
 
     public function archivePage(): void
