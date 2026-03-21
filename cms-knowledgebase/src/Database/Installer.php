@@ -1,0 +1,125 @@
+<?php
+
+declare(strict_types=1);
+
+namespace CmsKnowledgebase\Database;
+
+use CMS\Database;
+use CmsKnowledgebase\Support\Defaults;
+use CmsKnowledgebase\Support\LoggerFactory;
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+final class Installer
+{
+    private static ?self $instance = null;
+
+    private $logger;
+
+    public static function instance(): self
+    {
+        return self::$instance ??= new self();
+    }
+
+    private function __construct()
+    {
+        $this->logger = LoggerFactory::create();
+    }
+
+    public function install(): void
+    {
+        $db = Database::instance();
+        $pdo = $db->getPdo();
+        $prefix = $db->prefix();
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}kb_entries (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            keyword VARCHAR(190) NOT NULL,
+            slug VARCHAR(190) NOT NULL,
+            excerpt TEXT DEFAULT NULL,
+            content LONGTEXT DEFAULT NULL,
+            tooltip_text TEXT DEFAULT NULL,
+            synonyms TEXT DEFAULT NULL,
+            category VARCHAR(120) DEFAULT NULL,
+            priority INT NOT NULL DEFAULT 100,
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+            is_case_sensitive TINYINT(1) NOT NULL DEFAULT 0,
+            is_whole_word TINYINT(1) NOT NULL DEFAULT 1,
+            max_links_per_page INT NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_slug (slug),
+            KEY idx_keyword (keyword),
+            KEY idx_active_priority (is_active, priority),
+            KEY idx_category (category)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}kb_settings (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            setting_key VARCHAR(100) NOT NULL,
+            setting_value LONGTEXT DEFAULT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_setting_key (setting_key)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $this->seedDefaults();
+        $this->storeVersion();
+    }
+
+    public function maybeUpgrade(): void
+    {
+        $currentVersion = $this->getStoredVersion();
+        if ($currentVersion === CMS_KNOWLEDGEBASE_VERSION) {
+            return;
+        }
+
+        $this->install();
+        $this->logger->info('CMS Knowledgebase Schema geprüft/aktualisiert.', [
+            'from' => $currentVersion,
+            'to' => CMS_KNOWLEDGEBASE_VERSION,
+        ]);
+    }
+
+    private function seedDefaults(): void
+    {
+        $db = Database::instance();
+        $table = $db->prefix() . 'kb_settings';
+        $stmt = $db->prepare("INSERT INTO {$table} (setting_key, setting_value)
+            VALUES (:setting_key, :setting_value)
+            ON DUPLICATE KEY UPDATE setting_value = setting_value");
+
+        foreach (Defaults::settings() as $key => $value) {
+            $stmt->execute([
+                'setting_key' => $key,
+                'setting_value' => $value,
+            ]);
+        }
+    }
+
+    private function storeVersion(): void
+    {
+        $db = Database::instance();
+        $settingsTable = $db->prefix() . 'settings';
+        $stmt = $db->prepare("INSERT INTO {$settingsTable} (option_name, option_value, autoload)
+            VALUES (:option_name, :option_value, 0)
+            ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)");
+        $stmt->execute([
+            'option_name' => 'cms_knowledgebase_version',
+            'option_value' => CMS_KNOWLEDGEBASE_VERSION,
+        ]);
+    }
+
+    private function getStoredVersion(): string
+    {
+        $db = Database::instance();
+        $settingsTable = $db->prefix() . 'settings';
+        $stmt = $db->prepare("SELECT option_value FROM {$settingsTable} WHERE option_name = ? LIMIT 1");
+        $stmt->execute(['cms_knowledgebase_version']);
+        $value = $stmt->fetchColumn();
+
+        return is_string($value) ? $value : '';
+    }
+}

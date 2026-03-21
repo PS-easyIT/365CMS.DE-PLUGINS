@@ -1,0 +1,12 @@
+{
+    "name": "CMS Knowledgebase",
+    "slug": "cms-knowledgebase",
+    "version": "1.0.0",
+    "requires_cms": "2.0.0",
+    "tested_cms": "2.1.0",
+    "author": "365 Network",
+    "author_uri": "https://365network.de",
+    "download_url": "https://365network.de/plugins/cms-knowledgebase/cms-knowledgebase-1.0.0.zip",
+    "last_updated": "2026-03-21",
+    "changelog": "Initiales Release: Knowledgebase-Einträge, Auto-Linking, Tooltips, Admin-CRUD und öffentliche KB-Seiten."
+}
