@@ -166,7 +166,7 @@ final class CMS_Knowledgebase
             return false;
         }
 
-        return true;
+        return $path === '/kb' || str_starts_with($path, '/kb/');
     }
 }
 
