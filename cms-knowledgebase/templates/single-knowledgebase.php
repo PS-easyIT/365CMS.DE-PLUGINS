@@ -57,7 +57,7 @@ $showSidebar = $showKeywordBadges || !empty($entry['tooltip_text']);
                     <span>Begriffe</span>
                 </div>
                 <div class="cms-kb-stat">
-                    <strong><?php echo $showRelatedEntries ? number_format(count($relatedEntries)) : '—'; ?></strong>
+                    <strong><?php echo $showRelatedEntries ? number_format(count($relatedPosts ?? [])) : '—'; ?></strong>
                     <span>Verwandt</span>
                 </div>
                 <div class="cms-kb-stat">
@@ -84,18 +84,31 @@ $showSidebar = $showKeywordBadges || !empty($entry['tooltip_text']);
                     <?php echo $renderedContent; ?>
                 </div>
 
-                <?php if ($showRelatedEntries && !empty($relatedEntries)): ?>
+                <?php if ($showRelatedEntries && !empty($relatedPosts)): ?>
                     <section class="cms-kb-related-block cms-kb-sidebar__section" aria-labelledby="cms-kb-related-heading">
                         <h2 id="cms-kb-related-heading">Verwandte Artikel</h2>
-                        <ul class="cms-kb-sidebar__list cms-kb-related-block__list">
-                            <?php foreach ($relatedEntries as $related): ?>
-                                <li>
-                                    <a href="<?php echo htmlspecialchars(SITE_URL . '/kb/' . rawurlencode((string) $related['slug']), ENT_QUOTES, 'UTF-8'); ?>">
-                                        <?php echo htmlspecialchars((string) $related['title'], ENT_QUOTES, 'UTF-8'); ?>
-                                    </a>
-                                </li>
+                        <div class="cms-kb-related-posts">
+                            <?php foreach ($relatedPosts as $related): ?>
+                                <article class="cms-kb-related-post">
+                                    <p class="cms-kb-related-post__meta">
+                                        <?php if (!empty($related['category_name'])): ?>
+                                            <span><?php echo htmlspecialchars((string) $related['category_name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                                        <?php else: ?>
+                                            <span>365CMS Beitrag</span>
+                                        <?php endif; ?>
+                                    </p>
+                                    <h3 class="cms-kb-related-post__title">
+                                        <a href="<?php echo htmlspecialchars((string) ($related['url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                                            <?php echo htmlspecialchars((string) ($related['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                                        </a>
+                                    </h3>
+                                    <?php if (!empty($related['excerpt'])): ?>
+                                        <p class="cms-kb-related-post__excerpt"><?php echo htmlspecialchars((string) $related['excerpt'], ENT_QUOTES, 'UTF-8'); ?></p>
+                                    <?php endif; ?>
+                                    <a class="cms-kb-related-post__cta" href="<?php echo htmlspecialchars((string) ($related['url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">Beitrag lesen</a>
+                                </article>
                             <?php endforeach; ?>
-                        </ul>
+                        </div>
                     </section>
                 <?php endif; ?>
             </section>

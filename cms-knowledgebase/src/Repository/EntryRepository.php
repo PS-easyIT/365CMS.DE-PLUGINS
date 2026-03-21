@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace CmsKnowledgebase\Repository;
 
 use CMS\Database;
+use CMS\Services\ContentLocalizationService;
+use CMS\Services\PermalinkService;
 use PDO;
 use CmsKnowledgebase\Support\Defaults;
 use CmsKnowledgebase\Support\LoggerFactory;
@@ -173,6 +175,116 @@ final class EntryRepository
 
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return is_array($rows) ? $rows : [];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    public function getRelatedPosts(array $entry, string $locale = 'de', int $limit = 4): array
+    {
+        $terms = $this->buildRelatedPostTerms($entry);
+        if ($terms === []) {
+            return [];
+        }
+
+        $db = Database::instance();
+        $prefix = $db->prefix();
+        $locale = $this->normalizeContentLocale($locale);
+        $localizedTitle = $locale === 'en' ? "COALESCE(NULLIF(p.title_en, ''), p.title)" : 'p.title';
+        $localizedExcerpt = $locale === 'en' ? "COALESCE(NULLIF(p.excerpt_en, ''), p.excerpt)" : 'p.excerpt';
+        $localizedContent = $locale === 'en' ? "COALESCE(NULLIF(p.content_en, ''), p.content)" : 'p.content';
+        $tagNamesSql = "COALESCE((SELECT GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ', ')
+            FROM {$prefix}post_tag_rel ptr
+            INNER JOIN {$prefix}post_tags t ON t.id = ptr.tag_id
+            WHERE ptr.post_id = p.id), '')";
+
+        $scoreParts = [];
+        $scoreParams = [];
+        $havingParts = [];
+        $havingParams = [];
+
+        foreach ($terms as $term) {
+            $needle = '%' . $term . '%';
+            $scoreParts[] = "(CASE WHEN {$localizedTitle} LIKE ? THEN 80 ELSE 0 END)";
+            $scoreParams[] = $needle;
+
+            $scoreParts[] = "(CASE WHEN {$localizedExcerpt} LIKE ? THEN 30 ELSE 0 END)";
+            $scoreParams[] = $needle;
+
+            $scoreParts[] = "(CASE WHEN {$localizedContent} LIKE ? THEN 12 ELSE 0 END)";
+            $scoreParams[] = $needle;
+
+            $scoreParts[] = "(CASE WHEN COALESCE(c.name, '') LIKE ? THEN 20 ELSE 0 END)";
+            $scoreParams[] = $needle;
+
+            $scoreParts[] = "(CASE WHEN COALESCE(p.tags, '') LIKE ? THEN 18 ELSE 0 END)";
+            $scoreParams[] = $needle;
+
+            $scoreParts[] = "(CASE WHEN {$tagNamesSql} LIKE ? THEN 18 ELSE 0 END)";
+            $scoreParams[] = $needle;
+
+            $havingParts[] = "{$localizedTitle} LIKE ?";
+            $havingParams[] = $needle;
+
+            $havingParts[] = "{$localizedExcerpt} LIKE ?";
+            $havingParams[] = $needle;
+
+            $havingParts[] = "{$localizedContent} LIKE ?";
+            $havingParams[] = $needle;
+
+            $havingParts[] = "COALESCE(c.name, '') LIKE ?";
+            $havingParams[] = $needle;
+
+            $havingParts[] = "COALESCE(p.tags, '') LIKE ?";
+            $havingParams[] = $needle;
+
+            $havingParts[] = "{$tagNamesSql} LIKE ?";
+            $havingParams[] = $needle;
+        }
+
+        $scoreSql = implode(' + ', $scoreParts);
+        $havingSql = implode(' OR ', $havingParts);
+        $localeAvailability = $this->buildPostLocaleAvailabilityExpression('p', $locale);
+
+        $sql = "SELECT
+                p.id,
+                p.title,
+                p.title_en,
+                p.slug,
+                p.slug_en,
+                p.excerpt,
+                p.excerpt_en,
+                p.content,
+                p.content_en,
+                p.published_at,
+                p.created_at,
+                COALESCE(c.name, '') AS category_name,
+                {$tagNamesSql} AS tag_names,
+                ({$scoreSql}) AS relevance_score
+            FROM {$prefix}posts p
+            LEFT JOIN {$prefix}post_categories c ON c.id = p.category_id
+            WHERE p.status = 'published' AND {$localeAvailability}
+            AND ({$havingSql})
+            ORDER BY relevance_score DESC, COALESCE(p.published_at, p.created_at) DESC
+            LIMIT {$limit}";
+
+        $rows = $db->get_results($sql, array_merge($scoreParams, $havingParams)) ?: [];
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $localization = ContentLocalizationService::getInstance();
+        $permalinks = PermalinkService::getInstance();
+        $posts = [];
+
+        foreach ($rows as $row) {
+            $post = is_array($row) ? $row : (array) $row;
+            $post = $localization->localizePost($post, $locale);
+            $post['url'] = $permalinks->buildPostUrl($post, $locale);
+            $posts[] = $post;
+        }
+
+        return $posts;
     }
 
     /**
@@ -684,6 +796,84 @@ final class EntryRepository
         }
 
         return false;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function buildRelatedPostTerms(array $entry): array
+    {
+        $terms = [];
+
+        foreach (['keyword', 'title', 'category'] as $field) {
+            $value = trim((string) ($entry[$field] ?? ''));
+            if ($value !== '') {
+                $terms[] = $value;
+            }
+        }
+
+        $synonyms = preg_split('/[\r\n,]+/', (string) ($entry['synonyms'] ?? '')) ?: [];
+        foreach ($synonyms as $synonym) {
+            $synonym = trim((string) $synonym);
+            if ($synonym !== '' && mb_strlen($synonym, 'UTF-8') >= 3) {
+                $terms[] = $synonym;
+            }
+        }
+
+        $terms = array_values(array_unique(array_filter(array_map(
+            static fn(string $term): string => trim($term),
+            $terms
+        ), static fn(string $term): bool => $term !== '' && mb_strlen($term, 'UTF-8') >= 3)));
+
+        usort($terms, static fn(string $left, string $right): int => mb_strlen($right, 'UTF-8') <=> mb_strlen($left, 'UTF-8'));
+
+        return array_slice($terms, 0, 8);
+    }
+
+    private function normalizeContentLocale(string $locale): string
+    {
+        $normalized = ContentLocalizationService::getInstance()->normalizeLocale($locale);
+
+        return $normalized !== '' ? $normalized : 'de';
+    }
+
+    private function buildPostLocaleAvailabilityExpression(string $alias, string $locale): string
+    {
+        $locale = $this->normalizeContentLocale($locale);
+        $baseContent = $this->buildBasePostContentExpression($alias);
+        $englishLegacyOnly = $this->buildLegacyEnglishOnlyPostExpression($alias);
+
+        if ($locale === 'de') {
+            return "{$baseContent} AND NOT {$englishLegacyOnly}";
+        }
+
+        if ($locale === 'en') {
+            $localizedContent = $this->buildLocalizedPostContentExpression($alias, 'en');
+            return "({$localizedContent} OR {$englishLegacyOnly})";
+        }
+
+        return '1=1';
+    }
+
+    private function buildBasePostContentExpression(string $alias): string
+    {
+        return "(CHAR_LENGTH(TRIM(COALESCE({$alias}.content, ''))) > 0"
+            . " OR CHAR_LENGTH(TRIM(COALESCE({$alias}.excerpt, ''))) > 0"
+            . " OR CHAR_LENGTH(TRIM(COALESCE({$alias}.title, ''))) > 0)";
+    }
+
+    private function buildLocalizedPostContentExpression(string $alias, string $locale): string
+    {
+        return "(CHAR_LENGTH(TRIM(COALESCE({$alias}.content_{$locale}, ''))) > 0"
+            . " OR CHAR_LENGTH(TRIM(COALESCE({$alias}.excerpt_{$locale}, ''))) > 0"
+            . " OR CHAR_LENGTH(TRIM(COALESCE({$alias}.title_{$locale}, ''))) > 0)";
+    }
+
+    private function buildLegacyEnglishOnlyPostExpression(string $alias): string
+    {
+        $englishContent = $this->buildLocalizedPostContentExpression($alias, 'en');
+
+        return "(CHAR_LENGTH(TRIM(COALESCE({$alias}.slug_en, ''))) > 0 AND NOT {$englishContent})";
     }
 
     private function sanitizeText(string $value, int $maxLength = 255): string

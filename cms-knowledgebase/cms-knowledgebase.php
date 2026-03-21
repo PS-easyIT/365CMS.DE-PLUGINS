@@ -115,7 +115,7 @@ final class CMS_Knowledgebase
 
     public function enqueue_public_styles(): void
     {
-        if (!$this->should_enqueue_public_assets()) {
+        if (!\CmsKnowledgebase\Support\RequestInspector::shouldLoadTooltipAssets()) {
             return;
         }
 
@@ -127,7 +127,7 @@ final class CMS_Knowledgebase
 
     public function output_public_style_variables(): void
     {
-        if (!$this->should_enqueue_public_assets()) {
+        if (!\CmsKnowledgebase\Support\RequestInspector::shouldOutputPublicStyleVariables()) {
             return;
         }
 
@@ -145,7 +145,7 @@ final class CMS_Knowledgebase
 
     public function enqueue_public_scripts(): void
     {
-        if (!$this->should_enqueue_public_assets()) {
+        if (!\CmsKnowledgebase\Support\RequestInspector::shouldLoadTooltipAssets()) {
             return;
         }
 
@@ -153,20 +153,6 @@ final class CMS_Knowledgebase
         if (is_file($file)) {
             echo '<script src="' . htmlspecialchars(CMS_KNOWLEDGEBASE_PLUGIN_URL . 'assets/js/knowledgebase-tooltip.js?v=' . filemtime($file), ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
         }
-    }
-
-    private function should_enqueue_public_assets(): bool
-    {
-        if (PHP_SAPI === 'cli') {
-            return false;
-        }
-
-        $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
-        if ($path !== '' && str_starts_with($path, '/admin')) {
-            return false;
-        }
-
-        return $path === '/kb' || str_starts_with($path, '/kb/');
     }
 }
 

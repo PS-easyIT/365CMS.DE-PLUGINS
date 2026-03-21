@@ -9,6 +9,7 @@ use DOMElement;
 use DOMNode;
 use DOMXPath;
 use CmsKnowledgebase\Repository\EntryRepository;
+use CmsKnowledgebase\Support\RequestInspector;
 use CmsKnowledgebase\Support\LoggerFactory;
 
 if (!defined('ABSPATH')) {
@@ -239,7 +240,10 @@ final class Linker
 
         $relAttr = $rel !== [] ? ' rel="' . htmlspecialchars(implode(' ', $rel), ENT_QUOTES, 'UTF-8') . '"' : '';
         $tooltipAttributes = '';
-        if (($settings['enable_tooltips'] ?? '0') === '1' && $tooltipBody !== '') {
+        if (($settings['enable_tooltips'] ?? '0') === '1'
+            && $tooltipBody !== ''
+            && RequestInspector::shouldAttachTooltipAttributes()
+        ) {
             $tooltipAttributes = ' data-kb-tooltip-title="' . $tooltipTitle . '" data-kb-tooltip-body="' . $tooltipBody . '"';
         }
 
@@ -336,8 +340,7 @@ final class Linker
 
     private function isKnowledgebaseRequest(): bool
     {
-        $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
-        return $path === '/kb' || str_starts_with($path, '/kb/');
+        return RequestInspector::isKnowledgebaseRequest();
     }
 
     private function linkDocumentRegions(string $html): string
