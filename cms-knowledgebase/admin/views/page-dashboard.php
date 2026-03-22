@@ -34,6 +34,7 @@
         </div>
         <div class="kb-quick-actions">
             <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entries" class="btn btn-primary">➕ Neuer Eintrag</a>
+            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-categories" class="btn btn-secondary btn-sm">🗂️ Kategorien</a>
             <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-settings?tab=general" class="btn btn-secondary btn-sm">⚙️ Einstellungen</a>
             <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-settings?tab=design" class="btn btn-secondary btn-sm">🎨 Design</a>
             <a href="/kb" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">🌍 Knowledgebase öffnen</a>
@@ -62,7 +63,7 @@
                         <article class="kb-entry-card kb-entry-card--compact">
                             <div class="kb-entry-card__main">
                                 <div class="kb-entry-card__header">
-                                    <h4><a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entries?edit=<?php echo (int) $entry['id']; ?>" class="kb-admin-link"><?php echo htmlspecialchars((string) $entry['title'], ENT_QUOTES, 'UTF-8'); ?></a></h4>
+                                    <h4><a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entry-editor?edit=<?php echo (int) $entry['id']; ?>" class="kb-admin-link"><?php echo htmlspecialchars((string) $entry['title'], ENT_QUOTES, 'UTF-8'); ?></a></h4>
                                     <span class="status-badge <?php echo ((int) ($entry['is_active'] ?? 0) === 1) ? 'active' : 'inactive'; ?>"><?php echo ((int) ($entry['is_active'] ?? 0) === 1) ? 'Aktiv' : 'Inaktiv'; ?></span>
                                 </div>
                                 <div class="kb-meta-pills">
@@ -71,7 +72,7 @@
                                 </div>
                             </div>
                             <div class="kb-action-row kb-action-row--compact">
-                                <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entries?edit=<?php echo (int) $entry['id']; ?>" class="btn btn-secondary btn-sm">Bearbeiten</a>
+                                <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entry-editor?edit=<?php echo (int) $entry['id']; ?>" class="btn btn-secondary btn-sm">Bearbeiten</a>
                                 <a href="/kb/<?php echo rawurlencode((string) $entry['slug']); ?>" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Öffnen</a>
                             </div>
                         </article>
