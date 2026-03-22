@@ -134,7 +134,7 @@ $estimateRelatedReadTime = static function (array $post): int {
                                         </a>
                                     </h3>
                                     <?php if ($relatedDateLabel !== '' || $relatedReadTime > 0): ?>
-                                        <div class="cms-kb-related-post__details" aria-label="Metainformationen zum Beitrag">
+                                        <div class="cms-kb-related-post__details" aria-label="Metainformationen zum Eintrag">
                                             <?php if ($relatedDateLabel !== ''): ?>
                                                 <time class="cms-kb-related-post__detail"<?php echo $relatedDateIso !== '' ? ' datetime="' . htmlspecialchars($relatedDateIso, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>><?php echo htmlspecialchars($relatedDateLabel, ENT_QUOTES, 'UTF-8'); ?></time>
                                             <?php endif; ?>
@@ -143,7 +143,7 @@ $estimateRelatedReadTime = static function (array $post): int {
                                             <?php endif; ?>
                                         </div>
                                     <?php endif; ?>
-                                    <a class="cms-kb-related-post__cta" href="<?php echo htmlspecialchars((string) ($related['url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><span aria-hidden="true">… </span>zum Beitrag</a>
+                                    <a class="cms-kb-related-post__cta" href="<?php echo htmlspecialchars((string) ($related['url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><span aria-hidden="true">… </span>zum Eintrag</a>
                                 </article>
                             <?php endforeach; ?>
                         </div>
