@@ -94,12 +94,14 @@ final class CMS_Projects_Admin
         $selectedProject = $selectedProjectId > 0 ? $this->service->findProject($selectedProjectId) : null;
         $projectBoards = $selectedProject !== null ? $this->service->getProjectBoards((int) $selectedProject['id'], 'admin') : [];
         $projectWidgets = $selectedProject !== null ? $this->service->getProjectWidgets((int) $selectedProject['id'], 'admin') : [];
+        $projectTasks = $selectedProject !== null ? $this->service->getProjectTasks((int) $selectedProject['id'], 'admin') : [];
         $summary = $this->service->getSummary();
         $projectFormValues = $selectedProject ?? $this->service->getProjectDefaults();
         $sectionConfig = $this->getSectionConfig($section);
         $csrfToken = class_exists('CMS\\Security') ? \CMS\Security::instance()->generateToken('cms_projects_admin') : '';
         $boardTypes = $this->service->getBoardTypes();
         $widgetTypes = $this->service->getWidgetTypes();
+        $taskPriorities = $this->service->getTaskPriorities();
         $projectStatuses = $this->service->getProjectStatuses();
         $projectVisibilities = $this->service->getProjectVisibilities();
         $widgetScopes = $this->service->getWidgetScopes();
@@ -142,6 +144,14 @@ final class CMS_Projects_Admin
         if ($action === 'save_widget') {
             $result = $this->service->saveWidget($_POST);
             $message = (string) ($result['message'] ?? 'Widget-Aktion abgeschlossen.');
+            $messageType = !empty($result['success']) ? 'success' : 'error';
+            $selectedProjectId = max(0, (int) ($_POST['project_id'] ?? $selectedProjectId));
+            return [$message, $messageType, $selectedProjectId, self::PAGE_PROJECTS];
+        }
+
+        if ($action === 'save_task') {
+            $result = $this->service->saveTask($_POST);
+            $message = (string) ($result['message'] ?? 'Ticket-Aktion abgeschlossen.');
             $messageType = !empty($result['success']) ? 'success' : 'error';
             $selectedProjectId = max(0, (int) ($_POST['project_id'] ?? $selectedProjectId));
             return [$message, $messageType, $selectedProjectId, self::PAGE_PROJECTS];

@@ -12,6 +12,7 @@ final class CMS_Projects_Service
     private const MAX_SHORT_TEXT_LENGTH = 190;
     private const MAX_SUMMARY_LENGTH = 1200;
     private const MAX_DESCRIPTION_LENGTH = 20000;
+    private const MAX_COLUMN_KEY_LENGTH = 80;
 
     public function __construct(private readonly CMS_Projects_Repository $repository)
     {
@@ -41,6 +42,7 @@ final class CMS_Projects_Service
             'projects' => $this->repository->countProjects(),
             'boards' => $this->repository->countBoards(),
             'widgets' => $this->repository->countWidgets(),
+            'tasks' => $this->repository->countTasks(),
             'active_projects' => $active,
             'public_projects' => $public,
         ];
@@ -83,6 +85,16 @@ final class CMS_Projects_Service
         return ['public' => 'Nur Public', 'member' => 'Nur Member', 'both' => 'Public + Member'];
     }
 
+    public function getTaskPriorities(): array
+    {
+        return [
+            'low' => 'Niedrig',
+            'medium' => 'Mittel',
+            'high' => 'Hoch',
+            'critical' => 'Kritisch',
+        ];
+    }
+
     public function getProjects(): array
     {
         $projects = $this->repository->getProjects();
@@ -117,10 +129,15 @@ final class CMS_Projects_Service
     {
         $scope = $this->normalizeDashboardScope($scope);
         $boards = $this->repository->getBoardsByProject($projectId, $scope === 'admin', $scope === 'public' ? true : null);
-        return array_map(function (array $board): array {
+        $tasksByBoard = $this->groupTasksByBoard($this->getProjectTasks($projectId, $scope));
+
+        return array_map(function (array $board) use ($tasksByBoard): array {
             $board['payload_data'] = $this->sanitizeBoardPayload($this->decodePayload((string) ($board['payload'] ?? '')));
             $typeConfig = $this->getBoardTypes()[$board['board_type'] ?? 'kanban'] ?? ['label' => 'Board', 'description' => ''];
             $board['board_label'] = (string) ($typeConfig['label'] ?? 'Board');
+            $board['tasks'] = $tasksByBoard[(int) ($board['id'] ?? 0)] ?? [];
+            $board['task_count'] = count($board['tasks']);
+            $board['payload_data'] = $this->mergeTasksIntoBoardPayload($board['payload_data'], $board['tasks']);
             return $board;
         }, $boards);
     }
@@ -154,6 +171,75 @@ final class CMS_Projects_Service
             'boards' => $this->getProjectBoards($projectId, $scope),
             'widgets' => $this->getProjectWidgets($projectId, $scope),
         ];
+    }
+
+    public function getProjectTasks(int $projectId, string $scope = 'admin'): array
+    {
+        $scope = $this->normalizeDashboardScope($scope);
+        $tasks = $this->repository->getTasksByProject($projectId, $scope, $scope === 'admin');
+
+        return array_map(function (array $task): array {
+            $task['priority_label'] = (string) ($this->getTaskPriorities()[$task['priority'] ?? 'medium'] ?? 'Mittel');
+            $task['column_key'] = $this->normalizeColumnKey((string) ($task['column_key'] ?? ''));
+            $task['payload_data'] = $this->decodePayload((string) ($task['payload'] ?? ''));
+            return $task;
+        }, $tasks);
+    }
+
+    public function saveTask(array $input): array
+    {
+        $projectId = (int) ($input['project_id'] ?? 0);
+        $project = $this->findProject($projectId);
+        if ($project === null) {
+            return ['success' => false, 'message' => 'Projekt für das Ticket wurde nicht gefunden.'];
+        }
+
+        $boardId = (int) ($input['board_id'] ?? 0);
+        $board = $this->findBoardForProject($projectId, $boardId);
+        if ($board === null) {
+            return ['success' => false, 'message' => 'Board für das Ticket wurde nicht gefunden.'];
+        }
+
+        $title = $this->sanitizeText((string) ($input['title'] ?? ''), self::MAX_SHORT_TEXT_LENGTH);
+        if ($title === '') {
+            return ['success' => false, 'message' => 'Ticket-Titel ist erforderlich.'];
+        }
+
+        $priority = (string) ($input['priority'] ?? 'medium');
+        if (!isset($this->getTaskPriorities()[$priority])) {
+            $priority = 'medium';
+        }
+
+        $columnKey = $this->resolveBoardColumnKey($board, (string) ($input['column_key'] ?? ''));
+        if ($columnKey === '') {
+            return ['success' => false, 'message' => 'Für das Ticket wurde keine gültige Board-Spalte gefunden.'];
+        }
+
+        $dueDate = $this->normalizeDueDate((string) ($input['due_date'] ?? ''));
+        if ((string) ($input['due_date'] ?? '') !== '' && $dueDate === null) {
+            return ['success' => false, 'message' => 'Das Fälligkeitsdatum ist ungültig.'];
+        }
+
+        $saveId = $this->repository->saveTask([
+            'project_id' => $projectId,
+            'board_id' => $boardId,
+            'column_key' => $columnKey,
+            'title' => $title,
+            'description' => $this->sanitizeMultilineText((string) ($input['description'] ?? ''), self::MAX_DESCRIPTION_LENGTH),
+            'priority' => $priority,
+            'assignee_name' => $this->sanitizeText((string) ($input['assignee_name'] ?? ''), self::MAX_SHORT_TEXT_LENGTH),
+            'due_date' => $dueDate ?? '',
+            'sort_order' => max(0, (int) ($input['sort_order'] ?? 0)),
+            'is_public' => $this->toBooleanFlag($input['is_public'] ?? 0),
+            'is_active' => $this->toBooleanFlag($input['is_active'] ?? 0),
+            'payload' => json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ]);
+
+        if ($saveId === false) {
+            return ['success' => false, 'message' => 'Ticket konnte nicht gespeichert werden.'];
+        }
+
+        return ['success' => true, 'message' => 'Ticket wurde gespeichert.', 'id' => (int) $saveId];
     }
 
     public function getProjectDefaults(): array
@@ -344,9 +430,10 @@ final class CMS_Projects_Service
 
         return array_map(function (array $project) use ($counts): array {
             $projectId = (int) ($project['id'] ?? 0);
-            $aggregate = $counts[$projectId] ?? ['board_count' => 0, 'widget_count' => 0];
+            $aggregate = $counts[$projectId] ?? ['board_count' => 0, 'widget_count' => 0, 'task_count' => 0];
             $project['board_count'] = (int) ($aggregate['board_count'] ?? 0);
             $project['widget_count'] = (int) ($aggregate['widget_count'] ?? 0);
+            $project['task_count'] = (int) ($aggregate['task_count'] ?? 0);
             $project['preview_links'] = $this->getProjectPreviewLinks($project);
             return $project;
         }, $projects);
@@ -451,7 +538,7 @@ final class CMS_Projects_Service
     {
         $sanitized = [];
 
-        foreach ($groups as $group) {
+        foreach (array_values($groups) as $index => $group) {
             if (!is_array($group)) {
                 continue;
             }
@@ -470,12 +557,145 @@ final class CMS_Projects_Service
             }
 
             $sanitized[] = [
+                'key' => $this->buildColumnKey((string) ($group['key'] ?? ''), $title, $index),
                 'title' => $title !== '' ? $title : 'Block',
                 'items' => $items,
             ];
         }
 
         return $sanitized;
+    }
+
+    private function groupTasksByBoard(array $tasks): array
+    {
+        $grouped = [];
+
+        foreach ($tasks as $task) {
+            $boardId = (int) ($task['board_id'] ?? 0);
+            if ($boardId <= 0) {
+                continue;
+            }
+
+            $grouped[$boardId][] = $task;
+        }
+
+        return $grouped;
+    }
+
+    private function mergeTasksIntoBoardPayload(array $payload, array $tasks): array
+    {
+        $taskGroups = [];
+        foreach ($tasks as $task) {
+            $columnKey = $this->normalizeColumnKey((string) ($task['column_key'] ?? ''));
+            if ($columnKey === '') {
+                continue;
+            }
+
+            $taskGroups[$columnKey][] = $task;
+        }
+
+        foreach (['columns', 'lanes', 'clusters', 'stages', 'milestones'] as $key) {
+            if (!isset($payload[$key]) || !is_array($payload[$key])) {
+                continue;
+            }
+
+            $payload[$key] = array_map(function (array $group, int $index) use ($taskGroups): array {
+                $columnKey = $this->buildColumnKey((string) ($group['key'] ?? ''), (string) ($group['title'] ?? 'Block'), $index);
+                $group['key'] = $columnKey;
+                $group['tasks'] = $taskGroups[$columnKey] ?? [];
+                return $group;
+            }, array_values($payload[$key]), array_keys(array_values($payload[$key])));
+
+            break;
+        }
+
+        return $payload;
+    }
+
+    private function findBoardForProject(int $projectId, int $boardId): ?array
+    {
+        if ($boardId <= 0) {
+            return null;
+        }
+
+        foreach ($this->repository->getBoardsByProject($projectId) as $board) {
+            if ((int) ($board['id'] ?? 0) === $boardId) {
+                $board['payload_data'] = $this->sanitizeBoardPayload($this->decodePayload((string) ($board['payload'] ?? '')));
+                return $board;
+            }
+        }
+
+        return null;
+    }
+
+    private function resolveBoardColumnKey(array $board, string $requestedKey): string
+    {
+        $requestedKey = $this->normalizeColumnKey($requestedKey);
+        $payload = (array) ($board['payload_data'] ?? []);
+
+        foreach (['columns', 'lanes', 'clusters', 'stages', 'milestones'] as $key) {
+            if (!isset($payload[$key]) || !is_array($payload[$key])) {
+                continue;
+            }
+
+            foreach (array_values($payload[$key]) as $index => $group) {
+                if (!is_array($group)) {
+                    continue;
+                }
+
+                $columnKey = $this->buildColumnKey((string) ($group['key'] ?? ''), (string) ($group['title'] ?? 'Block'), $index);
+                if ($requestedKey === '' || $requestedKey === $columnKey) {
+                    return $columnKey;
+                }
+            }
+        }
+
+        return '';
+    }
+
+    private function buildColumnKey(string $key, string $title, int $index): string
+    {
+        $normalized = $this->normalizeColumnKey($key);
+        if ($normalized !== '') {
+            return $normalized;
+        }
+
+        $normalized = $this->normalizeColumnKey($this->normalizeSlug($title));
+        if ($normalized !== '') {
+            return $normalized;
+        }
+
+        return 'column-' . ($index + 1);
+    }
+
+    private function normalizeColumnKey(string $key): string
+    {
+        $key = strtolower(trim($key));
+        $key = preg_replace('/[^a-z0-9\-_]+/', '-', $key) ?? '';
+        $key = trim($key, '-_');
+        $key = preg_replace('/[-_]{2,}/', '-', $key) ?? '';
+        return $this->truncate($key, self::MAX_COLUMN_KEY_LENGTH);
+    }
+
+    private function normalizeDueDate(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('Y-m-d', $value);
+        $errors = \DateTimeImmutable::getLastErrors();
+
+        if ($errors === false) {
+            $errors = ['warning_count' => 0, 'error_count' => 0];
+        }
+
+        if (!$date instanceof \DateTimeImmutable || !is_array($errors) || ($errors['warning_count'] ?? 0) > 0 || ($errors['error_count'] ?? 0) > 0) {
+            return null;
+        }
+
+        return $date->format('Y-m-d');
     }
 
     private function sanitizeWidgetPayload(string $widgetType, array $payload): array

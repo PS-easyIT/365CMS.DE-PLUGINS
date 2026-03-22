@@ -12,9 +12,11 @@ final class CMS_Projects_Repository
     private string $projectsTable = 'projects_projects';
     private string $boardsTable = 'projects_boards';
     private string $widgetsTable = 'projects_widgets';
+    private string $tasksTable = 'projects_tasks';
     private string $projectsTableFull;
     private string $boardsTableFull;
     private string $widgetsTableFull;
+    private string $tasksTableFull;
 
     public function __construct()
     {
@@ -23,6 +25,7 @@ final class CMS_Projects_Repository
         $this->projectsTableFull = $prefix . $this->projectsTable;
         $this->boardsTableFull = $prefix . $this->boardsTable;
         $this->widgetsTableFull = $prefix . $this->widgetsTable;
+        $this->tasksTableFull = $prefix . $this->tasksTable;
     }
 
     public function ensureTables(): void
@@ -78,6 +81,28 @@ final class CMS_Projects_Repository
             PRIMARY KEY (`id`),
             KEY `idx_project_scope` (`project_id`, `scope`, `is_active`),
             KEY `idx_project_widget_position` (`project_id`, `position`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $this->db->query("CREATE TABLE IF NOT EXISTS `{$this->tasksTableFull}` (
+            `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `project_id` INT UNSIGNED NOT NULL,
+            `board_id` INT UNSIGNED NOT NULL,
+            `column_key` VARCHAR(80) NOT NULL,
+            `title` VARCHAR(190) NOT NULL,
+            `description` LONGTEXT DEFAULT NULL,
+            `priority` VARCHAR(20) NOT NULL DEFAULT 'medium',
+            `assignee_name` VARCHAR(190) NOT NULL DEFAULT '',
+            `due_date` DATE DEFAULT NULL,
+            `sort_order` INT UNSIGNED NOT NULL DEFAULT 0,
+            `is_public` TINYINT(1) NOT NULL DEFAULT 0,
+            `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+            `payload` LONGTEXT DEFAULT NULL,
+            `created_at` DATETIME NOT NULL,
+            `updated_at` DATETIME NOT NULL,
+            PRIMARY KEY (`id`),
+            KEY `idx_project_board_column` (`project_id`, `board_id`, `column_key`),
+            KEY `idx_board_public_active` (`board_id`, `is_public`, `is_active`),
+            KEY `idx_project_sort` (`project_id`, `sort_order`, `id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
 
@@ -228,6 +253,69 @@ final class CMS_Projects_Repository
         return $updated ? $id : false;
     }
 
+    public function getTasksByProject(int $projectId, string $scope = 'admin', bool $includeInactive = true): array
+    {
+        $sql = "SELECT * FROM `{$this->tasksTableFull}` WHERE project_id = ?";
+        $params = [$projectId];
+
+        if (!$includeInactive) {
+            $sql .= ' AND is_active = 1';
+        }
+
+        if ($scope === 'public') {
+            $sql .= ' AND is_public = 1';
+        }
+
+        $sql .= ' ORDER BY board_id ASC, sort_order ASC, id ASC';
+        $rows = $this->db->get_results($sql, $params) ?: [];
+        return array_map([$this, 'mapTaskRow'], $rows);
+    }
+
+    public function getTasksByBoard(int $boardId, string $scope = 'admin', bool $includeInactive = true): array
+    {
+        $sql = "SELECT * FROM `{$this->tasksTableFull}` WHERE board_id = ?";
+        $params = [$boardId];
+
+        if (!$includeInactive) {
+            $sql .= ' AND is_active = 1';
+        }
+
+        if ($scope === 'public') {
+            $sql .= ' AND is_public = 1';
+        }
+
+        $sql .= ' ORDER BY sort_order ASC, id ASC';
+        $rows = $this->db->get_results($sql, $params) ?: [];
+        return array_map([$this, 'mapTaskRow'], $rows);
+    }
+
+    public function saveTask(array $data, ?int $id = null): int|false
+    {
+        $payload = [
+            'project_id' => (int) ($data['project_id'] ?? 0),
+            'board_id' => (int) ($data['board_id'] ?? 0),
+            'column_key' => (string) ($data['column_key'] ?? ''),
+            'title' => (string) ($data['title'] ?? ''),
+            'description' => (string) ($data['description'] ?? ''),
+            'priority' => (string) ($data['priority'] ?? 'medium'),
+            'assignee_name' => (string) ($data['assignee_name'] ?? ''),
+            'due_date' => (string) ($data['due_date'] ?? '') !== '' ? (string) ($data['due_date'] ?? '') : null,
+            'sort_order' => (int) ($data['sort_order'] ?? 0),
+            'is_public' => !empty($data['is_public']) ? 1 : 0,
+            'is_active' => !empty($data['is_active']) ? 1 : 0,
+            'payload' => (string) ($data['payload'] ?? ''),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+
+        if ($id === null) {
+            $payload['created_at'] = date('Y-m-d H:i:s');
+            return $this->db->insert($this->tasksTable, $payload);
+        }
+
+        $updated = $this->db->update($this->tasksTable, $payload, ['id' => $id]);
+        return $updated ? $id : false;
+    }
+
     public function countProjects(): int
     {
         return (int) ($this->db->get_var("SELECT COUNT(*) FROM `{$this->projectsTableFull}`") ?? 0);
@@ -241,6 +329,11 @@ final class CMS_Projects_Repository
     public function countWidgets(): int
     {
         return (int) ($this->db->get_var("SELECT COUNT(*) FROM `{$this->widgetsTableFull}`") ?? 0);
+    }
+
+    public function countTasks(): int
+    {
+        return (int) ($this->db->get_var("SELECT COUNT(*) FROM `{$this->tasksTableFull}`") ?? 0);
     }
 
     public function getProjectEntityCounts(array $projectIds): array
@@ -257,6 +350,7 @@ final class CMS_Projects_Repository
             $counts[$projectId] = [
                 'board_count' => 0,
                 'widget_count' => 0,
+                'task_count' => 0,
             ];
         }
 
@@ -285,6 +379,20 @@ final class CMS_Projects_Repository
             $projectId = (int) ($row->project_id ?? 0);
             if ($projectId > 0 && isset($counts[$projectId])) {
                 $counts[$projectId]['widget_count'] = (int) ($row->aggregate_count ?? 0);
+            }
+        }
+
+        $taskRows = $this->db->get_results(
+            "SELECT project_id, COUNT(*) AS aggregate_count
+             FROM `{$this->tasksTableFull}`
+             WHERE project_id IN ({$idList})
+             GROUP BY project_id"
+        ) ?: [];
+
+        foreach ($taskRows as $row) {
+            $projectId = (int) ($row->project_id ?? 0);
+            if ($projectId > 0 && isset($counts[$projectId])) {
+                $counts[$projectId]['task_count'] = (int) ($row->aggregate_count ?? 0);
             }
         }
 
@@ -337,6 +445,27 @@ final class CMS_Projects_Repository
             'title' => (string) ($row->title ?? ''),
             'content' => (string) ($row->content ?? ''),
             'position' => (int) ($row->position ?? 0),
+            'is_active' => (int) ($row->is_active ?? 0),
+            'payload' => (string) ($row->payload ?? ''),
+            'created_at' => (string) ($row->created_at ?? ''),
+            'updated_at' => (string) ($row->updated_at ?? ''),
+        ];
+    }
+
+    private function mapTaskRow(object $row): array
+    {
+        return [
+            'id' => (int) ($row->id ?? 0),
+            'project_id' => (int) ($row->project_id ?? 0),
+            'board_id' => (int) ($row->board_id ?? 0),
+            'column_key' => (string) ($row->column_key ?? ''),
+            'title' => (string) ($row->title ?? ''),
+            'description' => (string) ($row->description ?? ''),
+            'priority' => (string) ($row->priority ?? 'medium'),
+            'assignee_name' => (string) ($row->assignee_name ?? ''),
+            'due_date' => (string) ($row->due_date ?? ''),
+            'sort_order' => (int) ($row->sort_order ?? 0),
+            'is_public' => (int) ($row->is_public ?? 0),
             'is_active' => (int) ($row->is_active ?? 0),
             'payload' => (string) ($row->payload ?? ''),
             'created_at' => (string) ($row->created_at ?? ''),

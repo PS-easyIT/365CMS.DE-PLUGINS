@@ -2,12 +2,23 @@
 .cp-public-shell,
 .cp-member-shell {
     --cp-primary: #2563eb;
-    --cp-bg: #f8fafc;
-    --cp-card: #ffffff;
+    --cp-primary-dark: #1d4ed8;
+    --cp-primary-soft: #eff6ff;
+    --cp-bg: #f6f8fb;
+    --cp-card: rgba(255, 255, 255, 0.92);
     --cp-border: #dbe3f0;
+    --cp-border-strong: #c7d4e5;
     --cp-text: #0f172a;
     --cp-muted: #64748b;
+    --cp-success-bg: #dcfce7;
+    --cp-success-text: #166534;
+    --cp-danger-bg: #fee2e2;
+    --cp-danger-text: #991b1b;
     color: var(--cp-text);
+    background: var(--cp-bg);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
 .cp-header-card,
@@ -22,8 +33,9 @@
 .cp-stat-card {
     background: var(--cp-card);
     border: 1px solid var(--cp-border);
-    border-radius: 18px;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    border-radius: 20px;
+    box-shadow: 0 12px 36px rgba(15, 23, 42, 0.06);
+    backdrop-filter: blur(10px);
 }
 
 .cp-admin-shell,
@@ -32,12 +44,15 @@
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+    padding: 0.25rem 0 1rem;
 }
 
 .cp-header-card,
 .cp-public-hero {
-    padding: 1.5rem;
-    background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+    padding: 1.6rem;
+    background:
+        radial-gradient(circle at top right, rgba(37, 99, 235, 0.12), transparent 32%),
+        linear-gradient(135deg, #f8fbff 0%, #f5f8fc 100%);
 }
 
 .cp-kicker {
@@ -58,20 +73,50 @@
     flex-wrap: wrap;
 }
 
+.cp-hero-copy {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.cp-hero-meta,
+.cp-card-meta-row,
+.cp-preview-links,
+.cp-table-actions {
+    display: flex;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.cp-hero-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(199, 212, 229, 0.95);
+    color: var(--cp-text);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
 .cp-alert {
     padding: 0.9rem 1rem;
     border-radius: 14px;
     font-weight: 600;
+    border: 1px solid transparent;
 }
 
 .cp-alert-success {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--cp-success-bg);
+    color: var(--cp-success-text);
+    border-color: rgba(22, 101, 52, 0.1);
 }
 
 .cp-alert-error {
-    background: #fee2e2;
-    color: #991b1b;
+    background: var(--cp-danger-bg);
+    color: var(--cp-danger-text);
+    border-color: rgba(153, 27, 27, 0.12);
 }
 
 .cp-summary-grid,
@@ -88,6 +133,10 @@
 
 .cp-summary-card {
     padding: 1rem 1.1rem;
+}
+
+.cp-summary-card--accent {
+    background: linear-gradient(180deg, rgba(37, 99, 235, 0.1) 0%, rgba(255, 255, 255, 0.96) 100%);
 }
 
 .cp-summary-card strong {
@@ -117,6 +166,7 @@
 .cp-project-detail-card,
 .cp-board-card {
     padding: 1.25rem;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
 .cp-panel-wide {
@@ -139,9 +189,52 @@
     overflow-x: auto;
 }
 
+.cp-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.cp-table thead th {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--cp-muted);
+}
+
+.cp-table tbody tr:hover {
+    background: rgba(37, 99, 235, 0.03);
+}
+
 .cp-form {
     display: grid;
     gap: 0.9rem;
+}
+
+.cp-form-section {
+    display: grid;
+    gap: 0.85rem;
+    padding: 1rem;
+    border: 1px solid var(--cp-border);
+    border-radius: 16px;
+    background: rgba(248, 250, 252, 0.7);
+}
+
+.cp-form-section--muted {
+    background: rgba(239, 246, 255, 0.55);
+}
+
+.cp-form-section__title {
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--cp-muted);
+}
+
+.cp-field-hint {
+    color: var(--cp-muted);
+    font-size: 0.78rem;
+    line-height: 1.5;
 }
 
 .cp-form label {
@@ -160,6 +253,25 @@
     font: inherit;
     background: #fff;
     color: var(--cp-text);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.cp-form input:focus,
+.cp-form select:focus,
+.cp-form textarea:focus {
+    outline: none;
+    border-color: rgba(37, 99, 235, 0.55);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.cp-code-input {
+    min-height: 180px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    background: #0f172a;
+    color: #e2e8f0;
+    border-color: #1e293b;
 }
 
 .cp-form-grid-2 {
@@ -184,12 +296,13 @@
     display: inline-flex;
     align-items: center;
     border-radius: 999px;
-    padding: 0.3rem 0.7rem;
-    background: #eff6ff;
+    padding: 0.34rem 0.75rem;
+    background: var(--cp-primary-soft);
     color: var(--cp-primary);
     font-size: 0.8rem;
     font-weight: 700;
     text-decoration: none;
+    border: 1px solid rgba(37, 99, 235, 0.08);
 }
 
 .cp-member-project-pill.active {
@@ -204,9 +317,25 @@
     gap: 1rem;
 }
 
-.cp-board-preview-grid,
-.cp-board-columns {
+.cp-dashboard-side {
     display: grid;
+    gap: 1rem;
+}
+
+.cp-ticket-stack {
+    display: grid;
+    gap: 0.7rem;
+    margin-top: 0.9rem;
+}
+
+.cp-ticket-stack--list {
+    gap: 0.9rem;
+}
+
+.cp-board-columns,
+.cp-board-preview-grid {
+    display: grid;
+    gap: 0.9rem;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 0.9rem;
     margin-top: 1rem;
@@ -218,6 +347,40 @@
     border-radius: 14px;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
+    min-height: 100%;
+}
+
+.cp-ticket-card {
+    padding: 0.85rem 0.9rem;
+    border-radius: 14px;
+    border: 1px solid rgba(37, 99, 235, 0.12);
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+
+.cp-ticket-card--admin-list {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+}
+
+.cp-ticket-card__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 0.75rem;
+    margin-bottom: 0.45rem;
+}
+
+.cp-ticket-card p {
+    margin: 0.35rem 0 0;
+}
+
+.cp-ticket-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem 0.8rem;
+    margin-top: 0.55rem;
+    color: var(--cp-muted);
+    font-size: 0.8rem;
 }
 
 .cp-board-preview-column h4,
@@ -251,6 +414,7 @@
 .cp-stat-card {
     padding: 0.85rem;
     text-align: center;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.95));
 }
 
 .cp-stat-card strong {
@@ -268,6 +432,15 @@
     overflow: hidden;
 }
 
+.cp-project-card:hover,
+.cp-board-card:hover,
+.cp-widget-card:hover,
+.cp-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.09);
+    border-color: var(--cp-border-strong);
+}
+
 .cp-project-color {
     display: inline-block;
     width: 60px;
@@ -282,10 +455,25 @@
     justify-content: center;
     padding: 0.7rem 1rem;
     border-radius: 12px;
-    background: var(--cp-primary);
+    background: linear-gradient(135deg, var(--cp-primary) 0%, var(--cp-primary-dark) 100%);
     color: #fff;
     text-decoration: none;
     font-weight: 700;
+    border: 1px solid transparent;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+}
+
+.cp-button:hover,
+.cp-button:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.22);
+}
+
+.cp-button-secondary {
+    background: #fff;
+    color: var(--cp-primary-dark);
+    border-color: rgba(37, 99, 235, 0.16);
+    box-shadow: none;
 }
 
 .cp-dashboard-shell {
@@ -299,6 +487,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.6rem;
+    padding: 0.2rem 0;
 }
 
 .cp-empty-state {
@@ -309,16 +498,38 @@
     color: var(--cp-muted);
 }
 
+.cp-public-shell a,
+.cp-member-shell a,
+.cp-admin-shell a {
+    transition: color 0.18s ease, opacity 0.18s ease;
+}
+
+.cp-public-shell a:hover,
+.cp-member-shell a:hover,
+.cp-admin-shell a:hover {
+    opacity: 0.92;
+}
+
 @media (max-width: 1080px) {
     .cp-admin-grid,
     .cp-admin-grid-bottom,
     .cp-dashboard-shell {
         grid-template-columns: 1fr;
     }
+
+    .cp-public-hero,
+    .cp-header-card {
+        gap: 1rem;
+    }
 }
 
 @media (max-width: 720px) {
     .cp-form-grid-2 {
         grid-template-columns: 1fr;
+    }
+
+    .cp-public-hero,
+    .cp-header-card {
+        padding: 1.2rem;
     }
 }

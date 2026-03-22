@@ -21,6 +21,26 @@ $renderBoardBlock = static function (array $board): void {
             echo '<li>' . htmlspecialchars((string) $item, ENT_QUOTES, 'UTF-8') . '</li>';
         }
         echo '</ul>';
+        if (((array) ($group['tasks'] ?? [])) !== []) {
+            echo '<div class="cp-ticket-stack">';
+            foreach ((array) ($group['tasks'] ?? []) as $task) {
+                echo '<article class="cp-ticket-card">';
+                echo '<div class="cp-ticket-card__head"><strong>' . htmlspecialchars((string) ($task['title'] ?? ''), ENT_QUOTES, 'UTF-8') . '</strong><span class="cp-badge">' . htmlspecialchars((string) ($task['priority_label'] ?? ''), ENT_QUOTES, 'UTF-8') . '</span></div>';
+                if (!empty($task['description'])) {
+                    echo '<p>' . nl2br(htmlspecialchars((string) ($task['description'] ?? ''), ENT_QUOTES, 'UTF-8')) . '</p>';
+                }
+                echo '<div class="cp-ticket-meta">';
+                if (!empty($task['assignee_name'])) {
+                    echo '<span>' . htmlspecialchars((string) ($task['assignee_name'] ?? ''), ENT_QUOTES, 'UTF-8') . '</span>';
+                }
+                if (!empty($task['due_date'])) {
+                    echo '<span>' . htmlspecialchars((string) ($task['due_date'] ?? ''), ENT_QUOTES, 'UTF-8') . '</span>';
+                }
+                echo '</div>';
+                echo '</article>';
+            }
+            echo '</div>';
+        }
         echo '</div>';
     }
     echo '</div>';
@@ -76,6 +96,7 @@ $renderWidgetBlock = static function (array $widget): void {
             <?php if ($currentProject !== null): ?>
                 <span class="cp-hero-pill"><?php echo (int) ($currentProject['board_count'] ?? 0); ?> Boards</span>
                 <span class="cp-hero-pill"><?php echo (int) ($currentProject['widget_count'] ?? 0); ?> Widgets</span>
+                <span class="cp-hero-pill"><?php echo (int) ($currentProject['task_count'] ?? 0); ?> Tickets</span>
             <?php endif; ?>
         </div>
     </section>
