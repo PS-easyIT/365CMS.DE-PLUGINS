@@ -226,7 +226,7 @@ declare(strict_types=1);
                 <p><?php echo htmlspecialchars((string) ($pageDescription ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
             </div>
             <div class="section-nav">
-                <a href="<?php echo htmlspecialchars((string) (($publicRouteMap['overview'] ?? '/marketplace')), ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo (($section ?? 'overview') === 'overview') ? 'active' : ''; ?>">Übersicht</a>
+                <a href="<?php echo htmlspecialchars((string) (($publicRouteMap['overview'] ?? '/marketplace-public')), ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo (($section ?? 'overview') === 'overview') ? 'active' : ''; ?>">Übersicht</a>
                 <?php foreach ($sections as $sectionItem): ?>
                     <a href="<?php echo htmlspecialchars((string) ($sectionItem['url'] ?? '#'), ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo (($section ?? '') === ($sectionItem['key'] ?? '')) ? 'active' : ''; ?>"><?php echo htmlspecialchars((string) ($sectionItem['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a>
                 <?php endforeach; ?>

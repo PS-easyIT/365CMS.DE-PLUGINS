@@ -104,12 +104,17 @@ final class CMS_Marketplace_Service
 
     public function getPublicRouteMap(): array
     {
+        $settings = $this->getSettings();
+        $publicBase = '/marketplace-public';
+
         return [
-            'overview' => '/marketplace',
-            'plugins' => '/marketplace/plugins',
-            'themes' => '/marketplace/themes',
-            'cms' => '/marketplace/cms',
-            'submit' => $this->normalizePublicPath((string) ($this->getSettings()['public_submission_path'] ?? '/marketplace-submit')),
+            'overview' => $publicBase,
+            'plugins' => $publicBase . '/plugins',
+            'themes' => $publicBase . '/themes',
+            'cms' => $publicBase . '/cms',
+            'submit' => !empty($settings['public_submission_enabled'])
+                ? $this->normalizePublicPath((string) ($settings['public_submission_path'] ?? '/marketplace-submit'))
+                : '',
         ];
     }
 
@@ -131,7 +136,7 @@ final class CMS_Marketplace_Service
         $siteUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
         $summary = $this->getSummary();
 
-        return [
+        $sections = [
             [
                 'key' => 'plugins',
                 'label' => 'Plugins',
@@ -156,15 +161,20 @@ final class CMS_Marketplace_Service
                 'url' => $siteUrl . ($routes['cms'] ?? '/marketplace/cms'),
                 'feed_url' => $this->getPublicUrls()['cms_update'] ?? '',
             ],
-            [
+        ];
+
+        if (!empty($routes['submit'])) {
+            $sections[] = [
                 'key' => 'submit',
                 'label' => 'Einreichung',
                 'description' => 'Öffentliche Einreichung für neue Plugins, Themes und CMS-Pakete.',
                 'count' => 0,
-                'url' => $siteUrl . ($routes['submit'] ?? '/marketplace-submit'),
+                'url' => $siteUrl . $routes['submit'],
                 'feed_url' => '',
-            ],
-        ];
+            ];
+        }
+
+        return $sections;
     }
 
     public function getPublicOverviewPayload(): array
@@ -391,6 +401,8 @@ final class CMS_Marketplace_Service
 
     public function syncPublicCatalogs(): void
     {
+        $this->ensureStorageDirectories();
+
         foreach (['cms', 'plugin', 'theme'] as $type) {
             $published = $this->repository->getPublishedByType($type);
             $latestEntries = $this->reduceToLatestVersions($published);
@@ -433,8 +445,12 @@ final class CMS_Marketplace_Service
 
     public function getPublicSubmissionUrl(): string
     {
-        $siteUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
         $settings = $this->getSettings();
+        if (empty($settings['public_submission_enabled'])) {
+            return '';
+        }
+
+        $siteUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
         return $siteUrl . $this->normalizePublicPath((string) ($settings['public_submission_path'] ?? '/marketplace-submit'));
     }
 
@@ -892,6 +908,11 @@ final class CMS_Marketplace_Service
 
     private function writeJsonFile(string $path, array $payload): void
     {
+        $directory = dirname($path);
+        if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
+            return;
+        }
+
         $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         if (!is_string($json)) {
             return;

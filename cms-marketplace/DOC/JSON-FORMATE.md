@@ -1,6 +1,56 @@
 # JSON-Formate des zentralen Marketplace
 
-## 1. Plugin-Katalog
+## 1. Öffentlicher Overview-Index
+
+Pfad:
+
+```text
+https://365cms.de/marketplace/index.json
+```
+
+Hinweis: Diese JSON-Datei liegt weiterhin bewusst im echten Datei-/Feed-Bereich `/marketplace`. Die HTML-Ansichten laufen getrennt unter `/marketplace-public`.
+
+Beispielstruktur:
+
+```json
+{
+  "generated_at": "2026-03-22T10:30:00+00:00",
+  "site": "https://365cms.de",
+  "sections": [
+    {
+      "key": "plugins",
+      "label": "Plugins",
+      "description": "Verfügbare 365CMS-Plugins mit Installations- und Update-Metadaten.",
+      "count": 12,
+      "url": "https://365cms.de/marketplace-public/plugins",
+      "feed_url": "https://365cms.de/marketplace/plugins/index.json"
+    },
+    {
+      "key": "themes",
+      "label": "Themes",
+      "description": "Verfügbare 365CMS-Themes mit Installations- und Update-Metadaten.",
+      "count": 4,
+      "url": "https://365cms.de/marketplace-public/themes",
+      "feed_url": "https://365cms.de/marketplace/themes/index.json"
+    },
+    {
+      "key": "cms",
+      "label": "CMS",
+      "description": "365CMS-Core-Pakete, Update-Kanäle und zentrale Update-Metadaten.",
+      "count": 2,
+      "url": "https://365cms.de/marketplace-public/cms",
+      "feed_url": "https://365cms.de/marketplace/core/365cms/update.json"
+    }
+  ],
+  "latest": {
+    "cms": [],
+    "plugins": [],
+    "themes": []
+  }
+}
+```
+
+## 2. Plugin-Katalog
 
 Pfad:
 
@@ -56,7 +106,7 @@ Beispielstruktur:
 }
 ```
 
-## 2. Theme-Katalog
+## 3. Theme-Katalog
 
 Pfad:
 
@@ -75,7 +125,23 @@ Bei kostenpflichtigen Einträgen ist typischerweise:
 - `contact_form_slug` gesetzt
 - `purchase_type = contact_form`
 
-## 3. Manifest pro Eintrag
+## 4. CMS-Feed
+
+Pfad:
+
+```text
+https://365cms.de/marketplace/core/365cms/update.json
+```
+
+Aktuell wird für den `cms`-Bereich zusätzlich zentral erzeugt:
+
+- `index.json`
+- `manifest.json`
+- `update.json`
+
+Der Inhalt entspricht dem neuesten freigegebenen CMS-Paket und nutzt dieselben Kernfelder wie Plugin-/Theme-Manifeste.
+
+## 5. Manifest pro Eintrag
 
 Pfad:
 
@@ -90,7 +156,7 @@ Zusätzliche Felder gegenüber dem Index:
 - `created_at`
 - `updated_at`
 
-## 4. Update-Datei pro Eintrag
+## 6. Update-Datei pro Eintrag
 
 Pfad:
 

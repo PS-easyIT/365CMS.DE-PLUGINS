@@ -251,11 +251,12 @@ declare(strict_types=1);
                 <span class="eyebrow">Plugin-eigene Public-Seite</span>
                 <div>
                     <h1>Marketplace Einreichung</h1>
-                    <p>Hier kannst du Plugins und Themes für den zentralen 365CMS Marketplace einreichen. Öffentliche Einreichungen werden nie sofort veröffentlicht, sondern müssen zuerst von einem Administrator geprüft und freigeschaltet werden.</p>
+                    <p>Hier kannst du Plugins, Themes und CMS-Pakete für den zentralen 365CMS Marketplace einreichen. Öffentliche Einreichungen werden nie sofort veröffentlicht, sondern müssen zuerst von einem Administrator geprüft und freigeschaltet werden.</p>
                 </div>
                 <div class="hero-badges">
                     <span class="hero-badge">Theme-unabhängige Ausgabe</span>
                     <span class="hero-badge">Admin-Freigabe erforderlich</span>
+                    <span class="hero-badge">CMS, Plugins oder Themes</span>
                     <span class="hero-badge">Kostenlos oder kostenpflichtig</span>
                 </div>
             </div>
@@ -277,7 +278,7 @@ declare(strict_types=1);
                     </div>
                     <div class="fact-item">
                         <strong>Kostenpflichtige Einträge</strong>
-                        <div class="muted">Bei kostenpflichtigen Plugins oder Themes ist kein Paket zwingend erforderlich. Statt Download wird im Marketplace ein Kauf-/Anfrage-Link auf dein Kontaktformular ausgegeben.</div>
+                        <div class="muted">Bei kostenpflichtigen CMS-, Plugin- oder Theme-Einträgen ist kein Paket zwingend erforderlich. Statt Download wird im Marketplace ein Kauf-/Anfrage-Link auf dein Kontaktformular ausgegeben.</div>
                     </div>
                     <div class="fact-item">
                         <strong>Kostenlose Einträge</strong>
@@ -310,6 +311,7 @@ declare(strict_types=1);
                         <label>
                             <span>Typ</span>
                             <select name="type" required>
+                                <option value="cms" <?php echo (($values['type'] ?? '') === 'cms') ? 'selected' : ''; ?>>CMS</option>
                                 <option value="plugin" <?php echo (($values['type'] ?? '') === 'plugin') ? 'selected' : ''; ?>>Plugin</option>
                                 <option value="theme" <?php echo (($values['type'] ?? '') === 'theme') ? 'selected' : ''; ?>>Theme</option>
                             </select>

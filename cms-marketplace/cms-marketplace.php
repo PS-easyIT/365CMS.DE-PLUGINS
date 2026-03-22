@@ -66,6 +66,12 @@ final class CMS_Marketplace
     public function boot(): void
     {
         try {
+            if ($this->public->shouldHandleBeforeRouting()) {
+                $this->admin->boot();
+                $this->public->handleRequest('submit');
+                return;
+            }
+
             if ($this->public->isCurrentRequest()) {
                 $this->admin->boot();
                 return;

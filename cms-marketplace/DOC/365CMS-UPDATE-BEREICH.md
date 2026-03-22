@@ -8,7 +8,7 @@ Diese Dokumentation beschreibt nur das Zielbild. Eine Umsetzung im Haupt-CMS erf
 
 ## Geplanter Adminbereich im Plugin `cms-marketplace`
 
-Im zentralen Adminbereich soll es später einen eigenen Bereich für `365CMS Updates` geben.
+Im zentralen Adminbereich gibt es jetzt bereits einen eigenen Bereich für `CMS`.
 
 Dort soll ein Administrator zentral:
 
@@ -87,11 +87,15 @@ Für den späteren Update-Bereich sollten mindestens gelten:
 
 ## Nicht Teil der aktuellen Umsetzung
 
-Aktuell wird nur die Dokumentation angelegt.
+Aktuell bereits im Plugin umgesetzt sind:
 
-Noch nicht umgesetzt sind:
+- eigener `CMS`-Adminbereich
+- Upload und Pflege von CMS-Paketen
+- öffentliche Dateien unter `/marketplace/core/365cms`
+- zentrale `manifest.json`- und `update.json`-Erzeugung
 
-- Admin-UI für Core-Pakete im Plugin
-- öffentliche Core-Feed-Erzeugung
+Noch nicht umgesetzt sind im Haupt-CMS:
+
 - Abruf/Anzeige im 365CMS-Dashboard
 - Download-, Entpack- und Update-Prozess im Haupt-CMS
+- Backup-/Rollback-Steuerung im Haupt-CMS

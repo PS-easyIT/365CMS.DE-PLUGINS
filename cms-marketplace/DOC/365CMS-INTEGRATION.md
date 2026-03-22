@@ -62,6 +62,24 @@ Für einzelne Plugins/Themes sollte 365CMS künftig je Eintrag bevorzugt folgend
 
 Bei kostenpflichtigen Einträgen ist `download_url` typischerweise leer und stattdessen `purchase_url` mit Kontaktformular-Ziel gesetzt.
 
+### 5. Optionaler Overview-Einstiegspunkt
+
+Für spätere Marketplace-Clients kann zusätzlich ein zentraler Überblick genutzt werden:
+
+```text
+https://365cms.de/marketplace/index.json
+```
+
+Darüber kann ein Client alle öffentlichen Bereiche (`plugins`, `themes`, `cms`) discovern, ohne Endpunkte fest im Code zu verdrahten.
+
+Die HTML-Ansichten des Marketplace laufen getrennt dazu unter:
+
+```text
+https://365cms.de/marketplace-public
+```
+
+Dadurch kollidiert die öffentliche Übersicht nicht mit dem echten Datei-/Feed-Ordner `/marketplace`.
+
 ## Empfohlene Erweiterungen
 
 ### A. UI-Einstellungen im Admin
@@ -100,3 +118,14 @@ Der spätere zentrale Bereich für 365CMS-Core-Updates ist separat dokumentiert 
 ### Themes
 
 - `theme_marketplace_url = https://365cms.de/marketplace/themes`
+
+### CMS / Core
+
+- zentraler Core-Feed: `https://365cms.de/marketplace/core/365cms/update.json`
+
+## Hinweis zu Installieren vs. Kaufen
+
+Für zukünftige 365CMS-Clients gilt:
+
+- wenn `download_url` vorhanden ist, kann ein Paket direkt installiert oder aktualisiert werden
+- wenn `is_paid = true` und `purchase_url` gesetzt ist, sollte statt eines direkten Downloads ein Kauf-/Anfrage-Flow angeboten werden

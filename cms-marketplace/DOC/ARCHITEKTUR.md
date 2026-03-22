@@ -4,6 +4,13 @@
 
 ```text
 /marketplace/
+├── index.json
+├── core/
+│   └── 365cms/
+│       ├── index.json
+│       ├── manifest.json
+│       ├── update.json
+│       └── 365cms-<version>.zip
 ├── plugins/
 │   ├── index.json
 │   └── <slug>/
@@ -24,6 +31,13 @@ Zusätzlich gibt es einen öffentlichen Einreichungsbereich unter:
 /marketplace-submit
 ```
 
+Zusätzlich rendert das Plugin öffentliche HTML-Seiten direkt selbst:
+
+- `/marketplace-public` als Übersicht aller öffentlichen Bereiche
+- `/marketplace-public/plugins`
+- `/marketplace-public/themes`
+- `/marketplace-public/cms`
+
 ## Datenquelle
 
 Das Plugin speichert die Marketplace-Einträge in einer eigenen Tabelle:
@@ -32,7 +46,7 @@ Das Plugin speichert die Marketplace-Einträge in einer eigenen Tabelle:
 
 Je Eintrag werden u. a. gespeichert:
 
-- Typ `plugin` oder `theme`
+- Typ `cms`, `plugin` oder `theme`
 - `slug`
 - `name`
 - `version`
@@ -52,6 +66,8 @@ Je Eintrag werden u. a. gespeichert:
 Nur Einträge mit `is_published = 1` werden in den öffentlichen JSON-Dateien ausgegeben.
 
 Zusätzlich wird pro `slug` nur die jeweils höchste Version in den zentralen `index.json`-Dateien veröffentlicht.
+
+Für `cms` wird zusätzlich immer ein zentraler `manifest.json`- und `update.json`-Stand im Verzeichnis `/marketplace/core/365cms/` erzeugt.
 
 Wenn für denselben `slug` eine höhere Version angelegt und freigegeben wird, werden die öffentlichen Dateien automatisch aktualisiert:
 
@@ -76,7 +92,7 @@ Damit können spätere 365CMS-Clients oder öffentliche Marketplace-Ansichten st
 
 ## Öffentliche Einreichungen
 
-Über `/marketplace-submit` können Plugins und Themes öffentlich eingereicht werden.
+Über den konfigurierbaren Public-Submission-Pfad können CMS-, Plugin- und Theme-Pakete öffentlich eingereicht werden.
 
 Diese Einreichungen werden immer:
 
@@ -88,12 +104,27 @@ Diese Einreichungen werden immer:
 
 Externe 365CMS-Installationen sollen später diese Endpunkte lesen können:
 
+- Öffentliche HTML-Übersicht: `https://365cms.de/marketplace-public`
 - Plugin-Katalog: `https://365cms.de/marketplace/plugins/index.json`
 - Theme-Katalog: `https://365cms.de/marketplace/themes/index.json`
+- CMS-Kanal: `https://365cms.de/marketplace/core/365cms/update.json`
 - Plugin-Manifest: `https://365cms.de/marketplace/plugins/<slug>/manifest.json`
 - Theme-Manifest: `https://365cms.de/marketplace/themes/<slug>/manifest.json`
 - Plugin-Update: `https://365cms.de/marketplace/plugins/<slug>/update.json`
 - Theme-Update: `https://365cms.de/marketplace/themes/<slug>/update.json`
+
+## Admin-Architektur
+
+Das Plugin gliedert den Adminbereich in eigene Bereiche für:
+
+- `Übersicht`
+- `CMS`
+- `Plugins`
+- `Themes`
+- `Verzeichnis`
+- `Einstellungen`
+
+In den Einstellungen werden bereichsspezifische Defaults für `CMS`, `Plugins` und `Themes` persistent gespeichert.
 
 ## Sicherheitsansatz
 

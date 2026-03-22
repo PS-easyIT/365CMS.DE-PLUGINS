@@ -17,6 +17,11 @@ final class CMS_Marketplace_Public
         return $this->resolveCurrentSection() !== null;
     }
 
+    public function shouldHandleBeforeRouting(): bool
+    {
+        return (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') && $this->resolveCurrentSection() === 'submit';
+    }
+
     public function registerRoutes(object $router): void
     {
         if (!method_exists($router, 'addRoute')) {
@@ -39,9 +44,6 @@ final class CMS_Marketplace_Public
         $submitPath = (string) ($routes['submit'] ?? '');
         if ($submitPath !== '') {
             $router->addRoute('GET', $submitPath, function (): void {
-                $this->handleRequest('submit');
-            });
-            $router->addRoute('POST', $submitPath, function (): void {
                 $this->handleRequest('submit');
             });
         }
