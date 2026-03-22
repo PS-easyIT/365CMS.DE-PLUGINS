@@ -37,6 +37,12 @@ if (!defined('ABSPATH')) {
                 </div>
             </div>
 
+            <div class="kb-editor-help kb-editor-help--soft" aria-label="Kategorie-Hinweise">
+                <span class="kb-editor-help__chip">Filter-Button im Frontend</span>
+                <span class="kb-editor-help__chip">Umbenennen aktualisiert Einträge</span>
+                <span class="kb-editor-help__chip">Sortierung steuert Reihenfolge</span>
+            </div>
+
             <form method="post" class="kb-settings-form admin-form">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="action" value="save_category">
@@ -91,10 +97,13 @@ if (!defined('ABSPATH')) {
                         <tbody>
                             <?php foreach ($categories as $item): ?>
                                 <tr>
-                                    <td><strong><?php echo htmlspecialchars((string) ($item['category'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></strong></td>
+                                    <td>
+                                        <strong><?php echo htmlspecialchars((string) ($item['category'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></strong>
+                                        <div class="kb-table-secondary">Sichtbar als Filter in Knowledgebase und Glossar</div>
+                                    </td>
                                     <td><code><?php echo htmlspecialchars((string) ($item['slug'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></code></td>
                                     <td><?php echo (int) ($item['sort_order'] ?? 0); ?></td>
-                                    <td><?php echo number_format((int) ($item['entry_count'] ?? 0)); ?></td>
+                                    <td><span class="kb-count-badge"><?php echo number_format((int) ($item['entry_count'] ?? 0)); ?> Einträge</span></td>
                                     <td>
                                         <div class="kb-action-row">
                                             <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-categories?edit=<?php echo (int) ($item['id'] ?? 0); ?>" class="btn btn-secondary btn-sm">Bearbeiten</a>

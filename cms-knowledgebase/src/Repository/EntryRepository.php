@@ -38,6 +38,7 @@ final class EntryRepository
     {
         $db = Database::instance();
         $entriesTable = $this->entriesTable();
+        $categoriesTable = $this->categoriesTable();
         $stats = [
             'entries' => 0,
             'active_entries' => 0,
@@ -48,8 +49,7 @@ final class EntryRepository
         $query = "SELECT
             COUNT(*) AS entries,
             SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS active_entries,
-            SUM(CASE WHEN tooltip_text IS NOT NULL AND tooltip_text <> '' THEN 1 ELSE 0 END) AS tooltip_entries,
-            COUNT(DISTINCT CASE WHEN category IS NOT NULL AND category <> '' THEN category END) AS categories
+            SUM(CASE WHEN tooltip_text IS NOT NULL AND tooltip_text <> '' THEN 1 ELSE 0 END) AS tooltip_entries
             FROM {$entriesTable}";
 
         $stmt = $db->prepare($query);
@@ -57,9 +57,17 @@ final class EntryRepository
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (is_array($row)) {
             foreach ($stats as $key => $value) {
+                if ($key === 'categories') {
+                    continue;
+                }
+
                 $stats[$key] = (int) ($row[$key] ?? $value);
             }
         }
+
+        $categoryStmt = $db->prepare("SELECT COUNT(*) FROM {$categoriesTable}");
+        $categoryStmt->execute();
+        $stats['categories'] = (int) $categoryStmt->fetchColumn();
 
         return $stats;
     }
@@ -369,6 +377,7 @@ final class EntryRepository
 
         $numberRanges = [
             'max_links_per_page' => [1, 25],
+            'related_posts_limit' => [3, 6],
             'content_max_width' => [720, 1600],
             'sidebar_width' => [220, 420],
             'design_border_radius' => [0, 32],
@@ -399,6 +408,7 @@ final class EntryRepository
                 'show_category_sidebar',
                 'show_keyword_badges',
                 'show_related_entries',
+                'related_posts_limit',
                 'show_nav_link',
                 'nav_label',
             ],
@@ -616,6 +626,19 @@ final class EntryRepository
 
         if ($name === '') {
             return ['success' => false, 'error' => 'Bitte einen Kategorienamen angeben.'];
+        }
+
+        $duplicateQuery = 'SELECT id FROM ' . $table . ' WHERE name = ?';
+        $duplicateParams = [$name];
+        if ($id > 0) {
+            $duplicateQuery .= ' AND id <> ?';
+            $duplicateParams[] = $id;
+        }
+        $duplicateQuery .= ' LIMIT 1';
+        $duplicateStmt = $db->prepare($duplicateQuery);
+        $duplicateStmt->execute($duplicateParams);
+        if (is_array($duplicateStmt->fetch(PDO::FETCH_ASSOC))) {
+            return ['success' => false, 'error' => 'Eine Kategorie mit diesem Namen existiert bereits.'];
         }
 
         $slug = $this->generateUniqueCategorySlug($name, $id);
@@ -1214,7 +1237,7 @@ final class EntryRepository
 
     private function sanitizeRichText(string $value): string
     {
-        return trim(strip_tags($value, '<p><a><strong><em><ul><ol><li><br><blockquote><code><pre><h2><h3><h4><table><thead><tbody><tfoot><tr><th><td><caption><colgroup><col>'));
+        return trim(strip_tags($value, '<div><p><a><strong><em><ul><ol><li><br><blockquote><code><pre><h2><h3><h4><table><thead><tbody><tfoot><tr><th><td><caption><colgroup><col>'));
     }
 
     /**

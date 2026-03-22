@@ -30,6 +30,7 @@ final class Defaults
             'show_category_sidebar' => '1',
             'show_keyword_badges' => '1',
             'show_related_entries' => '1',
+            'related_posts_limit' => '4',
             'show_nav_link' => '1',
             'nav_label' => 'Knowledgebase',
             'content_max_width' => '1200',

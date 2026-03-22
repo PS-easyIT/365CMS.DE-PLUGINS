@@ -213,7 +213,8 @@ final class PublicController
             ? \CMS\Services\ContentLocalizationService::getInstance()->resolveRequestContext($requestPath)
             : ['locale' => 'de'];
         $contentLocale = (string) ($requestContext['locale'] ?? 'de');
-        $relatedPosts = $repository->getRelatedPosts($entry, $contentLocale);
+        $relatedPostsLimit = max(3, min(6, (int) ($settings['related_posts_limit'] ?? 4)));
+        $relatedPosts = $repository->getRelatedPosts($entry, $contentLocale, $relatedPostsLimit);
         $theme = class_exists('CMS\\ThemeManager') ? \CMS\ThemeManager::instance() : null;
 
         if ($theme !== null) {

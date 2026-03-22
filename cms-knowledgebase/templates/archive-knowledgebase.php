@@ -149,15 +149,8 @@ $pageWindowEnd = $totalEntries > 0 ? min($totalEntries, $pageWindowStart + count
                             </div>
 
                             <div class="cms-kb-entry__aside">
-                                <?php if (($settings['show_keyword_badges'] ?? '1') === '1'): ?>
-                                    <p class="cms-kb-entry__keyword">
-                                        <strong>Keyword</strong>
-                                        <span><?php echo htmlspecialchars((string) $item['keyword'], ENT_QUOTES, 'UTF-8'); ?></span>
-                                    </p>
-                                <?php endif; ?>
-
                                 <footer class="cms-kb-entry__footer">
-                                    <a class="cms-kb-entry__cta" href="<?php echo htmlspecialchars(SITE_URL . '/kb/' . rawurlencode((string) $item['slug']), ENT_QUOTES, 'UTF-8'); ?>">Eintrag lesen</a>
+                                    <a class="cms-kb-entry__cta" href="<?php echo htmlspecialchars(SITE_URL . '/kb/' . rawurlencode((string) $item['slug']), ENT_QUOTES, 'UTF-8'); ?>"><span aria-hidden="true">… </span>zum Eintrag</a>
                                 </footer>
                             </div>
                         </article>

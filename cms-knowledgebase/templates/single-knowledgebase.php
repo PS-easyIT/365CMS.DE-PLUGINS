@@ -6,6 +6,7 @@ $synonymItems = array_values(array_filter(array_map(
     preg_split('/[\r\n,]+/', (string) ($entry['synonyms'] ?? '')) ?: []
 )));
 $showRelatedEntries = ($settings['show_related_entries'] ?? '1') === '1';
+$relatedPostsLimit = max(3, min(6, (int) ($settings['related_posts_limit'] ?? 4)));
 $showKeywordBadges = ($settings['show_keyword_badges'] ?? '1') === '1';
 $renderedContent = (string) ($entry['content'] ?? '');
 $cmsPrefix = \CMS\Database::instance()->prefix();
@@ -20,7 +21,54 @@ $renderedContent = preg_replace(
     $renderedContent,
     1
 ) ?? $renderedContent;
+if (class_exists('\\CMS\\Services\\SiteTableService')) {
+    $renderedContent = \CMS\Services\SiteTableService::getInstance()->replaceShortcodes($renderedContent);
+}
 $showSidebar = $showKeywordBadges || !empty($entry['tooltip_text']);
+$formatRelatedPostDate = static function (?string $dateValue, string $locale = 'de'): string {
+    $rawValue = trim((string) $dateValue);
+    if ($rawValue === '') {
+        return '';
+    }
+
+    if (function_exists('phinit_format_date')) {
+        try {
+            return (string) phinit_format_date($rawValue, 'numeric', $locale);
+        } catch (\Throwable) {
+        }
+    }
+
+    $timestamp = strtotime($rawValue);
+    if ($timestamp === false) {
+        return '';
+    }
+
+    return $locale === 'en' ? date('m/d/Y', $timestamp) : date('d.m.Y', $timestamp);
+};
+$estimateRelatedReadTime = static function (array $post): int {
+    $contentSource = trim((string) ($post['content'] ?? ''));
+    if ($contentSource === '') {
+        $contentSource = trim((string) ($post['excerpt'] ?? ''));
+    }
+
+    if ($contentSource === '') {
+        return 0;
+    }
+
+    if (function_exists('phinit_reading_time')) {
+        try {
+            return max(1, (int) phinit_reading_time($contentSource));
+        } catch (\Throwable) {
+        }
+    }
+
+    $wordCount = str_word_count(strip_tags($contentSource));
+    if ($wordCount <= 0) {
+        return 0;
+    }
+
+    return max(1, (int) ceil($wordCount / 220));
+};
 ?>
 
 <main class="cms-kb-content cms-kb-content--single">
@@ -46,55 +94,32 @@ $showSidebar = $showKeywordBadges || !empty($entry['tooltip_text']);
                 <?php if (!empty($entry['excerpt'])): ?>
                     <p class="cms-kb-hero__intro"><?php echo htmlspecialchars((string) $entry['excerpt'], ENT_QUOTES, 'UTF-8'); ?></p>
                 <?php endif; ?>
-
-                <?php if ($showKeywordBadges): ?>
-                    <div class="cms-kb-chip-row" aria-label="Begriffsinfos">
-                        <span class="cms-kb-chip">Fokusbegriff: <?php echo htmlspecialchars((string) $entry['keyword'], ENT_QUOTES, 'UTF-8'); ?></span>
-                        <?php foreach (array_slice($synonymItems, 0, 3) as $synonym): ?>
-                            <span class="cms-kb-chip cms-kb-chip--muted"><?php echo htmlspecialchars($synonym, ENT_QUOTES, 'UTF-8'); ?></span>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
-
-            <div class="cms-kb-stats" aria-label="Artikel-Highlights">
-                <div class="cms-kb-stat">
-                    <strong><?php echo number_format(count($synonymItems) + 1); ?></strong>
-                    <span>Begriffe</span>
-                </div>
-                <div class="cms-kb-stat">
-                    <strong><?php echo $showRelatedEntries ? number_format(count($relatedPosts ?? [])) : '—'; ?></strong>
-                    <span>Verwandt</span>
-                </div>
-                <div class="cms-kb-stat">
-                    <strong><?php echo htmlspecialchars((string) ($entry['category'] ?? 'Allgemein'), ENT_QUOTES, 'UTF-8'); ?></strong>
-                    <span>Bereich</span>
-                </div>
             </div>
         </header>
 
         <div class="cms-kb-single-layout<?php echo $showSidebar ? ' has-sidebar' : ''; ?>">
             <section class="cms-kb-body">
-                <?php if ($showKeywordBadges): ?>
-                    <div class="cms-kb-inline-note">
-                        <strong>Fokusbegriff:</strong>
-                        <span><?php echo htmlspecialchars((string) $entry['keyword'], ENT_QUOTES, 'UTF-8'); ?></span>
-                        <?php if ($synonymItems !== []): ?>
-                            <span class="cms-kb-inline-note__sep">•</span>
-                            <span><?php echo number_format(count($synonymItems)); ?> Synonyme hinterlegt</span>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
-
                 <div class="cms-kb-richtext">
                     <?php echo $renderedContent; ?>
                 </div>
 
                 <?php if ($showRelatedEntries && !empty($relatedPosts)): ?>
-                    <section class="cms-kb-related-block cms-kb-sidebar__section" aria-labelledby="cms-kb-related-heading">
-                        <h2 id="cms-kb-related-heading">Verwandte Artikel</h2>
+                    <section class="cms-kb-related-block" aria-labelledby="cms-kb-related-heading">
+                        <h2 id="cms-kb-related-heading" class="cms-kb-related-block__title">Verwandte Artikel</h2>
                         <div class="cms-kb-related-posts">
-                            <?php foreach ($relatedPosts as $related): ?>
+                            <?php foreach (array_slice($relatedPosts, 0, $relatedPostsLimit) as $related): ?>
+                                <?php
+                                $relatedDateRaw = trim((string) ($related['published_at'] ?? $related['created_at'] ?? ''));
+                                $relatedDateLabel = $formatRelatedPostDate($relatedDateRaw, $contentLocale ?? 'de');
+                                $relatedDateIso = '';
+                                if ($relatedDateRaw !== '') {
+                                    $relatedTimestamp = strtotime($relatedDateRaw);
+                                    if ($relatedTimestamp !== false) {
+                                        $relatedDateIso = date(DATE_ATOM, $relatedTimestamp);
+                                    }
+                                }
+                                $relatedReadTime = $estimateRelatedReadTime($related);
+                                ?>
                                 <article class="cms-kb-related-post">
                                     <p class="cms-kb-related-post__meta">
                                         <?php if (!empty($related['category_name'])): ?>
@@ -108,17 +133,17 @@ $showSidebar = $showKeywordBadges || !empty($entry['tooltip_text']);
                                             <?php echo htmlspecialchars((string) ($related['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                                         </a>
                                     </h3>
-                                    <?php if (!empty($related['relevance_signals']) && is_array($related['relevance_signals'])): ?>
-                                        <div class="cms-kb-chip-row" aria-label="Relevanzsignale">
-                                            <?php foreach (array_slice($related['relevance_signals'], 0, 3) as $signal): ?>
-                                                <span class="cms-kb-chip cms-kb-chip--muted"><?php echo htmlspecialchars((string) $signal, ENT_QUOTES, 'UTF-8'); ?></span>
-                                            <?php endforeach; ?>
+                                    <?php if ($relatedDateLabel !== '' || $relatedReadTime > 0): ?>
+                                        <div class="cms-kb-related-post__details" aria-label="Metainformationen zum Beitrag">
+                                            <?php if ($relatedDateLabel !== ''): ?>
+                                                <time class="cms-kb-related-post__detail"<?php echo $relatedDateIso !== '' ? ' datetime="' . htmlspecialchars($relatedDateIso, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>><?php echo htmlspecialchars($relatedDateLabel, ENT_QUOTES, 'UTF-8'); ?></time>
+                                            <?php endif; ?>
+                                            <?php if ($relatedReadTime > 0): ?>
+                                                <span class="cms-kb-related-post__detail"><?php echo htmlspecialchars(($contentLocale ?? 'de') === 'en' ? $relatedReadTime . ' min read' : $relatedReadTime . ' Min. Lesezeit', ENT_QUOTES, 'UTF-8'); ?></span>
+                                            <?php endif; ?>
                                         </div>
                                     <?php endif; ?>
-                                    <?php if (!empty($related['excerpt'])): ?>
-                                        <p class="cms-kb-related-post__excerpt"><?php echo htmlspecialchars((string) $related['excerpt'], ENT_QUOTES, 'UTF-8'); ?></p>
-                                    <?php endif; ?>
-                                    <a class="cms-kb-related-post__cta" href="<?php echo htmlspecialchars((string) ($related['url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">Beitrag lesen</a>
+                                    <a class="cms-kb-related-post__cta" href="<?php echo htmlspecialchars((string) ($related['url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><span aria-hidden="true">… </span>zum Beitrag</a>
                                 </article>
                             <?php endforeach; ?>
                         </div>

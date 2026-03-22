@@ -33,7 +33,7 @@
             </div>
         </div>
         <div class="kb-quick-actions">
-            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entries" class="btn btn-primary">➕ Neuer Eintrag</a>
+            <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-entry-editor" class="btn btn-primary">➕ Neuer Eintrag</a>
             <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-categories" class="btn btn-secondary btn-sm">🗂️ Kategorien</a>
             <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-settings?tab=general" class="btn btn-secondary btn-sm">⚙️ Einstellungen</a>
             <a href="/admin/plugins/knowledgebase-dashboard/knowledgebase-settings?tab=design" class="btn btn-secondary btn-sm">🎨 Design</a>

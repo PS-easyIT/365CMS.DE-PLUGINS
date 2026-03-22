@@ -90,6 +90,10 @@
                             <label class="kb-setting-toggle"><input type="checkbox" name="show_keyword_badges" value="1" <?php echo ($settings['show_keyword_badges'] ?? '0') === '1' ? 'checked' : ''; ?>> <span>Keyword-Hinweise anzeigen</span></label>
                             <label class="kb-setting-toggle"><input type="checkbox" name="show_related_entries" value="1" <?php echo ($settings['show_related_entries'] ?? '0') === '1' ? 'checked' : ''; ?>> <span>Verwandte Einträge anzeigen</span></label>
                         </div>
+                        <label class="kb-setting-field">
+                            <span>Anzahl verwandter 365CMS-Artikel</span>
+                            <input type="number" name="related_posts_limit" min="3" max="6" value="<?php echo (int) ($settings['related_posts_limit'] ?? 4); ?>">
+                        </label>
                     </section>
 
                     <section class="kb-settings-group kb-settings-group--card">
