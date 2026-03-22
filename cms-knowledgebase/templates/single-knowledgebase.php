@@ -8,6 +8,12 @@ $synonymItems = array_values(array_filter(array_map(
 $showRelatedEntries = ($settings['show_related_entries'] ?? '1') === '1';
 $showKeywordBadges = ($settings['show_keyword_badges'] ?? '1') === '1';
 $renderedContent = (string) ($entry['content'] ?? '');
+$cmsPrefix = \CMS\Database::instance()->prefix();
+$renderedContent = str_replace(
+    ['{{cms_prefix}}', '{cms_prefix}', '[cms_prefix]', '%cms_prefix%', '{{table_prefix}}', '{table_prefix}'],
+    $cmsPrefix,
+    $renderedContent
+);
 $renderedContent = preg_replace(
     '/<h([2-4])>\s*Metadaten\s*<\/h\1>\s*<ul>.*?<\/ul>/isu',
     '',
@@ -102,6 +108,13 @@ $showSidebar = $showKeywordBadges || !empty($entry['tooltip_text']);
                                             <?php echo htmlspecialchars((string) ($related['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
                                         </a>
                                     </h3>
+                                    <?php if (!empty($related['relevance_signals']) && is_array($related['relevance_signals'])): ?>
+                                        <div class="cms-kb-chip-row" aria-label="Relevanzsignale">
+                                            <?php foreach (array_slice($related['relevance_signals'], 0, 3) as $signal): ?>
+                                                <span class="cms-kb-chip cms-kb-chip--muted"><?php echo htmlspecialchars((string) $signal, ENT_QUOTES, 'UTF-8'); ?></span>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
                                     <?php if (!empty($related['excerpt'])): ?>
                                         <p class="cms-kb-related-post__excerpt"><?php echo htmlspecialchars((string) $related['excerpt'], ENT_QUOTES, 'UTF-8'); ?></p>
                                     <?php endif; ?>

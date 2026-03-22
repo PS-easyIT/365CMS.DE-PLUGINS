@@ -34,12 +34,36 @@ final class Pages
         self::renderWithLayout('Knowledgebase-Einträge', static function (): void {
             $repository = EntryRepository::instance();
             $entries = $repository->getEntryList();
-            $standardPackages = StandardPackages::instance()->getPackages();
-            $entry = isset($_GET['edit']) ? $repository->getEntry((int) $_GET['edit']) : null;
             $csrfToken = Security::instance()->generateToken('knowledgebase_admin');
             $notice = self::pullNotice();
 
             include CMS_KNOWLEDGEBASE_PLUGIN_DIR . 'admin/views/page-entries.php';
+        });
+    }
+
+    public static function renderEntryEditor(): void
+    {
+        self::renderWithLayout('Knowledgebase-Eintrag bearbeiten', static function (): void {
+            $repository = EntryRepository::instance();
+            $entry = isset($_GET['edit']) ? $repository->getEntry((int) $_GET['edit']) : null;
+            $categories = $repository->getCategories();
+            $csrfToken = Security::instance()->generateToken('knowledgebase_admin');
+            $notice = self::pullNotice();
+
+            include CMS_KNOWLEDGEBASE_PLUGIN_DIR . 'admin/views/page-entry-editor.php';
+        });
+    }
+
+    public static function renderCategories(): void
+    {
+        self::renderWithLayout('Knowledgebase-Kategorien', static function (): void {
+            $repository = EntryRepository::instance();
+            $categories = $repository->getCategories();
+            $categoryItem = isset($_GET['edit']) ? $repository->getCategory((int) $_GET['edit']) : null;
+            $csrfToken = Security::instance()->generateToken('knowledgebase_admin');
+            $notice = self::pullNotice();
+
+            include CMS_KNOWLEDGEBASE_PLUGIN_DIR . 'admin/views/page-categories.php';
         });
     }
 
@@ -49,10 +73,14 @@ final class Pages
             $repository = EntryRepository::instance();
             $settings = $repository->getSettings();
             $stats = $repository->getDashboardStats();
+            $standardPackagesService = StandardPackages::instance();
+            $standardPackages = $standardPackagesService->getPackages();
+            $csvFilenameWarnings = $standardPackagesService->getCsvFilenameWarnings();
             $tab = (string) ($_GET['tab'] ?? 'general');
             $tabs = [
                 'general' => '⚙️ Allgemein',
                 'design' => '🎨 Design',
+                'import' => '📦 Import',
                 'system' => '🖥️ System',
             ];
             if (!isset($tabs[$tab])) {
@@ -60,13 +88,28 @@ final class Pages
             }
 
             $designTokens = $repository->getPublicDesignTokens();
+            $lastImportAtRaw = trim((string) ($settings['csv_last_import_at'] ?? ''));
+            $lastImportAt = 'Noch kein CSV-Import';
+            if ($lastImportAtRaw !== '') {
+                try {
+                    $lastImportAt = (new \DateTimeImmutable($lastImportAtRaw))->setTimezone(new \DateTimeZone(date_default_timezone_get()))->format('d.m.Y H:i');
+                } catch (\Throwable) {
+                    $lastImportAt = $lastImportAtRaw;
+                }
+            }
+
             $systemInfo = [
                 'plugin_version' => CMS_KNOWLEDGEBASE_VERSION,
                 'public_route' => '/kb',
+                'glossary_sitemap_url' => SITE_URL . '/glossar-sitemap.xml',
                 'content_max_width' => $settings['content_max_width'] ?? '1200',
                 'sidebar_width' => $settings['sidebar_width'] ?? '300',
                 'autolink_enabled' => ($settings['enable_autolink'] ?? '0') === '1' ? 'Ja' : 'Nein',
                 'output_buffer' => ($settings['enable_output_buffer'] ?? '0') === '1' ? 'Ja' : 'Nein',
+                'csv_last_import_at' => $lastImportAt,
+                'csv_last_import_count' => (int) ($settings['csv_last_import_count'] ?? 0),
+                'csv_last_import_scope' => (string) ($settings['csv_last_import_scope'] ?? '—'),
+                'current_entry_count' => (int) ($stats['entries'] ?? 0),
             ];
             $csrfToken = Security::instance()->generateToken('knowledgebase_admin');
             $notice = self::pullNotice();
@@ -110,6 +153,10 @@ final class Pages
         $result = match ($action) {
             'save_entry' => $repository->saveEntry($_POST),
             'delete_entry' => $repository->deleteEntry((int) ($_POST['entry_id'] ?? 0)),
+            'save_category' => $repository->saveCategory($_POST),
+            'delete_category' => $repository->deleteCategory((int) ($_POST['category_id'] ?? 0)),
+            'hard_reset_entries' => $repository->hardResetEntries(),
+            'hard_reset_and_import_all' => self::hardResetAndImportAll(),
             'save_settings' => $repository->saveSettings($_POST),
             'create_standard_package' => StandardPackages::instance()->importPackage((string) ($_POST['package_key'] ?? '')),
             'create_all_standard_packages' => StandardPackages::instance()->importAllPackages(),
@@ -131,6 +178,11 @@ final class Pages
         $css = CMS_KNOWLEDGEBASE_PLUGIN_DIR . 'assets/css/knowledgebase-admin.css';
         if (is_file($css)) {
             echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_KNOWLEDGEBASE_PLUGIN_URL . 'assets/css/knowledgebase-admin.css?v=' . filemtime($css), ENT_QUOTES, 'UTF-8') . '">' . "\n";
+        }
+
+        $js = CMS_KNOWLEDGEBASE_PLUGIN_DIR . 'assets/js/knowledgebase-admin.js';
+        if (is_file($js)) {
+            echo '<script src="' . htmlspecialchars(CMS_KNOWLEDGEBASE_PLUGIN_URL . 'assets/js/knowledgebase-admin.js?v=' . filemtime($js), ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
         }
     }
 
@@ -181,7 +233,7 @@ final class Pages
             $query['tab'] = $tab;
         }
 
-        if ($editId > 0 && str_contains($url, 'knowledgebase-entries')) {
+        if ($editId > 0 && (str_contains($url, 'knowledgebase-entries') || str_contains($url, 'knowledgebase-entry-editor') || str_contains($url, 'knowledgebase-categories'))) {
             $query['edit'] = (string) $editId;
         }
 
@@ -191,5 +243,31 @@ final class Pages
 
         header('Location: ' . $url);
         exit;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function hardResetAndImportAll(): array
+    {
+        $repository = EntryRepository::instance();
+        $resetResult = $repository->hardResetEntries();
+
+        if (!((bool) ($resetResult['success'] ?? false))) {
+            return $resetResult;
+        }
+
+        $importResult = StandardPackages::instance()->importAllPackages();
+        if (!((bool) ($importResult['success'] ?? false))) {
+            return [
+                'success' => false,
+                'error' => trim(((string) ($resetResult['message'] ?? 'Hardreset abgeschlossen.')) . ' ' . ((string) ($importResult['message'] ?? $importResult['error'] ?? 'CSV-Import fehlgeschlagen.'))),
+            ];
+        }
+
+        return [
+            'success' => true,
+            'message' => trim(((string) ($resetResult['message'] ?? '')) . ' ' . ((string) ($importResult['message'] ?? ''))),
+        ];
     }
 }

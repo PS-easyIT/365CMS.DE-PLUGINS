@@ -1,0 +1,1923 @@
+{
+  "M365_Glossar.csv": {
+    "file_path": "x:\\03-Dokumente & Bilder\\50-PhinIT\\50-ARTIKEL\\M365_Glossar.csv",
+    "record_count": 113,
+    "entries": [
+      {
+        "eintrag": "Microsoft 365 Tenant",
+        "kurzbeschreibung": "Die zentrale Verwaltungsinstanz einer M365-Umgebung.",
+        "langbeschreibung": "Der Microsoft 365 Tenant ist die organisationseigene Cloud-Instanz, in der saemtliche Benutzerkonten, Lizenzen, Dienste, Sicherheitsrichtlinien und Konfigurationen zusammenlaufen. Er bildet die Grundlage fuer alle Microsoft-365-Dienste und wird beim Onboarding automatisch mit einer *.onmicrosoft.com-Domaene angelegt.",
+        "lizenz_info": "Bestandteil jedes M365-Abonnements (Business Basic bis E5).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/enterprise/tenant-roadmap-microsoft-365"
+      },
+      {
+        "eintrag": "Exchange Online",
+        "kurzbeschreibung": "Cloudbasierter E-Mail- und Kalenderdienst in Microsoft 365.",
+        "langbeschreibung": "Exchange Online stellt Postfaecher, Kalender, Kontakte, Aufgaben und oeffentliche Ordner als Cloud-Dienst bereit. Admins verwalten Transportregeln, Connectors, Antispam-Richtlinien und Postfachberechtigungen per Exchange Admin Center oder PowerShell.",
+        "lizenz_info": "Enthalten in Business Basic, Standard, E1, E3, E5 oder als Standalone (Plan 1 / Plan 2).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/exchange/exchange-online"
+      },
+      {
+        "eintrag": "SharePoint Online",
+        "kurzbeschreibung": "Dokumentenmanagement- und Intranet-Plattform in M365.",
+        "langbeschreibung": "SharePoint Online bietet Teamwebsites, Kommunikationswebsites, Dokumentbibliotheken, Listen und Hub-Strukturen fuer die unternehmensweite Zusammenarbeit. Berechtigungen, Versionierung und Compliance-Funktionen lassen sich granular steuern.",
+        "lizenz_info": "Enthalten in Business Basic+, E1, E3, E5 oder Standalone (Plan 1 / Plan 2).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/sharepoint/introduction"
+      },
+      {
+        "eintrag": "Microsoft Teams",
+        "kurzbeschreibung": "Kollaborationsplattform fuer Chat, Meetings, Telefonie und Apps.",
+        "langbeschreibung": "Microsoft Teams vereint persistenten Chat, Audio-/Videokonferenzen, Telefonie, Dateifreigabe und App-Integration in einem Client. Es dient als zentrale Oberflaeche fuer die taegliche Zusammenarbeit und bindet SharePoint, Planner, Loop und Drittanbieter-Apps ein.",
+        "lizenz_info": "Enthalten in Business Basic+, E1, E3, E5; Teams Essentials als Einstieg.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoftteams/get-started-with-teams-quick-start"
+      },
+      {
+        "eintrag": "OneDrive for Business",
+        "kurzbeschreibung": "Persoenlicher Cloudspeicher fuer geschaeftliche Dateien.",
+        "langbeschreibung": "OneDrive for Business speichert persoenliche Arbeitsdateien in der Cloud mit Synchronisation, Versionsverlauf, Freigabeoptionen und Known Folder Move. Die Daten liegen auf SharePoint Online und profitieren von dessen Compliance- und Sicherheitsfunktionen.",
+        "lizenz_info": "Enthalten in Business Basic+, E1, E3, E5; 1 TB Standard, bis 5 TB erweiterbar.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/sharepoint/onedrive-overview"
+      },
+      {
+        "eintrag": "Microsoft Entra ID",
+        "kurzbeschreibung": "Cloud-Identitaetsdienst fuer Benutzer, Gruppen und Zugriff.",
+        "langbeschreibung": "Microsoft Entra ID (ehemals Azure Active Directory) verwaltet Identitaeten, Gruppenmitgliedschaften, App-Registrierungen, Conditional Access und Single Sign-On. Es ist die zentrale Authentifizierungs- und Autorisierungsschicht fuer alle M365- und Azure-Dienste.",
+        "lizenz_info": "Free-Tier inkl.; P1 in M365 E3, P2 in M365 E5 enthalten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/fundamentals/whatis"
+      },
+      {
+        "eintrag": "Microsoft Intune",
+        "kurzbeschreibung": "Cloud-Plattform fuer Geraete- und App-Verwaltung.",
+        "langbeschreibung": "Microsoft Intune steuert Geraeteregistrierung, Compliance-Richtlinien, Konfigurationsprofile und App-Verteilung fuer Windows, macOS, iOS und Android. In Kombination mit Conditional Access greifen nur konforme Geraete auf Unternehmensressourcen zu.",
+        "lizenz_info": "Enthalten in M365 E3/E5, EMS E3/E5; Intune Plan 1 / Plan 2 als Add-on.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/mem/intune/fundamentals/what-is-intune"
+      },
+      {
+        "eintrag": "Conditional Access",
+        "kurzbeschreibung": "Richtlinienbasierte Zugriffssteuerung in Entra ID.",
+        "langbeschreibung": "Conditional Access wertet bei jeder Anmeldung Signale wie Benutzer, Geraet, Standort, Risikostufe und App aus und erzwingt definierte Aktionen (MFA, Geraetecompliance, Blockierung). Es ist das zentrale Werkzeug fuer Zero-Trust-Zugriffskontrolle in Microsoft 365.",
+        "lizenz_info": "Erfordert mindestens Entra ID P1 (in M365 E3 enthalten).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity/conditional-access/overview"
+      },
+      {
+        "eintrag": "Multi-Faktor-Authentifizierung",
+        "kurzbeschreibung": "Zusaetzlicher Anmeldefaktor neben dem Passwort.",
+        "langbeschreibung": "MFA ergaenzt die Anmeldung um einen zweiten Faktor (Authenticator-App, FIDO2-Key, SMS, Telefonanruf). In Kombination mit Conditional Access laesst sich MFA risiko- und kontextabhaengig steuern. Security Defaults aktivieren MFA fuer alle Benutzer.",
+        "lizenz_info": "Security Defaults kostenlos; erweiterte Steuerung ab Entra ID P1.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity/authentication/concept-mfa-howitworks"
+      },
+      {
+        "eintrag": "Defender for Office 365",
+        "kurzbeschreibung": "Schutz fuer E-Mail, Links und Anhaenge vor Bedrohungen.",
+        "langbeschreibung": "Defender for Office 365 schuetzt Exchange Online, SharePoint und Teams vor Phishing, Malware, Business-E-Mail-Compromise und Zero-Day-Angriffen. Plan 1 bietet Safe Links/Attachments, Plan 2 ergaenzt Threat Explorer, automatisierte Untersuchung und Angriffssimulation.",
+        "lizenz_info": "Plan 1 in M365 E3 (teilweise), Plan 2 in M365 E5; separat als Add-on.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-office-365/mdo-about"
+      },
+      {
+        "eintrag": "Teams Telefonie",
+        "kurzbeschreibung": "Cloud-Telefonie-Integration in Microsoft Teams.",
+        "langbeschreibung": "Teams Telefonie ersetzt oder ergaenzt klassische TK-Anlagen durch Phone System, Calling Plans oder Direct Routing / Operator Connect. Auto-Attendant, Anrufwarteschlangen und Voicemail werden direkt in Teams verwaltet.",
+        "lizenz_info": "Phone System in E5 enthalten; Calling Plans oder SBC separat.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoftteams/cloud-voice-landing-page"
+      },
+      {
+        "eintrag": "Microsoft Planner",
+        "kurzbeschreibung": "Visuelles Aufgabenboard fuer Teamplanung.",
+        "langbeschreibung": "Microsoft Planner bietet Kanban-Boards, Aufgabenzuweisung, Faelligkeiten, Labels und Fortschrittsdiagramme. Plaene sind an M365-Gruppen gebunden und lassen sich als Tab in Teams einbinden. Seit 2024 werden Planner und To Do enger zusammengefuehrt.",
+        "lizenz_info": "Enthalten in Business Basic+, E1, E3, E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/office365/planner/planner-for-admins"
+      },
+      {
+        "eintrag": "Microsoft To Do",
+        "kurzbeschreibung": "Persoenliche Aufgabenverwaltung mit Tagesplanung.",
+        "langbeschreibung": "Microsoft To Do bietet Aufgabenlisten, Erinnerungen, Faelligkeiten und die Funktion Mein Tag zur taeglichen Priorisierung. Aufgaben aus Planner, Outlook und Cortana fliessen automatisch ein.",
+        "lizenz_info": "Enthalten in allen M365-Plaenen mit Exchange-Postfach.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsofttodo/overview"
+      },
+      {
+        "eintrag": "Power Automate",
+        "kurzbeschreibung": "Workflow-Automatisierung zwischen M365- und Drittsystemen.",
+        "langbeschreibung": "Power Automate erstellt automatisierte, geplante oder manuell gestartete Flows zwischen hunderten Konnektoren. Typische Szenarien: Genehmigungsworkflows, Datei-Synchronisation, Benachrichtigungen und Datenintegration zwischen SharePoint, Teams, Outlook und Drittanbieter-APIs.",
+        "lizenz_info": "Basis-Flows in M365 enthalten; Premium-Konnektoren und RPA separat.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/power-automate/getting-started"
+      },
+      {
+        "eintrag": "Power Apps",
+        "kurzbeschreibung": "Low-Code-Plattform fuer fachbereichsnahe Anwendungen.",
+        "langbeschreibung": "Power Apps ermoeglicht Canvas- und modellgesteuerte Apps mit Formularen, Datenanbindung an Dataverse, SharePoint, SQL und weitere Quellen. Fachbereiche erstellen eigene Anwendungen ohne klassische Entwicklung.",
+        "lizenz_info": "Basis-Nutzung in M365 enthalten; Premium und Dataverse separat.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/power-apps/powerapps-overview"
+      },
+      {
+        "eintrag": "Microsoft Forms",
+        "kurzbeschreibung": "Formular- und Umfragetool fuer Feedback und Datenerfassung.",
+        "langbeschreibung": "Microsoft Forms erstellt Umfragen, Quizze und Feedbackformulare mit Verzweigungslogik, Bewertungsskalen und Echtzeitauswertung. Formulare koennen in Teams eingebettet oder per Link geteilt werden.",
+        "lizenz_info": "Enthalten in Business Basic+, E1, E3, E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-forms/admin-information"
+      },
+      {
+        "eintrag": "Microsoft Bookings",
+        "kurzbeschreibung": "Online-Terminbuchung mit Kalender-Integration.",
+        "langbeschreibung": "Microsoft Bookings stellt eine buchbare Seite bereit, auf der Kunden oder Mitarbeitende Termine anhand verfuegbarer Zeitfenster buchen. Bestaetigungen, Erinnerungen und Stornierungen erfolgen automatisch. Integration in Teams und Outlook ist nativ vorhanden.",
+        "lizenz_info": "Enthalten in Business Standard, E3, E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/bookings/bookings-overview"
+      },
+      {
+        "eintrag": "Microsoft Loop",
+        "kurzbeschreibung": "Flexible, gemeinsam bearbeitbare Inhaltsbausteine.",
+        "langbeschreibung": "Microsoft Loop bietet Workspaces, Seiten und Komponenten, die in Echtzeit gemeinsam bearbeitet und in Teams, Outlook und Word eingebettet werden koennen. Loop-Komponenten bleiben ueberall synchron.",
+        "lizenz_info": "Enthalten in Business Standard+, E3, E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/loop/loop-compliance-summary"
+      },
+      {
+        "eintrag": "Viva Engage",
+        "kurzbeschreibung": "Community-Plattform fuer soziale Interaktion im Unternehmen.",
+        "langbeschreibung": "Viva Engage (Nachfolger von Yammer) bietet Communities, Storyline-Posts, Fragen und Antworten sowie Leadership-Kommunikation. Es integriert sich in Teams und foerdert abteilungsuebergreifende Vernetzung.",
+        "lizenz_info": "Enthalten in M365 E1, E3, E5; Viva Suite fuer Premium-Funktionen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/viva/engage/overview"
+      },
+      {
+        "eintrag": "Viva Insights",
+        "kurzbeschreibung": "Auswertungen zu Arbeitsgewohnheiten und Produktivitaet.",
+        "langbeschreibung": "Viva Insights analysiert Meetingzeiten, Fokuszeiten, E-Mail-Verhalten und Zusammenarbeitsmuster. Persoenliche Insights helfen Einzelnen; Manager- und Organisationsansichten unterstuetzen datengestuetzte Entscheidungen.",
+        "lizenz_info": "Persoenliche Insights in M365 E1+; Premium in Viva Insights Add-on oder Viva Suite.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/viva/insights/introduction"
+      },
+      {
+        "eintrag": "Microsoft Purview",
+        "kurzbeschreibung": "Compliance-, Datenschutz- und Informationsschutz-Suite.",
+        "langbeschreibung": "Microsoft Purview buendelt Information Protection, DLP, Retention, eDiscovery, Audit, Insider Risk Management und Communication Compliance. Es klassifiziert, schuetzt und ueberwacht Daten ueber M365, Azure und hybride Umgebungen hinweg.",
+        "lizenz_info": "Basisfunktionen in E3; erweiterter Umfang in E5 oder Purview Add-ons.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/purview/purview"
+      },
+      {
+        "eintrag": "Aufbewahrungsrichtlinien",
+        "kurzbeschreibung": "Regeln fuer Aufbewahrung, Archivierung und Loeschung.",
+        "langbeschreibung": "Aufbewahrungsrichtlinien (Retention Policies) definieren, wie lange Inhalte in Exchange, SharePoint, OneDrive und Teams aufbewahrt oder nach Ablauf automatisch geloescht werden. Kernbestandteil der Purview-Compliance-Loesung.",
+        "lizenz_info": "Basis in E3; erweiterte Szenarien (Adaptive Scopes) ab E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/purview/retention"
+      },
+      {
+        "eintrag": "Sensitivity Labels",
+        "kurzbeschreibung": "Inhaltsklassifizierung mit Schutzmassnahmen.",
+        "langbeschreibung": "Sensitivity Labels kennzeichnen Dokumente und E-Mails nach Schutzbedarf (Vertraulich, Intern etc.) und erzwingen optional Verschluesselung, Wasserzeichen, Kopfzeilen oder Freigabebeschraenkungen. Verwaltung ueber Purview, Anwendung in Office-Apps, Teams und SharePoint.",
+        "lizenz_info": "Manuelle Labels in E3; Auto-Labeling ab E5 oder Information Protection Add-on.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/purview/sensitivity-labels"
+      },
+      {
+        "eintrag": "Copilot for Microsoft 365",
+        "kurzbeschreibung": "KI-Assistent in Word, Excel, Teams, Outlook u.v.m.",
+        "langbeschreibung": "Copilot for Microsoft 365 nutzt Large Language Models im Kontext der Unternehmensdaten (Graph-grounded), um Texte zu entwerfen, Daten zu analysieren, Meetings zusammenzufassen und Aufgaben zu beschleunigen. Die Daten bleiben im Tenant-Sicherheitsrahmen.",
+        "lizenz_info": "Kostenpflichtiges Add-on; setzt M365 E3/E5 oder Business Standard/Premium voraus.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/copilot/microsoft-365/microsoft-365-copilot-overview"
+      },
+      {
+        "eintrag": "Hybrid Identity",
+        "kurzbeschreibung": "Verbindung lokaler Verzeichnisdienste mit Cloud-Identitaeten.",
+        "langbeschreibung": "Hybrid Identity synchronisiert on-premises Active Directory ueber Entra Connect mit Microsoft Entra ID. Benutzer erhalten ein einheitliches Konto fuer lokale und Cloud-Ressourcen. Methoden: Password Hash Sync, Pass-through Auth, Federation.",
+        "lizenz_info": "Entra Connect kostenlos; erweiterte Features in Entra ID P1/P2.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity/hybrid/whatis-hybrid-identity"
+      },
+      {
+        "eintrag": "Microsoft Stream",
+        "kurzbeschreibung": "Videoplattform in Microsoft 365 (SharePoint-basiert).",
+        "langbeschreibung": "Microsoft Stream speichert, verwaltet und streamt Unternehmensvideos auf SharePoint Online. Meeting-Aufzeichnungen aus Teams landen automatisch in OneDrive/SharePoint. Transkription, Kapitel und Suche sind integriert.",
+        "lizenz_info": "Enthalten in M365 Business Basic+, E1, E3, E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/stream/overview"
+      },
+      {
+        "eintrag": "Microsoft Stream Classic",
+        "kurzbeschreibung": "Fruehere eigenstaendige Videoplattform (eingestellt).",
+        "langbeschreibung": "Microsoft Stream Classic war die urspruengliche Azure-Media-Services-basierte Videoplattform. Sie wurde durch die SharePoint-basierte Stream-Version ersetzt. Die Migration ist abgeschlossen.",
+        "lizenz_info": "Eingestellt; Inhalte in Stream (on SharePoint) migriert.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/stream/streamnew/stream-classic-to-new-migration-overview"
+      },
+      {
+        "eintrag": "Microsoft Whiteboard",
+        "kurzbeschreibung": "Digitale Kollaborationsflaeche fuer Skizzen und Brainstorming.",
+        "langbeschreibung": "Microsoft Whiteboard bietet ein unendliches Canvas fuer Freihandzeichnungen, Haftnotizen, Vorlagen und Reaktionen. Whiteboards koennen in Teams-Meetings gestartet und in der Whiteboard-App weiterbearbeitet werden.",
+        "lizenz_info": "Enthalten in M365 Business Basic+, E1, E3, E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/whiteboard/manage-whiteboard"
+      },
+      {
+        "eintrag": "Microsoft Whiteboard Online",
+        "kurzbeschreibung": "Browserbasierte Nutzung von Microsoft Whiteboard.",
+        "langbeschreibung": "Microsoft Whiteboard Online ist die Web-Version des Whiteboards unter whiteboard.microsoft.com ohne Desktop-Installation. Funktionsumfang und Synchronisation entsprechen der nativen App.",
+        "lizenz_info": "Wie Microsoft Whiteboard; keine separate Lizenz noetig.",
+        "ms_learn_weblinks": "https://whiteboard.microsoft.com"
+      },
+      {
+        "eintrag": "Microsoft Sway",
+        "kurzbeschreibung": "Webbasiertes Tool fuer interaktive Praesentationen und Berichte.",
+        "langbeschreibung": "Microsoft Sway erstellt visuell ansprechende, responsive Inhalte wie Berichte, Newsletter oder Trainingsmaterialien. Bilder, Videos und Texte werden automatisch layoutet und sind per Link teilbar.",
+        "lizenz_info": "Enthalten in M365 Business Basic+, E1, E3, E5.",
+        "ms_learn_weblinks": "https://support.microsoft.com/sway"
+      },
+      {
+        "eintrag": "Microsoft Sway Templates",
+        "kurzbeschreibung": "Vorgefertigte Layouts und Vorlagen fuer Sway.",
+        "langbeschreibung": "Sway Templates bieten Design- und Strukturvorlagen fuer haeufige Szenarien wie Newsletter, Portfolios und Schulungsmaterialien. Sie beschleunigen die Erstellung und sorgen fuer ein einheitliches Erscheinungsbild.",
+        "lizenz_info": "In Sway enthalten; keine separate Lizenz.",
+        "ms_learn_weblinks": "https://sway.cloud.microsoft"
+      },
+      {
+        "eintrag": "Microsoft Delve",
+        "kurzbeschreibung": "Kontextbezogene Dokumentenanzeige basierend auf Zusammenarbeit.",
+        "langbeschreibung": "Microsoft Delve zeigt Benutzern relevante Dokumente an, basierend auf Zusammenarbeit, Zugriffen und Interaktionen im Microsoft Graph. Es dient als personalisierte Startseite fuer Dokumente, wird aber zunehmend durch andere M365-Oberflaechen ersetzt.",
+        "lizenz_info": "Enthalten in M365 E1, E3, E5 (Funktion wird reduziert).",
+        "ms_learn_weblinks": "https://support.microsoft.com/office/what-is-delve-1315665a-c6af-4409-a28d-49f8916878ca"
+      },
+      {
+        "eintrag": "Microsoft Viva",
+        "kurzbeschreibung": "Plattform fuer Employee Experience in Microsoft 365.",
+        "langbeschreibung": "Microsoft Viva buendelt Module fuer Kommunikation (Connections), Lernen (Learning), Einblicke (Insights), Engagement (Engage), Ziele (Goals) und Wissensmanagement. Ziel: Produktivitaet, Wohlbefinden und Lernkultur im Arbeitsalltag staerken.",
+        "lizenz_info": "Einzelmodule teils in M365 enthalten; Viva Suite als Gesamtlizenz.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/viva/microsoft-viva-overview"
+      },
+      {
+        "eintrag": "Microsoft Viva Learning",
+        "kurzbeschreibung": "Lernplattform integriert in Teams.",
+        "langbeschreibung": "Viva Learning aggregiert Lerninhalte aus LinkedIn Learning, internen Quellen und Drittanbietern (z. B. SAP SuccessFactors, Cornerstone) direkt in Teams. Manager empfehlen Inhalte, Mitarbeitende verfolgen ihren Lernfortschritt.",
+        "lizenz_info": "Basis in M365 E3/E5; Premium-Features in Viva Learning Add-on oder Viva Suite.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/viva/learning/overview-viva-learning"
+      },
+      {
+        "eintrag": "Microsoft Viva Topics",
+        "kurzbeschreibung": "KI-gestuetzte Wissensorganisation (eingestellt).",
+        "langbeschreibung": "Viva Topics identifizierte automatisch Themen im Tenant und erstellte Wissensseiten mit relevanten Personen, Dokumenten und Ressourcen. Microsoft hat den Dienst Anfang 2025 eingestellt und verweist auf Copilot-gestuetzte Wissensfeatures.",
+        "lizenz_info": "Eingestellt; Funktionalitaet geht in Copilot / SharePoint Premium auf.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/topics/"
+      },
+      {
+        "eintrag": "Microsoft Viva Connections",
+        "kurzbeschreibung": "Unternehmensportal und Dashboard in Teams.",
+        "langbeschreibung": "Viva Connections bringt Intranet-Inhalte, Unternehmenskommunikation und personalisierte Dashboard-Karten in Microsoft Teams. Basiert auf SharePoint und wird ueber App-Setup-Richtlinien bereitgestellt.",
+        "lizenz_info": "Enthalten in M365 E3, E5; Dashboard-Karten teils Premium.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/viva/connections/viva-connections-overview"
+      },
+      {
+        "eintrag": "Microsoft Viva Goals",
+        "kurzbeschreibung": "OKR-Management und strategische Zielverfolgung.",
+        "langbeschreibung": "Viva Goals unterstuetzt Objectives and Key Results (OKR) mit Alignment-Ansichten, Check-ins und Integrationen in Teams, Planner und Azure DevOps. Transparenz ueber strategische Ziele und deren Fortschritt im gesamten Unternehmen.",
+        "lizenz_info": "In Viva Suite enthalten oder als Add-on; wird in Copilot integriert.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/viva/goals/intro-to-ms-viva-goals"
+      },
+      {
+        "eintrag": "Microsoft Yammer",
+        "kurzbeschreibung": "Frueheres Enterprise Social Network (jetzt Viva Engage).",
+        "langbeschreibung": "Yammer war Microsofts soziales Netzwerk fuer Unternehmen. Communities, Storyline und Q&A-Funktionen wurden unter dem Namen Viva Engage weiterentwickelt. Der Yammer-Name ist weitgehend ersetzt.",
+        "lizenz_info": "Funktionalitaet in Viva Engage ueberfuehrt.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/viva/engage/overview"
+      },
+      {
+        "eintrag": "Microsoft Lists",
+        "kurzbeschreibung": "Strukturierte Listenverwaltung in Microsoft 365.",
+        "langbeschreibung": "Microsoft Lists bietet anpassbare Listen mit Spaltentypen, Ansichten (Grid, Gallery, Calendar, Board), Formatierungsregeln und Automatisierungen. Listen koennen in Teams eingebettet und mit Power Automate verknuepft werden.",
+        "lizenz_info": "Enthalten in Business Basic+, E1, E3, E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/community/working-with-microsoft-lists"
+      },
+      {
+        "eintrag": "Microsoft Lists Rules",
+        "kurzbeschreibung": "Regelbasierte Automatisierungen in Listen.",
+        "langbeschreibung": "Lists Rules ermoeglichen einfache Wenn-Dann-Automatisierungen direkt in Microsoft Lists, z. B. Benachrichtigungen bei Statuswechsel oder Faelligkeitsueberschreitungen. Fuer komplexere Szenarien wird Power Automate empfohlen.",
+        "lizenz_info": "In Microsoft Lists enthalten.",
+        "ms_learn_weblinks": "https://support.microsoft.com/office/create-a-rule-in-microsoft-lists-0839e289-49c5-4c3c-80f0-1b8d0684c37e"
+      },
+      {
+        "eintrag": "Microsoft MyAnalytics",
+        "kurzbeschreibung": "Persoenliche Arbeitsgewohnheits-Analyse (jetzt Viva Insights).",
+        "langbeschreibung": "MyAnalytics war die Vorgaengerbezeichnung der persoenlichen Insights zu Fokuszeit, Meeting-Aufwand und E-Mail-Verhalten. Die Funktionalitaet ist vollstaendig in Viva Insights (Personal Insights) aufgegangen.",
+        "lizenz_info": "Funktionalitaet in Viva Insights ueberfuehrt.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/viva/insights/introduction"
+      },
+      {
+        "eintrag": "Microsoft Compliance Center",
+        "kurzbeschreibung": "Verwaltungsportal fuer Compliance- und Datenschutzfunktionen.",
+        "langbeschreibung": "Das Compliance Center war das zentrale Portal fuer DLP, Retention, eDiscovery, Audit und Informationsschutz. Die Funktionalitaet wurde in das Microsoft Purview Portal ueberfuehrt.",
+        "lizenz_info": "Zugang ueber Purview-Portal; Umfang abhaengig von E3/E5-Lizenz.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/purview/purview-portal"
+      },
+      {
+        "eintrag": "Microsoft Compliance Manager",
+        "kurzbeschreibung": "Compliance-Bewertung und Massnahmenplanung.",
+        "langbeschreibung": "Compliance Manager bewertet den Compliance-Status anhand von Vorlagen (z. B. ISO 27001, DSGVO, TISAX) und gibt priorisierte Handlungsempfehlungen. Der Compliance Score zeigt den Reifegrad auf einen Blick.",
+        "lizenz_info": "Basiszugang in E3; erweiterte Vorlagen in E5 oder Compliance Add-ons.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/purview/compliance-manager"
+      },
+      {
+        "eintrag": "Microsoft Security & Compliance Center",
+        "kurzbeschreibung": "Ehemaliges Portal fuer Sicherheit und Compliance (aufgeteilt).",
+        "langbeschreibung": "Das Security & Compliance Center war die zentrale Verwaltungsoberflaeche, bevor Microsoft es in das Defender Portal (Sicherheit) und das Purview Portal (Compliance) aufgeteilt hat.",
+        "lizenz_info": "Aufgeteilt in Defender Portal und Purview Portal.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/purview/purview-portal"
+      },
+      {
+        "eintrag": "Microsoft Secure Score",
+        "kurzbeschreibung": "Sicherheitsbewertung der M365-Konfiguration.",
+        "langbeschreibung": "Secure Score analysiert die Sicherheitskonfiguration des Tenants (MFA, Conditional Access, Geraete, Mail-Schutz etc.) und vergibt Punkte. Empfohlene Verbesserungsmassnahmen sind nach Auswirkung und Aufwand priorisiert.",
+        "lizenz_info": "Kostenlos verfuegbar in jedem M365-Tenant.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender/microsoft-365-defender/microsoft-secure-score"
+      },
+      {
+        "eintrag": "Microsoft Graph API",
+        "kurzbeschreibung": "Zentrale Programmierschnittstelle fuer M365-Daten.",
+        "langbeschreibung": "Microsoft Graph ist die einheitliche REST-API fuer den Zugriff auf Benutzer, Gruppen, Mails, Kalender, Dateien, Teams und weitere M365-Ressourcen. Grundlage fuer Automatisierung, Integrationen und Copilot-Features.",
+        "lizenz_info": "API-Zugriff in allen M365-Plaenen; manche Endpunkte erfordern hoehere Lizenzen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/graph/overview"
+      },
+      {
+        "eintrag": "Microsoft 365 Groups",
+        "kurzbeschreibung": "Gemeinsamer Identitaets- und Ressourcencontainer.",
+        "langbeschreibung": "Eine M365-Gruppe ist das Identitaetsobjekt hinter Teams, Planner-Plaenen, SharePoint-Teamwebsites und Outlook-Gruppenpostfaechern. Das Erstellen eines Teams erzeugt automatisch eine M365-Gruppe mit allen verbundenen Ressourcen.",
+        "lizenz_info": "Enthalten in allen M365-Plaenen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/admin/create-groups/office-365-groups"
+      },
+      {
+        "eintrag": "Microsoft 365 Lighthouse",
+        "kurzbeschreibung": "Multi-Tenant-Verwaltung fuer Managed-Service-Provider.",
+        "langbeschreibung": "Lighthouse bietet MSPs und CSP-Partnern eine konsolidierte Ansicht ueber mehrere Kunden-Tenants mit Baseline-Sicherheitskonfigurationen, Risikobewertungen und Bereitstellungsaufgaben.",
+        "lizenz_info": "Fuer CSP-Partner mit GDAP; Kunden benoetigen M365 Business Premium oder E3+.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/lighthouse/m365-lighthouse-overview"
+      },
+      {
+        "eintrag": "Microsoft 365 Roadmap",
+        "kurzbeschreibung": "Oeffentliche Uebersicht geplanter und ausgerollter M365-Features.",
+        "langbeschreibung": "Die Microsoft 365 Roadmap unter microsoft.com/microsoft-365/roadmap zeigt Funktionen im Status In Entwicklung, Rolling Out und Launched. Wichtigstes Werkzeug fuer Change- und Release-Management in M365-Umgebungen.",
+        "lizenz_info": "Oeffentlich zugaenglich; kein Login erforderlich.",
+        "ms_learn_weblinks": "https://www.microsoft.com/microsoft-365/roadmap"
+      },
+      {
+        "eintrag": "Microsoft 365 Admin Center",
+        "kurzbeschreibung": "Zentrales Portal fuer M365-Verwaltung.",
+        "langbeschreibung": "Das Admin Center (admin.microsoft.com) verwaltet Benutzer, Gruppen, Lizenzen, Domaenen, Dienststatus und Richtlinien. Von hier aus erreichen Admins die spezialisierten Portale fuer Exchange, SharePoint, Teams, Security und Compliance.",
+        "lizenz_info": "Zugang fuer alle M365-Admins.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/admin/admin-overview/admin-center-overview"
+      },
+      {
+        "eintrag": "Microsoft 365 Message Center",
+        "kurzbeschreibung": "Aenderungskommunikation und Service-Nachrichten.",
+        "langbeschreibung": "Das Message Center informiert Admins ueber neue, geaenderte oder auslaufende M365-Funktionen mit geplanten Zeitrahmen und Handlungsbedarf. Primaerer Kanal fuer Change-Management-Informationen von Microsoft.",
+        "lizenz_info": "In jedem M365-Tenant verfuegbar.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/admin/manage/message-center"
+      },
+      {
+        "eintrag": "Microsoft 365 Service Health",
+        "kurzbeschreibung": "Echtzeit-Dienststatus und Stoerungsmeldungen.",
+        "langbeschreibung": "Service Health zeigt den aktuellen Zustand aller M365-Dienste, offene Incidents, geplante Wartungen und Post-Incident-Reviews. Admins koennen Benachrichtigungen konfigurieren und den Verlauf frueherer Vorfaelle einsehen.",
+        "lizenz_info": "In jedem M365-Tenant verfuegbar.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/enterprise/view-service-health"
+      },
+      {
+        "eintrag": "Microsoft 365 Apps for Enterprise",
+        "kurzbeschreibung": "Vollstaendige Office-Desktopsuite mit Cloud-Anbindung.",
+        "langbeschreibung": "M365 Apps for Enterprise umfasst Word, Excel, PowerPoint, Outlook, Access und Publisher als lokal installierte Desktop-Anwendungen mit monatlichen Feature-Updates und Cloud-Integration (Co-Authoring, AutoSave, Copilot).",
+        "lizenz_info": "Enthalten in E3, E5, Business Standard/Premium.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/deployoffice/about-microsoft-365-apps"
+      },
+      {
+        "eintrag": "Microsoft 365 Apps Admin Center",
+        "kurzbeschreibung": "Portal fuer Servicing und Health-Daten der Office-Apps.",
+        "langbeschreibung": "Das Apps Admin Center (config.office.com) steuert Update-Kanaele, Bereitstellungskonfigurationen, Office-Cloud-Policies und Gesundheitsdashboards der installierten M365-Apps.",
+        "lizenz_info": "Zugang fuer M365-Admins.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/deployoffice/admincenter/overview"
+      },
+      {
+        "eintrag": "Microsoft Teams Premium",
+        "kurzbeschreibung": "Erweiterte Teams-Funktionen fuer Meetings und Sicherheit.",
+        "langbeschreibung": "Teams Premium ergaenzt intelligente Meeting-Zusammenfassungen (Copilot), benutzerdefinierte Meeting-Vorlagen, Watermarking, End-to-End-Verschluesselung, erweiterte Webinar-Funktionen und Virtual Appointments.",
+        "lizenz_info": "Kostenpflichtiges Add-on zu M365 E3/E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoftteams/enhanced-teams-experience"
+      },
+      {
+        "eintrag": "Microsoft Teams Rooms",
+        "kurzbeschreibung": "Raum-Hardware und -Software fuer Teams-Meetings.",
+        "langbeschreibung": "Teams Rooms integriert Besprechungsraeume nativ in Teams mit zertifizierter Hardware (Kameras, Displays, Mikrofone). Verwaltung ueber das Teams Rooms Pro Management Portal mit Monitoring und Remote-Konfiguration.",
+        "lizenz_info": "Teams Rooms Basic (kostenlos, bis 25 Raeume) oder Teams Rooms Pro.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoftteams/rooms/"
+      },
+      {
+        "eintrag": "Microsoft Teams Live Events",
+        "kurzbeschreibung": "Grosse Live-Uebertragungen in Teams (Nachfolger: Town Hall).",
+        "langbeschreibung": "Teams Live Events ermoeglichte Uebertragungen an bis zu 20.000 Teilnehmer mit Produzenten- und Moderatorenrollen. Die Funktion wird schrittweise durch Teams Town Hall ersetzt.",
+        "lizenz_info": "Eingestellt zugunsten von Town Hall; war in E1, E3, E5 enthalten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoftteams/teams-live-events/what-are-teams-live-events"
+      },
+      {
+        "eintrag": "Microsoft Teams Breakout Rooms",
+        "kurzbeschreibung": "Gruppenraeume innerhalb eines Teams-Meetings.",
+        "langbeschreibung": "Breakout Rooms teilen Meeting-Teilnehmer in separate virtuelle Raeume fuer Kleingruppenarbeit, Workshops oder Diskussionsrunden. Der Organisator kann Teilnehmer zuweisen, zwischen Raeumen wechseln und alle zurueckholen.",
+        "lizenz_info": "In allen Teams-Lizenzen enthalten.",
+        "ms_learn_weblinks": "https://support.microsoft.com/office/use-breakout-rooms-in-microsoft-teams-meetings-7de1f48a-da07-466c-a5ab-4ebace28e461"
+      },
+      {
+        "eintrag": "Microsoft Teams Shifts",
+        "kurzbeschreibung": "Dienstplan- und Schichtverwaltung in Teams.",
+        "langbeschreibung": "Teams Shifts bietet Schichtplanung, Zeiterfassung, Tausch-Anfragen und offene Schichten fuer Frontline-Worker. Integration mit Workforce-Management-Systemen (z. B. Blue Yonder, Reflexis) ueber Konnektoren moeglich.",
+        "lizenz_info": "Enthalten in M365 F1, F3, E1, E3, E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoftteams/expand-teams-across-your-org/shifts-for-teams-landing-page"
+      },
+      {
+        "eintrag": "Microsoft Teams Calling",
+        "kurzbeschreibung": "Cloud-Telefonie, Rufnummern und Anrufsteuerung in Teams.",
+        "langbeschreibung": "Teams Calling umfasst Phone System, Calling Plans, Operator Connect und Direct Routing fuer PSTN-Anbindung. Auto-Attendants, Anrufwarteschlangen, Voicemail und Call Analytics stehen zur Verfuegung.",
+        "lizenz_info": "Phone System in E5; Calling Plan oder SBC/Operator Connect separat.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoftteams/cloud-voice-landing-page"
+      },
+      {
+        "eintrag": "Microsoft Teams Education",
+        "kurzbeschreibung": "Teams fuer Bildungseinrichtungen mit Klassenfunktionen.",
+        "langbeschreibung": "Teams Education bietet Klassenteams mit Aufgaben, Noten, Kursnotizen, Insights-Dashboard fuer Lehrkraefte und Integration mit Schulverwaltungssystemen (SDS). Sonderlizenzen fuer Bildungseinrichtungen verfuegbar.",
+        "lizenz_info": "M365 Education A1 (kostenlos), A3, A5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoftteams/expand-teams-across-your-org/teams-for-education-landing-page"
+      },
+      {
+        "eintrag": "Microsoft Teams Approval Workflow",
+        "kurzbeschreibung": "Genehmigungsprozesse direkt in Teams.",
+        "langbeschreibung": "Approvals in Teams ermoeglicht Genehmigungsanfragen mit Vorlagen, Anhaengen und Ketten-Genehmigungen direkt aus dem Teams-Chat oder Kanal. Im Hintergrund nutzt es Power Automate und Dataverse.",
+        "lizenz_info": "Basisfunktion in M365 enthalten; erweiterte Flows ueber Power Automate Premium.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoftteams/approval-admin"
+      },
+      {
+        "eintrag": "Microsoft Teams Webinar",
+        "kurzbeschreibung": "Registrierungspflichtige Online-Veranstaltungen in Teams.",
+        "langbeschreibung": "Teams-Webinare bieten Registrierungsformulare, E-Mail-Bestaetigungen, Teilnehmer-Reporting und strukturierte Praesentationen. Erweiterte Funktionen (Warteliste, manuelle Genehmigung) in Teams Premium verfuegbar.",
+        "lizenz_info": "Basisfunktion in E3/E5; erweiterte Features in Teams Premium.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoftteams/set-up-webinars"
+      },
+      {
+        "eintrag": "Microsoft Teams Town Hall",
+        "kurzbeschreibung": "Grossveranstaltungsformat fuer interne Kommunikation.",
+        "langbeschreibung": "Town Hall ersetzt Live Events und unterstuetzt bis zu 10.000 (bzw. 20.000 mit Premium) interaktive Teilnehmer mit Q&A, RTMP-In, Co-Organisatoren und Aufzeichnung. Ideal fuer All-Hands, Quartals-Updates und CEO-Kommunikation.",
+        "lizenz_info": "In E3/E5 enthalten; erweiterte Kapazitaet in Teams Premium.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoftteams/plan-town-halls"
+      },
+      {
+        "eintrag": "Microsoft Planner Hub",
+        "kurzbeschreibung": "Zentrale Uebersicht aller Planner-Plaene und Aufgaben.",
+        "langbeschreibung": "Der Planner Hub buendelt alle Plaene, an denen ein Benutzer beteiligt ist, in einer Gesamtansicht. Aufgaben lassen sich nach Faelligkeit, Plan oder Prioritaet filtern. Seit dem neuen Planner (2024) verschmelzen Planner- und To-Do-Aufgaben.",
+        "lizenz_info": "Enthalten in M365 Business Basic+, E1, E3, E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/office365/planner/planner-for-admins"
+      },
+      {
+        "eintrag": "Microsoft Planner Charts",
+        "kurzbeschreibung": "Diagramme fuer Aufgabenstand und Fortschritt in Planner.",
+        "langbeschreibung": "Planner Charts zeigen den Aufgabenstatus (Nicht begonnen / In Bearbeitung / Erledigt / Ueberfaellig) als Balken- und Kreisdiagramme. Schneller Ueberblick ueber den Planfortschritt.",
+        "lizenz_info": "In Microsoft Planner enthalten.",
+        "ms_learn_weblinks": "https://support.microsoft.com/office/view-charts-of-your-plan-s-progress-38dc2e1c-b888-4ca0-a8a8-4e15bc2caef4"
+      },
+      {
+        "eintrag": "Microsoft Project",
+        "kurzbeschreibung": "Projektmanagement mit Zeitachsen und Ressourcenplanung.",
+        "langbeschreibung": "Microsoft Project bietet Gantt-Diagramme, Aufgabenabhaengigkeiten, Ressourcenauslastung und Projektportfolio-Management. Die Cloud-Version (Project for the Web) basiert auf Dataverse und integriert sich in Teams und Power Platform.",
+        "lizenz_info": "Separate Lizenz: Project Plan 1, 3 oder 5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/project/project-for-the-web-get-started-with-office-365"
+      },
+      {
+        "eintrag": "Microsoft Visio",
+        "kurzbeschreibung": "Diagramm- und Visualisierungstool fuer Prozesse und Strukturen.",
+        "langbeschreibung": "Visio erstellt Flussdiagramme, Organigramme, Netzwerkdiagramme, Grundrisse und BPMN-Prozessdarstellungen. Visio for the Web erlaubt Co-Authoring und Einbettung in SharePoint und Teams.",
+        "lizenz_info": "Separate Lizenz: Visio Plan 1 oder Plan 2. Basis-Anzeige in M365 enthalten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/office/client-developer/visio/visio-online"
+      },
+      {
+        "eintrag": "Microsoft OneNote",
+        "kurzbeschreibung": "Digitales Notizbuch fuer strukturierte Notizen.",
+        "langbeschreibung": "OneNote organisiert Notizen in Notizbuechern, Abschnitten und Seiten mit Freihand, Tabellen, Dateianlagen und Tags. Notizbuecher koennen in Teams, SharePoint und Outlook eingebettet und im Team geteilt werden.",
+        "lizenz_info": "Enthalten in allen M365-Plaenen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/office/client-developer/onenote/onenote-developer-reference"
+      },
+      {
+        "eintrag": "Microsoft Outlook Online",
+        "kurzbeschreibung": "Webbasierte E-Mail-, Kalender- und Kontaktverwaltung.",
+        "langbeschreibung": "Outlook Online (outlook.office.com) bietet E-Mail, Kalender, Kontakte und Aufgaben im Browser ohne Desktop-Installation. Features wie Focused Inbox, Quick Steps und Add-ins stehen auch im Web zur Verfuegung.",
+        "lizenz_info": "Enthalten in allen M365-Plaenen mit Exchange Online.",
+        "ms_learn_weblinks": "https://support.microsoft.com/outlook"
+      },
+      {
+        "eintrag": "Microsoft Outlook Mobile",
+        "kurzbeschreibung": "Outlook-App fuer Smartphones und Tablets.",
+        "langbeschreibung": "Outlook Mobile (iOS/Android) bietet E-Mail, Kalender, Kontakte und Dateianhänge mit Swipe-Gesten, Fokus-Posteingang und Integration von Cloud-Speichern. Intune-App-Protection-Policies sichern Unternehmensdaten.",
+        "lizenz_info": "Kostenlose App; Unternehmensfunktionen ueber M365-Lizenz.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/exchange/clients-and-mobile-in-exchange-online/outlook-for-ios-and-android/outlook-for-ios-and-android"
+      },
+      {
+        "eintrag": "Microsoft Word Online",
+        "kurzbeschreibung": "Browserbasierte Version von Microsoft Word.",
+        "langbeschreibung": "Word Online ermoeglicht das Erstellen und gemeinsame Bearbeiten von Dokumenten im Browser mit Echtzeit-Co-Authoring. Funktionsumfang gegenueber Desktop-App reduziert, deckt aber gaengigste Szenarien ab.",
+        "lizenz_info": "Enthalten in allen M365-Plaenen.",
+        "ms_learn_weblinks": "https://support.microsoft.com/word"
+      },
+      {
+        "eintrag": "Microsoft Excel Online",
+        "kurzbeschreibung": "Browserbasierte Version von Microsoft Excel.",
+        "langbeschreibung": "Excel Online bietet Tabellenkalkulation, Formeln, Diagramme und gemeinsame Bearbeitung im Browser. Erweiterte Features wie Power Query, Makros und Pivot-Berichte sind teilweise eingeschraenkt.",
+        "lizenz_info": "Enthalten in allen M365-Plaenen.",
+        "ms_learn_weblinks": "https://support.microsoft.com/excel"
+      },
+      {
+        "eintrag": "Microsoft PowerPoint Online",
+        "kurzbeschreibung": "Browserbasierte Version von Microsoft PowerPoint.",
+        "langbeschreibung": "PowerPoint Online ermoeglicht das Erstellen, Bearbeiten und Praesentieren von Folien im Browser mit Echtzeit-Zusammenarbeit. Animationen und erweiterte Designfeatures sind teilweise reduziert.",
+        "lizenz_info": "Enthalten in allen M365-Plaenen.",
+        "ms_learn_weblinks": "https://support.microsoft.com/powerpoint"
+      },
+      {
+        "eintrag": "Microsoft Office for the Web",
+        "kurzbeschreibung": "Sammelbezeichnung fuer browserbasierte Office-Anwendungen.",
+        "langbeschreibung": "Office for the Web umfasst Word, Excel, PowerPoint, OneNote und Outlook im Browser. Die Apps starten aus OneDrive, SharePoint oder dem M365-Portal und ermoeglichen plattformunabhaengiges Arbeiten.",
+        "lizenz_info": "Enthalten in allen M365-Plaenen; eingeschraenkt auch kostenlos nutzbar.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/office/dev/add-ins/overview/office-add-ins"
+      },
+      {
+        "eintrag": "Microsoft Office Scripts",
+        "kurzbeschreibung": "TypeScript-Automatisierungen in Excel for the Web.",
+        "langbeschreibung": "Office Scripts ermoeglichen aufgezeichnete oder manuell geschriebene TypeScript-Skripte zur Automatisierung wiederkehrender Aufgaben in Excel Online. Scripts koennen ueber Power Automate-Flows ausgeloest werden.",
+        "lizenz_info": "Enthalten in M365 Business Standard+, E3, E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/office/dev/scripts/overview/excel"
+      },
+      {
+        "eintrag": "Microsoft Office Lens",
+        "kurzbeschreibung": "Mobile App zum Digitalisieren von Dokumenten und Whiteboards.",
+        "langbeschreibung": "Office Lens erfasst Fotos von Dokumenten, Whiteboards und Visitenkarten, korrigiert Perspektive und Belichtung und speichert als PDF, Word oder Bild in OneDrive oder OneNote. Funktion in OneDrive- und Outlook-Mobile-Apps integriert.",
+        "lizenz_info": "Kostenlose App; Speicherung ueber M365-Konto.",
+        "ms_learn_weblinks": "https://support.microsoft.com/office/microsoft-lens-for-android-ec124207-0049-4201-afaf-b5874a8e6f2b"
+      },
+      {
+        "eintrag": "Microsoft Office Deployment Tool",
+        "kurzbeschreibung": "Werkzeug zur automatisierten Office-Bereitstellung.",
+        "langbeschreibung": "Das ODT (setup.exe mit XML-Konfiguration) ermoeglicht Offline-Installation, Kanalsteuerung, Sprachpakete und Anpassung der M365-Apps-Installation. Haeufig in Kombination mit Intune oder SCCM eingesetzt.",
+        "lizenz_info": "Kostenloses Tool; setzt M365-Lizenzen voraus.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/deployoffice/overview-office-deployment-tool"
+      },
+      {
+        "eintrag": "Microsoft Editor",
+        "kurzbeschreibung": "KI-gestuetzter Schreibassistent fuer Rechtschreibung und Stil.",
+        "langbeschreibung": "Microsoft Editor prueft Texte auf Rechtschreibung, Grammatik, Klarheit, Praegnanz und inklusive Sprache in Word, Outlook, Edge und als Browser-Extension. Premium-Features (Stilverfeinerung) erfordern eine M365-Lizenz.",
+        "lizenz_info": "Basisfunktion kostenlos; Premium in M365 Personal/Business/E3/E5.",
+        "ms_learn_weblinks": "https://support.microsoft.com/editor"
+      },
+      {
+        "eintrag": "Microsoft Power BI",
+        "kurzbeschreibung": "Analyse- und Reporting-Plattform fuer Datenvisualisierung.",
+        "langbeschreibung": "Power BI verbindet sich mit Datenquellen (SQL, SharePoint, Excel, REST-APIs u.v.m.), modelliert Daten und erstellt interaktive Dashboards und Berichte. Desktop kostenlos; Freigabe ueber Power BI Service erfordert Pro- oder Premium-Lizenz.",
+        "lizenz_info": "Power BI Pro in M365 E5 enthalten; separat als Pro oder Premium Per User.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/power-bi/fundamentals/power-bi-overview"
+      },
+      {
+        "eintrag": "Microsoft Power Platform",
+        "kurzbeschreibung": "Low-Code-Suite fuer Analyse, Apps und Automatisierung.",
+        "langbeschreibung": "Die Power Platform umfasst Power BI, Power Apps, Power Automate, Power Pages und Copilot Studio. Fachbereiche erstellen datengetriebene Apps, Automatisierungen und Analysen mit minimalem Coding-Aufwand.",
+        "lizenz_info": "Basisfunktionen in M365 enthalten; Premium-Features separat lizenziert.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/power-platform/"
+      },
+      {
+        "eintrag": "Microsoft Power Virtual Agents",
+        "kurzbeschreibung": "Low-Code-Chatbot-Erstellung (jetzt Copilot Studio).",
+        "langbeschreibung": "Power Virtual Agents ermoeglichte dialogbasierte Bots ohne Code. Die Funktionalitaet ist in Microsoft Copilot Studio aufgegangen, das erweiterte KI-Funktionen und generative Antworten bietet.",
+        "lizenz_info": "In Copilot Studio ueberfuehrt; separate Lizenz erforderlich.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-copilot-studio/fundamentals-what-is-copilot-studio"
+      },
+      {
+        "eintrag": "Microsoft Endpoint Manager",
+        "kurzbeschreibung": "Fruehere Sammelbezeichnung fuer Intune + ConfigMgr.",
+        "langbeschreibung": "Microsoft Endpoint Manager fasste Intune (Cloud) und Configuration Manager (on-premises) unter einem Markennamen zusammen. Die Bezeichnung wurde zugunsten von Microsoft Intune (inkl. Intune Suite) vereinfacht.",
+        "lizenz_info": "Bezeichnung veraltet; siehe Microsoft Intune.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/mem/intune/fundamentals/what-is-intune"
+      },
+      {
+        "eintrag": "Microsoft Cloud App Security",
+        "kurzbeschreibung": "Fruehere Bezeichnung fuer Defender for Cloud Apps.",
+        "langbeschreibung": "Microsoft Cloud App Security war der CASB-Dienst zur Ueberwachung und Kontrolle von SaaS-Anwendungen. Der Dienst heisst jetzt Microsoft Defender for Cloud Apps.",
+        "lizenz_info": "Umbenannt in Defender for Cloud Apps; in M365 E5 oder als Add-on.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-cloud-apps/what-is-defender-for-cloud-apps"
+      },
+      {
+        "eintrag": "Microsoft Defender for Identity",
+        "kurzbeschreibung": "Erkennung identitaetsbasierter Angriffe in hybriden AD-Umgebungen.",
+        "langbeschreibung": "Defender for Identity ueberwacht AD-Signale (Kerberos, LDAP, DNS) und erkennt laterale Bewegungen, Pass-the-Hash, Golden-Ticket-Angriffe und verdaechtige Kontoaktivitaeten. Sensoren auf Domain Controllern installiert.",
+        "lizenz_info": "Enthalten in M365 E5 oder als EMS E5 / Defender for Identity Add-on.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-for-identity/what-is"
+      },
+      {
+        "eintrag": "Microsoft Defender for Cloud Apps",
+        "kurzbeschreibung": "CASB-Dienst fuer Ueberwachung und Kontrolle von Cloud-Apps.",
+        "langbeschreibung": "Defender for Cloud Apps erkennt Shadow-IT, bewertet App-Risiken, setzt Session- und Access-Policies durch und ueberwacht Datenfluesse in SaaS-Anwendungen. Integration mit Conditional Access ermoeglicht Echtzeit-Session-Kontrolle.",
+        "lizenz_info": "Enthalten in M365 E5, EMS E5 oder als Standalone-Lizenz.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-cloud-apps/what-is-defender-for-cloud-apps"
+      },
+      {
+        "eintrag": "Microsoft Defender XDR",
+        "kurzbeschreibung": "Erweiterte Bedrohungserkennung ueber Identitaeten, Endpunkte und E-Mail.",
+        "langbeschreibung": "Defender XDR (Extended Detection and Response) korreliert Signale aus Defender for Endpoint, Defender for Office 365, Defender for Identity und Defender for Cloud Apps zu einem einheitlichen Bedrohungsbild mit automatisierter Untersuchung.",
+        "lizenz_info": "Vollumfang in M365 E5; einzelne Defender-Produkte separat lizenzierbar.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-xdr/microsoft-365-defender"
+      },
+      {
+        "eintrag": "Microsoft Advanced eDiscovery",
+        "kurzbeschreibung": "Juristische Suche und Aufbereitung grosser Datenbestaende.",
+        "langbeschreibung": "Advanced eDiscovery (jetzt Purview eDiscovery Premium) unterstuetzt Legal-Hold, Sammlungen, Review-Sets, KI-gestuetzte Relevanzanalyse und Redaction fuer juristische und Compliance-Teams.",
+        "lizenz_info": "Enthalten in M365 E5 oder als Purview eDiscovery Add-on.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/purview/ediscovery"
+      },
+      {
+        "eintrag": "Microsoft Exchange Hybrid",
+        "kurzbeschreibung": "Koexistenz von On-Premises-Exchange und Exchange Online.",
+        "langbeschreibung": "Exchange Hybrid verbindet lokale Exchange-Server (2016/2019) mit Exchange Online ueber den Hybrid Configuration Wizard. Postfaecher koennen zwischen on-premises und Cloud verschoben werden; Frei/Gebucht, Mailtipps und Cross-Premises-Berechtigungen funktionieren nahtlos.",
+        "lizenz_info": "Exchange Online-Lizenz + lokale Exchange-Lizenz; Hybrid-Agent oder Classic Hybrid.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/exchange/exchange-hybrid"
+      },
+      {
+        "eintrag": "Microsoft SharePoint Hub Sites",
+        "kurzbeschreibung": "Verknuepfung verwandter SharePoint-Websites.",
+        "langbeschreibung": "Hub Sites buendeln mehrere SharePoint-Websites unter gemeinsamer Navigation, Suche, News-Aggregation und Designvorgaben. Sie schaffen eine logische Struktur (z. B. pro Abteilung oder Region) ohne starre Hierarchie.",
+        "lizenz_info": "Enthalten in SharePoint Online-Plaenen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/sharepoint/planning-hub-sites"
+      },
+      {
+        "eintrag": "Microsoft Search",
+        "kurzbeschreibung": "Organisationsweite Suche ueber M365-Inhalte.",
+        "langbeschreibung": "Microsoft Search durchsucht Dateien, E-Mails, Personen, Teams-Chats, SharePoint-Seiten und externe Datenquellen ueber Konnektoren. Suchergebnisse erscheinen in der Bing-Leiste, SharePoint, Office.com und Teams.",
+        "lizenz_info": "Enthalten in allen M365-Plaenen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoftsearch/overview-microsoft-search"
+      },
+      {
+        "eintrag": "Microsoft Bookings Mobile",
+        "kurzbeschreibung": "Mobile Terminverwaltung ueber die Bookings-App.",
+        "langbeschreibung": "Bookings Mobile ermoeglicht Mitarbeitenden, Termine unterwegs einzusehen, zu bestaetigen oder abzusagen. Buchungen, Kunden-Infos und Kalenderansichten stehen auf iOS und Android zur Verfuegung.",
+        "lizenz_info": "In Bookings-Lizenz enthalten (Business Standard+, E3, E5).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/bookings/bookings-overview"
+      },
+      {
+        "eintrag": "Microsoft Loop Components",
+        "kurzbeschreibung": "Einbettbare, synchronisierte Inhaltselemente aus Loop.",
+        "langbeschreibung": "Loop Components (z. B. Tabellen, Aufgabenlisten, Abstimmungen) koennen in Teams-Chats, Outlook-Mails und Word-Dokumente eingefuegt werden. Aenderungen synchronisieren sich in Echtzeit ueber alle Einbettungsorte.",
+        "lizenz_info": "Enthalten in M365 Business Standard+, E3, E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/loop/loop-components-teams"
+      },
+      {
+        "eintrag": "Microsoft Loop Workspaces",
+        "kurzbeschreibung": "Gemeinsame Arbeitsbereiche in Microsoft Loop.",
+        "langbeschreibung": "Loop Workspaces buendeln Seiten und Komponenten zu Projektbereichen. Teilnehmer koennen Inhalte strukturieren, kommentieren und gemeinsam bearbeiten, vergleichbar mit einem leichtgewichtigen Wiki fuer Projektteams.",
+        "lizenz_info": "Enthalten in M365 Business Standard+, E3, E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/loop/loop-workspaces-storage-permission"
+      },
+      {
+        "eintrag": "Microsoft Syntex",
+        "kurzbeschreibung": "KI-gestuetzte Dokumentenverarbeitung (jetzt SharePoint Premium).",
+        "langbeschreibung": "Microsoft Syntex (umbenannt in SharePoint Premium Content AI) klassifiziert Dokumente, extrahiert Metadaten und automatisiert Content-Workflows mithilfe von KI-Modellen. Szenarien: Rechnungsverarbeitung, Vertragsanalyse, Dokumentensortierung.",
+        "lizenz_info": "Pay-as-you-go oder als SharePoint Premium Add-on.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/syntex/syntex-overview"
+      },
+      {
+        "eintrag": "Bedingter Zugriff",
+        "kurzbeschreibung": "Deutsche Bezeichnung fuer Conditional Access.",
+        "langbeschreibung": "Bedingter Zugriff ist die eingedeutschte Variante von Conditional Access in der M365-Administration. Richtlinien steuern den Zugriff abhaengig von Benutzer, Geraet, Standort und Risikostufe, identisch mit der englischen Funktion.",
+        "lizenz_info": "Erfordert Entra ID P1 (in M365 E3 enthalten).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity/conditional-access/overview"
+      },
+      {
+        "eintrag": "Benutzerprinzipal",
+        "kurzbeschreibung": "Identitaetsobjekt eines Benutzers im Verzeichnisdienst.",
+        "langbeschreibung": "Ein Benutzerprinzipal (User Principal) repraesentiert einen authentifizierten Benutzer in Entra ID oder Active Directory. Er traegt einen UPN (User Principal Name), besitzt Gruppenmitgliedschaften und erhaelt Rollen und Berechtigungen.",
+        "lizenz_info": "Grundbestandteil jeder Entra-ID-Instanz.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/fundamentals/how-to-create-delete-users"
+      },
+      {
+        "eintrag": "Dienstprinzipal",
+        "kurzbeschreibung": "Sicherheitsobjekt einer Anwendung oder eines Dienstes in Entra ID.",
+        "langbeschreibung": "Ein Dienstprinzipal (Service Principal) ist die Identitaet, unter der eine registrierte Anwendung oder ein verwalteter Dienst auf Ressourcen zugreift. Er wird bei der App-Registrierung automatisch erstellt und erhaelt API-Berechtigungen.",
+        "lizenz_info": "Grundbestandteil jeder Entra-ID-Instanz.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity-platform/app-objects-and-service-principals"
+      },
+      {
+        "eintrag": "Identity Access Management",
+        "kurzbeschreibung": "Verwaltung digitaler Identitaeten und Zugriffsrechte.",
+        "langbeschreibung": "Identity Access Management (IAM) umfasst Richtlinien, Prozesse und Technologien zur Steuerung von Identitaeten, Authentifizierung, Autorisierung und Zugriffsueberpruefungen. In Microsoft 365 bildet Entra ID die IAM-Grundlage.",
+        "lizenz_info": "Entra ID Free inkl.; erweiterte Features ab P1/P2.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/fundamentals/introduction-identity-access-management"
+      },
+      {
+        "eintrag": "Identity Protection & Governance",
+        "kurzbeschreibung": "Risikoerkennung, Lebenszyklus und Zugriffskontrolle fuer Identitaeten.",
+        "langbeschreibung": "Identity Protection erkennt Anmelderisiken und kompromittierte Konten; Identity Governance steuert Zugriffsueberpruefungen, Entitlement Management und Lebenszyklusworkflows. Fundament fuer eine Zero-Trust-Identitaetsstrategie.",
+        "lizenz_info": "Erfordert Entra ID P2 (in M365 E5 enthalten).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/id-governance/identity-governance-overview"
+      },
+      {
+        "eintrag": "Identitaetssicherheitsbewertung",
+        "kurzbeschreibung": "Sicherheitsbewertung des Identitaetsschutzes.",
+        "langbeschreibung": "Die Identitaetssicherheitsbewertung (Identity Secure Score) bewertet die Konfiguration von MFA, Conditional Access, PIM und weiteren Identitaetsschutzmassnahmen. Sie ergaenzt den Microsoft Secure Score um identitaetsspezifische Empfehlungen.",
+        "lizenz_info": "Verfuegbar ab Entra ID P1.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity/monitoring-health/concept-identity-secure-score"
+      },
+      {
+        "eintrag": "Mandant bzw. Tenant",
+        "kurzbeschreibung": "Organisatorisch getrennte M365- oder Entra-Instanz.",
+        "langbeschreibung": "Ein Mandant (Tenant) ist die isolierte Instanz eines Unternehmens in Microsoft 365 und Entra ID. Jeder Tenant hat eine eigene Tenant-ID, Domaenen, Benutzer und Konfigurationen. Multi-Tenant-Szenarien erfordern Cross-Tenant-Zugriffsrichtlinien.",
+        "lizenz_info": "Wird bei der ersten M365-Lizenzierung angelegt.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/fundamentals/whatis"
+      },
+      {
+        "eintrag": "Privileged Identity Management",
+        "kurzbeschreibung": "Zeitlich begrenzte Aktivierung privilegierter Rollen.",
+        "langbeschreibung": "PIM ermoeglicht Just-in-Time-Rollenzuweisungen fuer Entra-ID- und Azure-Rollen mit Genehmigungsworkflow, Begruendungspflicht und Audit-Trail. So wird das Risiko durch dauerhaft aktive Admin-Rechte minimiert.",
+        "lizenz_info": "Erfordert Entra ID P2 (in M365 E5 enthalten).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/id-governance/privileged-identity-management/pim-configure"
+      },
+      {
+        "eintrag": "Single Sign-On",
+        "kurzbeschreibung": "Einmalige Anmeldung fuer mehrere Anwendungen.",
+        "langbeschreibung": "SSO ermoeglicht Benutzern, sich einmal bei Entra ID zu authentifizieren und anschliessend ohne erneute Anmeldung auf verbundene SaaS-Anwendungen, On-Premises-Apps und Azure-Ressourcen zuzugreifen. Protokolle: SAML, OIDC, WS-Federation.",
+        "lizenz_info": "Grundfunktion in Entra ID Free; App-Proxy und erweiterte Features ab P1.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity/enterprise-apps/what-is-single-sign-on"
+      },
+      {
+        "eintrag": "Tenant ID",
+        "kurzbeschreibung": "Eindeutige Kennung einer Entra-ID-/M365-Instanz.",
+        "langbeschreibung": "Die Tenant ID ist eine GUID, die den Mandanten eindeutig identifiziert. Sie wird bei API-Aufrufen, App-Registrierungen, Conditional-Access-Konfigurationen und Cross-Tenant-Szenarien benoetigt.",
+        "lizenz_info": "Automatisch bei Tenant-Erstellung generiert.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/fundamentals/how-to-find-tenant"
+      },
+      {
+        "eintrag": "Zugriffstoken",
+        "kurzbeschreibung": "Sicherheitstoken fuer autorisierte API-Zugriffe.",
+        "langbeschreibung": "Ein Zugriffstoken (Access Token) wird nach erfolgreicher Authentifizierung ueber OAuth 2.0 / OIDC ausgestellt und berechtigt den Aufrufer, auf Ressourcen (z. B. Microsoft Graph) zuzugreifen. Token haben eine begrenzte Lebensdauer und enthalten Claims zu Benutzer und Berechtigungen.",
+        "lizenz_info": "Bestandteil der Entra-ID-Authentifizierungsinfrastruktur.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity-platform/access-tokens"
+      },
+      {
+        "eintrag": "Benutzerprinzipalname",
+        "kurzbeschreibung": "Eindeutiger Anmeldename im UPN-Format.",
+        "langbeschreibung": "Der Benutzerprinzipalname (User Principal Name / UPN) hat das Format benutzer@domaene.de und dient als primaerer Anmeldename in Entra ID und Active Directory. In Hybrid-Szenarien muss der UPN zwischen on-premises AD und Entra ID uebereinstimmen.",
+        "lizenz_info": "Grundbestandteil jedes Benutzerkontos.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity/hybrid/connect/plan-connect-userprincipalname"
+      },
+      {
+        "eintrag": "App-Registrierung",
+        "kurzbeschreibung": "Anlegen einer Anwendung in Entra ID.",
+        "langbeschreibung": "Eine App-Registrierung definiert eine Anwendungsidentitaet in Entra ID mit Client-ID, Redirect-URIs, API-Berechtigungen und Zertifikaten/Secrets. Voraussetzung fuer OAuth-basierte Authentifizierung und Microsoft-Graph-Zugriffe.",
+        "lizenz_info": "Grundfunktion in Entra ID Free.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity-platform/quickstart-register-app"
+      },
+      {
+        "eintrag": "Lizenzzuweisung",
+        "kurzbeschreibung": "Zuordnung von M365-Lizenzplaenen an Benutzer oder Gruppen.",
+        "langbeschreibung": "Lizenzzuweisung erfolgt direkt, gruppenbasiert oder per PowerShell. Serviceplaene innerhalb einer SKU werden aktiviert oder deaktiviert. Gruppenbasierte Lizenzierung erfordert mindestens Entra ID P1.",
+        "lizenz_info": "Direktzuweisung in allen Plaenen; gruppenbasiert ab Entra ID P1.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity/users/licensing-groups-assign"
+      },
+      {
+        "eintrag": "Gastzugriff",
+        "kurzbeschreibung": "Kontrollierter Zugriff fuer externe Personen.",
+        "langbeschreibung": "Gastzugriff (B2B-Zusammenarbeit) ermoeglicht externen Benutzern den Zugriff auf Teams, SharePoint, Planner und weitere Ressourcen mit eigenem Konto. Cross-Tenant-Zugriffsrichtlinien und Conditional Access steuern den Gast-Lebenszyklus.",
+        "lizenz_info": "Grundfunktion in allen M365-Plaenen; erweiterte Steuerung ab Entra ID P1.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/external-id/what-is-b2b"
+      },
+      {
+        "eintrag": "Freigegebenes Postfach",
+        "kurzbeschreibung": "Gemeinsam genutztes Exchange-Postfach ohne eigenes Login.",
+        "langbeschreibung": "Ein Shared Mailbox wird mehreren Benutzern ueber Vollzugriff oder Senden-als-Berechtigung zugaenglich gemacht. Es benoetigt keine eigene Lizenz bis 50 GB. Typische Szenarien: info@, support@, bewerbung@ etc.",
+        "lizenz_info": "Kostenlos bis 50 GB; ab 50 GB Exchange-Plan-Lizenz erforderlich.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/exchange/collaboration-exo/shared-mailboxes"
+      },
+      {
+        "eintrag": "Retention Label",
+        "kurzbeschreibung": "Inhaltsklassifizierung nach Aufbewahrungs- und Loeschregeln.",
+        "langbeschreibung": "Retention Labels werden Dokumenten oder E-Mails zugewiesen und steuern Aufbewahrungsdauer, Loeschzeitpunkt und Records-Deklaration. Anwendung manuell, automatisch (per Bedingung) oder ueber trainierbare Klassifizierer.",
+        "lizenz_info": "Basisfunktionen in E3; Auto-Apply und Records Management ab E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/purview/retention"
+      },
+      {
+        "eintrag": "Datenresidenz",
+        "kurzbeschreibung": "Geografischer Speicherort von M365-Daten.",
+        "langbeschreibung": "Datenresidenz bestimmt, in welchen Rechenzentrumsregionen ruhende Kundendaten (Data at Rest) gespeichert werden. Microsoft bietet Advanced Data Residency und Multi-Geo-Funktionen fuer regulatorische Anforderungen (z. B. EU Data Boundary).",
+        "lizenz_info": "Standard-Datenresidenz in allen Plaenen; Multi-Geo und ADR als Add-on.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoft-365/enterprise/o365-data-locations"
+      }
+    ]
+  },
+  "Azure_Glossar.csv": {
+    "file_path": "x:\\03-Dokumente & Bilder\\50-PhinIT\\50-ARTIKEL\\Azure_Glossar.csv",
+    "record_count": 108,
+    "entries": [
+      {
+        "eintrag": "Azure Subscription",
+        "kurzbeschreibung": "Abrechnungs- und Verwaltungsgrenze fuer Azure-Ressourcen.",
+        "langbeschreibung": "Eine Azure Subscription ist der Container, unter dem Ressourcen bereitgestellt und abgerechnet werden. Sie definiert Berechtigungsgrenzen, Budgets und Richtlinienbereiche. Mehrere Subscriptions lassen sich ueber Management Groups hierarchisch organisieren.",
+        "lizenz_info": "Pay-as-you-go, EA, CSP oder MOSP; kostenlose Testversion verfuegbar.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/cost-management-billing/manage/create-subscription"
+      },
+      {
+        "eintrag": "Resource Group",
+        "kurzbeschreibung": "Logischer Container fuer zusammengehoerige Azure-Ressourcen.",
+        "langbeschreibung": "Eine Resource Group buendelt Azure-Ressourcen, die denselben Lebenszyklus, dieselben Berechtigungen oder dasselbe Projekt teilen. RBAC-Rollen, Tags und Policies koennen auf Ressourcengruppenebene zugewiesen werden. Das Loeschen einer Gruppe entfernt alle enthaltenen Ressourcen.",
+        "lizenz_info": "Keine separaten Kosten; Teil jeder Azure Subscription.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-resource-manager/management/manage-resource-groups-portal"
+      },
+      {
+        "eintrag": "Virtual Network",
+        "kurzbeschreibung": "Isoliertes Netzwerk in Azure fuer Subnetze, Dienste und Sicherheitsregeln.",
+        "langbeschreibung": "Ein Azure Virtual Network (VNet) ist das Fundament der Netzwerkarchitektur in Azure. Es ermoeglicht private IP-Adressierung, Subnetze, DNS-Einstellungen, Peering, Service Endpoints und Private Endpoints. VNets sind regional begrenzt, koennen aber per Peering oder VPN verbunden werden.",
+        "lizenz_info": "Keine Grundkosten fuer VNets; Peering und Gateway erzeugen Datenverkehrskosten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/virtual-network/virtual-networks-overview"
+      },
+      {
+        "eintrag": "Network Security Group",
+        "kurzbeschreibung": "Regelbasierte Netzwerkfilterung auf Subnetz- oder NIC-Ebene.",
+        "langbeschreibung": "Eine NSG enthaelt Eingangs- und Ausgangsregeln mit Prioritaeten, die Netzwerkverkehr nach Quelle, Ziel, Port und Protokoll erlauben oder verweigern. NSGs werden auf Subnetze oder einzelne Netzwerkschnittstellen angewendet und sind ein Kernbaustein der Azure-Netzwerksicherheit.",
+        "lizenz_info": "Keine separaten Kosten; in jeder Azure Subscription verfuegbar.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/virtual-network/network-security-groups-overview"
+      },
+      {
+        "eintrag": "Azure App Service",
+        "kurzbeschreibung": "Verwalteter PaaS-Dienst fuer Webanwendungen und APIs.",
+        "langbeschreibung": "Azure App Service hostet Web-Apps, REST-APIs und mobile Backends ohne eigenen Serverbetrieb. Unterstuetzt werden .NET, Java, Node.js, Python, PHP und Container. Features: Auto-Scaling, Deployment Slots, benutzerdefinierte Domaenen, SSL und CI/CD-Integration.",
+        "lizenz_info": "Free- und Shared-Tier verfuegbar; Basic, Standard, Premium und Isolated fuer Produktion.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/app-service/overview"
+      },
+      {
+        "eintrag": "Azure Functions",
+        "kurzbeschreibung": "Serverlose, ereignisgesteuerte Code-Ausfuehrung.",
+        "langbeschreibung": "Azure Functions fuehrt Code auf Basis von Triggern (HTTP, Timer, Queue, Event Grid u.v.m.) aus und skaliert automatisch. Unterstuetzt C#, JavaScript, Python, Java, PowerShell und weitere Sprachen. Ideal fuer Microservices, Integrationen und Eventverarbeitung.",
+        "lizenz_info": "Consumption Plan: Pay-per-Execution; Premium und Dedicated Plan fuer konstante Last.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-functions/functions-overview"
+      },
+      {
+        "eintrag": "Azure Storage Account",
+        "kurzbeschreibung": "Zentraler Container fuer Blobs, Files, Queues und Tables.",
+        "langbeschreibung": "Ein Azure Storage Account stellt den Zugang zu den Speicherdiensten Blob, File, Queue und Table bereit. Er definiert Redundanz (LRS, ZRS, GRS, RA-GRS), Zugriffsebenen (Hot, Cool, Cold, Archive) und Sicherheitseinstellungen wie Verschluesselung und Private Endpoints.",
+        "lizenz_info": "Pay-as-you-go nach Speichermenge, Transaktionen und Datenverkehr.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/storage/common/storage-account-overview"
+      },
+      {
+        "eintrag": "Azure Blob Storage",
+        "kurzbeschreibung": "Hochskalierbarer Objektspeicher fuer unstrukturierte Daten.",
+        "langbeschreibung": "Azure Blob Storage speichert Dateien, Backups, Medien, Logs und beliebige Binaerdaten als Blobs in Containern. Zugriffsebenen (Hot, Cool, Cold, Archive) optimieren Kosten nach Zugriffshaeufigkeit. Lifecycle-Management-Regeln automatisieren die Tier-Verschiebung.",
+        "lizenz_info": "Kosten nach Speichermenge, Zugriffsebene und Transaktionen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/storage/blobs/storage-blobs-introduction"
+      },
+      {
+        "eintrag": "Azure Files",
+        "kurzbeschreibung": "Cloud-basierte SMB/NFS-Dateifreigaben.",
+        "langbeschreibung": "Azure Files stellt vollstaendig verwaltete Dateifreigaben bereit, die per SMB oder NFS eingebunden werden koennen. Szenarien: Lift-and-Shift von Fileshares, gemeinsam genutzte Konfigurationen, Home-Verzeichnisse. Azure File Sync ermoeglicht hybride Caching-Szenarien.",
+        "lizenz_info": "Standard (HDD) und Premium (SSD); Abrechnung nach Kapazitaet und Transaktionen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/storage/files/storage-files-introduction"
+      },
+      {
+        "eintrag": "Azure Backup",
+        "kurzbeschreibung": "Zentrale Datensicherung fuer Azure- und Hybrid-Workloads.",
+        "langbeschreibung": "Azure Backup sichert VMs, SQL-Datenbanken, Azure Files, Blobs, SAP HANA und on-premises-Server in Recovery Services oder Backup Vaults. Richtlinien steuern Zeitplaene, Aufbewahrung und Geo-Redundanz. MARS-Agent und DPM/MABS erweitern den Schutz auf lokale Systeme.",
+        "lizenz_info": "Pay-as-you-go nach geschuetzter Instanzgroesse und Speicherverbrauch.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/backup/backup-overview"
+      },
+      {
+        "eintrag": "Azure Site Recovery",
+        "kurzbeschreibung": "Disaster-Recovery-Dienst mit Replikation und Failover.",
+        "langbeschreibung": "Azure Site Recovery (ASR) repliziert VMs, physische Server und VMware-Workloads kontinuierlich nach Azure oder zwischen Regionen. Im Ernstfall ermoeglicht ein orchestriertes Failover die schnelle Wiederherstellung. Recovery-Plaene definieren Reihenfolge und Abhaengigkeiten.",
+        "lizenz_info": "Kosten pro geschuetzter Instanz plus Speicher und Netzwerkverkehr.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/site-recovery/site-recovery-overview"
+      },
+      {
+        "eintrag": "Azure Key Vault",
+        "kurzbeschreibung": "Verwalteter Tresor fuer Geheimnisse, Zertifikate und Schluessel.",
+        "langbeschreibung": "Azure Key Vault speichert und verwaltet Secrets, Zertifikate und kryptografische Schluessel zentral und HSM-gesichert. Anwendungen und Dienste greifen per RBAC oder Access Policies auf die Vault-Inhalte zu. Integration in App Service, Functions, AKS und DevOps-Pipelines.",
+        "lizenz_info": "Standard und Premium (mit HSM); Abrechnung nach Operationen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/key-vault/general/overview"
+      },
+      {
+        "eintrag": "Azure Monitor",
+        "kurzbeschreibung": "Monitoring-Plattform fuer Metriken, Logs und Alerts.",
+        "langbeschreibung": "Azure Monitor sammelt Telemetriedaten aus Azure-Ressourcen, Anwendungen (Application Insights), Gastbetriebssystemen und Custom Sources. Metriken, Logs, Warnungen, Dashboards und Workbooks ermoeglichen durchgaengige Ueberwachung und Diagnose.",
+        "lizenz_info": "Basismetriken kostenlos; Log Analytics und erweiterte Features nach Datenvolumen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-monitor/overview"
+      },
+      {
+        "eintrag": "Log Analytics",
+        "kurzbeschreibung": "Analysewerkzeug fuer Azure-Logs mit KQL-Abfragen.",
+        "langbeschreibung": "Log Analytics ist der Abfrage- und Analysebereich innerhalb von Azure Monitor. Daten aus VMs, Azure-Diensten, Containern und Sicherheitsquellen werden in einem Log Analytics Workspace gesammelt und mit Kusto Query Language (KQL) ausgewertet.",
+        "lizenz_info": "Kosten nach eingespeistem Datenvolumen (Pay-as-you-go oder Commitment Tiers).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-monitor/logs/log-analytics-overview"
+      },
+      {
+        "eintrag": "Azure Policy",
+        "kurzbeschreibung": "Governance-Dienst fuer Konfigurations- und Compliance-Regeln.",
+        "langbeschreibung": "Azure Policy definiert und erzwingt Regeln fuer Azure-Ressourcen (z. B. erlaubte Regionen, SKUs, Tags, Verschluesselung). Policies koennen Audit-only arbeiten oder non-compliant-Deployments aktiv verhindern. Initiatives buendeln mehrere Policies.",
+        "lizenz_info": "Kostenlos fuer Azure-Ressourcen; Gastkonfiguration und Arc-Szenarien teils kostenpflichtig.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/governance/policy/overview"
+      },
+      {
+        "eintrag": "Azure Virtual Desktop",
+        "kurzbeschreibung": "Verwaltete virtuelle Windows-Arbeitsplaetze aus Azure.",
+        "langbeschreibung": "Azure Virtual Desktop (AVD) stellt Windows 10/11 Multi-Session oder Einzelsitzungen als gehostete Desktops bereit. Benutzer greifen per RDP-Client, Browser oder Thin Client zu. Skalierung, Profile (FSLogix), Sicherheit und Netzwerk werden zentral gesteuert.",
+        "lizenz_info": "Kein AVD-Lizenzaufpreis mit M365 E3/E5 oder Windows E3/E5; VM-Compute und Storage separat.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/virtual-desktop/overview"
+      },
+      {
+        "eintrag": "Azure SQL Database",
+        "kurzbeschreibung": "Verwalteter relationaler Datenbankdienst (SQL Server).",
+        "langbeschreibung": "Azure SQL Database bietet eine vollstaendig verwaltete SQL-Server-Instanz als PaaS mit automatischem Patching, Backups, Geo-Replikation und intelligentem Tuning. Bereitstellungsoptionen: Einzeldatenbank, Elastic Pool oder Managed Instance.",
+        "lizenz_info": "DTU- oder vCore-basierte Abrechnung; serverless Tier fuer variable Last.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-sql/database/sql-database-paas-overview"
+      },
+      {
+        "eintrag": "Azure Container Registry",
+        "kurzbeschreibung": "Verwaltete Registry fuer Container-Images und OCI-Artefakte.",
+        "langbeschreibung": "Azure Container Registry (ACR) speichert und verwaltet Docker-Images, Helm-Charts und OCI-Artefakte. Geo-Replikation, Image-Scanning und Task-basierte Builds sind integriert. ACR ist die Standard-Registry fuer AKS, App Service und Azure Functions.",
+        "lizenz_info": "Basic, Standard, Premium; Abrechnung nach Tier und Speicherverbrauch.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/container-registry/container-registry-intro"
+      },
+      {
+        "eintrag": "Azure Kubernetes Service",
+        "kurzbeschreibung": "Verwalteter Kubernetes-Cluster in Azure.",
+        "langbeschreibung": "AKS stellt Control Plane als verwalteten Dienst bereit, waehrend Kunden die Worker-Nodes definieren. Features: Auto-Scaling, RBAC, Azure CNI, Monitoring mit Container Insights, GitOps-Integration und Policy-Enforcement. Ideal fuer containerisierte Microservices.",
+        "lizenz_info": "Control Plane kostenlos; Kosten fuer VMs, Storage, Netzwerk und optionale Add-ons.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/aks/intro-kubernetes"
+      },
+      {
+        "eintrag": "Azure Front Door",
+        "kurzbeschreibung": "Globaler Load Balancer mit CDN, WAF und Edge-Routing.",
+        "langbeschreibung": "Azure Front Door beschleunigt Webanwendungen durch globales Anycast-Routing, Caching, SSL-Offloading und integrierte Web Application Firewall (WAF). Health Probes, Session Affinity und regelbasiertes Routing steuern den Datenverkehr zu Backend-Pools.",
+        "lizenz_info": "Standard und Premium; Abrechnung nach Anfragen, Datenverkehr und WAF-Regeln.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/frontdoor/front-door-overview"
+      },
+      {
+        "eintrag": "Application Gateway",
+        "kurzbeschreibung": "Layer-7-Load-Balancer mit WAF und SSL-Terminierung.",
+        "langbeschreibung": "Application Gateway verteilt HTTP/HTTPS-Anfragen auf Backend-Pools mit URL-basiertem Routing, Cookie-Affinity, SSL-Terminierung und Web Application Firewall (WAF v2). Einsatz typisch fuer regionale Webanwendungen hinter einem VNet.",
+        "lizenz_info": "v1 und v2; Abrechnung nach Gateway-Stunden und verarbeiteten Daten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/application-gateway/overview"
+      },
+      {
+        "eintrag": "Azure Bastion",
+        "kurzbeschreibung": "Sicherer RDP/SSH-Zugriff auf VMs ohne oeffentliche IPs.",
+        "langbeschreibung": "Azure Bastion stellt einen verwalteten Jump-Host im VNet bereit, ueber den Admins per Browser oder nativen Client auf VMs zugreifen, ohne oeffentliche Ports zu oeffnen. TLS-geschuetzt, auditierbar und ohne zusaetzliche Agent-Installation.",
+        "lizenz_info": "Basic, Standard und Premium SKU; Abrechnung nach Stunden und Datenverkehr.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/bastion/bastion-overview"
+      },
+      {
+        "eintrag": "Managed Identity",
+        "kurzbeschreibung": "Azure-Ressource mit verwalteter Identitaet fuer Zugriff ohne Secrets.",
+        "langbeschreibung": "Managed Identities stellen Azure-Ressourcen (VMs, App Services, Functions, AKS etc.) automatisch eine Entra-ID-Identitaet bereit. Der Dienst bezieht Tokens ohne gespeicherte Passwoerter oder Secrets. System Assigned ist an eine Ressource gebunden, User Assigned ist wiederverwendbar.",
+        "lizenz_info": "Kostenlos; Teil von Entra ID.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview"
+      },
+      {
+        "eintrag": "Azure Landing Zone",
+        "kurzbeschreibung": "Referenzarchitektur fuer Governance und Netzwerk in Azure.",
+        "langbeschreibung": "Eine Azure Landing Zone definiert die Zielarchitektur fuer Subscriptions, Netzwerktopologie (Hub-Spoke oder Virtual WAN), Identitaet, Governance, Sicherheit und Betrieb. Microsoft stellt Referenzimplementierungen (Enterprise-Scale) als Accelerator bereit.",
+        "lizenz_info": "Kostenlos als Architekturkonzept; Ressourcenkosten abhaengig von Implementierung.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/"
+      },
+      {
+        "eintrag": "Cost Management",
+        "kurzbeschreibung": "Kostenanalyse, Budgetierung und Optimierung fuer Azure.",
+        "langbeschreibung": "Azure Cost Management liefert Kostenaufschluesselungen, Budgetwarnungen, Anomalie-Erkennung und Reservierungsempfehlungen. Daten koennen nach Subscription, Resource Group, Tags und Dienst gefiltert und exportiert werden.",
+        "lizenz_info": "Kostenlos fuer Azure-Verbrauchsanalyse; AWS-Konnektor optional.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/cost-management-billing/costs/overview-cost-management"
+      },
+      {
+        "eintrag": "Azure Active Directory",
+        "kurzbeschreibung": "Fruehere Bezeichnung fuer Microsoft Entra ID.",
+        "langbeschreibung": "Azure Active Directory (Azure AD) war der Name des Cloud-Identitaetsdienstes von Microsoft bis zur Umbenennung in Microsoft Entra ID (2023). Alle Dokumentation und Portale verweisen mittlerweile auf Entra ID. Funktionalitaet und Lizenzen sind identisch.",
+        "lizenz_info": "Siehe Microsoft Entra ID (Free, P1, P2).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/fundamentals/whatis"
+      },
+      {
+        "eintrag": "Azure AD Connect",
+        "kurzbeschreibung": "Synchronisierungstool fuer on-premises AD und Entra ID.",
+        "langbeschreibung": "Azure AD Connect (jetzt Entra Connect / Entra Connect Sync) synchronisiert Benutzer, Gruppen und Kontakte aus dem lokalen Active Directory nach Microsoft Entra ID. Authentifizierungsmethoden: Password Hash Sync, Pass-through Authentication, Federation. Entra Cloud Sync ist die neuere Alternative.",
+        "lizenz_info": "Kostenlos; Entra Cloud Sync ebenfalls ohne Zusatzkosten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity/hybrid/connect/whatis-azure-ad-connect"
+      },
+      {
+        "eintrag": "APP-ID / Client-ID",
+        "kurzbeschreibung": "Eindeutige Kennung einer registrierten Anwendung in Entra ID.",
+        "langbeschreibung": "Die Application ID (Client ID) wird bei der App-Registrierung in Entra ID automatisch generiert. Sie identifiziert die Anwendung bei OAuth-2.0-Flows, Token-Anfragen und API-Aufrufen. Jede App-Registrierung erhaelt genau eine Client-ID.",
+        "lizenz_info": "Kostenlos; Teil jeder Entra-ID-Instanz.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity-platform/quickstart-register-app"
+      },
+      {
+        "eintrag": "Anwendungsmanifest",
+        "kurzbeschreibung": "JSON-Konfiguration einer registrierten App in Entra ID.",
+        "langbeschreibung": "Das Anwendungsmanifest beschreibt Berechtigungen (requiredResourceAccess), Redirect-URIs, Token-Konfigurationen, Rollen und weitere Eigenschaften einer App-Registrierung. Es kann im Portal oder per API bearbeitet werden.",
+        "lizenz_info": "Kostenlos; Teil der App-Registrierung in Entra ID.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity-platform/reference-app-manifest"
+      },
+      {
+        "eintrag": "Azure Resource Manager",
+        "kurzbeschreibung": "Steuerungsebene fuer Bereitstellung und Verwaltung von Azure-Ressourcen.",
+        "langbeschreibung": "Azure Resource Manager (ARM) ist die API-Schicht, ueber die alle Azure-Ressourcen erstellt, aktualisiert und geloescht werden. ARM verarbeitet Anfragen von Portal, CLI, PowerShell, SDKs und Infrastruktur-as-Code-Tools (ARM Templates, Bicep, Terraform).",
+        "lizenz_info": "Kostenlos; ARM-API ist der Standard-Zugang zu Azure.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-resource-manager/management/overview"
+      },
+      {
+        "eintrag": "Azure Resource Manager Templates",
+        "kurzbeschreibung": "Deklarative JSON-Vorlagen fuer reproduzierbare Azure-Deployments.",
+        "langbeschreibung": "ARM Templates definieren Infrastruktur als Code im JSON-Format. Sie beschreiben Ressourcen, Abhaengigkeiten, Parameter und Outputs fuer wiederholbare, idempotente Deployments. Fuer neue Projekte empfiehlt Microsoft die Nachfolgesprache Bicep.",
+        "lizenz_info": "Kostenlos; nur die bereitgestellten Ressourcen verursachen Kosten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-resource-manager/templates/overview"
+      },
+      {
+        "eintrag": "Azure Resource Graph",
+        "kurzbeschreibung": "Schnelle, abonnementuebergreifende Abfrage von Azure-Ressourcen.",
+        "langbeschreibung": "Azure Resource Graph ermoeglicht KQL-basierte Abfragen ueber alle Azure-Ressourcen und deren Eigenschaften hinweg, ohne jeden Dienst einzeln abzufragen. Ideal fuer Inventar, Compliance-Berichte und Governance-Dashboards.",
+        "lizenz_info": "Kostenlos.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/governance/resource-graph/overview"
+      },
+      {
+        "eintrag": "Azure Automation",
+        "kurzbeschreibung": "Dienst fuer Runbooks, DSC und Updateverwaltung.",
+        "langbeschreibung": "Azure Automation fuehrt PowerShell- oder Python-Runbooks aus, verwaltet Desired State Configuration (DSC) und koordiniert Update-Deployments. Hybrid Runbook Worker ermoeglichen die Ausfuehrung auf lokalen Servern.",
+        "lizenz_info": "500 Minuten/Monat kostenlos; darueber hinaus pro Job-Minute.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/automation/overview"
+      },
+      {
+        "eintrag": "Azure Batch",
+        "kurzbeschreibung": "Verwalteter Dienst fuer parallele und HPC-Workloads.",
+        "langbeschreibung": "Azure Batch plant und fuehrt grosse Mengen paralleler Rechenaufgaben auf dynamisch skalierten VM-Pools aus. Szenarien: Renderingm Media-Encoding, Monte-Carlo-Simulationen, wissenschaftliche Berechnungen.",
+        "lizenz_info": "Kein Batch-Aufpreis; nur VM-Compute- und Speicherkosten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/batch/batch-technical-overview"
+      },
+      {
+        "eintrag": "Azure Blueprints",
+        "kurzbeschreibung": "Governance-Vorlagen fuer Subscriptions (veraltet).",
+        "langbeschreibung": "Azure Blueprints stellte paketierte Vorlagen fuer Policies, RBAC-Rollen und ARM-Templates bereit, um neue Subscriptions standardisiert zu konfigurieren. Microsoft empfiehlt stattdessen Azure Deployment Environments, Template Specs und Policy-Initiativen.",
+        "lizenz_info": "Veraltet; Nachfolger: Deployment Environments + Policy Initiatives.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/governance/blueprints/overview"
+      },
+      {
+        "eintrag": "Azure CLI",
+        "kurzbeschreibung": "Kommandozeilenschnittstelle fuer Azure-Verwaltung.",
+        "langbeschreibung": "Die Azure CLI (az) ist ein plattformuebergreifendes Tool fuer die Verwaltung von Azure-Ressourcen per Terminal. Sie eignet sich fuer Scripting, Automatisierung und interaktive Administration. Installation auf Windows, macOS, Linux und Azure Cloud Shell.",
+        "lizenz_info": "Kostenlos; Open Source.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/cli/azure/what-is-azure-cli"
+      },
+      {
+        "eintrag": "Azure Cache for Redis",
+        "kurzbeschreibung": "Verwalteter In-Memory-Cache fuer schnelle Datenzugriffe.",
+        "langbeschreibung": "Azure Cache for Redis stellt einen vollstaendig verwalteten Redis-kompatiblen Cache bereit fuer Session-Speicher, Output-Caching, Leaderboards und Echtzeit-Analysen. Clustering, Geo-Replikation und Persistenz sind verfuegbar.",
+        "lizenz_info": "Basic, Standard, Premium, Enterprise; Abrechnung nach Tier und Groesse.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-cache-for-redis/cache-overview"
+      },
+      {
+        "eintrag": "Azure Cognitive Services",
+        "kurzbeschreibung": "KI-APIs fuer Sprache, Bild, Entscheidung und Suche (jetzt Azure AI Services).",
+        "langbeschreibung": "Azure Cognitive Services (umbenannt in Azure AI Services) stellt vorgefertigte KI-Modelle als APIs bereit: Computer Vision, Speech, Language Understanding, Translator, Anomaly Detector u.v.m. Integration in Apps ohne eigenes ML-Training.",
+        "lizenz_info": "Free-Tier verfuegbar; Standard nach API-Aufrufen und Transaktionen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/ai-services/what-are-ai-services"
+      },
+      {
+        "eintrag": "Azure Communication Services",
+        "kurzbeschreibung": "APIs fuer Chat, Telefonie, Video und SMS in eigenen Apps.",
+        "langbeschreibung": "Azure Communication Services (ACS) ermoeglicht Entwicklern, Kommunikationsfunktionen (VoIP, PSTN, Video, Chat, SMS, E-Mail) in eigene Anwendungen zu integrieren, basierend auf derselben Infrastruktur wie Microsoft Teams.",
+        "lizenz_info": "Pay-as-you-go nach Nutzung (Minuten, Nachrichten, Teilnehmer).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/communication-services/overview"
+      },
+      {
+        "eintrag": "Azure Container Instances",
+        "kurzbeschreibung": "Schnelle Container-Ausfuehrung ohne Cluster.",
+        "langbeschreibung": "Azure Container Instances (ACI) startet Container direkt als verwaltete Instanzen ohne Kubernetes-Overhead. Ideal fuer kurzlebige Jobs, CI/CD-Tasks, Burst-Szenarien und einfache Microservices. Unterstuetzt Linux- und Windows-Container.",
+        "lizenz_info": "Abrechnung nach vCPU-Sekunden und Speicher-GB-Sekunden.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/container-instances/container-instances-overview"
+      },
+      {
+        "eintrag": "Azure Cosmos DB",
+        "kurzbeschreibung": "Global verteilte, multi-model NoSQL-Datenbank.",
+        "langbeschreibung": "Azure Cosmos DB bietet garantierte einstellige Millisekunden-Latenz, automatische Geo-Replikation, mehrere Konsistenzmodelle und APIs fuer SQL, MongoDB, Cassandra, Gremlin und Table. Ideal fuer global skalierte Anwendungen mit hoher Verfuegbarkeit.",
+        "lizenz_info": "Abrechnung nach Request Units (RU/s) und Speicher; Serverless-Option verfuegbar.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/cosmos-db/introduction"
+      },
+      {
+        "eintrag": "Azure Data Factory",
+        "kurzbeschreibung": "Integrationsdienst fuer Datenpipelines und ETL/ELT.",
+        "langbeschreibung": "Azure Data Factory orchestriert Datenbewegungen und Transformationen zwischen ueber 90 Quellen und Zielen. Pipelines bestehen aus Aktivitaeten (Copy, Data Flow, Lookup etc.) und koennen zeitgesteuert oder ereignisbasiert ausgeloest werden.",
+        "lizenz_info": "Abrechnung nach Pipeline-Ausfuehrungen, Datenfluss-Clusterstunden und Integration Runtime.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/data-factory/introduction"
+      },
+      {
+        "eintrag": "Azure Data Lake",
+        "kurzbeschreibung": "Skalierbarer Datenspeicher fuer analytische Workloads.",
+        "langbeschreibung": "Azure Data Lake Storage Gen2 kombiniert Azure Blob Storage mit hierarchischem Namespace (HNS) fuer performante Big-Data-Analysen. Kompatibel mit Hadoop, Spark, Databricks und Synapse Analytics. POSIX-kompatible ACLs ermoeglichen feingranulare Zugriffskontrolle.",
+        "lizenz_info": "Kosten wie Blob Storage (Hot/Cool/Archive) plus HNS-Zuschlag.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/storage/blobs/data-lake-storage-introduction"
+      },
+      {
+        "eintrag": "Azure Databricks",
+        "kurzbeschreibung": "Verwaltete Apache-Spark-Plattform fuer Datenanalyse und ML.",
+        "langbeschreibung": "Azure Databricks bietet kollaborative Notebooks, Delta Lake, MLflow-Integration und Unity Catalog fuer Daten-Engineering, Data Science und ML-Workflows. Gemeinsam mit Azure Synapse und Data Factory bildet es die Azure-Datenplattform.",
+        "lizenz_info": "Abrechnung nach Databricks Units (DBU) plus VM-Compute.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/databricks/introduction/"
+      },
+      {
+        "eintrag": "Azure Dedicated Host",
+        "kurzbeschreibung": "Exklusiver physischer Server fuer Azure-VMs.",
+        "langbeschreibung": "Azure Dedicated Host stellt einen vollstaendigen physischen Server bereit, der nur von einem einzelnen Kunden genutzt wird. Szenarien: regulatorische Anforderungen (Hardware-Isolation), Lizenz-Compliance (BYOL), kontrollierte Wartungsfenster.",
+        "lizenz_info": "Abrechnung pro Host, unabhaengig von der Anzahl platzierter VMs.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/virtual-machines/dedicated-hosts"
+      },
+      {
+        "eintrag": "Azure DevOps",
+        "kurzbeschreibung": "Plattform fuer Planung, Repos, Pipelines und Artefakte.",
+        "langbeschreibung": "Azure DevOps buendelt Boards (Arbeitsplanung), Repos (Git-basiert), Pipelines (CI/CD), Test Plans und Artifacts in einer integrierten DevOps-Plattform. Verfuegbar als Cloud-Dienst (dev.azure.com) und on-premises (Azure DevOps Server).",
+        "lizenz_info": "Basic-Plan fuer 5 Benutzer kostenlos; darueber hinaus per User/Monat.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/devops/user-guide/what-is-azure-devops"
+      },
+      {
+        "eintrag": "Azure Disk Storage",
+        "kurzbeschreibung": "Verwaltete Datentraeger fuer Azure-VMs.",
+        "langbeschreibung": "Azure Disk Storage bietet Managed Disks in verschiedenen Leistungsklassen: Ultra Disk, Premium SSD v2, Premium SSD, Standard SSD und Standard HDD. Snapshots, Verschluesselung (PMK/CMK), Shared Disks und Burst-Faehigkeiten sind verfuegbar.",
+        "lizenz_info": "Abrechnung nach Disk-Typ, Groesse und bereitgestelltem IOPS/Throughput.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/virtual-machines/managed-disks-overview"
+      },
+      {
+        "eintrag": "Azure Event Grid",
+        "kurzbeschreibung": "Ereignisverteilung in Echtzeit (Publish-Subscribe).",
+        "langbeschreibung": "Azure Event Grid routet Ereignisse von Azure-Diensten, eigenen Anwendungen und SaaS-Partnern an Subscriber (Functions, Logic Apps, Webhooks, Event Hubs etc.). Filterung und Dead-Lettering sind integriert. Ideal fuer ereignisgesteuerte Architekturen.",
+        "lizenz_info": "Abrechnung nach Anzahl der Operationen (Events).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/event-grid/overview"
+      },
+      {
+        "eintrag": "Azure Event Hubs",
+        "kurzbeschreibung": "Skalierbare Event-Streaming-Plattform fuer hohen Durchsatz.",
+        "langbeschreibung": "Azure Event Hubs nimmt Millionen Events pro Sekunde entgegen und speichert sie fuer die Verarbeitung durch Consumer (Stream Analytics, Functions, Databricks, Kafka-Clients). Kafka-kompatibles Protokoll ist nativ verfuegbar.",
+        "lizenz_info": "Basic, Standard, Premium und Dedicated; nach Throughput Units oder Processing Units.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/event-hubs/event-hubs-about"
+      },
+      {
+        "eintrag": "Azure ExpressRoute",
+        "kurzbeschreibung": "Private, dedizierte Netzwerkverbindung zu Azure.",
+        "langbeschreibung": "ExpressRoute stellt ueber einen Connectivity-Provider eine private Layer-2/Layer-3-Verbindung zwischen eigenem Rechenzentrum und Azure her. Vorteile: niedrige Latenz, hohe Bandbreite (bis 100 Gbit/s), keine Internetexposition. Peering-Optionen: Private, Microsoft.",
+        "lizenz_info": "Abrechnung nach Port-Geschwindigkeit, Metering-Plan und ggf. Premium-Add-on.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/expressroute/expressroute-introduction"
+      },
+      {
+        "eintrag": "Azure Firewall",
+        "kurzbeschreibung": "Verwaltete, zustandsbehaftete Netzwerkfirewall.",
+        "langbeschreibung": "Azure Firewall schuetzt VNets mit Anwendungs-, Netzwerk- und DNAT-Regeln. Premium bietet TLS-Inspection, IDPS und URL-Filterung. Zentrale Verwaltung ueber Firewall Manager und Firewall Policies ermoeglichen konsistente Regeln ueber mehrere Hubs.",
+        "lizenz_info": "Standard und Premium; Abrechnung nach Bereitstellungsstunden und verarbeiteten Daten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/firewall/overview"
+      },
+      {
+        "eintrag": "Azure Firewall Manager",
+        "kurzbeschreibung": "Zentrale Verwaltung fuer Azure-Firewall-Richtlinien.",
+        "langbeschreibung": "Azure Firewall Manager verwaltet Firewall Policies, Secured Virtual Hubs und DDoS-Schutz uebergreifend. In Virtual-WAN-Szenarien werden Secured Hubs direkt provisioniert. Ideal fuer Organisationen mit mehreren Hubs oder Regionen.",
+        "lizenz_info": "Keine separaten Kosten; Firewall-Instanzen werden separat abgerechnet.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/firewall-manager/overview"
+      },
+      {
+        "eintrag": "Azure IoT Hub",
+        "kurzbeschreibung": "Zentrale Kommunikationsplattform fuer IoT-Geraete.",
+        "langbeschreibung": "Azure IoT Hub ermoeglicht bidirektionale Kommunikation zwischen Millionen IoT-Geraeten und Cloud-Backends. Features: Geraeteprovisionierung, Nachrichtenrouting, Device Twins, Direct Methods und Edge-Deployment-Verwaltung.",
+        "lizenz_info": "Free, Basic und Standard Tier; nach Nachrichtenvolumen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/iot-hub/iot-concepts-and-iot-hub"
+      },
+      {
+        "eintrag": "Azure Lighthouse",
+        "kurzbeschreibung": "Delegierte Verwaltung ueber mehrere Azure-Tenants.",
+        "langbeschreibung": "Azure Lighthouse ermoeglicht Service Providern und zentralen IT-Teams, Azure-Ressourcen in Kunden- oder Tochtergesellschafts-Subscriptions zu verwalten, ohne den Tenant zu wechseln. Zugriff wird per ARM-Template oder Managed-Service-Angebot delegiert.",
+        "lizenz_info": "Kostenlos; nur die verwalteten Ressourcen verursachen Kosten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/lighthouse/overview"
+      },
+      {
+        "eintrag": "Azure Load Balancer",
+        "kurzbeschreibung": "Layer-4-Lastverteilung fuer Azure-Netzwerkverkehr.",
+        "langbeschreibung": "Azure Load Balancer verteilt eingehenden TCP/UDP-Verkehr auf Backend-Instanzen (VMs, VMSS, IPs) anhand von Health Probes und Verteilungsregeln. Verfuegbar als Public (Internet-facing) oder Internal (VNet-intern) in Basic und Standard SKU.",
+        "lizenz_info": "Basic kostenlos; Standard nach Regeln und verarbeitetem Datenverkehr.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/load-balancer/load-balancer-overview"
+      },
+      {
+        "eintrag": "Azure Logic Apps",
+        "kurzbeschreibung": "Low-Code-Workflow-Automatisierung zwischen Diensten und APIs.",
+        "langbeschreibung": "Azure Logic Apps erstellt visuelle Workflows mit Hunderten vorgefertigten Konnektoren fuer Microsoft-Dienste, SaaS-Anwendungen und benutzerdefinierte APIs. Szenarien: Systemintegration, B2B-Kommunikation, Datenorchestrierung, Genehmigungsflows.",
+        "lizenz_info": "Consumption (pay-per-action) oder Standard (App-Service-basiert).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/logic-apps/logic-apps-overview"
+      },
+      {
+        "eintrag": "Azure Logic App Connectors",
+        "kurzbeschreibung": "Vorgefertigte Integrationsbausteine fuer Logic Apps.",
+        "langbeschreibung": "Connectors stellen Trigger und Actions bereit, die Logic Apps mit Diensten wie Office 365, SharePoint, SQL, SAP, Salesforce, HTTP u.v.m. verbinden. Managed Connectors laufen in Azure, On-Premises-Gateway-Connectors erreichen lokale Systeme.",
+        "lizenz_info": "Standard-Connectors in Consumption enthalten; Premium- und Enterprise-Connectors separat.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/connectors/introduction"
+      },
+      {
+        "eintrag": "Azure Machine Learning",
+        "kurzbeschreibung": "Plattform fuer ML-Entwicklung, Training und Bereitstellung.",
+        "langbeschreibung": "Azure Machine Learning bietet Notebooks, AutoML, Designer (Low-Code), verwaltete Compute-Cluster, Modellregistrierung, Endpunkt-Bereitstellung und MLOps-Pipelines. Integration mit VS Code, Databricks und Open-Source-Frameworks (PyTorch, TensorFlow, scikit-learn).",
+        "lizenz_info": "Abrechnung nach Compute, Speicher und optionalen Managed Endpoints.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/machine-learning/overview-what-is-azure-machine-learning"
+      },
+      {
+        "eintrag": "Azure Managed Applications",
+        "kurzbeschreibung": "Verwaltete Loesungen in Kundensubscriptions.",
+        "langbeschreibung": "Azure Managed Applications ermoeglichen ISVs und internen Teams, vollstaendige Loesungen (ARM-basiert) bereitzustellen, bei denen der Anbieter die Verwaltung uebernimmt. Kunden nutzen die Anwendung, ohne die zugrunde liegenden Ressourcen direkt zu veraendern.",
+        "lizenz_info": "Abhaengig von den enthaltenen Ressourcen und ggf. ISV-Gebuehren.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-resource-manager/managed-applications/overview"
+      },
+      {
+        "eintrag": "Azure Migrate",
+        "kurzbeschreibung": "Bewertung und Migration von Workloads nach Azure.",
+        "langbeschreibung": "Azure Migrate bietet Tools zur Ermittlung (Discovery), Bewertung (Assessment) und Migration von Servern, Datenbanken, Web-Apps und VDI-Umgebungen. Agentless- und Agent-basierte Szenarien werden unterstuetzt. Integration mit Partner-Tools (Carbonite, Cloudamize etc.).",
+        "lizenz_info": "Kostenloses Hub-Portal; nur migrierte Ressourcen verursachen Azure-Kosten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/migrate/migrate-services-overview"
+      },
+      {
+        "eintrag": "Azure Monitor Logs",
+        "kurzbeschreibung": "Protokollbasierte Analyseebene in Azure Monitor.",
+        "langbeschreibung": "Azure Monitor Logs sammelt und speichert Logdaten aus Azure-Ressourcen, Gastbetriebssystemen, Anwendungen und benutzerdefinierten Quellen in Log Analytics Workspaces. Abfragen erfolgen per KQL; Ergebnisse fliessen in Alerts, Workbooks und Dashboards.",
+        "lizenz_info": "Kosten nach Datenvolumen und Aufbewahrungsdauer.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-monitor/logs/data-platform-logs"
+      },
+      {
+        "eintrag": "Azure Network Watcher",
+        "kurzbeschreibung": "Diagnose- und Analysewerkzeuge fuer Azure-Netzwerke.",
+        "langbeschreibung": "Network Watcher bietet IP-Flow-Verify, NSG-Flow-Logs, Connection Monitor, Paketerfassung und Topologie-Ansichten fuer die Netzwerkdiagnose. Unverzichtbar fuer Troubleshooting von Konnektivitaetsproblemen in VNets.",
+        "lizenz_info": "Basistools kostenlos; Flow Logs erzeugen Log-Analytics- und Storage-Kosten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/network-watcher/network-watcher-monitoring-overview"
+      },
+      {
+        "eintrag": "Azure Policy Insights",
+        "kurzbeschreibung": "Compliance-Berichte und Auswertungen fuer Azure Policies.",
+        "langbeschreibung": "Azure Policy Insights liefert Compliance-Status, Detailinformationen zu nicht-konformen Ressourcen und Aenderungshistorien. Daten koennen in Workbooks visualisiert, per API abgefragt und in Governance-Reports integriert werden.",
+        "lizenz_info": "Kostenlos als Teil von Azure Policy.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/governance/policy/how-to/get-compliance-data"
+      },
+      {
+        "eintrag": "Azure Private Endpoint",
+        "kurzbeschreibung": "Private IP-Anbindung eines Azure-Dienstes im VNet.",
+        "langbeschreibung": "Ein Private Endpoint erstellt eine Netzwerkschnittstelle mit privater IP in einem VNet, die ueber Azure Private Link mit einem PaaS-Dienst (z. B. Storage, SQL, Key Vault) verbunden wird. Der Datenverkehr verlasst nie das Azure-Backbone.",
+        "lizenz_info": "Kosten pro Private Endpoint plus Datenverarbeitungsgebuehr.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/private-link/private-endpoint-overview"
+      },
+      {
+        "eintrag": "Azure Private Link",
+        "kurzbeschreibung": "Privater Zugriff auf PaaS- und Partnerdienste ueber Azure-Backbone.",
+        "langbeschreibung": "Azure Private Link ermoeglicht den Zugriff auf Azure-PaaS-Dienste und eigene Dienste ueber Private Endpoints im VNet. Der Datenverkehr wird ueber das Microsoft-Backbone-Netzwerk geroutet, ohne das oeffentliche Internet zu nutzen.",
+        "lizenz_info": "Kosten pro Private Link Endpoint und verarbeitete Daten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/private-link/private-link-overview"
+      },
+      {
+        "eintrag": "Azure Purview",
+        "kurzbeschreibung": "Fruehere Bezeichnung fuer Microsoft Purview Data Governance.",
+        "langbeschreibung": "Azure Purview war der Name des Datenkatalog- und Data-Governance-Dienstes in Azure. Er wurde in Microsoft Purview integriert und umfasst Data Catalog, Data Map, Data Estate Insights und Data Sharing.",
+        "lizenz_info": "Umbenannt in Microsoft Purview; Abrechnung nach gescannten Ressourcen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/purview/purview"
+      },
+      {
+        "eintrag": "Azure Security Center",
+        "kurzbeschreibung": "Ehemaliges Sicherheitsportal (jetzt Defender for Cloud).",
+        "langbeschreibung": "Azure Security Center war das zentrale Portal fuer Sicherheitsempfehlungen, Secure Score und Bedrohungsschutz in Azure. Die Funktionalitaet wurde in Microsoft Defender for Cloud ueberfuehrt.",
+        "lizenz_info": "Umbenannt in Defender for Cloud; CSPM kostenlos, CWPP-Plaene kostenpflichtig.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/defender-for-cloud/defender-for-cloud-introduction"
+      },
+      {
+        "eintrag": "Azure Sentinel",
+        "kurzbeschreibung": "Cloud-natives SIEM und SOAR (jetzt Microsoft Sentinel).",
+        "langbeschreibung": "Azure Sentinel (jetzt Microsoft Sentinel) sammelt Sicherheitsdaten aus Azure, M365, On-Premises und Drittquellen, erkennt Bedrohungen per Analytics Rules und automatisiert Reaktionen ueber Playbooks (Logic Apps). KQL-basierte Abfragen und Workbooks dienen der Investigation.",
+        "lizenz_info": "Abrechnung nach eingespeistem Logdatenvolumen; Commitment Tiers verfuegbar.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/sentinel/overview"
+      },
+      {
+        "eintrag": "Azure Service Endpoint",
+        "kurzbeschreibung": "Optimierter Netzwerkpfad fuer Azure-Dienste aus einem VNet.",
+        "langbeschreibung": "Service Endpoints erweitern den VNet-Identitaetsraum auf ausgewaehlte Azure-Dienste (Storage, SQL, Key Vault etc.), sodass der Datenverkehr ueber das Azure-Backbone laeuft. Im Gegensatz zu Private Endpoints bleibt die oeffentliche IP des Dienstes bestehen.",
+        "lizenz_info": "Kostenlos; kein Datenverarbeitungsaufpreis.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/virtual-network/virtual-network-service-endpoints-overview"
+      },
+      {
+        "eintrag": "Azure Service Health",
+        "kurzbeschreibung": "Personalisierter Dienststatus fuer eigene Azure-Ressourcen.",
+        "langbeschreibung": "Azure Service Health informiert ueber Dienstprobleme, geplante Wartungen und Health Advisories, die die eigenen Azure-Ressourcen betreffen. Benachrichtigungen lassen sich per Action Group an E-Mail, SMS, Webhook oder ITSM-Systeme weiterleiten.",
+        "lizenz_info": "Kostenlos.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/service-health/overview"
+      },
+      {
+        "eintrag": "Azure Service Bus",
+        "kurzbeschreibung": "Verwalteter Messaging-Dienst mit Queues und Topics.",
+        "langbeschreibung": "Azure Service Bus stellt zuverlaessige, transaktionale Nachrichtenwarteschlangen und Publish-Subscribe-Topics bereit. Features: Dead-Lettering, Sessions, Duplicate Detection und Auto-Forwarding. Ideal fuer entkoppelte Microservices und Integrationsszenarien.",
+        "lizenz_info": "Basic, Standard und Premium; nach Operationen und Nachrichtengroesse.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/service-bus-messaging/service-bus-messaging-overview"
+      },
+      {
+        "eintrag": "Azure SignalR Service",
+        "kurzbeschreibung": "Verwaltete Echtzeit-Kommunikation fuer Web-Apps.",
+        "langbeschreibung": "Azure SignalR Service skaliert SignalR-Verbindungen (WebSockets, Server-Sent Events, Long Polling) ohne eigene Infrastruktur. Szenarien: Live-Dashboards, Chat, Benachrichtigungen, kollaborative Bearbeitung.",
+        "lizenz_info": "Free-Tier verfuegbar; Standard nach Einheiten und Nachrichten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-signalr/signalr-overview"
+      },
+      {
+        "eintrag": "Azure Spring Cloud",
+        "kurzbeschreibung": "Verwalteter Dienst fuer Spring-Boot-Apps (jetzt Azure Spring Apps).",
+        "langbeschreibung": "Azure Spring Cloud (umbenannt in Azure Spring Apps) bietet eine verwaltete Laufzeitumgebung fuer Spring-Boot- und Spring-Cloud-Anwendungen mit Service Discovery, Config Server, Blue-Green-Deployment und integriertem Monitoring.",
+        "lizenz_info": "Basic, Standard und Enterprise Tier; nach vCPU-Stunden und Speicher.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/spring-apps/overview"
+      },
+      {
+        "eintrag": "Azure Stack",
+        "kurzbeschreibung": "Hybrid-Plattformfamilie fuer Azure-Dienste on-premises.",
+        "langbeschreibung": "Azure Stack umfasst Azure Stack Hub (vollstaendiges Azure-Erlebnis im eigenen Rechenzentrum), Azure Stack HCI (hyperkonvergente Infrastruktur mit Azure-Integration) und Azure Stack Edge (Edge-Computing-Geraete). Gemeinsames Ziel: konsistente Hybrid-Cloud.",
+        "lizenz_info": "Azure Stack Hub: Hardware + Software-Lizenz; HCI: Subscription; Edge: Geraet + Nutzung.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure-stack/"
+      },
+      {
+        "eintrag": "Azure Synapse Analytics",
+        "kurzbeschreibung": "Integrierte Plattform fuer Data Warehousing und Big Data.",
+        "langbeschreibung": "Azure Synapse vereint dedizierte SQL-Pools, serverlose SQL-Pools, Spark-Pools und Data-Explorer-Pools in einem Workspace. Synapse Pipelines orchestrieren Datenfluesse. Integration mit Power BI und Azure ML fuer End-to-End-Analysen.",
+        "lizenz_info": "Abrechnung nach genutzten Pools, DWU und Datenverarbeitung.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/synapse-analytics/overview-what-is"
+      },
+      {
+        "eintrag": "Azure Table Storage",
+        "kurzbeschreibung": "Schemalose NoSQL-Tabelle im Azure Storage Account.",
+        "langbeschreibung": "Azure Table Storage speichert strukturierte, nicht-relationale Daten als Schluessel-Wert-Paare (PartitionKey, RowKey). Einfach, kostenguenstig und massiv skalierbar. Fuer erweiterte Anforderungen empfiehlt Microsoft Azure Cosmos DB Table API.",
+        "lizenz_info": "Kosten nach gespeichertem Datenvolumen und Transaktionen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/storage/tables/table-storage-overview"
+      },
+      {
+        "eintrag": "Azure Traffic Manager",
+        "kurzbeschreibung": "DNS-basierte globale Lastverteilung.",
+        "langbeschreibung": "Azure Traffic Manager verteilt DNS-Anfragen anhand von Routing-Methoden (Priority, Weighted, Performance, Geographic, MultiValue, Subnet) auf globale Endpunkte. Health Checks entfernen ausgefallene Endpunkte automatisch.",
+        "lizenz_info": "Abrechnung nach DNS-Abfragen und Health Checks.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/traffic-manager/traffic-manager-overview"
+      },
+      {
+        "eintrag": "Azure Update Management",
+        "kurzbeschreibung": "Patch-Verwaltung fuer Azure- und Hybrid-Systeme.",
+        "langbeschreibung": "Azure Update Management (jetzt Teil von Azure Update Manager) bewertet fehlende Updates auf Windows und Linux, plant Wartungsfenster und installiert Patches. Unterstuetzt Azure-VMs, Arc-enabled Server und on-premises-Maschinen.",
+        "lizenz_info": "Azure Update Manager kostenlos fuer Azure-VMs; Arc-Server per Arc-Lizenz.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/update-manager/overview"
+      },
+      {
+        "eintrag": "Azure VPN Gateway",
+        "kurzbeschreibung": "Verschluesselte VPN-Verbindungen zwischen Azure und anderen Netzen.",
+        "langbeschreibung": "Azure VPN Gateway stellt IPsec/IKE-basierte Site-to-Site-, Point-to-Site- und VNet-to-VNet-Verbindungen bereit. SKUs reichen von Basic bis VpnGw5AZ mit unterschiedlicher Bandbreite, Tunnel-Anzahl und Verfuegbarkeitszonenunterstuetzung.",
+        "lizenz_info": "Abrechnung nach Gateway-SKU (pro Stunde) und Datenverkehr.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/vpn-gateway/vpn-gateway-about-vpngateways"
+      },
+      {
+        "eintrag": "Azure Virtual Machine Scale Sets",
+        "kurzbeschreibung": "Automatisch skalierte Gruppen identischer VMs.",
+        "langbeschreibung": "VMSS ermoeglicht das Bereitstellen und Verwalten einer Gruppe identischer VMs mit Auto-Scaling-Regeln, Rolling Upgrades, Fault-Domain-Verteilung und Load-Balancer-Integration. Ideal fuer zustandslose Workloads mit variabler Last.",
+        "lizenz_info": "Kosten fuer die genutzten VM-Instanzen und zugehoerige Ressourcen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/virtual-machine-scale-sets/overview"
+      },
+      {
+        "eintrag": "Azure Virtual Network Peering",
+        "kurzbeschreibung": "Direkte Verbindung zweier VNets ueber Azure-Backbone.",
+        "langbeschreibung": "VNet Peering verbindet zwei VNets (regional oder global) mit niedriger Latenz und hoher Bandbreite ueber das Microsoft-Backbone-Netzwerk. Peered VNets kommunizieren ueber private IPs, als waeren sie im selben Netz. NSGs und Route Tables bleiben wirksam.",
+        "lizenz_info": "Abrechnung nach ein- und ausgehendem Datenverkehr.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/virtual-network/virtual-network-peering-overview"
+      },
+      {
+        "eintrag": "Azure Virtual WAN",
+        "kurzbeschreibung": "Globale Netzwerkplattform fuer WAN, VPN und ExpressRoute.",
+        "langbeschreibung": "Azure Virtual WAN vereint Site-to-Site-VPN, Point-to-Site-VPN, ExpressRoute und VNet-Verbindungen in einem verwalteten Hub-Netzwerk. Secured Hubs integrieren Azure Firewall. Routing-Policies und Routing-Intent steuern den Datenfluss.",
+        "lizenz_info": "Abrechnung nach Hub-Typ, Verbindungstyp und Datenverkehr.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/virtual-wan/virtual-wan-about"
+      },
+      {
+        "eintrag": "Azure WebJobs",
+        "kurzbeschreibung": "Hintergrundprozesse im Azure App Service.",
+        "langbeschreibung": "Azure WebJobs fuehrt Skripte oder Programme (PowerShell, Bash, .NET, Node.js etc.) als Hintergrundtasks im Kontext eines App-Service-Plans aus. Trigger: zeitgesteuert (CRON), kontinuierlich oder manuell. Fuer neue Projekte werden Azure Functions empfohlen.",
+        "lizenz_info": "In den App-Service-Plan-Kosten enthalten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/app-service/webjobs-create"
+      },
+      {
+        "eintrag": "Azure Workbooks",
+        "kurzbeschreibung": "Interaktive Berichte und Dashboards in Azure Monitor.",
+        "langbeschreibung": "Azure Workbooks kombinieren Text, KQL-Abfragen, Metriken, Diagramme und Parameter zu interaktiven Berichten. Sie werden in Azure Monitor, Sentinel, Defender und anderen Diensten fuer Analyse und Visualisierung eingesetzt.",
+        "lizenz_info": "Kostenlos (Logdaten verursachen Log-Analytics-Kosten).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-monitor/visualize/workbooks-overview"
+      },
+      {
+        "eintrag": "Subscription",
+        "kurzbeschreibung": "Azure-Abonnement fuer Ressourcen und Abrechnung.",
+        "langbeschreibung": "Eine Subscription ist die Verwaltungs- und Abrechnungseinheit in Azure. Sie enthaelt Resource Groups mit Ressourcen, unterliegt RBAC- und Policy-Zuweisungen und kann in Management Groups organisiert werden. Mehrere Subscriptions ermoeglichen Kostenstellen- und Umgebungstrennung.",
+        "lizenz_info": "Typ abhaengig vom Vertrag: Pay-as-you-go, EA, CSP, MCA.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/cost-management-billing/manage/create-subscription"
+      },
+      {
+        "eintrag": "Subscription ID",
+        "kurzbeschreibung": "Eindeutige Kennung eines Azure-Abonnements.",
+        "langbeschreibung": "Die Subscription ID ist eine GUID, die jedes Azure-Abonnement eindeutig identifiziert. Sie wird in CLI-Befehlen, ARM-Templates, API-Aufrufen und Diagnosen referenziert.",
+        "lizenz_info": "Automatisch bei Subscription-Erstellung generiert.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-portal/get-subscription-tenant-id"
+      },
+      {
+        "eintrag": "Service Principal",
+        "kurzbeschreibung": "Anwendungsidentitaet fuer authentifizierten Azure-Zugriff.",
+        "langbeschreibung": "Ein Service Principal ist die Entra-ID-Darstellung einer registrierten Anwendung oder eines Dienstes. Er erhaelt RBAC-Rollen auf Azure-Ressourcen und authentifiziert sich per Secret, Zertifikat oder Federated Credential.",
+        "lizenz_info": "Kostenlos; Teil von Entra ID.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity-platform/app-objects-and-service-principals"
+      },
+      {
+        "eintrag": "User Assigned Managed Identity",
+        "kurzbeschreibung": "Wiederverwendbare verwaltete Identitaet fuer mehrere Ressourcen.",
+        "langbeschreibung": "Eine User Assigned Managed Identity wird als eigenstaendige Azure-Ressource erstellt und kann mehreren VMs, Functions, App Services etc. zugewiesen werden. Ideal, wenn mehrere Ressourcen dieselben Berechtigungen benoetigen.",
+        "lizenz_info": "Kostenlos; Teil von Entra ID.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview"
+      },
+      {
+        "eintrag": "System Assigned Managed Identity",
+        "kurzbeschreibung": "Automatisch an eine Azure-Ressource gebundene Identitaet.",
+        "langbeschreibung": "Eine System Assigned Managed Identity wird direkt mit einer Azure-Ressource erstellt und geloescht. Sie ist 1:1 an die Ressource gebunden. Token werden automatisch von Azure rotiert, ohne manuelle Secret-Verwaltung.",
+        "lizenz_info": "Kostenlos; Teil von Entra ID.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview"
+      },
+      {
+        "eintrag": "Availability Set",
+        "kurzbeschreibung": "Verteilung von VMs auf Fehler- und Update-Domaenen.",
+        "langbeschreibung": "Ein Availability Set platziert VMs in getrennten Fault Domains (getrennte Stromversorgung/Netzwerk) und Update Domains (gestaffelte Wartung). So wird das Risiko eines gleichzeitigen Ausfalls oder geplanten Neustarts reduziert.",
+        "lizenz_info": "Kostenlos; nur die VMs verursachen Kosten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/virtual-machines/availability-set-overview"
+      },
+      {
+        "eintrag": "Availability Zone",
+        "kurzbeschreibung": "Physisch getrennter Standort innerhalb einer Azure-Region.",
+        "langbeschreibung": "Availability Zones sind voneinander isolierte Rechenzentren innerhalb einer Azure-Region mit unabhaengiger Stromversorgung, Kuehlung und Netzwerk. Zonale oder zonenredundante Bereitstellungen erhoehen die Ausfallsicherheit auf 99,99 % SLA.",
+        "lizenz_info": "Kein Aufpreis fuer die Zone selbst; zonenredundante Dienste teils teurere SKUs.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/reliability/availability-zones-overview"
+      },
+      {
+        "eintrag": "Azure Arc",
+        "kurzbeschreibung": "Azure-Verwaltung fuer Server, Kubernetes und Dienste ausserhalb von Azure.",
+        "langbeschreibung": "Azure Arc projiziert externe Ressourcen (on-premises-Server, AWS/GCP-VMs, Kubernetes-Cluster) in Azure Resource Manager. Damit lassen sich Azure Policy, RBAC, Monitoring, Defender und Update Management einheitlich anwenden.",
+        "lizenz_info": "Arc-Agent kostenlos; Arc-enabled Data Services und Arc-enabled SQL separat.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-arc/overview"
+      },
+      {
+        "eintrag": "Azure Advisor",
+        "kurzbeschreibung": "Personalisierte Empfehlungen fuer Azure-Best-Practices.",
+        "langbeschreibung": "Azure Advisor analysiert die Konfiguration und Nutzung von Azure-Ressourcen und gibt priorisierte Empfehlungen in den Kategorien Kosten, Sicherheit, Zuverlaessigkeit, Betrieb und Leistung. Empfehlungen koennen per Automation umgesetzt werden.",
+        "lizenz_info": "Kostenlos.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/advisor/advisor-overview"
+      },
+      {
+        "eintrag": "Azure Cost Management + Billing",
+        "kurzbeschreibung": "Kostenanalyse, Budgets und Rechnungsverwaltung.",
+        "langbeschreibung": "Azure Cost Management + Billing vereint Kostenaufschluesselungen, Budget-Warnungen, Exports, Reservierungsempfehlungen und Rechnungsverwaltung. Zugang fuer EA-, MCA- und CSP-Kunden ueber das Azure-Portal.",
+        "lizenz_info": "Kostenlos fuer Azure-Verbrauch; AWS-Konnektor optional kostenpflichtig.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/cost-management-billing/"
+      },
+      {
+        "eintrag": "Azure API Management",
+        "kurzbeschreibung": "API-Gateway fuer Veroeffentlichung, Schutz und Monitoring.",
+        "langbeschreibung": "Azure API Management stellt ein Gateway vor Backend-APIs, das Authentifizierung, Rate Limiting, Caching, Transformation und Monitoring bereitstellt. Entwicklerportale ermoeglichen Self-Service-API-Zugriff. Unterstuetzt REST, SOAP, GraphQL und WebSocket.",
+        "lizenz_info": "Developer, Basic, Standard, Premium und Consumption Tier.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/api-management/api-management-key-concepts"
+      },
+      {
+        "eintrag": "Azure DNS",
+        "kurzbeschreibung": "Verwalteter DNS-Hosting-Dienst in Azure.",
+        "langbeschreibung": "Azure DNS hostet DNS-Zonen auf dem globalen Azure-Netzwerk mit Anycast-Routing. Unterstuetzt oeffentliche DNS-Zonen, private DNS-Zonen (VNet-Namensaufloesung) und DNS-basierte Routing-Szenarien. Integration mit Azure-Diensten und ARM-Templates.",
+        "lizenz_info": "Abrechnung nach gehosteten Zonen und DNS-Abfragen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/dns/dns-overview"
+      },
+      {
+        "eintrag": "Azure DDoS Protection",
+        "kurzbeschreibung": "Automatischer Schutz vor DDoS-Angriffen auf Azure-Ressourcen.",
+        "langbeschreibung": "Azure DDoS Protection (Standard / Network Protection) erkennt und entschaerft volumetrische und Protokoll-Angriffe auf oeffentliche Azure-Endpunkte automatisch. Telemetrie, Warnungen und Angriffsberichte sind in Azure Monitor integriert.",
+        "lizenz_info": "DDoS Network Protection: feste Monatspauschale plus Overage.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/ddos-protection/ddos-protection-overview"
+      },
+      {
+        "eintrag": "Azure Image Builder",
+        "kurzbeschreibung": "Automatisierte Erstellung standardisierter VM-Images.",
+        "langbeschreibung": "Azure Image Builder (AIB) automatisiert das Erstellen und Anpassen von Windows- und Linux-VM-Images auf Basis von Packer. Images werden in Shared Image Gallery (Azure Compute Gallery) veroeffentlicht und stehen fuer VMSS, AVD und Einzelbereitstellungen zur Verfuegung.",
+        "lizenz_info": "Kostenlos; nur die Build-VM und Storage erzeugen Kosten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/virtual-machines/image-builder-overview"
+      },
+      {
+        "eintrag": "Azure Backup Vault",
+        "kurzbeschreibung": "Moderner Tresor fuer Azure-Backup-Szenarien.",
+        "langbeschreibung": "Ein Azure Backup Vault ist der Speicherort fuer Backup-Daten neuerer Azure-Workloads (Blobs, Disks, PostgreSQL). Er ergaenzt den klassischen Recovery Services Vault und wird fuer zukuenftige Backup-Features priorisiert.",
+        "lizenz_info": "Kosten nach geschuetzter Datenmenge und Redundanzstufe.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/backup/backup-vault-overview"
+      },
+      {
+        "eintrag": "Azure Recovery Services Vault",
+        "kurzbeschreibung": "Klassischer Tresor fuer Backup und Site Recovery.",
+        "langbeschreibung": "Der Recovery Services Vault speichert Backup-Daten und Site-Recovery-Konfigurationen fuer VMs, SQL-Datenbanken, File Shares und on-premises-Workloads. Soft Delete, Cross-Region Restore und Immutable Vaults erhoehen die Datensicherheit.",
+        "lizenz_info": "Kosten nach geschuetzten Instanzen und Speicherverbrauch.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/backup/backup-azure-recovery-services-vault-overview"
+      },
+      {
+        "eintrag": "Azure App Configuration",
+        "kurzbeschreibung": "Zentraler Konfigurationsspeicher und Feature-Flag-Dienst.",
+        "langbeschreibung": "Azure App Configuration verwaltet Anwendungseinstellungen, Verbindungszeichenfolgen und Feature Flags zentral. Apps beziehen Konfigurationen dynamisch ohne Neustart. Integration mit Key Vault fuer Secrets und mit Azure DevOps fuer CI/CD.",
+        "lizenz_info": "Free und Standard Tier; nach Anfragen und Speicher.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-app-configuration/overview"
+      },
+      {
+        "eintrag": "Azure Database for PostgreSQL",
+        "kurzbeschreibung": "Verwalteter PostgreSQL-Datenbankdienst.",
+        "langbeschreibung": "Azure Database for PostgreSQL Flexible Server bietet vollstaendig verwaltetes PostgreSQL mit Hochverfuegbarkeit, automatischen Backups, Skalierung und Patchmanagement. Unterstuetzt PostgreSQL-Versionen 13-16 mit Extensions wie PostGIS, pgvector.",
+        "lizenz_info": "Abrechnung nach vCores, Speicher und Backup-Speicher.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/postgresql/flexible-server/overview"
+      },
+      {
+        "eintrag": "Azure Database for MySQL",
+        "kurzbeschreibung": "Verwalteter MySQL-Datenbankdienst.",
+        "langbeschreibung": "Azure Database for MySQL Flexible Server stellt verwaltetes MySQL mit Zone-redundanter Hochverfuegbarkeit, automatischen Backups und intelligenter Leistungsoptimierung bereit. Unterstuetzt MySQL 5.7 und 8.0.",
+        "lizenz_info": "Abrechnung nach vCores, Speicher und Backup-Speicher.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/mysql/flexible-server/overview"
+      },
+      {
+        "eintrag": "Azure Load Testing",
+        "kurzbeschreibung": "Verwalteter Lasttest-Dienst fuer Webanwendungen.",
+        "langbeschreibung": "Azure Load Testing fuehrt Apache-JMeter-basierte Lasttests in Azure aus, um Leistungsgrenzen, Skalierungsverhalten und Regressionsprobleme zu identifizieren. CI/CD-Integration ermoeglicht automatisierte Performance-Gates in Pipelines.",
+        "lizenz_info": "Abrechnung nach virtuellen Benutzerstunden.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/load-testing/overview-what-is-azure-load-testing"
+      },
+      {
+        "eintrag": "Azure Chaos Studio",
+        "kurzbeschreibung": "Verwalteter Dienst fuer kontrollierte Resilienztests.",
+        "langbeschreibung": "Azure Chaos Studio injiziert kontrollierte Fehler (VM-Shutdown, Netzwerk-Latenz, DNS-Ausfall etc.) in Azure-Ressourcen, um die Widerstandsfaehigkeit von Systemen zu pruefen. Experimente werden deklarativ definiert und auditiert.",
+        "lizenz_info": "Abrechnung nach Experimentminuten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/chaos-studio/chaos-studio-overview"
+      },
+      {
+        "eintrag": "Bicep",
+        "kurzbeschreibung": "Domaenenspezifische Sprache fuer Azure Infrastructure as Code.",
+        "langbeschreibung": "Bicep ist die von Microsoft empfohlene Nachfolgesprache fuer ARM Templates. Sie bietet praegnantere Syntax, Module, Typ-Validierung und native Integration in Azure CLI, VS Code und Azure DevOps. Bicep-Dateien werden transparent in ARM-JSON kompiliert.",
+        "lizenz_info": "Kostenlos; Open Source.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-resource-manager/bicep/overview"
+      },
+      {
+        "eintrag": "Management Group",
+        "kurzbeschreibung": "Hierarchische Organisation von Azure-Subscriptions.",
+        "langbeschreibung": "Management Groups bilden eine Baumstruktur ueber Subscriptions hinweg. Azure Policy, RBAC und Budgets koennen auf Management-Group-Ebene zugewiesen werden und vererben sich automatisch an untergeordnete Subscriptions und Gruppen.",
+        "lizenz_info": "Kostenlos.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/governance/management-groups/overview"
+      },
+      {
+        "eintrag": "Role Based Access Control",
+        "kurzbeschreibung": "Rollenbasierte Zugriffskontrolle in Azure.",
+        "langbeschreibung": "Azure RBAC steuert Zugriffsrechte ueber Rollenzuweisungen (Role Assignment = Sicherheitsprinzipal + Rolle + Scope). Vordefinierte Rollen (Owner, Contributor, Reader u.v.m.) und benutzerdefinierte Rollen ermoeglichen feingranulare Berechtigungen auf Ressourcen, Gruppen, Subscriptions und Management Groups.",
+        "lizenz_info": "Kostenlos; Teil jeder Azure Subscription.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/role-based-access-control/overview"
+      }
+    ]
+  },
+  "Infra_Netzwerk_Glossar.csv": {
+    "file_path": "x:\\03-Dokumente & Bilder\\50-PhinIT\\50-ARTIKEL\\Infra_Netzwerk_Glossar.csv",
+    "record_count": 25,
+    "entries": [
+      {
+        "eintrag": "Firewall",
+        "kurzbeschreibung": "Netzwerkfilter zum Schutz vor unerwuenschtem Zugriff.",
+        "langbeschreibung": "Eine Firewall analysiert ein- und ausgehenden Netzwerkverkehr anhand definierter Regeln (Port, Protokoll, Quelle, Ziel) und erlaubt oder blockiert Verbindungen. Unterschieden werden Paketfilter, Stateful Inspection, Application-Layer-Firewalls und Next-Generation Firewalls (NGFW) mit IDS/IPS, TLS-Inspection und URL-Filterung. In Unternehmen bildet die Firewall die erste Verteidigungslinie am Perimeter und zwischen Netzwerksegmenten.",
+        "lizenz_info": "Abhaengig vom Hersteller (OPNsense/pfSense kostenlos; FortiGate, Sophos, Palo Alto lizenzpflichtig mit Jahressubscription fuer UTM/IPS-Module).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/windows/security/operating-system-security/network-security/windows-firewall/"
+      },
+      {
+        "eintrag": "VLAN",
+        "kurzbeschreibung": "Logische Netzwerktrennung auf einem physischen Switch.",
+        "langbeschreibung": "Ein Virtual LAN (VLAN) segmentiert ein physisches Netzwerk in mehrere isolierte Broadcast-Domaenen. Jedes VLAN erhaelt eine eigene Subnetz-Konfiguration; die Kommunikation zwischen VLANs erfordert Routing (Inter-VLAN-Routing per Layer-3-Switch oder Firewall). VLANs erhoehen Sicherheit, reduzieren Broadcast-Last und erleichtern die Netzwerkorganisation nach Standort, Abteilung oder Funktion.",
+        "lizenz_info": "Keine Lizenzkosten; Feature jedes Managed Switch (IEEE 802.1Q).",
+        "ms_learn_weblinks": "https://en.wikipedia.org/wiki/VLAN"
+      },
+      {
+        "eintrag": "VPN",
+        "kurzbeschreibung": "Verschluesselte Verbindung ueber unsichere Netzwerke.",
+        "langbeschreibung": "Ein Virtual Private Network (VPN) erstellt einen verschluesselten Tunnel zwischen zwei Endpunkten ueber ein oeffentliches Netz (z. B. Internet). Protokolle: IPsec, IKEv2, OpenVPN, WireGuard. Szenarien: Site-to-Site (Standortverbindung), Remote Access (Benutzer zu Netzwerk) und Client-to-Client. VPNs schuetzen Vertraulichkeit und Integritaet des Datenverkehrs.",
+        "lizenz_info": "Abhaengig von Loesung: OpenVPN/WireGuard kostenlos; kommerzielle Gateways (FortiGate, Sophos, Azure VPN) lizenz- oder nutzungsbasiert.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/vpn-gateway/vpn-gateway-about-vpngateways"
+      },
+      {
+        "eintrag": "Switch Management",
+        "kurzbeschreibung": "Konfiguration, Ueberwachung und Pflege von Netzwerkswitches.",
+        "langbeschreibung": "Switch Management umfasst VLAN-Konfiguration, Port-Security, Spanning Tree, Link Aggregation, Firmware-Updates, SNMP-Monitoring und Logging. Managed Switches bieten Web-GUI, CLI (SSH/Telnet) und SNMP-Zugang. Best Practices: Trunk-Ports absichern, ungenutzte Ports deaktivieren, Firmware aktuell halten.",
+        "lizenz_info": "Managed Switches erfordern ggf. Hersteller-Lizenz (z. B. Cisco DNA, HPE/Aruba Central); viele Hersteller ohne Zusatzlizenz.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/windows-server/networking/"
+      },
+      {
+        "eintrag": "Wi-Fi 6",
+        "kurzbeschreibung": "WLAN-Standard mit hoher Effizienz und Kapazitaet (802.11ax).",
+        "langbeschreibung": "Wi-Fi 6 (IEEE 802.11ax) verbessert Durchsatz, Latenz und Mehrbenutzerverhalten gegenueber Wi-Fi 5 durch OFDMA, MU-MIMO, BSS Coloring und Target Wake Time. Ideal fuer dichte Umgebungen mit vielen Endgeraeten (Bueros, Produktion, oeffentliche Bereiche). Wi-Fi 6E erweitert den Standard auf das 6-GHz-Band.",
+        "lizenz_info": "Keine Protokolllizenz; Kosten fuer Access Points und ggf. Controller-/Cloud-Management-Lizenz (z. B. Aruba Central, UniFi, Meraki).",
+        "ms_learn_weblinks": "https://www.wi-fi.org/discover-wi-fi/wi-fi-certified-6"
+      },
+      {
+        "eintrag": "Site-to-Site VPN",
+        "kurzbeschreibung": "Dauerhafte verschluesselte Standortverbindung.",
+        "langbeschreibung": "Ein Site-to-Site VPN verbindet zwei Netzwerke (z. B. Hauptstandort und Filiale) ueber einen IPsec- oder IKEv2-Tunnel permanent miteinander. Beide Seiten benoetigen ein VPN-Gateway (Firewall, Router oder Cloud-Gateway). Routing-Tabellen steuern, welcher Verkehr durch den Tunnel fliesst. Redundante Tunnel erhoehen die Verfuegbarkeit.",
+        "lizenz_info": "Kosten fuer VPN-Gateways an beiden Standorten; bei Azure VPN Gateway nach SKU und Datenverkehr.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/vpn-gateway/tutorial-site-to-site-portal"
+      },
+      {
+        "eintrag": "Remote Access VPN",
+        "kurzbeschreibung": "Verschluesselter Fernzugriff fuer einzelne Benutzer.",
+        "langbeschreibung": "Remote Access VPN ermoeglicht Mitarbeitenden, sich von unterwegs oder aus dem Homeoffice sicher mit dem Unternehmensnetzwerk zu verbinden. Der Client baut einen verschluesselten Tunnel (IPsec, SSL/TLS, WireGuard) zum VPN-Gateway auf. Always-On-VPN und Split-Tunneling sind gaengige Konfigurationsoptionen.",
+        "lizenz_info": "Abhaengig von Loesung: Windows Always-On-VPN in Windows Server enthalten; kommerzielle Clients (FortiClient, GlobalProtect) per User oder Appliance lizenziert.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/windows-server/remote/remote-access/remote-access"
+      },
+      {
+        "eintrag": "DHCP",
+        "kurzbeschreibung": "Automatische IP-Konfiguration fuer Netzwerkclients.",
+        "langbeschreibung": "Das Dynamic Host Configuration Protocol (DHCP) vergibt IP-Adressen, Subnetzmasken, Gateways, DNS-Server und weitere Optionen automatisch an Clients. Ein DHCP-Server verwaltet Adressbereiche (Scopes), Reservierungen und Lease-Zeiten. DHCP-Relay (IP Helper) leitet Anfragen ueber Subnetzgrenzen hinweg weiter. Ausfallsicherheit durch DHCP-Failover oder Split Scopes.",
+        "lizenz_info": "In Windows Server enthalten; auf Firewalls und Routern integriert.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/windows-server/networking/technologies/dhcp/dhcp-top"
+      },
+      {
+        "eintrag": "DNS",
+        "kurzbeschreibung": "Namensaufloesung als zentraler Basisdienst.",
+        "langbeschreibung": "Das Domain Name System (DNS) uebersetzt Hostnamen in IP-Adressen und umgekehrt. Intern stellt DNS die Grundlage fuer Active Directory, Kerberos und Dienst-Lokalisierung (SRV-Records) dar. Externe DNS-Zonen steuern die oeffentliche Erreichbarkeit von Websites, MX-Records fuer E-Mail und SPF/DKIM/DMARC fuer Mailsicherheit. DNS-Sicherheit: DNSSEC, DNS over HTTPS (DoH), DNS-Filterung.",
+        "lizenz_info": "In Windows Server und Linux enthalten; Cloud-DNS (Azure DNS, Cloudflare) nach Zonen und Abfragen.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/windows-server/networking/dns/dns-top"
+      },
+      {
+        "eintrag": "Active Directory",
+        "kurzbeschreibung": "Verzeichnisdienst fuer Windows-Umgebungen.",
+        "langbeschreibung": "Active Directory Domain Services (AD DS) verwaltet Benutzerkonten, Computerkonten, Gruppen, Organisationseinheiten (OUs) und Gruppenrichtlinien (GPOs) in einer hierarchischen Struktur (Forest, Domain, Site). Kerberos und NTLM dienen der Authentifizierung. AD DS ist die Grundlage fuer on-premises-Identitaetsverwaltung und Hybrid-Szenarien mit Entra ID.",
+        "lizenz_info": "In Windows Server enthalten (Standard oder Datacenter); keine separate AD-Lizenz.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/windows-server/identity/ad-ds/get-started/virtual-dc/active-directory-domain-services-overview"
+      },
+      {
+        "eintrag": "Domain Controller",
+        "kurzbeschreibung": "Server mit Active-Directory-Rolle fuer Authentifizierung und Richtlinien.",
+        "langbeschreibung": "Ein Domain Controller (DC) hostet eine Kopie der AD-Datenbank (NTDS.dit), beantwortet Authentifizierungsanfragen (Kerberos/NTLM), repliziert Verzeichnisaenderungen mit anderen DCs und wendet Gruppenrichtlinien an. Best Practices: mindestens zwei DCs pro Domaene, FSMO-Rollen verteilen, DCs haerten und separat sichern.",
+        "lizenz_info": "In Windows Server enthalten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/windows-server/identity/ad-ds/deploy/install-active-directory-domain-services--level-100-"
+      },
+      {
+        "eintrag": "File Server",
+        "kurzbeschreibung": "Zentraler Server fuer Dateifreigaben und Berechtigungen.",
+        "langbeschreibung": "Ein File Server stellt SMB- oder NFS-Freigaben bereit, auf die Benutzer ueber das Netzwerk zugreifen. NTFS- und Freigabeberechtigungen steuern den Zugriff. Features: DFS-Namespaces (einheitliche Pfade), DFS-Replikation, FSRM (Kontingente, Dateiueberwachung), Shadow Copies (Vorgaengerversionen). Backup und Berechtigungsmanagement sind zentrale Betriebsaufgaben.",
+        "lizenz_info": "In Windows Server enthalten; Storage-Kosten fuer Hardware oder Cloud-Speicher.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/windows-server/storage/storage"
+      },
+      {
+        "eintrag": "Print Server",
+        "kurzbeschreibung": "Zentrale Drucker- und Warteschlangenverwaltung.",
+        "langbeschreibung": "Ein Print Server verwaltet Druckerwarteschlangen, Treiber und Freigaben zentral fuer alle Benutzer im Netzwerk. Drucker werden per GPO oder Point-and-Print verteilt. In modernen Umgebungen werden Print Server zunehmend durch Universal Print (Cloud) oder Direct IP Printing ersetzt.",
+        "lizenz_info": "In Windows Server enthalten; Microsoft Universal Print als Cloud-Alternative in M365 E3/E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/windows-server/administration/windows-server-print"
+      },
+      {
+        "eintrag": "Network Attached Storage",
+        "kurzbeschreibung": "Dateibasiertes Speichersystem im Netzwerk (NAS).",
+        "langbeschreibung": "Ein NAS stellt Dateifreigaben (SMB, NFS, AFP) ueber das Netzwerk bereit und dient als zentrale Ablage, Backup-Ziel oder Medienserver. Hersteller wie Synology, QNAP und TrueNAS bieten RAID-Konfigurationen, Snapshot-Replikation, iSCSI-Targets und App-Oekosysteme. In Unternehmen ergaenzt ein NAS oft den File Server oder dient als Backup-Repository.",
+        "lizenz_info": "Hardware-Anschaffung; Software meist im Lieferumfang (Synology DSM, QNAP QTS kostenlos auf eigener Hardware).",
+        "ms_learn_weblinks": "https://en.wikipedia.org/wiki/Network-attached_storage"
+      },
+      {
+        "eintrag": "Monitoring",
+        "kurzbeschreibung": "Ueberwachung von Systemen, Diensten und Netzwerken.",
+        "langbeschreibung": "Monitoring erfasst Metriken (CPU, RAM, Disk, Netzwerk), Dienstverfuegbarkeit, Logs und Ereignisse und loest bei Schwellwertueberschreitungen Alarme aus. Tools: PRTG, Zabbix, Nagios, Checkmk, Grafana + Prometheus, Azure Monitor. Dashboards und Reports unterstuetzen proaktives Kapazitaetsmanagement und schnelle Fehlerdiagnose.",
+        "lizenz_info": "PRTG (100 Sensoren kostenlos), Zabbix/Nagios/Checkmk Open Source kostenlos; Enterprise-Versionen und Cloud-Monitoring kostenpflichtig.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/azure-monitor/overview"
+      },
+      {
+        "eintrag": "Redundanz",
+        "kurzbeschreibung": "Ausfallsicherheit durch doppelt vorhandene Komponenten.",
+        "langbeschreibung": "Redundanz bezeichnet das Vorhalten zusaetzlicher Komponenten (Server, Netzteile, Leitungen, Switches, Internetanbindungen), die bei Ausfall einer Primaerkomponente uebernehmen. Typen: Aktiv-Passiv (Standby), Aktiv-Aktiv (Lastverteilung), N+1 (eine Reserve). Redundanz ist ein Kernprinzip fuer Hochverfuegbarkeit und wird in SLAs als Verfuegbarkeitsziel (z. B. 99,9 %) quantifiziert.",
+        "lizenz_info": "Keine Lizenzkosten; Investition in doppelte Hardware, Leitungen und ggf. zweiten ISP.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/reliability/overview"
+      },
+      {
+        "eintrag": "Unterbrechungsfreie Stromversorgung",
+        "kurzbeschreibung": "USV zum Schutz vor Stromausfaellen und Spannungsschwankungen.",
+        "langbeschreibung": "Eine USV (UPS) ueberbrueckt kurzfristige Stromausfaelle per Batterie und schuetzt angeschlossene Systeme vor abruptem Abschalten. Typen: Offline/Standby, Line-Interactive und Online/Double-Conversion. USV-Management-Software (z. B. APC PowerChute, Eaton IPM) kann bei laengerem Ausfall ein geordnetes Herunterfahren der Server ausloesen. Batteriekapazitaet, Laufzeit und regelmaessige Tests sind kritische Betriebsparameter.",
+        "lizenz_info": "Hardware-Anschaffung (APC, Eaton, Vertiv); Management-Software teils im Lieferumfang.",
+        "ms_learn_weblinks": "https://en.wikipedia.org/wiki/Uninterruptible_power_supply"
+      },
+      {
+        "eintrag": "Server-Virtualisierung",
+        "kurzbeschreibung": "Mehrere virtuelle Server auf gemeinsamer Hardware.",
+        "langbeschreibung": "Server-Virtualisierung abstrahiert physische Hardware durch einen Hypervisor, sodass mehrere virtuelle Maschinen (VMs) auf einem Host laufen. Vorteile: bessere Hardwareauslastung, schnelle Bereitstellung, Snapshots, Live-Migration und vereinfachtes Backup. Gaengige Hypervisoren: Hyper-V, VMware vSphere/ESXi, Proxmox VE, KVM.",
+        "lizenz_info": "Hyper-V in Windows Server enthalten; VMware vSphere lizenzpflichtig (per CPU/Socket oder Subscription); Proxmox VE kostenlos (Community) oder mit Subscription.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/windows-server/virtualization/hyper-v/hyper-v-on-windows-server"
+      },
+      {
+        "eintrag": "Hyper-V",
+        "kurzbeschreibung": "Microsofts Virtualisierungstechnologie fuer VMs.",
+        "langbeschreibung": "Hyper-V ist der Typ-1-Hypervisor von Microsoft, integriert in Windows Server und als eigenstaendiger Hyper-V Server (kostenlos) verfuegbar. Features: Live-Migration, Failover-Clustering, Replikation, verschachtelte Virtualisierung, Secure Boot fuer VMs und Integration Services. Hyper-V Manager und Windows Admin Center dienen der Verwaltung, PowerShell fuer Automatisierung.",
+        "lizenz_info": "In Windows Server Standard (2 VMs) und Datacenter (unbegrenzt) enthalten; Hyper-V Server (Core) war kostenlos (eingestellt ab Server 2022).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/windows-server/virtualization/hyper-v/hyper-v-on-windows-server"
+      },
+      {
+        "eintrag": "VMware",
+        "kurzbeschreibung": "Verbreitete Virtualisierungsplattform fuer Server und Infrastruktur.",
+        "langbeschreibung": "VMware vSphere/ESXi ist eine weit verbreitete Enterprise-Virtualisierungsplattform. vCenter Server verwaltet mehrere ESXi-Hosts zentral mit vMotion, DRS, HA und Storage-Tiering. Seit der Broadcom-Uebernahme (2023) wurde das Lizenzmodell auf Subscriptions umgestellt. Alternativen wie Proxmox und Hyper-V gewinnen an Bedeutung.",
+        "lizenz_info": "Subscription-basiert (VMware Cloud Foundation, vSphere Foundation); ehemals per Socket lizenziert. Kostenlose ESXi-Version eingestellt.",
+        "ms_learn_weblinks": "https://docs.vmware.com/en/VMware-vSphere/index.html"
+      },
+      {
+        "eintrag": "Patchpanel",
+        "kurzbeschreibung": "Strukturierte Verteilstelle fuer Netzwerkverkabelung.",
+        "langbeschreibung": "Ein Patchpanel ist die zentrale Anschlussleiste im Netzwerkschrank, an der die fest installierten Netzwerkkabel (Verlegekabel) aufgelegt werden. Patchkabel verbinden die Panel-Ports mit Switch-Ports. Saubere Beschriftung, Dokumentation und Kabelmanagement sind essenziell fuer Uebersichtlichkeit und schnelle Fehlersuche.",
+        "lizenz_info": "Hardware-Anschaffung; keine Lizenzkosten.",
+        "ms_learn_weblinks": "https://en.wikipedia.org/wiki/Patch_panel"
+      },
+      {
+        "eintrag": "Netzwerksegmentierung",
+        "kurzbeschreibung": "Trennung von Netzbereichen fuer Sicherheit und Performance.",
+        "langbeschreibung": "Netzwerksegmentierung unterteilt ein Netzwerk in isolierte Zonen (z. B. Server, Clients, Gaeste, IoT, Management) mittels VLANs, Subnetzen und Firewallregeln. Vorteile: geringere Angriffsflaeche, eingedaemmte Lateral Movement, bessere QoS-Steuerung und klare Verantwortlichkeiten. Microsegmentierung verfeinert diesen Ansatz auf Workload-Ebene.",
+        "lizenz_info": "Keine Lizenzkosten fuer VLANs; Firewall-Regeln und ggf. SDN-Loesungen abhaengig vom Hersteller.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/architecture/networking/guide/network-level-segmentation"
+      },
+      {
+        "eintrag": "Quality of Service",
+        "kurzbeschreibung": "Priorisierung zeitkritischer Datenstroeme im Netzwerk.",
+        "langbeschreibung": "Quality of Service (QoS) priorisiert bestimmten Netzwerkverkehr (z. B. VoIP, Video, Steuerungsprotokolle) gegenueber weniger kritischem Datenverkehr durch Markierung (DSCP), Warteschlangen-Management und Bandbreitenreservierung. In Teams-Telefonie-Umgebungen ist QoS essenziell fuer stabile Sprachqualitaet. Konfiguration erfolgt auf Switches, Firewalls und per GPO.",
+        "lizenz_info": "In Netzwerk-Hardware und Windows integriert; keine separate Lizenz.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/microsoftteams/qos-in-teams"
+      },
+      {
+        "eintrag": "Remote Monitoring and Management",
+        "kurzbeschreibung": "Zentrale Ueberwachung und Verwaltung von IT-Systemen fuer MSPs.",
+        "langbeschreibung": "RMM-Tools ermoeglichen IT-Dienstleistern und internen Teams die zentrale Ueberwachung, Fernwartung, Patch-Verwaltung, Skriptausfuehrung und Alerting ueber alle verwalteten Endpunkte. Agenten auf den Clients melden Status und Metriken an eine zentrale Konsole. Gaengige Loesungen: ConnectWise Automate, Datto RMM, NinjaRMM, Atera.",
+        "lizenz_info": "Subscription pro Endpunkt oder Techniker; Preise je nach Anbieter.",
+        "ms_learn_weblinks": "https://en.wikipedia.org/wiki/Remote_monitoring_and_management"
+      },
+      {
+        "eintrag": "IT-Inventarisierung",
+        "kurzbeschreibung": "Erfassung von Geraeten, Software, Lizenzen und Zustaendigkeiten.",
+        "langbeschreibung": "IT-Inventarisierung dokumentiert alle IT-Assets (Hardware, Software, Lizenzen, Vertraege) mit Standort, Zustand, Eigentuemer und Lebenszyklus. Sie bildet die Grundlage fuer Lizenz-Compliance, Budgetplanung, Incident-Management und Audits. Tools: GLPI, Lansweeper, Snow Software, Microsoft Endpoint Analytics, Excel-basierte Eigenloesungen.",
+        "lizenz_info": "Open Source (GLPI, Snipe-IT) kostenlos; Enterprise-Tools (Lansweeper, Snow) lizenzpflichtig.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/mem/analytics/overview"
+      }
+    ]
+  },
+  "Security_Compliance_Glossar.csv": {
+    "file_path": "x:\\03-Dokumente & Bilder\\50-PhinIT\\50-ARTIKEL\\Security_Compliance_Glossar.csv",
+    "record_count": 25,
+    "entries": [
+      {
+        "eintrag": "Zero Trust",
+        "kurzbeschreibung": "Sicherheitsmodell ohne pauschales Vertrauen.",
+        "langbeschreibung": "Zero Trust basiert auf dem Prinzip 'Never trust, always verify'. Jede Zugriffsanfrage wird unabhaengig von Standort oder Netzwerk anhand von Identitaet, Geraetezustand, Risikosignal und Richtlinie geprueft. Die drei Saeulen: Identitaeten verifizieren, Least Privilege durchsetzen, von einem Sicherheitsvorfall ausgehen (Assume Breach). Microsoft setzt Zero Trust ueber Entra ID, Conditional Access, Intune, Defender und Purview um.",
+        "lizenz_info": "Kein einzelnes Produkt; umgesetzt durch M365 E3/E5, Entra ID P1/P2, Intune, Defender-Suite.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/security/zero-trust/"
+      },
+      {
+        "eintrag": "Endpoint Protection",
+        "kurzbeschreibung": "Schutz von Endgeraeten vor Malware und Bedrohungen.",
+        "langbeschreibung": "Endpoint Protection umfasst Antivirus, Anti-Malware, verhaltensbasierte Erkennung, Exploit-Schutz und Geraetekontrolle auf Clients und Servern. Microsoft Defender for Endpoint bietet als EDR-Loesung zusaetzlich Threat Analytics, automatisierte Untersuchung und Live-Response. Drittanbieter: CrowdStrike, SentinelOne, Sophos, Trend Micro.",
+        "lizenz_info": "Microsoft Defender Antivirus in Windows enthalten; Defender for Endpoint Plan 1 in M365 E3, Plan 2 in M365 E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-endpoint/microsoft-defender-endpoint"
+      },
+      {
+        "eintrag": "Security Awareness",
+        "kurzbeschreibung": "Schulungen zur Erkennung von IT-Sicherheitsrisiken.",
+        "langbeschreibung": "Security Awareness Training sensibilisiert Mitarbeitende fuer Phishing, Social Engineering, Passwortsicherheit, Datenklassifizierung und physische Sicherheit. Regelmaessige Kampagnen, Phishing-Simulationen und Wissenspruefungen erhoehen die menschliche Verteidigungslinie. Microsoft bietet Attack Simulation Training in Defender for Office 365 Plan 2.",
+        "lizenz_info": "Attack Simulation Training in M365 E5 / Defender for Office 365 Plan 2; Drittanbieter (KnowBe4, Proofpoint) separat.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-office-365/attack-simulation-training-get-started"
+      },
+      {
+        "eintrag": "Backup-Strategie",
+        "kurzbeschreibung": "Plan fuer Datensicherung, Aufbewahrung und Wiederherstellung.",
+        "langbeschreibung": "Eine Backup-Strategie definiert Sicherungsumfang (welche Daten), Sicherungsart (Voll, Inkrementell, Differentiell), Sicherungsintervalle (RPO), Wiederherstellungszeiten (RTO), Aufbewahrungsfristen und Speicherorte (lokal, offsite, Cloud). Die 3-2-1-Regel (3 Kopien, 2 Medien, 1 extern) ist ein bewaehrtes Grundprinzip. Regelmaessige Restore-Tests verifizieren die Wiederherstellbarkeit.",
+        "lizenz_info": "Abhaengig von Backup-Loesung: Veeam, Azure Backup, Acronis, Windows Server Backup (enthalten), Synology Hyper Backup (in NAS enthalten).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/backup/backup-overview"
+      },
+      {
+        "eintrag": "Disaster Recovery",
+        "kurzbeschreibung": "Wiederherstellung von Systemen nach gravierenden Ausfaellen.",
+        "langbeschreibung": "Disaster Recovery (DR) beschreibt Verfahren und Infrastruktur, um nach Katastrophen (Hardwareausfall, Ransomware, Standortverlust) IT-Systeme und Daten geordnet wiederherzustellen. DR-Plaene definieren RTO, RPO, Failover-Reihenfolge und Kommunikationswege. Technologien: Azure Site Recovery, Veeam Replication, VMware SRM, Hyper-V Replica.",
+        "lizenz_info": "Azure Site Recovery nach geschuetzter Instanz; Veeam, Zerto lizenzpflichtig; Hyper-V Replica in Windows Server enthalten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/site-recovery/site-recovery-overview"
+      },
+      {
+        "eintrag": "Business Continuity",
+        "kurzbeschreibung": "Aufrechterhaltung kritischer Prozesse bei Stoerungen.",
+        "langbeschreibung": "Business Continuity Management (BCM) sichert die Fortfuehrung geschaeftskritischer Prozesse auch waehrend und nach Krisen. Ein BCP (Business Continuity Plan) identifiziert kritische Prozesse (BIA), definiert Mindestbetriebsniveaus, Ausweichstandorte und Kommunikationsplaene. DR ist ein Teilaspekt von BCM. Standards: ISO 22301, BSI 200-4.",
+        "lizenz_info": "Kein spezifisches Produkt; organisatorischer Prozess unterstuetzt durch DR-Tools und Redundanzkonzepte.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/reliability/business-continuity-management-program"
+      },
+      {
+        "eintrag": "Vulnerability Management",
+        "kurzbeschreibung": "Erkennung, Bewertung und Behebung von Schwachstellen.",
+        "langbeschreibung": "Vulnerability Management ist ein kontinuierlicher Prozess: Schwachstellen-Scans identifizieren CVEs und Fehlkonfigurationen, Risikobewertung priorisiert nach CVSS-Score und Geschaeftskontext, Remediation schliesst die Luecken durch Patches oder Konfigurationsaenderungen. Microsoft Defender Vulnerability Management bietet integriertes Scanning fuer M365-verwaltete Endgeraete.",
+        "lizenz_info": "Defender Vulnerability Management in M365 E5 oder als Add-on; Drittanbieter: Tenable, Qualys, Rapid7.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-vulnerability-management/defender-vulnerability-management"
+      },
+      {
+        "eintrag": "Patch Management",
+        "kurzbeschreibung": "Kontrollierte Aktualisierung von Software und Betriebssystemen.",
+        "langbeschreibung": "Patch Management umfasst die Bewertung, den Test, die Genehmigung und das Deployment von Sicherheits- und Feature-Updates auf Servern, Clients und Netzwerkgeraeten. Tools: WSUS, Microsoft Intune, Azure Update Manager, SCCM/MECM, ManageEngine. Patch-Zyklen sollten zeitnah nach Patch Tuesday erfolgen, kritische Updates ggf. sofort.",
+        "lizenz_info": "WSUS in Windows Server enthalten; Intune in M365 E3/E5; Azure Update Manager kostenlos fuer Azure-VMs.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/update-manager/overview"
+      },
+      {
+        "eintrag": "Incident Response",
+        "kurzbeschreibung": "Strukturierte Reaktion auf Sicherheitsvorfaelle.",
+        "langbeschreibung": "Incident Response (IR) folgt typischerweise dem NIST-Framework: Vorbereitung, Erkennung und Analyse, Eindaemmung, Beseitigung, Wiederherstellung und Lessons Learned. Ein IR-Plan definiert Rollen, Eskalationswege, Kommunikation und forensische Massnahmen. Microsoft Defender XDR und Sentinel unterstuetzen automatisierte Erkennung und Reaktion (SOAR).",
+        "lizenz_info": "Tools in M365 E5 (Defender XDR, Sentinel); IR-Plan als organisatorische Massnahme ohne Lizenzkosten.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-xdr/incidents-overview"
+      },
+      {
+        "eintrag": "SIEM",
+        "kurzbeschreibung": "Zentrale Sammlung und Korrelation von Sicherheitsereignissen.",
+        "langbeschreibung": "Ein Security Information and Event Management (SIEM) System aggregiert Logdaten aus Firewalls, Servern, Endpunkten, Cloud-Diensten und Anwendungen, korreliert Ereignisse per Analyseregeln und erzeugt Sicherheitswarnungen. Microsoft Sentinel ist die cloudnative SIEM/SOAR-Loesung auf Basis von Log Analytics. Alternativen: Splunk, IBM QRadar, Elastic SIEM.",
+        "lizenz_info": "Microsoft Sentinel nach Logdatenvolumen; Splunk/QRadar lizenzbasiert; Elastic SIEM Open Source (Basis).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/sentinel/overview"
+      },
+      {
+        "eintrag": "SOC",
+        "kurzbeschreibung": "Sicherheitsleitstelle fuer Ueberwachung und Vorfallbearbeitung.",
+        "langbeschreibung": "Ein Security Operations Center (SOC) ist das Team und die Infrastruktur, die Sicherheitsmeldungen aus SIEM, EDR, Firewall und weiteren Quellen in Echtzeit ueberwacht, Vorfaelle analysiert und Gegenmassnahmen einleitet. SOC-Betrieb kann intern, extern (Managed SOC / MDR) oder hybrid organisiert sein. Schichtbetrieb (24/7) ist fuer kritische Umgebungen Standard.",
+        "lizenz_info": "Organisatorisch; Tool-Kosten fuer SIEM + EDR + SOAR; Managed SOC als Dienstleistung nach Endpunktzahl.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/azure/sentinel/overview"
+      },
+      {
+        "eintrag": "Endpoint Detection and Response",
+        "kurzbeschreibung": "Erkennung und Reaktion auf Bedrohungen an Endgeraeten.",
+        "langbeschreibung": "EDR-Loesungen sammeln Telemetriedaten von Endgeraeten (Prozesse, Netzwerk, Registry, Dateioperationen), erkennen verdaechtige Aktivitaeten per KI und Verhaltensanalyse und ermoeglichen forensische Untersuchung und Remote-Reaktion (Isolation, Live Response). Microsoft Defender for Endpoint Plan 2 ist eine fuehrende EDR-Loesung.",
+        "lizenz_info": "Defender for Endpoint Plan 2 in M365 E5; Drittanbieter: CrowdStrike Falcon, SentinelOne, Carbon Black.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-endpoint/microsoft-defender-endpoint"
+      },
+      {
+        "eintrag": "Extended Detection and Response",
+        "kurzbeschreibung": "Uebergreifende Bedrohungserkennung ueber mehrere Signalquellen.",
+        "langbeschreibung": "XDR erweitert EDR um die Korrelation von Signalen aus Identitaeten (Entra ID), E-Mail (Defender for Office 365), Cloud-Apps (Defender for Cloud Apps) und Netzwerk. Microsoft Defender XDR vereint diese Quellen in einem Portal mit automatisierter Untersuchung und Incident-Korrelation.",
+        "lizenz_info": "Microsoft Defender XDR in M365 E5; einzelne Defender-Komponenten separat lizenzierbar.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-xdr/microsoft-365-defender"
+      },
+      {
+        "eintrag": "Data Loss Prevention",
+        "kurzbeschreibung": "Schutz vor unkontrolliertem Abfluss sensibler Daten.",
+        "langbeschreibung": "DLP-Richtlinien erkennen und blockieren sensible Inhalte (Kreditkartennummern, Personalausweise, Geschaeftsgeheimnisse) beim Versenden per E-Mail, Hochladen in Cloud-Dienste, Kopieren auf USB oder Drucken. Microsoft Purview DLP schuetzt Exchange, SharePoint, OneDrive, Teams und Endgeraete. Adaptive Scopes und Trainable Classifiers verfeinern die Erkennung.",
+        "lizenz_info": "Basis-DLP in M365 E3; Endpoint DLP und erweiterte Szenarien in M365 E5 oder Purview Add-on.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/purview/dlp-learn-about-dlp"
+      },
+      {
+        "eintrag": "E-Mail-Security",
+        "kurzbeschreibung": "Schutz des Mailverkehrs vor Spam, Malware und Phishing.",
+        "langbeschreibung": "E-Mail-Security umfasst Antispam-Filterung, Anti-Malware-Scanning, Anti-Phishing-Richtlinien, Safe Links, Safe Attachments, SPF, DKIM, DMARC und Quarantaene-Management. In Microsoft 365 bietet Exchange Online Protection (EOP) den Basisschutz, Defender for Office 365 Plan 1/2 erweitert um fortgeschrittene Erkennung und Angriffssimulation.",
+        "lizenz_info": "EOP in allen M365-Plaenen enthalten; Defender for Office 365 Plan 1 in E3 (teilweise), Plan 2 in E5.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-office-365/mdo-about"
+      },
+      {
+        "eintrag": "Phishing-Simulation",
+        "kurzbeschreibung": "Realitaetsnahe Test-Kampagnen zur Schulung von Mitarbeitenden.",
+        "langbeschreibung": "Phishing-Simulationen senden kontrollierte Phishing-E-Mails an Mitarbeitende, messen die Klick- und Meldequote und bieten anschliessend gezieltes Training an. Ziel: Reduktion der Anfaelligkeit fuer echte Phishing-Angriffe. Microsoft Attack Simulation Training bietet Vorlagen, Automatisierung und Reporting direkt im M365-Portal.",
+        "lizenz_info": "Attack Simulation Training in M365 E5 / Defender for Office 365 Plan 2; KnowBe4, Proofpoint separat.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-office-365/attack-simulation-training-get-started"
+      },
+      {
+        "eintrag": "SPF",
+        "kurzbeschreibung": "DNS-Eintrag zur Definition autorisierter Mailserver.",
+        "langbeschreibung": "Sender Policy Framework (SPF) ist ein TXT-Record im DNS, der festlegt, welche IP-Adressen oder Hostnamen im Namen einer Domain E-Mails versenden duerfen. Empfangende Mailserver pruefen den SPF-Record und koennen Nachrichten von nicht autorisierten Quellen ablehnen oder markieren. SPF allein schuetzt nicht vor Header-Spoofing, daher immer mit DKIM und DMARC kombinieren.",
+        "lizenz_info": "Kostenlos; DNS-Eintrag.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-office-365/email-authentication-spf-configure"
+      },
+      {
+        "eintrag": "DKIM",
+        "kurzbeschreibung": "Kryptografische Signatur ausgehender E-Mails.",
+        "langbeschreibung": "DomainKeys Identified Mail (DKIM) signiert den Header und Body ausgehender Mails mit einem privaten Schluessel. Der empfangende Server prueft die Signatur gegen den oeffentlichen Schluessel im DNS-CNAME/TXT-Record der Absenderdomaene. DKIM stellt sicher, dass die Nachricht unterwegs nicht veraendert wurde, und ist neben SPF eine Voraussetzung fuer DMARC.",
+        "lizenz_info": "Kostenlos; in Exchange Online per PowerShell oder Defender-Portal aktivierbar.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-office-365/email-authentication-dkim-configure"
+      },
+      {
+        "eintrag": "DMARC",
+        "kurzbeschreibung": "Richtlinie fuer den Umgang mit SPF-/DKIM-Verstoessen.",
+        "langbeschreibung": "Domain-based Message Authentication, Reporting and Conformance (DMARC) definiert per DNS-TXT-Record, wie Empfaenger mit E-Mails umgehen sollen, die SPF und/oder DKIM nicht bestehen (none, quarantine, reject). DMARC-Reports liefern Einblicke, welche Systeme im Namen der Domain senden. Die schrittweise Einrichtung von none ueber quarantine zu reject ist Best Practice.",
+        "lizenz_info": "Kostenlos; DNS-Eintrag. Report-Analyse per DMARC-Analyzer-Tools (z. B. Valimail, dmarcian).",
+        "ms_learn_weblinks": "https://learn.microsoft.com/defender-office-365/email-authentication-dmarc-configure"
+      },
+      {
+        "eintrag": "Privileged Access Management",
+        "kurzbeschreibung": "Kontrolle und Absicherung hochprivilegierter Zugriffe.",
+        "langbeschreibung": "PAM schuetzt Konten mit weitreichenden Berechtigungen (Domain Admins, Global Admins, Root) durch Prinzipien wie Least Privilege, Just-in-Time-Zugriff, Genehmigungsworkflows und lueckenlose Protokollierung. Microsoft Entra PIM ermoeglicht zeitlich begrenzte Rollenaktivierung; Privileged Access Workstations (PAW) haerten die Admin-Arbeitsplaetze.",
+        "lizenz_info": "Entra PIM erfordert Entra ID P2 (in M365 E5); PAW als organisatorische Massnahme.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/id-governance/privileged-identity-management/pim-configure"
+      },
+      {
+        "eintrag": "Passwort-Richtlinie",
+        "kurzbeschreibung": "Anforderungen an Laenge, Komplexitaet und Handhabung von Passwoertern.",
+        "langbeschreibung": "Passwort-Richtlinien definieren Mindestlaenge, Komplexitaetsanforderungen, Sperrschwellen und Wiederverwendungsregeln. Moderne Empfehlungen (NIST 800-63B, BSI) setzen auf laengere Passwoerter statt haeufigem Wechsel und foerdern MFA als ergaenzenden Faktor. Entra ID Password Protection blockiert schwache und kompromittierte Passwoerter; Custom Banned Password Lists ergaenzen den Schutz.",
+        "lizenz_info": "Entra ID Password Protection in Free/P1; Custom Banned Lists ab Entra ID P1.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/entra/identity/authentication/concept-password-ban-bad"
+      },
+      {
+        "eintrag": "Compliance Audit",
+        "kurzbeschreibung": "Systematische Pruefung von Prozessen und Systemen gegen Vorgaben.",
+        "langbeschreibung": "Ein Compliance Audit bewertet, ob IT-Systeme, Prozesse und Dokumentationen definierte Standards und regulatorische Anforderungen erfuellen (z. B. ISO 27001, TISAX, DSGVO, NIS2). Auditoren pruefen Richtlinien, Nachweise, technische Konfigurationen und Massnahmenumsetzung. Microsoft Purview Compliance Manager unterstuetzt die Audit-Vorbereitung mit Assessments und Empfehlungen.",
+        "lizenz_info": "Purview Compliance Manager in M365 E3 (Basis); erweiterte Vorlagen in E5 oder Compliance Add-on.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/purview/compliance-manager"
+      },
+      {
+        "eintrag": "ISO 27001",
+        "kurzbeschreibung": "Internationaler Standard fuer Informationssicherheits-Management.",
+        "langbeschreibung": "ISO/IEC 27001 definiert Anforderungen an ein Informationssicherheits-Managementsystem (ISMS): Risikoanalyse, Massnahmenkatalog (Annex A mit 93 Controls), Dokumentation, internes Audit und kontinuierliche Verbesserung. Die Zertifizierung erfolgt durch akkreditierte Stellen und ist in vielen Branchen (Automotive/TISAX, Finanzen, oeffentliche Hand) gefordert oder erwartet.",
+        "lizenz_info": "Keine Produktlizenz; Zertifizierungskosten durch Auditgesellschaft; Umsetzung mit M365-Compliance-Tools unterstuetzbar.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/compliance/regulatory/offering-iso-27001"
+      },
+      {
+        "eintrag": "NIS2",
+        "kurzbeschreibung": "EU-Richtlinie fuer Cybersicherheit kritischer Einrichtungen.",
+        "langbeschreibung": "Die NIS2-Richtlinie (EU 2022/2555) erweitert den Kreis betroffener Unternehmen erheblich und verschaerft Anforderungen an Risikomanagement, Incident Reporting (24h/72h-Meldepflichten), Supply-Chain-Sicherheit und Geschaeftsleitungshaftung. Betroffene Sektoren: Energie, Verkehr, Gesundheit, digitale Infrastruktur, Verwaltung, Fertigung u.v.m. Die nationale Umsetzung (in DE: NIS2UmsuCG) konkretisiert die Anforderungen.",
+        "lizenz_info": "Kein spezifisches Produkt; Umsetzung durch organisatorische und technische Massnahmen, unterstuetzt durch M365 E5 Security, Sentinel, Purview.",
+        "ms_learn_weblinks": "https://digital-strategy.ec.europa.eu/en/policies/nis2-directive"
+      },
+      {
+        "eintrag": "DSGVO",
+        "kurzbeschreibung": "EU-Datenschutzverordnung fuer personenbezogene Daten.",
+        "langbeschreibung": "Die Datenschutz-Grundverordnung (DSGVO / GDPR) regelt die Verarbeitung personenbezogener Daten in der EU. Kernprinzipien: Rechtmaessigkeit, Zweckbindung, Datenminimierung, Richtigkeit, Speicherbegrenzung, Integritaet und Vertraulichkeit. Organisationen muessen Verarbeitungsverzeichnisse fuehren, Datenschutz-Folgenabschaetzungen durchfuehren und Betroffenenrechte (Auskunft, Loeschung, Portabilitaet) gewaehrleisten. Microsoft 365 unterstuetzt DSGVO-Compliance durch Purview (DLP, Retention, eDiscovery, Audit), Sensitivity Labels und Compliance Manager.",
+        "lizenz_info": "Kein spezifisches Produkt; Compliance-Tools in M365 E3/E5; Purview Add-ons fuer erweiterte Szenarien.",
+        "ms_learn_weblinks": "https://learn.microsoft.com/compliance/regulatory/gdpr"
+      }
+    ]
+  }
+}

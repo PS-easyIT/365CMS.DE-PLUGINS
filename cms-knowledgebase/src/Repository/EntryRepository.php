@@ -149,11 +149,64 @@ final class EntryRepository
     public function getCategories(): array
     {
         $db = Database::instance();
-        $stmt = $db->prepare('SELECT category, COUNT(*) AS entry_count FROM ' . $this->entriesTable() . " WHERE is_active = 1 AND category IS NOT NULL AND category <> '' GROUP BY category ORDER BY category ASC");
+        $stmt = $db->prepare('SELECT c.id, c.name AS category, c.slug, c.sort_order, COUNT(e.id) AS entry_count
+            FROM ' . $this->categoriesTable() . ' c
+            LEFT JOIN ' . $this->entriesTable() . ' e ON e.category = c.name AND e.is_active = 1
+            GROUP BY c.id, c.name, c.slug, c.sort_order
+            ORDER BY c.sort_order ASC, c.name ASC');
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return is_array($rows) ? $rows : [];
+    }
+
+    public function getCategory(int $id): ?array
+    {
+        $db = Database::instance();
+        $stmt = $db->prepare('SELECT id, name AS category, slug, sort_order FROM ' . $this->categoriesTable() . ' WHERE id = ? LIMIT 1');
+        $stmt->execute([$id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    public function countEntries(array $filters = []): int
+    {
+        $db = Database::instance();
+        $table = $this->entriesTable();
+        $conditions = [];
+        $params = [];
+
+        if (($filters['status'] ?? '') === 'active') {
+            $conditions[] = 'is_active = 1';
+        }
+
+        $search = trim((string) ($filters['search'] ?? ''));
+        if ($search !== '') {
+            $conditions[] = '(title LIKE ? OR keyword LIKE ? OR synonyms LIKE ? OR excerpt LIKE ?)';
+            $needle = '%' . $search . '%';
+            $params[] = $needle;
+            $params[] = $needle;
+            $params[] = $needle;
+            $params[] = $needle;
+        }
+
+        $category = trim((string) ($filters['category'] ?? ''));
+        if ($category !== '') {
+            $conditions[] = 'category = ?';
+            $params[] = $category;
+        }
+
+        $sql = 'SELECT COUNT(*) FROM ' . $table;
+        if ($conditions !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $conditions);
+        }
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $count = $stmt->fetchColumn();
+
+        return (int) $count;
     }
 
     /**
@@ -182,68 +235,18 @@ final class EntryRepository
      */
     public function getRelatedPosts(array $entry, string $locale = 'de', int $limit = 4): array
     {
-        $terms = $this->buildRelatedPostTerms($entry);
-        if ($terms === []) {
-            return [];
+        $profile = $this->buildRelatedPostSearchProfile($entry);
+        if (($profile['phrases'] ?? []) === [] && ($profile['tokens'] ?? []) === []) {
+            return $this->getFallbackRelatedPosts($locale, $limit);
         }
 
         $db = Database::instance();
         $prefix = $db->prefix();
         $locale = $this->normalizeContentLocale($locale);
-        $localizedTitle = $locale === 'en' ? "COALESCE(NULLIF(p.title_en, ''), p.title)" : 'p.title';
-        $localizedExcerpt = $locale === 'en' ? "COALESCE(NULLIF(p.excerpt_en, ''), p.excerpt)" : 'p.excerpt';
-        $localizedContent = $locale === 'en' ? "COALESCE(NULLIF(p.content_en, ''), p.content)" : 'p.content';
         $tagNamesSql = "COALESCE((SELECT GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ', ')
             FROM {$prefix}post_tag_rel ptr
             INNER JOIN {$prefix}post_tags t ON t.id = ptr.tag_id
             WHERE ptr.post_id = p.id), '')";
-
-        $scoreParts = [];
-        $scoreParams = [];
-        $havingParts = [];
-        $havingParams = [];
-
-        foreach ($terms as $term) {
-            $needle = '%' . $term . '%';
-            $scoreParts[] = "(CASE WHEN {$localizedTitle} LIKE ? THEN 80 ELSE 0 END)";
-            $scoreParams[] = $needle;
-
-            $scoreParts[] = "(CASE WHEN {$localizedExcerpt} LIKE ? THEN 30 ELSE 0 END)";
-            $scoreParams[] = $needle;
-
-            $scoreParts[] = "(CASE WHEN {$localizedContent} LIKE ? THEN 12 ELSE 0 END)";
-            $scoreParams[] = $needle;
-
-            $scoreParts[] = "(CASE WHEN COALESCE(c.name, '') LIKE ? THEN 20 ELSE 0 END)";
-            $scoreParams[] = $needle;
-
-            $scoreParts[] = "(CASE WHEN COALESCE(p.tags, '') LIKE ? THEN 18 ELSE 0 END)";
-            $scoreParams[] = $needle;
-
-            $scoreParts[] = "(CASE WHEN {$tagNamesSql} LIKE ? THEN 18 ELSE 0 END)";
-            $scoreParams[] = $needle;
-
-            $havingParts[] = "{$localizedTitle} LIKE ?";
-            $havingParams[] = $needle;
-
-            $havingParts[] = "{$localizedExcerpt} LIKE ?";
-            $havingParams[] = $needle;
-
-            $havingParts[] = "{$localizedContent} LIKE ?";
-            $havingParams[] = $needle;
-
-            $havingParts[] = "COALESCE(c.name, '') LIKE ?";
-            $havingParams[] = $needle;
-
-            $havingParts[] = "COALESCE(p.tags, '') LIKE ?";
-            $havingParams[] = $needle;
-
-            $havingParts[] = "{$tagNamesSql} LIKE ?";
-            $havingParams[] = $needle;
-        }
-
-        $scoreSql = implode(' + ', $scoreParts);
-        $havingSql = implode(' OR ', $havingParts);
         $localeAvailability = $this->buildPostLocaleAvailabilityExpression('p', $locale);
 
         $sql = "SELECT
@@ -256,19 +259,18 @@ final class EntryRepository
                 p.excerpt_en,
                 p.content,
                 p.content_en,
+                p.tags,
                 p.published_at,
                 p.created_at,
                 COALESCE(c.name, '') AS category_name,
-                {$tagNamesSql} AS tag_names,
-                ({$scoreSql}) AS relevance_score
+                {$tagNamesSql} AS tag_names
             FROM {$prefix}posts p
             LEFT JOIN {$prefix}post_categories c ON c.id = p.category_id
             WHERE p.status = 'published' AND {$localeAvailability}
-            AND ({$havingSql})
-            ORDER BY relevance_score DESC, COALESCE(p.published_at, p.created_at) DESC
-            LIMIT {$limit}";
+            ORDER BY COALESCE(p.published_at, p.created_at) DESC
+            LIMIT 250";
 
-        $rows = $db->get_results($sql, array_merge($scoreParams, $havingParams)) ?: [];
+        $rows = $db->get_results($sql) ?: [];
         if (!is_array($rows)) {
             return [];
         }
@@ -280,11 +282,41 @@ final class EntryRepository
         foreach ($rows as $row) {
             $post = is_array($row) ? $row : (array) $row;
             $post = $localization->localizePost($post, $locale);
+            $score = $this->scoreRelatedPost($post, $profile);
+            if ($score <= 0) {
+                continue;
+            }
+
+            $post['relevance_score'] = $score;
+            $post['relevance_signals'] = $this->collectRelatedPostSignals($post, $profile);
             $post['url'] = $permalinks->buildPostUrl($post, $locale);
             $posts[] = $post;
         }
 
-        return $posts;
+        usort($posts, static function (array $left, array $right): int {
+            $scoreCompare = ((int) ($right['relevance_score'] ?? 0)) <=> ((int) ($left['relevance_score'] ?? 0));
+            if ($scoreCompare !== 0) {
+                return $scoreCompare;
+            }
+
+            return strcmp(
+                (string) ($right['published_at'] ?? $right['created_at'] ?? ''),
+                (string) ($left['published_at'] ?? $left['created_at'] ?? '')
+            );
+        });
+
+        $posts = array_slice($posts, 0, $limit);
+        if (count($posts) >= $limit) {
+            return $posts;
+        }
+
+        $fallbackPosts = $this->getFallbackRelatedPosts(
+            $locale,
+            $limit - count($posts),
+            array_map(static fn(array $post): int => (int) ($post['id'] ?? 0), $posts)
+        );
+
+        return array_slice(array_merge($posts, $fallbackPosts), 0, $limit);
     }
 
     /**
@@ -361,6 +393,8 @@ final class EntryRepository
                 'open_links_new_tab',
                 'archive_title',
                 'archive_intro',
+                'glossary_title',
+                'glossary_intro',
                 'show_search',
                 'show_category_sidebar',
                 'show_keyword_badges',
@@ -396,8 +430,13 @@ final class EntryRepository
                 }
             }
 
-            if ($isActiveKey && isset($colorDefaults[$key]) && isset($input[$key . '_text']) && trim((string) $input[$key . '_text']) !== '') {
-                $value = (string) $input[$key . '_text'];
+            if ($isActiveKey && isset($colorDefaults[$key])) {
+                $value = $this->resolveSubmittedColorValue(
+                    $input,
+                    $key,
+                    (string) ($existingSettings[$key] ?? $default),
+                    $colorDefaults[$key]
+                );
             }
 
             if (in_array($key, $checkboxKeys, true)) {
@@ -411,7 +450,11 @@ final class EntryRepository
                 $value = $this->sanitizeText((string) $value, 40);
             } elseif ($key === 'archive_title') {
                 $value = $this->sanitizeText((string) $value, 120);
+            } elseif ($key === 'glossary_title') {
+                $value = $this->sanitizeText((string) $value, 120);
             } elseif ($key === 'archive_intro') {
+                $value = $this->sanitizeTextarea((string) $value);
+            } elseif ($key === 'glossary_intro') {
                 $value = $this->sanitizeTextarea((string) $value);
             } else {
                 $value = $this->sanitizeText((string) $value, 1000);
@@ -424,6 +467,29 @@ final class EntryRepository
         }
 
         return ['success' => true, 'message' => 'Knowledgebase-Einstellungen gespeichert.'];
+    }
+
+    private function resolveSubmittedColorValue(array $input, string $key, string $currentValue, string $fallback): string
+    {
+        $pickerValue = trim((string) ($input[$key] ?? ''));
+        $textValue = trim((string) ($input[$key . '_text'] ?? ''));
+        $normalizedCurrent = strtoupper($this->sanitizeColor($currentValue, $fallback));
+        $normalizedPicker = preg_match('/^#[0-9A-Fa-f]{6}$/', $pickerValue) === 1 ? strtoupper($pickerValue) : '';
+        $normalizedText = preg_match('/^#[0-9A-Fa-f]{6}$/', $textValue) === 1 ? strtoupper($textValue) : '';
+
+        if ($normalizedPicker !== '' && $normalizedPicker !== $normalizedCurrent && ($normalizedText === '' || $normalizedText === $normalizedCurrent)) {
+            return $normalizedPicker;
+        }
+
+        if ($normalizedText !== '') {
+            return $normalizedText;
+        }
+
+        if ($normalizedPicker !== '') {
+            return $normalizedPicker;
+        }
+
+        return $fallback;
     }
 
     /**
@@ -469,6 +535,10 @@ final class EntryRepository
 
         if ($title === '' || $keyword === '') {
             return ['success' => false, 'error' => 'Titel und Fokusbegriff sind erforderlich.'];
+        }
+
+        if ($category !== '') {
+            $this->ensureCategoryExists($category);
         }
 
         if ($id > 0) {
@@ -535,6 +605,65 @@ final class EntryRepository
         return ['success' => true, 'message' => 'Knowledgebase-Eintrag angelegt.', 'id' => $newId];
     }
 
+    public function saveCategory(array $input): array
+    {
+        $db = Database::instance();
+        $table = $this->categoriesTable();
+        $id = (int) ($input['category_id'] ?? 0);
+        $name = $this->sanitizeText((string) ($input['category_name'] ?? ''), 120);
+        $sortOrder = max(0, min(9999, (int) ($input['sort_order'] ?? 0)));
+        $current = $id > 0 ? $this->getCategory($id) : null;
+
+        if ($name === '') {
+            return ['success' => false, 'error' => 'Bitte einen Kategorienamen angeben.'];
+        }
+
+        $slug = $this->generateUniqueCategorySlug($name, $id);
+
+        if ($id > 0 && $current !== null) {
+            $stmt = $db->prepare("UPDATE {$table} SET name = :name, slug = :slug, sort_order = :sort_order WHERE id = :id");
+            $stmt->execute([
+                'id' => $id,
+                'name' => $name,
+                'slug' => $slug,
+                'sort_order' => $sortOrder,
+            ]);
+
+            if (((string) ($current['category'] ?? '')) !== $name) {
+                $entryStmt = $db->prepare('UPDATE ' . $this->entriesTable() . ' SET category = ? WHERE category = ?');
+                $entryStmt->execute([$name, (string) ($current['category'] ?? '')]);
+            }
+
+            return ['success' => true, 'message' => 'Kategorie aktualisiert.', 'id' => $id];
+        }
+
+        $stmt = $db->prepare("INSERT INTO {$table} (name, slug, sort_order) VALUES (:name, :slug, :sort_order)");
+        $stmt->execute([
+            'name' => $name,
+            'slug' => $slug,
+            'sort_order' => $sortOrder,
+        ]);
+
+        return ['success' => true, 'message' => 'Kategorie angelegt.', 'id' => (int) $db->lastInsertId()];
+    }
+
+    public function deleteCategory(int $id): array
+    {
+        $category = $this->getCategory($id);
+        if ($category === null) {
+            return ['success' => false, 'error' => 'Kategorie nicht gefunden.'];
+        }
+
+        $db = Database::instance();
+        $entryStmt = $db->prepare('UPDATE ' . $this->entriesTable() . ' SET category = NULL WHERE category = ?');
+        $entryStmt->execute([(string) ($category['category'] ?? '')]);
+
+        $deleteStmt = $db->prepare('DELETE FROM ' . $this->categoriesTable() . ' WHERE id = ?');
+        $deleteStmt->execute([$id]);
+
+        return ['success' => true, 'message' => 'Kategorie gelöscht.'];
+    }
+
     public function deleteEntry(int $id): array
     {
         if ($id <= 0) {
@@ -548,6 +677,41 @@ final class EntryRepository
         $this->logger->info('Knowledgebase-Eintrag gelöscht.', ['entry_id' => $id]);
 
         return ['success' => true, 'message' => 'Knowledgebase-Eintrag gelöscht.'];
+    }
+
+    public function hardResetEntries(): array
+    {
+        $db = Database::instance();
+        $table = $this->entriesTable();
+        $deleted = $this->getDashboardStats()['entries'] ?? 0;
+
+        $stmt = $db->prepare('DELETE FROM ' . $table);
+        $stmt->execute();
+
+        try {
+            $db->getPdo()->exec('ALTER TABLE ' . $table . ' AUTO_INCREMENT = 1');
+        } catch (\Throwable) {
+            // AUTO_INCREMENT-Reset ist optional.
+        }
+
+        $this->logger->warning('Knowledgebase-Hardreset ausgeführt.', ['deleted_entries' => (int) $deleted]);
+
+        return [
+            'success' => true,
+            'message' => sprintf('Hardreset abgeschlossen. %d Knowledgebase-Einträge wurden entfernt.', (int) $deleted),
+        ];
+    }
+
+    public function saveCsvImportStatus(int $importedCount, int $created, int $updated, int $skipped, string $scope = 'all'): void
+    {
+        $timestamp = function_exists('gmdate') ? gmdate('c') : date('c');
+
+        $this->saveSettingValue('csv_last_import_at', $timestamp);
+        $this->saveSettingValue('csv_last_import_count', (string) max(0, $importedCount));
+        $this->saveSettingValue('csv_last_import_created', (string) max(0, $created));
+        $this->saveSettingValue('csv_last_import_updated', (string) max(0, $updated));
+        $this->saveSettingValue('csv_last_import_skipped', (string) max(0, $skipped));
+        $this->saveSettingValue('csv_last_import_scope', $this->sanitizeText($scope, 120));
     }
 
     /**
@@ -585,27 +749,22 @@ final class EntryRepository
             $slug = (string) ($entry['slug'] ?? '');
             $existingEntry = $slug !== '' ? ($existingEntries[$slug] ?? null) : null;
             if (is_array($existingEntry)) {
-                if ($this->isGeneratedPlaceholderEntry($existingEntry)) {
-                    $result = $this->saveEntry([
-                        ...$entry,
-                        'entry_id' => (string) ($existingEntry['id'] ?? 0),
-                        'is_active' => (string) ($existingEntry['is_active'] ?? $entry['is_active'] ?? '1'),
-                        'priority' => (string) ($existingEntry['priority'] ?? $entry['priority'] ?? '100'),
-                        'is_case_sensitive' => (string) ($existingEntry['is_case_sensitive'] ?? $entry['is_case_sensitive'] ?? '0'),
-                        'is_whole_word' => (string) ($existingEntry['is_whole_word'] ?? $entry['is_whole_word'] ?? '1'),
-                        'max_links_per_page' => (string) ($existingEntry['max_links_per_page'] ?? $entry['max_links_per_page'] ?? '1'),
-                    ]);
+                $result = $this->saveEntry([
+                    ...$entry,
+                    'entry_id' => (string) ($existingEntry['id'] ?? 0),
+                    'is_active' => (string) ($existingEntry['is_active'] ?? $entry['is_active'] ?? '1'),
+                    'priority' => (string) ($existingEntry['priority'] ?? $entry['priority'] ?? '100'),
+                    'is_case_sensitive' => (string) ($existingEntry['is_case_sensitive'] ?? $entry['is_case_sensitive'] ?? '0'),
+                    'is_whole_word' => (string) ($existingEntry['is_whole_word'] ?? $entry['is_whole_word'] ?? '1'),
+                    'max_links_per_page' => (string) ($existingEntry['max_links_per_page'] ?? $entry['max_links_per_page'] ?? '1'),
+                ]);
 
-                    if ((bool) ($result['success'] ?? false)) {
-                        ++$updated;
-                        continue;
-                    }
-
-                    ++$errors;
+                if ((bool) ($result['success'] ?? false)) {
+                    ++$updated;
                     continue;
                 }
 
-                ++$skipped;
+                ++$errors;
                 continue;
             }
 
@@ -637,6 +796,11 @@ final class EntryRepository
     private function entriesTable(): string
     {
         return Database::instance()->prefix() . 'kb_entries';
+    }
+
+    private function categoriesTable(): string
+    {
+        return Database::instance()->prefix() . 'kb_categories';
     }
 
     /**
@@ -675,6 +839,15 @@ final class EntryRepository
         }
         $sql .= ' ORDER BY is_active DESC, priority ASC, title ASC';
 
+        $limit = isset($filters['limit']) ? max(1, (int) $filters['limit']) : 0;
+        $offset = isset($filters['offset']) ? max(0, (int) $filters['offset']) : 0;
+        if ($limit > 0) {
+            $sql .= ' LIMIT ' . $limit;
+            if ($offset > 0) {
+                $sql .= ' OFFSET ' . $offset;
+            }
+        }
+
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -685,6 +858,19 @@ final class EntryRepository
     private function settingsTable(): string
     {
         return Database::instance()->prefix() . 'kb_settings';
+    }
+
+    private function saveSettingValue(string $key, string $value): void
+    {
+        $db = Database::instance();
+        $table = $this->settingsTable();
+        $stmt = $db->prepare("INSERT INTO {$table} (setting_key, setting_value)
+            VALUES (:setting_key, :setting_value)
+            ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $stmt->execute([
+            'setting_key' => $key,
+            'setting_value' => $value,
+        ]);
     }
 
     private function generateUniqueSlug(string $source, int $ignoreId = 0): string
@@ -805,7 +991,7 @@ final class EntryRepository
     {
         $terms = [];
 
-        foreach (['keyword', 'title', 'category'] as $field) {
+        foreach (['keyword', 'title', 'category', 'slug'] as $field) {
             $value = trim((string) ($entry[$field] ?? ''));
             if ($value !== '') {
                 $terms[] = $value;
@@ -828,6 +1014,108 @@ final class EntryRepository
         usort($terms, static fn(string $left, string $right): int => mb_strlen($right, 'UTF-8') <=> mb_strlen($left, 'UTF-8'));
 
         return array_slice($terms, 0, 8);
+    }
+
+    /**
+     * @return array{phrases: array<int, string>, tokens: array<int, string>}
+     */
+    private function buildRelatedPostSearchProfile(array $entry): array
+    {
+        $phrases = $this->buildRelatedPostTerms($entry);
+        $tokens = [];
+
+        foreach ($phrases as $phrase) {
+            $parts = preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($phrase, 'UTF-8')) ?: [];
+            foreach ($parts as $part) {
+                $part = trim($part);
+                if ($part === '') {
+                    continue;
+                }
+
+                if (mb_strlen($part, 'UTF-8') < 2) {
+                    continue;
+                }
+
+                if (preg_match('/^\d+$/', $part) === 1 && mb_strlen($part, 'UTF-8') < 4) {
+                    continue;
+                }
+
+                if (in_array($part, ['oder', 'aber', 'eine', 'einer', 'einem', 'einen', 'einer', 'der', 'die', 'das', 'dem', 'den', 'und', 'mit', 'für', 'fur', 'the', 'and', 'for', 'von', 'aus', 'bei', 'ein', 'eine', 'ist', 'are'], true)) {
+                    continue;
+                }
+
+                $tokens[] = $part;
+            }
+        }
+
+        $tokens = array_values(array_unique($tokens));
+        usort($tokens, static fn(string $left, string $right): int => mb_strlen($right, 'UTF-8') <=> mb_strlen($left, 'UTF-8'));
+
+        return [
+            'phrases' => $phrases,
+            'tokens' => array_slice($tokens, 0, 18),
+        ];
+    }
+
+    /**
+     * @param array{phrases: array<int, string>, tokens: array<int, string>} $profile
+     */
+    private function scoreRelatedPost(array $post, array $profile): int
+    {
+        $title = mb_strtolower(trim((string) ($post['title'] ?? '')), 'UTF-8');
+        $excerpt = mb_strtolower(trim((string) ($post['excerpt'] ?? '')), 'UTF-8');
+        $content = mb_strtolower(trim(strip_tags((string) ($post['content'] ?? ''))), 'UTF-8');
+        $category = mb_strtolower(trim((string) ($post['category_name'] ?? '')), 'UTF-8');
+        $tags = mb_strtolower(trim((string) (($post['tag_names'] ?? '') !== '' ? $post['tag_names'] : ($post['tags'] ?? ''))), 'UTF-8');
+
+        $score = 0;
+
+        foreach ($profile['phrases'] as $phrase) {
+            $needle = mb_strtolower($phrase, 'UTF-8');
+            if ($needle === '') {
+                continue;
+            }
+
+            if ($title !== '' && str_contains($title, $needle)) {
+                $score += 140;
+            }
+            if ($excerpt !== '' && str_contains($excerpt, $needle)) {
+                $score += 55;
+            }
+            if ($category !== '' && str_contains($category, $needle)) {
+                $score += 90;
+            }
+            if ($tags !== '' && str_contains($tags, $needle)) {
+                $score += 84;
+            }
+            if ($content !== '' && str_contains($content, $needle)) {
+                $score += 16;
+            }
+        }
+
+        foreach ($profile['tokens'] as $token) {
+            if ($token === '') {
+                continue;
+            }
+
+            if ($title !== '' && str_contains($title, $token)) {
+                $score += 24;
+            }
+            if ($excerpt !== '' && str_contains($excerpt, $token)) {
+                $score += 10;
+            }
+            if ($category !== '' && str_contains($category, $token)) {
+                $score += 28;
+            }
+            if ($tags !== '' && str_contains($tags, $token)) {
+                $score += 24;
+            }
+            if ($content !== '' && str_contains($content, $token)) {
+                $score += 4;
+            }
+        }
+
+        return $score;
     }
 
     private function normalizeContentLocale(string $locale): string
@@ -876,6 +1164,41 @@ final class EntryRepository
         return "(CHAR_LENGTH(TRIM(COALESCE({$alias}.slug_en, ''))) > 0 AND NOT {$englishContent})";
     }
 
+    /**
+     * @param array{phrases: array<int, string>, tokens: array<int, string>} $profile
+     * @return array<int, string>
+     */
+    private function collectRelatedPostSignals(array $post, array $profile): array
+    {
+        $signals = [];
+        $title = mb_strtolower(trim((string) ($post['title'] ?? '')), 'UTF-8');
+        $category = mb_strtolower(trim((string) ($post['category_name'] ?? '')), 'UTF-8');
+        $tags = mb_strtolower(trim((string) (($post['tag_names'] ?? '') !== '' ? $post['tag_names'] : ($post['tags'] ?? ''))), 'UTF-8');
+        $excerpt = mb_strtolower(trim((string) ($post['excerpt'] ?? '')), 'UTF-8');
+
+        foreach ($profile['phrases'] as $phrase) {
+            $needle = mb_strtolower($phrase, 'UTF-8');
+            if ($needle === '') {
+                continue;
+            }
+
+            if ($category !== '' && str_contains($category, $needle)) {
+                $signals[] = 'Kategorie-Match';
+            }
+            if ($tags !== '' && str_contains($tags, $needle)) {
+                $signals[] = 'Tag-Match';
+            }
+            if ($title !== '' && str_contains($title, $needle)) {
+                $signals[] = 'Titel-Match';
+            }
+            if ($excerpt !== '' && str_contains($excerpt, $needle)) {
+                $signals[] = 'Inhalts-Match';
+            }
+        }
+
+        return array_values(array_unique($signals));
+    }
+
     private function sanitizeText(string $value, int $maxLength = 255): string
     {
         $value = function_exists('sanitize_text_field') ? sanitize_text_field($value) : trim(strip_tags($value));
@@ -891,7 +1214,129 @@ final class EntryRepository
 
     private function sanitizeRichText(string $value): string
     {
-        return trim(strip_tags($value, '<p><a><strong><em><ul><ol><li><br><blockquote><code><pre><h2><h3><h4>'));
+        return trim(strip_tags($value, '<p><a><strong><em><ul><ol><li><br><blockquote><code><pre><h2><h3><h4><table><thead><tbody><tfoot><tr><th><td><caption><colgroup><col>'));
+    }
+
+    /**
+     * @param array<int, int> $excludeIds
+     * @return array<int, array<string, mixed>>
+     */
+    private function getFallbackRelatedPosts(string $locale, int $limit, array $excludeIds = []): array
+    {
+        if ($limit <= 0) {
+            return [];
+        }
+
+        $db = Database::instance();
+        $prefix = $db->prefix();
+        $locale = $this->normalizeContentLocale($locale);
+        $localeAvailability = $this->buildPostLocaleAvailabilityExpression('p', $locale);
+        $conditions = ["p.status = 'published'", $localeAvailability];
+        $params = [];
+
+        $excludeIds = array_values(array_filter(array_map(static fn(mixed $id): int => (int) $id, $excludeIds)));
+        if ($excludeIds !== []) {
+            $placeholders = implode(', ', array_fill(0, count($excludeIds), '?'));
+            $conditions[] = "p.id NOT IN ({$placeholders})";
+            foreach ($excludeIds as $excludeId) {
+                $params[] = $excludeId;
+            }
+        }
+
+        $sql = "SELECT
+                p.id,
+                p.title,
+                p.title_en,
+                p.slug,
+                p.slug_en,
+                p.excerpt,
+                p.excerpt_en,
+                p.content,
+                p.content_en,
+                p.tags,
+                p.published_at,
+                p.created_at,
+                COALESCE(c.name, '') AS category_name
+            FROM {$prefix}posts p
+            LEFT JOIN {$prefix}post_categories c ON c.id = p.category_id
+            WHERE " . implode(' AND ', $conditions) . "
+            ORDER BY COALESCE(p.published_at, p.created_at) DESC
+            LIMIT " . max(1, $limit * 3);
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $localization = ContentLocalizationService::getInstance();
+        $permalinks = PermalinkService::getInstance();
+        $posts = [];
+
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $post = $localization->localizePost($row, $locale);
+            $post['relevance_signals'] = ['Aktuell im 365CMS'];
+            $post['url'] = $permalinks->buildPostUrl($post, $locale);
+            $posts[] = $post;
+        }
+
+        return array_slice($posts, 0, $limit);
+    }
+
+    private function ensureCategoryExists(string $name): void
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return;
+        }
+
+        $db = Database::instance();
+        $existing = $db->prepare('SELECT id FROM ' . $this->categoriesTable() . ' WHERE name = ? LIMIT 1');
+        $existing->execute([$name]);
+        if (is_array($existing->fetch(PDO::FETCH_ASSOC))) {
+            return;
+        }
+
+        $stmt = $db->prepare('INSERT INTO ' . $this->categoriesTable() . ' (name, slug, sort_order) VALUES (?, ?, 0)');
+        $stmt->execute([$name, $this->generateUniqueCategorySlug($name)]);
+    }
+
+    private function generateUniqueCategorySlug(string $source, int $ignoreId = 0): string
+    {
+        $slug = $this->slugify($source);
+        if ($slug === '') {
+            $slug = 'kb-kategorie';
+        }
+
+        $db = Database::instance();
+        $table = $this->categoriesTable();
+        $candidate = $slug;
+        $suffix = 2;
+
+        while (true) {
+            $query = "SELECT id FROM {$table} WHERE slug = ?";
+            $params = [$candidate];
+            if ($ignoreId > 0) {
+                $query .= ' AND id <> ?';
+                $params[] = $ignoreId;
+            }
+            $query .= ' LIMIT 1';
+
+            $stmt = $db->prepare($query);
+            $stmt->execute($params);
+            $exists = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!is_array($exists)) {
+                return $candidate;
+            }
+
+            $candidate = $slug . '-' . $suffix;
+            ++$suffix;
+        }
     }
 
     private function sanitizeSynonyms(string $value): string

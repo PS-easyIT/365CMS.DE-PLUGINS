@@ -24,6 +24,8 @@ final class Defaults
             'open_links_new_tab' => '0',
             'archive_title' => 'Knowledgebase',
             'archive_intro' => 'Hilfreiche Begriffe, Hintergründe und kurze Erklärungen aus deinem CMS direkt im Kontext verlinkt.',
+            'glossary_title' => 'Glossar',
+            'glossary_intro' => 'Alle wichtigen Begriffe kompakt erklärt – ideal zum schnellen Nachschlagen und für interne Verlinkungen.',
             'show_search' => '1',
             'show_category_sidebar' => '1',
             'show_keyword_badges' => '1',

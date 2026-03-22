@@ -23,6 +23,7 @@ final class PublicController
     {
         $router->addRoute('GET', '/kb', [$this, 'archivePage']);
         $router->addRoute('GET', '/glossar', [$this, 'glossaryPage']);
+        $router->addRoute('GET', '/glossar-sitemap.xml', [$this, 'glossarySitemap']);
         $router->addRoute('GET', '/kb/:slug', [$this, 'singlePage']);
     }
 
@@ -52,16 +53,31 @@ final class PublicController
         $settings = $repository->getSettings();
         $search = trim((string) ($_GET['q'] ?? ''));
         $category = trim((string) ($_GET['category'] ?? ''));
-        $entries = $repository->getEntries([
+        $allowedPerPage = [25, 50, 100, 200];
+        $requestedPerPage = (int) ($_GET['per_page'] ?? 25);
+        $perPage = in_array($requestedPerPage, $allowedPerPage, true) ? $requestedPerPage : 25;
+        $filters = [
             'status' => 'active',
             'search' => $search,
             'category' => $category,
+        ];
+        $totalEntries = $repository->countEntries($filters);
+        $totalPages = max(1, (int) ceil($totalEntries / $perPage));
+        $currentPage = max(1, (int) ($_GET['page'] ?? 1));
+        $currentPage = min($currentPage, $totalPages);
+        $entries = $repository->getEntries([
+            ...$filters,
+            'limit' => $perPage,
+            'offset' => ($currentPage - 1) * $perPage,
         ]);
         $categories = $repository->getCategories();
         $archiveHeroEyebrow = 'Knowledgebase';
+        $archiveIntro = (string) ($settings['archive_intro'] ?? '');
         $archiveResultsLabel = $search !== '' || $category !== ''
             ? 'Gefilterte Knowledgebase-Treffer'
             : 'Knowledgebase-Übersicht';
+        $perPageOptions = $allowedPerPage;
+        $pageBaseUrl = SITE_URL . '/kb';
         $theme = class_exists('CMS\\ThemeManager') ? \CMS\ThemeManager::instance() : null;
 
         if ($theme !== null) {
@@ -81,16 +97,31 @@ final class PublicController
         $settings = $repository->getSettings();
         $search = trim((string) ($_GET['q'] ?? ''));
         $category = trim((string) ($_GET['category'] ?? ''));
-        $entries = $repository->getEntries([
+        $allowedPerPage = [25, 50, 100, 200];
+        $requestedPerPage = (int) ($_GET['per_page'] ?? 25);
+        $perPage = in_array($requestedPerPage, $allowedPerPage, true) ? $requestedPerPage : 25;
+        $filters = [
             'status' => 'active',
             'search' => $search,
             'category' => $category,
+        ];
+        $totalEntries = $repository->countEntries($filters);
+        $totalPages = max(1, (int) ceil($totalEntries / $perPage));
+        $currentPage = max(1, (int) ($_GET['page'] ?? 1));
+        $currentPage = min($currentPage, $totalPages);
+        $entries = $repository->getEntries([
+            ...$filters,
+            'limit' => $perPage,
+            'offset' => ($currentPage - 1) * $perPage,
         ]);
         $categories = $repository->getCategories();
         $archiveVariant = 'glossary';
         $archiveBasePath = '/glossar';
+        $pageBaseUrl = SITE_URL . '/glossar';
+        $perPageOptions = $allowedPerPage;
         $archiveHeroEyebrow = 'Glossar';
-        $archiveTitle = 'Glossar';
+        $archiveTitle = (string) ($settings['glossary_title'] ?? 'Glossar');
+        $archiveIntro = (string) ($settings['glossary_intro'] ?? '');
         $archiveResultsLabel = $search !== '' || $category !== ''
             ? 'Gefilterte Glossar-Einträge'
             : 'Glossar-Übersicht';
@@ -105,6 +136,65 @@ final class PublicController
         if ($theme !== null) {
             $theme->getFooter();
         }
+    }
+
+    public function glossarySitemap(): void
+    {
+        $repository = EntryRepository::instance();
+        $entries = $repository->getEntryList(['status' => 'active']);
+        $generatedAt = function_exists('gmdate') ? gmdate('c') : date('c');
+        $glossaryUrl = SITE_URL . '/glossar';
+
+        $latestGlossaryTimestamp = null;
+        foreach ($entries as $entry) {
+            $timestamp = $this->resolveLastModified((string) ($entry['updated_at'] ?? ''), (string) ($entry['created_at'] ?? ''));
+            if ($timestamp === null) {
+                continue;
+            }
+
+            if ($latestGlossaryTimestamp === null || $timestamp > $latestGlossaryTimestamp) {
+                $latestGlossaryTimestamp = $timestamp;
+            }
+        }
+
+        $urls = [[
+            'loc' => $glossaryUrl,
+            'lastmod' => $latestGlossaryTimestamp !== null ? gmdate('c', $latestGlossaryTimestamp) : $generatedAt,
+            'changefreq' => 'daily',
+            'priority' => '0.9',
+        ]];
+
+        foreach ($entries as $entry) {
+            $slug = trim((string) ($entry['slug'] ?? ''));
+            if ($slug === '') {
+                continue;
+            }
+
+            $timestamp = $this->resolveLastModified((string) ($entry['updated_at'] ?? ''), (string) ($entry['created_at'] ?? ''));
+            $urls[] = [
+                'loc' => SITE_URL . '/kb/' . rawurlencode($slug),
+                'lastmod' => $timestamp !== null ? gmdate('c', $timestamp) : $generatedAt,
+                'changefreq' => 'weekly',
+                'priority' => '0.7',
+            ];
+        }
+
+        header('Content-Type: application/xml; charset=UTF-8');
+
+        echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+        echo "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n";
+
+        foreach ($urls as $url) {
+            echo "  <url>\n";
+            echo '    <loc>' . htmlspecialchars((string) $url['loc'], ENT_XML1 | ENT_QUOTES, 'UTF-8') . "</loc>\n";
+            echo '    <lastmod>' . htmlspecialchars((string) $url['lastmod'], ENT_XML1 | ENT_QUOTES, 'UTF-8') . "</lastmod>\n";
+            echo '    <changefreq>' . htmlspecialchars((string) $url['changefreq'], ENT_XML1 | ENT_QUOTES, 'UTF-8') . "</changefreq>\n";
+            echo '    <priority>' . htmlspecialchars((string) $url['priority'], ENT_XML1 | ENT_QUOTES, 'UTF-8') . "</priority>\n";
+            echo "  </url>\n";
+        }
+
+        echo "</urlset>";
+        exit;
     }
 
     public function singlePage(string $slug): void
@@ -135,5 +225,22 @@ final class PublicController
         if ($theme !== null) {
             $theme->getFooter();
         }
+    }
+
+    private function resolveLastModified(string $updatedAt, string $createdAt): ?int
+    {
+        foreach ([$updatedAt, $createdAt] as $value) {
+            $value = trim($value);
+            if ($value === '') {
+                continue;
+            }
+
+            $timestamp = strtotime($value);
+            if ($timestamp !== false) {
+                return $timestamp;
+            }
+        }
+
+        return null;
     }
 }

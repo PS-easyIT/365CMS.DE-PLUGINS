@@ -34,6 +34,10 @@
     grid-column: 1 / -1;
 }
 
+.kb-form-card--single {
+    max-width: 1100px;
+}
+
 .kb-note-card,
 .kb-settings-card {
     background: #fff;
@@ -116,6 +120,21 @@
     gap: 0.9rem;
 }
 
+.kb-settings-grid--general {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+}
+
+.kb-settings-grid--design {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+}
+
+.kb-settings-grid--system {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+}
+
 .kb-form-grid label,
 .kb-settings-group {
     display: flex;
@@ -145,6 +164,14 @@
 .kb-settings-grid textarea {
     resize: vertical;
     min-height: 120px;
+}
+
+.kb-field-help {
+    display: block;
+    margin-top: 0.2rem;
+    color: #64748b;
+    font-size: 0.84rem;
+    line-height: 1.55;
 }
 
 .kb-form-grid__full,
@@ -178,10 +205,49 @@
     padding: 0.95rem;
 }
 
+.kb-settings-group--card {
+    min-height: 100%;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+
 .kb-settings-group h3 {
     margin: 0 0 0.25rem;
     color: #0f172a;
     font-size: 1rem;
+}
+
+.kb-settings-group__intro {
+    margin: 0;
+    color: #64748b;
+    line-height: 1.55;
+    font-size: 0.92rem;
+}
+
+.kb-setting-field {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.45rem !important;
+}
+
+.kb-setting-field--textarea {
+    align-items: stretch !important;
+}
+
+.kb-setting-toggle {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 0.65rem !important;
+    line-height: 1.45;
+}
+
+.kb-setting-toggle input[type="checkbox"] {
+    margin-top: 0.15rem;
+}
+
+.kb-settings-toggles {
+    display: grid;
+    gap: 0.65rem;
 }
 
 .kb-form-actions {
@@ -248,6 +314,10 @@
     gap: 1rem;
 }
 
+.kb-settings-grid--design .kb-settings-inline-grid {
+    grid-template-columns: 1fr;
+}
+
 .kb-color-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -256,6 +326,11 @@
     display: flex;
     gap: 0.75rem;
     align-items: center;
+}
+
+.kb-color-field input[type="text"] {
+    font-family: var(--font-code, 'JetBrains Mono', monospace);
+    text-transform: uppercase;
 }
 
 .kb-color-field input[type="color"] {
@@ -274,6 +349,10 @@
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
     gap: 1rem;
+}
+
+.kb-settings-group--preview {
+    padding: 1.1rem;
 }
 
 .kb-design-preview__card,
@@ -332,6 +411,15 @@
     padding-left: 1rem;
     color: #475569;
     line-height: 1.7;
+}
+
+.kb-system-card {
+    min-height: 100%;
+}
+
+.kb-system-card h4 {
+    margin: 0;
+    color: #0f172a;
 }
 
 .kb-entry-card-list {
@@ -487,6 +575,52 @@
     margin: 0;
 }
 
+.kb-list-table-wrap {
+    overflow-x: auto;
+}
+
+.kb-list-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.kb-list-table thead th {
+    padding: 0.9rem 0.85rem;
+    border-bottom: 1px solid #dbe1ea;
+    color: #475569;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: left;
+    background: #f8fafc;
+}
+
+.kb-list-table thead th:first-child {
+    border-top-left-radius: 14px;
+}
+
+.kb-list-table thead th:last-child {
+    border-top-right-radius: 14px;
+}
+
+.kb-list-table tbody td {
+    padding: 0.95rem 0.85rem;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+    color: #334155;
+    background: #fff;
+}
+
+.kb-list-table tbody tr:hover td {
+    background: #fbfdff;
+}
+
+.kb-list-table tbody code {
+    color: #64748b;
+}
+
 .kb-action-row--compact {
     justify-content: flex-end;
 }
@@ -524,6 +658,33 @@
     .kb-entry-card,
     .kb-settings-group {
         padding: 0.85rem;
+    }
+
+    .kb-list-table thead {
+        display: none;
+    }
+
+    .kb-list-table,
+    .kb-list-table tbody,
+    .kb-list-table tr,
+    .kb-list-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .kb-list-table tr {
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        overflow: hidden;
+        margin-bottom: 0.85rem;
+    }
+
+    .kb-list-table tbody td {
+        border-bottom: 1px solid #eef2f7;
+    }
+
+    .kb-list-table tbody td:last-child {
+        border-bottom: 0;
     }
 
     .kb-tab {

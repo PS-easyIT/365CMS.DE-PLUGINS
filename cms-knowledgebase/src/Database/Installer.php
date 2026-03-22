@@ -65,7 +65,20 @@ final class Installer
             UNIQUE KEY uniq_setting_key (setting_key)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}kb_categories (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(120) NOT NULL,
+            slug VARCHAR(140) NOT NULL,
+            sort_order INT NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_kb_category_name (name),
+            UNIQUE KEY uniq_kb_category_slug (slug),
+            KEY idx_kb_category_sort (sort_order, name)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
         $this->seedDefaults();
+        $this->syncCategoriesFromEntries();
         $this->storeVersion();
     }
 
@@ -97,6 +110,44 @@ final class Installer
                 'setting_value' => $value,
             ]);
         }
+    }
+
+    private function syncCategoriesFromEntries(): void
+    {
+        $db = Database::instance();
+        $entriesTable = $db->prefix() . 'kb_entries';
+        $categoriesTable = $db->prefix() . 'kb_categories';
+        $stmt = $db->prepare("SELECT DISTINCT category FROM {$entriesTable} WHERE category IS NOT NULL AND category <> '' ORDER BY category ASC");
+        $stmt->execute();
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        if (!is_array($rows)) {
+            return;
+        }
+
+        $insert = $db->prepare("INSERT INTO {$categoriesTable} (name, slug, sort_order)
+            VALUES (:name, :slug, 0)
+            ON DUPLICATE KEY UPDATE name = VALUES(name)");
+
+        foreach ($rows as $row) {
+            $name = trim((string) ($row['category'] ?? ''));
+            if ($name === '') {
+                continue;
+            }
+
+            $insert->execute([
+                'name' => $name,
+                'slug' => $this->slugify($name),
+            ]);
+        }
+    }
+
+    private function slugify(string $value): string
+    {
+        $value = mb_strtolower(trim($value), 'UTF-8');
+        $value = preg_replace('/[^\p{L}\p{N}]+/u', '-', $value) ?? '';
+        $value = trim($value, '-');
+
+        return mb_substr($value, 0, 140, 'UTF-8');
     }
 
     private function storeVersion(): void

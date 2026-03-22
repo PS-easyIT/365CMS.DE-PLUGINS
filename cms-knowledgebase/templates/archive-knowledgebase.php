@@ -6,45 +6,44 @@ $archiveBasePath = $archiveBasePath ?? '/kb';
 $archiveUrl = SITE_URL . $archiveBasePath;
 $archiveHeroEyebrow = $archiveHeroEyebrow ?? 'Wissen & Orientierung';
 $archiveTitle = $archiveTitle ?? (string) ($settings['archive_title'] ?? 'Knowledgebase');
+$archiveIntro = $archiveIntro ?? (string) ($settings['archive_intro'] ?? '');
 $forceListLayout = $archiveVariant === 'glossary';
 $showSidebar = false;
 $hasFilters = $search !== '' || $category !== '';
 $resultsLabel = $archiveResultsLabel ?? ($hasFilters ? 'Gefilterte Ergebnisse' : 'Alle Knowledgebase-Einträge');
-$visibleCategories = array_slice($categories, 0, 6);
 $variantClass = $forceListLayout ? 'cms-kb-content--glossary' : 'cms-kb-content--overview';
 $layoutClass = $forceListLayout ? 'cms-kb-archive-layout--list' : 'cms-kb-archive-layout--grid';
 $gridClass = $forceListLayout ? 'cms-kb-entry-grid--list' : 'cms-kb-entry-grid--cards';
 $entryClass = $forceListLayout ? 'cms-kb-entry--list' : 'cms-kb-entry--card';
+$totalEntries = isset($totalEntries) ? max(0, (int) $totalEntries) : count($entries);
+$currentPage = isset($currentPage) ? max(1, (int) $currentPage) : 1;
+$perPage = isset($perPage) ? max(1, (int) $perPage) : 25;
+$totalPages = isset($totalPages) ? max(1, (int) $totalPages) : max(1, (int) ceil($totalEntries / $perPage));
+$pageBaseUrl = $pageBaseUrl ?? $archiveUrl;
+$pageQuery = [];
+if ($search !== '') {
+    $pageQuery['q'] = $search;
+}
+if ($category !== '') {
+    $pageQuery['category'] = $category;
+}
+$perPageOptions = isset($perPageOptions) && is_array($perPageOptions) ? $perPageOptions : [25, 50, 100, 200];
+$pageQuery['per_page'] = $perPage;
+$pageWindowStart = $totalEntries > 0 ? (($currentPage - 1) * $perPage) + 1 : 0;
+$pageWindowEnd = $totalEntries > 0 ? min($totalEntries, $pageWindowStart + count($entries) - 1) : 0;
 ?>
 
 <main class="cms-kb-content cms-kb-content--archive <?php echo htmlspecialchars($variantClass, ENT_QUOTES, 'UTF-8'); ?>">
     <header class="cms-kb-hero">
-        <div class="cms-kb-hero__content">
-            <div class="cms-kb-hero__topline">
-                <div class="cms-kb-hero__headline">
-                    <p class="cms-kb-hero__eyebrow"><?php echo htmlspecialchars($archiveHeroEyebrow, ENT_QUOTES, 'UTF-8'); ?></p>
-                    <h1><?php echo htmlspecialchars($archiveTitle, ENT_QUOTES, 'UTF-8'); ?></h1>
-                </div>
-
-                <div class="cms-kb-stats" aria-label="Knowledgebase-Statistiken">
-                    <div class="cms-kb-stat">
-                        <strong><?php echo number_format(count($entries)); ?></strong>
-                        <span>Treffer</span>
-                    </div>
-                    <div class="cms-kb-stat">
-                        <strong><?php echo number_format(count($categories)); ?></strong>
-                        <span>Bereiche</span>
-                    </div>
-                    <div class="cms-kb-stat">
-                        <strong><?php echo $hasFilters ? 'Aktiv' : 'Offen'; ?></strong>
-                        <span>Filter</span>
-                    </div>
-                </div>
+        <div class="cms-kb-hero__content cms-kb-hero__content--compact">
+            <div class="cms-kb-hero__headline">
+                <p class="cms-kb-hero__eyebrow"><?php echo htmlspecialchars($archiveHeroEyebrow, ENT_QUOTES, 'UTF-8'); ?></p>
+                <h1><?php echo htmlspecialchars($archiveTitle, ENT_QUOTES, 'UTF-8'); ?></h1>
             </div>
 
-            <div class="cms-kb-hero__subline">
-                <?php if (!empty($settings['archive_intro'])): ?>
-                    <p class="cms-kb-hero__intro"><?php echo htmlspecialchars((string) ($settings['archive_intro'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
+            <div class="cms-kb-hero__subline cms-kb-hero__subline--compact">
+                <?php if ($archiveIntro !== ''): ?>
+                    <p class="cms-kb-hero__intro"><?php echo htmlspecialchars($archiveIntro, ENT_QUOTES, 'UTF-8'); ?></p>
                 <?php endif; ?>
 
                 <?php if ($hasFilters): ?>
@@ -80,6 +79,17 @@ $entryClass = $forceListLayout ? 'cms-kb-entry--list' : 'cms-kb-entry--card';
                         </select>
                     </div>
 
+                    <div class="cms-kb-filters__field cms-kb-filters__field--per-page">
+                        <label for="kb-per-page-filter">Anzahl</label>
+                        <select id="kb-per-page-filter" name="per_page">
+                            <?php foreach ($perPageOptions as $option): ?>
+                                <option value="<?php echo (int) $option; ?>" <?php echo $perPage === (int) $option ? 'selected' : ''; ?>>
+                                    <?php echo (int) $option; ?> Einträge
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
                     <div class="cms-kb-filters__actions">
                         <button type="submit">Suchen</button>
 
@@ -90,28 +100,26 @@ $entryClass = $forceListLayout ? 'cms-kb-entry--list' : 'cms-kb-entry--card';
                 </form>
             </nav>
             <?php endif; ?>
+
+            <?php if (!empty($categories)): ?>
+                <div class="cms-kb-chip-row cms-kb-chip-row--categories" aria-label="Kategorien">
+                    <?php $allQuery = ['per_page' => $perPage]; if ($search !== '') { $allQuery['q'] = $search; } ?>
+                    <a class="cms-kb-chip<?php echo $category === '' ? ' is-active' : ''; ?>" href="<?php echo htmlspecialchars($archiveUrl . '?' . http_build_query($allQuery), ENT_QUOTES, 'UTF-8'); ?>">Alle</a>
+                    <?php foreach ($categories as $item): ?>
+                        <?php $categoryValue = (string) ($item['category'] ?? ''); ?>
+                        <?php $categoryLinkQuery = ['category' => $categoryValue, 'per_page' => $perPage]; if ($search !== '') { $categoryLinkQuery['q'] = $search; } ?>
+                        <a class="cms-kb-chip<?php echo $category === $categoryValue ? ' is-active' : ''; ?>" href="<?php echo htmlspecialchars($archiveUrl . '?' . http_build_query($categoryLinkQuery), ENT_QUOTES, 'UTF-8'); ?>">
+                            <?php echo htmlspecialchars($categoryValue, ENT_QUOTES, 'UTF-8'); ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </header>
 
     <div class="cms-kb-archive-layout <?php echo htmlspecialchars($layoutClass, ENT_QUOTES, 'UTF-8'); ?><?php echo $showSidebar ? ' has-sidebar' : ''; ?>">
         <section class="cms-kb-listing cms-kb-listing--<?php echo htmlspecialchars($archiveVariant, ENT_QUOTES, 'UTF-8'); ?>" aria-labelledby="kb-results-heading">
-            <div class="cms-kb-section-head">
-                <div>
-                    <p class="cms-kb-section-head__eyebrow"><?php echo $forceListLayout ? 'Listansicht' : 'Gridansicht'; ?></p>
-                    <h2 id="kb-results-heading"><?php echo htmlspecialchars($resultsLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
-                </div>
-
-                <?php if (!empty($visibleCategories)): ?>
-                    <div class="cms-kb-chip-row" aria-label="Beliebte Kategorien">
-                        <?php foreach ($visibleCategories as $item): ?>
-                            <a class="cms-kb-chip" href="<?php echo htmlspecialchars($archiveUrl . '?category=' . rawurlencode((string) $item['category']), ENT_QUOTES, 'UTF-8'); ?>">
-                                <?php echo htmlspecialchars((string) $item['category'], ENT_QUOTES, 'UTF-8'); ?>
-                                <span><?php echo (int) ($item['entry_count'] ?? 0); ?></span>
-                            </a>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
-            </div>
+            <h2 id="kb-results-heading" class="screen-reader-text"><?php echo htmlspecialchars($resultsLabel, ENT_QUOTES, 'UTF-8'); ?></h2>
 
             <?php if (empty($entries)): ?>
                 <div class="cms-kb-empty-state" role="status" aria-live="polite">
@@ -155,6 +163,22 @@ $entryClass = $forceListLayout ? 'cms-kb-entry--list' : 'cms-kb-entry--card';
                         </article>
                     <?php endforeach; ?>
                 </div>
+
+                <?php if ($totalPages > 1): ?>
+                    <nav class="cms-kb-chip-row" aria-label="Seitennavigation">
+                        <?php if ($currentPage > 1): ?>
+                            <?php $prevQuery = $pageQuery; $prevQuery['page'] = $currentPage - 1; ?>
+                            <a class="cms-kb-chip" href="<?php echo htmlspecialchars($pageBaseUrl . '?' . http_build_query($prevQuery), ENT_QUOTES, 'UTF-8'); ?>" rel="prev">← Zurück</a>
+                        <?php endif; ?>
+
+                        <span class="cms-kb-chip" aria-current="page">Seite <?php echo number_format($currentPage); ?> von <?php echo number_format($totalPages); ?></span>
+
+                        <?php if ($currentPage < $totalPages): ?>
+                            <?php $nextQuery = $pageQuery; $nextQuery['page'] = $currentPage + 1; ?>
+                            <a class="cms-kb-chip" href="<?php echo htmlspecialchars($pageBaseUrl . '?' . http_build_query($nextQuery), ENT_QUOTES, 'UTF-8'); ?>" rel="next">Weiter →</a>
+                        <?php endif; ?>
+                    </nav>
+                <?php endif; ?>
             <?php endif; ?>
         </section>
     </div>
