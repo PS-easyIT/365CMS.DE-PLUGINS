@@ -81,9 +81,12 @@ final class CMS_Projects_Admin
         $messageType = 'success';
         $section = $this->resolveSection($forcedSection);
         $selectedProjectId = max(0, (int) ($_GET['project_id'] ?? 0));
+        $selectedTaskId = max(0, (int) ($_GET['task_id'] ?? 0));
 
         if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && isset($_POST['cms_projects_action'])) {
+            $postedAction = (string) ($_POST['cms_projects_action'] ?? '');
             [$message, $messageType, $selectedProjectId, $section] = $this->handlePost($section, $selectedProjectId);
+            $selectedTaskId = $postedAction === 'save_task' ? max(0, (int) ($_POST['task_id'] ?? 0)) : 0;
         }
 
         $projects = $this->service->getProjects();
@@ -95,6 +98,13 @@ final class CMS_Projects_Admin
         $projectBoards = $selectedProject !== null ? $this->service->getProjectBoards((int) $selectedProject['id'], 'admin') : [];
         $projectWidgets = $selectedProject !== null ? $this->service->getProjectWidgets((int) $selectedProject['id'], 'admin') : [];
         $projectTasks = $selectedProject !== null ? $this->service->getProjectTasks((int) $selectedProject['id'], 'admin') : [];
+        $taskFormValues = $this->service->getTaskDefaults();
+        if ($selectedProject !== null && $selectedTaskId > 0) {
+            $selectedTask = $this->service->findTask($selectedTaskId);
+            if ($selectedTask !== null && (int) ($selectedTask['project_id'] ?? 0) === (int) ($selectedProject['id'] ?? 0)) {
+                $taskFormValues = array_merge($taskFormValues, $selectedTask);
+            }
+        }
         $summary = $this->service->getSummary();
         $projectFormValues = $selectedProject ?? $this->service->getProjectDefaults();
         $sectionConfig = $this->getSectionConfig($section);
@@ -155,6 +165,30 @@ final class CMS_Projects_Admin
             $messageType = !empty($result['success']) ? 'success' : 'error';
             $selectedProjectId = max(0, (int) ($_POST['project_id'] ?? $selectedProjectId));
             return [$message, $messageType, $selectedProjectId, self::PAGE_PROJECTS];
+        }
+
+        if ($action === 'delete_task') {
+            $taskId = max(0, (int) ($_POST['task_id'] ?? 0));
+            $projectId = max(0, (int) ($_POST['project_id'] ?? $selectedProjectId));
+            $result = $this->service->deleteTask($taskId, $projectId);
+            $message = (string) ($result['message'] ?? 'Ticket-Löschung abgeschlossen.');
+            $messageType = !empty($result['success']) ? 'success' : 'error';
+            return [$message, $messageType, $projectId, self::PAGE_PROJECTS];
+        }
+
+        if ($action === 'move_task') {
+            $taskId = max(0, (int) ($_POST['task_id'] ?? 0));
+            $projectId = max(0, (int) ($_POST['project_id'] ?? $selectedProjectId));
+            $targetBoardId = max(0, (int) ($_POST['target_board_id'] ?? 0));
+            $targetColumnKey = (string) ($_POST['target_column_key'] ?? '');
+            $orderedTaskIds = array_values(array_filter(
+                array_map('intval', explode(',', (string) ($_POST['ordered_task_ids'] ?? ''))),
+                static fn (int $id): bool => $id > 0
+            ));
+            $result = $this->service->moveTask($taskId, $projectId, $targetBoardId, $targetColumnKey, $orderedTaskIds);
+            $message = (string) ($result['message'] ?? 'Ticket-Verschiebung abgeschlossen.');
+            $messageType = !empty($result['success']) ? 'success' : 'error';
+            return [$message, $messageType, $projectId, self::PAGE_PROJECTS];
         }
 
         return ['Unbekannte Aktion.', 'error', $selectedProjectId, $section];

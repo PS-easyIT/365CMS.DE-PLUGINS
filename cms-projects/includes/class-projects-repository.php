@@ -289,6 +289,12 @@ final class CMS_Projects_Repository
         return array_map([$this, 'mapTaskRow'], $rows);
     }
 
+    public function findTaskById(int $id): ?array
+    {
+        $row = $this->db->get_row("SELECT * FROM `{$this->tasksTableFull}` WHERE id = ? LIMIT 1", [$id]);
+        return $row ? $this->mapTaskRow($row) : null;
+    }
+
     public function saveTask(array $data, ?int $id = null): int|false
     {
         $payload = [
@@ -314,6 +320,23 @@ final class CMS_Projects_Repository
 
         $updated = $this->db->update($this->tasksTable, $payload, ['id' => $id]);
         return $updated ? $id : false;
+    }
+
+    public function updateTaskPosition(int $id, int $boardId, string $columnKey, int $sortOrder): bool
+    {
+        $updated = $this->db->update($this->tasksTable, [
+            'board_id' => $boardId,
+            'column_key' => $columnKey,
+            'sort_order' => max(0, $sortOrder),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ], ['id' => $id]);
+
+        return $updated !== false;
+    }
+
+    public function deleteTask(int $id): bool
+    {
+        return $this->db->delete($this->tasksTable, ['id' => $id]);
     }
 
     public function countProjects(): int

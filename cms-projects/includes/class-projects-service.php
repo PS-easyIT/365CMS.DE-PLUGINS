@@ -186,12 +186,35 @@ final class CMS_Projects_Service
         }, $tasks);
     }
 
+    public function findTask(int $taskId): ?array
+    {
+        if ($taskId <= 0) {
+            return null;
+        }
+
+        $task = $this->repository->findTaskById($taskId);
+        if ($task === null) {
+            return null;
+        }
+
+        $task['priority_label'] = (string) ($this->getTaskPriorities()[$task['priority'] ?? 'medium'] ?? 'Mittel');
+        $task['column_key'] = $this->normalizeColumnKey((string) ($task['column_key'] ?? ''));
+        $task['payload_data'] = $this->decodePayload((string) ($task['payload'] ?? ''));
+        return $task;
+    }
+
     public function saveTask(array $input): array
     {
+        $taskId = max(0, (int) ($input['task_id'] ?? 0));
         $projectId = (int) ($input['project_id'] ?? 0);
         $project = $this->findProject($projectId);
         if ($project === null) {
             return ['success' => false, 'message' => 'Projekt für das Ticket wurde nicht gefunden.'];
+        }
+
+        $existingTask = $taskId > 0 ? $this->findTask($taskId) : null;
+        if ($taskId > 0 && ($existingTask === null || (int) ($existingTask['project_id'] ?? 0) !== $projectId)) {
+            return ['success' => false, 'message' => 'Das zu bearbeitende Ticket wurde nicht gefunden.'];
         }
 
         $boardId = (int) ($input['board_id'] ?? 0);
@@ -232,14 +255,92 @@ final class CMS_Projects_Service
             'sort_order' => max(0, (int) ($input['sort_order'] ?? 0)),
             'is_public' => $this->toBooleanFlag($input['is_public'] ?? 0),
             'is_active' => $this->toBooleanFlag($input['is_active'] ?? 0),
-            'payload' => json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        ]);
+            'payload' => json_encode((array) (($existingTask['payload_data'] ?? []) ?: []), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        ], $taskId > 0 ? $taskId : null);
 
         if ($saveId === false) {
             return ['success' => false, 'message' => 'Ticket konnte nicht gespeichert werden.'];
         }
 
-        return ['success' => true, 'message' => 'Ticket wurde gespeichert.', 'id' => (int) $saveId];
+        return ['success' => true, 'message' => $taskId > 0 ? 'Ticket wurde aktualisiert.' : 'Ticket wurde gespeichert.', 'id' => (int) $saveId];
+    }
+
+    public function deleteTask(int $taskId, int $projectId): array
+    {
+        $task = $this->findTask($taskId);
+        if ($task === null || (int) ($task['project_id'] ?? 0) !== $projectId) {
+            return ['success' => false, 'message' => 'Das Ticket wurde nicht gefunden.'];
+        }
+
+        if (!$this->repository->deleteTask($taskId)) {
+            return ['success' => false, 'message' => 'Ticket konnte nicht gelöscht werden.'];
+        }
+
+        return ['success' => true, 'message' => 'Ticket wurde gelöscht.', 'id' => $taskId];
+    }
+
+    public function moveTask(int $taskId, int $projectId, int $targetBoardId, string $targetColumnKey, array $orderedTaskIds = []): array
+    {
+        $task = $this->findTask($taskId);
+        if ($task === null || (int) ($task['project_id'] ?? 0) !== $projectId) {
+            return ['success' => false, 'message' => 'Das zu verschiebende Ticket wurde nicht gefunden.'];
+        }
+
+        $board = $this->findBoardForProject($projectId, $targetBoardId);
+        if ($board === null) {
+            return ['success' => false, 'message' => 'Ziel-Board wurde nicht gefunden.'];
+        }
+
+        $targetColumnKey = $this->normalizeColumnKey($targetColumnKey);
+        if ($targetColumnKey === '') {
+            return ['success' => false, 'message' => 'Ziel-Spalte ist ungültig.'];
+        }
+
+        $resolvedColumnKey = $this->resolveBoardColumnKey($board, $targetColumnKey);
+        if ($resolvedColumnKey === '') {
+            return ['success' => false, 'message' => 'Ziel-Spalte wurde im Board nicht gefunden.'];
+        }
+
+        $sourceBoardId = (int) ($task['board_id'] ?? 0);
+        $sourceColumnKey = $this->normalizeColumnKey((string) ($task['column_key'] ?? ''));
+        $allTasks = $this->getProjectTasks($projectId, 'admin');
+        $targetTasks = $this->getColumnTasks($allTasks, $targetBoardId, $resolvedColumnKey, $taskId);
+        $finalTargetTaskIds = $this->buildOrderedTaskIds($orderedTaskIds, $targetTasks, $taskId);
+
+        if (!$this->persistTaskOrder($finalTargetTaskIds, $targetBoardId, $resolvedColumnKey)) {
+            return ['success' => false, 'message' => 'Ticket konnte nicht verschoben werden.'];
+        }
+
+        if ($sourceBoardId !== $targetBoardId || $sourceColumnKey !== $resolvedColumnKey) {
+            $sourceTasks = $this->getColumnTasks($allTasks, $sourceBoardId, $sourceColumnKey, $taskId);
+            $sourceTaskIds = array_map(static fn (array $columnTask): int => (int) ($columnTask['id'] ?? 0), $sourceTasks);
+
+            if (!$this->persistTaskOrder($sourceTaskIds, $sourceBoardId, $sourceColumnKey)) {
+                return ['success' => false, 'message' => 'Quell-Spalte konnte nach dem Verschieben nicht neu sortiert werden.'];
+            }
+        }
+
+        return ['success' => true, 'message' => 'Ticket wurde verschoben.', 'id' => $taskId];
+    }
+
+    public function getTaskDefaults(): array
+    {
+        return [
+            'id' => 0,
+            'project_id' => 0,
+            'board_id' => 0,
+            'column_key' => '',
+            'title' => '',
+            'description' => '',
+            'priority' => 'medium',
+            'priority_label' => 'Mittel',
+            'assignee_name' => '',
+            'due_date' => '',
+            'sort_order' => 0,
+            'is_public' => 0,
+            'is_active' => 1,
+            'payload_data' => [],
+        ];
     }
 
     public function getProjectDefaults(): array
@@ -610,6 +711,107 @@ final class CMS_Projects_Service
         }
 
         return $payload;
+    }
+
+    private function getColumnTasks(array $tasks, int $boardId, string $columnKey, int $excludedTaskId = 0): array
+    {
+        $columnTasks = [];
+
+        foreach ($tasks as $task) {
+            if ((int) ($task['id'] ?? 0) === $excludedTaskId) {
+                continue;
+            }
+
+            if ((int) ($task['board_id'] ?? 0) !== $boardId) {
+                continue;
+            }
+
+            if ($this->normalizeColumnKey((string) ($task['column_key'] ?? '')) !== $columnKey) {
+                continue;
+            }
+
+            $columnTasks[] = $task;
+        }
+
+        return $columnTasks;
+    }
+
+    private function buildOrderedTaskIds(array $orderedTaskIds, array $targetTasks, int $movedTaskId): array
+    {
+        $existingTaskIds = [];
+        foreach ($targetTasks as $task) {
+            $taskId = (int) ($task['id'] ?? 0);
+            if ($taskId > 0) {
+                $existingTaskIds[$taskId] = true;
+            }
+        }
+
+        $finalOrder = [];
+        foreach ($orderedTaskIds as $requestedTaskId) {
+            $requestedTaskId = (int) $requestedTaskId;
+            if ($requestedTaskId <= 0 || isset($finalOrder[$requestedTaskId])) {
+                continue;
+            }
+
+            if ($requestedTaskId === $movedTaskId || isset($existingTaskIds[$requestedTaskId])) {
+                $finalOrder[$requestedTaskId] = $requestedTaskId;
+            }
+        }
+
+        if (!isset($finalOrder[$movedTaskId])) {
+            $finalOrder[$movedTaskId] = $movedTaskId;
+        }
+
+        foreach (array_keys($existingTaskIds) as $existingTaskId) {
+            if (!isset($finalOrder[$existingTaskId])) {
+                $finalOrder[$existingTaskId] = $existingTaskId;
+            }
+        }
+
+        return array_values($finalOrder);
+    }
+
+    private function persistTaskOrder(array $taskIds, int $boardId, string $columnKey): bool
+    {
+        $position = 1;
+
+        foreach ($taskIds as $taskId) {
+            $taskId = (int) $taskId;
+            if ($taskId <= 0) {
+                continue;
+            }
+
+            if (!$this->repository->updateTaskPosition($taskId, $boardId, $columnKey, $position)) {
+                return false;
+            }
+
+            $position++;
+        }
+
+        return true;
+    }
+
+    private function getNextTaskSortOrder(int $projectId, int $boardId, string $columnKey, int $excludedTaskId = 0): int
+    {
+        $maxSortOrder = 0;
+
+        foreach ($this->getProjectTasks($projectId, 'admin') as $task) {
+            if ((int) ($task['id'] ?? 0) === $excludedTaskId) {
+                continue;
+            }
+
+            if ((int) ($task['board_id'] ?? 0) !== $boardId) {
+                continue;
+            }
+
+            if ($this->normalizeColumnKey((string) ($task['column_key'] ?? '')) !== $columnKey) {
+                continue;
+            }
+
+            $maxSortOrder = max($maxSortOrder, (int) ($task['sort_order'] ?? 0));
+        }
+
+        return $maxSortOrder + 1;
     }
 
     private function findBoardForProject(int $projectId, int $boardId): ?array

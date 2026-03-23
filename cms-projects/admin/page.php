@@ -14,6 +14,7 @@ $collectBoardGroups = static function (array $payload): array {
 $renderBoardPreview = static function (array $board): string {
     $payload = (array) ($board['payload_data'] ?? []);
     $groups = [];
+    $boardId = (int) ($board['id'] ?? 0);
     foreach (['columns', 'lanes', 'clusters', 'stages', 'milestones'] as $key) {
         if (isset($payload[$key]) && is_array($payload[$key])) {
             $groups = $payload[$key];
@@ -25,36 +26,37 @@ $renderBoardPreview = static function (array $board): string {
     echo '<div class="cp-board-preview-grid">';
     foreach ($groups as $group) {
         $title = htmlspecialchars((string) ($group['title'] ?? 'Block'), ENT_QUOTES, 'UTF-8');
-        echo '<article class="cp-board-preview-column">';
+        $columnKey = htmlspecialchars((string) ($group['key'] ?? ''), ENT_QUOTES, 'UTF-8');
+        echo '<article class="cp-board-preview-column" data-drop-board-id="' . $boardId . '" data-drop-column-key="' . $columnKey . '">';
         echo '<h4>' . $title . '</h4>';
         echo '<ul>';
         foreach ((array) ($group['items'] ?? []) as $item) {
             echo '<li>' . htmlspecialchars((string) $item, ENT_QUOTES, 'UTF-8') . '</li>';
         }
         echo '</ul>';
-        if (((array) ($group['tasks'] ?? [])) !== []) {
-            echo '<div class="cp-ticket-stack">';
-            foreach ((array) ($group['tasks'] ?? []) as $task) {
-                echo '<article class="cp-ticket-card">';
-                echo '<div class="cp-ticket-card__head">';
-                echo '<strong>' . htmlspecialchars((string) ($task['title'] ?? ''), ENT_QUOTES, 'UTF-8') . '</strong>';
-                echo '<span class="cp-badge">' . htmlspecialchars((string) ($task['priority_label'] ?? ''), ENT_QUOTES, 'UTF-8') . '</span>';
-                echo '</div>';
-                if (!empty($task['description'])) {
-                    echo '<p>' . nl2br(htmlspecialchars((string) ($task['description'] ?? ''), ENT_QUOTES, 'UTF-8')) . '</p>';
-                }
-                echo '<div class="cp-ticket-meta">';
-                if (!empty($task['assignee_name'])) {
-                    echo '<span>' . htmlspecialchars((string) ($task['assignee_name'] ?? ''), ENT_QUOTES, 'UTF-8') . '</span>';
-                }
-                if (!empty($task['due_date'])) {
-                    echo '<span>' . htmlspecialchars((string) ($task['due_date'] ?? ''), ENT_QUOTES, 'UTF-8') . '</span>';
-                }
-                echo '</div>';
-                echo '</article>';
+        $tasks = (array) ($group['tasks'] ?? []);
+        echo '<div class="cp-ticket-stack" data-ticket-stack>';
+        foreach ($tasks as $task) {
+            echo '<article class="cp-ticket-card cp-ticket-card--draggable" draggable="true" data-task-id="' . (int) ($task['id'] ?? 0) . '">';
+            echo '<div class="cp-ticket-card__head">';
+            echo '<strong>' . htmlspecialchars((string) ($task['title'] ?? ''), ENT_QUOTES, 'UTF-8') . '</strong>';
+            echo '<span class="cp-badge">' . htmlspecialchars((string) ($task['priority_label'] ?? ''), ENT_QUOTES, 'UTF-8') . '</span>';
+            echo '</div>';
+            if (!empty($task['description'])) {
+                echo '<p>' . nl2br(htmlspecialchars((string) ($task['description'] ?? ''), ENT_QUOTES, 'UTF-8')) . '</p>';
+            }
+            echo '<div class="cp-ticket-meta">';
+            if (!empty($task['assignee_name'])) {
+                echo '<span>' . htmlspecialchars((string) ($task['assignee_name'] ?? ''), ENT_QUOTES, 'UTF-8') . '</span>';
+            }
+            if (!empty($task['due_date'])) {
+                echo '<span>' . htmlspecialchars((string) ($task['due_date'] ?? ''), ENT_QUOTES, 'UTF-8') . '</span>';
             }
             echo '</div>';
+            echo '</article>';
         }
+        echo '</div>';
+        echo '<div class="cp-ticket-dropzone-hint' . ($tasks !== [] ? ' cp-ticket-dropzone-hint--hidden' : '') . '">Ticket hier ablegen</div>';
         echo '</article>';
     }
     echo '</div>';
@@ -136,6 +138,9 @@ foreach (($projectBoards ?? []) as $board) {
         ];
     }
 }
+
+$taskFormValues = is_array($taskFormValues ?? null) ? $taskFormValues : [];
+$activeTaskId = (int) ($taskFormValues['id'] ?? 0);
 ?>
 <div class="wrap cp-admin-shell">
     <div class="cp-header-card">
@@ -271,6 +276,16 @@ foreach (($projectBoards ?? []) as $board) {
     </div>
 
     <?php if ($selectedProject !== null): ?>
+        <form method="post" hidden data-cp-task-move-form>
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+            <input type="hidden" name="cms_projects_action" value="move_task">
+            <input type="hidden" name="project_id" value="<?php echo (int) ($selectedProject['id'] ?? 0); ?>">
+            <input type="hidden" name="task_id" value="0">
+            <input type="hidden" name="target_board_id" value="0">
+            <input type="hidden" name="target_column_key" value="">
+            <input type="hidden" name="ordered_task_ids" value="">
+        </form>
+
         <div class="cp-admin-grid cp-admin-grid-bottom">
             <section class="cp-panel">
                 <div class="cp-panel-head">
@@ -358,7 +373,7 @@ foreach (($projectBoards ?? []) as $board) {
             <section class="cp-panel">
                 <div class="cp-panel-head">
                     <div>
-                        <h2>Ticket anlegen</h2>
+                        <h2><?php echo $activeTaskId > 0 ? 'Ticket bearbeiten' : 'Ticket anlegen'; ?></h2>
                         <span class="cp-muted">Echte Tasks pro Board-Spalte</span>
                     </div>
                 </div>
@@ -366,14 +381,15 @@ foreach (($projectBoards ?? []) as $board) {
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="cms_projects_action" value="save_task">
                     <input type="hidden" name="project_id" value="<?php echo (int) ($selectedProject['id'] ?? 0); ?>">
-                    <label><span>Titel</span><input type="text" name="title" maxlength="190" required placeholder="z. B. API-Fehler bei Login beheben"></label>
+                    <input type="hidden" name="task_id" value="<?php echo $activeTaskId; ?>">
+                    <label><span>Titel</span><input type="text" name="title" maxlength="190" required placeholder="z. B. API-Fehler bei Login beheben" value="<?php echo htmlspecialchars((string) ($taskFormValues['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></label>
                     <div class="cp-form-grid-2">
                         <label>
                             <span>Board</span>
                             <select name="board_id" required>
                                 <option value="">Board wählen</option>
                                 <?php foreach ($boardColumnOptions as $boardOption): ?>
-                                    <option value="<?php echo (int) ($boardOption['id'] ?? 0); ?>"><?php echo htmlspecialchars((string) ($boardOption['title'] ?? 'Board'), ENT_QUOTES, 'UTF-8'); ?></option>
+                                    <option value="<?php echo (int) ($boardOption['id'] ?? 0); ?>" <?php echo ((int) ($taskFormValues['board_id'] ?? 0) === (int) ($boardOption['id'] ?? 0)) ? 'selected' : ''; ?>><?php echo htmlspecialchars((string) ($boardOption['title'] ?? 'Board'), ENT_QUOTES, 'UTF-8'); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </label>
@@ -384,7 +400,7 @@ foreach (($projectBoards ?? []) as $board) {
                                 <?php foreach ($boardColumnOptions as $boardOption): ?>
                                     <optgroup label="<?php echo htmlspecialchars((string) ($boardOption['title'] ?? 'Board'), ENT_QUOTES, 'UTF-8'); ?>">
                                         <?php foreach ((array) ($boardOption['columns'] ?? []) as $column): ?>
-                                            <option value="<?php echo htmlspecialchars((string) ($column['key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($column['title'] ?? 'Block'), ENT_QUOTES, 'UTF-8'); ?></option>
+                                            <option value="<?php echo htmlspecialchars((string) ($column['key'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" <?php echo ((string) ($taskFormValues['column_key'] ?? '') === (string) ($column['key'] ?? '')) ? 'selected' : ''; ?>><?php echo htmlspecialchars((string) ($column['title'] ?? 'Block'), ENT_QUOTES, 'UTF-8'); ?></option>
                                         <?php endforeach; ?>
                                     </optgroup>
                                 <?php endforeach; ?>
@@ -396,20 +412,25 @@ foreach (($projectBoards ?? []) as $board) {
                             <span>Priorität</span>
                             <select name="priority">
                                 <?php foreach ($taskPriorities as $priorityKey => $priorityLabel): ?>
-                                    <option value="<?php echo htmlspecialchars((string) $priorityKey, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) $priorityLabel, ENT_QUOTES, 'UTF-8'); ?></option>
+                                    <option value="<?php echo htmlspecialchars((string) $priorityKey, ENT_QUOTES, 'UTF-8'); ?>" <?php echo ((string) ($taskFormValues['priority'] ?? 'medium') === (string) $priorityKey) ? 'selected' : ''; ?>><?php echo htmlspecialchars((string) $priorityLabel, ENT_QUOTES, 'UTF-8'); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </label>
-                        <label><span>Sortierung</span><input type="number" name="sort_order" value="0" min="0"></label>
+                        <label><span>Sortierung</span><input type="number" name="sort_order" value="<?php echo (int) ($taskFormValues['sort_order'] ?? 0); ?>" min="0"></label>
                     </div>
                     <div class="cp-form-grid-2">
-                        <label><span>Zuständig</span><input type="text" name="assignee_name" maxlength="190" placeholder="z. B. Max Mustermann"></label>
-                        <label><span>Fällig am</span><input type="date" name="due_date"></label>
+                        <label><span>Zuständig</span><input type="text" name="assignee_name" maxlength="190" placeholder="z. B. Max Mustermann" value="<?php echo htmlspecialchars((string) ($taskFormValues['assignee_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></label>
+                        <label><span>Fällig am</span><input type="date" name="due_date" value="<?php echo htmlspecialchars((string) ($taskFormValues['due_date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></label>
                     </div>
-                    <label><span>Beschreibung</span><textarea name="description" rows="5" maxlength="20000" placeholder="Was muss erledigt werden, welche Akzeptanzkriterien gelten und gibt es Blocker?"></textarea></label>
-                    <label class="cp-checkbox-row"><input type="checkbox" name="is_public" value="1"><span>Auch im Public-Board zeigen</span></label>
-                    <label class="cp-checkbox-row"><input type="checkbox" name="is_active" value="1" checked><span>Ticket aktiv</span></label>
-                    <div class="cp-form-actions"><button type="submit" class="button button-primary">Ticket speichern</button></div>
+                    <label><span>Beschreibung</span><textarea name="description" rows="5" maxlength="20000" placeholder="Was muss erledigt werden, welche Akzeptanzkriterien gelten und gibt es Blocker?"><?php echo htmlspecialchars((string) ($taskFormValues['description'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea></label>
+                    <label class="cp-checkbox-row"><input type="checkbox" name="is_public" value="1" <?php echo !empty($taskFormValues['is_public']) ? 'checked' : ''; ?>><span>Auch im Public-Board zeigen</span></label>
+                    <label class="cp-checkbox-row"><input type="checkbox" name="is_active" value="1" <?php echo !array_key_exists('is_active', $taskFormValues) || !empty($taskFormValues['is_active']) ? 'checked' : ''; ?>><span>Ticket aktiv</span></label>
+                    <div class="cp-form-actions">
+                        <button type="submit" class="button button-primary"><?php echo $activeTaskId > 0 ? 'Ticket aktualisieren' : 'Ticket speichern'; ?></button>
+                        <?php if ($activeTaskId > 0): ?>
+                            <a class="button" href="<?php echo htmlspecialchars((string) (($pageLinks['projects'] ?? '?page=cms-projects-projects') . '&project_id=' . (int) ($selectedProject['id'] ?? 0)), ENT_QUOTES, 'UTF-8'); ?>">Neu anlegen</a>
+                        <?php endif; ?>
+                    </div>
                 </form>
             </section>
         </div>
@@ -482,11 +503,191 @@ foreach (($projectBoards ?? []) as $board) {
                                 <?php if (!empty($task['description'])): ?>
                                     <p><?php echo nl2br(htmlspecialchars((string) ($task['description'] ?? ''), ENT_QUOTES, 'UTF-8')); ?></p>
                                 <?php endif; ?>
+                                <div class="cp-inline-actions">
+                                    <a class="cp-button cp-button-secondary" href="<?php echo htmlspecialchars((string) (($pageLinks['projects'] ?? '?page=cms-projects-projects') . '&project_id=' . (int) ($selectedProject['id'] ?? 0) . '&task_id=' . (int) ($task['id'] ?? 0)), ENT_QUOTES, 'UTF-8'); ?>">Bearbeiten</a>
+                                    <form method="post" class="cp-inline-form" onsubmit="return confirm('Ticket wirklich löschen?');">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                                        <input type="hidden" name="cms_projects_action" value="delete_task">
+                                        <input type="hidden" name="project_id" value="<?php echo (int) ($selectedProject['id'] ?? 0); ?>">
+                                        <input type="hidden" name="task_id" value="<?php echo (int) ($task['id'] ?? 0); ?>">
+                                        <button type="submit" class="button">Löschen</button>
+                                    </form>
+                                </div>
                             </article>
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
             </section>
         </div>
+
+        <script>
+            (function () {
+                var moveForm = document.querySelector('[data-cp-task-move-form]');
+                if (!moveForm) {
+                    return;
+                }
+
+                var taskInput = moveForm.querySelector('input[name="task_id"]');
+                var boardInput = moveForm.querySelector('input[name="target_board_id"]');
+                var columnInput = moveForm.querySelector('input[name="target_column_key"]');
+                var orderedInput = moveForm.querySelector('input[name="ordered_task_ids"]');
+                var draggedTaskId = '';
+                var draggedBoardId = '';
+                var draggedColumnKey = '';
+                var draggedCard = null;
+                var sourceStack = null;
+                var sourceOrder = '';
+
+                var getStackOrder = function (stack) {
+                    return Array.prototype.map.call(stack.querySelectorAll('.cp-ticket-card--draggable[data-task-id]'), function (card) {
+                        return card.getAttribute('data-task-id') || '';
+                    }).filter(function (taskId) {
+                        return taskId !== '';
+                    });
+                };
+
+                var syncDropHints = function () {
+                    document.querySelectorAll('.cp-board-preview-column').forEach(function (column) {
+                        var stack = column.querySelector('[data-ticket-stack]');
+                        var hint = column.querySelector('.cp-ticket-dropzone-hint');
+                        if (!stack || !hint) {
+                            return;
+                        }
+
+                        hint.classList.toggle('cp-ticket-dropzone-hint--hidden', stack.querySelector('.cp-ticket-card--draggable[data-task-id]') !== null);
+                    });
+                };
+
+                var getDragAfterElement = function (stack, clientY) {
+                    var cards = Array.prototype.slice.call(stack.querySelectorAll('.cp-ticket-card--draggable[data-task-id]:not(.cp-ticket-card--dragging)'));
+
+                    return cards.reduce(function (closest, card) {
+                        var box = card.getBoundingClientRect();
+                        var offset = clientY - box.top - (box.height / 2);
+
+                        if (offset < 0 && offset > closest.offset) {
+                            return { offset: offset, element: card };
+                        }
+
+                        return closest;
+                    }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+                };
+
+                var clearTargets = function () {
+                    document.querySelectorAll('.cp-board-preview-column--drop-target').forEach(function (element) {
+                        element.classList.remove('cp-board-preview-column--drop-target');
+                    });
+                };
+
+                document.querySelectorAll('.cp-ticket-card--draggable[data-task-id]').forEach(function (ticketCard) {
+                    ticketCard.addEventListener('dragstart', function (event) {
+                        var currentColumn = ticketCard.closest('.cp-board-preview-column[data-drop-board-id][data-drop-column-key]');
+                        var currentStack = ticketCard.closest('[data-ticket-stack]');
+                        draggedTaskId = ticketCard.getAttribute('data-task-id') || '';
+                        draggedBoardId = currentColumn ? (currentColumn.getAttribute('data-drop-board-id') || '') : '';
+                        draggedColumnKey = currentColumn ? (currentColumn.getAttribute('data-drop-column-key') || '') : '';
+                        draggedCard = ticketCard;
+                        sourceStack = currentStack;
+                        sourceOrder = currentStack ? getStackOrder(currentStack).join(',') : '';
+                        ticketCard.classList.add('cp-ticket-card--dragging');
+
+                        if (event.dataTransfer) {
+                            event.dataTransfer.effectAllowed = 'move';
+                            event.dataTransfer.setData('text/plain', draggedTaskId);
+                        }
+                    });
+
+                    ticketCard.addEventListener('dragend', function () {
+                        draggedTaskId = '';
+                        draggedBoardId = '';
+                        draggedColumnKey = '';
+                        draggedCard = null;
+                        sourceStack = null;
+                        sourceOrder = '';
+                        ticketCard.classList.remove('cp-ticket-card--dragging');
+                        clearTargets();
+                        syncDropHints();
+                    });
+                });
+
+                document.querySelectorAll('.cp-board-preview-column[data-drop-board-id][data-drop-column-key]').forEach(function (column) {
+                    var stack = column.querySelector('[data-ticket-stack]');
+
+                    if (!stack) {
+                        return;
+                    }
+
+                    stack.addEventListener('dragover', function (event) {
+                        if (!draggedTaskId) {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        if (draggedCard) {
+                            var afterElement = getDragAfterElement(stack, event.clientY);
+                            if (afterElement === null) {
+                                stack.appendChild(draggedCard);
+                            } else if (afterElement !== draggedCard) {
+                                stack.insertBefore(draggedCard, afterElement);
+                            }
+                        }
+
+                        clearTargets();
+                        column.classList.add('cp-board-preview-column--drop-target');
+                        syncDropHints();
+                    });
+
+                    stack.addEventListener('drop', function (event) {
+                        var targetBoardId;
+                        var targetColumnKey;
+                        var taskId;
+                        var orderedTaskIds;
+
+                        if (!draggedTaskId) {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        targetBoardId = column.getAttribute('data-drop-board-id') || '';
+                        targetColumnKey = column.getAttribute('data-drop-column-key') || '';
+                        taskId = draggedTaskId;
+                        orderedTaskIds = getStackOrder(stack);
+
+                        clearTargets();
+                        syncDropHints();
+
+                        if (!taskId || !targetBoardId || !targetColumnKey) {
+                            return;
+                        }
+
+                        if (orderedTaskIds.length === 0) {
+                            return;
+                        }
+
+                        if (draggedBoardId === targetBoardId && draggedColumnKey === targetColumnKey && orderedTaskIds.join(',') === sourceOrder) {
+                            return;
+                        }
+
+                        taskInput.value = taskId;
+                        boardInput.value = targetBoardId;
+                        columnInput.value = targetColumnKey;
+                        orderedInput.value = orderedTaskIds.join(',');
+                        moveForm.submit();
+                    });
+
+                    column.addEventListener('dragover', function (event) {
+                        if (!draggedTaskId) {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        clearTargets();
+                        column.classList.add('cp-board-preview-column--drop-target');
+                    });
+                });
+
+                syncDropHints();
+            }());
+        </script>
     <?php endif; ?>
 </div>
