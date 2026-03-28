@@ -43,12 +43,14 @@ final class CMS_Events_Admin
     {
         $adminCss = CMS_EVENTS_PLUGIN_DIR . 'assets/css/events-admin.css';
         if (file_exists($adminCss)) {
-            echo '<link rel="stylesheet" href="' . CMS_EVENTS_PLUGIN_URL . 'assets/css/events-admin.css?v=' . filemtime($adminCss) . '">' . "\n";
+            $adminCssVersion = (string) filemtime($adminCss);
+            echo '<link rel="stylesheet" href="' . CMS_EVENTS_PLUGIN_URL . 'assets/css/events-admin.css?v=' . $adminCssVersion . '">' . "\n";
         }
 
         $adminJs = CMS_EVENTS_PLUGIN_DIR . 'assets/js/admin.js';
         if (file_exists($adminJs)) {
-            echo '<script src="' . CMS_EVENTS_PLUGIN_URL . 'assets/js/admin.js?v=' . filemtime($adminJs) . '" defer></script>' . "\n";
+            $adminJsVersion = (string) filemtime($adminJs);
+            echo '<script src="' . CMS_EVENTS_PLUGIN_URL . 'assets/js/admin.js?v=' . $adminJsVersion . '" defer></script>' . "\n";
         }
     }
 

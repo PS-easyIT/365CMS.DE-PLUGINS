@@ -1,5 +1,21 @@
 # CMS Experts – Changelog
 
+## [2.8.0-audit] – 2026-03-28
+
+### Geändert
+
+- **Versionierung:** Plugin-Header, Konstante und Klassenwert wurden auf den konsistenten Stand `2.0.0` gebracht.
+- **Datenbankpfade:** Listenabfragen verwenden jetzt defensiv begrenzte `limit`-/`offset`-Werte, und die Schema-Initialisierung läuft versionsgesteuert statt unnötig oft im Laufzeitpfad.
+- **Admin-Save:** Der beschädigte Save-Block wurde repariert und die `availability`-Normalisierung auf erlaubte Werte begrenzt.
+- **Member-Create:** E-Mail-, URL-, Availability-, Skill- und Spezialisierungsdaten werden im Member-Create-Handler jetzt ebenso restriktiv normalisiert.
+- **Template-Escaping:** Die Experten-Biografie im Single-Template wird nicht mehr roh ausgegeben, sondern sicher escaped und mit Zeilenumbrüchen gerendert.
+- **Link-Escaping:** Intern zusammengesetzte Breadcrumb-, Kontakt- und Register-Links im Single-Template werden jetzt ebenfalls konsequent im Attribut-Kontext escaped.
+- **Card-Link-Escaping:** Detail-Links aus `$url` werden im Card-Template jetzt ebenfalls konsequent im `href`-Attribut-Kontext escaped.
+- **Archive-/CTA-Link-Escaping:** Auch Reset-Link im Archive-Template sowie CTA-Link aus `$url` im Card-Template werden jetzt konsequent im `href`-Attribut-Kontext escaped.
+- **Style-/Title-Escaping:** Auch Avatar-Gradient im `style`-Attribut und Event-Zähler im `title`-Attribut des Single-Templates werden jetzt konsequent escaped.
+- **Ownership-Härtung:** Die zentrale `save_expert()`-Persistenz blockiert für Nicht-Admins jetzt Updates auf fremde Experten-IDs und entschärft damit latente IDOR-/Fremd-ID-Pfade.
+- **Assets:** Bootstrap- und Admin-Assets verwenden konsistent lokal zwischengespeicherte `filemtime()`-Versionen.
+
 ## [2.8.0-docs] – 2026-03-28
 
 ### Geändert

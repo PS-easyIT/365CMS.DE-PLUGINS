@@ -64,14 +64,23 @@ final class CMS_Events {
 
     public function enqueue_styles(): void {
         $css = $this->plugin_dir . 'assets/css/style.css';
-        if (file_exists($css)) echo '<link rel="stylesheet" href="' . $this->plugin_url . 'assets/css/style.css?v=' . filemtime($css) . '">' . "\n";
+        if (file_exists($css)) {
+            $cssVersion = (string) filemtime($css);
+            echo '<link rel="stylesheet" href="' . $this->plugin_url . 'assets/css/style.css?v=' . $cssVersion . '">' . "\n";
+        }
         $single_css = $this->plugin_dir . 'assets/css/single.css';
-        if (file_exists($single_css)) echo '<link rel="stylesheet" href="' . $this->plugin_url . 'assets/css/single.css?v=' . filemtime($single_css) . '">' . "\n";
+        if (file_exists($single_css)) {
+            $singleCssVersion = (string) filemtime($single_css);
+            echo '<link rel="stylesheet" href="' . $this->plugin_url . 'assets/css/single.css?v=' . $singleCssVersion . '">' . "\n";
+        }
     }
 
     public function enqueue_scripts(): void {
         $js = $this->plugin_dir . 'assets/js/script.js';
-        if (file_exists($js)) echo '<script src="' . $this->plugin_url . 'assets/js/script.js?v=' . filemtime($js) . '" defer></script>' . "\n";
+        if (file_exists($js)) {
+            $jsVersion = (string) filemtime($js);
+            echo '<script src="' . $this->plugin_url . 'assets/js/script.js?v=' . $jsVersion . '" defer></script>' . "\n";
+        }
     }
 
     public function get_version(): string { return $this->version; }

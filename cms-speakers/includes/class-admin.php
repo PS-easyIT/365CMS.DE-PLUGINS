@@ -49,7 +49,8 @@ final class CMS_Speakers_Admin
         // Admin-CSS einbinden
         $admin_css = CMS_SPEAKERS_PLUGIN_DIR . 'assets/css/speakers-admin.css';
         if (file_exists($admin_css)) {
-            echo '<link rel="stylesheet" href="' . CMS_SPEAKERS_PLUGIN_URL . 'assets/css/speakers-admin.css?v=' . filemtime($admin_css) . '">' . "\n";
+            $adminCssVersion = (string) filemtime($admin_css);
+            echo '<link rel="stylesheet" href="' . CMS_SPEAKERS_PLUGIN_URL . 'assets/css/speakers-admin.css?v=' . $adminCssVersion . '">' . "\n";
         }
 
         $speakers  = $data['speakers']  ?? [];
@@ -578,7 +579,8 @@ final class CMS_Speakers_Admin
         // Admin-CSS einbinden
         $admin_css = CMS_SPEAKERS_PLUGIN_DIR . 'assets/css/speakers-admin.css';
         if (file_exists($admin_css)) {
-            echo '<link rel="stylesheet" href="' . CMS_SPEAKERS_PLUGIN_URL . 'assets/css/speakers-admin.css?v=' . filemtime($admin_css) . '">' . "\n";
+            $adminCssVersion = (string) filemtime($admin_css);
+            echo '<link rel="stylesheet" href="' . CMS_SPEAKERS_PLUGIN_URL . 'assets/css/speakers-admin.css?v=' . $adminCssVersion . '">' . "\n";
         }
 
         // Decode JSON fields

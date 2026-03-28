@@ -42,6 +42,23 @@
 - [ ] keine unvalidierten Paginierungs-/Filterpfade
 - [ ] Doku- und Auditstand konsistent nachvollziehbar
 
+### Audit-Zwischenstand 2026-03-28
+
+- [x] Beschädigte `get_companies()`-Logik in der DB-Klasse repariert und wieder syntaktisch stabil hergestellt.
+- [x] Firmenlisten und Zählabfragen für `limit`/`offset` sowie `status => 'any'` defensiv vereinheitlicht.
+- [x] Member-Dashboard so angepasst, dass eigene `pending`-Einträge konsistent gezählt und angezeigt werden.
+- [x] Member-Create-Handler für E-Mail-, URL-, Industry-, Company-Size-, Jahres- und Tag-Daten restriktiver validiert.
+- [x] Single-Template für Firmenbeschreibung auf sichere Textausgabe mit Escaping und Zeilenumbruch-Rendering umgestellt.
+- [x] Intern zusammengesetzte Breadcrumb-, Experten-, Speaker- und Register-Links im Single-Template konsequent im Attribut-Kontext escaped.
+- [x] Reset- und Fallback-Links im Archive-Template für interne Navigationsziele konsequent im Attribut-Kontext escaped.
+- [x] Detail-Links aus `cms_company_url()` im Card-Template ebenfalls konsequent im Attribut-Kontext escaped.
+- [x] Auch Pagination-Links im Archive-Template mit zusammengesetzten Query-Parametern konsequent im Attribut-Kontext escaped.
+- [x] Auch dynamische `style`-Attributwerte für Avatar-Gradienten, Ribbon-Farben und Card-Rahmen in Single- und Card-Templates konsequent escaped.
+- [x] Zentrale `save_company()`-Persistenz verweigert für Nicht-Admins Updates auf fremde Company-IDs und entschärft damit latente Member-IDOR-Pfade.
+- [x] Admin-Asset-Ausgabe gegen fehlende Dateien abgesichert und `filemtime()` robust vereinheitlicht.
+- [ ] Ownership-/IDOR-Schutz für Bearbeiten, Löschen und Experten-Zuordnungen noch gezielt vertiefen.
+- [ ] Renderpfade für Logo-, Website- und Kontaktfelder noch vollständig gegen Ausgabefehler prüfen.
+
 ---
 
 ## 🔴 Hohe Priorität

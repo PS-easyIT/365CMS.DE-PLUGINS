@@ -91,7 +91,7 @@ $css_hdr_icon_raw = html_entity_decode($settings['archive_header_icon']       ??
 
         <button type="submit" class="expert-btn">Suchen</button>
         <?php if (!empty($city) || !empty($availability)): ?>
-            <a href="<?php echo SITE_URL; ?>/experts" class="expert-btn expert-btn-outline expert-btn--reset">Reset</a>
+            <a href="<?php echo htmlspecialchars(rtrim(SITE_URL, '/') . '/experts'); ?>" class="expert-btn expert-btn-outline expert-btn--reset">Reset</a>
         <?php endif; ?>
     </form>
 

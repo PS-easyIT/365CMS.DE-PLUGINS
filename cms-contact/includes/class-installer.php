@@ -146,6 +146,7 @@ final class CMS_Contact_Installer
             subject       VARCHAR(500)  DEFAULT NULL,
             message       TEXT          DEFAULT NULL,
             user_agent    VARCHAR(500)  DEFAULT NULL,
+            ip_address    VARCHAR(45)   DEFAULT NULL,
             status        VARCHAR(20)   NOT NULL DEFAULT 'unread',
             is_spam       TINYINT(1)    NOT NULL DEFAULT 0,
             read_at       TIMESTAMP     NULL DEFAULT NULL,
@@ -185,10 +186,10 @@ final class CMS_Contact_Installer
     {
         self::create_tables();
         self::seed_default_settings();
-        self::remove_submission_ip_column();
+        self::ensure_submission_ip_column();
     }
 
-    private static function remove_submission_ip_column(): void
+    private static function ensure_submission_ip_column(): void
     {
         if (!class_exists('CMS\Database')) {
             return;
@@ -204,11 +205,11 @@ final class CMS_Contact_Installer
             );
             $stmt->execute([$tableName, 'ip_address']);
 
-            if ($stmt->fetch()) {
-                $db->getPdo()->exec("ALTER TABLE {$tableName} DROP COLUMN ip_address");
+            if (!$stmt->fetch()) {
+                $db->getPdo()->exec("ALTER TABLE {$tableName} ADD COLUMN ip_address VARCHAR(45) DEFAULT NULL AFTER user_agent");
             }
         } catch (\Throwable $e) {
-            error_log('CMS_Contact_Installer::remove_submission_ip_column() error: ' . $e->getMessage());
+            error_log('CMS_Contact_Installer::ensure_submission_ip_column() error: ' . $e->getMessage());
         }
     }
 

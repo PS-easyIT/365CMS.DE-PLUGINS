@@ -45,6 +45,20 @@
 - [ ] keine offensichtlichen ungebremsten Listen-/Query-Pfade
 - [ ] alle geänderten Punkte im Changelog und in der Sicherheitsdoku nachvollziehbar dokumentiert
 
+### Audit-Zwischenstand 2026-03-28
+
+- [x] Member-Dashboard-Zählung für eigene Events so korrigiert, dass Entwürfe nicht fälschlich ausgeblendet werden.
+- [x] Event-Listenpfade in der DB-Klasse auf begrenzte `limit`-/`offset`-Werte gehärtet.
+- [x] Admin-Save für `status`, `price_type`, URL- und E-Mail-Felder mit Whitelists bzw. Validierung abgesichert.
+- [x] Member-Create-Handler für Preis-, URL-, E-Mail- und Tag-Felder an den gehärteten Admin-Standard angeglichen.
+- [x] Single-Template für Event-Beschreibung auf sichere Textausgabe mit Escaping und Zeilenumbruch-Rendering umgestellt.
+- [x] Intern zusammengesetzte Breadcrumb-, Speaker- und Register-Links im Single-Template konsequent im Attribut-Kontext escaped.
+- [x] Reset- und Pagination-Links im Archive-Template für interne URLs und Query-Parameter konsequent im Attribut-Kontext escaped.
+- [x] Auch dynamische Gradientwerte im `style`-Attribut des Speaker-Fallbacks im Single-Template konsequent escaped.
+- [x] Zentrale `save_event()`-Persistenz verweigert für Nicht-Admins Updates auf fremde Event-IDs und entschärft damit latente Member-IDOR-Pfade.
+- [x] Asset-Versionierung in Bootstrap und Admin auf konsistente, dateigeprüfte Nutzung von `filemtime()` vereinheitlicht.
+- [ ] Speaker-Typen, Kalender-Parameter und Render-Escaping noch vollständig durchprüfen.
+
 ---
 
 ## 🔴 Hohe Priorität

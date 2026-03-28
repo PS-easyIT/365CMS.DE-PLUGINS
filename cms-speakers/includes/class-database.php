@@ -410,6 +410,21 @@ final class CMS_Speakers_Database
             unset($data['id']);
             $data = array_intersect_key($data, array_flip($allowed));
 
+            if ($dataId > 0 && !CMS\Auth::instance()->isAdmin()) {
+                $current_user_id = (int) (CMS\Auth::instance()->currentUser()?->id ?? 0);
+                if ($current_user_id <= 0) {
+                    return false;
+                }
+
+                $owner_stmt = $db->prepare("SELECT user_id FROM {$p}speakers WHERE id = ? LIMIT 1");
+                $owner_stmt->execute([$dataId]);
+                $owner_id = (int) ($owner_stmt->fetchColumn() ?: 0);
+
+                if ($owner_id <= 0 || $owner_id !== $current_user_id) {
+                    return false;
+                }
+            }
+
             // Leere Numerics → NULL
             foreach (['max_audience_size','speaking_fee_min','speaking_fee_max','company_id'] as $nf) {
                 if (array_key_exists($nf, $data) && (string)$data[$nf] === '') {

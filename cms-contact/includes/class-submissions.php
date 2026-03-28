@@ -40,8 +40,8 @@ final class CMS_Contact_Submissions
     {
         $stmt = $this->pdo->prepare(
             "INSERT INTO {$this->prefix}contact_submissions
-             (form_id, user_id, sender_name, sender_email, subject, message, user_agent, status, is_spam)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+             (form_id, user_id, sender_name, sender_email, subject, message, user_agent, ip_address, status, is_spam)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
 
         $stmt->execute([
@@ -52,6 +52,7 @@ final class CMS_Contact_Submissions
             $data['subject']      ?? null,
             $data['message']      ?? null,
             $data['user_agent']   ?? (substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500)),
+            $data['ip_address']   ?? $this->get_client_ip(),
             'unread',
             (int) ($data['is_spam'] ?? 0),
         ]);
@@ -111,8 +112,9 @@ final class CMS_Contact_Submissions
         }
 
         if (!empty($filters['search'])) {
-            $where[]  = '(s.sender_name LIKE ? OR s.sender_email LIKE ? OR s.subject LIKE ? OR s.message LIKE ?)';
+            $where[]  = '(s.sender_name LIKE ? OR s.sender_email LIKE ? OR s.subject LIKE ? OR s.message LIKE ? OR s.ip_address LIKE ?)';
             $search   = '%' . $filters['search'] . '%';
+            $params[] = $search;
             $params[] = $search;
             $params[] = $search;
             $params[] = $search;
@@ -172,8 +174,9 @@ final class CMS_Contact_Submissions
         }
 
         if (!empty($filters['search'])) {
-            $where[]  = '(sender_name LIKE ? OR sender_email LIKE ? OR subject LIKE ? OR message LIKE ?)';
+            $where[]  = '(sender_name LIKE ? OR sender_email LIKE ? OR subject LIKE ? OR message LIKE ? OR ip_address LIKE ?)';
             $search   = '%' . $filters['search'] . '%';
+            $params[] = $search;
             $params[] = $search;
             $params[] = $search;
             $params[] = $search;
@@ -386,6 +389,8 @@ final class CMS_Contact_Submissions
         $body .= "E-Mail: "  . ($submission['sender_email'] ?? '-') . "\n";
         $body .= "Betreff: " . ($submission['subject']      ?? '-') . "\n\n";
         $body .= "Nachricht:\n" . ($submission['message']   ?? '-') . "\n\n";
+        $body .= "IP-Adresse: " . ($submission['ip_address'] ?? '-') . "\n";
+        $body .= "User-Agent: " . ($submission['user_agent'] ?? '-') . "\n\n";
 
         if (!empty($meta)) {
             $body .= "Zusätzliche Felder:\n";
@@ -541,6 +546,17 @@ final class CMS_Contact_Submissions
         }
 
         return $fromName . ' <' . $fromEmail . '>';
+    }
+
+    private function get_client_ip(): string
+    {
+        if (class_exists('CMS\\Security')) {
+            return (string) \CMS\Security::getClientIp();
+        }
+
+        $ip = (string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+
+        return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '0.0.0.0';
     }
 
     private function send_plain_mail(string $to, string $subject, string $body, array $headers = []): bool

@@ -115,26 +115,42 @@ class CMS_Companies_Member_Dashboard
             try {
                 $isAdminSave = \CMS\Auth::instance()->isAdmin();
                 $companyDb = CMS_Companies_Database::instance();
+                $allowedCompanySizes = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
+                $availableIndustries = array_map(static fn($industry) => (string) ($industry->name ?? ''), $companyDb->get_all_industries());
+                $validatedEmail = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
+                $validatedWebsite = filter_var(trim((string) ($_POST['website'] ?? '')), FILTER_VALIDATE_URL) ?: null;
+                $validatedLogoUrl = filter_var(trim((string) ($_POST['logo_url'] ?? '')), FILTER_VALIDATE_URL) ?: null;
+                $selectedIndustry = sanitize_text_field($_POST['industry'] ?? '');
+                if ($selectedIndustry !== '' && !in_array($selectedIndustry, $availableIndustries, true)) {
+                    $selectedIndustry = '';
+                }
+                $companySize = in_array($_POST['company_size'] ?? '', $allowedCompanySizes, true) ? (string) ($_POST['company_size'] ?? '') : '';
+                $currentYear = (int) date('Y');
+                $foundedYear = is_numeric($_POST['founded_year'] ?? '') ? (int) $_POST['founded_year'] : null;
+                if ($foundedYear !== null && ($foundedYear < 1800 || $foundedYear > $currentYear)) {
+                    $foundedYear = null;
+                }
+                $employeeCount = is_numeric($_POST['employee_count'] ?? '') ? max(0, (int) $_POST['employee_count']) : null;
                 $id = $companyDb->save_company([
                     'user_id'          => (int) $user->id,
                     'name'             => sanitize_text_field($_POST['name']         ?? ''),
-                    'email'            => filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL),
+                    'email'            => $validatedEmail,
                     'phone'            => sanitize_text_field($_POST['phone']         ?? ''),
-                    'website'          => filter_var($_POST['website'] ?? '', FILTER_SANITIZE_URL) ?: null,
-                    'logo_url'         => filter_var($_POST['logo_url'] ?? '', FILTER_SANITIZE_URL) ?: null,
-                    'industry'         => sanitize_text_field($_POST['industry']      ?? ''),
-                    'company_size'     => sanitize_text_field($_POST['company_size']  ?? ''),
+                    'website'          => $validatedWebsite,
+                    'logo_url'         => $validatedLogoUrl,
+                    'industry'         => $selectedIndustry,
+                    'company_size'     => $companySize,
                     'description'      => strip_tags($_POST['description']            ?? ''),
                     'location_city'    => sanitize_text_field($_POST['location_city'] ?? ''),
                     'location_zip'     => sanitize_text_field($_POST['location_zip']  ?? ''),
                     'location_country' => sanitize_text_field($_POST['location_country'] ?? 'Deutschland'),
-                    'founded_year'     => (int)($_POST['founded_year']   ?? 0) ?: null,
-                    'employee_count'   => (int)($_POST['employee_count'] ?? 0) ?: null,
+                    'founded_year'     => $foundedYear,
+                    'employee_count'   => $employeeCount,
                     'status'           => $isAdminSave ? 'active' : 'pending',
                 ]);
                 // Tags (Merkmale) als Meta speichern
                 if ($id > 0 && !empty($_POST['tags']) && is_array($_POST['tags'])) {
-                    $tags = array_values(array_filter(array_map('sanitize_text_field', $_POST['tags'])));
+                    $tags = array_values(array_unique(array_filter(array_map(static fn($tag) => sanitize_text_field(trim((string) $tag)), $_POST['tags']))));
                     $companyDb->save_meta($id, 'tags', $tags);
                 }
                 if ($isAdminSave) {

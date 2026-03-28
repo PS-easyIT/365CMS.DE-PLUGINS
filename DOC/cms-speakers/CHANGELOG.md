@@ -1,5 +1,23 @@
 # CMS Speakers – Changelog
 
+## [2.8.0-audit] – 2026-03-28
+
+### Geändert
+
+- **Statusschema:** Speaker-Status und Datenbankschema wurden für `pending` und `deleted` harmonisiert; bestehende Installationen werden per Migration nachgezogen.
+- **Listenhärtung:** `get_speakers()` normalisiert `limit`, `offset` und `ORDER BY` jetzt defensiv über feste Whitelists.
+- **Dashboard-/Admin-Logik:** Member- und Admin-Listen berücksichtigen Speaker über den tatsächlichen Statusfluss konsistent, inklusive eigener `pending`-Profile.
+- **Admin-Save:** `gender`, `travel_radius`, `availability`, `status` sowie Array-/Link-Felder werden restriktiver normalisiert.
+- **Member-Create:** Gender-, Format-, Travel-, Availability-, Topic- und Link-Daten werden im Member-Create-Handler jetzt ebenfalls restriktiv normalisiert.
+- **Template-Escaping:** Die Speaker-Bio im Single-Template wird nicht mehr roh ausgegeben, sondern sicher escaped und mit Zeilenumbrüchen gerendert.
+- **Link-Escaping:** Intern zusammengesetzte Breadcrumb-, Company-, Kontakt- und Register-Links im Single-Template werden jetzt ebenfalls konsequent im Attribut-Kontext escaped.
+- **Archive-Link-Escaping:** Reset- und Pagination-Links im Archive-Template behandeln interne URLs und Query-Parameter jetzt ebenfalls konsequent im `href`-Attribut-Kontext.
+- **Card-Link-Escaping:** Detail-Links aus `$speaker_url` werden im Card-Template jetzt ebenfalls konsequent im `href`-Attribut-Kontext escaped.
+- **Card-CTA-Escaping:** Auch der CTA-Link aus `$speaker_url` im Card-Template wird jetzt konsequent im `href`-Attribut-Kontext escaped.
+- **Style-/Title-Escaping:** Auch Avatar-Gradient im `style`-Attribut und Event-Zähler im `title`-Attribut des Single-Templates werden jetzt konsequent escaped.
+- **Ownership-Härtung:** Die zentrale `save_speaker()`-Persistenz blockiert für Nicht-Admins jetzt Updates auf fremde Speaker-IDs und entschärft damit latente IDOR-/Fremd-ID-Pfade.
+- **Assets:** Bootstrap- und Admin-Assets verwenden konsistente, dateigeprüfte Versionswerte.
+
 ## [2.8.0-docs] – 2026-03-28
 
 ### Geändert

@@ -63,6 +63,13 @@ if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'speakers
 - Attributwerte gesondert escapen
 - URLs nur nach Validierung rendern
 - Social-Links und Medienlinks nicht roh ausgeben
+- Bio- und Beschreibungstexte auf Single-Seiten nicht roh rendern, sondern als Text escapen und nur kontrolliert mit `nl2br()` umbrechen
+- intern zusammengesetzte Profil-, Kontakt- und Register-Links im `href`-Attribut-Kontext escapen
+- Reset-, Filter- und Pagination-Links im Archiv mit zusammengesetzten Query-Parametern ebenfalls nur escaped in `href` ausgeben
+- auch Detail-Links aus internen Variablen wie `$speaker_url` in Cards nur escaped im `href`-Attribut rendern
+- auch CTA-Links in Cards bei internen URL-Variablen nur escaped im `href`-Attribut rendern
+- auch dynamische Gradientwerte in `style`-Attributen und zusammengesetzte Tooltip-Texte in `title`-Attributen im Single-Template escapen
+- zentrale Save-Pfade für Speaker müssen bei Updates für Nicht-Admins den `user_id`-Besitz des Datensatzes gegenprüfen und fremde IDs verwerfen
 - Topic- und Event-History-Ausgaben gegen XSS absichern
 
 ## SQL-Sicherheit

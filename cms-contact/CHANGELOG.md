@@ -2,6 +2,18 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [1.1.4] – 2026-03-28
+
+### Geändert
+
+- Kontaktanfragen speichern wieder die technische Absender-IP in `contact_submissions`, damit eingereichte Anfragen im Admin nachvollziehbar bleiben.
+- Bestehende Installationen ergänzen die Spalte `ip_address` nun per Migration automatisch erneut, statt sie weiter zu entfernen.
+- Die Freitextsuche in den Einreichungen findet jetzt zusätzlich auch nach gespeicherter IP-Adresse.
+
+### Verbessert
+
+- Nachrichtenliste, Detailansicht und Benachrichtigungs-E-Mail zeigen die erfasste IP-Adresse gemeinsam mit dem User-Agent an.
+
 ## [1.1.3] – 2026-03-19
 
 ### Geändert

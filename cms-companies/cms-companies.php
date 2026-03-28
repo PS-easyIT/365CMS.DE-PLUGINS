@@ -129,13 +129,14 @@ final class CMS_Companies
         $css_file = $this->plugin_dir . 'assets/css/style.css';
         if (file_exists($css_file)) {
             $css_url = $this->plugin_url . 'assets/css/style.css';
-            $css_version = filemtime($css_file);
+            $css_version = (string) filemtime($css_file);
             echo '<link rel="stylesheet" href="' . htmlspecialchars($css_url) . '?v=' . $css_version . '">' . "\n";
         }
         $single_css_file = $this->plugin_dir . 'assets/css/single.css';
         if (file_exists($single_css_file)) {
             $single_css_url = $this->plugin_url . 'assets/css/single.css';
-            echo '<link rel="stylesheet" href="' . htmlspecialchars($single_css_url) . '?v=' . filemtime($single_css_file) . '">' . "\n";
+            $single_css_version = (string) filemtime($single_css_file);
+            echo '<link rel="stylesheet" href="' . htmlspecialchars($single_css_url) . '?v=' . $single_css_version . '">' . "\n";
         }
     }
 
@@ -144,7 +145,7 @@ final class CMS_Companies
         $js_file = $this->plugin_dir . 'assets/js/script.js';
         if (file_exists($js_file)) {
             $js_url = $this->plugin_url . 'assets/js/script.js';
-            $js_version = filemtime($js_file);
+            $js_version = (string) filemtime($js_file);
             echo '<script src="' . htmlspecialchars($js_url) . '?v=' . $js_version . '" defer></script>' . "\n";
         }
     }

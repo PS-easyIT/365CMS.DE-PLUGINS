@@ -66,18 +66,18 @@ $tier_color = '';
 if ($is_sponsor)         $tier_color = $ribbon_sponsor_color;
 elseif ($is_top_partner) $tier_color = $ribbon_top_color;
 elseif ($is_partner)     $tier_color = $ribbon_partner_color;
-$tier_style = $tier_color ? ' style="--co-tier-border:' . $tier_color . '"' : '';
+$tier_style = $tier_color ? ' style="--co-tier-border:' . $sec->escape($tier_color) . '"' : '';
 ?>
 
 <div class="co-card<?= $is_sponsor ? ' co-card--sponsor' : ($is_top_partner ? ' co-card--top' : ($is_partner ? ' co-card--partner' : '')) ?>"<?= $tier_style ?>>
 
     <!-- Status-Ribbon (Sponsor / Top-Partner / Partner) -->
     <?php if ($is_sponsor): ?>
-        <div class="co-card-ribbon co-card-ribbon--sponsor" style="--co-ribbon-bg:<?= $ribbon_sponsor_color ?>">★ Sponsor</div>
+        <div class="co-card-ribbon co-card-ribbon--sponsor" style="--co-ribbon-bg:<?= $sec->escape($ribbon_sponsor_color) ?>">★ Sponsor</div>
     <?php elseif ($is_top_partner): ?>
-        <div class="co-card-ribbon co-card-ribbon--top" style="--co-ribbon-bg:<?= $ribbon_top_color ?>">◆ Top-Partner</div>
+        <div class="co-card-ribbon co-card-ribbon--top" style="--co-ribbon-bg:<?= $sec->escape($ribbon_top_color) ?>">◆ Top-Partner</div>
     <?php elseif ($is_partner): ?>
-        <div class="co-card-ribbon co-card-ribbon--partner" style="--co-ribbon-bg:<?= $ribbon_partner_color ?>">● Partner</div>
+        <div class="co-card-ribbon co-card-ribbon--partner" style="--co-ribbon-bg:<?= $sec->escape($ribbon_partner_color) ?>">● Partner</div>
     <?php endif; ?>
 
     <!-- Header: Avatar + Name + Branche -->
@@ -87,11 +87,11 @@ $tier_style = $tier_color ? ' style="--co-tier-border:' . $tier_color . '"' : ''
                 <img src="<?= $sec->escape($company->logo_url) ?>" alt="<?= $sec->escape($company->name) ?>" loading="lazy">
             </div>
         <?php else: ?>
-            <div class="co-card-avatar" style="background:<?= $avatar_bg ?>;"><?= $sec->escape($initials) ?></div>
+            <div class="co-card-avatar" style="background:<?= $sec->escape($avatar_bg) ?>;"><?= $sec->escape($initials) ?></div>
         <?php endif; ?>
         <div class="co-card-identity">
             <h3 class="co-card-name">
-                <a href="<?= cms_company_url($company) ?>"><?= $sec->escape($company->name) ?></a>
+                <a href="<?= $sec->escape(cms_company_url($company)) ?>"><?= $sec->escape($company->name) ?></a>
             </h3>
         </div>
     </div>
@@ -118,7 +118,7 @@ $tier_style = $tier_color ? ' style="--co-tier-border:' . $tier_color . '"' : ''
 
     <!-- Footer: Actions -->
     <div class="co-card-footer">
-        <a href="<?= cms_company_url($company) ?>" class="co-btn co-btn-primary co-btn-block">
+        <a href="<?= $sec->escape(cms_company_url($company)) ?>" class="co-btn co-btn-primary co-btn-block">
             Details ansehen
         </a>
         <?php if ($show_website && !empty($company->website)): ?>

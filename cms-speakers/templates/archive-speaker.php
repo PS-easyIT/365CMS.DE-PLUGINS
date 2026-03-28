@@ -153,7 +153,7 @@ $archive_url = (defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/speakers/';
     <button type="submit" class="sp-btn sp-btn-primary">🔍 Suchen</button>
 
     <?php if (!empty($search) || !empty($filter_city) || !empty($filter_availability) || !empty($filter_format) || !empty($filter_travel)): ?>
-      <a href="<?= $archive_url ?>" class="sp-btn sp-btn-ghost">✕ Reset</a>
+      <a href="<?= htmlspecialchars($archive_url) ?>" class="sp-btn sp-btn-ghost">✕ Reset</a>
     <?php endif; ?>
 
   </form>
@@ -166,7 +166,7 @@ $archive_url = (defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/speakers/';
         <h3>Keine Speaker gefunden</h3>
         <p>Versuche es mit anderen Filterkriterien.</p>
         <?php if (!empty($search) || !empty($filter_city) || !empty($filter_availability)): ?>
-          <a href="<?= $archive_url ?>" class="sp-btn-ghost">✕ Filter zurücksetzen</a>
+          <a href="<?= htmlspecialchars($archive_url) ?>" class="sp-btn-ghost">✕ Filter zurücksetzen</a>
         <?php endif; ?>
       </div>
     <?php else: ?>
@@ -199,12 +199,12 @@ $archive_url = (defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/speakers/';
     <div class="sp-pagination">
       <?php if ($cur_page > 1): ?>
         <a class="sp-page-btn"
-           href="<?= $archive_url ?>?<?= $pq ?><?= $pq_sep ?>page=<?= $cur_page - 1 ?>">&larr; Zurück</a>
+           href="<?= htmlspecialchars($archive_url . '?' . $pq . $pq_sep . 'page=' . ($cur_page - 1)) ?>">&larr; Zurück</a>
       <?php endif; ?>
       <span class="sp-page-info">Seite <?= $cur_page ?> von <?= $pages_total ?></span>
       <?php if ($cur_page < $pages_total): ?>
         <a class="sp-page-btn"
-           href="<?= $archive_url ?>?<?= $pq ?><?= $pq_sep ?>page=<?= $cur_page + 1 ?>">Weiter &rarr;</a>
+           href="<?= htmlspecialchars($archive_url . '?' . $pq . $pq_sep . 'page=' . ($cur_page + 1)) ?>">Weiter &rarr;</a>
       <?php endif; ?>
     </div>
   <?php endif; ?>

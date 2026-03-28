@@ -52,7 +52,8 @@ final class CMS_Experts_Admin
         // Admin-CSS einbinden
         $admin_css = CMS_EXPERTS_PLUGIN_DIR . 'assets/css/experts-admin.css';
         if (file_exists($admin_css)) {
-            echo '<link rel="stylesheet" href="' . CMS_EXPERTS_PLUGIN_URL . 'assets/css/experts-admin.css?v=' . filemtime($admin_css) . '">' . "\n";
+            $adminCssVersion = (string) filemtime($admin_css);
+            echo '<link rel="stylesheet" href="' . CMS_EXPERTS_PLUGIN_URL . 'assets/css/experts-admin.css?v=' . $adminCssVersion . '">' . "\n";
         }
 
         $experts   = $data['experts']  ?? [];
@@ -735,7 +736,8 @@ final class CMS_Experts_Admin
         // Admin-CSS einbinden
         $admin_css = CMS_EXPERTS_PLUGIN_DIR . 'assets/css/experts-admin.css';
         if (file_exists($admin_css)) {
-            echo '<link rel="stylesheet" href="' . CMS_EXPERTS_PLUGIN_URL . 'assets/css/experts-admin.css?v=' . filemtime($admin_css) . '">' . "\n";
+            $adminCssVersion = (string) filemtime($admin_css);
+            echo '<link rel="stylesheet" href="' . CMS_EXPERTS_PLUGIN_URL . 'assets/css/experts-admin.css?v=' . $adminCssVersion . '">' . "\n";
         }
 
         $slug = '';

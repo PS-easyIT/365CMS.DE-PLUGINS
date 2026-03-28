@@ -67,7 +67,7 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 <div class="co-single-v2">
 
   <nav class="co-breadcrumb">
-    <a href="<?= $base_url ?>/companies">← Unternehmen</a>
+    <a href="<?= htmlspecialchars($base_url . '/companies') ?>">← Unternehmen</a>
     <span class="co-breadcrumb__sep">/</span>
     <span class="co-breadcrumb__cur"><?= $sec->escape(mb_strimwidth($company->name ?? '', 0, 60, '…')) ?></span>
   </nav>
@@ -86,7 +86,7 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       <?php if (!empty($company->logo_url)): ?>
         <div class="co-hero-v2__avatar"><img src="<?= $sec->escape($company->logo_url) ?>" alt="<?= $sec->escape($company->name) ?>"></div>
       <?php else: ?>
-        <div class="co-hero-v2__avatar" style="background:<?= $avatarBg ?>;"><?= $sec->escape($initials) ?></div>
+        <div class="co-hero-v2__avatar" style="background:<?= $sec->escape($avatarBg) ?>;"><?= $sec->escape($initials) ?></div>
       <?php endif; ?>
       <div class="co-hero-v2__meta">
         <h1 class="co-hero-v2__title"><?= $sec->escape($company->name) ?></h1>
@@ -98,8 +98,9 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
   <div class="co-bridge-v2">
     <div class="co-bridge-v2__about">
       <h2 class="co-bridge-v2__title">🏢 Über das Unternehmen</h2>
-      <?php if (!empty($company->description) && trim($company->description) !== ''): ?>
-        <div class="co-bridge-v2__text co-wysiwyg-content"><?= $company->description ?></div>
+      <?php $companyDescription = trim((string) ($company->description ?? '')); ?>
+      <?php if ($companyDescription !== ''): ?>
+        <div class="co-bridge-v2__text co-wysiwyg-content"><?= nl2br(htmlspecialchars($companyDescription)) ?></div>
       <?php else: ?>
         <p class="co-bridge-v2__text" style="color:#94a3b8;font-style:italic;">Noch keine Beschreibung hinterlegt.</p>
       <?php endif; ?>
@@ -185,12 +186,12 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
                   <?php if ($expPhoto): ?>
                     <div class="co-exp-row__av"><img src="<?= $expPhoto ?>" alt="<?= $expName ?>"></div>
                   <?php else: ?>
-                    <div class="co-exp-row__av" style="background:<?= $expGradient ?>"><?= $letter ?></div>
+                    <div class="co-exp-row__av" style="background:<?= $sec->escape($expGradient) ?>"><?= $letter ?></div>
                   <?php endif; ?>
                   <div class="co-exp-row__info">
                     <div class="co-exp-row__name">
                       <?php if ($expId > 0): ?>
-                        <a href="<?= SITE_URL ?>/experts/<?= $expId ?>"><?= $expName ?></a>
+                        <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/experts/' . $expId) ?>"><?= $expName ?></a>
                       <?php else: ?>
                         <?= $expName ?>
                       <?php endif; ?>
@@ -200,7 +201,7 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
                   </div>
                 </div>
                 <?php if ($expId > 0): ?>
-                  <a href="<?= SITE_URL ?>/experts/<?= $expId ?>" class="co-btn-v2 co-btn-v2--ghost co-btn-v2--sm" style="width:100%;text-align:center;">Profil →</a>
+                  <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/experts/' . $expId) ?>" class="co-btn-v2 co-btn-v2--ghost co-btn-v2--sm" style="width:100%;text-align:center;">Profil →</a>
                 <?php endif; ?>
               </div>
             <?php endforeach; ?>
@@ -234,12 +235,12 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
                   <?php if ($spkPhoto): ?>
                     <div class="co-exp-row__av"><img src="<?= $spkPhoto ?>" alt="<?= $spkName ?>"></div>
                   <?php else: ?>
-                    <div class="co-exp-row__av" style="background:<?= $spkGrad ?>"><?= $letter ?></div>
+                    <div class="co-exp-row__av" style="background:<?= $sec->escape($spkGrad) ?>"><?= $letter ?></div>
                   <?php endif; ?>
                   <div class="co-exp-row__info">
                     <div class="co-exp-row__name">
                       <?php if ($spkId > 0): ?>
-                        <a href="<?= SITE_URL ?>/speakers/<?= $spkId ?>"><?= $spkName ?></a>
+                        <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/speakers/' . $spkId) ?>"><?= $spkName ?></a>
                       <?php else: ?>
                         <?= $spkName ?>
                       <?php endif; ?>
@@ -249,7 +250,7 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
                   </div>
                 </div>
                 <?php if ($spkId > 0): ?>
-                  <a href="<?= SITE_URL ?>/speakers/<?= $spkId ?>" class="co-btn-v2 co-btn-v2--ghost co-btn-v2--sm" style="width:100%;text-align:center;">Profil →</a>
+                  <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/speakers/' . $spkId) ?>" class="co-btn-v2 co-btn-v2--ghost co-btn-v2--sm" style="width:100%;text-align:center;">Profil →</a>
                 <?php endif; ?>
               </div>
             <?php endforeach; ?>
@@ -265,7 +266,7 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       <strong>Dieses Unternehmensprofil wurde von der Redaktion angelegt.</strong>
       Gehört es Ihnen? Registrieren Sie sich kostenlos und übernehmen Sie die Verwaltung.
     </div>
-    <a href="<?= rtrim(SITE_URL, '/') ?>/register" class="co-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
+    <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/register') ?>" class="co-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
   </div>
   <?php endif; ?>
 </div>

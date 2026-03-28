@@ -43,6 +43,22 @@
 - [ ] keine offensichtlichen Performance-Bremsen in Listen und Detail-Lookups
 - [ ] Versions- und Dokumentationsstand konsistent nachvollziehbar
 
+### Audit-Zwischenstand 2026-03-28
+
+- [x] Versionsabweichung zwischen Plugin-Header, Konstante und Klassenwert auf `2.0.0` bereinigt.
+- [x] Listenabfragen in der DB-Klasse für `limit`/`offset` defensiv gehärtet.
+- [x] Save-Pfad für `availability` auf erlaubte Werte begrenzt und beschädigter Admin-Save-Block repariert.
+- [x] Member-Create-Handler für E-Mail-, URL-, Availability-, Skill- und Spezialisierungsdaten an den gehärteten Save-Standard angeglichen.
+- [x] Single-Template für Experten-Biografie auf sichere Textausgabe mit Escaping und Zeilenumbruch-Rendering umgestellt.
+- [x] Intern zusammengesetzte Breadcrumb-, Kontakt- und Register-Links im Single-Template konsequent im Attribut-Kontext escaped.
+- [x] Detail-Links aus `$url` im Card-Template ebenfalls konsequent im Attribut-Kontext escaped.
+- [x] Auch CTA-Link aus `$url` im Card-Template sowie Reset-Link im Archive-Template konsequent im Attribut-Kontext escaped.
+- [x] Auch Avatar-Gradient im `style`-Attribut und Event-Zähler im `title`-Attribut des Single-Templates konsequent escaped.
+- [x] Zentrale `save_expert()`-Persistenz verweigert für Nicht-Admins Updates auf fremde Experten-IDs und entschärft damit latente Member-IDOR-Pfade.
+- [x] Schema-Initialisierung auf versionsgesteuerte Prüfung reduziert, um unnötige Laufzeitkosten zu vermeiden.
+- [x] Asset-Versionierung in Bootstrap und Admin konsistent vereinheitlicht.
+- [ ] Meta-/Repeater-Strukturen und Ownership-Schutz im Member-Bereich noch gezielt vertiefen.
+
 ---
 
 ## 🔴 Hohe Priorität

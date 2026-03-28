@@ -195,7 +195,7 @@ $events     = $events ?? [];
 <div class="ex-v2">
 
   <nav class="ex-bc">
-    <a href="<?= $_base_url ?>/experts">← Experten</a>
+    <a href="<?= $sec->escape($_base_url . '/experts') ?>">← Experten</a>
     <span class="ex-bc__sep">/</span>
     <span class="ex-bc__cur"><?= $sec->escape(mb_strimwidth($full_name, 0, 60, '…')) ?></span>
   </nav>
@@ -214,7 +214,7 @@ $events     = $events ?? [];
       <?php if ($photo): ?>
         <div class="ex-hero__av"><img src="<?= $sec->escape($photo) ?>" alt="<?= $sec->escape($full_name) ?>"></div>
       <?php else: ?>
-        <div class="ex-hero__av" style="background:<?= $_ex_agrad ?>;"><?= htmlspecialchars($_ex_inits ?: '?') ?></div>
+        <div class="ex-hero__av" style="background:<?= $sec->escape($_ex_agrad) ?>;"><?= htmlspecialchars($_ex_inits ?: '?') ?></div>
       <?php endif; ?>
       <div class="ex-hero__meta">
         <?php if ($custom_award): ?><div class="ex-award">🏆 <?= $sec->escape($custom_award) ?></div><?php endif; ?>
@@ -226,7 +226,7 @@ $events     = $events ?? [];
             </div>
           <?php endif; ?>
           <?php if (!empty($events)): ?>
-            <span class="ex-hero__ev-count" title="<?= count($events) ?> zugewiesene Events">
+            <span class="ex-hero__ev-count" title="<?= $sec->escape((string) count($events) . ' zugewiesene Events') ?>">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               <?= count($events) ?>
             </span>
@@ -257,8 +257,8 @@ $events     = $events ?? [];
         <h2 class="ex-bridge__title">Über mich</h2>
         <div class="ex-bridge__text">
           <?php
-          $bio = (string)$expert->biography;
-          echo (bool)preg_match('/<(p|ul|ol|h[1-6]|blockquote|div|br)[\s>]/i', $bio) ? $bio : nl2br(htmlspecialchars($bio));
+          $bio = trim((string) $expert->biography);
+          echo nl2br($sec->escape($bio));
           ?>
         </div>
       </div>
@@ -275,7 +275,7 @@ $events     = $events ?? [];
 
         <!-- Reihe 1: Kontakt / Buchung -->
         <div class="ex-bridge__row">
-          <a href="<?= $_base_url ?>/contact?expert=<?= (int)$expert->id ?>" class="ex-btn ex-btn--sm ex-btn--block">Kontakt / Buchung</a>
+          <a href="<?= $sec->escape($_base_url . '/contact?expert=' . (int)$expert->id) ?>" class="ex-btn ex-btn--sm ex-btn--block">Kontakt / Buchung</a>
         </div>
 
         <!-- Reihe 2: Website · E-Mail · Telefon -->
@@ -313,9 +313,9 @@ $events     = $events ?? [];
           ];
           foreach ($social_icons as $sn => $icfg):
             if (!empty($social[$sn])): ?>
-              <a href="<?= $sec->escape($social[$sn]) ?>" target="_blank" rel="noopener" class="ex-si" title="<?= $icfg['label'] ?>"><?= $icfg['svg'] ?></a>
+              <a href="<?= $sec->escape($social[$sn]) ?>" target="_blank" rel="noopener" class="ex-si" title="<?= $sec->escape($icfg['label']) ?>"><?= $icfg['svg'] ?></a>
             <?php else: ?>
-              <span class="ex-si ex-si--empty" title="<?= $icfg['label'] ?>"><?= $icfg['svg'] ?></span>
+              <span class="ex-si ex-si--empty" title="<?= $sec->escape($icfg['label']) ?>"><?= $icfg['svg'] ?></span>
             <?php endif;
           endforeach; ?>
         </div>
@@ -688,7 +688,7 @@ $events     = $events ?? [];
       <strong>Dieses Profil wurde von der Redaktion angelegt.</strong>
       Gehört es Ihnen? Registrieren Sie sich kostenlos und übernehmen Sie die Verwaltung Ihres Profils.
     </div>
-    <a href="<?= rtrim(SITE_URL, '/') ?>/register" class="ex-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
+    <a href="<?= $sec->escape(rtrim(SITE_URL, '/') . '/register') ?>" class="ex-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
   </div>
   <?php endif; ?>
 </div>

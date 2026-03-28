@@ -18,6 +18,8 @@ if ($primaryMessage === '') {
 $privacyConsentAccepted = in_array(strtolower(trim((string) ($meta['privacy_consent'] ?? ''))), ['1', 'true', 'yes', 'ja'], true);
 $privacyConsentConfirmedAt = trim((string) ($meta['privacy_consent_confirmed_at'] ?? ''));
 $privacyPolicyUrl = trim((string) ($meta['privacy_policy_url'] ?? ''));
+$ipAddress = trim((string) ($submission['ip_address'] ?? ''));
+$userAgent = trim((string) ($submission['user_agent'] ?? ''));
 $coreFields = [];
 if ($senderName !== '') {
     $coreFields['Absender'] = $senderName;
@@ -178,6 +180,11 @@ foreach ($meta as $key => $value) {
                 <li>
                     <strong>Datenschutz</strong> <span><?php echo $privacyConsentAccepted ? '✅ Bestätigt' : '⚠️ Offen'; ?></span>
                 </li>
+                <?php if ($ipAddress !== ''): ?>
+                <li>
+                    <strong>IP-Adresse</strong> <span><?php echo $e($ipAddress); ?></span>
+                </li>
+                <?php endif; ?>
                 <?php if ($privacyConsentConfirmedAt !== ''): ?>
                 <li>
                     <strong>Bestätigt am</strong> <span><?php echo date('d.m.Y H:i:s', strtotime($privacyConsentConfirmedAt)); ?></span>
@@ -192,6 +199,11 @@ foreach ($meta as $key => $value) {
                 <li>
                     <strong>Erstellt</strong> <span><?php echo date('d.m.Y H:i:s', strtotime($submission['created_at'])); ?></span>
                 </li>
+                <?php if ($userAgent !== ''): ?>
+                <li>
+                    <strong>User-Agent</strong> <span><?php echo $e($userAgent); ?></span>
+                </li>
+                <?php endif; ?>
                 <?php if (!empty($submission['updated_at'])): ?>
                 <li>
                     <strong>Aktualisiert</strong> <span><?php echo date('d.m.Y H:i:s', strtotime($submission['updated_at'])); ?></span>

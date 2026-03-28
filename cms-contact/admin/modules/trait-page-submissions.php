@@ -253,6 +253,16 @@ trait CMS_Contact_Page_Submissions_Trait
             ];
         }
 
+        $ipAddress = trim((string) ($submission['ip_address'] ?? ''));
+        if ($ipAddress !== '') {
+            $highlights[] = [
+                'label' => 'IP',
+                'value' => $ipAddress,
+                'icon' => '🌐',
+                'type' => 'ip',
+            ];
+        }
+
         $formTitle = trim((string) ($submission['form_title'] ?? ''));
         if ($formTitle !== '') {
             $highlights[] = [

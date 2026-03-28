@@ -154,7 +154,7 @@ $s_featured_border = htmlspecialchars($settings['color_featured_border'] ?? '#f5
     <button type="submit" class="ev-btn ev-btn-primary">🔍 Suchen</button>
 
     <?php if ($cur_search || $cur_city || $cur_cat || $cur_when || $cur_online !== ''): ?>
-      <a href="<?= $archive_url ?>" class="ev-btn ev-btn-ghost">✕ Reset</a>
+      <a href="<?= htmlspecialchars($archive_url) ?>" class="ev-btn ev-btn-ghost">✕ Reset</a>
     <?php endif; ?>
 
   </form>
@@ -170,7 +170,7 @@ $s_featured_border = htmlspecialchars($settings['color_featured_border'] ?? '#f5
         <span class="ev-empty-icon">📭</span>
         <p><strong>Keine Events gefunden.</strong></p>
         <?php if ($cur_search || $cur_city || $cur_cat || $cur_when): ?>
-          <p><a href="<?= $archive_url ?>" class="ev-btn ev-btn-ghost ev-btn--inline">Filter zurücksetzen</a></p>
+          <p><a href="<?= htmlspecialchars($archive_url) ?>" class="ev-btn ev-btn-ghost ev-btn--inline">Filter zurücksetzen</a></p>
         <?php endif; ?>
       </div>
     <?php else: ?>
@@ -182,18 +182,19 @@ $s_featured_border = htmlspecialchars($settings['color_featured_border'] ?? '#f5
 
   <!-- Pagination -->
   <?php if ($tot_pages > 1): ?>
+    <?php $eventPaginationBase = $archive_url . '?search=' . urlencode($cur_search) . '&city=' . urlencode($cur_city) . '&category=' . urlencode($cur_cat); ?>
     <nav class="ev-pagination" aria-label="Seitennavigation">
       <?php if ($cur_page > 1): ?>
         <a class="ev-page-btn"
-           href="<?= $archive_url ?>?page=<?= $cur_page - 1 ?>&search=<?= urlencode($cur_search) ?>&city=<?= urlencode($cur_city) ?>&category=<?= urlencode($cur_cat) ?>">← Zurück</a>
+           href="<?= htmlspecialchars($eventPaginationBase . '&page=' . ($cur_page - 1)) ?>">← Zurück</a>
       <?php endif; ?>
       <?php for ($i = max(1, $cur_page - 2); $i <= min($tot_pages, $cur_page + 2); $i++): ?>
         <a class="ev-page-btn<?= $i === $cur_page ? ' active' : '' ?>"
-           href="<?= $archive_url ?>?page=<?= $i ?>&search=<?= urlencode($cur_search) ?>&city=<?= urlencode($cur_city) ?>&category=<?= urlencode($cur_cat) ?>"><?= $i ?></a>
+           href="<?= htmlspecialchars($eventPaginationBase . '&page=' . $i) ?>"><?= $i ?></a>
       <?php endfor; ?>
       <?php if ($cur_page < $tot_pages): ?>
         <a class="ev-page-btn"
-           href="<?= $archive_url ?>?page=<?= $cur_page + 1 ?>&search=<?= urlencode($cur_search) ?>&city=<?= urlencode($cur_city) ?>&category=<?= urlencode($cur_cat) ?>">Weiter →</a>
+           href="<?= htmlspecialchars($eventPaginationBase . '&page=' . ($cur_page + 1)) ?>">Weiter →</a>
       <?php endif; ?>
     </nav>
   <?php endif; ?>

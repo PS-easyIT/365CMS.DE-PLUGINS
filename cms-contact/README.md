@@ -10,7 +10,8 @@
 - **Pflichtfelder**: Jedes Feld einzeln als Pflichtfeld konfigurierbar
 - **Feldbreiten**: Voll (100%), Halb (50%), Drittel (33%), Zwei Drittel (66%)
 - **Drag & Drop Sortierung**: Felder per Drag & Drop umsortieren
-- **Spamschutz**: Honeypot + Math-Captcha + IP-Rate-Limiting
+- **Spamschutz**: Honeypot + Math-Captcha + sessionbasiertes Rate-Limiting
+- **Nachrichten-Telemetrie**: Admin sieht zu jeder Anfrage die erfasste IP-Adresse und den User-Agent
 - **E-Mail-Benachrichtigungen**: Admin-Benachrichtigung + optionale Bestätigung an Absender
 - **DSGVO-konform**: Export- und Lösch-Hooks, automatische Bereinigung
 - **Dashboard**: Statistiken, Trends, aktuelle Nachrichten
@@ -75,7 +76,7 @@ cms-contact/
 |---------|-------|
 | `cms_contact_forms` | Formulare (Titel, Slug, Template, Einstellungen) |
 | `cms_contact_fields` | Formularfelder (Typ, Label, Pflicht, Reihenfolge) |
-| `cms_contact_submissions` | Eingegangene Nachrichten |
+| `cms_contact_submissions` | Eingegangene Nachrichten inkl. User-Agent und IP-Adresse |
 | `cms_contact_submission_meta` | Key-Value-Metadaten pro Nachricht |
 | `cms_contact_settings` | Plugin-Einstellungen |
 
@@ -103,4 +104,4 @@ cms-contact/
 
 ## Version
 
-- **1.0.0** – Erstes Release
+- **1.1.4** – IP-Adresse und User-Agent werden bei bestätigten Kontaktanfragen im Admin mit angezeigt

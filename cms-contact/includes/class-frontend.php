@@ -383,6 +383,7 @@ final class CMS_Contact_Frontend
             'subject'      => $subject,
             'message'      => $message,
             'user_agent'   => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500),
+            'ip_address'   => class_exists('CMS\\Security') ? \CMS\Security::getClientIp() : (string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'),
         ], $meta);
 
         $this->register_rate_limit_hit($formId);
@@ -393,6 +394,8 @@ final class CMS_Contact_Frontend
             'sender_email' => $senderEmail,
             'subject'      => $subject,
             'message'      => $message,
+            'user_agent'   => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500),
+            'ip_address'   => class_exists('CMS\\Security') ? \CMS\Security::getClientIp() : (string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'),
         ], $meta);
 
         // Bestätigungs-E-Mail

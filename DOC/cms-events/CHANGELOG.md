@@ -1,5 +1,20 @@
 # CMS Events – Changelog
 
+## [2.8.0-audit] – 2026-03-28
+
+### Geändert
+
+- **Listenhärtung:** `get_events()` begrenzt `limit` und `offset` jetzt defensiv, damit Archiv-, Admin- und Member-Abfragen keine ungebremsten Query-Werte übernehmen.
+- **Admin-Save:** `status`, `price_type`, URL-, E-Mail- und Tag-Felder werden im Save-Handler jetzt restriktiver validiert und normalisiert.
+- **Member-Create:** Der Member-Create-Handler nutzt jetzt dieselben restriktiven Validierungen für Preis-, URL-, E-Mail- und Tag-Felder wie der gehärtete Save-Pfad.
+- **Template-Escaping:** Die Event-Beschreibung im Single-Template wird nicht mehr roh ausgegeben, sondern sicher escaped und mit Zeilenumbrüchen gerendert.
+- **Link-Escaping:** Intern zusammengesetzte Breadcrumb-, Speaker- und Register-Links im Single-Template werden jetzt ebenfalls konsequent im Attribut-Kontext escaped.
+- **Archive-Link-Escaping:** Reset- und Pagination-Links im Archive-Template behandeln interne URLs und Query-Parameter jetzt ebenfalls konsequent im `href`-Attribut-Kontext.
+- **Style-Attribut-Escaping:** Auch dynamische Gradientwerte im Speaker-Fallback des Single-Templates werden jetzt konsequent im `style`-Attribut-Kontext escaped.
+- **Ownership-Härtung:** Die zentrale `save_event()`-Persistenz blockiert für Nicht-Admins jetzt Updates auf fremde Event-IDs und entschärft damit latente IDOR-/Fremd-ID-Pfade.
+- **Member-Dashboard:** Eigene Event-Zähler berücksichtigen nicht mehr nur veröffentlichte Einträge, sondern den tatsächlichen Bearbeitungsstand des Members.
+- **Assets:** Bootstrap- und Admin-Assets nutzen konsistent dateigeprüfte, lokal zwischengespeicherte Versionswerte.
+
 ## [2.8.0-docs] – 2026-03-28
 
 ### Geändert

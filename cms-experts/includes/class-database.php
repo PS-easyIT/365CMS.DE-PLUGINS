@@ -250,10 +250,26 @@ final class CMS_Experts_Database
     public function save_expert(array $data): int
     {
         $db = CMS\Database::instance();
+        $expert_id = (int)($data['id'] ?? 0);
+
+        if ($expert_id > 0 && !CMS\Auth::instance()->isAdmin()) {
+            $current_user_id = (int) (CMS\Auth::instance()->currentUser()?->id ?? 0);
+            if ($current_user_id <= 0) {
+                return 0;
+            }
+
+            $owner_stmt = $db->prepare("SELECT user_id FROM {$db->prefix()}experts WHERE id = ? LIMIT 1");
+            $owner_stmt->execute([$expert_id]);
+            $owner_id = (int) ($owner_stmt->fetchColumn() ?: 0);
+
+            if ($owner_id <= 0 || $owner_id !== $current_user_id) {
+                return 0;
+            }
+        }
         
-        if (isset($data['id']) && $data['id'] > 0) {
+        if ($expert_id > 0) {
             // Update
-            return $this->update_expert($data['id'], $data);
+            return $this->update_expert($expert_id, $data);
         } else {
             // Insert
             return $this->insert_expert($data);

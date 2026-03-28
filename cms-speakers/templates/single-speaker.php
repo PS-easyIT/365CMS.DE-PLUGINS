@@ -196,7 +196,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
 <div class="sp-single-v2">
 
   <nav class="sp-breadcrumb">
-    <a href="<?= $archive_url ?>">← Speaker</a>
+    <a href="<?= htmlspecialchars($archive_url) ?>">← Speaker</a>
     <span class="sp-breadcrumb__sep">/</span>
     <span class="sp-breadcrumb__cur"><?= $full_name ?></span>
   </nav>
@@ -213,7 +213,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
       <?php if ($photo): ?>
         <div class="sp-hero-v2__av"><img src="<?= htmlspecialchars($photo) ?>" alt="<?= $full_name ?>"></div>
       <?php else: ?>
-        <div class="sp-hero-v2__av" style="background:<?= $av_grad ?>;"><?= htmlspecialchars($initials ?: '🎤') ?></div>
+        <div class="sp-hero-v2__av" style="background:<?= htmlspecialchars($av_grad) ?>;"><?= htmlspecialchars($initials ?: '🎤') ?></div>
       <?php endif; ?>
       <div class="sp-hero-v2__meta">
         <div class="sp-hero-v2__name-row">
@@ -224,7 +224,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
             </div>
           <?php endif; ?>
           <?php if (!empty($events)): ?>
-            <span class="sp-hero-v2__ev-count" title="<?= count($events) ?> zugewiesene Events">
+            <span class="sp-hero-v2__ev-count" title="<?= htmlspecialchars((string) count($events) . ' zugewiesene Events') ?>">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               <?= count($events) ?>
             </span>
@@ -234,7 +234,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
         <?php if ($company): ?>
           <p class="sp-hero-v2__co">🏢
             <?php if (!empty($s->company_id)): ?>
-              <a href="<?= $base_url ?>/companies/<?= (int)$s->company_id ?>"><?= $company ?></a>
+              <a href="<?= htmlspecialchars($base_url . '/companies/' . (int)$s->company_id) ?>"><?= $company ?></a>
             <?php elseif ($website): ?>
               <a href="<?= htmlspecialchars($website) ?>" target="_blank" rel="noopener"><?= $company ?></a>
             <?php else: echo $company; endif; ?>
@@ -246,10 +246,11 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
 
   <!-- ── Bridge Cards (overlap hero) ──────────────────────────── -->
   <div class="sp-bridge">
-    <?php if ($bio): ?>
+    <?php $speakerBio = trim((string) $bio); ?>
+    <?php if ($speakerBio !== ''): ?>
       <div class="sp-bridge__about">
         <h2 class="sp-bridge__title">Über <?= htmlspecialchars($first ?: 'den Speaker') ?></h2>
-        <div class="sp-bridge__text"><?= $bio ?></div>
+        <div class="sp-bridge__text"><?= nl2br(htmlspecialchars($speakerBio)) ?></div>
       </div>
     <?php else: ?>
       <div class="sp-bridge__about">
@@ -264,7 +265,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
         
         <!-- Reihe 1: Kontakt / Buchung -->
         <div class="sp-bridge__row">
-          <a href="<?= $base_url ?>/contact?speaker=<?= (int)$s->id ?>" class="sp-btn-v2 sp-btn-v2--sm sp-btn-v2--block">Kontakt / Buchung</a>
+          <a href="<?= htmlspecialchars($base_url . '/contact?speaker=' . (int)$s->id) ?>" class="sp-btn-v2 sp-btn-v2--sm sp-btn-v2--block">Kontakt / Buchung</a>
         </div>
 
         <!-- Reihe 2: Website · E-Mail · Telefon -->
@@ -309,9 +310,9 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
           ];
           foreach ($social_icons as $sn => $icfg):
             if (!empty($speaker_social[$sn])): ?>
-              <a href="<?= htmlspecialchars($speaker_social[$sn]) ?>" target="_blank" rel="noopener" class="sp-si" title="<?= $icfg['label'] ?>"><?= $icfg['svg'] ?></a>
+              <a href="<?= htmlspecialchars($speaker_social[$sn]) ?>" target="_blank" rel="noopener" class="sp-si" title="<?= htmlspecialchars($icfg['label']) ?>"><?= $icfg['svg'] ?></a>
             <?php else: ?>
-              <span class="sp-si sp-si--empty" title="<?= $icfg['label'] ?>"><?= $icfg['svg'] ?></span>
+              <span class="sp-si sp-si--empty" title="<?= htmlspecialchars($icfg['label']) ?>"><?= $icfg['svg'] ?></span>
             <?php endif;
           endforeach; ?>
         </div>
@@ -492,7 +493,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
       <strong>Dieses Profil wurde von der Redaktion angelegt.</strong>
       Gehört es Ihnen? Registrieren Sie sich kostenlos und übernehmen Sie die Verwaltung Ihres Speaker-Profils.
     </div>
-    <a href="<?= rtrim(SITE_URL, '/') ?>/register" class="sp-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
+    <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/register') ?>" class="sp-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
   </div>
   <?php endif; ?>
 </div>

@@ -55,6 +55,14 @@ echo htmlspecialchars($company['email'], ENT_QUOTES);
 echo htmlspecialchars($company['logo_url'], ENT_QUOTES);
 ```
 
+* Beschreibungsfelder auf öffentlichen Single-Seiten nicht roh rendern, sondern als Text escapen und nur kontrolliert mit `nl2br()` umbrechen.
+* Intern zusammengesetzte Profil-, Breadcrumb- und Register-Links ebenfalls im `href`-Attribut-Kontext escapen.
+* Reset- und Fallback-Links im Archiv für interne Navigationsziele ebenfalls nur escaped im `href`-Attribut ausgeben.
+* Auch aus Helper-Funktionen wie `cms_company_url()` erzeugte Card-Links nur escaped im `href`-Attribut rendern.
+* Auch Pagination-Links im Archiv mit zusammengesetzten Query-Parametern nur escaped im `href`-Attribut rendern.
+* Dynamische Farb- und Gradientwerte in `style`-Attributen von Cards und Single-Templates ebenfalls nur escaped ausgeben.
+* Zentrale Save-Pfade für Firmen müssen bei Updates für Nicht-Admins den `user_id`-Besitz des Datensatzes gegenprüfen und fremde IDs verwerfen.
+
 ## SQL-Injection-Prävention
 
 - Ausschließlich PDO Prepared Statements

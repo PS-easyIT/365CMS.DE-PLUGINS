@@ -4,6 +4,23 @@ Alle Änderungen folgen dem Format [Keep a Changelog](https://keepachangelog.com
 
 ---
 
+## [2.8.0-audit] – 2026-03-28
+
+### Geändert
+
+- **Datenbankpfad:** Die beschädigte `get_companies()`-Implementierung wurde repariert und die Datei wieder in einen stabilen, syntaktisch sauberen Zustand gebracht.
+- **Listen- und Statuslogik:** Firmenlisten und Zählabfragen wurden für `limit`, `offset` und `status => 'any'` defensiv vereinheitlicht.
+- **Member-Create:** E-Mail-, URL-, Branchen-, Größen-, Jahres- und Tag-Daten werden im Member-Create-Handler jetzt restriktiver geprüft und normalisiert.
+- **Template-Escaping:** Die Firmenbeschreibung im Single-Template wird nicht mehr roh ausgegeben, sondern sicher escaped und mit Zeilenumbrüchen gerendert.
+- **Link-Escaping:** Intern zusammengesetzte Breadcrumb-, Experten-, Speaker- und Register-Links im Single-Template werden jetzt ebenfalls konsequent im Attribut-Kontext escaped.
+- **Archive-Link-Escaping:** Reset- und Fallback-Links im Archive-Template behandeln interne Navigationsziele jetzt ebenfalls konsequent im `href`-Attribut-Kontext.
+- **Card-Link-Escaping:** Detail-Links aus `cms_company_url()` werden im Card-Template jetzt ebenfalls konsequent im `href`-Attribut-Kontext escaped.
+- **Archive-Pagination-Escaping:** Auch Pagination-Links im Archive-Template mit zusammengesetzten Query-Parametern werden jetzt konsequent im `href`-Attribut-Kontext escaped.
+- **Style-Attribut-Escaping:** Dynamische Avatar-Gradienten, Ribbon-Farben und Card-Rahmenwerte werden in Single- und Card-Templates jetzt ebenfalls konsequent im `style`-Attribut-Kontext escaped.
+- **Ownership-Härtung:** Die zentrale `save_company()`-Persistenz blockiert für Nicht-Admins jetzt Updates auf fremde Company-IDs und entschärft damit latente IDOR-/Fremd-ID-Pfade.
+- **Member-Dashboard:** Eigene `pending`-Firmen werden nun konsistent gezählt und in der Übersicht angezeigt; Admin-Ansichten können alle nicht gelöschten Einträge laden.
+- **Assets:** Admin- und Bootstrap-Assets nutzen robuste, dateigeprüfte Versionswerte statt direkter `filemtime()`-Aufrufe ohne Fallback.
+
 ## [2.8.0-docs] – 2026-03-28
 
 ### Geändert

@@ -135,33 +135,47 @@ class CMS_Speakers_Member_Dashboard
             }
             try {
                 $isAdminSave = \CMS\Auth::instance()->isAdmin();
+                $allowedGenders = ['', 'm', 'f', 'd'];
+                $allowedFormats = ['keynote', 'workshop', 'panel', 'moderation', 'training', 'consulting', 'interview', 'webinar'];
+                $allowedTravelRadii = ['local', 'regional', 'national', 'international', 'worldwide'];
+                $allowedAvailability = ['available', 'limited', 'booked'];
+                $validatedEmail = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
+                $validatedPhotoUrl = filter_var(trim((string) ($_POST['photo_url'] ?? '')), FILTER_VALIDATE_URL) ?: null;
+                $validatedWebsite = filter_var(trim((string) ($_POST['website'] ?? '')), FILTER_VALIDATE_URL) ?: null;
+                $validatedLinkedin = filter_var(trim((string) ($_POST['linkedin'] ?? '')), FILTER_VALIDATE_URL) ?: null;
+                $validatedTwitter = filter_var(trim((string) ($_POST['twitter'] ?? '')), FILTER_VALIDATE_URL) ?: null;
+                $validatedXing = filter_var(trim((string) ($_POST['xing'] ?? '')), FILTER_VALIDATE_URL) ?: null;
+                $normalizedFormats = array_values(array_unique(array_filter(array_map(static fn($format) => sanitize_text_field(trim((string) $format)), (array) ($_POST['formats'] ?? [])))));
+                $normalizedFormats = array_values(array_filter($normalizedFormats, static fn(string $format): bool => in_array($format, $allowedFormats, true)));
+                $normalizedSkills = array_values(array_unique(array_filter(array_map(static fn($skill) => sanitize_text_field(trim((string) $skill)), (array) ($_POST['skills'] ?? [])))));
+                $normalizedRecognitions = array_values(array_unique(array_filter(array_map(static fn($recognition) => sanitize_text_field(trim((string) $recognition)), (array) ($_POST['recognitions'] ?? [])))));
                 $id = CMS_Speakers_Database::instance()->save_speaker([
                     'user_id'           => (int) $user->id,
                     'first_name'        => sanitize_text_field($_POST['first_name']  ?? ''),
                     'last_name'         => sanitize_text_field($_POST['last_name']   ?? ''),
                     'title'             => sanitize_text_field($_POST['title']       ?? ''),
-                    'gender'            => sanitize_text_field($_POST['gender']      ?? ''),
-                    'email'             => filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL),
+                    'gender'            => in_array($_POST['gender'] ?? '', $allowedGenders, true) ? (string) ($_POST['gender'] ?? '') : '',
+                    'email'             => $validatedEmail,
                     'phone'             => sanitize_text_field($_POST['phone']       ?? ''),
                     'position'          => sanitize_text_field($_POST['position']    ?? ''),
                     'company'           => sanitize_text_field($_POST['company']     ?? ''),
-                    'photo_url'         => filter_var($_POST['photo_url'] ?? '', FILTER_SANITIZE_URL) ?: null,
+                    'photo_url'         => $validatedPhotoUrl,
                     'location_city'     => sanitize_text_field($_POST['location_city']     ?? ''),
                     'location_zip'      => sanitize_text_field($_POST['location_zip']      ?? ''),
                     'location_country'  => sanitize_text_field($_POST['location_country']  ?? 'Deutschland'),
-                    'website'           => filter_var($_POST['website']   ?? '', FILTER_SANITIZE_URL) ?: null,
-                    'linkedin'          => filter_var($_POST['linkedin']  ?? '', FILTER_SANITIZE_URL) ?: null,
-                    'twitter'           => filter_var($_POST['twitter']   ?? '', FILTER_SANITIZE_URL) ?: null,
-                    'xing'              => filter_var($_POST['xing']      ?? '', FILTER_SANITIZE_URL) ?: null,
+                    'website'           => $validatedWebsite,
+                    'linkedin'          => $validatedLinkedin,
+                    'twitter'           => $validatedTwitter,
+                    'xing'              => $validatedXing,
                     'languages'         => sanitize_text_field($_POST['languages']   ?? ''),
-                    'formats'           => json_encode(array_values(array_filter(array_map('sanitize_text_field', (array)($_POST['formats'] ?? []))))),
-                    'skills'            => json_encode(array_values(array_filter(array_map('sanitize_text_field', (array)($_POST['skills'] ?? []))))),
-                    'recognitions'      => json_encode(array_values(array_filter(array_map('sanitize_text_field', (array)($_POST['recognitions'] ?? []))))),
+                    'formats'           => json_encode($normalizedFormats),
+                    'skills'            => json_encode($normalizedSkills),
+                    'recognitions'      => json_encode($normalizedRecognitions),
                     'target_audience'   => sanitize_text_field($_POST['target_audience'] ?? ''),
                     'speaking_style'    => sanitize_text_field($_POST['speaking_style']  ?? ''),
-                    'travel_radius'     => sanitize_text_field($_POST['travel_radius'] ?? 'national'),
+                    'travel_radius'     => in_array($_POST['travel_radius'] ?? '', $allowedTravelRadii, true) ? (string) ($_POST['travel_radius'] ?? 'national') : 'national',
                     'max_audience_size' => is_numeric($_POST['max_audience'] ?? '')  ? (int)$_POST['max_audience']  : null,
-                    'availability'      => sanitize_text_field($_POST['availability'] ?? 'available'),
+                    'availability'      => in_array($_POST['availability'] ?? '', $allowedAvailability, true) ? (string) ($_POST['availability'] ?? 'available') : 'available',
                     'speaking_fee_min'  => is_numeric($_POST['fee_min'] ?? '') ? (float)$_POST['fee_min'] : null,
                     'speaking_fee_max'  => is_numeric($_POST['fee_max'] ?? '') ? (float)$_POST['fee_max'] : null,
                     'short_bio'         => strip_tags($_POST['short_bio'] ?? ''),
@@ -171,7 +185,7 @@ class CMS_Speakers_Member_Dashboard
 
                 // Topics speichern
                 if ($id > 0) {
-                    $topicNames = array_values(array_filter(array_map('trim', explode(',', $_POST['speaker_topics'] ?? ''))));
+                    $topicNames = array_values(array_unique(array_filter(array_map(static fn(string $topic): string => sanitize_text_field(trim($topic)), explode(',', $_POST['speaker_topics'] ?? '')))));
                     if (!empty($topicNames)) {
                         CMS_Speakers_Database::instance()->save_topics($id, $topicNames);
                     }

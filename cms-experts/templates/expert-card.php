@@ -117,7 +117,7 @@ $avail_label = $avail_labels[$availability] ?? ucfirst($availability);
         <div class="expert-card-header-text">
             <div class="expert-card-name-row">
                 <h3 class="expert-card-name">
-                    <a href="<?php echo $url; ?>"><?php echo $sec->escape($full_name); ?></a>
+                    <a href="<?php echo $sec->escape($url); ?>"><?php echo $sec->escape($full_name); ?></a>
                 </h3>
                 <?php if ($experience_years): ?>
                     <div class="expert-badge-mini" title="<?php echo (int)$experience_years; ?> Jahre Erfahrung">
@@ -202,7 +202,7 @@ $avail_label = $avail_labels[$availability] ?? ucfirst($availability);
     </div>
 
     <!-- CTA Button -->
-    <a href="<?php echo $url; ?>" class="expert-card-cta">
+    <a href="<?php echo $sec->escape($url); ?>" class="expert-card-cta">
         Profil ansehen <span class="cta-arrow">&#8250;</span>
     </a>
 

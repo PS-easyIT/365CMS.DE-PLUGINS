@@ -42,6 +42,23 @@
 - [ ] keine offensichtlichen Query-Bremsen in Listen oder Detail-Lookups
 - [ ] Doku- und Auditstand konsistent nachvollziehbar
 
+### Audit-Zwischenstand 2026-03-28
+
+- [x] Status-Schema und Anwendungspfade für `pending`/`deleted` harmonisiert und Migration für Bestandsdaten ergänzt.
+- [x] `get_speakers()` für `limit`/`offset` und `ORDER BY` mit defensiven Whitelists gehärtet.
+- [x] Member-Dashboard für eigene Speaker aller Status sowie Admin-Übersichten konsistent nachgezogen.
+- [x] Admin-Save mit Whitelists für `gender`, `travel_radius`, `availability`, `status` und normalisierten Arrays abgesichert.
+- [x] Member-Create-Handler für Gender-, Format-, Travel-, Availability-, Topic- und Link-Daten an den gehärteten Save-Standard angeglichen.
+- [x] Single-Template für Speaker-Bio auf sichere Textausgabe mit Escaping und Zeilenumbruch-Rendering umgestellt.
+- [x] Intern zusammengesetzte Breadcrumb-, Company-, Kontakt- und Register-Links im Single-Template konsequent im Attribut-Kontext escaped.
+- [x] Reset- und Pagination-Links im Archive-Template für interne URLs und Query-Parameter konsequent im Attribut-Kontext escaped.
+- [x] Detail-Links aus `$speaker_url` im Card-Template ebenfalls konsequent im Attribut-Kontext escaped.
+- [x] Auch der CTA-Link aus `$speaker_url` im Card-Template wird jetzt konsequent im Attribut-Kontext escaped.
+- [x] Auch Avatar-Gradient im `style`-Attribut und Event-Zähler im `title`-Attribut des Single-Templates werden jetzt konsequent escaped.
+- [x] Zentrale `save_speaker()`-Persistenz verweigert für Nicht-Admins Updates auf fremde Speaker-IDs und entschärft damit latente Member-IDOR-Pfade.
+- [x] Asset-Versionierung in Bootstrap und Admin konsistent vereinheitlicht.
+- [ ] Ownership-Schutz für Speaker-Unterdatensätze und Template-Escaping noch vollständig vertiefen.
+
 ---
 
 ## 🔴 Hohe Priorität

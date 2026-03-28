@@ -114,6 +114,18 @@ class CMS_Events_Member_Dashboard
             }
             try {
                 $isAdminSave = \CMS\Auth::instance()->isAdmin();
+                $allowedPriceTypes = ['free', 'paid', 'donation'];
+                $normalizedTags = isset($_POST['tags']) && is_array($_POST['tags'])
+                    ? array_values(array_unique(array_filter(array_map(static fn($tag) => sanitize_text_field(trim((string) $tag)), $_POST['tags']))))
+                    : [];
+                $onlineUrl = filter_var(trim((string) ($_POST['online_url'] ?? '')), FILTER_VALIDATE_URL) ?: null;
+                $registrationUrl = filter_var(trim((string) ($_POST['registration_url'] ?? '')), FILTER_VALIDATE_URL) ?: null;
+                $organizerWebsite = filter_var(trim((string) ($_POST['organizer_website'] ?? '')), FILTER_VALIDATE_URL) ?: null;
+                $organizerEmail = filter_var(trim((string) ($_POST['organizer_email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
+                $priceCurrency = strtoupper(substr(sanitize_text_field($_POST['price_currency'] ?? 'EUR'), 0, 10));
+                if ($priceCurrency === '') {
+                    $priceCurrency = 'EUR';
+                }
                 // save_event() setzt user_id automatisch aus CMS\Auth
                 $id = CMS_Events_Database::instance()->save_event([
                     'title'             => sanitize_text_field($_POST['title']      ?? ''),
@@ -129,20 +141,18 @@ class CMS_Events_Member_Dashboard
                     'country'           => sanitize_text_field($_POST['country']    ?? 'Deutschland'),
                     'description'       => strip_tags($_POST['description']         ?? ''),
                     'category'          => sanitize_text_field($_POST['category']   ?? ''),
-                    'tags'              => isset($_POST['tags']) && is_array($_POST['tags'])
-                                            ? array_values(array_filter(array_map('sanitize_text_field', $_POST['tags'])))
-                                            : [],
+                    'tags'              => $normalizedTags,
                     'capacity'          => is_numeric($_POST['capacity'] ?? '') ? (int)$_POST['capacity'] : null,
-                    'price_type'        => in_array($_POST['price_type'] ?? '', ['free', 'paid'], true) ? $_POST['price_type'] : 'free',
-                    'price'             => is_numeric($_POST['price'] ?? '') ? (float)$_POST['price'] : 0.0,
-                    'price_currency'    => sanitize_text_field($_POST['price_currency'] ?? 'EUR'),
+                    'price_type'        => in_array($_POST['price_type'] ?? '', $allowedPriceTypes, true) ? $_POST['price_type'] : 'free',
+                    'price'             => is_numeric($_POST['price'] ?? '') ? (float)$_POST['price'] : null,
+                    'price_currency'    => $priceCurrency,
                     'is_online'         => isset($_POST['is_online']) ? 1 : 0,
-                    'online_url'        => filter_var($_POST['online_url']        ?? '', FILTER_SANITIZE_URL) ?: null,
-                    'registration_url'  => filter_var($_POST['registration_url']  ?? '', FILTER_SANITIZE_URL) ?: null,
+                    'online_url'        => $onlineUrl,
+                    'registration_url'  => $registrationUrl,
                     'organizer_name'    => sanitize_text_field($_POST['organizer_name']    ?? ''),
-                    'organizer_email'   => filter_var($_POST['organizer_email']   ?? '', FILTER_SANITIZE_EMAIL),
+                    'organizer_email'   => $organizerEmail,
                     'organizer_phone'   => sanitize_text_field($_POST['organizer_phone']   ?? ''),
-                    'organizer_website' => filter_var($_POST['organizer_website'] ?? '', FILTER_SANITIZE_URL) ?: null,
+                    'organizer_website' => $organizerWebsite,
                     'status'            => $isAdminSave ? 'published' : 'draft',
                 ]);
                 if ($isAdminSave) {

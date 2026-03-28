@@ -89,7 +89,7 @@ foreach ($submissions as $submissionItem) {
         <div class="form-group">
             <label class="form-label contact-filter-label">Suche</label>
             <input type="text" name="search" class="form-control contact-filter-input contact-filter-input--search"
-                   value="<?php echo $e($filterSearch); ?>" placeholder="Name / E-Mail ...">
+                   value="<?php echo $e($filterSearch); ?>" placeholder="Name / E-Mail / IP ...">
         </div>
         <button type="submit" class="btn btn-secondary btn-sm">🔍 Filtern</button>
         <?php if ($filterFormId || $filterStatus || $filterSearch): ?>

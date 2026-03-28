@@ -67,6 +67,11 @@ Vor jeder Ausgabe ist der Kontext zu beachten:
 - URLs separat und strikt behandeln
 - Query-Parameter für Kalender- oder Filterlinks sicher erzeugen
 - WYSIWYG-/Langtexte nur über einen kontrollierten, erlaubten HTML-Umfang rendern
+- Event-Beschreibungen auf öffentlichen Single-Seiten nicht roh rendern, sondern als Text escapen und nur kontrolliert mit `nl2br()` umbrechen
+- Intern zusammengesetzte Detail-, Breadcrumb- und Register-Links ebenfalls im `href`-Attribut-Kontext escapen
+- Reset-, Filter- und Pagination-Links im Archiv mit zusammengesetzten Query-Parametern ebenfalls nur escaped in `href` ausgeben
+- Dynamische Gradientwerte in `style`-Attributen des Single-Templates ebenfalls nur escaped ausgeben
+- Zentrale Save-Pfade für Events müssen bei Updates für Nicht-Admins den `user_id`-Besitz des Datensatzes gegenprüfen und fremde IDs verwerfen
 
 ## SQL-Sicherheit
 

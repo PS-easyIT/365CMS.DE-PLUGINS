@@ -135,22 +135,32 @@ class CMS_Experts_Member_Dashboard
             }
             try {
                 $isAdminSave = \CMS\Auth::instance()->isAdmin();
+                $validatedEmail = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
+                $validatedPhotoUrl = filter_var(trim((string) ($_POST['photo_url'] ?? '')), FILTER_VALIDATE_URL) ?: null;
+                $availabilityMap = [
+                    'available' => 'available',
+                    'partially' => 'limited',
+                    'limited' => 'limited',
+                    'unavailable' => 'booked',
+                    'booked' => 'booked',
+                ];
+                $availability = $availabilityMap[$_POST['availability'] ?? 'available'] ?? 'available';
                 $id = CMS_Experts_Database::instance()->save_expert([
                     'user_id'          => (int) $user->id,
                     'first_name'       => sanitize_text_field($_POST['first_name'] ?? ''),
                     'last_name'        => sanitize_text_field($_POST['last_name']  ?? ''),
-                    'email'            => filter_var($_POST['email'] ?? '', FILTER_SANITIZE_EMAIL),
+                    'email'            => $validatedEmail,
                     'phone'            => sanitize_text_field($_POST['phone']  ?? ''),
                     'mobile'           => sanitize_text_field($_POST['mobile'] ?? ''),
                     'position'         => sanitize_text_field($_POST['position'] ?? ''),
                     'company'          => sanitize_text_field($_POST['company']  ?? ''),
-                    'photo_url'        => filter_var($_POST['photo_url'] ?? '', FILTER_SANITIZE_URL) ?: null,
+                    'photo_url'        => $validatedPhotoUrl,
                     'location_city'    => sanitize_text_field($_POST['location_city']    ?? ''),
                     'location_zip'     => sanitize_text_field($_POST['location_zip']     ?? ''),
                     'location_country' => sanitize_text_field($_POST['location_country'] ?? 'Deutschland'),
                     'biography'        => strip_tags($_POST['biography'] ?? ''),
                     'experience_years' => (int) ($_POST['experience_years'] ?? 0),
-                    'availability'     => sanitize_text_field($_POST['availability'] ?? 'available'),
+                    'availability'     => $availability,
                     'hourly_rate'      => is_numeric($_POST['hourly_rate'] ?? '') ? (float)$_POST['hourly_rate'] : null,
                     'daily_rate'       => is_numeric($_POST['daily_rate']  ?? '') ? (float)$_POST['daily_rate']  : null,
                     'status'           => $isAdminSave ? 'active' : 'pending',
@@ -159,7 +169,7 @@ class CMS_Experts_Member_Dashboard
                 // Skills speichern
                 if ($id > 0) {
                     $parse_tags = static fn(string $raw): array =>
-                        array_values(array_filter(array_map('trim', explode(',', $raw))));
+                        array_values(array_unique(array_filter(array_map(static fn(string $tag): string => sanitize_text_field(trim($tag)), explode(',', $raw)))));
 
                     CMS_Experts_Database::instance()->save_expert_skills($id, [
                         'general' => $parse_tags($_POST['skills_general'] ?? ''),
@@ -168,7 +178,7 @@ class CMS_Experts_Member_Dashboard
                     ]);
 
                     // Fachrichtungen speichern
-                    $spec_ids = array_map('intval', (array)($_POST['spec_ids'] ?? []));
+                    $spec_ids = array_values(array_unique(array_filter(array_map('intval', (array)($_POST['spec_ids'] ?? [])), static fn(int $specId): bool => $specId > 0)));
                     CMS_Experts_Database::instance()->save_expert_specializations($id, $spec_ids);
 
                     // Social-Links als Meta speichern

@@ -250,6 +250,21 @@ final class CMS_Events_Database
         $db = CMS\Database::instance();
         $event_id = (int)($data['id'] ?? 0);
 
+        if ($event_id > 0 && !CMS\Auth::instance()->isAdmin()) {
+            $current_user_id = (int) (CMS\Auth::instance()->currentUser()?->id ?? 0);
+            if ($current_user_id <= 0) {
+                return 0;
+            }
+
+            $owner_stmt = $db->prepare("SELECT user_id FROM {$db->prefix()}events WHERE id = ? LIMIT 1");
+            $owner_stmt->execute([$event_id]);
+            $owner_id = (int) ($owner_stmt->fetchColumn() ?: 0);
+
+            if ($owner_id <= 0 || $owner_id !== $current_user_id) {
+                return 0;
+            }
+        }
+
         $event_data = [
             'title'             => $data['title']             ?? '',
             'excerpt'           => $data['excerpt']           ?? null,

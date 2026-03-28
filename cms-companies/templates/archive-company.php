@@ -135,7 +135,7 @@ $all_industries = CMS_Companies_Database::instance()->get_all_industries();
 
         <button type="submit" class="co-btn co-btn-primary">Suchen</button>
         <?php if (!empty($filters['industry']) || !empty($filters['city']) || !empty($filters['partner']) || !empty($_GET['q'])): ?>
-            <a href="<?= SITE_URL ?>/companies" class="co-btn co-btn-ghost">× Reset</a>
+            <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/companies') ?>" class="co-btn co-btn-ghost">× Reset</a>
         <?php endif; ?>
 
     </form>
@@ -146,7 +146,7 @@ $all_industries = CMS_Companies_Database::instance()->get_all_industries();
             <div class="co-empty-icon">🏢</div>
             <h3>Keine Unternehmen gefunden</h3>
             <p>Bitte passen Sie Ihre Filterkriterien an.</p>
-            <a href="<?= SITE_URL ?>/companies" class="co-btn co-btn-primary">Alle anzeigen</a>
+            <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/companies') ?>" class="co-btn co-btn-primary">Alle anzeigen</a>
         </div>
     <?php else: ?>
         <div class="co-grid">
@@ -160,13 +160,14 @@ $all_industries = CMS_Companies_Database::instance()->get_all_industries();
 
         <!-- Pagination -->
         <?php if ($current_page > 1 || count($companies) >= $per_page): ?>
+        <?php $companyPaginationBase = '?industry=' . urlencode($filters['industry'] ?? '') . '&city=' . urlencode($filters['city'] ?? ''); ?>
         <div class="co-pagination">
             <?php if ($current_page > 1): ?>
-                <a href="?page=<?= $current_page - 1 ?>&industry=<?= urlencode($filters['industry'] ?? '') ?>&city=<?= urlencode($filters['city'] ?? '') ?>" class="co-page-btn">&larr; Zurück</a>
+                <a href="<?= htmlspecialchars($companyPaginationBase . '&page=' . ($current_page - 1)) ?>" class="co-page-btn">&larr; Zurück</a>
             <?php endif; ?>
             <span class="co-page-info">Seite <?= $current_page ?></span>
             <?php if (count($companies) >= $per_page): ?>
-                <a href="?page=<?= $current_page + 1 ?>&industry=<?= urlencode($filters['industry'] ?? '') ?>&city=<?= urlencode($filters['city'] ?? '') ?>" class="co-page-btn">Weiter &rarr;</a>
+                <a href="<?= htmlspecialchars($companyPaginationBase . '&page=' . ($current_page + 1)) ?>" class="co-page-btn">Weiter &rarr;</a>
             <?php endif; ?>
         </div>
         <?php endif; ?>

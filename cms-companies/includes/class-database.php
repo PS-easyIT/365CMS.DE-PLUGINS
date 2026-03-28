@@ -297,9 +297,25 @@ final class CMS_Companies_Database
     public function save_company(array $data): int
     {
         $db = CMS\Database::instance();
+        $company_id = (int)($data['id'] ?? 0);
+
+        if ($company_id > 0 && !CMS\Auth::instance()->isAdmin()) {
+            $current_user_id = (int) (CMS\Auth::instance()->currentUser()?->id ?? 0);
+            if ($current_user_id <= 0) {
+                return 0;
+            }
+
+            $owner_stmt = $db->prepare("SELECT user_id FROM {$db->prefix()}companies WHERE id = ? LIMIT 1");
+            $owner_stmt->execute([$company_id]);
+            $owner_id = (int) ($owner_stmt->fetchColumn() ?: 0);
+
+            if ($owner_id <= 0 || $owner_id !== $current_user_id) {
+                return 0;
+            }
+        }
         
-        if (isset($data['id']) && $data['id'] > 0) {
-            return $this->update_company($data['id'], $data);
+        if ($company_id > 0) {
+            return $this->update_company($company_id, $data);
         } else {
             return $this->insert_company($data);
         }

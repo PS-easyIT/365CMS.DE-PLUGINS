@@ -140,7 +140,7 @@ $initials = mb_strtoupper(mb_substr($first, 0, 1) . mb_substr($last, 0, 1));
 
         <div class="sp-card-header-text">
             <h3 class="sp-card-name">
-                <a href="<?php echo $speaker_url; ?>"><?php echo $sec->escape($full_name ?: 'Speaker'); ?></a>
+                <a href="<?php echo $sec->escape($speaker_url); ?>"><?php echo $sec->escape($full_name ?: 'Speaker'); ?></a>
             </h3>
 
             <div class="sp-card-title-row">
@@ -206,7 +206,7 @@ $initials = mb_strtoupper(mb_substr($first, 0, 1) . mb_substr($last, 0, 1));
     </div>
 
     <!-- CTA Button -->
-    <a href="<?php echo $speaker_url; ?>" class="sp-card-cta">
+    <a href="<?php echo $sec->escape($speaker_url); ?>" class="sp-card-cta">
         <?php echo $cta; ?> <span class="cta-arrow">&#8250;</span>
     </a>
 

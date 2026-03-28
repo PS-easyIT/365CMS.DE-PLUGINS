@@ -80,7 +80,7 @@ $accent    = htmlspecialchars($settings['color_accent']    ?? '#1d4ed8');
 <div class="ev-single-v2">
 
   <nav class="ev-breadcrumb">
-    <a href="<?= $archive_url ?>">← Events</a>
+    <a href="<?= htmlspecialchars($archive_url) ?>">← Events</a>
     <span class="ev-breadcrumb__sep">/</span>
     <span class="ev-breadcrumb__cur"><?= mb_strimwidth($title, 0, 60, '…') ?></span>
   </nav>
@@ -114,8 +114,9 @@ $accent    = htmlspecialchars($settings['color_accent']    ?? '#1d4ed8');
 
     <div class="ev-bridge-v2__about">
       <h2 class="ev-bridge-v2__title">📅 Über diesen Event</h2>
-      <?php if (!empty($desc) && trim($desc) !== ''): ?>
-        <div class="ev-bridge-v2__text ev-wysiwyg-content"><?= $desc ?></div>
+      <?php $eventDescription = trim((string) $desc); ?>
+      <?php if ($eventDescription !== ''): ?>
+        <div class="ev-bridge-v2__text ev-wysiwyg-content"><?= nl2br(htmlspecialchars($eventDescription)) ?></div>
       <?php else: ?>
         <p class="ev-bridge-v2__text" style="color:#94a3b8;font-style:italic;">Noch keine Beschreibung hinterlegt.</p>
       <?php endif; ?>
@@ -228,12 +229,12 @@ $accent    = htmlspecialchars($settings['color_accent']    ?? '#1d4ed8');
               <?php if ($spPhoto): ?>
                 <div class="ev-spk-row__av"><img src="<?= $spPhoto ?>" alt="<?= $spName ?>"></div>
               <?php else: ?>
-                <div class="ev-spk-row__av" style="background:<?= $spGrad ?>"><?= $letter ?></div>
+                <div class="ev-spk-row__av" style="background:<?= htmlspecialchars($spGrad) ?>"><?= $letter ?></div>
               <?php endif; ?>
               <div class="ev-spk-row__info">
                 <div class="ev-spk-row__name">
                   <?php if ($spId > 0): ?>
-                    <a href="<?= $base_url ?>/speakers/<?= $spId ?>"><?= $spName ?></a>
+                    <a href="<?= htmlspecialchars($base_url . '/speakers/' . $spId) ?>"><?= $spName ?></a>
                   <?php else: ?>
                     <?= $spName ?>
                   <?php endif; ?>
@@ -242,7 +243,7 @@ $accent    = htmlspecialchars($settings['color_accent']    ?? '#1d4ed8');
               </div>
             </div>
             <?php if ($spId > 0): ?>
-              <a href="<?= $base_url ?>/speakers/<?= $spId ?>" class="ev-spk-row__btn">Profil →</a>
+              <a href="<?= htmlspecialchars($base_url . '/speakers/' . $spId) ?>" class="ev-spk-row__btn">Profil →</a>
             <?php endif; ?>
           </div>
         <?php endforeach; ?>
@@ -257,7 +258,7 @@ $accent    = htmlspecialchars($settings['color_accent']    ?? '#1d4ed8');
       <strong>Dieser Event wurde von der Redaktion eingetragen.</strong>
       Sind Sie der Veranstalter? Registrieren Sie sich kostenlos und verwalten Sie Ihren Event selbst.
     </div>
-    <a href="<?= rtrim(SITE_URL, '/') ?>/register" class="ev-claim-banner__btn">Jetzt registrieren &amp; Event übernehmen →</a>
+    <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/register') ?>" class="ev-claim-banner__btn">Jetzt registrieren &amp; Event übernehmen →</a>
   </div>
   <?php endif; ?>
 

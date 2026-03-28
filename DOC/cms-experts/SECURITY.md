@@ -75,6 +75,12 @@ Für Profilseiten und Cards gilt:
 - Attributwerte strikt escapen
 - Links getrennt validieren und escapen
 - Rich-Text nur in kontrolliertem Umfang rendern
+- Biografie- und ähnliche Langtexte auf Single-Seiten nicht roh rendern, sondern als Text escapen und nur kontrolliert mit `nl2br()` umbrechen
+- intern zusammengesetzte Profil-, Kontakt- und Register-Links im `href`-Attribut-Kontext escapen
+- auch Detail-Links aus internen Variablen wie `$url` in Cards nur escaped im `href`-Attribut rendern
+- auch CTA-Links in Cards und Reset-Links im Archiv bei internen URL-Werten nur escaped im `href`-Attribut rendern
+- auch dynamische Gradientwerte in `style`-Attributen und zusammengesetzte Tooltip-Texte in `title`-Attributen im Single-Template escapen
+- zentrale Save-Pfade für Experten müssen bei Updates für Nicht-Admins den `user_id`-Besitz des Datensatzes gegenprüfen und fremde IDs verwerfen
 - eingebundene externe Feed-/RSS-Daten robust gegen Fehler und unerwartete Inhalte behandeln
 
 ## SQL-Sicherheit
