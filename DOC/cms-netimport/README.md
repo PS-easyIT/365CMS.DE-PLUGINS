@@ -1,0 +1,44 @@
+# CMS NetImport
+
+## Überblick
+
+`cms-netimport` ist ein vorbereiteter CSV-Importer für Netzwerkdaten im Plugin-Repository. Er liest definierte Dateien aus `cms-netimport/files_import/`, erkennt neuere datierte Update-Dateien derselben Dateifamilie automatisch und schreibt die Daten in die Ziel-Plugins `cms-companies`, `cms-experts`, `cms-speakers` und `cms-events`.
+
+## Importquellen
+
+- `Companies_Beispiel.csv`
+- `MVPs.csv`
+- `Experts_Beispiel.csv`
+- `Speaker.csv`
+- `Events_mit_Speaker.csv`
+
+## Importziele
+
+- Companies: Firmendatensätze inkl. Partner-Flags
+- Experts: MVPs und weitere Experten inkl. Skills/Meta
+- Speakers: Speaker-Profile inkl. Topics
+- Events: Event-Datensätze inkl. Speaker-/Expert-Zuordnungen
+
+## Admin-Nutzung
+
+Pfad: `/admin/netimport`
+
+Optionen:
+
+- bestehende Datensätze aktualisieren
+- fehlende Companies automatisch anlegen
+- Cross-Plugin-Beziehungen verknüpfen
+- fehlende Speaker/Experts aus Event-Zeilen minimal anlegen und direkt verknüpfen
+- Dry-Run / Preview ohne Datenbank-Schreibzugriffe
+
+Zusätzlich zeigt die Admin-Tabelle an, ob statt der Basisdatei bereits eine neuere `UPDATE`-CSV verwendet wird.
+
+Alle neu angelegten oder beim Import berührten Datensätze werden nach dem Import dem aktiven Admin über `user_id` zugeordnet.
+
+## Empfohlener Ablauf
+
+1. Companies importieren
+2. Experts (MVPs)
+3. Experts Beispiel
+4. Speakers
+5. Events

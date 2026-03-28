@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "updated": "2026-03-21",
+  "updated": "2026-03-28",
   "plugins": [
     {
       "slug": "cms-companies",
@@ -81,6 +81,11 @@
       "slug": "cms-knowledgebase",
       "name": "CMS Knowledgebase",
       "manifest": "PLUGINS/cms-knowledgebase/update.json"
+    },
+    {
+      "slug": "cms-netimport",
+      "name": "CMS NetImport",
+      "manifest": "PLUGINS/cms-netimport/update.json"
     }
   ]
 }

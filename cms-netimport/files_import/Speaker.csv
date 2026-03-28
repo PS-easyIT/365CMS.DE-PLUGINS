@@ -1,0 +1,176 @@
+﻿NR;VORNAME;NACHNAME;FIRMA;TOP IN WAS;MVP / AUSZEICHNUNG;ZERTIFIKATE;WEBSITE;EVENT(S)
+1;Marwan;Abu-Khalil;Siemens AG;Software Architecture;;;https://www.oop-konferenz.de/;OOP 2026 – Software-Architektur
+2;Will;Ahmed;Whoop;Sports Technology;;;https://omr.com/;OMR Festival 2026
+3;Leonardo;Aizpuru;Nespresso;Marketing / Brand;;;https://omr.com/;OMR Festival 2026
+4;Tim;Alexander;Deutsche Bank (CMO);Marketing / Finance;;;https://dmexco.com/;DMEXCO 2026
+5;Elke;Anderl;T-Systems;Industrial AI Cloud;;;https://www.t-systems.com/;Hamburger IT-Strategietage
+6;Keith;Atherton;;Power Platform Architecture;MVP;;https://www.communitydays.org/;ColorCloud 2026
+7;Florian;Augthun;Ströer SE;Cyber Security Architecture;;;https://dach.cyberseries.io/;DACHsec IT Security Summit 2026
+8;Carsten;Bange;BARC;Data Analytics / BI / AI;Dr.;;https://www.techshowfrankfurt.de/;Tech Show Frankfurt, DATA festival München
+9;Bärbel;Bas;Bundesregierung;BM Arbeit & Soziales;;;https://www.bitkom.org/;Bitkom TRANSFORM 2026
+10;Klaus;Bauer;;Head of Research / Cloud Security;;;https://www.we-conect.com/;Rethink! Cloud & Infrastructure Security
+11;Patrick;Baumgartner;;Java Development;;;https://www.javaland.eu/;JavaLand 2026
+12;Eric;Berg;;Azure / Cloud;Microsoft MVP;;https://www.cdc-germany.de/;Cloud & Datacenter Conference Germany
+13;Adam;Bien;adam-bien.com;Java / Cloud Native;;;http://adam-bien.com/;OOP 2026 – Software-Architektur, JavaLand 2026
+14;Matthias;Blatz;Heidelberg iT Management;AI / Data Center;;;https://www.ai-conference.de/;AI Conference: Science x Business
+15;Stefan;Blome;ALSO;CCO / IT-Channel;;;https://www.also.de/;ALSO Channel Trends & Visions
+16;Kathrin;Borchert;;Power BI & Fabric Administration;MVP;;https://www.communitydays.org/;ColorCloud 2026
+17;Bruno;Borges;;Java Development;;;https://www.javaland.eu/;JavaLand 2026
+18;Tom;Brady;;Business / Entrepreneurship;;;https://omr.com/;OMR Festival 2026
+19;Franziska;Brantner;Die Grünen;AI Policy;Dr.;;https://bigbangfestival.de/;BIG BANG KI Festival
+20;Carsten;Breuer;Bundeswehr;Generalinspekteur;;;https://www.bitkom.org/;Bitkom TRANSFORM 2026
+21;Hartje;Bruns;Governikus;Digital Identity;;;https://www.governikus.de/;OmniSecure 2026
+22;Katarzyna;Bukowska;;Cyber Security Operations;;;https://dach.cyberseries.io/;DACHsec IT Security Summit 2026
+23;Thorsten;Butz;IT-Trainer;M365 / Azure / Modern Work;Microsoft MVP;;https://www.communitydays.org/;Pottconf 2026
+24;Dorothee;Bär;Bundesregierung;Digitalpolitik;;;https://aidaq.berlin/;AI & Data Summit / Quantum Summit
+25;Immanuel;Bär;;White-Hat-Hacker / Cybersecurity;;;https://www.inno-it.de/;INNO IT Kiel
+26;Detlef;Bäumer;PICTURE GmbH;Prozessmanagement / Change;;;https://kommdigitale.de/;KommDigitale 2026
+27;Lina;Böcker;;Datenschutz / IT-Recht / AI-Regulierung;Dr.;;https://www.datenschutzkongress.de/;Datenschutzkongress 2026
+28;Aimie-Sarah;Carstensen;;E-Commerce / Retail (Gründerin);;;https://konferenz.k5.de/;K5 Konferenz 2026
+29;Nikki;Chapple;;M365 / Governance;Microsoft MVP;;https://collabsummit.eu/;European Collaboration Summit
+30;Andrew;Connell;;M365 / Copilot;Microsoft MVP;;https://collabsummit.eu/;European Collaboration Summit
+31;Petya;Dasheva;;Data Strategy / Human-Centered Analytics;;;https://www.techshowfrankfurt.de/;Tech Show Frankfurt
+32;Franz;Decker;BMW;CIO / Digital Transformation;;;https://www.it-strategietage.de/;Hamburger IT-Strategietage
+33;Kim;Duggen;embarc GmbH;Software-Architektur;;;https://www.oop-konferenz.de/;OOP 2026 – Software-Architektur
+34;Alexander;Dumke;;Global eCommerce;;;https://konferenz.k5.de/;K5 Konferenz 2026
+35;Scott;Durow;Microsoft;Power Platform / Vibe Engineering;;;https://www.communitydays.org/;ColorCloud 2026
+36;Wolfgang;Ehrk;DIERCK GROUP (CEO);IT-Panel;;;https://www.inno-it.de/;INNO IT Kiel
+37;Chris;Engelbert;;PostgreSQL / Async I/O;;;https://2026.pgconf.de/;PostgreSQL Conference Germany
+38;Markus;Engelke;Munich Re;Enterprise Cybersecurity;;;https://cybersecuritysumm.it/;Cybersecurity Summit Hamburg
+39;Pablo;Erat;On AG / LightSpray;Industrial Technology;;;https://www.hannovermesse.de/;Hannover Messe 2026
+40;Alexander;Erpenbach;;E-Commerce / Versicherung;;;https://konferenz.k5.de/;K5 Konferenz 2026
+41;Tobias;Fehenberger;Adva Network Security;Quantum-Safe Cryptography;;;https://www.omnisecure.berlin/;OmniSecure 2026
+42;Sara;Fennah;;M365 / Governance / Copilot;Microsoft MVP;;https://collabsummit.eu/;European Collaboration Summit
+43;Sarah;Fennah;;Microsoft Governance;MVP;;https://www.communitydays.org/;Copilot Community Conference Europe
+44;Stefan;Finkbeiner;Bosch Sensortec;Sensor Technology / IoT;;;https://www.embedded-world.de/;embedded world 2026
+45;Björn H.;Friedrich;Deutsche Telekom;Cloud Security / Zero Trust;;;https://www.we-conect.com/;Rethink! IT Security Herbst
+46;Thomas;Fuchs;HmbBfDI;Datenschutzpolitik;;;https://www.datenschutzkongress.de/;Datenschutzkongress 2026
+47;Noël;Funke;Hackers4Good;Cybersecurity / Ethical Hacking;;;https://cybersecuritysumm.it/;Cybersecurity Summit Hamburg
+48;Scott;Galloway;NYU Stern;Business Analysis / Tech;;;https://omr.com/;OMR Festival 2026
+49;Aude;Gandon;Nestlé (Global CMO);Marketing / Digital;;;https://dmexco.com/;DMEXCO 2026
+50;Peter;Gentsch;;Digital Disruption / AI;Prof. Dr.;;https://www.ccw.eu/;CCW 2026 – Kongressmesse Kundendialog
+51;Alexander;Graf;;Media / E-Commerce Publishing;;;https://konferenz.k5.de/;K5 Konferenz 2026
+52;Tommy;Grosche;Fortinet;Network Security;;;https://www.fortinet.com/;INNO IT Kiel
+53;Heike;Hagemeier;BMI;Cybersecurity Research;;;https://www.omnisecure.berlin/;OmniSecure 2026
+54;Alexander;Handschuh;DStGB;Kommunale Digitalisierung;;;https://kommdigitale.de/;KommDigitale 2026
+55;Dagmar;Hartge;LfDI Brandenburg;Datenschutzpolitik;;;https://www.datenschutzkongress.de/;Datenschutzkongress 2026
+56;Philipp;Heltewig;NiCE;Conversational AI;;;https://www.ccw.eu/;CCW 2026 – Kongressmesse Kundendialog
+57;Thomas;Hemker;;Adversary Analysis;;;https://www.security-insider.de/;ISX IT-Security Conference Frankfurt, ISX IT-Security Conference München
+58;Fabian;Hemmert;;User Experience / Technology;Prof. Dr.;;https://www.ccw.eu/;CCW 2026 – Kongressmesse Kundendialog
+59;Easen;Ho;Vantron Technology;Embedded / IoT;;;https://www.embedded-world.de/;embedded world 2026
+60;Thomas;Hoeren;Uni Münster;IT-Recht / Informationssicherheit;Prof.;;https://www.datenschutzkongress.de/;Datenschutzkongress 2026
+61;Tim;Höttges;Deutsche Telekom (CEO);Telecom / Digital Transformation;;;https://bigbangfestival.de/;BIG BANG KI Festival, digital X 2026
+62;Anja;Ittrich;;VP E-Commerce & Marketing;;;https://konferenz.k5.de/;K5 Konferenz 2026
+63;Marianne;Janik;Google Cloud (VP EMEA North);Cloud Technology;Dr.;;https://bigbangfestival.de/;BIG BANG KI Festival
+64;Martin;Kagerbauer;KIT;Verkehrsplanung;;;https://www.kit.edu/;IT-Trans 2026
+65;Brittany;Kaiser;Own Your Data;Digital Rights / Data Privacy;;;https://www.cloudfest.com/;CloudFest 2026
+66;Olaf;Kaiser;Systemhaus-Coach;MSP-Geschäftsmodelle;;;https://partnernews.sophos.com/;Sophos Partner Roadshow, Sophos MSP Community Days
+67;Felix;Kammerlander;;Software Architecture;;;https://www.oop-konferenz.de/;OOP 2026 – Software-Architektur
+68;Meike;Kamp;BlnBDI;Datenschutzpolitik;;;https://www.datenschutzkongress.de/;Datenschutzkongress 2026
+69;Nadine;Kamski;L'Oréal;Media Director DACH;;;https://dmexco.com/;DMEXCO 2026
+70;Valeria;Kaplan;;PostgreSQL Contributions;;;https://2026.pgconf.de/;PostgreSQL Conference Germany
+71;Alexander;Kaserbacher;;Software Architecture;;;https://www.oop-konferenz.de/;OOP 2026 – Software-Architektur
+72;Martin;Kasparick;;Sichere Kommunikation;Dr.-Ing.;;https://www.pmrexpo.com/;PMRExpo 2026
+73;Marcus;Keupp;;Business / Strategie;Prof. Dr.;;https://www.ccw.eu/;CCW 2026 – Kongressmesse Kundendialog
+74;Stephan;Klein;Governikus;Digital Identity / eID;;;https://www.governikus.de/;OmniSecure 2026
+75;Klaus;Klingner;;Information Security Officer;;;https://www.we-conect.com/;Rethink! Cloud & Infrastructure Security
+76;Tina;Klüwer;;Conversational AI;Dr.;;https://riseof.ai/;Rise of AI Conference
+77;Anna-Theresa;Korbutt;Hamburg Transport (HHA);ÖPNV / Keynote;;;https://www.it-trans.org/;IT-Trans 2026
+78;Dirk;Krautschick;;Database Performance;;;https://2026.pgconf.de/;PostgreSQL Conference Germany
+79;Oliver;Kreth;Ceyoniq;Digital Transformation / DMS;;;https://www.ceyoniq.com/;KommDigitale 2026
+80;Antonio;Krüger;DFKI;AI Research / HCI;Prof.;;https://www.dfki.de/;Rise of AI Conference
+81;Dieter;Kugelmann;LfDI Rheinland-Pfalz;Datenschutzregulierung;Prof.;;https://www.datenschutzkongress.de/;Datenschutzkongress 2026
+82;Helen;Kuhlmann;;KRITIS / BOS-Digitalfunk;;;https://www.pmrexpo.com/;PMRExpo 2026
+83;Gregor;Kuznik;;Global Information Security Officer / Zero Trust;;;https://www.we-conect.com/;Rethink! Cloud & Infrastructure Security
+84;Raphael;Köllner;;Microsoft Technologies;MVP;;https://www.communitydays.org/;Copilot Community Conference Europe
+85;Grant;LaFontaine;Whatnot;Live Shopping / E-Commerce;;;https://omr.com/;OMR Festival 2026
+86;Mojib;Latif;GEOMAR;Klimaforschung & AI;Prof.;;https://www.inno-it.de/;INNO IT Kiel
+87;Andreas;Livert;Extreme Networks;VP Sales DACH / Networking;;;https://www.inno-it.de/;INNO IT Kiel
+88;Daniel;Loebenberger;OTH Amberg-Weiden;Informatik / Kryptographie;;;https://www.omnisecure.berlin/;OmniSecure 2026
+89;Sylvia;Lösel;IT-Business Magazin;IT Media / Panel;;;https://www.inno-it.de/;INNO IT Kiel
+90;Daniel;Maier-Johnson;Kuehne+Nagel;CISO / Enterprise Cybersecurity;;;https://dach.cyberseries.io/;DACHsec IT Security Summit 2026
+91;Marian;Margraf;Freie Universität Berlin;Informatik / Digital ID;;;https://www.omnisecure.berlin/;OmniSecure 2026
+92;David;Matusiewicz;FOM University;Healthcare Management / Digital Health;Prof.;;https://www.dmea.de/;DMEA 2026 – Digital Health
+93;Thomas;Maurer;;Azure / Hybrid Cloud;Microsoft MVP;;https://www.cdc-germany.de/;Cloud & Datacenter Conference Germany
+94;Moritz;Mayer;A1 Digital;IT Security Solutions;;;https://www.heise.de/secit;secIT 2026
+95;Kevin;McDonnell;;Microsoft Technologies;MVP;;https://www.communitydays.org/;Copilot Community Conference Europe
+96;Miriam;Meckel;;Communication / Technology;Prof.;;https://www.techshowfrankfurt.de/;Tech Show Frankfurt
+97;Saskia;Meier-Andrae;;E-Commerce / Retail;Dr.;;https://konferenz.k5.de/;K5 Konferenz 2026
+98;Frank;Mentrup;Stadt Karlsruhe;Oberbürgermeister / Patronage;;;https://www.it-trans.org/;IT-Trans 2026
+99;Ludmilla;Middecke;Stadt Bielefeld;eGovernment-Strategie;;;https://kommdigitale.de/;KommDigitale 2026
+100;Hermann Ludwig;Moeller;ESPI;Science / Policy;;;https://live.handelsblatt.com/;TECH by Handelsblatt
+101;Marthe;Moengen;;Microsoft Fabric / Power BI;;;https://www.communitydays.org/;ColorCloud 2026
+102;Pierre-Alain;Mouy;;Cybersecurity in Space / Quantum;;;https://www.heise.de/secit;secIT 2026
+103;Anna;Mutska;;Conversational AI;;;https://www.ccw.eu/;CCW 2026 – Kongressmesse Kundendialog
+104;Chris;Müller;Ratepay;Cybersecurity / FinTech;;;https://cybersecuritysumm.it/;Cybersecurity Summit Hamburg
+105;Daniel;Müller-Gritschneder;TU Wien;Embedded Systems;;;https://www.embedded-world.de/;embedded world 2026
+106;Cedrik;Neike;Siemens AG;Industrial Automation / AI;;;https://www.siemens.com/;Hannover Messe 2026
+107;Laura;Nestler;;Community Building;;;https://omr.com/;OMR Festival 2026
+108;Vesa;Nopanen;;Microsoft Technologies;MVP;;https://www.communitydays.org/;Copilot Community Conference Europe
+109;Chuks;Ojeme;;Cybersecurity Thought Leadership;;;https://dach.cyberseries.io/;DACHsec IT Security Summit 2026
+110;Björn;Ommer;LMU München;Computer Vision / AI;Prof.;;https://bigbangfestival.de/;BIG BANG KI Festival
+111;Pieter;Op de Beéck;;Microsoft Technologies;MVP;;https://www.communitydays.org/;Copilot Community Conference Europe
+112;Bettina;Orlopp;Commerzbank;Finance / Banking;;;https://omr.com/;OMR Festival 2026
+113;Armin;Papperger;Rheinmetall;Defense & Technology;;;https://www.hannovermesse.de/;Hannover Messe 2026
+114;Radia;Perlman;Internet Pioneer;Internet Infrastructure / Networking;;;https://www.cloudfest.com/;CloudFest 2026
+115;Alexander;Pischon;KVV;ÖPNV-Management;;;https://www.it-trans.org/;IT-Trans 2026
+116;Claudia;Plattner;BSI;Cybersecurity & AI;;;https://www.bsi.bund.de/;Hamburger IT-Strategietage, Bitkom TRANSFORM 2026, BSI IT-Sicherheitskongress
+117;Carsten;Rachfahl;Rachfahl IT-Solutions;Hyper-V / Azure Stack HCI;Microsoft MVP;;https://www.cdc-germany.de/;Cloud & Datacenter Conference Germany
+118;Mark;Rackley;;M365 / Copilot;Microsoft MVP;;https://collabsummit.eu/;European Collaboration Summit
+119;Philip;Radlanski;Greenberg Traurig;AI / Datenschutz / Cybersecurity;Dr.;;https://www.datenschutzkongress.de/;Datenschutzkongress 2026
+120;Bernd;Rattey;Deutsche Bahn;CIO / IT-Strategie;;;https://www.it-strategietage.de/;Hamburger IT-Strategietage, Handelsblatt Summit Zukunft IT
+121;Christian;Raveaux;REWE Group;Customer Insights & Media;;;https://dmexco.com/;DMEXCO 2026
+122;Pascal;Reiniger;;CISO / Ransomware Defense;;;https://www.we-conect.com/;Rethink! Cloud & Infrastructure Security
+123;Natalie;Rodriguez;Hamburger Hochbahn;Innovation & Strategie;;;https://www.it-trans.org/;IT-Trans 2026
+124;Rasmus;Rothe;Merantix AG;AI Startups / Deep Learning;Dr.;;https://riseof.ai/;Rise of AI Conference
+125;Nina;Ruge;Moderation;Media / Health Communication;;;https://www.dmea.de/;DMEA 2026 – Digital Health
+126;Philipp;Räther;Allianz Group;Privacy / AI Trust Officer;Dr.;;https://www.datenschutzkongress.de/;Datenschutzkongress 2026
+127;Emilie;Rønning;;Microsoft Fabric / Data;;;https://www.communitydays.org/;ColorCloud 2026
+128;Dona;Sarkar;Microsoft;Microsoft Copilot;Microsoft;;https://www.communitydays.org/;Copilot Community Conference Europe
+129;Emma;Saroyan;;Open Source Community Building;;;https://2026.pgconf.de/;PostgreSQL Conference Germany
+130;August-Wilhelm;Scheer;;IT / Wirtschaftsinformatik;Prof. Dr.;;https://it-con-messe.de/;IT.CON 2026
+131;Bernd;Schlömer;CIO Sachsen-Anhalt;Digitale Verwaltung;;;https://kommdigitale.de/;KommDigitale 2026
+132;Jürgen;Schmidhuber;KAUST / NNAISENSE;AI Research / Neural Networks;Prof.;;https://riseof.ai/;Rise of AI Conference
+133;Dennis Kim;Schmidt;Dataport AöR;Public Sector IT Security;;;https://cybersecuritysumm.it/;Cybersecurity Summit Hamburg
+134;Carsten;Schneider;Bundesregierung;Umwelt & Klima;;;https://bigbangfestival.de/;BIG BANG KI Festival
+135;Sebastian;Schreiber;SySS GmbH;Cybersecurity / Penetration Testing;;;https://www.syss.de/;CloudFest 2026, Cybersecurity Summit Hamburg
+136;Dirk;Schrödter;CIO Schleswig-Holstein;Digitale Verwaltung;;;https://live.handelsblatt.com/;Handelsblatt Summit Zukunft IT
+137;Marcus;Schuler;F.A.Z. / implicator.ai;Technology Journalism;;;https://www.techshowfrankfurt.de/;Tech Show Frankfurt
+138;Rolf;Schumann;Schwarz-Digits;AI / Technology;;;https://bigbangfestival.de/;BIG BANG KI Festival
+139;Louis;Servin;;Enterprise Security Architecture;;;https://www.we-conect.com/;Rethink! Cloud & Infrastructure Security
+140;Christian;Sewing;Deutsche Bank;Finance / Banking;;;https://omr.com/;OMR Festival 2026
+141;Axel;Sikora;HS Offenburg;Embedded Systems;;;https://www.embedded-world.de/;embedded world 2026
+142;Richard J.;Simoncic;Microchip Technology;IoT / AI Keynote;;;https://www.embedded-world.de/;embedded world 2026
+143;Kristina;Sinemus;;Digital Infrastructure;Prof.;;https://www.dmea.de/;DMEA 2026 – Digital Health, Hessen Digital
+144;Falk;Sippach;embarc GmbH;Software-Architektur / DDD;;;https://www.oop-konferenz.de/;OOP 2026 – Software-Architektur
+145;Louisa;Specht-Riemenschneider;;Digital Health / Datenschutz;Prof.;;https://www.dmea.de/;DMEA 2026 – Digital Health
+146;Christoph;Straub;Barmer (CEO);Healthcare / Digital;Prof. Dr.;;https://bigbangfestival.de/;BIG BANG KI Festival
+147;Venkat;Subramaniam;Agile Developer Inc.;Java / Agile Development;Java Champion;;https://www.javaland.eu/;JavaLand 2026
+148;Julie;Sweet;Accenture;Organizational Transformation / AI;;;https://www.accenture.com/;Hannover Messe 2026
+149;Alexander;Thamm;Alexander Thamm GmbH;Data Science / AI;;;https://www.datafestival.de/;DATA festival München
+150;Frank;Thelen;Freigeist Capital;Innovation / Investment;;;https://bigbangfestival.de/;BIG BANG KI Festival
+151;Stefan;Toth;embarc GmbH;Software-Architektur;;;https://www.oop-konferenz.de/;OOP 2026 – Software-Architektur
+152;Hans;Uszkoreit;;AI Research / NLP;Prof.;;https://riseof.ai/;Rise of AI Conference
+153;Didier;Van Hoye;;Windows Server / Hybrid Cloud;Microsoft MVP;;https://www.cdc-germany.de/;Cloud & Datacenter Conference Germany
+154;Werner;Vogels;Amazon (CTO);Technology Leadership / Cloud;Dr.;;https://www.wearedevelopers.com/;WeAreDevelopers World Congress
+155;Robert;Wander;E-Government Consulting;Verwaltungsdigitalisierung;;;https://kommdigitale.de/;KommDigitale 2026
+156;Nina;Warken;BM Gesundheit;Healthcare Policy / Digital Health;Bundesministerin;;https://www.dmea.de/;DMEA 2026 – Digital Health
+157;Amy;Webb;Future Today Institute;Technology Trends / AI;;;https://amywebb.io/;Hannover Messe 2026
+158;Yasmin;Weiß;;KI / Workplace Transformation;Prof. Dr.;;https://www.also.de/;ALSO Channel Trends & Visions
+159;Isabell;Welpe;TUM;Strategie / AI;Prof. Dr.;;https://www.inno-it.de/;INNO IT Kiel
+160;Swantje;Westpfahl;;Cyber Risks / Geopolitik;Dr.;;https://www.security-insider.de/;ISX IT-Security Conference Frankfurt, ISX IT-Security Conference München
+161;Meredith;Whittaker;Signal;Tech / AI Policy;;;https://omr.com/;OMR Festival 2026
+162;Jan;Wieremjewicz;;PostgreSQL / Legacy Systems;;;https://2026.pgconf.de/;PostgreSQL Conference Germany
+163;Karsten;Wildberger;BM Digitales;Digitalpolitik;;;https://www.it-strategietage.de/;Hamburger IT-Strategietage, OMR Festival 2026, WeAreDevelopers World Congress, Handelsblatt Summit Zukunft IT, BIG BANG KI Festival
+164;Zoe;Wilson;;Microsoft Technologies;MVP;;https://www.communitydays.org/;Copilot Community Conference Europe
+165;Ralf;Wintergerst;Giesecke+Devrient / Bitkom;Digital Transformation / Bitkom-Präsident;;;https://www.bitkom.org/;Bitkom TRANSFORM 2026
+166;Thomas;Wlazik;TikTok (GM DACH);Social Media / Marketing;;;https://dmexco.com/;DMEXCO 2026
+167;Christian;Wulff;Ex-Bundespräsident;Technology / Policy;;;https://bigbangfestival.de/;BIG BANG KI Festival
+168;Christian;Wuttke;Schwarz Group;Chat & Voice Technology;;;https://www.ccw.eu/;CCW 2026 – Kongressmesse Kundendialog
+169;Eckart;Würzner;Stadt Heidelberg;OB / AI Policy;;;https://www.ai-conference.de/;AI Conference: Science x Business
+170;Feiyu;Xu;Amber Iris AI / Uni Digital Science;AI Research / Industry;Prof.;;https://riseof.ai/;Rise of AI Conference
+171;Marcel;Zehner;;Cloud & Datacenter Management;Microsoft MVP;;https://www.cdc-germany.de/;Cloud & Datacenter Conference Germany
+172;Kerstin;Zettl-Schabath;;Adversary Analysis;Dr.;;https://www.security-insider.de/;ISX IT-Security Conference Frankfurt, ISX IT-Security Conference München
+173;Elke;Zimmer;MdL Baden-Württemberg;Staatssekretärin Verkehr;;;https://www.it-trans.org/;IT-Trans 2026
+174;Katharina;Zweig;TU Kaiserslautern;AI / Algorithmen;Prof. Dr.;;https://www.inno-it.de/;INNO IT Kiel
+175;Stefan;Zörner;embarc GmbH;Software-Architektur;;;https://www.oop-konferenz.de/;OOP 2026 – Software-Architektur

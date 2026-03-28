@@ -18,7 +18,7 @@
 - [x] alle Admin- und Member-Save-Handler für Speaker, Topics und Auftritte identifizieren
 - [x] Ownership-Schutz gegen fremde Speaker-Profile und Unterdatensätze verifizieren
 - [x] Social-, Website-, Mail-, Telefon- und zentrale Social-/Medien-Links validieren und sicher ausgeben
-- [ ] Status-, Availability-, Format- und Presence-Werte nur per Whitelist akzeptieren
+- [ ] Status-, Availability- und Travel-Werte sind gehärtet; offener Rest: `formats` und `presence_type` in Unterdatensätzen explizit whitelisten
 - [x] Single- und Card-Templates auf konsequentes Escaping prüfen
 
 ### Speed
@@ -64,6 +64,7 @@
 - [x] Aktuellen Ownership-Stand präzisiert: Member-Dashboard bietet derzeit nur Create + Liste, kein realer Member-Edit- oder Event-/Topic-Update-Pfad vorhanden.
 - [x] Früher Plugin-Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals gehärtet: Komponenten werden nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) instanziiert.
 - [x] Tabellenaufbau beim Aktivieren vollständig entschärft: Auch Fehler bereits beim initialen Datenbankzugriff in `create_tables()` werden jetzt geloggt statt als Fatal an den Aktivierungs-Flow zurückzureichen.
+- [ ] Offener Restbefund: `admin_event_add()` übernimmt `presence_type` für Speaker-Auftritte derzeit noch als freien String; außerdem werden `formats` zwar normalisiert, aber noch nicht gegen feste erlaubte Werte gewhitelistet.
 - [x] Heutige Audit-/Doku-Änderungen auf plugin-eigene Release-Versionen umgestellt: Doku-Release `1.0.1`, technisches Audit-/Stabilitäts-Release `1.1.0`.
 
 ---

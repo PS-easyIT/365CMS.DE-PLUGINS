@@ -1,0 +1,70 @@
+.ni-card-spacer {
+    margin-bottom: 1.5rem;
+}
+
+.ni-form-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.ni-form-group-wide {
+    max-width: 840px;
+}
+
+.ni-table code {
+    font-size: 0.8rem;
+    color: #334155;
+    background: #f8fafc;
+    padding: 0.2rem 0.4rem;
+    border-radius: 6px;
+}
+
+.status-badge.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.ni-log-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.65rem;
+}
+
+.ni-log-item {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    padding: 0.75rem 0.9rem;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+}
+
+.ni-log-item--success {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+}
+
+.ni-log-item--warning {
+    border-color: #fde68a;
+    background: #fffbeb;
+}
+
+.ni-log-item--error {
+    border-color: #fecaca;
+    background: #fef2f2;
+}
+
+.ni-log-level {
+    min-width: 1.4rem;
+    line-height: 1.2;
+}
+
+@media (max-width: 640px) {
+    .ni-table th:nth-child(4),
+    .ni-table td:nth-child(4) {
+        display: none;
+    }
+}

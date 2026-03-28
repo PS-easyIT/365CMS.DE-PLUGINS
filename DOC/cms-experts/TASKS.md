@@ -16,7 +16,7 @@
 ### Security
 
 - [x] alle Admin- und Member-Save-Handler identifizieren
-- [ ] Meta-Whitelist und Sanitizing pro Feldtyp prüfen
+- [ ] Meta-Whitelist und Sanitizing pro Feldtyp finalisieren, insbesondere für Enum-/Meta-Reste wie `partner_status`
 - [x] Ownership-Schutz für Member-Profilbearbeitung gegen fremde IDs verifizieren
 - [ ] JSON-/Repeater-Felder strukturell validieren
 - [x] Social-, Website- und Feed-URLs validieren und sicher ausgeben
@@ -32,7 +32,7 @@
 ### Best Practices
 
 - [x] Versionsabweichung zwischen Plugin-Header, Konstante, Klassenwerten und `update.json` bereinigen
-- [ ] Status-, Availability- und Partner-Status-Werte konsequent whitelisten
+- [ ] Availability- und Partner-Status-Konsistenz zwischen Formular, Save-Whitelist und Frontend-Badges bereinigen
 - [ ] Cross-Plugin-Referenzen defensiv mit Guard-Checks absichern
 - [x] Fehlerbehandlung ohne fatale Seiteneffekte vereinheitlichen
 - [x] Doku in `README.md`, `CHANGELOG.md` und `SECURITY.md` nach Fixes aktuell halten
@@ -63,6 +63,7 @@
 - [x] Ownership-Stand präzisiert: Member-Dashboard bietet derzeit nur Create + Liste; kein realer Member-Edit- oder Repeater-Update-Pfad vorhanden, zentrale `save_expert()`-Härtung bleibt als Vorsorge aktiv.
 - [x] Früher Plugin-Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals gehärtet: Komponenten werden nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) instanziiert.
 - [x] Tabellenaufbau beim Aktivieren vollständig entschärft: Auch Fehler bereits beim initialen Datenbankzugriff in `create_tables()` werden jetzt geloggt statt als Fatal an den Aktivierungs-Flow zurückzureichen.
+- [ ] Offener Restbefund: Das Admin-Formular bietet bei `availability` noch `unavailable`, Save- und Frontend-Pfade arbeiten aber bereits mit `booked`; zusätzlich sollte `partner_status` als Meta-Enum explizit gewhitelistet werden.
 - [x] Heutige Audit-/Doku-Änderungen auf plugin-eigene Release-Versionen umgestellt: Doku-Release `2.0.1`, technisches Audit-/Stabilitäts-Release `2.1.0`.
 
 ---

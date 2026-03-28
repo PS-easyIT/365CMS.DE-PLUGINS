@@ -1,0 +1,57 @@
+﻿NR;VORNAME;NACHNAME;FIRMA;TOP IN WAS;AWARD-TYP;KATEGORIE;ZERTIFIKATE;WEBSITE;TYPISCHE EVENTS
+1;Alexander;Eggers;alexander-eggers.de;Microsoft Teams / M365 Copilot;Microsoft MVP;M365 Apps & Services, M365 Copilot;MCT;https://www.alexander-eggers.de/;M365 Summit, CollabSummit, Community Days
+2;Patrick;Kelbach;;Microsoft Technologies / Cloud;Microsoft MVP;M365 / Azure;;;M365 Summit, Pottconf, Community Days
+3;Eric;Berg;Mountain IT;Azure / Cloud Governance / Hybrid Infrastructure;Microsoft MVP;Azure, Cloud & Datacenter Management;MCT;https://ericberg.de/;CDC Germany, Experts Live, Azure Saturday, Ignite
+4;Carsten;Rachfahl;Rachfahl IT-Solutions;Hyper-V / Azure Stack HCI / Windows Server;Microsoft MVP;Cloud & Datacenter Management;;https://www.yourwebhoster.eu/;CDC Germany, Experts Live
+5;Thorsten;Butz;IT-Trainer;M365 / Azure / Collaboration / Modern Work;Microsoft MVP;M365 Apps & Services;;;Pottconf, Community Days
+6;Thomas;Maurer;;Azure / Hybrid Cloud;Microsoft MVP;Azure;;;CDC Germany, Ignite, Experts Live
+7;Marcel;Zehner;SoftwareONE;Azure / Cloud Strategy / Security / DevOps;Microsoft MVP;Azure;Microsoft Regional Director;https://marcelzehner.ch/;CDC Germany, Experts Live Europe, Experts Live Switzerland
+8;Didier;Van Hoye;;Windows Server / Hybrid Cloud;Microsoft MVP;Cloud & Datacenter Management;;;CDC Germany, Experts Live
+9;Frank;Carius;Net at Work GmbH;Exchange / Teams / M365 / Unified Communications;Microsoft MVP;M365 Apps & Services;MCM (Microsoft Certified Master);https://www.msxfaq.de/;M365 Summit, Exchange Summit, Commsverse
+10;Ingo;Gegenwarth;SAP;Exchange / PowerShell / Email Security;Microsoft MVP;M365 Apps & Services;MCM, MCSM;;Exchange Summit, Experts Live Germany
+11;Michael;Greth;Freelance Consultant;SharePoint / Microsoft Copilot / M365 / Video;Microsoft MVP;M365 Copilot & Clipchamp;;https://www.yourcopilot.de/;ESPC, CollabSummit, M365 Summit
+12;Fabian;Bader;glueckkanja-gab AG;Azure Security / Identity / PowerShell;Microsoft MVP;Azure;;https://cloudbrothers.info/;Troopers, CollabSummit, PowerShell Usergroups
+13;Gregor;Reimling;adesso SE;Azure / Cloud Security / Governance / Migration;Microsoft MVP;Azure, Security;MCT;https://reimling.eu/;CDC Germany, Azure Saturday, CollabSummit
+14;Jan-Henrik;Damaschke;Visorian GmbH;Azure / Cloud-Native / Security / DevOps;Microsoft MVP;Azure;;;Community Days, Azure Meetups
+15;Tom;Janetscheck;Microsoft;Azure Security / Cloud Infrastructure;Microsoft MVP (ehem.);Azure;;https://blog.azureandbeyond.com/;Azure Saturday, CDC Germany, KuppingerCole
+16;Ragnar;Heil;;M365 / Copilot / Governance / SharePoint;Microsoft MVP;M365 Apps & Services;;https://ragnarheil.de/;M365 Summit, ESPC, CollabSummit
+17;Nicki;Borell;Xperts at Work;SharePoint / M365 / GDPR / Azure;Microsoft MVP;M365 Apps & Services;Microsoft Regional Director;https://www.nickiborell.com/;ESPC, European Cloud Summit, CollabSummit
+18;Nico;Thiemer;nova laboro UG;SharePoint / M365 / Dynamics / Azure / Intune;Microsoft MVP;M365 Apps & Services;;https://nicothiemer.de/;M365 Summit, Community Days
+19;Thomas;Joos;Freelance Autor;Netzwerk / Security / AI / Windows Server;Microsoft MVP;Windows Server & Management;;https://thomas-joos.com/;IT-Tage, secIT, Fachzeitschriften (c't, iX)
+20;Nikki;Chapple;;M365 / Governance / Compliance;Microsoft MVP;M365 Apps & Services;;;CollabSummit, ESPC
+21;Sara;Fennah;;M365 / Governance / Copilot Preparation;Microsoft MVP;M365 Apps & Services;;;CollabSummit, ESPC, Copilot Conf
+22;Mark;Rackley;;M365 / Copilot;Microsoft MVP;M365 Apps & Services;;;CollabSummit
+23;Andrew;Connell;;M365 / Copilot / Development;Microsoft MVP;M365 Apps & Services;;;CollabSummit, Microsoft Ignite
+24;Dona;Sarkar;Microsoft;Microsoft Copilot / Product;Microsoft;M365 Copilot;;;Copilot Community Conf
+25;Kevin;McDonnell;;Microsoft Technologies;Microsoft MVP;M365;;;Copilot Community Conf
+26;Zoe;Wilson;;Microsoft Technologies;Microsoft MVP;M365;;;Copilot Community Conf
+27;Raphael;Köllner;;Microsoft Technologies;Microsoft MVP;M365 / Azure;;;Copilot Community Conf, Community Days
+28;Vesa;Nopanen;;Microsoft Technologies;Microsoft MVP;M365;;;Copilot Community Conf
+29;Pieter;Op de Beéck;;Microsoft Technologies;Microsoft MVP;M365;;;Copilot Community Conf
+30;Kathrin;Borchert;;Power BI / Microsoft Fabric / Administration;Microsoft MVP;Power BI & Fabric;;;ColorCloud, Community Days
+31;Keith;Atherton;;Power Platform Architecture;Microsoft MVP;Business Applications;;;ColorCloud, Community Days
+32;Scott;Durow;Microsoft;Power Platform / Vibe Engineering;Microsoft;Power Platform;;;ColorCloud
+33;Marthe;Moengen;;Microsoft Fabric / Power BI;Microsoft MVP;Data Platform;;;ColorCloud
+34;Emilie;Rønning;;Microsoft Fabric / Data Transformation;Microsoft MVP;Data Platform;;;ColorCloud
+35;Fabio;Bonolo;;Microsoft 365 / SharePoint;Microsoft MVP;M365 Apps & Services;;;M365 Summit Mainz
+36;Christoph;Twiehaus;;Microsoft 365;Microsoft MVP;M365 Apps & Services;;;M365 Summit Mainz
+37;Stephan;Bisser;SOLVION;Conversational AI / Bot Framework / Cognitive Services;Microsoft MVP;Artificial Intelligence;;https://bisser.io/;ESPC, CollabSummit
+38;Daniel;Laskewitz;Microsoft;Power Platform / MCP / Copilot Studio;Microsoft;Power Platform;;;ColorCloud
+39;Luise;Freese;;M365 / AI Apps / Compliance;Microsoft MVP;M365 Apps & Services;;;ColorCloud, CollabSummit
+40;Benedikt;Bergmann;CRM Konsulterna;Dynamics 365 / Power Platform;Microsoft MVP;Business Applications;;;ESPC, Community Days
+41;Sebastian;Sieber;;AI Agents / Copilot Studio;Microsoft MVP;Business Applications;;;ColorCloud
+42;Patrick;Gruenauer;IT-Trainer;PowerShell / M365 / Automation / Cybersecurity;Microsoft MVP;PowerShell, M365;MCSE, CCAI;https://sid-500.com/;Experts Live Austria
+43;Patrick;Köhler;;Azure / Azure Virtual Desktop;Microsoft MVP;Azure;;;Community Days
+44;Martina;Grom;atwork;M365 / Cloud Services / AI Community;Microsoft MVP;M365 Apps & Services;Microsoft Regional Director;https://blog.atwork.at/;ESPC, CollabSummit, Experts Live Austria
+45;Raphael;Manke;;Serverless / DevTools / AWS;AWS Hero;DevTools;;;AWS Community Day DACH, AWS Summit
+46;Nora;Schöner;;Cloud Architecture / DevOps / AWS;AWS Hero;DevTools;;;AWS Community Day DACH, AWS User Group Nuremberg
+47;Adam;Bien;adam-bien.com;Java / Cloud Native / Jakarta EE;Java Champion;Java;;https://adam-bien.com/;JavaLand, OOP, JAX, JavaOne
+48;Venkat;Subramaniam;Agile Developer Inc.;Java / Agile Development / Functional Programming;Java Champion;Java;;https://agiledeveloper.com/;JavaLand, JAX, Devoxx
+49;Heinz;Kabutz;JavaSpecialists.eu;Java Performance / Concurrency;Java Champion;Java;;https://www.javaspecialists.eu/;JavaLand, JAX
+50;Markus;Eisele;Red Hat;Java / Enterprise Architecture / Cloud;Java Champion;Java;;;JavaLand, JAX, Devoxx
+51;Sven;Ruppert;;Java / Core Java / Mutation Testing;Java Champion;Java;;;JavaLand, JAX
+52;Simon;Ritter;Azul Systems;Java / JVM / OpenJDK;Java Champion;Java;;;JavaLand, JAX, Devoxx
+53;Marc;Huppert;;VMware / Virtualisierung / VCDX;VMware vExpert;VCDX #181;;https://vcdx181.com/;VMworld, VMware Explore
+54;Sascha;Ernst;EPAM;Flutter / Dart / Firebase / AI;Google Developer Expert;Flutter, AI, Firebase;;;Flutter Berlin, GDG Events
+55;Tommy;Grosche;Fortinet;Network Security / Cisco;Cisco Champion;Security;;https://www.fortinet.com/;INNO IT Kiel
+56;Nico;Meisenzahl;;Kubernetes / Cloud Native / GitOps;CNCF Ambassador;Cloud Native;;;Container Days, KubeCon

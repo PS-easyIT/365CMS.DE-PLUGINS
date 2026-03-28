@@ -1,0 +1,16 @@
+{
+  "slug": "cms-netimport",
+  "name": "CMS NetImport",
+  "type": "plugin",
+  "license": "free",
+  "version": "1.1.0",
+  "min_cms_version": "0.20.0",
+  "min_php": "8.1",
+  "released": "2026-03-28",
+  "download_url": "",
+  "checksum_sha256": "",
+  "changelog": {
+    "1.1.0": "Admin-Ownership, automatische Event-Speaker/Expert-Anlage, Dry-Run, Update-Erkennung, CSV-Validierung und Performance-Härtungen ergänzt.",
+    "1.0.0": "Erstveröffentlichung: vorbereiteter CSV-Importer für Companies, Experts, Speakers und Events inklusive Cross-Plugin-Verknüpfungen."
+  }
+}

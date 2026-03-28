@@ -25,6 +25,7 @@
 | [cms-jobprofile-generator](cms-jobprofile-generator/) | 0.9.6 | 🧪 Beta | Stellenanzeigen-Generator mit Workflow-Genehmigung |
 | [cms-organigramm](cms-organigramm/) | 0.1.0 | 🚧 In Entwicklung | Interaktives Organigramm mit Cross-Plugin-Integration |
 | [cms-speakers](cms-speakers/) | 1.0.0 | ✅ Stabil | Speaker-Profile mit Topics & Präsentations-Historie |
+| [cms-netimport](cms-netimport/) | 1.0.0 | 🚀 Neu | CSV-Netzwerkimport für Companies, Experts, Speakers und Events |
 
 ---
 
