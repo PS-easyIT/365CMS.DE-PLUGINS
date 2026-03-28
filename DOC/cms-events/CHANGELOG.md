@@ -1,5 +1,13 @@
 # CMS Events – Changelog
 
+## [2.8.0-docs] – 2026-03-28
+
+### Geändert
+
+- **Dokumentation:** README, Aufgabenplanung und Sicherheitsdokumentation auf den Audit-Zielstand für **365CMS V2.8.0** erweitert.
+- **Audit-Vorbereitung:** Ein zentraler Abarbeitungsplan für `cms-events`, `cms-experts`, `cms-companies` und `cms-speakers` wurde unter `DOC/365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md` angelegt.
+- **Sicherheitsdokumentation:** Neues `SECURITY.md` ergänzt, mit Fokus auf Rechteprüfung, CSRF-Schutz, URL-/Eingabevalidierung, IDOR-Schutz und sichere Event-/Speaker-Verknüpfung.
+
 ## [1.0.1] – 2026-03-18
 
 ### Geändert

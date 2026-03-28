@@ -1,9 +1,10 @@
 # CMS Events – Dokumentation
 
 **Plugin:** `cms-events`  
-**Version:** 1.0.0  
+**Version:** 1.0.1  
 **Namespace:** `CMS_Events`  
-**Mindest-CMS-Version:** 365CMS 2.0+  
+**Aktueller Laufzeitstand:** 365CMS 2.0+  
+**Audit-/Dokustand:** Vorbereitung auf 365CMS V2.8.0 ohne Core-Änderungen  
 **PHP:** 8.1+
 
 ---
@@ -11,6 +12,13 @@
 ## Übersicht
 
 Das **CMS Events**-Plugin verwaltet Veranstaltungen – von Webinaren bis zu Konferenzen. Es unterstützt physische, Online- und hybride Events und bietet vollständige Speaker-Integration.
+
+## V2.8.0-Status
+
+- Die Dokumentation ist auf den **Audit- und Zielstand für 365CMS V2.8.0** angehoben.
+- Geplante Anpassungen betreffen ausschließlich das Plugin, **nicht den 365CMS-Core**.
+- Der Fokus der anstehenden Arbeiten liegt auf **Security**, **Speed** und **Best Practices**.
+- Der zentrale Abarbeitungsplan liegt in [`../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md`](../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md).
 
 ### Kernfunktionen
 
@@ -58,6 +66,7 @@ cms-events/
 
 | Dokument | Inhalt |
 |----------|--------|
+| [../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md](../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md) | Zentraler Audit- und Umsetzungsplan für die vier V2.8.0-Zielplugins |
 | [DATABASE.md](DATABASE.md) | Tabellen, Schemas, Indizes |
 | [HOOKS.md](HOOKS.md) | Actions & Filter |
 | [API.md](API.md) | Klassen- und Methoden-Referenz |

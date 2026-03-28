@@ -3,7 +3,8 @@
 **Plugin:** `cms-experts`  
 **Version:** 2.0.0  
 **Namespace:** `CMS_Experts`  
-**Mindest-CMS-Version:** 365CMS 2.0+  
+**Aktueller Laufzeitstand:** 365CMS 2.0+  
+**Audit-/Dokustand:** Vorbereitung auf 365CMS V2.8.0 ohne Core-Änderungen  
 **PHP:** 8.1+
 
 ---
@@ -11,6 +12,13 @@
 ## Übersicht
 
 Das **CMS Experts**-Plugin ist das zentrale Verzeichnis für IT-Experten-Profile im 365network-Ökosystem. Es entspricht funktional dem WordPress-Plugin `it-expert-cards` und bietet weit über 100 Profilfelder.
+
+## V2.8.0-Status
+
+- Die Dokumentation ist auf den **Audit- und Zielstand für 365CMS V2.8.0** angehoben.
+- Änderungen erfolgen ausschließlich im Plugin; **der 365CMS-Core bleibt unberührt**.
+- Der Schwerpunkt des laufenden Durchgangs liegt auf **Security**, **Speed**, **Best Practices** und der Bereinigung von Versionsabweichungen.
+- Der zentrale Abarbeitungsplan liegt in [`../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md`](../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md).
 
 ### Kernfunktionen
 

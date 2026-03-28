@@ -1,5 +1,13 @@
 # CMS Experts – Changelog
 
+## [2.8.0-docs] – 2026-03-28
+
+### Geändert
+
+- **Dokumentation:** README, Aufgabenplanung und Sicherheitsdokumentation auf den Zielstand für **365CMS V2.8.0** erweitert.
+- **Audit-Fokus:** Security-, Speed- und Best-Practice-Prüfschritte für `cms-experts` konkretisiert, einschließlich Ownership-Prüfung, Meta-Sanitizing und Versionskonsolidierung.
+- **Planung:** Verweis auf den zentralen Abarbeitungsplan `DOC/365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md` ergänzt.
+
 ## [2.0.0] – 2026-02-24
 
 ### Hinzugefügt

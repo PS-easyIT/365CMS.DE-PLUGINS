@@ -5,6 +5,48 @@
 
 ---
 
+## V2.8.0 – Audit- und Maßnahmenplan
+
+### Ziel des Durchgangs
+
+- [ ] Plugin vollständig auf **365CMS V2.8.0-Zielstand** dokumentarisch und technisch prüfen
+- [ ] **Keine Core-Änderungen** vornehmen
+- [ ] Security-, Speed- und Best-Practice-Befunde priorisieren und direkt im Plugin beheben
+
+### Security
+
+- [ ] Alle Admin- und Member-POST-Flows identifizieren
+- [ ] CSRF-Absicherung für Event-Save, Statuswechsel, Speaker-Zuordnung, Kategorien und Tag-Presets verifizieren
+- [ ] Rechteprüfung zwischen Admin und Member sauber trennen
+- [ ] Ownership-Schutz für Member-Events gegen fremde IDs prüfen
+- [ ] URL-Felder (`registration_url`, `online_url`, `organizer_website`, Medienlinks) validieren und beim Rendern sicher escapen
+- [ ] Status-, Typ- und Filterwerte (`status`, `price_type`, `speaker_type`) auf Whitelist-Prüfung prüfen
+- [ ] Kalender- und Query-Links gegen manipulierte Parameter absichern
+
+### Speed
+
+- [ ] Listenabfragen in Archiv, Admin und Member auf sinnvolle Limits/Pagination prüfen
+- [ ] Speaker-Lookups und Event-Relations auf N+1-Muster prüfen
+- [ ] Wiederholte Initialisierungsarbeit in Bootstrap-/Init-Pfaden prüfen
+- [ ] Asset-Ausgabe nur dort ausliefern, wo sie wirklich benötigt wird
+- [ ] wiederholte `filemtime()`-/Asset-Operationen auf unnötige Aufrufe prüfen
+
+### Best Practices
+
+- [ ] Versionsangaben zwischen Plugin-Header, Konstante, README und `update.json` konsistent halten
+- [ ] Redirects, Fehlerpfade und Fallbacks defensiv prüfen
+- [ ] Datums-, Zahlen- und JSON-Felder vor Persistenz normalisieren
+- [ ] Cross-Plugin-Abhängigkeiten nur mit Guard-Checks verwenden
+- [ ] Doku in `README.md`, `CHANGELOG.md` und `SECURITY.md` nach jedem relevanten Fix nachziehen
+
+### Abschlusskriterien
+
+- [ ] keine offenen kritischen Security-Befunde im Plugin
+- [ ] keine offensichtlichen ungebremsten Listen-/Query-Pfade
+- [ ] alle geänderten Punkte im Changelog und in der Sicherheitsdoku nachvollziehbar dokumentiert
+
+---
+
 ## 🔴 Hohe Priorität
 
 ### 1. Teilnehmer-Management

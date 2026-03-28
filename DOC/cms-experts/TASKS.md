@@ -5,6 +5,46 @@
 
 ---
 
+## V2.8.0 – Audit- und Maßnahmenplan
+
+### Ziel des Durchgangs
+
+- [ ] Plugin vollständig auf **365CMS V2.8.0-Zielstand** dokumentarisch und technisch prüfen
+- [ ] **Keine Core-Änderungen** vornehmen
+- [ ] erkannte Security-, Speed- und Best-Practice-Probleme direkt im Plugin beheben
+
+### Security
+
+- [ ] alle Admin- und Member-Save-Handler identifizieren
+- [ ] Meta-Whitelist und Sanitizing pro Feldtyp prüfen
+- [ ] Ownership-Schutz für Member-Profilbearbeitung gegen fremde IDs verifizieren
+- [ ] JSON-/Repeater-Felder strukturell validieren
+- [ ] Social-, Website- und Feed-URLs validieren und sicher ausgeben
+- [ ] Rich-Text-/Biografie-Ausgabe auf kontrolliertes HTML und korrektes Escaping prüfen
+
+### Speed
+
+- [ ] Expertenlisten, Detailseiten und Member-Ansichten auf N+1-Abfragen prüfen
+- [ ] Meta-, Skills- und Specialization-Lookups auf Bündelungspotenzial prüfen
+- [ ] wiederholte Initialisierungs- und Migrationspfade auf unnötige Laufzeitkosten prüfen
+- [ ] Template-Ausgabe und Asset-Ladung nur in benötigten Kontexten sicherstellen
+
+### Best Practices
+
+- [ ] Versionsabweichung zwischen Plugin-Header, Konstante, Klassenwerten und `update.json` bereinigen
+- [ ] Status-, Availability- und Partner-Status-Werte konsequent whitelisten
+- [ ] Cross-Plugin-Referenzen defensiv mit Guard-Checks absichern
+- [ ] Fehlerbehandlung ohne fatale Seiteneffekte vereinheitlichen
+- [ ] Doku in `README.md`, `CHANGELOG.md` und `SECURITY.md` nach Fixes aktuell halten
+
+### Abschlusskriterien
+
+- [ ] keine offenen kritischen Ownership-/Input-Validierungsprobleme
+- [ ] keine offensichtlichen Performance-Bremsen in Listen und Detail-Lookups
+- [ ] Versions- und Dokumentationsstand konsistent nachvollziehbar
+
+---
+
 ## 🔴 Hohe Priorität
 
 ### 1. Versions-Diskrepanz beheben
