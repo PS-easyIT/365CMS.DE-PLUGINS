@@ -15,6 +15,7 @@ if (!defined('ABSPATH')) {
 final class CMS_Speakers_Database
 {
     private static ?self $instance = null;
+    private const MAX_LIST_LIMIT = 200;
 
     public static function instance(): self
     {
@@ -25,6 +26,34 @@ final class CMS_Speakers_Database
     }
 
     private function __construct() {}
+
+    private function normalizeLimit(mixed $limit, int $default = 12): int
+    {
+        $limit = (int) $limit;
+        if ($limit <= 0) {
+            return $default;
+        }
+
+        return min($limit, self::MAX_LIST_LIMIT);
+    }
+
+    private function normalizeOffset(mixed $offset): int
+    {
+        return max(0, (int) $offset);
+    }
+
+    private function normalizeOrder(mixed $order): string
+    {
+        $allowed = [
+            's.created_at DESC',
+            's.created_at ASC',
+            's.last_name ASC, s.first_name ASC',
+            's.last_name DESC, s.first_name DESC',
+        ];
+
+        $order = is_string($order) ? trim($order) : '';
+        return in_array($order, $allowed, true) ? $order : 's.created_at DESC';
+    }
 
     // ═══════════════════════════════════════════════════════
     // TABELLEN ANLEGEN
@@ -69,12 +98,14 @@ final class CMS_Speakers_Database
                 target_audience     VARCHAR(400)     DEFAULT NULL,
                 speaking_style      VARCHAR(200)     DEFAULT NULL,
                 awards              TEXT             DEFAULT NULL,
+                recognitions        TEXT             DEFAULT NULL COMMENT 'JSON-Array vordefinierter Auszeichnungen',
+                skills              TEXT             DEFAULT NULL COMMENT 'JSON-Array Speaker-Skills',
                 travel_radius       ENUM('local','regional','national','international','worldwide') DEFAULT 'national',
                 max_audience_size   INT UNSIGNED     DEFAULT NULL,
                 speaking_fee_min    DECIMAL(10,2)    DEFAULT NULL,
                 speaking_fee_max    DECIMAL(10,2)    DEFAULT NULL,
                 availability        ENUM('available','limited','booked') DEFAULT 'available',
-                status              ENUM('active','inactive','draft') DEFAULT 'active',
+                status              ENUM('active','inactive','draft','pending','deleted') DEFAULT 'active',
                 is_featured         TINYINT(1)       DEFAULT 0,
                 is_verified         TINYINT(1)       DEFAULT 0,
                 profile_views       INT UNSIGNED     DEFAULT 0,
@@ -223,6 +254,10 @@ final class CMS_Speakers_Database
                 } catch (\Throwable $e) {}
             }
         }
+
+        try {
+            $pdo->exec("ALTER TABLE `{$p}speakers` MODIFY COLUMN `status` ENUM('active','inactive','draft','pending','deleted') DEFAULT 'active'");
+        } catch (\Throwable $e) {}
     }
 
     // ═══════════════════════════════════════════════════════
@@ -298,15 +333,16 @@ final class CMS_Speakers_Database
             }
 
             $whereStr = implode(' AND ', $where);
-            $limit    = (int)$args['limit'];
-            $offset   = (int)$args['offset'];
+            $limit    = $this->normalizeLimit($args['limit'] ?? 12, 12);
+            $offset   = $this->normalizeOffset($args['offset'] ?? 0);
+            $orderBy  = $this->normalizeOrder($args['order'] ?? 's.created_at DESC');
 
             $stmt = $db->prepare(
                 "SELECT s.*, c.name AS company_linked_name
                  FROM {$p}speakers s
                  LEFT JOIN {$p}companies c ON s.company_id = c.id
                  WHERE {$whereStr}
-                 ORDER BY {$args['order']}
+                 ORDER BY {$orderBy}
                  LIMIT {$limit} OFFSET {$offset}"
             );
             $stmt->execute($params);

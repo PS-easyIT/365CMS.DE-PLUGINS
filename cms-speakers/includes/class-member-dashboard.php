@@ -103,11 +103,11 @@ class CMS_Speakers_Member_Dashboard
         $isAdmin = \CMS\Auth::instance()->isAdmin();
         try {
             if ($isAdmin) {
-                $count = (int) CMS_Speakers_Database::instance()->count_speakers(['status' => 'active']);
+                $count = (int) CMS_Speakers_Database::instance()->count_speakers(['status' => null]);
                 return ['count' => $count, 'label' => 'Speaker gesamt'];
             } else {
                 $userId = (int) ($user->id ?? 0);
-                $count  = (int) CMS_Speakers_Database::instance()->count_speakers(['status' => 'active', 'user_id' => $userId]);
+                $count  = (int) CMS_Speakers_Database::instance()->count_speakers(['status' => null, 'user_id' => $userId]);
                 return ['count' => $count, 'label' => 'Meine Speaker'];
             }
         } catch (\Throwable $e) {
@@ -210,10 +210,10 @@ class CMS_Speakers_Member_Dashboard
                 $settings = $db->get_settings();
 
                 if ($isAdmin) {
-                    $queryArgs = ['status' => 'active', 'limit' => 60];
+                    $queryArgs = ['status' => null, 'limit' => 60];
                 } else {
                     // Eigene Einträge aller Status zeigen (inkl. pending)
-                    $queryArgs = ['user_id' => (int) ($user->id ?? 0), 'limit' => 60];
+                    $queryArgs = ['status' => null, 'user_id' => (int) ($user->id ?? 0), 'limit' => 60];
                 }
                 $speakers = $db->get_speakers($queryArgs) ?? [];
 

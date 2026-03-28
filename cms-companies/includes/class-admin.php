@@ -66,7 +66,8 @@ final class CMS_Companies_Admin
 
         // Admin-CSS laden
         $adminCss = CMS_COMPANIES_PLUGIN_DIR . 'assets/css/companies-admin.css';
-        echo '<link rel="stylesheet" href="' . CMS_COMPANIES_PLUGIN_URL . 'assets/css/companies-admin.css?v=' . filemtime($adminCss) . '">' . "\n";
+        $adminCssVersion = file_exists($adminCss) ? (string) filemtime($adminCss) : '1';
+        echo '<link rel="stylesheet" href="' . CMS_COMPANIES_PLUGIN_URL . 'assets/css/companies-admin.css?v=' . $adminCssVersion . '">' . "\n";
 
         $companies  = $data['companies']  ?? [];
         $tab        = $data['tab']        ?? 'overview';
@@ -741,7 +742,8 @@ final class CMS_Companies_Admin
 
         // Admin-CSS laden
         $adminCss = CMS_COMPANIES_PLUGIN_DIR . 'assets/css/companies-admin.css';
-        echo '<link rel="stylesheet" href="' . CMS_COMPANIES_PLUGIN_URL . 'assets/css/companies-admin.css?v=' . filemtime($adminCss) . '">' . "\n";
+        $adminCssVersion = file_exists($adminCss) ? (string) filemtime($adminCss) : '1';
+        echo '<link rel="stylesheet" href="' . CMS_COMPANIES_PLUGIN_URL . 'assets/css/companies-admin.css?v=' . $adminCssVersion . '">' . "\n";
         ?>
         <div class="admin-page-header">
             <div>

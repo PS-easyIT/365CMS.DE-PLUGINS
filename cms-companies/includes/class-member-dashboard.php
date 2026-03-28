@@ -89,11 +89,11 @@ class CMS_Companies_Member_Dashboard
         $isAdmin = \CMS\Auth::instance()->isAdmin();
         try {
             if ($isAdmin) {
-                $count = CMS_Companies_Database::instance()->get_companies_count(['status' => 'active']);
+                $count = CMS_Companies_Database::instance()->get_companies_count(['status' => 'any']);
                 return ['count' => $count, 'label' => 'Unternehmen gesamt'];
             } else {
                 $userId = (int) ($user->id ?? 0);
-                $count  = CMS_Companies_Database::instance()->get_companies_count(['status' => 'active', 'user_id' => $userId]);
+                $count  = CMS_Companies_Database::instance()->get_companies_count(['status' => 'any', 'user_id' => $userId]);
                 return ['count' => $count, 'label' => 'Meine Unternehmen'];
             }
         } catch (\Throwable $e) {
@@ -171,9 +171,9 @@ class CMS_Companies_Member_Dashboard
                 $settings = $db->get_settings();
 
                 if ($isAdmin) {
-                    $queryArgs = ['status' => 'active', 'limit' => 60];
+                    $queryArgs = ['status' => 'any', 'limit' => 60];
                 } else {
-                    $queryArgs = ['user_id' => (int) ($user->id ?? 0), 'limit' => 60];
+                    $queryArgs = ['status' => 'any', 'user_id' => (int) ($user->id ?? 0), 'limit' => 60];
                 }
                 $companies = $db->get_companies($queryArgs) ?? [];
             } catch (\Throwable $e) {

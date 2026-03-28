@@ -226,15 +226,31 @@ final class CMS_Speakers_Post_Type
             CMS\Router::instance()->redirect('/admin/speakers?error=csrf'); return;
         }
         $id      = (int)($_POST['speaker_id'] ?? 0);
-        $formats = is_array($_POST['formats'] ?? null) ? array_map('trim', $_POST['formats']) : [];
-        $langs   = array_filter(array_map('trim', explode(',', $_POST['languages'] ?? '')));
+        $allowed_genders = ['', 'm', 'f', 'd'];
+        $allowed_travel_radius = ['local', 'regional', 'national', 'international', 'worldwide'];
+        $allowed_availability = ['available', 'limited', 'booked'];
+        $allowed_statuses = ['active', 'inactive', 'draft', 'pending'];
+        $formats = is_array($_POST['formats'] ?? null)
+            ? array_values(array_filter(array_map(static fn($value) => trim((string) $value), $_POST['formats'])))
+            : [];
+        $langs   = array_values(array_filter(array_map('trim', explode(',', $_POST['languages'] ?? ''))));
+        $gender = in_array(trim((string)($_POST['gender'] ?? '')), $allowed_genders, true) ? trim((string)($_POST['gender'] ?? '')) : '';
+        $travel_radius = in_array(trim((string)($_POST['travel_radius'] ?? 'national')), $allowed_travel_radius, true)
+            ? trim((string)($_POST['travel_radius'] ?? 'national'))
+            : 'national';
+        $availability = in_array(trim((string)($_POST['availability'] ?? 'available')), $allowed_availability, true)
+            ? trim((string)($_POST['availability'] ?? 'available'))
+            : 'available';
+        $status = in_array(trim((string)($_POST['status'] ?? 'active')), $allowed_statuses, true)
+            ? trim((string)($_POST['status'] ?? 'active'))
+            : 'active';
 
         // Feldnamen auf DB-Spaltennamen mappen
         $data = [
             'first_name'        => trim($_POST['first_name']      ?? ''),
             'last_name'         => trim($_POST['last_name']       ?? ''),
             'title'             => trim($_POST['academic_title']  ?? ''),  // DB-Spalte: title
-            'gender'            => trim($_POST['gender']          ?? ''),
+            'gender'            => $gender,
             'position'          => trim($_POST['position']        ?? ''),
             'company'           => trim($_POST['company']         ?? ''),
             'company_id'        => (int)($_POST['company_id']     ?? 0) ?: null,
@@ -242,9 +258,9 @@ final class CMS_Speakers_Post_Type
             'phone'             => trim($_POST['phone']           ?? ''),
             'website'           => filter_var(trim($_POST['website']   ?? ''), FILTER_VALIDATE_URL) ?: '',
             'linkedin'          => filter_var(trim($_POST['linkedin']  ?? ''), FILTER_VALIDATE_URL) ?: '',
-            'twitter'           => trim($_POST['twitter']         ?? ''),
+            'twitter'           => trim(strip_tags($_POST['twitter'] ?? '')),
             'xing'              => filter_var(trim($_POST['xing']      ?? ''), FILTER_VALIDATE_URL) ?: '',
-            'instagram'         => trim($_POST['instagram']       ?? ''),
+            'instagram'         => trim(strip_tags($_POST['instagram'] ?? '')),
             'youtube'           => filter_var(trim($_POST['youtube']   ?? ''), FILTER_VALIDATE_URL) ?: '',
             'location_city'     => trim($_POST['location_city']    ?? ''),
             'location_zip'      => trim($_POST['location_zip']     ?? ''),
@@ -261,19 +277,23 @@ final class CMS_Speakers_Post_Type
             'target_audience'   => trim($_POST['target_audience']  ?? ''),
             'speaking_style'    => trim($_POST['speaking_style']   ?? ''),
             'awards'            => trim($_POST['awards']           ?? ''),
-            'travel_radius'     => trim($_POST['travel_radius']    ?? 'national'),
-            'availability'      => trim($_POST['availability']     ?? 'available'),
+            'travel_radius'     => $travel_radius,
+            'availability'      => $availability,
             'speaking_fee_min'  => (int)($_POST['speaking_fee_min'] ?? 0) ?: null,
             'speaking_fee_max'  => (int)($_POST['speaking_fee_max'] ?? 0) ?: null,
             'max_audience_size' => (int)($_POST['max_audience_size'] ?? 0) ?: null,
-            'status'            => trim($_POST['status']           ?? 'active'),
+            'status'            => $status,
             'is_featured'       => isset($_POST['is_featured']) ? 1 : 0,
             'is_verified'       => isset($_POST['is_verified'])  ? 1 : 0,
             'recognitions'      => json_encode(
-                is_array($_POST['recognitions'] ?? null) ? array_map('trim', $_POST['recognitions']) : []
+                is_array($_POST['recognitions'] ?? null)
+                    ? array_values(array_filter(array_map(static fn($value) => trim((string) $value), $_POST['recognitions'])))
+                    : []
             ),
             'skills'            => json_encode(
-                is_array($_POST['skills'] ?? null) ? array_map('trim', $_POST['skills']) : []
+                is_array($_POST['skills'] ?? null)
+                    ? array_values(array_filter(array_map(static fn($value) => trim((string) $value), $_POST['skills'])))
+                    : []
             ),
         ];
         $db       = CMS_Speakers_Database::instance();

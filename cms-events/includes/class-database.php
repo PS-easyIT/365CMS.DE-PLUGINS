@@ -233,8 +233,10 @@ final class CMS_Events_Database
 
         $where_clause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
         $order = 'ORDER BY event_date ASC, event_time ASC';
-        $limit = isset($args['limit']) ? 'LIMIT ' . (int)$args['limit'] : '';
-        $offset = isset($args['offset']) ? 'OFFSET ' . (int)$args['offset'] : '';
+        $limitValue = isset($args['limit']) ? max(1, min(200, (int) $args['limit'])) : null;
+        $offsetValue = isset($args['offset']) ? max(0, (int) $args['offset']) : null;
+        $limit = $limitValue !== null ? 'LIMIT ' . $limitValue : '';
+        $offset = ($limitValue !== null && $offsetValue !== null) ? 'OFFSET ' . $offsetValue : '';
 
         $sql = "SELECT * FROM {$db->prefix()}events {$where_clause} {$order} {$limit} {$offset}";
         $stmt = $db->prepare($sql);

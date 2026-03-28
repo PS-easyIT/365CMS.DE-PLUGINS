@@ -345,6 +345,11 @@ final class CMS_Events_Post_Type
         $desc_raw    = \CMS\Services\EditorService::getInstance()->sanitize($desc_raw);
         $description = preg_replace('/\s+style\s*=\s*(?:"[^"]*"|\x27[^\x27]*\x27)/i', '', $desc_raw) ?? $desc_raw;
 
+        $allowed_statuses = ['draft', 'published', 'cancelled', 'completed'];
+        $allowed_price_types = ['free', 'paid', 'donation'];
+        $status = in_array($_POST['status'] ?? '', $allowed_statuses, true) ? $_POST['status'] : 'published';
+        $price_type = in_array($_POST['price_type'] ?? '', $allowed_price_types, true) ? $_POST['price_type'] : 'free';
+
         $data = [
             'title'             => trim($_POST['title'] ?? ''),
             'excerpt'           => trim($_POST['excerpt'] ?? ''),
@@ -359,22 +364,24 @@ final class CMS_Events_Post_Type
             'zip'               => trim($_POST['zip']       ?? ''),
             'country'           => trim($_POST['country']   ?? 'Deutschland'),
             'category'          => trim($_POST['category']  ?? ''),
-            'tags'              => isset($_POST['tags']) && is_array($_POST['tags']) ? $_POST['tags'] : [],
+            'tags'              => isset($_POST['tags']) && is_array($_POST['tags'])
+                                    ? array_values(array_filter(array_map(static fn($tag) => trim((string) $tag), $_POST['tags'])))
+                                    : [],
             'capacity'          => (int)($_POST['capacity'] ?? 0) ?: null,
-            'registration_url'  => trim($_POST['registration_url'] ?? ''),
-            'price_type'        => $_POST['price_type']     ?? 'free',
+            'registration_url'  => filter_var(trim($_POST['registration_url'] ?? ''), FILTER_VALIDATE_URL) ?: null,
+            'price_type'        => $price_type,
             'price'             => !empty($_POST['price']) ? (float)$_POST['price'] : null,
-            'price_currency'    => $_POST['price_currency']  ?? 'EUR',
-            'image_url'         => trim($_POST['image_url']  ?? ''),
-            'banner_url'        => trim($_POST['banner_url'] ?? ''),
+            'price_currency'    => strtoupper(substr(trim((string)($_POST['price_currency'] ?? 'EUR')), 0, 10)),
+            'image_url'         => filter_var(trim($_POST['image_url'] ?? ''), FILTER_VALIDATE_URL) ?: null,
+            'banner_url'        => filter_var(trim($_POST['banner_url'] ?? ''), FILTER_VALIDATE_URL) ?: null,
             'is_online'         => isset($_POST['is_online'])   ? 1 : 0,
-            'online_url'        => trim($_POST['online_url']    ?? ''),
+            'online_url'        => filter_var(trim($_POST['online_url'] ?? ''), FILTER_VALIDATE_URL) ?: null,
             'is_featured'       => isset($_POST['is_featured']) ? 1 : 0,
             'organizer_name'    => trim($_POST['organizer_name']    ?? ''),
-            'organizer_email'   => trim($_POST['organizer_email']   ?? ''),
+            'organizer_email'   => filter_var(trim($_POST['organizer_email'] ?? ''), FILTER_VALIDATE_EMAIL) ?: '',
             'organizer_phone'   => trim($_POST['organizer_phone']   ?? ''),
-            'organizer_website' => trim($_POST['organizer_website'] ?? ''),
-            'status'            => $_POST['status'] ?? 'published',
+            'organizer_website' => filter_var(trim($_POST['organizer_website'] ?? ''), FILTER_VALIDATE_URL) ?: null,
+            'status'            => $status,
         ];
 
         if (empty($data['title'])) {

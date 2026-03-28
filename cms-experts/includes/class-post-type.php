@@ -651,22 +651,23 @@ final class CMS_Experts_Post_Type
             'location_country' => $security->sanitize($_POST['location_country'] ?? '', 'text'),
             'hourly_rate'      => isset($_POST['hourly_rate']) && $_POST['hourly_rate'] !== '' ? (float)$_POST['hourly_rate'] : null,
             'daily_rate'       => isset($_POST['daily_rate']) && $_POST['daily_rate'] !== '' ? (float)$_POST['daily_rate'] : null,
-            'availability'     => $security->sanitize($_POST['availability'] ?? 'available', 'text'),
+            'availability'     => in_array($_POST['availability'] ?? '', ['available', 'limited', 'booked'], true)
+                                    ? $_POST['availability']
+                                    : 'available',
             'experience_years' => (int)($_POST['experience_years'] ?? 0),
             'photo_url'        => $security->sanitize($_POST['photo_url'] ?? '', 'url'),
             'status'           => in_array($_POST['status'] ?? '', ['active', 'inactive', 'pending'], true)
                                     ? $_POST['status'] : 'active',
         ];
 
-        $db_manager = CMS_Experts_Database::instance();
-        $expert_id  = $db_manager->save_expert($data);
+        $expert_id = CMS_Experts_Database::instance()->save_expert($data);
 
         if ($expert_id > 0) {
             // Skills speichern (komma-getrennte Tag-Werte)
             $parse_tags = static fn(string $raw): array =>
                 array_values(array_filter(array_map('trim', explode(',', $raw))));
 
-            $db_manager->save_expert_skills($expert_id, [
+            CMS_Experts_Database::instance()->save_expert_skills($expert_id, [
                 'general' => $parse_tags($_POST['skills_general'] ?? ''),
                 'tech'    => $parse_tags($_POST['skills_tech'] ?? ''),
                 'soft'    => $parse_tags($_POST['skills_soft'] ?? ''),
@@ -674,7 +675,7 @@ final class CMS_Experts_Post_Type
 
             // Fachrichtungen speichern
             $spec_ids = array_map('intval', (array)($_POST['spec_ids'] ?? []));
-            $db_manager->save_expert_specializations($expert_id, $spec_ids);
+            CMS_Experts_Database::instance()->save_expert_specializations($expert_id, $spec_ids);
 
             // Meta: alle erlaubten Felder speichern –––––––––––––––––––––––––––––
             // Text-Felder (single values)

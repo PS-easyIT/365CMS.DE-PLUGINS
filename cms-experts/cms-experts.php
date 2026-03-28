@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin Constants
-define('CMS_EXPERTS_VERSION', '1.0.0');
+define('CMS_EXPERTS_VERSION', '2.0.0');
 define('CMS_EXPERTS_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_EXPERTS_PLUGIN_URL', '/plugins/cms-experts/');
 define('CMS_EXPERTS_TEXT_DOMAIN', 'cms-experts');
@@ -31,7 +31,7 @@ final class CMS_Experts
 {
     private static ?self $instance = null;
 
-    private string $version = '1.0.0';
+    private string $version = '2.0.0';
     private string $plugin_dir;
     private string $plugin_url;
     private string $text_domain = 'cms-experts';

@@ -93,7 +93,7 @@ class CMS_Events_Member_Dashboard
                 return ['count' => $count, 'label' => 'Events gesamt'];
             } else {
                 $userId = (int) ($user->id ?? 0);
-                $count  = CMS_Events_Database::instance()->count_events(['status' => 'published', 'user_id' => $userId]);
+                $count  = CMS_Events_Database::instance()->count_events(['user_id' => $userId]);
                 return ['count' => $count, 'label' => 'Meine Events'];
             }
         } catch (\Throwable $e) {
