@@ -10,32 +10,32 @@
 ### Ziel des Durchgangs
 
 - [ ] Plugin vollständig auf **365CMS V2.8.0-Zielstand** dokumentarisch und technisch prüfen
-- [ ] **Keine Core-Änderungen** vornehmen
-- [ ] erkannte Security-, Speed- und Best-Practice-Probleme direkt im Plugin beheben
+- [x] **Keine Core-Änderungen** vornehmen
+- [x] erkannte Security-, Speed- und Best-Practice-Probleme direkt im Plugin beheben
 
 ### Security
 
-- [ ] alle Admin- und Member-Save-Handler identifizieren
+- [x] alle Admin- und Member-Save-Handler identifizieren
 - [ ] Meta-Whitelist und Sanitizing pro Feldtyp prüfen
-- [ ] Ownership-Schutz für Member-Profilbearbeitung gegen fremde IDs verifizieren
+- [x] Ownership-Schutz für Member-Profilbearbeitung gegen fremde IDs verifizieren
 - [ ] JSON-/Repeater-Felder strukturell validieren
-- [ ] Social-, Website- und Feed-URLs validieren und sicher ausgeben
-- [ ] Rich-Text-/Biografie-Ausgabe auf kontrolliertes HTML und korrektes Escaping prüfen
+- [x] Social-, Website- und Feed-URLs validieren und sicher ausgeben
+- [x] Rich-Text-/Biografie-Ausgabe auf kontrolliertes HTML und korrektes Escaping prüfen
 
 ### Speed
 
 - [ ] Expertenlisten, Detailseiten und Member-Ansichten auf N+1-Abfragen prüfen
 - [ ] Meta-, Skills- und Specialization-Lookups auf Bündelungspotenzial prüfen
-- [ ] wiederholte Initialisierungs- und Migrationspfade auf unnötige Laufzeitkosten prüfen
+- [x] wiederholte Initialisierungs- und Migrationspfade auf unnötige Laufzeitkosten prüfen
 - [ ] Template-Ausgabe und Asset-Ladung nur in benötigten Kontexten sicherstellen
 
 ### Best Practices
 
-- [ ] Versionsabweichung zwischen Plugin-Header, Konstante, Klassenwerten und `update.json` bereinigen
+- [x] Versionsabweichung zwischen Plugin-Header, Konstante, Klassenwerten und `update.json` bereinigen
 - [ ] Status-, Availability- und Partner-Status-Werte konsequent whitelisten
 - [ ] Cross-Plugin-Referenzen defensiv mit Guard-Checks absichern
-- [ ] Fehlerbehandlung ohne fatale Seiteneffekte vereinheitlichen
-- [ ] Doku in `README.md`, `CHANGELOG.md` und `SECURITY.md` nach Fixes aktuell halten
+- [x] Fehlerbehandlung ohne fatale Seiteneffekte vereinheitlichen
+- [x] Doku in `README.md`, `CHANGELOG.md` und `SECURITY.md` nach Fixes aktuell halten
 
 ### Abschlusskriterien
 
@@ -45,7 +45,7 @@
 
 ### Audit-Zwischenstand 2026-03-28
 
-- [x] Versionsabweichung zwischen Plugin-Header, Konstante und Klassenwert auf `2.0.0` bereinigt.
+- [x] Versionsabweichung zwischen Plugin-Header, Konstante, Klassenwert und `update.json` auf den plugin-eigenen Release-Stand `2.1.0` bereinigt.
 - [x] Listenabfragen in der DB-Klasse für `limit`/`offset` defensiv gehärtet.
 - [x] Save-Pfad für `availability` auf erlaubte Werte begrenzt und beschädigter Admin-Save-Block repariert.
 - [x] Member-Create-Handler für E-Mail-, URL-, Availability-, Skill- und Spezialisierungsdaten an den gehärteten Save-Standard angeglichen.
@@ -62,19 +62,20 @@
 - [x] Foto-, Website-, Mail-, Telefon- und Social-Link-Felder in Single- und Card-Templates per zusätzlicher Renderzeit-Validierung gegen Alt- und Bestandsdaten gehärtet.
 - [x] Ownership-Stand präzisiert: Member-Dashboard bietet derzeit nur Create + Liste; kein realer Member-Edit- oder Repeater-Update-Pfad vorhanden, zentrale `save_expert()`-Härtung bleibt als Vorsorge aktiv.
 - [x] Früher Plugin-Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals gehärtet: Komponenten werden nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) instanziiert.
+- [x] Tabellenaufbau beim Aktivieren vollständig entschärft: Auch Fehler bereits beim initialen Datenbankzugriff in `create_tables()` werden jetzt geloggt statt als Fatal an den Aktivierungs-Flow zurückzureichen.
+- [x] Heutige Audit-/Doku-Änderungen auf plugin-eigene Release-Versionen umgestellt: Doku-Release `2.0.1`, technisches Audit-/Stabilitäts-Release `2.1.0`.
 
 ---
 
 ## 🔴 Hohe Priorität
 
 ### 1. Versions-Diskrepanz beheben
-- [ ] `CMS_EXPERTS_VERSION` Konstante von `1.0.0` auf `2.0.0` aktualisieren
-- [ ] `update.json` entsprechend anpassen
+- [x] Plugin-Header, Konstante, Klassenwert und `update.json` auf den plugin-eigenen Release-Stand `2.1.0` vereinheitlichen
 
-### 2. SECURITY.md erstellen
-- [ ] Auth-Matrix (Admin/Member/Guest) dokumentieren
-- [ ] CSRF-Absicherung aller Admin- und AJAX-Endpunkte
-- [ ] Input-Sanitierung pro Feld dokumentieren
+### 2. SECURITY.md vervollständigen
+- [x] Auth-Matrix (Admin/Member/Guest) dokumentieren
+- [x] CSRF-Absicherung aller Admin- und AJAX-Endpunkte
+- [x] Input-Sanitierung pro Feldtyp dokumentieren
 - [ ] Upload-Validierung für Profilbilder
 
 ### 3. DSGVO erweitern

@@ -50,11 +50,11 @@ final class CMS_Experts_Database
      */
     public function create_tables(): void
     {
-        $db = CMS\Database::instance();
-        $pdo = $db->getPdo();
-        $prefix = $db->prefix();
-
         try {
+            $db = CMS\Database::instance();
+            $pdo = $db->getPdo();
+            $prefix = $db->prefix();
+
             // Main experts table
             $sql = "CREATE TABLE IF NOT EXISTS {$prefix}experts (
                 id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

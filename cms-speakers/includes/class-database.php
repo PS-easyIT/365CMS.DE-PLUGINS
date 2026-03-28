@@ -61,11 +61,11 @@ final class CMS_Speakers_Database
 
     public function create_tables(): void
     {
-        $db  = CMS\Database::instance();
-        $pdo = $db->getPdo();
-        $p   = $db->prefix();
-
         try {
+            $db  = CMS\Database::instance();
+            $pdo = $db->getPdo();
+            $p   = $db->prefix();
+
             // ── Haupt-Speakers-Tabelle ──────────────────────────
             $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}speakers (
                 id                  INT UNSIGNED     AUTO_INCREMENT PRIMARY KEY,

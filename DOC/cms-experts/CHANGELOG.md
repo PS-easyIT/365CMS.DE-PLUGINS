@@ -1,10 +1,10 @@
 # CMS Experts – Changelog
 
-## [2.8.0-audit] – 2026-03-28
+## [2.1.0] – 2026-03-28
 
 ### Geändert
 
-- **Versionierung:** Plugin-Header, Konstante und Klassenwert wurden auf den konsistenten Stand `2.0.0` gebracht.
+- **Versionierung:** Plugin-Header, Konstante, Klassenwert und `update.json` wurden auf den konsistenten plugin-eigenen Release-Stand `2.1.0` gebracht.
 - **Datenbankpfade:** Listenabfragen verwenden jetzt defensiv begrenzte `limit`-/`offset`-Werte, und die Schema-Initialisierung läuft versionsgesteuert statt unnötig oft im Laufzeitpfad.
 - **Admin-Save:** Der beschädigte Save-Block wurde repariert und die `availability`-Normalisierung auf erlaubte Werte begrenzt.
 - **Member-Create:** E-Mail-, URL-, Availability-, Skill- und Spezialisierungsdaten werden im Member-Create-Handler jetzt ebenso restriktiv normalisiert.
@@ -19,9 +19,10 @@
 - **Title-Attribut-Escaping:** Auch interne Social-Icon-Labels im `title`-Attribut des Single-Templates werden jetzt konsequent escaped.
 - **Bootstrap-Fix:** Hook-registrierende Klassen werden jetzt bereits beim Plugin-Start instanziiert, sodass Admin-Sidebar-Eintrag und Admin-Routen nicht mehr von `cms_init` abhängen.
 - **Bootstrap-Guard:** Der frühe Bootstrap wird jetzt zusätzlich nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) ausgeführt und entschärft damit Aktivierungs-/Lade-Fatals.
+- **DB-Fatal-Guard:** Der komplette Tabellenaufbau inklusive initialem Datenbankzugriff wird im Aktivierungs-/Init-Pfad jetzt defensiv abgefangen und nur noch geloggt statt als Fatal nach oben weitergereicht.
 - **Assets:** Bootstrap- und Admin-Assets verwenden konsistent lokal zwischengespeicherte `filemtime()`-Versionen.
 
-## [2.8.0-docs] – 2026-03-28
+## [2.0.1] – 2026-03-28
 
 ### Geändert
 

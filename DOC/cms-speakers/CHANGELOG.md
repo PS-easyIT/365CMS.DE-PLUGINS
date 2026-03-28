@@ -1,6 +1,6 @@
 # CMS Speakers – Changelog
 
-## [2.8.0-audit] – 2026-03-28
+## [1.1.0] – 2026-03-28
 
 ### Geändert
 
@@ -21,9 +21,10 @@
 - **Ownership-Härtung:** Die zentrale `save_speaker()`-Persistenz blockiert für Nicht-Admins jetzt Updates auf fremde Speaker-IDs und entschärft damit latente IDOR-/Fremd-ID-Pfade.
 - **Bootstrap-Fix:** Hook-registrierende Klassen werden jetzt bereits beim Plugin-Start instanziiert, sodass Admin-Sidebar-Eintrag und Admin-Routen nicht mehr von `cms_init` abhängen.
 - **Bootstrap-Guard:** Der frühe Bootstrap wird jetzt zusätzlich nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) ausgeführt und entschärft damit Aktivierungs-/Lade-Fatals.
+- **DB-Fatal-Guard:** Der komplette Tabellenaufbau inklusive initialem Datenbankzugriff wird im Aktivierungs-/Init-Pfad jetzt defensiv abgefangen und nur noch geloggt statt als Fatal nach oben weitergereicht.
 - **Assets:** Bootstrap- und Admin-Assets verwenden konsistente, dateigeprüfte Versionswerte.
 
-## [2.8.0-docs] – 2026-03-28
+## [1.0.1] – 2026-03-28
 
 ### Geändert
 

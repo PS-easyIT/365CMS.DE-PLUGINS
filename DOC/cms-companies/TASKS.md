@@ -10,31 +10,31 @@
 ### Ziel des Durchgangs
 
 - [ ] Plugin vollständig auf **365CMS V2.8.0-Zielstand** dokumentarisch und technisch prüfen
-- [ ] **Keine Core-Änderungen** vornehmen
-- [ ] erkannte Security-, Speed- und Best-Practice-Probleme direkt im Plugin beheben
+- [x] **Keine Core-Änderungen** vornehmen
+- [x] erkannte Security-, Speed- und Best-Practice-Probleme direkt im Plugin beheben
 
 ### Security
 
-- [ ] alle Admin- und Member-POST-/Save-Flows identifizieren
-- [ ] Ownership-Schutz für Firmen im Member-Bereich gegen fremde IDs verifizieren
-- [ ] Filter-, Status- und Partnerwerte nur per Whitelist akzeptieren
-- [ ] Logo-, Website- und Kontaktfelder validieren und sicher ausgeben
-- [ ] Experten-Zuordnungen und Delete-/Status-Aktionen gegen CSRF und IDOR prüfen
+- [x] alle Admin- und Member-POST-/Save-Flows identifizieren
+- [x] Ownership-Schutz für Firmen im Member-Bereich gegen fremde IDs verifizieren
+- [x] Filter-, Status- und Partnerwerte nur per Whitelist akzeptieren
+- [x] Logo-, Website- und Kontaktfelder validieren und sicher ausgeben
+- [x] Experten-Zuordnungen und Delete-/Status-Aktionen gegen CSRF und IDOR prüfen
 
 ### Speed
 
-- [ ] Listenabfragen auf harte Integer-Validierung für `limit` und `offset` prüfen
+- [x] Listenabfragen auf harte Integer-Validierung für `limit` und `offset` prüfen
 - [ ] Firmen-, Experten- und Partner-Lookups auf N+1-Muster prüfen
 - [ ] Asset-Ladung und wiederholte Initialisierung auf unnötige Kosten prüfen
 - [ ] Sortierung und Filter auf indexfreundliche Nutzung prüfen
 
 ### Best Practices
 
-- [ ] Versions- und Update-Metadaten konsistent halten
-- [ ] Query-Bausteine mit Whitelists und Fallbacks absichern
+- [x] Versions- und Update-Metadaten konsistent halten
+- [x] Query-Bausteine mit Whitelists und Fallbacks absichern
 - [ ] Cross-Plugin-Abhängigkeiten defensiv prüfen
-- [ ] Fehlerbehandlung und Rückgabewerte vereinheitlichen
-- [ ] Doku in `README.md`, `CHANGELOG.md` und `SECURITY.md` nach Fixes aktualisieren
+- [x] Fehlerbehandlung und Rückgabewerte vereinheitlichen
+- [x] Doku in `README.md`, `CHANGELOG.md` und `SECURITY.md` nach Fixes aktualisieren
 
 ### Abschlusskriterien
 
@@ -61,6 +61,8 @@
 - [x] Renderpfade für Logo-, Website-, Mail- und Telefonfelder in Single- und Card-Templates per zusätzlicher Renderzeit-Validierung gegen Alt- und Bestandsdaten gehärtet.
 - [x] Ownership-Stand präzisiert: Member-Dashboard bietet derzeit nur Create + Liste; kein realer Member-Edit- oder Experten-Relations-Update-Pfad vorhanden, zentrale `save_company()`-Härtung bleibt als Vorsorge aktiv.
 - [x] Früher Plugin-Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals gehärtet: Komponenten werden nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) instanziiert.
+- [x] Tabellenaufbau beim Aktivieren vollständig entschärft: Auch Fehler bereits beim initialen Datenbankzugriff in `create_tables()` werden jetzt geloggt statt als Fatal an den Aktivierungs-Flow zurückzureichen.
+- [x] Heutige Audit-/Doku-Änderungen auf plugin-eigene Release-Versionen umgestellt: Doku-Release `1.0.1`, technisches Audit-/Stabilitäts-Release `1.1.0`.
 
 ---
 
@@ -80,7 +82,7 @@
 
 ### 3. SECURITY.md vervollständigen
 - [ ] CSRF-Absicherung aller AJAX-Endpunkte dokumentieren
-- [ ] Auth-Matrix (Admin/Member/Guest) aktuell halten
+- [x] Auth-Matrix (Admin/Member/Guest) aktuell halten
 
 ### 4. Member-Dashboard erweitern
 - [ ] Eigene Firma bearbeiten (Name, Beschreibung, Logo)

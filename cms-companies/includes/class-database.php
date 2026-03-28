@@ -34,11 +34,11 @@ final class CMS_Companies_Database
      */
     public function create_tables(): void
     {
-        $db = CMS\Database::instance();
-        $pdo = $db->getPdo();
-        $prefix = $db->prefix();
-
         try {
+            $db = CMS\Database::instance();
+            $pdo = $db->getPdo();
+            $prefix = $db->prefix();
+
             // Main companies table
             $sql = "CREATE TABLE IF NOT EXISTS {$prefix}companies (
                 id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

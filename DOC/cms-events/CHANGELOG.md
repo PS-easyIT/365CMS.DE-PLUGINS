@@ -1,6 +1,6 @@
 # CMS Events – Changelog
 
-## [2.8.0-audit] – 2026-03-28
+## [1.1.0] – 2026-03-28
 
 ### Geändert
 
@@ -20,7 +20,7 @@
 - **Member-Dashboard:** Eigene Event-Zähler berücksichtigen nicht mehr nur veröffentlichte Einträge, sondern den tatsächlichen Bearbeitungsstand des Members.
 - **Assets:** Bootstrap- und Admin-Assets nutzen konsistent dateigeprüfte, lokal zwischengespeicherte Versionswerte.
 
-## [2.8.0-docs] – 2026-03-28
+## [1.0.2] – 2026-03-28
 
 ### Geändert
 

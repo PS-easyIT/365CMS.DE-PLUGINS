@@ -10,34 +10,34 @@
 ### Ziel des Durchgangs
 
 - [ ] Plugin vollständig auf **365CMS V2.8.0-Zielstand** dokumentarisch und technisch prüfen
-- [ ] **Keine Core-Änderungen** vornehmen
-- [ ] Security-, Speed- und Best-Practice-Befunde priorisieren und direkt im Plugin beheben
+- [x] **Keine Core-Änderungen** vornehmen
+- [x] Security-, Speed- und Best-Practice-Befunde priorisieren und direkt im Plugin beheben
 
 ### Security
 
-- [ ] Alle Admin- und Member-POST-Flows identifizieren
-- [ ] CSRF-Absicherung für Event-Save, Statuswechsel, Speaker-Zuordnung, Kategorien und Tag-Presets verifizieren
-- [ ] Rechteprüfung zwischen Admin und Member sauber trennen
-- [ ] Ownership-Schutz für Member-Events gegen fremde IDs prüfen
-- [ ] URL-Felder (`registration_url`, `online_url`, `organizer_website`, Medienlinks) validieren und beim Rendern sicher escapen
-- [ ] Status-, Typ- und Filterwerte (`status`, `price_type`, `speaker_type`) auf Whitelist-Prüfung prüfen
-- [ ] Kalender- und Query-Links gegen manipulierte Parameter absichern
+- [x] Alle Admin- und Member-POST-Flows identifizieren
+- [x] CSRF-Absicherung für Event-Save, Statuswechsel, Speaker-Zuordnung, Kategorien und Tag-Presets verifizieren
+- [x] Rechteprüfung zwischen Admin und Member sauber trennen
+- [x] Ownership-Schutz für Member-Events gegen fremde IDs prüfen
+- [x] URL-Felder (`registration_url`, `online_url`, `organizer_website`, Medienlinks) validieren und beim Rendern sicher escapen
+- [x] Status-, Typ- und Filterwerte (`status`, `price_type`, `speaker_type`) auf Whitelist-Prüfung prüfen
+- [x] Kalender- und Query-Links gegen manipulierte Parameter absichern
 
 ### Speed
 
-- [ ] Listenabfragen in Archiv, Admin und Member auf sinnvolle Limits/Pagination prüfen
+- [x] Listenabfragen in Archiv, Admin und Member auf sinnvolle Limits/Pagination prüfen
 - [ ] Speaker-Lookups und Event-Relations auf N+1-Muster prüfen
-- [ ] Wiederholte Initialisierungsarbeit in Bootstrap-/Init-Pfaden prüfen
+- [x] Wiederholte Initialisierungsarbeit in Bootstrap-/Init-Pfaden prüfen
 - [ ] Asset-Ausgabe nur dort ausliefern, wo sie wirklich benötigt wird
-- [ ] wiederholte `filemtime()`-/Asset-Operationen auf unnötige Aufrufe prüfen
+- [x] wiederholte `filemtime()`-/Asset-Operationen auf unnötige Aufrufe prüfen
 
 ### Best Practices
 
-- [ ] Versionsangaben zwischen Plugin-Header, Konstante, README und `update.json` konsistent halten
+- [x] Versionsangaben zwischen Plugin-Header, Konstante, README und `update.json` konsistent halten
 - [ ] Redirects, Fehlerpfade und Fallbacks defensiv prüfen
 - [ ] Datums-, Zahlen- und JSON-Felder vor Persistenz normalisieren
 - [ ] Cross-Plugin-Abhängigkeiten nur mit Guard-Checks verwenden
-- [ ] Doku in `README.md`, `CHANGELOG.md` und `SECURITY.md` nach jedem relevanten Fix nachziehen
+- [x] Doku in `README.md`, `CHANGELOG.md` und `SECURITY.md` nach jedem relevanten Fix nachziehen
 
 ### Abschlusskriterien
 
@@ -60,6 +60,7 @@
 - [x] Asset-Versionierung in Bootstrap und Admin auf konsistente, dateigeprüfte Nutzung von `filemtime()` vereinheitlicht.
 - [x] Speaker-Typen, Kalender-Parameter und Render-Escaping vollständig nachgezogen: `speaker_type` zentral gewhitelistet, Kalender-`month`/`view` validiert und Frontend-URL-/Bild-/Kontaktpfade zusätzlich zur Laufzeit gehärtet.
 - [x] Früher Plugin-Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals gehärtet: Komponenten werden nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) instanziiert.
+- [x] Heutige Audit-/Doku-Änderungen auf plugin-eigene Release-Versionen umgestellt: Doku-Release `1.0.2`, technisches Audit-/Stabilitäts-Release `1.1.0`.
 
 ---
 
@@ -79,9 +80,9 @@
 - [ ] Einverständniserklärung bei Anmeldung
 - [ ] Datenschutzhinweis auf Event-Seiten
 
-### 3. SECURITY.md erstellen
-- [ ] Auth-Matrix dokumentieren
-- [ ] CSRF-Absicherung aller Endpunkte verifizieren
+### 3. SECURITY.md vervollständigen
+- [x] Auth-Matrix dokumentieren
+- [x] CSRF-Absicherung aller Endpunkte verifizieren
 - [ ] Upload-Validierung für Event-Bilder
 
 ### 4. Kalender-Integration

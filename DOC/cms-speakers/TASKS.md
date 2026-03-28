@@ -10,31 +10,31 @@
 ### Ziel des Durchgangs
 
 - [ ] Plugin vollständig auf **365CMS V2.8.0-Zielstand** dokumentarisch und technisch prüfen
-- [ ] **Keine Core-Änderungen** vornehmen
-- [ ] erkannte Security-, Speed- und Best-Practice-Probleme direkt im Plugin beheben
+- [x] **Keine Core-Änderungen** vornehmen
+- [x] erkannte Security-, Speed- und Best-Practice-Probleme direkt im Plugin beheben
 
 ### Security
 
-- [ ] alle Admin- und Member-Save-Handler für Speaker, Topics und Auftritte identifizieren
-- [ ] Ownership-Schutz gegen fremde Speaker-Profile und Unterdatensätze verifizieren
-- [ ] Social-, Website-, Video- und Slides-Links validieren und sicher ausgeben
+- [x] alle Admin- und Member-Save-Handler für Speaker, Topics und Auftritte identifizieren
+- [x] Ownership-Schutz gegen fremde Speaker-Profile und Unterdatensätze verifizieren
+- [x] Social-, Website-, Mail-, Telefon- und zentrale Social-/Medien-Links validieren und sicher ausgeben
 - [ ] Status-, Availability-, Format- und Presence-Werte nur per Whitelist akzeptieren
-- [ ] Single- und Card-Templates auf konsequentes Escaping prüfen
+- [x] Single- und Card-Templates auf konsequentes Escaping prüfen
 
 ### Speed
 
 - [ ] Speaker-Listen, Detailseiten und Member-Dashboard auf N+1-Abfragen prüfen
 - [ ] Topic-, Event- und Cross-Plugin-Lookups auf Bündelungspotenzial prüfen
-- [ ] wiederholte Tabellenanlage/Migrationen im Init-Pfad auf Optimierungspotenzial prüfen
+- [x] wiederholte Tabellenanlage/Migrationen im Init-Pfad auf Optimierungspotenzial prüfen
 - [ ] Asset-Ladung und unnötige Initialisierungskosten minimieren
 
 ### Best Practices
 
-- [ ] Versions- und Update-Metadaten konsistent halten
-- [ ] Cross-Plugin-Abhängigkeiten defensiv mit Guard-Checks absichern
-- [ ] Fehlerbehandlung und Fallbacks robust vereinheitlichen
-- [ ] Datenformate für Topics, Events und Social-Felder normalisieren
-- [ ] Doku in `README.md`, `CHANGELOG.md` und `SECURITY.md` nach Fixes aktuell halten
+- [x] Versions- und Update-Metadaten konsistent halten
+- [x] Cross-Plugin-Abhängigkeiten defensiv mit Guard-Checks absichern
+- [x] Fehlerbehandlung und Fallbacks robust vereinheitlichen
+- [x] Datenformate für Topics, Events und Social-Felder normalisieren
+- [x] Doku in `README.md`, `CHANGELOG.md` und `SECURITY.md` nach Fixes aktuell halten
 
 ### Abschlusskriterien
 
@@ -63,6 +63,8 @@
 - [x] Verbleibende Template-Restbefunde für Foto-, Website-, Mail-, Telefon- und Social-Links in Card- und Single-Templates per zusätzlicher Renderzeit-Validierung gegen Alt- und Bestandsdaten gehärtet.
 - [x] Aktuellen Ownership-Stand präzisiert: Member-Dashboard bietet derzeit nur Create + Liste, kein realer Member-Edit- oder Event-/Topic-Update-Pfad vorhanden.
 - [x] Früher Plugin-Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals gehärtet: Komponenten werden nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) instanziiert.
+- [x] Tabellenaufbau beim Aktivieren vollständig entschärft: Auch Fehler bereits beim initialen Datenbankzugriff in `create_tables()` werden jetzt geloggt statt als Fatal an den Aktivierungs-Flow zurückzureichen.
+- [x] Heutige Audit-/Doku-Änderungen auf plugin-eigene Release-Versionen umgestellt: Doku-Release `1.0.1`, technisches Audit-/Stabilitäts-Release `1.1.0`.
 
 ---
 
@@ -74,10 +76,10 @@
 - [ ] Einverständniserklärung bei Profilerstellung im Member-Bereich
 - [ ] HOOKS.md aktualisieren: DSGVO-Hooks dokumentieren
 
-### 2. SECURITY.md erstellen
-- [ ] Auth-Matrix (Admin/Member/Guest) für alle Endpunkte
-- [ ] CSRF-Absicherung dokumentieren
-- [ ] Input-Sanitierung pro Feld
+### 2. SECURITY.md vervollständigen
+- [x] Auth-Matrix (Admin/Member/Guest) für alle Endpunkte
+- [x] CSRF-Absicherung dokumentieren
+- [x] Input-Sanitierung pro Feldtyp dokumentieren
 - [ ] Profilbild-Upload-Validierung
 
 ### 3. Member-Dashboard erweitern

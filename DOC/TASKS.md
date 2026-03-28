@@ -11,6 +11,7 @@
   - `speaker_type`, Kalender-`month`/`view` sowie Single-Renderpfade für Bild-, Link- und Kontaktattribute zusätzlich gehärtet
   - Admin-Bootstrap so korrigiert, dass Sidebar-Eintrag und Admin-Routen nach Aktivierung zuverlässig verfügbar sind
   - Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals abgesichert
+  - Heutige Änderungen plugin-eigen versioniert als `1.0.2` (Doku) und `1.1.0` (Technik/Audit)
 
 - **`cms-speakers`**
   - Member-/Admin-Save-Logik, Template-Escaping und `title`-/`style`-Attribute weiter gehärtet
@@ -20,6 +21,8 @@
   - Member-Dashboard aktuell als Create-/Listen-Flow ohne realen Edit-Pfad verifiziert
   - Admin-Bootstrap so korrigiert, dass Sidebar-Eintrag und Admin-Routen nach Aktivierung zuverlässig verfügbar sind
   - Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals abgesichert
+  - Tabellenaufbau im Aktivierungs-/Init-Pfad zusätzlich gegen DB-Fatals entschärft
+  - Heutige Änderungen plugin-eigen versioniert als `1.0.1` (Doku) und `1.1.0` (Technik/Audit)
 
 - **`cms-experts`**
   - Escaping in Single-/Card-/Archive-Pfaden und Meta-Ausgaben weiter vertieft
@@ -28,6 +31,8 @@
   - Member-Dashboard aktuell als Create-/Listen-Flow ohne realen Edit-/Repeater-Update-Pfad verifiziert
   - Admin-Bootstrap so korrigiert, dass Sidebar-Eintrag und Admin-Routen nach Aktivierung zuverlässig verfügbar sind
   - Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals abgesichert
+  - Tabellenaufbau im Aktivierungs-/Init-Pfad zusätzlich gegen DB-Fatals entschärft
+  - Heutige Änderungen plugin-eigen versioniert als `2.0.1` (Doku) und `2.1.0` (Technik/Audit)
 
 - **`cms-companies`**
   - Listen-/Renderpfade, Link-Ausgaben und dynamische Style-Werte weiter gehärtet
@@ -37,10 +42,13 @@
   - Member-Dashboard aktuell als Create-/Listen-Flow ohne realen Edit-/Relations-Update-Pfad verifiziert
   - Admin-Bootstrap so korrigiert, dass Sidebar-Eintrag und Admin-Routen nach Aktivierung zuverlässig verfügbar sind
   - Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals abgesichert
+  - Tabellenaufbau im Aktivierungs-/Init-Pfad zusätzlich gegen DB-Fatals entschärft
+  - Heutige Änderungen plugin-eigen versioniert als `1.0.1` (Doku) und `1.1.0` (Technik/Audit)
 
 - **Nächster Fokus**
-  - verbleibende Template-Restbefunde nur noch in klaren Attribut-/Render-Kontexten prüfen
-  - Ownership-/IDOR-Schutz in Unterdatensätzen und Spezial-Handlern weiter vertiefen
+  - verbliebene Audit-Reste bei N+1-/Lookup-Pfaden, Asset-Ladung pro Kontext und unnötigen Init-Kosten prüfen
+  - SECURITY.md-Restpunkte zu Upload-Validierung, Auth-/CSRF-Dokumentation einzelner Endpunkte und Berechtigungsmatrix weiter vervollständigen
+  - DSGVO- und Member-Self-Service-Blöcke nur dort weiterziehen, wo sie über den heutigen Create-only-Stand hinaus tatsächlich implementiert werden sollen
 
 ---
 
