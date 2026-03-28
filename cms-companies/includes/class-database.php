@@ -251,44 +251,6 @@ final class CMS_Companies_Database
 
         // Partner Filter
         if (isset($args['is_partner'])) {
-            $where[] = 'is_partner = ?';
-            $params[] = $args['is_partner'] ? 1 : 0;
-        }
-        if (!empty($args['partner'])) {
-            match($args['partner']) {
-                'sponsor'     => ($where[] = 'is_sponsor = 1'),
-                'top_partner' => ($where[] = 'is_top_partner = 1'),
-                'partner'     => ($where[] = 'is_partner = 1'),
-                default       => null,
-            };
-        }
-
-        // Volltextsuche
-        if (!empty($args['q'])) {
-            $where[]  = '(name LIKE ? OR description LIKE ? OR location_city LIKE ?)';
-            $like     = '%' . $args['q'] . '%';
-            $params[] = $like;
-            $params[] = $like;
-            $params[] = $like;
-        }
-        if (!empty($args['user_id'])) {
-            $where[]  = 'user_id = ?';
-            $params[] = (int) $args['user_id'];
-        }
-
-        $where_clause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-        $limit = $args['limit'] ?? 50;
-        $offset = $args['offset'] ?? 0;
-
-        $sql = "SELECT * FROM {$db->prefix()}companies 
-                {$where_clause} 
-                ORDER BY is_sponsor DESC, is_top_partner DESC, is_partner DESC, name ASC 
-                LIMIT {$limit} OFFSET {$offset}";
-
-        $stmt = $db->prepare($sql);
-        $stmt->execute($params);
-        
-        return $stmt->fetchAll();
     }
 
     /**
