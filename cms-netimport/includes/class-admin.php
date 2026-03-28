@@ -164,7 +164,10 @@ final class CMS_NetImport_Admin
 
         $security  = CMS\Security::instance();
         $csrfToken = $security->generateToken('netimport_run');
-        $sources   = CMS_NetImport_Importer::instance()->get_sources();
+        $importer  = CMS_NetImport_Importer::instance();
+        $sources   = $importer->get_sources();
+        $history   = $importer->get_run_history(15);
+        $historyStats = $importer->get_history_stats();
         $rowTotal  = array_sum(array_map(static fn(array $source): int => (int) ($source['rows'] ?? 0), $sources));
         $activeTargets = count(array_filter($sources, static fn(array $source): bool => !empty($source['plugin_ready'])));
         $selectedOptions = array_merge([
@@ -217,6 +220,11 @@ final class CMS_NetImport_Admin
                 <div class="stat-number"><?= (int) $activeTargets ?></div>
                 <div class="stat-label">Aktive Ziel-Plugins</div>
             </div>
+            <div class="stat-card">
+                <div class="stat-icon">🕘</div>
+                <div class="stat-number"><?= (int) ($historyStats['total_runs'] ?? 0) ?></div>
+                <div class="stat-label">Gespeicherte Läufe</div>
+            </div>
         </div>
 
         <div class="admin-card ni-card-spacer">
@@ -264,6 +272,69 @@ final class CMS_NetImport_Admin
                     <button type="submit" class="btn btn-primary"><?= $selectedOptions['dry_run'] === '1' ? '🧪 Vorschau ausführen' : '📥 Import ausführen' ?></button>
                 </div>
             </form>
+        </div>
+
+        <div class="admin-card ni-card-spacer">
+            <h3>🗃️ Import-Historie</h3>
+            <?php if (empty($history)): ?>
+                <div class="empty-state">
+                    <p style="font-size:2.5rem;margin:0;">📝</p>
+                    <p><strong>Noch keine Import-Läufe gespeichert.</strong></p>
+                </div>
+            <?php else: ?>
+                <div class="users-table-container">
+                    <table class="users-table ni-table">
+                        <thead>
+                            <tr>
+                                <th>Zeit</th>
+                                <th>Quelle</th>
+                                <th>Modus</th>
+                                <th>Erstellt</th>
+                                <th>Aktualisiert</th>
+                                <th>Verknüpft</th>
+                                <th>Übersprungen</th>
+                                <th>Warnungen</th>
+                                <th>Fehler</th>
+                                <th>Dauer</th>
+                                <th>Admin</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php foreach ($history as $entry): ?>
+                            <tr>
+                                <td><?= htmlspecialchars(substr((string) ($entry->started_at ?? ''), 0, 16)) ?></td>
+                                <td>
+                                    <strong><?= htmlspecialchars((string) ($entry->run_type ?? '')) ?></strong>
+                                    <div><code><?= htmlspecialchars((string) ($entry->source_file ?? '')) ?></code></div>
+                                </td>
+                                <td>
+                                    <span class="status-badge <?= !empty($entry->is_dry_run) ? 'pending' : 'active' ?>">
+                                        <?= !empty($entry->is_dry_run) ? '🧪 Dry-Run' : '🚀 Live' ?>
+                                    </span>
+                                    <?php if (($entry->source_mode ?? 'base') === 'update'): ?>
+                                        <span class="status-badge pending">UPDATE</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?= (int) ($entry->created_count ?? 0) ?></td>
+                                <td><?= (int) ($entry->updated_count ?? 0) ?></td>
+                                <td><?= (int) ($entry->linked_count ?? 0) ?></td>
+                                <td><?= (int) ($entry->skipped_count ?? 0) ?></td>
+                                <td><?= (int) ($entry->warning_count ?? 0) ?></td>
+                                <td><?= (int) ($entry->error_count ?? 0) ?></td>
+                                <td><?= (int) ($entry->duration_ms ?? 0) ?> ms</td>
+                                <td><?= htmlspecialchars((string) ($entry->admin_username ?? 'System')) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-muted" style="margin-top:12px;">
+                    Letzter Lauf: <?= !empty($historyStats['last_run_at']) ? htmlspecialchars(substr((string) $historyStats['last_run_at'], 0, 16)) : '—' ?> ·
+                    Dry-Runs: <?= (int) ($historyStats['dry_runs'] ?? 0) ?> ·
+                    Live-Läufe: <?= (int) ($historyStats['live_runs'] ?? 0) ?> ·
+                    Summierte Fehler: <?= (int) ($historyStats['total_errors'] ?? 0) ?>
+                </p>
+            <?php endif; ?>
         </div>
 
         <div class="admin-card ni-card-spacer">

@@ -31,6 +31,7 @@ Der Import arbeitet mit vorhandenen CSV-Dateien im Ordner `files_import/` und un
 - optionale Auto-Anlage fehlender Companies
 - Event-Verknüpfung mit importierten oder bei Bedarf automatisch minimal angelegten Speakern und Experts
 - Zuordnung aller importierten Datensätze zum ausführenden bzw. aktiven Admin
+- persistente Import-Historie pro Lauf mit Zeit, Quelle, Counts, Fehlern und Dry-Run/Live-Status
 - Transaktionsschutz für Live-Imports
 - Lookup- und Parsing-Caches für schnellere Dubletten-, Relations- und Quellenprüfung
 - grundlegendes Import-Throttling im Admin
@@ -54,6 +55,20 @@ In der Admin-Tabelle wird die erkannte Datei inklusive `UPDATE`-Hinweis angezeig
 - DB-basiertes Rate-Limiting für Importstarts
 - Ownership-Nachzug auf `user_id` für Companies, Experts, Speakers und Events
 - Dry-Run zur Vorabprüfung größerer Importchargen empfohlen
+
+## Import-Historie
+
+Jeder Importlauf wird dauerhaft in einer eigenen Historien-Tabelle gespeichert. Erfasst werden unter anderem:
+
+- Zeitpunkt Start / Ende
+- Import-Typ und verwendete Quelldatei
+- Basis- oder `UPDATE`-Quelle
+- Dry-Run oder Live-Import
+- erstellt / aktualisiert / verknüpft / übersprungen / Warnungen / Fehler
+- Laufzeit in Millisekunden
+- ausführender Admin
+
+Die letzten Läufe werden direkt im Admin unterhalb der Importmaske angezeigt.
 
 ## Empfohlene Reihenfolge
 

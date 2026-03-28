@@ -35,6 +35,8 @@ Zusätzlich zeigt die Admin-Tabelle an, ob statt der Basisdatei bereits eine neu
 
 Alle neu angelegten oder beim Import berührten Datensätze werden nach dem Import dem aktiven Admin über `user_id` zugeordnet.
 
+Unterhalb der Importmaske wird außerdem eine persistente Historie der letzten Läufe angezeigt. Die Reports enthalten Zeit, Quelle, Counts, Fehler/Warnungen, Dry-Run/Live-Modus und den zugeordneten Admin.
+
 ## Empfohlener Ablauf
 
 1. Companies importieren

@@ -72,6 +72,11 @@ final class CMS_NetImport_Importer
 
     private ?int $adminUserIdCache = null;
 
+    private function __construct()
+    {
+        $this->ensure_storage();
+    }
+
     /** @var array<string, int> */
     private array $companyCache = [];
     /** @var array<string, int> */
@@ -86,6 +91,47 @@ final class CMS_NetImport_Importer
     public static function instance(): self
     {
         return self::$instance ??= new self();
+    }
+
+    public function ensure_storage(): void
+    {
+        if (!class_exists('CMS\\Database')) {
+            return;
+        }
+
+        try {
+            $db = CMS\Database::instance();
+            $pdo = $db->getPdo();
+            $prefix = $db->prefix();
+            $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}netimport_runs (
+                id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                user_id          INT UNSIGNED DEFAULT NULL,
+                run_type         VARCHAR(50) NOT NULL,
+                source_file      VARCHAR(255) DEFAULT NULL,
+                source_mode      VARCHAR(20) NOT NULL DEFAULT 'base',
+                is_dry_run       TINYINT(1) NOT NULL DEFAULT 0,
+                status           VARCHAR(20) NOT NULL DEFAULT 'completed',
+                created_count    INT UNSIGNED NOT NULL DEFAULT 0,
+                updated_count    INT UNSIGNED NOT NULL DEFAULT 0,
+                linked_count     INT UNSIGNED NOT NULL DEFAULT 0,
+                skipped_count    INT UNSIGNED NOT NULL DEFAULT 0,
+                warning_count    INT UNSIGNED NOT NULL DEFAULT 0,
+                error_count      INT UNSIGNED NOT NULL DEFAULT 0,
+                started_at       DATETIME NOT NULL,
+                finished_at      DATETIME NOT NULL,
+                duration_ms      INT UNSIGNED NOT NULL DEFAULT 0,
+                options_json     LONGTEXT DEFAULT NULL,
+                report_json      LONGTEXT DEFAULT NULL,
+                created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_type (run_type),
+                INDEX idx_started (started_at),
+                INDEX idx_user (user_id),
+                INDEX idx_status (status),
+                INDEX idx_dry_run (is_dry_run)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+        } catch (\Throwable $e) {
+            error_log('CMS NetImport storage init failed: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -112,6 +158,8 @@ final class CMS_NetImport_Importer
     public function run_import(string $type, array $options = []): array
     {
         $this->reset_caches();
+        $startedAt = microtime(true);
+        $startedAtSql = date('Y-m-d H:i:s');
 
         $options = array_merge([
             'update_existing' => '1',
@@ -119,21 +167,35 @@ final class CMS_NetImport_Importer
             'link_relations' => '1',
             'auto_create_event_people' => '1',
             'dry_run' => '0',
+            '_internal' => '0',
         ], $options);
 
+        $sourceForReport = [
+            'selected_file' => '',
+            'mode' => 'base',
+        ];
+
         if ($type === 'full') {
-            return $this->run_full_import($options);
+            $result = $this->run_full_import($options);
+            if ($options['_internal'] !== '1') {
+                $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
+            }
+            return $result;
         }
 
         if (!isset($this->sourceDefinitions[$type])) {
             $result = $this->create_result($type, '');
             $this->add_message($result, 'error', 'Unbekannter Import-Typ: ' . $type);
             $result['errors']++;
+            if ($options['_internal'] !== '1') {
+                $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
+            }
             return $result;
         }
 
         $definition = $this->sourceDefinitions[$type];
         $source = $this->resolve_source_file((string) $definition['canonical_file']);
+        $sourceForReport = $source;
         $result = $this->create_result($type, (string) ($source['selected_file'] ?? ''));
         $result['dry_run'] = $options['dry_run'] === '1';
         $result['source_mode'] = $source['mode'] ?? 'base';
@@ -141,12 +203,18 @@ final class CMS_NetImport_Importer
         if (empty($source['exists'])) {
             $result['errors']++;
             $this->add_message($result, 'error', 'Quelldatei nicht gefunden: ' . (string) $definition['canonical_file']);
+            if ($options['_internal'] !== '1') {
+                $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
+            }
             return $result;
         }
 
         if (!$this->is_plugin_ready((string) $definition['target_plugin'], (string) $definition['target_class'])) {
             $result['errors']++;
             $this->add_message($result, 'error', 'Ziel-Plugin nicht aktiv oder nicht geladen: ' . (string) $definition['target_label']);
+            if ($options['_internal'] !== '1') {
+                $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
+            }
             return $result;
         }
 
@@ -154,6 +222,9 @@ final class CMS_NetImport_Importer
         if ($validationError !== null) {
             $result['errors']++;
             $this->add_message($result, 'error', $validationError);
+            if ($options['_internal'] !== '1') {
+                $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
+            }
             return $result;
         }
 
@@ -161,6 +232,9 @@ final class CMS_NetImport_Importer
         if (($csvPayload['validation_error'] ?? null) !== null) {
             $result['errors']++;
             $this->add_message($result, 'error', (string) $csvPayload['validation_error']);
+            if ($options['_internal'] !== '1') {
+                $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
+            }
             return $result;
         }
 
@@ -171,6 +245,9 @@ final class CMS_NetImport_Importer
         if ($headerError !== null) {
             $result['errors']++;
             $this->add_message($result, 'error', $headerError);
+            if ($options['_internal'] !== '1') {
+                $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
+            }
             return $result;
         }
 
@@ -204,6 +281,10 @@ final class CMS_NetImport_Importer
             $this->run_in_transaction($executor, $result);
         }
 
+        if ($options['_internal'] !== '1') {
+            $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
+        }
+
         return $result;
     }
 
@@ -215,13 +296,73 @@ final class CMS_NetImport_Importer
     {
         $aggregate = $this->create_result('full', 'multiple');
         $aggregate['dry_run'] = $options['dry_run'] === '1';
+        $aggregate['steps'] = [];
 
         foreach (['companies_example', 'experts_mvps', 'experts_example', 'speakers', 'events'] as $step) {
-            $result = $this->run_import($step, $options);
+            $stepOptions = $options;
+            $stepOptions['_internal'] = '1';
+            $result = $this->run_import($step, $stepOptions);
             $this->merge_result($aggregate, $result);
+            $aggregate['steps'][] = [
+                'type' => $result['type'] ?? $step,
+                'file' => $result['file'] ?? '',
+                'created' => (int) ($result['created'] ?? 0),
+                'updated' => (int) ($result['updated'] ?? 0),
+                'linked' => (int) ($result['linked'] ?? 0),
+                'skipped' => (int) ($result['skipped'] ?? 0),
+                'warnings' => (int) ($result['warnings'] ?? 0),
+                'errors' => (int) ($result['errors'] ?? 0),
+                'source_mode' => $result['source_mode'] ?? 'base',
+            ];
         }
 
         return $aggregate;
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function get_run_history(int $limit = 20): array
+    {
+        $this->ensure_storage();
+        $limit = max(1, min(100, $limit));
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare(
+            "SELECT nr.*, u.username AS admin_username
+             FROM {$db->prefix()}netimport_runs nr
+             LEFT JOIN {$db->prefix()}users u ON nr.user_id = u.id
+             ORDER BY nr.started_at DESC, nr.id DESC
+             LIMIT {$limit}"
+        );
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * @return array<string, int|string|null>
+     */
+    public function get_history_stats(): array
+    {
+        $this->ensure_storage();
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare(
+            "SELECT COUNT(*) AS total_runs,
+                    SUM(CASE WHEN is_dry_run = 1 THEN 1 ELSE 0 END) AS dry_runs,
+                    SUM(CASE WHEN is_dry_run = 0 THEN 1 ELSE 0 END) AS live_runs,
+                    SUM(error_count) AS total_errors,
+                    MAX(started_at) AS last_run_at
+             FROM {$db->prefix()}netimport_runs"
+        );
+        $stmt->execute();
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'total_runs' => (int) ($row['total_runs'] ?? 0),
+            'dry_runs' => (int) ($row['dry_runs'] ?? 0),
+            'live_runs' => (int) ($row['live_runs'] ?? 0),
+            'total_errors' => (int) ($row['total_errors'] ?? 0),
+            'last_run_at' => $row['last_run_at'] ?? null,
+        ];
     }
 
     /**
@@ -1114,6 +1255,7 @@ final class CMS_NetImport_Importer
             'warnings' => 0,
             'dry_run' => false,
             'source_mode' => 'base',
+            'steps' => [],
             'messages' => [],
         ];
     }
@@ -1143,6 +1285,52 @@ final class CMS_NetImport_Importer
         }
         foreach ($incoming['messages'] ?? [] as $message) {
             $this->add_message($aggregate, (string) ($message['level'] ?? 'info'), (string) ($message['text'] ?? ''));
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $result
+     * @param array<string, string> $options
+     * @param array<string, mixed> $source
+     */
+    private function persist_run_report(array $result, array $options, array $source, float $startedAt, string $startedAtSql): void
+    {
+        $this->ensure_storage();
+
+        try {
+            $db = CMS\Database::instance();
+            $finishedAtSql = date('Y-m-d H:i:s');
+            $durationMs = max(0, (int) round((microtime(true) - $startedAt) * 1000));
+            $optionsForStorage = $options;
+            unset($optionsForStorage['_internal']);
+
+            $reportPayload = [
+                'messages' => $result['messages'] ?? [],
+                'steps' => $result['steps'] ?? [],
+                'file' => $result['file'] ?? '',
+            ];
+
+            $db->insert('netimport_runs', [
+                'user_id' => $this->get_admin_user_id(),
+                'run_type' => $result['type'] ?? 'unknown',
+                'source_file' => (string) ($source['selected_file'] ?? ($result['file'] ?? '')),
+                'source_mode' => (string) ($result['source_mode'] ?? ($source['mode'] ?? 'base')),
+                'is_dry_run' => !empty($result['dry_run']) ? 1 : 0,
+                'status' => !empty($result['errors']) ? 'completed_with_errors' : 'completed',
+                'created_count' => (int) ($result['created'] ?? 0),
+                'updated_count' => (int) ($result['updated'] ?? 0),
+                'linked_count' => (int) ($result['linked'] ?? 0),
+                'skipped_count' => (int) ($result['skipped'] ?? 0),
+                'warning_count' => (int) ($result['warnings'] ?? 0),
+                'error_count' => (int) ($result['errors'] ?? 0),
+                'started_at' => $startedAtSql,
+                'finished_at' => $finishedAtSql,
+                'duration_ms' => $durationMs,
+                'options_json' => json_encode($optionsForStorage, JSON_UNESCAPED_UNICODE),
+                'report_json' => json_encode($reportPayload, JSON_UNESCAPED_UNICODE),
+            ]);
+        } catch (\Throwable $e) {
+            error_log('CMS NetImport report persistence failed: ' . $e->getMessage());
         }
     }
 
