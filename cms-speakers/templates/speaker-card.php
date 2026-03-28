@@ -26,13 +26,15 @@ $full_name  = trim("$first $last");
 $position   = $s->position ?? '';
 $company    = $s->company_linked_name ?? $s->company ?? '';
 $city       = $s->location_city ?? '';
-$photo      = $s->photo_url ?? '';
-$linkedin   = $s->linkedin  ?? '';
-$xing       = $s->xing      ?? '';
-$twitter    = $s->twitter    ?? '';
-$website    = $s->website    ?? '';
-$email      = $s->email      ?? '';
-$github     = $s->github     ?? '';
+$photo      = filter_var(trim((string) ($s->photo_url ?? '')), FILTER_VALIDATE_URL) ?: '';
+$linkedin   = filter_var(trim((string) ($s->linkedin ?? '')), FILTER_VALIDATE_URL) ?: '';
+$xing       = filter_var(trim((string) ($s->xing ?? '')), FILTER_VALIDATE_URL) ?: '';
+$twitter_raw = trim((string) ($s->twitter ?? ''));
+$twitter    = filter_var($twitter_raw, FILTER_VALIDATE_URL)
+    ?: (filter_var('https://twitter.com/' . ltrim($twitter_raw, '@/'), FILTER_VALIDATE_URL) ?: '');
+$website    = filter_var(trim((string) ($s->website ?? '')), FILTER_VALIDATE_URL) ?: '';
+$email      = filter_var(trim((string) ($s->email ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
+$github     = filter_var(trim((string) ($s->github ?? '')), FILTER_VALIDATE_URL) ?: '';
 $is_featured = !empty($s->is_featured);
 $is_verified = !empty($s->is_verified);
 $avail       = $s->availability ?? 'available';
@@ -129,7 +131,7 @@ $initials = mb_strtoupper(mb_substr($first, 0, 1) . mb_substr($last, 0, 1));
     <!-- TOP: Avatar links, Text rechts -->
     <header class="sp-card-top">
         <div class="sp-card-avatar">
-            <?php if ($photo): ?>
+            <?php if ($photo !== ''): ?>
                 <img src="<?php echo $sec->escape($photo); ?>" alt="<?php echo $sec->escape($full_name); ?>" loading="lazy">
             <?php else: ?>
                 <div class="sp-avatar-placeholder">
@@ -191,7 +193,7 @@ $initials = mb_strtoupper(mb_substr($first, 0, 1) . mb_substr($last, 0, 1));
                 ['url' => $email ? 'mailto:' . $email : '', 'title' => 'E-Mail', 'svg' => '<svg class="social-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2m0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>'],
                 ['url' => $linkedin, 'title' => 'LinkedIn',    'svg' => '<svg class="social-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>'],
                 ['url' => $xing,     'title' => 'XING',        'svg' => '<svg class="social-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M18.188 0c-.517 0-.741.325-.927.66l-7.702 13.657 4.919 9.023c.17.308.436.66.967.66h3.454c.211 0 .375-.078.463-.22.089-.151.089-.346-.009-.536l-4.879-8.916L22.139.756c.095-.191.097-.387.006-.535C22.056.078 21.894 0 21.686 0h-3.498zm-9.945 5.237c-.208 0-.37.093-.458.233-.088.14-.09.316-.004.494l2.214 3.836-3.466 5.239c-.098.198-.1.388-.007.522.09.13.252.201.461.201h3.5c.513 0 .739-.326.926-.661l3.457-5.276-2.2-3.807c-.178-.308-.411-.663-.944-.663z"/></svg>'],
-                ['url' => $twitter ? 'https://twitter.com/' . ltrim($twitter, '@') : '', 'title' => 'X / Twitter', 'svg' => '<svg class="social-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'],
+                ['url' => $twitter, 'title' => 'X / Twitter', 'svg' => '<svg class="social-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'],
                 ['url' => $github,   'title' => 'GitHub',      'svg' => '<svg class="social-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>'],
             ];
             foreach ($social_items as $si):

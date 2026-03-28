@@ -30,21 +30,21 @@ $ev_time     = $e->event_time ?? '';
 $end_date    = $e->end_date ?? '';
 $end_time    = $e->end_time ?? '';
 $is_online   = !empty($e->is_online);
-$online_url  = htmlspecialchars($e->online_url ?? '');
-$reg_url     = htmlspecialchars($e->registration_url ?? '');
+$online_url  = filter_var(trim((string) ($e->online_url ?? '')), FILTER_VALIDATE_URL) ?: '';
+$reg_url     = filter_var(trim((string) ($e->registration_url ?? '')), FILTER_VALIDATE_URL) ?: '';
 $capacity    = (int)($e->capacity ?? 0);
 $status      = $e->status ?? 'published';
 $is_featured = !empty($e->is_featured);
-$banner_url  = htmlspecialchars($e->banner_url ?? '');
-$image_url   = htmlspecialchars($e->image_url ?? '');
+$banner_url  = filter_var(trim((string) ($e->banner_url ?? '')), FILTER_VALIDATE_URL) ?: '';
+$image_url   = filter_var(trim((string) ($e->image_url ?? '')), FILTER_VALIDATE_URL) ?: '';
 $price_type  = $e->price_type ?? 'free';
 $price       = (float)($e->price ?? 0);
 $price_cur   = htmlspecialchars($e->price_currency ?? 'EUR');
 $tags_raw    = !empty($e->tags) ? (json_decode($e->tags, true) ?? []) : [];
 $org_name    = htmlspecialchars($e->organizer_name    ?? '');
-$org_email   = htmlspecialchars($e->organizer_email   ?? '');
-$org_phone   = htmlspecialchars($e->organizer_phone   ?? '');
-$org_website = htmlspecialchars($e->organizer_website ?? '');
+$org_email   = filter_var(trim((string) ($e->organizer_email ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
+$org_phone   = preg_replace('/[^0-9+]/', '', trim((string) ($e->organizer_phone ?? ''))) ?: '';
+$org_website = filter_var(trim((string) ($e->organizer_website ?? '')), FILTER_VALIDATE_URL) ?: '';
 
 $show_price = !empty($settings['show_price'])     && $settings['show_price']     !== '0';
 $show_tags  = !empty($settings['show_tags'])       && $settings['show_tags']      !== '0';
@@ -88,11 +88,11 @@ $accent    = htmlspecialchars($settings['color_accent']    ?? '#1d4ed8');
   <!-- Hero Header 250px -->
   <header class="ev-hero-v2" style="background:linear-gradient(135deg,<?= $hdr_from ?> 0%,<?= $hdr_to ?> 100%);">
     <?php if ($banner_url): ?>
-      <div class="ev-hero-v2__bg" style="background-image:url('<?= $banner_url ?>');" aria-hidden="true"></div>
+      <div class="ev-hero-v2__bg" style="background-image:url('<?= htmlspecialchars($banner_url) ?>');" aria-hidden="true"></div>
     <?php endif; ?>
     <?php if ($image_url): ?>
       <div class="ev-hero-v2__thumb" aria-hidden="true">
-        <img src="<?= $image_url ?>" alt="<?= $title ?>">
+        <img src="<?= htmlspecialchars($image_url) ?>" alt="<?= $title ?>">
       </div>
     <?php endif; ?>
     <div class="ev-hero-v2__inner">
@@ -128,22 +128,22 @@ $accent    = htmlspecialchars($settings['color_accent']    ?? '#1d4ed8');
 
         <!-- Anmelde-Button -->
         <?php if ($reg_url && $status !== 'cancelled'): ?>
-          <a href="<?= $reg_url ?>" target="_blank" rel="noopener" class="ev-bridge-v2__book-btn">🎟 Jetzt anmelden</a>
+          <a href="<?= htmlspecialchars($reg_url) ?>" target="_blank" rel="noopener" class="ev-bridge-v2__book-btn">🎟 Jetzt anmelden</a>
         <?php elseif ($is_online && $online_url): ?>
-          <a href="<?= $online_url ?>" target="_blank" rel="noopener" class="ev-bridge-v2__book-btn">🔗 Online-Link aufrufen</a>
+          <a href="<?= htmlspecialchars($online_url) ?>" target="_blank" rel="noopener" class="ev-bridge-v2__book-btn">🔗 Online-Link aufrufen</a>
         <?php endif; ?>
 
         <!-- Veranstalter Kontakt-Icons -->
         <?php if ($org_email || $org_phone || $org_website): ?>
         <div class="ev-bridge-v2__icon-row">
           <?php if ($org_website): ?>
-            <a href="<?= $org_website ?>" target="_blank" rel="noopener" class="ev-bridge-v2__icon-btn">🌐 Web</a>
+            <a href="<?= htmlspecialchars($org_website) ?>" target="_blank" rel="noopener" class="ev-bridge-v2__icon-btn">🌐 Web</a>
           <?php endif; ?>
           <?php if ($org_email): ?>
-            <a href="mailto:<?= $org_email ?>" class="ev-bridge-v2__icon-btn">✉️ Mail</a>
+            <a href="mailto:<?= htmlspecialchars($org_email) ?>" class="ev-bridge-v2__icon-btn">✉️ Mail</a>
           <?php endif; ?>
           <?php if ($org_phone): ?>
-            <a href="tel:<?= $org_phone ?>" class="ev-bridge-v2__icon-btn">📞 Anruf</a>
+            <a href="tel:<?= htmlspecialchars($org_phone) ?>" class="ev-bridge-v2__icon-btn">📞 Anruf</a>
           <?php endif; ?>
         </div>
         <?php endif; ?>
@@ -215,10 +215,14 @@ $accent    = htmlspecialchars($settings['color_accent']    ?? '#1d4ed8');
         <?php foreach ((array)$speakers as $sp):
           $spFirst = $sp->first_name ?? '';
           $spLast  = $sp->last_name  ?? '';
+          $spType  = in_array(($sp->speaker_type ?? ''), ['speaker', 'expert'], true) ? (string) $sp->speaker_type : 'speaker';
           $spName  = htmlspecialchars(trim($spFirst . ' ' . $spLast) ?: 'Speaker');
           $spCity  = !empty($sp->location_city) ? htmlspecialchars($sp->location_city) : null;
-          $spPhoto = !empty($sp->photo_url)      ? htmlspecialchars($sp->photo_url)     : null;
+          $spPhotoUrl = filter_var(trim((string) ($sp->photo_url ?? '')), FILTER_VALIDATE_URL) ?: '';
           $spId    = (int)($sp->id ?? 0);
+          $spProfileUrl = $spId > 0
+            ? $base_url . ($spType === 'expert' ? '/experts/' : '/speakers/') . $spId
+            : '';
           $letter = mb_strtoupper(mb_substr($spFirst ?: $spLast, 0, 1) ?: 'S');
           $colors = [['#3b82f6','#1d4ed8'],['#0891b2','#0284c7'],['#6366f1','#4f46e5'],['#8b5cf6','#7c3aed'],['#0ea5e9','#0369a1']];
           $sc     = $colors[abs(crc32($spFirst . $spLast)) % count($colors)];
@@ -226,15 +230,15 @@ $accent    = htmlspecialchars($settings['color_accent']    ?? '#1d4ed8');
         ?>
           <div class="ev-spk-row">
             <div class="ev-spk-row__top">
-              <?php if ($spPhoto): ?>
-                <div class="ev-spk-row__av"><img src="<?= $spPhoto ?>" alt="<?= $spName ?>"></div>
+              <?php if ($spPhotoUrl !== ''): ?>
+                <div class="ev-spk-row__av"><img src="<?= htmlspecialchars($spPhotoUrl) ?>" alt="<?= $spName ?>"></div>
               <?php else: ?>
                 <div class="ev-spk-row__av" style="background:<?= htmlspecialchars($spGrad) ?>"><?= $letter ?></div>
               <?php endif; ?>
               <div class="ev-spk-row__info">
                 <div class="ev-spk-row__name">
-                  <?php if ($spId > 0): ?>
-                    <a href="<?= htmlspecialchars($base_url . '/speakers/' . $spId) ?>"><?= $spName ?></a>
+                  <?php if ($spProfileUrl !== ''): ?>
+                    <a href="<?= htmlspecialchars($spProfileUrl) ?>"><?= $spName ?></a>
                   <?php else: ?>
                     <?= $spName ?>
                   <?php endif; ?>
@@ -242,8 +246,8 @@ $accent    = htmlspecialchars($settings['color_accent']    ?? '#1d4ed8');
                 <?php if ($spCity):  ?><div class="ev-spk-row__sub">📍 <?= $spCity ?></div><?php endif; ?>
               </div>
             </div>
-            <?php if ($spId > 0): ?>
-              <a href="<?= htmlspecialchars($base_url . '/speakers/' . $spId) ?>" class="ev-spk-row__btn">Profil →</a>
+            <?php if ($spProfileUrl !== ''): ?>
+              <a href="<?= htmlspecialchars($spProfileUrl) ?>" class="ev-spk-row__btn">Profil →</a>
             <?php endif; ?>
           </div>
         <?php endforeach; ?>

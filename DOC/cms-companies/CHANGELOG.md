@@ -17,8 +17,12 @@ Alle Änderungen folgen dem Format [Keep a Changelog](https://keepachangelog.com
 - **Card-Link-Escaping:** Detail-Links aus `cms_company_url()` werden im Card-Template jetzt ebenfalls konsequent im `href`-Attribut-Kontext escaped.
 - **Archive-Pagination-Escaping:** Auch Pagination-Links im Archive-Template mit zusammengesetzten Query-Parametern werden jetzt konsequent im `href`-Attribut-Kontext escaped.
 - **Style-Attribut-Escaping:** Dynamische Avatar-Gradienten, Ribbon-Farben und Card-Rahmenwerte werden in Single- und Card-Templates jetzt ebenfalls konsequent im `style`-Attribut-Kontext escaped.
+- **Renderzeit-Validierung:** Logo-, Website-, Mail- und Telefon-Attribute werden in Single- und Card-Templates jetzt zusätzlich gegen Alt- und Bestandsdaten validiert, bevor sie im Frontend gerendert werden.
 - **Ownership-Härtung:** Die zentrale `save_company()`-Persistenz blockiert für Nicht-Admins jetzt Updates auf fremde Company-IDs und entschärft damit latente IDOR-/Fremd-ID-Pfade.
+- **Bootstrap-Fix:** Hook-registrierende Klassen werden jetzt bereits beim Plugin-Start instanziiert, sodass Admin-Sidebar-Eintrag und Admin-Routen nicht mehr von `cms_init` abhängen.
+- **Bootstrap-Guard:** Der frühe Bootstrap wird jetzt zusätzlich nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) ausgeführt und entschärft damit Aktivierungs-/Lade-Fatals.
 - **Member-Dashboard:** Eigene `pending`-Firmen werden nun konsistent gezählt und in der Übersicht angezeigt; Admin-Ansichten können alle nicht gelöschten Einträge laden.
+- **Member-Dashboard-Status:** Der aktuelle Rechte-Stand wurde nachgezogen: Im Member-Bereich existiert derzeit nur ein Create-/Listen-Flow, aber kein realer Edit- oder Experten-Relations-Update-Pfad für bestehende Firmen.
 - **Assets:** Admin- und Bootstrap-Assets nutzen robuste, dateigeprüfte Versionswerte statt direkter `filemtime()`-Aufrufe ohne Fallback.
 
 ## [2.8.0-docs] – 2026-03-28

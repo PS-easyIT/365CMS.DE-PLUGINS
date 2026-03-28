@@ -31,6 +31,8 @@ $show_industry  = ($s['design_show_industry']  ?? '1') === '1';
 $show_city      = ($s['design_show_city']      ?? '1') === '1';
 $show_employees = ($s['design_show_employees'] ?? '1') === '1';
 $show_website   = ($s['design_show_website']   ?? '1') === '1';
+$logo_url       = filter_var(trim((string) ($company->logo_url ?? '')), FILTER_VALIDATE_URL) ?: '';
+$website_url    = filter_var(trim((string) ($company->website ?? '')), FILTER_VALIDATE_URL) ?: '';
 $ribbon_partner_color  = htmlspecialchars($s['design_partner_color']     ?? '#9ca3af');
 $ribbon_top_color      = htmlspecialchars($s['design_top_partner_color'] ?? '#d97706');
 $ribbon_sponsor_color  = htmlspecialchars($s['design_sponsor_color']     ?? '#7c3aed');
@@ -82,9 +84,9 @@ $tier_style = $tier_color ? ' style="--co-tier-border:' . $sec->escape($tier_col
 
     <!-- Header: Avatar + Name + Branche -->
     <div class="co-card-head">
-        <?php if (!empty($company->logo_url)): ?>
+        <?php if ($logo_url !== ''): ?>
             <div class="co-card-avatar co-card-avatar--logo">
-                <img src="<?= $sec->escape($company->logo_url) ?>" alt="<?= $sec->escape($company->name) ?>" loading="lazy">
+                <img src="<?= $sec->escape($logo_url) ?>" alt="<?= $sec->escape($company->name) ?>" loading="lazy">
             </div>
         <?php else: ?>
             <div class="co-card-avatar" style="background:<?= $sec->escape($avatar_bg) ?>;"><?= $sec->escape($initials) ?></div>
@@ -121,8 +123,8 @@ $tier_style = $tier_color ? ' style="--co-tier-border:' . $sec->escape($tier_col
         <a href="<?= $sec->escape(cms_company_url($company)) ?>" class="co-btn co-btn-primary co-btn-block">
             Details ansehen
         </a>
-        <?php if ($show_website && !empty($company->website)): ?>
-            <a href="<?= $sec->escape($company->website) ?>" target="_blank" rel="noopener noreferrer" class="co-btn co-btn-ghost">
+        <?php if ($show_website && $website_url !== ''): ?>
+            <a href="<?= $sec->escape($website_url) ?>" target="_blank" rel="noopener noreferrer" class="co-btn co-btn-ghost">
                 🌐
             </a>
         <?php endif; ?>

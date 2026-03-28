@@ -56,8 +56,10 @@
 - [x] Reset- und Pagination-Links im Archive-Template für interne URLs und Query-Parameter konsequent im Attribut-Kontext escaped.
 - [x] Auch dynamische Gradientwerte im `style`-Attribut des Speaker-Fallbacks im Single-Template konsequent escaped.
 - [x] Zentrale `save_event()`-Persistenz verweigert für Nicht-Admins Updates auf fremde Event-IDs und entschärft damit latente Member-IDOR-Pfade.
+- [x] Plugin-Bootstrap instanziiert hook-registrierende Klassen jetzt frühzeitig, damit Admin-Sidebar-Eintrag und Admin-Routen nach Aktivierung zuverlässig verfügbar sind.
 - [x] Asset-Versionierung in Bootstrap und Admin auf konsistente, dateigeprüfte Nutzung von `filemtime()` vereinheitlicht.
-- [ ] Speaker-Typen, Kalender-Parameter und Render-Escaping noch vollständig durchprüfen.
+- [x] Speaker-Typen, Kalender-Parameter und Render-Escaping vollständig nachgezogen: `speaker_type` zentral gewhitelistet, Kalender-`month`/`view` validiert und Frontend-URL-/Bild-/Kontaktpfade zusätzlich zur Laufzeit gehärtet.
+- [x] Früher Plugin-Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals gehärtet: Komponenten werden nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) instanziiert.
 
 ---
 

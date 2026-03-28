@@ -11,7 +11,12 @@
 - **Link-Escaping:** Intern zusammengesetzte Breadcrumb-, Speaker- und Register-Links im Single-Template werden jetzt ebenfalls konsequent im Attribut-Kontext escaped.
 - **Archive-Link-Escaping:** Reset- und Pagination-Links im Archive-Template behandeln interne URLs und Query-Parameter jetzt ebenfalls konsequent im `href`-Attribut-Kontext.
 - **Style-Attribut-Escaping:** Auch dynamische Gradientwerte im Speaker-Fallback des Single-Templates werden jetzt konsequent im `style`-Attribut-Kontext escaped.
+- **Speaker-Typ-Härtung:** Die zentrale `assign_speaker()`-Persistenz whitelisted `speaker_type` jetzt zusätzlich selbst auf `speaker`/`expert`.
+- **Kalender-Parameter:** Calendar-Shortcodes validieren `month` und `view` jetzt auch aus Attributen und Query-Parametern restriktiv, bevor sie in Query- oder Render-Kontexte laufen.
+- **Renderzeit-Validierung:** Speaker-/Experten-Profillinks sowie Banner-, Bild-, Registrierungs-, Online- und Veranstalter-Kontaktfelder werden im Single-Template jetzt zusätzlich gegen Alt- und Bestandsdaten validiert.
 - **Ownership-Härtung:** Die zentrale `save_event()`-Persistenz blockiert für Nicht-Admins jetzt Updates auf fremde Event-IDs und entschärft damit latente IDOR-/Fremd-ID-Pfade.
+- **Bootstrap-Fix:** Hook-registrierende Klassen werden jetzt bereits beim Plugin-Start instanziiert, sodass Admin-Sidebar-Eintrag und Admin-Routen nicht mehr von `cms_init` abhängen.
+- **Bootstrap-Guard:** Der frühe Bootstrap wird jetzt zusätzlich nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) ausgeführt und entschärft damit Aktivierungs-/Lade-Fatals.
 - **Member-Dashboard:** Eigene Event-Zähler berücksichtigen nicht mehr nur veröffentlichte Einträge, sondern den tatsächlichen Bearbeitungsstand des Members.
 - **Assets:** Bootstrap- und Admin-Assets nutzen konsistent dateigeprüfte, lokal zwischengespeicherte Versionswerte.
 

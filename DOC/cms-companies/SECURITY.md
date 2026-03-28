@@ -18,7 +18,7 @@ Schwerpunkte sind:
 |---------|---------|
 | Admin-Backend | `CMS\Auth::instance()->isAdmin()` |
 | Member-Dashboard | `CMS\Auth::instance()->isLoggedIn()` |
-| Eigene Firma bearbeiten | `$company['user_id'] === Auth::instance()->getUserId()` oder `isAdmin()` |
+| Eigene Firma bearbeiten | aktuell kein Member-Edit-Pfad; Bearbeiten derzeit nur im Admin-Backend |
 | Firmen anderer Nutzer | Nur sichtbar, nicht bearbeitbar (für Member) |
 
 ## CSRF-Schutz
@@ -61,6 +61,7 @@ echo htmlspecialchars($company['logo_url'], ENT_QUOTES);
 * Auch aus Helper-Funktionen wie `cms_company_url()` erzeugte Card-Links nur escaped im `href`-Attribut rendern.
 * Auch Pagination-Links im Archiv mit zusammengesetzten Query-Parametern nur escaped im `href`-Attribut rendern.
 * Dynamische Farb- und Gradientwerte in `style`-Attributen von Cards und Single-Templates ebenfalls nur escaped ausgeben.
+* Logo-, Website-, Mailto- und Tel-Ausgaben auf öffentlichen Renderpfaden zusätzlich zur Eingabe-Sanitierung nochmals zur Laufzeit validieren, damit auch Alt- und Bestandsdaten keine unsicheren Attributwerte erzeugen.
 * Zentrale Save-Pfade für Firmen müssen bei Updates für Nicht-Admins den `user_id`-Besitz des Datensatzes gegenprüfen und fremde IDs verwerfen.
 
 ## SQL-Injection-Prävention
@@ -80,9 +81,9 @@ echo htmlspecialchars($company['logo_url'], ENT_QUOTES);
 |--------|-------|----------------------|------|
 | Firmen ansehen | ✅ | ✅ | ✅ |
 | Firma erstellen | ✅ | ✅ (eine) | ❌ |
-| Eigene Firma bearbeiten | ✅ | ✅ | ❌ |
+| Eigene Firma bearbeiten | ✅ | ❌ (derzeit kein Member-Edit-Pfad) | ❌ |
 | Fremde Firma bearbeiten | ✅ | ❌ | ❌ |
 | Firma löschen | ✅ | ❌ | ❌ |
 | Status ändern | ✅ | ❌ | ❌ |
 | Partner-Status vergeben | ✅ | ❌ | ❌ |
-| Experten zuordnen | ✅ | ✅ (eigene Firma) | ❌ |
+| Experten zuordnen | ✅ | ❌ | ❌ |

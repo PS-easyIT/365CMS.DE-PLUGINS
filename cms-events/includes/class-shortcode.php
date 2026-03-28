@@ -154,8 +154,20 @@ final class CMS_Events_Shortcode
             'category' => '',
         ], $atts);
 
+        $atts['month'] = preg_match('/^\d{4}-\d{2}$/', (string) $atts['month'])
+            ? (string) $atts['month']
+            : date('Y-m');
+
+        $atts['view'] = in_array((string) $atts['view'], ['month', 'week'], true)
+            ? (string) $atts['view']
+            : 'month';
+
         if (!empty($_GET['month']) && preg_match('/^\d{4}-\d{2}$/', (string)$_GET['month'])) {
             $atts['month'] = (string)$_GET['month'];
+        }
+
+        if (!empty($_GET['view']) && in_array((string) $_GET['view'], ['month', 'week'], true)) {
+            $atts['view'] = (string) $_GET['view'];
         }
 
         $db_manager = CMS_Events_Database::instance();
@@ -183,7 +195,7 @@ final class CMS_Events_Shortcode
                 <a class="btn-next calendar-nav-btn" href="<?= htmlspecialchars($this->buildCalendarNavigationUrl($nextMonth, (string)$atts['view'], (string)$atts['category']), ENT_QUOTES) ?>" aria-label="Nächster Monat">›</a>
             </div>
             
-            <div class="calendar-view-<?= $atts['view'] ?>">
+            <div class="calendar-view-<?= htmlspecialchars($atts['view'], ENT_QUOTES) ?>">
                 <?php if ($atts['view'] === 'month'): ?>
                     <?php $this->render_month_view($events, $atts['month']); ?>
                 <?php else: ?>

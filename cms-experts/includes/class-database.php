@@ -182,7 +182,6 @@ final class CMS_Experts_Database
 
         } catch (\PDOException $e) {
             error_log('CMS Experts Database Error: ' . $e->getMessage());
-            throw $e;
         }
     }
 

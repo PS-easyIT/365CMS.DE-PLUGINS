@@ -56,8 +56,13 @@
 - [x] Auch der CTA-Link aus `$speaker_url` im Card-Template wird jetzt konsequent im Attribut-Kontext escaped.
 - [x] Auch Avatar-Gradient im `style`-Attribut und Event-Zähler im `title`-Attribut des Single-Templates werden jetzt konsequent escaped.
 - [x] Zentrale `save_speaker()`-Persistenz verweigert für Nicht-Admins Updates auf fremde Speaker-IDs und entschärft damit latente Member-IDOR-Pfade.
+- [x] Auch interne Social-Icon-Labels im `title`-Attribut des Single-Templates werden jetzt konsequent escaped.
+- [x] Plugin-Bootstrap instanziiert hook-registrierende Klassen jetzt frühzeitig, damit Admin-Sidebar-Eintrag und Admin-Routen nach Aktivierung zuverlässig verfügbar sind.
+- [x] Spezial-Handler für Speaker-Event-Unterdatensätze (`admin_event_add`/`admin_event_delete`) als Admin-only mit CSRF-Schutz verifiziert; aktuell kein Member-IDOR-Pfad vorhanden.
 - [x] Asset-Versionierung in Bootstrap und Admin konsistent vereinheitlicht.
-- [ ] Ownership-Schutz für Speaker-Unterdatensätze und Template-Escaping noch vollständig vertiefen.
+- [x] Verbleibende Template-Restbefunde für Foto-, Website-, Mail-, Telefon- und Social-Links in Card- und Single-Templates per zusätzlicher Renderzeit-Validierung gegen Alt- und Bestandsdaten gehärtet.
+- [x] Aktuellen Ownership-Stand präzisiert: Member-Dashboard bietet derzeit nur Create + Liste, kein realer Member-Edit- oder Event-/Topic-Update-Pfad vorhanden.
+- [x] Früher Plugin-Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals gehärtet: Komponenten werden nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) instanziiert.
 
 ---
 

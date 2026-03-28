@@ -18,7 +18,7 @@ Besonders kritisch sind:
 |---------|-------------------|
 | Admin-Backend | `CMS\Auth::instance()->isAdmin()` |
 | Member-Dashboard | `CMS\Auth::instance()->isLoggedIn()` |
-| Eigenes Expertenprofil bearbeiten | nur Owner oder Admin |
+| Eigenes Expertenprofil bearbeiten | aktuell kein Member-Edit-Pfad; Bearbeiten derzeit nur im Admin-Backend |
 | Fremde Expertenprofile bearbeiten | nur Admin |
 | Taxonomien / Skill-Presets verwalten | nur Admin |
 | Öffentliche Profilseiten | ohne Login lesbar |
@@ -80,6 +80,8 @@ Für Profilseiten und Cards gilt:
 - auch Detail-Links aus internen Variablen wie `$url` in Cards nur escaped im `href`-Attribut rendern
 - auch CTA-Links in Cards und Reset-Links im Archiv bei internen URL-Werten nur escaped im `href`-Attribut rendern
 - auch dynamische Gradientwerte in `style`-Attributen und zusammengesetzte Tooltip-Texte in `title`-Attributen im Single-Template escapen
+- auch interne Social-Icon-Labels im `title`-Attribut des Single-Templates im Attribut-Kontext escapen
+- Foto-, Website-, Mail-, Telefon- und Social-Link-Felder auf öffentlichen Renderpfaden zusätzlich zur Eingabe-Sanitierung nochmals zur Laufzeit validieren, damit auch Alt- und Bestandsdaten keine unsicheren Attributwerte erzeugen
 - zentrale Save-Pfade für Experten müssen bei Updates für Nicht-Admins den `user_id`-Besitz des Datensatzes gegenprüfen und fremde IDs verwerfen
 - eingebundene externe Feed-/RSS-Daten robust gegen Fehler und unerwartete Inhalte behandeln
 
@@ -95,7 +97,7 @@ Für Profilseiten und Cards gilt:
 Audit-Schwerpunkte:
 
 - Member darf nur das eigene Profil ändern
-- Member darf keine fremden Zertifikate, Projekte oder Skill-Datensätze manipulieren
+- Member darf keine fremden Zertifikate, Projekte oder Skill-Datensätze manipulieren; aktuell existiert dafür kein öffentlicher Member-Update-Pfad
 - Profil-IDs aus URLs oder Formularen müssen stets gegen den eingeloggten User geprüft werden
 - Admin- und Member-Flows dürfen nicht vermischt werden
 
@@ -120,10 +122,10 @@ Bei Referenzen auf `company_id`, `expert_id`, Event-Bezüge oder Speaker-Verknü
 |--------|-------|--------------------------|------|
 | Experten ansehen | ✅ | ✅ | ✅ |
 | Profil erstellen | ✅ | ✅ sofern vorgesehen | ❌ |
-| Eigenes Profil bearbeiten | ✅ | ✅ | ❌ |
+| Eigenes Profil bearbeiten | ✅ | ❌ (derzeit kein Member-Edit-Pfad) | ❌ |
 | Fremdes Profil bearbeiten | ✅ | ❌ | ❌ |
-| Status ändern | ✅ | eingeschränkt nach Flow | ❌ |
-| Skill-/Preset-Verwaltung | ✅ | ❌ | ❌ |
+| Skills / Zertifikate / Projekte / Ausbildung verwalten | ✅ | ❌ | ❌ |
+| Status ändern | ✅ | ❌ | ❌ |
 | Soft-Delete | ✅ | ❌ bzw. nur definierter Self-Service-Flow | ❌ |
 
 ## Audit-Checkliste für V2.8.0

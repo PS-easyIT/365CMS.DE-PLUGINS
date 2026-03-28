@@ -18,9 +18,9 @@ Schwerpunkte sind:
 |---------|-------------------|
 | Admin-Backend | `CMS\Auth::instance()->isAdmin()` |
 | Member-Dashboard | `CMS\Auth::instance()->isLoggedIn()` |
-| Eigenes Speaker-Profil bearbeiten | nur Owner oder Admin |
+| Eigenes Speaker-Profil bearbeiten | aktuell kein Member-Edit-Pfad; Bearbeiten derzeit nur im Admin-Backend |
 | Fremde Speaker bearbeiten | nur Admin |
-| Event-/Topic-Zuordnungen pflegen | nur berechtigter Flow |
+| Event-/Topic-Zuordnungen pflegen | derzeit nur Admin |
 | Öffentliche Profilseiten | ohne Login lesbar |
 
 ## CSRF-/Nonce-Schutz
@@ -69,6 +69,8 @@ if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'speakers
 - auch Detail-Links aus internen Variablen wie `$speaker_url` in Cards nur escaped im `href`-Attribut rendern
 - auch CTA-Links in Cards bei internen URL-Variablen nur escaped im `href`-Attribut rendern
 - auch dynamische Gradientwerte in `style`-Attributen und zusammengesetzte Tooltip-Texte in `title`-Attributen im Single-Template escapen
+- auch interne Social-Icon-Labels im `title`-Attribut des Single-Templates im Attribut-Kontext escapen
+- Foto-, Website-, Mail-, Telefon- und Social-Link-Felder auf öffentlichen Renderpfaden zusätzlich zur Eingabe-Sanitierung nochmals zur Laufzeit validieren, damit auch Alt- und Bestandsdaten keine unsicheren Attributwerte erzeugen
 - zentrale Save-Pfade für Speaker müssen bei Updates für Nicht-Admins den `user_id`-Besitz des Datensatzes gegenprüfen und fremde IDs verwerfen
 - Topic- und Event-History-Ausgaben gegen XSS absichern
 
@@ -84,7 +86,7 @@ if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'speakers
 Besonders zu prüfen:
 
 - Member darf keine fremden Speaker-Profile bearbeiten
-- Member darf keine fremden Topic-/Event-Einträge manipulieren
+- Member darf keine fremden Topic-/Event-Einträge manipulieren; aktuell existiert dafür kein öffentlicher Member-Update-Pfad
 - Speaker- und Event-IDs aus Request-Daten müssen immer gegen Rechte und Existenz geprüft werden
 
 ## Cross-Plugin-Sicherheit
@@ -108,10 +110,10 @@ Für `expert_id`, `company_id` und `cms_event_id` gilt:
 |--------|-------|--------------------------|------|
 | Speaker ansehen | ✅ | ✅ | ✅ |
 | Profil erstellen | ✅ | ✅ sofern vorgesehen | ❌ |
-| Eigenes Profil bearbeiten | ✅ | ✅ | ❌ |
+| Eigenes Profil bearbeiten | ✅ | ❌ (derzeit kein Member-Edit-Pfad) | ❌ |
 | Fremdes Profil bearbeiten | ✅ | ❌ | ❌ |
-| Topics / Auftritte verwalten | ✅ | eingeschränkt im eigenen Profil | ❌ |
-| Status / Verfügbarkeit ändern | ✅ | eingeschränkt nach Flow | ❌ |
+| Topics / Auftritte verwalten | ✅ | ❌ | ❌ |
+| Status / Verfügbarkeit ändern | ✅ | ❌ | ❌ |
 | Profil löschen | ✅ | ❌ bzw. nur definierter Self-Service-Flow | ❌ |
 
 ## Audit-Checkliste für V2.8.0

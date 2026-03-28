@@ -139,7 +139,6 @@ final class CMS_Companies_Database
 
         } catch (\PDOException $e) {
             error_log('CMS Companies Database Error: ' . $e->getMessage());
-            throw $e;
         }
     }
 

@@ -51,6 +51,9 @@ final class CMS_Companies
 
         $this->load_dependencies();
         $this->init_hooks();
+        if ($this->can_bootstrap_components()) {
+            $this->bootstrap_components();
+        }
     }
 
     private function load_dependencies(): void
@@ -75,6 +78,20 @@ final class CMS_Companies
         }
     }
 
+    private function can_bootstrap_components(): bool
+    {
+        return class_exists('CMS\\Hooks') && class_exists('CMS\\Database');
+    }
+
+    private function bootstrap_components(): void
+    {
+        foreach (['CMS_Companies_Database', 'CMS_Companies_Post_Type', 'CMS_Companies_Meta_Boxes', 'CMS_Companies_Template_Loader', 'CMS_Companies_Shortcode', 'CMS_Companies_Admin', 'CMS_Companies_Member_Dashboard'] as $class) {
+            if (class_exists($class)) {
+                $class::instance();
+            }
+        }
+    }
+
     private function init_hooks(): void
     {
         if (class_exists('CMS\Hooks')) {
@@ -91,7 +108,7 @@ final class CMS_Companies
             return;
         }
 
-        if (class_exists('CMS_Companies_Database')) {
+        if (class_exists('CMS\\Database') && class_exists('CMS_Companies_Database')) {
             CMS_Companies_Database::instance()->create_tables();
         }
 
@@ -102,26 +119,16 @@ final class CMS_Companies
 
     public function init_plugin(): void
     {
+        if (!$this->can_bootstrap_components()) {
+            return;
+        }
+
         if (class_exists('CMS_Companies_Database')) {
             $db = CMS_Companies_Database::instance();
             // Tabellen bei jedem Init sicherstellen (CREATE IF NOT EXISTS – idempotent)
             try { $db->create_tables(); } catch (\Throwable $e) { error_log('CMS Companies: ' . $e->getMessage()); }
         }
-        if (class_exists('CMS_Companies_Post_Type')) {
-            CMS_Companies_Post_Type::instance();
-        }
-        if (class_exists('CMS_Companies_Meta_Boxes')) {
-            CMS_Companies_Meta_Boxes::instance();
-        }
-        if (class_exists('CMS_Companies_Template_Loader')) {
-            CMS_Companies_Template_Loader::instance();
-        }
-        if (class_exists('CMS_Companies_Shortcode')) {
-            CMS_Companies_Shortcode::instance();
-        }
-        if (class_exists('CMS_Companies_Admin')) {
-            CMS_Companies_Admin::instance();
-        }
+        $this->bootstrap_components();
     }
 
     public function enqueue_styles(): void

@@ -15,7 +15,12 @@
 - **Card-Link-Escaping:** Detail-Links aus `$speaker_url` werden im Card-Template jetzt ebenfalls konsequent im `href`-Attribut-Kontext escaped.
 - **Card-CTA-Escaping:** Auch der CTA-Link aus `$speaker_url` im Card-Template wird jetzt konsequent im `href`-Attribut-Kontext escaped.
 - **Style-/Title-Escaping:** Auch Avatar-Gradient im `style`-Attribut und Event-Zähler im `title`-Attribut des Single-Templates werden jetzt konsequent escaped.
+- **Title-Attribut-Escaping:** Auch interne Social-Icon-Labels im `title`-Attribut des Single-Templates werden jetzt konsequent escaped.
+- **Renderzeit-Validierung:** Foto-, Website-, Mail-, Telefon- und Social-Link-Felder werden in Card- und Single-Templates jetzt zusätzlich gegen Alt- und Bestandsdaten validiert, bevor sie in `src`, `href`, `mailto:` oder `tel:` gerendert werden.
+- **Member-Dashboard-Status:** Der aktuelle Rechte-Stand wurde nachgezogen: Im Member-Bereich existiert derzeit nur ein Create-/Listen-Flow, aber kein realer Edit- oder Update-Pfad für bestehende Speaker.
 - **Ownership-Härtung:** Die zentrale `save_speaker()`-Persistenz blockiert für Nicht-Admins jetzt Updates auf fremde Speaker-IDs und entschärft damit latente IDOR-/Fremd-ID-Pfade.
+- **Bootstrap-Fix:** Hook-registrierende Klassen werden jetzt bereits beim Plugin-Start instanziiert, sodass Admin-Sidebar-Eintrag und Admin-Routen nicht mehr von `cms_init` abhängen.
+- **Bootstrap-Guard:** Der frühe Bootstrap wird jetzt zusätzlich nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) ausgeführt und entschärft damit Aktivierungs-/Lade-Fatals.
 - **Assets:** Bootstrap- und Admin-Assets verwenden konsistente, dateigeprüfte Versionswerte.
 
 ## [2.8.0-docs] – 2026-03-28

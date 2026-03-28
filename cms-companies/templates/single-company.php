@@ -51,6 +51,10 @@ $partnerSponsorColor= $settings['design_sponsor_color']         ?? '#7c3aed';
 $partnerTopColor    = $settings['design_top_partner_color']     ?? '#d97706';
 $partnerColor       = $settings['design_partner_color']         ?? '#9ca3af';
 $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
+$companyLogoUrl     = filter_var(trim((string) ($company->logo_url ?? '')), FILTER_VALIDATE_URL) ?: '';
+$companyWebsiteUrl  = filter_var(trim((string) ($company->website ?? '')), FILTER_VALIDATE_URL) ?: '';
+$companyEmail       = filter_var(trim((string) ($company->email ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
+$companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->phone ?? ''))) ?: '';
 ?>
 <style>
 :root {
@@ -83,8 +87,8 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
       <?php endif; ?>
     </div>
     <div class="co-hero-v2__inner">
-      <?php if (!empty($company->logo_url)): ?>
-        <div class="co-hero-v2__avatar"><img src="<?= $sec->escape($company->logo_url) ?>" alt="<?= $sec->escape($company->name) ?>"></div>
+      <?php if ($companyLogoUrl !== ''): ?>
+        <div class="co-hero-v2__avatar"><img src="<?= $sec->escape($companyLogoUrl) ?>" alt="<?= $sec->escape($company->name) ?>"></div>
       <?php else: ?>
         <div class="co-hero-v2__avatar" style="background:<?= $sec->escape($avatarBg) ?>;"><?= $sec->escape($initials) ?></div>
       <?php endif; ?>
@@ -113,16 +117,16 @@ $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
         <a href="#contact" class="co-bridge-v2__book-btn">✉️ Nachricht / Buchen</a>
 
         <!-- Kontakt-Icons in einer Reihe -->
-        <?php if (!empty($company->website) || !empty($company->email) || !empty($company->phone)): ?>
+        <?php if ($companyWebsiteUrl !== '' || $companyEmail !== '' || $companyPhoneHref !== ''): ?>
         <div class="co-bridge-v2__icon-row">
-          <?php if (!empty($company->website)): ?>
-            <a href="<?= $sec->escape($company->website) ?>" target="_blank" rel="noopener" class="co-bridge-v2__icon-btn">🌐 Web</a>
+          <?php if ($companyWebsiteUrl !== ''): ?>
+            <a href="<?= $sec->escape($companyWebsiteUrl) ?>" target="_blank" rel="noopener" class="co-bridge-v2__icon-btn">🌐 Web</a>
           <?php endif; ?>
-          <?php if (!empty($company->email)): ?>
-            <a href="mailto:<?= $sec->escape($company->email) ?>" class="co-bridge-v2__icon-btn">✉️ Mail</a>
+          <?php if ($companyEmail !== ''): ?>
+            <a href="mailto:<?= $sec->escape($companyEmail) ?>" class="co-bridge-v2__icon-btn">✉️ Mail</a>
           <?php endif; ?>
-          <?php if (!empty($company->phone)): ?>
-            <a href="tel:<?= $sec->escape($company->phone) ?>" class="co-bridge-v2__icon-btn">📞 Anruf</a>
+          <?php if ($companyPhoneHref !== ''): ?>
+            <a href="tel:<?= $sec->escape($companyPhoneHref) ?>" class="co-bridge-v2__icon-btn">📞 Anruf</a>
           <?php endif; ?>
         </div>
         <?php endif; ?>

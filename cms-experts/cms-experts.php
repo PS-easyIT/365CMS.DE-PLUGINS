@@ -51,6 +51,9 @@ final class CMS_Experts
 
         $this->load_dependencies();
         $this->init_hooks();
+        if ($this->can_bootstrap_components()) {
+            $this->bootstrap_components();
+        }
     }
 
     /**
@@ -79,6 +82,20 @@ final class CMS_Experts
         }
     }
 
+    private function can_bootstrap_components(): bool
+    {
+        return class_exists('CMS\\Hooks') && class_exists('CMS\\Database');
+    }
+
+    private function bootstrap_components(): void
+    {
+        foreach (['CMS_Experts_Database', 'CMS_Experts_Post_Type', 'CMS_Experts_Meta_Boxes', 'CMS_Experts_Taxonomies', 'CMS_Experts_Template_Loader', 'CMS_Experts_Shortcode', 'CMS_Experts_Admin', 'CMS_Experts_Member_Dashboard'] as $class) {
+            if (class_exists($class)) {
+                $class::instance();
+            }
+        }
+    }
+
     /**
      * Registriert CMSv2 Hooks
      */
@@ -101,7 +118,7 @@ final class CMS_Experts
             return;
         }
 
-        if (class_exists('CMS_Experts_Database')) {
+        if (class_exists('CMS\\Database') && class_exists('CMS_Experts_Database')) {
             CMS_Experts_Database::instance()->create_tables();
         }
 
@@ -115,6 +132,10 @@ final class CMS_Experts
      */
     public function init_plugin(): void
     {
+        if (!$this->can_bootstrap_components()) {
+            return;
+        }
+
         if (class_exists('CMS_Experts_Database')) {
             $db = CMS_Experts_Database::instance();
             $schema_version = '2.0.0';
@@ -129,24 +150,7 @@ final class CMS_Experts
                 }
             }
         }
-        if (class_exists('CMS_Experts_Post_Type')) {
-            CMS_Experts_Post_Type::instance();
-        }
-        if (class_exists('CMS_Experts_Meta_Boxes')) {
-            CMS_Experts_Meta_Boxes::instance();
-        }
-        if (class_exists('CMS_Experts_Taxonomies')) {
-            CMS_Experts_Taxonomies::instance();
-        }
-        if (class_exists('CMS_Experts_Template_Loader')) {
-            CMS_Experts_Template_Loader::instance();
-        }
-        if (class_exists('CMS_Experts_Shortcode')) {
-            CMS_Experts_Shortcode::instance();
-        }
-        if (class_exists('CMS_Experts_Admin')) {
-            CMS_Experts_Admin::instance();
-        }
+        $this->bootstrap_components();
     }
 
     /**

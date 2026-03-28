@@ -55,9 +55,12 @@
 - [x] Auch Pagination-Links im Archive-Template mit zusammengesetzten Query-Parametern konsequent im Attribut-Kontext escaped.
 - [x] Auch dynamische `style`-Attributwerte für Avatar-Gradienten, Ribbon-Farben und Card-Rahmen in Single- und Card-Templates konsequent escaped.
 - [x] Zentrale `save_company()`-Persistenz verweigert für Nicht-Admins Updates auf fremde Company-IDs und entschärft damit latente Member-IDOR-Pfade.
+- [x] Plugin-Bootstrap instanziiert hook-registrierende Klassen jetzt frühzeitig, damit Admin-Sidebar-Eintrag und Admin-Routen nach Aktivierung zuverlässig verfügbar sind.
+- [x] Spezial-Handler für Experten-Zuordnungen (`admin_expert_assign`/`admin_expert_remove`) als Admin-only mit CSRF-Schutz verifiziert; aktuell kein Member-IDOR-Pfad vorhanden.
 - [x] Admin-Asset-Ausgabe gegen fehlende Dateien abgesichert und `filemtime()` robust vereinheitlicht.
-- [ ] Ownership-/IDOR-Schutz für Bearbeiten, Löschen und Experten-Zuordnungen noch gezielt vertiefen.
-- [ ] Renderpfade für Logo-, Website- und Kontaktfelder noch vollständig gegen Ausgabefehler prüfen.
+- [x] Renderpfade für Logo-, Website-, Mail- und Telefonfelder in Single- und Card-Templates per zusätzlicher Renderzeit-Validierung gegen Alt- und Bestandsdaten gehärtet.
+- [x] Ownership-Stand präzisiert: Member-Dashboard bietet derzeit nur Create + Liste; kein realer Member-Edit- oder Experten-Relations-Update-Pfad vorhanden, zentrale `save_company()`-Härtung bleibt als Vorsorge aktiv.
+- [x] Früher Plugin-Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals gehärtet: Komponenten werden nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) instanziiert.
 
 ---
 

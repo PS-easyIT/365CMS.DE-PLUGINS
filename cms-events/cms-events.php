@@ -31,12 +31,25 @@ final class CMS_Events {
         $this->plugin_url = CMS_EVENTS_PLUGIN_URL;
         $this->load_dependencies();
         $this->init_hooks();
+        if ($this->can_bootstrap_components()) {
+            $this->bootstrap_components();
+        }
     }
 
     private function load_dependencies(): void {
         $includes = $this->plugin_dir . 'includes/';
         foreach (['class-database.php', 'class-post-type.php', 'class-meta-boxes.php', 'class-template-loader.php', 'class-shortcode.php', 'class-admin.php', 'class-member-dashboard.php'] as $file) {
             if (file_exists($includes . $file)) require_once $includes . $file;
+        }
+    }
+
+    private function can_bootstrap_components(): bool {
+        return class_exists('CMS\\Hooks') && class_exists('CMS\\Database');
+    }
+
+    private function bootstrap_components(): void {
+        foreach (['CMS_Events_Database', 'CMS_Events_Post_Type', 'CMS_Events_Meta_Boxes', 'CMS_Events_Template_Loader', 'CMS_Events_Shortcode', 'CMS_Events_Admin', 'CMS_Events_Member_Dashboard'] as $class) {
+            if (class_exists($class)) $class::instance();
         }
     }
 
@@ -50,16 +63,17 @@ final class CMS_Events {
     }
 
     public function on_activation(string $plugin): void {
-        if ($plugin === 'cms-events' && class_exists('CMS_Events_Database')) {
+        if ($plugin === 'cms-events' && class_exists('CMS\\Database') && class_exists('CMS_Events_Database')) {
             CMS_Events_Database::instance()->create_tables();
             if (class_exists('CMS\Hooks')) CMS\Hooks::doAction('event_created');
         }
     }
 
     public function init_plugin(): void {
-        foreach (['CMS_Events_Database', 'CMS_Events_Post_Type', 'CMS_Events_Meta_Boxes', 'CMS_Events_Template_Loader', 'CMS_Events_Shortcode', 'CMS_Events_Admin'] as $class) {
-            if (class_exists($class)) $class::instance();
+        if (!$this->can_bootstrap_components()) {
+            return;
         }
+        $this->bootstrap_components();
     }
 
     public function enqueue_styles(): void {

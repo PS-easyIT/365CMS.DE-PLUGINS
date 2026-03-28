@@ -62,11 +62,12 @@ $border_radius      = (int)($settings['design_border_radius']    ?? 12);
 <?php
 // ── Data Extraction ──────────────────────────────────────────────────────────
 $full_name      = trim(($expert->first_name ?? '') . ' ' . ($expert->last_name ?? ''));
-$photo          = $expert->photo_url ?? '';
+$photo          = filter_var(trim((string) ($expert->photo_url ?? '')), FILTER_VALIDATE_URL) ?: '';
 $position       = $expert->position ?? '';
 $company        = $expert->company  ?? '';
 $company_id     = (int)($meta['company_id'] ?? 0);
 $company_url    = '';
+
 if ($company_id > 0) {
     $company_url = rtrim(SITE_URL, '/') . '/company/' . strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', str_replace(['ä','ö','ü','ß','Ä','Ö','Ü'], ['ae','oe','ue','ss','ae','oe','ue'], $company)), '-')) . '-' . $company_id;
 }
@@ -93,11 +94,11 @@ if (!empty($skills) && is_array($skills)) {
 
 // Social Links
 $social = [
-    'linkedin' => $meta['social_linkedin'] ?? '',
-    'xing'     => $meta['social_xing']     ?? '',
-    'github'   => $meta['social_github']   ?? '',
-    'twitter'  => $meta['social_twitter']  ?? '',
-    'website'  => $meta['social_website']  ?? '',
+    'linkedin' => filter_var(trim((string) ($meta['social_linkedin'] ?? '')), FILTER_VALIDATE_URL) ?: '',
+    'xing'     => filter_var(trim((string) ($meta['social_xing'] ?? '')), FILTER_VALIDATE_URL) ?: '',
+    'github'   => filter_var(trim((string) ($meta['social_github'] ?? '')), FILTER_VALIDATE_URL) ?: '',
+    'twitter'  => filter_var(trim((string) ($meta['social_twitter'] ?? '')), FILTER_VALIDATE_URL) ?: '',
+    'website'  => filter_var(trim((string) ($meta['social_website'] ?? '')), FILTER_VALIDATE_URL) ?: '',
 ];
 $has_social = !empty(array_filter($social));
 
@@ -144,11 +145,14 @@ $team_size_led      = $meta['team_size_led']           ?? '';
 $total_projects_cnt = $meta['total_projects']          ?? '';
 
 // Erweiterte Social Links
-$social['gitlab']        = $meta['social_gitlab']        ?? '';
-$social['stackoverflow'] = $meta['social_stackoverflow'] ?? '';
-$social['youtube']       = $meta['social_youtube']       ?? '';
-$social['blog_rss']      = $meta['social_blog_rss']      ?? '';
+$social['gitlab']        = filter_var(trim((string) ($meta['social_gitlab'] ?? '')), FILTER_VALIDATE_URL) ?: '';
+$social['stackoverflow'] = filter_var(trim((string) ($meta['social_stackoverflow'] ?? '')), FILTER_VALIDATE_URL) ?: '';
+$social['youtube']       = filter_var(trim((string) ($meta['social_youtube'] ?? '')), FILTER_VALIDATE_URL) ?: '';
+$social['blog_rss']      = filter_var(trim((string) ($meta['social_blog_rss'] ?? '')), FILTER_VALIDATE_URL) ?: '';
 $has_social = !empty(array_filter($social));
+
+$ex_email = filter_var(trim((string) ($expert->email ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
+$ex_phone = preg_replace('/[^0-9+]/', '', trim((string) ($expert->phone ?? ''))) ?: '';
 
 // Technische Expertise (JSON aus Meta)
 $prog_languages_raw = $meta['programming_languages'] ?? '';
@@ -211,7 +215,7 @@ $events     = $events ?? [];
         <?php if ($is_certified): ?><span class="ex-hero__badge ex-hero__badge--cert">✅ Zertifiziert</span><?php endif; ?>
         <?php if ($is_premium):   ?><span class="ex-hero__badge ex-hero__badge--premium">⭐ Premium</span><?php endif; ?>
       </div>
-      <?php if ($photo): ?>
+      <?php if ($photo !== ''): ?>
         <div class="ex-hero__av"><img src="<?= $sec->escape($photo) ?>" alt="<?= $sec->escape($full_name) ?>"></div>
       <?php else: ?>
         <div class="ex-hero__av" style="background:<?= $sec->escape($_ex_agrad) ?>;"><?= htmlspecialchars($_ex_inits ?: '?') ?></div>
@@ -238,14 +242,13 @@ $events     = $events ?? [];
           <p class="ex-hero__co">🏢
             <?php if ($company_url): ?>
               <a href="<?= $sec->escape($company_url) ?>"><?= $sec->escape($company) ?></a>
-            <?php elseif (!empty($social['website'])): ?>
+            <?php elseif ($social['website'] !== ''): ?>
               <a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener"><?= $sec->escape($company) ?></a>
             <?php else: ?>
               <?= $sec->escape($company) ?>
             <?php endif; ?>
           </p>
         <?php endif; ?>
-
       </div>
     </div>
   </header>
@@ -280,19 +283,17 @@ $events     = $events ?? [];
 
         <!-- Reihe 2: Website · E-Mail · Telefon -->
         <div class="ex-bridge__row ex-bridge__links">
-          <?php if (!empty($social['website'])): ?>
+          <?php if ($social['website'] !== ''): ?>
             <a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener" class="ex-bridge__link" title="Website ansehen">Website</a>
           <?php else: ?>
             <span class="ex-bridge__link ex-bridge__link--empty">Website</span>
           <?php endif; ?>
-          <?php $ex_email = $expert->email ?? ''; ?>
-          <?php if ($ex_email): ?>
+          <?php if ($ex_email !== ''): ?>
             <a href="mailto:<?= $sec->escape($ex_email) ?>" class="ex-bridge__link" title="E-Mail schreiben">E-Mail</a>
           <?php else: ?>
             <span class="ex-bridge__link ex-bridge__link--empty">E-Mail</span>
           <?php endif; ?>
-          <?php $ex_phone = $expert->phone ?? ''; ?>
-          <?php if ($ex_phone): ?>
+          <?php if ($ex_phone !== ''): ?>
             <a href="tel:<?= $sec->escape($ex_phone) ?>" class="ex-bridge__link" title="Anrufen">Telefon</a>
           <?php else: ?>
             <span class="ex-bridge__link ex-bridge__link--empty">Telefon</span>

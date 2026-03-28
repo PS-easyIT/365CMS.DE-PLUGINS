@@ -317,6 +317,8 @@ final class CMS_Events_Database
     {
         $db = CMS\Database::instance();
 
+        $speaker_type = in_array($speaker_type, ['speaker', 'expert'], true) ? $speaker_type : 'speaker';
+
         $speaker_data = [
             'event_id' => $event_id,
             'speaker_id' => $speaker_id,

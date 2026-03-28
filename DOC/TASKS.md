@@ -1,7 +1,46 @@
 # 365CMS Plugins – Zukünftige Plugin-Konzepte & Roadmap
 
-> Letzte Aktualisierung: 2026-02-27  
+> Letzte Aktualisierung: 2026-03-28  
 > Diese Datei dokumentiert geplante und vorgeschlagene Plugins für das 365CMS-Ökosystem.
+
+## Audit-Status – Bestandsplugins 2026-03-28
+
+- **`cms-events`**
+  - Template-Escaping in Single-/Archive-Pfaden deutlich gehärtet
+  - latente Ownership-/IDOR-Updates im zentralen Save-Pfad geschlossen
+  - `speaker_type`, Kalender-`month`/`view` sowie Single-Renderpfade für Bild-, Link- und Kontaktattribute zusätzlich gehärtet
+  - Admin-Bootstrap so korrigiert, dass Sidebar-Eintrag und Admin-Routen nach Aktivierung zuverlässig verfügbar sind
+  - Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals abgesichert
+
+- **`cms-speakers`**
+  - Member-/Admin-Save-Logik, Template-Escaping und `title`-/`style`-Attribute weiter gehärtet
+  - latente Ownership-/IDOR-Updates im zentralen Save-Pfad geschlossen
+  - Spezial-Handler für Speaker-Event-Unterdatensätze als Admin-only validiert; aktuell kein offener Member-IDOR-Pfad
+  - Foto-, Website-, Mail-, Telefon- und Social-Attribute in Card- und Single-Templates zusätzlich per Renderzeit-Validierung gegen Alt- und Bestandsdaten gehärtet
+  - Member-Dashboard aktuell als Create-/Listen-Flow ohne realen Edit-Pfad verifiziert
+  - Admin-Bootstrap so korrigiert, dass Sidebar-Eintrag und Admin-Routen nach Aktivierung zuverlässig verfügbar sind
+  - Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals abgesichert
+
+- **`cms-experts`**
+  - Escaping in Single-/Card-/Archive-Pfaden und Meta-Ausgaben weiter vertieft
+  - latente Ownership-/IDOR-Updates im zentralen Save-Pfad geschlossen
+  - Foto-, Website-, Mail-, Telefon- und Social-Attribute in Single- und Card-Templates zusätzlich per Renderzeit-Validierung gegen Alt- und Bestandsdaten gehärtet
+  - Member-Dashboard aktuell als Create-/Listen-Flow ohne realen Edit-/Repeater-Update-Pfad verifiziert
+  - Admin-Bootstrap so korrigiert, dass Sidebar-Eintrag und Admin-Routen nach Aktivierung zuverlässig verfügbar sind
+  - Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals abgesichert
+
+- **`cms-companies`**
+  - Listen-/Renderpfade, Link-Ausgaben und dynamische Style-Werte weiter gehärtet
+  - latente Ownership-/IDOR-Updates im zentralen Save-Pfad geschlossen
+  - Spezial-Handler für Experten-Zuordnungen als Admin-only validiert; aktuell kein offener Member-IDOR-Pfad
+  - Logo-, Website-, Mail- und Telefon-Attribute in Single- und Card-Templates zusätzlich per Renderzeit-Validierung gegen Alt- und Bestandsdaten gehärtet
+  - Member-Dashboard aktuell als Create-/Listen-Flow ohne realen Edit-/Relations-Update-Pfad verifiziert
+  - Admin-Bootstrap so korrigiert, dass Sidebar-Eintrag und Admin-Routen nach Aktivierung zuverlässig verfügbar sind
+  - Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals abgesichert
+
+- **Nächster Fokus**
+  - verbleibende Template-Restbefunde nur noch in klaren Attribut-/Render-Kontexten prüfen
+  - Ownership-/IDOR-Schutz in Unterdatensätzen und Spezial-Handlern weiter vertiefen
 
 ---
 

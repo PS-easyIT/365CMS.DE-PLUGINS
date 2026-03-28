@@ -20,7 +20,7 @@ Der Schwerpunkt liegt auf:
 | Member-Dashboard | `CMS\Auth::instance()->isLoggedIn()` |
 | Event eines Members bearbeiten | nur eigenes Event oder Admin |
 | Kategorien / Tag-Presets verwalten | nur Admin |
-| Speaker zuordnen / entfernen | nur Admin oder berechtigter Owner-Flow |
+| Speaker zuordnen / entfernen | derzeit nur Admin |
 | Öffentliche Archiv- und Detailseiten | ohne Login lesbar |
 
 ## CSRF-/Nonce-Schutz
@@ -71,6 +71,7 @@ Vor jeder Ausgabe ist der Kontext zu beachten:
 - Intern zusammengesetzte Detail-, Breadcrumb- und Register-Links ebenfalls im `href`-Attribut-Kontext escapen
 - Reset-, Filter- und Pagination-Links im Archiv mit zusammengesetzten Query-Parametern ebenfalls nur escaped in `href` ausgeben
 - Dynamische Gradientwerte in `style`-Attributen des Single-Templates ebenfalls nur escaped ausgeben
+- Externe Registrierungs-, Online-, Banner-, Bild- und Veranstalter-Kontaktfelder auf öffentlichen Renderpfaden zusätzlich zur Eingabe-Sanitierung nochmals zur Laufzeit validieren
 - Zentrale Save-Pfade für Events müssen bei Updates für Nicht-Admins den `user_id`-Besitz des Datensatzes gegenprüfen und fremde IDs verwerfen
 
 ## SQL-Sicherheit
@@ -85,7 +86,7 @@ Vor jeder Ausgabe ist der Kontext zu beachten:
 Besonders zu prüfen:
 
 - Member darf keine fremden Events über manipulierte IDs bearbeiten
-- Speaker-Zuordnungen dürfen nicht auf fremde oder unzulässige Datensätze zeigen
+- Speaker-Zuordnungen dürfen nicht auf fremde oder unzulässige Datensätze zeigen; `speaker_type` ist zentral auf `speaker`/`expert` zu whitelisten
 - Delete-/Status-Aktionen müssen die Ziel-ID und Berechtigung zusammen prüfen
 
 ## Externe Links und Kalenderdaten
@@ -93,6 +94,7 @@ Besonders zu prüfen:
 Besonderheiten von `cms-events`:
 
 - `registration_url`, `online_url`, `organizer_website` und ähnliche Felder müssen validiert werden
+- Kalender-Parameter wie `month` und `view` dürfen nur über enge Format- und Whitelist-Prüfungen in Query- oder Render-Kontexte gelangen
 - ICS-/Kalender-nahe Inhalte dürfen keine ungefilterten Sonderzeichen oder Header-gefährdenden Zeichenketten ausgeben
 - Redirects zu externen Registrierungsseiten müssen nur auf validen URLs basieren
 
@@ -112,7 +114,7 @@ Besonderheiten von `cms-events`:
 | Fremdes Event bearbeiten | ✅ | ❌ | ❌ |
 | Kategorien verwalten | ✅ | ❌ | ❌ |
 | Tag-Presets verwalten | ✅ | ❌ | ❌ |
-| Speaker zuordnen | ✅ | eingeschränkt nach Flow | ❌ |
+| Speaker zuordnen | ✅ | ❌ | ❌ |
 | Event löschen / Status ändern | ✅ | eingeschränkt nach Flow | ❌ |
 
 ## Audit-Checkliste für V2.8.0

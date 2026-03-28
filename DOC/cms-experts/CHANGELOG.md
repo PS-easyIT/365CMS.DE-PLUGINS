@@ -13,7 +13,12 @@
 - **Card-Link-Escaping:** Detail-Links aus `$url` werden im Card-Template jetzt ebenfalls konsequent im `href`-Attribut-Kontext escaped.
 - **Archive-/CTA-Link-Escaping:** Auch Reset-Link im Archive-Template sowie CTA-Link aus `$url` im Card-Template werden jetzt konsequent im `href`-Attribut-Kontext escaped.
 - **Style-/Title-Escaping:** Auch Avatar-Gradient im `style`-Attribut und Event-Zähler im `title`-Attribut des Single-Templates werden jetzt konsequent escaped.
+- **Renderzeit-Validierung:** Foto-, Website-, Mail-, Telefon- und Social-Link-Felder werden in Single- und Card-Templates jetzt zusätzlich gegen Alt- und Bestandsdaten validiert, bevor sie in `src`, `href`, `mailto:` oder `tel:` gerendert werden.
+- **Member-Dashboard-Status:** Der aktuelle Rechte-Stand wurde nachgezogen: Im Member-Bereich existiert derzeit nur ein Create-/Listen-Flow, aber kein realer Edit- oder Repeater-Update-Pfad für bestehende Experten.
 - **Ownership-Härtung:** Die zentrale `save_expert()`-Persistenz blockiert für Nicht-Admins jetzt Updates auf fremde Experten-IDs und entschärft damit latente IDOR-/Fremd-ID-Pfade.
+- **Title-Attribut-Escaping:** Auch interne Social-Icon-Labels im `title`-Attribut des Single-Templates werden jetzt konsequent escaped.
+- **Bootstrap-Fix:** Hook-registrierende Klassen werden jetzt bereits beim Plugin-Start instanziiert, sodass Admin-Sidebar-Eintrag und Admin-Routen nicht mehr von `cms_init` abhängen.
+- **Bootstrap-Guard:** Der frühe Bootstrap wird jetzt zusätzlich nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) ausgeführt und entschärft damit Aktivierungs-/Lade-Fatals.
 - **Assets:** Bootstrap- und Admin-Assets verwenden konsistent lokal zwischengespeicherte `filemtime()`-Versionen.
 
 ## [2.8.0-docs] – 2026-03-28

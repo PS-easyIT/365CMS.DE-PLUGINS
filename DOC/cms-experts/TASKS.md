@@ -55,9 +55,13 @@
 - [x] Auch CTA-Link aus `$url` im Card-Template sowie Reset-Link im Archive-Template konsequent im Attribut-Kontext escaped.
 - [x] Auch Avatar-Gradient im `style`-Attribut und Event-Zähler im `title`-Attribut des Single-Templates konsequent escaped.
 - [x] Zentrale `save_expert()`-Persistenz verweigert für Nicht-Admins Updates auf fremde Experten-IDs und entschärft damit latente Member-IDOR-Pfade.
+- [x] Auch interne Social-Icon-Labels im `title`-Attribut des Single-Templates werden jetzt konsequent escaped.
+- [x] Plugin-Bootstrap instanziiert hook-registrierende Klassen jetzt frühzeitig, damit Admin-Sidebar-Eintrag und Admin-Routen nach Aktivierung zuverlässig verfügbar sind.
 - [x] Schema-Initialisierung auf versionsgesteuerte Prüfung reduziert, um unnötige Laufzeitkosten zu vermeiden.
 - [x] Asset-Versionierung in Bootstrap und Admin konsistent vereinheitlicht.
-- [ ] Meta-/Repeater-Strukturen und Ownership-Schutz im Member-Bereich noch gezielt vertiefen.
+- [x] Foto-, Website-, Mail-, Telefon- und Social-Link-Felder in Single- und Card-Templates per zusätzlicher Renderzeit-Validierung gegen Alt- und Bestandsdaten gehärtet.
+- [x] Ownership-Stand präzisiert: Member-Dashboard bietet derzeit nur Create + Liste; kein realer Member-Edit- oder Repeater-Update-Pfad vorhanden, zentrale `save_expert()`-Härtung bleibt als Vorsorge aktiv.
+- [x] Früher Plugin-Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals gehärtet: Komponenten werden nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) instanziiert.
 
 ---
 
