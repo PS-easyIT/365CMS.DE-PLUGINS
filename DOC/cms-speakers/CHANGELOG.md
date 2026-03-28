@@ -1,5 +1,13 @@
 # CMS Speakers – Changelog
 
+## [2.8.0-docs] – 2026-03-28
+
+### Geändert
+
+- **Dokumentation:** README, Aufgabenplanung und Sicherheitsdokumentation auf den Zielstand für **365CMS V2.8.0** erweitert.
+- **Audit-Fokus:** Security-, Speed- und Best-Practice-Prüfschritte für `cms-speakers` konkretisiert, insbesondere für Ownership, Link-Validierung, Template-Escaping und Cross-Plugin-Referenzen.
+- **Planung:** Verweis auf den zentralen Abarbeitungsplan `DOC/365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md` ergänzt.
+
 ## [1.0.0] – 2026-02-21
 
 ### Hinzugefügt

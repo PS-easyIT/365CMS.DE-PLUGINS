@@ -72,6 +72,7 @@ cms-experts/
 
 | Dokument | Inhalt |
 |----------|--------|
+| [../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md](../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md) | Zentraler Audit- und Umsetzungsplan für die vier V2.8.0-Zielplugins |
 | [DATABASE.md](DATABASE.md) | Alle Tabellen (10+), Schemas, Relationen |
 | [HOOKS.md](HOOKS.md) | Actions & Filter |
 | [API.md](API.md) | Methoden-Referenz |

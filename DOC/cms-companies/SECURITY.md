@@ -1,4 +1,16 @@
-# CMS Companies – Sicherheitskonzept
+# CMS Companies – Sicherheitskonzept für 365CMS V2.8.0
+
+## Zweck
+
+Dieses Dokument beschreibt den Sicherheits-Zielstand und die Audit-Schwerpunkte für `cms-companies` im Rahmen der Anpassung an **365CMS V2.8.0**.
+
+Schwerpunkte sind:
+
+- Firmen-CRUD im Admin- und Member-Bereich
+- Experten-Zuordnungen
+- Status-, Partner- und Filterlogik
+- Kontakt-, Logo- und Website-Felder
+- öffentliche Archiv- und Detailseiten
 
 ## Authentifizierung & Autorisierung
 

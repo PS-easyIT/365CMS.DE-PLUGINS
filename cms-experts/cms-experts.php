@@ -117,10 +117,17 @@ final class CMS_Experts
     {
         if (class_exists('CMS_Experts_Database')) {
             $db = CMS_Experts_Database::instance();
-            // Tabellen bei jedem Init sicherstellen (CREATE IF NOT EXISTS – idempotent)
-            try { $db->create_tables(); } catch (\Throwable $e) { error_log('CMS Experts: ' . $e->getMessage()); }
-            // Sicherstellen dass ausstehende Migrationen (z.B. skill_type) ausgeführt werden
-            $db->maybe_migrate_skill_type();
+            $schema_version = '2.0.0';
+            $installed_schema_version = (string) $db->get_plugin_setting('schema_version', '');
+            if ($installed_schema_version !== $schema_version) {
+                try {
+                    $db->create_tables();
+                    $db->maybe_migrate_skill_type();
+                    $db->save_plugin_settings(['schema_version' => $schema_version]);
+                } catch (\Throwable $e) {
+                    error_log('CMS Experts: ' . $e->getMessage());
+                }
+            }
         }
         if (class_exists('CMS_Experts_Post_Type')) {
             CMS_Experts_Post_Type::instance();

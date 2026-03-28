@@ -15,6 +15,7 @@ if (!defined('ABSPATH')) {
 final class CMS_Experts_Database
 {
     private static ?self $instance = null;
+    private const MAX_LIST_LIMIT = 200;
 
     public static function instance(): self
     {
@@ -27,6 +28,21 @@ final class CMS_Experts_Database
     private function __construct()
     {
         // Constructor
+    }
+
+    private function normalizeLimit(mixed $limit, int $default = 50): int
+    {
+        $limit = (int) $limit;
+        if ($limit <= 0) {
+            return $default;
+        }
+
+        return min($limit, self::MAX_LIST_LIMIT);
+    }
+
+    private function normalizeOffset(mixed $offset): int
+    {
+        return max(0, (int) $offset);
     }
 
     /**
@@ -214,8 +230,8 @@ final class CMS_Experts_Database
         }
 
         $where_clause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-        $limit = $args['limit'] ?? 50;
-        $offset = $args['offset'] ?? 0;
+        $limit = $this->normalizeLimit($args['limit'] ?? 50, 50);
+        $offset = $this->normalizeOffset($args['offset'] ?? 0);
 
         $sql = "SELECT * FROM {$db->prefix()}experts 
                 {$where_clause} 

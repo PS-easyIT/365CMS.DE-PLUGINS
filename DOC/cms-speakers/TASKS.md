@@ -5,6 +5,45 @@
 
 ---
 
+## V2.8.0 – Audit- und Maßnahmenplan
+
+### Ziel des Durchgangs
+
+- [ ] Plugin vollständig auf **365CMS V2.8.0-Zielstand** dokumentarisch und technisch prüfen
+- [ ] **Keine Core-Änderungen** vornehmen
+- [ ] erkannte Security-, Speed- und Best-Practice-Probleme direkt im Plugin beheben
+
+### Security
+
+- [ ] alle Admin- und Member-Save-Handler für Speaker, Topics und Auftritte identifizieren
+- [ ] Ownership-Schutz gegen fremde Speaker-Profile und Unterdatensätze verifizieren
+- [ ] Social-, Website-, Video- und Slides-Links validieren und sicher ausgeben
+- [ ] Status-, Availability-, Format- und Presence-Werte nur per Whitelist akzeptieren
+- [ ] Single- und Card-Templates auf konsequentes Escaping prüfen
+
+### Speed
+
+- [ ] Speaker-Listen, Detailseiten und Member-Dashboard auf N+1-Abfragen prüfen
+- [ ] Topic-, Event- und Cross-Plugin-Lookups auf Bündelungspotenzial prüfen
+- [ ] wiederholte Tabellenanlage/Migrationen im Init-Pfad auf Optimierungspotenzial prüfen
+- [ ] Asset-Ladung und unnötige Initialisierungskosten minimieren
+
+### Best Practices
+
+- [ ] Versions- und Update-Metadaten konsistent halten
+- [ ] Cross-Plugin-Abhängigkeiten defensiv mit Guard-Checks absichern
+- [ ] Fehlerbehandlung und Fallbacks robust vereinheitlichen
+- [ ] Datenformate für Topics, Events und Social-Felder normalisieren
+- [ ] Doku in `README.md`, `CHANGELOG.md` und `SECURITY.md` nach Fixes aktuell halten
+
+### Abschlusskriterien
+
+- [ ] keine offenen kritischen Ownership-, Escaping- oder Link-Validierungsprobleme
+- [ ] keine offensichtlichen Query-Bremsen in Listen oder Detail-Lookups
+- [ ] Doku- und Auditstand konsistent nachvollziehbar
+
+---
+
 ## 🔴 Hohe Priorität
 
 ### 1. DSGVO-Compliance vervollständigen

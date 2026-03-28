@@ -5,6 +5,45 @@
 
 ---
 
+## V2.8.0 – Audit- und Maßnahmenplan
+
+### Ziel des Durchgangs
+
+- [ ] Plugin vollständig auf **365CMS V2.8.0-Zielstand** dokumentarisch und technisch prüfen
+- [ ] **Keine Core-Änderungen** vornehmen
+- [ ] erkannte Security-, Speed- und Best-Practice-Probleme direkt im Plugin beheben
+
+### Security
+
+- [ ] alle Admin- und Member-POST-/Save-Flows identifizieren
+- [ ] Ownership-Schutz für Firmen im Member-Bereich gegen fremde IDs verifizieren
+- [ ] Filter-, Status- und Partnerwerte nur per Whitelist akzeptieren
+- [ ] Logo-, Website- und Kontaktfelder validieren und sicher ausgeben
+- [ ] Experten-Zuordnungen und Delete-/Status-Aktionen gegen CSRF und IDOR prüfen
+
+### Speed
+
+- [ ] Listenabfragen auf harte Integer-Validierung für `limit` und `offset` prüfen
+- [ ] Firmen-, Experten- und Partner-Lookups auf N+1-Muster prüfen
+- [ ] Asset-Ladung und wiederholte Initialisierung auf unnötige Kosten prüfen
+- [ ] Sortierung und Filter auf indexfreundliche Nutzung prüfen
+
+### Best Practices
+
+- [ ] Versions- und Update-Metadaten konsistent halten
+- [ ] Query-Bausteine mit Whitelists und Fallbacks absichern
+- [ ] Cross-Plugin-Abhängigkeiten defensiv prüfen
+- [ ] Fehlerbehandlung und Rückgabewerte vereinheitlichen
+- [ ] Doku in `README.md`, `CHANGELOG.md` und `SECURITY.md` nach Fixes aktualisieren
+
+### Abschlusskriterien
+
+- [ ] keine offenen kritischen Berechtigungs- oder Query-Härtungsprobleme
+- [ ] keine unvalidierten Paginierungs-/Filterpfade
+- [ ] Doku- und Auditstand konsistent nachvollziehbar
+
+---
+
 ## 🔴 Hohe Priorität
 
 ### 1. Erweiterte Firmenprofile

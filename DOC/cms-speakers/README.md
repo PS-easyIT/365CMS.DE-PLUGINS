@@ -3,7 +3,8 @@
 **Plugin:** `cms-speakers`  
 **Version:** 1.0.0  
 **Namespace:** `CMS_Speakers`  
-**Mindest-CMS-Version:** 365CMS 2.0+  
+**Aktueller Laufzeitstand:** 365CMS 2.0+  
+**Audit-/Dokustand:** Vorbereitung auf 365CMS V2.8.0 ohne Core-Änderungen  
 **PHP:** 8.1+
 
 ---
@@ -11,6 +12,13 @@
 ## Übersicht
 
 Das **CMS Speakers**-Plugin verwaltet professionelle Speaker-Profile mit Vortragshistorie, Themengebieten, Honorarrahmen und Event-Anbindung.
+
+## V2.8.0-Status
+
+- Die Dokumentation ist auf den **Audit- und Zielstand für 365CMS V2.8.0** angehoben.
+- Änderungen erfolgen ausschließlich im Plugin; **der 365CMS-Core bleibt unberührt**.
+- Der Fokus des aktuellen Durchgangs liegt auf **Security**, **Speed**, **Best Practices** und defensiver Cross-Plugin-Integration.
+- Der zentrale Abarbeitungsplan liegt in [`../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md`](../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md).
 
 ### Kernfunktionen
 
@@ -60,10 +68,12 @@ cms-speakers/
 
 | Dokument | Inhalt |
 |----------|--------|
+| [../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md](../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md) | Zentraler Audit- und Umsetzungsplan für die vier V2.8.0-Zielplugins |
 | [DATABASE.md](DATABASE.md) | Tabellen-Schemas |
 | [HOOKS.md](HOOKS.md) | Actions & Filter |
 | [API.md](API.md) | Methoden-Referenz |
 | [CHANGELOG.md](CHANGELOG.md) | Versionshistorie |
+| [SECURITY.md](SECURITY.md) | Sicherheitskonzept |
 
 ---
 
