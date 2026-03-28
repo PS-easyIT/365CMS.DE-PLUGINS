@@ -37,6 +37,13 @@ Alle neu angelegten oder beim Import berührten Datensätze werden nach dem Impo
 
 Unterhalb der Importmaske wird außerdem eine persistente Historie der letzten Läufe angezeigt. Die Reports enthalten Zeit, Quelle, Counts, Fehler/Warnungen, Dry-Run/Live-Modus und den zugeordneten Admin.
 
+Seit `1.5.0` gilt zusätzlich:
+
+- `Reset` funktioniert auch für gespeicherte Komplettimporte zuverlässig
+- bereits zurückgesetzte Läufe werden sauber erkannt
+- gesetzte Historien-Filter bleiben auch nach `Reset` oder `Historie löschen` erhalten
+- Historien-Aktionen besitzen ein eigenes Rate-Limit zusätzlich zum eigentlichen Import-Run-Limit
+
 ## Empfohlener Ablauf
 
 1. Companies importieren

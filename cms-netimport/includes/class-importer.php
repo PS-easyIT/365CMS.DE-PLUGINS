@@ -177,6 +177,10 @@ final class CMS_NetImport_Importer
 
         if ($type === 'full') {
             $result = $this->run_full_import($options);
+            $sourceForReport = [
+                'selected_file' => (string) ($result['file'] ?? 'multiple'),
+                'mode' => (string) ($result['source_mode'] ?? 'base'),
+            ];
             if ($options['_internal'] !== '1') {
                 $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
             }
@@ -314,6 +318,10 @@ final class CMS_NetImport_Importer
                 'errors' => (int) ($result['errors'] ?? 0),
                 'source_mode' => $result['source_mode'] ?? 'base',
             ];
+
+            if (($result['source_mode'] ?? 'base') === 'update') {
+                $aggregate['source_mode'] = 'update';
+            }
         }
 
         return $aggregate;
@@ -322,38 +330,42 @@ final class CMS_NetImport_Importer
     /**
      * @return array<int, object>
      */
-    public function get_run_history(int $limit = 20): array
+    public function get_run_history(int $limit = 20, array $filters = []): array
     {
         $this->ensure_storage();
         $limit = max(1, min(100, $limit));
         $db = CMS\Database::instance();
+        $filterData = $this->build_history_filters($filters);
         $stmt = $db->prepare(
             "SELECT nr.*, u.username AS admin_username
              FROM {$db->prefix()}netimport_runs nr
              LEFT JOIN {$db->prefix()}users u ON nr.user_id = u.id
+             {$filterData['whereSql']}
              ORDER BY nr.started_at DESC, nr.id DESC
              LIMIT {$limit}"
         );
-        $stmt->execute();
+        $stmt->execute($filterData['params']);
         return $stmt->fetchAll();
     }
 
     /**
      * @return array<string, int|string|null>
      */
-    public function get_history_stats(): array
+    public function get_history_stats(array $filters = []): array
     {
         $this->ensure_storage();
         $db = CMS\Database::instance();
+        $filterData = $this->build_history_filters($filters);
         $stmt = $db->prepare(
             "SELECT COUNT(*) AS total_runs,
                     SUM(CASE WHEN is_dry_run = 1 THEN 1 ELSE 0 END) AS dry_runs,
                     SUM(CASE WHEN is_dry_run = 0 THEN 1 ELSE 0 END) AS live_runs,
                     SUM(error_count) AS total_errors,
                     MAX(started_at) AS last_run_at
-             FROM {$db->prefix()}netimport_runs"
+             FROM {$db->prefix()}netimport_runs nr
+             {$filterData['whereSql']}"
         );
-        $stmt->execute();
+        $stmt->execute($filterData['params']);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: [];
 
         return [
@@ -363,6 +375,191 @@ final class CMS_NetImport_Importer
             'total_errors' => (int) ($row['total_errors'] ?? 0),
             'last_run_at' => $row['last_run_at'] ?? null,
         ];
+    }
+
+    /**
+     * @return array{whereSql:string,params:array<int,mixed>}
+     */
+    private function build_history_filters(array $filters): array
+    {
+        $where = [];
+        $params = [];
+
+        $type = (string) ($filters['type'] ?? '');
+        $allowedTypes = array_merge(array_keys($this->sourceDefinitions), ['full']);
+        if ($type !== '' && in_array($type, $allowedTypes, true)) {
+            $where[] = 'nr.run_type = ?';
+            $params[] = $type;
+        }
+
+        $mode = (string) ($filters['mode'] ?? '');
+        if ($mode === 'dry') {
+            $where[] = 'nr.is_dry_run = 1';
+        } elseif ($mode === 'live') {
+            $where[] = 'nr.is_dry_run = 0';
+        }
+
+        $errors = (string) ($filters['errors'] ?? '');
+        if ($errors === 'with_errors') {
+            $where[] = 'nr.error_count > 0';
+        } elseif ($errors === 'without_errors') {
+            $where[] = 'nr.error_count = 0';
+        }
+
+        return [
+            'whereSql' => $where !== [] ? 'WHERE ' . implode(' AND ', $where) : '',
+            'params' => $params,
+        ];
+    }
+
+    public function clear_run_history(): int
+    {
+        $this->ensure_storage();
+
+        try {
+            $db = CMS\Database::instance();
+            $stmt = $db->prepare("DELETE FROM {$db->prefix()}netimport_runs");
+            $stmt->execute();
+            return (int) $stmt->rowCount();
+        } catch (\Throwable $e) {
+            error_log('CMS NetImport clear history failed: ' . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * @return array<string,mixed>|null
+     */
+    public function get_run_entry(int $runId): ?array
+    {
+        $this->ensure_storage();
+        $db = CMS\Database::instance();
+        $stmt = $db->prepare("SELECT * FROM {$db->prefix()}netimport_runs WHERE id = ? LIMIT 1");
+        $stmt->execute([$runId]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public function reset_run(int $runId): array
+    {
+        $this->ensure_storage();
+        $entry = $this->get_run_entry($runId);
+        $summary = [
+            'success' => false,
+            'removed_records' => 0,
+            'removed_links' => 0,
+            'message' => 'Reset konnte nicht durchgeführt werden.',
+        ];
+
+        if ($entry === null) {
+            $summary['message'] = 'Import-Lauf nicht gefunden.';
+            return $summary;
+        }
+
+        if (($entry['status'] ?? '') === 'reset') {
+            $summary['message'] = 'Import-Lauf wurde bereits zurückgesetzt.';
+            return $summary;
+        }
+
+        $report = json_decode((string) ($entry['report_json'] ?? ''), true);
+        $cleanupData = is_array($report['cleanup_data'] ?? null) ? $report['cleanup_data'] : [];
+        $createdRecords = is_array($cleanupData['created_records'] ?? null) ? $cleanupData['created_records'] : [];
+        $createdLinks = is_array($cleanupData['created_links'] ?? null) ? $cleanupData['created_links'] : [];
+
+        if ($createdRecords === [] && $createdLinks === []) {
+            $summary['message'] = 'Für diesen Lauf sind keine resetbaren Datensätze gespeichert.';
+            return $summary;
+        }
+
+        $db = CMS\Database::instance();
+        $pdo = $db->getPdo();
+
+        try {
+            if (!$pdo->inTransaction()) {
+                $pdo->beginTransaction();
+            }
+
+            foreach ($createdLinks as $link) {
+                if ($this->remove_event_link(
+                    (int) ($link['event_id'] ?? 0),
+                    (int) ($link['speaker_id'] ?? 0),
+                    (string) ($link['speaker_type'] ?? 'speaker')
+                )) {
+                    $summary['removed_links']++;
+                }
+            }
+
+            foreach (['events', 'speakers', 'experts', 'companies'] as $type) {
+                foreach (($createdRecords[$type] ?? []) as $recordId) {
+                    if ($this->remove_created_record($type, (int) $recordId)) {
+                        $summary['removed_records']++;
+                    }
+                }
+            }
+
+            $updatedReport = is_array($report) ? $report : [];
+            $updatedReport['reset_summary'] = [
+                'reset_at' => date('Y-m-d H:i:s'),
+                'removed_records' => $summary['removed_records'],
+                'removed_links' => $summary['removed_links'],
+            ];
+            $updatedReport['cleanup_data'] = [
+                'created_records' => [],
+                'created_links' => [],
+            ];
+
+            $db->update('netimport_runs', [
+                'status' => 'reset',
+                'report_json' => json_encode($updatedReport, JSON_UNESCAPED_UNICODE),
+            ], ['id' => $runId]);
+
+            if ($pdo->inTransaction()) {
+                $pdo->commit();
+            }
+
+            $summary['success'] = true;
+            $summary['message'] = 'Import-Lauf wurde zurückgesetzt. Entfernte Datensätze: ' . $summary['removed_records'] . ', entfernte Links: ' . $summary['removed_links'] . '.';
+            return $summary;
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            error_log('CMS NetImport reset run failed: ' . $e->getMessage());
+            $summary['message'] = 'Reset fehlgeschlagen: ' . $e->getMessage();
+            return $summary;
+        }
+    }
+
+    private function remove_event_link(int $eventId, int $speakerId, string $speakerType): bool
+    {
+        if ($eventId <= 0 || $speakerId <= 0) {
+            return false;
+        }
+
+        try {
+            $db = CMS\Database::instance();
+            $stmt = $db->prepare("DELETE FROM {$db->prefix()}event_speakers WHERE event_id = ? AND speaker_id = ? AND speaker_type = ?");
+            $stmt->execute([$eventId, $speakerId, $speakerType]);
+            return $stmt->rowCount() > 0;
+        } catch (\Throwable $e) {
+            error_log('CMS NetImport remove_event_link failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function remove_created_record(string $type, int $recordId): bool
+    {
+        if ($recordId <= 0) {
+            return false;
+        }
+
+        return match ($type) {
+            'events' => $this->is_plugin_ready('cms-events', 'CMS_Events_Database') ? CMS_Events_Database::instance()->delete_event($recordId) : false,
+            'speakers' => $this->is_plugin_ready('cms-speakers', 'CMS_Speakers_Database') ? CMS_Speakers_Database::instance()->delete_speaker($recordId) : false,
+            'experts' => $this->is_plugin_ready('cms-experts', 'CMS_Experts_Database') ? CMS_Experts_Database::instance()->delete_expert($recordId) : false,
+            'companies' => $this->is_plugin_ready('cms-companies', 'CMS_Companies_Database') ? CMS_Companies_Database::instance()->set_company_status($recordId, 'deleted') : false,
+            default => false,
+        };
     }
 
     /**
@@ -435,6 +632,7 @@ final class CMS_NetImport_Importer
                     $this->add_message($result, 'success', 'Unternehmen aktualisiert: ' . $name);
                 } else {
                     $result['created']++;
+                    $this->track_created_record($result, 'companies', $savedId);
                     $this->add_message($result, 'success', 'Unternehmen importiert: ' . $name);
                 }
             } else {
@@ -553,6 +751,7 @@ final class CMS_NetImport_Importer
                 $this->add_message($result, 'success', 'MVP-Expert aktualisiert: ' . $firstName . ' ' . $lastName);
             } else {
                 $result['created']++;
+                $this->track_created_record($result, 'experts', $savedId);
                 $this->add_message($result, 'success', 'MVP-Expert importiert: ' . $firstName . ' ' . $lastName);
             }
         }
@@ -673,6 +872,7 @@ final class CMS_NetImport_Importer
                 $this->add_message($result, 'success', 'Expert aktualisiert: ' . $firstName . ' ' . $lastName);
             } else {
                 $result['created']++;
+                $this->track_created_record($result, 'experts', $savedId);
                 $this->add_message($result, 'success', 'Expert importiert: ' . $firstName . ' ' . $lastName);
             }
         }
@@ -765,6 +965,7 @@ final class CMS_NetImport_Importer
                 $this->add_message($result, 'success', 'Speaker aktualisiert: ' . $firstName . ' ' . $lastName);
             } else {
                 $result['created']++;
+                $this->track_created_record($result, 'speakers', $savedId);
                 $this->add_message($result, 'success', 'Speaker importiert: ' . $firstName . ' ' . $lastName);
             }
         }
@@ -884,6 +1085,7 @@ final class CMS_NetImport_Importer
                     $this->add_message($result, 'success', 'Event aktualisiert: ' . $eventData['title']);
                 } else {
                     $result['created']++;
+                    $this->track_created_record($result, 'events', $savedId);
                     $this->add_message($result, 'success', 'Event importiert: ' . $eventData['title']);
                 }
             }
@@ -957,6 +1159,7 @@ final class CMS_NetImport_Importer
         if ($linked) {
             $this->assignmentCache[$assignmentKey] = true;
             $result['linked']++;
+            $this->track_created_link($result, $eventId, $entityId, $entityType);
             $this->add_message($result, 'success', 'Event-Verknüpfung erstellt: ' . $firstName . ' ' . $lastName . ' → Event #' . $eventId);
         } else {
             $result['warnings']++;
@@ -1020,6 +1223,7 @@ final class CMS_NetImport_Importer
                     CMS_Companies_Database::instance()->assign_expert($companyId, $expertId, $topic !== '' ? $topic : null, true);
                 }
                 $result['created']++;
+                $this->track_created_record($result, 'experts', $expertId);
                 $this->add_message($result, 'success', 'Event-Expert automatisch angelegt: ' . $firstName . ' ' . $lastName);
                 return ['id' => $expertId, 'type' => 'expert'];
             }
@@ -1057,6 +1261,7 @@ final class CMS_NetImport_Importer
                 CMS_Speakers_Database::instance()->save_topics($speakerId, [$topic]);
             }
             $result['created']++;
+            $this->track_created_record($result, 'speakers', $speakerId);
             $this->add_message($result, 'success', 'Event-Speaker automatisch angelegt: ' . $firstName . ' ' . $lastName);
         }
 
@@ -1256,7 +1461,52 @@ final class CMS_NetImport_Importer
             'dry_run' => false,
             'source_mode' => 'base',
             'steps' => [],
+            'cleanup_data' => [
+                'created_records' => [],
+                'created_links' => [],
+            ],
             'messages' => [],
+        ];
+    }
+
+    /**
+     * @param array<string,mixed> $result
+     */
+    private function track_created_record(array &$result, string $type, int $recordId): void
+    {
+        if ($recordId <= 0) {
+            return;
+        }
+        $result['cleanup_data']['created_records'][$type] ??= [];
+        if (!in_array($recordId, $result['cleanup_data']['created_records'][$type], true)) {
+            $result['cleanup_data']['created_records'][$type][] = $recordId;
+        }
+    }
+
+    /**
+     * @param array<string,mixed> $result
+     */
+    private function track_created_link(array &$result, int $eventId, int $speakerId, string $speakerType): void
+    {
+        if ($eventId <= 0 || $speakerId <= 0) {
+            return;
+        }
+
+        $result['cleanup_data']['created_links'] ??= [];
+        foreach ($result['cleanup_data']['created_links'] as $link) {
+            if (
+                (int) ($link['event_id'] ?? 0) === $eventId
+                && (int) ($link['speaker_id'] ?? 0) === $speakerId
+                && (string) ($link['speaker_type'] ?? 'speaker') === $speakerType
+            ) {
+                return;
+            }
+        }
+
+        $result['cleanup_data']['created_links'][] = [
+            'event_id' => $eventId,
+            'speaker_id' => $speakerId,
+            'speaker_type' => $speakerType,
         ];
     }
 
@@ -1283,6 +1533,24 @@ final class CMS_NetImport_Importer
         foreach (['created', 'updated', 'linked', 'skipped', 'errors', 'warnings'] as $key) {
             $aggregate[$key] = (int) $aggregate[$key] + (int) ($incoming[$key] ?? 0);
         }
+        foreach (($incoming['cleanup_data']['created_records'] ?? []) as $type => $recordIds) {
+            $aggregate['cleanup_data']['created_records'][$type] ??= [];
+            foreach ((array) $recordIds as $recordId) {
+                $recordId = (int) $recordId;
+                if ($recordId > 0 && !in_array($recordId, $aggregate['cleanup_data']['created_records'][$type], true)) {
+                    $aggregate['cleanup_data']['created_records'][$type][] = $recordId;
+                }
+            }
+        }
+        foreach (($incoming['cleanup_data']['created_links'] ?? []) as $link) {
+            $eventId = (int) ($link['event_id'] ?? 0);
+            $speakerId = (int) ($link['speaker_id'] ?? 0);
+            $speakerType = (string) ($link['speaker_type'] ?? 'speaker');
+            if ($eventId <= 0 || $speakerId <= 0) {
+                continue;
+            }
+            $this->track_created_link($aggregate, $eventId, $speakerId, $speakerType);
+        }
         foreach ($incoming['messages'] ?? [] as $message) {
             $this->add_message($aggregate, (string) ($message['level'] ?? 'info'), (string) ($message['text'] ?? ''));
         }
@@ -1308,6 +1576,7 @@ final class CMS_NetImport_Importer
                 'messages' => $result['messages'] ?? [],
                 'steps' => $result['steps'] ?? [],
                 'file' => $result['file'] ?? '',
+                'cleanup_data' => $result['cleanup_data'] ?? ['created_records' => [], 'created_links' => []],
             ];
 
             $db->insert('netimport_runs', [

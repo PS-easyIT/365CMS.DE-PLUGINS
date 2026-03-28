@@ -39,6 +39,7 @@ final class CMS_NetImport_Admin
     {
         $router->addRoute('GET', '/admin/netimport', [$this, 'render_page']);
         $router->addRoute('POST', '/admin/netimport/run', [$this, 'handle_run']);
+        $router->addRoute('POST', '/admin/netimport/history-action', [$this, 'handle_history_action']);
     }
 
     public function add_menu_item(array $menuItems): array
@@ -115,6 +116,89 @@ final class CMS_NetImport_Admin
         $this->render_page($result, $options);
     }
 
+    public function handle_history_action(): void
+    {
+        if (!CMS\Auth::instance()->isAdmin()) {
+            CMS\Router::instance()->redirect('/login');
+            return;
+        }
+
+        $filters = $this->read_history_filters();
+        $csrfToken = $_POST['csrf_token'] ?? '';
+        if (!CMS\Security::instance()->verifyToken($csrfToken, 'netimport_history_action')) {
+            $this->render_page([
+                'errors' => 1,
+                'warnings' => 0,
+                'created' => 0,
+                'updated' => 0,
+                'linked' => 0,
+                'skipped' => 0,
+                'dry_run' => false,
+                'messages' => [
+                    ['level' => 'error', 'text' => 'Sicherheitscheck für Historien-Aktion fehlgeschlagen.'],
+                ],
+                'type' => 'history_action',
+                'file' => '',
+            ], $this->read_options(), $filters);
+            return;
+        }
+
+        if (!$this->check_history_rate_limit()) {
+            $this->render_page([
+                'errors' => 1,
+                'warnings' => 0,
+                'created' => 0,
+                'updated' => 0,
+                'linked' => 0,
+                'skipped' => 0,
+                'dry_run' => false,
+                'messages' => [
+                    ['level' => 'error', 'text' => 'Zu viele Historien-Aktionen in kurzer Zeit. Bitte kurz warten und erneut versuchen.'],
+                ],
+                'type' => 'history_action',
+                'file' => '',
+            ], $this->read_options(), $filters);
+            return;
+        }
+
+        $this->log_history_action_attempt();
+
+        $action = trim((string) ($_POST['history_action'] ?? ''));
+        $importer = CMS_NetImport_Importer::instance();
+        $result = [
+            'errors' => 0,
+            'warnings' => 0,
+            'created' => 0,
+            'updated' => 0,
+            'linked' => 0,
+            'skipped' => 0,
+            'dry_run' => false,
+            'messages' => [],
+            'type' => 'history_action',
+            'file' => '',
+        ];
+
+        if ($action === 'clear_history') {
+            $deleted = $importer->clear_run_history();
+            $result['messages'][] = ['level' => 'success', 'text' => 'Import-Historie gelöscht. Entfernte Einträge: ' . $deleted . '.'];
+        } elseif ($action === 'reset_run') {
+            $runId = max(0, (int) ($_POST['run_id'] ?? 0));
+            $summary = $importer->reset_run($runId);
+            $result['messages'][] = [
+                'level' => !empty($summary['success']) ? 'success' : 'warning',
+                'text' => (string) ($summary['message'] ?? 'Reset ausgeführt.'),
+            ];
+            if (empty($summary['success'])) {
+                $result['warnings'] = 1;
+            }
+        } else {
+            $result['warnings'] = 1;
+            $result['messages'][] = ['level' => 'warning', 'text' => 'Unbekannte Historien-Aktion.'];
+        }
+
+        $this->render_page($result, $this->read_options(), $filters);
+    }
+
     private function read_options(): array
     {
         return [
@@ -144,6 +228,33 @@ final class CMS_NetImport_Admin
         }
     }
 
+    private function check_history_rate_limit(): bool
+    {
+        return CMS\Security::checkDbRateLimit(CMS\Security::getClientIp(), 'netimport_history_action', 20, 300);
+    }
+
+    private function log_history_action_attempt(): void
+    {
+        try {
+            CMS\Database::instance()->insert('login_attempts', [
+                'username'   => 'admin-netimport',
+                'ip_address' => CMS\Security::getClientIp(),
+                'action'     => 'netimport_history_action',
+            ]);
+        } catch (\Throwable $e) {
+            error_log('CMS NetImport history rate-limit logging failed: ' . $e->getMessage());
+        }
+    }
+
+    private function render_history_filter_inputs(array $historyFilters): void
+    {
+        ?>
+        <input type="hidden" name="history_type" value="<?= htmlspecialchars((string) ($historyFilters['type'] ?? ''), ENT_QUOTES) ?>">
+        <input type="hidden" name="history_mode" value="<?= htmlspecialchars((string) ($historyFilters['mode'] ?? ''), ENT_QUOTES) ?>">
+        <input type="hidden" name="history_errors" value="<?= htmlspecialchars((string) ($historyFilters['errors'] ?? ''), ENT_QUOTES) ?>">
+        <?php
+    }
+
     private function output_admin_assets(): void
     {
         $adminCss = CMS_NETIMPORT_PLUGIN_DIR . 'assets/css/netimport-admin.css';
@@ -153,7 +264,7 @@ final class CMS_NetImport_Admin
         }
     }
 
-    public function render_page(?array $result = null, array $selectedOptions = []): void
+    public function render_page(?array $result = null, array $selectedOptions = [], array $historyFilters = []): void
     {
         if (!CMS\Auth::instance()->isAdmin()) {
             CMS\Router::instance()->redirect('/login');
@@ -164,10 +275,16 @@ final class CMS_NetImport_Admin
 
         $security  = CMS\Security::instance();
         $csrfToken = $security->generateToken('netimport_run');
+        $historyCsrfToken = $security->generateToken('netimport_history_action');
         $importer  = CMS_NetImport_Importer::instance();
         $sources   = $importer->get_sources();
-        $history   = $importer->get_run_history(15);
-        $historyStats = $importer->get_history_stats();
+        $historyFilters = array_merge([
+            'type' => '',
+            'mode' => '',
+            'errors' => '',
+        ], $historyFilters === [] ? $this->read_history_filters() : $historyFilters);
+        $history   = $importer->get_run_history(25, $historyFilters);
+        $historyStats = $importer->get_history_stats($historyFilters);
         $rowTotal  = array_sum(array_map(static fn(array $source): int => (int) ($source['rows'] ?? 0), $sources));
         $activeTargets = count(array_filter($sources, static fn(array $source): bool => !empty($source['plugin_ready'])));
         $selectedOptions = array_merge([
@@ -276,6 +393,48 @@ final class CMS_NetImport_Admin
 
         <div class="admin-card ni-card-spacer">
             <h3>🗃️ Import-Historie</h3>
+            <form method="GET" action="<?= SITE_URL ?>/admin/netimport" class="admin-form ni-form-grid" style="margin-bottom:16px;">
+                <div class="form-group">
+                    <label class="form-label" for="ni_history_type">Typ</label>
+                    <select name="history_type" id="ni_history_type" class="form-control">
+                        <option value="">Alle</option>
+                        <option value="full" <?= $historyFilters['type'] === 'full' ? 'selected' : '' ?>>Komplettimport</option>
+                        <option value="companies_example" <?= $historyFilters['type'] === 'companies_example' ? 'selected' : '' ?>>Companies</option>
+                        <option value="experts_mvps" <?= $historyFilters['type'] === 'experts_mvps' ? 'selected' : '' ?>>Experts MVPs</option>
+                        <option value="experts_example" <?= $historyFilters['type'] === 'experts_example' ? 'selected' : '' ?>>Experts Beispiel</option>
+                        <option value="speakers" <?= $historyFilters['type'] === 'speakers' ? 'selected' : '' ?>>Speakers</option>
+                        <option value="events" <?= $historyFilters['type'] === 'events' ? 'selected' : '' ?>>Events</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="ni_history_mode">Modus</label>
+                    <select name="history_mode" id="ni_history_mode" class="form-control">
+                        <option value="">Alle</option>
+                        <option value="live" <?= $historyFilters['mode'] === 'live' ? 'selected' : '' ?>>Nur Live</option>
+                        <option value="dry" <?= $historyFilters['mode'] === 'dry' ? 'selected' : '' ?>>Nur Dry-Run</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="ni_history_errors">Fehler</label>
+                    <select name="history_errors" id="ni_history_errors" class="form-control">
+                        <option value="">Alle</option>
+                        <option value="with_errors" <?= $historyFilters['errors'] === 'with_errors' ? 'selected' : '' ?>>Mit Fehlern</option>
+                        <option value="without_errors" <?= $historyFilters['errors'] === 'without_errors' ? 'selected' : '' ?>>Ohne Fehler</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-secondary">🔎 Filter anwenden</button>
+                    <a href="<?= SITE_URL ?>/admin/netimport" class="btn btn-secondary">♻️ Filter zurücksetzen</a>
+                </div>
+            </form>
+
+            <form method="POST" action="<?= SITE_URL ?>/admin/netimport/history-action" style="margin-bottom:16px;">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($historyCsrfToken, ENT_QUOTES) ?>">
+                <input type="hidden" name="history_action" value="clear_history">
+                <?php $this->render_history_filter_inputs($historyFilters); ?>
+                <button type="submit" class="btn btn-secondary">🗑️ Historie löschen</button>
+            </form>
+
             <?php if (empty($history)): ?>
                 <div class="empty-state">
                     <p style="font-size:2.5rem;margin:0;">📝</p>
@@ -297,6 +456,7 @@ final class CMS_NetImport_Admin
                                 <th>Fehler</th>
                                 <th>Dauer</th>
                                 <th>Admin</th>
+                                <th>Aktionen</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -323,6 +483,15 @@ final class CMS_NetImport_Admin
                                 <td><?= (int) ($entry->error_count ?? 0) ?></td>
                                 <td><?= (int) ($entry->duration_ms ?? 0) ?> ms</td>
                                 <td><?= htmlspecialchars((string) ($entry->admin_username ?? 'System')) ?></td>
+                                <td>
+                                    <form method="POST" action="<?= SITE_URL ?>/admin/netimport/history-action" style="display:inline-block;">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($historyCsrfToken, ENT_QUOTES) ?>">
+                                        <input type="hidden" name="history_action" value="reset_run">
+                                        <input type="hidden" name="run_id" value="<?= (int) ($entry->id ?? 0) ?>">
+                                        <?php $this->render_history_filter_inputs($historyFilters); ?>
+                                        <button type="submit" class="btn btn-secondary">↩️ Reset</button>
+                                    </form>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>
@@ -411,5 +580,20 @@ final class CMS_NetImport_Admin
         <?php endif; ?>
         <?php
         renderAdminLayoutEnd();
+    }
+
+    private function read_history_filters(): array
+    {
+        $type = trim((string) ($_POST['history_type'] ?? $_GET['history_type'] ?? ''));
+        $mode = trim((string) ($_POST['history_mode'] ?? $_GET['history_mode'] ?? ''));
+        $errors = trim((string) ($_POST['history_errors'] ?? $_GET['history_errors'] ?? ''));
+
+        $allowedTypes = array_merge([''], ['full', 'companies_example', 'experts_mvps', 'experts_example', 'speakers', 'events']);
+
+        return [
+            'type' => in_array($type, $allowedTypes, true) ? $type : '',
+            'mode' => in_array($mode, ['', 'live', 'dry'], true) ? $mode : '',
+            'errors' => in_array($errors, ['', 'with_errors', 'without_errors'], true) ? $errors : '',
+        ];
     }
 }

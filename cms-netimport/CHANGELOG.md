@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.5.0 — 2026-03-28
+
+- Full-Import-Läufe aggregieren Reset-/Cleanup-Daten jetzt vollständig, sodass `Reset` auch nach Komplettimporten zuverlässig arbeitet
+- bereits zurückgesetzte Läufe werden als solche erkannt und nicht erneut irreführend verarbeitet
+- Historien-Filter bleiben bei `Reset` und `Historie löschen` erhalten
+- Historien-Aktionen zusätzlich per eigener Rate-Limit-Spur abgesichert
+
+## 1.4.0 — 2026-03-28
+
+- Historien-Filter nach Typ, Dry-Run/Live und Fehlerstatus ergänzt
+- `Historie löschen` für gespeicherte Importläufe ergänzt
+- `Reset` pro Importlauf ergänzt, inklusive Cleanup von gespeicherten Event-Verknüpfungen und erzeugten Datensätzen soweit resetbar
+
 ## 1.3.0 — 2026-03-28
 
 - persistente Import-Historie pro Lauf via Datenbanktabelle ergänzt

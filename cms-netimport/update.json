@@ -3,15 +3,17 @@
   "name": "CMS NetImport",
   "type": "plugin",
   "license": "free",
-  "version": "1.2.0",
+  "version": "1.5.0",
   "min_cms_version": "0.20.0",
   "min_php": "8.1",
   "released": "2026-03-28",
   "download_url": "",
   "checksum_sha256": "",
   "changelog": {
-    "1.2.0": "Persistente Import-Historie mit Zeit, Quelle, Counts, Fehlern, Dauer, Dry-Run/Live und Admin-Zuordnung ergänzt.",
-    "1.1.0": "Admin-Ownership, automatische Event-Speaker/Expert-Anlage, Dry-Run, Update-Erkennung, CSV-Validierung und Performance-Härtungen ergänzt.",
+    "1.5.0": "Full-Run-Cleanup für Reset vervollständigt, Doppel-Reset abgesichert, Historien-Filter bei Aktionen beibehalten und History-Aktionen zusätzlich gedrosselt.",
+    "1.4.0": "Historien-Filter, Historie löschen und Reset pro Importlauf für gespeicherte Cleanup-Daten ergänzt.",
+    "1.3.0": "Persistente Import-Historie mit Zeit, Quelle, Counts, Fehlern, Dauer, Dry-Run/Live und Admin-Zuordnung ergänzt.",
+    "1.2.0": "Admin-Ownership, automatische Event-Speaker/Expert-Anlage, Dry-Run, Update-Erkennung, CSV-Validierung und Performance-Härtungen ergänzt.",
     "1.0.0": "Erstveröffentlichung: vorbereiteter CSV-Importer für Companies, Experts, Speakers und Events inklusive Cross-Plugin-Verknüpfungen."
   }
 }
