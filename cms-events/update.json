@@ -10,7 +10,7 @@
   "download_url": "",
   "checksum_sha256": "",
   "changelog": {
-    "1.1.0": "Security-/Stabilitäts-Release: Audit-Härtungen für Save- und Renderpfade, Ownership-Schutz, speaker_type-/Kalender-Whitelists, Bootstrap-/DB-Fatal-Guards und Doku-Angleichungen.",
+    "1.1.0": "Security-/Stabilitäts-Release: Audit-Härtungen für Save- und Renderpfade, Ownership-Schutz, speaker_type-/Kalender-Whitelists, Bootstrap-/DB-Fatal-Guards und Doku-Angleichungen. Admin-Menüintegration für das aktuelle Core-Sidebar-System über cms_admin_menu/add_menu_page nachgezogen.",
     "1.0.2": "Dokumentations-Release: Audit-Plan, TASKS- und SECURITY-Dokumentation für den V2.8.0-Prüfstand der Plugin-Arbeit ergänzt und nachgezogen.",
     "1.0.1": "Admin-Refactor: Inline-Skripte/-Handler in der Events-Verwaltung entfernt, Modale/Bestätigungen/Form-Toggles in zentrale Assets ausgelagert.",
     "1.0.0": "Erstveröffentlichung: Veranstaltungsverwaltung, Kalender, Detailseiten."

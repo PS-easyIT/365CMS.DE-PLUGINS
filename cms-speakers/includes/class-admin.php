@@ -21,8 +21,35 @@ final class CMS_Speakers_Admin
         if (file_exists($menu_file) && !function_exists('renderAdminLayoutStart')) {
             require_once $menu_file;
         }
+        CMS\Hooks::addAction('cms_admin_menu', [$this, 'register_admin_menu'], 10);
         CMS\Hooks::addFilter('admin_menu_items', [$this, 'add_menu_item'], 10);
     }
+
+    public function register_admin_menu(): void
+    {
+        if (!function_exists('add_menu_page')) {
+            return;
+        }
+
+        add_menu_page(
+            'Speaker',
+            'Speaker',
+            'manage_options',
+            'speakers',
+            [self::class, 'render_plugin_page_bridge'],
+            '🎤',
+            45
+        );
+    }
+
+    public static function render_plugin_page_bridge(): void
+    {
+        $targetUrl = htmlspecialchars(SITE_URL . '/admin/speakers', ENT_QUOTES, 'UTF-8');
+
+        echo '<div class="admin-card"><p>Weiterleitung zur Speaker-Verwaltung … <a href="' . $targetUrl . '">Falls nichts passiert, hier klicken</a>.</p></div>';
+        echo '<script>window.location.replace(' . json_encode(SITE_URL . '/admin/speakers', JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ');</script>';
+    }
+
     public function add_menu_item(array $items): array
     {
         $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);

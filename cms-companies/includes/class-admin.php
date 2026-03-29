@@ -27,7 +27,33 @@ final class CMS_Companies_Admin
     private function __construct()
     {
         $this->loadAdminMenu();
+        CMS\Hooks::addAction('cms_admin_menu', [$this, 'register_admin_menu'], 10);
         CMS\Hooks::addFilter('admin_menu_items', [$this, 'add_menu_item'], 10);
+    }
+
+    public function register_admin_menu(): void
+    {
+        if (!function_exists('add_menu_page')) {
+            return;
+        }
+
+        add_menu_page(
+            'Unternehmen',
+            'Unternehmen',
+            'manage_options',
+            'companies',
+            [self::class, 'render_plugin_page_bridge'],
+            '🏢',
+            42
+        );
+    }
+
+    public static function render_plugin_page_bridge(): void
+    {
+        $targetUrl = htmlspecialchars(SITE_URL . '/admin/companies', ENT_QUOTES, 'UTF-8');
+
+        echo '<div class="admin-card"><p>Weiterleitung zur Unternehmen-Verwaltung … <a href="' . $targetUrl . '">Falls nichts passiert, hier klicken</a>.</p></div>';
+        echo '<script>window.location.replace(' . json_encode(SITE_URL . '/admin/companies', JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ');</script>';
     }
 
     private function loadAdminMenu(): void
