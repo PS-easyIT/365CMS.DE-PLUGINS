@@ -6,13 +6,14 @@
 
 - **6 Templates**: Classic, Modern, Split, Minimal, Business, Fullwidth
 - **Mehrere Formulare**: Jedes Formular hat eigenen Slug (`/contact/kontakt`, `/contact/support`, …)
-- **Benutzerdefinierte Felder**: Text, E-Mail, Telefon, Textarea, Select, Radio, Checkbox, Zahl, Datum, URL, Datei, Hidden
+- **Benutzerdefinierte Felder**: Text, E-Mail, Telefon, Textarea, Select, Radio, Checkbox, Zahl, Datum, URL, Hidden
 - **Pflichtfelder**: Jedes Feld einzeln als Pflichtfeld konfigurierbar
 - **Feldbreiten**: Voll (100%), Halb (50%), Drittel (33%), Zwei Drittel (66%)
 - **Drag & Drop Sortierung**: Felder per Drag & Drop umsortieren
 - **Spamschutz**: Honeypot + Math-Captcha + sessionbasiertes Rate-Limiting
+- **Sichtbare Serverfehler**: Feldfehler werden nach Redirect wieder am jeweiligen Formularfeld angezeigt
 - **Nachrichten-Telemetrie**: Admin sieht zu jeder Anfrage die erfasste IP-Adresse und den User-Agent
-- **E-Mail-Benachrichtigungen**: Admin-Benachrichtigung + optionale Bestätigung an Absender
+- **E-Mail-Benachrichtigungen**: Globaler Admin-Empfänger oder Formular-Empfänger + optionale Bestätigung an Absender
 - **DSGVO-konform**: Export- und Lösch-Hooks, automatische Bereinigung
 - **Dashboard**: Statistiken, Trends, aktuelle Nachrichten
 - **Responsive**: Alle Templates mobil-optimiert
@@ -104,4 +105,4 @@ cms-contact/
 
 ## Version
 
-- **1.1.4** – IP-Adresse und User-Agent werden bei bestätigten Kontaktanfragen im Admin mit angezeigt
+- **1.1.5** – Sicherheits-, Performance- und UX-Fixes für Redirects, Mail-Settings, Feldfehler und Submission-Listen

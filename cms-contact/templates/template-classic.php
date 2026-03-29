@@ -16,27 +16,25 @@ $theme = CMS\ThemeManager::instance();
 $theme->getHeader();
 ?>
     <link rel="stylesheet" href="<?php echo CMS_CONTACT_PLUGIN_URL; ?>assets/css/contact-public.css?v=<?php echo CMS_CONTACT_VERSION; ?>">
-    <?php if (!empty($form['custom_css'])): ?>
-    <style><?php echo $form['custom_css']; ?></style>
-    <?php endif; ?>
+    <?php echo CMS_Contact_Frontend::render_custom_css($form); ?>
 
-    <main class="contact-main">
+    <main class="contact-main" aria-labelledby="contact-form-title">
         <div class="contact-container contact-classic">
             <div class="contact-card">
-                <div class="contact-header">
-                    <h1><?php echo $e($form['title']); ?></h1>
+                <header class="contact-header">
+                    <h1 id="contact-form-title"><?php echo $e($form['title']); ?></h1>
                     <?php if (!empty($form['description'])): ?>
                     <p class="contact-description"><?php echo $e($form['description']); ?></p>
                     <?php endif; ?>
-                </div>
+                </header>
 
                 <?php if (!empty($success)): ?>
-                <div class="contact-alert contact-alert-success">
+                <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1">
                     ✅ <?php echo $e($success); ?>
                 </div>
                 <?php endif; ?>
                 <?php if (!empty($error)): ?>
-                <div class="contact-alert contact-alert-error">
+                <div class="contact-alert contact-alert-error" role="alert" aria-live="assertive" data-contact-message tabindex="-1">
                     ❌ <?php echo $e($error); ?>
                 </div>
                 <?php endif; ?>
@@ -45,7 +43,7 @@ $theme->getHeader();
                 <form method="POST" class="contact-form" novalidate>
                     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                     <?php if (!empty($form['enable_honeypot'])): ?>
-                    <div style="position:absolute;left:-9999px;" aria-hidden="true">
+                    <div class="contact-honeypot" aria-hidden="true">
                         <input type="text" name="website_url" tabindex="-1" autocomplete="off">
                     </div>
                     <?php endif; ?>
@@ -53,7 +51,7 @@ $theme->getHeader();
                     <div class="contact-fields">
                         <?php foreach ($fields as $field): ?>
                         <div class="contact-field contact-field-<?php echo $e($field['field_width'] ?? 'full'); ?>">
-                            <?php echo CMS_Contact_Frontend::render_field($field, '', $old); ?>
+                            <?php echo CMS_Contact_Frontend::render_field($field, '', $old, $fieldErrors ?? []); ?>
                         </div>
                         <?php endforeach; ?>
                     </div>
@@ -63,8 +61,8 @@ $theme->getHeader();
                         <?php
                         $a = rand(1, 10); $b = rand(1, 10); $_SESSION['captcha_expected_' . $form['slug']] = $a + $b;
                         ?>
-                        <label class="contact-label">Spamschutz: Was ist <?php echo $a; ?> + <?php echo $b; ?>? <span class="contact-required">*</span></label>
-                        <input type="number" name="captcha_answer" class="contact-input" required>
+                        <label class="contact-label" for="contact-captcha-answer">Spamschutz: Was ist <?php echo $a; ?> + <?php echo $b; ?>? <span class="contact-required">*</span></label>
+                        <input type="number" id="contact-captcha-answer" name="captcha_answer" class="contact-input" inputmode="numeric" required>
                     </div>
                     <?php endif; ?>
 

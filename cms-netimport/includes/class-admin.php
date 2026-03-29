@@ -262,6 +262,12 @@ final class CMS_NetImport_Admin
             $version = (string) filemtime($adminCss);
             echo '<link rel="stylesheet" href="' . CMS_NETIMPORT_PLUGIN_URL . 'assets/css/netimport-admin.css?v=' . $version . '">' . "\n";
         }
+
+        $adminJs = CMS_NETIMPORT_PLUGIN_DIR . 'assets/js/netimport-admin.js';
+        if (file_exists($adminJs)) {
+            $version = (string) filemtime($adminJs);
+            echo '<script src="' . CMS_NETIMPORT_PLUGIN_URL . 'assets/js/netimport-admin.js?v=' . $version . '" defer></script>' . "\n";
+        }
     }
 
     public function render_page(?array $result = null, array $selectedOptions = [], array $historyFilters = []): void
@@ -428,7 +434,11 @@ final class CMS_NetImport_Admin
                 </div>
             </form>
 
-            <form method="POST" action="<?= SITE_URL ?>/admin/netimport/history-action" style="margin-bottom:16px;">
+            <form method="POST" action="<?= SITE_URL ?>/admin/netimport/history-action" style="margin-bottom:16px;"
+                  data-confirm-action="true"
+                  data-confirm-title="Historie löschen?"
+                  data-confirm-message="Diese Aktion entfernt alle gespeicherten Importläufe dauerhaft. Bereits gespeicherte Reports gehen dabei verloren."
+                  data-confirm-button="Historie endgültig löschen">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($historyCsrfToken, ENT_QUOTES) ?>">
                 <input type="hidden" name="history_action" value="clear_history">
                 <?php $this->render_history_filter_inputs($historyFilters); ?>
@@ -461,6 +471,18 @@ final class CMS_NetImport_Admin
                         </thead>
                         <tbody>
                         <?php foreach ($history as $entry): ?>
+                            <?php
+                            $reportMessages = is_array($entry->report_messages ?? null) ? $entry->report_messages : [];
+                            $reportSteps = is_array($entry->report_steps ?? null) ? $entry->report_steps : [];
+                            $reportCleanup = is_array($entry->report_cleanup ?? null) ? $entry->report_cleanup : [];
+                            $reportResetSummary = is_array($entry->report_reset_summary ?? null) ? $entry->report_reset_summary : [];
+                            $createdRecords = is_array($reportCleanup['created_records'] ?? null) ? $reportCleanup['created_records'] : [];
+                            $createdLinks = is_array($reportCleanup['created_links'] ?? null) ? $reportCleanup['created_links'] : [];
+                            $cleanupRecordCount = 0;
+                            foreach ($createdRecords as $recordIds) {
+                                $cleanupRecordCount += is_array($recordIds) ? count($recordIds) : 0;
+                            }
+                            ?>
                             <tr>
                                 <td><?= htmlspecialchars(substr((string) ($entry->started_at ?? ''), 0, 16)) ?></td>
                                 <td>
@@ -471,6 +493,11 @@ final class CMS_NetImport_Admin
                                     <span class="status-badge <?= !empty($entry->is_dry_run) ? 'pending' : 'active' ?>">
                                         <?= !empty($entry->is_dry_run) ? '🧪 Dry-Run' : '🚀 Live' ?>
                                     </span>
+                                    <?php if (($entry->status ?? 'completed') === 'reset'): ?>
+                                        <span class="status-badge pending">↩️ Reset</span>
+                                    <?php elseif (($entry->status ?? 'completed') === 'completed_with_errors'): ?>
+                                        <span class="status-badge danger">⚠️ Mit Fehlern</span>
+                                    <?php endif; ?>
                                     <?php if (($entry->source_mode ?? 'base') === 'update'): ?>
                                         <span class="status-badge pending">UPDATE</span>
                                     <?php endif; ?>
@@ -484,13 +511,128 @@ final class CMS_NetImport_Admin
                                 <td><?= (int) ($entry->duration_ms ?? 0) ?> ms</td>
                                 <td><?= htmlspecialchars((string) ($entry->admin_username ?? 'System')) ?></td>
                                 <td>
-                                    <form method="POST" action="<?= SITE_URL ?>/admin/netimport/history-action" style="display:inline-block;">
-                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($historyCsrfToken, ENT_QUOTES) ?>">
-                                        <input type="hidden" name="history_action" value="reset_run">
-                                        <input type="hidden" name="run_id" value="<?= (int) ($entry->id ?? 0) ?>">
-                                        <?php $this->render_history_filter_inputs($historyFilters); ?>
-                                        <button type="submit" class="btn btn-secondary">↩️ Reset</button>
-                                    </form>
+                                    <?php if (!empty($entry->is_dry_run)): ?>
+                                        <span class="text-muted">Nicht nötig</span>
+                                    <?php elseif (($entry->status ?? 'completed') === 'reset'): ?>
+                                        <span class="text-muted">Bereits zurückgesetzt</span>
+                                    <?php else: ?>
+                                            <form method="POST" action="<?= SITE_URL ?>/admin/netimport/history-action" style="display:inline-block;"
+                                                data-confirm-action="true"
+                                                data-confirm-title="Importlauf zurücksetzen?"
+                                                data-confirm-message="Es werden nur die für diesen Lauf gespeicherten, resetbaren Datensätze und Event-Verknüpfungen entfernt. Diese Aktion kann nicht automatisch rückgängig gemacht werden."
+                                                data-confirm-button="Reset jetzt ausführen">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($historyCsrfToken, ENT_QUOTES) ?>">
+                                            <input type="hidden" name="history_action" value="reset_run">
+                                            <input type="hidden" name="run_id" value="<?= (int) ($entry->id ?? 0) ?>">
+                                            <?php $this->render_history_filter_inputs($historyFilters); ?>
+                                            <button type="submit" class="btn btn-secondary">↩️ Reset</button>
+                                        </form>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                            <tr class="ni-history-detail-row">
+                                <td colspan="12">
+                                    <details class="ni-history-details">
+                                        <summary>
+                                            🔍 Details anzeigen
+                                            <span class="ni-history-summary-meta">
+                                                Meldungen: <?= (int) ($entry->report_message_count ?? 0) ?> ·
+                                                Steps: <?= (int) ($entry->report_step_count ?? 0) ?> ·
+                                                Cleanup: <?= (int) $cleanupRecordCount ?> Datensätze / <?= count($createdLinks) ?> Links
+                                            </span>
+                                        </summary>
+
+                                        <div class="ni-history-panels">
+                                            <div class="ni-history-panel">
+                                                <h4>📦 Laufdetails</h4>
+                                                <ul class="ni-kv-list">
+                                                    <li><strong>Status:</strong> <?= htmlspecialchars((string) ($entry->status ?? 'completed')) ?></li>
+                                                    <li><strong>Datei:</strong> <code><?= htmlspecialchars((string) ($entry->source_file ?? '')) ?></code></li>
+                                                    <li><strong>Quelle:</strong> <?= htmlspecialchars((string) ($entry->source_mode ?? 'base')) ?></li>
+                                                    <li><strong>Start:</strong> <?= htmlspecialchars((string) ($entry->started_at ?? '')) ?></li>
+                                                    <li><strong>Ende:</strong> <?= htmlspecialchars((string) ($entry->finished_at ?? '')) ?></li>
+                                                </ul>
+                                                <?php if ($reportResetSummary !== []): ?>
+                                                    <div class="ni-inline-note">
+                                                        ↩️ Reset am <?= htmlspecialchars((string) ($reportResetSummary['reset_at'] ?? '')) ?> ·
+                                                        entfernte Datensätze: <?= (int) ($reportResetSummary['removed_records'] ?? 0) ?> ·
+                                                        entfernte Links: <?= (int) ($reportResetSummary['removed_links'] ?? 0) ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+
+                                            <?php if ($reportSteps !== []): ?>
+                                                <div class="ni-history-panel">
+                                                    <h4>🪜 Teil-Schritte</h4>
+                                                    <div class="users-table-container">
+                                                        <table class="users-table ni-table ni-subtable">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Typ</th>
+                                                                    <th>Datei</th>
+                                                                    <th>Quelle</th>
+                                                                    <th>Erstellt</th>
+                                                                    <th>Aktualisiert</th>
+                                                                    <th>Verknüpft</th>
+                                                                    <th>Warnungen</th>
+                                                                    <th>Fehler</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                            <?php foreach ($reportSteps as $step): ?>
+                                                                <tr>
+                                                                    <td><?= htmlspecialchars((string) ($step['type'] ?? '')) ?></td>
+                                                                    <td><code><?= htmlspecialchars((string) ($step['file'] ?? '')) ?></code></td>
+                                                                    <td><?= htmlspecialchars((string) ($step['source_mode'] ?? 'base')) ?></td>
+                                                                    <td><?= (int) ($step['created'] ?? 0) ?></td>
+                                                                    <td><?= (int) ($step['updated'] ?? 0) ?></td>
+                                                                    <td><?= (int) ($step['linked'] ?? 0) ?></td>
+                                                                    <td><?= (int) ($step['warnings'] ?? 0) ?></td>
+                                                                    <td><?= (int) ($step['errors'] ?? 0) ?></td>
+                                                                </tr>
+                                                            <?php endforeach; ?>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            <?php endif; ?>
+
+                                            <div class="ni-history-panel">
+                                                <h4>🧹 Cleanup-Daten</h4>
+                                                <ul class="ni-kv-list">
+                                                    <li><strong>Companies:</strong> <?= count((array) ($createdRecords['companies'] ?? [])) ?></li>
+                                                    <li><strong>Experts:</strong> <?= count((array) ($createdRecords['experts'] ?? [])) ?></li>
+                                                    <li><strong>Speakers:</strong> <?= count((array) ($createdRecords['speakers'] ?? [])) ?></li>
+                                                    <li><strong>Events:</strong> <?= count((array) ($createdRecords['events'] ?? [])) ?></li>
+                                                    <li><strong>Event-Links:</strong> <?= count($createdLinks) ?></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+
+                                        <?php if ($reportMessages !== []): ?>
+                                            <div class="ni-history-panel">
+                                                <h4>📋 Gespeicherte Meldungen</h4>
+                                                <ul class="ni-log-list ni-log-list-compact">
+                                                    <?php foreach ($reportMessages as $message): ?>
+                                                        <li class="ni-log-item ni-log-item--<?= htmlspecialchars((string) ($message['level'] ?? 'info'), ENT_QUOTES) ?>">
+                                                            <span class="ni-log-level">
+                                                                <?php
+                                                                $level = $message['level'] ?? 'info';
+                                                                echo match ($level) {
+                                                                    'error'   => '❌',
+                                                                    'warning' => '⚠️',
+                                                                    'success' => '✅',
+                                                                    default   => 'ℹ️',
+                                                                };
+                                                                ?>
+                                                            </span>
+                                                            <span><?= htmlspecialchars((string) ($message['text'] ?? '')) ?></span>
+                                                        </li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                            </div>
+                                        <?php endif; ?>
+                                    </details>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -578,6 +720,22 @@ final class CMS_NetImport_Admin
                 </ul>
             </div>
         <?php endif; ?>
+
+        <div class="ni-modal-backdrop" id="ni-confirm-backdrop" hidden>
+            <div class="ni-modal" role="dialog" aria-modal="true" aria-labelledby="ni-confirm-title" aria-describedby="ni-confirm-message">
+                <div class="ni-modal__header">
+                    <h3 id="ni-confirm-title">Aktion bestätigen</h3>
+                    <button type="button" class="ni-modal__close" data-confirm-close aria-label="Dialog schließen">×</button>
+                </div>
+                <div class="ni-modal__body">
+                    <p id="ni-confirm-message">Bitte bestätige diese Aktion.</p>
+                </div>
+                <div class="ni-modal__footer">
+                    <button type="button" class="btn btn-secondary" data-confirm-close>Abbrechen</button>
+                    <button type="button" class="btn btn-primary ni-btn-danger" id="ni-confirm-submit">Aktion ausführen</button>
+                </div>
+            </div>
+        </div>
         <?php
         renderAdminLayoutEnd();
     }

@@ -17,6 +17,7 @@ final class CMS_NetImport_Importer
 
     private const MAX_FILE_SIZE = 10485760; // 10 MB
     private const MAX_PREVIEW_MESSAGES = 200;
+    private const JSON_FLAGS = JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE;
 
     /** @var array<string, array<string, mixed>> */
     private array $sourceDefinitions = [
@@ -87,6 +88,9 @@ final class CMS_NetImport_Importer
     private array $eventCache = [];
     /** @var array<string, bool> */
     private array $assignmentCache = [];
+    /** @var array<string, int> */
+    private array $simulatedIdCache = [];
+    private int $simulatedIdSequence = 1000000000;
 
     public static function instance(): self
     {
@@ -345,7 +349,20 @@ final class CMS_NetImport_Importer
              LIMIT {$limit}"
         );
         $stmt->execute($filterData['params']);
-        return $stmt->fetchAll();
+        $rows = $stmt->fetchAll();
+
+        foreach ($rows as $entry) {
+            $reportData = $this->safe_json_decode((string) ($entry->report_json ?? ''));
+            $entry->report_data = $reportData;
+            $entry->report_messages = is_array($reportData['messages'] ?? null) ? $reportData['messages'] : [];
+            $entry->report_steps = is_array($reportData['steps'] ?? null) ? $reportData['steps'] : [];
+            $entry->report_cleanup = is_array($reportData['cleanup_data'] ?? null) ? $reportData['cleanup_data'] : [];
+            $entry->report_reset_summary = is_array($reportData['reset_summary'] ?? null) ? $reportData['reset_summary'] : [];
+            $entry->report_message_count = count($entry->report_messages);
+            $entry->report_step_count = count($entry->report_steps);
+        }
+
+        return $rows;
     }
 
     /**
@@ -461,7 +478,7 @@ final class CMS_NetImport_Importer
             return $summary;
         }
 
-        $report = json_decode((string) ($entry['report_json'] ?? ''), true);
+        $report = $this->safe_json_decode((string) ($entry['report_json'] ?? ''));
         $cleanupData = is_array($report['cleanup_data'] ?? null) ? $report['cleanup_data'] : [];
         $createdRecords = is_array($cleanupData['created_records'] ?? null) ? $cleanupData['created_records'] : [];
         $createdLinks = is_array($cleanupData['created_links'] ?? null) ? $cleanupData['created_links'] : [];
@@ -510,7 +527,7 @@ final class CMS_NetImport_Importer
 
             $db->update('netimport_runs', [
                 'status' => 'reset',
-                'report_json' => json_encode($updatedReport, JSON_UNESCAPED_UNICODE),
+                'report_json' => $this->safe_json_encode($updatedReport),
             ], ['id' => $runId]);
 
             if ($pdo->inTransaction()) {
@@ -613,8 +630,16 @@ final class CMS_NetImport_Importer
                     $result['updated']++;
                     $this->add_message($result, 'success', 'DRY-RUN: Unternehmen würde aktualisiert: ' . $name);
                 } else {
-                    $result['created']++;
-                    $this->add_message($result, 'success', 'DRY-RUN: Unternehmen würde angelegt: ' . $name);
+                    $cacheKey = $this->company_cache_key($name, $website);
+                    $simulated = $this->claim_simulated_id('company', $cacheKey);
+                    $this->companyCache[$cacheKey] = $simulated['id'];
+                    if ($simulated['is_new']) {
+                        $result['created']++;
+                        $this->add_message($result, 'success', 'DRY-RUN: Unternehmen würde angelegt: ' . $name);
+                    } else {
+                        $result['updated']++;
+                        $this->add_message($result, 'info', 'DRY-RUN: Unternehmen würde innerhalb dieses Laufs erneut referenziert: ' . $name);
+                    }
                 }
                 continue;
             }
@@ -688,8 +713,16 @@ final class CMS_NetImport_Importer
                     $result['updated']++;
                     $this->add_message($result, 'success', 'DRY-RUN: MVP-Expert würde aktualisiert: ' . $firstName . ' ' . $lastName);
                 } else {
-                    $result['created']++;
-                    $this->add_message($result, 'success', 'DRY-RUN: MVP-Expert würde angelegt: ' . $firstName . ' ' . $lastName);
+                    $cacheKey = $this->person_cache_key($firstName, $lastName);
+                    $simulated = $this->claim_simulated_id('expert', $cacheKey);
+                    $this->expertCache[$cacheKey] = $simulated['id'];
+                    if ($simulated['is_new']) {
+                        $result['created']++;
+                        $this->add_message($result, 'success', 'DRY-RUN: MVP-Expert würde angelegt: ' . $firstName . ' ' . $lastName);
+                    } else {
+                        $result['updated']++;
+                        $this->add_message($result, 'info', 'DRY-RUN: MVP-Expert würde innerhalb dieses Laufs erneut referenziert: ' . $firstName . ' ' . $lastName);
+                    }
                 }
                 if ($linkRelations && $companyId > 0) {
                     $result['linked']++;
@@ -804,8 +837,16 @@ final class CMS_NetImport_Importer
                     $result['updated']++;
                     $this->add_message($result, 'success', 'DRY-RUN: Expert würde aktualisiert: ' . $firstName . ' ' . $lastName);
                 } else {
-                    $result['created']++;
-                    $this->add_message($result, 'success', 'DRY-RUN: Expert würde angelegt: ' . $firstName . ' ' . $lastName);
+                    $cacheKey = $this->person_cache_key($firstName, $lastName);
+                    $simulated = $this->claim_simulated_id('expert', $cacheKey);
+                    $this->expertCache[$cacheKey] = $simulated['id'];
+                    if ($simulated['is_new']) {
+                        $result['created']++;
+                        $this->add_message($result, 'success', 'DRY-RUN: Expert würde angelegt: ' . $firstName . ' ' . $lastName);
+                    } else {
+                        $result['updated']++;
+                        $this->add_message($result, 'info', 'DRY-RUN: Expert würde innerhalb dieses Laufs erneut referenziert: ' . $firstName . ' ' . $lastName);
+                    }
                 }
                 if ($linkRelations && $companyId > 0) {
                     $result['linked']++;
@@ -920,8 +961,16 @@ final class CMS_NetImport_Importer
                     $result['updated']++;
                     $this->add_message($result, 'success', 'DRY-RUN: Speaker würde aktualisiert: ' . $firstName . ' ' . $lastName);
                 } else {
-                    $result['created']++;
-                    $this->add_message($result, 'success', 'DRY-RUN: Speaker würde angelegt: ' . $firstName . ' ' . $lastName);
+                    $cacheKey = $this->person_cache_key($firstName, $lastName);
+                    $simulated = $this->claim_simulated_id('speaker', $cacheKey);
+                    $this->speakerCache[$cacheKey] = $simulated['id'];
+                    if ($simulated['is_new']) {
+                        $result['created']++;
+                        $this->add_message($result, 'success', 'DRY-RUN: Speaker würde angelegt: ' . $firstName . ' ' . $lastName);
+                    } else {
+                        $result['updated']++;
+                        $this->add_message($result, 'info', 'DRY-RUN: Speaker würde innerhalb dieses Laufs erneut referenziert: ' . $firstName . ' ' . $lastName);
+                    }
                 }
                 continue;
             }
@@ -939,9 +988,9 @@ final class CMS_NetImport_Importer
                 'short_bio' => $this->truncate_text($this->build_speaker_bio($firstName, $lastName, implode(', ', $topics), $events), 580),
                 'website' => $website,
                 'location_country' => 'Deutschland',
-                'formats' => json_encode($this->infer_speaker_formats($events), JSON_UNESCAPED_UNICODE),
-                'recognitions' => json_encode($awards, JSON_UNESCAPED_UNICODE),
-                'skills' => json_encode($topics, JSON_UNESCAPED_UNICODE),
+                'formats' => $this->safe_json_encode($this->infer_speaker_formats($events), '[]'),
+                'recognitions' => $this->safe_json_encode($awards, '[]'),
+                'skills' => $this->safe_json_encode($topics, '[]'),
                 'availability' => 'available',
                 'status' => 'active',
                 'travel_radius' => 'national',
@@ -1064,8 +1113,17 @@ final class CMS_NetImport_Importer
                     $result['updated']++;
                     $this->add_message($result, 'success', 'DRY-RUN: Event würde aktualisiert: ' . $eventData['title']);
                 } else {
-                    $result['created']++;
-                    $this->add_message($result, 'success', 'DRY-RUN: Event würde angelegt: ' . $eventData['title']);
+                    $cacheKey = $this->event_cache_key((string) $eventData['title'], (string) $eventData['event_date']);
+                    $simulated = $this->claim_simulated_id('event', $cacheKey);
+                    $this->eventCache[$cacheKey] = $simulated['id'];
+                    $savedId = $simulated['id'];
+                    if ($simulated['is_new']) {
+                        $result['created']++;
+                        $this->add_message($result, 'success', 'DRY-RUN: Event würde angelegt: ' . $eventData['title']);
+                    } else {
+                        $result['updated']++;
+                        $this->add_message($result, 'info', 'DRY-RUN: Event würde innerhalb dieses Laufs erneut referenziert: ' . $eventData['title']);
+                    }
                 }
             } else {
                 if ($existingId > 0) {
@@ -1191,9 +1249,14 @@ final class CMS_NetImport_Importer
 
         if ($preferExpert) {
             if ($dryRun) {
-                $result['created']++;
-                $this->add_message($result, 'info', 'DRY-RUN: Fehlender Event-Expert würde minimal angelegt: ' . $firstName . ' ' . $lastName);
-                return ['id' => 0, 'type' => 'expert'];
+                $cacheKey = $this->person_cache_key($firstName, $lastName);
+                $simulated = $this->claim_simulated_id('expert', $cacheKey);
+                $this->expertCache[$cacheKey] = $simulated['id'];
+                if ($simulated['is_new']) {
+                    $result['created']++;
+                    $this->add_message($result, 'info', 'DRY-RUN: Fehlender Event-Expert würde minimal angelegt: ' . $firstName . ' ' . $lastName);
+                }
+                return ['id' => $simulated['id'], 'type' => 'expert'];
             }
 
             $expertId = (int) CMS_Experts_Database::instance()->save_expert([
@@ -1232,9 +1295,14 @@ final class CMS_NetImport_Importer
         }
 
         if ($dryRun) {
-            $result['created']++;
-            $this->add_message($result, 'info', 'DRY-RUN: Fehlender Event-Speaker würde minimal angelegt: ' . $firstName . ' ' . $lastName);
-            return ['id' => 0, 'type' => 'speaker'];
+            $cacheKey = $this->person_cache_key($firstName, $lastName);
+            $simulated = $this->claim_simulated_id('speaker', $cacheKey);
+            $this->speakerCache[$cacheKey] = $simulated['id'];
+            if ($simulated['is_new']) {
+                $result['created']++;
+                $this->add_message($result, 'info', 'DRY-RUN: Fehlender Event-Speaker würde minimal angelegt: ' . $firstName . ' ' . $lastName);
+            }
+            return ['id' => $simulated['id'], 'type' => 'speaker'];
         }
 
         $speakerId = CMS_Speakers_Database::instance()->save_speaker([
@@ -1595,8 +1663,8 @@ final class CMS_NetImport_Importer
                 'started_at' => $startedAtSql,
                 'finished_at' => $finishedAtSql,
                 'duration_ms' => $durationMs,
-                'options_json' => json_encode($optionsForStorage, JSON_UNESCAPED_UNICODE),
-                'report_json' => json_encode($reportPayload, JSON_UNESCAPED_UNICODE),
+                'options_json' => $this->safe_json_encode($optionsForStorage, '{}'),
+                'report_json' => $this->safe_json_encode($reportPayload, '{}'),
             ]);
         } catch (\Throwable $e) {
             error_log('CMS NetImport report persistence failed: ' . $e->getMessage());
@@ -1610,6 +1678,8 @@ final class CMS_NetImport_Importer
         $this->speakerCache = [];
         $this->eventCache = [];
         $this->assignmentCache = [];
+        $this->simulatedIdCache = [];
+        $this->simulatedIdSequence = 1000000000;
         $this->csvCache = [];
         $this->adminUserIdCache = null;
     }
@@ -2055,9 +2125,14 @@ final class CMS_NetImport_Importer
             return $existingId;
         }
         if ($dryRun) {
-            $result['created']++;
-            $this->add_message($result, 'info', 'DRY-RUN: Fehlende Company würde minimal angelegt: ' . $name);
-            return 0;
+            $cacheKey = $this->company_cache_key($name, $website);
+            $simulated = $this->claim_simulated_id('company', $cacheKey);
+            $this->companyCache[$cacheKey] = $simulated['id'];
+            if ($simulated['is_new']) {
+                $result['created']++;
+                $this->add_message($result, 'info', 'DRY-RUN: Fehlende Company würde minimal angelegt: ' . $name);
+            }
+            return $simulated['id'];
         }
         $savedId = (int) CMS_Companies_Database::instance()->save_company([
             'user_id' => $this->get_admin_user_id(),
@@ -2126,10 +2201,64 @@ final class CMS_NetImport_Importer
             return $this->assignmentCache[$assignmentKey];
         }
         [$eventId, $entityId, $entityType] = explode('|', $assignmentKey, 3);
+        if ((int) $eventId >= 1000000000 || (int) $entityId >= 1000000000) {
+            return $this->assignmentCache[$assignmentKey] = false;
+        }
         $db = CMS\Database::instance();
         $stmt = $db->prepare("SELECT id FROM {$db->prefix()}event_speakers WHERE event_id = ? AND speaker_id = ? AND speaker_type = ? LIMIT 1");
         $stmt->execute([(int) $eventId, (int) $entityId, $entityType]);
         return $this->assignmentCache[$assignmentKey] = ((int) ($stmt->fetchColumn() ?: 0) > 0);
+    }
+
+    /**
+     * @return array{id:int,is_new:bool}
+     */
+    private function claim_simulated_id(string $scope, string $lookupKey): array
+    {
+        $cacheKey = $scope . '|' . $lookupKey;
+        if (isset($this->simulatedIdCache[$cacheKey])) {
+            return [
+                'id' => $this->simulatedIdCache[$cacheKey],
+                'is_new' => false,
+            ];
+        }
+
+        $id = $this->simulatedIdSequence++;
+        $this->simulatedIdCache[$cacheKey] = $id;
+
+        return [
+            'id' => $id,
+            'is_new' => true,
+        ];
+    }
+
+    private function safe_json_encode(mixed $value, string $fallback = '[]'): string
+    {
+        $json = json_encode($value, self::JSON_FLAGS);
+        if ($json !== false) {
+            return $json;
+        }
+
+        error_log('CMS NetImport json_encode failed: ' . json_last_error_msg());
+        return $fallback;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function safe_json_decode(string $json): array
+    {
+        if ($json === '') {
+            return [];
+        }
+
+        $decoded = json_decode($json, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        error_log('CMS NetImport json_decode failed: ' . json_last_error_msg());
+        return [];
     }
 
     private function is_plugin_ready(string $slug, string $requiredClass = ''): bool

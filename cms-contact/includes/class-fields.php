@@ -47,7 +47,6 @@ final class CMS_Contact_Fields
             'radio'    => ['label' => 'Radio-Buttons',  'icon' => '🔘'],
             'checkbox' => ['label' => 'Checkbox',       'icon' => '☑️'],
             'hidden'   => ['label' => 'Versteckt',      'icon' => '👁️‍🗨️'],
-            'file'     => ['label' => 'Datei-Upload',   'icon' => '📎'],
         ];
     }
 

@@ -10,6 +10,7 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         initContactForms();
+        focusStatusMessage();
     });
 
     function initContactForms() {
@@ -145,6 +146,19 @@
 
     function isValidUrl(val) {
         try { new URL(val); return true; } catch { return false; }
+    }
+
+    function focusStatusMessage() {
+        var message = document.querySelector('[data-contact-message]');
+        if (!message) {
+            return;
+        }
+
+        if (!message.hasAttribute('tabindex')) {
+            message.setAttribute('tabindex', '-1');
+        }
+
+        message.focus({ preventScroll: true });
     }
 
 })();

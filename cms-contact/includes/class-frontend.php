@@ -147,7 +147,8 @@ final class CMS_Contact_Frontend
         $success = $_SESSION['contact_success'] ?? null;
         $error   = $_SESSION['contact_error']   ?? null;
         $old     = $_SESSION['contact_old']     ?? [];
-        unset($_SESSION['contact_success'], $_SESSION['contact_error'], $_SESSION['contact_old']);
+        $fieldErrors = $_SESSION['contact_field_errors'] ?? [];
+        unset($_SESSION['contact_success'], $_SESSION['contact_error'], $_SESSION['contact_old'], $_SESSION['contact_field_errors']);
 
         $template = $form['template'] ?? 'classic';
         $templateFile = CMS_CONTACT_PLUGIN_DIR . 'templates/template-' . $template . '.php';
@@ -198,6 +199,7 @@ final class CMS_Contact_Frontend
         } else {
             $_SESSION['contact_error'] = $result['error'];
             $_SESSION['contact_old']   = $result['old_data'] ?? [];
+            $_SESSION['contact_field_errors'] = $result['field_errors'] ?? [];
             if (function_exists('safe_redirect')) {
                 safe_redirect('/contact/' . $slug);
             } else {
@@ -491,7 +493,14 @@ final class CMS_Contact_Frontend
 
         // Benutzerdefinierte Validierung (Regex)
         if (!empty($field['validation']) && !preg_match($field['validation'], $value)) {
-            return "{$label}: Eingabe entspricht nicht dem erwarteten Format.";
+            $pattern = (string) $field['validation'];
+            if (@preg_match($pattern, '') == false) {
+                return "{$label}: Die konfigurierte Validierungsregel ist ungültig.";
+            }
+
+            if (preg_match($pattern, (string) $value) !== 1) {
+                return "{$label}: Eingabe entspricht nicht dem erwarteten Format.";
+            }
         }
 
         return null;
@@ -510,9 +519,34 @@ final class CMS_Contact_Frontend
             'email'    => filter_var($value, FILTER_SANITIZE_EMAIL) ?: '',
             'url'      => filter_var($value, FILTER_SANITIZE_URL) ?: '',
             'number'   => (string) (int) $value,
-            'textarea' => strip_tags((string) $value, '<br>'),
-            default    => htmlspecialchars(strip_tags((string) $value), ENT_QUOTES, 'UTF-8'),
+            'textarea' => trim(strip_tags((string) $value)),
+            default    => trim(strip_tags((string) $value)),
         };
+    }
+
+    public static function render_custom_css(array $form): string
+    {
+        $css = self::sanitize_custom_css((string) ($form['custom_css'] ?? ''));
+        if ($css === '') {
+            return '';
+        }
+
+        return "<style>\n" . $css . "\n</style>\n";
+    }
+
+    public static function sanitize_custom_css(string $css): string
+    {
+        $css = trim(strip_tags($css));
+        if ($css === '') {
+            return '';
+        }
+
+        $css = str_ireplace(['</style', '<style'], '', $css);
+        $css = preg_replace('/@import\s+/i', '', $css) ?? $css;
+        $css = preg_replace('/expression\s*\(/i', '', $css) ?? $css;
+        $css = preg_replace('/javascript\s*:/i', '', $css) ?? $css;
+
+        return trim($css);
     }
 
     // ── Rate-Limiting ─────────────────────────────────────────────────────────
@@ -569,6 +603,8 @@ final class CMS_Contact_Frontend
      */
     public static function render_field(array $field, string $csrfToken = '', array $old = [], array $errors = []): string
     {
+        unset($csrfToken);
+
         $name        = htmlspecialchars($field['field_name']);
         $label       = htmlspecialchars($field['field_label']);
         $type        = $field['field_type'];
@@ -580,6 +616,13 @@ final class CMS_Contact_Frontend
         $description = $field['description'] ?? '';
         $hasError    = isset($errors[$field['field_name']]);
         $errorMsg    = $hasError ? htmlspecialchars($errors[$field['field_name']]) : '';
+        $fieldId     = 'cf-' . preg_replace('/[^a-z0-9\-_]/i', '-', (string) ($field['field_name'] ?? 'field'));
+        $hintId      = $description !== '' && $type !== 'hidden' ? $fieldId . '-hint' : '';
+        $errorId     = $hasError ? $fieldId . '-error' : '';
+        $describedBy = trim(implode(' ', array_filter([$hintId, $errorId])));
+        $ariaInvalid = $hasError ? ' aria-invalid="true"' : '';
+        $ariaRequired = $required ? ' aria-required="true"' : '';
+        $ariaDescribedBy = $describedBy !== '' ? ' aria-describedby="' . htmlspecialchars($describedBy, ENT_QUOTES, 'UTF-8') . '"' : '';
 
         $widthClass = match ($width) {
             'half'      => 'contact-field--half',
@@ -592,7 +635,7 @@ final class CMS_Contact_Frontend
 
         $html = "<div class=\"contact-field {$widthClass}{$errorClass} {$cssClass}\">\n";
 
-        if ($type !== 'hidden') {
+        if ($type !== 'hidden' && $type !== 'radio') {
             $html .= "  <label for=\"cf-{$name}\" class=\"contact-label\">";
             $html .= $label;
             if ($required) {
@@ -603,13 +646,13 @@ final class CMS_Contact_Frontend
 
         switch ($type) {
             case 'textarea':
-                $html .= "  <textarea id=\"cf-{$name}\" name=\"{$name}\" class=\"contact-input contact-textarea\" placeholder=\"{$placeholder}\"";
+                $html .= "  <textarea id=\"cf-{$name}\" name=\"{$name}\" class=\"contact-input contact-textarea\" placeholder=\"{$placeholder}\"{$ariaInvalid}{$ariaRequired}{$ariaDescribedBy}";
                 if ($required) { $html .= ' required'; }
                 $html .= ">{$value}</textarea>\n";
                 break;
 
             case 'select':
-                $html .= "  <select id=\"cf-{$name}\" name=\"{$name}\" class=\"contact-input contact-select\"";
+                $html .= "  <select id=\"cf-{$name}\" name=\"{$name}\" class=\"contact-input contact-select\"{$ariaInvalid}{$ariaRequired}{$ariaDescribedBy}";
                 if ($required) { $html .= ' required'; }
                 $html .= ">\n";
                 $html .= "    <option value=\"\">{$placeholder}</option>\n";
@@ -626,28 +669,36 @@ final class CMS_Contact_Frontend
                 break;
 
             case 'radio':
-                $html .= "  <div class=\"contact-radio-group\">\n";
+                $html .= "  <fieldset class=\"contact-choice-group contact-radio-group\"{$ariaInvalid}{$ariaRequired}{$ariaDescribedBy}>\n";
+                $html .= "    <legend class=\"contact-label\">{$label}";
+                if ($required) {
+                    $html .= ' <span class="contact-required">*</span>';
+                }
+                $html .= "</legend>\n";
                 if (!empty($field['options_json'])) {
                     $options = json_decode($field['options_json'], true) ?: [];
                     foreach ($options as $i => $opt) {
                         $optVal   = htmlspecialchars($opt['value'] ?? '');
                         $optLabel = htmlspecialchars($opt['label'] ?? $opt['value'] ?? '');
                         $checked  = ($value === $optVal) ? ' checked' : '';
-                        $html .= "    <label class=\"contact-radio-label\">";
-                        $html .= "<input type=\"radio\" name=\"{$name}\" value=\"{$optVal}\"{$checked}";
+                        $optionId = $fieldId . '-' . $i;
+                        $html .= "    <div class=\"contact-choice-item\">";
+                        $html .= "<input type=\"radio\" id=\"{$optionId}\" name=\"{$name}\" value=\"{$optVal}\"{$checked}{$ariaInvalid}{$ariaRequired}{$ariaDescribedBy}";
                         if ($required && $i === 0) { $html .= ' required'; }
-                        $html .= "> {$optLabel}</label>\n";
+                        $html .= ">";
+                        $html .= "<label for=\"{$optionId}\" class=\"contact-radio-label\">{$optLabel}</label></div>\n";
                     }
                 }
-                $html .= "  </div>\n";
+                $html .= "  </fieldset>\n";
                 break;
 
             case 'checkbox':
                 $checked = !empty($value) ? ' checked' : '';
-                $html .= "  <label class=\"contact-checkbox-label\">";
-                $html .= "<input type=\"checkbox\" id=\"cf-{$name}\" name=\"{$name}\" value=\"1\"{$checked}";
+                $html .= "  <div class=\"contact-choice-group\">";
+                $html .= "<input type=\"checkbox\" id=\"cf-{$name}\" name=\"{$name}\" value=\"1\"{$checked}{$ariaInvalid}{$ariaRequired}{$ariaDescribedBy}";
                 if ($required) { $html .= ' required'; }
-                $html .= "> {$placeholder}</label>\n";
+                $html .= ">";
+                $html .= "<label for=\"cf-{$name}\" class=\"contact-checkbox-label\">" . ($placeholder !== '' ? $placeholder : $label) . "</label></div>\n";
                 break;
 
             case 'file':
@@ -658,17 +709,17 @@ final class CMS_Contact_Frontend
                 break;
 
             default:
-                $html .= "  <input type=\"{$type}\" id=\"cf-{$name}\" name=\"{$name}\" class=\"contact-input\" value=\"{$value}\" placeholder=\"{$placeholder}\"";
+                $html .= "  <input type=\"{$type}\" id=\"cf-{$name}\" name=\"{$name}\" class=\"contact-input\" value=\"{$value}\" placeholder=\"{$placeholder}\"{$ariaInvalid}{$ariaRequired}{$ariaDescribedBy}";
                 if ($required) { $html .= ' required'; }
                 $html .= ">\n";
         }
 
         if ($hasError) {
-            $html .= "  <div class=\"contact-error-msg\">{$errorMsg}</div>\n";
+            $html .= "  <div class=\"contact-error-msg contact-error-text\" id=\"{$errorId}\" role=\"alert\">{$errorMsg}</div>\n";
         }
 
         if (!empty($description) && $type !== 'hidden') {
-            $html .= "  <small class=\"contact-hint\">" . htmlspecialchars($description) . "</small>\n";
+            $html .= "  <small class=\"contact-hint\" id=\"{$hintId}\">" . htmlspecialchars($description) . "</small>\n";
         }
 
         $html .= "</div>\n";

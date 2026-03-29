@@ -208,7 +208,7 @@
         var optionsGroup = document.getElementById('optionsGroup');
         if (!fieldType || !optionsGroup) return;
 
-        optionsGroup.style.display = ['select', 'radio', 'checkbox'].includes(fieldType.value) ? 'block' : 'none';
+        optionsGroup.style.display = ['select', 'radio'].includes(fieldType.value) ? 'block' : 'none';
     }
 
     function openFieldModal() {
@@ -224,6 +224,25 @@
     }
 
     function editField(field) {
+        var optionsValue = '';
+        if (field.options_json) {
+            try {
+                var parsedOptions = typeof field.options_json === 'string'
+                    ? JSON.parse(field.options_json)
+                    : field.options_json;
+
+                if (Array.isArray(parsedOptions)) {
+                    optionsValue = parsedOptions.map(function (option) {
+                        return option && (option.label || option.value) ? String(option.label || option.value) : '';
+                    }).filter(function (option) {
+                        return option !== '';
+                    }).join('\n');
+                }
+            } catch (error) {
+                optionsValue = '';
+            }
+        }
+
         document.getElementById('fieldModalTitle').textContent = '✏️ Feld bearbeiten';
         document.getElementById('fieldFormAction').value = 'save_field';
         document.getElementById('fieldFormId').value = field.id || '';
@@ -232,7 +251,7 @@
         document.getElementById('field_type').value = field.field_type || 'text';
         document.getElementById('field_width').value = field.field_width || 'full';
         document.getElementById('field_placeholder').value = field.placeholder || '';
-        document.getElementById('field_options').value = field.options_json || '';
+        document.getElementById('field_options').value = optionsValue;
         document.getElementById('field_validation').value = field.validation || '';
         document.getElementById('field_required').checked = !!parseInt(field.is_required, 10);
         document.getElementById('field_system').checked = !!parseInt(field.is_system, 10);

@@ -201,8 +201,13 @@ trait CMS_Contact_Page_Submissions_Trait
 
     private static function enrich_submissions_for_list(array $submissions, CMS_Contact_Submissions $submissionsSvc): array
     {
+        $metaMap = $submissionsSvc->get_meta_for_submissions(array_map(
+            static fn (array $submission): int => (int) ($submission['id'] ?? 0),
+            $submissions
+        ));
+
         foreach ($submissions as &$submission) {
-            $meta = $submissionsSvc->get_meta((int) ($submission['id'] ?? 0));
+            $meta = $metaMap[(int) ($submission['id'] ?? 0)] ?? [];
             $submission['_list_highlights'] = self::extract_submission_highlights($submission, $meta);
         }
         unset($submission);

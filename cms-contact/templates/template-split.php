@@ -28,16 +28,14 @@ $theme = CMS\ThemeManager::instance();
 $theme->getHeader();
 ?>
     <link rel="stylesheet" href="<?php echo CMS_CONTACT_PLUGIN_URL; ?>assets/css/contact-public.css?v=<?php echo CMS_CONTACT_VERSION; ?>">
-    <?php if (!empty($form['custom_css'])): ?>
-    <style><?php echo $form['custom_css']; ?></style>
-    <?php endif; ?>
+    <?php echo CMS_Contact_Frontend::render_custom_css($form); ?>
 
-    <main class="contact-main">
+    <main class="contact-main" aria-labelledby="contact-form-title">
         <div class="contact-container contact-split">
             <!-- Linke Seite: Kontaktinformationen -->
-            <div class="contact-split-info">
+            <aside class="contact-split-info" aria-labelledby="contact-form-title">
                 <div class="contact-split-info-inner">
-                    <h1><?php echo $e($form['title']); ?></h1>
+                    <h1 id="contact-form-title"><?php echo $e($form['title']); ?></h1>
                     <?php if (!empty($form['description'])): ?>
                     <p class="contact-description"><?php echo $e($form['description']); ?></p>
                     <?php endif; ?>
@@ -45,7 +43,7 @@ $theme->getHeader();
                     <div class="contact-info-list">
                         <?php if ($companyEmail): ?>
                         <div class="contact-info-item">
-                            <span class="contact-info-icon">📧</span>
+                            <span class="contact-info-icon" aria-hidden="true">📧</span>
                             <div>
                                 <strong>E-Mail</strong>
                                 <a href="mailto:<?php echo $e($companyEmail); ?>"><?php echo $e($companyEmail); ?></a>
@@ -55,41 +53,42 @@ $theme->getHeader();
 
                         <?php if ($companyPhone): ?>
                         <div class="contact-info-item">
-                            <span class="contact-info-icon">📞</span>
+                            <span class="contact-info-icon" aria-hidden="true">📞</span>
                             <div>
                                 <strong>Telefon</strong>
-                                <span><?php echo $e($companyPhone); ?></span>
+                                <a href="tel:<?php echo $e(preg_replace('/[^+0-9]/', '', $companyPhone)); ?>"><?php echo $e($companyPhone); ?></a>
                             </div>
                         </div>
                         <?php endif; ?>
 
                         <?php if ($companyAddr): ?>
                         <div class="contact-info-item">
-                            <span class="contact-info-icon">📍</span>
+                            <span class="contact-info-icon" aria-hidden="true">📍</span>
                             <div>
                                 <strong>Adresse</strong>
-                                <span><?php echo nl2br($e($companyAddr)); ?></span>
+                                <address class="contact-address"><?php echo nl2br($e($companyAddr)); ?></address>
                             </div>
                         </div>
                         <?php endif; ?>
                     </div>
                 </div>
-            </div>
+            </aside>
 
             <!-- Rechte Seite: Formular -->
-            <div class="contact-split-form">
+            <section class="contact-split-form" aria-labelledby="contact-split-form-title">
+                <h2 class="contact-visually-hidden" id="contact-split-form-title">Kontaktformular</h2>
                 <?php if (!empty($success)): ?>
-                <div class="contact-alert contact-alert-success">✅ <?php echo $e($success); ?></div>
+                <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1">✅ <?php echo $e($success); ?></div>
                 <?php endif; ?>
                 <?php if (!empty($error)): ?>
-                <div class="contact-alert contact-alert-error">❌ <?php echo $e($error); ?></div>
+                <div class="contact-alert contact-alert-error" role="alert" aria-live="assertive" data-contact-message tabindex="-1">❌ <?php echo $e($error); ?></div>
                 <?php endif; ?>
 
                 <?php if (empty($success)): ?>
                 <form method="POST" class="contact-form" novalidate>
                     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                     <?php if (!empty($form['enable_honeypot'])): ?>
-                    <div style="position:absolute;left:-9999px;" aria-hidden="true">
+                    <div class="contact-honeypot" aria-hidden="true">
                         <input type="text" name="website_url" tabindex="-1" autocomplete="off">
                     </div>
                     <?php endif; ?>
@@ -97,7 +96,7 @@ $theme->getHeader();
                     <div class="contact-fields">
                         <?php foreach ($fields as $field): ?>
                         <div class="contact-field contact-field-<?php echo $e($field['field_width'] ?? 'full'); ?>">
-                            <?php echo CMS_Contact_Frontend::render_field($field, '', $old); ?>
+                            <?php echo CMS_Contact_Frontend::render_field($field, '', $old, $fieldErrors ?? []); ?>
                         </div>
                         <?php endforeach; ?>
                     </div>
@@ -105,8 +104,8 @@ $theme->getHeader();
                     <?php if (!empty($form['enable_captcha'])): ?>
                     <div class="contact-field contact-field-full contact-captcha">
                         <?php $a = rand(1, 10); $b = rand(1, 10); $_SESSION['captcha_expected_' . $form['slug']] = $a + $b; ?>
-                        <label class="contact-label">Was ist <?php echo $a; ?> + <?php echo $b; ?>? <span class="contact-required">*</span></label>
-                        <input type="number" name="captcha_answer" class="contact-input" required>
+                        <label class="contact-label" for="contact-captcha-answer">Was ist <?php echo $a; ?> + <?php echo $b; ?>? <span class="contact-required">*</span></label>
+                        <input type="number" id="contact-captcha-answer" name="captcha_answer" class="contact-input" inputmode="numeric" required>
                     </div>
                     <?php endif; ?>
 
@@ -117,7 +116,7 @@ $theme->getHeader();
                     </div>
                 </form>
                 <?php endif; ?>
-            </div>
+            </section>
         </div>
     </main>
 

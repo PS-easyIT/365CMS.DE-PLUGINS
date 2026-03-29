@@ -161,11 +161,11 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="rate_limit">Rate-Limit (pro Stunde/IP)</label>
+                <label class="form-label" for="rate_limit">Rate-Limit (pro Stunde/Sitzung)</label>
                 <input type="number" id="rate_limit" name="rate_limit" class="form-control"
                        value="<?php echo (int)($form['rate_limit'] ?? 3); ?>"
                        min="0" max="100" class="contact-input-number-sm">
-                <small class="form-text">0 = kein Limit. Standard: 3 Nachrichten pro Stunde pro IP.</small>
+                <small class="form-text">0 = kein Limit. Standard: 3 Nachrichten pro Stunde pro Browser-Sitzung.</small>
             </div>
         </div>
     </div>

@@ -43,6 +43,8 @@ Seit `1.5.0` gilt zusätzlich:
 - bereits zurückgesetzte Läufe werden sauber erkannt
 - gesetzte Historien-Filter bleiben auch nach `Reset` oder `Historie löschen` erhalten
 - Historien-Aktionen besitzen ein eigenes Rate-Limit zusätzlich zum eigentlichen Import-Run-Limit
+- pro Lauf steht eine aufklappbare Detailansicht mit gespeicherten Messages, Teil-Schritten, Cleanup-Daten und Reset-Summary bereit
+- `Reset` und `Historie löschen` laufen zusätzlich über ein vorgeschaltetes Confirm-Modal im Admin
 
 ## Empfohlener Ablauf
 

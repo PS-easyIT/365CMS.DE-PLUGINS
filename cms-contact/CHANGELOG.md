@@ -2,6 +2,27 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [1.1.5] – 2026-03-29
+
+### Sicherheitsfixes
+
+- Member-Redirects härten die Zielpfade jetzt auf den internen Kontaktbereich, sodass manipulierte Request-URLs keine offenen Weiterleitungen mehr auslösen.
+- Formular-CSS wird vor der Ausgabe zusätzlich bereinigt, um problematische Konstrukte wie `@import`, `expression()` oder `javascript:` im Inline-Style-Block zu entschärfen.
+
+### Verbessert
+
+- Die globale Empfängeradresse aus den Kontakt-Einstellungen greift jetzt auch wirklich für Benachrichtigungen; ältere Installationen mit `global_recipient` bleiben kompatibel.
+- Bestätigungs-E-Mails werden nur noch verschickt, wenn die Option im Admin aktiviert ist.
+- Serverseitige Feldfehler bleiben nach Redirect erhalten und werden direkt am betroffenen Formularfeld angezeigt.
+- Die Submission-Liste lädt Zusatz-Metadaten jetzt gesammelt statt pro Zeile einzeln und vermeidet damit unnötige N+1-Datenbankabfragen.
+- Member-Ansichten laden Formular-Titel jetzt per Join mit und zeigen dadurch verwendete Formulare konsistent an.
+- Die Feldverwaltung validiert Templates, Breiten und Regex-Formate strenger und blendet Options-Editoren nur noch bei tatsächlich unterstützten Auswahlfeldern ein.
+
+### Geändert
+
+- Die irreführende, aber nicht implementierte Auswahl `Datei-Upload` wird im Feld-Builder nicht länger angeboten.
+- Die Settings-Seite respektiert den aktiven Tab jetzt auch nach POST-Aktionen und Wartungs-Tasks.
+
 ## [1.1.4] – 2026-03-28
 
 ### Geändert

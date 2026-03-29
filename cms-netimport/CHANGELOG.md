@@ -6,6 +6,13 @@
 - bereits zurückgesetzte Läufe werden als solche erkannt und nicht erneut irreführend verarbeitet
 - Historien-Filter bleiben bei `Reset` und `Historie löschen` erhalten
 - Historien-Aktionen zusätzlich per eigener Rate-Limit-Spur abgesichert
+- Dry-Run simuliert jetzt auch automatisch angelegte Event-Personen und Companies konsistent für Folge-Verknüpfungen
+- Historie kennzeichnet `Reset`- und Fehler-Läufe deutlicher und blendet unnötige Reset-Aktionen für Dry-Runs aus
+- Dry-Run zählt mehrfach referenzierte, simulierte Companies/Speaker/Experts nicht länger fälschlich mehrfach als neue Datensätze
+- Dry-Run vergibt jetzt auch neuen Events simulierte IDs, damit Event↔Speaker/Expert-Verknüpfungen in der Vorschau vollständig mitgezählt werden
+- JSON- und Report-Speicherung nutzt jetzt UTF-8-robuste Encode-/Decode-Helper, damit fehlerhafte CSV-Zeichen die Historie und Speaker-JSON-Felder nicht beschädigen
+- Import-Historie zeigt jetzt pro Lauf eine aufklappbare Detailansicht mit gespeicherten Meldungen, Teil-Schritten, Cleanup-Daten und Reset-Informationen
+- Destruktive Historien-Aktionen (`Reset`, `Historie löschen`) laufen jetzt über ein eigenes Confirm-Modal statt direkter Sofortausführung
 
 ## 1.4.0 — 2026-03-28
 

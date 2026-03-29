@@ -1,12 +1,12 @@
 {
     "name": "CMS Contact",
     "slug": "cms-contact",
-    "version": "1.1.4",
+    "version": "1.1.5",
     "requires_cms": "2.0.0",
     "tested_cms": "2.0.0",
     "author": "365 Network",
     "author_uri": "https://365network.de",
-    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-1.1.4.zip",
-    "last_updated": "2026-03-28",
-    "changelog": "Kontaktanfragen speichern und zeigen wieder IP-Adresse und User-Agent im Admin an."
+    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-1.1.5.zip",
+    "last_updated": "2026-03-29",
+    "changelog": "Sicherere Redirects, funktionierende Mail-Settings, sichtbare Feldfehler und schnellere Submission-Listen."
 }

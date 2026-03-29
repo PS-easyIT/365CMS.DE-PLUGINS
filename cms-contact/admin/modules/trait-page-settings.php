@@ -23,6 +23,9 @@ trait CMS_Contact_Page_Settings_Trait
         $notice = '';
         $error  = '';
         $tab    = sanitize_text_field($_GET['tab'] ?? 'general');
+        if (!in_array($tab, ['general', 'design', 'cleanup'], true)) {
+            $tab = 'general';
+        }
 
         // POST-Handler
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -36,7 +39,7 @@ trait CMS_Contact_Page_Settings_Trait
 
         // Aktuelle Settings laden
         $settings = [
-            'admin_email'        => self::get_setting('admin_email'),
+            'admin_email'        => self::get_setting('admin_email', self::get_setting('global_recipient')),
             'from_name'          => self::get_setting('from_name', '365CMS Kontakt'),
             'from_email'         => self::get_setting('from_email'),
             'send_confirmation'  => self::get_setting('send_confirmation', '0'),
@@ -82,21 +85,35 @@ trait CMS_Contact_Page_Settings_Trait
      */
     private static function handle_save_contact_settings_post(): array
     {
-        self::save_setting('admin_email', filter_var($_POST['admin_email'] ?? '', FILTER_VALIDATE_EMAIL) ?: '');
+        $adminEmail = filter_var($_POST['admin_email'] ?? '', FILTER_VALIDATE_EMAIL) ?: '';
         self::save_setting('from_name', sanitize_text_field($_POST['from_name'] ?? ''));
         self::save_setting('from_email', filter_var($_POST['from_email'] ?? '', FILTER_VALIDATE_EMAIL) ?: '');
         self::save_setting('send_confirmation', isset($_POST['send_confirmation']) ? '1' : '0');
+        self::save_setting('admin_email', $adminEmail);
+        self::save_setting('global_recipient', $adminEmail);
         $privacyPolicyUrl = trim((string) ($_POST['privacy_policy_url'] ?? ''));
         if ($privacyPolicyUrl !== '' && !filter_var($privacyPolicyUrl, FILTER_VALIDATE_URL) && !str_starts_with($privacyPolicyUrl, '/')) {
             $privacyPolicyUrl = '/datenschutz';
         }
+
+        $defaultTemplate = sanitize_text_field($_POST['default_template'] ?? 'classic');
+        $availableTemplates = array_keys(CMS_Contact_Forms::get_available_templates());
+        if (!in_array($defaultTemplate, $availableTemplates, true)) {
+            $defaultTemplate = 'classic';
+        }
+
+        $primaryColor = sanitize_text_field($_POST['primary_color'] ?? '#3b82f6');
+        if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $primaryColor)) {
+            $primaryColor = '#3b82f6';
+        }
+
         self::save_setting('privacy_policy_url', $privacyPolicyUrl !== '' ? $privacyPolicyUrl : '/datenschutz');
         self::save_setting('require_privacy_consent', isset($_POST['require_privacy_consent']) ? '1' : '0');
-        self::save_setting('default_template', sanitize_text_field($_POST['default_template'] ?? 'classic'));
-        self::save_setting('primary_color', sanitize_text_field($_POST['primary_color'] ?? '#3b82f6'));
+        self::save_setting('default_template', $defaultTemplate);
+        self::save_setting('primary_color', $primaryColor);
         self::save_setting('border_radius', (string) max(0, (int) ($_POST['border_radius'] ?? 8)));
 
-        return ['notice' => 'Einstellungen gespeichert.'];
+        return ['notice' => 'Einstellungen gespeichert.', 'tab' => 'general'];
     }
 
     /**

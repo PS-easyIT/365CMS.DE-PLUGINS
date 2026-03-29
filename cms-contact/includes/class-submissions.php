@@ -244,6 +244,41 @@ final class CMS_Contact_Submissions
         return $meta;
     }
 
+    /**
+     * Meta-Daten für mehrere Submissions in einem Rutsch laden.
+     *
+     * @param int[] $submissionIds
+     * @return array<int, array<string, string>>
+     */
+    public function get_meta_for_submissions(array $submissionIds): array
+    {
+        $submissionIds = array_values(array_filter(array_map('intval', $submissionIds), static fn (int $id): bool => $id > 0));
+        if ($submissionIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($submissionIds), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT submission_id, meta_key, meta_value
+             FROM {$this->prefix}contact_submission_meta
+             WHERE submission_id IN ({$placeholders})
+             ORDER BY submission_id, id"
+        );
+        $stmt->execute($submissionIds);
+
+        $grouped = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $submissionId = (int) ($row['submission_id'] ?? 0);
+            if ($submissionId <= 0) {
+                continue;
+            }
+
+            $grouped[$submissionId][(string) $row['meta_key']] = (string) ($row['meta_value'] ?? '');
+        }
+
+        return $grouped;
+    }
+
     // ── Status ────────────────────────────────────────────────────────────────
 
     /**
@@ -333,7 +368,11 @@ final class CMS_Contact_Submissions
     public function get_user_submissions(int $userId): array
     {
         $stmt = $this->pdo->prepare(
-            "SELECT * FROM {$this->prefix}contact_submissions WHERE user_id = ? ORDER BY created_at DESC"
+            "SELECT s.*, f.title AS form_title, f.slug AS form_slug
+             FROM {$this->prefix}contact_submissions s
+             LEFT JOIN {$this->prefix}contact_forms f ON f.id = s.form_id
+             WHERE s.user_id = ?
+             ORDER BY s.created_at DESC"
         );
         $stmt->execute([$userId]);
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -370,13 +409,17 @@ final class CMS_Contact_Submissions
      */
     public function send_notification(array $form, array $submission, array $meta = []): bool
     {
-        $recipient = $form['recipient'] ?? '';
+        $recipient = trim((string) ($form['recipient'] ?? ''));
         if (empty($recipient)) {
-            // Globalen Empfänger aus Einstellungen laden
-            $recipient = $this->get_setting('global_recipient');
+            $recipient = trim($this->get_setting('admin_email'));
         }
 
         if (empty($recipient)) {
+            // Legacy-Fallback aus älteren Installationen laden
+            $recipient = trim($this->get_setting('global_recipient'));
+        }
+
+        if (empty($recipient) || !filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
             return false;
         }
 
@@ -439,6 +482,12 @@ final class CMS_Contact_Submissions
      */
     public function send_confirmation(array $form, array $submission): bool
     {
+        unset($form);
+
+        if ($this->get_setting('send_confirmation') !== '1') {
+            return false;
+        }
+
         $senderEmail = $submission['sender_email'] ?? '';
         if (empty($senderEmail) || !filter_var($senderEmail, FILTER_VALIDATE_EMAIL)) {
             return false;

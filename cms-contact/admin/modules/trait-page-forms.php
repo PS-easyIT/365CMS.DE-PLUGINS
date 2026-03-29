@@ -187,6 +187,11 @@ trait CMS_Contact_Page_Forms_Trait
             return ['error' => 'Ungültige Feld-ID.'];
         }
 
+        $field = CMS_Contact_Fields::instance()->get_by_id($fieldId);
+        if (!$field || (int) ($field['form_id'] ?? 0) !== $formId) {
+            return ['error' => 'Das gewünschte Feld gehört nicht zu diesem Formular.'];
+        }
+
         CMS_Contact_Fields::instance()->delete($fieldId);
         self::redirect_to_admin('forms', ['action' => 'fields', 'id' => $formId, 'notice' => 'field_deleted']);
     }
@@ -224,9 +229,14 @@ trait CMS_Contact_Page_Forms_Trait
         $title    = sanitize_text_field($_POST['title'] ?? '');
         $slug     = sanitize_text_field($_POST['slug'] ?? '');
         $template = sanitize_text_field($_POST['template'] ?? 'classic');
+        $availableTemplates = array_keys(CMS_Contact_Forms::get_available_templates());
 
         if (empty($title)) {
             return 'Titel ist erforderlich.';
+        }
+
+        if (!in_array($template, $availableTemplates, true)) {
+            return 'Das gewählte Template ist nicht verfügbar.';
         }
 
         $forms = CMS_Contact_Forms::instance();
@@ -268,10 +278,24 @@ trait CMS_Contact_Page_Forms_Trait
         }
 
         $slug = sanitize_text_field($_POST['slug'] ?? '');
+        $template = sanitize_text_field($_POST['template'] ?? 'classic');
+        $availableTemplates = array_keys(CMS_Contact_Forms::get_available_templates());
+        if (!in_array($template, $availableTemplates, true)) {
+            return 'Das gewählte Template ist nicht verfügbar.';
+        }
+
         $slug = preg_replace('/[^a-z0-9\-]/', '', strtolower($slug));
+        if ($slug === '') {
+            $slug = CMS_Contact_Forms::instance()->generate_slug($title);
+        }
 
         if (CMS_Contact_Forms::instance()->slug_exists($slug, $formId)) {
             return 'Dieser Slug ist bereits vergeben.';
+        }
+
+        $ccRecipients = self::sanitize_recipient_list((string) ($_POST['cc_recipients'] ?? ''));
+        if ($ccRecipients === null) {
+            return 'Mindestens eine CC-E-Mail-Adresse ist ungültig.';
         }
 
         $redirectUrl = trim((string) ($_POST['redirect_url'] ?? ''));
@@ -290,10 +314,10 @@ trait CMS_Contact_Page_Forms_Trait
         CMS_Contact_Forms::instance()->update($formId, [
             'title'           => $title,
             'slug'            => $slug,
-            'template'        => sanitize_text_field($_POST['template'] ?? 'classic'),
+            'template'        => $template,
             'description'     => sanitize_text_field($_POST['description'] ?? ''),
             'recipient'       => filter_var($_POST['recipient'] ?? '', FILTER_VALIDATE_EMAIL) ?: null,
-            'cc_recipients'   => sanitize_text_field($_POST['cc_recipients'] ?? ''),
+            'cc_recipients'   => $ccRecipients,
             'subject_prefix'  => sanitize_text_field($_POST['subject_prefix'] ?? ''),
             'success_message' => sanitize_text_field($_POST['success_message'] ?? ''),
             'redirect_url'    => $normalizedRedirectUrl,
@@ -302,7 +326,7 @@ trait CMS_Contact_Page_Forms_Trait
             'rate_limit'      => max(0, (int) ($_POST['rate_limit'] ?? 3)),
             'status'          => in_array($_POST['status'] ?? '', ['active', 'inactive'], true)
                 ? $_POST['status'] : 'active',
-            'custom_css'      => str_replace(['</style>', '<script', '</script>'], '', $_POST['custom_css'] ?? ''),
+            'custom_css'      => CMS_Contact_Frontend::sanitize_custom_css((string) ($_POST['custom_css'] ?? '')),
         ]);
 
         return true;
@@ -332,17 +356,34 @@ trait CMS_Contact_Page_Forms_Trait
 
         $fieldId = (int) ($_POST['field_id'] ?? 0);
         $fields  = CMS_Contact_Fields::instance();
+        $allowedFieldTypes = array_keys(CMS_Contact_Fields::get_field_types());
+        $allowedWidths = array_keys(CMS_Contact_Fields::get_field_widths());
+
+        $fieldType = sanitize_text_field($_POST['field_type'] ?? 'text');
+        if (!in_array($fieldType, $allowedFieldTypes, true)) {
+            return 'Der gewählte Feldtyp ist nicht verfügbar.';
+        }
+
+        $fieldWidth = sanitize_text_field($_POST['field_width'] ?? 'full');
+        if (!in_array($fieldWidth, $allowedWidths, true)) {
+            return 'Die gewählte Feldbreite ist ungültig.';
+        }
+
+        $validation = sanitize_text_field($_POST['field_validation'] ?? '');
+        if ($validation !== '' && !self::is_valid_custom_regex($validation)) {
+            return 'Die hinterlegte Validierungsregel ist kein gültiger regulärer Ausdruck.';
+        }
 
         $data = [
             'form_id'       => $formId,
             'field_name'    => preg_replace('/[^a-z0-9_]/', '', strtolower(sanitize_text_field($_POST['field_name'] ?? ''))),
             'field_label'   => sanitize_text_field($_POST['field_label'] ?? ''),
-            'field_type'    => sanitize_text_field($_POST['field_type'] ?? 'text'),
+            'field_type'    => $fieldType,
             'placeholder'   => sanitize_text_field($_POST['placeholder'] ?? ''),
             'default_value' => sanitize_text_field($_POST['default_value'] ?? ''),
-            'validation'    => sanitize_text_field($_POST['validation'] ?? ''),
+            'validation'    => $validation,
             'is_required'   => (int) ($_POST['is_required'] ?? 0),
-            'field_width'   => sanitize_text_field($_POST['field_width'] ?? 'full'),
+            'field_width'   => $fieldWidth,
             'css_class'     => sanitize_text_field($_POST['css_class'] ?? ''),
             'description'   => sanitize_text_field($_POST['description'] ?? ''),
         ];
@@ -379,13 +420,81 @@ trait CMS_Contact_Page_Forms_Trait
                     }
                 }
             }
+
+            if ($options === []) {
+                return 'Bitte hinterlege mindestens eine Auswahloption.';
+            }
+
             $data['options_json'] = $options;
+        }
+
+        if ($fieldId > 0) {
+            $existingField = $fields->get_by_id($fieldId);
+            if (!$existingField || (int) ($existingField['form_id'] ?? 0) !== $formId) {
+                return 'Das gewünschte Feld gehört nicht zu diesem Formular.';
+            }
         }
 
         if ($fieldId > 0) {
             $fields->update($fieldId, $data);
         } else {
             $fields->create($data);
+        }
+
+        return true;
+    }
+
+    private static function sanitize_recipient_list(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        $validRecipients = [];
+        foreach (preg_split('/\s*,\s*/', $value) ?: [] as $recipient) {
+            if ($recipient === '') {
+                continue;
+            }
+
+            if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+                return null;
+            }
+
+            $validRecipients[] = $recipient;
+        }
+
+        return implode(', ', array_unique($validRecipients));
+    }
+
+    private static function is_valid_custom_regex(string $pattern): bool
+    {
+        if (mb_strlen($pattern) > 160) {
+            return false;
+        }
+
+        $delimiter = $pattern[0] ?? '';
+        if (!in_array($delimiter, ['/', '#', '~', '%'], true)) {
+            return false;
+        }
+
+        $lastDelimiterPos = strrpos($pattern, $delimiter);
+        if ($lastDelimiterPos === false || $lastDelimiterPos === 0) {
+            return false;
+        }
+
+        $body = substr($pattern, 1, $lastDelimiterPos - 1);
+        if ($body === '' || str_contains($body, "\0") || str_contains($body, "\n") || str_contains($body, "\r")) {
+            return false;
+        }
+
+        $modifiers = substr($pattern, $lastDelimiterPos + 1);
+        if ($modifiers !== '' && strspn($modifiers, 'imsxuADSUXJ') !== strlen($modifiers)) {
+            return false;
+        }
+
+        if (substr_count($body, '.*') > 1 || substr_count($body, '.+') > 1) {
+            return false;
         }
 
         return true;

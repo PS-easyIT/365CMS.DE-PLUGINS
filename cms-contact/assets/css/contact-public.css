@@ -44,6 +44,30 @@
     min-height: 60vh;
 }
 
+.contact-main:focus {
+    outline: none;
+}
+
+.contact-visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.contact-honeypot {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
 .contact-container {
     max-width: var(--contact-container);
     margin: 0 auto;
@@ -105,6 +129,11 @@
     border-radius: var(--contact-radius);
     margin-bottom: 1.5rem;
     font-size: .95rem;
+}
+
+.contact-alert:focus-visible {
+    outline: 3px solid rgb(59 130 246 / .35);
+    outline-offset: 3px;
 }
 
 .contact-alert-success {
@@ -189,11 +218,43 @@
     box-sizing: border-box;
 }
 
+.contact-choice-group {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.contact-choice-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.contact-choice-group,
+.contact-choice-group legend {
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
 .contact-input:focus,
 .contact-textarea:focus,
 .contact-select:focus {
     border-color: var(--contact-primary);
     box-shadow: 0 0 0 3px var(--contact-primary-light);
+}
+
+.contact-input:focus-visible,
+.contact-textarea:focus-visible,
+.contact-select:focus-visible,
+.contact-checkbox-label:focus-within,
+.contact-radio-label:focus-within,
+.contact-btn:focus-visible,
+.contact-info-item a:focus-visible,
+.contact-business-card a:focus-visible,
+.contact-privacy-link:focus-visible {
+    outline: 3px solid rgb(59 130 246 / .35);
+    outline-offset: 3px;
 }
 
 .contact-input.is-invalid,
@@ -232,7 +293,7 @@
 
 .contact-checkbox-label,
 .contact-radio-label {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: .5rem;
     cursor: pointer;
@@ -250,6 +311,15 @@
 .contact-file-input {
     padding: .5rem 0;
     font-size: .9rem;
+}
+
+.contact-address {
+    font-style: normal;
+}
+
+.contact-embed-frame {
+    border: 0;
+    border-radius: 12px;
 }
 
 .contact-privacy-field {
@@ -742,6 +812,16 @@ body.dark-mode .contact-card {
     border-color: #334155;
 }
 
+body.dark-mode .contact-alert-success {
+    background: rgb(6 95 70 / .25);
+    color: #d1fae5;
+}
+
+body.dark-mode .contact-alert-error {
+    background: rgb(127 29 29 / .35);
+    color: #fee2e2;
+}
+
 body.dark-mode .contact-input,
 body.dark-mode .contact-textarea,
 body.dark-mode .contact-select {
@@ -752,6 +832,57 @@ body.dark-mode .contact-select {
 
 body.dark-mode .contact-label {
     color: #f1f5f9;
+}
+
+body.dark-mode .contact-description,
+body.dark-mode .contact-hint,
+body.dark-mode .contact-business-hero p,
+body.dark-mode .contact-business-card h4,
+body.dark-mode .booking-service-top p,
+body.dark-mode .booking-expert-sidebar p,
+body.dark-mode .booking-service-trust,
+body.dark-mode .contact-minimal-desc {
+    color: #cbd5e1;
+}
+
+body.dark-mode .contact-business-card,
+body.dark-mode .booking-contact-card,
+body.dark-mode .booking-event-card,
+body.dark-mode .booking-service-formcard,
+body.dark-mode .booking-expert-layout,
+body.dark-mode .booking-contact-body,
+body.dark-mode .booking-event-body,
+body.dark-mode .booking-expert-form,
+body.dark-mode .booking-service-wrap {
+    background: #1e293b;
+    color: #f1f5f9;
+    border-color: #334155;
+}
+
+body.dark-mode .contact-business-form-title,
+body.dark-mode .booking-service-top h1,
+body.dark-mode .booking-service-formcard h3,
+body.dark-mode .booking-event-body h3,
+body.dark-mode .booking-expert-form h3,
+body.dark-mode .booking-expert-sidebar h1,
+body.dark-mode .contact-header h1,
+body.dark-mode .contact-minimal-title {
+    color: #f8fafc;
+}
+
+body.dark-mode .contact-business-card a,
+body.dark-mode .contact-info-item a,
+body.dark-mode .contact-privacy-link {
+    color: #93c5fd;
+}
+
+body.dark-mode .contact-fullwidth-body {
+    background: #0f172a;
+}
+
+body.dark-mode .booking-service-badge {
+    background: rgb(59 130 246 / .18);
+    color: #bfdbfe;
 }
 
 body.dark-mode .contact-split-form {
@@ -766,6 +897,21 @@ body.dark-mode .contact-privacy-box {
 body.dark-mode .contact-privacy-text,
 body.dark-mode .contact-privacy-link {
     color: #f1f5f9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .contact-form,
+    .contact-input,
+    .contact-textarea,
+    .contact-select,
+    .contact-btn,
+    .contact-business-card,
+    .contact-modern-shape {
+        transition: none !important;
+        animation: none !important;
+        transform: none !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 /* =====================================================

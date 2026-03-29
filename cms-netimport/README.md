@@ -26,6 +26,8 @@ Der Import arbeitet mit vorhandenen CSV-Dateien im Ordner `files_import/` und un
 - Semikolon-CSV-Parsing mit Header-Normalisierung
 - Pflichtspalten-Prüfung pro CSV-Typ vor dem Import
 - Dry-Run / Preview ohne Schreibzugriffe
+- Dry-Run nutzt simulierte IDs und Laufzeit-Caches, damit wiederholte Referenzen und Event-Verknüpfungen innerhalb desselben Laufs realitätsnah bewertet werden
+- JSON-/Report-Speicherung ist gegen ungültige UTF-8-Zeichen aus CSV-Daten gehärtet und nutzt sichere Fallbacks statt stiller Encode-Fehler
 - Upsert nach Name/Datum/Website
 - automatische Erkennung neuerer CSV-Dateien derselben Dateifamilie als `UPDATE`
 - optionale Auto-Anlage fehlender Companies
@@ -81,6 +83,8 @@ Zusätzlich stehen dort jetzt zur Verfügung:
 - Filter nach Läufen mit oder ohne Fehler
 - `Historie löschen`
 - `Reset` pro Lauf für gespeicherte, resetbare Datensätze und Event-Verknüpfungen
+- aufklappbare Detailansicht pro Lauf mit gespeicherten Meldungen, Teil-Schritten, Cleanup-Daten und Reset-Zusammenfassung
+- Confirm-Modal für destruktive Historien-Aktionen statt direkter Sofortausführung
 
 Bereits zurückgesetzte Läufe werden dabei erkannt und nicht erneut scheinbar erfolgreich zurückgesetzt.
 

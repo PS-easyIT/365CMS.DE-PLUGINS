@@ -3,7 +3,7 @@
  * Plugin Name: CMS Contact
  * Plugin URI:  https://365network.de/cms-contact
  * Description: Kontaktformular-Plugin mit bis zu 6 Templates, benutzerdefinierten Metafeldern und mehreren Formularen unter verschiedenen Slugs
- * Version:     1.1.4
+ * Version:     1.1.5
  * Author:      365 Network
  * Author URI:  https://365network.de
  *
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // ── Konstanten ────────────────────────────────────────────────────────────────
-define('CMS_CONTACT_VERSION',    '1.1.4');
+define('CMS_CONTACT_VERSION',    '1.1.5');
 define('CMS_CONTACT_DB_VERSION', '3');
 define('CMS_CONTACT_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_CONTACT_PLUGIN_URL', '/plugins/cms-contact/');
@@ -25,6 +25,7 @@ define('CMS_CONTACT_PLUGIN_URL', '/plugins/cms-contact/');
 final class CMS_Contact
 {
     private static ?self $instance = null;
+    private const MEMBER_SECTION_PATH = '/member/plugin/contact';
     private string $version;
     private string $plugin_dir;
     private string $plugin_url;
@@ -127,7 +128,14 @@ final class CMS_Contact
 
     private function should_enqueue_public_assets(): bool
     {
-        return false;
+        $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        $path = (string) (parse_url($requestUri, PHP_URL_PATH) ?? '');
+
+        if ($path === '') {
+            return false;
+        }
+
+        return $path === '/contact' || str_starts_with($path, '/contact/');
     }
 
     public function enqueue_styles(): void
@@ -500,7 +508,10 @@ final class CMS_Contact
     private function build_member_section_url(array $overrides = []): string
     {
         $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '/member/plugin/contact');
-        $path = (string) (parse_url($requestUri, PHP_URL_PATH) ?? '/member/plugin/contact');
+        $requestPath = (string) (parse_url($requestUri, PHP_URL_PATH) ?? '');
+        $path = str_starts_with($requestPath, self::MEMBER_SECTION_PATH)
+            ? $requestPath
+            : self::MEMBER_SECTION_PATH;
 
         $query = [];
         $rawQuery = parse_url($requestUri, PHP_URL_QUERY);

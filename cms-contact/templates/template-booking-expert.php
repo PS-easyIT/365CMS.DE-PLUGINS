@@ -31,17 +31,15 @@ $theme->getHeader();
         .booking-expert-form { padding: 2.5rem 2rem; }
         .booking-expert-form h3 { font-size: 1.15rem; margin: 0 0 1rem; color: #1e293b; }
     </style>
-    <?php if (!empty($form['custom_css'])): ?>
-    <style><?php echo $form['custom_css']; ?></style>
-    <?php endif; ?>
+    <?php echo CMS_Contact_Frontend::render_custom_css($form); ?>
 
-    <main class="contact-main">
+    <main class="contact-main" aria-labelledby="contact-form-title">
         <div class="booking-expert-layout">
 
             <!-- Linke Seite: Experten-Info -->
-            <div class="booking-expert-sidebar">
-                <span class="booking-expert-badge">🎓 Experten-Beratung</span>
-                <h2><?php echo $e($form['title']); ?></h2>
+            <aside class="booking-expert-sidebar" aria-labelledby="contact-form-title">
+                <span class="booking-expert-badge" aria-hidden="true">🎓 Experten-Beratung</span>
+                <h1 id="contact-form-title"><?php echo $e($form['title']); ?></h1>
                 <?php if (!empty($form['description'])): ?>
                 <p><?php echo $e($form['description']); ?></p>
                 <?php endif; ?>
@@ -51,24 +49,24 @@ $theme->getHeader();
                     <li>Flexible Terminwahl</li>
                     <li>Online oder vor Ort</li>
                 </ul>
-            </div>
+            </aside>
 
             <!-- Rechte Seite: Formular -->
-            <div class="booking-expert-form">
-                <h3>📝 Beratungstermin anfragen</h3>
+            <section class="booking-expert-form" aria-labelledby="booking-expert-form-title">
+                <h2 id="booking-expert-form-title">📝 Beratungstermin anfragen</h2>
 
                 <?php if (!empty($success)): ?>
-                <div class="contact-alert contact-alert-success">✅ <?php echo $e($success); ?></div>
+                <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1">✅ <?php echo $e($success); ?></div>
                 <?php endif; ?>
                 <?php if (!empty($error)): ?>
-                <div class="contact-alert contact-alert-error">❌ <?php echo $e($error); ?></div>
+                <div class="contact-alert contact-alert-error" role="alert" aria-live="assertive" data-contact-message tabindex="-1">❌ <?php echo $e($error); ?></div>
                 <?php endif; ?>
 
                 <?php if (empty($success)): ?>
                 <form method="POST" class="contact-form" novalidate>
                     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
                     <?php if (!empty($form['enable_honeypot'])): ?>
-                    <div style="position:absolute;left:-9999px;" aria-hidden="true">
+                    <div class="contact-honeypot" aria-hidden="true">
                         <input type="text" name="website_url" tabindex="-1" autocomplete="off">
                     </div>
                     <?php endif; ?>
@@ -76,7 +74,7 @@ $theme->getHeader();
                     <div class="contact-fields">
                         <?php foreach ($fields as $field): ?>
                         <div class="contact-field contact-field-<?php echo $e($field['field_width'] ?? 'full'); ?>">
-                            <?php echo CMS_Contact_Frontend::render_field($field, '', $old); ?>
+                            <?php echo CMS_Contact_Frontend::render_field($field, '', $old, $fieldErrors ?? []); ?>
                         </div>
                         <?php endforeach; ?>
                     </div>
@@ -84,8 +82,8 @@ $theme->getHeader();
                     <?php if (!empty($form['enable_captcha'])): ?>
                     <div class="contact-field contact-field-full contact-captcha">
                         <?php $a = rand(1, 10); $b = rand(1, 10); $_SESSION['captcha_expected_' . $form['slug']] = $a + $b; ?>
-                        <label class="contact-label">Spamschutz: <?php echo $a; ?> + <?php echo $b; ?> = ? <span class="contact-required">*</span></label>
-                        <input type="number" name="captcha_answer" class="contact-input" required>
+                        <label class="contact-label" for="contact-captcha-answer">Spamschutz: <?php echo $a; ?> + <?php echo $b; ?> = ? <span class="contact-required">*</span></label>
+                        <input type="number" id="contact-captcha-answer" name="captcha_answer" class="contact-input" inputmode="numeric" required>
                     </div>
                     <?php endif; ?>
 
@@ -96,7 +94,7 @@ $theme->getHeader();
                     </div>
                 </form>
                 <?php endif; ?>
-            </div>
+            </section>
         </div>
     </main>
 

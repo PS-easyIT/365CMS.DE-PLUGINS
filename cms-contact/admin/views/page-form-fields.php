@@ -136,7 +136,7 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
                     <label class="form-label" for="field_options">Optionen (eine pro Zeile)</label>
                     <textarea id="field_options" name="field_options" class="form-control" rows="4"
                               placeholder="Option 1&#10;Option 2&#10;Option 3"></textarea>
-                    <small class="form-text">Für Select, Radio und Checkbox: Jede Zeile wird eine Auswahloption.</small>
+                    <small class="form-text">Für Select und Radio: Jede Zeile wird eine Auswahloption.</small>
                 </div>
 
                 <div class="form-group">

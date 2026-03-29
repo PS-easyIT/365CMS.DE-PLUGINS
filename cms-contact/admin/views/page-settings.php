@@ -46,9 +46,9 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 
 <!-- Tabs -->
 <div class="contact-tab-bar" data-tab-scope data-tab-content-selector=".tab-content" data-tab-button-selector="[data-contact-tab-target]">
-    <button class="contact-tab-btn active" data-contact-tab-target="tab-general" type="button">📧 Allgemein</button>
-    <button class="contact-tab-btn" data-contact-tab-target="tab-design" type="button">🎨 Design</button>
-    <button class="contact-tab-btn" data-contact-tab-target="tab-cleanup" type="button">🧹 Wartung</button>
+    <button class="contact-tab-btn<?php echo $tab === 'general' ? ' active' : ''; ?>" data-contact-tab-target="tab-general" type="button">📧 Allgemein</button>
+    <button class="contact-tab-btn<?php echo $tab === 'design' ? ' active' : ''; ?>" data-contact-tab-target="tab-design" type="button">🎨 Design</button>
+    <button class="contact-tab-btn<?php echo $tab === 'cleanup' ? ' active' : ''; ?>" data-contact-tab-target="tab-cleanup" type="button">🧹 Wartung</button>
 </div>
 
 <form method="POST" class="admin-form">
@@ -56,7 +56,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
 
     <!-- Tab: Allgemein -->
-    <div id="tab-general" class="tab-content active">
+    <div id="tab-general" class="tab-content<?php echo $tab === 'general' ? ' active' : ''; ?>">
         <div class="admin-card contact-tab-panel">
             <div class="contact-panel-header">
                 <div>
@@ -139,7 +139,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
     </div>
 
     <!-- Tab: Design -->
-    <div id="tab-design" class="tab-content">
+    <div id="tab-design" class="tab-content<?php echo $tab === 'design' ? ' active' : ''; ?>">
         <div class="admin-card contact-tab-panel">
             <h3>🎨 Standard-Design</h3>
             <p class="contact-muted-text contact-note-spacing">Diese Werte gelten als Fallback, wenn ein Formular keine eigenen Einstellungen hat.</p>
@@ -202,7 +202,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 </form>
 
 <!-- Tab: Wartung (separate Aktionen, nicht im Hauptformular) -->
-<div id="tab-cleanup" class="tab-content">
+<div id="tab-cleanup" class="tab-content<?php echo $tab === 'cleanup' ? ' active' : ''; ?>">
     <div class="admin-card contact-tab-panel">
         <h3>🧹 Wartung & Bereinigung</h3>
 
