@@ -65,6 +65,30 @@ final class CMS_Events_Admin
         }
     }
 
+    private function start_admin_layout(string $title, string $activePage): void
+    {
+        $this->loadAdminMenu();
+
+        if (function_exists('renderAdminLayoutStart')) {
+            renderAdminLayoutStart($title, $activePage);
+            return;
+        }
+
+        $pageTitle = $title;
+        require_once ABSPATH . 'admin/partials/header.php';
+        require_once ABSPATH . 'admin/partials/sidebar.php';
+    }
+
+    private function end_admin_layout(): void
+    {
+        if (function_exists('renderAdminLayoutEnd')) {
+            renderAdminLayoutEnd();
+            return;
+        }
+
+        require_once ABSPATH . 'admin/partials/footer.php';
+    }
+
     private function outputAdminAssets(): void
     {
         $adminCss = CMS_EVENTS_PLUGIN_DIR . 'assets/css/events-admin.css';
@@ -103,8 +127,7 @@ final class CMS_Events_Admin
 
     public function render_list(array $data): void
     {
-        $this->loadAdminMenu();
-        renderAdminLayoutStart('Events', 'events');
+        $this->start_admin_layout('Events', 'events');
         $this->outputAdminAssets();
 
         // Daten aus dem assoziativen Array lesen
@@ -805,7 +828,7 @@ final class CMS_Events_Admin
             </div>
         </div>
         <?php
-        renderAdminLayoutEnd();
+        $this->end_admin_layout();
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -814,7 +837,6 @@ final class CMS_Events_Admin
 
     public function render_form($event = null): void
     {
-        $this->loadAdminMenu();
         $is_edit    = ($event !== null);
         $page_title = $is_edit ? 'Event bearbeiten' : 'Neues Event anlegen';
         $csrf_token = CMS\Security::instance()->generateToken('save_event');
@@ -830,7 +852,7 @@ final class CMS_Events_Admin
             if (is_array($decoded)) $current_tags = $decoded;
         }
 
-        renderAdminLayoutStart($page_title, 'events');
+        $this->start_admin_layout($page_title, 'events');
         $this->outputAdminAssets();
         ?>
         <div class="admin-page-header">
@@ -1179,6 +1201,6 @@ final class CMS_Events_Admin
 
         </div><!-- /max-width -->
         <?php
-        renderAdminLayoutEnd();
+        $this->end_admin_layout();
     }
 }

@@ -25,6 +25,28 @@ final class CMS_Speakers_Admin
         CMS\Hooks::addFilter('admin_menu_items', [$this, 'add_menu_item'], 10);
     }
 
+    private function start_admin_layout(string $title, string $activePage): void
+    {
+        if (function_exists('renderAdminLayoutStart')) {
+            renderAdminLayoutStart($title, $activePage);
+            return;
+        }
+
+        $pageTitle = $title;
+        require_once ABSPATH . 'admin/partials/header.php';
+        require_once ABSPATH . 'admin/partials/sidebar.php';
+    }
+
+    private function end_admin_layout(): void
+    {
+        if (function_exists('renderAdminLayoutEnd')) {
+            renderAdminLayoutEnd();
+            return;
+        }
+
+        require_once ABSPATH . 'admin/partials/footer.php';
+    }
+
     public function register_admin_menu(): void
     {
         if (!function_exists('add_menu_page')) {
@@ -67,11 +89,7 @@ final class CMS_Speakers_Admin
     // ─── LIST ────────────────────────────────────────────────
     public function render_list(array $data): void
     {
-        $menu_file = ABSPATH . 'admin/partials/admin-menu.php';
-        if (file_exists($menu_file) && !function_exists('renderAdminLayoutStart')) {
-            require_once $menu_file;
-        }
-        renderAdminLayoutStart('Speaker', 'speakers');
+        $this->start_admin_layout('Speaker', 'speakers');
 
         // Admin-CSS einbinden
         $admin_css = CMS_SPEAKERS_PLUGIN_DIR . 'assets/css/speakers-admin.css';
@@ -585,23 +603,19 @@ final class CMS_Speakers_Admin
             </div>
         </div>
         <?php
-        renderAdminLayoutEnd();
+        $this->end_admin_layout();
     }
 
     // ─── FORM ────────────────────────────────────────────────
     public function render_form(?object $speaker, array $topics, array $events, array $companies): void
     {
-        $menu_file = ABSPATH . 'admin/partials/admin-menu.php';
-        if (file_exists($menu_file) && !function_exists('renderAdminLayoutStart')) {
-            require_once $menu_file;
-        }
         $is_edit   = $speaker !== null;
         $title     = $is_edit ? '✏️ Speaker bearbeiten' : '🎤 Neuer Speaker';
         $csrf      = CMS\Security::instance()->generateToken('save_speaker');
         $csrf_evt  = CMS\Security::instance()->generateToken('speaker_event');
         $sec       = CMS\Security::instance();
 
-        renderAdminLayoutStart($is_edit ? 'Speaker bearbeiten' : 'Neuer Speaker', 'speakers');
+        $this->start_admin_layout($is_edit ? 'Speaker bearbeiten' : 'Neuer Speaker', 'speakers');
 
         // Admin-CSS einbinden
         $admin_css = CMS_SPEAKERS_PLUGIN_DIR . 'assets/css/speakers-admin.css';
@@ -706,6 +720,6 @@ final class CMS_Speakers_Admin
         <?php endif; ?>
 
         <?php
-        renderAdminLayoutEnd();
+        $this->end_admin_layout();
     }
 }

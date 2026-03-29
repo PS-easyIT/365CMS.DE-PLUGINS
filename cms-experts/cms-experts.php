@@ -30,6 +30,7 @@ define('CMS_EXPERTS_TEXT_DOMAIN', 'cms-experts');
 final class CMS_Experts
 {
     private static ?self $instance = null;
+    private bool $components_bootstrapped = false;
 
     private string $version = '2.1.0';
     private string $plugin_dir;
@@ -51,9 +52,6 @@ final class CMS_Experts
 
         $this->load_dependencies();
         $this->init_hooks();
-        if ($this->can_bootstrap_components()) {
-            $this->bootstrap_components();
-        }
     }
 
     /**
@@ -89,6 +87,12 @@ final class CMS_Experts
 
     private function bootstrap_components(): void
     {
+        if ($this->components_bootstrapped) {
+            return;
+        }
+
+        $this->components_bootstrapped = true;
+
         foreach (['CMS_Experts_Database', 'CMS_Experts_Post_Type', 'CMS_Experts_Meta_Boxes', 'CMS_Experts_Taxonomies', 'CMS_Experts_Template_Loader', 'CMS_Experts_Shortcode', 'CMS_Experts_Admin', 'CMS_Experts_Member_Dashboard'] as $class) {
             if (class_exists($class)) {
                 $class::instance();

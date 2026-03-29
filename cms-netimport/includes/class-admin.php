@@ -61,6 +61,30 @@ final class CMS_NetImport_Admin
         }
     }
 
+    private function start_admin_layout(string $title, string $activePage): void
+    {
+        $this->load_admin_menu();
+
+        if (function_exists('renderAdminLayoutStart')) {
+            renderAdminLayoutStart($title, $activePage);
+            return;
+        }
+
+        $pageTitle = $title;
+        require_once ABSPATH . 'admin/partials/header.php';
+        require_once ABSPATH . 'admin/partials/sidebar.php';
+    }
+
+    private function end_admin_layout(): void
+    {
+        if (function_exists('renderAdminLayoutEnd')) {
+            renderAdminLayoutEnd();
+            return;
+        }
+
+        require_once ABSPATH . 'admin/partials/footer.php';
+    }
+
     public function register_routes($router): void
     {
         $router->addRoute('GET', '/admin/netimport', [$this, 'render_page']);
@@ -303,8 +327,6 @@ final class CMS_NetImport_Admin
             return;
         }
 
-        $this->load_admin_menu();
-
         $security  = CMS\Security::instance();
         $csrfToken = $security->generateToken('netimport_run');
         $historyCsrfToken = $security->generateToken('netimport_history_action');
@@ -327,7 +349,7 @@ final class CMS_NetImport_Admin
             'dry_run' => '0',
         ], $selectedOptions);
 
-        renderAdminLayoutStart('NetImport', 'netimport');
+        $this->start_admin_layout('NetImport', 'netimport');
         $this->output_admin_assets();
         ?>
         <div class="admin-page-header">
@@ -763,7 +785,7 @@ final class CMS_NetImport_Admin
             </div>
         </div>
         <?php
-        renderAdminLayoutEnd();
+        $this->end_admin_layout();
     }
 
     private function read_history_filters(): array

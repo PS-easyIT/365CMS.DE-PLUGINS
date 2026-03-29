@@ -64,6 +64,30 @@ final class CMS_Companies_Admin
         }
     }
 
+    private function start_admin_layout(string $title, string $activePage): void
+    {
+        $this->loadAdminMenu();
+
+        if (function_exists('renderAdminLayoutStart')) {
+            renderAdminLayoutStart($title, $activePage);
+            return;
+        }
+
+        $pageTitle = $title;
+        require_once ABSPATH . 'admin/partials/header.php';
+        require_once ABSPATH . 'admin/partials/sidebar.php';
+    }
+
+    private function end_admin_layout(): void
+    {
+        if (function_exists('renderAdminLayoutEnd')) {
+            renderAdminLayoutEnd();
+            return;
+        }
+
+        require_once ABSPATH . 'admin/partials/footer.php';
+    }
+
     public function add_menu_item(array $menuItems): array
     {
         $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
@@ -87,8 +111,7 @@ final class CMS_Companies_Admin
 
     public function render_list(array $data): void
     {
-        $this->loadAdminMenu();
-        renderAdminLayoutStart('Unternehmen', 'companies');
+        $this->start_admin_layout('Unternehmen', 'companies');
 
         // Admin-CSS laden
         $adminCss = CMS_COMPANIES_PLUGIN_DIR . 'assets/css/companies-admin.css';
@@ -745,7 +768,7 @@ final class CMS_Companies_Admin
             </div>
         </div>
         <?php
-        renderAdminLayoutEnd();
+        $this->end_admin_layout();
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -754,7 +777,6 @@ final class CMS_Companies_Admin
 
     public function render_form($company = null): void
     {
-        $this->loadAdminMenu();
         $is_edit    = ($company !== null);
         $page_title = $is_edit ? 'Unternehmen bearbeiten' : 'Neues Unternehmen anlegen';
         $csrf_token = CMS\Security::instance()->generateToken('save_company');
@@ -764,7 +786,7 @@ final class CMS_Companies_Admin
         $experts  = $db->get_available_experts();
         $assigned = $is_edit ? $db->get_company_experts((int)$company->id, false) : [];
 
-        renderAdminLayoutStart($page_title, 'companies');
+        $this->start_admin_layout($page_title, 'companies');
 
         // Admin-CSS laden
         $adminCss = CMS_COMPANIES_PLUGIN_DIR . 'assets/css/companies-admin.css';
@@ -828,6 +850,6 @@ final class CMS_Companies_Admin
             ?>
         </div>
         <?php
-        renderAdminLayoutEnd();
+        $this->end_admin_layout();
     }
 }

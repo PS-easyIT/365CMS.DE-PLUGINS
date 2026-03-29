@@ -27,7 +27,7 @@ final class CMS_Experts_Template_Loader
 
     private function __construct()
     {
-        $this->template_dir = CMS_Experts::instance()->get_plugin_dir() . 'templates/';
+        $this->template_dir = CMS_EXPERTS_PLUGIN_DIR . 'templates/';
     }
 
     /**

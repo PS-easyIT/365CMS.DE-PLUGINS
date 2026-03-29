@@ -170,9 +170,13 @@ CMS_Companies::instance();
  * @param  object $company  Firmen-Objekt mit ->name und ->id
  * @return string
  */
-function cms_company_url(object $company): string {
-    $slug = mb_strtolower(trim((string)$company->name), 'UTF-8');
-    $slug = preg_replace('/[^\p{L}0-9]+/u', '-', $slug);
-    $slug = trim((string)preg_replace('/-+/', '-', $slug), '-');
-    return SITE_URL . '/company/' . $slug . '-' . (int)$company->id;
+if (!function_exists('cms_company_url')) {
+    function cms_company_url(object $company): string {
+        $map   = ['ä'=>'ae','ö'=>'oe','ü'=>'ue','ß'=>'ss','Ä'=>'ae','Ö'=>'oe','Ü'=>'ue'];
+        $name  = str_replace(array_keys($map), array_values($map), (string)($company->name ?? ''));
+        $slug  = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name));
+        $slug  = trim($slug, '-') ?: 'company';
+
+        return SITE_URL . '/company/' . $slug . '-' . (int) $company->id;
+    }
 }

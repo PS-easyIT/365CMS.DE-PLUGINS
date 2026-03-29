@@ -1822,7 +1822,7 @@ final class CMS_NetImport_Importer
         }
 
         $headers = null;
-        while (($rawRow = fgetcsv($handle, 0, ';')) !== false) {
+        while (($rawRow = fgetcsv($handle, 0, ';', '"', '\\')) !== false) {
             if ($headers === null) {
                 $headers = array_map([$this, 'normalize_header'], $rawRow);
                 $headers = array_values(array_filter($headers, static fn(string $header): bool => $header !== ''));
