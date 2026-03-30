@@ -13,6 +13,7 @@ The CMS Events Manager plugin manages events with calendar view and detail pages
 - ✅ Custom database tables with proper relationships
 - ✅ Admin interface for managing events
 - ✅ Frontend display with card grid layout
+- ✅ Öffentliche Übersicht mit Themen-Badges oberhalb der Veranstalter-Meta, jeweils auf kompakte Ein-Zeilen-Darstellung optimiert
 - ✅ Calendar view for events
 - ✅ Detail pages for individual events
 - ✅ Speaker assignments (supports both speaker and expert profiles)

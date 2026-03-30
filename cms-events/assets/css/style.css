@@ -229,6 +229,13 @@
   flex-direction: column;
   gap: .15rem;
 }
+.ev-card-meta-stack {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+  min-width: 0;
+  margin-top: .2rem;
+}
 .ev-card-title {
   font-size: 1rem;
   font-weight: 700;
@@ -240,6 +247,22 @@
 }
 .ev-card-title a { color: var(--ev-text, #1e293b); text-decoration: none; }
 .ev-card-title a:hover { color: var(--ev-primary); }
+.ev-card-topics {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: .3rem;
+  min-width: 0;
+  overflow: hidden;
+}
+.ev-card-organizer {
+  margin: 0;
+  font-size: .74rem;
+  font-weight: 500;
+  color: var(--ev-text-m, #475569);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .ev-card-category {
   display: inline-block;
   font-size: .75rem;
@@ -301,6 +324,10 @@
   font-weight: 500;
   color: #0369a1;
   white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Excerpt (wie co-card-excerpt) */
@@ -459,11 +486,6 @@
 .ev-speaker-info-name { font-size: .9rem; font-weight: 700; color: var(--ev-text); }
 .ev-speaker-info-role { font-size: .77rem; color: var(--ev-text-l); margin-top: 2px; }
 
-/* Tags unterhalb (Archiv-Tag-Zeile) */
-.ev-card-tags {
-  display: flex; flex-wrap: wrap; gap: .3rem;
-  padding: 0 14px 8px;
-}
 .ev-tag-pill {
   display: inline-block;
   padding: .15rem .55rem;

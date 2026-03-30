@@ -5,6 +5,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/de/1.0.0/)
 
 ---
 
+## [2.1.1] – 2026-03-29
+
+### Geändert
+- Admin-Übersicht der Experten von Kartenansicht auf eine kompakte Listen-/Tabellenansicht umgestellt, damit Status, Verfügbarkeit und Aktionen schneller erfassbar sind.
+- Die Expertenliste im Admin besitzt jetzt eine steuerbare Sortierung für Aktualisierung, Erstellungsdatum, Name, Status und Verfügbarkeit.
+
+### Behoben
+- Löschen eines Experten im Admin funktioniert wieder korrekt: der Lösch-Request nutzt nun die richtige CSRF-Action `experts_admin` und leitet sauber mit Statusmeldung zurück.
+- Genehmigen/Löschen verwenden nun Bootstrap-kompatible Modals im bestehenden Admin-Layout, sodass die Aktionsbuttons zuverlässig reagieren.
+- Die Aktionsbuttons in der Admin-Liste nutzen nun zusätzlich das bereits im CMS bewährte `cmsConfirm()`-Bestätigungsmuster direkt am Formular-Button, wodurch Löschen und Genehmigen zuverlässig aus der Übersicht ausgelöst werden.
+- Erfolgsmeldungen nach Freigabe/Löschung wurden im Admin deutlicher formuliert; typische Fehlerfälle wie CSRF oder ungültige IDs werden verständlicher angezeigt.
+
 ## [2.0.0] – 2026-02-24
 
 ### Hinzugefügt

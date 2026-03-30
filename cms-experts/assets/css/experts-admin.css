@@ -70,6 +70,68 @@
     gap: 1.25rem;
 }
 
+/* ── Experten-Liste / Tabelle ────────────────────────────────── */
+.exp-list-table-container {
+    margin-top: 1rem;
+}
+
+.exp-list-table {
+    min-width: 980px;
+}
+
+.exp-list-row-pending {
+    background: linear-gradient(90deg, rgba(254, 243, 199, 0.4) 0%, rgba(255, 255, 255, 1) 18%);
+}
+
+.exp-list-primary {
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+}
+
+.exp-list-name {
+    font-weight: 600;
+    color: var(--admin-primary, #3b82f6);
+    text-decoration: none;
+}
+
+.exp-list-name:hover {
+    text-decoration: underline;
+}
+
+.exp-list-meta,
+.exp-list-details,
+.exp-list-date {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    font-size: .8125rem;
+    color: #64748b;
+}
+
+.exp-list-meta span,
+.exp-list-details span,
+.exp-list-date span,
+.exp-list-date small {
+    display: block;
+}
+
+.exp-list-date strong {
+    color: #1e293b;
+    font-size: .875rem;
+}
+
+.exp-list-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
+.exp-list-actions .btn {
+    min-width: 2.25rem;
+    justify-content: center;
+}
+
 /* ── Expert-Admin-Card ───────────────────────────────────────── */
 .exp-adm-card {
     background: #fff;
@@ -343,7 +405,13 @@
 }
 @media (max-width: 960px) {
     .exp-tabs { overflow-x: auto; flex-wrap: nowrap; }
+    .exp-list-table {
+        min-width: 760px;
+    }
 }
 @media (max-width: 640px) {
     .exp-adm-grid { grid-template-columns: 1fr; }
+    .exp-list-actions {
+        min-width: 140px;
+    }
 }

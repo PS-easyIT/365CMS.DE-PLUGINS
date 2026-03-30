@@ -109,6 +109,7 @@ final class CMS_Experts_Admin
         $presets   = $data['presets']  ?? ['general' => [], 'tech' => [], 'soft' => []];
         $settings  = $data['settings'] ?? [];
         $csrf      = $data['csrf']     ?? '';
+        $sort      = $data['sort']     ?? 'updated_desc';
         $companies = $data['companies'] ?? [];
 
         $s = array_merge([
@@ -168,10 +169,26 @@ final class CMS_Experts_Admin
         </div>
 
         <!-- Flash Messages -->
-        <?php if (isset($_GET['saved'])): ?><div class="alert alert-success">✅ Änderungen gespeichert.</div><?php endif; ?>
-        <?php if (isset($_GET['approved'])): ?><div class="alert alert-success">✅ Experte genehmigt und aktiviert.</div><?php endif; ?>
-        <?php if (isset($_GET['deleted'])): ?><div class="alert alert-success">✅ Eintrag gelöscht.</div><?php endif; ?>
-        <?php if (isset($_GET['error'])): ?><div class="alert alert-error">❌ Fehler: <?= htmlspecialchars($_GET['error'] ?? '') ?></div><?php endif; ?>
+        <?php if (isset($_GET['saved'])): ?>
+            <div class="alert alert-success"><strong>✅ Gespeichert.</strong> Die Änderungen wurden erfolgreich übernommen.</div>
+        <?php endif; ?>
+        <?php if (isset($_GET['approved'])): ?>
+            <div class="alert alert-success"><strong>✅ Experte freigegeben.</strong> Das Profil ist jetzt aktiv und öffentlich sichtbar.</div>
+        <?php endif; ?>
+        <?php if (isset($_GET['deleted'])): ?>
+            <div class="alert alert-success"><strong>🗑️ Experte gelöscht.</strong> Der Eintrag wurde erfolgreich entfernt.</div>
+        <?php endif; ?>
+        <?php if (isset($_GET['error'])):
+            $errorCode = (string)($_GET['error'] ?? '');
+            $errorMessages = [
+                'csrf' => 'Sicherheitsprüfung fehlgeschlagen. Bitte Seite neu laden und erneut versuchen.',
+                'invalid_id' => 'Der ausgewählte Experten-Eintrag konnte nicht eindeutig zugeordnet werden.',
+                'delete_failed' => 'Der Experten-Eintrag konnte nicht gelöscht werden.',
+            ];
+            $errorMessage = $errorMessages[$errorCode] ?? $errorCode;
+        ?>
+            <div class="alert alert-error"><strong>❌ Aktion fehlgeschlagen.</strong> <?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
+        <?php endif; ?>
 
         <!-- Tabs -->
         <div class="exp-tabs">
@@ -227,12 +244,25 @@ final class CMS_Experts_Admin
                         <option value="inactive" <?= $filter==='inactive' ?'selected':'' ?>>Inaktiv (<?= $inactive ?>)</option>
                     </select>
                 </div>
+                <div class="form-group" style="margin:0;flex:1;min-width:220px;">
+                    <label class="form-label">Sortierung</label>
+                    <select name="sort" class="form-control">
+                        <option value="updated_desc" <?= $sort==='updated_desc' ? 'selected' : '' ?>>Zuletzt aktualisiert (neu zuerst)</option>
+                        <option value="updated_asc" <?= $sort==='updated_asc' ? 'selected' : '' ?>>Zuletzt aktualisiert (alt zuerst)</option>
+                        <option value="created_desc" <?= $sort==='created_desc' ? 'selected' : '' ?>>Erstellt (neu zuerst)</option>
+                        <option value="created_asc" <?= $sort==='created_asc' ? 'selected' : '' ?>>Erstellt (alt zuerst)</option>
+                        <option value="name_asc" <?= $sort==='name_asc' ? 'selected' : '' ?>>Name (A–Z)</option>
+                        <option value="name_desc" <?= $sort==='name_desc' ? 'selected' : '' ?>>Name (Z–A)</option>
+                        <option value="status_asc" <?= $sort==='status_asc' ? 'selected' : '' ?>>Status</option>
+                        <option value="availability_asc" <?= $sort==='availability_asc' ? 'selected' : '' ?>>Verfügbarkeit</option>
+                    </select>
+                </div>
                 <button type="submit" class="btn btn-primary">🔍 Filtern</button>
-                <?php if ($search || $filter !== 'all'): ?><a href="?tab=overview" class="btn btn-secondary">✕ Reset</a><?php endif; ?>
+                <?php if ($search || $filter !== 'all' || $sort !== 'updated_desc'): ?><a href="?tab=overview" class="btn btn-secondary">✕ Reset</a><?php endif; ?>
             </form>
         </div>
 
-        <!-- Expert Grid -->
+        <!-- Expert List -->
         <?php if (empty($experts)): ?>
         <div class="empty-state">
             <p style="font-size:2.5rem;margin:0;">👨‍💻</p>
@@ -241,82 +271,161 @@ final class CMS_Experts_Admin
             <a href="<?= SITE_URL ?>/admin/experts/new" class="btn btn-primary" style="margin-top:1rem;">➕ Experten anlegen</a>
         </div>
         <?php else: ?>
-        <div class="exp-adm-grid">
-            <?php foreach ($experts as $ex):
-                $fn  = htmlspecialchars($ex->first_name ?? '');
-                $ln  = htmlspecialchars($ex->last_name  ?? '');
-                $name = trim("$fn $ln") ?: 'Unbekannt';
-                $parts = preg_split('/\s+/', $name);
-                $initials = mb_strtoupper(mb_substr($parts[0],0,1) . (isset($parts[1]) ? mb_substr($parts[1],0,1) : ''));
-                $pcolors  = [['#5e72e4','#8965e0'],['#0891b2','#06b6d4'],['#16a34a','#22c55e'],['#7c3aed','#a855f7'],['#d97706','#f59e0b']];
-                $cp  = $pcolors[abs(crc32($name)) % count($pcolors)];
-                $bg  = "linear-gradient(135deg,{$cp[0]},{$cp[1]})";
-                $st  = $ex->status ?? 'active';
-                $stCfg = [
-                    'active'   => ['✅ Aktiv',        '#065f46', '#d1fae5'],
-                    'inactive' => ['⏸ Inaktiv',       '#374151', '#f1f5f9'],
-                    'pending'  => ['⏳ Zur Prüfung',   '#92400e', '#fef3c7'],
-                ];
-                [$stLabel, $stColor, $stBg] = $stCfg[$st] ?? ['Unbekannt','#374151','#f3f4f6'];
-                $isPending = $st === 'pending';
-                $exAvail   = $ex->availability ?? 'available';
-                $availLabels = ['available'=>'✅ Verfügbar','limited'=>'⚠️ Begrenzt','booked'=>'🔴 Nicht verfügbar'];
-                $availColors = ['available'=>'#065f46','limited'=>'#78350f','booked'=>'#7f1d1d'];
-                $availBg     = ['available'=>'#d1fae5','limited'=>'#fef3c7','booked'=>'#fee2e2'];
-                $slug = method_exists('CMS_Experts_Database','generate_slug')
-                    ? CMS_Experts_Database::generate_slug($ex) : $ex->id;
-            ?>
-            <div class="exp-adm-card <?= $isPending ? 'exp-adm-card--pending' : '' ?>">
-                <?php if ($isPending): ?>
-                    <div class="exp-adm-pending-bar">⏳ Wartet auf Genehmigung</div>
-                <?php endif; ?>
-                <div class="exp-adm-top">
-                    <?php if (!empty($ex->photo_url)): ?>
-                        <div class="exp-adm-avatar" style="background:#e0e7ff;">
-                            <img src="<?= htmlspecialchars($ex->photo_url) ?>" alt="">
-                        </div>
-                    <?php else: ?>
-                        <div class="exp-adm-avatar" style="background:<?= $bg ?>"><?= $initials ?></div>
-                    <?php endif; ?>
-                    <div class="exp-adm-identity">
-                        <div class="exp-adm-badges">
-                            <span class="status-badge" style="background:<?= $stBg ?>;color:<?= $stColor ?>;"><?= $stLabel ?></span>
-                            <?php if (!$isPending): ?>
-                            <span class="status-badge" style="background:<?= $availBg[$exAvail]??'#f1f5f9' ?>;color:<?= $availColors[$exAvail]??'#374151' ?>;"><?= $availLabels[$exAvail]??$exAvail ?></span>
-                            <?php endif; ?>
-                        </div>
-                        <p class="exp-adm-name"><?= $name ?></p>
-                        <?php if (!empty($ex->position)): ?><p class="exp-adm-sub"><?= htmlspecialchars($ex->position) ?></p><?php endif; ?>
-                        <?php if (!empty($ex->company)): ?><p class="exp-adm-sub exp-adm-sub--muted"><?= htmlspecialchars($ex->company) ?></p><?php endif; ?>
-                    </div>
-                </div>
-                <div class="exp-adm-pills">
-                    <?php if (!empty($ex->location_city)): ?>
-                        <span class="exp-adm-pill">📍 <?= htmlspecialchars($ex->location_city) ?></span>
-                    <?php endif; ?>
-                    <?php if (!empty($ex->email)): ?>
-                        <span class="exp-adm-pill">✉ <?= htmlspecialchars($ex->email) ?></span>
-                    <?php endif; ?>
-                    <?php if (!empty($ex->experience_years) && (int)$ex->experience_years > 0): ?>
-                        <span class="exp-adm-pill exp-adm-pill--accent">📅 <?= (int)$ex->experience_years ?> Jahre</span>
-                    <?php endif; ?>
-                    <?php if (!empty($ex->hourly_rate)): ?>
-                        <span class="exp-adm-pill exp-adm-pill--accent">💶 <?= number_format((float)$ex->hourly_rate,0,',','.') ?> €/h</span>
-                    <?php endif; ?>
-                </div>
-                <div class="exp-adm-footer">
-                    <?php if ($isPending): ?>
-                        <button type="button" class="exp-adm-btn exp-adm-btn-approve"
-                                onclick="openApproveModal(<?= (int)$ex->id ?>, '<?= htmlspecialchars($name, ENT_QUOTES) ?>')">✓ Genehmigen</button>
-                    <?php else: ?>
-                        <a href="<?= SITE_URL ?>/experts/<?= $slug ?>" class="exp-adm-btn exp-adm-btn-ghost" target="_blank">🌐</a>
-                    <?php endif; ?>
-                    <a href="<?= SITE_URL ?>/admin/experts/edit/<?= (int)$ex->id ?>" class="exp-adm-btn exp-adm-btn-primary">✏️ Bearbeiten</a>
-                    <button type="button" class="exp-adm-btn exp-adm-btn-danger"
-                            onclick="openDeleteModal(<?= (int)$ex->id ?>, '<?= htmlspecialchars($name, ENT_QUOTES) ?>')">🗑️</button>
-                </div>
+        <div class="admin-card">
+            <h3>📋 Expertenliste</h3>
+            <p style="color:#64748b;font-size:.875rem;margin-bottom:1rem;">Alle Experten mit schnellen Aktionen für Freigabe, Bearbeitung und Löschung – inklusive steuerbarer Sortierung.</p>
+
+            <div class="users-table-container exp-list-table-container">
+                <table class="users-table exp-list-table">
+                    <thead>
+                        <tr>
+                            <th>Experte</th>
+                            <th>Status</th>
+                            <th>Verfügbarkeit</th>
+                            <th>Details</th>
+                            <th>Aktualisiert</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($experts as $ex):
+                        $firstName = htmlspecialchars((string)($ex->first_name ?? ''));
+                        $lastName  = htmlspecialchars((string)($ex->last_name ?? ''));
+                        $name = trim($firstName . ' ' . $lastName);
+                        if ($name === '') {
+                            $name = 'Unbekannt';
+                        }
+
+                        $safeName   = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+                        $position   = trim((string)($ex->position ?? ''));
+                        $company    = trim((string)($ex->company ?? ''));
+                        $city       = trim((string)($ex->location_city ?? ''));
+                        $email      = trim((string)($ex->email ?? ''));
+                        $statusKey  = (string)($ex->status ?? 'active');
+                        $isPending  = $statusKey === 'pending';
+                        $statusMap  = [
+                            'active'   => ['✅ Aktiv', 'active'],
+                            'inactive' => ['⏸️ Inaktiv', 'inactive'],
+                            'pending'  => ['⏳ Zur Prüfung', 'pending'],
+                            'deleted'  => ['🗑️ Gelöscht', 'danger'],
+                        ];
+                        [$statusLabel, $statusClass] = $statusMap[$statusKey] ?? ['ℹ️ Unbekannt', 'inactive'];
+
+                        $availabilityKey = (string)($ex->availability ?? 'available');
+                        $availabilityMap = [
+                            'available' => ['✅ Verfügbar', 'active'],
+                            'limited'   => ['⚠️ Begrenzt', 'pending'],
+                            'booked'    => ['🔴 Nicht verfügbar', 'danger'],
+                        ];
+                        [$availabilityLabel, $availabilityClass] = $availabilityMap[$availabilityKey] ?? ['—', 'inactive'];
+
+                        $updatedAt = !empty($ex->updated_at) ? strtotime((string)$ex->updated_at) : false;
+                        $createdAt = !empty($ex->created_at) ? strtotime((string)$ex->created_at) : false;
+                        $dateLabel = $updatedAt ? date('d.m.Y', $updatedAt) : '—';
+                        $timeLabel = $updatedAt ? date('H:i', $updatedAt) : '';
+                        $createdLabel = $createdAt ? date('d.m.Y', $createdAt) : '—';
+                        $slug = method_exists('CMS_Experts_Database', 'generate_slug')
+                            ? CMS_Experts_Database::generate_slug($ex)
+                            : (string)($ex->id ?? '');
+                        $publicUrl = SITE_URL . '/experts/' . rawurlencode($slug);
+                        $editUrl   = SITE_URL . '/admin/experts/edit/' . (int)$ex->id;
+                    ?>
+                        <tr<?= $isPending ? ' class="exp-list-row-pending"' : '' ?>>
+                            <td>
+                                <div class="exp-list-primary">
+                                    <a href="<?= htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8') ?>" class="exp-list-name">
+                                        <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>
+                                    </a>
+                                    <div class="exp-list-meta">
+                                        <?php if ($position !== ''): ?>
+                                            <span><?= htmlspecialchars($position, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php endif; ?>
+                                        <?php if ($company !== ''): ?>
+                                            <span><?= htmlspecialchars($company, ENT_QUOTES, 'UTF-8') ?></span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-badge <?= htmlspecialchars($statusClass, ENT_QUOTES, 'UTF-8') ?>">
+                                    <?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-badge <?= htmlspecialchars($availabilityClass, ENT_QUOTES, 'UTF-8') ?>">
+                                    <?= htmlspecialchars($availabilityLabel, ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                            </td>
+                            <td>
+                                <div class="exp-list-details">
+                                    <?php if ($city !== ''): ?>
+                                        <span>📍 <?= htmlspecialchars($city, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
+                                    <?php if ($email !== ''): ?>
+                                        <span>✉️ <?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($ex->experience_years) && (int)$ex->experience_years > 0): ?>
+                                        <span>📅 <?= (int)$ex->experience_years ?> Jahre</span>
+                                    <?php endif; ?>
+                                    <?php if (!empty($ex->hourly_rate)): ?>
+                                        <span>💶 <?= number_format((float)$ex->hourly_rate, 0, ',', '.') ?> €/h</span>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="exp-list-date">
+                                    <strong><?= htmlspecialchars($dateLabel, ENT_QUOTES, 'UTF-8') ?></strong>
+                                    <?php if ($timeLabel !== ''): ?>
+                                        <span><?= htmlspecialchars($timeLabel, ENT_QUOTES, 'UTF-8') ?> Uhr</span>
+                                    <?php endif; ?>
+                                    <small>Erstellt: <?= htmlspecialchars($createdLabel, ENT_QUOTES, 'UTF-8') ?></small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="exp-list-actions">
+                                    <?php if ($isPending): ?>
+                                        <form method="POST"
+                                              action="<?= SITE_URL ?>/admin/experts/approve/<?= (int)$ex->id ?>"
+                                              style="display:inline;">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-primary"
+                                                    onclick="cmsConfirm({title:'Expertenprofil genehmigen?',message:'Soll &quot;<?= $safeName ?>&quot; genehmigt und sofort aktiviert werden?',confirmText:'Genehmigen',confirmClass:'btn-primary',statusClass:'bg-success',onConfirm:()=>this.closest('form').submit()}); return false;"
+                                                    title="Genehmigen">
+                                                ✅
+                                            </button>
+                                        </form>
+                                    <?php endif; ?>
+                                    <a href="<?= htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8') ?>"
+                                       class="btn btn-sm btn-secondary"
+                                       title="Bearbeiten">
+                                        ✏️
+                                    </a>
+                                    <a href="<?= htmlspecialchars($publicUrl, ENT_QUOTES, 'UTF-8') ?>"
+                                       class="btn btn-sm btn-secondary"
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       title="Öffentlich ansehen">
+                                        🌐
+                                    </a>
+                                    <form method="POST"
+                                          action="<?= SITE_URL ?>/admin/experts/delete/<?= (int)$ex->id ?>"
+                                          style="display:inline;">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
+                                        <button type="submit"
+                                                class="btn btn-sm btn-danger"
+                                                onclick="cmsConfirm({title:'Expertenprofil löschen?',message:'Soll &quot;<?= $safeName ?>&quot; wirklich gelöscht werden? Diese Aktion kann nicht rückgängig gemacht werden.',confirmText:'Löschen',confirmClass:'btn-danger',statusClass:'bg-danger',onConfirm:()=>this.closest('form').submit()}); return false;"
+                                                title="Löschen">
+                                            🗑️
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
-            <?php endforeach; ?>
         </div>
         <?php endif; ?>
 
@@ -654,61 +763,7 @@ final class CMS_Experts_Admin
         </form>
         <?php endif; ?>
 
-        <!-- Delete Modal -->
-        <div id="deleteModal" class="modal" style="display:none;">
-            <div class="modal-content" style="max-width:480px;">
-                <div class="modal-header">
-                    <h3>🗑️ Experten löschen</h3>
-                    <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p>Soll <strong id="deleteModalName"></strong> wirklich gelöscht werden?</p>
-                    <p style="color:#ef4444;font-size:.875rem;">⚠️ Diese Aktion kann nicht rückgängig gemacht werden.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('deleteModal')">Abbrechen</button>
-                    <form method="POST" id="deleteModalForm" style="display:inline;">
-                        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                        <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Approve Modal -->
-        <div id="approveModal" class="modal" style="display:none;">
-            <div class="modal-content" style="max-width:480px;">
-                <div class="modal-header">
-                    <h3>✅ Experte genehmigen</h3>
-                    <button class="modal-close" onclick="closeModal('approveModal')">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <p>Soll <strong id="approveModalName"></strong> genehmigt und aktiviert werden?</p>
-                    <p style="color:#166534;font-size:.875rem;">Das Profil wird sofort öffentlich sichtbar.</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('approveModal')">Abbrechen</button>
-                    <form method="POST" id="approveModalForm" action="" style="display:inline;">
-                        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                        <button type="submit" class="btn btn-primary">✅ Genehmigen</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
         <script>
-        function openDeleteModal(id, name) {
-            document.getElementById('deleteModalName').textContent = name;
-            document.getElementById('deleteModalForm').action = '<?= SITE_URL ?>/admin/experts/delete/' + id;
-            openModal('deleteModal');
-        }
-
-        function openApproveModal(id, name) {
-            document.getElementById('approveModalName').textContent = name;
-            document.getElementById('approveModalForm').action = '<?= SITE_URL ?>/admin/experts/approve/' + id;
-            openModal('approveModal');
-        }
-
         // Live-Vorschau für Design-Tab
         (function() {
             const prevHeader = document.getElementById('prev-header');
@@ -728,7 +783,10 @@ final class CMS_Experts_Admin
             }
 
             <?php
-            $allColorKeys = array_merge(array_keys($colorFields), array_keys($badgeColorFields));
+            $allColorKeys = [];
+            if ($tab === 'design') {
+                $allColorKeys = array_merge(array_keys($colorFields), array_keys($badgeColorFields));
+            }
             ?>
             const allColorKeys = <?= json_encode($allColorKeys) ?>;
             allColorKeys.forEach(k => syncColor(k));

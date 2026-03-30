@@ -337,6 +337,7 @@ final class CMS_Experts_Post_Type
         $tab    = $_GET['tab']    ?? 'overview';
         $filter = $_GET['filter'] ?? 'all';
         $search = trim($_GET['search'] ?? '');
+        $sort   = (string)($_GET['sort'] ?? 'updated_desc');
 
         $db  = CMS_Experts_Database::instance();
         $tax = CMS_Experts_Taxonomies::instance();
@@ -357,6 +358,47 @@ final class CMS_Experts_Post_Type
             });
         }
 
+        $allowedSorts = [
+            'updated_desc',
+            'updated_asc',
+            'created_desc',
+            'created_asc',
+            'name_asc',
+            'name_desc',
+            'status_asc',
+            'availability_asc',
+        ];
+        if (!in_array($sort, $allowedSorts, true)) {
+            $sort = 'updated_desc';
+        }
+
+        usort($experts, static function ($a, $b) use ($sort): int {
+            $normalizeName = static function (object $expert): string {
+                return mb_strtolower(trim((string)($expert->first_name ?? '') . ' ' . (string)($expert->last_name ?? '')));
+            };
+            $toTimestamp = static function (?string $value): int {
+                if ($value === null || $value === '') {
+                    return 0;
+                }
+
+                $time = strtotime($value);
+                return $time !== false ? $time : 0;
+            };
+            $statusRank = ['pending' => 0, 'active' => 1, 'inactive' => 2, 'deleted' => 3];
+            $availabilityRank = ['available' => 0, 'limited' => 1, 'booked' => 2];
+
+            return match ($sort) {
+                'updated_asc' => $toTimestamp((string)($a->updated_at ?? '')) <=> $toTimestamp((string)($b->updated_at ?? '')),
+                'created_desc' => $toTimestamp((string)($b->created_at ?? '')) <=> $toTimestamp((string)($a->created_at ?? '')),
+                'created_asc' => $toTimestamp((string)($a->created_at ?? '')) <=> $toTimestamp((string)($b->created_at ?? '')),
+                'name_asc' => $normalizeName($a) <=> $normalizeName($b),
+                'name_desc' => $normalizeName($b) <=> $normalizeName($a),
+                'status_asc' => ($statusRank[(string)($a->status ?? '')] ?? 99) <=> ($statusRank[(string)($b->status ?? '')] ?? 99),
+                'availability_asc' => ($availabilityRank[(string)($a->availability ?? '')] ?? 99) <=> ($availabilityRank[(string)($b->availability ?? '')] ?? 99),
+                default => $toTimestamp((string)($b->updated_at ?? '')) <=> $toTimestamp((string)($a->updated_at ?? '')),
+            };
+        });
+
         $specs    = $tax->get_specializations();
         $presets  = $tax->get_skill_presets_grouped();
         $settings = $db->get_all_plugin_settings();
@@ -367,6 +409,7 @@ final class CMS_Experts_Post_Type
             'tab'      => $tab,
             'filter'   => $filter,
             'search'   => $search,
+            'sort'     => $sort,
             'specs'    => $specs,
             'presets'  => $presets,
             'settings' => $settings,
@@ -845,18 +888,21 @@ final class CMS_Experts_Post_Type
     public function admin_delete(string $id_param = ''): void
     {
         if (!CMS\Auth::instance()->isAdmin()) {
-            http_response_code(403);
-            echo json_encode(['error' => 'Unauthorized']);
+            CMS\Router::instance()->redirect('/login');
             return;
         }
 
-        $expert_id = $id_param !== '' ? (int)$id_param : (int)($_GET['id'] ?? 0);
+        $expert_id = $id_param !== '' ? (int)$id_param : (int)($_POST['id'] ?? 0);
 
         // CSRF Token Check
         $csrf_token = $_POST['csrf_token'] ?? '';
-        if (!CMS\Security::instance()->verifyToken($csrf_token)) {
-            http_response_code(403);
-            echo json_encode(['error' => 'Invalid CSRF token']);
+        if (!CMS\Security::instance()->verifyToken($csrf_token, 'experts_admin')) {
+            CMS\Router::instance()->redirect('/admin/experts?tab=overview&error=csrf');
+            return;
+        }
+
+        if ($expert_id <= 0) {
+            CMS\Router::instance()->redirect('/admin/experts?tab=overview&error=invalid_id');
             return;
         }
 
@@ -864,9 +910,9 @@ final class CMS_Experts_Post_Type
         $result = $db_manager->delete_expert($expert_id);
 
         if ($result) {
-            CMS\Router::instance()->redirect('/admin/experts?deleted=1');
+            CMS\Router::instance()->redirect('/admin/experts?tab=overview&deleted=1');
         } else {
-            CMS\Router::instance()->redirect('/admin/experts?error=1');
+            CMS\Router::instance()->redirect('/admin/experts?tab=overview&error=delete_failed');
         }
     }
 

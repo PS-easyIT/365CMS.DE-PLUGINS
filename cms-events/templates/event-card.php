@@ -30,10 +30,12 @@ $price_cur   = htmlspecialchars($e->price_currency ?? 'EUR');
 $tags_raw    = !empty($e->tags) ? (json_decode($e->tags, true) ?? []) : [];
 $show_price  = !empty($settings['show_price'])  && $settings['show_price'] !== '0';
 $show_tags   = !empty($settings['show_tags'])   && $settings['show_tags'] !== '0';
+$show_org    = !empty($settings['show_organizer']) && $settings['show_organizer'] !== '0';
 $is_online   = !empty($e->is_online);
 $is_featured = !empty($e->is_featured);
 $capacity    = (int)($e->capacity ?? 0);
 $status      = $e->status ?? 'published';
+$org_name    = htmlspecialchars(trim((string)($e->organizer_name ?? '')));
 
 $base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 $event_url = function_exists('cms_event_url') ? cms_event_url($e)
@@ -96,6 +98,20 @@ if ($status === 'cancelled') {
       <h3 class="ev-card-title">
         <a href="<?= htmlspecialchars($event_url) ?>"><?= $title ?></a>
       </h3>
+      <?php if (($show_tags && !empty($tags_raw)) || ($show_org && $org_name !== '')): ?>
+      <div class="ev-card-meta-stack">
+        <?php if ($show_tags && !empty($tags_raw)): ?>
+        <div class="ev-card-topics" aria-label="Event-Themen">
+          <?php foreach (array_slice($tags_raw, 0, 4) as $tag): ?>
+            <span class="ev-tag-pill" title="<?= htmlspecialchars((string)$tag) ?>"><?= htmlspecialchars((string)$tag) ?></span>
+          <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+        <?php if ($show_org && $org_name !== ''): ?>
+        <p class="ev-card-organizer" title="<?= $org_name ?>">🏢 Veranstalter: <?= $org_name ?></p>
+        <?php endif; ?>
+      </div>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -123,14 +139,6 @@ if ($status === 'cancelled') {
     <?php endif; ?>
   </div>
   <?php endif; ?>
-  <?php if ($show_tags && !empty($tags_raw)): ?>
-  <div class="ev-card-tags">
-    <?php foreach (array_slice($tags_raw, 0, 4) as $tag): ?>
-      <span class="ev-tag-pill"><?= htmlspecialchars($tag) ?></span>
-    <?php endforeach; ?>
-  </div>
-  <?php endif; ?>
-
   <!-- Excerpt -->
   <?php if ($desc): ?>
     <p class="ev-card-excerpt"><?= $desc ?>…</p>
