@@ -88,7 +88,8 @@ cms-feed/
 - Auch die Consent-Seite nutzt dabei dieselben Public-Assets, damit Änderungen an der Cookie-Einwilligung ohne Template-Sonderskript sauber auf die Ansicht zurückwirken
 - Member-Feed-Abos werden separat von den Admin-Digests gespeichert
 - Admin-Digests bleiben für manuelle/global konfigurierte Empfänger erhalten; Member-Abos gehören dem jeweiligen Benutzerkonto
-- Der stündliche Cron priorisiert die in `cms-phinit` auf der Startseite gewählten Feed-Kanäle und prüft zusätzlich alle nach `fetch_interval` fälligen Kanäle
+- Der stündliche Cron priorisiert die in `cms-phinit` auf der Startseite gewählten Feed-Kanäle, prüft zusätzlich alle nach `fetch_interval` fälligen Kanäle und reiht diese in die Fetch-Queue ein
+- Bereits eingereihte Queue-Tasks werden zusätzlich bei jedem regulären `task=all`-/`task=mail-queue`-Cron-Lauf in kleinen Batches weiter abgearbeitet, damit Rückstaus zwischen zwei Stundenläufen nicht stehen bleiben
 - Feed-Beiträge älter als 7 Tage werden stündlich automatisch bereinigt
 
 ## Systemanforderungen
@@ -97,6 +98,8 @@ cms-feed/
 - PHP ≥ 8.1
 - MySQL/MariaDB mit InnoDB
 - `allow_url_fopen` oder cURL
+
+> Hinweis für Shared Hosting: Der Feed-Abruf nutzt bevorzugt Stream-Zugriffe und fällt bei deaktiviertem `allow_url_fopen` automatisch auf cURL zurück. Mindestens einer der beiden Transportwege muss verfügbar sein.
 
 ## Lizenz
 

@@ -15,6 +15,7 @@ if (!defined('ABSPATH')) {
 final class CMS_Feed_Database
 {
     private static ?self $instance = null;
+    private const PROCESSING_TIMEOUT_MINUTES = 20;
 
     public static function instance(): self
     {
@@ -1143,6 +1144,8 @@ final class CMS_Feed_Database
         $prefix = $db->prefix();
         $added  = 0;
 
+        $this->release_stale_processing_tasks();
+
         $checkStmt  = $db->prepare(
             "SELECT COUNT(*) FROM {$prefix}feed_fetch_queue WHERE channel_id = ? AND status IN ('pending', 'processing')"
         );
@@ -1170,6 +1173,8 @@ final class CMS_Feed_Database
         $limit = max(1, $limit);
         $db     = \CMS\Database::instance();
         $prefix = $db->prefix();
+
+        $this->release_stale_processing_tasks();
 
         $stmt = $db->prepare(
             "SELECT q.*, c.name AS channel_name, c.feed_url
@@ -1241,6 +1246,27 @@ final class CMS_Feed_Database
             'failed'     => (int) ($rows['failed'] ?? 0),
             'total'      => array_sum(array_map('intval', $rows ?: [])),
         ];
+    }
+
+    public function release_stale_processing_tasks(int $timeoutMinutes = self::PROCESSING_TIMEOUT_MINUTES): int
+    {
+        $timeoutMinutes = max(5, $timeoutMinutes);
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $stmt   = $db->prepare(
+            "UPDATE {$prefix}feed_fetch_queue
+             SET status = 'pending',
+                 error = CASE
+                     WHEN error IS NULL OR error = '' THEN 'Queue-Task nach Timeout automatisch aus processing zurück auf pending gesetzt.'
+                     ELSE CONCAT(error, '\n[queue-recovery] Queue-Task nach Timeout automatisch aus processing zurück auf pending gesetzt.')
+                 END
+             WHERE status = 'processing'
+               AND created_at < DATE_SUB(NOW(), INTERVAL ? MINUTE)
+               AND processed_at IS NULL"
+        );
+        $stmt->execute([$timeoutMinutes]);
+
+        return $stmt->rowCount();
     }
 
     /**

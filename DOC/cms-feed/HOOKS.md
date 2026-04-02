@@ -62,9 +62,19 @@
 
 **Registriert in:** `CMS_Feed_Cron::__construct()` (Priorität 20)  
 **Callback:** `CMS_Feed_Cron::process_queue()`  
-**Beschreibung:** Verarbeitet ausstehende Fetch-Queue-Tasks (max. 5 Kanäle pro Durchlauf). Priorisiert bei aktivem `cms-phinit` die auf der Startseite ausgewählten Feed-Kanäle, reiht zusätzlich alle regulär fälligen Kanäle ein und bereinigt nicht hervorgehobene Beiträge älter als 7 Tage automatisch.
+**Beschreibung:** Priorisiert bei aktivem `cms-phinit` die auf der Startseite ausgewählten Feed-Kanäle, reiht zusätzlich alle regulär fälligen Kanäle in die Fetch-Queue ein, verarbeitet direkt einen ersten Batch und bereinigt nicht hervorgehobene Beiträge älter als 7 Tage automatisch.
 
 **Wichtig:** Seit dem Core-Fix vom `2026-03-17` wird `cms_cron_hourly` über den Core-Cron-Endpunkt (im Repo `CMS/cron.php`, in typischen FTP-Deployments als `/cron.php`) auch bei bestehenden Aufrufen von `task=mail-queue` automatisch mit ausgelöst, aber intern auf höchstens einen echten Lauf pro Stunde gedrosselt. Zusätzlich sind die Tasks `hourly` und `all` verfügbar.
+
+### cms_cron_mail_queue (Feed-Queue-Drain)
+
+**Registriert in:** `CMS_Feed_Cron::__construct()` (Priorität 20)  
+**Callback:** `CMS_Feed_Cron::drain_pending_queue()`  
+**Beschreibung:** Verarbeitet bei jedem regulären Mail-Queue-/`all`-Cron-Lauf einen kleinen Batch bereits eingereihter Feed-Tasks. Dadurch schrumpfen Rückstaus zwischen zwei stündlichen Läufen weiter, ohne dass neue fällige Kanäle minütlich doppelt eingereiht werden.
+
+**Wichtig:** Der Core feuert `cms_cron_mail_queue` jetzt auch dann als echten Hook, wenn `cron.php` die Mail-Queue intern bereits direkt verarbeitet hat. Das Kontext-Flag `mail_queue_already_handled` verhindert dabei nur die doppelte Mail-Verarbeitung, nicht aber zusätzliche Plugin-Worker wie `cms-feed`.
+
+Zusätzlich werden hängen gebliebene `feed_fetch_queue`-Einträge vor dem nächsten Drain-Lauf automatisch wieder auf `pending` gesetzt, sobald sie länger als 20 Minuten in `processing` stehen und noch kein `processed_at` besitzen.
 
 ---
 

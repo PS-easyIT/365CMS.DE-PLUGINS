@@ -34,6 +34,7 @@ final class CMS_Feed_Cron
     private function __construct()
     {
         if (class_exists('CMS\Hooks')) {
+            CMS\Hooks::addAction('cms_cron_mail_queue', [$this, 'drain_pending_queue'], 20);
             CMS\Hooks::addAction('cms_cron_hourly', [$this, 'process_queue'], 20);
         }
     }
@@ -63,13 +64,42 @@ final class CMS_Feed_Cron
         $result['queued'] += $db->add_to_fetch_queue($this->get_priority_channel_ids());
         $result['queued'] += $fetcher->enqueue_due_channels();
 
-        // Ausstehende Tasks holen (max. BATCH_SIZE)
-        $tasks = $db->get_pending_queue_tasks(self::BATCH_SIZE);
+        $result = $this->merge_results($result, $this->drain_pending_queue());
 
+        // Alte erledigte Einträge aufräumen (älter als 7 Tage)
+        $db->cleanup_queue(7);
+        $result['cleaned_up'] = $db->cleanup_old_items(self::AUTO_CLEANUP_DAYS);
+
+        return $result;
+    }
+
+    /**
+     * Bereits eingereihte Queue-Tasks in kleinen Batches verarbeiten.
+     *
+     * Dieser Worker hängt am häufigeren `cms_cron_mail_queue`-Tick, damit
+     * große Rückstaus nicht nur einmal pro Stunde um fünf Einträge schrumpfen.
+     * Das Einreihen neuer fälliger Kanäle bleibt weiterhin dem stündlichen
+     * `cms_cron_hourly`-Lauf vorbehalten.
+     *
+     * @param array<string, mixed> $context
+     * @return array{queued:int, processed:int, success:int, failed:int, new_items:int, cleaned_up:int}
+     */
+    public function drain_pending_queue(array $context = []): array
+    {
+        $db      = CMS_Feed_Database::instance();
+        $fetcher = CMS_Feed_RSS_Fetcher::instance();
+
+        $result = [
+            'queued' => 0,
+            'processed' => 0,
+            'success' => 0,
+            'failed' => 0,
+            'new_items' => 0,
+            'cleaned_up' => 0,
+        ];
+
+        $tasks = $db->get_pending_queue_tasks(self::BATCH_SIZE);
         if (empty($tasks)) {
-            // Nebenbei alte Einträge aufräumen
-            $db->cleanup_queue(7);
-            $result['cleaned_up'] = $db->cleanup_old_items(self::AUTO_CLEANUP_DAYS);
             return $result;
         }
 
@@ -79,18 +109,19 @@ final class CMS_Feed_Cron
             try {
                 $fetchResult = $fetcher->fetch_channel((int) $task['channel_id']);
 
-                if ($fetchResult['success']) {
+                if (!empty($fetchResult['success'])) {
                     $db->update_queue_task((int) $task['id'], 'done');
                     $result['success']++;
-                    $result['new_items'] += $fetchResult['new_items'] ?? 0;
-                } else {
-                    $db->update_queue_task(
-                        (int) $task['id'],
-                        'failed',
-                        $fetchResult['error'] ?? 'Unbekannter Fehler'
-                    );
-                    $result['failed']++;
+                    $result['new_items'] += (int) ($fetchResult['new_items'] ?? 0);
+                    continue;
                 }
+
+                $db->update_queue_task(
+                    (int) $task['id'],
+                    'failed',
+                    (string) ($fetchResult['error'] ?? 'Unbekannter Fehler')
+                );
+                $result['failed']++;
             } catch (\Throwable $e) {
                 $db->update_queue_task(
                     (int) $task['id'],
@@ -101,10 +132,6 @@ final class CMS_Feed_Cron
                 error_log('CMS Feed Cron: Fehler bei Kanal #' . $task['channel_id'] . ' – ' . $e->getMessage());
             }
         }
-
-        // Alte erledigte Einträge aufräumen (älter als 7 Tage)
-        $db->cleanup_queue(7);
-        $result['cleaned_up'] = $db->cleanup_old_items(self::AUTO_CLEANUP_DAYS);
 
         return $result;
     }
@@ -164,5 +191,19 @@ final class CMS_Feed_Cron
     public function get_status(): array
     {
         return CMS_Feed_Database::instance()->get_queue_stats();
+    }
+
+    /**
+     * @param array{queued:int, processed:int, success:int, failed:int, new_items:int, cleaned_up:int} $base
+     * @param array{queued:int, processed:int, success:int, failed:int, new_items:int, cleaned_up:int} $append
+     * @return array{queued:int, processed:int, success:int, failed:int, new_items:int, cleaned_up:int}
+     */
+    private function merge_results(array $base, array $append): array
+    {
+        foreach (['queued', 'processed', 'success', 'failed', 'new_items', 'cleaned_up'] as $key) {
+            $base[$key] = (int) ($base[$key] ?? 0) + (int) ($append[$key] ?? 0);
+        }
+
+        return $base;
     }
 }

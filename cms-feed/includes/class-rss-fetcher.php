@@ -570,30 +570,123 @@ final class CMS_Feed_RSS_Fetcher
      */
     private function fetch_raw_content(string $url, array &$responseHeaders): ?string
     {
-        $context = stream_context_create([
-            'http' => [
-                'method'          => 'GET',
-                'timeout'         => self::FETCH_TIMEOUT,
-                'user_agent'      => '365CMS.DE Feed Aggregator/' . CMS_FEED_VERSION,
-                'follow_location' => 0,
-                'max_redirects'   => 0,
-                'ignore_errors'   => true,
-            ],
-            'ssl' => [
-                'verify_peer'      => true,
-                'verify_peer_name' => true,
-            ],
-        ]);
+        $responseHeaders = [];
 
-        $content = @file_get_contents($url, false, $context);
-        $responseHeaders = $http_response_header ?? [];
+        if ($this->can_use_stream_fetch()) {
+            $context = stream_context_create([
+                'http' => [
+                    'method'          => 'GET',
+                    'timeout'         => self::FETCH_TIMEOUT,
+                    'user_agent'      => '365CMS.DE Feed Aggregator/' . CMS_FEED_VERSION,
+                    'follow_location' => 0,
+                    'max_redirects'   => 0,
+                    'ignore_errors'   => true,
+                ],
+                'ssl' => [
+                    'verify_peer'      => true,
+                    'verify_peer_name' => true,
+                ],
+            ]);
 
-        if ($content === false && $responseHeaders === []) {
-            error_log('CMS Feed: Request failed for ' . $url);
+            $content = @file_get_contents($url, false, $context);
+            $responseHeaders = $http_response_header ?? [];
+
+            if ($content !== false || $responseHeaders !== []) {
+                return $content === false ? '' : $content;
+            }
+        }
+
+        $curlResult = $this->fetch_raw_content_via_curl($url);
+        if ($curlResult !== null) {
+            $responseHeaders = $curlResult['headers'];
+            return $curlResult['body'];
+        }
+
+        error_log('CMS Feed: Request failed for ' . $url);
+        return null;
+    }
+
+    private function can_use_stream_fetch(): bool
+    {
+        if (!function_exists('file_get_contents')) {
+            return false;
+        }
+
+        $allowUrlFopen = ini_get('allow_url_fopen');
+        if ($allowUrlFopen === false) {
+            return false;
+        }
+
+        return !in_array(strtolower(trim((string) $allowUrlFopen)), ['0', 'off', 'false', 'no', ''], true);
+    }
+
+    /**
+     * @return array{headers: array<int,string>, body: string}|null
+     */
+    private function fetch_raw_content_via_curl(string $url): ?array
+    {
+        if (!function_exists('curl_init')) {
             return null;
         }
 
-        return $content === false ? '' : $content;
+        $handle = curl_init($url);
+        if ($handle === false) {
+            return null;
+        }
+
+        curl_setopt_array($handle, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HEADER => true,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_MAXREDIRS => 0,
+            CURLOPT_CONNECTTIMEOUT => self::FETCH_TIMEOUT,
+            CURLOPT_TIMEOUT => self::FETCH_TIMEOUT,
+            CURLOPT_USERAGENT => '365CMS.DE Feed Aggregator/' . CMS_FEED_VERSION,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_HTTPGET => true,
+        ]);
+
+        $rawResponse = curl_exec($handle);
+        if ($rawResponse === false) {
+            error_log('CMS Feed: cURL request failed for ' . $url . ' – ' . curl_error($handle));
+            curl_close($handle);
+            return null;
+        }
+
+        $headerSize = (int) curl_getinfo($handle, CURLINFO_HEADER_SIZE);
+        curl_close($handle);
+
+        $rawHeaders = substr($rawResponse, 0, $headerSize);
+        $body = substr($rawResponse, $headerSize);
+
+        return [
+            'headers' => $this->extract_header_lines_from_curl_response($rawHeaders),
+            'body' => is_string($body) ? $body : '',
+        ];
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private function extract_header_lines_from_curl_response(string $rawHeaders): array
+    {
+        $rawHeaders = str_replace("\r\n", "\n", trim($rawHeaders));
+        if ($rawHeaders === '') {
+            return [];
+        }
+
+        $headerBlocks = preg_split("/\n\n+/", $rawHeaders);
+        if (!is_array($headerBlocks) || $headerBlocks === []) {
+            return [];
+        }
+
+        $finalBlock = trim((string) end($headerBlocks));
+        if ($finalBlock === '') {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('trim', explode("\n", $finalBlock)), static fn (string $line): bool => $line !== ''));
     }
 
     /**

@@ -4,6 +4,17 @@ Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
 ---
 
+## [1.3.5] – 2026-04-02
+
+### Behoben
+- **Überfällige Feed-Queues werden zwischen zwei Stundenläufen jetzt weiter abgebaut** – `CMS_Feed_Cron` hängt zusätzlich am Core-Hook `cms_cron_mail_queue` und verarbeitet dort bei jedem regulären Cron-Tick einen kleinen Batch bereits eingereihter Feed-Tasks.
+- **Hängen gebliebene Queue-Jobs blockieren keine Kanäle mehr dauerhaft** – Verwaiste `processing`-Einträge werden nach 20 Minuten automatisch wieder auf `pending` gesetzt und können beim nächsten Lauf erneut verarbeitet werden.
+- **Feed-Abrufe funktionieren jetzt auch ohne `allow_url_fopen` zuverlässig weiter** – `CMS_Feed_RSS_Fetcher` nutzt bei fehlgeschlagenem oder deaktiviertem Stream-Zugriff automatisch cURL als Fallback, statt Shared-Hosting-Setups still mit „Feed konnte nicht geladen werden“ stehen zu lassen.
+
+### Technisch
+- **Stündlicher Lauf bleibt fürs Einreihen zuständig** – `cms_cron_hourly` reiht weiterhin priorisierte und regulär fällige Kanäle ein, verarbeitet einen ersten Batch und übernimmt Cleanup; der neue Minuten-Worker drainiert nur bereits bestehende Queue-Einträge.
+- **Core-/Plugin-Cron besser verzahnt** – Der Core feuert `cms_cron_mail_queue` nun auch während `task=all`/`task=mail-queue` als echten Hook mit Kontext-Flag, sodass Plugins wie `cms-feed` an jedem Cron-Lauf andocken können, ohne die Mail-Queue doppelt auszuführen.
+
 ## [1.3.4] – 2026-03-18
 
 ### Geändert
