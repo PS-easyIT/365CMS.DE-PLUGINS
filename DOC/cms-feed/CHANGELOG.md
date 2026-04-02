@@ -25,7 +25,7 @@ Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 ## [1.3.2] – 2026-03-17
 
 ### Behoben
-- **Automatisches Nachladen der Feeds funktioniert wieder** – Das Plugin hing korrekt am Hook `cms_cron_hourly`, aber der bisherige Core-Cron-Endpunkt `CMS/cron.php` löste diesen Hook nie aus. Bestehende Cron-Aufrufe für `task=mail-queue` triggern den stündlichen Feed-/Digest-Lauf jetzt automatisch mit.
+- **Automatisches Nachladen der Feeds funktioniert wieder** – Das Plugin hing korrekt am Hook `cms_cron_hourly`, aber der bisherige Core-Cron-Endpunkt (`CMS/cron.php` im Repo, deployed typischerweise als `/cron.php`) löste diesen Hook nie aus. Bestehende Cron-Aufrufe für `task=mail-queue` triggern den stündlichen Feed-/Digest-Lauf jetzt automatisch mit.
 
 ### Technisch
 - **Kompatibler Core-Cron-Bridge-Fix** – Der Core unterstützt jetzt zusätzlich `task=hourly` und `task=all`; der stündliche Hook wird intern auf höchstens einen echten Lauf pro Stunde gedrosselt, damit häufigere Mail-Queue-Crons keine Feed-Doppelverarbeitung verursachen.
