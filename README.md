@@ -17,7 +17,7 @@
 | [cms-events](cms-events/) | 1.0.0 | ✅ Stabil | Event-Verwaltung mit Speaker-Anbindung & Kalenderansicht |
 | [cms-experts](cms-experts/) | 2.0.0 | ✅ Stabil | IT-Experten-Verzeichnis mit umfangreichen Meta-Daten |
 | [cms-importer](cms-importer/) | 1.0.0 | ✅ Stabil | WordPress WXR-Importer für Posts & Pages |
-| [cms-contact](cms-contact/) | 1.1.5 | ✅ Stabil | Kontaktformulare mit Mehrfach-Formularen, Templates und DSGVO-Hooks |
+| [cms-contact](cms-contact/) | 1.1.6 | ✅ Stabil | Kontaktformulare mit Mehrfach-Formularen, Templates, DSGVO-Hooks und gehärtetem Installer für FK-Kollisionen |
 | [cms-downloads](cms-downloads/) | 1.0.0 | 🚀 Neu | Öffentliches Download-Management mit Kategorien, Typ-Presets und Archiv |
 | [cms-newsletter](cms-newsletter/) | 1.0.0 | 🚀 Neu | Newsletter-Management mit Subscribern, Templates, Kampagnen und öffentlicher Anmeldung |
 | [cms-promos](cms-promos/) | 1.0.0 | 🚀 Neu | Promo-Management für CTA-Flächen, Platzierungen, Banner und Klickziele |

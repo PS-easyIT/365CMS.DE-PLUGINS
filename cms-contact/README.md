@@ -18,6 +18,7 @@
 - **Dashboard**: Statistiken, Trends, aktuelle Nachrichten
 - **Responsive**: Alle Templates mobil-optimiert
 - **Dark Mode**: Vollständige Dark-Mode-Unterstützung
+- **Robuster Installer**: Eindeutige Foreign-Key-Namen verhindern InnoDB-Constraint-Kollisionen bei Neuinstallationen im selben Schema
 
 ## Installation
 
@@ -105,4 +106,4 @@ cms-contact/
 
 ## Version
 
-- **1.1.5** – Sicherheits-, Performance- und UX-Fixes für Redirects, Mail-Settings, Feldfehler und Submission-Listen
+- **1.1.6** – Installer-Hotfix für eindeutige Foreign-Key-Namen bei Neuinstallationen sowie weiterhin Sicherheits-, Performance- und UX-Fixes für Redirects, Mail-Settings, Feldfehler und Submission-Listen

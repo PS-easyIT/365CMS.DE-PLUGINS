@@ -2,6 +2,17 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [1.1.6] – 2026-04-04
+
+### Fixed
+
+- Der Installer erzeugt seine Foreign-Key-Constraints jetzt mit präfix- und tabellenspezifischen Namen statt mit generischen Bezeichnern wie `fk_field_form` oder `fk_submission_form`.
+- Neuinstallationen und Erstaktivierungen scheitern dadurch nicht mehr mit MySQL/InnoDB-Fehler `errno: 121` („Duplicate key on write or update“), wenn im selben Schema bereits gleichnamige Constraints existieren.
+
+### Geändert
+
+- `cms-contact` wurde auf Version `1.1.6` angehoben und das Update-Manifest auf den Hotfix-Stand synchronisiert.
+
 ## [1.1.5] – 2026-03-29
 
 ### Sicherheitsfixes

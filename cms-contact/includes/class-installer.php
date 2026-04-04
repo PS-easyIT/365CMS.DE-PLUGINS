@@ -15,6 +15,8 @@ if (!defined('ABSPATH')) {
 
 final class CMS_Contact_Installer
 {
+    private const FK_NAME_MAX_LENGTH = 64;
+
     /**
      * Vollständige Installation (Tabellen + Seeds)
      */
@@ -88,6 +90,9 @@ final class CMS_Contact_Installer
         $db  = \CMS\Database::instance();
         $pdo = $db->getPdo();
         $p   = $db->getPrefix();
+        $fieldsFormFk = self::buildForeignKeyName($p, 'contact_fields_form_id_fk');
+        $submissionsFormFk = self::buildForeignKeyName($p, 'contact_submissions_form_id_fk');
+        $metaSubmissionFk = self::buildForeignKeyName($p, 'contact_submission_meta_submission_id_fk');
 
         // 1. Kontaktformulare
         $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}contact_forms (
@@ -133,7 +138,7 @@ final class CMS_Contact_Installer
             created_at    TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_form (form_id),
             INDEX idx_order (form_id, field_order),
-            CONSTRAINT fk_field_form FOREIGN KEY (form_id) REFERENCES {$p}contact_forms(id) ON DELETE CASCADE
+            CONSTRAINT {$fieldsFormFk} FOREIGN KEY (form_id) REFERENCES {$p}contact_forms(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         // 3. Eingehende Nachrichten
@@ -157,7 +162,7 @@ final class CMS_Contact_Installer
             INDEX idx_user (user_id),
             INDEX idx_created (created_at),
             INDEX idx_spam (is_spam),
-            CONSTRAINT fk_submission_form FOREIGN KEY (form_id) REFERENCES {$p}contact_forms(id) ON DELETE CASCADE
+            CONSTRAINT {$submissionsFormFk} FOREIGN KEY (form_id) REFERENCES {$p}contact_forms(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         // 4. Meta-Daten zu Nachrichten (Key-Value)
@@ -168,7 +173,7 @@ final class CMS_Contact_Installer
             meta_value      TEXT         DEFAULT NULL,
             INDEX idx_submission (submission_id),
             INDEX idx_key (meta_key),
-            CONSTRAINT fk_meta_submission FOREIGN KEY (submission_id) REFERENCES {$p}contact_submissions(id) ON DELETE CASCADE
+            CONSTRAINT {$metaSubmissionFk} FOREIGN KEY (submission_id) REFERENCES {$p}contact_submissions(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         // 5. Plugin-Einstellungen
@@ -187,6 +192,26 @@ final class CMS_Contact_Installer
         self::create_tables();
         self::seed_default_settings();
         self::ensure_submission_ip_column();
+    }
+
+    private static function buildForeignKeyName(string $prefix, string $suffix): string
+    {
+        $base = strtolower($prefix . $suffix);
+        $base = preg_replace('/[^a-z0-9_]+/', '_', $base) ?? 'contact_fk';
+        $base = trim($base, '_');
+
+        if ($base === '') {
+            $base = 'contact_fk';
+        }
+
+        if (strlen($base) <= self::FK_NAME_MAX_LENGTH) {
+            return $base;
+        }
+
+        $hash = substr(md5($base), 0, 8);
+        $trimmedLength = self::FK_NAME_MAX_LENGTH - strlen($hash) - 1;
+
+        return substr($base, 0, max(1, $trimmedLength)) . '_' . $hash;
     }
 
     private static function ensure_submission_ip_column(): void
