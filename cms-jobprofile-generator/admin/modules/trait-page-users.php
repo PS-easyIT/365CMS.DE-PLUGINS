@@ -67,7 +67,8 @@ trait CMS_JPG_Page_Users_Trait
                                     }
                                     $notice = 'Unternehmen zugewiesen. Rolle automatisch auf Mandant gesetzt.';
                                 } catch (\Throwable $e) {
-                                    $error = 'Fehler: ' . $e->getMessage();
+                                    self::log_user_admin_exception('assign_company', $e);
+                                    $error = 'Das Unternehmen konnte nicht zugewiesen werden.';
                                 }
                             }
                             break;
@@ -94,7 +95,8 @@ trait CMS_JPG_Page_Users_Trait
                                     }
                                     $notice = 'Unternehmen angelegt, zugewiesen und Rolle auf Mandant gesetzt.';
                                 } catch (\Throwable $e) {
-                                    $error = 'Fehler: ' . $e->getMessage();
+                                    self::log_user_admin_exception('create_company', $e);
+                                    $error = 'Das Unternehmen konnte nicht angelegt werden.';
                                 }
                             }
                             break;
@@ -118,7 +120,8 @@ trait CMS_JPG_Page_Users_Trait
                 []
             ) ?: [];
         } catch (\Throwable $e) {
-            $error .= ' Benutzer-Abfrage: ' . $e->getMessage();
+            self::log_user_admin_exception('load_users', $e);
+            $error .= ' Benutzer konnten aktuell nicht vollständig geladen werden.';
         }
 
         $userMeta = [];
@@ -309,10 +312,15 @@ trait CMS_JPG_Page_Users_Trait
                     echo json_encode(['success' => false, 'error' => 'Unbekannte Aktion.']);
             }
         } catch (\Throwable $e) {
-            error_log('CMS_JPG handle_users_ajax: ' . $e->getMessage());
-            echo json_encode(['success' => false, 'error' => 'Datenbankfehler: ' . $e->getMessage()]);
+            self::log_user_admin_exception('handle_users_ajax', $e);
+            echo json_encode(['success' => false, 'error' => 'Die Benutzeraktion konnte nicht gespeichert werden.']);
         }
         exit;
+    }
+
+    private static function log_user_admin_exception(string $context, \Throwable $e): void
+    {
+        error_log('CMS_JPG users [' . $context . ']: ' . $e->getMessage());
     }
 
     /**

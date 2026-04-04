@@ -23,6 +23,30 @@ $allBenefits  = $allBenefits  ?? [];
 $tasks        = $tasks        ?? [];
 $requirements = $requirements ?? [];
 $benefitIds   = $benefitIds   ?? [];
+$createPrefill = is_array($createPrefill ?? null) ? $createPrefill : [];
+$formData = array_merge([
+    'title' => '',
+    'slug' => '',
+    'job_category_id' => 0,
+    'location' => '',
+    'employment_type' => 'Vollzeit',
+    'remote_option' => 'none',
+    'experience_level' => 'mid',
+    'salary_min' => '',
+    'salary_max' => '',
+    'summary' => '',
+    'description' => '',
+], $createPrefill);
+
+$escapedFormData = [
+    'title' => htmlspecialchars((string) ($formData['title'] ?? ''), ENT_QUOTES, 'UTF-8'),
+    'slug' => htmlspecialchars((string) ($formData['slug'] ?? ''), ENT_QUOTES, 'UTF-8'),
+    'location' => htmlspecialchars((string) ($formData['location'] ?? ''), ENT_QUOTES, 'UTF-8'),
+    'salary_min' => htmlspecialchars((string) ($formData['salary_min'] ?? ''), ENT_QUOTES, 'UTF-8'),
+    'salary_max' => htmlspecialchars((string) ($formData['salary_max'] ?? ''), ENT_QUOTES, 'UTF-8'),
+    'summary' => htmlspecialchars((string) ($formData['summary'] ?? ''), ENT_QUOTES, 'UTF-8'),
+    'description' => htmlspecialchars((string) ($formData['description'] ?? ''), ENT_QUOTES, 'UTF-8'),
+];
 ?>
 
 <?php if (!empty($notice)): ?>
@@ -55,7 +79,7 @@ $benefitIds   = $benefitIds   ?? [];
                 </label>
                 <input type="text" id="create_title" name="title" class="form-control"
                        placeholder="z. B. Senior Backend-Entwickler (m/w/d)" required maxlength="255"
-                       value="<?php echo $esc($_POST['title'] ?? ''); ?>">
+                      value="<?php echo $escapedFormData['title']; ?>">
             </div>
 
             <!-- Phase 14.2: Inline-Slug-Editor -->
@@ -64,7 +88,7 @@ $benefitIds   = $benefitIds   ?? [];
                 <div style="display:flex;gap:.5rem;align-items:center;">
                     <span style="color:#64748b;font-size:.875rem;white-space:nowrap;">/jobs/</span>
                     <input type="text" id="create_slug" name="slug" class="form-control"
-                           value="<?php echo $esc($_POST['slug'] ?? ''); ?>"
+                              value="<?php echo $escapedFormData['slug']; ?>"
                            pattern="[a-z0-9\-]+" maxlength="100"
                            placeholder="automatisch aus Titel generiert">
                 </div>
@@ -78,7 +102,7 @@ $benefitIds   = $benefitIds   ?? [];
                         <option value="">— Keine Kategorie —</option>
                         <?php foreach ($categories as $cat): ?>
                         <option value="<?php echo (int)$cat->id; ?>"
-                            <?php echo ((int)($_POST['job_category_id'] ?? 0) === (int)$cat->id) ? 'selected' : ''; ?>>
+                            <?php echo ($formData['job_category_id'] === (int)$cat->id) ? 'selected' : ''; ?>>
                             <?php echo $esc($cat->name); ?>
                         </option>
                         <?php endforeach; ?>
@@ -88,7 +112,7 @@ $benefitIds   = $benefitIds   ?? [];
                     <label class="form-label" for="create_location">Standort</label>
                     <input type="text" id="create_location" name="location" class="form-control"
                            placeholder="z. B. Berlin, München, Remote"
-                           value="<?php echo $esc($_POST['location'] ?? ''); ?>">
+                              value="<?php echo $escapedFormData['location']; ?>">
                 </div>
             </div>
 
@@ -98,7 +122,7 @@ $benefitIds   = $benefitIds   ?? [];
                     <select id="create_employment" name="employment_type" class="form-control">
                         <?php foreach (['Vollzeit','Teilzeit','Freelance','Praktikum','Ausbildung'] as $et): ?>
                         <option value="<?php echo $esc($et); ?>"
-                            <?php echo (($_POST['employment_type'] ?? 'Vollzeit') === $et) ? 'selected' : ''; ?>>
+                            <?php echo ($formData['employment_type'] === $et) ? 'selected' : ''; ?>>
                             <?php echo $esc($et); ?>
                         </option>
                         <?php endforeach; ?>
@@ -109,7 +133,7 @@ $benefitIds   = $benefitIds   ?? [];
                     <select id="create_remote" name="remote_option" class="form-control">
                         <?php foreach (['none' => 'Vor Ort', 'hybrid' => 'Hybrid', 'full' => 'Vollständig Remote'] as $val => $label): ?>
                         <option value="<?php echo $esc($val); ?>"
-                            <?php echo (($_POST['remote_option'] ?? 'none') === $val) ? 'selected' : ''; ?>>
+                            <?php echo ($formData['remote_option'] === $val) ? 'selected' : ''; ?>>
                             <?php echo $esc($label); ?>
                         </option>
                         <?php endforeach; ?>
@@ -120,7 +144,7 @@ $benefitIds   = $benefitIds   ?? [];
                     <select name="experience_level" class="form-control">
                         <?php foreach (['junior' => 'Junior','mid' => 'Mid-Level','senior' => 'Senior','lead' => 'Lead/Principal'] as $val => $label): ?>
                         <option value="<?php echo $esc($val); ?>"
-                            <?php echo (($_POST['experience_level'] ?? 'mid') === $val) ? 'selected' : ''; ?>>
+                            <?php echo ($formData['experience_level'] === $val) ? 'selected' : ''; ?>>
                             <?php echo $esc($label); ?>
                         </option>
                         <?php endforeach; ?>
@@ -133,13 +157,13 @@ $benefitIds   = $benefitIds   ?? [];
                     <label class="form-label" for="create_sal_min">Gehalt ab (€/Jahr, optional)</label>
                     <input type="number" id="create_sal_min" name="salary_min" class="form-control"
                            placeholder="55000" min="0" step="500"
-                           value="<?php echo $esc($_POST['salary_min'] ?? ''); ?>">
+                              value="<?php echo $escapedFormData['salary_min']; ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="create_sal_max">Gehalt bis (€/Jahr, optional)</label>
                     <input type="number" id="create_sal_max" name="salary_max" class="form-control"
                            placeholder="70000" min="0" step="500"
-                           value="<?php echo $esc($_POST['salary_max'] ?? ''); ?>">
+                              value="<?php echo $escapedFormData['salary_max']; ?>">
                 </div>
             </div>
 
@@ -150,7 +174,7 @@ $benefitIds   = $benefitIds   ?? [];
                 <textarea id="create_summary" name="summary" class="form-control"
                           rows="3" maxlength="300"
                           placeholder="Kurze Beschreibung der Stelle (max. 300 Zeichen)…"
-                          oninput="updateCreateCount('create_summary','summaryCount',300)"><?php echo $esc($_POST['summary'] ?? ''); ?></textarea>
+                          oninput="updateCreateCount('create_summary','summaryCount',300)"><?php echo $escapedFormData['summary']; ?></textarea>
                 <small class="form-text">Wird in der Listenansicht angezeigt.</small>
             </div>
 
@@ -158,7 +182,7 @@ $benefitIds   = $benefitIds   ?? [];
                 <label class="form-label" for="create_desc">Ausführliche Beschreibung</label>
                 <textarea id="create_desc" name="description" class="form-control"
                           style="min-height:180px;resize:vertical;"
-                          placeholder="Beschreibe die Stelle ausführlich: Aufgabenumfeld, Team, Technologien…"><?php echo $esc($_POST['description'] ?? ''); ?></textarea>
+                          placeholder="Beschreibe die Stelle ausführlich: Aufgabenumfeld, Team, Technologien…"><?php echo $escapedFormData['description']; ?></textarea>
                 <small class="form-text">HTML ist erlaubt (&lt;p&gt;, &lt;ul&gt;, &lt;strong&gt;, &lt;em&gt;).</small>
             </div>
         </div>

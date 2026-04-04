@@ -19,6 +19,37 @@ final class CMS_M365LIC_Pdf_Export
      * @param array<string,string> $settings
      * @param array<string,mixed> $pricingContext
      * @param array<string,mixed> $billingContext
+     * @param array<string,mixed> $pdfContext
+     */
+    public static function render_sanitized_export(
+        array $evaluation,
+        array $requirements,
+        array $settings,
+        array $pricingContext,
+        array $billingContext,
+        array $pdfContext = []
+    ): string {
+        $safePdfContext = self::sanitize_render_payload($pdfContext);
+        if (is_array($safePdfContext)) {
+            $safePdfContext['logo_path'] = '';
+        }
+
+        return self::render_html(
+            self::sanitize_render_payload($evaluation),
+            self::sanitize_render_payload($requirements),
+            self::sanitize_render_payload($settings),
+            self::sanitize_render_payload($pricingContext),
+            self::sanitize_render_payload($billingContext),
+            is_array($safePdfContext) ? $safePdfContext : []
+        );
+    }
+
+    /**
+     * @param array<string,mixed> $evaluation
+     * @param array<int,array<string,mixed>> $requirements
+     * @param array<string,string> $settings
+     * @param array<string,mixed> $pricingContext
+     * @param array<string,mixed> $billingContext
      */
     public static function render_html(array $evaluation, array $requirements, array $settings, array $pricingContext, array $billingContext, array $pdfContext = []): string
     {
@@ -518,7 +549,7 @@ final class CMS_M365LIC_Pdf_Export
                                 <strong><?php echo $esc((string) ($item['name'] ?? '')); ?></strong><br>
                                 <span class="muted"><?php echo $esc((string) ($item['pricing_basis_label'] ?? 'pro Benutzer')); ?> · <?php echo $esc((string) ($item['billing_cycle_label'] ?? '')); ?></span>
                                 <?php if ((string) ($item['description'] ?? '') !== ''): ?>
-                                <br><span class="muted"><?php echo $esc((string) $item['description']); ?></span>
+                                <br><span class="muted"><?php echo htmlspecialchars((string) $item['description'], ENT_QUOTES, 'UTF-8'); ?></span>
                                 <?php endif; ?>
                             </td>
                             <td><span class="chip chip--<?php echo $esc($typeTone((string) ($item['type_label'] ?? 'Basislizenz'))); ?>"><?php echo $esc((string) ($item['type_label'] ?? '')); ?></span></td>
@@ -668,6 +699,31 @@ final class CMS_M365LIC_Pdf_Export
         }
 
         return str_ends_with(strtolower($trimmed), '.pdf') ? $trimmed : $trimmed . '.pdf';
+    }
+
+    /**
+     * @return array<int|string,mixed>|string|int|float|bool|null
+     */
+    private static function sanitize_render_payload(mixed $value): mixed
+    {
+        if (is_array($value)) {
+            $sanitized = [];
+            foreach ($value as $key => $item) {
+                $sanitized[$key] = self::sanitize_render_payload($item);
+            }
+
+            return $sanitized;
+        }
+
+        if (is_string($value)) {
+            return trim(strip_tags($value));
+        }
+
+        if (is_int($value) || is_float($value) || is_bool($value) || $value === null) {
+            return $value;
+        }
+
+        return null;
     }
 
     private static function resolve_logo_data_uri(string $logoPath): ?string

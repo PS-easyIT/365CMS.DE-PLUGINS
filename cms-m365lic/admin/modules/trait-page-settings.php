@@ -17,7 +17,7 @@ trait CMS_M365LIC_Page_Settings_Trait
     {
         $notice = '';
         $error = '';
-        $tab = sanitize_text_field($_GET['tab'] ?? 'general');
+        $tab = $this->normalize_settings_tab($_GET['tab'] ?? 'general');
         $billingOptions = CMS_M365LIC_Catalog::billing_options();
         $settings = self::repo()->get_settings();
         $stats = self::repo()->get_statistics();
@@ -30,7 +30,7 @@ trait CMS_M365LIC_Page_Settings_Trait
             if (!self::verify_nonce('m365lic_settings')) {
                 $error = 'Sicherheitscheck fehlgeschlagen.';
             } else {
-                $tab = sanitize_text_field($_POST['tab'] ?? $tab);
+                $tab = $this->normalize_settings_tab($_POST['tab'] ?? $tab);
                 $action = sanitize_text_field($_POST['action'] ?? 'save_settings');
 
                 if ($action === 'repair_tables') {
@@ -48,6 +48,7 @@ trait CMS_M365LIC_Page_Settings_Trait
         }
 
         $csrfToken = self::generate_nonce('m365lic_settings');
+        $escapedTab = htmlspecialchars($tab, ENT_QUOTES, 'UTF-8');
         $tabs = [
             'general' => '⚙️ Allgemein',
             'design' => '🎨 Design & Sichtbarkeit',
@@ -86,7 +87,7 @@ trait CMS_M365LIC_Page_Settings_Trait
         <div class="admin-card m365lic-tab-card m365lic-tab-card--settings">
             <form method="POST" class="admin-form">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
-                <input type="hidden" name="tab" value="<?php echo self::esc($tab); ?>">
+                <input type="hidden" name="tab" value="<?php echo $escapedTab; ?>">
 
                 <?php if ($tab === 'general'): ?>
                     <h3>⚙️ Allgemeine Einstellungen</h3>
@@ -767,8 +768,17 @@ trait CMS_M365LIC_Page_Settings_Trait
 
             return implode(' · ', $messages);
         } catch (\Throwable $e) {
-            return 'Tabellenreparatur gestartet, aber nicht vollständig bestätigt: ' . $e->getMessage();
+            error_log('CMS_M365LIC repair_plugin_tables: ' . $e->getMessage());
+            return 'Die Tabellenreparatur konnte nicht vollständig bestätigt werden. Bitte Logs prüfen.';
         }
+    }
+
+    private function normalize_settings_tab(mixed $tab): string
+    {
+        $tab = sanitize_key((string) $tab);
+        $allowedTabs = ['general', 'design', 'alternatives', 'limits', 'export', 'system'];
+
+        return in_array($tab, $allowedTabs, true) ? $tab : 'general';
     }
 
     private function normalize_hex_color(string $value, string $fallback): string

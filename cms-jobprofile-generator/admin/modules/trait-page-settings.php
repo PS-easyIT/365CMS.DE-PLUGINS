@@ -103,14 +103,15 @@ trait CMS_JPG_Page_Settings_Trait
         ];
 
         $keys = $allowed[$tab] ?? [];
+        $stmt = $db->prepare(
+            "INSERT INTO {$p}jpg_settings (setting_key, setting_value)
+             VALUES (?, ?)
+             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+        );
         foreach ($keys as $key) {
             $value = sanitize_text_field($_POST[$key] ?? '');
             $sKey  = 'jpg_' . $key;
-            $pdo->exec(
-                "INSERT INTO {$p}jpg_settings (setting_key, setting_value)
-                 VALUES ('{$sKey}', " . $pdo->quote($value) . ")
-                 ON DUPLICATE KEY UPDATE setting_value = " . $pdo->quote($value)
-            );
+            $stmt->execute([$sKey, $value]);
         }
 
         $notice = 'Einstellungen gespeichert.';
@@ -252,7 +253,8 @@ trait CMS_JPG_Page_Settings_Trait
             $count = count($expired);
             return ["✅ {$count} abgelaufene Bewerbung(en) nach {$days} Tagen gelöscht (DSGVO).", ''];
         } catch (\Throwable $e) {
-            return ['', 'Fehler: ' . $e->getMessage()];
+            error_log('CMS_JPG cleanup_expired_applications: ' . $e->getMessage());
+            return ['', 'Die Bereinigung konnte nicht abgeschlossen werden. Bitte Logs prüfen.'];
         }
     }
 }

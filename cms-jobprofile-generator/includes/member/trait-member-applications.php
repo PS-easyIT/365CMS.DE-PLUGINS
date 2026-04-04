@@ -186,7 +186,8 @@ trait CMS_JPG_Member_Applications_Trait
 
             echo json_encode(['success' => true]);
         } catch (\Throwable $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            error_log('CMS_JPG applications ajax_update_status: ' . $e->getMessage());
+            echo json_encode(['success' => false, 'error' => 'Der Status konnte nicht aktualisiert werden.']);
         }
         exit;
     }

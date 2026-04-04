@@ -139,15 +139,15 @@ trait CMS_JPG_Page_Design_Trait
     {
         $db  = \CMS\Database::instance();
         $p   = $db->getPrefix();
-        $pdo = $db->getPdo();
+        $stmt = $db->prepare(
+            "INSERT INTO {$p}jpg_settings (setting_key, setting_value)
+             VALUES (?, ?)
+             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+        );
 
         foreach ($data as $key => $value) {
             $key = 'cd_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($key));
-            $pdo->exec(
-                "INSERT INTO {$p}jpg_settings (setting_key, setting_value)
-                 VALUES ('{$key}', " . $pdo->quote((string) $value) . ")
-                 ON DUPLICATE KEY UPDATE setting_value = " . $pdo->quote((string) $value)
-            );
+            $stmt->execute([$key, (string) $value]);
         }
     }
 }

@@ -17,8 +17,9 @@ trait CMS_M365LIC_Page_Special_Users_Trait
     {
         $notice = '';
         $error = '';
-        $search = trim((string) ($_GET['s'] ?? ''));
-        $groups = self::repo()->get_special_groups(false);
+        $search = sanitize_text_field((string) ($_GET['s'] ?? ''));
+        $escapedSearch = htmlspecialchars($search, ENT_QUOTES, 'UTF-8');
+        $groups = $this->normalize_special_user_groups(self::repo()->get_special_groups(false));
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!self::verify_nonce('m365lic_special_users')) {
@@ -50,8 +51,8 @@ trait CMS_M365LIC_Page_Special_Users_Trait
             }
         }
 
-        $assignedUsers = self::repo()->get_special_users();
-        $candidates = self::repo()->find_users_for_special_assignment($search);
+        $assignedUsers = $this->normalize_special_user_assignments(self::repo()->get_special_users());
+        $candidates = $this->normalize_special_user_candidates(self::repo()->find_users_for_special_assignment($search));
         $csrfToken = self::generate_nonce('m365lic_special_users');
         ?>
         <div class="admin-page-header">
@@ -153,7 +154,7 @@ trait CMS_M365LIC_Page_Special_Users_Trait
                     </div>
                     <form method="GET" class="m365lic-search-form">
                         <input type="hidden" name="page" value="m365lic-special-users">
-                        <input class="form-control" type="search" name="s" value="<?php echo self::esc($search); ?>" placeholder="Benutzer suchen …">
+                        <input class="form-control" type="search" name="s" value="<?php echo $escapedSearch; ?>" placeholder="Benutzer suchen …">
                     </form>
                 </div>
 
@@ -269,5 +270,102 @@ trait CMS_M365LIC_Page_Special_Users_Trait
             </div>
         </div>
         <?php
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $groups
+     * @return array<int,array<string,mixed>>
+     */
+    private function normalize_special_user_groups(array $groups): array
+    {
+        $normalized = [];
+
+        foreach ($groups as $group) {
+            if (!is_array($group)) {
+                continue;
+            }
+
+            $normalized[] = [
+                'id' => max(0, (int) ($group['id'] ?? 0)),
+                'group_label' => sanitize_text_field((string) ($group['group_label'] ?? 'Gruppe')),
+                'group_key' => sanitize_key((string) ($group['group_key'] ?? 'special')),
+            ];
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $assignedUsers
+     * @return array<int,array<string,mixed>>
+     */
+    private function normalize_special_user_assignments(array $assignedUsers): array
+    {
+        $normalized = [];
+
+        foreach ($assignedUsers as $user) {
+            if (!is_array($user)) {
+                continue;
+            }
+
+            $displayName = trim((string) ($user['display_name'] ?? ''));
+            $username = sanitize_text_field((string) ($user['username'] ?? ''));
+
+            $normalized[] = [
+                'user_id' => max(0, (int) ($user['user_id'] ?? 0)),
+                'display_name' => sanitize_text_field($displayName !== '' ? $displayName : $username),
+                'username' => $username,
+                'email' => sanitize_email((string) ($user['email'] ?? '')),
+                'group_label' => sanitize_text_field((string) ($user['group_label'] ?? 'Gruppe')),
+                'group_key' => sanitize_key((string) ($user['group_key'] ?? 'special')),
+                'group_pricing_tier' => (string) (($user['group_pricing_tier'] ?? 'group') === 'member' ? 'member' : 'group'),
+                'effective_markup_percent' => (float) ($user['effective_markup_percent'] ?? 0),
+                'user_markup_override_percent' => isset($user['user_markup_override_percent']) && $user['user_markup_override_percent'] !== ''
+                    ? (float) $user['user_markup_override_percent']
+                    : null,
+                'note' => sanitize_text_field((string) ($user['note'] ?? '')),
+                'is_active' => !empty($user['is_active']) ? 1 : 0,
+            ];
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $candidates
+     * @return array<int,array<string,mixed>>
+     */
+    private function normalize_special_user_candidates(array $candidates): array
+    {
+        $normalized = [];
+
+        foreach ($candidates as $candidate) {
+            if (!is_array($candidate)) {
+                continue;
+            }
+
+            $displayName = trim((string) ($candidate['display_name'] ?? ''));
+            $username = sanitize_text_field((string) ($candidate['username'] ?? ''));
+
+            $normalized[] = [
+                'id' => max(0, (int) ($candidate['id'] ?? 0)),
+                'display_name' => sanitize_text_field($displayName !== '' ? $displayName : $username),
+                'username' => $username,
+                'email' => sanitize_email((string) ($candidate['email'] ?? '')),
+                'role' => sanitize_key((string) ($candidate['role'] ?? 'member')),
+                'special_is_active' => !empty($candidate['special_is_active']) ? 1 : 0,
+                'group_id' => max(0, (int) ($candidate['group_id'] ?? 0)),
+                'assigned_group_label' => sanitize_text_field((string) ($candidate['assigned_group_label'] ?? '')),
+                'group_label' => sanitize_text_field((string) ($candidate['group_label'] ?? 'Gruppe')),
+                'group_pricing_tier' => (string) (($candidate['group_pricing_tier'] ?? 'group') === 'member' ? 'member' : 'group'),
+                'default_markup_percent' => (float) ($candidate['default_markup_percent'] ?? 0),
+                'user_markup_override_percent' => isset($candidate['user_markup_override_percent']) && $candidate['user_markup_override_percent'] !== ''
+                    ? (float) $candidate['user_markup_override_percent']
+                    : null,
+                'note' => sanitize_text_field((string) ($candidate['note'] ?? '')),
+            ];
+        }
+
+        return $normalized;
     }
 }

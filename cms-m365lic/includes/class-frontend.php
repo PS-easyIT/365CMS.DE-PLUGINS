@@ -952,7 +952,7 @@ final class CMS_M365LIC_Frontend
         );
         $pdfSettings = $this->build_pdf_settings($settings, $variant, $userPricingProfile, $pricingContext);
         $pdfContext = $this->build_pdf_context($variant, $userPricingProfile, $pricingContext);
-        $html = CMS_M365LIC_Pdf_Export::render_html($evaluation, $normalizedRequirements, $pdfSettings, $pricingContext, $billingContext, $pdfContext);
+        $html = CMS_M365LIC_Pdf_Export::render_sanitized_export($evaluation, $normalizedRequirements, $pdfSettings, $pricingContext, $billingContext, $pdfContext);
         $filename = match ($variant) {
             self::EXPORT_VARIANT_PARTNER => 'm365-partner-report',
             self::EXPORT_VARIANT_WHITELABEL => 'm365-whitelabel-report',
@@ -1359,7 +1359,7 @@ final class CMS_M365LIC_Frontend
                 ? 'EK / Partnerpreise ohne Aufschlag'
                 : 'Verkaufspreise inkl. persönlicher Aufschläge',
             'partner_name' => is_array($userPricingProfile) ? trim((string) ($userPricingProfile['partner_name'] ?? '')) : '',
-            'logo_path' => is_array($userPricingProfile) ? trim((string) ($userPricingProfile['partner_logo_path'] ?? '')) : '',
+            'logo_path' => '',
             'scope_label' => (string) ($pricingContext['label'] ?? ''),
         ];
     }

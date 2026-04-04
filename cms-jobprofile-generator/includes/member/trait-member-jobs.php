@@ -130,6 +130,7 @@ trait CMS_JPG_Member_Jobs_Trait
         $tasks         = [];
         $requirements  = [];
         $benefitIds    = [];
+        $createPrefill = $this->build_create_prefill();
         try {
             $categories    = CMS_JPG_JobCategories::instance()->get_all();
             $allBenefits   = CMS_JPG_BenefitsCatalog::instance()->get_grouped();
@@ -142,7 +143,7 @@ trait CMS_JPG_Member_Jobs_Trait
 
         $csrf = $this->generate_token('create');
         $this->render_with_layout('views/member/page-jobs-create.php',
-            compact('categories', 'allBenefits', 'tasks', 'requirements', 'benefitIds', 'workflowSteps', 'csrf', 'notice', 'error'));
+            compact('categories', 'allBenefits', 'tasks', 'requirements', 'benefitIds', 'workflowSteps', 'csrf', 'notice', 'error', 'createPrefill'));
     }
 
     /** GET+POST /member/jobs/edit/:id – Profil bearbeiten */
@@ -489,6 +490,57 @@ trait CMS_JPG_Member_Jobs_Trait
             $counter++;
         }
         return $slug;
+    }
+
+    /**
+     * @return array<string,string|int>
+     */
+    private function build_create_prefill(): array
+    {
+        $prefill = [
+            'title' => '',
+            'slug' => '',
+            'job_category_id' => 0,
+            'location' => '',
+            'employment_type' => 'Vollzeit',
+            'remote_option' => 'none',
+            'experience_level' => 'mid',
+            'salary_min' => '',
+            'salary_max' => '',
+            'summary' => '',
+            'description' => '',
+        ];
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return $prefill;
+        }
+
+        $prefill['title'] = sanitize_text_field((string) ($_POST['title'] ?? ''));
+        $prefill['slug'] = preg_replace('/[^a-z0-9\-]/', '', strtolower((string) ($_POST['slug'] ?? ''))) ?: '';
+        $prefill['job_category_id'] = max(0, (int) ($_POST['job_category_id'] ?? 0));
+        $prefill['location'] = sanitize_text_field((string) ($_POST['location'] ?? ''));
+
+        $employmentType = (string) ($_POST['employment_type'] ?? 'Vollzeit');
+        $prefill['employment_type'] = in_array($employmentType, ['Vollzeit', 'Teilzeit', 'Freelance', 'Praktikum', 'Ausbildung'], true)
+            ? $employmentType
+            : 'Vollzeit';
+
+        $remoteOption = (string) ($_POST['remote_option'] ?? 'none');
+        $prefill['remote_option'] = in_array($remoteOption, ['none', 'hybrid', 'full'], true)
+            ? $remoteOption
+            : 'none';
+
+        $experienceLevel = (string) ($_POST['experience_level'] ?? 'mid');
+        $prefill['experience_level'] = in_array($experienceLevel, ['junior', 'mid', 'senior', 'lead'], true)
+            ? $experienceLevel
+            : 'mid';
+
+        $prefill['salary_min'] = preg_replace('/[^0-9]/', '', (string) ($_POST['salary_min'] ?? '')) ?: '';
+        $prefill['salary_max'] = preg_replace('/[^0-9]/', '', (string) ($_POST['salary_max'] ?? '')) ?: '';
+        $prefill['summary'] = sanitize_textarea_field((string) ($_POST['summary'] ?? ''));
+        $prefill['description'] = sanitize_textarea_field((string) ($_POST['description'] ?? ''));
+
+        return $prefill;
     }
 
     // ── Datenzugriff ─────────────────────────────────────────────────────────
