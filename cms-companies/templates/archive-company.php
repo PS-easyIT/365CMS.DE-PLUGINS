@@ -51,6 +51,9 @@ $grid_cols = match($s['design_grid_columns']) {
 
 // Branchen für Filtermenü
 $all_industries = CMS_Companies_Database::instance()->get_all_industries();
+$companiesArchiveUrl = htmlspecialchars(rtrim((string) SITE_URL, '/') . '/companies', ENT_QUOTES, 'UTF-8');
+$searchQuery = htmlspecialchars(sanitize_text_field((string) ($_GET['q'] ?? '')), ENT_QUOTES, 'UTF-8');
+$cityFilter = htmlspecialchars(sanitize_text_field((string) ($filters['city'] ?? '')), ENT_QUOTES, 'UTF-8');
 ?>
 
 <div class="co-archive">
@@ -98,20 +101,20 @@ $all_industries = CMS_Companies_Database::instance()->get_all_industries();
     <?php endif; ?>
 
     <!-- Filter Bar -->
-    <form method="GET" action="<?= SITE_URL ?>/companies" class="co-filter-bar">
+    <form method="GET" action="<?= $companiesArchiveUrl ?>" class="co-filter-bar">
 
         <!-- Freitextsuche -->
         <div class="co-filter-input">
             <span class="co-filter-icon">🔍</span>
             <input type="text" name="q" placeholder="Unternehmen suchen…"
-                   value="<?= CMS\Security::instance()->escape($_GET['q'] ?? '') ?>">
+                   value="<?= $searchQuery ?>">
         </div>
 
         <!-- Stadt -->
         <div class="co-filter-input co-filter-input--sm">
             <span class="co-filter-icon">📍</span>
             <input type="text" name="city" placeholder="Stadt…"
-                   value="<?= CMS\Security::instance()->escape($filters['city'] ?? '') ?>">
+                   value="<?= $cityFilter ?>">
         </div>
 
         <!-- Branche -->
@@ -135,7 +138,7 @@ $all_industries = CMS_Companies_Database::instance()->get_all_industries();
 
         <button type="submit" class="co-btn co-btn-primary">Suchen</button>
         <?php if (!empty($filters['industry']) || !empty($filters['city']) || !empty($filters['partner']) || !empty($_GET['q'])): ?>
-            <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/companies') ?>" class="co-btn co-btn-ghost">× Reset</a>
+            <a href="<?= $companiesArchiveUrl ?>" class="co-btn co-btn-ghost">× Reset</a>
         <?php endif; ?>
 
     </form>
@@ -146,7 +149,7 @@ $all_industries = CMS_Companies_Database::instance()->get_all_industries();
             <div class="co-empty-icon">🏢</div>
             <h3>Keine Unternehmen gefunden</h3>
             <p>Bitte passen Sie Ihre Filterkriterien an.</p>
-            <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/companies') ?>" class="co-btn co-btn-primary">Alle anzeigen</a>
+            <a href="<?= $companiesArchiveUrl ?>" class="co-btn co-btn-primary">Alle anzeigen</a>
         </div>
     <?php else: ?>
         <div class="co-grid">

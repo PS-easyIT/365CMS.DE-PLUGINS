@@ -248,6 +248,12 @@ Theme-Override möglich: `{theme}/experts/{template-name}.php`
 | `databases` | JSON | [{name,level},…] |
 | `cloud_platforms` | JSON | [{name,level},…] |
 | `tools_preferred` | JSON | ["Docker","Jira",…] |
+
+## Sicherheitsstatus (2026-04-04)
+
+- Snyk-Code-Audit für `cms-experts` abgeschlossen, aktuell ohne offene Findings.
+- Das Archiv escaped Such- und Ortsfilter jetzt direkt an den Eingabe- und Reset-Sinks.
+- Die öffentliche Filter-Navigation bleibt damit funktional, ohne taint-basierte XSS-Befunde auszulösen.
 | `industry_experience` | JSON | ["FinTech",…] |
 | `career_stations` | JSON | [{company,position,from_date,to_date,location,achievements},…] |
 | `testimonials` | JSON | [{text,client_name,position,company,rating},…] |

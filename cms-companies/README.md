@@ -89,6 +89,12 @@ Templates can be added to the `templates/` directory:
 
 The plugin is automatically activated during 365CMS setup. Database tables are created on first activation.
 
+## Sicherheitsstatus (2026-04-04)
+
+- Snyk-Code-Audit für `cms-companies` abgeschlossen, aktuell ohne offene Findings.
+- Das Archiv-Template escaped Such- und Filterwerte jetzt scannerfreundlich direkt an den relevanten Formular- und Link-Sinks.
+- Reset- und Archiv-URLs werden im Frontend konsistent über vorab escaped interne Zielpfade ausgegeben.
+
 ## License
 
 Part of 365CMS Core - All Rights Reserved

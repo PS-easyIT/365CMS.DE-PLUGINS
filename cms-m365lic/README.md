@@ -167,3 +167,9 @@ cms-m365lic/
 ## Lizenz
 
 Copyright © 2026 365 Network. Alle Rechte vorbehalten.
+
+## Sicherheitsstatus (2026-04-04)
+
+- Snyk-Code-Audit für `cms-m365lic` abgeschlossen, aktuell ohne offene Findings.
+- Der PDF-Export arbeitet jetzt mit serverseitigen Export-Snapshots statt mit requestbasiertem JSON-Payload aus dem Formular.
+- Whitelabel-/Partner-Kontext, Export-Varianten und Report-Texte werden vor dem Rendering konsequent normalisiert; dateibasierte Logo-Auflösung ist im PDF-Renderer deaktiviert.

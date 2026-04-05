@@ -26,6 +26,9 @@ $settings = array_merge([
 
 $city         = $filters['city'] ?? '';
 $availability = $filters['availability'] ?? '';
+$expertsArchiveUrl = htmlspecialchars(rtrim((string) SITE_URL, '/') . '/experts', ENT_QUOTES, 'UTF-8');
+$expertSearchQuery = htmlspecialchars(sanitize_text_field((string) ($_GET['q'] ?? '')), ENT_QUOTES, 'UTF-8');
+$expertCityFilter = htmlspecialchars(sanitize_text_field((string) $city), ENT_QUOTES, 'UTF-8');
 
 // CSS-Variablen aus Settings
 $css_primary      = htmlspecialchars($settings['design_primary_color']       ?? '#5e72e4');
@@ -68,18 +71,18 @@ $css_hdr_icon_raw = html_entity_decode($settings['archive_header_icon']       ??
     <?php endif; ?>
 
     <!-- Filter Bar (Styled like IT Expert Cards) -->
-    <form method="GET" action="<?php echo SITE_URL; ?>/experts" class="archive-filter-bar">
+    <form method="GET" action="<?php echo $expertsArchiveUrl; ?>" class="archive-filter-bar">
         
         <!-- Search Input -->
         <div class="filter-input-wrapper">
             <span class="icon">🔍</span>
-            <input type="text" name="q" placeholder="Experten suchen..." value="<?php echo CMS\Security::instance()->escape($_GET['q'] ?? ''); ?>">
+            <input type="text" name="q" placeholder="Experten suchen..." value="<?php echo $expertSearchQuery; ?>">
         </div>
 
         <!-- City Filter -->
         <div class="filter-input-wrapper filter-input-wrapper--sm">
             <span class="icon">📍</span>
-            <input type="text" name="city" placeholder="Stadt..." value="<?php echo CMS\Security::instance()->escape($city); ?>">
+            <input type="text" name="city" placeholder="Stadt..." value="<?php echo $expertCityFilter; ?>">
         </div>
 
         <!-- Availability Filter -->
@@ -91,7 +94,7 @@ $css_hdr_icon_raw = html_entity_decode($settings['archive_header_icon']       ??
 
         <button type="submit" class="expert-btn">Suchen</button>
         <?php if (!empty($city) || !empty($availability)): ?>
-            <a href="<?php echo htmlspecialchars(rtrim(SITE_URL, '/') . '/experts'); ?>" class="expert-btn expert-btn-outline expert-btn--reset">Reset</a>
+            <a href="<?php echo $expertsArchiveUrl; ?>" class="expert-btn expert-btn-outline expert-btn--reset">Reset</a>
         <?php endif; ?>
     </form>
 

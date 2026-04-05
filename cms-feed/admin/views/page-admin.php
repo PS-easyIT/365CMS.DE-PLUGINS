@@ -580,15 +580,18 @@ elseif ($tab === 'items'):
     $itemPage   = max(1, (int)($_GET['page'] ?? 1));
     $perPage    = 25;
     $offset     = ($itemPage - 1) * $perPage;
+    $feedSearchQuery = sanitize_text_field((string) ($_GET['q'] ?? ''));
+    $escapedFeedSearchQuery = htmlspecialchars($feedSearchQuery, ENT_QUOTES, 'UTF-8');
     $itemFilter = ['include_hidden' => true];
     if (!empty($_GET['cat'])) $itemFilter['category_id'] = (int)$_GET['cat'];
     if (!empty($_GET['ch']))  $itemFilter['channel_id']  = (int)$_GET['ch'];
-    if (!empty($_GET['q']))   $itemFilter['search']      = sanitize_text_field($_GET['q']);
+    if ($feedSearchQuery !== '') $itemFilter['search'] = $feedSearchQuery;
     $totalItems = $db->count_items($itemFilter);
+    $safeTotalItems = max(0, (int) $totalItems);
     $totalPages = (int)ceil($totalItems / $perPage);
     $feedItems  = $db->get_items($itemFilter, $offset, $perPage);
 ?>
-    <h3>📰 Beiträge (<?php echo number_format($totalItems); ?>)</h3>
+    <h3>📰 Beiträge (<?php echo number_format($safeTotalItems); ?>)</h3>
 
     <!-- Filter -->
     <form method="GET" class="feed-filter-bar">
@@ -602,7 +605,7 @@ elseif ($tab === 'items'):
             <?php endforeach; ?>
         </select>
         <input type="text" name="q" class="form-control feed-input-medium"
-               value="<?php echo htmlspecialchars($_GET['q'] ?? ''); ?>"
+             value="<?php echo $escapedFeedSearchQuery; ?>"
                placeholder="Suche...">
         <button type="submit" class="btn btn-secondary btn-sm">🔍 Filtern</button>
     </form>

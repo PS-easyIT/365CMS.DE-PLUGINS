@@ -180,16 +180,7 @@ final class CMS_Newsletter_Admin_Pages
 
     private static function redirect_back(): void
     {
-        $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
-        $url = SITE_URL . ($path !== null && $path !== false && $path !== '' ? $path : '/admin/plugins/newsletter-dashboard/newsletter-dashboard');
-
-        if (!empty($_POST['_edit_id'])) {
-            $url .= '?edit=' . (int) $_POST['_edit_id'];
-        } elseif (!empty($_GET['tab'])) {
-            $url .= '?tab=' . urlencode((string) $_GET['tab']);
-        }
-
-        header('Location: ' . $url);
+        header('Location: ' . SITE_URL . '/admin/plugins/newsletter-dashboard/newsletter-dashboard');
         exit;
     }
 }

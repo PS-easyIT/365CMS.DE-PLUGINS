@@ -127,11 +127,15 @@
                     return;
                 }
 
-                let html = '';
+                container.textContent = '';
                 data.slots.forEach(function (slot) {
-                    html += '<button type="button" class="booking-slot-btn" data-time="' + slot + '">' + slot + ' Uhr</button>';
+                    var btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'booking-slot-btn';
+                    btn.dataset.time = String(slot);
+                    btn.textContent = String(slot) + ' Uhr';
+                    container.appendChild(btn);
                 });
-                container.innerHTML = html;
 
                 container.querySelectorAll('.booking-slot-btn').forEach(function (btn) {
                     btn.addEventListener('click', function () {
@@ -174,7 +178,7 @@
         if (date && time) {
             var parts = date.split('-');
             var formatted = parts[2] + '.' + parts[1] + '.' + parts[0];
-            summary.innerHTML = '📅 <strong>' + formatted + '</strong> um <strong>' + time + ' Uhr</strong>';
+            summary.textContent = '📅 ' + formatted + ' um ' + time + ' Uhr';
         }
     }
 

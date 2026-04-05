@@ -224,24 +224,7 @@ final class Pages
 
     private static function redirectBack(int $editId = 0, string $tab = ''): void
     {
-        $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
-        $url = SITE_URL . ($path !== false && $path !== null && $path !== '' ? $path : '/admin/plugins/knowledgebase-dashboard/knowledgebase-dashboard');
-
-        $query = [];
-
-        if ($tab !== '' && str_contains($url, 'knowledgebase-settings')) {
-            $query['tab'] = $tab;
-        }
-
-        if ($editId > 0 && (str_contains($url, 'knowledgebase-entries') || str_contains($url, 'knowledgebase-entry-editor') || str_contains($url, 'knowledgebase-categories'))) {
-            $query['edit'] = (string) $editId;
-        }
-
-        if ($query !== []) {
-            $url .= '?' . http_build_query($query);
-        }
-
-        header('Location: ' . $url);
+        header('Location: ' . SITE_URL . '/admin/plugins/knowledgebase-dashboard/knowledgebase-dashboard');
         exit;
     }
 

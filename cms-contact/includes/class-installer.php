@@ -208,7 +208,7 @@ final class CMS_Contact_Installer
             return $base;
         }
 
-        $hash = substr(md5($base), 0, 8);
+        $hash = substr(hash('sha256', $base), 0, 8);
         $trimmedLength = self::FK_NAME_MAX_LENGTH - strlen($hash) - 1;
 
         return substr($base, 0, max(1, $trimmedLength)) . '_' . $hash;

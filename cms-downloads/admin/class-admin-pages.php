@@ -165,14 +165,7 @@ final class CMS_Downloads_Admin_Pages
 
     private static function redirect_back(): void
     {
-        $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
-        $url = SITE_URL . ($path !== null && $path !== false && $path !== '' ? $path : '/admin/plugins/downloads-dashboard/downloads-dashboard');
-
-        if (!empty($_POST['_edit_id'])) {
-            $url .= '?edit=' . (int) $_POST['_edit_id'];
-        }
-
-        header('Location: ' . $url);
+        header('Location: ' . SITE_URL . '/admin/plugins/downloads-dashboard/downloads-dashboard');
         exit;
     }
 }

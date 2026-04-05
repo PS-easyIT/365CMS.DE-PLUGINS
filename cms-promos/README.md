@@ -10,3 +10,9 @@ Promo- und Kampagnen-Plugin für 365CMS mit Platzierungen, CTA-Elementen, Ziel-U
 - Klick-Weiterleitung über `/promo/click/:slug`
 - Öffentliche Übersicht über `/promos`
 - Admin-Dashboard mit Statistik- und Verwaltungsseiten
+
+## Sicherheitsstatus (2026-04-04)
+
+- Snyk-Code-Audit für `cms-promos` abgeschlossen, aktuell ohne offene Findings.
+- Admin-Redirects verweisen nach schreibenden Aktionen jetzt ausschließlich auf feste interne Dashboard-Routen.
+- Das reduziert Redirect-Manipulationen und beseitigt den vorherigen Open-Redirect-Befund.

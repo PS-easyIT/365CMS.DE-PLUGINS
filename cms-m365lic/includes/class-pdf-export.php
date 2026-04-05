@@ -53,6 +53,12 @@ final class CMS_M365LIC_Pdf_Export
      */
     public static function render_html(array $evaluation, array $requirements, array $settings, array $pricingContext, array $billingContext, array $pdfContext = []): string
     {
+        $evaluation = is_array(self::sanitize_render_payload($evaluation)) ? self::sanitize_render_payload($evaluation) : [];
+        $requirements = is_array(self::sanitize_render_payload($requirements)) ? self::sanitize_render_payload($requirements) : [];
+        $settings = is_array(self::sanitize_render_payload($settings)) ? self::sanitize_render_payload($settings) : [];
+        $pricingContext = is_array(self::sanitize_render_payload($pricingContext)) ? self::sanitize_render_payload($pricingContext) : [];
+        $billingContext = is_array(self::sanitize_render_payload($billingContext)) ? self::sanitize_render_payload($billingContext) : [];
+        $pdfContext = is_array(self::sanitize_render_payload($pdfContext)) ? self::sanitize_render_payload($pdfContext) : [];
         $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
         $formatMoney = static function ($value) use ($esc): string {
             if ($value === null || $value === '') {
@@ -91,7 +97,7 @@ final class CMS_M365LIC_Pdf_Export
         $variantLabel = trim((string) ($pdfContext['variant_label'] ?? ''));
         $priceModeLabel = trim((string) ($pdfContext['price_mode_label'] ?? ''));
         $partnerName = trim((string) ($pdfContext['partner_name'] ?? ''));
-        $logoDataUri = self::resolve_logo_data_uri((string) ($pdfContext['logo_path'] ?? ''));
+        $logoDataUri = null;
         $rows = array_values($evaluation['rows'] ?? []);
         $totals = array_values($evaluation['totals'] ?? []);
         $totalUsers = 0;

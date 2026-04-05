@@ -2,6 +2,13 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [Unreleased] – 2026-04-04
+
+### Sicherheitsfixes
+
+- Öffentliche Slot-Buttons und Zusammenfassungen werden jetzt DOM-sicher per `createElement()` und `textContent` statt per `innerHTML` aufgebaut.
+- Damit ist der letzte DOM-XSS-Befund im Booking-Frontend bereinigt.
+
 ## [1.0.0] – 2025-06-28
 
 ### Hinzugefügt

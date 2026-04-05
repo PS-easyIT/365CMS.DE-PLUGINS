@@ -221,6 +221,9 @@ final class CMS_Events_Shortcode
         }
 
         $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $path = is_string($path) && preg_match('~^/events(?:/[a-z0-9\-_/]+)?$~i', $path) === 1
+            ? $path
+            : '/events';
         $query = http_build_query($params);
 
         return (string)$path . ($query !== '' ? '?' . $query : '');
@@ -315,7 +318,7 @@ final class CMS_Events_Shortcode
             $day_events = array_filter($events, fn($e) => $e->event_date === $date);
             
             $has_events = count($day_events) > 0 ? 'has-events' : '';
-            echo '<div class="calendar-day ' . $has_events . '" data-date="' . $date . '">';
+            echo '<div class="calendar-day ' . htmlspecialchars($has_events, ENT_QUOTES, 'UTF-8') . '" data-date="' . htmlspecialchars($date, ENT_QUOTES, 'UTF-8') . '">';
             echo '<span class="day-number">' . $day . '</span>';
             
             if (count($day_events) > 0) {

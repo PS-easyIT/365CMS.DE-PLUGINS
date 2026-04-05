@@ -639,7 +639,7 @@ final class CMS_M365LIC_Calculator
             (string) ($package['slug'] ?? ''),
             $pricingTier,
             $billingCycle,
-            md5((string) json_encode($pricingProfile, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR)),
+            hash('sha256', (string) json_encode($pricingProfile, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR)),
         ]);
 
         if (array_key_exists($cacheKey, $cache)) {

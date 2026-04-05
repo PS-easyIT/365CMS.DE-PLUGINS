@@ -211,6 +211,9 @@ final class CMS_M365LIC_Frontend
         $evaluationToken = class_exists('CMS\Security')
             ? \CMS\Security::instance()->generateToken('m365lic_evaluate')
             : bin2hex(random_bytes(16));
+        $exportPayloadId = is_array($evaluation)
+            ? $this->store_export_snapshot($evaluation, $requirements, $settings, $pricingContext, $selectedBilling, $userPricingProfile)
+            : '';
         $this->set_seo((string) ($settings['page_title'] ?? 'Microsoft 365 Lizenzberater'), (string) ($settings['page_intro'] ?? ''));
         include CMS_M365LIC_PLUGIN_DIR . 'templates/page-calculator.php';
         if (!$embedded) {
@@ -906,23 +909,38 @@ final class CMS_M365LIC_Frontend
             exit;
         }
 
-        $scope = $this->sanitize_scope($_POST['context_scope'] ?? self::SCOPE_PUBLIC);
-        $variant = $this->sanitize_export_variant($_POST['export_variant'] ?? ($scope === self::SCOPE_PUBLIC ? self::EXPORT_VARIANT_STANDARD : self::EXPORT_VARIANT_WHITELABEL));
+        $exportSnapshot = $this->load_export_snapshot((string) ($_POST['export_payload_id'] ?? ''));
+        if (!is_array($exportSnapshot)) {
+            http_response_code(422);
+            echo 'Ungültige Exportdaten.';
+            exit;
+        }
+
+        $pricingContext = is_array($exportSnapshot['pricing_context'] ?? null)
+            ? $exportSnapshot['pricing_context']
+            : ['scope' => self::SCOPE_PUBLIC, 'tier' => 'public', 'group_key' => '', 'label' => 'Öffentlicher Bereich'];
+        $scope = $this->sanitize_scope($pricingContext['scope'] ?? self::SCOPE_PUBLIC);
+        $requestedVariant = (string) ($_POST['export_variant'] ?? '');
+        $variant = self::EXPORT_VARIANT_STANDARD;
+        if ($requestedVariant === self::EXPORT_VARIANT_WHITELABEL) {
+            $variant = self::EXPORT_VARIANT_WHITELABEL;
+        } elseif ($requestedVariant === self::EXPORT_VARIANT_PARTNER) {
+            $variant = self::EXPORT_VARIANT_PARTNER;
+        }
         if ($scope === self::SCOPE_PUBLIC) {
             $variant = self::EXPORT_VARIANT_STANDARD;
         }
-        $pricingContext = $this->build_access_context($scope, $settings, true);
-        $userPricingProfile = $this->resolve_user_pricing_profile($scope);
+        $userPricingProfile = is_array($exportSnapshot['user_pricing_profile'] ?? null)
+            ? $exportSnapshot['user_pricing_profile']
+            : null;
 
         if (($pricingContext['scope'] ?? self::SCOPE_PUBLIC) === self::SCOPE_SPECIAL) {
             $variant = self::EXPORT_VARIANT_WHITELABEL;
         }
 
-        $billingContext = $repo->resolve_billing_cycle(
-            (string) ($_POST['billing_cycle'] ?? ''),
-            (string) ($pricingContext['tier'] ?? 'public'),
-            $settings
-        );
+        $billingContext = is_array($exportSnapshot['billing_context'] ?? null)
+            ? $exportSnapshot['billing_context']
+            : $repo->resolve_billing_cycle(null, (string) ($pricingContext['tier'] ?? 'public'), $settings);
         $limitInfo = $repo->enforce_daily_limit('pdf_export', (string) ($pricingContext['tier'] ?? 'public'));
         if (empty($limitInfo['allowed'])) {
             http_response_code(429);
@@ -930,29 +948,34 @@ final class CMS_M365LIC_Frontend
             exit;
         }
 
-        $requirements = json_decode((string) ($_POST['requirements_json'] ?? '[]'), true);
-        if (!is_array($requirements)) {
-            http_response_code(422);
-            echo 'Ungültige Exportdaten.';
-            exit;
-        }
-
-        $normalizedRequirements = $this->normalize_requirements($requirements);
-        if (count($normalizedRequirements) > self::MAX_REQUIREMENT_ROWS) {
-            $normalizedRequirements = array_slice($normalizedRequirements, 0, self::MAX_REQUIREMENT_ROWS);
-        }
-
-        $evaluation = CMS_M365LIC_Calculator::evaluate(
-            $normalizedRequirements,
-            $repo->get_packages(false),
-            (string) ($pricingContext['tier'] ?? 'public'),
-            (string) ($billingContext['key'] ?? 'annual_upfront'),
-            $userPricingProfile,
-            $variant !== self::EXPORT_VARIANT_PARTNER
-        );
+        $normalizedRequirements = is_array($exportSnapshot['requirements'] ?? null)
+            ? $exportSnapshot['requirements']
+            : [$this->default_requirement_row()];
+        $evaluation = is_array($exportSnapshot['evaluation'] ?? null)
+            ? $exportSnapshot['evaluation']
+            : [];
+        $snapshotSettings = is_array($exportSnapshot['settings'] ?? null) ? $exportSnapshot['settings'] : [];
         $pdfSettings = $this->build_pdf_settings($settings, $variant, $userPricingProfile, $pricingContext);
         $pdfContext = $this->build_pdf_context($variant, $userPricingProfile, $pricingContext);
-        $html = CMS_M365LIC_Pdf_Export::render_sanitized_export($evaluation, $normalizedRequirements, $pdfSettings, $pricingContext, $billingContext, $pdfContext);
+        $safeEvaluation = $this->sanitize_pdf_payload($evaluation);
+        $safeRequirements = $this->sanitize_pdf_payload($normalizedRequirements);
+        $safePdfSettings = $this->sanitize_pdf_payload(array_merge($snapshotSettings, [
+            'page_title' => (string) ($pdfSettings['page_title'] ?? ''),
+            'page_intro' => (string) ($pdfSettings['page_intro'] ?? ''),
+            'pdf_footer' => (string) ($pdfSettings['pdf_footer'] ?? ''),
+            'legal_note' => (string) ($pdfSettings['legal_note'] ?? ($snapshotSettings['legal_note'] ?? '')),
+        ]));
+        $safePricingContext = $this->sanitize_pdf_payload($pricingContext);
+        $safeBillingContext = $this->sanitize_pdf_payload($billingContext);
+        $safePdfContext = $this->sanitize_pdf_payload($pdfContext);
+        $html = CMS_M365LIC_Pdf_Export::render_html(
+            is_array($safeEvaluation) ? $safeEvaluation : [],
+            is_array($safeRequirements) ? $safeRequirements : [],
+            is_array($safePdfSettings) ? $safePdfSettings : [],
+            is_array($safePricingContext) ? $safePricingContext : [],
+            is_array($safeBillingContext) ? $safeBillingContext : [],
+            is_array($safePdfContext) ? $safePdfContext : []
+        );
         $filename = match ($variant) {
             self::EXPORT_VARIANT_PARTNER => 'm365-partner-report',
             self::EXPORT_VARIANT_WHITELABEL => 'm365-whitelabel-report',
@@ -1230,14 +1253,23 @@ final class CMS_M365LIC_Frontend
             if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken($_POST['member_settings_csrf_token'] ?? '', 'm365lic_member_settings')) {
                 $error = 'Sicherheitscheck fehlgeschlagen. Bitte die Seite neu laden.';
             } else {
-                $repo->save_user_pricing_profile($userId, [
-                    'partner_name' => trim((string) ($_POST['partner_name'] ?? '')),
+                $profileInput = [
+                    'partner_name' => sanitize_text_field((string) ($_POST['partner_name'] ?? '')),
                     'partner_logo_path' => $this->normalize_logo_path((string) ($_POST['partner_logo_path'] ?? '')),
-                    'whitelabel_title' => trim((string) ($_POST['whitelabel_title'] ?? '')),
-                    'whitelabel_intro' => trim((string) ($_POST['whitelabel_intro'] ?? '')),
-                    'base_markup_percent' => $_POST['base_markup_percent'] ?? 0,
-                    'addon_markup_percent' => $_POST['addon_markup_percent'] ?? 0,
-                    'copilot_markup_percent' => $_POST['copilot_markup_percent'] ?? 0,
+                    'whitelabel_title' => sanitize_text_field((string) ($_POST['whitelabel_title'] ?? '')),
+                    'whitelabel_intro' => sanitize_textarea_field((string) ($_POST['whitelabel_intro'] ?? '')),
+                    'base_markup_percent' => $this->normalize_markup_percent($_POST['base_markup_percent'] ?? 0),
+                    'addon_markup_percent' => $this->normalize_markup_percent($_POST['addon_markup_percent'] ?? 0),
+                    'copilot_markup_percent' => $this->normalize_markup_percent($_POST['copilot_markup_percent'] ?? 0),
+                ];
+                $repo->save_user_pricing_profile($userId, [
+                    'partner_name' => $profileInput['partner_name'],
+                    'partner_logo_path' => $profileInput['partner_logo_path'],
+                    'whitelabel_title' => $profileInput['whitelabel_title'],
+                    'whitelabel_intro' => $profileInput['whitelabel_intro'],
+                    'base_markup_percent' => $profileInput['base_markup_percent'],
+                    'addon_markup_percent' => $profileInput['addon_markup_percent'],
+                    'copilot_markup_percent' => $profileInput['copilot_markup_percent'],
                 ]);
                 $repo->save_user_package_costs($userId, is_array($_POST['ek_prices'] ?? null) ? $_POST['ek_prices'] : []);
                 $profile = $repo->get_user_pricing_profile($userId);
@@ -1304,6 +1336,16 @@ final class CMS_M365LIC_Frontend
         return $path;
     }
 
+    private function normalize_markup_percent(mixed $value): float
+    {
+        $normalized = str_replace(',', '.', trim((string) $value));
+        if ($normalized === '' || !is_numeric($normalized)) {
+            return 0.0;
+        }
+
+        return max(0.0, round((float) $normalized, 2));
+    }
+
     /**
      * @param array<string,string> $settings
      * @param array<string,mixed>|null $userPricingProfile
@@ -1313,9 +1355,9 @@ final class CMS_M365LIC_Frontend
     private function build_pdf_settings(array $settings, string $variant, ?array $userPricingProfile, array $pricingContext): array
     {
         if ($variant === self::EXPORT_VARIANT_WHITELABEL && is_array($userPricingProfile)) {
-            $partnerName = trim((string) ($userPricingProfile['partner_name'] ?? ''));
-            $whitelabelTitle = trim((string) ($userPricingProfile['whitelabel_title'] ?? ''));
-            $whitelabelIntro = trim((string) ($userPricingProfile['whitelabel_intro'] ?? ''));
+            $partnerName = sanitize_text_field((string) ($userPricingProfile['partner_name'] ?? ''));
+            $whitelabelTitle = sanitize_text_field((string) ($userPricingProfile['whitelabel_title'] ?? ''));
+            $whitelabelIntro = sanitize_textarea_field((string) ($userPricingProfile['whitelabel_intro'] ?? ''));
 
             $settings['page_title'] = $whitelabelTitle !== ''
                 ? $whitelabelTitle
@@ -1358,9 +1400,8 @@ final class CMS_M365LIC_Frontend
             'price_mode_label' => $variant === self::EXPORT_VARIANT_PARTNER
                 ? 'EK / Partnerpreise ohne Aufschlag'
                 : 'Verkaufspreise inkl. persönlicher Aufschläge',
-            'partner_name' => is_array($userPricingProfile) ? trim((string) ($userPricingProfile['partner_name'] ?? '')) : '',
-            'logo_path' => '',
-            'scope_label' => (string) ($pricingContext['label'] ?? ''),
+            'partner_name' => is_array($userPricingProfile) ? sanitize_text_field((string) ($userPricingProfile['partner_name'] ?? '')) : '',
+            'scope_label' => sanitize_text_field((string) ($pricingContext['label'] ?? '')),
         ];
     }
 
@@ -1532,5 +1573,113 @@ final class CMS_M365LIC_Frontend
             'features' => ['mail', 'teams', 'office_web', 'office_desktop', 'onedrive', 'sharepoint', 'forms', 'stream', 'viva_engage'],
             'eu_services' => [],
         ];
+    }
+
+    /**
+     * @param array<string,mixed> $evaluation
+     * @param array<int,array<string,mixed>> $requirements
+     * @param array<string,string> $settings
+     * @param array<string,mixed> $pricingContext
+     * @param array<string,mixed> $billingContext
+     */
+    private function store_export_snapshot(
+        array $evaluation,
+        array $requirements,
+        array $settings,
+        array $pricingContext,
+        array $billingContext,
+        ?array $userPricingProfile
+    ): string {
+        if (!isset($_SESSION) || !is_array($_SESSION)) {
+            return '';
+        }
+
+        $snapshotId = bin2hex(random_bytes(16));
+        $snapshots = is_array($_SESSION['cms_m365lic_export_snapshots'] ?? null)
+            ? $_SESSION['cms_m365lic_export_snapshots']
+            : [];
+
+        $snapshots[$snapshotId] = [
+            'created_at' => time(),
+            'evaluation' => $this->sanitize_pdf_payload($evaluation),
+            'requirements' => $this->sanitize_pdf_payload($requirements),
+            'settings' => $this->sanitize_pdf_payload([
+                'page_title' => (string) ($settings['page_title'] ?? ''),
+                'page_intro' => (string) ($settings['page_intro'] ?? ''),
+                'pdf_footer' => (string) ($settings['pdf_footer'] ?? ''),
+                'legal_note' => (string) ($settings['legal_note'] ?? ''),
+            ]),
+            'pricing_context' => $this->sanitize_pdf_payload([
+                'scope' => (string) ($pricingContext['scope'] ?? self::SCOPE_PUBLIC),
+                'tier' => (string) ($pricingContext['tier'] ?? 'public'),
+                'group_key' => (string) ($pricingContext['group_key'] ?? ''),
+                'label' => (string) ($pricingContext['label'] ?? 'Öffentlicher Bereich'),
+            ]),
+            'billing_context' => $this->sanitize_pdf_payload([
+                'key' => (string) ($billingContext['key'] ?? 'annual_upfront'),
+                'label' => (string) ($billingContext['label'] ?? ''),
+                'short_label' => (string) ($billingContext['short_label'] ?? ''),
+                'note' => (string) ($billingContext['note'] ?? ''),
+            ]),
+            'user_pricing_profile' => is_array($userPricingProfile)
+                ? $this->sanitize_pdf_payload([
+                    'partner_name' => (string) ($userPricingProfile['partner_name'] ?? ''),
+                    'whitelabel_title' => (string) ($userPricingProfile['whitelabel_title'] ?? ''),
+                    'whitelabel_intro' => (string) ($userPricingProfile['whitelabel_intro'] ?? ''),
+                ])
+                : null,
+        ];
+
+        uasort($snapshots, static function (array $left, array $right): int {
+            return ((int) ($right['created_at'] ?? 0)) <=> ((int) ($left['created_at'] ?? 0));
+        });
+        $snapshots = array_slice($snapshots, 0, 10, true);
+
+        $_SESSION['cms_m365lic_export_snapshots'] = $snapshots;
+
+        return $snapshotId;
+    }
+
+    /**
+     * @return array<string,mixed>|null
+     */
+    private function load_export_snapshot(string $snapshotId): ?array
+    {
+        $snapshotId = trim($snapshotId);
+        if ($snapshotId === '') {
+            return null;
+        }
+
+        $snapshots = is_array($_SESSION['cms_m365lic_export_snapshots'] ?? null)
+            ? $_SESSION['cms_m365lic_export_snapshots']
+            : [];
+        $snapshot = $snapshots[$snapshotId] ?? null;
+
+        return is_array($snapshot) ? $snapshot : null;
+    }
+
+    /**
+     * @return array<int|string,mixed>|string|int|float|bool|null
+     */
+    private function sanitize_pdf_payload(mixed $value): mixed
+    {
+        if (is_array($value)) {
+            $sanitized = [];
+            foreach ($value as $key => $item) {
+                $sanitized[$key] = $this->sanitize_pdf_payload($item);
+            }
+
+            return $sanitized;
+        }
+
+        if (is_string($value)) {
+            return trim(strip_tags($value));
+        }
+
+        if (is_int($value) || is_float($value) || is_bool($value) || $value === null) {
+            return $value;
+        }
+
+        return null;
     }
 }

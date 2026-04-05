@@ -867,9 +867,7 @@ $renderRequirementRow = static function (array $requirement, int $index) use ($f
                 <form method="POST" action="/api/m365lic/export" class="m365lic-export-form">
                     <input type="hidden" name="csrf_token" value="<?php echo $esc($csrfToken); ?>">
                     <input type="hidden" name="export_csrf_token" value="<?php echo $esc($exportToken); ?>">
-                    <input type="hidden" name="context_scope" value="<?php echo $esc((string) ($pricingContext['scope'] ?? 'public')); ?>">
-                    <input type="hidden" name="billing_cycle" value="<?php echo $esc((string) ($selectedBilling['key'] ?? 'annual_upfront')); ?>">
-                    <input type="hidden" name="requirements_json" value="<?php echo $esc(json_encode($requirements, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)); ?>">
+                    <input type="hidden" name="export_payload_id" value="<?php echo $esc((string) ($exportPayloadId ?? '')); ?>">
                     <?php if (($viewContext['scope'] ?? 'public') === 'public'): ?>
                     <button type="submit" name="export_variant" value="standard" class="m365lic-btn m365lic-btn--primary">📄 PDF exportieren</button>
                     <?php elseif (($viewContext['scope'] ?? 'public') === 'special'): ?>

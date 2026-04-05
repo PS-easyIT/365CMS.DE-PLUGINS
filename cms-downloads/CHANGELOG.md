@@ -1,5 +1,12 @@
 # Changelog – CMS Downloads
 
+## [Unreleased] – 2026-04-04
+
+### Sicherheitsfixes
+
+- Admin-Redirects nach POST-Aktionen zeigen jetzt nur noch auf die feste interne Dashboard-Route.
+- Der verbliebene Open-Redirect-Befund im Downloads-Admin wurde damit beseitigt.
+
 ## [1.0.0] – 2026-03-14
 
 ### Hinzugefügt

@@ -2,6 +2,13 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [Unreleased] – 2026-04-04
+
+### Sicherheitsfixes
+
+- Repo-weites Snyk-Audit erneut bestätigt: `cms-contact` bleibt ohne offene Findings.
+- Der Installer-Hotfix mit eindeutigen Foreign-Key-Namen ist als aktueller Audit-Stand dokumentiert und bleibt Teil der abgesicherten Neuinstallations-Story.
+
 ## [1.1.6] – 2026-04-04
 
 ### Fixed

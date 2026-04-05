@@ -104,6 +104,12 @@ cms-contact/
 - `dsgvo_export_data` – Datenexport für einen Benutzer
 - `dsgvo_delete_data` – Datenlöschung für einen Benutzer
 
+## Sicherheitsstatus (2026-04-04)
+
+- Snyk-Code-Audit für `cms-contact` abgeschlossen, aktuell ohne offene Findings.
+- Der Installer verwendet schemaweit eindeutige Foreign-Key-Namen und verhindert damit InnoDB-Kollisionen bei Neuinstallationen im selben Datenbankschema.
+- Der dokumentierte Hotfix-Stand deckt damit sowohl Datenbank-Stabilität als auch die bereits bestehenden Redirect-/Sanitizing-Härtungen des Plugins ab.
+
 ## Version
 
 - **1.1.6** – Installer-Hotfix für eindeutige Foreign-Key-Namen bei Neuinstallationen sowie weiterhin Sicherheits-, Performance- und UX-Fixes für Redirects, Mail-Settings, Feldfehler und Submission-Listen

@@ -5,6 +5,13 @@ Format: [Keep a Changelog](https://keepachangelog.com/de/1.0.0/)
 
 ---
 
+## [Unreleased] – 2026-04-04
+
+### Sicherheitsfixes
+
+- Such- und Ortsfilter im Experten-Archiv werden jetzt direkt an den Eingabe- und Reset-Sinks escaped.
+- Der letzte XSS-Befund im öffentlichen Archiv-Template ist damit geschlossen.
+
 ## [2.1.1] – 2026-03-29
 
 ### Geändert

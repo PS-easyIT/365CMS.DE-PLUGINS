@@ -5,6 +5,14 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ---
 
+## [Unreleased] – 2026-04-04
+
+### Sicherheitsfixes
+
+- Member-Create-Views nutzen jetzt serverseitig vorbereitete, sanitierte Prefill-Daten statt requestnaher Formwerte.
+- Design-/Settings-Upserts wurden auf Prepared Statements umgestellt.
+- Öffentliche Fehlerausgaben in Admin- und Member-Flows geben keine Roh-Exceptions mehr aus und loggen intern stattdessen generische Fehlermeldungen.
+
 ## [0.9.6] – 2026-02-27
 
 ### Behoben

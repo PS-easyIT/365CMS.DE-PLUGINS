@@ -249,6 +249,12 @@ Bei Aktivierung führt `CMS_JPG_Installer::install()` automatisch aus:
 | **cms-companies** | Firmen-Dropdown im Generator, Autofill (PLZ/Ort/Land/Telefon), Standard-Benefits, Mandant-Rollenprüfung |
 | **cms-experts** | Team-Genehmiger-Auswahl aus Experten-Profilen |
 
+## Sicherheitsstatus (2026-04-04)
+
+- Snyk-Code-Audit für `cms-jobprofile-generator` abgeschlossen, aktuell ohne offene Findings.
+- Member-Create-Views arbeiten jetzt mit serverseitig vorbereiteten, sanitisierten Prefill-Daten statt mit rohen Request-Werten.
+- Admin-Settings/Design speichern sicher per Prepared Statements; öffentliche Fehlermeldungen aus Admin- und Member-AJAX-Flows wurden auf generische Texte mit internem Logging reduziert.
+
 > Details: [DOC/CROSS-PLUGIN-INTEGRATION.md](DOC/CROSS-PLUGIN-INTEGRATION.md)
 
 ---

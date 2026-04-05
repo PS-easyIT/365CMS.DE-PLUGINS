@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] - 2026-04-04
+
+- Admin-Redirects nach Schreibaktionen wurden auf feste interne Dashboard-Ziele begrenzt.
+- Der Open-Redirect-Befund in `src/Admin/Pages.php` ist damit behoben.
+
 ## 1.0.0 - 2026-03-21
 
 - Erstes Release von CMS Knowledgebase

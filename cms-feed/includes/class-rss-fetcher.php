@@ -342,7 +342,7 @@ final class CMS_Feed_RSS_Fetcher
         // GUID
         $guid = (string) ($item->guid ?? $item->link ?? '');
         if (empty($guid)) {
-            $guid = md5((string) ($item->title ?? '') . $pubDate);
+            $guid = hash('sha256', (string) ($item->title ?? '') . '|' . $pubDate);
         }
 
         return [
@@ -390,7 +390,7 @@ final class CMS_Feed_RSS_Fetcher
         // GUID
         $guid = (string) ($entry->id ?? $link);
         if (empty($guid)) {
-            $guid = md5((string) ($entry->title ?? '') . $pubDate);
+            $guid = hash('sha256', (string) ($entry->title ?? '') . '|' . $pubDate);
         }
 
         // Autor

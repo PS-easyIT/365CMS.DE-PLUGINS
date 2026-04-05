@@ -108,6 +108,12 @@ CMS\Hooks::addAction('booking_register_providers', function () {
 | `/booking/ical/{booking-id}` | GET | iCal-Download |
 | `/api/booking/slots/{provider-id}/{date}` | GET | Verfügbare Zeitfenster (JSON) |
 
+## Sicherheitsstatus (2026-04-04)
+
+- Snyk-Code-Audit für `cms-booking` abgeschlossen, aktuell ohne offene Findings.
+- Die öffentliche Slot-Auswahl rendert Zeitfenster jetzt konsequent per DOM-API statt per `innerHTML`, wodurch DOM-XSS-Risiken aus Remote-Slotdaten reduziert wurden.
+- Die Buchungszusammenfassung nutzt im Frontend nur noch textbasierte Ausgabe für dynamische Inhalte.
+
 ## Lizenz
 
 Copyright © 2025 365 Network. Alle Rechte vorbehalten.

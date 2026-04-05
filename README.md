@@ -108,6 +108,13 @@ $row = $stmt->fetch();
 - Prepared Statements für alle DB-Operationen
 - `htmlspecialchars()` bei allen HTML-Ausgaben
 
+## Snyk-Status – 2026-04-04
+
+- ✅ Repo-weites Snyk-Code-Audit für die First-Party-Plugins abgeschlossen
+- ✅ Aktueller Stand: **0 Findings** für `e:\00-WPwork\365CMS.DE-PLUGINS`
+- 🔒 In diesem Durchgang wurden unter anderem DOM-XSS-, Open-Redirect-, Insecure-Hash-, SQL- und PDF-Export-Flows in mehreren Plugins gehärtet
+- 📝 Betroffene Plugin-Dokumentationen und Changelogs wurden parallel auf den Audit-Stand aktualisiert
+
 ---
 
 ## Cross-Plugin-Beziehungen

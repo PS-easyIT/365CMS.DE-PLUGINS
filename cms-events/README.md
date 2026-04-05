@@ -106,6 +106,12 @@ The plugin supports both physical and online events:
 
 The plugin is automatically activated during 365CMS setup. Database tables are created on first activation.
 
+## Sicherheitsstatus (2026-04-04)
+
+- Snyk-Code-Audit für `cms-events` abgeschlossen, aktuell ohne offene Findings.
+- Die Kalendernavigation begrenzt ihre Zielpfade jetzt auf interne `/events`-Routen und escaped dynamische Klassen-/Datumsattribute direkt an der Ausgabe.
+- Damit wurden die letzten XSS-/URL-Flows im Shortcode-Rendering entschärft.
+
 ## License
 
 Part of 365CMS Core - All Rights Reserved

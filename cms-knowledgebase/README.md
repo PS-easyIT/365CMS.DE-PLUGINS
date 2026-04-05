@@ -24,3 +24,9 @@ CMS Knowledgebase erweitert 365CMS um eine kleine, performante Wissensdatenbank 
 - Für zuverlässiges Auto-Linking ist der Filter `content_render` der bevorzugte Weg.
 - Der Output-Buffer-Fallback ist standardmäßig aktiv, damit bestehende Themes trotzdem profitieren.
 - Der bestehende leere Tippfehler-Ordner `cms-knowledbase` wurde absichtlich nicht überschrieben.
+
+## Sicherheitsstatus (2026-04-04)
+
+- Snyk-Code-Audit für `cms-knowledgebase` abgeschlossen, aktuell ohne offene Findings.
+- Admin-Redirects verweisen nach schreibenden Aktionen jetzt nur noch auf feste interne Dashboard-Ziele.
+- Dadurch sind die bisherigen Open-Redirect-Befunde im Admin-Flow beseitigt.

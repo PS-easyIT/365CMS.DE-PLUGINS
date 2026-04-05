@@ -47,3 +47,9 @@ cms-downloads/
 └── templates/
     └── archive-downloads.php
 ```
+
+## Sicherheitsstatus (2026-04-04)
+
+- Snyk-Code-Audit für `cms-downloads` abgeschlossen, aktuell ohne offene Findings.
+- Admin-Redirects führen nach POST-Aktionen jetzt ausschließlich auf feste interne Dashboard-Routen zurück.
+- Dadurch werden request-basierte Redirect-Ziele vermieden und Open-Redirect-Befunde beseitigt.

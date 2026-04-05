@@ -23,3 +23,9 @@ Newsletter-Plugin für 365CMS mit Subscriber-Verwaltung, Templates, Kampagnenpla
 - `GET /newsletter`
 - `POST /newsletter/subscribe`
 - `GET /newsletter/unsubscribe/:token`
+
+## Sicherheitsstatus (2026-04-04)
+
+- Snyk-Code-Audit für `cms-newsletter` abgeschlossen, aktuell ohne offene Findings.
+- Admin-Redirects verwenden nach POST-Aktionen nur noch feste interne Ziele.
+- Damit wurde der verbliebene Open-Redirect-Befund in der Admin-Navigation geschlossen.

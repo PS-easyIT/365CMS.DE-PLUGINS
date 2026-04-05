@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] – 2026-04-04
+
+- PDF-Export auf serverseitige Export-Snapshots umgestellt, sodass keine requestbasierten JSON-Auswertungen mehr direkt in das PDF-Rendering fließen.
+- Export-Varianten werden im Frontend strikt auf feste Konstanten gemappt; Whitelabel-/Partnertexte werden vor dem Rendern zusätzlich normalisiert.
+- Der PDF-Renderer arbeitet ohne dateibasierte Logo-Auflösung und der letzte Snyk-Befund für `cms-m365lic` ist damit geschlossen.
+
 ## 1.5.0 – 2026-03-18
 
 - Public- und EU-Vergleichs-Frontend visuell näher an das Theme `cms-phinit` gezogen: dunkler Hero, Navy-/Gold-/Teal-Akzente, prägnantere Tabellenköpfe und editorialere Karten-/Button-Stile
