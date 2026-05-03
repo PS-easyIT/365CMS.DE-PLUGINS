@@ -31,7 +31,7 @@
 
 ```
 cms-feed/
-├── cms-feed.php                    # Hauptdatei (v1.3.3)
+├── cms-feed.php                    # Hauptdatei (v1.3.6)
 ├── update.json                     # Plugin-Manifest
 ├── includes/
 │   ├── class-database.php          # DB-Tabellen + CRUD (659 Zeilen)
@@ -80,7 +80,7 @@ cms-feed/
     - **Täglich** um `15:00 Uhr`
     - **Täglich 2×** um `09:00 Uhr` und `15:00 Uhr`
     - **Wöchentlich** an einem frei wählbaren Wochentag um `09:00 Uhr` oder `15:00 Uhr`
-- Die Zustellung läuft über den bestehenden `cms_cron_hourly`-Hook und sendet nur fällige Slots
+- Die Zustellung läuft über den bestehenden `cms_cron_hourly`-Hook, sendet nur fällige Slots und legt E-Mails bei aktiver Mail-Queue in den zentralen Cron-Worker
 
 ## Wichtige Architektur-Hinweise
 
@@ -90,6 +90,7 @@ cms-feed/
 - Admin-Digests bleiben für manuelle/global konfigurierte Empfänger erhalten; Member-Abos gehören dem jeweiligen Benutzerkonto
 - Der stündliche Cron priorisiert die in `cms-phinit` auf der Startseite gewählten Feed-Kanäle, prüft zusätzlich alle nach `fetch_interval` fälligen Kanäle und reiht diese in die Fetch-Queue ein
 - Bereits eingereihte Queue-Tasks werden zusätzlich bei jedem regulären `task=all`-/`task=mail-queue`-Cron-Lauf in kleinen Batches weiter abgearbeitet, damit Rückstaus zwischen zwei Stundenläufen nicht stehen bleiben
+- Feed-Digests und Member-Abo-Mails nutzen den zentralen MailService bzw. die Mail-Queue statt direktem `mail()`, damit SMTP/OAuth-Konfiguration, Retry-Backoff und Mail-Logs greifen
 - Feed-Beiträge älter als 7 Tage werden stündlich automatisch bereinigt
 
 ## Systemanforderungen

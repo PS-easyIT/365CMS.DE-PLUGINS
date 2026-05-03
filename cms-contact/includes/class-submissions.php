@@ -443,10 +443,11 @@ final class CMS_Contact_Submissions
             }
         }
 
-    $body .= "\n---\nGesendet am: " . date('d.m.Y H:i') . "\n";
+        $body .= "\n---\nGesendet am: " . date('d.m.Y H:i') . "\n";
 
         $headers = [
             'X-365CMS-Source' => 'cms-contact-notification',
+            'X-365CMS-Test-Source' => 'cms-contact-notification',
         ];
 
         $fromHeader = $this->build_from_header();
@@ -503,6 +504,7 @@ final class CMS_Contact_Submissions
 
         $headers = [
             'X-365CMS-Source' => 'cms-contact-confirmation',
+            'X-365CMS-Test-Source' => 'cms-contact-confirmation',
         ];
 
         $fromHeader = $this->build_from_header();
@@ -589,12 +591,13 @@ final class CMS_Contact_Submissions
             return null;
         }
 
-        $fromName = trim($this->get_setting('from_name'));
+        $fromName = trim(str_replace(["\r", "\n", '"', '\\'], ' ', $this->get_setting('from_name')));
+        $fromName = preg_replace('/\s+/u', ' ', $fromName) ?? '';
         if ($fromName === '') {
             return $fromEmail;
         }
 
-        return $fromName . ' <' . $fromEmail . '>';
+        return '"' . $fromName . '" <' . $fromEmail . '>';
     }
 
     private function get_client_ip(): string
@@ -610,6 +613,16 @@ final class CMS_Contact_Submissions
 
     private function send_plain_mail(string $to, string $subject, string $body, array $headers = []): bool
     {
+        if (class_exists('\\CMS\\Services\\MailQueueService')) {
+            $queue = \CMS\Services\MailQueueService::getInstance();
+            if ($queue->shouldQueue($headers)) {
+                $result = $queue->enqueuePlain($to, $subject, $body, $headers, null, 'cms-contact');
+                if (!empty($result['success'])) {
+                    return true;
+                }
+            }
+        }
+
         if (class_exists('\\CMS\\Services\\MailService')) {
             return \CMS\Services\MailService::getInstance()->sendPlain($to, $subject, $body, $headers);
         }

@@ -13,7 +13,7 @@
 - **Spamschutz**: Honeypot + Math-Captcha + sessionbasiertes Rate-Limiting
 - **Sichtbare Serverfehler**: Feldfehler werden nach Redirect wieder am jeweiligen Formularfeld angezeigt
 - **Nachrichten-Telemetrie**: Admin sieht zu jeder Anfrage die erfasste IP-Adresse und den User-Agent
-- **E-Mail-Benachrichtigungen**: Globaler Admin-Empfänger oder Formular-Empfänger + optionale Bestätigung an Absender
+- **E-Mail-Benachrichtigungen**: Globaler Admin-Empfänger oder Formular-Empfänger + optionale Bestätigung an Absender; bei aktiver Mail-Queue werden Nachrichten asynchron über den zentralen Cron-Worker versendet
 - **DSGVO-konform**: Export- und Lösch-Hooks, automatische Bereinigung
 - **Dashboard**: Statistiken, Trends, aktuelle Nachrichten
 - **Responsive**: Alle Templates mobil-optimiert
@@ -112,4 +112,4 @@ cms-contact/
 
 ## Version
 
-- **1.1.6** – Installer-Hotfix für eindeutige Foreign-Key-Namen bei Neuinstallationen sowie weiterhin Sicherheits-, Performance- und UX-Fixes für Redirects, Mail-Settings, Feldfehler und Submission-Listen
+- **1.1.7** – Kontakt-Benachrichtigungen und Bestätigungsmails hängen jetzt an der zentralen Mail-Queue, damit Cron-Retries, SMTP/OAuth-Konfiguration und Mail-Logging konsistent greifen

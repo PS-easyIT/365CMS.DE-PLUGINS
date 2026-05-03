@@ -1,12 +1,12 @@
 {
     "name": "CMS Contact",
     "slug": "cms-contact",
-    "version": "1.1.6",
+    "version": "1.1.7",
     "requires_cms": "2.0.0",
     "tested_cms": "2.0.0",
     "author": "365 Network",
     "author_uri": "https://365network.de",
-    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-1.1.6.zip",
-    "last_updated": "2026-04-04",
-    "changelog": "Installer-Hotfix für eindeutige Foreign-Key-Namen, damit Neuinstallationen nicht mehr an InnoDB-Constraint-Kollisionen scheitern."
+    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-1.1.7.zip",
+    "last_updated": "2026-05-03",
+    "changelog": "Kontakt-Benachrichtigungen und Bestätigungsmails nutzen jetzt die zentrale Mail-Queue, sofern diese aktiv ist, und fallen nur bei deaktivierter Queue auf den direkten MailService zurück."
 }

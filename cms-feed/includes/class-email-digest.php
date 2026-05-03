@@ -193,14 +193,48 @@ HTML;
      */
     private function send_email(string $to, string $subject, string $html, string $fromName, string $fromEmail): bool
     {
-        $headers = "MIME-Version: 1.0\r\n";
-        $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+        $headers = [
+            'X-365CMS-Source' => 'cms-feed-digest',
+            'X-365CMS-Test-Source' => 'cms-feed-digest',
+        ];
 
-        if ($fromEmail) {
-            $headers .= "From: {$fromName} <{$fromEmail}>\r\n";
+        $fromHeader = $this->build_from_header($fromName, $fromEmail);
+        if ($fromHeader !== null) {
+            $headers['From'] = $fromHeader;
         }
 
-        return mail($to, $subject, $html, $headers);
+        if (class_exists('\\CMS\\Services\\MailQueueService')) {
+            $queue = \CMS\Services\MailQueueService::getInstance();
+            if ($queue->shouldQueue($headers)) {
+                $result = $queue->enqueue($to, $subject, $html, $headers, null, 'cms-feed-digest');
+                if (!empty($result['success'])) {
+                    return true;
+                }
+            }
+        }
+
+        if (class_exists('\\CMS\\Services\\MailService')) {
+            return \CMS\Services\MailService::getInstance()->send($to, $subject, $html, $headers);
+        }
+
+        return false;
+    }
+
+    private function build_from_header(string $fromName, string $fromEmail): ?string
+    {
+        $fromEmail = trim($fromEmail);
+        if (!filter_var($fromEmail, FILTER_VALIDATE_EMAIL)) {
+            return null;
+        }
+
+        $fromName = trim(str_replace(["\r", "\n", '"', '\\'], ' ', $fromName));
+        $fromName = preg_replace('/\s+/u', ' ', $fromName) ?? '';
+
+        if ($fromName === '') {
+            return $fromEmail;
+        }
+
+        return '"' . $fromName . '" <' . $fromEmail . '>';
     }
 
     /**

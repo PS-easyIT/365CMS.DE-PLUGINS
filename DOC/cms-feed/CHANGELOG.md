@@ -4,6 +4,15 @@ Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
 ---
 
+## [1.3.6] – 2026-05-03
+
+### Behoben
+- **Feed-Digests hängen jetzt an der zentralen Mail-Infrastruktur** – `CMS_Feed_Email_Digest` nutzt bei aktiver Queue `MailQueueService` und fällt sonst auf `MailService` zurück, statt direkt `mail()` aufzurufen.
+- **Member-Feed-Abos profitieren von Cron-Retries** – fällige Abo-Mails werden nicht mehr am stündlichen Feed-Cron vorbei versendet, sondern über denselben SMTP/OAuth-, Logging- und Retry-Pfad wie andere CMS-Mails verarbeitet.
+
+### Technisch
+- Digest-Mails setzen nun nachvollziehbare `X-365CMS-*`-Quellheader und übernehmen optionale Feed-Absender nur nach E-Mail-Validierung.
+
 ## [1.3.5] – 2026-04-02
 
 ### Behoben
