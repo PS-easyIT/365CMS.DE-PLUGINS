@@ -65,6 +65,7 @@ $theme->getHeader();
                 <?php if (empty($success)): ?>
                 <form method="POST" class="contact-form" novalidate>
                     <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                    <input type="hidden" name="contact_started_at" value="<?php echo (int) time(); ?>">
                     <?php if (!empty($form['enable_honeypot'])): ?>
                     <div class="contact-honeypot" aria-hidden="true">
                         <input type="text" name="website_url" tabindex="-1" autocomplete="off">

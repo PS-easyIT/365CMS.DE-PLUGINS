@@ -2,7 +2,20 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
-## [Unreleased] – 2026-04-04
+## [Unreleased] – 2026-05-09
+
+## [1.1.8] – 2026-05-09
+
+### Sicherheitsfixes
+
+- Öffentliche Kontaktformulare nutzen jetzt zusätzlich den zentralen `CMS\Services\AntispamService`, sodass globale AntiSpam-Regeln aus `/admin/antispam` auch für `cms-contact` greifen.
+- Die Formular-Templates senden dafür einen serverseitig prüfbaren Start-Timestamp mit, damit `antispam_min_time` nicht länger nur bei Kommentaren wirkt.
+
+### Verbessert
+
+- Das Kontakt-Plugin behält weiterhin sein lokales Mathe-Captcha und das sessionbasierte Erfolgs-Rate-Limit, ergänzt diese Prüfungen jetzt aber um denselben globalen Blacklist-/Linklimit-/User-Agent-Vertrag wie der Core.
+
+## [1.1.7] – 2026-05-03
 
 ### Sicherheitsfixes
 

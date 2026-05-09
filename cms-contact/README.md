@@ -10,7 +10,7 @@
 - **Pflichtfelder**: Jedes Feld einzeln als Pflichtfeld konfigurierbar
 - **Feldbreiten**: Voll (100%), Halb (50%), Drittel (33%), Zwei Drittel (66%)
 - **Drag & Drop Sortierung**: Felder per Drag & Drop umsortieren
-- **Spamschutz**: Honeypot + Math-Captcha + sessionbasiertes Rate-Limiting
+- **Spamschutz**: Honeypot + zentraler CMS-AntiSpam-Service (Mindestzeit, Linklimit, Blacklist, leere User-Agents) + optionales Math-Captcha + sessionbasiertes Rate-Limiting
 - **Sichtbare Serverfehler**: Feldfehler werden nach Redirect wieder am jeweiligen Formularfeld angezeigt
 - **Nachrichten-Telemetrie**: Admin sieht zu jeder Anfrage die erfasste IP-Adresse und den User-Agent
 - **E-Mail-Benachrichtigungen**: Globaler Admin-Empfänger oder Formular-Empfänger + optionale Bestätigung an Absender; bei aktiver Mail-Queue werden Nachrichten asynchron über den zentralen Cron-Worker versendet
@@ -104,12 +104,14 @@ cms-contact/
 - `dsgvo_export_data` – Datenexport für einen Benutzer
 - `dsgvo_delete_data` – Datenlöschung für einen Benutzer
 
-## Sicherheitsstatus (2026-04-04)
+## Sicherheitsstatus (2026-05-09)
 
 - Snyk-Code-Audit für `cms-contact` abgeschlossen, aktuell ohne offene Findings.
 - Der Installer verwendet schemaweit eindeutige Foreign-Key-Namen und verhindert damit InnoDB-Kollisionen bei Neuinstallationen im selben Datenbankschema.
-- Der dokumentierte Hotfix-Stand deckt damit sowohl Datenbank-Stabilität als auch die bereits bestehenden Redirect-/Sanitizing-Härtungen des Plugins ab.
+- Öffentliche Formulare nutzen zusätzlich denselben zentralen `CMS\Services\AntispamService` wie der Core-Kommentarpfad; globale AntiSpam-Regeln aus `/admin/antispam` greifen damit auch für Kontaktanfragen.
+- Der dokumentierte Hotfix-Stand deckt damit sowohl Datenbank-Stabilität als auch die bestehenden Redirect-/Sanitizing-Härtungen und die zentrale AntiSpam-Verdrahtung des Plugins ab.
 
 ## Version
 
+- **1.1.8** – Öffentliche Kontaktformulare nutzen jetzt zusätzlich den zentralen 365CMS-AntiSpam-Service, damit Mindestzeit, Linklimit, User-Agent- und Blacklist-Prüfung nicht länger nur im Kommentarpfad greifen
 - **1.1.7** – Kontakt-Benachrichtigungen und Bestätigungsmails hängen jetzt an der zentralen Mail-Queue, damit Cron-Retries, SMTP/OAuth-Konfiguration und Mail-Logging konsistent greifen

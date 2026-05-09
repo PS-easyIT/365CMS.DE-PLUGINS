@@ -258,11 +258,6 @@ final class CMS_Contact_Frontend
             return ['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen. Bitte laden Sie die Seite neu.'];
         }
 
-        // Honeypot-Check
-        if (!empty($form['enable_honeypot']) && !empty($_POST['website_url'])) {
-            return ['success' => false, 'error' => 'Spam erkannt.'];
-        }
-
         // CAPTCHA-Check (session-basiert)
         if (!empty($form['enable_captcha'])) {
             $answer   = (int) ($_POST['captcha_answer'] ?? 0);
@@ -368,6 +363,31 @@ final class CMS_Contact_Frontend
             }
         }
 
+        $ipAddress = class_exists('CMS\\Security')
+            ? \CMS\Security::getClientIp()
+            : (string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+        $userAgent = substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 500);
+
+        if (class_exists('CMS\\Services\\AntispamService')) {
+            $antispamResult = \CMS\Services\AntispamService::getInstance()->evaluate([
+                'honeypot_value' => (string) ($_POST['website_url'] ?? ''),
+                'started_at' => (int) ($_POST['contact_started_at'] ?? 0),
+                'email' => $senderEmail,
+                'ip_address' => $ipAddress,
+                'author_name' => $senderName,
+                'content' => $this->build_antispam_content($subject, $message, $meta),
+                'user_agent' => $userAgent,
+            ]);
+
+            if (!empty($antispamResult['rejected'])) {
+                return [
+                    'success' => false,
+                    'error' => $this->get_antispam_error_message((string) ($antispamResult['reason'] ?? '')),
+                    'old_data' => $oldData,
+                ];
+            }
+        }
+
         // User-ID ermitteln
         $userId = null;
         if (class_exists('CMS\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
@@ -384,8 +404,8 @@ final class CMS_Contact_Frontend
             'sender_email' => $senderEmail,
             'subject'      => $subject,
             'message'      => $message,
-            'user_agent'   => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500),
-            'ip_address'   => class_exists('CMS\\Security') ? \CMS\Security::getClientIp() : (string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'),
+            'user_agent'   => $userAgent,
+            'ip_address'   => $ipAddress,
         ], $meta);
 
         $this->register_rate_limit_hit($formId);
@@ -396,8 +416,8 @@ final class CMS_Contact_Frontend
             'sender_email' => $senderEmail,
             'subject'      => $subject,
             'message'      => $message,
-            'user_agent'   => substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500),
-            'ip_address'   => class_exists('CMS\\Security') ? \CMS\Security::getClientIp() : (string) ($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'),
+            'user_agent'   => $userAgent,
+            'ip_address'   => $ipAddress,
         ], $meta);
 
         // Bestätigungs-E-Mail
@@ -426,6 +446,40 @@ final class CMS_Contact_Frontend
         }
 
         return $fallback;
+    }
+
+    private function build_antispam_content(string $subject, string $message, array $meta): string
+    {
+        $parts = [];
+
+        foreach ([$subject, $message] as $value) {
+            $value = trim($value);
+            if ($value !== '') {
+                $parts[] = $value;
+            }
+        }
+
+        foreach ($meta as $value) {
+            if (!is_scalar($value)) {
+                continue;
+            }
+
+            $value = trim((string) $value);
+            if ($value !== '') {
+                $parts[] = $value;
+            }
+        }
+
+        return implode("\n", $parts);
+    }
+
+    private function get_antispam_error_message(string $reason): string
+    {
+        return match ($reason) {
+            'minimum_time' => 'Bitte warten Sie einen Moment und senden Sie das Formular erneut.',
+            'max_links' => 'Zu viele Links in der Anfrage. Bitte kürzen Sie den Inhalt und versuchen Sie es erneut.',
+            default => 'Ihre Anfrage wurde aus Sicherheitsgründen blockiert. Bitte prüfen Sie Ihre Eingaben und versuchen Sie es erneut.',
+        };
     }
 
     private function filter_public_fields(array $fields): array
