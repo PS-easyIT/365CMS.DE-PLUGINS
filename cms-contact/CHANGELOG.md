@@ -2,7 +2,13 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
-## [Unreleased] – 2026-05-09
+## [Unreleased] – 2026-05-15
+
+## [1.1.9] – 2026-05-15
+
+### Fixed
+
+- Deutschsprachige Legacy-Links unter `/kontakt` und `/kontakt/{slug}` leiten jetzt per 301 auf die kanonischen Kontaktformular-Routen `/contact` bzw. `/contact/{slug}` weiter. Dadurch laufen bestehende Theme- oder Menüeinträge nicht mehr in eine 404-Seite.
 
 ## [1.1.8] – 2026-05-09
 

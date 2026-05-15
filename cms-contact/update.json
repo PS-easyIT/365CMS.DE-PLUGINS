@@ -1,12 +1,12 @@
 {
     "name": "CMS Contact",
     "slug": "cms-contact",
-    "version": "1.1.8",
+    "version": "1.1.9",
     "requires_cms": "2.0.0",
     "tested_cms": "2.0.0",
     "author": "365 Network",
     "author_uri": "https://365network.de",
-    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-1.1.8.zip",
-    "last_updated": "2026-05-09",
-    "changelog": "Öffentliche Kontaktformulare nutzen jetzt zusätzlich den zentralen 365CMS-AntiSpam-Service, sodass Mindestzeit, Linklimit, User-Agent- und Blacklist-Prüfung nicht länger nur im Kommentarpfad greifen."
+    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-1.1.9.zip",
+    "last_updated": "2026-05-15",
+    "changelog": "Legacy-Links unter /kontakt leiten jetzt sauber auf die kanonische Kontaktformular-Route /contact weiter."
 }

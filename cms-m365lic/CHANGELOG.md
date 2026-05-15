@@ -2,6 +2,7 @@
 
 ## [Unreleased] – 2026-04-04
 
+- Public-Layout im Theme-Embed korrigiert: Der M365-License-Hero startet jetzt ohne zusätzliche Plugin-Headerhöhen-Reservierung, ohne negativen Top-Ausgleich und ohne visuelle Theme-Breadcrumb-Zwischenleiste direkt bündig unter dem Theme-Header; zwischen Plugin-Hero und Plugin-Inhalt sowie zwischen letztem Plugin-Abschnitt und Theme-Footer bleibt pluginintern jeweils `25px` Abstand.
 - PDF-Export auf serverseitige Export-Snapshots umgestellt, sodass keine requestbasierten JSON-Auswertungen mehr direkt in das PDF-Rendering fließen.
 - Export-Varianten werden im Frontend strikt auf feste Konstanten gemappt; Whitelabel-/Partnertexte werden vor dem Rendern zusätzlich normalisiert.
 - Der PDF-Renderer arbeitet ohne dateibasierte Logo-Auflösung und der letzte Snyk-Befund für `cms-m365lic` ist damit geschlossen.

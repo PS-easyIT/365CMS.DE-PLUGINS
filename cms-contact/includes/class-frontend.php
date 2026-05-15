@@ -37,6 +37,10 @@ final class CMS_Contact_Frontend
 
         $router = \CMS\Router::instance();
 
+        // Legacy-Alias für deutschsprachige Theme-/Menülinks: /kontakt → /contact
+        $router->addRoute('GET',  '/kontakt',              [$this, 'redirect_legacy_default']);
+        $router->addRoute('GET',  '/kontakt/:slug',        [$this, 'redirect_legacy_form']);
+
         // Basis-Route: /contact (ohne Slug) – erstes aktives Formular als Fallback
         $router->addRoute('GET',  '/contact',              [$this, 'render_default_form']);
         $router->addRoute('POST', '/contact',              [$this, 'handle_default_submit']);
@@ -47,6 +51,29 @@ final class CMS_Contact_Frontend
 
         // AJAX-Submit-Endpoint
         $router->addRoute('POST', '/api/contact/:slug/submit', [$this, 'handle_ajax_submit']);
+    }
+
+    public function redirect_legacy_default(): void
+    {
+        $this->redirect_legacy_contact_path('/contact');
+    }
+
+    public function redirect_legacy_form(string $slug): void
+    {
+        $safeSlug = preg_replace('/[^a-zA-Z0-9_-]+/', '', $slug) ?? '';
+        $this->redirect_legacy_contact_path('/contact/' . ltrim($safeSlug, '/'));
+    }
+
+    private function redirect_legacy_contact_path(string $targetPath): void
+    {
+        $query = (string) ($_SERVER['QUERY_STRING'] ?? '');
+        $location = $targetPath . ($query !== '' ? '?' . $query : '');
+
+        if (!headers_sent()) {
+            header('Location: ' . $location, true, 301);
+        }
+
+        exit;
     }
 
     // ── Formular rendern ──────────────────────────────────────────────────────
