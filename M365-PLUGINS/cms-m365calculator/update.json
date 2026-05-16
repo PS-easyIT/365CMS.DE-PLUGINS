@@ -1,0 +1,11 @@
+{
+  "version": "1.0.1",
+  "download_url": "https://365network.de/plugins/cms-m365calculator/cms-m365calculator.zip",
+  "requires": "2.9.0",
+  "tested": "2.9.7",
+  "last_updated": "2026-05-16",
+  "sections": {
+    "description": "Modulare Microsoft-365-Rechner-Toolbox mit dynamischer Hub-Landingpage und Shared-Mailbox-vs.-Lizenz-Rechner.",
+    "changelog": "Dynamische PHINIT-konforme Hub-Landingpage, selbstregistrierende Tool-Registry, SVG-Icon-Helper und Route /m365-rechner ergänzt."
+  }
+}

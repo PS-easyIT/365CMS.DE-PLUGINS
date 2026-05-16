@@ -1,0 +1,38 @@
+{
+  "info": {
+    "label": "Info-/Kontaktpostfach",
+    "description": "Klassische Funktionsadresse wie info@, kontakt@ oder service@."
+  },
+  "support": {
+    "label": "Support-/Helpdesk-Inbox",
+    "description": "Gemeinsames Bearbeiten eingehender Kunden- oder Servicemails."
+  },
+  "sales": {
+    "label": "Vertrieb / Sales",
+    "description": "Team-Inbox für Angebots- oder Anfragebearbeitung."
+  },
+  "reception": {
+    "label": "Empfang / Zentrale",
+    "description": "Organisationsadresse für Empfang, Termin- oder Telefonzentrale."
+  },
+  "former_employee": {
+    "label": "Ehemaliger Mitarbeiter",
+    "description": "Konvertierung oder Weiterführung einer früheren Benutzer-Mailbox."
+  },
+  "team_assistance": {
+    "label": "Teamassistenz / Sekretariat",
+    "description": "Mehrere interne Personen arbeiten mit gemeinsamem Postfach und Kalender."
+  },
+  "project_mailbox": {
+    "label": "Projektpostfach",
+    "description": "Zeitlich oder organisatorisch begrenztes Projekt mit gemeinsamer Inbox."
+  },
+  "personal_work_mailbox": {
+    "label": "Persönliches Arbeitspostfach",
+    "description": "Eine Person benötigt eigene Identität, Login und persönliche Mailbox."
+  },
+  "other": {
+    "label": "Sonstiges Szenario",
+    "description": "Individueller Sonderfall, der über die Standardmuster hinausgeht."
+  }
+}

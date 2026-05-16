@@ -1,0 +1,41 @@
+{
+  "version": "2026-05-15",
+  "limits": {
+    "max_unlicensed_storage_gb": 50,
+    "licensed_primary_mailbox_gb": 100,
+    "auto_expanding_archive_tb": 1.5,
+    "practical_user_limit": 25
+  },
+  "decision_categories": {
+    "shared_unlicensed": "Shared Mailbox ohne Zusatzlizenz geeignet",
+    "shared_licensed": "Shared Mailbox geeignet, aber mit Zusatzlizenz / Add-on",
+    "borderline": "Grenzfall – Shared Mailbox technisch möglich, Governance prüfen",
+    "regular_user": "Reguläre Benutzer-Mailbox empfohlen",
+    "m365_group": "Microsoft 365 Group statt Shared Mailbox empfohlen"
+  },
+  "hard_rules": [
+    "Direkter Login oder persönliche Identität spricht gegen Shared Mailbox.",
+    "Shared Mailboxes bis 50 GB können ohne eigene Lizenz betrieben werden, sofern keine lizenzpflichtigen Features aktiv sind.",
+    "Archiv, Litigation Hold, In-Place Hold, Purview-/Retention- und Defender-Funktionen können Lizenzbedarf auslösen.",
+    "Externe direkte Mailboxnutzung ist kein regulärer Shared-Mailbox-Anwendungsfall.",
+    "Bei breiter externer Zusammenarbeit oder Workspace-Funktionen ist Microsoft 365 Group zu prüfen."
+  ],
+  "operational_notes": [
+    "Benutzer mit Zugriff benötigen eigene lizenzierte Exchange-Online-Berechtigung.",
+    "Sign-in für das Shared-Mailbox-Konto blockieren.",
+    "Das zugrunde liegende Benutzerkonto nach Konvertierung nicht löschen.",
+    "Automapping funktioniert sauber bei expliziten Full-Access-Berechtigungen, nicht zuverlässig bei Gruppenberechtigungen.",
+    "Mehr als 25 aktive Nutzer gilt als Praxisgrenze, bei der Outlook-/Verbindungsprobleme wahrscheinlicher werden."
+  ],
+  "sources": [
+    "https://learn.microsoft.com/en-us/microsoft-365/admin/email/about-shared-mailboxes",
+    "https://learn.microsoft.com/en-us/microsoft-365/admin/email/create-a-shared-mailbox",
+    "https://learn.microsoft.com/en-us/microsoft-365/admin/email/configure-a-shared-mailbox",
+    "https://learn.microsoft.com/en-us/microsoft-365/admin/email/convert-user-mailbox-to-shared-mailbox",
+    "https://learn.microsoft.com/en-us/office365/servicedescriptions/exchange-online-service-description/exchange-online-limits",
+    "https://learn.microsoft.com/en-us/office365/servicedescriptions/exchange-online-archiving-service-description/exchange-online-archiving-service-description",
+    "https://learn.microsoft.com/en-us/purview/autoexpanding-archiving",
+    "https://learn.microsoft.com/en-us/office365/servicedescriptions/microsoft-365-service-descriptions/microsoft-365-tenantlevel-services-licensing-guidance",
+    "https://learn.microsoft.com/en-us/defender-office-365/mdo-service-description"
+  ]
+}

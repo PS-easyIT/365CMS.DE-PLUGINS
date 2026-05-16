@@ -1,0 +1,15 @@
+.m365calculator-admin-shell {
+    display: grid;
+    gap: 1rem;
+}
+
+.m365calculator-admin-grid {
+    margin-bottom: 1rem;
+}
+
+.m365calculator-admin-shell code {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 0.18rem 0.35rem;
+}

@@ -1,0 +1,43 @@
+{
+  "shared_mailbox_unlicensed": {
+    "label": "Shared Mailbox ohne eigene Lizenz",
+    "monthly_price": 0,
+    "currency": "EUR",
+    "storage_gb": 50,
+    "fits": ["Gemeinsame Inbox", "Interne Funktionsadresse", "Send As / Send on Behalf", "Gemeinsamer Kalender"],
+    "does_not_fit": ["Direktes Login", "Archiv/Hold", "> 50 GB", "Externe direkte Benutzer"]
+  },
+  "exchange_online_plan_1": {
+    "label": "Exchange Online Plan 1",
+    "monthly_price": 3.50,
+    "currency": "EUR",
+    "storage_gb": 50,
+    "fits": ["Mail-only-Benutzerpostfach", "Basis-Exchange-Szenarien"],
+    "does_not_fit": ["100-GB-Primärpostfach", "Archiv/Hold ohne Add-on"]
+  },
+  "exchange_online_plan_2": {
+    "label": "Exchange Online Plan 2",
+    "monthly_price": 6.90,
+    "currency": "EUR",
+    "storage_gb": 100,
+    "fits": ["> 50 GB bis 100 GB", "Archiv", "Litigation Hold", "Compliance-lastige Mailbox"]
+  },
+  "exchange_online_archiving": {
+    "label": "Exchange Online Archiving Add-on",
+    "monthly_price": 3.00,
+    "currency": "EUR",
+    "fits": ["Archiv für passende Exchange-Grundlizenz", "Auto-expanding Archive bis 1,5 TB"]
+  },
+  "defender_office_365_plan_1": {
+    "label": "Defender for Office 365 Plan 1",
+    "monthly_price": 1.73,
+    "currency": "EUR",
+    "fits": ["Sicherer Link-/Anhangschutz", "Basis-Mailschutz"]
+  },
+  "m365_business_standard": {
+    "label": "Microsoft 365 Business Standard",
+    "monthly_price": 10.80,
+    "currency": "EUR",
+    "fits": ["Reguläre Benutzer-Mailbox", "Office-Apps", "Teams", "OneDrive", "SharePoint"]
+  }
+}

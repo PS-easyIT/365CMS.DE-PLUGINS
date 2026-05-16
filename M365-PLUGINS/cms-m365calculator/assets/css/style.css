@@ -1,0 +1,14 @@
+.phinit-tool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--phinit-space-5);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .phinit-tool-grid {
+        grid-template-columns: 1fr;
+    }
+}
