@@ -1,0 +1,38 @@
+{
+  "defaults": {
+    "base_plan": "m365-business-standard",
+    "mailbox_type": "user",
+    "mailbox_count": 25,
+    "current_primary_gb": 35,
+    "current_archive_gb": 20,
+    "monthly_growth_gb": 3,
+    "daily_archive_growth_gb": 0.2,
+    "retention_years": 7,
+    "archive_goal": "auto_expand",
+    "needs_hold": true,
+    "needs_purview_premium": false
+  },
+  "limits": {
+    "unlicensed_shared_primary_gb": 50,
+    "licensed_shared_primary_gb": 100,
+    "resource_unlicensed_primary_gb": 50,
+    "resource_licensed_primary_gb": 100,
+    "auto_expanding_archive_gb": 1500,
+    "auto_expanding_archive_trigger_gb": 90,
+    "auto_expanding_archive_initial_gb": 100,
+    "auto_expanding_daily_growth_warning_gb": 1,
+    "additional_storage_provisioning_days": 30,
+    "recoverable_items_default_gb": 30,
+    "recoverable_items_on_hold_gb": 100
+  },
+  "recommendation_thresholds": {
+    "primary_warning_ratio": 0.9,
+    "archive_warning_ratio": 0.85,
+    "horizon_months": 12
+  },
+  "messages": {
+    "journal_warning": "Auto-expanding Archive ist nicht für Journaling, Transportregeln oder das Kopieren von Archivdaten mehrerer Benutzer vorgesehen.",
+    "cannot_disable_autoexpanding": "Einmal aktiviertes Auto-expanding Archiving kann laut Microsoft nicht wieder deaktiviert werden.",
+    "inactive_mailbox_warning": "Bei inaktiven Mailboxen hat Auto-expanding Archiving besondere Wiederherstellungseinschränkungen; vor Aktivierung Governance prüfen."
+  }
+}

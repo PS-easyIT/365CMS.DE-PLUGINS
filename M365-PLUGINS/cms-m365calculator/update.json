@@ -1,11 +1,11 @@
 {
-  "version": "1.0.1",
+  "version": "1.11.0",
   "download_url": "https://365network.de/plugins/cms-m365calculator/cms-m365calculator.zip",
   "requires": "2.9.0",
   "tested": "2.9.7",
   "last_updated": "2026-05-16",
   "sections": {
-    "description": "Modulare Microsoft-365-Rechner-Toolbox mit dynamischer Hub-Landingpage und Shared-Mailbox-vs.-Lizenz-Rechner.",
-    "changelog": "Dynamische PHINIT-konforme Hub-Landingpage, selbstregistrierende Tool-Registry, SVG-Icon-Helper und Route /m365-rechner ergänzt."
+    "description": "Modulare Microsoft-365-Rechner-Toolbox mit Frontline-Worker-Lizenz-Check, Copilot-Pilot-Phase-Rechner, AI-Pack-vs-Copilot-Pro-Vergleich, Archive-Mailbox-Rechner, Annual-vs-Monthly Commitment Rechner, Lizenz- und Add-on-Matrizen, Add-On-Konfigurator, M365-Lizenzvergleich, M365-Lizenzberater, Copilot ROI-Rechner, Shared-Mailbox-Rechner und Copilot Lizenz-Pflicht-Checker.",
+    "changelog": "Frontline Worker Lizenz-Eignung-Check unter /frontline-worker-lizenz-check ergänzt. Neue Kataloge für Rollenprofile, Gerätemodelle, Planbewertung und Branchenpresets. Engine, Public Template, Frontend-Route und Tool-Registry auf Version 1.11.0 erweitert."
   }
 }

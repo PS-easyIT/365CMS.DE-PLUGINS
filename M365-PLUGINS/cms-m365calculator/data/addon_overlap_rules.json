@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "source_checked": "2026-05-16",
+    "description": "Redundanz-, Kombinations- und Upgrade-Regeln für den M365 Add-On-Konfigurator"
+  },
+  "mutual_exclusions": [
+    {
+      "addons": ["teams-calling-plan-domestic", "teams-calling-plan-international", "teams-calling-plan-payg"],
+      "message": "Pro Nutzer sollte nur ein Microsoft-Calling-Plan-Modell angesetzt werden: Domestic, International oder Pay-as-you-go."
+    },
+    {
+      "addons": ["m365-copilot-business", "m365-copilot"],
+      "message": "Business- und Enterprise-Copilot-Add-on nicht parallel für dieselbe Nutzergruppe kalkulieren."
+    }
+  ],
+  "upgrade_recommendations": [
+    {
+      "base_plan": "m365-business-basic",
+      "target_plan": "m365-business-premium",
+      "addons_any": ["intune-plan-1", "entra-id-p1", "defender-for-business"],
+      "addons_min_count": 2,
+      "reason": "Mehrere Security-/Management-Add-ons auf Business Basic sprechen meist für Business Premium statt Einzelstapel."
+    },
+    {
+      "base_plan": "m365-business-standard",
+      "target_plan": "m365-business-premium",
+      "addons_any": ["intune-plan-1", "entra-id-p1", "defender-for-business"],
+      "addons_min_count": 2,
+      "reason": "Business Premium bündelt Intune, Entra ID P1 und Defender for Business oft sauberer als einzelne Add-ons."
+    },
+    {
+      "base_plan": "office-365-e3",
+      "target_plan": "office-365-e5",
+      "addons_any": ["teams-phone-standard", "power-bi-pro", "audio-conferencing", "defender-for-office-365-plan-2"],
+      "addons_min_count": 2,
+      "reason": "Bei Office 365 E3 können Telefonie-, Audio-, BI- und Security-Add-ons zusammen Richtung E5 kippen."
+    },
+    {
+      "base_plan": "m365-e3",
+      "target_plan": "m365-e5",
+      "addons_any": ["teams-phone-standard", "power-bi-pro", "entra-id-p2", "defender-for-office-365-plan-2"],
+      "addons_min_count": 2,
+      "reason": "Bei Microsoft 365 E3 ist E5 oft der sauberere Zielzustand, wenn Phone System, Power BI und Premium Security zusammenkommen."
+    },
+    {
+      "base_plan": "exchange-online-plan-1",
+      "target_plan": "exchange-online-plan-2",
+      "addons_any": ["exchange-online-archiving"],
+      "addons_min_count": 1,
+      "reason": "Für dauerhafte Archivierungsanforderungen ist Exchange Online Plan 2 häufig der klarere Basisplan."
+    }
+  ],
+  "auto_add_rules": [
+    {
+      "when_addon": "teams-phone-standard",
+      "when_parameter": "pstn_provider",
+      "when_value": "microsoft",
+      "parameter_map": {
+        "calling_plan_domestic": "teams-calling-plan-domestic",
+        "calling_plan_international": "teams-calling-plan-international",
+        "calling_plan_payg": "teams-calling-plan-payg"
+      },
+      "message": "Microsoft als PSTN-Anbieter benötigt zusätzlich einen passenden Calling Plan oder Pay-as-you-go-Pfad."
+    },
+    {
+      "when_parameter": "resource_accounts",
+      "minimum": 1,
+      "add_addon": "teams-phone-resource-account",
+      "message": "Resource Accounts benötigen die no-cost Teams Phone Resource Account SKU."
+    },
+    {
+      "when_parameter": "premium_connectors",
+      "equals": true,
+      "add_addon": "power-apps-premium",
+      "unless_any_selected": ["power-apps-premium", "power-automate-premium"],
+      "message": "Premium-, Custom- oder On-Premises-Connectoren benötigen einen Standalone-Power-Platform-Premium-Pfad."
+    },
+    {
+      "when_parameter": "dataverse_required",
+      "equals": true,
+      "add_addon": "power-apps-premium",
+      "unless_any_selected": ["power-apps-premium", "power-automate-premium"],
+      "message": "Dataverse für eigene Apps ist nicht durch die begrenzten M365-Dataverse-Servicepläne abgedeckt."
+    }
+  ],
+  "global_warnings": [
+    "Add-ons in New Commerce sind eigenständige Product/SKUs mit eigenen Laufzeiten; Co-Terminierung aktiv prüfen.",
+    "Preise sind Pflegewerte. Verfügbarkeit, Kanal, Segment und Land müssen vor Bestellung gegen Partner Center oder Microsoft-Angebot geprüft werden.",
+    "Ein vorhandener M365-Plan bedeutet nicht automatisch Premium-Connector-, Dataverse- oder Copilot-Produktionsrechte."
+  ],
+  "sources": [
+    "https://learn.microsoft.com/en-us/partner-center/customers/new-commerce-add-ons",
+    "https://learn.microsoft.com/en-us/partner-center/pricing/pricing-and-offers",
+    "https://learn.microsoft.com/en-us/microsoftteams/teams-phone-licensing",
+    "https://learn.microsoft.com/en-us/microsoftteams/teams-add-on-licensing/microsoft-teams-add-on-licensing",
+    "https://learn.microsoft.com/en-us/microsoftteams/teams-add-on-licensing/virtual-user",
+    "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-licensing",
+    "https://learn.microsoft.com/en-us/power-platform/admin/powerapps-flow-licensing-faq"
+  ]
+}

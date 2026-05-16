@@ -2,8 +2,8 @@
 /**
  * Plugin Name: CMS M365 Calculator
  * Plugin URI: https://365network.de/cms-m365calculator
- * Description: Modulare Microsoft-365-Rechner-Toolbox mit Shared-Mailbox-vs.-Lizenz-Rechner und vorbereiteter Modularchitektur.
- * Version: 1.0.1
+ * Description: Modulare Microsoft-365-Rechner-Toolbox mit Exchange-Online-ROI-Rechner, Frontline-Worker-Lizenz-Check, Copilot-Pilot-Phase-Rechner, AI-Pack-vs-Copilot-Pro-Vergleich, Archive-Mailbox-, Annual-vs-Monthly-Rechner, Lizenz- und Add-on-Matrizen, Add-On-Konfigurator, Lizenzvergleich, Lizenzberater, Copilot ROI-Rechner, Shared-Mailbox- und Copilot-Lizenz-Pflicht-Checker.
+ * Version: 1.12.0
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_M365CALCULATOR_VERSION', '1.0.1');
+define('CMS_M365CALCULATOR_VERSION', '1.12.0');
 define('CMS_M365CALCULATOR_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_M365CALCULATOR_PLUGIN_URL', '/plugins/cms-m365calculator/');
 
@@ -42,9 +42,23 @@ final class CMS_M365CALCULATOR
 
         $files = [
             $inc . 'class-catalog.php',
+            $inc . 'class-installer.php',
+            $inc . 'class-settings.php',
             $inc . 'class-icons.php',
             $inc . 'class-tool-registry.php',
+            $inc . 'class-license-comparison.php',
+            $inc . 'class-readonly-matrices.php',
+            $inc . 'class-commitment-calculator.php',
+            $inc . 'class-archive-mailbox-calculator.php',
+            $inc . 'class-ai-product-comparison.php',
+            $inc . 'class-copilot-pilot-calculator.php',
+            $inc . 'class-frontline-worker-check.php',
+            $inc . 'class-exchange-online-roi-calculator.php',
+            $inc . 'class-addon-configurator.php',
+            $inc . 'class-license-advisor.php',
             $inc . 'class-shared-mailbox-calculator.php',
+            $inc . 'class-copilot-license-checker.php',
+            $inc . 'class-copilot-roi-calculator.php',
             $inc . 'class-frontend.php',
             $admin . 'class-admin-menu.php',
             $admin . 'class-admin-pages.php',
@@ -71,6 +85,7 @@ final class CMS_M365CALCULATOR
 
     public function init_plugin(): void
     {
+        CMS_M365CALCULATOR_Installer::maybe_install();
         CMS_M365CALCULATOR_Frontend::instance();
     }
 
@@ -80,6 +95,7 @@ final class CMS_M365CALCULATOR
             return;
         }
 
+        CMS_M365CALCULATOR_Installer::install();
         CMS_M365CALCULATOR_Frontend::instance();
     }
 }

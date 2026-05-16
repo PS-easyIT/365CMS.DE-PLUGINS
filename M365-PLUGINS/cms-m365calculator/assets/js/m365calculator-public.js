@@ -12,7 +12,7 @@
 
     function initResultFocus() {
         var result = document.querySelector('[data-m365calc-result]');
-        if (!result || !window.location.pathname.includes('shared-mailbox-vs-lizenz')) {
+        if (!result) {
             return;
         }
 

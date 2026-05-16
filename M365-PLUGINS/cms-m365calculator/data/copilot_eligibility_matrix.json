@@ -1,0 +1,72 @@
+{
+  "version": "2026-05-16",
+  "source_checked_at": "2026-05-16",
+  "sources": [
+    "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-licensing",
+    "https://learn.microsoft.com/en-us/copilot/manage#microsoft-365-copilot-chat-eligibility",
+    "https://learn.microsoft.com/en-us/office365/servicedescriptions/office-365-platform-service-description/microsoft-365-copilot"
+  ],
+  "segments": {
+    "commercial": {
+      "label": "Commercial",
+      "plans": {
+        "m365-business-basic": {"name": "Microsoft 365 Business Basic", "eligible_full": true, "eligible_business": true, "eligible_chat": true, "monthly_price": 5.60, "notes": ["Berechtigte Basislizenz für Microsoft 365 Copilot Add-on.", "Desktop-Apps sind nicht enthalten; App-Readiness separat prüfen."]},
+        "m365-business-standard": {"name": "Microsoft 365 Business Standard", "eligible_full": true, "eligible_business": true, "eligible_chat": true, "monthly_price": 11.70, "notes": ["Berechtigte Business-Basislizenz."]},
+        "m365-business-premium": {"name": "Microsoft 365 Business Premium", "eligible_full": true, "eligible_business": true, "eligible_chat": true, "monthly_price": 20.60, "notes": ["Berechtigte Business-Basislizenz mit erweiterten Sicherheitsfunktionen."]},
+        "m365-apps-business": {"name": "Microsoft 365 Apps for business", "eligible_full": true, "eligible_business": true, "eligible_chat": false, "monthly_price": 9.80, "notes": ["Berechtigte Basis für das Add-on, aber Exchange/OneDrive müssen technisch separat vorhanden sein."]},
+        "m365-apps-enterprise": {"name": "Microsoft 365 Apps for enterprise", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 12.80, "notes": ["Berechtigte Basis für das Add-on, technische Dienste separat prüfen."]},
+        "m365-e3": {"name": "Microsoft 365 E3", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 33.70, "notes": ["Berechtigte Enterprise-Basislizenz."]},
+        "m365-e5": {"name": "Microsoft 365 E5", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 53.70, "notes": ["Berechtigte Enterprise-Basislizenz."]},
+        "m365-f1": {"name": "Microsoft 365 F1", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 2.10, "notes": ["Berechtigte Frontline-Basis; Funktionsumfang und App-Readiness prüfen."]},
+        "m365-f3": {"name": "Microsoft 365 F3", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 7.50, "notes": ["Berechtigte Frontline-Basis; Funktionsumfang und App-Readiness prüfen."]},
+        "office-e1": {"name": "Office 365 E1", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 9.40, "notes": ["Berechtigte Office-Basis; Desktop-Apps fehlen."]},
+        "office-e3": {"name": "Office 365 E3", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 23.10, "notes": ["Berechtigte Office-Basis."]},
+        "office-e5": {"name": "Office 365 E5", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 37.70, "notes": ["Berechtigte Office-Basis."]},
+        "office-f3": {"name": "Office 365 F3", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 3.70, "notes": ["Berechtigte Frontline-Basis; Funktionsumfang prüfen."]},
+        "teams-essentials": {"name": "Microsoft Teams Essentials", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 3.70, "notes": ["Berechtigte Basis laut Lizenzoptionen; Exchange/Apps/OneDrive separat prüfen."]},
+        "teams-enterprise": {"name": "Microsoft Teams Enterprise", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 5.25, "notes": ["Berechtigte Teams-Basis; technische M365-Dienste separat prüfen."]},
+        "exchange-kiosk": {"name": "Exchange Kiosk", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 1.90, "notes": ["Berechtigte Basis; App- und OneDrive-Voraussetzungen meist nicht erfüllt."]},
+        "exchange-plan-1": {"name": "Exchange Online Plan 1", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 3.70, "notes": ["Berechtigte Exchange-Basis; Apps/OneDrive separat prüfen."]},
+        "exchange-plan-2": {"name": "Exchange Online Plan 2", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 7.50, "notes": ["Berechtigte Exchange-Basis; Apps/OneDrive separat prüfen."]},
+        "sharepoint-plan-1": {"name": "SharePoint Online Plan 1", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 4.70, "notes": ["Berechtigte Basis; Exchange-Primärpostfach und Apps separat prüfen."]},
+        "sharepoint-plan-2": {"name": "SharePoint Online Plan 2", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 9.40, "notes": ["Berechtigte Basis; Exchange-Primärpostfach und Apps separat prüfen."]},
+        "onedrive-plan-1": {"name": "OneDrive for work and school Plan 1", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 4.70, "notes": ["Berechtigte Basis; Exchange-Primärpostfach und Apps separat prüfen."]},
+        "onedrive-plan-2": {"name": "OneDrive for work and school Plan 2", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 9.40, "notes": ["Berechtigte Basis; Exchange-Primärpostfach und Apps separat prüfen."]},
+        "planner-plan-1": {"name": "Microsoft Planner Plan 1", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 9.40, "notes": ["Berechtigte Basis; M365-Dienstvoraussetzungen separat prüfen."]},
+        "project-plan-3": {"name": "Microsoft Project Plan 3", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 28.10, "notes": ["Berechtigte Basis; M365-Dienstvoraussetzungen separat prüfen."]},
+        "project-plan-5": {"name": "Microsoft Project Plan 5", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 51.50, "notes": ["Berechtigte Basis; M365-Dienstvoraussetzungen separat prüfen."]},
+        "visio-plan-1": {"name": "Visio Plan 1", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 4.70, "notes": ["Berechtigte Basis; M365-Dienstvoraussetzungen separat prüfen."]},
+        "visio-plan-2": {"name": "Visio Plan 2", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 14.00, "notes": ["Berechtigte Basis; M365-Dienstvoraussetzungen separat prüfen."]},
+        "clipchamp": {"name": "Microsoft Clipchamp", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 0.00, "notes": ["Berechtigte Basis laut Lizenzoptionen; Praxiseignung und technische Voraussetzungen separat prüfen."]},
+        "none-or-unknown": {"name": "Keine / unbekannte Lizenz", "eligible_full": false, "eligible_business": false, "eligible_chat": false, "monthly_price": 0.00, "notes": ["Keine belastbare Copilot-Basis erkannt."]}
+      }
+    },
+    "government": {
+      "label": "Government",
+      "plans": {
+        "m365-g3": {"name": "Microsoft 365 G3", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 0.00, "notes": ["Berechtigte Government-Basis; Cloud-Feature-Verfügbarkeit separat prüfen."]},
+        "m365-g5": {"name": "Microsoft 365 G5", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 0.00, "notes": ["Berechtigte Government-Basis; Cloud-Feature-Verfügbarkeit separat prüfen."]},
+        "m365-f1": {"name": "Microsoft 365 F1", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 0.00, "notes": ["Berechtigte Government-/Frontline-Basis; Spezialpfad prüfen."]},
+        "office-g1": {"name": "Office 365 G1", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 0.00, "notes": ["Berechtigte Government-Basis; App-Readiness prüfen."]},
+        "office-g3": {"name": "Office 365 G3", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 0.00, "notes": ["Berechtigte Government-Basis."]},
+        "office-g5": {"name": "Office 365 G5", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 0.00, "notes": ["Berechtigte Government-Basis."]},
+        "office-f3": {"name": "Office 365 F3", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 0.00, "notes": ["Berechtigte Government-/Frontline-Basis; Spezialpfad prüfen."]},
+        "exchange-plan-1": {"name": "Exchange Online Plan 1", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 0.00, "notes": ["Berechtigte Government-Basis; Apps/OneDrive separat prüfen."]},
+        "exchange-plan-2": {"name": "Exchange Online Plan 2", "eligible_full": true, "eligible_business": false, "eligible_chat": false, "monthly_price": 0.00, "notes": ["Berechtigte Government-Basis; Apps/OneDrive separat prüfen."]},
+        "none-or-unknown": {"name": "Keine / unbekannte Government-Lizenz", "eligible_full": false, "eligible_business": false, "eligible_chat": false, "monthly_price": 0.00, "notes": ["Government-Szenario manuell gegen aktuelle Microsoft-Liste prüfen."]}
+      }
+    },
+    "education": {
+      "label": "Education",
+      "plans": {
+        "m365-a1": {"name": "Microsoft 365 A1", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 0.00, "notes": ["Berechtigte Education-Basis; Alters-/Rollenvorgaben beachten."]},
+        "m365-a3": {"name": "Microsoft 365 A3", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 0.00, "notes": ["Berechtigte Education-Basis."]},
+        "m365-a5": {"name": "Microsoft 365 A5", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 0.00, "notes": ["Berechtigte Education-Basis."]},
+        "office-a1": {"name": "Office 365 A1", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 0.00, "notes": ["Berechtigte Education-Basis; App-Readiness prüfen."]},
+        "office-a3": {"name": "Office 365 A3", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 0.00, "notes": ["Berechtigte Education-Basis."]},
+        "office-a5": {"name": "Office 365 A5", "eligible_full": true, "eligible_business": false, "eligible_chat": true, "monthly_price": 0.00, "notes": ["Berechtigte Education-Basis."]},
+        "none-or-unknown": {"name": "Keine / unbekannte Education-Lizenz", "eligible_full": false, "eligible_business": false, "eligible_chat": false, "monthly_price": 0.00, "notes": ["Education-Szenario manuell gegen aktuelle Microsoft-Liste prüfen."]}
+      }
+    }
+  }
+}

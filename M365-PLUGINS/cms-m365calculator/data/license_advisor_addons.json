@@ -1,0 +1,166 @@
+{
+  "meta": {
+    "source": "Migrated from cms-m365lic package seeds plus Microsoft Learn guardrails",
+    "source_checked": "2026-05-15",
+    "currency": "EUR"
+  },
+  "addons": [
+    {
+      "slug": "copilot-chat-included",
+      "name": "Microsoft 365 Copilot Chat",
+      "feature": "copilot_chat",
+      "price_month": 0.00,
+      "pricing_basis": "per_user",
+      "prerequisite_tags": ["copilot_chat_eligible"],
+      "redundant_if_features": ["copilot_chat"],
+      "source_note": "Microsoft Learn: web-based Copilot Chat is included for eligible Microsoft 365 subscriptions."
+    },
+    {
+      "slug": "m365-copilot-business",
+      "name": "Microsoft 365 Copilot Business",
+      "feature": "copilot_m365",
+      "price_month": 18.20,
+      "pricing_basis": "per_user",
+      "prerequisite_tags": ["copilot_business_eligible"],
+      "hard_requirements": ["entra_id", "exchange_online_primary_mailbox", "m365_apps", "onedrive"],
+      "source_note": "Migrated cms-m365lic EUR reference price; Microsoft Learn: Copilot is an add-on with eligible base license."
+    },
+    {
+      "slug": "m365-copilot",
+      "name": "Microsoft 365 Copilot",
+      "feature": "copilot_m365",
+      "price_month": 26.00,
+      "pricing_basis": "per_user",
+      "prerequisite_tags": ["copilot_enterprise_eligible"],
+      "hard_requirements": ["entra_id", "exchange_online_primary_mailbox", "m365_apps", "onedrive"],
+      "source_note": "Migrated cms-m365lic EUR reference price; Microsoft Learn: primary Exchange Online mailbox required."
+    },
+    {
+      "slug": "teams-phone",
+      "name": "Microsoft Teams Phone Standard",
+      "feature": "phone_system",
+      "price_month": 8.70,
+      "pricing_basis": "per_user",
+      "prerequisite_tags": ["teams"],
+      "redundant_if_tags": ["phone_system_included"],
+      "source_note": "Migrated cms-m365lic EUR reference price; Microsoft Learn: E5 paths include Phone System."
+    },
+    {
+      "slug": "teams-phone-resource-account",
+      "name": "Microsoft Teams Phone Resource Account",
+      "feature": "resource_account",
+      "price_month": 0.00,
+      "pricing_basis": "flat_monthly",
+      "prerequisite_tags": ["teams"],
+      "source_note": "Microsoft Learn: resource account licenses are no-cost but must still be purchased/assigned; do not assign Teams Phone Standard to resource accounts."
+    },
+    {
+      "slug": "teams-premium",
+      "name": "Microsoft Teams Premium",
+      "feature": "teams_premium",
+      "price_month": 8.70,
+      "pricing_basis": "per_user",
+      "prerequisite_tags": ["teams"],
+      "source_note": "Migrated cms-m365lic EUR reference price."
+    },
+    {
+      "slug": "power-apps-premium",
+      "name": "Power Apps Premium",
+      "feature": "power_apps",
+      "price_month": 17.30,
+      "pricing_basis": "per_user",
+      "prerequisite_tags": [],
+      "source_note": "Migrated cms-m365lic EUR reference price; Microsoft Learn lists Power Apps Premium at USD 20 user/month."
+    },
+    {
+      "slug": "power-automate-premium",
+      "name": "Power Automate Premium",
+      "feature": "automation",
+      "price_month": 13.00,
+      "pricing_basis": "per_user",
+      "prerequisite_tags": [],
+      "source_note": "Migrated cms-m365lic EUR reference price; Microsoft Learn lists Power Automate Premium at USD 15 user/month."
+    },
+    {
+      "slug": "power-bi-pro",
+      "name": "Power BI Pro",
+      "feature": "power_bi",
+      "price_month": 12.10,
+      "pricing_basis": "per_user",
+      "prerequisite_tags": [],
+      "source_note": "Migrated cms-m365lic EUR reference price; Power BI Pro is included in E5 paths."
+    },
+    {
+      "slug": "intune-plan-1",
+      "name": "Microsoft Intune Plan 1",
+      "feature": "intune",
+      "price_month": 6.90,
+      "pricing_basis": "per_user",
+      "prerequisite_tags": [],
+      "source_note": "Migrated cms-m365lic EUR reference price."
+    },
+    {
+      "slug": "entra-id-p1",
+      "name": "Microsoft Entra ID P1",
+      "feature": "entra_id_p1",
+      "price_month": 5.20,
+      "pricing_basis": "per_user",
+      "prerequisite_tags": [],
+      "source_note": "Migrated cms-m365lic EUR reference price."
+    },
+    {
+      "slug": "entra-id-p2",
+      "name": "Microsoft Entra ID P2",
+      "feature": "entra_id_p2",
+      "price_month": 7.80,
+      "pricing_basis": "per_user",
+      "prerequisite_tags": [],
+      "source_note": "Migrated cms-m365lic EUR reference price."
+    },
+    {
+      "slug": "defender-for-business",
+      "name": "Microsoft Defender for Business",
+      "feature": "defender",
+      "price_month": 2.60,
+      "pricing_basis": "per_user",
+      "prerequisite_tags": ["business", "smb"],
+      "source_note": "Migrated cms-m365lic EUR reference price."
+    },
+    {
+      "slug": "defender-for-office-365-plan-1",
+      "name": "Defender for Office 365 Plan 1",
+      "feature": "defender_office_p1",
+      "price_month": 1.73,
+      "pricing_basis": "per_user",
+      "prerequisite_tags": ["exchange", "m365", "office365"],
+      "source_note": "Migrated cms-m365lic EUR reference price."
+    },
+    {
+      "slug": "defender-for-office-365-plan-2",
+      "name": "Defender for Office 365 Plan 2",
+      "feature": "defender_office_p2",
+      "price_month": 4.30,
+      "pricing_basis": "per_user",
+      "prerequisite_tags": ["exchange", "m365", "office365"],
+      "source_note": "Migrated cms-m365lic EUR reference price."
+    },
+    {
+      "slug": "exchange-online-archiving",
+      "name": "Exchange Online Archiving",
+      "feature": "archive",
+      "price_month": 3.00,
+      "pricing_basis": "per_user",
+      "prerequisite_tags": ["exchange"],
+      "source_note": "Migrated cms-m365lic public reference price."
+    },
+    {
+      "slug": "sharepoint-extra-storage",
+      "name": "Office 365 Extra File Storage",
+      "feature": "sharepoint_storage",
+      "price_month": null,
+      "pricing_basis": "per_gb",
+      "prerequisite_tags": ["sharepoint", "m365", "office365"],
+      "source_note": "Microsoft Learn: SharePoint tenant storage starts at 1 TB plus 10 GB per qualifying license; extra storage is bought in 1 GB increments."
+    }
+  ]
+}

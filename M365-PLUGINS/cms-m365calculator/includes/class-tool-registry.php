@@ -21,7 +21,7 @@ final class CMS_M365CALCULATOR_Tool_Registry
     /**
      * Module registrieren sich über diese Methode.
      *
-     * Beispiel für ein späteres m365lic-Modul:
+    * Beispiel für ein Modul:
      * CMS_M365CALCULATOR_Tool_Registry::register([
      *     'key' => 'm365lic',
      *     'title' => 'Microsoft 365 Lizenzberater',
@@ -47,7 +47,7 @@ final class CMS_M365CALCULATOR_Tool_Registry
     /**
      * @return array<string,array<string,mixed>>
      */
-    public static function tools(): array
+    public static function tools(bool $applySettings = true): array
     {
         self::bootstrap();
 
@@ -62,7 +62,9 @@ final class CMS_M365CALCULATOR_Tool_Registry
             }
         }
 
-        return self::$tools;
+        return $applySettings && class_exists('CMS_M365CALCULATOR_Settings')
+            ? CMS_M365CALCULATOR_Settings::apply_to_tools(self::$tools)
+            : self::$tools;
     }
 
     /**
@@ -94,9 +96,9 @@ final class CMS_M365CALCULATOR_Tool_Registry
     /**
      * @return array<int,array<string,mixed>>
      */
-    public static function ordered_tools(): array
+    public static function ordered_tools(bool $applySettings = true): array
     {
-        $tools = array_values(self::tools());
+        $tools = array_values(self::tools($applySettings));
         $statusOrder = ['live' => 0, 'beta' => 1, 'soon' => 2];
 
         usort($tools, static function (array $left, array $right) use ($statusOrder): int {
@@ -126,6 +128,187 @@ final class CMS_M365CALCULATOR_Tool_Registry
         self::$bootstrapped = true;
 
         self::register_shared_mailbox_module();
+        self::register_readonly_suite_matrix_module();
+        self::register_license_comparison_module();
+        self::register_readonly_addon_matrix_module();
+        self::register_addon_configurator_module();
+        self::register_commitment_calculator_module();
+        self::register_archive_mailbox_calculator_module();
+        self::register_ai_product_comparison_module();
+        self::register_copilot_pilot_calculator_module();
+        self::register_frontline_worker_license_check_module();
+        self::register_exchange_online_roi_module();
+        self::register_license_advisor_module();
+        self::register_copilot_license_checker_module();
+        self::register_copilot_roi_module();
+    }
+
+    private static function register_addon_configurator_module(): void
+    {
+        self::register([
+            'key' => 'm365-add-on-konfigurator',
+            'title' => 'M365 Add-On-Konfigurator',
+            'description' => 'Prüft Add-ons, Prerequisites, Redundanzen, Verbrauchsprodukte und Upgrade-Alternativen für Microsoft 365.',
+            'icon' => 'addons',
+            'url' => '/m365-add-on-konfigurator',
+            'category' => 'Lizenzen',
+            'status' => 'live',
+            'priority' => 4,
+        ]);
+    }
+
+    private static function register_commitment_calculator_module(): void
+    {
+        self::register([
+            'key' => 'm365-commitment-calculator',
+            'title' => 'Annual vs. Monthly Commitment Rechner',
+            'description' => 'Vergleicht Monatslaufzeit, Jahresbindung, jährliche Abrechnung und Split-Strategie für variable Microsoft-365-Seats.',
+            'icon' => 'calculator',
+            'url' => '/m365-jahresvertrag-vs-monatsvertrag',
+            'category' => 'Lizenzen',
+            'status' => 'live',
+            'priority' => 6,
+        ]);
+    }
+
+    private static function register_archive_mailbox_calculator_module(): void
+    {
+        self::register([
+            'key' => 'm365-archive-mailbox',
+            'title' => 'Archive Mailbox Rechner',
+            'description' => 'Prüft Archivgröße, Auto-expanding Archive, Shared-Mailbox-Sonderfälle, Hold und passende Exchange-/M365-Lizenzpfade.',
+            'icon' => 'mailbox',
+            'url' => '/m365-archive-mailbox-rechner',
+            'category' => 'Exchange',
+            'status' => 'live',
+            'priority' => 8,
+        ]);
+    }
+
+    private static function register_ai_product_comparison_module(): void
+    {
+        self::register([
+            'key' => 'ai-pack-vs-copilot-pro',
+            'title' => 'AI Pack vs. Copilot Pro Vergleich',
+            'description' => 'Vergleicht Copilot Chat, Microsoft 365 Copilot, Spezial-Copilots, Copilot Studio und dynamische AI-Angebote nach Use Case.',
+            'icon' => 'copilot',
+            'url' => '/ai-pack-vs-copilot-pro',
+            'category' => 'Copilot',
+            'status' => 'live',
+            'priority' => 12,
+        ]);
+    }
+
+    private static function register_copilot_pilot_calculator_module(): void
+    {
+        self::register([
+            'key' => 'copilot-pilot-calculator',
+            'title' => 'Copilot Pilot-Phase-Rechner',
+            'description' => 'Empfiehlt Pilotgröße, Dauer, Budgetrahmen, Champion-Bedarf und Governance-Schritte für Microsoft 365 Copilot.',
+            'icon' => 'copilot',
+            'url' => '/copilot-pilot-rechner',
+            'category' => 'Copilot',
+            'status' => 'live',
+            'priority' => 13,
+        ]);
+    }
+
+    private static function register_frontline_worker_license_check_module(): void
+    {
+        self::register([
+            'key' => 'frontline-worker-license-check',
+            'title' => 'Frontline Worker Lizenz-Eignung-Check',
+            'description' => 'Prüft F1, F3, Mischmodell oder Enterprise-Bedarf für mobile, schichtbasierte und deskless Nutzergruppen.',
+            'icon' => 'license',
+            'url' => '/frontline-worker-lizenz-check',
+            'category' => 'Lizenzen',
+            'status' => 'live',
+            'priority' => 7,
+        ]);
+    }
+
+    private static function register_exchange_online_roi_module(): void
+    {
+        self::register([
+            'key' => 'exchange-online-roi',
+            'title' => 'On-Prem Exchange zu Exchange Online ROI',
+            'description' => 'Berechnet Vollkosten, Break-even, Migrationspfad und Management-Fazit für Exchange Online.',
+            'icon' => 'roi',
+            'url' => '/exchange-online-roi',
+            'category' => 'Exchange',
+            'status' => 'live',
+            'priority' => 7,
+        ]);
+    }
+
+    private static function register_readonly_suite_matrix_module(): void
+    {
+        self::register([
+            'key' => 'm365-lizenzmatrix',
+            'title' => 'M365 Lizenzmatrix',
+            'description' => 'Gesamtübersicht der Microsoft-365-Vollpakete von Business Basic bis Microsoft 365 E5.',
+            'icon' => 'comparison',
+            'url' => '/m365-lizenzmatrix',
+            'category' => 'Lizenzen',
+            'status' => 'live',
+            'priority' => 2,
+        ]);
+    }
+
+    private static function register_readonly_addon_matrix_module(): void
+    {
+        self::register([
+            'key' => 'm365-addon-matrix',
+            'title' => 'M365 Add-on-Matrix',
+            'description' => 'Gesamtübersicht der Microsoft-365-Add-ons inklusive Exchange, Teams, Copilot, Intune, Entra ID, Defender, Purview und Power Platform.',
+            'icon' => 'addons',
+            'url' => '/m365-addon-matrix',
+            'category' => 'Lizenzen',
+            'status' => 'live',
+            'priority' => 4,
+        ]);
+    }
+
+    private static function register_license_comparison_module(): void
+    {
+        self::register([
+            'key' => 'm365-lizenzvergleich',
+            'title' => 'M365-Lizenzvergleich',
+            'description' => 'Vergleicht Microsoft-365-Pläne nach Desktop Apps, Mail, Teams, Copilot, Security, Power Platform und Zusatzdiensten.',
+            'icon' => 'comparison',
+            'url' => '/m365-lizenzvergleich',
+            'category' => 'Lizenzen',
+            'status' => 'live',
+            'priority' => 3,
+        ]);
+    }
+
+    private static function register_copilot_roi_module(): void
+    {
+        self::register([
+            'key' => 'copilot-roi',
+            'title' => 'Copilot ROI-Rechner',
+            'description' => 'Berechnet Business Case, Break-even-Minuten und Pilot- oder Rollout-Empfehlung für Microsoft 365 Copilot.',
+            'icon' => 'roi',
+            'url' => '/copilot-roi-rechner',
+            'category' => 'Copilot',
+            'status' => 'live',
+            'priority' => 15,
+        ]);
+    }
+
+    private static function register_license_advisor_module(): void
+    {
+        self::register([
+            'key' => 'm365lic',
+            'title' => 'M365-Lizenz-Berater',
+            'description' => 'Empfiehlt Basislizenzen, Add-ons und Mischmodelle für konkrete Microsoft-365-Anforderungen.',
+            'icon' => 'license',
+            'url' => '/m365-lizenzberater',
+            'category' => 'Lizenzen',
+            'status' => 'live',
+            'priority' => 5,
+        ]);
     }
 
     private static function register_shared_mailbox_module(): void
@@ -139,6 +322,20 @@ final class CMS_M365CALCULATOR_Tool_Registry
             'category' => 'Lizenzen',
             'status' => 'live',
             'priority' => 10,
+        ]);
+    }
+
+    private static function register_copilot_license_checker_module(): void
+    {
+        self::register([
+            'key' => 'copilot-license-check',
+            'title' => 'Copilot Lizenz-Pflicht-Checker',
+            'description' => 'Prüft Basislizenz, Copilot-Chat-Status und technische Readiness für Microsoft 365 Copilot.',
+            'icon' => 'copilot',
+            'url' => '/copilot-lizenz-check',
+            'category' => 'Lizenzen',
+            'status' => 'live',
+            'priority' => 20,
         ]);
     }
 

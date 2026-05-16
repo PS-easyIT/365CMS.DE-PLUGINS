@@ -1,0 +1,254 @@
+{
+  "meta": {
+    "source": "Microsoft Learn and Microsoft licensing pages, combined with migrated cms-m365lic plan catalog",
+    "source_checked": "2026-05-15",
+    "status_model": ["included", "partial", "addon", "prerequisite", "not_included"],
+    "sources": [
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-licensing",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-requirements",
+      "https://learn.microsoft.com/en-us/microsoftteams/teams-phone-licensing",
+      "https://learn.microsoft.com/en-us/microsoftteams/teams-add-on-licensing/microsoft-teams-add-on-licensing",
+      "https://learn.microsoft.com/en-us/power-platform/admin/powerapps-flow-licensing-faq",
+      "https://learn.microsoft.com/en-us/power-platform/admin/pricing-billing-skus",
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
+      "https://learn.microsoft.com/en-us/partner-center/pricing/pricing-and-offers",
+      "https://www.microsoft.com/en-us/licensing/news/Microsoft365-Teams-2025",
+      "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates"
+    ]
+  },
+  "status_labels": {
+    "included": "Enthalten",
+    "partial": "Teilweise",
+    "addon": "Add-on nötig",
+    "prerequisite": "Voraussetzung prüfen",
+    "not_included": "Nicht enthalten"
+  },
+  "status_short_labels": {
+    "included": "Ja",
+    "partial": "Teilweise",
+    "addon": "Add-on",
+    "prerequisite": "Voraussetzung",
+    "not_included": "Nein"
+  },
+  "feature_groups": [
+    { "key": "apps", "label": "Apps & Office" },
+    { "key": "mail", "label": "E-Mail & Kalender" },
+    { "key": "collaboration", "label": "Zusammenarbeit" },
+    { "key": "storage", "label": "Dateien & Speicher" },
+    { "key": "security", "label": "Security, Identität & Geräte" },
+    { "key": "power", "label": "Power Platform & Analytics" },
+    { "key": "ai", "label": "KI, Copilot & Zusatzdienste" },
+    { "key": "commercial", "label": "Kauf- und Servicehinweise" }
+  ],
+  "features": {
+    "office_web": {
+      "label": "Office Web Apps",
+      "group": "apps",
+      "description": "Word, Excel, PowerPoint und weitere Office-Webfunktionen im Browser.",
+      "included_if_features": ["office_web"]
+    },
+    "office_desktop": {
+      "label": "Desktop Apps",
+      "group": "apps",
+      "description": "Installierbare Microsoft 365 Apps für Windows und Mac.",
+      "included_if_features": ["office_desktop"]
+    },
+    "shared_computer_activation": {
+      "label": "Shared Computer Activation",
+      "group": "apps",
+      "description": "Wichtig für Terminalserver, RDS, AVD oder gemeinsam genutzte Geräte.",
+      "included_if_tags": ["shared_computer_activation"],
+      "addon_if_features": ["office_desktop"]
+    },
+    "forms_bookings_stream": {
+      "label": "Forms, Bookings, Stream",
+      "group": "apps",
+      "description": "Ergänzende Produktivitäts- und Medienfunktionen.",
+      "included_if_features": ["forms", "bookings", "stream"],
+      "partial_if_features_any": ["forms", "stream"]
+    },
+    "exchange_mailbox": {
+      "label": "Exchange Online Mailbox",
+      "group": "mail",
+      "description": "Primäres Exchange-Online-Postfach für Business-Mail und Copilot-Szenarien.",
+      "included_if_features": ["mail"],
+      "included_if_tags": ["exchange"]
+    },
+    "archive_retention": {
+      "label": "Archivierung / Retention-Pfad",
+      "group": "mail",
+      "description": "Archiv- und Aufbewahrungspfad für Mailbox- und Compliance-Szenarien.",
+      "included_if_features": ["archive"],
+      "addon_if_features": ["mail"]
+    },
+    "teams_chat_meetings": {
+      "label": "Teams Chat & Meetings",
+      "group": "collaboration",
+      "description": "Teams-Funktionalität für Chat, Meetings und Zusammenarbeit.",
+      "included_if_features": ["teams"],
+      "included_if_tags": ["teams"],
+      "addon_if_tags": ["enterprise", "office365", "m365"]
+    },
+    "audio_conferencing": {
+      "label": "Audio Conferencing",
+      "group": "collaboration",
+      "description": "Einwahl in Teams-Besprechungen per Telefon.",
+      "included_if_features": ["audio_conf"],
+      "addon_if_features": ["teams"]
+    },
+    "teams_phone": {
+      "label": "Teams Phone / Phone System",
+      "group": "collaboration",
+      "description": "Cloud-PBX-Funktionen wie Rufweiterleitung, Call Queues und Auto Attendants.",
+      "included_if_features": ["phone_system"],
+      "included_if_tags": ["phone_system_included"],
+      "addon_if_features": ["teams"]
+    },
+    "pstn_calling": {
+      "label": "PSTN / Calling Plan",
+      "group": "collaboration",
+      "description": "Externe Telefonie per Microsoft Calling Plan oder Provider-Anbindung.",
+      "addon_by_default": true,
+      "default_note": "PSTN ist separat zu planen: Calling Plan, Operator Connect, Direct Routing oder Shared Calling."
+    },
+    "onedrive": {
+      "label": "OneDrive for Business",
+      "group": "storage",
+      "description": "Persönlicher Cloudspeicher und zentrale Voraussetzung für viele Copilot- und Datei-Szenarien.",
+      "included_if_features": ["onedrive"]
+    },
+    "sharepoint": {
+      "label": "SharePoint / Teams-Dateien",
+      "group": "storage",
+      "description": "Team-Sites, Dokumentbibliotheken und Teams-Dateiablage.",
+      "included_if_features": ["sharepoint"]
+    },
+    "tenant_storage": {
+      "label": "SharePoint-Tenant-Speicher",
+      "group": "storage",
+      "description": "In Microsoft 365 typischerweise 1 TB Tenant-Basis plus zusätzlicher Speicher je Lizenz; Add-on-Speicher separat möglich.",
+      "included_if_features": ["sharepoint"],
+      "partial_if_features": ["onedrive"],
+      "addon_if_features": ["mail"]
+    },
+    "intune": {
+      "label": "Intune Geräteverwaltung",
+      "group": "security",
+      "description": "Endpoint- und Mobile-Device-Management.",
+      "included_if_features": ["intune"],
+      "addon_if_tags": ["enterprise", "business", "office365"]
+    },
+    "defender_office_endpoint": {
+      "label": "Defender / Threat Protection",
+      "group": "security",
+      "description": "Microsoft Defender-Pfade für Office, Endpoint oder Suite-Abdeckung je Plan.",
+      "included_if_features": ["defender"],
+      "included_if_tags": ["security"],
+      "addon_if_tags": ["m365", "office365", "business", "enterprise"]
+    },
+    "entra_id_p1": {
+      "label": "Entra ID P1",
+      "group": "security",
+      "description": "Identity- und Access-Basisfunktionen wie Conditional-Access-Pfad.",
+      "included_if_features": ["entra_id_p1"],
+      "included_if_features_any": ["entra_id_p1", "entra_id_p2"],
+      "addon_if_tags": ["m365", "office365", "business", "enterprise"]
+    },
+    "entra_id_p2": {
+      "label": "Entra ID P2",
+      "group": "security",
+      "description": "Erweiterte Identity-Governance- und Risiko-Funktionen.",
+      "included_if_features": ["entra_id_p2"],
+      "addon_if_tags": ["m365", "office365", "business", "enterprise"]
+    },
+    "purview_compliance": {
+      "label": "Purview / Compliance-Pfad",
+      "group": "security",
+      "description": "Compliance-, eDiscovery-, Information-Protection- und Retention-Pfade.",
+      "included_if_tags": ["compliance", "premium"],
+      "partial_if_features": ["archive"],
+      "addon_if_tags": ["m365", "office365", "business", "enterprise"]
+    },
+    "windows_rights": {
+      "label": "Windows Enterprise Rechte",
+      "group": "security",
+      "description": "Windows Enterprise / Windows-Rechte als Teil von Microsoft 365 Enterprise.",
+      "included_if_features": ["windows_rights"],
+      "addon_if_tags": ["enterprise", "business"]
+    },
+    "power_apps_seeded": {
+      "label": "Power Apps seeded",
+      "group": "power",
+      "description": "M365-seeded Nutzung für Microsoft-365-Kontext und Standardconnectoren.",
+      "included_if_tags": ["seeded_power_platform"]
+    },
+    "power_automate_seeded": {
+      "label": "Power Automate seeded",
+      "group": "power",
+      "description": "Automatisierungen im Microsoft-365-Kontext mit Standardconnectoren.",
+      "included_if_tags": ["seeded_power_platform"]
+    },
+    "premium_connectors": {
+      "label": "Premium / Custom Connectors",
+      "group": "power",
+      "description": "Premium-, Custom-Connectoren und On-Premises-Gateways benötigen in der Regel Standalone-Power-Platform-Lizenzen.",
+      "addon_by_default": true
+    },
+    "dataverse": {
+      "label": "Dataverse für eigene Apps",
+      "group": "power",
+      "description": "Vollwertige Dataverse-Nutzung für eigene Apps ist nicht automatisch durch M365-seeded Rechte abgedeckt.",
+      "partial_if_tags": ["seeded_power_platform"],
+      "addon_by_default": true
+    },
+    "power_bi": {
+      "label": "Power BI Pro / Analytics",
+      "group": "power",
+      "description": "Power BI Pro oder Analytics-Rechte je Suite.",
+      "included_if_features": ["power_bi"],
+      "addon_if_tags": ["m365", "office365", "business", "enterprise"]
+    },
+    "copilot_chat": {
+      "label": "Microsoft 365 Copilot Chat",
+      "group": "ai",
+      "description": "Web-grounded Copilot Chat für berechtigte Entra-Konten.",
+      "included_if_tags": ["copilot_chat_eligible"]
+    },
+    "m365_copilot_addon": {
+      "label": "Microsoft 365 Copilot Add-on",
+      "group": "ai",
+      "description": "Vollständige M365-Copilot-Erlebnisse benötigen eine Copilot-Lizenz zusätzlich zur geeigneten Basis.",
+      "addon_if_tags": ["copilot_business_eligible", "copilot_enterprise_eligible"],
+      "missing_status": "prerequisite",
+      "missing_note": "Basislizenz oder technischer Kontext muss vor Copilot-Zuweisung geprüft werden."
+    },
+    "security_copilot": {
+      "label": "Security Copilot / E5 Security-Pfad",
+      "group": "ai",
+      "description": "Security-Copilot- und E5-Security-Pfade laut aktueller Packaging-Informationen gesondert prüfen.",
+      "overrides": {
+        "m365-e5": { "status": "partial", "note": "E5-Security-Pfad vorhanden; Rollout, Kapazität und Verfügbarkeit separat prüfen." }
+      }
+    },
+    "business_300_limit": {
+      "label": "Business 300er-Grenze",
+      "group": "commercial",
+      "description": "Business-SKUs sind typischerweise bis 300 Benutzer modelliert.",
+      "included_if_tags": ["business"],
+      "not_included_note": "Kein Business-300-Limit in diesem Plan modelliert."
+    },
+    "monthly_term_path": {
+      "label": "Monatslaufzeit / Flexibilität",
+      "group": "commercial",
+      "description": "Monatliche oder jährliche Laufzeiten hängen von SKU, Kanal und Markt ab.",
+      "included_if_terms": ["P1M"],
+      "partial_if_terms": ["P1Y"]
+    },
+    "frontline_context": {
+      "label": "Frontline-Kontext",
+      "group": "commercial",
+      "description": "Frontline-Pläne sind für passende Frontline-Nutzungsszenarien gedacht.",
+      "included_if_audience": ["frontline"]
+    }
+  }
+}

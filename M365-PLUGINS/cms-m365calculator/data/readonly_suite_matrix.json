@@ -1,0 +1,376 @@
+{
+  "meta": {
+    "title": "Microsoft 365 Lizenzmatrix – Vollpakete",
+    "source_checked": "2026-05-16",
+    "currency": "EUR",
+    "price_basis": "Referenzpreis pro Benutzer/Monat bei jährlicher Bindung, sofern nicht anders angegeben.",
+    "notes": [
+      "Diese Matrix zeigt bewusst nur Microsoft-365-Vollpakete: Business Basic, Business Standard, Business Premium, Microsoft 365 E3 und Microsoft 365 E5.",
+      "Office-365-only-Pläne, Frontline-Pläne und App-only-SKUs sind nicht Teil dieser reinen M365-Vollpaketmatrix.",
+      "Preise, Teams-Bundles, Segmentverfügbarkeit und Kanalangebote müssen vor Bestellung im Partner Center oder beim Distributor geprüft werden."
+    ],
+    "sources": [
+      "https://aka.ms/M365BusinessPlans",
+      "https://aka.ms/M365EnterprisePlans",
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/exchange-online-service-description/exchange-online-limits",
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/exchange-online-archiving-service-description/exchange-online-archiving-service-description",
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/onedrive-for-business-service-description",
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/office-365-advanced-threat-protection-service-description",
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/microsoft-365-service-descriptions/microsoft-365-tenantlevel-services-licensing-guidance/microsoft-purview-service-description",
+      "https://learn.microsoft.com/en-us/mem/intune/fundamentals/licenses",
+      "https://learn.microsoft.com/en-us/entra/fundamentals/licensing",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-licensing",
+      "https://learn.microsoft.com/en-us/microsoftteams/teams-phone-licensing",
+      "https://learn.microsoft.com/en-us/partner-center/pricing/pricing-and-offers",
+      "https://www.microsoft.com/en-us/licensing/news"
+    ]
+  },
+  "columns": [
+    { "slug": "m365-business-basic", "name": "Microsoft 365 Business Basic", "short": "Business Basic", "family": "Business", "price_month": 5.20, "max_users": "300", "badge": "Web & Cloud" },
+    { "slug": "m365-business-standard", "name": "Microsoft 365 Business Standard", "short": "Business Standard", "family": "Business", "price_month": 10.80, "max_users": "300", "badge": "Desktop Apps" },
+    { "slug": "m365-business-premium", "name": "Microsoft 365 Business Premium", "short": "Business Premium", "family": "Business", "price_month": 19.10, "max_users": "300", "badge": "SMB Security" },
+    { "slug": "m365-e3", "name": "Microsoft 365 E3", "short": "Microsoft 365 E3", "family": "Enterprise", "price_month": 34.90, "max_users": "Enterprise", "badge": "Enterprise Standard" },
+    { "slug": "m365-e5", "name": "Microsoft 365 E5", "short": "Microsoft 365 E5", "family": "Enterprise", "price_month": 57.00, "max_users": "Enterprise", "badge": "Enterprise Premium" }
+  ],
+  "groups": [
+    {
+      "key": "table-core",
+      "label": "Paket, Apps & Zusammenarbeit",
+      "rows": [
+        {
+          "label": "Zielgruppe",
+          "values": {
+            "m365-business-basic": { "status": "included", "label": "KMU Cloud", "note": "Bis 300 Benutzer; Web-, Mail- und Kollaborationsbasis." },
+            "m365-business-standard": { "status": "included", "label": "KMU Standard", "note": "Bis 300 Benutzer; zusätzlich Desktop Apps." },
+            "m365-business-premium": { "status": "included", "label": "KMU Premium", "note": "Bis 300 Benutzer; Standard plus Security/Device-Pfad." },
+            "m365-e3": { "status": "included", "label": "Enterprise", "note": "Enterprise Modern Workplace mit Windows-/Intune-Basis." },
+            "m365-e5": { "status": "included", "label": "Enterprise Premium", "note": "E3 plus E5 Security, Voice und BI-Pfade." }
+          }
+        },
+        {
+          "label": "Benutzerlimit",
+          "values": {
+            "m365-business-basic": { "status": "partial", "label": "300", "note": "Business-SKU-Grenze beachten." },
+            "m365-business-standard": { "status": "partial", "label": "300", "note": "Business-SKU-Grenze beachten." },
+            "m365-business-premium": { "status": "partial", "label": "300", "note": "Business-SKU-Grenze beachten." },
+            "m365-e3": { "status": "included", "label": "Enterprise", "note": "Für größere Tenants und Enterprise-Verträge geeignet." },
+            "m365-e5": { "status": "included", "label": "Enterprise", "note": "Für größere Tenants und Enterprise-Verträge geeignet." }
+          }
+        },
+        {
+          "label": "Office Web Apps",
+          "values": {
+            "m365-business-basic": { "status": "included", "label": "Ja", "note": "Word, Excel, PowerPoint im Browser." },
+            "m365-business-standard": { "status": "included", "label": "Ja", "note": "Web Apps zusätzlich zu Desktop Apps." },
+            "m365-business-premium": { "status": "included", "label": "Ja", "note": "Web Apps zusätzlich zu Desktop Apps." },
+            "m365-e3": { "status": "included", "label": "Ja", "note": "Enterprise Web Apps." },
+            "m365-e5": { "status": "included", "label": "Ja", "note": "Enterprise Web Apps." }
+          }
+        },
+        {
+          "label": "Desktop Apps Windows/Mac",
+          "values": {
+            "m365-business-basic": { "status": "not_included", "label": "Nein", "note": "Nur Web-/Mobile-Pfad." },
+            "m365-business-standard": { "status": "included", "label": "Ja", "note": "Installierbare Microsoft 365 Apps." },
+            "m365-business-premium": { "status": "included", "label": "Ja", "note": "Installierbare Microsoft 365 Apps." },
+            "m365-e3": { "status": "included", "label": "Ja", "note": "Enterprise Apps inklusive Shared-Computer-Pfad." },
+            "m365-e5": { "status": "included", "label": "Ja", "note": "Enterprise Apps inklusive Shared-Computer-Pfad." }
+          }
+        },
+        {
+          "label": "Shared Computer Activation / RDS / AVD",
+          "values": {
+            "m365-business-basic": { "status": "not_included", "label": "Nein", "note": "Keine Desktop Apps." },
+            "m365-business-standard": { "status": "not_included", "label": "Nein", "note": "Für Shared Computer Activation besser Premium/E3/E5 prüfen." },
+            "m365-business-premium": { "status": "included", "label": "Ja", "note": "Im Katalog als Shared-Computer-Pfad modelliert." },
+            "m365-e3": { "status": "included", "label": "Ja", "note": "Enterprise Shared-Computer-Pfad." },
+            "m365-e5": { "status": "included", "label": "Ja", "note": "Enterprise Shared-Computer-Pfad." }
+          }
+        },
+        {
+          "label": "Exchange Online Mailbox",
+          "values": {
+            "m365-business-basic": { "status": "included", "label": "Ja", "note": "Business-Mailbox enthalten." },
+            "m365-business-standard": { "status": "included", "label": "Ja", "note": "Business-Mailbox enthalten." },
+            "m365-business-premium": { "status": "included", "label": "Ja", "note": "Business-Mailbox enthalten." },
+            "m365-e3": { "status": "included", "label": "Ja", "note": "Enterprise-Mailbox plus Archivpfad." },
+            "m365-e5": { "status": "included", "label": "Ja", "note": "Enterprise-Mailbox plus E5-Pfade." }
+          }
+        },
+        {
+          "label": "Mailboxgröße je Benutzer",
+          "values": {
+            "m365-business-basic": { "status": "included", "label": "50 GB", "note": "Exchange Online Plan 1-basierte User-Mailbox." },
+            "m365-business-standard": { "status": "included", "label": "50 GB", "note": "Exchange Online Plan 1-basierte User-Mailbox." },
+            "m365-business-premium": { "status": "included", "label": "50 GB", "note": "Business Premium nutzt für die Primärmailbox den 50-GB-Planungswert." },
+            "m365-e3": { "status": "included", "label": "100 GB", "note": "Enterprise-Mailbox mit Exchange Online Plan 2-Pfad." },
+            "m365-e5": { "status": "included", "label": "100 GB", "note": "Enterprise-Mailbox mit Exchange Online Plan 2-Pfad." }
+          }
+        },
+        {
+          "label": "Archivmailbox / Auto-expanding",
+          "values": {
+            "m365-business-basic": { "status": "addon", "label": "50 GB / Add-on", "note": "Basisarchiv; bis 1,5 TB mit Exchange Online Archiving Add-on." },
+            "m365-business-standard": { "status": "addon", "label": "50 GB / Add-on", "note": "Basisarchiv; bis 1,5 TB mit Exchange Online Archiving Add-on." },
+            "m365-business-premium": { "status": "included", "label": "bis 1,5 TB", "note": "Auto-expanding Archive im Planungsmodell enthalten." },
+            "m365-e3": { "status": "included", "label": "bis 1,5 TB", "note": "Auto-expanding Archive im Enterprise-Pfad." },
+            "m365-e5": { "status": "included", "label": "bis 1,5 TB", "note": "Auto-expanding Archive plus E5-Compliance-Pfade." }
+          }
+        },
+        {
+          "label": "Shared-/Resource-Mailboxes",
+          "values": {
+            "m365-business-basic": { "status": "partial", "label": "50 GB ohne Lizenz", "note": "100 GB, Archiv, Hold oder Premium-Schutz benötigen passende Lizenz." },
+            "m365-business-standard": { "status": "partial", "label": "50 GB ohne Lizenz", "note": "100 GB, Archiv, Hold oder Premium-Schutz benötigen passende Lizenz." },
+            "m365-business-premium": { "status": "partial", "label": "50/100 GB prüfen", "note": "Für lizenzierte Shared-Mailbox mit Archiv-/Compliance-Pfad geeignet prüfen." },
+            "m365-e3": { "status": "included", "label": "100 GB möglich", "note": "Mit passender Lizenz für Shared-/Resource-Mailbox-Größen- und Archivpfade." },
+            "m365-e5": { "status": "included", "label": "100 GB möglich", "note": "Mit passender Lizenz plus E5-Security-/Compliance-Pfade." }
+          }
+        },
+        {
+          "label": "Teams Chat & Meetings",
+          "values": {
+            "m365-business-basic": { "status": "included", "label": "Ja", "note": "Teams-Funktionalität modelliert; regionale Bundle-Varianten prüfen." },
+            "m365-business-standard": { "status": "included", "label": "Ja", "note": "Teams-Funktionalität modelliert; regionale Bundle-Varianten prüfen." },
+            "m365-business-premium": { "status": "included", "label": "Ja", "note": "Teams-Funktionalität modelliert; regionale Bundle-Varianten prüfen." },
+            "m365-e3": { "status": "included", "label": "Ja", "note": "Enterprise Teams-Pfad; Bundle-Varianten prüfen." },
+            "m365-e5": { "status": "included", "label": "Ja", "note": "Enterprise Teams-Pfad; Bundle-Varianten prüfen." }
+          }
+        },
+        {
+          "label": "SharePoint & Teams-Dateien",
+          "values": {
+            "m365-business-basic": { "status": "included", "label": "Ja", "note": "Team Sites und Dateiablage." },
+            "m365-business-standard": { "status": "included", "label": "Ja", "note": "Team Sites und Dateiablage." },
+            "m365-business-premium": { "status": "included", "label": "Ja", "note": "Team Sites und Dateiablage." },
+            "m365-e3": { "status": "included", "label": "Ja", "note": "Enterprise SharePoint-Pfad." },
+            "m365-e5": { "status": "included", "label": "Ja", "note": "Enterprise SharePoint-Pfad." }
+          }
+        },
+        {
+          "label": "SharePoint Tenant-Speicher",
+          "values": {
+            "m365-business-basic": { "status": "included", "label": "1 TB + 10 GB/User", "note": "Organisationsspeicherpool für SharePoint/Teams-Dateien." },
+            "m365-business-standard": { "status": "included", "label": "1 TB + 10 GB/User", "note": "Organisationsspeicherpool für SharePoint/Teams-Dateien." },
+            "m365-business-premium": { "status": "included", "label": "1 TB + 10 GB/User", "note": "Organisationsspeicherpool plus Security-/Governance-Pfad." },
+            "m365-e3": { "status": "included", "label": "1 TB + 10 GB/User", "note": "Enterprise SharePoint-Speicherpool." },
+            "m365-e5": { "status": "included", "label": "1 TB + 10 GB/User", "note": "Enterprise SharePoint-Speicherpool plus E5-Compliance-Pfade." }
+          }
+        },
+        {
+          "label": "SharePoint Site-/Dateilimits",
+          "values": {
+            "m365-business-basic": { "status": "included", "label": "25 TB Site / 250 GB Datei", "note": "Listen/Bibliotheken bis 30 Mio. Elemente; Sync-Design beachten." },
+            "m365-business-standard": { "status": "included", "label": "25 TB Site / 250 GB Datei", "note": "Listen/Bibliotheken bis 30 Mio. Elemente; Sync-Design beachten." },
+            "m365-business-premium": { "status": "included", "label": "25 TB Site / 250 GB Datei", "note": "Kernlimits plus Governance-/Security-Kontext planen." },
+            "m365-e3": { "status": "included", "label": "25 TB Site / 250 GB Datei", "note": "Enterprise-Kernlimits; Compliance-Locations separat planen." },
+            "m365-e5": { "status": "included", "label": "25 TB Site / 250 GB Datei", "note": "Enterprise-Kernlimits plus E5-Compliance-Locations." }
+          }
+        },
+        {
+          "label": "OneDrive for Business",
+          "values": {
+            "m365-business-basic": { "status": "included", "label": "Ja", "note": "Persönlicher Cloudspeicher." },
+            "m365-business-standard": { "status": "included", "label": "Ja", "note": "Persönlicher Cloudspeicher." },
+            "m365-business-premium": { "status": "included", "label": "Ja", "note": "Persönlicher Cloudspeicher." },
+            "m365-e3": { "status": "included", "label": "Ja", "note": "Enterprise OneDrive-Pfad." },
+            "m365-e5": { "status": "included", "label": "Ja", "note": "Enterprise OneDrive-Pfad." }
+          }
+        },
+        {
+          "label": "OneDrive-Speicher je Benutzer",
+          "values": {
+            "m365-business-basic": { "status": "included", "label": "1 TB/User", "note": "Persönlicher OneDrive-Speicher; nicht als Systembackup verwenden." },
+            "m365-business-standard": { "status": "included", "label": "1 TB/User", "note": "Persönlicher OneDrive-Speicher; nicht als Abteilungsablage missbrauchen." },
+            "m365-business-premium": { "status": "included", "label": "1 TB/User", "note": "Persönlicher OneDrive-Speicher plus Device-/Security-Pfad." },
+            "m365-e3": { "status": "included", "label": "1 TB, bis 5 TB", "note": "Erweiterung auf 5 TB je Benutzer im Enterprise-Kontext möglich." },
+            "m365-e5": { "status": "included", "label": "1 TB, bis 5 TB", "note": "Erweiterung auf 5 TB je Benutzer im Enterprise-Kontext möglich." }
+          }
+        }
+      ]
+    },
+    {
+      "key": "table-security",
+      "label": "Security, Identität, Compliance & Geräte",
+      "rows": [
+        {
+          "label": "Intune / Endpoint Management",
+          "values": {
+            "m365-business-basic": { "status": "addon", "label": "Add-on", "note": "Intune separat oder Business Premium." },
+            "m365-business-standard": { "status": "addon", "label": "Add-on", "note": "Intune separat oder Business Premium." },
+            "m365-business-premium": { "status": "included", "label": "Ja", "note": "Intune Plan 1 Pfad enthalten." },
+            "m365-e3": { "status": "included", "label": "Ja", "note": "Enterprise Device Management enthalten." },
+            "m365-e5": { "status": "included", "label": "Ja", "note": "Enterprise Device Management enthalten." }
+          }
+        },
+        {
+          "label": "Entra ID P1 / Conditional Access",
+          "values": {
+            "m365-business-basic": { "status": "addon", "label": "Add-on", "note": "Entra ID P1 separat." },
+            "m365-business-standard": { "status": "addon", "label": "Add-on", "note": "Entra ID P1 separat." },
+            "m365-business-premium": { "status": "included", "label": "Ja", "note": "Entra ID P1 Pfad enthalten." },
+            "m365-e3": { "status": "included", "label": "Ja", "note": "Entra ID P1 Pfad enthalten." },
+            "m365-e5": { "status": "included", "label": "Ja + P2", "note": "P1 und P2-Pfade modelliert." }
+          }
+        },
+        {
+          "label": "Entra ID P2 / Identity Protection",
+          "values": {
+            "m365-business-basic": { "status": "addon", "label": "Add-on", "note": "Entra ID P2 separat." },
+            "m365-business-standard": { "status": "addon", "label": "Add-on", "note": "Entra ID P2 separat." },
+            "m365-business-premium": { "status": "addon", "label": "Add-on", "note": "P2 separat; P1 bereits enthalten." },
+            "m365-e3": { "status": "addon", "label": "Add-on", "note": "P2 separat; P1-Pfad vorhanden." },
+            "m365-e5": { "status": "included", "label": "Ja", "note": "Entra ID P2 Pfad enthalten." }
+          }
+        },
+        {
+          "label": "Defender for Business / Endpoint",
+          "values": {
+            "m365-business-basic": { "status": "addon", "label": "Add-on", "note": "Defender separat." },
+            "m365-business-standard": { "status": "addon", "label": "Add-on", "note": "Defender separat." },
+            "m365-business-premium": { "status": "included", "label": "Ja", "note": "SMB Defender-Pfad enthalten." },
+            "m365-e3": { "status": "partial", "label": "Basis", "note": "Endpoint-/E5-Security-Pfade separat prüfen." },
+            "m365-e5": { "status": "included", "label": "Stark", "note": "E5 Security/Defender-Pfade modelliert." }
+          }
+        },
+        {
+          "label": "Defender for Office 365",
+          "values": {
+            "m365-business-basic": { "status": "addon", "label": "Add-on", "note": "MDO Plan 1/2 separat." },
+            "m365-business-standard": { "status": "addon", "label": "Add-on", "note": "MDO Plan 1/2 separat." },
+            "m365-business-premium": { "status": "included", "label": "Plan 1", "note": "Safe Links, Safe Attachments und Anti-Phishing-Pfad modelliert." },
+            "m365-e3": { "status": "addon", "label": "Add-on", "note": "MDO Plan 1/2 separat." },
+            "m365-e5": { "status": "included", "label": "Plan 2", "note": "Plan 1 plus Explorer, AIR, Attack Simulation, Advanced Hunting und XDR-Pfade." }
+          }
+        },
+        {
+          "label": "Purview / eDiscovery / Retention",
+          "values": {
+            "m365-business-basic": { "status": "partial", "label": "Basis", "note": "Basisaufbewahrung; Premium-Compliance separat." },
+            "m365-business-standard": { "status": "partial", "label": "Basis", "note": "Basisaufbewahrung; Premium-Compliance separat." },
+            "m365-business-premium": { "status": "partial", "label": "Basis + Archiv", "note": "Retention-/DLP-Basis und Archivpfad; E5-Compliance separat." },
+            "m365-e3": { "status": "partial", "label": "E3-Basis", "note": "Retention, DLP, eDiscovery Standard und Archivpfade modelliert." },
+            "m365-e5": { "status": "included", "label": "E5 erweitert", "note": "Audit Premium, eDiscovery Premium, Insider Risk, Communication Compliance und IPG-Pfade." }
+          }
+        },
+        {
+          "label": "Audit, DLP, eDiscovery, Sensitivity",
+          "values": {
+            "m365-business-basic": { "status": "partial", "label": "Basis", "note": "Audit Standard und Basisfunktionen; Premium-Funktionen separat." },
+            "m365-business-standard": { "status": "partial", "label": "Basis", "note": "Basisfunktionen; DLP-/Premium-Compliance je Bedarf separat prüfen." },
+            "m365-business-premium": { "status": "partial", "label": "SMB Security", "note": "DLP-/Retention-Basis und Information-Protection-Pfade prüfen." },
+            "m365-e3": { "status": "partial", "label": "Standard", "note": "DLP, eDiscovery Standard, Retention und manuelle Sensitivity Labels." },
+            "m365-e5": { "status": "included", "label": "Premium", "note": "Premium-Audit, eDiscovery Premium, Auto-Labeling und erweiterte Purview-Funktionen." }
+          }
+        },
+        {
+          "label": "Windows Enterprise Rechte",
+          "values": {
+            "m365-business-basic": { "status": "not_included", "label": "Nein", "note": "Kein Windows Enterprise Pfad." },
+            "m365-business-standard": { "status": "not_included", "label": "Nein", "note": "Kein Windows Enterprise Pfad." },
+            "m365-business-premium": { "status": "partial", "label": "Business-Pfad", "note": "Windows Business/Endpoint-Pfad prüfen." },
+            "m365-e3": { "status": "included", "label": "Ja", "note": "Windows Enterprise Rechte modelliert." },
+            "m365-e5": { "status": "included", "label": "Ja", "note": "Windows Enterprise Rechte modelliert." }
+          }
+        }
+      ]
+    },
+    {
+      "key": "table-premium",
+      "label": "KI, Telefonie, Analytics, Power Platform & Beschaffung",
+      "rows": [
+        {
+          "label": "Copilot Chat",
+          "values": {
+            "m365-business-basic": { "status": "included", "label": "Ja", "note": "Für berechtigte Konten modelliert." },
+            "m365-business-standard": { "status": "included", "label": "Ja", "note": "Für berechtigte Konten modelliert." },
+            "m365-business-premium": { "status": "included", "label": "Ja", "note": "Für berechtigte Konten modelliert." },
+            "m365-e3": { "status": "included", "label": "Ja", "note": "Für berechtigte Konten modelliert." },
+            "m365-e5": { "status": "included", "label": "Ja", "note": "Für berechtigte Konten modelliert." }
+          }
+        },
+        {
+          "label": "Microsoft 365 Copilot Add-on",
+          "values": {
+            "m365-business-basic": { "status": "addon", "label": "Business Add-on", "note": "Technische Voraussetzungen prüfen." },
+            "m365-business-standard": { "status": "addon", "label": "Business Add-on", "note": "Technische Voraussetzungen prüfen." },
+            "m365-business-premium": { "status": "addon", "label": "Business Add-on", "note": "Technische Voraussetzungen prüfen." },
+            "m365-e3": { "status": "addon", "label": "Enterprise Add-on", "note": "Technische Voraussetzungen prüfen." },
+            "m365-e5": { "status": "addon", "label": "Enterprise Add-on", "note": "Technische Voraussetzungen prüfen." }
+          }
+        },
+        {
+          "label": "Teams Phone / Phone System",
+          "values": {
+            "m365-business-basic": { "status": "addon", "label": "Add-on", "note": "Teams Phone Standard plus PSTN-Modell." },
+            "m365-business-standard": { "status": "addon", "label": "Add-on", "note": "Teams Phone Standard plus PSTN-Modell." },
+            "m365-business-premium": { "status": "addon", "label": "Add-on", "note": "Teams Phone Standard plus PSTN-Modell." },
+            "m365-e3": { "status": "addon", "label": "Add-on", "note": "Teams Phone Standard plus PSTN-Modell." },
+            "m365-e5": { "status": "included", "label": "Phone System", "note": "Phone System modelliert; PSTN separat." }
+          }
+        },
+        {
+          "label": "Audio Conferencing",
+          "values": {
+            "m365-business-basic": { "status": "addon", "label": "Add-on", "note": "Audio Conferencing separat prüfen." },
+            "m365-business-standard": { "status": "addon", "label": "Add-on", "note": "Audio Conferencing separat prüfen." },
+            "m365-business-premium": { "status": "addon", "label": "Add-on", "note": "Audio Conferencing separat prüfen." },
+            "m365-e3": { "status": "addon", "label": "Add-on", "note": "Audio Conferencing separat prüfen." },
+            "m365-e5": { "status": "included", "label": "Ja", "note": "Audio-Pfad modelliert." }
+          }
+        },
+        {
+          "label": "Power Apps / Power Automate seeded",
+          "values": {
+            "m365-business-basic": { "status": "included", "label": "Seeded", "note": "Standardconnectoren im M365-Kontext." },
+            "m365-business-standard": { "status": "included", "label": "Seeded", "note": "Standardconnectoren im M365-Kontext." },
+            "m365-business-premium": { "status": "included", "label": "Seeded", "note": "Standardconnectoren im M365-Kontext." },
+            "m365-e3": { "status": "included", "label": "Seeded", "note": "Standardconnectoren im M365-Kontext." },
+            "m365-e5": { "status": "included", "label": "Seeded", "note": "Standardconnectoren im M365-Kontext." }
+          }
+        },
+        {
+          "label": "Premium Connectoren / Dataverse",
+          "values": {
+            "m365-business-basic": { "status": "addon", "label": "Add-on", "note": "Power Apps/Automate Premium separat." },
+            "m365-business-standard": { "status": "addon", "label": "Add-on", "note": "Power Apps/Automate Premium separat." },
+            "m365-business-premium": { "status": "addon", "label": "Add-on", "note": "Power Apps/Automate Premium separat." },
+            "m365-e3": { "status": "addon", "label": "Add-on", "note": "Power Apps/Automate Premium separat." },
+            "m365-e5": { "status": "addon", "label": "Add-on", "note": "Trotz E5 für Premium-App-Szenarien separat prüfen." }
+          }
+        },
+        {
+          "label": "Power BI Pro",
+          "values": {
+            "m365-business-basic": { "status": "addon", "label": "Add-on", "note": "Power BI Pro separat." },
+            "m365-business-standard": { "status": "addon", "label": "Add-on", "note": "Power BI Pro separat." },
+            "m365-business-premium": { "status": "addon", "label": "Add-on", "note": "Power BI Pro separat." },
+            "m365-e3": { "status": "addon", "label": "Add-on", "note": "Power BI Pro separat." },
+            "m365-e5": { "status": "included", "label": "Ja", "note": "Power BI Pro im E5-Pfad modelliert." }
+          }
+        },
+        {
+          "label": "Monats- und Jahreslaufzeit",
+          "values": {
+            "m365-business-basic": { "status": "included", "label": "P1M/P1Y", "note": "Term und Billing Plan getrennt prüfen." },
+            "m365-business-standard": { "status": "included", "label": "P1M/P1Y", "note": "Term und Billing Plan getrennt prüfen." },
+            "m365-business-premium": { "status": "included", "label": "P1M/P1Y", "note": "Term und Billing Plan getrennt prüfen." },
+            "m365-e3": { "status": "included", "label": "P1M/P1Y/P3Y", "note": "Enterprise-Terms je Kanal prüfen." },
+            "m365-e5": { "status": "included", "label": "P1M/P1Y/P3Y", "note": "Enterprise-Terms je Kanal prüfen." }
+          }
+        },
+        {
+          "label": "Typische Upgrade-Logik",
+          "values": {
+            "m365-business-basic": { "status": "warning", "label": "zu Standard/Premium", "note": "Desktop Apps oder Security treiben Upgrade." },
+            "m365-business-standard": { "status": "warning", "label": "zu Premium", "note": "Security, Intune und Conditional Access treiben Upgrade." },
+            "m365-business-premium": { "status": "partial", "label": "KMU Top", "note": "Bei >300 Usern oder E5-Funktionen Enterprise prüfen." },
+            "m365-e3": { "status": "warning", "label": "zu E5", "note": "Voice, BI, E5 Security/Compliance treiben Upgrade." },
+            "m365-e5": { "status": "included", "label": "Top-Suite", "note": "Add-ons bleiben für Copilot, PSTN, Premium Apps und Spezialdienste relevant." }
+          }
+        }
+      ]
+    }
+  ]
+}

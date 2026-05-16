@@ -1,0 +1,190 @@
+{
+  "meta": {
+    "source": "Migrated from cms-m365lic package seeds and Microsoft Learn guardrails",
+    "source_checked": "2026-05-15",
+    "currency": "EUR",
+    "price_basis": "Reference price per user/month for annual commitment unless noted"
+  },
+  "plans": [
+    {
+      "slug": "exchange-online-plan-1",
+      "name": "Exchange Online Plan 1",
+      "family": "Exchange",
+      "audience": "knowledge",
+      "price_month": 3.50,
+      "max_users": 500000,
+      "terms": ["P1Y", "P1M"],
+      "features": ["mail"],
+      "tags": ["exchange", "copilot_enterprise_eligible", "copilot_chat_eligible"],
+      "source_note": "Migrated cms-m365lic EUR reference price; Microsoft Learn lists Exchange Plan 1 as Copilot eligible."
+    },
+    {
+      "slug": "exchange-online-plan-2",
+      "name": "Exchange Online Plan 2",
+      "family": "Exchange",
+      "audience": "knowledge",
+      "price_month": 6.90,
+      "max_users": 500000,
+      "terms": ["P1Y", "P1M"],
+      "features": ["mail", "archive"],
+      "tags": ["exchange", "compliance", "copilot_enterprise_eligible", "copilot_chat_eligible"],
+      "source_note": "Migrated cms-m365lic EUR reference price; includes stronger archive/compliance mailbox path."
+    },
+    {
+      "slug": "m365-apps-business",
+      "name": "Microsoft 365 Apps for Business",
+      "family": "Business",
+      "audience": "knowledge",
+      "price_month": 8.25,
+      "max_users": 300,
+      "terms": ["P1Y", "P1M"],
+      "features": ["office_desktop", "office_web", "onedrive", "forms"],
+      "tags": ["apps", "business", "smb", "copilot_business_eligible", "copilot_chat_eligible"],
+      "source_note": "Migrated cms-m365lic reference price; Business SKUs are capped at 300 seats per tenant."
+    },
+    {
+      "slug": "m365-apps-enterprise",
+      "name": "Microsoft 365 Apps for Enterprise",
+      "family": "Enterprise",
+      "audience": "knowledge",
+      "price_month": 13.20,
+      "max_users": 500000,
+      "terms": ["P1Y", "P1M"],
+      "features": ["office_desktop", "office_web", "onedrive", "forms", "terminalserver"],
+      "tags": ["apps", "enterprise", "shared_computer_activation", "copilot_enterprise_eligible", "copilot_chat_eligible"],
+      "source_note": "Migrated cms-m365lic EUR reference price; used for app-only and Shared Computer Activation scenarios."
+    },
+    {
+      "slug": "m365-business-basic",
+      "name": "Microsoft 365 Business Basic",
+      "family": "Business",
+      "audience": "knowledge",
+      "price_month": 5.20,
+      "max_users": 300,
+      "terms": ["P1Y", "P1M"],
+      "features": ["mail", "teams", "office_web", "onedrive", "sharepoint", "forms", "stream"],
+      "tags": ["m365", "business", "smb", "teams", "exchange", "copilot_business_eligible", "copilot_enterprise_eligible", "copilot_chat_eligible", "seeded_power_platform"],
+      "source_note": "Migrated cms-m365lic EUR reference price; max 300 Business seats per tenant."
+    },
+    {
+      "slug": "m365-business-standard",
+      "name": "Microsoft 365 Business Standard",
+      "family": "Business",
+      "audience": "knowledge",
+      "price_month": 10.80,
+      "max_users": 300,
+      "terms": ["P1Y", "P1M"],
+      "features": ["mail", "teams", "office_web", "office_desktop", "onedrive", "sharepoint", "forms", "bookings", "stream"],
+      "tags": ["m365", "business", "smb", "teams", "exchange", "copilot_business_eligible", "copilot_enterprise_eligible", "copilot_chat_eligible", "seeded_power_platform"],
+      "source_note": "Migrated cms-m365lic EUR reference price; good fit for classic SMB knowledge workers."
+    },
+    {
+      "slug": "m365-business-premium",
+      "name": "Microsoft 365 Business Premium",
+      "family": "Business",
+      "audience": "knowledge",
+      "price_month": 19.10,
+      "max_users": 300,
+      "terms": ["P1Y", "P1M"],
+      "features": ["mail", "teams", "office_web", "office_desktop", "terminalserver", "onedrive", "sharepoint", "forms", "bookings", "stream", "intune", "defender", "entra_id_p1"],
+      "tags": ["m365", "business", "smb", "teams", "exchange", "security", "shared_computer_activation", "copilot_business_eligible", "copilot_enterprise_eligible", "copilot_chat_eligible", "seeded_power_platform"],
+      "source_note": "Migrated cms-m365lic EUR reference price; SMB security baseline with Intune/Defender path."
+    },
+    {
+      "slug": "office-365-e1",
+      "name": "Office 365 E1",
+      "family": "Office Enterprise",
+      "audience": "knowledge",
+      "price_month": 8.70,
+      "max_users": 500000,
+      "terms": ["P1Y", "P1M"],
+      "features": ["mail", "teams", "office_web", "onedrive", "sharepoint", "forms", "stream"],
+      "tags": ["office365", "enterprise", "teams", "exchange", "copilot_enterprise_eligible", "copilot_chat_eligible", "seeded_power_platform"],
+      "source_note": "Migrated cms-m365lic EUR reference price; enterprise web-worker path."
+    },
+    {
+      "slug": "office-365-e3",
+      "name": "Office 365 E3",
+      "family": "Office Enterprise",
+      "audience": "knowledge",
+      "price_month": 23.20,
+      "max_users": 500000,
+      "terms": ["P1Y", "P1M", "P3Y"],
+      "features": ["mail", "teams", "office_web", "office_desktop", "terminalserver", "onedrive", "sharepoint", "forms", "bookings", "stream", "archive"],
+      "tags": ["office365", "enterprise", "teams", "exchange", "compliance", "shared_computer_activation", "copilot_enterprise_eligible", "copilot_chat_eligible", "seeded_power_platform"],
+      "source_note": "Migrated cms-m365lic EUR reference price; enterprise desktop and compliance baseline."
+    },
+    {
+      "slug": "office-365-e5",
+      "name": "Office 365 E5",
+      "family": "Office Enterprise",
+      "audience": "knowledge",
+      "price_month": 38.40,
+      "max_users": 500000,
+      "terms": ["P1Y", "P1M", "P3Y"],
+      "features": ["mail", "teams", "office_web", "office_desktop", "terminalserver", "onedrive", "sharepoint", "forms", "bookings", "stream", "archive", "defender", "audio_conf", "phone_system", "power_bi"],
+      "tags": ["office365", "enterprise", "teams", "exchange", "security", "phone_system_included", "shared_computer_activation", "copilot_enterprise_eligible", "copilot_chat_eligible", "seeded_power_platform"],
+      "source_note": "Migrated cms-m365lic EUR reference price; E5 includes Phone System path."
+    },
+    {
+      "slug": "m365-e3",
+      "name": "Microsoft 365 E3",
+      "family": "Microsoft 365 Enterprise",
+      "audience": "knowledge",
+      "price_month": 34.90,
+      "max_users": 500000,
+      "terms": ["P1Y", "P1M", "P3Y"],
+      "features": ["mail", "teams", "office_web", "office_desktop", "terminalserver", "onedrive", "sharepoint", "forms", "bookings", "stream", "archive", "windows_rights", "intune"],
+      "tags": ["m365", "enterprise", "teams", "exchange", "security", "shared_computer_activation", "copilot_enterprise_eligible", "copilot_chat_eligible", "seeded_power_platform"],
+      "source_note": "Migrated cms-m365lic EUR reference price; Enterprise management baseline."
+    },
+    {
+      "slug": "m365-e5",
+      "name": "Microsoft 365 E5",
+      "family": "Microsoft 365 Enterprise",
+      "audience": "knowledge",
+      "price_month": 57.00,
+      "max_users": 500000,
+      "terms": ["P1Y", "P1M", "P3Y"],
+      "features": ["mail", "teams", "office_web", "office_desktop", "terminalserver", "onedrive", "sharepoint", "forms", "bookings", "stream", "archive", "windows_rights", "intune", "defender", "audio_conf", "phone_system", "power_bi", "entra_id_p2"],
+      "tags": ["m365", "enterprise", "teams", "exchange", "security", "premium", "phone_system_included", "shared_computer_activation", "copilot_enterprise_eligible", "copilot_chat_eligible", "seeded_power_platform"],
+      "source_note": "Migrated cms-m365lic reference price; top-suite for security, compliance, analytics and Phone System."
+    },
+    {
+      "slug": "m365-f1",
+      "name": "Microsoft 365 F1",
+      "family": "Frontline",
+      "audience": "frontline",
+      "price_month": 1.90,
+      "max_users": 500000,
+      "terms": ["P1Y", "P1M"],
+      "features": ["frontline", "teams", "sharepoint", "stream"],
+      "tags": ["m365", "frontline", "teams", "copilot_enterprise_eligible", "copilot_chat_eligible"],
+      "source_note": "Migrated cms-m365lic EUR reference price; frontline light collaboration path."
+    },
+    {
+      "slug": "m365-f3",
+      "name": "Microsoft 365 F3",
+      "family": "Frontline",
+      "audience": "frontline",
+      "price_month": 6.90,
+      "max_users": 500000,
+      "terms": ["P1Y", "P1M"],
+      "features": ["frontline", "mail", "teams", "office_web", "onedrive", "sharepoint", "stream"],
+      "tags": ["m365", "frontline", "teams", "exchange", "copilot_enterprise_eligible", "copilot_chat_eligible", "seeded_power_platform"],
+      "source_note": "Migrated cms-m365lic EUR reference price; frontline with mail and file needs."
+    },
+    {
+      "slug": "office-365-f3",
+      "name": "Office 365 F3",
+      "family": "Frontline",
+      "audience": "frontline",
+      "price_month": 6.90,
+      "max_users": 500000,
+      "terms": ["P1Y", "P1M"],
+      "features": ["frontline", "mail", "teams", "office_web", "onedrive", "sharepoint", "stream"],
+      "tags": ["office365", "frontline", "teams", "exchange", "copilot_enterprise_eligible", "copilot_chat_eligible", "seeded_power_platform"],
+      "source_note": "Migrated cms-m365lic EUR reference price; Office frontline plan."
+    }
+  ]
+}

@@ -1,14 +1,113 @@
+#m365calculator-landing {
+    display: grid;
+    gap: var(--phinit-space-8);
+}
+
+body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
+    margin-top: var(--m365calc-theme-header-gap, 25px);
+}
+
+#m365calculator-landing > header {
+    border-bottom: 1px solid var(--phinit-color-border);
+    padding-bottom: var(--phinit-space-6);
+}
+
+#m365calculator-landing > header h1 {
+    margin-bottom: var(--phinit-space-3);
+}
+
+#m365calculator-landing > section {
+    display: grid;
+    gap: var(--phinit-space-4);
+}
+
+#m365calculator-landing > section > h2 {
+    margin: 0;
+}
+
 .phinit-tool-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
     gap: var(--phinit-space-5);
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
+.phinit-tool-grid > li {
+    min-width: 0;
+}
+
+.phinit-tool-grid .phinit-card {
+    align-items: flex-start;
+    display: flex;
+    gap: var(--phinit-space-4);
+    height: 100%;
+}
+
+.phinit-tool-card__body {
+    display: grid;
+    gap: var(--phinit-space-3);
+    min-width: 0;
+}
+
+.phinit-tool-card__icon {
+    align-items: center;
+    border: 1px solid var(--phinit-color-border);
+    border-radius: var(--phinit-radius-md);
+    color: var(--phinit-color-accent);
+    display: inline-flex;
+    height: 48px;
+    justify-content: center;
+    width: 48px;
+}
+
+.phinit-tool-card__icon svg {
+    display: block;
+    height: 24px;
+    width: 24px;
+}
+
+.phinit-tool-grid h3 {
+    align-items: flex-start;
+    display: flex;
+    gap: var(--phinit-space-2);
+    justify-content: space-between;
+    margin: 0;
+}
+
+.phinit-tool-grid p {
+    color: var(--phinit-color-text-muted);
+    margin: 0;
+}
+
+.phinit-status-label {
+    border: 1px solid var(--phinit-color-border);
+    border-radius: var(--phinit-radius-full);
+    color: var(--phinit-color-muted);
+    flex: 0 0 auto;
+    font-size: var(--phinit-text-xs);
+    font-weight: 700;
+    line-height: 1;
+    padding: var(--phinit-space-1) var(--phinit-space-2);
+    text-transform: uppercase;
+}
+
+.phinit-tool-card--disabled {
+    opacity: 0.7;
+}
+
+.phinit-tool-card__disabled-note {
+    color: var(--phinit-color-muted);
+    font-weight: 700;
+}
+
 @media (max-width: 768px) {
     .phinit-tool-grid {
         grid-template-columns: 1fr;
+    }
+
+    .phinit-tool-grid .phinit-card {
+        align-items: flex-start;
     }
 }

@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "title": "On-Prem Exchange Cost Defaults",
+    "source_checked": "2026-05-16",
+    "description": "Standardannahmen für Exchange-On-Prem-Vollkosten, Hardware-Refresh, Betrieb und Datenqualität."
+  },
+  "defaults": {
+    "mailboxes": 250,
+    "average_mailbox_gb": 18,
+    "servers": 2,
+    "server_hardware_cost": 28000,
+    "exchange_windows_license_cost": 12000,
+    "storage_backup_monthly": 950,
+    "power_hosting_monthly": 420,
+    "maintenance_monthly": 650,
+    "admin_hours_monthly": 18,
+    "admin_hourly_rate": 95,
+    "ha_dr_monthly": 700,
+    "monitoring_tools_monthly": 350,
+    "certificates_annual": 450,
+    "hardware_refresh_due_months": 12,
+    "migration_cost": 18000,
+    "coexistence_months": 3,
+    "analysis_years": 5,
+    "cloud_plan": "exchange_online_p2",
+    "migration_method": "hybrid",
+    "data_quality": "estimated",
+    "archive_compliance_required": true,
+    "hybrid_required": true,
+    "org_wants_fast_exit": false,
+    "public_folders_or_legacy_apps": false,
+    "backup_reduction_monthly": 350
+  },
+  "data_quality": {
+    "complete": {
+      "label": "Ist-Daten vollständig",
+      "risk_delta": -10,
+      "confidence": "hoch"
+    },
+    "estimated": {
+      "label": "Ist-Daten teilweise geschätzt",
+      "risk_delta": 10,
+      "confidence": "mittel"
+    },
+    "rough": {
+      "label": "Nur grobe Annahmen vorhanden",
+      "risk_delta": 28,
+      "confidence": "niedrig"
+    }
+  },
+  "refresh_windows": {
+    "0": { "label": "Refresh jetzt fällig", "roi_boost": 24 },
+    "6": { "label": "Refresh innerhalb 6 Monaten", "roi_boost": 20 },
+    "12": { "label": "Refresh innerhalb 12 Monaten", "roi_boost": 16 },
+    "24": { "label": "Refresh innerhalb 24 Monaten", "roi_boost": 8 },
+    "36": { "label": "Refresh innerhalb 36 Monaten", "roi_boost": 2 },
+    "60": { "label": "Refresh später als 36 Monate", "roi_boost": -6 }
+  },
+  "recommendation_categories": {
+    "fast_break_even": {
+      "label": "Schneller Break-Even",
+      "tone": "success",
+      "summary": "On-Prem-Kosten, Refresh-Druck und Betriebsvorteile sprechen klar für Exchange Online."
+    },
+    "midterm_break_even": {
+      "label": "Break-Even mittelfristig",
+      "tone": "info",
+      "summary": "Der Business Case wird innerhalb des Betrachtungszeitraums positiv, benötigt aber saubere Migrationsplanung."
+    },
+    "strategic_cloud": {
+      "label": "Kurzfristig teurer, strategisch sinnvoll",
+      "tone": "warning",
+      "summary": "Die Cloud ist kurzfristig nicht günstiger, reduziert aber Betriebsrisiken und Modernisierungsdruck."
+    },
+    "hybrid_review": {
+      "label": "Hybrid oder Teilumstieg prüfen",
+      "tone": "info",
+      "summary": "Koexistenz, Legacy-Abhängigkeiten oder große Datenmengen sprechen gegen einen Schnellumstieg."
+    },
+    "insufficient_data": {
+      "label": "Ist-Daten zu unvollständig für belastbaren ROI",
+      "tone": "danger",
+      "summary": "Vor einer Entscheidung sollten Kosten, Datenmengen und Migrationspfad geschärft werden."
+    }
+  },
+  "thresholds": {
+    "fast_break_even_months": 18,
+    "midterm_break_even_months": 42,
+    "high_risk_score": 72,
+    "low_confidence_risk": 75,
+    "large_mailbox_count": 2000,
+    "cutover_recommended_max": 150
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "version": "2026-05-16",
+  "source_checked_at": "2026-05-16",
+  "sources": [
+    "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-requirements",
+    "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-overview"
+  ],
+  "required": {
+    "entra_account": {
+      "label": "Microsoft Entra ID-Konto",
+      "missing": "Ohne Microsoft Entra ID-Konto kann Microsoft 365 Copilot nicht zugewiesen werden.",
+      "next_step": "Benutzer im Tenant anlegen oder synchronisieren und Lizenzzuweisung über Entra/Microsoft 365 Admin Center vorbereiten."
+    },
+    "primary_exchange_mailbox": {
+      "label": "Primäres Exchange-Online-Postfach",
+      "missing": "Microsoft 365 Copilot wird nur für primäre Exchange-Online-Postfächer unterstützt.",
+      "next_step": "Primäres Exchange-Online-Postfach bereitstellen; Shared, Group, Archive und Delegate Mailboxes ersetzen diese Voraussetzung nicht."
+    }
+  },
+  "recommended": {
+    "m365_apps_deployed": {
+      "label": "Microsoft 365 Apps bereitgestellt",
+      "missing": "Für Copilot in Word, Excel, PowerPoint, Outlook und weiteren Apps müssen Microsoft 365 Apps bereitgestellt und aktuell sein.",
+      "next_step": "Microsoft 365 Apps ausrollen, Update-Kanäle prüfen und Office Feature Updates zulassen."
+    },
+    "onedrive_enabled": {
+      "label": "OneDrive aktiviert",
+      "missing": "Einige Copilot-Funktionen benötigen OneDrive-Konten und Datei-Dienste.",
+      "next_step": "OneDrive für Zielgruppen bereitstellen und Datei-/Freigabe-Governance prüfen."
+    },
+    "teams_ready": {
+      "label": "Teams und Meeting-Readiness geprüft",
+      "missing": "Teams-Copilot-Szenarien benötigen passende Teams-Konfiguration, Transkription oder Meeting-Aufzeichnung.",
+      "next_step": "Teams-Policies, Meeting-Transkription und App-Verfügbarkeit prüfen."
+    },
+    "privacy_controls_reviewed": {
+      "label": "App-Privacy und Connected Experiences geprüft",
+      "missing": "Privacy- und Connected-Experience-Einstellungen können Copilot-Funktionen beeinflussen.",
+      "next_step": "Microsoft 365 Apps Privacy Controls und Connected Experiences vor Rollout prüfen."
+    },
+    "network_ready": {
+      "label": "Netzwerk-Endpunkte und WSS bereit",
+      "missing": "Copilot nutzt Microsoft-365-Endpunkte und WebSockets; blockierte Endpunkte können App-Integrationen stören.",
+      "next_step": "Microsoft 365 URLs/IPs sowie WSS-Verbindungen zu *.cloud.microsoft und *.office.com prüfen."
+    }
+  },
+  "mailbox_exclusions": [
+    "Shared Mailbox",
+    "Group Mailbox",
+    "Archive Mailbox",
+    "Delegate Mailbox"
+  ]
+}

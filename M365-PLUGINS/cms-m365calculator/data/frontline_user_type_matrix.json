@@ -1,0 +1,133 @@
+{
+  "meta": {
+    "title": "Frontline User Type Matrix",
+    "source_checked": "2026-05-16",
+    "description": "Rollen-, Geräte- und Arbeitsmuster für die Einordnung von Frontline-, Misch- und Information-Worker-Profilen.",
+    "sources": [
+      "https://learn.microsoft.com/en-us/microsoft-365/frontline/",
+      "https://learn.microsoft.com/en-us/microsoft-365/frontline/flw-overview?view=o365-worldwide",
+      "https://learn.microsoft.com/en-us/microsoft-365/frontline/flw-devices?view=o365-worldwide",
+      "https://learn.microsoft.com/en-us/microsoft-365/frontline/flw-licensing-options?view=o365-worldwide",
+      "https://learn.microsoft.com/en-us/microsoft-365/frontline/flw-shared-devices?view=o365-worldwide",
+      "https://adoption.microsoft.com/microsoft-teams/frontline-workers/"
+    ]
+  },
+  "roles": {
+    "retail_associate": {
+      "label": "Retail Associate / Filiale",
+      "industry": "Retail",
+      "frontline_base": 82,
+      "typical_devices": ["shared_device", "byod", "company_smartphone"],
+      "signals": ["Schichtbetrieb", "Kundenkontakt", "mobile Aufgaben", "Teams, Shifts, Tasks"],
+      "exclusion_factors": ["umfangreiche Desktop-Office-Nutzung", "komplexe Dokumenterstellung"]
+    },
+    "store_manager": {
+      "label": "Filialleitung / Teamleitung",
+      "industry": "Retail",
+      "frontline_base": 66,
+      "typical_devices": ["company_smartphone", "dedicated_device", "shared_device"],
+      "signals": ["Schichtkoordination", "Kommunikation", "leichte Auswertung", "Teamsteuerung"],
+      "exclusion_factors": ["umfangreiche Reports", "regelmäßige Desktop-Dokumentarbeit"]
+    },
+    "production_worker": {
+      "label": "Produktion / Fertigung",
+      "industry": "Manufacturing",
+      "frontline_base": 86,
+      "typical_devices": ["shared_device", "kiosk_terminal", "dedicated_device"],
+      "signals": ["Schichtarbeit", "Arbeitsanweisungen", "Checklisten", "Shared Device"],
+      "exclusion_factors": ["persönlicher Desktop-Arbeitsplatz", "dauerhafte Office-Erstellung"]
+    },
+    "logistics_worker": {
+      "label": "Logistik / Lager / Transport",
+      "industry": "Logistics",
+      "frontline_base": 84,
+      "typical_devices": ["shared_device", "company_smartphone", "dedicated_device"],
+      "signals": ["mobile Abläufe", "Aufgabenlisten", "Schichtbetrieb", "Standortwechsel"],
+      "exclusion_factors": ["starke Dokumentenbearbeitung", "Planungs- oder Analysearbeitsplatz"]
+    },
+    "healthcare_worker": {
+      "label": "Pflege / Healthcare-Team",
+      "industry": "Healthcare",
+      "frontline_base": 74,
+      "typical_devices": ["shared_device", "company_smartphone", "dedicated_device"],
+      "signals": ["Schichtbetrieb", "Patienten- oder Bewohnerkontakt", "schnelle Kommunikation", "hohe Datenschutzanforderung"],
+      "exclusion_factors": ["umfangreiche Falldokumentation im Desktop", "Spezialsysteme mit höherer Lizenzbasis"]
+    },
+    "field_service": {
+      "label": "Field Service / Außendienst-Technik",
+      "industry": "Field Service",
+      "frontline_base": 70,
+      "typical_devices": ["company_smartphone", "dedicated_device", "byod"],
+      "signals": ["unterwegs", "Kunden- oder Anlagenkontakt", "mobile Erfassung", "Checklisten"],
+      "exclusion_factors": ["vollständige Office-Suite unterwegs", "komplexe Projektarbeit"]
+    },
+    "service_counter": {
+      "label": "Service Counter / Empfang",
+      "industry": "Service",
+      "frontline_base": 58,
+      "typical_devices": ["dedicated_device", "shared_device"],
+      "signals": ["Kundenkontakt", "standardisierte Abläufe", "leichte Kommunikation"],
+      "exclusion_factors": ["eigener Büroarbeitsplatz", "regelmäßige Dokumenterstellung"]
+    },
+    "information_worker": {
+      "label": "Information Worker / Office-Rolle",
+      "industry": "Office",
+      "frontline_base": 18,
+      "typical_devices": ["dedicated_device"],
+      "signals": ["Desktop- oder Laptop-Arbeit", "Dokumenterstellung", "Meetings", "Analyse"],
+      "exclusion_factors": ["kein Frontline-Profil"]
+    }
+  },
+  "device_models": {
+    "shared_device": {
+      "label": "Shared Device",
+      "frontline_delta": 14,
+      "f1_fit_delta": 8,
+      "f3_fit_delta": 6,
+      "risk_delta": 8,
+      "guidance": "Shared Device passt gut zu Schicht- und Standortarbeit, braucht aber klare Anmeldung, Abmeldung und Geräteverwaltung.",
+      "security_guidance": "Shared Device Mode, Conditional Access und App-Schutzrichtlinien einplanen."
+    },
+    "byod": {
+      "label": "Privates Smartphone",
+      "frontline_delta": 8,
+      "f1_fit_delta": 4,
+      "f3_fit_delta": 6,
+      "risk_delta": 10,
+      "guidance": "BYOD ist praktisch für Schichtpläne, Chat und HR-Informationen, muss aber arbeitsrechtlich und technisch passen.",
+      "security_guidance": "App-Schutz, Zugriffskontrollen und klare BYOD-Regeln vorbereiten."
+    },
+    "company_smartphone": {
+      "label": "Firmen-Smartphone",
+      "frontline_delta": 10,
+      "f1_fit_delta": 5,
+      "f3_fit_delta": 8,
+      "risk_delta": 4,
+      "guidance": "Firmen-Smartphones eignen sich für mobile Kommunikation, Aufgaben, Formulare und Außendienstprozesse.",
+      "security_guidance": "Mobile Device Management und App-Schutzrichtlinien einplanen."
+    },
+    "dedicated_device": {
+      "label": "Dediziertes Gerät",
+      "frontline_delta": 0,
+      "f1_fit_delta": -2,
+      "f3_fit_delta": 3,
+      "risk_delta": 3,
+      "guidance": "Ein persönliches Gerät kann Frontline sein, deutet bei viel Desktop-Arbeit aber eher auf F3 oder Enterprise hin.",
+      "security_guidance": "Geräte-Compliance und Zugriffskontrollen prüfen."
+    },
+    "kiosk_terminal": {
+      "label": "Kiosk / Terminal",
+      "frontline_delta": -8,
+      "f1_fit_delta": -10,
+      "f3_fit_delta": -8,
+      "risk_delta": 24,
+      "guidance": "Kiosk-Modelle sind nur für sehr eng gefasste Aufgaben geeignet und liefern oft keine gute Nutzerzuordnung.",
+      "security_guidance": "Für Zusammenarbeit, Audit und nutzerbasierte Schutzfunktionen besser identitätsbasierte Modelle prüfen."
+    }
+  },
+  "classification": {
+    "frontline_min": 70,
+    "mixed_min": 45,
+    "manual_review_risk": 70
+  }
+}

@@ -80,24 +80,26 @@ if (class_exists('CMS\\ThemeManager')) {
                     <span class="phinit-tool-card__icon" aria-hidden="true">
                         <?php echo CMS_M365CALCULATOR_Icons::svg((string) ($tool['icon'] ?? 'calculator')); ?>
                     </span>
-                    <h3>
+                    <section class="phinit-tool-card__body">
+                        <h3>
+                            <?php if ($isLinked): ?>
+                            <a href="<?php echo $esc($url); ?>"><?php echo $esc($tool['title'] ?? ''); ?></a>
+                            <?php else: ?>
+                            <span><?php echo $esc($tool['title'] ?? ''); ?></span>
+                            <?php endif; ?>
+                            <?php if ($label !== ''): ?>
+                            <span class="phinit-status-label"><?php echo $esc($label); ?></span>
+                            <?php endif; ?>
+                        </h3>
+                        <p><?php echo $esc($tool['description'] ?? ''); ?></p>
                         <?php if ($isLinked): ?>
-                        <a href="<?php echo $esc($url); ?>"><?php echo $esc($tool['title'] ?? ''); ?></a>
+                        <a href="<?php echo $esc($url); ?>" class="phinit-btn phinit-btn--link">
+                            Öffnen <span class="phinit-arrow" aria-hidden="true">→</span>
+                        </a>
                         <?php else: ?>
-                        <span><?php echo $esc($tool['title'] ?? ''); ?></span>
+                        <span class="phinit-tool-card__disabled-note" aria-disabled="true">Nicht verfügbar</span>
                         <?php endif; ?>
-                        <?php if ($label !== ''): ?>
-                        <span class="phinit-status-label"><?php echo $esc($label); ?></span>
-                        <?php endif; ?>
-                    </h3>
-                    <p><?php echo $esc($tool['description'] ?? ''); ?></p>
-                    <?php if ($isLinked): ?>
-                    <a href="<?php echo $esc($url); ?>" class="phinit-btn phinit-btn--link">
-                        Öffnen <span class="phinit-arrow" aria-hidden="true">→</span>
-                    </a>
-                    <?php else: ?>
-                    <span class="phinit-tool-card__disabled-note" aria-disabled="true">Nicht verfügbar</span>
-                    <?php endif; ?>
+                    </section>
                 </article>
             </li>
             <?php endforeach; ?>

@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "source": "Plan and feature caveats for license comparison module",
+    "source_checked": "2026-05-15"
+  },
+  "global_notes": [
+    "Preise sind Referenzwerte aus dem migrierten m365lic-Katalog und müssen vor Angebotserstellung gegen aktuelle Microsoft-/CSP-Preislisten geprüft werden.",
+    "Feature-Status zeigt Lizenzlogik, nicht Mandantenkonfiguration. Richtlinien, Rollout, Region und Tenant-Settings können Funktionen trotzdem einschränken.",
+    "Copilot Chat ist nicht identisch mit Microsoft 365 Copilot. Volle M365-Copilot-Erlebnisse benötigen eine separate Copilot-Lizenz und technische Voraussetzungen.",
+    "Power Platform seeded Rechte decken Standard-Microsoft-365-Szenarien ab; Premium-Connectoren, Custom Connectoren, On-Premises-Gateways und produktive Dataverse-Apps sind separat zu prüfen.",
+    "Teams Phone benötigt Phone-System-Rechte und für externe Telefonie zusätzlich PSTN-Optionen wie Calling Plan, Operator Connect, Direct Routing oder Shared Calling."
+  ],
+  "plan_notes": {
+    "m365-business-basic": ["Keine Desktop Apps; guter Web-/Mail-/Teams-Einstieg.", "Business-SKU: 300er-Grenze beachten."],
+    "m365-business-standard": ["Desktop Apps enthalten; klassische KMU-Produktivitätsbasis.", "Security- und Geräteverwaltung meist erst mit Business Premium oder Add-ons belastbar."],
+    "m365-business-premium": ["Starker KMU-Sicherheits- und Device-Management-Pfad mit Desktop Apps.", "Business-SKU: 300er-Grenze beachten."],
+    "office-365-e1": ["Enterprise-Web-Worker-Pfad ohne Desktop Apps.", "Security-/Device-Funktionen meist per Add-on oder Suite-Wechsel."],
+    "office-365-e3": ["Enterprise Desktop Apps und Archiv-Pfad enthalten.", "Windows-/Device-Management-Funktionen sind eher Microsoft-365-E3/E5-Pfad."],
+    "office-365-e5": ["Office-E5-Pfad mit Analytics, Audio Conferencing und Phone-System-Rechten.", "Endpoint-/Windows-Management ist dennoch getrennt vom Microsoft-365-E5-Pfad zu bewerten."],
+    "m365-e3": ["Enterprise-Produktivität plus Windows-/Intune-Baseline.", "Security-Add-ons können je Zielbild weiterhin nötig sein."],
+    "m365-e5": ["Stärkster modellierter Suite-Pfad für Security, Compliance, Analytics und Phone System.", "Security-Copilot-/Packaging-Details regelmäßig gegen Microsoft Licensing News prüfen."],
+    "m365-f1": ["Leichter Frontline-Pfad ohne klassische Mailbox im Modell.", "Für Knowledge Worker meist nicht passend."],
+    "m365-f3": ["Frontline mit Mail-, Teams- und Datei-Pfad.", "Frontline-Nutzungsbedingungen und Geräte-/Schicht-Kontext prüfen."],
+    "office-365-f3": ["Office-Frontline-Pfad mit Mail, Teams und Web-Apps.", "CSP-/Kanalverfügbarkeit prüfen."]
+  }
+}

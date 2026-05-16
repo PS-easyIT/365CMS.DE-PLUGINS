@@ -1,0 +1,138 @@
+{
+  "meta": {
+    "title": "Archive Mailbox Planannahmen",
+    "source_checked": "2026-05-16",
+    "currency": "EUR",
+    "notes": [
+      "Auto-expanding Archive wird als Kapazität bis 1,5 TB modelliert; zusätzliche Archiv-Speicherbereiche können laut Microsoft bis zu 30 Tage Provisionierungszeit benötigen.",
+      "Shared Mailboxes ohne eigene Lizenz werden für die Primärmailbox mit 50 GB modelliert; 100 GB und erweiterte Compliance-/Archivfunktionen benötigen eine passende Lizenz.",
+      "Die gepflegten Preise sind Orientierungswerte und müssen vor Bestellung im Partner Center oder beim Distributor geprüft werden."
+    ],
+    "sources": [
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/exchange-online-service-description/exchange-online-limits",
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/exchange-online-archiving-service-description/exchange-online-archiving-service-description",
+      "https://learn.microsoft.com/en-us/purview/autoexpanding-archiving",
+      "https://learn.microsoft.com/en-us/purview/enable-autoexpanding-archiving",
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/microsoft-365-service-descriptions/microsoft-365-tenantlevel-services-licensing-guidance/microsoft-purview-service-description"
+    ]
+  },
+  "plans": [
+    {
+      "slug": "m365-business-basic",
+      "name": "Microsoft 365 Business Basic",
+      "short": "Business Basic",
+      "price_month": 5.20,
+      "primary_mailbox_gb": 50,
+      "archive_mailbox_gb": 50,
+      "auto_expanding_gb": 0,
+      "auto_expanding_included": false,
+      "archiving_addon_supported": true,
+      "recommended_archive_addon": "exchange-online-archiving",
+      "hold_supported": false,
+      "plan_rank": 10,
+      "note": "Exchange Online Plan 1-basierter Business-Pfad; Auto-expanding Archive per Exchange Online Archiving Add-on prüfen."
+    },
+    {
+      "slug": "m365-business-standard",
+      "name": "Microsoft 365 Business Standard",
+      "short": "Business Standard",
+      "price_month": 10.80,
+      "primary_mailbox_gb": 50,
+      "archive_mailbox_gb": 50,
+      "auto_expanding_gb": 0,
+      "auto_expanding_included": false,
+      "archiving_addon_supported": true,
+      "recommended_archive_addon": "exchange-online-archiving",
+      "hold_supported": false,
+      "plan_rank": 20,
+      "note": "Business-Pfad mit Desktop Apps; großer Archivbedarf wird über Archiving Add-on oder Upgrade bewertet."
+    },
+    {
+      "slug": "m365-business-premium",
+      "name": "Microsoft 365 Business Premium",
+      "short": "Business Premium",
+      "price_month": 19.10,
+      "primary_mailbox_gb": 50,
+      "archive_mailbox_gb": 100,
+      "auto_expanding_gb": 1500,
+      "auto_expanding_included": true,
+      "archiving_addon_supported": false,
+      "recommended_archive_addon": "",
+      "hold_supported": true,
+      "plan_rank": 30,
+      "note": "Business-Premium-Pfad mit Archiv-/Compliance-Berechtigung; Primärmailbox bleibt als Planungswert 50 GB."
+    },
+    {
+      "slug": "m365-e3",
+      "name": "Microsoft 365 E3",
+      "short": "M365 E3",
+      "price_month": 34.90,
+      "primary_mailbox_gb": 100,
+      "archive_mailbox_gb": 100,
+      "auto_expanding_gb": 1500,
+      "auto_expanding_included": true,
+      "archiving_addon_supported": false,
+      "recommended_archive_addon": "",
+      "hold_supported": true,
+      "plan_rank": 40,
+      "note": "Enterprise-Pfad mit 100-GB-Mailbox und Auto-expanding Archive."
+    },
+    {
+      "slug": "m365-e5",
+      "name": "Microsoft 365 E5",
+      "short": "M365 E5",
+      "price_month": 57.00,
+      "primary_mailbox_gb": 100,
+      "archive_mailbox_gb": 100,
+      "auto_expanding_gb": 1500,
+      "auto_expanding_included": true,
+      "archiving_addon_supported": false,
+      "recommended_archive_addon": "",
+      "hold_supported": true,
+      "plan_rank": 50,
+      "note": "Enterprise-Premium-Pfad mit 100-GB-Mailbox, Auto-expanding Archive und erweitertem Security-/Compliance-Kontext."
+    },
+    {
+      "slug": "exchange-online-plan-1",
+      "name": "Exchange Online Plan 1",
+      "short": "EXO P1",
+      "price_month": 3.50,
+      "primary_mailbox_gb": 50,
+      "archive_mailbox_gb": 50,
+      "auto_expanding_gb": 0,
+      "auto_expanding_included": false,
+      "archiving_addon_supported": true,
+      "recommended_archive_addon": "exchange-online-archiving",
+      "hold_supported": false,
+      "plan_rank": 15,
+      "note": "Standalone-Mailbox mit 50 GB; Archiving Add-on für Auto-expanding Archive prüfen."
+    },
+    {
+      "slug": "exchange-online-plan-2",
+      "name": "Exchange Online Plan 2",
+      "short": "EXO P2",
+      "price_month": 6.90,
+      "primary_mailbox_gb": 100,
+      "archive_mailbox_gb": 100,
+      "auto_expanding_gb": 1500,
+      "auto_expanding_included": true,
+      "archiving_addon_supported": false,
+      "recommended_archive_addon": "",
+      "hold_supported": true,
+      "plan_rank": 35,
+      "note": "Standalone-Exchange-Plan mit 100-GB-Mailbox, Hold- und Auto-expanding-Archivpfad."
+    }
+  ],
+  "addons": [
+    {
+      "slug": "exchange-online-archiving",
+      "name": "Exchange Online Archiving",
+      "short": "EOA",
+      "price_month": 3.00,
+      "archive_mailbox_gb": 100,
+      "auto_expanding_gb": 1500,
+      "adds_hold": true,
+      "note": "Add-on für geeignete Plan-1-/Kiosk-/Business-Basispläne; ergänzt Auto-expanding Archive und Hold-Pfade."
+    }
+  ]
+}

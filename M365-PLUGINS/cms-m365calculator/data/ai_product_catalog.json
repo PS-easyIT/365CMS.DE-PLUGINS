@@ -1,0 +1,195 @@
+{
+  "meta": {
+    "title": "AI Product Catalog",
+    "source_checked": "2026-05-16",
+    "currency": "EUR",
+    "price_basis": "Orientierungswerte und Kostenmodelle; finale Preise, Capacity und Angebotsnamen im jeweiligen Kanal prüfen.",
+    "notes": [
+      "Copilot Chat ist der sichere Einstiegspfad für webbasierte Arbeit in Microsoft-365-Organisationen.",
+      "Microsoft 365 Copilot ist der Pfad für Arbeitsdaten aus Microsoft Graph, Microsoft-365-Apps und organisationsweite Wissensarbeit.",
+      "Produktlabels wie AI Pack, Copilot Pro oder branchenspezifische Bundles werden bewusst katalogbasiert gepflegt."
+    ],
+    "sources": [
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/which-copilot-for-your-organization",
+      "https://learn.microsoft.com/en-us/copilot/overview",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-licensing",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-overview",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/enterprise-data-protection",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/pay-as-you-go/overview",
+      "https://learn.microsoft.com/en-us/copilot/security/microsoft-security-copilot",
+      "https://learn.microsoft.com/en-us/microsoft-copilot-studio/fundamentals-what-is-copilot-studio",
+      "https://docs.github.com/copilot/about-github-copilot/what-is-github-copilot",
+      "https://www.microsoft.com/en-us/licensing/news",
+      "https://learn.microsoft.com/en-us/power-platform/admin/powerapps-flow-licensing-faq"
+    ]
+  },
+  "products": [
+    {
+      "slug": "copilot-chat",
+      "name": "Microsoft 365 Copilot Chat",
+      "short": "Copilot Chat",
+      "type": "chat",
+      "category": "Chat",
+      "data_grounding": "web",
+      "cost_model": "In geeigneten Microsoft-365-Organisationen enthalten; Agents optional nutzungsbasiert.",
+      "price_month": 0,
+      "target_roles": ["knowledge_worker", "executive", "sales", "service", "process_team"],
+      "data_scopes": ["web", "open_file", "payg_agent"],
+      "goals": ["personal_assistant", "quick_research", "light_app_chat"],
+      "strengths": [
+        "Sicherer Einstieg mit Enterprise Data Protection",
+        "Web-grounded Chat, Pages, Datei-Upload und Bildgenerierung je Verfügbarkeit",
+        "Pay-as-you-go Agents für erste Tests ohne vollständige Copilot-Lizenz"
+      ],
+      "limits": [
+        "Nicht standardmäßig über alle Arbeitsdaten aus Microsoft Graph grounded",
+        "Organisationswissen nur über hochgeladene/offene Inhalte oder Agents",
+        "Keine vollständigen In-App- und Analytics-Pfade wie Microsoft 365 Copilot"
+      ],
+      "manual_review": false
+    },
+    {
+      "slug": "microsoft-365-copilot",
+      "name": "Microsoft 365 Copilot",
+      "short": "M365 Copilot",
+      "type": "work",
+      "category": "Work Data",
+      "data_grounding": "work_web_graph",
+      "cost_model": "Add-on je berechtigtem Benutzer; Basislizenz und Readiness erforderlich.",
+      "price_month": 28.10,
+      "target_roles": ["knowledge_worker", "executive", "sales", "service", "process_team"],
+      "data_scopes": ["work", "mail", "files", "meetings", "graph", "third_party_search"],
+      "goals": ["org_knowledge", "in_app_productivity", "meeting_summary", "document_work", "custom_agents"],
+      "strengths": [
+        "Grounding in Microsoft Graph, Dateien, E-Mails, Chats und Meetings mit Berechtigungsmodell",
+        "In-App-Erlebnisse in Word, Excel, PowerPoint, Outlook, Teams und weiteren Microsoft-365-Apps",
+        "Copilot Search, Agents, Analytics und zusätzliche Admin-/Governance-Pfade"
+      ],
+      "limits": [
+        "Benötigt berechtigte Basislizenz und technische Readiness",
+        "Vor Rollout Berechtigungen, Oversharing und Datenqualität prüfen",
+        "Nicht der Spezialpfad für reine Security- oder Entwicklungs-Workloads"
+      ],
+      "manual_review": false
+    },
+    {
+      "slug": "microsoft-copilot-consumer",
+      "name": "Microsoft Copilot Consumer",
+      "short": "Consumer Copilot",
+      "type": "consumer",
+      "category": "Consumer",
+      "data_grounding": "web",
+      "cost_model": "Persönlicher Consumer-Pfad; nicht als Standard für sensible Unternehmensdaten planen.",
+      "price_month": 0,
+      "target_roles": ["personal", "knowledge_worker"],
+      "data_scopes": ["web"],
+      "goals": ["personal_assistant", "quick_research"],
+      "strengths": [
+        "Für persönliche oder nicht sensible Web-Aufgaben geeignet",
+        "Schneller Einstieg außerhalb des Unternehmenslizenzpfads"
+      ],
+      "limits": [
+        "Nicht der Standardpfad für proprietäre oder sensible Unternehmensdaten",
+        "Keine organisatorische M365-Governance als Zielmodell",
+        "Kein Microsoft-365-Work-Data-Grounding"
+      ],
+      "manual_review": true
+    },
+    {
+      "slug": "security-copilot",
+      "name": "Microsoft Security Copilot",
+      "short": "Security Copilot",
+      "type": "specialized",
+      "category": "Security",
+      "data_grounding": "security",
+      "cost_model": "Security-/Capacity-orientierter Spezialpfad; Tenant-, Rollen- und Datenquellen prüfen.",
+      "price_month": null,
+      "target_roles": ["security"],
+      "data_scopes": ["security", "alerts", "defender", "sentinel", "intune", "entra", "purview"],
+      "goals": ["role_specialist", "incident_response", "threat_hunting", "security_posture"],
+      "strengths": [
+        "Incident Response, Threat Hunting, Policy- und Posture-Management",
+        "Integration mit Defender XDR, Sentinel, Intune, Entra, Purview und Plugins",
+        "Kontextualisierte Security-Auswertungen und Reportings"
+      ],
+      "limits": [
+        "Nicht als allgemeiner Office-Assistent planen",
+        "Security-Datenquellen, Rollenmodell und Capacity getrennt bewerten",
+        "Cloud- und Regionseinschränkungen prüfen"
+      ],
+      "manual_review": false
+    },
+    {
+      "slug": "github-copilot",
+      "name": "GitHub Copilot",
+      "short": "GitHub Copilot",
+      "type": "specialized",
+      "category": "Development",
+      "data_grounding": "code",
+      "cost_model": "Developer-Lizenz je Benutzer bzw. Organisations-/Enterprise-Plan.",
+      "price_month": null,
+      "target_roles": ["developer"],
+      "data_scopes": ["code", "repositories", "developer_tools"],
+      "goals": ["role_specialist", "code_assistance", "developer_productivity"],
+      "strengths": [
+        "Codevorschläge, Chat, CLI- und Pull-Request-Unterstützung",
+        "Entwicklerfokus statt allgemeiner Office-Fokus",
+        "Organisations- und Enterprise-Verwaltung je GitHub-Plan"
+      ],
+      "limits": [
+        "Nicht für allgemeine Microsoft-365-Work-Data-Szenarien gedacht",
+        "Repository-, IP- und Governance-Regeln separat prüfen",
+        "Copilot Pro/Pro+ Consumer-Labels sind nicht automatisch Enterprise-Standard"
+      ],
+      "manual_review": false
+    },
+    {
+      "slug": "copilot-studio",
+      "name": "Microsoft Copilot Studio",
+      "short": "Copilot Studio",
+      "type": "agent",
+      "category": "Agents",
+      "data_grounding": "custom_sources",
+      "cost_model": "Tenant-/Message-/Capacity-Modell; M365- und Teams-Rechte von Standalone-Rechten trennen.",
+      "price_month": null,
+      "target_roles": ["process_team", "service", "sales", "knowledge_worker", "developer"],
+      "data_scopes": ["crm", "ticketing", "custom_api", "process", "knowledge_base", "payg_agent"],
+      "goals": ["custom_agents", "process_automation", "role_specialist", "customer_service", "workflow"],
+      "strengths": [
+        "Low-code-Agenten, Knowledge Sources, Topics, Tools, Trigger und Agent Flows",
+        "Eigene Agenten für Support, HR, Service, Sales oder Prozessautomatisierung",
+        "Kann Microsoft 365 Copilot erweitern oder eigenständige Agenten bereitstellen"
+      ],
+      "limits": [
+        "Capacity, Messages, Connectors und Dataverse-Rechte separat planen",
+        "Nicht automatisch Ersatz für Microsoft 365 Copilot in Office-Apps",
+        "Für produktive Agenten Governance, DLP und Betriebskonzept einplanen"
+      ],
+      "manual_review": false
+    },
+    {
+      "slug": "dynamic-ai-pack",
+      "name": "AI Pack / Spezialbundle",
+      "short": "AI Pack",
+      "type": "dynamic_offer",
+      "category": "Dynamisch",
+      "data_grounding": "varies",
+      "cost_model": "Dynamisches Angebot; Packaging, Markt und Quellenstand manuell prüfen.",
+      "price_month": null,
+      "target_roles": ["sales", "service", "process_team", "executive", "knowledge_worker"],
+      "data_scopes": ["crm", "ticketing", "industry", "varies"],
+      "goals": ["role_specialist", "custom_agents", "org_knowledge"],
+      "strengths": [
+        "Kann Spezialfunktionen oder Bundle-Vorteile enthalten",
+        "Sinnvoll als gepflegtes Angebotslabel im Katalog",
+        "Erlaubt schnelle Aktualisierung ohne Codeänderung"
+      ],
+      "limits": [
+        "Produktname und Umfang können sich kurzfristig ändern",
+        "Nur mit aktuellem Angebot, Price List oder Herstellerseite empfehlen",
+        "Nicht pauschal als besser als Copilot Chat oder Microsoft 365 Copilot werten"
+      ],
+      "manual_review": true
+    }
+  ]
+}

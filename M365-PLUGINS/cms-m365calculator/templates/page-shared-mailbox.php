@@ -65,9 +65,7 @@ if (class_exists('CMS\\ThemeManager')) {
                 <p>Alle Pflichtfelder sind mit realistischen Defaults vorbelegt. Passe die Werte an deinen Tenant-Fall an.</p>
             </div>
 
-            <form method="POST" class="m365calc-form" data-m365calc-form>
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
-
+            <form method="GET" class="m365calc-form" data-m365calc-form>
                 <fieldset class="m365calc-fieldset">
                     <legend>Grunddaten</legend>
                     <div class="m365calc-form-grid m365calc-form-grid--3">
@@ -113,6 +111,7 @@ if (class_exists('CMS\\ThemeManager')) {
                     <legend>Fachliche Anforderungen</legend>
                     <div class="m365calc-choice-grid">
                         <?php foreach ($boolFields as $fieldName => $fieldMeta): ?>
+                        <input type="hidden" name="<?php echo htmlspecialchars((string) $fieldName, ENT_QUOTES, 'UTF-8'); ?>" value="0">
                         <label class="m365calc-choice">
                             <input type="checkbox" name="<?php echo htmlspecialchars((string) $fieldName, ENT_QUOTES, 'UTF-8'); ?>" value="1" <?php echo !empty($input[$fieldName]) ? 'checked' : ''; ?>>
                             <span>
@@ -128,6 +127,7 @@ if (class_exists('CMS\\ThemeManager')) {
                     <legend>Lizenz & Compliance</legend>
                     <div class="m365calc-choice-grid">
                         <?php foreach ($complianceFields as $fieldName => $fieldMeta): ?>
+                        <input type="hidden" name="<?php echo htmlspecialchars((string) $fieldName, ENT_QUOTES, 'UTF-8'); ?>" value="0">
                         <label class="m365calc-choice">
                             <input type="checkbox" name="<?php echo htmlspecialchars((string) $fieldName, ENT_QUOTES, 'UTF-8'); ?>" value="1" <?php echo !empty($input[$fieldName]) ? 'checked' : ''; ?>>
                             <span>
@@ -153,6 +153,7 @@ if (class_exists('CMS\\ThemeManager')) {
                             <label for="current_license_type">Referenzlizenz</label>
                             <input id="current_license_type" name="current_license_type" class="phinit-input" type="text" maxlength="80" value="<?php echo htmlspecialchars((string) $input['current_license_type'], ENT_QUOTES, 'UTF-8'); ?>">
                         </div>
+                        <input type="hidden" name="convert_existing_user_mailbox" value="0">
                         <label class="m365calc-choice m365calc-choice--inline">
                             <input type="checkbox" name="convert_existing_user_mailbox" value="1" <?php echo !empty($input['convert_existing_user_mailbox']) ? 'checked' : ''; ?>>
                             <span><strong>Bestehende User-Mailbox konvertieren</strong><small>Migration-/Konvertierungshinweise ausgeben.</small></span>
