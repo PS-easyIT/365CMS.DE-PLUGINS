@@ -133,7 +133,7 @@
 .phinit-card {
     background: var(--phinit-color-surface);
     border: 1px solid var(--phinit-color-border);
-    border-radius: var(--phinit-radius-md);
+    border-radius: var(--m365tools-ui-radius, 2px);
     box-shadow: var(--phinit-shadow-card);
     padding: var(--phinit-space-5);
 }
@@ -164,7 +164,7 @@
 .phinit-btn {
     align-items: center;
     border: 1px solid transparent;
-    border-radius: var(--phinit-radius-sm);
+    border-radius: var(--m365tools-ui-radius, 2px);
     cursor: pointer;
     display: inline-flex;
     font-family: var(--phinit-font-body);
@@ -240,7 +240,7 @@
 .phinit-textarea {
     background: var(--phinit-color-surface);
     border: 1px solid var(--phinit-color-border);
-    border-radius: var(--phinit-radius-sm);
+    border-radius: var(--m365tools-ui-radius, 2px);
     color: var(--phinit-color-ink);
     font-family: var(--phinit-font-body);
     font-size: var(--phinit-text-base);
@@ -300,7 +300,7 @@
     background: var(--phinit-color-surface);
     border: 1px solid var(--phinit-color-border);
     border-left-width: 3px;
-    border-radius: var(--phinit-radius-sm);
+    border-radius: var(--m365tools-ui-radius, 2px);
     color: var(--phinit-color-ink);
     font-size: var(--phinit-text-sm);
     padding: var(--phinit-space-3) var(--phinit-space-4);
@@ -362,7 +362,7 @@
 .phinit-result {
     background: var(--phinit-color-surface);
     border: 1px solid var(--phinit-color-border);
-    border-radius: var(--phinit-radius-md);
+    border-radius: var(--m365tools-ui-radius, 2px);
     padding: var(--phinit-space-5);
 }
 
@@ -413,7 +413,7 @@
 
 .phinit-empty-state {
     border: 1px solid var(--phinit-color-border);
-    border-radius: var(--phinit-radius-md);
+    border-radius: var(--m365tools-ui-radius, 2px);
     padding: var(--phinit-space-5);
 }
 

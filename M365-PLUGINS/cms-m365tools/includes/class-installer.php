@@ -126,9 +126,7 @@ final class CMS_M365CALCULATOR_Installer
 
     private static function migrate_legacy_settings(\PDO $pdo, string $newTable, string $oldTable): void
     {
-        $stmt = $pdo->prepare('SHOW TABLES LIKE ?');
-        $stmt->execute([$oldTable]);
-        if ($stmt->fetchColumn() === false) {
+        if (!self::table_exists($pdo, $oldTable)) {
             return;
         }
 
@@ -159,10 +157,27 @@ final class CMS_M365CALCULATOR_Installer
 
     private static function column_exists(\PDO $pdo, string $table, string $column): bool
     {
-        $stmt = $pdo->prepare('SHOW COLUMNS FROM ' . self::quote_identifier($table) . ' LIKE ?');
-        $stmt->execute([$column]);
+        $stmt = $pdo->prepare('SELECT 1
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = ?
+              AND COLUMN_NAME = ?
+            LIMIT 1');
+        $stmt->execute([$table, $column]);
 
-        return $stmt->fetch() !== false;
+        return $stmt->fetchColumn() !== false;
+    }
+
+    private static function table_exists(\PDO $pdo, string $table): bool
+    {
+        $stmt = $pdo->prepare('SELECT 1
+            FROM INFORMATION_SCHEMA.TABLES
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = ?
+            LIMIT 1');
+        $stmt->execute([$table]);
+
+        return $stmt->fetchColumn() !== false;
     }
 
     /**

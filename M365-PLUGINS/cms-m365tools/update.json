@@ -1,11 +1,11 @@
 {
-  "version": "1.29.16",
+  "version": "1.29.20",
   "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
   "requires": "2.9.0",
   "tested": "2.9.7",
   "last_updated": "2026-05-17",
   "sections": {
     "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme, zentraler Dienstleister- und Kontaktformular-CTA, eigenem Landingpage-Designer, UX-optimierter Live-Suche, Tag-Filtern, Sticky-Kategorie-Navigation, zusammengeführtem Read-only-Matrix-Unterpunkt, globalen Paketpreis- und Abopreisbereichen, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass und 21 Public-Modulen.",
-    "changelog": "Vollständiger Public-/Admin-Audit für CMS M365TOOLS: Admin-Speicherungen laufen jetzt atomar in Transaktionen, Landingpage-Card-Navigation validiert Ziel-URLs vor dem Navigieren und Public-Radien der Modul- und Landingpage-Komponenten sind konsequent auf maximal 2px begrenzt. Validiert wurden PHP-Lint, JSON, Public-POST, Admin-CSRF, JS-Sinks, Design-Radien und Scope."
+    "changelog": "Read-only-Matrix-Scrollfix für CMS M365TOOLS: Lizenzmatrix und Add-on-Matrix starten beim Öffnen wieder am Seitenanfang. Der automatische Ergebnis-Fokus bleibt für interaktive Rechner erhalten, wird aber auf Read-only-Matrixseiten deaktiviert; zusätzlich wird Browser-Scroll-Restoration dort ohne Hash-Ziel auf den Seitenanfang gesetzt."
   }
 }

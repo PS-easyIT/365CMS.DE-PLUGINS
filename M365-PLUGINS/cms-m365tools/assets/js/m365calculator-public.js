@@ -11,6 +11,10 @@
     }
 
     function initResultFocus() {
+        if (document.querySelector('.m365calc-readonly-page')) {
+            return;
+        }
+
         var result = document.querySelector('[data-m365calc-result]');
         if (!result) {
             return;
@@ -19,6 +23,18 @@
         result.setAttribute('tabindex', '-1');
         result.focus({ preventScroll: true });
         result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function initReadonlyMatrixScrollPosition() {
+        if (!document.querySelector('.m365calc-readonly-page') || window.location.hash) {
+            return;
+        }
+
+        if ('scrollRestoration' in window.history) {
+            window.history.scrollRestoration = 'manual';
+        }
+
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }
 
     function initPrintButtons() {
@@ -195,6 +211,7 @@
 
     ready(function () {
         initContentHost();
+        initReadonlyMatrixScrollPosition();
         initResultFocus();
         initPrintButtons();
         initResetButtons();

@@ -39,6 +39,22 @@ final class CMS_M365CALCULATOR_Frontend
 
     private static ?self $instance = null;
 
+    /** @var array<string,string>|null */
+    private ?array $moduleRouteMapCache = null;
+
+    /** @var array<int,string>|null */
+    private ?array $publicRouteCache = null;
+
+    private ?string $requestPathCache = null;
+
+    private ?bool $calculatorRequestCache = null;
+
+    private ?bool $toolboxRequestCache = null;
+
+    private ?string $currentModuleKeyCache = null;
+
+    private bool $currentModuleKeyResolved = false;
+
     public static function instance(): self
     {
         if (self::$instance === null) {
@@ -77,7 +93,7 @@ final class CMS_M365CALCULATOR_Frontend
         });
 
         $router->addRoute('GET', self::LICENSE_ADVISOR_ROUTE, function (): void {
-            $this->render_license_advisor('GET');
+            $this->render_license_advisor();
         });
 
         $router->addRoute('GET', self::LICENSE_COMPARISON_ROUTE, function (): void {
@@ -149,31 +165,31 @@ final class CMS_M365CALCULATOR_Frontend
         });
 
         $router->addRoute('POST', self::LICENSE_ADVISOR_ROUTE, function (): void {
-            $this->render_license_advisor('POST');
+            $this->redirect_current_public_path();
         });
 
         $router->addRoute('GET', self::SHARED_MAILBOX_ROUTE, function (): void {
-            $this->render_shared_mailbox('GET');
+            $this->render_shared_mailbox();
         });
 
         $router->addRoute('POST', self::SHARED_MAILBOX_ROUTE, function (): void {
-            $this->render_shared_mailbox('POST');
+            $this->redirect_current_public_path();
         });
 
         $router->addRoute('GET', self::COPILOT_LICENSE_ROUTE, function (): void {
-            $this->render_copilot_license_check('GET');
+            $this->render_copilot_license_check();
         });
 
         $router->addRoute('POST', self::COPILOT_LICENSE_ROUTE, function (): void {
-            $this->render_copilot_license_check('POST');
+            $this->redirect_current_public_path();
         });
 
         $router->addRoute('GET', self::COPILOT_ROI_ROUTE, function (): void {
-            $this->render_copilot_roi('GET');
+            $this->render_copilot_roi();
         });
 
         $router->addRoute('POST', self::COPILOT_ROI_ROUTE, function (): void {
-            $this->render_copilot_roi('POST');
+            $this->redirect_current_public_path();
         });
     }
 
@@ -598,7 +614,7 @@ final class CMS_M365CALCULATOR_Frontend
         exit;
     }
 
-    private function render_license_advisor(string $method): void
+    private function render_license_advisor(): void
     {
         $this->ensure_tool_available('m365lic');
 
@@ -609,8 +625,8 @@ final class CMS_M365CALCULATOR_Frontend
         $personaPresets = CMS_M365CALCULATOR_License_Advisor::load_persona_presets();
         $featureOptions = CMS_M365CALCULATOR_License_Advisor::feature_options();
 
-        $source = $method === 'POST' ? $_POST : $_GET;
-        if ($method === 'POST' || !empty($_GET)) {
+        if (!empty($_GET)) {
+            $source = $_GET;
             $input = CMS_M365CALCULATOR_License_Advisor::normalize_input($source);
             $result = CMS_M365CALCULATOR_License_Advisor::evaluate($input);
             $notice = 'Die M365-Lizenzempfehlung wurde erstellt.';
@@ -621,7 +637,7 @@ final class CMS_M365CALCULATOR_Frontend
         exit;
     }
 
-    private function render_shared_mailbox(string $method): void
+    private function render_shared_mailbox(): void
     {
         $this->ensure_tool_available('shared-mailbox');
 
@@ -634,8 +650,8 @@ final class CMS_M365CALCULATOR_Frontend
         $licenseMatrix = CMS_M365CALCULATOR_Catalog::license_matrix();
         $pricing = CMS_M365CALCULATOR_Catalog::pricing();
 
-        $source = $method === 'POST' ? $_POST : $_GET;
-        if ($method === 'POST' || !empty($_GET)) {
+        if (!empty($_GET)) {
+            $source = $_GET;
             $input = CMS_M365CALCULATOR_Shared_Mailbox_Calculator::normalize_input($source);
             $result = CMS_M365CALCULATOR_Shared_Mailbox_Calculator::evaluate($input);
             $notice = 'Die Shared-Mailbox-Auswertung wurde erstellt.';
@@ -646,7 +662,7 @@ final class CMS_M365CALCULATOR_Frontend
         exit;
     }
 
-    private function render_copilot_license_check(string $method): void
+    private function render_copilot_license_check(): void
     {
         $this->ensure_tool_available('copilot-license-check');
 
@@ -658,8 +674,8 @@ final class CMS_M365CALCULATOR_Frontend
         $prerequisites = CMS_M365CALCULATOR_Copilot_License_Checker::load_copilot_prerequisites();
         $upgradePaths = CMS_M365CALCULATOR_Catalog::copilot_upgrade_paths();
 
-        $source = $method === 'POST' ? $_POST : $_GET;
-        if ($method === 'POST' || !empty($_GET)) {
+        if (!empty($_GET)) {
+            $source = $_GET;
             $input = CMS_M365CALCULATOR_Copilot_License_Checker::normalize_input($source);
             $result = CMS_M365CALCULATOR_Copilot_License_Checker::evaluate($input);
             $notice = 'Die Copilot-Lizenzprüfung wurde erstellt.';
@@ -670,7 +686,7 @@ final class CMS_M365CALCULATOR_Frontend
         exit;
     }
 
-    private function render_copilot_roi(string $method): void
+    private function render_copilot_roi(): void
     {
         $this->ensure_tool_available('copilot-roi');
 
@@ -682,8 +698,8 @@ final class CMS_M365CALCULATOR_Frontend
         $pricing = CMS_M365CALCULATOR_Catalog::copilot_pricing();
         $assumptions = CMS_M365CALCULATOR_Catalog::roi_assumptions();
 
-        $source = $method === 'POST' ? $_POST : $_GET;
-        if ($method === 'POST' || !empty($_GET)) {
+        if (!empty($_GET)) {
+            $source = $_GET;
             $input = CMS_M365CALCULATOR_Copilot_ROI_Calculator::normalize_input($source);
             $result = CMS_M365CALCULATOR_Copilot_ROI_Calculator::evaluate($input);
             $notice = 'Der Copilot ROI wurde berechnet.';
@@ -703,28 +719,60 @@ final class CMS_M365CALCULATOR_Frontend
         $this->render_toolbox();
     }
 
+    private function redirect_current_public_path(): void
+    {
+        $path = $this->normalized_request_path();
+        if ($path === '' || preg_match('/^[a-z0-9\/_-]+$/i', $path) !== 1) {
+            $path = trim(self::TOOLBOX_ROUTE, '/');
+        }
+
+        $path = '/' . $path;
+
+        if (!headers_sent()) {
+            header('Location: ' . $path, true, 303);
+        }
+
+        exit;
+    }
+
     private function is_calculator_request(): bool
     {
+        if ($this->calculatorRequestCache !== null) {
+            return $this->calculatorRequestCache;
+        }
+
         $requestPath = $this->normalized_request_path();
         if ($requestPath === '') {
-            return false;
+            $this->calculatorRequestCache = false;
+
+            return $this->calculatorRequestCache;
         }
 
         foreach ($this->all_public_routes() as $routePath) {
             if ($this->path_matches_route($requestPath, $routePath)) {
-                return true;
+                $this->calculatorRequestCache = true;
+
+                return $this->calculatorRequestCache;
             }
         }
 
-        return false;
+        $this->calculatorRequestCache = false;
+
+        return $this->calculatorRequestCache;
     }
 
     private function is_toolbox_request(): bool
     {
+        if ($this->toolboxRequestCache !== null) {
+            return $this->toolboxRequestCache;
+        }
+
         $requestPath = $this->normalized_request_path();
 
-        return $this->path_matches_route($requestPath, trim(self::TOOLBOX_ROUTE, '/'))
+        $this->toolboxRequestCache = $this->path_matches_route($requestPath, trim(self::TOOLBOX_ROUTE, '/'))
             || $this->path_matches_route($requestPath, trim(self::TOOLBOX_ROUTE_ALIAS, '/'));
+
+        return $this->toolboxRequestCache;
     }
 
     /**
@@ -770,6 +818,11 @@ final class CMS_M365CALCULATOR_Frontend
 
     private function current_module_key_from_request(): ?string
     {
+        if ($this->currentModuleKeyResolved) {
+            return $this->currentModuleKeyCache;
+        }
+
+        $this->currentModuleKeyResolved = true;
         $requestPath = $this->normalized_request_path();
         if ($requestPath === '') {
             return null;
@@ -777,7 +830,9 @@ final class CMS_M365CALCULATOR_Frontend
 
         foreach ($this->module_route_map() as $routePath => $moduleKey) {
             if ($this->path_matches_route($requestPath, $routePath)) {
-                return $moduleKey;
+                $this->currentModuleKeyCache = $moduleKey;
+
+                return $this->currentModuleKeyCache;
             }
         }
 
@@ -789,10 +844,16 @@ final class CMS_M365CALCULATOR_Frontend
      */
     private function all_public_routes(): array
     {
-        return array_merge([
+        if ($this->publicRouteCache !== null) {
+            return $this->publicRouteCache;
+        }
+
+        $this->publicRouteCache = array_merge([
             trim(self::TOOLBOX_ROUTE, '/'),
             trim(self::TOOLBOX_ROUTE_ALIAS, '/'),
         ], array_keys($this->module_route_map()));
+
+        return $this->publicRouteCache;
     }
 
     /**
@@ -800,6 +861,10 @@ final class CMS_M365CALCULATOR_Frontend
      */
     private function module_route_map(): array
     {
+        if ($this->moduleRouteMapCache !== null) {
+            return $this->moduleRouteMapCache;
+        }
+
         $map = [];
 
         if (class_exists('CMS_M365CALCULATOR_Tool_Registry')) {
@@ -845,12 +910,20 @@ final class CMS_M365CALCULATOR_Frontend
             $map[$route] ??= $moduleKey;
         }
 
-        return $map;
+        $this->moduleRouteMapCache = $map;
+
+        return $this->moduleRouteMapCache;
     }
 
     private function normalized_request_path(): string
     {
-        return trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
+        if ($this->requestPathCache !== null) {
+            return $this->requestPathCache;
+        }
+
+        $this->requestPathCache = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
+
+        return $this->requestPathCache;
     }
 
     private function path_matches_route(string $requestPath, string $routePath): bool

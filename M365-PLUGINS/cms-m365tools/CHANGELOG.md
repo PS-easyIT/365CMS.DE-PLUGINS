@@ -1,6 +1,36 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.29.20 – 2026-05-17
+
+- Scrollposition der Read-only-Matrixseiten korrigiert: Lizenzmatrix und Add-on-Matrix starten beim direkten Öffnen wieder oben am Contentheader.
+- Der automatische Ergebnis-Fokus aus `m365calculator-public.js` wird auf `.m365calc-readonly-page` nicht mehr ausgeführt.
+- Browser-Scroll-Restoration wird für Read-only-Matrixseiten ohne Hash-Ziel auf `manual` gesetzt und direkt auf Seitenanfang korrigiert.
+- Ergebnis-Fokus und Smooth-Scroll bleiben für interaktive Rechnerseiten unverändert erhalten.
+
+## 1.29.19 – 2026-05-17
+
+- Erneuten vollständigen Public-/Admin-Audit für Sicherheit, Routing, Erkennung, Logikpfade und Geschwindigkeit durchgeführt.
+- Public-Basisstyles gehärtet: `plugin-base.css` nutzt für Karten, Buttons, Inputs, Hinweise, Ergebnisboxen und Empty States jetzt den M365-UI-Radius mit maximal 2px statt PHINIT-Theme-Radien.
+- Admin-Oberflächen optisch vereinheitlicht: Formularfelder, Alerts, Tabs, Callouts und Preistabellen sind auf 2px Radius reduziert.
+- Frontend-Erkennung beschleunigt: Public-Routenliste, Toolbox-Erkennung, Rechnerseiten-Erkennung und aktueller Modulschlüssel werden pro Request gecacht.
+- Audit erneut gegen Public-Wortfilter, JS-Sinks, SQL-Metadatenabfragen, Admin-CSRF, PHP-Lint, JSON und CSS-Radius-Ausreißer geprüft.
+
+## 1.29.18 – 2026-05-17
+
+- Admin-Speicherfix für Matrixen, zentrale Einstellungen, Landingpage Designer und Modulübersicht umgesetzt.
+- MariaDB-kompatible Installer-Prüfung eingeführt: Tabellen- und Spaltenchecks laufen jetzt über `INFORMATION_SCHEMA` statt über `SHOW ... LIKE ?`.
+- Der Save-Vorcheck kann dadurch Tabellen/Spalten prüfen, ohne einen SQL-Syntaxfehler nahe `?` auszulösen.
+- Bestehende Migrationen und Legacy-Übernahme bleiben erhalten; `SHOW COLUMNS FROM` wird nur noch ohne Platzhalter für die sichere Spaltenliste einer bekannten Tabelle genutzt.
+
+## 1.29.17 – 2026-05-17
+
+- Erneuter vollständiger Audit mit Schwerpunkt auf Public-/Admin-Sicherheit, Weiterleitungen, Routenerkennung, Logikpfaden und Geschwindigkeit durchgeführt.
+- Öffentliche POST-Aufrufe auf Rechnerseiten werden nicht mehr ausgewertet; sie werden per sicherem `303` auf den internen Pfad zurückgeführt. Dadurch entstehen keine öffentlichen Formular-/Sicherheitsmeldungen und keine Body-Datenverarbeitung auf Publicseiten.
+- Landingpage-Card-Klicks verwenden nur noch vorhandene, serverseitig gefilterte Links; direkte Browser-Location-Zuweisung wurde entfernt.
+- Routenerkennung beschleunigt: Public-Route-Map und normalisierter Request-Pfad werden pro Request gecacht und nicht mehrfach aufgebaut.
+- Redirect-Ziele werden zusätzlich auf sichere interne Pfadzeichen begrenzt, bevor ein Location-Header gesetzt wird.
+
 ## 1.29.16 – 2026-05-17
 
 - Vollständiger Public-/Admin-Audit für Sicherheit, Routing, Save-Logik, Public-Design und Performance durchgeführt.

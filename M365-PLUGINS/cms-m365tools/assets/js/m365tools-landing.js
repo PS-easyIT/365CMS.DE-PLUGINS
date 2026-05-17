@@ -203,8 +203,9 @@
                 }
 
                 var destination = safeCardUrl(card.getAttribute('data-m365tools-card-url'));
-                if (destination !== '') {
-                    window.location.assign(destination);
+                var link = card.querySelector('a[href]');
+                if (destination !== '' && link && safeCardUrl(link.getAttribute('href')) === destination) {
+                    link.click();
                 }
             });
         });
