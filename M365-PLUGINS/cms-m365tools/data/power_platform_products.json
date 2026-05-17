@@ -1,0 +1,193 @@
+{
+  "meta": {
+    "title": "Power Platform Produkt- und Preiskatalog",
+    "version": "1.0.0",
+    "currency": "USD",
+    "source_checked": "2026-05-17",
+    "price_basis": "Microsoft-Listenpreise und Planungswerte aus Microsoft Learn; Vertrags-, CSP-, EA- oder PAYG-Konditionen bitte tenantbezogen pflegen.",
+    "sources": [
+      "https://learn.microsoft.com/en-us/power-platform/admin/powerapps-flow-licensing-faq",
+      "https://learn.microsoft.com/en-us/power-platform/admin/pricing-billing-skus",
+      "https://learn.microsoft.com/en-us/power-platform/admin/about-powerapps-perapp",
+      "https://learn.microsoft.com/en-us/power-platform/admin/power-automate-licensing/types",
+      "https://learn.microsoft.com/en-us/power-platform/admin/pay-as-you-go-meters"
+    ]
+  },
+  "defaults": {
+    "use_case": "internal_app",
+    "users": 120,
+    "makers": 8,
+    "environments": 2,
+    "apps_per_user": 1,
+    "scenario_count": 1,
+    "months": 12,
+    "connector_type": "standard",
+    "flow_context": "in_app",
+    "usage_pattern": "stable",
+    "rpa_mode": "none",
+    "bot_scope": "none",
+    "website_access": "none",
+    "monthly_flow_runs": 0,
+    "monthly_copilot_credits": 0,
+    "api_requests_per_day": 0,
+    "dataverse_db_gb": 0,
+    "dataverse_file_gb": 0,
+    "dataverse_log_gb": 0,
+    "process_mining_gb": 0,
+    "dataverse_for_teams": 1,
+    "teams_only": 1,
+    "outside_teams_use": 0,
+    "ai_builder_required": 0,
+    "managed_environment": 0,
+    "advanced_governance": 0,
+    "azure_subscription": 0
+  },
+  "products": {
+    "m365_seeded_rights": {
+      "name": "Microsoft 365 seeded Power Platform Rechte",
+      "family": "seeded",
+      "license_type": "seeded",
+      "billing_unit": "included",
+      "list_price_monthly": 0,
+      "includes_dataverse": "limited",
+      "includes_premium_connectors": false,
+      "includes_custom_connectors": false,
+      "includes_onprem_gateway": false,
+      "summary": "Für Microsoft-365-nahe Apps und Flows mit Standard-Connectoren; keine allgemeine Premium- oder Dataverse-Nutzung."
+    },
+    "power_apps_per_app": {
+      "name": "Power Apps per app",
+      "family": "power_apps",
+      "license_type": "user_app",
+      "billing_unit": "user_app_month",
+      "list_price_monthly": 5,
+      "includes_dataverse": "full_for_app",
+      "includes_premium_connectors": true,
+      "includes_custom_connectors": true,
+      "includes_onprem_gateway": true,
+      "summary": "Einstieg für ein klar abgegrenztes App- oder Website-Szenario je Nutzer und Umgebung."
+    },
+    "power_apps_premium": {
+      "name": "Power Apps Premium",
+      "family": "power_apps",
+      "license_type": "user",
+      "billing_unit": "user_month",
+      "list_price_monthly": 20,
+      "volume_price_monthly": 12,
+      "volume_threshold_users": 2000,
+      "includes_dataverse": "full",
+      "includes_premium_connectors": true,
+      "includes_custom_connectors": true,
+      "includes_onprem_gateway": true,
+      "included_ai_builder_credits": 500,
+      "summary": "Per-User-Pfad für mehrere Apps, breitere Maker-/App-Portfolios und produktive Dataverse-Szenarien."
+    },
+    "power_automate_premium": {
+      "name": "Power Automate Premium",
+      "family": "power_automate",
+      "license_type": "user",
+      "billing_unit": "user_month",
+      "list_price_monthly": 15,
+      "daily_actions": 40000,
+      "included_ai_builder_credits": 5000,
+      "includes_premium_connectors": true,
+      "includes_custom_connectors": true,
+      "includes_onprem_gateway": true,
+      "includes_attended_rpa": true,
+      "summary": "User-Lizenz für Premium-Flows, Custom Connectoren, Desktop-Automation im attended Modus und Process-Mining-Basis."
+    },
+    "power_automate_process": {
+      "name": "Power Automate Process",
+      "family": "power_automate",
+      "license_type": "capacity",
+      "billing_unit": "bot_or_flow_month",
+      "list_price_monthly": 150,
+      "daily_actions": 250000,
+      "included_ai_builder_credits": 5000,
+      "includes_unattended_rpa": true,
+      "summary": "Capacity-Modell für unbeaufsichtigte Bots oder zentrale Prozessautomation ohne Per-User-Verteilung je Ausführung."
+    },
+    "power_automate_hosted_rpa": {
+      "name": "Power Automate Hosted RPA",
+      "family": "power_automate",
+      "license_type": "capacity",
+      "billing_unit": "hosted_bot_month",
+      "list_price_monthly": 215,
+      "daily_actions": 250000,
+      "included_ai_builder_credits": 5000,
+      "includes_hosted_rpa": true,
+      "summary": "Hosted-RPA-Kapazität für Microsoft-gehostete Maschinen und hochautomatisierte Desktop-Prozesse."
+    },
+    "copilot_studio_payg": {
+      "name": "Copilot Studio PAYG Credits",
+      "family": "copilot_studio",
+      "license_type": "credit",
+      "billing_unit": "credit_month",
+      "list_price_monthly": 0.01,
+      "summary": "Planungswert für Copilot-Studio- und Agent-Credit-Verbrauch bei PAYG."
+    },
+    "power_pages_authenticated_pack": {
+      "name": "Power Pages Authenticated User Pack",
+      "family": "power_pages",
+      "license_type": "website",
+      "billing_unit": "100_auth_users_month",
+      "list_price_monthly": 200,
+      "pack_size": 100,
+      "minimum_environment_assignment": 25,
+      "summary": "Kapazität für eindeutige angemeldete Website-Nutzer pro Monat."
+    },
+    "power_pages_anonymous_pack": {
+      "name": "Power Pages Anonymous User Pack",
+      "family": "power_pages",
+      "license_type": "website",
+      "billing_unit": "500_anon_users_month",
+      "list_price_monthly": 75,
+      "pack_size": 500,
+      "minimum_environment_assignment": 200,
+      "summary": "Kapazität für eindeutige anonyme Website-Besucher pro Monat."
+    }
+  },
+  "options": {
+    "use_case": {
+      "internal_app": "Interne App",
+      "workflow": "Cloud Flow / Workflow",
+      "desktop_rpa": "Desktop-Automation / RPA",
+      "bot_agent": "Bot / Agent",
+      "website": "Website / Portal",
+      "teams_extension": "Teams-nahe Lösung",
+      "citizen_development": "Citizen-Development-Portfolio"
+    },
+    "months": {
+      "12": "12 Monate",
+      "24": "24 Monate",
+      "36": "36 Monate"
+    },
+    "usage_pattern": {
+      "stable": "Stabil planbar",
+      "seasonal": "Saisonal",
+      "unpredictable": "Schwer planbar"
+    },
+    "flow_context": {
+      "in_app": "Flow läuft im App-Kontext",
+      "standalone": "Flow läuft eigenständig"
+    },
+    "rpa_mode": {
+      "none": "Keine RPA",
+      "attended": "Attended RPA",
+      "unattended": "Unattended RPA",
+      "hosted": "Hosted RPA"
+    },
+    "bot_scope": {
+      "none": "Kein Bot / Agent",
+      "teams_only": "Teams-zentriert",
+      "full": "Vollständiger Copilot-Studio-Agent"
+    },
+    "website_access": {
+      "none": "Keine Website",
+      "internal": "Interne Website",
+      "authenticated": "Angemeldete Nutzer",
+      "anonymous": "Anonyme Besucher",
+      "mixed": "Angemeldet und anonym"
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "title": "Power Platform Governance-Regeln",
+    "version": "1.0.0",
+    "source_checked": "2026-05-17",
+    "sources": [
+      "https://learn.microsoft.com/en-us/power-platform/admin/powerapps-flow-licensing-faq",
+      "https://learn.microsoft.com/en-us/power-platform/admin/about-teams-environment"
+    ]
+  },
+  "dataverse_for_teams": {
+    "label": "Dataverse for Teams",
+    "storage_gb_per_environment": 2,
+    "records_per_environment": 1000000,
+    "one_environment_per_team": true,
+    "extra_capacity_available": false,
+    "supports_ai_builder": false,
+    "supports_desktop_flows": false,
+    "supports_custom_connectors": false,
+    "outside_teams_requires_upgrade": true,
+    "upgrade_reasons": [
+      "Nutzung außerhalb Teams",
+      "AI Builder",
+      "Desktop Flows",
+      "allgemeine Dataverse-API-Nutzung",
+      "Enterprise-ALM, Auditing oder Governance"
+    ]
+  },
+  "managed_environment_entitlement": {
+    "included_with": [
+      "Power Apps Premium",
+      "Power Apps per app",
+      "Power Automate Premium",
+      "Power Automate Process",
+      "Power Automate Hosted Process",
+      "Copilot Studio",
+      "Power Pages",
+      "Dynamics 365 Enterprise"
+    ],
+    "text": "Managed Environments sind in vielen Premium- und Capacity-Angeboten enthalten und sollten bei Governance-Anforderungen berücksichtigt werden."
+  },
+  "advanced_controls": {
+    "cmk": {
+      "label": "Customer Managed Key",
+      "needs_managed_environment": true,
+      "needs_e5_or_compliance": true
+    },
+    "lockbox": {
+      "label": "Customer Lockbox",
+      "needs_managed_environment": true,
+      "needs_e5_or_compliance": true
+    },
+    "vnet": {
+      "label": "Azure Virtual Network Support",
+      "needs_managed_environment": true,
+      "needs_e5_or_compliance": true,
+      "needs_azure_subscription": true
+    }
+  },
+  "warnings": {
+    "seeded_scope": "Seeded Rechte decken Standard-Connectoren im Microsoft-365-Kontext ab, aber keine generelle Premium- oder Dataverse-Plattformnutzung.",
+    "dataverse_for_teams_limit": "Dataverse for Teams ist bewusst limitiert; bei Wachstum, AI, Desktop-Flows oder Nutzung außerhalb Teams ist ein Upgrade-Pfad einzuplanen.",
+    "power_pages_capacity": "Power Pages wird nach eindeutigen Website-Nutzern und Kapazität geplant, nicht als normaler Per-User-Plan.",
+    "credits_monthly_reset": "Credits und viele Capacity-Modelle werden monatlich betrachtet; nicht genutzte Kapazität wird nicht in den nächsten Monat übernommen."
+  }
+}

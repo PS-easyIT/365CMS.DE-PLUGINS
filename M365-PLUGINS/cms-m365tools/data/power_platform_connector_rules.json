@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "title": "Power Platform Connector-Regeln",
+    "version": "1.0.0",
+    "source_checked": "2026-05-17",
+    "sources": [
+      "https://learn.microsoft.com/en-us/power-platform/admin/powerapps-flow-licensing-faq",
+      "https://learn.microsoft.com/en-us/power-platform/admin/power-automate-licensing/types"
+    ]
+  },
+  "connector_options": {
+    "standard": "Standard-Connectoren",
+    "premium": "Premium-Connectoren",
+    "custom": "Custom Connectoren",
+    "onprem": "On-Premises Gateway"
+  },
+  "rules": {
+    "standard": {
+      "label": "Standard-Connectoren",
+      "seeded_allowed": true,
+      "per_app_allowed": true,
+      "per_user_required": false,
+      "capacity_compatible": true,
+      "severity": "low",
+      "message": "Standard-Connectoren können im Microsoft-365-Kontext enthalten sein."
+    },
+    "premium": {
+      "label": "Premium-Connectoren",
+      "seeded_allowed": false,
+      "per_app_allowed": true,
+      "per_user_required": true,
+      "capacity_compatible": true,
+      "severity": "high",
+      "message": "Premium-Connectoren sind ein harter Treiber für Standalone-Power-Platform-Rechte."
+    },
+    "custom": {
+      "label": "Custom Connectoren",
+      "seeded_allowed": false,
+      "per_app_allowed": true,
+      "per_user_required": true,
+      "capacity_compatible": true,
+      "severity": "high",
+      "message": "Custom Connectoren brauchen eine passende Power-Apps- oder Power-Automate-Lizenzierung."
+    },
+    "onprem": {
+      "label": "On-Premises Gateway",
+      "seeded_allowed": false,
+      "per_app_allowed": true,
+      "per_user_required": true,
+      "capacity_compatible": true,
+      "severity": "high",
+      "message": "On-Premises-Gateways sind kein seeded Standardpfad und müssen premiumfähig geplant werden."
+    }
+  }
+}
