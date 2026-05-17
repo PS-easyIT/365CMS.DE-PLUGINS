@@ -134,8 +134,11 @@ final class CMS_M365CALCULATOR_Admin_Pages
             if (class_exists('CMS\\Security') && !\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'm365tools_admin_modules')) {
                 $error = 'Sicherheitscheck fehlgeschlagen.';
             } else {
-                CMS_M365CALCULATOR_Settings::save_module_settings($_POST);
-                $notice = 'Moduleinstellungen gespeichert.';
+                if (self::run_admin_save(static function (): void {
+                    CMS_M365CALCULATOR_Settings::save_module_settings($_POST);
+                }, $error)) {
+                    $notice = 'Moduleinstellungen gespeichert.';
+                }
             }
         }
 
@@ -272,14 +275,20 @@ final class CMS_M365CALCULATOR_Admin_Pages
             } else {
                 $action = (string) ($_POST['action'] ?? '');
                 if ($action === 'save_module_display') {
-                    CMS_M365CALCULATOR_Settings::save_single_module_settings($moduleKey, $_POST);
-                    $notice = 'Anzeigeeinstellungen gespeichert.';
-                    $activeTab = 'display';
+                    if (self::run_admin_save(static function () use ($moduleKey): void {
+                        CMS_M365CALCULATOR_Settings::save_single_module_settings($moduleKey, $_POST);
+                    }, $error)) {
+                        $notice = 'Anzeigeeinstellungen gespeichert.';
+                        $activeTab = 'display';
+                    }
                 } elseif ($action === 'save_module_options') {
                     $activeTab = self::normalize_tab((string) ($_POST['settings_group'] ?? $activeTab), $tabs);
                     $fields = CMS_M365CALCULATOR_Admin_Module_Config::fields_for($tool, $activeTab);
-                    CMS_M365CALCULATOR_Settings::save_module_options($moduleKey, $activeTab, self::sanitize_module_options($fields, $_POST));
-                    $notice = 'Moduleinstellungen gespeichert.';
+                    if (self::run_admin_save(static function () use ($moduleKey, $activeTab, $fields): void {
+                        CMS_M365CALCULATOR_Settings::save_module_options($moduleKey, $activeTab, self::sanitize_module_options($fields, $_POST));
+                    }, $error)) {
+                        $notice = 'Moduleinstellungen gespeichert.';
+                    }
                 }
             }
         }
@@ -311,8 +320,11 @@ final class CMS_M365CALCULATOR_Admin_Pages
             } elseif ((string) ($_POST['action'] ?? '') === 'save_global_options') {
                 $activeTab = self::normalize_tab((string) ($_POST['settings_group'] ?? $activeTab), $tabs, $defaultTab);
                 $fields = self::global_fields_for($area, $activeTab);
-                CMS_M365CALCULATOR_Settings::save_global_options($activeTab, self::sanitize_module_options($fields, $_POST));
-                $notice = 'Globale Einstellungen gespeichert.';
+                if (self::run_admin_save(static function () use ($activeTab, $fields): void {
+                    CMS_M365CALCULATOR_Settings::save_global_options($activeTab, self::sanitize_module_options($fields, $_POST));
+                }, $error)) {
+                    $notice = 'Globale Einstellungen gespeichert.';
+                }
             }
         }
 
@@ -347,6 +359,24 @@ final class CMS_M365CALCULATOR_Admin_Pages
         $first = array_key_first($tabs);
 
         return is_string($first) ? $first : 'overview';
+    }
+
+    private static function run_admin_save(callable $save, string &$error): bool
+    {
+        try {
+            if (class_exists('CMS_M365CALCULATOR_Installer')) {
+                CMS_M365CALCULATOR_Installer::maybe_install();
+            }
+
+            $save();
+
+            return true;
+        } catch (\Throwable $e) {
+            error_log('CMS M365 Tools admin save failed: ' . $e->getMessage());
+            $error = 'Speichern ist fehlgeschlagen. Die Datenbanktabellen wurden geprüft; bitte erneut versuchen oder das Fehlerlog prüfen.';
+
+            return false;
+        }
     }
 
     /**
@@ -523,7 +553,7 @@ final class CMS_M365CALCULATOR_Admin_Pages
                     'secondary' => 'Alle Aktionen ruhig darstellen',
                     'minimal' => 'Minimal / textnah',
                 ], 'Optische Gewichtung der Matrix-Buttons.'),
-                self::number('matrix_header_radius', 'Header-Rundung in px', '8', 0, 24, 1, 'Rundung für flächige oder gerahmte Header.'),
+                self::number('matrix_header_radius', 'Header-Rundung in px', '2', 0, 2, 1, 'Maximal 2px: Rundung für flächige oder gerahmte Header.'),
                 self::color('matrix_color_header_background', 'Header-Hintergrund', '#f8fafc', 'Hintergrundfarbe für flächige Header.'),
                 self::color('matrix_color_header_text', 'Header-Text', '#1e293b', 'Textfarbe im Contentheader.'),
                 self::color('matrix_color_header_muted', 'Header-Sekundärtext', '#64748b', 'Farbe für Overline und Beschreibung.'),

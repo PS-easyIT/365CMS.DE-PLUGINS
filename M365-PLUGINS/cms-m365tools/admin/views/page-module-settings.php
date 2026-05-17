@@ -42,6 +42,12 @@ $renderField = static function (array $field) use ($esc, $fieldValue): void {
                 </select>
             <?php elseif ($type === 'number'): ?>
                 <input type="number" id="<?php echo $esc($key); ?>" name="<?php echo $esc($key); ?>" class="form-control m365calculator-admin-control" value="<?php echo $esc($value); ?>" min="<?php echo $esc($field['min'] ?? ''); ?>" max="<?php echo $esc($field['max'] ?? ''); ?>" step="<?php echo $esc($field['step'] ?? '1'); ?>">
+            <?php elseif ($type === 'color'): ?>
+                <?php $colorValue = preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1 ? $value : (string) ($field['default'] ?? '#000000'); ?>
+                <div class="m365calculator-admin-color-field">
+                    <input type="color" id="<?php echo $esc($key); ?>" name="<?php echo $esc($key); ?>" class="form-control m365calculator-admin-control m365calculator-admin-control--color" value="<?php echo $esc($colorValue); ?>">
+                    <input type="text" class="form-control m365calculator-admin-control m365calculator-admin-control--color-text" value="<?php echo $esc($colorValue); ?>" maxlength="7" pattern="^#[0-9A-Fa-f]{6}$" aria-label="<?php echo $esc($label); ?> Farbwert" data-m365-color-copy="<?php echo $esc($key); ?>">
+                </div>
             <?php else: ?>
                 <input type="text" id="<?php echo $esc($key); ?>" name="<?php echo $esc($key); ?>" class="form-control m365calculator-admin-control" value="<?php echo $esc($value); ?>" maxlength="255">
             <?php endif; ?>
@@ -104,6 +110,7 @@ $renderField = static function (array $field) use ($esc, $fieldValue): void {
         <p class="m365calculator-admin-muted">Dieses Modul hat einen eigenen Admin-Unterpunkt. Anzeige, Preisannahmen, Workflow und Datenstand werden in den Tabs dieser Seite gepflegt.</p>
         <div class="m365calculator-admin-next-actions">
             <a class="btn btn-secondary" href="<?php echo $esc($moduleAdminUrl . '?tab=display'); ?>">🖥️ Anzeige bearbeiten</a>
+            <a class="btn btn-secondary" href="<?php echo $esc($moduleAdminUrl . '?tab=design'); ?>">🎨 Public-Design</a>
             <a class="btn btn-secondary" href="<?php echo $esc($moduleAdminUrl . '?tab=pricing'); ?>">💶 Preise anpassen</a>
             <a class="btn btn-secondary" href="<?php echo $esc($moduleAdminUrl . '?tab=workflow'); ?>">🔁 Workflow pflegen</a>
         </div>
@@ -151,6 +158,7 @@ $renderField = static function (array $field) use ($esc, $fieldValue): void {
     <?php else: ?>
         <?php
         $tabTitles = [
+            'design' => '🎨 Public-Design dieses Moduls',
             'pricing' => '💶 Preise & Annahmen',
             'workflow' => '🔁 Workflow-Einstellungen',
             'data' => '🧾 Datenstand & Regeln',
@@ -172,3 +180,21 @@ $renderField = static function (array $field) use ($esc, $fieldValue): void {
         </form>
     <?php endif; ?>
 </div>
+
+<script>
+document.querySelectorAll('[data-m365-color-copy]').forEach(function (input) {
+    var color = document.getElementById(input.getAttribute('data-m365-color-copy'));
+    if (!color) {
+        return;
+    }
+
+    input.addEventListener('input', function () {
+        if (/^#[0-9A-Fa-f]{6}$/.test(input.value)) {
+            color.value = input.value;
+        }
+    });
+    color.addEventListener('input', function () {
+        input.value = color.value;
+    });
+});
+</script>

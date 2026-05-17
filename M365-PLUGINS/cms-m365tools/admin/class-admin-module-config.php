@@ -21,6 +21,7 @@ final class CMS_M365CALCULATOR_Admin_Module_Config
         return [
             'overview' => '📌 Übersicht',
             'display' => '🖥️ Anzeige',
+            'design' => '🎨 Public-Design',
             'pricing' => '💶 Preise & Annahmen',
             'workflow' => '🔁 Workflow',
             'data' => '🧾 Daten & Regeln',
@@ -36,11 +37,40 @@ final class CMS_M365CALCULATOR_Admin_Module_Config
         $category = strtolower((string) ($tool['category'] ?? ''));
 
         return match ($tab) {
+            'design' => self::design_fields(),
             'pricing' => self::pricing_fields($key, $category),
             'workflow' => self::workflow_fields($key, $category),
             'data' => self::data_fields($key, $category),
             default => [],
         };
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private static function design_fields(): array
+    {
+        return [
+            self::checkbox('design_override_enabled', 'Eigenes Public-Design für dieses Modul verwenden', '0', 'Wenn aktiv, überschreibt dieses Modul die globalen Landingpage-Farben und Abstände auf seiner Public-Seite.'),
+            self::color('design_color_background', 'Content-Hintergrund', '#ffffff', 'Grundfläche direkt hinter Contentheader und Modulbereichen.'),
+            self::color('design_color_surface', 'Box-Basisfarbe', '#ffffff', 'Basisfarbe für Karten, Ergebnisboxen, Tabellenbereiche und Eingabeboxen.'),
+            self::color('design_color_surface_alt', 'Ruhige Fläche', '#f8fafc', 'Alternative Fläche für dezente Blöcke, Hinweise und Sekundärbereiche.'),
+            self::color('design_color_primary', 'Primärfarbe', '#2563eb', 'Buttons, Links, aktive Zustände und wichtige Akzente.'),
+            self::color('design_color_accent', 'Akzentfarbe', '#0f766e', 'Sekundärer Akzent für Kanten, Badges und Highlights.'),
+            self::color('design_color_header_background', 'Header-Hintergrund', '#f8fafc', 'Hintergrund der oberen Modul-Headerbox.'),
+            self::color('design_color_header_text', 'Header-Textfarbe', '#1e293b', 'Titel- und Haupttextfarbe im Modul-Contentheader.'),
+            self::color('design_color_header_muted', 'Header-Sekundärtext', '#64748b', 'Overline, Intro und Metatexte im Modul-Contentheader.'),
+            self::color('design_color_header_border', 'Header-Rahmen', '#e2e8f0', 'Rahmen- oder Akzentkante des Modul-Contentheaders.'),
+            self::color('design_color_button_primary_bg', 'Primärbutton Hintergrund', '#2563eb', 'Hintergrund für primäre Aktionen auf der Modul-Publicseite.'),
+            self::color('design_color_button_primary_text', 'Primärbutton Text', '#ffffff', 'Textfarbe für primäre Aktionen.'),
+            self::color('design_color_button_secondary_bg', 'Sekundärbutton Hintergrund', '#ffffff', 'Hintergrund für sekundäre Aktionen.'),
+            self::color('design_color_button_secondary_text', 'Sekundärbutton Text', '#1e293b', 'Textfarbe für sekundäre Aktionen.'),
+            self::color('design_color_text', 'Textfarbe', '#1e293b', 'Primäre Textfarbe der Modul-Publicseite.'),
+            self::color('design_color_muted', 'Sekundärtext', '#64748b', 'Beschreibungen, Hinweise und kleine Labels.'),
+            self::color('design_color_border', 'Rahmenfarbe', '#e2e8f0', 'Borders, Trennlinien und Tabellenkanten.'),
+            self::number('design_card_radius', 'Rundung der Boxen und Buttons in px', '2', 0, 2, 1, 'Maximal 2px: steuert Karten, Headerboxen und Buttons dieses Moduls.'),
+            self::number('design_section_gap', 'Abschnittsabstand in px', '32', 16, 96, 2, 'Vertikaler Abstand zwischen den öffentlichen Modulabschnitten.'),
+        ];
     }
 
     /**
@@ -214,6 +244,14 @@ final class CMS_M365CALCULATOR_Admin_Module_Config
     private static function checkbox(string $key, string $label, string $default, string $help): array
     {
         return ['key' => $key, 'label' => $label, 'type' => 'checkbox', 'default' => $default, 'help' => $help];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private static function color(string $key, string $label, string $default, string $help): array
+    {
+        return ['key' => $key, 'label' => $label, 'type' => 'color', 'default' => $default, 'help' => $help];
     }
 
     /**

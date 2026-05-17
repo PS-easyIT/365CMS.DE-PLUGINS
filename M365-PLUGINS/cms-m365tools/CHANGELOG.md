@@ -1,6 +1,15 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.29.13 – 2026-05-17
+
+- Vollaudit für Public- und Admin-Flows umgesetzt: Admin-POST-Flows bleiben abgesichert, Eingaben werden feldtypbezogen normalisiert und DB-Tabellenbezeichner werden vor SQL-Nutzung gekapselt.
+- Jede Modul-Adminseite erhält den neuen Tab `Public-Design` mit optionalem Modul-Override für Hintergrund, Surface, Header, Buttons, Text, Rahmen, Abschnittsabstand und maximal 2px Rundung.
+- Public-Design-Tokens werden routegenau je Modul angewendet; Body-Klassen enthalten zusätzlich die aktive Modulkennung für gezielte Theme-/CSS-Diagnose.
+- Read-only Lizenzmatrix und Add-on-Matrix übernehmen modulbezogene Design-Overrides ebenfalls und begrenzen Header-Rundungen konsistent auf maximal 2px.
+- Frontend-Routenerkennung wurde zentralisiert, damit Assets, Body-Klassen, Header-Reset und Design-Tokens bei direkten Routen, Alias-/Unterpfad-Aufrufen und Modulseiten zuverlässig greifen.
+- JSON-Kataloge sowie Modul-/Global-Optionszugriffe werden pro Request gecacht, um wiederholte Datenbank- und Dateisystemzugriffe auf Public- und Adminseiten zu reduzieren.
+
 ## 1.29.12 – 2026-05-17
 
 - Landingpage und Public-Modulseiten erhalten innerhalb des Plugin-Hintergrunds 25px Abstand zwischen oberem Hintergrundrand und Contentheader/Headerbox.

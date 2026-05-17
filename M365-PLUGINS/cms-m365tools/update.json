@@ -1,11 +1,11 @@
 {
-  "version": "1.29.12",
+  "version": "1.29.13",
   "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
   "requires": "2.9.0",
   "tested": "2.9.7",
   "last_updated": "2026-05-17",
   "sections": {
     "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme, zentraler Dienstleister- und Kontaktformular-CTA, eigenem Landingpage-Designer, UX-optimierter Live-Suche, Tag-Filtern, Sticky-Kategorie-Navigation, zusammengeführtem Read-only-Matrix-Unterpunkt, globalen Paketpreis- und Abopreisbereichen, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass und 21 Public-Modulen.",
-    "changelog": "Landingpage und alle Public-Modulseiten erhalten zwischen Content-Hintergrundrand und Contentheader einen festen 25px Innenabstand. Die Content-Hintergrundfarbe ist im Landingpage Designer als Content-Hintergrund steuerbar und gilt für Hub und Module. Boxen, Headerflächen und Buttons werden auf maximal 2px Rundung begrenzt und heben sich über eine dezente, leicht dunklere Surface-Fläche vom Hintergrund ab."
+    "changelog": "Vollaudit für CMS M365TOOLS: Jede Modul-Adminseite erhält einen Public-Design-Tab mit optionalen modulbezogenen Farben, Header-, Button-, Surface-, Radius- und Abschnitts-Overrides. Frontend-Routenerkennung, Body-Klassen und Design-Tokens wurden zentralisiert, Matrixseiten übernehmen Modul-Overrides ebenfalls. JSON-Kataloge und Optionszugriffe werden pro Request gecacht, DB-Tabellenbezeichner gehärtet und die Matrix-Rundung auf maximal 2px begrenzt."
   }
 }

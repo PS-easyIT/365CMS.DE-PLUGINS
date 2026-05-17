@@ -227,7 +227,7 @@ body.m365calculator-theme-embed:not(.is-member) .breadcrumb-nav {
 .m365calc-matrix-header--accent .m365calc-hero,
 .m365calc-matrix-header--inverted .m365calc-hero {
     background: var(--m365matrix-header-bg, #f8fafc);
-    border-radius: var(--m365matrix-header-radius, var(--phinit-radius-md));
+    border-radius: min(var(--m365matrix-header-radius, 2px), 2px);
     padding: var(--phinit-space-6);
 }
 

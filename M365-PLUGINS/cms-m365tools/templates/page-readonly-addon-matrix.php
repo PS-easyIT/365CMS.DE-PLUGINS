@@ -36,6 +36,22 @@ $matrixOptions = class_exists('CMS_M365CALCULATOR_Settings')
         CMS_M365CALCULATOR_Settings::global_options('matrix-addon')
     )
     : [];
+if (class_exists('CMS_M365CALCULATOR_Settings')) {
+    $moduleDesign = CMS_M365CALCULATOR_Settings::module_options('m365-addon-matrix', 'design');
+    if ((string) ($moduleDesign['design_override_enabled'] ?? '0') === '1') {
+        $matrixOptions = array_merge($matrixOptions, [
+            'matrix_header_radius' => (string) ($moduleDesign['design_card_radius'] ?? '2'),
+            'matrix_color_header_background' => (string) ($moduleDesign['design_color_header_background'] ?? '#f8fafc'),
+            'matrix_color_header_text' => (string) ($moduleDesign['design_color_header_text'] ?? '#1e293b'),
+            'matrix_color_header_muted' => (string) ($moduleDesign['design_color_header_muted'] ?? '#64748b'),
+            'matrix_color_header_border' => (string) ($moduleDesign['design_color_header_border'] ?? '#e2e8f0'),
+            'matrix_color_primary_button_bg' => (string) ($moduleDesign['design_color_button_primary_bg'] ?? '#2563eb'),
+            'matrix_color_primary_button_text' => (string) ($moduleDesign['design_color_button_primary_text'] ?? '#ffffff'),
+            'matrix_color_secondary_button_bg' => (string) ($moduleDesign['design_color_button_secondary_bg'] ?? '#ffffff'),
+            'matrix_color_secondary_button_text' => (string) ($moduleDesign['design_color_button_secondary_text'] ?? '#1e293b'),
+        ]);
+    }
+}
 $matrixValue = static fn(string $key, string $default): string => (string) ($matrixOptions[$key] ?? $default);
 $matrixEnabled = static fn(string $key, string $default = '1'): bool => (string) ($matrixOptions[$key] ?? $default) === '1';
 $matrixChoice = static function (string $key, string $default, array $allowed) use ($matrixOptions): string {
@@ -72,7 +88,7 @@ $headerStyle = $matrixChoice('matrix_header_style', 'plain', ['plain', 'surface'
 $headerAlignment = $matrixChoice('matrix_header_alignment', 'split', ['split', 'left', 'center']);
 $buttonLayout = $matrixChoice('matrix_button_layout', 'inline', ['inline', 'stacked', 'right']);
 $buttonStyle = $matrixChoice('matrix_button_style', 'default', ['default', 'primary', 'secondary', 'minimal']);
-$headerRadius = max(0, min(24, (int) $matrixValue('matrix_header_radius', '8')));
+$headerRadius = max(0, min(2, (int) $matrixValue('matrix_header_radius', '2')));
 $headerBackground = $matrixColor('matrix_color_header_background', '#f8fafc');
 $headerText = $matrixColor('matrix_color_header_text', '#1e293b');
 $headerMuted = $matrixColor('matrix_color_header_muted', '#64748b');

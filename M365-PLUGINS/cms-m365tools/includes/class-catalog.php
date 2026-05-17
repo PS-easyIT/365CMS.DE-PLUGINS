@@ -707,6 +707,12 @@ final class CMS_M365CALCULATOR_Catalog
      */
     private static function load_json(string $file): array
     {
+        static $cache = [];
+
+        if (isset($cache[$file])) {
+            return $cache[$file];
+        }
+
         $path = CMS_M365CALCULATOR_PLUGIN_DIR . 'data/' . $file;
         if (!file_exists($path)) {
             return [];
@@ -719,7 +725,9 @@ final class CMS_M365CALCULATOR_Catalog
 
         $decoded = json_decode($json, true);
 
-        return is_array($decoded) ? $decoded : [];
+        $cache[$file] = is_array($decoded) ? $decoded : [];
+
+        return $cache[$file];
     }
 
     /**

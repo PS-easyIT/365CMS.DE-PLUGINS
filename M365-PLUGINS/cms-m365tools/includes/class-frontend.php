@@ -214,6 +214,11 @@ final class CMS_M365CALCULATOR_Frontend
                 CMS_M365CALCULATOR_Settings::global_options('landing-layout'),
                 CMS_M365CALCULATOR_Settings::global_options('landing-colors')
             );
+
+            $moduleKey = $this->current_module_key_from_request();
+            if ($moduleKey !== null) {
+                $options = $this->apply_module_design_overrides($options, $moduleKey);
+            }
         }
 
         $color = static function (array $values, string $key, string $default): string {
@@ -440,6 +445,10 @@ body.m365calculator-theme-embed #masthead.site-header + :not(#content):not(.mobi
         }
         $classList[] = 'm365tools-theme-embed';
         $classList[] = 'm365calculator-theme-embed';
+        $moduleKey = $this->current_module_key_from_request();
+        if ($moduleKey !== null) {
+            $classList[] = 'm365tools-module-' . preg_replace('/[^a-z0-9_-]+/i', '-', $moduleKey);
+        }
 
         return implode(' ', array_values(array_unique($classList)));
     }
@@ -778,67 +787,134 @@ body.m365calculator-theme-embed #masthead.site-header + :not(#content):not(.mobi
 
     private function is_calculator_request(): bool
     {
-        $requestPath = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
+        $requestPath = $this->normalized_request_path();
         if ($requestPath === '') {
             return false;
         }
 
-        return $requestPath === trim(self::TOOLBOX_ROUTE, '/')
-            || $requestPath === trim(self::TOOLBOX_ROUTE_ALIAS, '/')
-            || $requestPath === trim(self::READONLY_SUITE_MATRIX_ROUTE, '/')
-            || $requestPath === trim(self::LICENSE_COMPARISON_ROUTE, '/')
-            || $requestPath === trim(self::READONLY_ADDON_MATRIX_ROUTE, '/')
-            || $requestPath === trim(self::ADDON_CONFIGURATOR_ROUTE, '/')
-            || $requestPath === trim(self::COMMITMENT_ROUTE, '/')
-            || $requestPath === trim(self::ARCHIVE_MAILBOX_ROUTE, '/')
-            || $requestPath === trim(self::AI_PRODUCT_COMPARISON_ROUTE, '/')
-            || $requestPath === trim(self::COPILOT_PILOT_ROUTE, '/')
-            || $requestPath === trim(self::FRONTLINE_WORKER_ROUTE, '/')
-            || $requestPath === trim(self::EXCHANGE_ONLINE_ROI_ROUTE, '/')
-            || $requestPath === trim(self::TEAMS_PHONE_ADVISOR_ROUTE, '/')
-            || $requestPath === trim(self::MICROSOFT_PRICE_TRACKER_ROUTE, '/')
-            || $requestPath === trim(self::LICENSE_AUDIT_CHECKLIST_ROUTE, '/')
-            || $requestPath === trim(self::STORAGE_NEEDS_ROUTE, '/')
-            || $requestPath === trim(self::BACKUP_COST_ROUTE, '/')
-            || $requestPath === trim(self::WORKSPACE_M365_TCO_ROUTE, '/')
-            || $requestPath === trim(self::POWER_PLATFORM_COST_ROUTE, '/')
-            || $requestPath === trim(self::LICENSE_ADVISOR_ROUTE, '/')
-            || $requestPath === trim(self::SHARED_MAILBOX_ROUTE, '/')
-            || $requestPath === trim(self::COPILOT_LICENSE_ROUTE, '/')
-            || $requestPath === trim(self::COPILOT_ROI_ROUTE, '/')
-            || str_ends_with($requestPath, self::TOOLBOX_ROUTE)
-            || str_ends_with($requestPath, self::TOOLBOX_ROUTE_ALIAS)
-            || str_ends_with($requestPath, self::READONLY_SUITE_MATRIX_ROUTE)
-            || str_ends_with($requestPath, self::LICENSE_COMPARISON_ROUTE)
-            || str_ends_with($requestPath, self::READONLY_ADDON_MATRIX_ROUTE)
-            || str_ends_with($requestPath, self::ADDON_CONFIGURATOR_ROUTE)
-            || str_ends_with($requestPath, self::COMMITMENT_ROUTE)
-            || str_ends_with($requestPath, self::ARCHIVE_MAILBOX_ROUTE)
-            || str_ends_with($requestPath, self::AI_PRODUCT_COMPARISON_ROUTE)
-            || str_ends_with($requestPath, self::COPILOT_PILOT_ROUTE)
-            || str_ends_with($requestPath, self::FRONTLINE_WORKER_ROUTE)
-            || str_ends_with($requestPath, self::EXCHANGE_ONLINE_ROI_ROUTE)
-            || str_ends_with($requestPath, self::TEAMS_PHONE_ADVISOR_ROUTE)
-            || str_ends_with($requestPath, self::MICROSOFT_PRICE_TRACKER_ROUTE)
-            || str_ends_with($requestPath, self::LICENSE_AUDIT_CHECKLIST_ROUTE)
-            || str_ends_with($requestPath, self::STORAGE_NEEDS_ROUTE)
-            || str_ends_with($requestPath, self::BACKUP_COST_ROUTE)
-            || str_ends_with($requestPath, self::WORKSPACE_M365_TCO_ROUTE)
-            || str_ends_with($requestPath, self::POWER_PLATFORM_COST_ROUTE)
-            || str_ends_with($requestPath, self::LICENSE_ADVISOR_ROUTE)
-            || str_ends_with($requestPath, self::SHARED_MAILBOX_ROUTE)
-            || str_ends_with($requestPath, self::COPILOT_LICENSE_ROUTE)
-            || str_ends_with($requestPath, self::COPILOT_ROI_ROUTE);
+        foreach ($this->all_public_routes() as $routePath) {
+            if ($this->path_matches_route($requestPath, $routePath)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function is_toolbox_request(): bool
     {
-        $requestPath = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
+        $requestPath = $this->normalized_request_path();
 
-        return $requestPath === trim(self::TOOLBOX_ROUTE, '/')
-            || $requestPath === trim(self::TOOLBOX_ROUTE_ALIAS, '/')
-            || str_ends_with($requestPath, self::TOOLBOX_ROUTE)
-            || str_ends_with($requestPath, self::TOOLBOX_ROUTE_ALIAS);
+        return $this->path_matches_route($requestPath, trim(self::TOOLBOX_ROUTE, '/'))
+            || $this->path_matches_route($requestPath, trim(self::TOOLBOX_ROUTE_ALIAS, '/'));
+    }
+
+    /**
+     * @param array<string,string> $options
+     * @return array<string,string>
+     */
+    private function apply_module_design_overrides(array $options, string $moduleKey): array
+    {
+        $design = CMS_M365CALCULATOR_Settings::module_options($moduleKey, 'design');
+        if ((string) ($design['design_override_enabled'] ?? '0') !== '1') {
+            return $options;
+        }
+
+        $map = [
+            'design_card_radius' => 'landing_card_radius',
+            'design_section_gap' => 'landing_section_gap',
+            'design_color_primary' => 'landing_color_primary',
+            'design_color_accent' => 'landing_color_accent',
+            'design_color_background' => 'landing_color_background',
+            'design_color_surface' => 'landing_color_surface',
+            'design_color_surface_alt' => 'landing_color_surface_alt',
+            'design_color_header_background' => 'landing_color_header_background',
+            'design_color_header_text' => 'landing_color_header_text',
+            'design_color_header_muted' => 'landing_color_header_muted',
+            'design_color_header_border' => 'landing_color_header_border',
+            'design_color_button_primary_bg' => 'landing_color_button_primary_bg',
+            'design_color_button_primary_text' => 'landing_color_button_primary_text',
+            'design_color_button_secondary_bg' => 'landing_color_button_secondary_bg',
+            'design_color_button_secondary_text' => 'landing_color_button_secondary_text',
+            'design_color_text' => 'landing_color_text',
+            'design_color_muted' => 'landing_color_muted',
+            'design_color_border' => 'landing_color_border',
+        ];
+
+        foreach ($map as $source => $target) {
+            if (array_key_exists($source, $design)) {
+                $options[$target] = (string) $design[$source];
+            }
+        }
+
+        return $options;
+    }
+
+    private function current_module_key_from_request(): ?string
+    {
+        $requestPath = $this->normalized_request_path();
+        if ($requestPath === '') {
+            return null;
+        }
+
+        foreach ($this->module_route_map() as $routePath => $moduleKey) {
+            if ($this->path_matches_route($requestPath, $routePath)) {
+                return $moduleKey;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private function all_public_routes(): array
+    {
+        return array_merge([
+            trim(self::TOOLBOX_ROUTE, '/'),
+            trim(self::TOOLBOX_ROUTE_ALIAS, '/'),
+        ], array_keys($this->module_route_map()));
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    private function module_route_map(): array
+    {
+        return [
+            trim(self::READONLY_SUITE_MATRIX_ROUTE, '/') => 'm365-lizenzmatrix',
+            trim(self::LICENSE_COMPARISON_ROUTE, '/') => 'm365-lizenzvergleich',
+            trim(self::READONLY_ADDON_MATRIX_ROUTE, '/') => 'm365-addon-matrix',
+            trim(self::ADDON_CONFIGURATOR_ROUTE, '/') => 'm365-add-on-konfigurator',
+            trim(self::COMMITMENT_ROUTE, '/') => 'm365-commitment-calculator',
+            trim(self::ARCHIVE_MAILBOX_ROUTE, '/') => 'm365-archive-mailbox',
+            trim(self::AI_PRODUCT_COMPARISON_ROUTE, '/') => 'ai-pack-vs-copilot-pro',
+            trim(self::COPILOT_PILOT_ROUTE, '/') => 'copilot-pilot-calculator',
+            trim(self::FRONTLINE_WORKER_ROUTE, '/') => 'frontline-worker-license-check',
+            trim(self::EXCHANGE_ONLINE_ROI_ROUTE, '/') => 'exchange-online-roi',
+            trim(self::TEAMS_PHONE_ADVISOR_ROUTE, '/') => 'teams-phone-advisor',
+            trim(self::MICROSOFT_PRICE_TRACKER_ROUTE, '/') => 'microsoft-price-tracker',
+            trim(self::LICENSE_AUDIT_CHECKLIST_ROUTE, '/') => 'license-audit-checklist',
+            trim(self::STORAGE_NEEDS_ROUTE, '/') => 'm365-storage-needs-calculator',
+            trim(self::BACKUP_COST_ROUTE, '/') => 'm365-backup-cost-calculator',
+            trim(self::WORKSPACE_M365_TCO_ROUTE, '/') => 'workspace-m365-tco-calculator',
+            trim(self::POWER_PLATFORM_COST_ROUTE, '/') => 'power-platform-cost-calculator',
+            trim(self::LICENSE_ADVISOR_ROUTE, '/') => 'm365lic',
+            trim(self::SHARED_MAILBOX_ROUTE, '/') => 'shared-mailbox',
+            trim(self::COPILOT_LICENSE_ROUTE, '/') => 'copilot-license-check',
+            trim(self::COPILOT_ROI_ROUTE, '/') => 'copilot-roi',
+        ];
+    }
+
+    private function normalized_request_path(): string
+    {
+        return trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
+    }
+
+    private function path_matches_route(string $requestPath, string $routePath): bool
+    {
+        return $requestPath === $routePath || str_ends_with($requestPath, '/' . $routePath);
     }
 
     private function set_seo(string $title, string $description): void

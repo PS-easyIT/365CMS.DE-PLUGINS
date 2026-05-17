@@ -15,6 +15,12 @@ final class CMS_M365CALCULATOR_Settings
 {
     private const GLOBAL_MODULE_KEY = 'global';
 
+    /** @var array<string,array<string,mixed>>|null */
+    private static ?array $moduleSettingsCache = null;
+
+    /** @var array<string,array<string,string>> */
+    private static array $optionCache = [];
+
     /**
      * @param array<string,array<string,mixed>> $tools
      * @return array<string,array<string,mixed>>
@@ -57,6 +63,10 @@ final class CMS_M365CALCULATOR_Settings
      */
     public static function module_settings(): array
     {
+        if (self::$moduleSettingsCache !== null) {
+            return self::$moduleSettingsCache;
+        }
+
         if (!class_exists('CMS\\Database')) {
             return [];
         }
@@ -64,7 +74,8 @@ final class CMS_M365CALCULATOR_Settings
         try {
             $db = \CMS\Database::instance();
             $table = self::table_name($db);
-            $stmt = $db->getPdo()->query("SELECT module_key, is_enabled, status_override, priority_override, title_override, description_override FROM {$table}");
+            $quotedTable = self::quote_identifier($table);
+            $stmt = $db->getPdo()->query("SELECT module_key, is_enabled, status_override, priority_override, title_override, description_override FROM {$quotedTable}");
             $rows = $stmt !== false ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
             $settings = [];
 
@@ -84,7 +95,9 @@ final class CMS_M365CALCULATOR_Settings
                 ];
             }
 
-            return $settings;
+            self::$moduleSettingsCache = $settings;
+
+            return self::$moduleSettingsCache;
         } catch (\Throwable $e) {
             return [];
         }
@@ -131,8 +144,9 @@ final class CMS_M365CALCULATOR_Settings
         $modules = is_array($posted['modules'] ?? null) ? $posted['modules'] : [];
         $db = \CMS\Database::instance();
         $table = self::table_name($db);
+        $quotedTable = self::quote_identifier($table);
 
-        $sql = "INSERT INTO {$table} (module_key, is_enabled, status_override, priority_override, title_override, description_override)
+        $sql = "INSERT INTO {$quotedTable} (module_key, is_enabled, status_override, priority_override, title_override, description_override)
                 VALUES (?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
                     is_enabled = VALUES(is_enabled),
@@ -160,6 +174,8 @@ final class CMS_M365CALCULATOR_Settings
 
             $stmt->execute([$key, $enabled, $status, $priority, $title !== '' ? $title : null, $description !== '' ? $description : null]);
         }
+
+        self::$moduleSettingsCache = null;
     }
 
     /**
@@ -200,9 +216,15 @@ final class CMS_M365CALCULATOR_Settings
             return [];
         }
 
+        $cacheKey = self::option_cache_key($key, $group);
+        if (isset(self::$optionCache[$cacheKey])) {
+            return self::$optionCache[$cacheKey];
+        }
+
         try {
             $db = \CMS\Database::instance();
             $table = self::option_table_name($db);
+            $quotedTable = self::quote_identifier($table);
             $params = [$key];
             $where = 'module_key = ?';
 
@@ -211,7 +233,7 @@ final class CMS_M365CALCULATOR_Settings
                 $params[] = $group;
             }
 
-            $stmt = $db->getPdo()->prepare("SELECT option_group, option_key, option_value FROM {$table} WHERE {$where}");
+            $stmt = $db->getPdo()->prepare("SELECT option_group, option_key, option_value FROM {$quotedTable} WHERE {$where}");
             $stmt->execute($params);
             $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $options = [];
@@ -231,7 +253,9 @@ final class CMS_M365CALCULATOR_Settings
                 $options[$optionGroup . '.' . $optionKey] = (string) ($row['option_value'] ?? '');
             }
 
-            return $options;
+            self::$optionCache[$cacheKey] = $options;
+
+            return self::$optionCache[$cacheKey];
         } catch (\Throwable $e) {
             return [];
         }
@@ -254,7 +278,8 @@ final class CMS_M365CALCULATOR_Settings
 
         $db = \CMS\Database::instance();
         $table = self::option_table_name($db);
-        $sql = "INSERT INTO {$table} (module_key, option_group, option_key, option_value, value_type)
+        $quotedTable = self::quote_identifier($table);
+        $sql = "INSERT INTO {$quotedTable} (module_key, option_group, option_key, option_value, value_type)
                 VALUES (?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
                     option_value = VALUES(option_value),
@@ -269,6 +294,8 @@ final class CMS_M365CALCULATOR_Settings
 
             $stmt->execute([$key, $group, $cleanOptionKey, self::limit_text((string) $value, 2000), 'string']);
         }
+
+        self::clear_option_cache($key, $group);
     }
 
     /**
@@ -299,6 +326,22 @@ final class CMS_M365CALCULATOR_Settings
         $prefix = method_exists($db, 'getPrefix') ? $db->getPrefix() : (method_exists($db, 'prefix') ? $db->prefix() : 'cms_');
 
         return $prefix . 'm365tools_module_options';
+    }
+
+    private static function option_cache_key(string $moduleKey, ?string $group): string
+    {
+        return $moduleKey . '|' . (($group !== null && $group !== '') ? $group : '*');
+    }
+
+    private static function clear_option_cache(string $moduleKey, string $group): void
+    {
+        unset(self::$optionCache[self::option_cache_key($moduleKey, $group)]);
+        unset(self::$optionCache[self::option_cache_key($moduleKey, null)]);
+    }
+
+    private static function quote_identifier(string $identifier): string
+    {
+        return '`' . str_replace('`', '``', $identifier) . '`';
     }
 
     private static function normalize_status(string $status): string
