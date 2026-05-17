@@ -26,6 +26,10 @@
 - `addon_configurator_addons()` – lädt Add-on-Katalog, Billing-Typen, Preise und Prerequisites
 - `addon_overlap_rules()` – lädt Redundanz-, Auto-Add- und Upgrade-Regeln
 - `consumption_modules()` – lädt Verbrauchs- und Spezialmodule wie Microsoft 365 Backup
+- `sharepoint_storage_rules()` – lädt SharePoint-Tenant-Pool, Site-, Datei- und Sync-Limits
+- `onedrive_quota_presets()` – lädt OneDrive-Quota-Presets und Betriebsleitplanken
+- `exchange_storage_rules()` – lädt Exchange-Primärpostfach-, Archiv- und Auto-expanding-Grenzen
+- `storage_growth_assumptions()` – lädt Defaults, Wachstums-, Puffer- und Statusannahmen für den Storage-Bedarfs-Rechner
 - `microsoft_backup_baseline()` – lädt offizielle Microsoft-365-Backup-Baseline für Preis, Workloads, Retention, Restore und Billing
 - `backup_providers()` – lädt Microsoft-Baseline und manuell gepflegte Providervergleichsdaten
 - `backup_comparison_rules()` – lädt Defaults, Scoring-Gewichte, Empfehlungstexte und FAQ für den Backup-Kosten-Rechner
@@ -145,6 +149,21 @@
 - `compare_backup_scenarios(array $input, array $results, array $rules, array $microsoft, array $cheapest)` – leitet die Empfehlungskategorie ab
 - `render_backup_cost_page()` – liefert den Template-Pfad für `/m365-backup-kostenrechner`
 
+## `CMS_M365CALCULATOR_Storage_Needs_Calculator`
+
+- `default_input()` – Default-Werte für Lizenzen, Nutzer, SharePoint, OneDrive, Exchange, Archiv, Wachstum, Puffer und Cleanup-Potenzial
+- `normalize_input(array $source)` – normalisiert Anfrageparameter, Zahlenfelder, Postfachgröße, Archivmodell und Betrachtungszeitraum
+- `evaluate(array $input)` – kombiniert SharePoint-, OneDrive-, Exchange- und Archivbewertung, Kostenannahme, Status, Leitplanken, Quellen und Optionen
+- `calculate_storage_requirements(array $input, array $sharepointRules, array $onedriveRules, array $exchangeRules)` – berechnet Forecast, Kapazität, Überhang und Auslastung je Bereich
+- `calculate_storage_overage_costs(array $input, array $requirements, array $sharepointRules)` – berechnet zusätzlichen SharePoint-Speicher in GB-Schritten und Monats-/Jahresannahme
+- `calculate_exchange_archive_need(array $input, float $growthFactor, float $bufferFactor, array $exchangeRules)` – bewertet Archivnutzer, Archivmodell, Forecast, Kapazität und Überhang
+- `build_storage_capacity_status(array $input, array $requirements, array $sharepointRules, array $onedriveRules, array $exchangeRules, array $growthRules)` – leitet Status, Score, Auffälligkeiten und nächste Schritte ab
+- `load_sharepoint_storage_rules()` – lädt `sharepoint_storage_rules.json`
+- `load_onedrive_quota_presets()` – lädt `onedrive_quota_presets.json`
+- `load_exchange_storage_rules()` – lädt `exchange_storage_rules.json`
+- `load_storage_growth_assumptions()` – lädt `storage_growth_assumptions.json`
+- `render_storage_calculator_page()` – liefert den Template-Pfad für `/m365-storage-bedarfsrechner`
+
 ## `CMS_M365CALCULATOR_Settings`
 
 - `apply_to_tools(array $tools)` – wendet Admin-Overrides auf Registry-Module an
@@ -191,6 +210,6 @@
 
 ## `CMS_M365CALCULATOR_Frontend`
 
-- Registriert `/m365-tools`, `/m365-rechner`, `/m365-lizenz-audit-checkliste`, `/m365-backup-kostenrechner`, `/microsoft-preiserhoehung-tracker`, `/teams-phone-lizenzberater`, `/exchange-online-roi`, `/frontline-worker-lizenz-check`, `/copilot-pilot-rechner`, `/ai-pack-vs-copilot-pro`, `/m365-lizenzmatrix`, `/m365-addon-matrix`, `/m365-archive-mailbox-rechner`, `/m365-jahresvertrag-vs-monatsvertrag`, `/m365-add-on-konfigurator`, `/m365-lizenzvergleich`, `/m365-lizenzberater`, `/copilot-roi-rechner`, `/shared-mailbox-vs-lizenz` und `/copilot-lizenz-check`
+- Registriert `/m365-tools`, `/m365-rechner`, `/m365-lizenz-audit-checkliste`, `/m365-storage-bedarfsrechner`, `/m365-backup-kostenrechner`, `/microsoft-preiserhoehung-tracker`, `/teams-phone-lizenzberater`, `/exchange-online-roi`, `/frontline-worker-lizenz-check`, `/copilot-pilot-rechner`, `/ai-pack-vs-copilot-pro`, `/m365-lizenzmatrix`, `/m365-addon-matrix`, `/m365-archive-mailbox-rechner`, `/m365-jahresvertrag-vs-monatsvertrag`, `/m365-add-on-konfigurator`, `/m365-lizenzvergleich`, `/m365-lizenzberater`, `/copilot-roi-rechner`, `/shared-mailbox-vs-lizenz` und `/copilot-lizenz-check`
 - Bindet Assets nur auf Plugin-Routen ein
 - Rendert Toolbox und Rechner-Template

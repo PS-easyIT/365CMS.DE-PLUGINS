@@ -100,7 +100,7 @@
           "weight": 13,
           "finding_type": "license_assignment_errors",
           "source_url": "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/manage-group-licenses?view=o365-worldwide",
-          "deeplink_triggers": ["addon_configurator", "license_advisor"],
+          "deeplink_triggers": ["storage_review", "addon_configurator", "license_advisor"],
           "summary_if_open": "Lizenzfehlerlisten wurden noch nicht je Produkt ausgewertet.",
           "summary_if_done": "Lizenzfehlerlisten wurden je Produkt geprüft."
         },
@@ -286,7 +286,7 @@
           "weight": 6,
           "finding_type": "site_storage_limits",
           "source_url": "https://learn.microsoft.com/en-us/sharepoint/manage-site-collection-storage-limits",
-          "deeplink_triggers": ["addon_configurator"],
+          "deeplink_triggers": ["storage_review", "addon_configurator"],
           "summary_if_open": "Site-Speicherlimits und Warnwerte sind noch nicht geprüft.",
           "summary_if_done": "Site-Speicherlimits und Warnwerte sind geprüft."
         },
@@ -298,7 +298,7 @@
           "weight": 7,
           "finding_type": "extra_storage_procurement",
           "source_url": "https://learn.microsoft.com/en-us/office365/admin/subscriptions-and-billing/add-storage-space",
-          "deeplink_triggers": ["addon_configurator", "price_tracker"],
+          "deeplink_triggers": ["storage_review", "addon_configurator", "price_tracker"],
           "summary_if_open": "Zusatzspeicher und Bezugsweg sind noch nicht bewertet.",
           "summary_if_done": "Zusatzspeicher und Bezugsweg sind bewertet."
         },

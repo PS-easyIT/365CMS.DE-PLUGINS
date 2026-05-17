@@ -328,7 +328,7 @@ final class CMS_M365CALCULATOR_Storage_Needs_Calculator
             'Exchange-Archiv' => $archiveRatio,
         ] as $label => $ratio) {
             if ($ratio >= 1.0) {
-                $key = 'capacity';
+                $key = self::max_key($key, 'capacity');
                 $score -= 24;
                 $warnings[] = $label . ' überschreitet im Planungszeitraum die modellierte Kapazität.';
             } elseif ($ratio >= 0.95) {
@@ -343,7 +343,7 @@ final class CMS_M365CALCULATOR_Storage_Needs_Calculator
         }
 
         if ($siteRatio >= 0.95) {
-            $key = 'danger';
+            $key = self::max_key($key, 'danger');
             $score -= 20;
             $warnings[] = 'Die größte Site nähert sich der Microsoft-Grenze von 25 TB.';
             $nextSteps[] = 'Große Site in Hub-/Site-Architektur, Archivbereiche oder Datenlebenszyklus aufteilen.';
@@ -353,7 +353,7 @@ final class CMS_M365CALCULATOR_Storage_Needs_Calculator
         }
 
         if ($largestMailboxRatio >= 1.0) {
-            $key = 'capacity';
+            $key = self::max_key($key, 'capacity');
             $score -= 18;
             $warnings[] = 'Die größte Mailbox überschreitet die gewählte Primärpostfachgröße.';
             $nextSteps[] = 'Mailbox-Archivierung, Plan 2, E3/E5 oder passende Add-on-Strategie prüfen.';
@@ -363,7 +363,7 @@ final class CMS_M365CALCULATOR_Storage_Needs_Calculator
         }
 
         if ($syncedItems > $previewSync) {
-            $key = 'danger';
+            $key = self::max_key($key, 'danger');
             $score -= 20;
             $warnings[] = 'Die synchronisierten Elemente liegen über dem Public-Preview-Richtwert von 1.000.000 Elementen je Sync-Instanz.';
             $nextSteps[] = 'Sync-Strategie mit Shortcuts, Files On-Demand, weniger Bibliotheken und Sync Reports neu planen.';
@@ -375,7 +375,7 @@ final class CMS_M365CALCULATOR_Storage_Needs_Calculator
         }
 
         if ($largestFile > $maxFile) {
-            $key = 'danger';
+            $key = self::max_key($key, 'danger');
             $score -= 20;
             $warnings[] = 'Die größte Datei überschreitet die Microsoft-Grenze für einzelne Dateien.';
         } elseif ($largestFile >= $maxFile * 0.8) {
@@ -384,7 +384,7 @@ final class CMS_M365CALCULATOR_Storage_Needs_Calculator
         }
 
         if ($cleanupPotential >= 15 && (($sharepointRatio >= 0.8 && $sharepointCleanupRatio < $sharepointRatio) || (float) ($requirements['sharepoint']['overage_after_cleanup_gb'] ?? 0) < (float) ($requirements['sharepoint']['overage_gb'] ?? 0))) {
-            $key = $key === 'danger' ? $key : 'governance';
+            $key = self::max_key($key, 'governance');
             $nextSteps[] = 'Cleanup, Versionierung und Lifecycle-Regeln vor reinem Zusatzspeicher bewerten.';
         }
 

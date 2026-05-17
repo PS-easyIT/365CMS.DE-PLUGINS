@@ -266,3 +266,11 @@ Berechnung des tatsächlichen Storage-Bedarfs für OneDrive, SharePoint und Exch
 - OneDrive-Quotas tenantabhängig administrativ pflegen.
 - Zusatzspeicherpreise zentral halten.
 - Cleanup-/Archiv-Regeln mit Praxisdaten schärfen.
+
+## Umsetzung 1.19.0 – 2026-05-17
+
+- Modul `m365-storage-needs-calculator` unter `/m365-storage-bedarfsrechner` implementiert.
+- Engine `CMS_M365CALCULATOR_Storage_Needs_Calculator` ergänzt.
+- Public Template `templates/page-storage-needs-calculator.php` ergänzt.
+- Kataloge `sharepoint_storage_rules.json`, `onedrive_quota_presets.json`, `exchange_storage_rules.json` und `storage_growth_assumptions.json` ergänzt.
+- Route, Tool-Registry, Katalogloader, Update-Manifest, README, API-, Datenbank-, Hooks- und Modul-Dokumentation synchronisiert.

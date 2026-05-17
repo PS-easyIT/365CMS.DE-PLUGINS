@@ -1,6 +1,15 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.19.0 – 2026-05-17
+
+- Neues Modul `m365-storage-needs-calculator` unter `/m365-storage-bedarfsrechner` ergänzt.
+- Neue JSON-Kataloge `sharepoint_storage_rules.json`, `onedrive_quota_presets.json`, `exchange_storage_rules.json` und `storage_growth_assumptions.json` für SharePoint-Pool, OneDrive-Quotas, Exchange-/Archivgrenzen, Wachstumsannahmen, Zusatzspeicher und Quellen ergänzt.
+- Engine `CMS_M365CALCULATOR_Storage_Needs_Calculator` mit Eingabe-Normalisierung, SharePoint-/OneDrive-/Exchange-Trennung, Forecast, Puffer, Cleanup-Potenzial, Zusatzspeicherrechnung und Kapazitätsstatus implementiert.
+- Public Template `page-storage-needs-calculator.php` im PHINIT-Layout mit Eingabe-Card, Status-Card, Bereichs-KPIs, Leitplanken-Tabelle, Detailwerten und Quellenstand ergänzt.
+- Lizenz-Audit-Deep-Link `storage_review` auf den neuen Storage-Bedarfs-Rechner ergänzt.
+- Public-Constraint beibehalten: keine serverseitige Speicherung und keine öffentlichen Formular-Prüfhinweise.
+
 ## 1.18.0 – 2026-05-17
 
 - Neues Modul `m365-backup-cost-calculator` unter `/m365-backup-kostenrechner` ergänzt.

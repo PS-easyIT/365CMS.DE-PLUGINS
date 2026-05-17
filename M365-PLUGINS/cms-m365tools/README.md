@@ -1,12 +1,13 @@
 # CMS M365 Tools
 
-`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Enthalten sind der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
+`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Enthalten sind der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
 
 ## Enthaltene Routen
 
 - `/m365-tools` – Hub-Übersicht aller Module
 - `/m365-rechner` – alternative Hub-Route
 - `/m365-lizenz-audit-checkliste` – interaktive Lizenz-Audit-Checkliste mit Browser-Fortschritt, Druckzusammenfassung und Deep Links zu Spezialrechnern
+- `/m365-storage-bedarfsrechner` – SharePoint-Pool, OneDrive-Quotas, Exchange-Postfächer, Archivbedarf, Wachstum und Zusatzspeicherbedarf berechnen
 - `/m365-backup-kostenrechner` – Microsoft-365-Backup-Baseline und Providervergleich nach Kosten, Workloads, Retention, Restore-Tiefe und Betriebsmodell berechnen
 - `/microsoft-preiserhoehung-tracker` – offizielle Microsoft-Preis-, Packaging-, SKU-, Renewal- und Forecast-Ereignisse mit Budgetchart auswerten
 - `/teams-phone-lizenzberater` – Teams Phone, Calling Plan, Operator Connect, Direct Routing, Mischmodell und Sonderpfade bewerten
@@ -46,6 +47,7 @@ cms-m365tools/
 │   ├── class-teams-phone-advisor.php
 │   ├── class-microsoft-price-tracker.php
 │   ├── class-license-audit-checklist.php
+│   ├── class-storage-needs-calculator.php
 │   ├── class-backup-cost-calculator.php
 │   ├── class-addon-configurator.php
 │   ├── class-license-comparison.php
@@ -102,6 +104,10 @@ cms-m365tools/
 │   ├── license_audit_checklist.json
 │   ├── license_audit_deeplinks.json
 │   ├── audit_pdf_template.json
+│   ├── sharepoint_storage_rules.json
+│   ├── onedrive_quota_presets.json
+│   ├── exchange_storage_rules.json
+│   ├── storage_growth_assumptions.json
 │   ├── microsoft_backup_baseline.json
 │   ├── backup_providers.json
 │   ├── backup_comparison_rules.json
@@ -122,6 +128,7 @@ cms-m365tools/
 │   ├── page-teams-phone-advisor.php
 │   ├── page-microsoft-price-tracker.php
 │   ├── page-license-audit-checklist.php
+│   ├── page-storage-needs-calculator.php
 │   ├── page-backup-cost-calculator.php
 │   ├── page-archive-mailbox-calculator.php
 │   ├── page-commitment-calculator.php
@@ -165,6 +172,17 @@ Die Lizenz-Audit-Checkliste bewertet und strukturiert unter anderem:
 - Frontline-Kandidaten, Copilot-Basislizenzen, primäres Exchange-Online-Postfach und App-/Netzwerk-Readiness
 - Add-on-Redundanzen, SharePoint-Tenant-Speicher, Site-Limits, Extra File Storage, Microsoft 365 Backup und Laufzeitmodell
 - lokalen Browser-Fortschritt, offene/erledigte Punkte, Druck-/PDF-Zusammenfassung und Deep Links zu passenden Spezialrechnern
+
+Der M365 Storage-Bedarfs-Rechner bewertet unter anderem:
+
+- SharePoint-Tenant-Pool nach Microsoft-Formel 1 TB plus 10 GB je qualifizierter Lizenz
+- größten Site-Bedarf gegen die 25-TB-Site-Grenze und tenantweiten Pool getrennt
+- OneDrive-Bedarf je Nutzer, konfigurierte Tenant-Quota und 1-TB-/5-TB-Planungsgrenzen
+- Exchange-Primärpostfächer mit 50-GB- oder 100-GB-Modell sowie größte Mailbox im Forecast
+- Exchange-Archiv mit 50 GB, 100 GB oder Auto-expanding bis 1,5 TB
+- Wachstum über 12, 24 oder 36 Monate, Planungspuffer, Cleanup-Potenzial und Zusatzspeicherpreisannahme
+- Sync-Performance-Richtwert von 300.000 Elementen, 1.000.000-Elemente-Preview und 250-GB-Einzeldateigrenze
+- Empfehlungskategorien für ausreichend dimensioniert, beobachten, Zusatzspeicher/Archivstrategie, akutes Risiko oder Governance zuerst
 
 Der M365 Backup-Kosten-Rechner bewertet unter anderem:
 

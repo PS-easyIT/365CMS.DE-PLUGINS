@@ -70,6 +70,12 @@
       "url": "/teams-phone-lizenzberater",
       "category": "Teams"
     },
+    "storage_review": {
+      "label": "M365 Storage-Bedarfs-Rechner",
+      "description": "Berechnet SharePoint-Pool, OneDrive-Quotas, Exchange-Postfächer, Archivbedarf und Wachstum.",
+      "url": "/m365-storage-bedarfsrechner",
+      "category": "Speicher"
+    },
     "backup_review": {
       "label": "M365 Backup-Kosten-Rechner",
       "description": "Berechnet Microsoft-Backup-Baseline und Providervergleich für geschützte Datenmengen.",
@@ -89,6 +95,7 @@
     "commitment_calculator",
     "price_tracker",
     "teams_phone",
+    "storage_review",
     "backup_review"
   ]
 }

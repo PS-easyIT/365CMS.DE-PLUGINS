@@ -1,5 +1,11 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 1.19.0 – 2026-05-17
+
+- Modul-Dokumentation `modules/storage-needs-calculator.md` für den neuen M365 Storage-Bedarfs-Rechner ergänzt.
+- API-, Datenbank-, README- und Hooks-Dokumentation um Route `/m365-storage-bedarfsrechner`, neue Kataloge und Engine-Methoden erweitert.
+- Dokumentiert die getrennte Bewertung von SharePoint-Pool, OneDrive-Quotas, Exchange-Postfächern, Archivbedarf, Wachstum und operativen Microsoft-Grenzen.
+
 ## 1.18.0 – 2026-05-17
 
 - Modul-Dokumentation `modules/backup-cost-calculator.md` für den neuen M365 Backup-Kosten-Rechner ergänzt.

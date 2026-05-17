@@ -2,7 +2,7 @@
 
 ## Überblick
 
-`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Produktive Module sind der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
+`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Produktive Module sind der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
 
 ## Detaildokumente
 
@@ -16,6 +16,7 @@
 | Modul | Route | Datei |
 |---|---|---|
 | Lizenz-Audit-Checkliste | `/m365-lizenz-audit-checkliste` | `modules/license-audit-checklist.md` |
+| M365 Storage-Bedarfs-Rechner | `/m365-storage-bedarfsrechner` | `modules/storage-needs-calculator.md` |
 | M365 Backup-Kosten-Rechner | `/m365-backup-kostenrechner` | `modules/backup-cost-calculator.md` |
 | Microsoft-Preiserhöhung-Tracker | `/microsoft-preiserhoehung-tracker` | `modules/microsoft-price-tracker.md` |
 | Teams Phone-Lizenz-Berater | `/teams-phone-lizenzberater` | `modules/teams-phone-advisor.md` |
@@ -41,6 +42,7 @@
 | `/m365-tools` | Übersicht aller Rechner-Module |
 | `/m365-rechner` | Alternative Hub-Route |
 | `/m365-lizenz-audit-checkliste` | Interaktive Microsoft-365-Lizenz-Audit-Checkliste mit Browser-Fortschritt, Druckzusammenfassung und Deep Links |
+| `/m365-storage-bedarfsrechner` | SharePoint-Pool, OneDrive-Quotas, Exchange-Postfächer, Archivbedarf, Wachstum und Zusatzspeicherbedarf bewerten |
 | `/m365-backup-kostenrechner` | Microsoft-365-Backup-Baseline und Providervergleich für Kosten, Workloads, Retention, Restore-Tiefe und Betriebsmodell |
 | `/microsoft-preiserhoehung-tracker` | Microsoft-Preis-, Packaging-, SKU-, Renewal- und Forecast-Ereignisse mit Budgetwirkung bewerten |
 | `/teams-phone-lizenzberater` | Teams Phone, PSTN-Modell, Operator Connect, Direct Routing und Calling Plan bewerten |
@@ -113,6 +115,10 @@
 | `license_audit_checklist.json` | Audit-Kategorien, Prüfpunkte, Schweregrade, Quellen und Zusammenfassungstexte |
 | `license_audit_deeplinks.json` | Triggerbasierte Deep Links zu Spezialrechnern |
 | `audit_pdf_template.json` | Abschnitte und Labels für Druck-/PDF-Zusammenfassung |
+| `sharepoint_storage_rules.json` | SharePoint-Tenant-Pool, Site-, Datei- und Sync-Limits für den Storage-Bedarfs-Rechner |
+| `onedrive_quota_presets.json` | OneDrive-Quota-Presets, Restore-/Papierkorbfristen und Sync-Betriebsempfehlungen |
+| `exchange_storage_rules.json` | Exchange-Primärpostfach-, Shared-/Resource-, Archiv- und Auto-expanding-Grenzen |
+| `storage_growth_assumptions.json` | Defaults, Wachstum, Puffer, Cleanup-Potenzial, Statuslabels und Planungsgrenzen |
 | `microsoft_backup_baseline.json` | Offizielle Microsoft-365-Backup-Baseline für Preis, Workloads, Retention, Restore-Performance, Trust Boundary und Billing |
 | `backup_providers.json` | Manuell gepflegte Vergleichsdaten für Backup-Provider und Microsoft-Baseline |
 | `backup_comparison_rules.json` | Defaults, Scoring-Gewichte, Empfehlungstexte und FAQ für den Backup-Kosten-Rechner |

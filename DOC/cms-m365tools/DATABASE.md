@@ -73,6 +73,10 @@ Die Katalogdaten liegen als versionierte JSON-Dateien im Plugin-Verzeichnis:
 - `data/license_audit_checklist.json`
 - `data/license_audit_deeplinks.json`
 - `data/audit_pdf_template.json`
+- `data/sharepoint_storage_rules.json`
+- `data/onedrive_quota_presets.json`
+- `data/exchange_storage_rules.json`
+- `data/storage_growth_assumptions.json`
 - `data/microsoft_backup_baseline.json`
 - `data/backup_providers.json`
 - `data/backup_comparison_rules.json`
