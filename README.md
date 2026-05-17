@@ -22,6 +22,7 @@
 | [cms-newsletter](cms-newsletter/) | 1.0.0 | 🚀 Neu | Newsletter-Management mit Subscribern, Templates, Kampagnen und öffentlicher Anmeldung |
 | [cms-promos](cms-promos/) | 1.0.0 | 🚀 Neu | Promo-Management für CTA-Flächen, Platzierungen, Banner und Klickziele |
 | [cms-m365lic](cms-m365lic/) | 1.1.0 | 🚀 Neu | Microsoft-365-Lizenzberater mit Spezial-User-Zuweisung, Billing-Modellen, vollständigem Seed-Katalog und getrennten Public/Member/Spezial-Bereichen |
+| [cms-m365tools](M365-PLUGINS/cms-m365tools/) | 1.18.0 | 🚀 Neu | Modulare Microsoft-365-Rechner- und Tool-Box mit 18 Public-Modulen, Backup-Kosten, Lizenz-Audit, Preis-Tracker, ROI-, Telefonie-, Copilot- und Lizenztools |
 | [cms-jobprofile-generator](cms-jobprofile-generator/) | 0.9.6 | 🧪 Beta | Stellenanzeigen-Generator mit Workflow-Genehmigung |
 | [cms-organigramm](cms-organigramm/) | 0.1.0 | 🚧 In Entwicklung | Interaktives Organigramm mit Cross-Plugin-Integration |
 | [cms-speakers](cms-speakers/) | 1.0.0 | ✅ Stabil | Speaker-Profile mit Topics & Präsentations-Historie |
@@ -147,6 +148,7 @@ DOC/
 ├── cms-importer/
 ├── cms-newsletter/
 ├── cms-promos/
+├── cms-m365tools/
 ├── cms-jobprofile-generator/
 ├── cms-organigramm/
 ├── cms-speakers/

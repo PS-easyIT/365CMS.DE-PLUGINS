@@ -1,0 +1,11 @@
+{
+  "version": "1.18.0",
+  "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
+  "requires": "2.9.0",
+  "tested": "2.9.7",
+  "last_updated": "2026-05-17",
+  "sections": {
+    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit Backup-Kosten-Rechner, Lizenz-Audit-Checkliste, Microsoft-Preiserhöhung-Tracker, Teams-Phone-Lizenz-Berater, Exchange-Online-ROI-Rechner, Frontline-Worker-Lizenz-Check, Copilot-Pilot-Phase-Rechner, AI-Pack-vs-Copilot-Pro-Vergleich, Archive-Mailbox-Rechner, Annual-vs-Monthly Commitment Rechner, Lizenz- und Add-on-Matrizen, Add-On-Konfigurator, M365-Lizenzvergleich, M365-Lizenzberater, Copilot ROI-Rechner, Shared-Mailbox-Rechner und Copilot Lizenz-Pflicht-Checker.",
+    "changelog": "Neues Modul M365 Backup-Kosten-Rechner unter /m365-backup-kostenrechner ergänzt: offizielle Microsoft-365-Backup-Baseline, manuell gepflegter Providervergleich, Kostenranking, Workload-/Retention-/Restore-Bewertung und FAQ. Public-Seite rechnet ohne serverseitige Speicherung."
+  }
+}

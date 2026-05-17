@@ -1,0 +1,332 @@
+{
+  "meta": {
+    "source_checked": "2026-05-17",
+    "title": "Lizenz-Audit-Checkliste",
+    "intro": "Schrittweise Microsoft-365-Auditliste für Lizenzbestand, Offboarding, Shared Mailboxes, Copilot, Frontline, Speicher und Backup.",
+    "sources": [
+      "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/assign-licenses-to-users",
+      "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/manage-group-licenses?view=o365-worldwide",
+      "https://learn.microsoft.com/en-us/microsoft-365/admin/add-users/remove-former-employee?view=o365-worldwide",
+      "https://learn.microsoft.com/en-us/onedrive/retention-and-deletion",
+      "https://learn.microsoft.com/en-us/microsoft-365/admin/email/about-shared-mailboxes",
+      "https://learn.microsoft.com/en-us/microsoft-365/admin/email/convert-user-mailbox-to-shared-mailbox?view=o365-worldwide",
+      "https://learn.microsoft.com/en-us/purview/create-and-manage-inactive-mailboxes",
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/exchange-online-service-description/exchange-online-limits#StorageLimits",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-licensing",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-requirements",
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
+      "https://learn.microsoft.com/en-us/sharepoint/manage-site-collection-storage-limits",
+      "https://learn.microsoft.com/en-us/office365/admin/subscriptions-and-billing/add-storage-space",
+      "https://learn.microsoft.com/en-us/microsoft-365/backup/backup-overview",
+      "https://learn.microsoft.com/en-us/microsoft-365/frontline/flw-licensing-options?view=o365-worldwide"
+    ]
+  },
+  "categories": {
+    "identity": {
+      "label": "Identität und Nutzerbestand",
+      "description": "Prüft aktive, gelöschte und ehemalige Nutzer sowie Rollen- und Nutzertypen.",
+      "items": [
+        {
+          "id": "identity-active-users",
+          "label": "Aktive Nutzer mit HR- oder Abteilungsbestand abgleichen",
+          "description": "Vergleiche aktive Microsoft-365-Konten mit aktueller Mitarbeiter-, Dienstleister- und Funktionskonto-Liste.",
+          "severity": "savings",
+          "weight": 8,
+          "finding_type": "unused_accounts",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/assign-licenses-to-users",
+          "deeplink_triggers": ["license_advisor", "license_comparison"],
+          "summary_if_open": "Aktive Konten sind noch nicht mit dem realen Nutzerbestand abgeglichen.",
+          "summary_if_done": "Aktive Konten wurden mit dem realen Nutzerbestand abgeglichen."
+        },
+        {
+          "id": "identity-usage-location",
+          "label": "Nutzungsstandort vor Lizenzzuweisung prüfen",
+          "description": "Bei Diensten mit regionaler Verfügbarkeit muss für Nutzer ein passender Standort hinterlegt sein; bei Gruppenlizenzierung erben Nutzer ohne Standort den Mandantenstandort.",
+          "severity": "risk",
+          "weight": 7,
+          "finding_type": "license_assignment_errors",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/manage-group-licenses?view=o365-worldwide",
+          "deeplink_triggers": ["license_advisor"],
+          "summary_if_open": "Nutzungsstandorte können Lizenzzuweisungen oder Diensteinschränkungen beeinflussen.",
+          "summary_if_done": "Nutzungsstandorte sind als Bestandteil der Lizenzprüfung dokumentiert."
+        },
+        {
+          "id": "identity-former-employees",
+          "label": "Ehemalige Mitarbeitende mit Offboarding-Liste abgleichen",
+          "description": "Prüfe, ob ehemalige Nutzer gesperrt, Mail- und OneDrive-Daten übergeben, Geräte bereinigt und Lizenzen neu zugeordnet wurden.",
+          "severity": "critical",
+          "weight": 12,
+          "finding_type": "offboarding_gap",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/admin/add-users/remove-former-employee?view=o365-worldwide",
+          "deeplink_triggers": ["shared_mailbox", "archive_mailbox"],
+          "summary_if_open": "Offboarding-Schritte für ehemalige Nutzer sind noch nicht vollständig bestätigt.",
+          "summary_if_done": "Offboarding-Schritte für ehemalige Nutzer sind nachvollziehbar geprüft."
+        },
+        {
+          "id": "identity-hybrid-source",
+          "label": "Hybride Konten im lokalen Verzeichnis berücksichtigen",
+          "description": "Wenn Konten aus einem lokalen Verzeichnis synchronisiert werden, müssen Lösch- und Wiederherstellungsschritte dort geplant werden.",
+          "severity": "risk",
+          "weight": 6,
+          "finding_type": "hybrid_dependency",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/admin/add-users/remove-former-employee?view=o365-worldwide",
+          "deeplink_triggers": ["license_advisor"],
+          "summary_if_open": "Hybride Identitätsabhängigkeiten sind noch nicht im Audit berücksichtigt.",
+          "summary_if_done": "Hybride Identitätsabhängigkeiten sind in der Prüfung berücksichtigt."
+        }
+      ]
+    },
+    "license_assignment": {
+      "label": "Lizenzzuweisung und Fehlerprüfung",
+      "description": "Bewertet direkte Lizenzierung, Gruppenlizenzierung, Lizenzfehler und SKU-Mix.",
+      "items": [
+        {
+          "id": "license-direct-vs-group",
+          "label": "Direkte und gruppenbasierte Zuweisungen vergleichen",
+          "description": "Dokumentiere, welche Produkte direkt zugewiesen sind und welche über Gruppen gesteuert werden, damit Doppelungen und Altlasten sichtbar werden.",
+          "severity": "savings",
+          "weight": 9,
+          "finding_type": "assignment_model",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/assign-licenses-to-users",
+          "deeplink_triggers": ["license_comparison", "license_advisor"],
+          "summary_if_open": "Direkte und gruppenbasierte Zuweisungen sind noch nicht sauber getrennt.",
+          "summary_if_done": "Zuweisungsmodell ist dokumentiert und vergleichbar."
+        },
+        {
+          "id": "license-group-errors",
+          "label": "Fehler und Auffälligkeiten je Produkt prüfen",
+          "description": "Prüfe Produktseiten auf Fehlerlisten, insbesondere unzureichende Verfügbarkeit, widersprüchliche Servicepläne, fehlende Abhängigkeiten, Proxy-Adressen und Standortprobleme.",
+          "severity": "critical",
+          "weight": 13,
+          "finding_type": "license_assignment_errors",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/manage-group-licenses?view=o365-worldwide",
+          "deeplink_triggers": ["addon_configurator", "license_advisor"],
+          "summary_if_open": "Lizenzfehlerlisten wurden noch nicht je Produkt ausgewertet.",
+          "summary_if_done": "Lizenzfehlerlisten wurden je Produkt geprüft."
+        },
+        {
+          "id": "license-nested-groups",
+          "label": "Verschachtelte Gruppen in Lizenzgruppen vermeiden",
+          "description": "Gruppenlizenzierung berücksichtigt keine verschachtelten Gruppen; prüfe daher direkte Mitglieder und dynamische Gruppenlogik.",
+          "severity": "risk",
+          "weight": 8,
+          "finding_type": "group_license_limit",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/manage-group-licenses?view=o365-worldwide",
+          "deeplink_triggers": ["license_advisor"],
+          "summary_if_open": "Lizenzgruppen wurden noch nicht auf Verschachtelungen geprüft.",
+          "summary_if_done": "Lizenzgruppen wurden auf Verschachtelungen und direkte Mitglieder geprüft."
+        },
+        {
+          "id": "license-large-groups",
+          "label": "Große Lizenzgruppen mit Änderungsfenster planen",
+          "description": "Bei großen Gruppen können Lizenz- oder Mitgliedschaftsänderungen länger laufen; plane Änderung, Nachkontrolle und Stichprobe.",
+          "severity": "info",
+          "weight": 5,
+          "finding_type": "group_change_window",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/manage-group-licenses?view=o365-worldwide",
+          "deeplink_triggers": ["license_advisor"],
+          "summary_if_open": "Änderungsfenster für große Lizenzgruppen ist noch nicht geplant.",
+          "summary_if_done": "Änderungsfenster und Nachkontrolle für große Lizenzgruppen sind eingeplant."
+        },
+        {
+          "id": "license-renewal-price",
+          "label": "Renewal- und Preisänderungsfenster in Audit aufnehmen",
+          "description": "Vergleiche aktive SKUs, Laufzeiten und Renewal-Daten mit aktuellen Microsoft-Preisereignissen.",
+          "severity": "savings",
+          "weight": 9,
+          "finding_type": "renewal_budget",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/assign-licenses-to-users",
+          "deeplink_triggers": ["price_tracker", "commitment_calculator"],
+          "summary_if_open": "Renewal- und Preisänderungsfenster sind noch nicht im Audit bewertet.",
+          "summary_if_done": "Renewal- und Preisänderungsfenster wurden im Audit berücksichtigt."
+        }
+      ]
+    },
+    "mail_retention": {
+      "label": "Mailbox, Archiv und Aufbewahrung",
+      "description": "Prüft Shared Mailboxes, ehemalige Nutzer, OneDrive, Holds, Archive und Aufbewahrungspflichten.",
+      "items": [
+        {
+          "id": "mail-shared-50gb",
+          "label": "Shared Mailboxes unter 50 GB und ohne Zusatzfunktionen identifizieren",
+          "description": "Shared Mailboxes benötigen bis 50 GB in vielen Standardfällen keine eigene Lizenz; Zugriffsnutzer benötigen weiterhin Exchange Online.",
+          "severity": "savings",
+          "weight": 10,
+          "finding_type": "shared_mailbox_savings",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/admin/email/about-shared-mailboxes",
+          "deeplink_triggers": ["shared_mailbox"],
+          "summary_if_open": "Shared-Mailbox-Größen und Zusatzfunktionen sind noch nicht bewertet.",
+          "summary_if_done": "Shared-Mailbox-Größen und Zusatzfunktionen sind bewertet."
+        },
+        {
+          "id": "mail-shared-hold-archive",
+          "label": "Shared Mailboxes mit Archiv, Hold oder Premiumfunktionen separat prüfen",
+          "description": "Für mehr als 50 GB, Archiv, Litigation Hold, erweiterte eDiscovery- oder Retention-Funktionen kann eine passende Lizenz erforderlich sein.",
+          "severity": "compliance",
+          "weight": 12,
+          "finding_type": "shared_mailbox_compliance",
+          "source_url": "https://learn.microsoft.com/en-us/office365/servicedescriptions/exchange-online-service-description/exchange-online-limits#StorageLimits",
+          "deeplink_triggers": ["shared_mailbox", "archive_mailbox", "addon_configurator"],
+          "summary_if_open": "Shared Mailboxes mit Archiv, Hold oder Premiumfunktionen sind noch nicht separat geprüft.",
+          "summary_if_done": "Shared Mailboxes mit Archiv, Hold oder Premiumfunktionen sind separat geprüft."
+        },
+        {
+          "id": "mail-conversion-anchor",
+          "label": "Mailbox-Konvertierungen mit Ankerkonto dokumentieren",
+          "description": "Vor der Konvertierung zur Shared Mailbox muss die User-Mailbox lizenziert sein; nach Konvertierung darf das zugehörige Konto nicht als Anker entfernt werden.",
+          "severity": "risk",
+          "weight": 9,
+          "finding_type": "mailbox_conversion",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/admin/email/convert-user-mailbox-to-shared-mailbox?view=o365-worldwide",
+          "deeplink_triggers": ["shared_mailbox"],
+          "summary_if_open": "Konvertierte Mailboxen und Ankerkonten sind noch nicht dokumentiert.",
+          "summary_if_done": "Konvertierte Mailboxen und Ankerkonten sind dokumentiert."
+        },
+        {
+          "id": "mail-inactive-mailboxes",
+          "label": "Inactive-Mailbox-Pfad vor Löschung prüfen",
+          "description": "Für Inactive Mailboxes muss vor dem Löschen ein geeigneter Hold bestehen; Lizenz- und Aufbewahrungsstatus müssen vorher passen.",
+          "severity": "compliance",
+          "weight": 12,
+          "finding_type": "inactive_mailbox",
+          "source_url": "https://learn.microsoft.com/en-us/purview/create-and-manage-inactive-mailboxes",
+          "deeplink_triggers": ["archive_mailbox", "addon_configurator"],
+          "summary_if_open": "Inactive-Mailbox-Fälle sind noch nicht mit Hold- und Lizenzstatus abgeglichen.",
+          "summary_if_done": "Inactive-Mailbox-Fälle wurden mit Hold- und Lizenzstatus abgeglichen."
+        },
+        {
+          "id": "mail-onedrive-retention",
+          "label": "OneDrive-Zugriff und Aufbewahrungsfrist ehemaliger Nutzer prüfen",
+          "description": "Standardmäßig erhalten Manager oder sekundäre Besitzer Zugang; die Cleanup-Logik startet durch Kontolöschung, nicht nur durch Entfernen einer Lizenz.",
+          "severity": "compliance",
+          "weight": 11,
+          "finding_type": "onedrive_offboarding",
+          "source_url": "https://learn.microsoft.com/en-us/onedrive/retention-and-deletion",
+          "deeplink_triggers": ["backup_review"],
+          "summary_if_open": "OneDrive-Zugriff und Aufbewahrungsfristen ehemaliger Nutzer sind noch nicht geprüft.",
+          "summary_if_done": "OneDrive-Zugriff und Aufbewahrungsfristen ehemaliger Nutzer sind geprüft."
+        }
+      ]
+    },
+    "segmentation": {
+      "label": "Nutzersegmentierung und Copilot",
+      "description": "Bewertet Knowledge Worker, Frontline Worker, Copilot-Fähigkeit und Add-on-Bedarf.",
+      "items": [
+        {
+          "id": "segment-frontline-candidates",
+          "label": "Frontline-Kandidaten aus Knowledge-Worker-Bestand trennen",
+          "description": "Mobile, schichtbasierte oder deskless Rollen können je nach App- und Gerätebedarf mit F1/F3 oder Mischmodellen geplant werden.",
+          "severity": "savings",
+          "weight": 10,
+          "finding_type": "frontline_segmentation",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/frontline/flw-licensing-options?view=o365-worldwide",
+          "deeplink_triggers": ["frontline_check"],
+          "summary_if_open": "Frontline-Kandidaten sind noch nicht vom Knowledge-Worker-Bestand getrennt.",
+          "summary_if_done": "Frontline-Kandidaten sind gesondert bewertet."
+        },
+        {
+          "id": "segment-copilot-base",
+          "label": "Copilot-fähige Basislizenzen und Add-on-Bedarf prüfen",
+          "description": "Microsoft 365 Copilot ist ein Add-on und benötigt passende Basislizenzen sowie Nutzerkonten im Microsoft-365-Mandanten.",
+          "severity": "risk",
+          "weight": 10,
+          "finding_type": "copilot_license_base",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-licensing",
+          "deeplink_triggers": ["copilot_license", "copilot_pilot", "addon_configurator"],
+          "summary_if_open": "Copilot-fähige Basislizenzen sind noch nicht je Zielgruppe geprüft.",
+          "summary_if_done": "Copilot-fähige Basislizenzen sind je Zielgruppe geprüft."
+        },
+        {
+          "id": "segment-copilot-mailbox",
+          "label": "Copilot-Postfach- und App-Anforderungen prüfen",
+          "description": "Copilot benötigt ein primäres Exchange-Online-Postfach und ist nicht für Archiv-, Gruppen-, Shared- oder Delegate-Mailboxen verfügbar.",
+          "severity": "risk",
+          "weight": 9,
+          "finding_type": "copilot_readiness",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-requirements",
+          "deeplink_triggers": ["copilot_license", "copilot_pilot"],
+          "summary_if_open": "Copilot-Postfach- und App-Anforderungen sind noch nicht geprüft.",
+          "summary_if_done": "Copilot-Postfach- und App-Anforderungen sind geprüft."
+        },
+        {
+          "id": "segment-addons-overlap",
+          "label": "Add-ons gegen vorhandene Suite-Funktionen abgleichen",
+          "description": "Prüfe Teams Phone, Copilot, Defender, Entra, Purview, Archivierung und Power Platform auf enthaltene Funktionen, Prerequisites und Redundanzen.",
+          "severity": "savings",
+          "weight": 9,
+          "finding_type": "addon_overlap",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/assign-licenses-to-users",
+          "deeplink_triggers": ["addon_configurator", "license_comparison"],
+          "summary_if_open": "Add-on-Redundanzen und Prerequisites sind noch nicht bewertet.",
+          "summary_if_done": "Add-on-Redundanzen und Prerequisites sind bewertet."
+        }
+      ]
+    },
+    "storage_backup_procurement": {
+      "label": "Speicher, Backup und Beschaffung",
+      "description": "Prüft SharePoint-/OneDrive-Speicher, Backup-Verbrauch, Laufzeitmodell und Beschaffungskanal.",
+      "items": [
+        {
+          "id": "storage-sharepoint-pool",
+          "label": "SharePoint-Tenant-Speicher gegen Lizenzbestand abgleichen",
+          "description": "Viele Pläne nutzen die Formel 1 TB plus 10 GB je Lizenz; Speicherwerte können zeitversetzt aktualisiert werden.",
+          "severity": "risk",
+          "weight": 8,
+          "finding_type": "sharepoint_storage",
+          "source_url": "https://learn.microsoft.com/en-us/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
+          "deeplink_triggers": ["addon_configurator", "license_advisor"],
+          "summary_if_open": "SharePoint-Tenant-Speicher ist noch nicht gegen den Lizenzbestand abgeglichen.",
+          "summary_if_done": "SharePoint-Tenant-Speicher ist gegen den Lizenzbestand abgeglichen."
+        },
+        {
+          "id": "storage-site-limits",
+          "label": "Site-Speicherlimits und Benachrichtigungen prüfen",
+          "description": "Bei manuellen Site-Limits sollten Warnwerte und Anforderungswege für mehr Speicher geprüft werden.",
+          "severity": "risk",
+          "weight": 6,
+          "finding_type": "site_storage_limits",
+          "source_url": "https://learn.microsoft.com/en-us/sharepoint/manage-site-collection-storage-limits",
+          "deeplink_triggers": ["addon_configurator"],
+          "summary_if_open": "Site-Speicherlimits und Warnwerte sind noch nicht geprüft.",
+          "summary_if_done": "Site-Speicherlimits und Warnwerte sind geprüft."
+        },
+        {
+          "id": "storage-extra-file-storage",
+          "label": "Extra File Storage und Bezugsweg prüfen",
+          "description": "Zusätzlicher SharePoint-Speicher wird in 1-GB-Schritten ergänzt; bei CSP oder Volumenlizenz kann der Bezugsweg über den Partner laufen.",
+          "severity": "savings",
+          "weight": 7,
+          "finding_type": "extra_storage_procurement",
+          "source_url": "https://learn.microsoft.com/en-us/office365/admin/subscriptions-and-billing/add-storage-space",
+          "deeplink_triggers": ["addon_configurator", "price_tracker"],
+          "summary_if_open": "Zusatzspeicher und Bezugsweg sind noch nicht bewertet.",
+          "summary_if_done": "Zusatzspeicher und Bezugsweg sind bewertet."
+        },
+        {
+          "id": "storage-backup-scope",
+          "label": "Microsoft 365 Backup Scope und Verbrauchsschätzung prüfen",
+          "description": "Microsoft 365 Backup deckt OneDrive, SharePoint und Exchange ab und wird verbrauchsbasiert abgerechnet; Scope und GB-Menge gehören in das Audit.",
+          "severity": "compliance",
+          "weight": 9,
+          "finding_type": "backup_scope",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/backup/backup-overview",
+          "deeplink_triggers": ["addon_configurator", "backup_review"],
+          "summary_if_open": "Backup-Scope und Verbrauchsschätzung sind noch nicht geprüft.",
+          "summary_if_done": "Backup-Scope und Verbrauchsschätzung sind geprüft."
+        },
+        {
+          "id": "procurement-commitment",
+          "label": "Jahresbindung, Monatslaufzeit und flexible Seats bewerten",
+          "description": "Trenne stabilen Kernbestand von saisonalen oder projektbezogenen Seats, bevor Laufzeitmodell und Renewal angepasst werden.",
+          "severity": "savings",
+          "weight": 8,
+          "finding_type": "commitment_model",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/assign-licenses-to-users",
+          "deeplink_triggers": ["commitment_calculator", "price_tracker"],
+          "summary_if_open": "Laufzeitmodell und flexible Seats sind noch nicht bewertet.",
+          "summary_if_done": "Laufzeitmodell und flexible Seats sind bewertet."
+        }
+      ]
+    }
+  }
+}

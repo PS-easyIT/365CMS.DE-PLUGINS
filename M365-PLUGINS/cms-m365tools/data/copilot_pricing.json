@@ -1,0 +1,29 @@
+{
+  "meta": {
+    "source_checked_at": "2026-05-16",
+    "currency": "EUR",
+    "price_basis": "Reference assumptions per user/month; verify against customer contract before ordering",
+    "notes": [
+      "Microsoft 365 Copilot is licensed as an add-on to eligible base plans.",
+      "ROI values are assumptions and not a Microsoft guarantee."
+    ]
+  },
+  "copilot_addon": {
+    "name": "Microsoft 365 Copilot",
+    "monthly_per_user": 28.10,
+    "annual_per_user": 337.20,
+    "source_note": "Default copied from existing Copilot upgrade assumptions."
+  },
+  "enablement": {
+    "pilot_default_one_time": 2500.00,
+    "broad_default_one_time": 7500.00,
+    "monthly_change_default": 0.00
+  },
+  "sources": [
+    "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-licensing",
+    "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-requirements",
+    "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-setup",
+    "https://learn.microsoft.com/en-us/office365/servicedescriptions/office-365-platform-service-description/microsoft-365-copilot",
+    "https://www.microsoft.com/en-us/licensing/news"
+  ]
+}

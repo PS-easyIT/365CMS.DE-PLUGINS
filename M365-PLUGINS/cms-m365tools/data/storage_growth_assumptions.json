@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "source_checked": "2026-05-17",
+    "display_text": "Wachstum, Puffer, Cleanup-Potenzial und Zusatzspeicherpreis sind Planungsannahmen und sollten vor Beschaffung mit den aktuellen Tenant- und Vertragsdaten abgeglichen werden."
+  },
+  "defaults": {
+    "qualified_licenses": 250,
+    "users": 250,
+    "sharepoint_current_gb": 1800,
+    "sharepoint_largest_site_gb": 450,
+    "sharepoint_sites": 35,
+    "synced_items": 180000,
+    "largest_file_gb": 18,
+    "onedrive_users": 230,
+    "onedrive_avg_gb": 42,
+    "onedrive_quota_gb": 1024,
+    "mailboxes": 240,
+    "avg_mailbox_gb": 28,
+    "largest_mailbox_gb": 45,
+    "mailbox_plan_limit_gb": 50,
+    "archive_users_percent": 20,
+    "avg_archive_gb": 35,
+    "archive_model": "standard_50",
+    "annual_growth_percent": 18,
+    "planning_months": 12,
+    "buffer_percent": 15,
+    "cleanup_potential_percent": 8,
+    "extra_storage_price_month": 0.2
+  },
+  "limits": {
+    "users_min": 1,
+    "users_max": 500000,
+    "gb_max": 50000000,
+    "sites_max": 2000000,
+    "items_max": 50000000,
+    "growth_percent_max": 500,
+    "buffer_percent_max": 200,
+    "cleanup_percent_max": 90,
+    "planning_month_options": [12, 24, 36]
+  },
+  "status_labels": {
+    "success": "Ausreichend dimensioniert",
+    "watch": "Beobachten und Wachstum einplanen",
+    "capacity": "Zusatzspeicher oder Archivstrategie nötig",
+    "danger": "Akutes Kapazitätsrisiko",
+    "governance": "Governance- und Cleanup-Potenzial zuerst nutzen"
+  },
+  "area_labels": {
+    "sharepoint": "SharePoint-Dateispeicher",
+    "onedrive": "OneDrive-Benutzerspeicher",
+    "exchange": "Exchange-Postfächer",
+    "archive": "Exchange-Archiv"
+  }
+}

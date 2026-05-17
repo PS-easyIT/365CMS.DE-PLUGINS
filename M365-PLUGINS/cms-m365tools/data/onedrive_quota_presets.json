@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "source_checked": "2026-05-17",
+    "sources": [
+      "https://learn.microsoft.com/en-us/sharepoint/onedrive-overview",
+      "https://learn.microsoft.com/en-us/onedrive/set-default-storage-space",
+      "https://learn.microsoft.com/en-us/onedrive/ideal-state-configuration",
+      "https://support.microsoft.com/en-us/office/restrictions-and-limitations-in-onedrive-and-sharepoint-64883a5d-228e-48f5-b3d2-eb39e07630fa"
+    ]
+  },
+  "quota_presets": {
+    "1024": "1 TB Standard pro Nutzer",
+    "2048": "2 TB pro Nutzer",
+    "5120": "5 TB pro Nutzer für berechtigte Umgebungen",
+    "custom": "Eigene Tenant-Vorgabe"
+  },
+  "limits": {
+    "default_user_quota_gb": 1024,
+    "max_common_user_quota_gb": 5120,
+    "minimum_user_quota_gb": 1,
+    "files_restore_days": 30,
+    "recycle_bin_days_work_school": 93,
+    "warning_ratio": 0.8,
+    "critical_ratio": 0.95
+  },
+  "sync_guidance": {
+    "files_on_demand_recommended": true,
+    "storage_sense_recommended": true,
+    "known_folder_move_recommended": true,
+    "shortcuts_preferred_for_shared_folders": true,
+    "sync_reports_recommended": true
+  }
+}

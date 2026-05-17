@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "source_checked": "2026-05-16",
+    "note": "Auszug für Planungslogik. Vollständige Verfügbarkeit je Land und Rufnummerntyp immer gegen Microsoft-Länderübersicht und Carrier-Angebote prüfen.",
+    "sources": [
+      "https://learn.microsoft.com/en-us/microsoftteams/calling-plan-overview",
+      "https://learn.microsoft.com/en-us/microsoftteams/calling-plans-for-office-365",
+      "https://learn.microsoft.com/en-us/microsoftteams/pstn-connectivity"
+    ]
+  },
+  "countries": {
+    "DE": { "label": "Deutschland", "region": "DACH", "calling_plan_available": true, "payg_zone": "2", "audio_conferencing_available": true, "communication_credits_available": true, "operator_connect_common": true, "direct_routing_supported": true },
+    "AT": { "label": "Österreich", "region": "DACH", "calling_plan_available": true, "payg_zone": "2", "audio_conferencing_available": true, "communication_credits_available": true, "operator_connect_common": true, "direct_routing_supported": true },
+    "CH": { "label": "Schweiz", "region": "DACH", "calling_plan_available": true, "payg_zone": "2", "audio_conferencing_available": true, "communication_credits_available": true, "operator_connect_common": true, "direct_routing_supported": true },
+    "NL": { "label": "Niederlande", "region": "EU", "calling_plan_available": true, "payg_zone": "2", "audio_conferencing_available": true, "communication_credits_available": true, "operator_connect_common": true, "direct_routing_supported": true },
+    "FR": { "label": "Frankreich", "region": "EU", "calling_plan_available": true, "payg_zone": "2", "audio_conferencing_available": true, "communication_credits_available": true, "operator_connect_common": true, "direct_routing_supported": true },
+    "IT": { "label": "Italien", "region": "EU", "calling_plan_available": true, "payg_zone": "2", "audio_conferencing_available": true, "communication_credits_available": true, "operator_connect_common": true, "direct_routing_supported": true },
+    "ES": { "label": "Spanien", "region": "EU", "calling_plan_available": true, "payg_zone": "2", "audio_conferencing_available": true, "communication_credits_available": true, "operator_connect_common": true, "direct_routing_supported": true },
+    "UK": { "label": "Vereinigtes Königreich", "region": "UK", "calling_plan_available": true, "payg_zone": "1", "audio_conferencing_available": true, "communication_credits_available": true, "operator_connect_common": true, "direct_routing_supported": true },
+    "US": { "label": "USA", "region": "North America", "calling_plan_available": true, "payg_zone": "1", "audio_conferencing_available": true, "communication_credits_available": true, "operator_connect_common": true, "direct_routing_supported": true },
+    "CA": { "label": "Kanada", "region": "North America", "calling_plan_available": true, "payg_zone": "1", "audio_conferencing_available": true, "communication_credits_available": true, "operator_connect_common": true, "direct_routing_supported": true },
+    "MX": { "label": "Mexiko", "region": "LATAM", "calling_plan_available": true, "payg_zone": "MX", "audio_conferencing_available": true, "communication_credits_available": true, "operator_connect_common": true, "direct_routing_supported": true },
+    "IN": { "label": "Indien", "region": "APAC", "calling_plan_available": false, "payg_zone": "none", "audio_conferencing_available": true, "communication_credits_available": true, "operator_connect_common": true, "direct_routing_supported": true, "note": "Operator Connect for India und lokale Vorgaben separat prüfen." },
+    "OTHER": { "label": "Anderes Land / mehrere Länder", "region": "Global", "calling_plan_available": false, "payg_zone": "review", "audio_conferencing_available": false, "communication_credits_available": false, "operator_connect_common": false, "direct_routing_supported": true, "note": "Verfügbarkeit je Nutzerland prüfen; Direct Routing oder Operator Connect oft als Ausgangspunkt." }
+  }
+}

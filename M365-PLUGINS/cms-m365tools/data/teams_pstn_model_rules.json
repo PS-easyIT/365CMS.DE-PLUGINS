@@ -1,0 +1,159 @@
+{
+  "meta": {
+    "source_checked": "2026-05-16",
+    "sources": [
+      "https://learn.microsoft.com/en-us/microsoftteams/pstn-connectivity",
+      "https://learn.microsoft.com/en-us/microsoftteams/calling-plans-for-office-365",
+      "https://learn.microsoft.com/en-us/microsoftteams/operator-connect-plan",
+      "https://learn.microsoft.com/en-us/microsoftteams/direct-routing-plan",
+      "https://learn.microsoft.com/en-us/microsoftteams/shared-calling-plan"
+    ]
+  },
+  "models": {
+    "calling_plan": {
+      "label": "Calling Plan empfohlen",
+      "short": "Calling Plan",
+      "tone": "success",
+      "operations": "niedrig",
+      "flexibility": "mittel",
+      "complexity": 22,
+      "base_score": 52,
+      "best_for": "Standardisierte Standorte in Ländern mit Microsoft Calling Plans und ohne bestehende Carrier-Bindung.",
+      "requirements": [
+        "Teams Phone je Nutzer",
+        "Calling Plan je Nutzer oder passendes Bundle",
+        "Verfügbarkeit im Land der Nutzerlizenz",
+        "Rufnummern bestellen oder portieren"
+      ],
+      "advantages": [
+        "Microsoft ist PSTN-Anbieter",
+        "Kein eigener SBC-Betrieb",
+        "Einfacher Start für Standard-Use-Cases"
+      ],
+      "limits": [
+        "Nicht in jedem Land verfügbar",
+        "Carrier-Sonderverträge und Spezialrouting lassen sich nur begrenzt abbilden",
+        "Pay-As-You-Go oder Überläufe benötigen saubere Kostensteuerung"
+      ]
+    },
+    "operator_connect": {
+      "label": "Operator Connect empfohlen",
+      "short": "Operator Connect",
+      "tone": "success",
+      "operations": "mittel",
+      "flexibility": "hoch",
+      "complexity": 38,
+      "base_score": 50,
+      "best_for": "Organisationen mit passendem Operator-Connect-Partner oder Wunsch nach Carrier-Betrieb ohne eigenen SBC.",
+      "requirements": [
+        "Teams Phone je Nutzer",
+        "TeamsOnly je Nutzer",
+        "Vertrag mit teilnehmendem Operator",
+        "Nummernzuweisung über Teams Admin Center und Operator-Prozess"
+      ],
+      "advantages": [
+        "Operator verwaltet PSTN-Service und Infrastruktur",
+        "Gute Balance aus Cloud-Integration und Carrier-Wahl",
+        "Support über Operator mit Microsoft-Eskalation"
+      ],
+      "limits": [
+        "Nur mit teilnehmenden Operatoren und Ländern sinnvoll",
+        "TeamsOnly-Modus für betroffene Nutzer erforderlich",
+        "Tarife, Portierung und Service-Level hängen vom Operator ab"
+      ]
+    },
+    "direct_routing": {
+      "label": "Direct Routing empfohlen",
+      "short": "Direct Routing",
+      "tone": "warning",
+      "operations": "hoch",
+      "flexibility": "sehr hoch",
+      "complexity": 74,
+      "base_score": 45,
+      "best_for": "Bestehende Carrier-Verträge, PBX-/Analog-/Contact-Center-Integration, Spezialrouting oder Länder ohne Calling Plan.",
+      "requirements": [
+        "Teams Phone und Microsoft Teams je Nutzer",
+        "Zertifizierter SBC oder gemanagter Direct-Routing-Dienst",
+        "Öffentliche IP, öffentlicher DNS-Eintrag und vertrauenswürdiges Zertifikat",
+        "SBC-FQDN mit registrierter Tenant-Domäne",
+        "Voice Routing Policies und SBC-Routing"
+      ],
+      "advantages": [
+        "Sehr flexibel bei Carriern, Ländern und Sonderrouting",
+        "Integration mit PBX, Analoggeräten und Contact Centern möglich",
+        "Kombinierbar mit Calling Plan oder Operator Connect"
+      ],
+      "limits": [
+        "Höherer Betriebs- und Supportaufwand",
+        "Nicht für Islands-Modus geeignet",
+        "Support beginnt in der Regel beim SBC-Anbieter"
+      ]
+    },
+    "mixed_model": {
+      "label": "Mischmodell empfohlen",
+      "short": "Mischmodell",
+      "tone": "info",
+      "operations": "mittel bis hoch",
+      "flexibility": "sehr hoch",
+      "complexity": 58,
+      "base_score": 48,
+      "best_for": "Mehrere Länder, unterschiedliche Nutzergruppen, Low-Volume-User, Sonderstandorte und zentrale Telefonie-Anforderungen.",
+      "requirements": [
+        "Segmentierung nach Ländern, Rollen und Rufnummernbedarf",
+        "Teams Phone für betroffene Nutzer",
+        "Mindestens ein PSTN-Modell je Nutzergruppe",
+        "Klare Betriebs- und Supportzuordnung"
+      ],
+      "advantages": [
+        "Ermöglicht Standardisierung ohne Sonderfälle zu verbiegen",
+        "Shared Calling, Calling Plan, Operator Connect und Direct Routing können kombiniert werden",
+        "Gut für gestaffelte Migrationen"
+      ],
+      "limits": [
+        "Braucht saubere Governance und Dokumentation",
+        "Kostenvergleich ist je Persona zu rechnen",
+        "Portierung und Nummernmanagement werden komplexer"
+      ]
+    },
+    "architecture_review": {
+      "label": "Sonderpfad / Architektur-Review nötig",
+      "short": "Architektur-Review",
+      "tone": "danger",
+      "operations": "zu klären",
+      "flexibility": "abhängig vom Zielbild",
+      "complexity": 88,
+      "base_score": 30,
+      "best_for": "Unklare Teams-Basis, fehlender PSTN-Pfad, nicht erfüllte Direct-Routing-Voraussetzungen oder regulierte Spezialfälle.",
+      "requirements": [
+        "Lizenzbasis klären",
+        "TeamsOnly- und Koexistenzmodell klären",
+        "Carrier-, Nummern- und Standortdaten sammeln",
+        "Technische Abhängigkeiten bewerten"
+      ],
+      "advantages": [
+        "Verhindert Fehlentscheidungen vor Portierung und Rollout",
+        "Macht Sonderfälle sichtbar",
+        "Erzeugt belastbare Roadmap"
+      ],
+      "limits": [
+        "Keine pauschale Empfehlung ohne Detaildaten",
+        "Migrationsplanung und Anbieterabstimmung nötig"
+      ]
+    }
+  },
+  "scoring": {
+    "calling_plan_country_bonus": 22,
+    "calling_plan_microsoft_carrier_bonus": 18,
+    "operator_partner_bonus": 24,
+    "operator_managed_bonus": 10,
+    "direct_existing_carrier_bonus": 20,
+    "direct_pbx_bonus": 18,
+    "direct_special_routing_bonus": 18,
+    "direct_sbc_bonus": 18,
+    "direct_no_sbc_penalty": -30,
+    "teams_only_missing_penalty": -28,
+    "many_countries_mixed_bonus": 18,
+    "low_volume_shared_bonus": 16,
+    "standard_low_complexity_bonus": 10
+  }
+}

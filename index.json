@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "updated": "2026-05-16",
+  "updated": "2026-05-17",
   "plugins": [
     {
       "slug": "cms-companies",
@@ -78,9 +78,9 @@
       "manifest": "PLUGINS/cms-m365lic/update.json"
     },
     {
-      "slug": "cms-m365calculator",
-      "name": "CMS M365 Calculator",
-      "manifest": "PLUGINS/cms-m365calculator/update.json"
+      "slug": "cms-m365tools",
+      "name": "CMS M365 Tools",
+      "manifest": "PLUGINS/cms-m365tools/update.json"
     },
     {
       "slug": "cms-knowledgebase",

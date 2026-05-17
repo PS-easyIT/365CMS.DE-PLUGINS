@@ -1,5 +1,5 @@
 Baue die öffentliche Landingpage (Hub-Übersicht) für das bestehende 365CMS-Plugin
-"cms-m365calculator".
+"cms-m365tools".
 
 ZIEL
 Eine Public-Seite, die ALLE verfügbaren Rechner-/Berechnungs-Module des Plugins
@@ -53,7 +53,7 @@ SEITENAUFBAU (semantisch)
 <main class="phinit-plugin">
   <header>
     <p class="phinit-overline">Rechner & Tools</p>
-    <h1>M365 Rechner</h1>
+    <h1>M365 Tools</h1>
     <p class="phinit-prose">Ein, zwei sachliche Sätze, was hier zu finden
        ist. Kein Marketing-Ton.</p>
   </header>

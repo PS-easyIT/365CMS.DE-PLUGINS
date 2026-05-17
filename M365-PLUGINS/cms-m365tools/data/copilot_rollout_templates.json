@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "title": "Copilot Rollout Templates",
+    "source_checked": "2026-05-17",
+    "description": "Standard-Zeitpläne für Copilot-Piloten mit Vorbereitung, Enablement, Feedback, Messung und Go/No-Go."
+  },
+  "templates": {
+    "4": {
+      "label": "4 Wochen Micro-Pilot",
+      "best_for": "kleine Teams mit klarer Fragestellung",
+      "phases": [
+        { "week": "Woche 1", "title": "Vorbereitung", "tasks": ["Teilnehmer bestätigen", "Use Cases festlegen", "kurze Einführung planen"] },
+        { "week": "Woche 2", "title": "Aktivierung", "tasks": ["Lizenzen zuweisen", "Welcome-Kommunikation senden", "erste Prompts und Meeting-Szenarien testen"] },
+        { "week": "Woche 3", "title": "Feedback", "tasks": ["Nutzerfeedback einsammeln", "Blocker und Datenschutzfragen dokumentieren", "Champion-Fragen bündeln"] },
+        { "week": "Woche 4", "title": "Entscheidung", "tasks": ["Ergebnisse bewerten", "Go/No-Go ableiten", "nächste Pilotstufe planen"] }
+      ]
+    },
+    "6": {
+      "label": "6 Wochen Abteilungs-Pilot",
+      "best_for": "repräsentative Fachabteilung",
+      "phases": [
+        { "week": "Woche 1", "title": "Readiness", "tasks": ["Lizenz- und App-Readiness prüfen", "Pilotgruppe segmentieren", "Success-Kriterien festlegen"] },
+        { "week": "Woche 2", "title": "Enablement", "tasks": ["Champions briefen", "Szenario-Workshops starten", "Feedbackkanal aktivieren"] },
+        { "week": "Woche 3-4", "title": "Nutzung", "tasks": ["Meetings, Mail, Dokumente und Recherche testen", "Best Practices sammeln", "Risiken und Supportfälle erfassen"] },
+        { "week": "Woche 5", "title": "Messung", "tasks": ["Adoption und Aktivität prüfen", "Nutzenstorys erfassen", "Governance-Lücken bewerten"] },
+        { "week": "Woche 6", "title": "Roadmap", "tasks": ["Rollout-Empfehlung erstellen", "Training anpassen", "nächste Nutzerwelle planen"] }
+      ]
+    },
+    "8": {
+      "label": "8 Wochen funktionsübergreifender Pilot",
+      "best_for": "mehrere Rollen und Abteilungen",
+      "phases": [
+        { "week": "Woche 1", "title": "Foundation", "tasks": ["Datenhygiene-Risiken priorisieren", "Pilotrollen auswählen", "Champions und Fachbereichsowner benennen"] },
+        { "week": "Woche 2", "title": "Launch", "tasks": ["Kommunikation und Onboarding durchführen", "Use-Case-Backlog veröffentlichen", "Feedback und Supportkanal öffnen"] },
+        { "week": "Woche 3-5", "title": "Adoption", "tasks": ["Szenarien pro Rolle testen", "Meeting-, Dokument- und Wissensarbeit messen", "Weekly Feedback Review durchführen"] },
+        { "week": "Woche 6", "title": "Governance Review", "tasks": ["Oversharing-Funde bewerten", "Labels, DLP und Site-Zugriffe nachziehen", "Pilotumfang anpassen"] },
+        { "week": "Woche 7-8", "title": "Entscheidung", "tasks": ["ROI- und Adoption-Signale bewerten", "Rollout-Wellen planen", "Management-Entscheidung vorbereiten"] }
+      ]
+    },
+    "12": {
+      "label": "12 Wochen skalierter Pilot",
+      "best_for": "Enterprise und breite Rollout-Vorbereitung",
+      "phases": [
+        { "week": "Woche 1-2", "title": "Governance & Setup", "tasks": ["Security- und Compliance-Leitplanken finalisieren", "Kommunikationsplan veröffentlichen", "Messkonzept abstimmen"] },
+        { "week": "Woche 3-4", "title": "Enablement", "tasks": ["Champions schulen", "Rollenbasierte Trainings durchführen", "Supportmodell aktivieren"] },
+        { "week": "Woche 5-8", "title": "Nutzung & Optimierung", "tasks": ["Szenarien je Bereich testen", "Nutzungsberichte prüfen", "Prompt- und Prozessmuster dokumentieren"] },
+        { "week": "Woche 9-10", "title": "Kontrolle", "tasks": ["Audit- und Purview-Signale prüfen", "Datenhygiene-Nacharbeit einplanen", "Change-Backlog priorisieren"] },
+        { "week": "Woche 11-12", "title": "Skalierung", "tasks": ["Rollout-Wellen budgetieren", "Training und Champions skalieren", "Go/No-Go dokumentieren"] }
+      ]
+    }
+  },
+  "success_metrics": [
+    "aktive Nutzung pro Woche",
+    "Use Cases mit messbarem Zeitgewinn",
+    "Feedbackquote und Nutzerzufriedenheit",
+    "Anzahl gelöster Support- und Governance-Fragen",
+    "Rollout-Blocker vor breiter Einführung",
+    "Readiness- und Usage-Signale aus Microsoft 365 Admin Center, Viva Insights oder vergleichbaren Reports",
+    "Sichtbare Reduktion priorisierter Oversharing- und Datenhygiene-Funde"
+  ]
+}

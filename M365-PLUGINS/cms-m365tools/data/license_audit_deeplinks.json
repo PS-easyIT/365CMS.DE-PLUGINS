@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "title": "Lizenz-Audit Deep Links",
+    "source_checked": "2026-05-17"
+  },
+  "links": {
+    "shared_mailbox": {
+      "label": "Shared-Mailbox-Rechner",
+      "description": "Prüft 50-GB-Grenze, Archiv, Hold, Premiumfunktionen und mögliche Einsparung.",
+      "url": "/shared-mailbox-vs-lizenz",
+      "category": "Exchange"
+    },
+    "archive_mailbox": {
+      "label": "Archive Mailbox Rechner",
+      "description": "Bewertet Archivgröße, Auto-expanding Archive, Hold und passende Exchange-Pfade.",
+      "url": "/m365-archive-mailbox-rechner",
+      "category": "Exchange"
+    },
+    "copilot_license": {
+      "label": "Copilot Lizenz-Check",
+      "description": "Prüft Basislizenz, primäres Exchange-Online-Postfach und technische Readiness.",
+      "url": "/copilot-lizenz-check",
+      "category": "Copilot"
+    },
+    "copilot_pilot": {
+      "label": "Copilot Pilot-Phase-Rechner",
+      "description": "Plant Pilotgröße, Dauer, Champions, Budget und Readiness-Schritte.",
+      "url": "/copilot-pilot-rechner",
+      "category": "Copilot"
+    },
+    "frontline_check": {
+      "label": "Frontline Worker Lizenz-Check",
+      "description": "Bewertet F1/F3-Eignung, Mischmodell und Enterprise-Bedarf.",
+      "url": "/frontline-worker-lizenz-check",
+      "category": "Lizenzen"
+    },
+    "addon_configurator": {
+      "label": "M365 Add-On-Konfigurator",
+      "description": "Prüft Prerequisites, Redundanzen, Upgrade-Pfade und Verbrauchsprodukte.",
+      "url": "/m365-add-on-konfigurator",
+      "category": "Lizenzen"
+    },
+    "license_advisor": {
+      "label": "M365-Lizenzberater",
+      "description": "Empfiehlt Basislizenzen, Add-ons und Mischmodelle je Nutzergruppe.",
+      "url": "/m365-lizenzberater",
+      "category": "Lizenzen"
+    },
+    "license_comparison": {
+      "label": "M365-Lizenzvergleich",
+      "description": "Vergleicht Suite-Funktionen, Add-on-Bedarf und Planunterschiede.",
+      "url": "/m365-lizenzvergleich",
+      "category": "Lizenzen"
+    },
+    "commitment_calculator": {
+      "label": "Annual vs. Monthly Rechner",
+      "description": "Vergleicht Jahresbindung, Monatslaufzeit und Split-Strategien.",
+      "url": "/m365-jahresvertrag-vs-monatsvertrag",
+      "category": "Lizenzen"
+    },
+    "price_tracker": {
+      "label": "Microsoft-Preiserhöhung-Tracker",
+      "description": "Bewertet offizielle Preis-, Packaging-, SKU- und Renewal-Ereignisse.",
+      "url": "/microsoft-preiserhoehung-tracker",
+      "category": "Lizenzen"
+    },
+    "teams_phone": {
+      "label": "Teams Phone-Lizenz-Berater",
+      "description": "Plant Calling Plan, Operator Connect, Direct Routing und Mischmodell.",
+      "url": "/teams-phone-lizenzberater",
+      "category": "Teams"
+    },
+    "backup_review": {
+      "label": "M365 Backup-Kosten-Rechner",
+      "description": "Berechnet Microsoft-Backup-Baseline und Providervergleich für geschützte Datenmengen.",
+      "url": "/m365-backup-kostenrechner",
+      "category": "Speicher"
+    }
+  },
+  "default_order": [
+    "license_advisor",
+    "license_comparison",
+    "addon_configurator",
+    "shared_mailbox",
+    "archive_mailbox",
+    "frontline_check",
+    "copilot_license",
+    "copilot_pilot",
+    "commitment_calculator",
+    "price_tracker",
+    "teams_phone",
+    "backup_review"
+  ]
+}

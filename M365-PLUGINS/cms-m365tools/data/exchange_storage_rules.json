@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "version": "1.0.0",
+    "source_checked": "2026-05-17",
+    "sources": [
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/exchange-online-service-description/exchange-online-limits",
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/exchange-online-archiving-service-description/exchange-online-archiving-service-description",
+      "https://learn.microsoft.com/en-us/microsoft-365/compliance/autoexpanding-archiving",
+      "https://learn.microsoft.com/en-us/purview/enable-autoexpanding-archiving",
+      "https://learn.microsoft.com/en-us/microsoft-365/compliance/set-up-an-archive-and-deletion-policy-for-mailboxes"
+    ]
+  },
+  "primary_mailbox_limits": {
+    "kiosk_gb": 2,
+    "plan1_gb": 50,
+    "plan2_gb": 100,
+    "shared_unlicensed_gb": 50,
+    "shared_licensed_gb": 100,
+    "resource_unlicensed_gb": 50,
+    "resource_licensed_gb": 100,
+    "group_mailbox_gb": 50,
+    "public_folder_mailbox_gb": 100,
+    "recoverable_items_default_gb": 30,
+    "recoverable_items_hold_gb": 100,
+    "warning_ratio": 0.9,
+    "critical_ratio": 1.0
+  },
+  "archive_limits": {
+    "none_gb": 0,
+    "standard_50_gb": 50,
+    "standard_100_gb": 100,
+    "auto_expanding_gb": 1500,
+    "auto_expanding_trigger_gb": 90,
+    "additional_storage_provisioning_days": 30,
+    "daily_growth_warning_gb": 1,
+    "warning_ratio": 0.85,
+    "critical_ratio": 1.0
+  },
+  "plan_options": {
+    "50": "50 GB Primärpostfach",
+    "100": "100 GB Primärpostfach"
+  },
+  "archive_options": {
+    "none": "Kein Archiv geplant",
+    "standard_50": "50 GB Archiv",
+    "standard_100": "100 GB Archiv",
+    "auto_expand": "Auto-expanding bis 1,5 TB"
+  }
+}
