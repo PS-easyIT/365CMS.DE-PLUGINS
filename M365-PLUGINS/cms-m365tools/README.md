@@ -1,12 +1,13 @@
 # CMS M365 Tools
 
-`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Enthalten sind der **Google Workspace ↔ Microsoft 365 TCO-Rechner**, der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
+`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Enthalten sind der **Power Platform Kosten-Kalkulator**, der **Google Workspace ↔ Microsoft 365 TCO-Rechner**, der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
 
 ## Enthaltene Routen
 
 - `/m365-tools` – Hub-Übersicht aller Module
 - `/m365-rechner` – alternative Hub-Route
 - `/m365-lizenz-audit-checkliste` – interaktive Lizenz-Audit-Checkliste mit Browser-Fortschritt, Druckzusammenfassung und Deep Links zu Spezialrechnern
+- `/power-platform-kosten-kalkulator` – Power Apps, Power Automate, Dataverse for Teams, Power Pages, Copilot Studio, Credits, Requests, Storage, PAYG, Capacity und Governance-Kostentreiber bewerten
 - `/google-workspace-zu-m365-tco` – Google Workspace und Microsoft 365 inklusive Lizenzkosten, Migration, Schulung, Change-Aufwand, Parallelbetrieb und Break-even vergleichen
 - `/m365-storage-bedarfsrechner` – SharePoint-Pool, OneDrive-Quotas, Exchange-Postfächer, Archivbedarf, Wachstum und Zusatzspeicherbedarf berechnen
 - `/m365-backup-kostenrechner` – Microsoft-365-Backup-Baseline und Providervergleich nach Kosten, Workloads, Retention, Restore-Tiefe und Betriebsmodell berechnen
@@ -51,6 +52,7 @@ cms-m365tools/
 │   ├── class-storage-needs-calculator.php
 │   ├── class-backup-cost-calculator.php
 │   ├── class-workspace-m365-tco-calculator.php
+│   ├── class-power-platform-cost-calculator.php
 │   ├── class-addon-configurator.php
 │   ├── class-license-comparison.php
 │   ├── class-license-advisor.php
@@ -117,6 +119,11 @@ cms-m365tools/
 │   ├── m365_target_plans.json
 │   ├── workspace_to_m365_mapping.json
 │   ├── migration_defaults.json
+│   ├── power_platform_products.json
+│   ├── power_platform_use_cases.json
+│   ├── power_platform_connector_rules.json
+│   ├── power_platform_capacity_catalog.json
+│   ├── power_platform_governance_rules.json
 │   ├── commitment_pricing.json
 │   ├── commitment_assumptions.json
 │   ├── commitment_channel_notes.json
@@ -137,6 +144,7 @@ cms-m365tools/
 │   ├── page-storage-needs-calculator.php
 │   ├── page-backup-cost-calculator.php
 │   ├── page-workspace-m365-tco-calculator.php
+│   ├── page-power-platform-cost-calculator.php
 │   ├── page-archive-mailbox-calculator.php
 │   ├── page-commitment-calculator.php
 │   ├── page-addon-configurator.php
@@ -189,6 +197,16 @@ Der Google Workspace ↔ Microsoft 365 TCO-Rechner bewertet unter anderem:
 - Break-even, Delta, monatliche Kosten und kumulierte Kostenentwicklung
 - Business-Plan-Grenzen bei mehr als 300 Nutzern und Enterprise-Sonderfälle
 - native Microsoft-Migrationsleitplanken für Mail, Calendar, Contacts und Rules
+
+Der Power Platform Kosten-Kalkulator bewertet unter anderem:
+
+- enthaltene Microsoft-365-/Teams-Rechte gegenüber Standalone-Premium-, PAYG- und Capacity-Pfaden
+- Power Apps per app, Power Apps Premium, Power Automate Premium, Process, Hosted RPA und Power Pages Kapazitätsmodelle
+- Premium-, Custom- und On-Premises-Connectoren als harte Lizenztreiber
+- Dataverse for Teams inklusive 2-GB-/Teams-Kontext, Upgrade-Pfad, AI- und Desktop-Flow-Grenzen
+- Copilot Studio, AI Builder, Copilot Credits, Requests, Dataverse Storage und Process Mining als eigene Kostenarten
+- Governance-Treiber wie Managed Environments, CMK, Customer Lockbox, vNet und Architektur-Review
+- Empfehlungskategorien für seeded ausreichend, günstiger Einstieg, Per-User-Premium, Capacity-Modell oder Architekturprüfung
 
 Der M365 Storage-Bedarfs-Rechner bewertet unter anderem:
 

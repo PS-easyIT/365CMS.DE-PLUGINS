@@ -529,3 +529,12 @@ Der Score soll **nicht** die harte Regelbasis ersetzen, sondern Grenzfälle erkl
 - `Copilot Studio`-Preise und Credit-Pakete nicht hart verdrahten, sondern separat verwalten
 - `Power BI` bewusst nur als angrenzendes Thema modellieren, nicht als Kernbestandteil der Power-Platform-Logik
 - Governance-Features wie `CMK`, `Lockbox`, `vNet` nur im erweiterten Modus bewerten, da sie nicht für jedes Projekt relevant sind
+
+## Umsetzung 1.21.0 – 2026-05-17
+
+- Live-Modul `power-platform-cost-calculator` unter `/power-platform-kosten-kalkulator` ergänzt.
+- Engine `CMS_M365CALCULATOR_Power_Platform_Cost_Calculator` mit Normalisierung, Seeded-Fit, Connector-Regeln, Dataverse-for-Teams-Fit, Kostenblöcken, Credit-Auswertung, Capacity-Kosten, Empfehlung, Warnungen und nächsten Schritten umgesetzt.
+- Public Template `templates/page-power-platform-cost-calculator.php` im PHINIT-Layout ergänzt.
+- Kataloge `power_platform_products.json`, `power_platform_use_cases.json`, `power_platform_connector_rules.json`, `power_platform_capacity_catalog.json` und `power_platform_governance_rules.json` ergänzt.
+- Route, Tool-Registry, Katalogloader, Update-Manifest, README und zentrale Dokumentation synchronisiert.
+- Public-Seite speichert keine Eingaben serverseitig und zeigt keine technischen Prüfmechanismen an.

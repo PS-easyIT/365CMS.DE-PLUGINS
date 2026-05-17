@@ -84,5 +84,12 @@ Die Katalogdaten liegen als versionierte JSON-Dateien im Plugin-Verzeichnis:
 - `data/m365_target_plans.json`
 - `data/workspace_to_m365_mapping.json`
 - `data/migration_defaults.json`
+- `data/power_platform_products.json`
+- `data/power_platform_use_cases.json`
+- `data/power_platform_connector_rules.json`
+- `data/power_platform_capacity_catalog.json`
+- `data/power_platform_governance_rules.json`
 
 Die Lizenz-Audit-Checkliste speichert keine Daten serverseitig. Der interaktive Fortschritt wird im Browser des Besuchers verwaltet und nicht in einer Datenbank-Tabelle persistiert.
+
+Der Power Platform Kosten-Kalkulator verwendet ausschließlich versionierte JSON-Kataloge und persistiert keine Public-Eingaben serverseitig.

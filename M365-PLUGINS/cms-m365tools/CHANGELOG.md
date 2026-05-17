@@ -1,6 +1,15 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.21.0 – 2026-05-17
+
+- Neues Modul `power-platform-cost-calculator` unter `/power-platform-kosten-kalkulator` ergänzt.
+- Neue JSON-Kataloge `power_platform_products.json`, `power_platform_use_cases.json`, `power_platform_connector_rules.json`, `power_platform_capacity_catalog.json` und `power_platform_governance_rules.json` für Power Apps, Power Automate, Dataverse for Teams, Power Pages, Copilot Studio, Credits, Storage, Requests, PAYG, Capacity und Governance ergänzt.
+- Engine `CMS_M365CALCULATOR_Power_Platform_Cost_Calculator` mit Eingabe-Normalisierung, Seeded-Rechte-Prüfung, Connector-Regeln, Dataverse-for-Teams-Fit, Kostenblöcken, Credit-Verbrauch, Capacity-Kosten, Warnungen und nächsten Schritten implementiert.
+- Public Template `page-power-platform-cost-calculator.php` im PHINIT-Layout mit Szenarioformular, Ergebnis-Card, Kostenblöcken, Seeded-/Dataverse-Fit, Warnungen, nächsten Schritten und Quellenblock ergänzt.
+- Tool-Registry, Frontend-Route, Katalogloader, Update-Manifest, README, API-, Datenbank-, Hooks- und Modul-Dokumentation synchronisiert.
+- Public-Constraint beibehalten: keine serverseitige Speicherung und keine öffentlichen Formular-Prüfhinweise.
+
 ## 1.20.0 – 2026-05-17
 
 - Neues Modul `workspace-m365-tco-calculator` unter `/google-workspace-zu-m365-tco` ergänzt.

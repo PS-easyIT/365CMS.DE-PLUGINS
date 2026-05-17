@@ -37,6 +37,11 @@
 - `m365_target_plans()` – lädt Microsoft-365-Zielpläne, Preise, Segmente und Funktionsprofile für den TCO-Rechner
 - `workspace_to_m365_mapping()` – lädt Planmapping, Anforderungsoptionen und Empfehlungskategorien für beide Richtungen
 - `migration_defaults()` – lädt Migrations-, Schulungs-, Change-, Hypercare- und Parallelbetriebsannahmen
+- `power_platform_products()` – lädt Produkt-, Preis- und Optionskatalog für den Power Platform Kosten-Kalkulator
+- `power_platform_use_cases()` – lädt Use-Case-Regeln und Empfehlungskategorien
+- `power_platform_connector_rules()` – lädt Standard-/Premium-/Custom-/On-Premises-Connectorregeln
+- `power_platform_capacity_catalog()` – lädt Capacity-, Credit-, Request-, Storage-, Process-Mining- und PAYG-Annahmen
+- `power_platform_governance_rules()` – lädt Dataverse-for-Teams- und Governance-Leitplanken
 - `license_advisor_plans()` – lädt Basislizenz-Kataloge
 - `license_advisor_addons()` – lädt Add-ons und Prerequisites
 - `license_advisor_feature_matrix()` – lädt Featuredefinitionen
@@ -184,6 +189,27 @@
 - `load_migration_defaults()` – lädt `migration_defaults.json`
 - `render_workspace_tco_page()` – liefert den Template-Pfad für `/google-workspace-zu-m365-tco`
 
+## `CMS_M365CALCULATOR_Power_Platform_Cost_Calculator`
+
+- `default_input()` – Default-Werte für Use Case, Nutzer, Maker, Umgebungen, Connectoren, RPA, Website, Credits, Requests, Storage und Governance
+- `normalize_input(array $source)` – normalisiert Anfrageparameter, Zahlenfelder, Auswahlwerte und Checkbox-Werte
+- `validate_power_platform_input(array $source)` – normalisiert Eingaben und liefert fachliche Hinweise zu fehlenden Mengen
+- `evaluate(array $input)` – kombiniert Use Case, Seeded-Rechte, Connector-Regeln, Dataverse-for-Teams-Fit, Kostenblöcke, Warnungen, Quellen und nächste Schritte
+- `evaluate_power_platform_use_case(array $input)` – liefert den gewählten Use Case, Hauptpfad, Alternativpfad und Capacity-Einordnung
+- `evaluate_power_platform_seeded_rights(array $input, array $useCase, array $connector)` – prüft, ob enthaltene M365-/Teams-Rechte plausibel ausreichen
+- `evaluate_dataverse_for_teams_fit(array $input, array $governance)` – bewertet Dataverse-for-Teams-Grenzen und Upgrade-Treiber
+- `calculate_power_platform_costs(array $input, array $productsCatalog, array $capacityCatalog, array $seeded, array $dataverseFit)` – berechnet Monats-, Jahres- und Zeitraumkosten
+- `calculate_power_platform_capacity_costs(array $input, array $capacity, array $seeded)` – berechnet Dataverse Storage, Process Mining, Request-Add-ons und AI-Prüfpositionen
+- `calculate_power_platform_credit_usage(array $input)` – berechnet Copilot-Credit-Verbrauch auf Monats- und Jahresbasis
+- `build_power_platform_recommendation(array $input, array $selectedUseCase, array $connector, array $seeded, array $dataverseFit, array $costs, array $useCases)` – leitet Hauptempfehlung und Tonalität ab
+- `load_power_platform_products()` – lädt `power_platform_products.json`
+- `load_power_platform_use_cases()` – lädt `power_platform_use_cases.json`
+- `load_power_platform_connector_rules()` – lädt `power_platform_connector_rules.json`
+- `load_power_platform_capacity_catalog()` – lädt `power_platform_capacity_catalog.json`
+- `load_power_platform_governance_rules()` – lädt `power_platform_governance_rules.json`
+- `render_power_platform_page()` – liefert den Template-Pfad für `/power-platform-kosten-kalkulator`
+- `export_power_platform_pdf(array $result)` – liefert eine druckfreundliche Exportstruktur
+
 ## `CMS_M365CALCULATOR_Settings`
 
 - `apply_to_tools(array $tools)` – wendet Admin-Overrides auf Registry-Module an
@@ -230,6 +256,6 @@
 
 ## `CMS_M365CALCULATOR_Frontend`
 
-- Registriert `/m365-tools`, `/m365-rechner`, `/m365-lizenz-audit-checkliste`, `/google-workspace-zu-m365-tco`, `/m365-storage-bedarfsrechner`, `/m365-backup-kostenrechner`, `/microsoft-preiserhoehung-tracker`, `/teams-phone-lizenzberater`, `/exchange-online-roi`, `/frontline-worker-lizenz-check`, `/copilot-pilot-rechner`, `/ai-pack-vs-copilot-pro`, `/m365-lizenzmatrix`, `/m365-addon-matrix`, `/m365-archive-mailbox-rechner`, `/m365-jahresvertrag-vs-monatsvertrag`, `/m365-add-on-konfigurator`, `/m365-lizenzvergleich`, `/m365-lizenzberater`, `/copilot-roi-rechner`, `/shared-mailbox-vs-lizenz` und `/copilot-lizenz-check`
+- Registriert `/m365-tools`, `/m365-rechner`, `/m365-lizenz-audit-checkliste`, `/power-platform-kosten-kalkulator`, `/google-workspace-zu-m365-tco`, `/m365-storage-bedarfsrechner`, `/m365-backup-kostenrechner`, `/microsoft-preiserhoehung-tracker`, `/teams-phone-lizenzberater`, `/exchange-online-roi`, `/frontline-worker-lizenz-check`, `/copilot-pilot-rechner`, `/ai-pack-vs-copilot-pro`, `/m365-lizenzmatrix`, `/m365-addon-matrix`, `/m365-archive-mailbox-rechner`, `/m365-jahresvertrag-vs-monatsvertrag`, `/m365-add-on-konfigurator`, `/m365-lizenzvergleich`, `/m365-lizenzberater`, `/copilot-roi-rechner`, `/shared-mailbox-vs-lizenz` und `/copilot-lizenz-check`
 - Bindet Assets nur auf Plugin-Routen ein
 - Rendert Toolbox und Rechner-Template

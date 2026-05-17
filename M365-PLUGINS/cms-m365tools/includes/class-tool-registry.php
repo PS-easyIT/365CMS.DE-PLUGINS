@@ -144,6 +144,7 @@ final class CMS_M365CALCULATOR_Tool_Registry
         self::register_storage_needs_calculator_module();
         self::register_backup_cost_calculator_module();
         self::register_workspace_m365_tco_module();
+        self::register_power_platform_cost_calculator_module();
         self::register_license_advisor_module();
         self::register_copilot_license_checker_module();
         self::register_copilot_roi_module();
@@ -326,6 +327,20 @@ final class CMS_M365CALCULATOR_Tool_Registry
             'icon' => 'roi',
             'url' => '/google-workspace-zu-m365-tco',
             'category' => 'Migration',
+            'status' => 'live',
+            'priority' => 1,
+        ]);
+    }
+
+    private static function register_power_platform_cost_calculator_module(): void
+    {
+        self::register([
+            'key' => 'power-platform-cost-calculator',
+            'title' => 'Power Platform Kosten-Kalkulator',
+            'description' => 'Bewertet Power Apps, Power Automate, Dataverse, Power Pages, Copilot Studio, Credits, Capacity und Governance.',
+            'icon' => 'addons',
+            'url' => '/power-platform-kosten-kalkulator',
+            'category' => 'Power Platform',
             'status' => 'live',
             'priority' => 1,
         ]);

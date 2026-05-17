@@ -31,6 +31,7 @@ final class CMS_M365CALCULATOR_Frontend
     private const STORAGE_NEEDS_ROUTE = '/m365-storage-bedarfsrechner';
     private const BACKUP_COST_ROUTE = '/m365-backup-kostenrechner';
     private const WORKSPACE_M365_TCO_ROUTE = '/google-workspace-zu-m365-tco';
+    private const POWER_PLATFORM_COST_ROUTE = '/power-platform-kosten-kalkulator';
     private const LICENSE_ADVISOR_ROUTE = '/m365-lizenzberater';
     private const SHARED_MAILBOX_ROUTE = '/shared-mailbox-vs-lizenz';
     private const COPILOT_LICENSE_ROUTE = '/copilot-lizenz-check';
@@ -139,6 +140,10 @@ final class CMS_M365CALCULATOR_Frontend
 
         $router->addRoute('GET', self::WORKSPACE_M365_TCO_ROUTE, function (): void {
             $this->render_workspace_m365_tco_calculator();
+        });
+
+        $router->addRoute('GET', self::POWER_PLATFORM_COST_ROUTE, function (): void {
+            $this->render_power_platform_cost_calculator();
         });
 
         $router->addRoute('POST', self::LICENSE_ADVISOR_ROUTE, function (): void {
@@ -424,6 +429,18 @@ final class CMS_M365CALCULATOR_Frontend
         exit;
     }
 
+    private function render_power_platform_cost_calculator(): void
+    {
+        $this->ensure_tool_available('power-platform-cost-calculator');
+
+        $input = CMS_M365CALCULATOR_Power_Platform_Cost_Calculator::normalize_input($_GET);
+        $result = CMS_M365CALCULATOR_Power_Platform_Cost_Calculator::evaluate($input);
+
+        $this->set_seo('Power Platform Kosten-Kalkulator', 'Bewertet Power Apps, Power Automate, Dataverse for Teams, Power Pages, Copilot Studio, Credits, Storage, Requests und Governance-Kostentreiber.');
+        include CMS_M365CALCULATOR_Power_Platform_Cost_Calculator::render_power_platform_page();
+        exit;
+    }
+
     private function render_license_advisor(string $method): void
     {
         $this->ensure_tool_available('m365lic');
@@ -554,6 +571,7 @@ final class CMS_M365CALCULATOR_Frontend
             || $requestPath === trim(self::STORAGE_NEEDS_ROUTE, '/')
             || $requestPath === trim(self::BACKUP_COST_ROUTE, '/')
             || $requestPath === trim(self::WORKSPACE_M365_TCO_ROUTE, '/')
+            || $requestPath === trim(self::POWER_PLATFORM_COST_ROUTE, '/')
             || $requestPath === trim(self::LICENSE_ADVISOR_ROUTE, '/')
             || $requestPath === trim(self::SHARED_MAILBOX_ROUTE, '/')
             || $requestPath === trim(self::COPILOT_LICENSE_ROUTE, '/')
@@ -576,6 +594,7 @@ final class CMS_M365CALCULATOR_Frontend
             || str_ends_with($requestPath, self::STORAGE_NEEDS_ROUTE)
             || str_ends_with($requestPath, self::BACKUP_COST_ROUTE)
             || str_ends_with($requestPath, self::WORKSPACE_M365_TCO_ROUTE)
+            || str_ends_with($requestPath, self::POWER_PLATFORM_COST_ROUTE)
             || str_ends_with($requestPath, self::LICENSE_ADVISOR_ROUTE)
             || str_ends_with($requestPath, self::SHARED_MAILBOX_ROUTE)
             || str_ends_with($requestPath, self::COPILOT_LICENSE_ROUTE)

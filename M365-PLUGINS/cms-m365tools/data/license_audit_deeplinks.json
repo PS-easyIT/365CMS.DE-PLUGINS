@@ -58,6 +58,12 @@
       "url": "/google-workspace-zu-m365-tco",
       "category": "Migration"
     },
+    "power_platform_cost": {
+      "label": "Power Platform Kosten-Kalkulator",
+      "description": "Bewertet Power Apps, Power Automate, Dataverse, Power Pages, Copilot Studio, Credits, Capacity und Governance.",
+      "url": "/power-platform-kosten-kalkulator",
+      "category": "Power Platform"
+    },
     "commitment_calculator": {
       "label": "Annual vs. Monthly Rechner",
       "description": "Vergleicht Jahresbindung, Monatslaufzeit und Split-Strategien.",
@@ -93,6 +99,7 @@
     "license_advisor",
     "license_comparison",
     "workspace_tco",
+    "power_platform_cost",
     "addon_configurator",
     "shared_mailbox",
     "archive_mailbox",

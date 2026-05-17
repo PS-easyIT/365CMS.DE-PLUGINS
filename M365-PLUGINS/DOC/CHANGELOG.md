@@ -1,5 +1,11 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 1.21.0 – 2026-05-17
+
+- Modul-Dokumentation `modules/power-platform-cost-calculator.md` für den neuen Power Platform Kosten-Kalkulator ergänzt.
+- API-, Datenbank-, README- und Hooks-Dokumentation um Route `/power-platform-kosten-kalkulator`, neue Kataloge und Engine-Methoden erweitert.
+- Dokumentiert Seeded-Rechte, Premium-/Capacity-/PAYG-Pfade, Connector-Regeln, Dataverse for Teams, Power Pages, Copilot Credits, Requests, Storage und Governance-Treiber.
+
 ## 1.20.0 – 2026-05-17
 
 - Modul-Dokumentation `modules/workspace-m365-tco-calculator.md` für den neuen Google Workspace ↔ Microsoft 365 TCO-Rechner ergänzt.

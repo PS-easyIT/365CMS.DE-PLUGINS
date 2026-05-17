@@ -33,6 +33,7 @@
 | `/m365-storage-bedarfsrechner` | `GET` | Nicht erforderlich, da nur berechnet und nichts serverseitig gespeichert wird |
 | `/m365-backup-kostenrechner` | `GET` | Nicht erforderlich, da nur berechnet und nichts serverseitig gespeichert wird |
 | `/google-workspace-zu-m365-tco` | `GET` | Nicht erforderlich, da nur berechnet und nichts serverseitig gespeichert wird |
+| `/power-platform-kosten-kalkulator` | `GET` | Nicht erforderlich, da nur berechnet und nichts serverseitig gespeichert wird |
 | `/microsoft-preiserhoehung-tracker` | `GET` | Nicht erforderlich, da nur berechnet und nichts serverseitig gespeichert wird |
 | `/teams-phone-lizenzberater` | `GET` | Nicht erforderlich, da nur berechnet und nichts serverseitig gespeichert wird |
 | `/exchange-online-roi` | `GET` | Nicht erforderlich, da nur berechnet und nichts serverseitig gespeichert wird |

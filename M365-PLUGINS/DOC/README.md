@@ -1,116 +1,151 @@
-# M365-PLUGINS – Planungsordner
+# CMS M365 Tools – Dokumentation
 
-Dieser Ordner enthält die initialen Konzept- und Umsetzungspläne für die M365-Tools rund um Lizenzen, Kosten, ROI, Migration und Optimierung für `phinit.de`.
+## Überblick
 
-## Ausgangslage
+`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Produktive Module sind der **Power Platform Kosten-Kalkulator**, der **Google Workspace ↔ Microsoft 365 TCO-Rechner**, der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
 
-- Die Anforderung spricht von **22 Tool-Ideen**, die bereitgestellte Liste enthält aber **25 konkrete Tools**.
-- Deshalb wurden hier **alle 25 gelisteten Tools** jeweils als eigene Markdown-Planungsdatei angelegt.
-- Als gestalterische und funktionale Vorlage dient das bestehende Plugin `cms-m365lic`.
+## Detaildokumente
 
-## Gemeinsamer Design-Blueprint aus `cms-m365lic`
+| Datei | Zweck |
+|---|---|
+| `LICENSE-AUDIT-CHECKLIST.md` | Fachliche und technische Dokumentation der Route `/m365-lizenz-audit-checkliste` |
+| `modules/*.md` | Einzeldokumentation je registriertem Public-Modul |
 
-Alle Tools sollten – je nach Komplexität – dieselbe Produktsprache verwenden:
+## Modul-Dokumentation
 
-- dunkler Hero mit Navy-/Gold-/Teal-Akzenten
-- klare KPI-Karten direkt über den Ergebnissen
-- modularer Wizard oder Konfigurator statt langer Einzelformulare
-- Ergebnisblöcke als Karten + Tabellen + Delta-/Summenfelder
-- konsistente CTA-Zone für PDF-Export, Beratung und Kontaktaufnahme
-- Theme-Embed statt isolierter Tool-Seite
-- mobil gut bedienbar, mit gestapelten Karten statt unlesbarer Desktop-Tabellen
+| Modul | Route | Datei |
+|---|---|---|
+| Lizenz-Audit-Checkliste | `/m365-lizenz-audit-checkliste` | `modules/license-audit-checklist.md` |
+| Power Platform Kosten-Kalkulator | `/power-platform-kosten-kalkulator` | `modules/power-platform-cost-calculator.md` |
+| Google Workspace ↔ Microsoft 365 TCO-Rechner | `/google-workspace-zu-m365-tco` | `modules/workspace-m365-tco-calculator.md` |
+| M365 Storage-Bedarfs-Rechner | `/m365-storage-bedarfsrechner` | `modules/storage-needs-calculator.md` |
+| M365 Backup-Kosten-Rechner | `/m365-backup-kostenrechner` | `modules/backup-cost-calculator.md` |
+| Microsoft-Preiserhöhung-Tracker | `/microsoft-preiserhoehung-tracker` | `modules/microsoft-price-tracker.md` |
+| Teams Phone-Lizenz-Berater | `/teams-phone-lizenzberater` | `modules/teams-phone-advisor.md` |
+| On-Prem Exchange zu Exchange Online ROI | `/exchange-online-roi` | `modules/exchange-online-roi.md` |
+| Frontline Worker Lizenz-Eignung-Check | `/frontline-worker-lizenz-check` | `modules/frontline-worker-license-check.md` |
+| Copilot Pilot-Phase-Rechner | `/copilot-pilot-rechner` | `modules/copilot-pilot-calculator.md` |
+| AI Pack vs. Copilot Pro Vergleich | `/ai-pack-vs-copilot-pro` | `modules/ai-product-comparison.md` |
+| M365 Lizenzmatrix | `/m365-lizenzmatrix` | `modules/readonly-suite-matrix.md` |
+| M365 Add-on-Matrix | `/m365-addon-matrix` | `modules/readonly-addon-matrix.md` |
+| Archive Mailbox Rechner | `/m365-archive-mailbox-rechner` | `modules/archive-mailbox-calculator.md` |
+| Annual vs. Monthly Commitment Rechner | `/m365-jahresvertrag-vs-monatsvertrag` | `modules/commitment-calculator.md` |
+| M365 Add-On-Konfigurator | `/m365-add-on-konfigurator` | `modules/addon-configurator.md` |
+| M365-Lizenzvergleich | `/m365-lizenzvergleich` | `modules/license-comparison.md` |
+| M365-Lizenz-Berater | `/m365-lizenzberater` | `modules/license-advisor.md` |
+| Copilot ROI-Rechner | `/copilot-roi-rechner` | `modules/copilot-roi.md` |
+| Shared-Mailbox vs. Lizenz-Rechner | `/shared-mailbox-vs-lizenz` | `modules/shared-mailbox.md` |
+| Copilot Lizenz-Pflicht-Checker | `/copilot-lizenz-check` | `modules/copilot-license-check.md` |
 
-## Gemeinsame technische Basis
+## Public Routes
 
-Für die spätere Umsetzung sollte möglichst viel gemeinsam genutzt werden:
+| Route | Zweck |
+|---|---|
+| `/m365-tools` | Übersicht aller Rechner-Module |
+| `/m365-rechner` | Alternative Hub-Route |
+| `/m365-lizenz-audit-checkliste` | Interaktive Microsoft-365-Lizenz-Audit-Checkliste mit Browser-Fortschritt, Druckzusammenfassung und Deep Links |
+| `/power-platform-kosten-kalkulator` | Power Apps, Power Automate, Dataverse for Teams, Power Pages, Copilot Studio, Credits, Requests, Storage, PAYG, Capacity und Governance-Kostentreiber bewerten |
+| `/google-workspace-zu-m365-tco` | Google Workspace und Microsoft 365 inklusive Lizenzkosten, Migration, Schulung, Change-Aufwand, Parallelbetrieb und Break-even vergleichen |
+| `/m365-storage-bedarfsrechner` | SharePoint-Pool, OneDrive-Quotas, Exchange-Postfächer, Archivbedarf, Wachstum und Zusatzspeicherbedarf bewerten |
+| `/m365-backup-kostenrechner` | Microsoft-365-Backup-Baseline und Providervergleich für Kosten, Workloads, Retention, Restore-Tiefe und Betriebsmodell |
+| `/microsoft-preiserhoehung-tracker` | Microsoft-Preis-, Packaging-, SKU-, Renewal- und Forecast-Ereignisse mit Budgetwirkung bewerten |
+| `/teams-phone-lizenzberater` | Teams Phone, PSTN-Modell, Operator Connect, Direct Routing und Calling Plan bewerten |
+| `/exchange-online-roi` | Vollkosten-, Break-even- und Migrationspfad-Rechner für On-Prem Exchange zu Exchange Online |
+| `/frontline-worker-lizenz-check` | Frontline Worker, F1/F3-Eignung, Mischmodell und Enterprise-Bedarf prüfen |
+| `/copilot-pilot-rechner` | Copilot-Pilotgröße, Dauer, Budget, Champions und Readiness planen |
+| `/ai-pack-vs-copilot-pro` | AI Pack, Copilot Pro, Copilot Chat, Microsoft 365 Copilot und Spezial-Copilots vergleichen |
+| `/m365-lizenzmatrix` | Gesamtübersicht der Microsoft-365-Vollpakete ohne Filter oder Formular |
+| `/m365-addon-matrix` | Gesamtübersicht aller Add-on-Bereiche mit Paketen nebeneinander |
+| `/m365-archive-mailbox-rechner` | Archive Mailbox Rechner für Archivgröße, Auto-expanding Archive, Shared-Mailbox-Sonderfälle, Hold und Purview-Hinweise |
+| `/m365-jahresvertrag-vs-monatsvertrag` | Annual vs. Monthly Commitment Rechner für Monatslaufzeit, Jahresbindung und Split-Strategie |
+| `/m365-add-on-konfigurator` | Add-ons, Voraussetzungen, Redundanzen, Upgrade-Alternativen und Verbrauchsprodukte prüfen |
+| `/m365-lizenzvergleich` | Filterbare Lizenz-Vergleichstabelle mit Feature-Status und Zusatzdiensten |
+| `/m365-lizenzberater` | Lizenzberater mit Gruppen, Add-ons, Kosten und Alternativen |
+| `/copilot-roi-rechner` | Copilot ROI, Break-even, Payback und Pilot-/Rollout-Empfehlung |
+| `/shared-mailbox-vs-lizenz` | Shared-Mailbox-Entscheidung und Kostenabschätzung |
+| `/copilot-lizenz-check` | Copilot-Basislizenz-, Chat- und Technik-Readiness-Check |
 
-- zentrale Preis- und Produktdaten, idealerweise `pricing.json` + ergänzende Katalogdateien
-- gemeinsame Render-Bausteine für Hero, KPI-Cards, Ergebnis-Cards, Vergleichstabellen, CTA-Footer
-- gemeinsamer PDF-Export-Flow
-- Admin-Pflege für Preise, Texte, SEO, Quellenstand und Defaults
-- Tracking für Tool-Start, Ergebnis erzeugt, PDF exportiert und Beratung angefragt
+## Datenquellen
 
-## Empfohlene gemeinsame Datenquellen
+| Datei | Zweck |
+|---|---|
+| `copilot_eligibility_matrix.json` | Berechtigte Basispläne nach Segment und Chat-Eligibility |
+| `copilot_technical_prerequisites.json` | Technische Mindest- und Readiness-Voraussetzungen |
+| `license_upgrade_paths.json` | Pflegewerte für Zielpläne, Preisannahmen und Upgrade-Pfade |
+| `license_advisor_plans.json` | Migrierte Basislizenz-Kataloge aus `cms-m365lic` |
+| `license_advisor_addons.json` | Add-ons und Voraussetzungen für Copilot, Phone, Power Platform, Security und Storage |
+| `license_advisor_feature_matrix.json` | Feature-Schlüssel, Labels und Bewertungsgewichte |
+| `license_advisor_persona_presets.json` | Persona-Presets für Nutzergruppen |
+| `license_advisor_commercial_rules.json` | Kommerzielle Leitplanken, Billing-Multiplikatoren und Quellen |
+| `copilot_pricing.json` | Copilot-Preis- und Enablement-Pflegewerte |
+| `copilot_readiness_rules.json` | ROI-Readiness-Gates, Blocker und Warnungen |
+| `roi_assumptions.json` | Standardannahmen, Szenarien, Ramp-up-Kurven und Schwellenwerte |
+| `persona_roi_presets.json` | Rollenprofile und Standardannahmen für ROI-Personas |
+| `plan_comparison_feature_matrix.json` | Feature-Statusregeln für Lizenzvergleich, Desktop Apps, Zusatzdienste und Copilot-Pfade |
+| `plan_comparison_badges.json` | Badge-Texte für Plan-Highlights und Add-on-Hinweise |
+| `plan_comparison_notes.json` | Globale und planbezogene Hinweise für die Vergleichstabelle |
+| `readonly_suite_matrix.json` | Statische Vollpaket-Matrix für `/m365-lizenzmatrix` |
+| `readonly_addon_matrix.json` | Statische Add-on-Bereichsmatrix für `/m365-addon-matrix` |
+| `archive_mailbox_plans.json` | Planwerte für Primärmailbox, Archiv, Auto-expanding Archive und Exchange Online Archiving |
+| `archive_mailbox_assumptions.json` | Defaults, Limits, Schwellenwerte und Warntexte für den Archive Mailbox Rechner |
+| `commitment_pricing.json` | Preisannahmen und Laufzeitfähigkeit für den Commitment Rechner |
+| `commitment_assumptions.json` | Defaults, Limits, Labels und Empfehlungsschwellen für Commitment-Simulationen |
+| `commitment_channel_notes.json` | Kanal-, Vertrags- und Quellenhinweise zu CSP, MCA und EA |
+| `addon_configurator_addons.json` | Add-on-Katalog mit Preisen, Billing-Typen, Prerequisites und Redundanzmerkmalen |
+| `addon_overlap_rules.json` | Overlap-, Auto-Add- und Upgrade-Empfehlungsregeln |
+| `consumption_modules.json` | Verbrauchs- und Spezialmodule wie Microsoft 365 Backup und no-cost SKUs |
+| `microsoft_price_events.json` | Offizielle Microsoft-Preis-, Packaging-, SKU-, Renewal- und Produktlebenszyklus-Ereignisse |
+| `microsoft_price_changes.json` | SKU-bezogene Preisänderungen und Delta-Werte für den Preis-Tracker |
+| `microsoft_inventory_mapping.json` | SKU-, Segment-, Kanal- und Filter-Mapping für Preis- und Bestandsauswertung |
+| `microsoft_price_forecast_rules.json` | Forecast-Szenarien und Planungshinweise für Budgetrunden |
+| `teams_phone_base_eligibility.json` | Basislizenz-Eignung für Teams Phone und PSTN-Modelle |
+| `teams_pstn_model_rules.json` | Bewertungsregeln für Calling Plan, Operator Connect, Direct Routing und Mischmodell |
+| `teams_country_availability.json` | Länder- und Verfügbarkeitsannahmen für Teams-Telefonie |
+| `teams_voice_providers.json` | Provider- und Architekturhinweise für Voice-Modelle |
+| `teams_direct_routing_requirements.json` | Direct-Routing-Voraussetzungen wie SBC, DNS, Zertifikat und Domäne |
+| `teams_phone_cost_assumptions.json` | Kostenannahmen für Teams Phone und PSTN-Bausteine |
+| `exchange_online_plans.json` | Exchange-Online-Zielpläne, Preise und Kapazitätswerte |
+| `onprem_exchange_cost_defaults.json` | On-Prem-Exchange-Kostenannahmen für ROI-Auswertung |
+| `exchange_migration_velocity.json` | Migrationspfade, Durchsatzannahmen und Risikoindikatoren |
+| `frontline_user_type_matrix.json` | Rollen- und Gerätemodelle für Frontline Worker |
+| `frontline_plan_matrix.json` | F1-/F3-/Enterprise-Bewertung und Preisannahmen |
+| `frontline_industry_presets.json` | Branchenpresets für Frontline-Auswertung |
+| `copilot_pilot_sizes.json` | Pilotgrößen, Laufzeiten und Champion-Annahmen für Copilot |
+| `copilot_rollout_templates.json` | Rollout-Templates und Zeitpläne für Copilot-Einführung |
+| `copilot_readiness_checklist.json` | Readiness-Faktoren für Copilot-Pilot und Rollout |
+| `ai_product_catalog.json` | Produktkatalog für AI Pack, Copilot Pro, Copilot Chat und Spezial-Copilots |
+| `ai_use_case_matrix.json` | Use-Case-Scoring für AI-Produktvergleich |
+| `ai_dynamic_offers.json` | Dynamische Angebotslabels und volatile Microsoft-KI-Angebote |
+| `license_audit_checklist.json` | Audit-Kategorien, Prüfpunkte, Schweregrade, Quellen und Zusammenfassungstexte |
+| `license_audit_deeplinks.json` | Triggerbasierte Deep Links zu Spezialrechnern |
+| `audit_pdf_template.json` | Abschnitte und Labels für Druck-/PDF-Zusammenfassung |
+| `sharepoint_storage_rules.json` | SharePoint-Tenant-Pool, Site-, Datei- und Sync-Limits für den Storage-Bedarfs-Rechner |
+| `onedrive_quota_presets.json` | OneDrive-Quota-Presets, Restore-/Papierkorbfristen und Sync-Betriebsempfehlungen |
+| `exchange_storage_rules.json` | Exchange-Primärpostfach-, Shared-/Resource-, Archiv- und Auto-expanding-Grenzen |
+| `storage_growth_assumptions.json` | Defaults, Wachstum, Puffer, Cleanup-Potenzial, Statuslabels und Planungsgrenzen |
+| `microsoft_backup_baseline.json` | Offizielle Microsoft-365-Backup-Baseline für Preis, Workloads, Retention, Restore-Performance, Trust Boundary und Billing |
+| `backup_providers.json` | Manuell gepflegte Vergleichsdaten für Backup-Provider und Microsoft-Baseline |
+| `backup_comparison_rules.json` | Defaults, Scoring-Gewichte, Empfehlungstexte und FAQ für den Backup-Kosten-Rechner |
+| `google_workspace_plans.json` | Google-Workspace-Pläne, Preise, Storage- und Feature-Leitplanken für den TCO-Rechner |
+| `m365_target_plans.json` | Microsoft-365-Zielpläne, Preise, Segmente und Funktionsprofile für den TCO-Rechner |
+| `workspace_to_m365_mapping.json` | Planmapping, Anforderungsoptionen und Empfehlungskategorien für beide Richtungen |
+| `migration_defaults.json` | Migrations-, Schulungs-, Change-, Hypercare-, Parallelbetriebs- und Quellenannahmen |
+| `power_platform_products.json` | Produkt- und Preisannahmen für Power Apps, Power Automate, Power Pages, Copilot Studio, PAYG und Capacity-Pfade |
+| `power_platform_use_cases.json` | Use-Case-Regeln und Empfehlungskategorien für Apps, Flows, RPA, Bots, Websites und Teams-nahe Lösungen |
+| `power_platform_connector_rules.json` | Connector-Regeln für Standard, Premium, Custom und On-Premises-Pfade |
+| `power_platform_capacity_catalog.json` | Capacity-, Credit-, Request-, Storage-, Process-Mining- und PAYG-Annahmen |
+| `power_platform_governance_rules.json` | Dataverse-for-Teams- und Governance-Regeln inklusive Managed Environments, CMK, Lockbox und vNet |
 
-- `pricing.json` – M365-Basispreise, Add-ons, Zahlungsmodelle, Aufschläge
-- `plans.json` – Plan-Matrix, Features, Voraussetzungen, Zielgruppen
-- `addons.json` – Add-on-Katalog inkl. Überschneidungen und Pflichtvoraussetzungen
-- `providers.json` – Alternativanbieter, Backup-Tools, Migrations-Tools, Telefonie-Provider
-- `assumptions.json` – Default-Annahmen für ROI, Migration, Schulung, Admin-Aufwand
-- `price-history.json` – Preisentwicklungen, Regionen, Stichtage, Quellenlinks
+## Lizenz-Audit-Checkliste
 
-## Wiederverwendbare Funktionsbausteine
+Die Route `/m365-lizenz-audit-checkliste` bietet eine interaktive Checkliste für Microsoft-365-Lizenzaudits. Sie deckt Identitäten, Lizenzzuweisungen, ehemalige Nutzer, Shared Mailboxes, Inactive Mailboxes, Copilot, Frontline Worker, SharePoint-/OneDrive-Speicher, Microsoft 365 Backup und Renewal-/Beschaffungsthemen ab.
 
-Diese Funktionsfamilien tauchen in fast allen Tools wieder auf:
+Der Fortschritt wird im Browser gespeichert. Die Zusammenfassung kann über die Druckfunktion als PDF abgelegt werden. Fachliche Details stehen in `LICENSE-AUDIT-CHECKLIST.md`.
 
-- `load_*_catalog()` – Stammdaten laden
-- `validate_*_input()` – Eingaben normalisieren und prüfen
-- `calculate_*()` – Kernlogik oder Simulation
-- `build_*_result_viewmodel()` – Ergebnisdaten für Templates vorbereiten
-- `render_*_page()` – Frontend-Seite rendern
-- `export_*_pdf()` – PDF-Auswertung erzeugen
-- `track_*_event()` – Conversion- und Nutzungstracking
+## Admin-Steuerung
 
-## Inhaltsverzeichnis
+Der Adminbereich kann je Modul Sichtbarkeit, Status, Priorität, öffentlichen Titel und Beschreibung überschreiben. Die Werte werden in `cms_m365tools_module_settings` gespeichert und beim Rendern der Registry angewendet. Vorhandene Werte aus der früheren Tabelle `cms_m365calculator_module_settings` werden beim Installer-Lauf migriert.
 
-### Lizenz & Preis-Beratung
+## Designvorgaben
 
-1. `01-m365-lizenz-berater-killer-tool.md`
-2. `02-lizenz-vergleichstabelle.md`
-3. `03-add-on-konfigurator.md`
-4. `04-step-up-vs-mix-berater.md`
-5. `05-annual-vs-monthly-commitment-rechner.md`
-
-### KI & Copilot
-
-6. `06-copilot-roi-rechner.md`
-7. `07-copilot-lizenz-pflicht-checker.md`
-8. `08-ai-pack-vs-copilot-pro-vergleich.md`
-9. `09-pilot-phase-rechner-copilot.md`
-
-### Storage, Backup & Capacity
-
-10. `10-storage-bedarfs-rechner.md`
-11. `11-archive-mailbox-rechner.md`
-12. `12-m365-backup-kosten-rechner.md`
-13. `13-sharepoint-storage-limit-rechner.md`
-
-### Migration & Wechsel
-
-14. `14-google-workspace-zu-m365-tco-rechner.md`
-15. `15-on-premise-exchange-zu-exchange-online-roi.md`
-16. `16-tenant-tenant-migration-kosten-schaetzer.md`
-17. `17-csp-vs-ea-vs-mca-vergleich.md`
-
-### Optimierung & Audit
-
-18. `18-inaktive-user-sparpotenzial-rechner.md`
-19. `19-frontline-worker-lizenz-eignung-check.md`
-20. `20-shared-mailbox-vs-lizenz-rechner.md`
-21. `21-lizenz-audit-checkliste.md`
-
-### Spezialthemen
-
-22. `22-power-platform-kosten-kalkulator.md`
-23. `23-microsoft-preiserhoehung-tracker.md`
-24. `24-teams-phone-lizenz-berater.md`
-25. `25-eu-data-boundary-lizenz-aufpreis-rechner.md`
-
-## Empfohlene Priorisierung
-
-1. `06-copilot-roi-rechner.md`
-2. `01-m365-lizenz-berater-killer-tool.md`
-3. `02-lizenz-vergleichstabelle.md`
-4. `03-add-on-konfigurator.md`
-5. `12-m365-backup-kosten-rechner.md`
-
-## Toolbox-Gedanke
-
-Die Einzeltools sollten später zusätzlich in einer gemeinsamen Landingpage **„M365 Cost Toolbox“** gebündelt werden. Dadurch entstehen:
-
-- eine starke SEO-Hub-Seite
-- interne Verlinkung zwischen den Tools
-- bessere Lead-Übergänge in Beratung, Audit und CSP-Services
-- zentrale Pflege von Preisstand und Quellenhinweisen
-
-Stand dieses Planungsordners: `15.05.2026`
+Das Plugin nutzt PHINIT-konforme Public-Komponenten und vermeidet statische Inline-Styles, große Gradients, Glassmorphism oder KI-Optik. Die Hub-Landingpage rendert Module ausschließlich aus der Tool-Registry. Öffentliche Pluginseiten setzen einen Plugin-eigenen Abstand von 25px zum Theme-Header.

@@ -296,6 +296,46 @@ final class CMS_M365CALCULATOR_Catalog
     /**
      * @return array<string,mixed>
      */
+    public static function power_platform_products(): array
+    {
+        return self::load_json('power_platform_products.json');
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public static function power_platform_use_cases(): array
+    {
+        return self::load_json('power_platform_use_cases.json');
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public static function power_platform_connector_rules(): array
+    {
+        return self::load_json('power_platform_connector_rules.json');
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public static function power_platform_capacity_catalog(): array
+    {
+        return self::load_json('power_platform_capacity_catalog.json');
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public static function power_platform_governance_rules(): array
+    {
+        return self::load_json('power_platform_governance_rules.json');
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
     public static function license_advisor_plans(): array
     {
         return self::load_json('license_advisor_plans.json');

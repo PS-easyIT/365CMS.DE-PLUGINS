@@ -155,6 +155,51 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
     }
 
     /**
+     * @param array<string,mixed> $source
+     * @return array<string,mixed>
+     */
+    public static function validate_power_platform_input(array $source): array
+    {
+        $input = self::normalize_input($source);
+        $warnings = [];
+        if ((int) ($input['users'] ?? 0) <= 0) {
+            $warnings[] = 'Mindestens ein betroffener Nutzer wird benötigt.';
+        }
+        if ((string) ($input['website_access'] ?? 'none') !== 'none'
+            && (int) ($input['authenticated_site_users'] ?? 0) === 0
+            && (int) ($input['anonymous_site_users'] ?? 0) === 0
+        ) {
+            $warnings[] = 'Für Power Pages sollten angemeldete oder anonyme Website-Nutzer geschätzt werden.';
+        }
+        if ((string) ($input['bot_scope'] ?? 'none') === 'full' && (int) ($input['monthly_copilot_credits'] ?? 0) === 0) {
+            $warnings[] = 'Für volle Agent-Szenarien sollte ein monatlicher Copilot-Credit-Verbrauch geschätzt werden.';
+        }
+
+        return ['input' => $input, 'warnings' => $warnings, 'valid' => $warnings === []];
+    }
+
+    /**
+     * @param array<string,mixed> $input
+     * @return array<string,mixed>
+     */
+    public static function evaluate_power_platform_use_case(array $input): array
+    {
+        $input = self::normalize_input($input);
+        $useCases = CMS_M365CALCULATOR_Catalog::power_platform_use_cases();
+        $useCase = is_array($useCases['use_cases'][$input['use_case']] ?? null) ? $useCases['use_cases'][$input['use_case']] : [];
+
+        return [
+            'key' => (string) ($input['use_case'] ?? 'internal_app'),
+            'label' => (string) ($useCase['label'] ?? 'Interne App'),
+            'recommended_path' => (string) ($useCase['recommended_path'] ?? 'm365_seeded_rights'),
+            'secondary_path' => (string) ($useCase['secondary_path'] ?? ''),
+            'supports_seeded_rights' => (bool) ($useCase['supports_seeded_rights'] ?? false),
+            'needs_capacity_model' => (bool) ($useCase['needs_capacity_model'] ?? false),
+            'text' => (string) ($useCase['text'] ?? ''),
+        ];
+    }
+
+    /**
      * @param array<string,mixed> $input
      * @param array<string,mixed> $useCase
      * @param array<string,mixed> $connector
@@ -373,6 +418,27 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
 
     /**
      * @param array<string,mixed> $input
+     * @return array<string,mixed>
+     */
+    public static function calculate_power_platform_credit_usage(array $input): array
+    {
+        $input = self::normalize_input($input);
+        $capacityCatalog = CMS_M365CALCULATOR_Catalog::power_platform_capacity_catalog();
+        $capacity = is_array($capacityCatalog['capacity'] ?? null) ? $capacityCatalog['capacity'] : [];
+        $credits = (int) ($input['monthly_copilot_credits'] ?? 0);
+        $unitPrice = (float) ($capacity['copilot_credit']['unit_price_monthly'] ?? 0.01);
+
+        return [
+            'credits' => $credits,
+            'unit_price' => $unitPrice,
+            'monthly' => $credits * $unitPrice,
+            'annual' => $credits * $unitPrice * 12,
+            'label' => 'Copilot Credits',
+        ];
+    }
+
+    /**
+     * @param array<string,mixed> $input
      * @param array<string,mixed> $selectedUseCase
      * @param array<string,mixed> $connector
      * @param array<string,mixed> $seeded
@@ -448,6 +514,22 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
     public static function render_power_platform_page(): string
     {
         return CMS_M365CALCULATOR_PLUGIN_DIR . 'templates/page-power-platform-cost-calculator.php';
+    }
+
+    /**
+     * @param array<string,mixed> $result
+     * @return array<string,mixed>
+     */
+    public static function export_power_platform_pdf(array $result): array
+    {
+        return [
+            'title' => 'Power Platform Kosten-Kalkulator',
+            'recommendation' => (string) ($result['recommendation']['label'] ?? ''),
+            'monthly_total' => (float) ($result['costs']['monthly_total'] ?? 0),
+            'period_total' => (float) ($result['costs']['period_total'] ?? 0),
+            'sections' => ['Empfehlung', 'Kostenblöcke', 'Seeded Fit', 'Dataverse for Teams', 'Warnungen', 'Nächste Schritte'],
+            'delivery' => 'browser_print',
+        ];
     }
 
     /**
