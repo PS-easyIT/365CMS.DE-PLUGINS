@@ -646,7 +646,7 @@ final class CMS_M365CALCULATOR_Admin_Pages
             }
 
             if ($type === 'select') {
-                $allowed = is_array($field['options'] ?? null) ? array_keys($field['options']) : [];
+                $allowed = is_array($field['options'] ?? null) ? array_map('strval', array_keys($field['options'])) : [];
                 $options[$key] = in_array($raw, $allowed, true) ? $raw : (string) ($field['default'] ?? '');
                 continue;
             }
