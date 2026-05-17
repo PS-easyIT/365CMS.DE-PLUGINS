@@ -187,12 +187,18 @@
             div.className = 'cmsforum-form-group';
             div.style.display = 'flex';
             div.style.gap = '.5rem';
-            div.innerHTML = `
-                <input type="text" name="poll_options[]" class="cmsforum-input"
-                       placeholder="Option ${count + 1}" maxlength="255">
-                <button type="button" class="cmsforum-btn cmsforum-btn--sm cmsforum-btn--danger"
-                        data-action="remove-poll-option">✕</button>
-            `;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.name = 'poll_options[]';
+            input.className = 'cmsforum-input';
+            input.placeholder = `Option ${count + 1}`;
+            input.maxLength = 255;
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'cmsforum-btn cmsforum-btn--sm cmsforum-btn--danger';
+            removeButton.dataset.action = 'remove-poll-option';
+            removeButton.textContent = '✕';
+            div.append(input, removeButton);
             container.appendChild(div);
         });
 

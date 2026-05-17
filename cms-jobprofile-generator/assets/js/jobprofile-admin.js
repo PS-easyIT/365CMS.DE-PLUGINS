@@ -196,16 +196,34 @@ function jpgAddTask() {
     const li   = document.createElement('li');
     li.className = 'jpg-task-item';
     li.draggable = true;
-    li.innerHTML =
-        '<span class="jpg-drag-handle" aria-hidden="true">⠿</span>' +
-        '<span class="jpg-task-num" style="font-size:.8rem;color:#94a3b8;flex-shrink:0;">' + (idx + 1) + '.</span>' +
-        '<input type="text" name="tasks[' + idx + '][description]" class="form-control" ' +
-            'placeholder="Aufgabe beschreiben …" maxlength="255">' +
-        '<input type="hidden" name="tasks[' + idx + '][sort_order]" value="' + (idx + 1) + '">' +
-        '<button type="button" class="jpg-task-remove" onclick="jpgRemoveTask(this)" title="Entfernen">✕</button>';
+    const handle = document.createElement('span');
+    handle.className = 'jpg-drag-handle';
+    handle.setAttribute('aria-hidden', 'true');
+    handle.textContent = '⠿';
+    const number = document.createElement('span');
+    number.className = 'jpg-task-num';
+    number.style.cssText = 'font-size:.8rem;color:#94a3b8;flex-shrink:0;';
+    number.textContent = (idx + 1) + '.';
+    const description = document.createElement('input');
+    description.type = 'text';
+    description.name = 'tasks[' + idx + '][description]';
+    description.className = 'form-control';
+    description.placeholder = 'Aufgabe beschreiben …';
+    description.maxLength = 255;
+    const order = document.createElement('input');
+    order.type = 'hidden';
+    order.name = 'tasks[' + idx + '][sort_order]';
+    order.value = String(idx + 1);
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'jpg-task-remove';
+    remove.title = 'Entfernen';
+    remove.textContent = '✕';
+    remove.addEventListener('click', function () { jpgRemoveTask(remove); });
+    li.append(handle, number, description, order, remove);
 
     list.appendChild(li);
-    li.querySelector('input[type="text"]').focus();
+    description.focus();
     jpgInitDnd('jpg-task-list'); // re-init DnD after DOM change
 }
 
@@ -234,15 +252,31 @@ function jpgAddReq() {
     const idx = container.querySelectorAll('.jpg-req-item').length;
     const div = document.createElement('div');
     div.className = 'jpg-req-item';
-    div.innerHTML =
-        '<button type="button" class="jpg-req-type must" onclick="jpgToggleReqType(this)">Pflicht</button>' +
-        '<input type="hidden" name="requirements[' + idx + '][type]" value="must">' +
-        '<input type="text" name="requirements[' + idx + '][description]" class="form-control" ' +
-            'placeholder="Anforderung …" maxlength="255">' +
-        '<button type="button" class="jpg-task-remove" onclick="this.closest(\'.jpg-req-item\').remove()" title="Entfernen">✕</button>';
+    const typeButton = document.createElement('button');
+    typeButton.type = 'button';
+    typeButton.className = 'jpg-req-type must';
+    typeButton.textContent = 'Pflicht';
+    typeButton.addEventListener('click', function () { jpgToggleReqType(typeButton); });
+    const typeInput = document.createElement('input');
+    typeInput.type = 'hidden';
+    typeInput.name = 'requirements[' + idx + '][type]';
+    typeInput.value = 'must';
+    const description = document.createElement('input');
+    description.type = 'text';
+    description.name = 'requirements[' + idx + '][description]';
+    description.className = 'form-control';
+    description.placeholder = 'Anforderung …';
+    description.maxLength = 255;
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'jpg-task-remove';
+    remove.title = 'Entfernen';
+    remove.textContent = '✕';
+    remove.addEventListener('click', function () { div.remove(); });
+    div.append(typeButton, typeInput, description, remove);
 
     container.appendChild(div);
-    div.querySelector('input[type="text"]').focus();
+    description.focus();
 }
 
 function jpgToggleReqType(btn) {

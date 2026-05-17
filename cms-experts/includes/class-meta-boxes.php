@@ -1337,7 +1337,7 @@ final class CMS_Experts_Meta_Boxes
                 }
 
                 function renderPills() {
-                    pillsEl.innerHTML = '';
+                    pillsEl.replaceChildren();
                     tags.forEach((tag, i) => {
                         const pill = document.createElement('span');
                         pill.className = 'tag-pill';

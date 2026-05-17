@@ -164,8 +164,8 @@ document.querySelectorAll('.jpg-status-select').forEach(function(sel) {
     sel.addEventListener('focus', function() { this.dataset.prev = this.value; });
 });
 
-function jpgShowLetter(html) {
-    document.getElementById('jpgLetterContent').innerHTML = html;
+function jpgShowLetter(text) {
+    document.getElementById('jpgLetterContent').textContent = text || '';
     document.getElementById('jpgLetterModal').style.display = 'flex';
 }
 window.addEventListener('click', function(e) {

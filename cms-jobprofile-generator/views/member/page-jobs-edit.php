@@ -596,19 +596,42 @@ $selRem     = $profile->remote_option    ?? 'onsite';
         if (btn)  btn.classList.add('active');
     };
 
+    function createRemoveButton(removeTargetSelector) {
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.style.cssText = 'background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;padding:.15rem .3rem;';
+        button.textContent = '✕';
+        button.addEventListener('click', function () {
+            var target = removeTargetSelector ? button.closest(removeTargetSelector) : button.parentElement;
+            if (target) {
+                target.remove();
+            }
+        });
+        return button;
+    }
+
+    function createTaskHandle() {
+        var handle = document.createElement('span');
+        handle.style.cssText = 'cursor:grab;color:#94a3b8;user-select:none;';
+        handle.textContent = '⠿';
+        return handle;
+    }
+
     // Aufgabe hinzufügen
     window.jpgAddTask = function () {
         var item = document.createElement('div');
         item.className  = 'jpg-task-item';
         item.draggable  = true;
         item.style.cssText = 'display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;background:#f8fafc;border-radius:6px;padding:.35rem .5rem;';
-        item.innerHTML  =
-            '<span style="cursor:grab;color:#94a3b8;user-select:none;">⠿</span>' +
-            '<input type="text" name="tasks[]" class="form-control" style="flex:1;" placeholder="Aufgabe beschreiben…">' +
-            '<button type="button" onclick="this.closest(\'.jpg-task-item\').remove()" ' +
-            'style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;padding:.15rem .3rem;">✕</button>';
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.name = 'tasks[]';
+        input.className = 'form-control';
+        input.style.flex = '1';
+        input.placeholder = 'Aufgabe beschreiben…';
+        item.append(createTaskHandle(), input, createRemoveButton('.jpg-task-item'));
         document.getElementById('jpgMemberTaskList').appendChild(item);
-        item.querySelector('input').focus();
+        input.focus();
         jpgInitEditDrag();
     };
 
@@ -616,14 +639,25 @@ $selRem     = $profile->remote_option    ?? 'onsite';
     window.jpgAddReq = function () {
         var row = document.createElement('div');
         row.style.cssText = 'display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;';
-        row.innerHTML =
-            '<input type="text" name="req_text[]" class="form-control" style="flex:1;" placeholder="Anforderung…">' +
-            '<select name="req_type[]" class="form-control" style="width:auto;min-width:130px;">' +
-            '<option value="must">Pflicht</option><option value="nice">Wünschenswert</option><option value="optional">Optional</option></select>' +
-            '<button type="button" onclick="this.parentElement.remove()" ' +
-            'style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1.1rem;">✕</button>';
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.name = 'req_text[]';
+        input.className = 'form-control';
+        input.style.flex = '1';
+        input.placeholder = 'Anforderung…';
+        var select = document.createElement('select');
+        select.name = 'req_type[]';
+        select.className = 'form-control';
+        select.style.cssText = 'width:auto;min-width:130px;';
+        [['must', 'Pflicht'], ['nice', 'Wünschenswert'], ['optional', 'Optional']].forEach(function (optionData) {
+            var option = document.createElement('option');
+            option.value = optionData[0];
+            option.textContent = optionData[1];
+            select.appendChild(option);
+        });
+        row.append(input, select, createRemoveButton());
         document.getElementById('jpgMemberReqList').appendChild(row);
-        row.querySelector('input').focus();
+        input.focus();
     };
 
     // Drag & Drop für Aufgaben
@@ -643,9 +677,12 @@ $selRem     = $profile->remote_option    ?? 'onsite';
             item.ondrop      = function (e) {
                 e.stopPropagation();
                 if (jpgDragSrc !== item) {
-                    var aHtml = jpgDragSrc.innerHTML, bHtml = item.innerHTML;
-                    jpgDragSrc.innerHTML = bHtml;
-                    item.innerHTML       = aHtml;
+                    var midpoint = item.getBoundingClientRect().top + item.getBoundingClientRect().height / 2;
+                    if (e.clientY < midpoint) {
+                        list.insertBefore(jpgDragSrc, item);
+                    } else {
+                        list.insertBefore(jpgDragSrc, item.nextSibling);
+                    }
                 }
                 return false;
             };

@@ -415,7 +415,9 @@ $roleLabels = [
                     const uid  = formEl.querySelector('[name="target_user_id"]').value;
                     const cell = document.querySelector('[data-user-company-cell="' + uid + '"]');
                     if (cell) {
-                        cell.innerHTML = '<span>🏢 ' + data.company_name.replace(/</g,'&lt;') + '</span>';
+                        const company = document.createElement('span');
+                        company.textContent = '🏢 ' + data.company_name;
+                        cell.replaceChildren(company);
                     }
                     // Neues Unternehmen soll auch in der Auswahl erscheinen → Seite neu laden
                     if (data.company_id) {

@@ -159,7 +159,15 @@ $v = fn(string $field, string $default = '') => htmlspecialchars((string) ($prof
             if (d.country) parts.push('🌍 ' + d.country);
             if (d.phone)   parts.push('📞 ' + d.phone);
             if (d.website) parts.push('🌐 ' + d.website);
-            info.innerHTML = parts.join(' &nbsp;|&nbsp; ');
+            info.replaceChildren();
+            parts.forEach(function (part, index) {
+                if (index > 0) {
+                    info.appendChild(document.createTextNode(' | '));
+                }
+                var span = document.createElement('span');
+                span.textContent = part;
+                info.appendChild(span);
+            });
             info.style.display = parts.length ? 'block' : 'none';
         }
     }
@@ -751,19 +759,85 @@ $v = fn(string $field, string $default = '') => htmlspecialchars((string) ($prof
 </div><!-- /.admin-card -->
 
 <script>
+function jpgMakeRemoveButton(label, onClick) {
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-sm btn-danger';
+    button.textContent = label || '✕';
+    button.addEventListener('click', onClick || function () {
+        var row = button.closest('.jpg-req-item, .jpg-task-item');
+        if (row) row.remove();
+    });
+    return button;
+}
+
+function jpgMakeReqTypeSelect(selectedType, includeOptional) {
+    var select = document.createElement('select');
+    select.name = 'req_type[]';
+    select.className = 'form-control';
+    select.style.cssText = 'width:130px;flex-shrink:0;';
+    var options = [['must', '🔴 Pflicht'], ['nice', '🔵 Wünschenswert']];
+    if (includeOptional) {
+        options.push(['optional', '🟢 Optional']);
+    }
+    options.forEach(function (optionData) {
+        var option = document.createElement('option');
+        option.value = optionData[0];
+        option.textContent = optionData[1];
+        option.selected = optionData[0] === selectedType;
+        select.appendChild(option);
+    });
+    return select;
+}
+
+function jpgMakeTextInput(name, placeholder, value, listId) {
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.name = name;
+    input.className = 'form-control';
+    input.placeholder = placeholder;
+    input.style.flex = '1';
+    if (value) input.value = String(value);
+    if (listId) input.setAttribute('list', listId);
+    return input;
+}
+
+function jpgAppendTaskRow(list, value) {
+    var idx  = list.querySelectorAll('.jpg-task-item').length;
+    var div  = document.createElement('div');
+    div.className   = 'jpg-task-item';
+    div.dataset.index = String(idx);
+    var handle = document.createElement('span');
+    handle.className = 'jpg-drag-handle';
+    handle.draggable = true;
+    handle.title = 'Ziehen zum Sortieren';
+    handle.textContent = '⠿';
+    var input = jpgMakeTextInput('tasks[]', 'Aufgabenbeschreibung eingeben…', value || '');
+    var remove = jpgMakeRemoveButton('✕', function () { jpgRemoveTask(remove); });
+    remove.title = 'Löschen';
+    div.append(handle, input, remove);
+    list.appendChild(div);
+    return input;
+}
+
+function jpgAppendReqRow(list, selectedType, value, includeOptional) {
+    var div = document.createElement('div');
+    div.className = 'jpg-req-item';
+    div.style.cssText = 'display:flex;gap:.75rem;align-items:center;margin-bottom:.5rem;';
+    div.append(
+        jpgMakeReqTypeSelect(selectedType || 'must', includeOptional),
+        jpgMakeTextInput('req_text[]', includeOptional ? 'Anforderung eingeben…' : 'Anforderung eingeben oder Skill wählen…', value || '', 'jpgSkillDatalist'),
+        jpgMakeRemoveButton('✕', function () { div.remove(); })
+    );
+    list.appendChild(div);
+    return div.querySelector('input[type="text"]');
+}
+
 // ── Aufgaben (Tab 2) ───────────────────────────────────────────────────────
 function jpgAddTask() {
     var list = document.getElementById('jpgTaskList');
     if (!list) return;
-    var idx  = list.querySelectorAll('.jpg-task-item').length;
-    var div  = document.createElement('div');
-    div.className   = 'jpg-task-item';
-    div.dataset.index = idx;
-    div.innerHTML = '<span class="jpg-drag-handle" draggable="true" title="Ziehen zum Sortieren">⠿</span>'
-        + '<input type="text" name="tasks[]" class="form-control" placeholder="Aufgabenbeschreibung eingeben…" style="flex:1;">'
-        + '<button type="button" class="btn btn-sm btn-danger" onclick="jpgRemoveTask(this)" title="Löschen">✕</button>';
-    list.appendChild(div);
-    div.querySelector('input').focus();
+    jpgAppendTaskRow(list, '').focus();
     jpgInitDnd();
 }
 function jpgRemoveTask(btn) {
@@ -776,18 +850,7 @@ function jpgRemoveTask(btn) {
 function jpgAddReq() {
     var list = document.getElementById('jpgReqList');
     if (!list) return;
-    var div  = document.createElement('div');
-    div.className = 'jpg-req-item';
-    div.style.cssText = 'display:flex;gap:.75rem;align-items:center;margin-bottom:.5rem;';
-    div.innerHTML = '<select name="req_type[]" class="form-control" style="width:130px;flex-shrink:0;">'
-        + '<option value="must">🔴 Pflicht</option>'
-        + '<option value="nice">🔵 Wünschenswert</option>'
-        + '<option value="optional">🟢 Optional</option>'
-        + '</select>'
-        + '<input type="text" name="req_text[]" list="jpgSkillDatalist" class="form-control" placeholder="Anforderung eingeben oder Skill wählen…" style="flex:1;">'
-        + '<button type="button" class="btn btn-sm btn-danger" onclick="this.closest(\'.jpg-req-item\').remove()">✕</button>';
-    list.appendChild(div);
-    div.querySelector('input').focus();
+    jpgAppendReqRow(list, 'must', '', true).focus();
 }
 
 function jpgAddSkillReq() {
@@ -797,17 +860,7 @@ function jpgAddSkillReq() {
     var list = document.getElementById('jpgReqList');
     if (!list) return;
     var type = typePicker ? typePicker.value : 'must';
-    var div  = document.createElement('div');
-    div.className = 'jpg-req-item';
-    div.style.cssText = 'display:flex;gap:.75rem;align-items:center;margin-bottom:.5rem;';
-    var safeVal = picker.value.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    div.innerHTML = '<select name="req_type[]" class="form-control" style="width:130px;flex-shrink:0;">'
-        + '<option value="must"' + (type==='must'?' selected':'') + '>🔴 Pflicht</option>'
-        + '<option value="nice"' + (type==='nice'?' selected':'') + '>🔵 Wünschenswert</option>'
-        + '</select>'
-        + '<input type="text" name="req_text[]" list="jpgSkillDatalist" class="form-control" value="' + safeVal + '" placeholder="Anforderung eingeben oder Skill wählen…" style="flex:1;">'
-        + '<button type="button" class="btn btn-sm btn-danger" onclick="this.closest(\'.jpg-req-item\').remove()">✕</button>';
-    list.appendChild(div);
+    jpgAppendReqRow(list, type, picker.value, false);
     picker.value = '';
 }
 
@@ -826,33 +879,14 @@ function jpgAddReqItem() {
     if (!list) return;
     var opt  = picker.options[picker.selectedIndex];
     var type = (opt && opt.dataset.reqType) ? opt.dataset.reqType : (typePicker ? typePicker.value : 'must');
-    var div     = document.createElement('div');
-    div.className = 'jpg-req-item';
-    div.style.cssText = 'display:flex;gap:.75rem;align-items:center;margin-bottom:.5rem;';
-    var safeVal = picker.value.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    div.innerHTML = '<select name="req_type[]" class="form-control" style="width:130px;flex-shrink:0;">'
-        + '<option value="must"' + (type==='must'?' selected':'') + '>🔴 Pflicht</option>'
-        + '<option value="nice"' + (type==='nice'?' selected':'') + '>🔵 Wünschenswert</option>'
-        + '<option value="optional"' + (type==='optional'?' selected':'') + '>🟢 Optional</option>'
-        + '</select>'
-        + '<input type="text" name="req_text[]" list="jpgSkillDatalist" class="form-control" value="' + safeVal + '" placeholder="Anforderung eingeben…" style="flex:1;">'
-        + '<button type="button" class="btn btn-sm btn-danger" onclick="this.closest(\'.jpg-req-item\').remove()">✕</button>';
-    list.appendChild(div);
+    jpgAppendReqRow(list, type, picker.value, true);
     picker.value = '';
 }
 
 function jpgAddTaskFromModule(content) {
     var list = document.getElementById('jpgTaskList');
     if (!list) return;
-    var idx  = list.querySelectorAll('.jpg-task-item').length;
-    var div  = document.createElement('div');
-    div.className   = 'jpg-task-item';
-    div.dataset.index = idx;
-    var safeVal = String(content).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    div.innerHTML = '<span class="jpg-drag-handle" draggable="true" title="Ziehen zum Sortieren">⠿</span>'
-        + '<input type="text" name="tasks[]" class="form-control" value="' + safeVal + '" placeholder="Aufgabenbeschreibung eingeben…" style="flex:1;">'
-        + '<button type="button" class="btn btn-sm btn-danger" onclick="jpgRemoveTask(this)" title="Löschen">✕</button>';
-    list.appendChild(div);
+    jpgAppendTaskRow(list, String(content || ''));
     jpgInitDnd();
 }
 
@@ -952,7 +986,11 @@ document.addEventListener('DOMContentLoaded', function() {
             'font-weight:500',
             'margin-top:.35rem',
         ].join(';');
-        hint.innerHTML = '⚠️ Kategorie geändert – <strong>Basisdaten speichern</strong>, damit Kategorie-Benefits im Benefits-Tab korrekt vorausgewählt werden.';
+        hint.append(
+            document.createTextNode('⚠️ Kategorie geändert – '),
+            Object.assign(document.createElement('strong'), { textContent: 'Basisdaten speichern' }),
+            document.createTextNode(', damit Kategorie-Benefits im Benefits-Tab korrekt vorausgewählt werden.')
+        );
         catSelect.closest('.form-group').appendChild(hint);
 
         // Benefits-Tab orangefarben markieren
