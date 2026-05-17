@@ -302,7 +302,16 @@ final class CMS_M365CALCULATOR_Frontend
 
     private function render_toolbox(): void
     {
-        $landingOptions = class_exists('CMS_M365CALCULATOR_Settings') ? CMS_M365CALCULATOR_Settings::global_options('landing') : [];
+        $landingOptions = [];
+        if (class_exists('CMS_M365CALCULATOR_Settings')) {
+            $landingOptions = array_merge(
+                CMS_M365CALCULATOR_Settings::global_options('landing'),
+                CMS_M365CALCULATOR_Settings::global_options('landing-content'),
+                CMS_M365CALCULATOR_Settings::global_options('landing-layout'),
+                CMS_M365CALCULATOR_Settings::global_options('landing-colors'),
+                CMS_M365CALCULATOR_Settings::global_options('landing-visibility')
+            );
+        }
         $groupedTools = CMS_M365CALCULATOR_Tool_Registry::grouped_by_category();
         $bestPracticeCatalog = CMS_M365CALCULATOR_Catalog::m365_best_practice_catalog();
         $bestPracticeMeta = is_array($bestPracticeCatalog['meta'] ?? null) ? $bestPracticeCatalog['meta'] : [];

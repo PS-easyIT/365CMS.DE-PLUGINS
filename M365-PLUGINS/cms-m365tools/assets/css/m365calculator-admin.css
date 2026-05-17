@@ -45,6 +45,25 @@
     width: 100%;
 }
 
+.m365calculator-admin-color-field {
+    align-items: center;
+    display: flex;
+    gap: 0.625rem;
+}
+
+.m365calculator-admin-control--color {
+    flex: 0 0 56px;
+    height: 40px;
+    padding: 2px;
+    width: 56px;
+}
+
+.m365calculator-admin-control--color-text {
+    flex: 0 0 120px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    max-width: 120px;
+}
+
 .m365calculator-admin-control:is(textarea) {
     min-width: 18rem;
     resize: vertical;

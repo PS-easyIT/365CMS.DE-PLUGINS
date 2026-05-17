@@ -7,6 +7,16 @@
     width: 100%;
 }
 
+.m365calc-visually-hidden {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
 .m365calc-provider-cta {
     margin-left: auto;
     margin-right: auto;
@@ -105,6 +115,112 @@ body.m365calculator-theme-embed:not(.is-member) .breadcrumb-nav {
 .m365calc-aside p,
 .m365calc-result-card p {
     color: var(--phinit-color-ink-secondary);
+}
+
+.m365calc-matrix-page .m365calc-hero {
+    color: var(--m365matrix-header-text, var(--phinit-color-ink));
+}
+
+.m365calc-matrix-page .m365calc-hero h1 {
+    color: var(--m365matrix-header-text, var(--phinit-color-ink));
+}
+
+.m365calc-matrix-page .m365calc-hero p,
+.m365calc-matrix-page .m365calc-hero .phinit-overline {
+    color: var(--m365matrix-header-muted, var(--phinit-color-ink-secondary));
+}
+
+.m365calc-matrix-header--surface .m365calc-hero,
+.m365calc-matrix-header--bordered .m365calc-hero,
+.m365calc-matrix-header--accent .m365calc-hero,
+.m365calc-matrix-header--inverted .m365calc-hero {
+    background: var(--m365matrix-header-bg, #f8fafc);
+    border-radius: var(--m365matrix-header-radius, var(--phinit-radius-md));
+    padding: var(--phinit-space-6);
+}
+
+.m365calc-matrix-header--bordered .m365calc-hero,
+.m365calc-matrix-header--accent .m365calc-hero,
+.m365calc-matrix-header--inverted .m365calc-hero {
+    border: 1px solid var(--m365matrix-header-border, var(--phinit-color-border));
+}
+
+.m365calc-matrix-header--accent .m365calc-hero {
+    border-left-width: 4px;
+}
+
+.m365calc-matrix-header--inverted .m365calc-hero {
+    background: var(--m365matrix-header-text, #1e293b);
+}
+
+.m365calc-matrix-header--inverted .m365calc-hero h1 {
+    color: var(--m365matrix-header-bg, #ffffff);
+}
+
+.m365calc-matrix-header--inverted .m365calc-hero p,
+.m365calc-matrix-header--inverted .m365calc-hero .phinit-overline {
+    color: color-mix(in srgb, var(--m365matrix-header-bg, #ffffff) 78%, transparent);
+}
+
+.m365calc-matrix-align--left .m365calc-hero__content {
+    align-items: flex-start;
+    flex-direction: column;
+}
+
+.m365calc-matrix-align--center .m365calc-hero,
+.m365calc-matrix-align--center .m365calc-hero__content {
+    align-items: center;
+    text-align: center;
+}
+
+.m365calc-matrix-align--center .m365calc-hero__content {
+    flex-direction: column;
+}
+
+.m365calc-matrix-buttons--stacked .m365calc-actions {
+    align-items: stretch;
+    flex-direction: column;
+}
+
+.m365calc-matrix-buttons--right .m365calc-actions {
+    justify-content: flex-end;
+}
+
+.m365calc-matrix-page .m365calc-actions .phinit-btn {
+    border-color: var(--m365matrix-secondary-button-bg, var(--phinit-color-border));
+}
+
+.m365calc-matrix-page .m365calc-actions .phinit-btn--primary,
+.m365calc-matrix-page .m365calc-matrix-primary-action {
+    background: var(--m365matrix-primary-button-bg, var(--phinit-color-accent));
+    border-color: var(--m365matrix-primary-button-bg, var(--phinit-color-accent));
+    color: var(--m365matrix-primary-button-text, #ffffff);
+}
+
+.m365calc-matrix-page .m365calc-actions .phinit-btn--secondary,
+.m365calc-matrix-page .m365calc-matrix-action {
+    background: var(--m365matrix-secondary-button-bg, #ffffff);
+    color: var(--m365matrix-secondary-button-text, var(--phinit-color-ink));
+}
+
+.m365calc-matrix-button-style--primary .m365calc-actions .phinit-btn {
+    background: var(--m365matrix-primary-button-bg, var(--phinit-color-accent));
+    border-color: var(--m365matrix-primary-button-bg, var(--phinit-color-accent));
+    color: var(--m365matrix-primary-button-text, #ffffff);
+}
+
+.m365calc-matrix-button-style--secondary .m365calc-actions .phinit-btn {
+    background: var(--m365matrix-secondary-button-bg, #ffffff);
+    border-color: var(--m365matrix-header-border, var(--phinit-color-border));
+    color: var(--m365matrix-secondary-button-text, var(--phinit-color-ink));
+}
+
+.m365calc-matrix-button-style--minimal .m365calc-actions .phinit-btn {
+    background: transparent;
+    border-color: transparent;
+    color: var(--m365matrix-header-muted, var(--phinit-color-ink-secondary));
+    padding-left: 0;
+    padding-right: 0;
 }
 
 .m365calc-tool-grid,

@@ -65,6 +65,11 @@ $renderField = static function (array $field) use ($esc, $fieldValue): void {
                 </select>
             <?php elseif ($type === 'number'): ?>
                 <input type="number" id="<?php echo $esc($key); ?>" name="<?php echo $esc($key); ?>" class="form-control m365calculator-admin-control" value="<?php echo $esc($value); ?>" min="<?php echo $esc($field['min'] ?? ''); ?>" max="<?php echo $esc($field['max'] ?? ''); ?>" step="<?php echo $esc($field['step'] ?? '1'); ?>">
+            <?php elseif ($type === 'color'): ?>
+                <div class="m365calculator-admin-color-field">
+                    <input type="color" id="<?php echo $esc($key); ?>" name="<?php echo $esc($key); ?>" class="form-control m365calculator-admin-control m365calculator-admin-control--color" value="<?php echo $esc(preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1 ? $value : ($field['default'] ?? '#000000')); ?>">
+                    <input type="text" class="form-control m365calculator-admin-control m365calculator-admin-control--color-text" value="<?php echo $esc(preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1 ? $value : ($field['default'] ?? '#000000')); ?>" maxlength="7" pattern="^#[0-9A-Fa-f]{6}$" aria-label="<?php echo $esc($label); ?> Farbwert" data-m365-color-copy="<?php echo $esc($key); ?>">
+                </div>
             <?php else: ?>
                 <input type="text" id="<?php echo $esc($key); ?>" name="<?php echo $esc($key); ?>" class="form-control m365calculator-admin-control" value="<?php echo $esc($value); ?>" maxlength="255">
             <?php endif; ?>
@@ -161,3 +166,21 @@ $renderPriceInput = static function (array $field, string $tierLabel) use ($esc,
         <button type="submit" class="btn btn-primary">💾 Globale Einstellungen speichern</button>
     </form>
 </div>
+
+<script>
+document.querySelectorAll('[data-m365-color-copy]').forEach(function (input) {
+    var color = document.getElementById(input.getAttribute('data-m365-color-copy'));
+    if (!color) {
+        return;
+    }
+
+    input.addEventListener('input', function () {
+        if (/^#[0-9A-Fa-f]{6}$/.test(input.value)) {
+            color.value = input.value;
+        }
+    });
+    color.addEventListener('input', function () {
+        input.value = color.value;
+    });
+});
+</script>

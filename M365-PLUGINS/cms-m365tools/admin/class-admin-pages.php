@@ -38,6 +38,20 @@ final class CMS_M365CALCULATOR_Admin_Pages
         });
     }
 
+    public static function render_landing_designer(): void
+    {
+        self::render_with_layout('M365 Tools – Landingpage Designer', 'm365tools-landing-designer', static function (): void {
+            self::instance()->render_global_settings_page('landing-designer');
+        });
+    }
+
+    public static function render_readonly_matrices(): void
+    {
+        self::render_with_layout('M365 Tools – Read-only Matrixen', 'm365tools-readonly-matrices', static function (): void {
+            self::instance()->render_global_settings_page('readonly-matrices');
+        });
+    }
+
     public static function render_package_prices(): void
     {
         self::render_with_layout('M365 Tools – Paketpreise', 'm365tools-package-prices', static function (): void {
@@ -304,6 +318,9 @@ final class CMS_M365CALCULATOR_Admin_Pages
 
         $fields = self::global_fields_for($area, $activeTab);
         $tabOptions = CMS_M365CALCULATOR_Settings::global_options($activeTab);
+        if ($area === 'landing-designer') {
+            $tabOptions = array_merge(CMS_M365CALCULATOR_Settings::global_options('landing'), $tabOptions);
+        }
         $pageMeta = self::global_page_meta($area);
         $pageTitle = $pageMeta['title'];
         $pageDescription = $pageMeta['description'];
@@ -348,10 +365,20 @@ final class CMS_M365CALCULATOR_Admin_Pages
                 'commitment' => '📅 Commitments',
                 'billing' => '🧾 Abrechnung',
             ],
+            'landing-designer' => [
+                'landing-content' => '✍️ Contentheader',
+                'landing-layout' => '🧱 Layouts & Boxen',
+                'landing-colors' => '🎨 Farben',
+                'landing-visibility' => '👁️ Sichtbarkeit',
+            ],
+            'readonly-matrices' => [
+                'matrix-suite' => '📊 Lizenzmatrix',
+                'matrix-addon' => '➕ Add-on-Matrix',
+                'matrix-design' => '🎨 Design',
+            ],
             default => [
                 'general' => '⚙️ Allgemein',
                 'provider' => '🏢 Dienstleister & Kontakt',
-                'landing' => '🎨 Landingpage Designer',
                 'review' => '🧭 Review & Quellen',
                 'workflow' => '🔁 Workflow',
                 'system' => '🧾 System',
@@ -364,6 +391,8 @@ final class CMS_M365CALCULATOR_Admin_Pages
         return match ($area) {
             'package-prices' => 'base-packages',
             'subscription-prices' => 'terms',
+            'landing-designer' => 'landing-content',
+            'readonly-matrices' => 'matrix-suite',
             default => 'general',
         };
     }
@@ -382,6 +411,14 @@ final class CMS_M365CALCULATOR_Admin_Pages
                 'title' => '🔁 Abopreise & Laufzeiten',
                 'description' => 'Laufzeit-, Renewal- und Abrechnungsannahmen zentral für alle Rechner steuern.',
             ],
+            'landing-designer' => [
+                'title' => '🎨 Landingpage Designer',
+                'description' => 'Hub-Content, Layouts, Farben, Boxen und sichtbare Bereiche der Public-Landingpage gestalten.',
+            ],
+            'readonly-matrices' => [
+                'title' => '📚 Read-only Matrixen',
+                'description' => 'Lizenz- und Add-on-Matrix gemeinsam pflegen, gestalten und Außenbereiche steuern.',
+            ],
             default => [
                 'title' => '⚙️ Zentrale Einstellungen',
                 'description' => 'Pluginweite Defaults, Quellen-Reviews und Betriebsregeln an einer Stelle verwalten.',
@@ -394,6 +431,8 @@ final class CMS_M365CALCULATOR_Admin_Pages
         return match ($area) {
             'package-prices' => 'm365tools-package-prices',
             'subscription-prices' => 'm365tools-subscription-prices',
+            'landing-designer' => 'm365tools-landing-designer',
+            'readonly-matrices' => 'm365tools-readonly-matrices',
             default => 'm365tools-settings',
         };
     }
@@ -411,7 +450,238 @@ final class CMS_M365CALCULATOR_Admin_Pages
             return self::subscription_price_fields($tab);
         }
 
+        if ($area === 'landing-designer') {
+            return self::landing_designer_fields($tab);
+        }
+
+        if ($area === 'readonly-matrices') {
+            return self::readonly_matrix_fields($tab);
+        }
+
         return self::plugin_setting_fields($tab);
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private static function readonly_matrix_fields(string $tab): array
+    {
+        return match ($tab) {
+            'matrix-addon' => [
+                self::text('matrix_addon_overline', 'Header-Overline', 'Add-on-Matrix', 'Kleine Zeile oberhalb der Add-on-Matrix-Überschrift.'),
+                self::text('matrix_addon_title', 'Header-Titel', 'Microsoft 365 Add-on-Matrix', 'Hauptüberschrift der Add-on-Matrix.'),
+                self::textarea('matrix_addon_intro', 'Header-Intro', 'Öffentliche Übersicht aller Add-on-Bereiche: Exchange, SharePoint, OneDrive, Teams Phone, Copilot, Security, Power Platform und Spezialdienste.', 'Einleitungstext im Contentheader.'),
+                self::text('matrix_addon_secondary_button_label', 'Sekundärbutton Text', 'Vollpaket-Matrix öffnen', 'Beschriftung des sekundären Header-Buttons.'),
+                self::text('matrix_addon_secondary_button_url', 'Sekundärbutton Ziel', '/m365-lizenzmatrix', 'Interne Route oder vollständige URL.'),
+                self::text('matrix_addon_tool_button_label', 'Weiterer Button Text', 'Add-On-Konfigurator öffnen', 'Beschriftung des zweiten Header-Buttons.'),
+                self::text('matrix_addon_tool_button_url', 'Weiterer Button Ziel', '/m365-add-on-konfigurator', 'Interne Route oder vollständige URL.'),
+                self::text('matrix_addon_result_overline', 'Matrix-Overline', 'Matrix', 'Kleine Zeile über dem Matrixbereich.'),
+                self::text('matrix_addon_result_title', 'Matrix-Titel', 'Gesamtübersicht der Microsoft-365-Add-ons', 'Überschrift vor den Add-on-Bereichen.'),
+                self::textarea('matrix_addon_result_intro', 'Matrix-Intro', 'Die wichtigsten Add-ons mit Größen, Voraussetzungen, Abgrenzungen und typischen Kaufgründen.', 'Beschreibung oberhalb der Add-on-Bereiche.'),
+                self::text('matrix_addon_primary_button_label', 'CTA-Button Text', 'Lizenzcheck anfragen', 'Beschriftung des primären CTA-Buttons.'),
+                self::text('matrix_addon_primary_button_url', 'CTA-Button Ziel', '/kontakt', 'Kontaktformular, Beratungsseite oder interne Route.'),
+                self::checkbox('matrix_addon_show_hero', 'Contentheader anzeigen', '1', 'Blendet den oberen Contentheader ein.'),
+                self::checkbox('matrix_addon_show_hero_buttons', 'Header-Buttons anzeigen', '1', 'Blendet die Buttons im Contentheader ein.'),
+                self::checkbox('matrix_addon_show_result_header', 'Einleitungsbereich vor Matrix anzeigen', '1', 'Blendet den kurzen Matrix-Introbereich ein.'),
+                self::checkbox('matrix_addon_show_print_button', 'Drucken-Button anzeigen', '1', 'Zeigt den PDF-/Drucken-Button im Introbereich.'),
+                self::checkbox('matrix_addon_show_primary_cta', 'CTA-Button anzeigen', '1', 'Zeigt den Kontakt- oder Beratungsbutton im Introbereich.'),
+                self::checkbox('matrix_addon_show_area_headers', 'Bereichsheader anzeigen', '1', 'Zeigt Überschrift und Beschreibung je Add-on-Bereich.'),
+                self::checkbox('matrix_addon_show_package_cards', 'Paketkarten anzeigen', '1', 'Zeigt die kleinen Paketkarten oberhalb jeder Add-on-Tabelle.'),
+                self::checkbox('matrix_addon_show_notes', 'Hinweise anzeigen', '1', 'Zeigt den Hinweisblock unterhalb der Matrix.'),
+                self::checkbox('matrix_addon_show_sources', 'Quellenstand anzeigen', '1', 'Zeigt den Quellenblock unterhalb der Matrix.'),
+            ],
+            'matrix-design' => [
+                self::select('matrix_header_style', 'Contentheader-Stil', 'plain', [
+                    'plain' => 'Schlicht',
+                    'surface' => 'Ruhige Fläche',
+                    'bordered' => 'Gerahmt',
+                    'accent' => 'Akzentkante',
+                    'inverted' => 'Dunkel / invertiert',
+                ], 'Optik des Matrix-Contentheaders.'),
+                self::select('matrix_header_alignment', 'Header-Ausrichtung', 'split', [
+                    'split' => 'Text links, Aktionen rechts',
+                    'left' => 'Links ausgerichtet',
+                    'center' => 'Zentriert',
+                ], 'Ausrichtung von Headertexten und Aktionen.'),
+                self::select('matrix_button_layout', 'Button-Layout', 'inline', [
+                    'inline' => 'Nebeneinander',
+                    'stacked' => 'Untereinander',
+                    'right' => 'Rechts ausgerichtet',
+                ], 'Layout der Header- und Matrix-Aktionen.'),
+                self::select('matrix_button_style', 'Button-Stil', 'default', [
+                    'default' => 'Theme-Standard',
+                    'primary' => 'Alle Aktionen primär betonen',
+                    'secondary' => 'Alle Aktionen ruhig darstellen',
+                    'minimal' => 'Minimal / textnah',
+                ], 'Optische Gewichtung der Matrix-Buttons.'),
+                self::number('matrix_header_radius', 'Header-Rundung in px', '8', 0, 24, 1, 'Rundung für flächige oder gerahmte Header.'),
+                self::color('matrix_color_header_background', 'Header-Hintergrund', '#f8fafc', 'Hintergrundfarbe für flächige Header.'),
+                self::color('matrix_color_header_text', 'Header-Text', '#1e293b', 'Textfarbe im Contentheader.'),
+                self::color('matrix_color_header_muted', 'Header-Sekundärtext', '#64748b', 'Farbe für Overline und Beschreibung.'),
+                self::color('matrix_color_header_border', 'Header-Rahmen', '#e2e8f0', 'Rahmen- und Akzentfarbe im Header.'),
+                self::color('matrix_color_primary_button_bg', 'Primärbutton Hintergrund', '#2563eb', 'Hintergrundfarbe für primäre Matrix-Aktionen.'),
+                self::color('matrix_color_primary_button_text', 'Primärbutton Text', '#ffffff', 'Textfarbe für primäre Matrix-Aktionen.'),
+                self::color('matrix_color_secondary_button_bg', 'Sekundärbutton Hintergrund', '#ffffff', 'Hintergrundfarbe für sekundäre Matrix-Aktionen.'),
+                self::color('matrix_color_secondary_button_text', 'Sekundärbutton Text', '#1e293b', 'Textfarbe für sekundäre Matrix-Aktionen.'),
+            ],
+            default => [
+                self::text('matrix_suite_overline', 'Header-Overline', 'Lizenzmatrix', 'Kleine Zeile oberhalb der Lizenzmatrix-Überschrift.'),
+                self::text('matrix_suite_title', 'Header-Titel', 'Microsoft 365 Lizenzmatrix – Vollpakete', 'Hauptüberschrift der Lizenzmatrix.'),
+                self::textarea('matrix_suite_intro', 'Header-Intro', 'Öffentliche Gesamtübersicht der Microsoft-365-Vollpakete Business Basic, Business Standard, Business Premium, Microsoft 365 E3 und Microsoft 365 E5.', 'Einleitungstext im Contentheader.'),
+                self::text('matrix_suite_secondary_button_label', 'Sekundärbutton Text', 'Interaktiven Lizenzvergleich öffnen', 'Beschriftung des sekundären Header-Buttons.'),
+                self::text('matrix_suite_secondary_button_url', 'Sekundärbutton Ziel', '/m365-lizenzvergleich', 'Interne Route oder vollständige URL.'),
+                self::text('matrix_suite_tool_button_label', 'Weiterer Button Text', 'Add-on-Matrix öffnen', 'Beschriftung des zweiten Header-Buttons.'),
+                self::text('matrix_suite_tool_button_url', 'Weiterer Button Ziel', '/m365-addon-matrix', 'Interne Route oder vollständige URL.'),
+                self::text('matrix_suite_result_overline', 'Matrix-Overline', 'Matrix', 'Kleine Zeile über der Tabelle.'),
+                self::text('matrix_suite_result_title', 'Matrix-Titel', 'Gesamtübersicht der Microsoft-365-Vollpakete', 'Überschrift direkt vor der Tabelle.'),
+                self::textarea('matrix_suite_result_intro', 'Matrix-Intro', 'Alle zentralen Paket-, App-, Security-, Compliance-, KI- und Beschaffungspunkte in einer Übersicht.', 'Beschreibung direkt vor der Tabelle.'),
+                self::text('matrix_suite_primary_button_label', 'CTA-Button Text', 'Lizenzcheck anfragen', 'Beschriftung des primären CTA-Buttons.'),
+                self::text('matrix_suite_primary_button_url', 'CTA-Button Ziel', '/kontakt', 'Kontaktformular, Beratungsseite oder interne Route.'),
+                self::checkbox('matrix_suite_show_hero', 'Contentheader anzeigen', '1', 'Blendet den oberen Contentheader ein.'),
+                self::checkbox('matrix_suite_show_hero_buttons', 'Header-Buttons anzeigen', '1', 'Blendet die Buttons im Contentheader ein.'),
+                self::checkbox('matrix_suite_show_result_header', 'Einleitungsbereich vor Matrix anzeigen', '1', 'Blendet den kurzen Matrix-Introbereich ein.'),
+                self::checkbox('matrix_suite_show_print_button', 'Drucken-Button anzeigen', '1', 'Zeigt den PDF-/Drucken-Button im Matrixbereich.'),
+                self::checkbox('matrix_suite_show_primary_cta', 'CTA-Button anzeigen', '1', 'Zeigt den Kontakt- oder Beratungsbutton im Matrixbereich.'),
+                self::checkbox('matrix_suite_show_notes', 'Hinweise anzeigen', '1', 'Zeigt den Hinweisblock unterhalb der Matrix.'),
+                self::checkbox('matrix_suite_show_sources', 'Quellenstand anzeigen', '1', 'Zeigt den Quellenblock unterhalb der Matrix.'),
+            ],
+        };
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private static function landing_designer_fields(string $tab): array
+    {
+        return match ($tab) {
+            'landing-layout' => [
+                self::select('landing_page_layout', 'Seitenbreite', 'wide', [
+                    'normal' => 'Normaler Contentbereich',
+                    'wide' => 'Breit / volle Theme-Breite',
+                    'boxed' => 'Gerahmter Hub',
+                    'editorial' => 'Redaktionell mit großzügiger Leseführung',
+                    'directory' => 'Verzeichnis-Look für viele Module',
+                ], 'Legt die Grundbreite und Anmutung des Hubs fest.'),
+                self::select('landing_header_layout', 'Contentheader-Layout', 'split', [
+                    'split' => 'Text links, Kennzahlen rechts',
+                    'stacked' => 'Untereinander',
+                    'compact' => 'Kompakt',
+                    'hero-card' => 'Hero-Karte mit ruhiger Fläche',
+                    'editorial' => 'Editorial: schmale Textspalte',
+                ], 'Layout des oberen Landingpage-Bereichs.'),
+                self::select('landing_header_style', 'Contentheader-Stil', 'plain', [
+                    'plain' => 'Schlicht mit Trennlinie',
+                    'surface' => 'Ruhige Fläche',
+                    'bordered' => 'Gerahmter Header',
+                    'accent' => 'Mit dezenter Akzentkante',
+                    'inverted' => 'Dunkler Header mit hellen Texten',
+                ], 'Optik des Contentheaders unabhängig vom Seitenlayout.'),
+                self::select('landing_header_alignment', 'Header-Ausrichtung', 'left', [
+                    'left' => 'Links ausgerichtet',
+                    'center' => 'Zentriert',
+                    'split' => 'Split / redaktionell',
+                ], 'Ausrichtung von Text und Buttons im Header.'),
+                self::select('landing_button_layout', 'Header-Buttons Layout', 'inline', [
+                    'inline' => 'Nebeneinander',
+                    'stacked' => 'Untereinander',
+                    'right' => 'Rechts ausgerichtet',
+                ], 'Layout der optionalen Header-Buttons.'),
+                self::select('landing_category_layout', 'Kategorie-Navigation', 'line', [
+                    'line' => 'Schlichte Link-Zeile',
+                    'pills' => 'Pill-Navigation',
+                    'cards' => 'Kleine Navigationskarten',
+                    'minimal' => 'Minimal mit reduzierten Zählern',
+                ], 'Darstellung der Kategorie-Sprungmarken.'),
+                self::select('landing_tool_layout', 'Toolbox-Layout', 'grid', [
+                    'grid' => 'Kartenraster',
+                    'compact-grid' => 'Kompaktes Kartenraster',
+                    'list' => 'Listenartige Karten',
+                    'directory' => 'Verzeichnis mit klaren Zeilen',
+                    'feature-first' => 'Erstes Modul je Kategorie hervorgehoben',
+                ], 'Darstellung der Modulboxen.'),
+                self::select('landing_card_style', 'Box-Stil', 'bordered', [
+                    'bordered' => 'Dezent gerahmt',
+                    'quiet' => 'Ruhig / redaktionell',
+                    'flat' => 'Flach ohne Schatten',
+                    'accent' => 'Mit Akzentkante',
+                ], 'Optische Gewichtung der Karten.'),
+                self::select('landing_tool_button_style', 'Tool-Button Stil', 'link', [
+                    'link' => 'Textlink mit Pfeil',
+                    'primary' => 'Primärer Button',
+                    'secondary' => 'Sekundärer Button',
+                    'minimal' => 'Minimal ohne Pfeil',
+                ], 'Darstellung der Buttons innerhalb der Modulboxen.'),
+                self::select('landing_density', 'Abstände', 'comfortable', [
+                    'compact' => 'Kompakt',
+                    'comfortable' => 'Ausgewogen',
+                    'spacious' => 'Großzügig',
+                ], 'Steuert vertikale Abstände und Kartenpadding.'),
+                self::number('landing_card_radius', 'Rundung der Boxen in px', '8', 0, 24, 1, 'Steuert die Rundung der Landingpage-Karten.'),
+                self::number('landing_cards_min_width', 'Mindestbreite der Modulboxen in px', '320', 220, 520, 10, 'Breite der Modulboxen im Kartenraster.'),
+                self::number('landing_section_gap', 'Abschnittsabstand in px', '32', 16, 96, 2, 'Vertikaler Abstand zwischen Landingpage-Abschnitten.'),
+            ],
+            'landing-colors' => [
+                self::color('landing_color_primary', 'Primärfarbe', '#2563eb', 'Buttons, Links, aktive Zustände und dezente Akzente.'),
+                self::color('landing_color_accent', 'Akzentfarbe', '#0f766e', 'Sekundärer Akzent für Kanten, Zähler oder Highlights.'),
+                self::color('landing_color_background', 'Hintergrund', '#ffffff', 'Grundfläche des Landingpage-Hubs.'),
+                self::color('landing_color_surface', 'Box-Hintergrund', '#ffffff', 'Hintergrund der Karten und Review-Bereiche.'),
+                self::color('landing_color_surface_alt', 'Ruhige Fläche', '#f8fafc', 'Alternative Fläche für Hero, Fakten oder dezente Blöcke.'),
+                self::color('landing_color_header_background', 'Header-Hintergrund', '#f8fafc', 'Eigene Hintergrundfarbe für gerahmte oder flächige Contentheader.'),
+                self::color('landing_color_header_text', 'Header-Textfarbe', '#1e293b', 'Eigene Textfarbe im Landingpage-Header.'),
+                self::color('landing_color_header_muted', 'Header-Sekundärtext', '#64748b', 'Overline und Introtext im Header.'),
+                self::color('landing_color_header_border', 'Header-Rahmen', '#e2e8f0', 'Rahmen- oder Akzentkante des Contentheaders.'),
+                self::color('landing_color_button_primary_bg', 'Primärbutton Hintergrund', '#2563eb', 'Hintergrund des primären Header-Buttons.'),
+                self::color('landing_color_button_primary_text', 'Primärbutton Text', '#ffffff', 'Textfarbe des primären Header-Buttons.'),
+                self::color('landing_color_button_secondary_bg', 'Sekundärbutton Hintergrund', '#ffffff', 'Hintergrund des sekundären Header-Buttons.'),
+                self::color('landing_color_button_secondary_text', 'Sekundärbutton Text', '#1e293b', 'Textfarbe des sekundären Header-Buttons.'),
+                self::color('landing_color_text', 'Textfarbe', '#1e293b', 'Primäre Textfarbe.'),
+                self::color('landing_color_muted', 'Sekundärtext', '#64748b', 'Beschreibungen, Hinweise und kleine Labels.'),
+                self::color('landing_color_border', 'Rahmenfarbe', '#e2e8f0', 'Borders, Trennlinien und Tabellenkanten.'),
+            ],
+            'landing-visibility' => [
+                self::checkbox('landing_show_header_overline', 'Header-Overline anzeigen', '1', 'Zeigt die kleine Zeile über der Hauptüberschrift.'),
+                self::checkbox('landing_show_header_title', 'Header-Titel anzeigen', '1', 'Zeigt die Hauptüberschrift im Contentheader.'),
+                self::checkbox('landing_show_header_intro', 'Header-Intro anzeigen', '1', 'Zeigt den Einleitungstext im Contentheader.'),
+                self::checkbox('landing_show_header_buttons', 'Header-Buttons anzeigen', '1', 'Zeigt primäre und sekundäre Buttons im Landingpage-Header.'),
+                self::checkbox('landing_show_facts', 'Kennzahlen anzeigen', '1', 'Zeigt Module, Live-Zahl und Review-Bereiche im Header.'),
+                self::checkbox('landing_show_fact_modules', 'Kennzahl Module anzeigen', '1', 'Zeigt die Anzahl aller Module.'),
+                self::checkbox('landing_show_fact_live', 'Kennzahl Live anzeigen', '1', 'Zeigt die Anzahl aktiver Module.'),
+                self::checkbox('landing_show_fact_reviews', 'Kennzahl Review-Bereiche anzeigen', '1', 'Zeigt die Anzahl der Review-Bereiche.'),
+                self::checkbox('landing_show_category_nav', 'Kategorie-Navigation anzeigen', '1', 'Blendet die Sprungnavigation zu Kategorien ein.'),
+                self::checkbox('landing_show_category_overline', 'Kategorie-Overline anzeigen', '1', 'Zeigt die kleine Kategorie-Zeile über Abschnittsüberschriften.'),
+                self::checkbox('landing_show_category_counts', 'Kategorie-Zähler anzeigen', '1', 'Zeigt die Modulanzahl je Kategorie.'),
+                self::checkbox('landing_show_review_panel', 'Best-Practice-Kompass anzeigen', '1', 'Zeigt den Review-Block auf der Landingpage.'),
+                self::checkbox('landing_show_review_domain_summaries', 'Review-Beschreibungen anzeigen', '1', 'Zeigt die Beschreibungstexte der Review-Domänen.'),
+                self::checkbox('landing_show_icons', 'Modul-Icons anzeigen', '1', 'Zeigt die Icon-Spalte in Modulboxen.'),
+                self::checkbox('landing_link_card_titles', 'Modultitel verlinken', '1', 'Verlinkt den Titel jeder Modulbox zur Zielseite.'),
+                self::checkbox('landing_show_tool_descriptions', 'Modulbeschreibungen anzeigen', '1', 'Zeigt die Beschreibungstexte in den Toolkarten.'),
+                self::checkbox('landing_show_status_labels', 'Statuslabels anzeigen', '1', 'Zeigt Beta-/Bald-Hinweise in Modulboxen.'),
+                self::checkbox('landing_show_review_chips', 'Review-Chips in Modulboxen anzeigen', '1', 'Zeigt Review-Schwerpunkte direkt in den Toolkarten.'),
+                self::checkbox('landing_show_module_checks', 'Prüfpunkte in Modulboxen anzeigen', '1', 'Zeigt konkrete Prüfpunkte direkt in den Toolkarten.'),
+                self::checkbox('landing_show_tool_buttons', 'Tool-Buttons anzeigen', '1', 'Zeigt den Button in jeder Modulbox.'),
+                self::checkbox('landing_show_disabled_note', 'Hinweis bei inaktiven Modulen anzeigen', '1', 'Zeigt einen kurzen Hinweis, wenn ein Modul noch nicht verfügbar ist.'),
+            ],
+            default => [
+                self::text('landing_overline', 'Header-Overline', 'Rechner & Tools', 'Kleine Zeile oberhalb der Landingpage-Hauptüberschrift.'),
+                self::text('landing_title', 'Landingpage-Titel', 'M365 Tools', 'Hauptüberschrift der Toolbox-Landingpage.'),
+                self::textarea('landing_intro', 'Intro-Text', 'Eine kuratierte Sammlung für Microsoft-365-Lizenzierung, Kosten, Speicher, Backup, Copilot, Telefonie, Migration und Betrieb.', 'Einleitungstext im Contentheader.'),
+                self::text('landing_primary_button_label', 'Primärbutton Text', 'Lizenzberater öffnen', 'Beschriftung des primären Header-Buttons.'),
+                self::text('landing_primary_button_url', 'Primärbutton Ziel', '/m365-lizenzberater', 'Interne Route oder vollständige URL für den primären Header-Button.'),
+                self::text('landing_secondary_button_label', 'Sekundärbutton Text', 'Kontakt aufnehmen', 'Beschriftung des sekundären Header-Buttons.'),
+                self::text('landing_secondary_button_url', 'Sekundärbutton Ziel', '/kontakt', 'Interne Route oder vollständige URL für den sekundären Header-Button.'),
+                self::text('landing_review_overline', 'Review-Overline', 'Querschnittsreview', 'Kleine Zeile oberhalb des Best-Practice-Kompasses.'),
+                self::text('landing_review_title', 'Review-Titel', 'Microsoft 365 Best-Practice-Kompass', 'Fallback-Titel, falls der Katalog keinen eigenen Titel liefert.'),
+                self::textarea('landing_review_intro', 'Review-Intro', '', 'Optionaler eigener Einleitungstext für den Review-Bereich.'),
+                self::text('landing_open_button_label', 'Öffnen-Button Text', 'Öffnen', 'Text des Links in jeder Toolbox-Karte.'),
+                self::select('landing_tool_button_target_mode', 'Tool-Button Ziel', 'tool', [
+                    'tool' => 'Jeweilige Toolseite',
+                    'primary' => 'Primärbutton-Ziel verwenden',
+                    'secondary' => 'Sekundärbutton-Ziel verwenden',
+                    'custom' => 'Eigenes globales Ziel verwenden',
+                ], 'Legt fest, wohin die Buttons in den Modulboxen führen.'),
+                self::text('landing_tool_button_custom_url', 'Eigenes Tool-Button Ziel', '', 'Optionales globales Ziel für alle Modulbox-Buttons.'),
+            ],
+        };
     }
 
     /**
@@ -435,29 +705,6 @@ final class CMS_M365CALCULATOR_Admin_Pages
                     'boxed' => 'Kompakte Box',
                     'wide' => 'Breiter Abschlussbereich',
                 ], 'Steuert die optische Gewichtung des Dienstleister-Hinweises.'),
-            ],
-            'landing' => [
-                self::text('landing_overline', 'Header-Overline', 'Rechner & Tools', 'Kleine Zeile oberhalb der Landingpage-Hauptüberschrift.'),
-                self::text('landing_title', 'Landingpage-Titel', 'M365 Tools', 'Hauptüberschrift der Toolbox-Landingpage.'),
-                self::textarea('landing_intro', 'Intro-Text', 'Eine kuratierte Sammlung für Microsoft-365-Lizenzierung, Kosten, Speicher, Backup, Copilot, Telefonie, Migration und Betrieb.', 'Einleitungstext im Contentheader.'),
-                self::select('landing_header_layout', 'Contentheader-Layout', 'split', [
-                    'split' => 'Text links, Kennzahlen rechts',
-                    'stacked' => 'Untereinander',
-                    'compact' => 'Kompakt ohne große Kennzahlenfläche',
-                ], 'Layout des oberen Landingpage-Bereichs.'),
-                self::select('landing_tool_layout', 'Toolbox-Layout', 'grid', [
-                    'grid' => 'Kartenraster',
-                    'compact-grid' => 'Kompaktes Kartenraster',
-                    'list' => 'Listenartige Karten',
-                ], 'Darstellung der Modulboxen.'),
-                self::number('landing_card_radius', 'Rundung der Boxen in px', '8', 0, 24, 1, 'Steuert die Rundung der Landingpage-Karten.'),
-                self::number('landing_cards_min_width', 'Mindestbreite der Modulboxen in px', '320', 220, 520, 10, 'Breite der Modulboxen im Kartenraster.'),
-                self::checkbox('landing_show_facts', 'Kennzahlen anzeigen', '1', 'Zeigt Module, Live-Zahl und Review-Bereiche im Header.'),
-                self::checkbox('landing_show_category_nav', 'Kategorie-Navigation anzeigen', '1', 'Blendet die Sprungnavigation zu Kategorien ein.'),
-                self::checkbox('landing_show_review_panel', 'Best-Practice-Kompass anzeigen', '1', 'Zeigt den Review-Block auf der Landingpage.'),
-                self::checkbox('landing_show_review_chips', 'Review-Chips in Modulboxen anzeigen', '1', 'Zeigt Review-Schwerpunkte direkt in den Toolkarten.'),
-                self::checkbox('landing_show_module_checks', 'Prüfpunkte in Modulboxen anzeigen', '1', 'Zeigt konkrete Prüfpunkte direkt in den Toolkarten.'),
-                self::text('landing_open_button_label', 'Öffnen-Button Text', 'Öffnen', 'Text des Links in jeder Toolbox-Karte.'),
             ],
             'review' => [
                 self::text('last_global_review_date', 'Letzter Quellenabgleich', date('Y-m-d'), 'Datum des letzten fachlichen All-Module-Reviews.'),
@@ -682,6 +929,14 @@ final class CMS_M365CALCULATOR_Admin_Pages
     /**
      * @return array<string,mixed>
      */
+    private static function color(string $key, string $label, string $default, string $help): array
+    {
+        return ['key' => $key, 'label' => $label, 'type' => 'color', 'default' => $default, 'help' => $help];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
     private static function number(string $key, string $label, string $default, float $min, float $max, float $step, string $help): array
     {
         return [
@@ -730,6 +985,11 @@ final class CMS_M365CALCULATOR_Admin_Pages
             if ($type === 'select') {
                 $allowed = is_array($field['options'] ?? null) ? array_map('strval', array_keys($field['options'])) : [];
                 $options[$key] = in_array($raw, $allowed, true) ? $raw : (string) ($field['default'] ?? '');
+                continue;
+            }
+
+            if ($type === 'color') {
+                $options[$key] = preg_match('/^#[0-9a-fA-F]{6}$/', $raw) === 1 ? strtolower($raw) : (string) ($field['default'] ?? '#000000');
                 continue;
             }
 

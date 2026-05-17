@@ -60,17 +60,20 @@
 
 ## Admin-Konfiguration
 
-- `CMS_M365CALCULATOR_Admin_Menu::register()` – registriert Dashboard, ab `1.27.0` zentrale Unterpunkte für Plugin-Einstellungen, Paketpreise sowie Abopreise & Laufzeiten und danach je Tool-Registry-Modul einen logisch sortierten Unterpunkt unter `M365 Tools`; ab `1.28.0` nutzen Modulunterpunkte kurze Sidebar-Labels
+- `CMS_M365CALCULATOR_Admin_Menu::register()` – registriert Dashboard, ab `1.27.0` zentrale Unterpunkte für Plugin-Einstellungen, Paketpreise sowie Abopreise & Laufzeiten und danach je Tool-Registry-Modul einen logisch sortierten Unterpunkt unter `M365 Tools`; ab `1.28.0` nutzen Modulunterpunkte kurze Sidebar-Labels; ab `1.29.1` registriert der Designer einen eigenen Unterpunkt `Landingpage Designer`
+- `CMS_M365CALCULATOR_Admin_Pages::render_landing_designer()` – rendert ab `1.29.1` den eigenen Landingpage-Designer mit Tabs für Contentheader, Layouts & Boxen, Farben und Sichtbarkeit
+- `CMS_M365CALCULATOR_Admin_Pages::landing_designer_fields()` – liefert die Designer-Felddefinitionen für Headertexte, Header-/Tool-Buttons, Zielmodi, Header-Layout, Farbpalette und Sichtbarkeitsschalter
 - `CMS_M365CALCULATOR_Admin_Pages::render_plugin_settings()` – rendert die zentrale Plugin-Einstellungsseite mit Tabs für Allgemein, Review & Quellen, Workflow und System
 - `CMS_M365CALCULATOR_Admin_Pages::render_package_prices()` – rendert globale Paket- und Add-on-Preisannahmen für alle Module, ab `1.28.0` dynamisch mit Public-, Member- und Spezialfeldern aus dem M365LIC-Seed
 - `CMS_M365CALCULATOR_Admin_Pages::render_subscription_prices()` – rendert globale Abopreis-, Laufzeit-, Commitment- und Abrechnungsannahmen
+- `CMS_M365CALCULATOR_Frontend::render_provider_cta()` – rendert ab `1.29.0` den zentral gepflegten Dienstleister-/Kontaktformular-Hinweis vor dem Footer von Toolseiten
 - `CMS_M365CALCULATOR_Admin_Pages::render_module_settings(string $moduleKey)` – rendert die Modul-Unterseite mit Tabs für Übersicht, Anzeige, Preise & Annahmen, Workflow sowie Daten & Regeln
 - `CMS_M365CALCULATOR_Admin_Module_Config::tabs_for(array $tool)` – liefert die Tab-Struktur für eine Modul-Einstellungsseite
 - `CMS_M365CALCULATOR_Admin_Module_Config::fields_for(array $tool, string $tab)` – liefert modul- und kategoriebasierte Felddefinitionen für Preis-, Workflow- und Daten-Tabs inklusive Quellenprofil, Endpoint-/Netzwerkpfad, Schutz-/Datenzugriff und Servicegrenzen-/Kapazität
 - `CMS_M365CALCULATOR_Settings::module_options(string $moduleKey, ?string $optionGroup = null)` – lädt gespeicherte Moduloptionen
 - `CMS_M365CALCULATOR_Settings::save_module_options(string $moduleKey, string $optionGroup, array $options)` – speichert Preis-, Workflow- und Datenoptionen eines Moduls
-- `CMS_M365CALCULATOR_Settings::global_options(?string $optionGroup = null)` – lädt pluginweite Standardoptionen aus der globalen Optionsgruppe
-- `CMS_M365CALCULATOR_Settings::save_global_options(string $optionGroup, array $options)` – speichert zentrale Plugin-, Paketpreis- und Abopreisoptionen ohne zusätzliche Tabelle
+- `CMS_M365CALCULATOR_Settings::global_options(?string $optionGroup = null)` – lädt pluginweite Standardoptionen aus der globalen Optionsgruppe, darunter `provider` sowie ab `1.29.1` `landing-content`, `landing-layout`, `landing-colors` und `landing-visibility`
+- `CMS_M365CALCULATOR_Settings::save_global_options(string $optionGroup, array $options)` – speichert zentrale Plugin-, Paketpreis-, Abopreis-, Dienstleister- und Landingpage-Optionen ohne zusätzliche Tabelle
 - `CMS_M365CALCULATOR_Settings::save_single_module_settings(string $moduleKey, array $values)` – speichert Anzeige-Overrides für ein einzelnes Modul
 
 ## `CMS_M365CALCULATOR_License_Audit_Checklist`
@@ -237,7 +240,7 @@
 - `save_module_settings(array $posted)` – speichert Admin-Overrides CSRF-geschützt über die Adminseite
 - `module_options(string $moduleKey, ?string $optionGroup = null)` – lädt generische Optionswerte für Modul-Tabs
 - `save_module_options(string $moduleKey, string $optionGroup, array $options)` – speichert generische Moduloptionen
-- `global_options(?string $optionGroup = null)` – lädt globale Defaults für zentrale Einstellungen, Paketpreise sowie Abopreise & Laufzeiten
+- `global_options(?string $optionGroup = null)` – lädt globale Defaults für zentrale Einstellungen, Paketpreise, Abopreise & Laufzeiten, Dienstleister/Kontakt und Landingpage-Designer
 - `save_global_options(string $optionGroup, array $options)` – speichert globale Defaults über die vorhandene Optionslogik
 
 ## `CMS_M365CALCULATOR_Tool_Registry`

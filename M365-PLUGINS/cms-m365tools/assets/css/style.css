@@ -1,7 +1,47 @@
 #m365tools-landing,
 #m365calculator-landing {
+    background: var(--m365tools-bg, transparent);
+    color: var(--m365tools-text, inherit);
     display: grid;
-    gap: var(--phinit-space-8);
+    gap: var(--m365tools-section-gap, var(--phinit-space-8));
+}
+
+.m365tools-visually-hidden {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
+#m365tools-landing.m365tools-page--normal,
+#m365tools-landing.m365tools-page--boxed,
+#m365tools-landing.m365tools-page--editorial,
+#m365tools-landing.m365tools-page--directory {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+}
+
+#m365tools-landing.m365tools-page--normal {
+    max-width: var(--phinit-content-wide, 1200px);
+}
+
+#m365tools-landing.m365tools-page--boxed {
+    border: 1px solid var(--m365tools-border, var(--phinit-color-border));
+    border-radius: var(--m365tools-card-radius, var(--phinit-radius-md));
+    max-width: min(100%, 1240px);
+    padding: var(--phinit-space-6);
+}
+
+#m365tools-landing.m365tools-page--editorial {
+    max-width: min(100%, 1080px);
+}
+
+#m365tools-landing.m365tools-page--directory {
+    max-width: min(100%, 1320px);
 }
 
 body.m365tools-theme-embed:not(.is-member) main.phinit-plugin,
@@ -11,7 +51,7 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
 
 #m365tools-landing > header,
 #m365calculator-landing > header {
-    border-bottom: 1px solid var(--phinit-color-border);
+    border-bottom: 1px solid var(--m365tools-header-border, var(--m365tools-border, var(--phinit-color-border)));
     padding-bottom: var(--phinit-space-6);
 }
 
@@ -22,10 +62,64 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
     grid-template-columns: minmax(0, 1fr) minmax(16rem, 24rem);
 }
 
+.m365tools-header--surface .m365tools-landing__header,
+.m365tools-header--bordered .m365tools-landing__header,
+.m365tools-header--accent .m365tools-landing__header,
+.m365tools-header--inverted .m365tools-landing__header {
+    background: var(--m365tools-header-bg, var(--m365tools-surface-alt, var(--phinit-color-bg)));
+    border-radius: var(--m365tools-card-radius, var(--phinit-radius-md));
+    color: var(--m365tools-header-text, var(--m365tools-text, var(--phinit-color-ink)));
+    padding: var(--phinit-space-6);
+}
+
+.m365tools-header--bordered .m365tools-landing__header,
+.m365tools-header--accent .m365tools-landing__header,
+.m365tools-header--inverted .m365tools-landing__header {
+    border: 1px solid var(--m365tools-header-border, var(--m365tools-border, var(--phinit-color-border)));
+}
+
+.m365tools-header--accent .m365tools-landing__header {
+    border-left: 4px solid var(--m365tools-primary, var(--phinit-color-accent));
+}
+
+.m365tools-header--inverted .m365tools-landing__header {
+    background: var(--m365tools-header-text, #1e293b);
+    color: var(--m365tools-header-bg, #ffffff);
+}
+
+.m365tools-header--inverted .m365tools-landing__facts dt,
+.m365tools-header--inverted .m365tools-landing__intro .phinit-prose,
+.m365tools-header--inverted .m365tools-landing__intro .phinit-overline {
+    color: color-mix(in srgb, var(--m365tools-header-bg, #ffffff) 78%, transparent);
+}
+
+.m365tools-header-align--center .m365tools-landing__header,
+.m365tools-header-align--center .m365tools-landing__intro {
+    justify-items: center;
+    text-align: center;
+}
+
+.m365tools-header-align--split .m365tools-landing__intro {
+    max-width: 860px;
+}
+
 .m365tools-landing--stacked .m365tools-landing__header,
-.m365tools-landing--compact .m365tools-landing__header {
+.m365tools-landing--compact .m365tools-landing__header,
+.m365tools-landing--hero-card .m365tools-landing__header,
+.m365tools-landing--editorial .m365tools-landing__header {
     align-items: start;
     grid-template-columns: 1fr;
+}
+
+.m365tools-landing--hero-card .m365tools-landing__header {
+    background: var(--m365tools-header-bg, var(--m365tools-surface-alt, var(--phinit-color-bg)));
+    border: 1px solid var(--m365tools-header-border, var(--m365tools-border, var(--phinit-color-border)));
+    border-radius: var(--m365tools-card-radius, var(--phinit-radius-md));
+    padding: var(--phinit-space-6);
+}
+
+.m365tools-landing--editorial .m365tools-landing__intro {
+    max-width: 760px;
 }
 
 .m365tools-landing--compact .m365tools-landing__facts {
@@ -37,13 +131,69 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
     gap: var(--phinit-space-3);
 }
 
+#m365tools-landing .phinit-overline {
+    color: var(--m365tools-primary, var(--phinit-color-accent));
+}
+
+.m365tools-landing__intro .phinit-overline {
+    color: var(--m365tools-header-muted, var(--m365tools-primary, var(--phinit-color-accent)));
+}
+
+.m365tools-landing__intro .phinit-prose {
+    color: var(--m365tools-header-muted, var(--m365tools-muted, var(--phinit-color-ink-secondary)));
+}
+
+.m365tools-landing__intro h1 {
+    color: var(--m365tools-header-text, var(--m365tools-text, var(--phinit-color-ink)));
+}
+
+.m365tools-header--inverted .m365tools-landing__intro h1,
+.m365tools-header--inverted .m365tools-landing__facts dd {
+    color: var(--m365tools-header-bg, #ffffff);
+}
+
+.m365tools-header--inverted .m365tools-landing__intro .phinit-overline,
+.m365tools-header--inverted .m365tools-landing__intro .phinit-prose,
+.m365tools-header--inverted .m365tools-landing__facts dt {
+    color: color-mix(in srgb, var(--m365tools-header-bg, #ffffff) 78%, transparent);
+}
+
+.m365tools-landing__buttons {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--phinit-space-3);
+}
+
+.m365tools-buttons--stacked .m365tools-landing__buttons {
+    align-items: stretch;
+    flex-direction: column;
+    max-width: 20rem;
+}
+
+.m365tools-buttons--right .m365tools-landing__buttons {
+    justify-content: flex-end;
+}
+
+.m365tools-btn--primary {
+    background: var(--m365tools-button-primary-bg, var(--m365tools-primary, var(--phinit-color-accent)));
+    border-color: var(--m365tools-button-primary-bg, var(--m365tools-primary, var(--phinit-color-accent)));
+    color: var(--m365tools-button-primary-text, #ffffff);
+}
+
+.m365tools-btn--secondary {
+    background: var(--m365tools-button-secondary-bg, var(--m365tools-surface, #ffffff));
+    border-color: var(--m365tools-border, var(--phinit-color-border));
+    color: var(--m365tools-button-secondary-text, var(--m365tools-text, var(--phinit-color-ink)));
+}
+
 #m365tools-landing > header h1,
 #m365calculator-landing > header h1 {
     margin: 0;
 }
 
 .m365tools-landing__facts {
-    border-top: 1px solid var(--phinit-color-border);
+    border-top: 1px solid var(--m365tools-header-border, var(--m365tools-border, var(--phinit-color-border)));
     display: grid;
     gap: var(--phinit-space-3);
     margin: 0;
@@ -60,11 +210,15 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
 .m365tools-landing__facts dt,
 .m365tools-section-count,
 .m365tools-category-nav small {
-    color: var(--phinit-color-ink-secondary);
+    color: var(--m365tools-muted, var(--phinit-color-ink-secondary));
     font-size: var(--phinit-text-xs);
     font-weight: 500;
     letter-spacing: 0.04em;
     text-transform: uppercase;
+}
+
+.m365tools-landing__facts dt {
+    color: var(--m365tools-header-muted, var(--m365tools-muted, var(--phinit-color-ink-secondary)));
 }
 
 .m365tools-landing__facts dd {
@@ -75,9 +229,16 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
 }
 
 .m365tools-category-nav {
-    border-bottom: 1px solid var(--phinit-color-border);
-    border-top: 1px solid var(--phinit-color-border);
+    border-bottom: 1px solid var(--m365tools-border, var(--phinit-color-border));
+    border-top: 1px solid var(--m365tools-border, var(--phinit-color-border));
     padding: var(--phinit-space-3) 0;
+}
+
+.m365tools-category--pills .m365tools-category-nav,
+.m365tools-category--cards .m365tools-category-nav,
+.m365tools-category--minimal .m365tools-category-nav {
+    border: 0;
+    padding: 0;
 }
 
 .m365tools-category-nav ol {
@@ -95,6 +256,27 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
     gap: var(--phinit-space-2);
     min-height: 44px;
     padding: var(--phinit-space-2) 0;
+}
+
+.m365tools-category--pills .m365tools-category-nav a,
+.m365tools-category--cards .m365tools-category-nav a {
+    border: 1px solid var(--m365tools-border, var(--phinit-color-border));
+    border-radius: var(--m365tools-card-radius, var(--phinit-radius-md));
+    color: var(--m365tools-text, var(--phinit-color-ink));
+    padding: var(--phinit-space-2) var(--phinit-space-3);
+}
+
+.m365tools-category--pills .m365tools-category-nav a {
+    border-radius: 999px;
+}
+
+.m365tools-category--cards .m365tools-category-nav a {
+    background: var(--m365tools-surface, var(--phinit-color-surface));
+    min-width: 10rem;
+}
+
+.m365tools-category--minimal .m365tools-category-nav small {
+    display: none;
 }
 
 .m365tools-section-head {
@@ -144,6 +326,45 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
     border-radius: var(--m365tools-card-radius, var(--phinit-radius-md));
 }
 
+#m365tools-landing .phinit-card {
+    background: var(--m365tools-surface, var(--phinit-color-surface));
+    border-color: var(--m365tools-border, var(--phinit-color-border));
+}
+
+#m365tools-landing .phinit-card p,
+#m365tools-landing .m365tools-review-domain span,
+#m365tools-landing .phinit-tool-grid p {
+    color: var(--m365tools-muted, var(--phinit-color-ink-secondary));
+}
+
+.m365tools-cards--quiet .phinit-tool-grid .phinit-card {
+    box-shadow: none;
+}
+
+.m365tools-cards--flat .phinit-tool-grid .phinit-card {
+    border-left-width: 1px;
+    box-shadow: none;
+}
+
+.m365tools-cards--accent .phinit-tool-grid .phinit-card {
+    border-left: 3px solid var(--m365tools-primary, var(--phinit-color-accent));
+}
+
+.m365tools-density--compact {
+    --m365tools-section-gap: 24px;
+}
+
+.m365tools-density--compact .phinit-tool-grid .phinit-card {
+    gap: var(--phinit-space-2);
+    padding: var(--phinit-space-4);
+}
+
+.m365tools-density--spacious .phinit-tool-grid .phinit-card,
+.m365tools-density--spacious .m365tools-review-panel,
+.m365tools-density--spacious.m365tools-landing--hero-card .m365tools-landing__header {
+    padding: var(--phinit-space-7);
+}
+
 .m365tools-tools--compact-grid .phinit-tool-grid {
     gap: var(--phinit-space-3);
 }
@@ -157,8 +378,27 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
     grid-template-columns: 1fr;
 }
 
-.m365tools-tools--list .phinit-tool-grid .phinit-card {
+.m365tools-tools--list .phinit-tool-grid .phinit-card,
+.m365tools-tools--directory .phinit-tool-grid .phinit-card {
     grid-template-columns: minmax(0, 1fr);
+}
+
+.m365tools-tools--directory .phinit-tool-grid {
+    gap: var(--phinit-space-3);
+    grid-template-columns: 1fr;
+}
+
+.m365tools-tools--directory .phinit-tool-card__head {
+    align-items: center;
+}
+
+.m365tools-tools--feature-first .phinit-tool-grid > li:first-child {
+    grid-column: 1 / -1;
+}
+
+.m365tools-tools--feature-first .phinit-tool-grid > li:first-child .phinit-card {
+    background: var(--m365tools-surface-alt, var(--phinit-color-bg));
+    border-left: 3px solid var(--m365tools-accent, var(--m365tools-primary, var(--phinit-color-accent)));
 }
 
 .phinit-tool-card__head {
@@ -175,7 +415,7 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
 }
 
 .phinit-tool-card__icon {
-    color: var(--phinit-color-ink-secondary);
+    color: var(--m365tools-muted, var(--phinit-color-ink-secondary));
     display: inline-flex;
     margin-top: var(--phinit-space-1);
 }
@@ -194,8 +434,29 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
     margin: 0;
 }
 
+.m365tools-tool-buttons--primary .m365tools-tool-button {
+    background: var(--m365tools-button-primary-bg, var(--m365tools-primary, var(--phinit-color-accent)));
+    border-color: var(--m365tools-button-primary-bg, var(--m365tools-primary, var(--phinit-color-accent)));
+    color: var(--m365tools-button-primary-text, #ffffff);
+    justify-self: start;
+    padding: var(--phinit-space-2) var(--phinit-space-3);
+}
+
+.m365tools-tool-buttons--secondary .m365tools-tool-button {
+    background: var(--m365tools-button-secondary-bg, var(--m365tools-surface, #ffffff));
+    border: 1px solid var(--m365tools-border, var(--phinit-color-border));
+    color: var(--m365tools-button-secondary-text, var(--m365tools-text, var(--phinit-color-ink)));
+    justify-self: start;
+    padding: var(--phinit-space-2) var(--phinit-space-3);
+}
+
+.m365tools-tool-buttons--minimal .m365tools-tool-button {
+    color: var(--m365tools-muted, var(--phinit-color-ink-secondary));
+    font-weight: 500;
+}
+
 .phinit-tool-grid p {
-    color: var(--phinit-color-ink-secondary);
+    color: var(--m365tools-muted, var(--phinit-color-ink-secondary));
     margin: 0;
 }
 
@@ -224,8 +485,8 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
 }
 
 .m365tools-review-domain {
-    border: 1px solid var(--phinit-color-border);
-    border-left: 3px solid var(--phinit-color-border);
+    border: 1px solid var(--m365tools-border, var(--phinit-color-border));
+    border-left: 3px solid var(--m365tools-accent, var(--phinit-color-border));
     display: grid;
     gap: var(--phinit-space-2);
     padding: var(--phinit-space-3) var(--phinit-space-4);
@@ -236,7 +497,7 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
 }
 
 .m365tools-review-domain span {
-    color: var(--phinit-color-ink-secondary);
+    color: var(--m365tools-muted, var(--phinit-color-ink-secondary));
 }
 
 .m365tools-review-chip-list {
@@ -246,10 +507,10 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
 }
 
 .m365tools-review-chip-list li {
-    background: var(--phinit-color-bg);
-    border: 1px solid var(--phinit-color-border);
+    background: var(--m365tools-surface-alt, var(--phinit-color-bg));
+    border: 1px solid var(--m365tools-border, var(--phinit-color-border));
     border-radius: var(--phinit-radius-sm);
-    color: var(--phinit-color-ink-secondary);
+    color: var(--m365tools-muted, var(--phinit-color-ink-secondary));
     font-size: var(--phinit-text-xs);
     font-weight: 500;
     line-height: 1;
@@ -257,14 +518,14 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
 }
 
 .m365tools-review-check-list {
-    border-top: 1px solid var(--phinit-color-border);
+    border-top: 1px solid var(--m365tools-border, var(--phinit-color-border));
     display: grid;
     gap: var(--phinit-space-2);
     padding-top: var(--phinit-space-3);
 }
 
 .m365tools-review-check-list li {
-    color: var(--phinit-color-ink-secondary);
+    color: var(--m365tools-muted, var(--phinit-color-ink-secondary));
     font-size: var(--phinit-text-sm);
     line-height: 1.45;
     padding-left: var(--phinit-space-4);
@@ -284,9 +545,9 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
 }
 
 .phinit-status-label {
-    border: 1px solid var(--phinit-color-border);
+    border: 1px solid var(--m365tools-border, var(--phinit-color-border));
     border-radius: var(--phinit-radius-sm);
-    color: var(--phinit-color-ink-secondary);
+    color: var(--m365tools-muted, var(--phinit-color-ink-secondary));
     flex: 0 0 auto;
     font-size: var(--phinit-text-xs);
     font-weight: 500;
@@ -307,6 +568,10 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
 @media (max-width: 768px) {
     .m365tools-landing__header {
         grid-template-columns: 1fr;
+    }
+
+    #m365tools-landing.m365tools-page--boxed {
+        padding: var(--phinit-space-4);
     }
 
     .m365tools-section-head {

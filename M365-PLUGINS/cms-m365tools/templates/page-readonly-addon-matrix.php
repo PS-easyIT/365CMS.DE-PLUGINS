@@ -30,49 +30,140 @@ $cellHtml = static function (array $cell) use ($esc): string {
 
     return $html;
 };
+$matrixOptions = class_exists('CMS_M365CALCULATOR_Settings')
+    ? array_merge(
+        CMS_M365CALCULATOR_Settings::global_options('matrix-design'),
+        CMS_M365CALCULATOR_Settings::global_options('matrix-addon')
+    )
+    : [];
+$matrixValue = static fn(string $key, string $default): string => (string) ($matrixOptions[$key] ?? $default);
+$matrixEnabled = static fn(string $key, string $default = '1'): bool => (string) ($matrixOptions[$key] ?? $default) === '1';
+$matrixChoice = static function (string $key, string $default, array $allowed) use ($matrixOptions): string {
+    $value = (string) ($matrixOptions[$key] ?? $default);
+
+    return in_array($value, $allowed, true) ? $value : $default;
+};
+$matrixColor = static function (string $key, string $default) use ($matrixOptions): string {
+    $value = (string) ($matrixOptions[$key] ?? $default);
+
+    return preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1 ? strtolower($value) : $default;
+};
+$safeUrl = static function (string $url): string {
+    $url = trim($url);
+    if ($url === '') {
+        return '';
+    }
+
+    if (str_starts_with($url, '/') && !str_starts_with($url, '//') && !str_contains($url, "\0")) {
+        return $url;
+    }
+
+    $scheme = strtolower((string) (parse_url($url, PHP_URL_SCHEME) ?: ''));
+    if (in_array($scheme, ['http', 'https'], true) && filter_var($url, FILTER_VALIDATE_URL) !== false) {
+        return $url;
+    }
+
+    return '';
+};
 $matrix = is_array($matrix ?? null) ? $matrix : CMS_M365CALCULATOR_ReadOnly_Matrices::addon_matrix();
 $areas = is_array($matrix['areas'] ?? null) ? $matrix['areas'] : [];
 $meta = is_array($matrix['meta'] ?? null) ? $matrix['meta'] : [];
+$headerStyle = $matrixChoice('matrix_header_style', 'plain', ['plain', 'surface', 'bordered', 'accent', 'inverted']);
+$headerAlignment = $matrixChoice('matrix_header_alignment', 'split', ['split', 'left', 'center']);
+$buttonLayout = $matrixChoice('matrix_button_layout', 'inline', ['inline', 'stacked', 'right']);
+$buttonStyle = $matrixChoice('matrix_button_style', 'default', ['default', 'primary', 'secondary', 'minimal']);
+$headerRadius = max(0, min(24, (int) $matrixValue('matrix_header_radius', '8')));
+$headerBackground = $matrixColor('matrix_color_header_background', '#f8fafc');
+$headerText = $matrixColor('matrix_color_header_text', '#1e293b');
+$headerMuted = $matrixColor('matrix_color_header_muted', '#64748b');
+$headerBorder = $matrixColor('matrix_color_header_border', '#e2e8f0');
+$primaryButtonBackground = $matrixColor('matrix_color_primary_button_bg', '#2563eb');
+$primaryButtonText = $matrixColor('matrix_color_primary_button_text', '#ffffff');
+$secondaryButtonBackground = $matrixColor('matrix_color_secondary_button_bg', '#ffffff');
+$secondaryButtonText = $matrixColor('matrix_color_secondary_button_text', '#1e293b');
+$showHero = $matrixEnabled('matrix_addon_show_hero');
+$showHeroButtons = $matrixEnabled('matrix_addon_show_hero_buttons');
+$showResultHeader = $matrixEnabled('matrix_addon_show_result_header');
+$showPrintButton = $matrixEnabled('matrix_addon_show_print_button');
+$showPrimaryCta = $matrixEnabled('matrix_addon_show_primary_cta');
+$showAreaHeaders = $matrixEnabled('matrix_addon_show_area_headers');
+$showPackageCards = $matrixEnabled('matrix_addon_show_package_cards');
+$showNotes = $matrixEnabled('matrix_addon_show_notes');
+$showSources = $matrixEnabled('matrix_addon_show_sources');
+$heroTitle = $matrixValue('matrix_addon_title', 'Microsoft 365 Add-on-Matrix');
+$heroOverline = $matrixValue('matrix_addon_overline', 'Add-on-Matrix');
+$heroIntro = $matrixValue('matrix_addon_intro', 'Öffentliche Übersicht aller Add-on-Bereiche: Exchange, SharePoint, OneDrive, Teams Phone, Copilot, Security, Power Platform und Spezialdienste.');
+$secondaryButtonLabel = $matrixValue('matrix_addon_secondary_button_label', 'Vollpaket-Matrix öffnen');
+$secondaryButtonUrl = $safeUrl($matrixValue('matrix_addon_secondary_button_url', '/m365-lizenzmatrix'));
+$toolButtonLabel = $matrixValue('matrix_addon_tool_button_label', 'Add-On-Konfigurator öffnen');
+$toolButtonUrl = $safeUrl($matrixValue('matrix_addon_tool_button_url', '/m365-add-on-konfigurator'));
+$resultOverline = $matrixValue('matrix_addon_result_overline', 'Matrix');
+$resultTitle = $matrixValue('matrix_addon_result_title', 'Gesamtübersicht der Microsoft-365-Add-ons');
+$resultIntro = $matrixValue('matrix_addon_result_intro', 'Die wichtigsten Add-ons mit Größen, Voraussetzungen, Abgrenzungen und typischen Kaufgründen.');
+$primaryButtonLabel = $matrixValue('matrix_addon_primary_button_label', 'Lizenzcheck anfragen');
+$primaryButtonUrl = $safeUrl($matrixValue('matrix_addon_primary_button_url', '/kontakt'));
 
 if (class_exists('CMS\\ThemeManager')) {
     \CMS\ThemeManager::instance()->getHeader(['title' => 'Microsoft 365 Add-on-Matrix']);
 }
 ?>
 
-<main class="phinit-plugin m365calc-page m365calc-comparison-page m365calc-readonly-page" id="m365-addon-matrix">
+<main class="phinit-plugin m365calc-page m365calc-comparison-page m365calc-readonly-page m365calc-matrix-page m365calc-matrix-header--<?php echo $esc($headerStyle); ?> m365calc-matrix-align--<?php echo $esc($headerAlignment); ?> m365calc-matrix-buttons--<?php echo $esc($buttonLayout); ?> m365calc-matrix-button-style--<?php echo $esc($buttonStyle); ?>" id="m365-addon-matrix" style="--m365matrix-header-bg: <?php echo $esc($headerBackground); ?>; --m365matrix-header-text: <?php echo $esc($headerText); ?>; --m365matrix-header-muted: <?php echo $esc($headerMuted); ?>; --m365matrix-header-border: <?php echo $esc($headerBorder); ?>; --m365matrix-header-radius: <?php echo (int) $headerRadius; ?>px; --m365matrix-primary-button-bg: <?php echo $esc($primaryButtonBackground); ?>; --m365matrix-primary-button-text: <?php echo $esc($primaryButtonText); ?>; --m365matrix-secondary-button-bg: <?php echo $esc($secondaryButtonBackground); ?>; --m365matrix-secondary-button-text: <?php echo $esc($secondaryButtonText); ?>;">
+    <?php if (!$showHero): ?>
+    <h1 class="m365calc-visually-hidden"><?php echo $esc($heroTitle); ?></h1>
+    <?php endif; ?>
+    <?php if ($showHero): ?>
     <header class="m365calc-hero">
-        <p class="phinit-overline">Add-on-Matrix</p>
+        <p class="phinit-overline"><?php echo $esc($heroOverline); ?></p>
         <section class="m365calc-hero__content" aria-labelledby="m365addonmatrix-title">
             <section>
-                <h1 id="m365addonmatrix-title">Microsoft 365 Add-on-Matrix</h1>
-                <p class="phinit-prose">Öffentliche Übersicht aller Add-on-Bereiche: Exchange, SharePoint, OneDrive, Teams Phone, Copilot, Security, Power Platform und Spezialdienste.</p>
+                <h1 id="m365addonmatrix-title"><?php echo $esc($heroTitle); ?></h1>
+                <p class="phinit-prose"><?php echo $esc($heroIntro); ?></p>
             </section>
+            <?php if ($showHeroButtons && ($secondaryButtonUrl !== '' || $toolButtonUrl !== '')): ?>
             <nav class="m365calc-actions" aria-label="Weitere Lizenztools">
-                <a class="phinit-btn phinit-btn--secondary" href="/m365-lizenzmatrix">Vollpaket-Matrix öffnen</a>
-                <a class="phinit-btn phinit-btn--secondary" href="/m365-add-on-konfigurator">Add-On-Konfigurator öffnen</a>
+                <?php if ($secondaryButtonUrl !== ''): ?>
+                <a class="phinit-btn phinit-btn--secondary m365calc-matrix-action" href="<?php echo $esc($secondaryButtonUrl); ?>"><?php echo $esc($secondaryButtonLabel); ?></a>
+                <?php endif; ?>
+                <?php if ($toolButtonUrl !== ''): ?>
+                <a class="phinit-btn phinit-btn--secondary m365calc-matrix-action" href="<?php echo $esc($toolButtonUrl); ?>"><?php echo $esc($toolButtonLabel); ?></a>
+                <?php endif; ?>
             </nav>
+            <?php endif; ?>
         </section>
     </header>
+    <?php endif; ?>
 
-    <section class="phinit-result m365calc-result-card" id="m365calc-result" tabindex="-1" aria-labelledby="m365addonmatrix-result-title" data-m365calc-result>
+    <section class="phinit-result m365calc-result-card" id="m365calc-result" tabindex="-1" aria-label="<?php echo $esc($resultTitle); ?>" data-m365calc-result>
+        <?php if ($showResultHeader): ?>
         <header class="m365calc-result-heading">
             <section>
-                <p class="phinit-overline">Matrix</p>
-                <h2 id="m365addonmatrix-result-title">Gesamtübersicht der Microsoft-365-Add-ons</h2>
-                <p>Die wichtigsten Add-ons mit Größen, Voraussetzungen, Abgrenzungen und typischen Kaufgründen.</p>
+                <p class="phinit-overline"><?php echo $esc($resultOverline); ?></p>
+                <h2 id="m365addonmatrix-result-title"><?php echo $esc($resultTitle); ?></h2>
+                <p><?php echo $esc($resultIntro); ?></p>
             </section>
+            <?php if ($showPrintButton || ($showPrimaryCta && $primaryButtonUrl !== '')): ?>
             <section class="m365calc-actions">
+                <?php if ($showPrintButton): ?>
                 <button type="button" class="phinit-btn phinit-btn--secondary" data-m365calc-print>Drucken / PDF speichern</button>
-                <a class="phinit-btn phinit-btn--primary" href="/kontakt">Lizenzcheck anfragen</a>
+                <?php endif; ?>
+                <?php if ($showPrimaryCta && $primaryButtonUrl !== ''): ?>
+                <a class="phinit-btn phinit-btn--primary m365calc-matrix-primary-action" href="<?php echo $esc($primaryButtonUrl); ?>"><?php echo $esc($primaryButtonLabel); ?></a>
+                <?php endif; ?>
             </section>
+            <?php endif; ?>
         </header>
+        <?php else: ?>
+        <h2 id="m365addonmatrix-result-title" class="m365calc-visually-hidden"><?php echo $esc($resultTitle); ?></h2>
+        <?php endif; ?>
     </section>
 
     <?php foreach ($areas as $area): ?>
     <?php if (!is_array($area)) { continue; } ?>
     <?php $packages = is_array($area['packages'] ?? null) ? $area['packages'] : []; ?>
     <?php $rows = is_array($area['rows'] ?? null) ? $area['rows'] : []; ?>
-    <section class="phinit-result m365calc-result-card m365calc-readonly-area" aria-labelledby="m365addonarea-<?php echo $esc($area['key'] ?? 'area'); ?>">
+    <section class="phinit-result m365calc-result-card m365calc-readonly-area" aria-label="<?php echo $esc($area['label'] ?? 'Add-ons'); ?>">
+        <?php if ($showAreaHeaders): ?>
         <header class="m365calc-result-heading">
             <section>
                 <p class="phinit-overline">Add-on-Bereich</p>
@@ -80,7 +171,11 @@ if (class_exists('CMS\\ThemeManager')) {
                 <p><?php echo $esc($area['description'] ?? ''); ?></p>
             </section>
         </header>
+        <?php else: ?>
+        <h2 id="m365addonarea-<?php echo $esc($area['key'] ?? 'area'); ?>" class="m365calc-visually-hidden"><?php echo $esc($area['label'] ?? 'Add-ons'); ?></h2>
+        <?php endif; ?>
 
+        <?php if ($showPackageCards): ?>
         <section class="m365calc-summary-grid m365calc-readonly-package-grid" aria-label="Pakete in <?php echo $esc($area['label'] ?? 'Add-ons'); ?>">
             <?php foreach ($packages as $package): ?>
             <?php if (!is_array($package)) { continue; } ?>
@@ -91,6 +186,7 @@ if (class_exists('CMS\\ThemeManager')) {
             </article>
             <?php endforeach; ?>
         </section>
+        <?php endif; ?>
 
         <section class="phinit-table-wrap m365calc-compare-wrap m365calc-readonly-wrap" aria-label="Add-on-Matrix <?php echo $esc($area['label'] ?? ''); ?>">
             <table class="phinit-table m365calc-compare-table m365calc-readonly-table">
@@ -132,7 +228,9 @@ if (class_exists('CMS\\ThemeManager')) {
     </section>
     <?php endforeach; ?>
 
+    <?php if ($showNotes || $showSources): ?>
     <section class="m365calc-result-grid" aria-label="Hinweise und Quellen">
+        <?php if ($showNotes): ?>
         <article class="phinit-note phinit-note--warning">
             <h2>Hinweise zur Add-on-Übersicht</h2>
             <ul class="m365calc-note-list">
@@ -141,6 +239,8 @@ if (class_exists('CMS\\ThemeManager')) {
                 <?php endforeach; ?>
             </ul>
         </article>
+        <?php endif; ?>
+        <?php if ($showSources): ?>
         <article class="phinit-note phinit-note--info m365calc-source-card">
             <h2>Quellenstand</h2>
             <p><?php echo $esc($meta['price_basis'] ?? 'Preis- und Lizenzinformationen vor Bestellung prüfen.'); ?></p>
@@ -153,7 +253,9 @@ if (class_exists('CMS\\ThemeManager')) {
                 </ul>
             </details>
         </article>
+        <?php endif; ?>
     </section>
+    <?php endif; ?>
 </main>
 
 <?php

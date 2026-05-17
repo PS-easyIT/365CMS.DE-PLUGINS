@@ -62,16 +62,68 @@ $landingValue = static function (string $key, string $default) use ($landingOpti
 
     return $value !== '' ? $value : $default;
 };
+$landingChoice = static function (string $key, string $default, array $allowed) use ($landingOptions): string {
+    $value = (string) ($landingOptions[$key] ?? $default);
+
+    return in_array($value, $allowed, true) ? $value : $default;
+};
+$landingColor = static function (string $key, string $default) use ($landingOptions): string {
+    $value = (string) ($landingOptions[$key] ?? $default);
+
+    return preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1 ? strtolower($value) : $default;
+};
 $landingEnabled = static fn(string $key, string $default = '1'): bool => (string) ($landingOptions[$key] ?? $default) === '1';
-$landingLayout = in_array((string) ($landingOptions['landing_header_layout'] ?? 'split'), ['split', 'stacked', 'compact'], true) ? (string) ($landingOptions['landing_header_layout'] ?? 'split') : 'split';
-$toolLayout = in_array((string) ($landingOptions['landing_tool_layout'] ?? 'grid'), ['grid', 'compact-grid', 'list'], true) ? (string) ($landingOptions['landing_tool_layout'] ?? 'grid') : 'grid';
+$pageLayout = $landingChoice('landing_page_layout', 'wide', ['normal', 'wide', 'boxed', 'editorial', 'directory']);
+$landingLayout = $landingChoice('landing_header_layout', 'split', ['split', 'stacked', 'compact', 'hero-card', 'editorial']);
+$headerStyle = $landingChoice('landing_header_style', 'plain', ['plain', 'surface', 'bordered', 'accent', 'inverted']);
+$headerAlignment = $landingChoice('landing_header_alignment', 'left', ['left', 'center', 'split']);
+$buttonLayout = $landingChoice('landing_button_layout', 'inline', ['inline', 'stacked', 'right']);
+$categoryLayout = $landingChoice('landing_category_layout', 'line', ['line', 'pills', 'cards', 'minimal']);
+$toolLayout = $landingChoice('landing_tool_layout', 'grid', ['grid', 'compact-grid', 'list', 'directory', 'feature-first']);
+$cardStyle = $landingChoice('landing_card_style', 'bordered', ['bordered', 'quiet', 'flat', 'accent']);
+$density = $landingChoice('landing_density', 'comfortable', ['compact', 'comfortable', 'spacious']);
+$toolButtonStyle = $landingChoice('landing_tool_button_style', 'link', ['link', 'primary', 'secondary', 'minimal']);
+$toolButtonTargetMode = $landingChoice('landing_tool_button_target_mode', 'tool', ['tool', 'primary', 'secondary', 'custom']);
 $cardRadius = max(0, min(24, (int) ($landingOptions['landing_card_radius'] ?? 8)));
 $cardsMinWidth = max(220, min(520, (int) ($landingOptions['landing_cards_min_width'] ?? 320)));
+$sectionGap = max(16, min(96, (int) ($landingOptions['landing_section_gap'] ?? 32)));
+$landingPrimary = $landingColor('landing_color_primary', '#2563eb');
+$landingAccent = $landingColor('landing_color_accent', '#0f766e');
+$landingBackground = $landingColor('landing_color_background', '#ffffff');
+$landingSurface = $landingColor('landing_color_surface', '#ffffff');
+$landingSurfaceAlt = $landingColor('landing_color_surface_alt', '#f8fafc');
+$landingHeaderBg = $landingColor('landing_color_header_background', '#f8fafc');
+$landingHeaderText = $landingColor('landing_color_header_text', '#1e293b');
+$landingHeaderMuted = $landingColor('landing_color_header_muted', '#64748b');
+$landingHeaderBorder = $landingColor('landing_color_header_border', '#e2e8f0');
+$landingPrimaryButtonBg = $landingColor('landing_color_button_primary_bg', '#2563eb');
+$landingPrimaryButtonText = $landingColor('landing_color_button_primary_text', '#ffffff');
+$landingSecondaryButtonBg = $landingColor('landing_color_button_secondary_bg', '#ffffff');
+$landingSecondaryButtonText = $landingColor('landing_color_button_secondary_text', '#1e293b');
+$landingText = $landingColor('landing_color_text', '#1e293b');
+$landingMuted = $landingColor('landing_color_muted', '#64748b');
+$landingBorder = $landingColor('landing_color_border', '#e2e8f0');
+$showHeaderOverline = $landingEnabled('landing_show_header_overline');
+$showHeaderTitle = $landingEnabled('landing_show_header_title');
+$showHeaderIntro = $landingEnabled('landing_show_header_intro');
+$showHeaderButtons = $landingEnabled('landing_show_header_buttons');
 $showFacts = $landingEnabled('landing_show_facts');
+$showFactModules = $landingEnabled('landing_show_fact_modules');
+$showFactLive = $landingEnabled('landing_show_fact_live');
+$showFactReviews = $landingEnabled('landing_show_fact_reviews');
 $showCategoryNav = $landingEnabled('landing_show_category_nav');
+$showCategoryOverline = $landingEnabled('landing_show_category_overline');
+$showCategoryCounts = $landingEnabled('landing_show_category_counts');
 $showReviewPanel = $landingEnabled('landing_show_review_panel');
+$showReviewDomainSummaries = $landingEnabled('landing_show_review_domain_summaries');
+$showIcons = $landingEnabled('landing_show_icons');
+$linkCardTitles = $landingEnabled('landing_link_card_titles');
+$showToolDescriptions = $landingEnabled('landing_show_tool_descriptions');
+$showStatusLabels = $landingEnabled('landing_show_status_labels');
 $showReviewChips = $landingEnabled('landing_show_review_chips');
 $showModuleChecks = $landingEnabled('landing_show_module_checks');
+$showToolButtons = $landingEnabled('landing_show_tool_buttons');
+$showDisabledNote = $landingEnabled('landing_show_disabled_note');
 $openButtonLabel = $landingValue('landing_open_button_label', 'Öffnen');
 $toolCount = 0;
 $liveCount = 0;
@@ -92,33 +144,65 @@ $reviewDomainCount = is_array($bestPracticeDomains ?? null) ? count($bestPractic
 $landingTitle = $landingValue('landing_title', 'M365 Tools');
 $landingOverline = $landingValue('landing_overline', 'Rechner & Tools');
 $landingIntro = $landingValue('landing_intro', 'Eine kuratierte Sammlung für Microsoft-365-Lizenzierung, Kosten, Speicher, Backup, Copilot, Telefonie, Migration und Betrieb.');
+$landingPrimaryButtonLabel = $landingValue('landing_primary_button_label', 'Lizenzberater öffnen');
+$landingPrimaryButtonUrl = $safeUrl($landingValue('landing_primary_button_url', '/m365-lizenzberater'));
+$landingSecondaryButtonLabel = $landingValue('landing_secondary_button_label', 'Kontakt aufnehmen');
+$landingSecondaryButtonUrl = $safeUrl($landingValue('landing_secondary_button_url', '/kontakt'));
+$landingToolButtonCustomUrl = $safeUrl($landingValue('landing_tool_button_custom_url', ''));
+$landingReviewOverline = $landingValue('landing_review_overline', 'Querschnittsreview');
+$landingReviewTitle = $landingValue('landing_review_title', (string) ($bestPracticeMeta['title'] ?? 'Microsoft 365 Best-Practice-Kompass'));
+$landingReviewIntro = $landingValue('landing_review_intro', (string) ($bestPracticeMeta['summary'] ?? ''));
 
 if (class_exists('CMS\ThemeManager')) {
     \CMS\ThemeManager::instance()->getHeader(['title' => $landingTitle]);
 }
 ?>
 
-<main class="phinit-plugin m365tools-landing--<?php echo $esc($landingLayout); ?> m365tools-tools--<?php echo $esc($toolLayout); ?>" id="m365tools-landing" style="--m365tools-card-radius: <?php echo (int) $cardRadius; ?>px; --m365tools-card-min: <?php echo (int) $cardsMinWidth; ?>px;">
+<main class="phinit-plugin m365tools-page--<?php echo $esc($pageLayout); ?> m365tools-landing--<?php echo $esc($landingLayout); ?> m365tools-header--<?php echo $esc($headerStyle); ?> m365tools-header-align--<?php echo $esc($headerAlignment); ?> m365tools-buttons--<?php echo $esc($buttonLayout); ?> m365tools-category--<?php echo $esc($categoryLayout); ?> m365tools-tools--<?php echo $esc($toolLayout); ?> m365tools-cards--<?php echo $esc($cardStyle); ?> m365tools-tool-buttons--<?php echo $esc($toolButtonStyle); ?> m365tools-density--<?php echo $esc($density); ?>" id="m365tools-landing" style="--m365tools-card-radius: <?php echo (int) $cardRadius; ?>px; --m365tools-card-min: <?php echo (int) $cardsMinWidth; ?>px; --m365tools-section-gap: <?php echo (int) $sectionGap; ?>px; --m365tools-primary: <?php echo $esc($landingPrimary); ?>; --m365tools-accent: <?php echo $esc($landingAccent); ?>; --m365tools-bg: <?php echo $esc($landingBackground); ?>; --m365tools-surface: <?php echo $esc($landingSurface); ?>; --m365tools-surface-alt: <?php echo $esc($landingSurfaceAlt); ?>; --m365tools-header-bg: <?php echo $esc($landingHeaderBg); ?>; --m365tools-header-text: <?php echo $esc($landingHeaderText); ?>; --m365tools-header-muted: <?php echo $esc($landingHeaderMuted); ?>; --m365tools-header-border: <?php echo $esc($landingHeaderBorder); ?>; --m365tools-button-primary-bg: <?php echo $esc($landingPrimaryButtonBg); ?>; --m365tools-button-primary-text: <?php echo $esc($landingPrimaryButtonText); ?>; --m365tools-button-secondary-bg: <?php echo $esc($landingSecondaryButtonBg); ?>; --m365tools-button-secondary-text: <?php echo $esc($landingSecondaryButtonText); ?>; --m365tools-text: <?php echo $esc($landingText); ?>; --m365tools-muted: <?php echo $esc($landingMuted); ?>; --m365tools-border: <?php echo $esc($landingBorder); ?>;">
     <header class="m365tools-landing__header">
         <section class="m365tools-landing__intro" aria-labelledby="m365tools-title">
+            <?php if ($showHeaderOverline): ?>
             <p class="phinit-overline"><?php echo $esc($landingOverline); ?></p>
+            <?php endif; ?>
+            <?php if ($showHeaderTitle): ?>
             <h1 id="m365tools-title"><?php echo $esc($landingTitle); ?></h1>
+            <?php else: ?>
+            <h1 id="m365tools-title" class="m365tools-visually-hidden"><?php echo $esc($landingTitle); ?></h1>
+            <?php endif; ?>
+            <?php if ($showHeaderIntro): ?>
             <p class="phinit-prose"><?php echo $esc($landingIntro); ?></p>
+            <?php endif; ?>
+            <?php if ($showHeaderButtons && ($landingPrimaryButtonUrl !== '' || $landingSecondaryButtonUrl !== '')): ?>
+            <nav class="m365tools-landing__buttons" aria-label="Landingpage Aktionen">
+                <?php if ($landingPrimaryButtonUrl !== ''): ?>
+                <a class="phinit-btn phinit-btn--primary m365tools-btn m365tools-btn--primary" href="<?php echo $esc($landingPrimaryButtonUrl); ?>"><?php echo $esc($landingPrimaryButtonLabel); ?></a>
+                <?php endif; ?>
+                <?php if ($landingSecondaryButtonUrl !== ''): ?>
+                <a class="phinit-btn phinit-btn--secondary m365tools-btn m365tools-btn--secondary" href="<?php echo $esc($landingSecondaryButtonUrl); ?>"><?php echo $esc($landingSecondaryButtonLabel); ?></a>
+                <?php endif; ?>
+            </nav>
+            <?php endif; ?>
         </section>
-        <?php if ($showFacts): ?>
+        <?php if ($showFacts && ($showFactModules || $showFactLive || $showFactReviews)): ?>
         <dl class="m365tools-landing__facts" aria-label="Übersicht Kennzahlen">
+            <?php if ($showFactModules): ?>
             <div>
                 <dt>Module</dt>
                 <dd><?php echo (int) $toolCount; ?></dd>
             </div>
+            <?php endif; ?>
+            <?php if ($showFactLive): ?>
             <div>
                 <dt>Live</dt>
                 <dd><?php echo (int) $liveCount; ?></dd>
             </div>
+            <?php endif; ?>
+            <?php if ($showFactReviews): ?>
             <div>
                 <dt>Review-Bereiche</dt>
                 <dd><?php echo (int) $reviewDomainCount; ?></dd>
             </div>
+            <?php endif; ?>
         </dl>
         <?php endif; ?>
     </header>
@@ -131,7 +215,9 @@ if (class_exists('CMS\ThemeManager')) {
             <li>
                 <a href="#<?php echo $esc($sectionId); ?>">
                     <span><?php echo $esc($category); ?></span>
+                    <?php if ($showCategoryCounts): ?>
                     <small><?php echo (int) $count; ?></small>
+                    <?php endif; ?>
                 </a>
             </li>
             <?php endforeach; ?>
@@ -143,10 +229,10 @@ if (class_exists('CMS\ThemeManager')) {
     <section class="phinit-card m365tools-review-panel" aria-labelledby="m365tools-review-title">
         <header class="m365tools-section-head">
             <section>
-                <p class="phinit-overline">Querschnittsreview</p>
-                <h2 id="m365tools-review-title"><?php echo $esc($bestPracticeMeta['title'] ?? 'Microsoft 365 Best-Practice-Kompass'); ?></h2>
-                <?php if (!empty($bestPracticeMeta['summary'])): ?>
-                <p class="phinit-prose"><?php echo $esc($bestPracticeMeta['summary']); ?></p>
+                <p class="phinit-overline"><?php echo $esc($landingReviewOverline); ?></p>
+                <h2 id="m365tools-review-title"><?php echo $esc($landingReviewTitle); ?></h2>
+                <?php if ($landingReviewIntro !== ''): ?>
+                <p class="phinit-prose"><?php echo $esc($landingReviewIntro); ?></p>
                 <?php endif; ?>
             </section>
         </header>
@@ -157,7 +243,9 @@ if (class_exists('CMS\ThemeManager')) {
             <?php endif; ?>
             <li class="m365tools-review-domain">
                 <strong><?php echo $esc($domain['label'] ?? 'Review'); ?></strong>
+                <?php if ($showReviewDomainSummaries): ?>
                 <span><?php echo $esc($domain['summary'] ?? ''); ?></span>
+                <?php endif; ?>
             </li>
             <?php endforeach; ?>
         </ul>
@@ -176,10 +264,14 @@ if (class_exists('CMS\ThemeManager')) {
     <section aria-labelledby="<?php echo $esc($sectionId); ?>">
         <header class="m365tools-section-head">
             <section>
+                <?php if ($showCategoryOverline): ?>
                 <p class="phinit-overline">Kategorie</p>
+                <?php endif; ?>
                 <h2 id="<?php echo $esc($sectionId); ?>"><?php echo $esc($category); ?></h2>
             </section>
+            <?php if ($showCategoryCounts): ?>
             <span class="m365tools-section-count"><?php echo (int) ($categoryCounts[(string) $category] ?? count((array) $tools)); ?> Module</span>
+            <?php endif; ?>
         </header>
 
         <?php if (empty($tools)): ?>
@@ -194,6 +286,13 @@ if (class_exists('CMS\ThemeManager')) {
             $status = (string) ($tool['status'] ?? 'soon');
             $url = $safeUrl($tool['url'] ?? '');
             $isLinked = $url !== '' && in_array($status, ['live', 'beta'], true);
+            $buttonUrl = match ($toolButtonTargetMode) {
+                'primary' => $landingPrimaryButtonUrl,
+                'secondary' => $landingSecondaryButtonUrl,
+                'custom' => $landingToolButtonCustomUrl,
+                default => $url,
+            };
+            $buttonIsLinked = $buttonUrl !== '' && in_array($status, ['live', 'beta'], true);
             $label = $statusLabel($status);
             $toolKey = (string) ($tool['key'] ?? '');
             $domainKeys = isset($toolReviewMap[$toolKey]) && is_array($toolReviewMap[$toolKey]) ? $toolReviewMap[$toolKey] : [];
@@ -203,22 +302,26 @@ if (class_exists('CMS\ThemeManager')) {
             <li>
                 <article class="phinit-card phinit-card--accent<?php echo $status === 'soon' ? ' phinit-tool-card--disabled' : ''; ?>"<?php echo $status === 'soon' ? ' aria-disabled="true"' : ''; ?>>
                     <header class="phinit-tool-card__head">
+                        <?php if ($showIcons): ?>
                         <span class="phinit-tool-card__icon" aria-hidden="true">
                             <?php echo CMS_M365CALCULATOR_Icons::svg((string) ($tool['icon'] ?? 'calculator')); ?>
                         </span>
+                        <?php endif; ?>
                         <h3>
-                            <?php if ($isLinked): ?>
+                            <?php if ($isLinked && $linkCardTitles): ?>
                             <a href="<?php echo $esc($url); ?>"><?php echo $esc($tool['title'] ?? ''); ?></a>
                             <?php else: ?>
                             <span><?php echo $esc($tool['title'] ?? ''); ?></span>
                             <?php endif; ?>
-                            <?php if ($label !== ''): ?>
+                            <?php if ($showStatusLabels && $label !== ''): ?>
                             <span class="phinit-status-label"><?php echo $esc($label); ?></span>
                             <?php endif; ?>
                         </h3>
                     </header>
                     <section class="phinit-tool-card__body">
+                        <?php if ($showToolDescriptions): ?>
                         <p><?php echo $esc($tool['description'] ?? ''); ?></p>
+                        <?php endif; ?>
                         <?php if ($showReviewChips && !empty($toolReviewLabels)): ?>
                         <ul class="m365tools-review-chip-list" role="list" aria-label="Review-Schwerpunkte">
                             <?php foreach (array_slice($toolReviewLabels, 0, 4) as $reviewLabel): ?>
@@ -233,11 +336,11 @@ if (class_exists('CMS\ThemeManager')) {
                             <?php endforeach; ?>
                         </ul>
                         <?php endif; ?>
-                        <?php if ($isLinked): ?>
-                        <a href="<?php echo $esc($url); ?>" class="phinit-btn phinit-btn--link">
-                            <?php echo $esc($openButtonLabel); ?> <span class="phinit-arrow" aria-hidden="true">→</span>
+                        <?php if ($showToolButtons && $buttonIsLinked): ?>
+                        <a href="<?php echo $esc($buttonUrl); ?>" class="phinit-btn phinit-btn--link m365tools-tool-button">
+                            <?php echo $esc($openButtonLabel); ?><?php if ($toolButtonStyle !== 'minimal'): ?> <span class="phinit-arrow" aria-hidden="true">→</span><?php endif; ?>
                         </a>
-                        <?php else: ?>
+                        <?php elseif ($showDisabledNote && !$buttonIsLinked): ?>
                         <span class="phinit-tool-card__disabled-note" aria-disabled="true">Nicht verfügbar</span>
                         <?php endif; ?>
                     </section>

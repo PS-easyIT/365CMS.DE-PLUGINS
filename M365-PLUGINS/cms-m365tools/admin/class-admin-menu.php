@@ -51,6 +51,24 @@ final class CMS_M365CALCULATOR_Admin_Menu
 
         add_submenu_page(
             'm365tools-dashboard',
+            'M365 Tools – Landingpage Designer',
+            '🎨 Landingpage Designer',
+            'manage_options',
+            'm365tools-landing-designer',
+            [$pages, 'render_landing_designer']
+        );
+
+        add_submenu_page(
+            'm365tools-dashboard',
+            'M365 Tools – Read-only Matrixen',
+            '📚 Matrixen',
+            'manage_options',
+            'm365tools-readonly-matrices',
+            [$pages, 'render_readonly_matrices']
+        );
+
+        add_submenu_page(
+            'm365tools-dashboard',
             'M365 Tools – Paketpreise',
             '💶 Paketpreise',
             'manage_options',
@@ -70,6 +88,10 @@ final class CMS_M365CALCULATOR_Admin_Menu
         foreach (self::ordered_admin_tools() as $tool) {
             $moduleKey = (string) ($tool['key'] ?? '');
             if ($moduleKey === '') {
+                continue;
+            }
+
+            if (in_array($moduleKey, ['m365-lizenzmatrix', 'm365-addon-matrix'], true)) {
                 continue;
             }
 

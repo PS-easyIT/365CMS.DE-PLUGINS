@@ -1,11 +1,11 @@
 {
-  "version": "1.29.0",
+  "version": "1.29.2",
   "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
   "requires": "2.9.0",
   "tested": "2.9.7",
   "last_updated": "2026-05-17",
   "sections": {
-    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme, zentraler Dienstleister- und Kontaktformular-CTA, Landingpage-Designer, zentraler Plugin-Einstellungsseite, eigenen globalen Unterpunkten für Paketpreise sowie Abopreise & Laufzeiten, kurzen Modulmenüs, eigenem Admin-Unterpunkt je Modul, Einstellungs-Tabs für Anzeige, Preise, Workflows und Datenstand, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass und 21 Public-Modulen.",
-    "changelog": "Adminseiten nutzen nun die volle Admincontent-Breite mit 25px Abstand an allen Seiten und neutralerem, weniger KI-artigem Layout. Neue globale Einstellungen für Dienstleister, Kontaktformular und CTA werden vor dem Footer der Toolseiten ausgegeben. Der neue Landingpage-Designer steuert Contentheader, Layout, Boxen, Sichtbarkeit von Bereichen, Texte, Rundungen und Modulbox-Darstellung."
+    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme, zentraler Dienstleister- und Kontaktformular-CTA, eigenem Landingpage-Designer-Untermenü, Button- und Header-Designer, globalen Paketpreis- und Abopreisbereichen, kurzen Modulmenüs, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass und 21 Public-Modulen.",
+    "changelog": "Der Landingpage Designer bietet zusätzliche Ausblend- und Button-Optionen. Header-Overline, Titel, Intro, Header-Buttons, einzelne Kennzahlen, Kategorie-Overline, Kategorie-Zähler, Review-Beschreibungen, Modultitel-Links, Tool-Buttons und Hinweise für inaktive Module können gezielt ein- oder ausgeblendet werden. Primär- und Sekundärbutton erhalten eigene Texte und Ziele; Modulbox-Buttons können zur Toolseite, zu einem Header-Button-Ziel oder zu einem eigenen globalen Ziel führen. Header-Stil, Ausrichtung, Button-Layout sowie eigene Header- und Button-Farben wurden ergänzt."
   }
 }

@@ -1,6 +1,22 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.29.2 – 2026-05-17
+
+- Landingpage Designer um deutlich feinere Sichtbarkeitsoptionen erweitert: Header-Overline, Header-Titel, Header-Intro, Header-Buttons, einzelne Header-Kennzahlen, Kategorie-Overline, Kategorie-Zähler, Review-Beschreibungen, Modultitel-Links, Tool-Buttons und Hinweise für inaktive Module sind separat schaltbar.
+- Header-Buttons können nun mit eigenem Text und Ziel für Primär- und Sekundäraktion gepflegt werden.
+- Modulbox-Buttons können ausgeblendet werden und unterstützen Zielmodi: jeweilige Toolseite, Primärbutton-Ziel, Sekundärbutton-Ziel oder eigenes globales Ziel.
+- Neue Header-Designoptionen ergänzt: Header-Stil, Header-Ausrichtung und Button-Layout.
+- Farbauswahl erweitert: eigene Farben für Contentheader-Hintergrund, Header-Text, Header-Sekundärtext, Header-Rahmen sowie Primär- und Sekundärbuttons.
+
+## 1.29.1 – 2026-05-17
+
+- `Landingpage Designer` aus den Tabs der zentralen Einstellungen herausgelöst und als eigener Admin-Untermenüpunkt unter `M365 Tools` ergänzt.
+- Designer in eigene Tabs aufgeteilt: `Contentheader`, `Layouts & Boxen`, `Farben` und `Sichtbarkeit`.
+- Neue Layoutoptionen ergänzt: Seitenbreite, Header-Varianten, Kategorie-Navigation, Kartenraster, kompaktes Raster, Liste, Verzeichnis und hervorgehobenes erstes Modul je Kategorie.
+- Neue Designoptionen ergänzt: Box-Stil, Dichte, Kartenrundung, Mindestbreite, Abschnittsabstand und vollständige Landingpage-Farbpalette.
+- Public-Landingpage wendet Designerwerte über CSS-Variablen und Layoutklassen an und kann Icons, Beschreibungen, Statuslabels, Review-Chips und Prüfpunkte gezielt ein- oder ausblenden.
+
 ## 1.29.0 – 2026-05-17
 
 - Adminlayout pluginweit vereinheitlicht: Adminseiten nutzen die volle Contentbreite mit 25px Außenabstand und reduzierter, neutralerer Karten-/Tab-Optik.

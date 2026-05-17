@@ -1,5 +1,18 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 1.29.2 – 2026-05-17
+
+- Landingpage-Designer-Dokumentation um weitere Ausblendoptionen für Header, Kennzahlen, Kategorie-Köpfe, Review-Beschreibungen, Modultitel-Links, Tool-Buttons und inaktive Modulhinweise ergänzt.
+- Button-Dokumentation erweitert: Primär-/Sekundärbutton mit eigenem Ziel sowie Modulbox-Button-Zielmodi.
+- Header-Design-Dokumentation um Header-Stil, Ausrichtung, Button-Layout sowie Header- und Button-Farben ergänzt.
+
+## 1.29.1 – 2026-05-17
+
+- Dokumentiert, dass der `Landingpage Designer` ein eigener Admin-Untermenüpunkt ist.
+- Designer-Dokumentation um Tabs für Contentheader, Layouts & Boxen, Farben und Sichtbarkeit erweitert.
+- Neue Landingpage-Optionen für Seitenbreite, Header-Varianten, Kategorie-Navigation, Modulbox-Layouts, Kartenstil, Dichte, Abschnittsabstände und Farbpalette dokumentiert.
+- Public-Anwendung der Designerwerte über CSS-Variablen, Layoutklassen und Sichtbarkeits-Toggles beschrieben.
+
 ## 1.29.0 – 2026-05-17
 
 - Admin-Dokumentation um volle Contentbreite, 25px Außenabstand und neutraleres Layout ergänzt.
