@@ -1,6 +1,6 @@
 # CMS M365 Tools
 
-`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Enthalten sind der **All-Module-Best-Practice-Kompass**, der **Power Platform Kosten-Kalkulator mit Well-Architected-Review**, der **Google Workspace ↔ Microsoft 365 TCO-Rechner**, der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**. Ab `1.28.0` übernimmt das Plugin die Paketpreise bevorzugt aus dem aktiven `cms-m365lic` Seed-Katalog und pflegt sie zentral als Public-, Member- und Spezialpreise. Ab `1.29.1` steuert ein eigener `Landingpage Designer`-Unterpunkt Contentheader, Layouts, Boxen, Farben, Rundungen und Sichtbarkeit der Hub-Landingpage. Ab `1.29.3` bündelt der Admin-Unterpunkt `Matrixen` die Read-only Lizenzmatrix und Add-on-Matrix mit Bereichs-Tabs und gemeinsamem Design-Tab.
+`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Enthalten sind der **All-Module-Best-Practice-Kompass**, der **Power Platform Kosten-Kalkulator mit Well-Architected-Review**, der **Google Workspace ↔ Microsoft 365 TCO-Rechner**, der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**. Ab `1.28.0` übernimmt das Plugin die Paketpreise bevorzugt aus dem aktiven `cms-m365lic` Seed-Katalog und pflegt sie zentral als Public-, Member- und Spezialpreise. Ab `1.29.1` steuert ein eigener `Landingpage Designer`-Unterpunkt Contentheader, Layouts, Boxen, Farben, Rundungen und Sichtbarkeit der Hub-Landingpage. Ab `1.29.3` bündelt der Admin-Unterpunkt `Matrixen` die Read-only Lizenzmatrix und Add-on-Matrix mit Bereichs-Tabs und gemeinsamem Design-Tab. Ab `1.29.9` startet der öffentliche Plugin-Content ohne äußeren Theme-Header- oder Theme-Wrapper-Abstand; zusätzlich greifen spätes Head-Critical-CSS und die Host-Klasse `m365tools-content-host` gegen Theme-/Customizer-Overrides.
 
 ## Enthaltene Routen
 
@@ -160,6 +160,8 @@ cms-m365tools/
     │   ├── style.css
     │   └── m365calculator-public.css
     └── js/
+        ├── m365tools-landing.js
+        └── m365calculator-public.js
 ```
 
 ## Landingpage-Registry
@@ -190,6 +192,8 @@ Ab `1.29.2` kann der Designer zusätzlich Header-Overline, Header-Titel, Header-
 
 Ab `1.29.3` sind `M365 Lizenzmatrix` und `M365 Add-on-Matrix` im Adminbereich im Unterpunkt `Matrixen` zusammengefasst. Die Tabs `Lizenzmatrix` und `Add-on-Matrix` pflegen Texte, Buttonziele, CTA und bereichsspezifische Sichtbarkeit. Der Tab `Design` steuert Contentheader-Stil, Ausrichtung, Button-Layout, Button-Stil, Header-Rundung, Header-/Button-Farben sowie globale Schalter für Contentheader, Header-Buttons, Einleitungsbereich, Druckaktion, CTA, Hinweise, Quellenstand, Add-on-Bereichsheader und Paketkarten.
 
+Ab `1.29.5` besitzt die Hub-Landingpage eine sticky Live-Suche mit Kategorie-Chips, eine sticky Kategorie-Sidebar mit aktiver 3px-Navy-Kante, mobile horizontale Filter-Chips, Kategorie-Heros mit SVG-Icon und Kurzbeschreibung, Tabler-Icons im Best-Practice-Kompass, `Beliebt`-/`Neu`-Badges, klickbare Toolcards, Hero-Direkteinstieg mit Suchfokus, Kategorie-Hash, Slash-Suchshortcut, Back-to-top und automatischen Dark Mode. Die Interaktionen laufen in `assets/js/m365tools-landing.js` ohne externe Bibliotheken.
+
 ## All-Module-Best-Practice-Kompass
 
 Der zentrale Katalog `m365_best_practice_catalog.json` ordnet alle Public-Module querschnittlichen Review-Domänen zu:
@@ -208,7 +212,7 @@ Die Hub-Landingpage rendert daraus eine kompakte Übersicht, Modul-Fokuschips un
 
 ## Design
 
-Das Frontend nutzt die PHINIT-Plugin-Komponenten (`phinit-plugin`, `phinit-card`, `phinit-btn`, `phinit-field`, `phinit-table`, `phinit-note`, `phinit-result`) und ergänzt nur schlanke Layout-Klassen mit dem Präfix `m365calc-*`. Ab `1.24.0` ist die Public-Oberfläche bewusst redaktioneller aufgebaut: keine Verlaufsflächen, keine Glassmorphism-Effekte, keine Icon-Kacheln in Signalfarben, reduzierte Schriftgewichte, dezente Statuskanten und bessere Scanbarkeit auf Landingpage, Formularen, Ergebnisbereichen, Tabellen, Auditlisten und Charts. Öffentliche Pluginseiten setzen einen Plugin-eigenen Abstand zum Theme-Header über PHINIT-Tokens.
+Das Frontend nutzt die PHINIT-Plugin-Komponenten (`phinit-plugin`, `phinit-card`, `phinit-btn`, `phinit-field`, `phinit-table`, `phinit-note`, `phinit-result`) und ergänzt nur schlanke Layout-Klassen mit den Präfixen `m365calc-*` und `m365tools-*`. Ab `1.24.0` ist die Public-Oberfläche bewusst redaktioneller aufgebaut: keine Verlaufsflächen, keine Glassmorphism-Effekte, keine Icon-Kacheln in Signalfarben, reduzierte Schriftgewichte, dezente Statuskanten und bessere Scanbarkeit auf Landingpage, Formularen, Ergebnisbereichen, Tabellen, Auditlisten und Charts. Ab `1.29.5` sind Card- und Kompass-Beschreibungen mindestens 14px groß, Lauftexte großzügiger gesetzt, Metadaten kontrastreicher, Cards erhalten klare Hover-/Fokuszustände und die Landingpage nutzt 3/2/1-Spalten-Breakpoints plus Touch-Ziele ab 44px. Ab `1.29.9` gibt es keinen äußeren Abstand zwischen Theme-Header, Theme-Wrappern und Plugin-Content; gewünschte Luft entsteht ausschließlich innerhalb der Plugin-Struktur.
 
 ## Fachliche Logik
 

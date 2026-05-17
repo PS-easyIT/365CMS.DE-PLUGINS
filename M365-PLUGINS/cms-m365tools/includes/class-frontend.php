@@ -54,9 +54,12 @@ final class CMS_M365CALCULATOR_Frontend
         if (class_exists('CMS\\Hooks')) {
             \CMS\Hooks::addFilter('body_class', [$this, 'filter_body_class'], 20);
             \CMS\Hooks::addAction('head', [$this, 'enqueue_public_styles'], 20);
+            \CMS\Hooks::addAction('head', [$this, 'output_edge_spacing_reset'], 120);
             \CMS\Hooks::addAction('before_footer', [$this, 'render_provider_cta'], 20);
             \CMS\Hooks::addAction('body_end', [$this, 'enqueue_public_scripts'], 20);
         }
+
+        $this->suppress_after_header_promos();
     }
 
     private function register_routes(): void
@@ -199,20 +202,100 @@ final class CMS_M365CALCULATOR_Frontend
         }
     }
 
+    public function output_edge_spacing_reset(): void
+    {
+        if (!$this->is_calculator_request()) {
+            return;
+        }
+        ?>
+<style id="cms-m365tools-edge-reset">
+body.m365tools-theme-embed #page.site,
+body.m365calculator-theme-embed #page.site,
+body.m365tools-theme-embed #content.site-content,
+body.m365calculator-theme-embed #content.site-content,
+#content.m365tools-content-host,
+.site-content.m365tools-content-host,
+body:has(#m365tools-landing) #page.site,
+body:has(#m365calculator-landing) #page.site,
+body:has(#m365tools-landing) #content.site-content,
+body:has(#m365calculator-landing) #content.site-content,
+body:has(#m365tools-landing) .site-content,
+body:has(#m365calculator-landing) .site-content {
+    margin-block-start: 0 !important;
+    margin-top: 0 !important;
+    padding-block-start: 0 !important;
+    padding-top: 0 !important;
+}
+body.m365tools-theme-embed,
+body.m365calculator-theme-embed,
+body.m365tools-theme-embed #page.site,
+body.m365calculator-theme-embed #page.site,
+body:has(#m365tools-landing),
+body:has(#m365calculator-landing),
+body:has(#m365tools-landing) #page.site,
+body:has(#m365calculator-landing) #page.site {
+    background-color: #ffffff !important;
+}
+body.m365tools-theme-embed #content.site-content,
+body.m365calculator-theme-embed #content.site-content,
+#content.m365tools-content-host,
+.site-content.m365tools-content-host,
+body:has(#m365tools-landing) #content.site-content,
+body:has(#m365calculator-landing) #content.site-content {
+    background-color: #ffffff !important;
+    border-block-start-width: 0 !important;
+    border-top-width: 0 !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+}
+body.m365tools-theme-embed .promos-hook-zone--after_header,
+body.m365calculator-theme-embed .promos-hook-zone--after_header,
+body:has(#m365tools-landing) .promos-hook-zone--after_header,
+body:has(#m365calculator-landing) .promos-hook-zone--after_header,
+#masthead.site-header + .promos-hook-zone--after_header {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+}
+#m365tools-landing,
+#m365calculator-landing {
+    margin-block-start: 0 !important;
+    margin-top: 0 !important;
+    padding-block-start: 0 !important;
+    padding-top: 0 !important;
+}
+</style>
+        <?php
+    }
+
     public function enqueue_public_scripts(): void
     {
-        if (!$this->is_calculator_request() || $this->is_toolbox_request()) {
+        if (!$this->is_calculator_request()) {
             return;
         }
 
-        $js = CMS_M365CALCULATOR_PLUGIN_DIR . 'assets/js/m365calculator-public.js';
+        $jsFile = $this->is_toolbox_request()
+            ? 'm365tools-landing.js'
+            : 'm365calculator-public.js';
+        $js = CMS_M365CALCULATOR_PLUGIN_DIR . 'assets/js/' . $jsFile;
         if (!file_exists($js)) {
             return;
         }
 
         echo '<script src="'
-            . htmlspecialchars(CMS_M365CALCULATOR_PLUGIN_URL . 'assets/js/m365calculator-public.js', ENT_QUOTES, 'UTF-8')
+            . htmlspecialchars(CMS_M365CALCULATOR_PLUGIN_URL . 'assets/js/' . $jsFile, ENT_QUOTES, 'UTF-8')
             . '?v=' . filemtime($js) . '" defer></script>' . "\n";
+    }
+
+    private function suppress_after_header_promos(): void
+    {
+        if (!$this->is_calculator_request() || !class_exists('CMS\\Hooks') || !class_exists('CMS_Promos_Public_Controller')) {
+            return;
+        }
+
+        \CMS\Hooks::removeAction('after_header', [CMS_Promos_Public_Controller::instance(), 'render_after_header_promos'], 20);
     }
 
     public function render_provider_cta(): void

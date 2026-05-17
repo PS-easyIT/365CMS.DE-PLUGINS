@@ -1,6 +1,58 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.29.9 – 2026-05-17
+
+- Null-Abstand zum Theme-Header als spätes Critical-CSS im Head abgesichert (`output_edge_spacing_reset`, Priorität 120).
+- Der Theme-Content-Host wird auf der Landingpage per JavaScript mit `m365tools-content-host` markiert, damit auch Browser-/Theme-Konstellationen ohne verlässliche Parent-Selector-Auswertung den Host-Reset erhalten.
+- `#page.site`, `#content.site-content`, `.site-content.m365tools-content-host`, `#m365tools-landing` und `#m365calculator-landing` werden im späten Reset oben hart auf `0` gesetzt.
+
+## 1.29.8 – 2026-05-17
+
+- Null-Abstand zum Theme-Header robust nachgeschärft, weil 365Network die Plugin-Body-Klassen bisher nicht am `<body>` ausgegeben hat.
+- ID-basierte Fallbacks für `#m365tools-landing` und `#m365calculator-landing` ergänzt.
+- Zusätzliche `:has()`-Wrapper-Resets für `.site-content`, `.page-wrap`, `.site-main`, `.content-wrapper`, `.content-area`, `.content-area--page`, `.page-content` und `.entry-content` ergänzt.
+- `margin-block-start` und `padding-block-start` ebenfalls auf `0` gesetzt, damit auch logical CSS-Abstände keine Restlücke erzeugen.
+
+## 1.29.7 – 2026-05-17
+
+- Verbleibenden Theme-Wrapper-Abstand oberhalb des öffentlichen M365-Plugin-Contents entfernt.
+- Zusätzlich zu `main.phinit-plugin` werden nun auch `.page-wrap`, `.site-main`, `.content-wrapper`, `.content-area` und `.content-area--page` für M365-Toolseiten oben auf `0` gesetzt.
+- Damit beginnt der Plugin-Content bündig direkt nach dem Theme-Header; gewünschte Abstände liegen ausschließlich innerhalb des Plugin-Contents.
+
+## 1.29.6 – 2026-05-17
+
+- Äußeren Abstand zwischen Theme-Header und M365-Plugin-Content entfernt.
+- `main.phinit-plugin` startet auf öffentlichen M365-Tools-Seiten nun direkt nach dem Theme-Header mit `margin-top: 0`.
+- Bestehende interne Plugin-Abstände bleiben erhalten; der Abstand entsteht damit nur noch im Plugin-Content selbst.
+
+## 1.29.5 – 2026-05-17
+
+- Hero-CTA final geschärft: Primärbutton führt als `Alle 21 Tools durchsuchen ↓` zum `#direkteinstieg`, scrollt weich zur Suche und fokussiert das Suchfeld.
+- `Kontakt aufnehmen` ist im Hero jetzt ein ruhiger Textlink mit 13px Schrift, ohne Buttonrahmen.
+- Sticky-Kategorie-Sidebar auf `top: 80px`, viewportbegrenzte Höhe und Scrollbereich angepasst.
+- Aktive Kategorie im Sidebar-ToC wird per `IntersectionObserver` bei 0.3 Sichtbarkeit hervorgehoben und erhält 3px Navy-Kante, `font-weight: 500` und kurze Transition.
+- Abstand zwischen Header/Kennzahlen und Direkteinstieg auf maximal 24px reduziert.
+- Best-Practice-Kompass-Karten erhalten Tabler-Outline-Icons je Domäne und größere Beschreibungstexte mit 14px/1.65.
+- Mobile Kategorieauswahl nutzt horizontale Filter-Chips; die Sidebar wird bis 768px ausgeblendet.
+- Filter-Chips sind als ARIA-Radiogroup umgesetzt, inklusive `aria-checked`, roving focus und Pfeiltastensteuerung.
+- Suchfeld unterstützt `/` als Tastaturkürzel und zeigt den Shortcut-Hinweis im Feld.
+- Kategorie-Chips aktualisieren die URL per Hash; beim Laden wird ein passender Hash wieder als Filter aktiv.
+- Scroll- und Transition-Verhalten respektiert `prefers-reduced-motion`.
+
+## 1.29.4 – 2026-05-17
+
+- M365-Tools-Landingpage nach UX-/UI-Review überarbeitet: Sticky Live-Suche, Kategorie-Chips und clientseitige Filterung ohne Reload ergänzt.
+- Sticky Kategorie-Navigation als Desktop-Sidebar ergänzt; mobil wird die Navigation horizontal scrollbar unterhalb des Hero-/Finder-Bereichs geführt.
+- Aktive Kategorie wird beim Scrollen per `IntersectionObserver` hervorgehoben.
+- Toolcards erhalten größere Beschreibungstexte, besseren Zeilenabstand, stärkeren Textkontrast, volle Card-Klickfläche, Pointer-Cursor, Fokus-/Hover-State mit dezenter Bewegung und Navy-Border.
+- Responsive Grid auf 3/2/1-Spalten-Logik verbessert und Touch-Ziele auf mindestens 44px ausgerichtet.
+- CTA-Texte geschärft: Hero-Fallback führt direkt zur Toolsuche, Card-Buttons nutzen kontextuelle Texte wie `Rechner starten`, `Checkliste laden` oder `Tool öffnen`.
+- Kategorie-Heros mit 24px SVG-Icon und 1-Satz-Beschreibung je Bereich ergänzt.
+- `Beliebt`- und `Neu`-Badges für fokussierte Toolcards ergänzt.
+- Back-to-top-Button ab Scrolltiefe ergänzt und automatischer Dark Mode über CSS Custom Properties eingebaut.
+- Neues Vanilla-JS `assets/js/m365tools-landing.js` wird nur auf der Toolbox-Landingpage geladen.
+
 ## 1.29.3 – 2026-05-17
 
 - Die Read-only `M365 Lizenzmatrix` und `M365 Add-on-Matrix` sind im Adminbereich nicht mehr als zwei separate Modul-Unterpunkte geführt, sondern im neuen Unterpunkt `Matrixen` gebündelt.

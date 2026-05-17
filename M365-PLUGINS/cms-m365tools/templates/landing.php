@@ -16,10 +16,28 @@ $categoryId = static function (string $category): string {
     $normalized = strtolower(trim((string) preg_replace('/[^a-z0-9]+/i', '-', $category), '-'));
     return $normalized !== '' ? 'cat-' . $normalized : 'cat-tools';
 };
+$categoryMeta = static function (string $category): array {
+    $key = strtolower(trim($category));
+
+    return match ($key) {
+        'lizenzen' => ['icon' => 'license', 'description' => 'Lizenzmodelle, Add-ons, Audits und Kostenpfade schnell einordnen.'],
+        'copilot' => ['icon' => 'copilot', 'description' => 'Copilot-Eignung, Pilotierung, ROI und KI-Angebote strukturiert bewerten.'],
+        'exchange' => ['icon' => 'mailbox', 'description' => 'Mailboxen, Archivierung und Exchange-Modernisierung sauber planen.'],
+        'teams' => ['icon' => 'phone', 'description' => 'Telefonie, PSTN-Modelle und Teams-Phone-Optionen vergleichen.'],
+        'speicher' => ['icon' => 'storage', 'description' => 'SharePoint, OneDrive, Exchange und Backup-Speicherbedarf greifbar machen.'],
+        'power platform' => ['icon' => 'addons', 'description' => 'Power Apps, Automate, Dataverse, Credits und Governance realistisch kalkulieren.'],
+        'migration' => ['icon' => 'roi', 'description' => 'Migrations- und TCO-Szenarien mit Kosten, Aufwand und Break-even bewerten.'],
+        default => ['icon' => 'calculator', 'description' => 'Weitere Microsoft-365-Werkzeuge für konkrete Betriebs- und Planungsfragen.'],
+    };
+};
 $safeUrl = static function (mixed $value): string {
     $url = trim((string) $value);
     if ($url === '') {
         return '';
+    }
+
+    if (preg_match('/^#[A-Za-z][A-Za-z0-9_-]*$/', $url) === 1) {
+        return $url;
     }
 
     if (str_starts_with($url, '/') && !str_starts_with($url, '//') && !str_contains($url, "\0")) {
@@ -55,6 +73,21 @@ $reviewChecks = static function (string $toolKey, array $checkMap): array {
     $checks = isset($checkMap[$toolKey]) && is_array($checkMap[$toolKey]) ? $checkMap[$toolKey] : [];
 
     return array_values(array_filter(array_map(static fn(mixed $value): string => trim((string) $value), $checks)));
+};
+$reviewIconClass = static function (array $domain): string {
+    $label = strtolower(trim((string) ($domain['label'] ?? '')));
+
+    return match ($label) {
+        'lizenz & kosten' => 'ti-receipt',
+        'identität & zugriff' => 'ti-shield-lock',
+        'schutz & compliance' => 'ti-lock',
+        'servicegrenzen' => 'ti-adjustments',
+        'speicher & backup' => 'ti-database',
+        'netzwerk & performance' => 'ti-wifi',
+        'copilot & ki' => 'ti-robot',
+        'power platform betrieb' => 'ti-bolt',
+        default => 'ti-compass',
+    };
 };
 $landingOptions = is_array($landingOptions ?? null) ? $landingOptions : [];
 $landingValue = static function (string $key, string $default) use ($landingOptions): string {
@@ -124,7 +157,8 @@ $showReviewChips = $landingEnabled('landing_show_review_chips');
 $showModuleChecks = $landingEnabled('landing_show_module_checks');
 $showToolButtons = $landingEnabled('landing_show_tool_buttons');
 $showDisabledNote = $landingEnabled('landing_show_disabled_note');
-$openButtonLabel = $landingValue('landing_open_button_label', 'Öffnen');
+$openButtonLabel = $landingValue('landing_open_button_label', '');
+$hasCustomOpenButtonLabel = trim((string) ($landingOptions['landing_open_button_label'] ?? '')) !== '';
 $toolCount = 0;
 $liveCount = 0;
 $categoryCounts = [];
@@ -144,10 +178,17 @@ $reviewDomainCount = is_array($bestPracticeDomains ?? null) ? count($bestPractic
 $landingTitle = $landingValue('landing_title', 'M365 Tools');
 $landingOverline = $landingValue('landing_overline', 'Rechner & Tools');
 $landingIntro = $landingValue('landing_intro', 'Eine kuratierte Sammlung für Microsoft-365-Lizenzierung, Kosten, Speicher, Backup, Copilot, Telefonie, Migration und Betrieb.');
-$landingPrimaryButtonLabel = $landingValue('landing_primary_button_label', 'Lizenzberater öffnen');
-$landingPrimaryButtonUrl = $safeUrl($landingValue('landing_primary_button_url', '/m365-lizenzberater'));
+$landingPrimaryButtonLabel = $landingValue('landing_primary_button_label', 'Alle ' . (string) $toolCount . ' Tools durchsuchen ↓');
+$landingPrimaryButtonUrl = $safeUrl($landingValue('landing_primary_button_url', '#direkteinstieg'));
 $landingSecondaryButtonLabel = $landingValue('landing_secondary_button_label', 'Kontakt aufnehmen');
 $landingSecondaryButtonUrl = $safeUrl($landingValue('landing_secondary_button_url', '/kontakt'));
+$primaryLabelNormalized = strtolower(trim($landingPrimaryButtonLabel));
+if ($landingPrimaryButtonUrl === '' || $landingPrimaryButtonUrl === '/kontakt' || $landingPrimaryButtonUrl === '#m365tools-explorer' || $primaryLabelNormalized === 'kontakt aufnehmen') {
+    $landingPrimaryButtonLabel = 'Alle ' . (string) $toolCount . ' Tools durchsuchen ↓';
+    $landingPrimaryButtonUrl = '#direkteinstieg';
+} elseif (str_contains($primaryLabelNormalized, 'tools durchsuchen') && !str_contains($landingPrimaryButtonLabel, '↓')) {
+    $landingPrimaryButtonLabel .= ' ↓';
+}
 $landingToolButtonCustomUrl = $safeUrl($landingValue('landing_tool_button_custom_url', ''));
 $landingReviewOverline = $landingValue('landing_review_overline', 'Querschnittsreview');
 $landingReviewTitle = $landingValue('landing_review_title', (string) ($bestPracticeMeta['title'] ?? 'Microsoft 365 Best-Practice-Kompass'));
@@ -175,10 +216,10 @@ if (class_exists('CMS\ThemeManager')) {
             <?php if ($showHeaderButtons && ($landingPrimaryButtonUrl !== '' || $landingSecondaryButtonUrl !== '')): ?>
             <nav class="m365tools-landing__buttons" aria-label="Landingpage Aktionen">
                 <?php if ($landingPrimaryButtonUrl !== ''): ?>
-                <a class="phinit-btn phinit-btn--primary m365tools-btn m365tools-btn--primary" href="<?php echo $esc($landingPrimaryButtonUrl); ?>"><?php echo $esc($landingPrimaryButtonLabel); ?></a>
+                <a class="phinit-btn phinit-btn--primary m365tools-btn m365tools-btn--primary" href="<?php echo $esc($landingPrimaryButtonUrl); ?>"<?php echo $landingPrimaryButtonUrl === '#direkteinstieg' ? ' data-m365tools-primary-search' : ''; ?>><?php echo $esc($landingPrimaryButtonLabel); ?></a>
                 <?php endif; ?>
                 <?php if ($landingSecondaryButtonUrl !== ''): ?>
-                <a class="phinit-btn phinit-btn--secondary m365tools-btn m365tools-btn--secondary" href="<?php echo $esc($landingSecondaryButtonUrl); ?>"><?php echo $esc($landingSecondaryButtonLabel); ?></a>
+                <a class="m365tools-contact-link" href="<?php echo $esc($landingSecondaryButtonUrl); ?>"><?php echo $esc($landingSecondaryButtonLabel); ?></a>
                 <?php endif; ?>
             </nav>
             <?php endif; ?>
@@ -208,22 +249,56 @@ if (class_exists('CMS\ThemeManager')) {
     </header>
 
     <?php if ($showCategoryNav && !empty($categoryCounts)): ?>
-    <nav class="m365tools-category-nav" aria-label="Modulkategorien">
-        <ol>
+    <span class="m365tools-anchor" id="m365tools-explorer" aria-hidden="true"></span>
+    <section class="m365tools-finder" id="direkteinstieg" aria-labelledby="m365tools-finder-title" data-m365tools-finder>
+        <div class="m365tools-finder__head">
+            <section>
+                <p class="phinit-overline">Direkteinstieg</p>
+                <h2 id="m365tools-finder-title">Alle Tools durchsuchen</h2>
+            </section>
+            <p class="m365tools-finder__count" data-m365tools-result-count><?php echo (int) $toolCount; ?> Tools sichtbar</p>
+        </div>
+        <label class="m365tools-search" for="tool-search">
+            <span class="m365tools-visually-hidden">Tools suchen</span>
+            <span class="m365tools-search__control">
+                <input id="tool-search" type="search" autocomplete="off" placeholder="Nach Tool, Thema oder Kategorie suchen …" data-m365tools-search>
+                <kbd class="m365tools-search__hint" aria-hidden="true">/</kbd>
+            </span>
+        </label>
+        <div class="m365tools-tag-filter" role="radiogroup" aria-label="Nach Kategorie filtern" data-m365tools-chip-group>
+            <button type="button" class="m365tools-tag-chip is-active" role="radio" aria-checked="true" data-m365tools-tag="all">Alle</button>
             <?php foreach ($categoryCounts as $category => $count): ?>
-            <?php $sectionId = $categoryId((string) $category); ?>
-            <li>
-                <a href="#<?php echo $esc($sectionId); ?>">
-                    <span><?php echo $esc($category); ?></span>
-                    <?php if ($showCategoryCounts): ?>
-                    <small><?php echo (int) $count; ?></small>
-                    <?php endif; ?>
-                </a>
-            </li>
+            <button type="button" class="m365tools-tag-chip" role="radio" aria-checked="false" data-m365tools-tag="<?php echo $esc(strtolower((string) $category)); ?>">
+                <?php echo $esc($category); ?>
+                <?php if ($showCategoryCounts): ?>
+                <span><?php echo (int) $count; ?></span>
+                <?php endif; ?>
+            </button>
             <?php endforeach; ?>
-        </ol>
-    </nav>
+        </div>
+    </section>
     <?php endif; ?>
+
+    <div class="m365tools-directory">
+        <?php if ($showCategoryNav && !empty($categoryCounts)): ?>
+        <nav class="m365tools-category-nav" aria-label="Modulkategorien" data-m365tools-toc>
+            <ol>
+                <?php foreach ($categoryCounts as $category => $count): ?>
+                <?php $sectionId = $categoryId((string) $category); ?>
+                <li>
+                    <a href="#<?php echo $esc($sectionId); ?>" data-m365tools-toc-link="<?php echo $esc($sectionId); ?>">
+                        <span><?php echo $esc($category); ?></span>
+                        <?php if ($showCategoryCounts): ?>
+                        <small><?php echo (int) $count; ?></small>
+                        <?php endif; ?>
+                    </a>
+                </li>
+                <?php endforeach; ?>
+            </ol>
+        </nav>
+        <?php endif; ?>
+
+        <div class="m365tools-directory__content" data-m365tools-list>
 
     <?php if ($showReviewPanel && !empty($bestPracticeDomains) && is_array($bestPracticeDomains)): ?>
     <section class="phinit-card m365tools-review-panel" aria-labelledby="m365tools-review-title">
@@ -242,7 +317,7 @@ if (class_exists('CMS\ThemeManager')) {
             <?php continue; ?>
             <?php endif; ?>
             <li class="m365tools-review-domain">
-                <strong><?php echo $esc($domain['label'] ?? 'Review'); ?></strong>
+                <strong><i class="ti <?php echo $esc($reviewIconClass($domain)); ?> m365tools-kompass-icon" aria-hidden="true"></i><span><?php echo $esc($domain['label'] ?? 'Review'); ?></span></strong>
                 <?php if ($showReviewDomainSummaries): ?>
                 <span><?php echo $esc($domain['summary'] ?? ''); ?></span>
                 <?php endif; ?>
@@ -261,13 +336,18 @@ if (class_exists('CMS\ThemeManager')) {
 
     <?php foreach ($groupedTools as $category => $tools): ?>
     <?php $sectionId = $categoryId((string) $category); ?>
-    <section aria-labelledby="<?php echo $esc($sectionId); ?>">
+    <?php $meta = $categoryMeta((string) $category); ?>
+    <section aria-labelledby="<?php echo $esc($sectionId); ?>" data-m365tools-section data-m365tools-category="<?php echo $esc(strtolower((string) $category)); ?>">
         <header class="m365tools-section-head">
-            <section>
+            <section class="m365tools-section-title">
+                <span class="m365tools-section-icon" aria-hidden="true"><?php echo CMS_M365CALCULATOR_Icons::svg((string) ($meta['icon'] ?? 'calculator')); ?></span>
+                <span>
                 <?php if ($showCategoryOverline): ?>
                 <p class="phinit-overline">Kategorie</p>
                 <?php endif; ?>
                 <h2 id="<?php echo $esc($sectionId); ?>"><?php echo $esc($category); ?></h2>
+                <p class="m365tools-section-description"><?php echo $esc($meta['description'] ?? ''); ?></p>
+                </span>
             </section>
             <?php if ($showCategoryCounts): ?>
             <span class="m365tools-section-count"><?php echo (int) ($categoryCounts[(string) $category] ?? count((array) $tools)); ?> Module</span>
@@ -298,9 +378,19 @@ if (class_exists('CMS\ThemeManager')) {
             $domainKeys = isset($toolReviewMap[$toolKey]) && is_array($toolReviewMap[$toolKey]) ? $toolReviewMap[$toolKey] : [];
             $toolReviewLabels = $reviewLabels($domainKeys, is_array($bestPracticeDomains ?? null) ? $bestPracticeDomains : []);
             $toolReviewChecks = $reviewChecks($toolKey, is_array($toolCheckMap ?? null) ? $toolCheckMap : []);
+            $toolTitle = (string) ($tool['title'] ?? '');
+            $toolDescription = (string) ($tool['description'] ?? '');
+            $toolText = strtolower(trim((string) $category . ' ' . $toolTitle . ' ' . $toolDescription . ' ' . implode(' ', $toolReviewLabels) . ' ' . implode(' ', $toolReviewChecks)));
+            $isPopularTool = in_array($toolKey, ['license-audit-checklist', 'm365lic', 'm365-lizenzvergleich'], true);
+            $isNewTool = in_array($toolKey, ['m365-lizenzmatrix', 'm365-addon-matrix', 'copilot-roi'], true);
+            $cardButtonLabel = $openButtonLabel;
+            if (!$hasCustomOpenButtonLabel) {
+                $titleLower = strtolower($toolTitle);
+                $cardButtonLabel = str_contains($titleLower, 'checkliste') ? 'Checkliste laden' : (str_contains($titleLower, 'rechner') ? 'Rechner starten' : 'Tool öffnen');
+            }
             ?>
-            <li>
-                <article class="phinit-card phinit-card--accent<?php echo $status === 'soon' ? ' phinit-tool-card--disabled' : ''; ?>"<?php echo $status === 'soon' ? ' aria-disabled="true"' : ''; ?>>
+            <li data-m365tools-card data-m365tools-category="<?php echo $esc(strtolower((string) $category)); ?>" data-m365tools-search-value="<?php echo $esc($toolText); ?>">
+                <article class="phinit-card phinit-card--accent<?php echo $status === 'soon' ? ' phinit-tool-card--disabled' : ''; ?>"<?php echo $buttonIsLinked ? ' data-m365tools-card-url="' . $esc($buttonUrl) . '"' : ''; ?><?php echo $status === 'soon' ? ' aria-disabled="true"' : ''; ?>>
                     <header class="phinit-tool-card__head">
                         <?php if ($showIcons): ?>
                         <span class="phinit-tool-card__icon" aria-hidden="true">
@@ -309,18 +399,24 @@ if (class_exists('CMS\ThemeManager')) {
                         <?php endif; ?>
                         <h3>
                             <?php if ($isLinked && $linkCardTitles): ?>
-                            <a href="<?php echo $esc($url); ?>"><?php echo $esc($tool['title'] ?? ''); ?></a>
+                            <a href="<?php echo $esc($url); ?>"><?php echo $esc($toolTitle); ?></a>
                             <?php else: ?>
-                            <span><?php echo $esc($tool['title'] ?? ''); ?></span>
+                            <span><?php echo $esc($toolTitle); ?></span>
                             <?php endif; ?>
                             <?php if ($showStatusLabels && $label !== ''): ?>
                             <span class="phinit-status-label"><?php echo $esc($label); ?></span>
                             <?php endif; ?>
                         </h3>
+                        <?php if ($isPopularTool || $isNewTool): ?>
+                        <span class="m365tools-card-badges" aria-label="Tool-Hinweise">
+                            <?php if ($isPopularTool): ?><span class="m365tools-badge m365tools-badge--popular">Beliebt</span><?php endif; ?>
+                            <?php if ($isNewTool): ?><span class="m365tools-badge m365tools-badge--new">Neu</span><?php endif; ?>
+                        </span>
+                        <?php endif; ?>
                     </header>
                     <section class="phinit-tool-card__body">
                         <?php if ($showToolDescriptions): ?>
-                        <p><?php echo $esc($tool['description'] ?? ''); ?></p>
+                        <p><?php echo $esc($toolDescription); ?></p>
                         <?php endif; ?>
                         <?php if ($showReviewChips && !empty($toolReviewLabels)): ?>
                         <ul class="m365tools-review-chip-list" role="list" aria-label="Review-Schwerpunkte">
@@ -338,7 +434,7 @@ if (class_exists('CMS\ThemeManager')) {
                         <?php endif; ?>
                         <?php if ($showToolButtons && $buttonIsLinked): ?>
                         <a href="<?php echo $esc($buttonUrl); ?>" class="phinit-btn phinit-btn--link m365tools-tool-button">
-                            <?php echo $esc($openButtonLabel); ?><?php if ($toolButtonStyle !== 'minimal'): ?> <span class="phinit-arrow" aria-hidden="true">→</span><?php endif; ?>
+                            <?php echo $esc($cardButtonLabel); ?><?php if ($toolButtonStyle !== 'minimal'): ?> <span class="phinit-arrow" aria-hidden="true">→</span><?php endif; ?>
                         </a>
                         <?php elseif ($showDisabledNote && !$buttonIsLinked): ?>
                         <span class="phinit-tool-card__disabled-note" aria-disabled="true">Nicht verfügbar</span>
@@ -351,6 +447,15 @@ if (class_exists('CMS\ThemeManager')) {
         <?php endif; ?>
     </section>
     <?php endforeach; ?>
+        </div>
+    </div>
+
+    <section class="phinit-empty-state m365tools-no-results" role="status" aria-live="polite" hidden data-m365tools-empty>
+        <h2>Keine passenden Tools gefunden</h2>
+        <p>Bitte Suchbegriff anpassen oder einen anderen Kategorie-Chip wählen.</p>
+    </section>
+
+    <button type="button" class="m365tools-back-to-top" aria-label="Nach oben" data-m365tools-top>↑</button>
 </main>
 
 <?php

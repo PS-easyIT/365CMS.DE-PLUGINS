@@ -1,11 +1,11 @@
 {
-  "version": "1.29.3",
+  "version": "1.29.10",
   "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
   "requires": "2.9.0",
   "tested": "2.9.7",
   "last_updated": "2026-05-17",
   "sections": {
-    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme, zentraler Dienstleister- und Kontaktformular-CTA, eigenem Landingpage-Designer, zusammengeführtem Read-only-Matrix-Unterpunkt, Matrix-Design-Tab, globalen Paketpreis- und Abopreisbereichen, kurzen Modulmenüs, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass und 21 Public-Modulen.",
-    "changelog": "Lizenzmatrix und Add-on-Matrix sind im Adminbereich jetzt unter einem Unterpunkt Matrixen zusammengefasst. Der Bereich bietet Tabs für Lizenzmatrix, Add-on-Matrix und Design. Im Design-Tab lassen sich Contentheader-Stil, Header-Ausrichtung, Button-Layout, Button-Stil, Rundung sowie Header- und Button-Farben zentral steuern. Zusätzlich können Header, Header-Buttons, Einleitungsbereich, Drucken-Button, CTA, Hinweise, Quellenstand sowie Add-on-Bereichsheader und Paketkarten global abgeschaltet und je Matrix überschrieben werden."
+    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme, zentraler Dienstleister- und Kontaktformular-CTA, eigenem Landingpage-Designer, UX-optimierter Live-Suche, Tag-Filtern, Sticky-Kategorie-Navigation, zusammengeführtem Read-only-Matrix-Unterpunkt, globalen Paketpreis- und Abopreisbereichen, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass und 21 Public-Modulen.",
+    "changelog": "Der Abstand zwischen 365Network-Header und M365-Tools-Content wurde final geschlossen: after_header-Promo-Zonen werden auf M365-Routen serverseitig entfernt und zusätzlich per Critical-CSS ausgeblendet. Der Theme-Content-Host wird auf M365-Seiten full-width, ohne Schatten und mit weißem Hintergrund direkt unter dem Header gerendert."
   }
 }

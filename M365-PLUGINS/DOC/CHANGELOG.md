@@ -1,5 +1,31 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 1.29.9 – 2026-05-17
+
+- Dokumentiert die finale Null-Abstand-Absicherung über spätes Head-Critical-CSS und die JS-Klasse `m365tools-content-host` am Theme-Content-Host.
+
+## 1.29.8 – 2026-05-17
+
+- Dokumentiert den robusten Null-Abstand-Fix mit ID-basierten Fallbacks und `:has()`-Wrapper-Resets für Themes ohne ausgegebene Plugin-Body-Klassen.
+
+## 1.29.7 – 2026-05-17
+
+- Dokumentiert den erweiterten Theme-Wrapper-Reset für M365-Toolseiten: `.page-wrap`, `.site-main`, `.content-wrapper`, `.content-area` und `.content-area--page` starten oben ohne Außenabstand.
+
+## 1.29.6 – 2026-05-17
+
+- Dokumentiert den Layout-Fix: kein äußerer Abstand mehr zwischen Theme-Header und öffentlichem M365-Plugin-Content; interne Content-Abstände bleiben Aufgabe des Plugin-Layouts.
+
+## 1.29.5 – 2026-05-17
+
+- Dokumentiert die direkte UI-Improvement-Runde für die Hub-Landingpage: Hero-CTA zum Direkteinstieg, Kontakt als Textlink, Sticky-Sidebar, aktive Kategorie, Kompass-Icons, mobile Filter-Chips, Radiogroup-A11y, Suchshortcut, Kategorie-Hash und reduced-motion-konforme Interaktionen.
+
+## 1.29.4 – 2026-05-17
+
+- Dokumentiert die UX-Überarbeitung der M365-Tools-Landingpage mit Live-Suche, Tag-Filtern, Sticky-ToC, Kategorie-Heros, Card-Hover, Badges, Back-to-top und Dark Mode.
+- README und API um das neue Landingpage-JS `assets/js/m365tools-landing.js` sowie die rein native Filter-/Navigationslogik ergänzt.
+- Public-Designhinweise um bessere Typografie, Kontraste, Breakpoints und Touch-Ziele erweitert.
+
 ## 1.29.3 – 2026-05-17
 
 - Dokumentiert den neuen Admin-Unterpunkt `Matrixen`, der Lizenzmatrix und Add-on-Matrix in einem Bereich bündelt.

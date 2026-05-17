@@ -69,6 +69,7 @@
 - `CMS_M365CALCULATOR_Admin_Pages::render_package_prices()` – rendert globale Paket- und Add-on-Preisannahmen für alle Module, ab `1.28.0` dynamisch mit Public-, Member- und Spezialfeldern aus dem M365LIC-Seed
 - `CMS_M365CALCULATOR_Admin_Pages::render_subscription_prices()` – rendert globale Abopreis-, Laufzeit-, Commitment- und Abrechnungsannahmen
 - `CMS_M365CALCULATOR_Frontend::render_provider_cta()` – rendert ab `1.29.0` den zentral gepflegten Dienstleister-/Kontaktformular-Hinweis vor dem Footer von Toolseiten
+- `assets/js/m365tools-landing.js` – steuert ab `1.29.5` die Hub-Landingpage mit Live-Suche, Kategorie-Chips, ARIA-Radiogroup, Pfeiltastensteuerung, Kategorie-Hash, Slash-Suchshortcut, Hero-Suchfokus, aktiver Sticky-Navigation, klickbaren Cards und Back-to-top ohne externe Bibliotheken
 - `CMS_M365CALCULATOR_Admin_Pages::render_module_settings(string $moduleKey)` – rendert die Modul-Unterseite mit Tabs für Übersicht, Anzeige, Preise & Annahmen, Workflow sowie Daten & Regeln
 - `CMS_M365CALCULATOR_Admin_Module_Config::tabs_for(array $tool)` – liefert die Tab-Struktur für eine Modul-Einstellungsseite
 - `CMS_M365CALCULATOR_Admin_Module_Config::fields_for(array $tool, string $tab)` – liefert modul- und kategoriebasierte Felddefinitionen für Preis-, Workflow- und Daten-Tabs inklusive Quellenprofil, Endpoint-/Netzwerkpfad, Schutz-/Datenzugriff und Servicegrenzen-/Kapazität
