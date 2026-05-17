@@ -1,6 +1,15 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.27.0 – 2026-05-17
+
+- Alle 21 Public-Module erneut gegen zusätzliche offizielle Microsoft-Learn-Quellen zu Endpoint-Webservice, Endpoint-Change-Management, Copilot-App-/Netzwerkanforderungen, Lizenzzuweisung, Gruppenlizenzierung und Microsoft 365 Backup geprüft.
+- Admin-Menü logisch neu sortiert: zentrale Pluginbereiche stehen vor den Modul-Unterseiten, Module werden nach Fachkategorie und Priorität benannt.
+- Neue zentrale Admin-Unterseite `Zentrale Einstellungen` mit Tabs für Allgemein, Review & Quellen, Workflow und System ergänzt.
+- Neue eigene Admin-Unterpunkte `Paketpreise` sowie `Abopreise & Laufzeiten` für globale Preis-, Add-on-, Laufzeit-, Commitment- und Abrechnungsannahmen ergänzt.
+- Globale Adminwerte werden ohne neue Tabelle über die vorhandene Optionsspeicherung gepflegt und können je Modul weiter überschrieben werden.
+- Best-Practice- und Audit-Kataloge um Endpoint-Änderungsprozess, Gruppenlizenzierungsgrenzen, Copilot Office Feature Updates und Backup-PAYG-Kontext erweitert.
+
 ## 1.26.0 – 2026-05-17
 
 - Alle 21 registrierten Public-Module erneut gegen offizielle Microsoft-Learn-Quellen zu M365-Endpunkten, Netzwerkplanung, Conditional Access, Defender for Office 365, Copilot Setup, Power-Platform-Requestgrenzen und Dataverse-Kapazität geprüft.

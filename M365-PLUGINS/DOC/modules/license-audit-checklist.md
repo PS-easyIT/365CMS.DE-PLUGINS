@@ -7,7 +7,7 @@
 - Engine: `CMS_M365CALCULATOR_License_Audit_Checklist`
 - Template: `templates/page-license-audit-checklist.php`
 - Status: `live`
-- Version: `1.26.0`
+- Version: `1.27.0`
 
 ## Zweck
 
@@ -36,6 +36,7 @@ Die Checkliste enthält zusätzlich die Kategorie `Zugriff, Schutz, Netzwerk und
 - Defender-Mail-Schutz, Standard-/Strict-Protection, Safe Links, Safe Attachments, SPF, DKIM, DMARC und Meldeprozess für Benutzer
 - Microsoft-365-Nutzungsberichte für Lizenz-, Speicher-, Teams-, Copilot- und Mailbox-Auswertung
 - Microsoft-365-Endpoints, Netzwerkpfad, lokale Namensauflösung, lokalen Internetausstieg und Performance-Basiswerte
+- Endpoint-Änderungen über Microsoft-365-Webservice, Versionsstand, Änderungsdaten und fachliche Nachkontrolle
 - SharePoint-, OneDrive-, Sync- und Teams-Grenzen vor Migration, Wachstum oder Telefonieplanung
 - Copilot-Datenzugriff, WSS-Verbindungen, Apps, OneDrive, Teams-Meetingdaten, Datenschutzrahmen, Datenfreigaben und Pilotmetriken
 - Power-Platform-Requests, Flow-Profile, nicht-interaktive Identitäten, Dataverse Database/File/Log, Suchindex und Umgebungskapazität
@@ -44,3 +45,5 @@ Die Checkliste enthält zusätzlich die Kategorie `Zugriff, Schutz, Netzwerk und
 ## Pflege
 
 Neue Auditpunkte werden im Checklisten-Katalog ergänzt. Spezialtool-Verweise werden über `license_audit_deeplinks.json` gesteuert.
+
+Ab `1.27.0` ergänzt die Checkliste den Endpoint-Änderungsprozess und ist mit den neuen globalen Adminbereichen für Paketpreise sowie Abopreise & Laufzeiten dokumentiert.

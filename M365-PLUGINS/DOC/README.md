@@ -144,7 +144,7 @@ Die Route `/m365-lizenz-audit-checkliste` bietet eine interaktive Checkliste fü
 
 ## All-Module-Best-Practice-Kompass
 
-Der Hub `/m365-tools` lädt ab `1.23.0` den Katalog `m365_best_practice_catalog.json`. Der Katalog bündelt die zuletzt geprüften offiziellen Microsoft-Learn-Quellen und ordnet jedes Public-Modul den passenden Review-Domänen zu. Ab `1.26.0` enthält er zusätzlich Domänenkontrollen und konkrete Prüfpunkte je Modul. Dadurch ist bereits auf der Landingpage sichtbar, welche Module Lizenzkosten, Zugriff, Schutz, Servicegrenzen, Speicher/Backup, Netzwerk/Performance, Copilot/KI, Power Platform oder Migration/Betrieb berühren und welche fachlichen Punkte aktuell geprüft werden sollten.
+Der Hub `/m365-tools` lädt ab `1.23.0` den Katalog `m365_best_practice_catalog.json`. Der Katalog bündelt die zuletzt geprüften offiziellen Microsoft-Learn-Quellen und ordnet jedes Public-Modul den passenden Review-Domänen zu. Ab `1.26.0` enthält er zusätzlich Domänenkontrollen und konkrete Prüfpunkte je Modul; ab `1.27.0` sind zusätzliche Quellen zu Endpoint-Webservice, Endpoint-Change-Management, Lizenzzuweisung, Gruppenlizenzierung, Copilot-App-/Netzwerkvoraussetzungen und Microsoft 365 Backup eingearbeitet. Dadurch ist bereits auf der Landingpage sichtbar, welche Module Lizenzkosten, Zugriff, Schutz, Servicegrenzen, Speicher/Backup, Netzwerk/Performance, Copilot/KI, Power Platform oder Migration/Betrieb berühren und welche fachlichen Punkte aktuell geprüft werden sollten.
 
 Die erneute Quellenrunde berücksichtigt insbesondere Microsoft-365-Endpunkte und Netzwerkplanung, Entra Conditional Access Planning, Defender for Office 365 Deployment, Copilot Licensing/Requirements/Setup, Exchange-/SharePoint-/Teams-Grenzen, Microsoft 365 Backup sowie Power Platform API Request Limits und Dataverse Capacity. Die vollständige Modulabdeckung steht in `ALL-MODULE-BEST-PRACTICE-REVIEW.md`.
 
@@ -157,6 +157,8 @@ Der Fortschritt wird im Browser gespeichert. Die Zusammenfassung kann über die 
 Der Adminbereich kann je Modul Sichtbarkeit, Status, Priorität, öffentlichen Titel und Beschreibung überschreiben. Die Werte werden in `cms_m365tools_module_settings` gespeichert und beim Rendern der Registry angewendet. Vorhandene Werte aus der früheren Tabelle `cms_m365calculator_module_settings` werden beim Installer-Lauf migriert. Ab `1.24.1` ist die Migration tolerant gegenüber älteren Tabellenständen und ergänzt fehlende Settings-Spalten automatisch.
 
 Ab `1.25.0` bekommt jedes Registry-Modul genau einen eigenen Unterpunkt unter `M365 Tools`. In dieser Unterseite werden die weiteren Einstellungen per Tabs organisiert: Übersicht, Anzeige, Preise & Annahmen, Workflow sowie Daten & Regeln. Preis-, Workflow- und Datenwerte landen in `cms_m365tools_module_options`, sodass Preisanpassungen, Review-Zyklen, Owner, Quellenstand und interne Änderungsvermerke je Modul gepflegt werden können. Ab `1.26.0` ergänzt der Daten-Tab Quellenprofil, Endpoint-/Netzwerkpfad, Schutz-/Datenzugriff und Servicegrenzen-/Kapazitätsreview; Copilot- und Power-Platform-Module erhalten zusätzliche Spezialfelder.
+
+Ab `1.27.0` ist der Adminbereich zusätzlich logisch gegliedert: `Zentrale Einstellungen` bündelt pluginweite Defaults, Review-Quellen, Workflow und Systemnotizen; `Paketpreise` pflegt globale M365-Paket- und Add-on-Preise; `Abopreise & Laufzeiten` pflegt Monats-/Jahres-/Dreijahresannahmen, Renewal-Fenster, Gruppenlizenzierungsgrenzen und Abrechnungslogik. Die Modulunterpunkte folgen danach nach Fachkategorie und Priorität.
 
 ## Designvorgaben
 

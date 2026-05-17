@@ -164,7 +164,7 @@ cms-m365tools/
 
 ## Landingpage-Registry
 
-Module melden sich über `CMS_M365CALCULATOR_Tool_Registry::register()` mit `key`, `title`, `description`, `icon`, `url`, `category` und `status` an. Die Landingpage gruppiert automatisch nach Kategorie, sortiert `live` vor `beta` vor `soon`, zeigt Kennzahlen, eine Kategorie-Schnellnavigation und je Modul die Schwerpunkte sowie ab `1.26.0` konkrete aktuelle Prüfpunkte aus `m365_best_practice_catalog.json`. Der Adminbereich kann je Modul Sichtbarkeit, Status, Priorität, Titel und Beschreibung überschreiben.
+Module melden sich über `CMS_M365CALCULATOR_Tool_Registry::register()` mit `key`, `title`, `description`, `icon`, `url`, `category` und `status` an. Die Landingpage gruppiert automatisch nach Kategorie, sortiert `live` vor `beta` vor `soon`, zeigt Kennzahlen, eine Kategorie-Schnellnavigation und je Modul die Schwerpunkte sowie ab `1.26.0` konkrete aktuelle Prüfpunkte aus `m365_best_practice_catalog.json`. Der Adminbereich kann je Modul Sichtbarkeit, Status, Priorität, Titel und Beschreibung überschreiben; ab `1.27.0` werden die Modul-Unterpunkte im Adminmenü zusätzlich fachlich nach Kategorie und Priorität sortiert.
 
 ## Admin-Modulsettings
 
@@ -177,6 +177,8 @@ Ab `1.25.0` erhält jedes registrierte Modul genau einen eigenen Unterpunkt unte
 - `Daten & Regeln` – Quellenstand, Annahmenstatus, manuelle Annahmen und interne Änderungsvermerke
 
 Preis-, Workflow- und Datenoptionen werden in `cms_m365tools_module_options` gespeichert. Die Felddefinitionen kommen zentral aus `CMS_M365CALCULATOR_Admin_Module_Config`, damit neue Module automatisch eine konsistente Einstellungsseite erhalten. Ab `1.26.0` enthält der Tab `Daten & Regeln` zusätzlich Quellenprofil, Endpoint-/Netzwerkpfad-Review, Schutz-/Datenzugriffs-Review sowie Servicegrenzen-/Kapazitäts-Review; Copilot- und Power-Platform-Module erhalten passende Zusatzschwellen.
+
+Ab `1.27.0` stehen die globalen Adminbereiche vor den Modulseiten: `Zentrale Einstellungen`, `Paketpreise` sowie `Abopreise & Laufzeiten`. Das Admin-Menü sortiert Module anschließend nach Fachkategorie und Priorität, damit Lizenz-, Copilot-, Exchange-, Teams-, Speicher-, Power-Platform- und Migrationsseiten leichter auffindbar sind. Globale Werte werden in derselben Optionslogik gespeichert und dienen als zentrale Defaults für alle Module.
 
 ## All-Module-Best-Practice-Kompass
 
@@ -192,7 +194,7 @@ Der zentrale Katalog `m365_best_practice_catalog.json` ordnet alle Public-Module
 - Power Platform Betrieb
 - Migration & Betrieb
 
-Die Hub-Landingpage rendert daraus eine kompakte Übersicht, Modul-Fokuschips und konkrete Prüfpunkte je Tool. Die Inhalte basieren auf offiziellen Microsoft-Learn-Quellen zu Usage Reports, M365-Endpoint-Webservice, Network Connectivity Principles, Network Planning and Performance, Entra Conditional Access Planning, Defender for Office 365 Deployment, Exchange-/SharePoint-/Teams-Grenzen, Copilot Licensing/Requirements/Setup, Microsoft 365 Backup sowie Power Platform Well-Architected, Request Limits und Dataverse Capacity.
+Die Hub-Landingpage rendert daraus eine kompakte Übersicht, Modul-Fokuschips und konkrete Prüfpunkte je Tool. Die Inhalte basieren auf offiziellen Microsoft-Learn-Quellen zu Usage Reports, Lizenzzuweisung, Gruppenlizenzierung, M365-Endpoint-Webservice, Endpoint-Change-Management, Network Connectivity Principles, Network Planning and Performance, Entra Conditional Access Planning, Defender for Office 365 Deployment, Exchange-/SharePoint-/Teams-Grenzen, Copilot Licensing/Requirements/Setup, Microsoft 365 Backup sowie Power Platform Well-Architected, Request Limits und Dataverse Capacity.
 
 ## Design
 

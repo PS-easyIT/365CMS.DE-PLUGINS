@@ -1,5 +1,12 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 1.27.0 – 2026-05-17
+
+- Admin-Dokumentation um zentrale Plugin-Einstellungen, globale Paketpreise sowie Abopreise & Laufzeiten als eigene Unterpunkte ergänzt.
+- README, API und Datenbankdokumentation beschreiben die logisch sortierte Admin-Menüstruktur und die Wiederverwendung von `cms_m365tools_module_options` für globale Defaults.
+- Best-Practice-Dokumentation um zusätzliche Quellen zu Microsoft-365-Endpoint-Webservice, Endpoint-Change-Management, Copilot-App-/Netzwerkanforderungen, Lizenzzuweisung, Gruppenlizenzierung und Microsoft 365 Backup aktualisiert.
+- Lizenz-Audit-Beschreibung um Endpoint-Änderungsprozess und globale Preis-/Laufzeitpflege nachgezogen.
+
 ## 1.26.0 – 2026-05-17
 
 - Erneute All-Module-Best-Practice-Prüfung dokumentiert und neue Datei `ALL-MODULE-BEST-PRACTICE-REVIEW.md` für alle 21 Module ergänzt.

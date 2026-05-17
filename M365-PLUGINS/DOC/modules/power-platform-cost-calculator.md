@@ -7,7 +7,7 @@
 - Engine: `CMS_M365CALCULATOR_Power_Platform_Cost_Calculator`
 - Template: `templates/page-power-platform-cost-calculator.php`
 - Status: `live`
-- Version: `1.26.0`
+- Version: `1.27.0`
 
 ## Zweck
 
@@ -85,6 +85,7 @@ Die Route berechnet ausschließlich aus Anfrageparametern und speichert keine Ei
 - Microsoft-Listenpreise regelmäßig gegen Learn-, Product-Terms- und Vertragsstände prüfen
 - CSP-, EA-, MCA- oder Partnerkonditionen in den Katalogen ersetzen
 - Request-, Storage-, Credit-, Dataverse-Capacity- und PAYG-Werte quartalsweise aktualisieren
+- Globale Paketpreis- und Laufzeitdefaults aus den Adminbereichen `Paketpreise` und `Abopreise & Laufzeiten` bei der fachlichen Pflege berücksichtigen
 - Dataverse-for-Teams- und Governance-Regeln bei Microsoft-Änderungen nachführen
 - Copilot-Studio- und AI-Builder-Preismodelle getrennt beobachten
 - Well-Architected-, Datenrichtlinien-, Managed-Environment-, ALM- und Performance-Quellen regelmäßig gegen Microsoft Learn prüfen
