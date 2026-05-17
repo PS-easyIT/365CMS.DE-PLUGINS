@@ -632,7 +632,7 @@ elseif ($tab === 'items'):
             <?php foreach ($feedItems as $item): ?>
                 <tr>
                     <td class="feed-item-title-cell">
-                        <a href="<?php echo htmlspecialchars($item['link']); ?>" target="_blank"
+                                <a href="<?php echo htmlspecialchars($item['link']); ?>" target="_blank" rel="noopener noreferrer"
                            class="feed-table-link">
                             <?php echo htmlspecialchars(mb_substr($item['title'], 0, 80)); ?>
                         </a>

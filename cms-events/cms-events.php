@@ -3,7 +3,7 @@
  * Plugin Name: CMS Events
  * Plugin URI: https://365network.de/cms-events
  * Description: Verwaltung von Events mit Speakeranbindung, Veranstaltern aus cms-companies und voller Metaverwaltung
- * Version: 1.1.0
+ * Version: 3.0.0
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -12,13 +12,14 @@
 declare(strict_types=1);
 if (!defined('ABSPATH')) exit;
 
-define('CMS_EVENTS_VERSION', '1.1.0');
+define('CMS_EVENTS_VERSION', '3.0.0');
 define('CMS_EVENTS_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_EVENTS_PLUGIN_URL', '/plugins/cms-events/');
 
 final class CMS_Events {
     private static ?self $instance = null;
-    private string $version = '1.1.0';
+    private bool $components_bootstrapped = false;
+    private string $version = '3.0.0';
     private string $plugin_dir;
     private string $plugin_url;
 
@@ -48,6 +49,12 @@ final class CMS_Events {
     }
 
     private function bootstrap_components(): void {
+        if ($this->components_bootstrapped) {
+            return;
+        }
+
+        $this->components_bootstrapped = true;
+
         foreach (['CMS_Events_Database', 'CMS_Events_Post_Type', 'CMS_Events_Meta_Boxes', 'CMS_Events_Template_Loader', 'CMS_Events_Shortcode', 'CMS_Events_Admin', 'CMS_Events_Member_Dashboard'] as $class) {
             if (class_exists($class)) $class::instance();
         }
@@ -73,19 +80,45 @@ final class CMS_Events {
         if (!$this->can_bootstrap_components()) {
             return;
         }
+        $this->ensure_schema();
         $this->bootstrap_components();
     }
 
+    private function ensure_schema(): void {
+        if (!class_exists('CMS_Events_Database')) {
+            return;
+        }
+
+        $db = CMS_Events_Database::instance();
+        $settings = method_exists($db, 'get_settings') ? $db->get_settings() : [];
+        $schema_version = '3.0.0';
+        if (($settings['schema_version'] ?? '') === $schema_version) {
+            return;
+        }
+
+        try {
+            $db->create_tables();
+            if (method_exists($db, 'save_settings')) {
+                $db->save_settings(['schema_version' => $schema_version]);
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS Events: ' . $e->getMessage());
+        }
+    }
+
     public function enqueue_styles(): void {
+        $this->enqueue_style_file('plugin-base.css');
+        $this->enqueue_style_file('style.css');
+        $this->enqueue_style_file('single.css');
+    }
+
+    private function enqueue_style_file(string $file): void {
         $css = $this->plugin_dir . 'assets/css/style.css';
+        $css = $this->plugin_dir . 'assets/css/' . $file;
         if (file_exists($css)) {
             $cssVersion = (string) filemtime($css);
-            echo '<link rel="stylesheet" href="' . $this->plugin_url . 'assets/css/style.css?v=' . $cssVersion . '">' . "\n";
-        }
-        $single_css = $this->plugin_dir . 'assets/css/single.css';
-        if (file_exists($single_css)) {
-            $singleCssVersion = (string) filemtime($single_css);
-            echo '<link rel="stylesheet" href="' . $this->plugin_url . 'assets/css/single.css?v=' . $singleCssVersion . '">' . "\n";
+            $href = $this->plugin_url . 'assets/css/' . $file . '?v=' . $cssVersion;
+            echo '<link rel="stylesheet" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '">' . "\n";
         }
     }
 
@@ -93,7 +126,8 @@ final class CMS_Events {
         $js = $this->plugin_dir . 'assets/js/script.js';
         if (file_exists($js)) {
             $jsVersion = (string) filemtime($js);
-            echo '<script src="' . $this->plugin_url . 'assets/js/script.js?v=' . $jsVersion . '" defer></script>' . "\n";
+            $src = $this->plugin_url . 'assets/js/script.js?v=' . $jsVersion;
+            echo '<script src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
         }
     }
 

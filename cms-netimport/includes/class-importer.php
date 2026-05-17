@@ -1759,7 +1759,8 @@ final class CMS_NetImport_Importer
         }
         $real = realpath($path);
         $base = realpath(CMS_NETIMPORT_PLUGIN_DIR . 'files_import');
-        if ($real === false || $base === false || !str_starts_with($real, $base)) {
+        $basePath = $base !== false ? rtrim($base, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR : false;
+        if ($real === false || $basePath === false || !str_starts_with($real, $basePath)) {
             return 'Unsicherer Dateipfad erkannt.';
         }
         if (strtolower((string) pathinfo($real, PATHINFO_EXTENSION)) !== 'csv') {
@@ -2015,7 +2016,31 @@ final class CMS_NetImport_Importer
 
     private function sanitize_url(string $value): string
     {
-        return filter_var(trim($value), FILTER_VALIDATE_URL) ? trim($value) : '';
+        $url = trim($value);
+        if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return '';
+        }
+
+        if (!in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true)) {
+            return '';
+        }
+
+        $host = strtolower(trim((string) $parts['host'], '[]'));
+        if ($host === 'localhost' || str_ends_with($host, '.localhost') || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
+            return '';
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP)
+            && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return '';
+        }
+
+        return mb_substr($url, 0, 2048);
     }
 
     private function truncate_text(string $value, int $maxLength): string

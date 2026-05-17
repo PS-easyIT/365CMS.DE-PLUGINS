@@ -3,7 +3,7 @@
  * Plugin Name: CMS Experts
  * Plugin URI: https://365network.de/cms-experts
  * Description: Verwaltung von IT-Experten-Profilen mit Card-Ansicht, Detailseiten und umfangreichen Meta-Daten
- * Version: 2.1.0
+ * Version: 3.0.0
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin Constants
-define('CMS_EXPERTS_VERSION', '2.1.0');
+define('CMS_EXPERTS_VERSION', '3.0.0');
 define('CMS_EXPERTS_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_EXPERTS_PLUGIN_URL', '/plugins/cms-experts/');
 define('CMS_EXPERTS_TEXT_DOMAIN', 'cms-experts');
@@ -32,7 +32,7 @@ final class CMS_Experts
     private static ?self $instance = null;
     private bool $components_bootstrapped = false;
 
-    private string $version = '2.1.0';
+    private string $version = '3.0.0';
     private string $plugin_dir;
     private string $plugin_url;
     private string $text_domain = 'cms-experts';
@@ -142,7 +142,7 @@ final class CMS_Experts
 
         if (class_exists('CMS_Experts_Database')) {
             $db = CMS_Experts_Database::instance();
-            $schema_version = '2.0.0';
+            $schema_version = '3.0.0';
             $installed_schema_version = (string) $db->get_plugin_setting('schema_version', '');
             if ($installed_schema_version !== $schema_version) {
                 try {
@@ -170,18 +170,20 @@ final class CMS_Experts
             echo '<link rel="stylesheet" href="' . htmlspecialchars($sun_css) . '">' . "\n";
         }
 
-        $css_file = $this->plugin_dir . 'assets/css/style.css';
-        if (file_exists($css_file)) {
-            $css_url = $this->plugin_url . 'assets/css/style.css';
-            $css_version = (string) filemtime($css_file);
-            echo '<link rel="stylesheet" href="' . htmlspecialchars($css_url) . '?v=' . $css_version . '">' . "\n";
+        $this->enqueue_style_file('plugin-base.css');
+        $this->enqueue_style_file('style.css');
+        $this->enqueue_style_file('single.css');
+    }
+
+    private function enqueue_style_file(string $file): void
+    {
+        $css_file = $this->plugin_dir . 'assets/css/' . $file;
+        if (!file_exists($css_file)) {
+            return;
         }
-        $single_css_file = $this->plugin_dir . 'assets/css/single.css';
-        if (file_exists($single_css_file)) {
-            $single_css_url = $this->plugin_url . 'assets/css/single.css';
-            $single_css_version = (string) filemtime($single_css_file);
-            echo '<link rel="stylesheet" href="' . htmlspecialchars($single_css_url) . '?v=' . $single_css_version . '">' . "\n";
-        }
+
+        $href = $this->plugin_url . 'assets/css/' . $file . '?v=' . (string) filemtime($css_file);
+        echo '<link rel="stylesheet" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '">' . "\n";
     }
 
     /**
@@ -193,7 +195,7 @@ final class CMS_Experts
         if (file_exists($js_file)) {
             $js_url = $this->plugin_url . 'assets/js/script.js';
             $js_version = (string) filemtime($js_file);
-            echo '<script src="' . htmlspecialchars($js_url) . '?v=' . $js_version . '" defer></script>' . "\n";
+            echo '<script src="' . htmlspecialchars($js_url . '?v=' . $js_version, ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
         }
     }
 

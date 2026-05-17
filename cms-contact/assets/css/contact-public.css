@@ -3,7 +3,7 @@
  * Styles für alle Kontaktformular-Templates.
  *
  * @package CMS_Contact
- * @version 1.0.0
+ * @version 3.0.0
  */
 
 /* =====================================================
@@ -772,6 +772,213 @@
 /* =====================================================
    15. Captcha field
    ===================================================== */
+.booking-contact-card,
+.booking-event-card,
+.booking-service-formcard,
+.booking-expert-layout {
+    background: var(--contact-bg);
+    border: 1px solid var(--contact-border);
+    border-radius: 12px;
+    box-shadow: var(--contact-shadow);
+    overflow: hidden;
+}
+
+.booking-contact-card {
+    max-width: 640px;
+    margin: 2rem auto;
+}
+
+.booking-contact-header,
+.booking-event-header,
+.booking-expert-sidebar {
+    background: #1e3a5f;
+    color: #fff;
+    padding: 2rem 2rem 1.5rem;
+}
+
+.booking-contact-header h1,
+.booking-event-header h1,
+.booking-expert-sidebar h1 {
+    color: #fff;
+    font-size: 1.5rem;
+    margin: 0 0 .25rem;
+}
+
+.booking-contact-header p,
+.booking-event-header p,
+.booking-expert-sidebar p {
+    color: rgb(255 255 255 / .86);
+    margin: 0;
+    font-size: .95rem;
+}
+
+.booking-contact-body,
+.booking-event-body,
+.booking-expert-form {
+    padding: 2rem;
+}
+
+.booking-contact-badge,
+.booking-event-badge,
+.booking-expert-badge,
+.booking-service-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.booking-contact-badge,
+.booking-event-badge,
+.booking-expert-badge {
+    margin-bottom: .75rem;
+    padding: .28rem .75rem;
+    background: rgb(255 255 255 / .16);
+    color: #fff;
+}
+
+.booking-event-card {
+    max-width: 700px;
+    margin: 2rem auto;
+}
+
+.booking-event-header {
+    position: relative;
+}
+
+.booking-event-badges,
+.booking-service-badge-bar {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+.booking-event-badges {
+    margin-bottom: .75rem;
+}
+
+.booking-event-body h2,
+.booking-expert-form h2,
+.booking-service-formcard h2 {
+    font-size: 1.15rem;
+    margin: 0 0 1.25rem;
+    color: var(--contact-text);
+}
+
+.booking-expert-layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 0;
+    min-height: 70vh;
+    max-width: 1100px;
+    margin: 2rem auto;
+}
+
+.booking-expert-sidebar {
+    display: flex;
+    flex-direction: column;
+}
+
+.booking-expert-features {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
+}
+
+.booking-expert-features li {
+    padding: .4rem 0;
+    font-size: .9rem;
+    color: rgb(255 255 255 / .9);
+}
+
+.booking-expert-features li::before {
+    content: '✓ ';
+    color: #86efac;
+}
+
+.booking-service-wrap {
+    max-width: 750px;
+    margin: 2rem auto;
+    padding: 0 1.25rem;
+}
+
+.booking-service-top {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.booking-service-top h1 {
+    font-size: 1.6rem;
+    margin: 0 0 .3rem;
+    color: var(--contact-text);
+}
+
+.booking-service-top p {
+    color: var(--contact-text-muted);
+    margin: 0;
+}
+
+.booking-service-badge-bar {
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.booking-service-badge {
+    padding: .3rem .8rem;
+    background: var(--contact-primary-light);
+    color: var(--contact-primary-dark);
+}
+
+.booking-service-formcard {
+    padding: 2rem;
+}
+
+.booking-service-formcard h2 {
+    padding-bottom: .75rem;
+    border-bottom: 1px solid var(--contact-border);
+}
+
+.booking-service-trust {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    color: var(--contact-text-light);
+    font-size: .8rem;
+    flex-wrap: wrap;
+}
+
+.booking-service-trust span {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+}
+
+@media (max-width: 768px) {
+    .booking-expert-layout {
+        grid-template-columns: 1fr;
+        margin: 1rem;
+    }
+
+    .booking-contact-card,
+    .booking-event-card {
+        margin: 1rem;
+    }
+
+    .booking-contact-header,
+    .booking-event-header,
+    .booking-expert-sidebar,
+    .booking-contact-body,
+    .booking-event-body,
+    .booking-expert-form,
+    .booking-service-formcard {
+        padding: 1.5rem;
+    }
+}
+
 .contact-captcha {
     margin-top: .5rem;
 }

@@ -11,6 +11,10 @@
 
 declare(strict_types=1);
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 if (!isset($speaker)) {
     return;
 }
@@ -109,7 +113,7 @@ $avail_label  = $avail_labels[$avail] ?? 'Verf&#252;gbar';
 $initials = mb_strtoupper(mb_substr($first, 0, 1) . mb_substr($last, 0, 1));
 ?>
 
-<article class="sp-card sp-card--overview">
+<article class="phinit-card phinit-card--accent sp-card sp-card--overview">
 
     <!-- Status Badges Links Oben -->
     <div class="sp-card-status-badges">
@@ -132,7 +136,7 @@ $initials = mb_strtoupper(mb_substr($first, 0, 1) . mb_substr($last, 0, 1));
     <header class="sp-card-top">
         <div class="sp-card-avatar">
             <?php if ($photo !== ''): ?>
-                <img src="<?php echo $sec->escape($photo); ?>" alt="<?php echo $sec->escape($full_name); ?>" loading="lazy">
+                <img src="<?php echo $sec->escape($photo); ?>" alt="<?php echo $sec->escape($full_name); ?>" width="96" height="96" loading="lazy" decoding="async">
             <?php else: ?>
                 <div class="sp-avatar-placeholder">
                     <span><?php echo $sec->escape($initials ?: '🎤'); ?></span>
@@ -199,16 +203,16 @@ $initials = mb_strtoupper(mb_substr($first, 0, 1) . mb_substr($last, 0, 1));
             foreach ($social_items as $si):
                 $active = !empty($si['url']);
             ?>
-                <a href="<?php echo $active ? $sec->escape($si['url']) : '#'; ?>"
-                   <?php echo $active ? 'target="_blank" rel="noopener"' : 'class="social-disabled"'; ?>
-                   title="<?php echo $sec->escape($si['title']); ?>">
+                     <a href="<?php echo $active ? $sec->escape($si['url']) : '#'; ?>"
+                         <?php echo $active ? 'target="_blank" rel="noopener noreferrer"' : 'class="social-disabled" aria-disabled="true" tabindex="-1"'; ?>
+                         title="<?php echo $sec->escape($si['title']); ?>" aria-label="<?php echo $sec->escape($si['title']); ?>">
                     <?php echo $si['svg']; ?>
                 </a>
             <?php endforeach; ?>
     </div>
 
     <!-- CTA Button -->
-    <a href="<?php echo $sec->escape($speaker_url); ?>" class="sp-card-cta">
+    <a href="<?php echo $sec->escape($speaker_url); ?>" class="phinit-btn phinit-btn--primary sp-card-cta">
         <?php echo $cta; ?> <span class="cta-arrow">&#8250;</span>
     </a>
 

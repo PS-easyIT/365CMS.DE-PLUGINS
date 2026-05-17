@@ -21,6 +21,7 @@ final class CMS_Feed_RSS_Fetcher
     private const MAX_REDIRECTS = 3;
     private const MAX_CHANNELS_PER_RUN = 10;
     private const ERROR_BACKOFF_SECONDS = 1800;
+    private const MAX_RESPONSE_BYTES = 2097152; // 2 MB RSS/Atom reichen für kuratierte Feeds aus.
 
     public static function instance(): self
     {
@@ -55,6 +56,15 @@ final class CMS_Feed_RSS_Fetcher
         $scheme = strtolower((string) $parts['scheme']);
         if (!in_array($scheme, ['http', 'https'], true)) {
             return ['success' => false, 'error' => 'Es sind nur http- und https-Feeds erlaubt.'];
+        }
+
+        if (!empty($parts['user']) || !empty($parts['pass'])) {
+            return ['success' => false, 'error' => 'Feed-URLs mit Zugangsdaten sind nicht erlaubt.'];
+        }
+
+        $port = isset($parts['port']) ? (int) $parts['port'] : ($scheme === 'https' ? 443 : 80);
+        if (!in_array($port, [80, 443], true)) {
+            return ['success' => false, 'error' => 'Feed-URLs dürfen nur Standard-Webports 80/443 verwenden.'];
         }
 
         $host = (string) $parts['host'];
@@ -241,7 +251,7 @@ final class CMS_Feed_RSS_Fetcher
             $content = preg_replace('/^\xEF\xBB\xBF/', '', $content);
 
             libxml_use_internal_errors(true);
-            $xml = simplexml_load_string($content, 'SimpleXMLElement', LIBXML_NOCDATA);
+            $xml = simplexml_load_string($content, 'SimpleXMLElement', LIBXML_NOCDATA | LIBXML_NONET);
             libxml_clear_errors();
 
             return $xml ?: null;
@@ -348,7 +358,7 @@ final class CMS_Feed_RSS_Fetcher
         return [
             'guid'        => $this->sanitize_guid($guid),
             'title'       => $this->clean_text((string) ($item->title ?? 'Kein Titel')),
-            'link'        => filter_var((string) ($item->link ?? ''), FILTER_VALIDATE_URL) ?: '',
+            'link'        => $this->sanitize_external_url((string) ($item->link ?? '')),
             'description' => $this->truncate_text(strip_tags($description), 500),
             'content'     => $content,
             'author'      => $this->clean_text($author),
@@ -402,7 +412,7 @@ final class CMS_Feed_RSS_Fetcher
         return [
             'guid'        => $this->sanitize_guid($guid),
             'title'       => $this->clean_text((string) ($entry->title ?? 'Kein Titel')),
-            'link'        => filter_var($link, FILTER_VALIDATE_URL) ?: '',
+            'link'        => $this->sanitize_external_url($link),
             'description' => $this->truncate_text(strip_tags($description ?: $content), 500),
             'content'     => $content,
             'author'      => $this->clean_text($author),
@@ -423,14 +433,14 @@ final class CMS_Feed_RSS_Fetcher
                 $attrs = $media->content->attributes();
                 $url   = (string) ($attrs['url'] ?? '');
                 if ($url && $this->is_image_url($url)) {
-                    return $url;
+                    return $this->sanitize_external_url($url);
                 }
             }
             if (isset($media->thumbnail)) {
                 $attrs = $media->thumbnail->attributes();
                 $url   = (string) ($attrs['url'] ?? '');
                 if ($url) {
-                    return $url;
+                    return $this->sanitize_external_url($url);
                 }
             }
         }
@@ -441,7 +451,7 @@ final class CMS_Feed_RSS_Fetcher
             $type  = (string) ($attrs['type'] ?? '');
             $url   = (string) ($attrs['url'] ?? '');
             if (str_starts_with($type, 'image/') && $url) {
-                return $url;
+                return $this->sanitize_external_url($url);
             }
         }
 
@@ -456,9 +466,7 @@ final class CMS_Feed_RSS_Fetcher
     {
         if (preg_match('/<img[^>]+src=["\']([^"\']+)["\']/', $html, $matches)) {
             $url = $matches[1];
-            if (filter_var($url, FILTER_VALIDATE_URL)) {
-                return $url;
-            }
+            return $this->sanitize_external_url($url);
         }
         return '';
     }
@@ -470,21 +478,21 @@ final class CMS_Feed_RSS_Fetcher
     {
         // RSS: image > url
         if (isset($xml->channel->image->url)) {
-            return (string) $xml->channel->image->url;
+            return $this->sanitize_external_url((string) $xml->channel->image->url);
         }
 
         // Atom: icon / logo
         if (isset($xml->icon)) {
-            return (string) $xml->icon;
+            return $this->sanitize_external_url((string) $xml->icon);
         }
         if (isset($xml->logo)) {
-            return (string) $xml->logo;
+            return $this->sanitize_external_url((string) $xml->logo);
         }
 
         // Fallback: Favicon der Domain
         $parsed = parse_url($feedUrl);
         if (isset($parsed['scheme'], $parsed['host'])) {
-            return $parsed['scheme'] . '://' . $parsed['host'] . '/favicon.ico';
+            return $this->sanitize_external_url($parsed['scheme'] . '://' . $parsed['host'] . '/favicon.ico');
         }
 
         return '';
@@ -498,9 +506,7 @@ final class CMS_Feed_RSS_Fetcher
         // RSS
         if (isset($xml->channel->link)) {
             $url = (string) $xml->channel->link;
-            if (filter_var($url, FILTER_VALIDATE_URL)) {
-                return $url;
-            }
+            return $this->sanitize_external_url($url);
         }
 
         // Atom
@@ -508,9 +514,7 @@ final class CMS_Feed_RSS_Fetcher
             $attrs = $link->attributes();
             if ((string) ($attrs['rel'] ?? '') === 'alternate') {
                 $url = (string) ($attrs['href'] ?? '');
-                if (filter_var($url, FILTER_VALIDATE_URL)) {
-                    return $url;
-                }
+                return $this->sanitize_external_url($url);
             }
         }
 
@@ -565,6 +569,35 @@ final class CMS_Feed_RSS_Fetcher
         return in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'], true);
     }
 
+    private function sanitize_external_url(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return '';
+        }
+
+        if (!in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true)) {
+            return '';
+        }
+
+        $host = (string) $parts['host'];
+        if ($this->is_private_host_name($host)) {
+            return '';
+        }
+
+        $literalHost = trim($host, '[]');
+        if (filter_var($literalHost, FILTER_VALIDATE_IP) && !$this->is_public_ip_address($literalHost)) {
+            return '';
+        }
+
+        return $url;
+    }
+
     /**
      * @param array<int,string> $responseHeaders
      */
@@ -592,7 +625,12 @@ final class CMS_Feed_RSS_Fetcher
             $responseHeaders = $http_response_header ?? [];
 
             if ($content !== false || $responseHeaders !== []) {
-                return $content === false ? '' : $content;
+                $body = $content === false ? '' : $content;
+                if (strlen($body) > self::MAX_RESPONSE_BYTES) {
+                    error_log('CMS Feed: Response too large for ' . $url);
+                    return null;
+                }
+                return $body;
             }
         }
 
@@ -647,6 +685,10 @@ final class CMS_Feed_RSS_Fetcher
             CURLOPT_HTTPGET => true,
         ]);
 
+        if (defined('CURLOPT_PROTOCOLS') && defined('CURLPROTO_HTTP') && defined('CURLPROTO_HTTPS')) {
+            curl_setopt($handle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+        }
+
         $rawResponse = curl_exec($handle);
         if ($rawResponse === false) {
             error_log('CMS Feed: cURL request failed for ' . $url . ' – ' . curl_error($handle));
@@ -659,6 +701,10 @@ final class CMS_Feed_RSS_Fetcher
 
         $rawHeaders = substr($rawResponse, 0, $headerSize);
         $body = substr($rawResponse, $headerSize);
+        if (is_string($body) && strlen($body) > self::MAX_RESPONSE_BYTES) {
+            error_log('CMS Feed: cURL response too large for ' . $url);
+            return null;
+        }
 
         return [
             'headers' => $this->extract_header_lines_from_curl_response($rawHeaders),

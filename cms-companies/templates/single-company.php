@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Template: Single Company (Detail View)
  *
@@ -26,15 +28,9 @@ $is_sponsor     = (bool)($company->is_sponsor     ?? false);
 $is_top_partner = (bool)($company->is_top_partner ?? false);
 $is_partner     = (bool)($company->is_partner     ?? false);
 
-// Avatar-Initials + Gradient (deterministisch)
+// Avatar-Initials
 $name_parts = preg_split('/\s+/', trim($company->name));
 $initials   = mb_strtoupper(mb_substr($name_parts[0], 0, 1) . (isset($name_parts[1]) ? mb_substr($name_parts[1], 0, 1) : ''));
-$palettes   = [
-    ['#0891b2','#0284c7'], ['#7c3aed','#a855f7'], ['#059669','#34d399'],
-    ['#d97706','#f59e0b'], ['#1d4ed8','#3b82f6'],
-];
-$cp         = $palettes[abs(crc32($company->name)) % count($palettes)];
-$avatarBg   = "linear-gradient(135deg,{$cp[0]},{$cp[1]})";
 
 // Header-Design-Einstellungen aus DB
 $settings           = CMS_Companies_Database::instance()->get_settings();
@@ -56,19 +52,7 @@ $companyWebsiteUrl  = filter_var(trim((string) ($company->website ?? '')), FILTE
 $companyEmail       = filter_var(trim((string) ($company->email ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
 $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->phone ?? ''))) ?: '';
 ?>
-<style>
-:root {
-  --co-primary:          <?= htmlspecialchars($settings['design_primary_color'] ?? '#0891b2') ?>;
-  --co-primary-d:        <?= htmlspecialchars($settings['design_accent_color']  ?? '#0284c7') ?>;
-  --co-radius:           <?= (int)($settings['design_border_radius'] ?? 14) ?>px;
-  --co-shadow:           0 1px 3px rgba(0,0,0,.04), 0 4px 14px rgba(0,0,0,.04);
-  --co-shadow-h:         0 4px 20px rgba(0,0,0,.10);
-  --co-detail-hdr-bg:    linear-gradient(135deg, <?= htmlspecialchars($headerBgFrom) ?> 0%, <?= htmlspecialchars($headerBgTo) ?> 100%);
-  --co-detail-hdr-color: <?= htmlspecialchars($headerTitleColor) ?>;
-}
-</style>
-
-<div class="co-single-v2">
+<main class="phinit-plugin co-single-v2">
 
   <nav class="co-breadcrumb">
     <a href="<?= htmlspecialchars($base_url . '/companies') ?>">← Unternehmen</a>
@@ -76,7 +60,7 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
     <span class="co-breadcrumb__cur"><?= $sec->escape(mb_strimwidth($company->name ?? '', 0, 60, '…')) ?></span>
   </nav>
 
-  <header class="co-hero-v2" style="background:linear-gradient(135deg,<?= htmlspecialchars($headerBgFrom) ?> 0%,<?= htmlspecialchars($headerBgTo) ?> 100%);">
+  <header class="co-hero-v2 phinit-card phinit-card--accent">
     <div class="co-hero-v2__badges">
       <?php if ($is_sponsor): ?>
         <span class="co-hero-v2__badge co-hero-v2__badge--sponsor">★ Sponsor</span>
@@ -88,9 +72,9 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
     </div>
     <div class="co-hero-v2__inner">
       <?php if ($companyLogoUrl !== ''): ?>
-        <div class="co-hero-v2__avatar"><img src="<?= $sec->escape($companyLogoUrl) ?>" alt="<?= $sec->escape($company->name) ?>"></div>
+        <div class="co-hero-v2__avatar"><img src="<?= $sec->escape($companyLogoUrl) ?>" alt="<?= $sec->escape($company->name) ?>" width="120" height="120" loading="eager" decoding="async"></div>
       <?php else: ?>
-        <div class="co-hero-v2__avatar" style="background:<?= $sec->escape($avatarBg) ?>;"><?= $sec->escape($initials) ?></div>
+        <div class="co-hero-v2__avatar co-hero-v2__avatar--placeholder"><?= $sec->escape($initials) ?></div>
       <?php endif; ?>
       <div class="co-hero-v2__meta">
         <h1 class="co-hero-v2__title"><?= $sec->escape($company->name) ?></h1>
@@ -100,33 +84,33 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
 
   <!-- Bridge Cards (überlappen Hero, wie Expert-Single) -->
   <div class="co-bridge-v2">
-    <div class="co-bridge-v2__about">
+    <section class="co-bridge-v2__about phinit-card">
       <h2 class="co-bridge-v2__title">🏢 Über das Unternehmen</h2>
       <?php $companyDescription = trim((string) ($company->description ?? '')); ?>
       <?php if ($companyDescription !== ''): ?>
         <div class="co-bridge-v2__text co-wysiwyg-content"><?= nl2br(htmlspecialchars($companyDescription)) ?></div>
       <?php else: ?>
-        <p class="co-bridge-v2__text" style="color:#94a3b8;font-style:italic;">Noch keine Beschreibung hinterlegt.</p>
+        <p class="co-bridge-v2__text co-empty-text">Noch keine Beschreibung hinterlegt.</p>
       <?php endif; ?>
-    </div>
-    <div class="co-bridge-v2__contact">
+    </section>
+    <section class="co-bridge-v2__contact phinit-card">
       <h2 class="co-bridge-v2__title">&#128203; Details &amp; Kontakt</h2>
       <div class="co-bridge-v2__contact-body">
 
         <!-- Buchungs-Button -->
-        <a href="#contact" class="co-bridge-v2__book-btn">✉️ Nachricht / Buchen</a>
+        <a href="#contact" class="phinit-btn phinit-btn--primary co-bridge-v2__book-btn">Nachricht / Buchen</a>
 
         <!-- Kontakt-Icons in einer Reihe -->
         <?php if ($companyWebsiteUrl !== '' || $companyEmail !== '' || $companyPhoneHref !== ''): ?>
         <div class="co-bridge-v2__icon-row">
           <?php if ($companyWebsiteUrl !== ''): ?>
-            <a href="<?= $sec->escape($companyWebsiteUrl) ?>" target="_blank" rel="noopener" class="co-bridge-v2__icon-btn">🌐 Web</a>
+            <a href="<?= $sec->escape($companyWebsiteUrl) ?>" target="_blank" rel="noopener noreferrer" class="co-bridge-v2__icon-btn">Web</a>
           <?php endif; ?>
           <?php if ($companyEmail !== ''): ?>
-            <a href="mailto:<?= $sec->escape($companyEmail) ?>" class="co-bridge-v2__icon-btn">✉️ Mail</a>
+            <a href="mailto:<?= $sec->escape($companyEmail) ?>" class="co-bridge-v2__icon-btn">Mail</a>
           <?php endif; ?>
           <?php if ($companyPhoneHref !== ''): ?>
-            <a href="tel:<?= $sec->escape($companyPhoneHref) ?>" class="co-bridge-v2__icon-btn">📞 Anruf</a>
+            <a href="tel:<?= $sec->escape($companyPhoneHref) ?>" class="co-bridge-v2__icon-btn">Anruf</a>
           <?php endif; ?>
         </div>
         <?php endif; ?>
@@ -159,7 +143,7 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
         <?php endif; ?>
 
       </div>
-    </div>
+    </section>
   </div>
 
   <div class="co-people-v2">
@@ -188,9 +172,9 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
               <div class="co-exp-row">
                 <div class="co-exp-row__top">
                   <?php if ($expPhoto): ?>
-                    <div class="co-exp-row__av"><img src="<?= $expPhoto ?>" alt="<?= $expName ?>"></div>
+                    <div class="co-exp-row__av"><img src="<?= $expPhoto ?>" alt="<?= $expName ?>" width="56" height="56" loading="lazy" decoding="async"></div>
                   <?php else: ?>
-                    <div class="co-exp-row__av" style="background:<?= $sec->escape($expGradient) ?>"><?= $letter ?></div>
+                    <div class="co-exp-row__av co-exp-row__av--placeholder"><?= $letter ?></div>
                   <?php endif; ?>
                   <div class="co-exp-row__info">
                     <div class="co-exp-row__name">
@@ -205,7 +189,7 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
                   </div>
                 </div>
                 <?php if ($expId > 0): ?>
-                  <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/experts/' . $expId) ?>" class="co-btn-v2 co-btn-v2--ghost co-btn-v2--sm" style="width:100%;text-align:center;">Profil →</a>
+                  <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/experts/' . $expId, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary co-btn-v2 co-btn-v2--ghost co-btn-v2--sm co-btn-v2--full">Profil →</a>
                 <?php endif; ?>
               </div>
             <?php endforeach; ?>
@@ -237,9 +221,9 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
               <div class="co-exp-row">
                 <div class="co-exp-row__top">
                   <?php if ($spkPhoto): ?>
-                    <div class="co-exp-row__av"><img src="<?= $spkPhoto ?>" alt="<?= $spkName ?>"></div>
+                    <div class="co-exp-row__av"><img src="<?= $spkPhoto ?>" alt="<?= $spkName ?>" width="56" height="56" loading="lazy" decoding="async"></div>
                   <?php else: ?>
-                    <div class="co-exp-row__av" style="background:<?= $sec->escape($spkGrad) ?>"><?= $letter ?></div>
+                    <div class="co-exp-row__av co-exp-row__av--placeholder"><?= $letter ?></div>
                   <?php endif; ?>
                   <div class="co-exp-row__info">
                     <div class="co-exp-row__name">
@@ -254,7 +238,7 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
                   </div>
                 </div>
                 <?php if ($spkId > 0): ?>
-                  <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/speakers/' . $spkId) ?>" class="co-btn-v2 co-btn-v2--ghost co-btn-v2--sm" style="width:100%;text-align:center;">Profil →</a>
+                  <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/speakers/' . $spkId, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary co-btn-v2 co-btn-v2--ghost co-btn-v2--sm co-btn-v2--full">Profil →</a>
                 <?php endif; ?>
               </div>
             <?php endforeach; ?>
@@ -270,7 +254,7 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
       <strong>Dieses Unternehmensprofil wurde von der Redaktion angelegt.</strong>
       Gehört es Ihnen? Registrieren Sie sich kostenlos und übernehmen Sie die Verwaltung.
     </div>
-    <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/register') ?>" class="co-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
+    <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/register', ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--primary co-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
   </div>
   <?php endif; ?>
-</div>
+</main>

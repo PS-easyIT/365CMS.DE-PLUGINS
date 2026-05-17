@@ -167,7 +167,7 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
                     <div class="contact-inline-actions">
                         <a href="?section=forms&action=fields&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Felder bearbeiten">📝</a>
                         <a href="?section=forms&action=edit&id=<?php echo (int)$f['id']; ?>" class="btn btn-sm btn-secondary" title="Bearbeiten">✏️</a>
-                        <a href="/contact/<?php echo htmlspecialchars($f['slug']); ?>" target="_blank" class="btn btn-sm btn-secondary" title="Vorschau">👁️</a>
+                        <a href="/contact/<?php echo htmlspecialchars($f['slug']); ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary" title="Vorschau">👁️</a>
                     </div>
                 </td>
             </tr>

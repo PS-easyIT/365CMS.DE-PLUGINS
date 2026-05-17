@@ -18,15 +18,6 @@ $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
 $theme = CMS\ThemeManager::instance();
 $theme->getHeader();
 ?>
-    <link rel="stylesheet" href="<?php echo CMS_CONTACT_PLUGIN_URL; ?>assets/css/contact-public.css?v=<?php echo CMS_CONTACT_VERSION; ?>">
-    <style>
-        .booking-contact-card { max-width: 640px; margin: 2rem auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.08); overflow: hidden; }
-        .booking-contact-header { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #fff; padding: 2rem 2rem 1.5rem; }
-        .booking-contact-header h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
-        .booking-contact-header p { opacity: .9; margin: 0; font-size: .95rem; }
-        .booking-contact-body { padding: 2rem; }
-        .booking-contact-badge { display: inline-block; background: rgba(255,255,255,.2); color: #fff; padding: .25rem .75rem; border-radius: 20px; font-size: .8rem; margin-bottom: .75rem; }
-    </style>
     <?php echo CMS_Contact_Frontend::render_custom_css($form); ?>
 
     <main class="contact-main" aria-labelledby="contact-form-title">
@@ -85,4 +76,3 @@ $theme->getHeader();
     </main>
 
     <?php CMS\ThemeManager::instance()->getFooter(); ?>
-    <script src="<?php echo CMS_CONTACT_PLUGIN_URL; ?>assets/js/contact-public.js?v=<?php echo CMS_CONTACT_VERSION; ?>" defer></script>

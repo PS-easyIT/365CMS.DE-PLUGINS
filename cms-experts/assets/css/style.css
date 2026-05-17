@@ -1474,3 +1474,37 @@
 /* ── Archive: Pagination & Empty State ────────────────────────── */
 .expert-pagination { margin-top: 40px; text-align: center; }
 .no-results        { text-align: center; padding: 50px; color: var(--expert-text-light, #94a3b8); }
+
+/* 365CMS 3.x / PHINIT Publicsite Override */
+.experts-archive-wrapper { background: var(--phinit-color-bg); border-color: var(--phinit-color-border); }
+.expert-archive-header { margin: var(--phinit-space-5); background: var(--phinit-color-surface); color: var(--phinit-color-ink); border: 1px solid var(--phinit-color-border); border-radius: var(--phinit-radius-md); }
+.expert-archive-header .header-title,
+.expert-archive-header .header-description { color: var(--phinit-color-ink); }
+.expert-archive-header .header-description-area { background: var(--phinit-color-bg); border-color: var(--phinit-color-border); }
+.archive-filter-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items: end; margin: var(--phinit-space-5); box-shadow: var(--phinit-shadow-card); }
+.filter-input-wrapper input { padding-left: var(--phinit-space-3); }
+.filter-input-wrapper .icon { display: none; }
+.experts-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.expert-card,
+.expert-card--overview { height: auto; min-height: 0; max-height: none; background: var(--phinit-color-surface); border-color: var(--phinit-color-border); box-shadow: var(--phinit-shadow-card); }
+.expert-card:hover,
+.expert-card--overview:hover { transform: none; box-shadow: var(--phinit-shadow-raised); }
+.expert-card--overview .expert-card-top,
+.expert-card--overview .expert-card-expertise-section,
+.expert-card-social { background: var(--phinit-color-bg); border-color: var(--phinit-color-border); }
+.expert-avatar-placeholder { background: var(--phinit-color-surface-alt); color: var(--phinit-color-ink-on-dark); }
+.badge-partner,
+.badge-top-partner,
+.badge-sponsor,
+.badge-premium,
+.badge-certified,
+.badge-mvp,
+.badge-award { background: var(--phinit-color-surface-alt); border-color: var(--phinit-color-surface-alt); box-shadow: none; }
+.skill-pill { background: var(--phinit-color-surface); border: 1px solid var(--phinit-color-border); color: var(--phinit-color-ink-secondary); }
+.expert-card--overview .expert-card-cta { background: var(--phinit-color-accent); }
+
+@media (max-width: 640px) {
+    .expert-archive-header,
+    .archive-filter-bar { margin: var(--phinit-space-3); }
+    .experts-grid { padding: 0 var(--phinit-space-3); }
+}

@@ -16,6 +16,7 @@ final class CMS_Experts_Template_Loader
 {
     private static ?self $instance = null;
     private string $template_dir;
+    private string $theme_template_dir = '';
 
     public static function instance(): self
     {
@@ -28,6 +29,30 @@ final class CMS_Experts_Template_Loader
     private function __construct()
     {
         $this->template_dir = CMS_EXPERTS_PLUGIN_DIR . 'templates/';
+        if (class_exists('CMS\\ThemeManager')) {
+            $this->theme_template_dir = \CMS\ThemeManager::instance()->getThemePath() . 'cms-experts/';
+        }
+    }
+
+    private function locate_template(string $template_name): ?string
+    {
+        $template_name = str_replace('.php', '', $template_name) . '.php';
+
+        $theme_template = $this->theme_template_dir !== '' ? $this->theme_template_dir . $template_name : '';
+        if ($theme_template !== '' && file_exists($theme_template)) {
+            return $theme_template;
+        }
+
+        $legacy_theme_template = '';
+        if (class_exists('CMS\\ThemeManager')) {
+            $legacy_theme_template = \CMS\ThemeManager::instance()->getThemePath() . 'experts/' . $template_name;
+        }
+        if ($legacy_theme_template !== '' && file_exists($legacy_theme_template)) {
+            return $legacy_theme_template;
+        }
+
+        $plugin_template = $this->template_dir . $template_name;
+        return file_exists($plugin_template) ? $plugin_template : null;
     }
 
     /**
@@ -35,19 +60,15 @@ final class CMS_Experts_Template_Loader
      */
     public function render_template(string $template_name, array $data = []): void
     {
-        // Theme-Override: Pfad wird zur Laufzeit vom ThemeManager ermittelt (kein THEME_DIR)
-        $theme_template = \CMS\ThemeManager::instance()->getThemePath() . 'experts/' . $template_name . '.php';
-        $plugin_template = $this->template_dir . $template_name . '.php';
+        $template_file = $this->locate_template($template_name);
 
-        $template_file = file_exists($theme_template) ? $theme_template : $plugin_template;
-
-        if (!file_exists($template_file)) {
-            echo '<!-- Template not found: ' . $template_name . ' -->';
+        if ($template_file === null) {
+            echo '<!-- Template not found: ' . htmlspecialchars($template_name, ENT_QUOTES, 'UTF-8') . ' -->';
             return;
         }
 
         // Extrahiere Daten in lokale Variablen
-        extract($data);
+        extract($data, EXTR_SKIP);
 
         // Include Template
         include $template_file;

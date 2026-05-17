@@ -1,4 +1,5 @@
 ﻿<?php
+
 /**
  * Single Speaker Detail – Struktur nach single-expert.php
  *
@@ -10,6 +11,10 @@
  *
  * @package CMS_Speakers
  */
+
+if (!defined('ABSPATH')) {
+  exit;
+}
 
 if (!isset($speaker)) {
     return;
@@ -31,21 +36,8 @@ if (!function_exists('sp_hex_mix')) {
 }
 
 /* ── CSS-Variablen aus Settings ─────────────────────────────── */
-$primary_raw  = $settings['design_primary_color']       ?? '#8b5cf6';
-$accent_raw   = $settings['design_accent_color']        ?? '#7c3aed';
-$primary      = htmlspecialchars($primary_raw);
-$accent       = htmlspecialchars($accent_raw);
-$card_bg      = htmlspecialchars($settings['design_card_bg']              ?? '#faf5ff');
-$hdr_from     = htmlspecialchars($settings['detail_header_bg_from']       ?? '#f9f6ff');
-$hdr_to       = htmlspecialchars($settings['detail_header_bg_to']         ?? '#f1ecfd');
-$hdr_title    = htmlspecialchars($settings['detail_header_title_color']   ?? '#1e293b');
-
-// Abgeleitete Farben
-$primary_h      = htmlspecialchars(sp_hex_mix($primary_raw, 0.18, false));
-$secondary      = htmlspecialchars(sp_hex_mix($accent_raw,  0.20, false));
-$card_top_bg    = htmlspecialchars(sp_hex_mix($accent_raw,  0.76, true));
-$border_color   = htmlspecialchars(sp_hex_mix($accent_raw,  0.55, true));
-$border_l_color = htmlspecialchars(sp_hex_mix($accent_raw,  0.79, true));
+$primary_raw  = $settings['design_primary_color'] ?? '';
+$accent_raw   = $settings['design_accent_color'] ?? '';
 
 /* ── Basis-Daten ─────────────────────────────────────────────── */
 $s          = $speaker;
@@ -136,15 +128,10 @@ $_rec_group_labels = [
 ];
 /* ── Initialen / Avatar ──────────────────────────────────────── */
 $initials = mb_strtoupper(mb_substr($first, 0, 1) . mb_substr($last, 0, 1));
-$pcolors  = [['#8b5cf6','#a855f7'],['#7c3aed','#8b5cf6'],['#a855f7','#c084fc'],['#6d28d9','#8b5cf6'],['#9333ea','#a855f7']];
-$cp       = $pcolors[abs(crc32($full_name)) % count($pcolors)];
-$av_grad  = "linear-gradient(135deg,{$cp[0]},{$cp[1]})";
 
 /* ── Availability / Travel Labels ───────────────────────────── */
 $avail_labels = ['available' => 'Verfügbar', 'limited' => 'Begrenzt', 'booked' => 'Ausgebucht'];
 $avail_label  = $avail_labels[$avail] ?? 'Verfügbar';
-$avail_map    = ['available' => '#d1fae5', 'limited' => '#fef3c7', 'booked' => '#fee2e2'];
-$avail_color  = $avail_map[$avail] ?? '#ede9fe';
 $travel_labels = ['local'=>'📍 Lokal','regional'=>'🗺️ Regional','national'=>'🇩🇪 DACH','international'=>'🌍 International','worldwide'=>'🌐 Weltweit'];
 $travel_label  = $travel_labels[$travel] ?? $travel;
 
@@ -155,47 +142,7 @@ $presence_labels = ['presence' => '🏛️ Präsenz', 'online' => '💻 Online',
 $topics = $topics ?? [];
 $events = $events ?? [];
 ?>
-<?php
-$badge_avail_bg       = htmlspecialchars($settings['design_badge_avail_bg']       ?? '#d1fae5');
-$badge_avail_color    = htmlspecialchars($settings['design_badge_avail_color']    ?? '#065f46');
-$badge_limited_bg     = htmlspecialchars($settings['design_badge_limited_bg']     ?? '#fef3c7');
-$badge_limited_color  = htmlspecialchars($settings['design_badge_limited_color']  ?? '#92400e');
-$badge_booked_bg      = htmlspecialchars($settings['design_badge_booked_bg']      ?? '#fee2e2');
-$badge_booked_color   = htmlspecialchars($settings['design_badge_booked_color']   ?? '#991b1b');
-$badge_mvp_bg         = htmlspecialchars($settings['design_badge_mvp_bg']         ?? 'rgba(251,191,36,0.2)');
-$badge_mvp_color      = htmlspecialchars($settings['design_badge_mvp_color']      ?? '#fbbf24');
-$badge_verified_bg    = htmlspecialchars($settings['design_badge_verified_bg']    ?? '#ede9fe');
-$badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'] ?? '#5b21b6');
-?>
-<style>
-:root {
-  --sp-primary:     <?= $primary ?>;
-  --sp-primary-h:   <?= $primary_h ?>;
-  --sp-accent:      <?= $accent ?>;
-  --sp-secondary:   <?= $secondary ?>;
-  --sp-hdr-from:    <?= $hdr_from ?>;
-  --sp-hdr-to:      <?= $hdr_to ?>;
-  --sp-hdr-title:   <?= $hdr_title ?>;
-  --sp-card-bg:     <?= $card_bg ?>;
-  --sp-card-top-bg: <?= $card_top_bg ?>;
-  --sp-border:      <?= $border_color ?>;
-  --sp-border-l:    <?= $border_l_color ?>;
-  --sp-radius:      <?= (int)($settings['design_border_radius'] ?? 12) ?>px;
-  /* Badge-Farben (konfigurierbar) */
-  --sp-avail-available-bg:    <?= $badge_avail_bg ?>;
-  --sp-avail-available-color: <?= $badge_avail_color ?>;
-  --sp-avail-limited-bg:      <?= $badge_limited_bg ?>;
-  --sp-avail-limited-color:   <?= $badge_limited_color ?>;
-  --sp-avail-booked-bg:       <?= $badge_booked_bg ?>;
-  --sp-avail-booked-color:    <?= $badge_booked_color ?>;
-  --sp-badge-mvp-bg:          <?= $badge_mvp_bg ?>;
-  --sp-badge-mvp-color:       <?= $badge_mvp_color ?>;
-  --sp-badge-verified-bg:     <?= $badge_verified_bg ?>;
-  --sp-badge-verified-color:  <?= $badge_verified_color ?>;
-}
-</style>
-
-<div class="sp-single-v2">
+<main class="phinit-plugin sp-single-v2">
 
   <nav class="sp-breadcrumb">
     <a href="<?= htmlspecialchars($archive_url) ?>">← Speaker</a>
@@ -213,9 +160,9 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
         <?php endif; ?>
       </div>
       <?php if ($photo !== ''): ?>
-        <div class="sp-hero-v2__av"><img src="<?= htmlspecialchars($photo) ?>" alt="<?= $full_name ?>"></div>
+        <div class="sp-hero-v2__av"><img src="<?= htmlspecialchars($photo, ENT_QUOTES, 'UTF-8') ?>" alt="<?= $full_name ?>" width="120" height="120" loading="eager" decoding="async"></div>
       <?php else: ?>
-        <div class="sp-hero-v2__av" style="background:<?= htmlspecialchars($av_grad) ?>;"><?= htmlspecialchars($initials ?: '🎤') ?></div>
+        <div class="sp-hero-v2__av sp-hero-v2__av--placeholder"><?= htmlspecialchars($initials ?: '🎤') ?></div>
       <?php endif; ?>
       <div class="sp-hero-v2__meta">
         <div class="sp-hero-v2__name-row">
@@ -238,7 +185,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
             <?php if (!empty($s->company_id)): ?>
               <a href="<?= htmlspecialchars($base_url . '/companies/' . (int)$s->company_id) ?>"><?= $company ?></a>
             <?php elseif ($website !== ''): ?>
-              <a href="<?= htmlspecialchars($website) ?>" target="_blank" rel="noopener"><?= $company ?></a>
+              <a href="<?= htmlspecialchars($website, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><?= $company ?></a>
             <?php else: echo $company; endif; ?>
           </p>
         <?php endif; ?>
@@ -257,7 +204,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
     <?php else: ?>
       <div class="sp-bridge__about">
         <h2 class="sp-bridge__title">Über <?= htmlspecialchars($first ?: 'den Speaker') ?></h2>
-        <p class="sp-bridge__text" style="color:#94a3b8;font-style:italic;">Noch keine Beschreibung hinterlegt.</p>
+        <p class="sp-bridge__text sp-prose-muted">Noch keine Beschreibung hinterlegt.</p>
       </div>
     <?php endif; ?>
 
@@ -273,7 +220,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
         <!-- Reihe 2: Website · E-Mail · Telefon -->
         <div class="sp-bridge__row sp-bridge__links">
           <?php if ($website !== ''): ?>
-            <a href="<?= htmlspecialchars($website) ?>" target="_blank" rel="noopener" class="sp-bridge__link" title="Website ansehen">Website</a>
+            <a href="<?= htmlspecialchars($website, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="sp-bridge__link" title="Website ansehen">Website</a>
           <?php else: ?>
             <span class="sp-bridge__link sp-bridge__link--empty">Website</span>
           <?php endif; ?>
@@ -312,7 +259,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
           ];
           foreach ($social_icons as $sn => $icfg):
             if (!empty($speaker_social[$sn])): ?>
-              <a href="<?= htmlspecialchars($speaker_social[$sn]) ?>" target="_blank" rel="noopener" class="sp-si" title="<?= htmlspecialchars($icfg['label']) ?>"><?= $icfg['svg'] ?></a>
+              <a href="<?= htmlspecialchars($speaker_social[$sn], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="sp-si" title="<?= htmlspecialchars($icfg['label']) ?>" aria-label="<?= htmlspecialchars($icfg['label']) ?>"><?= $icfg['svg'] ?></a>
             <?php else: ?>
               <span class="sp-si sp-si--empty" title="<?= htmlspecialchars($icfg['label']) ?>"><?= $icfg['svg'] ?></span>
             <?php endif;
@@ -329,7 +276,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
       <?php if ($speaking_style): ?>
         <div class="ex-sec">
           <h2 class="ex-sec__title">Vortragsstil</h2>
-          <p style="line-height:1.7;color:#475569;font-size:.92rem;"><?= nl2br(htmlspecialchars($speaking_style)) ?></p>
+          <p class="sp-prose-muted"><?= nl2br(htmlspecialchars($speaking_style)) ?></p>
         </div>
       <?php endif; ?>
 
@@ -366,7 +313,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
       <?php if ($target_audience): ?>
         <div class="ex-sec">
           <h2 class="ex-sec__title">Zielgruppe</h2>
-          <p style="line-height:1.7;color:#475569;font-size:.92rem;"><?= nl2br(htmlspecialchars($target_audience)) ?></p>
+          <p class="sp-prose-muted"><?= nl2br(htmlspecialchars($target_audience)) ?></p>
         </div>
       <?php endif; ?>
 
@@ -374,7 +321,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
         <div class="ex-sec">
           <h2 class="ex-sec__title">Auszeichnungen & Rankings</h2>
           <?php if ($awards): ?>
-            <p style="line-height:1.7;color:#475569;font-size:.92rem;margin-bottom:1rem;"><?= nl2br(htmlspecialchars($awards)) ?></p>
+            <p class="sp-prose-muted sp-prose-muted--spaced"><?= nl2br(htmlspecialchars($awards)) ?></p>
           <?php endif; ?>
           <?php foreach ($_recognitions as $grp => $items):
             if (empty($items) || !is_array($items)) continue; ?>
@@ -495,18 +442,7 @@ $badge_verified_color = htmlspecialchars($settings['design_badge_verified_color'
       <strong>Dieses Profil wurde von der Redaktion angelegt.</strong>
       Gehört es Ihnen? Registrieren Sie sich kostenlos und übernehmen Sie die Verwaltung Ihres Speaker-Profils.
     </div>
-    <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/register') ?>" class="sp-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
+    <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/register', ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--primary sp-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
   </div>
   <?php endif; ?>
-</div>
-<script>
-(function(){
-  function checkBioOverflow(){
-    document.querySelectorAll('.sp-bridge__text').forEach(function(el){
-      el.classList.toggle('is-overflow', el.scrollHeight > el.clientHeight);
-    });
-  }
-  checkBioOverflow();
-  window.addEventListener('resize', checkBioOverflow);
-})();
-</script>
+</main>

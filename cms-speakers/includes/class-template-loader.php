@@ -16,6 +16,7 @@ final class CMS_Speakers_Template_Loader
 {
     private static ?self $instance = null;
     private string $template_path;
+    private string $theme_template_path = '';
 
     public static function instance(): self
     {
@@ -28,6 +29,30 @@ final class CMS_Speakers_Template_Loader
     private function __construct()
     {
         $this->template_path = CMS_SPEAKERS_PLUGIN_DIR . 'templates/';
+        if (class_exists('CMS\\ThemeManager')) {
+            $this->theme_template_path = \CMS\ThemeManager::instance()->getThemePath() . 'cms-speakers/';
+        }
+    }
+
+    private function locate_template(string $template_name): ?string
+    {
+        $template_name = str_replace('.php', '', $template_name) . '.php';
+
+        $theme_template = $this->theme_template_path !== '' ? $this->theme_template_path . $template_name : '';
+        if ($theme_template !== '' && file_exists($theme_template)) {
+            return $theme_template;
+        }
+
+        $legacy_theme_template = '';
+        if (class_exists('CMS\\ThemeManager')) {
+            $legacy_theme_template = \CMS\ThemeManager::instance()->getThemePath() . 'speakers/' . $template_name;
+        }
+        if ($legacy_theme_template !== '' && file_exists($legacy_theme_template)) {
+            return $legacy_theme_template;
+        }
+
+        $plugin_template = $this->template_path . $template_name;
+        return file_exists($plugin_template) ? $plugin_template : null;
     }
 
     /**
@@ -35,11 +60,11 @@ final class CMS_Speakers_Template_Loader
      */
     public function render_template(string $template_name, array $data = []): void
     {
-        $template_file = $this->template_path . $template_name . '.php';
+        $template_file = $this->locate_template($template_name);
 
-        if (!file_exists($template_file)) {
+        if ($template_file === null) {
             if (defined('CMS_DEBUG') && CMS_DEBUG) {
-                error_log("[CMS Speakers] Template nicht gefunden: {$template_file}");
+                error_log("[CMS Speakers] Template nicht gefunden: {$template_name}");
             }
             echo '<p>Template nicht gefunden: ' . htmlspecialchars($template_name) . '</p>';
             return;
@@ -71,7 +96,7 @@ final class CMS_Speakers_Template_Loader
         }
 
         ob_start();
-        include $this->template_path . 'speaker-card.php';
+        $this->render_template('speaker-card', ['speaker' => $speaker, 'settings' => $settings, 'topics' => $topics]);
         return ob_get_clean();
     }
 

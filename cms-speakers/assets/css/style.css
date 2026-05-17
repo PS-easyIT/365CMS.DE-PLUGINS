@@ -745,3 +745,34 @@
     padding: 0 1rem;
   }
 }
+
+/* 365CMS 3.x / PHINIT Publicsite Override */
+.sp-archive { background: var(--phinit-color-bg); border-color: var(--phinit-color-border); }
+.sp-archive-header { margin: var(--phinit-space-5); min-height: auto; background: var(--phinit-color-surface); color: var(--phinit-color-ink); }
+.sp-archive-header-title,
+.sp-archive-subtitle,
+.sp-archive-count { color: var(--phinit-color-ink); }
+.sp-archive-count { background: var(--phinit-color-bg); border: 1px solid var(--phinit-color-border); backdrop-filter: none; }
+.sp-filter-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items: end; margin: var(--phinit-space-5); box-shadow: var(--phinit-shadow-card); }
+.sp-filter-input input { padding-left: var(--phinit-space-3); }
+.sp-filter-icon { display: none; }
+.sp-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.sp-card,
+.sp-card--overview { height: auto; min-height: 0; max-height: none; background: var(--phinit-color-surface); border-color: var(--phinit-color-border); box-shadow: var(--phinit-shadow-card); }
+.sp-card:hover,
+.sp-card--overview:hover { transform: none; box-shadow: var(--phinit-shadow-raised); }
+.sp-card--overview .sp-card-top,
+.sp-card--overview .sp-card-expertise-section,
+.sp-card-social { background: var(--phinit-color-bg); border-color: var(--phinit-color-border); }
+.sp-avatar-placeholder { background: var(--phinit-color-surface-alt); color: var(--phinit-color-ink-on-dark); }
+.sp-badge-featured,
+.sp-badge-verified { background: var(--phinit-color-surface-alt); border-color: var(--phinit-color-surface-alt); }
+.sp-card--overview .sp-format-pill,
+.sp-skill-pill { background: var(--phinit-color-surface); border-color: var(--phinit-color-border); color: var(--phinit-color-ink-secondary); }
+.sp-card--overview .sp-card-cta { background: var(--phinit-color-accent); }
+
+@media (max-width: 640px) {
+  .sp-archive-header,
+  .sp-filter-bar { margin: var(--phinit-space-3); }
+  .sp-grid { padding: 0 var(--phinit-space-3); }
+}

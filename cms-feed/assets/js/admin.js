@@ -159,7 +159,7 @@
                 var form = document.getElementById('channelBulkForm');
                 var idContainer = document.getElementById('channelBulkIds');
                 document.getElementById('channelBulkAction').value = action;
-                idContainer.innerHTML = '';
+                idContainer.textContent = '';
                 checked.forEach(function(cb) {
                     var input = document.createElement('input');
                     input.type = 'hidden';
@@ -213,7 +213,7 @@
                 var form = document.getElementById('categoryBulkForm');
                 var idContainer = document.getElementById('categoryBulkIds');
                 document.getElementById('categoryBulkAction').value = action;
-                idContainer.innerHTML = '';
+                idContainer.textContent = '';
                 checked.forEach(function(cb) {
                     var input = document.createElement('input');
                     input.type = 'hidden';
@@ -241,22 +241,61 @@
         modal = document.createElement('div');
         modal.id = 'bulkConfirmModal';
         modal.className = 'modal feed-modal';
-        modal.innerHTML = [
-            '<div class="modal-content feed-modal-content--compact">',
-            '  <div class="modal-header">',
-            '    <h3 id="bulkConfirmTitle">⚠️ Aktion bestätigen</h3>',
-            '    <button class="modal-close" type="button" data-feed-close-modal="bulkConfirmModal">&times;</button>',
-            '  </div>',
-            '  <div class="modal-body">',
-            '    <p id="bulkConfirmMessage"></p>',
-            '    <p id="bulkConfirmWarning" class="feed-warning-text" hidden>⚠️ Diese Aktion kann nicht rückgängig gemacht werden.</p>',
-            '  </div>',
-            '  <div class="modal-footer">',
-            '    <button type="button" class="btn btn-secondary" data-feed-close-modal="bulkConfirmModal">Abbrechen</button>',
-            '    <button type="button" id="bulkConfirmBtn" class="btn btn-primary">✅ Bestätigen</button>',
-            '  </div>',
-            '</div>'
-        ].join('');
+
+        var content = document.createElement('div');
+        content.className = 'modal-content feed-modal-content--compact';
+
+        var header = document.createElement('div');
+        header.className = 'modal-header';
+
+        var title = document.createElement('h3');
+        title.id = 'bulkConfirmTitle';
+        title.textContent = '⚠️ Aktion bestätigen';
+
+        var closeButton = document.createElement('button');
+        closeButton.className = 'modal-close';
+        closeButton.type = 'button';
+        closeButton.setAttribute('data-feed-close-modal', 'bulkConfirmModal');
+        closeButton.setAttribute('aria-label', 'Dialog schließen');
+        closeButton.textContent = '×';
+
+        var body = document.createElement('div');
+        body.className = 'modal-body';
+
+        var message = document.createElement('p');
+        message.id = 'bulkConfirmMessage';
+
+        var warning = document.createElement('p');
+        warning.id = 'bulkConfirmWarning';
+        warning.className = 'feed-warning-text';
+        warning.hidden = true;
+        warning.textContent = '⚠️ Diese Aktion kann nicht rückgängig gemacht werden.';
+
+        var footer = document.createElement('div');
+        footer.className = 'modal-footer';
+
+        var cancelButton = document.createElement('button');
+        cancelButton.type = 'button';
+        cancelButton.className = 'btn btn-secondary';
+        cancelButton.setAttribute('data-feed-close-modal', 'bulkConfirmModal');
+        cancelButton.textContent = 'Abbrechen';
+
+        var confirmButton = document.createElement('button');
+        confirmButton.type = 'button';
+        confirmButton.id = 'bulkConfirmBtn';
+        confirmButton.className = 'btn btn-primary';
+        confirmButton.textContent = '✅ Bestätigen';
+
+        header.appendChild(title);
+        header.appendChild(closeButton);
+        body.appendChild(message);
+        body.appendChild(warning);
+        footer.appendChild(cancelButton);
+        footer.appendChild(confirmButton);
+        content.appendChild(header);
+        content.appendChild(body);
+        content.appendChild(footer);
+        modal.appendChild(content);
         document.body.appendChild(modal);
 
         modal.querySelector('#bulkConfirmBtn').addEventListener('click', function() {

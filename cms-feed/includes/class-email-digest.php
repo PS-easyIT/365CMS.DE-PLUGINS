@@ -163,7 +163,7 @@ HTML;
             $html .= <<<HTML
 
             <div style="{$border}padding:16px 0;">
-                <a href="{$link}" style="color:#1e293b;text-decoration:none;font-weight:600;font-size:.95rem;line-height:1.4;" target="_blank">{$title}</a>
+                <a href="{$link}" style="color:#1e293b;text-decoration:none;font-weight:600;font-size:.95rem;line-height:1.4;" target="_blank" rel="noopener noreferrer">{$title}</a>
                 <p style="margin:6px 0 0;font-size:.8rem;color:#64748b;">{$source} · {$pubDate}</p>
                 <p style="margin:8px 0 0;font-size:.875rem;color:#475569;line-height:1.5;">{$description}</p>
             </div>

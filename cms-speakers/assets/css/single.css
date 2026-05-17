@@ -600,3 +600,36 @@
   .sp-hero-v2__av    { width: 80px; height: 80px; }
   .sp-ev-grid-v2     { grid-template-columns: 1fr; }
 }
+
+/* 365CMS 3.x / PHINIT Publicsite Override */
+.sp-single-v2 { background: var(--phinit-color-bg); border-color: var(--phinit-color-border); }
+.sp-breadcrumb { background: var(--phinit-color-surface); border-color: var(--phinit-color-border); }
+.sp-hero-v2 { height: auto; min-height: 220px; max-height: none; background: var(--phinit-color-surface); border-bottom-color: var(--phinit-color-accent); }
+.sp-hero-v2__inner { min-height: 220px; }
+.sp-hero-v2__av { box-shadow: none; background: var(--phinit-color-bg); border: 1px solid var(--phinit-color-border); }
+.sp-hero-v2__av--placeholder { background: var(--phinit-color-surface-alt); color: var(--phinit-color-ink-on-dark); }
+.sp-hero-v2__spec-pill,
+.sp-hero-v2__ev-count,
+.sp-hero-v2__si { backdrop-filter: none; background: var(--phinit-color-bg); border: 1px solid var(--phinit-color-border); color: var(--phinit-color-ink-secondary); }
+.sp-hero-v2__si:hover,
+.sp-si:hover,
+.sp-si-v2:hover { transform: none; box-shadow: none; }
+.sp-bridge { margin-top: var(--phinit-space-5); }
+.sp-bridge__about,
+.sp-bridge__contact,
+.sp-sec-v2,
+.sp-sc-v2,
+.sp-ev-v2 { background: var(--phinit-color-surface); border-color: var(--phinit-color-border); box-shadow: var(--phinit-shadow-card); }
+.sp-bridge__about:hover,
+.sp-bridge__contact:hover,
+.sp-sec-v2:hover { box-shadow: var(--phinit-shadow-card); }
+.sp-prose-muted,
+.sp-prose-muted--spaced { color: var(--phinit-color-ink-secondary); line-height: 1.7; }
+.sp-prose-muted--spaced { margin-top: var(--phinit-space-3); }
+.sp-btn-v2 { background: var(--phinit-color-accent); transform: none; }
+.sp-btn-v2:hover { transform: none; filter: none; }
+
+@media (max-width: 768px) {
+  .sp-bridge { padding: 0 var(--phinit-space-4); }
+  .sp-hero-v2__inner { min-height: 0; }
+}

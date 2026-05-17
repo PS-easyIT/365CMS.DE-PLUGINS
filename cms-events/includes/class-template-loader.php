@@ -36,6 +36,10 @@ final class CMS_Events_Template_Loader
      */
     private function getThemeTemplateDir(): string
     {
+        if (!class_exists('CMS\\ThemeManager')) {
+            return '';
+        }
+
         return \CMS\ThemeManager::instance()->getThemePath() . 'cms-events/';
     }
 
@@ -58,8 +62,9 @@ final class CMS_Events_Template_Loader
         $template_name = str_replace('.php', '', $template_name) . '.php';
 
         // Theme-Override: Pfad wird zur Laufzeit vom ThemeManager ermittelt
-        $theme_template = $this->getThemeTemplateDir() . $template_name;
-        if (file_exists($theme_template)) {
+        $theme_dir = $this->getThemeTemplateDir();
+        $theme_template = $theme_dir !== '' ? $theme_dir . $template_name : '';
+        if ($theme_template !== '' && file_exists($theme_template)) {
             return $theme_template;
         }
 

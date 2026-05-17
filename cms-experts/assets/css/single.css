@@ -720,3 +720,33 @@
   .ex-hero__badges  { position: absolute; top: .5rem; right: .75rem; left: .75rem; max-width: none; }
   .ex-hero__av      { width: 80px; height: 80px; }
 }
+
+/* 365CMS 3.x / PHINIT Publicsite Override */
+.ex-v2 { background: var(--phinit-color-bg); border-color: var(--phinit-color-border); }
+.ex-bc { background: var(--phinit-color-surface); border-color: var(--phinit-color-border); }
+.ex-hero { height: auto; min-height: 220px; max-height: none; background: var(--phinit-color-surface); border-bottom-color: var(--phinit-color-accent); }
+.ex-hero__inner { min-height: 220px; }
+.ex-hero__av { box-shadow: none; background: var(--phinit-color-bg); border: 1px solid var(--phinit-color-border); }
+.ex-hero__av--placeholder { background: var(--phinit-color-surface-alt); color: var(--phinit-color-ink-on-dark); }
+.ex-hero__badge,
+.ex-hero__spec-pill,
+.ex-hero__ev-count,
+.ex-hero__si { backdrop-filter: none; background: var(--phinit-color-bg); border: 1px solid var(--phinit-color-border); color: var(--phinit-color-ink-secondary); }
+.ex-hero__si:hover,
+.ex-si:hover { transform: none; box-shadow: none; }
+.ex-bridge { margin-top: var(--phinit-space-5); }
+.ex-bridge__about,
+.ex-bridge__contact,
+.ex-sec,
+.ex-sc,
+.ex-ev-v2,
+.ex-cert-item { background: var(--phinit-color-surface); border-color: var(--phinit-color-border); box-shadow: var(--phinit-shadow-card); }
+.ex-prose-muted { color: var(--phinit-color-ink-secondary); line-height: 1.7; }
+.ex-btn { background: var(--phinit-color-accent); box-shadow: none; transform: none; }
+.ex-btn:hover { transform: none; box-shadow: none; }
+.ex-btn--ghost { background: var(--phinit-color-bg); color: var(--phinit-color-link); border-color: var(--phinit-color-border); }
+
+@media (max-width: 768px) {
+  .ex-bridge { padding: 0 var(--phinit-space-4); }
+  .ex-hero__inner { min-height: 0; }
+}

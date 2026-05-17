@@ -37,27 +37,6 @@ $hdr_to             = $settings['detail_header_bg_to']   ?? $settings['archive_h
 $hdr_title          = $settings['archive_header_title_color']    ?? '#7c4700';
 $border_radius      = (int)($settings['design_border_radius']    ?? 12);
 ?>
-<style>
-:root {
-  --expert-primary:         <?php echo $sec->escape($primary_color); ?>;
-  --expert-accent:          <?php echo $sec->escape($accent_color); ?>;
-  --expert-cta-color:       <?php echo $sec->escape($cta_color); ?>;
-  --expert-card-bg:         <?php echo $sec->escape($card_bg_color); ?>;
-  --expert-hdr-bg:          linear-gradient(135deg, <?php echo $sec->escape($hdr_from); ?> 0%, <?php echo $sec->escape($hdr_to); ?> 100%);
-  --expert-hdr-title:       <?php echo $sec->escape($hdr_title); ?>;
-  --expert-radius:          <?php echo $border_radius; ?>px;
-  --detail-header-bg:       <?php echo $sec->escape($detail_header_bg); ?>;
-  --detail-header-color:    <?php echo $sec->escape($detail_header_col); ?>;
-  --detail-accent:          <?php echo $sec->escape($detail_accent); ?>;
-  --status-available-color: <?php echo $sec->escape($status_avail_color); ?>;
-  --status-limited-color:   <?php echo $sec->escape($status_limit_color); ?>;
-  --status-booked-color:    <?php echo $sec->escape($status_book_color); ?>;
-  --partner-color:          <?php echo $sec->escape($partner_color); ?>;
-  --top-partner-color:      <?php echo $sec->escape($top_partner_color); ?>;
-  --sponsor-color:          <?php echo $sec->escape($sponsor_color); ?>;
-  --expert-cta:             <?php echo $sec->escape($cta_color); ?>;
-}
-</style>
 
 <?php
 // ── Data Extraction ──────────────────────────────────────────────────────────
@@ -189,14 +168,11 @@ $partner_badge_html = match ($partner_status) {
 $_ex_first  = $expert->first_name ?? '';
 $_ex_last   = $expert->last_name  ?? '';
 $_ex_inits  = strtoupper(mb_substr($_ex_first, 0, 1) . mb_substr($_ex_last, 0, 1));
-$_ex_pals   = [['#5e72e4','#8965e0'],['#0891b2','#06b6d4'],['#16a34a','#22c55e'],['#7c3aed','#a855f7'],['#d97706','#f59e0b']];
-$_ex_cp     = $_ex_pals[abs(crc32($full_name)) % count($_ex_pals)];
-$_ex_agrad  = "linear-gradient(135deg,{$_ex_cp[0]},{$_ex_cp[1]})";
 $_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 $events     = $events ?? [];
 ?>
 
-<div class="ex-v2">
+<main class="phinit-plugin ex-v2">
 
   <nav class="ex-bc">
     <a href="<?= $sec->escape($_base_url . '/experts') ?>">← Experten</a>
@@ -216,9 +192,9 @@ $events     = $events ?? [];
         <?php if ($is_premium):   ?><span class="ex-hero__badge ex-hero__badge--premium">⭐ Premium</span><?php endif; ?>
       </div>
       <?php if ($photo !== ''): ?>
-        <div class="ex-hero__av"><img src="<?= $sec->escape($photo) ?>" alt="<?= $sec->escape($full_name) ?>"></div>
+        <div class="ex-hero__av"><img src="<?= $sec->escape($photo) ?>" alt="<?= $sec->escape($full_name) ?>" width="120" height="120" loading="eager" decoding="async"></div>
       <?php else: ?>
-        <div class="ex-hero__av" style="background:<?= $sec->escape($_ex_agrad) ?>;"><?= htmlspecialchars($_ex_inits ?: '?') ?></div>
+        <div class="ex-hero__av ex-hero__av--placeholder"><?= htmlspecialchars($_ex_inits ?: '?') ?></div>
       <?php endif; ?>
       <div class="ex-hero__meta">
         <?php if ($custom_award): ?><div class="ex-award">🏆 <?= $sec->escape($custom_award) ?></div><?php endif; ?>
@@ -243,7 +219,7 @@ $events     = $events ?? [];
             <?php if ($company_url): ?>
               <a href="<?= $sec->escape($company_url) ?>"><?= $sec->escape($company) ?></a>
             <?php elseif ($social['website'] !== ''): ?>
-              <a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener"><?= $sec->escape($company) ?></a>
+              <a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener noreferrer"><?= $sec->escape($company) ?></a>
             <?php else: ?>
               <?= $sec->escape($company) ?>
             <?php endif; ?>
@@ -268,7 +244,7 @@ $events     = $events ?? [];
     <?php else: ?>
       <div class="ex-bridge__about">
         <h2 class="ex-bridge__title">Über <?= $sec->escape(explode(' ', $full_name)[0] ?? 'mich') ?></h2>
-        <p class="ex-bridge__text" style="color:#94a3b8;font-style:italic;">Noch keine Beschreibung hinterlegt.</p>
+        <p class="ex-bridge__text ex-prose-muted">Noch keine Beschreibung hinterlegt.</p>
       </div>
     <?php endif; ?>
 
@@ -278,13 +254,13 @@ $events     = $events ?? [];
 
         <!-- Reihe 1: Kontakt / Buchung -->
         <div class="ex-bridge__row">
-          <a href="<?= $sec->escape($_base_url . '/contact?expert=' . (int)$expert->id) ?>" class="ex-btn ex-btn--sm ex-btn--block">Kontakt / Buchung</a>
+          <a href="<?= $sec->escape($_base_url . '/contact?expert=' . (int)$expert->id) ?>" class="phinit-btn phinit-btn--primary ex-btn ex-btn--sm ex-btn--block">Kontakt / Buchung</a>
         </div>
 
         <!-- Reihe 2: Website · E-Mail · Telefon -->
         <div class="ex-bridge__row ex-bridge__links">
           <?php if ($social['website'] !== ''): ?>
-            <a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener" class="ex-bridge__link" title="Website ansehen">Website</a>
+            <a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener noreferrer" class="ex-bridge__link" title="Website ansehen">Website</a>
           <?php else: ?>
             <span class="ex-bridge__link ex-bridge__link--empty">Website</span>
           <?php endif; ?>
@@ -314,7 +290,7 @@ $events     = $events ?? [];
           ];
           foreach ($social_icons as $sn => $icfg):
             if (!empty($social[$sn])): ?>
-              <a href="<?= $sec->escape($social[$sn]) ?>" target="_blank" rel="noopener" class="ex-si" title="<?= $sec->escape($icfg['label']) ?>"><?= $icfg['svg'] ?></a>
+              <a href="<?= $sec->escape($social[$sn]) ?>" target="_blank" rel="noopener noreferrer" class="ex-si" title="<?= $sec->escape($icfg['label']) ?>" aria-label="<?= $sec->escape($icfg['label']) ?>"><?= $icfg['svg'] ?></a>
             <?php else: ?>
               <span class="ex-si ex-si--empty" title="<?= $sec->escape($icfg['label']) ?>"><?= $icfg['svg'] ?></span>
             <?php endif;
@@ -398,7 +374,7 @@ $events     = $events ?? [];
               <div class="ex-proj-item__name"><?= $sec->escape($pj->project_name ?? '') ?></div>
               <div class="ex-proj-item__meta">
                 <?= $sec->escape($pj->project_role ?? '') ?><?= (!empty($pj->project_role) && ($p_start || $p_end)) ? ' · ' : '' ?><?= $p_start ? $p_start . ' – ' . $p_end : '' ?>
-                <?php if (!empty($pj->project_url)): ?> · <a href="<?= $sec->escape($pj->project_url) ?>" target="_blank" rel="noopener">↗</a><?php endif; ?>
+                <?php if (!empty($pj->project_url)): ?> · <a href="<?= $sec->escape($pj->project_url) ?>" target="_blank" rel="noopener noreferrer" aria-label="Projekt öffnen">↗</a><?php endif; ?>
               </div>
               <?php if (!empty($pj->project_description)): ?>
                 <div class="ex-proj-item__desc"><?= nl2br($sec->escape($pj->project_description)) ?></div>
@@ -585,7 +561,7 @@ $events     = $events ?? [];
           if ($company_url):
               $co_val = '<a href="'.$sec->escape($company_url).'">'.$sec->escape($company).'</a>';
           elseif (!empty($social['website'])):
-              $co_val = '<a href="'.$sec->escape($social['website']).'" target="_blank" rel="noopener">'.$sec->escape($company).'</a>';
+              $co_val = '<a href="'.$sec->escape($social['website']).'" target="_blank" rel="noopener noreferrer">'.$sec->escape($company).'</a>';
           else:
               $co_val = $sec->escape($company);
           endif;
@@ -689,18 +665,7 @@ $events     = $events ?? [];
       <strong>Dieses Profil wurde von der Redaktion angelegt.</strong>
       Gehört es Ihnen? Registrieren Sie sich kostenlos und übernehmen Sie die Verwaltung Ihres Profils.
     </div>
-    <a href="<?= $sec->escape(rtrim(SITE_URL, '/') . '/register') ?>" class="ex-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
+    <a href="<?= $sec->escape(rtrim(SITE_URL, '/') . '/register') ?>" class="phinit-btn phinit-btn--primary ex-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
   </div>
   <?php endif; ?>
-</div>
-<script>
-(function(){
-  function checkBioOverflow(){
-    document.querySelectorAll('.ex-bridge__text').forEach(function(el){
-      el.classList.toggle('is-overflow', el.scrollHeight > el.clientHeight);
-    });
-  }
-  checkBioOverflow();
-  window.addEventListener('resize', checkBioOverflow);
-})();
-</script>
+</main>

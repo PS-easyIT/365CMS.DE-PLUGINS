@@ -1,12 +1,12 @@
 {
     "name": "CMS Contact",
     "slug": "cms-contact",
-    "version": "1.1.9",
-    "requires_cms": "2.0.0",
-    "tested_cms": "2.0.0",
+    "version": "3.0.0",
+    "requires_cms": "3.0.0",
+    "tested_cms": "3.0.0",
     "author": "365 Network",
     "author_uri": "https://365network.de",
-    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-1.1.9.zip",
-    "last_updated": "2026-05-15",
-    "changelog": "Legacy-Links unter /kontakt leiten jetzt sauber auf die kanonische Kontaktformular-Route /contact weiter."
+    "download_url": "https://365network.de/plugins/cms-contact/cms-contact-3.0.0.zip",
+    "last_updated": "2026-05-17",
+    "changelog": "365CMS-3.x-Security-Baseline: Kontaktformulare nutzen zusätzlich DB-basiertes Rate-Limiting pro IP/Formular, zählen auch validierte Fehlversuche, prüfen Custom-Regex sicher, begrenzen Feldwerte/CSS, härten öffentliche URL-/CSS-/Feldtypen-Sanitierung und laden Public-CSS/JS nur noch zentral statt pro Template doppelt."
 }

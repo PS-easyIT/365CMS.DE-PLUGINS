@@ -17,20 +17,6 @@ $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
 $theme = CMS\ThemeManager::instance();
 $theme->getHeader();
 ?>
-    <link rel="stylesheet" href="<?php echo CMS_CONTACT_PLUGIN_URL; ?>assets/css/contact-public.css?v=<?php echo CMS_CONTACT_VERSION; ?>">
-    <style>
-        .booking-expert-layout { display: grid; grid-template-columns: 340px 1fr; gap: 0; min-height: 70vh; max-width: 1100px; margin: 2rem auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.08); overflow: hidden; }
-        @media (max-width: 768px) { .booking-expert-layout { grid-template-columns: 1fr; } }
-        .booking-expert-sidebar { background: linear-gradient(180deg, #1e3a5f 0%, #0f2240 100%); color: #fff; padding: 2.5rem 2rem; display: flex; flex-direction: column; }
-        .booking-expert-sidebar h2 { font-size: 1.3rem; margin: 0 0 .5rem; }
-        .booking-expert-sidebar p { opacity: .85; font-size: .9rem; line-height: 1.6; }
-        .booking-expert-badge { display: inline-flex; align-items: center; gap: .4rem; background: rgba(255,255,255,.15); padding: .3rem .8rem; border-radius: 20px; font-size: .8rem; margin-bottom: 1rem; }
-        .booking-expert-features { list-style: none; padding: 0; margin: 1.5rem 0 0; }
-        .booking-expert-features li { padding: .4rem 0; font-size: .9rem; opacity: .9; }
-        .booking-expert-features li::before { content: '✓ '; color: #4ade80; }
-        .booking-expert-form { padding: 2.5rem 2rem; }
-        .booking-expert-form h3 { font-size: 1.15rem; margin: 0 0 1rem; color: #1e293b; }
-    </style>
     <?php echo CMS_Contact_Frontend::render_custom_css($form); ?>
 
     <main class="contact-main" aria-labelledby="contact-form-title">
@@ -100,4 +86,3 @@ $theme->getHeader();
     </main>
 
     <?php CMS\ThemeManager::instance()->getFooter(); ?>
-    <script src="<?php echo CMS_CONTACT_PLUGIN_URL; ?>assets/js/contact-public.js?v=<?php echo CMS_CONTACT_VERSION; ?>" defer></script>

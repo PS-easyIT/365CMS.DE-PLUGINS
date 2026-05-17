@@ -17,18 +17,6 @@ $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
 $theme = CMS\ThemeManager::instance();
 $theme->getHeader();
 ?>
-    <link rel="stylesheet" href="<?php echo CMS_CONTACT_PLUGIN_URL; ?>assets/css/contact-public.css?v=<?php echo CMS_CONTACT_VERSION; ?>">
-    <style>
-        .booking-event-card { max-width: 700px; margin: 2rem auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.08); overflow: hidden; }
-        .booking-event-header { background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #3b82f6 100%); color: #fff; padding: 2rem 2rem 1.5rem; position: relative; }
-        .booking-event-header::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 30px; background: #fff; border-radius: 16px 16px 0 0; }
-        .booking-event-header h1 { font-size: 1.5rem; margin: 0 0 .25rem; position: relative; z-index: 1; }
-        .booking-event-header p { opacity: .9; margin: 0; font-size: .95rem; position: relative; z-index: 1; }
-        .booking-event-badges { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .75rem; position: relative; z-index: 1; }
-        .booking-event-badge { display: inline-flex; align-items: center; gap: .3rem; background: rgba(255,255,255,.2); color: #fff; padding: .25rem .7rem; border-radius: 20px; font-size: .78rem; }
-        .booking-event-body { padding: 1.5rem 2rem 2rem; }
-        .booking-event-body h3 { font-size: 1.1rem; margin: 0 0 1rem; color: #1e293b; }
-    </style>
     <?php echo CMS_Contact_Frontend::render_custom_css($form); ?>
 
     <main class="contact-main" aria-labelledby="contact-form-title">
@@ -92,4 +80,3 @@ $theme->getHeader();
     </main>
 
     <?php CMS\ThemeManager::instance()->getFooter(); ?>
-    <script src="<?php echo CMS_CONTACT_PLUGIN_URL; ?>assets/js/contact-public.js?v=<?php echo CMS_CONTACT_VERSION; ?>" defer></script>

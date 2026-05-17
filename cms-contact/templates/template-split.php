@@ -27,7 +27,6 @@ $companyAddr  = $getInfo('company_address') ?: '';
 $theme = CMS\ThemeManager::instance();
 $theme->getHeader();
 ?>
-    <link rel="stylesheet" href="<?php echo CMS_CONTACT_PLUGIN_URL; ?>assets/css/contact-public.css?v=<?php echo CMS_CONTACT_VERSION; ?>">
     <?php echo CMS_Contact_Frontend::render_custom_css($form); ?>
 
     <main class="contact-main" aria-labelledby="contact-form-title">
@@ -122,4 +121,3 @@ $theme->getHeader();
     </main>
 
     <?php CMS\ThemeManager::instance()->getFooter(); ?>
-    <script src="<?php echo CMS_CONTACT_PLUGIN_URL; ?>assets/js/contact-public.js?v=<?php echo CMS_CONTACT_VERSION; ?>" defer></script>

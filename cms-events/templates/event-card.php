@@ -78,7 +78,7 @@ if ($status === 'cancelled') {
     $ribbon_class = '';
 }
 ?>
-<div class="<?= $card_class ?>">
+<article class="phinit-card phinit-card--accent <?= $card_class ?>">
 
   <!-- Ribbon -->
   <div class="ev-card-ribbon <?= $ribbon_class ?>">
@@ -146,11 +146,11 @@ if ($status === 'cancelled') {
 
   <!-- Footer -->
   <div class="ev-card-footer">
-    <a href="<?= htmlspecialchars($event_url) ?>" class="ev-btn ev-btn-primary">Details →</a>
+    <a href="<?= htmlspecialchars($event_url, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--primary ev-btn ev-btn-primary">Details <span class="phinit-arrow">→</span></a>
     <?php if ($reg_url && !$is_past && $status !== 'cancelled'): ?>
-      <a href="<?= $reg_url ?>" target="_blank" rel="noopener"
-         class="ev-btn ev-btn-ghost">Anmelden</a>
+      <a href="<?= htmlspecialchars($reg_url, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"
+         class="phinit-btn phinit-btn--secondary ev-btn ev-btn-ghost">Anmelden</a>
     <?php endif; ?>
   </div>
 
-</div>
+</article>

@@ -47,10 +47,14 @@ final class CMS_NetImport_Admin
 
     public static function render_plugin_page_bridge(): void
     {
+        if (!headers_sent()) {
+            header('Location: ' . SITE_URL . '/admin/netimport');
+            exit;
+        }
+
         $targetUrl = htmlspecialchars(SITE_URL . '/admin/netimport', ENT_QUOTES, 'UTF-8');
 
         echo '<div class="admin-card"><p>Weiterleitung zur NetImport-Verwaltung … <a href="' . $targetUrl . '">Falls nichts passiert, hier klicken</a>.</p></div>';
-        echo '<script>window.location.replace(' . json_encode(SITE_URL . '/admin/netimport', JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ');</script>';
     }
 
     private function load_admin_menu(): void
@@ -267,15 +271,7 @@ final class CMS_NetImport_Admin
 
     private function log_run_attempt(): void
     {
-        try {
-            CMS\Database::instance()->insert('login_attempts', [
-                'username'   => 'admin-netimport',
-                'ip_address' => CMS\Security::getClientIp(),
-                'action'     => 'netimport_run',
-            ]);
-        } catch (\Throwable $e) {
-            error_log('CMS NetImport rate-limit logging failed: ' . $e->getMessage());
-        }
+        CMS\Security::recordDbRateLimitAttempt(CMS\Security::getClientIp(), 'netimport_run', 'admin-netimport');
     }
 
     private function check_history_rate_limit(): bool
@@ -285,15 +281,7 @@ final class CMS_NetImport_Admin
 
     private function log_history_action_attempt(): void
     {
-        try {
-            CMS\Database::instance()->insert('login_attempts', [
-                'username'   => 'admin-netimport',
-                'ip_address' => CMS\Security::getClientIp(),
-                'action'     => 'netimport_history_action',
-            ]);
-        } catch (\Throwable $e) {
-            error_log('CMS NetImport history rate-limit logging failed: ' . $e->getMessage());
-        }
+        CMS\Security::recordDbRateLimitAttempt(CMS\Security::getClientIp(), 'netimport_history_action', 'admin-netimport');
     }
 
     private function render_history_filter_inputs(array $historyFilters): void
@@ -310,13 +298,13 @@ final class CMS_NetImport_Admin
         $adminCss = CMS_NETIMPORT_PLUGIN_DIR . 'assets/css/netimport-admin.css';
         if (file_exists($adminCss)) {
             $version = (string) filemtime($adminCss);
-            echo '<link rel="stylesheet" href="' . CMS_NETIMPORT_PLUGIN_URL . 'assets/css/netimport-admin.css?v=' . $version . '">' . "\n";
+            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_NETIMPORT_PLUGIN_URL . 'assets/css/netimport-admin.css?v=' . $version, ENT_QUOTES, 'UTF-8') . '">' . "\n";
         }
 
         $adminJs = CMS_NETIMPORT_PLUGIN_DIR . 'assets/js/netimport-admin.js';
         if (file_exists($adminJs)) {
             $version = (string) filemtime($adminJs);
-            echo '<script src="' . CMS_NETIMPORT_PLUGIN_URL . 'assets/js/netimport-admin.js?v=' . $version . '" defer></script>' . "\n";
+            echo '<script src="' . htmlspecialchars(CMS_NETIMPORT_PLUGIN_URL . 'assets/js/netimport-admin.js?v=' . $version, ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
         }
     }
 

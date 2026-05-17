@@ -433,3 +433,27 @@
   .ev-breadcrumb { padding: .6rem 1rem; }
   .ev-claim-banner { padding: .75rem 1rem; }
 }
+
+/* 365CMS 3.x / PHINIT Publicsite Override */
+.ev-single-v2 { background: var(--phinit-color-bg); border-color: var(--phinit-color-border); }
+.ev-breadcrumb { background: var(--phinit-color-surface); border-color: var(--phinit-color-border); }
+.ev-hero-v2 { height: auto; min-height: 220px; max-height: none; background: var(--phinit-color-surface); border-bottom-color: var(--phinit-color-accent); }
+.ev-hero-v2__bg img { width: 100%; height: 100%; object-fit: cover; opacity: .12; }
+.ev-hero-v2__inner { min-height: 220px; transform: none; }
+.ev-hero-v2__title { background: none; border: 0; box-shadow: none; backdrop-filter: none; padding: 0; color: var(--phinit-color-ink); }
+.ev-hero-v2__datebadge,
+.ev-spk-row__av--placeholder { background: var(--phinit-color-surface-alt); color: var(--phinit-color-ink-on-dark); box-shadow: none; }
+.ev-bridge-v2 { margin-top: var(--phinit-space-5); }
+.ev-bridge-v2__about,
+.ev-bridge-v2__contact,
+.ev-sec-v2,
+.ev-spk-row { min-height: 0; background: var(--phinit-color-surface); border-color: var(--phinit-color-border); box-shadow: var(--phinit-shadow-card); }
+.ev-empty-text { color: var(--phinit-color-ink-secondary); font-style: italic; }
+.ev-bridge-v2__book-btn { width: 100%; }
+.ev-bridge-v2__icon-btn { background: var(--phinit-color-bg); border-color: var(--phinit-color-border); color: var(--phinit-color-link); }
+.ev-speaker-grid-v2 { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+
+@media (max-width: 768px) {
+  .ev-hero-v2__inner { padding-right: var(--phinit-space-4); }
+  .ev-hero-v2__thumb { position: static; width: 96px; height: 96px; margin: var(--phinit-space-4); }
+}

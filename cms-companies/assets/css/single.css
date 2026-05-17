@@ -665,3 +665,25 @@
 
   .co-breadcrumb { padding: .6rem 1rem; }
 }
+
+/* 365CMS 3.x / PHINIT Publicsite Override */
+.co-single-v2 { background: var(--phinit-color-bg); border-color: var(--phinit-color-border); }
+.co-breadcrumb { background: var(--phinit-color-surface); border-color: var(--phinit-color-border); }
+.co-hero-v2 { height: auto; min-height: 220px; max-height: none; background: var(--phinit-color-surface); border-bottom-color: var(--phinit-color-accent); }
+.co-hero-v2__avatar { box-shadow: none; background: var(--phinit-color-bg); border: 1px solid var(--phinit-color-border); }
+.co-hero-v2__avatar--placeholder,
+.co-exp-row__av--placeholder { background: var(--phinit-color-surface-alt); color: var(--phinit-color-ink-on-dark); }
+.co-bridge-v2 { margin-top: var(--phinit-space-5); }
+.co-bridge-v2__about,
+.co-bridge-v2__contact,
+.co-sec-v2,
+.co-exp-row { min-height: 0; background: var(--phinit-color-surface); border-color: var(--phinit-color-border); box-shadow: var(--phinit-shadow-card); }
+.co-empty-text { color: var(--phinit-color-ink-secondary); font-style: italic; }
+.co-bridge-v2__book-btn { width: 100%; }
+.co-bridge-v2__icon-btn { background: var(--phinit-color-bg); border-color: var(--phinit-color-border); color: var(--phinit-color-link); }
+.co-expert-grid-v2 { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.co-btn-v2--full { width: 100%; text-align: center; }
+
+@media (max-width: 768px) {
+  .co-bridge-v2 { padding: 0 var(--phinit-space-4); }
+}

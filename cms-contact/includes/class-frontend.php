@@ -299,6 +299,7 @@ final class CMS_Contact_Frontend
         if (!$this->check_rate_limit($formId, (int) ($form['rate_limit'] ?? 3))) {
             return ['success' => false, 'error' => 'Zu viele Anfragen. Bitte versuchen Sie es später erneut.'];
         }
+        $this->register_rate_limit_hit($formId);
 
         // Felder laden und validieren
         $fields      = $this->filter_public_fields(CMS_Contact_Fields::instance()->get_by_form($formId));
@@ -434,8 +435,6 @@ final class CMS_Contact_Frontend
             'user_agent'   => $userAgent,
             'ip_address'   => $ipAddress,
         ], $meta);
-
-        $this->register_rate_limit_hit($formId);
 
         // E-Mail-Benachrichtigung
         $submissions->send_notification($form, [
@@ -573,9 +572,9 @@ final class CMS_Contact_Frontend
         }
 
         // Benutzerdefinierte Validierung (Regex)
-        if (!empty($field['validation']) && !preg_match($field['validation'], $value)) {
+        if (!empty($field['validation'])) {
             $pattern = (string) $field['validation'];
-            if (@preg_match($pattern, '') == false) {
+            if (@preg_match($pattern, '') === false) {
                 return "{$label}: Die konfigurierte Validierungsregel ist ungültig.";
             }
 
@@ -597,12 +596,28 @@ final class CMS_Contact_Frontend
         }
 
         return match ($type) {
-            'email'    => filter_var($value, FILTER_SANITIZE_EMAIL) ?: '',
-            'url'      => filter_var($value, FILTER_SANITIZE_URL) ?: '',
+            'email'    => mb_substr((string) (filter_var($value, FILTER_SANITIZE_EMAIL) ?: ''), 0, 254),
+            'url'      => $this->sanitize_public_url((string) $value),
             'number'   => (string) (int) $value,
-            'textarea' => trim(strip_tags((string) $value)),
-            default    => trim(strip_tags((string) $value)),
+            'tel'      => mb_substr(trim(preg_replace('/[^0-9+\s\-\/()]/u', '', (string) $value) ?? ''), 0, 64),
+            'textarea' => mb_substr(trim(strip_tags((string) $value)), 0, 5000),
+            default    => mb_substr(trim(strip_tags((string) $value)), 0, 1000),
         };
+    }
+
+    private function sanitize_public_url(string $value): string
+    {
+        $url = trim(filter_var($value, FILTER_SANITIZE_URL) ?: '');
+        if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts) || empty($parts['scheme'])) {
+            return '';
+        }
+
+        return in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true) ? mb_substr($url, 0, 2048) : '';
     }
 
     public static function render_custom_css(array $form): string
@@ -617,15 +632,19 @@ final class CMS_Contact_Frontend
 
     public static function sanitize_custom_css(string $css): string
     {
-        $css = trim(strip_tags($css));
+        $css = mb_substr(trim(strip_tags($css)), 0, 4000);
         if ($css === '') {
             return '';
         }
 
         $css = str_ireplace(['</style', '<style'], '', $css);
         $css = preg_replace('/@import\s+/i', '', $css) ?? $css;
+        $css = preg_replace('/@charset\s+[^;]+;/i', '', $css) ?? $css;
         $css = preg_replace('/expression\s*\(/i', '', $css) ?? $css;
         $css = preg_replace('/javascript\s*:/i', '', $css) ?? $css;
+        $css = preg_replace('/url\s*\(\s*["\']?\s*(?:javascript|data):/i', 'url(#blocked-', $css) ?? $css;
+        $css = preg_replace('/(?:behavior|-moz-binding)\s*:/i', 'blocked-property:', $css) ?? $css;
+        $css = preg_replace('/(?:backdrop-filter|filter)\s*:[^;{}]+;?/i', '', $css) ?? $css;
 
         return trim($css);
     }
@@ -639,6 +658,13 @@ final class CMS_Contact_Frontend
     {
         if ($maxPerHour <= 0) {
             return true;
+        }
+
+        if (class_exists('CMS\\Security')) {
+            $ipAddress = \CMS\Security::getClientIp();
+            if (!\CMS\Security::checkDbRateLimit($ipAddress, 'contact_form_' . $formId, $maxPerHour, 3600)) {
+                return false;
+            }
         }
 
         if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -663,6 +689,10 @@ final class CMS_Contact_Frontend
 
     private function register_rate_limit_hit(int $formId): void
     {
+        if (class_exists('CMS\\Security')) {
+            \CMS\Security::recordDbRateLimitAttempt(\CMS\Security::getClientIp(), 'contact_form_' . $formId, 'contact-form');
+        }
+
         if (session_status() !== PHP_SESSION_ACTIVE) {
             return;
         }
@@ -688,12 +718,12 @@ final class CMS_Contact_Frontend
 
         $name        = htmlspecialchars($field['field_name']);
         $label       = htmlspecialchars($field['field_label']);
-        $type        = $field['field_type'];
+        $type        = self::normalize_public_field_type((string) ($field['field_type'] ?? 'text'));
         $placeholder = htmlspecialchars($field['placeholder'] ?? '');
         $required    = !empty($field['is_required']);
         $value       = htmlspecialchars($old[$field['field_name']] ?? $field['default_value'] ?? '');
         $width       = $field['field_width'] ?? 'full';
-        $cssClass    = $field['css_class'] ?? '';
+        $cssClass    = preg_replace('/[^a-zA-Z0-9_\-\s]/', '', (string) ($field['css_class'] ?? '')) ?? '';
         $description = $field['description'] ?? '';
         $hasError    = isset($errors[$field['field_name']]);
         $errorMsg    = $hasError ? htmlspecialchars($errors[$field['field_name']]) : '';
@@ -808,6 +838,14 @@ final class CMS_Contact_Frontend
         return $html;
     }
 
+    private static function normalize_public_field_type(string $type): string
+    {
+        $type = strtolower(trim($type));
+        $allowed = ['text', 'email', 'url', 'tel', 'number', 'date', 'textarea', 'select', 'radio', 'checkbox', 'hidden', 'file'];
+
+        return in_array($type, $allowed, true) ? $type : 'text';
+    }
+
     public static function render_privacy_consent(array $form = [], array $old = []): string
     {
         $settings = self::instance()->get_privacy_settings();
@@ -843,6 +881,10 @@ final class CMS_Contact_Frontend
             } elseif (defined('SITE_URL')) {
                 $url = rtrim((string) SITE_URL, '/') . '/datenschutz';
             }
+        }
+
+        if ($url !== '' && !filter_var($url, FILTER_VALIDATE_URL) && !str_starts_with($url, '/')) {
+            $url = '';
         }
 
         return [

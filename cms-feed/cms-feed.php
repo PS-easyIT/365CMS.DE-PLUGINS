@@ -3,7 +3,7 @@
  * Plugin Name: CMS Feed
  * Plugin URI: https://365network.de/cms-feed
  * Description: RSS-Feed-Aggregator mit Kategorie-Bereichen, Public Pages, Design-Einstellungen, Member-Feed-Abos und E-Mail-Digest
- * Version: 1.3.6
+ * Version: 3.0.0
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,14 +16,14 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_FEED_VERSION',    '1.3.6');
+define('CMS_FEED_VERSION',    '3.0.0');
 define('CMS_FEED_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_FEED_PLUGIN_URL', '/plugins/cms-feed/');
 
 final class CMS_Feed
 {
     private static ?self $instance = null;
-    private string $version = '1.3.6';
+    private string $version = '3.0.0';
     private string $plugin_dir;
     private string $plugin_url;
 
@@ -127,12 +127,12 @@ final class CMS_Feed
         if ($isAdmin) {
             $adminCss = $this->plugin_dir . 'assets/css/feed-admin.css';
             if (file_exists($adminCss)) {
-                echo '<link rel="stylesheet" href="' . $this->plugin_url . 'assets/css/feed-admin.css?v=' . filemtime($adminCss) . '">' . "\n";
+                echo '<link rel="stylesheet" href="' . htmlspecialchars($this->plugin_url . 'assets/css/feed-admin.css?v=' . filemtime($adminCss), ENT_QUOTES, 'UTF-8') . '">' . "\n";
             }
         } elseif ($isFeedRoute) {
             $css = $this->plugin_dir . 'assets/css/style.css';
             if (file_exists($css)) {
-                echo '<link rel="stylesheet" href="' . $this->plugin_url . 'assets/css/style.css?v=' . filemtime($css) . '">' . "\n";
+                echo '<link rel="stylesheet" href="' . htmlspecialchars($this->plugin_url . 'assets/css/style.css?v=' . filemtime($css), ENT_QUOTES, 'UTF-8') . '">' . "\n";
             }
             // Design-Tokens als CSS Custom Properties injizieren
             $this->inject_design_tokens();
@@ -149,12 +149,12 @@ final class CMS_Feed
         if ($isAdmin) {
             $js = $this->plugin_dir . 'assets/js/admin.js';
             if (file_exists($js)) {
-                echo '<script src="' . $this->plugin_url . 'assets/js/admin.js?v=' . filemtime($js) . '" defer></script>' . "\n";
+                echo '<script src="' . htmlspecialchars($this->plugin_url . 'assets/js/admin.js?v=' . filemtime($js), ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
             }
         } elseif ($isFeedRoute) {
             $js = $this->plugin_dir . 'assets/js/script.js';
             if (file_exists($js)) {
-                echo '<script src="' . $this->plugin_url . 'assets/js/script.js?v=' . filemtime($js) . '" defer></script>' . "\n";
+                echo '<script src="' . htmlspecialchars($this->plugin_url . 'assets/js/script.js?v=' . filemtime($js), ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
             }
         }
     }
@@ -168,15 +168,22 @@ final class CMS_Feed
         $s = CMS_Feed_Database::instance()->get_settings();
 
         echo '<style>:root{'
-            . '--fd-primary:'       . htmlspecialchars($s['color_primary']     ?? '#0891b2') . ';'
-            . '--fd-accent:'        . htmlspecialchars($s['color_accent']      ?? '#e0f2fe') . ';'
-            . '--fd-hdr-from:'      . htmlspecialchars($s['color_hdr_from']    ?? '#0c4a6e') . ';'
-            . '--fd-hdr-to:'        . htmlspecialchars($s['color_hdr_to']      ?? '#0891b2') . ';'
-            . '--fd-hdr-title:'     . htmlspecialchars($s['color_hdr_title']   ?? '#ffffff') . ';'
-            . '--fd-card-bg:'       . htmlspecialchars($s['color_card_bg']     ?? '#ffffff') . ';'
-            . '--fd-card-border:'   . htmlspecialchars($s['color_card_border'] ?? '#e2e8f0') . ';'
+            . '--fd-primary:'       . htmlspecialchars($this->normalize_css_color((string) ($s['color_primary'] ?? ''), '#0891b2'), ENT_QUOTES, 'UTF-8') . ';'
+            . '--fd-accent:'        . htmlspecialchars($this->normalize_css_color((string) ($s['color_accent'] ?? ''), '#e0f2fe'), ENT_QUOTES, 'UTF-8') . ';'
+            . '--fd-hdr-from:'      . htmlspecialchars($this->normalize_css_color((string) ($s['color_hdr_from'] ?? ''), '#0c4a6e'), ENT_QUOTES, 'UTF-8') . ';'
+            . '--fd-hdr-to:'        . htmlspecialchars($this->normalize_css_color((string) ($s['color_hdr_to'] ?? ''), '#0891b2'), ENT_QUOTES, 'UTF-8') . ';'
+            . '--fd-hdr-title:'     . htmlspecialchars($this->normalize_css_color((string) ($s['color_hdr_title'] ?? ''), '#ffffff'), ENT_QUOTES, 'UTF-8') . ';'
+            . '--fd-card-bg:'       . htmlspecialchars($this->normalize_css_color((string) ($s['color_card_bg'] ?? ''), '#ffffff'), ENT_QUOTES, 'UTF-8') . ';'
+            . '--fd-card-border:'   . htmlspecialchars($this->normalize_css_color((string) ($s['color_card_border'] ?? ''), '#e2e8f0'), ENT_QUOTES, 'UTF-8') . ';'
             . '--fd-radius:'        . ((int)($s['border_radius'] ?? 10)) . 'px;'
             . '}</style>' . "\n";
+    }
+
+    private function normalize_css_color(string $value, string $fallback): string
+    {
+        $value = trim($value);
+
+        return preg_match('/^#[0-9A-Fa-f]{6}$/', $value) === 1 ? $value : $fallback;
     }
 
     private function is_feed_public_route(string $currentPath): bool

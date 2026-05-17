@@ -511,3 +511,29 @@
     max-width: none;
   }
 }
+
+/* 365CMS 3.x / PHINIT Publicsite Override */
+.co-archive { background: var(--phinit-color-bg); border-color: var(--phinit-color-border); }
+.co-archive-header { margin: var(--phinit-space-5); min-height: auto; background: var(--phinit-color-surface); color: var(--phinit-color-ink); }
+.co-archive-header-title,
+.co-archive-header-inner h1,
+.co-archive-header-inner h2,
+.co-archive-subtitle,
+.co-archive-count { color: var(--phinit-color-ink); }
+.co-archive-count { background: var(--phinit-color-bg); border: 1px solid var(--phinit-color-border); backdrop-filter: none; }
+.co-filter-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); align-items: end; margin: var(--phinit-space-5); box-shadow: var(--phinit-shadow-card); }
+.co-filter-input input { padding-left: var(--phinit-space-3); }
+.co-filter-icon { display: none; }
+.co-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.co-card { height: auto; min-height: 0; max-height: none; background: var(--phinit-color-surface); border-width: 1px; box-shadow: var(--phinit-shadow-card); }
+.co-card:hover { transform: none; box-shadow: var(--phinit-shadow-raised); }
+.co-card-avatar--placeholder { background: var(--phinit-color-surface-alt); color: var(--phinit-color-ink-on-dark); box-shadow: none; }
+.co-card-pills { background: var(--phinit-color-bg); border-color: var(--phinit-color-border); }
+.co-card-pill { border-radius: var(--phinit-radius-sm); background: var(--phinit-color-surface); border-color: var(--phinit-color-border); }
+.co-card-ribbon { background: var(--phinit-color-surface-alt); color: var(--phinit-color-ink-on-dark); box-shadow: none; }
+
+@media (max-width: 640px) {
+  .co-archive-header,
+  .co-filter-bar { margin: var(--phinit-space-3); }
+  .co-grid { padding: 0 var(--phinit-space-3); }
+}

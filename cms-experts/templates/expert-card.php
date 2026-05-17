@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Expert Card Component - Design aligned with IT Expert Cards (WP Plugin)
  * Layout: Badges top, avatar left + text right, expertise banner, skills grid, social icons, CTA
@@ -88,7 +90,7 @@ $avail_label = $avail_labels[$availability] ?? ucfirst($availability);
 
 ?>
 
-<article class="expert-card expert-card--overview">
+<article class="phinit-card phinit-card--accent expert-card expert-card--overview">
 
     <!-- Auszeichnungs-Badge Links Oben (nur einer, nach Priorität) -->
     <?php if ($highlight_badge): ?>
@@ -106,7 +108,7 @@ $avail_label = $avail_labels[$availability] ?? ucfirst($availability);
     <header class="expert-card-top">
         <div class="expert-card-avatar">
             <?php if ($photo !== ''): ?>
-                <img src="<?php echo $sec->escape($photo); ?>" alt="<?php echo $sec->escape($full_name); ?>">
+                <img src="<?php echo $sec->escape($photo); ?>" alt="<?php echo $sec->escape($full_name); ?>" width="96" height="96" loading="lazy" decoding="async">
             <?php else: ?>
                 <div class="expert-avatar-placeholder">
                     <span><?php echo strtoupper(substr($expert->first_name ?? 'E', 0, 1)); ?></span>
@@ -193,16 +195,16 @@ $avail_label = $avail_labels[$availability] ?? ucfirst($availability);
             foreach ($social_items as $si):
                 $active = !empty($si['url']);
             ?>
-                <a href="<?php echo $active ? $sec->escape($si['url']) : '#'; ?>"
-                   <?php echo $active ? 'target="_blank" rel="noopener"' : 'class="social-disabled"'; ?>
-                   title="<?php echo $sec->escape($si['title']); ?>">
+                     <a href="<?php echo $active ? $sec->escape($si['url']) : '#'; ?>"
+                         <?php echo $active ? 'target="_blank" rel="noopener noreferrer"' : 'class="social-disabled" aria-disabled="true" tabindex="-1"'; ?>
+                         title="<?php echo $sec->escape($si['title']); ?>" aria-label="<?php echo $sec->escape($si['title']); ?>">
                     <?php echo $si['svg']; ?>
                 </a>
             <?php endforeach; ?>
     </div>
 
     <!-- CTA Button -->
-    <a href="<?php echo $sec->escape($url); ?>" class="expert-card-cta">
+    <a href="<?php echo $sec->escape($url); ?>" class="phinit-btn phinit-btn--primary expert-card-cta">
         Profil ansehen <span class="cta-arrow">&#8250;</span>
     </a>
 

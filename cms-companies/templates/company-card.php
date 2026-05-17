@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 /**
  * Template: Company Card Component
  *
@@ -33,9 +35,6 @@ $show_employees = ($s['design_show_employees'] ?? '1') === '1';
 $show_website   = ($s['design_show_website']   ?? '1') === '1';
 $logo_url       = filter_var(trim((string) ($company->logo_url ?? '')), FILTER_VALIDATE_URL) ?: '';
 $website_url    = filter_var(trim((string) ($company->website ?? '')), FILTER_VALIDATE_URL) ?: '';
-$ribbon_partner_color  = htmlspecialchars($s['design_partner_color']     ?? '#9ca3af');
-$ribbon_top_color      = htmlspecialchars($s['design_top_partner_color'] ?? '#d97706');
-$ribbon_sponsor_color  = htmlspecialchars($s['design_sponsor_color']     ?? '#7c3aed');
 
 // Initials (bis zu 2 Zeichen)
 $name_parts = preg_split('/\s+/', trim($company->name));
@@ -45,14 +44,6 @@ $initials    = mb_strtoupper(mb_substr($name_parts[0], 0, 1) . (isset($name_part
 $is_sponsor     = (bool)($company->is_sponsor     ?? false);
 $is_top_partner = (bool)($company->is_top_partner ?? false);
 $is_partner     = (bool)($company->is_partner     ?? false);
-
-// Avatar-Gradient (deterministisch per Name)
-$palettes = [
-    ['#0891b2','#0284c7'], ['#7c3aed','#a855f7'], ['#059669','#34d399'],
-    ['#d97706','#f59e0b'], ['#e11d48','#fb7185'], ['#1d4ed8','#3b82f6'],
-];
-$cp        = $palettes[abs(crc32($company->name)) % count($palettes)];
-$avatar_bg = "linear-gradient(135deg,{$cp[0]},{$cp[1]})";
 
 // Excerpt
 $excerpt = '';
@@ -64,32 +55,27 @@ if ($company->description) {
 $industry_label = $company->industry ?? '';
 
 // CSS-Variable für Rahmenfarbe = Badge-Farbe (aus Admin-Design-Einstellungen)
-$tier_color = '';
-if ($is_sponsor)         $tier_color = $ribbon_sponsor_color;
-elseif ($is_top_partner) $tier_color = $ribbon_top_color;
-elseif ($is_partner)     $tier_color = $ribbon_partner_color;
-$tier_style = $tier_color ? ' style="--co-tier-border:' . $sec->escape($tier_color) . '"' : '';
 ?>
 
-<div class="co-card<?= $is_sponsor ? ' co-card--sponsor' : ($is_top_partner ? ' co-card--top' : ($is_partner ? ' co-card--partner' : '')) ?>"<?= $tier_style ?>>
+<article class="phinit-card phinit-card--accent co-card<?= $is_sponsor ? ' co-card--sponsor' : ($is_top_partner ? ' co-card--top' : ($is_partner ? ' co-card--partner' : '')) ?>">
 
     <!-- Status-Ribbon (Sponsor / Top-Partner / Partner) -->
     <?php if ($is_sponsor): ?>
-        <div class="co-card-ribbon co-card-ribbon--sponsor" style="--co-ribbon-bg:<?= $sec->escape($ribbon_sponsor_color) ?>">★ Sponsor</div>
+        <div class="co-card-ribbon co-card-ribbon--sponsor">★ Sponsor</div>
     <?php elseif ($is_top_partner): ?>
-        <div class="co-card-ribbon co-card-ribbon--top" style="--co-ribbon-bg:<?= $sec->escape($ribbon_top_color) ?>">◆ Top-Partner</div>
+        <div class="co-card-ribbon co-card-ribbon--top">◆ Top-Partner</div>
     <?php elseif ($is_partner): ?>
-        <div class="co-card-ribbon co-card-ribbon--partner" style="--co-ribbon-bg:<?= $sec->escape($ribbon_partner_color) ?>">● Partner</div>
+        <div class="co-card-ribbon co-card-ribbon--partner">● Partner</div>
     <?php endif; ?>
 
     <!-- Header: Avatar + Name + Branche -->
     <div class="co-card-head">
         <?php if ($logo_url !== ''): ?>
             <div class="co-card-avatar co-card-avatar--logo">
-                <img src="<?= $sec->escape($logo_url) ?>" alt="<?= $sec->escape($company->name) ?>" loading="lazy">
+                <img src="<?= $sec->escape($logo_url) ?>" alt="<?= $sec->escape($company->name) ?>" width="72" height="72" loading="lazy" decoding="async">
             </div>
         <?php else: ?>
-            <div class="co-card-avatar" style="background:<?= $sec->escape($avatar_bg) ?>;"><?= $sec->escape($initials) ?></div>
+            <div class="co-card-avatar co-card-avatar--placeholder"><?= $sec->escape($initials) ?></div>
         <?php endif; ?>
         <div class="co-card-identity">
             <h3 class="co-card-name">
@@ -120,15 +106,15 @@ $tier_style = $tier_color ? ' style="--co-tier-border:' . $sec->escape($tier_col
 
     <!-- Footer: Actions -->
     <div class="co-card-footer">
-        <a href="<?= $sec->escape(cms_company_url($company)) ?>" class="co-btn co-btn-primary co-btn-block">
+        <a href="<?= $sec->escape(cms_company_url($company)) ?>" class="phinit-btn phinit-btn--primary co-btn co-btn-primary co-btn-block">
             Details ansehen
         </a>
         <?php if ($show_website && $website_url !== ''): ?>
-            <a href="<?= $sec->escape($website_url) ?>" target="_blank" rel="noopener noreferrer" class="co-btn co-btn-ghost">
+            <a href="<?= $sec->escape($website_url) ?>" target="_blank" rel="noopener noreferrer" class="phinit-btn phinit-btn--secondary co-btn co-btn-ghost" aria-label="Website öffnen">
                 🌐
             </a>
         <?php endif; ?>
     </div>
 
-</div>
+</article>
 
