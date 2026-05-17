@@ -800,7 +800,24 @@ final class CMS_M365CALCULATOR_Frontend
      */
     private function module_route_map(): array
     {
-        return [
+        $map = [];
+
+        if (class_exists('CMS_M365CALCULATOR_Tool_Registry')) {
+            foreach (CMS_M365CALCULATOR_Tool_Registry::tools(false) as $tool) {
+                if (!is_array($tool)) {
+                    continue;
+                }
+
+                $key = trim((string) ($tool['key'] ?? ''));
+                $url = trim((string) ($tool['url'] ?? ''));
+                $path = trim((string) parse_url($url, PHP_URL_PATH), '/');
+                if ($key !== '' && $path !== '') {
+                    $map[$path] = $key;
+                }
+            }
+        }
+
+        $fallback = [
             trim(self::READONLY_SUITE_MATRIX_ROUTE, '/') => 'm365-lizenzmatrix',
             trim(self::LICENSE_COMPARISON_ROUTE, '/') => 'm365-lizenzvergleich',
             trim(self::READONLY_ADDON_MATRIX_ROUTE, '/') => 'm365-addon-matrix',
@@ -823,6 +840,12 @@ final class CMS_M365CALCULATOR_Frontend
             trim(self::COPILOT_LICENSE_ROUTE, '/') => 'copilot-license-check',
             trim(self::COPILOT_ROI_ROUTE, '/') => 'copilot-roi',
         ];
+
+        foreach ($fallback as $route => $moduleKey) {
+            $map[$route] ??= $moduleKey;
+        }
+
+        return $map;
     }
 
     private function normalized_request_path(): string

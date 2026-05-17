@@ -1,6 +1,30 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.29.16 – 2026-05-17
+
+- Vollständiger Public-/Admin-Audit für Sicherheit, Routing, Save-Logik, Public-Design und Performance durchgeführt.
+- Admin-Speicherungen für Modulübersicht, Moduloptionen, Landingpage Designer, Matrixen, Preise und globale Einstellungen laufen jetzt atomar in Datenbanktransaktionen; bei Fehlern wird sauber zurückgerollt.
+- Öffentliche Landingpage-Card-Navigation validiert Ziel-URLs im Browser zusätzlich auf gleiche Origin und sichere HTTP(S)-Pfade, bevor navigiert wird.
+- Public-Design weiter vereinheitlicht: Landingpage- und Modul-Komponenten nutzen durchgängig maximal 2px Radius für Karten, Boxen, Formularflächen, Badges, Buttons und responsive Matrixkarten.
+- Validierung erweitert: PHP-Lint, JSON-Parsing, Public-POST-Prüfung, Admin-CSRF-Formulare, JS-Sink-Suche, CSS-Radius-Suche und Scope-Check.
+
+## 1.29.15 – 2026-05-17
+
+- Speichern im Landingpage Designer und in Modul-/Global-Settings robuster gemacht: Optionswerte werden migrationssicher per Delete+Insert geschrieben und hängen nicht mehr von vorhandenen Unique-Indexes oder `ON DUPLICATE KEY UPDATE` ab.
+- Admin-Save führt die Tabellenerstellung jetzt strikt aus, damit echte Tabellen-/SQL-Fehler nicht mehr vorher im Installer verschluckt werden.
+- Tabellen-Neuanlage für Moduloptionen nutzt kürzere Index-Spalten, um ältere MySQL-/MariaDB-Indexlimits auf Shared-Hosting-Umgebungen sicherer zu unterstützen.
+- Admin-Fehlermeldungen zeigen einen gekürzten technischen Hinweis, damit verbleibende DB-Probleme direkt im Backend erkennbar sind.
+- Alte Matrix-Modul-Admin-URLs wie `m365tools-module-m365-lizenzmatrix` werden on-demand auf den zusammengeführten Matrixen-Bereich geroutet und lösen keinen 404-/Theme-Folgefehler mehr aus.
+
+## 1.29.14 – 2026-05-17
+
+- Admin-Speicheraktionen weiter gehärtet: Sicherheitsprüfungen schlagen nun geschlossen fehl, falls der CMS-Sicherheitsdienst fehlt oder der Sicherheitswert ungültig ist.
+- Speicherpfade bleiben 500er-robust: fehlende Tabellen werden vor Save-Aktionen erneut geprüft/angelegt, Runtime-Fehler werden geloggt und als Admin-Hinweis ausgegeben.
+- Public-Design-Erkennung robuster gemacht: Route-zu-Modul-Zuordnung wird zuerst aus der Modul-Registry abgeleitet und nur noch per Fallback ergänzt.
+- Statischen Header-/Wrapper-Gap-Reset aus dem Inline-Head in `plugin-base.css` verschoben, damit der Public-Reset cachebar ist und nur dynamische Design-Tokens inline bleiben.
+- Erzwungene systemseitige Dark-Mode-Farbüberschreibungen entfernt, damit die im Adminbereich gesetzten Landingpage- und Modulfarben immer Vorrang behalten.
+
 ## 1.29.13 – 2026-05-17
 
 - Vollaudit für Public- und Admin-Flows umgesetzt: Admin-POST-Flows bleiben abgesichert, Eingaben werden feldtypbezogen normalisiert und DB-Tabellenbezeichner werden vor SQL-Nutzung gekapselt.

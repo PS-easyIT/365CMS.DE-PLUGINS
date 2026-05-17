@@ -52,6 +52,12 @@ final class CMS_M365CALCULATOR_Admin_Pages
         });
     }
 
+    public static function render_matrix_alias(string $tab): void
+    {
+        $_GET['tab'] = self::clean_key($tab);
+        self::render_readonly_matrices();
+    }
+
     public static function render_package_prices(): void
     {
         self::render_with_layout('M365 Tools – Paketpreise', 'm365tools-package-prices', static function (): void {
@@ -380,7 +386,7 @@ final class CMS_M365CALCULATOR_Admin_Pages
     {
         try {
             if (class_exists('CMS_M365CALCULATOR_Installer')) {
-                CMS_M365CALCULATOR_Installer::maybe_install();
+                CMS_M365CALCULATOR_Installer::ensure_for_admin_save();
             }
 
             $save();
@@ -388,10 +394,18 @@ final class CMS_M365CALCULATOR_Admin_Pages
             return true;
         } catch (\Throwable $e) {
             error_log('CMS M365 Tools admin save failed: ' . $e->getMessage());
-            $error = 'Speichern ist fehlgeschlagen. Die Datenbanktabellen wurden geprüft; bitte erneut versuchen oder das Fehlerlog prüfen.';
+            $error = 'Speichern ist fehlgeschlagen. Die Datenbanktabellen wurden geprüft. Technischer Hinweis: ' . self::admin_error_detail($e->getMessage());
 
             return false;
         }
+    }
+
+    private static function admin_error_detail(string $message): string
+    {
+        $message = trim(strip_tags($message));
+        $message = preg_replace('/\s+/', ' ', $message) ?? $message;
+
+        return self::limit_text($message !== '' ? $message : 'Unbekannter Datenbankfehler.', 220);
     }
 
     /**

@@ -145,34 +145,46 @@ final class CMS_M365CALCULATOR_Settings
         $db = \CMS\Database::instance();
         $table = self::table_name($db);
         $quotedTable = self::quote_identifier($table);
+        $pdo = $db->getPdo();
+        $ownsTransaction = !$pdo->inTransaction();
 
-        $sql = "INSERT INTO {$quotedTable} (module_key, is_enabled, status_override, priority_override, title_override, description_override)
-                VALUES (?, ?, ?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE
-                    is_enabled = VALUES(is_enabled),
-                    status_override = VALUES(status_override),
-                    priority_override = VALUES(priority_override),
-                    title_override = VALUES(title_override),
-                    description_override = VALUES(description_override)";
-        $stmt = $db->prepare($sql);
+        $delete = $db->prepare("DELETE FROM {$quotedTable} WHERE module_key = ?");
+        $insert = $db->prepare("INSERT INTO {$quotedTable} (module_key, is_enabled, status_override, priority_override, title_override, description_override) VALUES (?, ?, ?, ?, ?, ?)");
 
-        foreach ($modules as $moduleKey => $values) {
-            if (!is_array($values)) {
-                continue;
+        try {
+            if ($ownsTransaction) {
+                $pdo->beginTransaction();
             }
 
-            $key = self::clean_key((string) $moduleKey);
-            if ($key === '') {
-                continue;
+            foreach ($modules as $moduleKey => $values) {
+                if (!is_array($values)) {
+                    continue;
+                }
+
+                $key = self::clean_key((string) $moduleKey);
+                if ($key === '') {
+                    continue;
+                }
+
+                $enabled = !empty($values['is_enabled']) ? 1 : 0;
+                $status = self::normalize_status((string) ($values['status_override'] ?? 'live')) ?: 'live';
+                $priority = max(0, min(1000, (int) ($values['priority_override'] ?? 100)));
+                $title = self::limit_text(trim(strip_tags((string) ($values['title_override'] ?? ''))), 90);
+                $description = self::limit_text(trim(strip_tags((string) ($values['description_override'] ?? ''))), 140);
+
+                $delete->execute([$key]);
+                $insert->execute([$key, $enabled, $status, $priority, $title !== '' ? $title : null, $description !== '' ? $description : null]);
             }
 
-            $enabled = !empty($values['is_enabled']) ? 1 : 0;
-            $status = self::normalize_status((string) ($values['status_override'] ?? 'live')) ?: 'live';
-            $priority = max(0, min(1000, (int) ($values['priority_override'] ?? 100)));
-            $title = self::limit_text(trim(strip_tags((string) ($values['title_override'] ?? ''))), 90);
-            $description = self::limit_text(trim(strip_tags((string) ($values['description_override'] ?? ''))), 140);
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
+        } catch (\Throwable $e) {
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
 
-            $stmt->execute([$key, $enabled, $status, $priority, $title !== '' ? $title : null, $description !== '' ? $description : null]);
+            throw $e;
         }
 
         self::$moduleSettingsCache = null;
@@ -279,20 +291,36 @@ final class CMS_M365CALCULATOR_Settings
         $db = \CMS\Database::instance();
         $table = self::option_table_name($db);
         $quotedTable = self::quote_identifier($table);
-        $sql = "INSERT INTO {$quotedTable} (module_key, option_group, option_key, option_value, value_type)
-                VALUES (?, ?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE
-                    option_value = VALUES(option_value),
-                    value_type = VALUES(value_type)";
-        $stmt = $db->getPdo()->prepare($sql);
+        $pdo = $db->getPdo();
+        $ownsTransaction = !$pdo->inTransaction();
+        $delete = $db->prepare("DELETE FROM {$quotedTable} WHERE module_key = ? AND option_group = ?");
+        $insert = $db->prepare("INSERT INTO {$quotedTable} (module_key, option_group, option_key, option_value, value_type) VALUES (?, ?, ?, ?, ?)");
 
-        foreach ($options as $optionKey => $value) {
-            $cleanOptionKey = self::clean_key((string) $optionKey);
-            if ($cleanOptionKey === '') {
-                continue;
+        try {
+            if ($ownsTransaction) {
+                $pdo->beginTransaction();
             }
 
-            $stmt->execute([$key, $group, $cleanOptionKey, self::limit_text((string) $value, 2000), 'string']);
+            $delete->execute([$key, $group]);
+
+            foreach ($options as $optionKey => $value) {
+                $cleanOptionKey = self::clean_key((string) $optionKey);
+                if ($cleanOptionKey === '') {
+                    continue;
+                }
+
+                $insert->execute([$key, $group, $cleanOptionKey, self::limit_text((string) $value, 2000), 'string']);
+            }
+
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
+        } catch (\Throwable $e) {
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $e;
         }
 
         self::clear_option_cache($key, $group);

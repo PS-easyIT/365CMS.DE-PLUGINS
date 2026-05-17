@@ -85,6 +85,8 @@ final class CMS_M365CALCULATOR_Admin_Menu
             [$pages, 'render_subscription_prices']
         );
 
+        self::register_matrix_alias_if_requested($pages);
+
         foreach (self::ordered_admin_tools() as $tool) {
             $moduleKey = (string) ($tool['key'] ?? '');
             if ($moduleKey === '') {
@@ -107,6 +109,33 @@ final class CMS_M365CALCULATOR_Admin_Menu
                 }
             );
         }
+    }
+
+    private static function register_matrix_alias_if_requested(string $pages): void
+    {
+        $requestPath = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH), '/');
+        $aliases = [
+            'admin/plugins/m365tools-dashboard/m365tools-module-m365-lizenzmatrix' => ['matrix-suite', 'M365 Tools – Lizenzmatrix'],
+            'admin/plugins/m365tools-dashboard/m365tools-module-m365-addon-matrix' => ['matrix-addon', 'M365 Tools – Add-on-Matrix'],
+        ];
+
+        if (!isset($aliases[$requestPath])) {
+            return;
+        }
+
+        [$tab, $title] = $aliases[$requestPath];
+        $slug = basename($requestPath);
+
+        add_submenu_page(
+            'm365tools-dashboard',
+            $title,
+            '📚 Matrixen',
+            'manage_options',
+            $slug,
+            static function () use ($pages, $tab): void {
+                $pages::render_matrix_alias($tab);
+            }
+        );
     }
 
     /**

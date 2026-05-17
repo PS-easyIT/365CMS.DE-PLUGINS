@@ -178,13 +178,34 @@
     }
 
     function initCardLinks(root) {
+        function safeCardUrl(value) {
+            var raw = String(value || '').trim();
+            if (raw === '' || /[\u0000-\u001F\u007F]/.test(raw)) {
+                return '';
+            }
+
+            try {
+                var parsed = new URL(raw, window.location.origin);
+                if ((parsed.protocol !== 'http:' && parsed.protocol !== 'https:') || parsed.origin !== window.location.origin) {
+                    return '';
+                }
+
+                return parsed.pathname + parsed.search + parsed.hash;
+            } catch (error) {
+                return '';
+            }
+        }
+
         root.querySelectorAll('[data-m365tools-card-url]').forEach(function (card) {
             card.addEventListener('click', function (event) {
                 if (event.target.closest('a, button, input, textarea, select')) {
                     return;
                 }
 
-                window.location.href = card.getAttribute('data-m365tools-card-url');
+                var destination = safeCardUrl(card.getAttribute('data-m365tools-card-url'));
+                if (destination !== '') {
+                    window.location.assign(destination);
+                }
             });
         });
     }
