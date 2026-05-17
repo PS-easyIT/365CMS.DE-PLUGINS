@@ -25,3 +25,5 @@ Statische Gesamtübersicht der Microsoft-365-Vollpakete. Die Matrix zeigt wichti
 ## Pflege
 
 Neue Suite-Werte direkt im JSON-Katalog ergänzen. Die Engine normalisiert nur Anzeige- und Matrixstruktur.
+
+Ab `1.29.3` werden Headertexte, Buttontexte, Buttonziele, CTA, Hinweis-/Quellenbereiche und Design der Public-Seite im Admin-Unterpunkt `Matrixen` gepflegt. Der Tab `Lizenzmatrix` enthält die bereichsspezifischen Inhalte; der Tab `Design` liefert gemeinsame Defaults für Contentheader, Buttons, Farben und Bereiche außerhalb der eigentlichen Tabelle.

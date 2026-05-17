@@ -25,3 +25,5 @@ Statische Gesamtübersicht wichtiger Microsoft-365-Add-ons nach Bereichen wie Ex
 ## Pflege
 
 Add-ons nach Fachbereich gruppieren und volatile Produktnamen im Katalog pflegen.
+
+Ab `1.29.3` werden Headertexte, Buttontexte, Buttonziele, CTA, Bereichsheader, Paketkarten, Hinweis-/Quellenbereiche und Design der Public-Seite im Admin-Unterpunkt `Matrixen` gepflegt. Der Tab `Add-on-Matrix` enthält die bereichsspezifischen Inhalte; der Tab `Design` liefert gemeinsame Defaults für Contentheader, Buttons, Farben und Bereiche außerhalb der eigentlichen Tabellen.

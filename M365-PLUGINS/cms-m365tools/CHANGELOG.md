@@ -1,6 +1,15 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.29.3 – 2026-05-17
+
+- Die Read-only `M365 Lizenzmatrix` und `M365 Add-on-Matrix` sind im Adminbereich nicht mehr als zwei separate Modul-Unterpunkte geführt, sondern im neuen Unterpunkt `Matrixen` gebündelt.
+- Der neue Matrixbereich nutzt Tabs für `Lizenzmatrix`, `Add-on-Matrix` und `Design`.
+- Lizenzmatrix- und Add-on-Matrix-Tab pflegen Headertexte, Buttontexte, Buttonziele, Matrix-Intro, CTA und bereichsspezifische Sichtbarkeit.
+- Der Design-Tab steuert Contentheader-Stil, Header-Ausrichtung, Button-Layout, Button-Stil, Header-Rundung, Header-Farben und Button-Farben.
+- Globale Design-Schalter können Contentheader, Header-Buttons, Einleitungsbereiche, Druckaktion, CTA, Hinweise, Quellenstand sowie Add-on-Bereichsheader und Paketkarten außerhalb der eigentlichen Matrixen abschalten.
+- Public-Templates der beiden Matrixseiten übernehmen die neuen Einstellungen über globale Optionen und CSS-Variablen.
+
 ## 1.29.2 – 2026-05-17
 
 - Landingpage Designer um deutlich feinere Sichtbarkeitsoptionen erweitert: Header-Overline, Header-Titel, Header-Intro, Header-Buttons, einzelne Header-Kennzahlen, Kategorie-Overline, Kategorie-Zähler, Review-Beschreibungen, Modultitel-Links, Tool-Buttons und Hinweise für inaktive Module sind separat schaltbar.

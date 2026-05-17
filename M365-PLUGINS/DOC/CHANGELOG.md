@@ -1,5 +1,12 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 1.29.3 – 2026-05-17
+
+- Dokumentiert den neuen Admin-Unterpunkt `Matrixen`, der Lizenzmatrix und Add-on-Matrix in einem Bereich bündelt.
+- Neue Matrix-Tabs `Lizenzmatrix`, `Add-on-Matrix` und `Design` dokumentiert.
+- Matrix-Designoptionen für Contentheader, Buttons, Farben, Rundungen und globale Sichtbarkeit außerhalb der Matrixbereiche ergänzt.
+- Datenbankdokumentation um die globalen Optionsgruppen `matrix-suite`, `matrix-addon` und `matrix-design` erweitert.
+
 ## 1.29.2 – 2026-05-17
 
 - Landingpage-Designer-Dokumentation um weitere Ausblendoptionen für Header, Kennzahlen, Kategorie-Köpfe, Review-Beschreibungen, Modultitel-Links, Tool-Buttons und inaktive Modulhinweise ergänzt.

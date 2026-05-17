@@ -19,7 +19,7 @@ Ab Version `1.16.0` nutzt das Plugin die Tabelle `cms_m365tools_module_settings`
 
 ## `cms_m365tools_module_options`
 
-Ab Version `1.25.0` speichert diese Tabelle modulbezogene Admin-Optionen für die Tabs `Preise & Annahmen`, `Workflow` und `Daten & Regeln`. Die Werte sind bewusst generisch abgelegt, damit jedes Registry-Modul eigene Felder erhalten kann, ohne pro Modul eine neue Tabelle anzulegen. Ab Version `1.27.0` nutzt das Plugin dieselbe Tabelle zusätzlich für zentrale Defaults (`module_key = global`), darunter Plugin-Einstellungen, Paketpreise sowie Abopreise & Laufzeiten. Ab Version `1.28.0` werden in den Gruppen `base-packages` und `addons` Public-, Member- und Spezialpreis-Overrides aus dem M365LIC-Paketkatalog gespeichert; die Gruppe `terms` hält die Laufzeitfaktoren für Jahr/jährlich, Jahr/monatlich und Monat/flexibel. Ab Version `1.29.0` speichert die Gruppe `provider` zentrale Dienstleister-/Kontaktformular-Werte; ab Version `1.29.1` speichern `landing-content`, `landing-layout`, `landing-colors` und `landing-visibility` die Werte des eigenen Landingpage-Designer-Unterpunkts.
+Ab Version `1.25.0` speichert diese Tabelle modulbezogene Admin-Optionen für die Tabs `Preise & Annahmen`, `Workflow` und `Daten & Regeln`. Die Werte sind bewusst generisch abgelegt, damit jedes Registry-Modul eigene Felder erhalten kann, ohne pro Modul eine neue Tabelle anzulegen. Ab Version `1.27.0` nutzt das Plugin dieselbe Tabelle zusätzlich für zentrale Defaults (`module_key = global`), darunter Plugin-Einstellungen, Paketpreise sowie Abopreise & Laufzeiten. Ab Version `1.28.0` werden in den Gruppen `base-packages` und `addons` Public-, Member- und Spezialpreis-Overrides aus dem M365LIC-Paketkatalog gespeichert; die Gruppe `terms` hält die Laufzeitfaktoren für Jahr/jährlich, Jahr/monatlich und Monat/flexibel. Ab Version `1.29.0` speichert die Gruppe `provider` zentrale Dienstleister-/Kontaktformular-Werte; ab Version `1.29.1` speichern `landing-content`, `landing-layout`, `landing-colors` und `landing-visibility` die Werte des eigenen Landingpage-Designer-Unterpunkts. Ab Version `1.29.3` speichern `matrix-suite`, `matrix-addon` und `matrix-design` die gemeinsamen Read-only-Matrix-Einstellungen.
 
 | Feld | Typ | Zweck |
 |---|---|---|
@@ -47,6 +47,11 @@ Typische globale Preisoptionen ab `1.28.0`:
 - `module_key = global`, `option_group = landing-colors`, `option_key = landing_color_header_background`
 - `module_key = global`, `option_group = landing-visibility`, `option_key = landing_show_icons`
 - `module_key = global`, `option_group = landing-visibility`, `option_key = landing_show_tool_buttons`
+- `module_key = global`, `option_group = matrix-suite`, `option_key = matrix_suite_title`
+- `module_key = global`, `option_group = matrix-addon`, `option_key = matrix_addon_show_package_cards`
+- `module_key = global`, `option_group = matrix-design`, `option_key = matrix_header_style`
+- `module_key = global`, `option_group = matrix-design`, `option_key = matrix_show_notes`
+- `module_key = global`, `option_group = matrix-design`, `option_key = matrix_color_header_background`
 
 Die Katalogdaten liegen als versionierte JSON-Dateien im Plugin-Verzeichnis:
 
