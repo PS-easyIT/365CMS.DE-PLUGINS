@@ -74,11 +74,10 @@ final class CMS_M365CALCULATOR_Admin_Menu
             }
 
             $title = (string) ($tool['title'] ?? $moduleKey);
-            $categoryLabel = self::category_label((string) ($tool['category'] ?? 'Weitere Tools'));
             add_submenu_page(
                 'm365tools-dashboard',
                 $title . ' – Einstellungen',
-                '🧩 ' . $categoryLabel . ' · ' . $title,
+                '🧩 ' . self::module_menu_label($moduleKey, $tool),
                 'manage_options',
                 'm365tools-module-' . $moduleKey,
                 static function () use ($moduleKey): void {
@@ -125,17 +124,46 @@ final class CMS_M365CALCULATOR_Admin_Menu
         return $tools;
     }
 
-    private static function category_label(string $category): string
+    /**
+     * @param array<string,mixed> $tool
+     */
+    private static function module_menu_label(string $moduleKey, array $tool): string
     {
-        return match (strtolower($category)) {
-            'lizenzen' => 'Lizenz',
-            'copilot' => 'Copilot',
-            'exchange' => 'Exchange',
-            'teams' => 'Teams',
-            'speicher' => 'Speicher',
-            'power platform' => 'Power Platform',
-            'migration' => 'Migration',
-            default => 'Tool',
+        $label = match ($moduleKey) {
+            'license-audit-checklist' => 'Audit',
+            'm365-lizenzmatrix' => 'Matrix',
+            'm365-lizenzvergleich' => 'Vergleich',
+            'm365-addon-matrix' => 'Add-ons Matrix',
+            'm365-add-on-konfigurator' => 'Add-ons',
+            'm365lic' => 'Lizenzberater',
+            'm365-commitment-calculator' => 'Laufzeiten',
+            'frontline-worker-license-check' => 'Frontline',
+            'microsoft-price-tracker' => 'Preis-Tracker',
+            'shared-mailbox' => 'Shared Mailbox',
+            'copilot-license-check' => 'Copilot Check',
+            'm365-archive-mailbox' => 'Archiv',
+            'exchange-online-roi' => 'Exchange ROI',
+            'teams-phone-advisor' => 'Teams Phone',
+            'm365-storage-needs-calculator' => 'Storage',
+            'm365-backup-cost-calculator' => 'Backup',
+            'power-platform-cost-calculator' => 'Power Platform',
+            'workspace-m365-tco-calculator' => 'Workspace TCO',
+            'ai-pack-vs-copilot-pro' => 'AI Vergleich',
+            'copilot-pilot-calculator' => 'Copilot Pilot',
+            'copilot-roi' => 'Copilot ROI',
+            default => (string) ($tool['title'] ?? $moduleKey),
         };
+
+        return self::limit_label($label, 24);
+    }
+
+    private static function limit_label(string $label, int $length): string
+    {
+        $label = trim(strip_tags($label));
+        if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+            return mb_strlen($label) > $length ? rtrim(mb_substr($label, 0, $length - 1)) . '…' : $label;
+        }
+
+        return strlen($label) > $length ? rtrim(substr($label, 0, $length - 1)) . '…' : $label;
     }
 }

@@ -181,7 +181,9 @@ final class CMS_M365CALCULATOR_Commitment_Calculator
      */
     private static function annual_model(array $plan, array $months, string $key, string $label): array
     {
-        $price = (float) ($plan['annual_price_month'] ?? 0);
+        $price = $key === 'annual_monthly'
+            ? (float) ($plan['annual_monthly_price_month'] ?? ($plan['annual_price_month'] ?? 0))
+            : (float) ($plan['annual_price_month'] ?? 0);
         $total = 0.0;
         $committed = 0;
         $seatMonths = 0;

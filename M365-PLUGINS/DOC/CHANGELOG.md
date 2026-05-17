@@ -1,5 +1,17 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 1.28.1 – 2026-05-17
+
+- Adminlayout der Paketpreise dokumentiert: Public-, Member- und Spezialpreise stehen je Paket nebeneinander.
+- Hinweis ergänzt, dass der Paketpreisbereich die volle Admincontent-Breite nutzt und der Plugin-Adminbereich 25px oberen Abstand erhält.
+
+## 1.28.0 – 2026-05-17
+
+- Dokumentiert, dass `cms-m365tools` Paketpreise bevorzugt aus dem aktiven `cms-m365lic` Seed-Katalog übernimmt.
+- Admin-Dokumentation um dynamische Public-, Member- und Spezialpreisfelder für Basislizenzen und Add-ons ergänzt.
+- API-Dokumentation um `m365_package_price_catalog()` und die daraus abgeleiteten Pricing-/Commitment-Kataloge erweitert.
+- Admin-Menü-Dokumentation auf kurze Modul-Labels zur Sidebar-Optimierung aktualisiert.
+
 ## 1.27.0 – 2026-05-17
 
 - Admin-Dokumentation um zentrale Plugin-Einstellungen, globale Paketpreise sowie Abopreise & Laufzeiten als eigene Unterpunkte ergänzt.

@@ -42,7 +42,31 @@ final class CMS_M365CALCULATOR_Catalog
      */
     public static function pricing(): array
     {
-        return self::load_json('pricing.json');
+        $pricing = self::load_json('pricing.json');
+        $catalog = self::m365_package_price_catalog();
+        $products = is_array($pricing['products'] ?? null) ? $pricing['products'] : [];
+
+        foreach (self::catalog_packages($catalog) as $package) {
+            $slug = (string) ($package['slug'] ?? '');
+            $price = self::package_tier_price($package, 'public');
+            if ($slug === '' || $price === null) {
+                continue;
+            }
+
+            $products[$slug] = $price;
+        }
+
+        if ($products !== []) {
+            $pricing['products'] = $products;
+        }
+
+        $pricing['currency'] = (string) ($catalog['meta']['currency'] ?? ($pricing['currency'] ?? 'EUR'));
+        $pricing['price_date'] = (string) ($catalog['meta']['price_date'] ?? ($pricing['price_date'] ?? '2026-03-17'));
+        $pricing['review_note'] = 'Paketpreise werden bevorzugt aus dem CMS M365 License Seed-Katalog übernommen und können global in M365 Tools übersteuert werden.';
+        $pricing['defaults']['reference_user_mailbox_monthly'] = $products['m365-business-standard'] ?? ($pricing['defaults']['reference_user_mailbox_monthly'] ?? 10.80);
+        $pricing['defaults']['shared_license_monthly'] = $products['exchange-online-plan-2'] ?? ($pricing['defaults']['shared_license_monthly'] ?? 6.90);
+
+        return $pricing;
     }
 
     /**
@@ -146,7 +170,104 @@ final class CMS_M365CALCULATOR_Catalog
      */
     public static function commitment_pricing(): array
     {
-        return self::load_json('commitment_pricing.json');
+        $pricing = self::load_json('commitment_pricing.json');
+        $catalog = self::m365_package_price_catalog();
+        $plans = [];
+        $sourcePlans = is_array($pricing['plans'] ?? null) ? $pricing['plans'] : [];
+        $existingPlans = [];
+
+        foreach ($sourcePlans as $plan) {
+            if (is_array($plan) && !empty($plan['slug'])) {
+                $existingPlans[(string) $plan['slug']] = $plan;
+            }
+        }
+
+        $termOptions = class_exists('CMS_M365CALCULATOR_Settings')
+            ? CMS_M365CALCULATOR_Settings::global_options('terms')
+            : [];
+        $annualMonthlyUplift = self::option_float($termOptions, 'annual-monthly-uplift-percent', 5.0, 0.0, 200.0);
+        $monthlyUplift = self::option_float($termOptions, 'monthly-uplift-percent', 20.0, 0.0, 200.0);
+
+        foreach (self::catalog_packages($catalog) as $package) {
+            $slug = (string) ($package['slug'] ?? '');
+            $price = self::package_tier_price($package, 'public');
+            if ($slug === '' || $price === null || $price < 0) {
+                continue;
+            }
+
+            $existing = is_array($existingPlans[$slug] ?? null) ? $existingPlans[$slug] : [];
+            $isEnterprise = str_contains($slug, '-e3') || str_contains($slug, '-e5') || str_contains($slug, 'enterprise');
+            $plans[] = [
+                'slug' => $slug,
+                'name' => (string) ($package['name'] ?? ($existing['name'] ?? $slug)),
+                'family' => (string) ($package['category'] ?? ($existing['family'] ?? 'M365')),
+                'max_users' => $existing['max_users'] ?? (str_contains($slug, 'business') ? 300 : null),
+                'annual_price_month' => round($price, 2),
+                'annual_monthly_price_month' => round($price * (1 + ($annualMonthlyUplift / 100)), 2),
+                'monthly_price_month' => round($price * (1 + ($monthlyUplift / 100)), 2),
+                'annual_monthly_uplift_percent' => $annualMonthlyUplift,
+                'monthly_uplift_percent' => $monthlyUplift,
+                'terms' => $isEnterprise ? ['P1M', 'P1Y', 'P3Y'] : ['P1M', 'P1Y'],
+                'supports_three_year' => $isEnterprise,
+                'three_year_min_users' => $isEnterprise ? (int) ($existing['three_year_min_users'] ?? 100) : null,
+                'source_note' => (string) ($package['source_note'] ?? ($existing['source_note'] ?? 'Aus dem zentralen M365-Paketkatalog abgeleitet.')),
+                'sort_order' => (int) ($package['sort_order'] ?? 9999),
+            ];
+        }
+
+        if ($plans !== []) {
+            usort($plans, static fn(array $left, array $right): int => ((int) ($left['sort_order'] ?? 0)) <=> ((int) ($right['sort_order'] ?? 0)));
+            $pricing['plans'] = $plans;
+        }
+
+        $pricing['meta']['currency'] = (string) ($catalog['meta']['currency'] ?? ($pricing['meta']['currency'] ?? 'EUR'));
+        $pricing['meta']['source_checked'] = (string) ($catalog['meta']['price_date'] ?? ($pricing['meta']['source_checked'] ?? '2026-03-17'));
+        $pricing['meta']['price_basis'] = 'Aus dem CMS M365 License Paketkatalog abgeleitete Public-Referenzpreise mit zentralen Laufzeitannahmen.';
+
+        return $pricing;
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public static function m365_package_price_catalog(): array
+    {
+        $packages = self::m365lic_package_seeds();
+        $source = 'cms-m365lic';
+
+        if ($packages === []) {
+            $packages = self::fallback_package_seeds();
+            $source = 'cms-m365tools';
+        }
+
+        $packages = self::apply_global_package_overrides($packages);
+
+        usort($packages, static function (array $left, array $right): int {
+            $leftOrder = (int) ($left['sort_order'] ?? 9999);
+            $rightOrder = (int) ($right['sort_order'] ?? 9999);
+            if ($leftOrder !== $rightOrder) {
+                return $leftOrder <=> $rightOrder;
+            }
+
+            return strcmp((string) ($left['name'] ?? ''), (string) ($right['name'] ?? ''));
+        });
+
+        return [
+            'meta' => [
+                'source_plugin' => $source,
+                'price_date' => '2026-03-17',
+                'currency' => 'EUR',
+                'tiers' => ['public', 'member', 'group'],
+                'note' => 'Public-, Member- und Spezialpreise aus dem M365LIC Seed-Katalog; globale M365-Tools-Overrides haben Vorrang.',
+            ],
+            'billing_options' => self::m365lic_billing_options(),
+            'packages' => $packages,
+        ];
+    }
+
+    public static function package_price_option_key(string $slug, string $tier): string
+    {
+        return 'pkg-' . self::clean_key($slug) . '-' . self::clean_key($tier) . '-eur';
     }
 
     /**
@@ -599,5 +720,186 @@ final class CMS_M365CALCULATOR_Catalog
         $decoded = json_decode($json, true);
 
         return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private static function catalog_packages(array $catalog): array
+    {
+        $packages = is_array($catalog['packages'] ?? null) ? $catalog['packages'] : [];
+
+        return array_values(array_filter($packages, static fn(mixed $package): bool => is_array($package)));
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private static function m365lic_package_seeds(): array
+    {
+        if (!self::ensure_m365lic_catalog_loaded() || !method_exists('CMS_M365LIC_Catalog', 'package_seeds')) {
+            return [];
+        }
+
+        try {
+            $packages = \CMS_M365LIC_Catalog::package_seeds();
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        return is_array($packages) ? array_values(array_filter($packages, static fn(mixed $package): bool => is_array($package))) : [];
+    }
+
+    /**
+     * @return array<string,array<string,mixed>>
+     */
+    private static function m365lic_billing_options(): array
+    {
+        if (self::ensure_m365lic_catalog_loaded() && method_exists('CMS_M365LIC_Catalog', 'billing_options')) {
+            try {
+                $options = \CMS_M365LIC_Catalog::billing_options();
+                if (is_array($options) && $options !== []) {
+                    return $options;
+                }
+            } catch (\Throwable $e) {
+                // Fallback below.
+            }
+        }
+
+        return [
+            'annual_upfront' => ['key' => 'annual_upfront', 'label' => '1 Jahr · jährliche Zahlung', 'short_label' => 'Jahr / jährlich', 'multiplier' => 1.00],
+            'annual_monthly' => ['key' => 'annual_monthly', 'label' => '1 Jahr · monatliche Zahlung (+5%)', 'short_label' => 'Jahr / monatlich', 'multiplier' => 1.05],
+            'monthly_flex' => ['key' => 'monthly_flex', 'label' => '1 Monat · monatlich (+20%)', 'short_label' => 'Monat / flexibel', 'multiplier' => 1.20],
+        ];
+    }
+
+    private static function ensure_m365lic_catalog_loaded(): bool
+    {
+        if (class_exists('CMS_M365LIC_Catalog')) {
+            return true;
+        }
+
+        $isActive = defined('CMS_M365LIC_VERSION');
+        if (!$isActive && class_exists('CMS\\PluginManager') && method_exists('CMS\\PluginManager', 'instance')) {
+            try {
+                $manager = \CMS\PluginManager::instance();
+                $isActive = method_exists($manager, 'isPluginActive') && $manager->isPluginActive('cms-m365lic');
+            } catch (\Throwable $e) {
+                $isActive = false;
+            }
+        }
+
+        if (!$isActive) {
+            return false;
+        }
+
+        $candidates = [
+            dirname(CMS_M365CALCULATOR_PLUGIN_DIR) . '/cms-m365lic/includes/class-catalog.php',
+            (defined('ABSPATH') ? ABSPATH : dirname(CMS_M365CALCULATOR_PLUGIN_DIR, 2) . '/') . 'plugins/cms-m365lic/includes/class-catalog.php',
+        ];
+
+        foreach ($candidates as $file) {
+            if (is_string($file) && file_exists($file)) {
+                require_once $file;
+                break;
+            }
+        }
+
+        return class_exists('CMS_M365LIC_Catalog');
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private static function fallback_package_seeds(): array
+    {
+        $pricing = self::load_json('pricing.json');
+        $products = is_array($pricing['products'] ?? null) ? $pricing['products'] : [];
+        $packages = [];
+        $order = 10;
+
+        foreach ($products as $slug => $price) {
+            $packages[] = [
+                'slug' => (string) $slug,
+                'name' => ucwords(str_replace('-', ' ', (string) $slug)),
+                'kind' => str_contains((string) $slug, 'defender') || str_contains((string) $slug, 'archiving') ? 'addon' : 'base',
+                'category' => 'm365',
+                'pricing_basis' => 'per_user',
+                'public_price' => is_numeric($price) ? (float) $price : null,
+                'member_price' => is_numeric($price) ? (float) $price : null,
+                'group_price' => is_numeric($price) ? (float) $price : null,
+                'currency' => (string) ($pricing['currency'] ?? 'EUR'),
+                'source_note' => 'Fallback aus dem lokalen M365-Tools-Preiskatalog.',
+                'sort_order' => $order,
+                'is_active' => 1,
+            ];
+            $order += 10;
+        }
+
+        return $packages;
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $packages
+     * @return array<int,array<string,mixed>>
+     */
+    private static function apply_global_package_overrides(array $packages): array
+    {
+        if (!class_exists('CMS_M365CALCULATOR_Settings')) {
+            return $packages;
+        }
+
+        $baseOptions = CMS_M365CALCULATOR_Settings::global_options('base-packages');
+        $addonOptions = CMS_M365CALCULATOR_Settings::global_options('addons');
+
+        foreach ($packages as &$package) {
+            $slug = (string) ($package['slug'] ?? '');
+            if ($slug === '') {
+                continue;
+            }
+
+            $options = (string) ($package['kind'] ?? 'base') === 'addon' ? $addonOptions : $baseOptions;
+            foreach (['public' => 'public_price', 'member' => 'member_price', 'group' => 'group_price'] as $tier => $field) {
+                $optionKey = self::package_price_option_key($slug, $tier);
+                if (isset($options[$optionKey]) && is_numeric($options[$optionKey])) {
+                    $package[$field] = round((float) $options[$optionKey], 2);
+                }
+            }
+        }
+        unset($package);
+
+        return $packages;
+    }
+
+    private static function package_tier_price(array $package, string $tier): ?float
+    {
+        $field = match ($tier) {
+            'member' => 'member_price',
+            'group' => 'group_price',
+            default => 'public_price',
+        };
+
+        $value = $package[$field] ?? null;
+        if ($value === null || $value === '') {
+            $value = $package['public_price'] ?? null;
+        }
+
+        return is_numeric($value) ? round((float) $value, 2) : null;
+    }
+
+    /**
+     * @param array<string,string> $options
+     */
+    private static function option_float(array $options, string $key, float $default, float $min, float $max): float
+    {
+        $value = $options[$key] ?? $options[str_replace('-', '_', $key)] ?? null;
+        $number = is_numeric($value) ? (float) $value : $default;
+
+        return max($min, min($max, $number));
+    }
+
+    private static function clean_key(string $value): string
+    {
+        return trim((string) preg_replace('/[^a-z0-9_-]+/i', '-', strtolower($value)), '-');
     }
 }

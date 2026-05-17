@@ -19,7 +19,7 @@ Ab Version `1.16.0` nutzt das Plugin die Tabelle `cms_m365tools_module_settings`
 
 ## `cms_m365tools_module_options`
 
-Ab Version `1.25.0` speichert diese Tabelle modulbezogene Admin-Optionen für die Tabs `Preise & Annahmen`, `Workflow` und `Daten & Regeln`. Die Werte sind bewusst generisch abgelegt, damit jedes Registry-Modul eigene Felder erhalten kann, ohne pro Modul eine neue Tabelle anzulegen. Ab Version `1.27.0` nutzt das Plugin dieselbe Tabelle zusätzlich für zentrale Defaults (`module_key = global`), darunter Plugin-Einstellungen, Paketpreise sowie Abopreise & Laufzeiten.
+Ab Version `1.25.0` speichert diese Tabelle modulbezogene Admin-Optionen für die Tabs `Preise & Annahmen`, `Workflow` und `Daten & Regeln`. Die Werte sind bewusst generisch abgelegt, damit jedes Registry-Modul eigene Felder erhalten kann, ohne pro Modul eine neue Tabelle anzulegen. Ab Version `1.27.0` nutzt das Plugin dieselbe Tabelle zusätzlich für zentrale Defaults (`module_key = global`), darunter Plugin-Einstellungen, Paketpreise sowie Abopreise & Laufzeiten. Ab Version `1.28.0` werden in den Gruppen `base-packages` und `addons` Public-, Member- und Spezialpreis-Overrides aus dem M365LIC-Paketkatalog gespeichert; die Gruppe `terms` hält die Laufzeitfaktoren für Jahr/jährlich, Jahr/monatlich und Monat/flexibel.
 
 | Feld | Typ | Zweck |
 |---|---|---|
@@ -31,7 +31,17 @@ Ab Version `1.25.0` speichert diese Tabelle modulbezogene Admin-Optionen für di
 | `value_type` | `VARCHAR(20)` | Reserviert für spätere Typauswertung, aktuell `string` |
 | `updated_at` | `TIMESTAMP` | Änderungszeitpunkt |
 
+Typische globale Preisoptionen ab `1.28.0`:
+
+- `module_key = global`, `option_group = base-packages`, `option_key = pkg-m365-business-standard-public-eur`
+- `module_key = global`, `option_group = base-packages`, `option_key = pkg-m365-business-standard-member-eur`
+- `module_key = global`, `option_group = addons`, `option_key = pkg-m365-copilot-group-eur`
+- `module_key = global`, `option_group = terms`, `option_key = annual-monthly-uplift-percent`
+- `module_key = global`, `option_group = terms`, `option_key = monthly-uplift-percent`
+
 Die Katalogdaten liegen als versionierte JSON-Dateien im Plugin-Verzeichnis:
+
+Ab `1.28.0` erzeugt `CMS_M365CALCULATOR_Catalog::m365_package_price_catalog()` zusätzlich einen Laufzeitkatalog aus `CMS_M365LIC_Catalog::package_seeds()`, sofern `cms-m365lic` aktiv ist. Dieser dynamische Katalog ist keine eigene Tabelle und keine separate JSON-Datei; globale Overrides werden in `cms_m365tools_module_options` gespeichert.
 
 - `data/shared_mailbox_rules.json`
 - `data/mailbox_license_matrix.json`

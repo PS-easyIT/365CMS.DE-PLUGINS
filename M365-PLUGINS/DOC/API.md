@@ -5,7 +5,7 @@
 - `rules()` – lädt Regeln aus `shared_mailbox_rules.json`
 - `license_matrix()` – lädt Lizenzprofile aus `mailbox_license_matrix.json`
 - `scenarios()` – lädt auswählbare Szenarien
-- `pricing()` – lädt Preisannahmen
+- `pricing()` – lädt Preisannahmen und reichert sie ab `1.28.0` bevorzugt mit Public-Preisen aus dem M365LIC-Paketkatalog an
 - `copilot_eligibility_matrix()` – lädt Copilot-Basislizenz- und Chat-Eligibility
 - `copilot_prerequisites()` – lädt technische Copilot-Voraussetzungen
 - `copilot_upgrade_paths()` – lädt Upgrade- und Preisannahmen
@@ -18,7 +18,7 @@
 - `plan_comparison_notes()` – lädt globale und planbezogene Vergleichshinweise
 - `readonly_suite_matrix()` – lädt die statische Vollpaket-Matrix für `/m365-lizenzmatrix`
 - `readonly_addon_matrix()` – lädt die statische Add-on-Matrix für `/m365-addon-matrix`
-- `commitment_pricing()` – lädt Preisannahmen für den Annual-vs-Monthly-Rechner
+- `commitment_pricing()` – lädt Preisannahmen für den Annual-vs-Monthly-Rechner und leitet ab `1.28.0` Planpreise aus dem zentralen Paketkatalog ab
 - `commitment_assumptions()` – lädt Defaults, Limits, Labels und Empfehlungsschwellen
 - `commitment_channel_notes()` – lädt Kanal-, Quellen- und Vertragsnotizen für CSP, MCA und EA
 - `archive_mailbox_plans()` – lädt Planwerte für Primärmailbox, Archiv, Auto-expanding Archive und Exchange Online Archiving
@@ -55,12 +55,14 @@
 - `license_audit_checklist()` – lädt Audit-Kategorien und Prüfpunkte
 - `license_audit_deeplinks()` – lädt Trigger und Spezialtool-Verweise
 - `audit_pdf_template()` – lädt Struktur und Labels der Druckzusammenfassung
+- `m365_package_price_catalog()` – liefert den zentralen Paketpreiskatalog mit Basislizenzen, Add-ons, Public-, Member- und Spezialpreisen; nutzt bevorzugt `CMS_M365LIC_Catalog::package_seeds()` und fällt auf lokale Preiswerte zurück
+- `package_price_option_key(string $slug, string $tier)` – erzeugt den globalen Optionsschlüssel für einen SKU-/Preisstufen-Override
 
 ## Admin-Konfiguration
 
-- `CMS_M365CALCULATOR_Admin_Menu::register()` – registriert Dashboard, ab `1.27.0` zentrale Unterpunkte für Plugin-Einstellungen, Paketpreise sowie Abopreise & Laufzeiten und danach je Tool-Registry-Modul einen logisch sortierten Unterpunkt unter `M365 Tools`
+- `CMS_M365CALCULATOR_Admin_Menu::register()` – registriert Dashboard, ab `1.27.0` zentrale Unterpunkte für Plugin-Einstellungen, Paketpreise sowie Abopreise & Laufzeiten und danach je Tool-Registry-Modul einen logisch sortierten Unterpunkt unter `M365 Tools`; ab `1.28.0` nutzen Modulunterpunkte kurze Sidebar-Labels
 - `CMS_M365CALCULATOR_Admin_Pages::render_plugin_settings()` – rendert die zentrale Plugin-Einstellungsseite mit Tabs für Allgemein, Review & Quellen, Workflow und System
-- `CMS_M365CALCULATOR_Admin_Pages::render_package_prices()` – rendert globale Paket- und Add-on-Preisannahmen für alle Module
+- `CMS_M365CALCULATOR_Admin_Pages::render_package_prices()` – rendert globale Paket- und Add-on-Preisannahmen für alle Module, ab `1.28.0` dynamisch mit Public-, Member- und Spezialfeldern aus dem M365LIC-Seed
 - `CMS_M365CALCULATOR_Admin_Pages::render_subscription_prices()` – rendert globale Abopreis-, Laufzeit-, Commitment- und Abrechnungsannahmen
 - `CMS_M365CALCULATOR_Admin_Pages::render_module_settings(string $moduleKey)` – rendert die Modul-Unterseite mit Tabs für Übersicht, Anzeige, Preise & Annahmen, Workflow sowie Daten & Regeln
 - `CMS_M365CALCULATOR_Admin_Module_Config::tabs_for(array $tool)` – liefert die Tab-Struktur für eine Modul-Einstellungsseite

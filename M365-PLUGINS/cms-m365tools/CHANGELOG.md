@@ -1,6 +1,20 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.28.1 – 2026-05-17
+
+- Paketpreis-Adminseite optimiert: Public-, Member- und Spezialpreis werden je Paket in einer gemeinsamen Zeile nebeneinander angezeigt.
+- Der Paketpreisbereich nutzt die volle Breite des Admincontent-Bereichs statt einer begrenzten Kartenbreite.
+- Der Plugin-Adminbereich erhält oben 25px Abstand zum Fensterrand bzw. Admincontent-Rand.
+
+## 1.28.0 – 2026-05-17
+
+- Paketpreise werden bevorzugt aus dem `cms-m365lic` Seed-Katalog übernommen, sofern CMS M365 License aktiv ist; andernfalls bleiben lokale Fallback-Preise verfügbar.
+- Globale Adminseite `Paketpreise` rendert jetzt M365-Pakete und Add-ons dynamisch mit Public-, Member- und Spezialpreis je SKU.
+- `CMS_M365CALCULATOR_Catalog::pricing()` und `commitment_pricing()` leiten Referenzpreise und Laufzeitmodelle aus dem zentralen Paketkatalog ab.
+- Abopreise & Laufzeiten berücksichtigen nun die M365LIC-Logik für Jahr/jährlich, Jahr/monatlich und Monat/flexibel mit zentral anpassbaren Aufschlägen.
+- Modul-Unterpunkte im Adminmenü verwenden kurze Labels wie `Audit`, `Matrix`, `Teams Phone`, `Power Platform` oder `Workspace TCO`, damit die Sidebar kompakt bleibt.
+
 ## 1.27.0 – 2026-05-17
 
 - Alle 21 Public-Module erneut gegen zusätzliche offizielle Microsoft-Learn-Quellen zu Endpoint-Webservice, Endpoint-Change-Management, Copilot-App-/Netzwerkanforderungen, Lizenzzuweisung, Gruppenlizenzierung und Microsoft 365 Backup geprüft.

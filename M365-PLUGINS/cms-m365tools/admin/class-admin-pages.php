@@ -482,21 +482,18 @@ final class CMS_M365CALCULATOR_Admin_Pages
     private static function package_price_fields(string $tab): array
     {
         return match ($tab) {
-            'addons' => [
-                self::number('exchange_online_plan_1_eur', 'Exchange Online Plan 1', '3.50', 0, 1000, 0.01, 'Globaler Referenzpreis pro Nutzer/Monat.'),
-                self::number('exchange_online_plan_2_eur', 'Exchange Online Plan 2', '6.90', 0, 1000, 0.01, 'Globaler Referenzpreis pro Nutzer/Monat.'),
-                self::number('defender_office_365_p1_eur', 'Defender for Office 365 Plan 1', '1.73', 0, 1000, 0.01, 'Globaler Add-on-Referenzpreis.'),
-                self::number('defender_office_365_p2_eur', 'Defender for Office 365 Plan 2', '4.30', 0, 1000, 0.01, 'Globaler Add-on-Referenzpreis.'),
-                self::number('teams_phone_standard_eur', 'Teams Phone Standard', '8.70', 0, 1000, 0.01, 'Telefonie-Add-on ohne Verbrauchsminuten.'),
-                self::number('m365_copilot_eur', 'Microsoft 365 Copilot Add-on', '28.10', 0, 1000, 0.01, 'Globaler Copilot-Referenzpreis pro Nutzer/Monat.'),
-                self::number('m365_backup_per_gb_eur', 'Microsoft 365 Backup pro GB', '0.15', 0, 100, 0.001, 'PAYG-Annahme pro geschütztem GB/Monat.'),
-            ],
+            'addons' => self::package_catalog_fields('addon'),
             'price-rules' => [
                 self::number('default_price_adjustment_percent', 'Globale Preisanpassung in %', '0', -80, 300, 0.1, 'Aufschlag oder Rabatt auf zentrale Referenzpreise.'),
                 self::number('partner_discount_percent', 'Partner-/Rahmenvertragsrabatt in %', '0', 0, 90, 0.1, 'Optionaler zentraler Rabatt vor Modulberechnung.'),
                 self::number('risk_buffer_percent', 'Budgetpuffer in %', '10', 0, 200, 0.1, 'Puffer für Preisereignisse, Wechselkurse oder Packaging-Änderungen.'),
+                self::select('default_price_tier', 'Standard-Preisstufe für Rechner', 'public', [
+                    'public' => 'Public',
+                    'member' => 'Member',
+                    'group' => 'Spezial',
+                ], 'Legt fest, welche zentrale Preisstufe neue Kalkulationen bevorzugt verwenden sollen.'),
                 self::select('price_source_type', 'Preisquelle', 'reference_json', [
-                    'reference_json' => 'Gepflegte JSON-Referenz',
+                    'reference_json' => 'M365LIC Seed-Katalog / gepflegte Referenz',
                     'csp_export' => 'CSP-/Partner-Export',
                     'contract' => 'Rahmenvertrag',
                     'manual' => 'Manuelle Annahme',
@@ -504,15 +501,58 @@ final class CMS_M365CALCULATOR_Admin_Pages
                 self::text('price_source_date', 'Preisstand', date('Y-m-d'), 'Datum des letzten Preisabgleichs.'),
                 self::textarea('price_source_note', 'Preisnotiz', '', 'Interne Notiz zu Preislisten, Vertragsständen oder Abweichungen.'),
             ],
-            default => [
-                self::number('m365_business_basic_eur', 'Microsoft 365 Business Basic', '5.20', 0, 1000, 0.01, 'Globaler Paketpreis pro Nutzer/Monat.'),
-                self::number('m365_business_standard_eur', 'Microsoft 365 Business Standard', '10.80', 0, 1000, 0.01, 'Globaler Paketpreis pro Nutzer/Monat.'),
-                self::number('m365_business_premium_eur', 'Microsoft 365 Business Premium', '19.10', 0, 1000, 0.01, 'Globaler Paketpreis pro Nutzer/Monat.'),
-                self::number('office_365_e3_eur', 'Office 365 E3', '23.20', 0, 1000, 0.01, 'Globaler Paketpreis pro Nutzer/Monat.'),
-                self::number('m365_e3_eur', 'Microsoft 365 E3', '34.90', 0, 1000, 0.01, 'Globaler Paketpreis pro Nutzer/Monat.'),
-                self::number('m365_e5_eur', 'Microsoft 365 E5', '57.00', 0, 1000, 0.01, 'Globaler Paketpreis pro Nutzer/Monat.'),
-            ],
+            default => self::package_catalog_fields('base'),
         };
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private static function package_catalog_fields(string $kind): array
+    {
+        $catalog = CMS_M365CALCULATOR_Catalog::m365_package_price_catalog();
+        $packages = is_array($catalog['packages'] ?? null) ? $catalog['packages'] : [];
+        $tiers = [
+            'public' => 'Public',
+            'member' => 'Member',
+            'group' => 'Spezial',
+        ];
+        $fields = [];
+
+        foreach ($packages as $package) {
+            if (!is_array($package) || (string) ($package['kind'] ?? 'base') !== $kind) {
+                continue;
+            }
+
+            $slug = (string) ($package['slug'] ?? '');
+            $name = (string) ($package['name'] ?? $slug);
+            if ($slug === '' || $name === '') {
+                continue;
+            }
+
+            $basis = (string) ($package['pricing_basis'] ?? 'per_user') === 'flat_monthly'
+                ? 'Fixpreis pro Monat'
+                : 'pro Nutzer/Monat';
+            $category = (string) ($package['category'] ?? 'm365');
+
+            foreach ($tiers as $tier => $tierLabel) {
+                $field = $tier === 'member' ? 'member_price' : ($tier === 'group' ? 'group_price' : 'public_price');
+                $default = $package[$field] ?? $package['public_price'] ?? '0';
+                $fields[] = self::number(
+                    CMS_M365CALCULATOR_Catalog::package_price_option_key($slug, $tier),
+                    $name . ' · ' . $tierLabel,
+                    is_numeric($default) ? (string) $default : '0',
+                    0,
+                    100000,
+                    0.01,
+                    'Kategorie ' . $category . ', ' . $basis . '. Herkunft: CMS M365 License Seed-Katalog.'
+                );
+            }
+        }
+
+        return $fields !== [] ? $fields : [
+            self::textarea('package_catalog_note', 'Kataloghinweis', '', 'Es wurden keine Pakete gefunden. Prüfe, ob CMS M365 License aktiv ist oder lokale Fallback-Preise vorhanden sind.'),
+        ];
     }
 
     /**
@@ -550,8 +590,9 @@ final class CMS_M365CALCULATOR_Admin_Pages
                 self::textarea('billing_note', 'Abrechnungsnotiz', '', 'Hinweis zu PAYG, CSP, Rahmenvertrag oder interner Kostenstelle.'),
             ],
             default => [
-                self::number('monthly_uplift_percent', 'Monatslaufzeit-Aufschlag in %', '20', 0, 200, 0.1, 'Globaler Standardaufschlag für flexible Laufzeit.'),
-                self::number('annual_discount_percent', 'Jahresbindungs-Rabatt in %', '0', 0, 90, 0.1, 'Optionaler Rabatt für Jahresbindung.'),
+                self::number('annual-monthly-uplift-percent', 'Jahresbindung mit monatlicher Zahlung in %', '5', 0, 200, 0.1, 'Entspricht dem M365LIC-Standard für Jahr / monatlich.'),
+                self::number('monthly_uplift_percent', 'Monatslaufzeit-Aufschlag in %', '20', 0, 200, 0.1, 'Entspricht dem M365LIC-Standard für Monat / flexibel.'),
+                self::number('annual_discount_percent', 'Jährliche Zahlung Rabatt in %', '0', 0, 90, 0.1, 'Optionaler Rabatt für Jahr / jährlich gegenüber der Referenz.'),
                 self::number('three_year_discount_percent', 'Dreijahres-Rabatt in %', '0', 0, 90, 0.1, 'Optionaler Rabatt für geeignete Enterprise-Szenarien.'),
                 self::number('three_year_min_users', 'Mindestmenge Dreijahrespfad', '100', 0, 1000000, 1, 'Interner Richtwert für P3Y-Prüfung.'),
                 self::select('default_term', 'Standardlaufzeit', 'P1Y', [
