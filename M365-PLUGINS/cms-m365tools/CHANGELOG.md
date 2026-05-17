@@ -1,6 +1,14 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.23.0 – 2026-05-17
+
+- Alle Public-Module erneut gegen offizielle Microsoft-Learn-Quellen zu Best Practices, Schutz, Performance, Lizenzierung, Servicegrenzen, Backup, Copilot, Teams, Exchange, SharePoint, Entra und Power Platform geprüft.
+- Neuen Katalog `m365_best_practice_catalog.json` ergänzt, der alle Module zentral den Review-Domänen Lizenz & Kosten, Identität & Zugriff, Schutz & Compliance, Servicegrenzen, Speicher & Backup, Netzwerk & Performance, Copilot & KI, Power Platform Betrieb sowie Migration & Betrieb zuordnet.
+- Hub-Landingpage zeigt nun den All-Module-Best-Practice-Kompass und pro Modul fokussierte Review-Chips im PHINIT-Layout.
+- Lizenz-Audit-Checkliste um neue Querschnittsprüfpunkte für privilegierte Rollen, Conditional Access, Mail-Schutz, Nutzungsberichte, Netzwerk-Basiswerte, SharePoint-/OneDrive-/Teams-Grenzen, Copilot-Datenzugriff und Wiederherstellungsziele erweitert.
+- Deep Links der Audit-Checkliste um Exchange Online ROI und Copilot ROI ergänzt; öffentliche Texte bleiben frei von technischen Formular-Prüfmeldungen.
+
 ## 1.22.0 – 2026-05-17
 
 - Power Platform Kosten-Kalkulator um Microsoft Well-Architected-, Security-, ALM-, Performance- und Operational-Excellence-Review erweitert.
