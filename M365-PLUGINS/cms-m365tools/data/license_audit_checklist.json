@@ -21,12 +21,16 @@
       "https://learn.microsoft.com/en-us/microsoft-365/frontline/flw-licensing-options?view=o365-worldwide",
       "https://learn.microsoft.com/en-us/microsoft-365/admin/activity-reports/activity-reports",
       "https://learn.microsoft.com/en-us/entra/identity/conditional-access/overview",
+      "https://learn.microsoft.com/en-us/entra/identity/conditional-access/plan-conditional-access",
       "https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/privileged-roles-permissions",
-      "https://learn.microsoft.com/en-us/microsoft-365/security/office-365-security/security-roadmap",
+      "https://learn.microsoft.com/en-us/defender-office-365/mdo-deployment-guide",
       "https://learn.microsoft.com/en-us/microsoft-365/enterprise/microsoft-365-network-connectivity-principles",
-      "https://learn.microsoft.com/en-us/microsoft-365/enterprise/performance-tuning-using-baselines-and-history",
+      "https://learn.microsoft.com/en-us/microsoft-365/enterprise/urls-and-ip-address-ranges",
+      "https://learn.microsoft.com/en-us/microsoft-365/enterprise/network-planning-and-performance",
       "https://learn.microsoft.com/en-us/microsoftteams/limits-specifications-teams",
-      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-privacy"
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-setup",
+      "https://learn.microsoft.com/en-us/power-platform/admin/api-request-limits-allocations",
+      "https://learn.microsoft.com/en-us/power-platform/admin/capacity-storage"
     ]
   },
   "categories": {
@@ -354,24 +358,24 @@
         },
         {
           "id": "ops-conditional-access",
-          "label": "Conditional-Access-Basisregeln und Legacy-Anmeldung prüfen",
-          "description": "Plane Regeln für Adminrollen, riskante Anmeldungen, Geräte- und Standortsignale sowie das Blockieren veralteter Anmeldewege.",
+          "label": "Conditional-Access-Planung mit Pilot und Notfallkonten prüfen",
+          "description": "Plane Regeln für Adminrollen, riskante Anmeldungen, Geräte- und Standortsignale mit Pilotgruppen, Report-only-Phase, Notfallkonten und dokumentierter Änderungsreihenfolge.",
           "severity": "critical",
           "weight": 13,
           "finding_type": "access_policy",
-          "source_url": "https://learn.microsoft.com/en-us/entra/identity/conditional-access/overview",
+          "source_url": "https://learn.microsoft.com/en-us/entra/identity/conditional-access/plan-conditional-access",
           "deeplink_triggers": ["addon_configurator", "license_advisor", "frontline_check"],
-          "summary_if_open": "Conditional-Access-Basisregeln und Legacy-Anmeldewege sind noch nicht geprüft.",
-          "summary_if_done": "Conditional-Access-Basisregeln und Legacy-Anmeldewege sind geprüft."
+          "summary_if_open": "Conditional-Access-Planung mit Pilot und Notfallkonten ist noch nicht geprüft.",
+          "summary_if_done": "Conditional-Access-Planung mit Pilot und Notfallkonten ist geprüft."
         },
         {
           "id": "ops-mail-protection",
-          "label": "Mail-Schutz, Safe Links, Safe Attachments und Domain-Authentizität prüfen",
-          "description": "Vergleiche vorhandene Exchange- und Defender-Funktionen mit Phishing-Schutz, Link-/Anlagenprüfung, SPF, DKIM und DMARC für genutzte und ungenutzte Domänen.",
+          "label": "Defender-Mail-Schutz und Domain-Authentizität prüfen",
+          "description": "Vergleiche vorhandene Exchange- und Defender-Funktionen mit SPF, DKIM, DMARC, Standard-/Strict-Protection, Safe Links, Safe Attachments und Meldeprozess für Benutzer.",
           "severity": "compliance",
           "weight": 11,
           "finding_type": "mail_protection",
-          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/security/office-365-security/security-roadmap",
+          "source_url": "https://learn.microsoft.com/en-us/defender-office-365/mdo-deployment-guide",
           "deeplink_triggers": ["addon_configurator", "license_comparison", "shared_mailbox"],
           "summary_if_open": "Mail-Schutz und Domain-Authentizität sind noch nicht vollständig bewertet.",
           "summary_if_done": "Mail-Schutz und Domain-Authentizität sind bewertet."
@@ -390,15 +394,15 @@
         },
         {
           "id": "ops-network-baseline",
-          "label": "Microsoft-365-Netzwerkpfad und Performance-Basiswerte dokumentieren",
-          "description": "Dokumentiere lokale Namensauflösung, lokalen Internetausstieg, direkte Microsoft-365-Pfade, Standort, Gerät, Zeitpunkt und Dauer wiederkehrender Performance-Messungen.",
+          "label": "Microsoft-365-Endpoint- und Netzwerkpfad dokumentieren",
+          "description": "Dokumentiere lokale Namensauflösung, lokalen Internetausstieg, aktuelle Microsoft-365-Endpunkte, direkte Pfade, Standort, Gerät, Zeitpunkt und Dauer wiederkehrender Performance-Messungen.",
           "severity": "risk",
           "weight": 10,
           "finding_type": "network_performance",
-          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/enterprise/microsoft-365-network-connectivity-principles",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/enterprise/urls-and-ip-address-ranges",
           "deeplink_triggers": ["workspace_tco", "exchange_roi", "teams_phone", "copilot_pilot"],
-          "summary_if_open": "Netzwerkpfad und Performance-Basiswerte sind noch nicht dokumentiert.",
-          "summary_if_done": "Netzwerkpfad und Performance-Basiswerte sind dokumentiert."
+          "summary_if_open": "Endpoint- und Netzwerkpfad sind noch nicht dokumentiert.",
+          "summary_if_done": "Endpoint- und Netzwerkpfad sind dokumentiert."
         },
         {
           "id": "ops-sharepoint-onedrive-limits",
@@ -447,6 +451,30 @@
           "deeplink_triggers": ["backup_review", "storage_review", "addon_configurator"],
           "summary_if_open": "Backup-Schutzumfang und Wiederherstellungsziele sind noch nicht je Workload festgelegt.",
           "summary_if_done": "Backup-Schutzumfang und Wiederherstellungsziele sind je Workload festgelegt."
+        },
+        {
+          "id": "ops-copilot-network-setup",
+          "label": "Copilot-Netzwerk, Apps und Datenfreigaben vor Pilot prüfen",
+          "description": "Prüfe WSS-Verbindungen zu Microsoft-365-Domänen, Updatekanal, Office Feature Updates, OneDrive, Teams-Meetingdaten, SharePoint-Freigaben und Pilotphasen vor breiter Aktivierung.",
+          "severity": "risk",
+          "weight": 11,
+          "finding_type": "copilot_operational_readiness",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-setup",
+          "deeplink_triggers": ["copilot_license", "copilot_pilot", "copilot_roi"],
+          "summary_if_open": "Copilot-Netzwerk, Apps und Datenfreigaben sind noch nicht vor Pilot geprüft.",
+          "summary_if_done": "Copilot-Netzwerk, Apps und Datenfreigaben sind vor Pilot geprüft."
+        },
+        {
+          "id": "ops-power-platform-requests-capacity",
+          "label": "Power-Platform-Requests und Dataverse-Kapazität in Audit aufnehmen",
+          "description": "Bewerte tägliche Request-Kontingente, Flow-Profile, nicht-interaktive Identitäten sowie Dataverse Database/File/Log, Suchindex und Umgebungskapazität.",
+          "severity": "risk",
+          "weight": 10,
+          "finding_type": "power_platform_capacity",
+          "source_url": "https://learn.microsoft.com/en-us/power-platform/admin/api-request-limits-allocations",
+          "deeplink_triggers": ["power_platform_cost", "addon_configurator", "storage_review"],
+          "summary_if_open": "Power-Platform-Requests und Dataverse-Kapazität sind noch nicht im Audit berücksichtigt.",
+          "summary_if_done": "Power-Platform-Requests und Dataverse-Kapazität sind im Audit berücksichtigt."
         }
       ]
     }

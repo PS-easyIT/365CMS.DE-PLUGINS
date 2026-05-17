@@ -150,17 +150,37 @@ final class CMS_M365CALCULATOR_Admin_Module_Config
      */
     private static function data_fields(string $key, string $category): array
     {
-        return [
+        $fields = [
             self::text('catalog_source_date', 'Quellenstand', date('Y-m-d'), 'Datum oder Label des letzten fachlichen Datenabgleichs.'),
             self::select('assumption_status', 'Annahmenstatus', 'managed_json', [
                 'managed_json' => 'Katalogdaten aus JSON',
                 'custom_review' => 'Manuelle Annahmen im Review',
                 'locked' => 'Gesperrter geprüfter Stand',
             ], 'Kennzeichnet, wie belastbar die Datenbasis aktuell ist.'),
+            self::select('official_source_profile', 'Offizielles Quellenprofil', 'microsoft_learn', [
+                'microsoft_learn' => 'Microsoft Learn / Service Description',
+                'microsoft_admin_center' => 'Admin Center / Usage Reports',
+                'partner_contract' => 'Partner-, CSP- oder Vertragsdaten',
+                'mixed' => 'Gemischte Quellenbasis',
+            ], 'Ordnet die bevorzugte Datenquelle für fachliche Nachweise ein.'),
             self::checkbox('enable_custom_assumptions', 'Manuelle Annahmen für dieses Modul erlauben', '1', 'Erlaubt Admins, Preise und Annahmen modulbezogen zu übersteuern.'),
+            self::checkbox('endpoint_readiness_reviewed', 'Endpoint-/Netzwerkpfad geprüft', '0', 'Markiert, dass Netzwerk-, Endpoint- oder Performance-Aspekte für dieses Modul fachlich bewertet wurden.'),
+            self::checkbox('protection_reviewed', 'Schutz-/Datenzugriff geprüft', '0', 'Markiert, dass Zugriff, Mail-Schutz, Datenfreigaben oder Compliance-Aspekte für dieses Modul bewertet wurden.'),
+            self::checkbox('capacity_limits_reviewed', 'Servicegrenzen/Kapazität geprüft', '0', 'Markiert, dass relevante Microsoft-365-Grenzen, Speicher- oder Request-Kapazitäten geprüft wurden.'),
             self::textarea('public_source_hint', 'Öffentlicher Quellenhinweis', '', 'Optionaler kurzer Quellen- oder Standhinweis für Redaktionspflege.'),
             self::textarea('internal_change_log', 'Interner Änderungsvermerk', '', 'Was wurde an Daten, Preisen, Regeln oder Workflow fachlich geändert?'),
         ];
+
+        if (str_contains($key, 'copilot')) {
+            $fields[] = self::checkbox('copilot_setup_reviewed', 'Copilot Setup-Readiness geprüft', '0', 'Markiert App-, OneDrive-, Teams-, Exchange-Online-, WSS- und Datenfreigabeprüfung für Copilot-Module.');
+        }
+
+        if (str_contains($key, 'power-platform')) {
+            $fields[] = self::number('request_review_threshold_per_day', 'Request-Prüfschwelle pro Tag', '6000', 0, 1000000000, 1, 'Interne Schwelle, ab der tägliche Requests gesondert reviewed werden.');
+            $fields[] = self::number('dataverse_capacity_warning_percent', 'Dataverse-Warnschwelle in %', '85', 0, 100, 0.1, 'Interne Warnschwelle für Database-, File- und Log-Kapazität.');
+        }
+
+        return $fields;
     }
 
     /**

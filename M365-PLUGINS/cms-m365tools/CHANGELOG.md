@@ -1,6 +1,15 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.26.0 – 2026-05-17
+
+- Alle 21 registrierten Public-Module erneut gegen offizielle Microsoft-Learn-Quellen zu M365-Endpunkten, Netzwerkplanung, Conditional Access, Defender for Office 365, Copilot Setup, Power-Platform-Requestgrenzen und Dataverse-Kapazität geprüft.
+- `m365_best_practice_catalog.json` erweitert: Domänen enthalten jetzt konkrete Kontrollpunkte und jedes Modul bekommt eigene, landingpagefähige Prüfpunkte.
+- Hub-Landingpage zeigt pro Tool neben Review-Domänen nun zwei konkrete aktuelle Prüfpunkte im ruhigen PHINIT-Layout.
+- Lizenz-Audit-Checkliste um neue Punkte für Conditional-Access-Planung, Defender-Mail-Schutz, M365-Endpoints, Copilot-Setup und Power-Platform-Kapazität ergänzt.
+- Power-Platform-Reifeprüfung bewertet zusätzliche Request-Last- und Dataverse-Kapazitätspfade mit offiziellen Quellen.
+- Admin-Daten-Tab je Modul um Quellenprofil, Endpoint-/Netzwerkpfad, Schutz-/Datenzugriff und Servicegrenzen-/Kapazitätsreview ergänzt.
+
 ## 1.25.0 – 2026-05-17
 
 - Admin-Menü erweitert: Jedes registrierte Public-Modul erhält genau einen eigenen Unterpunkt unter `M365 Tools`.

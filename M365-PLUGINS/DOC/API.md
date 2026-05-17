@@ -51,7 +51,7 @@
 - `microsoft_price_changes()` – lädt SKU-bezogene Preisänderungen und Delta-Werte
 - `microsoft_inventory_mapping()` – lädt SKU-, Segment-, Kanal- und Filter-Mapping
 - `microsoft_price_forecast_rules()` – lädt Forecast-Szenarien für den Preis-Tracker
-- `m365_best_practice_catalog()` – lädt den All-Module-Best-Practice-Kompass mit Review-Domänen und Modulzuordnung
+- `m365_best_practice_catalog()` – lädt den All-Module-Best-Practice-Kompass mit Review-Domänen, Domänenkontrollen, Modulzuordnung und konkreten Modul-Prüfpunkten
 - `license_audit_checklist()` – lädt Audit-Kategorien und Prüfpunkte
 - `license_audit_deeplinks()` – lädt Trigger und Spezialtool-Verweise
 - `audit_pdf_template()` – lädt Struktur und Labels der Druckzusammenfassung
@@ -61,7 +61,7 @@
 - `CMS_M365CALCULATOR_Admin_Menu::register()` – registriert Dashboard und ab `1.25.0` je Tool-Registry-Modul einen eigenen Unterpunkt unter `M365 Tools`
 - `CMS_M365CALCULATOR_Admin_Pages::render_module_settings(string $moduleKey)` – rendert die Modul-Unterseite mit Tabs für Übersicht, Anzeige, Preise & Annahmen, Workflow sowie Daten & Regeln
 - `CMS_M365CALCULATOR_Admin_Module_Config::tabs_for(array $tool)` – liefert die Tab-Struktur für eine Modul-Einstellungsseite
-- `CMS_M365CALCULATOR_Admin_Module_Config::fields_for(array $tool, string $tab)` – liefert modul- und kategoriebasierte Felddefinitionen für Preis-, Workflow- und Daten-Tabs
+- `CMS_M365CALCULATOR_Admin_Module_Config::fields_for(array $tool, string $tab)` – liefert modul- und kategoriebasierte Felddefinitionen für Preis-, Workflow- und Daten-Tabs inklusive Quellenprofil, Endpoint-/Netzwerkpfad, Schutz-/Datenzugriff und Servicegrenzen-/Kapazität
 - `CMS_M365CALCULATOR_Settings::module_options(string $moduleKey, ?string $optionGroup = null)` – lädt gespeicherte Moduloptionen
 - `CMS_M365CALCULATOR_Settings::save_module_options(string $moduleKey, string $optionGroup, array $options)` – speichert Preis-, Workflow- und Datenoptionen eines Moduls
 - `CMS_M365CALCULATOR_Settings::save_single_module_settings(string $moduleKey, array $values)` – speichert Anzeige-Overrides für ein einzelnes Modul
@@ -209,7 +209,7 @@
 - `evaluate_power_platform_use_case(array $input)` – liefert den gewählten Use Case, Hauptpfad, Alternativpfad und Capacity-Einordnung
 - `evaluate_power_platform_seeded_rights(array $input, array $useCase, array $connector)` – prüft, ob enthaltene M365-/Teams-Rechte plausibel ausreichen
 - `evaluate_dataverse_for_teams_fit(array $input, array $governance)` – bewertet Dataverse-for-Teams-Grenzen und Upgrade-Treiber
-- `evaluate_power_platform_best_practices(array $input, array $governance)` – bewertet Security, Datenrichtlinien, Identität, Zugangsdaten, ALM, Monitoring, Performance und Datenlebenszyklus anhand Microsoft-Well-Architected-Leitplanken
+- `evaluate_power_platform_best_practices(array $input, array $governance)` – bewertet Security, Datenrichtlinien, Identität, Zugangsdaten, ALM, Monitoring, Performance, Datenlebenszyklus, Request-Last und Dataverse-Kapazitätsplanung anhand Microsoft-Well-Architected- und Capacity-Leitplanken
 - `calculate_power_platform_costs(array $input, array $productsCatalog, array $capacityCatalog, array $seeded, array $dataverseFit)` – berechnet Monats-, Jahres- und Zeitraumkosten
 - `calculate_power_platform_capacity_costs(array $input, array $capacity, array $seeded)` – berechnet Dataverse Storage, Process Mining, Request-Add-ons und AI-Prüfpositionen
 - `calculate_power_platform_credit_usage(array $input)` – berechnet Copilot-Credit-Verbrauch auf Monats- und Jahresbasis

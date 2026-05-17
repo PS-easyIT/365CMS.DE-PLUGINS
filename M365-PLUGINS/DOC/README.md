@@ -8,6 +8,7 @@
 
 | Datei | Zweck |
 |---|---|
+| `ALL-MODULE-BEST-PRACTICE-REVIEW.md` | Erneute Quellenprüfung, Domänen und konkrete Prüfpunkte für alle 21 Public-Module |
 | `LICENSE-AUDIT-CHECKLIST.md` | Fachliche und technische Dokumentation der Route `/m365-lizenz-audit-checkliste` |
 | `modules/*.md` | Einzeldokumentation je registriertem Public-Modul |
 
@@ -98,7 +99,7 @@
 | `microsoft_price_changes.json` | SKU-bezogene Preisänderungen und Delta-Werte für den Preis-Tracker |
 | `microsoft_inventory_mapping.json` | SKU-, Segment-, Kanal- und Filter-Mapping für Preis- und Bestandsauswertung |
 | `microsoft_price_forecast_rules.json` | Forecast-Szenarien und Planungshinweise für Budgetrunden |
-| `m365_best_practice_catalog.json` | Zentrale Zuordnung aller Module zu Review-Domänen wie Lizenzierung, Zugriff, Schutz, Servicegrenzen, Speicher, Netzwerk, Copilot, Power Platform und Migration |
+| `m365_best_practice_catalog.json` | Zentrale Zuordnung aller Module zu Review-Domänen, Domänenkontrollen und konkreten Modul-Prüfpunkten für Lizenzierung, Zugriff, Schutz, Servicegrenzen, Speicher, Netzwerk, Copilot, Power Platform und Migration |
 | `teams_phone_base_eligibility.json` | Basislizenz-Eignung für Teams Phone und PSTN-Modelle |
 | `teams_pstn_model_rules.json` | Bewertungsregeln für Calling Plan, Operator Connect, Direct Routing und Mischmodell |
 | `teams_country_availability.json` | Länder- und Verfügbarkeitsannahmen für Teams-Telefonie |
@@ -134,16 +135,18 @@
 | `power_platform_products.json` | Produkt-, Preis-, Eingabe- und Best-Practice-Optionsannahmen für Power Apps, Power Automate, Power Pages, Copilot Studio, PAYG, Capacity, Security, ALM und Performance |
 | `power_platform_use_cases.json` | Use-Case-Regeln und Empfehlungskategorien für Apps, Flows, RPA, Bots, Websites und Teams-nahe Lösungen |
 | `power_platform_connector_rules.json` | Connector-Regeln für Standard, Premium, Custom und On-Premises-Pfade |
-| `power_platform_capacity_catalog.json` | Capacity-, Credit-, Request-, Storage-, Process-Mining- und PAYG-Annahmen |
-| `power_platform_governance_rules.json` | Dataverse-for-Teams-, Governance- und Microsoft-Well-Architected-Regeln inklusive Managed Environments, CMK, Lockbox, vNet, Datenrichtlinien, Security, ALM, Operations und Performance |
+| `power_platform_capacity_catalog.json` | Capacity-, Credit-, Request-, Storage-, Process-Mining- und PAYG-Annahmen inklusive Request-Service-Protection und Dataverse-Kapazitätsschwellen |
+| `power_platform_governance_rules.json` | Dataverse-for-Teams-, Governance- und Microsoft-Well-Architected-Regeln inklusive Managed Environments, CMK, Lockbox, vNet, Datenrichtlinien, Security, ALM, Operations, Performance, Request Limits und Dataverse Capacity |
 
 ## Lizenz-Audit-Checkliste
 
-Die Route `/m365-lizenz-audit-checkliste` bietet eine interaktive Checkliste für Microsoft-365-Lizenzaudits. Sie deckt Identitäten, Lizenzzuweisungen, ehemalige Nutzer, Shared Mailboxes, Inactive Mailboxes, Copilot, Frontline Worker, SharePoint-/OneDrive-Speicher, Microsoft 365 Backup, privilegierte Rollen, Conditional Access, Mail-Schutz, Nutzungsberichte, Netzwerk-Basiswerte, Teams-Grenzen, Copilot-Datenzugriff und Renewal-/Beschaffungsthemen ab.
+Die Route `/m365-lizenz-audit-checkliste` bietet eine interaktive Checkliste für Microsoft-365-Lizenzaudits. Sie deckt Identitäten, Lizenzzuweisungen, ehemalige Nutzer, Shared Mailboxes, Inactive Mailboxes, Copilot, Frontline Worker, SharePoint-/OneDrive-Speicher, Microsoft 365 Backup, privilegierte Rollen, Conditional Access mit Pilotplanung, Defender-Mail-Schutz, Nutzungsberichte, M365-Endpoints, Netzwerk-Basiswerte, Teams-Grenzen, Copilot-Datenzugriff, Copilot-Setup, Power-Platform-Requests, Dataverse-Kapazität und Renewal-/Beschaffungsthemen ab.
 
 ## All-Module-Best-Practice-Kompass
 
-Der Hub `/m365-tools` lädt ab `1.23.0` den Katalog `m365_best_practice_catalog.json`. Der Katalog bündelt die zuletzt geprüften offiziellen Microsoft-Learn-Quellen und ordnet jedes Public-Modul den passenden Review-Domänen zu. Dadurch ist bereits auf der Landingpage sichtbar, welche Module Lizenzkosten, Zugriff, Schutz, Servicegrenzen, Speicher/Backup, Netzwerk/Performance, Copilot/KI, Power Platform oder Migration/Betrieb berühren.
+Der Hub `/m365-tools` lädt ab `1.23.0` den Katalog `m365_best_practice_catalog.json`. Der Katalog bündelt die zuletzt geprüften offiziellen Microsoft-Learn-Quellen und ordnet jedes Public-Modul den passenden Review-Domänen zu. Ab `1.26.0` enthält er zusätzlich Domänenkontrollen und konkrete Prüfpunkte je Modul. Dadurch ist bereits auf der Landingpage sichtbar, welche Module Lizenzkosten, Zugriff, Schutz, Servicegrenzen, Speicher/Backup, Netzwerk/Performance, Copilot/KI, Power Platform oder Migration/Betrieb berühren und welche fachlichen Punkte aktuell geprüft werden sollten.
+
+Die erneute Quellenrunde berücksichtigt insbesondere Microsoft-365-Endpunkte und Netzwerkplanung, Entra Conditional Access Planning, Defender for Office 365 Deployment, Copilot Licensing/Requirements/Setup, Exchange-/SharePoint-/Teams-Grenzen, Microsoft 365 Backup sowie Power Platform API Request Limits und Dataverse Capacity. Die vollständige Modulabdeckung steht in `ALL-MODULE-BEST-PRACTICE-REVIEW.md`.
 
 Ab `1.24.0` ist die Landingpage zusätzlich als ruhige Übersichtsseite aufgebaut: Intro-Zone, Kennzahlen, Kategorie-Schnellnavigation, Querschnittsreview und reduzierte Tool-Cards mit klarer Leseführung.
 
@@ -153,7 +156,7 @@ Der Fortschritt wird im Browser gespeichert. Die Zusammenfassung kann über die 
 
 Der Adminbereich kann je Modul Sichtbarkeit, Status, Priorität, öffentlichen Titel und Beschreibung überschreiben. Die Werte werden in `cms_m365tools_module_settings` gespeichert und beim Rendern der Registry angewendet. Vorhandene Werte aus der früheren Tabelle `cms_m365calculator_module_settings` werden beim Installer-Lauf migriert. Ab `1.24.1` ist die Migration tolerant gegenüber älteren Tabellenständen und ergänzt fehlende Settings-Spalten automatisch.
 
-Ab `1.25.0` bekommt jedes Registry-Modul genau einen eigenen Unterpunkt unter `M365 Tools`. In dieser Unterseite werden die weiteren Einstellungen per Tabs organisiert: Übersicht, Anzeige, Preise & Annahmen, Workflow sowie Daten & Regeln. Preis-, Workflow- und Datenwerte landen in `cms_m365tools_module_options`, sodass Preisanpassungen, Review-Zyklen, Owner, Quellenstand und interne Änderungsvermerke je Modul gepflegt werden können.
+Ab `1.25.0` bekommt jedes Registry-Modul genau einen eigenen Unterpunkt unter `M365 Tools`. In dieser Unterseite werden die weiteren Einstellungen per Tabs organisiert: Übersicht, Anzeige, Preise & Annahmen, Workflow sowie Daten & Regeln. Preis-, Workflow- und Datenwerte landen in `cms_m365tools_module_options`, sodass Preisanpassungen, Review-Zyklen, Owner, Quellenstand und interne Änderungsvermerke je Modul gepflegt werden können. Ab `1.26.0` ergänzt der Daten-Tab Quellenprofil, Endpoint-/Netzwerkpfad, Schutz-/Datenzugriff und Servicegrenzen-/Kapazitätsreview; Copilot- und Power-Platform-Module erhalten zusätzliche Spezialfelder.
 
 ## Designvorgaben
 

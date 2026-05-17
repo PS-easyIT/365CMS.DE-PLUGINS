@@ -164,7 +164,7 @@ cms-m365tools/
 
 ## Landingpage-Registry
 
-Module melden sich über `CMS_M365CALCULATOR_Tool_Registry::register()` mit `key`, `title`, `description`, `icon`, `url`, `category` und `status` an. Die Landingpage gruppiert automatisch nach Kategorie, sortiert `live` vor `beta` vor `soon`, zeigt Kennzahlen, eine Kategorie-Schnellnavigation und je Modul die Schwerpunkte aus `m365_best_practice_catalog.json`. Der Adminbereich kann je Modul Sichtbarkeit, Status, Priorität, Titel und Beschreibung überschreiben.
+Module melden sich über `CMS_M365CALCULATOR_Tool_Registry::register()` mit `key`, `title`, `description`, `icon`, `url`, `category` und `status` an. Die Landingpage gruppiert automatisch nach Kategorie, sortiert `live` vor `beta` vor `soon`, zeigt Kennzahlen, eine Kategorie-Schnellnavigation und je Modul die Schwerpunkte sowie ab `1.26.0` konkrete aktuelle Prüfpunkte aus `m365_best_practice_catalog.json`. Der Adminbereich kann je Modul Sichtbarkeit, Status, Priorität, Titel und Beschreibung überschreiben.
 
 ## Admin-Modulsettings
 
@@ -176,7 +176,7 @@ Ab `1.25.0` erhält jedes registrierte Modul genau einen eigenen Unterpunkt unte
 - `Workflow` – Owner, Review-Intervall, Freigabemodus, Quellen-/Exportverhalten und modulnahe Review-Regeln
 - `Daten & Regeln` – Quellenstand, Annahmenstatus, manuelle Annahmen und interne Änderungsvermerke
 
-Preis-, Workflow- und Datenoptionen werden in `cms_m365tools_module_options` gespeichert. Die Felddefinitionen kommen zentral aus `CMS_M365CALCULATOR_Admin_Module_Config`, damit neue Module automatisch eine konsistente Einstellungsseite erhalten.
+Preis-, Workflow- und Datenoptionen werden in `cms_m365tools_module_options` gespeichert. Die Felddefinitionen kommen zentral aus `CMS_M365CALCULATOR_Admin_Module_Config`, damit neue Module automatisch eine konsistente Einstellungsseite erhalten. Ab `1.26.0` enthält der Tab `Daten & Regeln` zusätzlich Quellenprofil, Endpoint-/Netzwerkpfad-Review, Schutz-/Datenzugriffs-Review sowie Servicegrenzen-/Kapazitäts-Review; Copilot- und Power-Platform-Module erhalten passende Zusatzschwellen.
 
 ## All-Module-Best-Practice-Kompass
 
@@ -192,7 +192,7 @@ Der zentrale Katalog `m365_best_practice_catalog.json` ordnet alle Public-Module
 - Power Platform Betrieb
 - Migration & Betrieb
 
-Die Hub-Landingpage rendert daraus eine kompakte Übersicht und Modul-Fokuschips. Die Inhalte basieren auf offiziellen Microsoft-Learn-Quellen zu Usage Reports, Network Connectivity Principles, Performance-Baselines, Entra Conditional Access, privilegierten Rollen, Defender for Office 365, Exchange-/SharePoint-/Teams-Grenzen, Copilot, Backup und Power Platform Well-Architected.
+Die Hub-Landingpage rendert daraus eine kompakte Übersicht, Modul-Fokuschips und konkrete Prüfpunkte je Tool. Die Inhalte basieren auf offiziellen Microsoft-Learn-Quellen zu Usage Reports, M365-Endpoint-Webservice, Network Connectivity Principles, Network Planning and Performance, Entra Conditional Access Planning, Defender for Office 365 Deployment, Exchange-/SharePoint-/Teams-Grenzen, Copilot Licensing/Requirements/Setup, Microsoft 365 Backup sowie Power Platform Well-Architected, Request Limits und Dataverse Capacity.
 
 ## Design
 
@@ -216,7 +216,7 @@ Die Lizenz-Audit-Checkliste bewertet und strukturiert unter anderem:
 - Frontline-Kandidaten, Copilot-Basislizenzen, primäres Exchange-Online-Postfach und App-/Netzwerk-Readiness
 - Add-on-Redundanzen, SharePoint-Tenant-Speicher, Site-Limits, Extra File Storage, Microsoft 365 Backup und Laufzeitmodell
 - privilegierte Rollen, Conditional Access, Mail-Schutz, Domain-Authentizität und Microsoft-365-Nutzungsberichte
-- Netzwerkpfad, Performance-Basiswerte, SharePoint-/OneDrive-/Teams-Grenzen, Copilot-Datenzugriff und Wiederherstellungsziele
+- M365-Endpoints, Netzwerkpfad, Performance-Basiswerte, SharePoint-/OneDrive-/Teams-Grenzen, Copilot-Datenzugriff, Copilot-Setup, Power-Platform-Requests, Dataverse-Kapazität und Wiederherstellungsziele
 - lokalen Browser-Fortschritt, offene/erledigte Punkte, Druck-/PDF-Zusammenfassung und Deep Links zu passenden Spezialrechnern
 
 Der Google Workspace ↔ Microsoft 365 TCO-Rechner bewertet unter anderem:

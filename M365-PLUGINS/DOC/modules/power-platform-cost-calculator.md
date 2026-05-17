@@ -7,7 +7,7 @@
 - Engine: `CMS_M365CALCULATOR_Power_Platform_Cost_Calculator`
 - Template: `templates/page-power-platform-cost-calculator.php`
 - Status: `live`
-- Version: `1.22.0`
+- Version: `1.26.0`
 
 ## Zweck
 
@@ -32,6 +32,8 @@ Bewertet Power-Platform-Szenarien über Apps, Flows, RPA, Bots/Agents, Power Pag
 - Power Pages wird nach Website-Kapazität für angemeldete und anonyme Nutzer geplant.
 - Dataverse for Teams ist ein Sonderpfad für Teams-nahe Lösungen mit Grenzen bei Datenmenge, AI, Desktop-Flows und Nutzung außerhalb Teams.
 - Credits, Requests, Dataverse Storage und Process Mining werden als eigene Kostenarten ausgewiesen.
+- Request-Kontingente, Tageslast und sehr hohe Fünf-Minuten-Lastspitzen werden gegen offizielle Power-Platform-Grenzen eingeordnet.
+- Dataverse Database/File/Log, Suchindex, Umgebungskapazität sowie 85-/95-Prozent-Schwellen werden als Capacity-Planung berücksichtigt.
 - Governance-Treiber wie Managed Environments, CMK, Customer Lockbox und vNet führen zu Architekturprüfung.
 - Microsoft-Well-Architected-Leitplanken bewerten Security Baseline, Identität, Zugangsdaten, Datenrichtlinien, Managed Environments, ALM, Operations, Performance-Ziele und Datenlebenszyklus.
 - Advanced Connector Policies werden als granularer Allowlist-Pfad bewertet; Custom- und HTTP-Pfade brauchen weiterhin zusätzliche Steuerung.
@@ -59,7 +61,7 @@ Bewertet Power-Platform-Szenarien über Apps, Flows, RPA, Bots/Agents, Power Pag
 - Seeded-Fit und Dataverse-for-Teams-Fit
 - Kostenblöcke nach User-, App-, Bot-, Website-, Credit-, Request-, Storage- und Capacity-Anteilen
 - Score mit erklärenden Gründen
-- Best-Practice-Score für Security, ALM, Performance, Datenrichtlinien und Betrieb
+- Best-Practice-Score für Security, ALM, Performance, Datenrichtlinien, Betrieb, Request-Last und Dataverse-Kapazitätsplanung
 - Prüfpunkte mit Status, Bewertung, nächstem Schritt und Microsoft-Learn-Quelle
 - Warnungen, nächste Schritte, Quellenstand und Microsoft-Learn-Quellen
 
@@ -82,7 +84,7 @@ Die Route berechnet ausschließlich aus Anfrageparametern und speichert keine Ei
 
 - Microsoft-Listenpreise regelmäßig gegen Learn-, Product-Terms- und Vertragsstände prüfen
 - CSP-, EA-, MCA- oder Partnerkonditionen in den Katalogen ersetzen
-- Request-, Storage-, Credit- und PAYG-Werte quartalsweise aktualisieren
+- Request-, Storage-, Credit-, Dataverse-Capacity- und PAYG-Werte quartalsweise aktualisieren
 - Dataverse-for-Teams- und Governance-Regeln bei Microsoft-Änderungen nachführen
 - Copilot-Studio- und AI-Builder-Preismodelle getrennt beobachten
 - Well-Architected-, Datenrichtlinien-, Managed-Environment-, ALM- und Performance-Quellen regelmäßig gegen Microsoft Learn prüfen

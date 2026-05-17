@@ -51,6 +51,11 @@ $reviewLabels = static function (array $domainKeys, array $domains): array {
 
     return array_values(array_unique($labels));
 };
+$reviewChecks = static function (string $toolKey, array $checkMap): array {
+    $checks = isset($checkMap[$toolKey]) && is_array($checkMap[$toolKey]) ? $checkMap[$toolKey] : [];
+
+    return array_values(array_filter(array_map(static fn(mixed $value): string => trim((string) $value), $checks)));
+};
 $toolCount = 0;
 $liveCount = 0;
 $categoryCounts = [];
@@ -170,6 +175,7 @@ if (class_exists('CMS\\ThemeManager')) {
             $toolKey = (string) ($tool['key'] ?? '');
             $domainKeys = isset($toolReviewMap[$toolKey]) && is_array($toolReviewMap[$toolKey]) ? $toolReviewMap[$toolKey] : [];
             $toolReviewLabels = $reviewLabels($domainKeys, is_array($bestPracticeDomains ?? null) ? $bestPracticeDomains : []);
+            $toolReviewChecks = $reviewChecks($toolKey, is_array($toolCheckMap ?? null) ? $toolCheckMap : []);
             ?>
             <li>
                 <article class="phinit-card phinit-card--accent<?php echo $status === 'soon' ? ' phinit-tool-card--disabled' : ''; ?>"<?php echo $status === 'soon' ? ' aria-disabled="true"' : ''; ?>>
@@ -194,6 +200,13 @@ if (class_exists('CMS\\ThemeManager')) {
                         <ul class="m365tools-review-chip-list" role="list" aria-label="Review-Schwerpunkte">
                             <?php foreach (array_slice($toolReviewLabels, 0, 4) as $reviewLabel): ?>
                             <li><?php echo $esc($reviewLabel); ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php endif; ?>
+                        <?php if (!empty($toolReviewChecks)): ?>
+                        <ul class="m365tools-review-check-list" role="list" aria-label="Aktuelle Prüfpunkte">
+                            <?php foreach (array_slice($toolReviewChecks, 0, 2) as $reviewCheck): ?>
+                            <li><?php echo $esc($reviewCheck); ?></li>
                             <?php endforeach; ?>
                         </ul>
                         <?php endif; ?>

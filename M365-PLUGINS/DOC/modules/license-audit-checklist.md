@@ -7,6 +7,7 @@
 - Engine: `CMS_M365CALCULATOR_License_Audit_Checklist`
 - Template: `templates/page-license-audit-checklist.php`
 - Status: `live`
+- Version: `1.26.0`
 
 ## Zweck
 
@@ -26,17 +27,18 @@ Interaktive Microsoft-365-Auditliste für Lizenzbestand, Offboarding, Shared Mai
 - Deep Links zu Spezialrechnern
 - Quellenstand
 
-## Querschnittsprüfung ab 1.23.0
+## Querschnittsprüfung ab 1.26.0
 
 Die Checkliste enthält zusätzlich die Kategorie `Zugriff, Schutz, Netzwerk und Betrieb` mit Prüfpunkten für:
 
 - privilegierte Rollen, geringstes Recht, Just-in-Time-Zugriff und wiederkehrende Reviews
-- Conditional Access, Adminrollen, Standort-/Gerätesignale und veraltete Anmeldewege
-- Mail-Schutz, Safe Links, Safe Attachments, SPF, DKIM und DMARC
+- Conditional Access mit Pilotgruppe, Report-only-Phase, Notfallkonten, Adminrollen, Standort-/Gerätesignalen und veralteten Anmeldewegen
+- Defender-Mail-Schutz, Standard-/Strict-Protection, Safe Links, Safe Attachments, SPF, DKIM, DMARC und Meldeprozess für Benutzer
 - Microsoft-365-Nutzungsberichte für Lizenz-, Speicher-, Teams-, Copilot- und Mailbox-Auswertung
-- Microsoft-365-Netzwerkpfad, lokale Namensauflösung, lokalen Internetausstieg und Performance-Basiswerte
+- Microsoft-365-Endpoints, Netzwerkpfad, lokale Namensauflösung, lokalen Internetausstieg und Performance-Basiswerte
 - SharePoint-, OneDrive-, Sync- und Teams-Grenzen vor Migration, Wachstum oder Telefonieplanung
-- Copilot-Datenzugriff, Apps, OneDrive, Teams-Meetingdaten, Datenschutzrahmen und Pilotmetriken
+- Copilot-Datenzugriff, WSS-Verbindungen, Apps, OneDrive, Teams-Meetingdaten, Datenschutzrahmen, Datenfreigaben und Pilotmetriken
+- Power-Platform-Requests, Flow-Profile, nicht-interaktive Identitäten, Dataverse Database/File/Log, Suchindex und Umgebungskapazität
 - Backup-Schutzumfang und Wiederherstellungsziele je Workload
 
 ## Pflege

@@ -443,6 +443,21 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
             $addCheck('ALM', 'warning', 'Deployment-Prozess kann bremsen', 'Mehrere Umgebungen ohne CI/CD erhöhen Importzeiten, manuelle Schritte und Fehlerrisiko.', 'Source Control, Build-Artefakte, stage-and-upgrade und kleine Lösungsschichten einführen.', self::best_practice_source($rules, 'deployment_performance'), 8);
         }
 
+        $dailyRequests = (int) ($input['api_requests_per_day'] ?? 0);
+        $requestSource = self::best_practice_source($rules, 'request_limits');
+        if ($dailyRequests > 40000) {
+            $addCheck('Kapazität', 'danger', 'Request-Last sehr hoch', 'Die geplante Tageslast liegt oberhalb typischer Paid-User-Kontingente und braucht Add-on-, PAYG- oder Architekturplanung.', 'Request-Spitzen, Flow-Besitzer, nicht-interaktive Identitäten, Add-ons und Drosselungsrisiko vor Go-live modellieren.', $requestSource, 16);
+        } elseif ($dailyRequests > 6000) {
+            $addCheck('Kapazität', 'warning', 'Request-Last prüfpflichtig', 'Die geplante Tageslast kann seeded oder Per-App-Pfade überschreiten und sollte gegen Lizenz- und Flow-Modell geprüft werden.', 'Tages- und Fünf-Minuten-Last aus produktionsnahen Messungen ableiten und Lizenzpfad festlegen.', $requestSource, 8);
+        } elseif ($dailyRequests > 0) {
+            $addCheck('Kapazität', 'ok', 'Request-Last eingeplant', 'Die erwartete Request-Last ist im Szenario erfasst und kann gegen Lizenz- und Add-on-Pfade bewertet werden.', 'Nach Produktivstart tatsächliche Tages- und Spitzenlast regelmäßig gegen das Modell prüfen.', $requestSource, 0);
+        }
+
+        $dataverseCapacityGb = (float) ($input['dataverse_db_gb'] ?? 0) + (float) ($input['dataverse_file_gb'] ?? 0) + (float) ($input['dataverse_log_gb'] ?? 0);
+        if ($dataverseCapacityGb > 0) {
+            $addCheck('Kapazität', 'ok', 'Dataverse-Kapazität im Modell', 'Database-, File- und Log-Wachstum sind im Szenario erfasst und sollten gegen Tenant-Pools sowie operative Schwellen geprüft werden.', 'Freie Kapazität, Suchindex, Umgebungskapazität und 85-/95-Prozent-Schwellen in das Admin-Monitoring übernehmen.', self::best_practice_source($rules, 'capacity_storage'), 0);
+        }
+
         $score = max(0, min(100, $score));
         $tone = $score >= 80 ? 'success' : ($score >= 60 ? 'warning' : 'danger');
         $label = $tone === 'success'

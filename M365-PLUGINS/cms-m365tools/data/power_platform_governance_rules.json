@@ -22,7 +22,9 @@
       "https://learn.microsoft.com/en-us/power-platform/alm/environment-strategy-alm",
       "https://learn.microsoft.com/en-us/power-platform/alm/solution-concepts-alm",
       "https://learn.microsoft.com/en-us/power-platform/alm/organize-solutions",
-      "https://learn.microsoft.com/en-us/power-platform/alm/performance-recommendations"
+      "https://learn.microsoft.com/en-us/power-platform/alm/performance-recommendations",
+      "https://learn.microsoft.com/en-us/power-platform/admin/api-request-limits-allocations",
+      "https://learn.microsoft.com/en-us/power-platform/admin/capacity-storage"
     ]
   },
   "dataverse_for_teams": {
@@ -78,7 +80,9 @@
     "seeded_scope": "Seeded Rechte decken Standard-Connectoren im Microsoft-365-Kontext ab, aber keine generelle Premium- oder Dataverse-Plattformnutzung.",
     "dataverse_for_teams_limit": "Dataverse for Teams ist bewusst limitiert; bei Wachstum, AI, Desktop-Flows oder Nutzung außerhalb Teams ist ein Upgrade-Pfad einzuplanen.",
     "power_pages_capacity": "Power Pages wird nach eindeutigen Website-Nutzern und Kapazität geplant, nicht als normaler Per-User-Plan.",
-    "credits_monthly_reset": "Credits und viele Capacity-Modelle werden monatlich betrachtet; nicht genutzte Kapazität wird nicht in den nächsten Monat übernommen."
+    "credits_monthly_reset": "Credits und viele Capacity-Modelle werden monatlich betrachtet; nicht genutzte Kapazität wird nicht in den nächsten Monat übernommen.",
+    "request_limits": "Request-Kontingente unterscheiden sich je Lizenz-, App-, Flow- und Identitätstyp; hohe Automatisierung sollte gegen Tages- und Fünf-Minuten-Grenzen geplant werden.",
+    "capacity_thresholds": "Dataverse-Kapazität sollte vor 85 Prozent und spätestens vor 95 Prozent Verbrauch nachgesteuert werden, damit Speichern, Kopieren und Wiederherstellen nicht blockieren."
   },
   "best_practice_rules": {
     "security": {
@@ -135,6 +139,16 @@
       "label": "Deployment Performance",
       "source": "https://learn.microsoft.com/en-us/power-platform/alm/performance-recommendations",
       "summary": "Stage-and-upgrade, kleine Lösungsschichten, keine Force-Overwrite-Imports und kein Publish-all bei Managed Solutions beschleunigen und stabilisieren Rollouts."
+    },
+    "request_limits": {
+      "label": "Request-Kontingente und Lastspitzen",
+      "source": "https://learn.microsoft.com/en-us/power-platform/admin/api-request-limits-allocations",
+      "summary": "Paid-User-, seeded-, Flow- und nicht-interaktive Pfade haben unterschiedliche Tageskontingente; zusätzlich gilt eine Service-Schutzgrenze für sehr hohe Fünf-Minuten-Last."
+    },
+    "capacity_storage": {
+      "label": "Dataverse-Kapazität und Speicherpools",
+      "source": "https://learn.microsoft.com/en-us/power-platform/admin/capacity-storage",
+      "summary": "Database-, File-, Log-, Suchindex- und Umgebungskapazität müssen separat betrachtet werden; 15-Prozent- und 5-Prozent-Restkapazität sind wichtige operative Schwellen."
     }
   }
 }

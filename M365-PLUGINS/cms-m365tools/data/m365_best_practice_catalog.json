@@ -2,62 +2,112 @@
   "meta": {
     "source_checked": "2026-05-17",
     "title": "Microsoft 365 Best-Practice-Kompass",
-    "summary": "Querschnittsreview für Lizenzierung, Zugriff, Schutz, Servicegrenzen, Netzwerk, Performance, Copilot, Power Platform, Backup und Migrationsplanung über alle Module.",
+    "summary": "Querschnittsreview für Lizenzierung, Zugriff, Schutz, Servicegrenzen, Netzwerk, Performance, Copilot, Power Platform, Backup und Migrationsplanung über alle Module. Der Stand wurde erneut gegen offizielle Microsoft-Learn-Quellen geprüft.",
     "sources": [
       "https://learn.microsoft.com/en-us/microsoft-365/admin/activity-reports/activity-reports",
       "https://learn.microsoft.com/en-us/microsoft-365/enterprise/microsoft-365-network-connectivity-principles",
-      "https://learn.microsoft.com/en-us/microsoft-365/enterprise/performance-tuning-using-baselines-and-history",
+      "https://learn.microsoft.com/en-us/microsoft-365/enterprise/urls-and-ip-address-ranges",
+      "https://learn.microsoft.com/en-us/microsoft-365/enterprise/network-planning-and-performance",
       "https://learn.microsoft.com/en-us/entra/identity/conditional-access/overview",
-      "https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/privileged-roles-permissions",
-      "https://learn.microsoft.com/en-us/microsoft-365/security/office-365-security/security-roadmap",
+      "https://learn.microsoft.com/en-us/entra/identity/conditional-access/plan-conditional-access",
+      "https://learn.microsoft.com/en-us/defender-office-365/mdo-about",
+      "https://learn.microsoft.com/en-us/defender-office-365/mdo-deployment-guide",
       "https://learn.microsoft.com/en-us/office365/servicedescriptions/exchange-online-service-description/exchange-online-limits",
       "https://learn.microsoft.com/en-us/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
       "https://learn.microsoft.com/en-us/microsoftteams/teams-add-on-licensing/microsoft-teams-add-on-licensing",
       "https://learn.microsoft.com/en-us/microsoftteams/limits-specifications-teams",
       "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-licensing",
       "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-requirements",
-      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-privacy",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-setup",
       "https://learn.microsoft.com/en-us/microsoft-365/backup/backup-overview",
       "https://learn.microsoft.com/en-us/power-platform/well-architected/",
-      "https://learn.microsoft.com/en-us/power-platform/well-architected/performance-efficiency/checklist"
+      "https://learn.microsoft.com/en-us/power-platform/well-architected/security/",
+      "https://learn.microsoft.com/en-us/power-platform/well-architected/performance-efficiency/",
+      "https://learn.microsoft.com/en-us/power-platform/admin/api-request-limits-allocations",
+      "https://learn.microsoft.com/en-us/power-platform/admin/capacity-storage"
     ]
   },
   "domains": {
     "licensing_cost": {
       "label": "Lizenz & Kosten",
-      "summary": "Nutzerbestand, Gruppenlogik, Add-ons, Laufzeiten und Renewal-Fenster gemeinsam prüfen, damit Doppelungen und falsche Basispakete sichtbar werden."
+      "summary": "Nutzerbestand, Gruppenlogik, Add-ons, Laufzeiten, Renewal-Fenster und Nutzungsberichte gemeinsam prüfen, damit Doppelungen, falsche Basispakete und volatile Preisereignisse sichtbar werden.",
+      "controls": [
+        "Direkte und gruppenbasierte Zuweisungen trennen",
+        "Nutzungsberichte mit Datenschutz-Einstellung und geringstmöglichen Rollen auswerten",
+        "Renewal-, Laufzeit- und Preisänderungsfenster je SKU dokumentieren"
+      ]
     },
     "identity_access": {
       "label": "Identität & Zugriff",
-      "summary": "Adminrollen nach geringstem Recht, MFA, Conditional Access, regelmäßigen Reviews und klaren Notfallkonten planen."
+      "summary": "Adminrollen nach geringstem Recht, MFA, Conditional Access, Report-only-Phasen, Pilotgruppen, Notfallkonten und wiederkehrende Reviews planen.",
+      "controls": [
+        "Globale Adminrechte auf Ausnahmefälle begrenzen",
+        "Conditional Access mit Pilotgruppe und Report-only-Phase validieren",
+        "Notfallkonten und Servicekonten bewusst auswerten"
+      ]
     },
     "security_compliance": {
       "label": "Schutz & Compliance",
-      "summary": "Defender-, Purview-, Mail-Authentifizierung, Aufbewahrung und Datenzugriff mit den Lizenzentscheidungen verbinden."
+      "summary": "Defender-, Purview-, Mail-Authentifizierung, Aufbewahrung, Datenzugriff, Benutzerberichte und Datenklassifikation mit den Lizenzentscheidungen verbinden.",
+      "controls": [
+        "SPF, DKIM und DMARC für genutzte und ungenutzte Domänen prüfen",
+        "Standard-/Strict-Protection, Safe Links und Safe Attachments einordnen",
+        "Datenzugriff, Aufbewahrung und Auditierbarkeit vor Rollout bewerten"
+      ]
     },
     "service_limits": {
       "label": "Servicegrenzen",
-      "summary": "Exchange-, SharePoint-, OneDrive-, Teams- und Copilot-Grenzen vor Kosten- oder Migrationsentscheidungen einbeziehen."
+      "summary": "Exchange-, SharePoint-, OneDrive-, Teams-, Copilot- und Power-Platform-Grenzen vor Kosten-, Pilot- oder Migrationsentscheidungen einbeziehen.",
+      "controls": [
+        "Mailbox-, Archiv-, Versand- und Empfangsgrenzen berücksichtigen",
+        "SharePoint-Pool, Sitegröße, Dateigröße, Pfadlänge und Sync-Umfang prüfen",
+        "Teams-Meeting-, Kanal-, Chat- und Telefoniegrenzen gegen Zielbild halten"
+      ]
     },
     "storage_backup": {
       "label": "Speicher & Backup",
-      "summary": "Tenant-Pool, Site-Grenzen, Postfach- und Archivwachstum, Schutzumfang und Restore-Ziele gemeinsam modellieren."
+      "summary": "Tenant-Pool, Site-Grenzen, Postfach- und Archivwachstum, Dataverse-Kapazität, Schutzumfang, Restore-Ziele und Kostenmodell gemeinsam modellieren.",
+      "controls": [
+        "SharePoint- und Dataverse-Kapazität mit 15-/5-Prozent-Schwellen planen",
+        "Microsoft 365 Backup nach Workload, GB-Scope, Retention und Restore-Ziel bewerten",
+        "Archiv- und Shared-Mailbox-Sonderfälle getrennt behandeln"
+      ]
     },
     "network_performance": {
       "label": "Netzwerk & Performance",
-      "summary": "Lokalen Internetausstieg, lokale Namensauflösung, direkte Microsoft-365-Pfade, Basiswerte und Messfenster dokumentieren."
+      "summary": "Lokalen Internetausstieg, lokale Namensauflösung, Microsoft-365-Endpoint-Webservice, direkte M365-Pfade, WSS für Copilot und messbare Basiswerte dokumentieren.",
+      "controls": [
+        "Optimize-/Allow-Endpunkte automatisiert aus dem Microsoft-Webservice pflegen",
+        "Proxy, TLS-Inspection, VPN-Hairpins und entfernte DNS-Pfade für M365-Verkehr vermeiden",
+        "Leistung mit Standort, Gerät, Uhrzeit und Workload regelmäßig messen"
+      ]
     },
     "copilot_ai": {
       "label": "Copilot & KI",
-      "summary": "Basislizenz, primäres Exchange-Online-Postfach, Apps, OneDrive, Teams-Meetingdaten, Datenschutz und Pilotmetriken prüfen."
+      "summary": "Basislizenz, primäres Exchange-Online-Postfach, Apps, OneDrive, Teams-Meetingdaten, WSS-Verbindungen, Datenschutz, Pilotmetriken und Oversharing-Review prüfen.",
+      "controls": [
+        "Copilot nur für geeignete Basispakete und primäre Exchange-Online-Postfächer planen",
+        "Current oder Monthly Enterprise Channel sowie Office Feature Updates berücksichtigen",
+        "SharePoint-Oversharing, Purview, Audit und Copilot Control System vor breitem Rollout prüfen"
+      ]
     },
     "power_platform_ops": {
       "label": "Power Platform Betrieb",
-      "summary": "Umgebungen, Datenrichtlinien, ALM, Monitoring, Kapazität, Connectoren und produktionsnahe Performance-Ziele bewerten."
+      "summary": "Umgebungen, Datenrichtlinien, ALM, Monitoring, Request-Kontingente, Dataverse-Kapazität, Connectoren und produktionsnahe Performance-Ziele bewerten.",
+      "controls": [
+        "Request-Kontingente je Nutzer, Flow und nicht-interaktive Identität gegen Szenario prüfen",
+        "Dataverse Database/File/Log, Suchindex und Umgebungskapazität separat einplanen",
+        "Security-, ALM- und Performance-Efficiency-Pfeiler aus Well-Architected abbilden"
+      ]
     },
     "migration_operations": {
       "label": "Migration & Betrieb",
-      "summary": "Quellsystem-Performance, Change-Fenster, Hypercare, Parallelbetrieb, Reporting und Verantwortlichkeiten früh einplanen."
+      "summary": "Quellsystem-Performance, Netzwerkpfade, Change-Fenster, Hypercare, Parallelbetrieb, Reporting, Rollback und Verantwortlichkeiten früh einplanen.",
+      "controls": [
+        "Bandbreite, Datenmenge, Migrationsgeschwindigkeit und Change-Fenster vor Kostenrechnung erfassen",
+        "Pilot, Kommunikation, Hypercare und Betriebsübergabe getrennt budgetieren",
+        "Quellsysteme, Zielgrenzen und Report-Verfügbarkeit vor Management-Fazit prüfen"
+      ]
     }
   },
   "tool_domains": {
@@ -82,5 +132,112 @@
     "m365lic": ["licensing_cost", "service_limits", "identity_access"],
     "copilot-license-check": ["copilot_ai", "identity_access", "network_performance"],
     "copilot-roi": ["copilot_ai", "licensing_cost", "migration_operations"]
+  },
+  "module_checks": {
+    "shared-mailbox": [
+      "50-GB-Grenze, 100-GB-Lizenzpfad, Archiv, Hold und Premiumfunktionen getrennt bewerten.",
+      "Zugriffsnutzer müssen passende Exchange-Online-Rechte haben; Shared-Mailbox-Konto nicht als normales Nutzerkonto verwenden.",
+      "Mail-Authentifizierung und Defender-Abdeckung für gemeinsam genutzte Domänen berücksichtigen."
+    ],
+    "m365-lizenzmatrix": [
+      "Planvergleich um Nutzungsberichte, Servicegrenzen und enthaltene Schutzfunktionen ergänzen.",
+      "Copilot-, Defender-, Entra-, Purview- und Power-Platform-Abhängigkeiten nicht nur preislich, sondern fachlich einordnen.",
+      "Frontline-, Business- und Enterprise-Segmente getrennt auswerten."
+    ],
+    "m365-lizenzvergleich": [
+      "Featurevergleich gegen aktuelle Copilot-Basislizenzliste und Exchange-/SharePoint-/Teams-Grenzen prüfen.",
+      "Datenschutz- und Reportverfügbarkeit bei Lizenzoptimierung berücksichtigen.",
+      "Add-on-Pfade nur empfehlen, wenn Suite-Upgrade nicht wirtschaftlicher oder sauberer ist."
+    ],
+    "m365-addon-matrix": [
+      "Add-ons nach Prerequisites, Funktionsüberlappung und enthaltenen Suite-Funktionen prüfen.",
+      "Defender for Office 365, Safe Links, Safe Attachments und Domain-Authentifizierung als Schutzpfad ausweisen.",
+      "Power-Platform-Capacity, Request-Kontingente und Dataverse-Speicher gesondert darstellen."
+    ],
+    "m365-add-on-konfigurator": [
+      "Prerequisites, Redundanzen, Upgrade-Alternativen und Verbrauchsmodelle gemeinsam auswerten.",
+      "Backup-, Storage-, Power-Platform- und Copilot-Add-ons mit Scope, Kapazität und Betriebsmodell prüfen.",
+      "Mail-Schutz- und Identitäts-Add-ons gegen vorhandene Suite-Rechte abgleichen."
+    ],
+    "m365-commitment-calculator": [
+      "Stabilen Kernbestand, saisonale Seats und Projektspitzen vor Laufzeitentscheidung trennen.",
+      "Renewal-Fenster, Preisänderungen und Beschaffungskanal im Forecast dokumentieren.",
+      "Change- und Nachkontrollfenster bei großen Lizenzgruppen berücksichtigen."
+    ],
+    "m365-archive-mailbox": [
+      "Auto-expanding Archive, Recoverable-Items-Grenzen, Hold und Inactive-Mailbox-Pfade getrennt prüfen.",
+      "Archiv darf nicht als Sammelarchiv für mehrere Personen oder Entitäten geplant werden.",
+      "Shared-Mailbox-Archivierung braucht bei erweiterten Anforderungen passende Lizenzierung."
+    ],
+    "ai-pack-vs-copilot-pro": [
+      "Microsoft 365 Copilot, Copilot Chat, Copilot Pro, Copilot Studio und Spezial-Copilots nach Datenzugriff und Zielgruppe trennen.",
+      "Work-based Chat benötigt Microsoft-365-Copilot-Lizenz; Web-basierte Chatpfade separat bewerten.",
+      "Datenschutz, Purview, SharePoint-Zugriff und Webdaten-Nutzung je Use Case prüfen."
+    ],
+    "copilot-pilot-calculator": [
+      "Pilotgruppe mit hoher M365-Nutzung, Champions, Kommunikation und messbaren Adoption-Kriterien planen.",
+      "Apps, Updatekanal, OneDrive, Teams-Transkription, WSS-Verbindungen und primäre Exchange-Online-Postfächer prüfen.",
+      "Oversharing, Purview Audit, SharePoint Advanced Management und Copilot Control System vor Rollout bewerten."
+    ],
+    "frontline-worker-license-check": [
+      "F1/F3-Fit gegen App-Bedarf, Gerätefreigabe, Standortsignale und Schichtrollen prüfen.",
+      "Conditional Access, App-Schutz und Gast-/Gerätekonzept in die Empfehlung aufnehmen.",
+      "Frontline-Kandidaten nicht mit Knowledge-Worker-Anforderungen vermischen."
+    ],
+    "exchange-online-roi": [
+      "Mailboxgrößen, Versand-/Empfangsgrenzen, Message-Size, Migrationsdurchsatz und Archivpfade einbeziehen.",
+      "Netzwerkbasis, lokale Namensauflösung und direkte Microsoft-365-Pfade vor Migration messen.",
+      "On-Prem-Betriebskosten, Security-Benefit und Hypercare getrennt ausweisen."
+    ],
+    "teams-phone-advisor": [
+      "Teams-Meeting-, Kanal-, Chat- und PSTN-Grenzen gegen Länder-, Standort- und Nutzeranforderungen prüfen.",
+      "UDP-Medienpfade, lokale Egress-Strategie und Provider-/SBC-Betrieb vor Modellwahl bewerten.",
+      "Calling Plan, Operator Connect, Direct Routing und Mischmodell nicht nur preislich vergleichen."
+    ],
+    "microsoft-price-tracker": [
+      "Offizielle Preis-, Packaging-, SKU- und Renewal-Ereignisse von Forecast-Annahmen trennen.",
+      "Bestandsmapping je Segment, Kanal und Laufzeitmodell pflegen.",
+      "Budgetwirkung mit Nutzungs- und Lizenzdaten in 7/30/90/180-Tage-Fenstern plausibilisieren."
+    ],
+    "license-audit-checklist": [
+      "Least-Privilege-Rollen, Conditional-Access-Planung, Mail-Schutz, Reports, Netzwerk, Backup und Copilot-Datenzugriff als Querschnitt prüfen.",
+      "SharePoint-/OneDrive-/Teams-/Exchange-Grenzen vor Einspar- oder Migrationsmaßnahmen einbeziehen.",
+      "Power-Platform-Requests, Dataverse-Kapazität und Environment-Governance in Audits aufnehmen."
+    ],
+    "m365-backup-cost-calculator": [
+      "OneDrive, SharePoint und Exchange nach Schutzumfang, GB, Retention und Restore-Granularität trennen.",
+      "Microsoft-365-Backup-Performance, Trust Boundary, Append-only-Ansatz und Wiederherstellungsart in Vergleich aufnehmen.",
+      "Regelmäßige Restore-Tests und Verantwortlichkeiten budgetieren."
+    ],
+    "m365-storage-needs-calculator": [
+      "SharePoint-Pool, 25-TB-Sitegrenze, 250-GB-Dateien, 400-Zeichen-Pfade und Sync-Empfehlungen berücksichtigen.",
+      "Dataverse Database/File/Log, Suchindex und 15-/5-Prozent-Kapazitätsschwellen bei Power-Platform-Szenarien berücksichtigen.",
+      "Exchange-Archiv, Recoverable Items und Shared-/Resource-Mailbox-Sonderfälle getrennt ausweisen."
+    ],
+    "workspace-m365-tco-calculator": [
+      "Migration mit Netzwerkbasis, Parallelbetrieb, Schulung, Hypercare und Datenmengen realistisch planen.",
+      "SharePoint-/OneDrive-/Teams-Grenzen und Endpoint-Anforderungen vor Zielkostenentscheidung prüfen.",
+      "Adoption- und Betriebsaufwand getrennt von reinen Lizenzkosten darstellen."
+    ],
+    "power-platform-cost-calculator": [
+      "Request-Kontingente, Flow-Profile, nicht-interaktive Identitäten und mögliche Add-ons gegen Nutzung prüfen.",
+      "Dataverse Database/File/Log, Suchindex, 85-/95-Prozent-Planung und Umgebungskapazität einbeziehen.",
+      "Well-Architected Security, Performance Efficiency, ALM und Operational Excellence als Reifegrad bewerten."
+    ],
+    "m365lic": [
+      "Basispläne nach Persona, Standort, Gruppenlogik, Servicegrenzen und Add-on-Bedarf empfehlen.",
+      "Copilot-, Teams Phone-, Defender-, Entra-, Purview-, Storage- und Power-Platform-Prerequisites je Gruppe prüfen.",
+      "Nutzungsberichte und Datenschutz-Einstellung als Datengrundlage kennzeichnen."
+    ],
+    "copilot-license-check": [
+      "Aktuelle Copilot-Basislizenzliste, Copilot Chat und Government-/Education-Sonderpfade prüfen.",
+      "Primäres Exchange-Online-Postfach, Microsoft 365 Apps, OneDrive, Teams, Loop, Whiteboard und WSS-Verbindungen abgleichen.",
+      "Gäste, Shared-/Delegate-/Group-Mailboxen und device-based Apps-Lizenzierung nicht als Standardpfad werten."
+    ],
+    "copilot-roi": [
+      "ROI nur mit Pilotdaten, Adoption, Champion-Modell, Nutzungsreports und belastbaren Zeitwertannahmen berechnen.",
+      "Datenzugriff, Oversharing, Purview, Audit und Updatekanal als Readiness-Gates vor Rollout aufnehmen.",
+      "Break-even-Minuten nach Rolle, Nutzungshäufigkeit und realistischem Ramp-up getrennt ausweisen."
+    ]
   }
 }

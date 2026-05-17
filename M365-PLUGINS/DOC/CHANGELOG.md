@@ -1,5 +1,12 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 1.26.0 – 2026-05-17
+
+- Erneute All-Module-Best-Practice-Prüfung dokumentiert und neue Datei `ALL-MODULE-BEST-PRACTICE-REVIEW.md` für alle 21 Module ergänzt.
+- README auf erweiterte Quellenlage zu M365-Endpunkten, Netzwerkplanung, Conditional Access, Defender for Office 365, Copilot Setup, Power-Platform-Requests und Dataverse-Kapazität aktualisiert.
+- Datenquellenbeschreibung für `m365_best_practice_catalog.json`, `license_audit_checklist.json`, `power_platform_capacity_catalog.json` und `power_platform_governance_rules.json` nachgezogen.
+- Admin-Dokumentation um neue Review-Felder für Quellenprofil, Endpoint-/Netzwerkpfad, Schutz-/Datenzugriff und Servicegrenzen-/Kapazität ergänzt.
+
 ## 1.25.0 – 2026-05-17
 
 - Admin-Modulsettings dokumentiert: eigener Unterpunkt je Public-Modul und Tabs für Übersicht, Anzeige, Preise & Annahmen, Workflow sowie Daten & Regeln.

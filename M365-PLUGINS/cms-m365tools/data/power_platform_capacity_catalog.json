@@ -9,6 +9,7 @@
       "https://learn.microsoft.com/en-us/power-platform/admin/powerapps-flow-licensing-faq",
       "https://learn.microsoft.com/en-us/power-platform/admin/pay-as-you-go-meters",
       "https://learn.microsoft.com/en-us/power-platform/admin/api-request-limits-allocations",
+      "https://learn.microsoft.com/en-us/power-platform/admin/capacity-storage",
       "https://learn.microsoft.com/en-us/ai-builder/administer-licensing",
       "https://learn.microsoft.com/en-us/ai-builder/message-management",
       "https://learn.microsoft.com/en-us/ai-builder/credit-management",
@@ -95,6 +96,8 @@
     "ai_builder_credit_flow": "AI Builder in Apps und Flows nutzt zuerst AI-Builder-Credits und danach Copilot Credits, sofern verfügbar.",
     "agent_credit_flow": "Agenten und Agent-Flows nutzen Copilot Credits.",
     "power_pages_pack_sizes": "Power Pages Subscription Packs starten bei 100 angemeldeten oder 500 anonymen Nutzern je Website und Monat.",
-    "request_limits": "Paid Power Platform User liegen typischerweise bei 40.000 Requests pro 24 Stunden; Per App und Microsoft-365-seeded Pfade bei 6.000."
+    "request_limits": "Paid Power Platform User liegen typischerweise bei 40.000 Requests pro 24 Stunden; Per App und Microsoft-365-seeded Pfade bei 6.000.",
+    "request_service_protection": "Für sehr hohe Lastspitzen gilt zusätzlich eine Power-Platform-Grenze von 100.000 Requests innerhalb von fünf Minuten.",
+    "dataverse_capacity_thresholds": "Bei weniger als 15 Prozent freier Dataverse-Kapazität sollten Admins nachsteuern; unter 5 Prozent können bestimmte Speicher-, Kopier- und Restore-Aktionen eingeschränkt werden."
   }
 }

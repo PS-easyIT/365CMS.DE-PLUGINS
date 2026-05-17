@@ -81,6 +81,7 @@ final class CMS_M365CALCULATOR_Installer
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         $columns = [
+            'module_key' => 'ADD COLUMN module_key VARCHAR(120) NOT NULL DEFAULT ' . "''" . ' AFTER id',
             'option_group' => 'ADD COLUMN option_group VARCHAR(60) NOT NULL DEFAULT ' . "'general'" . ' AFTER module_key',
             'option_key' => 'ADD COLUMN option_key VARCHAR(120) NOT NULL DEFAULT ' . "''" . ' AFTER option_group',
             'option_value' => 'ADD COLUMN option_value TEXT DEFAULT NULL AFTER option_key',
@@ -100,6 +101,7 @@ final class CMS_M365CALCULATOR_Installer
     private static function ensure_settings_columns(\PDO $pdo, string $table): void
     {
         $columns = [
+            'module_key' => 'ADD COLUMN module_key VARCHAR(120) NOT NULL DEFAULT ' . "''" . ' AFTER id',
             'is_enabled' => 'ADD COLUMN is_enabled TINYINT(1) NOT NULL DEFAULT 1 AFTER module_key',
             'status_override' => 'ADD COLUMN status_override VARCHAR(20) DEFAULT NULL AFTER is_enabled',
             'priority_override' => 'ADD COLUMN priority_override INT UNSIGNED DEFAULT NULL AFTER status_override',
