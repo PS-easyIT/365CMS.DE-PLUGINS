@@ -51,7 +51,7 @@ class CMS_Companies_Member_Dashboard
 
         if ($cssUrl !== '') {
             $v = $cssFile && file_exists($cssFile) ? filemtime($cssFile) : '1';
-            echo '<link rel="stylesheet" href="' . htmlspecialchars($cssUrl) . '?v=' . $v . '">' . "\n";
+            echo '<link rel="stylesheet" href="' . htmlspecialchars($cssUrl . '?v=' . $v, ENT_QUOTES, 'UTF-8') . '">' . "\n";
         }
     }
 
@@ -107,9 +107,9 @@ class CMS_Companies_Member_Dashboard
     {
         // ── POST: neues Unternehmen speichern ─────────────────────────────────
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['company_create'])) {
-            if (!\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'member_company_create')) {
+            if (!\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'member_company_create')) {
                 $_SESSION['error'] = 'Sicherheitscheck fehlgeschlagen.';
-                header('Location: /member/plugin/companies?action=new');
+                header('Location: /member/plugin/companies?action=new', true, 303);
                 exit;
             }
             try {
@@ -118,8 +118,8 @@ class CMS_Companies_Member_Dashboard
                 $allowedCompanySizes = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
                 $availableIndustries = array_map(static fn($industry) => (string) ($industry->name ?? ''), $companyDb->get_all_industries());
                 $validatedEmail = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
-                $validatedWebsite = filter_var(trim((string) ($_POST['website'] ?? '')), FILTER_VALIDATE_URL) ?: null;
-                $validatedLogoUrl = filter_var(trim((string) ($_POST['logo_url'] ?? '')), FILTER_VALIDATE_URL) ?: null;
+                $validatedWebsite = cms_companies_public_url((string) ($_POST['website'] ?? '')) ?: null;
+                $validatedLogoUrl = cms_companies_public_url((string) ($_POST['logo_url'] ?? '')) ?: null;
                 $selectedIndustry = sanitize_text_field($_POST['industry'] ?? '');
                 if ($selectedIndustry !== '' && !in_array($selectedIndustry, $availableIndustries, true)) {
                     $selectedIndustry = '';
@@ -140,7 +140,7 @@ class CMS_Companies_Member_Dashboard
                     'logo_url'         => $validatedLogoUrl,
                     'industry'         => $selectedIndustry,
                     'company_size'     => $companySize,
-                    'description'      => strip_tags($_POST['description']            ?? ''),
+                    'description'      => mb_substr(trim(strip_tags((string) ($_POST['description'] ?? ''))), 0, 5000),
                     'location_city'    => sanitize_text_field($_POST['location_city'] ?? ''),
                     'location_zip'     => sanitize_text_field($_POST['location_zip']  ?? ''),
                     'location_country' => sanitize_text_field($_POST['location_country'] ?? 'Deutschland'),
@@ -158,11 +158,12 @@ class CMS_Companies_Member_Dashboard
                 } else {
                     $_SESSION['success'] = 'Ihr Unternehmen wurde eingereicht und wird vom Admin geprüft.';
                 }
-                header('Location: /member/plugin/companies');
+                header('Location: /member/plugin/companies', true, 303);
                 exit;
             } catch (\Throwable $e) {
-                $_SESSION['error'] = 'Fehler beim Speichern: ' . $e->getMessage();
-                header('Location: /member/plugin/companies?action=new');
+                error_log('CMS Companies member save failed: ' . $e->getMessage());
+                $_SESSION['error'] = 'Fehler beim Speichern. Bitte prüfen Sie Ihre Angaben und versuchen Sie es erneut.';
+                header('Location: /member/plugin/companies?action=new', true, 303);
                 exit;
             }
         }
@@ -232,26 +233,25 @@ class CMS_Companies_Member_Dashboard
         </div>
         <?php else: ?>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem;">
-            <p style="color:#64748b;font-size:.875rem;margin:0;">
+        <div class="co-member-toolbar">
+            <p class="co-member-count">
                 <?php echo count($companies); ?> Unternehmen verfügbar
             </p>
             <a href="/member/plugin/companies?action=new" class="btn btn-primary">
-                ➕ Neues Unternehmen
+                Neues Unternehmen
             </a>
         </div>
 
         <?php if (empty($companies)): ?>
         <div class="empty-state">
-            <p style="font-size:2.5rem;margin:0 0 .75rem;">🏢</p>
             <p><strong>Keine Unternehmen vorhanden</strong></p>
-            <p style="color:#64748b;margin:.25rem 0 0;">Es sind noch keine aktiven Unternehmens-Profile vorhanden.</p>
-            <a href="/member/plugin/companies?action=new" class="btn btn-primary" style="margin-top:1rem;">
-                ➕ Erstes Unternehmen anlegen
+            <p class="co-member-empty-text">Es sind noch keine aktiven Unternehmens-Profile vorhanden.</p>
+            <a href="/member/plugin/companies?action=new" class="btn btn-primary co-member-empty-action">
+                Erstes Unternehmen anlegen
             </a>
         </div>
         <?php else: ?>
-        <div class="co-grid" style="grid-template-columns:repeat(3,1fr);">
+        <div class="co-grid co-member-grid">
             <?php foreach ($companies as $company): ?>
                 <?php
                 if (class_exists('CMS_Companies_Template_Loader')) {
@@ -273,50 +273,50 @@ class CMS_Companies_Member_Dashboard
 
     private function renderCreateForm(object $user): void
     {
+        $e = static fn($value): string => htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8');
         $csrfToken  = \CMS\Security::instance()->generateToken('member_company_create');
         $isAdmin    = \CMS\Auth::instance()->isAdmin();
         $companyDb  = CMS_Companies_Database::instance();
         $industries = $companyDb->get_all_industries();
         $tagPresets = $companyDb->get_tag_presets();
         ?>
-        <div style="margin-bottom:1rem;">
+        <div class="co-member-back">
             <a href="/member/plugin/companies" class="btn btn-secondary btn-sm">
                 ← Zurück zur Übersicht
             </a>
         </div>
 
         <?php if (!$isAdmin): ?>
-        <div class="alert" style="background:#f0fdfa;border-left:4px solid #0891b2;color:#155e75;">
-            <strong>ℹ️ Hinweis:</strong> Ihr Profil wird nach dem Einreichen vom Admin geprüft und dann freigeschaltet.
+        <div class="alert co-member-info-alert">
+            <strong>Hinweis:</strong> Ihr Profil wird nach dem Einreichen vom Admin geprüft und dann freigeschaltet.
         </div>
         <?php endif; ?>
 
         <div class="admin-card">
-            <h3>🏢 Neues Unternehmen einreichen</h3>
+            <h3>Neues Unternehmen einreichen</h3>
 
             <form method="POST" action="/member/plugin/companies?action=new">
                 <input type="hidden" name="company_create" value="1">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
 
                 <!-- Unternehmensdaten -->
-                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
-                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">🏢 Unternehmensdaten</h4>
+                <h4 class="co-member-form-section-title">Unternehmensdaten</h4>
 
                 <div class="form-group">
-                    <label class="form-label">Unternehmensname <span style="color:#ef4444;">*</span></label>
+                          <label class="form-label">Unternehmensname <span class="co-member-required">*</span></label>
                     <input type="text" name="name" class="form-control" required
-                           value="<?php echo htmlspecialchars($_POST['name'] ?? ''); ?>">
+                              value="<?php echo $e($_POST['name'] ?? ''); ?>" autocomplete="organization">
                 </div>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+                      <div class="co-member-form-grid co-member-form-grid--2">
                     <div class="form-group">
                         <label class="form-label">Branche</label>
                         <select name="industry" class="form-control">
                             <option value="">– bitte wählen –</option>
                             <?php foreach ($industries as $ind): ?>
-                                <option value="<?php echo htmlspecialchars($ind->name); ?>"
+                                <option value="<?php echo $e($ind->name); ?>"
                                     <?php echo (($_POST['industry'] ?? '') === $ind->name) ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($ind->name); ?>
+                                    <?php echo $e($ind->name); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -339,21 +339,19 @@ class CMS_Companies_Member_Dashboard
                     <label class="form-label">Logo-URL</label>
                     <input type="url" name="logo_url" class="form-control"
                            placeholder="https://beispiel.de/logo.png"
-                           value="<?php echo htmlspecialchars($_POST['logo_url'] ?? ''); ?>">
+                           value="<?php echo $e($_POST['logo_url'] ?? ''); ?>" inputmode="url">
                     <small class="form-text">Direktlink zum Firmenlogo (PNG, JPG oder SVG empfohlen).</small>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Beschreibung</label>
-                    <textarea name="description" class="form-control" rows="4"
-                              style="resize:vertical;"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
+                    <textarea name="description" class="form-control co-member-textarea" rows="4"><?php echo $e($_POST['description'] ?? ''); ?></textarea>
                 </div>
 
                 <!-- Merkmale / Tags -->
                 <?php if (!empty($tagPresets)): ?>
-                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
-                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">🏷️ Merkmale / Tags</h4>
-                <p style="font-size:.85rem;color:#64748b;margin-bottom:.75rem;">Wähle passende Merkmale für dein Unternehmen aus den Vorlagen.</p>
+                <h4 class="co-member-form-section-title">Merkmale / Tags</h4>
+                <p class="co-member-help-text">Wähle passende Merkmale für dein Unternehmen aus den Vorlagen.</p>
                 <?php
                     $typeLabels = ['general' => 'Allgemein', 'special' => 'Spezialisierung', 'quality' => 'Qualität'];
                     $grouped = [];
@@ -362,17 +360,15 @@ class CMS_Companies_Member_Dashboard
                     }
                     $postedTags = $_POST['tags'] ?? [];
                     foreach ($grouped as $type => $presets): ?>
-                    <div style="margin-bottom:.75rem;">
-                        <strong style="font-size:.85rem;color:#475569;"><?php echo htmlspecialchars($typeLabels[$type] ?? ucfirst($type)); ?></strong>
-                        <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.35rem;">
+                    <div class="co-member-tag-group">
+                        <strong class="co-member-tag-title"><?php echo $e($typeLabels[$type] ?? ucfirst((string) $type)); ?></strong>
+                        <div class="co-member-tag-list">
                             <?php foreach ($presets as $preset): ?>
-                                <label style="display:inline-flex;align-items:center;gap:.3rem;padding:.35rem .7rem;
-                                              background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;
-                                              font-size:.85rem;transition:all .15s ease;">
-                                    <input type="checkbox" name="tags[]" value="<?php echo htmlspecialchars($preset->tag_name); ?>"
+                                <label class="co-member-tag-pill">
+                                    <input class="co-member-checkbox" type="checkbox" name="tags[]" value="<?php echo $e($preset->tag_name); ?>"
                                            <?php echo in_array($preset->tag_name, $postedTags) ? 'checked' : ''; ?>
-                                           style="accent-color:#3b82f6;">
-                                    <?php echo htmlspecialchars($preset->tag_name); ?>
+                                    >
+                                    <?php echo $e($preset->tag_name); ?>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -381,19 +377,18 @@ class CMS_Companies_Member_Dashboard
                 <?php endif; ?>
 
                 <!-- Kontakt -->
-                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
-                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">📞 Kontakt</h4>
+                <h4 class="co-member-form-section-title">Kontakt</h4>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+                <div class="co-member-form-grid co-member-form-grid--2">
                     <div class="form-group">
                         <label class="form-label">E-Mail</label>
                         <input type="email" name="email" class="form-control"
-                               value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
+                               value="<?php echo $e($_POST['email'] ?? ''); ?>" autocomplete="email" inputmode="email">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Telefon</label>
                         <input type="tel" name="phone" class="form-control"
-                               value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>">
+                               value="<?php echo $e($_POST['phone'] ?? ''); ?>" autocomplete="tel" inputmode="tel">
                     </div>
                 </div>
 
@@ -401,53 +396,51 @@ class CMS_Companies_Member_Dashboard
                     <label class="form-label">Website</label>
                     <input type="url" name="website" class="form-control"
                            placeholder="https://"
-                           value="<?php echo htmlspecialchars($_POST['website'] ?? ''); ?>">
+                           value="<?php echo $e($_POST['website'] ?? ''); ?>" inputmode="url">
                 </div>
 
                 <!-- Standort -->
-                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
-                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">📍 Standort</h4>
+                <h4 class="co-member-form-section-title">Standort</h4>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;">
+                <div class="co-member-form-grid co-member-form-grid--3">
                     <div class="form-group">
                         <label class="form-label">Stadt</label>
                         <input type="text" name="location_city" class="form-control"
-                               value="<?php echo htmlspecialchars($_POST['location_city'] ?? ''); ?>">
+                               value="<?php echo $e($_POST['location_city'] ?? ''); ?>" autocomplete="address-level2">
                     </div>
                     <div class="form-group">
                         <label class="form-label">PLZ</label>
                         <input type="text" name="location_zip" class="form-control"
-                               value="<?php echo htmlspecialchars($_POST['location_zip'] ?? ''); ?>">
+                               value="<?php echo $e($_POST['location_zip'] ?? ''); ?>" autocomplete="postal-code" inputmode="numeric">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Land</label>
                         <input type="text" name="location_country" class="form-control"
-                               value="<?php echo htmlspecialchars($_POST['location_country'] ?? 'Deutschland'); ?>">
+                               value="<?php echo $e($_POST['location_country'] ?? 'Deutschland'); ?>" autocomplete="country-name">
                     </div>
                 </div>
 
                 <!-- Weiteres -->
-                <h4 style="color:#475569;font-size:.95rem;margin:1.25rem 0 .75rem;
-                           padding-bottom:.5rem;border-bottom:1px solid #f1f5f9;">📊 Weiteres</h4>
+                <h4 class="co-member-form-section-title">Weiteres</h4>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
+                <div class="co-member-form-grid co-member-form-grid--2">
                     <div class="form-group">
                         <label class="form-label">Gegründet (Jahr)</label>
                         <input type="number" name="founded_year" class="form-control"
                                min="1800" max="<?php echo date('Y'); ?>"
                                placeholder="<?php echo date('Y'); ?>"
-                               value="<?php echo htmlspecialchars($_POST['founded_year'] ?? ''); ?>">
+                               value="<?php echo $e($_POST['founded_year'] ?? ''); ?>" inputmode="numeric">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Mitarbeiteranzahl (Zahl)</label>
                         <input type="number" name="employee_count" class="form-control" min="0"
-                               value="<?php echo htmlspecialchars($_POST['employee_count'] ?? ''); ?>">
+                               value="<?php echo $e($_POST['employee_count'] ?? ''); ?>" inputmode="numeric">
                         <small class="form-text">Exakte Zahl, falls bekannt.</small>
                     </div>
                 </div>
 
-                <div style="display:flex;gap:.75rem;margin-top:1.5rem;">
-                    <button type="submit" class="btn btn-primary">💾 Unternehmen einreichen</button>
+                <div class="co-member-form-actions">
+                    <button type="submit" class="btn btn-primary">Unternehmen einreichen</button>
                     <a href="/member/plugin/companies" class="btn btn-secondary">Abbrechen</a>
                 </div>
             </form>

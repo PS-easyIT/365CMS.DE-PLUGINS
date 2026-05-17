@@ -92,7 +92,16 @@ trait CMS_Contact_Page_Settings_Trait
         self::save_setting('admin_email', $adminEmail);
         self::save_setting('global_recipient', $adminEmail);
         $privacyPolicyUrl = trim((string) ($_POST['privacy_policy_url'] ?? ''));
-        if ($privacyPolicyUrl !== '' && !filter_var($privacyPolicyUrl, FILTER_VALIDATE_URL) && !str_starts_with($privacyPolicyUrl, '/')) {
+        if ($privacyPolicyUrl !== '' && str_starts_with($privacyPolicyUrl, '/')) {
+            $privacyPolicyUrl = '/' . ltrim($privacyPolicyUrl, '/');
+        } elseif ($privacyPolicyUrl !== '') {
+            $parts = filter_var($privacyPolicyUrl, FILTER_VALIDATE_URL) ? parse_url($privacyPolicyUrl) : false;
+            if (!is_array($parts) || !in_array(strtolower((string) ($parts['scheme'] ?? '')), ['http', 'https'], true)) {
+                $privacyPolicyUrl = '/datenschutz';
+            }
+        }
+
+        if ($privacyPolicyUrl !== '' && !str_starts_with($privacyPolicyUrl, '/') && !filter_var($privacyPolicyUrl, FILTER_VALIDATE_URL)) {
             $privacyPolicyUrl = '/datenschutz';
         }
 

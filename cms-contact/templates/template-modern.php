@@ -26,7 +26,6 @@ $theme->getHeader();
 
             <div class="contact-card contact-card-elevated">
                 <header class="contact-header contact-header-centered">
-                    <span class="contact-icon-badge" aria-hidden="true">✉️</span>
                     <h1 id="contact-form-title"><?php echo $e($form['title']); ?></h1>
                     <?php if (!empty($form['description'])): ?>
                     <p class="contact-description"><?php echo $e($form['description']); ?></p>
@@ -35,7 +34,6 @@ $theme->getHeader();
 
                 <?php if (!empty($success)): ?>
                 <div class="contact-alert contact-alert-success contact-alert-modern" role="status" aria-live="polite" data-contact-message tabindex="-1">
-                    <span class="contact-alert-icon" aria-hidden="true">🎉</span>
                     <div>
                         <strong>Vielen Dank!</strong><br>
                         <?php echo $e($success); ?>
@@ -44,14 +42,13 @@ $theme->getHeader();
                 <?php endif; ?>
                 <?php if (!empty($error)): ?>
                 <div class="contact-alert contact-alert-error contact-alert-modern" role="alert" aria-live="assertive" data-contact-message tabindex="-1">
-                    <span class="contact-alert-icon" aria-hidden="true">⚠️</span>
                     <div><?php echo $e($error); ?></div>
                 </div>
                 <?php endif; ?>
 
                 <?php if (empty($success)): ?>
                 <form method="POST" class="contact-form" novalidate>
-                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
                     <input type="hidden" name="contact_started_at" value="<?php echo (int) time(); ?>">
                     <?php if (!empty($form['enable_honeypot'])): ?>
                     <div class="contact-honeypot" aria-hidden="true">

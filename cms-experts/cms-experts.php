@@ -3,7 +3,7 @@
  * Plugin Name: CMS Experts
  * Plugin URI: https://365network.de/cms-experts
  * Description: Verwaltung von IT-Experten-Profilen mit Card-Ansicht, Detailseiten und umfangreichen Meta-Daten
- * Version: 3.0.0
+ * Version: 3.0.1
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -17,10 +17,44 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin Constants
-define('CMS_EXPERTS_VERSION', '3.0.0');
+define('CMS_EXPERTS_VERSION', '3.0.1');
 define('CMS_EXPERTS_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_EXPERTS_PLUGIN_URL', '/plugins/cms-experts/');
 define('CMS_EXPERTS_TEXT_DOMAIN', 'cms-experts');
+
+if (!function_exists('cms_experts_public_url')) {
+    function cms_experts_public_url(?string $url): string
+    {
+        $url = trim((string) $url);
+        if ($url === '' || strlen($url) > 2048 || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return '';
+        }
+
+        if (!in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true)) {
+            return '';
+        }
+
+        if (!empty($parts['user']) || !empty($parts['pass'])) {
+            return '';
+        }
+
+        $host = strtolower(trim((string) $parts['host'], '[]'));
+        if ($host === '' || $host === 'localhost' || str_ends_with($host, '.localhost') || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
+            return '';
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP) && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return '';
+        }
+
+        return $url;
+    }
+}
 
 /**
  * Hauptklasse für CMS Experts Plugin
@@ -32,7 +66,7 @@ final class CMS_Experts
     private static ?self $instance = null;
     private bool $components_bootstrapped = false;
 
-    private string $version = '3.0.0';
+    private string $version = '3.0.1';
     private string $plugin_dir;
     private string $plugin_url;
     private string $text_domain = 'cms-experts';

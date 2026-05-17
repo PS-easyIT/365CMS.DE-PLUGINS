@@ -98,7 +98,7 @@ final class CMS_Experts_Admin
         $admin_css = CMS_EXPERTS_PLUGIN_DIR . 'assets/css/experts-admin.css';
         if (file_exists($admin_css)) {
             $adminCssVersion = (string) filemtime($admin_css);
-            echo '<link rel="stylesheet" href="' . CMS_EXPERTS_PLUGIN_URL . 'assets/css/experts-admin.css?v=' . $adminCssVersion . '">' . "\n";
+            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_EXPERTS_PLUGIN_URL . 'assets/css/experts-admin.css?v=' . $adminCssVersion, ENT_QUOTES, 'UTF-8') . '">' . "\n";
         }
 
         $experts   = $data['experts']  ?? [];
@@ -163,8 +163,8 @@ final class CMS_Experts_Admin
                 <p>Verwalte alle Experten-Profile, Fachrichtungen und Skills</p>
             </div>
             <div class="header-actions">
-                <a href="<?= SITE_URL ?>/experts" class="btn btn-secondary" target="_blank">🌐 Öffentlich</a>
-                <a href="<?= SITE_URL ?>/admin/experts/new" class="btn btn-primary">➕ Neuer Experte</a>
+                <a href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/experts', ENT_QUOTES, 'UTF-8') ?>" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">Öffentlich</a>
+                <a href="<?= htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/experts/new', ENT_QUOTES, 'UTF-8') ?>" class="btn btn-primary">Neuer Experte</a>
             </div>
         </div>
 
@@ -458,7 +458,7 @@ final class CMS_Experts_Admin
                                 <div class="exp-tax-root">
                                     <span>📂 <?= htmlspecialchars($root->name) ?></span>
                                     <form method="POST" action="<?= SITE_URL ?>/admin/experts/taxonomy/delete/<?= (int)$root->id ?>" style="display:inline;">
-                                        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                                         <button type="submit" class="exp-tax-del-btn"
                                                 onclick="return confirm('«<?= htmlspecialchars($root->name, ENT_QUOTES) ?>» und alle Unter-Einträge löschen?')">×</button>
                                     </form>
@@ -467,7 +467,7 @@ final class CMS_Experts_Admin
                                 <div class="exp-tax-child">
                                     <span>↳ <?= htmlspecialchars($child->name) ?></span>
                                     <form method="POST" action="<?= SITE_URL ?>/admin/experts/taxonomy/delete/<?= (int)$child->id ?>" style="display:inline;">
-                                        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                                         <button type="submit" class="exp-tax-del-btn"
                                                 onclick="return confirm('«<?= htmlspecialchars($child->name, ENT_QUOTES) ?>» löschen?')">×</button>
                                     </form>
@@ -482,7 +482,7 @@ final class CMS_Experts_Admin
             <div class="admin-card">
                 <h3>➕ Neue Fachrichtung</h3>
                 <form method="POST" action="<?= SITE_URL ?>/admin/experts/taxonomy/add">
-                    <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                     <div class="form-group">
                         <label class="form-label">Name <span style="color:#ef4444;">*</span></label>
                         <input type="text" name="spec_name" class="form-control" required placeholder="z.B. iOS-Entwicklung">
@@ -529,7 +529,7 @@ final class CMS_Experts_Admin
                                 <span class="exp-skill-tag">
                                     <?= htmlspecialchars($sk->skill_name) ?>
                                     <form method="POST" action="<?= SITE_URL ?>/admin/experts/skillpreset/delete/<?= (int)$sk->id ?>" style="display:inline;">
-                                        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                                         <button type="submit" class="exp-skill-del"
                                                 onclick="return confirm('«<?= htmlspecialchars($sk->skill_name, ENT_QUOTES) ?>» löschen?')">×</button>
                                     </form>
@@ -546,7 +546,7 @@ final class CMS_Experts_Admin
             <div class="admin-card">
                 <h3>➕ Neue Skill-Vorlage</h3>
                 <form method="POST" action="<?= SITE_URL ?>/admin/experts/skillpreset/add">
-                    <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
                     <div class="form-group">
                         <label class="form-label">Skill-Name <span style="color:#ef4444;">*</span></label>
                         <input type="text" name="skill_name" class="form-control" required placeholder="z.B. Kubernetes">
@@ -571,7 +571,7 @@ final class CMS_Experts_Admin
         elseif ($tab === 'design'):
         ?>
         <form method="POST" action="<?= SITE_URL ?>/admin/experts/settings/save">
-            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="settings_tab" value="design">
 
             <div class="admin-card">
@@ -722,7 +722,7 @@ final class CMS_Experts_Admin
         elseif ($tab === 'settings'):
         ?>
         <form method="POST" action="<?= SITE_URL ?>/admin/experts/settings/save">
-            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="settings_tab" value="settings">
 
             <div class="admin-card">
@@ -836,7 +836,7 @@ final class CMS_Experts_Admin
         $admin_css = CMS_EXPERTS_PLUGIN_DIR . 'assets/css/experts-admin.css';
         if (file_exists($admin_css)) {
             $adminCssVersion = (string) filemtime($admin_css);
-            echo '<link rel="stylesheet" href="' . CMS_EXPERTS_PLUGIN_URL . 'assets/css/experts-admin.css?v=' . $adminCssVersion . '">' . "\n";
+            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_EXPERTS_PLUGIN_URL . 'assets/css/experts-admin.css?v=' . $adminCssVersion, ENT_QUOTES, 'UTF-8') . '">' . "\n";
         }
 
         $slug = '';
@@ -862,7 +862,7 @@ final class CMS_Experts_Admin
         <?php if (isset($_GET['error'])): ?><div class="alert alert-error">❌ Fehler: <?= htmlspecialchars($_GET['error'] ?? '') ?></div><?php endif; ?>
 
         <form method="POST" action="<?= SITE_URL ?>/admin/experts/save" class="expert-form">
-            <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
             <?php if ($is_edit): ?>
             <input type="hidden" name="expert_id" value="<?= (int)$expert->id ?>">
             <?php endif; ?>

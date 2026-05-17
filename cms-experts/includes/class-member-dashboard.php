@@ -128,7 +128,7 @@ class CMS_Experts_Member_Dashboard
     {
         // ── POST: neuen Experten speichern ────────────────────────────────────
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['expert_create'])) {
-            if (!\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'member_expert_create')) {
+            if (!\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'member_expert_create')) {
                 $_SESSION['error'] = 'Sicherheitscheck fehlgeschlagen.';
                 header('Location: /member/plugin/experts?action=new');
                 exit;
@@ -136,7 +136,7 @@ class CMS_Experts_Member_Dashboard
             try {
                 $isAdminSave = \CMS\Auth::instance()->isAdmin();
                 $validatedEmail = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
-                $validatedPhotoUrl = filter_var(trim((string) ($_POST['photo_url'] ?? '')), FILTER_VALIDATE_URL) ?: null;
+                $validatedPhotoUrl = cms_experts_public_url((string) ($_POST['photo_url'] ?? '')) ?: null;
                 $availabilityMap = [
                     'available' => 'available',
                     'partially' => 'limited',
@@ -188,7 +188,7 @@ class CMS_Experts_Member_Dashboard
                         'social_youtube', 'social_blog_rss',
                     ];
                     foreach ($social_keys as $sKey) {
-                        $sVal = filter_var($_POST['meta'][$sKey] ?? '', FILTER_VALIDATE_URL) ?: '';
+                        $sVal = cms_experts_public_url((string) ($_POST['meta'][$sKey] ?? ''));
                         if ($sVal !== '') {
                             CMS_Experts_Database::instance()->save_meta($id, $sKey, $sVal);
                         }

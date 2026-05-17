@@ -29,9 +29,9 @@ $settings = array_merge([
 $city         = $filters['city'] ?? '';
 $availability = $filters['availability'] ?? '';
 $expertsArchiveUrl = htmlspecialchars(rtrim((string) SITE_URL, '/') . '/experts', ENT_QUOTES, 'UTF-8');
-$expertSearchQuery = htmlspecialchars(sanitize_text_field((string) ($_GET['q'] ?? '')), ENT_QUOTES, 'UTF-8');
+$expertSearchQuery = htmlspecialchars((string) ($filters['q'] ?? ''), ENT_QUOTES, 'UTF-8');
 $expertCityFilter = htmlspecialchars(sanitize_text_field((string) $city), ENT_QUOTES, 'UTF-8');
-$css_hdr_icon_raw = html_entity_decode($settings['archive_header_icon']       ?? '&#128100;', ENT_HTML5, 'UTF-8');
+$css_hdr_icon_raw = htmlspecialchars(html_entity_decode($settings['archive_header_icon'] ?? '', ENT_HTML5, 'UTF-8'), ENT_QUOTES, 'UTF-8');
 ?>
 <main class="phinit-plugin experts-archive-wrapper">
     
@@ -74,7 +74,7 @@ $css_hdr_icon_raw = html_entity_decode($settings['archive_header_icon']       ??
         </select></label>
 
         <button type="submit" class="phinit-btn phinit-btn--primary expert-btn">Suchen</button>
-        <?php if (!empty($city) || !empty($availability)): ?>
+        <?php if (!empty($city) || !empty($availability) || $expertSearchQuery !== ''): ?>
             <a href="<?php echo $expertsArchiveUrl; ?>" class="phinit-btn phinit-btn--secondary expert-btn expert-btn-outline expert-btn--reset">Reset</a>
         <?php endif; ?>
     </form>

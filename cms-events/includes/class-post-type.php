@@ -65,7 +65,7 @@ final class CMS_Events_Post_Type
         $current_path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
         $is_active = strpos($current_path, '/events') === 0 ? 'active' : '';
         
-        echo '<a href="' . SITE_URL . '/events" class="nav-link ' . $is_active . '">Events</a>';
+        echo '<a href="' . htmlspecialchars((string) SITE_URL, ENT_QUOTES, 'UTF-8') . '/events" class="nav-link ' . htmlspecialchars($is_active, ENT_QUOTES, 'UTF-8') . '">Events</a>';
     }
 
     public function archive_page(): void
@@ -74,14 +74,14 @@ final class CMS_Events_Post_Type
         $db_manager = CMS_Events_Database::instance();
         $settings   = $db_manager->get_settings();
 
-        $filter_category = $_GET['category'] ?? null;
-        $filter_city     = $_GET['city']     ?? null;
-        $filter_month    = $_GET['month']    ?? null;
-        $filter_online   = isset($_GET['online']) ? (int)$_GET['online'] : null;
-        $when_filter     = $_GET['when']     ?? null;  // upcoming|past
-        $search          = trim($_GET['search'] ?? '');
-        $page            = max(1, (int)($_GET['page'] ?? 1));
-        $per_page        = max(6, (int)($settings['per_page'] ?? 12));
+        $filter_category = $this->sanitize_text_param($_GET['category'] ?? null, 100);
+        $filter_city     = $this->sanitize_text_param($_GET['city'] ?? null, 100);
+        $filter_month    = $this->sanitize_month($_GET['month'] ?? null);
+        $filter_online   = $this->sanitize_binary_filter($_GET['online'] ?? null);
+        $when_filter     = in_array((string) ($_GET['when'] ?? ''), ['upcoming', 'past'], true) ? (string) $_GET['when'] : null;
+        $search          = $this->sanitize_text_param($_GET['search'] ?? '', 120) ?? '';
+        $page            = max(1, min(500, (int)($_GET['page'] ?? 1)));
+        $per_page        = max(6, min(100, (int)($settings['per_page'] ?? 12)));
 
         $args = [
             'status' => 'published',
@@ -96,10 +96,10 @@ final class CMS_Events_Post_Type
         }
         // else: kein Datumsfilter → alle Events anzeigen
 
-        if ($filter_category)         $args['category']  = $filter_category;
-        if ($filter_city)             $args['city']       = $filter_city;
-        if ($filter_month)            $args['month']      = $filter_month;
-        if ($search)                  $args['search']     = $search;
+        if ($filter_category !== null) $args['category']  = $filter_category;
+        if ($filter_city !== null)     $args['city']       = $filter_city;
+        if ($filter_month !== null)    $args['month']      = $filter_month;
+        if ($search !== '')            $args['search']     = $search;
         if ($filter_online !== null)  $args['is_online']  = $filter_online;
 
         $events     = $db_manager->get_events($args);
@@ -132,8 +132,8 @@ final class CMS_Events_Post_Type
     {
         $db_manager = CMS_Events_Database::instance();
         
-        $month = $_GET['month'] ?? date('Y-m');
-        $view = $_GET['view'] ?? 'month'; // 'month' or 'week'
+        $month = $this->sanitize_month($_GET['month'] ?? null) ?? date('Y-m');
+        $view = in_array((string) ($_GET['view'] ?? 'month'), ['month', 'week'], true) ? (string) $_GET['view'] : 'month';
 
         $args = [
             'status' => 'published',
@@ -178,7 +178,7 @@ final class CMS_Events_Post_Type
     public function single_page_by_slug(string $slug = ''): void
     {
         if ($slug === '') {
-            $slug = $_GET['slug'] ?? '';
+            $slug = (string) ($_GET['slug'] ?? '');
         }
 
         // Format: {titel}-{id} – ID aus dem letzten Zahl-Segment extrahieren
@@ -214,9 +214,9 @@ final class CMS_Events_Post_Type
         $tm->getFooter();
     }
 
-    public function export_ical(): void
+    public function export_ical(string $id = ''): void
     {
-        $event_id = (int)($_GET['id'] ?? 0);
+        $event_id = $id !== '' ? (int) $id : (int)($_GET['id'] ?? 0);
         
         if ($event_id <= 0) {
             http_response_code(404);
@@ -236,50 +236,103 @@ final class CMS_Events_Post_Type
 
     private function generate_ical($event): void
     {
-        $start_datetime = new DateTime($event->event_date . ' ' . ($event->event_time ?? '00:00:00'));
-        $end_datetime = $event->end_date 
-            ? new DateTime($event->end_date . ' ' . ($event->end_time ?? '23:59:59'))
-            : clone $start_datetime->modify('+2 hours');
+        $start_datetime = $this->create_event_datetime((string) ($event->event_date ?? ''), (string) ($event->event_time ?? '00:00:00'));
+        if (!$start_datetime instanceof DateTimeImmutable) {
+            http_response_code(404);
+            exit;
+        }
+
+        $end_datetime = !empty($event->end_date)
+            ? $this->create_event_datetime((string) $event->end_date, (string) ($event->end_time ?? '23:59:59'))
+            : $start_datetime->modify('+2 hours');
+
+        if (!$end_datetime instanceof DateTimeImmutable || $end_datetime <= $start_datetime) {
+            $end_datetime = $start_datetime->modify('+2 hours');
+        }
+
+        $host = $this->get_safe_calendar_host();
+        $eventId = max(0, (int) ($event->id ?? 0));
 
         $ical = "BEGIN:VCALENDAR\r\n";
         $ical .= "VERSION:2.0\r\n";
         $ical .= "PRODID:-//CMS Events//NONSGML v1.0//EN\r\n";
         $ical .= "BEGIN:VEVENT\r\n";
-        $ical .= "UID:" . $event->id . "@" . $_SERVER['HTTP_HOST'] . "\r\n";
+        $ical .= $this->format_ical_line('UID', $eventId . '@' . $host);
         $ical .= "DTSTAMP:" . gmdate('Ymd\THis\Z') . "\r\n";
         $ical .= "DTSTART:" . $start_datetime->format('Ymd\THis') . "\r\n";
         $ical .= "DTEND:" . $end_datetime->format('Ymd\THis') . "\r\n";
-        $ical .= "SUMMARY:" . $this->escape_ical($event->title) . "\r\n";
+        $ical .= $this->format_ical_line('SUMMARY', (string) ($event->title ?? 'Event'));
         
-        if ($event->description) {
-            $ical .= "DESCRIPTION:" . $this->escape_ical(strip_tags($event->description)) . "\r\n";
+        if (!empty($event->description)) {
+            $ical .= $this->format_ical_line('DESCRIPTION', strip_tags((string) $event->description));
         }
         
-        if ($event->location) {
-            $location = $event->location;
-            if ($event->city) {
+        if (!empty($event->location)) {
+            $location = (string) $event->location;
+            if (!empty($event->city)) {
                 $location .= ', ' . $event->city;
             }
-            $ical .= "LOCATION:" . $this->escape_ical($location) . "\r\n";
+            $ical .= $this->format_ical_line('LOCATION', $location);
         }
         
-        if ($event->online_url) {
-            $ical .= "URL:" . $event->online_url . "\r\n";
+        $onlineUrl = cms_events_public_url($event->online_url ?? null);
+        if ($onlineUrl !== '') {
+            $ical .= $this->format_ical_line('URL', $onlineUrl);
         }
         
         $ical .= "END:VEVENT\r\n";
         $ical .= "END:VCALENDAR\r\n";
 
         header('Content-Type: text/calendar; charset=utf-8');
-        header('Content-Disposition: attachment; filename="event-' . $event->id . '.ics"');
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Disposition: attachment; filename="event-' . $eventId . '.ics"');
+        header('Content-Length: ' . (string) strlen($ical));
         echo $ical;
         exit;
     }
 
+    private function create_event_datetime(string $date, string $time): ?DateTimeImmutable
+    {
+        $date = $this->sanitize_date($date) ?? '';
+        $time = $this->sanitize_time($time) ?? '00:00:00';
+        if ($date === '') {
+            return null;
+        }
+
+        $format = strlen($time) === 5 ? '!Y-m-d H:i' : '!Y-m-d H:i:s';
+        $dt = DateTimeImmutable::createFromFormat($format, $date . ' ' . $time);
+
+        return $dt instanceof DateTimeImmutable ? $dt : null;
+    }
+
+    private function get_safe_calendar_host(): string
+    {
+        $siteHost = defined('SITE_URL') ? parse_url((string) SITE_URL, PHP_URL_HOST) : null;
+        $host = is_string($siteHost) ? $siteHost : (string) ($_SERVER['HTTP_HOST'] ?? 'localhost');
+        $host = strtolower(preg_replace('/[^a-z0-9.-]/i', '', $host) ?? '');
+
+        return $host !== '' ? $host : 'localhost';
+    }
+
+    private function format_ical_line(string $name, string $value): string
+    {
+        return $this->fold_ical_line($name . ':' . $this->escape_ical($value)) . "\r\n";
+    }
+
+    private function fold_ical_line(string $line): string
+    {
+        if (strlen($line) <= 75) {
+            return $line;
+        }
+
+        return rtrim(chunk_split($line, 75, "\r\n "), "\r\n ");
+    }
+
     private function escape_ical(string $text): string
     {
+        $text = str_replace('\\', '\\\\', $text);
         $text = str_replace(["\r\n", "\n", "\r"], "\\n", $text);
-        $text = str_replace([',', ';', '\\'], ['\\,', '\\;', '\\\\'], $text);
+        $text = str_replace([',', ';'], ['\\,', '\\;'], $text);
         return $text;
     }
 
@@ -330,7 +383,7 @@ final class CMS_Events_Post_Type
             return;
         }
 
-        $csrf_token = $_POST['csrf_token'] ?? '';
+        $csrf_token = (string) ($_POST['csrf_token'] ?? '');
         if (!CMS\Security::instance()->verifyToken($csrf_token, 'save_event')) {
             CMS\Router::instance()->redirect('/admin/events?error=csrf');
             return;
@@ -347,40 +400,40 @@ final class CMS_Events_Post_Type
 
         $allowed_statuses = ['draft', 'published', 'cancelled', 'completed'];
         $allowed_price_types = ['free', 'paid', 'donation'];
-        $status = in_array($_POST['status'] ?? '', $allowed_statuses, true) ? $_POST['status'] : 'published';
-        $price_type = in_array($_POST['price_type'] ?? '', $allowed_price_types, true) ? $_POST['price_type'] : 'free';
+        $status = in_array($_POST['status'] ?? '', $allowed_statuses, true) ? (string) $_POST['status'] : 'published';
+        $price_type = in_array($_POST['price_type'] ?? '', $allowed_price_types, true) ? (string) $_POST['price_type'] : 'free';
 
         $data = [
-            'title'             => trim($_POST['title'] ?? ''),
-            'excerpt'           => trim($_POST['excerpt'] ?? ''),
+            'title'             => $this->sanitize_required_text($_POST['title'] ?? '', 255),
+            'excerpt'           => $this->sanitize_text_param($_POST['excerpt'] ?? '', 500) ?? '',
             'description'       => $description,
-            'event_date'        => $_POST['event_date']  ?? null,
-            'event_time'        => $_POST['event_time']  ?? null,
-            'end_date'          => $_POST['end_date']    ?? null,
-            'end_time'          => $_POST['end_time']    ?? null,
-            'location'          => trim($_POST['location']  ?? ''),
-            'address'           => trim($_POST['address']   ?? ''),
-            'city'              => trim($_POST['city']      ?? ''),
-            'zip'               => trim($_POST['zip']       ?? ''),
-            'country'           => trim($_POST['country']   ?? 'Deutschland'),
-            'category'          => trim($_POST['category']  ?? ''),
+            'event_date'        => $this->sanitize_date($_POST['event_date'] ?? null),
+            'event_time'        => $this->sanitize_time($_POST['event_time'] ?? null),
+            'end_date'          => $this->sanitize_date($_POST['end_date'] ?? null),
+            'end_time'          => $this->sanitize_time($_POST['end_time'] ?? null),
+            'location'          => $this->sanitize_text_param($_POST['location'] ?? '', 255) ?? '',
+            'address'           => $this->sanitize_text_param($_POST['address'] ?? '', 500) ?? '',
+            'city'              => $this->sanitize_text_param($_POST['city'] ?? '', 100) ?? '',
+            'zip'               => $this->sanitize_text_param($_POST['zip'] ?? '', 20) ?? '',
+            'country'           => $this->sanitize_text_param($_POST['country'] ?? 'Deutschland', 100) ?? 'Deutschland',
+            'category'          => $this->sanitize_text_param($_POST['category'] ?? '', 100) ?? '',
             'tags'              => isset($_POST['tags']) && is_array($_POST['tags'])
-                                    ? array_values(array_filter(array_map(static fn($tag) => trim((string) $tag), $_POST['tags'])))
+                                    ? array_values(array_filter(array_map(fn($tag) => $this->sanitize_text_param($tag, 80) ?? '', $_POST['tags'])))
                                     : [],
-            'capacity'          => (int)($_POST['capacity'] ?? 0) ?: null,
-            'registration_url'  => filter_var(trim($_POST['registration_url'] ?? ''), FILTER_VALIDATE_URL) ?: null,
+            'capacity'          => max(0, (int)($_POST['capacity'] ?? 0)) ?: null,
+            'registration_url'  => $this->sanitize_public_url($_POST['registration_url'] ?? ''),
             'price_type'        => $price_type,
-            'price'             => !empty($_POST['price']) ? (float)$_POST['price'] : null,
-            'price_currency'    => strtoupper(substr(trim((string)($_POST['price_currency'] ?? 'EUR')), 0, 10)),
-            'image_url'         => filter_var(trim($_POST['image_url'] ?? ''), FILTER_VALIDATE_URL) ?: null,
-            'banner_url'        => filter_var(trim($_POST['banner_url'] ?? ''), FILTER_VALIDATE_URL) ?: null,
+            'price'             => !empty($_POST['price']) ? max(0.0, (float)$_POST['price']) : null,
+            'price_currency'    => $this->sanitize_currency($_POST['price_currency'] ?? 'EUR'),
+            'image_url'         => $this->sanitize_public_url($_POST['image_url'] ?? ''),
+            'banner_url'        => $this->sanitize_public_url($_POST['banner_url'] ?? ''),
             'is_online'         => isset($_POST['is_online'])   ? 1 : 0,
-            'online_url'        => filter_var(trim($_POST['online_url'] ?? ''), FILTER_VALIDATE_URL) ?: null,
+            'online_url'        => $this->sanitize_public_url($_POST['online_url'] ?? ''),
             'is_featured'       => isset($_POST['is_featured']) ? 1 : 0,
-            'organizer_name'    => trim($_POST['organizer_name']    ?? ''),
-            'organizer_email'   => filter_var(trim($_POST['organizer_email'] ?? ''), FILTER_VALIDATE_EMAIL) ?: '',
-            'organizer_phone'   => trim($_POST['organizer_phone']   ?? ''),
-            'organizer_website' => filter_var(trim($_POST['organizer_website'] ?? ''), FILTER_VALIDATE_URL) ?: null,
+            'organizer_name'    => $this->sanitize_text_param($_POST['organizer_name'] ?? '', 255) ?? '',
+            'organizer_email'   => filter_var(trim((string) ($_POST['organizer_email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '',
+            'organizer_phone'   => $this->sanitize_text_param($_POST['organizer_phone'] ?? '', 50) ?? '',
+            'organizer_website' => $this->sanitize_public_url($_POST['organizer_website'] ?? ''),
             'status'            => $status,
         ];
 
@@ -472,8 +525,8 @@ final class CMS_Events_Post_Type
         if (!CMS\Auth::instance()->isAdmin()) { CMS\Router::instance()->redirect('/login'); return; }
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') { CMS\Router::instance()->redirect('/admin/events'); return; }
 
-        $csrf  = $_POST['csrf_token'] ?? '';
-        $tab   = $_POST['_from_tab']  ?? 'settings';
+        $csrf  = (string) ($_POST['csrf_token'] ?? '');
+        $tab   = in_array((string) ($_POST['_from_tab'] ?? 'settings'), ['settings', 'design'], true) ? (string) $_POST['_from_tab'] : 'settings';
         if (!CMS\Security::instance()->verifyToken($csrf, 'event_settings')) {
             CMS\Router::instance()->redirect('/admin/events?tab=' . $tab . '&error=csrf');
             return;
@@ -510,7 +563,7 @@ final class CMS_Events_Post_Type
         // Nur Text-/Zahl-Felder des aktuellen Tabs speichern
         foreach ($group['text'] as $key) {
             if (array_key_exists($key, $_POST)) {
-                $settings[$key] = trim((string)$_POST[$key]);
+                $settings[$key] = $this->sanitize_setting_value($key, $_POST[$key]);
             }
         }
 
@@ -528,8 +581,8 @@ final class CMS_Events_Post_Type
         if (!CMS\Auth::instance()->isAdmin()) { CMS\Router::instance()->redirect('/login'); return; }
 
         $db      = CMS_Events_Database::instance();
-        $tab     = $_GET['tab']    ?? 'overview';
-        $filter  = $_GET['filter'] ?? 'all';
+        $tab     = in_array((string) ($_GET['tab'] ?? 'overview'), ['overview', 'categories', 'tags', 'design', 'settings'], true) ? (string) $_GET['tab'] : 'overview';
+        $filter  = in_array((string) ($_GET['filter'] ?? 'all'), ['all', 'upcoming', 'past', 'featured', 'online', 'draft'], true) ? (string) $_GET['filter'] : 'all';
 
         $events     = $db->get_events(['limit' => 200]);
         $categories = $db->get_event_categories();
@@ -556,8 +609,8 @@ final class CMS_Events_Post_Type
             CMS\Router::instance()->redirect('/admin/events?tab=categories&error=csrf');
             return;
         }
-        $name = trim($_POST['category_name'] ?? '');
-        $icon = trim($_POST['category_icon'] ?? '📂');
+        $name = $this->sanitize_required_text($_POST['category_name'] ?? '', 150);
+        $icon = $this->sanitize_text_param($_POST['category_icon'] ?? '📂', 10) ?? '📂';
         if ($name) CMS_Events_Database::instance()->add_event_category($name, $icon);
         CMS\Router::instance()->redirect('/admin/events?tab=categories');
     }
@@ -582,8 +635,8 @@ final class CMS_Events_Post_Type
             CMS\Router::instance()->redirect('/admin/events?tab=tags&error=csrf');
             return;
         }
-        $name = trim($_POST['tag_name'] ?? '');
-        $type = trim($_POST['tag_type'] ?? 'general');
+        $name = $this->sanitize_required_text($_POST['tag_name'] ?? '', 150);
+        $type = in_array((string) ($_POST['tag_type'] ?? 'general'), ['general', 'special', 'format'], true) ? (string) $_POST['tag_type'] : 'general';
         if ($name) CMS_Events_Database::instance()->add_event_tag_preset($name, $type);
         CMS\Router::instance()->redirect('/admin/events?tab=tags');
     }
@@ -602,40 +655,137 @@ final class CMS_Events_Post_Type
 
     public function admin_speaker_add(): void
     {
-        if (!CMS\Auth::instance()->isAdmin()) { http_response_code(403); echo json_encode(['error'=>'Unauthorized']); exit; }
-        header('Content-Type: application/json');
+        if (!CMS\Auth::instance()->isAdmin()) { http_response_code(403); header('Content-Type: application/json; charset=utf-8'); header('X-Content-Type-Options: nosniff'); echo json_encode(['error'=>'Unauthorized'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit; }
+        header('Content-Type: application/json; charset=utf-8');
+        header('X-Content-Type-Options: nosniff');
         if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'event_speaker')) {
-            http_response_code(403); echo json_encode(['error'=>'CSRF']); exit;
+            http_response_code(403); echo json_encode(['error'=>'CSRF'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit;
         }
         $event_id    = (int)($_POST['event_id']    ?? 0);
         $speaker_id  = (int)($_POST['speaker_id']  ?? 0);
         $speaker_type = in_array($_POST['speaker_type'] ?? '', ['speaker','expert'], true)
             ? $_POST['speaker_type'] : 'speaker';
         if ($event_id <= 0 || $speaker_id <= 0) {
-            http_response_code(400); echo json_encode(['error'=>'Invalid data']); exit;
+            http_response_code(400); echo json_encode(['error'=>'Invalid data'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit;
         }
         $db  = CMS_Events_Database::instance();
         $ok  = $db->assign_speaker($event_id, $speaker_id, $speaker_type, [
-            'presentation_title' => trim($_POST['presentation_title'] ?? ''),
-            'session_time'       => $_POST['session_time'] ?: null,
-            'role'               => trim($_POST['role'] ?? ''),
+            'presentation_title' => $this->sanitize_text_param($_POST['presentation_title'] ?? '', 255) ?? '',
+            'session_time'       => $this->sanitize_time($_POST['session_time'] ?? null),
+            'role'               => $this->sanitize_text_param($_POST['role'] ?? '', 100) ?? '',
         ]);
-        echo json_encode(['success' => $ok]);
+        echo json_encode(['success' => $ok], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
     }
 
     public function admin_speaker_remove(string $id = ''): void
     {
-        if (!CMS\Auth::instance()->isAdmin()) { http_response_code(403); echo json_encode(['error'=>'Unauthorized']); exit; }
-        header('Content-Type: application/json');
+        if (!CMS\Auth::instance()->isAdmin()) { http_response_code(403); header('Content-Type: application/json; charset=utf-8'); header('X-Content-Type-Options: nosniff'); echo json_encode(['error'=>'Unauthorized'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit; }
+        header('Content-Type: application/json; charset=utf-8');
+        header('X-Content-Type-Options: nosniff');
         if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'event_speaker')) {
-            http_response_code(403); echo json_encode(['error'=>'CSRF']); exit;
+            http_response_code(403); echo json_encode(['error'=>'CSRF'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit;
         }
         $assignment_id = $id !== '' ? (int)$id : (int)($_POST['id'] ?? 0);
-        if ($assignment_id <= 0) { http_response_code(400); echo json_encode(['error'=>'Invalid id']); exit; }
+        if ($assignment_id <= 0) { http_response_code(400); echo json_encode(['error'=>'Invalid id'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit; }
         $ok = CMS_Events_Database::instance()->remove_event_speaker($assignment_id);
-        echo json_encode(['success' => $ok]);
+        echo json_encode(['success' => $ok], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
+    }
+
+    private function sanitize_text_param(mixed $value, int $maxLength): ?string
+    {
+        $text = trim(strip_tags((string) $value));
+        if ($text === '') {
+            return null;
+        }
+
+        return mb_substr($text, 0, $maxLength, 'UTF-8');
+    }
+
+    private function sanitize_required_text(mixed $value, int $maxLength): string
+    {
+        return $this->sanitize_text_param($value, $maxLength) ?? '';
+    }
+
+    private function sanitize_date(mixed $value): ?string
+    {
+        $date = trim((string) $value);
+        if ($date === '' || preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) !== 1) {
+            return null;
+        }
+
+        [$year, $month, $day] = array_map('intval', explode('-', $date));
+        return checkdate($month, $day, $year) ? $date : null;
+    }
+
+    private function sanitize_time(mixed $value): ?string
+    {
+        $time = trim((string) $value);
+        if ($time === '') {
+            return null;
+        }
+
+        if (preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/', $time) !== 1) {
+            return null;
+        }
+
+        return strlen($time) === 5 ? $time . ':00' : $time;
+    }
+
+    private function sanitize_month(mixed $value): ?string
+    {
+        $month = trim((string) $value);
+        return preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) === 1 ? $month : null;
+    }
+
+    private function sanitize_binary_filter(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return in_array((string) $value, ['0', '1'], true) ? (int) $value : null;
+    }
+
+    private function sanitize_public_url(mixed $value): ?string
+    {
+        $url = cms_events_public_url($value);
+        return $url !== '' ? $url : null;
+    }
+
+    private function sanitize_currency(mixed $value): string
+    {
+        $currency = strtoupper(preg_replace('/[^A-Z]/i', '', (string) $value) ?? '');
+        return $currency !== '' ? substr($currency, 0, 10) : 'EUR';
+    }
+
+    private function sanitize_setting_value(string $key, mixed $value): string
+    {
+        $raw = trim((string) $value);
+
+        if (str_starts_with($key, 'color_')) {
+            return preg_match('/^#[0-9a-fA-F]{6}$/', $raw) === 1 ? $raw : '';
+        }
+
+        if ($key === 'archive_slug') {
+            $slug = preg_replace('/[^a-z0-9-]+/i', '-', strtolower($raw)) ?? '';
+            return trim($slug, '-') ?: 'events';
+        }
+
+        if ($key === 'per_page') {
+            return (string) max(6, min(100, (int) $raw));
+        }
+
+        if ($key === 'grid_columns') {
+            return in_array($raw, ['auto', '2', '3', '4'], true) ? $raw : 'auto';
+        }
+
+        if ($key === 'border_radius') {
+            return (string) max(0, min(32, (int) $raw));
+        }
+
+        return mb_substr(strip_tags($raw), 0, 500, 'UTF-8');
     }
 
     private function render_404(): void
@@ -655,5 +805,30 @@ if (!function_exists('cms_event_url')) {
         $slug  = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $title));
         $slug  = trim($slug, '-') ?: 'event';
         return SITE_URL . '/event/' . $slug . '-' . (int)$event->id;
+    }
+}
+
+if (!function_exists('cms_events_public_url')) {
+    function cms_events_public_url(mixed $url): string
+    {
+        $url = trim((string) $url);
+        if ($url === '' || strlen($url) > 1000 || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return '';
+        }
+
+        if (!in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true)) {
+            return '';
+        }
+
+        if (!empty($parts['user']) || !empty($parts['pass'])) {
+            return '';
+        }
+
+        return $url;
     }
 }

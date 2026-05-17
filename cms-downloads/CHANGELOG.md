@@ -1,5 +1,13 @@
 # Changelog – CMS Downloads
 
+## [3.0.1] – 2026-05-17
+
+### Geändert
+
+- Download-Auslieferung setzt jetzt `X-Content-Type-Options: nosniff`, validiert MIME-Headerwerte defensiv und nutzt einen ASCII-Fallback für `Content-Disposition` plus UTF-8-`filename*`.
+- Public-Archiv und externe Redirectseite wurden von dekorativen Emoji-Labels bereinigt und konsequenter im Attribut-Kontext escaped.
+- Admin-Rest-Styles wurden aus Inline-Attributen in zentrale CSS-Klassen verschoben.
+
 ## [3.0.0] – 2026-05-17
 
 ### Sicherheitsfixes

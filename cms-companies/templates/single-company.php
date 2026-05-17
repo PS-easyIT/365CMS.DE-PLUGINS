@@ -47,15 +47,15 @@ $partnerSponsorColor= $settings['design_sponsor_color']         ?? '#7c3aed';
 $partnerTopColor    = $settings['design_top_partner_color']     ?? '#d97706';
 $partnerColor       = $settings['design_partner_color']         ?? '#9ca3af';
 $base_url           = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
-$companyLogoUrl     = filter_var(trim((string) ($company->logo_url ?? '')), FILTER_VALIDATE_URL) ?: '';
-$companyWebsiteUrl  = filter_var(trim((string) ($company->website ?? '')), FILTER_VALIDATE_URL) ?: '';
+$companyLogoUrl     = cms_companies_public_url((string) ($company->logo_url ?? ''));
+$companyWebsiteUrl  = cms_companies_public_url((string) ($company->website ?? ''));
 $companyEmail       = filter_var(trim((string) ($company->email ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
 $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->phone ?? ''))) ?: '';
 ?>
 <main class="phinit-plugin co-single-v2">
 
   <nav class="co-breadcrumb">
-    <a href="<?= htmlspecialchars($base_url . '/companies') ?>">← Unternehmen</a>
+    <a href="<?= htmlspecialchars($base_url . '/companies', ENT_QUOTES, 'UTF-8') ?>">← Unternehmen</a>
     <span class="co-breadcrumb__sep">/</span>
     <span class="co-breadcrumb__cur"><?= $sec->escape(mb_strimwidth($company->name ?? '', 0, 60, '…')) ?></span>
   </nav>
@@ -85,10 +85,10 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
   <!-- Bridge Cards (überlappen Hero, wie Expert-Single) -->
   <div class="co-bridge-v2">
     <section class="co-bridge-v2__about phinit-card">
-      <h2 class="co-bridge-v2__title">🏢 Über das Unternehmen</h2>
+      <h2 class="co-bridge-v2__title">Über das Unternehmen</h2>
       <?php $companyDescription = trim((string) ($company->description ?? '')); ?>
       <?php if ($companyDescription !== ''): ?>
-        <div class="co-bridge-v2__text co-wysiwyg-content"><?= nl2br(htmlspecialchars($companyDescription)) ?></div>
+        <div class="co-bridge-v2__text co-wysiwyg-content"><?= nl2br(htmlspecialchars($companyDescription, ENT_QUOTES, 'UTF-8')) ?></div>
       <?php else: ?>
         <p class="co-bridge-v2__text co-empty-text">Noch keine Beschreibung hinterlegt.</p>
       <?php endif; ?>
@@ -120,16 +120,16 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
         <!-- Unternehmensdaten -->
         <?php
         $facts = [];
-        if (!empty($company->industry))       $facts[] = ['🏭 Branche',    $sec->escape($company->industry)];
-        if (!empty($company->company_size))   $facts[] = ['📊 Größe',      $sec->escape($company->company_size)];
-        if (!empty($company->employee_count)) $facts[] = ['👥 Mitarbeiter', number_format((int)$company->employee_count, 0, ',', '.')];
-        if (!empty($company->founded_year))   $facts[] = ['📅 Gegründet',  (string)(int)$company->founded_year];
+        if (!empty($company->industry))       $facts[] = ['Branche',    $sec->escape($company->industry)];
+        if (!empty($company->company_size))   $facts[] = ['Größe',      $sec->escape($company->company_size)];
+        if (!empty($company->employee_count)) $facts[] = ['Mitarbeiter', number_format((int)$company->employee_count, 0, ',', '.')];
+        if (!empty($company->founded_year))   $facts[] = ['Gegründet',  (string)(int)$company->founded_year];
         if (!empty($company->location_city)) {
             $loc = trim(($company->location_zip ?? '') . ' ' . $company->location_city);
             if (!empty($company->location_country) && $company->location_country !== 'Deutschland') {
                 $loc .= ', ' . $company->location_country;
             }
-            $facts[] = ['📍 Standort', $sec->escape($loc)];
+            $facts[] = ['Standort', $sec->escape($loc)];
         }
         if (!empty($facts)): ?>
         <div class="co-bridge-v2__facts">
@@ -151,7 +151,7 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
       <?php if (!empty($experts)): ?>
         <div class="co-sec-v2">
           <h2 class="co-sec-v2__title">
-            👤 Unsere Experten
+            Unsere Experten
             <span class="co-section-count"><?= count($experts) ?></span>
           </h2>
           <div class="co-expert-grid-v2">
@@ -162,7 +162,7 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
               $expRole      = !empty($exp->role)     ? $sec->escape($exp->role)     : null;
               $expCity      = !empty($exp->location_city) ? $sec->escape($exp->location_city) : null;
               $expAvail     = $exp->availability ?? 'available';
-              $expPhoto     = !empty($exp->photo_url) ? $sec->escape($exp->photo_url) : null;
+              $expPhoto     = cms_companies_public_url((string) ($exp->photo_url ?? ''));
               $expId        = (int)($exp->id ?? 0);
               $letter       = mb_strtoupper(mb_substr($expFirstName ?: $expLastName, 0, 1) ?: 'E');
               $expColors    = [['#5e72e4','#8965e0'],['#0891b2','#06b6d4'],['#16a34a','#22c55e'],['#7c3aed','#a855f7'],['#d97706','#f59e0b']];
@@ -179,13 +179,13 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
                   <div class="co-exp-row__info">
                     <div class="co-exp-row__name">
                       <?php if ($expId > 0): ?>
-                        <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/experts/' . $expId) ?>"><?= $expName ?></a>
+                        <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/experts/' . $expId, ENT_QUOTES, 'UTF-8') ?>"><?= $expName ?></a>
                       <?php else: ?>
                         <?= $expName ?>
                       <?php endif; ?>
                     </div>
-                    <?php if ($expRole): ?><div class="co-exp-row__sub">💼 <?= $expRole ?></div><?php endif; ?>
-                    <?php if ($expCity): ?><div class="co-exp-row__sub">📍 <?= $expCity ?></div><?php endif; ?>
+                    <?php if ($expRole): ?><div class="co-exp-row__sub"><?= $expRole ?></div><?php endif; ?>
+                    <?php if ($expCity): ?><div class="co-exp-row__sub"><?= $expCity ?></div><?php endif; ?>
                   </div>
                 </div>
                 <?php if ($expId > 0): ?>
@@ -200,7 +200,7 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
       <?php if (!empty($speakers)): ?>
         <div class="co-sec-v2">
           <h2 class="co-sec-v2__title">
-            🎤 Unsere Speaker
+            Unsere Speaker
             <span class="co-section-count"><?= count($speakers) ?></span>
           </h2>
           <div class="co-expert-grid-v2">
@@ -211,7 +211,7 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
               $spkRole   = !empty($spk->position)      ? $sec->escape($spk->position)      : null;
               $spkCity   = !empty($spk->location_city) ? $sec->escape($spk->location_city) : null;
               $spkAvail  = $spk->availability ?? 'available';
-              $spkPhoto  = !empty($spk->photo_url) ? $sec->escape($spk->photo_url) : null;
+              $spkPhoto  = cms_companies_public_url((string) ($spk->photo_url ?? ''));
               $spkId     = (int)($spk->id ?? 0);
               $letter    = mb_strtoupper(mb_substr($spkFirst ?: $spkLast, 0, 1) ?: 'S');
               $spkColors = [['#5e72e4','#8965e0'],['#0891b2','#06b6d4'],['#16a34a','#22c55e'],['#7c3aed','#a855f7'],['#d97706','#f59e0b']];
@@ -228,13 +228,13 @@ $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->pho
                   <div class="co-exp-row__info">
                     <div class="co-exp-row__name">
                       <?php if ($spkId > 0): ?>
-                        <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/speakers/' . $spkId) ?>"><?= $spkName ?></a>
+                        <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/speakers/' . $spkId, ENT_QUOTES, 'UTF-8') ?>"><?= $spkName ?></a>
                       <?php else: ?>
                         <?= $spkName ?>
                       <?php endif; ?>
                     </div>
-                    <?php if ($spkRole): ?><div class="co-exp-row__sub">🎤 <?= $spkRole ?></div><?php endif; ?>
-                    <?php if ($spkCity): ?><div class="co-exp-row__sub">📍 <?= $spkCity ?></div><?php endif; ?>
+                    <?php if ($spkRole): ?><div class="co-exp-row__sub"><?= $spkRole ?></div><?php endif; ?>
+                    <?php if ($spkCity): ?><div class="co-exp-row__sub"><?= $spkCity ?></div><?php endif; ?>
                   </div>
                 </div>
                 <?php if ($spkId > 0): ?>

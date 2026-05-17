@@ -110,7 +110,7 @@ foreach ($submissions as $submissionItem) {
 <?php else: ?>
 <form method="POST" id="bulkForm">
     <input type="hidden" name="sub_action" value="bulk_action">
-    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
     <div class="contact-bulk-card">
         <div>

@@ -205,3 +205,23 @@ if (!function_exists('cms_company_url')) {
         return SITE_URL . '/company/' . $slug . '-' . (int) $company->id;
     }
 }
+
+/**
+ * Validiert öffentliche Asset-/Profil-URLs für Logo, Website und verknüpfte Profile.
+ */
+if (!function_exists('cms_companies_public_url')) {
+    function cms_companies_public_url(?string $url): string
+    {
+        $url = trim((string) $url);
+        if ($url === '' || mb_strlen($url) > 2048 || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts) || empty($parts['scheme'])) {
+            return '';
+        }
+
+        return in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true) ? $url : '';
+    }
+}

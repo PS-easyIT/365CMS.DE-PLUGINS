@@ -18,7 +18,7 @@ $sec = CMS\Security::instance();
 $slug = !empty($expert->slug)
     ? $expert->slug
     : CMS_Experts_Database::generate_slug($expert);
-$url  = SITE_URL . '/experts/' . $slug;
+$url  = rtrim((string) SITE_URL, '/') . '/experts/' . rawurlencode((string) $slug);
 $full_name        = trim(($expert->first_name ?? '') . ' ' . ($expert->last_name ?? ''));
 $job_title        = $expert->position ?? '';
 $company_name     = $expert->company_name ?? ($expert->company ?? ''); // company_name oder company-Feld
@@ -27,16 +27,16 @@ $company_url      = '';
 if ($company_id > 0 && function_exists('cms_company_url')) {
     $company_url = SITE_URL . '/company/' . strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', str_replace(['ä','ö','ü','ß','Ä','Ö','Ü'], ['ae','oe','ue','ss','ae','oe','ue'], $company_name)), '-')) . '-' . $company_id;
 }
-$photo            = filter_var(trim((string) ($expert->photo_url ?? '')), FILTER_VALIDATE_URL) ?: '';
+$photo            = cms_experts_public_url((string) ($expert->photo_url ?? ''));
 $city             = $expert->location_city ?? '';
 $availability     = $expert->availability ?? 'available';
 $experience_years = $expert->experience_years ?? null;
-$linkedin         = filter_var(trim((string) ($expert->_social['social_linkedin'] ?? '')), FILTER_VALIDATE_URL) ?: '';
-$website          = filter_var(trim((string) ($expert->_social['social_website'] ?? '')), FILTER_VALIDATE_URL) ?: '';
-$xing             = filter_var(trim((string) ($expert->_social['social_xing'] ?? '')), FILTER_VALIDATE_URL) ?: '';
-$twitter          = filter_var(trim((string) ($expert->_social['social_twitter'] ?? '')), FILTER_VALIDATE_URL) ?: '';
-$github           = filter_var(trim((string) ($expert->_social['social_github'] ?? '')), FILTER_VALIDATE_URL) ?: '';
-$gitlab           = filter_var(trim((string) ($expert->_social['social_gitlab'] ?? '')), FILTER_VALIDATE_URL) ?: '';
+$linkedin         = cms_experts_public_url((string) ($expert->_social['social_linkedin'] ?? ''));
+$website          = cms_experts_public_url((string) ($expert->_social['social_website'] ?? ''));
+$xing             = cms_experts_public_url((string) ($expert->_social['social_xing'] ?? ''));
+$twitter          = cms_experts_public_url((string) ($expert->_social['social_twitter'] ?? ''));
+$github           = cms_experts_public_url((string) ($expert->_social['social_github'] ?? ''));
+$gitlab           = cms_experts_public_url((string) ($expert->_social['social_gitlab'] ?? ''));
 $email            = filter_var(trim((string) ($expert->email ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
 $specialization  = '';
 $show_specs      = ($settings['design_show_specialization'] ?? '1') === '1';
@@ -69,13 +69,13 @@ $custom_award = trim($expert->_social['custom_award'] ?? '');
 $highlight_badge = '';
 $highlight_class = '';
 if ($is_mvp) {
-    $highlight_badge = '⭐ MVP';
+    $highlight_badge = 'MVP';
     $highlight_class = 'badge-mvp';
 } elseif ($is_premium) {
-    $highlight_badge = '💎 Premium';
+    $highlight_badge = 'Premium';
     $highlight_class = 'badge-premium';
 } elseif ($custom_award !== '') {
-    $highlight_badge = '🎖️ ' . $custom_award;
+    $highlight_badge = $custom_award;
     $highlight_class = 'badge-award';
 }
 

@@ -95,6 +95,13 @@ The plugin is automatically activated during 365CMS setup. Database tables are c
 - Das Archiv-Template escaped Such- und Filterwerte jetzt scannerfreundlich direkt an den relevanten Formular- und Link-Sinks.
 - Reset- und Archiv-URLs werden im Frontend konsistent über vorab escaped interne Zielpfade ausgegeben.
 
+## Sicherheitsstatus (2026-05-17)
+
+- Public-Logo-, Website- und verknüpfte Profilbild-URLs werden zur Laufzeit auf `http`/`https` beschränkt.
+- Member-Create-Formulare escapen CSRF-Token und alte POST-Werte explizit im Attributkontext mit `ENT_QUOTES` und `UTF-8`.
+- Member-Redirects nach POST nutzen `303 See Other`, speichern technische Fehler nur ins Log und zeigen Nutzern generische Fehlermeldungen.
+- Public Cards, Archiv und Detailseite wurden von dekorativer Emoji-UI bereinigt und stärker an das ruhige PHINIT-Design angeglichen.
+
 ## License
 
 Part of 365CMS Core - All Rights Reserved

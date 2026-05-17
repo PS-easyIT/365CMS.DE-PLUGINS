@@ -18,15 +18,15 @@ if (!isset($event)) {
 
 $e        = $event;
 $id       = (int) $e->id;
-$title    = htmlspecialchars($e->title ?? '');
-$category = htmlspecialchars($e->category ?? '');
-$city     = htmlspecialchars($e->city ?? '');
+$title    = htmlspecialchars((string) ($e->title ?? ''), ENT_QUOTES, 'UTF-8');
+$category = htmlspecialchars((string) ($e->category ?? ''), ENT_QUOTES, 'UTF-8');
+$city     = htmlspecialchars((string) ($e->city ?? ''), ENT_QUOTES, 'UTF-8');
 $excerpt_raw = !empty($e->excerpt) ? $e->excerpt : strip_tags($e->description ?? '');
-$desc        = htmlspecialchars(mb_substr($excerpt_raw, 0, 120));
-$reg_url     = htmlspecialchars($e->registration_url ?? '');
+$desc        = htmlspecialchars(mb_substr((string) $excerpt_raw, 0, 120, 'UTF-8'), ENT_QUOTES, 'UTF-8');
+$reg_url     = function_exists('cms_events_public_url') ? cms_events_public_url($e->registration_url ?? null) : '';
 $price_type  = $e->price_type ?? 'free';
 $price       = (float)($e->price ?? 0);
-$price_cur   = htmlspecialchars($e->price_currency ?? 'EUR');
+$price_cur   = htmlspecialchars((string) ($e->price_currency ?? 'EUR'), ENT_QUOTES, 'UTF-8');
 $tags_raw    = !empty($e->tags) ? (json_decode($e->tags, true) ?? []) : [];
 $show_price  = !empty($settings['show_price'])  && $settings['show_price'] !== '0';
 $show_tags   = !empty($settings['show_tags'])   && $settings['show_tags'] !== '0';
@@ -35,7 +35,7 @@ $is_online   = !empty($e->is_online);
 $is_featured = !empty($e->is_featured);
 $capacity    = (int)($e->capacity ?? 0);
 $status      = $e->status ?? 'published';
-$org_name    = htmlspecialchars(trim((string)($e->organizer_name ?? '')));
+$org_name    = htmlspecialchars(trim((string)($e->organizer_name ?? '')), ENT_QUOTES, 'UTF-8');
 
 $base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
 $event_url = function_exists('cms_event_url') ? cms_event_url($e)
@@ -65,10 +65,10 @@ if ($status === 'cancelled') {
     $ribbon_text  = 'Abgesagt';
     $ribbon_class = 'ev-ribbon-cancelled';
 } elseif ($is_featured) {
-    $ribbon_text  = '⭐ Featured';
+  $ribbon_text  = 'Featured';
     $ribbon_class = 'ev-ribbon-featured';
 } elseif ($is_today) {
-    $ribbon_text  = '🔴 Heute';
+  $ribbon_text  = 'Heute';
     $ribbon_class = 'ev-ribbon-today';
 } elseif ($is_past) {
     $ribbon_text  = 'Vergangen';
@@ -82,7 +82,7 @@ if ($status === 'cancelled') {
 
   <!-- Ribbon -->
   <div class="ev-card-ribbon <?= $ribbon_class ?>">
-    <?= htmlspecialchars($ribbon_text) ?>
+    <?= htmlspecialchars($ribbon_text, ENT_QUOTES, 'UTF-8') ?>
   </div>
 
   <!-- Head: Datum-Block + Titel/Kategorie + Pills rechts -->
@@ -96,19 +96,19 @@ if ($status === 'cancelled') {
     <?php endif; ?>
     <div class="ev-card-identity">
       <h3 class="ev-card-title">
-        <a href="<?= htmlspecialchars($event_url) ?>"><?= $title ?></a>
+        <a href="<?= htmlspecialchars($event_url, ENT_QUOTES, 'UTF-8') ?>"><?= $title ?></a>
       </h3>
       <?php if (($show_tags && !empty($tags_raw)) || ($show_org && $org_name !== '')): ?>
       <div class="ev-card-meta-stack">
         <?php if ($show_tags && !empty($tags_raw)): ?>
         <div class="ev-card-topics" aria-label="Event-Themen">
           <?php foreach (array_slice($tags_raw, 0, 4) as $tag): ?>
-            <span class="ev-tag-pill" title="<?= htmlspecialchars((string)$tag) ?>"><?= htmlspecialchars((string)$tag) ?></span>
+            <span class="ev-tag-pill" title="<?= htmlspecialchars((string)$tag, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string)$tag, ENT_QUOTES, 'UTF-8') ?></span>
           <?php endforeach; ?>
         </div>
         <?php endif; ?>
         <?php if ($show_org && $org_name !== ''): ?>
-        <p class="ev-card-organizer" title="<?= $org_name ?>">🏢 Veranstalter: <?= $org_name ?></p>
+        <p class="ev-card-organizer" title="<?= $org_name ?>">Veranstalter: <?= $org_name ?></p>
         <?php endif; ?>
       </div>
       <?php endif; ?>
@@ -120,21 +120,21 @@ if ($status === 'cancelled') {
   <?php if ($has_pills): ?>
   <div class="ev-card-pills">
     <?php if ($is_online): ?>
-      <span class="ev-pill ev-pill-online">🌐 Online</span>
+      <span class="ev-pill ev-pill-online">Online</span>
     <?php elseif ($city): ?>
-      <span class="ev-pill">📍 <?= $city ?></span>
+      <span class="ev-pill">Ort: <?= $city ?></span>
     <?php endif; ?>
     <?php if ($speaker_count > 0): ?>
-      <span class="ev-pill ev-pill-speakers">🎤 <?= $speaker_count ?></span>
+      <span class="ev-pill ev-pill-speakers">Speaker: <?= $speaker_count ?></span>
     <?php endif; ?>
     <?php if ($capacity > 0): ?>
-      <span class="ev-pill ev-pill-capacity">🪑 <?= $capacity ?></span>
+      <span class="ev-pill ev-pill-capacity">Plätze: <?= $capacity ?></span>
     <?php endif; ?>
     <?php if ($show_price): ?>
       <?php if ($price_type === 'free'): ?>
-        <span class="ev-pill ev-pill-free">✅ Frei</span>
+        <span class="ev-pill ev-pill-free">Kostenlos</span>
       <?php elseif ($price > 0): ?>
-        <span class="ev-pill ev-pill-price">💶 <?= number_format($price, 0, ',', '.') ?>&nbsp;<?= $price_cur ?></span>
+        <span class="ev-pill ev-pill-price"><?= number_format($price, 0, ',', '.') ?>&nbsp;<?= $price_cur ?></span>
       <?php endif; ?>
     <?php endif; ?>
   </div>

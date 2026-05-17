@@ -200,6 +200,12 @@
     margin-top: 0;
 }
 
+.contact-section-divider {
+    border: none;
+    border-top: 1px solid #f1f5f9;
+    margin: 1.5rem 0;
+}
+
 .contact-inline-actions {
     display: flex;
     flex-wrap: wrap;

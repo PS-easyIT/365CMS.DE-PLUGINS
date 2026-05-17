@@ -73,7 +73,7 @@ final class CMS_Experts_Post_Type
         $current_path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
         $is_active = strpos($current_path, '/experts') === 0 ? 'active' : '';
         
-        echo '<a href="' . SITE_URL . '/experts" class="nav-link ' . $is_active . '">Experten</a>';
+        echo '<a href="' . htmlspecialchars(rtrim((string) SITE_URL, '/') . '/experts', ENT_QUOTES, 'UTF-8') . '" class="nav-link ' . htmlspecialchars($is_active, ENT_QUOTES, 'UTF-8') . '">Experten</a>';
     }
 
     /**
@@ -111,10 +111,13 @@ final class CMS_Experts_Post_Type
         ], $raw_settings);
 
         // Filter aus URL
-        $filter_availability = $_GET['availability'] ?? null;
-        $filter_city         = $_GET['city'] ?? null;
-        $page                = max(1, (int)($_GET['page'] ?? 1));
-        $per_page            = max(1, (int)$settings['archive_per_page']);
+        $rawAvailability = (string) ($_GET['availability'] ?? '');
+        $filter_availability = in_array($rawAvailability, ['available', 'limited', 'booked'], true) ? $rawAvailability : null;
+        $filter_city = mb_substr(trim(strip_tags((string) ($_GET['city'] ?? ''))), 0, 100);
+        $filter_city = $filter_city !== '' ? $filter_city : null;
+        $filter_search = mb_substr(trim(strip_tags((string) ($_GET['q'] ?? ''))), 0, 120);
+        $page                = max(1, min(999, (int)($_GET['page'] ?? 1)));
+        $per_page            = max(1, min(60, (int)$settings['archive_per_page']));
 
         $args = [
             'status' => 'active',
@@ -127,6 +130,9 @@ final class CMS_Experts_Post_Type
         }
         if ($filter_city) {
             $args['city'] = $filter_city;
+        }
+        if ($filter_search !== '') {
+            $args['search'] = $filter_search;
         }
 
         $experts = $db_manager->get_experts($args);
@@ -204,6 +210,7 @@ final class CMS_Experts_Post_Type
             'filters'      => [
                 'availability' => $filter_availability,
                 'city'         => $filter_city,
+                'q'            => $filter_search,
             ],
         ]);
 
@@ -217,8 +224,10 @@ final class CMS_Experts_Post_Type
     public function single_page_by_slug(string $slug = ''): void
     {
         if ($slug === '') {
-            $slug = $_GET['slug'] ?? '';
+            $slug = (string) ($_GET['slug'] ?? '');
         }
+
+        $slug = mb_substr(trim($slug), 0, 180);
 
         // ID aus dem Ende extrahieren: z.B. "max-mustermann-42" → 42
         $expert_id = 0;
@@ -334,9 +343,15 @@ final class CMS_Experts_Post_Type
 
         display_resource_limit_warning('experts', 'Experten');
 
-        $tab    = $_GET['tab']    ?? 'overview';
-        $filter = $_GET['filter'] ?? 'all';
-        $search = trim($_GET['search'] ?? '');
+        $tab    = (string) ($_GET['tab'] ?? 'overview');
+        if (!in_array($tab, ['overview', 'taxonomies', 'skills', 'design', 'settings'], true)) {
+            $tab = 'overview';
+        }
+        $filter = (string) ($_GET['filter'] ?? 'all');
+        if (!in_array($filter, ['all', 'active', 'inactive', 'pending'], true)) {
+            $filter = 'all';
+        }
+        $search = mb_substr(trim(strip_tags((string) ($_GET['search'] ?? ''))), 0, 120);
         $sort   = (string)($_GET['sort'] ?? 'updated_desc');
 
         $db  = CMS_Experts_Database::instance();
@@ -425,7 +440,7 @@ final class CMS_Experts_Post_Type
             return;
         }
         $expert_id  = $id_param !== '' ? (int)$id_param : (int)($_POST['id'] ?? 0);
-        $csrf_token = $_POST['csrf_token'] ?? '';
+        $csrf_token = (string) ($_POST['csrf_token'] ?? '');
         if (!CMS\Security::instance()->verifyToken($csrf_token, 'experts_admin')) {
             CMS\Router::instance()->redirect('/admin/experts?tab=overview&error=csrf');
             return;
@@ -441,11 +456,11 @@ final class CMS_Experts_Post_Type
             CMS\Router::instance()->redirect('/login');
             return;
         }
-        if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'experts_admin')) {
+        if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'experts_admin')) {
             CMS\Router::instance()->redirect('/admin/experts?tab=taxonomies&error=csrf');
             return;
         }
-        $name      = trim($_POST['spec_name'] ?? '');
+        $name      = mb_substr(trim(strip_tags((string) ($_POST['spec_name'] ?? ''))), 0, 120);
         $parent_id = (int)($_POST['parent_id'] ?? 0);
         if ($name !== '') {
             $slug = mb_strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $name));
@@ -464,7 +479,7 @@ final class CMS_Experts_Post_Type
             CMS\Router::instance()->redirect('/login');
             return;
         }
-        if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'experts_admin')) {
+        if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'experts_admin')) {
             CMS\Router::instance()->redirect('/admin/experts?tab=taxonomies&error=csrf');
             return;
         }
@@ -480,12 +495,12 @@ final class CMS_Experts_Post_Type
             CMS\Router::instance()->redirect('/login');
             return;
         }
-        if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'experts_admin')) {
+        if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'experts_admin')) {
             CMS\Router::instance()->redirect('/admin/experts?tab=skills&error=csrf');
             return;
         }
-        $name = trim($_POST['skill_name'] ?? '');
-        $type = $_POST['skill_type'] ?? 'general';
+        $name = mb_substr(trim(strip_tags((string) ($_POST['skill_name'] ?? ''))), 0, 120);
+        $type = in_array($_POST['skill_type'] ?? '', ['general', 'tech', 'soft'], true) ? (string) $_POST['skill_type'] : 'general';
         if ($name !== '') {
             CMS_Experts_Taxonomies::instance()->save_skill_preset($name, $type);
         }
@@ -499,7 +514,7 @@ final class CMS_Experts_Post_Type
             CMS\Router::instance()->redirect('/login');
             return;
         }
-        if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'experts_admin')) {
+        if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'experts_admin')) {
             CMS\Router::instance()->redirect('/admin/experts?tab=skills&error=csrf');
             return;
         }
@@ -515,7 +530,7 @@ final class CMS_Experts_Post_Type
             CMS\Router::instance()->redirect('/login');
             return;
         }
-        if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'experts_admin')) {
+        if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'experts_admin')) {
             CMS\Router::instance()->redirect('/admin/experts?tab=settings&error=csrf');
             return;
         }
@@ -698,7 +713,7 @@ final class CMS_Experts_Post_Type
                                     ? $_POST['availability']
                                     : 'available',
             'experience_years' => (int)($_POST['experience_years'] ?? 0),
-            'photo_url'        => $security->sanitize($_POST['photo_url'] ?? '', 'url'),
+            'photo_url'        => cms_experts_public_url((string) ($_POST['photo_url'] ?? '')) ?: null,
             'status'           => in_array($_POST['status'] ?? '', ['active', 'inactive', 'pending'], true)
                                     ? $_POST['status'] : 'active',
         ];
@@ -772,9 +787,7 @@ final class CMS_Experts_Post_Type
             // URL-Felder
             foreach ($url_meta_keys as $key) {
                 if (array_key_exists($key, $raw_meta)) {
-                    $db_manager->save_meta($expert_id, $key,
-                        $security->sanitize((string)($raw_meta[$key] ?? ''), 'url')
-                    );
+                    $db_manager->save_meta($expert_id, $key, cms_experts_public_url((string)($raw_meta[$key] ?? '')));
                 }
             }
             // Checkbox-Felder (explizit auch auf 0 setzen wenn nicht gesendet)
@@ -830,9 +843,9 @@ final class CMS_Experts_Post_Type
                     $certs_clean[] = [
                         'cert_name'   => $security->sanitize($cert['cert_name']   ?? '', 'text'),
                         'cert_issuer' => $security->sanitize($cert['cert_issuer'] ?? '', 'text'),
-                        'cert_date'   => $security->sanitize($cert['cert_date']   ?? '', 'text'),
-                        'cert_expiry' => $security->sanitize($cert['cert_expiry'] ?? '', 'text'),
-                        'cert_url'    => $security->sanitize($cert['cert_url']    ?? '', 'url'),
+                        'cert_date'   => $this->sanitize_date_value((string)($cert['cert_date']   ?? '')),
+                        'cert_expiry' => $this->sanitize_date_value((string)($cert['cert_expiry'] ?? '')),
+                        'cert_url'    => cms_experts_public_url((string)($cert['cert_url'] ?? '')),
                     ];
                 }
                 $db_manager->save_expert_certifications($expert_id, $certs_clean);
@@ -848,9 +861,9 @@ final class CMS_Experts_Post_Type
                         'project_name'        => $security->sanitize($proj['project_name']        ?? '', 'text'),
                         'project_description' => $security->sanitize($proj['project_description'] ?? '', 'text'),
                         'project_role'        => $security->sanitize($proj['project_role']        ?? '', 'text'),
-                        'project_start'       => $security->sanitize($proj['project_start']       ?? '', 'text'),
-                        'project_end'         => $security->sanitize($proj['project_end']         ?? '', 'text'),
-                        'project_url'         => $security->sanitize($proj['project_url']         ?? '', 'url'),
+                        'project_start'       => $this->sanitize_date_value((string)($proj['project_start'] ?? '')),
+                        'project_end'         => $this->sanitize_date_value((string)($proj['project_end'] ?? '')),
+                        'project_url'         => cms_experts_public_url((string)($proj['project_url'] ?? '')),
                         'technologies'        => $security->sanitize($proj['technologies']        ?? '', 'text'),
                     ];
                 }
@@ -895,7 +908,7 @@ final class CMS_Experts_Post_Type
         $expert_id = $id_param !== '' ? (int)$id_param : (int)($_POST['id'] ?? 0);
 
         // CSRF Token Check
-        $csrf_token = $_POST['csrf_token'] ?? '';
+        $csrf_token = (string) ($_POST['csrf_token'] ?? '');
         if (!CMS\Security::instance()->verifyToken($csrf_token, 'experts_admin')) {
             CMS\Router::instance()->redirect('/admin/experts?tab=overview&error=csrf');
             return;
@@ -972,11 +985,22 @@ final class CMS_Experts_Post_Type
         http_response_code(404);
         $themeManager = \CMS\ThemeManager::instance();
         $themeManager->getHeader();
-        echo '<main class="site-main"><div class="container" style="padding:4rem 0;text-align:center;">';
-        echo '<h1 style="font-size:3rem;color:var(--text-color,#333);">404</h1>';
-        echo '<p style="font-size:1.2rem;margin:1rem 0 2rem;">Experte nicht gefunden.</p>';
-        echo '<a href="' . SITE_URL . '/experts" class="btn">Zur Experten-Übersicht</a>';
+        echo '<main class="site-main"><div class="container cms-experts-not-found">';
+        echo '<h1>404</h1>';
+        echo '<p>Experte nicht gefunden.</p>';
+        echo '<a href="' . htmlspecialchars(rtrim((string) SITE_URL, '/') . '/experts', ENT_QUOTES, 'UTF-8') . '" class="btn">Zur Experten-Übersicht</a>';
         echo '</div></main>';
         $themeManager->getFooter();
+    }
+
+    private function sanitize_date_value(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+
+        [$year, $month, $day] = array_map('intval', explode('-', $value));
+        return checkdate($month, $day, $year) ? sprintf('%04d-%02d-%02d', $year, $month, $day) : null;
     }
 }

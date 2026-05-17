@@ -51,7 +51,7 @@ class CMS_Events_Member_Dashboard
 
         if ($cssUrl !== '') {
             $v = $cssFile && file_exists($cssFile) ? filemtime($cssFile) : '1';
-            echo '<link rel="stylesheet" href="' . htmlspecialchars($cssUrl) . '?v=' . $v . '">' . "\n";
+            echo '<link rel="stylesheet" href="' . htmlspecialchars($cssUrl . '?v=' . $v, ENT_QUOTES, 'UTF-8') . '">' . "\n";
         }
     }
 
@@ -118,9 +118,9 @@ class CMS_Events_Member_Dashboard
                 $normalizedTags = isset($_POST['tags']) && is_array($_POST['tags'])
                     ? array_values(array_unique(array_filter(array_map(static fn($tag) => sanitize_text_field(trim((string) $tag)), $_POST['tags']))))
                     : [];
-                $onlineUrl = filter_var(trim((string) ($_POST['online_url'] ?? '')), FILTER_VALIDATE_URL) ?: null;
-                $registrationUrl = filter_var(trim((string) ($_POST['registration_url'] ?? '')), FILTER_VALIDATE_URL) ?: null;
-                $organizerWebsite = filter_var(trim((string) ($_POST['organizer_website'] ?? '')), FILTER_VALIDATE_URL) ?: null;
+                $onlineUrl = function_exists('cms_events_public_url') ? (cms_events_public_url($_POST['online_url'] ?? '') ?: null) : null;
+                $registrationUrl = function_exists('cms_events_public_url') ? (cms_events_public_url($_POST['registration_url'] ?? '') ?: null) : null;
+                $organizerWebsite = function_exists('cms_events_public_url') ? (cms_events_public_url($_POST['organizer_website'] ?? '') ?: null) : null;
                 $organizerEmail = filter_var(trim((string) ($_POST['organizer_email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
                 $priceCurrency = strtoupper(substr(sanitize_text_field($_POST['price_currency'] ?? 'EUR'), 0, 10));
                 if ($priceCurrency === '') {
@@ -130,10 +130,10 @@ class CMS_Events_Member_Dashboard
                 $id = CMS_Events_Database::instance()->save_event([
                     'title'             => sanitize_text_field($_POST['title']      ?? ''),
                     'excerpt'           => strip_tags($_POST['excerpt']             ?? ''),
-                    'event_date'        => sanitize_text_field($_POST['event_date'] ?? ''),
-                    'event_time'        => sanitize_text_field($_POST['event_time'] ?? ''),
-                    'end_date'          => sanitize_text_field($_POST['end_date']   ?? ''),
-                    'end_time'          => sanitize_text_field($_POST['end_time']   ?? ''),
+                    'event_date'        => $this->sanitizeDate($_POST['event_date'] ?? ''),
+                    'event_time'        => $this->sanitizeTime($_POST['event_time'] ?? ''),
+                    'end_date'          => $this->sanitizeDate($_POST['end_date']   ?? ''),
+                    'end_time'          => $this->sanitizeTime($_POST['end_time']   ?? ''),
                     'location'          => sanitize_text_field($_POST['location']   ?? ''),
                     'address'           => sanitize_text_field($_POST['address']    ?? ''),
                     'city'              => sanitize_text_field($_POST['city']       ?? ''),
@@ -209,10 +209,12 @@ class CMS_Events_Member_Dashboard
             'design_card_bg'       => '#fff',
         ], $settings);
 
+        $primaryColor = $this->sanitizeHexColor((string) ($settings['design_primary_color'] ?? '#dc2626'), '#dc2626');
+        $cardColor = $this->sanitizeHexColor((string) ($settings['design_card_bg'] ?? '#fff'), '#ffffff');
         $cssVars = sprintf(
             ':root{--ev-primary:%s;--ev-card-bg:%s;}',
-            htmlspecialchars($settings['design_primary_color'] ?? '#dc2626'),
-            htmlspecialchars($settings['design_card_bg'] ?? '#fff')
+            htmlspecialchars($primaryColor, ENT_QUOTES, 'UTF-8'),
+            htmlspecialchars($cardColor, ENT_QUOTES, 'UTF-8')
         );
         echo '<style>' . $cssVars . '</style>';
         ?>
@@ -230,17 +232,16 @@ class CMS_Events_Member_Dashboard
             </p>
             <a href="/member/plugin/events?action=new"
                class="ev-member-new-link">
-                ➕ Neues Event
+                Neues Event
             </a>
         </div>
 
         <?php if (empty($events)): ?>
         <div class="empty-state">
-            <p class="ev-member-empty-icon">📅</p>
             <p><strong>Keine Events vorhanden</strong></p>
             <p class="ev-member-empty-text">Es sind noch keine Events vorhanden.</p>
             <a href="/member/plugin/events?action=new" class="btn btn-primary ev-member-empty-cta">
-                ➕ Erstes Event anlegen
+                Erstes Event anlegen
             </a>
         </div>
         <?php else: ?>
@@ -290,7 +291,7 @@ class CMS_Events_Member_Dashboard
 
             <form method="POST" action="/member/plugin/events?action=new">
                 <input type="hidden" name="event_create" value="1">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
                 <!-- Veranstaltung -->
                 <h4 class="ev-member-section-title">📅 Veranstaltung</h4>
@@ -499,12 +500,42 @@ class CMS_Events_Member_Dashboard
                 </div>
 
                 <div class="ev-member-actions">
-                    <button type="submit" class="btn btn-primary">💾 Event einreichen</button>
+                    <button type="submit" class="btn btn-primary">Event einreichen</button>
                     <a href="/member/plugin/events" class="btn btn-secondary">Abbrechen</a>
                 </div>
             </form>
         </div>
         <?php
+    }
+
+    private function sanitizeDate(mixed $value): ?string
+    {
+        $date = trim((string) $value);
+        if ($date === '' || preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) !== 1) {
+            return null;
+        }
+
+        [$year, $month, $day] = array_map('intval', explode('-', $date));
+        return checkdate($month, $day, $year) ? $date : null;
+    }
+
+    private function sanitizeTime(mixed $value): ?string
+    {
+        $time = trim((string) $value);
+        if ($time === '') {
+            return null;
+        }
+
+        if (preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/', $time) !== 1) {
+            return null;
+        }
+
+        return strlen($time) === 5 ? $time . ':00' : $time;
+    }
+
+    private function sanitizeHexColor(string $value, string $fallback): string
+    {
+        return preg_match('/^#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?$/', $value) === 1 ? $value : $fallback;
     }
 }
 

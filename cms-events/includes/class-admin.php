@@ -94,13 +94,13 @@ final class CMS_Events_Admin
         $adminCss = CMS_EVENTS_PLUGIN_DIR . 'assets/css/events-admin.css';
         if (file_exists($adminCss)) {
             $adminCssVersion = (string) filemtime($adminCss);
-            echo '<link rel="stylesheet" href="' . CMS_EVENTS_PLUGIN_URL . 'assets/css/events-admin.css?v=' . $adminCssVersion . '">' . "\n";
+            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_EVENTS_PLUGIN_URL . 'assets/css/events-admin.css?v=' . $adminCssVersion, ENT_QUOTES, 'UTF-8') . '">' . "\n";
         }
 
         $adminJs = CMS_EVENTS_PLUGIN_DIR . 'assets/js/admin.js';
         if (file_exists($adminJs)) {
             $adminJsVersion = (string) filemtime($adminJs);
-            echo '<script src="' . CMS_EVENTS_PLUGIN_URL . 'assets/js/admin.js?v=' . $adminJsVersion . '" defer></script>' . "\n";
+            echo '<script src="' . htmlspecialchars(CMS_EVENTS_PLUGIN_URL . 'assets/js/admin.js?v=' . $adminJsVersion, ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
         }
     }
 
@@ -137,7 +137,8 @@ final class CMS_Events_Admin
         $categories  = $data['categories']  ?? [];
         $tag_presets = $data['tag_presets'] ?? ['general' => [], 'special' => [], 'format' => []];
         $settings    = $data['settings']    ?? [];
-        $csrf        = $data['csrf']        ?? '';
+        $csrf        = (string) ($data['csrf'] ?? '');
+        $csrfEsc     = htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8');
         $sec         = CMS\Security::instance();
 
         // Settings mit Defaults zusammenführen
@@ -416,7 +417,7 @@ final class CMS_Events_Admin
                 <div class="ev-adm-foot">
                     <?php if ($isDraft): ?>
                         <form method="POST" action="<?= SITE_URL ?>/admin/events/approve/<?= $id ?>" id="ev-approve-form-<?= $id ?>" class="ev-inline-form">
-                            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                            <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                             <button type="button" class="ev-adm-btn ev-adm-btn-primary ev-btn-inline-success"
                                     data-ev-approve-event
                                     data-ev-event-name="<?= htmlspecialchars((string)($ev->title ?? ''), ENT_QUOTES) ?>"
@@ -461,7 +462,7 @@ final class CMS_Events_Admin
                                   data-ev-confirm-message="Kategorie „<?= htmlspecialchars((string)($cat->name ?? ''), ENT_QUOTES) ?>” wirklich löschen?"
                                   data-ev-confirm-button="Löschen"
                                   data-ev-confirm-class="btn-danger">
-                                <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                                <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                                 <button type="submit" class="ev-del-btn">×</button>
                             </form>
                         <?php endif; ?>
@@ -473,7 +474,7 @@ final class CMS_Events_Admin
             <div class="ev-side-card">
                 <h3 class="ev-heading-reset">➕ Neue Kategorie</h3>
                 <form method="POST" action="<?= SITE_URL ?>/admin/events/category/add">
-                    <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                    <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                     <div class="ev-form-group">
                         <label>Icon (Emoji)</label>
                         <input type="text" name="category_icon" value="📂" maxlength="4"
@@ -518,7 +519,7 @@ final class CMS_Events_Admin
                                           data-ev-confirm-message="Tag „<?= htmlspecialchars((string)($tg->tag_name ?? ''), ENT_QUOTES) ?>” wirklich löschen?"
                                           data-ev-confirm-button="Löschen"
                                           data-ev-confirm-class="btn-danger">
-                                        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                                        <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                                         <button type="submit" class="ev-tag-del">×</button>
                                     </form>
                                 </span>
@@ -534,7 +535,7 @@ final class CMS_Events_Admin
             <div class="ev-side-card">
                 <h3 class="ev-heading-reset">➕ Neues Tag</h3>
                 <form method="POST" action="<?= SITE_URL ?>/admin/events/tagpreset/add">
-                    <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                    <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                     <div class="ev-form-group">
                         <label>Tag-Name *</label>
                         <input type="text" name="tag_name" required placeholder="z.B. Einsteiger">
@@ -557,7 +558,7 @@ final class CMS_Events_Admin
         elseif ($tab === 'design'):
         ?>
         <form method="POST" action="<?= SITE_URL ?>/admin/events/settings/save">
-            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+            <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
             <input type="hidden" name="_from_tab"  value="design">
 
             <div class="admin-card">
@@ -735,7 +736,7 @@ final class CMS_Events_Admin
         elseif ($tab === 'settings'):
         ?>
         <form method="POST" action="<?= SITE_URL ?>/admin/events/settings/save">
-            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+            <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
             <input type="hidden" name="_from_tab"  value="settings">
 
             <div class="admin-card">
@@ -804,7 +805,7 @@ final class CMS_Events_Admin
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-ev-modal-close="evDeleteModal">Abbrechen</button>
                     <form method="POST" id="evDeleteForm" class="ev-inline-form-compact">
-                        <input type="hidden" name="csrf_token" value="<?= CMS\Security::instance()->generateToken('delete_event') ?>">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(CMS\Security::instance()->generateToken('delete_event'), ENT_QUOTES, 'UTF-8') ?>">
                         <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
                     </form>
                 </div>
@@ -888,7 +889,7 @@ final class CMS_Events_Admin
 
         <div class="ev-content-max">
         <form method="POST" action="<?= SITE_URL ?>/admin/events/save" id="ev-main-form">
-            <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="event_id"   value="<?= $is_edit ? (int)$event->id : 0 ?>">
 
             <!-- ── Block 1: Basis-Informationen ─────────────────────── -->

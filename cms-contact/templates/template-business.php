@@ -22,7 +22,7 @@ $companyName  = $getInfo('company_name')  ?: $siteName;
 $companyEmail = $getInfo('admin_email')   ?: ($form['recipient'] ?? '');
 $companyPhone = $getInfo('company_phone') ?: '';
 $companyAddr  = $getInfo('company_address') ?: '';
-$mapEmbed     = $getInfo('map_embed_url') ?: '';
+$mapEmbed     = CMS_Contact_Frontend::sanitize_map_embed_url($getInfo('map_embed_url') ?: '');
 
 $theme = CMS\ThemeManager::instance();
 $theme->getHeader();
@@ -45,7 +45,7 @@ $theme->getHeader();
             <section class="contact-business-cards" aria-label="Kontaktinformationen">
                 <?php if ($companyEmail): ?>
                 <article class="contact-business-card">
-                    <span class="contact-business-card-icon" aria-hidden="true">📧</span>
+                    <span class="contact-business-card-icon" aria-hidden="true">Mail</span>
                     <h4>E-Mail</h4>
                     <a href="mailto:<?php echo $e($companyEmail); ?>"><?php echo $e($companyEmail); ?></a>
                 </article>
@@ -53,7 +53,7 @@ $theme->getHeader();
 
                 <?php if ($companyPhone): ?>
                 <article class="contact-business-card">
-                    <span class="contact-business-card-icon" aria-hidden="true">📞</span>
+                    <span class="contact-business-card-icon" aria-hidden="true">Tel</span>
                     <h4>Telefon</h4>
                     <a href="tel:<?php echo $e(preg_replace('/[^+0-9]/', '', $companyPhone)); ?>"><?php echo $e($companyPhone); ?></a>
                 </article>
@@ -61,7 +61,7 @@ $theme->getHeader();
 
                 <?php if ($companyAddr): ?>
                 <article class="contact-business-card">
-                    <span class="contact-business-card-icon" aria-hidden="true">📍</span>
+                    <span class="contact-business-card-icon" aria-hidden="true">Ort</span>
                     <h4>Adresse</h4>
                     <address class="contact-address"><?php echo nl2br($e($companyAddr)); ?></address>
                 </article>
@@ -73,15 +73,15 @@ $theme->getHeader();
                 <h2 class="contact-business-form-title" id="contact-business-form-title">Schreiben Sie uns</h2>
 
                 <?php if (!empty($success)): ?>
-                <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1">✅ <?php echo $e($success); ?></div>
+                <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1"><?php echo $e($success); ?></div>
                 <?php endif; ?>
                 <?php if (!empty($error)): ?>
-                <div class="contact-alert contact-alert-error" role="alert" aria-live="assertive" data-contact-message tabindex="-1">❌ <?php echo $e($error); ?></div>
+                <div class="contact-alert contact-alert-error" role="alert" aria-live="assertive" data-contact-message tabindex="-1"><?php echo $e($error); ?></div>
                 <?php endif; ?>
 
                 <?php if (empty($success)): ?>
                 <form method="POST" class="contact-form" novalidate>
-                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
                     <input type="hidden" name="contact_started_at" value="<?php echo (int) time(); ?>">
                     <?php if (!empty($form['enable_honeypot'])): ?>
                     <div class="contact-honeypot" aria-hidden="true">
@@ -108,7 +108,7 @@ $theme->getHeader();
                     <?php echo CMS_Contact_Frontend::render_privacy_consent($form, $old); ?>
 
                     <div class="contact-submit">
-                        <button type="submit" class="contact-btn contact-btn-primary">📧 Nachricht senden</button>
+                        <button type="submit" class="contact-btn contact-btn-primary">Nachricht senden</button>
                     </div>
                 </form>
                 <?php endif; ?>

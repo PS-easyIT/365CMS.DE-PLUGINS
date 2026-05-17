@@ -67,9 +67,10 @@ final class CMS_Contact_Frontend
     private function redirect_legacy_contact_path(string $targetPath): void
     {
         $query = (string) ($_SERVER['QUERY_STRING'] ?? '');
-        $location = $targetPath . ($query !== '' ? '?' . $query : '');
+        $location = $this->build_local_redirect_path($targetPath, $query);
 
         if (!headers_sent()) {
+            $this->send_security_headers();
             header('Location: ' . $location, true, 301);
         }
 
@@ -154,6 +155,7 @@ final class CMS_Contact_Frontend
      */
     public function render_form(string $slug): void
     {
+        $this->send_security_headers();
         $form = CMS_Contact_Forms::instance()->get_by_slug($slug);
 
         if (!$form) {
@@ -204,6 +206,7 @@ final class CMS_Contact_Frontend
      */
     public function handle_submit(string $slug): void
     {
+        $this->send_security_headers();
         $form = CMS_Contact_Forms::instance()->get_by_slug($slug);
 
         if (!$form) {
@@ -217,7 +220,7 @@ final class CMS_Contact_Frontend
             $_SESSION['contact_success'] = $form['success_message']
                 ?? 'Vielen Dank für Ihre Nachricht!';
 
-            $redirectUrl = $this->resolve_form_redirect($form, '/contact/' . $slug . '?sent=1');
+            $redirectUrl = $this->resolve_form_redirect($form, '/contact/' . rawurlencode($slug) . '?sent=1');
             if (function_exists('safe_redirect')) {
                 safe_redirect($redirectUrl);
             } else {
@@ -227,10 +230,11 @@ final class CMS_Contact_Frontend
             $_SESSION['contact_error'] = $result['error'];
             $_SESSION['contact_old']   = $result['old_data'] ?? [];
             $_SESSION['contact_field_errors'] = $result['field_errors'] ?? [];
+            $fallbackUrl = '/contact/' . rawurlencode($slug);
             if (function_exists('safe_redirect')) {
-                safe_redirect('/contact/' . $slug);
+                safe_redirect($fallbackUrl);
             } else {
-                header('Location: /contact/' . $slug, true, 302);
+                header('Location: ' . $fallbackUrl, true, 302);
             }
         }
         exit;
@@ -241,13 +245,14 @@ final class CMS_Contact_Frontend
      */
     public function handle_ajax_submit(string $slug): void
     {
-        header('Content-Type: application/json');
+        $this->send_security_headers();
+        header('Content-Type: application/json; charset=utf-8');
 
         $form = CMS_Contact_Forms::instance()->get_by_slug($slug);
 
         if (!$form) {
             http_response_code(404);
-            echo json_encode(['success' => false, 'error' => 'Formular nicht gefunden']);
+            echo json_encode(['success' => false, 'error' => 'Formular nicht gefunden'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             exit;
         }
 
@@ -257,14 +262,14 @@ final class CMS_Contact_Frontend
             echo json_encode([
                 'success' => true,
                 'message' => $form['success_message'] ?? 'Vielen Dank für Ihre Nachricht!',
-            ]);
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         } else {
             http_response_code(422);
             echo json_encode([
                 'success' => false,
                 'error'   => $result['error'],
                 'errors'  => $result['field_errors'] ?? [],
-            ]);
+            ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
         exit;
     }
@@ -280,7 +285,7 @@ final class CMS_Contact_Frontend
         $slug   = $form['slug'];
 
         // CSRF-Check
-        $csrfToken = $_POST['csrf_token'] ?? '';
+        $csrfToken = (string) ($_POST['csrf_token'] ?? '');
         if (!\CMS\Security::instance()->verifyToken($csrfToken, 'contact_' . $slug)) {
             return ['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen. Bitte laden Sie die Seite neu.'];
         }
@@ -474,6 +479,36 @@ final class CMS_Contact_Frontend
         return $fallback;
     }
 
+    private function build_local_redirect_path(string $targetPath, string $rawQuery = ''): string
+    {
+        $targetPath = '/' . ltrim($targetPath, '/');
+        $path = parse_url($targetPath, PHP_URL_PATH);
+        if (!is_string($path) || !str_starts_with($path, '/contact')) {
+            $path = '/contact';
+        }
+
+        $queryString = '';
+        if ($rawQuery !== '') {
+            parse_str($rawQuery, $queryParams);
+            if (is_array($queryParams) && $queryParams !== []) {
+                $queryString = http_build_query($queryParams, '', '&', PHP_QUERY_RFC3986);
+            }
+        }
+
+        return $path . ($queryString !== '' ? '?' . $queryString : '');
+    }
+
+    private function send_security_headers(): void
+    {
+        if (headers_sent()) {
+            return;
+        }
+
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: SAMEORIGIN');
+        header('Referrer-Policy: strict-origin-when-cross-origin');
+    }
+
     private function build_antispam_content(string $subject, string $message, array $meta): string
     {
         $parts = [];
@@ -532,7 +567,7 @@ final class CMS_Contact_Frontend
                 break;
 
             case 'url':
-                if (!filter_var($value, FILTER_VALIDATE_URL)) {
+                if ($this->sanitize_public_url((string) $value) === '') {
                     return "{$label}: Bitte geben Sie eine gültige URL ein.";
                 }
                 break;
@@ -618,6 +653,45 @@ final class CMS_Contact_Frontend
         }
 
         return in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true) ? mb_substr($url, 0, 2048) : '';
+    }
+
+    public static function sanitize_map_embed_url(string $value): string
+    {
+        $url = trim(filter_var($value, FILTER_SANITIZE_URL) ?: '');
+        if ($url === '' || mb_strlen($url) > 2048 || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        $path = (string) ($parts['path'] ?? '');
+
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return '';
+        }
+
+        $allowedHosts = [
+            'www.google.com',
+            'maps.google.com',
+            'www.google.de',
+            'maps.google.de',
+            'www.openstreetmap.org',
+        ];
+
+        if (!in_array($host, $allowedHosts, true)) {
+            return '';
+        }
+
+        if (str_contains($host, 'google') && !str_starts_with($path, '/maps/embed')) {
+            return '';
+        }
+
+        if ($host === 'www.openstreetmap.org' && $path !== '/export/embed.html') {
+            return '';
+        }
+
+        return $url;
     }
 
     public static function render_custom_css(array $form): string
@@ -716,17 +790,17 @@ final class CMS_Contact_Frontend
     {
         unset($csrfToken);
 
-        $name        = htmlspecialchars($field['field_name']);
-        $label       = htmlspecialchars($field['field_label']);
+        $name        = htmlspecialchars((string) $field['field_name'], ENT_QUOTES, 'UTF-8');
+        $label       = htmlspecialchars((string) $field['field_label'], ENT_QUOTES, 'UTF-8');
         $type        = self::normalize_public_field_type((string) ($field['field_type'] ?? 'text'));
-        $placeholder = htmlspecialchars($field['placeholder'] ?? '');
+        $placeholder = htmlspecialchars((string) ($field['placeholder'] ?? ''), ENT_QUOTES, 'UTF-8');
         $required    = !empty($field['is_required']);
-        $value       = htmlspecialchars($old[$field['field_name']] ?? $field['default_value'] ?? '');
+        $value       = htmlspecialchars((string) ($old[$field['field_name']] ?? $field['default_value'] ?? ''), ENT_QUOTES, 'UTF-8');
         $width       = $field['field_width'] ?? 'full';
         $cssClass    = preg_replace('/[^a-zA-Z0-9_\-\s]/', '', (string) ($field['css_class'] ?? '')) ?? '';
         $description = $field['description'] ?? '';
         $hasError    = isset($errors[$field['field_name']]);
-        $errorMsg    = $hasError ? htmlspecialchars($errors[$field['field_name']]) : '';
+        $errorMsg    = $hasError ? htmlspecialchars((string) $errors[$field['field_name']], ENT_QUOTES, 'UTF-8') : '';
         $fieldId     = 'cf-' . preg_replace('/[^a-z0-9\-_]/i', '-', (string) ($field['field_name'] ?? 'field'));
         $hintId      = $description !== '' && $type !== 'hidden' ? $fieldId . '-hint' : '';
         $errorId     = $hasError ? $fieldId . '-error' : '';

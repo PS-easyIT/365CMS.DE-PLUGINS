@@ -42,7 +42,7 @@ $theme->getHeader();
                     <div class="contact-info-list">
                         <?php if ($companyEmail): ?>
                         <div class="contact-info-item">
-                            <span class="contact-info-icon" aria-hidden="true">📧</span>
+                            <span class="contact-info-icon" aria-hidden="true">Mail</span>
                             <div>
                                 <strong>E-Mail</strong>
                                 <a href="mailto:<?php echo $e($companyEmail); ?>"><?php echo $e($companyEmail); ?></a>
@@ -52,7 +52,7 @@ $theme->getHeader();
 
                         <?php if ($companyPhone): ?>
                         <div class="contact-info-item">
-                            <span class="contact-info-icon" aria-hidden="true">📞</span>
+                            <span class="contact-info-icon" aria-hidden="true">Tel</span>
                             <div>
                                 <strong>Telefon</strong>
                                 <a href="tel:<?php echo $e(preg_replace('/[^+0-9]/', '', $companyPhone)); ?>"><?php echo $e($companyPhone); ?></a>
@@ -62,7 +62,7 @@ $theme->getHeader();
 
                         <?php if ($companyAddr): ?>
                         <div class="contact-info-item">
-                            <span class="contact-info-icon" aria-hidden="true">📍</span>
+                            <span class="contact-info-icon" aria-hidden="true">Ort</span>
                             <div>
                                 <strong>Adresse</strong>
                                 <address class="contact-address"><?php echo nl2br($e($companyAddr)); ?></address>
@@ -77,15 +77,15 @@ $theme->getHeader();
             <section class="contact-split-form" aria-labelledby="contact-split-form-title">
                 <h2 class="contact-visually-hidden" id="contact-split-form-title">Kontaktformular</h2>
                 <?php if (!empty($success)): ?>
-                <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1">✅ <?php echo $e($success); ?></div>
+                <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1"><?php echo $e($success); ?></div>
                 <?php endif; ?>
                 <?php if (!empty($error)): ?>
-                <div class="contact-alert contact-alert-error" role="alert" aria-live="assertive" data-contact-message tabindex="-1">❌ <?php echo $e($error); ?></div>
+                <div class="contact-alert contact-alert-error" role="alert" aria-live="assertive" data-contact-message tabindex="-1"><?php echo $e($error); ?></div>
                 <?php endif; ?>
 
                 <?php if (empty($success)): ?>
                 <form method="POST" class="contact-form" novalidate>
-                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
                     <input type="hidden" name="contact_started_at" value="<?php echo (int) time(); ?>">
                     <?php if (!empty($form['enable_honeypot'])): ?>
                     <div class="contact-honeypot" aria-hidden="true">
@@ -112,7 +112,7 @@ $theme->getHeader();
                     <?php echo CMS_Contact_Frontend::render_privacy_consent($form, $old); ?>
 
                     <div class="contact-submit">
-                        <button type="submit" class="contact-btn contact-btn-primary">📧 Absenden</button>
+                        <button type="submit" class="contact-btn contact-btn-primary">Absenden</button>
                     </div>
                 </form>
                 <?php endif; ?>

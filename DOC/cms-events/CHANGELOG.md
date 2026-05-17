@@ -1,5 +1,14 @@
 # CMS Events – Changelog
 
+## [3.0.1] – 2026-05-17
+
+### Geändert
+
+- **iCal-Härtung:** Der Export nutzt jetzt immutable Datumsobjekte, validierte Start-/Endzeiten, einen sicheren Host, `nosniff`, `Content-Length`, gefaltete ICS-Zeilen und validierte HTTP(S)-URLs.
+- **Query-/POST-Normalisierung:** Archiv-, Kalender-, Admin-Save-, Settings-, Speaker-AJAX- und Member-Create-Pfade validieren Datums-, Zeit-, URL-, Tab-, Filter- und Textwerte restriktiver.
+- **Publicsite-Design:** Archiv- und Karten-Templates wurden von dekorativem Emoji-UI bereinigt und behalten die PHINIT-nahe, ruhige Darstellung bei.
+- **Admin-/Member-Ausgabe:** CSRF-Attribute, Admin-Asset-URLs, JSON-Antworten und dynamische CSS-Farbwerte werden konsequenter escaped bzw. normalisiert.
+
 ## [1.1.0] – 2026-03-28
 
 ### Geändert

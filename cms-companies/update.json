@@ -10,7 +10,7 @@
   "download_url": "",
   "checksum_sha256": "",
   "changelog": {
-    "3.0.0": "365CMS-3.x-Modernisierung: idempotenter Bootstrap, schema_version-Gating, PHINIT Publicsite-Basis, semantische Archive-/Card-/Detailtemplates, Theme-Override-Harmonisierung sowie Mobile/Desktop-UX- und PageSpeed-Optimierungen ohne generischen KI-Look.",
+    "3.0.0": "365CMS-3.x-Modernisierung: idempotenter Bootstrap, schema_version-Gating, PHINIT Publicsite-Basis, semantische Archive-/Card-/Detailtemplates, Theme-Override-Harmonisierung sowie Mobile/Desktop-UX- und PageSpeed-Optimierungen ohne generischen KI-Look. Public-Logo-/Website-/Profilbild-URLs werden auf http/https beschränkt, Member-Formulare escapen CSRF-/POST-Attribute explizit, Redirects nutzen 303 und die öffentlichen Cards/Detailseiten wurden von dekorativer Emoji-UI bereinigt.",
     "1.1.0": "Security-/Stabilitäts-Release: Listen-/Render-Härtung, Ownership-Schutz, Mail-/Telefon-/Website-Validierung, Bootstrap-/DB-Fatal-Guards und Doku-Angleichungen. Admin-Menüintegration für das aktuelle Core-Sidebar-System über cms_admin_menu/add_menu_page nachgezogen.",
     "1.0.1": "Dokumentations-Release: Audit-Plan, TASKS- und SECURITY-Dokumentation für den V2.8.0-Prüfstand der Plugin-Arbeit ergänzt und nachgezogen.",
     "1.0.0": "Erstveröffentlichung: Unternehmens-Profile, Card-Ansicht, Detailseiten."

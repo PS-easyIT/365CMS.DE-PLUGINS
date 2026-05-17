@@ -26,7 +26,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 
 <form method="POST" class="admin-form">
     <input type="hidden" name="form_action" value="update_form">
-    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+    <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
 
     <!-- Tabs -->
     <div class="contact-inline-tabs" data-tab-scope data-tab-content-selector=".tab-content" data-tab-button-selector="[data-contact-tab-target]">

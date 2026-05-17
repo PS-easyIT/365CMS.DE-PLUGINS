@@ -4,6 +4,19 @@ Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
 ## [Unreleased] – 2026-05-15
 
+### Sicherheitsfixes
+
+- Public- und AJAX-Routen senden zusätzliche Security-Header (`nosniff`, `SAMEORIGIN`, restriktive Referrer-Policy), solange noch keine Header verschickt wurden.
+- Legacy-Redirects von `/kontakt` kodieren Query-Parameter per `http_build_query()` und bleiben strikt auf lokale `/contact`-Ziele begrenzt.
+- Formular-Redirects werden auch ohne Core-Helfer nur noch als interne Pfade akzeptiert; externe Fallback-Redirects werden verworfen.
+- Öffentliche Template-CSRF-Attribute und zentrale Admin-CSRF-Attribute werden explizit mit `ENT_QUOTES` und `UTF-8` escaped.
+- URL-Felder akzeptieren serverseitig nur noch `http`/`https`; Map-Embeds sind auf Google-Maps-Embed und OpenStreetMap-Embed-Allowlist begrenzt.
+
+### Design & Performance
+
+- Public-Templates wurden von dekorativer Emoji-UI in Alerts, Buttons und Buchungsbadges bereinigt und bleiben dadurch ruhiger im PHINIT-Layout.
+- JSON-Antworten des AJAX-Endpunkts verwenden konsistente UTF-8-/Slash-Flags und vermeiden unnötige Encoding-Artefakte.
+
 ## [1.1.9] – 2026-05-15
 
 ### Fixed

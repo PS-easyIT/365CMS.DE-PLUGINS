@@ -41,7 +41,7 @@ $border_radius      = (int)($settings['design_border_radius']    ?? 12);
 <?php
 // ── Data Extraction ──────────────────────────────────────────────────────────
 $full_name      = trim(($expert->first_name ?? '') . ' ' . ($expert->last_name ?? ''));
-$photo          = filter_var(trim((string) ($expert->photo_url ?? '')), FILTER_VALIDATE_URL) ?: '';
+$photo          = cms_experts_public_url((string) ($expert->photo_url ?? ''));
 $position       = $expert->position ?? '';
 $company        = $expert->company  ?? '';
 $company_id     = (int)($meta['company_id'] ?? 0);
@@ -73,11 +73,11 @@ if (!empty($skills) && is_array($skills)) {
 
 // Social Links
 $social = [
-    'linkedin' => filter_var(trim((string) ($meta['social_linkedin'] ?? '')), FILTER_VALIDATE_URL) ?: '',
-    'xing'     => filter_var(trim((string) ($meta['social_xing'] ?? '')), FILTER_VALIDATE_URL) ?: '',
-    'github'   => filter_var(trim((string) ($meta['social_github'] ?? '')), FILTER_VALIDATE_URL) ?: '',
-    'twitter'  => filter_var(trim((string) ($meta['social_twitter'] ?? '')), FILTER_VALIDATE_URL) ?: '',
-    'website'  => filter_var(trim((string) ($meta['social_website'] ?? '')), FILTER_VALIDATE_URL) ?: '',
+    'linkedin' => cms_experts_public_url((string) ($meta['social_linkedin'] ?? '')),
+    'xing'     => cms_experts_public_url((string) ($meta['social_xing'] ?? '')),
+    'github'   => cms_experts_public_url((string) ($meta['social_github'] ?? '')),
+    'twitter'  => cms_experts_public_url((string) ($meta['social_twitter'] ?? '')),
+    'website'  => cms_experts_public_url((string) ($meta['social_website'] ?? '')),
 ];
 $has_social = !empty(array_filter($social));
 
@@ -124,10 +124,10 @@ $team_size_led      = $meta['team_size_led']           ?? '';
 $total_projects_cnt = $meta['total_projects']          ?? '';
 
 // Erweiterte Social Links
-$social['gitlab']        = filter_var(trim((string) ($meta['social_gitlab'] ?? '')), FILTER_VALIDATE_URL) ?: '';
-$social['stackoverflow'] = filter_var(trim((string) ($meta['social_stackoverflow'] ?? '')), FILTER_VALIDATE_URL) ?: '';
-$social['youtube']       = filter_var(trim((string) ($meta['social_youtube'] ?? '')), FILTER_VALIDATE_URL) ?: '';
-$social['blog_rss']      = filter_var(trim((string) ($meta['social_blog_rss'] ?? '')), FILTER_VALIDATE_URL) ?: '';
+$social['gitlab']        = cms_experts_public_url((string) ($meta['social_gitlab'] ?? ''));
+$social['stackoverflow'] = cms_experts_public_url((string) ($meta['social_stackoverflow'] ?? ''));
+$social['youtube']       = cms_experts_public_url((string) ($meta['social_youtube'] ?? ''));
+$social['blog_rss']      = cms_experts_public_url((string) ($meta['social_blog_rss'] ?? ''));
 $has_social = !empty(array_filter($social));
 
 $ex_email = filter_var(trim((string) ($expert->email ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
@@ -374,7 +374,7 @@ $events     = $events ?? [];
               <div class="ex-proj-item__name"><?= $sec->escape($pj->project_name ?? '') ?></div>
               <div class="ex-proj-item__meta">
                 <?= $sec->escape($pj->project_role ?? '') ?><?= (!empty($pj->project_role) && ($p_start || $p_end)) ? ' · ' : '' ?><?= $p_start ? $p_start . ' – ' . $p_end : '' ?>
-                <?php if (!empty($pj->project_url)): ?> · <a href="<?= $sec->escape($pj->project_url) ?>" target="_blank" rel="noopener noreferrer" aria-label="Projekt öffnen">↗</a><?php endif; ?>
+                <?php $projectUrl = cms_experts_public_url((string) ($pj->project_url ?? '')); if ($projectUrl !== ''): ?> · <a href="<?= $sec->escape($projectUrl) ?>" target="_blank" rel="noopener noreferrer" aria-label="Projekt öffnen">Projekt</a><?php endif; ?>
               </div>
               <?php if (!empty($pj->project_description)): ?>
                 <div class="ex-proj-item__desc"><?= nl2br($sec->escape($pj->project_description)) ?></div>

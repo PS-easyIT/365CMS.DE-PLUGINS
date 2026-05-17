@@ -228,6 +228,12 @@ final class CMS_Experts_Database
             $params[] = $args['city'];
         }
 
+        if (!empty($args['search'])) {
+            $where[] = '(first_name LIKE ? OR last_name LIKE ? OR position LIKE ? OR company LIKE ? OR location_city LIKE ?)';
+            $term = '%' . mb_substr(trim((string) $args['search']), 0, 120) . '%';
+            array_push($params, $term, $term, $term, $term, $term);
+        }
+
         $where_clause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
         $limit = $this->normalizeLimit($args['limit'] ?? 50, 50);
         $offset = $this->normalizeOffset($args['offset'] ?? 0);
@@ -453,7 +459,7 @@ final class CMS_Experts_Database
         foreach ($skills_by_type as $type => $names) {
             $type = in_array($type, ['general', 'tech', 'soft'], true) ? $type : 'general';
             foreach ($names as $skill_name) {
-                $skill_name = trim($skill_name);
+                $skill_name = mb_substr(trim(strip_tags((string) $skill_name)), 0, 120);
                 if ($skill_name === '') {
                     continue;
                 }
@@ -542,8 +548,8 @@ final class CMS_Experts_Database
         }
 
         $where_clause = 'WHERE ' . implode(' AND ', $where);
-        $limit  = $args['limit']  ?? 500;
-        $offset = $args['offset'] ?? 0;
+        $limit  = $this->normalizeLimit($args['limit'] ?? 200, 200);
+        $offset = $this->normalizeOffset($args['offset'] ?? 0);
 
         // Pending-Profile zuerst
         $sql = "SELECT * FROM {$db->prefix()}experts
@@ -694,15 +700,15 @@ final class CMS_Experts_Database
         $prefix = $db->prefix();
         $db->execute("DELETE FROM {$prefix}expert_certifications WHERE expert_id = ?", [$expert_id]);
         foreach ($items as $item) {
-            $name = trim($item['cert_name'] ?? '');
+            $name = mb_substr(trim(strip_tags((string) ($item['cert_name'] ?? ''))), 0, 255);
             if ($name === '') continue;
             $db->insert('expert_certifications', [
                 'expert_id'   => $expert_id,
                 'cert_name'   => $name,
-                'cert_issuer' => trim($item['cert_issuer'] ?? '') ?: null,
-                'cert_date'   => !empty($item['cert_date'])   ? $item['cert_date']   : null,
-                'cert_expiry' => !empty($item['cert_expiry']) ? $item['cert_expiry'] : null,
-                'cert_url'    => trim($item['cert_url'] ?? '') ?: null,
+                'cert_issuer' => mb_substr(trim(strip_tags((string) ($item['cert_issuer'] ?? ''))), 0, 255) ?: null,
+                'cert_date'   => $this->normalizeDate($item['cert_date'] ?? null),
+                'cert_expiry' => $this->normalizeDate($item['cert_expiry'] ?? null),
+                'cert_url'    => $this->normalizePublicUrl($item['cert_url'] ?? null),
             ]);
         }
     }
@@ -730,16 +736,16 @@ final class CMS_Experts_Database
         $prefix = $db->prefix();
         $db->execute("DELETE FROM {$prefix}expert_projects WHERE expert_id = ?", [$expert_id]);
         foreach ($items as $item) {
-            $name = trim($item['project_name'] ?? '');
+            $name = mb_substr(trim(strip_tags((string) ($item['project_name'] ?? ''))), 0, 255);
             if ($name === '') continue;
             $db->insert('expert_projects', [
                 'expert_id'           => $expert_id,
                 'project_name'        => $name,
-                'project_description' => trim($item['project_description'] ?? '') ?: null,
-                'project_role'        => trim($item['project_role'] ?? '') ?: null,
-                'project_start'       => !empty($item['project_start']) ? $item['project_start'] : null,
-                'project_end'         => !empty($item['project_end'])   ? $item['project_end']   : null,
-                'project_url'         => trim($item['project_url'] ?? '') ?: null,
+                'project_description' => mb_substr(trim(strip_tags((string) ($item['project_description'] ?? ''))), 0, 2000) ?: null,
+                'project_role'        => mb_substr(trim(strip_tags((string) ($item['project_role'] ?? ''))), 0, 150) ?: null,
+                'project_start'       => $this->normalizeDate($item['project_start'] ?? null),
+                'project_end'         => $this->normalizeDate($item['project_end'] ?? null),
+                'project_url'         => $this->normalizePublicUrl($item['project_url'] ?? null),
                 'technologies'        => !empty($item['technologies'])
                     ? (is_array($item['technologies']) ? json_encode($item['technologies']) : $item['technologies'])
                     : null,
@@ -857,5 +863,26 @@ final class CMS_Experts_Database
         $last  = $normalize($expert->last_name  ?? '') ?: 'unbekannt';
 
         return $first . '-' . $last . '-' . (int)$expert->id;
+    }
+
+    private function normalizeDate(mixed $value): ?string
+    {
+        $value = trim((string) $value);
+        if ($value === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+
+        [$year, $month, $day] = array_map('intval', explode('-', $value));
+        return checkdate($month, $day, $year) ? sprintf('%04d-%02d-%02d', $year, $month, $day) : null;
+    }
+
+    private function normalizePublicUrl(mixed $value): ?string
+    {
+        if (function_exists('cms_experts_public_url')) {
+            $url = cms_experts_public_url((string) $value);
+            return $url !== '' ? $url : null;
+        }
+
+        return null;
     }
 }

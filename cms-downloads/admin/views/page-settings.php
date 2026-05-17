@@ -100,7 +100,7 @@
                 <span class="dl-soft-badge">Suche aktiv</span>
                 <span class="dl-soft-badge">Kategorien sichtbar</span>
             </div>
-            <p class="dl-admin-muted" style="margin-top:0.9rem;">Gerade bei gemischten Inhalten wie Skripten, Webprojekten, Dokumenten und eBooks wirkt das Archiv damit deutlich strukturierter.</p>
+            <p class="dl-admin-muted dl-admin-muted--spaced">Gerade bei gemischten Inhalten wie Skripten, Webprojekten, Dokumenten und eBooks wirkt das Archiv damit deutlich strukturierter.</p>
         </div>
     </div>
 </div>

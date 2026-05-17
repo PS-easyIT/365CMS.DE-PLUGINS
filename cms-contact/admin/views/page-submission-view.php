@@ -155,7 +155,7 @@ foreach ($meta as $key => $value) {
             <form method="POST" class="contact-status-form">
                 <input type="hidden" name="sub_action" value="update_status">
                 <input type="hidden" name="id" value="<?php echo (int)$submission['id']; ?>">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
                 <select name="status" class="form-control contact-status-select">
                     <?php foreach ($statusMap as $key => $s): ?>
                     <option value="<?php echo $key; ?>" <?php echo $submission['status'] === $key ? 'selected' : ''; ?>>
@@ -246,7 +246,7 @@ foreach ($meta as $key => $value) {
             <form method="POST" class="contact-inline-form">
                 <input type="hidden" name="sub_action" value="delete">
                 <input type="hidden" name="id" value="<?php echo (int)$submission['id']; ?>">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
                 <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
             </form>
         </div>

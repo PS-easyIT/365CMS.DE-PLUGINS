@@ -307,7 +307,10 @@ trait CMS_Contact_Page_Forms_Trait
                     return 'Weiterleitungs-URL muss eine gültige interne URL der Website sein.';
                 }
             } else {
-                $normalizedRedirectUrl = filter_var($redirectUrl, FILTER_VALIDATE_URL) ?: null;
+                $normalizedRedirectUrl = self::normalize_internal_redirect_path($redirectUrl);
+                if ($normalizedRedirectUrl === null) {
+                    return 'Weiterleitungs-URL muss eine gültige interne URL der Website sein.';
+                }
             }
         }
 
@@ -465,6 +468,32 @@ trait CMS_Contact_Page_Forms_Trait
         }
 
         return implode(', ', array_unique($validRecipients));
+    }
+
+    private static function normalize_internal_redirect_path(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        if (!str_starts_with($value, '/') || str_starts_with($value, '//')) {
+            return null;
+        }
+
+        $path = parse_url($value, PHP_URL_PATH);
+        if (!is_string($path) || $path === '' || str_contains($path, "\0")) {
+            return null;
+        }
+
+        $query = parse_url($value, PHP_URL_QUERY);
+        if (is_string($query) && $query !== '') {
+            parse_str($query, $params);
+            $query = http_build_query(is_array($params) ? $params : [], '', '&', PHP_QUERY_RFC3986);
+            return $path . ($query !== '' ? '?' . $query : '');
+        }
+
+        return $path;
     }
 
     private static function is_valid_custom_regex(string $pattern): bool

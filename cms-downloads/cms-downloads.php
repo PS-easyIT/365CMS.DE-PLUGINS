@@ -3,7 +3,7 @@
  * Plugin Name: CMS Downloads
  * Plugin URI: https://365network.de/cms-downloads
  * Description: Download-Management für öffentliche Dateien mit Kategorien, Templates und Frontend-Archiv.
- * Version: 3.0.0
+ * Version: 3.0.1
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_DOWNLOADS_VERSION', '3.0.0');
+define('CMS_DOWNLOADS_VERSION', '3.0.1');
 define('CMS_DOWNLOADS_DB_VERSION', '1.0.0');
 define('CMS_DOWNLOADS_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_DOWNLOADS_PLUGIN_URL', '/plugins/cms-downloads/');

@@ -24,7 +24,7 @@ $theme->getHeader();
 
             <!-- Linke Seite: Experten-Info -->
             <aside class="booking-expert-sidebar" aria-labelledby="contact-form-title">
-                <span class="booking-expert-badge" aria-hidden="true">🎓 Experten-Beratung</span>
+                <span class="booking-expert-badge" aria-hidden="true">Experten-Beratung</span>
                 <h1 id="contact-form-title"><?php echo $e($form['title']); ?></h1>
                 <?php if (!empty($form['description'])): ?>
                 <p><?php echo $e($form['description']); ?></p>
@@ -39,18 +39,18 @@ $theme->getHeader();
 
             <!-- Rechte Seite: Formular -->
             <section class="booking-expert-form" aria-labelledby="booking-expert-form-title">
-                <h2 id="booking-expert-form-title">📝 Beratungstermin anfragen</h2>
+                <h2 id="booking-expert-form-title">Beratungstermin anfragen</h2>
 
                 <?php if (!empty($success)): ?>
-                <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1">✅ <?php echo $e($success); ?></div>
+                <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1"><?php echo $e($success); ?></div>
                 <?php endif; ?>
                 <?php if (!empty($error)): ?>
-                <div class="contact-alert contact-alert-error" role="alert" aria-live="assertive" data-contact-message tabindex="-1">❌ <?php echo $e($error); ?></div>
+                <div class="contact-alert contact-alert-error" role="alert" aria-live="assertive" data-contact-message tabindex="-1"><?php echo $e($error); ?></div>
                 <?php endif; ?>
 
                 <?php if (empty($success)): ?>
                 <form method="POST" class="contact-form" novalidate>
-                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
                     <input type="hidden" name="contact_started_at" value="<?php echo (int) time(); ?>">
                     <?php if (!empty($form['enable_honeypot'])): ?>
                     <div class="contact-honeypot" aria-hidden="true">
@@ -77,7 +77,7 @@ $theme->getHeader();
                     <?php echo CMS_Contact_Frontend::render_privacy_consent($form, $old); ?>
 
                     <div class="contact-submit">
-                        <button type="submit" class="contact-btn contact-btn-primary">🎓 Beratung anfragen</button>
+                        <button type="submit" class="contact-btn contact-btn-primary">Beratung anfragen</button>
                     </div>
                 </form>
                 <?php endif; ?>

@@ -1,5 +1,14 @@
 # CMS Experts – Changelog
 
+## [3.0.1] – 2026-05-17
+
+### Geändert
+
+- Öffentliche Experten-URLs, Profilbilder, Social-Links, Projekt- und Zertifikatslinks werden auf sichere `http`/`https`-Ziele ohne lokale/private Hosts begrenzt.
+- Archiv-, Admin- und Member-Filter normalisieren Query-/POST-Werte mit Whitelists, Längenlimits und robusten Bounds für Pagination/Listenlimits.
+- Admin-CSRF-Token und Asset-URLs werden im Attribut-Kontext escaped; öffentliche Card-/Detailausgaben vermeiden dekorative Emoji-Badges in den wichtigsten CTA-/Statusflächen.
+- Zertifikats- und Projektdaten validieren Datumsfelder vor der Speicherung und kappen Freitextfelder defensiv.
+
 ## [2.1.0] – 2026-03-28
 
 ### Geändert

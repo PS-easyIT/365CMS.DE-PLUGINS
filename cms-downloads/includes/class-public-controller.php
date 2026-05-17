@@ -39,7 +39,7 @@ final class CMS_Downloads_Public_Controller
         $settings = $repository->get_settings();
         $categories = $repository->get_categories(true);
         $currentCategory = $slug !== '' ? $repository->get_category_by_slug($slug) : null;
-        $search = trim((string) ($_GET['q'] ?? ''));
+        $search = mb_substr(trim(strip_tags((string) ($_GET['q'] ?? ''))), 0, 120, 'UTF-8');
         $perPage = max(6, min(120, (int) ($settings['downloads_per_page'] ?? 24)));
         $currentPage = max(1, (int) ($_GET['page'] ?? 1));
 
@@ -127,11 +127,16 @@ final class CMS_Downloads_Public_Controller
         $repository->increment_download_count((int) $download['id']);
 
         $mime = function_exists('mime_content_type') ? (string) mime_content_type($absolutePath) : 'application/octet-stream';
+        if ($mime === '' || preg_match('/^[a-z0-9.+-]+\/[a-z0-9.+-]+$/i', $mime) !== 1) {
+            $mime = 'application/octet-stream';
+        }
         $filename = $this->safe_download_filename((string) ($download['file_name'] ?? basename($absolutePath)));
+        $asciiFilename = $this->safe_ascii_filename($filename);
 
         header('Content-Description: File Transfer');
+        header('X-Content-Type-Options: nosniff');
         header('Content-Type: ' . $mime);
-        header('Content-Disposition: attachment; filename="' . $filename . '"; filename*=UTF-8\'\'' . rawurlencode($filename));
+        header('Content-Disposition: attachment; filename="' . $asciiFilename . '"; filename*=UTF-8\'\'' . rawurlencode($filename));
         header('Content-Length: ' . (string) filesize($absolutePath));
         header('Cache-Control: private, max-age=0, must-revalidate');
         header('Pragma: public');
@@ -249,6 +254,14 @@ final class CMS_Downloads_Public_Controller
         }
 
         return mb_substr($filename, 0, 180, 'UTF-8');
+    }
+
+    private function safe_ascii_filename(string $filename): string
+    {
+        $ascii = preg_replace('/[^A-Za-z0-9._-]+/', '-', $filename) ?? '';
+        $ascii = trim($ascii, '.-_');
+
+        return $ascii !== '' ? substr($ascii, 0, 180) : 'download.bin';
     }
 
     /**

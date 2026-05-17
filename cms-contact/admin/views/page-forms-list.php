@@ -169,7 +169,7 @@ foreach ($allForms as $formItem) {
             <form method="POST" id="deleteModalForm" class="contact-inline-form">
                 <input type="hidden" name="form_action" value="delete_form">
                 <input type="hidden" name="id" id="deleteModalId" data-delete-modal-id>
-                <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
             </form>
         </div>

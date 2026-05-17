@@ -33,8 +33,8 @@ $show_industry  = ($s['design_show_industry']  ?? '1') === '1';
 $show_city      = ($s['design_show_city']      ?? '1') === '1';
 $show_employees = ($s['design_show_employees'] ?? '1') === '1';
 $show_website   = ($s['design_show_website']   ?? '1') === '1';
-$logo_url       = filter_var(trim((string) ($company->logo_url ?? '')), FILTER_VALIDATE_URL) ?: '';
-$website_url    = filter_var(trim((string) ($company->website ?? '')), FILTER_VALIDATE_URL) ?: '';
+$logo_url       = cms_companies_public_url((string) ($company->logo_url ?? ''));
+$website_url    = cms_companies_public_url((string) ($company->website ?? ''));
 
 // Initials (bis zu 2 Zeichen)
 $name_parts = preg_split('/\s+/', trim($company->name));
@@ -87,14 +87,14 @@ $industry_label = $company->industry ?? '';
     <!-- Info-Pills -->
     <?php
     $pills = [];
-    if ($show_city     && !empty($company->location_city))   $pills[] = ['📍', $sec->escape($company->location_city)];
-    if ($show_employees && !empty($company->employee_count)) $pills[] = ['👥', number_format((int)$company->employee_count, 0, ',', '.') . ' Mitarb.'];
-    if ($show_employees && !empty($company->company_size))   $pills[] = ['🏢', $sec->escape($company->company_size)];
-    if (!empty($company->founded_year))                      $pills[] = ['📅', 'Seit ' . $company->founded_year];
+    if ($show_city     && !empty($company->location_city))   $pills[] = ['Standort', $sec->escape($company->location_city)];
+    if ($show_employees && !empty($company->employee_count)) $pills[] = ['Team', number_format((int)$company->employee_count, 0, ',', '.') . ' Mitarb.'];
+    if ($show_employees && !empty($company->company_size))   $pills[] = ['Größe', $sec->escape($company->company_size)];
+    if (!empty($company->founded_year))                      $pills[] = ['Seit', (string) (int) $company->founded_year];
     if ($pills): ?>
     <div class="co-card-pills">
-        <?php foreach ($pills as [$ico, $txt]): ?>
-            <span class="co-card-pill"><?= $ico ?> <?= $txt ?></span>
+        <?php foreach ($pills as [$label, $txt]): ?>
+            <span class="co-card-pill"><span class="co-card-pill__label"><?= $label ?></span> <?= $txt ?></span>
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
@@ -111,7 +111,7 @@ $industry_label = $company->industry ?? '';
         </a>
         <?php if ($show_website && $website_url !== ''): ?>
             <a href="<?= $sec->escape($website_url) ?>" target="_blank" rel="noopener noreferrer" class="phinit-btn phinit-btn--secondary co-btn co-btn-ghost" aria-label="Website öffnen">
-                🌐
+                Website
             </a>
         <?php endif; ?>
     </div>

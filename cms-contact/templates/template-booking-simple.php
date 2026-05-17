@@ -23,7 +23,7 @@ $theme->getHeader();
     <main class="contact-main" aria-labelledby="contact-form-title">
         <article class="booking-contact-card">
             <header class="booking-contact-header">
-                <span class="booking-contact-badge" aria-hidden="true">📅 Buchungsanfrage</span>
+                <span class="booking-contact-badge" aria-hidden="true">Buchungsanfrage</span>
                 <h1 id="contact-form-title"><?php echo $e($form['title']); ?></h1>
                 <?php if (!empty($form['description'])): ?>
                 <p><?php echo $e($form['description']); ?></p>
@@ -32,15 +32,15 @@ $theme->getHeader();
 
             <section class="booking-contact-body" aria-labelledby="contact-form-title">
                 <?php if (!empty($success)): ?>
-                <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1">✅ <?php echo $e($success); ?></div>
+                <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1"><?php echo $e($success); ?></div>
                 <?php endif; ?>
                 <?php if (!empty($error)): ?>
-                <div class="contact-alert contact-alert-error" role="alert" aria-live="assertive" data-contact-message tabindex="-1">❌ <?php echo $e($error); ?></div>
+                <div class="contact-alert contact-alert-error" role="alert" aria-live="assertive" data-contact-message tabindex="-1"><?php echo $e($error); ?></div>
                 <?php endif; ?>
 
                 <?php if (empty($success)): ?>
                 <form method="POST" class="contact-form" novalidate>
-                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
                     <input type="hidden" name="contact_started_at" value="<?php echo (int) time(); ?>">
                     <?php if (!empty($form['enable_honeypot'])): ?>
                     <div class="contact-honeypot" aria-hidden="true">
@@ -67,7 +67,7 @@ $theme->getHeader();
                     <?php echo CMS_Contact_Frontend::render_privacy_consent($form, $old); ?>
 
                     <div class="contact-submit">
-                        <button type="submit" class="contact-btn contact-btn-primary">📅 Anfrage absenden</button>
+                        <button type="submit" class="contact-btn contact-btn-primary">Anfrage absenden</button>
                     </div>
                 </form>
                 <?php endif; ?>

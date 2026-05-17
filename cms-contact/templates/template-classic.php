@@ -29,18 +29,18 @@ $theme->getHeader();
 
                 <?php if (!empty($success)): ?>
                 <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1">
-                    ✅ <?php echo $e($success); ?>
+                    <?php echo $e($success); ?>
                 </div>
                 <?php endif; ?>
                 <?php if (!empty($error)): ?>
                 <div class="contact-alert contact-alert-error" role="alert" aria-live="assertive" data-contact-message tabindex="-1">
-                    ❌ <?php echo $e($error); ?>
+                    <?php echo $e($error); ?>
                 </div>
                 <?php endif; ?>
 
                 <?php if (empty($success)): ?>
                 <form method="POST" class="contact-form" novalidate>
-                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
                     <input type="hidden" name="contact_started_at" value="<?php echo (int) time(); ?>">
                     <?php if (!empty($form['enable_honeypot'])): ?>
                     <div class="contact-honeypot" aria-hidden="true">
@@ -69,7 +69,7 @@ $theme->getHeader();
                     <?php echo CMS_Contact_Frontend::render_privacy_consent($form, $old); ?>
 
                     <div class="contact-submit">
-                        <button type="submit" class="contact-btn contact-btn-primary">📧 Nachricht senden</button>
+                        <button type="submit" class="contact-btn contact-btn-primary">Nachricht senden</button>
                     </div>
                 </form>
                 <?php endif; ?>

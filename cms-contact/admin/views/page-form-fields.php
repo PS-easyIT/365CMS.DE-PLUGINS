@@ -60,7 +60,7 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
                 <?php if (empty($field['is_system'])): ?>
                 <form method="POST" class="js-contact-delete-field-form">
                     <input type="hidden" name="form_action" value="delete_field">
-                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
                     <input type="hidden" name="field_id" value="<?php echo (int)$field['id']; ?>">
                     <button class="btn btn-sm btn-danger" type="submit">🗑️</button>
                 </form>
@@ -73,7 +73,7 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
     <!-- Reihenfolge speichern -->
     <form method="POST" id="orderForm" class="contact-spacing-top">
         <input type="hidden" name="form_action" value="reorder_fields">
-        <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+        <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
         <input type="hidden" name="field_order" id="fieldOrderInput" value="">
         <button type="submit" class="btn btn-secondary btn-sm" id="saveOrderBtn" hidden>
             💾 Reihenfolge speichern
@@ -92,7 +92,7 @@ $fieldWidths = CMS_Contact_Fields::get_field_widths();
         <div class="modal-body">
             <form id="fieldForm" method="POST">
                 <input type="hidden" name="form_action" id="fieldFormAction" value="save_field">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
                 <input type="hidden" name="field_id" id="fieldFormId" value="">
 
                 <div class="contact-form-grid-2-wide">

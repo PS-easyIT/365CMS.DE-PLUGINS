@@ -24,8 +24,8 @@ $theme->getHeader();
 
             <header class="booking-service-top">
                 <div class="booking-service-badge-bar" aria-hidden="true">
-                    <span class="booking-service-badge">🏢 Dienstleistung</span>
-                    <span class="booking-service-badge">📋 Buchung</span>
+                    <span class="booking-service-badge">Dienstleistung</span>
+                    <span class="booking-service-badge">Buchung</span>
                 </div>
                 <h1 id="contact-form-title"><?php echo $e($form['title']); ?></h1>
                 <?php if (!empty($form['description'])): ?>
@@ -34,18 +34,18 @@ $theme->getHeader();
             </header>
 
             <section class="booking-service-formcard" aria-labelledby="booking-service-form-title">
-                <h2 id="booking-service-form-title">📋 Leistung anfragen</h2>
+                <h2 id="booking-service-form-title">Leistung anfragen</h2>
 
                 <?php if (!empty($success)): ?>
-                <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1">✅ <?php echo $e($success); ?></div>
+                <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1"><?php echo $e($success); ?></div>
                 <?php endif; ?>
                 <?php if (!empty($error)): ?>
-                <div class="contact-alert contact-alert-error" role="alert" aria-live="assertive" data-contact-message tabindex="-1">❌ <?php echo $e($error); ?></div>
+                <div class="contact-alert contact-alert-error" role="alert" aria-live="assertive" data-contact-message tabindex="-1"><?php echo $e($error); ?></div>
                 <?php endif; ?>
 
                 <?php if (empty($success)): ?>
                 <form method="POST" class="contact-form" novalidate>
-                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
                     <input type="hidden" name="contact_started_at" value="<?php echo (int) time(); ?>">
                     <?php if (!empty($form['enable_honeypot'])): ?>
                     <div class="contact-honeypot" aria-hidden="true">
@@ -72,16 +72,16 @@ $theme->getHeader();
                     <?php echo CMS_Contact_Frontend::render_privacy_consent($form, $old); ?>
 
                     <div class="contact-submit">
-                        <button type="submit" class="contact-btn contact-btn-primary">📋 Buchung anfragen</button>
+                        <button type="submit" class="contact-btn contact-btn-primary">Buchung anfragen</button>
                     </div>
                 </form>
                 <?php endif; ?>
             </section>
 
             <section class="booking-service-trust" aria-label="Vertrauensmerkmale">
-                <span aria-label="SSL-gesichert">🔒 SSL-gesichert</span>
-                <span aria-label="Sofortige Bestätigung">📧 Sofortige Bestätigung</span>
-                <span aria-label="DSGVO-konform">🛡️ DSGVO-konform</span>
+                <span>SSL-gesichert</span>
+                <span>Sofortige Bestätigung</span>
+                <span>DSGVO-konform</span>
             </section>
         </div>
     </main>

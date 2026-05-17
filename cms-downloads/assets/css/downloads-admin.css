@@ -181,6 +181,18 @@
     gap: 0.45rem;
 }
 
+.dl-badge-stack--spaced {
+    margin-top: 0.75rem;
+}
+
+.dl-note-card__text--spaced {
+    margin: 0.8rem 0 0;
+}
+
+.dl-admin-muted--spaced {
+    margin-top: 0.9rem;
+}
+
 .dl-soft-badge {
     display: inline-flex;
     align-items: center;

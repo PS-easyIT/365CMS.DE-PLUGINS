@@ -21,7 +21,7 @@ $settings = CMS_Companies_Database::instance()->get_settings();
 $s = array_merge([
     'archive_title'              => '',
     'archive_description'        => '',
-    'archive_header_icon'        => '🏢',
+    'archive_header_icon'        => '',
     'archive_header_bg_from'     => '#e0f2fe',
     'archive_header_bg_to'       => '#bae6fd',
     'archive_header_title_color' => '#0c4a6e',
@@ -66,7 +66,9 @@ $cityFilter = htmlspecialchars(sanitize_text_field((string) ($filters['city'] ??
     <!-- Gradient Header -->
     <header class="co-archive-header phinit-card phinit-card--accent">
         <div class="co-archive-header-inner">
-            <div class="co-archive-header-icon"><?= htmlspecialchars($s['archive_header_icon']) ?></div>
+            <?php if (trim((string) $s['archive_header_icon']) !== ''): ?>
+            <div class="co-archive-header-icon"><?= htmlspecialchars((string) $s['archive_header_icon'], ENT_QUOTES, 'UTF-8') ?></div>
+            <?php endif; ?>
             <div>
                 <?php if ($has_title): ?>
                 <h2 class="co-archive-header-title"><?= htmlspecialchars($s['archive_title']) ?></h2>
@@ -105,9 +107,9 @@ $cityFilter = htmlspecialchars(sanitize_text_field((string) ($filters['city'] ??
         <!-- Branche -->
         <label class="phinit-field" for="co-industry"><span>Branche</span>
         <select id="co-industry" name="industry" class="co-filter-select phinit-select">
-            <option value="">🏭 Alle Branchen</option>
+            <option value="">Alle Branchen</option>
             <?php foreach ($all_industries as $ind): ?>
-                <option value="<?= htmlspecialchars($ind->slug) ?>"
+                <option value="<?= htmlspecialchars((string) $ind->slug, ENT_QUOTES, 'UTF-8') ?>"
                         <?= ($filters['industry'] ?? '') === $ind->slug ? 'selected' : '' ?>>
                     <?= CMS\Security::instance()->escape($ind->name) ?>
                 </option>
@@ -117,10 +119,10 @@ $cityFilter = htmlspecialchars(sanitize_text_field((string) ($filters['city'] ??
         <!-- Partnerstatus -->
         <label class="phinit-field" for="co-partner"><span>Partnerstatus</span>
         <select id="co-partner" name="partner" class="co-filter-select phinit-select">
-            <option value="">🤝 Alle Partner</option>
-            <option value="sponsor"     <?= ($filters['partner'] ?? '') === 'sponsor'     ? 'selected' : '' ?>>💜 Sponsor</option>
-            <option value="top_partner" <?= ($filters['partner'] ?? '') === 'top_partner' ? 'selected' : '' ?>>🥇 Top-Partner</option>
-            <option value="partner"     <?= ($filters['partner'] ?? '') === 'partner'     ? 'selected' : '' ?>>🤝 Partner</option>
+            <option value="">Alle Partner</option>
+            <option value="sponsor"     <?= ($filters['partner'] ?? '') === 'sponsor'     ? 'selected' : '' ?>>Sponsor</option>
+            <option value="top_partner" <?= ($filters['partner'] ?? '') === 'top_partner' ? 'selected' : '' ?>>Top-Partner</option>
+            <option value="partner"     <?= ($filters['partner'] ?? '') === 'partner'     ? 'selected' : '' ?>>Partner</option>
         </select></label>
 
         <button type="submit" class="phinit-btn phinit-btn--primary co-btn co-btn-primary">Suchen</button>
@@ -133,7 +135,6 @@ $cityFilter = htmlspecialchars(sanitize_text_field((string) ($filters['city'] ??
     <!-- Results -->
     <?php if (empty($companies)): ?>
         <div class="co-empty-state phinit-empty-state" role="status" aria-live="polite">
-            <div class="co-empty-icon">🏢</div>
             <h3>Keine Unternehmen gefunden</h3>
             <p>Bitte passen Sie Ihre Filterkriterien an.</p>
             <a href="<?= $companiesArchiveUrl ?>" class="phinit-btn phinit-btn--primary co-btn co-btn-primary">Alle anzeigen</a>
@@ -150,7 +151,7 @@ $cityFilter = htmlspecialchars(sanitize_text_field((string) ($filters['city'] ??
 
         <!-- Pagination -->
         <?php if ($current_page > 1 || count($companies) >= $per_page): ?>
-        <?php $companyPaginationBase = '?industry=' . urlencode($filters['industry'] ?? '') . '&city=' . urlencode($filters['city'] ?? ''); ?>
+        <?php $companyPaginationBase = '?industry=' . rawurlencode((string) ($filters['industry'] ?? '')) . '&city=' . rawurlencode((string) ($filters['city'] ?? '')) . '&partner=' . rawurlencode((string) ($filters['partner'] ?? '')) . '&q=' . rawurlencode((string) ($_GET['q'] ?? '')); ?>
         <div class="co-pagination">
             <?php if ($current_page > 1): ?>
                 <a href="<?= htmlspecialchars($companyPaginationBase . '&page=' . ($current_page - 1), ENT_QUOTES, 'UTF-8') ?>" class="co-page-btn phinit-btn phinit-btn--secondary">&larr; Zurück</a>

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
+<?php declare(strict_types=1); if (!defined('ABSPATH')) exit;
+$e = fn($v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
+?>
 
 <?php include CMS_CONTACT_PLUGIN_DIR . 'admin/views/partial-section-nav.php'; ?>
 
@@ -14,12 +16,12 @@
 </div>
 
 <?php if (!empty($error)): ?>
-<div class="alert alert-error">❌ <?php echo htmlspecialchars($error); ?></div>
+<div class="alert alert-error">❌ <?php echo $e($error); ?></div>
 <?php endif; ?>
 
 <form method="POST" class="admin-form">
     <input type="hidden" name="form_action" value="create_form">
-    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+    <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
 
     <div class="admin-card">
         <h3>📋 Grundeinstellungen</h3>
@@ -28,13 +30,13 @@
             <div class="form-group">
                 <label class="form-label" for="title">Titel <span class="contact-required">*</span></label>
                 <input type="text" id="title" name="title" class="form-control"
-                       value="<?php echo htmlspecialchars($_POST['title'] ?? ''); ?>"
+                       value="<?php echo $e($_POST['title'] ?? ''); ?>"
                        placeholder="z. B. Kontakt, Anfrage, Bewerbung" required>
             </div>
             <div class="form-group">
                 <label class="form-label" for="slug">URL-Slug</label>
                 <input type="text" id="slug" name="slug" class="form-control"
-                       value="<?php echo htmlspecialchars($_POST['slug'] ?? ''); ?>"
+                       value="<?php echo $e($_POST['slug'] ?? ''); ?>"
                        placeholder="Wird automatisch generiert"
                        pattern="[a-z0-9\-]+" title="Nur Kleinbuchstaben, Zahlen und Bindestriche">
                 <small class="form-text">Erreichbar unter /contact/{slug}</small>
@@ -44,21 +46,21 @@
         <div class="form-group">
             <label class="form-label" for="description">Beschreibung</label>
             <textarea id="description" name="description" class="form-control" rows="2"
-                      placeholder="Optionale Beschreibung, die über dem Formular angezeigt wird"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
+                      placeholder="Optionale Beschreibung, die über dem Formular angezeigt wird"><?php echo $e($_POST['description'] ?? ''); ?></textarea>
         </div>
 
         <div class="contact-form-intro-grid">
             <div class="form-group">
                 <label class="form-label" for="recipient">Empfänger E-Mail</label>
                 <input type="email" id="recipient" name="recipient" class="form-control"
-                       value="<?php echo htmlspecialchars($_POST['recipient'] ?? ''); ?>"
+                       value="<?php echo $e($_POST['recipient'] ?? ''); ?>"
                        placeholder="Globale Einstellung wird verwendet">
                 <small class="form-text">Leer = globaler Empfänger aus den Einstellungen</small>
             </div>
             <div class="form-group">
                 <label class="form-label" for="success_message">Erfolgsmeldung</label>
                 <input type="text" id="success_message" name="success_message" class="form-control"
-                       value="<?php echo htmlspecialchars($_POST['success_message'] ?? 'Vielen Dank für Ihre Nachricht!'); ?>">
+                       value="<?php echo $e($_POST['success_message'] ?? 'Vielen Dank für Ihre Nachricht!'); ?>">
             </div>
         </div>
     </div>
@@ -69,13 +71,13 @@
         <div class="contact-template-grid">
             <?php foreach ($templates as $key => $tpl): ?>
             <label class="contact-template-card">
-                <input type="radio" name="template" value="<?php echo htmlspecialchars($key); ?>"
+                <input type="radio" name="template" value="<?php echo $e($key); ?>"
                        <?php echo ($key === ($_POST['template'] ?? 'classic')) ? 'checked' : ''; ?>
                        class="contact-template-card__input">
                 <span class="contact-template-card__body">
                     <span class="contact-template-card__icon"><?php echo $tpl['icon']; ?></span>
-                    <span class="contact-template-card__title"><?php echo htmlspecialchars($tpl['name']); ?></span>
-                    <span class="contact-template-card__text"><?php echo htmlspecialchars($tpl['description']); ?></span>
+                    <span class="contact-template-card__title"><?php echo $e($tpl['name']); ?></span>
+                    <span class="contact-template-card__text"><?php echo $e($tpl['description']); ?></span>
                 </span>
             </label>
             <?php endforeach; ?>

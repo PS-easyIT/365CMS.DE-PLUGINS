@@ -135,14 +135,14 @@ $featuredCount = count(array_filter($downloads, static fn(array $item): bool => 
         <div class="dl-note-card">
             <span class="dl-note-card__eyebrow">Vordefinierte Typen</span>
             <span class="dl-note-card__title">Templates für typische Download-Inhalte</span>
-            <div class="dl-badge-stack" style="margin-top:0.75rem;">
+            <div class="dl-badge-stack dl-badge-stack--spaced">
                 <span class="dl-soft-badge">⚡ PowerShell</span>
                 <span class="dl-soft-badge">🌐 Webprojekte</span>
                 <span class="dl-soft-badge">📄 Dokumente</span>
                 <span class="dl-soft-badge">📚 eBooks</span>
                 <span class="dl-soft-badge">🗜️ Archive</span>
             </div>
-            <p class="dl-note-card__text" style="margin:0.8rem 0 0;">Die Typen helfen dir bei konsistenter Kategorisierung und verständlicher Darstellung im öffentlichen Bereich.</p>
+            <p class="dl-note-card__text dl-note-card__text--spaced">Die Typen helfen dir bei konsistenter Kategorisierung und verständlicher Darstellung im öffentlichen Bereich.</p>
         </div>
     </div>
 </div>
