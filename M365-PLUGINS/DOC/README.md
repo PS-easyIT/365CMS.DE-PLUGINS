@@ -2,7 +2,7 @@
 
 ## Überblick
 
-`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Produktive Module sind der **Power Platform Kosten-Kalkulator mit Well-Architected-Review**, der **Google Workspace ↔ Microsoft 365 TCO-Rechner**, der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
+`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Produktive Module sind der **All-Module-Best-Practice-Kompass**, der **Power Platform Kosten-Kalkulator mit Well-Architected-Review**, der **Google Workspace ↔ Microsoft 365 TCO-Rechner**, der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
 
 ## Detaildokumente
 
@@ -98,6 +98,7 @@
 | `microsoft_price_changes.json` | SKU-bezogene Preisänderungen und Delta-Werte für den Preis-Tracker |
 | `microsoft_inventory_mapping.json` | SKU-, Segment-, Kanal- und Filter-Mapping für Preis- und Bestandsauswertung |
 | `microsoft_price_forecast_rules.json` | Forecast-Szenarien und Planungshinweise für Budgetrunden |
+| `m365_best_practice_catalog.json` | Zentrale Zuordnung aller Module zu Review-Domänen wie Lizenzierung, Zugriff, Schutz, Servicegrenzen, Speicher, Netzwerk, Copilot, Power Platform und Migration |
 | `teams_phone_base_eligibility.json` | Basislizenz-Eignung für Teams Phone und PSTN-Modelle |
 | `teams_pstn_model_rules.json` | Bewertungsregeln für Calling Plan, Operator Connect, Direct Routing und Mischmodell |
 | `teams_country_availability.json` | Länder- und Verfügbarkeitsannahmen für Teams-Telefonie |
@@ -138,7 +139,11 @@
 
 ## Lizenz-Audit-Checkliste
 
-Die Route `/m365-lizenz-audit-checkliste` bietet eine interaktive Checkliste für Microsoft-365-Lizenzaudits. Sie deckt Identitäten, Lizenzzuweisungen, ehemalige Nutzer, Shared Mailboxes, Inactive Mailboxes, Copilot, Frontline Worker, SharePoint-/OneDrive-Speicher, Microsoft 365 Backup und Renewal-/Beschaffungsthemen ab.
+Die Route `/m365-lizenz-audit-checkliste` bietet eine interaktive Checkliste für Microsoft-365-Lizenzaudits. Sie deckt Identitäten, Lizenzzuweisungen, ehemalige Nutzer, Shared Mailboxes, Inactive Mailboxes, Copilot, Frontline Worker, SharePoint-/OneDrive-Speicher, Microsoft 365 Backup, privilegierte Rollen, Conditional Access, Mail-Schutz, Nutzungsberichte, Netzwerk-Basiswerte, Teams-Grenzen, Copilot-Datenzugriff und Renewal-/Beschaffungsthemen ab.
+
+## All-Module-Best-Practice-Kompass
+
+Der Hub `/m365-tools` lädt ab `1.23.0` den Katalog `m365_best_practice_catalog.json`. Der Katalog bündelt die zuletzt geprüften offiziellen Microsoft-Learn-Quellen und ordnet jedes Public-Modul den passenden Review-Domänen zu. Dadurch ist bereits auf der Landingpage sichtbar, welche Module Lizenzkosten, Zugriff, Schutz, Servicegrenzen, Speicher/Backup, Netzwerk/Performance, Copilot/KI, Power Platform oder Migration/Betrieb berühren.
 
 Der Fortschritt wird im Browser gespeichert. Die Zusammenfassung kann über die Druckfunktion als PDF abgelegt werden. Fachliche Details stehen in `LICENSE-AUDIT-CHECKLIST.md`.
 

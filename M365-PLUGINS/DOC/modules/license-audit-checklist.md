@@ -10,7 +10,7 @@
 
 ## Zweck
 
-Interaktive Microsoft-365-Auditliste für Lizenzbestand, Offboarding, Shared Mailboxes, Copilot, Frontline, Speicher, Backup und Renewal. Der Fortschritt wird im Browser gespeichert und kann über die Druckfunktion als PDF abgelegt werden.
+Interaktive Microsoft-365-Auditliste für Lizenzbestand, Offboarding, Shared Mailboxes, Copilot, Frontline, Speicher, Backup, Zugriff, Schutz, Netzwerk, Performance und Renewal. Der Fortschritt wird im Browser gespeichert und kann über die Druckfunktion als PDF abgelegt werden.
 
 ## Datenquellen
 
@@ -25,6 +25,19 @@ Interaktive Microsoft-365-Auditliste für Lizenzbestand, Offboarding, Shared Mai
 - priorisierte Schwerpunkte
 - Deep Links zu Spezialrechnern
 - Quellenstand
+
+## Querschnittsprüfung ab 1.23.0
+
+Die Checkliste enthält zusätzlich die Kategorie `Zugriff, Schutz, Netzwerk und Betrieb` mit Prüfpunkten für:
+
+- privilegierte Rollen, geringstes Recht, Just-in-Time-Zugriff und wiederkehrende Reviews
+- Conditional Access, Adminrollen, Standort-/Gerätesignale und veraltete Anmeldewege
+- Mail-Schutz, Safe Links, Safe Attachments, SPF, DKIM und DMARC
+- Microsoft-365-Nutzungsberichte für Lizenz-, Speicher-, Teams-, Copilot- und Mailbox-Auswertung
+- Microsoft-365-Netzwerkpfad, lokale Namensauflösung, lokalen Internetausstieg und Performance-Basiswerte
+- SharePoint-, OneDrive-, Sync- und Teams-Grenzen vor Migration, Wachstum oder Telefonieplanung
+- Copilot-Datenzugriff, Apps, OneDrive, Teams-Meetingdaten, Datenschutzrahmen und Pilotmetriken
+- Backup-Schutzumfang und Wiederherstellungsziele je Workload
 
 ## Pflege
 

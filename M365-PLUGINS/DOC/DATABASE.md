@@ -52,6 +52,7 @@ Die Katalogdaten liegen als versionierte JSON-Dateien im Plugin-Verzeichnis:
 - `data/microsoft_price_changes.json`
 - `data/microsoft_inventory_mapping.json`
 - `data/microsoft_price_forecast_rules.json`
+- `data/m365_best_practice_catalog.json`
 - `data/teams_phone_base_eligibility.json`
 - `data/teams_pstn_model_rules.json`
 - `data/teams_country_availability.json`
@@ -89,6 +90,8 @@ Die Katalogdaten liegen als versionierte JSON-Dateien im Plugin-Verzeichnis:
 - `data/power_platform_connector_rules.json`
 - `data/power_platform_capacity_catalog.json`
 - `data/power_platform_governance_rules.json`
+
+`m365_best_practice_catalog.json` enthält ab `1.23.0` den zentralen All-Module-Best-Practice-Kompass. Die Datei besteht aus `meta`, `domains` und `tool_domains`: `domains` beschreibt Review-Bereiche wie Lizenz & Kosten, Identität & Zugriff, Schutz & Compliance, Servicegrenzen, Speicher & Backup, Netzwerk & Performance, Copilot & KI, Power Platform Betrieb sowie Migration & Betrieb; `tool_domains` ordnet diese Bereiche den Public-Modulen zu.
 
 `power_platform_products.json` enthält ab `1.22.0` zusätzlich die Optionswerte für Umgebungsstrategie, Datenrichtlinien, Identitätssteuerung, Zugangsdaten, ALM, Monitoring, Performance-Ziele und Datenlebenszyklus. `power_platform_governance_rules.json` enthält ab `1.22.0` die Microsoft-Well-Architected-, Security-, Datenrichtlinien-, Managed-Environment-, Performance-, Operations- und ALM-Quellen für den Best-Practice-Review.
 

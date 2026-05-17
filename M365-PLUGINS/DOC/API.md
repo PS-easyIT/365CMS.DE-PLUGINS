@@ -51,6 +51,7 @@
 - `microsoft_price_changes()` – lädt SKU-bezogene Preisänderungen und Delta-Werte
 - `microsoft_inventory_mapping()` – lädt SKU-, Segment-, Kanal- und Filter-Mapping
 - `microsoft_price_forecast_rules()` – lädt Forecast-Szenarien für den Preis-Tracker
+- `m365_best_practice_catalog()` – lädt den All-Module-Best-Practice-Kompass mit Review-Domänen und Modulzuordnung
 - `license_audit_checklist()` – lädt Audit-Kategorien und Prüfpunkte
 - `license_audit_deeplinks()` – lädt Trigger und Spezialtool-Verweise
 - `audit_pdf_template()` – lädt Struktur und Labels der Druckzusammenfassung
@@ -259,4 +260,4 @@
 
 - Registriert `/m365-tools`, `/m365-rechner`, `/m365-lizenz-audit-checkliste`, `/power-platform-kosten-kalkulator`, `/google-workspace-zu-m365-tco`, `/m365-storage-bedarfsrechner`, `/m365-backup-kostenrechner`, `/microsoft-preiserhoehung-tracker`, `/teams-phone-lizenzberater`, `/exchange-online-roi`, `/frontline-worker-lizenz-check`, `/copilot-pilot-rechner`, `/ai-pack-vs-copilot-pro`, `/m365-lizenzmatrix`, `/m365-addon-matrix`, `/m365-archive-mailbox-rechner`, `/m365-jahresvertrag-vs-monatsvertrag`, `/m365-add-on-konfigurator`, `/m365-lizenzvergleich`, `/m365-lizenzberater`, `/copilot-roi-rechner`, `/shared-mailbox-vs-lizenz` und `/copilot-lizenz-check`
 - Bindet Assets nur auf Plugin-Routen ein
-- Rendert Toolbox und Rechner-Template
+- Rendert Toolbox, All-Module-Best-Practice-Kompass und Rechner-Templates

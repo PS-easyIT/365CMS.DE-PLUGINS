@@ -1,5 +1,12 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 1.23.0 – 2026-05-17
+
+- Dokumentation für den All-Module-Best-Practice-Kompass ergänzt.
+- Neue Datenquelle `m365_best_practice_catalog.json` in README, API und Datenquellenübersicht dokumentiert.
+- Lizenz-Audit-Dokumentation um neue Querschnittsprüfpunkte für privilegierte Rollen, Conditional Access, Mail-Schutz, Nutzungsberichte, Netzwerk-Basiswerte, Servicegrenzen, Copilot-Datenzugriff und Wiederherstellungsziele erweitert.
+- Dokumentiert, dass der Hub je Modul Review-Domänen aus offiziellen Microsoft-Learn-Quellen anzeigt und weiterhin keine serverseitige Speicherung für Public-Auswertungen benötigt.
+
 ## 1.22.0 – 2026-05-17
 
 - Power-Platform-Dokumentation um Microsoft Well-Architected-, Security-, ALM-, Performance-, Datenrichtlinien- und Operational-Excellence-Review erweitert.

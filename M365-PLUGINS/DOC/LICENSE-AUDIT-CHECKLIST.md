@@ -2,7 +2,7 @@
 
 ## Überblick
 
-Die **Lizenz-Audit-Checkliste** ist ein Public-Modul von `cms-m365tools` für ein strukturiertes Microsoft-365-Lizenzaudit. Das Modul führt IT, Einkauf oder Management durch die wichtigsten Prüffelder: Identitäten, Lizenzzuweisungen, ehemalige Nutzer, Mailbox- und Aufbewahrungspfade, Copilot, Frontline Worker, Storage, Backup und Vertrags-/Renewal-Themen.
+Die **Lizenz-Audit-Checkliste** ist ein Public-Modul von `cms-m365tools` für ein strukturiertes Microsoft-365-Lizenzaudit. Das Modul führt IT, Einkauf oder Management durch die wichtigsten Prüffelder: Identitäten, Lizenzzuweisungen, ehemalige Nutzer, Mailbox- und Aufbewahrungspfade, Copilot, Frontline Worker, Storage, Backup, Zugriff, Schutz, Netzwerk, Performance und Vertrags-/Renewal-Themen.
 
 - Route: `/m365-lizenz-audit-checkliste`
 - Registry-Key: `license-audit-checklist`
@@ -26,6 +26,7 @@ Das Modul liefert eine interaktive Schritt-für-Schritt-Liste für das M365-Lize
 | Mailbox, Archiv und Aufbewahrung | Shared Mailboxes, Archiv, Hold, Inactive Mailboxes, OneDrive-Aufbewahrung und Konvertierungspfade prüfen |
 | Nutzersegmentierung und Copilot | Frontline-Kandidaten, Copilot-Basislizenzen, Postfach- und App-Anforderungen bewerten |
 | Speicher, Backup und Beschaffung | SharePoint-Speicher, Site-Limits, Extra File Storage, Microsoft 365 Backup und Laufzeitmodell prüfen |
+| Zugriff, Schutz, Netzwerk und Betrieb | Privilegierte Rollen, Conditional Access, Mail-Schutz, Nutzungsberichte, Netzwerk-Basiswerte, Servicegrenzen, Copilot-Datenzugriff und Wiederherstellungsziele bewerten |
 
 ## Datenmodell
 
@@ -67,6 +68,9 @@ Beispiele:
 | `addon_configurator` | `/m365-add-on-konfigurator` | Add-ons, Prerequisites, Redundanzen und Verbrauchsprodukte prüfen |
 | `license_advisor` | `/m365-lizenzberater` | Basislizenzen und Mischmodelle je Nutzergruppe empfehlen |
 | `license_comparison` | `/m365-lizenzvergleich` | Pläne und Feature-Abdeckung vergleichen |
+| `workspace_tco` | `/google-workspace-zu-m365-tco` | Workspace und Microsoft 365 inklusive Migration, Schulung, Change-Aufwand und Break-even bewerten |
+| `exchange_roi` | `/exchange-online-roi` | Exchange-Betriebskosten, Migration und Betriebsrisiken bewerten |
+| `copilot_roi` | `/copilot-roi-rechner` | Copilot Business Case, Break-even und Rollout-Empfehlung bewerten |
 | `commitment_calculator` | `/m365-jahresvertrag-vs-monatsvertrag` | Jahresbindung, Monatslaufzeit und Split-Strategie bewerten |
 | `price_tracker` | `/microsoft-preiserhoehung-tracker` | Preis-, Packaging- und Renewal-Ereignisse bewerten |
 
@@ -172,6 +176,14 @@ Die Auditregeln wurden auf Basis offizieller Microsoft-Learn-Seiten modelliert, 
 - Add more SharePoint storage to your subscription
 - Microsoft 365 Backup overview
 - Frontline worker user types and licensing
+- Microsoft 365 admin center usage reports
+- Microsoft Entra Conditional Access overview
+- Microsoft Entra privileged roles and permissions
+- Microsoft Defender for Office 365 overview
+- Microsoft 365 network connectivity principles
+- Microsoft 365 performance baselines and history
+- Microsoft Teams limits and specifications
+- Microsoft 365 Copilot privacy and data handling
 
 ## Pflegehinweise
 
