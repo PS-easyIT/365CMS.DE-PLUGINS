@@ -23,12 +23,16 @@ $showPhone     = ($ds('modal_show_phone', '1') === '1');
 $showCv        = ($ds('modal_show_cv', '1') === '1');
 $requireCv     = ($ds('modal_require_cv', '0') === '1');
 $privacyUrl    = $ds('modal_privacy_url', '/datenschutz');
+$privacyUrl    = preg_match('#^/[A-Za-z0-9/_\-.]*$#', $privacyUrl) || (filter_var($privacyUrl, FILTER_VALIDATE_URL) && in_array(strtolower((string) parse_url($privacyUrl, PHP_URL_SCHEME)), ['http', 'https'], true))
+    ? $privacyUrl
+    : '/datenschutz';
 $privacyText   = $ds('modal_privacy_text', 'Mit dem Absenden stimmst du der Verarbeitung deiner Daten gemäß unserer Datenschutzerklärung zu.');
 $successText   = $ds('modal_success_text', 'Bewerbung eingereicht! Wir melden uns so schnell wie möglich.');
 $coverMinChars = max(0, (int) $ds('modal_cover_min_chars', '20'));
 
 $isLoggedIn  = false;
 $currentUser = null;
+$jobSlugEsc = htmlspecialchars((string) ($profile->slug ?? ''), ENT_QUOTES, 'UTF-8');
 if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
     $isLoggedIn = true;
     $currentUser = method_exists(\CMS\Auth::instance(), 'currentUser')
@@ -41,13 +45,13 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
 <div id="jpgApplyModal" class="jpg-modal">
     <div class="jpg-modal__box">
         <div class="jpg-modal__header">
-            <h3 class="jpg-modal__title">📩 Bewerbung: <?php echo htmlspecialchars($profile->title, ENT_QUOTES); ?></h3>
-            <button type="button" onclick="jpgCloseApplyModal()" class="jpg-modal__close" aria-label="Schließen">&times;</button>
+            <h3 class="jpg-modal__title">Bewerbung: <?php echo htmlspecialchars((string) $profile->title, ENT_QUOTES, 'UTF-8'); ?></h3>
+            <button type="button" data-jpg-modal-close class="jpg-modal__close" aria-label="Schließen">&times;</button>
         </div>
 
         <!-- Erfolgs-Banner -->
         <div id="jpgApplySuccess" class="jpg-modal__banner jpg-modal__banner--success">
-            ✅ <strong><?php echo htmlspecialchars($successText, ENT_QUOTES); ?></strong>
+            <strong><?php echo htmlspecialchars((string) $successText, ENT_QUOTES, 'UTF-8'); ?></strong>
         </div>
         <!-- Fehler-Banner -->
         <div id="jpgApplyError" class="jpg-modal__banner jpg-modal__banner--error"></div>
@@ -63,7 +67,8 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
             <!-- Tab: Registrierung -->
             <div class="jpg-modal__tab-content active" id="jpgTabRegister">
                 <form id="jpgRegisterForm" class="jpg-modal__form" novalidate>
-                    <input type="hidden" name="_jpg_csrf" value="<?php echo htmlspecialchars($applyCsrf ?? '', ENT_QUOTES); ?>">
+                    <input type="hidden" name="_jpg_csrf" value="<?php echo htmlspecialchars((string) ($applyCsrf ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="job_slug" value="<?php echo $jobSlugEsc; ?>">
                     <input type="text" name="_hp_name" class="jpg-honeypot" aria-hidden="true" tabindex="-1" autocomplete="off">
 
                     <p class="jpg-modal__info">Erstelle ein Konto, um dich zu bewerben und deine Bewerbungen zu verwalten.</p>
@@ -105,11 +110,11 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
                     <?php endif; ?>
 
                     <div class="jpg-modal__footer">
-                        <button type="button" onclick="jpgCloseApplyModal()" class="jpg-modal__btn jpg-modal__btn--cancel">Abbrechen</button>
+                        <button type="button" data-jpg-modal-close class="jpg-modal__btn jpg-modal__btn--cancel">Abbrechen</button>
                         <button type="submit" id="jpgRegSubmit" class="jpg-modal__btn jpg-modal__btn--submit">📩 Registrieren & Bewerben</button>
                     </div>
-                    <p class="jpg-modal__privacy"><?php echo htmlspecialchars($privacyText, ENT_QUOTES); ?>
-                        <a href="<?php echo htmlspecialchars($privacyUrl, ENT_QUOTES); ?>" class="jpg-modal__privacy-link">Datenschutzerklärung</a>
+                    <p class="jpg-modal__privacy"><?php echo htmlspecialchars((string) $privacyText, ENT_QUOTES, 'UTF-8'); ?>
+                        <a href="<?php echo htmlspecialchars((string) $privacyUrl, ENT_QUOTES, 'UTF-8'); ?>" class="jpg-modal__privacy-link">Datenschutzerklärung</a>
                     </p>
                 </form>
             </div>
@@ -117,7 +122,7 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
             <!-- Tab: Login -->
             <div class="jpg-modal__tab-content" id="jpgTabLogin">
                 <form id="jpgLoginForm" class="jpg-modal__form" novalidate>
-                    <input type="hidden" name="_jpg_csrf" value="<?php echo htmlspecialchars($applyCsrf ?? '', ENT_QUOTES); ?>">
+                    <input type="hidden" name="_jpg_csrf" value="<?php echo htmlspecialchars((string) ($applyCsrf ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
 
                     <p class="jpg-modal__info">Melde dich an, um dich auf diese Stelle zu bewerben.</p>
 
@@ -131,7 +136,7 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
                     </div>
 
                     <div class="jpg-modal__footer">
-                        <button type="button" onclick="jpgCloseApplyModal()" class="jpg-modal__btn jpg-modal__btn--cancel">Abbrechen</button>
+                        <button type="button" data-jpg-modal-close class="jpg-modal__btn jpg-modal__btn--cancel">Abbrechen</button>
                         <button type="submit" id="jpgLoginSubmit" class="jpg-modal__btn jpg-modal__btn--submit">🔐 Anmelden</button>
                     </div>
                 </form>
@@ -141,20 +146,20 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
         <?php else: ?>
         <!-- Normales Bewerbungsformular (eingeloggt oder Login nicht erzwungen) -->
         <form id="jpgApplyForm" class="jpg-modal__form" novalidate>
-            <input type="hidden" name="_jpg_csrf" value="<?php echo htmlspecialchars($applyCsrf ?? '', ENT_QUOTES); ?>">
+            <input type="hidden" name="_jpg_csrf" value="<?php echo htmlspecialchars((string) ($applyCsrf ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
             <input type="text" name="_hp_name" class="jpg-honeypot" aria-hidden="true" tabindex="-1" autocomplete="off">
 
             <div class="jpg-form-group">
                 <label class="jpg-form-label">Vollständiger Name <span class="jpg-required">*</span></label>
                 <input type="text" name="applicant_name" required autocomplete="name" class="jpg-form-input"
                        placeholder="Max Mustermann"
-                       value="<?php echo $currentUser ? htmlspecialchars($currentUser->display_name ?? '', ENT_QUOTES) : ''; ?>">
+                       value="<?php echo $currentUser ? htmlspecialchars((string) ($currentUser->display_name ?? ''), ENT_QUOTES, 'UTF-8') : ''; ?>">
             </div>
             <div class="jpg-form-group">
                 <label class="jpg-form-label">E-Mail-Adresse <span class="jpg-required">*</span></label>
                 <input type="email" name="applicant_email" required autocomplete="email" class="jpg-form-input"
                        placeholder="max@beispiel.de"
-                       value="<?php echo $currentUser ? htmlspecialchars($currentUser->email ?? '', ENT_QUOTES) : ''; ?>">
+                       value="<?php echo $currentUser ? htmlspecialchars((string) ($currentUser->email ?? ''), ENT_QUOTES, 'UTF-8') : ''; ?>">
             </div>
             <?php if ($showPhone): ?>
             <div class="jpg-form-group">
@@ -177,11 +182,11 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
             <?php endif; ?>
 
             <div class="jpg-modal__footer">
-                <button type="button" onclick="jpgCloseApplyModal()" class="jpg-modal__btn jpg-modal__btn--cancel">Abbrechen</button>
+                <button type="button" data-jpg-modal-close class="jpg-modal__btn jpg-modal__btn--cancel">Abbrechen</button>
                 <button type="submit" id="jpgApplySubmit" class="jpg-modal__btn jpg-modal__btn--submit">📩 Bewerbung absenden</button>
             </div>
-            <p class="jpg-modal__privacy"><?php echo htmlspecialchars($privacyText, ENT_QUOTES); ?>
-                <a href="<?php echo htmlspecialchars($privacyUrl, ENT_QUOTES); ?>" class="jpg-modal__privacy-link">Datenschutzerklärung</a>
+            <p class="jpg-modal__privacy"><?php echo htmlspecialchars((string) $privacyText, ENT_QUOTES, 'UTF-8'); ?>
+                <a href="<?php echo htmlspecialchars((string) $privacyUrl, ENT_QUOTES, 'UTF-8'); ?>" class="jpg-modal__privacy-link">Datenschutzerklärung</a>
             </p>
         </form>
         <?php endif; ?>
@@ -193,8 +198,8 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
     var modal      = document.getElementById('jpgApplyModal');
     var success    = document.getElementById('jpgApplySuccess');
     var errBox     = document.getElementById('jpgApplyError');
-    var siteUrl    = '<?php echo defined('SITE_URL') ? htmlspecialchars(SITE_URL, ENT_QUOTES) : ''; ?>';
-    var jobSlug    = '<?php echo htmlspecialchars($profile->slug, ENT_QUOTES); ?>';
+    var siteUrl    = '<?php echo defined('SITE_URL') ? htmlspecialchars((string) SITE_URL, ENT_QUOTES, 'UTF-8') : ''; ?>';
+    var jobSlug    = '<?php echo $jobSlugEsc; ?>';
 
     window.jpgOpenApplyModal = function () {
         modal.style.display = 'flex';
@@ -205,8 +210,15 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
         document.body.style.overflow = '';
         errBox.style.display = 'none';
     };
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('[data-jpg-apply-open]')) {
+            e.preventDefault();
+            window.jpgOpenApplyModal();
+        }
+    });
     modal.addEventListener('click', function (e) {
         if (e.target === modal) window.jpgCloseApplyModal();
+        if (e.target.closest('[data-jpg-modal-close]')) window.jpgCloseApplyModal();
     });
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && modal.style.display === 'flex') window.jpgCloseApplyModal();
@@ -270,6 +282,7 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
                 // Schritt 1: Registrieren
                 var regFd = new FormData();
                 regFd.append('_jpg_csrf',    regForm.querySelector('[name="_jpg_csrf"]').value);
+                regFd.append('job_slug',     jobSlug);
                 regFd.append('display_name', regForm.querySelector('[name="display_name"]').value);
                 regFd.append('email',        regForm.querySelector('[name="email"]').value);
                 regFd.append('password',     regForm.querySelector('[name="password"]').value);
@@ -287,7 +300,7 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
                 // Schritt 2: Bewerbung absenden (jetzt eingeloggt)
                 btn.textContent = '⏳ Bewerbung wird gesendet…';
                 var applyFd = new FormData();
-                applyFd.append('_jpg_csrf',       regForm.querySelector('[name="_jpg_csrf"]').value);
+                applyFd.append('_jpg_csrf',       regData.apply_csrf || regForm.querySelector('[name="_jpg_csrf"]').value);
                 applyFd.append('applicant_name',  regForm.querySelector('[name="display_name"]').value);
                 applyFd.append('applicant_email', regForm.querySelector('[name="email"]').value);
                 if (phoneEl) applyFd.append('applicant_phone', phoneEl.value);
@@ -298,13 +311,14 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
                 var applyRes  = await fetch(siteUrl + '/jobs/' + jobSlug + '/apply', { method: 'POST', body: applyFd });
                 var applyData = await applyRes.json();
 
-                if (applyData.success || applyData.require_auth) {
-                    // require_auth kann passieren wenn CSRF nach Registration ungültig ist
-                    // In dem Fall dennoch Erfolg zeigen - User ist registriert
+                if (applyData.success) {
                     regForm.style.display   = 'none';
                     success.style.display   = 'block';
                     var authTabs = document.getElementById('jpgAuthTabs');
                     if (authTabs) authTabs.querySelector('.jpg-modal__tab-nav').style.display = 'none';
+                } else if (applyData.require_auth) {
+                    showError('Konto erstellt. Bitte melde dich erneut an und sende die Bewerbung danach ab.');
+                    btn.disabled = false; btn.textContent = 'Bewerbung absenden';
                 } else {
                     showError(applyData.error || 'Bewerbung konnte nicht abgeschickt werden.');
                     btn.disabled = false; btn.textContent = '📩 Registrieren & Bewerben';

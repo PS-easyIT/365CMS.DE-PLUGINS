@@ -1,4 +1,4 @@
-# Changelog
+# CMS Forum – Changelog
 
 ## 3.0.1 - 2026-05-17
 
@@ -16,14 +16,3 @@
 ### UX & Kompatibilität
 - Public-Thread- und Suchansichten stärker escaped, ohne Inline-Handler und mit sauberem Theme-Header/Footer gerendert.
 - Update-Metadaten auf PHP 8.4 und 365CMS 3.x.x aktualisiert.
-
-## 3.0.0 - 2026-05-17
-
-### Security
-- CSRF-Token-Ausgaben in Admin-, Frontend- und Member-Views mit `htmlspecialchars(..., ENT_QUOTES, 'UTF-8')` gehärtet.
-- Inline generierter Reply-CSRF-Token in der Thread-Ansicht sicher escaped.
-- Poll-Prozentwerte auf 0 bis 100 begrenzt, bevor sie in CSS-Breiten ausgegeben werden.
-
-### Kompatibilität
-- Plugin-Version und Update-Metadaten auf 365CMS 3.0.0 aktualisiert.
-- Asset-URL-Ausgaben in der Hauptdatei mit explizitem Attribute-Escaping gehärtet.

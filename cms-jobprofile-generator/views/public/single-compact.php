@@ -32,7 +32,7 @@ $showTeam    = ($ds('single_show_team', '1') === '1');
 $showSkills  = ($ds('single_show_skills', '1') === '1');
 $showBenefits= ($ds('single_show_benefits', '1') === '1');
 $showJsonld  = ($ds('single_show_jsonld', '1') === '1');
-$applyText   = $ds('btn_apply_text', '📩 Jetzt bewerben');
+$applyText   = $ds('btn_apply_text', 'Jetzt bewerben');
 ?>
 <div class="jpg-public jpg-layout-compact">
 
@@ -79,7 +79,7 @@ $applyText   = $ds('btn_apply_text', '📩 Jetzt bewerben');
                 <?php endif; ?>
             </div>
             <div class="jpg-compact-apply-inline">
-                <button type="button" class="jpg-btn-apply" onclick="jpgOpenApplyModal()">
+                <button type="button" class="jpg-btn-apply" data-jpg-apply-open>
                     <?php echo $esc($applyText); ?>
                 </button>
             </div>
@@ -184,7 +184,7 @@ $applyText   = $ds('btn_apply_text', '📩 Jetzt bewerben');
 
         <!-- Bewerbung -->
         <section class="jpg-compact-section jpg-compact-apply">
-            <button type="button" class="jpg-btn-apply jpg-btn-apply--fullwidth" onclick="jpgOpenApplyModal()">
+            <button type="button" class="jpg-btn-apply jpg-btn-apply--fullwidth" data-jpg-apply-open>
                 <?php echo $esc($applyText); ?>
             </button>
         </section>

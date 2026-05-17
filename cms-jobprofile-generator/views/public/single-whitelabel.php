@@ -235,7 +235,7 @@ $pageTitle = $esc($profile->title) . ($company ? ' – ' . $esc($company) : '');
             <div class="jpg-apply-section" id="apply">
                 <h2>Jetzt bewerben</h2>
                 <?php if (!empty($profile->description)): ?>
-                <div style="margin-bottom:1.25rem;"><?php echo $profile->description; /* Already sanitized HTML */ ?></div>
+                <div style="margin-bottom:1.25rem;"><?php echo nl2br($esc(strip_tags((string) $profile->description))); ?></div>
                 <?php endif; ?>
                 <button type="button" class="jpg-btn-apply" onclick="jpgOpenApplyModal()">
                     📩 Jetzt bewerben

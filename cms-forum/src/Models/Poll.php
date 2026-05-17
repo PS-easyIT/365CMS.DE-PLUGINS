@@ -78,7 +78,7 @@ final class Poll
     {
         $p = $this->db()->prefix();
         $stmt = $this->db()->prepare(
-            "INSERT INTO {$p}" . self::OPTIONS_TABLE . " (poll_id, text, sort_order) VALUES (?, ?, ?)"
+            "INSERT INTO {$p}" . self::OPTIONS_TABLE . " (poll_id, option_text, sort_order) VALUES (?, ?, ?)"
         );
         $stmt->execute([$pollId, $text, $sortOrder]);
         return (int) $this->db()->getPdo()->lastInsertId();
@@ -90,6 +90,14 @@ final class Poll
     public function vote(int $pollId, int $optionId, int $userId): bool
     {
         $p = $this->db()->prefix();
+
+        $stmt = $this->db()->prepare(
+            "SELECT COUNT(*) FROM {$p}" . self::OPTIONS_TABLE . " WHERE id = ? AND poll_id = ?"
+        );
+        $stmt->execute([$optionId, $pollId]);
+        if ((int) $stmt->fetchColumn() === 0) {
+            return false;
+        }
 
         // Prüfe ob bereits abgestimmt
         $stmt = $this->db()->prepare(
@@ -111,7 +119,7 @@ final class Poll
 
         if ($result) {
             // Zähler aktualisieren
-            $this->db()->prepare("UPDATE {$p}" . self::OPTIONS_TABLE . " SET vote_count = vote_count + 1 WHERE id = ?")->execute([$optionId]);
+            $this->db()->prepare("UPDATE {$p}" . self::OPTIONS_TABLE . " SET vote_count = vote_count + 1 WHERE id = ? AND poll_id = ?")->execute([$optionId, $pollId]);
             $this->db()->prepare("UPDATE {$p}" . self::TABLE . " SET vote_count = vote_count + 1 WHERE id = ?")->execute([$pollId]);
         }
 

@@ -26,10 +26,15 @@
 
     async function postJSON(url, body) {
         const fd = new FormData();
-        for (const [k, v] of Object.entries(body)) fd.append(k, String(v));
+        if (body instanceof FormData) {
+            for (const [k, v] of body.entries()) fd.append(k, String(v));
+        } else {
+            for (const [k, v] of Object.entries(body)) fd.append(k, String(v));
+        }
         const res = await fetch(url, { method: 'POST', body: fd });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
+        const data = await res.json().catch(() => ({ success: false, error: `HTTP ${res.status}` }));
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        return data;
     }
 
     /* ── Like / Unlike ─────────────────────────────────────── */
@@ -40,19 +45,20 @@
             if (!btn) return;
             e.preventDefault();
 
-            const postId = btn.dataset.postId;
+            const postId = btn.dataset.postId || btn.dataset.post;
             const csrfToken = btn.dataset.csrf;
             if (!postId || !csrfToken) return;
 
             btn.disabled = true;
             try {
-                const data = await postJSON('/forum/post/' + postId + '/like', {
+                const data = await postJSON('/forum/api/like', {
+                    post_id: postId,
                     csrf_token: csrfToken,
                     ajax: '1'
                 });
                 if (data.success) {
-                    const countEl = btn.querySelector('.cmsforum-like-count');
-                    if (countEl) countEl.textContent = data.likes ?? '';
+                    const countEl = btn.querySelector('.cmsforum-like-count, .js-like-count');
+                    if (countEl) countEl.textContent = data.count ?? data.likes ?? '';
                     btn.classList.toggle('cmsforum-post__action-btn--active', data.liked);
                     btn.title = data.liked ? 'Gefällt mir nicht mehr' : 'Gefällt mir';
                 }
@@ -72,20 +78,23 @@
             if (!btn) return;
             e.preventDefault();
 
-            const threadId = btn.dataset.threadId;
+            const itemId = btn.dataset.itemId || btn.dataset.threadId || btn.dataset.id;
+            const type = btn.dataset.type || 'thread';
             const csrfToken = btn.dataset.csrf;
-            if (!threadId || !csrfToken) return;
+            if (!itemId || !csrfToken) return;
 
             btn.disabled = true;
             try {
-                const data = await postJSON('/forum/thread/' + threadId + '/subscribe', {
+                const data = await postJSON('/forum/api/subscribe', {
+                    type,
+                    item_id: itemId,
                     csrf_token: csrfToken,
                     ajax: '1'
                 });
                 if (data.success) {
                     btn.classList.toggle('cmsforum-post__action-btn--active', data.subscribed);
-                    const label = btn.querySelector('.cmsforum-subscribe-label');
-                    if (label) label.textContent = data.subscribed ? 'Abonniert' : 'Abonnieren';
+                    const label = btn.querySelector('.cmsforum-subscribe-label') || btn;
+                    label.textContent = data.subscribed ? 'Abonniert' : 'Abonnieren';
                 }
             } catch (err) {
                 console.error('Subscribe error:', err);
@@ -112,9 +121,10 @@
             const btn = e.target.closest('[data-action="report"]');
             if (!btn) return;
             e.preventDefault();
-            if (postIdField) postIdField.value = btn.dataset.postId || '';
+            if (postIdField) postIdField.value = btn.dataset.postId || btn.dataset.post || '';
             if (reasonSelect) reasonSelect.selectedIndex = 0;
             if (detailField) detailField.value = '';
+            modal.hidden = false;
             modal.style.display = 'flex';
         });
 
@@ -122,12 +132,14 @@
         document.addEventListener('click', (e) => {
             if (e.target.closest('[data-action="close-modal"]') || e.target === modal) {
                 modal.style.display = 'none';
+                modal.hidden = true;
             }
         });
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && modal.style.display === 'flex') {
                 modal.style.display = 'none';
+                modal.hidden = true;
             }
         });
 
@@ -145,7 +157,7 @@
                     const data = await postJSON(form.action, fd);
                     if (data.success) {
                         showAlert(alertBox, 'success', 'Meldung wurde gesendet.');
-                        setTimeout(() => { modal.style.display = 'none'; }, 1500);
+                        setTimeout(() => { modal.style.display = 'none'; modal.hidden = true; }, 1500);
                     } else {
                         showAlert(alertBox, 'error', data.error || 'Fehler beim Senden.');
                     }
@@ -217,6 +229,34 @@
                     if (submitBtn) submitBtn.disabled = false;
                 }
             });
+        });
+
+        document.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.js-poll-vote');
+            if (!btn) return;
+            e.preventDefault();
+
+            const pollId = btn.dataset.poll;
+            const optionId = btn.dataset.option;
+            const csrfToken = btn.dataset.csrf;
+            if (!pollId || !optionId || !csrfToken) return;
+
+            btn.disabled = true;
+            try {
+                const data = await postJSON('/forum/api/poll-vote', {
+                    poll_id: pollId,
+                    option_ids: optionId,
+                    csrf_token: csrfToken,
+                    ajax: '1'
+                });
+                if (data.success) {
+                    location.reload();
+                }
+            } catch (err) {
+                console.error('Poll vote error:', err);
+            } finally {
+                btn.disabled = false;
+            }
         });
     }
 

@@ -73,7 +73,11 @@ class CMS_JPG_Member_Controller
     private function require_auth(): void
     {
         if (!$this->auth->isLoggedIn()) {
-            header('Location: /login?redirect=' . urlencode($_SERVER['REQUEST_URI'] ?? '/member/jobs'));
+            $redirect = (string) ($_SERVER['REQUEST_URI'] ?? '/member/jobs');
+            if ($redirect === '' || !str_starts_with($redirect, '/')) {
+                $redirect = '/member/jobs';
+            }
+            header('Location: /login?redirect=' . rawurlencode($redirect), true, 303);
             exit;
         }
         $this->userId = method_exists($this->auth, 'getUserId') ? (int) $this->auth->getUserId() : 0;
@@ -91,11 +95,11 @@ class CMS_JPG_Member_Controller
 
     private function verify_token(string $action): bool
     {
-        $token = $_POST['_jpg_csrf'] ?? '';
+        $token = (string) ($_POST['_jpg_csrf'] ?? '');
         if (class_exists('CMS\\Security')) {
             return \CMS\Security::instance()->verifyToken($token, 'member_jpg_' . $action);
         }
-        return !empty($token); // Fallback
+        return false;
     }
 
     // ── Eingabe-Helfer ────────────────────────────────────────────────────────
@@ -110,9 +114,33 @@ class CMS_JPG_Member_Controller
         return match ($type) {
             'int'   => (int) $raw,
             'email' => (string) filter_var($raw, FILTER_VALIDATE_EMAIL),
-            'url'   => (string) filter_var($raw, FILTER_VALIDATE_URL),
+            'url'   => $this->sanitize_public_url((string) $raw),
             'html'  => (string) $raw,  // SunEditor-Inhalte; sanitizeHtml() in Logik anwenden
             default => sanitize_text_field((string) $raw),
         };
+    }
+
+    private function sanitize_public_url(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '' || strlen($url) > 2048 || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+        $parts = parse_url($url);
+        if (!is_array($parts)) {
+            return '';
+        }
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || !empty($parts['user']) || !empty($parts['pass'])) {
+            return '';
+        }
+        $host = strtolower(trim((string) ($parts['host'] ?? ''), '[]'));
+        if ($host === '' || $host === 'localhost' || str_ends_with($host, '.localhost') || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
+            return '';
+        }
+        if (filter_var($host, FILTER_VALIDATE_IP) && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return '';
+        }
+        return $url;
     }
 }

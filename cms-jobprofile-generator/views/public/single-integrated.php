@@ -184,7 +184,7 @@ $esc = function (string $v): string {
         <div class="jpg-apply-section" id="apply">
             <h2>Jetzt bewerben</h2>
             <?php if (!empty($profile->description)): ?>
-            <div class="jpg-apply-desc"><?php echo $profile->description; /* Already sanitized HTML */ ?></div>
+            <div class="jpg-apply-desc"><?php echo nl2br($esc(strip_tags((string) $profile->description))); ?></div>
             <?php endif; ?>
             <button type="button" class="jpg-btn-apply" onclick="jpgOpenApplyModal()">
                 📩 Jetzt bewerben

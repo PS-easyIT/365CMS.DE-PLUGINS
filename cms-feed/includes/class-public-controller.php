@@ -35,7 +35,7 @@ final class CMS_Feed_Public_Controller
     {
         $db   = CMS_Feed_Database::instance();
         $s    = $db->get_settings();
-        $slug = trim((string) ($s['archive_slug'] ?? 'feeds'), '/');
+        $slug = $this->sanitize_slug((string) ($s['archive_slug'] ?? 'feeds'));
         if ($slug === '' || $slug === 'feed') {
             $slug = 'feeds';
         }
@@ -74,7 +74,7 @@ final class CMS_Feed_Public_Controller
         }
 
         $db       = CMS_Feed_Database::instance();
-        $category = $db->get_category_by_slug($catSlug);
+        $category = $db->get_category_by_slug($this->sanitize_slug($catSlug));
 
         if ($category && (int) $category['is_public']) {
             $this->render_category($category);
@@ -93,10 +93,10 @@ final class CMS_Feed_Public_Controller
         $s          = $db->get_settings();
         $categories = $db->get_public_categories();
 
-        $page    = max(1, (int) ($_GET['page'] ?? 1));
+        $page    = max(1, min(999, (int) ($_GET['page'] ?? 1)));
         $perPage = max(4, min(100, (int) ($s['per_page'] ?? 20)));
         $offset  = ($page - 1) * $perPage;
-        $search  = sanitize_text_field($_GET['q'] ?? '');
+        $search  = mb_substr(trim(strip_tags((string) ($_GET['q'] ?? ''))), 0, 120);
 
         $filters = [];
         if ($search) {
@@ -129,10 +129,10 @@ final class CMS_Feed_Public_Controller
         $db = CMS_Feed_Database::instance();
         $s  = $db->get_settings();
 
-        $page    = max(1, (int) ($_GET['page'] ?? 1));
+        $page    = max(1, min(999, (int) ($_GET['page'] ?? 1)));
         $perPage = max(4, min(100, (int) ($category['items_per_page'] ?: ($s['per_page'] ?? 20))));
         $offset  = ($page - 1) * $perPage;
-        $search  = sanitize_text_field($_GET['q'] ?? '');
+        $search  = mb_substr(trim(strip_tags((string) ($_GET['q'] ?? ''))), 0, 120);
 
         $filters = ['category_id' => (int) $category['id']];
         if ($search) {
@@ -155,18 +155,23 @@ final class CMS_Feed_Public_Controller
             'pages'    => $pages,
             'total'    => $total,
             'archivePath' => $this->get_archive_path($s),
-            'publicCategoryPath' => '/feed/' . rawurlencode((string) ($category['slug'] ?? '')),
+            'publicCategoryPath' => '/feed/' . rawurlencode($this->sanitize_slug((string) ($category['slug'] ?? ''))),
         ]);
     }
 
     private function get_archive_path(array $settings): string
     {
-        $slug = trim((string) ($settings['archive_slug'] ?? 'feeds'), '/');
+        $slug = $this->sanitize_slug((string) ($settings['archive_slug'] ?? 'feeds'));
         if ($slug === '' || $slug === 'feed') {
             $slug = 'feeds';
         }
 
         return '/' . $slug;
+    }
+
+    private function sanitize_slug(string $slug): string
+    {
+        return preg_replace('/[^a-z0-9\-]/', '', strtolower(trim($slug, '/'))) ?: '';
     }
 
     private function has_feed_access(): bool

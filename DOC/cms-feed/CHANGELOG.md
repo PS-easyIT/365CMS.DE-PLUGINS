@@ -4,6 +4,16 @@ Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
 ---
 
+## [3.0.1] – 2026-05-17
+
+### Geändert
+- Public-Archiv- und Kategorie-Routen normalisieren Slugs, Suchbegriffe und Pagination defensiv.
+- Admin-Formulare geben CSRF-Token im Attribut-Kontext escaped aus; Kanal-Site-URLs werden auf sichere `http`/`https`-Links ohne lokale/private Hosts begrenzt.
+- Feed-Card-Links und Bilder werden vor der Ausgabe nochmals gegen unsichere Schemes, Credentials und lokale/private Hosts geprüft.
+- Public-Templates nutzen explizites `ENT_QUOTES`/`UTF-8`-Escaping und textbasierte Such-/Badge-Controls für bessere Accessibility und weniger dekorative UI-Last.
+
+---
+
 ## [1.3.6] – 2026-05-03
 
 ### Behoben

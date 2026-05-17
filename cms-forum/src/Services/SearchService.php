@@ -42,7 +42,8 @@ final class SearchService
     public function search(string $query, array $filters = [], int $offset = 0, int $limit = 20): array
     {
         $p    = $this->db()->prefix();
-        $term = '%' . trim($query) . '%';
+        $query = mb_substr(trim(strip_tags($query)), 0, 120);
+        $term = '%' . $query . '%';
 
         $where  = ["t.status != 'deleted'", "po.is_deleted = 0"];
         $params = [];
@@ -88,7 +89,8 @@ final class SearchService
         $total = (int) $stmt->fetchColumn();
 
         // Ergebnisse laden
-        $limit = min($limit, self::MAX_RESULTS);
+        $limit = max(1, min($limit, self::MAX_RESULTS));
+        $offset = max(0, $offset);
         $sql = "SELECT DISTINCT t.*, u.username, f.name AS forum_name, f.slug AS forum_slug,
                        (SELECT COUNT(*) FROM {$p}cmsforum_posts WHERE thread_id = t.id AND is_deleted = 0) AS post_count
                 FROM {$p}cmsforum_threads t

@@ -26,24 +26,24 @@ use CMS_Forum\Helpers\TimeHelper;
 
         <!-- Breadcrumb -->
         <nav class="cmsforum-breadcrumb" aria-label="Breadcrumb">
-            <a href="<?php echo SITE_URL; ?>/">Startseite</a>
+            <a href="<?php echo htmlspecialchars(rtrim((string) SITE_URL, '/'), ENT_QUOTES, 'UTF-8'); ?>/">Startseite</a>
             <span class="cmsforum-breadcrumb__sep" aria-hidden="true">›</span>
-            <a href="<?php echo SITE_URL; ?>/forum">Forum</a>
+            <a href="<?php echo htmlspecialchars(rtrim((string) SITE_URL, '/'), ENT_QUOTES, 'UTF-8'); ?>/forum">Forum</a>
             <span class="cmsforum-breadcrumb__sep" aria-hidden="true">›</span>
             <span class="cmsforum-breadcrumb__current" aria-current="page">Suche</span>
         </nav>
 
         <div class="cmsforum-page-header">
-            <h1 class="cmsforum-page-header__title">🔍 Forum-Suche</h1>
+            <h1 class="cmsforum-page-header__title">Forum-Suche</h1>
         </div>
 
         <!-- Suchformular -->
         <div class="cmsforum-card">
-            <form method="GET" action="<?php echo SITE_URL; ?>/forum/search" class="cmsforum-search-form">
+            <form method="GET" action="<?php echo htmlspecialchars(rtrim((string) SITE_URL, '/'), ENT_QUOTES, 'UTF-8'); ?>/forum/search" class="cmsforum-search-form">
                 <div class="cmsforum-search-form__row">
-                    <input type="text" name="q" class="cmsforum-input cmsforum-input--lg" value="<?php echo htmlspecialchars($query); ?>"
+                          <input type="text" name="q" class="cmsforum-input cmsforum-input--lg" value="<?php echo htmlspecialchars((string) $query, ENT_QUOTES, 'UTF-8'); ?>"
                            placeholder="Suchbegriff eingeben..." autofocus>
-                    <button type="submit" class="cmsforum-btn cmsforum-btn--primary">🔍 Suchen</button>
+                          <button type="submit" class="cmsforum-btn cmsforum-btn--primary">Suchen</button>
                 </div>
                 <details class="cmsforum-details" <?php echo !empty($filters) ? 'open' : ''; ?>>
                     <summary class="cmsforum-details__summary">⚙️ Erweiterte Filter</summary>
@@ -51,11 +51,11 @@ use CMS_Forum\Helpers\TimeHelper;
                         <div class="cmsforum-search-filters">
                             <div class="cmsforum-form-group">
                                 <label class="cmsforum-label">Datum von</label>
-                                <input type="date" name="from" class="cmsforum-input" value="<?php echo htmlspecialchars($filters['date_from'] ?? ''); ?>">
+                                <input type="date" name="from" class="cmsforum-input" value="<?php echo htmlspecialchars((string) ($filters['date_from'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                             </div>
                             <div class="cmsforum-form-group">
                                 <label class="cmsforum-label">Datum bis</label>
-                                <input type="date" name="to" class="cmsforum-input" value="<?php echo htmlspecialchars($filters['date_to'] ?? ''); ?>">
+                                <input type="date" name="to" class="cmsforum-input" value="<?php echo htmlspecialchars((string) ($filters['date_to'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                             </div>
                         </div>
                     </div>
@@ -68,7 +68,7 @@ use CMS_Forum\Helpers\TimeHelper;
             <?php if (empty($threads)): ?>
                 <div class="cmsforum-empty">
                     <p class="cmsforum-empty__icon">🔍</p>
-                    <p class="cmsforum-empty__text">Keine Ergebnisse für &bdquo;<?php echo htmlspecialchars($query); ?>&ldquo;</p>
+                    <p class="cmsforum-empty__text">Keine Ergebnisse für &bdquo;<?php echo htmlspecialchars((string) $query, ENT_QUOTES, 'UTF-8'); ?>&ldquo;</p>
                 </div>
             <?php else: ?>
                 <div class="cmsforum-search-results">
@@ -79,21 +79,21 @@ use CMS_Forum\Helpers\TimeHelper;
                         <div class="cmsforum-thread-item">
                             <div class="cmsforum-thread-item__body">
                                 <h3 class="cmsforum-thread-item__title">
-                                    <a href="<?php echo SITE_URL; ?>/forum/thread/<?php echo (int)$t->id; ?>">
-                                        <?php echo htmlspecialchars($t->title); ?>
+                                    <a href="<?php echo htmlspecialchars(rtrim((string) SITE_URL, '/'), ENT_QUOTES, 'UTF-8'); ?>/forum/thread/<?php echo (int)$t->id; ?>">
+                                        <?php echo htmlspecialchars((string) $t->title, ENT_QUOTES, 'UTF-8'); ?>
                                     </a>
                                 </h3>
                                 <div class="cmsforum-thread-item__meta">
-                                    <span><?php echo htmlspecialchars($t->username ?? 'Gelöscht'); ?></span>
+                                    <span><?php echo htmlspecialchars((string) ($t->username ?? 'Gelöscht'), ENT_QUOTES, 'UTF-8'); ?></span>
                                     <span class="cmsforum-thread-item__sep">·</span>
                                     <?php echo TimeHelper::tag($t->created_at); ?>
                                     <?php if (!empty($t->forum_name)): ?>
                                         <span class="cmsforum-thread-item__sep">·</span>
-                                        <span>in <?php echo htmlspecialchars($t->forum_name); ?></span>
+                                        <span>in <?php echo htmlspecialchars((string) $t->forum_name, ENT_QUOTES, 'UTF-8'); ?></span>
                                     <?php endif; ?>
                                 </div>
                                 <?php if (!empty($t->snippet)): ?>
-                                    <p class="cmsforum-search-results__snippet"><?php echo $t->snippet; ?></p>
+                                    <p class="cmsforum-search-results__snippet"><?php echo htmlspecialchars((string) $t->snippet, ENT_QUOTES, 'UTF-8'); ?></p>
                                 <?php endif; ?>
                             </div>
                             <div class="cmsforum-thread-item__stats">
@@ -104,7 +104,7 @@ use CMS_Forum\Helpers\TimeHelper;
                         <?php endforeach; ?>
                     </div>
 
-                    <?php echo $pagination->render(SITE_URL . '/forum/search?q=' . urlencode($query)); ?>
+                    <?php echo $pagination->render(rtrim((string) SITE_URL, '/') . '/forum/search?q=' . rawurlencode((string) $query)); ?>
                 </div>
             <?php endif; ?>
         <?php endif; ?>

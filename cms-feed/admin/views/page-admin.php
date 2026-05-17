@@ -4,6 +4,7 @@
 $queueStats = CMS_Feed_Database::instance()->get_queue_stats();
 $healthSummary = CMS_Feed_Database::instance()->get_channel_health_summary();
 $attentionChannels = CMS_Feed_Database::instance()->get_attention_channels(6);
+$csrfEsc = htmlspecialchars((string) $csrf, ENT_QUOTES, 'UTF-8');
 ?>
 
 <div class="feed-admin-shell-wrap">
@@ -18,7 +19,7 @@ $attentionChannels = CMS_Feed_Database::instance()->get_attention_channels(6);
         <?php if ($tab === 'dashboard'): ?>
             <form method="POST" class="feed-inline-form">
                 <input type="hidden" name="action" value="fetch_now">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                 <button type="submit" class="btn btn-primary">🔄 Alle Feeds abrufen</button>
             </form>
         <?php elseif ($tab === 'channels'): ?>
@@ -181,7 +182,7 @@ if ($tab === 'dashboard'):
             <form method="POST" class="feed-inline-form">
                 <input type="hidden" name="action" value="cleanup">
                 <input type="hidden" name="cleanup_days" value="7">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                 <button type="submit" class="btn btn-secondary btn-sm">🧹 Alte Beiträge aufräumen</button>
             </form>
         </div>
@@ -288,7 +289,7 @@ elseif ($tab === 'channels'):
             <span id="channelBulkCount">0</span> ausgewählt
         </span>
         <form method="POST" id="channelBulkForm" class="feed-inline-actions">
-            <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
             <input type="hidden" name="action" id="channelBulkAction" value="">
             <div id="channelBulkIds"></div>
             <button type="button" class="btn btn-sm btn-primary" data-feed-bulk-channel-action="bulk_fetch_channels" title="Ausgewählte abrufen (max. 5 sofort, Rest per Cron)">🔄 Abrufen</button>
@@ -349,7 +350,7 @@ elseif ($tab === 'channels'):
                             <form method="POST" class="feed-inline-form">
                                 <input type="hidden" name="action" value="fetch_now">
                                 <input type="hidden" name="channel_id" value="<?php echo (int)$ch['id']; ?>">
-                                <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                                <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                                 <button type="submit" class="btn btn-sm btn-secondary" title="Jetzt abrufen">🔄</button>
                             </form>
                             <button type="button" class="btn btn-sm btn-secondary" data-feed-edit-channel="<?php echo (int)$ch['id']; ?>" title="Bearbeiten">✏️</button>
@@ -388,7 +389,7 @@ elseif ($tab === 'categories'):
             <span id="categoryBulkCount">0</span> ausgewählt
         </span>
         <form method="POST" id="categoryBulkForm" class="feed-inline-actions">
-            <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
             <input type="hidden" name="action" id="categoryBulkAction" value="">
             <div id="categoryBulkIds"></div>
             <button type="button" class="btn btn-sm btn-danger" data-feed-bulk-category-action="bulk_delete_categories">🗑️ Ausgewählte löschen</button>
@@ -488,7 +489,7 @@ elseif ($tab === 'catalog'):
                     <input type="hidden" name="action" value="import_catalog">
                     <input type="hidden" name="catalog_key" value="<?php echo htmlspecialchars($catKey); ?>">
                     <input type="hidden" name="target_category_id" value="0">
-                    <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                     <button type="submit" class="btn btn-primary btn-sm">
                         📥 Komplett importieren
                     </button>
@@ -498,7 +499,7 @@ elseif ($tab === 'catalog'):
                     <form method="POST" class="feed-inline-actions" data-feed-confirm-message="<?php echo htmlspecialchars('Feeds aus „' . $catInfo['name'] . '“ in bestehenden Bereich importieren?', ENT_QUOTES); ?>" data-feed-confirm-danger="0">
                         <input type="hidden" name="action" value="import_catalog">
                         <input type="hidden" name="catalog_key" value="<?php echo htmlspecialchars($catKey); ?>">
-                        <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                        <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                         <select name="target_category_id" class="form-control feed-input-compact">
                             <?php foreach ($categories as $cat): ?>
                             <option value="<?php echo (int)$cat['id']; ?>"><?php echo htmlspecialchars($cat['icon'] . ' ' . $cat['name']); ?></option>
@@ -518,7 +519,7 @@ elseif ($tab === 'catalog'):
                     <input type="hidden" name="action" value="import_catalog">
                     <input type="hidden" name="catalog_key" value="<?php echo htmlspecialchars($catKey); ?>">
                     <input type="hidden" name="catalog_import_mode" value="selected">
-                    <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
 
                     <div class="feed-catalog-toolbar">
                         <span><?php echo count($catalogFeeds); ?> Quellen verfügbar</span>
@@ -651,19 +652,19 @@ elseif ($tab === 'items'):
                             <form method="POST" class="feed-inline-form">
                                 <input type="hidden" name="action" value="toggle_featured">
                                 <input type="hidden" name="id" value="<?php echo (int)$item['id']; ?>">
-                                <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                                <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                                 <button type="submit" class="btn btn-sm btn-secondary" title="<?php echo (int)$item['is_featured'] ? 'Featured entfernen' : 'Als Featured markieren'; ?>">⭐</button>
                             </form>
                             <form method="POST" class="feed-inline-form">
                                 <input type="hidden" name="action" value="toggle_hidden">
                                 <input type="hidden" name="id" value="<?php echo (int)$item['id']; ?>">
-                                <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                                <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                                 <button type="submit" class="btn btn-sm btn-secondary" title="Ausblenden">👁️</button>
                             </form>
                             <form method="POST" class="feed-inline-form" data-feed-confirm-message="Diesen Beitrag wirklich löschen?">
                                 <input type="hidden" name="action" value="delete_item">
                                 <input type="hidden" name="id" value="<?php echo (int)$item['id']; ?>">
-                                <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                                <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                                 <button type="submit" class="btn btn-sm btn-danger" title="Löschen">🗑️</button>
                             </form>
                         </div>
@@ -763,7 +764,7 @@ elseif ($tab === 'digests'):
                             <form method="POST" class="feed-inline-form">
                                 <input type="hidden" name="action" value="test_digest">
                                 <input type="hidden" name="digest_id" value="<?php echo (int)$dg['id']; ?>">
-                                <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                                <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                                 <button type="submit" class="btn btn-sm btn-secondary" title="Test senden">📤</button>
                             </form>
                             <button type="button" class="btn btn-sm btn-secondary" data-feed-edit-digest="<?php echo (int)$dg['id']; ?>" title="Bearbeiten">✏️</button>
@@ -783,7 +784,7 @@ elseif ($tab === 'digests'):
 
     <form method="POST" class="admin-form feed-settings-form feed-settings-form--narrow">
         <input type="hidden" name="action" value="save_digest_settings">
-        <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+        <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
 
         <div class="form-group">
             <label class="form-label">Absendername</label>
@@ -849,7 +850,7 @@ elseif ($tab === 'settings'):
         <div class="feed-settings-layout">
         <form method="POST" class="admin-form feed-settings-form admin-card feed-settings-panel">
             <input type="hidden" name="action" value="save_settings">
-            <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
 
             <div class="feed-panel-header">
                 <div>
@@ -925,7 +926,7 @@ elseif ($tab === 'settings'):
         <div class="feed-settings-layout">
         <form method="POST" class="admin-form feed-settings-form feed-settings-form--wide admin-card feed-settings-panel">
             <input type="hidden" name="action" value="save_design">
-            <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
 
             <div class="feed-panel-header">
                 <div>
@@ -1051,13 +1052,13 @@ elseif ($tab === 'settings'):
             <form method="POST" class="feed-inline-form-block">
                 <input type="hidden" name="action" value="cleanup">
                 <input type="hidden" name="cleanup_days" value="7">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                 <button type="submit" class="btn btn-secondary">🧹 Beiträge älter 7 Tage entfernen</button>
             </form>
             <form method="POST" class="feed-inline-form-block">
                 <input type="hidden" name="action" value="cleanup">
                 <input type="hidden" name="cleanup_days" value="30">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                 <button type="submit" class="btn btn-danger">🧹 Beiträge älter 30 Tage entfernen</button>
             </form>
         </div>
@@ -1093,7 +1094,7 @@ elseif ($tab === 'settings'):
         <div class="modal-body">
             <form id="channelForm" method="POST" class="admin-form">
                 <input type="hidden" name="action" value="save_channel">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                 <input type="hidden" name="channel_id" id="channel_id" value="">
 
                 <div class="form-group">
@@ -1158,7 +1159,7 @@ elseif ($tab === 'settings'):
         <div class="modal-body">
             <form id="categoryForm" method="POST" class="admin-form">
                 <input type="hidden" name="action" value="save_category">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                 <input type="hidden" name="cat_id" id="cat_id" value="">
 
                 <div class="feed-form-grid-auto-icon">
@@ -1225,7 +1226,7 @@ elseif ($tab === 'settings'):
         <div class="modal-body">
             <form id="digestForm" method="POST" class="admin-form">
                 <input type="hidden" name="action" value="save_digest">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                 <input type="hidden" name="digest_id" id="digest_id" value="">
 
                 <div class="form-group">
@@ -1288,7 +1289,7 @@ elseif ($tab === 'settings'):
             <form method="POST" id="deleteModalForm" class="feed-inline-form">
                 <input type="hidden" name="action" id="deleteModalAction" value="">
                 <input type="hidden" name="id" id="deleteModalId">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                 <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
             </form>
         </div>

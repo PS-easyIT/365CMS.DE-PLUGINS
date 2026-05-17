@@ -331,6 +331,7 @@ class CMS_JPG_Frontend
 
     public function render_integrated(string $slug): void
     {
+        $slug = $this->sanitize_slug($slug);
         $profile = $this->load_profile($slug);
 
         if (!$profile) {
@@ -383,6 +384,7 @@ class CMS_JPG_Frontend
 
     public function render_whitelabel(string $slug): void
     {
+        $slug = $this->sanitize_slug($slug);
         // Feature-Gate: Whitelabel nur mit aktiver Feature-Flag
         if (function_exists('user_has_feature') && !user_has_feature('whitelabel_jobs')) {
             // Fallback zur normalen Ansicht
@@ -417,20 +419,18 @@ class CMS_JPG_Frontend
 
     public function handle_pdf_export(string $slug): void
     {
+        $slug = $this->sanitize_slug($slug);
         // Rate-Limiting
         if (!$this->check_rate_limit('pdf_export', 5, 60)) {
             http_response_code(429);
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Rate limit exceeded. Max 5 PDFs pro Minute.']);
+            $this->send_json(['error' => 'Rate limit exceeded. Max 5 PDFs pro Minute.'], 429);
             exit;
         }
 
         $profile = $this->load_profile($slug);
 
         if (!$profile) {
-            http_response_code(404);
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Profil nicht gefunden.']);
+            $this->send_json(['error' => 'Profil nicht gefunden.'], 404);
             exit;
         }
 
@@ -443,7 +443,8 @@ class CMS_JPG_Frontend
         if (!class_exists('\\Mpdf\\Mpdf')) {
             // Fallback: HTML-Download
             header('Content-Type: text/html; charset=utf-8');
-            header('Content-Disposition: attachment; filename="' . $profile->slug . '.html"');
+            header('X-Content-Type-Options: nosniff');
+            header('Content-Disposition: attachment; filename="' . $this->safe_ascii_filename((string) $profile->slug, 'stellenprofil') . '.html"');
             echo $html;
             exit;
         }
@@ -461,12 +462,10 @@ class CMS_JPG_Frontend
             $mpdf->SetAuthor($data['company'] ?? '365CMS');
             $mpdf->WriteHTML($html);
 
-            $mpdf->Output($profile->slug . '.pdf', 'D');
+            $mpdf->Output($this->safe_ascii_filename((string) $profile->slug, 'stellenprofil') . '.pdf', 'D');
         } catch (\Throwable $e) {
             error_log('CMS_JPG_Frontend::handle_pdf_export() mPDF error: ' . $e->getMessage());
-            http_response_code(500);
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'PDF-Generierung fehlgeschlagen.']);
+            $this->send_json(['error' => 'PDF-Generierung fehlgeschlagen.'], 500);
         }
         exit;
     }
@@ -488,6 +487,7 @@ class CMS_JPG_Frontend
      */
     public function handle_apply(string $slug): void
     {
+        $slug = $this->sanitize_slug($slug);
         // PHP-Warnings/Notices dürfen den JSON-Response-Body nicht korrumpieren
         @ini_set('display_errors', '0');
 
@@ -497,39 +497,36 @@ class CMS_JPG_Frontend
             ob_end_clean();
         }
 
-        header('Content-Type: application/json; charset=utf-8');
+        $this->send_json_headers();
 
         // ── 1. Rate-Limiting ──────────────────────────────────────────────────
         if (!$this->check_rate_limit('apply_job', 3, 300)) {
-            http_response_code(429);
-            echo json_encode(['success' => false, 'error' => 'Zu viele Anfragen. Bitte warte 5 Minuten.']);
+            $this->send_json(['success' => false, 'error' => 'Zu viele Anfragen. Bitte warte 5 Minuten.'], 429);
             exit;
         }
 
         // ── 2. Honeypot (verstecktes Feld muss leer sein) ────────────────────
         if (!empty($_POST['_hp_name'] ?? '')) {
             http_response_code(200); // Täuscht Bots
-            echo json_encode(['success' => true]);
+            $this->send_json(['success' => true]);
             exit;
         }
 
         // ── 3. CSRF-Verifikation ──────────────────────────────────────────────
-        $token = $_POST['_jpg_csrf'] ?? '';
+        $token = (string) ($_POST['_jpg_csrf'] ?? '');
         $tokenValid = false;
         if (class_exists('CMS\\Security')) {
             $tokenValid = \CMS\Security::instance()->verifyToken($token, 'jpg_apply_' . $slug);
         }
         if (!$tokenValid) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen. Bitte die Seite neu laden.']);
+            $this->send_json(['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen. Bitte die Seite neu laden.'], 403);
             exit;
         }
 
         // ── 4. Profil laden & Status prüfen ──────────────────────────────────
         $profile = $this->load_profile($slug);
         if (!$profile) {
-            http_response_code(404);
-            echo json_encode(['success' => false, 'error' => 'Stellenanzeige nicht gefunden.']);
+            $this->send_json(['success' => false, 'error' => 'Stellenanzeige nicht gefunden.'], 404);
             exit;
         }
 
@@ -540,30 +537,26 @@ class CMS_JPG_Frontend
             $userId = method_exists($auth, 'getUserId') ? (int) $auth->getUserId() : null;
         }
         if (!$userId) {
-            http_response_code(401);
-            echo json_encode(['success' => false, 'error' => 'Du musst eingeloggt sein, um dich zu bewerben.', 'require_auth' => true]);
+            $this->send_json(['success' => false, 'error' => 'Du musst eingeloggt sein, um dich zu bewerben.', 'require_auth' => true], 401);
             exit;
         }
 
         // ── 5. Eingaben sanitieren ────────────────────────────────────────────
-        $name        = $this->sanitize_text($_POST['applicant_name'] ?? '');
-        $email       = filter_var($_POST['applicant_email'] ?? '', FILTER_VALIDATE_EMAIL);
-        $coverLetter = $this->sanitize_html($_POST['cover_letter'] ?? '');
-        $phone       = $this->sanitize_text($_POST['applicant_phone'] ?? '');
+        $name        = mb_substr($this->sanitize_text((string) ($_POST['applicant_name'] ?? '')), 0, 120);
+        $email       = filter_var((string) ($_POST['applicant_email'] ?? ''), FILTER_VALIDATE_EMAIL);
+        $coverLetter = mb_substr($this->sanitize_html((string) ($_POST['cover_letter'] ?? '')), 0, 12000);
+        $phone       = mb_substr($this->sanitize_text((string) ($_POST['applicant_phone'] ?? '')), 0, 80);
 
         if (empty($name) || strlen($name) < 2) {
-            http_response_code(422);
-            echo json_encode(['success' => false, 'error' => 'Bitte gib deinen vollständigen Namen an.']);
+            $this->send_json(['success' => false, 'error' => 'Bitte gib deinen vollständigen Namen an.'], 422);
             exit;
         }
         if (!$email) {
-            http_response_code(422);
-            echo json_encode(['success' => false, 'error' => 'Bitte gib eine gültige E-Mail-Adresse an.']);
+            $this->send_json(['success' => false, 'error' => 'Bitte gib eine gültige E-Mail-Adresse an.'], 422);
             exit;
         }
         if (empty($coverLetter) || strlen(strip_tags($coverLetter)) < 20) {
-            http_response_code(422);
-            echo json_encode(['success' => false, 'error' => 'Bitte verfasse ein kurzes Anschreiben (mind. 20 Zeichen).']);
+            $this->send_json(['success' => false, 'error' => 'Bitte verfasse ein kurzes Anschreiben (mind. 20 Zeichen).'], 422);
             exit;
         }
 
@@ -573,8 +566,7 @@ class CMS_JPG_Frontend
         if (!empty($_FILES['cv_file']['name'])) {
             $upload = $this->handle_cv_upload($_FILES['cv_file']);
             if (!$upload['success']) {
-                http_response_code(422);
-                echo json_encode(['success' => false, 'error' => $upload['error']]);
+                $this->send_json(['success' => false, 'error' => $upload['error']], 422);
                 exit;
             }
             $cvFilePath  = $upload['path'];
@@ -605,15 +597,14 @@ class CMS_JPG_Frontend
             $applicationId = $db->insert_id();
         } catch (\Throwable $e) {
             error_log('CMS_JPG_Frontend::handle_apply() DB error: ' . $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['success' => false, 'error' => 'Bewerbung konnte nicht gespeichert werden. Bitte versuche es erneut.']);
+            $this->send_json(['success' => false, 'error' => 'Bewerbung konnte nicht gespeichert werden. Bitte versuche es erneut.'], 500);
             exit;
         }
 
         // ── 8. Notification-Trigger (Task 5.3) ───────────────────────────────
         $this->trigger_application_notifications($profile, $name, (string) $email, (int) $applicationId);
 
-        echo json_encode([
+        $this->send_json([
             'success' => true,
             'message' => 'Deine Bewerbung wurde erfolgreich eingereicht. Wir melden uns bei dir!',
         ]);
@@ -630,48 +621,44 @@ class CMS_JPG_Frontend
     {
         @ini_set('display_errors', '0');
         while (ob_get_level() > 0) { ob_end_clean(); }
-        header('Content-Type: application/json; charset=utf-8');
+        $this->send_json_headers();
 
         // Rate-Limiting
         if (!$this->check_rate_limit('applicant_register', 5, 600)) {
-            http_response_code(429);
-            echo json_encode(['success' => false, 'error' => 'Zu viele Registrierungsversuche. Bitte warte 10 Minuten.']);
+            $this->send_json(['success' => false, 'error' => 'Zu viele Registrierungsversuche. Bitte warte 10 Minuten.'], 429);
             exit;
         }
 
         // Honeypot
         if (!empty($_POST['_hp_name'] ?? '')) {
-            echo json_encode(['success' => true]);
+            $this->send_json(['success' => true]);
             exit;
         }
 
         // CSRF
-        $token = $_POST['_jpg_csrf'] ?? '';
-        if (class_exists('CMS\\Security') && !$this->verify_csrf_any($token)) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen. Bitte die Seite neu laden.']);
+        $token = (string) ($_POST['_jpg_csrf'] ?? '');
+        $jobSlug = $this->sanitize_slug((string) ($_POST['job_slug'] ?? ''));
+        if (class_exists('CMS\Security') && !$this->verify_registration_csrf($token, $jobSlug)) {
+            $this->send_json(['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen. Bitte die Seite neu laden.'], 403);
             exit;
         }
 
         // Eingaben
-        $displayName = $this->sanitize_text($_POST['display_name'] ?? '');
-        $email       = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
-        $password    = $_POST['password'] ?? '';
-        $phone       = $this->sanitize_text($_POST['phone'] ?? '');
+        $displayName = mb_substr($this->sanitize_text((string) ($_POST['display_name'] ?? '')), 0, 120);
+        $email       = filter_var((string) ($_POST['email'] ?? ''), FILTER_VALIDATE_EMAIL);
+        $password    = (string) ($_POST['password'] ?? '');
+        $phone       = mb_substr($this->sanitize_text((string) ($_POST['phone'] ?? '')), 0, 80);
 
         if (empty($displayName) || strlen($displayName) < 2) {
-            http_response_code(422);
-            echo json_encode(['success' => false, 'error' => 'Bitte gib deinen vollständigen Namen an.']);
+            $this->send_json(['success' => false, 'error' => 'Bitte gib deinen vollständigen Namen an.'], 422);
             exit;
         }
         if (!$email) {
-            http_response_code(422);
-            echo json_encode(['success' => false, 'error' => 'Bitte gib eine gültige E-Mail-Adresse an.']);
+            $this->send_json(['success' => false, 'error' => 'Bitte gib eine gültige E-Mail-Adresse an.'], 422);
             exit;
         }
         if (strlen($password) < 12) {
-            http_response_code(422);
-            echo json_encode(['success' => false, 'error' => 'Das Passwort muss mindestens 12 Zeichen lang sein.']);
+            $this->send_json(['success' => false, 'error' => 'Das Passwort muss mindestens 12 Zeichen lang sein.'], 422);
             exit;
         }
 
@@ -685,8 +672,7 @@ class CMS_JPG_Frontend
         ]);
 
         if ($result !== true) {
-            http_response_code(422);
-            echo json_encode(['success' => false, 'error' => is_string($result) ? $result : 'Registrierung fehlgeschlagen.']);
+            $this->send_json(['success' => false, 'error' => is_string($result) ? $result : 'Registrierung fehlgeschlagen.'], 422);
             exit;
         }
 
@@ -710,7 +696,7 @@ class CMS_JPG_Frontend
         $loginResult = $auth->login((string) $email, $password);
         if ($loginResult !== true) {
             // Registrierung war erfolgreich, Login fehlgeschlagen (z.B. MFA)
-            echo json_encode([
+            $this->send_json([
                 'success'  => true,
                 'message'  => 'Konto erstellt! Bitte melde dich an, um fortzufahren.',
                 'redirect' => '/login?redirect=' . urlencode('/jobs'),
@@ -718,27 +704,32 @@ class CMS_JPG_Frontend
             exit;
         }
 
-        echo json_encode([
+        $this->send_json([
             'success'      => true,
             'message'      => 'Konto erstellt und eingeloggt! Du kannst dich jetzt bewerben.',
             'logged_in'    => true,
             'display_name' => $displayName,
+            'apply_csrf'   => (class_exists('CMS\\Security') && $jobSlug !== '')
+                ? \CMS\Security::instance()->generateToken('jpg_apply_' . $jobSlug)
+                : '',
         ]);
         exit;
     }
 
     /**
-     * Flexible CSRF-Prüfung: Akzeptiert Token für verschiedene Actions.
+     * Strikte CSRF-Prüfung für Bewerber-Registrierung.
      */
-    private function verify_csrf_any(string $token): bool
+    private function verify_registration_csrf(string $token, string $jobSlug): bool
     {
-        if (empty($token)) return false;
+        if ($token === '') {
+            return false;
+        }
         $sec = \CMS\Security::instance();
-        // Versuche verschiedene Action-Slugs
-        foreach (['jpg_register', 'jpg_apply_'] as $prefix) {
-            if ($sec->verifyToken($token, $prefix)) {
-                return true;
-            }
+        if ($sec->verifyToken($token, 'jpg_register')) {
+            return true;
+        }
+        if ($jobSlug !== '' && $sec->verifyToken($token, 'jpg_apply_' . $jobSlug)) {
+            return true;
         }
         return false;
     }
@@ -812,18 +803,31 @@ class CMS_JPG_Frontend
      */
     private function handle_cv_upload(array $file): array
     {
-        // Nur PDF/DOCX/DOC erlaubt
-        $allowed = ['application/pdf', 'application/msword',
-                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-        $finfo    = new \finfo(FILEINFO_MIME_TYPE);
-        $mimeType = $finfo->file($file['tmp_name']);
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            return ['success' => false, 'error' => 'Upload fehlgeschlagen. Bitte wähle eine gültige Datei.'];
+        }
 
-        if (!in_array($mimeType, $allowed, true)) {
+        $tmpName = (string) ($file['tmp_name'] ?? '');
+        if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+            return ['success' => false, 'error' => 'Upload konnte nicht validiert werden.'];
+        }
+
+        // Nur PDF/DOCX/DOC erlaubt
+        $allowed = [
+            'application/pdf' => 'pdf',
+            'application/msword' => 'doc',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+        ];
+        $finfo    = new \finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->file($tmpName);
+
+        if (!is_string($mimeType) || !array_key_exists($mimeType, $allowed)) {
             return ['success' => false, 'error' => 'Nur PDF oder Word-Dateien sind erlaubt.'];
         }
 
         $maxSize = 5 * 1024 * 1024; // 5 MB
-        if ($file['size'] > $maxSize) {
+        $fileSize = (int) ($file['size'] ?? 0);
+        if ($fileSize <= 0 || $fileSize > $maxSize) {
             return ['success' => false, 'error' => 'Datei zu groß (max. 5 MB).'];
         }
 
@@ -833,11 +837,11 @@ class CMS_JPG_Frontend
         }
 
         $token    = bin2hex(random_bytes(24));
-        $ext      = $mimeType === 'application/pdf' ? 'pdf' : 'docx';
+        $ext      = $allowed[$mimeType];
         $fileName = $token . '.' . $ext;
         $destPath = $uploadDir . $fileName;
 
-        if (!move_uploaded_file($file['tmp_name'], $destPath)) {
+        if (!move_uploaded_file($tmpName, $destPath)) {
             return ['success' => false, 'error' => 'Datei konnte nicht gespeichert werden.'];
         }
 
@@ -854,7 +858,7 @@ class CMS_JPG_Frontend
         if (function_exists('sanitize_text_field')) {
             return sanitize_text_field($value);
         }
-        return htmlspecialchars(strip_tags(trim($value)), ENT_QUOTES);
+        return htmlspecialchars(strip_tags(trim($value)), ENT_QUOTES, 'UTF-8');
     }
 
     /**
@@ -873,6 +877,11 @@ class CMS_JPG_Frontend
 
     private function load_profile(string $slug): ?object
     {
+        $slug = $this->sanitize_slug($slug);
+        if ($slug === '') {
+            return null;
+        }
+
         $db = \CMS\Database::instance();
         $p  = $db->getPrefix();
 
@@ -929,8 +938,8 @@ class CMS_JPG_Frontend
             // Phase 6.3 – cms-experts Team-Sektion
             'experts'        => $this->load_company_experts($profile),
             // Bewerbungsformular CSRF-Token (Task 5.3)
-            'applyCsrf'      => class_exists('CMS\\Security')
-                ? \CMS\Security::instance()->generateToken('jpg_apply_' . $profile->slug)
+            'applyCsrf'      => class_exists('CMS\Security')
+                ? \CMS\Security::instance()->generateToken('jpg_apply_' . $this->sanitize_slug((string) $profile->slug))
                 : bin2hex(random_bytes(16)),
         ];
     }
@@ -1375,5 +1384,31 @@ class CMS_JPG_Frontend
         $_SESSION[$key] = $data;
 
         return true;
+    }
+
+    private function sanitize_slug(string $slug): string
+    {
+        $slug = strtolower(rawurldecode(trim($slug)));
+        return preg_replace('/[^a-z0-9\-_]/', '', $slug) ?? '';
+    }
+
+    private function send_json_headers(): void
+    {
+        header('Content-Type: application/json; charset=UTF-8');
+        header('X-Content-Type-Options: nosniff');
+    }
+
+    private function send_json(array $payload, int $statusCode = 200): void
+    {
+        $this->send_json_headers();
+        http_response_code($statusCode);
+        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    private function safe_ascii_filename(string $value, string $fallback): string
+    {
+        $value = preg_replace('/[^a-zA-Z0-9._-]/', '-', $value) ?? '';
+        $value = trim($value, '.-');
+        return $value !== '' ? substr($value, 0, 120) : $fallback;
     }
 }

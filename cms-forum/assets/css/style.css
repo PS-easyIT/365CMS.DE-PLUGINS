@@ -802,6 +802,19 @@ body.dark-mode .cmsforum-poll__bar { background: rgba(59, 130, 246, .15); }
     margin-bottom: .75rem;
 }
 
+/* ── BBCode Helpers ───────────────────────────────────────── */
+
+.cmsforum-align--left { text-align: left; }
+.cmsforum-align--center { text-align: center; }
+.cmsforum-align--right { text-align: right; }
+.cmsforum-align--justify { text-align: justify; }
+
+.cmsforum-indent {
+    margin-left: 1.5rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--cmsforum-border);
+}
+
 /* ── Error ─────────────────────────────────────────────────── */
 
 .cmsforum-error {
@@ -913,6 +926,10 @@ body.dark-mode .cmsforum-poll__bar { background: rgba(59, 130, 246, .15); }
     background: rgba(0, 0, 0, .7);
     z-index: var(--cmsforum-z-modal);
     padding: 1rem;
+}
+
+.cmsforum-modal[hidden] {
+    display: none;
 }
 
 .cmsforum-modal__content {

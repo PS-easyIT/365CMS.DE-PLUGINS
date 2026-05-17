@@ -117,7 +117,10 @@ final class CMS_Feed_Admin
         $db   = CMS_Feed_Database::instance();
         $sec  = \CMS\Security::instance();
 
-        $tab = $data['tab'] ?? ($_GET['tab'] ?? 'dashboard');
+        $tab = (string) ($data['tab'] ?? ($_GET['tab'] ?? 'dashboard'));
+        if (!in_array($tab, ['dashboard', 'channels', 'categories', 'catalog', 'items', 'digests', 'settings'], true)) {
+            $tab = 'dashboard';
+        }
 
         $notice = $data['notice'] ?? null;
         $error  = $data['error']  ?? null;
@@ -125,7 +128,7 @@ final class CMS_Feed_Admin
 
         // ── POST-Verarbeitung (VOR Token-Generierung, damit das alte Token geprüft wird) ──
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-            if (!$sec->verifyToken($_POST['csrf_token'] ?? '', 'cms_feed_admin')) {
+            if (!$sec->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'cms_feed_admin')) {
                 $error = 'Sicherheitscheck fehlgeschlagen.';
             } else {
                 $result = $this->handle_post($tab);
@@ -225,7 +228,7 @@ final class CMS_Feed_Admin
             'category_id'    => $catId,
             'name'           => $name,
             'feed_url'       => $feedUrlValidation['url'] ?? '',
-            'site_url'       => filter_var($_POST['site_url'] ?? '', FILTER_VALIDATE_URL) ?: null,
+            'site_url'       => $this->sanitize_public_url((string) ($_POST['site_url'] ?? '')) ?: null,
             'description'    => sanitize_text_field($_POST['channel_description'] ?? ''),
             'is_active'      => !empty($_POST['is_active']) ? 1 : 0,
             'fetch_interval' => max(5, min(1440, (int) ($_POST['fetch_interval'] ?? 60))),
@@ -255,7 +258,10 @@ final class CMS_Feed_Admin
             return ['error' => 'Name und Slug sind erforderlich.'];
         }
 
-        $slug = preg_replace('/[^a-z0-9\-]/', '', strtolower($slug));
+        $slug = $this->sanitize_slug($slug);
+        if ($slug === '' || $slug === 'feed') {
+            return ['error' => 'Bitte verwende einen gültigen, konfliktfreien Slug.'];
+        }
 
         CMS_Feed_Database::instance()->save_category([
             'id'             => (int) ($_POST['cat_id'] ?? 0) ?: null,
@@ -388,7 +394,7 @@ final class CMS_Feed_Admin
         CMS_Feed_Database::instance()->update_settings([
             'archive_title'       => sanitize_text_field($_POST['archive_title'] ?? ''),
             'archive_description' => sanitize_text_field($_POST['archive_description'] ?? ''),
-            'archive_slug'        => preg_replace('/[^a-z0-9\-]/', '', strtolower($_POST['archive_slug'] ?? 'feeds')),
+            'archive_slug'        => $this->sanitize_slug((string) ($_POST['archive_slug'] ?? 'feeds')) ?: 'feeds',
             'per_page'            => (string) max(4, min(100, (int) ($_POST['per_page'] ?? 20))),
             'open_in_new_tab'     => !empty($_POST['open_in_new_tab']) ? '1' : '0',
             'show_source'         => !empty($_POST['show_source']) ? '1' : '0',
@@ -460,7 +466,7 @@ final class CMS_Feed_Admin
         $db = CMS_Feed_Database::instance();
         $targetCatId = (int) ($_POST['target_category_id'] ?? 0);
         if ($targetCatId < 1) {
-            $slug = preg_replace('/[^a-z0-9\-]/', '', strtolower($catData['slug']));
+            $slug = $this->sanitize_slug((string) $catData['slug']);
             $targetCatId = $db->save_category([
                 'id'             => null,
                 'name'           => $catData['name'],
@@ -605,5 +611,43 @@ final class CMS_Feed_Admin
         }
 
         return ['ids' => $ids];
+    }
+
+    private function sanitize_slug(string $slug): string
+    {
+        $slug = preg_replace('/[^a-z0-9\-]/', '', strtolower(trim($slug, '/'))) ?: '';
+        return $slug !== 'feed' ? $slug : 'feeds';
+    }
+
+    private function sanitize_public_url(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '' || strlen($url) > 2048 || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return '';
+        }
+
+        if (!in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true)) {
+            return '';
+        }
+
+        if (!empty($parts['user']) || !empty($parts['pass'])) {
+            return '';
+        }
+
+        $host = strtolower(trim((string) $parts['host'], '[]'));
+        if ($host === 'localhost' || str_ends_with($host, '.localhost') || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
+            return '';
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP) && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return '';
+        }
+
+        return $url;
     }
 }

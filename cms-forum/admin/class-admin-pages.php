@@ -71,7 +71,7 @@ final class CMS_Forum_Admin_Pages
      */
     protected static function verify_nonce(string $action): bool
     {
-        return \CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', $action);
+        return \CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), $action);
     }
 
     /**

@@ -572,7 +572,7 @@ final class CMS_Feed_RSS_Fetcher
     private function sanitize_external_url(string $url): string
     {
         $url = trim($url);
-        if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+        if ($url === '' || strlen($url) > 2048 || !filter_var($url, FILTER_VALIDATE_URL)) {
             return '';
         }
 
@@ -582,6 +582,10 @@ final class CMS_Feed_RSS_Fetcher
         }
 
         if (!in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true)) {
+            return '';
+        }
+
+        if (!empty($parts['user']) || !empty($parts['pass'])) {
             return '';
         }
 

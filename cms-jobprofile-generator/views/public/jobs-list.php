@@ -163,7 +163,8 @@ $cardStyle   = $ds['pd_list_card_style']     ?? 'horizontal';
     <div class="jpg-jobs-list__grid jpg-jobs-list__grid--<?php echo $esc($cardStyle); ?>">
         <?php foreach ($profiles as $job): ?>
         <?php
-            $jobUrl  = '/jobs/' . htmlspecialchars($job->slug ?? '', ENT_QUOTES);
+            $jobSlug = preg_replace('/[^a-z0-9\-_]/', '', strtolower((string) ($job->slug ?? ''))) ?? '';
+            $jobUrl  = '/jobs/' . rawurlencode($jobSlug);
             $typeLabel   = $typeLabels[$job->employment_type ?? ''] ?? ($job->employment_type ?? '');
             $remoteLabel = $remoteLabels[$job->remote_option ?? ''] ?? ($job->remote_option ?? '');
         ?>

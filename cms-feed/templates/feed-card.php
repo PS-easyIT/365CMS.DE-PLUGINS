@@ -24,9 +24,31 @@ $newTab      = !empty($settings['open_in_new_tab']);
 $excerptLen  = (int)($settings['excerpt_length'] ?? 160);
 $isHero      = !empty($isMagazineHero);
 
-$link        = $item['link'] ?? '#';
+$sanitizeFeedUrl = static function (mixed $value): string {
+    $url = trim((string) $value);
+    if ($url === '' || strlen($url) > 2048 || !filter_var($url, FILTER_VALIDATE_URL)) {
+        return '';
+    }
+    $parts = parse_url($url);
+    if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host']) || !in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true)) {
+        return '';
+    }
+    if (!empty($parts['user']) || !empty($parts['pass'])) {
+        return '';
+    }
+    $host = strtolower(trim((string) $parts['host'], '[]'));
+    if ($host === 'localhost' || str_ends_with($host, '.localhost') || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
+        return '';
+    }
+    if (filter_var($host, FILTER_VALIDATE_IP) && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+        return '';
+    }
+    return $url;
+};
+
+$link        = $sanitizeFeedUrl($item['link'] ?? '') ?: '#';
 $title       = $item['title'] ?? 'Ohne Titel';
-$imageUrl    = $item['image_url'] ?? '';
+$imageUrl    = $sanitizeFeedUrl($item['image_url'] ?? '');
 $author      = $item['author'] ?? '';
 $channelName = $item['channel_name'] ?? '';
 $catName     = $item['category_name'] ?? '';
@@ -42,11 +64,11 @@ if (mb_strlen($excerpt) > $excerptLen) {
 ?>
 <article class="fd-card<?php echo $isHero ? ' fd-card--hero' : ''; ?><?php echo $isFeatured ? ' fd-card--featured' : ''; ?>">
     <?php if ($showImage && !empty($imageUrl)): ?>
-    <a href="<?php echo htmlspecialchars($link); ?>"
+    <a href="<?php echo htmlspecialchars($link, ENT_QUOTES, 'UTF-8'); ?>"
        class="fd-card__image-link"
        <?php echo $newTab ? 'target="_blank" rel="noopener noreferrer"' : ''; ?>>
-        <img src="<?php echo htmlspecialchars($imageUrl); ?>"
-             alt="<?php echo htmlspecialchars($title); ?>"
+           <img src="<?php echo htmlspecialchars($imageUrl, ENT_QUOTES, 'UTF-8'); ?>"
+               alt="<?php echo htmlspecialchars((string) $title, ENT_QUOTES, 'UTF-8'); ?>"
              class="fd-card__image"
              loading="lazy">
     </a>
@@ -54,33 +76,33 @@ if (mb_strlen($excerpt) > $excerptLen) {
 
     <div class="fd-card__body">
         <?php if ($isFeatured): ?>
-        <span class="fd-card__badge">⭐ Featured</span>
+        <span class="fd-card__badge">Featured</span>
         <?php endif; ?>
 
         <h3 class="fd-card__title">
-            <a href="<?php echo htmlspecialchars($link); ?>"
+            <a href="<?php echo htmlspecialchars($link, ENT_QUOTES, 'UTF-8'); ?>"
                <?php echo $newTab ? 'target="_blank" rel="noopener noreferrer"' : ''; ?>>
-                <?php echo htmlspecialchars($title); ?>
+                <?php echo htmlspecialchars((string) $title, ENT_QUOTES, 'UTF-8'); ?>
             </a>
         </h3>
 
         <?php if ($showExcerpt && !empty($excerpt)): ?>
-        <p class="fd-card__excerpt"><?php echo htmlspecialchars($excerpt); ?></p>
+        <p class="fd-card__excerpt"><?php echo htmlspecialchars((string) $excerpt, ENT_QUOTES, 'UTF-8'); ?></p>
         <?php endif; ?>
 
         <div class="fd-card__meta">
             <?php if ($showSource && !empty($channelName)): ?>
-            <span class="fd-card__source"><?php echo htmlspecialchars($channelName); ?></span>
+            <span class="fd-card__source"><?php echo htmlspecialchars((string) $channelName, ENT_QUOTES, 'UTF-8'); ?></span>
             <?php endif; ?>
 
             <?php if ($showDate && !empty($pubDate)): ?>
-            <time class="fd-card__date" datetime="<?php echo htmlspecialchars($pubDate); ?>">
-                <?php echo date('d.m.Y', strtotime($pubDate)); ?>
+            <time class="fd-card__date" datetime="<?php echo htmlspecialchars((string) $pubDate, ENT_QUOTES, 'UTF-8'); ?>">
+                <?php $pubTs = strtotime((string) $pubDate); echo $pubTs ? date('d.m.Y', $pubTs) : ''; ?>
             </time>
             <?php endif; ?>
 
             <?php if (!empty($author) && $showSource): ?>
-            <span class="fd-card__author">von <?php echo htmlspecialchars($author); ?></span>
+            <span class="fd-card__author">von <?php echo htmlspecialchars((string) $author, ENT_QUOTES, 'UTF-8'); ?></span>
             <?php endif; ?>
         </div>
     </div>

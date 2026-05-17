@@ -25,17 +25,17 @@ if (!defined('ABSPATH')) {
 
         <!-- Breadcrumb -->
         <nav class="cmsforum-breadcrumb" aria-label="Breadcrumb">
-            <a href="<?php echo SITE_URL; ?>/">Startseite</a>
+            <a href="<?php echo htmlspecialchars(rtrim((string) SITE_URL, '/'), ENT_QUOTES, 'UTF-8'); ?>/">Startseite</a>
             <span class="cmsforum-breadcrumb__sep" aria-hidden="true">›</span>
-            <a href="<?php echo SITE_URL; ?>/forum">Forum</a>
+            <a href="<?php echo htmlspecialchars(rtrim((string) SITE_URL, '/'), ENT_QUOTES, 'UTF-8'); ?>/forum">Forum</a>
             <span class="cmsforum-breadcrumb__sep" aria-hidden="true">›</span>
-            <a href="<?php echo SITE_URL; ?>/forum/thread/<?php echo (int)$thread->id; ?>"><?php echo htmlspecialchars($thread->title); ?></a>
+            <a href="<?php echo htmlspecialchars(rtrim((string) SITE_URL, '/'), ENT_QUOTES, 'UTF-8'); ?>/forum/thread/<?php echo (int)$thread->id; ?>"><?php echo htmlspecialchars((string) $thread->title, ENT_QUOTES, 'UTF-8'); ?></a>
             <span class="cmsforum-breadcrumb__sep" aria-hidden="true">›</span>
             <span class="cmsforum-breadcrumb__current" aria-current="page">Bearbeiten</span>
         </nav>
 
         <div class="cmsforum-page-header">
-            <h1 class="cmsforum-page-header__title">✏️ Beitrag bearbeiten</h1>
+            <h1 class="cmsforum-page-header__title">Beitrag bearbeiten</h1>
         </div>
 
         <?php if ($error): ?>
@@ -61,13 +61,13 @@ if (!defined('ABSPATH')) {
                         <button type="button" class="cmsforum-editor__btn" data-bbcode="quote" title="Zitat">💬</button>
                     </div>
                     <textarea name="content" id="edit-content" class="cmsforum-editor__textarea"
-                              rows="12" required minlength="3" maxlength="50000"><?php echo htmlspecialchars($post->content); ?></textarea>
+                              rows="12" required minlength="3" maxlength="50000"><?php echo htmlspecialchars((string) $post->content, ENT_QUOTES, 'UTF-8'); ?></textarea>
                 </div>
             </div>
 
             <div class="cmsforum-form-actions">
-                <a href="<?php echo SITE_URL; ?>/forum/thread/<?php echo (int)$thread->id; ?>#post-<?php echo (int)$post->id; ?>" class="cmsforum-btn cmsforum-btn--secondary">↩️ Abbrechen</a>
-                <button type="submit" class="cmsforum-btn cmsforum-btn--primary">💾 Änderungen speichern</button>
+                <a href="<?php echo htmlspecialchars(rtrim((string) SITE_URL, '/'), ENT_QUOTES, 'UTF-8'); ?>/forum/thread/<?php echo (int)$thread->id; ?>#post-<?php echo (int)$post->id; ?>" class="cmsforum-btn cmsforum-btn--secondary">Abbrechen</a>
+                <button type="submit" class="cmsforum-btn cmsforum-btn--primary">Änderungen speichern</button>
             </div>
         </form>
 

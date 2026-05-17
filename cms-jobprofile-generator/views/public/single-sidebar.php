@@ -32,7 +32,7 @@ $showTeam    = ($ds('single_show_team', '1') === '1');
 $showSkills  = ($ds('single_show_skills', '1') === '1');
 $showBenefits= ($ds('single_show_benefits', '1') === '1');
 $showJsonld  = ($ds('single_show_jsonld', '1') === '1');
-$applyText   = $ds('btn_apply_text', '📩 Jetzt bewerben');
+$applyText   = $ds('btn_apply_text', 'Jetzt bewerben');
 ?>
 <div class="jpg-public jpg-layout-sidebar">
 
@@ -162,7 +162,7 @@ $applyText   = $ds('btn_apply_text', '📩 Jetzt bewerben');
                 <div class="jpg-sidebar-cta-card">
                     <h3>Interesse?</h3>
                     <p>Bewirb dich direkt auf diese Stelle.</p>
-                    <button type="button" class="jpg-btn-apply jpg-btn-apply--fullwidth" onclick="jpgOpenApplyModal()">
+                    <button type="button" class="jpg-btn-apply jpg-btn-apply--fullwidth" data-jpg-apply-open>
                         <?php echo $esc($applyText); ?>
                     </button>
                 </div>

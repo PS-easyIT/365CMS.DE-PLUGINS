@@ -79,25 +79,8 @@ final class BBCodeParser
             $text = preg_replace($pattern, $replace, $text) ?? $text;
         }
 
-        // [color=X]...[/color]
-        $text = preg_replace_callback(
-            '/\[color=([a-zA-Z#0-9]+)\](.*?)\[\/color\]/si',
-            function (array $m): string {
-                $color = preg_match('/^(#[0-9a-fA-F]{3,6}|[a-zA-Z]+)$/', $m[1]) ? $m[1] : '#000';
-                return '<span style="color:' . $color . ';">' . $m[2] . '</span>';
-            },
-            $text
-        ) ?? $text;
-
-        // [size=X]...[/size] (1-7 oder Pixelwert 8-72)
-        $text = preg_replace_callback(
-            '/\[size=(\d+)\](.*?)\[\/size\]/si',
-            function (array $m): string {
-                $size = max(8, min(72, (int) $m[1]));
-                return '<span style="font-size:' . $size . 'px;">' . $m[2] . '</span>';
-            },
-            $text
-        ) ?? $text;
+        $text = preg_replace('/\[color=[^\]]+\](.*?)\[\/color\]/si', '$1', $text) ?? $text;
+        $text = preg_replace('/\[size=\d+\](.*?)\[\/size\]/si', '$1', $text) ?? $text;
 
         return $text;
     }
@@ -222,7 +205,7 @@ final class BBCodeParser
         $text = preg_replace_callback(
             '/\[align=(left|center|right|justify)\](.*?)\[\/align\]/si',
             function (array $m): string {
-                return '<div style="text-align:' . $m[1] . ';">' . $m[2] . '</div>';
+                return '<div class="cmsforum-align cmsforum-align--' . $m[1] . '">' . $m[2] . '</div>';
             },
             $text
         ) ?? $text;
@@ -230,7 +213,7 @@ final class BBCodeParser
         // [indent]...[/indent]
         $text = preg_replace(
             '/\[indent\](.*?)\[\/indent\]/si',
-            '<div style="margin-left:2rem;">$1</div>',
+            '<div class="cmsforum-indent">$1</div>',
             $text
         ) ?? $text;
 
@@ -273,20 +256,39 @@ final class BBCodeParser
         $url = html_entity_decode($url, ENT_QUOTES, 'UTF-8');
         $url = trim($url);
 
-        // javascript: blockieren
-        if (preg_match('/^\s*javascript\s*:/i', $url)) {
+        if ($url === '' || strlen($url) > 2048 || preg_match('/^\s*javascript\s*:/i', $url)) {
             return '';
         }
 
         // Protokoll prüfen
         $parsed = parse_url($url);
-        if (isset($parsed['scheme']) && !in_array(strtolower($parsed['scheme']), self::ALLOWED_PROTOCOLS, true)) {
+        if (!is_array($parsed)) {
+            return '';
+        }
+
+        if (isset($parsed['scheme']) && !in_array(strtolower((string) $parsed['scheme']), self::ALLOWED_PROTOCOLS, true)) {
+            return '';
+        }
+
+        if (!empty($parsed['user']) || !empty($parsed['pass'])) {
             return '';
         }
 
         // Wenn kein Protokoll, http:// voranstellen
         if (!isset($parsed['scheme']) && !str_starts_with($url, 'mailto:')) {
             $url = 'https://' . $url;
+            $parsed = parse_url($url);
+        }
+
+        $scheme = strtolower((string) ($parsed['scheme'] ?? ''));
+        if ($scheme !== 'mailto') {
+            $host = strtolower(trim((string) ($parsed['host'] ?? ''), '[]'));
+            if ($host === '' || $host === 'localhost' || str_ends_with($host, '.localhost') || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
+                return '';
+            }
+            if (filter_var($host, FILTER_VALIDATE_IP) && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+                return '';
+            }
         }
 
         return htmlspecialchars($url, ENT_QUOTES, 'UTF-8');

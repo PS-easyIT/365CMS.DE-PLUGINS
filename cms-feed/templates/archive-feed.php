@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) exit;
 $archiveTitle          = $settings['archive_title'] ?? 'Feed-Übersicht';
 $archiveDesc           = $settings['archive_description'] ?? '';
 $slug                  = $settings['archive_slug'] ?? 'feeds';
-$archivePath           = $archivePath ?? '/' . trim((string) $slug, '/');
+$archivePath           = $archivePath ?? '/' . (preg_replace('/[^a-z0-9\-]/', '', strtolower(trim((string) $slug, '/'))) ?: 'feeds');
 $publicCategoryBasePath = $publicCategoryBasePath ?? '/feed';
 $newTab                = !empty($settings['open_in_new_tab']);
 
@@ -29,17 +29,17 @@ $newTab                = !empty($settings['open_in_new_tab']);
 <!-- Header -->
 <header class="fd-header">
     <div class="fd-header__inner">
-        <h1 class="fd-header__title"><?php echo htmlspecialchars($archiveTitle); ?></h1>
+        <h1 class="fd-header__title"><?php echo htmlspecialchars((string) $archiveTitle, ENT_QUOTES, 'UTF-8'); ?></h1>
         <?php if (!empty($archiveDesc)): ?>
-        <p class="fd-header__desc"><?php echo htmlspecialchars($archiveDesc); ?></p>
+        <p class="fd-header__desc"><?php echo htmlspecialchars((string) $archiveDesc, ENT_QUOTES, 'UTF-8'); ?></p>
         <?php endif; ?>
 
         <!-- Suche -->
-        <form method="GET" action="<?php echo htmlspecialchars($archivePath); ?>" class="fd-search">
+        <form method="GET" action="<?php echo htmlspecialchars((string) $archivePath, ENT_QUOTES, 'UTF-8'); ?>" class="fd-search">
             <input type="text" name="q" class="fd-search__input"
-                   value="<?php echo htmlspecialchars($search ?? ''); ?>"
+                     value="<?php echo htmlspecialchars((string) ($search ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
                    placeholder="Feeds durchsuchen…">
-            <button type="submit" class="fd-search__btn">🔍</button>
+                 <button type="submit" class="fd-search__btn" aria-label="Feeds durchsuchen">Suchen</button>
         </form>
     </div>
 </header>
@@ -49,15 +49,15 @@ $newTab                = !empty($settings['open_in_new_tab']);
     <!-- Bereich-Navigation -->
     <?php if (!empty($categories) && count($categories) > 1): ?>
     <nav class="fd-cat-nav" aria-label="Feed-Bereiche">
-        <a href="<?php echo htmlspecialchars($archivePath); ?>"
+        <a href="<?php echo htmlspecialchars((string) $archivePath, ENT_QUOTES, 'UTF-8'); ?>"
            class="fd-cat-nav__item fd-cat-nav__item--active">
             Alle
         </a>
         <?php foreach ($categories as $cat): ?>
-        <a href="<?php echo htmlspecialchars(rtrim($publicCategoryBasePath, '/') . '/' . (string) ($cat['slug'] ?? '')); ?>"
+        <a href="<?php echo htmlspecialchars(rtrim((string) $publicCategoryBasePath, '/') . '/' . rawurlencode((string) ($cat['slug'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>"
            class="fd-cat-nav__item">
-            <span class="fd-cat-nav__icon"><?php echo htmlspecialchars($cat['icon']); ?></span>
-            <?php echo htmlspecialchars($cat['name']); ?>
+            <span class="fd-cat-nav__icon"><?php echo htmlspecialchars((string) ($cat['icon'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
+            <?php echo htmlspecialchars((string) ($cat['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
         </a>
         <?php endforeach; ?>
     </nav>
@@ -66,8 +66,8 @@ $newTab                = !empty($settings['open_in_new_tab']);
     <!-- Suchergebnis-Hinweis -->
     <?php if (!empty($search)): ?>
     <div class="fd-search-hint">
-        Ergebnisse für „<strong><?php echo htmlspecialchars($search); ?></strong>"
-        <a href="<?php echo htmlspecialchars($archivePath); ?>" class="fd-search-hint__reset">✕ Zurücksetzen</a>
+        Ergebnisse für „<strong><?php echo htmlspecialchars((string) $search, ENT_QUOTES, 'UTF-8'); ?></strong>"
+        <a href="<?php echo htmlspecialchars((string) $archivePath, ENT_QUOTES, 'UTF-8'); ?>" class="fd-search-hint__reset">Zurücksetzen</a>
     </div>
     <?php endif; ?>
 
@@ -91,16 +91,16 @@ $newTab                = !empty($settings['open_in_new_tab']);
     <?php if (($pages ?? 1) > 1): ?>
     <div class="fd-pagination">
         <?php if ($page > 1): ?>
-        <a href="?page=<?php echo $page - 1; ?><?php echo !empty($search) ? '&q=' . urlencode($search) : ''; ?>"
+        <a href="?page=<?php echo max(1, (int) $page - 1); ?><?php echo !empty($search) ? '&q=' . rawurlencode((string) $search) : ''; ?>"
            class="fd-pagination__btn">← Zurück</a>
         <?php endif; ?>
 
         <span class="fd-pagination__info">
-            Seite <?php echo $page; ?> von <?php echo $pages; ?>
+            Seite <?php echo (int) $page; ?> von <?php echo (int) $pages; ?>
         </span>
 
         <?php if ($page < $pages): ?>
-        <a href="?page=<?php echo $page + 1; ?><?php echo !empty($search) ? '&q=' . urlencode($search) : ''; ?>"
+        <a href="?page=<?php echo (int) $page + 1; ?><?php echo !empty($search) ? '&q=' . rawurlencode((string) $search) : ''; ?>"
            class="fd-pagination__btn">Weiter →</a>
         <?php endif; ?>
     </div>

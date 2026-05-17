@@ -23,18 +23,18 @@ if (!defined('ABSPATH')) {
 
         <!-- Breadcrumb -->
         <nav class="cmsforum-breadcrumb" aria-label="Breadcrumb">
-            <a href="<?php echo SITE_URL; ?>/">Startseite</a>
+            <a href="<?php echo htmlspecialchars(rtrim((string) SITE_URL, '/'), ENT_QUOTES, 'UTF-8'); ?>/">Startseite</a>
             <span class="cmsforum-breadcrumb__sep" aria-hidden="true">›</span>
-            <a href="<?php echo SITE_URL; ?>/forum">Forum</a>
+            <a href="<?php echo htmlspecialchars(rtrim((string) SITE_URL, '/'), ENT_QUOTES, 'UTF-8'); ?>/forum">Forum</a>
             <span class="cmsforum-breadcrumb__sep" aria-hidden="true">›</span>
-            <a href="<?php echo SITE_URL; ?>/forum/<?php echo htmlspecialchars($forum->slug); ?>"><?php echo htmlspecialchars($forum->name); ?></a>
+            <a href="<?php echo htmlspecialchars(rtrim((string) SITE_URL, '/'), ENT_QUOTES, 'UTF-8'); ?>/forum/<?php echo htmlspecialchars((string) $forum->slug, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) $forum->name, ENT_QUOTES, 'UTF-8'); ?></a>
             <span class="cmsforum-breadcrumb__sep" aria-hidden="true">›</span>
             <span class="cmsforum-breadcrumb__current" aria-current="page">Neuer Thread</span>
         </nav>
 
         <div class="cmsforum-page-header">
-            <h1 class="cmsforum-page-header__title">➕ Neuer Thread</h1>
-            <p class="cmsforum-page-header__desc">in <?php echo htmlspecialchars($forum->name); ?></p>
+            <h1 class="cmsforum-page-header__title">Neuer Thread</h1>
+            <p class="cmsforum-page-header__desc">in <?php echo htmlspecialchars((string) $forum->name, ENT_QUOTES, 'UTF-8'); ?></p>
         </div>
 
         <?php if ($error): ?>
@@ -48,8 +48,8 @@ if (!defined('ABSPATH')) {
             <!-- Titel -->
             <div class="cmsforum-form-group">
                 <label for="thread-title" class="cmsforum-label">Titel <span class="cmsforum-required">*</span></label>
-                <input type="text" id="thread-title" name="title" class="cmsforum-input"
-                       value="<?php echo htmlspecialchars($_POST['title'] ?? ''); ?>"
+                  <input type="text" id="thread-title" name="title" class="cmsforum-input"
+                      value="<?php echo htmlspecialchars((string) ($_POST['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
                        required minlength="3" maxlength="200" placeholder="Thread-Titel eingeben...">
             </div>
 
@@ -59,8 +59,8 @@ if (!defined('ABSPATH')) {
                 <label class="cmsforum-label">Typ</label>
                 <div class="cmsforum-radio-group">
                     <label class="cmsforum-radio"><input type="radio" name="type" value="normal" checked> Normal</label>
-                    <label class="cmsforum-radio"><input type="radio" name="type" value="sticky"> 📌 Angepinnt</label>
-                    <label class="cmsforum-radio"><input type="radio" name="type" value="announcement"> 📢 Ankündigung</label>
+                    <label class="cmsforum-radio"><input type="radio" name="type" value="sticky"> Angepinnt</label>
+                    <label class="cmsforum-radio"><input type="radio" name="type" value="announcement"> Ankündigung</label>
                 </div>
             </div>
             <?php endif; ?>
@@ -83,7 +83,7 @@ if (!defined('ABSPATH')) {
                     </div>
                     <textarea name="content" id="thread-content" class="cmsforum-editor__textarea"
                               rows="12" required minlength="3" maxlength="50000"
-                              placeholder="Dein Beitrag..."><?php echo htmlspecialchars($_POST['content'] ?? ''); ?></textarea>
+                              placeholder="Dein Beitrag..."><?php echo htmlspecialchars((string) ($_POST['content'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea>
                 </div>
             </div>
 
@@ -115,8 +115,8 @@ if (!defined('ABSPATH')) {
 
             <!-- Submit -->
             <div class="cmsforum-form-actions">
-                <a href="<?php echo SITE_URL; ?>/forum/<?php echo htmlspecialchars($forum->slug); ?>" class="cmsforum-btn cmsforum-btn--secondary">↩️ Abbrechen</a>
-                <button type="submit" class="cmsforum-btn cmsforum-btn--primary">📝 Thread erstellen</button>
+                <a href="<?php echo htmlspecialchars(rtrim((string) SITE_URL, '/'), ENT_QUOTES, 'UTF-8'); ?>/forum/<?php echo htmlspecialchars((string) $forum->slug, ENT_QUOTES, 'UTF-8'); ?>" class="cmsforum-btn cmsforum-btn--secondary">Abbrechen</a>
+                <button type="submit" class="cmsforum-btn cmsforum-btn--primary">Thread erstellen</button>
             </div>
         </form>
 

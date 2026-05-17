@@ -32,7 +32,7 @@ $showTeam    = ($ds('single_show_team', '1') === '1');
 $showSkills  = ($ds('single_show_skills', '1') === '1');
 $showBenefits= ($ds('single_show_benefits', '1') === '1');
 $showJsonld  = ($ds('single_show_jsonld', '1') === '1');
-$applyText   = $ds('btn_apply_text', '📩 Jetzt bewerben');
+$applyText   = $ds('btn_apply_text', 'Jetzt bewerben');
 ?>
 <div class="jpg-public jpg-layout-classic">
     <div class="jpg-job-card">
@@ -191,9 +191,9 @@ $applyText   = $ds('btn_apply_text', '📩 Jetzt bewerben');
         <div class="jpg-apply-section" id="apply">
             <h2>Jetzt bewerben</h2>
             <?php if (!empty($profile->description)): ?>
-            <div class="jpg-apply-desc"><?php echo $profile->description; ?></div>
+            <div class="jpg-apply-desc"><?php echo nl2br($esc(strip_tags((string) $profile->description))); ?></div>
             <?php endif; ?>
-            <button type="button" class="jpg-btn-apply" onclick="jpgOpenApplyModal()">
+            <button type="button" class="jpg-btn-apply" data-jpg-apply-open>
                 <?php echo $esc($applyText); ?>
             </button>
         </div>

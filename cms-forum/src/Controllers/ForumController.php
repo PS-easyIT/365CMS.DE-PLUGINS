@@ -124,8 +124,8 @@ final class ForumController
             return;
         }
 
-        $page    = max(1, (int) ($_GET['page'] ?? 1));
-        $perPage = $this->getSetting('threads_per_page', 20);
+        $page    = max(1, min(999, (int) ($_GET['page'] ?? 1)));
+        $perPage = max(1, min(100, $this->getSetting('threads_per_page', 20)));
         $total   = Thread::instance()->countByForum((int) $forum->id);
         $pag     = new Pagination($total, $page, $perPage);
 
@@ -147,7 +147,7 @@ final class ForumController
             'threads'   => $threads,
             'subforums' => $subforums,
             'pagination' => $pag,
-            'pageTitle' => htmlspecialchars($forum->name),
+            'pageTitle' => htmlspecialchars((string) $forum->name, ENT_QUOTES, 'UTF-8'),
         ];
 
         $this->render('forum-show', $viewData);
@@ -166,7 +166,7 @@ final class ForumController
 
         $auth = \CMS\Auth::instance();
         if (!$auth->isLoggedIn()) {
-            header('Location: ' . SITE_URL . '/login');
+            header('Location: ' . rtrim((string) SITE_URL, '/') . '/login', true, 303);
             exit;
         }
 
@@ -200,16 +200,16 @@ final class ForumController
      */
     public function search(): void
     {
-        $query = trim($_GET['q'] ?? '');
+        $query = mb_substr(trim(strip_tags((string) ($_GET['q'] ?? ''))), 0, 120);
         $filters = [
             'forum_id'  => (int) ($_GET['forum'] ?? 0) ?: null,
             'user_id'   => (int) ($_GET['user'] ?? 0) ?: null,
-            'date_from' => $_GET['from'] ?? null,
-            'date_to'   => $_GET['to'] ?? null,
+            'date_from' => $this->sanitizeDate((string) ($_GET['from'] ?? '')),
+            'date_to'   => $this->sanitizeDate((string) ($_GET['to'] ?? '')),
         ];
         $filters = array_filter($filters);
 
-        $page    = max(1, (int) ($_GET['page'] ?? 1));
+        $page    = max(1, min(999, (int) ($_GET['page'] ?? 1)));
         $perPage = 20;
         $offset  = ($page - 1) * $perPage;
 
@@ -225,7 +225,7 @@ final class ForumController
             'filters'    => $filters,
             'threads'    => $results['threads'],
             'pagination' => $pag,
-            'pageTitle'  => 'Suche' . ($query ? ': ' . htmlspecialchars($query) : ''),
+            'pageTitle'  => 'Suche' . ($query ? ': ' . htmlspecialchars($query, ENT_QUOTES, 'UTF-8') : ''),
         ];
 
         $this->render('forum-search', $viewData);
@@ -254,7 +254,7 @@ final class ForumController
         $viewData = [
             'user'      => $user,
             'meta'      => $meta,
-            'pageTitle' => htmlspecialchars($user->username),
+            'pageTitle' => htmlspecialchars((string) $user->username, ENT_QUOTES, 'UTF-8'),
         ];
 
         $this->render('forum-profile', $viewData);
@@ -365,6 +365,19 @@ final class ForumController
     private function renderForbidden(): void
     {
         http_response_code(403);
-        echo '<div class="cmsforum-error"><h2>Zugriff verweigert</h2><p>Du hast keine Berechtigung, dieses Forum zu sehen.</p></div>';
+        \CMS\ThemeManager::instance()->getHeader();
+        echo '<main class="cmsforum"><div class="cmsforum-error"><h2>Zugriff verweigert</h2><p>Du hast keine Berechtigung, dieses Forum zu sehen.</p></div></main>';
+        \CMS\ThemeManager::instance()->getFooter();
+    }
+
+    private function sanitizeDate(string $value): ?string
+    {
+        $value = trim($value);
+        if ($value === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+
+        [$year, $month, $day] = array_map('intval', explode('-', $value));
+        return checkdate($month, $day, $year) ? sprintf('%04d-%02d-%02d', $year, $month, $day) : null;
     }
 }

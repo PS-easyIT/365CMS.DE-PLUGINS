@@ -4,7 +4,7 @@ declare(strict_types=1);
  * Plugin Name: CMS Job Profile Generator
  * Plugin URI:  https://365network.de/cms-jobprofile-generator
  * Description: Vollständiger Job-Profil-Generator mit Bibliotheken, Vorlagen und Workflow
- * Version:     3.0.0
+ * Version:     3.0.1
  * Author:      365CMS
  * Author URI:  https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 }
 
 // ── Konstanten ────────────────────────────────────────────────────────────────
-define('JPG_VERSION',     '3.0.0');
+define('JPG_VERSION',     '3.0.1');
 define('JPG_DB_VERSION',  '7');
 define('JPG_DIR',         dirname(__FILE__) . '/');
 define('JPG_URL',         '/plugins/cms-jobprofile-generator/');
@@ -27,8 +27,8 @@ define('JPG_TEXT_DOMAIN', 'cms-jobprofile-generator');
 // (z. B. <style>-Tags aus functions.php) bereits gesendet haben. ob_start() hier
 // fängt alles ab; in den AJAX-Handlern wird der Buffer geleert (ob_end_clean).
 if (
-    (isset($_GET['_jpg_export']) && $_GET['_jpg_export'] === 'json') ||
-    (isset($_POST['_jpg_action']) && $_POST['_jpg_action'] === 'preview')
+    (isset($_GET['_jpg_export']) && (string) $_GET['_jpg_export'] === 'json') ||
+    (isset($_POST['_jpg_action']) && (string) $_POST['_jpg_action'] === 'preview')
 ) {
     ob_start();
 }

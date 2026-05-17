@@ -3,7 +3,7 @@
  * Plugin Name: CMS Forum
  * Plugin URI: https://365network.de/cms-forum
  * Description: Vollwertiges Community-Forum mit Kategorien, Subforen, Threads, BBCode-Editor, Berechtigungssystem, Moderationstools und Rang-System.
- * Version: 3.0.0
+ * Version: 3.0.1
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_FORUM_VERSION',    '3.0.0');
+define('CMS_FORUM_VERSION',    '3.0.1');
 define('CMS_FORUM_DB_VERSION', '1.0.1');
 define('CMS_FORUM_DIR',        dirname(__FILE__) . '/');
 define('CMS_FORUM_URL',        '/plugins/cms-forum/');
@@ -239,9 +239,8 @@ final class CMS_Forum
         $db = \CMS\Database::instance();
         $p  = $db->prefix();
 
-        $posts = $db->prepare("SELECT id, content, created_at FROM {$p}cmsforum_posts WHERE user_id = ? ORDER BY created_at DESC")
-                     ->execute([$userId]);
-        $posts = $posts ? $posts->fetchAll(\PDO::FETCH_ASSOC) : [];
+        $stmt = $db->prepare("SELECT id, content, created_at FROM {$p}cmsforum_posts WHERE user_id = ? ORDER BY created_at DESC");
+        $posts = $stmt->execute([$userId]) ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
 
         return [
             'cms-forum' => [

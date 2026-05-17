@@ -31,6 +31,11 @@ use CMS_Forum\Helpers\AvatarHelper;
 $auth = \CMS\Auth::instance();
 $isLoggedIn = $auth->isLoggedIn();
 $userId = $isLoggedIn ? (int)$auth->currentUser()->id : 0;
+$siteUrl = htmlspecialchars(rtrim((string) SITE_URL, '/'), ENT_QUOTES, 'UTF-8');
+$likeCsrf = $isLoggedIn ? \CMS\Security::instance()->generateToken('forum_like') : '';
+$subscribeCsrf = $isLoggedIn ? \CMS\Security::instance()->generateToken('forum_subscribe') : '';
+$reportCsrf = $isLoggedIn ? \CMS\Security::instance()->generateToken('forum_report') : '';
+$pollCsrf = $isLoggedIn ? \CMS\Security::instance()->generateToken('forum_poll_vote') : '';
 
 // Attachments nach Post-ID gruppieren
 $attachmentsByPost = [];
@@ -44,13 +49,13 @@ foreach ($attachments as $att) {
 
         <!-- Breadcrumb -->
         <nav class="cmsforum-breadcrumb" aria-label="Breadcrumb">
-            <a href="<?php echo SITE_URL; ?>/">Startseite</a>
+            <a href="<?php echo $siteUrl; ?>/">Startseite</a>
             <span class="cmsforum-breadcrumb__sep" aria-hidden="true">›</span>
-            <a href="<?php echo SITE_URL; ?>/forum">Forum</a>
+            <a href="<?php echo $siteUrl; ?>/forum">Forum</a>
             <span class="cmsforum-breadcrumb__sep" aria-hidden="true">›</span>
-            <a href="<?php echo SITE_URL; ?>/forum/<?php echo htmlspecialchars($forum->slug); ?>"><?php echo htmlspecialchars($forum->name); ?></a>
+            <a href="<?php echo $siteUrl; ?>/forum/<?php echo htmlspecialchars((string) $forum->slug, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) $forum->name, ENT_QUOTES, 'UTF-8'); ?></a>
             <span class="cmsforum-breadcrumb__sep" aria-hidden="true">›</span>
-            <span class="cmsforum-breadcrumb__current" aria-current="page"><?php echo htmlspecialchars($thread->title); ?></span>
+            <span class="cmsforum-breadcrumb__current" aria-current="page"><?php echo htmlspecialchars((string) $thread->title, ENT_QUOTES, 'UTF-8'); ?></span>
         </nav>
 
         <!-- Thread Header -->
@@ -58,14 +63,15 @@ foreach ($attachments as $att) {
             <div class="cmsforum-thread-header__info">
                 <h1 class="cmsforum-thread-header__title">
                     <?php if ($thread->type === 'sticky'): ?>📌 <?php elseif ($thread->type === 'announcement'): ?>📢 <?php endif; ?>
-                    <?php echo htmlspecialchars($thread->title); ?>
+                    <?php echo htmlspecialchars((string) $thread->title, ENT_QUOTES, 'UTF-8'); ?>
                     <?php if ($thread->status === 'closed'): ?><span class="cmsforum-badge cmsforum-badge--closed">🔒 Geschlossen</span><?php endif; ?>
                 </h1>
             </div>
             <div class="cmsforum-thread-header__actions">
                 <?php if ($isLoggedIn): ?>
-                    <button class="cmsforum-btn cmsforum-btn--secondary cmsforum-btn--sm js-subscribe"
-                            data-type="thread" data-id="<?php echo (int)$thread->id; ?>"
+                        <button class="cmsforum-btn cmsforum-btn--secondary cmsforum-btn--sm js-subscribe"
+                            data-action="subscribe" data-type="thread" data-item-id="<?php echo (int)$thread->id; ?>"
+                            data-csrf="<?php echo htmlspecialchars($subscribeCsrf, ENT_QUOTES, 'UTF-8'); ?>"
                             aria-label="<?php echo $isSubscribed ? 'Abbestellen' : 'Abonnieren'; ?>">
                         <?php echo $isSubscribed ? '🔔 Abonniert' : '🔕 Abonnieren'; ?>
                     </button>
@@ -99,7 +105,8 @@ foreach ($attachments as $att) {
                     <?php if (!$hasVoted && $isLoggedIn): ?>
                         <button class="cmsforum-poll__vote-btn js-poll-vote"
                                 data-poll="<?php echo (int)$poll->id; ?>"
-                                data-option="<?php echo (int)$opt->id; ?>">
+                            data-option="<?php echo (int)$opt->id; ?>"
+                            data-csrf="<?php echo htmlspecialchars($pollCsrf, ENT_QUOTES, 'UTF-8'); ?>">
                             <?php echo htmlspecialchars($opt->option_text); ?>
                         </button>
                     <?php else: ?>
@@ -128,11 +135,11 @@ foreach ($attachments as $att) {
                         <?php echo AvatarHelper::render($post->username ?? 'U', $post->avatar_url ?? null, 64); ?>
                     </div>
                     <div class="cmsforum-post__author-name">
-                        <a href="<?php echo SITE_URL; ?>/forum/user/<?php echo (int)$post->user_id; ?>"><?php echo htmlspecialchars($post->username ?? 'Gelöscht'); ?></a>
+                        <a href="<?php echo $siteUrl; ?>/forum/user/<?php echo (int)$post->user_id; ?>"><?php echo htmlspecialchars((string) ($post->username ?? 'Gelöscht'), ENT_QUOTES, 'UTF-8'); ?></a>
                     </div>
                     <?php if (!empty($post->rank_title)): ?>
                         <span class="cmsforum-post__rank <?php echo htmlspecialchars($post->rank_css_class ?? ''); ?>">
-                            <?php echo htmlspecialchars($post->rank_title); ?>
+                            <?php echo htmlspecialchars((string) $post->rank_title, ENT_QUOTES, 'UTF-8'); ?>
                         </span>
                     <?php endif; ?>
                     <span class="cmsforum-post__count"><?php echo (int)$post->post_count; ?> Beiträge</span>
@@ -161,9 +168,9 @@ foreach ($attachments as $att) {
                     <div class="cmsforum-post__attachments">
                         <h4 class="cmsforum-post__attachments-title">📎 Anhänge</h4>
                         <?php foreach ($postAttachments as $att): ?>
-                        <a href="<?php echo SITE_URL; ?>/uploads/forum/<?php echo htmlspecialchars($att->file_path); ?>"
+                        <a href="<?php echo $siteUrl; ?>/uploads/forum/<?php echo htmlspecialchars(basename((string) ($att->file_path ?? $att->filename ?? '')), ENT_QUOTES, 'UTF-8'); ?>"
                            class="cmsforum-attachment" target="_blank" rel="noopener noreferrer">
-                            <?php echo htmlspecialchars($att->original_name); ?>
+                            <?php echo htmlspecialchars((string) $att->original_name, ENT_QUOTES, 'UTF-8'); ?>
                             <span class="cmsforum-attachment__size">(<?php echo round((int)$att->file_size / 1024); ?> KB)</span>
                         </a>
                         <?php endforeach; ?>
@@ -182,7 +189,9 @@ foreach ($attachments as $att) {
                         <div class="cmsforum-post__actions">
                             <?php if ($isLoggedIn): ?>
                                 <button class="cmsforum-post__action-btn js-like"
-                                        data-post="<?php echo (int)$post->id; ?>"
+                                    data-action="like"
+                                    data-post-id="<?php echo (int)$post->id; ?>"
+                                    data-csrf="<?php echo htmlspecialchars($likeCsrf, ENT_QUOTES, 'UTF-8'); ?>"
                                         aria-label="Like">
                                     ❤️ <span class="js-like-count"><?php echo (int)$post->like_count; ?></span>
                                 </button>
@@ -191,11 +200,11 @@ foreach ($attachments as $att) {
                             <?php endif; ?>
 
                             <?php if ($isLoggedIn && (int)$post->user_id === $userId): ?>
-                                <a href="<?php echo SITE_URL; ?>/forum/post/<?php echo (int)$post->id; ?>/edit" class="cmsforum-post__action-btn">✏️ Bearbeiten</a>
+                                <a href="<?php echo $siteUrl; ?>/forum/post/<?php echo (int)$post->id; ?>/edit" class="cmsforum-post__action-btn">Bearbeiten</a>
                             <?php endif; ?>
 
                             <?php if ($isLoggedIn && (int)$post->user_id !== $userId): ?>
-                                <button class="cmsforum-post__action-btn js-report" data-post="<?php echo (int)$post->id; ?>">🚩 Melden</button>
+                                <button class="cmsforum-post__action-btn js-report" data-action="report" data-post-id="<?php echo (int)$post->id; ?>">Melden</button>
                             <?php endif; ?>
 
                             <?php if ($thread->status === 'open' && $isLoggedIn): ?>
@@ -209,7 +218,7 @@ foreach ($attachments as $att) {
         </div>
 
         <!-- Paginierung -->
-        <?php echo $pagination->render(SITE_URL . '/forum/thread/' . (int)$thread->id); ?>
+        <?php echo $pagination->render(rtrim((string) SITE_URL, '/') . '/forum/thread/' . (int)$thread->id); ?>
 
         <!-- Antwort-Formular -->
         <?php if ($thread->status === 'open' && $isLoggedIn): ?>
@@ -246,7 +255,7 @@ foreach ($attachments as $att) {
             <div class="cmsforum-alert cmsforum-alert--info">🔒 Dieser Thread ist geschlossen. Neue Antworten sind nicht möglich.</div>
         <?php elseif (!$isLoggedIn): ?>
             <div class="cmsforum-alert cmsforum-alert--info">
-                <a href="<?php echo SITE_URL; ?>/login">Anmelden</a>, um zu antworten.
+                <a href="<?php echo $siteUrl; ?>/login">Anmelden</a>, um zu antworten.
             </div>
         <?php endif; ?>
 
@@ -254,17 +263,19 @@ foreach ($attachments as $att) {
 </div><!-- /.cmsforum -->
 
 <!-- Report Modal -->
-<div class="cmsforum-modal" id="reportModal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle">
+<div class="cmsforum-modal" id="reportModal" hidden role="dialog" aria-modal="true" aria-labelledby="reportModalTitle">
     <div class="cmsforum-modal__content">
-        <div class="cmsforum-modal__header">
-            <h3 id="reportModalTitle">🚩 Beitrag melden</h3>
-            <button class="cmsforum-modal__close" onclick="document.getElementById('reportModal').style.display='none'" aria-label="Schließen">&times;</button>
-        </div>
-        <div class="cmsforum-modal__body">
-            <input type="hidden" id="report-post-id">
+        <form id="reportForm" method="POST" action="<?php echo $siteUrl; ?>/forum/api/report">
+            <div class="cmsforum-modal__header">
+                <h3 id="reportModalTitle">Beitrag melden</h3>
+                <button class="cmsforum-modal__close" type="button" data-action="close-modal" aria-label="Schließen">&times;</button>
+            </div>
+            <div class="cmsforum-modal__body">
+            <input type="hidden" id="reportPostId" name="post_id">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($reportCsrf, ENT_QUOTES, 'UTF-8'); ?>">
             <div class="cmsforum-form-group">
-                <label class="cmsforum-label">Grund</label>
-                <select id="report-reason" class="cmsforum-input">
+                <label class="cmsforum-label" for="reportReason">Grund</label>
+                <select id="reportReason" name="reason" class="cmsforum-input">
                     <option value="spam">Spam</option>
                     <option value="offensive">Beleidigend</option>
                     <option value="off_topic">Off-Topic</option>
@@ -273,13 +284,14 @@ foreach ($attachments as $att) {
                 </select>
             </div>
             <div class="cmsforum-form-group">
-                <label class="cmsforum-label">Details (optional)</label>
-                <textarea id="report-detail" class="cmsforum-input" rows="3" maxlength="500"></textarea>
+                <label class="cmsforum-label" for="reportDetail">Details (optional)</label>
+                <textarea id="reportDetail" name="detail" class="cmsforum-input" rows="3" maxlength="500"></textarea>
             </div>
-        </div>
-        <div class="cmsforum-modal__footer">
-            <button type="button" class="cmsforum-btn cmsforum-btn--secondary" onclick="document.getElementById('reportModal').style.display='none'">Abbrechen</button>
-            <button type="button" class="cmsforum-btn cmsforum-btn--danger js-report-submit">🚩 Melden</button>
-        </div>
+            </div>
+            <div class="cmsforum-modal__footer">
+                <button type="button" class="cmsforum-btn cmsforum-btn--secondary" data-action="close-modal">Abbrechen</button>
+                <button type="submit" class="cmsforum-btn cmsforum-btn--danger js-report-submit">Melden</button>
+            </div>
+        </form>
     </div>
 </div>

@@ -56,7 +56,9 @@ final class ThreadController
         $forum = Forum::instance()->findById((int) $thread->forum_id);
         if (!$forum || !PermissionService::instance()->canRead((int) $forum->id)) {
             http_response_code(403);
-            echo '<div class="cmsforum-error"><h2>Zugriff verweigert</h2></div>';
+            \CMS\ThemeManager::instance()->getHeader();
+            echo '<main class="cmsforum"><div class="cmsforum-error"><h2>Zugriff verweigert</h2></div></main>';
+            \CMS\ThemeManager::instance()->getFooter();
             return;
         }
 
@@ -64,8 +66,8 @@ final class ThreadController
         Thread::instance()->incrementViews($threadId);
 
         // Beiträge mit Paginierung
-        $page    = max(1, (int) ($_GET['page'] ?? 1));
-        $perPage = $this->getSetting('posts_per_page', 15);
+        $page    = max(1, min(999, (int) ($_GET['page'] ?? 1)));
+        $perPage = max(1, min(100, $this->getSetting('posts_per_page', 15)));
         $total   = Post::instance()->countByThread($threadId);
         $pag     = new Pagination($total, $page, $perPage);
 
@@ -121,11 +123,13 @@ final class ThreadController
             'attachments'  => $attachments,
             'error'        => $error,
             'success'      => $success,
-            'pageTitle'    => htmlspecialchars($thread->title),
+            'pageTitle'    => htmlspecialchars((string) $thread->title, ENT_QUOTES, 'UTF-8'),
         ];
 
         extract($viewData, EXTR_SKIP);
+        \CMS\ThemeManager::instance()->getHeader();
         include CMS_FORUM_DIR . 'views/frontend/thread-show.php';
+        \CMS\ThemeManager::instance()->getFooter();
     }
 
     /**
@@ -139,7 +143,7 @@ final class ThreadController
         $success = null;
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_thread') {
-            if (!\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'forum_new_thread')) {
+            if (!\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'forum_new_thread')) {
                 $error = 'Sicherheitscheck fehlgeschlagen.';
             } else {
                 // Flood-Control
@@ -147,8 +151,8 @@ final class ThreadController
                 if ($wait > 0) {
                     $error = "Bitte warte noch {$wait} Sekunden, bevor du einen neuen Thread erstellst.";
                 } else {
-                    $title   = sanitize_text_field($_POST['title'] ?? '');
-                    $content = trim($_POST['content'] ?? '');
+                    $title   = mb_substr(sanitize_text_field((string) ($_POST['title'] ?? '')), 0, 200);
+                    $content = mb_substr(trim((string) ($_POST['content'] ?? '')), 0, 50000);
                     $type    = in_array($_POST['type'] ?? '', ['normal', 'sticky', 'announcement'], true) ? $_POST['type'] : 'normal';
 
                     if (empty($title)) {
@@ -180,12 +184,12 @@ final class ThreadController
                                 'user_id'      => $userId,
                                 'content'      => $content,
                                 'is_first_post' => 1,
-                                'ip_address'   => $_SERVER['REMOTE_ADDR'] ?? '',
+                                'ip_address'   => filter_var((string) ($_SERVER['REMOTE_ADDR'] ?? ''), FILTER_VALIDATE_IP) ?: '',
                             ]);
 
                             // Umfrage erstellen falls vorhanden
                             if (!empty($_POST['poll_question']) && !empty($_POST['poll_options'])) {
-                                $this->createPoll($threadId, $_POST['poll_question'], $_POST['poll_options'], $_POST['poll_multi'] ?? '0');
+                                $this->createPoll($threadId, (string) $_POST['poll_question'], (array) $_POST['poll_options'], (string) ($_POST['poll_multi'] ?? '0'));
                             }
 
                             // Zähler aktualisieren
@@ -201,7 +205,7 @@ final class ThreadController
                             // Auto-Abo
                             Subscription::instance()->subscribe($userId, 'thread', $threadId);
 
-                            header('Location: ' . SITE_URL . '/forum/thread/' . $threadId);
+                            header('Location: ' . rtrim((string) SITE_URL, '/') . '/forum/thread/' . $threadId, true, 303);
                             exit;
                         } else {
                             $error = 'Thread konnte nicht erstellt werden.';
@@ -217,11 +221,13 @@ final class ThreadController
             'forum'     => $forum,
             'csrfToken' => $csrfToken,
             'error'     => $error,
-            'pageTitle' => 'Neuer Thread in ' . htmlspecialchars($forum->name),
+            'pageTitle' => 'Neuer Thread in ' . htmlspecialchars((string) $forum->name, ENT_QUOTES, 'UTF-8'),
         ];
 
         extract($viewData, EXTR_SKIP);
+        \CMS\ThemeManager::instance()->getHeader();
         include CMS_FORUM_DIR . 'views/frontend/thread-create.php';
+        \CMS\ThemeManager::instance()->getFooter();
     }
 
     /**
@@ -229,18 +235,17 @@ final class ThreadController
      */
     public function toggleSubscription(): void
     {
-        header('Content-Type: application/json');
+        $this->sendJsonHeaders();
         $auth = \CMS\Auth::instance();
 
         if (!$auth->isLoggedIn()) {
             http_response_code(401);
-            echo json_encode(['success' => false, 'error' => 'Nicht eingeloggt.']);
+            $this->sendJson(['success' => false, 'error' => 'Nicht eingeloggt.'], 401);
             exit;
         }
 
-        if (!\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'forum_subscribe')) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen.']);
+        if (!\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'forum_subscribe')) {
+            $this->sendJson(['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen.'], 403);
             exit;
         }
 
@@ -248,8 +253,7 @@ final class ThreadController
         $itemId = (int) ($_POST['item_id'] ?? 0);
 
         if (!$type || $itemId <= 0) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Ungültige Anfrage.']);
+            $this->sendJson(['success' => false, 'error' => 'Ungültige Anfrage.'], 400);
             exit;
         }
 
@@ -258,10 +262,10 @@ final class ThreadController
 
         if ($sub->isSubscribed($userId, $type, $itemId)) {
             $sub->unsubscribe($userId, $type, $itemId);
-            echo json_encode(['success' => true, 'subscribed' => false]);
+            $this->sendJson(['success' => true, 'subscribed' => false]);
         } else {
             $sub->subscribe($userId, $type, $itemId);
-            echo json_encode(['success' => true, 'subscribed' => true]);
+            $this->sendJson(['success' => true, 'subscribed' => true]);
         }
         exit;
     }
@@ -271,27 +275,28 @@ final class ThreadController
      */
     public function pollVote(): void
     {
-        header('Content-Type: application/json');
+        $this->sendJsonHeaders();
         $auth = \CMS\Auth::instance();
 
         if (!$auth->isLoggedIn()) {
-            http_response_code(401);
-            echo json_encode(['success' => false, 'error' => 'Nicht eingeloggt.']);
+            $this->sendJson(['success' => false, 'error' => 'Nicht eingeloggt.'], 401);
             exit;
         }
 
-        if (!\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'forum_poll_vote')) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen.']);
+        if (!\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'forum_poll_vote')) {
+            $this->sendJson(['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen.'], 403);
             exit;
         }
 
         $pollId    = (int) ($_POST['poll_id'] ?? 0);
-        $optionIds = array_map('intval', (array) ($_POST['option_ids'] ?? []));
+        $optionIds = array_values(array_unique(array_filter(
+            array_map('intval', (array) ($_POST['option_ids'] ?? [])),
+            static fn (int $id): bool => $id > 0
+        )));
+        $optionIds = array_slice($optionIds, 0, 10);
 
         if ($pollId <= 0 || empty($optionIds)) {
-            http_response_code(400);
-            echo json_encode(['success' => false, 'error' => 'Ungültige Anfrage.']);
+            $this->sendJson(['success' => false, 'error' => 'Ungültige Anfrage.'], 400);
             exit;
         }
 
@@ -299,7 +304,7 @@ final class ThreadController
         $poll   = Poll::instance();
 
         if ($poll->hasVoted($pollId, $userId)) {
-            echo json_encode(['success' => false, 'error' => 'Du hast bereits abgestimmt.']);
+            $this->sendJson(['success' => false, 'error' => 'Du hast bereits abgestimmt.']);
             exit;
         }
 
@@ -307,7 +312,7 @@ final class ThreadController
             $poll->vote($pollId, $optId, $userId);
         }
 
-        echo json_encode(['success' => true]);
+        $this->sendJson(['success' => true]);
         exit;
     }
 
@@ -326,7 +331,7 @@ final class ThreadController
             return ['Du musst eingeloggt sein, um zu antworten.', null];
         }
 
-        if (!\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'forum_reply')) {
+        if (!\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'forum_reply')) {
             return ['Sicherheitscheck fehlgeschlagen.', null];
         }
 
@@ -342,7 +347,7 @@ final class ThreadController
             return ["Bitte warte noch {$wait} Sekunden.", null];
         }
 
-        $content = trim($_POST['content'] ?? '');
+        $content = mb_substr(trim((string) ($_POST['content'] ?? '')), 0, 50000);
         if (empty($content)) {
             return ['Bitte gib einen Beitrag ein.', null];
         }
@@ -351,7 +356,7 @@ final class ThreadController
             'thread_id'  => $threadId,
             'user_id'    => $userId,
             'content'    => $content,
-            'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
+            'ip_address' => filter_var((string) ($_SERVER['REMOTE_ADDR'] ?? ''), FILTER_VALIDATE_IP) ?: '',
         ]);
 
         if (!$postId) {
@@ -372,14 +377,18 @@ final class ThreadController
     /**
      * Umfrage erstellen.
      */
-    private function createPoll(int $threadId, string $question, string $options, string $multiChoice): void
+    private function createPoll(int $threadId, string $question, array $options, string $multiChoice): void
     {
-        $question = sanitize_text_field($question);
+        $question = mb_substr(sanitize_text_field($question), 0, 255);
         if (empty($question)) {
             return;
         }
 
-        $optionLines = array_filter(array_map('trim', explode("\n", $options)));
+        $optionLines = array_values(array_filter(array_map(
+            static fn (mixed $option): string => mb_substr(sanitize_text_field((string) $option), 0, 200),
+            $options
+        )));
+        $optionLines = array_slice($optionLines, 0, 10);
         if (count($optionLines) < 2) {
             return;
         }
@@ -392,12 +401,21 @@ final class ThreadController
 
         if ($pollId) {
             foreach ($optionLines as $i => $text) {
-                $text = sanitize_text_field($text);
-                if ($text !== '') {
-                    Poll::instance()->addOption($pollId, $text, $i);
-                }
+                Poll::instance()->addOption($pollId, $text, $i);
             }
         }
+    }
+
+    private function sendJsonHeaders(): void
+    {
+        header('Content-Type: application/json; charset=UTF-8');
+        header('X-Content-Type-Options: nosniff');
+    }
+
+    private function sendJson(array $payload, int $statusCode = 200): void
+    {
+        http_response_code($statusCode);
+        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     /**

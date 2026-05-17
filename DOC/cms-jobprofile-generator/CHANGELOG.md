@@ -6,6 +6,21 @@
 
 ---
 
+## [3.0.1] – 2026-05-17
+
+### Security
+- Bewerber-Registrierung prüft CSRF jetzt strikt gegen `jpg_register` oder den konkreten Job-Slug (`jpg_apply_{slug}`); der frühere flexible Prefix-Check wurde entfernt.
+- JSON-Endpunkte senden `X-Content-Type-Options: nosniff` und einheitliche UTF-8-JSON-Antworten.
+- Öffentliche Job-Slugs, PDF-/HTML-Dateinamen und Uploads werden serverseitig normalisiert und begrenzt.
+- Member-Redirects bleiben intern und CSRF-Fallbacks ohne `CMS\Security` schlagen sicher fehl.
+
+### Publicsite & UX
+- Bewerbungsmodal nutzt delegierte Events statt Inline-Click-Handlern in den aktuellen Single-Layouts.
+- Public-Ausgaben für Job-Beschreibungen und Modal-Texte wurden direkt escaped bzw. auf Textdarstellung begrenzt.
+- Kompatibilitätsmetadaten auf PHP 8.4 aktualisiert.
+
+---
+
 ## [0.9.3] – 2026-02-26
 
 ### Hinzugefügt
