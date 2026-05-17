@@ -81,6 +81,8 @@ final class CMS_Booking_Frontend
 
     private function render_provider_page(string $providerSlug): void
     {
+        $this->send_security_headers();
+
         $provider = CMS_Booking_Providers::instance()->get_by_slug($providerSlug);
         if (!$provider || $provider['status'] !== 'active') {
             $this->render_404();
@@ -106,6 +108,8 @@ final class CMS_Booking_Frontend
 
     private function render_service_booking(string $providerSlug, string $serviceSlug): void
     {
+        $this->send_security_headers();
+
         $provider = CMS_Booking_Providers::instance()->get_by_slug($providerSlug);
         if (!$provider || $provider['status'] !== 'active') {
             $this->render_404();
@@ -150,10 +154,12 @@ final class CMS_Booking_Frontend
 
     private function process_booking(string $providerSlug, string $serviceSlug): void
     {
+        $this->send_security_headers();
+
         $provider = CMS_Booking_Providers::instance()->get_by_slug($providerSlug);
         $service  = $provider ? CMS_Booking_Services::instance()->get_by_slug((int) $provider['id'], $serviceSlug) : null;
 
-        if (!$provider || !$service) {
+        if (!$provider || !$service || $provider['status'] !== 'active' || $service['status'] !== 'active') {
             $this->render_404();
             return;
         }
@@ -179,7 +185,7 @@ final class CMS_Booking_Frontend
             $customerPhone = sanitize_text_field($_POST['customer_phone'] ?? '');
             $bookingDate   = sanitize_text_field($_POST['booking_date'] ?? '');
             $startTime     = sanitize_text_field($_POST['start_time'] ?? '');
-            $notes         = strip_tags($_POST['notes'] ?? '');
+            $notes         = mb_substr(trim(strip_tags((string) ($_POST['notes'] ?? ''))), 0, 2000);
 
             if ($customerName === '') {
                 $error = 'Bitte geben Sie Ihren Namen an.';
@@ -187,7 +193,7 @@ final class CMS_Booking_Frontend
                 $error = 'Bitte geben Sie eine gültige E-Mail-Adresse an.';
             } elseif ($bookingDate === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $bookingDate)) {
                 $error = 'Bitte wählen Sie ein gültiges Datum.';
-            } elseif ($startTime === '' || !preg_match('/^\d{2}:\d{2}$/', $startTime)) {
+            } elseif ($startTime === '' || !$this->is_valid_time($startTime)) {
                 $error = 'Bitte wählen Sie eine Uhrzeit.';
             }
         }
@@ -270,8 +276,8 @@ final class CMS_Booking_Frontend
                 $accessToken = $this->generate_access_token($bookingId, $booking['ical_uid'] ?? '');
 
                 // Weiterleitung zur Bestätigungsseite
-                $confirmUrl = (defined('SITE_URL') ? SITE_URL : '') . "/booking/confirm/{$bookingId}?token={$accessToken}";
-                header("Location: {$confirmUrl}");
+                $confirmUrl = (defined('SITE_URL') ? SITE_URL : '') . "/booking/confirm/{$bookingId}?token=" . rawurlencode($accessToken);
+                header('Location: ' . $confirmUrl, true, 303);
                 exit;
             } catch (\Throwable $e) {
                 $error = 'Beim Speichern der Buchung ist ein Fehler aufgetreten.';
@@ -298,6 +304,8 @@ final class CMS_Booking_Frontend
 
     private function render_confirmation(int $bookingId): void
     {
+        $this->send_security_headers();
+
         $booking = CMS_Booking_Bookings::instance()->get($bookingId);
         if (!$booking) {
             $this->render_404();
@@ -312,6 +320,8 @@ final class CMS_Booking_Frontend
             echo '<h1>Zugriff verweigert</h1><p>Ungültiger oder fehlender Zugangs-Token.</p>';
             exit;
         }
+
+        $accessToken = $expectedToken;
 
         $calExport = CMS_Booking_Calendar_Export::instance();
         $googleUrl = $calExport->google_calendar_url($booking);
@@ -329,6 +339,8 @@ final class CMS_Booking_Frontend
 
     private function serve_ical(int $bookingId): void
     {
+        $this->send_security_headers();
+
         $booking = CMS_Booking_Bookings::instance()->get($bookingId);
         if (!$booking) {
             http_response_code(404);
@@ -354,6 +366,7 @@ final class CMS_Booking_Frontend
 
     private function api_get_slots(int $providerId, string $date): void
     {
+        $this->send_security_headers();
         header('Content-Type: application/json; charset=utf-8');
 
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
@@ -413,6 +426,7 @@ final class CMS_Booking_Frontend
 
     private function render_404(): void
     {
+        $this->send_security_headers();
         http_response_code(404);
         if (class_exists('CMS\ThemeManager')) {
             \CMS\ThemeManager::instance()->render('404');
@@ -439,8 +453,34 @@ final class CMS_Booking_Frontend
      */
     private function generate_access_token(int $bookingId, string $icalUid): string
     {
-        $secret = defined('CMS_SECRET_KEY') ? CMS_SECRET_KEY : 'cms-booking-fallback-key';
-        return hash('sha256', $bookingId . ':' . $icalUid . ':' . $secret);
+        $secret = defined('CMS_SECRET_KEY') && CMS_SECRET_KEY !== ''
+            ? (string) CMS_SECRET_KEY
+            : hash('sha256', (defined('ABSPATH') ? (string) ABSPATH : __DIR__) . '|' . (defined('SITE_URL') ? (string) SITE_URL : ''));
+
+        return hash_hmac('sha256', $bookingId . ':' . $icalUid, $secret);
+    }
+
+    private function is_valid_time(string $time): bool
+    {
+        if (!preg_match('/^(\d{2}):(\d{2})$/', $time, $matches)) {
+            return false;
+        }
+
+        $hour = (int) $matches[1];
+        $minute = (int) $matches[2];
+
+        return $hour >= 0 && $hour <= 23 && $minute >= 0 && $minute <= 59;
+    }
+
+    private function send_security_headers(): void
+    {
+        if (headers_sent()) {
+            return;
+        }
+
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: SAMEORIGIN');
+        header('Referrer-Policy: strict-origin-when-cross-origin');
     }
 
     /**

@@ -77,6 +77,10 @@ final class CMS_Booking_Integration
      */
     public static function register_provider_type(string $pluginSlug, array $config): void
     {
+        if (!preg_match('/^[a-z0-9\-_]+$/', $pluginSlug)) {
+            throw new \InvalidArgumentException('Ungültiger Plugin-Slug für Booking-Provider.');
+        }
+
         $defaults = [
             'label'            => $pluginSlug,
             'icon'             => '📋',
@@ -89,7 +93,15 @@ final class CMS_Booking_Integration
             'fields_map'       => [],
         ];
 
-        self::$providerTypes[$pluginSlug] = array_merge($defaults, $config);
+        $type = array_merge($defaults, $config);
+
+        foreach (['source_table', 'name_column', 'email_column', 'user_id_column'] as $identifierKey) {
+            if ($type[$identifierKey] !== '' && !self::is_safe_identifier((string) $type[$identifierKey])) {
+                throw new \InvalidArgumentException('Ungültiger Booking-Provider-Identifier: ' . $identifierKey);
+            }
+        }
+
+        self::$providerTypes[$pluginSlug] = $type;
     }
 
     /**
@@ -206,10 +218,10 @@ final class CMS_Booking_Integration
         }
 
         $siteUrl = defined('SITE_URL') ? SITE_URL : '';
-        $url     = $siteUrl . '/booking/' . htmlspecialchars($provider['slug']);
-        $label   = htmlspecialchars($options['label'] ?? 'Termin buchen');
-        $icon    = $options['icon'] ?? '📅';
-        $class   = htmlspecialchars($options['class'] ?? 'btn btn-primary booking-btn');
+        $url     = htmlspecialchars($siteUrl . '/booking/' . rawurlencode((string) $provider['slug']), ENT_QUOTES, 'UTF-8');
+        $label   = htmlspecialchars((string) ($options['label'] ?? 'Termin buchen'), ENT_QUOTES, 'UTF-8');
+        $icon    = htmlspecialchars(strip_tags((string) ($options['icon'] ?? '')), ENT_QUOTES, 'UTF-8');
+        $class   = htmlspecialchars(self::sanitize_class_list((string) ($options['class'] ?? 'btn btn-primary booking-btn')), ENT_QUOTES, 'UTF-8');
 
         return <<<HTML
 <a href="{$url}" class="{$class}">
@@ -235,16 +247,16 @@ HTML;
         }
 
         $siteUrl = defined('SITE_URL') ? SITE_URL : '';
-        $baseUrl = $siteUrl . '/booking/' . htmlspecialchars($provider['slug']);
-        $title   = htmlspecialchars($options['title'] ?? 'Buchbare Leistungen');
+        $baseUrl = $siteUrl . '/booking/' . rawurlencode((string) $provider['slug']);
+        $title   = htmlspecialchars((string) ($options['title'] ?? 'Buchbare Leistungen'), ENT_QUOTES, 'UTF-8');
 
         $html = '<div class="booking-widget">';
-        $html .= '<h4 class="booking-widget__title">' . ($options['icon'] ?? '📅') . ' ' . $title . '</h4>';
+        $html .= '<h4 class="booking-widget__title">' . $title . '</h4>';
         $html .= '<ul class="booking-widget__services">';
 
         foreach ($services as $service) {
-            $url      = $baseUrl . '/' . htmlspecialchars($service['slug']);
-            $sTitle   = htmlspecialchars($service['title']);
+            $url      = htmlspecialchars($baseUrl . '/' . rawurlencode((string) $service['slug']), ENT_QUOTES, 'UTF-8');
+            $sTitle   = htmlspecialchars((string) $service['title'], ENT_QUOTES, 'UTF-8');
             $duration = CMS_Booking_Services::format_duration((int) $service['duration_min']);
             $price    = CMS_Booking_Services::format_price((int) $service['price_cents'], $provider['currency'] ?? 'EUR');
 
@@ -284,9 +296,22 @@ HTML;
             throw new \InvalidArgumentException("Unbekannter Provider-Typ: {$pluginSlug}");
         }
 
+        $sourceTable = (string) $type['source_table'];
+        $nameColumn = (string) $type['name_column'];
+        $emailColumn = (string) $type['email_column'];
+        $userIdColumn = (string) $type['user_id_column'];
+
+        if (!self::is_safe_identifier($sourceTable)
+            || !self::is_safe_identifier($nameColumn)
+            || !self::is_safe_identifier($emailColumn)
+            || ($userIdColumn !== '' && !self::is_safe_identifier($userIdColumn))
+        ) {
+            throw new \InvalidArgumentException('Unsichere Booking-Provider-Konfiguration.');
+        }
+
         $db   = \CMS\Database::instance();
         $p    = $db->getPrefix();
-        $stmt = $db->prepare("SELECT * FROM {$p}{$type['source_table']} WHERE id = ?");
+        $stmt = $db->prepare("SELECT * FROM {$p}{$sourceTable} WHERE id = ?");
         $stmt->execute([$sourceId]);
         $source = $stmt->fetch(\PDO::FETCH_ASSOC);
 
@@ -297,12 +322,22 @@ HTML;
         $data = array_merge([
             'source_plugin' => $pluginSlug,
             'source_id'     => $sourceId,
-            'display_name'  => $source[$type['name_column']]    ?? 'Unbekannt',
-            'email'         => $source[$type['email_column']]   ?? '',
-            'user_id'       => $source[$type['user_id_column']] ?? null,
+            'display_name'  => $source[$nameColumn]    ?? 'Unbekannt',
+            'email'         => $source[$emailColumn]   ?? '',
+            'user_id'       => $userIdColumn !== '' ? ($source[$userIdColumn] ?? null) : null,
         ], $overrides);
 
         return CMS_Booking_Providers::instance()->upsert($data);
+    }
+
+    private static function is_safe_identifier(string $identifier): bool
+    {
+        return preg_match('/^[A-Za-z0-9_]+$/', $identifier) === 1;
+    }
+
+    private static function sanitize_class_list(string $classList): string
+    {
+        return trim(preg_replace('/[^A-Za-z0-9_\-\s]/', '', $classList) ?: 'booking-btn');
     }
 
     /**

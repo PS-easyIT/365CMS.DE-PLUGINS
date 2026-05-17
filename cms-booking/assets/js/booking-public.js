@@ -24,7 +24,12 @@
         const providerId    = parseInt(el.dataset.providerId, 10);
         const serviceId     = parseInt(el.dataset.serviceId, 10);
         const apiUrl        = el.dataset.apiUrl || '/api/booking/slots';
-        const availableDates = JSON.parse(el.dataset.availableDates || '[]');
+        let availableDates = [];
+        try {
+            availableDates = JSON.parse(el.dataset.availableDates || '[]');
+        } catch (error) {
+            availableDates = [];
+        }
         const availSet       = new Set(availableDates);
 
         let currentYear  = new Date().getFullYear();
@@ -136,7 +141,8 @@
 
         renderMessage(container, 'Zeitfenster werden geladen…');
 
-        const url = apiUrl + '/' + providerId + '/' + date + '?service_id=' + serviceId;
+        const url = apiUrl + '/' + encodeURIComponent(providerId) + '/' + encodeURIComponent(date)
+            + '?service_id=' + encodeURIComponent(serviceId);
 
         fetch(url)
             .then(function (res) { return res.json(); })
@@ -187,7 +193,7 @@
 
     function showStep(stepId) {
         var step = document.getElementById(stepId);
-        if (step) step.style.display = '';
+        if (step) step.hidden = false;
     }
 
     /* =================================================================== */
@@ -204,7 +210,7 @@
         if (date && time) {
             var parts = date.split('-');
             var formatted = parts[2] + '.' + parts[1] + '.' + parts[0];
-            summary.textContent = '📅 ' + formatted + ' um ' + time + ' Uhr';
+            summary.textContent = formatted + ' um ' + time + ' Uhr';
         }
     }
 

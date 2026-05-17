@@ -27,7 +27,7 @@ final class CMS_Booking_Calendar_Export
      */
     public function generate_ics(array $booking): string
     {
-        $uid   = $booking['ical_uid'] ?? bin2hex(random_bytes(16)) . '@' . ($this->get_host());
+        $uid   = $this->sanitize_ical_token((string) ($booking['ical_uid'] ?? bin2hex(random_bytes(16)) . '@' . ($this->get_host())));
         $now   = gmdate('Ymd\THis\Z');
         $start = gmdate('Ymd\THis\Z', strtotime("{$booking['booking_date']} {$booking['start_time']}"));
         $end   = gmdate('Ymd\THis\Z', strtotime("{$booking['booking_date']} {$booking['end_time']}"));
@@ -45,8 +45,8 @@ final class CMS_Booking_Calendar_Export
                 ? ($booking['meeting_url'] ?? 'Online')
                 : 'Vor Ort'
         );
-        $organizer = $booking['provider_email'] ?? '';
-        $attendee  = $booking['customer_email'] ?? '';
+        $organizer = $this->sanitize_mailto((string) ($booking['provider_email'] ?? ''));
+        $attendee  = $this->sanitize_mailto((string) ($booking['customer_email'] ?? ''));
 
         $lines = [
             'BEGIN:VCALENDAR',
@@ -84,9 +84,10 @@ final class CMS_Booking_Calendar_Export
     public function serve_ics(array $booking): void
     {
         $ics      = $this->generate_ics($booking);
-        $filename = 'buchung-' . ($booking['id'] ?? 'termin') . '.ics';
+        $filename = 'buchung-' . (int) ($booking['id'] ?? 0) . '.ics';
 
         header('Content-Type: text/calendar; charset=utf-8');
+        header('X-Content-Type-Options: nosniff');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         header('Content-Length: ' . strlen($ics));
         echo $ics;
@@ -118,6 +119,17 @@ final class CMS_Booking_Calendar_Export
     {
         $text = str_replace(['\\', ';', ',', "\n", "\r"], ['\\\\', '\\;', '\\,', '\\n', ''], $text);
         return $text;
+    }
+
+    private function sanitize_ical_token(string $value): string
+    {
+        return preg_replace('/[^A-Za-z0-9@._\-]/', '', $value) ?: bin2hex(random_bytes(16)) . '@' . $this->get_host();
+    }
+
+    private function sanitize_mailto(string $email): string
+    {
+        $email = filter_var($email, FILTER_VALIDATE_EMAIL);
+        return is_string($email) ? $email : '';
     }
 
     private function get_host(): string

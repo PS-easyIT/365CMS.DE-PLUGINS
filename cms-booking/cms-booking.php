@@ -136,7 +136,7 @@ final class CMS_Booking
         $css = CMS_BOOKING_PLUGIN_DIR . 'assets/css/booking-public.css';
         if (file_exists($css)) {
             echo '<link rel="stylesheet" href="'
-                . htmlspecialchars(CMS_BOOKING_PLUGIN_URL . 'assets/css/booking-public.css')
+                . htmlspecialchars(CMS_BOOKING_PLUGIN_URL . 'assets/css/booking-public.css', ENT_QUOTES, 'UTF-8')
                 . '?v=' . filemtime($css) . '">' . "\n";
         }
     }
@@ -146,7 +146,7 @@ final class CMS_Booking
         $js = CMS_BOOKING_PLUGIN_DIR . 'assets/js/booking-public.js';
         if (file_exists($js)) {
             echo '<script src="'
-                . htmlspecialchars(CMS_BOOKING_PLUGIN_URL . 'assets/js/booking-public.js')
+                . htmlspecialchars(CMS_BOOKING_PLUGIN_URL . 'assets/js/booking-public.js', ENT_QUOTES, 'UTF-8')
                 . '?v=' . filemtime($js) . '" defer></script>' . "\n";
         }
     }
@@ -186,8 +186,8 @@ final class CMS_Booking
         <div class="cms-member-section">
             <?php if (empty($bookings)): ?>
                 <div class="empty-state">
-                    <p style="font-size:2rem;margin:0;">🗓️</p>
                     <p><strong>Keine Buchungen vorhanden</strong></p>
+                    <p class="text-muted">Sobald Termine gebucht wurden, erscheinen sie hier.</p>
                 </div>
             <?php else: ?>
                 <div class="users-table-container">
@@ -208,7 +208,7 @@ final class CMS_Booking
                                 <td><?php echo htmlspecialchars($row['provider_name'] ?? '—'); ?></td>
                                 <td><?php echo htmlspecialchars($row['booking_date'] ?? '—'); ?></td>
                                 <td>
-                                    <span class="status-badge <?php echo htmlspecialchars($statusClass); ?>">
+                                    <span class="status-badge <?php echo htmlspecialchars($statusClass, ENT_QUOTES, 'UTF-8'); ?>">
                                         <?php echo htmlspecialchars($row['status'] ?? '—'); ?>
                                     </span>
                                 </td>

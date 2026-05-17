@@ -34,7 +34,7 @@ $val      = fn(string $key, string $default = ''): string => $e($old[$key] ?? $d
 
             <!-- Breadcrumb -->
             <nav class="booking-breadcrumb">
-                <a href="<?php echo $siteUrl; ?>/booking/<?php echo $e($provider['slug']); ?>">← <?php echo $e($provider['display_name']); ?></a>
+                <a href="<?php echo $e($siteUrl); ?>/booking/<?php echo $e($provider['slug']); ?>">← <?php echo $e($provider['display_name']); ?></a>
             </nav>
 
             <div class="booking-form-layout">
@@ -47,17 +47,17 @@ $val      = fn(string $key, string $default = ''): string => $e($old[$key] ?? $d
                         <p><?php echo $e($service['description']); ?></p>
                         <?php endif; ?>
                         <ul class="booking-info-list">
-                            <li>🕑 <?php echo CMS_Booking_Services::format_duration((int) $service['duration_min']); ?></li>
+                            <li>Dauer: <?php echo CMS_Booking_Services::format_duration((int) $service['duration_min']); ?></li>
                             <li>
                                 <?php
                                 $priceCents = (int) $service['price_cents'];
                                 echo $priceCents > 0
-                                    ? '💰 ' . CMS_Booking_Services::format_price($priceCents)
-                                    : '✅ Kostenlos';
+                                    ? 'Preis: ' . CMS_Booking_Services::format_price($priceCents)
+                                    : 'Kostenlos';
                                 ?>
                             </li>
                             <?php
-                            $typeLabels = ['online' => '💻 Online-Termin', 'onsite' => '📍 Vor Ort', 'hybrid' => '🔀 Online oder vor Ort'];
+                            $typeLabels = ['online' => 'Online-Termin', 'onsite' => 'Vor Ort', 'hybrid' => 'Online oder vor Ort'];
                             $lt = $service['location_type'] ?? 'online';
                             ?>
                             <li><?php echo $typeLabels[$lt] ?? $lt; ?></li>
@@ -72,23 +72,23 @@ $val      = fn(string $key, string $default = ''): string => $e($old[$key] ?? $d
                 <div class="booking-form-panel">
 
                     <?php if (!empty($success)): ?>
-                    <div class="booking-alert booking-alert-success">✅ <?php echo $e($success); ?></div>
+                    <div class="booking-alert booking-alert-success"><?php echo $e($success); ?></div>
                     <?php endif; ?>
                     <?php if (!empty($error)): ?>
-                    <div class="booking-alert booking-alert-error">❌ <?php echo $e($error); ?></div>
+                    <div class="booking-alert booking-alert-error"><?php echo $e($error); ?></div>
                     <?php endif; ?>
 
                     <?php if (empty($success)): ?>
                     <form method="POST" class="booking-form" id="bookingForm" novalidate>
-                        <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                        <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
                         <!-- Honeypot -->
-                        <div style="position:absolute;left:-9999px;" aria-hidden="true">
+                        <div class="booking-honeypot" aria-hidden="true">
                             <input type="text" name="website_url" tabindex="-1" autocomplete="off">
                         </div>
 
                         <!-- Schritt 1: Datum -->
                         <div class="booking-step" id="step-date">
-                            <h3>📅 Datum wählen</h3>
+                            <h3>Datum wählen</h3>
                             <div class="booking-calendar" id="bookingCalendar"
                                  data-provider-id="<?php echo (int) $provider['id']; ?>"
                                  data-service-id="<?php echo (int) $service['id']; ?>"
@@ -100,8 +100,8 @@ $val      = fn(string $key, string $default = ''): string => $e($old[$key] ?? $d
                         </div>
 
                         <!-- Schritt 2: Uhrzeit -->
-                        <div class="booking-step" id="step-time" style="display:none;">
-                            <h3>🕑 Uhrzeit wählen</h3>
+                        <div class="booking-step" id="step-time" hidden>
+                            <h3>Uhrzeit wählen</h3>
                             <div class="booking-slots" id="bookingSlots">
                                 <p class="text-muted">Bitte zuerst ein Datum wählen.</p>
                             </div>
@@ -109,28 +109,28 @@ $val      = fn(string $key, string $default = ''): string => $e($old[$key] ?? $d
                         </div>
 
                         <!-- Schritt 3: Kontaktdaten -->
-                        <div class="booking-step" id="step-contact" style="display:none;">
-                            <h3>👤 Ihre Daten</h3>
+                        <div class="booking-step" id="step-contact" hidden>
+                            <h3>Ihre Daten</h3>
 
                             <div class="booking-field">
                                 <label for="customer_name">Name <span class="required">*</span></label>
                                 <input type="text" id="customer_name" name="customer_name" class="booking-input"
                                        value="<?php echo $val('customer_name'); ?>" required
-                                       placeholder="Max Mustermann">
+                                       placeholder="Max Mustermann" autocomplete="name">
                             </div>
 
                             <div class="booking-field">
                                 <label for="customer_email">E-Mail <span class="required">*</span></label>
                                 <input type="email" id="customer_email" name="customer_email" class="booking-input"
                                        value="<?php echo $val('customer_email'); ?>" required
-                                       placeholder="max@muster.de">
+                                       placeholder="max@muster.de" autocomplete="email" inputmode="email">
                             </div>
 
                             <div class="booking-field">
                                 <label for="customer_phone">Telefon</label>
                                 <input type="tel" id="customer_phone" name="customer_phone" class="booking-input"
                                        value="<?php echo $val('customer_phone'); ?>"
-                                       placeholder="+49 123 456789">
+                                       placeholder="+49 123 456789" autocomplete="tel" inputmode="tel">
                             </div>
 
                             <div class="booking-field">
@@ -141,10 +141,10 @@ $val      = fn(string $key, string $default = ''): string => $e($old[$key] ?? $d
                         </div>
 
                         <!-- Submit -->
-                        <div class="booking-actions" id="step-submit" style="display:none;">
+                        <div class="booking-actions" id="step-submit" hidden>
                             <div class="booking-summary" id="bookingSummary"></div>
                             <button type="submit" class="booking-btn booking-btn-primary">
-                                📅 Verbindlich buchen
+                                Verbindlich buchen
                             </button>
                         </div>
                     </form>

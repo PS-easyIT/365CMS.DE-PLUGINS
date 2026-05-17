@@ -30,42 +30,41 @@ $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
         <div class="booking-container">
 
             <!-- Provider-Header -->
-            <div class="booking-provider-header">
+            <header class="booking-provider-header">
                 <h1><?php echo $e($provider['display_name']); ?></h1>
                 <?php if (!empty($provider['bio'])): ?>
                 <p class="booking-provider-description"><?php echo $e($provider['bio']); ?></p>
                 <?php endif; ?>
                 <?php if (!empty($provider['email'])): ?>
                 <p class="booking-provider-meta">
-                    📧 <?php echo $e($provider['email']); ?>
+                    <?php echo $e($provider['email']); ?>
                     <?php if (!empty($provider['phone'])): ?>
-                    &nbsp;·&nbsp;📞 <?php echo $e($provider['phone']); ?>
+                    &nbsp;·&nbsp;<?php echo $e($provider['phone']); ?>
                     <?php endif; ?>
                 </p>
                 <?php endif; ?>
-            </div>
+            </header>
 
             <!-- Services -->
             <?php if (empty($services)): ?>
             <div class="booking-empty-state">
-                <p style="font-size:2.5rem;">📭</p>
                 <p><strong>Aktuell keine Terminart verfügbar</strong></p>
                 <p class="text-muted">Bitte versuchen Sie es später erneut.</p>
             </div>
             <?php else: ?>
-            <div class="booking-services-grid">
+            <section class="booking-services-grid" aria-label="Buchbare Leistungen">
                 <?php foreach ($services as $service): ?>
-                     <a href="<?php echo $e($siteUrl); ?>/booking/<?php echo $e($provider['slug']); ?>/<?php echo $e($service['slug']); ?>"
+                <article>
+                    <a href="<?php echo $e($siteUrl); ?>/booking/<?php echo $e($provider['slug']); ?>/<?php echo $e($service['slug']); ?>"
                    class="booking-service-card">
                     <div class="booking-service-card__header">
                         <h3><?php echo $e($service['title']); ?></h3>
                         <?php
-                        $typeIcons = ['online' => '💻', 'onsite' => '📍', 'hybrid' => '🔀'];
                         $typeLabels = ['online' => 'Online', 'onsite' => 'Vor Ort', 'hybrid' => 'Hybrid'];
                         $lt = $service['location_type'] ?? 'online';
                         ?>
                         <span class="booking-service-card__type">
-                            <?php echo $typeIcons[$lt] ?? ''; ?> <?php echo $typeLabels[$lt] ?? $lt; ?>
+                            <?php echo $e($typeLabels[$lt] ?? $lt); ?>
                         </span>
                     </div>
                     <?php if (!empty($service['description'])): ?>
@@ -73,7 +72,7 @@ $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
                     <?php endif; ?>
                     <div class="booking-service-card__footer">
                         <span class="booking-service-card__duration">
-                            🕑 <?php echo CMS_Booking_Services::format_duration((int) $service['duration_min']); ?>
+                            <?php echo CMS_Booking_Services::format_duration((int) $service['duration_min']); ?>
                         </span>
                         <span class="booking-service-card__price">
                             <?php
@@ -86,8 +85,9 @@ $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
                     </div>
                     <span class="booking-service-card__cta">Jetzt buchen →</span>
                 </a>
+                </article>
                 <?php endforeach; ?>
-            </div>
+            </section>
             <?php endif; ?>
 
         </div>

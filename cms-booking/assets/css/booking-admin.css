@@ -126,3 +126,60 @@
 .booking-confirm-modal__content {
     max-width: 420px;
 }
+
+.booking-admin-filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem;
+    align-items: flex-end;
+}
+
+.booking-admin-filter-group {
+    margin: 0;
+}
+
+.booking-admin-filter-group--status {
+    min-width: 180px;
+}
+
+.booking-admin-filter-group--provider,
+.booking-admin-filter-group--search {
+    min-width: 200px;
+}
+
+.booking-admin-filter-group--search {
+    flex: 1;
+}
+
+.booking-admin-muted {
+    color: #64748b;
+    font-size: .8rem;
+}
+
+.booking-admin-muted--subtle {
+    color: #94a3b8;
+    font-size: .79rem;
+}
+
+.booking-admin-actions {
+    display: flex;
+    gap: .4rem;
+    flex-wrap: wrap;
+}
+
+.booking-admin-inline-form {
+    margin: 0;
+}
+
+.booking-admin-pagination {
+    display: flex;
+    gap: .5rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.booking-admin-pagination-info {
+    padding: .375rem .875rem;
+    color: #64748b;
+    font-size: .875rem;
+}

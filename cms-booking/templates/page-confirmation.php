@@ -15,6 +15,13 @@ $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
 
 $statusLabels = CMS_Booking_Bookings::status_labels();
 $statusClass  = CMS_Booking_Bookings::status_badge_class($booking['status']);
+$meetingUrl   = '';
+if (!empty($booking['meeting_url']) && filter_var($booking['meeting_url'], FILTER_VALIDATE_URL)) {
+    $meetingScheme = strtolower((string) parse_url($booking['meeting_url'], PHP_URL_SCHEME));
+    if (in_array($meetingScheme, ['http', 'https'], true)) {
+        $meetingUrl = (string) $booking['meeting_url'];
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -33,7 +40,6 @@ $statusClass  = CMS_Booking_Bookings::status_badge_class($booking['status']);
         <div class="booking-container booking-container--narrow">
 
             <div class="booking-confirmation-card">
-                <div class="booking-confirmation-icon">✅</div>
                 <h1>Vielen Dank für Ihre Buchung!</h1>
                 <p class="booking-confirmation-subtitle">
                     <?php if ($booking['status'] === 'confirmed'): ?>
@@ -92,11 +98,11 @@ $statusClass  = CMS_Booking_Bookings::status_badge_class($booking['status']);
                             <th>Ort</th>
                             <td>
                                 <?php
-                                $locLabels = ['online' => '💻 Online-Termin', 'onsite' => '📍 Vor Ort', 'hybrid' => '🔀 Online / Vor Ort'];
-                                echo $locLabels[$booking['location_type']] ?? $booking['location_type'];
+                                $locLabels = ['online' => 'Online-Termin', 'onsite' => 'Vor Ort', 'hybrid' => 'Online / Vor Ort'];
+                                echo $e($locLabels[$booking['location_type']] ?? $booking['location_type']);
                                 ?>
-                                <?php if (!empty($booking['meeting_url'])): ?>
-                                <br><a href="<?php echo $e($booking['meeting_url']); ?>" target="_blank" rel="noopener noreferrer">
+                                <?php if ($meetingUrl !== ''): ?>
+                                <br><a href="<?php echo $e($meetingUrl); ?>" target="_blank" rel="noopener noreferrer">
                                     Meeting-Link öffnen ↗
                                 </a>
                                 <?php endif; ?>
@@ -114,15 +120,15 @@ $statusClass  = CMS_Booking_Bookings::status_badge_class($booking['status']);
 
                 <!-- Kalender-Links -->
                 <div class="booking-confirmation-actions">
-                    <p class="booking-confirmation-actions-label">📅 Zum Kalender hinzufügen:</p>
+                    <p class="booking-confirmation-actions-label">Zum Kalender hinzufügen:</p>
                     <div class="booking-confirmation-btns">
-                                <a href="<?php echo $e($siteUrl); ?>/booking/ical/<?php echo (int) $booking['id']; ?>"
+                        <a href="<?php echo $e($siteUrl); ?>/booking/ical/<?php echo (int) $booking['id']; ?>?token=<?php echo $e($accessToken ?? ''); ?>"
                            class="booking-btn booking-btn-secondary" download>
-                            📥 iCal / Outlook
+                            iCal / Outlook
                         </a>
                         <a href="<?php echo $e($googleUrl); ?>"
                            class="booking-btn booking-btn-secondary" target="_blank" rel="noopener noreferrer">
-                            📅 Google Kalender
+                            Google Kalender
                         </a>
                     </div>
                 </div>
@@ -130,7 +136,7 @@ $statusClass  = CMS_Booking_Bookings::status_badge_class($booking['status']);
                 <!-- Hinweise -->
                 <div class="booking-confirmation-notes">
                     <?php if ($booking['status'] === 'pending'): ?>
-                    <p>ℹ️ Sie erhalten eine E-Mail, sobald Ihre Buchung bestätigt wurde.</p>
+                    <p>Sie erhalten eine E-Mail, sobald Ihre Buchung bestätigt wurde.</p>
                     <?php endif; ?>
                     <p>Eine Bestätigung wurde an <strong><?php echo $e($booking['customer_email']); ?></strong> gesendet.</p>
                 </div>
