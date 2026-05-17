@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "title": "Workspace-M365 Migrations- und TCO-Defaults",
+    "version": "1.0.0",
+    "currency": "EUR",
+    "source_checked": "2026-05-17",
+    "price_basis": "Projekt-, Schulungs-, Change- und Parallelbetriebswerte sind Planungsannahmen und müssen je Angebot geschärft werden.",
+    "sources": [
+      "https://learn.microsoft.com/en-us/exchange/mailbox-migration/automated-migration-neweac",
+      "https://learn.microsoft.com/en-us/exchange/mailbox-migration/google-workspace-migration-prerequisites",
+      "https://learn.microsoft.com/en-us/exchange/mailbox-migration/office-365-migration-best-practices",
+      "https://learn.microsoft.com/en-us/exchange/mailbox-migration/completion-gspace-migration-batch-neweac",
+      "https://learn.microsoft.com/en-us/exchange/mailbox-migration/how-it-all-works-in-the-backend"
+    ]
+  },
+  "defaults": {
+    "direction": "google_to_m365",
+    "users": 120,
+    "analysis_months": 36,
+    "workspace_plan": "business_standard",
+    "m365_plan": "auto",
+    "google_addons_monthly_per_user": 0,
+    "m365_addons_monthly_per_user": 0,
+    "migration_cost_per_user": 95,
+    "training_cost_per_user": 60,
+    "change_cost_per_user": 35,
+    "project_base_cost": 2500,
+    "admin_extra_monthly": 750,
+    "hypercare_months": 2,
+    "parallel_months": 2,
+    "parallel_cost_percent": 50,
+    "security_need": "standard",
+    "storage_need": "standard",
+    "ai_need": "standard",
+    "special_controls_required": 0,
+    "google_addons_unknown": 0
+  },
+  "limits": {
+    "users_min": 1,
+    "users_max": 500000,
+    "analysis_month_options": [12, 24, 36, 48, 60],
+    "cost_max": 1000000,
+    "percent_max": 100,
+    "month_max": 24
+  },
+  "direction_options": {
+    "google_to_m365": "Google Workspace zu Microsoft 365",
+    "m365_to_google": "Microsoft 365 zu Google Workspace"
+  },
+  "migration_facts": {
+    "native_google_workspace_filters": [
+      "Mail",
+      "Calendar",
+      "Contacts",
+      "Rules"
+    ],
+    "specialized_gmail_onboarding_duration_days": {
+      "0_10_gb": 2,
+      "10_50_gb": 8,
+      "50_100_gb": 12,
+      "100_200_gb": 19
+    },
+    "default_concurrent_migrations": 20,
+    "default_concurrent_incremental_syncs": 10,
+    "license_assignment_window_days": 30,
+    "routing_domains_required": true,
+    "mrm_archive_policy_review": "MRM- und Archivierungsrichtlinien vor der Migration prüfen, weil verschobene Elemente bei der Inhaltsprüfung als fehlend erscheinen können."
+  },
+  "complexity_bands": {
+    "small": {
+      "max_users": 50,
+      "label": "kleines Projekt",
+      "factor": 0.85
+    },
+    "standard": {
+      "max_users": 300,
+      "label": "Standardprojekt",
+      "factor": 1.0
+    },
+    "enterprise": {
+      "max_users": 500000,
+      "label": "Enterprise-Projekt",
+      "factor": 1.25
+    }
+  }
+}

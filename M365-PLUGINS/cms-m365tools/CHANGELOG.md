@@ -1,6 +1,15 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.20.0 – 2026-05-17
+
+- Neues Modul `workspace-m365-tco-calculator` unter `/google-workspace-zu-m365-tco` ergänzt.
+- Neue JSON-Kataloge `google_workspace_plans.json`, `m365_target_plans.json`, `workspace_to_m365_mapping.json` und `migration_defaults.json` für Google-Planpreise, M365-Zielpläne, Mapping, Projektkosten, Hypercare, Parallelbetrieb und Migrationsleitplanken ergänzt.
+- Engine `CMS_M365CALCULATOR_Workspace_M365_TCO_Calculator` mit Eingabe-Normalisierung, Auto-Mapping, 3-Jahres-TCO, Richtungslogik, Break-even, Delta-Auswertung, Warnungen, nächsten Schritten und Quellenstand implementiert.
+- Public Template `page-workspace-m365-tco-calculator.php` im PHINIT-Layout mit Szenarioformular, TCO-KPIs, Plattformvergleich, Kostenentwicklung, Projektannahmen und Quellenblock ergänzt.
+- Tool-Registry, Frontend-Route, Katalogloader, Update-Manifest, README, API-, Datenbank-, Hooks- und Modul-Dokumentation synchronisiert.
+- Public-Constraint beibehalten: keine serverseitige Speicherung und keine öffentlichen Formular-Prüfhinweise.
+
 ## 1.19.0 – 2026-05-17
 
 - Neues Modul `m365-storage-needs-calculator` unter `/m365-storage-bedarfsrechner` ergänzt.

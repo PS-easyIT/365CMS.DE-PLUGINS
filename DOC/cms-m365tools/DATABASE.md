@@ -80,5 +80,9 @@ Die Katalogdaten liegen als versionierte JSON-Dateien im Plugin-Verzeichnis:
 - `data/microsoft_backup_baseline.json`
 - `data/backup_providers.json`
 - `data/backup_comparison_rules.json`
+- `data/google_workspace_plans.json`
+- `data/m365_target_plans.json`
+- `data/workspace_to_m365_mapping.json`
+- `data/migration_defaults.json`
 
 Die Lizenz-Audit-Checkliste speichert keine Daten serverseitig. Der interaktive Fortschritt wird im Browser des Besuchers verwaltet und nicht in einer Datenbank-Tabelle persistiert.

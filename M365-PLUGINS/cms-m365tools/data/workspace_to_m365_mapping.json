@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "title": "Google Workspace zu Microsoft 365 Mapping",
+    "version": "1.0.0",
+    "source_checked": "2026-05-17",
+    "sources": [
+      "https://workspace.google.com/pricing.html",
+      "https://aka.ms/M365BusinessPlans",
+      "https://aka.ms/M365EnterprisePlans"
+    ]
+  },
+  "workspace_to_m365": {
+    "business_starter": {
+      "default": "m365-business-basic",
+      "desktop_apps": "m365-business-standard",
+      "security": "m365-business-premium",
+      "enterprise": "m365-e3",
+      "reason": "Starter passt preislich meist zu Business Basic; Desktop-Apps oder Security heben das Ziel an."
+    },
+    "business_standard": {
+      "default": "m365-business-standard",
+      "security": "m365-business-premium",
+      "enterprise": "m365-e3",
+      "reason": "Standard entspricht typischerweise dem Business-Standard-Zielbild; Geräte- und Security-Anforderungen sprechen für Premium."
+    },
+    "business_plus": {
+      "default": "m365-business-premium",
+      "enterprise": "m365-e3",
+      "high_security": "m365-e5",
+      "reason": "Plus wird wegen eDiscovery, Speicher und Verwaltung mindestens gegen Business Premium oder Enterprise gespiegelt."
+    },
+    "enterprise": {
+      "default": "m365-e3",
+      "high_security": "m365-e5",
+      "reason": "Enterprise-Anforderungen werden gegen E3/E5 bewertet; Sonderverträge bleiben manuell zu prüfen."
+    }
+  },
+  "m365_to_workspace": {
+    "m365-business-basic": {
+      "default": "business_starter",
+      "storage": "business_standard",
+      "reason": "Business Basic kann grob mit Starter verglichen werden, mehr Speicher spricht für Standard."
+    },
+    "m365-business-standard": {
+      "default": "business_standard",
+      "reason": "Business Standard wird gegen Workspace Standard gespiegelt."
+    },
+    "m365-business-premium": {
+      "default": "business_plus",
+      "enterprise": "enterprise",
+      "reason": "Business Premium verlangt wegen Verwaltung und Schutz meist Plus oder Enterprise."
+    },
+    "office-365-e3": {
+      "default": "enterprise",
+      "reason": "E3-ähnliche Anforderungen werden gegen Workspace Enterprise geprüft."
+    },
+    "m365-e3": {
+      "default": "enterprise",
+      "reason": "E3-Zielbilder sind meist Enterprise-Mappings."
+    },
+    "m365-e5": {
+      "default": "enterprise",
+      "reason": "E5-Funktionsumfang erfordert manuelle Enterprise-Bewertung."
+    }
+  },
+  "requirements": {
+    "security_need_options": {
+      "basic": "Basis",
+      "standard": "Standard",
+      "high": "Hoch",
+      "enterprise": "Enterprise"
+    },
+    "storage_need_options": {
+      "low": "bis 30 GB je Nutzer",
+      "standard": "bis 2 TB je Nutzer",
+      "high": "bis 5 TB je Nutzer",
+      "enterprise": "Enterprise / vertraglich"
+    },
+    "ai_need_options": {
+      "none": "nicht ausschlaggebend",
+      "standard": "integrierte KI-Funktionen wichtig",
+      "advanced": "erweiterte KI- und Automatisierungsfunktionen wichtig"
+    }
+  },
+  "recommendations": {
+    "m365_cheaper": {
+      "label": "Microsoft 365 wirtschaftlich günstiger",
+      "tone": "success",
+      "text": "Microsoft 365 liegt über den betrachteten Zeitraum klar unter dem Workspace-TCO."
+    },
+    "google_cheaper": {
+      "label": "Google Workspace wirtschaftlich günstiger",
+      "tone": "success",
+      "text": "Google Workspace liegt über den betrachteten Zeitraum klar unter dem Microsoft-365-TCO."
+    },
+    "similar": {
+      "label": "Wirtschaftlich ähnlich – strategische Faktoren entscheiden",
+      "tone": "warning",
+      "text": "Die Kostendifferenz ist gering; Funktions-, Betriebs- und Integrationsziele sollten entscheiden."
+    },
+    "google_short_term": {
+      "label": "Google bleibt kurzfristig günstiger",
+      "tone": "info",
+      "text": "Google Workspace bleibt im Betrachtungszeitraum günstiger oder der Break-even liegt außerhalb des Modells."
+    },
+    "delayed_break_even": {
+      "label": "Migration kostet kurzfristig mehr, rechnet sich aber später",
+      "tone": "warning",
+      "text": "Die Umstellung erzeugt Projektkosten, kann sich aber durch niedrigere laufende Kosten amortisieren."
+    },
+    "manual_review": {
+      "label": "Mapping / Anforderungen manuell prüfen",
+      "tone": "danger",
+      "text": "Sonderanforderungen, Enterprise-Verträge oder unbekannte Add-ons sollten vor einer Empfehlung detailliert geprüft werden."
+    }
+  }
+}

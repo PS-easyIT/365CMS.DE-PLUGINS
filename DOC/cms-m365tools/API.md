@@ -33,6 +33,10 @@
 - `microsoft_backup_baseline()` – lädt offizielle Microsoft-365-Backup-Baseline für Preis, Workloads, Retention, Restore und Billing
 - `backup_providers()` – lädt Microsoft-Baseline und manuell gepflegte Providervergleichsdaten
 - `backup_comparison_rules()` – lädt Defaults, Scoring-Gewichte, Empfehlungstexte und FAQ für den Backup-Kosten-Rechner
+- `google_workspace_plans()` – lädt Google-Workspace-Pläne, Preise, Speicher- und Funktionsleitplanken
+- `m365_target_plans()` – lädt Microsoft-365-Zielpläne, Preise, Segmente und Funktionsprofile für den TCO-Rechner
+- `workspace_to_m365_mapping()` – lädt Planmapping, Anforderungsoptionen und Empfehlungskategorien für beide Richtungen
+- `migration_defaults()` – lädt Migrations-, Schulungs-, Change-, Hypercare- und Parallelbetriebsannahmen
 - `license_advisor_plans()` – lädt Basislizenz-Kataloge
 - `license_advisor_addons()` – lädt Add-ons und Prerequisites
 - `license_advisor_feature_matrix()` – lädt Featuredefinitionen
@@ -164,6 +168,22 @@
 - `load_storage_growth_assumptions()` – lädt `storage_growth_assumptions.json`
 - `render_storage_calculator_page()` – liefert den Template-Pfad für `/m365-storage-bedarfsrechner`
 
+## `CMS_M365CALCULATOR_Workspace_M365_TCO_Calculator`
+
+- `default_input()` – Default-Werte für Richtung, Nutzerzahl, Planwahl, Betrachtungszeitraum, Add-ons, Projektkosten, Anforderungen und Sonderfälle
+- `normalize_input(array $source)` – normalisiert GET-Parameter, Zahlenfelder, Auswahlwerte und Checkbox-Werte
+- `evaluate(array $input)` – kombiniert Planmapping, Plattform-TCO, Projektannahmen, Break-even, Timeline, Warnungen, nächste Schritte und Quellen
+- `map_workspace_to_m365_plans(array $input, array $workspaceCatalog, array $m365Catalog, array $mappingCatalog)` – leitet Zielpläne für Google-Workspace-zu-M365 und M365-zu-Google ab
+- `calculate_workspace_tco(array $input, array $plan, array $migration)` – berechnet Workspace-Lizenzen, Add-ons, Projektanteil, laufende Kosten und Gesamtkosten
+- `calculate_m365_tco(array $input, array $plan, array $migration)` – berechnet Microsoft-365-Lizenzen, Add-ons, Projektanteil, laufende Kosten und Gesamtkosten
+- `compare_workspace_m365_tco(array $input, array $workspace, array $m365, array $mappingCatalog, array $migration)` – leitet Gewinner, Delta, Prozentdifferenz, Break-even und Empfehlungskategorie ab
+- `build_workspace_migration_assumptions(array $input, float $workspaceMonthly, float $m365Monthly, array $defaultsCatalog)` – berechnet Projekt-, Schulungs-, Change-, Hypercare- und Parallelbetriebskosten
+- `load_google_workspace_plans()` – lädt `google_workspace_plans.json`
+- `load_m365_target_plans()` – lädt `m365_target_plans.json`
+- `load_workspace_to_m365_mapping()` – lädt `workspace_to_m365_mapping.json`
+- `load_migration_defaults()` – lädt `migration_defaults.json`
+- `render_workspace_tco_page()` – liefert den Template-Pfad für `/google-workspace-zu-m365-tco`
+
 ## `CMS_M365CALCULATOR_Settings`
 
 - `apply_to_tools(array $tools)` – wendet Admin-Overrides auf Registry-Module an
@@ -210,6 +230,6 @@
 
 ## `CMS_M365CALCULATOR_Frontend`
 
-- Registriert `/m365-tools`, `/m365-rechner`, `/m365-lizenz-audit-checkliste`, `/m365-storage-bedarfsrechner`, `/m365-backup-kostenrechner`, `/microsoft-preiserhoehung-tracker`, `/teams-phone-lizenzberater`, `/exchange-online-roi`, `/frontline-worker-lizenz-check`, `/copilot-pilot-rechner`, `/ai-pack-vs-copilot-pro`, `/m365-lizenzmatrix`, `/m365-addon-matrix`, `/m365-archive-mailbox-rechner`, `/m365-jahresvertrag-vs-monatsvertrag`, `/m365-add-on-konfigurator`, `/m365-lizenzvergleich`, `/m365-lizenzberater`, `/copilot-roi-rechner`, `/shared-mailbox-vs-lizenz` und `/copilot-lizenz-check`
+- Registriert `/m365-tools`, `/m365-rechner`, `/m365-lizenz-audit-checkliste`, `/google-workspace-zu-m365-tco`, `/m365-storage-bedarfsrechner`, `/m365-backup-kostenrechner`, `/microsoft-preiserhoehung-tracker`, `/teams-phone-lizenzberater`, `/exchange-online-roi`, `/frontline-worker-lizenz-check`, `/copilot-pilot-rechner`, `/ai-pack-vs-copilot-pro`, `/m365-lizenzmatrix`, `/m365-addon-matrix`, `/m365-archive-mailbox-rechner`, `/m365-jahresvertrag-vs-monatsvertrag`, `/m365-add-on-konfigurator`, `/m365-lizenzvergleich`, `/m365-lizenzberater`, `/copilot-roi-rechner`, `/shared-mailbox-vs-lizenz` und `/copilot-lizenz-check`
 - Bindet Assets nur auf Plugin-Routen ein
 - Rendert Toolbox und Rechner-Template

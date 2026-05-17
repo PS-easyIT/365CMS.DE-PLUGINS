@@ -143,6 +143,7 @@ final class CMS_M365CALCULATOR_Tool_Registry
         self::register_license_audit_checklist_module();
         self::register_storage_needs_calculator_module();
         self::register_backup_cost_calculator_module();
+        self::register_workspace_m365_tco_module();
         self::register_license_advisor_module();
         self::register_copilot_license_checker_module();
         self::register_copilot_roi_module();
@@ -311,6 +312,20 @@ final class CMS_M365CALCULATOR_Tool_Registry
             'icon' => 'storage',
             'url' => '/m365-storage-bedarfsrechner',
             'category' => 'Speicher',
+            'status' => 'live',
+            'priority' => 1,
+        ]);
+    }
+
+    private static function register_workspace_m365_tco_module(): void
+    {
+        self::register([
+            'key' => 'workspace-m365-tco-calculator',
+            'title' => 'Google Workspace ↔ M365 TCO-Rechner',
+            'description' => 'Vergleicht Google Workspace und Microsoft 365 über Lizenzkosten, Migration, Schulung, Change-Aufwand, Parallelbetrieb und Break-even.',
+            'icon' => 'roi',
+            'url' => '/google-workspace-zu-m365-tco',
+            'category' => 'Migration',
             'status' => 'live',
             'priority' => 1,
         ]);

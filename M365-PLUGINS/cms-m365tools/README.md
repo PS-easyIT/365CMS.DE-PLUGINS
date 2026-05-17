@@ -1,12 +1,13 @@
 # CMS M365 Tools
 
-`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Enthalten sind der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
+`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Enthalten sind der **Google Workspace ↔ Microsoft 365 TCO-Rechner**, der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
 
 ## Enthaltene Routen
 
 - `/m365-tools` – Hub-Übersicht aller Module
 - `/m365-rechner` – alternative Hub-Route
 - `/m365-lizenz-audit-checkliste` – interaktive Lizenz-Audit-Checkliste mit Browser-Fortschritt, Druckzusammenfassung und Deep Links zu Spezialrechnern
+- `/google-workspace-zu-m365-tco` – Google Workspace und Microsoft 365 inklusive Lizenzkosten, Migration, Schulung, Change-Aufwand, Parallelbetrieb und Break-even vergleichen
 - `/m365-storage-bedarfsrechner` – SharePoint-Pool, OneDrive-Quotas, Exchange-Postfächer, Archivbedarf, Wachstum und Zusatzspeicherbedarf berechnen
 - `/m365-backup-kostenrechner` – Microsoft-365-Backup-Baseline und Providervergleich nach Kosten, Workloads, Retention, Restore-Tiefe und Betriebsmodell berechnen
 - `/microsoft-preiserhoehung-tracker` – offizielle Microsoft-Preis-, Packaging-, SKU-, Renewal- und Forecast-Ereignisse mit Budgetchart auswerten
@@ -49,6 +50,7 @@ cms-m365tools/
 │   ├── class-license-audit-checklist.php
 │   ├── class-storage-needs-calculator.php
 │   ├── class-backup-cost-calculator.php
+│   ├── class-workspace-m365-tco-calculator.php
 │   ├── class-addon-configurator.php
 │   ├── class-license-comparison.php
 │   ├── class-license-advisor.php
@@ -111,6 +113,10 @@ cms-m365tools/
 │   ├── microsoft_backup_baseline.json
 │   ├── backup_providers.json
 │   ├── backup_comparison_rules.json
+│   ├── google_workspace_plans.json
+│   ├── m365_target_plans.json
+│   ├── workspace_to_m365_mapping.json
+│   ├── migration_defaults.json
 │   ├── commitment_pricing.json
 │   ├── commitment_assumptions.json
 │   ├── commitment_channel_notes.json
@@ -130,6 +136,7 @@ cms-m365tools/
 │   ├── page-license-audit-checklist.php
 │   ├── page-storage-needs-calculator.php
 │   ├── page-backup-cost-calculator.php
+│   ├── page-workspace-m365-tco-calculator.php
 │   ├── page-archive-mailbox-calculator.php
 │   ├── page-commitment-calculator.php
 │   ├── page-addon-configurator.php
@@ -172,6 +179,16 @@ Die Lizenz-Audit-Checkliste bewertet und strukturiert unter anderem:
 - Frontline-Kandidaten, Copilot-Basislizenzen, primäres Exchange-Online-Postfach und App-/Netzwerk-Readiness
 - Add-on-Redundanzen, SharePoint-Tenant-Speicher, Site-Limits, Extra File Storage, Microsoft 365 Backup und Laufzeitmodell
 - lokalen Browser-Fortschritt, offene/erledigte Punkte, Druck-/PDF-Zusammenfassung und Deep Links zu passenden Spezialrechnern
+
+Der Google Workspace ↔ Microsoft 365 TCO-Rechner bewertet unter anderem:
+
+- laufende Lizenzkosten für Google Workspace und Microsoft 365 über 12 bis 60 Monate
+- Mapping von Business Starter, Standard, Plus und Enterprise auf passende Microsoft-365-Zielpläne
+- Rückwärtsvergleich von Microsoft 365 zu Google Workspace
+- Migrationskosten, Schulung, Change-Aufwand, Hypercare und Parallelbetrieb als getrennte Kostenblöcke
+- Break-even, Delta, monatliche Kosten und kumulierte Kostenentwicklung
+- Business-Plan-Grenzen bei mehr als 300 Nutzern und Enterprise-Sonderfälle
+- native Microsoft-Migrationsleitplanken für Mail, Calendar, Contacts und Rules
 
 Der M365 Storage-Bedarfs-Rechner bewertet unter anderem:
 

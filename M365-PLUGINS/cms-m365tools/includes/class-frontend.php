@@ -30,6 +30,7 @@ final class CMS_M365CALCULATOR_Frontend
     private const LICENSE_AUDIT_CHECKLIST_ROUTE = '/m365-lizenz-audit-checkliste';
     private const STORAGE_NEEDS_ROUTE = '/m365-storage-bedarfsrechner';
     private const BACKUP_COST_ROUTE = '/m365-backup-kostenrechner';
+    private const WORKSPACE_M365_TCO_ROUTE = '/google-workspace-zu-m365-tco';
     private const LICENSE_ADVISOR_ROUTE = '/m365-lizenzberater';
     private const SHARED_MAILBOX_ROUTE = '/shared-mailbox-vs-lizenz';
     private const COPILOT_LICENSE_ROUTE = '/copilot-lizenz-check';
@@ -134,6 +135,10 @@ final class CMS_M365CALCULATOR_Frontend
 
         $router->addRoute('GET', self::BACKUP_COST_ROUTE, function (): void {
             $this->render_backup_cost_calculator();
+        });
+
+        $router->addRoute('GET', self::WORKSPACE_M365_TCO_ROUTE, function (): void {
+            $this->render_workspace_m365_tco_calculator();
         });
 
         $router->addRoute('POST', self::LICENSE_ADVISOR_ROUTE, function (): void {
@@ -407,6 +412,18 @@ final class CMS_M365CALCULATOR_Frontend
         exit;
     }
 
+    private function render_workspace_m365_tco_calculator(): void
+    {
+        $this->ensure_tool_available('workspace-m365-tco-calculator');
+
+        $input = CMS_M365CALCULATOR_Workspace_M365_TCO_Calculator::normalize_input($_GET);
+        $result = CMS_M365CALCULATOR_Workspace_M365_TCO_Calculator::evaluate($input);
+
+        $this->set_seo('Google Workspace zu Microsoft 365 TCO-Rechner', 'Vergleicht Google Workspace und Microsoft 365 über Lizenzkosten, Migration, Schulung, Change-Aufwand, Parallelbetrieb, Break-even und 3-Jahres-TCO.');
+        include CMS_M365CALCULATOR_Workspace_M365_TCO_Calculator::render_workspace_tco_page();
+        exit;
+    }
+
     private function render_license_advisor(string $method): void
     {
         $this->ensure_tool_available('m365lic');
@@ -536,6 +553,7 @@ final class CMS_M365CALCULATOR_Frontend
             || $requestPath === trim(self::LICENSE_AUDIT_CHECKLIST_ROUTE, '/')
             || $requestPath === trim(self::STORAGE_NEEDS_ROUTE, '/')
             || $requestPath === trim(self::BACKUP_COST_ROUTE, '/')
+            || $requestPath === trim(self::WORKSPACE_M365_TCO_ROUTE, '/')
             || $requestPath === trim(self::LICENSE_ADVISOR_ROUTE, '/')
             || $requestPath === trim(self::SHARED_MAILBOX_ROUTE, '/')
             || $requestPath === trim(self::COPILOT_LICENSE_ROUTE, '/')
@@ -557,6 +575,7 @@ final class CMS_M365CALCULATOR_Frontend
             || str_ends_with($requestPath, self::LICENSE_AUDIT_CHECKLIST_ROUTE)
             || str_ends_with($requestPath, self::STORAGE_NEEDS_ROUTE)
             || str_ends_with($requestPath, self::BACKUP_COST_ROUTE)
+            || str_ends_with($requestPath, self::WORKSPACE_M365_TCO_ROUTE)
             || str_ends_with($requestPath, self::LICENSE_ADVISOR_ROUTE)
             || str_ends_with($requestPath, self::SHARED_MAILBOX_ROUTE)
             || str_ends_with($requestPath, self::COPILOT_LICENSE_ROUTE)

@@ -2,8 +2,8 @@
 /**
  * Plugin Name: CMS M365 Tools
  * Plugin URI: https://365network.de/cms-m365tools
- * Description: Modulare Microsoft-365-Rechner-Toolbox mit Storage-Bedarfs-Rechner, Backup-Kosten-Rechner, Lizenz-Audit-Checkliste, Microsoft-Preiserhöhung-Tracker, Teams-Phone-Lizenz-Berater, Exchange-Online-ROI-Rechner, Frontline-Worker-Lizenz-Check, Copilot-Pilot-Phase-Rechner, AI-Pack-vs-Copilot-Pro-Vergleich, Archive-Mailbox-, Annual-vs-Monthly-Rechner, Lizenz- und Add-on-Matrizen, Add-On-Konfigurator, Lizenzvergleich, Lizenzberater, Copilot ROI-Rechner, Shared-Mailbox- und Copilot-Lizenz-Pflicht-Checker.
- * Version: 1.19.0
+ * Description: Modulare Microsoft-365-Rechner-Toolbox mit Google-Workspace-M365-TCO-Rechner, Storage-Bedarfs-Rechner, Backup-Kosten-Rechner, Lizenz-Audit-Checkliste, Microsoft-Preiserhöhung-Tracker, Teams-Phone-Lizenz-Berater, Exchange-Online-ROI-Rechner, Frontline-Worker-Lizenz-Check, Copilot-Pilot-Phase-Rechner, AI-Pack-vs-Copilot-Pro-Vergleich, Archive-Mailbox-, Annual-vs-Monthly-Rechner, Lizenz- und Add-on-Matrizen, Add-On-Konfigurator, Lizenzvergleich, Lizenzberater, Copilot ROI-Rechner, Shared-Mailbox- und Copilot-Lizenz-Pflicht-Checker.
+ * Version: 1.20.0
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_M365TOOLS_VERSION', '1.19.0');
+define('CMS_M365TOOLS_VERSION', '1.20.0');
 define('CMS_M365TOOLS_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_M365TOOLS_PLUGIN_URL', '/plugins/cms-m365tools/');
 
@@ -67,6 +67,7 @@ final class CMS_M365CALCULATOR
             $inc . 'class-license-audit-checklist.php',
             $inc . 'class-storage-needs-calculator.php',
             $inc . 'class-backup-cost-calculator.php',
+            $inc . 'class-workspace-m365-tco-calculator.php',
             $inc . 'class-addon-configurator.php',
             $inc . 'class-license-advisor.php',
             $inc . 'class-shared-mailbox-calculator.php',

@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "title": "Microsoft 365 Zielpläne für Workspace-TCO",
+    "version": "1.0.0",
+    "currency": "EUR",
+    "source_checked": "2026-05-17",
+    "price_basis": "Referenzpreise aus dem gepflegten cms-m365tools Preiskatalog; CSP-, EA- oder Aktionspreise separat prüfen.",
+    "sources": [
+      "https://aka.ms/M365BusinessPlans",
+      "https://aka.ms/M365EnterprisePlans"
+    ]
+  },
+  "plans": {
+    "m365-business-basic": {
+      "name": "Microsoft 365 Business Basic",
+      "segment": "business",
+      "monthly_price": 5.20,
+      "user_limit": 300,
+      "storage_gb_per_user": 1024,
+      "mailbox_gb": 50,
+      "desktop_apps": false,
+      "security_level": "basic",
+      "endpoint_level": "basic",
+      "ai_level": "basic",
+      "summary": "Cloud-Einstieg mit Teams, Exchange, OneDrive und Web-/Mobile-Apps."
+    },
+    "m365-business-standard": {
+      "name": "Microsoft 365 Business Standard",
+      "segment": "business",
+      "monthly_price": 10.80,
+      "user_limit": 300,
+      "storage_gb_per_user": 1024,
+      "mailbox_gb": 50,
+      "desktop_apps": true,
+      "security_level": "standard",
+      "endpoint_level": "basic",
+      "ai_level": "standard",
+      "summary": "Business-Paket mit Desktop-Apps, Exchange, Teams, OneDrive und SharePoint."
+    },
+    "m365-business-premium": {
+      "name": "Microsoft 365 Business Premium",
+      "segment": "business",
+      "monthly_price": 19.10,
+      "user_limit": 300,
+      "storage_gb_per_user": 1024,
+      "mailbox_gb": 50,
+      "desktop_apps": true,
+      "security_level": "advanced",
+      "endpoint_level": "advanced",
+      "ai_level": "standard",
+      "summary": "Business-Paket mit Desktop-Apps, Intune, Entra ID P1 und Defender for Business."
+    },
+    "office-365-e3": {
+      "name": "Office 365 E3",
+      "segment": "enterprise",
+      "monthly_price": 23.20,
+      "user_limit": 0,
+      "storage_gb_per_user": 1024,
+      "mailbox_gb": 100,
+      "desktop_apps": true,
+      "security_level": "standard",
+      "endpoint_level": "standard",
+      "ai_level": "standard",
+      "summary": "Enterprise-Office- und Collaboration-Pfad mit 100-GB-Postfach."
+    },
+    "m365-e3": {
+      "name": "Microsoft 365 E3",
+      "segment": "enterprise",
+      "monthly_price": 34.90,
+      "user_limit": 0,
+      "storage_gb_per_user": 1024,
+      "mailbox_gb": 100,
+      "desktop_apps": true,
+      "security_level": "advanced",
+      "endpoint_level": "advanced",
+      "ai_level": "standard",
+      "summary": "Enterprise-Zielbild mit Identität, Geräteverwaltung, Office, Teams, Exchange, SharePoint und OneDrive."
+    },
+    "m365-e5": {
+      "name": "Microsoft 365 E5",
+      "segment": "enterprise",
+      "monthly_price": 57.00,
+      "user_limit": 0,
+      "storage_gb_per_user": 1024,
+      "mailbox_gb": 100,
+      "desktop_apps": true,
+      "security_level": "enterprise",
+      "endpoint_level": "enterprise",
+      "ai_level": "advanced",
+      "summary": "Enterprise-Zielbild mit erweiterten Security-, Compliance-, Analytics- und Telefoniebausteinen je nach Ausprägung."
+    }
+  },
+  "plan_options": {
+    "auto": "Automatisch empfehlen",
+    "m365-business-basic": "Microsoft 365 Business Basic",
+    "m365-business-standard": "Microsoft 365 Business Standard",
+    "m365-business-premium": "Microsoft 365 Business Premium",
+    "office-365-e3": "Office 365 E3",
+    "m365-e3": "Microsoft 365 E3",
+    "m365-e5": "Microsoft 365 E5"
+  }
+}

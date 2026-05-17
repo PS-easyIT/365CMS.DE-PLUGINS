@@ -52,6 +52,12 @@
       "url": "/m365-lizenzvergleich",
       "category": "Lizenzen"
     },
+    "workspace_tco": {
+      "label": "Google Workspace ↔ M365 TCO-Rechner",
+      "description": "Vergleicht Workspace und Microsoft 365 inklusive Migration, Schulung, Change-Aufwand und Break-even.",
+      "url": "/google-workspace-zu-m365-tco",
+      "category": "Migration"
+    },
     "commitment_calculator": {
       "label": "Annual vs. Monthly Rechner",
       "description": "Vergleicht Jahresbindung, Monatslaufzeit und Split-Strategien.",
@@ -86,6 +92,7 @@
   "default_order": [
     "license_advisor",
     "license_comparison",
+    "workspace_tco",
     "addon_configurator",
     "shared_mailbox",
     "archive_mailbox",

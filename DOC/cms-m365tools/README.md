@@ -2,7 +2,7 @@
 
 ## Überblick
 
-`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Produktive Module sind der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
+`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Produktive Module sind der **Google Workspace ↔ Microsoft 365 TCO-Rechner**, der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
 
 ## Detaildokumente
 
@@ -16,6 +16,7 @@
 | Modul | Route | Datei |
 |---|---|---|
 | Lizenz-Audit-Checkliste | `/m365-lizenz-audit-checkliste` | `modules/license-audit-checklist.md` |
+| Google Workspace ↔ Microsoft 365 TCO-Rechner | `/google-workspace-zu-m365-tco` | `modules/workspace-m365-tco-calculator.md` |
 | M365 Storage-Bedarfs-Rechner | `/m365-storage-bedarfsrechner` | `modules/storage-needs-calculator.md` |
 | M365 Backup-Kosten-Rechner | `/m365-backup-kostenrechner` | `modules/backup-cost-calculator.md` |
 | Microsoft-Preiserhöhung-Tracker | `/microsoft-preiserhoehung-tracker` | `modules/microsoft-price-tracker.md` |
@@ -42,6 +43,7 @@
 | `/m365-tools` | Übersicht aller Rechner-Module |
 | `/m365-rechner` | Alternative Hub-Route |
 | `/m365-lizenz-audit-checkliste` | Interaktive Microsoft-365-Lizenz-Audit-Checkliste mit Browser-Fortschritt, Druckzusammenfassung und Deep Links |
+| `/google-workspace-zu-m365-tco` | Google Workspace und Microsoft 365 inklusive Lizenzkosten, Migration, Schulung, Change-Aufwand, Parallelbetrieb und Break-even vergleichen |
 | `/m365-storage-bedarfsrechner` | SharePoint-Pool, OneDrive-Quotas, Exchange-Postfächer, Archivbedarf, Wachstum und Zusatzspeicherbedarf bewerten |
 | `/m365-backup-kostenrechner` | Microsoft-365-Backup-Baseline und Providervergleich für Kosten, Workloads, Retention, Restore-Tiefe und Betriebsmodell |
 | `/microsoft-preiserhoehung-tracker` | Microsoft-Preis-, Packaging-, SKU-, Renewal- und Forecast-Ereignisse mit Budgetwirkung bewerten |
@@ -122,6 +124,10 @@
 | `microsoft_backup_baseline.json` | Offizielle Microsoft-365-Backup-Baseline für Preis, Workloads, Retention, Restore-Performance, Trust Boundary und Billing |
 | `backup_providers.json` | Manuell gepflegte Vergleichsdaten für Backup-Provider und Microsoft-Baseline |
 | `backup_comparison_rules.json` | Defaults, Scoring-Gewichte, Empfehlungstexte und FAQ für den Backup-Kosten-Rechner |
+| `google_workspace_plans.json` | Google-Workspace-Pläne, Preise, Storage- und Feature-Leitplanken für den TCO-Rechner |
+| `m365_target_plans.json` | Microsoft-365-Zielpläne, Preise, Segmente und Funktionsprofile für den TCO-Rechner |
+| `workspace_to_m365_mapping.json` | Planmapping, Anforderungsoptionen und Empfehlungskategorien für beide Richtungen |
+| `migration_defaults.json` | Migrations-, Schulungs-, Change-, Hypercare-, Parallelbetriebs- und Quellenannahmen |
 
 ## Lizenz-Audit-Checkliste
 

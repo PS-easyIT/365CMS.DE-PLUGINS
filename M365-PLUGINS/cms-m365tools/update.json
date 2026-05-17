@@ -1,11 +1,11 @@
 {
-  "version": "1.19.0",
+  "version": "1.20.0",
   "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
   "requires": "2.9.0",
   "tested": "2.9.7",
   "last_updated": "2026-05-17",
   "sections": {
-    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit Storage-Bedarfs-Rechner, Backup-Kosten-Rechner, Lizenz-Audit-Checkliste, Microsoft-Preiserhöhung-Tracker, Teams-Phone-Lizenz-Berater, Exchange-Online-ROI-Rechner, Frontline-Worker-Lizenz-Check, Copilot-Pilot-Phase-Rechner, AI-Pack-vs-Copilot-Pro-Vergleich, Archive-Mailbox-Rechner, Annual-vs-Monthly Commitment Rechner, Lizenz- und Add-on-Matrizen, Add-On-Konfigurator, M365-Lizenzvergleich, M365-Lizenzberater, Copilot ROI-Rechner, Shared-Mailbox-Rechner und Copilot Lizenz-Pflicht-Checker.",
-    "changelog": "Neues Modul M365 Storage-Bedarfs-Rechner unter /m365-storage-bedarfsrechner ergänzt: SharePoint-Pool, OneDrive-Quotas, Exchange-Postfächer, Archivbedarf, Wachstum, Puffer, Cleanup-Potenzial, Zusatzspeicherannahme und operative Microsoft-Grenzen. Public-Seite rechnet ohne serverseitige Speicherung."
+    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit Google-Workspace-M365-TCO-Rechner, Storage-Bedarfs-Rechner, Backup-Kosten-Rechner, Lizenz-Audit-Checkliste, Microsoft-Preiserhöhung-Tracker, Teams-Phone-Lizenz-Berater, Exchange-Online-ROI-Rechner, Frontline-Worker-Lizenz-Check, Copilot-Pilot-Phase-Rechner, AI-Pack-vs-Copilot-Pro-Vergleich, Archive-Mailbox-Rechner, Annual-vs-Monthly Commitment Rechner, Lizenz- und Add-on-Matrizen, Add-On-Konfigurator, M365-Lizenzvergleich, M365-Lizenzberater, Copilot ROI-Rechner, Shared-Mailbox-Rechner und Copilot Lizenz-Pflicht-Checker.",
+    "changelog": "Neues Modul Google Workspace ↔ Microsoft 365 TCO-Rechner unter /google-workspace-zu-m365-tco ergänzt: Planmapping, 3-Jahres-TCO, Migration, Schulung, Change-Aufwand, Hypercare, Parallelbetrieb, Break-even, Quellenstand und beide Vergleichsrichtungen. Public-Seite rechnet ohne serverseitige Speicherung."
   }
 }

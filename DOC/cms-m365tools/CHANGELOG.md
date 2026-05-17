@@ -1,5 +1,11 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 1.20.0 – 2026-05-17
+
+- Modul-Dokumentation `modules/workspace-m365-tco-calculator.md` für den neuen Google Workspace ↔ Microsoft 365 TCO-Rechner ergänzt.
+- API-, Datenbank-, README- und Hooks-Dokumentation um Route `/google-workspace-zu-m365-tco`, neue Kataloge und Engine-Methoden erweitert.
+- Dokumentiert Planmapping, 3-Jahres-TCO, Migration, Schulung, Change-Aufwand, Hypercare, Parallelbetrieb und Break-even in beide Richtungen.
+
 ## 1.19.0 – 2026-05-17
 
 - Modul-Dokumentation `modules/storage-needs-calculator.md` für den neuen M365 Storage-Bedarfs-Rechner ergänzt.

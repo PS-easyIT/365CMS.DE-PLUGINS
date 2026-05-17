@@ -264,6 +264,38 @@ final class CMS_M365CALCULATOR_Catalog
     /**
      * @return array<string,mixed>
      */
+    public static function google_workspace_plans(): array
+    {
+        return self::load_json('google_workspace_plans.json');
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public static function m365_target_plans(): array
+    {
+        return self::load_json('m365_target_plans.json');
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public static function workspace_to_m365_mapping(): array
+    {
+        return self::load_json('workspace_to_m365_mapping.json');
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public static function migration_defaults(): array
+    {
+        return self::load_json('migration_defaults.json');
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
     public static function license_advisor_plans(): array
     {
         return self::load_json('license_advisor_plans.json');
