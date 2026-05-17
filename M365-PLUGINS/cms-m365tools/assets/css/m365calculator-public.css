@@ -1,7 +1,10 @@
 .m365calc-page {
     --m365tools-navy: #1a3a5c;
     --m365tools-focus: #2563eb;
-    --m365tools-shadow-hover: 0 2px 12px rgb(0 0 0 / 0.08);
+    --m365tools-content-top-gap: 25px;
+    --m365tools-ui-radius: min(var(--m365tools-card-radius, 2px), 2px);
+    --m365tools-surface-raised: color-mix(in srgb, var(--m365tools-surface, var(--m365tools-bg, #ffffff)) 96%, #0f172a 4%);
+    --m365tools-shadow-hover: 0 1px 6px rgb(15 23 42 / 0.08);
     background: var(--m365tools-bg, #ffffff);
     color: var(--m365tools-text, var(--phinit-color-ink));
     display: grid;
@@ -9,6 +12,7 @@
     margin-left: auto;
     margin-right: auto;
     max-width: var(--phinit-content-wide, 1200px);
+    padding-top: var(--m365tools-content-top-gap, 25px) !important;
     width: 100%;
 }
 
@@ -22,9 +26,9 @@
 .m365calc-page .m365calc-compare-wrap,
 .m365calc-page .m365calc-addon-table-wrap,
 .m365calc-page .m365calc-faq-list details {
-    background: var(--m365tools-surface, #ffffff);
+    background: var(--m365tools-surface-raised, #f8fafc);
     border-color: var(--m365tools-border, var(--phinit-color-border));
-    border-radius: var(--m365tools-card-radius, var(--phinit-radius-md));
+    border-radius: var(--m365tools-ui-radius, 2px);
 }
 
 .m365calc-page .phinit-card,
@@ -44,12 +48,14 @@
 .m365calc-page .phinit-btn--primary {
     background: var(--m365tools-button-primary-bg, var(--m365tools-primary, var(--phinit-color-accent)));
     border-color: var(--m365tools-button-primary-bg, var(--m365tools-primary, var(--phinit-color-accent)));
+    border-radius: var(--m365tools-ui-radius, 2px);
     color: var(--m365tools-button-primary-text, #ffffff);
 }
 
 .m365calc-page .phinit-btn--secondary {
-    background: var(--m365tools-button-secondary-bg, #ffffff);
+    background: color-mix(in srgb, var(--m365tools-button-secondary-bg, var(--m365tools-surface-raised, #f8fafc)) 94%, #0f172a 6%);
     border-color: var(--m365tools-border, var(--phinit-color-border));
+    border-radius: var(--m365tools-ui-radius, 2px);
     color: var(--m365tools-button-secondary-text, var(--phinit-color-ink));
 }
 
@@ -76,9 +82,9 @@
 }
 
 .m365calc-page .m365calc-hero {
-    background: var(--m365tools-header-bg, var(--m365tools-surface-alt, #f8fafc));
+    background: var(--m365tools-header-bg, var(--m365tools-surface-raised, var(--m365tools-surface-alt, #f8fafc)));
     border: 1px solid var(--m365tools-header-border, var(--m365tools-border, var(--phinit-color-border)));
-    border-radius: var(--m365tools-card-radius, var(--phinit-radius-md));
+    border-radius: var(--m365tools-ui-radius, 2px);
     color: var(--m365tools-header-text, var(--m365tools-text, var(--phinit-color-ink)));
     padding: var(--phinit-space-6);
 }
@@ -1060,6 +1066,44 @@ body.m365calculator-theme-embed:not(.is-member) .breadcrumb-nav {
 
 .m365calc-audit-summary-list {
     align-content: start;
+}
+
+.m365calc-page .phinit-card,
+.m365calc-page .phinit-result,
+.m365calc-page .phinit-empty-state,
+.m365calc-page .phinit-note,
+.m365calc-page .m365calc-hero,
+.m365calc-page .m365calc-choice,
+.m365calc-page .m365calc-fieldset,
+.m365calc-page .m365calc-plan-select,
+.m365calc-page .m365calc-score,
+.m365calc-page .m365calc-readonly-wrap,
+.m365calc-page .m365calc-compare-wrap,
+.m365calc-page .m365calc-addon-table-wrap,
+.m365calc-page .m365calc-status-pill,
+.m365calc-page .m365calc-audit-item,
+.m365calc-page .m365calc-faq-list details,
+.m365calc-page .m365calc-chart__bar,
+.m365calc-page .m365calc-audit-progress {
+    border-radius: var(--m365tools-ui-radius, 2px);
+}
+
+.m365calc-page .phinit-card,
+.m365calc-page .phinit-result,
+.m365calc-page .phinit-empty-state,
+.m365calc-page .phinit-note,
+.m365calc-page .m365calc-choice,
+.m365calc-page .m365calc-plan-select,
+.m365calc-page .m365calc-audit-item,
+.m365calc-page .m365calc-readonly-table tbody tr {
+    background: var(--m365tools-surface-raised, #f8fafc);
+}
+
+.m365calc-page .phinit-btn,
+.m365calc-page button,
+.m365calc-page input[type="submit"],
+.m365calc-page input[type="button"] {
+    border-radius: var(--m365tools-ui-radius, 2px);
 }
 
 @media print {

@@ -1,6 +1,13 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.29.12 – 2026-05-17
+
+- Landingpage und Public-Modulseiten erhalten innerhalb des Plugin-Hintergrunds 25px Abstand zwischen oberem Hintergrundrand und Contentheader/Headerbox.
+- Die Admin-Farbe `Content-Hintergrund` im Landingpage Designer gilt nun ausdrücklich für Landingpage und Public-Modulseiten.
+- Boxen, Contentheader und Buttons werden auf maximal 2px Rundung begrenzt.
+- Karten, Toolbox-Elemente, Modulboxen und sekundäre Buttons nutzen eine dezente, leicht dunklere Surface-Fläche, damit sie sich sichtbar, aber ruhig vom Hintergrund abheben.
+
 ## 1.29.11 – 2026-05-17
 
 - Den letzten sichtbaren 1–2px-Saum zwischen Theme-Header und M365TOOLS-Content pluginseitig geschlossen.
