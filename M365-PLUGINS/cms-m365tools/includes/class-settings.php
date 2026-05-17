@@ -13,6 +13,8 @@ if (!defined('ABSPATH')) {
 
 final class CMS_M365CALCULATOR_Settings
 {
+    private const GLOBAL_MODULE_KEY = 'global';
+
     /**
      * @param array<string,array<string,mixed>> $tools
      * @return array<string,array<string,mixed>>
@@ -267,6 +269,22 @@ final class CMS_M365CALCULATOR_Settings
 
             $stmt->execute([$key, $group, $cleanOptionKey, self::limit_text((string) $value, 2000), 'string']);
         }
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function global_options(?string $optionGroup = null): array
+    {
+        return self::module_options(self::GLOBAL_MODULE_KEY, $optionGroup);
+    }
+
+    /**
+     * @param array<string,string> $options
+     */
+    public static function save_global_options(string $optionGroup, array $options): void
+    {
+        self::save_module_options(self::GLOBAL_MODULE_KEY, $optionGroup, $options);
     }
 
     private static function table_name(\CMS\Database $db): string

@@ -25,6 +25,8 @@
       "https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/privileged-roles-permissions",
       "https://learn.microsoft.com/en-us/defender-office-365/mdo-deployment-guide",
       "https://learn.microsoft.com/en-us/microsoft-365/enterprise/microsoft-365-network-connectivity-principles",
+      "https://learn.microsoft.com/en-us/microsoft-365/enterprise/managing-office-365-endpoints",
+      "https://learn.microsoft.com/en-us/microsoft-365/enterprise/microsoft-365-ip-web-service",
       "https://learn.microsoft.com/en-us/microsoft-365/enterprise/urls-and-ip-address-ranges",
       "https://learn.microsoft.com/en-us/microsoft-365/enterprise/network-planning-and-performance",
       "https://learn.microsoft.com/en-us/microsoftteams/limits-specifications-teams",
@@ -403,6 +405,18 @@
           "deeplink_triggers": ["workspace_tco", "exchange_roi", "teams_phone", "copilot_pilot"],
           "summary_if_open": "Endpoint- und Netzwerkpfad sind noch nicht dokumentiert.",
           "summary_if_done": "Endpoint- und Netzwerkpfad sind dokumentiert."
+        },
+        {
+          "id": "ops-endpoint-change-management",
+          "label": "Endpoint-Änderungen mit Webservice und Reviewprozess pflegen",
+          "description": "Prüfe regelmäßig die Microsoft-365-Endpoint-Version, übernehme Datenänderungen nur bei neuem Stand und plane Firewall-, Proxy- oder PAC-Anpassungen mit fachlicher Nachkontrolle.",
+          "severity": "risk",
+          "weight": 9,
+          "finding_type": "endpoint_change_management",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/enterprise/microsoft-365-ip-web-service",
+          "deeplink_triggers": ["workspace_tco", "exchange_roi", "teams_phone", "copilot_pilot"],
+          "summary_if_open": "Endpoint-Änderungen werden noch nicht mit Versionsstand und Reviewprozess gepflegt.",
+          "summary_if_done": "Endpoint-Änderungen werden mit Versionsstand und Reviewprozess gepflegt."
         },
         {
           "id": "ops-sharepoint-onedrive-limits",

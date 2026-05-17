@@ -31,6 +31,27 @@ final class CMS_M365CALCULATOR_Admin_Pages
         });
     }
 
+    public static function render_plugin_settings(): void
+    {
+        self::render_with_layout('M365 Tools – Zentrale Einstellungen', 'm365tools-settings', static function (): void {
+            self::instance()->render_global_settings_page('settings');
+        });
+    }
+
+    public static function render_package_prices(): void
+    {
+        self::render_with_layout('M365 Tools – Paketpreise', 'm365tools-package-prices', static function (): void {
+            self::instance()->render_global_settings_page('package-prices');
+        });
+    }
+
+    public static function render_subscription_prices(): void
+    {
+        self::render_with_layout('M365 Tools – Abopreise & Laufzeiten', 'm365tools-subscription-prices', static function (): void {
+            self::instance()->render_global_settings_page('subscription-prices');
+        });
+    }
+
     public static function render_module_settings(string $moduleKey): void
     {
         $key = self::clean_key($moduleKey);
@@ -257,14 +278,340 @@ final class CMS_M365CALCULATOR_Admin_Pages
         include CMS_M365CALCULATOR_PLUGIN_DIR . 'admin/views/page-module-settings.php';
     }
 
+    public function render_global_settings_page(string $area): void
+    {
+        $area = self::clean_key($area);
+        $tabs = self::global_tabs_for($area);
+        $defaultTab = self::default_global_tab($area);
+        $activeTab = self::normalize_tab((string) ($_GET['tab'] ?? $_POST['settings_group'] ?? $defaultTab), $tabs, $defaultTab);
+        $csrfAction = 'm365tools_global_' . $area;
+        $csrfToken = class_exists('CMS\\Security')
+            ? \CMS\Security::instance()->generateToken($csrfAction)
+            : '';
+        $notice = '';
+        $error = '';
+
+        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+            if (class_exists('CMS\\Security') && !\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', $csrfAction)) {
+                $error = 'Sicherheitscheck fehlgeschlagen.';
+            } elseif ((string) ($_POST['action'] ?? '') === 'save_global_options') {
+                $activeTab = self::normalize_tab((string) ($_POST['settings_group'] ?? $activeTab), $tabs, $defaultTab);
+                $fields = self::global_fields_for($area, $activeTab);
+                CMS_M365CALCULATOR_Settings::save_global_options($activeTab, self::sanitize_module_options($fields, $_POST));
+                $notice = 'Globale Einstellungen gespeichert.';
+            }
+        }
+
+        $fields = self::global_fields_for($area, $activeTab);
+        $tabOptions = CMS_M365CALCULATOR_Settings::global_options($activeTab);
+        $pageMeta = self::global_page_meta($area);
+        $pageTitle = $pageMeta['title'];
+        $pageDescription = $pageMeta['description'];
+        $baseAdminUrl = '/admin/plugins/m365tools-dashboard/' . self::global_slug_for($area);
+
+        include CMS_M365CALCULATOR_PLUGIN_DIR . 'admin/views/page-global-settings.php';
+    }
+
     /**
      * @param array<string,string> $tabs
      */
-    private static function normalize_tab(string $tab, array $tabs): string
+    private static function normalize_tab(string $tab, array $tabs, string $fallback = 'overview'): string
     {
         $tab = self::clean_key($tab);
 
-        return isset($tabs[$tab]) ? $tab : 'overview';
+        if (isset($tabs[$tab])) {
+            return $tab;
+        }
+
+        if (isset($tabs[$fallback])) {
+            return $fallback;
+        }
+
+        $first = array_key_first($tabs);
+
+        return is_string($first) ? $first : 'overview';
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    private static function global_tabs_for(string $area): array
+    {
+        return match ($area) {
+            'package-prices' => [
+                'base-packages' => '📦 M365-Pakete',
+                'addons' => '➕ Add-ons',
+                'price-rules' => '🧮 Preisregeln',
+            ],
+            'subscription-prices' => [
+                'terms' => '🔁 Laufzeiten',
+                'commitment' => '📅 Commitments',
+                'billing' => '🧾 Abrechnung',
+            ],
+            default => [
+                'general' => '⚙️ Allgemein',
+                'review' => '🧭 Review & Quellen',
+                'workflow' => '🔁 Workflow',
+                'system' => '🧾 System',
+            ],
+        };
+    }
+
+    private static function default_global_tab(string $area): string
+    {
+        return match ($area) {
+            'package-prices' => 'base-packages',
+            'subscription-prices' => 'terms',
+            default => 'general',
+        };
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    private static function global_page_meta(string $area): array
+    {
+        return match ($area) {
+            'package-prices' => [
+                'title' => '💶 Paketpreise',
+                'description' => 'Globale Paket- und Add-on-Preise als zentrale Basis für alle Module pflegen.',
+            ],
+            'subscription-prices' => [
+                'title' => '🔁 Abopreise & Laufzeiten',
+                'description' => 'Laufzeit-, Renewal- und Abrechnungsannahmen zentral für alle Rechner steuern.',
+            ],
+            default => [
+                'title' => '⚙️ Zentrale Einstellungen',
+                'description' => 'Pluginweite Defaults, Quellen-Reviews und Betriebsregeln an einer Stelle verwalten.',
+            ],
+        };
+    }
+
+    private static function global_slug_for(string $area): string
+    {
+        return match ($area) {
+            'package-prices' => 'm365tools-package-prices',
+            'subscription-prices' => 'm365tools-subscription-prices',
+            default => 'm365tools-settings',
+        };
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private static function global_fields_for(string $area, string $tab): array
+    {
+        if ($area === 'package-prices') {
+            return self::package_price_fields($tab);
+        }
+
+        if ($area === 'subscription-prices') {
+            return self::subscription_price_fields($tab);
+        }
+
+        return self::plugin_setting_fields($tab);
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private static function plugin_setting_fields(string $tab): array
+    {
+        return match ($tab) {
+            'review' => [
+                self::text('last_global_review_date', 'Letzter Quellenabgleich', date('Y-m-d'), 'Datum des letzten fachlichen All-Module-Reviews.'),
+                self::select('primary_source_profile', 'Primäres Quellenprofil', 'microsoft_learn', [
+                    'microsoft_learn' => 'Microsoft Learn / Service Description',
+                    'admin_center' => 'Microsoft Admin Center / Reports',
+                    'partner_contract' => 'CSP-, Partner- oder Vertragsdaten',
+                    'mixed' => 'Gemischte Quellenbasis',
+                ], 'Zentrale Einordnung für Quellen- und Preisstände.'),
+                self::number('default_review_interval_days', 'Standard-Review-Intervall in Tagen', '90', 7, 730, 1, 'Empfohlener Rhythmus für Preis-, Sicherheits- und Performance-Reviews.'),
+                self::select('endpoint_update_cycle', 'Endpoint-Pflege', 'version_hourly', [
+                    'manual_monthly' => 'Monatliche manuelle Prüfung',
+                    'version_hourly' => 'Versionsprüfung stündlich, Daten nur bei Änderung',
+                    'partner_managed' => 'Durch SD-WAN/Partnerlösung gepflegt',
+                ], 'Angelehnt an Microsofts Endpoint-Webservice-Empfehlung.'),
+                self::select('usage_report_window', 'Standard-Reportfenster', '90', [
+                    '7' => '7 Tage',
+                    '30' => '30 Tage',
+                    '90' => '90 Tage',
+                    '180' => '180 Tage',
+                ], 'Standardfenster für Nutzungs- und Plausibilitätsberichte.'),
+                self::textarea('review_note', 'Interne Review-Notiz', '', 'Kurznotiz zu Quellen, Learn-Updates oder Preislistenabgleich.'),
+            ],
+            'workflow' => [
+                self::select('default_owner_role', 'Standard-Owner', 'license_manager', [
+                    'license_manager' => 'Lizenzmanagement',
+                    'finance' => 'Finanzen/Einkauf',
+                    'it_ops' => 'IT Operations',
+                    'security' => 'Security/Compliance',
+                    'admin' => 'CMS Admin',
+                ], 'Pluginweite Standardverantwortung.'),
+                self::select('default_publication_mode', 'Veröffentlichungsmodus', 'reviewed', [
+                    'reviewed' => 'Geprüfte Änderungen veröffentlichen',
+                    'draft_first' => 'Änderungen zuerst intern vorbereiten',
+                    'locked' => 'Nur zentrale Pflege erlauben',
+                ], 'Grundlogik für fachliche Änderungen.'),
+                self::checkbox('require_price_owner_note', 'Preisnotiz bei Änderungen erwarten', '1', 'Markiert Preisänderungen intern als begründungspflichtig.'),
+                self::checkbox('prefer_group_license_review', 'Gruppenbasierte Lizenzprüfung bevorzugen', '1', 'Erinnert Admins an gruppenbasierte Zuweisungen und Fehlerlisten.'),
+                self::checkbox('prefer_pilot_rollouts', 'Pilot- und Phasenrollouts bevorzugen', '1', 'Standardannahme für Copilot, Conditional Access und größere Lizenzänderungen.'),
+                self::textarea('workflow_note', 'Workflow-Notiz', '', 'Interne Hinweise zu Freigaben, Rollen und Review-Ablauf.'),
+            ],
+            'system' => [
+                self::text('plugin_version_reference', 'Versionsreferenz', CMS_M365CALCULATOR_VERSION, 'Aktuelle Pluginversion als Dokumentationsanker.'),
+                self::text('docs_root', 'Dokumentationspfad', 'M365-PLUGINS/DOC', 'Verschobener zentraler Dokumentationsordner.'),
+                self::text('public_hub_url', 'Public Hub URL', '/m365-tools', 'Öffentliche Landingpage der Toolbox.'),
+                self::text('support_contact', 'Interner Ansprechpartner', '', 'Optionaler Kontakt für Pflege und Eskalation.'),
+                self::textarea('system_note', 'Systemhinweis', '', 'Technischer Hinweis zu Deployment, Datenpflege oder Abhängigkeiten.'),
+            ],
+            default => [
+                self::select('currency', 'Standardwährung', 'EUR', ['EUR' => 'EUR', 'CHF' => 'CHF', 'USD' => 'USD', 'GBP' => 'GBP'], 'Gilt als Default für zentrale Preisbereiche.'),
+                self::text('market', 'Markt / Region', 'DE', 'Marktkennzeichen für Preis- und Quellenannahmen.'),
+                self::checkbox('show_global_source_hints', 'Quellenhinweise standardmäßig anzeigen', '1', 'Default für gepflegte Quellenhinweise in Modulen.'),
+                self::checkbox('enable_public_landing_checks', 'Best-Practice-Kompass auf Landingpage anzeigen', '1', 'Steuert den sichtbaren Review-Kontext auf der Toolbox-Landingpage.'),
+                self::number('default_admin_buffer_percent', 'Standard-Betriebspuffer in %', '10', 0, 200, 0.1, 'Globaler Puffer für Betriebs-, Review- oder Beschaffungskosten.'),
+                self::textarea('general_note', 'Allgemeine Notiz', '', 'Interne Notiz zur Gesamt-Toolbox.'),
+            ],
+        };
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private static function package_price_fields(string $tab): array
+    {
+        return match ($tab) {
+            'addons' => [
+                self::number('exchange_online_plan_1_eur', 'Exchange Online Plan 1', '3.50', 0, 1000, 0.01, 'Globaler Referenzpreis pro Nutzer/Monat.'),
+                self::number('exchange_online_plan_2_eur', 'Exchange Online Plan 2', '6.90', 0, 1000, 0.01, 'Globaler Referenzpreis pro Nutzer/Monat.'),
+                self::number('defender_office_365_p1_eur', 'Defender for Office 365 Plan 1', '1.73', 0, 1000, 0.01, 'Globaler Add-on-Referenzpreis.'),
+                self::number('defender_office_365_p2_eur', 'Defender for Office 365 Plan 2', '4.30', 0, 1000, 0.01, 'Globaler Add-on-Referenzpreis.'),
+                self::number('teams_phone_standard_eur', 'Teams Phone Standard', '8.70', 0, 1000, 0.01, 'Telefonie-Add-on ohne Verbrauchsminuten.'),
+                self::number('m365_copilot_eur', 'Microsoft 365 Copilot Add-on', '28.10', 0, 1000, 0.01, 'Globaler Copilot-Referenzpreis pro Nutzer/Monat.'),
+                self::number('m365_backup_per_gb_eur', 'Microsoft 365 Backup pro GB', '0.15', 0, 100, 0.001, 'PAYG-Annahme pro geschütztem GB/Monat.'),
+            ],
+            'price-rules' => [
+                self::number('default_price_adjustment_percent', 'Globale Preisanpassung in %', '0', -80, 300, 0.1, 'Aufschlag oder Rabatt auf zentrale Referenzpreise.'),
+                self::number('partner_discount_percent', 'Partner-/Rahmenvertragsrabatt in %', '0', 0, 90, 0.1, 'Optionaler zentraler Rabatt vor Modulberechnung.'),
+                self::number('risk_buffer_percent', 'Budgetpuffer in %', '10', 0, 200, 0.1, 'Puffer für Preisereignisse, Wechselkurse oder Packaging-Änderungen.'),
+                self::select('price_source_type', 'Preisquelle', 'reference_json', [
+                    'reference_json' => 'Gepflegte JSON-Referenz',
+                    'csp_export' => 'CSP-/Partner-Export',
+                    'contract' => 'Rahmenvertrag',
+                    'manual' => 'Manuelle Annahme',
+                ], 'Kennzeichnet die bevorzugte globale Preisquelle.'),
+                self::text('price_source_date', 'Preisstand', date('Y-m-d'), 'Datum des letzten Preisabgleichs.'),
+                self::textarea('price_source_note', 'Preisnotiz', '', 'Interne Notiz zu Preislisten, Vertragsständen oder Abweichungen.'),
+            ],
+            default => [
+                self::number('m365_business_basic_eur', 'Microsoft 365 Business Basic', '5.20', 0, 1000, 0.01, 'Globaler Paketpreis pro Nutzer/Monat.'),
+                self::number('m365_business_standard_eur', 'Microsoft 365 Business Standard', '10.80', 0, 1000, 0.01, 'Globaler Paketpreis pro Nutzer/Monat.'),
+                self::number('m365_business_premium_eur', 'Microsoft 365 Business Premium', '19.10', 0, 1000, 0.01, 'Globaler Paketpreis pro Nutzer/Monat.'),
+                self::number('office_365_e3_eur', 'Office 365 E3', '23.20', 0, 1000, 0.01, 'Globaler Paketpreis pro Nutzer/Monat.'),
+                self::number('m365_e3_eur', 'Microsoft 365 E3', '34.90', 0, 1000, 0.01, 'Globaler Paketpreis pro Nutzer/Monat.'),
+                self::number('m365_e5_eur', 'Microsoft 365 E5', '57.00', 0, 1000, 0.01, 'Globaler Paketpreis pro Nutzer/Monat.'),
+            ],
+        };
+    }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    private static function subscription_price_fields(string $tab): array
+    {
+        return match ($tab) {
+            'commitment' => [
+                self::number('stable_core_target_percent', 'Stabiler Kernbestand in %', '80', 0, 100, 0.1, 'Zielwert für Seats, die langfristig gebunden werden können.'),
+                self::number('seasonal_buffer_percent', 'Flexibler Saison-/Projektpuffer in %', '20', 0, 100, 0.1, 'Anteil für Monatslaufzeit oder kurzfristige Anpassung.'),
+                self::number('renewal_review_days', 'Renewal-Review vor Ablauf in Tagen', '90', 1, 365, 1, 'Vorlauf für Preis-, Seat- und Paketprüfung.'),
+                self::number('license_group_batch_limit', 'Gruppen je Lizenzvorgang', '20', 1, 100, 1, 'Admin-Center-Richtwert für gruppenbasierte Aktionen.'),
+                self::checkbox('track_assignment_issues', 'Zuweisungsprobleme nachhalten', '1', 'Erinnert an Auswertung der Fehler- und Problemübersicht.'),
+                self::textarea('commitment_note', 'Commitment-Notiz', '', 'Interne Notiz zu Kernbestand, Projektspitzen und Renewal-Fenstern.'),
+            ],
+            'billing' => [
+                self::select('default_billing_model', 'Standard-Abrechnungsmodell', 'monthly_per_user', [
+                    'monthly_per_user' => 'Monatlich pro Nutzer',
+                    'annual_paid_monthly' => 'Jährlich gebunden, monatlich bezahlt',
+                    'annual_prepaid' => 'Jährlich im Voraus',
+                    'pay_as_you_go' => 'Verbrauchsbasiert',
+                ], 'Default für Rechnerszenarien.'),
+                self::select('rounding_mode', 'Rundung', 'commercial_2_decimals', [
+                    'commercial_2_decimals' => 'Kaufmännisch auf 2 Stellen',
+                    'ceil_cent' => 'Cent aufrunden',
+                    'whole_euro' => 'Volle Euro anzeigen',
+                ], 'Darstellung globaler Preisannahmen.'),
+                self::select('tax_handling', 'Steuerdarstellung', 'net', [
+                    'net' => 'Netto',
+                    'gross' => 'Brutto',
+                    'both' => 'Netto und Brutto',
+                ], 'Standarddarstellung für Admin-Kalkulationen.'),
+                self::number('tax_percent', 'Steuersatz in %', '19', 0, 100, 0.1, 'Optionaler Steuersatz für interne Vergleiche.'),
+                self::textarea('billing_note', 'Abrechnungsnotiz', '', 'Hinweis zu PAYG, CSP, Rahmenvertrag oder interner Kostenstelle.'),
+            ],
+            default => [
+                self::number('monthly_uplift_percent', 'Monatslaufzeit-Aufschlag in %', '20', 0, 200, 0.1, 'Globaler Standardaufschlag für flexible Laufzeit.'),
+                self::number('annual_discount_percent', 'Jahresbindungs-Rabatt in %', '0', 0, 90, 0.1, 'Optionaler Rabatt für Jahresbindung.'),
+                self::number('three_year_discount_percent', 'Dreijahres-Rabatt in %', '0', 0, 90, 0.1, 'Optionaler Rabatt für geeignete Enterprise-Szenarien.'),
+                self::number('three_year_min_users', 'Mindestmenge Dreijahrespfad', '100', 0, 1000000, 1, 'Interner Richtwert für P3Y-Prüfung.'),
+                self::select('default_term', 'Standardlaufzeit', 'P1Y', [
+                    'P1M' => 'Monatlich',
+                    'P1Y' => 'Jährlich',
+                    'P3Y' => 'Drei Jahre',
+                ], 'Default für Rechner, wenn kein Szenario abweicht.'),
+                self::textarea('term_note', 'Laufzeitnotiz', '', 'Interne Notiz zu Annahmen, Kanal oder Beschaffungsregeln.'),
+            ],
+        };
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private static function text(string $key, string $label, string $default, string $help): array
+    {
+        return ['key' => $key, 'label' => $label, 'type' => 'text', 'default' => $default, 'help' => $help];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private static function textarea(string $key, string $label, string $default, string $help): array
+    {
+        return ['key' => $key, 'label' => $label, 'type' => 'textarea', 'default' => $default, 'help' => $help];
+    }
+
+    /**
+     * @param array<string,string> $options
+     * @return array<string,mixed>
+     */
+    private static function select(string $key, string $label, string $default, array $options, string $help): array
+    {
+        return ['key' => $key, 'label' => $label, 'type' => 'select', 'default' => $default, 'options' => $options, 'help' => $help];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private static function checkbox(string $key, string $label, string $default, string $help): array
+    {
+        return ['key' => $key, 'label' => $label, 'type' => 'checkbox', 'default' => $default, 'help' => $help];
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private static function number(string $key, string $label, string $default, float $min, float $max, float $step, string $help): array
+    {
+        return [
+            'key' => $key,
+            'label' => $label,
+            'type' => 'number',
+            'default' => $default,
+            'min' => $min,
+            'max' => $max,
+            'step' => $step,
+            'help' => $help,
+        ];
     }
 
     /**
