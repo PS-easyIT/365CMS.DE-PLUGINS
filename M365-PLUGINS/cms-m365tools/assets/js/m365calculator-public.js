@@ -42,6 +42,34 @@
         });
     }
 
+    function initContentHost() {
+        var root = document.querySelector('.m365calc-page, #m365calculator-landing');
+        if (!root) {
+            return;
+        }
+
+        var host = root.closest('#content, .site-content');
+        if (!host) {
+            return;
+        }
+
+        host.classList.add('m365tools-content-host');
+
+        var header = document.getElementById('masthead');
+        if (!header || !header.parentElement || header.parentElement !== host.parentElement) {
+            return;
+        }
+
+        var node = header.nextElementSibling;
+        while (node && node !== host) {
+            if (!node.matches('.mobile-menu-overlay, .mobile-menu-drawer, .search-overlay')) {
+                node.classList.add('m365tools-header-interstitial');
+                node.setAttribute('aria-hidden', 'true');
+            }
+            node = node.nextElementSibling;
+        }
+    }
+
     function initLicenseAuditChecklist() {
         document.querySelectorAll('[data-m365calc-audit]').forEach(function (root) {
             var key = root.getAttribute('data-m365calc-audit-key') || 'm365calc-license-audit';
@@ -166,6 +194,7 @@
     }
 
     ready(function () {
+        initContentHost();
         initResultFocus();
         initPrintButtons();
         initResetButtons();

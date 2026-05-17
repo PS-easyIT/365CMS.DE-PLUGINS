@@ -44,6 +44,20 @@
         }
 
         host.classList.add('m365tools-content-host');
+
+        var header = document.getElementById('masthead');
+        if (!header || !header.parentElement || header.parentElement !== host.parentElement) {
+            return;
+        }
+
+        var node = header.nextElementSibling;
+        while (node && node !== host) {
+            if (!node.matches('.mobile-menu-overlay, .mobile-menu-drawer, .search-overlay')) {
+                node.classList.add('m365tools-header-interstitial');
+                node.setAttribute('aria-hidden', 'true');
+            }
+            node = node.nextElementSibling;
+        }
     }
 
     function initFinder(root) {

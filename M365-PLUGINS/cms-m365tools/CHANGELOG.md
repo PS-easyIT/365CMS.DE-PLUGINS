@@ -1,6 +1,20 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.29.11 – 2026-05-17
+
+- Den letzten sichtbaren 1–2px-Saum zwischen Theme-Header und M365TOOLS-Content pluginseitig geschlossen.
+- Der M365TOOLS-Content-Host erhält auf öffentlichen Toolseiten einen minimalen 2px-Overlap, damit kein Theme-Hintergrund mehr zwischen Header und Plugin-Content durchscheint.
+- Alle Modul-Publicseiten übernehmen nun die Landingpage-Design-Tokens für Hintergrund, Surface, Headerfläche, Karten, Buttons, Rundungen und Abschnittsabstände.
+- `m365calculator-public.js` markiert Modul-Content-Hosts ebenfalls als `m365tools-content-host` und behandelt Zwischenknoten vor dem Content wie die Landingpage.
+
+## 1.29.10 – 2026-05-17
+
+- Header-Content-Abstand ausschließlich innerhalb von `cms-m365tools` nachgeschärft.
+- Der M365TOOLS-Landingpage-Code markiert generische Zwischenknoten zwischen Theme-Header und eigenem Content als `m365tools-header-interstitial`.
+- Plugin-CSS und spätes Critical-CSS blenden diese Zwischenknoten route-lokal aus und setzen den Content-Host auf volle Breite, weißen Hintergrund und ohne Schatten.
+- Keine spezifische Abhängigkeit auf ein anderes Plugin; der Fix bleibt vollständig im M365TOOLS-Plugin.
+
 ## 1.29.9 – 2026-05-17
 
 - Null-Abstand zum Theme-Header als spätes Critical-CSS im Head abgesichert (`output_edge_spacing_reset`, Priorität 120).

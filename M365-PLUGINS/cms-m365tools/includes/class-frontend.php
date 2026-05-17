@@ -54,12 +54,11 @@ final class CMS_M365CALCULATOR_Frontend
         if (class_exists('CMS\\Hooks')) {
             \CMS\Hooks::addFilter('body_class', [$this, 'filter_body_class'], 20);
             \CMS\Hooks::addAction('head', [$this, 'enqueue_public_styles'], 20);
+            \CMS\Hooks::addAction('head', [$this, 'output_public_design_tokens'], 30);
             \CMS\Hooks::addAction('head', [$this, 'output_edge_spacing_reset'], 120);
             \CMS\Hooks::addAction('before_footer', [$this, 'render_provider_cta'], 20);
             \CMS\Hooks::addAction('body_end', [$this, 'enqueue_public_scripts'], 20);
         }
-
-        $this->suppress_after_header_promos();
     }
 
     private function register_routes(): void
@@ -202,6 +201,64 @@ final class CMS_M365CALCULATOR_Frontend
         }
     }
 
+    public function output_public_design_tokens(): void
+    {
+        if (!$this->is_calculator_request()) {
+            return;
+        }
+
+        $options = [];
+        if (class_exists('CMS_M365CALCULATOR_Settings')) {
+            $options = array_merge(
+                CMS_M365CALCULATOR_Settings::global_options('landing'),
+                CMS_M365CALCULATOR_Settings::global_options('landing-layout'),
+                CMS_M365CALCULATOR_Settings::global_options('landing-colors')
+            );
+        }
+
+        $color = static function (array $values, string $key, string $default): string {
+            $value = (string) ($values[$key] ?? $default);
+
+            return preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1 ? strtolower($value) : $default;
+        };
+
+        $number = static function (array $values, string $key, int $default, int $min, int $max): int {
+            return max($min, min($max, (int) ($values[$key] ?? $default)));
+        };
+
+        $vars = [
+            '--m365tools-card-radius' => $number($options, 'landing_card_radius', 2, 0, 2) . 'px',
+            '--m365tools-ui-radius' => $number($options, 'landing_card_radius', 2, 0, 2) . 'px',
+            '--m365tools-content-top-gap' => '25px',
+            '--m365tools-card-min' => $number($options, 'landing_cards_min_width', 320, 220, 520) . 'px',
+            '--m365tools-section-gap' => $number($options, 'landing_section_gap', 32, 16, 96) . 'px',
+            '--m365tools-primary' => $color($options, 'landing_color_primary', '#2563eb'),
+            '--m365tools-accent' => $color($options, 'landing_color_accent', '#0f766e'),
+            '--m365tools-bg' => $color($options, 'landing_color_background', '#ffffff'),
+            '--m365tools-surface' => $color($options, 'landing_color_surface', '#ffffff'),
+            '--m365tools-surface-alt' => $color($options, 'landing_color_surface_alt', '#f8fafc'),
+            '--m365tools-header-bg' => $color($options, 'landing_color_header_background', '#f8fafc'),
+            '--m365tools-header-text' => $color($options, 'landing_color_header_text', '#1e293b'),
+            '--m365tools-header-muted' => $color($options, 'landing_color_header_muted', '#64748b'),
+            '--m365tools-header-border' => $color($options, 'landing_color_header_border', '#e2e8f0'),
+            '--m365tools-button-primary-bg' => $color($options, 'landing_color_button_primary_bg', '#2563eb'),
+            '--m365tools-button-primary-text' => $color($options, 'landing_color_button_primary_text', '#ffffff'),
+            '--m365tools-button-secondary-bg' => $color($options, 'landing_color_button_secondary_bg', '#ffffff'),
+            '--m365tools-button-secondary-text' => $color($options, 'landing_color_button_secondary_text', '#1e293b'),
+            '--m365tools-text' => $color($options, 'landing_color_text', '#1e293b'),
+            '--m365tools-muted' => $color($options, 'landing_color_muted', '#64748b'),
+            '--m365tools-border' => $color($options, 'landing_color_border', '#e2e8f0'),
+        ];
+
+        echo '<style id="cms-m365tools-public-design">' . "\n";
+        echo ':root, body.m365tools-theme-embed, body.m365calculator-theme-embed {' . "\n";
+        foreach ($vars as $name => $value) {
+            echo '    ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ': ' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . ';' . "\n";
+        }
+        echo '}' . "\n";
+        echo '</style>' . "\n";
+    }
+
     public function output_edge_spacing_reset(): void
     {
         if (!$this->is_calculator_request()) {
@@ -216,10 +273,13 @@ body.m365calculator-theme-embed #content.site-content,
 #content.m365tools-content-host,
 .site-content.m365tools-content-host,
 body:has(#m365tools-landing) #page.site,
+body:has(.m365calc-page) #page.site,
 body:has(#m365calculator-landing) #page.site,
 body:has(#m365tools-landing) #content.site-content,
+body:has(.m365calc-page) #content.site-content,
 body:has(#m365calculator-landing) #content.site-content,
 body:has(#m365tools-landing) .site-content,
+body:has(.m365calc-page) .site-content,
 body:has(#m365calculator-landing) .site-content {
     margin-block-start: 0 !important;
     margin-top: 0 !important;
@@ -233,26 +293,35 @@ body.m365calculator-theme-embed #page.site,
 body:has(#m365tools-landing),
 body:has(#m365calculator-landing),
 body:has(#m365tools-landing) #page.site,
+body:has(.m365calc-page) #page.site,
 body:has(#m365calculator-landing) #page.site {
-    background-color: #ffffff !important;
+    background-color: var(--m365tools-bg, #ffffff) !important;
 }
 body.m365tools-theme-embed #content.site-content,
 body.m365calculator-theme-embed #content.site-content,
 #content.m365tools-content-host,
 .site-content.m365tools-content-host,
 body:has(#m365tools-landing) #content.site-content,
+body:has(.m365calc-page) #content.site-content,
 body:has(#m365calculator-landing) #content.site-content {
-    background-color: #ffffff !important;
+    background-color: var(--m365tools-bg, #ffffff) !important;
     border-block-start-width: 0 !important;
     border-top-width: 0 !important;
     box-shadow: none !important;
+    margin-block-start: -2px !important;
+    margin-top: -2px !important;
     max-width: 100% !important;
+    position: relative !important;
 }
-body.m365tools-theme-embed .promos-hook-zone--after_header,
-body.m365calculator-theme-embed .promos-hook-zone--after_header,
-body:has(#m365tools-landing) .promos-hook-zone--after_header,
-body:has(#m365calculator-landing) .promos-hook-zone--after_header,
-#masthead.site-header + .promos-hook-zone--after_header {
+.m365tools-header-interstitial {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+}
+body.m365tools-theme-embed #masthead.site-header + :not(#content):not(.mobile-menu-overlay):not(.mobile-menu-drawer):not(.search-overlay),
+body.m365calculator-theme-embed #masthead.site-header + :not(#content):not(.mobile-menu-overlay):not(.mobile-menu-drawer):not(.search-overlay) {
     display: none !important;
     height: 0 !important;
     margin: 0 !important;
@@ -260,11 +329,12 @@ body:has(#m365calculator-landing) .promos-hook-zone--after_header,
     padding: 0 !important;
 }
 #m365tools-landing,
-#m365calculator-landing {
+#m365calculator-landing,
+.m365calc-page {
     margin-block-start: 0 !important;
     margin-top: 0 !important;
-    padding-block-start: 0 !important;
-    padding-top: 0 !important;
+    padding-block-start: var(--m365tools-content-top-gap, 25px) !important;
+    padding-top: var(--m365tools-content-top-gap, 25px) !important;
 }
 </style>
         <?php
@@ -287,15 +357,6 @@ body:has(#m365calculator-landing) .promos-hook-zone--after_header,
         echo '<script src="'
             . htmlspecialchars(CMS_M365CALCULATOR_PLUGIN_URL . 'assets/js/' . $jsFile, ENT_QUOTES, 'UTF-8')
             . '?v=' . filemtime($js) . '" defer></script>' . "\n";
-    }
-
-    private function suppress_after_header_promos(): void
-    {
-        if (!$this->is_calculator_request() || !class_exists('CMS\\Hooks') || !class_exists('CMS_Promos_Public_Controller')) {
-            return;
-        }
-
-        \CMS\Hooks::removeAction('after_header', [CMS_Promos_Public_Controller::instance(), 'render_after_header_promos'], 20);
     }
 
     public function render_provider_cta(): void

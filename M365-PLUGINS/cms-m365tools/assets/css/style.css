@@ -73,22 +73,31 @@
 }
 
 body:has(#m365tools-landing) #content.site-content,
+body:has(.m365calc-page) #content.site-content,
 body:has(#m365calculator-landing) #content.site-content,
 body:has(#m365tools-landing) .site-content,
+body:has(.m365calc-page) .site-content,
 body:has(#m365calculator-landing) .site-content,
 body:has(#m365tools-landing) .page-wrap,
+body:has(.m365calc-page) .page-wrap,
 body:has(#m365calculator-landing) .page-wrap,
 body:has(#m365tools-landing) .site-main,
+body:has(.m365calc-page) .site-main,
 body:has(#m365calculator-landing) .site-main,
 body:has(#m365tools-landing) .content-wrapper,
+body:has(.m365calc-page) .content-wrapper,
 body:has(#m365calculator-landing) .content-wrapper,
 body:has(#m365tools-landing) .content-area,
+body:has(.m365calc-page) .content-area,
 body:has(#m365calculator-landing) .content-area,
 body:has(#m365tools-landing) .content-area--page,
+body:has(.m365calc-page) .content-area--page,
 body:has(#m365calculator-landing) .content-area--page,
 body:has(#m365tools-landing) .page-content,
+body:has(.m365calc-page) .page-content,
 body:has(#m365calculator-landing) .page-content,
 body:has(#m365tools-landing) .entry-content,
+body:has(.m365calc-page) .entry-content,
 body:has(#m365calculator-landing) .entry-content {
     margin-block-start: 0 !important;
     margin-top: 0 !important;
@@ -131,24 +140,35 @@ body.m365calculator-theme-embed:not(.is-member) .entry-content {
 body.m365tools-theme-embed:not(.is-member),
 body.m365calculator-theme-embed:not(.is-member),
 body.m365tools-theme-embed:not(.is-member) #page.site,
-body.m365calculator-theme-embed:not(.is-member) #page.site {
-    background-color: #ffffff !important;
+body.m365calculator-theme-embed:not(.is-member) #page.site,
+body:has(.m365calc-page) #page.site {
+    background-color: var(--m365tools-bg, #ffffff) !important;
 }
 
 body.m365tools-theme-embed:not(.is-member) #content.site-content,
 body.m365calculator-theme-embed:not(.is-member) #content.site-content,
 body.m365tools-theme-embed:not(.is-member) .site-content,
-body.m365calculator-theme-embed:not(.is-member) .site-content {
-    background-color: #ffffff !important;
+body.m365calculator-theme-embed:not(.is-member) .site-content,
+body:has(.m365calc-page) #content.site-content,
+body:has(.m365calc-page) .site-content {
+    background-color: var(--m365tools-bg, #ffffff) !important;
     box-shadow: none !important;
+    margin-block-start: -2px !important;
+    margin-top: -2px !important;
     max-width: 100% !important;
+    position: relative !important;
 }
 
-body.m365tools-theme-embed:not(.is-member) .promos-hook-zone--after_header,
-body.m365calculator-theme-embed:not(.is-member) .promos-hook-zone--after_header,
-body:has(#m365tools-landing) .promos-hook-zone--after_header,
-body:has(#m365calculator-landing) .promos-hook-zone--after_header,
-#masthead.site-header + .promos-hook-zone--after_header {
+.m365tools-header-interstitial {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+}
+
+body.m365tools-theme-embed:not(.is-member) #masthead.site-header + :not(#content):not(.mobile-menu-overlay):not(.mobile-menu-drawer):not(.search-overlay),
+body.m365calculator-theme-embed:not(.is-member) #masthead.site-header + :not(#content):not(.mobile-menu-overlay):not(.mobile-menu-drawer):not(.search-overlay) {
     display: none !important;
     height: 0 !important;
     margin: 0 !important;
