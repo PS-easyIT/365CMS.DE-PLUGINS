@@ -79,7 +79,7 @@ $activeCategories = count(array_filter($categories, static fn($cat) => !empty($c
                             <div class="forum-inline-actions">
                                 <button class="btn btn-sm btn-secondary" onclick="editCategory(<?php echo (int)$cat->id; ?>, '<?php echo htmlspecialchars($cat->name, ENT_QUOTES); ?>', <?php echo (int)$cat->sort_order; ?>, <?php echo $cat->is_active ? 'true' : 'false'; ?>)">✏️</button>
                                 <form method="POST" style="margin:0;">
-                                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="forum_action" value="delete_category">
                                     <input type="hidden" name="category_id" value="<?php echo (int)$cat->id; ?>">
                                     <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteConfirm(this.closest('form'), 'Kategorie wirklich löschen?')">🗑️</button>
@@ -105,7 +105,7 @@ $activeCategories = count(array_filter($categories, static fn($cat) => !empty($c
         </div>
         <form method="POST">
             <div class="modal-body">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="forum_action" value="create_category">
                 <div class="form-group">
                     <label for="cat-name" class="form-label">Name <span style="color:#ef4444;">*</span></label>
@@ -133,7 +133,7 @@ $activeCategories = count(array_filter($categories, static fn($cat) => !empty($c
         </div>
         <form method="POST">
             <div class="modal-body">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="forum_action" value="update_category">
                 <input type="hidden" name="category_id" id="edit-cat-id">
                 <div class="form-group">

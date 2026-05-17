@@ -3,7 +3,7 @@
  * Plugin Name: CMS Forum
  * Plugin URI: https://365network.de/cms-forum
  * Description: Vollwertiges Community-Forum mit Kategorien, Subforen, Threads, BBCode-Editor, Berechtigungssystem, Moderationstools und Rang-System.
- * Version: 1.0.0
+ * Version: 3.0.0
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_FORUM_VERSION',    '1.0.0');
+define('CMS_FORUM_VERSION',    '3.0.0');
 define('CMS_FORUM_DB_VERSION', '1.0.1');
 define('CMS_FORUM_DIR',        dirname(__FILE__) . '/');
 define('CMS_FORUM_URL',        '/plugins/cms-forum/');
@@ -179,7 +179,7 @@ final class CMS_Forum
     {
         $cssPath = CMS_FORUM_DIR . 'assets/css/style.css';
         if (file_exists($cssPath)) {
-            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_FORUM_URL . 'assets/css/style.css?v=' . filemtime($cssPath)) . '">' . "\n";
+            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_FORUM_URL . 'assets/css/style.css?v=' . filemtime($cssPath), ENT_QUOTES, 'UTF-8') . '">' . "\n";
         }
     }
 
@@ -190,7 +190,7 @@ final class CMS_Forum
     {
         $jsPath = CMS_FORUM_DIR . 'assets/js/forum.js';
         if (file_exists($jsPath)) {
-            echo '<script src="' . htmlspecialchars(CMS_FORUM_URL . 'assets/js/forum.js?v=' . filemtime($jsPath)) . '" defer></script>' . "\n";
+            echo '<script src="' . htmlspecialchars(CMS_FORUM_URL . 'assets/js/forum.js?v=' . filemtime($jsPath), ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
         }
     }
 

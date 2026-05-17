@@ -349,7 +349,10 @@
                 return;
             }
 
-            assignedList.innerHTML = '<p class="form-text ev-text-muted">' + (speakerBox.dataset.evSpeakerEmptyMessage || 'Noch keine Person zugeordnet.') + '</p>';
+            var emptyMessage = document.createElement('p');
+            emptyMessage.className = 'form-text ev-text-muted';
+            emptyMessage.textContent = speakerBox.dataset.evSpeakerEmptyMessage || 'Noch keine Person zugeordnet.';
+            assignedList.replaceChildren(emptyMessage);
         }
 
         async function removeSpeaker(assignmentId) {

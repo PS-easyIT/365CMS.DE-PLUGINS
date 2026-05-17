@@ -102,7 +102,7 @@ foreach ($categories as $c) { $catMap[(int)$c->id] = $c; }
                             <div class="forum-inline-actions">
                                 <button class="btn btn-sm btn-secondary" onclick="editForum(<?php echo (int)$f->id; ?>)">✏️</button>
                                 <form method="POST" style="margin:0;">
-                                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="forum_action" value="delete_forum">
                                     <input type="hidden" name="forum_id" value="<?php echo (int)$f->id; ?>">
                                     <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteConfirm(this.closest('form'), 'Forum wirklich löschen?')">🗑️</button>
@@ -129,7 +129,7 @@ foreach ($categories as $c) { $catMap[(int)$c->id] = $c; }
         </div>
         <form method="POST">
             <div class="modal-body">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="forum_action" value="create_forum">
                 <div class="form-group">
                     <label class="form-label">Kategorie <span style="color:#ef4444;">*</span></label>

@@ -116,7 +116,7 @@ $closedThreads = count(array_filter($threads, static fn($thread) => ($thread->st
                         <td>
                             <div class="forum-inline-actions">
                                 <form method="POST" style="margin:0;">
-                                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="forum_action" value="lock_thread">
                                     <input type="hidden" name="thread_id" value="<?php echo (int)$t->id; ?>">
                                     <button type="submit" class="btn btn-sm btn-secondary" title="<?php echo $t->status === 'closed' ? 'Öffnen' : 'Schließen'; ?>">
@@ -124,13 +124,13 @@ $closedThreads = count(array_filter($threads, static fn($thread) => ($thread->st
                                     </button>
                                 </form>
                                 <form method="POST" style="margin:0;">
-                                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="forum_action" value="pin_thread">
                                     <input type="hidden" name="thread_id" value="<?php echo (int)$t->id; ?>">
                                     <button type="submit" class="btn btn-sm btn-secondary" title="<?php echo $t->type === 'sticky' ? 'Entpinnen' : 'Pinnen'; ?>">📌</button>
                                 </form>
                                 <form method="POST" style="margin:0;">
-                                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="forum_action" value="delete_thread">
                                     <input type="hidden" name="thread_id" value="<?php echo (int)$t->id; ?>">
                                     <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteConfirm(this.closest('form'), 'Thread wirklich löschen?')">🗑️</button>

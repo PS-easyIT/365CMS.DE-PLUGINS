@@ -36,7 +36,7 @@
 </div>
 
 <form method="POST" class="admin-form">
-    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
     <input type="hidden" name="forum_action" value="save_settings">
 
     <!-- Allgemein -->
@@ -196,7 +196,7 @@
     </div>
     <div class="forum-inline-actions">
         <form method="POST">
-            <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
             <input type="hidden" name="forum_action" value="recalculate_counters">
             <button type="submit" class="btn btn-secondary btn-sm">🔄 Zähler neu berechnen</button>
         </form>

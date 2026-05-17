@@ -96,7 +96,7 @@ $bannedUsers = count(array_filter($users, static fn($user) => !empty($user->is_b
                         <td>
                             <?php if ($u->is_banned): ?>
                                 <form method="POST" style="margin:0;">
-                                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="forum_action" value="unban_user">
                                     <input type="hidden" name="user_id" value="<?php echo (int)$u->user_id; ?>">
                                     <button type="submit" class="btn btn-sm btn-secondary">🔓 Entsperren</button>
@@ -134,7 +134,7 @@ $bannedUsers = count(array_filter($users, static fn($user) => !empty($user->is_b
         </div>
         <form method="POST">
             <div class="modal-body">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="forum_action" value="ban_user">
                 <input type="hidden" name="user_id" id="ban-user-id">
                 <p>Benutzer <strong id="ban-username"></strong> sperren:</p>

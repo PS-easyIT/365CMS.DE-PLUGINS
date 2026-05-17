@@ -85,14 +85,14 @@ $resolvedCount = count(array_filter($reports, static fn($report) => ($report->st
             <?php if ($r->status === 'open'): ?>
             <div class="forum-inline-actions">
                 <form method="POST" style="margin:0;">
-                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="forum_action" value="resolve_report">
                     <input type="hidden" name="report_id" value="<?php echo (int)$r->id; ?>">
                     <input type="hidden" name="resolution" value="dismissed">
                     <button type="submit" class="btn btn-sm btn-secondary">✅ Abweisen</button>
                 </form>
                 <form method="POST" style="margin:0;">
-                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="forum_action" value="delete_reported_post">
                     <input type="hidden" name="report_id" value="<?php echo (int)$r->id; ?>">
                     <input type="hidden" name="post_id" value="<?php echo (int)$r->post_id; ?>">

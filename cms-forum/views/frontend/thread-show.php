@@ -92,7 +92,7 @@ foreach ($attachments as $att) {
                 ?>
                 <?php foreach ($pollOptions as $opt): ?>
                 <?php
-                $pct = $totalVotes > 0 ? round(((int)$opt->vote_count / $totalVotes) * 100) : 0;
+                $pct = $totalVotes > 0 ? max(0, min(100, (int) round(((int)$opt->vote_count / $totalVotes) * 100))) : 0;
                 $voted = in_array((int)$opt->id, $userVotes, true);
                 ?>
                 <div class="cmsforum-poll__option <?php echo $voted ? 'cmsforum-poll__option--voted' : ''; ?>">
@@ -217,7 +217,7 @@ foreach ($attachments as $att) {
             <h3 class="cmsforum-reply__title">↩️ Antworten</h3>
             <form method="POST" class="cmsforum-reply__form" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="reply">
-                <input type="hidden" name="csrf_token" value="<?php echo \CMS\Security::instance()->generateToken('forum_reply'); ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) \CMS\Security::instance()->generateToken('forum_reply'), ENT_QUOTES, 'UTF-8'); ?>">
 
                 <div class="cmsforum-editor">
                     <div class="cmsforum-editor__toolbar" id="bbcode-toolbar">

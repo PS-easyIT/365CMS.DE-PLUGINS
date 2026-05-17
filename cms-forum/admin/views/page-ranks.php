@@ -14,7 +14,7 @@ $specialRanks = count(array_filter($ranks, static fn($rank) => !empty($rank->is_
     </div>
     <div class="header-actions">
         <form method="POST" style="display:inline;">
-            <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
             <input type="hidden" name="forum_action" value="recalculate_ranks">
             <button type="submit" class="btn btn-secondary btn-sm">🔄 Alle Ränge neu berechnen</button>
         </form>
@@ -86,7 +86,7 @@ $specialRanks = count(array_filter($ranks, static fn($rank) => !empty($rank->is_
                             <div class="forum-inline-actions">
                                 <button class="btn btn-sm btn-secondary" onclick="editRank(<?php echo (int)$r->id; ?>, '<?php echo htmlspecialchars($r->name, ENT_QUOTES); ?>', <?php echo (int)$r->min_posts; ?>, '<?php echo htmlspecialchars($r->color ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($r->icon ?? '', ENT_QUOTES); ?>', <?php echo $r->is_special ? 'true' : 'false'; ?>)">✏️</button>
                                 <form method="POST" style="margin:0;">
-                                    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="forum_action" value="delete_rank">
                                     <input type="hidden" name="rank_id" value="<?php echo (int)$r->id; ?>">
                                     <button type="button" class="btn btn-sm btn-danger" onclick="openDeleteConfirm(this.closest('form'), 'Rang wirklich löschen?')">🗑️</button>
@@ -112,7 +112,7 @@ $specialRanks = count(array_filter($ranks, static fn($rank) => !empty($rank->is_
         </div>
         <form method="POST">
             <div class="modal-body">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="forum_action" value="create_rank">
                 <div class="form-group">
                     <label class="form-label">Titel <span style="color:#ef4444;">*</span></label>
@@ -151,7 +151,7 @@ $specialRanks = count(array_filter($ranks, static fn($rank) => !empty($rank->is_
         </div>
         <form method="POST">
             <div class="modal-body">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="forum_action" value="update_rank">
                 <input type="hidden" name="rank_id" id="edit-rank-id">
                 <div class="form-group">

@@ -128,11 +128,46 @@
         insertAtCursor(textarea, '\n' + nextIndent);
     }
 
-    function renderPreviewMarkup(value) {
+    function isUnsafePreviewUrl(value) {
+        return /^\s*(javascript|data|vbscript):/i.test(String(value || ''));
+    }
+
+    function sanitizePreviewNode(node) {
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+            return;
+        }
+
+        var blockedTags = ['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'LINK', 'META'];
+        if (blockedTags.indexOf(node.tagName) !== -1) {
+            node.remove();
+            return;
+        }
+
+        Array.from(node.attributes).forEach(function (attribute) {
+            var name = attribute.name.toLowerCase();
+            var value = attribute.value || '';
+            if (name.indexOf('on') === 0 || ((name === 'href' || name === 'src' || name === 'xlink:href') && isUnsafePreviewUrl(value))) {
+                node.removeAttribute(attribute.name);
+            }
+        });
+
+        Array.from(node.childNodes).forEach(sanitizePreviewNode);
+    }
+
+    function buildPreviewFragment(value) {
         var markup = String(value || '').trim();
+        var fragment = document.createDocumentFragment();
 
         if (!markup) {
-            return '<div class="kb-code-editor__empty-preview"><strong>Noch kein Inhalt vorhanden.</strong><span>Schreibe HTML oder füge ein Snippet ein – die Preview aktualisiert sich automatisch.</span></div>';
+            var empty = document.createElement('div');
+            empty.className = 'kb-code-editor__empty-preview';
+            var title = document.createElement('strong');
+            title.textContent = 'Noch kein Inhalt vorhanden.';
+            var hint = document.createElement('span');
+            hint.textContent = 'Schreibe HTML oder füge ein Snippet ein – die Preview aktualisiert sich automatisch.';
+            empty.append(title, hint);
+            fragment.appendChild(empty);
+            return fragment;
         }
 
         markup = markup
@@ -143,7 +178,13 @@
             })
             .replace(/<div class="cms-kb-table-module cms-kb-table-module--info">/gi, '<div class="kb-code-editor__info-module kb-code-editor__info-module--info">');
 
-        return markup;
+        var parsed = new DOMParser().parseFromString(markup, 'text/html');
+        Array.from(parsed.body.childNodes).forEach(sanitizePreviewNode);
+        Array.from(parsed.body.childNodes).forEach(function (child) {
+            fragment.appendChild(document.importNode(child, true));
+        });
+
+        return fragment;
     }
 
     function initCodeEditors() {
@@ -177,7 +218,7 @@
             };
 
             var renderPreview = function () {
-                preview.innerHTML = renderPreviewMarkup(textarea.value);
+                preview.replaceChildren(buildPreviewFragment(textarea.value));
             };
 
             editor.querySelectorAll('[data-editor-insert]').forEach(function (button) {

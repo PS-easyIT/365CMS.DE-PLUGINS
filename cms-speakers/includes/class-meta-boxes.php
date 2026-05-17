@@ -480,8 +480,8 @@ final class CMS_Speakers_Meta_Boxes
             function spkUpdatePhoto(url) {
                 var prev = document.getElementById('spk-photo-preview');
                 var img  = document.getElementById('spk-photo-img');
-                if (!url) { prev.innerHTML = '📷'; return; }
-                if (!img) { img = document.createElement('img'); img.id = 'spk-photo-img'; img.style.cssText='width:100%;height:100%;object-fit:cover;'; prev.innerHTML=''; prev.appendChild(img); }
+                if (!url) { prev.replaceChildren(document.createTextNode('📷')); return; }
+                if (!img) { img = document.createElement('img'); img.id = 'spk-photo-img'; img.style.cssText='width:100%;height:100%;object-fit:cover;'; prev.replaceChildren(img); }
                 img.src = url;
             }
             </script>
@@ -524,7 +524,13 @@ final class CMS_Speakers_Meta_Boxes
                     var span = document.createElement('span');
                     span.className = 'spk-topic-tag';
                     span.dataset.tag = val;
-                    span.innerHTML = val + '<button type="button" onclick="spkRemoveTopic(this.parentElement)" style="background:none;border:none;cursor:pointer;padding:0 0 0 4px;color:inherit;font-size:1rem;">&times;<\/button>';
+                    span.appendChild(document.createTextNode(val));
+                    var removeButton = document.createElement('button');
+                    removeButton.type = 'button';
+                    removeButton.style.cssText = 'background:none;border:none;cursor:pointer;padding:0 0 0 4px;color:inherit;font-size:1rem;';
+                    removeButton.textContent = '×';
+                    removeButton.addEventListener('click', function(){ spkRemoveTopic(span); });
+                    span.appendChild(removeButton);
                     wrap.insertBefore(span, input);
                     updateHidden();
                 }
