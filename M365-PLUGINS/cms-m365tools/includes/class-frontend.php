@@ -54,6 +54,7 @@ final class CMS_M365CALCULATOR_Frontend
         if (class_exists('CMS\\Hooks')) {
             \CMS\Hooks::addFilter('body_class', [$this, 'filter_body_class'], 20);
             \CMS\Hooks::addAction('head', [$this, 'enqueue_public_styles'], 20);
+            \CMS\Hooks::addAction('before_footer', [$this, 'render_provider_cta'], 20);
             \CMS\Hooks::addAction('body_end', [$this, 'enqueue_public_scripts'], 20);
         }
     }
@@ -214,6 +215,74 @@ final class CMS_M365CALCULATOR_Frontend
             . '?v=' . filemtime($js) . '" defer></script>' . "\n";
     }
 
+    public function render_provider_cta(): void
+    {
+        if (!$this->is_calculator_request() || $this->is_toolbox_request() || !class_exists('CMS_M365CALCULATOR_Settings')) {
+            return;
+        }
+
+        $settings = CMS_M365CALCULATOR_Settings::global_options('provider');
+        if ((string) ($settings['provider_cta_enabled'] ?? '1') !== '1') {
+            return;
+        }
+
+        $esc = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+        $safeUrl = static function (mixed $value): string {
+            $url = trim((string) $value);
+            if ($url === '') {
+                return '';
+            }
+
+            if (str_starts_with($url, '/') && !str_starts_with($url, '//') && !str_contains($url, "\0")) {
+                return $url;
+            }
+
+            $parts = parse_url($url);
+            $scheme = is_array($parts) ? strtolower((string) ($parts['scheme'] ?? '')) : '';
+
+            return in_array($scheme, ['http', 'https'], true) && filter_var($url, FILTER_VALIDATE_URL) !== false ? $url : '';
+        };
+
+        $style = in_array((string) ($settings['provider_cta_style'] ?? 'quiet'), ['quiet', 'boxed', 'wide'], true)
+            ? (string) ($settings['provider_cta_style'] ?? 'quiet')
+            : 'quiet';
+        $contactUrl = $safeUrl($settings['provider_contact_form_url'] ?? '/kontakt');
+        $profileUrl = $safeUrl($settings['provider_profile_url'] ?? '');
+        $providerName = trim((string) ($settings['provider_name'] ?? '365 Network'));
+        $headline = trim((string) ($settings['provider_headline'] ?? 'Unterstützung bei Microsoft 365 gewünscht?'));
+        $text = trim((string) ($settings['provider_text'] ?? 'Wir unterstützen bei Lizenzanalyse, Umsetzung, Governance und laufender Optimierung.'));
+        $buttonLabel = trim((string) ($settings['provider_button_label'] ?? 'Beratung anfragen'));
+        $email = trim((string) ($settings['provider_email'] ?? ''));
+        $phone = trim((string) ($settings['provider_phone'] ?? ''));
+        ?>
+        <section class="phinit-plugin m365calc-provider-cta m365calc-provider-cta--<?php echo $esc($style); ?>" aria-labelledby="m365calc-provider-title">
+            <div class="phinit-card m365calc-provider-cta__card">
+                <div>
+                    <p class="phinit-overline"><?php echo $esc($providerName !== '' ? $providerName : 'Dienstleister'); ?></p>
+                    <h2 id="m365calc-provider-title"><?php echo $esc($headline); ?></h2>
+                    <?php if ($text !== ''): ?>
+                    <p class="phinit-prose"><?php echo $esc($text); ?></p>
+                    <?php endif; ?>
+                    <?php if ($email !== '' || $phone !== ''): ?>
+                    <p class="m365calc-provider-cta__meta">
+                        <?php if ($email !== ''): ?><span><?php echo $esc($email); ?></span><?php endif; ?>
+                        <?php if ($phone !== ''): ?><span><?php echo $esc($phone); ?></span><?php endif; ?>
+                    </p>
+                    <?php endif; ?>
+                </div>
+                <nav class="m365calc-actions" aria-label="Kontaktmöglichkeiten">
+                    <?php if ($contactUrl !== ''): ?>
+                    <a class="phinit-btn phinit-btn--primary" href="<?php echo $esc($contactUrl); ?>"><?php echo $esc($buttonLabel !== '' ? $buttonLabel : 'Kontakt aufnehmen'); ?></a>
+                    <?php endif; ?>
+                    <?php if ($profileUrl !== ''): ?>
+                    <a class="phinit-btn phinit-btn--secondary" href="<?php echo $esc($profileUrl); ?>">Mehr erfahren</a>
+                    <?php endif; ?>
+                </nav>
+            </div>
+        </section>
+        <?php
+    }
+
     public function filter_body_class(mixed $bodyClass): string
     {
         $classes = trim((string) $bodyClass);
@@ -233,13 +302,16 @@ final class CMS_M365CALCULATOR_Frontend
 
     private function render_toolbox(): void
     {
+        $landingOptions = class_exists('CMS_M365CALCULATOR_Settings') ? CMS_M365CALCULATOR_Settings::global_options('landing') : [];
         $groupedTools = CMS_M365CALCULATOR_Tool_Registry::grouped_by_category();
         $bestPracticeCatalog = CMS_M365CALCULATOR_Catalog::m365_best_practice_catalog();
         $bestPracticeMeta = is_array($bestPracticeCatalog['meta'] ?? null) ? $bestPracticeCatalog['meta'] : [];
         $bestPracticeDomains = is_array($bestPracticeCatalog['domains'] ?? null) ? $bestPracticeCatalog['domains'] : [];
         $toolReviewMap = is_array($bestPracticeCatalog['tool_domains'] ?? null) ? $bestPracticeCatalog['tool_domains'] : [];
         $toolCheckMap = is_array($bestPracticeCatalog['module_checks'] ?? null) ? $bestPracticeCatalog['module_checks'] : [];
-        $this->set_seo('M365 Tools', 'Übersicht verfügbarer Microsoft-365-Rechner, Checklisten und Berechnungstools.');
+        $seoTitle = trim((string) ($landingOptions['landing_title'] ?? 'M365 Tools'));
+        $seoDescription = trim((string) ($landingOptions['landing_intro'] ?? 'Übersicht verfügbarer Microsoft-365-Rechner, Checklisten und Berechnungstools.'));
+        $this->set_seo($seoTitle !== '' ? $seoTitle : 'M365 Tools', $seoDescription !== '' ? $seoDescription : 'Übersicht verfügbarer Microsoft-365-Rechner, Checklisten und Berechnungstools.');
         include CMS_M365CALCULATOR_PLUGIN_DIR . 'templates/landing.php';
         exit;
     }

@@ -1,7 +1,17 @@
 .m365calculator-admin-shell {
+    box-sizing: border-box;
     display: grid;
     gap: 1rem;
-    margin-top: 25px;
+    margin: 25px;
+    width: calc(100% - 50px);
+}
+
+.m365calculator-admin-shell > .admin-card,
+.m365calculator-admin-shell > .dashboard-grid,
+.m365calculator-admin-shell > .m365calculator-admin-grid,
+.m365calculator-admin-shell > form,
+.m365calculator-admin-shell > section {
+    width: 100%;
 }
 
 .m365calculator-admin-grid {
@@ -26,8 +36,8 @@
 }
 
 .m365calculator-admin-control {
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
+    border: 1px solid #d7dee8;
+    border-radius: 5px;
     box-sizing: border-box;
     font: inherit;
     max-width: 100%;
@@ -48,7 +58,7 @@
 }
 
 .m365calculator-admin-shell .alert {
-    border-radius: 8px;
+    border-radius: 5px;
     padding: 0.85rem 1rem;
 }
 
@@ -67,7 +77,7 @@
 .m365calculator-admin-shell code {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 4px;
+    border-radius: 3px;
     padding: 0.18rem 0.35rem;
 }
 
@@ -83,7 +93,7 @@
     align-items: center;
     border: 1px solid transparent;
     border-bottom: 2px solid transparent;
-    border-radius: 6px 6px 0 0;
+    border-radius: 5px 5px 0 0;
     color: #475569;
     display: inline-flex;
     font-size: 0.875rem;
@@ -108,9 +118,10 @@
 }
 
 .m365calculator-admin-tab-card {
-    border-radius: 0 10px 10px 10px;
+    border-radius: 0 6px 6px 6px;
     margin-top: 0;
-    max-width: 980px;
+    max-width: none;
+    width: 100%;
 }
 
 .m365calculator-admin-tab-card--wide {
@@ -139,7 +150,7 @@
 .m365calculator-admin-summary-grid > div {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    border-radius: 5px;
     display: grid;
     gap: 0.35rem;
     padding: 0.85rem;
@@ -168,9 +179,9 @@
 .m365calculator-admin-callout {
     align-items: flex-start;
     background: #f8fafc;
-    border: 1px solid #dbeafe;
-    border-left: 4px solid var(--admin-primary, #3b82f6);
-    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #cbd5e1;
+    border-radius: 5px;
     color: #334155;
     display: grid;
     gap: 0.2rem;
@@ -184,7 +195,7 @@
 
 .m365calculator-price-table {
     border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    border-radius: 5px;
     display: grid;
     margin-bottom: 1.25rem;
     overflow: hidden;
@@ -252,6 +263,11 @@
 }
 
 @media (max-width: 900px) {
+    .m365calculator-admin-shell {
+        margin: 16px;
+        width: calc(100% - 32px);
+    }
+
     .m365calculator-admin-form-grid,
     .m365calculator-admin-summary-grid {
         grid-template-columns: 1fr;

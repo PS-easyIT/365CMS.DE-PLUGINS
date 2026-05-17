@@ -7,6 +7,43 @@
     width: 100%;
 }
 
+.m365calc-provider-cta {
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: var(--phinit-space-6);
+    max-width: var(--phinit-content-wide, 1200px);
+    width: 100%;
+}
+
+.m365calc-provider-cta__card {
+    align-items: center;
+    border-left: 3px solid var(--phinit-color-border);
+    display: flex;
+    gap: var(--phinit-space-5);
+    justify-content: space-between;
+}
+
+.m365calc-provider-cta__card h2,
+.m365calc-provider-cta__card p {
+    margin-top: 0;
+}
+
+.m365calc-provider-cta__meta {
+    color: var(--phinit-color-ink-secondary);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--phinit-space-2) var(--phinit-space-4);
+    margin-bottom: 0;
+}
+
+.m365calc-provider-cta--wide {
+    max-width: none;
+}
+
+.m365calc-provider-cta--boxed {
+    max-width: 900px;
+}
+
 body.m365tools-theme-embed:not(.is-member) .page-wrap,
 body.m365calculator-theme-embed:not(.is-member) .page-wrap {
     min-height: 0;
@@ -881,6 +918,11 @@ body.m365calculator-theme-embed:not(.is-member) .breadcrumb-nav {
     .m365calc-tool-card__head,
     .m365calc-result-heading,
     .m365calc-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .m365calc-provider-cta__card {
         align-items: stretch;
         flex-direction: column;
     }

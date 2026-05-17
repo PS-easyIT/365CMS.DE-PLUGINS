@@ -22,6 +22,16 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
     grid-template-columns: minmax(0, 1fr) minmax(16rem, 24rem);
 }
 
+.m365tools-landing--stacked .m365tools-landing__header,
+.m365tools-landing--compact .m365tools-landing__header {
+    align-items: start;
+    grid-template-columns: 1fr;
+}
+
+.m365tools-landing--compact .m365tools-landing__facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .m365tools-landing__intro {
     display: grid;
     gap: var(--phinit-space-3);
@@ -115,7 +125,7 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
 
 .phinit-tool-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--m365tools-card-min, 320px)), 1fr));
     gap: var(--phinit-space-5);
     list-style: none;
     padding: 0;
@@ -131,6 +141,24 @@ body.m365calculator-theme-embed:not(.is-member) main.phinit-plugin {
     display: grid;
     gap: var(--phinit-space-3);
     height: 100%;
+    border-radius: var(--m365tools-card-radius, var(--phinit-radius-md));
+}
+
+.m365tools-tools--compact-grid .phinit-tool-grid {
+    gap: var(--phinit-space-3);
+}
+
+.m365tools-tools--compact-grid .phinit-tool-grid .phinit-card {
+    gap: var(--phinit-space-2);
+    padding: var(--phinit-space-4);
+}
+
+.m365tools-tools--list .phinit-tool-grid {
+    grid-template-columns: 1fr;
+}
+
+.m365tools-tools--list .phinit-tool-grid .phinit-card {
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .phinit-tool-card__head {

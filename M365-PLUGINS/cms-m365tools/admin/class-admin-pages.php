@@ -350,6 +350,8 @@ final class CMS_M365CALCULATOR_Admin_Pages
             ],
             default => [
                 'general' => '⚙️ Allgemein',
+                'provider' => '🏢 Dienstleister & Kontakt',
+                'landing' => '🎨 Landingpage Designer',
                 'review' => '🧭 Review & Quellen',
                 'workflow' => '🔁 Workflow',
                 'system' => '🧾 System',
@@ -418,6 +420,45 @@ final class CMS_M365CALCULATOR_Admin_Pages
     private static function plugin_setting_fields(string $tab): array
     {
         return match ($tab) {
+            'provider' => [
+                self::checkbox('provider_cta_enabled', 'Dienstleister-Hinweis nach Tool-Auswertungen anzeigen', '1', 'Blendet unter Rechner- und Toolseiten einen zentral gepflegten Ansprechpartner ein.'),
+                self::text('provider_name', 'Dienstleister / Anbietername', '365 Network', 'Name des Dienstleisters, der nach Tool-Aufrufen empfohlen wird.'),
+                self::text('provider_headline', 'CTA-Überschrift', 'Unterstützung bei Microsoft 365 gewünscht?', 'Überschrift für den Hinweisbereich nach Tool-Auswertungen.'),
+                self::textarea('provider_text', 'CTA-Text', 'Wir unterstützen bei Lizenzanalyse, Umsetzung, Governance und laufender Optimierung.', 'Kurzer Text für den zentralen Dienstleister-Hinweis.'),
+                self::text('provider_button_label', 'Button-Text', 'Beratung anfragen', 'Beschriftung des primären Kontaktbuttons.'),
+                self::text('provider_contact_form_url', 'Kontaktformular-URL', '/kontakt', 'Interne Route oder vollständige URL zum gewünschten Kontaktformular.'),
+                self::text('provider_profile_url', 'Dienstleister-Profil / Landingpage', '', 'Optionaler Link zur Anbieter- oder Leistungsseite.'),
+                self::text('provider_email', 'Kontakt-E-Mail', '', 'Optionaler Kontakt für Rückfragen.'),
+                self::text('provider_phone', 'Telefon', '', 'Optional sichtbare Telefonnummer.'),
+                self::select('provider_cta_style', 'Darstellung', 'quiet', [
+                    'quiet' => 'Ruhig / redaktionell',
+                    'boxed' => 'Kompakte Box',
+                    'wide' => 'Breiter Abschlussbereich',
+                ], 'Steuert die optische Gewichtung des Dienstleister-Hinweises.'),
+            ],
+            'landing' => [
+                self::text('landing_overline', 'Header-Overline', 'Rechner & Tools', 'Kleine Zeile oberhalb der Landingpage-Hauptüberschrift.'),
+                self::text('landing_title', 'Landingpage-Titel', 'M365 Tools', 'Hauptüberschrift der Toolbox-Landingpage.'),
+                self::textarea('landing_intro', 'Intro-Text', 'Eine kuratierte Sammlung für Microsoft-365-Lizenzierung, Kosten, Speicher, Backup, Copilot, Telefonie, Migration und Betrieb.', 'Einleitungstext im Contentheader.'),
+                self::select('landing_header_layout', 'Contentheader-Layout', 'split', [
+                    'split' => 'Text links, Kennzahlen rechts',
+                    'stacked' => 'Untereinander',
+                    'compact' => 'Kompakt ohne große Kennzahlenfläche',
+                ], 'Layout des oberen Landingpage-Bereichs.'),
+                self::select('landing_tool_layout', 'Toolbox-Layout', 'grid', [
+                    'grid' => 'Kartenraster',
+                    'compact-grid' => 'Kompaktes Kartenraster',
+                    'list' => 'Listenartige Karten',
+                ], 'Darstellung der Modulboxen.'),
+                self::number('landing_card_radius', 'Rundung der Boxen in px', '8', 0, 24, 1, 'Steuert die Rundung der Landingpage-Karten.'),
+                self::number('landing_cards_min_width', 'Mindestbreite der Modulboxen in px', '320', 220, 520, 10, 'Breite der Modulboxen im Kartenraster.'),
+                self::checkbox('landing_show_facts', 'Kennzahlen anzeigen', '1', 'Zeigt Module, Live-Zahl und Review-Bereiche im Header.'),
+                self::checkbox('landing_show_category_nav', 'Kategorie-Navigation anzeigen', '1', 'Blendet die Sprungnavigation zu Kategorien ein.'),
+                self::checkbox('landing_show_review_panel', 'Best-Practice-Kompass anzeigen', '1', 'Zeigt den Review-Block auf der Landingpage.'),
+                self::checkbox('landing_show_review_chips', 'Review-Chips in Modulboxen anzeigen', '1', 'Zeigt Review-Schwerpunkte direkt in den Toolkarten.'),
+                self::checkbox('landing_show_module_checks', 'Prüfpunkte in Modulboxen anzeigen', '1', 'Zeigt konkrete Prüfpunkte direkt in den Toolkarten.'),
+                self::text('landing_open_button_label', 'Öffnen-Button Text', 'Öffnen', 'Text des Links in jeder Toolbox-Karte.'),
+            ],
             'review' => [
                 self::text('last_global_review_date', 'Letzter Quellenabgleich', date('Y-m-d'), 'Datum des letzten fachlichen All-Module-Reviews.'),
                 self::select('primary_source_profile', 'Primäres Quellenprofil', 'microsoft_learn', [

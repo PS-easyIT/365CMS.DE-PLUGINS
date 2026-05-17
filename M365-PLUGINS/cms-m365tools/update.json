@@ -1,11 +1,11 @@
 {
-  "version": "1.28.1",
+  "version": "1.29.0",
   "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
   "requires": "2.9.0",
   "tested": "2.9.7",
   "last_updated": "2026-05-17",
   "sections": {
-    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme für Public-, Member- und Spezialpreise, zentraler Plugin-Einstellungsseite, eigenen globalen Unterpunkten für Paketpreise sowie Abopreise & Laufzeiten, kurzen Modulmenüs, eigenem Admin-Unterpunkt je Modul, Einstellungs-Tabs für Anzeige, Preise, Workflows und Datenstand, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass, Power-Platform-Kosten- und Well-Architected-Review, Google-Workspace-M365-TCO-Rechner, Storage-Bedarfs-Rechner, Backup-Kosten-Rechner, Lizenz-Audit-Checkliste, Microsoft-Preiserhöhung-Tracker, Teams-Phone-Lizenz-Berater, Exchange-Online-ROI-Rechner, Frontline-Worker-Lizenz-Check, Copilot-Pilot-Phase-Rechner, AI-Pack-vs-Copilot-Pro-Vergleich, Archive-Mailbox-Rechner, Annual-vs-Monthly Commitment Rechner, Lizenz- und Add-on-Matrizen, Add-On-Konfigurator, M365-Lizenzvergleich, M365-Lizenzberater, Copilot ROI-Rechner, Shared-Mailbox-Rechner und Copilot Lizenz-Pflicht-Checker.",
-    "changelog": "Paketpreise werden nun bevorzugt aus dem CMS M365 License Seed-Katalog übernommen und in M365 Tools als globale Public-, Member- und Spezialpreise gepflegt. Die drei Preisstufen werden im Adminbereich pro Paket nebeneinander dargestellt, der Paketpreisbereich nutzt die volle Adminbreite und der Plugin-Adminbereich erhält 25px Abstand nach oben. Modul-Menülabels im Adminbereich wurden gekürzt, damit die Sidebar kompakt bleibt."
+    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme, zentraler Dienstleister- und Kontaktformular-CTA, Landingpage-Designer, zentraler Plugin-Einstellungsseite, eigenen globalen Unterpunkten für Paketpreise sowie Abopreise & Laufzeiten, kurzen Modulmenüs, eigenem Admin-Unterpunkt je Modul, Einstellungs-Tabs für Anzeige, Preise, Workflows und Datenstand, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass und 21 Public-Modulen.",
+    "changelog": "Adminseiten nutzen nun die volle Admincontent-Breite mit 25px Abstand an allen Seiten und neutralerem, weniger KI-artigem Layout. Neue globale Einstellungen für Dienstleister, Kontaktformular und CTA werden vor dem Footer der Toolseiten ausgegeben. Der neue Landingpage-Designer steuert Contentheader, Layout, Boxen, Sichtbarkeit von Bereichen, Texte, Rundungen und Modulbox-Darstellung."
   }
 }

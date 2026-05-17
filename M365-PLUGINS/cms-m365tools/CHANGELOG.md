@@ -1,6 +1,14 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.29.0 – 2026-05-17
+
+- Adminlayout pluginweit vereinheitlicht: Adminseiten nutzen die volle Contentbreite mit 25px Außenabstand und reduzierter, neutralerer Karten-/Tab-Optik.
+- Neue zentrale Einstellungen `Dienstleister & Kontakt` ergänzt, inklusive Anbietername, CTA-Text, Kontaktformular-URL, Profil-Link, E-Mail, Telefon und Darstellungsmodus.
+- Toolseiten zeigen den zentral gepflegten Dienstleister-Hinweis vor dem Footer, damit nach Rechneraufrufen ein einheitlicher nächster Schritt sichtbar wird.
+- Neuer `Landingpage Designer` ergänzt: Header-Overline, Titel, Intro, Contentheader-Layout, Toolbox-Layout, Kartenbreite, Rundungen, Bereichssichtbarkeit, Review-Chips, Prüfpunkte und Öffnen-Button-Text sind adminseitig steuerbar.
+- Landingpage liest die neuen Design- und Inhaltswerte direkt aus den globalen Optionen und rendert kompakte, Listen- oder Rasterlayouts ohne zusätzliche Tabellen.
+
 ## 1.28.1 – 2026-05-17
 
 - Paketpreis-Adminseite optimiert: Public-, Member- und Spezialpreis werden je Paket in einer gemeinsamen Zeile nebeneinander angezeigt.

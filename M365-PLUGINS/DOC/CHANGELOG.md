@@ -1,5 +1,12 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 1.29.0 – 2026-05-17
+
+- Admin-Dokumentation um volle Contentbreite, 25px Außenabstand und neutraleres Layout ergänzt.
+- Neue globale Tabs `Dienstleister & Kontakt` sowie `Landingpage Designer` dokumentiert.
+- Dokumentiert, dass Toolseiten den zentralen Dienstleister-/Kontaktformular-Hinweis vor dem Footer ausgeben.
+- Landingpage-Dokumentation um steuerbare Headertexte, Layouts, Boxen, Rundungen und sichtbare Bereiche erweitert.
+
 ## 1.28.1 – 2026-05-17
 
 - Adminlayout der Paketpreise dokumentiert: Public-, Member- und Spezialpreise stehen je Paket nebeneinander.

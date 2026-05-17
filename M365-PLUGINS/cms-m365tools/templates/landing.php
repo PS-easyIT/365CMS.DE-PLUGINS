@@ -56,6 +56,23 @@ $reviewChecks = static function (string $toolKey, array $checkMap): array {
 
     return array_values(array_filter(array_map(static fn(mixed $value): string => trim((string) $value), $checks)));
 };
+$landingOptions = is_array($landingOptions ?? null) ? $landingOptions : [];
+$landingValue = static function (string $key, string $default) use ($landingOptions): string {
+    $value = trim((string) ($landingOptions[$key] ?? ''));
+
+    return $value !== '' ? $value : $default;
+};
+$landingEnabled = static fn(string $key, string $default = '1'): bool => (string) ($landingOptions[$key] ?? $default) === '1';
+$landingLayout = in_array((string) ($landingOptions['landing_header_layout'] ?? 'split'), ['split', 'stacked', 'compact'], true) ? (string) ($landingOptions['landing_header_layout'] ?? 'split') : 'split';
+$toolLayout = in_array((string) ($landingOptions['landing_tool_layout'] ?? 'grid'), ['grid', 'compact-grid', 'list'], true) ? (string) ($landingOptions['landing_tool_layout'] ?? 'grid') : 'grid';
+$cardRadius = max(0, min(24, (int) ($landingOptions['landing_card_radius'] ?? 8)));
+$cardsMinWidth = max(220, min(520, (int) ($landingOptions['landing_cards_min_width'] ?? 320)));
+$showFacts = $landingEnabled('landing_show_facts');
+$showCategoryNav = $landingEnabled('landing_show_category_nav');
+$showReviewPanel = $landingEnabled('landing_show_review_panel');
+$showReviewChips = $landingEnabled('landing_show_review_chips');
+$showModuleChecks = $landingEnabled('landing_show_module_checks');
+$openButtonLabel = $landingValue('landing_open_button_label', 'Öffnen');
 $toolCount = 0;
 $liveCount = 0;
 $categoryCounts = [];
@@ -72,18 +89,23 @@ foreach (($groupedTools ?? []) as $category => $tools) {
 }
 $reviewDomainCount = is_array($bestPracticeDomains ?? null) ? count($bestPracticeDomains) : 0;
 
-if (class_exists('CMS\\ThemeManager')) {
-    \CMS\ThemeManager::instance()->getHeader(['title' => 'M365 Tools']);
+$landingTitle = $landingValue('landing_title', 'M365 Tools');
+$landingOverline = $landingValue('landing_overline', 'Rechner & Tools');
+$landingIntro = $landingValue('landing_intro', 'Eine kuratierte Sammlung für Microsoft-365-Lizenzierung, Kosten, Speicher, Backup, Copilot, Telefonie, Migration und Betrieb.');
+
+if (class_exists('CMS\ThemeManager')) {
+    \CMS\ThemeManager::instance()->getHeader(['title' => $landingTitle]);
 }
 ?>
 
-<main class="phinit-plugin" id="m365tools-landing">
+<main class="phinit-plugin m365tools-landing--<?php echo $esc($landingLayout); ?> m365tools-tools--<?php echo $esc($toolLayout); ?>" id="m365tools-landing" style="--m365tools-card-radius: <?php echo (int) $cardRadius; ?>px; --m365tools-card-min: <?php echo (int) $cardsMinWidth; ?>px;">
     <header class="m365tools-landing__header">
         <section class="m365tools-landing__intro" aria-labelledby="m365tools-title">
-            <p class="phinit-overline">Rechner &amp; Tools</p>
-            <h1 id="m365tools-title">M365 Tools</h1>
-            <p class="phinit-prose">Eine kuratierte Sammlung für Microsoft-365-Lizenzierung, Kosten, Speicher, Backup, Copilot, Telefonie, Migration und Betrieb. Ruhig aufgebaut, schnell erfassbar und bewusst ohne Effekt-Show.</p>
+            <p class="phinit-overline"><?php echo $esc($landingOverline); ?></p>
+            <h1 id="m365tools-title"><?php echo $esc($landingTitle); ?></h1>
+            <p class="phinit-prose"><?php echo $esc($landingIntro); ?></p>
         </section>
+        <?php if ($showFacts): ?>
         <dl class="m365tools-landing__facts" aria-label="Übersicht Kennzahlen">
             <div>
                 <dt>Module</dt>
@@ -98,9 +120,10 @@ if (class_exists('CMS\\ThemeManager')) {
                 <dd><?php echo (int) $reviewDomainCount; ?></dd>
             </div>
         </dl>
+        <?php endif; ?>
     </header>
 
-    <?php if (!empty($categoryCounts)): ?>
+    <?php if ($showCategoryNav && !empty($categoryCounts)): ?>
     <nav class="m365tools-category-nav" aria-label="Modulkategorien">
         <ol>
             <?php foreach ($categoryCounts as $category => $count): ?>
@@ -116,7 +139,7 @@ if (class_exists('CMS\\ThemeManager')) {
     </nav>
     <?php endif; ?>
 
-    <?php if (!empty($bestPracticeDomains) && is_array($bestPracticeDomains)): ?>
+    <?php if ($showReviewPanel && !empty($bestPracticeDomains) && is_array($bestPracticeDomains)): ?>
     <section class="phinit-card m365tools-review-panel" aria-labelledby="m365tools-review-title">
         <header class="m365tools-section-head">
             <section>
@@ -196,14 +219,14 @@ if (class_exists('CMS\\ThemeManager')) {
                     </header>
                     <section class="phinit-tool-card__body">
                         <p><?php echo $esc($tool['description'] ?? ''); ?></p>
-                        <?php if (!empty($toolReviewLabels)): ?>
+                        <?php if ($showReviewChips && !empty($toolReviewLabels)): ?>
                         <ul class="m365tools-review-chip-list" role="list" aria-label="Review-Schwerpunkte">
                             <?php foreach (array_slice($toolReviewLabels, 0, 4) as $reviewLabel): ?>
                             <li><?php echo $esc($reviewLabel); ?></li>
                             <?php endforeach; ?>
                         </ul>
                         <?php endif; ?>
-                        <?php if (!empty($toolReviewChecks)): ?>
+                        <?php if ($showModuleChecks && !empty($toolReviewChecks)): ?>
                         <ul class="m365tools-review-check-list" role="list" aria-label="Aktuelle Prüfpunkte">
                             <?php foreach (array_slice($toolReviewChecks, 0, 2) as $reviewCheck): ?>
                             <li><?php echo $esc($reviewCheck); ?></li>
@@ -212,7 +235,7 @@ if (class_exists('CMS\\ThemeManager')) {
                         <?php endif; ?>
                         <?php if ($isLinked): ?>
                         <a href="<?php echo $esc($url); ?>" class="phinit-btn phinit-btn--link">
-                            Öffnen <span class="phinit-arrow" aria-hidden="true">→</span>
+                            <?php echo $esc($openButtonLabel); ?> <span class="phinit-arrow" aria-hidden="true">→</span>
                         </a>
                         <?php else: ?>
                         <span class="phinit-tool-card__disabled-note" aria-disabled="true">Nicht verfügbar</span>
