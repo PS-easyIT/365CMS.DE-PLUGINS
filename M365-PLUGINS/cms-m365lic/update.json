@@ -1,13 +1,13 @@
 {
     "name": "CMS M365 License",
     "slug": "cms-m365lic",
-    "version": "1.4.9",
-    "requires_cms": "2.0.0",
-    "tested_cms": "2.0.0",
+    "version": "3.0.0",
+    "requires_cms": "3.0.0",
+    "tested_cms": "3.0.0",
     "author": "365 Network",
     "author_url": "https://365network.de",
     "description": "Microsoft-365-Lizenzberater mit Bedarfsanalyse, Paketverwaltung, Copilot-Lizenzlogik und PDF-Export.",
     "download_url": "",
-    "last_updated": "2026-03-17",
-    "changelog": "1.4.9: EU-Alternativen für Defender/XDR, MDM/UEM, IAM, Projektmanagement, Low-Code, BI, DMS, Telefonie und Generative KI ergänzt; Bestandsinstallationen erhalten fehlende Standard-Einträge jetzt automatisch per Merge. Unreleased: M365-Public-Layout hält im Theme-Embed pluginintern 25px Abstand zwischen Hero und Inhalt sowie zwischen Content-Ende und Theme-Footer." 
+    "last_updated": "2026-05-17",
+    "changelog": "365CMS 3.0.0 Kompatibilität: Manifest und Plugin-Version aktualisiert; PDF-Snapshot-Härtung, Export-Varianten-Mapping und Public-Layout-Fixes aus dem Unreleased-Zweig als Release-Stand übernommen." 
 }

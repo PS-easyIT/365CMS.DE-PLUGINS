@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.0 – 2026-05-17
+
+- Plugin-Version und Update-Metadaten auf 365CMS 3.0.0 aktualisiert.
+- PDF-Snapshot-Härtung, Export-Varianten-Mapping und Public-Layout-Fixes aus dem bisherigen Unreleased-Zweig als stabiler 3.0.0-Stand dokumentiert.
+
 ## [Unreleased] – 2026-04-04
 
 - Public-Layout im Theme-Embed korrigiert: Der M365-License-Hero startet jetzt ohne zusätzliche Plugin-Headerhöhen-Reservierung, ohne negativen Top-Ausgleich und ohne visuelle Theme-Breadcrumb-Zwischenleiste direkt bündig unter dem Theme-Header; zwischen Plugin-Hero und Plugin-Inhalt sowie zwischen letztem Plugin-Abschnitt und Theme-Footer bleibt pluginintern jeweils `25px` Abstand.

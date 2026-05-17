@@ -4,7 +4,7 @@ declare(strict_types=1);
  * Plugin Name: CMS Job Profile Generator
  * Plugin URI:  https://365network.de/cms-jobprofile-generator
  * Description: Vollständiger Job-Profil-Generator mit Bibliotheken, Vorlagen und Workflow
- * Version:     0.9.6
+ * Version:     3.0.0
  * Author:      365CMS
  * Author URI:  https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 }
 
 // ── Konstanten ────────────────────────────────────────────────────────────────
-define('JPG_VERSION',     '0.9.6');
+define('JPG_VERSION',     '3.0.0');
 define('JPG_DB_VERSION',  '7');
 define('JPG_DIR',         dirname(__FILE__) . '/');
 define('JPG_URL',         '/plugins/cms-jobprofile-generator/');
@@ -179,7 +179,7 @@ final class CMS_JobProfileGenerator
         $css_file = $this->plugin_dir . 'assets/css/jobprofile-admin.css';
         if (file_exists($css_file)) {
             echo '<link rel="stylesheet" href="'
-                . htmlspecialchars($this->plugin_url . 'assets/css/jobprofile-admin.css')
+                . htmlspecialchars($this->plugin_url . 'assets/css/jobprofile-admin.css', ENT_QUOTES, 'UTF-8')
                 . '?v=' . filemtime($css_file) . '">' . "\n";
         }
     }
@@ -189,7 +189,7 @@ final class CMS_JobProfileGenerator
         $js_file = $this->plugin_dir . 'assets/js/jobprofile-admin.js';
         if (file_exists($js_file)) {
             echo '<script src="'
-                . htmlspecialchars($this->plugin_url . 'assets/js/jobprofile-admin.js')
+                . htmlspecialchars($this->plugin_url . 'assets/js/jobprofile-admin.js', ENT_QUOTES, 'UTF-8')
                 . '?v=' . filemtime($js_file) . '" defer></script>' . "\n";
         }
     }

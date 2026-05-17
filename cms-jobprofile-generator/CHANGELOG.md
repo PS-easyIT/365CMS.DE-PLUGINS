@@ -5,6 +5,18 @@ Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ---
 
+## [3.0.0] – 2026-05-17
+
+### Sicherheitsfixes
+
+- DOM-XSS-Sinks in Admin-/Member-Views und `jobprofile-admin.js` durch DOM-API (`createElement`, `textContent`, `append`, `replaceChildren`) ersetzt.
+- Bewerbungsanschreiben im Member-Modal werden als Text gerendert statt als HTML in den DOM geschrieben.
+- Asset-URL-Ausgaben in der Plugin-Hauptdatei nutzen nun explizites Attribute-Escaping mit `ENT_QUOTES` und UTF-8.
+
+### Geändert
+
+- Plugin-Version und Update-Metadaten auf 365CMS 3.0.0 aktualisiert.
+
 ## [Unreleased] – 2026-04-04
 
 ### Sicherheitsfixes

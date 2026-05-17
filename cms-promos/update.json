@@ -1,11 +1,12 @@
 {
   "name": "CMS Promos",
   "slug": "cms-promos",
-  "version": "1.1.0",
+  "version": "3.0.0",
   "author": "365 Network",
   "homepage": "https://365network.de/cms-promos",
   "download_url": "https://365network.de/downloads/cms-promos.zip",
-  "requires": "2.0.0",
-  "tested": "2.3.1",
-  "last_updated": "2026-03-14"
+  "requires": "3.0.0",
+  "tested": "3.0.0",
+  "last_updated": "2026-05-17",
+  "changelog": "365CMS 3.0.0 Kompatibilität: Manifest und Plugin-Version aktualisiert; Open-Redirect-Härtung aus dem Unreleased-Zweig als Release-Stand übernommen."
 }

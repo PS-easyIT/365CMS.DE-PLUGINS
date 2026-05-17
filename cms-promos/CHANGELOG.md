@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.0 - 2026-05-17
+
+- Plugin-Version und Update-Metadaten auf 365CMS 3.0.0 aktualisiert.
+- Admin-Redirect-Härtung aus dem bisherigen Unreleased-Zweig als stabiler 3.0.0-Stand dokumentiert.
+
 ## [Unreleased] - 2026-04-04
 
 - Admin-Redirects nach schreibenden Aktionen wurden auf feste interne Dashboard-Routen begrenzt.
