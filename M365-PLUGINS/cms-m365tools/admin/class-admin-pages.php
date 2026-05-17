@@ -122,16 +122,35 @@ final class CMS_M365CALCULATOR_Admin_Pages
         }
     }
 
+    private static function csrf_token(string $action): string
+    {
+        if (!class_exists('CMS\\Security')) {
+            return '';
+        }
+
+        return (string) \CMS\Security::instance()->generateToken($action);
+    }
+
+    private static function verify_admin_request(string $action): bool
+    {
+        if (!class_exists('CMS\\Security')) {
+            error_log('CMS M365 Tools admin security service missing for action: ' . $action);
+
+            return false;
+        }
+
+        return \CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), $action);
+    }
+
     public function render_dashboard_page(): void
     {
         $notice = '';
         $error = '';
-        $csrfToken = class_exists('CMS\\Security')
-            ? \CMS\Security::instance()->generateToken('m365tools_admin_modules')
-            : '';
+        $csrfAction = 'm365tools_admin_modules';
+        $csrfToken = self::csrf_token($csrfAction);
 
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') === 'save_module_settings') {
-            if (class_exists('CMS\\Security') && !\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'm365tools_admin_modules')) {
+            if (!self::verify_admin_request($csrfAction)) {
                 $error = 'Sicherheitscheck fehlgeschlagen.';
             } else {
                 if (self::run_admin_save(static function (): void {
@@ -265,12 +284,10 @@ final class CMS_M365CALCULATOR_Admin_Pages
         $tabs = CMS_M365CALCULATOR_Admin_Module_Config::tabs_for($tool);
         $activeTab = self::normalize_tab((string) ($_GET['tab'] ?? $_POST['settings_group'] ?? 'overview'), $tabs);
         $csrfAction = 'm365tools_module_' . $moduleKey;
-        $csrfToken = class_exists('CMS\\Security')
-            ? \CMS\Security::instance()->generateToken($csrfAction)
-            : '';
+        $csrfToken = self::csrf_token($csrfAction);
 
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-            if (class_exists('CMS\\Security') && !\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', $csrfAction)) {
+            if (!self::verify_admin_request($csrfAction)) {
                 $error = 'Sicherheitscheck fehlgeschlagen.';
             } else {
                 $action = (string) ($_POST['action'] ?? '');
@@ -308,14 +325,12 @@ final class CMS_M365CALCULATOR_Admin_Pages
         $defaultTab = self::default_global_tab($area);
         $activeTab = self::normalize_tab((string) ($_GET['tab'] ?? $_POST['settings_group'] ?? $defaultTab), $tabs, $defaultTab);
         $csrfAction = 'm365tools_global_' . $area;
-        $csrfToken = class_exists('CMS\\Security')
-            ? \CMS\Security::instance()->generateToken($csrfAction)
-            : '';
+        $csrfToken = self::csrf_token($csrfAction);
         $notice = '';
         $error = '';
 
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
-            if (class_exists('CMS\\Security') && !\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', $csrfAction)) {
+            if (!self::verify_admin_request($csrfAction)) {
                 $error = 'Sicherheitscheck fehlgeschlagen.';
             } elseif ((string) ($_POST['action'] ?? '') === 'save_global_options') {
                 $activeTab = self::normalize_tab((string) ($_POST['settings_group'] ?? $activeTab), $tabs, $defaultTab);

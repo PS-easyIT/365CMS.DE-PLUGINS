@@ -55,7 +55,6 @@ final class CMS_M365CALCULATOR_Frontend
             \CMS\Hooks::addFilter('body_class', [$this, 'filter_body_class'], 20);
             \CMS\Hooks::addAction('head', [$this, 'enqueue_public_styles'], 20);
             \CMS\Hooks::addAction('head', [$this, 'output_public_design_tokens'], 30);
-            \CMS\Hooks::addAction('head', [$this, 'output_edge_spacing_reset'], 120);
             \CMS\Hooks::addAction('before_footer', [$this, 'render_provider_cta'], 20);
             \CMS\Hooks::addAction('body_end', [$this, 'enqueue_public_scripts'], 20);
         }
@@ -262,87 +261,6 @@ final class CMS_M365CALCULATOR_Frontend
         }
         echo '}' . "\n";
         echo '</style>' . "\n";
-    }
-
-    public function output_edge_spacing_reset(): void
-    {
-        if (!$this->is_calculator_request()) {
-            return;
-        }
-        ?>
-<style id="cms-m365tools-edge-reset">
-body.m365tools-theme-embed #page.site,
-body.m365calculator-theme-embed #page.site,
-body.m365tools-theme-embed #content.site-content,
-body.m365calculator-theme-embed #content.site-content,
-#content.m365tools-content-host,
-.site-content.m365tools-content-host,
-body:has(#m365tools-landing) #page.site,
-body:has(.m365calc-page) #page.site,
-body:has(#m365calculator-landing) #page.site,
-body:has(#m365tools-landing) #content.site-content,
-body:has(.m365calc-page) #content.site-content,
-body:has(#m365calculator-landing) #content.site-content,
-body:has(#m365tools-landing) .site-content,
-body:has(.m365calc-page) .site-content,
-body:has(#m365calculator-landing) .site-content {
-    margin-block-start: 0 !important;
-    margin-top: 0 !important;
-    padding-block-start: 0 !important;
-    padding-top: 0 !important;
-}
-body.m365tools-theme-embed,
-body.m365calculator-theme-embed,
-body.m365tools-theme-embed #page.site,
-body.m365calculator-theme-embed #page.site,
-body:has(#m365tools-landing),
-body:has(#m365calculator-landing),
-body:has(#m365tools-landing) #page.site,
-body:has(.m365calc-page) #page.site,
-body:has(#m365calculator-landing) #page.site {
-    background-color: var(--m365tools-bg, #ffffff) !important;
-}
-body.m365tools-theme-embed #content.site-content,
-body.m365calculator-theme-embed #content.site-content,
-#content.m365tools-content-host,
-.site-content.m365tools-content-host,
-body:has(#m365tools-landing) #content.site-content,
-body:has(.m365calc-page) #content.site-content,
-body:has(#m365calculator-landing) #content.site-content {
-    background-color: var(--m365tools-bg, #ffffff) !important;
-    border-block-start-width: 0 !important;
-    border-top-width: 0 !important;
-    box-shadow: none !important;
-    margin-block-start: -2px !important;
-    margin-top: -2px !important;
-    max-width: 100% !important;
-    position: relative !important;
-}
-.m365tools-header-interstitial {
-    display: none !important;
-    height: 0 !important;
-    margin: 0 !important;
-    overflow: hidden !important;
-    padding: 0 !important;
-}
-body.m365tools-theme-embed #masthead.site-header + :not(#content):not(.mobile-menu-overlay):not(.mobile-menu-drawer):not(.search-overlay),
-body.m365calculator-theme-embed #masthead.site-header + :not(#content):not(.mobile-menu-overlay):not(.mobile-menu-drawer):not(.search-overlay) {
-    display: none !important;
-    height: 0 !important;
-    margin: 0 !important;
-    overflow: hidden !important;
-    padding: 0 !important;
-}
-#m365tools-landing,
-#m365calculator-landing,
-.m365calc-page {
-    margin-block-start: 0 !important;
-    margin-top: 0 !important;
-    padding-block-start: var(--m365tools-content-top-gap, 25px) !important;
-    padding-top: var(--m365tools-content-top-gap, 25px) !important;
-}
-</style>
-        <?php
     }
 
     public function enqueue_public_scripts(): void
