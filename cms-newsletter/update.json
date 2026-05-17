@@ -1,11 +1,11 @@
 {
   "name": "CMS Newsletter",
   "slug": "cms-newsletter",
-  "version": "1.0.0",
+  "version": "3.0.0",
   "author": "365 Network",
   "homepage": "https://365network.de/cms-newsletter",
   "download_url": "https://365network.de/downloads/cms-newsletter.zip",
-  "requires": "2.0.0",
-  "tested": "2.3.1",
-  "last_updated": "2026-03-14"
+  "requires": "3.0.0",
+  "tested": "3.0.0",
+  "last_updated": "2026-05-17"
 }

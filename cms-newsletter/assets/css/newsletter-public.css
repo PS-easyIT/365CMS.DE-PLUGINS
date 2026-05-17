@@ -66,6 +66,22 @@
     gap: 1rem;
 }
 
+.newsletter-section-title {
+    margin-top: 0;
+}
+
+.newsletter-form-note {
+    margin-top: 1rem;
+}
+
+.newsletter-hp {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
 .newsletter-form__grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

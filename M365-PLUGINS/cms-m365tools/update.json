@@ -1,11 +1,11 @@
 {
-  "version": "1.29.21",
+  "version": "3.0.0",
   "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
-  "requires": "2.9.0",
-  "tested": "2.9.7",
+  "requires": "3.0.0",
+  "tested": "3.0.0",
   "last_updated": "2026-05-17",
   "sections": {
     "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme, zentraler Dienstleister- und Kontaktformular-CTA, eigenem Landingpage-Designer, UX-optimierter Live-Suche, Tag-Filtern, Sticky-Kategorie-Navigation, zusammengeführtem Read-only-Matrix-Unterpunkt, globalen Paketpreis- und Abopreisbereichen, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass und 21 Public-Modulen.",
-    "changelog": "Erneuter vollständiger Public-/Admin-Audit für CMS M365TOOLS: Admin-Redirects werden enger validiert, Read-only-Matrixseiten stellen Browser-Scroll-Restoration beim Verlassen zurück, Landingpage-Suche cached Section-Cards und ist robuster bei leeren Chip-Gruppen. Zusätzlich wurden numerische Teams-Phone-Score-Ausgaben gecastet und Public/Admin-Checks erneut validiert."
+    "changelog": "365CMS-3.0.0-Kompatibilität für CMS M365TOOLS: Admin-Farbwert-Synchronisierung wurde aus Inline-View-Skripten in ein cachebares defer-Asset ausgelagert, Public-Design-Token enthalten nur noch konfigurierbare Werte und der statische Content-Gap liegt wieder in CSS. Zusätzlich wurden Version, Manifest und Release-Hinweise auf 3.0.0 angehoben."
   }
 }

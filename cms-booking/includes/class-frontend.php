@@ -163,10 +163,8 @@ final class CMS_Booking_Frontend
         $old     = $_POST;
 
         // CSRF
-        if (class_exists('CMS\Security')) {
-            if (!\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'booking_submit')) {
-                $error = 'Sicherheitscheck fehlgeschlagen. Bitte versuchen Sie es erneut.';
-            }
+        if (!class_exists('CMS\Security') || !\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'booking_submit')) {
+            $error = 'Sicherheitscheck fehlgeschlagen. Bitte versuchen Sie es erneut.';
         }
 
         // Honeypot
@@ -307,9 +305,9 @@ final class CMS_Booking_Frontend
         }
 
         // Token-basierter Zugangsschutz (DSGVO)
-        $token = $_GET['token'] ?? '';
+        $token = (string) ($_GET['token'] ?? '');
         $expectedToken = $this->generate_access_token($bookingId, $booking['ical_uid'] ?? '');
-        if ($token !== $expectedToken) {
+        if (!hash_equals($expectedToken, $token)) {
             http_response_code(403);
             echo '<h1>Zugriff verweigert</h1><p>Ungültiger oder fehlender Zugangs-Token.</p>';
             exit;
@@ -339,9 +337,9 @@ final class CMS_Booking_Frontend
         }
 
         // Token-basierter Zugangsschutz (DSGVO)
-        $token = $_GET['token'] ?? '';
+        $token = (string) ($_GET['token'] ?? '');
         $expectedToken = $this->generate_access_token($bookingId, $booking['ical_uid'] ?? '');
-        if ($token !== $expectedToken) {
+        if (!hash_equals($expectedToken, $token)) {
             http_response_code(403);
             echo 'Zugriff verweigert.';
             exit;

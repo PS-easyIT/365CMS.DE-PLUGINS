@@ -33,6 +33,18 @@
 
         render();
 
+        function createNode(tagName, className, text) {
+            const node = document.createElement(tagName);
+            if (className) {
+                node.className = className;
+            }
+            if (text !== undefined) {
+                node.textContent = String(text);
+            }
+
+            return node;
+        }
+
         function render() {
             const firstDay  = new Date(currentYear, currentMonth, 1);
             const lastDay   = new Date(currentYear, currentMonth + 1, 0);
@@ -47,20 +59,24 @@
             ];
             const dayLabels = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
-            let html = '<div class="booking-cal-header">';
-            html += '<button type="button" data-cal-prev>‹</button>';
-            html += '<span>' + monthNames[currentMonth] + ' ' + currentYear + '</span>';
-            html += '<button type="button" data-cal-next>›</button>';
-            html += '</div>';
+            const header = createNode('div', 'booking-cal-header');
+            const prevButton = createNode('button', '', '‹');
+            prevButton.type = 'button';
+            prevButton.dataset.calPrev = '';
+            const title = createNode('span', '', monthNames[currentMonth] + ' ' + currentYear);
+            const nextButton = createNode('button', '', '›');
+            nextButton.type = 'button';
+            nextButton.dataset.calNext = '';
+            header.append(prevButton, title, nextButton);
 
-            html += '<div class="booking-cal-grid">';
+            const grid = createNode('div', 'booking-cal-grid');
             dayLabels.forEach(function (d) {
-                html += '<div class="cal-day-label">' + d + '</div>';
+                grid.appendChild(createNode('div', 'cal-day-label', d));
             });
 
             // Leere Zellen vor dem 1.
             for (let i = 0; i < startDow; i++) {
-                html += '<div class="cal-day empty"></div>';
+                grid.appendChild(createNode('div', 'cal-day empty'));
             }
 
             for (let d = 1; d <= daysInMonth; d++) {
@@ -77,19 +93,22 @@
                 if (isAvail) cls += ' available';
                 if (isSel) cls += ' selected';
 
-                html += '<div class="' + cls + '" data-date="' + dateStr + '">' + d + '</div>';
+                const day = createNode('button', cls, d);
+                day.type = 'button';
+                day.dataset.date = dateStr;
+                day.disabled = !isAvail;
+                grid.appendChild(day);
             }
 
-            html += '</div>';
-            el.innerHTML = html;
+            el.replaceChildren(header, grid);
 
             // Events
-            el.querySelector('[data-cal-prev]').addEventListener('click', function () {
+            prevButton.addEventListener('click', function () {
                 currentMonth--;
                 if (currentMonth < 0) { currentMonth = 11; currentYear--; }
                 render();
             });
-            el.querySelector('[data-cal-next]').addEventListener('click', function () {
+            nextButton.addEventListener('click', function () {
                 currentMonth++;
                 if (currentMonth > 11) { currentMonth = 0; currentYear++; }
                 render();
@@ -115,7 +134,7 @@
         const container = document.getElementById('bookingSlots');
         if (!container) return;
 
-        container.innerHTML = '<p class="text-muted">⏳ Zeitfenster werden geladen…</p>';
+        renderMessage(container, 'Zeitfenster werden geladen…');
 
         const url = apiUrl + '/' + providerId + '/' + date + '?service_id=' + serviceId;
 
@@ -123,11 +142,11 @@
             .then(function (res) { return res.json(); })
             .then(function (data) {
                 if (!data.success || !data.slots || data.slots.length === 0) {
-                    container.innerHTML = '<p class="text-muted">Keine freien Zeiten an diesem Tag.</p>';
+                    renderMessage(container, 'Keine freien Zeiten an diesem Tag.');
                     return;
                 }
 
-                container.textContent = '';
+                container.replaceChildren();
                 data.slots.forEach(function (slot) {
                     var btn = document.createElement('button');
                     btn.type = 'button';
@@ -151,8 +170,15 @@
                 });
             })
             .catch(function () {
-                container.innerHTML = '<p class="text-muted">Fehler beim Laden der Zeitfenster.</p>';
+                renderMessage(container, 'Fehler beim Laden der Zeitfenster.');
             });
+    }
+
+    function renderMessage(container, message) {
+        var note = document.createElement('p');
+        note.className = 'text-muted';
+        note.textContent = message;
+        container.replaceChildren(note);
     }
 
     /* =================================================================== */

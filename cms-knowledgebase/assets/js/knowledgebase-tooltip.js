@@ -5,7 +5,14 @@
         var tooltip = document.createElement('div');
         tooltip.className = 'cms-kb-tooltip';
         tooltip.setAttribute('role', 'tooltip');
-        tooltip.innerHTML = '<span class="cms-kb-tooltip__title"></span><span class="cms-kb-tooltip__body"></span>';
+
+        var title = document.createElement('span');
+        title.className = 'cms-kb-tooltip__title';
+
+        var body = document.createElement('span');
+        body.className = 'cms-kb-tooltip__body';
+
+        tooltip.append(title, body);
         document.body.appendChild(tooltip);
         return tooltip;
     }

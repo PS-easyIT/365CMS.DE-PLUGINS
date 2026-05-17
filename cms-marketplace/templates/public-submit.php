@@ -1,5 +1,9 @@
 <?php
 declare(strict_types=1);
+
+if (!defined('ABSPATH')) {
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -211,6 +215,13 @@ declare(strict_types=1);
             flex-wrap: wrap;
             align-items: center;
         }
+        .hp-field {
+            position: absolute;
+            left: -10000px;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
         .button {
             display: inline-flex;
             align-items: center;
@@ -294,7 +305,12 @@ declare(strict_types=1);
             <section class="card">
                 <h2>Einreichungsformular</h2>
                 <form method="post" enctype="multipart/form-data" action="<?php echo htmlspecialchars((string) $submitUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                    <input type="hidden" name="MAX_FILE_SIZE" value="52428800">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                    <label class="hp-field" aria-hidden="true" tabindex="-1">
+                        <span>Website</span>
+                        <input type="text" name="company_website" value="" autocomplete="off" tabindex="-1">
+                    </label>
 
                     <div class="form-grid cols-2">
                         <label>
@@ -360,10 +376,10 @@ declare(strict_types=1);
                         </label>
                         <label>
                             <span>ZIP-Paket</span>
-                            <input type="file" name="package_zip" accept=".zip">
+                            <input type="file" name="package_zip" accept=".zip,application/zip,application/x-zip-compressed">
                         </label>
                     </div>
-                    <div class="hint">Bei kostenpflichtigen Einträgen ist ein ZIP optional. Bei kostenlosen Einträgen ist es erforderlich.</div>
+                    <div class="hint">Bei kostenpflichtigen Einträgen ist ein ZIP optional. Bei kostenlosen Einträgen ist es erforderlich. Maximal 50 MB, Root-Ordner muss exakt dem Slug entsprechen.</div>
 
                     <div class="form-grid cols-2">
                         <label>

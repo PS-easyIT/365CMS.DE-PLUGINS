@@ -180,21 +180,3 @@ $renderField = static function (array $field) use ($esc, $fieldValue): void {
         </form>
     <?php endif; ?>
 </div>
-
-<script>
-document.querySelectorAll('[data-m365-color-copy]').forEach(function (input) {
-    var color = document.getElementById(input.getAttribute('data-m365-color-copy'));
-    if (!color) {
-        return;
-    }
-
-    input.addEventListener('input', function () {
-        if (/^#[0-9A-Fa-f]{6}$/.test(input.value)) {
-            color.value = input.value;
-        }
-    });
-    color.addEventListener('input', function () {
-        input.value = color.value;
-    });
-});
-</script>

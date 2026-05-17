@@ -2,12 +2,16 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
-## [Unreleased] – 2026-04-04
+## [3.0.0] – 2026-05-17
 
 ### Sicherheitsfixes
 
 - Öffentliche Slot-Buttons und Zusammenfassungen werden jetzt DOM-sicher per `createElement()` und `textContent` statt per `innerHTML` aufgebaut.
 - Damit ist der letzte DOM-XSS-Befund im Booking-Frontend bereinigt.
+- Das Admin-Bestätigungsmodal wird ebenfalls vollständig per DOM-API erzeugt; `innerHTML` und Hilfs-Escaping-Sinks sind entfernt.
+- Das Buchungsformular gibt `data-available-dates` attributsicher aus und lädt Public-CSS/-JS nicht mehr zusätzlich zur zentralen Hook-Ausgabe.
+- Öffentliche Buchungs-POSTs schlagen jetzt geschlossen fehl, falls der CMS-Sicherheitsdienst fehlt; Bestätigungs- und iCal-Zugangstoken werden timing-sicher mit `hash_equals()` geprüft.
+- Provider- und Bestätigungsseiten laden das Public-CSS nicht mehr doppelt; Admin-Links in neuen Tabs verwenden `rel="noopener noreferrer"`.
 
 ## [1.0.0] – 2025-06-28
 

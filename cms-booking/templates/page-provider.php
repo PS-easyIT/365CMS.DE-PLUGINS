@@ -20,7 +20,6 @@ $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Termin buchen – <?php echo $e($provider['display_name']); ?> – <?php echo $e($siteName); ?></title>
     <?php \CMS\Hooks::doAction('head'); ?>
-    <link rel="stylesheet" href="<?php echo CMS_BOOKING_PLUGIN_URL; ?>assets/css/booking-public.css?v=<?php echo CMS_BOOKING_VERSION; ?>">
 </head>
 <body class="booking-page booking-provider-page">
     <?php \CMS\Hooks::doAction('body_start'); ?>
@@ -56,7 +55,7 @@ $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
             <?php else: ?>
             <div class="booking-services-grid">
                 <?php foreach ($services as $service): ?>
-                <a href="<?php echo $siteUrl; ?>/booking/<?php echo $e($provider['slug']); ?>/<?php echo $e($service['slug']); ?>"
+                     <a href="<?php echo $e($siteUrl); ?>/booking/<?php echo $e($provider['slug']); ?>/<?php echo $e($service['slug']); ?>"
                    class="booking-service-card">
                     <div class="booking-service-card__header">
                         <h3><?php echo $e($service['title']); ?></h3>

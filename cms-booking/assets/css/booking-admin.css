@@ -118,3 +118,11 @@
     color: #ef4444;
     font-weight: 600;
 }
+
+.booking-confirm-modal {
+    display: flex;
+}
+
+.booking-confirm-modal__content {
+    max-width: 420px;
+}

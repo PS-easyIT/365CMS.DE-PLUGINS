@@ -8,16 +8,16 @@
             liegt auf einer externen Website.
         </p>
 
-        <div class="dl-card-meta" style="margin: 1rem 0 1.5rem; display: block;">
+        <div class="dl-card-meta dl-external-target">
             Ziel: <?php echo htmlspecialchars((string) $externalUrl, ENT_QUOTES, 'UTF-8'); ?>
         </div>
 
-        <div style="display:flex; gap:0.75rem; flex-wrap:wrap; justify-content:center;">
+        <div class="dl-external-actions">
             <a href="<?php echo htmlspecialchars($continueUrl, ENT_QUOTES, 'UTF-8'); ?>" class="dl-download-button">↗️ Externen Download öffnen</a>
             <a href="<?php echo htmlspecialchars($backUrl, ENT_QUOTES, 'UTF-8'); ?>" class="dl-filter-link">← Zurück</a>
         </div>
 
-        <p class="dl-admin-muted" style="margin-top:1rem; max-width:52rem;">
+        <p class="dl-admin-muted dl-external-note">
             Hinweis: Externe Downloads werden nicht direkt von 365CMS ausgeliefert. Bitte prüfe bei sensiblen Inhalten die Ziel-Domain und den Anbieter, bevor du fortfährst.
         </p>
     </section>

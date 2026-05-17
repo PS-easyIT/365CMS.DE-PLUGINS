@@ -1,6 +1,14 @@
 
 # Changelog – CMS M365 Tools
 
+## 3.0.0 – 2026-05-17
+
+- 365CMS-3.0.0-Kompatibilität gesetzt und Plugin-Header, Konstanten sowie Update-Manifest auf `3.0.0` angehoben.
+- Admin-Farbwert-Synchronisierung aus den View-Dateien in `assets/js/m365calculator-admin.js` ausgelagert; die Views enthalten damit keine Inline-`<script>`-Blöcke mehr.
+- Admin-JavaScript wird zentral mit `defer` und `filemtime()`-Cache-Busting geladen.
+- Public-Design-Token bereinigt: der statische Content-Top-Gap bleibt in den CSS-Dateien, während inline nur konfigurierbare Token ausgegeben werden.
+- Prüfung nach OWASP DOM-XSS/CSRF und web.dev LCP/INP/Lazy-Loading-Leitplanken erneut als Modernisierungsbasis durchgeführt.
+
 ## 1.29.21 – 2026-05-17
 
 - Erneuten vollständigen Public-/Admin-Audit für Sicherheit, Bugs, Weiterleitungen, Erkennung, Logikpfade und Geschwindigkeit durchgeführt.

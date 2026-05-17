@@ -23,7 +23,6 @@ $val      = fn(string $key, string $default = ''): string => $e($old[$key] ?? $d
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $e($service['title']); ?> – <?php echo $e($provider['display_name']); ?> – <?php echo $e($siteName); ?></title>
     <?php \CMS\Hooks::doAction('head'); ?>
-    <link rel="stylesheet" href="<?php echo CMS_BOOKING_PLUGIN_URL; ?>assets/css/booking-public.css?v=<?php echo CMS_BOOKING_VERSION; ?>">
 </head>
 <body class="booking-page booking-form-page">
     <?php \CMS\Hooks::doAction('body_start'); ?>
@@ -93,8 +92,8 @@ $val      = fn(string $key, string $default = ''): string => $e($old[$key] ?? $d
                             <div class="booking-calendar" id="bookingCalendar"
                                  data-provider-id="<?php echo (int) $provider['id']; ?>"
                                  data-service-id="<?php echo (int) $service['id']; ?>"
-                                 data-available-dates='<?php echo json_encode($availDates); ?>'
-                                 data-api-url="<?php echo $siteUrl; ?>/api/booking/slots">
+                                 data-available-dates='<?php echo htmlspecialchars((string) json_encode($availDates, JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES), ENT_QUOTES, 'UTF-8'); ?>'
+                                 data-api-url="<?php echo $e($siteUrl); ?>/api/booking/slots">
                                 <!-- JS-gesteuerter Kalender -->
                             </div>
                             <input type="hidden" name="booking_date" id="bookingDate" value="<?php echo $val('booking_date'); ?>" required>
@@ -158,7 +157,6 @@ $val      = fn(string $key, string $default = ''): string => $e($old[$key] ?? $d
 
     <?php \CMS\Hooks::doAction('before_footer'); ?>
     <?php \CMS\ThemeManager::instance()->render('footer'); ?>
-    <script src="<?php echo CMS_BOOKING_PLUGIN_URL; ?>assets/js/booking-public.js?v=<?php echo CMS_BOOKING_VERSION; ?>" defer></script>
     <?php \CMS\Hooks::doAction('body_end'); ?>
 </body>
 </html>

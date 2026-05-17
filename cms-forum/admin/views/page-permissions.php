@@ -39,7 +39,7 @@
 </div>
 <?php else: ?>
 <form method="POST">
-    <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
     <input type="hidden" name="forum_action" value="save_permissions">
 
     <?php

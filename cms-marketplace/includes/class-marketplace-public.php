@@ -8,6 +8,10 @@ if (!defined('ABSPATH')) {
 
 final class CMS_Marketplace_Public
 {
+    private const PUBLIC_SUBMIT_MIN_INTERVAL = 30;
+    private const PUBLIC_SUBMIT_WINDOW = 3600;
+    private const PUBLIC_SUBMIT_MAX_ATTEMPTS = 10;
+
     public function __construct(private readonly CMS_Marketplace_Service $service)
     {
     }
@@ -92,7 +96,14 @@ final class CMS_Marketplace_Public
         if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             $values = array_merge($values, $this->extractSubmittedValues($_POST));
 
-            if (!class_exists('CMS\Security') || !\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'cms_marketplace_public_submit')) {
+            if ($this->isHoneypotFilled($_POST)) {
+                $message = 'Danke, deine Einreichung wurde entgegengenommen.';
+                $messageType = 'success';
+                $values = $this->getDefaultValues();
+            } elseif ($this->recordAndCheckRateLimit()) {
+                $message = 'Bitte warte kurz, bevor du eine weitere Einreichung absendest.';
+                $messageType = 'error';
+            } elseif (!class_exists('CMS\\Security') || !\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'cms_marketplace_public_submit')) {
                 $message = 'Sicherheitscheck fehlgeschlagen.';
                 $messageType = 'error';
             } else {
@@ -180,5 +191,54 @@ final class CMS_Marketplace_Public
             'submitter_name' => trim((string) ($input['submitter_name'] ?? '')),
             'submitter_email' => trim((string) ($input['submitter_email'] ?? '')),
         ];
+    }
+
+    private function isHoneypotFilled(array $input): bool
+    {
+        return trim((string) ($input['company_website'] ?? '')) !== '';
+    }
+
+    private function recordAndCheckRateLimit(): bool
+    {
+        $ip = trim((string) ($_SERVER['REMOTE_ADDR'] ?? ''));
+        if ($ip === '') {
+            return false;
+        }
+
+        $directory = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'cms-marketplace-rate';
+        if (!is_dir($directory) && !mkdir($directory, 0700, true) && !is_dir($directory)) {
+            return false;
+        }
+
+        $file = $directory . DIRECTORY_SEPARATOR . hash('sha256', $ip) . '.json';
+        $now = time();
+        $attempts = [];
+
+        if (is_file($file)) {
+            $raw = file_get_contents($file);
+            $decoded = is_string($raw) ? json_decode($raw, true) : null;
+            if (is_array($decoded)) {
+                $attempts = array_values(array_filter(array_map('intval', $decoded), static function (int $timestamp) use ($now): bool {
+                    return $timestamp >= ($now - self::PUBLIC_SUBMIT_WINDOW);
+                }));
+            }
+        }
+
+        $lastAttempt = $attempts !== [] ? max($attempts) : 0;
+        if ($lastAttempt > 0 && ($now - $lastAttempt) < self::PUBLIC_SUBMIT_MIN_INTERVAL) {
+            return true;
+        }
+
+        if (count($attempts) >= self::PUBLIC_SUBMIT_MAX_ATTEMPTS) {
+            return true;
+        }
+
+        $attempts[] = $now;
+        $json = json_encode($attempts);
+        if (is_string($json)) {
+            file_put_contents($file, $json);
+        }
+
+        return false;
     }
 }

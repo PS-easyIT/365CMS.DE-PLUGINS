@@ -9,6 +9,11 @@ if (!defined('ABSPATH')) {
 final class CMS_Marketplace_Service
 {
     private const MAX_PACKAGE_SIZE = 52428800;
+    private const MAX_UNCOMPRESSED_PACKAGE_SIZE = 262144000;
+    private const MAX_ZIP_ENTRIES = 2000;
+    private const MAX_ZIP_ENTRY_NAME_LENGTH = 512;
+    private const MAX_PREVIEW_SOURCE_BYTES = 524288;
+    private const MAX_PREVIEW_BYTES = 4000;
 
     public function __construct(private readonly CMS_Marketplace_Repository $repository)
     {
@@ -552,7 +557,8 @@ final class CMS_Marketplace_Service
         }
 
         $absolutePath = $rootPath . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
-        if (!file_exists($absolutePath)) {
+        $resolvedPath = $this->resolveContainedExistingPath($rootPath, $relativePath);
+        if ($resolvedPath === null) {
             return [
                 'exists' => false,
                 'type' => '',
@@ -567,6 +573,7 @@ final class CMS_Marketplace_Service
             ];
         }
 
+        $absolutePath = $resolvedPath;
         $isFile = is_file($absolutePath);
         return [
             'exists' => true,
@@ -625,7 +632,7 @@ final class CMS_Marketplace_Service
         }
 
         $tmpName = (string) ($uploadedFile['tmp_name'] ?? '');
-        if ($tmpName === '' || !is_file($tmpName)) {
+        if ($tmpName === '' || !is_file($tmpName) || !$this->isAcceptableUploadedFile($tmpName)) {
             return ['success' => false, 'message' => 'Die hochgeladene Paketdatei ist ungültig.'];
         }
 
@@ -638,6 +645,10 @@ final class CMS_Marketplace_Service
         $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
         if ($extension !== 'zip') {
             return ['success' => false, 'message' => 'Es sind nur ZIP-Pakete erlaubt.'];
+        }
+
+        if (!$this->hasZipSignature($tmpName) || !$this->hasAllowedZipMimeType($tmpName)) {
+            return ['success' => false, 'message' => 'Die Paketdatei ist keine gültige ZIP-Datei.'];
         }
 
         if (!class_exists(\ZipArchive::class)) {
@@ -661,8 +672,16 @@ final class CMS_Marketplace_Service
             return ['success' => false, 'message' => 'Zielverzeichnis für das Paket konnte nicht erstellt werden.'];
         }
 
+        if (!$this->isContainedPath($targetDir, $this->getStorageBasePath())) {
+            return ['success' => false, 'message' => 'Zielverzeichnis für das Paket ist ungültig.'];
+        }
+
         $targetFileName = $slug . '-' . $version . '.zip';
         $targetPath = $targetDir . DIRECTORY_SEPARATOR . $targetFileName;
+
+        if (!$this->isContainedPath($targetPath, $this->getStorageBasePath(), false)) {
+            return ['success' => false, 'message' => 'Zielpfad für das Paket ist ungültig.'];
+        }
 
         if (!$this->moveUploadedFile($tmpName, $targetPath)) {
             return ['success' => false, 'message' => 'Das Paket konnte nicht in das Marketplace-Verzeichnis verschoben werden.'];
@@ -895,12 +914,20 @@ final class CMS_Marketplace_Service
 
     private function moveUploadedFile(string $source, string $target): bool
     {
+        if (!$this->isContainedPath($target, $this->getStorageBasePath(), false)) {
+            return false;
+        }
+
         if (is_file($target)) {
             unlink($target);
         }
 
         if (is_uploaded_file($source)) {
             return move_uploaded_file($source, $target);
+        }
+
+        if (PHP_SAPI !== 'cli') {
+            return false;
         }
 
         return rename($source, $target) || copy($source, $target);
@@ -928,11 +955,24 @@ final class CMS_Marketplace_Service
             return false;
         }
 
-        $hasEntries = false;
+        if ($zip->numFiles < 1 || $zip->numFiles > self::MAX_ZIP_ENTRIES) {
+            return false;
+        }
+
+        $hasFileEntries = false;
+        $totalUncompressedSize = 0;
 
         for ($index = 0; $index < $zip->numFiles; $index++) {
             $entryName = $zip->getNameIndex($index);
             if (!is_string($entryName) || $entryName === '') {
+                return false;
+            }
+
+            if (strlen($entryName) > self::MAX_ZIP_ENTRY_NAME_LENGTH || str_contains($entryName, "\0")) {
+                return false;
+            }
+
+            if ($entryName[0] === '/' || $entryName[0] === '\\') {
                 return false;
             }
 
@@ -951,14 +991,91 @@ final class CMS_Marketplace_Service
                 continue;
             }
 
+            foreach ($segments as $segment) {
+                if ($segment === '.' || $segment === '..') {
+                    return false;
+                }
+            }
+
             if ($segments[0] !== $expectedSlug) {
                 return false;
             }
 
-            $hasEntries = true;
+            if ($this->zipEntryIsSymlink($zip, $index)) {
+                return false;
+            }
+
+            $entryStats = $zip->statIndex($index);
+            if (!is_array($entryStats)) {
+                return false;
+            }
+
+            $isDirectory = str_ends_with($normalized, '/');
+            if (!$isDirectory) {
+                $entrySize = max(0, (int) ($entryStats['size'] ?? 0));
+                $totalUncompressedSize += $entrySize;
+                if ($totalUncompressedSize > self::MAX_UNCOMPRESSED_PACKAGE_SIZE) {
+                    return false;
+                }
+
+                $hasFileEntries = true;
+            }
         }
 
-        return $hasEntries;
+        return $hasFileEntries;
+    }
+
+    private function isAcceptableUploadedFile(string $tmpName): bool
+    {
+        if (is_uploaded_file($tmpName)) {
+            return true;
+        }
+
+        return PHP_SAPI === 'cli' && is_file($tmpName);
+    }
+
+    private function hasZipSignature(string $path): bool
+    {
+        $handle = @fopen($path, 'rb');
+        if (!is_resource($handle)) {
+            return false;
+        }
+
+        $signature = (string) fread($handle, 4);
+        fclose($handle);
+
+        return in_array($signature, ["PK\x03\x04", "PK\x05\x06", "PK\x07\x08"], true);
+    }
+
+    private function hasAllowedZipMimeType(string $path): bool
+    {
+        if (!class_exists(\finfo::class)) {
+            return true;
+        }
+
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = (string) $finfo->file($path);
+        return in_array($mime, ['application/zip', 'application/x-zip', 'application/x-zip-compressed', 'application/octet-stream'], true);
+    }
+
+    private function zipEntryIsSymlink(\ZipArchive $zip, int $index): bool
+    {
+        if (!method_exists($zip, 'getExternalAttributesIndex')) {
+            return false;
+        }
+
+        $opsys = 0;
+        $attributes = 0;
+        if (!$zip->getExternalAttributesIndex($index, $opsys, $attributes)) {
+            return false;
+        }
+
+        if ($opsys !== 3) {
+            return false;
+        }
+
+        $mode = ($attributes >> 16) & 0170000;
+        return $mode === 0120000;
     }
 
     private function getUploadErrorMessage(int $errorCode): string
@@ -980,7 +1097,36 @@ final class CMS_Marketplace_Service
             return '';
         }
 
-        return filter_var($url, FILTER_VALIDATE_URL) ? $url : '';
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || $host === '') {
+            return '';
+        }
+
+        if (!empty($parts['user']) || !empty($parts['pass']) || !$this->isPublicUrlHost($host)) {
+            return '';
+        }
+
+        return $url;
+    }
+
+    private function isPublicUrlHost(string $host): bool
+    {
+        $host = strtolower(trim($host, " \t\n\r\0\x0B[]"));
+        if ($host === '' || $host === 'localhost' || str_ends_with($host, '.localhost') || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
+            return false;
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
+        }
+
+        return preg_match('/^[a-z0-9.-]+$/', $host) === 1;
     }
 
     private function sanitizeEmail(string $value): string
@@ -997,7 +1143,12 @@ final class CMS_Marketplace_Service
         }
 
         if (filter_var($contactFormSlug, FILTER_VALIDATE_URL)) {
-            return $contactFormSlug;
+            return $this->sanitizeUrl($contactFormSlug);
+        }
+
+        $contactFormSlug = $this->normalizeRelativePublicPath($contactFormSlug);
+        if ($contactFormSlug === '') {
+            return '';
         }
 
         $settings = $this->getSettings();
@@ -1015,7 +1166,35 @@ final class CMS_Marketplace_Service
 
     private function normalizeContactFormSlug(string $value): string
     {
-        return trim($value);
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            return $this->sanitizeUrl($value);
+        }
+
+        return $this->normalizeRelativePublicPath($value);
+    }
+
+    private function normalizeRelativePublicPath(string $path): string
+    {
+        $path = str_replace('\\', '/', trim($path));
+        $path = preg_replace('/[\x00-\x1F\x7F]/', '', $path) ?? '';
+        $path = ltrim($path, '/');
+        if ($path === '' || str_starts_with($path, '//')) {
+            return '';
+        }
+
+        $segments = array_values(array_filter(explode('/', $path), static fn (string $segment): bool => $segment !== ''));
+        foreach ($segments as $segment) {
+            if ($segment === '.' || $segment === '..') {
+                return '';
+            }
+        }
+
+        return implode('/', $segments);
     }
 
     private function normalizePriceAmount(mixed $value): ?string
@@ -1063,13 +1242,13 @@ final class CMS_Marketplace_Service
             'cms_update_notes' => '',
             'cms_default_slug' => '365cms',
             'cms_default_author' => '365 Network',
-            'cms_default_requires_cms' => '2.6.0',
+            'cms_default_requires_cms' => '3.0.0',
             'cms_default_requires_php' => '8.1',
             'plugin_default_author' => '365 Network',
-            'plugin_default_requires_cms' => '2.6.0',
+            'plugin_default_requires_cms' => '3.0.0',
             'plugin_default_requires_php' => '8.1',
             'theme_default_author' => '365 Network',
-            'theme_default_requires_cms' => '2.6.0',
+            'theme_default_requires_cms' => '3.0.0',
             'theme_default_requires_php' => '8.1',
         ];
     }
@@ -1152,7 +1331,14 @@ final class CMS_Marketplace_Service
             return '';
         }
 
-        return preg_replace('#/+#', '/', $path) ?: '';
+        $segments = array_values(array_filter(explode('/', $path), static fn (string $segment): bool => $segment !== ''));
+        foreach ($segments as $segment) {
+            if ($segment === '.' || $segment === '..') {
+                return '';
+            }
+        }
+
+        return implode('/', $segments);
     }
 
     private function buildFilePreview(string $absolutePath): string
@@ -1162,7 +1348,19 @@ final class CMS_Marketplace_Service
             return '';
         }
 
-        $contents = @file_get_contents($absolutePath);
+        $fileSize = @filesize($absolutePath);
+        if (!is_int($fileSize) || $fileSize < 0 || $fileSize > self::MAX_PREVIEW_SOURCE_BYTES) {
+            return '';
+        }
+
+        $handle = @fopen($absolutePath, 'rb');
+        if (!is_resource($handle)) {
+            return '';
+        }
+
+        $contents = (string) fread($handle, self::MAX_PREVIEW_BYTES + 1);
+        fclose($handle);
+
         if (!is_string($contents) || $contents === '') {
             return '';
         }
@@ -1172,7 +1370,52 @@ final class CMS_Marketplace_Service
             return '';
         }
 
-        return mb_substr($contents, 0, 4000);
+        return mb_substr($contents, 0, self::MAX_PREVIEW_BYTES);
+    }
+
+    private function resolveContainedExistingPath(string $rootPath, string $relativePath): ?string
+    {
+        $rootReal = realpath($rootPath);
+        if (!is_string($rootReal)) {
+            return null;
+        }
+
+        $candidate = $rootReal . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+        $candidateReal = realpath($candidate);
+        if (!is_string($candidateReal) || !$this->pathStartsWith($candidateReal, $rootReal)) {
+            return null;
+        }
+
+        return $candidateReal;
+    }
+
+    private function isContainedPath(string $path, string $rootPath, bool $mustExist = true): bool
+    {
+        $rootReal = realpath($rootPath);
+        if (!is_string($rootReal)) {
+            return false;
+        }
+
+        $pathReal = $mustExist ? realpath($path) : realpath(dirname($path));
+        if (!is_string($pathReal)) {
+            return false;
+        }
+
+        $candidate = $mustExist ? $pathReal : $pathReal . DIRECTORY_SEPARATOR . basename($path);
+        return $this->pathStartsWith($candidate, $rootReal);
+    }
+
+    private function pathStartsWith(string $path, string $rootPath): bool
+    {
+        $path = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path), DIRECTORY_SEPARATOR);
+        $rootPath = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $rootPath), DIRECTORY_SEPARATOR);
+
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $path = strtolower($path);
+            $rootPath = strtolower($rootPath);
+        }
+
+        return $path === $rootPath || str_starts_with($path, $rootPath . DIRECTORY_SEPARATOR);
     }
 
     private function getDirectoryRootPath(string $scope): string

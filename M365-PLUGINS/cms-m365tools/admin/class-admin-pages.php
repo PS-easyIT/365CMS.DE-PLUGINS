@@ -145,6 +145,13 @@ final class CMS_M365CALCULATOR_Admin_Pages
                 . htmlspecialchars(CMS_M365CALCULATOR_PLUGIN_URL . 'assets/css/m365calculator-admin.css', ENT_QUOTES, 'UTF-8')
                 . '?v=' . filemtime($css) . '">' . "\n";
         }
+
+        $js = CMS_M365CALCULATOR_PLUGIN_DIR . 'assets/js/m365calculator-admin.js';
+        if (file_exists($js)) {
+            echo '<script src="'
+                . htmlspecialchars(CMS_M365CALCULATOR_PLUGIN_URL . 'assets/js/m365calculator-admin.js', ENT_QUOTES, 'UTF-8')
+                . '?v=' . filemtime($js) . '" defer></script>' . "\n";
+        }
     }
 
     private static function csrf_token(string $action): string

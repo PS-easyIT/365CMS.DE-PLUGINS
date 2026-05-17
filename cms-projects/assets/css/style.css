@@ -483,6 +483,7 @@
     height: 6px;
     border-radius: 999px;
     margin-bottom: 1rem;
+    background: var(--cp-project-accent, var(--cp-primary));
 }
 
 .cp-button {

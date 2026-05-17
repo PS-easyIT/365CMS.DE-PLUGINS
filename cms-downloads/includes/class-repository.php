@@ -431,13 +431,19 @@ final class CMS_Downloads_Repository
         $relativePath = 'downloads/' . $storedName;
         $absolutePath = $uploadRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $storedName);
 
+        $uploadRootReal = realpath($uploadRoot);
+        $absolutePathReal = realpath($absolutePath);
+        if ($uploadRootReal === false || $absolutePathReal === false || !str_starts_with($absolutePathReal, rtrim($uploadRootReal, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR)) {
+            return ['success' => false, 'error' => 'Die hochgeladene Datei konnte nicht sicher im Download-Verzeichnis verifiziert werden.'];
+        }
+
         return [
             'success' => true,
             'file_name' => basename($storedName),
             'file_path' => str_replace('\\', '/', $relativePath),
             'file_url' => rtrim((string) UPLOAD_URL, '/') . '/downloads/' . str_replace('\\', '/', $storedName),
             'file_ext' => strtolower(pathinfo($storedName, PATHINFO_EXTENSION)),
-            'file_size' => is_file($absolutePath) ? (int) filesize($absolutePath) : 0,
+            'file_size' => is_file($absolutePathReal) ? (int) filesize($absolutePathReal) : 0,
         ];
     }
 

@@ -1,6 +1,19 @@
 <?php
 declare(strict_types=1);
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+$projectAccentStyle = static function (array $project): string {
+    $color = (string) ($project['accent_color'] ?? '#2563eb');
+    if (preg_match('/^#[0-9a-fA-F]{6}$/', $color) !== 1) {
+        $color = '#2563eb';
+    }
+
+    return '--cp-project-accent:' . strtolower($color) . ';';
+};
+
 $renderBoardBlock = static function (array $board): void {
     $payload = (array) ($board['payload_data'] ?? []);
     $groups = [];
@@ -113,7 +126,7 @@ $renderWidgetBlock = static function (array $widget): void {
         <section class="cp-dashboard-shell">
             <div class="cp-dashboard-main">
                 <article class="cp-project-detail-card">
-                    <span class="cp-project-color" style="background:<?php echo htmlspecialchars((string) ($dashboard['project']['accent_color'] ?? '#2563eb'), ENT_QUOTES, 'UTF-8'); ?>"></span>
+                    <span class="cp-project-color" style="<?php echo htmlspecialchars($projectAccentStyle((array) ($dashboard['project'] ?? [])), ENT_QUOTES, 'UTF-8'); ?>"></span>
                     <div class="cp-card-meta-row">
                         <span class="cp-badge"><?php echo htmlspecialchars((string) ($dashboard['project']['status'] ?? 'active'), ENT_QUOTES, 'UTF-8'); ?></span>
                         <?php if (!empty($dashboard['project']['owner_name'])): ?>

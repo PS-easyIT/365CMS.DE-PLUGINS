@@ -249,7 +249,6 @@ final class CMS_M365CALCULATOR_Frontend
         $vars = [
             '--m365tools-card-radius' => $number($options, 'landing_card_radius', 2, 0, 2) . 'px',
             '--m365tools-ui-radius' => $number($options, 'landing_card_radius', 2, 0, 2) . 'px',
-            '--m365tools-content-top-gap' => '25px',
             '--m365tools-card-min' => $number($options, 'landing_cards_min_width', 320, 220, 520) . 'px',
             '--m365tools-section-gap' => $number($options, 'landing_section_gap', 32, 16, 96) . 'px',
             '--m365tools-primary' => $color($options, 'landing_color_primary', '#2563eb'),

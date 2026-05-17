@@ -43,7 +43,7 @@ if (!defined('ABSPATH')) {
 
         <form method="POST" class="cmsforum-form" enctype="multipart/form-data">
             <input type="hidden" name="action" value="create_thread">
-            <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
             <!-- Titel -->
             <div class="cmsforum-form-group">

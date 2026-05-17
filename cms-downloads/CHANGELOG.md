@@ -1,11 +1,15 @@
 # Changelog – CMS Downloads
 
-## [Unreleased] – 2026-04-04
+## [3.0.0] – 2026-05-17
 
 ### Sicherheitsfixes
 
 - Admin-Redirects nach POST-Aktionen zeigen jetzt nur noch auf die feste interne Dashboard-Route.
 - Der verbliebene Open-Redirect-Befund im Downloads-Admin wurde damit beseitigt.
+- Download-Dateinamen werden vor dem `Content-Disposition`-Header auf header-sichere Zeichen begrenzt und zusätzlich als `filename*` ausgegeben.
+- Upload-Ergebnisse werden per `realpath()` auf das Downloads-Verzeichnis begrenzt, bevor Pfad, URL und Dateigröße übernommen werden.
+- Externe Redirect-Ziele werden auf öffentliche HTTP(S)-Hosts ohne Credentials und ohne Sonderports begrenzt; localhost, private/reservierte IPs und interne Domain-Suffixe werden blockiert.
+- Statische Inline-Styles der externen Redirectseite wurden in `downloads-public.css` ausgelagert.
 
 ## [1.0.0] – 2026-03-14
 

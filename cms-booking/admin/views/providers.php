@@ -137,7 +137,7 @@
 
                                 <!-- Booking-Seite öffnen -->
                                 <a href="/booking/<?php echo htmlspecialchars($item['slug']); ?>"
-                                   target="_blank" class="btn btn-sm btn-secondary" title="Buchungsseite">🔗</a>
+                                              target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary" title="Buchungsseite">🔗</a>
                             </div>
                         </td>
                     </tr>

@@ -1,9 +1,11 @@
 # Changelog
 
-## [Unreleased] - 2026-04-04
+## [3.0.0] - 2026-05-17
 
 - Admin-Redirects nach Schreibaktionen wurden auf feste interne Dashboard-Ziele begrenzt.
 - Der Open-Redirect-Befund in `src/Admin/Pages.php` ist damit behoben.
+- Öffentliche Tooltip-Elemente werden ohne statisches `innerHTML` per DOM-API aufgebaut.
+- Auto-Link-Ausgaben behalten `noopener noreferrer`, wenn Links in neuen Tabs geöffnet werden.
 
 ## 1.0.0 - 2026-03-21
 

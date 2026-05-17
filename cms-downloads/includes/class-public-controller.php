@@ -30,7 +30,7 @@ final class CMS_Downloads_Public_Controller
         $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
         $active = strpos($currentPath, '/downloads') === 0 ? 'active' : '';
 
-        echo '<a href="' . SITE_URL . '/downloads" class="nav-link ' . htmlspecialchars($active, ENT_QUOTES, 'UTF-8') . '">Downloads</a>';
+        echo '<a href="' . htmlspecialchars((string) SITE_URL, ENT_QUOTES, 'UTF-8') . '/downloads" class="nav-link ' . htmlspecialchars($active, ENT_QUOTES, 'UTF-8') . '">Downloads</a>';
     }
 
     public function archive_page(string $slug = ''): void
@@ -127,11 +127,11 @@ final class CMS_Downloads_Public_Controller
         $repository->increment_download_count((int) $download['id']);
 
         $mime = function_exists('mime_content_type') ? (string) mime_content_type($absolutePath) : 'application/octet-stream';
-        $filename = (string) ($download['file_name'] ?? basename($absolutePath));
+        $filename = $this->safe_download_filename((string) ($download['file_name'] ?? basename($absolutePath)));
 
         header('Content-Description: File Transfer');
         header('Content-Type: ' . $mime);
-        header('Content-Disposition: attachment; filename="' . rawurldecode(str_replace('%2F', '-', rawurlencode($filename))) . '"');
+        header('Content-Disposition: attachment; filename="' . $filename . '"; filename*=UTF-8\'\'' . rawurlencode($filename));
         header('Content-Length: ' . (string) filesize($absolutePath));
         header('Cache-Control: private, max-age=0, must-revalidate');
         header('Pragma: public');
@@ -175,7 +175,16 @@ final class CMS_Downloads_Public_Controller
             return false;
         }
 
+        if (!empty($parts['user']) || !empty($parts['pass'])) {
+            return false;
+        }
+
         if (!in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true)) {
+            return false;
+        }
+
+        $port = isset($parts['port']) ? (int) $parts['port'] : null;
+        if ($port !== null && !in_array($port, [80, 443], true)) {
             return false;
         }
 
@@ -185,7 +194,13 @@ final class CMS_Downloads_Public_Controller
     private function is_allowed_external_host(string $host, array $settings): bool
     {
         $normalizedHost = mb_strtolower(trim($host), 'UTF-8');
+        $normalizedHost = trim($normalizedHost, '[]');
         if ($normalizedHost === '') {
+            return false;
+        }
+
+        if (!$this->is_public_external_host($normalizedHost)) {
+            error_log('CMS Downloads: Blocked non-public external download host ' . $normalizedHost . '.');
             return false;
         }
 
@@ -202,6 +217,38 @@ final class CMS_Downloads_Public_Controller
 
         error_log('CMS Downloads: Blocked external download host ' . $normalizedHost . ' because it is not in the allowlist.');
         return false;
+    }
+
+    private function is_public_external_host(string $host): bool
+    {
+        if (in_array($host, ['localhost', 'localhost.localdomain'], true)) {
+            return false;
+        }
+
+        foreach (['.local', '.internal', '.intranet', '.lan'] as $suffix) {
+            if (str_ends_with($host, $suffix)) {
+                return false;
+            }
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
+            return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
+        }
+
+        return preg_match('/^(?=.{1,253}$)(?!-)(?:[a-z0-9-]{1,63}\.)+[a-z]{2,63}$/', $host) === 1;
+    }
+
+    private function safe_download_filename(string $filename): string
+    {
+        $filename = basename(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $filename));
+        $filename = preg_replace('/[\x00-\x1F\x7F"\\\/]+/', '-', $filename) ?? '';
+        $filename = trim($filename, " .\t\n\r\0\x0B-");
+
+        if ($filename === '') {
+            return 'download.bin';
+        }
+
+        return mb_substr($filename, 0, 180, 'UTF-8');
     }
 
     /**

@@ -23,7 +23,6 @@ $statusClass  = CMS_Booking_Bookings::status_badge_class($booking['status']);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Buchung bestätigt – <?php echo $e($siteName); ?></title>
     <?php \CMS\Hooks::doAction('head'); ?>
-    <link rel="stylesheet" href="<?php echo CMS_BOOKING_PLUGIN_URL; ?>assets/css/booking-public.css?v=<?php echo CMS_BOOKING_VERSION; ?>">
 </head>
 <body class="booking-page booking-confirmation-page">
     <?php \CMS\Hooks::doAction('body_start'); ?>
@@ -117,7 +116,7 @@ $statusClass  = CMS_Booking_Bookings::status_badge_class($booking['status']);
                 <div class="booking-confirmation-actions">
                     <p class="booking-confirmation-actions-label">📅 Zum Kalender hinzufügen:</p>
                     <div class="booking-confirmation-btns">
-                        <a href="<?php echo $siteUrl; ?>/booking/ical/<?php echo (int) $booking['id']; ?>"
+                                <a href="<?php echo $e($siteUrl); ?>/booking/ical/<?php echo (int) $booking['id']; ?>"
                            class="booking-btn booking-btn-secondary" download>
                             📥 iCal / Outlook
                         </a>
@@ -138,7 +137,7 @@ $statusClass  = CMS_Booking_Bookings::status_badge_class($booking['status']);
 
                 <!-- Zurück -->
                 <div class="booking-confirmation-back">
-                    <a href="<?php echo $siteUrl; ?>" class="booking-btn booking-btn-outline">← Zur Startseite</a>
+                    <a href="<?php echo $e($siteUrl); ?>" class="booking-btn booking-btn-outline">← Zur Startseite</a>
                 </div>
             </div>
 

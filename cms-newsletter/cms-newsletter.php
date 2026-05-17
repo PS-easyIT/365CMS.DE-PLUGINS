@@ -3,7 +3,7 @@
  * Plugin Name: CMS Newsletter
  * Plugin URI: https://365network.de/cms-newsletter
  * Description: Newsletter-Management mit Subscriber-Verwaltung, Templates, Kampagnen, Opt-In-Prozess und öffentlicher Anmeldeseite.
- * Version: 1.0.0
+ * Version: 3.0.0
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_NEWSLETTER_VERSION', '1.0.0');
+define('CMS_NEWSLETTER_VERSION', '3.0.0');
 define('CMS_NEWSLETTER_DB_VERSION', '1.0.0');
 define('CMS_NEWSLETTER_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_NEWSLETTER_PLUGIN_URL', '/plugins/cms-newsletter/');

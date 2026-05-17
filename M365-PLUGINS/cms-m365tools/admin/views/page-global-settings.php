@@ -166,21 +166,3 @@ $renderPriceInput = static function (array $field, string $tierLabel) use ($esc,
         <button type="submit" class="btn btn-primary">💾 Globale Einstellungen speichern</button>
     </form>
 </div>
-
-<script>
-document.querySelectorAll('[data-m365-color-copy]').forEach(function (input) {
-    var color = document.getElementById(input.getAttribute('data-m365-color-copy'));
-    if (!color) {
-        return;
-    }
-
-    input.addEventListener('input', function () {
-        if (/^#[0-9A-Fa-f]{6}$/.test(input.value)) {
-            color.value = input.value;
-        }
-    });
-    color.addEventListener('input', function () {
-        input.value = color.value;
-    });
-});
-</script>

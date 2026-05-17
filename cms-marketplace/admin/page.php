@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 $entryType = (string) ($entryType ?? ($filterType !== '' ? $filterType : 'plugin'));
 $isEntrySection = in_array($section ?? '', ['overview', 'plugins', 'themes', 'cms'], true);
 $isSettingsSection = ($section ?? '') === 'settings';

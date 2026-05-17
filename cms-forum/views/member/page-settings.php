@@ -31,7 +31,7 @@ if (!defined('ABSPATH')) {
 
     <form method="POST" class="cmsforum-form">
         <input type="hidden" name="action" value="save_forum_settings">
-        <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
         <!-- Signatur -->
         <div class="cmsforum-form-group">

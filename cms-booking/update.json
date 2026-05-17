@@ -1,13 +1,13 @@
 {
     "name": "CMS Booking",
     "slug": "cms-booking",
-    "version": "1.0.0",
-    "requires_cms": "2.0.0",
-    "tested_cms": "2.0.0",
+    "version": "3.0.0",
+    "requires_cms": "3.0.0",
+    "tested_cms": "3.0.0",
     "author": "365 Network",
     "author_url": "https://365network.de",
     "description": "Universelles Buchungssystem – andere Plugins (Experts, Speakers, Events, Companies) können sich als Anbieter registrieren.",
     "download_url": "",
-    "last_updated": "2025-06-28",
-    "changelog": "Initial release: Provider-Architektur, Buchungsworkflow, Verfügbarkeits-Engine, E-Mail-Benachrichtigungen, Kalender-Integration"
+    "last_updated": "2026-05-17",
+    "changelog": "365CMS-3.0.0-Kompatibilität: Public-Kalender, Slot-Meldungen und Admin-Bestätigungsmodal werden DOM-sicher ohne innerHTML aufgebaut. Buchungs-, Provider- und Bestätigungsseiten laden CSS/JS nicht mehr doppelt und JSON-Datenattribute werden attributsicher ausgegeben. Öffentliche Buchungs-POSTs schlagen ohne CMS-Sicherheitsdienst geschlossen fehl, Zugangstoken werden timing-sicher geprüft und Admin-New-Tab-Links nutzen rel=\"noopener noreferrer\"."
 }

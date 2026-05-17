@@ -11,6 +11,10 @@ if (!defined('ABSPATH')) {
 
 final class CMS_Newsletter_Public_Controller
 {
+    private const SUBSCRIBE_MIN_INTERVAL = 20;
+    private const SUBSCRIBE_WINDOW = 3600;
+    private const SUBSCRIBE_MAX_ATTEMPTS = 8;
+
     private static ?self $instance = null;
 
     public static function instance(): self
@@ -38,9 +42,10 @@ final class CMS_Newsletter_Public_Controller
             'exists' => 'Diese E-Mail-Adresse ist bereits im Newsletter erfasst.',
             'invalid' => 'Bitte gib eine gültige E-Mail-Adresse ein.',
             'unsubscribed' => 'Du wurdest erfolgreich vom Newsletter abgemeldet.',
+            'rate-limit' => 'Bitte warte kurz, bevor du dich erneut anmeldest.',
             default => '',
         };
-        $messageType = in_array($notice, ['invalid'], true) ? 'error' : 'success';
+        $messageType = in_array($notice, ['invalid', 'rate-limit'], true) ? 'error' : 'success';
         $csrfToken = class_exists('CMS\\Security') ? \CMS\Security::instance()->generateToken('newsletter_subscribe') : '';
         $theme = class_exists('CMS\\ThemeManager') ? \CMS\ThemeManager::instance() : null;
 
@@ -58,15 +63,22 @@ final class CMS_Newsletter_Public_Controller
     public function handle_subscribe(): void
     {
         $security = class_exists('CMS\\Security') ? \CMS\Security::instance() : null;
-        if ($security !== null && !$security->verifyToken($_POST['csrf_token'] ?? '', 'newsletter_subscribe')) {
-            header('Location: ' . SITE_URL . '/newsletter?newsletter_notice=invalid');
+        if ($this->isHoneypotFilled($_POST)) {
+            $this->redirect_with_notice('subscribed');
+        }
+
+        if ($this->record_and_check_rate_limit()) {
+            $this->redirect_with_notice('rate-limit');
+        }
+
+        if ($security === null || !$security->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'newsletter_subscribe')) {
+            $this->redirect_with_notice('invalid');
             exit;
         }
 
         $email = trim((string) ($_POST['email'] ?? ''));
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            header('Location: ' . SITE_URL . '/newsletter?newsletter_notice=invalid');
-            exit;
+            $this->redirect_with_notice('invalid');
         }
 
         $repository = CMS_Newsletter_Repository::instance();
@@ -82,18 +94,85 @@ final class CMS_Newsletter_Public_Controller
         ]);
 
         if (!($result['success'] ?? false) && str_contains((string) ($result['error'] ?? ''), 'bereits')) {
-            header('Location: ' . SITE_URL . '/newsletter?newsletter_notice=exists');
-            exit;
+            $this->redirect_with_notice('exists');
         }
 
-        header('Location: ' . SITE_URL . '/newsletter?newsletter_notice=' . (!empty($settings['require_double_opt_in']) ? 'double-opt-in' : 'subscribed'));
-        exit;
+        $this->redirect_with_notice(!empty($settings['require_double_opt_in']) ? 'double-opt-in' : 'subscribed');
     }
 
     public function unsubscribe_page(string $token): void
     {
+        $token = $this->normalize_unsubscribe_token($token);
+        if ($token === '') {
+            $this->redirect_with_notice('invalid');
+        }
+
         CMS_Newsletter_Repository::instance()->unsubscribe_by_token($token);
-        header('Location: ' . SITE_URL . '/newsletter?newsletter_notice=unsubscribed');
+        $this->redirect_with_notice('unsubscribed');
+    }
+
+    private function redirect_with_notice(string $notice): void
+    {
+        $allowed = ['subscribed', 'double-opt-in', 'exists', 'invalid', 'unsubscribed', 'rate-limit'];
+        $notice = in_array($notice, $allowed, true) ? $notice : 'invalid';
+        $siteUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
+        header('Location: ' . $siteUrl . '/newsletter?newsletter_notice=' . rawurlencode($notice));
         exit;
+    }
+
+    private function isHoneypotFilled(array $input): bool
+    {
+        return trim((string) ($input['website'] ?? '')) !== '';
+    }
+
+    private function record_and_check_rate_limit(): bool
+    {
+        $ip = trim((string) ($_SERVER['REMOTE_ADDR'] ?? ''));
+        if ($ip === '') {
+            return false;
+        }
+
+        $directory = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'cms-newsletter-rate';
+        if (!is_dir($directory) && !mkdir($directory, 0700, true) && !is_dir($directory)) {
+            return false;
+        }
+
+        $file = $directory . DIRECTORY_SEPARATOR . hash('sha256', $ip) . '.json';
+        $now = time();
+        $attempts = [];
+
+        if (is_file($file)) {
+            $raw = file_get_contents($file);
+            $decoded = is_string($raw) ? json_decode($raw, true) : null;
+            if (is_array($decoded)) {
+                $attempts = array_values(array_filter(array_map('intval', $decoded), static function (int $timestamp) use ($now): bool {
+                    return $timestamp >= ($now - self::SUBSCRIBE_WINDOW);
+                }));
+            }
+        }
+
+        $lastAttempt = $attempts !== [] ? max($attempts) : 0;
+        if ($lastAttempt > 0 && ($now - $lastAttempt) < self::SUBSCRIBE_MIN_INTERVAL) {
+            return true;
+        }
+
+        if (count($attempts) >= self::SUBSCRIBE_MAX_ATTEMPTS) {
+            return true;
+        }
+
+        $attempts[] = $now;
+        $json = json_encode($attempts);
+        if (is_string($json)) {
+            file_put_contents($file, $json);
+        }
+
+        return false;
+    }
+
+    private function normalize_unsubscribe_token(string $token): string
+    {
+        $token = preg_replace('/[^a-f0-9]/i', '', trim($token)) ?? '';
+        $length = strlen($token);
+        return ($length >= 32 && $length <= 120) ? $token : '';
     }
 }

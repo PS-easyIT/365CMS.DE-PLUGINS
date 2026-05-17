@@ -44,7 +44,7 @@ if (!defined('ABSPATH')) {
 
         <form method="POST" class="cmsforum-form">
             <input type="hidden" name="action" value="edit_post">
-            <input type="hidden" name="csrf_token" value="<?php echo $csrfToken; ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
             <div class="cmsforum-form-group">
                 <label for="edit-content" class="cmsforum-label">Beitrag</label>

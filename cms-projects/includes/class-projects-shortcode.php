@@ -62,7 +62,7 @@ final class CMS_Projects_Shortcode
         echo '<section class="cp-dashboard-shell">';
         echo '<div class="cp-dashboard-main">';
         echo '<article class="cp-project-detail-card">';
-        echo '<span class="cp-project-color" style="background:' . htmlspecialchars((string) ($project['accent_color'] ?? '#2563eb'), ENT_QUOTES, 'UTF-8') . '"></span>';
+        echo '<span class="cp-project-color" style="' . htmlspecialchars($this->buildProjectAccentStyle($project), ENT_QUOTES, 'UTF-8') . '"></span>';
         echo '<h2>' . htmlspecialchars((string) ($project['name'] ?? ''), ENT_QUOTES, 'UTF-8') . '</h2>';
         echo '<p>' . nl2br(htmlspecialchars((string) ($project['summary'] ?? ''), ENT_QUOTES, 'UTF-8')) . '</p>';
         echo '</article>';
@@ -140,6 +140,16 @@ final class CMS_Projects_Shortcode
             $parsed[(string) ($pair[1] ?? '')] = (string) ($pair[2] ?? '');
         }
         return $parsed;
+    }
+
+    private function buildProjectAccentStyle(array $project): string
+    {
+        $color = (string) ($project['accent_color'] ?? '#2563eb');
+        if (preg_match('/^#[0-9a-fA-F]{6}$/', $color) !== 1) {
+            $color = '#2563eb';
+        }
+
+        return '--cp-project-accent:' . strtolower($color) . ';';
     }
 
     private function renderBoard(array $board): void

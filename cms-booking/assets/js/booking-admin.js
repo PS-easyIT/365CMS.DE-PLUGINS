@@ -74,21 +74,45 @@
 
         modalEl = document.createElement('div');
         modalEl.className = 'modal';
-        modalEl.style.display = 'flex';
-        modalEl.innerHTML =
-            '<div class="modal-content" style="max-width:420px;">' +
-                '<div class="modal-header">' +
-                    '<h3>' + escHtml(title) + '</h3>' +
-                    '<button class="modal-close" data-modal-close>&times;</button>' +
-                '</div>' +
-                '<div class="modal-body">' +
-                    '<p>' + escHtml(message) + '</p>' +
-                '</div>' +
-                '<div class="modal-footer">' +
-                    '<button type="button" class="btn btn-secondary" data-modal-close>Abbrechen</button>' +
-                    '<button type="button" class="btn btn-danger" data-modal-confirm>Bestätigen</button>' +
-                '</div>' +
-            '</div>';
+        modalEl.classList.add('booking-confirm-modal');
+
+        var content = document.createElement('div');
+        content.className = 'modal-content booking-confirm-modal__content';
+
+        var header = document.createElement('div');
+        header.className = 'modal-header';
+        var heading = document.createElement('h3');
+        heading.textContent = title;
+        var closeHeader = document.createElement('button');
+        closeHeader.type = 'button';
+        closeHeader.className = 'modal-close';
+        closeHeader.dataset.modalClose = '';
+        closeHeader.setAttribute('aria-label', 'Dialog schließen');
+        closeHeader.textContent = '×';
+        header.append(heading, closeHeader);
+
+        var body = document.createElement('div');
+        body.className = 'modal-body';
+        var text = document.createElement('p');
+        text.textContent = message;
+        body.appendChild(text);
+
+        var footer = document.createElement('div');
+        footer.className = 'modal-footer';
+        var cancelButton = document.createElement('button');
+        cancelButton.type = 'button';
+        cancelButton.className = 'btn btn-secondary';
+        cancelButton.dataset.modalClose = '';
+        cancelButton.textContent = 'Abbrechen';
+        var confirmButton = document.createElement('button');
+        confirmButton.type = 'button';
+        confirmButton.className = 'btn btn-danger';
+        confirmButton.dataset.modalConfirm = '';
+        confirmButton.textContent = 'Bestätigen';
+        footer.append(cancelButton, confirmButton);
+
+        content.append(header, body, footer);
+        modalEl.appendChild(content);
 
         document.body.appendChild(modalEl);
 
@@ -111,16 +135,6 @@
             modalEl.remove();
             modalEl = null;
         }
-    }
-
-    /* =================================================================== */
-    /*  Helfer                                                              */
-    /* =================================================================== */
-
-    function escHtml(str) {
-        var div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
     }
 
 })();

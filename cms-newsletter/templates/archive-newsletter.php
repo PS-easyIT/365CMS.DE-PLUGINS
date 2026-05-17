@@ -16,9 +16,13 @@
         </div>
 
         <div class="newsletter-hero__panel">
-            <h2 style="margin-top:0;">Jetzt anmelden</h2>
+            <h2 class="newsletter-section-title">Jetzt anmelden</h2>
             <form method="post" action="/newsletter/subscribe" class="newsletter-form">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                <label class="newsletter-hp" aria-hidden="true" tabindex="-1">
+                    Website
+                    <input type="text" name="website" value="" autocomplete="off" tabindex="-1">
+                </label>
                 <div class="newsletter-form__grid">
                     <label class="newsletter-label">
                         Vorname
@@ -39,7 +43,7 @@
                 </label>
                 <button class="newsletter-submit" type="submit">✉️ Newsletter abonnieren</button>
             </form>
-            <p class="newsletter-lead" style="margin-top:1rem;"><?php echo htmlspecialchars((string) ($settings['footer_note'] ?? 'Du kannst dich jederzeit wieder mit einem Klick abmelden.')); ?></p>
+            <p class="newsletter-lead newsletter-form-note"><?php echo htmlspecialchars((string) ($settings['footer_note'] ?? 'Du kannst dich jederzeit wieder mit einem Klick abmelden.')); ?></p>
         </div>
     </section>
 
@@ -51,7 +55,7 @@
 
     <section class="newsletter-card-grid">
         <article class="newsletter-card">
-            <h3 style="margin-top:0;">Was du erhältst</h3>
+            <h3 class="newsletter-section-title">Was du erhältst</h3>
             <ul class="newsletter-list">
                 <li>Produkt- und Plugin-Updates aus dem 365CMS-Ökosystem</li>
                 <li>Hinweise zu Events, Releases und neuen Funktionen</li>
@@ -59,7 +63,7 @@
             </ul>
         </article>
         <article class="newsletter-card">
-            <h3 style="margin-top:0;">Aktuelle Versandplanung</h3>
+            <h3 class="newsletter-section-title">Aktuelle Versandplanung</h3>
             <?php if (empty($campaigns)): ?>
                 <p>Aktuell sind noch keine Kampagnen öffentlich sichtbar vorbereitet.</p>
             <?php else: ?>

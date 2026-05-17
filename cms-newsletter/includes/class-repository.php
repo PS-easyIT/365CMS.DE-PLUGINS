@@ -399,7 +399,7 @@ final class CMS_Newsletter_Repository
         try {
             return bin2hex(random_bytes(16));
         } catch (\Throwable) {
-            return sha1((string) microtime(true) . '-' . uniqid('', true));
+            return hash('sha256', (string) microtime(true) . '-' . uniqid('', true));
         }
     }
 }

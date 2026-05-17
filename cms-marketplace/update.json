@@ -1,0 +1,12 @@
+{
+  "name": "365CMS Marketplace",
+  "slug": "cms-marketplace",
+  "version": "3.0.0",
+  "requires_cms": "3.0.0",
+  "requires_php": "8.1",
+  "tested_up_to": "3.0.0",
+  "release_date": "2026-05-17",
+  "author": "365 Network",
+  "description": "Zentrale Marketplace-Verwaltung für Plugins, Themes und CMS-Pakete mit gehärteter ZIP-Upload-Prüfung, Public-Submission-Schutz und JSON-Feeds.",
+  "changelog": "ZIP-Upload-Härtung, Path-Traversal- und Symlink-Schutz, CSRF-fail-closed, Public-Submission-Rate-Limit und 365CMS-3.0.0-Kompatibilität."
+}
