@@ -105,9 +105,28 @@ final class CMS_M365CALCULATOR_Admin_Pages
     private static function check_access(): void
     {
         if (!class_exists('CMS\\Auth') || !\CMS\Auth::instance()->isAdmin()) {
-            header('Location: ' . (defined('SITE_URL') ? SITE_URL : '/'));
+            header('Location: ' . self::safe_admin_redirect_url(), true, 302);
             exit;
         }
+    }
+
+    private static function safe_admin_redirect_url(): string
+    {
+        $url = defined('SITE_URL') ? trim((string) SITE_URL) : '/';
+        if ($url === '' || str_contains($url, "\0") || preg_match('/[\r\n]/', $url) === 1) {
+            return '/';
+        }
+
+        if (str_starts_with($url, '/') && !str_starts_with($url, '//')) {
+            return $url;
+        }
+
+        $scheme = strtolower((string) (parse_url($url, PHP_URL_SCHEME) ?: ''));
+        if (in_array($scheme, ['http', 'https'], true) && filter_var($url, FILTER_VALIDATE_URL) !== false) {
+            return $url;
+        }
+
+        return '/';
     }
 
     private static function load_admin_menu(): void

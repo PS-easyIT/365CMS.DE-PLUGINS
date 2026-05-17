@@ -31,7 +31,11 @@
         }
 
         if ('scrollRestoration' in window.history) {
+            var originalScrollRestoration = window.history.scrollRestoration;
             window.history.scrollRestoration = 'manual';
+            window.addEventListener('pagehide', function () {
+                window.history.scrollRestoration = originalScrollRestoration;
+            }, { once: true });
         }
 
         window.scrollTo({ top: 0, left: 0, behavior: 'auto' });

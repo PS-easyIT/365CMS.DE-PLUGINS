@@ -65,6 +65,12 @@
         var chips = Array.prototype.slice.call(root.querySelectorAll('[data-m365tools-tag]'));
         var cards = Array.prototype.slice.call(root.querySelectorAll('[data-m365tools-card]'));
         var sections = Array.prototype.slice.call(root.querySelectorAll('[data-m365tools-section]'));
+        var sectionCards = sections.map(function (section) {
+            return {
+                section: section,
+                cards: Array.prototype.slice.call(section.querySelectorAll('[data-m365tools-card]'))
+            };
+        });
         var count = root.querySelector('[data-m365tools-result-count]');
         var empty = root.querySelector('[data-m365tools-empty]');
         var group = root.querySelector('[data-m365tools-chip-group]');
@@ -114,11 +120,11 @@
                 }
             });
 
-            sections.forEach(function (section) {
-                var visibleInSection = Array.prototype.some.call(section.querySelectorAll('[data-m365tools-card]'), function (card) {
+            sectionCards.forEach(function (entry) {
+                var visibleInSection = entry.cards.some(function (card) {
                     return !card.hidden;
                 });
-                section.hidden = !visibleInSection;
+                entry.section.hidden = !visibleInSection;
             });
 
             if (count) {
@@ -148,7 +154,7 @@
             });
         });
 
-        if (group) {
+        if (group && chips.length > 0) {
             group.addEventListener('keydown', function (event) {
                 var keys = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'];
                 if (keys.indexOf(event.key) === -1) {
@@ -271,10 +277,11 @@
 
         button.addEventListener('click', function (event) {
             event.preventDefault();
-            target.scrollIntoView({ behavior: scrollBehavior(), block: 'start' });
+            var behavior = scrollBehavior();
+            target.scrollIntoView({ behavior: behavior, block: 'start' });
             window.setTimeout(function () {
                 search.focus({ preventScroll: true });
-            }, scrollBehavior() === 'smooth' ? 260 : 0);
+            }, behavior === 'smooth' ? 260 : 0);
         });
     }
 
@@ -302,8 +309,8 @@
 
         initContentHost(root);
         initFinder(root);
-    initHeroSearch(root);
-    initSearchShortcut();
+        initHeroSearch(root);
+        initSearchShortcut();
         initCardLinks(root);
         initToc(root);
         initBackToTop(root);

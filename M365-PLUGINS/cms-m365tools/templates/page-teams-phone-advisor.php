@@ -269,8 +269,8 @@ if (class_exists('CMS\\ThemeManager')) {
                 <p><?php echo $esc($recommendation['reason'] ?? 'Das Szenario wurde bewertet.'); ?></p>
                 <section class="m365calc-score" aria-label="Modell-Fit">
                     <span>Modell-Fit</span>
-                    <strong><?php echo $score; ?>%</strong>
-                    <div class="m365calc-score__bar"><span style="--m365calc-score-width: <?php echo $score; ?>%;"></span></div>
+                    <strong><?php echo (int) $score; ?>%</strong>
+                    <div class="m365calc-score__bar"><span style="--m365calc-score-width: <?php echo max(0, min(100, (int) $score)); ?>%;"></span></div>
                 </section>
             </article>
 
@@ -310,7 +310,7 @@ if (class_exists('CMS\\ThemeManager')) {
         </article>
         <article class="phinit-card m365calc-mini-card">
             <span>Readiness</span>
-            <strong><?php echo $readinessScore; ?>%</strong>
+            <strong><?php echo (int) $readinessScore; ?>%</strong>
             <p>Bewertet Teams-Basis, Teams Phone, PSTN-Pfad, Koexistenz und technische Voraussetzungen.</p>
         </article>
         <article class="phinit-card m365calc-mini-card">

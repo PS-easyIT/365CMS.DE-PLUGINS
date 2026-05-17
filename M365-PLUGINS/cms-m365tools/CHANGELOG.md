@@ -1,6 +1,15 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.29.21 – 2026-05-17
+
+- Erneuten vollständigen Public-/Admin-Audit für Sicherheit, Bugs, Weiterleitungen, Erkennung, Logikpfade und Geschwindigkeit durchgeführt.
+- Admin-Zugriffsweiterleitung gehärtet: das Fallback-Ziel wird vor dem `Location`-Header auf lokale Pfade oder gültige HTTP(S)-URLs ohne Steuerzeichen begrenzt.
+- Read-only-Matrixseiten stellen `history.scrollRestoration` beim Verlassen der Seite wieder auf den ursprünglichen Browserwert zurück.
+- Landingpage-Suche beschleunigt: Section-Card-Listen werden einmalig gecacht statt bei jeder Eingabe neu per DOM-Query gesucht.
+- Landingpage-Chip-Tastaturnavigation ist gegen leere Chip-Gruppen abgesichert; Hero-Suchscroll berechnet das Bewegungsverhalten nur noch einmal pro Klick.
+- Teams-Phone-Score-Ausgaben werden als Integer ausgegeben und die Balkenbreite wird auf 0–100% begrenzt.
+
 ## 1.29.20 – 2026-05-17
 
 - Scrollposition der Read-only-Matrixseiten korrigiert: Lizenzmatrix und Add-on-Matrix starten beim direkten Öffnen wieder oben am Contentheader.
