@@ -44,6 +44,7 @@ final class CMS_M365CALCULATOR_Installer
 
         $newTable = $prefix . 'm365tools_module_settings';
         $oldTable = $prefix . 'm365calculator_module_settings';
+        $optionTable = $prefix . 'm365tools_module_options';
         $quotedNewTable = self::quote_identifier($newTable);
 
         $pdo->exec("CREATE TABLE IF NOT EXISTS {$quotedNewTable} (
@@ -60,7 +61,40 @@ final class CMS_M365CALCULATOR_Installer
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         self::ensure_settings_columns($pdo, $newTable);
+        self::create_module_options_table($pdo, $optionTable);
         self::migrate_legacy_settings($pdo, $newTable, $oldTable);
+    }
+
+    private static function create_module_options_table(\PDO $pdo, string $table): void
+    {
+        $quotedTable = self::quote_identifier($table);
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$quotedTable} (
+            id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            module_key    VARCHAR(120) NOT NULL,
+            option_group  VARCHAR(60)  NOT NULL,
+            option_key    VARCHAR(120) NOT NULL,
+            option_value  TEXT         DEFAULT NULL,
+            value_type    VARCHAR(20)  NOT NULL DEFAULT 'string',
+            updated_at    TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY idx_module_option (module_key, option_group, option_key),
+            INDEX idx_module_group (module_key, option_group)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $columns = [
+            'option_group' => 'ADD COLUMN option_group VARCHAR(60) NOT NULL DEFAULT ' . "'general'" . ' AFTER module_key',
+            'option_key' => 'ADD COLUMN option_key VARCHAR(120) NOT NULL DEFAULT ' . "''" . ' AFTER option_group',
+            'option_value' => 'ADD COLUMN option_value TEXT DEFAULT NULL AFTER option_key',
+            'value_type' => 'ADD COLUMN value_type VARCHAR(20) NOT NULL DEFAULT ' . "'string'" . ' AFTER option_value',
+            'updated_at' => 'ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER value_type',
+        ];
+
+        foreach ($columns as $column => $alterSql) {
+            if (self::column_exists($pdo, $table, $column)) {
+                continue;
+            }
+
+            $pdo->exec('ALTER TABLE ' . self::quote_identifier($table) . ' ' . $alterSql);
+        }
     }
 
     private static function ensure_settings_columns(\PDO $pdo, string $table): void

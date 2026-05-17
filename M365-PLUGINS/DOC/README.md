@@ -153,6 +153,8 @@ Der Fortschritt wird im Browser gespeichert. Die Zusammenfassung kann über die 
 
 Der Adminbereich kann je Modul Sichtbarkeit, Status, Priorität, öffentlichen Titel und Beschreibung überschreiben. Die Werte werden in `cms_m365tools_module_settings` gespeichert und beim Rendern der Registry angewendet. Vorhandene Werte aus der früheren Tabelle `cms_m365calculator_module_settings` werden beim Installer-Lauf migriert. Ab `1.24.1` ist die Migration tolerant gegenüber älteren Tabellenständen und ergänzt fehlende Settings-Spalten automatisch.
 
+Ab `1.25.0` bekommt jedes Registry-Modul genau einen eigenen Unterpunkt unter `M365 Tools`. In dieser Unterseite werden die weiteren Einstellungen per Tabs organisiert: Übersicht, Anzeige, Preise & Annahmen, Workflow sowie Daten & Regeln. Preis-, Workflow- und Datenwerte landen in `cms_m365tools_module_options`, sodass Preisanpassungen, Review-Zyklen, Owner, Quellenstand und interne Änderungsvermerke je Modul gepflegt werden können.
+
 ## Designvorgaben
 
 Das Plugin nutzt PHINIT-konforme Public-Komponenten und vermeidet statische Inline-Styles, große Gradients, Glassmorphism oder KI-Optik. Die Hub-Landingpage rendert Module ausschließlich aus der Tool-Registry. Öffentliche Pluginseiten setzen einen Plugin-eigenen Abstand zum Theme-Header über PHINIT-Tokens. Ab `1.24.0` sind Icons, Badges, Fortschrittsbalken, Chart-Balken, Tabellenlabels und Statuszustände bewusst zurückhaltender gestaltet: keine bunten Icon-Kacheln, keine übergroße Pill-Optik, keine vollflächig eingefärbten Statuskarten und reduzierte Schriftgewichte für eine erfahrene, gewachsene Website-Anmutung.

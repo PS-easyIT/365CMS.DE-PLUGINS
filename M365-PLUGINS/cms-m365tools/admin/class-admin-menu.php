@@ -39,5 +39,24 @@ final class CMS_M365CALCULATOR_Admin_Menu
             'm365tools-dashboard',
             [$pages, 'render_dashboard']
         );
+
+        foreach (CMS_M365CALCULATOR_Tool_Registry::ordered_tools(false) as $tool) {
+            $moduleKey = (string) ($tool['key'] ?? '');
+            if ($moduleKey === '') {
+                continue;
+            }
+
+            $title = (string) ($tool['title'] ?? $moduleKey);
+            add_submenu_page(
+                'm365tools-dashboard',
+                $title . ' – Einstellungen',
+                '⚙️ ' . $title,
+                'manage_options',
+                'm365tools-module-' . $moduleKey,
+                static function () use ($moduleKey): void {
+                    CMS_M365CALCULATOR_Admin_Pages::render_module_settings($moduleKey);
+                }
+            );
+        }
     }
 }

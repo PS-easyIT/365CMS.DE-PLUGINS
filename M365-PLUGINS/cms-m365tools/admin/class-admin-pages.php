@@ -31,6 +31,17 @@ final class CMS_M365CALCULATOR_Admin_Pages
         });
     }
 
+    public static function render_module_settings(string $moduleKey): void
+    {
+        $key = self::clean_key($moduleKey);
+        $tool = CMS_M365CALCULATOR_Tool_Registry::tools(false)[$key] ?? null;
+        $title = is_array($tool) ? (string) ($tool['title'] ?? $key) : 'Modul';
+
+        self::render_with_layout($title . ' – Einstellungen', 'm365tools-module-' . $key, static function () use ($key): void {
+            self::instance()->render_module_settings_page($key);
+        });
+    }
+
     private static function render_with_layout(string $title, string $slug, callable $renderer): void
     {
         self::check_access();
@@ -200,5 +211,117 @@ final class CMS_M365CALCULATOR_Admin_Pages
             </form>
         </div>
         <?php
+    }
+
+    public function render_module_settings_page(string $moduleKey): void
+    {
+        $moduleKey = self::clean_key($moduleKey);
+        $tool = CMS_M365CALCULATOR_Tool_Registry::tools(false)[$moduleKey] ?? null;
+        if (!is_array($tool)) {
+            echo '<div class="admin-card"><h3>⚠️ Modul nicht gefunden</h3><p>Dieses Modul ist nicht in der Registry vorhanden.</p></div>';
+            return;
+        }
+
+        $notice = '';
+        $error = '';
+        $tabs = CMS_M365CALCULATOR_Admin_Module_Config::tabs_for($tool);
+        $activeTab = self::normalize_tab((string) ($_GET['tab'] ?? $_POST['settings_group'] ?? 'overview'), $tabs);
+        $csrfAction = 'm365tools_module_' . $moduleKey;
+        $csrfToken = class_exists('CMS\\Security')
+            ? \CMS\Security::instance()->generateToken($csrfAction)
+            : '';
+
+        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+            if (class_exists('CMS\\Security') && !\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', $csrfAction)) {
+                $error = 'Sicherheitscheck fehlgeschlagen.';
+            } else {
+                $action = (string) ($_POST['action'] ?? '');
+                if ($action === 'save_module_display') {
+                    CMS_M365CALCULATOR_Settings::save_single_module_settings($moduleKey, $_POST);
+                    $notice = 'Anzeigeeinstellungen gespeichert.';
+                    $activeTab = 'display';
+                } elseif ($action === 'save_module_options') {
+                    $activeTab = self::normalize_tab((string) ($_POST['settings_group'] ?? $activeTab), $tabs);
+                    $fields = CMS_M365CALCULATOR_Admin_Module_Config::fields_for($tool, $activeTab);
+                    CMS_M365CALCULATOR_Settings::save_module_options($moduleKey, $activeTab, self::sanitize_module_options($fields, $_POST));
+                    $notice = 'Moduleinstellungen gespeichert.';
+                }
+            }
+        }
+
+        $moduleSettings = CMS_M365CALCULATOR_Settings::settings_for_admin([$moduleKey => $tool])[$moduleKey] ?? [];
+        $tabOptions = CMS_M365CALCULATOR_Settings::module_options($moduleKey, $activeTab);
+        $fields = CMS_M365CALCULATOR_Admin_Module_Config::fields_for($tool, $activeTab);
+        $moduleAdminUrl = '/admin/plugins/m365tools-dashboard/m365tools-module-' . rawurlencode($moduleKey);
+
+        include CMS_M365CALCULATOR_PLUGIN_DIR . 'admin/views/page-module-settings.php';
+    }
+
+    /**
+     * @param array<string,string> $tabs
+     */
+    private static function normalize_tab(string $tab, array $tabs): string
+    {
+        $tab = self::clean_key($tab);
+
+        return isset($tabs[$tab]) ? $tab : 'overview';
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $fields
+     * @param array<string,mixed> $posted
+     * @return array<string,string>
+     */
+    private static function sanitize_module_options(array $fields, array $posted): array
+    {
+        $options = [];
+
+        foreach ($fields as $field) {
+            $key = self::clean_key((string) ($field['key'] ?? ''));
+            if ($key === '') {
+                continue;
+            }
+
+            $type = (string) ($field['type'] ?? 'text');
+            if ($type === 'checkbox') {
+                $options[$key] = !empty($posted[$key]) ? '1' : '0';
+                continue;
+            }
+
+            $raw = (string) ($posted[$key] ?? ($field['default'] ?? ''));
+            if ($type === 'number') {
+                $number = is_numeric($raw) ? (float) $raw : (float) ($field['default'] ?? 0);
+                $min = (float) ($field['min'] ?? -1000000);
+                $max = (float) ($field['max'] ?? 1000000);
+                $formatted = rtrim(rtrim((string) max($min, min($max, $number)), '0'), '.');
+                $options[$key] = $formatted !== '' ? $formatted : '0';
+                continue;
+            }
+
+            if ($type === 'select') {
+                $allowed = is_array($field['options'] ?? null) ? array_keys($field['options']) : [];
+                $options[$key] = in_array($raw, $allowed, true) ? $raw : (string) ($field['default'] ?? '');
+                continue;
+            }
+
+            $limit = $type === 'textarea' ? 2000 : 255;
+            $options[$key] = self::limit_text(trim(strip_tags($raw)), $limit);
+        }
+
+        return $options;
+    }
+
+    private static function clean_key(string $value): string
+    {
+        return trim((string) preg_replace('/[^a-z0-9_-]+/i', '-', strtolower($value)), '-');
+    }
+
+    private static function limit_text(string $value, int $length): string
+    {
+        if (function_exists('mb_substr')) {
+            return mb_substr($value, 0, $length);
+        }
+
+        return substr($value, 0, $length);
     }
 }

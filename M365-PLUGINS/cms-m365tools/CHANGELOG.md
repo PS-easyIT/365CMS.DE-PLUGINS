@@ -1,6 +1,15 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.25.0 – 2026-05-17
+
+- Admin-Menü erweitert: Jedes registrierte Public-Modul erhält genau einen eigenen Unterpunkt unter `M365 Tools`.
+- Neue Modul-Einstellungsseite mit URL-basierten Tabs ergänzt: Übersicht, Anzeige, Preise & Annahmen, Workflow sowie Daten & Regeln.
+- Anzeige-Tab nutzt die vorhandenen Modul-Overrides für Sichtbarkeit, Status, Sortierung, Titel und Beschreibung.
+- Neue Tabelle `cms_m365tools_module_options` ergänzt, um Preisannahmen, Workflow-Vorgaben und Daten-/Regelhinweise modulbezogen zu speichern.
+- Modul-Tabs werden aus der Tool-Registry und einer zentralen Admin-Konfiguration generiert; Copilot-, Exchange-, Teams-, Storage-, Backup-, Power-Platform-, Migration- und Preis-Tracker-Module bekommen passende Zusatzfelder.
+- Admin-CSS für PHINIT-konforme Tabs, Formular-Grids, Übersichtsblöcke und Modul-Aktionen ergänzt.
+
 ## 1.24.1 – 2026-05-17
 
 - Installer gegen ältere Modulsettings-Tabellen gehärtet, die noch nicht alle Override-Spalten enthalten.

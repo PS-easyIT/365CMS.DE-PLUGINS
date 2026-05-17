@@ -17,6 +17,20 @@ Ab Version `1.16.0` nutzt das Plugin die Tabelle `cms_m365tools_module_settings`
 | `description_override` | `TEXT` | Optionale öffentliche Beschreibung |
 | `updated_at` | `TIMESTAMP` | Änderungszeitpunkt |
 
+## `cms_m365tools_module_options`
+
+Ab Version `1.25.0` speichert diese Tabelle modulbezogene Admin-Optionen für die Tabs `Preise & Annahmen`, `Workflow` und `Daten & Regeln`. Die Werte sind bewusst generisch abgelegt, damit jedes Registry-Modul eigene Felder erhalten kann, ohne pro Modul eine neue Tabelle anzulegen.
+
+| Feld | Typ | Zweck |
+|---|---|---|
+| `id` | `INT UNSIGNED AUTO_INCREMENT` | Primärschlüssel |
+| `module_key` | `VARCHAR(120)` | Modulschlüssel aus der Tool-Registry |
+| `option_group` | `VARCHAR(60)` | Tab-/Optionsgruppe, z. B. `pricing`, `workflow`, `data` |
+| `option_key` | `VARCHAR(120)` | Feldschlüssel innerhalb der Gruppe |
+| `option_value` | `TEXT` | Gespeicherter Optionswert |
+| `value_type` | `VARCHAR(20)` | Reserviert für spätere Typauswertung, aktuell `string` |
+| `updated_at` | `TIMESTAMP` | Änderungszeitpunkt |
+
 Die Katalogdaten liegen als versionierte JSON-Dateien im Plugin-Verzeichnis:
 
 - `data/shared_mailbox_rules.json`

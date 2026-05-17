@@ -166,6 +166,18 @@ cms-m365tools/
 
 Module melden sich über `CMS_M365CALCULATOR_Tool_Registry::register()` mit `key`, `title`, `description`, `icon`, `url`, `category` und `status` an. Die Landingpage gruppiert automatisch nach Kategorie, sortiert `live` vor `beta` vor `soon`, zeigt Kennzahlen, eine Kategorie-Schnellnavigation und je Modul die Schwerpunkte aus `m365_best_practice_catalog.json`. Der Adminbereich kann je Modul Sichtbarkeit, Status, Priorität, Titel und Beschreibung überschreiben.
 
+## Admin-Modulsettings
+
+Ab `1.25.0` erhält jedes registrierte Modul genau einen eigenen Unterpunkt unter `M365 Tools`. Die Modul-Unterseite nutzt Tabs für:
+
+- `Übersicht` – Registry-Metadaten, Route, Status und Schnellaktionen
+- `Anzeige` – Sichtbarkeit, Status, Sortierung, Titel und Beschreibung
+- `Preise & Annahmen` – modulbezogene Preisaufschläge, Rabatte, Puffer und fachliche Zusatzwerte
+- `Workflow` – Owner, Review-Intervall, Freigabemodus, Quellen-/Exportverhalten und modulnahe Review-Regeln
+- `Daten & Regeln` – Quellenstand, Annahmenstatus, manuelle Annahmen und interne Änderungsvermerke
+
+Preis-, Workflow- und Datenoptionen werden in `cms_m365tools_module_options` gespeichert. Die Felddefinitionen kommen zentral aus `CMS_M365CALCULATOR_Admin_Module_Config`, damit neue Module automatisch eine konsistente Einstellungsseite erhalten.
+
 ## All-Module-Best-Practice-Kompass
 
 Der zentrale Katalog `m365_best_practice_catalog.json` ordnet alle Public-Module querschnittlichen Review-Domänen zu:

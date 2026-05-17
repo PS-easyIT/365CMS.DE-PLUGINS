@@ -6,7 +6,7 @@
 |---|---|---|
 | `cms_init` | `CMS_M365CALCULATOR::init_plugin()` | Prüft Installer-Tabelle und initialisiert Frontend Controller |
 | `plugin_activated` | `CMS_M365CALCULATOR::on_activation()` | Erstellt Modulsettings-Tabelle und initialisiert Frontend Controller |
-| `cms_admin_menu` | `CMS_M365CALCULATOR_Admin_Menu::register()` | Registriert Admin-Menü |
+| `cms_admin_menu` | `CMS_M365CALCULATOR_Admin_Menu::register()` | Registriert Admin-Menü inklusive eigenem Unterpunkt je Modul |
 | `register_routes` | `CMS_M365CALCULATOR_Frontend::instance()` | Registriert Public Routes |
 | `head` | `CMS_M365CALCULATOR_Frontend::enqueue_public_styles()` | Bindet CSS nur auf Plugin-Routen ein |
 | `body_end` | `CMS_M365CALCULATOR_Frontend::enqueue_public_scripts()` | Bindet JavaScript nur auf Rechner-Routen ein, nicht auf dem Hub |

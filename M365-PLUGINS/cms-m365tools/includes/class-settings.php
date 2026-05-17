@@ -160,11 +160,127 @@ final class CMS_M365CALCULATOR_Settings
         }
     }
 
+    /**
+     * @param array<string,mixed> $values
+     */
+    public static function save_single_module_settings(string $moduleKey, array $values): void
+    {
+        $key = self::clean_key($moduleKey);
+        if ($key === '') {
+            return;
+        }
+
+        self::save_module_settings([
+            'modules' => [
+                $key => [
+                    'is_enabled' => !empty($values['is_enabled']) ? '1' : '0',
+                    'status_override' => (string) ($values['status_override'] ?? 'live'),
+                    'priority_override' => (string) ($values['priority_override'] ?? '100'),
+                    'title_override' => (string) ($values['title_override'] ?? ''),
+                    'description_override' => (string) ($values['description_override'] ?? ''),
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public static function module_options(string $moduleKey, ?string $optionGroup = null): array
+    {
+        if (!class_exists('CMS\\Database')) {
+            return [];
+        }
+
+        $key = self::clean_key($moduleKey);
+        $group = $optionGroup !== null ? self::clean_key($optionGroup) : null;
+        if ($key === '') {
+            return [];
+        }
+
+        try {
+            $db = \CMS\Database::instance();
+            $table = self::option_table_name($db);
+            $params = [$key];
+            $where = 'module_key = ?';
+
+            if ($group !== null && $group !== '') {
+                $where .= ' AND option_group = ?';
+                $params[] = $group;
+            }
+
+            $stmt = $db->getPdo()->prepare("SELECT option_group, option_key, option_value FROM {$table} WHERE {$where}");
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $options = [];
+
+            foreach ($rows as $row) {
+                $optionKey = self::clean_key((string) ($row['option_key'] ?? ''));
+                if ($optionKey === '') {
+                    continue;
+                }
+
+                if ($group !== null && $group !== '') {
+                    $options[$optionKey] = (string) ($row['option_value'] ?? '');
+                    continue;
+                }
+
+                $optionGroup = self::clean_key((string) ($row['option_group'] ?? ''));
+                $options[$optionGroup . '.' . $optionKey] = (string) ($row['option_value'] ?? '');
+            }
+
+            return $options;
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * @param array<string,string> $options
+     */
+    public static function save_module_options(string $moduleKey, string $optionGroup, array $options): void
+    {
+        if (!class_exists('CMS\\Database')) {
+            return;
+        }
+
+        $key = self::clean_key($moduleKey);
+        $group = self::clean_key($optionGroup);
+        if ($key === '' || $group === '') {
+            return;
+        }
+
+        $db = \CMS\Database::instance();
+        $table = self::option_table_name($db);
+        $sql = "INSERT INTO {$table} (module_key, option_group, option_key, option_value, value_type)
+                VALUES (?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                    option_value = VALUES(option_value),
+                    value_type = VALUES(value_type)";
+        $stmt = $db->getPdo()->prepare($sql);
+
+        foreach ($options as $optionKey => $value) {
+            $cleanOptionKey = self::clean_key((string) $optionKey);
+            if ($cleanOptionKey === '') {
+                continue;
+            }
+
+            $stmt->execute([$key, $group, $cleanOptionKey, self::limit_text((string) $value, 2000), 'string']);
+        }
+    }
+
     private static function table_name(\CMS\Database $db): string
     {
         $prefix = method_exists($db, 'getPrefix') ? $db->getPrefix() : (method_exists($db, 'prefix') ? $db->prefix() : 'cms_');
 
         return $prefix . 'm365tools_module_settings';
+    }
+
+    private static function option_table_name(\CMS\Database $db): string
+    {
+        $prefix = method_exists($db, 'getPrefix') ? $db->getPrefix() : (method_exists($db, 'prefix') ? $db->prefix() : 'cms_');
+
+        return $prefix . 'm365tools_module_options';
     }
 
     private static function normalize_status(string $status): string

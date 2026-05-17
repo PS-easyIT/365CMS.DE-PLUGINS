@@ -1,5 +1,11 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 1.25.0 – 2026-05-17
+
+- Admin-Modulsettings dokumentiert: eigener Unterpunkt je Public-Modul und Tabs für Übersicht, Anzeige, Preise & Annahmen, Workflow sowie Daten & Regeln.
+- Neue Tabelle `cms_m365tools_module_options` in der Datenbankdokumentation ergänzt.
+- API- und Hooks-Dokumentation um Admin-Konfiguration, Moduloptionen und dynamische Submenüs erweitert.
+
 ## 1.24.1 – 2026-05-17
 
 - Installer-Härtung für Legacy-Modulsettings dokumentiert.

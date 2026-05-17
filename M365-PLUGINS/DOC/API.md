@@ -56,6 +56,16 @@
 - `license_audit_deeplinks()` – lädt Trigger und Spezialtool-Verweise
 - `audit_pdf_template()` – lädt Struktur und Labels der Druckzusammenfassung
 
+## Admin-Konfiguration
+
+- `CMS_M365CALCULATOR_Admin_Menu::register()` – registriert Dashboard und ab `1.25.0` je Tool-Registry-Modul einen eigenen Unterpunkt unter `M365 Tools`
+- `CMS_M365CALCULATOR_Admin_Pages::render_module_settings(string $moduleKey)` – rendert die Modul-Unterseite mit Tabs für Übersicht, Anzeige, Preise & Annahmen, Workflow sowie Daten & Regeln
+- `CMS_M365CALCULATOR_Admin_Module_Config::tabs_for(array $tool)` – liefert die Tab-Struktur für eine Modul-Einstellungsseite
+- `CMS_M365CALCULATOR_Admin_Module_Config::fields_for(array $tool, string $tab)` – liefert modul- und kategoriebasierte Felddefinitionen für Preis-, Workflow- und Daten-Tabs
+- `CMS_M365CALCULATOR_Settings::module_options(string $moduleKey, ?string $optionGroup = null)` – lädt gespeicherte Moduloptionen
+- `CMS_M365CALCULATOR_Settings::save_module_options(string $moduleKey, string $optionGroup, array $options)` – speichert Preis-, Workflow- und Datenoptionen eines Moduls
+- `CMS_M365CALCULATOR_Settings::save_single_module_settings(string $moduleKey, array $values)` – speichert Anzeige-Overrides für ein einzelnes Modul
+
 ## `CMS_M365CALCULATOR_License_Audit_Checklist`
 
 - `default_input()` – Default-Werte für Mandantengröße, Prüftiefe und Audit-Schwerpunkte
