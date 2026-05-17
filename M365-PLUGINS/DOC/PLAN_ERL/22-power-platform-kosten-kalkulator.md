@@ -538,3 +538,11 @@ Der Score soll **nicht** die harte Regelbasis ersetzen, sondern Grenzfälle erkl
 - Kataloge `power_platform_products.json`, `power_platform_use_cases.json`, `power_platform_connector_rules.json`, `power_platform_capacity_catalog.json` und `power_platform_governance_rules.json` ergänzt.
 - Route, Tool-Registry, Katalogloader, Update-Manifest, README und zentrale Dokumentation synchronisiert.
 - Public-Seite speichert keine Eingaben serverseitig und zeigt keine technischen Prüfmechanismen an.
+
+## Erweiterung 1.22.0 – 2026-05-17
+
+- Microsoft Learn zu Power Platform Well-Architected, Security, Identity, Application Secrets, Data Policies, Advanced Connector Policies, Managed Environments, Performance Efficiency, Operational Excellence und ALM recherchiert.
+- Kataloge um Best-Practice-Optionen für Umgebungsstrategie, Datenrichtlinien, Identität/Rollen, Zugangsdaten, ALM, Monitoring, Performance-Ziele und Datenlebenszyklus erweitert.
+- Engine um `evaluate_power_platform_best_practices()` ergänzt; Ergebnisblock `best_practices` enthält Score, Tonalität, Prüfpunkte, kritische Punkte, nächste Schritte und Quellen.
+- Public Template um PHINIT-konformen Best-Practice-Erfassungsblock und Ergebnisreview für Security, ALM, Performance, Datenrichtlinien und Betrieb erweitert.
+- Verschobene Dokumentation unter `M365-PLUGINS/DOC` aktualisiert.

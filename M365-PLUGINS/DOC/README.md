@@ -2,7 +2,7 @@
 
 ## Überblick
 
-`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Produktive Module sind der **Power Platform Kosten-Kalkulator**, der **Google Workspace ↔ Microsoft 365 TCO-Rechner**, der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
+`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Produktive Module sind der **Power Platform Kosten-Kalkulator mit Well-Architected-Review**, der **Google Workspace ↔ Microsoft 365 TCO-Rechner**, der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
 
 ## Detaildokumente
 
@@ -44,7 +44,7 @@
 | `/m365-tools` | Übersicht aller Rechner-Module |
 | `/m365-rechner` | Alternative Hub-Route |
 | `/m365-lizenz-audit-checkliste` | Interaktive Microsoft-365-Lizenz-Audit-Checkliste mit Browser-Fortschritt, Druckzusammenfassung und Deep Links |
-| `/power-platform-kosten-kalkulator` | Power Apps, Power Automate, Dataverse for Teams, Power Pages, Copilot Studio, Credits, Requests, Storage, PAYG, Capacity und Governance-Kostentreiber bewerten |
+| `/power-platform-kosten-kalkulator` | Power Apps, Power Automate, Dataverse for Teams, Power Pages, Copilot Studio, Credits, Requests, Storage, PAYG, Capacity sowie Security-, ALM-, Performance-, Datenrichtlinien- und Governance-Reife bewerten |
 | `/google-workspace-zu-m365-tco` | Google Workspace und Microsoft 365 inklusive Lizenzkosten, Migration, Schulung, Change-Aufwand, Parallelbetrieb und Break-even vergleichen |
 | `/m365-storage-bedarfsrechner` | SharePoint-Pool, OneDrive-Quotas, Exchange-Postfächer, Archivbedarf, Wachstum und Zusatzspeicherbedarf bewerten |
 | `/m365-backup-kostenrechner` | Microsoft-365-Backup-Baseline und Providervergleich für Kosten, Workloads, Retention, Restore-Tiefe und Betriebsmodell |
@@ -130,11 +130,11 @@
 | `m365_target_plans.json` | Microsoft-365-Zielpläne, Preise, Segmente und Funktionsprofile für den TCO-Rechner |
 | `workspace_to_m365_mapping.json` | Planmapping, Anforderungsoptionen und Empfehlungskategorien für beide Richtungen |
 | `migration_defaults.json` | Migrations-, Schulungs-, Change-, Hypercare-, Parallelbetriebs- und Quellenannahmen |
-| `power_platform_products.json` | Produkt- und Preisannahmen für Power Apps, Power Automate, Power Pages, Copilot Studio, PAYG und Capacity-Pfade |
+| `power_platform_products.json` | Produkt-, Preis-, Eingabe- und Best-Practice-Optionsannahmen für Power Apps, Power Automate, Power Pages, Copilot Studio, PAYG, Capacity, Security, ALM und Performance |
 | `power_platform_use_cases.json` | Use-Case-Regeln und Empfehlungskategorien für Apps, Flows, RPA, Bots, Websites und Teams-nahe Lösungen |
 | `power_platform_connector_rules.json` | Connector-Regeln für Standard, Premium, Custom und On-Premises-Pfade |
 | `power_platform_capacity_catalog.json` | Capacity-, Credit-, Request-, Storage-, Process-Mining- und PAYG-Annahmen |
-| `power_platform_governance_rules.json` | Dataverse-for-Teams- und Governance-Regeln inklusive Managed Environments, CMK, Lockbox und vNet |
+| `power_platform_governance_rules.json` | Dataverse-for-Teams-, Governance- und Microsoft-Well-Architected-Regeln inklusive Managed Environments, CMK, Lockbox, vNet, Datenrichtlinien, Security, ALM, Operations und Performance |
 
 ## Lizenz-Audit-Checkliste
 

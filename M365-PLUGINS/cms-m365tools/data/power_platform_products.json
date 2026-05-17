@@ -40,7 +40,15 @@
     "ai_builder_required": 0,
     "managed_environment": 0,
     "advanced_governance": 0,
-    "azure_subscription": 0
+    "azure_subscription": 0,
+    "environment_strategy": "dev_test_prod",
+    "data_policy_state": "classic",
+    "identity_controls": "groups",
+    "secret_management": "environment_variables",
+    "alm_level": "managed_solutions",
+    "monitoring_level": "admin_center",
+    "performance_targets": "numeric",
+    "data_lifecycle": "classified"
   },
   "products": {
     "m365_seeded_rights": {
@@ -188,6 +196,54 @@
       "authenticated": "Angemeldete Nutzer",
       "anonymous": "Anonyme Besucher",
       "mixed": "Angemeldet und anonym"
+    },
+    "environment_strategy": {
+      "default_only": "Default- oder Einzelumgebung",
+      "dev_prod": "Entwicklung und Produktion getrennt",
+      "dev_test_prod": "Entwicklung, Test und Produktion getrennt",
+      "enterprise_ring": "Dev/Test/UAT/Pre-Prod/Prod mit Regionenplanung"
+    },
+    "data_policy_state": {
+      "none": "Keine Datenrichtlinie dokumentiert",
+      "classic": "Klassische Datenrichtlinien gepflegt",
+      "advanced": "Advanced Connector Policies als Allowlist geplant",
+      "managed_advanced": "Managed Environments mit granularen Connector-Regeln"
+    },
+    "identity_controls": {
+      "basic": "Direkte Nutzer-/Maker-Zuweisungen",
+      "groups": "Gruppenbasierte Rollen und Umgebungszugriffe",
+      "conditional_pim": "Gruppen, Conditional Access und zeitbegrenzte Adminrollen",
+      "full_reviews": "Zusätzlich Access Reviews und Gast-Governance"
+    },
+    "secret_management": {
+      "embedded": "Zugangsdaten in Apps, Flows oder Build-Artefakten",
+      "environment_variables": "Umgebungsvariablen und getrennte Werte je Umgebung",
+      "vault_rotation": "Key Vault oder Secret Store mit Wechselprozess",
+      "vault_audited": "Secret Store mit Rotation, Auditing und Deployment-Integration"
+    },
+    "alm_level": {
+      "direct_edit": "Direkte Änderungen in produktiven Umgebungen",
+      "unmanaged_only": "Unmanaged Lösungen ohne Build-Pipeline",
+      "managed_solutions": "Managed Lösungen für Test und Produktion",
+      "pipelines_source_control": "Source Control, CI/CD und Managed Solutions"
+    },
+    "monitoring_level": {
+      "none": "Kein belastbares Monitoring geplant",
+      "admin_center": "Admin Center, Solution Checker und Flow Checker",
+      "app_insights": "Application Insights oder Azure Monitor angebunden",
+      "secops": "Zentraler Betrieb mit Alerts, Log Analytics und SecOps-Prozess"
+    },
+    "performance_targets": {
+      "none": "Keine Zielwerte definiert",
+      "rough": "Grobe Erwartungswerte dokumentiert",
+      "numeric": "Numerische Zielwerte je kritischem Flow",
+      "production_like": "Zielwerte plus Tests in produktionsnaher Umgebung"
+    },
+    "data_lifecycle": {
+      "unclassified": "Daten nicht klassifiziert",
+      "classified": "Datenklassen und Schutzbedarf dokumentiert",
+      "retention_archive": "Archivierung, Bereinigung und Aufbewahrung geplant",
+      "optimized": "Datenmodell, Partitionierung, Caching und Bereinigung optimiert"
     }
   }
 }

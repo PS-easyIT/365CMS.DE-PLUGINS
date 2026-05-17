@@ -560,6 +560,14 @@ final class CMS_M365CALCULATOR_Catalog
     /**
      * @return array<string,mixed>
      */
+    public static function m365_best_practice_catalog(): array
+    {
+        return self::load_json('m365_best_practice_catalog.json');
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
     public static function license_audit_deeplinks(): array
     {
         return self::load_json('license_audit_deeplinks.json');

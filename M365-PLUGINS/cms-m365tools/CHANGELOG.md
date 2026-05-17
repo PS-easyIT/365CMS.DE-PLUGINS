@@ -1,6 +1,14 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.22.0 – 2026-05-17
+
+- Power Platform Kosten-Kalkulator um Microsoft Well-Architected-, Security-, ALM-, Performance- und Operational-Excellence-Review erweitert.
+- Neue Eingabefelder für Umgebungsstrategie, Datenrichtlinien, Identität/Rollen, Zugangsdaten, ALM, Monitoring, Performance-Ziele und Datenlebenszyklus ergänzt.
+- Engine `CMS_M365CALCULATOR_Power_Platform_Cost_Calculator` gibt nun `best_practices` mit Score, Prüfpunkten, kritischen Punkten, Quellen und nächsten Schritten zurück.
+- Governance-Katalog `power_platform_governance_rules.json` um Microsoft-Learn-Quellen und Best-Practice-Regeln für Security, Datenrichtlinien, Managed Environments, Performance, Datenmodell, Betrieb und ALM erweitert.
+- Public Template zeigt den Best-Practice-Review im PHINIT-Layout, ohne serverseitige Speicherung und ohne technische Formular-Prüftexte.
+
 ## 1.21.0 – 2026-05-17
 
 - Neues Modul `power-platform-cost-calculator` unter `/power-platform-kosten-kalkulator` ergänzt.

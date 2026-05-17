@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "source_checked": "2026-05-17",
+    "title": "Microsoft 365 Best-Practice-Kompass",
+    "summary": "Querschnittsreview für Lizenzierung, Zugriff, Schutz, Servicegrenzen, Netzwerk, Performance, Copilot, Power Platform, Backup und Migrationsplanung über alle Module.",
+    "sources": [
+      "https://learn.microsoft.com/en-us/microsoft-365/admin/activity-reports/activity-reports",
+      "https://learn.microsoft.com/en-us/microsoft-365/enterprise/microsoft-365-network-connectivity-principles",
+      "https://learn.microsoft.com/en-us/microsoft-365/enterprise/performance-tuning-using-baselines-and-history",
+      "https://learn.microsoft.com/en-us/entra/identity/conditional-access/overview",
+      "https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/privileged-roles-permissions",
+      "https://learn.microsoft.com/en-us/microsoft-365/security/office-365-security/security-roadmap",
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/exchange-online-service-description/exchange-online-limits",
+      "https://learn.microsoft.com/en-us/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
+      "https://learn.microsoft.com/en-us/microsoftteams/teams-add-on-licensing/microsoft-teams-add-on-licensing",
+      "https://learn.microsoft.com/en-us/microsoftteams/limits-specifications-teams",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-licensing",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-requirements",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-privacy",
+      "https://learn.microsoft.com/en-us/microsoft-365/backup/backup-overview",
+      "https://learn.microsoft.com/en-us/power-platform/well-architected/",
+      "https://learn.microsoft.com/en-us/power-platform/well-architected/performance-efficiency/checklist"
+    ]
+  },
+  "domains": {
+    "licensing_cost": {
+      "label": "Lizenz & Kosten",
+      "summary": "Nutzerbestand, Gruppenlogik, Add-ons, Laufzeiten und Renewal-Fenster gemeinsam prüfen, damit Doppelungen und falsche Basispakete sichtbar werden."
+    },
+    "identity_access": {
+      "label": "Identität & Zugriff",
+      "summary": "Adminrollen nach geringstem Recht, MFA, Conditional Access, regelmäßigen Reviews und klaren Notfallkonten planen."
+    },
+    "security_compliance": {
+      "label": "Schutz & Compliance",
+      "summary": "Defender-, Purview-, Mail-Authentifizierung, Aufbewahrung und Datenzugriff mit den Lizenzentscheidungen verbinden."
+    },
+    "service_limits": {
+      "label": "Servicegrenzen",
+      "summary": "Exchange-, SharePoint-, OneDrive-, Teams- und Copilot-Grenzen vor Kosten- oder Migrationsentscheidungen einbeziehen."
+    },
+    "storage_backup": {
+      "label": "Speicher & Backup",
+      "summary": "Tenant-Pool, Site-Grenzen, Postfach- und Archivwachstum, Schutzumfang und Restore-Ziele gemeinsam modellieren."
+    },
+    "network_performance": {
+      "label": "Netzwerk & Performance",
+      "summary": "Lokalen Internetausstieg, lokale Namensauflösung, direkte Microsoft-365-Pfade, Basiswerte und Messfenster dokumentieren."
+    },
+    "copilot_ai": {
+      "label": "Copilot & KI",
+      "summary": "Basislizenz, primäres Exchange-Online-Postfach, Apps, OneDrive, Teams-Meetingdaten, Datenschutz und Pilotmetriken prüfen."
+    },
+    "power_platform_ops": {
+      "label": "Power Platform Betrieb",
+      "summary": "Umgebungen, Datenrichtlinien, ALM, Monitoring, Kapazität, Connectoren und produktionsnahe Performance-Ziele bewerten."
+    },
+    "migration_operations": {
+      "label": "Migration & Betrieb",
+      "summary": "Quellsystem-Performance, Change-Fenster, Hypercare, Parallelbetrieb, Reporting und Verantwortlichkeiten früh einplanen."
+    }
+  },
+  "tool_domains": {
+    "shared-mailbox": ["licensing_cost", "service_limits", "security_compliance"],
+    "m365-lizenzmatrix": ["licensing_cost", "service_limits", "security_compliance"],
+    "m365-lizenzvergleich": ["licensing_cost", "service_limits", "copilot_ai"],
+    "m365-addon-matrix": ["licensing_cost", "security_compliance", "power_platform_ops"],
+    "m365-add-on-konfigurator": ["licensing_cost", "security_compliance", "storage_backup"],
+    "m365-commitment-calculator": ["licensing_cost", "migration_operations"],
+    "m365-archive-mailbox": ["service_limits", "storage_backup", "security_compliance"],
+    "ai-pack-vs-copilot-pro": ["copilot_ai", "security_compliance", "licensing_cost"],
+    "copilot-pilot-calculator": ["copilot_ai", "identity_access", "network_performance"],
+    "frontline-worker-license-check": ["licensing_cost", "identity_access", "security_compliance"],
+    "exchange-online-roi": ["migration_operations", "service_limits", "network_performance"],
+    "teams-phone-advisor": ["licensing_cost", "service_limits", "network_performance"],
+    "microsoft-price-tracker": ["licensing_cost", "migration_operations"],
+    "license-audit-checklist": ["licensing_cost", "identity_access", "security_compliance", "network_performance", "storage_backup"],
+    "m365-backup-cost-calculator": ["storage_backup", "security_compliance", "service_limits"],
+    "m365-storage-needs-calculator": ["storage_backup", "service_limits", "network_performance"],
+    "workspace-m365-tco-calculator": ["migration_operations", "licensing_cost", "network_performance"],
+    "power-platform-cost-calculator": ["power_platform_ops", "identity_access", "security_compliance", "network_performance"],
+    "m365lic": ["licensing_cost", "service_limits", "identity_access"],
+    "copilot-license-check": ["copilot_ai", "identity_access", "network_performance"],
+    "copilot-roi": ["copilot_ai", "licensing_cost", "migration_operations"]
+  }
+}

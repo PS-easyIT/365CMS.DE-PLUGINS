@@ -28,6 +28,12 @@
       "url": "/copilot-pilot-rechner",
       "category": "Copilot"
     },
+    "copilot_roi": {
+      "label": "Copilot ROI-Rechner",
+      "description": "Berechnet Business Case, Break-even, Payback und Pilot- oder Rollout-Empfehlung.",
+      "url": "/copilot-roi-rechner",
+      "category": "Copilot"
+    },
     "frontline_check": {
       "label": "Frontline Worker Lizenz-Check",
       "description": "Bewertet F1/F3-Eignung, Mischmodell und Enterprise-Bedarf.",
@@ -56,6 +62,12 @@
       "label": "Google Workspace ↔ M365 TCO-Rechner",
       "description": "Vergleicht Workspace und Microsoft 365 inklusive Migration, Schulung, Change-Aufwand und Break-even.",
       "url": "/google-workspace-zu-m365-tco",
+      "category": "Migration"
+    },
+    "exchange_roi": {
+      "label": "Exchange Online ROI-Rechner",
+      "description": "Bewertet Vollkosten, Migrationspfad, Break-even und Betriebsrisiken für Exchange Online.",
+      "url": "/exchange-online-roi",
       "category": "Migration"
     },
     "power_platform_cost": {
@@ -99,6 +111,7 @@
     "license_advisor",
     "license_comparison",
     "workspace_tco",
+    "exchange_roi",
     "power_platform_cost",
     "addon_configurator",
     "shared_mailbox",
@@ -106,6 +119,7 @@
     "frontline_check",
     "copilot_license",
     "copilot_pilot",
+    "copilot_roi",
     "commitment_calculator",
     "price_tracker",
     "teams_phone",

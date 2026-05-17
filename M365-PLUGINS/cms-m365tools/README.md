@@ -1,13 +1,13 @@
 # CMS M365 Tools
 
-`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Enthalten sind der **Power Platform Kosten-Kalkulator**, der **Google Workspace ↔ Microsoft 365 TCO-Rechner**, der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
+`cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Enthalten sind der **All-Module-Best-Practice-Kompass**, der **Power Platform Kosten-Kalkulator mit Well-Architected-Review**, der **Google Workspace ↔ Microsoft 365 TCO-Rechner**, der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**.
 
 ## Enthaltene Routen
 
 - `/m365-tools` – Hub-Übersicht aller Module
 - `/m365-rechner` – alternative Hub-Route
 - `/m365-lizenz-audit-checkliste` – interaktive Lizenz-Audit-Checkliste mit Browser-Fortschritt, Druckzusammenfassung und Deep Links zu Spezialrechnern
-- `/power-platform-kosten-kalkulator` – Power Apps, Power Automate, Dataverse for Teams, Power Pages, Copilot Studio, Credits, Requests, Storage, PAYG, Capacity und Governance-Kostentreiber bewerten
+- `/power-platform-kosten-kalkulator` – Power Apps, Power Automate, Dataverse for Teams, Power Pages, Copilot Studio, Credits, Requests, Storage, PAYG, Capacity sowie Security-, ALM-, Performance- und Governance-Reife bewerten
 - `/google-workspace-zu-m365-tco` – Google Workspace und Microsoft 365 inklusive Lizenzkosten, Migration, Schulung, Change-Aufwand, Parallelbetrieb und Break-even vergleichen
 - `/m365-storage-bedarfsrechner` – SharePoint-Pool, OneDrive-Quotas, Exchange-Postfächer, Archivbedarf, Wachstum und Zusatzspeicherbedarf berechnen
 - `/m365-backup-kostenrechner` – Microsoft-365-Backup-Baseline und Providervergleich nach Kosten, Workloads, Retention, Restore-Tiefe und Betriebsmodell berechnen
@@ -105,6 +105,7 @@ cms-m365tools/
 │   ├── microsoft_price_changes.json
 │   ├── microsoft_inventory_mapping.json
 │   ├── microsoft_price_forecast_rules.json
+│   ├── m365_best_practice_catalog.json
 │   ├── license_audit_checklist.json
 │   ├── license_audit_deeplinks.json
 │   ├── audit_pdf_template.json
@@ -163,7 +164,23 @@ cms-m365tools/
 
 ## Landingpage-Registry
 
-Module melden sich über `CMS_M365CALCULATOR_Tool_Registry::register()` mit `key`, `title`, `description`, `icon`, `url`, `category` und `status` an. Die Landingpage gruppiert automatisch nach Kategorie und sortiert `live` vor `beta` vor `soon`. Der Adminbereich kann je Modul Sichtbarkeit, Status, Priorität, Titel und Beschreibung überschreiben.
+Module melden sich über `CMS_M365CALCULATOR_Tool_Registry::register()` mit `key`, `title`, `description`, `icon`, `url`, `category` und `status` an. Die Landingpage gruppiert automatisch nach Kategorie, sortiert `live` vor `beta` vor `soon` und zeigt je Modul die Schwerpunkte aus `m365_best_practice_catalog.json`. Der Adminbereich kann je Modul Sichtbarkeit, Status, Priorität, Titel und Beschreibung überschreiben.
+
+## All-Module-Best-Practice-Kompass
+
+Der zentrale Katalog `m365_best_practice_catalog.json` ordnet alle Public-Module querschnittlichen Review-Domänen zu:
+
+- Lizenz & Kosten
+- Identität & Zugriff
+- Schutz & Compliance
+- Servicegrenzen
+- Speicher & Backup
+- Netzwerk & Performance
+- Copilot & KI
+- Power Platform Betrieb
+- Migration & Betrieb
+
+Die Hub-Landingpage rendert daraus eine kompakte Übersicht und Modul-Fokuschips. Die Inhalte basieren auf offiziellen Microsoft-Learn-Quellen zu Usage Reports, Network Connectivity Principles, Performance-Baselines, Entra Conditional Access, privilegierten Rollen, Defender for Office 365, Exchange-/SharePoint-/Teams-Grenzen, Copilot, Backup und Power Platform Well-Architected.
 
 ## Design
 
@@ -186,6 +203,8 @@ Die Lizenz-Audit-Checkliste bewertet und strukturiert unter anderem:
 - OneDrive-Zugriff und Aufbewahrungsfristen bei ehemaligen Nutzern
 - Frontline-Kandidaten, Copilot-Basislizenzen, primäres Exchange-Online-Postfach und App-/Netzwerk-Readiness
 - Add-on-Redundanzen, SharePoint-Tenant-Speicher, Site-Limits, Extra File Storage, Microsoft 365 Backup und Laufzeitmodell
+- privilegierte Rollen, Conditional Access, Mail-Schutz, Domain-Authentizität und Microsoft-365-Nutzungsberichte
+- Netzwerkpfad, Performance-Basiswerte, SharePoint-/OneDrive-/Teams-Grenzen, Copilot-Datenzugriff und Wiederherstellungsziele
 - lokalen Browser-Fortschritt, offene/erledigte Punkte, Druck-/PDF-Zusammenfassung und Deep Links zu passenden Spezialrechnern
 
 Der Google Workspace ↔ Microsoft 365 TCO-Rechner bewertet unter anderem:
@@ -206,6 +225,8 @@ Der Power Platform Kosten-Kalkulator bewertet unter anderem:
 - Dataverse for Teams inklusive 2-GB-/Teams-Kontext, Upgrade-Pfad, AI- und Desktop-Flow-Grenzen
 - Copilot Studio, AI Builder, Copilot Credits, Requests, Dataverse Storage und Process Mining als eigene Kostenarten
 - Governance-Treiber wie Managed Environments, CMK, Customer Lockbox, vNet und Architektur-Review
+- Microsoft Well-Architected-Leitplanken für Security Baseline, Identitätssteuerung, Zugangsdaten, Datenrichtlinien, Managed Environments, ALM, Operations und Performance
+- Best-Practice-Score mit Prüfpunkten zu Umgebungsstrategie, Datenmodell, Monitoring, Deployment und produktionsnahen Performance-Zielen
 - Empfehlungskategorien für seeded ausreichend, günstiger Einstieg, Per-User-Premium, Capacity-Modell oder Architekturprüfung
 
 Der M365 Storage-Bedarfs-Rechner bewertet unter anderem:

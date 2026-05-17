@@ -50,6 +50,14 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
             'managed_environment' => (int) ($defaults['managed_environment'] ?? 0),
             'advanced_governance' => (int) ($defaults['advanced_governance'] ?? 0),
             'azure_subscription' => (int) ($defaults['azure_subscription'] ?? 0),
+            'environment_strategy' => (string) ($defaults['environment_strategy'] ?? 'dev_test_prod'),
+            'data_policy_state' => (string) ($defaults['data_policy_state'] ?? 'classic'),
+            'identity_controls' => (string) ($defaults['identity_controls'] ?? 'groups'),
+            'secret_management' => (string) ($defaults['secret_management'] ?? 'environment_variables'),
+            'alm_level' => (string) ($defaults['alm_level'] ?? 'managed_solutions'),
+            'monitoring_level' => (string) ($defaults['monitoring_level'] ?? 'admin_center'),
+            'performance_targets' => (string) ($defaults['performance_targets'] ?? 'numeric'),
+            'data_lifecycle' => (string) ($defaults['data_lifecycle'] ?? 'classified'),
         ];
     }
 
@@ -95,6 +103,14 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
         $input['managed_environment'] = self::bool_int($source['managed_environment'] ?? $input['managed_environment']);
         $input['advanced_governance'] = self::bool_int($source['advanced_governance'] ?? $input['advanced_governance']);
         $input['azure_subscription'] = self::bool_int($source['azure_subscription'] ?? $input['azure_subscription']);
+        $input['environment_strategy'] = self::enum((string) ($source['environment_strategy'] ?? $input['environment_strategy']), array_keys((array) ($options['environment_strategy'] ?? [])), 'dev_test_prod');
+        $input['data_policy_state'] = self::enum((string) ($source['data_policy_state'] ?? $input['data_policy_state']), array_keys((array) ($options['data_policy_state'] ?? [])), 'classic');
+        $input['identity_controls'] = self::enum((string) ($source['identity_controls'] ?? $input['identity_controls']), array_keys((array) ($options['identity_controls'] ?? [])), 'groups');
+        $input['secret_management'] = self::enum((string) ($source['secret_management'] ?? $input['secret_management']), array_keys((array) ($options['secret_management'] ?? [])), 'environment_variables');
+        $input['alm_level'] = self::enum((string) ($source['alm_level'] ?? $input['alm_level']), array_keys((array) ($options['alm_level'] ?? [])), 'managed_solutions');
+        $input['monitoring_level'] = self::enum((string) ($source['monitoring_level'] ?? $input['monitoring_level']), array_keys((array) ($options['monitoring_level'] ?? [])), 'admin_center');
+        $input['performance_targets'] = self::enum((string) ($source['performance_targets'] ?? $input['performance_targets']), array_keys((array) ($options['performance_targets'] ?? [])), 'numeric');
+        $input['data_lifecycle'] = self::enum((string) ($source['data_lifecycle'] ?? $input['data_lifecycle']), array_keys((array) ($options['data_lifecycle'] ?? [])), 'classified');
 
         return $input;
     }
@@ -117,6 +133,7 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
         $dataverseFit = self::evaluate_dataverse_for_teams_fit($input, $governance);
         $costs = self::calculate_power_platform_costs($input, $products, $capacity, $seeded, $dataverseFit);
         $score = self::score($input, $connector, $seeded, $dataverseFit, $useCases);
+        $bestPractices = self::evaluate_power_platform_best_practices($input, $governance);
         $recommendation = self::build_power_platform_recommendation($input, $selectedUseCase, $connector, $seeded, $dataverseFit, $costs, $useCases);
 
         return [
@@ -127,9 +144,10 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
             'dataverse_fit' => $dataverseFit,
             'costs' => $costs,
             'score' => $score,
+            'best_practices' => $bestPractices,
             'recommendation' => $recommendation,
-            'warnings' => self::build_warnings($input, $connector, $seeded, $dataverseFit, $costs, $governance),
-            'next_steps' => self::build_next_steps($recommendation, $input, $dataverseFit),
+            'warnings' => self::build_warnings($input, $connector, $seeded, $dataverseFit, $costs, $governance, $bestPractices),
+            'next_steps' => self::build_next_steps($recommendation, $input, $dataverseFit, $bestPractices),
             'options' => [
                 'use_case' => (array) ($products['options']['use_case'] ?? []),
                 'months' => (array) ($products['options']['months'] ?? []),
@@ -139,11 +157,20 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
                 'rpa_mode' => (array) ($products['options']['rpa_mode'] ?? []),
                 'bot_scope' => (array) ($products['options']['bot_scope'] ?? []),
                 'website_access' => (array) ($products['options']['website_access'] ?? []),
+                'environment_strategy' => (array) ($products['options']['environment_strategy'] ?? []),
+                'data_policy_state' => (array) ($products['options']['data_policy_state'] ?? []),
+                'identity_controls' => (array) ($products['options']['identity_controls'] ?? []),
+                'secret_management' => (array) ($products['options']['secret_management'] ?? []),
+                'alm_level' => (array) ($products['options']['alm_level'] ?? []),
+                'monitoring_level' => (array) ($products['options']['monitoring_level'] ?? []),
+                'performance_targets' => (array) ($products['options']['performance_targets'] ?? []),
+                'data_lifecycle' => (array) ($products['options']['data_lifecycle'] ?? []),
             ],
             'facts' => [
                 'capacity' => (array) ($capacity['facts'] ?? []),
                 'governance' => (array) ($governance['warnings'] ?? []),
                 'dataverse_for_teams' => (array) ($governance['dataverse_for_teams'] ?? []),
+                'best_practices' => (array) ($governance['best_practice_rules'] ?? []),
             ],
             'meta' => [
                 'source_checked' => self::source_checked([$products, $useCases, $connectorRules, $capacity, $governance]),
@@ -282,6 +309,157 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
             'summary' => $issues === []
                 ? 'Dataverse for Teams wirkt für den eingegebenen Umfang passend oder ist nicht kritisch.'
                 : 'Dataverse for Teams ist für dieses Szenario wahrscheinlich zu eng.',
+        ];
+    }
+
+    /**
+     * @param array<string,mixed> $input
+     * @param array<string,mixed> $governance
+     * @return array<string,mixed>
+     */
+    public static function evaluate_power_platform_best_practices(array $input, array $governance): array
+    {
+        $rules = is_array($governance['best_practice_rules'] ?? null) ? $governance['best_practice_rules'] : [];
+        $checks = [];
+        $score = 100;
+        $critical = [];
+        $nextSteps = [];
+        $sources = [];
+        $addCheck = static function (string $area, string $status, string $label, string $text, string $nextStep, string $source, int $penalty) use (&$checks, &$score, &$critical, &$nextSteps, &$sources): void {
+            $checks[] = [
+                'area' => $area,
+                'status' => $status,
+                'status_label' => self::best_practice_status_label($status),
+                'label' => $label,
+                'text' => $text,
+                'next_step' => $nextStep,
+                'source' => $source,
+            ];
+            $score -= $penalty;
+            if ($status === 'danger') {
+                $critical[] = $label . ': ' . $text;
+            }
+            if ($nextStep !== '') {
+                $nextSteps[] = $nextStep;
+            }
+            if ($source !== '') {
+                $sources[] = $source;
+            }
+        };
+
+        $environmentStrategy = (string) ($input['environment_strategy'] ?? 'dev_test_prod');
+        $environmentSource = self::best_practice_source($rules, 'alm');
+        if ($environmentStrategy === 'default_only') {
+            $addCheck('ALM', 'danger', 'Umgebungsstrategie zu schmal', 'Default- oder Einzelumgebungen passen nicht zu produktiven Power-Platform-Workloads.', 'Mindestens Entwicklung, Test und Produktion trennen und die Default-Umgebung kontrollieren.', $environmentSource, 25);
+        } elseif ($environmentStrategy === 'dev_prod') {
+            $addCheck('ALM', 'warning', 'Teststufe fehlt', 'Ohne separate Testumgebung fehlen Deployment- und End-to-End-Validierung vor Produktion.', 'Eine dedizierte Testumgebung für Lösungsexport, Import und Fachabnahme ergänzen.', $environmentSource, 12);
+        } else {
+            $addCheck('ALM', 'ok', 'Umgebungsstrategie tragfähig', 'Die gewählte Trennung unterstützt Entwicklung, Validierung und produktiven Betrieb.', 'Regionen und Update-Stationen bei internationalen Umgebungen vor Rollout abgleichen.', $environmentSource, 0);
+        }
+
+        $policyState = (string) ($input['data_policy_state'] ?? 'classic');
+        $policySource = self::best_practice_source($rules, 'data_policy');
+        $advancedPolicySource = self::best_practice_source($rules, 'advanced_connector_policy');
+        $connectorType = (string) ($input['connector_type'] ?? 'standard');
+        if ($policyState === 'none') {
+            $addCheck('Security', 'danger', 'Datenrichtlinien fehlen', 'Connector-Nutzung ist ohne dokumentierte Guardrails schwer steuerbar und kann Datenpfade ungewollt öffnen.', 'Datenrichtlinien je Umgebung oder Umgebungsgruppe definieren und neue Connectoren bewusst klassifizieren.', $policySource, 20);
+        } elseif ($policyState === 'advanced') {
+            $addCheck('Security', 'warning', 'Allowlist-Pfad mit Grenzen', 'Advanced Connector Policies sind granular, gelten derzeit aber vor allem für zertifizierte Connectoren.', 'Preview-Grenzen dokumentieren und Custom- oder HTTP-Pfade zusätzlich klassisch steuern.', $advancedPolicySource, in_array($connectorType, ['custom', 'onprem'], true) ? 12 : 6);
+        } elseif ($policyState === 'managed_advanced') {
+            $addCheck('Security', 'ok', 'Granulare Connector-Steuerung', 'Managed Environments mit Connector-Regeln verbessern Default-Deny, Transparenz und Betriebskontrolle.', 'Wirksamkeit regelmäßig prüfen und Policy-Änderungen mit Maker-Kommunikation begleiten.', $advancedPolicySource, 0);
+        } else {
+            $addCheck('Security', 'ok', 'Datenrichtlinien vorhanden', 'Klassische Datenrichtlinien bilden eine belastbare Basis für Business-, Non-Business- und gesperrte Connectoren.', 'Custom Connectoren, neue Connectoren und Gültigkeitsbereiche quartalsweise überprüfen.', $policySource, 0);
+        }
+
+        $identityControls = (string) ($input['identity_controls'] ?? 'groups');
+        $identitySource = self::best_practice_source($rules, 'identity');
+        if ($identityControls === 'basic') {
+            $addCheck('Security', 'danger', 'Zugriffe zu individuell', 'Direkte Zuweisungen erschweren least privilege, Rollenwechsel, Audits und Gastkontrolle.', 'Rollen über Entra-Gruppen modellieren und Adminrechte zeitlich begrenzen.', $identitySource, 18);
+        } elseif ($identityControls === 'groups') {
+            $addCheck('Security', 'warning', 'Gruppenbasis ohne starke Zusatzkontrollen', 'Gruppen reduzieren Pflegeaufwand, decken aber bedingte Zugriffe und privilegierte Rollen noch nicht vollständig ab.', 'Conditional Access, getrennte Adminrollen und Access Reviews für produktive Umgebungen ergänzen.', $identitySource, 8);
+        } else {
+            $addCheck('Security', 'ok', 'Identitätskontrollen reif', 'Gruppen, bedingte Zugriffe, zeitlich begrenzte Adminrollen und Reviews senken die Angriffsfläche.', 'Audit-Trail und Gastzugriffe regelmäßig gegen Rollenmodell prüfen.', $identitySource, 0);
+        }
+
+        $secretManagement = (string) ($input['secret_management'] ?? 'environment_variables');
+        $secretSource = self::best_practice_source($rules, 'secrets');
+        if ($secretManagement === 'embedded') {
+            $addCheck('Security', 'danger', 'Zugangsdaten unsicher abgelegt', 'Geheime Werte in Apps, Flows, Konfiguration oder Builds erhöhen Leckage- und Wiederverwendungsrisiken.', 'Key Vault, Secret Store oder getrennte Umgebungsvariablen einführen und Ablage in Code/Builds prüfen.', $secretSource, 20);
+        } elseif ($secretManagement === 'environment_variables') {
+            $addCheck('Security', 'warning', 'Zugangsdaten getrennt, aber Rotation offen', 'Umgebungsvariablen helfen beim ALM-Transport, ersetzen aber keinen vollständigen Wechsel- und Auditprozess.', 'Rotation, Berechtigungen und Protokollierung für geheime Werte verbindlich planen.', $secretSource, 8);
+        } else {
+            $addCheck('Security', 'ok', 'Zugangsdaten sauber gesteuert', 'Secret Store, Rotation, Auditing und Deployment-Integration passen zu produktiven Integrationspfaden.', 'Wechselprozesse in Runbooks und Pipelines regelmäßig testen.', $secretSource, 0);
+        }
+
+        $almLevel = (string) ($input['alm_level'] ?? 'managed_solutions');
+        $solutionSource = self::best_practice_source($rules, 'alm');
+        if ($almLevel === 'direct_edit') {
+            $addCheck('ALM', 'danger', 'Direkte Produktionsänderungen', 'Direkte Änderungen in Produktion erhöhen Ausfall-, Abhängigkeits- und Rollback-Risiken.', 'Unmanaged Entwicklung, Managed Solutions für Zielumgebungen und Freigabeprozess einführen.', $solutionSource, 22);
+        } elseif ($almLevel === 'unmanaged_only') {
+            $addCheck('ALM', 'warning', 'ALM-Reife begrenzt', 'Unmanaged-only-Prozesse sind für produktive Zielumgebungen schwer wartbar und schlecht rückverfolgbar.', 'Managed Solutions als Build-Artefakte und Source Control als führende Quelle etablieren.', $solutionSource, 12);
+        } else {
+            $addCheck('ALM', 'ok', 'Solution-Modell belastbar', 'Managed Solutions und strukturierte Umgebungen unterstützen sichere Updates und Nachvollziehbarkeit.', 'Stage-and-upgrade und klare Publisher-/Layering-Strategie für Releases nutzen.', $solutionSource, 0);
+        }
+
+        $monitoringLevel = (string) ($input['monitoring_level'] ?? 'admin_center');
+        $operationsSource = self::best_practice_source($rules, 'operations');
+        if ($monitoringLevel === 'none') {
+            $addCheck('Betrieb', 'danger', 'Monitoring fehlt', 'Ohne Metriken, Logs und Alerts werden Engpässe, Fehlermuster und Sicherheitsereignisse spät erkannt.', 'Admin Center, Checker, Application Insights oder zentrale Log-Auswertung vor Go-live festlegen.', $operationsSource, 18);
+        } elseif ($monitoringLevel === 'admin_center') {
+            $addCheck('Betrieb', 'warning', 'Basis-Monitoring vorhanden', 'Admin Center und Checker helfen im Alltag, liefern aber nur begrenzt zentrale Betriebs- und Incident-Signale.', 'Für kritische Apps Application Insights, Azure Monitor oder Log Analytics einplanen.', $operationsSource, 8);
+        } else {
+            $addCheck('Betrieb', 'ok', 'Monitoring und Betrieb belastbar', 'Zentrale Telemetrie, Alerts und Betriebsprozesse unterstützen schnelle Analyse und kontinuierliche Verbesserung.', 'Dashboards, Alarmwege und Verantwortlichkeiten regelmäßig in Incident-Übungen prüfen.', $operationsSource, 0);
+        }
+
+        $performanceTargets = (string) ($input['performance_targets'] ?? 'numeric');
+        $performanceSource = self::best_practice_source($rules, 'performance');
+        if ($performanceTargets === 'none') {
+            $addCheck('Performance', 'danger', 'Performance-Ziele fehlen', 'Ohne numerische Zielwerte lassen sich kritische Flows, Apps und Datenzugriffe nicht belastbar bewerten.', 'Antwortzeiten, Durchsatz, Laufzeiten und Lastspitzen je kritischem Flow definieren.', $performanceSource, 16);
+        } elseif ($performanceTargets === 'rough') {
+            $addCheck('Performance', 'warning', 'Performance-Ziele zu grob', 'Grobe Erwartungen reichen für saisonale Last, Connector-Limits und produktionsnahe Tests oft nicht aus.', 'Numerische Ziele und Tests in einer produktionsnahen Umgebung ergänzen.', $performanceSource, 8);
+        } else {
+            $addCheck('Performance', 'ok', 'Performance-Ziele messbar', 'Numerische Zielwerte und produktionsnahe Validierung unterstützen Kapazitäts- und Architekturentscheidungen.', 'Flow Checker, Solution Checker, Monitor und Lastdaten regelmäßig in Verbesserungen überführen.', $performanceSource, 0);
+        }
+
+        $dataLifecycle = (string) ($input['data_lifecycle'] ?? 'classified');
+        $dataPerformanceSource = self::best_practice_source($rules, 'data_performance');
+        if ($dataLifecycle === 'unclassified') {
+            $addCheck('Daten', 'danger', 'Datenklassen fehlen', 'Ohne Klassifikation sind Schutzbedarf, Zugriff, Aufbewahrung und Datenmodell schwer priorisierbar.', 'Datenklassen, Schutzbedarf und Aufbewahrung für Dataverse, Dateien und Integrationen festlegen.', $dataPerformanceSource, 18);
+        } elseif ($dataLifecycle === 'classified') {
+            $addCheck('Daten', 'warning', 'Datenmodell noch nicht optimiert', 'Klassifikation ist vorhanden, aber Archivierung, Bereinigung und Performance-Tuning sind noch offen.', 'Serverseitige Sichten, Caching, Batch-Verarbeitung, Archivierung und Bereinigung bewerten.', $dataPerformanceSource, 6);
+        } else {
+            $addCheck('Daten', 'ok', 'Datenlebenszyklus geplant', 'Klassifikation, Bereinigung, Archivierung und Optimierung reduzieren Last, Kosten und Betriebsrisiken.', 'Datenwachstum und Query-Performance im Monitoring regelmäßig nachhalten.', $dataPerformanceSource, 0);
+        }
+
+        if ((int) ($input['advanced_governance'] ?? 0) === 1 && (int) ($input['managed_environment'] ?? 0) === 0) {
+            $addCheck('Governance', 'danger', 'Enterprise-Kontrollen ohne Managed Environment', 'CMK, Lockbox, vNet, Sharing-Limits und erweiterte Auswertungen benötigen ein passendes Governance-Zielmodell.', 'Managed Environments und Lizenz-/Compliance-Voraussetzungen vor Architekturentscheidung prüfen.', self::best_practice_source($rules, 'managed_environment'), 16);
+        }
+
+        if (in_array($connectorType, ['custom', 'onprem'], true) && !in_array($policyState, ['classic', 'managed_advanced'], true)) {
+            $addCheck('Security', 'warning', 'Custom-Connector-Pfad absichern', 'Custom- oder On-Premises-Pfade brauchen heute zusätzliche klassische Steuerung und Review der Datenwege.', 'Connector-Besitzer, Endpunkte, Datenklassen und erlaubte Umgebungen dokumentieren.', $policySource, 8);
+        }
+
+        if ($almLevel !== 'pipelines_source_control' && (int) ($input['environments'] ?? 1) > 2) {
+            $addCheck('ALM', 'warning', 'Deployment-Prozess kann bremsen', 'Mehrere Umgebungen ohne CI/CD erhöhen Importzeiten, manuelle Schritte und Fehlerrisiko.', 'Source Control, Build-Artefakte, stage-and-upgrade und kleine Lösungsschichten einführen.', self::best_practice_source($rules, 'deployment_performance'), 8);
+        }
+
+        $score = max(0, min(100, $score));
+        $tone = $score >= 80 ? 'success' : ($score >= 60 ? 'warning' : 'danger');
+        $label = $tone === 'success'
+            ? 'Best-Practice-Reife gut'
+            : ($tone === 'warning' ? 'Best-Practice-Reife prüfen' : 'Best-Practice-Reife kritisch');
+
+        return [
+            'score' => $score,
+            'tone' => $tone,
+            'label' => $label,
+            'summary' => $score >= 80
+                ? 'Security, ALM, Performance und Betrieb wirken für das Szenario solide vorbereitet.'
+                : 'Vor produktivem Ausbau sollten die markierten Governance-, Sicherheits-, ALM- oder Performance-Punkte geklärt werden.',
+            'checks' => $checks,
+            'critical' => array_values(array_unique($critical)),
+            'next_steps' => array_slice(array_values(array_unique($nextSteps)), 0, 8),
+            'sources' => array_values(array_unique(array_filter($sources))),
         ];
     }
 
@@ -527,7 +705,7 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
             'recommendation' => (string) ($result['recommendation']['label'] ?? ''),
             'monthly_total' => (float) ($result['costs']['monthly_total'] ?? 0),
             'period_total' => (float) ($result['costs']['period_total'] ?? 0),
-            'sections' => ['Empfehlung', 'Kostenblöcke', 'Seeded Fit', 'Dataverse for Teams', 'Warnungen', 'Nächste Schritte'],
+            'sections' => ['Empfehlung', 'Kostenblöcke', 'Seeded Fit', 'Dataverse for Teams', 'Best-Practice-Review', 'Warnungen', 'Nächste Schritte'],
             'delivery' => 'browser_print',
         ];
     }
@@ -615,6 +793,22 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
         ];
     }
 
+    /** @param array<string,mixed> $rules */
+    private static function best_practice_source(array $rules, string $key): string
+    {
+        return (string) ($rules[$key]['source'] ?? '');
+    }
+
+    private static function best_practice_status_label(string $status): string
+    {
+        return match ($status) {
+            'ok' => 'passt',
+            'warning' => 'prüfen',
+            'danger' => 'kritisch',
+            default => 'offen',
+        };
+    }
+
     /** @param array<int,array<string,mixed>> $items */
     private static function primary_cost_driver(array $items): string
     {
@@ -629,9 +823,10 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
      * @param array<string,mixed> $dataverseFit
      * @param array<string,mixed> $costs
      * @param array<string,mixed> $governance
+     * @param array<string,mixed> $bestPractices
      * @return array<int,string>
      */
-    private static function build_warnings(array $input, array $connector, array $seeded, array $dataverseFit, array $costs, array $governance): array
+    private static function build_warnings(array $input, array $connector, array $seeded, array $dataverseFit, array $costs, array $governance, array $bestPractices): array
     {
         $warnings = [];
         foreach ((array) ($seeded['blockers'] ?? []) as $blocker) {
@@ -659,6 +854,9 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
         if ((int) ($input['dataverse_for_teams'] ?? 0) === 1 && !empty($governanceWarnings['dataverse_for_teams_limit'])) {
             $warnings[] = (string) $governanceWarnings['dataverse_for_teams_limit'];
         }
+        foreach (array_slice((array) ($bestPractices['critical'] ?? []), 0, 4) as $critical) {
+            $warnings[] = (string) $critical;
+        }
 
         return array_values(array_unique(array_filter($warnings)));
     }
@@ -667,9 +865,10 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
      * @param array<string,mixed> $recommendation
      * @param array<string,mixed> $input
      * @param array<string,mixed> $dataverseFit
+     * @param array<string,mixed> $bestPractices
      * @return array<int,string>
      */
-    private static function build_next_steps(array $recommendation, array $input, array $dataverseFit): array
+    private static function build_next_steps(array $recommendation, array $input, array $dataverseFit, array $bestPractices): array
     {
         $steps = [
             'Produktive Connectoren, Umgebungen und App-/Flow-Besitzer inventarisieren.',
@@ -684,6 +883,9 @@ final class CMS_M365CALCULATOR_Power_Platform_Cost_Calculator
         }
         if ((int) ($input['monthly_copilot_credits'] ?? 0) > 0 || (int) ($input['ai_builder_required'] ?? 0) === 1) {
             $steps[] = 'Copilot- und AI-Verbrauch monatlich schätzen und Monitoring in Power Platform Admin Center einplanen.';
+        }
+        foreach ((array) ($bestPractices['next_steps'] ?? []) as $bestPracticeStep) {
+            $steps[] = (string) $bestPracticeStep;
         }
 
         return array_values(array_unique($steps));

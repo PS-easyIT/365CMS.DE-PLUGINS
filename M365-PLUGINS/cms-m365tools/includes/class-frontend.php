@@ -234,6 +234,10 @@ final class CMS_M365CALCULATOR_Frontend
     private function render_toolbox(): void
     {
         $groupedTools = CMS_M365CALCULATOR_Tool_Registry::grouped_by_category();
+        $bestPracticeCatalog = CMS_M365CALCULATOR_Catalog::m365_best_practice_catalog();
+        $bestPracticeMeta = is_array($bestPracticeCatalog['meta'] ?? null) ? $bestPracticeCatalog['meta'] : [];
+        $bestPracticeDomains = is_array($bestPracticeCatalog['domains'] ?? null) ? $bestPracticeCatalog['domains'] : [];
+        $toolReviewMap = is_array($bestPracticeCatalog['tool_domains'] ?? null) ? $bestPracticeCatalog['tool_domains'] : [];
         $this->set_seo('M365 Tools', 'Übersicht verfügbarer Microsoft-365-Rechner, Checklisten und Berechnungstools.');
         include CMS_M365CALCULATOR_PLUGIN_DIR . 'templates/landing.php';
         exit;

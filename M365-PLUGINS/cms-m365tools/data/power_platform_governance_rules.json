@@ -5,7 +5,24 @@
     "source_checked": "2026-05-17",
     "sources": [
       "https://learn.microsoft.com/en-us/power-platform/admin/powerapps-flow-licensing-faq",
-      "https://learn.microsoft.com/en-us/power-platform/admin/about-teams-environment"
+      "https://learn.microsoft.com/en-us/power-platform/admin/about-teams-environment",
+      "https://learn.microsoft.com/en-us/power-platform/well-architected/security/checklist",
+      "https://learn.microsoft.com/en-us/power-platform/well-architected/security/principles",
+      "https://learn.microsoft.com/en-us/power-platform/well-architected/security/identity-access",
+      "https://learn.microsoft.com/en-us/power-platform/well-architected/security/application-secrets",
+      "https://learn.microsoft.com/en-us/power-platform/admin/wp-data-loss-prevention",
+      "https://learn.microsoft.com/en-us/power-platform/admin/prevent-data-loss",
+      "https://learn.microsoft.com/en-us/power-platform/admin/advanced-connector-policies",
+      "https://learn.microsoft.com/en-us/power-platform/admin/managed-environment-overview",
+      "https://learn.microsoft.com/en-us/power-platform/well-architected/performance-efficiency/checklist",
+      "https://learn.microsoft.com/en-us/power-platform/well-architected/performance-efficiency/optimize-code",
+      "https://learn.microsoft.com/en-us/power-platform/well-architected/performance-efficiency/optimize-data-performance",
+      "https://learn.microsoft.com/en-us/power-platform/well-architected/operational-excellence/checklist",
+      "https://learn.microsoft.com/en-us/power-platform/alm/basics-alm",
+      "https://learn.microsoft.com/en-us/power-platform/alm/environment-strategy-alm",
+      "https://learn.microsoft.com/en-us/power-platform/alm/solution-concepts-alm",
+      "https://learn.microsoft.com/en-us/power-platform/alm/organize-solutions",
+      "https://learn.microsoft.com/en-us/power-platform/alm/performance-recommendations"
     ]
   },
   "dataverse_for_teams": {
@@ -62,5 +79,62 @@
     "dataverse_for_teams_limit": "Dataverse for Teams ist bewusst limitiert; bei Wachstum, AI, Desktop-Flows oder Nutzung außerhalb Teams ist ein Upgrade-Pfad einzuplanen.",
     "power_pages_capacity": "Power Pages wird nach eindeutigen Website-Nutzern und Kapazität geplant, nicht als normaler Per-User-Plan.",
     "credits_monthly_reset": "Credits und viele Capacity-Modelle werden monatlich betrachtet; nicht genutzte Kapazität wird nicht in den nächsten Monat übernommen."
+  },
+  "best_practice_rules": {
+    "security": {
+      "label": "Security Baseline und Zugriff",
+      "source": "https://learn.microsoft.com/en-us/power-platform/well-architected/security/checklist",
+      "summary": "Zero-Trust-Prinzipien, least privilege, Datenklassifikation, sichere Entwicklung, starke Identitätssteuerung und Incident-Prozesse sollten vor breitem Rollout feststehen."
+    },
+    "identity": {
+      "label": "Identität und Rollenmodell",
+      "source": "https://learn.microsoft.com/en-us/power-platform/well-architected/security/identity-access",
+      "summary": "Microsoft Entra ID, Gruppen, Conditional Access, zeitbegrenzte Adminrollen, Access Reviews und Audit Trails reduzieren Betriebs- und Sicherheitsrisiken."
+    },
+    "secrets": {
+      "label": "Zugangsdaten und geheime Werte",
+      "source": "https://learn.microsoft.com/en-us/power-platform/well-architected/security/application-secrets",
+      "summary": "Geheime Werte gehören in gehärtete Stores oder sauber getrennte Umgebungsvariablen, mit Rotation, Auditing und Scans gegen versehentliche Ablage in Code oder Builds."
+    },
+    "data_policy": {
+      "label": "Datenrichtlinien und Connector-Grenzen",
+      "source": "https://learn.microsoft.com/en-us/power-platform/admin/wp-data-loss-prevention",
+      "summary": "Datenrichtlinien wirken als Guardrails für Connectoren, betreffen Design- und Laufzeit und brauchen bei Custom- oder HTTP-Pfaden weiterhin klassische Steuerung."
+    },
+    "advanced_connector_policy": {
+      "label": "Advanced Connector Policies",
+      "source": "https://learn.microsoft.com/en-us/power-platform/admin/advanced-connector-policies",
+      "summary": "Advanced Connector Policies setzen auf Default-Deny und Allowlists für zertifizierte Connectoren; produktiv wegen Preview-Status und Custom-Connector-Grenzen bewusst einplanen."
+    },
+    "managed_environment": {
+      "label": "Managed Environments",
+      "source": "https://learn.microsoft.com/en-us/power-platform/admin/managed-environment-overview",
+      "summary": "Managed Environments bündeln Governance, Usage Insights, Sharing-Limits, Solution Checker, Policies, Pipelines, App Insights Export und Enterprise-Kontrollen."
+    },
+    "performance": {
+      "label": "Performance Efficiency",
+      "source": "https://learn.microsoft.com/en-us/power-platform/well-architected/performance-efficiency/checklist",
+      "summary": "Numerische Ziele, produktionsnahe Tests, Messdaten, optimierte Logik, priorisierte kritische Flows und kontinuierliche Optimierung sind zentrale Performance-Leitplanken."
+    },
+    "data_performance": {
+      "label": "Datenperformance",
+      "source": "https://learn.microsoft.com/en-us/power-platform/well-architected/performance-efficiency/optimize-data-performance",
+      "summary": "Datenprofiling, serverseitige Sichten, Caching, Batch-Verarbeitung, Partitionierung, Archivierung und Bereinigung verhindern unnötige Last und spätere Skalierungsprobleme."
+    },
+    "operations": {
+      "label": "Operational Excellence",
+      "source": "https://learn.microsoft.com/en-us/power-platform/well-architected/operational-excellence/checklist",
+      "summary": "Dokumentierte Betriebsaufgaben, klare Verantwortlichkeiten, Automatisierung, Monitoring, Notfallprozesse und sichere Deployment-Methoden erhöhen Betriebsreife."
+    },
+    "alm": {
+      "label": "ALM und Solutions",
+      "source": "https://learn.microsoft.com/en-us/power-platform/alm/basics-alm",
+      "summary": "Mindestens Entwicklung, Test und Produktion trennen, Source Control nutzen, Managed Solutions in Nicht-Entwicklungsumgebungen einsetzen und CI/CD standardisieren."
+    },
+    "deployment_performance": {
+      "label": "Deployment Performance",
+      "source": "https://learn.microsoft.com/en-us/power-platform/alm/performance-recommendations",
+      "summary": "Stage-and-upgrade, kleine Lösungsschichten, keine Force-Overwrite-Imports und kein Publish-all bei Managed Solutions beschleunigen und stabilisieren Rollouts."
+    }
   }
 }

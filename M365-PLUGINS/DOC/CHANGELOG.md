@@ -1,5 +1,12 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 1.22.0 – 2026-05-17
+
+- Power-Platform-Dokumentation um Microsoft Well-Architected-, Security-, ALM-, Performance-, Datenrichtlinien- und Operational-Excellence-Review erweitert.
+- API-Dokumentation ergänzt `evaluate_power_platform_best_practices()` und den neuen Ergebnisblock `best_practices`.
+- Modul-Dokumentation `modules/power-platform-cost-calculator.md` um neue Eingabefelder, Best-Practice-Score, Prüfpunkte und Quellen erweitert.
+- Datenquellenbeschreibung für `power_platform_products.json` und `power_platform_governance_rules.json` auf Best-Practice-Optionen und Microsoft-Learn-Regeln erweitert.
+
 ## 1.21.0 – 2026-05-17
 
 - Modul-Dokumentation `modules/power-platform-cost-calculator.md` für den neuen Power Platform Kosten-Kalkulator ergänzt.

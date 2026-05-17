@@ -33,6 +33,7 @@ $recommendation = is_array($result['recommendation'] ?? null) ? $result['recomme
 $costs = is_array($result['costs'] ?? null) ? $result['costs'] : [];
 $seeded = is_array($result['seeded'] ?? null) ? $result['seeded'] : [];
 $dataverseFit = is_array($result['dataverse_fit'] ?? null) ? $result['dataverse_fit'] : [];
+$bestPractices = is_array($result['best_practices'] ?? null) ? $result['best_practices'] : [];
 $options = is_array($result['options'] ?? null) ? $result['options'] : [];
 $warnings = is_array($result['warnings'] ?? null) ? $result['warnings'] : [];
 $nextSteps = is_array($result['next_steps'] ?? null) ? $result['next_steps'] : [];
@@ -63,7 +64,7 @@ if (class_exists('CMS\ThemeManager')) {
             <header class="m365calc-section__head">
                 <section>
                     <h2 id="power-platform-form-title">Szenario erfassen</h2>
-                    <p>Trenne enthaltene M365-/Teams-Rechte, Premium-Pfade, Capacity-Modelle und Governance-Risiken sauber voneinander.</p>
+                    <p>Trenne enthaltene M365-/Teams-Rechte, Premium-Pfade, Capacity-Modelle, Security, ALM, Performance und Governance sauber voneinander.</p>
                 </section>
             </header>
 
@@ -244,6 +245,76 @@ if (class_exists('CMS\ThemeManager')) {
                     </section>
                 </fieldset>
 
+                <fieldset class="m365calc-fieldset">
+                    <legend>Best Practices, Sicherheit und Betrieb</legend>
+                    <section class="m365calc-form-grid m365calc-form-grid--2">
+                        <label class="phinit-field" for="pp-environment-strategy">
+                            Umgebungsstrategie
+                            <select class="phinit-select" id="pp-environment-strategy" name="environment_strategy">
+                                <?php foreach (($options['environment_strategy'] ?? []) as $key => $label): ?>
+                                <option value="<?php echo $esc($key); ?>"<?php echo $isSelected((string) ($input['environment_strategy'] ?? ''), (string) $key); ?>><?php echo $esc($label); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="phinit-field" for="pp-data-policy-state">
+                            Datenrichtlinien
+                            <select class="phinit-select" id="pp-data-policy-state" name="data_policy_state">
+                                <?php foreach (($options['data_policy_state'] ?? []) as $key => $label): ?>
+                                <option value="<?php echo $esc($key); ?>"<?php echo $isSelected((string) ($input['data_policy_state'] ?? ''), (string) $key); ?>><?php echo $esc($label); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="phinit-field" for="pp-identity-controls">
+                            Identität und Rollen
+                            <select class="phinit-select" id="pp-identity-controls" name="identity_controls">
+                                <?php foreach (($options['identity_controls'] ?? []) as $key => $label): ?>
+                                <option value="<?php echo $esc($key); ?>"<?php echo $isSelected((string) ($input['identity_controls'] ?? ''), (string) $key); ?>><?php echo $esc($label); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="phinit-field" for="pp-secret-management">
+                            Umgang mit Zugangsdaten
+                            <select class="phinit-select" id="pp-secret-management" name="secret_management">
+                                <?php foreach (($options['secret_management'] ?? []) as $key => $label): ?>
+                                <option value="<?php echo $esc($key); ?>"<?php echo $isSelected((string) ($input['secret_management'] ?? ''), (string) $key); ?>><?php echo $esc($label); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="phinit-field" for="pp-alm-level">
+                            ALM und Deployment
+                            <select class="phinit-select" id="pp-alm-level" name="alm_level">
+                                <?php foreach (($options['alm_level'] ?? []) as $key => $label): ?>
+                                <option value="<?php echo $esc($key); ?>"<?php echo $isSelected((string) ($input['alm_level'] ?? ''), (string) $key); ?>><?php echo $esc($label); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="phinit-field" for="pp-monitoring-level">
+                            Monitoring und Betrieb
+                            <select class="phinit-select" id="pp-monitoring-level" name="monitoring_level">
+                                <?php foreach (($options['monitoring_level'] ?? []) as $key => $label): ?>
+                                <option value="<?php echo $esc($key); ?>"<?php echo $isSelected((string) ($input['monitoring_level'] ?? ''), (string) $key); ?>><?php echo $esc($label); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="phinit-field" for="pp-performance-targets">
+                            Performance-Ziele
+                            <select class="phinit-select" id="pp-performance-targets" name="performance_targets">
+                                <?php foreach (($options['performance_targets'] ?? []) as $key => $label): ?>
+                                <option value="<?php echo $esc($key); ?>"<?php echo $isSelected((string) ($input['performance_targets'] ?? ''), (string) $key); ?>><?php echo $esc($label); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="phinit-field" for="pp-data-lifecycle">
+                            Datenmodell und Lebenszyklus
+                            <select class="phinit-select" id="pp-data-lifecycle" name="data_lifecycle">
+                                <?php foreach (($options['data_lifecycle'] ?? []) as $key => $label): ?>
+                                <option value="<?php echo $esc($key); ?>"<?php echo $isSelected((string) ($input['data_lifecycle'] ?? ''), (string) $key); ?>><?php echo $esc($label); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                    </section>
+                </fieldset>
+
                 <section class="m365calc-actions">
                     <button type="submit" class="phinit-btn phinit-btn--primary">Power-Platform-Kosten berechnen</button>
                     <a class="phinit-btn phinit-btn--secondary" href="/power-platform-kosten-kalkulator">Zurücksetzen</a>
@@ -274,6 +345,12 @@ if (class_exists('CMS\ThemeManager')) {
                 <h2><?php echo $esc($recommendation['use_case_text'] ?? ''); ?></h2>
                 <p><?php echo $esc($seeded['summary'] ?? ''); ?></p>
             </article>
+
+            <article class="phinit-note <?php echo $esc($toneClass((string) ($bestPractices['tone'] ?? 'info'))); ?>">
+                <p class="phinit-overline">Best-Practice-Review</p>
+                <h2><?php echo $esc($bestPractices['label'] ?? 'Best-Practice-Reife prüfen'); ?></h2>
+                <p><?php echo $esc($bestPractices['summary'] ?? ''); ?></p>
+            </article>
         </aside>
     </section>
 
@@ -292,6 +369,11 @@ if (class_exists('CMS\ThemeManager')) {
             <span>Score</span>
             <strong><?php echo (int) ($result['score']['value'] ?? 0); ?></strong>
             <p>Positive Werte sprechen für einfache Pfade, negative Werte für Review- und Premium-Treiber.</p>
+        </article>
+        <article class="phinit-card m365calc-mini-card">
+            <span>Best Practices</span>
+            <strong><?php echo (int) ($bestPractices['score'] ?? 0); ?>/100</strong>
+            <p><?php echo $esc($bestPractices['label'] ?? 'Best-Practice-Reife prüfen'); ?></p>
         </article>
         <article class="phinit-card m365calc-mini-card">
             <span>Quellenstand</span>
@@ -327,6 +409,37 @@ if (class_exists('CMS\ThemeManager')) {
                             <td><?php echo $money($item['unit_price'] ?? 0, $currency); ?></td>
                             <td><?php echo $money($item['monthly'] ?? 0, $currency); ?></td>
                             <td><?php echo $esc($item['note'] ?? ''); ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </section>
+        </article>
+
+        <article class="phinit-card">
+            <header class="m365calc-section__head">
+                <section>
+                    <p class="phinit-overline">Best Practices</p>
+                    <h2>Security, ALM, Performance und Betrieb</h2>
+                </section>
+            </header>
+            <section class="m365calc-table-wrap">
+                <table class="phinit-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Bereich</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Bewertung</th>
+                            <th scope="col">Nächster Schritt</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach (($bestPractices['checks'] ?? []) as $check): ?>
+                        <tr>
+                            <td><?php echo $esc($check['area'] ?? ''); ?></td>
+                            <td><?php echo $esc($check['status_label'] ?? 'offen'); ?></td>
+                            <td><strong><?php echo $esc($check['label'] ?? ''); ?></strong><br><?php echo $esc($check['text'] ?? ''); ?></td>
+                            <td><?php echo $esc($check['next_step'] ?? ''); ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>

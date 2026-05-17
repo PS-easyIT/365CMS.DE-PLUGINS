@@ -37,11 +37,11 @@
 - `m365_target_plans()` – lädt Microsoft-365-Zielpläne, Preise, Segmente und Funktionsprofile für den TCO-Rechner
 - `workspace_to_m365_mapping()` – lädt Planmapping, Anforderungsoptionen und Empfehlungskategorien für beide Richtungen
 - `migration_defaults()` – lädt Migrations-, Schulungs-, Change-, Hypercare- und Parallelbetriebsannahmen
-- `power_platform_products()` – lädt Produkt-, Preis- und Optionskatalog für den Power Platform Kosten-Kalkulator
+- `power_platform_products()` – lädt Produkt-, Preis-, Options- und Best-Practice-Auswahlkatalog für den Power Platform Kosten-Kalkulator
 - `power_platform_use_cases()` – lädt Use-Case-Regeln und Empfehlungskategorien
 - `power_platform_connector_rules()` – lädt Standard-/Premium-/Custom-/On-Premises-Connectorregeln
 - `power_platform_capacity_catalog()` – lädt Capacity-, Credit-, Request-, Storage-, Process-Mining- und PAYG-Annahmen
-- `power_platform_governance_rules()` – lädt Dataverse-for-Teams- und Governance-Leitplanken
+- `power_platform_governance_rules()` – lädt Dataverse-for-Teams-, Governance- und Well-Architected-Leitplanken
 - `license_advisor_plans()` – lädt Basislizenz-Kataloge
 - `license_advisor_addons()` – lädt Add-ons und Prerequisites
 - `license_advisor_feature_matrix()` – lädt Featuredefinitionen
@@ -191,13 +191,14 @@
 
 ## `CMS_M365CALCULATOR_Power_Platform_Cost_Calculator`
 
-- `default_input()` – Default-Werte für Use Case, Nutzer, Maker, Umgebungen, Connectoren, RPA, Website, Credits, Requests, Storage und Governance
+- `default_input()` – Default-Werte für Use Case, Nutzer, Maker, Umgebungen, Connectoren, RPA, Website, Credits, Requests, Storage, Governance und Best-Practice-Felder
 - `normalize_input(array $source)` – normalisiert Anfrageparameter, Zahlenfelder, Auswahlwerte und Checkbox-Werte
 - `validate_power_platform_input(array $source)` – normalisiert Eingaben und liefert fachliche Hinweise zu fehlenden Mengen
-- `evaluate(array $input)` – kombiniert Use Case, Seeded-Rechte, Connector-Regeln, Dataverse-for-Teams-Fit, Kostenblöcke, Warnungen, Quellen und nächste Schritte
+- `evaluate(array $input)` – kombiniert Use Case, Seeded-Rechte, Connector-Regeln, Dataverse-for-Teams-Fit, Kostenblöcke, Best-Practice-Review, Warnungen, Quellen und nächste Schritte
 - `evaluate_power_platform_use_case(array $input)` – liefert den gewählten Use Case, Hauptpfad, Alternativpfad und Capacity-Einordnung
 - `evaluate_power_platform_seeded_rights(array $input, array $useCase, array $connector)` – prüft, ob enthaltene M365-/Teams-Rechte plausibel ausreichen
 - `evaluate_dataverse_for_teams_fit(array $input, array $governance)` – bewertet Dataverse-for-Teams-Grenzen und Upgrade-Treiber
+- `evaluate_power_platform_best_practices(array $input, array $governance)` – bewertet Security, Datenrichtlinien, Identität, Zugangsdaten, ALM, Monitoring, Performance und Datenlebenszyklus anhand Microsoft-Well-Architected-Leitplanken
 - `calculate_power_platform_costs(array $input, array $productsCatalog, array $capacityCatalog, array $seeded, array $dataverseFit)` – berechnet Monats-, Jahres- und Zeitraumkosten
 - `calculate_power_platform_capacity_costs(array $input, array $capacity, array $seeded)` – berechnet Dataverse Storage, Process Mining, Request-Add-ons und AI-Prüfpositionen
 - `calculate_power_platform_credit_usage(array $input)` – berechnet Copilot-Credit-Verbrauch auf Monats- und Jahresbasis

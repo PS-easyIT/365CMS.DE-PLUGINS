@@ -90,6 +90,8 @@ Die Katalogdaten liegen als versionierte JSON-Dateien im Plugin-Verzeichnis:
 - `data/power_platform_capacity_catalog.json`
 - `data/power_platform_governance_rules.json`
 
+`power_platform_products.json` enthält ab `1.22.0` zusätzlich die Optionswerte für Umgebungsstrategie, Datenrichtlinien, Identitätssteuerung, Zugangsdaten, ALM, Monitoring, Performance-Ziele und Datenlebenszyklus. `power_platform_governance_rules.json` enthält ab `1.22.0` die Microsoft-Well-Architected-, Security-, Datenrichtlinien-, Managed-Environment-, Performance-, Operations- und ALM-Quellen für den Best-Practice-Review.
+
 Die Lizenz-Audit-Checkliste speichert keine Daten serverseitig. Der interaktive Fortschritt wird im Browser des Besuchers verwaltet und nicht in einer Datenbank-Tabelle persistiert.
 
 Der Power Platform Kosten-Kalkulator verwendet ausschließlich versionierte JSON-Kataloge und persistiert keine Public-Eingaben serverseitig.

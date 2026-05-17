@@ -2,7 +2,7 @@
   "meta": {
     "source_checked": "2026-05-17",
     "title": "Lizenz-Audit-Checkliste",
-    "intro": "Schrittweise Microsoft-365-Auditliste für Lizenzbestand, Offboarding, Shared Mailboxes, Copilot, Frontline, Speicher und Backup.",
+    "intro": "Schrittweise Microsoft-365-Auditliste für Lizenzbestand, Offboarding, Shared Mailboxes, Copilot, Frontline, Speicher, Backup, Zugriff, Schutz, Netzwerk und Performance.",
     "sources": [
       "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/assign-licenses-to-users",
       "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/manage-group-licenses?view=o365-worldwide",
@@ -18,7 +18,15 @@
       "https://learn.microsoft.com/en-us/sharepoint/manage-site-collection-storage-limits",
       "https://learn.microsoft.com/en-us/office365/admin/subscriptions-and-billing/add-storage-space",
       "https://learn.microsoft.com/en-us/microsoft-365/backup/backup-overview",
-      "https://learn.microsoft.com/en-us/microsoft-365/frontline/flw-licensing-options?view=o365-worldwide"
+      "https://learn.microsoft.com/en-us/microsoft-365/frontline/flw-licensing-options?view=o365-worldwide",
+      "https://learn.microsoft.com/en-us/microsoft-365/admin/activity-reports/activity-reports",
+      "https://learn.microsoft.com/en-us/entra/identity/conditional-access/overview",
+      "https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/privileged-roles-permissions",
+      "https://learn.microsoft.com/en-us/microsoft-365/security/office-365-security/security-roadmap",
+      "https://learn.microsoft.com/en-us/microsoft-365/enterprise/microsoft-365-network-connectivity-principles",
+      "https://learn.microsoft.com/en-us/microsoft-365/enterprise/performance-tuning-using-baselines-and-history",
+      "https://learn.microsoft.com/en-us/microsoftteams/limits-specifications-teams",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-privacy"
     ]
   },
   "categories": {
@@ -325,6 +333,120 @@
           "deeplink_triggers": ["commitment_calculator", "price_tracker"],
           "summary_if_open": "Laufzeitmodell und flexible Seats sind noch nicht bewertet.",
           "summary_if_done": "Laufzeitmodell und flexible Seats sind bewertet."
+        }
+      ]
+    },
+    "security_performance_operations": {
+      "label": "Zugriff, Schutz, Netzwerk und Betrieb",
+      "description": "Querschnittsprüfung für Adminrollen, Zugriffspolitik, Mail-Schutz, Reporting, Servicegrenzen, Netzwerkpfade, Copilot, Teams und Wiederherstellung.",
+      "items": [
+        {
+          "id": "ops-privileged-roles",
+          "label": "Privilegierte Rollen auf geringstes Recht und Review-Rhythmus prüfen",
+          "description": "Begrenze globale Adminrechte, plane Just-in-Time-Zugriff, starke Anmeldung und wiederkehrende Zugriffsreviews für Rollen mit hohem Einfluss.",
+          "severity": "critical",
+          "weight": 14,
+          "finding_type": "privileged_access",
+          "source_url": "https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/privileged-roles-permissions",
+          "deeplink_triggers": ["license_advisor", "addon_configurator"],
+          "summary_if_open": "Privilegierte Rollen sind noch nicht nach geringstem Recht und Review-Rhythmus bewertet.",
+          "summary_if_done": "Privilegierte Rollen sind nach geringstem Recht und Review-Rhythmus bewertet."
+        },
+        {
+          "id": "ops-conditional-access",
+          "label": "Conditional-Access-Basisregeln und Legacy-Anmeldung prüfen",
+          "description": "Plane Regeln für Adminrollen, riskante Anmeldungen, Geräte- und Standortsignale sowie das Blockieren veralteter Anmeldewege.",
+          "severity": "critical",
+          "weight": 13,
+          "finding_type": "access_policy",
+          "source_url": "https://learn.microsoft.com/en-us/entra/identity/conditional-access/overview",
+          "deeplink_triggers": ["addon_configurator", "license_advisor", "frontline_check"],
+          "summary_if_open": "Conditional-Access-Basisregeln und Legacy-Anmeldewege sind noch nicht geprüft.",
+          "summary_if_done": "Conditional-Access-Basisregeln und Legacy-Anmeldewege sind geprüft."
+        },
+        {
+          "id": "ops-mail-protection",
+          "label": "Mail-Schutz, Safe Links, Safe Attachments und Domain-Authentizität prüfen",
+          "description": "Vergleiche vorhandene Exchange- und Defender-Funktionen mit Phishing-Schutz, Link-/Anlagenprüfung, SPF, DKIM und DMARC für genutzte und ungenutzte Domänen.",
+          "severity": "compliance",
+          "weight": 11,
+          "finding_type": "mail_protection",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/security/office-365-security/security-roadmap",
+          "deeplink_triggers": ["addon_configurator", "license_comparison", "shared_mailbox"],
+          "summary_if_open": "Mail-Schutz und Domain-Authentizität sind noch nicht vollständig bewertet.",
+          "summary_if_done": "Mail-Schutz und Domain-Authentizität sind bewertet."
+        },
+        {
+          "id": "ops-usage-reports",
+          "label": "Microsoft-365-Nutzungsberichte für Lizenz- und Adoption-Auswertung einplanen",
+          "description": "Nutze Rollen mit geringem Umfang, berücksichtige Datenschutz-Einstellungen und vergleiche aktive Nutzung, Speicher, Teams, Copilot und Mailboxdaten in passenden Zeitfenstern.",
+          "severity": "savings",
+          "weight": 9,
+          "finding_type": "usage_reporting",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/admin/activity-reports/activity-reports",
+          "deeplink_triggers": ["license_advisor", "copilot_pilot", "price_tracker"],
+          "summary_if_open": "Nutzungsberichte sind noch nicht für Lizenz- und Adoption-Auswertung eingeplant.",
+          "summary_if_done": "Nutzungsberichte sind für Lizenz- und Adoption-Auswertung eingeplant."
+        },
+        {
+          "id": "ops-network-baseline",
+          "label": "Microsoft-365-Netzwerkpfad und Performance-Basiswerte dokumentieren",
+          "description": "Dokumentiere lokale Namensauflösung, lokalen Internetausstieg, direkte Microsoft-365-Pfade, Standort, Gerät, Zeitpunkt und Dauer wiederkehrender Performance-Messungen.",
+          "severity": "risk",
+          "weight": 10,
+          "finding_type": "network_performance",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/enterprise/microsoft-365-network-connectivity-principles",
+          "deeplink_triggers": ["workspace_tco", "exchange_roi", "teams_phone", "copilot_pilot"],
+          "summary_if_open": "Netzwerkpfad und Performance-Basiswerte sind noch nicht dokumentiert.",
+          "summary_if_done": "Netzwerkpfad und Performance-Basiswerte sind dokumentiert."
+        },
+        {
+          "id": "ops-sharepoint-onedrive-limits",
+          "label": "SharePoint-, OneDrive- und Sync-Grenzen vor Migration oder Wachstum prüfen",
+          "description": "Bewerte Tenant-Speicher, Site-Größe, Dateigröße, Pfadlänge, eindeutige Berechtigungen sowie Sync-Elementzahlen vor Storage-, Backup- oder Migrationsentscheidungen.",
+          "severity": "risk",
+          "weight": 10,
+          "finding_type": "sharepoint_onedrive_limits",
+          "source_url": "https://learn.microsoft.com/en-us/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
+          "deeplink_triggers": ["storage_review", "backup_review", "workspace_tco"],
+          "summary_if_open": "SharePoint-, OneDrive- und Sync-Grenzen sind noch nicht in der Planung berücksichtigt.",
+          "summary_if_done": "SharePoint-, OneDrive- und Sync-Grenzen sind in der Planung berücksichtigt."
+        },
+        {
+          "id": "ops-teams-capacity",
+          "label": "Teams-Meeting-, Kanal- und Telefoniegrenzen gegen Zielbild prüfen",
+          "description": "Vergleiche Teamgröße, Kanalmodell, Meetinggrößen, Audio Conferencing, Teams Phone und PSTN-Modell mit den geplanten Nutzer- und Standortanforderungen.",
+          "severity": "risk",
+          "weight": 9,
+          "finding_type": "teams_capacity",
+          "source_url": "https://learn.microsoft.com/en-us/microsoftteams/limits-specifications-teams",
+          "deeplink_triggers": ["teams_phone", "addon_configurator", "copilot_pilot"],
+          "summary_if_open": "Teams-Meeting-, Kanal- und Telefoniegrenzen sind noch nicht gegen das Zielbild geprüft.",
+          "summary_if_done": "Teams-Meeting-, Kanal- und Telefoniegrenzen sind gegen das Zielbild geprüft."
+        },
+        {
+          "id": "ops-copilot-privacy-readiness",
+          "label": "Copilot-Datenzugriff, Apps und Pilotmetriken vor Rollout prüfen",
+          "description": "Bewerte Basislizenz, primäres Exchange-Online-Postfach, Microsoft 365 Apps, OneDrive, Teams-Meetingdaten, Datenschutzrahmen, Datenhygiene und Erfolgsmessung je Zielgruppe.",
+          "severity": "compliance",
+          "weight": 12,
+          "finding_type": "copilot_data_readiness",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-privacy",
+          "deeplink_triggers": ["copilot_license", "copilot_pilot", "copilot_roi"],
+          "summary_if_open": "Copilot-Datenzugriff, Apps und Pilotmetriken sind noch nicht vor Rollout geprüft.",
+          "summary_if_done": "Copilot-Datenzugriff, Apps und Pilotmetriken sind vor Rollout geprüft."
+        },
+        {
+          "id": "ops-backup-restore-objectives",
+          "label": "Backup-Schutzumfang und Wiederherstellungsziele je Workload festlegen",
+          "description": "Trenne Exchange, OneDrive und SharePoint nach Schutzanteil, Datenmenge, gewünschter Aufbewahrung, Restore-Zeit und Zuständigkeit für große Wiederherstellungen.",
+          "severity": "compliance",
+          "weight": 10,
+          "finding_type": "backup_restore_objectives",
+          "source_url": "https://learn.microsoft.com/en-us/microsoft-365/backup/backup-overview",
+          "deeplink_triggers": ["backup_review", "storage_review", "addon_configurator"],
+          "summary_if_open": "Backup-Schutzumfang und Wiederherstellungsziele sind noch nicht je Workload festgelegt.",
+          "summary_if_done": "Backup-Schutzumfang und Wiederherstellungsziele sind je Workload festgelegt."
         }
       ]
     }
