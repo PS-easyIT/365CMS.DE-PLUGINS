@@ -1,5 +1,17 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 1.24.1 – 2026-05-17
+
+- Installer-Härtung für Legacy-Modulsettings dokumentiert.
+- Datenbankdokumentation ergänzt, dass fehlende Spalten in bestehenden Settings-Tabellen automatisch nachgezogen werden.
+- README-Hinweis zur spaltenbewussten Migration alter `cms_m365calculator_module_settings`-Tabellen aktualisiert.
+
+## 1.24.0 – 2026-05-17
+
+- Public-Design-Refresh der `cms-m365tools`-Seiten dokumentiert.
+- README um die neue Landingpage-Struktur mit Kennzahlen, Kategorie-Schnellnavigation und ruhiger Tool-Card-Anmutung ergänzt.
+- Designvorgaben auf die überarbeitete PHINIT-Oberfläche mit reduzierter Pill-Optik, ruhigeren Statuskanten, dezenten Fortschritts-/Chart-Elementen und besserer Scanbarkeit aktualisiert.
+
 ## 1.23.0 – 2026-05-17
 
 - Dokumentation für den All-Module-Best-Practice-Kompass ergänzt.

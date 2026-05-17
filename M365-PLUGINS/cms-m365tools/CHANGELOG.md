@@ -1,6 +1,22 @@
 
 # Changelog – CMS M365 Tools
 
+## 1.24.1 – 2026-05-17
+
+- Installer gegen ältere Modulsettings-Tabellen gehärtet, die noch nicht alle Override-Spalten enthalten.
+- Migration von `cms_m365calculator_module_settings` nach `cms_m365tools_module_settings` liest vorhandene Legacy-Spalten jetzt spaltenbewusst und setzt sichere Standardwerte für fehlende Felder.
+- Bestehende `cms_m365tools_module_settings`-Tabellen werden beim Installer-Lauf um fehlende Spalten ergänzt.
+- Installer-Fehler werden protokolliert und blockieren Public- oder Admin-Seiten nicht mehr mit einem 500-Fehler.
+- Bootstrap gegen doppelte Legacy-/Neu-Ladung abgesichert, damit parallel vorhandene Altinstallationen keinen Klassen-ReDeclare-Fatal auslösen.
+
+## 1.24.0 – 2026-05-17
+
+- Publicsites visuell überarbeitet, damit sie stärker wie gewachsene PHINIT-Seiten und nicht wie generierte SaaS-Kacheln wirken.
+- Hub-Landingpage mit klarer Intro-Zone, Kennzahlen, Kategorie-Schnellnavigation, ruhigeren Bereichsköpfen und reduzierten Tool-Cards neu strukturiert.
+- Gemeinsame Public-CSS-Schicht geglättet: weniger Pill-Optik, reduzierte Schriftgewichte, dezentere Fortschrittsbalken, funktionale Statuskanten und keine vollflächig eingefärbten Statuskarten.
+- Modulicons, Badges, Review-Chips, Tabellenlabels, FAQ-Summarys, Audit-Items und Chart-Balken auf ruhigere PHINIT-Tokens und bessere Scanbarkeit angepasst.
+- Public-Constraint beibehalten: keine technischen Formular-Prüfhinweise auf öffentlichen Seiten.
+
 ## 1.23.0 – 2026-05-17
 
 - Alle Public-Module erneut gegen offizielle Microsoft-Learn-Quellen zu Best Practices, Schutz, Performance, Lizenzierung, Servicegrenzen, Backup, Copilot, Teams, Exchange, SharePoint, Entra und Power Platform geprüft.

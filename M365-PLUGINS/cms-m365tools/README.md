@@ -164,7 +164,7 @@ cms-m365tools/
 
 ## Landingpage-Registry
 
-Module melden sich über `CMS_M365CALCULATOR_Tool_Registry::register()` mit `key`, `title`, `description`, `icon`, `url`, `category` und `status` an. Die Landingpage gruppiert automatisch nach Kategorie, sortiert `live` vor `beta` vor `soon` und zeigt je Modul die Schwerpunkte aus `m365_best_practice_catalog.json`. Der Adminbereich kann je Modul Sichtbarkeit, Status, Priorität, Titel und Beschreibung überschreiben.
+Module melden sich über `CMS_M365CALCULATOR_Tool_Registry::register()` mit `key`, `title`, `description`, `icon`, `url`, `category` und `status` an. Die Landingpage gruppiert automatisch nach Kategorie, sortiert `live` vor `beta` vor `soon`, zeigt Kennzahlen, eine Kategorie-Schnellnavigation und je Modul die Schwerpunkte aus `m365_best_practice_catalog.json`. Der Adminbereich kann je Modul Sichtbarkeit, Status, Priorität, Titel und Beschreibung überschreiben.
 
 ## All-Module-Best-Practice-Kompass
 
@@ -184,7 +184,7 @@ Die Hub-Landingpage rendert daraus eine kompakte Übersicht und Modul-Fokuschips
 
 ## Design
 
-Das Frontend nutzt die PHINIT-Plugin-Komponenten (`phinit-plugin`, `phinit-card`, `phinit-btn`, `phinit-field`, `phinit-table`, `phinit-note`, `phinit-result`) und ergänzt nur schlanke Layout-Klassen mit dem Präfix `m365calc-*`. Öffentliche Pluginseiten setzen einen Plugin-eigenen Abstand von 25px zum Theme-Header.
+Das Frontend nutzt die PHINIT-Plugin-Komponenten (`phinit-plugin`, `phinit-card`, `phinit-btn`, `phinit-field`, `phinit-table`, `phinit-note`, `phinit-result`) und ergänzt nur schlanke Layout-Klassen mit dem Präfix `m365calc-*`. Ab `1.24.0` ist die Public-Oberfläche bewusst redaktioneller aufgebaut: keine Verlaufsflächen, keine Glassmorphism-Effekte, keine Icon-Kacheln in Signalfarben, reduzierte Schriftgewichte, dezente Statuskanten und bessere Scanbarkeit auf Landingpage, Formularen, Ergebnisbereichen, Tabellen, Auditlisten und Charts. Öffentliche Pluginseiten setzen einen Plugin-eigenen Abstand zum Theme-Header über PHINIT-Tokens.
 
 ## Fachliche Logik
 

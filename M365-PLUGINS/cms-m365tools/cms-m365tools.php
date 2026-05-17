@@ -2,8 +2,8 @@
 /**
  * Plugin Name: CMS M365 Tools
  * Plugin URI: https://365network.de/cms-m365tools
- * Description: Modulare Microsoft-365-Rechner-Toolbox mit All-Module-Best-Practice-Kompass, Power-Platform-Kosten- und Well-Architected-Review, Google-Workspace-M365-TCO-Rechner, Storage-Bedarfs-Rechner, Backup-Kosten-Rechner, Lizenz-Audit-Checkliste, Microsoft-Preiserhöhung-Tracker, Teams-Phone-Lizenz-Berater, Exchange-Online-ROI-Rechner, Frontline-Worker-Lizenz-Check, Copilot-Pilot-Phase-Rechner, AI-Pack-vs-Copilot-Pro-Vergleich, Archive-Mailbox-, Annual-vs-Monthly-Rechner, Lizenz- und Add-on-Matrizen, Add-On-Konfigurator, Lizenzvergleich, Lizenzberater, Copilot ROI-Rechner, Shared-Mailbox- und Copilot-Lizenz-Pflicht-Checker.
- * Version: 1.23.0
+ * Description: Modulare Microsoft-365-Rechner-Toolbox mit ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass, Power-Platform-Kosten- und Well-Architected-Review, Google-Workspace-M365-TCO-Rechner, Storage-Bedarfs-Rechner, Backup-Kosten-Rechner, Lizenz-Audit-Checkliste, Microsoft-Preiserhöhung-Tracker, Teams-Phone-Lizenz-Berater, Exchange-Online-ROI-Rechner, Frontline-Worker-Lizenz-Check, Copilot-Pilot-Phase-Rechner, AI-Pack-vs-Copilot-Pro-Vergleich, Archive-Mailbox-, Annual-vs-Monthly-Rechner, Lizenz- und Add-on-Matrizen, Add-On-Konfigurator, Lizenzvergleich, Lizenzberater, Copilot ROI-Rechner, Shared-Mailbox- und Copilot-Lizenz-Pflicht-Checker.
+ * Version: 1.24.1
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,15 +16,16 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_M365TOOLS_VERSION', '1.23.0');
-define('CMS_M365TOOLS_PLUGIN_DIR', dirname(__FILE__) . '/');
-define('CMS_M365TOOLS_PLUGIN_URL', '/plugins/cms-m365tools/');
+defined('CMS_M365TOOLS_VERSION') || define('CMS_M365TOOLS_VERSION', '1.24.1');
+defined('CMS_M365TOOLS_PLUGIN_DIR') || define('CMS_M365TOOLS_PLUGIN_DIR', dirname(__FILE__) . '/');
+defined('CMS_M365TOOLS_PLUGIN_URL') || define('CMS_M365TOOLS_PLUGIN_URL', '/plugins/cms-m365tools/');
 
 // Legacy-Aliasse: Die internen Klassen behalten aus Kompatibilitätsgründen ihren bisherigen Präfix.
-define('CMS_M365CALCULATOR_VERSION', CMS_M365TOOLS_VERSION);
-define('CMS_M365CALCULATOR_PLUGIN_DIR', CMS_M365TOOLS_PLUGIN_DIR);
-define('CMS_M365CALCULATOR_PLUGIN_URL', CMS_M365TOOLS_PLUGIN_URL);
+defined('CMS_M365CALCULATOR_VERSION') || define('CMS_M365CALCULATOR_VERSION', CMS_M365TOOLS_VERSION);
+defined('CMS_M365CALCULATOR_PLUGIN_DIR') || define('CMS_M365CALCULATOR_PLUGIN_DIR', CMS_M365TOOLS_PLUGIN_DIR);
+defined('CMS_M365CALCULATOR_PLUGIN_URL') || define('CMS_M365CALCULATOR_PLUGIN_URL', CMS_M365TOOLS_PLUGIN_URL);
 
+if (!class_exists('CMS_M365CALCULATOR', false)) {
 final class CMS_M365CALCULATOR
 {
     private const PLUGIN_SLUG = 'cms-m365tools';
@@ -116,3 +117,4 @@ final class CMS_M365CALCULATOR
 }
 
 CMS_M365CALCULATOR::instance();
+}

@@ -1,11 +1,11 @@
 {
-  "version": "1.23.0",
+  "version": "1.24.1",
   "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
   "requires": "2.9.0",
   "tested": "2.9.7",
   "last_updated": "2026-05-17",
   "sections": {
-    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit All-Module-Best-Practice-Kompass, Power-Platform-Kosten- und Well-Architected-Review, Google-Workspace-M365-TCO-Rechner, Storage-Bedarfs-Rechner, Backup-Kosten-Rechner, Lizenz-Audit-Checkliste, Microsoft-Preiserhöhung-Tracker, Teams-Phone-Lizenz-Berater, Exchange-Online-ROI-Rechner, Frontline-Worker-Lizenz-Check, Copilot-Pilot-Phase-Rechner, AI-Pack-vs-Copilot-Pro-Vergleich, Archive-Mailbox-Rechner, Annual-vs-Monthly Commitment Rechner, Lizenz- und Add-on-Matrizen, Add-On-Konfigurator, M365-Lizenzvergleich, M365-Lizenzberater, Copilot ROI-Rechner, Shared-Mailbox-Rechner und Copilot Lizenz-Pflicht-Checker.",
-    "changelog": "Alle Module mit zentralem Microsoft-365-Best-Practice-Kompass für Lizenzierung, Zugriff, Schutz, Servicegrenzen, Netzwerk, Performance, Copilot, Power Platform, Backup und Migration erweitert. Lizenz-Audit-Checkliste um neue Querschnittsprüfpunkte und Deep Links ergänzt."
+    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass, Power-Platform-Kosten- und Well-Architected-Review, Google-Workspace-M365-TCO-Rechner, Storage-Bedarfs-Rechner, Backup-Kosten-Rechner, Lizenz-Audit-Checkliste, Microsoft-Preiserhöhung-Tracker, Teams-Phone-Lizenz-Berater, Exchange-Online-ROI-Rechner, Frontline-Worker-Lizenz-Check, Copilot-Pilot-Phase-Rechner, AI-Pack-vs-Copilot-Pro-Vergleich, Archive-Mailbox-Rechner, Annual-vs-Monthly Commitment Rechner, Lizenz- und Add-on-Matrizen, Add-On-Konfigurator, M365-Lizenzvergleich, M365-Lizenzberater, Copilot ROI-Rechner, Shared-Mailbox-Rechner und Copilot Lizenz-Pflicht-Checker.",
+    "changelog": "Installer gehärtet: Legacy-Modulsettings werden spaltenbewusst migriert, fehlende Spalten in bestehenden Settings-Tabellen ergänzt und Installationsfehler protokolliert statt öffentliche oder Admin-Seiten mit einem 500-Fehler zu blockieren."
   }
 }

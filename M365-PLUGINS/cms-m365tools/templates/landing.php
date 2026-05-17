@@ -51,6 +51,21 @@ $reviewLabels = static function (array $domainKeys, array $domains): array {
 
     return array_values(array_unique($labels));
 };
+$toolCount = 0;
+$liveCount = 0;
+$categoryCounts = [];
+foreach (($groupedTools ?? []) as $category => $tools) {
+    $tools = is_array($tools) ? $tools : [];
+    $categoryCounts[(string) $category] = count($tools);
+    $toolCount += count($tools);
+
+    foreach ($tools as $tool) {
+        if (is_array($tool) && ($tool['status'] ?? '') === 'live') {
+            $liveCount++;
+        }
+    }
+}
+$reviewDomainCount = is_array($bestPracticeDomains ?? null) ? count($bestPracticeDomains) : 0;
 
 if (class_exists('CMS\\ThemeManager')) {
     \CMS\ThemeManager::instance()->getHeader(['title' => 'M365 Tools']);
@@ -58,19 +73,55 @@ if (class_exists('CMS\\ThemeManager')) {
 ?>
 
 <main class="phinit-plugin" id="m365tools-landing">
-    <header>
-        <p class="phinit-overline">Rechner &amp; Tools</p>
-        <h1>M365 Tools</h1>
-        <p class="phinit-prose">Diese Übersicht bündelt verfügbare Microsoft-365-Rechner, Checklisten und Berechnungstools des Plugins. Neue Module erscheinen automatisch, sobald sie in der Registry angemeldet sind.</p>
+    <header class="m365tools-landing__header">
+        <section class="m365tools-landing__intro" aria-labelledby="m365tools-title">
+            <p class="phinit-overline">Rechner &amp; Tools</p>
+            <h1 id="m365tools-title">M365 Tools</h1>
+            <p class="phinit-prose">Eine kuratierte Sammlung für Microsoft-365-Lizenzierung, Kosten, Speicher, Backup, Copilot, Telefonie, Migration und Betrieb. Ruhig aufgebaut, schnell erfassbar und bewusst ohne Effekt-Show.</p>
+        </section>
+        <dl class="m365tools-landing__facts" aria-label="Übersicht Kennzahlen">
+            <div>
+                <dt>Module</dt>
+                <dd><?php echo (int) $toolCount; ?></dd>
+            </div>
+            <div>
+                <dt>Live</dt>
+                <dd><?php echo (int) $liveCount; ?></dd>
+            </div>
+            <div>
+                <dt>Review-Bereiche</dt>
+                <dd><?php echo (int) $reviewDomainCount; ?></dd>
+            </div>
+        </dl>
     </header>
+
+    <?php if (!empty($categoryCounts)): ?>
+    <nav class="m365tools-category-nav" aria-label="Modulkategorien">
+        <ol>
+            <?php foreach ($categoryCounts as $category => $count): ?>
+            <?php $sectionId = $categoryId((string) $category); ?>
+            <li>
+                <a href="#<?php echo $esc($sectionId); ?>">
+                    <span><?php echo $esc($category); ?></span>
+                    <small><?php echo (int) $count; ?></small>
+                </a>
+            </li>
+            <?php endforeach; ?>
+        </ol>
+    </nav>
+    <?php endif; ?>
 
     <?php if (!empty($bestPracticeDomains) && is_array($bestPracticeDomains)): ?>
     <section class="phinit-card m365tools-review-panel" aria-labelledby="m365tools-review-title">
-        <p class="phinit-overline">Querschnittsreview</p>
-        <h2 id="m365tools-review-title"><?php echo $esc($bestPracticeMeta['title'] ?? 'Microsoft 365 Best-Practice-Kompass'); ?></h2>
-        <?php if (!empty($bestPracticeMeta['summary'])): ?>
-        <p class="phinit-prose"><?php echo $esc($bestPracticeMeta['summary']); ?></p>
-        <?php endif; ?>
+        <header class="m365tools-section-head">
+            <section>
+                <p class="phinit-overline">Querschnittsreview</p>
+                <h2 id="m365tools-review-title"><?php echo $esc($bestPracticeMeta['title'] ?? 'Microsoft 365 Best-Practice-Kompass'); ?></h2>
+                <?php if (!empty($bestPracticeMeta['summary'])): ?>
+                <p class="phinit-prose"><?php echo $esc($bestPracticeMeta['summary']); ?></p>
+                <?php endif; ?>
+            </section>
+        </header>
         <ul class="m365tools-review-domain-grid" role="list">
             <?php foreach ($bestPracticeDomains as $domain): ?>
             <?php if (!is_array($domain)): ?>
@@ -95,7 +146,13 @@ if (class_exists('CMS\\ThemeManager')) {
     <?php foreach ($groupedTools as $category => $tools): ?>
     <?php $sectionId = $categoryId((string) $category); ?>
     <section aria-labelledby="<?php echo $esc($sectionId); ?>">
-        <h2 id="<?php echo $esc($sectionId); ?>"><?php echo $esc($category); ?></h2>
+        <header class="m365tools-section-head">
+            <section>
+                <p class="phinit-overline">Kategorie</p>
+                <h2 id="<?php echo $esc($sectionId); ?>"><?php echo $esc($category); ?></h2>
+            </section>
+            <span class="m365tools-section-count"><?php echo (int) ($categoryCounts[(string) $category] ?? count((array) $tools)); ?> Module</span>
+        </header>
 
         <?php if (empty($tools)): ?>
         <section class="phinit-empty-state" role="status" aria-live="polite">
@@ -116,10 +173,10 @@ if (class_exists('CMS\\ThemeManager')) {
             ?>
             <li>
                 <article class="phinit-card phinit-card--accent<?php echo $status === 'soon' ? ' phinit-tool-card--disabled' : ''; ?>"<?php echo $status === 'soon' ? ' aria-disabled="true"' : ''; ?>>
-                    <span class="phinit-tool-card__icon" aria-hidden="true">
-                        <?php echo CMS_M365CALCULATOR_Icons::svg((string) ($tool['icon'] ?? 'calculator')); ?>
-                    </span>
-                    <section class="phinit-tool-card__body">
+                    <header class="phinit-tool-card__head">
+                        <span class="phinit-tool-card__icon" aria-hidden="true">
+                            <?php echo CMS_M365CALCULATOR_Icons::svg((string) ($tool['icon'] ?? 'calculator')); ?>
+                        </span>
                         <h3>
                             <?php if ($isLinked): ?>
                             <a href="<?php echo $esc($url); ?>"><?php echo $esc($tool['title'] ?? ''); ?></a>
@@ -130,6 +187,8 @@ if (class_exists('CMS\\ThemeManager')) {
                             <span class="phinit-status-label"><?php echo $esc($label); ?></span>
                             <?php endif; ?>
                         </h3>
+                    </header>
+                    <section class="phinit-tool-card__body">
                         <p><?php echo $esc($tool['description'] ?? ''); ?></p>
                         <?php if (!empty($toolReviewLabels)): ?>
                         <ul class="m365tools-review-chip-list" role="list" aria-label="Review-Schwerpunkte">

@@ -4,7 +4,7 @@ Ab Version `1.2.0` legt das Plugin eine eigene Tabelle für Admin-Overrides der 
 
 ## `cms_m365tools_module_settings`
 
-Ab Version `1.16.0` nutzt das Plugin die Tabelle `cms_m365tools_module_settings`. Falls aus einer früheren Installation noch `cms_m365calculator_module_settings` vorhanden ist, kopiert der Installer vorhandene Modul-Overrides automatisch in die neue Tabelle.
+Ab Version `1.16.0` nutzt das Plugin die Tabelle `cms_m365tools_module_settings`. Falls aus einer früheren Installation noch `cms_m365calculator_module_settings` vorhanden ist, kopiert der Installer vorhandene Modul-Overrides automatisch in die neue Tabelle. Ab Version `1.24.1` ist diese Migration spaltenbewusst: ältere Legacy-Tabellen dürfen einzelne Override-Spalten noch nicht besitzen; fehlende Werte werden dann mit sicheren Standards übernommen. Bestehende `cms_m365tools_module_settings`-Tabellen werden außerdem um fehlende Spalten erweitert.
 
 | Feld | Typ | Zweck |
 |---|---|---|

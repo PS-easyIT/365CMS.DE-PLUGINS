@@ -145,12 +145,14 @@ Die Route `/m365-lizenz-audit-checkliste` bietet eine interaktive Checkliste fü
 
 Der Hub `/m365-tools` lädt ab `1.23.0` den Katalog `m365_best_practice_catalog.json`. Der Katalog bündelt die zuletzt geprüften offiziellen Microsoft-Learn-Quellen und ordnet jedes Public-Modul den passenden Review-Domänen zu. Dadurch ist bereits auf der Landingpage sichtbar, welche Module Lizenzkosten, Zugriff, Schutz, Servicegrenzen, Speicher/Backup, Netzwerk/Performance, Copilot/KI, Power Platform oder Migration/Betrieb berühren.
 
+Ab `1.24.0` ist die Landingpage zusätzlich als ruhige Übersichtsseite aufgebaut: Intro-Zone, Kennzahlen, Kategorie-Schnellnavigation, Querschnittsreview und reduzierte Tool-Cards mit klarer Leseführung.
+
 Der Fortschritt wird im Browser gespeichert. Die Zusammenfassung kann über die Druckfunktion als PDF abgelegt werden. Fachliche Details stehen in `LICENSE-AUDIT-CHECKLIST.md`.
 
 ## Admin-Steuerung
 
-Der Adminbereich kann je Modul Sichtbarkeit, Status, Priorität, öffentlichen Titel und Beschreibung überschreiben. Die Werte werden in `cms_m365tools_module_settings` gespeichert und beim Rendern der Registry angewendet. Vorhandene Werte aus der früheren Tabelle `cms_m365calculator_module_settings` werden beim Installer-Lauf migriert.
+Der Adminbereich kann je Modul Sichtbarkeit, Status, Priorität, öffentlichen Titel und Beschreibung überschreiben. Die Werte werden in `cms_m365tools_module_settings` gespeichert und beim Rendern der Registry angewendet. Vorhandene Werte aus der früheren Tabelle `cms_m365calculator_module_settings` werden beim Installer-Lauf migriert. Ab `1.24.1` ist die Migration tolerant gegenüber älteren Tabellenständen und ergänzt fehlende Settings-Spalten automatisch.
 
 ## Designvorgaben
 
-Das Plugin nutzt PHINIT-konforme Public-Komponenten und vermeidet statische Inline-Styles, große Gradients, Glassmorphism oder KI-Optik. Die Hub-Landingpage rendert Module ausschließlich aus der Tool-Registry. Öffentliche Pluginseiten setzen einen Plugin-eigenen Abstand von 25px zum Theme-Header.
+Das Plugin nutzt PHINIT-konforme Public-Komponenten und vermeidet statische Inline-Styles, große Gradients, Glassmorphism oder KI-Optik. Die Hub-Landingpage rendert Module ausschließlich aus der Tool-Registry. Öffentliche Pluginseiten setzen einen Plugin-eigenen Abstand zum Theme-Header über PHINIT-Tokens. Ab `1.24.0` sind Icons, Badges, Fortschrittsbalken, Chart-Balken, Tabellenlabels und Statuszustände bewusst zurückhaltender gestaltet: keine bunten Icon-Kacheln, keine übergroße Pill-Optik, keine vollflächig eingefärbten Statuskarten und reduzierte Schriftgewichte für eine erfahrene, gewachsene Website-Anmutung.
