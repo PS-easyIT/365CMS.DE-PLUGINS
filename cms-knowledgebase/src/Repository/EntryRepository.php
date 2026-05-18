@@ -225,6 +225,7 @@ final class EntryRepository
         $db = Database::instance();
         $table = $this->entriesTable();
         $category = trim((string) ($entry['category'] ?? ''));
+        $limit = max(1, min(20, $limit));
 
         if ($category !== '') {
             $stmt = $db->prepare("SELECT * FROM {$table} WHERE is_active = 1 AND id <> ? AND category = ? ORDER BY priority ASC, title ASC LIMIT {$limit}");
@@ -615,6 +616,11 @@ final class EntryRepository
         return ['success' => true, 'message' => 'Knowledgebase-Eintrag angelegt.', 'id' => $newId];
     }
 
+    public function sanitizePublicRichText(string $value): string
+    {
+        return $this->sanitizeRichText($value);
+    }
+
     public function saveCategory(array $input): array
     {
         $db = Database::instance();
@@ -862,7 +868,7 @@ final class EntryRepository
         }
         $sql .= ' ORDER BY is_active DESC, priority ASC, title ASC';
 
-        $limit = isset($filters['limit']) ? max(1, (int) $filters['limit']) : 0;
+        $limit = isset($filters['limit']) ? max(1, min(200, (int) $filters['limit'])) : 0;
         $offset = isset($filters['offset']) ? max(0, (int) $filters['offset']) : 0;
         if ($limit > 0) {
             $sql .= ' LIMIT ' . $limit;
@@ -1237,7 +1243,144 @@ final class EntryRepository
 
     private function sanitizeRichText(string $value): string
     {
-        return trim(strip_tags($value, '<div><p><a><strong><em><ul><ol><li><br><blockquote><code><pre><h2><h3><h4><table><thead><tbody><tfoot><tr><th><td><caption><colgroup><col>'));
+        $html = trim(strip_tags($value, '<div><p><a><strong><em><ul><ol><li><br><blockquote><code><pre><h2><h3><h4><table><thead><tbody><tfoot><tr><th><td><caption><colgroup><col>'));
+        if ($html === '') {
+            return '';
+        }
+
+        if (!class_exists(\DOMDocument::class)) {
+            return $this->stripRichTextAttributes($html);
+        }
+
+        return $this->sanitizeRichTextWithDom($html);
+    }
+
+    private function sanitizeRichTextWithDom(string $html): string
+    {
+        $previous = libxml_use_internal_errors(true);
+        $dom = new \DOMDocument('1.0', 'UTF-8');
+        $loaded = $dom->loadHTML(
+            '<?xml encoding="utf-8" ?><div id="kb-richtext-root">' . $html . '</div>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR | LIBXML_NOWARNING | LIBXML_NONET
+        );
+
+        if ($loaded !== true) {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+            return $this->stripRichTextAttributes($html);
+        }
+
+        $root = $dom->getElementById('kb-richtext-root');
+        if (!$root instanceof \DOMElement) {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+            return $this->stripRichTextAttributes($html);
+        }
+
+        $this->sanitizeRichTextNode($root);
+
+        $output = '';
+        foreach ($root->childNodes as $child) {
+            $output .= $dom->saveHTML($child) ?: '';
+        }
+
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        return trim($output);
+    }
+
+    private function sanitizeRichTextNode(\DOMNode $node): void
+    {
+        if ($node instanceof \DOMElement) {
+            $allowedAttributes = $node->tagName === 'a' ? ['href', 'title', 'target', 'rel'] : [];
+            if (in_array($node->tagName, ['td', 'th'], true)) {
+                $allowedAttributes = ['colspan', 'rowspan'];
+            }
+
+            foreach (iterator_to_array($node->attributes ?? []) as $attribute) {
+                $name = strtolower($attribute->nodeName);
+                $value = trim((string) $attribute->nodeValue);
+                if (str_starts_with($name, 'on') || !in_array($name, $allowedAttributes, true)) {
+                    $node->removeAttribute($attribute->nodeName);
+                    continue;
+                }
+
+                if ($node->tagName === 'a' && $name === 'href' && !$this->isSafeRichTextUrl($value)) {
+                    $node->removeAttribute('href');
+                    continue;
+                }
+
+                if ($node->tagName === 'a' && $name === 'target' && $value !== '_blank') {
+                    $node->removeAttribute('target');
+                    continue;
+                }
+
+                if ($name === 'title') {
+                    $node->setAttribute('title', mb_substr(strip_tags($value), 0, 180, 'UTF-8'));
+                }
+
+                if (in_array($name, ['colspan', 'rowspan'], true)) {
+                    $node->setAttribute($name, (string) max(1, min(12, (int) $value)));
+                }
+            }
+
+            if ($node->tagName === 'a' && $node->getAttribute('target') === '_blank') {
+                $relParts = preg_split('/\s+/', strtolower($node->getAttribute('rel'))) ?: [];
+                $relParts = array_values(array_unique(array_filter(array_merge($relParts, ['noopener', 'noreferrer']))));
+                $node->setAttribute('rel', implode(' ', $relParts));
+            }
+        }
+
+        foreach (iterator_to_array($node->childNodes) as $child) {
+            $this->sanitizeRichTextNode($child);
+        }
+    }
+
+    private function stripRichTextAttributes(string $html): string
+    {
+        return preg_replace('/<([a-z0-9]+)(?:\s[^>]*)?>/i', '<$1>', $html) ?? '';
+    }
+
+    private function isSafeRichTextUrl(string $url): bool
+    {
+        $url = trim($url);
+        if ($url === '' || strlen($url) > 2048 || preg_match('/[\x00-\x1F\x7F]/', $url) === 1) {
+            return false;
+        }
+
+        if (str_starts_with($url, '#')) {
+            return true;
+        }
+
+        if (str_starts_with($url, '/') && !str_starts_with($url, '//')) {
+            return true;
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts)) {
+            return false;
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || $host === '') {
+            return false;
+        }
+
+        if (($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
+            return false;
+        }
+
+        if (in_array($host, ['localhost', 'localhost.localdomain'], true) || str_ends_with($host, '.local')) {
+            return false;
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
+            return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
+        }
+
+        return true;
     }
 
     /**

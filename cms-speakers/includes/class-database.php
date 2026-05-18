@@ -409,6 +409,7 @@ final class CMS_Speakers_Database
             $dataId = $id > 0 ? $id : (int)($data['id'] ?? 0);
             unset($data['id']);
             $data = array_intersect_key($data, array_flip($allowed));
+            $data = $this->sanitize_speaker_data($data);
 
             if ($dataId > 0 && !CMS\Auth::instance()->isAdmin()) {
                 $current_user_id = (int) (CMS\Auth::instance()->currentUser()?->id ?? 0);
@@ -557,6 +558,7 @@ final class CMS_Speakers_Database
             $id = (int)($data['id'] ?? 0);
             unset($data['id']);
             $data = array_intersect_key($data, array_flip($allowed));
+            $data = $this->sanitize_event_data($data);
 
             // Leere Datumsfelder → NULL
             foreach (['event_date','event_date_end'] as $df) {
@@ -624,6 +626,147 @@ final class CMS_Speakers_Database
                 )->execute([$key, $value, $value]);
             }
         } catch (\Throwable $e) { error_log('CMS_Speakers save_settings: ' . $e->getMessage()); }
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    private function sanitize_speaker_data(array $data): array
+    {
+        $textLimits = [
+            'first_name' => 100,
+            'last_name' => 100,
+            'title' => 100,
+            'position' => 200,
+            'company' => 200,
+            'email' => 150,
+            'phone' => 60,
+            'short_bio' => 600,
+            'location_city' => 100,
+            'location_zip' => 20,
+            'location_country' => 100,
+            'target_audience' => 400,
+            'speaking_style' => 200,
+            'twitter' => 200,
+            'instagram' => 200,
+        ];
+
+        foreach ($textLimits as $field => $limit) {
+            if (array_key_exists($field, $data) && $data[$field] !== null) {
+                $data[$field] = $this->clean_text((string) $data[$field], $limit);
+            }
+        }
+
+        foreach (['bio' => 20000, 'awards' => 4000] as $field => $limit) {
+            if (array_key_exists($field, $data) && $data[$field] !== null) {
+                $data[$field] = $this->clean_textarea((string) $data[$field], $limit);
+            }
+        }
+
+        foreach (['photo_url', 'website', 'linkedin', 'xing', 'youtube', 'github', 'gitlab'] as $field) {
+            if (array_key_exists($field, $data) && $data[$field] !== null) {
+                $data[$field] = $this->clean_url((string) $data[$field]);
+            }
+        }
+
+        if (isset($data['email'])) {
+            $data['email'] = filter_var((string) $data['email'], FILTER_VALIDATE_EMAIL) ?: '';
+        }
+
+        if (isset($data['phone'])) {
+            $data['phone'] = preg_replace('/[^0-9+()\s.\-]/', '', (string) $data['phone']) ?: '';
+        }
+
+        $enums = [
+            'gender' => ['', 'm', 'f', 'd'],
+            'travel_radius' => ['local', 'regional', 'national', 'international', 'worldwide'],
+            'availability' => ['available', 'limited', 'booked'],
+            'status' => ['active', 'inactive', 'draft', 'pending', 'deleted'],
+        ];
+        foreach ($enums as $field => $allowed) {
+            if (isset($data[$field]) && !in_array((string) $data[$field], $allowed, true)) {
+                unset($data[$field]);
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    private function sanitize_event_data(array $data): array
+    {
+        foreach (['event_title' => 300, 'event_location' => 300, 'organizer_name' => 300, 'topic' => 400] as $field => $limit) {
+            if (array_key_exists($field, $data) && $data[$field] !== null) {
+                $data[$field] = $this->clean_text((string) $data[$field], $limit);
+            }
+        }
+
+        if (array_key_exists('description', $data) && $data['description'] !== null) {
+            $data['description'] = $this->clean_textarea((string) $data['description'], 4000);
+        }
+
+        foreach (['video_url', 'slides_url', 'event_url'] as $field) {
+            if (array_key_exists($field, $data) && $data[$field] !== null) {
+                $data[$field] = $this->clean_url((string) $data[$field]);
+            }
+        }
+
+        $enums = [
+            'event_type' => ['keynote', 'workshop', 'panel', 'moderation', 'interview', 'webinar', 'conference', 'training', 'other'],
+            'presence_type' => ['presence', 'online', 'hybrid'],
+            'organizer_type' => ['company', 'cms_event', 'manual'],
+        ];
+        foreach ($enums as $field => $allowed) {
+            if (isset($data[$field]) && !in_array((string) $data[$field], $allowed, true)) {
+                unset($data[$field]);
+            }
+        }
+
+        return $data;
+    }
+
+    private function clean_text(string $value, int $maxLength = 255): string
+    {
+        return mb_substr(trim(strip_tags($value)), 0, $maxLength);
+    }
+
+    private function clean_textarea(string $value, int $maxLength = 2000): string
+    {
+        return mb_substr(trim(strip_tags($value)), 0, $maxLength);
+    }
+
+    private function clean_url(string $value): string
+    {
+        $url = trim($value);
+        if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]]/', $url) === 1 || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts)) {
+            return '';
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || ($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
+            return '';
+        }
+
+        $host = strtolower(trim((string) ($parts['host'] ?? ''), '[]'));
+        if ($host === '' || in_array($host, ['localhost', 'localhost.localdomain'], true) || str_ends_with($host, '.local')) {
+            return '';
+        }
+
+        $ip = filter_var($host, FILTER_VALIDATE_IP);
+        if ($ip !== false && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return '';
+        }
+
+        return $url;
     }
 
     // ═══════════════════════════════════════════════════════

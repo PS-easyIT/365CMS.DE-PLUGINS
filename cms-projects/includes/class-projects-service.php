@@ -13,6 +13,7 @@ final class CMS_Projects_Service
     private const MAX_SUMMARY_LENGTH = 1200;
     private const MAX_DESCRIPTION_LENGTH = 20000;
     private const MAX_COLUMN_KEY_LENGTH = 80;
+    private const MAX_PAYLOAD_LENGTH = 65535;
 
     public function __construct(private readonly CMS_Projects_Repository $repository)
     {
@@ -430,6 +431,9 @@ final class CMS_Projects_Service
         }
 
         $payload = trim((string) ($input['payload'] ?? ''));
+        if (strlen($payload) > self::MAX_PAYLOAD_LENGTH) {
+            return ['success' => false, 'message' => 'Board-Payload ist zu groß.'];
+        }
         if ($payload === '') {
             $payload = json_encode($this->getDefaultBoardPayload($boardType), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
@@ -483,6 +487,9 @@ final class CMS_Projects_Service
         }
 
         $payload = trim((string) ($input['payload'] ?? ''));
+        if (strlen($payload) > self::MAX_PAYLOAD_LENGTH) {
+            return ['success' => false, 'message' => 'Widget-Payload ist zu groß.'];
+        }
         if ($payload === '') {
             $payload = json_encode($this->getDefaultWidgetPayload($widgetType), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
@@ -575,6 +582,10 @@ final class CMS_Projects_Service
         $payload = trim($payload);
         if ($payload === '') {
             return [];
+        }
+
+        if (strlen($payload) > self::MAX_PAYLOAD_LENGTH) {
+            return null;
         }
 
         try {
@@ -954,7 +965,7 @@ final class CMS_Projects_Service
     private function sanitizeUrl(string $url): string
     {
         $url = trim($url);
-        if ($url === '') {
+        if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]]/', $url) === 1) {
             return '';
         }
 
@@ -963,8 +974,31 @@ final class CMS_Projects_Service
             return '';
         }
 
-        $scheme = strtolower((string) parse_url($validated, PHP_URL_SCHEME));
-        return in_array($scheme, ['http', 'https'], true) ? $validated : '';
+        $parts = parse_url($validated);
+        if (!is_array($parts)) {
+            return '';
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return '';
+        }
+
+        if (($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
+            return '';
+        }
+
+        $host = strtolower(trim((string) ($parts['host'] ?? ''), '[]'));
+        if ($host === '' || in_array($host, ['localhost', 'localhost.localdomain'], true) || str_ends_with($host, '.local')) {
+            return '';
+        }
+
+        $ip = filter_var($host, FILTER_VALIDATE_IP);
+        if ($ip !== false && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return '';
+        }
+
+        return $validated;
     }
 
     private function toBooleanFlag(mixed $value): bool

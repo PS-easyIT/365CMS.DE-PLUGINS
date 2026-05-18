@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.1 – 2026-05-18
+
+- Security-/Compatibility-Pass für 365CMS v3.x.x und PHP 8.4 dokumentiert.
+- CSRF-Token-Prüfungen in Admin-, Public-Auswertung-, PDF-Export- und Member-Einstellungen string-cast-sicher nachgezogen.
+- Update-Manifest um PHP-8.4-Anforderungen ergänzt.
+
 ## 3.0.0 – 2026-05-17
 
 - Plugin-Version und Update-Metadaten auf 365CMS 3.0.0 aktualisiert.

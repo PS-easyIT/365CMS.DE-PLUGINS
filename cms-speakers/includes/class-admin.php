@@ -59,7 +59,7 @@ final class CMS_Speakers_Admin
             'manage_options',
             'speakers',
             [self::class, 'render_plugin_page_bridge'],
-            '🎤',
+            'SP',
             45
         );
     }
@@ -79,7 +79,7 @@ final class CMS_Speakers_Admin
             'type'   => 'item',
             'slug'   => 'speakers',
             'label'  => 'Speaker',
-            'icon'   => '🎤',
+            'icon'   => 'SP',
             'url'    => '/admin/speakers',
             'active' => str_starts_with($path, '/admin/speakers'),
         ];
@@ -95,7 +95,7 @@ final class CMS_Speakers_Admin
         $admin_css = CMS_SPEAKERS_PLUGIN_DIR . 'assets/css/speakers-admin.css';
         if (file_exists($admin_css)) {
             $adminCssVersion = (string) filemtime($admin_css);
-            echo '<link rel="stylesheet" href="' . CMS_SPEAKERS_PLUGIN_URL . 'assets/css/speakers-admin.css?v=' . $adminCssVersion . '">' . "\n";
+            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_SPEAKERS_PLUGIN_URL . 'assets/css/speakers-admin.css?v=' . $adminCssVersion, ENT_QUOTES, 'UTF-8') . '">' . "\n";
         }
 
         $speakers  = $data['speakers']  ?? [];
@@ -110,7 +110,7 @@ final class CMS_Speakers_Admin
             'archive_title'              => 'Speaker Directory',
             'archive_description'        => 'Finden Sie den passenden Redner für Ihr Event',
             'archive_per_page'           => '12',
-            'archive_header_icon'        => '🎤',
+            'archive_header_icon'        => 'SP',
             'archive_header_bg_from'     => '#6d28d9',
             'archive_header_bg_to'       => '#a855f7',
             'archive_header_title_color' => '#ffffff',
@@ -150,29 +150,29 @@ final class CMS_Speakers_Admin
         <!-- Page Header -->
         <div class="admin-page-header">
             <div>
-                <h2>🎤 Speaker</h2>
+                <h2>Speaker</h2>
                 <p>Verwalte alle Speaker-Profile, Themen und Auftritte</p>
             </div>
             <div class="header-actions">
-                <a href="<?= SITE_URL ?>/speakers" class="btn btn-secondary" target="_blank">🌐 Öffentlich</a>
-                <a href="<?= SITE_URL ?>/admin/speakers/new" class="btn btn-primary">➕ Neuer Speaker</a>
+                <a href="<?= htmlspecialchars(SITE_URL . '/speakers', ENT_QUOTES, 'UTF-8') ?>" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">Öffentlich</a>
+                <a href="<?= htmlspecialchars(SITE_URL . '/admin/speakers/new', ENT_QUOTES, 'UTF-8') ?>" class="btn btn-primary">Neuer Speaker</a>
             </div>
         </div>
 
         <!-- Flash Messages -->
-        <?php if (isset($_GET['saved'])): ?><div class="alert alert-success">✅ Änderungen gespeichert.</div><?php endif; ?>
-        <?php if (isset($_GET['approved'])): ?><div class="alert alert-success">✅ Speaker genehmigt und aktiviert.</div><?php endif; ?>
-        <?php if (isset($_GET['deleted'])): ?><div class="alert alert-success">✅ Speaker gelöscht.</div><?php endif; ?>
-        <?php if (isset($_GET['error'])): ?><div class="alert alert-error">❌ Fehler: <?= htmlspecialchars($_GET['error']) ?></div><?php endif; ?>
+        <?php if (isset($_GET['saved'])): ?><div class="alert alert-success">Änderungen gespeichert.</div><?php endif; ?>
+        <?php if (isset($_GET['approved'])): ?><div class="alert alert-success">Speaker genehmigt und aktiviert.</div><?php endif; ?>
+        <?php if (isset($_GET['deleted'])): ?><div class="alert alert-success">Speaker gelöscht.</div><?php endif; ?>
+        <?php if (isset($_GET['error'])): ?><div class="alert alert-error">Fehler: <?= htmlspecialchars((string) $_GET['error'], ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
 
         <!-- Tabs -->
         <div class="spk-tabs">
             <?php
             $tabs = [
-                'overview'  => ['👀', 'Übersicht'],
-                'topics'    => ['🏷️', 'Themen'],
-                'design'    => ['🎨', 'Design'],
-                'settings'  => ['⚙️', 'Einstellungen'],
+                'overview'  => ['OV', 'Übersicht'],
+                'topics'    => ['TG', 'Themen'],
+                'design'    => ['UI', 'Design'],
+                'settings'  => ['CFG', 'Einstellungen'],
             ];
             foreach ($tabs as $slug => [$icon, $label]): ?>
                 <a href="?tab=<?= $slug ?>" class="spk-tab <?= $tab === $slug ? 'active' : '' ?>">
@@ -189,10 +189,10 @@ final class CMS_Speakers_Admin
         <div class="dashboard-grid">
             <?php
             $stat_items = [
-                ['🎤', 'Gesamt',     $total,    ''],
-                ['✅', 'Aktiv',      $active,   ''],
-                ['💜', 'Verfügbar',  $avail,    ''],
-                ['⭐', 'Featured',   $featured, ''],
+                ['ALL', 'Gesamt',     $total,    ''],
+                ['ACT', 'Aktiv',      $active,   ''],
+                ['AVL', 'Verfügbar',  $avail,    ''],
+                ['TOP', 'Featured',   $featured, ''],
                 ['✔',  'Verifiziert',$verified, ''],
             ];
             foreach ($stat_items as [$si_icon, $si_label, $si_value]): ?>
@@ -220,7 +220,7 @@ final class CMS_Speakers_Admin
                         <option value="verified"  <?= $filter==='verified'  ?'selected':'' ?>>Verifiziert (<?= $verified ?>)</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary">🔍 Filtern</button>
+                <button type="submit" class="btn btn-primary">Filtern</button>
                 <?php if ($search || $filter !== 'all'): ?><a href="?tab=overview" class="btn btn-secondary">✕ Reset</a><?php endif; ?>
             </form>
         </div>
@@ -228,88 +228,83 @@ final class CMS_Speakers_Admin
         <!-- Speaker Grid -->
         <?php if (empty($speakers)): ?>
         <div class="empty-state">
-            <p style="font-size:2.5rem;margin:0;">🎤</p>
+            <p style="font-size:2.5rem;margin:0;">Keine Daten</p>
             <p><strong>Noch keine Speaker vorhanden</strong></p>
             <p class="text-muted">Erstelle den ersten Speaker-Eintrag.</p>
-            <a href="<?= SITE_URL ?>/admin/speakers/new" class="btn btn-primary" style="margin-top:1rem;">➕ Speaker anlegen</a>
+            <a href="<?= htmlspecialchars(SITE_URL . '/admin/speakers/new', ENT_QUOTES, 'UTF-8') ?>" class="btn btn-primary" style="margin-top:1rem;">Speaker anlegen</a>
         </div>
         <?php else: ?>
         <div class="spk-adm-grid">
             <?php foreach ($speakers as $sp):
-                $fn  = htmlspecialchars($sp->first_name ?? '');
-                $ln  = htmlspecialchars($sp->last_name  ?? '');
+                $fn  = htmlspecialchars((string) ($sp->first_name ?? ''), ENT_QUOTES, 'UTF-8');
+                $ln  = htmlspecialchars((string) ($sp->last_name  ?? ''), ENT_QUOTES, 'UTF-8');
                 $name = trim("$fn $ln") ?: 'Unbekannt';
                 $parts = preg_split('/\s+/', $name);
                 $initials = mb_strtoupper(mb_substr($parts[0],0,1) . (isset($parts[1]) ? mb_substr($parts[1],0,1) : ''));
-                $pcolors  = [['#8b5cf6','#a855f7'],['#7c3aed','#8b5cf6'],['#a855f7','#c084fc'],['#6d28d9','#8b5cf6'],['#9333ea','#a855f7']];
-                $cp  = $pcolors[abs(crc32($name)) % count($pcolors)];
-                $bg  = "linear-gradient(135deg,{$cp[0]},{$cp[1]})";
                 $spStatus  = $sp->status ?? 'active';
                 $isPending = $spStatus === 'pending';
                 $spAvail = $sp->availability ?? 'available';
-                $availLabels = ['available'=>'✅ Verfügbar','limited'=>'⚠️ Begrenzt','booked'=>'🔴 Ausgebucht'];
+                $availLabels = ['available'=>'Verfügbar','limited'=>'Begrenzt','booked'=>'Ausgebucht'];
                 $availColors = ['available'=>'#065f46','limited'=>'#78350f','booked'=>'#7f1d1d'];
                 $availBg     = ['available'=>'#d1fae5','limited'=>'#fef3c7','booked'=>'#fee2e2'];
                 $travel = $sp->travel_radius ?? 'national';
-                $travelLabel = ['local'=>'📍 Lokal','regional'=>'🗺️ Regional','national'=>'🇩🇪 DACH','international'=>'🌍 International','worldwide'=>'🌐 Weltweit'][$travel] ?? $travel;
+                $travelLabel = ['local'=>'Lokal','regional'=>'Regional','national'=>'DACH','international'=>'International','worldwide'=>'Weltweit'][$travel] ?? $travel;
                 $formats = json_decode($sp->formats ?? '[]', true) ?: [];
                 $fmtLabels = ['keynote'=>'Keynote','workshop'=>'Workshop','panel'=>'Panel','moderation'=>'Moderation','training'=>'Training','consulting'=>'Beratung','interview'=>'Interview','webinar'=>'Webinar'];
-                $company = htmlspecialchars($sp->company_linked_name ?? $sp->company ?? '');
+                $company = htmlspecialchars((string) ($sp->company_linked_name ?? $sp->company ?? ''), ENT_QUOTES, 'UTF-8');
                 $slug = CMS_Speakers_Database::generate_slug($sp);
             ?>
             <div class="spk-adm-card <?= $isPending ? 'spk-adm-card--pending' : '' ?>">
                 <?php if ($isPending): ?>
-                    <div class="spk-adm-pending-bar" style="background:#fef3c7;color:#92400e;text-align:center;padding:.5rem;font-size:.85rem;font-weight:600;border-radius:10px 10px 0 0;">⏳ Wartet auf Genehmigung</div>
+                    <div class="spk-adm-pending-bar">Wartet auf Genehmigung</div>
                 <?php endif; ?>
                 <div class="spk-adm-top">
                     <?php if (!empty($sp->photo_url)): ?>
-                        <div class="spk-adm-avatar" style="background:#ede9fe;">
-                            <img src="<?= htmlspecialchars($sp->photo_url) ?>" alt="">
+                        <div class="spk-adm-avatar spk-adm-avatar--photo">
+                            <img src="<?= htmlspecialchars((string) $sp->photo_url, ENT_QUOTES, 'UTF-8') ?>" alt="" loading="lazy">
                         </div>
                     <?php else: ?>
-                        <div class="spk-adm-avatar" style="background:<?= $bg ?>"><?= $initials ?></div>
+                        <div class="spk-adm-avatar spk-adm-avatar--placeholder"><?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?></div>
                     <?php endif; ?>
                     <div class="spk-adm-identity">
                         <div class="spk-adm-badges">
                             <?php if ($isPending): ?>
-                                <span class="status-badge" style="background:#fef3c7;color:#92400e;">⏳ Zur Prüfung</span>
+                                <span class="status-badge" style="background:#fef3c7;color:#92400e;">Zur Prüfung</span>
                             <?php else: ?>
                             <?php if ($sp->is_verified ?? 0): ?><span class="status-badge active">✔ Verifiziert</span><?php endif; ?>
-                            <?php if ($sp->is_featured ?? 0): ?><span class="status-badge admin">⭐ Featured</span><?php endif; ?>
-                            <span class="status-badge" style="background:<?= $availBg[$spAvail]??'#f1f5f9' ?>;color:<?= $availColors[$spAvail]??'#374151' ?>;"><?= $availLabels[$spAvail]??$spAvail ?></span>
+                            <?php if ($sp->is_featured ?? 0): ?><span class="status-badge admin">Featured</span><?php endif; ?>
+                            <span class="status-badge spk-status-<?= htmlspecialchars((string) $spAvail, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($availLabels[$spAvail] ?? $spAvail), ENT_QUOTES, 'UTF-8') ?></span>
                             <?php endif; ?>
                         </div>
                         <p class="spk-adm-name"><?= $name ?></p>
-                        <?php if (!empty($sp->position)): ?><p class="spk-adm-sub"><?= htmlspecialchars($sp->position) ?></p><?php endif; ?>
+                        <?php if (!empty($sp->position)): ?><p class="spk-adm-sub"><?= htmlspecialchars((string) $sp->position, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
                         <?php if ($company): ?><p class="spk-adm-sub spk-adm-sub--muted"><?= $company ?></p><?php endif; ?>
                     </div>
                 </div>
                 <div class="spk-adm-pills">
                     <?php if (!empty($sp->location_city)): ?>
-                        <span class="spk-adm-pill">📍 <?= htmlspecialchars($sp->location_city) ?></span>
+                        <span class="spk-adm-pill"><?= htmlspecialchars((string) $sp->location_city, ENT_QUOTES, 'UTF-8') ?></span>
                     <?php endif; ?>
                     <span class="spk-adm-pill"><?= $travelLabel ?></span>
                     <?php foreach (array_slice($formats, 0, 2) as $fmt): ?>
-                        <span class="spk-adm-pill spk-adm-pill--accent"><?= htmlspecialchars($fmtLabels[$fmt] ?? $fmt) ?></span>
+                        <span class="spk-adm-pill spk-adm-pill--accent"><?= htmlspecialchars((string) ($fmtLabels[$fmt] ?? $fmt), ENT_QUOTES, 'UTF-8') ?></span>
                     <?php endforeach; ?>
-                    <?php if (!empty($sp->email)): ?><span class="spk-adm-pill">✉ <?= htmlspecialchars($sp->email) ?></span><?php endif; ?>
+                    <?php if (!empty($sp->email)): ?><span class="spk-adm-pill"><?= htmlspecialchars((string) $sp->email, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
                     <?php if (!empty($sp->speaking_fee_min) || !empty($sp->speaking_fee_max)): ?>
                         <span class="spk-adm-pill spk-adm-pill--accent">💶 <?= $sp->speaking_fee_min ? number_format((float)$sp->speaking_fee_min,0,',','.') : '' ?><?= ($sp->speaking_fee_min && $sp->speaking_fee_max) ? '–' : '' ?><?= $sp->speaking_fee_max ? number_format((float)$sp->speaking_fee_max,0,',','.') . ' €' : '' ?></span>
                     <?php endif; ?>
                 </div>
                 <div class="spk-adm-footer">
                     <?php if ($isPending): ?>
-                        <form method="POST" action="<?= SITE_URL ?>/admin/speakers/approve/<?= (int)$sp->id ?>" style="display:contents;">
-                            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                            <button type="button" class="spk-adm-btn spk-adm-btn-primary" style="background:#16a34a;border-color:#16a34a;"
-                                    onclick="openSpkApproveModal(<?= (int)$sp->id ?>, '<?= htmlspecialchars($name, ENT_QUOTES) ?>', this.closest('form'))">✓ Genehmigen</button>
+                        <form method="POST" action="<?= htmlspecialchars(SITE_URL . '/admin/speakers/approve/' . (int)$sp->id, ENT_QUOTES, 'UTF-8') ?>" class="spk-contents-form">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string) $csrf, ENT_QUOTES, 'UTF-8') ?>">
+                            <button type="button" class="spk-adm-btn spk-adm-btn-primary spk-adm-btn-approve" data-speaker-approve-name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>">Genehmigen</button>
                         </form>
                     <?php else: ?>
-                        <a href="<?= SITE_URL ?>/speakers/<?= $slug ?>" class="spk-adm-btn spk-adm-btn-ghost" target="_blank">🌐</a>
+                        <a href="<?= htmlspecialchars(SITE_URL . '/speakers/' . $slug, ENT_QUOTES, 'UTF-8') ?>" class="spk-adm-btn spk-adm-btn-ghost" target="_blank" rel="noopener noreferrer">Ansehen</a>
                     <?php endif; ?>
-                    <a href="<?= SITE_URL ?>/admin/speakers/edit/<?= (int)$sp->id ?>" class="spk-adm-btn spk-adm-btn-primary">✏️ Bearbeiten</a>
-                    <button type="button" class="spk-adm-btn spk-adm-btn-danger"
-                            onclick="openDeleteModal(<?= (int)$sp->id ?>, '<?= htmlspecialchars($name, ENT_QUOTES) ?>')">🗑️</button>
+                    <a href="<?= htmlspecialchars(SITE_URL . '/admin/speakers/edit/' . (int)$sp->id, ENT_QUOTES, 'UTF-8') ?>" class="spk-adm-btn spk-adm-btn-primary">Bearbeiten</a>
+                        <button type="button" class="spk-adm-btn spk-adm-btn-danger" data-speaker-delete-id="<?= (int)$sp->id ?>" data-speaker-delete-name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>">Löschen</button>
                 </div>
             </div>
             <?php endforeach; ?>
@@ -550,18 +545,18 @@ final class CMS_Speakers_Admin
         <div id="deleteModal" class="modal" style="display:none;">
             <div class="modal-content" style="max-width:480px;">
                 <div class="modal-header">
-                    <h3>🗑️ Speaker löschen</h3>
-                    <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
+                    <h3>Speaker löschen</h3>
+                    <button class="modal-close" type="button" data-spk-modal-close="deleteModal">&times;</button>
                 </div>
                 <div class="modal-body">
                     <p>Soll <strong id="deleteModalName"></strong> wirklich gelöscht werden?</p>
-                    <p style="color:#ef4444;font-size:.875rem;">⚠️ Diese Aktion kann nicht rückgängig gemacht werden.</p>
+                    <p style="color:#ef4444;font-size:.875rem;">Diese Aktion kann nicht rückgängig gemacht werden.</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('deleteModal')">Abbrechen</button>
+                    <button type="button" class="btn btn-secondary" data-spk-modal-close="deleteModal">Abbrechen</button>
                     <form method="POST" id="deleteModalForm" style="display:inline;">
-                        <input type="hidden" name="csrf_token" value="<?= CMS\Security::instance()->generateToken('delete_speaker') ?>">
-                        <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(CMS\Security::instance()->generateToken('delete_speaker'), ENT_QUOTES, 'UTF-8') ?>">
+                        <button type="submit" class="btn btn-danger">Endgültig löschen</button>
                     </form>
                 </div>
             </div>
@@ -583,22 +578,38 @@ final class CMS_Speakers_Admin
         document.getElementById('approveSpkModalConfirm')?.addEventListener('click', function() {
             if (_spkApproveForm) _spkApproveForm.submit();
         });
+        document.querySelectorAll('[data-speaker-delete-id]').forEach(function(button) {
+            button.addEventListener('click', function() {
+                openDeleteModal(button.dataset.speakerDeleteId || '0', button.dataset.speakerDeleteName || '');
+            });
+        });
+        document.querySelectorAll('[data-speaker-approve-name]').forEach(function(button) {
+            button.addEventListener('click', function() {
+                openSpkApproveModal(0, button.dataset.speakerApproveName || '', button.closest('form'));
+            });
+        });
+        document.addEventListener('click', function(event) {
+            var closeButton = event.target.closest('[data-spk-modal-close]');
+            if (closeButton) {
+                closeModal(closeButton.dataset.spkModalClose || '');
+            }
+        });
         </script>
 
         <!-- Approve Modal -->
         <div id="approveSpkModal" class="modal" style="display:none;">
             <div class="modal-content" style="max-width:480px;">
                 <div class="modal-header">
-                    <h3>✅ Speaker genehmigen</h3>
-                    <button class="modal-close" onclick="closeModal('approveSpkModal')">&times;</button>
+                    <h3>Speaker genehmigen</h3>
+                    <button class="modal-close" type="button" data-spk-modal-close="approveSpkModal">&times;</button>
                 </div>
                 <div class="modal-body">
                     <p>Soll <strong id="approveSpkModalName"></strong> genehmigt und aktiviert werden?</p>
                     <p style="color:#166534;font-size:.875rem;">Das Profil wird sofort öffentlich sichtbar.</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('approveSpkModal')">Abbrechen</button>
-                    <button type="button" class="btn btn-primary" id="approveSpkModalConfirm">✅ Genehmigen</button>
+                    <button type="button" class="btn btn-secondary" data-spk-modal-close="approveSpkModal">Abbrechen</button>
+                    <button type="button" class="btn btn-primary" id="approveSpkModalConfirm">Genehmigen</button>
                 </div>
             </div>
         </div>
@@ -610,7 +621,7 @@ final class CMS_Speakers_Admin
     public function render_form(?object $speaker, array $topics, array $events, array $companies): void
     {
         $is_edit   = $speaker !== null;
-        $title     = $is_edit ? '✏️ Speaker bearbeiten' : '🎤 Neuer Speaker';
+        $title     = $is_edit ? 'Speaker bearbeiten' : 'Neuer Speaker';
         $csrf      = CMS\Security::instance()->generateToken('save_speaker');
         $csrf_evt  = CMS\Security::instance()->generateToken('speaker_event');
         $sec       = CMS\Security::instance();
@@ -621,7 +632,7 @@ final class CMS_Speakers_Admin
         $admin_css = CMS_SPEAKERS_PLUGIN_DIR . 'assets/css/speakers-admin.css';
         if (file_exists($admin_css)) {
             $adminCssVersion = (string) filemtime($admin_css);
-            echo '<link rel="stylesheet" href="' . CMS_SPEAKERS_PLUGIN_URL . 'assets/css/speakers-admin.css?v=' . $adminCssVersion . '">' . "\n";
+            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_SPEAKERS_PLUGIN_URL . 'assets/css/speakers-admin.css?v=' . $adminCssVersion, ENT_QUOTES, 'UTF-8') . '">' . "\n";
         }
 
         // Decode JSON fields
@@ -630,26 +641,26 @@ final class CMS_Speakers_Admin
         $langs_str = implode(', ', $langs);
 
         $all_formats = [
-            'keynote'     => '🎤 Keynote',
-            'workshop'    => '🛠️ Workshop',
-            'panel'       => '💬 Podiumsdiskussion',
-            'moderation'  => '🎙️ Moderation',
-            'training'    => '📚 Training',
-            'consulting'  => '🤝 Beratung',
-            'interview'   => '🎥 Interview',
-            'webinar'     => '💻 Webinar',
+            'keynote'     => 'Keynote',
+            'workshop'    => 'Workshop',
+            'panel'       => 'Podiumsdiskussion',
+            'moderation'  => 'Moderation',
+            'training'    => 'Training',
+            'consulting'  => 'Beratung',
+            'interview'   => 'Interview',
+            'webinar'     => 'Webinar',
         ];
         $travel_options = [
-            'local'         => '📍 Lokal (Umkreis 50 km)',
-            'regional'      => '🗺️ Regional (Bundesland)',
-            'national'      => '🇩🇪 National (DACH)',
-            'international' => '🌍 International (Europa)',
-            'worldwide'     => '🌐 Weltweit',
+            'local'         => 'Lokal (Umkreis 50 km)',
+            'regional'      => 'Regional (Bundesland)',
+            'national'      => 'National (DACH)',
+            'international' => 'International (Europa)',
+            'worldwide'     => 'Weltweit',
         ];
         $avail_options = [
-            'available' => '✅ Verfügbar',
-            'limited'   => '⚠️ Begrenzt verfügbar',
-            'booked'    => '🔴 Ausgebucht',
+            'available' => 'Verfügbar',
+            'limited'   => 'Begrenzt verfügbar',
+            'booked'    => 'Ausgebucht',
         ];
         $event_types = [
             'keynote'     => 'Keynote',
@@ -671,13 +682,13 @@ final class CMS_Speakers_Admin
             <div class="header-actions">
                 <a href="<?= SITE_URL ?>/admin/speakers" class="btn btn-secondary">← Zurück</a>
                 <?php if ($is_edit): ?>
-                <a href="<?= SITE_URL ?>/speakers/<?= htmlspecialchars(CMS_Speakers_Database::generate_slug($speaker)) ?>" class="btn btn-secondary" target="_blank">🌐 Ansehen</a>
+                <a href="<?= htmlspecialchars(SITE_URL . '/speakers/' . CMS_Speakers_Database::generate_slug($speaker), ENT_QUOTES, 'UTF-8') ?>" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">Ansehen</a>
                 <?php endif; ?>
             </div>
         </div>
 
-        <?php if (isset($_GET['saved'])): ?><div class="alert alert-success">✅ Gespeichert.</div><?php endif; ?>
-        <?php if (isset($_GET['error'])): ?><div class="alert alert-error">❌ Fehler: <?= htmlspecialchars($_GET['error']) ?></div><?php endif; ?>
+        <?php if (isset($_GET['saved'])): ?><div class="alert alert-success">Gespeichert.</div><?php endif; ?>
+        <?php if (isset($_GET['error'])): ?><div class="alert alert-error">Fehler: <?= htmlspecialchars((string) $_GET['error'], ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
 
         <form method="POST" action="<?= SITE_URL ?>/admin/speakers/save">
             <input type="hidden" name="speaker_id" value="<?= (int)($speaker->id ?? 0) ?>">
@@ -707,9 +718,9 @@ final class CMS_Speakers_Admin
             <!-- Sticky Save Bar -->
             <div class="admin-card form-actions-card">
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">💾 Speaker speichern</button>
+                    <button type="submit" class="btn btn-primary">Speaker speichern</button>
                     <a href="<?= SITE_URL ?>/admin/speakers" class="btn btn-secondary">Abbrechen</a>
-                    <?php if ($is_edit): ?><span class="form-actions__hint">Zuletzt gespeichert: <?= htmlspecialchars(date('d.m.Y H:i', strtotime($speaker->updated_at ?? 'now'))) ?></span><?php endif; ?>
+                    <?php if ($is_edit): ?><span class="form-actions__hint">Zuletzt gespeichert: <?= htmlspecialchars(date('d.m.Y H:i', strtotime($speaker->updated_at ?? 'now')), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
                 </div>
             </div>
         </form>

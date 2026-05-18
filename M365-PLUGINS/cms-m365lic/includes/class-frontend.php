@@ -155,7 +155,7 @@ final class CMS_M365LIC_Frontend
         $viewContext = $this->build_view_context($pricingContext, $embedded, $settings, $selectedBilling, $userPricingProfile);
 
         if ($method === 'POST') {
-            if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyPersistentToken($_POST['evaluation_csrf_token'] ?? '', 'm365lic_evaluate')) {
+            if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyPersistentToken((string) ($_POST['evaluation_csrf_token'] ?? ''), 'm365lic_evaluate')) {
                 $error = 'Sicherheitscheck fehlgeschlagen. Bitte die Seite neu laden.';
             } else {
                 $requirements = $this->parse_posted_requirements();
@@ -241,7 +241,7 @@ final class CMS_M365LIC_Frontend
         $euPageIntro = 'Erfasse mehrere Bedarfsgruppen wie in der Standard-Auswertung und vergleiche die empfohlene Microsoft-365-Kombination direkt mit einem europäischen Alternativ-Stack.';
 
         if ($method === 'POST') {
-            if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyPersistentToken($_POST['evaluation_csrf_token'] ?? '', 'm365lic_evaluate')) {
+            if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyPersistentToken((string) ($_POST['evaluation_csrf_token'] ?? ''), 'm365lic_evaluate')) {
                 $error = 'Sicherheitscheck fehlgeschlagen. Bitte die Seite neu laden.';
             } else {
                 $requirements = $this->parse_posted_requirements();
@@ -903,7 +903,7 @@ final class CMS_M365LIC_Frontend
         $repo = CMS_M365LIC_Repository::instance();
         $settings = $repo->get_settings();
 
-        if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyPersistentToken($_POST['export_csrf_token'] ?? '', 'm365lic_export')) {
+        if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyPersistentToken((string) ($_POST['export_csrf_token'] ?? ''), 'm365lic_export')) {
             http_response_code(403);
             echo 'Sicherheitscheck fehlgeschlagen.';
             exit;
@@ -1250,7 +1250,7 @@ final class CMS_M365LIC_Frontend
         $error = '';
 
         if ($method === 'POST') {
-            if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken($_POST['member_settings_csrf_token'] ?? '', 'm365lic_member_settings')) {
+            if (class_exists('CMS\Security') && !\CMS\Security::instance()->verifyToken((string) ($_POST['member_settings_csrf_token'] ?? ''), 'm365lic_member_settings')) {
                 $error = 'Sicherheitscheck fehlgeschlagen. Bitte die Seite neu laden.';
             } else {
                 $profileInput = [

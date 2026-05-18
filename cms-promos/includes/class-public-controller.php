@@ -44,6 +44,7 @@ final class CMS_Promos_Public_Controller
 
     public function archive_page(string $slug = ''): void
     {
+        $slug = $this->normalize_slug($slug);
         $repository = CMS_Promos_Repository::instance();
         $settings = $repository->get_settings();
         $placements = $repository->get_placements();
@@ -67,15 +68,17 @@ final class CMS_Promos_Public_Controller
 
     public function redirect_promo(string $slug): void
     {
+        $slug = $this->normalize_slug($slug);
         $promo = CMS_Promos_Repository::instance()->get_promo_by_slug($slug);
-        if ($promo === null || empty($promo['target_url'])) {
+        $targetUrl = $promo !== null ? $this->sanitize_redirect_url((string) ($promo['target_url'] ?? '')) : '';
+        if ($promo === null || $targetUrl === '') {
             http_response_code(404);
             echo '<h1>404 – Promo nicht gefunden</h1>';
             return;
         }
 
         CMS_Promos_Repository::instance()->increment_click((int) $promo['id']);
-        header('Location: ' . (string) $promo['target_url'], true, 302);
+        header('Location: ' . $targetUrl, true, 302);
         exit;
     }
 
@@ -159,7 +162,7 @@ final class CMS_Promos_Public_Controller
                     echo '<p>' . $this->escape_html((string) $promo['teaser']) . '</p>';
                 }
                 if (!empty($promo['content_html'])) {
-                    echo '<div class="promos-hook-card__body">' . (string) $promo['content_html'] . '</div>';
+                    echo '<div class="promos-hook-card__body">' . $this->sanitize_public_html((string) $promo['content_html']) . '</div>';
                 }
                 echo '<a class="promos-card__button" href="' . $this->escape_attr($redirectUrl) . '"' . $targetBehavior . '>' . $this->escape_html($buttonLabel) . '</a>';
                 echo '</div>';
@@ -180,5 +183,64 @@ final class CMS_Promos_Public_Controller
     private function escape_attr(string $value): string
     {
         return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    }
+
+    private function normalize_slug(string $slug): string
+    {
+        $slug = strtolower(trim($slug));
+        $slug = preg_replace('/[^a-z0-9\-]+/', '-', $slug) ?? '';
+        $slug = trim($slug, '-');
+        return substr($slug, 0, 120);
+    }
+
+    private function sanitize_redirect_url(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]]/', $url) === 1) {
+            return '';
+        }
+
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts)) {
+            return '';
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return '';
+        }
+
+        if (($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
+            return '';
+        }
+
+        $host = strtolower(trim((string) ($parts['host'] ?? ''), '[]'));
+        if ($host === '' || in_array($host, ['localhost', 'localhost.localdomain'], true) || str_ends_with($host, '.local')) {
+            return '';
+        }
+
+        $ip = filter_var($host, FILTER_VALIDATE_IP);
+        if ($ip !== false && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return '';
+        }
+
+        return $url;
+    }
+
+    private function sanitize_public_html(string $html): string
+    {
+        $html = trim(strip_tags($html, '<p><a><strong><em><ul><ol><li><br><h2><h3><h4><span>'));
+        $html = preg_replace('/\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $html) ?? '';
+        $html = preg_replace('/\s+style\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $html) ?? '';
+
+        return preg_replace_callback('/\s+href\s*=\s*("([^"]*)"|\'([^\']*)\'|([^\s>]+))/i', function (array $matches): string {
+            $href = html_entity_decode((string) ($matches[2] ?? $matches[3] ?? $matches[4] ?? ''), ENT_QUOTES, 'UTF-8');
+            $safeHref = $this->sanitize_redirect_url($href);
+            return $safeHref !== '' ? ' href="' . $this->escape_attr($safeHref) . '"' : '';
+        }, $html) ?? '';
     }
 }

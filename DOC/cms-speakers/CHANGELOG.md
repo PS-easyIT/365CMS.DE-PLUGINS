@@ -1,5 +1,15 @@
 # CMS Speakers – Changelog
 
+## [3.0.1] – 2026-05-18
+
+### Geändert
+
+- **Security-Pass:** CSRF-Token-Prüfungen in Admin- und Member-Pfaden string-cast-sicher gemacht.
+- **URL-Härtung:** Public-Templates, Admin-Saves und zentrale Persistenz validieren HTTP/HTTPS-URLs restriktiver und blocken Credentials, lokale/private Ziele und Steuerzeichen.
+- **Input-Normalisierung:** GET-Filter, Settings, Event-Daten und Textfelder werden begrenzt und über feste Allow-Lists normalisiert.
+- **Publicsite-UX:** Archive-, Card- und Single-Template von Emoji-Deko befreit und Ausgabe-Escaping auf UTF-8/ENT_QUOTES nachgezogen.
+- **Admin-UX:** Menü-/Header-/Button-Labels beruhigt, Asset-URLs escaped und kritische Inline-Eventhandler auf data-Attribut-Listener umgestellt.
+
 ## [1.1.0] – 2026-03-28
 
 ### Geändert

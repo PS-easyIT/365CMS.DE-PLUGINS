@@ -14,6 +14,7 @@ final class CMS_Newsletter_Public_Controller
     private const SUBSCRIBE_MIN_INTERVAL = 20;
     private const SUBSCRIBE_WINDOW = 3600;
     private const SUBSCRIBE_MAX_ATTEMPTS = 8;
+    private const RATE_LIMIT_FILE_MAX_BYTES = 8192;
 
     private static ?self $instance = null;
 
@@ -116,7 +117,7 @@ final class CMS_Newsletter_Public_Controller
         $allowed = ['subscribed', 'double-opt-in', 'exists', 'invalid', 'unsubscribed', 'rate-limit'];
         $notice = in_array($notice, $allowed, true) ? $notice : 'invalid';
         $siteUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
-        header('Location: ' . $siteUrl . '/newsletter?newsletter_notice=' . rawurlencode($notice));
+        header('Location: ' . $siteUrl . '/newsletter?newsletter_notice=' . rawurlencode($notice), true, 303);
         exit;
     }
 
@@ -141,29 +142,47 @@ final class CMS_Newsletter_Public_Controller
         $now = time();
         $attempts = [];
 
-        if (is_file($file)) {
-            $raw = file_get_contents($file);
-            $decoded = is_string($raw) ? json_decode($raw, true) : null;
-            if (is_array($decoded)) {
-                $attempts = array_values(array_filter(array_map('intval', $decoded), static function (int $timestamp) use ($now): bool {
-                    return $timestamp >= ($now - self::SUBSCRIBE_WINDOW);
-                }));
+        $handle = fopen($file, 'c+b');
+        if (!is_resource($handle)) {
+            return false;
+        }
+
+        try {
+            if (!flock($handle, LOCK_EX)) {
+                return false;
             }
-        }
 
-        $lastAttempt = $attempts !== [] ? max($attempts) : 0;
-        if ($lastAttempt > 0 && ($now - $lastAttempt) < self::SUBSCRIBE_MIN_INTERVAL) {
-            return true;
-        }
+            $size = filesize($file);
+            if (is_int($size) && $size > 0 && $size <= self::RATE_LIMIT_FILE_MAX_BYTES) {
+                rewind($handle);
+                $raw = stream_get_contents($handle, self::RATE_LIMIT_FILE_MAX_BYTES);
+                $decoded = is_string($raw) ? json_decode($raw, true) : null;
+                if (is_array($decoded)) {
+                    $attempts = array_values(array_filter(array_map('intval', $decoded), static function (int $timestamp) use ($now): bool {
+                        return $timestamp >= ($now - self::SUBSCRIBE_WINDOW);
+                    }));
+                }
+            }
 
-        if (count($attempts) >= self::SUBSCRIBE_MAX_ATTEMPTS) {
-            return true;
-        }
+            $lastAttempt = $attempts !== [] ? max($attempts) : 0;
+            if ($lastAttempt > 0 && ($now - $lastAttempt) < self::SUBSCRIBE_MIN_INTERVAL) {
+                return true;
+            }
 
-        $attempts[] = $now;
-        $json = json_encode($attempts);
-        if (is_string($json)) {
-            file_put_contents($file, $json);
+            if (count($attempts) >= self::SUBSCRIBE_MAX_ATTEMPTS) {
+                return true;
+            }
+
+            $attempts[] = $now;
+            $json = json_encode($attempts, JSON_THROW_ON_ERROR);
+            rewind($handle);
+            ftruncate($handle, 0);
+            fwrite($handle, $json);
+        } catch (\Throwable) {
+            return false;
+        } finally {
+            flock($handle, LOCK_UN);
+            fclose($handle);
         }
 
         return false;

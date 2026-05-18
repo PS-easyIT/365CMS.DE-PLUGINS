@@ -1,5 +1,10 @@
 # Plugin-Dokumentations-Changelog
 
+## 3.0.1 – 2026-05-18
+
+- CSRF-Token-Prüfungen für Admin-, Public-, Export- und Member-Flows auf string-cast-sichere 365CMS-v3.x.x-Nutzung dokumentiert.
+- Manifest-Anforderungen für PHP 8.4 ergänzt.
+
 ## 1.4.9
 
 - Zusätzliche EU-Alternativen für Defender/XDR, Intune/MDM, IAM, Enterprise-Projektmanagement, Low-Code, BI, DMS/Archivierung und Cloud-Telefonie dokumentiert

@@ -1,5 +1,10 @@
 # CMS M365 Tools – Dokumentations-Changelog
 
+## 3.0.1 – 2026-05-18
+
+- PHP-8.4-Manifestanforderungen und 365CMS-v3.x.x-Releasevalidierung für `cms-m365tools` dokumentiert.
+- Security-Hotspot-Prüfung für Admin-CSRF, DOM-XSS-Sinks und Public-Route-Normalisierung als aktuellen 3.x-Stand festgehalten.
+
 ## 1.29.9 – 2026-05-17
 
 - Dokumentiert die finale Null-Abstand-Absicherung über spätes Head-Critical-CSS und die JS-Klasse `m365tools-content-host` am Theme-Content-Host.

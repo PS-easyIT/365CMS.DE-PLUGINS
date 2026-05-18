@@ -27,9 +27,9 @@ if (!defined('ABSPATH')) {
         * { box-sizing: border-box; }
         body {
             margin: 0;
-            font-family: Inter, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             color: var(--text);
-            background: linear-gradient(180deg, #eff6ff 0%, var(--bg) 220px);
+            background: var(--bg);
         }
         a { color: var(--primary); }
         .shell {
@@ -44,9 +44,9 @@ if (!defined('ABSPATH')) {
             gap: 18px;
             padding: 28px;
             border-radius: 24px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(239,246,255,0.94) 100%);
+            background: #ffffff;
             border: 1px solid #dbeafe;
-            box-shadow: 0 20px 40px rgba(37, 99, 235, 0.08);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
         }
         .eyebrow {
             display: inline-flex;
@@ -127,7 +127,7 @@ if (!defined('ABSPATH')) {
             border: 1px solid var(--line);
             border-radius: 22px;
             padding: 22px;
-            box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
         }
         .card h2,
         .card h3 {

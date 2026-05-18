@@ -1,12 +1,12 @@
 {
   "name": "CMS Projects",
   "slug": "cms-projects",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "requires_cms": "3.0.0",
-  "requires_php": "8.1",
+  "requires_php": "8.4",
   "tested_up_to": "3.0.0",
-  "release_date": "2026-05-17",
+  "release_date": "2026-05-18",
   "author": "365 Network",
   "description": "Projektmanagement mit Projekt-Dashboards, Boards und Widgets für Member- und Public-Bereiche.",
-  "changelog": "Public-/Member-Templates mit Guards, validierter Accent-Farbe über CSS Custom Property und 365CMS-3.0.0-Kompatibilität."
+  "changelog": "365CMS-3.0.1/PHP-8.4-Härtung: Admin-Renderer prüft Admin-Zugriff, Slugs werden vor Public-/Member-Lookups normalisiert, Widget-URLs blockieren Credentials/Kontrollzeichen/private Hosts, JSON-Payloads sind begrenzt und Public-/Member-Styles wurden optisch beruhigt."
 }

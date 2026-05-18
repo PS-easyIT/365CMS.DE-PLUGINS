@@ -17,10 +17,10 @@ final class CMS_Promos_Admin_Menu
             return;
         }
 
-        add_menu_page('Promos', 'Promos', 'manage_options', 'promos-dashboard', [CMS_Promos_Admin_Pages::class, 'render_dashboard'], '🎯', 58);
-        add_submenu_page('promos-dashboard', 'Dashboard', '📊 Dashboard', 'manage_options', 'promos-dashboard', [CMS_Promos_Admin_Pages::class, 'render_dashboard']);
-        add_submenu_page('promos-dashboard', 'Promos', '🎯 Promos', 'manage_options', 'promos-items', [CMS_Promos_Admin_Pages::class, 'render_promos']);
-        add_submenu_page('promos-dashboard', 'Platzierungen', '🧱 Platzierungen', 'manage_options', 'promos-placements', [CMS_Promos_Admin_Pages::class, 'render_placements']);
-        add_submenu_page('promos-dashboard', 'Einstellungen', '⚙️ Einstellungen', 'manage_options', 'promos-settings', [CMS_Promos_Admin_Pages::class, 'render_settings']);
+        add_menu_page('Promos', 'Promos', 'manage_options', 'promos-dashboard', [CMS_Promos_Admin_Pages::class, 'render_dashboard'], 'PR', 58);
+        add_submenu_page('promos-dashboard', 'Dashboard', 'Dashboard', 'manage_options', 'promos-dashboard', [CMS_Promos_Admin_Pages::class, 'render_dashboard']);
+        add_submenu_page('promos-dashboard', 'Promos', 'Promos', 'manage_options', 'promos-items', [CMS_Promos_Admin_Pages::class, 'render_promos']);
+        add_submenu_page('promos-dashboard', 'Platzierungen', 'Platzierungen', 'manage_options', 'promos-placements', [CMS_Promos_Admin_Pages::class, 'render_placements']);
+        add_submenu_page('promos-dashboard', 'Einstellungen', 'Einstellungen', 'manage_options', 'promos-settings', [CMS_Promos_Admin_Pages::class, 'render_settings']);
     }
 }

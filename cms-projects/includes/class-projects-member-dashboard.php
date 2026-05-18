@@ -22,7 +22,7 @@ final class CMS_Projects_Member_Dashboard
             'plugin' => 'cms-projects',
             'slug' => 'projects',
             'label' => 'PROJECTS',
-            'icon' => '📁',
+            'icon' => 'PRJ',
             'category' => 'plugins',
             'priority' => 30,
             'capability' => null,
@@ -33,7 +33,7 @@ final class CMS_Projects_Member_Dashboard
                 'stats_callback' => [$this, 'getDashboardStats'],
                 'link_label' => 'Zu den Projekten',
                 'admin_url' => '/admin/plugins/cms-projects',
-                'admin_label' => '⚙️ Admin',
+                'admin_label' => 'Admin',
             ],
             'render_callback' => [$this, 'renderPage'],
         ]);
@@ -67,6 +67,8 @@ final class CMS_Projects_Member_Dashboard
     {
         $projects = $this->service->getMemberProjects();
         $selectedSlug = trim((string) ($_GET['project'] ?? ''));
+        $selectedSlug = preg_replace('/[^a-z0-9\-_]/i', '', $selectedSlug) ?? '';
+        $selectedSlug = substr($selectedSlug, 0, 120);
         $currentProject = null;
 
         if ($selectedSlug !== '') {

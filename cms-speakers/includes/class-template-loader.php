@@ -66,7 +66,7 @@ final class CMS_Speakers_Template_Loader
             if (defined('CMS_DEBUG') && CMS_DEBUG) {
                 error_log("[CMS Speakers] Template nicht gefunden: {$template_name}");
             }
-            echo '<p>Template nicht gefunden: ' . htmlspecialchars($template_name) . '</p>';
+            echo '<p>Template nicht gefunden: ' . htmlspecialchars($template_name, ENT_QUOTES, 'UTF-8') . '</p>';
             return;
         }
 

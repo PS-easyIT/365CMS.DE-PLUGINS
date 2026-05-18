@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.0.1 — 2026-05-18
+
+- PHP-Anforderung auf 8.4 angehoben und Plugin-Version auf `3.0.1` aktualisiert.
+- Admin-CSRF-Token werden vor der Prüfung konsequent als String behandelt.
+- Interne Admin-Bridge-Redirects nutzen HTTP 303 statt impliziter Standardweiterleitung.
+- Admin-Ausgaben und Formularziele wurden konsistent mit `ENT_QUOTES` und UTF-8 escaped.
+- Statische Inline-Styles wurden in `assets/css/netimport-admin.css` verschoben.
+- Importierte URLs blockieren jetzt zusätzlich Credentials, Kontrollzeichen und überlange Werte.
+- Admin-UI optisch beruhigt: weniger Symbol-Deko, klarere Textlabels.
+
 ## 1.5.0 — 2026-03-28
 
 - Full-Import-Läufe aggregieren Reset-/Cleanup-Daten jetzt vollständig, sodass `Reset` auch nach Komplettimporten zuverlässig arbeitet

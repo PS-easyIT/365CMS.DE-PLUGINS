@@ -115,7 +115,7 @@ final class CMS_M365LIC_Admin_Pages
     protected static function verify_nonce(string $action): bool
     {
         return !class_exists('CMS\\Security')
-            || \CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', $action);
+            || \CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), $action);
     }
 
     protected static function repo(): CMS_M365LIC_Repository

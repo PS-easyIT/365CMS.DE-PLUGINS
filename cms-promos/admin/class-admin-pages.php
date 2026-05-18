@@ -92,7 +92,7 @@ final class CMS_Promos_Admin_Pages
             return;
         }
 
-        if (!Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'promos_admin')) {
+        if (!Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'promos_admin')) {
             self::store_notice(false, 'Sicherheitscheck fehlgeschlagen.');
             self::redirect_back();
         }
@@ -137,7 +137,7 @@ final class CMS_Promos_Admin_Pages
     private static function check_access(): void
     {
         if (!Auth::instance()->isAdmin()) {
-            header('Location: ' . SITE_URL);
+            header('Location: ' . SITE_URL, true, 303);
             exit;
         }
     }
@@ -159,7 +159,7 @@ final class CMS_Promos_Admin_Pages
 
     private static function redirect_back(): void
     {
-        header('Location: ' . SITE_URL . '/admin/plugins/promos-dashboard/promos-dashboard');
+        header('Location: ' . SITE_URL . '/admin/plugins/promos-dashboard/promos-dashboard', true, 303);
         exit;
     }
 }

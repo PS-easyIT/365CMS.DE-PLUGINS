@@ -11,6 +11,26 @@
     max-width: 840px;
 }
 
+.ni-history-filter-form,
+.ni-history-action-form {
+    margin-bottom: 1rem;
+}
+
+.ni-inline-form {
+    display: inline-block;
+}
+
+.ni-history-meta {
+    margin-top: 0.75rem;
+}
+
+.stat-icon {
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #475569;
+}
+
 .ni-table code {
     font-size: 0.8rem;
     color: #334155;

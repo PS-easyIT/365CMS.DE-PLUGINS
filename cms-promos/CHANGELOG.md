@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.1 - 2026-05-18
+
+- CSRF-Token-Prüfung und Admin-Redirects für 365CMS v3.x.x gehärtet.
+- Ziel-URLs, Richtext-Inhalte und Slugs strenger normalisiert und validiert.
+- Public-Archiv semantisch modernisiert, Inline-Styles entfernt und Escaping vereinheitlicht.
+- Admin-Oberfläche ruhiger gestaltet und Emoji-Deko durch klare Textlabels ersetzt.
+
 ## 3.0.0 - 2026-05-17
 
 - Plugin-Version und Update-Metadaten auf 365CMS 3.0.0 aktualisiert.

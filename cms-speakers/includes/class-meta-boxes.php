@@ -495,13 +495,13 @@ final class CMS_Speakers_Meta_Boxes
         <div class="admin-card">
             <h3>🏷️ Themen & Schwerpunkte</h3>
             <input type="hidden" name="topics_json" id="spk-topics-json" value="<?= $topics_json ?>">
-            <div id="spk-topics-wrap" style="display:flex;flex-wrap:wrap;gap:.4rem;min-height:44px;padding:.5rem;border:2px solid #e2e8f0;border-radius:8px;background:#fafcff;cursor:text;" onclick="document.getElementById('spk-topic-input').focus()">
+            <div id="spk-topics-wrap" style="display:flex;flex-wrap:wrap;gap:.4rem;min-height:44px;padding:.5rem;border:2px solid #e2e8f0;border-radius:8px;background:#fafcff;cursor:text;" data-spk-focus-input="spk-topic-input">
                 <?php foreach ($topics as $t):
                     $name = is_object($t) ? $t->topic_name : ($t['topic_name'] ?? $t);
                 ?>
                 <span class="spk-topic-tag" data-tag="<?= htmlspecialchars($name) ?>">
                     <?= htmlspecialchars($name) ?>
-                    <button type="button" onclick="spkRemoveTopic(this.parentElement)" style="background:none;border:none;cursor:pointer;padding:0 0 0 4px;color:inherit;font-size:1rem;">&times;</button>
+                    <button type="button" data-spk-remove-topic="1" style="background:none;border:none;cursor:pointer;padding:0 0 0 4px;color:inherit;font-size:1rem;">&times;</button>
                 </span>
                 <?php endforeach; ?>
                 <input id="spk-topic-input" type="text" placeholder="Thema eingeben + Enter …" style="border:none;outline:none;background:transparent;font-size:.85rem;min-width:160px;padding:.1rem .3rem;">
@@ -535,6 +535,15 @@ final class CMS_Speakers_Meta_Boxes
                     updateHidden();
                 }
                 window.spkRemoveTopic = function(el){ el.remove(); updateHidden(); };
+                wrap.addEventListener('click', function(e){
+                    var removeButton = e.target.closest('[data-spk-remove-topic]');
+                    if (removeButton) {
+                        e.preventDefault();
+                        spkRemoveTopic(removeButton.parentElement);
+                        return;
+                    }
+                    input.focus();
+                });
                 input.addEventListener('keydown', function(e){
                     if (e.key === 'Enter' || e.key === ',' || e.key === 'Tab') {
                         e.preventDefault();
@@ -716,7 +725,7 @@ final class CMS_Speakers_Meta_Boxes
                         <?php if ($org): ?><span class="spk-ev-org">🏢 <?= htmlspecialchars($org) ?></span><?php endif; ?>
                         <?php if ($et->audience_size ?? ''): ?><span class="spk-ev-loc">👥 <?= number_format((int)$et->audience_size) ?></span><?php endif; ?>
                     </div>
-                    <button type="button" onclick="spkDeleteEvent(<?= (int)$et->id ?>)" class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border:none;cursor:pointer;border-radius:6px;padding:.2rem .5rem;">🗑️</button>
+                    <button type="button" data-spk-delete-event="<?= (int)$et->id ?>" class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border:none;cursor:pointer;border-radius:6px;padding:.2rem .5rem;">Löschen</button>
                 </div>
                 <?php endforeach; endif; ?>
             </div>
@@ -819,7 +828,7 @@ final class CMS_Speakers_Meta_Boxes
                         </label>
                     </div>
                 </div>
-                <button type="button" onclick="spkAddEvent()" class="btn btn-primary" style="margin-top:.25rem;">✅ Auftritt speichern</button>
+                <button type="button" data-spk-add-event="1" class="btn btn-primary" style="margin-top:.25rem;">Auftritt speichern</button>
             </div>
         </div>
 
@@ -875,6 +884,14 @@ final class CMS_Speakers_Meta_Boxes
                 .then(function(d){ if (d.success) { var row = document.querySelector('[data-id="'+id+'"]'); if(row) row.remove(); } })
                 .catch(function(e){ alert('Fehler: ' + e.message); });
         }
+        document.querySelectorAll('[data-spk-delete-event]').forEach(function(button) {
+            button.addEventListener('click', function() {
+                spkDeleteEvent(button.dataset.spkDeleteEvent || '0');
+            });
+        });
+        document.querySelectorAll('[data-spk-add-event]').forEach(function(button) {
+            button.addEventListener('click', spkAddEvent);
+        });
         </script>
 
         <style>

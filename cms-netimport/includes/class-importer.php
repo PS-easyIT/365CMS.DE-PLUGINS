@@ -2017,7 +2017,7 @@ final class CMS_NetImport_Importer
     private function sanitize_url(string $value): string
     {
         $url = trim($value);
-        if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+        if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]]/', $url) === 1 || !filter_var($url, FILTER_VALIDATE_URL)) {
             return '';
         }
 
@@ -2027,6 +2027,10 @@ final class CMS_NetImport_Importer
         }
 
         if (!in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true)) {
+            return '';
+        }
+
+        if (($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
             return '';
         }
 

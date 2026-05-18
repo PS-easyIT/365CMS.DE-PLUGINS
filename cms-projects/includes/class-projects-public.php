@@ -33,6 +33,8 @@ final class CMS_Projects_Public
     public function singlePage(string $slug = ''): void
     {
         $slug = trim($slug) !== '' ? $slug : (string) ($_GET['slug'] ?? '');
+        $slug = preg_replace('/[^a-z0-9\-_]/i', '', $slug) ?? '';
+        $slug = substr($slug, 0, 120);
         $project = $this->service->findProjectBySlug($slug);
         if ($project === null || ($project['visibility'] ?? '') !== 'public') {
             http_response_code(404);

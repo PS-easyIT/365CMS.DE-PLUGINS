@@ -51,8 +51,8 @@ final class PublicController
     {
         $repository = EntryRepository::instance();
         $settings = $repository->getSettings();
-        $search = trim((string) ($_GET['q'] ?? ''));
-        $category = trim((string) ($_GET['category'] ?? ''));
+        $search = $this->sanitizeSearchTerm($_GET['q'] ?? '');
+        $category = $this->sanitizeCategoryFilter($_GET['category'] ?? '');
         $allowedPerPage = [25, 50, 100, 200];
         $requestedPerPage = (int) ($_GET['per_page'] ?? 25);
         $perPage = in_array($requestedPerPage, $allowedPerPage, true) ? $requestedPerPage : 25;
@@ -63,7 +63,7 @@ final class PublicController
         ];
         $totalEntries = $repository->countEntries($filters);
         $totalPages = max(1, (int) ceil($totalEntries / $perPage));
-        $currentPage = max(1, (int) ($_GET['page'] ?? 1));
+        $currentPage = $this->sanitizePageNumber($_GET['page'] ?? 1);
         $currentPage = min($currentPage, $totalPages);
         $entries = $repository->getEntries([
             ...$filters,
@@ -95,8 +95,8 @@ final class PublicController
     {
         $repository = EntryRepository::instance();
         $settings = $repository->getSettings();
-        $search = trim((string) ($_GET['q'] ?? ''));
-        $category = trim((string) ($_GET['category'] ?? ''));
+        $search = $this->sanitizeSearchTerm($_GET['q'] ?? '');
+        $category = $this->sanitizeCategoryFilter($_GET['category'] ?? '');
         $allowedPerPage = [25, 50, 100, 200];
         $requestedPerPage = (int) ($_GET['per_page'] ?? 25);
         $perPage = in_array($requestedPerPage, $allowedPerPage, true) ? $requestedPerPage : 25;
@@ -107,7 +107,7 @@ final class PublicController
         ];
         $totalEntries = $repository->countEntries($filters);
         $totalPages = max(1, (int) ceil($totalEntries / $perPage));
-        $currentPage = max(1, (int) ($_GET['page'] ?? 1));
+        $currentPage = $this->sanitizePageNumber($_GET['page'] ?? 1);
         $currentPage = min($currentPage, $totalPages);
         $entries = $repository->getEntries([
             ...$filters,
@@ -179,7 +179,7 @@ final class PublicController
             ];
         }
 
-        header('Content-Type: application/xml; charset=UTF-8');
+        $this->sendXmlHeaders();
 
         echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
         echo "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n";
@@ -199,12 +199,17 @@ final class PublicController
 
     public function singlePage(string $slug): void
     {
+        $slug = $this->sanitizePublicSlug($slug);
+        if ($slug === '') {
+            $this->renderNotFound();
+            return;
+        }
+
         $repository = EntryRepository::instance();
         $entry = $repository->getEntryBySlug($slug);
         $settings = $repository->getSettings();
         if ($entry === null) {
-            http_response_code(404);
-            echo '<h1>404 – Knowledgebase-Eintrag nicht gefunden</h1>';
+            $this->renderNotFound();
             return;
         }
 
@@ -243,5 +248,57 @@ final class PublicController
         }
 
         return null;
+    }
+
+    private function sanitizeSearchTerm(mixed $value): string
+    {
+        $value = trim(strip_tags((string) $value));
+        $value = preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $value) ?? '';
+        $value = preg_replace('/\s+/u', ' ', $value) ?? '';
+
+        return mb_substr(trim($value), 0, 120, 'UTF-8');
+    }
+
+    private function sanitizeCategoryFilter(mixed $value): string
+    {
+        $value = trim(strip_tags((string) $value));
+        $value = preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $value) ?? '';
+        $value = preg_replace('/\s+/u', ' ', $value) ?? '';
+
+        return mb_substr(trim($value), 0, 120, 'UTF-8');
+    }
+
+    private function sanitizePageNumber(mixed $value): int
+    {
+        return max(1, min(10000, (int) $value));
+    }
+
+    private function sanitizePublicSlug(string $slug): string
+    {
+        $slug = trim(rawurldecode($slug));
+        $slug = mb_substr($slug, 0, 190, 'UTF-8');
+
+        return preg_match('/^[\p{L}\p{N}-]+$/u', $slug) === 1 ? $slug : '';
+    }
+
+    private function sendXmlHeaders(): void
+    {
+        header('Content-Type: application/xml; charset=UTF-8');
+        header('X-Content-Type-Options: nosniff');
+    }
+
+    private function renderNotFound(): void
+    {
+        http_response_code(404);
+        $theme = class_exists('CMS\\ThemeManager') ? \CMS\ThemeManager::instance() : null;
+        if ($theme !== null) {
+            $theme->getHeader();
+        }
+
+        echo '<main class="cms-kb-content cms-kb-content--single"><article class="cms-kb-article"><h1>Knowledgebase-Eintrag nicht gefunden</h1><p>Der angeforderte Eintrag ist nicht verfügbar oder wurde verschoben.</p><p><a class="cms-kb-entry__cta" href="' . htmlspecialchars(SITE_URL . '/kb', ENT_QUOTES, 'UTF-8') . '">Zur Knowledgebase</a></p></article></main>';
+
+        if ($theme !== null) {
+            $theme->getFooter();
+        }
     }
 }

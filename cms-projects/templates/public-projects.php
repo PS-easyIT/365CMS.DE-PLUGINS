@@ -100,7 +100,7 @@ $renderWidgetBlock = static function (array $widget): void {
     echo '</article>';
 };
 ?>
-<div class="cp-public-shell">
+<main class="cp-public-shell">
     <section class="cp-public-hero">
         <div class="cp-hero-copy">
             <span class="cp-kicker">365CMS Projects</span>
@@ -120,7 +120,7 @@ $renderWidgetBlock = static function (array $widget): void {
     <?php if ($view === 'archive'): ?>
         <section class="cp-project-grid">
             <?php if ($projects === []): ?>
-                <div class="cp-empty-state">Aktuell sind keine öffentlichen Projekte sichtbar.</div>
+                <div class="cp-empty-state" role="status" aria-live="polite">Aktuell sind keine öffentlichen Projekte sichtbar.</div>
             <?php else: ?>
                 <?php foreach ($projects as $project): ?>
                     <article class="cp-project-card">
@@ -157,7 +157,7 @@ $renderWidgetBlock = static function (array $widget): void {
                 </article>
                 <div class="cp-board-stack">
                     <?php if (($dashboard['boards'] ?? []) === []): ?>
-                        <div class="cp-empty-state">Für dieses öffentliche Projekt sind aktuell keine Boards sichtbar.</div>
+                        <div class="cp-empty-state" role="status" aria-live="polite">Für dieses öffentliche Projekt sind aktuell keine Boards sichtbar.</div>
                     <?php else: ?>
                         <?php foreach (($dashboard['boards'] ?? []) as $board): ?>
                             <?php $renderBoardBlock($board); ?>
@@ -167,7 +167,7 @@ $renderWidgetBlock = static function (array $widget): void {
             </div>
             <aside class="cp-dashboard-side">
                 <?php if (($dashboard['widgets'] ?? []) === []): ?>
-                    <div class="cp-empty-state">Für dieses Projekt sind keine öffentlichen Widgets vorhanden.</div>
+                    <div class="cp-empty-state" role="status" aria-live="polite">Für dieses Projekt sind keine öffentlichen Widgets vorhanden.</div>
                 <?php else: ?>
                     <?php foreach (($dashboard['widgets'] ?? []) as $widget): ?>
                         <?php $renderWidgetBlock($widget); ?>
@@ -176,4 +176,4 @@ $renderWidgetBlock = static function (array $widget): void {
             </aside>
         </section>
     <?php endif; ?>
-</div>
+</main>

@@ -1,6 +1,12 @@
 
 # Changelog – CMS M365 Tools
 
+## 3.0.1 – 2026-05-18
+
+- Compatibility-/Validation-Pass für 365CMS v3.x.x und PHP 8.4 abgeschlossen.
+- Manifest um `min_php`/`requires_php` 8.4 ergänzt und Plugin-Version synchronisiert.
+- Security-Hotspots erneut geprüft: Admin-CSRF, DOM-XSS-Sinks und öffentliche Route-/GET-Normalisierung bleiben auf dem bereits gehärteten 3.x-Stand.
+
 ## 3.0.0 – 2026-05-17
 
 - 365CMS-3.0.0-Kompatibilität gesetzt und Plugin-Header, Konstanten sowie Update-Manifest auf `3.0.0` angehoben.

@@ -45,7 +45,17 @@
 
 /* ── Stat-Cards – Icon-Erweiterung ───────────────────────────── */
 .stat-icon {
-    font-size: 1.75rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.25rem;
+    height: 2rem;
+    border-radius: 999px;
+    background: #f5f3ff;
+    color: #6d28d9;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .04em;
     margin-bottom: .25rem;
 }
 
@@ -89,8 +99,17 @@
     font-size: 1.1rem;
     font-weight: 800;
     color: #fff;
-    box-shadow: 0 2px 8px rgba(139,92,246,.3);
+    background: #6d28d9;
+    box-shadow: 0 1px 3px rgba(15,23,42,.12);
     overflow: hidden;
+}
+
+.spk-adm-avatar--photo {
+    background: #ede9fe;
+}
+
+.spk-adm-avatar--placeholder {
+    background: #6d28d9;
 }
 .spk-adm-avatar img {
     width: 100%;
@@ -131,6 +150,32 @@
     gap: .3rem;
     flex-wrap: wrap;
     margin-bottom: .2rem;
+}
+
+.spk-adm-pending-bar {
+    margin: -1.25rem -1.25rem .25rem;
+    padding: .5rem;
+    border-radius: 12px 12px 0 0;
+    background: #fef3c7;
+    color: #92400e;
+    text-align: center;
+    font-size: .85rem;
+    font-weight: 600;
+}
+
+.spk-status-available {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.spk-status-limited {
+    background: #fef3c7;
+    color: #78350f;
+}
+
+.spk-status-booked {
+    background: #fee2e2;
+    color: #7f1d1d;
 }
 
 /* ── Pills ───────────────────────────────────────────────────── */
@@ -186,6 +231,8 @@
 .spk-adm-btn-primary { background: #8b5cf6; color: #fff; }
 .spk-adm-btn-ghost   { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
 .spk-adm-btn-danger  { background: #fee2e2; color: #991b1b; }
+.spk-adm-btn-approve { background: #16a34a; color: #fff; }
+.spk-contents-form { display: contents; }
 
 /* ── Topic-Tag ───────────────────────────────────────────────── */
 .spk-topic-tag {

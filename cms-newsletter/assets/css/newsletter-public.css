@@ -1,20 +1,9 @@
-:root {
-    --nl-primary: #2563eb;
-    --nl-primary-dark: #1d4ed8;
-    --nl-accent: #eff6ff;
-    --nl-text: #0f172a;
-    --nl-muted: #64748b;
-    --nl-border: #dbeafe;
-    --nl-bg: #f8fafc;
-    --nl-card: #ffffff;
-    --nl-radius: 16px;
-    --nl-shadow: 0 12px 32px rgba(15, 23, 42, .08);
-}
-
 .newsletter-archive {
     max-width: 1120px;
     margin: 0 auto;
     padding: 2.5rem 1.25rem 4rem;
+    font-family: var(--phinit-font-body, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    color: var(--phinit-color-ink, #1a2233);
 }
 
 .newsletter-hero {
@@ -26,15 +15,15 @@
 
 .newsletter-hero__panel,
 .newsletter-card {
-    background: var(--nl-card);
-    border: 1px solid var(--nl-border);
-    border-radius: var(--nl-radius);
+    background: var(--phinit-color-surface, #ffffff);
+    border: 1px solid var(--phinit-color-border, #dde3ec);
+    border-radius: var(--phinit-radius-md, 10px);
     padding: 1.5rem;
-    box-shadow: var(--nl-shadow);
+    box-shadow: var(--phinit-shadow-card, 0 1px 3px rgb(15 23 42 / 0.08));
 }
 
 .newsletter-hero__panel--brand {
-    background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+    border-left: 3px solid var(--phinit-color-accent, #f5a623);
 }
 
 .newsletter-kicker {
@@ -43,7 +32,7 @@
     font-weight: 700;
     letter-spacing: .05em;
     text-transform: uppercase;
-    color: var(--nl-primary);
+    color: var(--phinit-color-ink-secondary, #5a6678);
     margin-bottom: .8rem;
 }
 
@@ -51,13 +40,13 @@
     margin: 0 0 .75rem;
     font-size: clamp(1.8rem, 4vw, 3rem);
     line-height: 1.1;
-    color: var(--nl-text);
+    color: var(--phinit-color-ink, #1a2233);
 }
 
 .newsletter-lead,
 .newsletter-card p,
 .newsletter-card li {
-    color: var(--nl-muted);
+    color: var(--phinit-color-ink-secondary, #5a6678);
     line-height: 1.7;
 }
 
@@ -92,16 +81,26 @@
     display: grid;
     gap: .45rem;
     font-weight: 600;
-    color: var(--nl-text);
+    color: var(--phinit-color-ink, #1a2233);
+}
+
+.newsletter-label__hint {
+    font-weight: 400;
+    color: var(--phinit-color-ink-secondary, #5a6678);
 }
 
 .newsletter-input {
     width: 100%;
     padding: .85rem 1rem;
-    border: 1px solid #cbd5e1;
-    border-radius: 12px;
-    background: #fff;
-    color: var(--nl-text);
+    border: 1px solid var(--phinit-color-border, #dde3ec);
+    border-radius: var(--phinit-radius-sm, 6px);
+    background: var(--phinit-color-surface, #ffffff);
+    color: var(--phinit-color-ink, #1a2233);
+}
+
+.newsletter-input:focus {
+    outline: 2px solid var(--phinit-color-accent, #f5a623);
+    outline-offset: 2px;
 }
 
 .newsletter-submit {
@@ -110,30 +109,30 @@
     justify-content: center;
     padding: .9rem 1.2rem;
     border: 0;
-    border-radius: 12px;
-    background: var(--nl-primary);
-    color: #fff;
+    min-height: 44px;
+    border-radius: var(--phinit-radius-sm, 6px);
+    background: var(--phinit-color-accent, #f5a623);
+    color: var(--phinit-color-accent-ink, #1a2233);
     font-weight: 700;
     cursor: pointer;
 }
 
 .newsletter-submit:hover {
-    background: var(--nl-primary-dark);
+    filter: brightness(0.97);
 }
 
 .newsletter-alert {
     margin-bottom: 1.25rem;
     padding: .9rem 1rem;
-    border-radius: 12px;
-    border: 1px solid #bfdbfe;
-    background: #eff6ff;
-    color: #1d4ed8;
+    border-radius: var(--phinit-radius-sm, 6px);
+    border: 1px solid var(--phinit-color-border, #dde3ec);
+    border-left: 3px solid var(--phinit-color-success, #3b6d11);
+    background: var(--phinit-color-surface, #ffffff);
+    color: var(--phinit-color-ink, #1a2233);
 }
 
 .newsletter-alert--error {
-    border-color: #fecaca;
-    background: #fef2f2;
-    color: #b91c1c;
+    border-left-color: var(--phinit-color-danger, #a32d2d);
 }
 
 .newsletter-stat-grid,
@@ -146,15 +145,15 @@
 
 .newsletter-stat {
     padding: 1rem 1.1rem;
-    background: #fff;
-    border: 1px solid #dbeafe;
-    border-radius: 14px;
+    background: var(--phinit-color-surface, #ffffff);
+    border: 1px solid var(--phinit-color-border, #dde3ec);
+    border-radius: var(--phinit-radius-md, 10px);
 }
 
 .newsletter-stat strong {
     display: block;
     font-size: 1.5rem;
-    color: var(--nl-text);
+    color: var(--phinit-color-ink, #1a2233);
 }
 
 .newsletter-list {
@@ -166,5 +165,11 @@
     .newsletter-hero,
     .newsletter-form__grid {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .newsletter-submit {
+        transition: none;
     }
 }

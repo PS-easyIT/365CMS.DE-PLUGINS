@@ -1,5 +1,14 @@
 # Changelog – 365CMS Marketplace
 
+## 3.0.1 – 2026-05-17
+
+- PHP-Anforderung auf 8.4 angehoben und Plugin-Version auf `3.0.1` aktualisiert.
+- Öffentliche Einreichungsfelder werden längenbegrenzt normalisiert, bevor sie erneut gerendert oder gespeichert werden.
+- Public-HTML-Antworten senden `X-Content-Type-Options: nosniff`.
+- Rate-Limit-Dateien werden größenbegrenzt gelesen und mit `LOCK_EX` geschrieben.
+- Directory-Ansicht überspringt Symlinks und codiert öffentliche Datei-URLs segmentweise.
+- Publicsite-Design ruhiger gestaltet: Systemfont, neutrale Flächen, reduzierte Schatten statt generischer Gradient-Optik.
+
 ## 3.0.0 – 2026-05-17
 
 - Kompatibilität auf 365CMS 3.0.0 angehoben.

@@ -123,7 +123,6 @@ $pageWindowEnd = $totalEntries > 0 ? min($totalEntries, $pageWindowStart + count
 
             <?php if (empty($entries)): ?>
                 <div class="cms-kb-empty-state" role="status" aria-live="polite">
-                    <p class="cms-kb-empty-state__icon" aria-hidden="true">🔎</p>
                     <p class="cms-kb-empty-state__title">Keine Einträge gefunden</p>
                     <p class="cms-kb-empty-state__body">Versuche es mit einem anderen Suchbegriff oder entferne den Kategorie-Filter.</p>
                 </div>

@@ -63,6 +63,7 @@ final class CMS_Marketplace_Public
         if (!headers_sent()) {
             http_response_code(200);
             header('Content-Type: text/html; charset=UTF-8');
+            header('X-Content-Type-Options: nosniff');
         }
 
         if ($section !== 'submit') {
@@ -167,30 +168,59 @@ final class CMS_Marketplace_Public
     private function extractSubmittedValues(array $input): array
     {
         return [
-            'type' => (string) ($input['type'] ?? 'plugin'),
-            'slug' => trim((string) ($input['slug'] ?? '')),
-            'name' => trim((string) ($input['name'] ?? '')),
-            'version' => trim((string) ($input['version'] ?? '')),
-            'author' => trim((string) ($input['author'] ?? '')),
-            'description' => trim((string) ($input['description'] ?? '')),
-            'category' => trim((string) ($input['category'] ?? '')),
-            'homepage_url' => trim((string) ($input['homepage_url'] ?? '')),
-            'docs_url' => trim((string) ($input['docs_url'] ?? '')),
-            'changelog_url' => trim((string) ($input['changelog_url'] ?? '')),
-            'icon_url' => trim((string) ($input['icon_url'] ?? '')),
-            'screenshot_url' => trim((string) ($input['screenshot_url'] ?? '')),
-            'requires_cms' => trim((string) ($input['requires_cms'] ?? '')),
-            'requires_php' => trim((string) ($input['requires_php'] ?? '')),
-            'tested_up_to' => trim((string) ($input['tested_up_to'] ?? '')),
-            'released_on' => trim((string) ($input['released_on'] ?? '')),
-            'notes' => trim((string) ($input['notes'] ?? '')),
+            'type' => $this->sanitizeSubmittedType($input['type'] ?? 'plugin'),
+            'slug' => $this->sanitizeSubmittedText($input['slug'] ?? '', 120),
+            'name' => $this->sanitizeSubmittedText($input['name'] ?? '', 190),
+            'version' => $this->sanitizeSubmittedText($input['version'] ?? '', 50),
+            'author' => $this->sanitizeSubmittedText($input['author'] ?? '', 190),
+            'description' => $this->sanitizeSubmittedTextarea($input['description'] ?? '', 1200),
+            'category' => $this->sanitizeSubmittedText($input['category'] ?? '', 120),
+            'homepage_url' => $this->sanitizeSubmittedText($input['homepage_url'] ?? '', 2048),
+            'docs_url' => $this->sanitizeSubmittedText($input['docs_url'] ?? '', 2048),
+            'changelog_url' => $this->sanitizeSubmittedText($input['changelog_url'] ?? '', 2048),
+            'icon_url' => $this->sanitizeSubmittedText($input['icon_url'] ?? '', 2048),
+            'screenshot_url' => $this->sanitizeSubmittedText($input['screenshot_url'] ?? '', 2048),
+            'requires_cms' => $this->sanitizeSubmittedText($input['requires_cms'] ?? '', 30),
+            'requires_php' => $this->sanitizeSubmittedText($input['requires_php'] ?? '', 30),
+            'tested_up_to' => $this->sanitizeSubmittedText($input['tested_up_to'] ?? '', 30),
+            'released_on' => $this->sanitizeSubmittedDate($input['released_on'] ?? ''),
+            'notes' => $this->sanitizeSubmittedTextarea($input['notes'] ?? '', 2000),
             'is_paid' => !empty($input['is_paid']) ? 1 : 0,
-            'price_amount' => trim((string) ($input['price_amount'] ?? '')),
-            'price_currency' => trim((string) ($input['price_currency'] ?? 'EUR')),
-            'contact_form_slug' => trim((string) ($input['contact_form_slug'] ?? '')),
-            'submitter_name' => trim((string) ($input['submitter_name'] ?? '')),
-            'submitter_email' => trim((string) ($input['submitter_email'] ?? '')),
+            'price_amount' => $this->sanitizeSubmittedText($input['price_amount'] ?? '', 20),
+            'price_currency' => $this->sanitizeSubmittedText($input['price_currency'] ?? 'EUR', 10),
+            'contact_form_slug' => $this->sanitizeSubmittedText($input['contact_form_slug'] ?? '', 255),
+            'submitter_name' => $this->sanitizeSubmittedText($input['submitter_name'] ?? '', 190),
+            'submitter_email' => $this->sanitizeSubmittedText($input['submitter_email'] ?? '', 190),
         ];
+    }
+
+    private function sanitizeSubmittedType(mixed $value): string
+    {
+        $value = strtolower(trim((string) $value));
+        return in_array($value, ['cms', 'plugin', 'theme'], true) ? $value : 'plugin';
+    }
+
+    private function sanitizeSubmittedText(mixed $value, int $maxLength): string
+    {
+        $value = trim(strip_tags((string) $value));
+        $value = preg_replace('/[[:cntrl:]]+/u', ' ', $value) ?? '';
+        $value = preg_replace('/\s+/u', ' ', $value) ?? '';
+
+        return mb_substr(trim($value), 0, max(1, $maxLength), 'UTF-8');
+    }
+
+    private function sanitizeSubmittedTextarea(mixed $value, int $maxLength): string
+    {
+        $value = str_replace(["\r\n", "\r"], "\n", strip_tags((string) $value));
+        $value = str_replace("\0", '', $value);
+
+        return mb_substr(trim($value), 0, max(1, $maxLength), 'UTF-8');
+    }
+
+    private function sanitizeSubmittedDate(mixed $value): string
+    {
+        $value = trim((string) $value);
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1 ? $value : '';
     }
 
     private function isHoneypotFilled(array $input): bool
@@ -215,7 +245,8 @@ final class CMS_Marketplace_Public
         $attempts = [];
 
         if (is_file($file)) {
-            $raw = file_get_contents($file);
+            $size = @filesize($file);
+            $raw = is_int($size) && $size >= 0 && $size <= 4096 ? file_get_contents($file) : '';
             $decoded = is_string($raw) ? json_decode($raw, true) : null;
             if (is_array($decoded)) {
                 $attempts = array_values(array_filter(array_map('intval', $decoded), static function (int $timestamp) use ($now): bool {
@@ -236,7 +267,7 @@ final class CMS_Marketplace_Public
         $attempts[] = $now;
         $json = json_encode($attempts);
         if (is_string($json)) {
-            file_put_contents($file, $json);
+            file_put_contents($file, $json, LOCK_EX);
         }
 
         return false;

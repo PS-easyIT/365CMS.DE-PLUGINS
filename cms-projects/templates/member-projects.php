@@ -97,7 +97,7 @@ $renderWidgetBlock = static function (array $widget): void {
     echo '</article>';
 };
 ?>
-<div class="cp-member-shell">
+<section class="cp-member-shell" aria-label="Projektbereich">
     <section class="cp-public-hero">
         <div class="cp-hero-copy">
             <span class="cp-kicker">Member Projects</span>
@@ -121,7 +121,7 @@ $renderWidgetBlock = static function (array $widget): void {
     </div>
 
     <?php if ($dashboard === null): ?>
-        <div class="cp-empty-state">Noch keine Projekte verfügbar.</div>
+        <div class="cp-empty-state" role="status" aria-live="polite">Noch keine Projekte verfügbar.</div>
     <?php else: ?>
         <section class="cp-dashboard-shell">
             <div class="cp-dashboard-main">
@@ -141,7 +141,7 @@ $renderWidgetBlock = static function (array $widget): void {
                 </article>
                 <div class="cp-board-stack">
                     <?php if (($dashboard['boards'] ?? []) === []): ?>
-                        <div class="cp-empty-state">Für dieses Projekt sind aktuell keine Boards verfügbar.</div>
+                        <div class="cp-empty-state" role="status" aria-live="polite">Für dieses Projekt sind aktuell keine Boards verfügbar.</div>
                     <?php else: ?>
                         <?php foreach (($dashboard['boards'] ?? []) as $board): ?>
                             <?php $renderBoardBlock($board); ?>
@@ -151,7 +151,7 @@ $renderWidgetBlock = static function (array $widget): void {
             </div>
             <aside class="cp-dashboard-side">
                 <?php if (($dashboard['widgets'] ?? []) === []): ?>
-                    <div class="cp-empty-state">Für dieses Projekt sind aktuell keine Widgets verfügbar.</div>
+                    <div class="cp-empty-state" role="status" aria-live="polite">Für dieses Projekt sind aktuell keine Widgets verfügbar.</div>
                 <?php else: ?>
                     <?php foreach (($dashboard['widgets'] ?? []) as $widget): ?>
                         <?php $renderWidgetBlock($widget); ?>
@@ -160,4 +160,4 @@ $renderWidgetBlock = static function (array $widget): void {
             </aside>
         </section>
     <?php endif; ?>
-</div>
+</section>

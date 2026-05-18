@@ -75,6 +75,9 @@ final class CMS_Newsletter_Admin_Pages
             $repository = CMS_Newsletter_Repository::instance();
             $settings = $repository->get_settings();
             $tab = (string) ($_GET['tab'] ?? 'general');
+            if (!in_array($tab, ['general', 'content', 'compliance'], true)) {
+                $tab = 'general';
+            }
             $csrfToken = Security::instance()->generateToken('newsletter_admin');
             $notice = self::pull_notice();
 
@@ -106,7 +109,7 @@ final class CMS_Newsletter_Admin_Pages
             return;
         }
 
-        if (!Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'newsletter_admin')) {
+        if (!Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'newsletter_admin')) {
             self::store_notice(false, 'Sicherheitscheck fehlgeschlagen.');
             self::redirect_back();
         }
@@ -153,7 +156,7 @@ final class CMS_Newsletter_Admin_Pages
     private static function check_access(): void
     {
         if (!Auth::instance()->isAdmin()) {
-            header('Location: ' . SITE_URL);
+            header('Location: ' . SITE_URL, true, 303);
             exit;
         }
     }
@@ -180,7 +183,7 @@ final class CMS_Newsletter_Admin_Pages
 
     private static function redirect_back(): void
     {
-        header('Location: ' . SITE_URL . '/admin/plugins/newsletter-dashboard/newsletter-dashboard');
+        header('Location: ' . SITE_URL . '/admin/plugins/newsletter-dashboard/newsletter-dashboard', true, 303);
         exit;
     }
 }

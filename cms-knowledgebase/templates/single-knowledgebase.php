@@ -24,6 +24,7 @@ $renderedContent = preg_replace(
 if (class_exists('\\CMS\\Services\\SiteTableService')) {
     $renderedContent = \CMS\Services\SiteTableService::getInstance()->replaceShortcodes($renderedContent);
 }
+$renderedContent = \CmsKnowledgebase\Repository\EntryRepository::instance()->sanitizePublicRichText($renderedContent);
 $showSidebar = $showKeywordBadges || !empty($entry['tooltip_text']);
 $formatRelatedPostDate = static function (?string $dateValue, string $locale = 'de'): string {
     $rawValue = trim((string) $dateValue);

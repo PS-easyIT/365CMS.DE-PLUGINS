@@ -2,7 +2,7 @@
 /**
  * Plugin Name: 365CMS Marketplace
  * Description: Zentrale Marketplace-Verwaltung für Plugins und Themes mit ZIP-Paketen und JSON-Feeds unter /marketplace.
- * Version: 3.0.0
+ * Version: 3.0.1
  * Author: 365 Network
  * Requires CMS: 3.0.0
  */
@@ -18,7 +18,7 @@ if (defined('CMS_MARKETPLACE_BOOTSTRAPPED')) {
 }
 
 define('CMS_MARKETPLACE_BOOTSTRAPPED', true);
-defined('CMS_MARKETPLACE_VERSION') || define('CMS_MARKETPLACE_VERSION', '3.0.0');
+defined('CMS_MARKETPLACE_VERSION') || define('CMS_MARKETPLACE_VERSION', '3.0.1');
 defined('CMS_MARKETPLACE_PLUGIN_DIR') || define('CMS_MARKETPLACE_PLUGIN_DIR', __DIR__ . DIRECTORY_SEPARATOR);
 defined('CMS_MARKETPLACE_PLUGIN_URL') || define('CMS_MARKETPLACE_PLUGIN_URL', '/plugins/cms-marketplace/');
 

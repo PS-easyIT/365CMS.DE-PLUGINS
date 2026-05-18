@@ -19,6 +19,33 @@ if (!isset($speaker)) {
     return;
 }
 
+if (!function_exists('cms_speakers_safe_http_url')) {
+    function cms_speakers_safe_http_url(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]]/', $url) === 1 || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+        $parts = parse_url($url);
+        if (!is_array($parts)) {
+            return '';
+        }
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || ($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
+            return '';
+        }
+        $host = strtolower(trim((string) ($parts['host'] ?? ''), '[]'));
+        if ($host === '' || in_array($host, ['localhost', 'localhost.localdomain'], true) || str_ends_with($host, '.local')) {
+            return '';
+        }
+        $ip = filter_var($host, FILTER_VALIDATE_IP);
+        if ($ip !== false && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return '';
+        }
+        return $url;
+    }
+}
+
 $s   = $speaker;
 $sec = CMS\Security::instance();
 
@@ -30,15 +57,15 @@ $full_name  = trim("$first $last");
 $position   = $s->position ?? '';
 $company    = $s->company_linked_name ?? $s->company ?? '';
 $city       = $s->location_city ?? '';
-$photo      = filter_var(trim((string) ($s->photo_url ?? '')), FILTER_VALIDATE_URL) ?: '';
-$linkedin   = filter_var(trim((string) ($s->linkedin ?? '')), FILTER_VALIDATE_URL) ?: '';
-$xing       = filter_var(trim((string) ($s->xing ?? '')), FILTER_VALIDATE_URL) ?: '';
+$photo      = cms_speakers_safe_http_url((string) ($s->photo_url ?? ''));
+$linkedin   = cms_speakers_safe_http_url((string) ($s->linkedin ?? ''));
+$xing       = cms_speakers_safe_http_url((string) ($s->xing ?? ''));
 $twitter_raw = trim((string) ($s->twitter ?? ''));
-$twitter    = filter_var($twitter_raw, FILTER_VALIDATE_URL)
-    ?: (filter_var('https://twitter.com/' . ltrim($twitter_raw, '@/'), FILTER_VALIDATE_URL) ?: '');
-$website    = filter_var(trim((string) ($s->website ?? '')), FILTER_VALIDATE_URL) ?: '';
+$twitter    = cms_speakers_safe_http_url($twitter_raw)
+    ?: cms_speakers_safe_http_url('https://twitter.com/' . ltrim($twitter_raw, '@/'));
+$website    = cms_speakers_safe_http_url((string) ($s->website ?? ''));
 $email      = filter_var(trim((string) ($s->email ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
-$github     = filter_var(trim((string) ($s->github ?? '')), FILTER_VALIDATE_URL) ?: '';
+$github     = cms_speakers_safe_http_url((string) ($s->github ?? ''));
 $is_featured = !empty($s->is_featured);
 $is_verified = !empty($s->is_verified);
 $avail       = $s->availability ?? 'available';
@@ -76,14 +103,14 @@ if (is_string($formats_raw) && $formats_raw) {
     $formats = is_array($decoded_fmt) ? $decoded_fmt : array_filter(array_map('trim', explode(',', $formats_raw)));
 }
 $fmt_labels = [
-    'keynote'    => '🎤 Keynote',
-    'workshop'   => '🛠️ Workshop',
-    'panel'      => '💬 Panel',
-    'moderation' => '🎙️ Moderation',
-    'training'   => '📚 Training',
-    'consulting' => '🤝 Beratung',
-    'interview'  => '🎥 Interview',
-    'webinar'    => '💻 Webinar',
+    'keynote'    => 'Keynote',
+    'workshop'   => 'Workshop',
+    'panel'      => 'Panel',
+    'moderation' => 'Moderation',
+    'training'   => 'Training',
+    'consulting' => 'Beratung',
+    'interview'  => 'Interview',
+    'webinar'    => 'Webinar',
 ];
 
 // ── Settings Defaults ──────────────────────────────────────
@@ -118,7 +145,7 @@ $initials = mb_strtoupper(mb_substr($first, 0, 1) . mb_substr($last, 0, 1));
     <!-- Status Badges Links Oben -->
     <div class="sp-card-status-badges">
         <?php if ($show_mvp && $is_featured): ?>
-            <span class="sp-card-corner-badge sp-badge-featured"><span>⭐ MVP</span></span>
+            <span class="sp-card-corner-badge sp-badge-featured"><span>MVP</span></span>
         <?php endif; ?>
         <?php if ($is_verified): ?>
             <span class="sp-card-corner-badge sp-badge-verified"><span>✔ Verifiziert</span></span>
@@ -139,7 +166,7 @@ $initials = mb_strtoupper(mb_substr($first, 0, 1) . mb_substr($last, 0, 1));
                 <img src="<?php echo $sec->escape($photo); ?>" alt="<?php echo $sec->escape($full_name); ?>" width="96" height="96" loading="lazy" decoding="async">
             <?php else: ?>
                 <div class="sp-avatar-placeholder">
-                    <span><?php echo $sec->escape($initials ?: '🎤'); ?></span>
+                    <span><?php echo $sec->escape($initials ?: 'SP'); ?></span>
                 </div>
             <?php endif; ?>
         </div>
@@ -164,7 +191,7 @@ $initials = mb_strtoupper(mb_substr($first, 0, 1) . mb_substr($last, 0, 1));
             <?php if ($city): ?>
                 <div class="sp-card-location-row">
                     <span class="sp-card-location">
-                        <span class="loc-icon">📍</span>
+                        <span class="loc-icon" aria-hidden="true">Ort</span>
                         <span><?php echo $sec->escape($city); ?></span>
                     </span>
                 </div>

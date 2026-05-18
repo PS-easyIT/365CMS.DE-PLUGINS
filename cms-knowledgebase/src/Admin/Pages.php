@@ -142,14 +142,14 @@ final class Pages
             return;
         }
 
-        if (!Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'knowledgebase_admin')) {
+        if (!Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'knowledgebase_admin')) {
             self::storeNotice(false, 'Sicherheitscheck fehlgeschlagen.');
             self::redirectBack();
         }
 
         $repository = EntryRepository::instance();
         $action = (string) ($_POST['action'] ?? '');
-        $redirectTab = (string) ($_POST['redirect_tab'] ?? $_GET['tab'] ?? '');
+        $redirectTab = self::sanitizeTab((string) ($_POST['redirect_tab'] ?? $_GET['tab'] ?? ''));
         $result = match ($action) {
             'save_entry' => $repository->saveEntry($_POST),
             'delete_entry' => $repository->deleteEntry((int) ($_POST['entry_id'] ?? 0)),
@@ -197,7 +197,7 @@ final class Pages
     private static function checkAccess(): void
     {
         if (!Auth::instance()->isAdmin()) {
-            header('Location: ' . SITE_URL);
+            header('Location: ' . SITE_URL, true, 303);
             exit;
         }
     }
@@ -224,8 +224,13 @@ final class Pages
 
     private static function redirectBack(int $editId = 0, string $tab = ''): void
     {
-        header('Location: ' . SITE_URL . '/admin/plugins/knowledgebase-dashboard/knowledgebase-dashboard');
+        header('Location: ' . SITE_URL . '/admin/plugins/knowledgebase-dashboard/knowledgebase-dashboard', true, 303);
         exit;
+    }
+
+    private static function sanitizeTab(string $tab): string
+    {
+        return in_array($tab, ['general', 'design', 'import', 'system'], true) ? $tab : '';
     }
 
     /**

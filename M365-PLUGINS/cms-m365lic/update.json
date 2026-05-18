@@ -1,13 +1,15 @@
 {
     "name": "CMS M365 License",
     "slug": "cms-m365lic",
-    "version": "3.0.0",
+    "version": "3.0.1",
     "requires_cms": "3.0.0",
     "tested_cms": "3.0.0",
     "author": "365 Network",
     "author_url": "https://365network.de",
     "description": "Microsoft-365-Lizenzberater mit Bedarfsanalyse, Paketverwaltung, Copilot-Lizenzlogik und PDF-Export.",
     "download_url": "",
-    "last_updated": "2026-05-17",
-    "changelog": "365CMS 3.0.0 Kompatibilität: Manifest und Plugin-Version aktualisiert; PDF-Snapshot-Härtung, Export-Varianten-Mapping und Public-Layout-Fixes aus dem Unreleased-Zweig als Release-Stand übernommen." 
+    "min_php": "8.4",
+    "requires_php": "8.4",
+    "last_updated": "2026-05-18",
+    "changelog": "365CMS 3.0.1 Security-/Compatibility-Pass: CSRF-Token in Admin-, Public-, Export- und Member-Flows werden string-cast-sicher geprüft; Manifest auf PHP 8.4 angehoben."
 }

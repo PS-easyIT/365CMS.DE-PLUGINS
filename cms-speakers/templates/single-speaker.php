@@ -20,6 +20,33 @@ if (!isset($speaker)) {
     return;
 }
 
+if (!function_exists('cms_speakers_safe_http_url')) {
+  function cms_speakers_safe_http_url(string $url): string
+  {
+    $url = trim($url);
+    if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]]/', $url) === 1 || !filter_var($url, FILTER_VALIDATE_URL)) {
+      return '';
+    }
+    $parts = parse_url($url);
+    if (!is_array($parts)) {
+      return '';
+    }
+    $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+    if (!in_array($scheme, ['http', 'https'], true) || ($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
+      return '';
+    }
+    $host = strtolower(trim((string) ($parts['host'] ?? ''), '[]'));
+    if ($host === '' || in_array($host, ['localhost', 'localhost.localdomain'], true) || str_ends_with($host, '.local')) {
+      return '';
+    }
+    $ip = filter_var($host, FILTER_VALIDATE_IP);
+    if ($ip !== false && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+      return '';
+    }
+    return $url;
+  }
+}
+
 /* ── CSS-Farb-Hilfsfunktionen ────────────────────────────────── */
 if (!function_exists('sp_hex_mix')) {
     function sp_hex_mix(string $hex, float $frac, bool $to_white = true): string {
@@ -44,23 +71,23 @@ $s          = $speaker;
 $id         = (int)$s->id;
 $first      = $s->first_name ?? '';
 $last       = $s->last_name  ?? '';
-$full_name  = htmlspecialchars(trim("$first $last"));
-$position   = htmlspecialchars($s->position ?? '');
-$company    = htmlspecialchars($s->company_linked_name ?? $s->company ?? '');
-$city       = htmlspecialchars($s->location_city ?? '');
-$country    = htmlspecialchars($s->country ?? '');
-$photo      = filter_var(trim((string) ($s->photo_url ?? '')), FILTER_VALIDATE_URL) ?: '';
+$full_name  = htmlspecialchars(trim("$first $last"), ENT_QUOTES, 'UTF-8');
+$position   = htmlspecialchars((string) ($s->position ?? ''), ENT_QUOTES, 'UTF-8');
+$company    = htmlspecialchars((string) ($s->company_linked_name ?? $s->company ?? ''), ENT_QUOTES, 'UTF-8');
+$city       = htmlspecialchars((string) ($s->location_city ?? ''), ENT_QUOTES, 'UTF-8');
+$country    = htmlspecialchars((string) ($s->country ?? ''), ENT_QUOTES, 'UTF-8');
+$photo      = cms_speakers_safe_http_url((string) ($s->photo_url ?? ''));
 $bio        = $s->bio ?? '';
-$linkedin   = filter_var(trim((string) ($s->linkedin ?? '')), FILTER_VALIDATE_URL) ?: '';
-$xing       = filter_var(trim((string) ($s->xing ?? '')), FILTER_VALIDATE_URL) ?: '';
+$linkedin   = cms_speakers_safe_http_url((string) ($s->linkedin ?? ''));
+$xing       = cms_speakers_safe_http_url((string) ($s->xing ?? ''));
 $twitter_raw = trim((string) ($s->twitter ?? ''));
-$twitter    = filter_var($twitter_raw, FILTER_VALIDATE_URL)
-    ?: (filter_var('https://twitter.com/' . ltrim($twitter_raw, '@/'), FILTER_VALIDATE_URL) ?: '');
-$instagram  = filter_var(trim((string) ($s->instagram ?? '')), FILTER_VALIDATE_URL) ?: '';
-$youtube    = filter_var(trim((string) ($s->youtube ?? '')), FILTER_VALIDATE_URL) ?: '';
-$website    = filter_var(trim((string) ($s->website ?? '')), FILTER_VALIDATE_URL) ?: '';
-$github     = filter_var(trim((string) ($s->github ?? '')), FILTER_VALIDATE_URL) ?: '';
-$gitlab     = filter_var(trim((string) ($s->gitlab ?? '')), FILTER_VALIDATE_URL) ?: '';
+$twitter    = cms_speakers_safe_http_url($twitter_raw)
+  ?: cms_speakers_safe_http_url('https://twitter.com/' . ltrim($twitter_raw, '@/'));
+$instagram  = cms_speakers_safe_http_url((string) ($s->instagram ?? ''));
+$youtube    = cms_speakers_safe_http_url((string) ($s->youtube ?? ''));
+$website    = cms_speakers_safe_http_url((string) ($s->website ?? ''));
+$github     = cms_speakers_safe_http_url((string) ($s->github ?? ''));
+$gitlab     = cms_speakers_safe_http_url((string) ($s->gitlab ?? ''));
 $email      = filter_var(trim((string) ($s->email ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
 $phone      = preg_replace('/[^0-9+]/', '', trim((string) ($s->phone ?? ''))) ?: '';
 $is_featured  = !empty($s->is_featured);
@@ -102,14 +129,14 @@ if (is_string($formats_raw) && $formats_raw) {
     $formats = is_array($d) ? $d : array_filter(array_map('trim', explode(',', $formats_raw)));
 }
 $fmt_labels = [
-    'keynote'    => '🎤 Keynote',
-    'workshop'   => '🛠️ Workshop',
-    'panel'      => '💬 Panel',
-    'moderation' => '🎙️ Moderation',
-    'training'   => '📚 Training',
-    'consulting' => '🤝 Beratung',
-    'interview'  => '🎥 Interview',
-    'webinar'    => '💻 Webinar',
+    'keynote'    => 'Keynote',
+    'workshop'   => 'Workshop',
+    'panel'      => 'Panel',
+    'moderation' => 'Moderation',
+    'training'   => 'Training',
+    'consulting' => 'Beratung',
+    'interview'  => 'Interview',
+    'webinar'    => 'Webinar',
 ];
 /* ── Skills ───────────────────────────────────────────────────────────────── */
 $_sk_raw = $s->skills ?? '';
@@ -120,11 +147,11 @@ $_skill_labels = CMS_Speakers_Meta_Boxes::get_skill_labels();
 $_rec_raw = $s->recognitions ?? '';
 $_recognitions = is_string($_rec_raw) && $_rec_raw ? (json_decode($_rec_raw, true) ?: []) : [];
 $_rec_group_labels = [
-    'community_programmes' => '🤝 Community Programme',
-    'speaker_awards'       => '🏆 Speaker Awards',
-    'rankings'             => '📊 Rankings & Listen',
-    'academic'             => '🎓 Akademische Auszeichnungen',
-    'other'                => '📌 Weitere Auszeichnungen',
+    'community_programmes' => 'Community Programme',
+    'speaker_awards'       => 'Speaker Awards',
+    'rankings'             => 'Rankings & Listen',
+    'academic'             => 'Akademische Auszeichnungen',
+    'other'                => 'Weitere Auszeichnungen',
 ];
 /* ── Initialen / Avatar ──────────────────────────────────────── */
 $initials = mb_strtoupper(mb_substr($first, 0, 1) . mb_substr($last, 0, 1));
@@ -132,11 +159,11 @@ $initials = mb_strtoupper(mb_substr($first, 0, 1) . mb_substr($last, 0, 1));
 /* ── Availability / Travel Labels ───────────────────────────── */
 $avail_labels = ['available' => 'Verfügbar', 'limited' => 'Begrenzt', 'booked' => 'Ausgebucht'];
 $avail_label  = $avail_labels[$avail] ?? 'Verfügbar';
-$travel_labels = ['local'=>'📍 Lokal','regional'=>'🗺️ Regional','national'=>'🇩🇪 DACH','international'=>'🌍 International','worldwide'=>'🌐 Weltweit'];
+$travel_labels = ['local'=>'Lokal','regional'=>'Regional','national'=>'DACH','international'=>'International','worldwide'=>'Weltweit'];
 $travel_label  = $travel_labels[$travel] ?? $travel;
 
 /* ── Presence-Type Labels ────────────────────────────────────── */
-$presence_labels = ['presence' => '🏛️ Präsenz', 'online' => '💻 Online', 'hybrid' => '🔀 Hybrid'];
+$presence_labels = ['presence' => 'Präsenz', 'online' => 'Online', 'hybrid' => 'Hybrid'];
 
 /* ── Topics + Events ─────────────────────────────────────────── */
 $topics = $topics ?? [];
@@ -145,7 +172,7 @@ $events = $events ?? [];
 <main class="phinit-plugin sp-single-v2">
 
   <nav class="sp-breadcrumb">
-    <a href="<?= htmlspecialchars($archive_url) ?>">← Speaker</a>
+    <a href="<?= htmlspecialchars($archive_url, ENT_QUOTES, 'UTF-8') ?>">← Speaker</a>
     <span class="sp-breadcrumb__sep">/</span>
     <span class="sp-breadcrumb__cur"><?= $full_name ?></span>
   </nav>
@@ -153,27 +180,27 @@ $events = $events ?? [];
   <header class="sp-hero-v2">
     <div class="sp-hero-v2__inner">
       <div class="sp-hero-v2__badges">
-        <span class="sp-hero-v2__badge sp-hero-v2__badge--avail-<?= htmlspecialchars($avail) ?>"><?= htmlspecialchars($avail_label) ?></span>
+        <span class="sp-hero-v2__badge sp-hero-v2__badge--avail-<?= htmlspecialchars((string) $avail, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($avail_label, ENT_QUOTES, 'UTF-8') ?></span>
         <?php if ($is_verified): ?><span class="sp-hero-v2__badge sp-hero-v2__badge--verified">✔ Verifiziert</span><?php endif; ?>
         <?php if (!empty($settings['design_show_mvp_badge'] ?? '1') && $is_featured): ?>
-          <span class="sp-hero-v2__badge sp-hero-v2__badge--mvp">⭐ MVP</span>
+          <span class="sp-hero-v2__badge sp-hero-v2__badge--mvp">MVP</span>
         <?php endif; ?>
       </div>
       <?php if ($photo !== ''): ?>
         <div class="sp-hero-v2__av"><img src="<?= htmlspecialchars($photo, ENT_QUOTES, 'UTF-8') ?>" alt="<?= $full_name ?>" width="120" height="120" loading="eager" decoding="async"></div>
       <?php else: ?>
-        <div class="sp-hero-v2__av sp-hero-v2__av--placeholder"><?= htmlspecialchars($initials ?: '🎤') ?></div>
+        <div class="sp-hero-v2__av sp-hero-v2__av--placeholder"><?= htmlspecialchars($initials ?: 'SP', ENT_QUOTES, 'UTF-8') ?></div>
       <?php endif; ?>
       <div class="sp-hero-v2__meta">
         <div class="sp-hero-v2__name-row">
           <h1 class="sp-hero-v2__name"><?= $full_name ?></h1>
           <?php if (!empty($topics)): ?>
             <div class="sp-hero-v2__spec-pills">
-              <?php foreach ((array)$topics as $t): $tname = is_object($t) ? ($t->topic_name ?? '') : (string)$t; if (!$tname) continue; ?><span class="sp-hero-v2__spec-pill"><?= htmlspecialchars($tname) ?></span><?php endforeach; ?>
+              <?php foreach ((array)$topics as $t): $tname = is_object($t) ? ($t->topic_name ?? '') : (string)$t; if (!$tname) continue; ?><span class="sp-hero-v2__spec-pill"><?= htmlspecialchars((string) $tname, ENT_QUOTES, 'UTF-8') ?></span><?php endforeach; ?>
             </div>
           <?php endif; ?>
           <?php if (!empty($events)): ?>
-            <span class="sp-hero-v2__ev-count" title="<?= htmlspecialchars((string) count($events) . ' zugewiesene Events') ?>">
+            <span class="sp-hero-v2__ev-count" title="<?= htmlspecialchars((string) count($events) . ' zugewiesene Events', ENT_QUOTES, 'UTF-8') ?>">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               <?= count($events) ?>
             </span>
@@ -181,9 +208,9 @@ $events = $events ?? [];
         </div>
         <?php if ($position): ?><p class="sp-hero-v2__pos"><?= $position ?></p><?php endif; ?>
         <?php if ($company): ?>
-          <p class="sp-hero-v2__co">🏢
+          <p class="sp-hero-v2__co">
             <?php if (!empty($s->company_id)): ?>
-              <a href="<?= htmlspecialchars($base_url . '/companies/' . (int)$s->company_id) ?>"><?= $company ?></a>
+              <a href="<?= htmlspecialchars($base_url . '/companies/' . (int)$s->company_id, ENT_QUOTES, 'UTF-8') ?>"><?= $company ?></a>
             <?php elseif ($website !== ''): ?>
               <a href="<?= htmlspecialchars($website, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><?= $company ?></a>
             <?php else: echo $company; endif; ?>
@@ -198,12 +225,12 @@ $events = $events ?? [];
     <?php $speakerBio = trim((string) $bio); ?>
     <?php if ($speakerBio !== ''): ?>
       <div class="sp-bridge__about">
-        <h2 class="sp-bridge__title">Über <?= htmlspecialchars($first ?: 'den Speaker') ?></h2>
-        <div class="sp-bridge__text"><?= nl2br(htmlspecialchars($speakerBio)) ?></div>
+        <h2 class="sp-bridge__title">Über <?= htmlspecialchars((string) ($first ?: 'den Speaker'), ENT_QUOTES, 'UTF-8') ?></h2>
+        <div class="sp-bridge__text"><?= nl2br(htmlspecialchars($speakerBio, ENT_QUOTES, 'UTF-8')) ?></div>
       </div>
     <?php else: ?>
       <div class="sp-bridge__about">
-        <h2 class="sp-bridge__title">Über <?= htmlspecialchars($first ?: 'den Speaker') ?></h2>
+        <h2 class="sp-bridge__title">Über <?= htmlspecialchars((string) ($first ?: 'den Speaker'), ENT_QUOTES, 'UTF-8') ?></h2>
         <p class="sp-bridge__text sp-prose-muted">Noch keine Beschreibung hinterlegt.</p>
       </div>
     <?php endif; ?>
@@ -214,7 +241,7 @@ $events = $events ?? [];
         
         <!-- Reihe 1: Kontakt / Buchung -->
         <div class="sp-bridge__row">
-          <a href="<?= htmlspecialchars($base_url . '/contact?speaker=' . (int)$s->id) ?>" class="sp-btn-v2 sp-btn-v2--sm sp-btn-v2--block">Kontakt / Buchung</a>
+          <a href="<?= htmlspecialchars($base_url . '/contact?speaker=' . (int)$s->id, ENT_QUOTES, 'UTF-8') ?>" class="sp-btn-v2 sp-btn-v2--sm sp-btn-v2--block">Kontakt / Buchung</a>
         </div>
 
         <!-- Reihe 2: Website · E-Mail · Telefon -->
@@ -226,13 +253,13 @@ $events = $events ?? [];
           <?php endif; ?>
           
           <?php if ($email !== ''): ?>
-            <a href="mailto:<?= htmlspecialchars($email) ?>" class="sp-bridge__link" title="E-Mail schreiben">E-Mail</a>
+            <a href="mailto:<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>" class="sp-bridge__link" title="E-Mail schreiben">E-Mail</a>
           <?php else: ?>
             <span class="sp-bridge__link sp-bridge__link--empty">E-Mail</span>
           <?php endif; ?>
           
           <?php if ($phone !== ''): ?>
-            <a href="tel:<?= htmlspecialchars($phone) ?>" class="sp-bridge__link" title="Anrufen">Telefon</a>
+            <a href="tel:<?= htmlspecialchars($phone, ENT_QUOTES, 'UTF-8') ?>" class="sp-bridge__link" title="Anrufen">Telefon</a>
           <?php else: ?>
             <span class="sp-bridge__link sp-bridge__link--empty">Telefon</span>
           <?php endif; ?>
@@ -259,9 +286,9 @@ $events = $events ?? [];
           ];
           foreach ($social_icons as $sn => $icfg):
             if (!empty($speaker_social[$sn])): ?>
-              <a href="<?= htmlspecialchars($speaker_social[$sn], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="sp-si" title="<?= htmlspecialchars($icfg['label']) ?>" aria-label="<?= htmlspecialchars($icfg['label']) ?>"><?= $icfg['svg'] ?></a>
+              <a href="<?= htmlspecialchars($speaker_social[$sn], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="sp-si" title="<?= htmlspecialchars($icfg['label'], ENT_QUOTES, 'UTF-8') ?>" aria-label="<?= htmlspecialchars($icfg['label'], ENT_QUOTES, 'UTF-8') ?>"><?= $icfg['svg'] ?></a>
             <?php else: ?>
-              <span class="sp-si sp-si--empty" title="<?= htmlspecialchars($icfg['label']) ?>"><?= $icfg['svg'] ?></span>
+              <span class="sp-si sp-si--empty" title="<?= htmlspecialchars($icfg['label'], ENT_QUOTES, 'UTF-8') ?>"><?= $icfg['svg'] ?></span>
             <?php endif;
           endforeach; ?>
         </div>
@@ -276,7 +303,7 @@ $events = $events ?? [];
       <?php if ($speaking_style): ?>
         <div class="ex-sec">
           <h2 class="ex-sec__title">Vortragsstil</h2>
-          <p class="sp-prose-muted"><?= nl2br(htmlspecialchars($speaking_style)) ?></p>
+          <p class="sp-prose-muted"><?= nl2br(htmlspecialchars((string) $speaking_style, ENT_QUOTES, 'UTF-8')) ?></p>
         </div>
       <?php endif; ?>
 
@@ -289,7 +316,7 @@ $events = $events ?? [];
           <h2 class="ex-sec__title">Skills & Technologien</h2>
           <div class="sp-skills-grid">
             <?php foreach ($__skills_sorted as $sk): ?>
-              <div class="sp-skill-item"><span class="sp-skill-item__name"><?= htmlspecialchars($_skill_labels[$sk] ?? $sk) ?></span></div>
+              <div class="sp-skill-item"><span class="sp-skill-item__name"><?= htmlspecialchars((string) ($_skill_labels[$sk] ?? $sk), ENT_QUOTES, 'UTF-8') ?></span></div>
             <?php endforeach; ?>
           </div>
         </div>
@@ -304,7 +331,7 @@ $events = $events ?? [];
           <h2 class="ex-sec__title">Vortragsformate</h2>
           <div class="sp-skills-grid">
             <?php foreach ($__formats_sorted as $f): ?>
-              <div class="sp-skill-item sp-skill-item--fmt"><span class="sp-skill-item__name"><?= htmlspecialchars($fmt_labels[$f] ?? $f) ?></span></div>
+              <div class="sp-skill-item sp-skill-item--fmt"><span class="sp-skill-item__name"><?= htmlspecialchars((string) ($fmt_labels[$f] ?? $f), ENT_QUOTES, 'UTF-8') ?></span></div>
             <?php endforeach; ?>
           </div>
         </div>
@@ -313,7 +340,7 @@ $events = $events ?? [];
       <?php if ($target_audience): ?>
         <div class="ex-sec">
           <h2 class="ex-sec__title">Zielgruppe</h2>
-          <p class="sp-prose-muted"><?= nl2br(htmlspecialchars($target_audience)) ?></p>
+          <p class="sp-prose-muted"><?= nl2br(htmlspecialchars((string) $target_audience, ENT_QUOTES, 'UTF-8')) ?></p>
         </div>
       <?php endif; ?>
 
@@ -321,13 +348,13 @@ $events = $events ?? [];
         <div class="ex-sec">
           <h2 class="ex-sec__title">Auszeichnungen & Rankings</h2>
           <?php if ($awards): ?>
-            <p class="sp-prose-muted sp-prose-muted--spaced"><?= nl2br(htmlspecialchars($awards)) ?></p>
+            <p class="sp-prose-muted sp-prose-muted--spaced"><?= nl2br(htmlspecialchars((string) $awards, ENT_QUOTES, 'UTF-8')) ?></p>
           <?php endif; ?>
           <?php foreach ($_recognitions as $grp => $items):
             if (empty($items) || !is_array($items)) continue; ?>
-            <h4 class="ex-sub-heading"><?= htmlspecialchars($_rec_group_labels[$grp] ?? $grp) ?></h4>
+            <h4 class="ex-sub-heading"><?= htmlspecialchars((string) ($_rec_group_labels[$grp] ?? $grp), ENT_QUOTES, 'UTF-8') ?></h4>
             <div class="ex-pills ex-pills--mb">
-              <?php foreach ($items as $item): ?><span class="ex-pill"><?= htmlspecialchars($item) ?></span><?php endforeach; ?>
+              <?php foreach ($items as $item): ?><span class="ex-pill"><?= htmlspecialchars((string) $item, ENT_QUOTES, 'UTF-8') ?></span><?php endforeach; ?>
             </div>
           <?php endforeach; ?>
         </div>
@@ -349,13 +376,13 @@ $events = $events ?? [];
           <h2 class="ex-sec__title">Events & Auftritte <span class="ex-count-badge"><?= count($events) ?></span></h2>
 
           <?php if (!empty($ev_future)): ?>
-            <h3 class="sp-ev-subhead">📅 Bevorstehende Events</h3>
+            <h3 class="sp-ev-subhead">Bevorstehende Events</h3>
             <div class="sp-ev-grid-v2">
               <?php foreach ($ev_future as $ev):
-                $ev_title    = htmlspecialchars($ev->event_title    ?? '');
+                $ev_title    = htmlspecialchars((string) ($ev->event_title ?? ''), ENT_QUOTES, 'UTF-8');
                 $ev_date_raw = $ev->event_date   ?? '';
-                $ev_location = htmlspecialchars($ev->event_location ?? '');
-                $ev_type     = htmlspecialchars($ev->event_type     ?? '');
+                $ev_location = htmlspecialchars((string) ($ev->event_location ?? ''), ENT_QUOTES, 'UTF-8');
+                $ev_type     = htmlspecialchars((string) ($ev->event_type ?? ''), ENT_QUOTES, 'UTF-8');
                 $ev_presence = $ev->presence_type ?? 'presence';
                 $ev_ts       = $ev_date_raw ? strtotime($ev_date_raw) : 0;
                 $ev_date_fmt = $ev_ts ? date('d.m.Y', $ev_ts) : '';
@@ -364,12 +391,12 @@ $events = $events ?? [];
                   <?php if ($ev_date_fmt): ?><div class="sp-ev-v2__date"><?= $ev_date_fmt ?></div><?php endif; ?>
                   <div class="sp-ev-v2__title"><?= $ev_title ?: 'Event' ?></div>
                   <div class="sp-ev-v2__meta">
-                    <?php if ($ev_location): ?><span>📍 <?= $ev_location ?></span><?php endif; ?>
+                    <?php if ($ev_location): ?><span><?= $ev_location ?></span><?php endif; ?>
                     <?php if ($ev_type && $ev_location): ?><span>·</span><?php endif; ?>
                     <?php if ($ev_type): ?><span><?= $ev_type ?></span><?php endif; ?>
                   </div>
                   <?php if ($ev_presence !== 'presence'): ?>
-                    <span class="sp-ev-v2__badge sp-ev-v2__badge--online"><?= htmlspecialchars($presence_labels[$ev_presence] ?? $ev_presence) ?></span>
+                    <span class="sp-ev-v2__badge sp-ev-v2__badge--online"><?= htmlspecialchars((string) ($presence_labels[$ev_presence] ?? $ev_presence), ENT_QUOTES, 'UTF-8') ?></span>
                   <?php endif; ?>
                 </div>
               <?php endforeach; ?>
@@ -377,13 +404,13 @@ $events = $events ?? [];
           <?php endif; ?>
 
           <?php if (!empty($ev_past)): ?>
-            <h3 class="sp-ev-subhead<?= !empty($ev_future) ? ' sp-ev-subhead--gap' : '' ?>">🗓️ Vergangene Events</h3>
+            <h3 class="sp-ev-subhead<?= !empty($ev_future) ? ' sp-ev-subhead--gap' : '' ?>">Vergangene Events</h3>
             <div class="sp-ev-grid-v2 sp-ev-grid-v2--past">
               <?php foreach ($ev_past as $ev):
-                $ev_title    = htmlspecialchars($ev->event_title    ?? '');
+                $ev_title    = htmlspecialchars((string) ($ev->event_title ?? ''), ENT_QUOTES, 'UTF-8');
                 $ev_date_raw = $ev->event_date   ?? '';
-                $ev_location = htmlspecialchars($ev->event_location ?? '');
-                $ev_type     = htmlspecialchars($ev->event_type     ?? '');
+                $ev_location = htmlspecialchars((string) ($ev->event_location ?? ''), ENT_QUOTES, 'UTF-8');
+                $ev_type     = htmlspecialchars((string) ($ev->event_type ?? ''), ENT_QUOTES, 'UTF-8');
                 $ev_presence = $ev->presence_type ?? 'presence';
                 $ev_ts       = $ev_date_raw ? strtotime($ev_date_raw) : 0;
                 $ev_date_fmt = $ev_ts ? date('d.m.Y', $ev_ts) : '';
@@ -392,12 +419,12 @@ $events = $events ?? [];
                   <?php if ($ev_date_fmt): ?><div class="sp-ev-v2__date"><?= $ev_date_fmt ?></div><?php endif; ?>
                   <div class="sp-ev-v2__title"><?= $ev_title ?: 'Event' ?></div>
                   <div class="sp-ev-v2__meta">
-                    <?php if ($ev_location): ?><span>📍 <?= $ev_location ?></span><?php endif; ?>
+                    <?php if ($ev_location): ?><span><?= $ev_location ?></span><?php endif; ?>
                     <?php if ($ev_type && $ev_location): ?><span>·</span><?php endif; ?>
                     <?php if ($ev_type): ?><span><?= $ev_type ?></span><?php endif; ?>
                   </div>
                   <?php if ($ev_presence !== 'presence'): ?>
-                    <span class="sp-ev-v2__badge sp-ev-v2__badge--online"><?= htmlspecialchars($presence_labels[$ev_presence] ?? $ev_presence) ?></span>
+                    <span class="sp-ev-v2__badge sp-ev-v2__badge--online"><?= htmlspecialchars((string) ($presence_labels[$ev_presence] ?? $ev_presence), ENT_QUOTES, 'UTF-8') ?></span>
                   <?php endif; ?>
                 </div>
               <?php endforeach; ?>
@@ -415,9 +442,9 @@ $events = $events ?? [];
       $sp_facts = [];
       if ($company):   $sp_facts[] = ['Unternehmen',$company]; endif;
       if ($city||$country): $sp_facts[] = ['Standort',trim("$city".($city&&$country?', ':'')."$country")]; endif;
-      if ($travel):    $sp_facts[] = ['Reichweite',htmlspecialchars($travel_label)]; endif;
+      if ($travel):    $sp_facts[] = ['Reichweite',htmlspecialchars((string) $travel_label, ENT_QUOTES, 'UTF-8')]; endif;
       if ($fee_min||$fee_max): $sp_facts[] = ['Honorar',($fee_min?number_format((float)$fee_min,0,',','.'):'').($fee_min&&$fee_max?'–':'').($fee_max?number_format((float)$fee_max,0,',','.').' €':'')]; endif;
-      if ($languages): $sp_facts[] = ['Sprachen',htmlspecialchars($languages)]; endif;
+      if ($languages): $sp_facts[] = ['Sprachen',htmlspecialchars($languages, ENT_QUOTES, 'UTF-8')]; endif;
       if ($max_audience): $sp_facts[] = ['Max. Audience',(int)$max_audience.' Pers.']; endif;
       if ($sp_facts): ?>
         <div class="ex-sc">

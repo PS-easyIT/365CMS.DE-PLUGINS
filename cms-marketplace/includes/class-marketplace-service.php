@@ -243,14 +243,21 @@ final class CMS_Marketplace_Service
     {
         $type = $this->normalizeType((string) ($input['type'] ?? ''));
         $slug = $this->normalizeSlug((string) ($input['slug'] ?? ''));
-        $name = trim((string) ($input['name'] ?? ''));
+        $name = $this->sanitizeText((string) ($input['name'] ?? ''), 190);
         $version = $this->normalizeVersion((string) ($input['version'] ?? ''));
+        $author = $this->sanitizeText((string) ($input['author'] ?? ''), 190);
+        $description = $this->sanitizeTextarea((string) ($input['description'] ?? ''), 1200);
+        $category = $this->sanitizeText((string) ($input['category'] ?? ''), 120);
+        $requiresCms = $this->sanitizeText((string) ($input['requires_cms'] ?? ''), 30);
+        $requiresPhp = $this->sanitizeText((string) ($input['requires_php'] ?? ''), 30);
+        $testedUpTo = $this->sanitizeText((string) ($input['tested_up_to'] ?? ''), 30);
+        $notes = $this->sanitizeTextarea((string) ($input['notes'] ?? ''), 2000);
         $isPaid = !empty($input['is_paid']);
         $priceAmount = $this->normalizePriceAmount($input['price_amount'] ?? null);
         $priceCurrency = $this->normalizeCurrency((string) ($input['price_currency'] ?? 'EUR'));
         $contactFormSlug = $this->normalizeContactFormSlug((string) ($input['contact_form_slug'] ?? ''));
         $submissionSource = $this->normalizeSubmissionSource((string) ($options['submission_source'] ?? $input['submission_source'] ?? 'admin'));
-        $submitterName = trim((string) ($options['submitter_name'] ?? $input['submitter_name'] ?? ''));
+        $submitterName = $this->sanitizeText((string) ($options['submitter_name'] ?? $input['submitter_name'] ?? ''), 190);
         $submitterEmail = $this->sanitizeEmail((string) ($options['submitter_email'] ?? $input['submitter_email'] ?? ''));
 
         if ($type === '' || $slug === '' || $name === '' || $version === '') {
@@ -338,18 +345,18 @@ final class CMS_Marketplace_Service
             'slug' => $slug,
             'name' => $name,
             'version' => $version,
-            'author' => trim((string) ($input['author'] ?? '')),
-            'description' => trim((string) ($input['description'] ?? '')),
-            'category' => trim((string) ($input['category'] ?? '')),
+            'author' => $author,
+            'description' => $description,
+            'category' => $category,
             'homepage_url' => $this->sanitizeUrl((string) ($input['homepage_url'] ?? '')),
             'docs_url' => $this->sanitizeUrl((string) ($input['docs_url'] ?? '')),
             'changelog_url' => $this->sanitizeUrl((string) ($input['changelog_url'] ?? '')),
             'icon_url' => $this->sanitizeUrl((string) ($input['icon_url'] ?? '')),
             'screenshot_url' => $this->sanitizeUrl((string) ($input['screenshot_url'] ?? '')),
-            'requires_cms' => trim((string) ($input['requires_cms'] ?? '')),
-            'requires_php' => trim((string) ($input['requires_php'] ?? '')),
-            'tested_up_to' => trim((string) ($input['tested_up_to'] ?? '')),
-            'notes' => trim((string) ($input['notes'] ?? '')),
+            'requires_cms' => $requiresCms,
+            'requires_php' => $requiresPhp,
+            'tested_up_to' => $testedUpTo,
+            'notes' => $notes,
             'released_on' => $releasedOn,
             'is_paid' => $isPaid,
             'price_amount' => $isPaid ? $priceAmount : null,
@@ -484,6 +491,11 @@ final class CMS_Marketplace_Service
             return $defaults;
         }
 
+        $size = @filesize($file);
+        if (!is_int($size) || $size < 0 || $size > 65536) {
+            return $defaults;
+        }
+
         $raw = file_get_contents($file);
         if (!is_string($raw) || trim($raw) === '') {
             return $defaults;
@@ -508,7 +520,7 @@ final class CMS_Marketplace_Service
         }
 
         $json = json_encode($settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        if (!is_string($json) || file_put_contents($file, $json . PHP_EOL) === false) {
+        if (!is_string($json) || file_put_contents($file, $json . PHP_EOL, LOCK_EX) === false) {
             return ['success' => false, 'message' => 'Die Marketplace-Einstellungen konnten nicht gespeichert werden.'];
         }
 
@@ -565,7 +577,7 @@ final class CMS_Marketplace_Service
                 'name' => basename($relativePath),
                 'relative_path' => $relativePath,
                 'absolute_path' => $absolutePath,
-                'public_url' => $rootUrl . '/' . ltrim(str_replace(' ', '%20', $relativePath), '/'),
+                'public_url' => $this->buildDirectoryPublicUrl($rootUrl, $relativePath),
                 'preview' => '',
                 'sha256' => '',
                 'size' => 0,
@@ -581,7 +593,7 @@ final class CMS_Marketplace_Service
             'name' => basename($absolutePath),
             'relative_path' => $relativePath,
             'absolute_path' => $absolutePath,
-            'public_url' => $rootUrl . '/' . ltrim(str_replace(' ', '%20', $relativePath), '/'),
+            'public_url' => $this->buildDirectoryPublicUrl($rootUrl, $relativePath),
             'preview' => $isFile ? $this->buildFilePreview($absolutePath) : '',
             'sha256' => $isFile ? (string) (hash_file('sha256', $absolutePath) ?: '') : '',
             'size' => $isFile ? (int) filesize($absolutePath) : 0,
@@ -945,7 +957,7 @@ final class CMS_Marketplace_Service
             return;
         }
 
-        file_put_contents($path, $json . PHP_EOL);
+        file_put_contents($path, $json . PHP_EOL, LOCK_EX);
     }
 
     private function validateZipEntries(\ZipArchive $zip, string $expectedSlug): bool
@@ -1097,11 +1109,14 @@ final class CMS_Marketplace_Service
             return '';
         }
 
-        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+        if (strlen($url) > 2048 || preg_match('/[[:cntrl:]]/', $url) === 1 || !filter_var($url, FILTER_VALIDATE_URL)) {
             return '';
         }
 
         $parts = parse_url($url);
+        if (!is_array($parts)) {
+            return '';
+        }
         $scheme = strtolower((string) ($parts['scheme'] ?? ''));
         $host = strtolower((string) ($parts['host'] ?? ''));
         if (!in_array($scheme, ['http', 'https'], true) || $host === '') {
@@ -1243,13 +1258,13 @@ final class CMS_Marketplace_Service
             'cms_default_slug' => '365cms',
             'cms_default_author' => '365 Network',
             'cms_default_requires_cms' => '3.0.0',
-            'cms_default_requires_php' => '8.1',
+            'cms_default_requires_php' => '8.4',
             'plugin_default_author' => '365 Network',
             'plugin_default_requires_cms' => '3.0.0',
-            'plugin_default_requires_php' => '8.1',
+            'plugin_default_requires_php' => '8.4',
             'theme_default_author' => '365 Network',
             'theme_default_requires_cms' => '3.0.0',
-            'theme_default_requires_php' => '8.1',
+            'theme_default_requires_php' => '8.4',
         ];
     }
 
@@ -1288,9 +1303,18 @@ final class CMS_Marketplace_Service
 
     private function normalizePublicPath(string $path): string
     {
-        $path = '/' . trim($path);
+        $path = str_replace('\\', '/', trim($path));
+        $path = preg_replace('/[[:cntrl:]?#]+/', '', $path) ?? '';
+        $path = '/' . ltrim($path, '/');
         $path = preg_replace('~/+~', '/', $path) ?? '/marketplace-submit';
-        $path = rtrim($path, '/');
+        $path = rtrim(mb_substr($path, 0, 120, 'UTF-8'), '/');
+        $segments = array_values(array_filter(explode('/', ltrim($path, '/')), static fn (string $segment): bool => $segment !== ''));
+        foreach ($segments as $segment) {
+            if ($segment === '.' || $segment === '..') {
+                return '/marketplace-submit';
+            }
+        }
+
         return $path !== '' ? $path : '/marketplace-submit';
     }
 
@@ -1326,6 +1350,7 @@ final class CMS_Marketplace_Service
     private function normalizeDirectoryRelativePath(string $path): string
     {
         $path = str_replace('\\', '/', trim($path));
+        $path = preg_replace('/[[:cntrl:]]+/', '', $path) ?? '';
         $path = ltrim($path, '/');
         if ($path === '' || str_contains($path, '../') || str_contains($path, '..\\')) {
             return '';
@@ -1338,7 +1363,7 @@ final class CMS_Marketplace_Service
             }
         }
 
-        return implode('/', $segments);
+        return mb_substr(implode('/', $segments), 0, 512, 'UTF-8');
     }
 
     private function buildFilePreview(string $absolutePath): string
@@ -1457,6 +1482,10 @@ final class CMS_Marketplace_Service
         });
 
         foreach ($items as $item) {
+            if ($item->isLink()) {
+                continue;
+            }
+
             $name = $item->getFilename();
             $itemRelativePath = ltrim($relativePath . '/' . $name, '/');
             $entries[] = [
@@ -1502,11 +1531,36 @@ final class CMS_Marketplace_Service
 
     private function normalizeSlug(string $slug): string
     {
-        return preg_replace('/[^a-z0-9_-]/', '', strtolower(trim($slug))) ?? '';
+        return mb_substr(preg_replace('/[^a-z0-9_-]/', '', strtolower(trim($slug))) ?? '', 0, 120, 'UTF-8');
     }
 
     private function normalizeVersion(string $version): string
     {
-        return preg_replace('/[^0-9A-Za-z._-]/', '', trim($version)) ?? '';
+        return mb_substr(preg_replace('/[^0-9A-Za-z._-]/', '', trim($version)) ?? '', 0, 50, 'UTF-8');
+    }
+
+    private function sanitizeText(string $value, int $maxLength): string
+    {
+        $value = trim(strip_tags($value));
+        $value = preg_replace('/[[:cntrl:]]+/u', ' ', $value) ?? '';
+        $value = preg_replace('/\s+/u', ' ', $value) ?? '';
+
+        return mb_substr(trim($value), 0, max(1, $maxLength), 'UTF-8');
+    }
+
+    private function sanitizeTextarea(string $value, int $maxLength): string
+    {
+        $value = str_replace(["\r\n", "\r"], "\n", strip_tags($value));
+        $value = str_replace("\0", '', $value);
+
+        return mb_substr(trim($value), 0, max(1, $maxLength), 'UTF-8');
+    }
+
+    private function buildDirectoryPublicUrl(string $rootUrl, string $relativePath): string
+    {
+        $segments = array_values(array_filter(explode('/', str_replace('\\', '/', $relativePath)), static fn (string $segment): bool => $segment !== ''));
+        $encoded = array_map(static fn (string $segment): string => rawurlencode($segment), $segments);
+
+        return rtrim($rootUrl, '/') . ($encoded !== [] ? '/' . implode('/', $encoded) : '');
     }
 }

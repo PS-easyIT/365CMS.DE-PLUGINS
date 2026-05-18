@@ -39,7 +39,7 @@ Beispiel-Zielmuster:
 ```php
 $token = CMS\Security::instance()->generateToken('speakers_form');
 
-if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'speakers_form')) {
+if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'speakers_form')) {
     throw new RuntimeException('Ungültiger Sicherheits-Token.');
 }
 ```

@@ -40,7 +40,7 @@ final class CMS_NetImport_Admin
             'manage_options',
             'netimport',
             [self::class, 'render_plugin_page_bridge'],
-            '📥',
+            'NI',
             46
         );
     }
@@ -48,7 +48,7 @@ final class CMS_NetImport_Admin
     public static function render_plugin_page_bridge(): void
     {
         if (!headers_sent()) {
-            header('Location: ' . SITE_URL . '/admin/netimport');
+            header('Location: ' . SITE_URL . '/admin/netimport', true, 303);
             exit;
         }
 
@@ -103,7 +103,7 @@ final class CMS_NetImport_Admin
             'type'   => 'item',
             'slug'   => 'netimport',
             'label'  => 'NetImport',
-            'icon'   => '📥',
+            'icon'   => 'NI',
             'url'    => '/admin/netimport',
             'active' => str_starts_with((string) $currentPath, '/admin/netimport'),
         ];
@@ -120,7 +120,7 @@ final class CMS_NetImport_Admin
 
         $options = $this->read_options();
 
-        $csrfToken = $_POST['csrf_token'] ?? '';
+        $csrfToken = (string) ($_POST['csrf_token'] ?? '');
         if (!CMS\Security::instance()->verifyToken($csrfToken, 'netimport_run')) {
             $this->render_page([
                 'errors'   => 1,
@@ -178,7 +178,7 @@ final class CMS_NetImport_Admin
         }
 
         $filters = $this->read_history_filters();
-        $csrfToken = $_POST['csrf_token'] ?? '';
+        $csrfToken = (string) ($_POST['csrf_token'] ?? '');
         if (!CMS\Security::instance()->verifyToken($csrfToken, 'netimport_history_action')) {
             $this->render_page([
                 'errors' => 1,
@@ -287,9 +287,9 @@ final class CMS_NetImport_Admin
     private function render_history_filter_inputs(array $historyFilters): void
     {
         ?>
-        <input type="hidden" name="history_type" value="<?= htmlspecialchars((string) ($historyFilters['type'] ?? ''), ENT_QUOTES) ?>">
-        <input type="hidden" name="history_mode" value="<?= htmlspecialchars((string) ($historyFilters['mode'] ?? ''), ENT_QUOTES) ?>">
-        <input type="hidden" name="history_errors" value="<?= htmlspecialchars((string) ($historyFilters['errors'] ?? ''), ENT_QUOTES) ?>">
+        <input type="hidden" name="history_type" value="<?= htmlspecialchars((string) ($historyFilters['type'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+        <input type="hidden" name="history_mode" value="<?= htmlspecialchars((string) ($historyFilters['mode'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
+        <input type="hidden" name="history_errors" value="<?= htmlspecialchars((string) ($historyFilters['errors'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
         <?php
     }
 
@@ -318,6 +318,9 @@ final class CMS_NetImport_Admin
         $security  = CMS\Security::instance();
         $csrfToken = $security->generateToken('netimport_run');
         $historyCsrfToken = $security->generateToken('netimport_history_action');
+        $adminNetimportUrl = htmlspecialchars(SITE_URL . '/admin/netimport', ENT_QUOTES, 'UTF-8');
+        $adminRunUrl = htmlspecialchars(SITE_URL . '/admin/netimport/run', ENT_QUOTES, 'UTF-8');
+        $adminHistoryActionUrl = htmlspecialchars(SITE_URL . '/admin/netimport/history-action', ENT_QUOTES, 'UTF-8');
         $importer  = CMS_NetImport_Importer::instance();
         $sources   = $importer->get_sources();
         $historyFilters = array_merge([
@@ -342,18 +345,17 @@ final class CMS_NetImport_Admin
         ?>
         <div class="admin-page-header">
             <div>
-                <h2>📥 CMS NetImport</h2>
+                <h2>CMS NetImport</h2>
                 <p>Importiert vorbereitete CSV-Daten in Events, Speaker, Companies und Experts.</p>
             </div>
             <div class="header-actions">
-                <a href="<?= SITE_URL ?>/admin/netimport" class="btn btn-secondary">🔄 Ansicht aktualisieren</a>
+                <a href="<?= $adminNetimportUrl ?>" class="btn btn-secondary">Ansicht aktualisieren</a>
             </div>
         </div>
 
         <?php if ($result !== null): ?>
             <div class="alert <?= !empty($result['errors']) ? 'alert-error' : 'alert-success' ?>">
-                <?= !empty($result['errors']) ? '❌' : (!empty($result['dry_run']) ? '🧪' : '✅') ?>
-                Import „<?= htmlspecialchars((string) ($result['type'] ?? 'unbekannt')) ?>“ abgeschlossen –
+                Import „<?= htmlspecialchars((string) ($result['type'] ?? 'unbekannt'), ENT_QUOTES, 'UTF-8') ?>“ abgeschlossen –
                 Modus: <?= !empty($result['dry_run']) ? 'Dry-Run / Preview' : 'Live-Import' ?>,
                 erstellt: <?= (int) ($result['created'] ?? 0) ?>,
                 aktualisiert: <?= (int) ($result['updated'] ?? 0) ?>,
@@ -365,31 +367,31 @@ final class CMS_NetImport_Admin
 
         <div class="dashboard-grid">
             <div class="stat-card">
-                <div class="stat-icon">🗂️</div>
+                <div class="stat-icon" aria-hidden="true">CSV</div>
                 <div class="stat-number"><?= count($sources) ?></div>
                 <div class="stat-label">Vorbereitete Quellen</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">📄</div>
+                <div class="stat-icon" aria-hidden="true">Σ</div>
                 <div class="stat-number"><?= (int) $rowTotal ?></div>
                 <div class="stat-label">CSV-Zeilen gesamt</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">🧩</div>
+                <div class="stat-icon" aria-hidden="true">PL</div>
                 <div class="stat-number"><?= (int) $activeTargets ?></div>
                 <div class="stat-label">Aktive Ziel-Plugins</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">🕘</div>
+                <div class="stat-icon" aria-hidden="true">RUN</div>
                 <div class="stat-number"><?= (int) ($historyStats['total_runs'] ?? 0) ?></div>
                 <div class="stat-label">Gespeicherte Läufe</div>
             </div>
         </div>
 
         <div class="admin-card ni-card-spacer">
-            <h3>🚀 Import starten</h3>
-            <form method="POST" action="<?= SITE_URL ?>/admin/netimport/run" class="admin-form ni-form-grid">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES) ?>">
+            <h3>Import starten</h3>
+            <form method="POST" action="<?= $adminRunUrl ?>" class="admin-form ni-form-grid">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
 
                 <div class="form-group ni-form-group-wide">
                     <label class="form-label" for="ni_import_type">Datensatz / Aufgabe</label>
@@ -428,14 +430,14 @@ final class CMS_NetImport_Admin
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-primary"><?= $selectedOptions['dry_run'] === '1' ? '🧪 Vorschau ausführen' : '📥 Import ausführen' ?></button>
+                    <button type="submit" class="btn btn-primary"><?= $selectedOptions['dry_run'] === '1' ? 'Vorschau ausführen' : 'Import ausführen' ?></button>
                 </div>
             </form>
         </div>
 
         <div class="admin-card ni-card-spacer">
-            <h3>🗃️ Import-Historie</h3>
-            <form method="GET" action="<?= SITE_URL ?>/admin/netimport" class="admin-form ni-form-grid" style="margin-bottom:16px;">
+            <h3>Import-Historie</h3>
+            <form method="GET" action="<?= $adminNetimportUrl ?>" class="admin-form ni-form-grid ni-history-filter-form">
                 <div class="form-group">
                     <label class="form-label" for="ni_history_type">Typ</label>
                     <select name="history_type" id="ni_history_type" class="form-control">
@@ -465,25 +467,24 @@ final class CMS_NetImport_Admin
                     </select>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-secondary">🔎 Filter anwenden</button>
-                    <a href="<?= SITE_URL ?>/admin/netimport" class="btn btn-secondary">♻️ Filter zurücksetzen</a>
+                    <button type="submit" class="btn btn-secondary">Filter anwenden</button>
+                    <a href="<?= $adminNetimportUrl ?>" class="btn btn-secondary">Filter zurücksetzen</a>
                 </div>
             </form>
 
-            <form method="POST" action="<?= SITE_URL ?>/admin/netimport/history-action" style="margin-bottom:16px;"
+            <form method="POST" action="<?= $adminHistoryActionUrl ?>" class="ni-history-action-form"
                   data-confirm-action="true"
                   data-confirm-title="Historie löschen?"
                   data-confirm-message="Diese Aktion entfernt alle gespeicherten Importläufe dauerhaft. Bereits gespeicherte Reports gehen dabei verloren."
                   data-confirm-button="Historie endgültig löschen">
-                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($historyCsrfToken, ENT_QUOTES) ?>">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($historyCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
                 <input type="hidden" name="history_action" value="clear_history">
                 <?php $this->render_history_filter_inputs($historyFilters); ?>
-                <button type="submit" class="btn btn-secondary">🗑️ Historie löschen</button>
+                <button type="submit" class="btn btn-secondary">Historie löschen</button>
             </form>
 
             <?php if (empty($history)): ?>
                 <div class="empty-state">
-                    <p style="font-size:2.5rem;margin:0;">📝</p>
                     <p><strong>Noch keine Import-Läufe gespeichert.</strong></p>
                 </div>
             <?php else: ?>
@@ -520,19 +521,19 @@ final class CMS_NetImport_Admin
                             }
                             ?>
                             <tr>
-                                <td><?= htmlspecialchars(substr((string) ($entry->started_at ?? ''), 0, 16)) ?></td>
+                                <td><?= htmlspecialchars(substr((string) ($entry->started_at ?? ''), 0, 16), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td>
-                                    <strong><?= htmlspecialchars((string) ($entry->run_type ?? '')) ?></strong>
-                                    <div><code><?= htmlspecialchars((string) ($entry->source_file ?? '')) ?></code></div>
+                                    <strong><?= htmlspecialchars((string) ($entry->run_type ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
+                                    <div><code><?= htmlspecialchars((string) ($entry->source_file ?? ''), ENT_QUOTES, 'UTF-8') ?></code></div>
                                 </td>
                                 <td>
                                     <span class="status-badge <?= !empty($entry->is_dry_run) ? 'pending' : 'active' ?>">
-                                        <?= !empty($entry->is_dry_run) ? '🧪 Dry-Run' : '🚀 Live' ?>
+                                        <?= !empty($entry->is_dry_run) ? 'Dry-Run' : 'Live' ?>
                                     </span>
                                     <?php if (($entry->status ?? 'completed') === 'reset'): ?>
-                                        <span class="status-badge pending">↩️ Reset</span>
+                                        <span class="status-badge pending">Reset</span>
                                     <?php elseif (($entry->status ?? 'completed') === 'completed_with_errors'): ?>
-                                        <span class="status-badge danger">⚠️ Mit Fehlern</span>
+                                        <span class="status-badge danger">Mit Fehlern</span>
                                     <?php endif; ?>
                                     <?php if (($entry->source_mode ?? 'base') === 'update'): ?>
                                         <span class="status-badge pending">UPDATE</span>
@@ -545,23 +546,23 @@ final class CMS_NetImport_Admin
                                 <td><?= (int) ($entry->warning_count ?? 0) ?></td>
                                 <td><?= (int) ($entry->error_count ?? 0) ?></td>
                                 <td><?= (int) ($entry->duration_ms ?? 0) ?> ms</td>
-                                <td><?= htmlspecialchars((string) ($entry->admin_username ?? 'System')) ?></td>
+                                <td><?= htmlspecialchars((string) ($entry->admin_username ?? 'System'), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td>
                                     <?php if (!empty($entry->is_dry_run)): ?>
                                         <span class="text-muted">Nicht nötig</span>
                                     <?php elseif (($entry->status ?? 'completed') === 'reset'): ?>
                                         <span class="text-muted">Bereits zurückgesetzt</span>
                                     <?php else: ?>
-                                            <form method="POST" action="<?= SITE_URL ?>/admin/netimport/history-action" style="display:inline-block;"
+                                            <form method="POST" action="<?= $adminHistoryActionUrl ?>" class="ni-inline-form"
                                                 data-confirm-action="true"
                                                 data-confirm-title="Importlauf zurücksetzen?"
                                                 data-confirm-message="Es werden nur die für diesen Lauf gespeicherten, resetbaren Datensätze und Event-Verknüpfungen entfernt. Diese Aktion kann nicht automatisch rückgängig gemacht werden."
                                                 data-confirm-button="Reset jetzt ausführen">
-                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($historyCsrfToken, ENT_QUOTES) ?>">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($historyCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
                                             <input type="hidden" name="history_action" value="reset_run">
                                             <input type="hidden" name="run_id" value="<?= (int) ($entry->id ?? 0) ?>">
                                             <?php $this->render_history_filter_inputs($historyFilters); ?>
-                                            <button type="submit" class="btn btn-secondary">↩️ Reset</button>
+                                            <button type="submit" class="btn btn-secondary">Reset</button>
                                         </form>
                                     <?php endif; ?>
                                 </td>
@@ -580,17 +581,17 @@ final class CMS_NetImport_Admin
 
                                         <div class="ni-history-panels">
                                             <div class="ni-history-panel">
-                                                <h4>📦 Laufdetails</h4>
+                                                <h4>Laufdetails</h4>
                                                 <ul class="ni-kv-list">
-                                                    <li><strong>Status:</strong> <?= htmlspecialchars((string) ($entry->status ?? 'completed')) ?></li>
-                                                    <li><strong>Datei:</strong> <code><?= htmlspecialchars((string) ($entry->source_file ?? '')) ?></code></li>
-                                                    <li><strong>Quelle:</strong> <?= htmlspecialchars((string) ($entry->source_mode ?? 'base')) ?></li>
-                                                    <li><strong>Start:</strong> <?= htmlspecialchars((string) ($entry->started_at ?? '')) ?></li>
-                                                    <li><strong>Ende:</strong> <?= htmlspecialchars((string) ($entry->finished_at ?? '')) ?></li>
+                                                        <li><strong>Status:</strong> <?= htmlspecialchars((string) ($entry->status ?? 'completed'), ENT_QUOTES, 'UTF-8') ?></li>
+                                                        <li><strong>Datei:</strong> <code><?= htmlspecialchars((string) ($entry->source_file ?? ''), ENT_QUOTES, 'UTF-8') ?></code></li>
+                                                        <li><strong>Quelle:</strong> <?= htmlspecialchars((string) ($entry->source_mode ?? 'base'), ENT_QUOTES, 'UTF-8') ?></li>
+                                                        <li><strong>Start:</strong> <?= htmlspecialchars((string) ($entry->started_at ?? ''), ENT_QUOTES, 'UTF-8') ?></li>
+                                                        <li><strong>Ende:</strong> <?= htmlspecialchars((string) ($entry->finished_at ?? ''), ENT_QUOTES, 'UTF-8') ?></li>
                                                 </ul>
                                                 <?php if ($reportResetSummary !== []): ?>
                                                     <div class="ni-inline-note">
-                                                        ↩️ Reset am <?= htmlspecialchars((string) ($reportResetSummary['reset_at'] ?? '')) ?> ·
+                                                        Reset am <?= htmlspecialchars((string) ($reportResetSummary['reset_at'] ?? ''), ENT_QUOTES, 'UTF-8') ?> ·
                                                         entfernte Datensätze: <?= (int) ($reportResetSummary['removed_records'] ?? 0) ?> ·
                                                         entfernte Links: <?= (int) ($reportResetSummary['removed_links'] ?? 0) ?>
                                                     </div>
@@ -599,7 +600,7 @@ final class CMS_NetImport_Admin
 
                                             <?php if ($reportSteps !== []): ?>
                                                 <div class="ni-history-panel">
-                                                    <h4>🪜 Teil-Schritte</h4>
+                                                    <h4>Teil-Schritte</h4>
                                                     <div class="users-table-container">
                                                         <table class="users-table ni-table ni-subtable">
                                                             <thead>
@@ -617,9 +618,9 @@ final class CMS_NetImport_Admin
                                                             <tbody>
                                                             <?php foreach ($reportSteps as $step): ?>
                                                                 <tr>
-                                                                    <td><?= htmlspecialchars((string) ($step['type'] ?? '')) ?></td>
-                                                                    <td><code><?= htmlspecialchars((string) ($step['file'] ?? '')) ?></code></td>
-                                                                    <td><?= htmlspecialchars((string) ($step['source_mode'] ?? 'base')) ?></td>
+                                                                    <td><?= htmlspecialchars((string) ($step['type'] ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
+                                                                    <td><code><?= htmlspecialchars((string) ($step['file'] ?? ''), ENT_QUOTES, 'UTF-8') ?></code></td>
+                                                                    <td><?= htmlspecialchars((string) ($step['source_mode'] ?? 'base'), ENT_QUOTES, 'UTF-8') ?></td>
                                                                     <td><?= (int) ($step['created'] ?? 0) ?></td>
                                                                     <td><?= (int) ($step['updated'] ?? 0) ?></td>
                                                                     <td><?= (int) ($step['linked'] ?? 0) ?></td>
@@ -634,7 +635,7 @@ final class CMS_NetImport_Admin
                                             <?php endif; ?>
 
                                             <div class="ni-history-panel">
-                                                <h4>🧹 Cleanup-Daten</h4>
+                                                <h4>Cleanup-Daten</h4>
                                                 <ul class="ni-kv-list">
                                                     <li><strong>Companies:</strong> <?= count((array) ($createdRecords['companies'] ?? [])) ?></li>
                                                     <li><strong>Experts:</strong> <?= count((array) ($createdRecords['experts'] ?? [])) ?></li>
@@ -647,22 +648,22 @@ final class CMS_NetImport_Admin
 
                                         <?php if ($reportMessages !== []): ?>
                                             <div class="ni-history-panel">
-                                                <h4>📋 Gespeicherte Meldungen</h4>
+                                                <h4>Gespeicherte Meldungen</h4>
                                                 <ul class="ni-log-list ni-log-list-compact">
                                                     <?php foreach ($reportMessages as $message): ?>
-                                                        <li class="ni-log-item ni-log-item--<?= htmlspecialchars((string) ($message['level'] ?? 'info'), ENT_QUOTES) ?>">
+                                                        <li class="ni-log-item ni-log-item--<?= htmlspecialchars((string) ($message['level'] ?? 'info'), ENT_QUOTES, 'UTF-8') ?>">
                                                             <span class="ni-log-level">
                                                                 <?php
                                                                 $level = $message['level'] ?? 'info';
                                                                 echo match ($level) {
-                                                                    'error'   => '❌',
-                                                                    'warning' => '⚠️',
-                                                                    'success' => '✅',
-                                                                    default   => 'ℹ️',
+                                                                    'error'   => 'Fehler',
+                                                                    'warning' => 'Warnung',
+                                                                    'success' => 'OK',
+                                                                    default   => 'Info',
                                                                 };
                                                                 ?>
                                                             </span>
-                                                            <span><?= htmlspecialchars((string) ($message['text'] ?? '')) ?></span>
+                                                            <span><?= htmlspecialchars((string) ($message['text'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
                                                         </li>
                                                     <?php endforeach; ?>
                                                 </ul>
@@ -675,8 +676,8 @@ final class CMS_NetImport_Admin
                         </tbody>
                     </table>
                 </div>
-                <p class="text-muted" style="margin-top:12px;">
-                    Letzter Lauf: <?= !empty($historyStats['last_run_at']) ? htmlspecialchars(substr((string) $historyStats['last_run_at'], 0, 16)) : '—' ?> ·
+                <p class="text-muted ni-history-meta">
+                    Letzter Lauf: <?= !empty($historyStats['last_run_at']) ? htmlspecialchars(substr((string) $historyStats['last_run_at'], 0, 16), ENT_QUOTES, 'UTF-8') : '—' ?> ·
                     Dry-Runs: <?= (int) ($historyStats['dry_runs'] ?? 0) ?> ·
                     Live-Läufe: <?= (int) ($historyStats['live_runs'] ?? 0) ?> ·
                     Summierte Fehler: <?= (int) ($historyStats['total_errors'] ?? 0) ?>
@@ -685,7 +686,7 @@ final class CMS_NetImport_Admin
         </div>
 
         <div class="admin-card ni-card-spacer">
-            <h3>🗃️ Vorbereitete CSV-Quellen</h3>
+            <h3>Vorbereitete CSV-Quellen</h3>
             <div class="users-table-container">
                 <table class="users-table ni-table">
                     <thead>
@@ -701,31 +702,31 @@ final class CMS_NetImport_Admin
                     <tbody>
                     <?php foreach ($sources as $source): ?>
                         <tr>
-                            <td><strong><?= htmlspecialchars((string) $source['label']) ?></strong></td>
+                            <td><strong><?= htmlspecialchars((string) $source['label'], ENT_QUOTES, 'UTF-8') ?></strong></td>
                             <td>
-                                <code><?= htmlspecialchars((string) $source['relative_path']) ?></code>
+                                <code><?= htmlspecialchars((string) $source['relative_path'], ENT_QUOTES, 'UTF-8') ?></code>
                                 <?php if (($source['mode'] ?? 'base') === 'update'): ?>
-                                    <div><span class="status-badge pending">🆕 UPDATE erkannt</span></div>
+                                    <div><span class="status-badge pending">Update erkannt</span></div>
                                 <?php endif; ?>
                                 <?php if (!empty($source['detected_date'])): ?>
-                                    <div class="text-muted">Datei-Datum: <?= htmlspecialchars((string) $source['detected_date']) ?></div>
+                                    <div class="text-muted">Datei-Datum: <?= htmlspecialchars((string) $source['detected_date'], ENT_QUOTES, 'UTF-8') ?></div>
                                 <?php endif; ?>
                             </td>
-                            <td><?= htmlspecialchars((string) $source['target_label']) ?></td>
+                            <td><?= htmlspecialchars((string) $source['target_label'], ENT_QUOTES, 'UTF-8') ?></td>
                             <td><?= (int) ($source['rows'] ?? 0) ?></td>
                             <td>
                                 <?php if (!empty($source['exists']) && !empty($source['plugin_ready'])): ?>
-                                    <span class="status-badge active">✅ Bereit</span>
+                                    <span class="status-badge active">Bereit</span>
                                     <?php if (($source['mode'] ?? 'base') === 'update'): ?>
                                         <span class="status-badge pending">UPDATE</span>
                                     <?php endif; ?>
                                 <?php elseif (empty($source['exists'])): ?>
-                                    <span class="status-badge danger">❌ Datei fehlt</span>
+                                    <span class="status-badge danger">Datei fehlt</span>
                                 <?php else: ?>
-                                    <span class="status-badge pending">⏳ Plugin inaktiv</span>
+                                    <span class="status-badge pending">Plugin inaktiv</span>
                                 <?php endif; ?>
                             </td>
-                            <td><?= htmlspecialchars((string) $source['description']) ?></td>
+                            <td><?= htmlspecialchars((string) $source['description'], ENT_QUOTES, 'UTF-8') ?></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
@@ -735,22 +736,22 @@ final class CMS_NetImport_Admin
 
         <?php if ($result !== null && !empty($result['messages'])): ?>
             <div class="admin-card ni-card-spacer">
-                <h3>📋 Import-Protokoll</h3>
+                <h3>Import-Protokoll</h3>
                 <ul class="ni-log-list">
                     <?php foreach ($result['messages'] as $message): ?>
-                        <li class="ni-log-item ni-log-item--<?= htmlspecialchars((string) ($message['level'] ?? 'info'), ENT_QUOTES) ?>">
+                        <li class="ni-log-item ni-log-item--<?= htmlspecialchars((string) ($message['level'] ?? 'info'), ENT_QUOTES, 'UTF-8') ?>">
                             <span class="ni-log-level">
                                 <?php
                                 $level = $message['level'] ?? 'info';
                                 echo match ($level) {
-                                    'error'   => '❌',
-                                    'warning' => '⚠️',
-                                    'success' => '✅',
-                                    default   => 'ℹ️',
+                                    'error'   => 'Fehler',
+                                    'warning' => 'Warnung',
+                                    'success' => 'OK',
+                                    default   => 'Info',
                                 };
                                 ?>
                             </span>
-                            <span><?= htmlspecialchars((string) ($message['text'] ?? '')) ?></span>
+                            <span><?= htmlspecialchars((string) ($message['text'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
                         </li>
                     <?php endforeach; ?>
                 </ul>

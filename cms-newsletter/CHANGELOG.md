@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.0.1 - 2026-05-18
+
+- PHP-Anforderung auf 8.4 angehoben und Plugin-Version auf `3.0.1` aktualisiert.
+- Admin-CSRF-Prüfung nutzt konsequent String-Casts und Redirects laufen mit HTTP 303.
+- Öffentliches Subscribe-Rate-Limit schreibt atomar mit Datei-Lock und Größenlimit.
+- Public-Inputs wurden um Längenbegrenzungen, Autocomplete und klarere Labels ergänzt.
+- Newsletter-Template-HTML entfernt Event-/Style-Attribute und blockiert unsichere `href`-Schemata.
+- Public- und Admin-UI optisch beruhigt: keine Emoji-Deko, weniger Insellook, PHINIT-nahe Tokens im Public-CSS.
+
 ## 3.0.0 - 2026-05-17
 
 - Kompatibilität auf 365CMS 3.0.0 angehoben.

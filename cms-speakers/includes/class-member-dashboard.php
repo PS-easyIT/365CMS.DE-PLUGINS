@@ -58,7 +58,7 @@ class CMS_Speakers_Member_Dashboard
 
         if ($cssUrl !== '') {
             $v = $cssFile && file_exists($cssFile) ? filemtime($cssFile) : '1';
-            echo '<link rel="stylesheet" href="' . htmlspecialchars($cssUrl) . '?v=' . $v . '">' . "\n";
+            echo '<link rel="stylesheet" href="' . htmlspecialchars($cssUrl, ENT_QUOTES, 'UTF-8') . '?v=' . (int) $v . '">' . "\n";
         }
     }
 
@@ -128,9 +128,9 @@ class CMS_Speakers_Member_Dashboard
     {
         // ── POST: neuen Speaker speichern ─────────────────────────────────────
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['speaker_create'])) {
-            if (!\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'member_speaker_create')) {
+            if (!\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'member_speaker_create')) {
                 $_SESSION['error'] = 'Sicherheitscheck fehlgeschlagen.';
-                header('Location: /member/plugin/speakers?action=new');
+                header('Location: /member/plugin/speakers?action=new', true, 303);
                 exit;
             }
             try {
@@ -195,11 +195,11 @@ class CMS_Speakers_Member_Dashboard
                 } else {
                     $_SESSION['success'] = 'Ihr Speaker-Profil wurde eingereicht und wird vom Admin geprüft.';
                 }
-                header('Location: /member/plugin/speakers');
+                header('Location: /member/plugin/speakers', true, 303);
                 exit;
             } catch (\Throwable $e) {
                 $_SESSION['error'] = 'Fehler beim Speichern: ' . $e->getMessage();
-                header('Location: /member/plugin/speakers?action=new');
+                header('Location: /member/plugin/speakers?action=new', true, 303);
                 exit;
             }
         }
@@ -634,7 +634,7 @@ class CMS_Speakers_Member_Dashboard
                 <div class="form-group">
                     <label class="form-label">Themen-Tags</label>
                     <div style="display:flex;flex-wrap:wrap;gap:.35rem;padding:.5rem;border:2px solid #e2e8f0;border-radius:8px;min-height:42px;cursor:text;"
-                         id="spkTopicWrap" onclick="document.getElementById('spkTopicInput').focus()">
+                        id="spkTopicWrap" data-spk-focus-input="spkTopicInput">
                         <input type="text" id="spkTopicInput" placeholder="z.B. Digitalisierung, KI, Führung …"
                                style="border:none;outline:none;flex:1;min-width:200px;font-size:.875rem;padding:.2rem 0;"
                                onkeydown="handleTopicKeydown(event)">
@@ -686,7 +686,7 @@ class CMS_Speakers_Member_Dashboard
                 const x = document.createElement('span');
                 x.textContent = '×';
                 x.style.cssText = 'cursor:pointer;font-weight:700;color:#c4b5fd;margin-left:2px;';
-                x.onclick = function() { _spkTopics.splice(idx, 1); renderTopicTags(); };
+                x.addEventListener('click', function() { _spkTopics.splice(idx, 1); renderTopicTags(); });
                 pill.appendChild(x);
                 wrap.insertBefore(pill, input);
             });
@@ -711,6 +711,12 @@ class CMS_Speakers_Member_Dashboard
                 renderTopicTags();
             }
         }
+        document.querySelectorAll('[data-spk-focus-input]').forEach(function(wrapper) {
+            wrapper.addEventListener('click', function() {
+                var input = document.getElementById(wrapper.dataset.spkFocusInput || '');
+                if (input) input.focus();
+            });
+        });
         </script>
         <?php
     }

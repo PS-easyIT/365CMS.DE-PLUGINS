@@ -368,24 +368,39 @@ final class CMS_Newsletter_Repository
 
     private function clean_text(string $value): string
     {
-        return trim(strip_tags($value));
+        return mb_substr(trim(strip_tags($value)), 0, 255);
     }
 
     private function clean_textarea(string $value): string
     {
-        return trim(strip_tags($value));
+        return mb_substr(trim(strip_tags($value)), 0, 2000);
     }
 
     private function clean_html(string $value): string
     {
-        return trim(strip_tags($value, '<p><a><strong><em><ul><ol><li><br><h2><h3><h4><table><thead><tbody><tr><td><th>'));
+        $html = trim(strip_tags($value, '<p><a><strong><em><ul><ol><li><br><h2><h3><h4><table><thead><tbody><tr><td><th>'));
+        $html = preg_replace('/\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $html) ?? '';
+        $html = preg_replace('/\s+style\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $html) ?? '';
+        $html = preg_replace_callback('/\s+href\s*=\s*("([^"]*)"|\'([^\']*)\'|([^\s>]+))/i', static function (array $matches): string {
+            $href = html_entity_decode((string) ($matches[2] ?? $matches[3] ?? $matches[4] ?? ''), ENT_QUOTES, 'UTF-8');
+            if (strlen($href) > 2048 || preg_match('/[[:cntrl:]]/', $href) === 1) {
+                return '';
+            }
+            $scheme = strtolower((string) (parse_url($href, PHP_URL_SCHEME) ?? ''));
+            if ($scheme !== '' && !in_array($scheme, ['http', 'https', 'mailto'], true)) {
+                return '';
+            }
+            return ' href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '"';
+        }, $html) ?? '';
+
+        return mb_substr($html, 0, 20000);
     }
 
     private function clean_slug(string $value): string
     {
         $slug = strtolower(trim($value));
         $slug = preg_replace('/[^a-z0-9\-]+/', '-', $slug) ?? '';
-        return trim($slug, '-') ?: 'general';
+        return mb_substr(trim($slug, '-') ?: 'general', 0, 80);
     }
 
     private function clean_email(string $value): string

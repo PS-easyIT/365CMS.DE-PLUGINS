@@ -338,28 +338,73 @@ final class CMS_Promos_Repository
     private function normalize_datetime(string $value): ?string
     {
         $value = trim($value);
-        return $value !== '' ? str_replace('T', ' ', $value) . ':00' : null;
+        if ($value === '') {
+            return null;
+        }
+
+        $date = DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $value)
+            ?: DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $value)
+            ?: DateTimeImmutable::createFromFormat('Y-m-d H:i', $value);
+
+        return $date instanceof DateTimeImmutable ? $date->format('Y-m-d H:i:s') : null;
     }
 
     private function clean_text(string $value): string
     {
-        return trim(strip_tags($value));
+        return mb_substr(trim(strip_tags($value)), 0, 255);
     }
 
     private function clean_textarea(string $value): string
     {
-        return trim(strip_tags($value));
+        return mb_substr(trim(strip_tags($value)), 0, 2000);
     }
 
     private function clean_html(string $value): string
     {
-        return trim(strip_tags($value, '<p><a><strong><em><ul><ol><li><br><h2><h3><h4><span>'));
+        $html = trim(strip_tags($value, '<p><a><strong><em><ul><ol><li><br><h2><h3><h4><span>'));
+        $html = preg_replace('/\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $html) ?? '';
+        $html = preg_replace('/\s+style\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $html) ?? '';
+        $html = preg_replace_callback('/\s+href\s*=\s*("([^"]*)"|\'([^\']*)\'|([^\s>]+))/i', function (array $matches): string {
+            $href = html_entity_decode((string) ($matches[2] ?? $matches[3] ?? $matches[4] ?? ''), ENT_QUOTES, 'UTF-8');
+            $safeHref = $this->clean_url($href);
+            return $safeHref !== '' ? ' href="' . htmlspecialchars($safeHref, ENT_QUOTES, 'UTF-8') . '"' : '';
+        }, $html) ?? '';
+
+        return mb_substr($html, 0, 20000);
     }
 
     private function clean_url(string $value): string
     {
-        $value = trim($value);
-        return filter_var($value, FILTER_VALIDATE_URL) ? $value : '';
+        $url = trim($value);
+        if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]]/', $url) === 1 || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts)) {
+            return '';
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return '';
+        }
+
+        if (($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
+            return '';
+        }
+
+        $host = strtolower(trim((string) ($parts['host'] ?? ''), '[]'));
+        if ($host === '' || in_array($host, ['localhost', 'localhost.localdomain'], true) || str_ends_with($host, '.local')) {
+            return '';
+        }
+
+        $ip = filter_var($host, FILTER_VALIDATE_IP);
+        if ($ip !== false && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return '';
+        }
+
+        return $url;
     }
 
     private function normalize_theme_hook(string $value): string
@@ -372,7 +417,7 @@ final class CMS_Promos_Repository
     {
         $slug = strtolower(trim(strip_tags($value)));
         $slug = preg_replace('/[^a-z0-9\-]+/', '-', $slug) ?? '';
-        return trim($slug, '-') ?: 'promo';
+        return mb_substr(trim($slug, '-') ?: 'promo', 0, 120);
     }
 
     private function ensure_unique_placement_slug(string $slug, int $ignoreId = 0): string

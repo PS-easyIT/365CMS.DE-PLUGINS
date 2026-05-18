@@ -27,7 +27,7 @@ final class CMS_Projects_Admin
             'admin',
             'cms-projects',
             [$this, 'renderOverviewPage'],
-            '📁',
+            'PRJ',
             83
         );
 
@@ -77,6 +77,11 @@ final class CMS_Projects_Admin
 
     public function renderPage(?string $forcedSection = null): void
     {
+        if (!$this->currentUserCanManageProjects()) {
+            header('Location: ' . (defined('SITE_URL') ? (string) SITE_URL : '/'), true, 303);
+            exit;
+        }
+
         $message = null;
         $messageType = 'success';
         $section = $this->resolveSection($forcedSection);
@@ -225,5 +230,14 @@ final class CMS_Projects_Admin
 
         $path = (string) (parse_url($requestUri, PHP_URL_PATH) ?? '');
         return $path !== '' && str_contains($path, '/admin/plugins/cms-projects');
+    }
+
+    private function currentUserCanManageProjects(): bool
+    {
+        if (class_exists('CMS\\Auth')) {
+            return \CMS\Auth::instance()->isAdmin();
+        }
+
+        return false;
     }
 }
