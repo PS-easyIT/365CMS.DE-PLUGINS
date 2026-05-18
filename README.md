@@ -13,19 +13,21 @@
 
 | Plugin | Version | Status | Beschreibung |
 |--------|---------|--------|--------------|
-| [cms-companies](cms-companies/) | 1.0.0 | ✅ Stabil | Firmen-Profile mit Experten-Zuordnung & Partner-Status |
-| [cms-events](cms-events/) | 1.0.0 | ✅ Stabil | Event-Verwaltung mit Speaker-Anbindung & Kalenderansicht |
-| [cms-experts](cms-experts/) | 2.0.0 | ✅ Stabil | IT-Experten-Verzeichnis mit umfangreichen Meta-Daten |
-| [cms-importer](cms-importer/) | 1.0.0 | ✅ Stabil | WordPress WXR-Importer für Posts & Pages |
+| [cms-companies](cms-companies/) | 3.0.1 | ✅ Stabil | Firmen-Profile mit Experten-Zuordnung & Partner-Status |
+| [cms-events](cms-events/) | 3.0.2 | ✅ Stabil | Event-Verwaltung mit Speaker-Anbindung & Kalenderansicht |
+| [cms-experts](cms-experts/) | 3.0.2 | ✅ Stabil | IT-Experten-Verzeichnis mit umfangreichen Meta-Daten |
 | [cms-contact](cms-contact/) | 1.1.6 | ✅ Stabil | Kontaktformulare mit Mehrfach-Formularen, Templates, DSGVO-Hooks und gehärtetem Installer für FK-Kollisionen |
 | [cms-downloads](cms-downloads/) | 1.0.0 | 🚀 Neu | Öffentliches Download-Management mit Kategorien, Typ-Presets und Archiv |
 | [cms-newsletter](cms-newsletter/) | 1.0.0 | 🚀 Neu | Newsletter-Management mit Subscribern, Templates, Kampagnen und öffentlicher Anmeldung |
 | [cms-promos](cms-promos/) | 1.0.0 | 🚀 Neu | Promo-Management für CTA-Flächen, Platzierungen, Banner und Klickziele |
+| [cms-booking](cms-booking/) | 3.0.1 | 🚀 Neu | Öffentliches Buchungs-Management mit Anbieter-, Leistungs-, Termin- und Kalenderverwaltung |
+| [cms-projects](cms-projects/) | 3.0.1 | 🚀 Neu | Projektmanagement mit Projekt-Dashboards, Boards und Widgets für Member- und Public-Bereiche |
+| [cms-marketplace](cms-marketplace/) | 3.0.1 | 🚀 Neu | Marketplace-Verwaltung für Plugins, Themes und CMS-Pakete mit ZIP-Upload-Prüfung, Public-Submission-Schutz und JSON-Feeds |
 | [cms-m365lic](cms-m365lic/) | 1.1.0 | 🚀 Neu | Microsoft-365-Lizenzberater mit Spezial-User-Zuweisung, Billing-Modellen, vollständigem Seed-Katalog und getrennten Public/Member/Spezial-Bereichen |
-| [cms-m365tools](M365-PLUGINS/cms-m365tools/) | 1.29.9 | 🚀 Neu | Modulare Microsoft-365-Rechner- und Tool-Box mit 21 Public-Modulen, öffentlichem Plugin-Content ohne äußeren Theme-Header- oder Theme-Wrapper-Abstand inklusive spätem Head-Critical-CSS und Host-Klasse gegen Theme-/Customizer-Overrides, UX-optimierter Hub-Landingpage mit Hero-Direkteinstieg, Live-Suche, Tag-Filtern, ARIA-Radiogroup, Kategorie-Hash, Slash-Suchshortcut, Sticky-ToC, Kategorie-Heros, Kompass-Icons, Badges, Dark Mode und Back-to-top, M365LIC-Preisübernahme für Public-/Member-/Spezialpreise, Dienstleister-/Kontaktformular-CTA nach Toolseiten, eigenem Landingpage-Designer-Untermenü mit Content-, Layout-, Farb-, Button- und Sichtbarkeitsoptionen, gemeinsamem Matrixen-Unterpunkt für Read-only Lizenz- und Add-on-Matrix inklusive Design-Tab, zentraler Plugin-Einstellungsseite, globalen Paketpreis- und Abopreis-Unterpunkten, kurzen Modulmenüs, eigenem Admin-Unterpunkt je Modul, Einstellungs-Tabs für Anzeige, Preise, Workflows und Datenstand, gehärteter Legacy-Settings-Migration, ruhigem PHINIT-Public-Design, erweitertem All-Module-Best-Practice-Kompass mit konkreten Prüfpunkten je Tool, Power-Platform-Request-/Dataverse-Capacity-Checks, Power-Platform-Kosten plus Well-Architected-Review, Workspace-M365-TCO, Storage-Bedarf, Backup-Kosten, Lizenz-Audit, Preis-Tracker, ROI-, Telefonie-, Copilot- und Lizenztools |
+| [cms-m365tools](cms-m365tools/) | 3.0.2 | 🚀 Neu | Modulare Microsoft-365-Rechner- und Tool-Box mit Core-kompatiblem Root-Bootstrap, 21 Public-Modulen, zentralen Admin-Einstellungen, Landingpage-Designer, Read-only-Matrixen, Paket-/Abopreisbereichen und ruhigem PHINIT-Public-Design |
 | [cms-jobprofile-generator](cms-jobprofile-generator/) | 0.9.6 | 🧪 Beta | Stellenanzeigen-Generator mit Workflow-Genehmigung |
 | [cms-organigramm](cms-organigramm/) | 0.1.0 | 🚧 In Entwicklung | Interaktives Organigramm mit Cross-Plugin-Integration |
-| [cms-speakers](cms-speakers/) | 1.0.0 | ✅ Stabil | Speaker-Profile mit Topics & Präsentations-Historie |
+| [cms-speakers](cms-speakers/) | 3.0.2 | ✅ Stabil | Speaker-Profile mit Topics & Präsentations-Historie |
 | [cms-netimport](cms-netimport/) | 1.0.0 | 🚀 Neu | CSV-Netzwerkimport für Companies, Experts, Speakers und Events |
 
 ---
@@ -145,9 +147,10 @@ DOC/
 ├── cms-companies/
 ├── cms-events/
 ├── cms-experts/
-├── cms-importer/
 ├── cms-newsletter/
 ├── cms-promos/
+├── cms-projects/
+├── cms-marketplace/
 ├── cms-m365tools/
 ├── cms-jobprofile-generator/
 ├── cms-organigramm/

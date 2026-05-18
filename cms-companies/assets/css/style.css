@@ -654,3 +654,96 @@
   .co-member-form-grid--3 { grid-template-columns: 1fr; }
   .co-member-form-actions { flex-direction: column; }
 }
+
+/* 365CMS 3.x / Public archive UX repair */
+.co-archive-header {
+  margin: var(--phinit-space-5) var(--phinit-space-5) 0;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.co-filter-bar {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--phinit-space-4);
+  margin: 0 var(--phinit-space-5) var(--phinit-space-6);
+  padding: var(--phinit-space-5);
+  border-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.co-filter-bar::before {
+  content: 'Suchen & filtern';
+  grid-column: 1 / -1;
+  padding-bottom: var(--phinit-space-3);
+  border-bottom: 1px solid var(--phinit-color-border);
+  color: var(--phinit-color-ink-secondary);
+  font-size: var(--phinit-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.co-filter-bar .phinit-field {
+  margin-bottom: 0;
+}
+
+.co-filter-bar .co-btn {
+  min-height: 44px;
+  justify-content: center;
+}
+
+.co-grid {
+  align-items: stretch;
+  gap: var(--phinit-space-5);
+}
+
+.co-card {
+  min-height: 100%;
+  padding: var(--phinit-space-5) var(--phinit-space-5) 0;
+  gap: var(--phinit-space-4);
+  overflow: hidden;
+}
+
+.co-card-head {
+  align-items: flex-start;
+}
+
+.co-card-name,
+.co-card-pill,
+.co-card-excerpt {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+
+.co-card-pills {
+  flex-wrap: wrap;
+  margin-right: calc(var(--phinit-space-5) * -1);
+  margin-left: calc(var(--phinit-space-5) * -1);
+  padding: var(--phinit-space-3) var(--phinit-space-5);
+}
+
+.co-card-footer {
+  flex-wrap: wrap;
+  gap: var(--phinit-space-3);
+  margin-top: auto;
+  padding: var(--phinit-space-4) 0;
+}
+
+.co-card-footer .co-btn-primary,
+.co-card-footer .co-btn-ghost {
+  flex: 1 1 10rem;
+}
+
+@media (max-width: 640px) {
+  .co-archive-header {
+    margin: var(--phinit-space-3) var(--phinit-space-3) 0;
+  }
+
+  .co-filter-bar {
+    margin: 0 var(--phinit-space-3) var(--phinit-space-5);
+    padding: var(--phinit-space-4);
+  }
+}

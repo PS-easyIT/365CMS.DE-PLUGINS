@@ -18,19 +18,9 @@
       "manifest": "PLUGINS/cms-experts/update.json"
     },
     {
-      "slug": "cms-jobads",
-      "name": "CMS Job Ads",
-      "manifest": "PLUGINS/cms-jobads/update.json"
-    },
-    {
       "slug": "cms-speakers",
       "name": "CMS Speakers",
       "manifest": "PLUGINS/cms-speakers/update.json"
-    },
-    {
-      "slug": "cms-importer",
-      "name": "CMS WordPress Importer",
-      "manifest": "PLUGINS/cms-importer/update.json"
     },
     {
       "slug": "cms-jobprofile-generator",
@@ -71,6 +61,16 @@
       "slug": "cms-promos",
       "name": "CMS Promos",
       "manifest": "PLUGINS/cms-promos/update.json"
+    },
+    {
+      "slug": "cms-projects",
+      "name": "CMS Projects",
+      "manifest": "PLUGINS/cms-projects/update.json"
+    },
+    {
+      "slug": "cms-marketplace",
+      "name": "365CMS Marketplace",
+      "manifest": "PLUGINS/cms-marketplace/update.json"
     },
     {
       "slug": "cms-m365lic",

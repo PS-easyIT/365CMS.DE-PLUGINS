@@ -3,7 +3,7 @@
  * Plugin Name: CMS Booking
  * Plugin URI:  https://365network.de/cms-booking
  * Description: Universelles Buchungs- und Terminverwaltungssystem – Experten, Speaker, Events, Unternehmen u. a. klinken sich ein.
- * Version:     3.0.0
+ * Version:     3.0.1
  * Author:      365 Network
  * Author URI:  https://365network.de
  *
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // ── Konstanten ────────────────────────────────────────────────────────────────
-define('CMS_BOOKING_VERSION',    '3.0.0');
+define('CMS_BOOKING_VERSION',    '3.0.1');
 define('CMS_BOOKING_DB_VERSION', '1');
 define('CMS_BOOKING_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_BOOKING_PLUGIN_URL', '/plugins/cms-booking/');
@@ -109,7 +109,11 @@ final class CMS_Booking
     public function on_activation(string $plugin): void
     {
         if ($plugin === 'cms-booking' && class_exists('CMS_Booking_Installer')) {
-            CMS_Booking_Installer::install();
+            try {
+                CMS_Booking_Installer::install();
+            } catch (\Throwable $e) {
+                error_log('cms-booking activation skipped: ' . $e->getMessage());
+            }
         }
     }
 
@@ -123,7 +127,11 @@ final class CMS_Booking
     public function init_plugin(): void
     {
         if (class_exists('CMS_Booking_Installer')) {
-            CMS_Booking_Installer::maybe_install();
+            try {
+                CMS_Booking_Installer::maybe_install();
+            } catch (\Throwable $e) {
+                error_log('cms-booking init install skipped: ' . $e->getMessage());
+            }
         }
     }
 

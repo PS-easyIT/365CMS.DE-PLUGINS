@@ -5,6 +5,61 @@
  * @package CMS_Booking
  */
 
+.booking-admin-shell {
+    box-sizing: border-box;
+    display: grid;
+    gap: 1.25rem;
+    margin: 25px;
+    width: calc(100% - 50px);
+}
+
+.booking-admin-shell > .admin-page-header,
+.booking-admin-shell > .admin-card,
+.booking-admin-shell > .dashboard-grid,
+.booking-admin-shell > form,
+.booking-admin-shell > nav {
+    width: 100%;
+}
+
+.booking-admin-shell .lp-section-nav {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 2px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+.booking-admin-shell .lp-section-nav__item {
+    align-items: center;
+    border-right: 1px solid #e2e8f0;
+    color: #475569;
+    display: inline-flex;
+    font-size: 0.875rem;
+    font-weight: 600;
+    gap: 0.4rem;
+    min-height: 44px;
+    padding: 0.7rem 1rem;
+    text-decoration: none;
+}
+
+.booking-admin-shell .lp-section-nav__item:hover,
+.booking-admin-shell .lp-section-nav__item.active {
+    background: #f8fafc;
+    color: var(--admin-primary, #2563eb);
+}
+
+.booking-admin-shell .stat-card h3 {
+    color: #64748b;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin: 0 0 0.35rem;
+    text-transform: uppercase;
+}
+
 /* Integration-Types Grid */
 .booking-integration-grid {
     display: grid;
@@ -182,4 +237,11 @@
     padding: .375rem .875rem;
     color: #64748b;
     font-size: .875rem;
+}
+
+@media (max-width: 900px) {
+    .booking-admin-shell {
+        margin: 16px;
+        width: calc(100% - 32px);
+    }
 }

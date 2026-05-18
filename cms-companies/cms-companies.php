@@ -3,7 +3,7 @@
  * Plugin Name: CMS Companies
  * Plugin URI: https://365network.de/cms-companies
  * Description: Verwaltung von Firmen-Profilen mit Experten-Zuordnung, Partner-Status und Unternehmens-Informationen
- * Version: 3.0.0
+ * Version: 3.0.1
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin Constants
-define('CMS_COMPANIES_VERSION', '3.0.0');
+define('CMS_COMPANIES_VERSION', '3.0.1');
 define('CMS_COMPANIES_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_COMPANIES_PLUGIN_URL', '/plugins/cms-companies/');
 define('CMS_COMPANIES_TEXT_DOMAIN', 'cms-companies');

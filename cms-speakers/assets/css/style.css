@@ -776,3 +776,117 @@
   .sp-filter-bar { margin: var(--phinit-space-3); }
   .sp-grid { padding: 0 var(--phinit-space-3); }
 }
+
+/* 365CMS 3.x / Public archive UX repair */
+.sp-archive-header {
+  margin: var(--phinit-space-5) var(--phinit-space-5) 0;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.sp-filter-bar {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--phinit-space-4);
+  margin: 0 var(--phinit-space-5) var(--phinit-space-6);
+  padding: var(--phinit-space-5);
+  border-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.sp-filter-bar::before {
+  content: 'Suchen & filtern';
+  grid-column: 1 / -1;
+  padding-bottom: var(--phinit-space-3);
+  border-bottom: 1px solid var(--phinit-color-border);
+  color: var(--phinit-color-ink-secondary);
+  font-size: var(--phinit-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sp-filter-bar .phinit-field {
+  margin-bottom: 0;
+}
+
+.sp-filter-bar .sp-btn {
+  min-height: 44px;
+  justify-content: center;
+}
+
+.sp-grid {
+  align-items: stretch;
+  gap: var(--phinit-space-5);
+}
+
+.sp-card,
+.sp-card--overview {
+  min-height: 100%;
+  overflow: hidden;
+}
+
+.sp-card--overview .sp-card-top {
+  align-items: flex-start;
+  padding: var(--phinit-space-6) var(--phinit-space-5) var(--phinit-space-4);
+  border-bottom: 1px solid var(--phinit-color-border);
+}
+
+.sp-card--overview .sp-card-header-text {
+  gap: var(--phinit-space-2);
+}
+
+.sp-card--overview .sp-card-name,
+.sp-card--overview .sp-card-title,
+.sp-card-company,
+.sp-card-location {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+
+.sp-card--overview .sp-card-expertise-section {
+  justify-content: flex-start;
+  max-height: none;
+  min-height: 0;
+  padding: var(--phinit-space-3) var(--phinit-space-5);
+}
+
+.sp-card--overview .sp-expertise-value {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+
+.sp-card--overview .sp-card-formats {
+  flex-wrap: wrap;
+  overflow: visible;
+  padding: var(--phinit-space-4) var(--phinit-space-5);
+}
+
+.sp-card--overview .sp-format-pill {
+  flex: 0 1 auto;
+}
+
+.sp-card--overview .sp-card-social {
+  display: none;
+}
+
+.sp-card--overview .sp-card-cta {
+  min-height: 44px;
+  margin-top: auto;
+  border-radius: 0 0 var(--phinit-radius-md) var(--phinit-radius-md);
+}
+
+@media (max-width: 640px) {
+  .sp-archive-header {
+    margin: var(--phinit-space-3) var(--phinit-space-3) 0;
+  }
+
+  .sp-filter-bar {
+    margin: 0 var(--phinit-space-3) var(--phinit-space-5);
+    padding: var(--phinit-space-4);
+  }
+}

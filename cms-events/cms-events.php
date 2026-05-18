@@ -3,7 +3,7 @@
  * Plugin Name: CMS Events
  * Plugin URI: https://365network.de/cms-events
  * Description: Verwaltung von Events mit Speakeranbindung, Veranstaltern aus cms-companies und voller Metaverwaltung
- * Version: 3.0.1
+ * Version: 3.0.2
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -12,7 +12,7 @@
 declare(strict_types=1);
 if (!defined('ABSPATH')) exit;
 
-define('CMS_EVENTS_VERSION', '3.0.1');
+define('CMS_EVENTS_VERSION', '3.0.2');
 define('CMS_EVENTS_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_EVENTS_PLUGIN_URL', '/plugins/cms-events/');
 

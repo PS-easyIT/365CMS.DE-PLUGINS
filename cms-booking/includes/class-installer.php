@@ -17,22 +17,30 @@ final class CMS_Booking_Installer
 {
     public static function install(): void
     {
-        self::create_tables();
-        self::seed_defaults();
-        self::store_db_version(CMS_BOOKING_DB_VERSION);
+        try {
+            self::create_tables();
+            self::seed_defaults();
+            self::store_db_version(CMS_BOOKING_DB_VERSION);
+        } catch (\Throwable $e) {
+            self::log_install_error($e);
+        }
     }
 
     public static function maybe_install(): void
     {
-        $stored = self::get_stored_version();
-        if ($stored === CMS_BOOKING_DB_VERSION) {
-            return;
-        }
-        if ($stored === '0') {
-            self::install();
-        } else {
-            self::create_tables();
-            self::store_db_version(CMS_BOOKING_DB_VERSION);
+        try {
+            $stored = self::get_stored_version();
+            if ($stored === CMS_BOOKING_DB_VERSION) {
+                return;
+            }
+            if ($stored === '0') {
+                self::install();
+            } else {
+                self::create_tables();
+                self::store_db_version(CMS_BOOKING_DB_VERSION);
+            }
+        } catch (\Throwable $e) {
+            self::log_install_error($e);
         }
     }
 
@@ -277,5 +285,10 @@ final class CMS_Booking_Installer
         } catch (\Throwable $e) {
             // ignore
         }
+    }
+
+    private static function log_install_error(\Throwable $e): void
+    {
+        error_log('CMS Booking installer skipped: ' . $e->getMessage());
     }
 }

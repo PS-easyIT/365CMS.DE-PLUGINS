@@ -112,37 +112,37 @@ final class CMS_Booking_Admin_Pages
 
     public static function render_dashboard(): void
     {
-        self::check_access();
-        self::enqueue_admin_assets();
-        self::instance()->render_dashboard_page();
+        self::render_with_layout('Buchungen', 'booking-dashboard', static function (): void {
+            self::instance()->render_dashboard_page();
+        });
     }
 
     public static function render_bookings(): void
     {
-        self::check_access();
-        self::enqueue_admin_assets();
-        self::instance()->render_bookings_page();
+        self::render_with_layout('Buchungen verwalten', 'booking-bookings', static function (): void {
+            self::instance()->render_bookings_page();
+        });
     }
 
     public static function render_providers(): void
     {
-        self::check_access();
-        self::enqueue_admin_assets();
-        self::instance()->render_providers_page();
+        self::render_with_layout('Booking Anbieter', 'booking-providers', static function (): void {
+            self::instance()->render_providers_page();
+        });
     }
 
     public static function render_services(): void
     {
-        self::check_access();
-        self::enqueue_admin_assets();
-        self::instance()->render_services_page();
+        self::render_with_layout('Booking Leistungen', 'booking-services', static function (): void {
+            self::instance()->render_services_page();
+        });
     }
 
     public static function render_settings(): void
     {
-        self::check_access();
-        self::enqueue_admin_assets();
-        self::instance()->render_settings_page();
+        self::render_with_layout('Booking Einstellungen', 'booking-settings', static function (): void {
+            self::instance()->render_settings_page();
+        });
     }
 
     /**
@@ -168,6 +168,66 @@ final class CMS_Booking_Admin_Pages
             default:
                 $this->render_dashboard_page();
                 break;
+        }
+    }
+
+    private static function render_with_layout(string $title, string $activePage, callable $renderer): void
+    {
+        self::check_access();
+
+        $layoutStarted = false;
+        if (!headers_sent()) {
+            if (function_exists('renderAdminLayoutStart')) {
+                renderAdminLayoutStart($title, $activePage);
+                $layoutStarted = true;
+            } else {
+                self::render_core_layout_start($title, $activePage);
+                $layoutStarted = true;
+            }
+        }
+
+        self::enqueue_admin_assets();
+        echo '<div class="booking-admin-shell">';
+        $renderer();
+        echo '</div>';
+        self::enqueue_admin_scripts();
+
+        if ($layoutStarted) {
+            if (function_exists('renderAdminLayoutEnd')) {
+                renderAdminLayoutEnd();
+            } else {
+                self::render_core_layout_end();
+            }
+        }
+    }
+
+    private static function render_core_layout_start(string $title, string $activePage): void
+    {
+        if (!defined('ABSPATH')) {
+            return;
+        }
+
+        $header = ABSPATH . 'admin/partials/header.php';
+        $sidebar = ABSPATH . 'admin/partials/sidebar.php';
+        if (!is_file($header) || !is_file($sidebar)) {
+            return;
+        }
+
+        $pageTitle = $title;
+        $pageAssets = [];
+        require $header;
+        require $sidebar;
+    }
+
+    private static function render_core_layout_end(): void
+    {
+        if (!defined('ABSPATH')) {
+            return;
+        }
+
+        $footer = ABSPATH . 'admin/partials/footer.php';
+        if (is_file($footer)) {
+            require $footer;
         }
     }
 }

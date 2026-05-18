@@ -781,3 +781,102 @@
   .ev-filter-bar { margin: var(--phinit-space-3); }
   .ev-grid { padding: 0 var(--phinit-space-3); }
 }
+
+/* 365CMS 3.x / Public archive UX repair */
+.ev-archive-header {
+  margin: var(--phinit-space-5) var(--phinit-space-5) 0;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.ev-filter-bar {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--phinit-space-4);
+  margin: 0 var(--phinit-space-5) var(--phinit-space-6);
+  padding: var(--phinit-space-5);
+  border-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.ev-filter-bar::before {
+  content: 'Suchen & filtern';
+  grid-column: 1 / -1;
+  padding-bottom: var(--phinit-space-3);
+  border-bottom: 1px solid var(--phinit-color-border);
+  color: var(--phinit-color-ink-secondary);
+  font-size: var(--phinit-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ev-filter-bar .phinit-field {
+  margin-bottom: 0;
+}
+
+.ev-filter-bar .ev-btn {
+  min-height: 44px;
+  justify-content: center;
+}
+
+.ev-grid {
+  align-items: stretch;
+  gap: var(--phinit-space-5);
+}
+
+.ev-card {
+  min-height: 100%;
+  padding: var(--phinit-space-5) var(--phinit-space-5) 0;
+  gap: var(--phinit-space-4);
+  overflow: hidden;
+}
+
+.ev-card-head {
+  align-items: flex-start;
+}
+
+.ev-card-title,
+.ev-card-organizer,
+.ev-tag-pill,
+.ev-pill {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+
+.ev-card-topics,
+.ev-card-pills {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.ev-card-pills {
+  margin-right: calc(var(--phinit-space-5) * -1);
+  margin-left: calc(var(--phinit-space-5) * -1);
+  padding: var(--phinit-space-3) var(--phinit-space-5);
+}
+
+.ev-card-footer {
+  flex-wrap: wrap;
+  gap: var(--phinit-space-3);
+  margin-top: auto;
+  padding: var(--phinit-space-4) 0;
+}
+
+.ev-card-footer .ev-btn-primary,
+.ev-card-footer .ev-btn-ghost {
+  flex: 1 1 10rem;
+}
+
+@media (max-width: 640px) {
+  .ev-archive-header {
+    margin: var(--phinit-space-3) var(--phinit-space-3) 0;
+  }
+
+  .ev-filter-bar {
+    margin: 0 var(--phinit-space-3) var(--phinit-space-5);
+    padding: var(--phinit-space-4);
+  }
+}

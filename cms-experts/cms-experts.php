@@ -3,7 +3,7 @@
  * Plugin Name: CMS Experts
  * Plugin URI: https://365network.de/cms-experts
  * Description: Verwaltung von IT-Experten-Profilen mit Card-Ansicht, Detailseiten und umfangreichen Meta-Daten
- * Version: 3.0.1
+ * Version: 3.0.2
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin Constants
-define('CMS_EXPERTS_VERSION', '3.0.1');
+define('CMS_EXPERTS_VERSION', '3.0.2');
 define('CMS_EXPERTS_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_EXPERTS_PLUGIN_URL', '/plugins/cms-experts/');
 define('CMS_EXPERTS_TEXT_DOMAIN', 'cms-experts');

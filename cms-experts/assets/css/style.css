@@ -1508,3 +1508,128 @@
     .archive-filter-bar { margin: var(--phinit-space-3); }
     .experts-grid { padding: 0 var(--phinit-space-3); }
 }
+
+/* 365CMS 3.x / Public archive UX repair */
+.expert-archive-header {
+    margin: var(--phinit-space-5) var(--phinit-space-5) 0;
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.archive-filter-bar {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: var(--phinit-space-4);
+    margin: 0 var(--phinit-space-5) var(--phinit-space-6);
+    padding: var(--phinit-space-5);
+    border-top: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.archive-filter-bar::before {
+    content: 'Suchen & filtern';
+    grid-column: 1 / -1;
+    padding-bottom: var(--phinit-space-3);
+    border-bottom: 1px solid var(--phinit-color-border);
+    color: var(--phinit-color-ink-secondary);
+    font-size: var(--phinit-text-xs);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.archive-filter-bar .phinit-field {
+    margin-bottom: 0;
+}
+
+.archive-filter-bar .expert-btn {
+    min-height: 44px;
+    justify-content: center;
+}
+
+.experts-grid {
+    align-items: stretch;
+    gap: var(--phinit-space-5);
+}
+
+.expert-card,
+.expert-card--overview {
+    min-height: 100%;
+    overflow: hidden;
+}
+
+.expert-card--overview .expert-card-top {
+    align-items: flex-start;
+    padding: var(--phinit-space-6) var(--phinit-space-5) var(--phinit-space-4);
+    border-bottom: 1px solid var(--phinit-color-border);
+}
+
+.expert-card--overview .expert-card-header-text {
+    gap: var(--phinit-space-2);
+}
+
+.expert-card-name-row,
+.expert-card-title-row,
+.expert-card-location-row {
+    align-items: flex-start;
+}
+
+.expert-card--overview .expert-card-name,
+.expert-card--overview .expert-card-title,
+.expert-card-company,
+.expert-card-location {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+}
+
+.expert-card--overview .expert-card-expertise-section {
+    justify-content: flex-start;
+    max-height: none;
+    min-height: 0;
+    padding: var(--phinit-space-3) var(--phinit-space-5);
+}
+
+.expert-card--overview .expert-card-expertise-section .expertise-value {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+}
+
+.expert-card--overview .expert-card-body {
+    justify-content: flex-start;
+    padding: var(--phinit-space-4) var(--phinit-space-5);
+}
+
+.expert-card--overview .expert-card-skills {
+    flex-wrap: wrap;
+    overflow: visible;
+}
+
+.skill-pill {
+    flex: 0 1 auto;
+    max-width: 100%;
+}
+
+.expert-card--overview .expert-card-social {
+    display: none;
+}
+
+.expert-card--overview .expert-card-cta {
+    min-height: 44px;
+    margin-top: auto;
+    border-radius: 0 0 var(--phinit-radius-md) var(--phinit-radius-md);
+}
+
+@media (max-width: 640px) {
+    .expert-archive-header {
+        margin: var(--phinit-space-3) var(--phinit-space-3) 0;
+    }
+
+    .archive-filter-bar {
+        margin: 0 var(--phinit-space-3) var(--phinit-space-5);
+        padding: var(--phinit-space-4);
+    }
+}

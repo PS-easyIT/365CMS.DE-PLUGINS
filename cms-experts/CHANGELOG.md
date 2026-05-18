@@ -5,6 +5,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/de/1.0.0/)
 
 ---
 
+## [3.0.2] – 2026-05-18
+
+### Geändert
+
+- Public-Archiv an PHINIT/365Network/M365Tools-Designsprache angeglichen: Header und Suche sind jetzt als sauber abgegrenzter Filterbereich gruppiert.
+- Experten-Cards wachsen nun natürlich mit ihrem Inhalt; lange Namen, Titel, Unternehmen, Orte und Expertise-Werte werden nicht mehr hart abgeschnitten.
+- Social-Media-Icon-Bänder werden in der Übersicht ausgeblendet, damit die Cards ruhiger wirken und der CTA stabil am Kartenende bleibt.
+
+---
+
 ## [Unreleased] – 2026-04-04
 
 ### Sicherheitsfixes

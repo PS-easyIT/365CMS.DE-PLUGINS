@@ -1,0 +1,13 @@
+{
+  "version": "3.0.2",
+  "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
+  "requires": "3.0.0",
+  "tested": "3.0.0",
+  "min_php": "8.4",
+  "requires_php": "8.4",
+  "last_updated": "2026-05-18",
+  "sections": {
+    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit Core-kompatiblem Root-Bootstrap für 365CMS 3.x.x und kanonischem Code unter M365-PLUGINS/cms-m365tools.",
+    "changelog": "365CMS-3.0.2 Activation-Fix: Root-Bootstrap ergänzt, damit der 365CMS PluginManager den Slug cms-m365tools über PLUGIN_PATH/cms-m365tools/cms-m365tools.php aktivieren kann. Der Bootstrap lädt den kanonischen Code aus M365-PLUGINS/cms-m365tools und setzt kompatible Asset-URLs für verschachtelte Deployments."
+  }
+}
