@@ -805,9 +805,9 @@ elseif ($tab === 'digests'):
         </div>
         <div class="form-group">
             <label class="form-label">Max. Beiträge pro Digest</label>
-            <input type="number" name="digest_max_items" class="form-control"
+                 <input type="number" name="digest_max_items" class="form-control feed-input-xs"
                    value="<?php echo (int)($settings['digest_max_items'] ?? 20); ?>"
-                   min="5" max="100" class="feed-input-xs">
+                     min="5" max="100">
         </div>
 
         <button type="submit" class="btn btn-primary">💾 Digest-Einstellungen speichern</button>
@@ -878,15 +878,15 @@ elseif ($tab === 'settings'):
             </div>
             <div class="form-group">
                 <label class="form-label">Einträge pro Seite</label>
-                <input type="number" name="per_page" class="form-control"
+                  <input type="number" name="per_page" class="form-control feed-input-xs"
                        value="<?php echo (int)($settings['per_page'] ?? 20); ?>"
-                       min="4" max="100" class="feed-input-xs">
+                      min="4" max="100">
             </div>
             <div class="form-group">
                 <label class="form-label">Zusammenfassung (Zeichen)</label>
-                <input type="number" name="excerpt_length" class="form-control"
+                  <input type="number" name="excerpt_length" class="form-control feed-input-xs"
                        value="<?php echo (int)($settings['excerpt_length'] ?? 160); ?>"
-                       min="50" max="500" class="feed-input-xs">
+                      min="50" max="500">
             </div>
 
             <div class="form-group">
@@ -1169,14 +1169,14 @@ elseif ($tab === 'settings'):
                     </div>
                     <div class="form-group">
                         <label class="form-label">Icon</label>
-                        <input type="text" name="cat_icon" id="cat_icon" class="form-control"
-                               value="📰" class="feed-input-icon">
+                           <input type="text" name="cat_icon" id="cat_icon" class="form-control feed-input-icon"
+                               value="📰">
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Slug <span class="feed-required">*</span></label>
-                    <input type="text" name="cat_slug" id="cat_slug" class="form-control" required
-                           pattern="[a-z0-9\-]+" class="feed-input-slug">
+                          <input type="text" name="cat_slug" id="cat_slug" class="form-control feed-input-slug" required
+                              pattern="[a-z0-9\-]+">
                           <small class="form-text">URL: /feed/<strong id="slugPreview">…</strong></small>
                 </div>
                 <div class="form-group">
