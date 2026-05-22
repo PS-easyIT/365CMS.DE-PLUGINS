@@ -58,8 +58,8 @@ $isFeatured  = (int)($item['is_featured'] ?? 0);
 
 // Kurzzusammenfassung
 $excerpt = strip_tags($description);
-if (mb_strlen($excerpt) > $excerptLen) {
-    $excerpt = mb_substr($excerpt, 0, $excerptLen) . '…';
+if (cms_feed_strlen($excerpt) > $excerptLen) {
+    $excerpt = cms_feed_substr($excerpt, 0, $excerptLen) . '…';
 }
 ?>
 <article class="fd-card<?php echo $isHero ? ' fd-card--hero' : ''; ?><?php echo $isFeatured ? ' fd-card--featured' : ''; ?>">

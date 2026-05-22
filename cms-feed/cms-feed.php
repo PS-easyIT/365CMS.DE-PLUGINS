@@ -20,6 +20,43 @@ define('CMS_FEED_VERSION',    '3.0.1');
 define('CMS_FEED_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_FEED_PLUGIN_URL', '/plugins/cms-feed/');
 
+if (!function_exists('cms_feed_strlen')) {
+    function cms_feed_strlen(string $text): int
+    {
+        if (function_exists('mb_strlen')) {
+            return mb_strlen($text, 'UTF-8');
+        }
+
+        if (preg_match_all('/./us', $text, $matches) !== false) {
+            return count($matches[0]);
+        }
+
+        return strlen($text);
+    }
+}
+
+if (!function_exists('cms_feed_substr')) {
+    function cms_feed_substr(string $text, int $start, ?int $length = null): string
+    {
+        if (function_exists('mb_substr')) {
+            return $length === null
+                ? mb_substr($text, $start, null, 'UTF-8')
+                : mb_substr($text, $start, $length, 'UTF-8');
+        }
+
+        if (preg_match_all('/./us', $text, $matches) !== false) {
+            $chars = $matches[0];
+            $slice = $length === null
+                ? array_slice($chars, $start)
+                : array_slice($chars, $start, $length);
+
+            return implode('', $slice);
+        }
+
+        return $length === null ? substr($text, $start) : substr($text, $start, $length);
+    }
+}
+
 final class CMS_Feed
 {
     private static ?self $instance = null;
@@ -90,15 +127,23 @@ final class CMS_Feed
     public function on_activation(string $plugin): void
     {
         if ($plugin === 'cms-feed' && class_exists('CMS_Feed_Database')) {
-            CMS_Feed_Database::instance()->create_tables();
-            CMS_Feed_Database::instance()->seed_defaults();
+            try {
+                CMS_Feed_Database::instance()->create_tables();
+                CMS_Feed_Database::instance()->seed_defaults();
+            } catch (\Throwable $e) {
+                error_log('CMS Feed: Activation schema setup failed – ' . $e->getMessage());
+            }
         }
     }
 
     public function init_plugin(): void
     {
         if (class_exists('CMS_Feed_Database')) {
-            CMS_Feed_Database::instance()->ensure_schema();
+            try {
+                CMS_Feed_Database::instance()->ensure_schema();
+            } catch (\Throwable $e) {
+                error_log('CMS Feed: Schema setup during init failed – ' . $e->getMessage());
+            }
         }
 
         $classes = [
@@ -112,7 +157,11 @@ final class CMS_Feed
         ];
         foreach ($classes as $class) {
             if (class_exists($class)) {
-                $class::instance();
+                try {
+                    $class::instance();
+                } catch (\Throwable $e) {
+                    error_log('CMS Feed: Initializing ' . $class . ' failed – ' . $e->getMessage());
+                }
             }
         }
     }

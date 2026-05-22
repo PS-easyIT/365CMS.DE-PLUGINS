@@ -527,7 +527,7 @@ final class CMS_Feed_RSS_Fetcher
 
     private function sanitize_guid(string $guid): string
     {
-        return mb_substr(trim($guid), 0, 500);
+        return cms_feed_substr(trim($guid), 0, 500);
     }
 
     private function clean_text(string $text): string
@@ -538,10 +538,10 @@ final class CMS_Feed_RSS_Fetcher
     private function truncate_text(string $text, int $length): string
     {
         $text = $this->clean_text($text);
-        if (mb_strlen($text) <= $length) {
+        if (cms_feed_strlen($text) <= $length) {
             return $text;
         }
-        return mb_substr($text, 0, $length) . '…';
+        return cms_feed_substr($text, 0, $length) . '…';
     }
 
     private function parse_date(string $dateStr): string

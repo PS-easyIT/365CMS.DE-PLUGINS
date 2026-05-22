@@ -157,7 +157,7 @@ HTML;
             $link        = htmlspecialchars($item['link']);
             $source      = htmlspecialchars($item['channel_name'] ?? '');
             $pubDate     = date('d.m.Y H:i', strtotime($item['pub_date']));
-            $description = htmlspecialchars(mb_substr(strip_tags($item['description'] ?? ''), 0, 200));
+            $description = htmlspecialchars(cms_feed_substr(strip_tags((string) ($item['description'] ?? '')), 0, 200));
             $border      = $i > 0 ? 'border-top:1px solid #e2e8f0;' : '';
 
             $html .= <<<HTML
@@ -449,7 +449,7 @@ HTML;
             $source      = htmlspecialchars((string) ($item['channel_name'] ?? 'Feed'));
             $category    = htmlspecialchars((string) ($item['category_name'] ?? ''));
             $pubDate     = !empty($item['pub_date']) ? date('d.m.Y H:i', strtotime((string) $item['pub_date'])) : '';
-            $description = htmlspecialchars(mb_substr(strip_tags((string) ($item['description'] ?? '')), 0, 220));
+            $description = htmlspecialchars(cms_feed_substr(strip_tags((string) ($item['description'] ?? '')), 0, 220));
             $border      = $index > 0 ? 'border-top:1px solid #e2e8f0;' : '';
             $meta        = trim($source . ($category !== '' ? ' · ' . $category : '') . ($pubDate !== '' ? ' · ' . $pubDate : ''));
 

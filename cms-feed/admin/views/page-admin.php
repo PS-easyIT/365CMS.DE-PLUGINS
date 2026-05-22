@@ -1,10 +1,13 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
 <?php
-$queueStats = CMS_Feed_Database::instance()->get_queue_stats();
-$healthSummary = CMS_Feed_Database::instance()->get_channel_health_summary();
-$attentionChannels = CMS_Feed_Database::instance()->get_attention_channels(6);
+$queueStats = $queueStats ?? ['pending' => 0, 'processing' => 0, 'done' => 0, 'failed' => 0, 'total' => 0];
+$healthSummary = $healthSummary ?? ['active' => 0, 'with_errors' => 0, 'never_fetched' => 0, 'overdue' => 0];
+$attentionChannels = $attentionChannels ?? [];
 $csrfEsc = htmlspecialchars((string) $csrf, ENT_QUOTES, 'UTF-8');
+$feedSubstr = static function (string $text, int $start, int $length): string {
+    return function_exists('cms_feed_substr') ? cms_feed_substr($text, $start, $length) : substr($text, $start, $length);
+};
 ?>
 
 <div class="feed-admin-shell-wrap">
@@ -581,7 +584,10 @@ elseif ($tab === 'items'):
     $itemPage   = max(1, (int)($_GET['page'] ?? 1));
     $perPage    = 25;
     $offset     = ($itemPage - 1) * $perPage;
-    $feedSearchQuery = sanitize_text_field((string) ($_GET['q'] ?? ''));
+    $rawFeedSearchQuery = (string) ($_GET['q'] ?? '');
+    $feedSearchQuery = function_exists('sanitize_text_field')
+        ? sanitize_text_field($rawFeedSearchQuery)
+        : trim(strip_tags($rawFeedSearchQuery));
     $escapedFeedSearchQuery = htmlspecialchars($feedSearchQuery, ENT_QUOTES, 'UTF-8');
     $itemFilter = ['include_hidden' => true];
     if (!empty($_GET['cat'])) $itemFilter['category_id'] = (int)$_GET['cat'];
@@ -635,7 +641,7 @@ elseif ($tab === 'items'):
                     <td class="feed-item-title-cell">
                                 <a href="<?php echo htmlspecialchars($item['link']); ?>" target="_blank" rel="noopener noreferrer"
                            class="feed-table-link">
-                            <?php echo htmlspecialchars(mb_substr($item['title'], 0, 80)); ?>
+                            <?php echo htmlspecialchars($feedSubstr((string) ($item['title'] ?? ''), 0, 80)); ?>
                         </a>
                         <?php if ((int)$item['is_featured']): ?>
                             <span class="feed-item-badge feed-item-badge--featured">⭐ Featured</span>

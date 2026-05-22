@@ -96,7 +96,7 @@ final class CMS_Feed_Public_Controller
         $page    = max(1, min(999, (int) ($_GET['page'] ?? 1)));
         $perPage = max(4, min(100, (int) ($s['per_page'] ?? 20)));
         $offset  = ($page - 1) * $perPage;
-        $search  = mb_substr(trim(strip_tags((string) ($_GET['q'] ?? ''))), 0, 120);
+        $search  = cms_feed_substr(trim(strip_tags((string) ($_GET['q'] ?? ''))), 0, 120);
 
         $filters = [];
         if ($search) {
@@ -132,7 +132,7 @@ final class CMS_Feed_Public_Controller
         $page    = max(1, min(999, (int) ($_GET['page'] ?? 1)));
         $perPage = max(4, min(100, (int) ($category['items_per_page'] ?: ($s['per_page'] ?? 20))));
         $offset  = ($page - 1) * $perPage;
-        $search  = mb_substr(trim(strip_tags((string) ($_GET['q'] ?? ''))), 0, 120);
+        $search  = cms_feed_substr(trim(strip_tags((string) ($_GET['q'] ?? ''))), 0, 120);
 
         $filters = ['category_id' => (int) $category['id']];
         if ($search) {

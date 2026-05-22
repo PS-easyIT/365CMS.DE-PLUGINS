@@ -70,9 +70,23 @@ final class CMS_Feed_Admin
 
     private function loadAdminMenu(): void
     {
-        $menu_file = ABSPATH . 'admin/partials/admin-menu.php';
-        if (file_exists($menu_file) && !function_exists('renderAdminLayoutStart')) {
-            require_once $menu_file;
+        if (function_exists('renderAdminLayoutStart') && function_exists('renderAdminLayoutEnd')) {
+            return;
+        }
+
+        $menuFiles = [
+            ABSPATH . 'includes/functions/admin-menu.php',
+            ABSPATH . 'CMS/includes/functions/admin-menu.php',
+            ABSPATH . 'admin/partials/admin-menu.php',
+        ];
+
+        foreach ($menuFiles as $menuFile) {
+            if (file_exists($menuFile)) {
+                require_once $menuFile;
+                if (function_exists('renderAdminLayoutStart')) {
+                    return;
+                }
+            }
         }
     }
 
@@ -106,7 +120,7 @@ final class CMS_Feed_Admin
     {
         $this->loadAdminMenu();
         if ($withLayout) {
-            renderAdminLayoutStart('Feeds', self::MENU_SLUG);
+            $this->render_layout_start();
         }
 
         $adminCss = CMS_FEED_PLUGIN_DIR . 'assets/css/feed-admin.css';
@@ -114,8 +128,19 @@ final class CMS_Feed_Admin
             echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_FEED_PLUGIN_URL . 'assets/css/feed-admin.css', ENT_QUOTES, 'UTF-8') . '?v=' . filemtime($adminCss) . '">' . "\n";
         }
 
-        $db   = CMS_Feed_Database::instance();
-        $sec  = \CMS\Security::instance();
+        try {
+            $db   = CMS_Feed_Database::instance();
+            $sec  = \CMS\Security::instance();
+        } catch (\Throwable $e) {
+            error_log('CMS Feed Admin: Bootstrap failed – ' . $e->getMessage());
+            $this->render_admin_failure('Die Feed-Administration konnte nicht initialisiert werden.', $e);
+            if ($withLayout) {
+                $this->render_layout_end();
+            }
+            return;
+        }
+
+        $schemaReady = true;
 
         $tab = (string) ($data['tab'] ?? ($_GET['tab'] ?? 'dashboard'));
         if (!in_array($tab, ['dashboard', 'channels', 'categories', 'catalog', 'items', 'digests', 'settings'], true)) {
@@ -126,15 +151,28 @@ final class CMS_Feed_Admin
         $error  = $data['error']  ?? null;
         $settingsSubTab = null;
 
+        try {
+            $db->ensure_schema();
+        } catch (\Throwable $e) {
+            $schemaReady = false;
+            $error = 'Feed-Datenbanktabellen konnten nicht vorbereitet werden. Bitte Migration/DB-Rechte prüfen.';
+            error_log('CMS Feed Admin: Schema preparation failed – ' . $e->getMessage());
+        }
+
         // ── POST-Verarbeitung (VOR Token-Generierung, damit das alte Token geprüft wird) ──
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-            if (!$sec->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'cms_feed_admin')) {
-                $error = 'Sicherheitscheck fehlgeschlagen.';
-            } else {
-                $result = $this->handle_post($tab);
-                $notice         = $result['notice'] ?? null;
-                $error          = $result['error']  ?? null;
-                $settingsSubTab = $result['stab']   ?? null;
+        if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+            try {
+                if (!$sec->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'cms_feed_admin')) {
+                    $error = 'Sicherheitscheck fehlgeschlagen.';
+                } else {
+                    $result = $this->handle_post($tab);
+                    $notice         = $result['notice'] ?? null;
+                    $error          = $result['error']  ?? null;
+                    $settingsSubTab = $result['stab']   ?? null;
+                }
+            } catch (\Throwable $e) {
+                $error = 'Die Aktion konnte nicht ausgeführt werden. Details wurden protokolliert.';
+                error_log('CMS Feed Admin: POST action failed – ' . $e->getMessage());
             }
         }
 
@@ -142,11 +180,30 @@ final class CMS_Feed_Admin
         $csrf = $sec->generateToken('cms_feed_admin');
 
         // ── Daten laden ───────────────────────────────────────────────
-        $settings   = $db->get_settings();
-        $categories = $db->get_categories();
-        $channels   = $db->get_channels();
-        $digests    = $db->get_digests();
-        $stats      = $db->get_stats();
+        $settings = [];
+        $categories = [];
+        $channels = [];
+        $digests = [];
+        $stats = $this->get_empty_stats();
+        $queueStats = $this->get_empty_queue_stats();
+        $healthSummary = $this->get_empty_health_summary();
+        $attentionChannels = [];
+
+        if ($schemaReady) {
+            try {
+                $settings = $db->get_settings();
+                $categories = $db->get_categories();
+                $channels = $db->get_channels();
+                $digests = $db->get_digests();
+                $stats = array_merge($stats, $db->get_stats());
+                $queueStats = array_merge($queueStats, $db->get_queue_stats());
+                $healthSummary = array_merge($healthSummary, $db->get_channel_health_summary());
+                $attentionChannels = $db->get_attention_channels(6);
+            } catch (\Throwable $e) {
+                $error = 'Feed-Daten konnten nicht geladen werden. Details wurden protokolliert.';
+                error_log('CMS Feed Admin: Loading admin data failed – ' . $e->getMessage());
+            }
+        }
 
         // ── Tabs definieren ───────────────────────────────────────────
         $tabs = [
@@ -159,11 +216,107 @@ final class CMS_Feed_Admin
             'settings'   => '⚙️ Einstellungen',
         ];
 
-        include CMS_FEED_PLUGIN_DIR . 'admin/views/page-admin.php';
+        $bufferLevel = ob_get_level();
+        ob_start();
+        try {
+            include CMS_FEED_PLUGIN_DIR . 'admin/views/page-admin.php';
+            echo ob_get_clean();
+        } catch (\Throwable $e) {
+            while (ob_get_level() > $bufferLevel) {
+                ob_end_clean();
+            }
+            error_log('CMS Feed Admin: View rendering failed – ' . $e->getMessage());
+            $this->render_admin_failure('Die Feed-Ansicht konnte nicht geladen werden.', $e);
+        }
 
         if ($withLayout) {
-            renderAdminLayoutEnd();
+            $this->render_layout_end();
         }
+    }
+
+    private function render_layout_start(): void
+    {
+        try {
+            if (function_exists('renderAdminLayoutStart')) {
+                renderAdminLayoutStart('Feeds', self::MENU_SLUG);
+                return;
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS Feed Admin: Layout start failed – ' . $e->getMessage());
+        }
+
+        echo '<main class="admin-content">';
+    }
+
+    private function render_layout_end(): void
+    {
+        try {
+            if (function_exists('renderAdminLayoutEnd')) {
+                renderAdminLayoutEnd();
+                return;
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS Feed Admin: Layout end failed – ' . $e->getMessage());
+        }
+
+        echo '</main>';
+    }
+
+    private function render_admin_failure(string $message, \Throwable $exception): void
+    {
+        unset($exception);
+        ?>
+        <div class="feed-admin-shell-wrap">
+            <div class="admin-page-header">
+                <div>
+                    <h2>📡 RSS-Feed-Aggregator</h2>
+                    <p>Die Admin-Seite wurde mit einem sicheren Fallback geöffnet.</p>
+                </div>
+            </div>
+            <div class="alert alert-error">
+                ❌ <?php echo htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?> Details wurden im PHP-Error-Log protokolliert.
+            </div>
+            <div class="admin-card feed-admin-shell">
+                <h3>🛠️ Diagnose</h3>
+                <p>Bitte prüfe Datenbank-Migrationen, Tabellenrechte und den letzten Eintrag im PHP-Error-Log.</p>
+            </div>
+        </div>
+        <?php
+    }
+
+    private function get_empty_stats(): array
+    {
+        return [
+            'categories' => 0,
+            'channels' => 0,
+            'channels_active' => 0,
+            'items' => 0,
+            'items_today' => 0,
+            'digests' => 0,
+            'member_subscriptions' => 0,
+            'channels_errors' => 0,
+        ];
+    }
+
+    private function get_empty_queue_stats(): array
+    {
+        return [
+            'pending' => 0,
+            'processing' => 0,
+            'done' => 0,
+            'failed' => 0,
+            'total' => 0,
+        ];
+    }
+
+    private function get_empty_health_summary(): array
+    {
+        return [
+            'active' => 0,
+            'with_errors' => 0,
+            'never_fetched' => 0,
+            'overdue' => 0,
+        ];
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -268,7 +421,7 @@ final class CMS_Feed_Admin
             'name'           => $name,
             'slug'           => $slug,
             'description'    => sanitize_text_field($_POST['cat_description'] ?? ''),
-            'icon'           => mb_substr(trim($_POST['cat_icon'] ?? '📰'), 0, 10),
+            'icon'           => cms_feed_substr(trim((string) ($_POST['cat_icon'] ?? '📰')), 0, 10),
             'is_public'      => !empty($_POST['cat_is_public']) ? 1 : 0,
             'sort_order'     => (int) ($_POST['cat_sort_order'] ?? 0),
             'layout'         => in_array($_POST['cat_layout'] ?? '', ['grid', 'list', 'magazine'], true) ? $_POST['cat_layout'] : 'grid',
