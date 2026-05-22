@@ -8,6 +8,31 @@ $csrfEsc = htmlspecialchars((string) $csrf, ENT_QUOTES, 'UTF-8');
 $feedSubstr = static function (string $text, int $start, int $length): string {
     return function_exists('cms_feed_substr') ? cms_feed_substr($text, $start, $length) : substr($text, $start, $length);
 };
+$feedAdminDateTime = static function (mixed $value, string $fallback = '—'): string {
+    if (!is_scalar($value)) {
+        return $fallback;
+    }
+
+    $raw = trim((string) $value);
+    if ($raw === '') {
+        return $fallback;
+    }
+
+    $timestamp = strtotime($raw);
+    if ($timestamp === false) {
+        return $fallback;
+    }
+
+    return date('d.m.Y H:i', $timestamp);
+};
+$feedGetString = static function (string $key, string $default = ''): string {
+    $value = $_GET[$key] ?? $default;
+    return is_scalar($value) ? (string) $value : $default;
+};
+$feedGetInt = static function (string $key, int $default = 0): int {
+    $value = $_GET[$key] ?? $default;
+    return is_scalar($value) ? (int) $value : $default;
+};
 ?>
 
 <div class="feed-admin-shell-wrap">
@@ -50,7 +75,7 @@ $feedSubstr = static function (string $text, int $start, int $length): string {
        class="feed-tab<?php echo $tab === $key ? ' active' : ''; ?>">
         <?php echo htmlspecialchars($label); ?>
         <?php if ($key === 'channels' && ($stats['channels_errors'] ?? 0) > 0): ?>
-            <span class="feed-tab-badge"><?php echo $stats['channels_errors']; ?></span>
+            <span class="feed-tab-badge"><?php echo (int) ($stats['channels_errors'] ?? 0); ?></span>
         <?php endif; ?>
     </a>
     <?php endforeach; ?>
@@ -76,38 +101,38 @@ if ($tab === 'dashboard'):
     <div class="dashboard-grid">
         <div class="stat-card">
             <div class="stat-icon">📁</div>
-            <div class="stat-number"><?php echo number_format($stats['categories'] ?? 0); ?></div>
+            <div class="stat-number"><?php echo number_format((int) ($stats['categories'] ?? 0)); ?></div>
             <div class="stat-label">Bereiche</div>
         </div>
         <div class="stat-card">
             <div class="stat-icon">📡</div>
-            <div class="stat-number"><?php echo number_format($stats['channels'] ?? 0); ?></div>
-            <div class="stat-label">Kanäle (<?php echo $stats['channels_active'] ?? 0; ?> aktiv)</div>
+            <div class="stat-number"><?php echo number_format((int) ($stats['channels'] ?? 0)); ?></div>
+            <div class="stat-label">Kanäle (<?php echo (int) ($stats['channels_active'] ?? 0); ?> aktiv)</div>
         </div>
         <div class="stat-card">
             <div class="stat-icon">📰</div>
-            <div class="stat-number"><?php echo number_format($stats['items'] ?? 0); ?></div>
+            <div class="stat-number"><?php echo number_format((int) ($stats['items'] ?? 0)); ?></div>
             <div class="stat-label">Beiträge gesamt</div>
         </div>
         <div class="stat-card">
             <div class="stat-icon">🆕</div>
-            <div class="stat-number"><?php echo number_format($stats['items_today'] ?? 0); ?></div>
+            <div class="stat-number"><?php echo number_format((int) ($stats['items_today'] ?? 0)); ?></div>
             <div class="stat-label">Heute neu</div>
         </div>
         <div class="stat-card">
             <div class="stat-icon">📧</div>
-            <div class="stat-number"><?php echo number_format($stats['digests'] ?? 0); ?></div>
+            <div class="stat-number"><?php echo number_format((int) ($stats['digests'] ?? 0)); ?></div>
             <div class="stat-label">Aktive Digests</div>
         </div>
         <div class="stat-card">
             <div class="stat-icon">👥</div>
-            <div class="stat-number"><?php echo number_format($stats['member_subscriptions'] ?? 0); ?></div>
+            <div class="stat-number"><?php echo number_format((int) ($stats['member_subscriptions'] ?? 0)); ?></div>
             <div class="stat-label">Member-Feed-Abos</div>
         </div>
         <?php if (($stats['channels_errors'] ?? 0) > 0): ?>
         <div class="stat-card feed-stat-card--danger">
             <div class="stat-icon">⚠️</div>
-            <div class="stat-number feed-stat-number--danger"><?php echo $stats['channels_errors']; ?></div>
+            <div class="stat-number feed-stat-number--danger"><?php echo (int) ($stats['channels_errors'] ?? 0); ?></div>
             <div class="stat-label">Kanäle mit Fehlern</div>
         </div>
         <?php endif; ?>
@@ -227,7 +252,7 @@ if ($tab === 'dashboard'):
                 <strong><?php echo htmlspecialchars($ch['name']); ?>:</strong>
                 <?php echo htmlspecialchars($ch['last_error']); ?>
                 <span class="feed-meta-inline">
-                    <?php echo $ch['last_fetched_at'] ? date('d.m.Y H:i', strtotime($ch['last_fetched_at'])) : 'Nie'; ?>
+                    <?php echo $feedAdminDateTime($ch['last_fetched_at'] ?? '', 'Nie'); ?>
                 </span>
             </div>
             <?php endforeach; ?>
@@ -245,7 +270,7 @@ if ($tab === 'dashboard'):
                     $statusLabel = $hasError ? 'Fehler' : ($neverFetched ? 'Noch nie abgerufen' : 'Überfällig');
                     $metaText = $neverFetched
                         ? 'Noch kein Abruf protokolliert'
-                        : ('Letzter Abruf vor ' . number_format(max(0, $minutesSinceFetch ?? 0)) . ' Min.');
+                        : ('Letzter Abruf vor ' . number_format((int) max(0, $minutesSinceFetch ?? 0)) . ' Min.');
                 ?>
                 <div class="alert <?php echo $hasError ? 'alert-error' : 'feed-admin-note feed-admin-note--soft'; ?> feed-alert-compact">
                     <strong><?php echo htmlspecialchars((string) ($ch['name'] ?? 'Kanal')); ?></strong>
@@ -334,7 +359,7 @@ elseif ($tab === 'channels'):
                     <td><?php echo (int)$ch['fetch_interval']; ?> min</td>
                     <td>
                         <?php if ($ch['last_fetched_at']): ?>
-                            <?php echo date('d.m.Y H:i', strtotime($ch['last_fetched_at'])); ?>
+                            <?php echo $feedAdminDateTime($ch['last_fetched_at'], 'Nie'); ?>
                         <?php else: ?>
                             <span class="feed-text-muted">Nie</span>
                         <?php endif; ?>
@@ -581,17 +606,19 @@ elseif ($tab === 'catalog'):
 // TAB: Beiträge
 // ══════════════════════════════════════════════════════════════════════
 elseif ($tab === 'items'):
-    $itemPage   = max(1, (int)($_GET['page'] ?? 1));
+    $itemPage   = max(1, $feedGetInt('page', 1));
     $perPage    = 25;
     $offset     = ($itemPage - 1) * $perPage;
-    $rawFeedSearchQuery = (string) ($_GET['q'] ?? '');
+    $selectedCategoryId = $feedGetInt('cat');
+    $selectedChannelId  = $feedGetInt('ch');
+    $rawFeedSearchQuery = $feedGetString('q');
     $feedSearchQuery = function_exists('sanitize_text_field')
         ? sanitize_text_field($rawFeedSearchQuery)
         : trim(strip_tags($rawFeedSearchQuery));
     $escapedFeedSearchQuery = htmlspecialchars($feedSearchQuery, ENT_QUOTES, 'UTF-8');
     $itemFilter = ['include_hidden' => true];
-    if (!empty($_GET['cat'])) $itemFilter['category_id'] = (int)$_GET['cat'];
-    if (!empty($_GET['ch']))  $itemFilter['channel_id']  = (int)$_GET['ch'];
+    if ($selectedCategoryId > 0) $itemFilter['category_id'] = $selectedCategoryId;
+    if ($selectedChannelId > 0)  $itemFilter['channel_id']  = $selectedChannelId;
     if ($feedSearchQuery !== '') $itemFilter['search'] = $feedSearchQuery;
     $totalItems = $db->count_items($itemFilter);
     $safeTotalItems = max(0, (int) $totalItems);
@@ -606,7 +633,7 @@ elseif ($tab === 'items'):
         <select name="cat" class="form-control feed-input-narrow">
             <option value="">Alle Bereiche</option>
             <?php foreach ($categories as $cat): ?>
-            <option value="<?php echo (int)$cat['id']; ?>" <?php echo ((int)($_GET['cat'] ?? 0)) === (int)$cat['id'] ? 'selected' : ''; ?>>
+            <option value="<?php echo (int)$cat['id']; ?>" <?php echo $selectedCategoryId === (int)$cat['id'] ? 'selected' : ''; ?>>
                 <?php echo htmlspecialchars($cat['name']); ?>
             </option>
             <?php endforeach; ?>
@@ -652,7 +679,7 @@ elseif ($tab === 'items'):
                     </td>
                     <td class="feed-item-meta-cell"><?php echo htmlspecialchars($item['channel_name'] ?? ''); ?></td>
                     <td class="feed-item-meta-cell"><?php echo htmlspecialchars($item['category_name'] ?? ''); ?></td>
-                    <td class="feed-item-meta-cell"><?php echo date('d.m.Y H:i', strtotime($item['pub_date'])); ?></td>
+                    <td class="feed-item-meta-cell"><?php echo $feedAdminDateTime($item['pub_date'] ?? ''); ?></td>
                     <td>
                         <div class="feed-table-actions feed-table-actions--tight">
                             <form method="POST" class="feed-inline-form">
@@ -684,13 +711,13 @@ elseif ($tab === 'items'):
     <?php if ($totalPages > 1): ?>
     <div class="feed-pagination">
         <?php if ($itemPage > 1): ?>
-            <a href="?tab=items&page=<?php echo $itemPage - 1; ?>&cat=<?php echo (int)($_GET['cat'] ?? 0); ?>&q=<?php echo urlencode($_GET['q'] ?? ''); ?>" class="btn btn-secondary btn-sm">← Zurück</a>
+            <a href="?tab=items&page=<?php echo $itemPage - 1; ?>&cat=<?php echo $selectedCategoryId; ?>&q=<?php echo rawurlencode($feedSearchQuery); ?>" class="btn btn-secondary btn-sm">← Zurück</a>
         <?php endif; ?>
         <span class="feed-pagination__meta">
             Seite <?php echo $itemPage; ?> von <?php echo $totalPages; ?>
         </span>
         <?php if ($itemPage < $totalPages): ?>
-            <a href="?tab=items&page=<?php echo $itemPage + 1; ?>&cat=<?php echo (int)($_GET['cat'] ?? 0); ?>&q=<?php echo urlencode($_GET['q'] ?? ''); ?>" class="btn btn-secondary btn-sm">Weiter →</a>
+            <a href="?tab=items&page=<?php echo $itemPage + 1; ?>&cat=<?php echo $selectedCategoryId; ?>&q=<?php echo rawurlencode($feedSearchQuery); ?>" class="btn btn-secondary btn-sm">Weiter →</a>
         <?php endif; ?>
     </div>
     <?php endif; ?>
@@ -753,7 +780,7 @@ elseif ($tab === 'digests'):
                     <td><?php echo $mailer->get_frequency_label((int)$dg['frequency']); ?></td>
                     <td>
                         <?php if ($dg['last_sent_at']): ?>
-                            <?php echo date('d.m.Y H:i', strtotime($dg['last_sent_at'])); ?>
+                            <?php echo $feedAdminDateTime($dg['last_sent_at']); ?>
                         <?php else: ?>
                             <span class="feed-text-muted">Noch nie</span>
                         <?php endif; ?>
@@ -824,7 +851,10 @@ elseif ($tab === 'digests'):
 // TAB: Einstellungen
 // ══════════════════════════════════════════════════════════════════════
 elseif ($tab === 'settings'):
-    $settingsTab = $settingsSubTab ?? ($_GET['stab'] ?? 'general');
+    $settingsTab = $settingsSubTab ?? $feedGetString('stab', 'general');
+    if (!in_array($settingsTab, ['general', 'design', 'system'], true)) {
+        $settingsTab = 'general';
+    }
 ?>
     <div class="feed-settings-overview">
         <div class="feed-info-card">
@@ -1302,38 +1332,47 @@ elseif ($tab === 'settings'):
     </div>
 </div>
 
-<textarea id="feed-channels-data" class="feed-data-payload" hidden><?php echo htmlspecialchars(json_encode(array_map(fn($c) => [
-    'id'             => (int)$c['id'],
-    'name'           => $c['name'],
-    'feed_url'       => $c['feed_url'],
-    'site_url'       => $c['site_url'] ?? '',
-    'category_id'    => (int)$c['category_id'],
-    'description'    => $c['description'] ?? '',
-    'fetch_interval' => (int)$c['fetch_interval'],
-    'max_items'      => (int)$c['max_items'],
-    'is_active'      => (int)$c['is_active'],
-], $channels)), ENT_QUOTES); ?></textarea>
+<?php
+$feedJsonFlags = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR;
+$feedChannelsJson = json_encode(array_map(fn($c) => [
+    'id'             => (int)($c['id'] ?? 0),
+    'name'           => (string)($c['name'] ?? ''),
+    'feed_url'       => (string)($c['feed_url'] ?? ''),
+    'site_url'       => (string)($c['site_url'] ?? ''),
+    'category_id'    => (int)($c['category_id'] ?? 0),
+    'description'    => (string)($c['description'] ?? ''),
+    'fetch_interval' => (int)($c['fetch_interval'] ?? 60),
+    'max_items'      => (int)($c['max_items'] ?? 10),
+    'is_active'      => (int)($c['is_active'] ?? 0),
+], $channels), $feedJsonFlags);
+$feedCategoriesJson = json_encode(array_map(fn($c) => [
+    'id'             => (int)($c['id'] ?? 0),
+    'name'           => (string)($c['name'] ?? ''),
+    'slug'           => (string)($c['slug'] ?? ''),
+    'description'    => (string)($c['description'] ?? ''),
+    'icon'           => (string)($c['icon'] ?? '📰'),
+    'is_public'      => (int)($c['is_public'] ?? 0),
+    'sort_order'     => (int)($c['sort_order'] ?? 0),
+    'layout'         => (string)($c['layout'] ?? 'grid'),
+    'items_per_page' => (int)($c['items_per_page'] ?? 20),
+], $categories), $feedJsonFlags);
+$feedDigestsJson = json_encode(array_map(fn($d) => [
+    'id'           => (int)($d['id'] ?? 0),
+    'name'         => (string)($d['name'] ?? ''),
+    'email'        => (string)($d['email'] ?? ''),
+    'category_ids' => json_decode((string)($d['category_ids'] ?? '[]'), true) ?? [],
+    'frequency'    => (int)($d['frequency'] ?? 1),
+    'is_active'    => (int)($d['is_active'] ?? 0),
+], $digests), $feedJsonFlags);
+$feedChannelsJson = is_string($feedChannelsJson) ? $feedChannelsJson : '[]';
+$feedCategoriesJson = is_string($feedCategoriesJson) ? $feedCategoriesJson : '[]';
+$feedDigestsJson = is_string($feedDigestsJson) ? $feedDigestsJson : '[]';
+?>
+<textarea id="feed-channels-data" class="feed-data-payload" hidden><?php echo htmlspecialchars($feedChannelsJson, ENT_QUOTES, 'UTF-8'); ?></textarea>
 
-<textarea id="feed-categories-data" class="feed-data-payload" hidden><?php echo htmlspecialchars(json_encode(array_map(fn($c) => [
-    'id'             => (int)$c['id'],
-    'name'           => $c['name'],
-    'slug'           => $c['slug'],
-    'description'    => $c['description'] ?? '',
-    'icon'           => $c['icon'] ?? '📰',
-    'is_public'      => (int)$c['is_public'],
-    'sort_order'     => (int)$c['sort_order'],
-    'layout'         => $c['layout'] ?? 'grid',
-    'items_per_page' => (int)$c['items_per_page'],
-], $categories)), ENT_QUOTES); ?></textarea>
+<textarea id="feed-categories-data" class="feed-data-payload" hidden><?php echo htmlspecialchars($feedCategoriesJson, ENT_QUOTES, 'UTF-8'); ?></textarea>
 
-<textarea id="feed-digests-data" class="feed-data-payload" hidden><?php echo htmlspecialchars(json_encode(array_map(fn($d) => [
-    'id'           => (int)$d['id'],
-    'name'         => $d['name'],
-    'email'        => $d['email'],
-    'category_ids' => json_decode($d['category_ids'] ?? '[]', true) ?? [],
-    'frequency'    => (int)$d['frequency'],
-    'is_active'    => (int)$d['is_active'],
-], $digests)), ENT_QUOTES); ?></textarea>
+<textarea id="feed-digests-data" class="feed-data-payload" hidden><?php echo htmlspecialchars($feedDigestsJson, ENT_QUOTES, 'UTF-8'); ?></textarea>
 
 
 

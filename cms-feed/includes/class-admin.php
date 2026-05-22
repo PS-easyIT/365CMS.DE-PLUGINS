@@ -92,7 +92,7 @@ final class CMS_Feed_Admin
 
     public function add_menu_item(array $menuItems): array
     {
-        $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
         $isActive    = str_starts_with($currentPath, '/admin/feeds');
 
         $menuItems[] = [
@@ -142,7 +142,8 @@ final class CMS_Feed_Admin
 
         $schemaReady = true;
 
-        $tab = (string) ($data['tab'] ?? ($_GET['tab'] ?? 'dashboard'));
+        $rawTab = $data['tab'] ?? ($_GET['tab'] ?? 'dashboard');
+        $tab = is_scalar($rawTab) ? (string) $rawTab : 'dashboard';
         if (!in_array($tab, ['dashboard', 'channels', 'categories', 'catalog', 'items', 'digests', 'settings'], true)) {
             $tab = 'dashboard';
         }

@@ -4,6 +4,17 @@ Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
 ---
 
+## [3.0.2] – 2026-05-22
+
+### Behoben
+- **Admin-500er unter PHP 8.4 beseitigt** – Feed-Admin-Zahlen, Datumswerte und Query-Parameter werden jetzt typisiert bzw. arraysicher normalisiert, bevor sie an strikte PHP-Formatter wie `number_format()`, `date()` oder `rawurlencode()` übergeben werden.
+- **Menüintegration robuster** – Der Admin-Menüpfad fällt bei `parse_url()`-Randfällen sauber auf einen leeren String zurück, statt bei `str_starts_with()` einen TypeError zu riskieren.
+
+### Technisch
+- Besonders relevant nach dem letzten Security-Hardening: manipulierte oder unerwartet strukturierte Query-Parameter wie `q[]`, `cat[]`, `page[]` oder `stab[]` können die Feed-Admin-View nicht mehr aus dem Tritt bringen.
+
+---
+
 ## [3.0.1] – 2026-05-17
 
 ### Geändert
