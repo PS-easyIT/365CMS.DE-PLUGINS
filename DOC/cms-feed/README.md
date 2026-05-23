@@ -2,6 +2,13 @@
 
 > Plugin für 365CMS zum Sammeln, Anzeigen und Versenden von RSS-Feeds.
 
+## Aktueller Stand
+
+- Version: `3.0.2`
+- Release: `2026-05-22`
+- Kompatibilität laut Manifest: `365CMS >= 3.0.0`, `PHP >= 8.4`
+- Aktueller Fix-Schwerpunkt: Feed-Admin-Views sind gegen PHP-8.4-TypeErrors bei Zahlen, Datumswerten, Query-Parametern und JSON-Payloads gehärtet.
+
 ## Features
 
 - **RSS-Feed-Sammlung** – Unterstützt RSS 2.0, RSS 1.0 (RDF) und Atom-Feeds
@@ -31,7 +38,7 @@
 
 ```
 cms-feed/
-├── cms-feed.php                    # Hauptdatei (v1.3.6)
+├── cms-feed.php                    # Hauptdatei (v3.0.2)
 ├── update.json                     # Plugin-Manifest
 ├── includes/
 │   ├── class-database.php          # DB-Tabellen + CRUD (659 Zeilen)
@@ -92,11 +99,12 @@ cms-feed/
 - Bereits eingereihte Queue-Tasks werden zusätzlich bei jedem regulären `task=all`-/`task=mail-queue`-Cron-Lauf in kleinen Batches weiter abgearbeitet, damit Rückstaus zwischen zwei Stundenläufen nicht stehen bleiben
 - Feed-Digests und Member-Abo-Mails nutzen den zentralen MailService bzw. die Mail-Queue statt direktem `mail()`, damit SMTP/OAuth-Konfiguration, Retry-Backoff und Mail-Logs greifen
 - Feed-Beiträge älter als 7 Tage werden stündlich automatisch bereinigt
+- Seit `3.0.2` normalisiert die Admin-View gemischte Datenbank- und Query-Werte vor strikten PHP-8.4-Formatter-Aufrufen (`number_format()`, `date()`, `rawurlencode()`), damit manipulierte Parameter wie `q[]`, `cat[]`, `page[]` oder defekte UTF-8-Payloads keinen 500er im Feed-Admin mehr auslösen.
 
 ## Systemanforderungen
 
-- 365CMS ≥ 0.20.0
-- PHP ≥ 8.1
+- 365CMS ≥ 3.0.0
+- PHP ≥ 8.4
 - MySQL/MariaDB mit InnoDB
 - `allow_url_fopen` oder cURL
 
