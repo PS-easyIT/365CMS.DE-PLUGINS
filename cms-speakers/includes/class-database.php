@@ -296,10 +296,13 @@ final class CMS_Speakers_Database
         $db = CMS\Database::instance();
         $p  = $db->prefix();
         try {
+            $hasCompanies = $this->table_exists($p . 'companies');
+            $companySelect = $hasCompanies ? ', c.name AS company_linked_name' : ', NULL AS company_linked_name';
+            $companyJoin = $hasCompanies ? "LEFT JOIN {$p}companies c ON s.company_id = c.id" : '';
             $stmt = $db->prepare("
-                SELECT s.*, c.name AS company_linked_name
+                SELECT s.*{$companySelect}
                 FROM {$p}speakers s
-                LEFT JOIN {$p}companies c ON s.company_id = c.id
+                {$companyJoin}
                 WHERE s.id = ? LIMIT 1");
             $stmt->execute([$id]);
             return $stmt->fetch() ?: null;
@@ -363,11 +366,14 @@ final class CMS_Speakers_Database
             $limit    = $this->normalizeLimit($args['limit'] ?? 12, 12);
             $offset   = $this->normalizeOffset($args['offset'] ?? 0);
             $orderBy  = $this->normalizeOrder($args['order'] ?? 's.created_at DESC');
+            $hasCompanies = $this->table_exists($p . 'companies');
+            $companySelect = $hasCompanies ? ', c.name AS company_linked_name' : ', NULL AS company_linked_name';
+            $companyJoin = $hasCompanies ? "LEFT JOIN {$p}companies c ON s.company_id = c.id" : '';
 
             $stmt = $db->prepare(
-                "SELECT s.*, c.name AS company_linked_name
+                "SELECT s.*{$companySelect}
                  FROM {$p}speakers s
-                 LEFT JOIN {$p}companies c ON s.company_id = c.id
+                 {$companyJoin}
                  WHERE {$whereStr}
                  ORDER BY {$orderBy}
                  LIMIT {$limit} OFFSET {$offset}"
@@ -464,13 +470,20 @@ final class CMS_Speakers_Database
                 $set = implode(', ', array_map(fn($k) => "`{$k}` = ?", array_keys($data)));
                 $stmt = $db->prepare("UPDATE {$p}speakers SET {$set} WHERE id = ?");
                 $stmt->execute([...array_values($data), $dataId]);
+                if (class_exists('CMS\\Hooks')) {
+                    CMS\Hooks::doAction('speaker_updated', $dataId, $data);
+                }
                 return $dataId;
             } else {
                 $keys   = implode(', ', array_map(fn($k) => "`{$k}`", array_keys($data)));
                 $places = implode(', ', array_fill(0, count($data), '?'));
                 $stmt   = $db->prepare("INSERT INTO {$p}speakers ({$keys}) VALUES ({$places})");
                 $stmt->execute(array_values($data));
-                return (int)$db->getPdo()->lastInsertId();
+                $newId = (int)$db->getPdo()->lastInsertId();
+                if (class_exists('CMS\\Hooks')) {
+                    CMS\Hooks::doAction('speaker_created', $newId, $data);
+                }
+                return $newId;
             }
         } catch (\Throwable $e) {
             error_log('CMS_Speakers save_speaker: ' . $e->getMessage());
@@ -553,11 +566,14 @@ final class CMS_Speakers_Database
             $where = 'se.speaker_id = ?';
             $params = [$speaker_id];
             if ($public_only) { $where .= ' AND se.is_public = 1'; }
+            $hasCompanies = $this->table_exists($p . 'companies');
+            $companySelect = $hasCompanies ? ', c.name AS company_name, c.logo_url AS company_logo' : ', NULL AS company_name, NULL AS company_logo';
+            $companyJoin = $hasCompanies ? "LEFT JOIN {$p}companies c ON se.company_id = c.id AND se.organizer_type = 'company'" : '';
 
             $stmt = $db->prepare(
-                "SELECT se.*, c.name AS company_name, c.logo_url AS company_logo
+                "SELECT se.*{$companySelect}
                  FROM {$p}speaker_events se
-                 LEFT JOIN {$p}companies c ON se.company_id = c.id AND se.organizer_type = 'company'
+                 {$companyJoin}
                  WHERE {$where}
                  ORDER BY se.event_date DESC, se.created_at DESC"
             );
@@ -931,6 +947,10 @@ final class CMS_Speakers_Database
     {
         $db = CMS\Database::instance();
         try {
+            if (!$this->table_exists($db->prefix() . 'companies')) {
+                return [];
+            }
+
             $stmt = $db->prepare(
                 "SELECT id, name, location_city FROM {$db->prefix()}companies
                  WHERE status = 'active' ORDER BY name ASC"
@@ -945,6 +965,10 @@ final class CMS_Speakers_Database
     {
         $db = CMS\Database::instance();
         try {
+            if (!$this->table_exists($db->prefix() . 'events')) {
+                return [];
+            }
+
             $stmt = $db->prepare(
                 "SELECT id, title, event_date, location_city
                  FROM {$db->prefix()}events

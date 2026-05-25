@@ -843,6 +843,17 @@ final class CMS_Speakers_Meta_Boxes
             if (cDiv) cDiv.style.display = val === 'company' ? 'block' : 'none';
         }
 
+        function spkParseJsonResponse(response) {
+            return response.json().catch(function() {
+                throw new Error('Ungültige Serverantwort');
+            }).then(function(data) {
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || ('HTTP ' + response.status));
+                }
+                return data;
+            });
+        }
+
         function spkAddEvent() {
             var orgType = document.querySelector('[name=nev_org_type]:checked')?.value || 'manual';
             var fd = new FormData();
@@ -868,11 +879,10 @@ final class CMS_Speakers_Meta_Boxes
             if (document.getElementById('nev_public').checked) fd.append('is_public','1');
 
             fetch(SPK_URL + '/admin/speakers/event/add', { method: 'POST', body: fd })
-                .then(function(r){ return r.json(); })
+                .then(spkParseJsonResponse)
                 .then(function(d){
-                    if (d.success) { window.location.reload(); }
-                    else { alert('Fehler: ' + (d.error || 'Unbekannt')); }
-                }).catch(function(e){ alert('Netzwerkfehler: ' + e.message); });
+                    window.location.reload();
+                }).catch(function(e){ alert('Fehler: ' + e.message); });
         }
 
         function spkDeleteEvent(id) {
@@ -880,8 +890,8 @@ final class CMS_Speakers_Meta_Boxes
             var fd = new FormData();
             fd.append('csrf_token', SPK_CSRF_EVT);
             fetch(SPK_URL + '/admin/speakers/event/delete/' + id, { method: 'POST', body: fd })
-                .then(function(r){ return r.json(); })
-                .then(function(d){ if (d.success) { var row = document.querySelector('[data-id="'+id+'"]'); if(row) row.remove(); } })
+                .then(spkParseJsonResponse)
+                .then(function(d){ var row = document.querySelector('[data-id="'+id+'"]'); if(row) row.remove(); })
                 .catch(function(e){ alert('Fehler: ' + e.message); });
         }
         document.querySelectorAll('[data-spk-delete-event]').forEach(function(button) {

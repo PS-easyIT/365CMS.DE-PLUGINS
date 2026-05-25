@@ -28,11 +28,17 @@ final class CMS_Speakers_Post_Type
         $router->addRoute('GET',  '/admin/speakers',            [$this, 'admin_list']);
         $router->addRoute('GET',  '/admin/speakers/new',        [$this, 'admin_create']);
         $router->addRoute('GET',  '/admin/speakers/edit/:id',   [$this, 'admin_edit']);
+        $router->addRoute('GET',  '/admin/speakers/save',       [$this, 'admin_method_not_allowed']);
         $router->addRoute('POST', '/admin/speakers/save',       [$this, 'admin_save']);
+        $router->addRoute('GET',  '/admin/speakers/delete/:id', [$this, 'admin_method_not_allowed']);
         $router->addRoute('POST', '/admin/speakers/delete/:id', [$this, 'admin_delete']);
+        $router->addRoute('GET',  '/admin/speakers/approve/:id', [$this, 'admin_method_not_allowed']);
         $router->addRoute('POST', '/admin/speakers/approve/:id', [$this, 'admin_approve']);
+        $router->addRoute('GET',  '/admin/speakers/event/add',        [$this, 'admin_method_not_allowed']);
         $router->addRoute('POST', '/admin/speakers/event/add',        [$this, 'admin_event_add']);
+        $router->addRoute('GET',  '/admin/speakers/event/delete/:id', [$this, 'admin_method_not_allowed']);
         $router->addRoute('POST', '/admin/speakers/event/delete/:id', [$this, 'admin_event_delete']);
+        $router->addRoute('GET',  '/admin/speakers/settings/save',    [$this, 'admin_method_not_allowed']);
         $router->addRoute('POST', '/admin/speakers/settings/save',    [$this, 'admin_settings_save']);
     }
     public function add_menu_item(): void
@@ -43,6 +49,7 @@ final class CMS_Speakers_Post_Type
     }
     public function archive_page(): void
     {
+        try {
         $tm = \CMS\ThemeManager::instance();
         $tm->getHeader();
         $db = CMS_Speakers_Database::instance();
@@ -99,9 +106,13 @@ final class CMS_Speakers_Post_Type
             'filter_availability','filter_format','filter_city','filter_travel','search'
         ));
         $tm->getFooter();
+        } catch (\Throwable $e) {
+            $this->render_public_error($e, 'archive');
+        }
     }
     public function single_page_by_slug(string $slug = ''): void
     {
+        try {
         if ($slug === '') $slug = $_GET['slug'] ?? '';
         $speaker_id = 0;
         if (preg_match('/-?(\d+)$/', $slug, $m))  $speaker_id = (int)$m[1];
@@ -150,6 +161,9 @@ final class CMS_Speakers_Post_Type
         $tm->getHeader();
         CMS_Speakers_Template_Loader::instance()->render_template('single-speaker', compact('speaker','topics','events','settings'));
         $tm->getFooter();
+        } catch (\Throwable $e) {
+            $this->render_public_error($e, 'single');
+        }
     }
     /**
      * Holt Events aus cms_event_speakers JOIN cms_events (cms-events Plugin).
@@ -161,6 +175,7 @@ final class CMS_Speakers_Post_Type
             $p  = $db->prefix();
             $stmt = $db->prepare(
                 "SELECT
+                    e.id                                                  AS cms_event_id,
                     e.title                                               AS event_title,
                     e.event_date,
                     COALESCE(NULLIF(e.location,''), NULLIF(e.city,''))   AS event_location,
@@ -186,9 +201,9 @@ final class CMS_Speakers_Post_Type
     {
         $this->require_admin();
         $db     = CMS_Speakers_Database::instance();
-        $tab    = $_GET['tab']    ?? 'overview';
-        $filter = $_GET['filter'] ?? 'all';
-        $search = trim($_GET['search'] ?? '');
+        $tab    = $this->allow_value((string) ($_GET['tab'] ?? 'overview'), ['overview', 'topics', 'design', 'settings']) ?? 'overview';
+        $filter = $this->allow_value((string) ($_GET['filter'] ?? 'all'), ['all', 'featured', 'verified', 'available', 'pending']) ?? 'all';
+        $search = $this->clean_text((string) ($_GET['search'] ?? ''), 120);
         $args = ['limit' => 200, 'status' => null];
         if ($filter === 'featured')  $args['is_featured']  = 1;
         if ($filter === 'verified')  $args['is_verified']  = 1;
@@ -199,7 +214,8 @@ final class CMS_Speakers_Post_Type
         $settings  = $db->get_settings();
         $companies = $db->get_companies_for_select();
         $csrf      = CMS\Security::instance()->generateToken('speaker_settings');
-        CMS_Speakers_Admin::instance()->render_list(compact('speakers','tab','filter','search','settings','csrf','companies'));
+        $approve_csrf = CMS\Security::instance()->generateToken('approve_speaker');
+        CMS_Speakers_Admin::instance()->render_list(compact('speakers','tab','filter','search','settings','csrf','approve_csrf','companies'));
     }
     public function admin_create(): void
     {
@@ -313,7 +329,7 @@ final class CMS_Speakers_Post_Type
         $this->require_admin();
         $speaker_id  = $id_param !== '' ? (int)$id_param : (int)($_POST['id'] ?? 0);
         $csrf_token  = (string) ($_POST['csrf_token'] ?? '');
-        if (!CMS\Security::instance()->verifyToken($csrf_token, 'speaker_settings')) {
+        if (!CMS\Security::instance()->verifyToken($csrf_token, 'approve_speaker')) {
             CMS\Router::instance()->redirect('/admin/speakers?tab=overview&error=csrf');
             return;
         }
@@ -335,9 +351,9 @@ final class CMS_Speakers_Post_Type
     {
         $this->require_admin();
         if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'speaker_event')) {
-            $this->json_error('CSRF'); }
+            $this->json_error('CSRF', 403); }
         $sid = (int)($_POST['speaker_id'] ?? 0);
-        if ($sid <= 0) $this->json_error('Ungueltige ID');
+        if ($sid <= 0) $this->json_error('Ungueltige ID', 422);
         $d = [
             'event_title'    => $this->clean_text((string) ($_POST['event_title'] ?? ''), 300),
             'event_type'     => $this->allow_value((string) ($_POST['event_type'] ?? 'keynote'), ['keynote', 'workshop', 'panel', 'moderation', 'interview', 'webinar', 'conference', 'training', 'other']) ?: 'keynote',
@@ -359,19 +375,16 @@ final class CMS_Speakers_Post_Type
         ];
         // save_event erwartet speaker_id als ersten Parameter
         $ok = CMS_Speakers_Database::instance()->save_event($sid, $d);
-        header('Content-Type: application/json');
-        echo json_encode(['success' => $ok]);
-        exit;
+        $this->json_response(['success' => $ok !== false, 'id' => $ok !== false ? (int) $ok : null], $ok !== false ? 200 : 500);
     }
     public function admin_event_delete(int $id = 0): void
     {
         $this->require_admin();
-        if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'speaker_event')) $this->json_error('CSRF');
+        if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'speaker_event')) $this->json_error('CSRF', 403);
         if ($id <= 0) $id = (int)($_GET['id'] ?? 0);
-        if ($id > 0) CMS_Speakers_Database::instance()->delete_event($id);
-        header('Content-Type: application/json');
-        echo json_encode(['success' => true]);
-        exit;
+        if ($id <= 0) $this->json_error('Ungueltige ID', 422);
+        $deleted = CMS_Speakers_Database::instance()->delete_event($id);
+        $this->json_response(['success' => $deleted], $deleted ? 200 : 500);
     }
     public function admin_settings_save(): void
     {
@@ -424,9 +437,46 @@ final class CMS_Speakers_Post_Type
     {
         http_response_code(404);
         $tm = \CMS\ThemeManager::instance();
+        if (method_exists($tm, 'render')) {
+            try {
+                $tm->render('404');
+                return;
+            } catch (\Throwable) {
+                // Fallback unten ausgeben.
+            }
+        }
+
         $tm->getHeader();
         echo '<main class="phinit-plugin sp-not-found"><h1>404</h1><h2>Speaker nicht gefunden</h2><p>Dieser Speaker existiert nicht oder wurde gelöscht.</p><a href="' . htmlspecialchars(SITE_URL . '/speakers', ENT_QUOTES, 'UTF-8') . '" class="phinit-btn phinit-btn--primary">Zur Speaker-Übersicht</a></main>';
         $tm->getFooter();
+    }
+
+    private function render_public_error(\Throwable $e, string $context): void
+    {
+        error_log('CMS Speakers public ' . $context . ': ' . $e->getMessage());
+        http_response_code(500);
+
+        try {
+            $tm = \CMS\ThemeManager::instance();
+            if (method_exists($tm, 'render')) {
+                $tm->render('error', ['message' => 'Die Speaker-Seite konnte nicht geladen werden.']);
+                return;
+            }
+
+            $tm->getHeader();
+            echo '<main class="phinit-plugin sp-error"><h1>Fehler</h1><p>Die Speaker-Seite konnte nicht geladen werden.</p></main>';
+            $tm->getFooter();
+        } catch (\Throwable) {
+            echo '<main class="phinit-plugin sp-error"><h1>Fehler</h1><p>Die Speaker-Seite konnte nicht geladen werden.</p></main>';
+        }
+    }
+
+    public function admin_method_not_allowed(): void
+    {
+        $this->require_admin();
+        http_response_code(405);
+        header('Allow: POST');
+        echo '<div class="admin-card"><h2>Methode nicht erlaubt</h2><p>Diese Aktion muss per POST ausgeführt werden.</p></div>';
     }
 
     private function allow_value(string $value, array $allowed): ?string
@@ -507,11 +557,17 @@ final class CMS_Speakers_Post_Type
 
         return $this->clean_text($value, 255);
     }
-    private function json_error(string $msg): void
+    private function json_response(array $payload, int $status = 200): void
     {
-        header('Content-Type: application/json');
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => $msg]);
+        http_response_code($status);
+        header('Content-Type: application/json; charset=utf-8');
+        header('X-Content-Type-Options: nosniff');
+        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
+    }
+
+    private function json_error(string $msg, int $status = 400): void
+    {
+        $this->json_response(['success' => false, 'error' => $msg], $status);
     }
 }

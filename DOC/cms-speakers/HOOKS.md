@@ -9,29 +9,20 @@ CMS\Hooks::doAction('speaker_created', int $speaker_id, array $data);
 
 ### `speaker_updated`
 ```php
-CMS\Hooks::doAction('speaker_updated', int $speaker_id, array $new_data, array $old_data);
+CMS\Hooks::doAction('speaker_updated', int $speaker_id, array $data);
 ```
 
-### `speaker_deleted`
+### `cms_speakers_activated`
 ```php
-CMS\Hooks::doAction('speaker_deleted', int $speaker_id);
+CMS\Hooks::doAction('cms_speakers_activated');
 ```
 
-### `speaker_presentation_added`
-Ausgelöst wenn ein neuer Auftritt/Vortrag gespeichert wird.
+### `cms_speakers_deactivated`
 ```php
-CMS\Hooks::doAction('speaker_presentation_added', int $speaker_id, array $event_data);
+CMS\Hooks::doAction('cms_speakers_deactivated');
 ```
 
-### `speaker_topic_added`
-```php
-CMS\Hooks::doAction('speaker_topic_added', int $speaker_id, string $topic_name);
-```
-
-### `speaker_availability_changed`
-```php
-CMS\Hooks::doAction('speaker_availability_changed', int $speaker_id, string $old, string $new);
-```
+Weitere Event-/Topic-Hooks können bei Bedarf ergänzt werden; Version 3.0.3 feuert bewusst nur die oben genannten CRUD- und Lifecycle-Hooks.
 
 ---
 
@@ -73,7 +64,11 @@ CMS\Hooks::applyFilters('speaker_fee_display', string $formatted, float $min, fl
 |------|----------|-----------|
 | `cms_init` | `CMS_Speakers::init_plugin()` | 10 |
 | `plugin_activated` | `CMS_Speakers::on_activation()` | 10 |
+| `plugin_deactivated` | `CMS_Speakers::on_deactivation()` | 10 |
+| `plugin_uninstalled` | `CMS_Speakers::on_uninstall()` | 10 |
 | `head` | `CMS_Speakers::enqueue_styles()` | 10 |
 | `body_end` | `CMS_Speakers::enqueue_scripts()` | 10 |
-| `cms_admin_menu` | `CMS_Speakers_Admin::register_menu()` | 10 |
-| `cms_member_dashboard` | `CMS_Speakers_Member_Dashboard::render()` | 20 |
+| `register_routes` | `CMS_Speakers_Post_Type::register_routes()` | 10 |
+| `main_nav` | `CMS_Speakers_Post_Type::add_menu_item()` | 10 |
+| `cms_admin_menu` | `CMS_Speakers_Admin::register_admin_menu()` | 10 |
+| `member_dashboard_init` | `CMS_Speakers_Member_Dashboard::register()` | 10 |

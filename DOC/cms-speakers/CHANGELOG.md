@@ -1,5 +1,17 @@
 # CMS Speakers – Changelog
 
+## [3.0.3] – 2026-05-25
+
+### Geändert
+
+- **Bootstrap:** Hauptklasse und Konstanten sind redeclare-sicher; hook-registrierende Komponenten werden bereits bei verfügbarem `CMS\Hooks` geladen und nicht mehr von der DB-Verfügbarkeit blockiert.
+- **Admin-Menü:** Der Sidebar-Eintrag `speakers` lädt das Dashboard serverseitig und nutzt den Core-Helper `includes/functions/admin-menu.php` statt einer JS-Weiterleitung.
+- **DB-Migration:** Spaltenprüfungen laufen über `INFORMATION_SCHEMA.COLUMNS`; interpolierte `SHOW COLUMNS ... LIKE`-Queries wurden entfernt.
+- **Settings:** Plugin-Einstellungen nutzen primär `CMS\Services\SettingsService` mit Legacy-Fallback auf `cms_speaker_plugin_settings`.
+- **HTTP-Fehlerpfade:** POST-only Admin-Endpunkte besitzen 405-Fallbacks; AJAX-Endpunkte liefern Statuscodes, JSON und `X-Content-Type-Options: nosniff`.
+- **Public Errors:** Öffentliche Archive-/Detailrouten loggen Exceptions und rendern native/fallback Error-Seiten statt White-Screens.
+- **Uninstall:** `drop_tables()` entfernt Speaker-Tabellen und bereinigt die `cms-speakers`-Settings-Gruppe.
+
 ## [3.0.1] – 2026-05-18
 
 ### Geändert

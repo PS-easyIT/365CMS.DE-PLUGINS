@@ -108,14 +108,16 @@ final class CMS_Speakers_Shortcode
         }
 
         $db_manager = CMS_Speakers_Database::instance();
+        $allowedTravel = ['local', 'regional', 'national', 'international', 'worldwide'];
+        $limit = max(1, min(200, (int) $atts['limit']));
 
         $args = [
-            'limit'  => (int) $atts['limit'],
+            'limit'  => $limit,
             'offset' => 0,
         ];
 
-        if (!empty($atts['travel'])) {
-            $args['travel_radius'] = $atts['travel'];
+        if (!empty($atts['travel']) && in_array((string) $atts['travel'], $allowedTravel, true)) {
+            $args['travel_radius'] = (string) $atts['travel'];
         }
 
         if (!empty($atts['featured'])) {

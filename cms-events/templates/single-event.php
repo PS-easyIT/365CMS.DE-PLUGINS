@@ -1,257 +1,250 @@
-<?php declare(strict_types=1);
-
+<?php
 /**
- * Single Event Detail – Hero + Bridge + Speaker-Section
- * Layout analog zur Company-Detailseite.
- *
- * Verfügbare Variablen (via extract()):
- *   $event    – object
- *   $speakers – array
- *   $settings – array
+ * Single Event Template – Plugin-Content only for CMS-PHINIT.
  *
  * @package CMS_Events
  */
+
+declare(strict_types=1);
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-if (!isset($event)) {
+if (empty($event)) {
     return;
 }
 
-$settings = is_array($settings ?? null) ? $settings : [];
+if (!function_exists('cms_events_view_date_parts')) {
+    function cms_events_view_date_parts(?string $date): array
+    {
+        $timestamp = $date ? strtotime($date) : 0;
+        if (!$timestamp) {
+            return ['', '', '', '', ''];
+        }
 
-$e  = $event;
-$id = (int) $e->id;
+        $weekdays = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+        $monthsFull = [1 => 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+        $monthsShort = [1 => 'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+        $month = (int) date('n', $timestamp);
 
-$title       = htmlspecialchars($e->title ?? '', ENT_QUOTES, 'UTF-8');
-$category    = htmlspecialchars($e->category ?? '', ENT_QUOTES, 'UTF-8');
-$desc        = $e->description ?? '';
-$city        = htmlspecialchars($e->city ?? '', ENT_QUOTES, 'UTF-8');
-$address     = htmlspecialchars($e->address ?? '', ENT_QUOTES, 'UTF-8');
-$zip         = htmlspecialchars($e->zip ?? '', ENT_QUOTES, 'UTF-8');
-$country     = htmlspecialchars($e->country ?? '', ENT_QUOTES, 'UTF-8');
-$ev_date     = $e->event_date ?? '';
-$ev_time     = $e->event_time ?? '';
-$end_date    = $e->end_date ?? '';
-$end_time    = $e->end_time ?? '';
-$is_online   = !empty($e->is_online);
-$online_url  = function_exists('cms_events_public_url') ? cms_events_public_url($e->online_url ?? null) : '';
-$reg_url     = function_exists('cms_events_public_url') ? cms_events_public_url($e->registration_url ?? null) : '';
-$capacity    = (int)($e->capacity ?? 0);
-$status      = $e->status ?? 'published';
-$banner_url  = function_exists('cms_events_public_url') ? cms_events_public_url($e->banner_url ?? null) : '';
-$image_url   = function_exists('cms_events_public_url') ? cms_events_public_url($e->image_url ?? null) : '';
-$price_type  = $e->price_type ?? 'free';
-$price       = (float)($e->price ?? 0);
-$price_cur   = htmlspecialchars($e->price_currency ?? 'EUR', ENT_QUOTES, 'UTF-8');
-$tags_raw    = !empty($e->tags) ? (json_decode($e->tags, true) ?? []) : [];
-$org_name    = htmlspecialchars($e->organizer_name ?? '', ENT_QUOTES, 'UTF-8');
-$org_email   = filter_var(trim((string) ($e->organizer_email ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
-$org_phone   = preg_replace('/[^0-9+]/', '', trim((string) ($e->organizer_phone ?? ''))) ?: '';
-$org_website = function_exists('cms_events_public_url') ? cms_events_public_url($e->organizer_website ?? null) : '';
+        return [
+            date('d', $timestamp),
+            $monthsShort[$month] ?? date('M', $timestamp),
+            $weekdays[(int) date('w', $timestamp)] . ', ' . date('d', $timestamp) . '. ' . ($monthsFull[$month] ?? date('F', $timestamp)) . ' ' . date('Y', $timestamp),
+            date('Y-m-d', $timestamp),
+            date('Y', $timestamp),
+        ];
+    }
+}
 
-$show_price = !empty($settings['show_price']) && $settings['show_price'] !== '0';
-$show_tags  = !empty($settings['show_tags']) && $settings['show_tags'] !== '0';
+if (!function_exists('cms_events_view_price_label')) {
+    function cms_events_view_price_label(object $event): string
+    {
+        $priceType = (string) ($event->price_type ?? 'free');
+        $price = (float) ($event->price ?? 0);
+        $currency = trim((string) ($event->price_currency ?? 'EUR')) ?: 'EUR';
 
-$base_url    = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
-$archive_slug = preg_replace('/[^a-z0-9-]+/i', '-', (string) ($settings['archive_slug'] ?? 'events')) ?: 'events';
-$archive_url = $base_url . '/' . trim($archive_slug, '-') . '/';
+        if ($priceType === 'free' || $price <= 0) {
+            return 'Kostenlos';
+        }
 
-$ev_ts  = $ev_date ? strtotime($ev_date) : 0;
-$end_ts = $end_date ? strtotime($end_date) : 0;
+        return number_format($price, 2, ',', '.') . ' ' . htmlspecialchars($currency, ENT_QUOTES, 'UTF-8');
+    }
+}
 
-$speakers = $speakers ?? [];
+if (!function_exists('cms_events_view_public_url')) {
+    function cms_events_view_public_url(mixed $url): string
+    {
+        $url = trim((string) $url);
+        if ($url === '' || strlen($url) > 1000) {
+            return '';
+        }
+
+        if (str_starts_with($url, '/')) {
+            $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
+            return $baseUrl . '/' . ltrim($url, '/');
+        }
+
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host']) || !empty($parts['user']) || !empty($parts['pass'])) {
+            return '';
+        }
+
+        return in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true) ? $url : '';
+    }
+}
+
+$e = $event;
+$baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
+$titleRaw = trim((string) ($e->title ?? ''));
+$title = htmlspecialchars($titleRaw !== '' ? $titleRaw : 'Event', ENT_QUOTES, 'UTF-8');
+$categoryRaw = trim((string) ($e->category ?? ''));
+$category = htmlspecialchars($categoryRaw !== '' ? $categoryRaw : 'Event', ENT_QUOTES, 'UTF-8');
+$locationRaw = trim((string) ($e->location ?? ''));
+$cityRaw = trim((string) ($e->city ?? ''));
+$locationText = trim($locationRaw . ($locationRaw !== '' && $cityRaw !== '' ? ', ' : '') . $cityRaw);
+$imageUrl = cms_events_view_public_url($e->banner_url ?? $e->image_url ?? null);
+$registrationUrl = cms_events_view_public_url($e->registration_url ?? null);
+$onlineUrl = cms_events_view_public_url($e->online_url ?? null);
+[$day, $monthShort, $displayDate, $machineDate] = cms_events_view_date_parts((string) ($e->event_date ?? ''));
+$eventTime = trim((string) ($e->event_time ?? ''));
+$endTime = trim((string) ($e->end_time ?? ''));
+$timeLabel = $eventTime !== '' ? substr($eventTime, 0, 5) . ' Uhr' . ($endTime !== '' ? ' – ' . substr($endTime, 0, 5) . ' Uhr' : '') : '';
+$speakerList = (array) ($speakers ?? []);
+$primarySpeaker = $speakerList[0] ?? null;
+$capacity = max(0, (int) ($e->capacity ?? 0));
+$registered = max(0, (int) ($e->registered_count ?? $e->registrations_count ?? 0));
+$seatsLeft = $capacity > 0 ? max(0, $capacity - $registered) : 0;
+$progress = $capacity > 0 ? min(100, (int) round(($registered / $capacity) * 100)) : 0;
+$isFullyBooked = $capacity > 0 && $seatsLeft <= 0;
+$eventUrl = function_exists('cms_event_url') ? cms_event_url($e) : $baseUrl . '/events/' . (int) ($e->id ?? 0);
+$shareUrl = $eventUrl;
+$description = trim((string) ($e->description ?? $e->excerpt ?? ''));
+$tags = !empty($e->tags) ? (json_decode((string) $e->tags, true) ?: []) : [];
+$relatedEvents = [];
+
+if (class_exists('CMS_Events_Database') && method_exists('CMS_Events_Database', 'instance')) {
+    $database = CMS_Events_Database::instance();
+    if (method_exists($database, 'get_events')) {
+        $relatedArgs = ['status' => 'published', 'upcoming' => true, 'limit' => 4];
+        if ($categoryRaw !== '') {
+            $relatedArgs['category'] = $categoryRaw;
+        }
+        $relatedEvents = array_values(array_filter($database->get_events($relatedArgs), static fn(object $item): bool => (int) ($item->id ?? 0) !== (int) ($e->id ?? 0)));
+        $relatedEvents = array_slice($relatedEvents, 0, 3);
+    }
+}
 ?>
-<main class="phinit-plugin ev-single-v2">
+<main class="phinit-plugin cms-events-wrap cms-events-detail">
+    <nav class="cms-events-breadcrumb" aria-label="Breadcrumb">
+        <a href="<?= htmlspecialchars($baseUrl . '/', ENT_QUOTES, 'UTF-8') ?>">Home</a>
+        <span aria-hidden="true">›</span>
+        <a href="<?= htmlspecialchars($baseUrl . '/events/', ENT_QUOTES, 'UTF-8') ?>">Veranstaltungen</a>
+        <span aria-hidden="true">›</span>
+        <span aria-current="page"><?= $title ?></span>
+    </nav>
 
-  <nav class="ev-breadcrumb" aria-label="Breadcrumb">
-    <a href="<?= htmlspecialchars($archive_url, ENT_QUOTES, 'UTF-8') ?>">← Events</a>
-    <span class="ev-breadcrumb__sep" aria-hidden="true">/</span>
-    <span class="ev-breadcrumb__cur"><?= mb_strimwidth($title, 0, 60, '…') ?></span>
-  </nav>
-
-  <header class="ev-hero-v2 phinit-card phinit-card--accent">
-    <?php if ($banner_url): ?>
-      <div class="ev-hero-v2__bg" aria-hidden="true">
-        <img src="<?= htmlspecialchars($banner_url, ENT_QUOTES, 'UTF-8') ?>" alt="" width="1200" height="675" loading="eager" decoding="async">
-      </div>
-    <?php endif; ?>
-    <?php if ($image_url): ?>
-      <div class="ev-hero-v2__thumb" aria-hidden="true">
-        <img src="<?= htmlspecialchars($image_url, ENT_QUOTES, 'UTF-8') ?>" alt="<?= $title ?>" width="160" height="160" loading="eager" decoding="async">
-      </div>
-    <?php endif; ?>
-    <div class="ev-hero-v2__inner">
-      <?php if ($ev_ts): ?>
-        <time class="ev-hero-v2__datebadge" datetime="<?= htmlspecialchars((string) $ev_date, ENT_QUOTES, 'UTF-8') ?>">
-          <span class="ev-hero-v2__date-day"><?= date('d', $ev_ts) ?></span>
-          <span class="ev-hero-v2__date-mon"><?= date('M', $ev_ts) ?></span>
-          <span class="ev-hero-v2__date-year"><?= date('Y', $ev_ts) ?></span>
-        </time>
-      <?php endif; ?>
-      <div class="ev-hero-v2__meta">
-        <h1 class="ev-hero-v2__title"><?= $title ?></h1>
-      </div>
-    </div>
-  </header>
-
-  <div class="ev-bridge-v2">
-    <section class="ev-bridge-v2__about phinit-card">
-      <h2 class="ev-bridge-v2__title">Über diesen Event</h2>
-      <?php $eventDescription = trim((string) $desc); ?>
-      <?php if ($eventDescription !== ''): ?>
-        <div class="ev-bridge-v2__text ev-wysiwyg-content"><?= nl2br(htmlspecialchars($eventDescription, ENT_QUOTES, 'UTF-8')) ?></div>
-      <?php else: ?>
-        <p class="ev-bridge-v2__text ev-empty-text">Noch keine Beschreibung hinterlegt.</p>
-      <?php endif; ?>
-    </section>
-
-    <section class="ev-bridge-v2__contact phinit-card">
-      <h2 class="ev-bridge-v2__title">Details &amp; Anmeldung</h2>
-      <div class="ev-bridge-v2__contact-body">
-        <?php if ($reg_url && $status !== 'cancelled'): ?>
-          <a href="<?= htmlspecialchars($reg_url, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="phinit-btn phinit-btn--primary ev-bridge-v2__book-btn">Jetzt anmelden</a>
-        <?php elseif ($is_online && $online_url): ?>
-          <a href="<?= htmlspecialchars($online_url, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="phinit-btn phinit-btn--primary ev-bridge-v2__book-btn">Online-Link aufrufen</a>
-        <?php endif; ?>
-
-        <?php if ($org_email || $org_phone || $org_website): ?>
-        <div class="ev-bridge-v2__icon-row">
-          <?php if ($org_website): ?>
-            <a href="<?= htmlspecialchars($org_website, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="ev-bridge-v2__icon-btn">Web</a>
-          <?php endif; ?>
-          <?php if ($org_email): ?>
-            <a href="mailto:<?= htmlspecialchars($org_email, ENT_QUOTES, 'UTF-8') ?>" class="ev-bridge-v2__icon-btn">Mail</a>
-          <?php endif; ?>
-          <?php if ($org_phone): ?>
-            <a href="tel:<?= htmlspecialchars($org_phone, ENT_QUOTES, 'UTF-8') ?>" class="ev-bridge-v2__icon-btn">Anruf</a>
-          <?php endif; ?>
-        </div>
-        <?php endif; ?>
-
-        <?php
-        $facts = [];
-        if ($ev_ts) {
-            $datum = date('d.m.Y', $ev_ts);
-            if ($ev_time) {
-                $datum .= ' · ' . htmlspecialchars((string) $ev_time, ENT_QUOTES, 'UTF-8') . ' Uhr';
-            }
-            $facts[] = ['Datum', $datum];
-        }
-        if ($end_ts && $end_ts !== $ev_ts) {
-            $end_str = date('d.m.Y', $end_ts);
-            if ($end_time) {
-                $end_str .= ' · ' . htmlspecialchars((string) $end_time, ENT_QUOTES, 'UTF-8') . ' Uhr';
-            }
-            $facts[] = ['Ende', $end_str];
-        }
-        if ($category) {
-            $facts[] = ['Kategorie', $category];
-        }
-        if ($is_online) {
-            $facts[] = ['Format', 'Online-Event'];
-        } elseif ($city || $address) {
-            $loc = trim(($address ? $address . ', ' : '') . ($zip ? $zip . ' ' : '') . $city);
-            if ($country && $country !== 'Deutschland') {
-                $loc .= ', ' . $country;
-            }
-            $facts[] = ['Ort', htmlspecialchars($loc, ENT_QUOTES, 'UTF-8')];
-        }
-        if ($capacity) {
-            $facts[] = ['Kapazität', $capacity . ' Plätze'];
-        }
-        if ($org_name) {
-            $facts[] = ['Veranstalter', $org_name];
-        }
-        if ($show_price) {
-            if ($price_type === 'free') {
-                $facts[] = ['Preis', 'Kostenlos'];
-            } elseif ($price_type === 'donation') {
-                $facts[] = ['Preis', 'Spendenbasis'];
-            } elseif ($price > 0) {
-                $facts[] = ['Preis', number_format($price, 2, ',', '.') . ' ' . $price_cur];
-            }
-        }
-        ?>
-        <?php if (!empty($facts)): ?>
-        <div class="ev-bridge-v2__facts">
-          <?php foreach ($facts as [$lbl, $val]): ?>
-            <div class="ev-bridge-v2__fact">
-              <span class="ev-bridge-v2__fact-lbl"><?= $lbl ?></span>
-              <span class="ev-bridge-v2__fact-val"><?= $val ?></span>
-            </div>
-          <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
-
-        <?php if ($show_tags && !empty($tags_raw)): ?>
-          <div class="ev-bridge-v2__tags" aria-label="Tags">
-            <?php foreach ($tags_raw as $tag): ?>
-              <span class="ev-bridge-v2__tag"><?= htmlspecialchars((string) $tag, ENT_QUOTES, 'UTF-8') ?></span>
-            <?php endforeach; ?>
-          </div>
-        <?php endif; ?>
-      </div>
-    </section>
-  </div>
-
-  <?php if (!empty($speakers)): ?>
-  <section class="ev-people-v2">
-    <div class="ev-sec-v2">
-      <h2 class="ev-sec-v2__title">
-        Speaker &amp; Referenten
-        <span class="ev-section-count"><?= count($speakers) ?></span>
-      </h2>
-      <div class="ev-speaker-grid-v2">
-        <?php foreach ((array)$speakers as $sp):
-          $spFirst = $sp->first_name ?? '';
-          $spLast  = $sp->last_name ?? '';
-          $spType  = in_array(($sp->speaker_type ?? ''), ['speaker', 'expert'], true) ? (string) $sp->speaker_type : 'speaker';
-          $spName  = htmlspecialchars(trim($spFirst . ' ' . $spLast) ?: 'Speaker', ENT_QUOTES, 'UTF-8');
-          $spCity  = !empty($sp->location_city) ? htmlspecialchars($sp->location_city, ENT_QUOTES, 'UTF-8') : null;
-          $spPhotoUrl = function_exists('cms_events_public_url') ? cms_events_public_url($sp->photo_url ?? null) : '';
-          $spId    = (int)($sp->id ?? 0);
-          $spProfileUrl = $spId > 0 ? $base_url . ($spType === 'expert' ? '/experts/' : '/speakers/') . $spId : '';
-          $letter = mb_strtoupper(mb_substr($spFirst ?: $spLast, 0, 1) ?: 'S');
-        ?>
-          <article class="ev-spk-row phinit-card">
-            <div class="ev-spk-row__top">
-              <?php if ($spPhotoUrl !== ''): ?>
-                <div class="ev-spk-row__av"><img src="<?= htmlspecialchars($spPhotoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= $spName ?>" width="56" height="56" loading="lazy" decoding="async"></div>
-              <?php else: ?>
-                <div class="ev-spk-row__av ev-spk-row__av--placeholder"><?= htmlspecialchars($letter, ENT_QUOTES, 'UTF-8') ?></div>
-              <?php endif; ?>
-              <div class="ev-spk-row__info">
-                <div class="ev-spk-row__name">
-                  <?php if ($spProfileUrl !== ''): ?>
-                    <a href="<?= htmlspecialchars($spProfileUrl, ENT_QUOTES, 'UTF-8') ?>"><?= $spName ?></a>
-                  <?php else: ?>
-                    <?= $spName ?>
-                  <?php endif; ?>
+    <div class="cms-events-detail__grid">
+        <article class="cms-events-detail__main">
+            <header class="cms-events-detail__head">
+                <div class="cms-events-detail__badges">
+                    <span class="cms-events-badge"><?= $category ?></span>
+                    <?php if ($isFullyBooked): ?>
+                        <span class="cms-events-badge cms-events-badge--muted">Ausgebucht</span>
+                    <?php endif; ?>
                 </div>
-                <?php if ($spCity): ?><div class="ev-spk-row__sub"><?= $spCity ?></div><?php endif; ?>
-              </div>
-            </div>
-            <?php if ($spProfileUrl !== ''): ?>
-              <a href="<?= htmlspecialchars($spProfileUrl, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary ev-spk-row__btn">Profil →</a>
+                <h1><?= $title ?></h1>
+                <div class="cms-events-detail__meta" aria-label="Event-Metadaten">
+                    <?php if ($machineDate !== ''): ?>
+                        <span><i class="ti ti-calendar-event" aria-hidden="true"></i><?= htmlspecialchars($displayDate, ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php endif; ?>
+                    <?php if ($timeLabel !== ''): ?>
+                        <span><i class="ti ti-clock" aria-hidden="true"></i><?= htmlspecialchars($timeLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php endif; ?>
+                    <?php if ($locationText !== ''): ?>
+                        <span><i class="ti ti-map-pin" aria-hidden="true"></i><?= htmlspecialchars($locationText, ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php endif; ?>
+                </div>
+            </header>
+
+            <figure class="cms-events-detail__hero">
+                <?php if ($imageUrl !== ''): ?>
+                    <img src="<?= htmlspecialchars($imageUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= $title ?>" width="1200" height="675" loading="eager" decoding="async">
+                <?php else: ?>
+                    <div class="cms-events-detail__hero-placeholder" aria-hidden="true"><i class="ti ti-calendar-event"></i></div>
+                <?php endif; ?>
+            </figure>
+
+            <section class="phinit-card cms-events-detail__section">
+                <h2>Über dieses Event</h2>
+                <?php if ($description !== ''): ?>
+                    <div class="cms-events-detail__content"><?= nl2br(htmlspecialchars($description, ENT_QUOTES, 'UTF-8')) ?></div>
+                <?php else: ?>
+                    <p class="cms-events-muted">Weitere Details zu diesem Event folgen in Kürze.</p>
+                <?php endif; ?>
+            </section>
+
+            <?php if ($primarySpeaker): ?>
+                <?php
+                $speakerName = trim((string) ($primarySpeaker->speaker_name ?? (($primarySpeaker->first_name ?? '') . ' ' . ($primarySpeaker->last_name ?? ''))));
+                $speakerImage = cms_events_view_public_url($primarySpeaker->photo_url ?? null);
+                $speakerType = in_array((string) ($primarySpeaker->speaker_type ?? 'speaker'), ['speaker', 'expert'], true) ? (string) $primarySpeaker->speaker_type : 'speaker';
+                $speakerLink = $baseUrl . ($speakerType === 'expert' ? '/experts/' : '/speakers/') . (int) ($primarySpeaker->speaker_id ?? 0);
+                ?>
+                <section class="phinit-card cms-events-speaker-teaser" aria-labelledby="cms-event-speaker-heading">
+                    <div class="cms-events-speaker-teaser__image">
+                        <?php if ($speakerImage !== ''): ?>
+                            <img src="<?= htmlspecialchars($speakerImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($speakerName, ENT_QUOTES, 'UTF-8') ?>" width="96" height="96" loading="lazy" decoding="async">
+                        <?php else: ?>
+                            <i class="ti ti-user" aria-hidden="true"></i>
+                        <?php endif; ?>
+                    </div>
+                    <div>
+                        <p class="phinit-overline">Speaker</p>
+                        <h2 id="cms-event-speaker-heading"><?= htmlspecialchars($speakerName !== '' ? $speakerName : 'Speaker', ENT_QUOTES, 'UTF-8') ?></h2>
+                        <?php if (!empty($primarySpeaker->position)): ?>
+                            <p><?= htmlspecialchars((string) $primarySpeaker->position, ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php endif; ?>
+                        <a href="<?= htmlspecialchars($speakerLink, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary">Speaker ansehen</a>
+                    </div>
+                </section>
             <?php endif; ?>
-          </article>
-        <?php endforeach; ?>
-      </div>
-    </div>
-  </section>
-  <?php endif; ?>
 
-  <?php if (!(int)($e->user_id ?? 0)): ?>
-  <aside class="ev-claim-banner phinit-note phinit-note--info">
-    <div class="ev-claim-banner__text">
-      <strong>Dieser Event wurde von der Redaktion eingetragen.</strong>
-      Sind Sie der Veranstalter? Registrieren Sie sich kostenlos und verwalten Sie Ihren Event selbst.
-    </div>
-    <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/register', ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--primary ev-claim-banner__btn">Jetzt registrieren &amp; Event übernehmen →</a>
-  </aside>
-  <?php endif; ?>
+            <section class="cms-events-share" id="event-share" aria-label="Event teilen">
+                <span>Teilen</span>
+                <a href="https://www.linkedin.com/sharing/share-offsite/?url=<?= rawurlencode($shareUrl) ?>" target="_blank" rel="noopener noreferrer" aria-label="Auf LinkedIn teilen"><i class="ti ti-brand-linkedin"></i></a>
+                <a href="https://twitter.com/intent/tweet?url=<?= rawurlencode($shareUrl) ?>&text=<?= rawurlencode($titleRaw) ?>" target="_blank" rel="noopener noreferrer" aria-label="Auf X teilen"><i class="ti ti-brand-x"></i></a>
+                <a href="mailto:?subject=<?= rawurlencode($titleRaw) ?>&body=<?= rawurlencode($shareUrl) ?>" aria-label="Per E-Mail teilen"><i class="ti ti-mail"></i></a>
+            </section>
+        </article>
 
+        <aside class="cms-events-detail__aside" aria-label="Anmeldung">
+            <div class="phinit-card cms-events-registration-card">
+                <div class="cms-events-registration-card__date">
+                    <span><?= htmlspecialchars($day, ENT_QUOTES, 'UTF-8') ?></span>
+                    <strong><?= htmlspecialchars($monthShort, ENT_QUOTES, 'UTF-8') ?></strong>
+                </div>
+                <h2>Anmeldung</h2>
+                <dl>
+                    <div><dt>Preis</dt><dd><?= cms_events_view_price_label($e) ?></dd></div>
+                    <?php if ($displayDate !== ''): ?><div><dt>Datum</dt><dd><?= htmlspecialchars($displayDate, ENT_QUOTES, 'UTF-8') ?></dd></div><?php endif; ?>
+                    <?php if ($timeLabel !== ''): ?><div><dt>Zeit</dt><dd><?= htmlspecialchars($timeLabel, ENT_QUOTES, 'UTF-8') ?></dd></div><?php endif; ?>
+                    <?php if ($locationText !== ''): ?><div><dt>Ort</dt><dd><?= htmlspecialchars($locationText, ENT_QUOTES, 'UTF-8') ?></dd></div><?php endif; ?>
+                </dl>
+
+                <?php if ($capacity > 0): ?>
+                    <div class="cms-events-capacity" aria-label="Verfügbare Plätze">
+                        <span><?= (int) $seatsLeft ?> von <?= (int) $capacity ?> Plätzen frei</span>
+                        <div class="cms-events-capacity__bar"><span style="--cms-event-progress: <?= (int) $progress ?>%;"></span></div>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (!$isFullyBooked && $registrationUrl !== ''): ?>
+                    <a href="<?= htmlspecialchars($registrationUrl, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--primary cms-events-registration-card__button" target="_blank" rel="noopener noreferrer">Jetzt anmelden</a>
+                <?php elseif (!$isFullyBooked && $onlineUrl !== ''): ?>
+                    <a href="<?= htmlspecialchars($onlineUrl, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--primary cms-events-registration-card__button" target="_blank" rel="noopener noreferrer">Online teilnehmen</a>
+                <?php else: ?>
+                    <button class="phinit-btn phinit-btn--primary cms-events-registration-card__button" type="button" disabled><?= $isFullyBooked ? 'Ausgebucht' : 'Anmeldung folgt' ?></button>
+                <?php endif; ?>
+            </div>
+
+            <?php if (!empty($relatedEvents)): ?>
+                <section class="phinit-card cms-events-related" aria-labelledby="cms-related-events-heading">
+                    <h2 id="cms-related-events-heading">Weitere Events</h2>
+                    <?php foreach ($relatedEvents as $related): ?>
+                        <?php [$relatedDay, $relatedMonth, $relatedDate] = cms_events_view_date_parts((string) ($related->event_date ?? '')); ?>
+                        <a class="cms-events-related__item" href="<?= htmlspecialchars(function_exists('cms_event_url') ? cms_event_url($related) : $baseUrl . '/events/' . (int) ($related->id ?? 0), ENT_QUOTES, 'UTF-8') ?>">
+                            <span><strong><?= htmlspecialchars($relatedDay, ENT_QUOTES, 'UTF-8') ?></strong><?= htmlspecialchars($relatedMonth, ENT_QUOTES, 'UTF-8') ?></span>
+                            <span><?= htmlspecialchars((string) ($related->title ?? 'Event'), ENT_QUOTES, 'UTF-8') ?><small><?= htmlspecialchars($relatedDate, ENT_QUOTES, 'UTF-8') ?></small></span>
+                        </a>
+                    <?php endforeach; ?>
+                </section>
+            <?php endif; ?>
+        </aside>
+    </div>
 </main>

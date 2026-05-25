@@ -1,11 +1,11 @@
 # CMS Speakers – Dokumentation
 
 **Plugin:** `cms-speakers`  
-**Version:** 1.0.0  
+**Version:** 3.0.3  
 **Namespace:** `CMS_Speakers`  
-**Aktueller Laufzeitstand:** 365CMS 2.0+  
-**Audit-/Dokustand:** Vorbereitung auf 365CMS V2.8.0 ohne Core-Änderungen  
-**PHP:** 8.1+
+**Aktueller Laufzeitstand:** 365CMS 3.0+  
+**Audit-/Dokustand:** Audit-Release 3.0.3 für 365CMS 3.x ohne Core-Änderungen  
+**PHP:** 8.4+
 
 ---
 
@@ -13,12 +13,12 @@
 
 Das **CMS Speakers**-Plugin verwaltet professionelle Speaker-Profile mit Vortragshistorie, Themengebieten, Honorarrahmen und Event-Anbindung.
 
-## V2.8.0-Status
+## 3.0.3-Audit-Status
 
-- Die Dokumentation ist auf den **Audit- und Zielstand für 365CMS V2.8.0** angehoben.
+- Die Dokumentation ist auf den **Audit- und Zielstand für 365CMS 3.x** angehoben.
 - Änderungen erfolgen ausschließlich im Plugin; **der 365CMS-Core bleibt unberührt**.
-- Der Fokus des aktuellen Durchgangs liegt auf **Security**, **Speed**, **Best Practices** und defensiver Cross-Plugin-Integration.
-- Der zentrale Abarbeitungsplan liegt in [`../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md`](../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md).
+- Der Fokus des aktuellen Durchgangs liegt auf **Security**, **HTTP-Fehlerpfaden**, **Best Practices**, **Admin-Menü-Integration** und defensiver Cross-Plugin-Integration.
+- Version 3.0.3 bringt redeclare-sicheren Bootstrap, SettingsService-Anbindung, `INFORMATION_SCHEMA`-Migrationen, 405-/JSON-Fehlerpfade und Uninstall-Cleanup.
 
 ### Kernfunktionen
 
@@ -29,7 +29,6 @@ Das **CMS Speakers**-Plugin verwaltet professionelle Speaker-Profile mit Vortrag
 | **Themen** | Speaker-Topics mit Beschreibung und Sortierung |
 | **Event-History** | Auftritte: Keynote, Workshop, Panel, Webinar, … |
 | **Honorar** | Preisspanne (min. / max.) + Reise-Radius |
-| **Verknüpfung** | Optional: Verlinkung mit Experten-Profil (`expert_id`) |
 | **Company-Link** | Optional: Firmenzugehörigkeit via `company_id` |
 | **Verfügbarkeit** | `available`, `limited`, `booked` |
 | **Badges** | `is_featured`, `is_verified` |
@@ -68,7 +67,6 @@ cms-speakers/
 
 | Dokument | Inhalt |
 |----------|--------|
-| [../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md](../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md) | Zentraler Audit- und Umsetzungsplan für die vier V2.8.0-Zielplugins |
 | [DATABASE.md](DATABASE.md) | Tabellen-Schemas |
 | [HOOKS.md](HOOKS.md) | Actions & Filter |
 | [API.md](API.md) | Methoden-Referenz |
@@ -100,7 +98,6 @@ $talks = $stmt->fetchAll();
 
 | Plugin | Richtung | Beschreibung |
 |--------|----------|--------------|
-| `cms-experts` | → | `expert_id` verlinkt Speaker mit Experten-Profil |
 | `cms-companies` | → | `company_id` verlinkt Speaker mit Firmenprofil |
 | `cms-events` | ← | Events können Speaker via `cms_event_speakers` einladen |
 

@@ -7,42 +7,99 @@
 (() => {
     'use strict';
 
-    // -- Archive: Filter Auto-Submit ------------------------------------
-    document.querySelectorAll('.sp-filter-select').forEach(sel => {
-        sel.addEventListener('change', () => sel.form?.submit());
-    });
+    const normalize = (value) => String(value || '').trim().toLocaleLowerCase();
 
-    // -- Archive: Search Reset ------------------------------------------
-    const resetBtn = document.querySelector('.sp-filter-reset');
-    resetBtn?.addEventListener('click', (e) => {
-        e.preventDefault();
-        const form = resetBtn.closest('form') ?? document.querySelector('.sp-filter-bar form');
-        if (!form) return;
-        form.querySelectorAll('input[type="text"], input[type="search"]').forEach(i => { i.value = ''; });
-        form.querySelectorAll('select').forEach(s => { s.selectedIndex = 0; });
-        form.submit();
-    });
+    function bindPublicSpeakerFilters() {
+        const root = document.querySelector('[data-cms-speaker-filter-root]');
+        if (!root) {
+            return;
+        }
 
-    // -- Smooth scroll for anchor links ---------------------------------
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', (e) => {
-            const target = document.querySelector(anchor.getAttribute('href'));
-            if (target) {
-                e.preventDefault();
-                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const cards = Array.from(root.querySelectorAll('[data-cms-speaker-card]'));
+        const empty = root.querySelector('[data-cms-speaker-empty]');
+        const topicSelect = root.querySelector('[data-cms-speaker-filter="topic"]');
+        const searchInput = root.querySelector('[data-cms-speaker-filter="search"]');
+
+        function applyFilters() {
+            const selectedTopic = normalize(topicSelect?.value);
+            const searchTerm = normalize(searchInput?.value);
+            let visibleCount = 0;
+
+            cards.forEach((card) => {
+                const matchesTopic = !selectedTopic || normalize(card.dataset.topic).includes(selectedTopic);
+                const matchesSearch = !searchTerm || normalize(card.dataset.name).includes(searchTerm);
+                const isVisible = matchesTopic && matchesSearch;
+
+                card.classList.toggle('hidden', !isVisible);
+                if (isVisible) {
+                    visibleCount += 1;
+                }
+            });
+
+            if (empty) {
+                empty.hidden = visibleCount > 0;
             }
-        });
-    });
+        }
 
-    // -- Card click: make entire card clickable -------------------------
-    document.querySelectorAll('.sp-card').forEach(card => {
-        const link = card.querySelector('.sp-card-cta a, a.sp-card-link');
-        if (!link) return;
-        card.style.cursor = 'pointer';
-        card.addEventListener('click', (e) => {
-            if (e.target.closest('button, a, input')) return;
-            window.location.href = link.href;
-        });
-    });
+        function resetFilters() {
+            if (topicSelect) {
+                topicSelect.value = '';
+            }
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            applyFilters();
+        }
 
+        topicSelect?.addEventListener('change', applyFilters);
+        searchInput?.addEventListener('input', applyFilters);
+        root.querySelectorAll('[data-cms-speaker-reset]').forEach((button) => {
+            button.addEventListener('click', resetFilters);
+        });
+
+        applyFilters();
+    }
+
+    function bindLegacyInteractions() {
+        document.querySelectorAll('.sp-filter-select').forEach((select) => {
+            select.addEventListener('change', () => select.form?.submit());
+        });
+
+        const resetBtn = document.querySelector('.sp-filter-reset');
+        resetBtn?.addEventListener('click', (event) => {
+            event.preventDefault();
+            const form = resetBtn.closest('form') ?? document.querySelector('.sp-filter-bar form');
+            if (!form) {
+                return;
+            }
+            form.querySelectorAll('input[type="text"], input[type="search"]').forEach((input) => { input.value = ''; });
+            form.querySelectorAll('select').forEach((select) => { select.selectedIndex = 0; });
+            form.submit();
+        });
+
+        document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+            anchor.addEventListener('click', (event) => {
+                const selector = anchor.getAttribute('href');
+                if (!selector || selector === '#') {
+                    return;
+                }
+                const target = document.querySelector(selector);
+                if (target) {
+                    event.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    }
+
+    function init() {
+        bindPublicSpeakerFilters();
+        bindLegacyInteractions();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init, { once: true });
+    } else {
+        init();
+    }
 })();

@@ -1,7 +1,7 @@
 ﻿# CMS Speakers Directory Plugin
 
-**Version:** 1.0.0  
-**Requires:** 365CMS 2.0+
+**Version:** 3.0.3  
+**Requires:** 365CMS 3.0+ / PHP 8.4+
 
 ## Description
 
@@ -25,23 +25,24 @@ The CMS Speakers Directory plugin manages speaker profiles with card views and d
 
 ### cms_speakers
 Main table storing speaker profiles with fields:
-- id, name, email, title, biography
-- photo_url, company, website, linkedin, twitter
-- expert_id (link to expert profile), speaking_topics, languages
-- fee_range, availability, status, created_at, updated_at
+- id, user_id, first_name, last_name, title, gender
+- company/company_id, email, phone, bio, short_bio, photo_url
+- location fields, website and social URLs
+- languages/formats/skills/recognitions JSON fields
+- travel radius, fee range, availability, status, badges and profile views
 
 ### cms_speaker_topics
-Speaker speaking topics with expertise levels:
-- id, speaker_id, topic, expertise_level, created_at
+Speaker topics:
+- id, speaker_id, topic_name, topic_desc, sort_order, created_at
 
-### cms_speaker_presentations
+### cms_speaker_events
 Past speaking engagements:
-- id, speaker_id, title, event_name, presentation_date
-- video_url, slides_url, description, created_at
+- id, speaker_id, event_title, event_type, event_date/event_date_end
+- organizer_type, company_id, cms_event_id, topic, description
+- video_url, slides_url, event_url, is_public, created_at
 
-### cms_speaker_meta
-Additional metadata for speakers:
-- id, speaker_id, meta_key, meta_value, created_at
+### Settings
+Runtime settings are stored primarily in the 365CMS `SettingsService` group `cms-speakers`. The legacy `cms_speaker_plugin_settings` table remains as migration/fallback storage.
 
 ## Usage
 
@@ -72,21 +73,22 @@ $stmt = $db->prepare("SELECT * FROM {$db->prefix()}speaker_topics WHERE speaker_
 $stmt->execute([$speaker_id]);
 $topics = $stmt->fetchAll();
 
-// Get past presentations
+// Get past speaking events
 $stmt = $db->prepare("
-    SELECT * FROM {$db->prefix()}speaker_presentations 
+    SELECT * FROM {$db->prefix()}speaker_events 
     WHERE speaker_id = ? 
-    ORDER BY presentation_date DESC
+    ORDER BY event_date DESC, created_at DESC
 ");
 $stmt->execute([$speaker_id]);
-$presentations = $stmt->fetchAll();
+$events = $stmt->fetchAll();
 ```
 
 ## Hooks
 
 ### Actions
-- `speaker_created` - Fired when a new speaker profile is created
-- `speaker_presentation_added` - Fired when a presentation is added
+- `speaker_created` - Fired when a new speaker profile is created: `(int $speaker_id, array $data)`
+- `speaker_updated` - Fired when a speaker profile is updated: `(int $speaker_id, array $data)`
+- `cms_speakers_activated` / `cms_speakers_deactivated` - Fired on plugin lifecycle events
 
 ### Filters
 - `speaker_card_content` - Modify speaker card HTML output
@@ -98,19 +100,16 @@ Templates can be added to the `templates/` directory:
 - `single-speaker.php` - Speaker detail view
 - `speaker-card.php` - Card component
 
-## Expert Integration
+## Cross-Plugin Integration
 
-Speakers can be linked to expert profiles via the `expert_id` field. This allows:
-- Displaying expert's technical expertise on speaker profile
-- Cross-referencing between expert and speaker directories
-- Unified profile management for individuals who are both experts and speakers
+Speakers can be linked to companies via `company_id` and to CMS events through `cms_event_id` in speaker events. All cross-plugin queries are defensive and keep working when the optional target tables are not installed.
 
 ## Availability Status
 
 Speakers have an availability field with the following values:
 - `available` - Currently available for speaking engagements
 - `limited` - Limited availability
-- `unavailable` - Not currently available
+- `booked` - Currently booked out
 
 ## Installation
 

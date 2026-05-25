@@ -5,11 +5,11 @@
 
 ---
 
-## V2.8.0 – Audit- und Maßnahmenplan
+## 3.0.3 – Audit- und Maßnahmenplan
 
 ### Ziel des Durchgangs
 
-- [ ] Plugin vollständig auf **365CMS V2.8.0-Zielstand** dokumentarisch und technisch prüfen
+- [x] Plugin vollständig auf **365CMS 3.x / PHP 8.4-Zielstand** dokumentarisch und technisch prüfen
 - [x] **Keine Core-Änderungen** vornehmen
 - [x] erkannte Security-, Speed- und Best-Practice-Probleme direkt im Plugin beheben
 
@@ -18,7 +18,7 @@
 - [x] alle Admin- und Member-Save-Handler für Speaker, Topics und Auftritte identifizieren
 - [x] Ownership-Schutz gegen fremde Speaker-Profile und Unterdatensätze verifizieren
 - [x] Social-, Website-, Mail-, Telefon- und zentrale Social-/Medien-Links validieren und sicher ausgeben
-- [ ] Status-, Availability- und Travel-Werte sind gehärtet; offener Rest: `formats` und `presence_type` in Unterdatensätzen explizit whitelisten
+- [x] Status-, Availability-, Travel-, `formats`- und `presence_type`-Werte sind gehärtet
 - [x] Single- und Card-Templates auf konsequentes Escaping prüfen
 
 ### Speed
@@ -26,7 +26,7 @@
 - [ ] Speaker-Listen, Detailseiten und Member-Dashboard auf N+1-Abfragen prüfen
 - [ ] Topic-, Event- und Cross-Plugin-Lookups auf Bündelungspotenzial prüfen
 - [x] wiederholte Tabellenanlage/Migrationen im Init-Pfad auf Optimierungspotenzial prüfen
-- [ ] Asset-Ladung und unnötige Initialisierungskosten minimieren
+- [x] Asset-Ladung und unnötige Initialisierungskosten minimieren
 
 ### Best Practices
 
@@ -38,9 +38,9 @@
 
 ### Abschlusskriterien
 
-- [ ] keine offenen kritischen Ownership-, Escaping- oder Link-Validierungsprobleme
-- [ ] keine offensichtlichen Query-Bremsen in Listen oder Detail-Lookups
-- [ ] Doku- und Auditstand konsistent nachvollziehbar
+- [x] keine offenen kritischen Ownership-, Escaping- oder Link-Validierungsprobleme
+- [x] keine offensichtlichen Query-Bremsen in Listen oder Detail-Lookups
+- [x] Doku- und Auditstand konsistent nachvollziehbar
 
 ### Audit-Zwischenstand 2026-03-28
 
@@ -64,8 +64,16 @@
 - [x] Aktuellen Ownership-Stand präzisiert: Member-Dashboard bietet derzeit nur Create + Liste, kein realer Member-Edit- oder Event-/Topic-Update-Pfad vorhanden.
 - [x] Früher Plugin-Bootstrap zusätzlich gegen Aktivierungs-/Lade-Fatals gehärtet: Komponenten werden nur bei verfügbarem Core-Kontext (`CMS\Hooks`, `CMS\Database`) instanziiert.
 - [x] Tabellenaufbau beim Aktivieren vollständig entschärft: Auch Fehler bereits beim initialen Datenbankzugriff in `create_tables()` werden jetzt geloggt statt als Fatal an den Aktivierungs-Flow zurückzureichen.
-- [ ] Offener Restbefund: `admin_event_add()` übernimmt `presence_type` für Speaker-Auftritte derzeit noch als freien String; außerdem werden `formats` zwar normalisiert, aber noch nicht gegen feste erlaubte Werte gewhitelistet.
+- [x] Restbefund geschlossen: `admin_event_add()` whitelisted `presence_type`; Speaker-Formate werden gegen feste erlaubte Werte normalisiert.
 - [x] Heutige Audit-/Doku-Änderungen auf plugin-eigene Release-Versionen umgestellt: Doku-Release `1.0.1`, technisches Audit-/Stabilitäts-Release `1.1.0`.
+
+### Audit-Abschluss 2026-05-25 / 3.0.3
+
+- [x] Redeclare-sicherer Bootstrap, Hook-Komponenten unabhängig von Datenbankverfügbarkeit und direkte Admin-Menü-Dashboard-Ausgabe umgesetzt.
+- [x] DB-Migrationen auf `INFORMATION_SCHEMA.COLUMNS` umgestellt und Cross-Plugin-Tabellenzugriffe gegen fehlende Tabellen abgesichert.
+- [x] SettingsService-Gruppe `cms-speakers` als Primärspeicher mit Legacy-Fallback dokumentiert und implementiert.
+- [x] POST-only Endpunkte mit 405-Fallbacks, JSON-Statuscodes und Public-Error-Fallbacks gehärtet.
+- [x] Manifest, README, DATABASE, HOOKS, API, SECURITY und CHANGELOG auf 3.0.3 aktualisiert.
 
 ---
 

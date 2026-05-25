@@ -17,12 +17,30 @@ final class CMS_Speakers_Admin
     }
     private function __construct()
     {
-        $menu_file = ABSPATH . 'admin/partials/admin-menu.php';
-        if (file_exists($menu_file) && !function_exists('renderAdminLayoutStart')) {
-            require_once $menu_file;
-        }
+        $this->load_admin_menu_helpers();
         CMS\Hooks::addAction('cms_admin_menu', [$this, 'register_admin_menu'], 10);
         CMS\Hooks::addFilter('admin_menu_items', [$this, 'add_menu_item'], 10);
+    }
+
+    private function load_admin_menu_helpers(): void
+    {
+        if (function_exists('renderAdminLayoutStart') && function_exists('add_menu_page')) {
+            return;
+        }
+
+        $candidates = [
+            ABSPATH . 'includes/functions/admin-menu.php',
+            ABSPATH . 'admin/partials/admin-menu.php',
+        ];
+
+        foreach ($candidates as $menu_file) {
+            if (file_exists($menu_file)) {
+                require_once $menu_file;
+                if (function_exists('renderAdminLayoutStart') && function_exists('add_menu_page')) {
+                    return;
+                }
+            }
+        }
     }
 
     private function start_admin_layout(string $title, string $activePage): void
@@ -33,8 +51,14 @@ final class CMS_Speakers_Admin
         }
 
         $pageTitle = $title;
-        require_once ABSPATH . 'admin/partials/header.php';
-        require_once ABSPATH . 'admin/partials/sidebar.php';
+        $header = ABSPATH . 'admin/partials/header.php';
+        $sidebar = ABSPATH . 'admin/partials/sidebar.php';
+        if (file_exists($header)) {
+            require_once $header;
+        }
+        if (file_exists($sidebar)) {
+            require_once $sidebar;
+        }
     }
 
     private function end_admin_layout(): void
@@ -44,7 +68,10 @@ final class CMS_Speakers_Admin
             return;
         }
 
-        require_once ABSPATH . 'admin/partials/footer.php';
+        $footer = ABSPATH . 'admin/partials/footer.php';
+        if (file_exists($footer)) {
+            require_once $footer;
+        }
     }
 
     public function register_admin_menu(): void
@@ -66,10 +93,22 @@ final class CMS_Speakers_Admin
 
     public static function render_plugin_page_bridge(): void
     {
-        $targetUrl = htmlspecialchars(SITE_URL . '/admin/speakers', ENT_QUOTES, 'UTF-8');
+        if (class_exists('CMS\\Auth') && !CMS\Auth::instance()->isAdmin()) {
+            CMS\Router::instance()->redirect('/login');
+            return;
+        }
 
-        echo '<div class="admin-card"><p>Weiterleitung zur Speaker-Verwaltung … <a href="' . $targetUrl . '">Falls nichts passiert, hier klicken</a>.</p></div>';
-        echo '<script>window.location.replace(' . json_encode(SITE_URL . '/admin/speakers', JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ');</script>';
+        if (class_exists('CMS_Speakers_Post_Type')) {
+            try {
+                CMS_Speakers_Post_Type::instance()->admin_list();
+                return;
+            } catch (\Throwable $e) {
+                error_log('CMS Speakers admin bridge: ' . $e->getMessage());
+            }
+        }
+
+        $targetUrl = htmlspecialchars(SITE_URL . '/admin/speakers', ENT_QUOTES, 'UTF-8');
+        echo '<div class="admin-card"><p>Die Speaker-Verwaltung konnte nicht direkt geladen werden. <a href="' . $targetUrl . '">Zur Speaker-Verwaltung wechseln</a>.</p></div>';
     }
 
     public function add_menu_item(array $items): array
@@ -104,6 +143,7 @@ final class CMS_Speakers_Admin
         $search    = $data['search']    ?? '';
         $settings  = $data['settings']  ?? [];
         $csrf      = $data['csrf']      ?? '';
+        $approveCsrf = $data['approve_csrf'] ?? '';
         $companies = $data['companies'] ?? [];
 
         $s = array_merge([
@@ -210,7 +250,7 @@ final class CMS_Speakers_Admin
                 <input type="hidden" name="tab" value="overview">
                 <div class="form-group" style="margin:0;flex:2;min-width:220px;">
                     <label class="form-label">Name / Stichwort</label>
-                    <input type="text" name="search" class="form-control" placeholder="Name, Ort, Position, Thema…" value="<?= htmlspecialchars($search) ?>">
+                    <input type="text" name="search" class="form-control" placeholder="Name, Ort, Position, Thema…" value="<?= htmlspecialchars((string) $search, ENT_QUOTES, 'UTF-8') ?>">
                 </div>
                 <div class="form-group" style="margin:0;flex:1;min-width:160px;">
                     <label class="form-label">Status / Typ</label>
@@ -297,7 +337,7 @@ final class CMS_Speakers_Admin
                 <div class="spk-adm-footer">
                     <?php if ($isPending): ?>
                         <form method="POST" action="<?= htmlspecialchars(SITE_URL . '/admin/speakers/approve/' . (int)$sp->id, ENT_QUOTES, 'UTF-8') ?>" class="spk-contents-form">
-                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string) $csrf, ENT_QUOTES, 'UTF-8') ?>">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string) $approveCsrf, ENT_QUOTES, 'UTF-8') ?>">
                             <button type="button" class="spk-adm-btn spk-adm-btn-primary spk-adm-btn-approve" data-speaker-approve-name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>">Genehmigen</button>
                         </form>
                     <?php else: ?>

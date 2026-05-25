@@ -1,8 +1,8 @@
-# CMS Speakers – Sicherheitskonzept für 365CMS V2.8.0
+# CMS Speakers – Sicherheitskonzept für 365CMS 3.x / Audit 3.0.3
 
 ## Zweck
 
-Dieses Dokument beschreibt den Sicherheits-Zielstand und die Audit-Schwerpunkte für `cms-speakers` im Rahmen der Anpassung an **365CMS V2.8.0**.
+Dieses Dokument beschreibt den Sicherheits-Zielstand und die Audit-Schwerpunkte für `cms-speakers` im Audit-Release **3.0.3** für **365CMS 3.x / PHP 8.4**.
 
 Schwerpunkte sind:
 
@@ -80,6 +80,20 @@ if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? '')
 - `LIMIT`, `OFFSET`, Sortierung und Filter whitelisten
 - keine ungeprüften Request-Werte in Query-Fragmente einbauen
 - Cross-Plugin-Joins robust gegen fehlende Tabellen/Datensätze gestalten
+- Schema-Migrationen über `INFORMATION_SCHEMA.COLUMNS` mit Prepared Statements prüfen; keine `SHOW COLUMNS ... LIKE`-Interpolation verwenden
+
+## HTTP-Fehlerpfade
+
+- öffentliche Archive-/Detailrouten müssen Exceptions loggen und native/fallback Error-Seiten rendern
+- fehlende Speaker rendern 404 über ThemeManager/fallback
+- POST-only Admin-Endpunkte liefern bei GET `405 Method Not Allowed` mit `Allow: POST`
+- AJAX-Endpunkte liefern JSON mit Statuscode und `X-Content-Type-Options: nosniff`
+
+## Settings
+
+- Plugin-Einstellungen werden primär über `CMS\Services\SettingsService` in der Gruppe `cms-speakers` gespeichert
+- die Legacy-Tabelle `cms_speaker_plugin_settings` dient nur noch als Migration/Fallback
+- Uninstall bereinigt Tabellen und SettingsService-Gruppe
 
 ## Ownership- und IDOR-Schutz
 
@@ -91,7 +105,7 @@ Besonders zu prüfen:
 
 ## Cross-Plugin-Sicherheit
 
-Für `expert_id`, `company_id` und `cms_event_id` gilt:
+Für `speaker_id`, `company_id` und `cms_event_id` gilt:
 
 - Referenz nur nutzen, wenn Zielplugin aktiv ist
 - Ziel-ID validieren
@@ -116,12 +130,13 @@ Für `expert_id`, `company_id` und `cms_event_id` gilt:
 | Status / Verfügbarkeit ändern | ✅ | ❌ | ❌ |
 | Profil löschen | ✅ | ❌ bzw. nur definierter Self-Service-Flow | ❌ |
 
-## Audit-Checkliste für V2.8.0
+## Audit-Checkliste für 3.0.3
 
-- [ ] Save-Handler für Speaker, Topics und Auftritte auf Token- und Rechteprüfung geprüft
-- [ ] Social-/Website-/Video-/Slides-Links validiert
-- [ ] Verfügbarkeits- und Statuswerte per Whitelist gehärtet
-- [ ] Member-Ownership auf Profil- und Unterdatensatzebene verifiziert
-- [ ] Single-/Card-Templates auf konsequentes Escaping geprüft
-- [ ] Cross-Plugin-Referenzen defensiv abgesichert
-- [ ] Versions- und Dokumentationsstand an V2.8.0 angepasst
+- [x] Save-Handler für Speaker, Topics und Auftritte auf Token- und Rechteprüfung geprüft
+- [x] Social-/Website-/Video-/Slides-Links validiert
+- [x] Verfügbarkeits- und Statuswerte per Whitelist gehärtet
+- [x] Member-Ownership auf Profil-Updates in zentraler Persistenz verifiziert
+- [x] Single-/Card-/Archive-Templates auf konsequentes Escaping geprüft
+- [x] Cross-Plugin-Referenzen defensiv gegen fehlende Tabellen abgesichert
+- [x] 405-/JSON-/Public-Error-Fallbacks ergänzt
+- [x] Versions- und Dokumentationsstand an 365CMS 3.x angepasst

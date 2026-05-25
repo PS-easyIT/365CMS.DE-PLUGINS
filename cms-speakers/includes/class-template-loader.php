@@ -63,11 +63,8 @@ final class CMS_Speakers_Template_Loader
         $template_file = $this->locate_template($template_name);
 
         if ($template_file === null) {
-            if (defined('CMS_DEBUG') && CMS_DEBUG) {
-                error_log("[CMS Speakers] Template nicht gefunden: {$template_name}");
-            }
-            echo '<p>Template nicht gefunden: ' . htmlspecialchars($template_name, ENT_QUOTES, 'UTF-8') . '</p>';
-            return;
+            error_log("[CMS Speakers] Template nicht gefunden: {$template_name}");
+            throw new \RuntimeException('Speaker-Template nicht gefunden: ' . $template_name);
         }
 
         // Extrahiere Variablen
@@ -96,8 +93,14 @@ final class CMS_Speakers_Template_Loader
         }
 
         ob_start();
-        $this->render_template('speaker-card', ['speaker' => $speaker, 'settings' => $settings, 'topics' => $topics]);
-        return ob_get_clean();
+        try {
+            $this->render_template('speaker-card', ['speaker' => $speaker, 'settings' => $settings, 'topics' => $topics]);
+            return (string) ob_get_clean();
+        } catch (\Throwable $e) {
+            ob_end_clean();
+            error_log('CMS Speakers card render: ' . $e->getMessage());
+            return '';
+        }
     }
 
     /**

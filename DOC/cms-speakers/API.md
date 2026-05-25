@@ -10,10 +10,12 @@
 |--------|-------|-------|
 | `CMS_Speakers` | `cms-speakers.php` | Haupt-Singleton, Hook-Registrierung |
 | `CMS_Speakers_Database` | `includes/class-database.php` | DB-Operationen |
-| `CMS_Speakers_Admin` | `admin/class-admin-pages.php` | Admin-Trait-Shell |
-| `CMS_Speakers_Admin_Menu` | `admin/class-admin-menu.php` | Menü-Registrierung |
-| `CMS_Speakers_Frontend` | `includes/class-frontend.php` | Shortcodes, Template-Routing |
-| `CMS_Speakers_Member` | `includes/class-member-dashboard.php` | Member-Profil-Verwaltung |
+| `CMS_Speakers_Post_Type` | `includes/class-post-type.php` | Public-/Admin-Routen, Controller |
+| `CMS_Speakers_Admin` | `includes/class-admin.php` | Admin-Menü und Admin-Views |
+| `CMS_Speakers_Meta_Boxes` | `includes/class-meta-boxes.php` | Admin-Formularbereiche |
+| `CMS_Speakers_Template_Loader` | `includes/class-template-loader.php` | Template-Lookup und Card-Rendering |
+| `CMS_Speakers_Shortcode` | `includes/class-shortcode.php` | `[cms_speakers]`-Content-Filter |
+| `CMS_Speakers_Member_Dashboard` | `includes/class-member-dashboard.php` | Member-Dashboard-Integration |
 
 ---
 
@@ -29,12 +31,10 @@ CMS_Speakers::instance(): self
 |---------|------|-----------|
 | `init_plugin()` | `cms_init` | 10 |
 | `on_activation()` | `plugin_activated` (slug = `cms-speakers`) | 10 |
-| `register_admin_menu()` | `cms_admin_menu` | 10 |
-| `render_member_dashboard()` | `cms_member_dashboard` | 20 |
+| `on_deactivation()` | `plugin_deactivated` (slug = `cms-speakers`) | 10 |
+| `on_uninstall()` | `plugin_uninstalled` (slug = `cms-speakers`) | 10 |
 | `enqueue_styles()` | `head` | 10 |
 | `enqueue_scripts()` | `body_end` | 10 |
-| `dsgvo_export()` | `dsgvo_export_data` | 10 |
-| `dsgvo_delete()` | `dsgvo_delete_data` | 10 |
 
 ---
 
@@ -46,7 +46,7 @@ CMS_Speakers_Database::instance(): self
 
 ### Speaker-CRUD
 
-#### `getAll(array $filters = [], int $limit = 50, int $offset = 0): array`
+#### `get_speakers(array $args = []): array`
 
 **Filter-Parameter:**
 
@@ -54,16 +54,14 @@ CMS_Speakers_Database::instance(): self
 |-----------|-----|--------------|
 | `status` | string | `active`, `inactive`, `pending`, `all` |
 | `format` | string | `keynote`, `workshop`, `panel`, `moderation`, `training`, `consulting` |
-| `topic_id` | int | Filter nach Themen-ID |
-| `language` | string | ISO-Code, z. B. `de`, `en` |
-| `available` | bool | Nur verfügbare Speaker |
+| `availability` | string | `available`, `limited`, `booked` |
 | `search` | string | Volltextsuche (Name, Titel, Bio) |
-| `fee_max` | int | Max. Honorar (€) |
-| `travel_radius` | int | Reiseradius in km |
+| `travel_radius` | string | `local`, `regional`, `national`, `international`, `worldwide` |
+| `limit` / `offset` | int | Pagination, Limit wird auf 200 begrenzt |
 
 ---
 
-#### `getById(int $id): ?array`
+#### `get_speaker(int $id): ?object`
 
 Gibt alle Felder aus `cms_speakers` zurück.
 
@@ -93,24 +91,17 @@ $speaker = CMS_Speakers_Database::instance()->getById(7);
 
 ---
 
-#### `create(array $data): int`
+#### `save_speaker(array $data, int $id = 0): int|false`
 
 **Pflichtfelder:** `first_name`, `last_name`  
-**Rückgabe:** Neue ID  
-**Feuert:** `speaker_created` mit `(int $id, array $data)`
+**Rückgabe:** Neue oder aktualisierte ID  
+**Feuert:** `speaker_created` bei Inserts und `speaker_updated` bei Updates mit `(int $id, array $data)`
 
 ---
 
-#### `update(int $id, array $data): bool`
-
-**Feuert:** `speaker_updated` mit `(int $id, array $data)`
-
----
-
-#### `delete(int $id): bool`
+#### `delete_speaker(int $id): bool`
 
 Löscht Speaker inklusive Topics und Event-Zuordnungen.  
-**Feuert:** `speaker_deleted` mit `(int $id)`
 
 ---
 
@@ -130,102 +121,58 @@ $topics = CMS_Speakers_Database::instance()->getTopics(7);
 
 ---
 
-#### `addTopic(int $speakerId, array $topicData): int`
+#### `save_topics(int $speaker_id, array $topics): void`
 
-**Felder:** `topic_name` (Pflicht), `topic_slug`, `topic_category`, `description`  
-**Rückgabe:** Neue Topic-ID
-
----
-
-#### `updateTopic(int $topicId, array $data): bool`
-
----
-
-#### `deleteTopic(int $topicId): bool`
+Ersetzt die Themen eines Speakers vollständig. Akzeptiert Strings oder Arrays mit `name`/`desc`.
 
 ---
 
 ### Event-Zuordnungen
 
-#### `getEvents(int $speakerId): array`
+#### `get_events(int $speaker_id, bool $public_only = false): array`
 
-Gibt alle Events zurück, denen dieser Speaker zugeordnet ist.
+Gibt manuelle Speaker-Auftritte aus `cms_speaker_events` zurück. Optionale Company-Daten werden nur gejoint, wenn `cms_companies` existiert.
 
-**Voraussetzung:** `cms-events` muss aktiv sein.
+#### `save_event(int $speaker_id, array $data): int|false`
 
-```php
-if (CMS\PluginManager::instance()->isPluginActive('cms-events')) {
-    $events = CMS_Speakers_Database::instance()->getEvents(7);
-}
-```
+Speichert einen manuellen Auftritt. Felder werden per Allow-List und Enum-Whitelists normalisiert.
 
----
+#### `delete_event(int $id): bool`
 
-#### `assignToEvent(int $speakerId, int $eventId, array $meta = []): bool`
+Löscht einen manuellen Auftritt.
 
-**Meta-Optionen:** `role` (`keynote`, `panel`, `workshop`), `presentation_title`, `presentation_duration`  
-**Feuert:** `speaker_event_assigned` mit `(int $speakerId, int $eventId)`
+### Settings
 
----
+#### `get_settings(): array`
 
-#### `removeFromEvent(int $speakerId, int $eventId): bool`
+Liest Defaults, Legacy-Settings und anschließend die Core-SettingsService-Gruppe `cms-speakers`.
 
----
+#### `save_settings(array $settings): void`
 
-### Meta-Felder
+Speichert primär in `CMS\Services\SettingsService`; bei fehlendem Service fällt die Methode auf `cms_speaker_plugin_settings` zurück.
 
-#### `getMeta(int $speakerId, string $key): mixed`
+#### `drop_tables(): void`
 
-#### `getAllMeta(int $speakerId): array`
-
-#### `setMeta(int $speakerId, string $key, mixed $value): void`
-
-#### `deleteMeta(int $speakerId, string $key): void`
+Uninstall-Cleanup: entfernt Speaker-Tabellen und bereinigt die SettingsService-Gruppe.
 
 ---
 
-### Präsentationen
-
-#### `getPresentations(int $speakerId): array`
-
-Gibt alle gespeicherten Vortragstitel / Präsentationen zurück (aus Meta-JSON oder eigenem Feld).
-
----
-
-## CMS_Speakers_Frontend
+## CMS_Speakers_Shortcode
 
 ### Shortcodes
 
-#### `[speakers_list]`
+#### `[cms_speakers]`
 
 | Attribut | Standard | Beschreibung |
 |----------|---------|--------------|
 | `limit` | `12` | Max. Anzahl |
-| `status` | `active` | Speaker-Status |
-| `format` | `''` | Vortragformat-Filter |
-| `topic` | `''` | Themen-Slug-Filter |
-| `language` | `''` | Sprach-Filter (ISO) |
-| `template` | `grid` | `grid` oder `list` |
-| `show_filter` | `true` | Filter-Leiste anzeigen |
-| `orderby` | `last_name` | Sortierfeld |
+| `travel` | `null` | Reisebereitschaft: `local`, `regional`, `national`, `international`, `worldwide` |
+| `featured` | `false` | Nur Featured-Speaker (`1`) |
 
 **Beispiele:**
 ```html
-[speakers_list limit="8" format="keynote" language="de"]
-[speakers_list topic="digitalisierung" template="list"]
+[cms_speakers limit="8" travel="national" featured="1"]
 ```
-
----
-
-#### `[speaker_profile id="7"]`
-
-| Attribut | Standard | Beschreibung |
-|----------|---------|--------------|
-| `id` | — | **Pflicht** – Speaker-ID |
-| `template` | `full` | `full`, `card`, `compact` |
-| `show_topics` | `true` | Themen anzeigen |
-| `show_events` | `true` | Vergangene Events anzeigen |
-| `show_contact` | `true` | Kontaktbereich anzeigen |
 
 ---
 
@@ -235,43 +182,45 @@ Gibt alle gespeicherten Vortragstitel / Präsentationen zurück (aus Meta-JSON o
 $speaker['id']                  // int
 $speaker['first_name']          // string
 $speaker['last_name']           // string
-$speaker['gender']              // 'male'|'female'|'diverse'|'unknown'
-$speaker['speaker_title']       // string
-$speaker['bio_short']           // string
-$speaker['bio_long']            // string (HTML erlaubt)
-$speaker['languages']           // CSV: 'de,en'
-$speaker['formats']             // CSV: 'keynote,workshop'
-$speaker['fee_min']             // int (€)
-$speaker['fee_max']             // int (€)
-$speaker['travel_radius']       // int (km)
-$speaker['travel_international']// int (0|1)
-$speaker['status']              // 'active'|'inactive'|'pending'
+$speaker['gender']              // ''|'m'|'f'|'d'
+$speaker['title']               // string|null
+$speaker['short_bio']           // string|null
+$speaker['bio']                 // string|null
+$speaker['languages']           // JSON-Array
+$speaker['formats']             // JSON-Array
+$speaker['speaking_fee_min']    // decimal|null
+$speaker['speaking_fee_max']    // decimal|null
+$speaker['travel_radius']       // local|regional|national|international|worldwide
+$speaker['status']              // active|inactive|draft|pending|deleted
 $speaker['photo_url']           // string|null
-$speaker['website_url']         // string|null
-$speaker['linkedin_url']        // string|null
+$speaker['website']             // string|null
+$speaker['linkedin']            // string|null
 
 $topics                         // Array aus getTopics()
-$events                         // Array aus getEvents() (nur wenn cms-events aktiv)
+$events                         // manuelle und optionale cms-events-Auftritte
 ```
 
 ---
 
-## AJAX-Endpunkte
+## HTTP-/AJAX-Endpunkte
 
-| Action-Key | Berechtigung | Beschreibung |
-|-----------|-------------|--------------|
-| `speaker_save` | Admin | Speaker erstellen/aktualisieren |
-| `speaker_delete` | Admin | Speaker löschen |
-| `speaker_topic_add` | Admin | Thema hinzufügen |
-| `speaker_topic_delete` | Admin | Thema entfernen |
-| `speaker_event_assign` | Admin | Event zuordnen |
-| `speaker_event_remove` | Admin | Event-Zuordnung entfernen |
-| `speaker_availability` | Member (eigenes Profil) | Verfügbarkeit setzen |
-| `speaker_meta_save` | Member (eigenes Profil) | Meta-Felder speichern |
+| Route | Methode | Berechtigung | Beschreibung |
+|-------|---------|-------------|--------------|
+| `/speakers` | GET | öffentlich | Speaker-Archiv |
+| `/speakers/:slug` | GET | öffentlich | Speaker-Detailseite |
+| `/admin/speakers` | GET | Admin | Dashboard/Liste |
+| `/admin/speakers/save` | POST | Admin + CSRF | Speaker speichern |
+| `/admin/speakers/delete/:id` | POST | Admin + CSRF | Speaker löschen |
+| `/admin/speakers/approve/:id` | POST | Admin + CSRF | Pending-Speaker freigeben |
+| `/admin/speakers/event/add` | POST | Admin + CSRF | Auftritt per JSON speichern |
+| `/admin/speakers/event/delete/:id` | POST | Admin + CSRF | Auftritt per JSON löschen |
+| `/admin/speakers/settings/save` | POST | Admin + CSRF | Einstellungen speichern |
+
+Alle POST-only Routen besitzen einen GET-Fallback mit `405 Method Not Allowed` und `Allow: POST`.
 
 **Antwortformat:**
 ```json
-{ "success": true, "data": { "id": 7 } }
+{ "success": true, "id": 7 }
 { "success": false, "error": "Thema nicht gefunden" }
 ```
 

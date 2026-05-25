@@ -1,8 +1,8 @@
 <?php
 /**
- * Event Archive Template – Struktur nach co-archive
+ * Event Archive Template – Plugin-Content only for CMS-PHINIT.
  *
- * Verfügbare Variablen (via extract() aus post-type::archive_page()):
+ * Verfügbare Variablen:
  *   $events, $settings, $current_page, $per_page, $pages, $total,
  *   $categories, $filter_category, $filter_city, $filter_month,
  *   $filter_online, $when_filter, $search
@@ -12,153 +12,121 @@
 
 declare(strict_types=1);
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 if (!isset($events, $settings)) {
     return;
 }
 
-$archive_title = htmlspecialchars((string) ($settings['archive_title'] ?? 'Events'), ENT_QUOTES, 'UTF-8');
-$archive_desc  = htmlspecialchars((string) ($settings['archive_description'] ?? 'Aktuelle Veranstaltungen'), ENT_QUOTES, 'UTF-8');
-$grid_cols = max(1, (int)($settings['grid_columns'] ?? 3));
-if ($grid_cols < 1) $grid_cols = 3;
-
-/* ── Filter-Variablen normalisieren ───────────────────────────── */
-$cur_search   = htmlspecialchars((string) ($search ?? ''), ENT_QUOTES, 'UTF-8');
-$cur_city     = htmlspecialchars((string) ($filter_city ?? ''), ENT_QUOTES, 'UTF-8');
-$cur_cat      = htmlspecialchars((string) ($filter_category ?? ''), ENT_QUOTES, 'UTF-8');
-$cur_when     = htmlspecialchars((string) ($when_filter ?? ''), ENT_QUOTES, 'UTF-8');
-$cur_online   = $filter_online !== null && $filter_online !== '' ? (string)(int)$filter_online : '';
-
-/* ── Pagination ──────────────────────────────────────────────── */
-$cur_page   = max(1, (int)($current_page ?? 1));
-$tot_pages  = max(1, (int)($pages ?? 1));
-$tot_events = (int)($total ?? count($events));
-
-/* ── Archive-URL ─────────────────────────────────────────────── */
-$base_url    = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
-$archive_slug = preg_replace('/[^a-z0-9-]+/i', '-', (string) ($settings['archive_slug'] ?? 'events')) ?: 'events';
-$archive_url = $base_url . '/' . trim($archive_slug, '-') . '/';
-
+$events = (array) $events;
+$categories = (array) ($categories ?? []);
+$baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
+$archiveSlug = preg_replace('/[^a-z0-9-]+/i', '-', (string) ($settings['archive_slug'] ?? 'events')) ?: 'events';
+$archiveUrl = $baseUrl . '/' . trim($archiveSlug, '-') . '/';
+$curPage = max(1, (int) ($current_page ?? 1));
+$totalPages = max(1, (int) ($pages ?? 1));
+$today = strtotime('today');
+$upcomingCount = count(array_filter($events, static function (object $event) use ($today): bool {
+    $timestamp = !empty($event->event_date) ? strtotime((string) $event->event_date) : 0;
+    return $timestamp && $today !== false && $timestamp >= $today;
+}));
+$currentYear = (int) date('Y');
+$selectedCategory = mb_strtolower((string) ($filter_category ?? ''), 'UTF-8');
+$selectedMonth = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string) ($filter_month ?? '')) === 1 ? substr((string) $filter_month, 5, 2) : '';
+$selectedYear = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string) ($filter_month ?? '')) === 1 ? substr((string) $filter_month, 0, 4) : '';
+$selectedSearch = htmlspecialchars((string) ($search ?? ''), ENT_QUOTES, 'UTF-8');
+$monthLabels = [
+    '01' => 'Januar', '02' => 'Februar', '03' => 'März', '04' => 'April',
+    '05' => 'Mai', '06' => 'Juni', '07' => 'Juli', '08' => 'August',
+    '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Dezember',
+];
 ?>
-<main class="phinit-plugin ev-archive">
+<main class="phinit-plugin cms-events-wrap" data-cms-events-filter-root>
+    <header class="cms-events-head">
+        <p class="phinit-overline">Events</p>
+        <h1>Veranstaltungen</h1>
+        <p class="cms-events-head__subtitle"><?= (int) $upcomingCount ?> bevorstehende Events</p>
+    </header>
 
-  <!-- Gradient-Header (nur wenn Titel oder Beschreibung in Einstellungen gesetzt) -->
-  <?php
-  $has_title = !empty(trim((string)($settings['archive_title']       ?? '')));
-  $has_desc  = !empty(trim((string)($settings['archive_description'] ?? '')));
-  if ($has_title || $has_desc):
-  ?>
-  <header class="ev-archive-header phinit-card phinit-card--accent">
-    <div class="ev-archive-header-inner">
-      <div>
-        <h2><?= $archive_title ?></h2>
-        <p class="ev-archive-subtitle"><?= $archive_desc ?></p>
-      </div>
-      <div class="ev-archive-count">
-        <span class="ev-archive-count-num"><?= $tot_events ?></span>
-        <span class="ev-archive-count-lbl">Events</span>
-      </div>
-    </div>
-  </header>
-  <?php endif; ?>
+    <nav class="cms-events-filter" aria-label="Eventfilter">
+        <div class="phinit-field cms-events-filter__field">
+            <label for="cms-event-category">Kategorie</label>
+            <select id="cms-event-category" class="phinit-select" data-cms-events-filter="category">
+                <option value="">Alle Kategorien</option>
+                <?php foreach ($categories as $category): ?>
+                    <?php $categoryValue = mb_strtolower((string) $category, 'UTF-8'); ?>
+                    <option value="<?= htmlspecialchars($categoryValue, ENT_QUOTES, 'UTF-8') ?>"<?= $selectedCategory === $categoryValue ? ' selected' : '' ?>>
+                        <?= htmlspecialchars((string) $category, ENT_QUOTES, 'UTF-8') ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
 
-  <!-- Filter-Bar -->
-  <form class="ev-filter-bar phinit-card" method="GET" action="<?= htmlspecialchars($archive_url, ENT_QUOTES, 'UTF-8') ?>" role="search">
+        <div class="phinit-field cms-events-filter__field">
+            <label for="cms-event-month">Monat</label>
+            <select id="cms-event-month" class="phinit-select" data-cms-events-filter="month">
+                <option value="">Alle Monate</option>
+                <?php foreach ($monthLabels as $monthValue => $monthLabel): ?>
+                    <option value="<?= htmlspecialchars($monthValue, ENT_QUOTES, 'UTF-8') ?>"<?= $selectedMonth === $monthValue ? ' selected' : '' ?>>
+                        <?= htmlspecialchars($monthLabel, ENT_QUOTES, 'UTF-8') ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
 
-    <div class="ev-filter-input phinit-field">
-      <label for="ev-search">Event suchen</label>
-      <input id="ev-search" class="phinit-input" type="search" name="search" placeholder="Event suchen…"
-             value="<?= $cur_search ?>">
-    </div>
+        <div class="phinit-field cms-events-filter__field">
+            <label for="cms-event-year">Jahr</label>
+            <select id="cms-event-year" class="phinit-select" data-cms-events-filter="year">
+                <option value="">Alle Jahre</option>
+                <?php for ($year = $currentYear; $year <= $currentYear + 1; $year++): ?>
+                    <option value="<?= (int) $year ?>"<?= $selectedYear === (string) $year ? ' selected' : '' ?>><?= (int) $year ?></option>
+                <?php endfor; ?>
+            </select>
+        </div>
 
-    <div class="ev-filter-input phinit-field">
-      <label for="ev-city">Ort / Stadt</label>
-      <input id="ev-city" class="phinit-input" type="text" name="city" placeholder="Ort / Stadt…"
-             value="<?= $cur_city ?>">
-    </div>
+        <div class="phinit-field cms-events-filter__field cms-events-filter__field--search">
+            <label for="cms-event-search">Suche</label>
+            <input id="cms-event-search" class="phinit-input" type="search" placeholder="Suche..." value="<?= $selectedSearch ?>" data-cms-events-filter="search">
+        </div>
 
-    <?php if (!empty($categories)): ?>
-      <label class="phinit-field" for="ev-category"><span>Kategorie</span>
-      <select id="ev-category" name="category" class="ev-filter-select phinit-select">
-        <option value="">Kategorie</option>
-        <?php foreach ((array)$categories as $cat): ?>
-          <?php $catEsc = htmlspecialchars((string) $cat, ENT_QUOTES, 'UTF-8'); ?>
-          <option value="<?= $catEsc ?>"<?= $cur_cat === $catEsc ? ' selected' : '' ?>>
-            <?= $catEsc ?>
-          </option>
-        <?php endforeach; ?>
-      </select></label>
-    <?php endif; ?>
-
-    <label class="phinit-field" for="ev-when"><span>Zeitraum</span>
-    <select id="ev-when" name="when" class="ev-filter-select phinit-select">
-      <option value="">Zeitraum</option>
-      <option value="upcoming"<?= $cur_when === 'upcoming' ? ' selected' : '' ?>>Bevorstehend</option>
-      <option value="past"<?= $cur_when === 'past' ? ' selected' : '' ?>>Vergangen</option>
-    </select></label>
-
-    <label class="phinit-field" for="ev-online"><span>Format</span>
-    <select id="ev-online" name="online" class="ev-filter-select phinit-select">
-      <option value="">Alle Formate</option>
-      <option value="0"<?= $cur_online === '0' ? ' selected' : '' ?>>Präsenz</option>
-      <option value="1"<?= $cur_online === '1' ? ' selected' : '' ?>>Online</option>
-    </select></label>
-
-    <button type="submit" class="phinit-btn phinit-btn--primary ev-btn ev-btn-primary">Suchen</button>
-
-    <?php if ($cur_search || $cur_city || $cur_cat || $cur_when || $cur_online !== ''): ?>
-      <a href="<?= htmlspecialchars($archive_url, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary ev-btn ev-btn-ghost">Reset</a>
-    <?php endif; ?>
-
-  </form>
-
-  <!-- Event-Grid -->
-  <?php
-  // $db wird von event-card.php intern benötigt, wenn speaker count per query:
-  $db = CMS_Events_Database::instance();
-  ?>
-  <section class="ev-grid phinit-grid" aria-label="Event-Liste">
-    <?php if (empty($events)): ?>
-      <div class="ev-empty phinit-empty-state" role="status" aria-live="polite">
-        <p><strong>Keine Events gefunden.</strong></p>
-        <?php if ($cur_search || $cur_city || $cur_cat || $cur_when): ?>
-          <p><a href="<?= htmlspecialchars($archive_url, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary ev-btn ev-btn-ghost ev-btn--inline">Filter zurücksetzen</a></p>
-        <?php endif; ?>
-      </div>
-    <?php else: ?>
-      <?php foreach ((array)$events as $event): ?>
-        <?php include __DIR__ . '/event-card.php'; ?>
-      <?php endforeach; ?>
-    <?php endif; ?>
-  </section>
-
-  <!-- Pagination -->
-  <?php if ($tot_pages > 1): ?>
-    <?php
-    $eventPaginationParams = array_filter([
-        'search'   => html_entity_decode($cur_search, ENT_QUOTES, 'UTF-8'),
-        'city'     => html_entity_decode($cur_city, ENT_QUOTES, 'UTF-8'),
-        'category' => html_entity_decode($cur_cat, ENT_QUOTES, 'UTF-8'),
-        'month'    => preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string) ($filter_month ?? '')) === 1 ? (string) $filter_month : '',
-        'when'     => in_array((string) ($when_filter ?? ''), ['upcoming', 'past'], true) ? (string) $when_filter : '',
-        'online'   => $cur_online,
-    ], static fn($value): bool => $value !== null && $value !== '');
-    $eventPaginationBase = $archive_url . (!empty($eventPaginationParams) ? '?' . http_build_query($eventPaginationParams) : '');
-    $paginationSeparator = str_contains($eventPaginationBase, '?') ? '&' : '?';
-    ?>
-    <nav class="ev-pagination" aria-label="Seitennavigation">
-      <?php if ($cur_page > 1): ?>
-        <a class="ev-page-btn phinit-btn phinit-btn--secondary"
-           href="<?= htmlspecialchars($eventPaginationBase . $paginationSeparator . 'page=' . ($cur_page - 1), ENT_QUOTES, 'UTF-8') ?>">Zurück</a>
-      <?php endif; ?>
-      <?php for ($i = max(1, $cur_page - 2); $i <= min($tot_pages, $cur_page + 2); $i++): ?>
-        <a class="ev-page-btn phinit-btn phinit-btn--secondary<?= $i === $cur_page ? ' active' : '' ?>"
-           href="<?= htmlspecialchars($eventPaginationBase . $paginationSeparator . 'page=' . $i, ENT_QUOTES, 'UTF-8') ?>"><?= $i ?></a>
-      <?php endfor; ?>
-      <?php if ($cur_page < $tot_pages): ?>
-        <a class="ev-page-btn phinit-btn phinit-btn--secondary"
-           href="<?= htmlspecialchars($eventPaginationBase . $paginationSeparator . 'page=' . ($cur_page + 1), ENT_QUOTES, 'UTF-8') ?>">Weiter</a>
-      <?php endif; ?>
+        <button type="button" class="phinit-btn phinit-btn--secondary cms-events-filter__reset" data-cms-events-reset>Filter zurücksetzen</button>
     </nav>
-  <?php endif; ?>
 
-</main><!-- /.ev-archive -->
+    <section class="cms-events-grid" aria-label="Event-Liste">
+        <?php if (empty($events)): ?>
+            <div class="cms-events-empty phinit-empty-state" role="status" aria-live="polite">
+                <i class="ti ti-calendar-off" aria-hidden="true"></i>
+                <p class="cms-events-empty__title">Keine Events gefunden.</p>
+            </div>
+        <?php else: ?>
+            <?php $db = CMS_Events_Database::instance(); ?>
+            <?php foreach ($events as $event): ?>
+                <?php include __DIR__ . '/event-card.php'; ?>
+            <?php endforeach; ?>
+        <?php endif; ?>
+    </section>
+
+    <?php if (!empty($events)): ?>
+        <div class="cms-events-empty cms-events-empty--js phinit-empty-state" role="status" aria-live="polite" hidden data-cms-events-empty>
+            <i class="ti ti-calendar-off" aria-hidden="true"></i>
+            <p class="cms-events-empty__title">Keine Events gefunden.</p>
+            <button type="button" class="phinit-btn phinit-btn--link" data-cms-events-reset>Filter zurücksetzen</button>
+        </div>
+    <?php endif; ?>
+
+    <?php if ($totalPages > 1): ?>
+        <nav class="cms-events-pagination" aria-label="Seitennavigation">
+            <?php if ($curPage > 1): ?>
+                <a class="cms-events-page" href="<?= htmlspecialchars($archiveUrl . '?page=' . ($curPage - 1), ENT_QUOTES, 'UTF-8') ?>" rel="prev">Zurück</a>
+            <?php endif; ?>
+            <?php for ($pageNumber = max(1, $curPage - 2); $pageNumber <= min($totalPages, $curPage + 2); $pageNumber++): ?>
+                <a class="cms-events-page<?= $pageNumber === $curPage ? ' is-active' : '' ?>" href="<?= htmlspecialchars($archiveUrl . '?page=' . $pageNumber, ENT_QUOTES, 'UTF-8') ?>"<?= $pageNumber === $curPage ? ' aria-current="page"' : '' ?>><?= (int) $pageNumber ?></a>
+            <?php endfor; ?>
+            <?php if ($curPage < $totalPages): ?>
+                <a class="cms-events-page" href="<?= htmlspecialchars($archiveUrl . '?page=' . ($curPage + 1), ENT_QUOTES, 'UTF-8') ?>" rel="next">Weiter</a>
+            <?php endif; ?>
+        </nav>
+    <?php endif; ?>
+</main>

@@ -7,7 +7,7 @@
 | `cms_speakers` | Haupt-Profil-Datensätze |
 | `cms_speaker_topics` | Speaker-Themengebiete |
 | `cms_speaker_events` | Auftritte & Präsentationen |
-| `cms_speaker_meta` | Flexible Zusatzdaten |
+| `cms_speaker_plugin_settings` | Legacy-/Fallback-Settings; primär wird `SettingsService` Gruppe `cms-speakers` genutzt |
 
 ---
 
@@ -45,12 +45,14 @@ CREATE TABLE cms_speakers (
     target_audience   VARCHAR(400) DEFAULT NULL,
     speaking_style    VARCHAR(200) DEFAULT NULL,
     awards            TEXT         DEFAULT NULL,
+    recognitions      TEXT         DEFAULT NULL COMMENT 'JSON-Array',
+    skills            TEXT         DEFAULT NULL COMMENT 'JSON-Array',
     travel_radius     ENUM('local','regional','national','international','worldwide') DEFAULT 'national',
     max_audience_size INT UNSIGNED DEFAULT NULL,
     speaking_fee_min  DECIMAL(10,2) DEFAULT NULL,
     speaking_fee_max  DECIMAL(10,2) DEFAULT NULL,
     availability      ENUM('available','limited','booked') DEFAULT 'available',
-    status            ENUM('active','inactive','draft')     DEFAULT 'active',
+    status            ENUM('active','inactive','draft','pending','deleted') DEFAULT 'active',
     is_featured       TINYINT(1)   DEFAULT 0,
     is_verified       TINYINT(1)   DEFAULT 0,
     profile_views     INT UNSIGNED DEFAULT 0,
@@ -106,30 +108,31 @@ CREATE TABLE cms_speaker_events (
     audience_size   INT UNSIGNED DEFAULT NULL,
     video_url       VARCHAR(600) DEFAULT NULL,
     slides_url      VARCHAR(600) DEFAULT NULL,
+    event_url       VARCHAR(600) DEFAULT NULL,
+    is_public       TINYINT(1)   DEFAULT 1,
     created_at      DATETIME     DEFAULT CURRENT_TIMESTAMP,
 
     INDEX idx_speaker    (speaker_id),
     INDEX idx_event_date (event_date),
-    INDEX idx_type       (event_type)
+    INDEX idx_company    (company_id),
+    INDEX idx_cms_event  (cms_event_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ---
 
-## `cms_speaker_meta`
+## Settings
 
-Identische Struktur wie `cms_expert_meta` – Key-Value-Store für flexible Erweiterungen.
+Neue und aktualisierte Einstellungen werden in der Core-Tabelle `cms_settings` über `CMS\Services\SettingsService` mit dem Gruppenpräfix `cms-speakers.*` gespeichert.
+
+Die Tabelle `cms_speaker_plugin_settings` bleibt für Migrationen und als Fallback bestehen:
 
 ```sql
-CREATE TABLE cms_speaker_meta (
-    id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    speaker_id INT UNSIGNED NOT NULL,
-    meta_key   VARCHAR(255) NOT NULL,
-    meta_value LONGTEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    INDEX idx_speaker  (speaker_id),
-    INDEX idx_meta_key (meta_key)
+CREATE TABLE cms_speaker_plugin_settings (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    setting_key   VARCHAR(255) NOT NULL UNIQUE,
+    setting_value LONGTEXT DEFAULT NULL,
+    updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
@@ -140,7 +143,9 @@ CREATE TABLE cms_speaker_meta (
 ```
 cms_users (1)──(0..1) cms_speakers (1)──(M) cms_speaker_topics
                           │           (1)──(M) cms_speaker_events ──(0..1) cms_events
-                          │           (1)──(M) cms_speaker_meta     ──(0..1) cms_companies
-                          └──(0..1) cms_experts (expert_id)
                           └──(0..1) cms_companies (company_id)
 ```
+
+## Migrationen
+
+Schema-Prüfungen nutzen `INFORMATION_SCHEMA.COLUMNS` mit Prepared Statements. Dadurch werden MySQL/MariaDB-Fehler durch `SHOW COLUMNS ... LIKE ?` vermieden und Spaltennamen nur aus internen Allow-Lists verarbeitet.
