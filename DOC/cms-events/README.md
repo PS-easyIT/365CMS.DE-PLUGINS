@@ -1,7 +1,7 @@
 # CMS Events – Dokumentation
 
 **Plugin:** `cms-events`  
-**Version:** 3.0.5  
+**Version:** 3.0.6  
 **Namespace:** `CMS_Events`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
 **Audit-/Dokustand:** 365CMS-3.x-Audit abgeschlossen am 2026-05-25  
@@ -18,6 +18,7 @@ Das **CMS Events**-Plugin verwaltet Veranstaltungen – von Webinaren bis zu Kon
 - Version `3.0.3` enthält den aktuellen Audit-/Stabilitätsstand für PHP 8.4 und 365CMS 3.x.
 - Version `3.0.4` behebt die defensive Admin-Menü-Registrierung, sodass der Events-Eintrag in der Sidebar zuverlässig sichtbar ist.
 - Version `3.0.5` behebt den Hauptdatei-Guard, damit `CMS_Events::instance()` beim Laden des Plugins tatsächlich ausgeführt wird.
+- Version `3.0.6` rendert den Events-Menüeintrag direkt als Dashboard/Overview statt über eine JS-Weiterleitung.
 - Bootstrap, Include-Klassen und Lifecycle-Hooks sind idempotent und gegen Redeclare-Fatals abgesichert.
 - Datenbankmigrationen nutzen `INFORMATION_SCHEMA`, erstellen die Settings-Tabelle im Installer und ergänzen Foreign Keys nicht-blockierend.
 - Öffentliche Fehlerpfade nutzen die 365CMS-404/Error-Fallbacks und protokollieren technische Details serverseitig.

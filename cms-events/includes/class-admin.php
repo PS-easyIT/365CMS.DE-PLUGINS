@@ -55,10 +55,12 @@ final class CMS_Events_Admin
 
     public static function render_plugin_page_bridge(): void
     {
-        $targetUrl = htmlspecialchars(SITE_URL . '/admin/events', ENT_QUOTES, 'UTF-8');
+        if (class_exists('CMS_Events_Post_Type', false)) {
+            CMS_Events_Post_Type::instance()->admin_list();
+            return;
+        }
 
-        echo '<div class="admin-card"><p>Weiterleitung zur Event-Verwaltung … <a href="' . $targetUrl . '">Falls nichts passiert, hier klicken</a>.</p></div>';
-        echo '<script>window.location.replace(' . json_encode(SITE_URL . '/admin/events', JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ');</script>';
+        CMS\Router::instance()->redirect('/admin/events');
     }
 
     private function loadAdminMenu(): void

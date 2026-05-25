@@ -2,7 +2,7 @@
 
 ## Zweck
 
-Dieses Dokument beschreibt den Sicherheits-Zielstand und die Audit-Prüfpunkte für `cms-events` im Rahmen des **365CMS-3.x-Audits**. Stand: `3.0.5` vom 2026-05-25.
+Dieses Dokument beschreibt den Sicherheits-Zielstand und die Audit-Prüfpunkte für `cms-events` im Rahmen des **365CMS-3.x-Audits**. Stand: `3.0.6` vom 2026-05-25.
 
 Der Schwerpunkt liegt auf:
 

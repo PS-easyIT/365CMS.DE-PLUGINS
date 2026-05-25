@@ -1,5 +1,10 @@
 # CMS Events – Changelog
 
+## [3.0.6] – 2026-05-25
+
+- **Admin-Menü-Dashboard:** Der Plugin-Menüeintrag `/admin/plugins/events/events` rendert den Overview-/Dashboard-Tab jetzt direkt serverseitig über `CMS_Events_Post_Type::admin_list()`.
+- Die bisherige JavaScript-Weiterleitungsbrücke nach `/admin/events` wurde entfernt. Damit erscheint das Dashboard sofort beim Klick auf den Sidebar-Menüeintrag und nicht erst nach einem zusätzlichen Tab-Klick oder Redirect.
+
 ## [3.0.5] – 2026-05-25
 
 - **Admin-Menü final:** Der Guard der Hauptdatei wurde von einem selbst-auslösenden `if (class_exists(...)) return;` auf das funktionierende `cms-feed`-Muster `if (!class_exists(...)) { class ... }` umgestellt. Dadurch wird `CMS_Events::instance()` beim Plugin-Laden ausgeführt und der `cms_admin_menu`-Hook tatsächlich registriert.

@@ -166,57 +166,32 @@ final class CMS_Speakers_Database
                 updated_at    DATETIME      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
-            // ── Lila Standard-Einstellungen (versionsbasierte Migration) ──
-            $defaultSettings = [
-                'design_primary_color'       => '#8b5cf6',
-                'design_accent_color'        => '#7c3aed',
-                'design_card_bg'             => '#faf5ff',
-                'design_border_radius'       => '12',
-                'design_cta_label'           => 'Profil ansehen',
-                'design_show_availability'   => '1',
-                'design_show_mvp_badge'      => '1',
-                'design_show_formats'        => '1',
-                'design_show_topics'         => '1',
-                'design_grid_columns'        => 'auto',
-                'archive_title'              => 'Speaker Directory',
-                'archive_description'        => 'Finden Sie den passenden Redner für Ihr Event',
-                'archive_per_page'           => '12',
-                'archive_header_icon'        => '🎤',
-                'archive_header_bg_from'     => '#6d28d9',
-                'archive_header_bg_to'       => '#a855f7',
-                'archive_header_title_color' => '#ffffff',
-                'detail_header_bg_from'      => '#4c1d95',
-                'detail_header_bg_to'        => '#7c3aed',
-                'detail_header_title_color'  => '#ffffff',
-            ];
-            // Version prüfen – nur wenn nicht aktuell → alle Farb-Defaults erzwingen
-            $targetVersion = '2.1.0';
+            // ── Lila Standard-Einstellungen (nur fehlende Schlüssel ergänzen) ──
+            $defaultSettings = $this->default_settings();
+            $targetVersion = '3.0.3';
             $stmtVer = $pdo->prepare(
                 "SELECT setting_value FROM {$p}speaker_plugin_settings WHERE setting_key = 'settings_version' LIMIT 1"
             );
             $stmtVer->execute();
             $installedVersion = $stmtVer->fetchColumn() ?: '';
 
+            // Nur neu hinzugekommene Schlüssel einfügen (bestehende nicht anfassen)
+            $stmtSeed = $pdo->prepare(
+                "INSERT IGNORE INTO {$p}speaker_plugin_settings (setting_key, setting_value) VALUES (?, ?)"
+            );
+            foreach ($defaultSettings as $k => $v) {
+                $stmtSeed->execute([$k, $v]);
+            }
+
             if ($installedVersion !== $targetVersion) {
-                // Erstinstallation oder Upgrade → REPLACE erzwingt lila Defaults
-                $stmtReplace = $pdo->prepare(
+                $stmtVersion = $pdo->prepare(
                     "INSERT INTO {$p}speaker_plugin_settings (setting_key, setting_value) VALUES (?, ?) "
                     . "ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
                 );
-                foreach ($defaultSettings as $k => $v) {
-                    $stmtReplace->execute([$k, $v]);
-                }
-                // Versions-Marker setzen – verhindert erneutes Überschreiben
-                $stmtReplace->execute(['settings_version', $targetVersion]);
-            } else {
-                // Nur neu hinzugekommene Schlüssel einfügen (bestehende nicht anfassen)
-                $stmtSeed = $pdo->prepare(
-                    "INSERT IGNORE INTO {$p}speaker_plugin_settings (setting_key, setting_value) VALUES (?, ?)"
-                );
-                foreach ($defaultSettings as $k => $v) {
-                    $stmtSeed->execute([$k, $v]);
-                }
+                $stmtVersion->execute(['settings_version', $targetVersion]);
             }
+
+            $this->seed_default_settings($defaultSettings);
 
             // ── ALTER bestehende Tabellen (Spalten ergänzen, falls nötig) ──
             $this->maybe_alter_tables($pdo, $p);
@@ -247,8 +222,7 @@ final class CMS_Speakers_Database
         foreach ($columns as $table => $cols) {
             foreach ($cols as $col => $def) {
                 try {
-                    $stmt = $pdo->query("SHOW COLUMNS FROM `{$table}` LIKE '{$col}'");
-                    if ($stmt && $stmt->rowCount() === 0) {
+                    if (!$this->column_exists($pdo, $table, $col)) {
                         $pdo->exec("ALTER TABLE `{$table}` ADD COLUMN `{$col}` {$def}");
                     }
                 } catch (\Throwable $e) {}
@@ -258,6 +232,59 @@ final class CMS_Speakers_Database
         try {
             $pdo->exec("ALTER TABLE `{$p}speakers` MODIFY COLUMN `status` ENUM('active','inactive','draft','pending','deleted') DEFAULT 'active'");
         } catch (\Throwable $e) {}
+    }
+
+    private function column_exists(\PDO $pdo, string $table, string $column): bool
+    {
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+        );
+        $stmt->execute([$table, $column]);
+
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
+    private function table_exists(string $table): bool
+    {
+        try {
+            $stmt = CMS\Database::instance()->prepare(
+                'SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?'
+            );
+            $stmt->execute([$table]);
+
+            return (int) $stmt->fetchColumn() > 0;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function default_settings(): array
+    {
+        return [
+            'design_primary_color'       => '#8b5cf6',
+            'design_accent_color'        => '#7c3aed',
+            'design_card_bg'             => '#faf5ff',
+            'design_border_radius'       => '12',
+            'design_cta_label'           => 'Profil ansehen',
+            'design_show_availability'   => '1',
+            'design_show_mvp_badge'      => '1',
+            'design_show_formats'        => '1',
+            'design_show_topics'         => '1',
+            'design_grid_columns'        => 'auto',
+            'archive_title'              => 'Speaker Directory',
+            'archive_description'        => 'Finden Sie den passenden Redner für Ihr Event',
+            'archive_per_page'           => '12',
+            'archive_header_icon'        => '🎤',
+            'archive_header_bg_from'     => '#6d28d9',
+            'archive_header_bg_to'       => '#a855f7',
+            'archive_header_title_color' => '#ffffff',
+            'detail_header_bg_from'      => '#4c1d95',
+            'detail_header_bg_to'        => '#7c3aed',
+            'detail_header_title_color'  => '#ffffff',
+        ];
     }
 
     // ═══════════════════════════════════════════════════════
@@ -601,6 +628,66 @@ final class CMS_Speakers_Database
 
     public function get_settings(): array
     {
+        $settings = $this->default_settings();
+
+        foreach ($this->get_legacy_settings() as $key => $value) {
+            $settings[$key] = $value;
+        }
+
+        $settingsService = $this->settings_service();
+        if ($settingsService !== null) {
+            try {
+                foreach ($settingsService->getGroup('cms-speakers') as $key => $value) {
+                    if (is_scalar($value) || $value === null) {
+                        $settings[$key] = (string) $value;
+                    }
+                }
+            } catch (\Throwable $e) {
+                error_log('CMS_Speakers get_settings SettingsService: ' . $e->getMessage());
+            }
+        }
+
+        return $settings;
+    }
+
+    public function save_settings(array $settings): void
+    {
+        $normalized = [];
+        foreach ($settings as $key => $value) {
+            if (!is_string($key) || $key === '') {
+                continue;
+            }
+            $normalized[$key] = is_scalar($value) || $value === null ? (string) $value : json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+
+        $settingsService = $this->settings_service();
+        if ($settingsService !== null) {
+            try {
+                if ($settingsService->setMany('cms-speakers', $normalized, [], 0)) {
+                    return;
+                }
+            } catch (\Throwable $e) {
+                error_log('CMS_Speakers save_settings SettingsService: ' . $e->getMessage());
+            }
+        }
+
+        $db = CMS\Database::instance();
+        $p  = $db->prefix();
+        try {
+            foreach ($normalized as $key => $value) {
+                $db->prepare(
+                    "INSERT INTO {$p}speaker_plugin_settings (setting_key, setting_value)
+                     VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?"
+                )->execute([$key, $value, $value]);
+            }
+        } catch (\Throwable $e) { error_log('CMS_Speakers save_settings: ' . $e->getMessage()); }
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function get_legacy_settings(): array
+    {
         $db = CMS\Database::instance();
         try {
             $stmt = $db->prepare(
@@ -609,23 +696,73 @@ final class CMS_Speakers_Database
             $stmt->execute([]);
             $rows = $stmt->fetchAll();
             $out  = [];
-            foreach ($rows as $row) { $out[$row->setting_key] = $row->setting_value; }
+            foreach ($rows as $row) {
+                $out[(string) $row->setting_key] = (string) $row->setting_value;
+            }
+
             return $out;
-        } catch (\Throwable $e) { return []; }
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
-    public function save_settings(array $settings): void
+    private function settings_service(): ?\CMS\Services\SettingsService
+    {
+        if (!class_exists('CMS\\Services\\SettingsService')) {
+            return null;
+        }
+
+        try {
+            return \CMS\Services\SettingsService::getInstance();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * @param array<string, string> $defaults
+     */
+    private function seed_default_settings(array $defaults): void
+    {
+        $settingsService = $this->settings_service();
+        if ($settingsService === null) {
+            return;
+        }
+
+        try {
+            $current = $settingsService->getGroup('cms-speakers');
+            $settingsService->setMany('cms-speakers', array_merge($defaults, $current), [], 0);
+        } catch (\Throwable $e) {
+            error_log('CMS_Speakers seed_default_settings: ' . $e->getMessage());
+        }
+    }
+
+    public function drop_tables(): void
     {
         $db = CMS\Database::instance();
-        $p  = $db->prefix();
+        $pdo = $db->getPdo();
+        $p = $db->prefix();
+
         try {
-            foreach ($settings as $key => $value) {
-                $db->prepare(
-                    "INSERT INTO {$p}speaker_plugin_settings (setting_key, setting_value)
-                     VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?"
-                )->execute([$key, $value, $value]);
+            $settingsService = $this->settings_service();
+            if ($settingsService !== null) {
+                $keys = array_unique(array_merge(
+                    array_keys($this->default_settings()),
+                    array_keys($this->get_legacy_settings()),
+                    array_keys($settingsService->getGroup('cms-speakers')),
+                    ['schema_version', 'settings_version']
+                ));
+                foreach ($keys as $key) {
+                    $settingsService->forget('cms-speakers', (string) $key);
+                }
             }
-        } catch (\Throwable $e) { error_log('CMS_Speakers save_settings: ' . $e->getMessage()); }
+        } catch (\Throwable $e) {
+            error_log('CMS_Speakers settings cleanup: ' . $e->getMessage());
+        }
+
+        foreach (['speaker_events', 'speaker_topics', 'speaker_plugin_settings', 'speakers'] as $table) {
+            $pdo->exec('DROP TABLE IF EXISTS `' . $p . $table . '`');
+        }
     }
 
     /**

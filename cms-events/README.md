@@ -1,6 +1,6 @@
 ﻿# CMS Events Manager Plugin
 
-**Version:** 3.0.5  
+**Version:** 3.0.6  
 **Requires:** 365CMS 3.0+  
 **PHP:** 8.4+
 
@@ -108,6 +108,7 @@ Templates can be added to the `templates/` directory:
 - Plugin-Audit für `cms-events` auf Version `3.0.3` abgeschlossen.
 - Version `3.0.4` lädt die zentralen Admin-Menü-Helper defensiv, damit der Events-Menüeintrag in der 365CMS-Sidebar zuverlässig erscheint.
 - Version `3.0.5` korrigiert den PHP-Selbst-Guard der Hauptdatei nach dem funktionierenden `cms-feed`-Muster, damit `CMS_Events::instance()` beim Plugin-Laden wirklich ausgeführt wird.
+- Version `3.0.6` rendert den Events-Menüeintrag direkt als Dashboard/Overview, ohne JS-Weiterleitungs-Zwischenseite.
 - Bootstrap und Include-Dateien sind gegen doppelte Ladepfade/klassische Redeclare-Fatals abgesichert.
 - DB-Migrationen nutzen `INFORMATION_SCHEMA` statt `SHOW COLUMNS`, Foreign Keys werden idempotent und nicht-blockierend ergänzt.
 - Plugin-Settings werden primär über den 365CMS `SettingsService` gelesen/geschrieben; die alte `event_settings`-Tabelle bleibt nur als kompatibler Fallback.

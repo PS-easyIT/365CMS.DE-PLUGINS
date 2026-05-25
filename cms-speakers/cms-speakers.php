@@ -2,8 +2,8 @@
 /**
  * Plugin Name: CMS Speakers
  * Plugin URI: https://365network.de/cms-speakers
- * Description: Verwaltung von Speaker-Profilen mit Card-Ansicht, Detail seiten, Topics und Presentations
- * Version: 3.0.2
+ * Description: Verwaltung von Speaker-Profilen mit Card-Ansicht, Detailseiten, Topics und Presentations
+ * Version: 3.0.3
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -17,22 +17,23 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin Constants
-define('CMS_SPEAKERS_VERSION', '3.0.2');
-define('CMS_SPEAKERS_PLUGIN_DIR', dirname(__FILE__) . '/');
-define('CMS_SPEAKERS_PLUGIN_URL', '/plugins/cms-speakers/');
-define('CMS_SPEAKERS_TEXT_DOMAIN', 'cms-speakers');
+defined('CMS_SPEAKERS_VERSION') || define('CMS_SPEAKERS_VERSION', '3.0.3');
+defined('CMS_SPEAKERS_PLUGIN_DIR') || define('CMS_SPEAKERS_PLUGIN_DIR', dirname(__FILE__) . '/');
+defined('CMS_SPEAKERS_PLUGIN_URL') || define('CMS_SPEAKERS_PLUGIN_URL', '/plugins/cms-speakers/');
+defined('CMS_SPEAKERS_TEXT_DOMAIN') || define('CMS_SPEAKERS_TEXT_DOMAIN', 'cms-speakers');
 
 /**
  * Hauptklasse für CMS Speakers Plugin
  *
  * @since 1.0.0
  */
+if (!class_exists('CMS_Speakers', false)) {
 final class CMS_Speakers
 {
     private static ?self $instance = null;
     private bool $components_bootstrapped = false;
 
-    private string $version = '3.0.1';
+    private string $version = '3.0.3';
     private string $plugin_dir;
     private string $plugin_url;
     private string $text_domain = 'cms-speakers';
@@ -52,6 +53,7 @@ final class CMS_Speakers
 
         $this->load_dependencies();
         $this->init_hooks();
+        $this->bootstrap_hook_components();
         if ($this->can_bootstrap_components()) {
             $this->bootstrap_components();
         }
@@ -88,6 +90,19 @@ final class CMS_Speakers
         return class_exists('CMS\\Hooks') && class_exists('CMS\\Database');
     }
 
+    private function bootstrap_hook_components(): void
+    {
+        if (!class_exists('CMS\\Hooks')) {
+            return;
+        }
+
+        foreach (['CMS_Speakers_Post_Type', 'CMS_Speakers_Meta_Boxes', 'CMS_Speakers_Template_Loader', 'CMS_Speakers_Shortcode', 'CMS_Speakers_Admin', 'CMS_Speakers_Member_Dashboard'] as $class) {
+            if (class_exists($class, false)) {
+                $class::instance();
+            }
+        }
+    }
+
     private function bootstrap_components(): void
     {
         if ($this->components_bootstrapped) {
@@ -108,6 +123,8 @@ final class CMS_Speakers
         if (class_exists('CMS\Hooks')) {
             CMS\Hooks::addAction('cms_init', [$this, 'init_plugin'], 10);
             CMS\Hooks::addAction('plugin_activated', [$this, 'on_activation'], 10);
+            CMS\Hooks::addAction('plugin_deactivated', [$this, 'on_deactivation'], 10);
+            CMS\Hooks::addAction('plugin_uninstalled', [$this, 'on_uninstall'], 10);
             CMS\Hooks::addAction('head', [$this, 'enqueue_styles'], 10);
             CMS\Hooks::addAction('body_end', [$this, 'enqueue_scripts'], 10);
         }
@@ -120,11 +137,39 @@ final class CMS_Speakers
         }
 
         if (class_exists('CMS\\Database') && class_exists('CMS_Speakers_Database')) {
-            CMS_Speakers_Database::instance()->create_tables();
+            try {
+                CMS_Speakers_Database::instance()->create_tables();
+            } catch (\Throwable $e) {
+                error_log('CMS Speakers activation skipped: ' . $e->getMessage());
+            }
         }
 
         if (class_exists('CMS\Hooks')) {
-            CMS\Hooks::doAction('speaker_created');
+            CMS\Hooks::doAction('cms_speakers_activated');
+        }
+    }
+
+    public function on_deactivation(string $plugin): void
+    {
+        if ($plugin !== 'cms-speakers') {
+            return;
+        }
+
+        if (class_exists('CMS\Hooks')) {
+            CMS\Hooks::doAction('cms_speakers_deactivated');
+        }
+    }
+
+    public function on_uninstall(string $plugin): void
+    {
+        if ($plugin !== 'cms-speakers' || !class_exists('CMS_Speakers_Database')) {
+            return;
+        }
+
+        try {
+            CMS_Speakers_Database::instance()->drop_tables();
+        } catch (\Throwable $e) {
+            error_log('CMS Speakers uninstall skipped: ' . $e->getMessage());
         }
     }
 
@@ -146,7 +191,7 @@ final class CMS_Speakers
 
         $db = CMS_Speakers_Database::instance();
         $settings = method_exists($db, 'get_settings') ? $db->get_settings() : [];
-        $schema_version = '3.0.1';
+        $schema_version = '3.0.3';
         if (($settings['schema_version'] ?? '') === $schema_version) {
             return;
         }
@@ -163,6 +208,10 @@ final class CMS_Speakers
 
     public function enqueue_styles(): void
     {
+        if (!$this->is_speaker_frontend_route()) {
+            return;
+        }
+
         $this->enqueue_style_file('plugin-base.css');
         $this->enqueue_style_file('style.css');
         $this->enqueue_style_file('single.css');
@@ -181,12 +230,23 @@ final class CMS_Speakers
 
     public function enqueue_scripts(): void
     {
+        if (!$this->is_speaker_frontend_route()) {
+            return;
+        }
+
         $js_file = $this->plugin_dir . 'assets/js/script.js';
         if (file_exists($js_file)) {
             $js_url = $this->plugin_url . 'assets/js/script.js';
             $js_version = (string) filemtime($js_file);
             echo '<script src="' . htmlspecialchars($js_url . '?v=' . $js_version, ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
         }
+    }
+
+    private function is_speaker_frontend_route(): bool
+    {
+        $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+
+        return $path === '/speakers' || str_starts_with($path, '/speakers/');
     }
 
     public function get_version(): string
@@ -204,6 +264,9 @@ final class CMS_Speakers
         return $this->plugin_url;
     }
 }
+}
 
 // Plugin initialisieren
-CMS_Speakers::instance();
+if (class_exists('CMS_Speakers', false)) {
+    CMS_Speakers::instance();
+}
