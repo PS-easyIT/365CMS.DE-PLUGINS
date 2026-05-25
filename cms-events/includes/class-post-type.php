@@ -141,6 +141,7 @@ final class CMS_Events_Post_Type
         $total      = $db_manager->count_events(array_diff_key($args, array_flip(['limit', 'offset'])));
         $pages      = max(1, (int)ceil($total / $per_page));
         $categories = $db_manager->get_distinct_categories();
+        $event_speakers_map = $this->get_event_speakers_map($events);
 
         $tm = \CMS\ThemeManager::instance();
         $tm->getHeader();
@@ -153,6 +154,7 @@ final class CMS_Events_Post_Type
             'pages'           => $pages,
             'total'           => $total,
             'categories'      => $categories,
+            'event_speakers_map' => $event_speakers_map,
             'filter_category' => $filter_category,
             'filter_city'     => $filter_city,
             'filter_month'    => $filter_month,
@@ -252,18 +254,83 @@ final class CMS_Events_Post_Type
 
         $speakers = $db_manager->get_event_speakers($event_id);
         $settings = $db_manager->get_settings();
+        $related_events = $this->get_related_events($db_manager, $event);
 
         $tm = \CMS\ThemeManager::instance();
         $tm->getHeader();
         CMS_Events_Template_Loader::instance()->render_template('single-event', [
-            'event'    => $event,
-            'speakers' => $speakers,
-            'settings' => $settings,
+            'event'          => $event,
+            'speakers'       => $speakers,
+            'settings'       => $settings,
+            'related_events' => $related_events,
         ]);
         $tm->getFooter();
         } catch (\Throwable $e) {
             $this->render_public_error('Das Event konnte nicht geladen werden.', $e);
         }
+    }
+
+    private function get_event_speakers_map(array $events): array
+    {
+        $event_ids = array_values(array_unique(array_filter(array_map(
+            static fn(object $event): int => max(0, (int) ($event->id ?? 0)),
+            $events
+        ))));
+
+        if (empty($event_ids)) {
+            return [];
+        }
+
+        try {
+            $db = CMS\Database::instance();
+            $prefix = $db->prefix();
+            $placeholders = implode(',', array_fill(0, count($event_ids), '?'));
+            $stmt = $db->prepare(
+                "SELECT es.*,
+                        COALESCE(s.first_name,    ex.first_name)    AS first_name,
+                        COALESCE(s.last_name,     ex.last_name)     AS last_name,
+                        COALESCE(s.photo_url,     ex.photo_url)     AS photo_url,
+                        COALESCE(s.position,      ex.position)      AS position,
+                        COALESCE(s.location_city, ex.location_city) AS location_city,
+                        CASE
+                            WHEN es.speaker_type = 'speaker' THEN CONCAT(s.first_name, ' ', s.last_name)
+                            WHEN es.speaker_type = 'expert'  THEN CONCAT(ex.first_name, ' ', ex.last_name)
+                        END AS speaker_name
+                 FROM {$prefix}event_speakers es
+                 LEFT JOIN {$prefix}speakers s ON es.speaker_id = s.id AND es.speaker_type = 'speaker'
+                 LEFT JOIN {$prefix}experts ex ON es.speaker_id = ex.id AND es.speaker_type = 'expert'
+                 WHERE es.event_id IN ({$placeholders})
+                 ORDER BY es.event_id ASC, es.session_time ASC, es.id ASC"
+            );
+            $stmt->execute($event_ids);
+
+            $map = [];
+            foreach ($stmt->fetchAll() as $row) {
+                $event_id = (int) ($row->event_id ?? 0);
+                if ($event_id > 0) {
+                    $map[$event_id][] = $row;
+                }
+            }
+
+            return $map;
+        } catch (\Throwable $e) {
+            error_log('CMS Events speaker archive preload skipped: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function get_related_events(CMS_Events_Database $db_manager, object $event): array
+    {
+        $args = ['status' => 'published', 'upcoming' => true, 'limit' => 4];
+        $category = trim((string) ($event->category ?? ''));
+        if ($category !== '') {
+            $args['category'] = $category;
+        }
+
+        return array_slice(array_values(array_filter(
+            $db_manager->get_events($args),
+            static fn(object $item): bool => (int) ($item->id ?? 0) !== (int) ($event->id ?? 0)
+        )), 0, 3);
     }
 
     public function export_ical(string $id = ''): void

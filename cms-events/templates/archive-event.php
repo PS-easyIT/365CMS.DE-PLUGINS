@@ -101,7 +101,6 @@ $monthLabels = [
                 <p class="cms-events-empty__title">Keine Events gefunden.</p>
             </div>
         <?php else: ?>
-            <?php $db = CMS_Events_Database::instance(); ?>
             <?php foreach ($events as $event): ?>
                 <?php include __DIR__ . '/event-card.php'; ?>
             <?php endforeach; ?>

@@ -127,6 +127,10 @@ final class CMS_Speakers_Post_Type
         $events   = $db->get_events($speaker_id, false);
         // Zusätzlich: über cms-events Plugin zugewiesene Events
         $events   = array_merge($events, $this->get_speaker_cms_events($speaker_id));
+        $related_speakers = array_slice(array_values(array_filter(
+            $db->get_speakers(['status' => 'active', 'limit' => 4]),
+            static fn(object $item): bool => (int) ($item->id ?? 0) !== $speaker_id
+        )), 0, 3);
         $raw_s    = $db->get_settings();
         $settings = array_merge([
             'design_primary_color'          => '#8b5cf6',
@@ -159,7 +163,7 @@ final class CMS_Speakers_Post_Type
         ], $raw_s);
         $tm = \CMS\ThemeManager::instance();
         $tm->getHeader();
-        CMS_Speakers_Template_Loader::instance()->render_template('single-speaker', compact('speaker','topics','events','settings'));
+        CMS_Speakers_Template_Loader::instance()->render_template('single-speaker', compact('speaker','topics','events','settings','related_speakers'));
         $tm->getFooter();
         } catch (\Throwable $e) {
             $this->render_public_error($e, 'single');

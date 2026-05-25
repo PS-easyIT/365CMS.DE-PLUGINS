@@ -3,7 +3,7 @@
  * Plugin Name: CMS Speakers
  * Plugin URI: https://365network.de/cms-speakers
  * Description: Verwaltung von Speaker-Profilen mit Card-Ansicht, Detailseiten, Topics und Presentations
- * Version: 3.0.4
+ * Version: 3.0.5
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin Constants
-defined('CMS_SPEAKERS_VERSION') || define('CMS_SPEAKERS_VERSION', '3.0.4');
+defined('CMS_SPEAKERS_VERSION') || define('CMS_SPEAKERS_VERSION', '3.0.5');
 defined('CMS_SPEAKERS_PLUGIN_DIR') || define('CMS_SPEAKERS_PLUGIN_DIR', dirname(__FILE__) . '/');
 defined('CMS_SPEAKERS_PLUGIN_URL') || define('CMS_SPEAKERS_PLUGIN_URL', '/plugins/cms-speakers/');
 defined('CMS_SPEAKERS_TEXT_DOMAIN') || define('CMS_SPEAKERS_TEXT_DOMAIN', 'cms-speakers');

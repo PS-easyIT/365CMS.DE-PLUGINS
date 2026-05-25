@@ -5,7 +5,8 @@
  * Scope-Variablen:
  *   $event    – object
  *   $settings – array (aus archive übergeben)
- *   $db       – CMS_Events_Database::instance() (aus archive-event.php)
+ *   $event_speakers_map – array<int,array<object>> optionaler Batch-Preload
+ *   $db                 – CMS_Events_Database::instance() optionaler Fallback
  *
  * @package CMS_Events
  */
@@ -64,14 +65,23 @@ if (!function_exists('cms_events_view_price_label')) {
 if (!function_exists('cms_events_view_public_url')) {
   function cms_events_view_public_url(mixed $url): string
   {
-    $url = trim((string) $url);
+    $url = str_replace('\\', '/', trim((string) $url));
     if ($url === '' || strlen($url) > 1000) {
       return '';
     }
 
-    if (str_starts_with($url, '/')) {
+    if (preg_match('/[\x00-\x1F\x7F]/', $url) === 1) {
+      return '';
+    }
+
+    if (str_starts_with($url, '/') || preg_match('#^(uploads|ASSETS|assets|plugins)/#i', $url) === 1) {
       $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
-      return $baseUrl . '/' . ltrim($url, '/');
+      $path = ltrim($url, '/');
+      if ($path === '' || str_contains($path, '..')) {
+        return '';
+      }
+
+      return $baseUrl . '/' . $path;
     }
 
     if (!filter_var($url, FILTER_VALIDATE_URL)) {
@@ -107,17 +117,21 @@ $today = strtotime('today');
 $isSoon = $timestamp && $today !== false && $timestamp >= $today && $timestamp <= ($today + 86400);
 $speakerName = '';
 $speakerUrl = '';
+$eventSpeakers = [];
 
-if ($id > 0 && isset($db) && method_exists($db, 'get_event_speakers')) {
+if (isset($event_speakers_map) && is_array($event_speakers_map)) {
+  $eventSpeakers = $event_speakers_map[$id] ?? [];
+} elseif ($id > 0 && isset($db) && method_exists($db, 'get_event_speakers')) {
   $eventSpeakers = $db->get_event_speakers($id) ?: [];
-  if (!empty($eventSpeakers)) {
-    $speaker = $eventSpeakers[0];
-    $speakerName = trim((string) ($speaker->speaker_name ?? (($speaker->first_name ?? '') . ' ' . ($speaker->last_name ?? ''))));
-    $speakerType = in_array((string) ($speaker->speaker_type ?? 'speaker'), ['speaker', 'expert'], true) ? (string) $speaker->speaker_type : 'speaker';
-    $speakerId = (int) ($speaker->speaker_id ?? 0);
-    if ($speakerId > 0) {
-      $speakerUrl = $baseUrl . ($speakerType === 'expert' ? '/experts/' : '/speakers/') . $speakerId;
-    }
+}
+
+if (!empty($eventSpeakers)) {
+  $speaker = $eventSpeakers[0];
+  $speakerName = trim((string) ($speaker->speaker_name ?? (($speaker->first_name ?? '') . ' ' . ($speaker->last_name ?? ''))));
+  $speakerType = in_array((string) ($speaker->speaker_type ?? 'speaker'), ['speaker', 'expert'], true) ? (string) $speaker->speaker_type : 'speaker';
+  $speakerId = (int) ($speaker->speaker_id ?? 0);
+  if ($speakerId > 0) {
+    $speakerUrl = $baseUrl . ($speakerType === 'expert' ? '/experts/' : '/speakers/') . $speakerId;
   }
 }
 

@@ -18,14 +18,23 @@ if (!isset($speaker)) {
 if (!function_exists('cms_speakers_view_public_url')) {
     function cms_speakers_view_public_url(mixed $url): string
     {
-        $url = trim((string) $url);
+        $url = str_replace('\\', '/', trim((string) $url));
         if ($url === '' || strlen($url) > 1000) {
             return '';
         }
 
-        if (str_starts_with($url, '/')) {
+        if (preg_match('/[\x00-\x1F\x7F]/', $url) === 1) {
+            return '';
+        }
+
+        if (str_starts_with($url, '/') || preg_match('#^(uploads|ASSETS|assets|plugins)/#i', $url) === 1) {
             $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
-            return $baseUrl . '/' . ltrim($url, '/');
+            $path = ltrim($url, '/');
+            if ($path === '' || str_contains($path, '..')) {
+                return '';
+            }
+
+            return $baseUrl . '/' . $path;
         }
 
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
@@ -33,7 +42,7 @@ if (!function_exists('cms_speakers_view_public_url')) {
         }
 
         $parts = parse_url($url);
-        if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+        if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host']) || !empty($parts['user']) || !empty($parts['pass'])) {
             return '';
         }
 

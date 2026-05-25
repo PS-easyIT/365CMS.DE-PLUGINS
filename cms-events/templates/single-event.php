@@ -56,14 +56,23 @@ if (!function_exists('cms_events_view_price_label')) {
 if (!function_exists('cms_events_view_public_url')) {
     function cms_events_view_public_url(mixed $url): string
     {
-        $url = trim((string) $url);
+        $url = str_replace('\\', '/', trim((string) $url));
         if ($url === '' || strlen($url) > 1000) {
             return '';
         }
 
-        if (str_starts_with($url, '/')) {
+        if (preg_match('/[\x00-\x1F\x7F]/', $url) === 1) {
+            return '';
+        }
+
+        if (str_starts_with($url, '/') || preg_match('#^(uploads|ASSETS|assets|plugins)/#i', $url) === 1) {
             $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
-            return $baseUrl . '/' . ltrim($url, '/');
+            $path = ltrim($url, '/');
+            if ($path === '' || str_contains($path, '..')) {
+                return '';
+            }
+
+            return $baseUrl . '/' . $path;
         }
 
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
@@ -106,19 +115,7 @@ $eventUrl = function_exists('cms_event_url') ? cms_event_url($e) : $baseUrl . '/
 $shareUrl = $eventUrl;
 $description = trim((string) ($e->description ?? $e->excerpt ?? ''));
 $tags = !empty($e->tags) ? (json_decode((string) $e->tags, true) ?: []) : [];
-$relatedEvents = [];
-
-if (class_exists('CMS_Events_Database') && method_exists('CMS_Events_Database', 'instance')) {
-    $database = CMS_Events_Database::instance();
-    if (method_exists($database, 'get_events')) {
-        $relatedArgs = ['status' => 'published', 'upcoming' => true, 'limit' => 4];
-        if ($categoryRaw !== '') {
-            $relatedArgs['category'] = $categoryRaw;
-        }
-        $relatedEvents = array_values(array_filter($database->get_events($relatedArgs), static fn(object $item): bool => (int) ($item->id ?? 0) !== (int) ($e->id ?? 0)));
-        $relatedEvents = array_slice($relatedEvents, 0, 3);
-    }
-}
+$relatedEvents = array_slice((array) ($related_events ?? []), 0, 3);
 ?>
 <main class="phinit-plugin cms-events-wrap cms-events-detail">
     <nav class="cms-events-breadcrumb" aria-label="Breadcrumb">
@@ -220,7 +217,7 @@ if (class_exists('CMS_Events_Database') && method_exists('CMS_Events_Database', 
                 <?php if ($capacity > 0): ?>
                     <div class="cms-events-capacity" aria-label="Verfügbare Plätze">
                         <span><?= (int) $seatsLeft ?> von <?= (int) $capacity ?> Plätzen frei</span>
-                        <div class="cms-events-capacity__bar"><span style="--cms-event-progress: <?= (int) $progress ?>%;"></span></div>
+                        <div class="cms-events-capacity__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= (int) $progress ?>" style="--cms-event-progress: <?= (int) $progress ?>%;"><span></span></div>
                     </div>
                 <?php endif; ?>
 
