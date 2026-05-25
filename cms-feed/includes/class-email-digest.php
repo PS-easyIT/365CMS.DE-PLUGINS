@@ -128,8 +128,8 @@ final class CMS_Feed_Email_Digest
      */
     private function build_email_html(array $digest, array $items, array $settings): string
     {
-        $primaryColor = htmlspecialchars($settings['color_primary'] ?? '#0891b2');
-        $digestName   = htmlspecialchars($digest['name']);
+        $primaryColor = htmlspecialchars((string) ($settings['color_primary'] ?? '#0891b2'), ENT_QUOTES, 'UTF-8');
+        $digestName   = htmlspecialchars((string) ($digest['name'] ?? ''), ENT_QUOTES, 'UTF-8');
         $date         = date('d.m.Y');
         $itemCount    = count($items);
 
@@ -155,11 +155,12 @@ final class CMS_Feed_Email_Digest
 HTML;
 
         foreach ($items as $i => $item) {
-            $title       = htmlspecialchars($item['title']);
-            $link        = htmlspecialchars($item['link']);
-            $source      = htmlspecialchars($item['channel_name'] ?? '');
-            $pubDate     = date('d.m.Y H:i', strtotime($item['pub_date']));
-            $description = htmlspecialchars(cms_feed_substr(strip_tags((string) ($item['description'] ?? '')), 0, 200));
+            $title       = htmlspecialchars((string) ($item['title'] ?? ''), ENT_QUOTES, 'UTF-8');
+            $link        = htmlspecialchars((string) ($item['link'] ?? '#'), ENT_QUOTES, 'UTF-8');
+            $source      = htmlspecialchars((string) ($item['channel_name'] ?? ''), ENT_QUOTES, 'UTF-8');
+            $pubTs       = strtotime((string) ($item['pub_date'] ?? ''));
+            $pubDate     = $pubTs ? date('d.m.Y H:i', $pubTs) : '';
+            $description = htmlspecialchars(cms_feed_substr(strip_tags((string) ($item['description'] ?? '')), 0, 200), ENT_QUOTES, 'UTF-8');
             $border      = $i > 0 ? 'border-top:1px solid #e2e8f0;' : '';
 
             $html .= <<<HTML
@@ -209,18 +210,22 @@ HTML;
             $headers['From'] = $fromHeader;
         }
 
-        if (class_exists('\\CMS\\Services\\MailQueueService')) {
-            $queue = \CMS\Services\MailQueueService::getInstance();
-            if ($queue->shouldQueue($headers)) {
-                $result = $queue->enqueue($to, $subject, $html, $headers, null, 'cms-feed-digest');
-                if (!empty($result['success'])) {
-                    return true;
+        try {
+            if (class_exists('\\CMS\\Services\\MailQueueService')) {
+                $queue = \CMS\Services\MailQueueService::getInstance();
+                if ($queue->shouldQueue($headers)) {
+                    $result = $queue->enqueue($to, $subject, $html, $headers, null, 'cms-feed-digest');
+                    if (!empty($result['success'])) {
+                        return true;
+                    }
                 }
             }
-        }
 
-        if (class_exists('\\CMS\\Services\\MailService')) {
-            return \CMS\Services\MailService::getInstance()->send($to, $subject, $html, $headers);
+            if (class_exists('\\CMS\\Services\\MailService')) {
+                return \CMS\Services\MailService::getInstance()->send($to, $subject, $html, $headers);
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS Feed Digest: Mail dispatch failed – ' . $e->getMessage());
         }
 
         return false;
