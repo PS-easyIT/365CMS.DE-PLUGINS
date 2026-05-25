@@ -13,6 +13,7 @@ Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 - `drop_tables()` für vollständigen Uninstall hinzugefügt und Löschroutinen für Bereiche/Kanäle um Queue- sowie Member-Abo-Cleanup erweitert.
 - Admin-POST-Handler normalisieren skalare Werte, Arrays, Enums und Farben zentral; manipulierte Array-Payloads in POST-Feldern verursachen keine PHP-8.4-TypeErrors mehr.
 - Public-Routen normalisieren Query-Parameter arraysicher und liefern bei Template-/DB-Ausnahmen gerenderte 500-Fallbacks statt White-Screen/Blank-200.
+- Plugin-Ausnahmen werden zentral über `CMS_Feed_Error_Handler` im 365CMS-Logger-Channel `plugin-cms-feed` protokolliert und anschließend über die nativen Theme-Fehlerseiten `error.php` bzw. `404.php` gerendert.
 - Mail-Digest-Testversand aktualisiert `last_sent_at` nicht mehr und prüft Zieladressen vor dem MailService-/Queue-Aufruf.
 
 ### Hinzugefügt

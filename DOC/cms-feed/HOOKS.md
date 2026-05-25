@@ -36,7 +36,16 @@
 | GET | `/feed/:catSlug` | `CMS_Feed_Public_Controller::route_category()` |
 | GET | `/{archive_slug}/:catSlug` | `CMS_Feed_Public_Controller::route_category()` |
 
-Seit `3.0.3` normalisieren die Public-Routen Query-Parameter arraysicher und liefern bei Template-/DB-Ausnahmen eine gerenderte 500-Fehlerseite. Fehlende oder nicht öffentliche Bereiche antworten mit `404`.
+Seit `3.0.3` normalisieren die Public-Routen Query-Parameter arraysicher und liefern bei Template-/DB-Ausnahmen die native 365CMS-Theme-Fehlerseite (`error.php`). Fehlende oder nicht öffentliche Bereiche antworten mit `404` und nutzen die native Theme-404-Seite.
+
+### Fehlerseiten & Logging
+
+`CMS_Feed_Error_Handler` bündelt Plugin-Ausnahmen:
+
+- Logging erfolgt bevorzugt über `CMS\Logger::instance()->withChannel('plugin-cms-feed')` inklusive Request-Kontext und Exception-Metadaten.
+- Public/Admin-Fehler werden mit passendem HTTP-Status über `ThemeManager::render('error', ['error_code' => ..., 'error_title' => ..., 'error_message' => ...])` ausgegeben.
+- 404-Fälle verwenden `ThemeManager::render('404')`.
+- Nur wenn der CMS-Logger oder die native Fehlerseite selbst fehlschlagen, greift ein minimaler Fallback auf `error_log()` bzw. einfache HTML-Ausgabe.
 
 ### Plugin-Lifecycle
 

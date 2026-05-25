@@ -199,7 +199,10 @@ final class CMS_Feed_RSS_Fetcher
         } catch (\Throwable $e) {
             $error = $e->getMessage();
             $db->update_channel_fetch($channelId, $error, (int) $channel['item_count']);
-            error_log("CMS Feed: Fetch error for channel {$channelId}: {$error}");
+            CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed: Feed-Abruf für Kanal fehlgeschlagen.', $e, 'warning', [
+                'scope' => 'rss.fetch_channel',
+                'channel_id' => $channelId,
+            ]);
             return ['success' => false, 'error' => $error, 'new_items' => 0];
         }
     }
@@ -214,7 +217,11 @@ final class CMS_Feed_RSS_Fetcher
         for ($redirectCount = 0; $redirectCount <= self::MAX_REDIRECTS; $redirectCount++) {
             $validation = $this->validate_feed_url($currentUrl);
             if (!$validation['success']) {
-                error_log('CMS Feed: Blocked feed URL "' . $currentUrl . '": ' . ($validation['error'] ?? 'Unbekannter Validierungsfehler'));
+                CMS_Feed_Error_Handler::instance()->log('warning', 'CMS Feed: Feed-URL wurde blockiert.', [
+                    'scope' => 'rss.validate_url',
+                    'url' => $currentUrl,
+                    'reason' => (string) ($validation['error'] ?? 'Unbekannter Validierungsfehler'),
+                ]);
                 return null;
             }
 
@@ -228,13 +235,20 @@ final class CMS_Feed_RSS_Fetcher
             if ($statusCode >= 300 && $statusCode < 400) {
                 $redirectTarget = $this->extract_redirect_location($responseHeaders);
                 if ($redirectTarget === null) {
-                    error_log('CMS Feed: Redirect without Location header for ' . $currentUrl);
+                    CMS_Feed_Error_Handler::instance()->log('warning', 'CMS Feed: Redirect ohne Location-Header.', [
+                        'scope' => 'rss.redirect',
+                        'url' => $currentUrl,
+                    ]);
                     return null;
                 }
 
                 $resolvedRedirect = $this->resolve_redirect_url($validation['url'] ?? $currentUrl, $redirectTarget);
                 if ($resolvedRedirect === null) {
-                    error_log('CMS Feed: Invalid redirect target "' . $redirectTarget . '" for ' . $currentUrl);
+                    CMS_Feed_Error_Handler::instance()->log('warning', 'CMS Feed: Ungültiges Redirect-Ziel.', [
+                        'scope' => 'rss.redirect',
+                        'url' => $currentUrl,
+                        'redirect_target' => $redirectTarget,
+                    ]);
                     return null;
                 }
 
@@ -243,7 +257,11 @@ final class CMS_Feed_RSS_Fetcher
             }
 
             if ($statusCode >= 400) {
-                error_log('CMS Feed: HTTP ' . $statusCode . ' while fetching ' . $currentUrl);
+                CMS_Feed_Error_Handler::instance()->log('warning', 'CMS Feed: HTTP-Fehler beim Feed-Abruf.', [
+                    'scope' => 'rss.http_status',
+                    'url' => $currentUrl,
+                    'status_code' => $statusCode,
+                ]);
                 return null;
             }
 
@@ -257,7 +275,10 @@ final class CMS_Feed_RSS_Fetcher
             return $xml ?: null;
         }
 
-        error_log('CMS Feed: Too many redirects while fetching ' . $url);
+        CMS_Feed_Error_Handler::instance()->log('warning', 'CMS Feed: Zu viele Redirects beim Feed-Abruf.', [
+            'scope' => 'rss.redirect_limit',
+            'url' => $url,
+        ]);
         return null;
     }
 
@@ -631,7 +652,10 @@ final class CMS_Feed_RSS_Fetcher
             if ($content !== false || $responseHeaders !== []) {
                 $body = $content === false ? '' : $content;
                 if (strlen($body) > self::MAX_RESPONSE_BYTES) {
-                    error_log('CMS Feed: Response too large for ' . $url);
+                    CMS_Feed_Error_Handler::instance()->log('warning', 'CMS Feed: Feed-Antwort ist zu groß.', [
+                        'scope' => 'rss.response_size',
+                        'url' => $url,
+                    ]);
                     return null;
                 }
                 return $body;
@@ -644,7 +668,10 @@ final class CMS_Feed_RSS_Fetcher
             return $curlResult['body'];
         }
 
-        error_log('CMS Feed: Request failed for ' . $url);
+        CMS_Feed_Error_Handler::instance()->log('warning', 'CMS Feed: Feed-Request fehlgeschlagen.', [
+            'scope' => 'rss.request',
+            'url' => $url,
+        ]);
         return null;
     }
 
@@ -695,7 +722,12 @@ final class CMS_Feed_RSS_Fetcher
 
         $rawResponse = curl_exec($handle);
         if ($rawResponse === false) {
-            error_log('CMS Feed: cURL request failed for ' . $url . ' – ' . curl_error($handle));
+            $curlError = curl_error($handle);
+            CMS_Feed_Error_Handler::instance()->log('warning', 'CMS Feed: cURL-Request fehlgeschlagen.', [
+                'scope' => 'rss.curl',
+                'url' => $url,
+                'curl_error' => $curlError,
+            ]);
             curl_close($handle);
             return null;
         }
@@ -706,7 +738,10 @@ final class CMS_Feed_RSS_Fetcher
         $rawHeaders = substr($rawResponse, 0, $headerSize);
         $body = substr($rawResponse, $headerSize);
         if (is_string($body) && strlen($body) > self::MAX_RESPONSE_BYTES) {
-            error_log('CMS Feed: cURL response too large for ' . $url);
+            CMS_Feed_Error_Handler::instance()->log('warning', 'CMS Feed: cURL-Antwort ist zu groß.', [
+                'scope' => 'rss.curl_response_size',
+                'url' => $url,
+            ]);
             return null;
         }
 

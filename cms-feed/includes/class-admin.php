@@ -124,24 +124,12 @@ final class CMS_Feed_Admin
     private function render_view(bool $withLayout, array $data = []): void
     {
         $this->loadAdminMenu();
-        if ($withLayout) {
-            $this->render_layout_start();
-        }
-
-        $adminCss = CMS_FEED_PLUGIN_DIR . 'assets/css/feed-admin.css';
-        if (file_exists($adminCss)) {
-            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_FEED_PLUGIN_URL . 'assets/css/feed-admin.css', ENT_QUOTES, 'UTF-8') . '?v=' . filemtime($adminCss) . '">' . "\n";
-        }
 
         try {
             $db   = CMS_Feed_Database::instance();
             $sec  = \CMS\Security::instance();
         } catch (\Throwable $e) {
-            error_log('CMS Feed Admin: Bootstrap failed – ' . $e->getMessage());
-            $this->render_admin_failure('Die Feed-Administration konnte nicht initialisiert werden.', $e);
-            if ($withLayout) {
-                $this->render_layout_end();
-            }
+            $this->render_admin_failure('Feed-Administration konnte nicht initialisiert werden', 'Die Feed-Administration konnte aktuell nicht initialisiert werden. Bitte versuche es später erneut.', $e, 'admin.bootstrap');
             return;
         }
 
@@ -160,9 +148,8 @@ final class CMS_Feed_Admin
         try {
             $db->ensure_schema();
         } catch (\Throwable $e) {
-            $schemaReady = false;
-            $error = 'Feed-Datenbanktabellen konnten nicht vorbereitet werden. Bitte Migration/DB-Rechte prüfen.';
-            error_log('CMS Feed Admin: Schema preparation failed – ' . $e->getMessage());
+            $this->render_admin_failure('Feed-Datenbank konnte nicht vorbereitet werden', 'Die Feed-Datenbanktabellen konnten nicht vorbereitet werden. Bitte prüfe Migrationen und Datenbankrechte.', $e, 'admin.schema');
+            return;
         }
 
         // ── POST-Verarbeitung (VOR Token-Generierung, damit das alte Token geprüft wird) ──
@@ -181,9 +168,8 @@ final class CMS_Feed_Admin
                     $settingsSubTab = $result['stab']   ?? null;
                 }
             } catch (\Throwable $e) {
-                http_response_code(500);
-                $error = 'Die Aktion konnte nicht ausgeführt werden. Details wurden protokolliert.';
-                error_log('CMS Feed Admin: POST action failed – ' . $e->getMessage());
+                $this->render_admin_failure('Feed-Aktion konnte nicht ausgeführt werden', 'Die angeforderte Feed-Aktion konnte nicht ausgeführt werden. Details wurden protokolliert.', $e, 'admin.post');
+                return;
             }
         }
 
@@ -211,8 +197,8 @@ final class CMS_Feed_Admin
                 $healthSummary = array_merge($healthSummary, $db->get_channel_health_summary());
                 $attentionChannels = $db->get_attention_channels(6);
             } catch (\Throwable $e) {
-                $error = 'Feed-Daten konnten nicht geladen werden. Details wurden protokolliert.';
-                error_log('CMS Feed Admin: Loading admin data failed – ' . $e->getMessage());
+                $this->render_admin_failure('Feed-Daten konnten nicht geladen werden', 'Die Feed-Daten konnten aktuell nicht geladen werden. Bitte versuche es später erneut.', $e, 'admin.load_data');
+                return;
             }
         }
 
@@ -230,18 +216,27 @@ final class CMS_Feed_Admin
         $bufferLevel = ob_get_level();
         ob_start();
         try {
+            if ($withLayout) {
+                $this->render_layout_start();
+            }
+
+            $adminCss = CMS_FEED_PLUGIN_DIR . 'assets/css/feed-admin.css';
+            if (file_exists($adminCss)) {
+                echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_FEED_PLUGIN_URL . 'assets/css/feed-admin.css', ENT_QUOTES, 'UTF-8') . '?v=' . filemtime($adminCss) . '">' . "\n";
+            }
+
             include CMS_FEED_PLUGIN_DIR . 'admin/views/page-admin.php';
+
+            if ($withLayout) {
+                $this->render_layout_end();
+            }
+
             echo ob_get_clean();
         } catch (\Throwable $e) {
             while (ob_get_level() > $bufferLevel) {
                 ob_end_clean();
             }
-            error_log('CMS Feed Admin: View rendering failed – ' . $e->getMessage());
-            $this->render_admin_failure('Die Feed-Ansicht konnte nicht geladen werden.', $e);
-        }
-
-        if ($withLayout) {
-            $this->render_layout_end();
+            $this->render_admin_failure('Feed-Ansicht konnte nicht geladen werden', 'Die Feed-Ansicht konnte aktuell nicht geladen werden. Bitte versuche es später erneut.', $e, 'admin.render_view');
         }
     }
 
@@ -253,7 +248,7 @@ final class CMS_Feed_Admin
                 return;
             }
         } catch (\Throwable $e) {
-            error_log('CMS Feed Admin: Layout start failed – ' . $e->getMessage());
+            CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed Admin: Layout-Start fehlgeschlagen.', $e, 'warning', ['scope' => 'admin.layout_start']);
         }
 
         echo '<main class="admin-content">';
@@ -267,32 +262,17 @@ final class CMS_Feed_Admin
                 return;
             }
         } catch (\Throwable $e) {
-            error_log('CMS Feed Admin: Layout end failed – ' . $e->getMessage());
+            CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed Admin: Layout-Ende fehlgeschlagen.', $e, 'warning', ['scope' => 'admin.layout_end']);
         }
 
         echo '</main>';
     }
 
-    private function render_admin_failure(string $message, \Throwable $exception): void
+    private function render_admin_failure(string $title, string $message, \Throwable $exception, string $scope): void
     {
-        unset($exception);
-        ?>
-        <div class="feed-admin-shell-wrap">
-            <div class="admin-page-header">
-                <div>
-                    <h2>📡 RSS-Feed-Aggregator</h2>
-                    <p>Die Admin-Seite wurde mit einem sicheren Fallback geöffnet.</p>
-                </div>
-            </div>
-            <div class="alert alert-error">
-                ❌ <?php echo htmlspecialchars($message, ENT_QUOTES, 'UTF-8'); ?> Details wurden im PHP-Error-Log protokolliert.
-            </div>
-            <div class="admin-card feed-admin-shell">
-                <h3>🛠️ Diagnose</h3>
-                <p>Bitte prüfe Datenbank-Migrationen, Tabellenrechte und den letzten Eintrag im PHP-Error-Log.</p>
-            </div>
-        </div>
-        <?php
+        CMS_Feed_Error_Handler::instance()->render_error_page(500, $title, $message, $exception, [
+            'scope' => $scope,
+        ]);
     }
 
     private function get_empty_stats(): array

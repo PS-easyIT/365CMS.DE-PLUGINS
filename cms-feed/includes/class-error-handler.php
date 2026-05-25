@@ -98,9 +98,9 @@ final class CMS_Feed_Error_Handler
             'error_message' => $message,
         ];
 
+        $bufferLevel = ob_get_level();
         try {
             if (class_exists('\\CMS\\ThemeManager')) {
-                $bufferLevel = ob_get_level();
                 ob_start();
                 \CMS\ThemeManager::instance()->render('error', $data);
                 $rendered = (string) ob_get_clean();
@@ -115,7 +115,7 @@ final class CMS_Feed_Error_Handler
                 }
             }
         } catch (\Throwable $renderError) {
-            while (ob_get_level() > 0) {
+            while (ob_get_level() > $bufferLevel) {
                 ob_end_clean();
             }
 
@@ -140,9 +140,9 @@ final class CMS_Feed_Error_Handler
             http_response_code(404);
         }
 
+        $bufferLevel = ob_get_level();
         try {
             if (class_exists('\\CMS\\ThemeManager')) {
-                $bufferLevel = ob_get_level();
                 ob_start();
                 \CMS\ThemeManager::instance()->render('404');
                 $rendered = (string) ob_get_clean();
@@ -157,7 +157,7 @@ final class CMS_Feed_Error_Handler
                 }
             }
         } catch (\Throwable $renderError) {
-            while (ob_get_level() > 0) {
+            while (ob_get_level() > $bufferLevel) {
                 ob_end_clean();
             }
 

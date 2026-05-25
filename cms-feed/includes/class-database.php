@@ -301,7 +301,7 @@ final class CMS_Feed_Database
             $columns = $pdo->query("SHOW COLUMNS FROM {$table}")->fetchAll(\PDO::FETCH_COLUMN);
             return is_array($columns) ? array_map('strval', $columns) : [];
         } catch (\Throwable $e) {
-            error_log('CMS Feed: Reading columns failed for ' . $table . ' – ' . $e->getMessage());
+            CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed DB: Tabellenspalten konnten nicht gelesen werden.', $e, 'warning', ['table' => $table]);
             return [];
         }
     }
@@ -316,7 +316,7 @@ final class CMS_Feed_Database
             $pdo->exec("ALTER TABLE {$table} ADD COLUMN {$column} {$definition}");
             $columns[] = $column;
         } catch (\Throwable $e) {
-            error_log('CMS Feed: Adding column ' . $table . '.' . $column . ' failed – ' . $e->getMessage());
+            CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed DB: Spalte konnte nicht ergänzt werden.', $e, 'warning', ['table' => $table, 'column' => $column]);
         }
     }
 
@@ -330,7 +330,7 @@ final class CMS_Feed_Database
 
             $pdo->exec("ALTER TABLE {$table} {$definition}");
         } catch (\Throwable $e) {
-            error_log('CMS Feed: Adding index ' . $indexName . ' on ' . $table . ' failed – ' . $e->getMessage());
+            CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed DB: Index konnte nicht ergänzt werden.', $e, 'warning', ['table' => $table, 'index' => $indexName]);
         }
     }
 
@@ -352,7 +352,7 @@ final class CMS_Feed_Database
 
             $pdo->exec("ALTER TABLE {$table} ADD CONSTRAINT {$constraintName} {$definition}");
         } catch (\Throwable $e) {
-            error_log('CMS Feed: Adding foreign key ' . $constraintName . ' failed – ' . $e->getMessage());
+            CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed DB: Foreign-Key konnte nicht ergänzt werden.', $e, 'warning', ['table' => $table, 'constraint' => $constraintName]);
         }
     }
 
@@ -375,7 +375,7 @@ final class CMS_Feed_Database
             try {
                 $pdo->exec($statement);
             } catch (\Throwable $e) {
-                error_log('CMS Feed: Orphan cleanup failed – ' . $e->getMessage());
+                CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed DB: Orphan-Cleanup fehlgeschlagen.', $e, 'warning');
             }
         }
     }
@@ -663,7 +663,7 @@ final class CMS_Feed_Database
             ]);
             return $stmt->rowCount() > 0;
         } catch (\PDOException $e) {
-            error_log('CMS Feed: Insert item failed – ' . $e->getMessage());
+            CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed DB: Feed-Item konnte nicht gespeichert werden.', $e, 'warning');
             return false;
         }
     }
@@ -1319,7 +1319,7 @@ final class CMS_Feed_Database
             $db->prepare("DELETE FROM {$prefix}feed_subscriptions WHERE channel_id IN ({$ph}) OR feed_id IN ({$ph})")
                 ->execute(array_merge($channelIds, $channelIds));
         } catch (\Throwable $e) {
-            error_log('CMS Feed: Legacy subscription cleanup failed – ' . $e->getMessage());
+            CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed DB: Legacy-Abo-Cleanup fehlgeschlagen.', $e, 'warning');
         }
 
         try {
@@ -1327,7 +1327,7 @@ final class CMS_Feed_Database
             $stmt->execute();
             $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         } catch (\Throwable $e) {
-            error_log('CMS Feed: Member subscription cleanup load failed – ' . $e->getMessage());
+            CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed DB: Member-Abo-Cleanup konnte Abos nicht laden.', $e, 'warning');
             return;
         }
 

@@ -37,8 +37,9 @@ final class CMS_Feed_Template_Loader
         $template_file = $this->locate_template($template_name);
 
         if (!$template_file) {
-            error_log("CMS Feed: Template '{$template_name}' not found");
-            $this->render_template_error('Template nicht gefunden: ' . $template_name);
+            $this->render_template_error('Feed-Template fehlt', 'Ein benötigtes Feed-Template konnte nicht geladen werden.', null, [
+                'template' => $template_name,
+            ]);
             return;
         }
 
@@ -53,8 +54,9 @@ final class CMS_Feed_Template_Loader
                 ob_end_clean();
             }
 
-            error_log("CMS Feed: Rendering template '{$template_name}' failed – " . $e->getMessage());
-            $this->render_template_error('Feed-Template konnte nicht gerendert werden.');
+            $this->render_template_error('Feed-Template konnte nicht gerendert werden', 'Ein Feed-Template hat einen Fehler ausgelöst. Bitte versuche es später erneut.', $e, [
+                'template' => $template_name,
+            ]);
         }
     }
 
@@ -96,7 +98,9 @@ final class CMS_Feed_Template_Loader
             }
         }
 
-        $this->render_template_error('Template-Part nicht gefunden: ' . $slug);
+        $this->render_template_error('Feed-Template-Part fehlt', 'Ein benötigter Feed-Template-Baustein konnte nicht geladen werden.', null, [
+            'template_part' => $slug,
+        ]);
     }
 
     public function buffer_template(string $template_name, array $data = []): string
@@ -116,23 +120,8 @@ final class CMS_Feed_Template_Loader
         return $template_name . '.php';
     }
 
-    private function render_template_error(string $message): void
+    private function render_template_error(string $title, string $message, ?\Throwable $exception = null, array $context = []): void
     {
-        http_response_code(500);
-
-        try {
-            \CMS\ThemeManager::instance()->getHeader(['title' => 'Feed-Fehler']);
-            echo '<main class="fd-main"><section class="fd-empty" role="alert">';
-            echo '<p class="fd-empty__text">' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p>';
-            echo '</section></main>';
-            \CMS\ThemeManager::instance()->getFooter();
-        } catch (\Throwable) {
-            if (!headers_sent()) {
-                header('Content-Type: text/html; charset=utf-8');
-            }
-            echo '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Feed-Fehler</title></head><body>';
-            echo '<h1>500</h1><p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p>';
-            echo '</body></html>';
-        }
+        CMS_Feed_Error_Handler::instance()->render_error_page(500, $title, $message, $exception, ['scope' => 'template'] + $context);
     }
 }

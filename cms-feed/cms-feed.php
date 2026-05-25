@@ -67,7 +67,11 @@ if (!function_exists('cms_feed_activate')) {
         try {
             CMS_Feed_Database::instance()->ensure_schema();
         } catch (\Throwable $e) {
-            error_log('CMS Feed: Activation schema setup failed – ' . $e->getMessage());
+            if (class_exists('CMS_Feed_Error_Handler')) {
+                CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed: Aktivierungs-Schema konnte nicht vorbereitet werden.', $e, 'error', ['scope' => 'lifecycle.activate']);
+            } else {
+                error_log('CMS Feed: Activation schema setup failed – ' . $e->getMessage());
+            }
         }
     }
 }
@@ -82,7 +86,11 @@ if (!function_exists('cms_feed_deactivate')) {
         try {
             CMS_Feed_Database::instance()->release_stale_processing_tasks(5);
         } catch (\Throwable $e) {
-            error_log('CMS Feed: Deactivation cleanup failed – ' . $e->getMessage());
+            if (class_exists('CMS_Feed_Error_Handler')) {
+                CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed: Deaktivierungs-Cleanup fehlgeschlagen.', $e, 'warning', ['scope' => 'lifecycle.deactivate']);
+            } else {
+                error_log('CMS Feed: Deactivation cleanup failed – ' . $e->getMessage());
+            }
         }
     }
 }
@@ -97,7 +105,11 @@ if (!function_exists('cms_feed_uninstall')) {
         try {
             CMS_Feed_Database::instance()->drop_tables();
         } catch (\Throwable $e) {
-            error_log('CMS Feed: Uninstall cleanup failed – ' . $e->getMessage());
+            if (class_exists('CMS_Feed_Error_Handler')) {
+                CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed: Uninstall-Cleanup fehlgeschlagen.', $e, 'error', ['scope' => 'lifecycle.uninstall']);
+            } else {
+                error_log('CMS Feed: Uninstall cleanup failed – ' . $e->getMessage());
+            }
         }
     }
 }
@@ -126,6 +138,7 @@ final class CMS_Feed
     {
         $includes = $this->plugin_dir . 'includes/';
         $files = [
+            'class-error-handler.php',
             'class-database.php',
             'class-rss-fetcher.php',
             'class-feed-catalog.php',
@@ -138,7 +151,11 @@ final class CMS_Feed
         foreach ($files as $file) {
             $path = $includes . $file;
             if (!is_file($path)) {
-                throw new \RuntimeException('CMS Feed dependency missing: ' . $file);
+                $exception = new \RuntimeException('CMS Feed dependency missing: ' . $file);
+                if (class_exists('CMS_Feed_Error_Handler')) {
+                    CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed: Pflicht-Abhängigkeit fehlt.', $exception, 'critical', ['dependency' => $file]);
+                }
+                throw $exception;
             }
 
             require_once $path;
@@ -185,7 +202,7 @@ final class CMS_Feed
             try {
                 CMS_Feed_Database::instance()->ensure_schema();
             } catch (\Throwable $e) {
-                error_log('CMS Feed: Schema setup during init failed – ' . $e->getMessage());
+                CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed: Schema-Setup während der Initialisierung fehlgeschlagen.', $e, 'error', ['scope' => 'init.schema']);
             }
         }
 
@@ -203,7 +220,10 @@ final class CMS_Feed
                 try {
                     $class::instance();
                 } catch (\Throwable $e) {
-                    error_log('CMS Feed: Initializing ' . $class . ' failed – ' . $e->getMessage());
+                    CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed: Plugin-Klasse konnte nicht initialisiert werden.', $e, 'error', [
+                        'scope' => 'init.class',
+                        'class' => $class,
+                    ]);
                 }
             }
         }
@@ -211,43 +231,51 @@ final class CMS_Feed
 
     public function enqueue_styles(): void
     {
-        $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
-        $isAdmin     = str_starts_with($currentPath, '/admin/feeds')
-            || str_starts_with($currentPath, '/admin/plugins/feeds');
-        $isFeedRoute = $this->is_feed_public_route($currentPath);
+        try {
+            $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+            $isAdmin     = str_starts_with($currentPath, '/admin/feeds')
+                || str_starts_with($currentPath, '/admin/plugins/feeds');
+            $isFeedRoute = $this->is_feed_public_route($currentPath);
 
-        if ($isAdmin) {
-            $adminCss = $this->plugin_dir . 'assets/css/feed-admin.css';
-            if (file_exists($adminCss)) {
-                echo '<link rel="stylesheet" href="' . htmlspecialchars($this->plugin_url . 'assets/css/feed-admin.css?v=' . filemtime($adminCss), ENT_QUOTES, 'UTF-8') . '">' . "\n";
+            if ($isAdmin) {
+                $adminCss = $this->plugin_dir . 'assets/css/feed-admin.css';
+                if (file_exists($adminCss)) {
+                    echo '<link rel="stylesheet" href="' . htmlspecialchars($this->plugin_url . 'assets/css/feed-admin.css?v=' . filemtime($adminCss), ENT_QUOTES, 'UTF-8') . '">' . "\n";
+                }
+            } elseif ($isFeedRoute) {
+                $css = $this->plugin_dir . 'assets/css/style.css';
+                if (file_exists($css)) {
+                    echo '<link rel="stylesheet" href="' . htmlspecialchars($this->plugin_url . 'assets/css/style.css?v=' . filemtime($css), ENT_QUOTES, 'UTF-8') . '">' . "\n";
+                }
+                // Design-Tokens als CSS Custom Properties injizieren
+                $this->inject_design_tokens();
             }
-        } elseif ($isFeedRoute) {
-            $css = $this->plugin_dir . 'assets/css/style.css';
-            if (file_exists($css)) {
-                echo '<link rel="stylesheet" href="' . htmlspecialchars($this->plugin_url . 'assets/css/style.css?v=' . filemtime($css), ENT_QUOTES, 'UTF-8') . '">' . "\n";
-            }
-            // Design-Tokens als CSS Custom Properties injizieren
-            $this->inject_design_tokens();
+        } catch (\Throwable $e) {
+            CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed: Styles konnten nicht eingebunden werden.', $e, 'warning', ['scope' => 'assets.styles']);
         }
     }
 
     public function enqueue_scripts(): void
     {
-        $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
-        $isAdmin     = str_starts_with($currentPath, '/admin/feeds')
-            || str_starts_with($currentPath, '/admin/plugins/feeds');
-        $isFeedRoute = $this->is_feed_public_route($currentPath);
+        try {
+            $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+            $isAdmin     = str_starts_with($currentPath, '/admin/feeds')
+                || str_starts_with($currentPath, '/admin/plugins/feeds');
+            $isFeedRoute = $this->is_feed_public_route($currentPath);
 
-        if ($isAdmin) {
-            $js = $this->plugin_dir . 'assets/js/admin.js';
-            if (file_exists($js)) {
-                echo '<script src="' . htmlspecialchars($this->plugin_url . 'assets/js/admin.js?v=' . filemtime($js), ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
+            if ($isAdmin) {
+                $js = $this->plugin_dir . 'assets/js/admin.js';
+                if (file_exists($js)) {
+                    echo '<script src="' . htmlspecialchars($this->plugin_url . 'assets/js/admin.js?v=' . filemtime($js), ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
+                }
+            } elseif ($isFeedRoute) {
+                $js = $this->plugin_dir . 'assets/js/script.js';
+                if (file_exists($js)) {
+                    echo '<script src="' . htmlspecialchars($this->plugin_url . 'assets/js/script.js?v=' . filemtime($js), ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
+                }
             }
-        } elseif ($isFeedRoute) {
-            $js = $this->plugin_dir . 'assets/js/script.js';
-            if (file_exists($js)) {
-                echo '<script src="' . htmlspecialchars($this->plugin_url . 'assets/js/script.js?v=' . filemtime($js), ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
-            }
+        } catch (\Throwable $e) {
+            CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed: Scripts konnten nicht eingebunden werden.', $e, 'warning', ['scope' => 'assets.scripts']);
         }
     }
 
@@ -286,7 +314,11 @@ final class CMS_Feed
 
         $archiveSlug = 'feeds';
         if (class_exists('CMS_Feed_Database')) {
-            $archiveSlug = CMS_Feed_Database::instance()->get_setting('archive_slug', 'feeds') ?: 'feeds';
+            try {
+                $archiveSlug = CMS_Feed_Database::instance()->get_setting('archive_slug', 'feeds') ?: 'feeds';
+            } catch (\Throwable $e) {
+                CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed: Archiv-Slug konnte nicht gelesen werden.', $e, 'warning', ['scope' => 'route.detect']);
+            }
         }
 
         $archiveSlug = preg_replace('/[^a-z0-9\-]/', '', strtolower(trim((string) $archiveSlug, '/')));

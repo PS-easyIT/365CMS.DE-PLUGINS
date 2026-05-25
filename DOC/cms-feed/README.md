@@ -7,7 +7,7 @@
 - Version: `3.0.3`
 - Release: `2026-05-25`
 - Kompatibilität laut Manifest: `365CMS >= 3.0.0`, `PHP >= 8.4`
-- Aktueller Fix-Schwerpunkt: Audit-Härtung für Lifecycle/Uninstall, Schema-Migrationen, arraysichere Admin-POST-Verarbeitung und gerenderte Public-Fehlerseiten.
+- Aktueller Fix-Schwerpunkt: Audit-Härtung für Lifecycle/Uninstall, Schema-Migrationen, arraysichere Admin-POST-Verarbeitung, native 365CMS-Fehlerseiten und strukturiertes Plugin-Logging.
 
 ## Features
 
@@ -42,6 +42,7 @@ cms-feed/
 ├── update.json                     # Plugin-Manifest
 ├── includes/
 │   ├── class-database.php          # DB-Tabellen + CRUD (659 Zeilen)
+│   ├── class-error-handler.php     # Native 365CMS-Fehlerseiten + strukturierter Logger
 │   ├── class-rss-fetcher.php       # RSS/Atom-Parser (477 Zeilen)
 │   ├── class-feed-catalog.php      # Kuratierter Feed-Katalog (300+ Feeds)
 │   ├── class-template-loader.php   # Template-Loader (Theme-Override)
@@ -101,6 +102,7 @@ cms-feed/
 - Feed-Beiträge älter als 7 Tage werden stündlich automatisch bereinigt
 - Seit `3.0.2` normalisiert die Admin-View gemischte Datenbank- und Query-Werte vor strikten PHP-8.4-Formatter-Aufrufen (`number_format()`, `date()`, `rawurlencode()`), damit manipulierte Parameter wie `q[]`, `cat[]`, `page[]` oder defekte UTF-8-Payloads keinen 500er im Feed-Admin mehr auslösen.
 - Seit `3.0.3` normalisieren auch alle Admin-POST-Handler skalare Werte und Arrays zentral, setzen bei CSRF-/Bad-Action-/Serverfehlern passende HTTP-Codes und entfernen beim Kanal-/Bereich-Löschen Queue- sowie Member-Abo-Referenzen.
+- Plugin-Ausnahmen werden seit `3.0.3` zentral über `CMS_Feed_Error_Handler` behandelt: erst strukturiert im 365CMS-Logger-Channel `plugin-cms-feed` protokollieren, dann native `error.php`-/`404.php`-Theme-Fehlerseite rendern, Fallback nur wenn auch diese Fehlerseite scheitert.
 - Die Whitelabel-/Embed-Ansicht ist über `/{archive_slug}/embed` erreichbar und nutzt dieselben Public-Assets wie das Archiv.
 
 ## Systemanforderungen

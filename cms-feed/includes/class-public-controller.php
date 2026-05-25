@@ -33,9 +33,17 @@ final class CMS_Feed_Public_Controller
      */
     public function register_routes($router): void
     {
-        $db   = CMS_Feed_Database::instance();
-        $s    = $db->get_settings();
-        $slug = $this->sanitize_slug((string) ($s['archive_slug'] ?? 'feeds'));
+        $slug = 'feeds';
+        try {
+            $db   = CMS_Feed_Database::instance();
+            $s    = $db->get_settings();
+            $slug = $this->sanitize_slug((string) ($s['archive_slug'] ?? 'feeds'));
+        } catch (\Throwable $e) {
+            CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed: Public-Routen konnten Einstellungen nicht laden.', $e, 'error', [
+                'scope' => 'public.register_routes',
+            ]);
+        }
+
         if ($slug === '' || $slug === 'feed') {
             $slug = 'feeds';
         }
@@ -64,7 +72,7 @@ final class CMS_Feed_Public_Controller
 
             $this->render_archive();
         } catch (\Throwable $e) {
-            $this->render_public_error(500, 'Feed-Archiv konnte nicht geladen werden.', $e);
+            $this->render_public_error(500, 'Feed-Archiv konnte nicht geladen werden.', 'Das Feed-Archiv konnte aktuell nicht geladen werden. Bitte versuche es später erneut.', $e, 'public.archive');
         }
     }
 
@@ -81,7 +89,7 @@ final class CMS_Feed_Public_Controller
 
             $this->render_archive('whitelabel-feed');
         } catch (\Throwable $e) {
-            $this->render_public_error(500, 'Feed-Embed konnte nicht geladen werden.', $e);
+            $this->render_public_error(500, 'Feed-Embed konnte nicht geladen werden.', 'Die Feed-Embed-Ansicht konnte aktuell nicht geladen werden. Bitte versuche es später erneut.', $e, 'public.embed');
         }
     }
 
@@ -106,7 +114,7 @@ final class CMS_Feed_Public_Controller
 
             $this->render_not_found();
         } catch (\Throwable $e) {
-            $this->render_public_error(500, 'Feed-Bereich konnte nicht geladen werden.', $e);
+            $this->render_public_error(500, 'Feed-Bereich konnte nicht geladen werden.', 'Der Feed-Bereich konnte aktuell nicht geladen werden. Bitte versuche es später erneut.', $e, 'public.category');
         }
     }
 
@@ -236,41 +244,15 @@ final class CMS_Feed_Public_Controller
 
     private function render_not_found(): void
     {
-        http_response_code(404);
-
-        try {
-            \CMS\ThemeManager::instance()->render('404');
-        } catch (\Throwable $e) {
-            error_log('CMS Feed: 404 rendering failed – ' . $e->getMessage());
-            $this->render_plain_error(404, 'Feed-Bereich nicht gefunden.');
-        }
+        CMS_Feed_Error_Handler::instance()->render_not_found('Feed-Bereich nicht gefunden.', null, [
+            'scope' => 'public.category.not_found',
+        ]);
     }
 
-    private function render_public_error(int $statusCode, string $message, \Throwable $exception): void
+    private function render_public_error(int $statusCode, string $title, string $message, \Throwable $exception, string $scope): void
     {
-        http_response_code($statusCode);
-        error_log('CMS Feed Public: ' . $message . ' – ' . $exception->getMessage());
-
-        try {
-            \CMS\ThemeManager::instance()->getHeader(['title' => 'Feed-Fehler']);
-            echo '<main class="fd-main"><section class="fd-empty" role="alert">';
-            echo '<p class="fd-empty__text">' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p>';
-            echo '</section></main>';
-            \CMS\ThemeManager::instance()->getFooter();
-        } catch (\Throwable) {
-            $this->render_plain_error($statusCode, $message);
-        }
-    }
-
-    private function render_plain_error(int $statusCode, string $message): void
-    {
-        http_response_code($statusCode);
-        if (!headers_sent()) {
-            header('Content-Type: text/html; charset=utf-8');
-        }
-
-        echo '<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Feed-Fehler</title></head><body>';
-        echo '<h1>' . (int) $statusCode . '</h1><p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p>';
-        echo '</body></html>';
+        CMS_Feed_Error_Handler::instance()->render_error_page($statusCode, $title, $message, $exception, [
+            'scope' => $scope,
+        ]);
     }
 }

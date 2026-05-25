@@ -225,7 +225,7 @@ HTML;
                 return \CMS\Services\MailService::getInstance()->send($to, $subject, $html, $headers);
             }
         } catch (\Throwable $e) {
-            error_log('CMS Feed Digest: Mail dispatch failed – ' . $e->getMessage());
+            CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed Digest: Mailversand fehlgeschlagen.', $e, 'error', ['scope' => 'digest.mail_dispatch']);
         }
 
         return false;

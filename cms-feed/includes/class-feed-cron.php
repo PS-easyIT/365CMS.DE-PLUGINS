@@ -129,7 +129,11 @@ final class CMS_Feed_Cron
                     $e->getMessage()
                 );
                 $result['failed']++;
-                error_log('CMS Feed Cron: Fehler bei Kanal #' . $task['channel_id'] . ' – ' . $e->getMessage());
+                CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed Cron: Kanalverarbeitung fehlgeschlagen.', $e, 'error', [
+                    'scope' => 'cron.drain_channel',
+                    'channel_id' => (int) ($task['channel_id'] ?? 0),
+                    'queue_id' => (int) ($task['id'] ?? 0),
+                ]);
             }
         }
 
@@ -180,7 +184,7 @@ final class CMS_Feed_Cron
                 }
             ));
         } catch (\Throwable $e) {
-            error_log('CMS Feed Cron: Homepage-Feed-Priorisierung fehlgeschlagen – ' . $e->getMessage());
+            CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed Cron: Homepage-Feed-Priorisierung fehlgeschlagen.', $e, 'warning', ['scope' => 'cron.priority_channels']);
             return [];
         }
     }
