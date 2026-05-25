@@ -16,23 +16,24 @@
 
 ## `CMS_Events_Database` – Methoden
 
-### `getUpcoming(int $limit, int $offset, array $filters): array`
-Gibt kommende Events (>= heute) zurück.
+### `get_events(array $args = []): array`
+Gibt Event-Listen zurück. `limit`/`offset`, Status-, Kategorie-, Stadt-, Monats- und Zeitfilter werden defensiv normalisiert.
 ```php
-$events = CMS_Events_Database::instance()->getUpcoming(limit: 10, offset: 0, filters: [
+$events = CMS_Events_Database::instance()->get_events([
+    'limit' => 10,
     'category' => 'webinar',
-    'featured' => true,
+    'upcoming' => true,
 ]);
 ```
 
-### `getById(int $id): array|false`
+### `get_event(int $id): object|false`
 ```php
-$event = CMS_Events_Database::instance()->getById(5);
+$event = CMS_Events_Database::instance()->get_event(5);
 ```
 
-### `create(array $data): int`
+### `save_event(array $data): int`
 ```php
-$id = CMS_Events_Database::instance()->create([
+$id = CMS_Events_Database::instance()->save_event([
     'title'      => 'PHP Summit 2026',
     'event_date' => '2026-06-15',
     'category'   => 'konferenz',
@@ -41,37 +42,30 @@ $id = CMS_Events_Database::instance()->create([
 ]);
 ```
 
-### `update(int $id, array $data): bool`
+### `delete_event(int $id): bool`
+
+### `get_event_speakers(int $event_id): array`
 ```php
-CMS_Events_Database::instance()->update(5, ['is_featured' => true]);
+$speakers = CMS_Events_Database::instance()->get_event_speakers(5);
 ```
 
-### `delete(int $id): bool`
-
-### `getSpeakers(int $event_id, string $type = 'all'): array`
+### `assign_speaker(int $event_id, int $speaker_id, string $type, array $meta): bool`
 ```php
-// Alle Speaker
-$all     = CMS_Events_Database::instance()->getSpeakers(5, 'all');
-// Nur cms-speakers
-$speaker = CMS_Events_Database::instance()->getSpeakers(5, 'speaker');
-// Nur cms-experts
-$experts = CMS_Events_Database::instance()->getSpeakers(5, 'expert');
-```
-
-### `assignSpeaker(int $event_id, int $speaker_id, string $type, array $meta): void`
-```php
-CMS_Events_Database::instance()->assignSpeaker(
-    event_id: 5,
-    speaker_id: 12,
-    type: 'speaker',
-    meta: ['role' => 'Keynote', 'presentation_title' => 'PHP 9 Features']
+$ok = CMS_Events_Database::instance()->assign_speaker(
+    5,
+    12,
+    'speaker',
+    ['role' => 'Keynote', 'presentation_title' => 'PHP 9 Features']
 );
 ```
 
-### `getCategories(): array`
+### `get_event_categories(): array`
 ```php
-$cats = CMS_Events_Database::instance()->getCategories();
+$cats = CMS_Events_Database::instance()->get_event_categories();
 ```
+
+### `drop_tables(): void`
+Wird im `plugin_uninstalled`-Lifecycle genutzt und entfernt Event-, Relation-, Meta-, Preset- und Settings-Tabellen.
 
 ---
 
@@ -95,7 +89,15 @@ $event['image_url'], $event['price_type'], $event['price'], $event['is_featured'
 
 **`single-event.php`:**
 ```php
-/** @var array $event  Vollständiger Datensatz */
+/** @var object $event  Vollständiger Datensatz */
 /** @var array $speakers Speaker-Liste mit role/presentation_title */
-/** @var array $meta    Meta-Werte */
+/** @var array $settings Plugin-Settings */
+```
+
+**`calendar-view.php`:**
+```php
+/** @var array $events Monats-Events */
+/** @var string $month YYYY-MM */
+/** @var string $view month|week */
+/** @var array $settings Plugin-Settings */
 ```

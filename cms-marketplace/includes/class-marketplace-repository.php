@@ -216,7 +216,19 @@ final class CMS_Marketplace_Repository
 
     private function ensureColumnExists(string $column, string $definition): void
     {
-        $existing = $this->db->get_row("SHOW COLUMNS FROM `{$this->table}` LIKE ?", [$column]);
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $column)) {
+            throw new \InvalidArgumentException('Invalid marketplace column name.');
+        }
+
+        $existing = $this->db->get_row(
+            'SELECT COLUMN_NAME
+             FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = ?
+               AND COLUMN_NAME = ?
+             LIMIT 1',
+            [$this->table, $column]
+        );
         if ($existing !== null) {
             return;
         }

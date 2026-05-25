@@ -592,6 +592,146 @@
   color: #fff;
 }
 
+.ev-calendar-page {
+  max-width: var(--max, 1140px);
+  margin: 0 auto;
+}
+
+.ev-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin: var(--phinit-space-4, 1rem) var(--phinit-space-5, 1.25rem);
+  color: var(--phinit-color-ink-secondary, #64748b);
+  font-size: .875rem;
+}
+
+.ev-breadcrumb a {
+  color: var(--ev-primary, #3b82f6);
+  text-decoration: none;
+}
+
+.ev-breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+.ev-calendar-nav {
+  display: flex;
+  gap: .75rem;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.ev-calendar-shell {
+  margin: var(--phinit-space-5, 1.25rem);
+  padding: var(--phinit-space-5, 1.25rem);
+}
+
+.calendar-weekdays,
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: .5rem;
+}
+
+.calendar-weekdays {
+  margin-bottom: .5rem;
+}
+
+.weekday {
+  color: var(--phinit-color-ink-secondary, #64748b);
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.calendar-day {
+  min-height: 9rem;
+  border: 1px solid var(--phinit-color-border, #e2e8f0);
+  border-radius: var(--phinit-radius-sm, 10px);
+  background: var(--phinit-color-surface, #fff);
+  padding: .75rem;
+}
+
+.calendar-day.empty {
+  background: var(--phinit-color-bg, #f8fafc);
+  border-style: dashed;
+}
+
+.calendar-day.has-events {
+  border-color: var(--ev-border, #bfdbfe);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, .08);
+}
+
+.day-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  color: var(--phinit-color-ink, #1e293b);
+  font-weight: 700;
+}
+
+.has-events .day-number {
+  background: var(--ev-light, #eff6ff);
+  color: var(--ev-primary-h, #1d4ed8);
+}
+
+.ev-calendar-events {
+  display: grid;
+  gap: .35rem;
+  margin: .75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ev-calendar-events a {
+  display: block;
+  padding: .35rem .45rem;
+  border-radius: 8px;
+  background: var(--ev-light, #eff6ff);
+  color: var(--ev-primary-h, #1d4ed8);
+  font-size: .8125rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ev-calendar-events a:hover {
+  background: var(--ev-primary, #3b82f6);
+  color: #fff;
+}
+
+.ev-calendar-more {
+  color: var(--phinit-color-ink-secondary, #64748b);
+  font-size: .75rem;
+}
+
+@media (max-width: 900px) {
+  .calendar-weekdays {
+    display: none;
+  }
+
+  .calendar-days {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-day.empty {
+    display: none;
+  }
+
+  .calendar-day {
+    min-height: 0;
+  }
+
+  .ev-calendar-nav {
+    margin-left: 0;
+  }
+}
+
 /* ── Member Dashboard / Formular ─────────────────────────────── */
 .ev-member-toolbar {
   display: flex;

@@ -9,6 +9,7 @@
 | `cms_event_meta` | Flexible Zusatz-Metadaten |
 | `cms_event_categories` | Kategorie-Präsets |
 | `cms_event_tag_presets` | Tag-Vorlagen |
+| `cms_event_settings` | Legacy-Fallback für Archiv-/Design-Settings; primärer Speicher ist `cms_settings` via `CMS\Services\SettingsService` |
 
 ---
 
@@ -57,6 +58,12 @@ CREATE TABLE cms_events (
     INDEX idx_featured (is_featured)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
+
+### Migrationen
+
+- Neue Spalten werden über `INFORMATION_SCHEMA.COLUMNS` geprüft und anschließend per `ALTER TABLE` ergänzt.
+- Foreign Keys werden erst nach erfolgreicher Tabellen-/Spaltenprüfung gesetzt und sind präfixsicher benannt.
+- FK-Fehler blockieren den Installer nicht, sondern werden über `error_log()` protokolliert.
 
 ### Felder
 
@@ -110,6 +117,15 @@ CREATE TABLE cms_event_speakers (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
+Optionaler FK bei kompatibler Zielumgebung:
+
+```sql
+ALTER TABLE cms_event_speakers
+    ADD CONSTRAINT fk_cms_events_speakers_event
+    FOREIGN KEY (event_id) REFERENCES cms_events(id)
+    ON DELETE CASCADE;
+```
+
 | Spalte | Beschreibung |
 |--------|--------------|
 | `speaker_id` | FK zu `cms_speakers.id` oder `cms_experts.id` |
@@ -133,6 +149,31 @@ CREATE TABLE cms_event_categories (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
+## `cms_event_settings` – Legacy-Fallback
+
+Neue Settings werden über `CMS\Services\SettingsService` in der Core-Tabelle `cms_settings` gespeichert. Die Gruppe lautet `cms-events`, daraus entstehen Optionsnamen wie `cms-events.archive_title` oder `cms-events.color_primary`.
+
+Die Plugin-eigene Tabelle bleibt als Abwärtskompatibilitäts-Fallback erhalten, damit bestehende Installationen alte Werte weiter lesen können.
+
+```sql
+CREATE TABLE cms_event_settings (
+    id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    setting_key   VARCHAR(100) NOT NULL UNIQUE,
+    setting_value TEXT,
+    updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+### Wichtige Settings
+
+| Key | Zweck |
+|-----|-------|
+| `archive_title`, `archive_description`, `archive_slug`, `per_page` | Archiv-Verhalten |
+| `color_primary`, `color_accent`, `color_card_bg`, `color_card_border` | Frontend-Farben |
+| `color_badge_*` | Status-, Featured- und Online-Badge-Farben |
+| `show_status_badge`, `show_featured_badge`, `show_online_badge` | Badge-Ausgabe |
+| `show_category`, `show_city`, `show_capacity`, `show_price`, `show_tags` | Karten-Pills |
+
 ### Standard-Kategorien (Seeding)
 
 | Name | Slug | Icon |
@@ -153,4 +194,6 @@ cms_users (1)────(0..N) cms_events (1)────(M) cms_event_speakers
                             │                                        └────(1) cms_experts
                             └──(1)────(M) cms_event_meta
                             └──(N)────(1) cms_event_categories
+
+cms_event_settings (Key/Value, pluginweit)
 ```

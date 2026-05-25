@@ -3,7 +3,7 @@
  * Plugin Name: CMS Events
  * Plugin URI: https://365network.de/cms-events
  * Description: Verwaltung von Events mit Speakeranbindung, Veranstaltern aus cms-companies und voller Metaverwaltung
- * Version: 3.0.2
+ * Version: 3.0.5
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -12,14 +12,15 @@
 declare(strict_types=1);
 if (!defined('ABSPATH')) exit;
 
-define('CMS_EVENTS_VERSION', '3.0.2');
-define('CMS_EVENTS_PLUGIN_DIR', dirname(__FILE__) . '/');
-define('CMS_EVENTS_PLUGIN_URL', '/plugins/cms-events/');
+defined('CMS_EVENTS_VERSION') || define('CMS_EVENTS_VERSION', '3.0.5');
+defined('CMS_EVENTS_PLUGIN_DIR') || define('CMS_EVENTS_PLUGIN_DIR', dirname(__FILE__) . '/');
+defined('CMS_EVENTS_PLUGIN_URL') || define('CMS_EVENTS_PLUGIN_URL', '/plugins/cms-events/');
 
+if (!class_exists('CMS_Events', false)) {
 final class CMS_Events {
     private static ?self $instance = null;
     private bool $components_bootstrapped = false;
-    private string $version = '3.0.1';
+    private string $version = '3.0.5';
     private string $plugin_dir;
     private string $plugin_url;
 
@@ -32,6 +33,7 @@ final class CMS_Events {
         $this->plugin_url = CMS_EVENTS_PLUGIN_URL;
         $this->load_dependencies();
         $this->init_hooks();
+        $this->bootstrap_hook_components();
         if ($this->can_bootstrap_components()) {
             $this->bootstrap_components();
         }
@@ -39,13 +41,43 @@ final class CMS_Events {
 
     private function load_dependencies(): void {
         $includes = $this->plugin_dir . 'includes/';
-        foreach (['class-database.php', 'class-post-type.php', 'class-meta-boxes.php', 'class-template-loader.php', 'class-shortcode.php', 'class-admin.php', 'class-member-dashboard.php'] as $file) {
-            if (file_exists($includes . $file)) require_once $includes . $file;
+        $dependencies = [
+            'class-database.php'         => 'CMS_Events_Database',
+            'class-post-type.php'        => 'CMS_Events_Post_Type',
+            'class-meta-boxes.php'       => 'CMS_Events_Meta_Boxes',
+            'class-template-loader.php'  => 'CMS_Events_Template_Loader',
+            'class-shortcode.php'        => 'CMS_Events_Shortcode',
+            'class-admin.php'            => 'CMS_Events_Admin',
+            'class-member-dashboard.php' => 'CMS_Events_Member_Dashboard',
+            'class-taxonomies.php'       => 'CMS_Events_Taxonomies',
+        ];
+
+        foreach ($dependencies as $file => $class) {
+            if (class_exists($class, false)) {
+                continue;
+            }
+
+            $path = $includes . $file;
+            if (file_exists($path)) {
+                require_once $path;
+            }
         }
     }
 
     private function can_bootstrap_components(): bool {
         return class_exists('CMS\\Hooks') && class_exists('CMS\\Database');
+    }
+
+    private function bootstrap_hook_components(): void {
+        if (!class_exists('CMS\\Hooks')) {
+            return;
+        }
+
+        foreach (['CMS_Events_Post_Type', 'CMS_Events_Meta_Boxes', 'CMS_Events_Shortcode', 'CMS_Events_Admin', 'CMS_Events_Member_Dashboard'] as $class) {
+            if (class_exists($class, false)) {
+                $class::instance();
+            }
+        }
     }
 
     private function bootstrap_components(): void {
@@ -64,6 +96,8 @@ final class CMS_Events {
         if (class_exists('CMS\Hooks')) {
             CMS\Hooks::addAction('cms_init', [$this, 'init_plugin'], 10);
             CMS\Hooks::addAction('plugin_activated', [$this, 'on_activation'], 10);
+            CMS\Hooks::addAction('plugin_uninstalled', [$this, 'on_uninstall'], 10);
+            CMS\Hooks::addAction('plugin_deactivated', [$this, 'on_deactivation'], 10);
             CMS\Hooks::addAction('head', [$this, 'enqueue_styles'], 10);
             CMS\Hooks::addAction('body_end', [$this, 'enqueue_scripts'], 10);
         }
@@ -71,8 +105,34 @@ final class CMS_Events {
 
     public function on_activation(string $plugin): void {
         if ($plugin === 'cms-events' && class_exists('CMS\\Database') && class_exists('CMS_Events_Database')) {
-            CMS_Events_Database::instance()->create_tables();
-            if (class_exists('CMS\Hooks')) CMS\Hooks::doAction('event_created');
+            try {
+                CMS_Events_Database::instance()->create_tables();
+                if (class_exists('CMS\Hooks')) CMS\Hooks::doAction('cms_events_activated');
+            } catch (\Throwable $e) {
+                error_log('CMS Events activation skipped: ' . $e->getMessage());
+            }
+        }
+    }
+
+    public function on_deactivation(string $plugin): void {
+        if ($plugin !== 'cms-events') {
+            return;
+        }
+
+        if (class_exists('CMS\Hooks')) {
+            CMS\Hooks::doAction('cms_events_deactivated');
+        }
+    }
+
+    public function on_uninstall(string $plugin): void {
+        if ($plugin !== 'cms-events' || !class_exists('CMS_Events_Database')) {
+            return;
+        }
+
+        try {
+            CMS_Events_Database::instance()->drop_tables();
+        } catch (\Throwable $e) {
+            error_log('CMS Events uninstall skipped: ' . $e->getMessage());
         }
     }
 
@@ -91,7 +151,7 @@ final class CMS_Events {
 
         $db = CMS_Events_Database::instance();
         $settings = method_exists($db, 'get_settings') ? $db->get_settings() : [];
-        $schema_version = '3.0.0';
+        $schema_version = '3.0.3';
         if (($settings['schema_version'] ?? '') === $schema_version) {
             return;
         }
@@ -134,5 +194,6 @@ final class CMS_Events {
     public function get_version(): string { return $this->version; }
     public function get_plugin_dir(): string { return $this->plugin_dir; }
     public function get_plugin_url(): string { return $this->plugin_url; }
+}
 }
 CMS_Events::instance();

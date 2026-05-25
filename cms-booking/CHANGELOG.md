@@ -2,6 +2,31 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [3.0.5] – 2026-05-25
+
+### Fehlerbehebungen
+
+- Der Guard der Hauptdatei wurde von einem selbst-auslösenden `if (class_exists(...)) return;` auf das funktionierende `cms-feed`-Muster `if (!class_exists(...)) { class ... }` umgestellt.
+- Dadurch wird `CMS_Booking::instance()` beim Plugin-Laden wieder ausgeführt und der `cms_admin_menu`-Hook für den Booking-Menüeintrag tatsächlich registriert.
+
+## [3.0.4] – 2026-05-25
+
+### Fehlerbehebungen
+
+- Das Admin-Menü lädt die zentralen 365CMS Admin-Menü-Helper nun defensiv, bevor `add_menu_page()` geprüft wird. Dadurch erscheint der Booking-Menüeintrag zuverlässig in der Sidebar.
+- Der Parent-Slug wurde auf `booking` vereinheitlicht; Unterseiten heißen `bookings`, `providers`, `services` und `settings`.
+- Interne Admin-Tab-Links zeigen jetzt konsistent auf `/admin/plugins/booking/*` und passen zur Member-Dashboard-Admin-URL.
+
+## [3.0.3] – 2026-05-25
+
+### Fehlerbehebungen
+
+- Der Installer legt Booking-Tabellen ohne Inline-Foreign-Keys an und ergänzt Relationen anschließend idempotent über `INFORMATION_SCHEMA`-Prüfungen.
+- Foreign-Key-Constraints erhalten prefixsichere Namen wie `fk_bs_booking_services_provider`, damit parallele Installationen mit anderen Tabellenpräfixen keine schemaweiten Namenskollisionen auslösen.
+- Einzelne FK-Additionsfehler werden separat protokolliert und blockieren nicht mehr das Erstellen der Tabellen, Seeds und DB-Version.
+- `CMS_BOOKING_DB_VERSION` wurde auf `2` angehoben, damit bestehende Installationen die robustere Migration erneut durchlaufen.
+- Die Plugin-Hauptdatei schützt Konstanten und Hauptklasse gegen versehentliches erneutes Laden.
+
 ## [3.0.2] – 2026-05-25
 
 ### Fehlerbehebungen

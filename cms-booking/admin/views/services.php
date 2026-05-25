@@ -2,19 +2,19 @@
 
 <!-- Section-Nav -->
 <nav class="lp-section-nav">
-    <a href="/admin/plugins/booking-dashboard/booking-dashboard" class="lp-section-nav__item">
+    <a href="/admin/plugins/booking/booking" class="lp-section-nav__item">
         <span class="lp-section-nav__icon">📊</span> Dashboard
     </a>
-    <a href="/admin/plugins/booking-dashboard/booking-bookings" class="lp-section-nav__item">
+    <a href="/admin/plugins/booking/bookings" class="lp-section-nav__item">
         <span class="lp-section-nav__icon">📋</span> Buchungen
     </a>
-    <a href="/admin/plugins/booking-dashboard/booking-providers" class="lp-section-nav__item">
+    <a href="/admin/plugins/booking/providers" class="lp-section-nav__item">
         <span class="lp-section-nav__icon">👥</span> Anbieter
     </a>
-    <a href="/admin/plugins/booking-dashboard/booking-services" class="lp-section-nav__item active">
+    <a href="/admin/plugins/booking/services" class="lp-section-nav__item active">
         <span class="lp-section-nav__icon">🛠️</span> Leistungen
     </a>
-    <a href="/admin/plugins/booking-dashboard/booking-settings" class="lp-section-nav__item">
+    <a href="/admin/plugins/booking/settings" class="lp-section-nav__item">
         <span class="lp-section-nav__icon">⚙️</span> Einstellungen
     </a>
 </nav>

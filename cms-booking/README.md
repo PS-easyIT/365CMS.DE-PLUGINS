@@ -1,6 +1,6 @@
 # CMS Booking – Universelles Buchungssystem
 
-> **Version:** 1.0.0  
+> **Version:** 3.0.5  
 > **Autor:** 365 Network  
 > **Abhängigkeiten:** 365CMS Core ≥ 2.0  
 > **Optionale Integration:** cms-contact, cms-experts, cms-speakers, cms-events, cms-companies
@@ -75,7 +75,7 @@ cms-booking/
 
 1. Plugin-Ordner `cms-booking/` nach `CMS/plugins/` kopieren
 2. Im Admin unter **Plugins** das Plugin **CMS Booking** aktivieren
-3. Unter **Buchungssystem → Einstellungen** die Grundkonfiguration vornehmen
+3. Unter **Plugins → Buchungen → Einstellungen** die Grundkonfiguration vornehmen
 4. Anbieter werden automatisch aus verknüpften Plugins synchronisiert oder können manuell angelegt werden
 5. Leistungen je Anbieter erstellen (Dauer, Preis, Ort-Typ)
 6. Verfügbarkeiten über Wochenplan definieren

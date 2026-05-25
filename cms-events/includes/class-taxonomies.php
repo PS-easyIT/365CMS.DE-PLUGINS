@@ -12,6 +12,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Events_Taxonomies', false)) {
+    return;
+}
+
 final class CMS_Events_Taxonomies
 {
     private static ?self $instance = null;
@@ -31,7 +35,9 @@ final class CMS_Events_Taxonomies
 
     private function init_hooks(): void
     {
-        CMS\Hooks::addAction('init', [$this, 'register_taxonomies'], 10);
+        if (class_exists('CMS\Hooks')) {
+            CMS\Hooks::addAction('cms_init', [$this, 'register_taxonomies'], 30);
+        }
     }
 
     public function register_taxonomies(): void
@@ -41,6 +47,11 @@ final class CMS_Events_Taxonomies
 
     private function register_event_categories(): void
     {
+        if (!function_exists('register_taxonomy')) {
+            $this->create_default_categories();
+            return;
+        }
+
         $labels = [
             'name' => 'Event-Kategorien',
             'singular_name' => 'Event-Kategorie',
@@ -92,19 +103,16 @@ final class CMS_Events_Taxonomies
         ];
 
         foreach ($default_categories as $slug => $name) {
-            $exists = $db->query(
-                "SELECT id FROM {$db->prefix()}event_categories WHERE slug = ?",
-                [$slug]
-            );
+            $stmt = $db->prepare("SELECT id FROM {$db->prefix()}event_categories WHERE slug = ? LIMIT 1");
+            $stmt->execute([$slug]);
+            $exists = $stmt->fetch();
 
             if (empty($exists)) {
                 $db->insert(
-                    "{$db->prefix()}event_categories",
+                    'event_categories',
                     [
                         'name' => $name,
                         'slug' => $slug,
-                        'description' => '',
-                        'parent_id' => 0,
                         'created_at' => date('Y-m-d H:i:s'),
                     ]
                 );

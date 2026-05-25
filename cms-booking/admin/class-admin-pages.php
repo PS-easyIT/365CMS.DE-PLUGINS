@@ -112,35 +112,35 @@ final class CMS_Booking_Admin_Pages
 
     public static function render_dashboard(): void
     {
-        self::render_with_layout('Buchungen', 'booking-dashboard', static function (): void {
+        self::render_with_layout('Buchungen', 'booking', static function (): void {
             self::instance()->render_dashboard_page();
         });
     }
 
     public static function render_bookings(): void
     {
-        self::render_with_layout('Buchungen verwalten', 'booking-bookings', static function (): void {
+        self::render_with_layout('Buchungen verwalten', 'bookings', static function (): void {
             self::instance()->render_bookings_page();
         });
     }
 
     public static function render_providers(): void
     {
-        self::render_with_layout('Booking Anbieter', 'booking-providers', static function (): void {
+        self::render_with_layout('Booking Anbieter', 'providers', static function (): void {
             self::instance()->render_providers_page();
         });
     }
 
     public static function render_services(): void
     {
-        self::render_with_layout('Booking Leistungen', 'booking-services', static function (): void {
+        self::render_with_layout('Booking Leistungen', 'services', static function (): void {
             self::instance()->render_services_page();
         });
     }
 
     public static function render_settings(): void
     {
-        self::render_with_layout('Booking Einstellungen', 'booking-settings', static function (): void {
+        self::render_with_layout('Booking Einstellungen', 'settings', static function (): void {
             self::instance()->render_settings_page();
         });
     }

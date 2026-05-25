@@ -1,6 +1,6 @@
 # CMS Booking – Datenbank-Schema
 
-> **DB_VERSION:** 1  
+> **DB_VERSION:** 2  
 > **Prefix:** `{cms_}` (konfigurierbar via `Database::getPrefix()`)
 
 ---
@@ -15,6 +15,8 @@
 | `bookings` | Buchungen (Kernentität) | `provider_id`, `service_id`, `user_id` |
 | `booking_meta` | Key-Value-Metadaten zu Buchungen | `booking_id` → bookings |
 | `booking_settings` | Globale Plugin-Einstellungen | – |
+
+Die Tabellen werden zuerst ohne Inline-Foreign-Keys angelegt. Danach ergänzt der Installer die Relationen idempotent mit prefixsicheren Constraint-Namen. Einzelne FK-Kollisionen verhindern dadurch nicht mehr die Grundinstallation.
 
 ---
 

@@ -1,7 +1,8 @@
 ﻿# CMS Events Manager Plugin
 
-**Version:** 1.0.1  
-**Requires:** 365CMS 2.0+
+**Version:** 3.0.5  
+**Requires:** 365CMS 3.0+  
+**PHP:** 8.4+
 
 ## Description
 
@@ -15,12 +16,15 @@ The CMS Events Manager plugin manages events with calendar view and detail pages
 - ✅ Frontend display with card grid layout
 - ✅ Öffentliche Übersicht mit Themen-Badges oberhalb der Veranstalter-Meta, jeweils auf kompakte Ein-Zeilen-Darstellung optimiert
 - ✅ Calendar view for events
+- ✅ Native 365CMS 404/Error-Fallbacks for plugin render failures
 - ✅ Detail pages for individual events
 - ✅ Speaker assignments (supports both speaker and expert profiles)
 - ✅ Online and physical event support
 - ✅ Meta data support
 - ✅ Shortcode support: `[cms_events]`
 - ✅ Inline-freier Admin-/Member-Workflow für Modale, Bestätigungen, Formular-Toggles und Kalendernavigation
+- ✅ Idempotenter Bootstrap mit Klassen-Guards, sauberem De-/Uninstall und robuster Schema-Migration
+- ✅ Settings über `CMS\Services\SettingsService` mit Legacy-Fallback auf `cms_event_settings`
 
 ## Database Tables
 
@@ -39,6 +43,10 @@ Relationship table linking events to speakers/experts:
 ### cms_event_meta
 Additional metadata for events:
 - id, event_id, meta_key, meta_value, created_at
+
+### cms_event_settings
+Legacy fallback table for archive/design behavior. New writes use `CMS\Services\SettingsService` (`cms_settings`, group `cms-events`):
+- id, setting_key, setting_value, updated_at
 
 ## Usage
 
@@ -93,7 +101,17 @@ Templates can be added to the `templates/` directory:
 - `archive-event.php` - Event list view
 - `single-event.php` - Event detail view
 - `event-card.php` - Card component
-- `event-calendar.php` - Calendar view
+- `calendar-view.php` - Calendar view
+
+## Sicherheitsstatus (2026-05-25)
+
+- Plugin-Audit für `cms-events` auf Version `3.0.3` abgeschlossen.
+- Version `3.0.4` lädt die zentralen Admin-Menü-Helper defensiv, damit der Events-Menüeintrag in der 365CMS-Sidebar zuverlässig erscheint.
+- Version `3.0.5` korrigiert den PHP-Selbst-Guard der Hauptdatei nach dem funktionierenden `cms-feed`-Muster, damit `CMS_Events::instance()` beim Plugin-Laden wirklich ausgeführt wird.
+- Bootstrap und Include-Dateien sind gegen doppelte Ladepfade/klassische Redeclare-Fatals abgesichert.
+- DB-Migrationen nutzen `INFORMATION_SCHEMA` statt `SHOW COLUMNS`, Foreign Keys werden idempotent und nicht-blockierend ergänzt.
+- Plugin-Settings werden primär über den 365CMS `SettingsService` gelesen/geschrieben; die alte `event_settings`-Tabelle bleibt nur als kompatibler Fallback.
+- Speaker-AJAX, Admin-Approve, Member-Create und Template-Fallbacks liefern konsistente Fehlerantworten und protokollieren technische Details serverseitig.
 
 ## Event Types
 
@@ -105,12 +123,6 @@ The plugin supports both physical and online events:
 ## Installation
 
 The plugin is automatically activated during 365CMS setup. Database tables are created on first activation.
-
-## Sicherheitsstatus (2026-04-04)
-
-- Snyk-Code-Audit für `cms-events` abgeschlossen, aktuell ohne offene Findings.
-- Die Kalendernavigation begrenzt ihre Zielpfade jetzt auf interne `/events`-Routen und escaped dynamische Klassen-/Datumsattribute direkt an der Ausgabe.
-- Damit wurden die letzten XSS-/URL-Flows im Shortcode-Rendering entschärft.
 
 ## License
 

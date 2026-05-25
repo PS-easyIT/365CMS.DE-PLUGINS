@@ -12,6 +12,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Events_Database', false)) {
+    return;
+}
+
 final class CMS_Events_Database
 {
     private static ?self $instance = null;
@@ -124,8 +128,11 @@ final class CMS_Events_Database
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+            $this->create_settings_table($pdo, $prefix);
+
             // Migrate + seed defaults
             $this->maybe_add_event_columns($pdo, $prefix);
+            $this->maybe_add_foreign_keys($pdo, $prefix);
             $this->maybe_seed_default_data();
 
         } catch (\Throwable $e) {
@@ -138,9 +145,12 @@ final class CMS_Events_Database
     {
         $existing = [];
         try {
-            $stmt = $pdo->query("SHOW COLUMNS FROM {$prefix}events");
-            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $col) {
-                $existing[$col['Field']] = true;
+            $stmt = $pdo->prepare(
+                'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?'
+            );
+            $stmt->execute([$prefix . 'events']);
+            foreach ($stmt->fetchAll(\PDO::FETCH_COLUMN) as $columnName) {
+                $existing[(string) $columnName] = true;
             }
         } catch (\Throwable) {
             return;
@@ -163,12 +173,130 @@ final class CMS_Events_Database
         foreach ($alterations as $column => $definition) {
             if (!isset($existing[$column])) {
                 try {
-                    $pdo->exec("ALTER TABLE {$prefix}events ADD COLUMN {$column} {$definition}");
+                    $pdo->exec('ALTER TABLE ' . $this->quote_identifier($prefix . 'events') . ' ADD COLUMN ' . $this->quote_identifier($column) . ' ' . $definition);
                 } catch (\Throwable $e) {
                     error_log("CMS Events: ALTER TABLE add {$column} failed – " . $e->getMessage());
                 }
             }
         }
+    }
+
+    private function create_settings_table(\PDO $pdo, string $prefix): void
+    {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}event_settings (
+            id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            setting_key   VARCHAR(100) NOT NULL UNIQUE,
+            setting_value TEXT,
+            updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    }
+
+    private function maybe_add_foreign_keys(\PDO $pdo, string $prefix): void
+    {
+        $relations = [
+            [
+                'table'      => $prefix . 'event_speakers',
+                'column'     => 'event_id',
+                'ref_table'  => $prefix . 'events',
+                'ref_column' => 'id',
+                'name'       => 'fk_events_speakers_event',
+            ],
+            [
+                'table'      => $prefix . 'event_meta',
+                'column'     => 'event_id',
+                'ref_table'  => $prefix . 'events',
+                'ref_column' => 'id',
+                'name'       => 'fk_events_meta_event',
+            ],
+        ];
+
+        foreach ($relations as $relation) {
+            $table     = (string) $relation['table'];
+            $column    = (string) $relation['column'];
+            $refTable  = (string) $relation['ref_table'];
+            $refColumn = (string) $relation['ref_column'];
+
+            if (
+                !$this->table_exists($pdo, $table)
+                || !$this->table_exists($pdo, $refTable)
+                || !$this->column_exists($pdo, $table, $column)
+                || !$this->column_exists($pdo, $refTable, $refColumn)
+                || $this->foreign_key_relation_exists($pdo, $table, $column, $refTable, $refColumn)
+            ) {
+                continue;
+            }
+
+            $constraint = $this->foreign_key_name($prefix, (string) $relation['name']);
+            $sql = sprintf(
+                'ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE',
+                $this->quote_identifier($table),
+                $this->quote_identifier($constraint),
+                $this->quote_identifier($column),
+                $this->quote_identifier($refTable),
+                $this->quote_identifier($refColumn)
+            );
+
+            try {
+                $pdo->exec($sql);
+            } catch (\Throwable $e) {
+                error_log('CMS Events foreign key skipped (' . $constraint . '): ' . $e->getMessage());
+            }
+        }
+    }
+
+    private function table_exists(\PDO $pdo, string $table): bool
+    {
+        $stmt = $pdo->prepare(
+            'SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+        );
+        $stmt->execute([$table]);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
+    private function column_exists(\PDO $pdo, string $table, string $column): bool
+    {
+        $stmt = $pdo->prepare(
+            'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+        );
+        $stmt->execute([$table, $column]);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
+    private function foreign_key_relation_exists(\PDO $pdo, string $table, string $column, string $refTable, string $refColumn): bool
+    {
+        $stmt = $pdo->prepare(
+            'SELECT CONSTRAINT_NAME
+             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = ?
+               AND COLUMN_NAME = ?
+               AND REFERENCED_TABLE_NAME = ?
+               AND REFERENCED_COLUMN_NAME = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$table, $column, $refTable, $refColumn]);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
+    private function foreign_key_name(string $prefix, string $baseName): string
+    {
+        $normalizedPrefix = trim((string) preg_replace('/[^a-zA-Z0-9_]+/', '_', $prefix), '_');
+        $normalizedBase   = trim((string) preg_replace('/[^a-zA-Z0-9_]+/', '_', preg_replace('/^fk_/', '', $baseName)), '_');
+        $name             = 'fk_' . ($normalizedPrefix !== '' ? $normalizedPrefix . '_' : '') . $normalizedBase;
+
+        if (strlen($name) <= 64) {
+            return $name;
+        }
+
+        return substr($name, 0, 53) . '_' . substr(hash('sha256', $name), 0, 10);
+    }
+
+    private function quote_identifier(string $identifier): string
+    {
+        return '`' . str_replace('`', '``', $identifier) . '`';
     }
 
     public function get_event(int $id): ?object
@@ -250,6 +378,10 @@ final class CMS_Events_Database
         $db = CMS\Database::instance();
         $event_id = (int)($data['id'] ?? 0);
 
+        if (trim((string) ($data['title'] ?? '')) === '' || trim((string) ($data['event_date'] ?? '')) === '') {
+            return 0;
+        }
+
         if ($event_id > 0 && !CMS\Auth::instance()->isAdmin()) {
             $current_user_id = (int) (CMS\Auth::instance()->currentUser()?->id ?? 0);
             if ($current_user_id <= 0) {
@@ -315,9 +447,19 @@ final class CMS_Events_Database
 
     public function assign_speaker(int $event_id, int $speaker_id, string $speaker_type = 'speaker', array $data = []): bool
     {
+        if ($event_id <= 0 || $speaker_id <= 0) {
+            return false;
+        }
+
         $db = CMS\Database::instance();
 
         $speaker_type = in_array($speaker_type, ['speaker', 'expert'], true) ? $speaker_type : 'speaker';
+
+        $exists = $db->prepare("SELECT id FROM {$db->prefix()}event_speakers WHERE event_id = ? AND speaker_id = ? AND speaker_type = ? LIMIT 1");
+        $exists->execute([$event_id, $speaker_id, $speaker_type]);
+        if ((int) ($exists->fetchColumn() ?: 0) > 0) {
+            return true;
+        }
 
         $speaker_data = [
             'event_id' => $event_id,
@@ -359,10 +501,15 @@ final class CMS_Events_Database
             ORDER BY es.session_time ASC, es.id ASC
         ";
         
-        $stmt = $db->prepare($sql);
-        $stmt->execute([$event_id]);
+        try {
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$event_id]);
 
-        return $stmt->fetchAll();
+            return $stmt->fetchAll();
+        } catch (\Throwable $e) {
+            error_log('CMS Events get_event_speakers skipped: ' . $e->getMessage());
+            return [];
+        }
     }
 
     public function save_meta(int $event_id, string $meta_key, $meta_value): bool
@@ -402,20 +549,23 @@ final class CMS_Events_Database
 
     public function get_settings(): array
     {
-        $db = CMS\Database::instance();
+        $settings = $this->default_settings();
 
-        // Falls es keine Settings-Tabelle gibt, Standardwerte zurückgeben
-        try {
-            $stmt = $db->prepare("SELECT setting_key, setting_value FROM {$db->prefix()}event_settings");
-            $stmt->execute();
-            $rows = $stmt->fetchAll();
-        } catch (\Throwable $e) {
-            return $this->default_settings();
+        foreach ($this->get_legacy_settings() as $key => $value) {
+            $settings[$key] = $value;
         }
 
-        $settings = $this->default_settings();
-        foreach ($rows as $row) {
-            $settings[$row->setting_key] = $row->setting_value;
+        $settingsService = $this->settings_service();
+        if ($settingsService !== null) {
+            try {
+                foreach ($settingsService->getGroup('cms-events') as $key => $value) {
+                    $settings[(string) $key] = is_scalar($value) || $value === null
+                        ? (string) $value
+                        : json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                }
+            } catch (\Throwable $e) {
+                error_log('CMS Events SettingsService getGroup failed: ' . $e->getMessage());
+            }
         }
 
         return $settings;
@@ -423,6 +573,17 @@ final class CMS_Events_Database
 
     public function save_settings(array $settings): void
     {
+        $settingsService = $this->settings_service();
+        if ($settingsService !== null) {
+            try {
+                if ($settingsService->setMany('cms-events', $settings, [], 0)) {
+                    return;
+                }
+            } catch (\Throwable $e) {
+                error_log('CMS Events SettingsService save failed: ' . $e->getMessage());
+            }
+        }
+
         $db = CMS\Database::instance();
         $this->maybe_create_settings_table();
 
@@ -436,17 +597,62 @@ final class CMS_Events_Database
         }
     }
 
+    /**
+     * @return array<string, string>
+     */
+    private function get_legacy_settings(): array
+    {
+        $db = CMS\Database::instance();
+
+        try {
+            $stmt = $db->prepare("SELECT setting_key, setting_value FROM {$db->prefix()}event_settings");
+            $stmt->execute();
+            $rows = $stmt->fetchAll();
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $settings = [];
+        foreach ($rows as $row) {
+            $key = (string) ($row->setting_key ?? '');
+            if ($key === '') {
+                continue;
+            }
+            $settings[$key] = (string) ($row->setting_value ?? '');
+        }
+
+        return $settings;
+    }
+
+    private function settings_service(): ?\CMS\Services\SettingsService
+    {
+        if (!class_exists('CMS\\Services\\SettingsService')) {
+            return null;
+        }
+
+        try {
+            return \CMS\Services\SettingsService::getInstance();
+        } catch (\Throwable $e) {
+            error_log('CMS Events SettingsService unavailable: ' . $e->getMessage());
+            return null;
+        }
+    }
+
     private function maybe_create_settings_table(): void
     {
         $db = CMS\Database::instance();
-        $db->prepare(
-            "CREATE TABLE IF NOT EXISTS {$db->prefix()}event_settings (
-                id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                setting_key   VARCHAR(100) NOT NULL UNIQUE,
-                setting_value TEXT,
-                updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
-        )->execute();
+        $this->create_settings_table($db->getPdo(), $db->prefix());
+    }
+
+    public function drop_tables(): void
+    {
+        $db     = CMS\Database::instance();
+        $pdo    = $db->getPdo();
+        $prefix = $db->prefix();
+
+        foreach (['event_meta', 'event_speakers', 'event_tag_presets', 'event_categories', 'event_settings', 'events'] as $table) {
+            $pdo->exec('DROP TABLE IF EXISTS ' . $this->quote_identifier($prefix . $table));
+        }
     }
 
     public function delete_event(int $id): bool
@@ -619,6 +825,18 @@ final class CMS_Events_Database
             'color_featured_border'   => '#f59e0b',
             'color_cancelled_bg'      => '#fee2e2',
             'color_online_badge'      => '#059669',
+            'color_badge_published_bg'    => '#d1fae5',
+            'color_badge_published_color' => '#065f46',
+            'color_badge_draft_bg'        => '#fef3c7',
+            'color_badge_draft_color'     => '#92400e',
+            'color_badge_cancelled_bg'    => '#fee2e2',
+            'color_badge_cancelled_color' => '#991b1b',
+            'color_badge_completed_bg'    => '#dbeafe',
+            'color_badge_completed_color' => '#1e40af',
+            'color_badge_featured_bg'     => '#fef3c7',
+            'color_badge_featured_color'  => '#92400e',
+            'color_badge_online_bg'       => '#d1fae5',
+            'color_badge_online_color'    => '#065f46',
             // Layout
             'border_radius'           => '12',
             // Anzeige-Schalter
@@ -629,6 +847,11 @@ final class CMS_Events_Database
             'show_price'              => '1',
             'show_organizer'          => '1',
             'show_tags'               => '1',
+            'show_status_badge'       => '1',
+            'show_featured_badge'     => '1',
+            'show_online_badge'       => '1',
+            'show_date_pill'          => '1',
+            'show_time_pill'          => '1',
         ];
     }
 

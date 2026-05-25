@@ -1,5 +1,11 @@
 # Changelog – 365CMS Marketplace
 
+## 3.0.2 – 2026-05-25
+
+- Die Schema-Migration prüft fehlende Spalten jetzt über `INFORMATION_SCHEMA.COLUMNS` statt über `SHOW COLUMNS ... LIKE ?`.
+- Dadurch verschwinden MariaDB/PDO-Prepare-Fehler beim Booten wie `Syntax error ... near '?'` für `bs_marketplace_items`.
+- Spaltennamen für automatische Migrationen werden vor dem `ALTER TABLE` zusätzlich auf Identifier-Zeichen begrenzt.
+
 ## 3.0.1 – 2026-05-17
 
 - PHP-Anforderung auf 8.4 angehoben und Plugin-Version auf `3.0.1` aktualisiert.

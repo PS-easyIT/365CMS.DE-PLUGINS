@@ -1,11 +1,11 @@
 # CMS Events – Dokumentation
 
 **Plugin:** `cms-events`  
-**Version:** 1.0.1  
+**Version:** 3.0.5  
 **Namespace:** `CMS_Events`  
-**Aktueller Laufzeitstand:** 365CMS 2.0+  
-**Audit-/Dokustand:** Vorbereitung auf 365CMS V2.8.0 ohne Core-Änderungen  
-**PHP:** 8.1+
+**Aktueller Laufzeitstand:** 365CMS 3.0+  
+**Audit-/Dokustand:** 365CMS-3.x-Audit abgeschlossen am 2026-05-25  
+**PHP:** 8.4+
 
 ---
 
@@ -13,12 +13,14 @@
 
 Das **CMS Events**-Plugin verwaltet Veranstaltungen – von Webinaren bis zu Konferenzen. Es unterstützt physische, Online- und hybride Events und bietet vollständige Speaker-Integration.
 
-## V2.8.0-Status
+## 365CMS-3.x-Status
 
-- Die Dokumentation ist auf den **Audit- und Zielstand für 365CMS V2.8.0** angehoben.
-- Geplante Anpassungen betreffen ausschließlich das Plugin, **nicht den 365CMS-Core**.
-- Der Fokus der anstehenden Arbeiten liegt auf **Security**, **Speed** und **Best Practices**.
-- Der zentrale Abarbeitungsplan liegt in [`../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md`](../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md).
+- Version `3.0.3` enthält den aktuellen Audit-/Stabilitätsstand für PHP 8.4 und 365CMS 3.x.
+- Version `3.0.4` behebt die defensive Admin-Menü-Registrierung, sodass der Events-Eintrag in der Sidebar zuverlässig sichtbar ist.
+- Version `3.0.5` behebt den Hauptdatei-Guard, damit `CMS_Events::instance()` beim Laden des Plugins tatsächlich ausgeführt wird.
+- Bootstrap, Include-Klassen und Lifecycle-Hooks sind idempotent und gegen Redeclare-Fatals abgesichert.
+- Datenbankmigrationen nutzen `INFORMATION_SCHEMA`, erstellen die Settings-Tabelle im Installer und ergänzen Foreign Keys nicht-blockierend.
+- Öffentliche Fehlerpfade nutzen die 365CMS-404/Error-Fallbacks und protokollieren technische Details serverseitig.
 
 ### Kernfunktionen
 
@@ -31,7 +33,7 @@ Das **CMS Events**-Plugin verwaltet Veranstaltungen – von Webinaren bis zu Kon
 | **Admin-Backend** | CRUD-Oberfläche unter `/admin/events` |
 | **Member-Dashboard** | Eigene Events erstellen und verwalten |
 | **Shortcode** | `[cms_events]` – Grid-Ansicht kommender Events |
-| **Öffentliche Routen** | `/events`, `/events/{id}` |
+| **Öffentliche Routen** | `/events`, `/events/calendar`, `/events/{id}` |
 
 ---
 
@@ -53,6 +55,7 @@ cms-events/
 │   └── class-template-loader.php
 ├── templates/
 │   ├── archive-event.php
+│   ├── calendar-view.php
 │   ├── event-card.php
 │   └── single-event.php
 └── assets/
@@ -66,7 +69,6 @@ cms-events/
 
 | Dokument | Inhalt |
 |----------|--------|
-| [../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md](../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md) | Zentraler Audit- und Umsetzungsplan für die vier V2.8.0-Zielplugins |
 | [DATABASE.md](DATABASE.md) | Tabellen, Schemas, Indizes |
 | [HOOKS.md](HOOKS.md) | Actions & Filter |
 | [API.md](API.md) | Klassen- und Methoden-Referenz |
@@ -80,13 +82,14 @@ cms-events/
 ### Admin-Interface
 ```
 /admin/events           → Übersicht
-/admin/events?new       → Neues Event
-/admin/events?edit=N    → Event N bearbeiten
+/admin/events/new       → Neues Event
+/admin/events/edit/N    → Event N bearbeiten
 ```
 
 ### Frontend
 ```
 /events                 → Upcoming Events (Grid)
+/events/calendar        → Kalenderansicht
 /events/{id}            → Event-Detailseite
 ```
 

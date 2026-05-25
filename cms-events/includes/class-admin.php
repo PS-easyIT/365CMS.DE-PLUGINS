@@ -13,6 +13,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Events_Admin', false)) {
+    return;
+}
+
 final class CMS_Events_Admin
 {
     private static ?self $instance = null;
@@ -59,9 +63,22 @@ final class CMS_Events_Admin
 
     private function loadAdminMenu(): void
     {
-        $menu_file = ABSPATH . 'admin/partials/admin-menu.php';
-        if (file_exists($menu_file) && !function_exists('renderAdminLayoutStart')) {
-            require_once $menu_file;
+        if (function_exists('add_menu_page') && function_exists('renderAdminLayoutStart') && function_exists('renderAdminLayoutEnd')) {
+            return;
+        }
+
+        $menuFiles = [
+            ABSPATH . 'includes/functions/admin-menu.php',
+            ABSPATH . 'CMS/includes/functions/admin-menu.php',
+        ];
+
+        foreach ($menuFiles as $menuFile) {
+            if (is_file($menuFile)) {
+                require_once $menuFile;
+                if (function_exists('add_menu_page') && function_exists('renderAdminLayoutStart')) {
+                    return;
+                }
+            }
         }
     }
 
@@ -75,8 +92,14 @@ final class CMS_Events_Admin
         }
 
         $pageTitle = $title;
-        require_once ABSPATH . 'admin/partials/header.php';
-        require_once ABSPATH . 'admin/partials/sidebar.php';
+        $header = ABSPATH . 'admin/partials/header.php';
+        $sidebar = ABSPATH . 'admin/partials/sidebar.php';
+        if (file_exists($header)) {
+            require_once $header;
+        }
+        if (file_exists($sidebar)) {
+            require_once $sidebar;
+        }
     }
 
     private function end_admin_layout(): void
@@ -86,7 +109,10 @@ final class CMS_Events_Admin
             return;
         }
 
-        require_once ABSPATH . 'admin/partials/footer.php';
+        $footer = ABSPATH . 'admin/partials/footer.php';
+        if (file_exists($footer)) {
+            require_once $footer;
+        }
     }
 
     private function outputAdminAssets(): void
@@ -139,6 +165,7 @@ final class CMS_Events_Admin
         $settings    = $data['settings']    ?? [];
         $csrf        = (string) ($data['csrf'] ?? '');
         $csrfEsc     = htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8');
+        $approveCsrf = htmlspecialchars((string) ($data['approve_csrf'] ?? ''), ENT_QUOTES, 'UTF-8');
         $sec         = CMS\Security::instance();
 
         // Settings mit Defaults zusammenführen
@@ -299,7 +326,7 @@ final class CMS_Events_Admin
                 <input type="hidden" name="tab" value="overview">
                 <div class="form-group ev-form-group--inline-reset ev-form-group--grow-2">
                     <label class="form-label">Titel / Stichwort</label>
-                    <input type="text" name="search" class="form-control" placeholder="Titel, Ort, Kategorie…" value="<?= htmlspecialchars($data['search'] ?? '') ?>">
+                    <input type="text" name="search" class="form-control" placeholder="Titel, Ort, Kategorie…" value="<?= htmlspecialchars((string)($data['search'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                 </div>
                 <div class="form-group ev-form-group--inline-reset ev-form-group--grow-1">
                     <label class="form-label">Status / Typ</label>
@@ -368,18 +395,18 @@ final class CMS_Events_Admin
                         <div class="ev-adm-badges">
                             <?php if (!empty($s['show_status_badge']) && $s['show_status_badge'] !== '0'): ?>
                                 <span class="ev-adm-badge"
-                                    data-ev-badge-fg="<?= htmlspecialchars($stColor, ENT_QUOTES) ?>"
-                                    data-ev-badge-bg="<?= htmlspecialchars($stBg, ENT_QUOTES) ?>"><?= $stLabel ?></span>
+                                    data-ev-badge-fg="<?= htmlspecialchars($stColor, ENT_QUOTES, 'UTF-8') ?>"
+                                    data-ev-badge-bg="<?= htmlspecialchars($stBg, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($stLabel, ENT_QUOTES, 'UTF-8') ?></span>
                             <?php endif; ?>
                             <?php if (!empty($ev->is_featured) && !empty($s['show_featured_badge']) && $s['show_featured_badge'] !== '0'): ?>
                                   <span class="ev-adm-badge"
-                                      data-ev-badge-fg="<?= htmlspecialchars((string)$s['color_badge_featured_color'], ENT_QUOTES) ?>"
-                                      data-ev-badge-bg="<?= htmlspecialchars((string)$s['color_badge_featured_bg'], ENT_QUOTES) ?>">⭐ Featured</span>
+                                      data-ev-badge-fg="<?= htmlspecialchars((string)$s['color_badge_featured_color'], ENT_QUOTES, 'UTF-8') ?>"
+                                      data-ev-badge-bg="<?= htmlspecialchars((string)$s['color_badge_featured_bg'], ENT_QUOTES, 'UTF-8') ?>">⭐ Featured</span>
                             <?php endif; ?>
                             <?php if (!empty($ev->is_online) && !empty($s['show_online_badge']) && $s['show_online_badge'] !== '0'): ?>
                                   <span class="ev-adm-badge"
-                                      data-ev-badge-fg="<?= htmlspecialchars((string)$s['color_badge_online_color'], ENT_QUOTES) ?>"
-                                      data-ev-badge-bg="<?= htmlspecialchars((string)$s['color_badge_online_bg'], ENT_QUOTES) ?>">🌐 Online</span>
+                                      data-ev-badge-fg="<?= htmlspecialchars((string)$s['color_badge_online_color'], ENT_QUOTES, 'UTF-8') ?>"
+                                      data-ev-badge-bg="<?= htmlspecialchars((string)$s['color_badge_online_bg'], ENT_QUOTES, 'UTF-8') ?>">🌐 Online</span>
                             <?php endif; ?>
                             <?php if ($isToday): ?>
                                 <span class="ev-adm-badge ev-adm-badge--today">🔴 Heute</span>
@@ -417,21 +444,21 @@ final class CMS_Events_Admin
                 <div class="ev-adm-foot">
                     <?php if ($isDraft): ?>
                         <form method="POST" action="<?= SITE_URL ?>/admin/events/approve/<?= $id ?>" id="ev-approve-form-<?= $id ?>" class="ev-inline-form">
-                            <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
+                            <input type="hidden" name="csrf_token" value="<?= $approveCsrf ?>">
                             <button type="button" class="ev-adm-btn ev-adm-btn-primary ev-btn-inline-success"
                                     data-ev-approve-event
-                                    data-ev-event-name="<?= htmlspecialchars((string)($ev->title ?? ''), ENT_QUOTES) ?>"
+                                    data-ev-event-name="<?= htmlspecialchars((string)($ev->title ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                     data-ev-submit-target="ev-approve-form-<?= $id ?>">✓ Genehmigen</button>
                         </form>
                     <?php else: ?>
                         <a href="<?= function_exists('cms_event_url') ? cms_event_url($ev) : SITE_URL . '/event/event-' . $id ?>"
-                           target="_blank" class="ev-adm-btn ev-adm-btn-ghost">🌐</a>
+                                    target="_blank" rel="noopener noreferrer" class="ev-adm-btn ev-adm-btn-ghost">🌐</a>
                     <?php endif; ?>
                     <a href="<?= SITE_URL ?>/admin/events/edit/<?= $id ?>"
                        class="ev-adm-btn ev-adm-btn-primary">✏️ Bearbeiten</a>
                         <button type="button" class="ev-adm-btn ev-adm-btn-danger"
                             data-ev-delete-event
-                            data-ev-event-name="<?= htmlspecialchars((string)($ev->title ?? ''), ENT_QUOTES) ?>"
+                            data-ev-event-name="<?= htmlspecialchars((string)($ev->title ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                             data-ev-delete-action="<?= SITE_URL ?>/admin/events/delete/<?= $id ?>">🗑️</button>
                 </div>
             </div>
@@ -459,7 +486,7 @@ final class CMS_Events_Admin
                         <?php if (($cat->id ?? 0) > 0): ?>
                             <form method="POST" action="<?= SITE_URL ?>/admin/events/category/delete/<?= (int)$cat->id ?>" class="ev-inline-form-compact"
                                   data-ev-confirm-title="Kategorie löschen?"
-                                  data-ev-confirm-message="Kategorie „<?= htmlspecialchars((string)($cat->name ?? ''), ENT_QUOTES) ?>” wirklich löschen?"
+                                  data-ev-confirm-message="Kategorie „<?= htmlspecialchars((string)($cat->name ?? ''), ENT_QUOTES, 'UTF-8') ?>” wirklich löschen?"
                                   data-ev-confirm-button="Löschen"
                                   data-ev-confirm-class="btn-danger">
                                 <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
@@ -516,7 +543,7 @@ final class CMS_Events_Admin
                                     <?= $sec->escape($tg->tag_name) ?>
                                     <form method="POST" action="<?= SITE_URL ?>/admin/events/tagpreset/delete/<?= (int)$tg->id ?>" class="ev-inline-form-compact"
                                           data-ev-confirm-title="Tag löschen?"
-                                          data-ev-confirm-message="Tag „<?= htmlspecialchars((string)($tg->tag_name ?? ''), ENT_QUOTES) ?>” wirklich löschen?"
+                                          data-ev-confirm-message="Tag „<?= htmlspecialchars((string)($tg->tag_name ?? ''), ENT_QUOTES, 'UTF-8') ?>” wirklich löschen?"
                                           data-ev-confirm-button="Löschen"
                                           data-ev-confirm-class="btn-danger">
                                         <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
@@ -582,7 +609,7 @@ final class CMS_Events_Admin
                         'color_cancelled_bg'    => ['Abgesagt-Badge Hintergrund',          '#fee2e2'],
                     ];
                     foreach ($colorFields as $key => [$label, $default]):
-                        $val = htmlspecialchars($s[$key] ?? $default);
+                        $val = htmlspecialchars((string) ($s[$key] ?? $default), ENT_QUOTES, 'UTF-8');
                     ?>
                     <div class="form-group">
                         <label class="form-label"><?= $label ?></label>
@@ -607,11 +634,11 @@ final class CMS_Events_Admin
                     <label class="form-label">Header-Icon (Emoji)</label>
                           <input type="text" name="archive_header_icon" id="txt_archive_header_icon"
                               class="form-control ev-header-icon-input"
-                           value="<?= htmlspecialchars(html_entity_decode($s['archive_header_icon'] ?? '📅', ENT_HTML5, 'UTF-8')) ?>"
+                           value="<?= htmlspecialchars(html_entity_decode((string)($s['archive_header_icon'] ?? '📅'), ENT_HTML5, 'UTF-8'), ENT_QUOTES, 'UTF-8') ?>"
                               maxlength="8">
                     <small class="form-text">z.B. 📅 🎉 🎤</small>
                 </div>
-                <div id="ev_hdr_preview" class="ev-header-preview" data-ev-preview-title="<?= htmlspecialchars((string)($s['archive_title'] ?? 'Events'), ENT_QUOTES) ?>">
+                <div id="ev_hdr_preview" class="ev-header-preview" data-ev-preview-title="<?= htmlspecialchars((string)($s['archive_title'] ?? 'Events'), ENT_QUOTES, 'UTF-8') ?>">
                     <span id="ev_hdr_icon" class="ev-header-preview-icon"></span>
                     <div>
                         <div id="ev_hdr_title" class="ev-header-preview-title"></div>
@@ -640,7 +667,7 @@ final class CMS_Events_Admin
                         'color_badge_online_color'    => ['🌐 Online – Textfarbe',        '#065f46'],
                     ];
                     foreach ($badgeColorFields as $key => [$label, $default]):
-                        $val = htmlspecialchars($s[$key] ?? $default);
+                        $val = htmlspecialchars((string) ($s[$key] ?? $default), ENT_QUOTES, 'UTF-8');
                     ?>
                     <div class="form-group">
                         <label class="form-label"><?= $label ?></label>
@@ -712,9 +739,9 @@ final class CMS_Events_Admin
                 <h3>👁️ Vorschau</h3>
                 <div class="ev-preview-shell" id="ev_design_preview">
                     <div id="prev-header" class="ev-preview-header">
-                        <span id="prev-icon" class="ev-preview-icon-live"><?= htmlspecialchars($s['archive_header_icon']) ?></span>
+                        <span id="prev-icon" class="ev-preview-icon-live"><?= htmlspecialchars((string)$s['archive_header_icon'], ENT_QUOTES, 'UTF-8') ?></span>
                         <div>
-                            <div id="prev-title" class="ev-preview-title"><?= htmlspecialchars($s['archive_title'] ?? 'Events') ?></div>
+                            <div id="prev-title" class="ev-preview-title"><?= htmlspecialchars((string)($s['archive_title'] ?? 'Events'), ENT_QUOTES, 'UTF-8') ?></div>
                             <div class="ev-preview-subtitle ev-preview-subtitle-light">Vorschau</div>
                         </div>
                     </div>
@@ -743,21 +770,21 @@ final class CMS_Events_Admin
                 <h3>📋 Archiv-Seite</h3>
                 <div class="form-group">
                     <label class="form-label">Seitentitel</label>
-                    <input type="text" name="archive_title" class="form-control"
-                           value="<?= htmlspecialchars($s['archive_title']) ?>"
+                          <input type="text" id="archive_title" name="archive_title" class="form-control"
+                              value="<?= htmlspecialchars((string)$s['archive_title'], ENT_QUOTES, 'UTF-8') ?>"
                            placeholder="Events">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Beschreibungstext</label>
                     <textarea name="archive_description" class="form-control" rows="3"
-                              placeholder="Kurze Beschreibung für Besucher..."><?= htmlspecialchars($s['archive_description']) ?></textarea>
+                              placeholder="Kurze Beschreibung für Besucher..."><?= htmlspecialchars((string)$s['archive_description'], ENT_QUOTES, 'UTF-8') ?></textarea>
                     <small class="form-text">Einleitungstext auf der Übersichtsseite.</small>
                 </div>
                 <div class="ev-grid-two ev-settings-grid">
                     <div class="form-group">
                         <label class="form-label">URL-Slug</label>
                         <input type="text" name="archive_slug" class="form-control"
-                               value="<?= htmlspecialchars($s['archive_slug'] ?? 'events') ?>"
+                               value="<?= htmlspecialchars((string)($s['archive_slug'] ?? 'events'), ENT_QUOTES, 'UTF-8') ?>"
                                placeholder="events">
                         <small class="form-text">z.B. «events» → /events/</small>
                     </div>
@@ -865,8 +892,8 @@ final class CMS_Events_Admin
             </div>
             <div class="header-actions">
                 <?php if ($is_edit): ?>
-                    <a href="<?= function_exists('cms_event_url') ? cms_event_url($event) : SITE_URL . '/event/event-' . (int)$event->id ?>"
-                       target="_blank" class="btn btn-secondary">&#128065; Ansehen</a>
+                          <a href="<?= function_exists('cms_event_url') ? cms_event_url($event) : SITE_URL . '/event/event-' . (int)$event->id ?>"
+                              target="_blank" rel="noopener noreferrer" class="btn btn-secondary">&#128065; Ansehen</a>
                 <?php endif; ?>
                 <a href="<?= SITE_URL ?>/admin/events" class="btn btn-secondary">← Zurück</a>
             </div>
@@ -901,14 +928,14 @@ final class CMS_Events_Admin
                         Titel <span class="ev-required">*</span>
                     </label>
                     <input type="text" id="ev_title" name="title" class="form-control"
-                           value="<?= htmlspecialchars($event->title ?? '') ?>"
+                           value="<?= htmlspecialchars((string)($event->title ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                            placeholder="z.B. Cloud Computing Summit 2026" required>
                 </div>
 
                 <div class="form-group">
                     <label class="form-label" for="ev_excerpt">Kurzbeschreibung / Teaser</label>
                     <input type="text" id="ev_excerpt" name="excerpt" class="form-control"
-                           value="<?= htmlspecialchars($event->excerpt ?? '') ?>"
+                           value="<?= htmlspecialchars((string)($event->excerpt ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                            placeholder="Kurze Zusammenfassung (wird auf Übersichtsseite angezeigt)"
                            maxlength="500">
                     <small class="form-text">Max. 500 Zeichen – erscheint auf der Event-Karte</small>
@@ -917,7 +944,7 @@ final class CMS_Events_Admin
                 <div class="form-group">
                     <label class="form-label" for="ev_desc">Vollständige Beschreibung</label>
                     <?php
-                    if (class_exists('\CMS\Services\EditorService')) {
+                    if (class_exists('CMS\\Services\\EditorService')) {
                         echo \CMS\Services\EditorService::getInstance()->render(
                             'description',
                             $event->description ?? '',
@@ -925,7 +952,7 @@ final class CMS_Events_Admin
                         );
                     } else { ?>
                         <textarea id="ev_desc" name="description" class="form-control" rows="8"
-                                  placeholder="Detaillierte Beschreibung, Agenda, Highlights…"><?= htmlspecialchars($event->description ?? '') ?></textarea>
+                                  placeholder="Detaillierte Beschreibung, Agenda, Highlights…"><?= htmlspecialchars((string)($event->description ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
                     <?php } ?>
                 </div>
 
@@ -936,15 +963,15 @@ final class CMS_Events_Admin
                             <select name="category" class="form-control">
                                 <option value="">-- Keine Kategorie --</option>
                                 <?php foreach ($categories_db as $cat): ?>
-                                    <option value="<?= htmlspecialchars($cat->name) ?>"
+                                    <option value="<?= htmlspecialchars((string)$cat->name, ENT_QUOTES, 'UTF-8') ?>"
                                             <?= ($event->category ?? '') === $cat->name ? 'selected' : '' ?>>
-                                        <?= htmlspecialchars($cat->icon ?? '📂') . ' ' . htmlspecialchars($cat->name) ?>
+                                        <?= htmlspecialchars((string)($cat->icon ?? '📂'), ENT_QUOTES, 'UTF-8') . ' ' . htmlspecialchars((string)$cat->name, ENT_QUOTES, 'UTF-8') ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
                         <?php else: ?>
                             <input type="text" name="category" class="form-control"
-                                   value="<?= htmlspecialchars($event->category ?? '') ?>"
+                                   value="<?= htmlspecialchars((string)($event->category ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                    placeholder="z.B. Konferenz">
                         <?php endif; ?>
                     </div>
@@ -983,23 +1010,23 @@ final class CMS_Events_Admin
                             Startdatum <span class="ev-required">*</span>
                         </label>
                         <input type="date" id="ev_date" name="event_date" class="form-control"
-                               value="<?= htmlspecialchars($event->event_date ?? '') ?>" required>
+                               value="<?= htmlspecialchars((string)($event->event_date ?? ''), ENT_QUOTES, 'UTF-8') ?>" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Startzeit</label>
                         <input type="time" name="event_time" class="form-control"
-                               value="<?= htmlspecialchars($event->event_time ?? '') ?>">
+                               value="<?= htmlspecialchars((string)($event->event_time ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Enddatum</label>
                         <input type="date" name="end_date" class="form-control"
-                               value="<?= htmlspecialchars($event->end_date ?? '') ?>">
+                               value="<?= htmlspecialchars((string)($event->end_date ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                         <small class="form-text">Leer = eintägig</small>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Endzeit</label>
                         <input type="time" name="end_time" class="form-control"
-                               value="<?= htmlspecialchars($event->end_time ?? '') ?>">
+                               value="<?= htmlspecialchars((string)($event->end_time ?? ''), ENT_QUOTES, 'UTF-8') ?>">
                     </div>
                 </div>
             </div>
@@ -1019,7 +1046,7 @@ final class CMS_Events_Admin
                     <div class="form-group">
                         <label class="form-label">Online-URL (Zoom, Teams, etc.)</label>
                         <input type="url" name="online_url" class="form-control"
-                               value="<?= htmlspecialchars($event->online_url ?? '') ?>"
+                               value="<?= htmlspecialchars((string)($event->online_url ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                placeholder="https://zoom.us/j/123456789">
                     </div>
                 </div>
@@ -1028,32 +1055,32 @@ final class CMS_Events_Admin
                     <div class="form-group">
                         <label class="form-label">Veranstaltungsort / Location-Name</label>
                         <input type="text" name="location" class="form-control"
-                               value="<?= htmlspecialchars($event->location ?? '') ?>"
+                               value="<?= htmlspecialchars((string)($event->location ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                placeholder="z.B. Messe Berlin, Kongresszentrum">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Adresse</label>
                         <input type="text" name="address" class="form-control"
-                               value="<?= htmlspecialchars($event->address ?? '') ?>"
+                               value="<?= htmlspecialchars((string)($event->address ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                placeholder="z.B. Messedamm 22">
                     </div>
                     <div class="ev-grid-three-location">
                         <div class="form-group">
                             <label class="form-label">PLZ</label>
                             <input type="text" name="zip" class="form-control"
-                                   value="<?= htmlspecialchars($event->zip ?? '') ?>"
+                                   value="<?= htmlspecialchars((string)($event->zip ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                    placeholder="10557">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Stadt</label>
                             <input type="text" name="city" class="form-control"
-                                   value="<?= htmlspecialchars($event->city ?? '') ?>"
+                                   value="<?= htmlspecialchars((string)($event->city ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                    placeholder="Berlin">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Land</label>
                             <input type="text" name="country" class="form-control"
-                                   value="<?= htmlspecialchars($event->country ?? 'Deutschland') ?>"
+                                   value="<?= htmlspecialchars((string)($event->country ?? 'Deutschland'), ENT_QUOTES, 'UTF-8') ?>"
                                    placeholder="Deutschland">
                         </div>
                     </div>
@@ -1073,7 +1100,7 @@ final class CMS_Events_Admin
                     <div class="form-group">
                         <label class="form-label">Anmelde-URL</label>
                         <input type="url" name="registration_url" class="form-control"
-                               value="<?= htmlspecialchars($event->registration_url ?? '') ?>"
+                               value="<?= htmlspecialchars((string)($event->registration_url ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                placeholder="https://...">
                     </div>
                 </div>
@@ -1090,7 +1117,7 @@ final class CMS_Events_Admin
                     <div class="form-group" id="ev_price_field"<?= ($event->price_type ?? 'free') === 'free' ? ' hidden' : '' ?>>
                         <label class="form-label">Preis</label>
                         <input type="number" name="price" class="form-control"
-                               value="<?= htmlspecialchars((string)($event->price ?? '')) ?>"
+                               value="<?= htmlspecialchars((string)($event->price ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                min="0" step="0.01" placeholder="0.00">
                     </div>
                     <div class="form-group" id="ev_currency_field"<?= ($event->price_type ?? 'free') === 'free' ? ' hidden' : '' ?>>
@@ -1111,14 +1138,14 @@ final class CMS_Events_Admin
                     <div class="form-group">
                         <label class="form-label">Event-Bild (URL)</label>
                         <input type="url" name="image_url" class="form-control"
-                               value="<?= htmlspecialchars($event->image_url ?? '') ?>"
+                               value="<?= htmlspecialchars((string)($event->image_url ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                placeholder="https://...">
                         <small class="form-text">Vorschaubild auf der Karte</small>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Banner-Bild (URL)</label>
                         <input type="url" name="banner_url" class="form-control"
-                               value="<?= htmlspecialchars($event->banner_url ?? '') ?>"
+                               value="<?= htmlspecialchars((string)($event->banner_url ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                placeholder="https://...">
                         <small class="form-text">Großes Bild auf der Event-Detailseite</small>
                     </div>
@@ -1132,25 +1159,25 @@ final class CMS_Events_Admin
                     <div class="form-group">
                         <label class="form-label">Name / Organisation</label>
                         <input type="text" name="organizer_name" class="form-control"
-                               value="<?= htmlspecialchars($event->organizer_name ?? '') ?>"
+                               value="<?= htmlspecialchars((string)($event->organizer_name ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                placeholder="z.B. 365 Network GmbH">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Website</label>
                         <input type="url" name="organizer_website" class="form-control"
-                               value="<?= htmlspecialchars($event->organizer_website ?? '') ?>"
+                               value="<?= htmlspecialchars((string)($event->organizer_website ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                placeholder="https://...">
                     </div>
                     <div class="form-group">
                         <label class="form-label">E-Mail</label>
                         <input type="email" name="organizer_email" class="form-control"
-                               value="<?= htmlspecialchars($event->organizer_email ?? '') ?>"
+                               value="<?= htmlspecialchars((string)($event->organizer_email ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                placeholder="info@beispiel.de">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Telefon</label>
                         <input type="text" name="organizer_phone" class="form-control"
-                               value="<?= htmlspecialchars($event->organizer_phone ?? '') ?>"
+                               value="<?= htmlspecialchars((string)($event->organizer_phone ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                                placeholder="+49 30 ...">
                     </div>
                 </div>
@@ -1163,10 +1190,10 @@ final class CMS_Events_Admin
                 <div class="ev-tag-toggle-list">
                     <?php foreach ($tag_presets as $tg): ?>
                         <label class="ev-tag-toggle">
-                            <input type="checkbox" name="tags[]" value="<?= htmlspecialchars($tg->tag_name) ?>"
+                            <input type="checkbox" name="tags[]" value="<?= htmlspecialchars((string)$tg->tag_name, ENT_QUOTES, 'UTF-8') ?>"
                                    <?= in_array($tg->tag_name, $current_tags) ? 'checked' : '' ?>
                                    class="ev-tag-toggle-input">
-                            <span><?= htmlspecialchars($tg->tag_name) ?></span>
+                            <span><?= htmlspecialchars((string)$tg->tag_name, ENT_QUOTES, 'UTF-8') ?></span>
                         </label>
                     <?php endforeach; ?>
                 </div>

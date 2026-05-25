@@ -63,6 +63,7 @@ Der Pfad ist in den Plugin-Einstellungen konfigurierbar und kann deaktiviert wer
 - CMS-Paketverwaltung mit eigenem Adminbereich
 - Datei-Details mit SHA-256 und Textvorschau in der Verzeichnisansicht
 - Separate Standardwerte für `CMS`, `Plugins` und `Themes` in den Einstellungen
+- MariaDB-sichere Schema-Migration über `INFORMATION_SCHEMA` statt `SHOW COLUMNS ... LIKE ?`
 
 ## Wichtiger Hinweis
 

@@ -12,6 +12,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Events_Shortcode', false)) {
+    return;
+}
+
 final class CMS_Events_Shortcode
 {
     private static ?self $instance = null;
@@ -84,22 +88,27 @@ final class CMS_Events_Shortcode
         ], $atts);
 
         $db_manager = CMS_Events_Database::instance();
+        $settings   = $db_manager->get_settings();
+        $limit      = max(1, min(100, (int) $atts['limit']));
+        $category   = $this->sanitize_shortcode_text($atts['category'] ?? '', 100);
+        $city       = $this->sanitize_shortcode_text($atts['city'] ?? '', 100);
+        $columns    = max(1, min(4, (int) $atts['columns']));
         
         $args = [
             'status' => 'published',
-            'limit' => (int)$atts['limit'],
+            'limit' => $limit,
         ];
 
-        if ($atts['upcoming']) {
+        if ($this->normalize_bool($atts['upcoming'])) {
             $args['upcoming'] = true;
         }
 
-        if (!empty($atts['category'])) {
-            $args['category'] = $atts['category'];
+        if ($category !== '') {
+            $args['category'] = $category;
         }
 
-        if (!empty($atts['city'])) {
-            $args['city'] = $atts['city'];
+        if ($city !== '') {
+            $args['city'] = $city;
         }
 
         $events = $db_manager->get_events($args);
@@ -108,9 +117,20 @@ final class CMS_Events_Shortcode
         
         $template_loader = CMS_Events_Template_Loader::instance();
         $template_loader->render_template('archive-event', [
-            'events' => $events,
-            'columns' => (int)$atts['columns'],
-            'show_filters' => (bool)$atts['show_filters'],
+            'events'          => $events,
+            'settings'        => array_merge($settings, ['grid_columns' => (string) $columns]),
+            'current_page'    => 1,
+            'per_page'        => $limit,
+            'pages'           => 1,
+            'total'           => count($events),
+            'categories'      => [],
+            'filter_category' => $category,
+            'filter_city'     => $city,
+            'filter_month'    => null,
+            'filter_online'   => null,
+            'when_filter'     => !empty($args['upcoming']) ? 'upcoming' : null,
+            'search'          => '',
+            'show_filters'    => $this->normalize_bool($atts['show_filters']),
         ]);
 
         return ob_get_clean();
@@ -134,6 +154,7 @@ final class CMS_Events_Shortcode
         }
 
         $speakers = $db_manager->get_event_speakers($event_id);
+        $settings = $db_manager->get_settings();
 
         ob_start();
         
@@ -141,6 +162,7 @@ final class CMS_Events_Shortcode
         $template_loader->render_template('single-event', [
             'event' => $event,
             'speakers' => $speakers,
+            'settings' => $settings,
         ]);
 
         return ob_get_clean();
@@ -154,7 +176,7 @@ final class CMS_Events_Shortcode
             'category' => '',
         ], $atts);
 
-        $atts['month'] = preg_match('/^\d{4}-\d{2}$/', (string) $atts['month'])
+        $atts['month'] = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string) $atts['month'])
             ? (string) $atts['month']
             : date('Y-m');
 
@@ -162,7 +184,9 @@ final class CMS_Events_Shortcode
             ? (string) $atts['view']
             : 'month';
 
-        if (!empty($_GET['month']) && preg_match('/^\d{4}-\d{2}$/', (string)$_GET['month'])) {
+        $atts['category'] = $this->sanitize_shortcode_text($atts['category'] ?? '', 100);
+
+        if (!empty($_GET['month']) && preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string)$_GET['month'])) {
             $atts['month'] = (string)$_GET['month'];
         }
 
@@ -190,12 +214,12 @@ final class CMS_Events_Shortcode
         ?>
         <div class="events-calendar-widget">
             <div class="calendar-header">
-                <a class="btn-prev calendar-nav-btn" href="<?= htmlspecialchars($this->buildCalendarNavigationUrl($previousMonth, (string)$atts['view'], (string)$atts['category']), ENT_QUOTES) ?>" aria-label="Vorheriger Monat">‹</a>
+                <a class="btn-prev calendar-nav-btn" href="<?= htmlspecialchars($this->buildCalendarNavigationUrl($previousMonth, (string)$atts['view'], (string)$atts['category']), ENT_QUOTES, 'UTF-8') ?>" aria-label="Vorheriger Monat">‹</a>
                 <h3><?= date('F Y', strtotime($atts['month'] . '-01')) ?></h3>
-                <a class="btn-next calendar-nav-btn" href="<?= htmlspecialchars($this->buildCalendarNavigationUrl($nextMonth, (string)$atts['view'], (string)$atts['category']), ENT_QUOTES) ?>" aria-label="Nächster Monat">›</a>
+                <a class="btn-next calendar-nav-btn" href="<?= htmlspecialchars($this->buildCalendarNavigationUrl($nextMonth, (string)$atts['view'], (string)$atts['category']), ENT_QUOTES, 'UTF-8') ?>" aria-label="Nächster Monat">›</a>
             </div>
             
-            <div class="calendar-view-<?= htmlspecialchars($atts['view'], ENT_QUOTES) ?>">
+            <div class="calendar-view-<?= htmlspecialchars($atts['view'], ENT_QUOTES, 'UTF-8') ?>">
                 <?php if ($atts['view'] === 'month'): ?>
                     <?php $this->render_month_view($events, $atts['month']); ?>
                 <?php else: ?>
@@ -237,15 +261,17 @@ final class CMS_Events_Shortcode
         ], $atts);
 
         $db_manager = CMS_Events_Database::instance();
+        $limit = max(1, min(20, (int) $atts['limit']));
+        $category = $this->sanitize_shortcode_text($atts['category'] ?? '', 100);
         
         $args = [
             'status' => 'published',
             'upcoming' => true,
-            'limit' => (int)$atts['limit'],
+            'limit' => $limit,
         ];
 
-        if (!empty($atts['category'])) {
-            $args['category'] = $atts['category'];
+        if ($category !== '') {
+            $args['category'] = $category;
         }
 
         $events = $db_manager->get_events($args);
@@ -267,7 +293,7 @@ final class CMS_Events_Shortcode
                         </div>
                         <div class="event-info">
                             <h4>
-                                <a href="/events/<?= $event->id ?>">
+                                <a href="<?= htmlspecialchars(function_exists('cms_event_url') ? cms_event_url($event) : '/events/' . (int) $event->id, ENT_QUOTES, 'UTF-8') ?>">
                                     <?= CMS\Security::instance()->escape($event->title) ?>
                                 </a>
                             </h4>
@@ -353,7 +379,8 @@ final class CMS_Events_Shortcode
             echo '<div class="week-day-events">';
             foreach ($day_events as $event) {
                 echo '<div class="week-event">';
-                echo '<a href="/events/' . $event->id . '">' . CMS\Security::instance()->escape($event->title) . '</a>';
+                $eventUrl = function_exists('cms_event_url') ? cms_event_url($event) : '/events/' . (int) $event->id;
+                echo '<a href="' . htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') . '">' . CMS\Security::instance()->escape($event->title) . '</a>';
                 echo '</div>';
             }
             echo '</div>';
@@ -362,5 +389,24 @@ final class CMS_Events_Shortcode
         }
         
         echo '</div>';
+    }
+
+    private function normalize_bool(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        return in_array(strtolower((string) $value), ['1', 'true', 'yes', 'on'], true);
+    }
+
+    private function sanitize_shortcode_text(mixed $value, int $maxLength): string
+    {
+        $text = trim(strip_tags((string) $value));
+        if ($text === '') {
+            return '';
+        }
+
+        return mb_substr($text, 0, $maxLength, 'UTF-8');
     }
 }

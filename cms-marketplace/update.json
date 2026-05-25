@@ -1,12 +1,12 @@
 {
   "name": "365CMS Marketplace",
   "slug": "cms-marketplace",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "requires_cms": "3.0.0",
   "requires_php": "8.4",
   "tested_up_to": "3.0.0",
-  "release_date": "2026-05-17",
+  "release_date": "2026-05-25",
   "author": "365 Network",
   "description": "Zentrale Marketplace-Verwaltung für Plugins, Themes und CMS-Pakete mit gehärteter ZIP-Upload-Prüfung, Public-Submission-Schutz und JSON-Feeds.",
-  "changelog": "365CMS-3.0.1/PHP-8.4-Härtung: Public-Submission-Felder werden begrenzt normalisiert, HTML-Antworten senden nosniff, Rate-Limit-Dateien sind größenbegrenzt/gesperrt und Directory-URLs werden segmentweise codiert."
+  "changelog": "3.0.2: Marketplace-Schema-Migration prüft fehlende Spalten über INFORMATION_SCHEMA statt SHOW COLUMNS ... LIKE ?, damit MariaDB/PDO keine Prepare-Syntaxfehler beim Booten mehr protokolliert. 3.0.1: PHP-8.4-Härtung: Public-Submission-Felder werden begrenzt normalisiert, HTML-Antworten senden nosniff, Rate-Limit-Dateien sind größenbegrenzt/gesperrt und Directory-URLs werden segmentweise codiert."
 }

@@ -5,11 +5,11 @@
 
 ---
 
-## V2.8.0 – Audit- und Maßnahmenplan
+## 365CMS 3.x – Audit- und Maßnahmenplan
 
 ### Ziel des Durchgangs
 
-- [ ] Plugin vollständig auf **365CMS V2.8.0-Zielstand** dokumentarisch und technisch prüfen
+- [x] Plugin vollständig auf **365CMS-3.x-Zielstand** dokumentarisch und technisch prüfen
 - [x] **Keine Core-Änderungen** vornehmen
 - [x] Security-, Speed- und Best-Practice-Befunde priorisieren und direkt im Plugin beheben
 
@@ -26,24 +26,32 @@
 ### Speed
 
 - [x] Listenabfragen in Archiv, Admin und Member auf sinnvolle Limits/Pagination prüfen
-- [ ] Speaker-Lookups und Event-Relations auf N+1-Muster prüfen
+- [x] Speaker-Lookups und Event-Relations gegen fehlende Cross-Plugin-Tabellen absichern
 - [x] Wiederholte Initialisierungsarbeit in Bootstrap-/Init-Pfaden prüfen
-- [ ] Asset-Ausgabe nur dort ausliefern, wo sie wirklich benötigt wird
+- [x] Asset-Ausgabe nur dort ausliefern, wo sie wirklich benötigt wird
 - [x] wiederholte `filemtime()`-/Asset-Operationen auf unnötige Aufrufe prüfen
 
 ### Best Practices
 
 - [x] Versionsangaben zwischen Plugin-Header, Konstante, README und `update.json` konsistent halten
-- [ ] Redirects, Fehlerpfade und Fallbacks defensiv prüfen
-- [ ] Datums-, Zahlen- und JSON-Felder vor Persistenz normalisieren
-- [ ] Cross-Plugin-Abhängigkeiten nur mit Guard-Checks verwenden
+- [x] Redirects, Fehlerpfade und Fallbacks defensiv prüfen
+- [x] Datums-, Zahlen- und JSON-Felder vor Persistenz normalisieren
+- [x] Cross-Plugin-Abhängigkeiten nur mit Guard-Checks verwenden
 - [x] Doku in `README.md`, `CHANGELOG.md` und `SECURITY.md` nach jedem relevanten Fix nachziehen
 
 ### Abschlusskriterien
 
-- [ ] keine offenen kritischen Security-Befunde im Plugin
-- [ ] keine offensichtlichen ungebremsten Listen-/Query-Pfade
-- [ ] alle geänderten Punkte im Changelog und in der Sicherheitsdoku nachvollziehbar dokumentiert
+- [x] keine offenen kritischen Security-Befunde im Plugin
+- [x] keine offensichtlichen ungebremsten Listen-/Query-Pfade
+- [x] alle geänderten Punkte im Changelog und in der Sicherheitsdoku nachvollziehbar dokumentiert
+
+### Audit-Abschluss 2026-05-25
+
+- [x] Version `3.0.3` für den aktuellen CMS-EVENTS-Audit vergeben.
+- [x] Klassen-/Bootstrap-Guards gegen doppelte Plugin-Ladepfade ergänzt.
+- [x] Settings-Tabelle, INFORMATION_SCHEMA-Migrationen und idempotente Foreign Keys ergänzt.
+- [x] Kalenderroute `/events/calendar` mit Template und Styles ausgeliefert.
+- [x] Native 365CMS-404/Error-Fallbacks und serverseitiges Logging für Render-/AJAX-Fehler ergänzt.
 
 ### Audit-Zwischenstand 2026-03-28
 

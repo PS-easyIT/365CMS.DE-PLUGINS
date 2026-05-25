@@ -12,6 +12,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Events_Template_Loader', false)) {
+    return;
+}
+
 final class CMS_Events_Template_Loader
 {
     private static ?self $instance = null;
@@ -49,12 +53,18 @@ final class CMS_Events_Template_Loader
 
         if (!$template_file) {
             error_log("CMS Events: Template '{$template_name}' not found");
+            $this->render_template_error('Template nicht gefunden', "Das Event-Template '{$template_name}' konnte nicht geladen werden.");
             return;
         }
 
         extract($data, EXTR_SKIP);
 
-        include $template_file;
+        try {
+            include $template_file;
+        } catch (\Throwable $e) {
+            error_log("CMS Events: Template '{$template_name}' failed: " . $e->getMessage());
+            $this->render_template_error('Template-Fehler', 'Das Event-Template konnte nicht gerendert werden.');
+        }
     }
 
     private function locate_template(string $template_name): ?string
@@ -101,5 +111,24 @@ final class CMS_Events_Template_Loader
         ob_start();
         $this->render_template($template_name, $data);
         return ob_get_clean();
+    }
+
+    private function render_template_error(string $title, string $message): void
+    {
+        http_response_code(500);
+        try {
+            if (class_exists('CMS\\ThemeManager')) {
+                \CMS\ThemeManager::instance()->render('error', [
+                    'error_code'    => 500,
+                    'error_title'   => $title,
+                    'error_message' => $message,
+                ]);
+                return;
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS Events template error fallback failed: ' . $e->getMessage());
+        }
+
+        echo '<section class="cms-error"><h1>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1><p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p></section>';
     }
 }

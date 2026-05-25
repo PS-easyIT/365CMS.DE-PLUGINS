@@ -1,5 +1,37 @@
 # CMS Events – Changelog
 
+## [3.0.5] – 2026-05-25
+
+- **Admin-Menü final:** Der Guard der Hauptdatei wurde von einem selbst-auslösenden `if (class_exists(...)) return;` auf das funktionierende `cms-feed`-Muster `if (!class_exists(...)) { class ... }` umgestellt. Dadurch wird `CMS_Events::instance()` beim Plugin-Laden ausgeführt und der `cms_admin_menu`-Hook tatsächlich registriert.
+- **Bootstrap-Timing:** Hook-Komponenten wie Admin, Routen, Meta-Boxen, Shortcodes und Member-Dashboard werden jetzt bereits bei verfügbarem `CMS\Hooks` registriert; DB-Migrationen bleiben weiterhin an `CMS\Database` gekoppelt.
+
+## [3.0.4] – 2026-05-25
+
+- **Admin-Menü:** `CMS_Events_Admin` lädt vor der Menüregistrierung die zentralen 365CMS Admin-Menü-Helper (`includes/functions/admin-menu.php`) defensiv. Dadurch erscheint der Events-Eintrag zuverlässig in der Sidebar, auch wenn der Core-Helper beim Plugin-Hook noch nicht global geladen war.
+
+## [3.0.3] – 2026-05-25
+
+### Geändert
+
+- **Bootstrap-Härtung:** Plugin-Konstanten, Hauptklasse und Include-Klassen sind gegen doppelte Ladepfade/Redeclare-Fatals abgesichert; Dependency-Loading überspringt bereits geladene Klassen.
+- **Lifecycle:** Deactivation- und Uninstall-Hooks wurden ergänzt; der Uninstall entfernt Event-Tabellen inklusive Settings-/Meta-/Relationstabellen kontrolliert.
+- **Datenbank:** Installer erstellt jetzt auch `event_settings`; Spaltenprüfungen laufen über `INFORMATION_SCHEMA`; Foreign Keys werden idempotent, präfixsicher und nicht-blockierend ergänzt.
+- **SettingsService:** Plugin-Settings werden primär über `CMS\Services\SettingsService` in `cms_settings` gespeichert; `event_settings` bleibt als Legacy-Fallback lesbar.
+- **Public-Routen:** Das fehlende Template `calendar-view.php` wurde ergänzt; Template-Fehler erzeugen keine Blank Pages mehr, sondern 365CMS-Error-Fallbacks mit serverseitigem Logging.
+- **Fehlerseiten:** Event-404 nutzt nun die native 365CMS-404-Renderstrecke mit minimalem Fallback.
+- **Admin/AJAX:** Approve nutzt einen eigenen CSRF-Kontext; Speaker-AJAX liefert konsistente JSON-Statuscodes und protokolliert technische Details.
+- **HTTP-Methoden:** Mutierende Admin-Endpunkte liefern für Browser-GETs jetzt explizit `405 Method Not Allowed` mit `Allow: POST` statt uneindeutiger 404-/Redirect-Pfade.
+- **Settings:** Badge-/Pill-Felder und Badge-Farben werden vollständig gespeichert und mit Default-Werten ausgeliefert.
+- **Frontend:** Kalenderansicht und Pagination behalten Filterzustände sauber bei; Shortcodes liefern die benötigten Template-Daten vollständig.
+
+## [3.0.2] – 2026-05-18
+
+### Geändert
+
+- **Public-Design-Pass:** Archiv-Header und Suche sind als abgegrenzter Filterbereich gruppiert.
+- **Event-Cards:** Karten wachsen ohne feste Höhen; lange Titel, Tags und Pills brechen kontrolliert um.
+- **Responsive UX:** Footer-Aktionen bleiben am Kartenende und funktionieren stabil auf Mobile/Desktop.
+
 ## [3.0.1] – 2026-05-17
 
 ### Geändert

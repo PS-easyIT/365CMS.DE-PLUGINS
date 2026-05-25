@@ -138,9 +138,7 @@ final class CMS_Booking_Installer
             updated_at      TIMESTAMP     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             INDEX idx_provider (provider_id),
             INDEX idx_status   (status),
-            UNIQUE KEY idx_provider_slug (provider_id, slug),
-            FOREIGN KEY (provider_id)
-                REFERENCES {$p}booking_providers(id) ON DELETE CASCADE
+            UNIQUE KEY idx_provider_slug (provider_id, slug)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         // 3. Verfügbarkeiten (Wochenplan + Ausnahmen)
@@ -155,9 +153,7 @@ final class CMS_Booking_Installer
             created_at      TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_provider (provider_id),
             INDEX idx_day      (day_of_week),
-            INDEX idx_date     (specific_date),
-            FOREIGN KEY (provider_id)
-                REFERENCES {$p}booking_providers(id) ON DELETE CASCADE
+            INDEX idx_date     (specific_date)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         // 4. Buchungen
@@ -195,11 +191,7 @@ final class CMS_Booking_Installer
             INDEX idx_date       (booking_date),
             INDEX idx_status     (status),
             INDEX idx_email      (customer_email),
-            INDEX idx_contact_sub (contact_submission_id),
-            FOREIGN KEY (provider_id)
-                REFERENCES {$p}booking_providers(id) ON DELETE CASCADE,
-            FOREIGN KEY (service_id)
-                REFERENCES {$p}booking_services(id) ON DELETE SET NULL
+            INDEX idx_contact_sub (contact_submission_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         // 5. Booking-Meta (flexibel)
@@ -210,9 +202,7 @@ final class CMS_Booking_Installer
             meta_value      TEXT          DEFAULT NULL,
             UNIQUE KEY idx_bm_unique (booking_id, meta_key),
             INDEX idx_booking (booking_id),
-            INDEX idx_key     (meta_key),
-            FOREIGN KEY (booking_id)
-                REFERENCES {$p}bookings(id) ON DELETE CASCADE
+            INDEX idx_key     (meta_key)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         // 6. Plugin-Einstellungen
@@ -222,6 +212,149 @@ final class CMS_Booking_Installer
             setting_value   TEXT          DEFAULT NULL,
             UNIQUE KEY idx_key (setting_key)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        self::add_foreign_keys($pdo, $p);
+    }
+
+    private static function add_foreign_keys(\PDO $pdo, string $p): void
+    {
+        $foreignKeys = [
+            [
+                'table'      => 'booking_services',
+                'column'     => 'provider_id',
+                'ref_table'  => 'booking_providers',
+                'ref_column' => 'id',
+                'name'       => 'fk_booking_services_provider',
+                'on_delete'  => 'CASCADE',
+            ],
+            [
+                'table'      => 'booking_availability',
+                'column'     => 'provider_id',
+                'ref_table'  => 'booking_providers',
+                'ref_column' => 'id',
+                'name'       => 'fk_booking_availability_provider',
+                'on_delete'  => 'CASCADE',
+            ],
+            [
+                'table'      => 'bookings',
+                'column'     => 'provider_id',
+                'ref_table'  => 'booking_providers',
+                'ref_column' => 'id',
+                'name'       => 'fk_bookings_provider',
+                'on_delete'  => 'CASCADE',
+            ],
+            [
+                'table'      => 'bookings',
+                'column'     => 'service_id',
+                'ref_table'  => 'booking_services',
+                'ref_column' => 'id',
+                'name'       => 'fk_bookings_service',
+                'on_delete'  => 'SET NULL',
+            ],
+            [
+                'table'      => 'booking_meta',
+                'column'     => 'booking_id',
+                'ref_table'  => 'bookings',
+                'ref_column' => 'id',
+                'name'       => 'fk_booking_meta_booking',
+                'on_delete'  => 'CASCADE',
+            ],
+        ];
+
+        foreach ($foreignKeys as $foreignKey) {
+            $table     = $p . (string) $foreignKey['table'];
+            $column    = (string) $foreignKey['column'];
+            $refTable  = $p . (string) $foreignKey['ref_table'];
+            $refColumn = (string) $foreignKey['ref_column'];
+            $onDelete  = (string) $foreignKey['on_delete'];
+
+            if (
+                !self::table_exists($pdo, $table)
+                || !self::table_exists($pdo, $refTable)
+                || !self::column_exists($pdo, $table, $column)
+                || !self::column_exists($pdo, $refTable, $refColumn)
+                || self::foreign_key_relation_exists($pdo, $table, $column, $refTable, $refColumn)
+            ) {
+                continue;
+            }
+
+            $constraint = self::foreign_key_name($p, (string) $foreignKey['name']);
+            $sql = sprintf(
+                'ALTER TABLE %s ADD CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE %s',
+                self::quote_identifier($table),
+                self::quote_identifier($constraint),
+                self::quote_identifier($column),
+                self::quote_identifier($refTable),
+                self::quote_identifier($refColumn),
+                $onDelete
+            );
+
+            try {
+                $pdo->exec($sql);
+            } catch (\Throwable $e) {
+                error_log('CMS Booking foreign key skipped (' . $constraint . '): ' . $e->getMessage());
+            }
+        }
+    }
+
+    private static function table_exists(\PDO $pdo, string $table): bool
+    {
+        $stmt = $pdo->prepare(
+            'SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+        );
+        $stmt->execute([$table]);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
+    private static function column_exists(\PDO $pdo, string $table, string $column): bool
+    {
+        $stmt = $pdo->prepare(
+            'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+        );
+        $stmt->execute([$table, $column]);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
+    private static function foreign_key_relation_exists(
+        \PDO $pdo,
+        string $table,
+        string $column,
+        string $refTable,
+        string $refColumn
+    ): bool {
+        $stmt = $pdo->prepare(
+            'SELECT CONSTRAINT_NAME
+             FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = ?
+               AND COLUMN_NAME = ?
+               AND REFERENCED_TABLE_NAME = ?
+               AND REFERENCED_COLUMN_NAME = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$table, $column, $refTable, $refColumn]);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
+    private static function foreign_key_name(string $prefix, string $baseName): string
+    {
+        $normalizedPrefix = trim((string) preg_replace('/[^a-zA-Z0-9_]+/', '_', $prefix), '_');
+        $normalizedBase   = trim((string) preg_replace('/[^a-zA-Z0-9_]+/', '_', preg_replace('/^fk_/', '', $baseName)), '_');
+        $name             = 'fk_' . ($normalizedPrefix !== '' ? $normalizedPrefix . '_' : '') . $normalizedBase;
+
+        if (strlen($name) <= 64) {
+            return $name;
+        }
+
+        return substr($name, 0, 53) . '_' . substr(hash('sha256', $name), 0, 10);
+    }
+
+    private static function quote_identifier(string $identifier): string
+    {
+        return '`' . str_replace('`', '``', $identifier) . '`';
     }
 
     /* ================================================================== */

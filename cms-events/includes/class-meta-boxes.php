@@ -12,6 +12,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Events_Meta_Boxes', false)) {
+    return;
+}
+
 final class CMS_Events_Meta_Boxes
 {
     private static ?self $instance = null;
@@ -59,7 +63,7 @@ final class CMS_Events_Meta_Boxes
             <div class="form-group">
                 <label for="description">Beschreibung</label>
                 <?php
-                if (class_exists('\CMS\Services\EditorService')) {
+                if (class_exists('CMS\\Services\\EditorService')) {
                     echo \CMS\Services\EditorService::getInstance()->render(
                         'description',
                         $description,
@@ -81,7 +85,7 @@ final class CMS_Events_Meta_Boxes
                 <select id="category" name="category" class="form-control">
                     <option value="">-- Bitte wählen --</option>
                     <?php foreach ($this->get_categories() as $value => $label): ?>
-                        <option value="<?= $value ?>" <?= $category === $value ? 'selected' : '' ?>>
+                        <option value="<?= htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8') ?>" <?= $category === $value ? 'selected' : '' ?>>
                             <?= CMS\Security::instance()->escape($label) ?>
                         </option>
                     <?php endforeach; ?>
@@ -296,7 +300,7 @@ final class CMS_Events_Meta_Boxes
         <div class="admin-card" id="ev-speaker-box"
              data-ev-speaker-endpoint-add="<?= SITE_URL ?>/admin/events/speaker/add"
              data-ev-speaker-endpoint-remove-base="<?= SITE_URL ?>/admin/events/speaker/remove/"
-             data-ev-speaker-csrf="<?= htmlspecialchars($csrf, ENT_QUOTES) ?>"
+             data-ev-speaker-csrf="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>"
              data-ev-speaker-event-id="<?= $event_id ?>"
              data-ev-speaker-empty-message="Noch keine Person zugeordnet.">
             <h3>&#128100; Speaker &amp; Experten</h3>
@@ -362,7 +366,7 @@ final class CMS_Events_Meta_Boxes
         $label = $type === 'expert' ? 'Experte' : 'Speaker';
         $bgCls = $type === 'expert' ? 'role-badge member' : 'status-badge active';
         $title = CMS\Security::instance()->escape($sp->presentation_title ?? '');
-        $time  = htmlspecialchars(substr($sp->session_time ?? '', 0, 5));
+        $time  = htmlspecialchars(substr((string)($sp->session_time ?? ''), 0, 5), ENT_QUOTES, 'UTF-8');
         ?>
         <div class="ev-sp-row" id="ev-sp-row-<?= $id ?>">
             <span class="<?= $bgCls ?>"><?= $label ?></span>

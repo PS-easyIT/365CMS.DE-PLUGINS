@@ -20,6 +20,8 @@ if (!isset($event)) {
     return;
 }
 
+$settings = is_array($settings ?? null) ? $settings : [];
+
 $e  = $event;
 $id = (int) $e->id;
 
@@ -73,7 +75,7 @@ $speakers = $speakers ?? [];
   <header class="ev-hero-v2 phinit-card phinit-card--accent">
     <?php if ($banner_url): ?>
       <div class="ev-hero-v2__bg" aria-hidden="true">
-        <img src="<?= htmlspecialchars($banner_url, ENT_QUOTES, 'UTF-8') ?>" alt="" loading="eager" decoding="async">
+        <img src="<?= htmlspecialchars($banner_url, ENT_QUOTES, 'UTF-8') ?>" alt="" width="1200" height="675" loading="eager" decoding="async">
       </div>
     <?php endif; ?>
     <?php if ($image_url): ?>

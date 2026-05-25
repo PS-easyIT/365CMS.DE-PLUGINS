@@ -17,7 +17,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class CMS_Events_Member_Dashboard
+if (class_exists('CMS_Events_Member_Dashboard', false)) {
+    return;
+}
+
+final class CMS_Events_Member_Dashboard
 {
     private static ?self $instance = null;
 
@@ -31,7 +35,7 @@ class CMS_Events_Member_Dashboard
 
     private function __construct()
     {
-        if (class_exists('\CMS\Hooks')) {
+        if (class_exists('CMS\\Hooks')) {
             \CMS\Hooks::addAction('member_dashboard_init', [$this, 'register'], 10);
             \CMS\Hooks::addAction('member_plugin_section_head', [$this, 'enqueueEventStyles'], 10);
         }
@@ -105,6 +109,11 @@ class CMS_Events_Member_Dashboard
 
     public function renderPage(object $user, array $params = []): void
     {
+        if (class_exists('CMS\\Auth') && method_exists(\CMS\Auth::instance(), 'isLoggedIn') && !\CMS\Auth::instance()->isLoggedIn()) {
+            header('Location: /login');
+            exit;
+        }
+
         // ── POST: neues Event speichern ───────────────────────────────────────
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['event_create'])) {
             if (!\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'member_event_create')) {
@@ -126,11 +135,19 @@ class CMS_Events_Member_Dashboard
                 if ($priceCurrency === '') {
                     $priceCurrency = 'EUR';
                 }
+                $title = sanitize_text_field($_POST['title'] ?? '');
+                $eventDate = $this->sanitizeDate($_POST['event_date'] ?? '');
+                if ($title === '' || $eventDate === null) {
+                    $_SESSION['error'] = 'Bitte mindestens Titel und Startdatum ausfüllen.';
+                    header('Location: /member/plugin/events?action=new');
+                    exit;
+                }
+
                 // save_event() setzt user_id automatisch aus CMS\Auth
                 $id = CMS_Events_Database::instance()->save_event([
-                    'title'             => sanitize_text_field($_POST['title']      ?? ''),
+                    'title'             => $title,
                     'excerpt'           => strip_tags($_POST['excerpt']             ?? ''),
-                    'event_date'        => $this->sanitizeDate($_POST['event_date'] ?? ''),
+                    'event_date'        => $eventDate,
                     'event_time'        => $this->sanitizeTime($_POST['event_time'] ?? ''),
                     'end_date'          => $this->sanitizeDate($_POST['end_date']   ?? ''),
                     'end_time'          => $this->sanitizeTime($_POST['end_time']   ?? ''),
@@ -155,6 +172,11 @@ class CMS_Events_Member_Dashboard
                     'organizer_website' => $organizerWebsite,
                     'status'            => $isAdminSave ? 'published' : 'draft',
                 ]);
+                if ($id <= 0) {
+                    $_SESSION['error'] = 'Das Event konnte nicht gespeichert werden. Bitte Eingaben prüfen.';
+                    header('Location: /member/plugin/events?action=new');
+                    exit;
+                }
                 if ($isAdminSave) {
                     $_SESSION['success'] = 'Event wurde erfolgreich angelegt.';
                 } else {
@@ -163,7 +185,8 @@ class CMS_Events_Member_Dashboard
                 header('Location: /member/plugin/events');
                 exit;
             } catch (\Throwable $e) {
-                $_SESSION['error'] = 'Fehler beim Speichern: ' . $e->getMessage();
+                error_log('CMS Events member create error: ' . $e->getMessage());
+                $_SESSION['error'] = 'Fehler beim Speichern. Bitte später erneut versuchen.';
                 header('Location: /member/plugin/events?action=new');
                 exit;
             }
@@ -205,12 +228,12 @@ class CMS_Events_Member_Dashboard
             'archive_slug'         => 'events',
             'show_price'           => '1',
             'show_tags'            => '1',
-            'design_primary_color' => '#dc2626',
-            'design_card_bg'       => '#fff',
+            'color_primary'        => '#dc2626',
+            'color_card_bg'        => '#ffffff',
         ], $settings);
 
-        $primaryColor = $this->sanitizeHexColor((string) ($settings['design_primary_color'] ?? '#dc2626'), '#dc2626');
-        $cardColor = $this->sanitizeHexColor((string) ($settings['design_card_bg'] ?? '#fff'), '#ffffff');
+        $primaryColor = $this->sanitizeHexColor((string) ($settings['color_primary'] ?? '#dc2626'), '#dc2626');
+        $cardColor = $this->sanitizeHexColor((string) ($settings['color_card_bg'] ?? '#ffffff'), '#ffffff');
         $cssVars = sprintf(
             ':root{--ev-primary:%s;--ev-card-bg:%s;}',
             htmlspecialchars($primaryColor, ENT_QUOTES, 'UTF-8'),
@@ -222,7 +245,7 @@ class CMS_Events_Member_Dashboard
         <?php if ($error): ?>
         <div class="member-alert member-alert-error">
             <span class="alert-icon">✕</span>
-            <span><?php echo htmlspecialchars($error); ?></span>
+            <span><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></span>
         </div>
         <?php else: ?>
 
@@ -299,14 +322,14 @@ class CMS_Events_Member_Dashboard
                 <div class="form-group">
                     <label class="form-label">Titel <span class="ev-member-required">*</span></label>
                     <input type="text" name="title" class="form-control" required
-                           value="<?php echo htmlspecialchars($_POST['title'] ?? ''); ?>">
+                           value="<?php echo htmlspecialchars((string)($_POST['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Kurzbeschreibung</label>
                     <input type="text" name="excerpt" class="form-control"
                            placeholder="Kurzer Teaser-Text für Suchergebnisse und Karten"
-                           value="<?php echo htmlspecialchars($_POST['excerpt'] ?? ''); ?>">
+                           value="<?php echo htmlspecialchars((string)($_POST['excerpt'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                 </div>
 
                 <!-- Datum & Zeit -->
@@ -316,22 +339,22 @@ class CMS_Events_Member_Dashboard
                     <div class="form-group">
                         <label class="form-label">Startdatum <span class="ev-member-required">*</span></label>
                         <input type="date" name="event_date" class="form-control" required
-                               value="<?php echo htmlspecialchars($_POST['event_date'] ?? ''); ?>">
+                               value="<?php echo htmlspecialchars((string)($_POST['event_date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Startzeit</label>
                         <input type="time" name="event_time" class="form-control"
-                               value="<?php echo htmlspecialchars($_POST['event_time'] ?? ''); ?>">
+                               value="<?php echo htmlspecialchars((string)($_POST['event_time'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Enddatum</label>
                         <input type="date" name="end_date" class="form-control"
-                               value="<?php echo htmlspecialchars($_POST['end_date'] ?? ''); ?>">
+                               value="<?php echo htmlspecialchars((string)($_POST['end_date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Endzeit</label>
                         <input type="time" name="end_time" class="form-control"
-                               value="<?php echo htmlspecialchars($_POST['end_time'] ?? ''); ?>">
+                               value="<?php echo htmlspecialchars((string)($_POST['end_time'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                 </div>
 
@@ -350,7 +373,7 @@ class CMS_Events_Member_Dashboard
                 <div id="ev-online-wrap" class="form-group"<?php echo isset($_POST['is_online']) ? '' : ' hidden'; ?>>
                     <label class="form-label">Online-Link</label>
                     <input type="url" name="online_url" class="form-control" placeholder="https://"
-                           value="<?php echo htmlspecialchars($_POST['online_url'] ?? ''); ?>">
+                           value="<?php echo htmlspecialchars((string)($_POST['online_url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                 </div>
 
                 <div id="ev-location-wrap"<?php echo isset($_POST['is_online']) ? ' hidden' : ''; ?>>
@@ -358,28 +381,28 @@ class CMS_Events_Member_Dashboard
                         <label class="form-label">Veranstaltungsort (Name)</label>
                         <input type="text" name="location" class="form-control"
                                placeholder="z. B. Messezentrum, Kongresshalle"
-                               value="<?php echo htmlspecialchars($_POST['location'] ?? ''); ?>">
+                               value="<?php echo htmlspecialchars((string)($_POST['location'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Adresse (Straße & Hausnummer)</label>
                         <input type="text" name="address" class="form-control"
-                               value="<?php echo htmlspecialchars($_POST['address'] ?? ''); ?>">
+                               value="<?php echo htmlspecialchars((string)($_POST['address'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                     <div class="ev-member-grid-3">
                         <div class="form-group">
                             <label class="form-label">Stadt</label>
                             <input type="text" name="city" class="form-control"
-                                   value="<?php echo htmlspecialchars($_POST['city'] ?? ''); ?>">
+                                   value="<?php echo htmlspecialchars((string)($_POST['city'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                         </div>
                         <div class="form-group">
                             <label class="form-label">PLZ</label>
                             <input type="text" name="zip" class="form-control"
-                                   value="<?php echo htmlspecialchars($_POST['zip'] ?? ''); ?>">
+                                   value="<?php echo htmlspecialchars((string)($_POST['zip'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Land</label>
                             <input type="text" name="country" class="form-control"
-                                   value="<?php echo htmlspecialchars($_POST['country'] ?? 'Deutschland'); ?>">
+                                   value="<?php echo htmlspecialchars((string)($_POST['country'] ?? 'Deutschland'), ENT_QUOTES, 'UTF-8'); ?>">
                         </div>
                     </div>
                 </div>
@@ -393,9 +416,9 @@ class CMS_Events_Member_Dashboard
                         <select name="category" class="form-control">
                             <option value="">– bitte wählen –</option>
                             <?php foreach ($categories as $cat): ?>
-                                <option value="<?php echo htmlspecialchars($cat->name); ?>"
+                                <option value="<?php echo htmlspecialchars((string)$cat->name, ENT_QUOTES, 'UTF-8'); ?>"
                                     <?php echo (($_POST['category'] ?? '') === $cat->name) ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars(($cat->icon ?? '') . ' ' . $cat->name); ?>
+                                    <?php echo htmlspecialchars((string)(($cat->icon ?? '') . ' ' . $cat->name), ENT_QUOTES, 'UTF-8'); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -403,7 +426,7 @@ class CMS_Events_Member_Dashboard
                     <div class="form-group">
                         <label class="form-label">Kapazität (Plätze)</label>
                         <input type="number" name="capacity" class="form-control" min="0"
-                               value="<?php echo htmlspecialchars($_POST['capacity'] ?? ''); ?>">
+                               value="<?php echo htmlspecialchars((string)($_POST['capacity'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                 </div>
 
@@ -420,13 +443,13 @@ class CMS_Events_Member_Dashboard
                 <?php foreach ($tagGroups as $type => $presets):
                     if (empty($presets)) continue; ?>
                     <div class="ev-member-tag-group">
-                        <strong class="ev-member-tag-group-title"><?php echo htmlspecialchars($typeLabels[$type] ?? ucfirst($type)); ?></strong>
+                        <strong class="ev-member-tag-group-title"><?php echo htmlspecialchars((string)($typeLabels[$type] ?? ucfirst((string)$type)), ENT_QUOTES, 'UTF-8'); ?></strong>
                         <div class="ev-member-tag-wrap">
                             <?php foreach ($presets as $preset): ?>
                                 <label class="ev-member-tag-option">
-                                    <input type="checkbox" name="tags[]" value="<?php echo htmlspecialchars($preset->tag_name); ?>"
+                                    <input type="checkbox" name="tags[]" value="<?php echo htmlspecialchars((string)$preset->tag_name, ENT_QUOTES, 'UTF-8'); ?>"
                                            <?php echo is_array($postedTags) && in_array($preset->tag_name, $postedTags) ? 'checked' : ''; ?>>
-                                    <?php echo htmlspecialchars($preset->tag_name); ?>
+                                    <?php echo htmlspecialchars((string)$preset->tag_name, ENT_QUOTES, 'UTF-8'); ?>
                                 </label>
                             <?php endforeach; ?>
                         </div>
@@ -437,7 +460,7 @@ class CMS_Events_Member_Dashboard
                 <div class="form-group">
                     <label class="form-label">Anmeldungslink</label>
                     <input type="url" name="registration_url" class="form-control" placeholder="https://"
-                           value="<?php echo htmlspecialchars($_POST['registration_url'] ?? ''); ?>">
+                           value="<?php echo htmlspecialchars((string)($_POST['registration_url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                 </div>
 
                 <div class="ev-member-grid-3">
@@ -452,13 +475,13 @@ class CMS_Events_Member_Dashboard
                         <div class="form-group">
                             <label class="form-label">Preis</label>
                             <input type="number" name="price" class="form-control" min="0" step="0.01"
-                                   value="<?php echo htmlspecialchars($_POST['price'] ?? ''); ?>">
+                                   value="<?php echo htmlspecialchars((string)($_POST['price'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Währung</label>
                             <input type="text" name="price_currency" class="form-control"
                                    placeholder="EUR" maxlength="3"
-                                   value="<?php echo htmlspecialchars($_POST['price_currency'] ?? 'EUR'); ?>">
+                                   value="<?php echo htmlspecialchars((string)($_POST['price_currency'] ?? 'EUR'), ENT_QUOTES, 'UTF-8'); ?>">
                         </div>
                     </div>
                 </div>
@@ -470,12 +493,12 @@ class CMS_Events_Member_Dashboard
                     <div class="form-group">
                         <label class="form-label">Name</label>
                         <input type="text" name="organizer_name" class="form-control"
-                               value="<?php echo htmlspecialchars($_POST['organizer_name'] ?? ''); ?>">
+                               value="<?php echo htmlspecialchars((string)($_POST['organizer_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                     <div class="form-group">
                         <label class="form-label">E-Mail</label>
                         <input type="email" name="organizer_email" class="form-control"
-                               value="<?php echo htmlspecialchars($_POST['organizer_email'] ?? ''); ?>">
+                               value="<?php echo htmlspecialchars((string)($_POST['organizer_email'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                 </div>
 
@@ -483,12 +506,12 @@ class CMS_Events_Member_Dashboard
                     <div class="form-group">
                         <label class="form-label">Telefon</label>
                         <input type="tel" name="organizer_phone" class="form-control"
-                               value="<?php echo htmlspecialchars($_POST['organizer_phone'] ?? ''); ?>">
+                               value="<?php echo htmlspecialchars((string)($_POST['organizer_phone'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Website</label>
                         <input type="url" name="organizer_website" class="form-control" placeholder="https://"
-                               value="<?php echo htmlspecialchars($_POST['organizer_website'] ?? ''); ?>">
+                               value="<?php echo htmlspecialchars((string)($_POST['organizer_website'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                 </div>
 
@@ -496,7 +519,7 @@ class CMS_Events_Member_Dashboard
                 <h4 class="ev-member-section-title">📝 Beschreibung</h4>
 
                 <div class="form-group">
-                    <textarea name="description" class="form-control ev-member-description" rows="6"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
+                    <textarea name="description" class="form-control ev-member-description" rows="6"><?php echo htmlspecialchars((string)($_POST['description'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea>
                 </div>
 
                 <div class="ev-member-actions">
@@ -538,6 +561,3 @@ class CMS_Events_Member_Dashboard
         return preg_match('/^#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?$/', $value) === 1 ? $value : $fallback;
     }
 }
-
-// Bootstrap
-CMS_Events_Member_Dashboard::instance();

@@ -12,6 +12,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Events_Post_Type', false)) {
+    return;
+}
+
 final class CMS_Events_Post_Type
 {
     private static ?self $instance = null;
@@ -58,6 +62,36 @@ final class CMS_Events_Post_Type
         $router->addRoute('POST', '/admin/events/tagpreset/delete/:id',     [$this, 'admin_tagpreset_delete']);
         $router->addRoute('POST', '/admin/events/speaker/add',               [$this, 'admin_speaker_add']);
         $router->addRoute('POST', '/admin/events/speaker/remove/:id',        [$this, 'admin_speaker_remove']);
+
+        // Explicit 405 for browser GETs against POST-only admin endpoints.
+        $router->addRoute('GET', '/admin/events/save',                     [$this, 'admin_post_method_not_allowed']);
+        $router->addRoute('GET', '/admin/events/delete/:id',               [$this, 'admin_post_method_not_allowed']);
+        $router->addRoute('GET', '/admin/events/approve/:id',              [$this, 'admin_post_method_not_allowed']);
+        $router->addRoute('GET', '/admin/events/settings/save',            [$this, 'admin_post_method_not_allowed']);
+        $router->addRoute('GET', '/admin/events/category/add',             [$this, 'admin_post_method_not_allowed']);
+        $router->addRoute('GET', '/admin/events/category/delete/:id',      [$this, 'admin_post_method_not_allowed']);
+        $router->addRoute('GET', '/admin/events/tagpreset/add',            [$this, 'admin_post_method_not_allowed']);
+        $router->addRoute('GET', '/admin/events/tagpreset/delete/:id',     [$this, 'admin_post_method_not_allowed']);
+        $router->addRoute('GET', '/admin/events/speaker/add',              [$this, 'admin_post_method_not_allowed']);
+        $router->addRoute('GET', '/admin/events/speaker/remove/:id',       [$this, 'admin_post_method_not_allowed']);
+    }
+
+    public function admin_post_method_not_allowed(): void
+    {
+        if (!CMS\Auth::instance()->isAdmin()) {
+            CMS\Router::instance()->redirect('/login');
+            return;
+        }
+
+        header('Allow: POST');
+        $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        if (str_contains($path, '/speaker/')) {
+            $this->json_response(['success' => false, 'error' => 'Method not allowed'], 405);
+        }
+
+        http_response_code(405);
+        echo '<!DOCTYPE html><html lang="de"><body><h1>Methode nicht erlaubt</h1><p>Dieser Endpunkt akzeptiert nur POST.</p></body></html>';
+        exit;
     }
 
     public function add_menu_item(): void
@@ -70,6 +104,7 @@ final class CMS_Events_Post_Type
 
     public function archive_page(): void
     {
+        try {
         // Öffentliche Ansicht – keine Abo-Prüfung, Erstellung ist separat geschützt
         $db_manager = CMS_Events_Database::instance();
         $settings   = $db_manager->get_settings();
@@ -126,11 +161,16 @@ final class CMS_Events_Post_Type
             'search'          => $search,
         ]);
         $tm->getFooter();
+        } catch (\Throwable $e) {
+            $this->render_public_error('Events konnten nicht geladen werden.', $e);
+        }
     }
 
     public function calendar_view(): void
     {
+        try {
         $db_manager = CMS_Events_Database::instance();
+        $settings   = $db_manager->get_settings();
         
         $month = $this->sanitize_month($_GET['month'] ?? null) ?? date('Y-m');
         $view = in_array((string) ($_GET['view'] ?? 'month'), ['month', 'week'], true) ? (string) $_GET['view'] : 'month';
@@ -146,15 +186,20 @@ final class CMS_Events_Post_Type
         $tm->getHeader();
         $template_loader = CMS_Events_Template_Loader::instance();
         $template_loader->render_template('calendar-view', [
-            'events' => $events,
-            'month'  => $month,
-            'view'   => $view,
+            'events'   => $events,
+            'month'    => $month,
+            'view'     => $view,
+            'settings' => $settings,
         ]);
         $tm->getFooter();
+        } catch (\Throwable $e) {
+            $this->render_public_error('Der Event-Kalender konnte nicht geladen werden.', $e);
+        }
     }
 
     public function single_page(string $id = ''): void
     {
+        try {
         $event_id = $id !== '' ? (int)$id : (int)($_GET['id'] ?? 0);
 
         if ($event_id <= 0) {
@@ -173,10 +218,14 @@ final class CMS_Events_Post_Type
         // 301-Redirect zur kanonischen Slug-URL
         header('Location: ' . cms_event_url($event), true, 301);
         exit;
+        } catch (\Throwable $e) {
+            $this->render_public_error('Das Event konnte nicht geladen werden.', $e);
+        }
     }
 
     public function single_page_by_slug(string $slug = ''): void
     {
+        try {
         if ($slug === '') {
             $slug = (string) ($_GET['slug'] ?? '');
         }
@@ -212,10 +261,14 @@ final class CMS_Events_Post_Type
             'settings' => $settings,
         ]);
         $tm->getFooter();
+        } catch (\Throwable $e) {
+            $this->render_public_error('Das Event konnte nicht geladen werden.', $e);
+        }
     }
 
     public function export_ical(string $id = ''): void
     {
+        try {
         $event_id = $id !== '' ? (int) $id : (int)($_GET['id'] ?? 0);
         
         if ($event_id <= 0) {
@@ -232,6 +285,14 @@ final class CMS_Events_Post_Type
         }
 
         $this->generate_ical($event);
+        } catch (\Throwable $e) {
+            error_log('CMS Events iCal export error: ' . $e->getMessage());
+            http_response_code(500);
+            header('Content-Type: text/plain; charset=utf-8');
+            header('X-Content-Type-Options: nosniff');
+            echo 'Kalenderdatei konnte nicht erstellt werden.';
+            exit;
+        }
     }
 
     private function generate_ical($event): void
@@ -394,8 +455,12 @@ final class CMS_Events_Post_Type
 
         // Beschreibung: HTML-Sanitierung + Inline-Style-Attribute entfernen.
         // html_entity_decode() als Schutz: falls Entities bereits kodiert übermittelt wurden.
-        $desc_raw    = html_entity_decode($_POST['description'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $desc_raw    = \CMS\Services\EditorService::getInstance()->sanitize($desc_raw);
+        $desc_raw    = html_entity_decode((string) ($_POST['description'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        if (class_exists('CMS\\Services\\EditorService')) {
+            $desc_raw = \CMS\Services\EditorService::getInstance()->sanitize($desc_raw);
+        } else {
+            $desc_raw = strip_tags($desc_raw, '<p><a><strong><em><ul><ol><li><br><blockquote><h2><h3>');
+        }
         $description = preg_replace('/\s+style\s*=\s*(?:"[^"]*"|\x27[^\x27]*\x27)/i', '', $desc_raw) ?? $desc_raw;
 
         $allowed_statuses = ['draft', 'published', 'cancelled', 'completed'];
@@ -445,6 +510,10 @@ final class CMS_Events_Post_Type
         try {
             if ($event_id > 0) { $data['id'] = $event_id; }
             $event_id = $db_manager->save_event($data);
+            if ($event_id <= 0) {
+                CMS\Router::instance()->redirect('/admin/events' . ((int)($_POST['event_id'] ?? 0) > 0 ? '/edit/' . (int)$_POST['event_id'] : '/new') . '?error=validation');
+                return;
+            }
             CMS\Router::instance()->redirect('/admin/events/edit/' . $event_id . '?success=1');
         } catch (\Throwable $e) {
             error_log('Event save error: ' . $e->getMessage());
@@ -501,7 +570,7 @@ final class CMS_Events_Post_Type
         $event_id   = (int)$id;
         $csrf_token = $_POST['csrf_token'] ?? '';
 
-        if (!CMS\Security::instance()->verifyToken($csrf_token, 'event_settings')) {
+        if (!CMS\Security::instance()->verifyToken($csrf_token, 'approve_event')) {
             CMS\Router::instance()->redirect('/admin/events?error=csrf');
             return;
         }
@@ -546,8 +615,17 @@ final class CMS_Events_Post_Type
                     'color_hdr_title', 'color_card_bg', 'color_card_border', 'color_cta',
                     'color_detail_hdr_bg', 'color_detail_hdr_text', 'color_detail_accent',
                     'color_featured_border', 'color_cancelled_bg', 'color_online_badge',
+                    'color_badge_published_bg', 'color_badge_published_color',
+                    'color_badge_draft_bg', 'color_badge_draft_color',
+                    'color_badge_cancelled_bg', 'color_badge_cancelled_color',
+                    'color_badge_completed_bg', 'color_badge_completed_color',
+                    'color_badge_featured_bg', 'color_badge_featured_color',
+                    'color_badge_online_bg', 'color_badge_online_color',
                 ],
-                'checkboxes'=> ['show_category','show_city','show_capacity','show_speakers','show_price','show_organizer','show_tags'],
+                'checkboxes'=> [
+                    'show_category','show_city','show_capacity','show_speakers','show_price','show_organizer','show_tags',
+                    'show_status_badge','show_featured_badge','show_online_badge','show_date_pill','show_time_pill',
+                ],
             ],
         ];
 
@@ -583,21 +661,25 @@ final class CMS_Events_Post_Type
         $db      = CMS_Events_Database::instance();
         $tab     = in_array((string) ($_GET['tab'] ?? 'overview'), ['overview', 'categories', 'tags', 'design', 'settings'], true) ? (string) $_GET['tab'] : 'overview';
         $filter  = in_array((string) ($_GET['filter'] ?? 'all'), ['all', 'upcoming', 'past', 'featured', 'online', 'draft'], true) ? (string) $_GET['filter'] : 'all';
+        $search  = $this->sanitize_text_param($_GET['search'] ?? '', 120) ?? '';
 
         $events     = $db->get_events(['limit' => 200]);
         $categories = $db->get_event_categories();
         $tag_presets= $db->get_event_tag_presets_grouped();
         $settings   = $db->get_settings();
         $csrf       = CMS\Security::instance()->generateToken('event_settings');
+        $approveCsrf= CMS\Security::instance()->generateToken('approve_event');
 
         CMS_Events_Admin::instance()->render_list([
             'events'      => $events,
             'tab'         => $tab,
             'filter'      => $filter,
+            'search'      => $search,
             'categories'  => $categories,
             'tag_presets' => $tag_presets,
             'settings'    => $settings,
             'csrf'        => $csrf,
+            'approve_csrf'=> $approveCsrf,
         ]);
     }
 
@@ -655,41 +737,60 @@ final class CMS_Events_Post_Type
 
     public function admin_speaker_add(): void
     {
-        if (!CMS\Auth::instance()->isAdmin()) { http_response_code(403); header('Content-Type: application/json; charset=utf-8'); header('X-Content-Type-Options: nosniff'); echo json_encode(['error'=>'Unauthorized'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit; }
-        header('Content-Type: application/json; charset=utf-8');
-        header('X-Content-Type-Options: nosniff');
+        if (!CMS\Auth::instance()->isAdmin()) {
+            $this->json_response(['success' => false, 'error' => 'Unauthorized'], 403);
+        }
         if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'event_speaker')) {
-            http_response_code(403); echo json_encode(['error'=>'CSRF'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit;
+            $this->json_response(['success' => false, 'error' => 'CSRF'], 403);
         }
         $event_id    = (int)($_POST['event_id']    ?? 0);
         $speaker_id  = (int)($_POST['speaker_id']  ?? 0);
         $speaker_type = in_array($_POST['speaker_type'] ?? '', ['speaker','expert'], true)
             ? $_POST['speaker_type'] : 'speaker';
         if ($event_id <= 0 || $speaker_id <= 0) {
-            http_response_code(400); echo json_encode(['error'=>'Invalid data'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit;
+            $this->json_response(['success' => false, 'error' => 'Invalid data'], 400);
         }
-        $db  = CMS_Events_Database::instance();
-        $ok  = $db->assign_speaker($event_id, $speaker_id, $speaker_type, [
-            'presentation_title' => $this->sanitize_text_param($_POST['presentation_title'] ?? '', 255) ?? '',
-            'session_time'       => $this->sanitize_time($_POST['session_time'] ?? null),
-            'role'               => $this->sanitize_text_param($_POST['role'] ?? '', 100) ?? '',
-        ]);
-        echo json_encode(['success' => $ok], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        exit;
+        try {
+            $db  = CMS_Events_Database::instance();
+            $ok  = $db->assign_speaker($event_id, $speaker_id, $speaker_type, [
+                'presentation_title' => $this->sanitize_text_param($_POST['presentation_title'] ?? '', 255) ?? '',
+                'session_time'       => $this->sanitize_time($_POST['session_time'] ?? null),
+                'role'               => $this->sanitize_text_param($_POST['role'] ?? '', 100) ?? '',
+            ]);
+            $this->json_response(['success' => $ok, 'error' => $ok ? null : 'Save failed'], $ok ? 200 : 422);
+        } catch (\Throwable $e) {
+            error_log('CMS Events speaker add error: ' . $e->getMessage());
+            $this->json_response(['success' => false, 'error' => 'Server error'], 500);
+        }
     }
 
     public function admin_speaker_remove(string $id = ''): void
     {
-        if (!CMS\Auth::instance()->isAdmin()) { http_response_code(403); header('Content-Type: application/json; charset=utf-8'); header('X-Content-Type-Options: nosniff'); echo json_encode(['error'=>'Unauthorized'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit; }
-        header('Content-Type: application/json; charset=utf-8');
-        header('X-Content-Type-Options: nosniff');
+        if (!CMS\Auth::instance()->isAdmin()) {
+            $this->json_response(['success' => false, 'error' => 'Unauthorized'], 403);
+        }
         if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'event_speaker')) {
-            http_response_code(403); echo json_encode(['error'=>'CSRF'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit;
+            $this->json_response(['success' => false, 'error' => 'CSRF'], 403);
         }
         $assignment_id = $id !== '' ? (int)$id : (int)($_POST['id'] ?? 0);
-        if ($assignment_id <= 0) { http_response_code(400); echo json_encode(['error'=>'Invalid id'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit; }
-        $ok = CMS_Events_Database::instance()->remove_event_speaker($assignment_id);
-        echo json_encode(['success' => $ok], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($assignment_id <= 0) {
+            $this->json_response(['success' => false, 'error' => 'Invalid id'], 400);
+        }
+        try {
+            $ok = CMS_Events_Database::instance()->remove_event_speaker($assignment_id);
+            $this->json_response(['success' => $ok, 'error' => $ok ? null : 'Delete failed'], $ok ? 200 : 404);
+        } catch (\Throwable $e) {
+            error_log('CMS Events speaker remove error: ' . $e->getMessage());
+            $this->json_response(['success' => false, 'error' => 'Server error'], 500);
+        }
+    }
+
+    private function json_response(array $payload, int $status = 200): void
+    {
+        http_response_code($status);
+        header('Content-Type: application/json; charset=utf-8');
+        header('X-Content-Type-Options: nosniff');
+        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
     }
 
@@ -791,7 +892,38 @@ final class CMS_Events_Post_Type
     private function render_404(): void
     {
         http_response_code(404);
-        echo '<div class="error-404"><h1>Event nicht gefunden</h1></div>';
+        try {
+            if (class_exists('CMS\\ThemeManager')) {
+                CMS\ThemeManager::instance()->render('404');
+                exit;
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS Events render_404 fallback: ' . $e->getMessage());
+        }
+
+        echo '<!DOCTYPE html><html lang="de"><body><h1>Event nicht gefunden</h1></body></html>';
+        exit;
+    }
+
+    private function render_public_error(string $message, \Throwable $e): void
+    {
+        error_log('CMS Events public route error: ' . $e->getMessage());
+        http_response_code(500);
+
+        try {
+            if (class_exists('CMS\\ThemeManager')) {
+                CMS\ThemeManager::instance()->render('error', [
+                    'error_code'    => 500,
+                    'error_title'   => 'Event-Fehler',
+                    'error_message' => $message,
+                ]);
+                exit;
+            }
+        } catch (\Throwable $fallbackError) {
+            error_log('CMS Events public error fallback failed: ' . $fallbackError->getMessage());
+        }
+
+        echo '<!DOCTYPE html><html lang="de"><body><h1>Event-Fehler</h1><p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p></body></html>';
         exit;
     }
 }

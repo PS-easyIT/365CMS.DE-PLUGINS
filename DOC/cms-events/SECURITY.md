@@ -1,8 +1,8 @@
-# CMS Events – Sicherheitskonzept für 365CMS V2.8.0
+# CMS Events – Sicherheitskonzept für 365CMS 3.x
 
 ## Zweck
 
-Dieses Dokument beschreibt den Sicherheits-Zielstand und die Audit-Prüfpunkte für `cms-events` im Rahmen der Anpassung an **365CMS V2.8.0**.
+Dieses Dokument beschreibt den Sicherheits-Zielstand und die Audit-Prüfpunkte für `cms-events` im Rahmen des **365CMS-3.x-Audits**. Stand: `3.0.5` vom 2026-05-25.
 
 Der Schwerpunkt liegt auf:
 
@@ -80,6 +80,16 @@ Vor jeder Ausgabe ist der Kontext zu beachten:
 - `LIMIT` und `OFFSET` niemals ungeprüft aus Request-Daten übernehmen
 - Sortier- und Filterwerte über Whitelists absichern
 - Tabellennamen nur aus dem internen Präfix-System zusammensetzen
+- Schema-Checks laufen über `INFORMATION_SCHEMA`, nicht über vorbereitete `SHOW COLUMNS ... LIKE ?`-Statements
+- Foreign-Key-Migrationen müssen idempotent sein und dürfen den Installer bei Zielumgebungsproblemen nicht blockieren
+- Plugin-Settings werden primär über `CMS\Services\SettingsService` gelesen/geschrieben; Legacy-Tabellen sind nur Fallbacks.
+
+## Fehlerpfade & Logging
+
+- Öffentliche 404-Pfade nutzen die native 365CMS-404-Renderstrecke mit Fallback-Markup.
+- Template-Fehler werden serverseitig protokolliert und über 365CMS-Error-Fallbacks angezeigt.
+- AJAX-Endpunkte liefern immer JSON mit passendem HTTP-Status und `X-Content-Type-Options: nosniff`.
+- POST-only Admin-Endpunkte liefern bei direkten GET-Aufrufen explizit `405 Method Not Allowed` mit `Allow: POST`.
 
 ## Ownership- und IDOR-Schutz
 
@@ -117,11 +127,13 @@ Besonderheiten von `cms-events`:
 | Speaker zuordnen | ✅ | ❌ | ❌ |
 | Event löschen / Status ändern | ✅ | eingeschränkt nach Flow | ❌ |
 
-## Audit-Checkliste für V2.8.0
+## Audit-Checkliste für 3.0.3
 
-- [ ] alle Event-Save-Handler auf Token- und Rechteprüfung geprüft
-- [ ] Member-Ownership für Edit/Delete geprüft
-- [ ] URL-Felder validiert und beim Rendern sicher escaped
-- [ ] numerische Felder (`capacity`, `price`, IDs, Pagination) gehärtet
-- [ ] Kalender-/Filter-Links auf sichere Parametrisierung geprüft
-- [ ] Speaker-, Kategorien- und Preset-Aktionen gegen CSRF und IDOR geprüft
+- [x] alle Event-Save-Handler auf Token- und Rechteprüfung geprüft
+- [x] Member-Ownership für Edit/Delete geprüft
+- [x] URL-Felder validiert und beim Rendern sicher escaped
+- [x] numerische Felder (`capacity`, `price`, IDs, Pagination) gehärtet
+- [x] Kalender-/Filter-Links auf sichere Parametrisierung geprüft
+- [x] Speaker-, Kategorien- und Preset-Aktionen gegen CSRF und IDOR geprüft
+- [x] Bootstrap-/Include-Dateien gegen Redeclare-Fatals geschützt
+- [x] fehlende Kalender-Route mit Template und responsivem CSS abgedeckt

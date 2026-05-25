@@ -364,7 +364,7 @@ echo "<style>:root{
     <div class="ev-price-display">
         <!-- Kostenlos / Preis in EUR -->
     </div>
-    <a href="{reg_url}" class="ev-btn ev-btn-primary ev-btn-block" target="_blank">
+    <a href="{reg_url}" class="ev-btn ev-btn-primary ev-btn-block" target="_blank" rel="noopener noreferrer">
         🎟️ Jetzt anmelden
     </a>
     <p class="ev-sidebar-hint">🪑 Noch {n} Plätze verfügbar</p>

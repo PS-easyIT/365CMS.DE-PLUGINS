@@ -133,19 +133,30 @@ $archive_url = $base_url . '/' . trim($archive_slug, '-') . '/';
 
   <!-- Pagination -->
   <?php if ($tot_pages > 1): ?>
-    <?php $eventPaginationBase = $archive_url . '?' . http_build_query(['search' => html_entity_decode($cur_search, ENT_QUOTES, 'UTF-8'), 'city' => html_entity_decode($cur_city, ENT_QUOTES, 'UTF-8'), 'category' => html_entity_decode($cur_cat, ENT_QUOTES, 'UTF-8')]); ?>
+    <?php
+    $eventPaginationParams = array_filter([
+        'search'   => html_entity_decode($cur_search, ENT_QUOTES, 'UTF-8'),
+        'city'     => html_entity_decode($cur_city, ENT_QUOTES, 'UTF-8'),
+        'category' => html_entity_decode($cur_cat, ENT_QUOTES, 'UTF-8'),
+        'month'    => preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string) ($filter_month ?? '')) === 1 ? (string) $filter_month : '',
+        'when'     => in_array((string) ($when_filter ?? ''), ['upcoming', 'past'], true) ? (string) $when_filter : '',
+        'online'   => $cur_online,
+    ], static fn($value): bool => $value !== null && $value !== '');
+    $eventPaginationBase = $archive_url . (!empty($eventPaginationParams) ? '?' . http_build_query($eventPaginationParams) : '');
+    $paginationSeparator = str_contains($eventPaginationBase, '?') ? '&' : '?';
+    ?>
     <nav class="ev-pagination" aria-label="Seitennavigation">
       <?php if ($cur_page > 1): ?>
         <a class="ev-page-btn phinit-btn phinit-btn--secondary"
-           href="<?= htmlspecialchars($eventPaginationBase . '&page=' . ($cur_page - 1), ENT_QUOTES, 'UTF-8') ?>">Zurück</a>
+           href="<?= htmlspecialchars($eventPaginationBase . $paginationSeparator . 'page=' . ($cur_page - 1), ENT_QUOTES, 'UTF-8') ?>">Zurück</a>
       <?php endif; ?>
       <?php for ($i = max(1, $cur_page - 2); $i <= min($tot_pages, $cur_page + 2); $i++): ?>
         <a class="ev-page-btn phinit-btn phinit-btn--secondary<?= $i === $cur_page ? ' active' : '' ?>"
-           href="<?= htmlspecialchars($eventPaginationBase . '&page=' . $i, ENT_QUOTES, 'UTF-8') ?>"><?= $i ?></a>
+           href="<?= htmlspecialchars($eventPaginationBase . $paginationSeparator . 'page=' . $i, ENT_QUOTES, 'UTF-8') ?>"><?= $i ?></a>
       <?php endfor; ?>
       <?php if ($cur_page < $tot_pages): ?>
         <a class="ev-page-btn phinit-btn phinit-btn--secondary"
-           href="<?= htmlspecialchars($eventPaginationBase . '&page=' . ($cur_page + 1), ENT_QUOTES, 'UTF-8') ?>">Weiter</a>
+           href="<?= htmlspecialchars($eventPaginationBase . $paginationSeparator . 'page=' . ($cur_page + 1), ENT_QUOTES, 'UTF-8') ?>">Weiter</a>
       <?php endif; ?>
     </nav>
   <?php endif; ?>

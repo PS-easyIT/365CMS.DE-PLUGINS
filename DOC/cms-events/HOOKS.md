@@ -79,7 +79,10 @@ CMS\Hooks::applyFilters('event_registration_url', string $url, array $event): st
 |------|----------|-----------|
 | `cms_init` | `CMS_Events::init_plugin()` | 10 |
 | `plugin_activated` | `CMS_Events::on_activation()` | 10 |
+| `plugin_deactivated` | `CMS_Events::on_deactivation()` | 10 |
+| `plugin_uninstalled` | `CMS_Events::on_uninstall()` | 10 |
 | `head` | `CMS_Events::enqueue_styles()` | 10 |
 | `body_end` | `CMS_Events::enqueue_scripts()` | 10 |
-| `cms_admin_menu` | `CMS_Events_Admin::register_menu()` | 10 |
-| `cms_member_dashboard` | `CMS_Events_Member_Dashboard::render()` | 20 |
+| `cms_admin_menu` | `CMS_Events_Admin::register_admin_menu()` | 10 |
+| `member_dashboard_init` | `CMS_Events_Member_Dashboard::register()` | 10 |
+| `member_plugin_section_head` | `CMS_Events_Member_Dashboard::enqueueEventStyles()` | 10 |

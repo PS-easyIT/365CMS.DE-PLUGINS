@@ -20,6 +20,18 @@ CMS Booking basiert auf einer **Provider-Architektur**: Externe Plugins (cms-exp
 4. **Buchungen** (bookings) – kompletter Lifecycle mit Status-Workflow
 5. **Einstellungen** (booking_settings) – globale Konfiguration
 
+## Admin-Menü
+
+Seit Version `3.0.4` registriert CMS Booking sein Admin-Menü über den Parent-Slug `booking` direkt in der 365CMS-Plugin-Sidebar.
+
+| Bereich | Route |
+|---|---|
+| Dashboard | `/admin/plugins/booking/booking` |
+| Buchungen | `/admin/plugins/booking/bookings` |
+| Anbieter | `/admin/plugins/booking/providers` |
+| Leistungen | `/admin/plugins/booking/services` |
+| Einstellungen | `/admin/plugins/booking/settings` |
+
 ## Kontaktformular-Integration
 
 CMS Booking stellt 4 optionale Templates für CMS Contact bereit:

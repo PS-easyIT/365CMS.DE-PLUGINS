@@ -314,6 +314,21 @@
         var addButton = speakerBox.querySelector('[data-ev-speaker-add]');
         var assignedList = document.getElementById('ev-assigned-speakers');
 
+        async function readJsonResponse(response) {
+            var payload = {};
+            try {
+                payload = await response.json();
+            } catch (error) {
+                payload = {};
+            }
+
+            if (!response.ok) {
+                throw new Error(payload.error || ('HTTP ' + response.status));
+            }
+
+            return payload;
+        }
+
         function syncPersonOptions() {
             if (!typeSelect || !personSelect) {
                 return;
@@ -364,7 +379,7 @@
                     method: 'POST',
                     body: fd
                 });
-                var payload = await response.json();
+                var payload = await readJsonResponse(response);
                 if (!payload.success) {
                     window.alert('Fehler beim Entfernen');
                     return;
@@ -400,7 +415,7 @@
                     method: 'POST',
                     body: fd
                 });
-                var payload = await response.json();
+                var payload = await readJsonResponse(response);
                 if (payload.success) {
                     window.location.reload();
                     return;
