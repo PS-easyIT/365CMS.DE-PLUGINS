@@ -273,7 +273,7 @@ final class CMS_Events_Post_Type
     private function get_event_speakers_map(array $events): array
     {
         $event_ids = array_values(array_unique(array_filter(array_map(
-            static fn(object $event): int => max(0, (int) ($event->id ?? 0)),
+            static fn($event): int => is_object($event) ? max(0, (int) ($event->id ?? 0)) : 0,
             $events
         ))));
 
