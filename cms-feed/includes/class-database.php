@@ -12,6 +12,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Feed_Database', false)) {
+    return;
+}
+
 final class CMS_Feed_Database
 {
     private static ?self $instance = null;

@@ -11,6 +11,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_NetImport_Importer', false)) {
+    return;
+}
+
 final class CMS_NetImport_Importer
 {
     private static ?self $instance = null;

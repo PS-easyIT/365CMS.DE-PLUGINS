@@ -2,6 +2,14 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [3.0.2] – 2026-05-25
+
+### Fehlerbehebungen
+
+- Der Installer liest und schreibt die Core-Tabelle `settings` wieder mit den korrekten Spalten `option_name` und `option_value`; dadurch verschwinden die `Unknown column 'setting_value'`-Logs beim DB-Versionscheck.
+- Foreign Keys werden beim Anlegen der Booking-Tabellen ohne manuell vergebene Constraint-Namen erstellt, damit MariaDB/MySQL keine schemaweiten Namenskollisionen (`errno: 121`) mehr erzeugt.
+- Die Installer-Klasse ist gegen versehentliches erneutes Laden geschützt.
+
 ## [3.0.0] – 2026-05-17
 
 ### Sicherheitsfixes

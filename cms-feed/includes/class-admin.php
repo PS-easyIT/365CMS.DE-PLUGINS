@@ -13,6 +13,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Feed_Admin', false)) {
+    return;
+}
+
 final class CMS_Feed_Admin
 {
     private static ?self $instance = null;
@@ -82,7 +86,6 @@ final class CMS_Feed_Admin
         $menuFiles = [
             ABSPATH . 'includes/functions/admin-menu.php',
             ABSPATH . 'CMS/includes/functions/admin-menu.php',
-            ABSPATH . 'admin/partials/admin-menu.php',
         ];
 
         foreach ($menuFiles as $menuFile) {

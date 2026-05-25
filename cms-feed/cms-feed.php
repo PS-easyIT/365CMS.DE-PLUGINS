@@ -16,9 +16,15 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_FEED_VERSION',    '3.0.3');
-define('CMS_FEED_PLUGIN_DIR', dirname(__FILE__) . '/');
-define('CMS_FEED_PLUGIN_URL', '/plugins/cms-feed/');
+if (!defined('CMS_FEED_VERSION')) {
+    define('CMS_FEED_VERSION', '3.0.3');
+}
+if (!defined('CMS_FEED_PLUGIN_DIR')) {
+    define('CMS_FEED_PLUGIN_DIR', dirname(__FILE__) . '/');
+}
+if (!defined('CMS_FEED_PLUGIN_URL')) {
+    define('CMS_FEED_PLUGIN_URL', '/plugins/cms-feed/');
+}
 
 if (!function_exists('cms_feed_strlen')) {
     function cms_feed_strlen(string $text): int
@@ -114,6 +120,7 @@ if (!function_exists('cms_feed_uninstall')) {
     }
 }
 
+if (!class_exists('CMS_Feed', false)) {
 final class CMS_Feed
 {
     private static ?self $instance = null;
@@ -138,17 +145,22 @@ final class CMS_Feed
     {
         $includes = $this->plugin_dir . 'includes/';
         $files = [
-            'class-error-handler.php',
-            'class-database.php',
-            'class-rss-fetcher.php',
-            'class-feed-catalog.php',
-            'class-feed-cron.php',
-            'class-template-loader.php',
-            'class-public-controller.php',
-            'class-email-digest.php',
-            'class-admin.php',
+            'class-error-handler.php'      => 'CMS_Feed_Error_Handler',
+            'class-database.php'           => 'CMS_Feed_Database',
+            'class-rss-fetcher.php'        => 'CMS_Feed_RSS_Fetcher',
+            'class-feed-catalog.php'       => 'CMS_Feed_Catalog',
+            'class-feed-cron.php'          => 'CMS_Feed_Cron',
+            'class-template-loader.php'    => 'CMS_Feed_Template_Loader',
+            'class-public-controller.php'  => 'CMS_Feed_Public_Controller',
+            'class-email-digest.php'       => 'CMS_Feed_Email_Digest',
+            'class-admin.php'              => 'CMS_Feed_Admin',
         ];
-        foreach ($files as $file) {
+
+        foreach ($files as $file => $className) {
+            if (class_exists($className, false)) {
+                continue;
+            }
+
             $path = $includes . $file;
             if (!is_file($path)) {
                 $exception = new \RuntimeException('CMS Feed dependency missing: ' . $file);
@@ -358,6 +370,8 @@ final class CMS_Feed
     {
         return $this->plugin_url;
     }
+}
+
 }
 
 CMS_Feed::instance();

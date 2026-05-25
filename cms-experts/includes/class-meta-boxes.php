@@ -25,6 +25,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Experts_Meta_Boxes', false)) {
+    return;
+}
+
 final class CMS_Experts_Meta_Boxes
 {
     private static ?self $instance = null;

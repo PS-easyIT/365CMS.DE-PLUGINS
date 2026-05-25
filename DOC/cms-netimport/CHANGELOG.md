@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 3.0.2 — 2026-05-25
+
+- Stabilitätsfix: `CMS_NetImport_Importer` ist gegen versehentliches erneutes Laden geschützt, damit Doppel-Include-Pfade keine `Cannot redeclare class`-Fatals erzeugen.
+
 ## 3.0.1 — 2026-05-18
 
 - Security-/UX-Pass für 365CMS v3.x.x und PHP 8.4.

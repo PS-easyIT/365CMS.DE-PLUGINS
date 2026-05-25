@@ -14,6 +14,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Feed_Error_Handler', false)) {
+    return;
+}
+
 final class CMS_Feed_Error_Handler
 {
     private static ?self $instance = null;

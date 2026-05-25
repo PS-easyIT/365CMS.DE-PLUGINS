@@ -16,6 +16,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Feed_Catalog', false)) {
+    return;
+}
+
 final class CMS_Feed_Catalog
 {
     private static ?self $instance = null;

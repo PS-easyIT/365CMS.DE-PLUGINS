@@ -13,6 +13,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Booking_Installer', false)) {
+    return;
+}
+
 final class CMS_Booking_Installer
 {
     public static function install(): void
@@ -66,7 +70,7 @@ final class CMS_Booking_Installer
         }
 
         try {
-            $stmt = $db->prepare("DELETE FROM {$p}settings WHERE setting_key = ?");
+            $stmt = $db->prepare("DELETE FROM {$p}settings WHERE option_name = ?");
             $stmt->execute(['booking_db_version']);
         } catch (\Throwable $e) {
             // ignore
@@ -135,7 +139,7 @@ final class CMS_Booking_Installer
             INDEX idx_provider (provider_id),
             INDEX idx_status   (status),
             UNIQUE KEY idx_provider_slug (provider_id, slug),
-            CONSTRAINT fk_service_provider FOREIGN KEY (provider_id)
+            FOREIGN KEY (provider_id)
                 REFERENCES {$p}booking_providers(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
@@ -152,7 +156,7 @@ final class CMS_Booking_Installer
             INDEX idx_provider (provider_id),
             INDEX idx_day      (day_of_week),
             INDEX idx_date     (specific_date),
-            CONSTRAINT fk_avail_provider FOREIGN KEY (provider_id)
+            FOREIGN KEY (provider_id)
                 REFERENCES {$p}booking_providers(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
@@ -192,9 +196,9 @@ final class CMS_Booking_Installer
             INDEX idx_status     (status),
             INDEX idx_email      (customer_email),
             INDEX idx_contact_sub (contact_submission_id),
-            CONSTRAINT fk_booking_provider FOREIGN KEY (provider_id)
+            FOREIGN KEY (provider_id)
                 REFERENCES {$p}booking_providers(id) ON DELETE CASCADE,
-            CONSTRAINT fk_booking_service  FOREIGN KEY (service_id)
+            FOREIGN KEY (service_id)
                 REFERENCES {$p}booking_services(id) ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
@@ -207,7 +211,7 @@ final class CMS_Booking_Installer
             UNIQUE KEY idx_bm_unique (booking_id, meta_key),
             INDEX idx_booking (booking_id),
             INDEX idx_key     (meta_key),
-            CONSTRAINT fk_bm_booking FOREIGN KEY (booking_id)
+            FOREIGN KEY (booking_id)
                 REFERENCES {$p}bookings(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
@@ -263,7 +267,7 @@ final class CMS_Booking_Installer
         try {
             $db   = \CMS\Database::instance();
             $stmt = $db->prepare(
-                "SELECT setting_value FROM {$db->getPrefix()}settings WHERE setting_key = ?"
+                "SELECT option_value FROM {$db->getPrefix()}settings WHERE option_name = ?"
             );
             $stmt->execute(['booking_db_version']);
             return (string) ($stmt->fetchColumn() ?: '0');
@@ -278,9 +282,9 @@ final class CMS_Booking_Installer
             $db = \CMS\Database::instance();
             $p  = $db->getPrefix();
             $db->prepare(
-                "INSERT INTO {$p}settings (setting_key, setting_value)
+                "INSERT INTO {$p}settings (option_name, option_value)
                  VALUES (?, ?)
-                 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+                 ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)"
             )->execute(['booking_db_version', $version]);
         } catch (\Throwable $e) {
             // ignore

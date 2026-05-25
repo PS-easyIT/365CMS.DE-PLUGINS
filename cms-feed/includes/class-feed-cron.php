@@ -17,6 +17,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Feed_Cron', false)) {
+    return;
+}
+
 final class CMS_Feed_Cron
 {
     private static ?self $instance = null;

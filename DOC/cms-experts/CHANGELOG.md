@@ -1,5 +1,11 @@
 # CMS Experts – Changelog
 
+## [3.0.3] – 2026-05-25
+
+### Fehlerbehebungen
+
+- `CMS_Experts_Meta_Boxes` ist gegen versehentliches erneutes Laden geschützt, damit Alt-/Doppel-Include-Pfade keine `Cannot redeclare class`-Fatals erzeugen.
+
 ## [3.0.1] – 2026-05-17
 
 ### Geändert

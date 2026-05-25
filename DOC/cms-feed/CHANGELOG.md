@@ -15,6 +15,7 @@ Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 - Public-Routen normalisieren Query-Parameter arraysicher und liefern bei Template-/DB-Ausnahmen gerenderte 500-Fallbacks statt White-Screen/Blank-200.
 - Plugin-Ausnahmen werden zentral über `CMS_Feed_Error_Handler` im 365CMS-Logger-Channel `plugin-cms-feed` protokolliert und anschließend über die nativen Theme-Fehlerseiten `error.php` bzw. `404.php` gerendert.
 - Mail-Digest-Testversand aktualisiert `last_sent_at` nicht mehr und prüft Zieladressen vor dem MailService-/Queue-Aufruf.
+- Bootstrap, Konstanten und alle Feed-Klassendateien sind gegen versehentliches erneutes Laden geschützt, damit Alt-/Doppel-Include-Pfade keine `Cannot redeclare class CMS_Feed_*`-Fatals mehr auslösen.
 
 ### Hinzugefügt
 - Whitelabel-/Embed-Route `/{archive_slug}/embed` für das vorhandene Standalone-Template.

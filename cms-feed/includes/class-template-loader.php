@@ -12,6 +12,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Feed_Template_Loader', false)) {
+    return;
+}
+
 final class CMS_Feed_Template_Loader
 {
     private static ?self $instance = null;

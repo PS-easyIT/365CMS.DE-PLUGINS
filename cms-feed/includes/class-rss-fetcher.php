@@ -14,6 +14,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Feed_RSS_Fetcher', false)) {
+    return;
+}
+
 final class CMS_Feed_RSS_Fetcher
 {
     private static ?self $instance = null;

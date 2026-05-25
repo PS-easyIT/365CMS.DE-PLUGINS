@@ -15,6 +15,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if (class_exists('CMS_Feed_Email_Digest', false)) {
+    return;
+}
+
 final class CMS_Feed_Email_Digest
 {
     private static ?self $instance = null;
