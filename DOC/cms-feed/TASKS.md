@@ -9,7 +9,7 @@
 
 ### 1. Cron-Integration vervollständigen
 - [x] Automatischer Feed-Abruf via `cms_cron_hourly` Hook sicherstellen
-- [ ] Konfigurierbare Abruf-Intervalle pro Kanal (aktuell nur `fetch_interval` in DB, aber Cron nutzt feste Stunde)
+- [x] Konfigurierbare Abruf-Intervalle pro Kanal: reguläre `cron.php`-Ticks reihen nach `fetch_interval` fällige Kanäle ein
 - [ ] Admin-Dashboard: Nächster geplanter Abruf anzeigen
 - [ ] Fehler-Benachrichtigung per E-Mail bei X aufeinanderfolgenden Fehlern
 

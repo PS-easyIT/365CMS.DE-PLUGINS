@@ -4,6 +4,16 @@ Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
 ---
 
+## [3.0.4] – 2026-05-25
+
+### Behoben
+- `CMS_Feed_Cron` hängt jetzt direkt am regulären `/cron.php`-Tick: `task=all` und `task=mail-queue` reihen bei jedem Lauf nach `fetch_interval` fällige Kanäle ein und verarbeiten anschließend einen Queue-Batch.
+- Neuer expliziter Feed-Cron-Task `task=feeds` bzw. Hook `cms_cron_feeds`, damit Feed-Aktualisierungen separat über CLI, Web-Cron oder den Systembereich gestartet werden können.
+- Der Core-Cron-Runner kennt den Task `feeds`, gibt Feed-Ergebnisse bei direkter Ausführung strukturiert zurück und zeigt die Feed-CLI-/URL-Aufrufe im Cron-Status an.
+- `limit` begrenzt den Feed-Batch, `force=1` reiht alle aktiven Kanäle ein; hängen gebliebene `processing`-Jobs werden vor dem Lauf wieder freigegeben.
+
+---
+
 ## [3.0.3] – 2026-05-25
 
 ### Behoben

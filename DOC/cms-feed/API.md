@@ -283,17 +283,22 @@ Bereits vorhandene Feeds (gleiche `feed_url` in beliebigem Bereich) werden über
 **Pattern:** Singleton  
 **Seit:** 1.2.0
 
-Verarbeitet die Fetch-Queue im Hintergrund via `cms_cron_hourly`. Priorisiert dabei die `cms-phinit`-Homepage-Kanäle, reiht zusätzlich alle fälligen Kanäle ein und bereinigt Beiträge älter als 7 Tage.
+Verarbeitet die Fetch-Queue im Hintergrund via `cms_cron_hourly`, `cms_cron_mail_queue` und `cms_cron_feeds`. Reguläre `/cron.php`-Aufrufe mit `task=all` oder `task=mail-queue` reihen nach `fetch_interval` fällige Kanäle ein und verarbeiten anschließend einen Batch; `task=feeds` startet nur den Feed-Worker.
 
 | Methode | Beschreibung |
 |---------|-------------|
-| `process_queue(): array` | Queue-Tasks verarbeiten (max. 5 pro Durchlauf), Homepage-Kanäle priorisieren und 7-Tage-Cleanup ausführen |
+| `run_cron_tick(array $context = []): array` | Fällige Kanäle einreihen, stale `processing`-Tasks freigeben, Queue-Batch verarbeiten und 7-Tage-Cleanup ausführen |
+| `process_queue(array $context = []): array` | Kompatibler stündlicher Wrapper für `run_cron_tick()` mit Homepage-Priorisierung |
+| `drain_pending_queue(array $context = []): array` | Bereits eingereihte Queue-Tasks im konfigurierten Batch verarbeiten |
 | `get_status(): array` | Aktuelle Queue-Statistiken abrufen |
 
-**Rückgabe von `process_queue()`:**
+**Rückgabe von `run_cron_tick()` / `process_queue()`:**
 ```php
 [
+    'executed'  => bool, // Cron-Tick wurde ausgeführt
+    'mode'      => string,
     'queued'     => int,  // Neu eingereihte Kanäle (Homepage + regulär fällige)
+    'requeued'   => int,  // Aus stale processing zurückgesetzte Tasks
     'processed' => int,  // Verarbeitete Tasks
     'success'   => int,  // Erfolgreich abgerufene Kanäle
     'failed'    => int,  // Fehlgeschlagene Abrufe
@@ -302,4 +307,4 @@ Verarbeitet die Fetch-Queue im Hintergrund via `cms_cron_hourly`. Priorisiert da
 ]
 ```
 
-**Batch-Logik:** Bei `bulk_fetch_channels` werden maximal 5 Kanäle sofort abgerufen. Alle weiteren werden in die `feed_fetch_queue`-Tabelle eingereiht und beim nächsten Cron-Durchlauf verarbeitet.
+**Batch-Logik:** Bei `bulk_fetch_channels` werden maximal 5 Kanäle sofort abgerufen. Alle weiteren werden in die `feed_fetch_queue`-Tabelle eingereiht und beim nächsten Cron-Durchlauf verarbeitet. Beim Cron-Task kann `limit` den Batch setzen; intern wird auf maximal 25 Kanäle pro Lauf begrenzt.

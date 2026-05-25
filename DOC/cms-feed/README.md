@@ -4,10 +4,10 @@
 
 ## Aktueller Stand
 
-- Version: `3.0.3`
+- Version: `3.0.4`
 - Release: `2026-05-25`
 - Kompatibilität laut Manifest: `365CMS >= 3.0.0`, `PHP >= 8.4`
-- Aktueller Fix-Schwerpunkt: Audit-Härtung für Lifecycle/Uninstall, Schema-Migrationen, arraysichere Admin-POST-Verarbeitung, native 365CMS-Fehlerseiten und strukturiertes Plugin-Logging.
+- Aktueller Fix-Schwerpunkt: saubere `cron.php`-Andockung für automatische Feed-Aktualisierung über `task=all`, `task=mail-queue` und den expliziten `task=feeds`.
 
 ## Features
 
@@ -38,7 +38,7 @@
 
 ```
 cms-feed/
-├── cms-feed.php                    # Hauptdatei (v3.0.3)
+├── cms-feed.php                    # Hauptdatei (v3.0.4)
 ├── update.json                     # Plugin-Manifest
 ├── includes/
 │   ├── class-database.php          # DB-Tabellen + CRUD (659 Zeilen)
@@ -96,8 +96,9 @@ cms-feed/
 - Auch die Consent-Seite nutzt dabei dieselben Public-Assets, damit Änderungen an der Cookie-Einwilligung ohne Template-Sonderskript sauber auf die Ansicht zurückwirken
 - Member-Feed-Abos werden separat von den Admin-Digests gespeichert
 - Admin-Digests bleiben für manuelle/global konfigurierte Empfänger erhalten; Member-Abos gehören dem jeweiligen Benutzerkonto
-- Der stündliche Cron priorisiert die in `cms-phinit` auf der Startseite gewählten Feed-Kanäle, prüft zusätzlich alle nach `fetch_interval` fälligen Kanäle und reiht diese in die Fetch-Queue ein
-- Bereits eingereihte Queue-Tasks werden zusätzlich bei jedem regulären `task=all`-/`task=mail-queue`-Cron-Lauf in kleinen Batches weiter abgearbeitet, damit Rückstaus zwischen zwei Stundenläufen nicht stehen bleiben
+- Jeder reguläre `cron.php`-Aufruf mit `task=all` oder `task=mail-queue` reiht nach `fetch_interval` fällige Feed-Kanäle in die Fetch-Queue ein und verarbeitet anschließend einen kleinen Batch. Dadurch aktualisieren sich Feeds auch zwischen zwei stündlichen Hooks zuverlässig.
+- Zusätzlich gibt es den expliziten Cron-Task `task=feeds` bzw. den Hook `cms_cron_feeds`, um nur Feed-Aktualisierungen auszuführen. Der `limit`-Parameter begrenzt den Batch (max. 25), `force=1` reiht alle aktiven Kanäle ein.
+- Der stündliche Cron priorisiert weiterhin die in `cms-phinit` auf der Startseite gewählten Feed-Kanäle und bereinigt automatisch Beiträge älter als 7 Tage.
 - Feed-Digests und Member-Abo-Mails nutzen den zentralen MailService bzw. die Mail-Queue statt direktem `mail()`, damit SMTP/OAuth-Konfiguration, Retry-Backoff und Mail-Logs greifen
 - Feed-Beiträge älter als 7 Tage werden stündlich automatisch bereinigt
 - Seit `3.0.2` normalisiert die Admin-View gemischte Datenbank- und Query-Werte vor strikten PHP-8.4-Formatter-Aufrufen (`number_format()`, `date()`, `rawurlencode()`), damit manipulierte Parameter wie `q[]`, `cat[]`, `page[]` oder defekte UTF-8-Payloads keinen 500er im Feed-Admin mehr auslösen.

@@ -87,17 +87,23 @@ Seit `3.0.3` normalisieren die Public-Routen Query-Parameter arraysicher und lie
 **Callback:** `CMS_Feed_Cron::process_queue()`  
 **Beschreibung:** Priorisiert bei aktivem `cms-phinit` die auf der Startseite ausgewählten Feed-Kanäle, reiht zusätzlich alle regulär fälligen Kanäle in die Fetch-Queue ein, verarbeitet direkt einen ersten Batch und bereinigt nicht hervorgehobene Beiträge älter als 7 Tage automatisch.
 
-**Wichtig:** Seit dem Core-Fix vom `2026-03-17` wird `cms_cron_hourly` über den Core-Cron-Endpunkt (im Repo `CMS/cron.php`, in typischen FTP-Deployments als `/cron.php`) auch bei bestehenden Aufrufen von `task=mail-queue` automatisch mit ausgelöst, aber intern auf höchstens einen echten Lauf pro Stunde gedrosselt. Zusätzlich sind die Tasks `hourly` und `all` verfügbar.
+**Wichtig:** `cms_cron_hourly` bleibt der stündliche Voll-/Cleanup-Lauf. Reguläre `/cron.php`-Aufrufe mit `task=all` oder `task=mail-queue` aktualisieren fällige Feeds zusätzlich über den Mail-Queue-Cron-Tick, ohne auf den nächsten stündlichen Lauf warten zu müssen.
 
-### cms_cron_mail_queue (Feed-Queue-Drain)
+### cms_cron_mail_queue (Feed-Cron-Tick)
 
 **Registriert in:** `CMS_Feed_Cron::__construct()` (Priorität 20)  
-**Callback:** `CMS_Feed_Cron::drain_pending_queue()`  
-**Beschreibung:** Verarbeitet bei jedem regulären Mail-Queue-/`all`-Cron-Lauf einen kleinen Batch bereits eingereihter Feed-Tasks. Dadurch schrumpfen Rückstaus zwischen zwei stündlichen Läufen weiter, ohne dass neue fällige Kanäle minütlich doppelt eingereiht werden.
+**Callback:** `CMS_Feed_Cron::run_cron_tick()`  
+**Beschreibung:** Reiht bei jedem regulären Mail-Queue-/`all`-Cron-Lauf alle nach `fetch_interval` fälligen Kanäle in die Fetch-Queue ein und verarbeitet anschließend einen begrenzten Batch. Bereits pending/processing Einträge werden nicht doppelt angelegt.
 
 **Wichtig:** Der Core feuert `cms_cron_mail_queue` jetzt auch dann als echten Hook, wenn `cron.php` die Mail-Queue intern bereits direkt verarbeitet hat. Das Kontext-Flag `mail_queue_already_handled` verhindert dabei nur die doppelte Mail-Verarbeitung, nicht aber zusätzliche Plugin-Worker wie `cms-feed`.
 
 Zusätzlich werden hängen gebliebene `feed_fetch_queue`-Einträge vor dem nächsten Drain-Lauf automatisch wieder auf `pending` gesetzt, sobald sie länger als 20 Minuten in `processing` stehen und noch kein `processed_at` besitzen.
+
+### cms_cron_feeds / task=feeds
+
+**Registriert in:** `CMS_Feed_Cron::__construct()` (Priorität 10)  
+**Callback:** `CMS_Feed_Cron::run_cron_tick()`  
+**Beschreibung:** Expliziter Feed-only-Cron für `/cron.php?task=feeds` oder `php cron.php --task=feeds`. `limit` begrenzt den Batch (max. 25), `force=1` reiht alle aktiven Kanäle ein.
 
 ---
 

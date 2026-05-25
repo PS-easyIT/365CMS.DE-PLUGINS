@@ -27,6 +27,7 @@ final class CMS_Feed_Cron
 
     /** Max. Kanäle pro Cron-Durchlauf */
     private const BATCH_SIZE = 5;
+    private const MAX_BATCH_SIZE = 25;
     private const AUTO_CLEANUP_DAYS = 7;
     private const HOMEPAGE_THEME_SLUG = 'cms-phinit';
 
@@ -38,8 +39,9 @@ final class CMS_Feed_Cron
     private function __construct()
     {
         if (class_exists('CMS\Hooks')) {
-            CMS\Hooks::addAction('cms_cron_mail_queue', [$this, 'drain_pending_queue'], 20);
+            CMS\Hooks::addAction('cms_cron_mail_queue', [$this, 'run_cron_tick'], 20);
             CMS\Hooks::addAction('cms_cron_hourly', [$this, 'process_queue'], 20);
+            CMS\Hooks::addAction('cms_cron_feeds', [$this, 'run_cron_tick'], 10);
         }
     }
 
@@ -51,13 +53,34 @@ final class CMS_Feed_Cron
      *
      * @return array Ergebnis-Array mit processed/success/failed Zähler
      */
-    public function process_queue(): array
+    public function process_queue(array $context = []): array
+    {
+        $context['source'] = (string) ($context['source'] ?? 'cms_cron_hourly');
+
+        return $this->run_cron_tick($context);
+    }
+
+    /**
+     * Zentraler Feed-Cron-Tick für `/cron.php`.
+     *
+     * Dieser Worker wird über `task=all`, `task=mail-queue`, `task=hourly`
+     * und den expliziten Hook `cms_cron_feeds` erreicht. Er reiht fällige
+     * Kanäle anhand ihres `fetch_interval` ein und verarbeitet anschließend
+     * einen begrenzten Batch aus der Queue.
+     *
+     * @param array<string, mixed> $context
+     * @return array<string, mixed>
+     */
+    public function run_cron_tick(array $context = []): array
     {
         $db      = CMS_Feed_Database::instance();
         $fetcher = CMS_Feed_RSS_Fetcher::instance();
 
         $result = [
+            'executed'  => true,
+            'mode'      => 'feed-cron-tick',
             'queued'    => 0,
+            'requeued'  => 0,
             'processed' => 0,
             'success'   => 0,
             'failed'    => 0,
@@ -65,10 +88,18 @@ final class CMS_Feed_Cron
             'cleaned_up' => 0,
         ];
 
-        $result['queued'] += $db->add_to_fetch_queue($this->get_priority_channel_ids());
-        $result['queued'] += $fetcher->enqueue_due_channels();
+        $result['requeued'] += $db->release_stale_processing_tasks();
 
-        $result = $this->merge_results($result, $this->drain_pending_queue());
+        if (!empty($context['force'])) {
+            $result['queued'] += $db->add_to_fetch_queue($this->get_active_channel_ids());
+        } else {
+            if ($this->should_enqueue_priority_channels($context)) {
+                $result['queued'] += $db->add_to_fetch_queue($this->get_priority_channel_ids());
+            }
+            $result['queued'] += $fetcher->enqueue_due_channels();
+        }
+
+        $result = $this->merge_results($result, $this->drain_pending_queue($context));
 
         // Alte erledigte Einträge aufräumen (älter als 7 Tage)
         $db->cleanup_queue(7);
@@ -80,13 +111,12 @@ final class CMS_Feed_Cron
     /**
      * Bereits eingereihte Queue-Tasks in kleinen Batches verarbeiten.
      *
-     * Dieser Worker hängt am häufigeren `cms_cron_mail_queue`-Tick, damit
-     * große Rückstaus nicht nur einmal pro Stunde um fünf Einträge schrumpfen.
-     * Das Einreihen neuer fälliger Kanäle bleibt weiterhin dem stündlichen
-     * `cms_cron_hourly`-Lauf vorbehalten.
+    * Wird intern vom zentralen Cron-Tick genutzt. Neue fällige Kanäle werden
+    * vorher in `run_cron_tick()` eingereiht; diese Methode übernimmt nur den
+    * kontrollierten Batch-Abruf bereits ausstehender Queue-Tasks.
      *
      * @param array<string, mixed> $context
-     * @return array{queued:int, processed:int, success:int, failed:int, new_items:int, cleaned_up:int}
+    * @return array{queued:int, processed:int, success:int, failed:int, new_items:int, cleaned_up:int}
      */
     public function drain_pending_queue(array $context = []): array
     {
@@ -102,7 +132,7 @@ final class CMS_Feed_Cron
             'cleaned_up' => 0,
         ];
 
-        $tasks = $db->get_pending_queue_tasks(self::BATCH_SIZE);
+        $tasks = $db->get_pending_queue_tasks($this->resolve_batch_size($context));
         if (empty($tasks)) {
             return $result;
         }
@@ -194,6 +224,45 @@ final class CMS_Feed_Cron
     }
 
     /**
+     * @return array<int>
+     */
+    private function get_active_channel_ids(): array
+    {
+        $channels = CMS_Feed_Database::instance()->get_channels();
+
+        return array_values(array_unique(array_filter(
+            array_map(
+                static fn (array $channel): int => !empty($channel['is_active']) ? (int) ($channel['id'] ?? 0) : 0,
+                $channels
+            ),
+            static fn (int $channelId): bool => $channelId > 0
+        )));
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function should_enqueue_priority_channels(array $context): bool
+    {
+        $source = (string) ($context['source'] ?? '');
+
+        return $source === 'cms_cron_hourly' || $source === 'hourly' || !empty($context['hourly']);
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    private function resolve_batch_size(array $context): int
+    {
+        $limit = filter_var($context['limit'] ?? null, FILTER_VALIDATE_INT);
+        if ($limit === false || $limit === null) {
+            return self::BATCH_SIZE;
+        }
+
+        return min(self::MAX_BATCH_SIZE, max(1, (int) $limit));
+    }
+
+    /**
      * Queue-Status abrufen (für Dashboard-Anzeige).
      */
     public function get_status(): array
@@ -208,7 +277,7 @@ final class CMS_Feed_Cron
      */
     private function merge_results(array $base, array $append): array
     {
-        foreach (['queued', 'processed', 'success', 'failed', 'new_items', 'cleaned_up'] as $key) {
+        foreach (['queued', 'requeued', 'processed', 'success', 'failed', 'new_items', 'cleaned_up'] as $key) {
             $base[$key] = (int) ($base[$key] ?? 0) + (int) ($append[$key] ?? 0);
         }
 
