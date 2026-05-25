@@ -36,6 +36,7 @@ final class CMS_Feed_Database
 
         $ensured = true;
         $this->create_tables();
+        $this->migrate_current_schema();
         $this->migrate_legacy_schema();
         $this->seed_defaults();
     }
@@ -189,6 +190,194 @@ final class CMS_Feed_Database
             INDEX idx_channel    (channel_id),
             INDEX idx_created    (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    }
+
+    private function migrate_current_schema(): void
+    {
+        $db     = \CMS\Database::instance();
+        $pdo    = $db->getPdo();
+        $prefix = $db->prefix();
+
+        $categories = $prefix . 'feed_categories';
+        $channels   = $prefix . 'feed_channels';
+        $items      = $prefix . 'feed_items';
+        $settings   = $prefix . 'feed_settings';
+        $digests    = $prefix . 'feed_digests';
+        $members    = $prefix . 'feed_member_subscriptions';
+        $legacy     = $prefix . 'feed_subscriptions';
+        $queue      = $prefix . 'feed_fetch_queue';
+
+        $categoryColumns = $this->get_table_columns($pdo, $categories);
+        $this->add_column_if_missing($pdo, $categories, $categoryColumns, 'description', 'TEXT DEFAULT NULL AFTER slug');
+        $this->add_column_if_missing($pdo, $categories, $categoryColumns, 'icon', "VARCHAR(10) DEFAULT '📰' AFTER description");
+        $this->add_column_if_missing($pdo, $categories, $categoryColumns, 'is_public', 'TINYINT(1) NOT NULL DEFAULT 1 AFTER icon');
+        $this->add_column_if_missing($pdo, $categories, $categoryColumns, 'sort_order', 'INT DEFAULT 0 AFTER is_public');
+        $this->add_column_if_missing($pdo, $categories, $categoryColumns, 'layout', "VARCHAR(30) NOT NULL DEFAULT 'grid' AFTER sort_order");
+        $this->add_column_if_missing($pdo, $categories, $categoryColumns, 'items_per_page', 'INT UNSIGNED NOT NULL DEFAULT 20 AFTER layout');
+        $this->add_column_if_missing($pdo, $categories, $categoryColumns, 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER items_per_page');
+        $this->add_column_if_missing($pdo, $categories, $categoryColumns, 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
+        $this->add_index_if_missing($pdo, $categories, 'unique_slug', 'ADD UNIQUE KEY unique_slug (slug)');
+        $this->add_index_if_missing($pdo, $categories, 'idx_public', 'ADD INDEX idx_public (is_public)');
+        $this->add_index_if_missing($pdo, $categories, 'idx_sort', 'ADD INDEX idx_sort (sort_order)');
+
+        $channelColumns = $this->get_table_columns($pdo, $channels);
+        $this->add_column_if_missing($pdo, $channels, $channelColumns, 'category_id', 'INT UNSIGNED NOT NULL DEFAULT 0 AFTER id');
+        $this->add_column_if_missing($pdo, $channels, $channelColumns, 'site_url', 'VARCHAR(500) DEFAULT NULL AFTER feed_url');
+        $this->add_column_if_missing($pdo, $channels, $channelColumns, 'description', 'TEXT DEFAULT NULL AFTER site_url');
+        $this->add_column_if_missing($pdo, $channels, $channelColumns, 'icon_url', 'VARCHAR(500) DEFAULT NULL AFTER description');
+        $this->add_column_if_missing($pdo, $channels, $channelColumns, 'is_active', 'TINYINT(1) NOT NULL DEFAULT 1 AFTER icon_url');
+        $this->add_column_if_missing($pdo, $channels, $channelColumns, 'fetch_interval', 'INT UNSIGNED NOT NULL DEFAULT 60 AFTER is_active');
+        $this->add_column_if_missing($pdo, $channels, $channelColumns, 'max_items', 'INT UNSIGNED NOT NULL DEFAULT 50 AFTER fetch_interval');
+        $this->add_column_if_missing($pdo, $channels, $channelColumns, 'last_fetched_at', 'TIMESTAMP NULL DEFAULT NULL AFTER max_items');
+        $this->add_column_if_missing($pdo, $channels, $channelColumns, 'last_error', 'TEXT DEFAULT NULL AFTER last_fetched_at');
+        $this->add_column_if_missing($pdo, $channels, $channelColumns, 'item_count', 'INT UNSIGNED NOT NULL DEFAULT 0 AFTER last_error');
+        $this->add_column_if_missing($pdo, $channels, $channelColumns, 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER item_count');
+        $this->add_column_if_missing($pdo, $channels, $channelColumns, 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
+        $this->add_index_if_missing($pdo, $channels, 'idx_category', 'ADD INDEX idx_category (category_id)');
+        $this->add_index_if_missing($pdo, $channels, 'idx_active', 'ADD INDEX idx_active (is_active)');
+        $this->add_index_if_missing($pdo, $channels, 'idx_fetch', 'ADD INDEX idx_fetch (last_fetched_at)');
+
+        $itemColumns = $this->get_table_columns($pdo, $items);
+        $this->add_column_if_missing($pdo, $items, $itemColumns, 'channel_id', 'INT UNSIGNED NOT NULL DEFAULT 0 AFTER id');
+        $this->add_column_if_missing($pdo, $items, $itemColumns, 'category_id', 'INT UNSIGNED NOT NULL DEFAULT 0 AFTER channel_id');
+        $this->add_column_if_missing($pdo, $items, $itemColumns, 'content', 'LONGTEXT DEFAULT NULL AFTER description');
+        $this->add_column_if_missing($pdo, $items, $itemColumns, 'author', 'VARCHAR(255) DEFAULT NULL AFTER content');
+        $this->add_column_if_missing($pdo, $items, $itemColumns, 'image_url', 'VARCHAR(500) DEFAULT NULL AFTER author');
+        $this->add_column_if_missing($pdo, $items, $itemColumns, 'pub_date', 'DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER image_url');
+        $this->add_column_if_missing($pdo, $items, $itemColumns, 'is_featured', 'TINYINT(1) NOT NULL DEFAULT 0 AFTER pub_date');
+        $this->add_column_if_missing($pdo, $items, $itemColumns, 'is_hidden', 'TINYINT(1) NOT NULL DEFAULT 0 AFTER is_featured');
+        $this->add_column_if_missing($pdo, $items, $itemColumns, 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER is_hidden');
+        $this->add_index_if_missing($pdo, $items, 'unique_guid_channel', 'ADD UNIQUE KEY unique_guid_channel (guid(191), channel_id)');
+        $this->add_index_if_missing($pdo, $items, 'idx_channel', 'ADD INDEX idx_channel (channel_id)');
+        $this->add_index_if_missing($pdo, $items, 'idx_category', 'ADD INDEX idx_category (category_id)');
+        $this->add_index_if_missing($pdo, $items, 'idx_pub_date', 'ADD INDEX idx_pub_date (pub_date)');
+        $this->add_index_if_missing($pdo, $items, 'idx_featured', 'ADD INDEX idx_featured (is_featured)');
+        $this->add_index_if_missing($pdo, $items, 'idx_hidden', 'ADD INDEX idx_hidden (is_hidden)');
+
+        $settingColumns = $this->get_table_columns($pdo, $settings);
+        $this->add_column_if_missing($pdo, $settings, $settingColumns, 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER setting_value');
+
+        $digestColumns = $this->get_table_columns($pdo, $digests);
+        $this->add_column_if_missing($pdo, $digests, $digestColumns, 'last_sent_at', 'TIMESTAMP NULL DEFAULT NULL AFTER is_active');
+        $this->add_column_if_missing($pdo, $digests, $digestColumns, 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER last_sent_at');
+        $this->add_column_if_missing($pdo, $digests, $digestColumns, 'updated_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
+        $this->add_index_if_missing($pdo, $digests, 'idx_active', 'ADD INDEX idx_active (is_active)');
+        $this->add_index_if_missing($pdo, $digests, 'idx_email', 'ADD INDEX idx_email (email)');
+
+        $memberColumns = $this->get_table_columns($pdo, $members);
+        $this->add_column_if_missing($pdo, $members, $memberColumns, 'daily_mode', "VARCHAR(20) NOT NULL DEFAULT '09' AFTER frequency");
+        $this->add_column_if_missing($pdo, $members, $memberColumns, 'weekly_day', 'TINYINT UNSIGNED NOT NULL DEFAULT 1 AFTER daily_mode');
+        $this->add_column_if_missing($pdo, $members, $memberColumns, 'weekly_time', "VARCHAR(5) NOT NULL DEFAULT '09' AFTER weekly_day");
+        $this->add_index_if_missing($pdo, $members, 'unique_user', 'ADD UNIQUE KEY unique_user (user_id)');
+        $this->add_index_if_missing($pdo, $members, 'idx_active', 'ADD INDEX idx_active (is_active)');
+        $this->add_index_if_missing($pdo, $members, 'idx_frequency', 'ADD INDEX idx_frequency (frequency)');
+
+        $legacyColumns = $this->get_table_columns($pdo, $legacy);
+        $this->add_column_if_missing($pdo, $legacy, $legacyColumns, 'daily_mode', "VARCHAR(20) NOT NULL DEFAULT '09' AFTER frequency");
+        $this->add_column_if_missing($pdo, $legacy, $legacyColumns, 'weekly_day', 'TINYINT UNSIGNED NOT NULL DEFAULT 1 AFTER daily_mode');
+        $this->add_column_if_missing($pdo, $legacy, $legacyColumns, 'weekly_time', "VARCHAR(5) NOT NULL DEFAULT '09' AFTER weekly_day");
+
+        $queueColumns = $this->get_table_columns($pdo, $queue);
+        $this->add_column_if_missing($pdo, $queue, $queueColumns, 'error', 'TEXT DEFAULT NULL AFTER status');
+        $this->add_column_if_missing($pdo, $queue, $queueColumns, 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER error');
+        $this->add_column_if_missing($pdo, $queue, $queueColumns, 'processed_at', 'TIMESTAMP NULL DEFAULT NULL AFTER created_at');
+        $this->add_index_if_missing($pdo, $queue, 'idx_status', 'ADD INDEX idx_status (status)');
+        $this->add_index_if_missing($pdo, $queue, 'idx_channel', 'ADD INDEX idx_channel (channel_id)');
+        $this->add_index_if_missing($pdo, $queue, 'idx_created', 'ADD INDEX idx_created (created_at)');
+
+        $this->delete_orphaned_relations($pdo, $prefix);
+        $this->add_foreign_key_if_missing($pdo, $channels, 'fk_feed_channels_category', "FOREIGN KEY (category_id) REFERENCES {$categories}(id) ON DELETE CASCADE");
+        $this->add_foreign_key_if_missing($pdo, $items, 'fk_feed_items_channel', "FOREIGN KEY (channel_id) REFERENCES {$channels}(id) ON DELETE CASCADE");
+        $this->add_foreign_key_if_missing($pdo, $items, 'fk_feed_items_category', "FOREIGN KEY (category_id) REFERENCES {$categories}(id) ON DELETE CASCADE");
+        $this->add_foreign_key_if_missing($pdo, $queue, 'fk_feed_fetch_queue_channel', "FOREIGN KEY (channel_id) REFERENCES {$channels}(id) ON DELETE CASCADE");
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private function get_table_columns(\PDO $pdo, string $table): array
+    {
+        try {
+            $columns = $pdo->query("SHOW COLUMNS FROM {$table}")->fetchAll(\PDO::FETCH_COLUMN);
+            return is_array($columns) ? array_map('strval', $columns) : [];
+        } catch (\Throwable $e) {
+            error_log('CMS Feed: Reading columns failed for ' . $table . ' – ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function add_column_if_missing(\PDO $pdo, string $table, array &$columns, string $column, string $definition): void
+    {
+        if (in_array($column, $columns, true)) {
+            return;
+        }
+
+        try {
+            $pdo->exec("ALTER TABLE {$table} ADD COLUMN {$column} {$definition}");
+            $columns[] = $column;
+        } catch (\Throwable $e) {
+            error_log('CMS Feed: Adding column ' . $table . '.' . $column . ' failed – ' . $e->getMessage());
+        }
+    }
+
+    private function add_index_if_missing(\PDO $pdo, string $table, string $indexName, string $definition): void
+    {
+        try {
+            $stmt = $pdo->query("SHOW INDEX FROM {$table} WHERE Key_name = " . $pdo->quote($indexName));
+            if ($stmt && $stmt->fetch()) {
+                return;
+            }
+
+            $pdo->exec("ALTER TABLE {$table} {$definition}");
+        } catch (\Throwable $e) {
+            error_log('CMS Feed: Adding index ' . $indexName . ' on ' . $table . ' failed – ' . $e->getMessage());
+        }
+    }
+
+    private function add_foreign_key_if_missing(\PDO $pdo, string $table, string $constraintName, string $definition): void
+    {
+        try {
+            $stmt = $pdo->prepare(
+                'SELECT CONSTRAINT_NAME
+                 FROM information_schema.TABLE_CONSTRAINTS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = ?
+                   AND CONSTRAINT_NAME = ?
+                   AND CONSTRAINT_TYPE = ?'
+            );
+            $stmt->execute([$this->strip_prefix_from_table_name($table), $constraintName, 'FOREIGN KEY']);
+            if ($stmt->fetchColumn() !== false) {
+                return;
+            }
+
+            $pdo->exec("ALTER TABLE {$table} ADD CONSTRAINT {$constraintName} {$definition}");
+        } catch (\Throwable $e) {
+            error_log('CMS Feed: Adding foreign key ' . $constraintName . ' failed – ' . $e->getMessage());
+        }
+    }
+
+    private function strip_prefix_from_table_name(string $table): string
+    {
+        $parts = preg_split('/[\\\\\/]/', $table);
+        return (string) end($parts);
+    }
+
+    private function delete_orphaned_relations(\PDO $pdo, string $prefix): void
+    {
+        $statements = [
+            "DELETE q FROM {$prefix}feed_fetch_queue q LEFT JOIN {$prefix}feed_channels c ON q.channel_id = c.id WHERE c.id IS NULL",
+            "DELETE i FROM {$prefix}feed_items i LEFT JOIN {$prefix}feed_channels c ON i.channel_id = c.id WHERE c.id IS NULL",
+            "DELETE i FROM {$prefix}feed_items i LEFT JOIN {$prefix}feed_categories cat ON i.category_id = cat.id WHERE cat.id IS NULL",
+            "DELETE c FROM {$prefix}feed_channels c LEFT JOIN {$prefix}feed_categories cat ON c.category_id = cat.id WHERE cat.id IS NULL",
+        ];
+
+        foreach ($statements as $statement) {
+            try {
+                $pdo->exec($statement);
+            } catch (\Throwable $e) {
+                error_log('CMS Feed: Orphan cleanup failed – ' . $e->getMessage());
+            }
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────
@@ -347,6 +536,14 @@ final class CMS_Feed_Database
     {
         $db     = \CMS\Database::instance();
         $prefix = $db->prefix();
+        $channelIds = $this->get_channel_ids_by_category_ids([$id]);
+        $this->remove_channels_from_member_subscriptions($channelIds);
+
+        if ($channelIds !== []) {
+            $ph = implode(',', array_fill(0, count($channelIds), '?'));
+            $db->prepare("DELETE FROM {$prefix}feed_fetch_queue WHERE channel_id IN ({$ph})")->execute($channelIds);
+        }
+
         // Items und Channels löschen
         $db->prepare("DELETE FROM {$prefix}feed_items WHERE category_id = ?")->execute([$id]);
         $db->prepare("DELETE FROM {$prefix}feed_channels WHERE category_id = ?")->execute([$id]);
@@ -428,6 +625,8 @@ final class CMS_Feed_Database
     {
         $db     = \CMS\Database::instance();
         $prefix = $db->prefix();
+        $this->remove_channels_from_member_subscriptions([$id]);
+        $db->prepare("DELETE FROM {$prefix}feed_fetch_queue WHERE channel_id = ?")->execute([$id]);
         $db->prepare("DELETE FROM {$prefix}feed_items WHERE channel_id = ?")->execute([$id]);
         $db->prepare("DELETE FROM {$prefix}feed_channels WHERE id = ?")->execute([$id]);
     }
@@ -1068,6 +1267,127 @@ final class CMS_Feed_Database
         }
     }
 
+    /**
+     * @param array<int,int> $categoryIds
+     * @return array<int,int>
+     */
+    private function get_channel_ids_by_category_ids(array $categoryIds): array
+    {
+        $categoryIds = array_values(array_unique(array_filter(
+            array_map('intval', $categoryIds),
+            static fn (int $categoryId): bool => $categoryId > 0
+        )));
+
+        if ($categoryIds === []) {
+            return [];
+        }
+
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $ph     = implode(',', array_fill(0, count($categoryIds), '?'));
+        $stmt   = $db->prepare("SELECT id FROM {$prefix}feed_channels WHERE category_id IN ({$ph})");
+        $stmt->execute($categoryIds);
+
+        return array_values(array_unique(array_filter(
+            array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN) ?: []),
+            static fn (int $channelId): bool => $channelId > 0
+        )));
+    }
+
+    /**
+     * Entfernt gelöschte Kanäle aus persönlichen Member-Abos und Legacy-Zeilen,
+     * damit Deaktivieren/Löschen keine hängenden JSON-Referenzen hinterlässt.
+     *
+     * @param array<int,int> $channelIds
+     */
+    private function remove_channels_from_member_subscriptions(array $channelIds): void
+    {
+        $channelIds = array_values(array_unique(array_filter(
+            array_map('intval', $channelIds),
+            static fn (int $channelId): bool => $channelId > 0
+        )));
+
+        if ($channelIds === []) {
+            return;
+        }
+
+        $db     = \CMS\Database::instance();
+        $prefix = $db->prefix();
+        $ph     = implode(',', array_fill(0, count($channelIds), '?'));
+
+        try {
+            $db->prepare("DELETE FROM {$prefix}feed_subscriptions WHERE channel_id IN ({$ph}) OR feed_id IN ({$ph})")
+                ->execute(array_merge($channelIds, $channelIds));
+        } catch (\Throwable $e) {
+            error_log('CMS Feed: Legacy subscription cleanup failed – ' . $e->getMessage());
+        }
+
+        try {
+            $stmt = $db->prepare("SELECT id, channel_ids FROM {$prefix}feed_member_subscriptions");
+            $stmt->execute();
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            error_log('CMS Feed: Member subscription cleanup load failed – ' . $e->getMessage());
+            return;
+        }
+
+        $update = $db->prepare(
+            "UPDATE {$prefix}feed_member_subscriptions
+             SET channel_ids = ?, is_active = ?
+             WHERE id = ?"
+        );
+
+        foreach ($rows as $row) {
+            $decoded = json_decode((string) ($row['channel_ids'] ?? '[]'), true);
+            if (!is_array($decoded)) {
+                continue;
+            }
+
+            $current = array_values(array_unique(array_filter(
+                array_map('intval', $decoded),
+                static fn (int $channelId): bool => $channelId > 0
+            )));
+            $remaining = array_values(array_diff($current, $channelIds));
+
+            if ($remaining === $current) {
+                continue;
+            }
+
+            $update->execute([
+                json_encode($remaining, JSON_UNESCAPED_UNICODE) ?: '[]',
+                $remaining !== [] ? 1 : 0,
+                (int) ($row['id'] ?? 0),
+            ]);
+        }
+    }
+
+    public function drop_tables(): void
+    {
+        $db     = \CMS\Database::instance();
+        $pdo    = $db->getPdo();
+        $prefix = $db->prefix();
+
+        $tables = [
+            "{$prefix}feed_fetch_queue",
+            "{$prefix}feed_subscriptions",
+            "{$prefix}feed_member_subscriptions",
+            "{$prefix}feed_digests",
+            "{$prefix}feed_settings",
+            "{$prefix}feed_items",
+            "{$prefix}feed_channels",
+            "{$prefix}feed_categories",
+        ];
+
+        try {
+            $pdo->exec('SET FOREIGN_KEY_CHECKS=0');
+            foreach ($tables as $table) {
+                $pdo->exec("DROP TABLE IF EXISTS {$table}");
+            }
+        } finally {
+            $pdo->exec('SET FOREIGN_KEY_CHECKS=1');
+        }
+    }
+
     // ──────────────────────────────────────────────────────────────────────
     // Bulk-Operationen
     // ──────────────────────────────────────────────────────────────────────
@@ -1084,6 +1404,7 @@ final class CMS_Feed_Database
         $ids    = array_map('intval', $ids);
         $ph     = implode(',', array_fill(0, count($ids), '?'));
 
+        $this->remove_channels_from_member_subscriptions($ids);
         $db->prepare("DELETE FROM {$prefix}feed_items WHERE channel_id IN ({$ph})")->execute($ids);
         $db->prepare("DELETE FROM {$prefix}feed_fetch_queue WHERE channel_id IN ({$ph})")->execute($ids);
         $stmt = $db->prepare("DELETE FROM {$prefix}feed_channels WHERE id IN ({$ph})");
@@ -1103,6 +1424,7 @@ final class CMS_Feed_Database
         $ids    = array_map('intval', $ids);
         $ph     = implode(',', array_fill(0, count($ids), '?'));
 
+        $this->remove_channels_from_member_subscriptions($this->get_channel_ids_by_category_ids($ids));
         $db->prepare("DELETE FROM {$prefix}feed_items WHERE category_id IN ({$ph})")->execute($ids);
         $db->prepare("DELETE FROM {$prefix}feed_fetch_queue WHERE channel_id IN (SELECT id FROM {$prefix}feed_channels WHERE category_id IN ({$ph}))")->execute($ids);
         $db->prepare("DELETE FROM {$prefix}feed_channels WHERE category_id IN ({$ph})")->execute($ids);

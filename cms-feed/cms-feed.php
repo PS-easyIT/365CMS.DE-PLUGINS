@@ -3,7 +3,7 @@
  * Plugin Name: CMS Feed
  * Plugin URI: https://365network.de/cms-feed
  * Description: RSS-Feed-Aggregator mit Kategorie-Bereichen, Public Pages, Design-Einstellungen, Member-Feed-Abos und E-Mail-Digest
- * Version: 3.0.2
+ * Version: 3.0.3
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_FEED_VERSION',    '3.0.2');
+define('CMS_FEED_VERSION',    '3.0.3');
 define('CMS_FEED_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_FEED_PLUGIN_URL', '/plugins/cms-feed/');
 
@@ -57,10 +57,55 @@ if (!function_exists('cms_feed_substr')) {
     }
 }
 
+if (!function_exists('cms_feed_activate')) {
+    function cms_feed_activate(): void
+    {
+        if (!class_exists('CMS_Feed_Database')) {
+            return;
+        }
+
+        try {
+            CMS_Feed_Database::instance()->ensure_schema();
+        } catch (\Throwable $e) {
+            error_log('CMS Feed: Activation schema setup failed – ' . $e->getMessage());
+        }
+    }
+}
+
+if (!function_exists('cms_feed_deactivate')) {
+    function cms_feed_deactivate(): void
+    {
+        if (!class_exists('CMS_Feed_Database')) {
+            return;
+        }
+
+        try {
+            CMS_Feed_Database::instance()->release_stale_processing_tasks(5);
+        } catch (\Throwable $e) {
+            error_log('CMS Feed: Deactivation cleanup failed – ' . $e->getMessage());
+        }
+    }
+}
+
+if (!function_exists('cms_feed_uninstall')) {
+    function cms_feed_uninstall(): void
+    {
+        if (!class_exists('CMS_Feed_Database')) {
+            return;
+        }
+
+        try {
+            CMS_Feed_Database::instance()->drop_tables();
+        } catch (\Throwable $e) {
+            error_log('CMS Feed: Uninstall cleanup failed – ' . $e->getMessage());
+        }
+    }
+}
+
 final class CMS_Feed
 {
     private static ?self $instance = null;
-    private string $version = '3.0.2';
+    private string $version = '3.0.3';
     private string $plugin_dir;
     private string $plugin_url;
 
@@ -91,9 +136,12 @@ final class CMS_Feed
             'class-admin.php',
         ];
         foreach ($files as $file) {
-            if (file_exists($includes . $file)) {
-                require_once $includes . $file;
+            $path = $includes . $file;
+            if (!is_file($path)) {
+                throw new \RuntimeException('CMS Feed dependency missing: ' . $file);
             }
+
+            require_once $path;
         }
     }
 
@@ -126,13 +174,8 @@ final class CMS_Feed
 
     public function on_activation(string $plugin): void
     {
-        if ($plugin === 'cms-feed' && class_exists('CMS_Feed_Database')) {
-            try {
-                CMS_Feed_Database::instance()->create_tables();
-                CMS_Feed_Database::instance()->seed_defaults();
-            } catch (\Throwable $e) {
-                error_log('CMS Feed: Activation schema setup failed – ' . $e->getMessage());
-            }
+        if ($plugin === 'cms-feed') {
+            cms_feed_activate();
         }
     }
 

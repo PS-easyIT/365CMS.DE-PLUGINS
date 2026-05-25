@@ -4,6 +4,23 @@ Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
 ---
 
+## [3.0.3] – 2026-05-25
+
+### Behoben
+- Lifecycle-Callbacks `cms_feed_activate()`, `cms_feed_deactivate()` und `cms_feed_uninstall()` ergänzt, damit der Core-PluginManager Aktivierung, Deaktivierung und Uninstall ohne fehlende Callback- bzw. Method-Fehler ausführen kann.
+- Pflicht-Includes im Plugin-Bootstrap werden nicht mehr still übersprungen, sondern schlagen kontrolliert mit protokollierter RuntimeException fehl.
+- Datenbankschema-Migration ergänzt fehlende Spalten, Indexe und Foreign-Key-Constraints und bereinigt Orphan-Relationen vor FK-Erstellung.
+- `drop_tables()` für vollständigen Uninstall hinzugefügt und Löschroutinen für Bereiche/Kanäle um Queue- sowie Member-Abo-Cleanup erweitert.
+- Admin-POST-Handler normalisieren skalare Werte, Arrays, Enums und Farben zentral; manipulierte Array-Payloads in POST-Feldern verursachen keine PHP-8.4-TypeErrors mehr.
+- Public-Routen normalisieren Query-Parameter arraysicher und liefern bei Template-/DB-Ausnahmen gerenderte 500-Fallbacks statt White-Screen/Blank-200.
+- Mail-Digest-Testversand aktualisiert `last_sent_at` nicht mehr und prüft Zieladressen vor dem MailService-/Queue-Aufruf.
+
+### Hinzugefügt
+- Whitelabel-/Embed-Route `/{archive_slug}/embed` für das vorhandene Standalone-Template.
+- Explizite HTTP-Statuscodes für CSRF-Fehler (`403`), unbekannte Admin-Aktionen (`400`), fehlende Feed-Bereiche (`404`) und Public-/Template-Ausnahmen (`500`).
+
+---
+
 ## [3.0.2] – 2026-05-22
 
 ### Behoben
@@ -18,12 +35,8 @@ Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 ## [3.0.1] – 2026-05-17
 
 ### Geändert
-- Public-Archiv- und Kategorie-Routen normalisieren Slugs, Suchbegriffe und Pagination defensiv.
-- Admin-Formulare geben CSRF-Token im Attribut-Kontext escaped aus; Kanal-Site-URLs werden auf sichere `http`/`https`-Links ohne lokale/private Hosts begrenzt.
 - Feed-Card-Links und Bilder werden vor der Ausgabe nochmals gegen unsichere Schemes, Credentials und lokale/private Hosts geprüft.
 - Public-Templates nutzen explizites `ENT_QUOTES`/`UTF-8`-Escaping und textbasierte Such-/Badge-Controls für bessere Accessibility und weniger dekorative UI-Last.
-
----
 
 ## [1.3.6] – 2026-05-03
 

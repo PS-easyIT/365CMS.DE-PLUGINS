@@ -51,6 +51,11 @@ final class CMS_Feed_Admin
 
     public static function render_dispatch(): void
     {
+        if (!CMS\Auth::instance()->isAdmin()) {
+            CMS\Router::instance()->redirect('/login');
+            return;
+        }
+
         self::instance()->render_view(false);
     }
 
@@ -163,15 +168,20 @@ final class CMS_Feed_Admin
         // ── POST-Verarbeitung (VOR Token-Generierung, damit das alte Token geprüft wird) ──
         if ($schemaReady && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             try {
-                if (!$sec->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'cms_feed_admin')) {
+                if (!$sec->verifyToken($this->post_string('csrf_token'), 'cms_feed_admin')) {
+                    http_response_code(403);
                     $error = 'Sicherheitscheck fehlgeschlagen.';
                 } else {
                     $result = $this->handle_post($tab);
+                    if (isset($result['status'])) {
+                        http_response_code((int) $result['status']);
+                    }
                     $notice         = $result['notice'] ?? null;
                     $error          = $result['error']  ?? null;
                     $settingsSubTab = $result['stab']   ?? null;
                 }
             } catch (\Throwable $e) {
+                http_response_code(500);
                 $error = 'Die Aktion konnte nicht ausgeführt werden. Details wurden protokolliert.';
                 error_log('CMS Feed Admin: POST action failed – ' . $e->getMessage());
             }
@@ -328,7 +338,7 @@ final class CMS_Feed_Admin
     {
         unset($tab);
 
-        $action = (string) ($_POST['action'] ?? '');
+        $action = $this->post_string('action');
         $handlers = [
             'save_channel' => 'handle_save_channel_post',
             'delete_channel' => 'handle_delete_channel_post',
@@ -354,7 +364,7 @@ final class CMS_Feed_Admin
         ];
 
         if (!isset($handlers[$action])) {
-            return [];
+            return ['error' => 'Unbekannte Feed-Admin-Aktion.', 'status' => 400];
         }
 
         $handler = $handlers[$action];
@@ -364,10 +374,10 @@ final class CMS_Feed_Admin
 
     private function handle_save_channel_post(): array
     {
-        $name = sanitize_text_field($_POST['channel_name'] ?? '');
+        $name = $this->post_text('channel_name');
         $feedFetcher = CMS_Feed_RSS_Fetcher::instance();
-        $feedUrlValidation = $feedFetcher->validate_feed_url((string) ($_POST['feed_url'] ?? ''));
-        $catId = (int) ($_POST['category_id'] ?? 0);
+        $feedUrlValidation = $feedFetcher->validate_feed_url($this->post_string('feed_url'));
+        $catId = $this->post_int('category_id');
 
         if (empty($name) || $catId < 1) {
             return ['error' => 'Name, Feed-URL und Bereich sind erforderlich.'];
@@ -378,15 +388,15 @@ final class CMS_Feed_Admin
         }
 
         CMS_Feed_Database::instance()->save_channel([
-            'id'             => (int) ($_POST['channel_id'] ?? 0) ?: null,
+            'id'             => $this->post_int('channel_id') ?: null,
             'category_id'    => $catId,
             'name'           => $name,
             'feed_url'       => $feedUrlValidation['url'] ?? '',
-            'site_url'       => $this->sanitize_public_url((string) ($_POST['site_url'] ?? '')) ?: null,
-            'description'    => sanitize_text_field($_POST['channel_description'] ?? ''),
-            'is_active'      => !empty($_POST['is_active']) ? 1 : 0,
-            'fetch_interval' => max(5, min(1440, (int) ($_POST['fetch_interval'] ?? 60))),
-            'max_items'      => max(10, min(500, (int) ($_POST['max_items'] ?? 50))),
+            'site_url'       => $this->sanitize_public_url($this->post_string('site_url')) ?: null,
+            'description'    => $this->post_text('channel_description'),
+            'is_active'      => $this->post_bool('is_active') ? 1 : 0,
+            'fetch_interval' => max(5, min(1440, $this->post_int('fetch_interval', 60))),
+            'max_items'      => max(10, min(500, $this->post_int('max_items', 50))),
         ]);
 
         return ['notice' => 'Kanal gespeichert.'];
@@ -394,7 +404,7 @@ final class CMS_Feed_Admin
 
     private function handle_delete_channel_post(): array
     {
-        $id = (int) ($_POST['id'] ?? 0);
+        $id = $this->post_int('id');
         if ($id <= 0) {
             return ['error' => 'Ungültige Kanal-ID.'];
         }
@@ -405,8 +415,8 @@ final class CMS_Feed_Admin
 
     private function handle_save_category_post(): array
     {
-        $name = sanitize_text_field($_POST['cat_name'] ?? '');
-        $slug = sanitize_text_field($_POST['cat_slug'] ?? '');
+        $name = $this->post_text('cat_name');
+        $slug = $this->post_text('cat_slug');
 
         if (empty($name) || empty($slug)) {
             return ['error' => 'Name und Slug sind erforderlich.'];
@@ -418,15 +428,15 @@ final class CMS_Feed_Admin
         }
 
         CMS_Feed_Database::instance()->save_category([
-            'id'             => (int) ($_POST['cat_id'] ?? 0) ?: null,
+            'id'             => $this->post_int('cat_id') ?: null,
             'name'           => $name,
             'slug'           => $slug,
-            'description'    => sanitize_text_field($_POST['cat_description'] ?? ''),
-            'icon'           => cms_feed_substr(trim((string) ($_POST['cat_icon'] ?? '📰')), 0, 10),
-            'is_public'      => !empty($_POST['cat_is_public']) ? 1 : 0,
-            'sort_order'     => (int) ($_POST['cat_sort_order'] ?? 0),
-            'layout'         => in_array($_POST['cat_layout'] ?? '', ['grid', 'list', 'magazine'], true) ? $_POST['cat_layout'] : 'grid',
-            'items_per_page' => max(4, min(100, (int) ($_POST['cat_items_per_page'] ?? 20))),
+            'description'    => $this->post_text('cat_description'),
+            'icon'           => cms_feed_substr(trim($this->post_string('cat_icon', '📰')), 0, 10),
+            'is_public'      => $this->post_bool('cat_is_public') ? 1 : 0,
+            'sort_order'     => $this->post_int('cat_sort_order'),
+            'layout'         => $this->post_enum('cat_layout', ['grid', 'list', 'magazine'], 'grid'),
+            'items_per_page' => max(4, min(100, $this->post_int('cat_items_per_page', 20))),
         ]);
 
         return ['notice' => 'Bereich gespeichert.'];
@@ -434,7 +444,7 @@ final class CMS_Feed_Admin
 
     private function handle_delete_category_post(): array
     {
-        $id = (int) ($_POST['id'] ?? 0);
+        $id = $this->post_int('id');
         if ($id <= 0) {
             return ['error' => 'Ungültige Bereich-ID.'];
         }
@@ -445,7 +455,7 @@ final class CMS_Feed_Admin
 
     private function handle_fetch_now_post(): array
     {
-        $channelId = (int) ($_POST['channel_id'] ?? 0);
+        $channelId = $this->post_int('channel_id');
         $fetcher = CMS_Feed_RSS_Fetcher::instance();
 
         if ($channelId > 0) {
@@ -482,7 +492,7 @@ final class CMS_Feed_Admin
 
     private function handle_delete_item_post(): array
     {
-        $id = (int) ($_POST['id'] ?? 0);
+        $id = $this->post_int('id');
         if ($id <= 0) {
             return ['error' => 'Ungültige ID.'];
         }
@@ -493,25 +503,25 @@ final class CMS_Feed_Admin
 
     private function handle_save_digest_post(): array
     {
-        $name = sanitize_text_field($_POST['digest_name'] ?? '');
-        $email = filter_var($_POST['digest_email'] ?? '', FILTER_VALIDATE_EMAIL);
+        $name = $this->post_text('digest_name');
+        $email = filter_var($this->post_string('digest_email'), FILTER_VALIDATE_EMAIL);
 
         if (empty($name) || !$email) {
             return ['error' => 'Name und gültige E-Mail sind erforderlich.'];
         }
 
-        $catIds = array_map('intval', $_POST['digest_categories'] ?? []);
+        $catIds = array_values(array_filter(array_map('intval', $this->post_array('digest_categories')), static fn (int $catId): bool => $catId > 0));
         if (empty($catIds)) {
             return ['error' => 'Mindestens ein Bereich muss gewählt werden.'];
         }
 
         CMS_Feed_Database::instance()->save_digest([
-            'id'           => (int) ($_POST['digest_id'] ?? 0) ?: null,
+            'id'           => $this->post_int('digest_id') ?: null,
             'name'         => $name,
             'email'        => $email,
             'category_ids' => $catIds,
-            'frequency'    => max(1, min(4, (int) ($_POST['digest_frequency'] ?? 1))),
-            'is_active'    => !empty($_POST['digest_is_active']) ? 1 : 0,
+            'frequency'    => max(1, min(4, $this->post_int('digest_frequency', 1))),
+            'is_active'    => $this->post_bool('digest_is_active') ? 1 : 0,
         ]);
 
         return ['notice' => 'Digest gespeichert.'];
@@ -519,7 +529,7 @@ final class CMS_Feed_Admin
 
     private function handle_delete_digest_post(): array
     {
-        $id = (int) ($_POST['id'] ?? 0);
+        $id = $this->post_int('id');
         if ($id <= 0) {
             return ['error' => 'Ungültige ID.'];
         }
@@ -530,7 +540,7 @@ final class CMS_Feed_Admin
 
     private function handle_test_digest_post(): array
     {
-        $id = (int) ($_POST['digest_id'] ?? 0);
+        $id = $this->post_int('digest_id');
         if ($id <= 0) {
             return ['error' => 'Ungültige Digest-ID.'];
         }
@@ -546,16 +556,16 @@ final class CMS_Feed_Admin
     private function handle_save_settings_post(): array
     {
         CMS_Feed_Database::instance()->update_settings([
-            'archive_title'       => sanitize_text_field($_POST['archive_title'] ?? ''),
-            'archive_description' => sanitize_text_field($_POST['archive_description'] ?? ''),
-            'archive_slug'        => $this->sanitize_slug((string) ($_POST['archive_slug'] ?? 'feeds')) ?: 'feeds',
-            'per_page'            => (string) max(4, min(100, (int) ($_POST['per_page'] ?? 20))),
-            'open_in_new_tab'     => !empty($_POST['open_in_new_tab']) ? '1' : '0',
-            'show_source'         => !empty($_POST['show_source']) ? '1' : '0',
-            'show_date'           => !empty($_POST['show_date']) ? '1' : '0',
-            'show_image'          => !empty($_POST['show_image']) ? '1' : '0',
-            'show_excerpt'        => !empty($_POST['show_excerpt']) ? '1' : '0',
-            'excerpt_length'      => (string) max(50, min(500, (int) ($_POST['excerpt_length'] ?? 160))),
+            'archive_title'       => $this->post_text('archive_title'),
+            'archive_description' => $this->post_text('archive_description'),
+            'archive_slug'        => $this->sanitize_slug($this->post_string('archive_slug', 'feeds')) ?: 'feeds',
+            'per_page'            => (string) max(4, min(100, $this->post_int('per_page', 20))),
+            'open_in_new_tab'     => $this->post_bool('open_in_new_tab') ? '1' : '0',
+            'show_source'         => $this->post_bool('show_source') ? '1' : '0',
+            'show_date'           => $this->post_bool('show_date') ? '1' : '0',
+            'show_image'          => $this->post_bool('show_image') ? '1' : '0',
+            'show_excerpt'        => $this->post_bool('show_excerpt') ? '1' : '0',
+            'excerpt_length'      => (string) max(50, min(500, $this->post_int('excerpt_length', 160))),
         ]);
 
         return ['notice' => 'Einstellungen gespeichert.', 'stab' => 'general'];
@@ -564,15 +574,15 @@ final class CMS_Feed_Admin
     private function handle_save_design_post(): array
     {
         CMS_Feed_Database::instance()->update_settings([
-            'color_primary'     => preg_match('/^#[0-9A-Fa-f]{6}$/', $_POST['color_primary'] ?? '') ? $_POST['color_primary'] : '#0891b2',
-            'color_accent'      => preg_match('/^#[0-9A-Fa-f]{6}$/', $_POST['color_accent'] ?? '') ? $_POST['color_accent'] : '#e0f2fe',
-            'color_hdr_from'    => preg_match('/^#[0-9A-Fa-f]{6}$/', $_POST['color_hdr_from'] ?? '') ? $_POST['color_hdr_from'] : '#0c4a6e',
-            'color_hdr_to'      => preg_match('/^#[0-9A-Fa-f]{6}$/', $_POST['color_hdr_to'] ?? '') ? $_POST['color_hdr_to'] : '#0891b2',
-            'color_hdr_title'   => preg_match('/^#[0-9A-Fa-f]{6}$/', $_POST['color_hdr_title'] ?? '') ? $_POST['color_hdr_title'] : '#ffffff',
-            'color_card_bg'     => preg_match('/^#[0-9A-Fa-f]{6}$/', $_POST['color_card_bg'] ?? '') ? $_POST['color_card_bg'] : '#ffffff',
-            'color_card_border' => preg_match('/^#[0-9A-Fa-f]{6}$/', $_POST['color_card_border'] ?? '') ? $_POST['color_card_border'] : '#e2e8f0',
-            'border_radius'     => (string) max(0, min(24, (int) ($_POST['border_radius'] ?? 10))),
-            'grid_columns'      => in_array($_POST['grid_columns'] ?? '', ['auto', '2', '3', '4'], true) ? $_POST['grid_columns'] : 'auto',
+            'color_primary'     => $this->post_color('color_primary', '#0891b2'),
+            'color_accent'      => $this->post_color('color_accent', '#e0f2fe'),
+            'color_hdr_from'    => $this->post_color('color_hdr_from', '#0c4a6e'),
+            'color_hdr_to'      => $this->post_color('color_hdr_to', '#0891b2'),
+            'color_hdr_title'   => $this->post_color('color_hdr_title', '#ffffff'),
+            'color_card_bg'     => $this->post_color('color_card_bg', '#ffffff'),
+            'color_card_border' => $this->post_color('color_card_border', '#e2e8f0'),
+            'border_radius'     => (string) max(0, min(24, $this->post_int('border_radius', 10))),
+            'grid_columns'      => $this->post_enum('grid_columns', ['auto', '2', '3', '4'], 'auto'),
         ]);
 
         return ['notice' => 'Design gespeichert.', 'stab' => 'design'];
@@ -581,10 +591,10 @@ final class CMS_Feed_Admin
     private function handle_save_digest_settings_post(): array
     {
         CMS_Feed_Database::instance()->update_settings([
-            'digest_from_name'  => sanitize_text_field($_POST['digest_from_name'] ?? ''),
-            'digest_from_email' => filter_var($_POST['digest_from_email'] ?? '', FILTER_VALIDATE_EMAIL) ?: '',
-            'digest_subject'    => sanitize_text_field($_POST['digest_subject'] ?? ''),
-            'digest_max_items'  => (string) max(5, min(100, (int) ($_POST['digest_max_items'] ?? 20))),
+            'digest_from_name'  => $this->post_text('digest_from_name'),
+            'digest_from_email' => filter_var($this->post_string('digest_from_email'), FILTER_VALIDATE_EMAIL) ?: '',
+            'digest_subject'    => $this->post_text('digest_subject'),
+            'digest_max_items'  => (string) max(5, min(100, $this->post_int('digest_max_items', 20))),
         ]);
 
         return ['notice' => 'Digest-Einstellungen gespeichert.'];
@@ -592,7 +602,7 @@ final class CMS_Feed_Admin
 
     private function handle_cleanup_post(): array
     {
-        $days = max(7, min(365, (int) ($_POST['cleanup_days'] ?? 7)));
+        $days = max(7, min(365, $this->post_int('cleanup_days', 7)));
         $deleted = CMS_Feed_Database::instance()->cleanup_old_items($days);
 
         return ['notice' => $deleted . ' alte Beiträge gelöscht.'];
@@ -600,12 +610,12 @@ final class CMS_Feed_Admin
 
     private function handle_import_catalog_post(): array
     {
-        $catalogKey = sanitize_text_field($_POST['catalog_key'] ?? '');
+        $catalogKey = $this->post_text('catalog_key');
         $catalog = CMS_Feed_Catalog::instance();
         $catData = $catalog->get_category($catalogKey);
-        $importMode = ($_POST['catalog_import_mode'] ?? 'all') === 'selected' ? 'selected' : 'all';
+        $importMode = $this->post_string('catalog_import_mode', 'all') === 'selected' ? 'selected' : 'all';
         $selectedFeedKeys = array_values(array_unique(array_filter(
-            array_map('intval', $_POST['catalog_feeds'] ?? []),
+            array_map('intval', $this->post_array('catalog_feeds')),
             static fn (int $feedKey): bool => $feedKey >= 0
         )));
 
@@ -618,7 +628,7 @@ final class CMS_Feed_Admin
         }
 
         $db = CMS_Feed_Database::instance();
-        $targetCatId = (int) ($_POST['target_category_id'] ?? 0);
+        $targetCatId = $this->post_int('target_category_id');
         if ($targetCatId < 1) {
             $slug = $this->sanitize_slug((string) $catData['slug']);
             $targetCatId = $db->save_category([
@@ -728,7 +738,7 @@ final class CMS_Feed_Admin
 
     private function handle_item_toggle_post(string $type): array
     {
-        $id = (int) ($_POST['id'] ?? 0);
+        $id = $this->post_int('id');
         if ($id <= 0) {
             return ['error' => 'Ungültige ID.'];
         }
@@ -759,12 +769,69 @@ final class CMS_Feed_Admin
      */
     private function get_bulk_ids_from_post(string $label): array
     {
-        $ids = array_values(array_filter(array_map('intval', $_POST['bulk_ids'] ?? []), static fn (int $id): bool => $id > 0));
+        $ids = array_values(array_filter(array_map('intval', $this->post_array('bulk_ids')), static fn (int $id): bool => $id > 0));
         if ($ids === []) {
             return ['error' => 'Keine ' . $label . ' ausgewählt.'];
         }
 
         return ['ids' => $ids];
+    }
+
+    private function post_string(string $key, string $default = ''): string
+    {
+        $value = $_POST[$key] ?? $default;
+
+        return is_scalar($value) ? (string) $value : $default;
+    }
+
+    private function post_int(string $key, int $default = 0): int
+    {
+        $value = $_POST[$key] ?? $default;
+
+        return is_scalar($value) ? (int) $value : $default;
+    }
+
+    private function post_bool(string $key): bool
+    {
+        $value = $_POST[$key] ?? null;
+        if (!is_scalar($value)) {
+            return false;
+        }
+
+        return !in_array(strtolower(trim((string) $value)), ['', '0', 'false', 'off', 'no'], true);
+    }
+
+    private function post_array(string $key): array
+    {
+        $value = $_POST[$key] ?? [];
+
+        return is_array($value) ? $value : [];
+    }
+
+    private function post_text(string $key, string $default = ''): string
+    {
+        $value = $this->post_string($key, $default);
+
+        return function_exists('sanitize_text_field')
+            ? sanitize_text_field($value)
+            : trim(strip_tags($value));
+    }
+
+    private function post_color(string $key, string $default): string
+    {
+        $value = $this->post_string($key, $default);
+
+        return preg_match('/^#[0-9A-Fa-f]{6}$/', $value) === 1 ? $value : $default;
+    }
+
+    /**
+     * @param array<int,string> $allowed
+     */
+    private function post_enum(string $key, array $allowed, string $default): string
+    {
+        $value = $this->post_string($key, $default);
+
+        return in_array($value, $allowed, true) ? $value : $default;
     }
 
     private function sanitize_slug(string $slug): string

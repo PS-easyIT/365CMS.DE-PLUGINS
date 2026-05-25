@@ -4,10 +4,10 @@
 
 ## Aktueller Stand
 
-- Version: `3.0.2`
-- Release: `2026-05-22`
+- Version: `3.0.3`
+- Release: `2026-05-25`
 - Kompatibilität laut Manifest: `365CMS >= 3.0.0`, `PHP >= 8.4`
-- Aktueller Fix-Schwerpunkt: Feed-Admin-Views sind gegen PHP-8.4-TypeErrors bei Zahlen, Datumswerten, Query-Parametern und JSON-Payloads gehärtet.
+- Aktueller Fix-Schwerpunkt: Audit-Härtung für Lifecycle/Uninstall, Schema-Migrationen, arraysichere Admin-POST-Verarbeitung und gerenderte Public-Fehlerseiten.
 
 ## Features
 
@@ -24,7 +24,7 @@
 - **Featured & Hidden** – Beiträge hervorheben oder ausblenden
 - **Auto-Cleanup** – Alte Beiträge automatisch stündlich auf 7 Tage begrenzen oder manuell entfernen
 - **Theme-Override** – Templates können im aktiven Theme überschrieben werden
-- **Whitelabel** – Standalone-Seite ohne CMS-Theme für Einbettung
+- **Whitelabel** – Standalone-Seite ohne CMS-Theme für Einbettung unter `/{archive_slug}/embed`
 
 ## Schnellstart
 
@@ -38,7 +38,7 @@
 
 ```
 cms-feed/
-├── cms-feed.php                    # Hauptdatei (v3.0.2)
+├── cms-feed.php                    # Hauptdatei (v3.0.3)
 ├── update.json                     # Plugin-Manifest
 ├── includes/
 │   ├── class-database.php          # DB-Tabellen + CRUD (659 Zeilen)
@@ -100,6 +100,8 @@ cms-feed/
 - Feed-Digests und Member-Abo-Mails nutzen den zentralen MailService bzw. die Mail-Queue statt direktem `mail()`, damit SMTP/OAuth-Konfiguration, Retry-Backoff und Mail-Logs greifen
 - Feed-Beiträge älter als 7 Tage werden stündlich automatisch bereinigt
 - Seit `3.0.2` normalisiert die Admin-View gemischte Datenbank- und Query-Werte vor strikten PHP-8.4-Formatter-Aufrufen (`number_format()`, `date()`, `rawurlencode()`), damit manipulierte Parameter wie `q[]`, `cat[]`, `page[]` oder defekte UTF-8-Payloads keinen 500er im Feed-Admin mehr auslösen.
+- Seit `3.0.3` normalisieren auch alle Admin-POST-Handler skalare Werte und Arrays zentral, setzen bei CSRF-/Bad-Action-/Serverfehlern passende HTTP-Codes und entfernen beim Kanal-/Bereich-Löschen Queue- sowie Member-Abo-Referenzen.
+- Die Whitelabel-/Embed-Ansicht ist über `/{archive_slug}/embed` erreichbar und nutzt dieselben Public-Assets wie das Archiv.
 
 ## Systemanforderungen
 

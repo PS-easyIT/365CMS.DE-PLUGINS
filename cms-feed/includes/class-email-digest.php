@@ -62,7 +62,7 @@ final class CMS_Feed_Email_Digest
     /**
      * Einen einzelnen Digest versenden.
      */
-    public function send_digest(array $digest): bool
+    public function send_digest(array $digest, bool $markSent = true): bool
     {
         $db = CMS_Feed_Database::instance();
         $s  = $db->get_settings();
@@ -87,7 +87,9 @@ final class CMS_Feed_Email_Digest
 
         if (empty($allItems)) {
             // Keine neuen Items, trotzdem als gesendet markieren
-            $db->update_digest_sent((int) $digest['id']);
+            if ($markSent) {
+                $db->update_digest_sent((int) $digest['id']);
+            }
             return true;
         }
 
@@ -114,7 +116,7 @@ final class CMS_Feed_Email_Digest
             $fromEmail
         );
 
-        if ($sent) {
+        if ($sent && $markSent) {
             $db->update_digest_sent((int) $digest['id']);
         }
 
@@ -193,6 +195,10 @@ HTML;
      */
     private function send_email(string $to, string $subject, string $html, string $fromName, string $fromEmail): bool
     {
+        if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
         $headers = [
             'X-365CMS-Source' => 'cms-feed-digest',
             'X-365CMS-Test-Source' => 'cms-feed-digest',
@@ -287,15 +293,9 @@ HTML;
             return false;
         }
 
-        // last_sent_at temporär auf NULL setzen für Test
-        $original = $digest['last_sent_at'];
         $digest['last_sent_at'] = null;
 
-        $result = $this->send_digest($digest);
-
-        // last_sent_at nicht aktualisieren bei Testversand – ist bereits in send_digest passiert
-
-        return $result;
+        return $this->send_digest($digest, false);
     }
 
     private function send_member_subscription(array $subscription, \DateTimeImmutable $now): bool

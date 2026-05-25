@@ -32,7 +32,21 @@
 | GET/POST | `/admin/feeds` | `CMS_Feed_Admin::admin_page()` |
 | GET/POST | `/admin/plugins/feeds/feeds` | `CMS_Feed_Admin::render_dispatch()` via `cms_admin_menu` / `add_menu_page()` |
 | GET | `/{archive_slug}` | `CMS_Feed_Public_Controller::route_archive()` |
+| GET | `/{archive_slug}/embed` | `CMS_Feed_Public_Controller::route_whitelabel()` |
+| GET | `/feed/:catSlug` | `CMS_Feed_Public_Controller::route_category()` |
 | GET | `/{archive_slug}/:catSlug` | `CMS_Feed_Public_Controller::route_category()` |
+
+Seit `3.0.3` normalisieren die Public-Routen Query-Parameter arraysicher und liefern bei Template-/DB-Ausnahmen eine gerenderte 500-Fehlerseite. Fehlende oder nicht öffentliche Bereiche antworten mit `404`.
+
+### Plugin-Lifecycle
+
+**Registriert über Core-PluginManager-Konventionen:** freie Funktionen in `cms-feed.php`
+
+| Funktion | Zeitpunkt | Verhalten |
+|----------|-----------|-----------|
+| `cms_feed_activate()` | Aktivierung | Lädt Abhängigkeiten, erstellt/migriert Tabellen, ergänzt Indexe/FKs und seedet Defaults. |
+| `cms_feed_deactivate()` | Deaktivierung | Gibt hängen gebliebene `processing`-Queue-Tasks frei. |
+| `cms_feed_uninstall()` | Plugin-Löschung | Ruft `CMS_Feed_Database::drop_tables()` auf und entfernt Plugin-Tabellen in FK-sicherer Reihenfolge. |
 
 ### cms_admin_menu
 
@@ -119,7 +133,7 @@ Werden über `CMS_Feed::inject_design_tokens()` als `:root`-Variablen injiziert:
 
 ## POST-Actions (Admin-Backend)
 
-Alle POST-Actions werden in `CMS_Feed_Admin::handle_post()` verarbeitet und erfordern ein gültiges CSRF-Token (`cms_feed_admin`).
+Alle POST-Actions werden in `CMS_Feed_Admin::handle_post()` verarbeitet und erfordern ein gültiges CSRF-Token (`cms_feed_admin`). Seit `3.0.3` werden alle POST-Felder zentral arraysicher normalisiert; ungültige Tokens setzen `403`, unbekannte Aktionen `400` und interne Fehler `500`.
 
 | Action | Tab | Beschreibung |
 |--------|-----|-------------|

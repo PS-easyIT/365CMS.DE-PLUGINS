@@ -229,3 +229,14 @@ feed_member_subscriptions.channel_ids ──── N:M feed_channels (JSON)
 - Beim Löschen eines **Kanals** werden alle zugehörigen **Beiträge** und **Queue-Einträge** kaskadierend gelöscht.
 - Der **Cleanup** löscht Beiträge älter als X Tage, behält aber Featured-Beiträge.
 - Die **Queue** wird automatisch bereinigt: erledigte/fehlgeschlagene Tasks älter als 7 Tage werden per Cron entfernt.
+
+## Migration & Uninstall
+
+Seit `3.0.3` führt `CMS_Feed_Database::ensure_schema()` neben der Tabellenerstellung auch eine aktuelle Schema-Migration aus:
+
+- fehlende Spalten und Indexe werden nachgetragen,
+- Orphan-Datensätze in `feed_items`, `feed_channels` und `feed_fetch_queue` werden vor FK-Erstellung entfernt,
+- Foreign Keys werden – soweit die Ziel-Datenbank sie akzeptiert – für `feed_channels.category_id`, `feed_items.channel_id`, `feed_items.category_id` und `feed_fetch_queue.channel_id` ergänzt,
+- ältere Installationen bleiben lauffähig, auch wenn ein einzelner FK wegen bestehender Altlasten nur protokolliert und nicht angelegt werden kann.
+
+`CMS_Feed_Database::drop_tables()` entfernt beim Plugin-Uninstall die Tabellen in FK-sicherer Reihenfolge: Queue, Legacy-/Member-Abos, Digests, Settings, Items, Channels, Categories.
