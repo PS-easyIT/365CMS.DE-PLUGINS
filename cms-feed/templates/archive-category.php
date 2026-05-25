@@ -76,9 +76,9 @@ $newTab             = !empty($settings['open_in_new_tab']);
             $isMagazineHero = ($layout === 'magazine' && $isFirst);
         ?>
         <?php if ($isMagazineHero): ?>
-            <?php include CMS_Feed_Template_Loader::instance()->locate_template('feed-card.php'); ?>
+            <?php CMS_Feed_Template_Loader::instance()->get_template_part('feed-card', '', ['item' => $item, 'settings' => $settings, 'isMagazineHero' => true]); ?>
         <?php else: ?>
-            <?php include CMS_Feed_Template_Loader::instance()->locate_template('feed-card.php'); ?>
+            <?php CMS_Feed_Template_Loader::instance()->get_template_part('feed-card', '', ['item' => $item, 'settings' => $settings, 'isMagazineHero' => false]); ?>
         <?php endif; ?>
         <?php
             $isFirst = false;

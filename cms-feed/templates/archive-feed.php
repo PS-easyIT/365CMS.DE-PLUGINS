@@ -82,7 +82,7 @@ $newTab                = !empty($settings['open_in_new_tab']);
     <?php else: ?>
     <div class="fd-grid">
         <?php foreach ($items as $item): ?>
-        <?php include CMS_Feed_Template_Loader::instance()->locate_template('feed-card.php'); ?>
+        <?php CMS_Feed_Template_Loader::instance()->get_template_part('feed-card', '', ['item' => $item, 'settings' => $settings]); ?>
         <?php endforeach; ?>
     </div>
     <?php endif; ?>
