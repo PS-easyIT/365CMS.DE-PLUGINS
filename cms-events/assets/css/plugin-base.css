@@ -1,1 +1,251 @@
-/* ==========================================================================\n   PHINIT plugin-base.css\n   Normative Basis für Public-Plugin-Templates im PHINIT-Theme.\n   ========================================================================== */\n\n:root {\n  --phinit-color-bg: #dde6f0;\n  --phinit-color-surface: #ffffff;\n  --phinit-color-surface-alt: #1b2a44;\n  --phinit-color-ink: #1a2233;\n  --phinit-color-ink-secondary: #5a6678;\n  --phinit-color-ink-on-dark: #e8edf5;\n  --phinit-color-border: #dde3ec;\n  --phinit-color-accent: #f5a623;\n  --phinit-color-accent-ink: #1a2233;\n  --phinit-color-link: #1f5fa8;\n  --phinit-color-success: #3b6d11;\n  --phinit-color-warning: #854f0b;\n  --phinit-color-danger: #a32d2d;\n  --phinit-font-display: 'Space Grotesk', system-ui, -apple-system, sans-serif;\n  --phinit-font-body: 'Inter', system-ui, -apple-system, sans-serif;\n  --phinit-font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;\n  --phinit-text-xs: 0.75rem;\n  --phinit-text-sm: 0.8125rem;\n  --phinit-text-base: 0.9375rem;\n  --phinit-text-lg: 1.0625rem;\n  --phinit-text-h3: 1.25rem;\n  --phinit-text-h2: 1.5rem;\n  --phinit-text-h1: 1.875rem;\n  --phinit-leading-body: 1.7;\n  --phinit-leading-tight: 1.25;\n  --phinit-space-1: 4px;\n  --phinit-space-2: 8px;\n  --phinit-space-3: 12px;\n  --phinit-space-4: 16px;\n  --phinit-space-5: 24px;\n  --phinit-space-6: 32px;\n  --phinit-space-8: 48px;\n  --phinit-space-10: 64px;\n  --phinit-radius-sm: 6px;\n  --phinit-radius-md: 10px;\n  --phinit-shadow-card: 0 1px 2px rgba(20, 34, 68, 0.06);\n  --phinit-shadow-raised: 0 4px 16px rgba(20, 34, 68, 0.10);\n  --phinit-content-max: 68ch;\n  --phinit-transition: 0.2s ease;\n}\n\n.phinit-plugin {\n  max-width: 100%;\n  overflow-wrap: break-word;\n  color: var(--phinit-color-ink);\n  font-family: var(--phinit-font-body);\n  font-size: var(--phinit-text-base);\n  line-height: var(--phinit-leading-body);\n  -webkit-font-smoothing: antialiased;\n}\n\n.phinit-plugin *,\n.phinit-plugin *::before,\n.phinit-plugin *::after { box-sizing: border-box; }\n\n.phinit-plugin .phinit-prose { max-width: var(--phinit-content-max); }\n.phinit-plugin .phinit-prose p,\n.phinit-plugin .phinit-prose ul,\n.phinit-plugin .phinit-prose ol { margin: 0 0 var(--phinit-space-4); }\n\n.phinit-plugin a { color: var(--phinit-color-link); text-decoration: none; }\n.phinit-plugin a:hover { text-decoration: underline; }\n\n.phinit-plugin h1,\n.phinit-plugin h2,\n.phinit-plugin h3 {\n  margin: 0 0 var(--phinit-space-4);\n  color: var(--phinit-color-ink);\n  font-family: var(--phinit-font-display);\n  font-weight: 500;\n  line-height: var(--phinit-leading-tight);\n}\n.phinit-plugin h1 { font-size: var(--phinit-text-h1); }\n.phinit-plugin h2 { font-size: var(--phinit-text-h2); }\n.phinit-plugin h3 { font-size: var(--phinit-text-h3); }\n\n.phinit-plugin .phinit-overline {\n  margin: 0 0 var(--phinit-space-5);\n  padding-bottom: var(--phinit-space-2);\n  border-bottom: 1px solid var(--phinit-color-border);\n  color: var(--phinit-color-ink-secondary);\n  font-size: var(--phinit-text-xs);\n  font-weight: 500;\n  letter-spacing: 0.06em;\n  text-transform: uppercase;\n}\n\n.phinit-plugin > * + * { margin-top: var(--phinit-space-8); }\n\n.phinit-card {\n  padding: var(--phinit-space-5);\n  background: var(--phinit-color-surface);\n  border: 1px solid var(--phinit-color-border);\n  border-radius: var(--phinit-radius-md);\n  box-shadow: var(--phinit-shadow-card);\n}\n.phinit-card--accent { border-left: 3px solid var(--phinit-color-accent); }\n.phinit-card--success { border-left: 3px solid var(--phinit-color-success); }\n.phinit-card--warning { border-left: 3px solid var(--phinit-color-warning); }\n.phinit-card--danger { border-left: 3px solid var(--phinit-color-danger); }\n.phinit-card .phinit-card { padding: var(--phinit-space-3) 0; border-width: 0 0 0 3px; border-radius: 0; box-shadow: none; }\n\n.phinit-btn {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--phinit-space-2);\n  min-height: 44px;\n  padding: var(--phinit-space-3) var(--phinit-space-5);\n  border: 1px solid transparent;\n  border-radius: var(--phinit-radius-sm);\n  font-family: var(--phinit-font-body);\n  font-size: var(--phinit-text-base);\n  font-weight: 500;\n  text-decoration: none;\n  cursor: pointer;\n  transition: background var(--phinit-transition), border-color var(--phinit-transition), filter var(--phinit-transition);\n}\n.phinit-btn:active { transform: scale(0.98); }\n.phinit-btn--primary { background: var(--phinit-color-accent); color: var(--phinit-color-accent-ink); }\n.phinit-btn--primary:hover { filter: brightness(0.95); text-decoration: none; }\n.phinit-btn--secondary { background: transparent; border-color: var(--phinit-color-border); color: var(--phinit-color-ink); }\n.phinit-btn--secondary:hover { background: var(--phinit-color-bg); border-color: var(--phinit-color-accent); text-decoration: none; }\n.phinit-btn--link { min-height: auto; padding: var(--phinit-space-2) 0; background: none; border: none; color: var(--phinit-color-link); }\n.phinit-btn--link .phinit-arrow { display: inline-block; transition: transform var(--phinit-transition); }\n.phinit-btn--link:hover { text-decoration: none; }\n.phinit-btn--link:hover .phinit-arrow { transform: translateX(4px); }\n\n.phinit-field { margin-bottom: var(--phinit-space-4); }\n.phinit-field label { display: block; margin-bottom: var(--phinit-space-2); color: var(--phinit-color-ink-secondary); font-size: var(--phinit-text-sm); }\n.phinit-required { color: var(--phinit-color-ink-secondary); font-weight: 400; }\n.phinit-input,\n.phinit-select,\n.phinit-textarea {\n  width: 100%;\n  padding: var(--phinit-space-3);\n  color: var(--phinit-color-ink);\n  background: var(--phinit-color-surface);\n  border: 1px solid var(--phinit-color-border);\n  border-radius: var(--phinit-radius-sm);\n  font-family: var(--phinit-font-body);\n  font-size: var(--phinit-text-base);\n}\n.phinit-input:focus,\n.phinit-select:focus,\n.phinit-textarea:focus { outline: 2px solid var(--phinit-color-accent); outline-offset: 1px; }\n\n.phinit-table { width: 100%; border-collapse: collapse; font-size: var(--phinit-text-sm); }\n.phinit-table th { padding: var(--phinit-space-2) var(--phinit-space-3); border-bottom: 1px solid var(--phinit-color-border); color: var(--phinit-color-ink-secondary); font-size: var(--phinit-text-xs); font-weight: 500; letter-spacing: 0.04em; text-align: left; text-transform: uppercase; }\n.phinit-table td { padding: var(--phinit-space-3); border-bottom: 0.5px solid var(--phinit-color-border); vertical-align: top; }\n.phinit-table tr:last-child td { border-bottom: none; }\n.phinit-table tbody tr:hover td { background: var(--phinit-color-bg); }\n.phinit-table .phinit-num { text-align: right; font-variant-numeric: tabular-nums; }\n.phinit-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }\n\n.phinit-note {\n  padding: var(--phinit-space-3) var(--phinit-space-4);\n  color: var(--phinit-color-ink);\n  background: var(--phinit-color-surface);\n  border: 1px solid var(--phinit-color-border);\n  border-left-width: 3px;\n  border-radius: var(--phinit-radius-sm);\n  font-size: var(--phinit-text-sm);\n}\n.phinit-note--info { border-left-color: var(--phinit-color-link); }\n.phinit-note--success { border-left-color: var(--phinit-color-success); }\n.phinit-note--warning { border-left-color: var(--phinit-color-warning); }\n.phinit-note--danger { border-left-color: var(--phinit-color-danger); }\n\n.phinit-steps { display: flex; gap: var(--phinit-space-5); margin-bottom: var(--phinit-space-6); border-bottom: 1px solid var(--phinit-color-border); }\n.phinit-step { position: relative; padding: 0 0 var(--phinit-space-3); color: var(--phinit-color-ink-secondary); background: none; border: none; font-size: var(--phinit-text-sm); cursor: pointer; }\n.phinit-step::after { content: ''; position: absolute; left: 0; bottom: -1px; width: 0; height: 2px; background: var(--phinit-color-accent); transition: width var(--phinit-transition); }\n.phinit-step[aria-current='step'] { color: var(--phinit-color-ink); font-weight: 500; }\n.phinit-step[aria-current='step']::after { width: 100%; }\n\n.phinit-result { padding: var(--phinit-space-5); background: var(--phinit-color-surface); border: 1px solid var(--phinit-color-border); border-radius: var(--phinit-radius-md); }\n.phinit-result__value { color: var(--phinit-color-ink); font-family: var(--phinit-font-display); font-size: var(--phinit-text-h1); font-weight: 600; }\n.phinit-result__caption { margin-top: var(--phinit-space-2); color: var(--phinit-color-ink-secondary); font-size: var(--phinit-text-sm); }\n.phinit-empty-state { padding: var(--phinit-space-5); border: 1px solid var(--phinit-color-border); border-radius: var(--phinit-radius-md); }\n\n@media (max-width: 768px) {\n  .phinit-plugin { font-size: var(--phinit-text-base); }\n  .phinit-grid { grid-template-columns: 1fr !important; }\n  .phinit-steps { overflow-x: auto; -webkit-overflow-scrolling: touch; }\n  .phinit-btn { width: 100%; justify-content: center; }\n  .phinit-btn--link { width: auto; }\n}\n\n@media (prefers-reduced-motion: reduce) {\n  .phinit-plugin *,\n  .phinit-plugin *::before,\n  .phinit-plugin *::after { transition: none !important; animation: none !important; }\n  .phinit-btn:active { transform: none; }\n  .phinit-btn--link:hover .phinit-arrow { transform: none; }\n}\n
+/* ==========================================================================
+   PHINIT plugin-base.css
+   Normative Basis für Public-Plugin-Templates im PHINIT-Theme.
+   ========================================================================== */
+
+:root {
+  --phinit-color-bg: #dde6f0;
+  --phinit-color-surface: #ffffff;
+  --phinit-color-surface-alt: #1b2a44;
+  --phinit-color-ink: #1a2233;
+  --phinit-color-ink-secondary: #5a6678;
+  --phinit-color-ink-on-dark: #e8edf5;
+  --phinit-color-border: #dde3ec;
+  --phinit-color-accent: #f5a623;
+  --phinit-color-accent-ink: #1a2233;
+  --phinit-color-link: #1f5fa8;
+  --phinit-color-success: #3b6d11;
+  --phinit-color-warning: #854f0b;
+  --phinit-color-danger: #a32d2d;
+  --phinit-font-display: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --phinit-font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --phinit-font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+  --phinit-text-xs: 0.75rem;
+  --phinit-text-sm: 0.8125rem;
+  --phinit-text-base: 0.9375rem;
+  --phinit-text-lg: 1.0625rem;
+  --phinit-text-h3: 1.25rem;
+  --phinit-text-h2: 1.5rem;
+  --phinit-text-h1: 1.875rem;
+  --phinit-leading-body: 1.7;
+  --phinit-leading-tight: 1.25;
+  --phinit-space-1: 4px;
+  --phinit-space-2: 8px;
+  --phinit-space-3: 12px;
+  --phinit-space-4: 16px;
+  --phinit-space-5: 24px;
+  --phinit-space-6: 32px;
+  --phinit-space-8: 48px;
+  --phinit-space-10: 64px;
+  --phinit-radius-sm: 6px;
+  --phinit-radius-md: 10px;
+  --phinit-shadow-card: 0 1px 2px rgba(20, 34, 68, 0.06);
+  --phinit-shadow-raised: 0 4px 16px rgba(20, 34, 68, 0.10);
+  --phinit-content-max: 68ch;
+  --phinit-transition: 0.2s ease;
+}
+
+.phinit-plugin {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  color: var(--phinit-color-ink);
+  font-family: var(--phinit-font-body);
+  font-size: var(--phinit-text-base);
+  line-height: var(--phinit-leading-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.phinit-plugin *,
+.phinit-plugin *::before,
+.phinit-plugin *::after {
+  box-sizing: border-box;
+}
+
+.phinit-plugin .phinit-prose {
+  max-width: var(--phinit-content-max);
+}
+
+.phinit-plugin .phinit-prose p,
+.phinit-plugin .phinit-prose ul,
+.phinit-plugin .phinit-prose ol {
+  margin: 0 0 var(--phinit-space-4);
+}
+
+.phinit-plugin a {
+  color: var(--phinit-color-link);
+  text-decoration: none;
+}
+
+.phinit-plugin a:hover {
+  text-decoration: underline;
+}
+
+.phinit-plugin h1,
+.phinit-plugin h2,
+.phinit-plugin h3 {
+  margin: 0 0 var(--phinit-space-4);
+  color: var(--phinit-color-ink);
+  font-family: var(--phinit-font-display);
+  font-weight: 500;
+  line-height: var(--phinit-leading-tight);
+}
+
+.phinit-plugin h1 { font-size: var(--phinit-text-h1); }
+.phinit-plugin h2 { font-size: var(--phinit-text-h2); }
+.phinit-plugin h3 { font-size: var(--phinit-text-h3); }
+
+.phinit-plugin .phinit-overline {
+  margin: 0 0 var(--phinit-space-5);
+  padding-bottom: var(--phinit-space-2);
+  border-bottom: 1px solid var(--phinit-color-border);
+  color: var(--phinit-color-ink-secondary);
+  font-size: var(--phinit-text-xs);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.phinit-plugin > * + * {
+  margin-top: var(--phinit-space-8);
+}
+
+.phinit-card {
+  padding: var(--phinit-space-5);
+  background: var(--phinit-color-surface);
+  border: 1px solid var(--phinit-color-border);
+  border-radius: var(--phinit-radius-md);
+  box-shadow: var(--phinit-shadow-card);
+}
+
+.phinit-card--accent { border-left: 3px solid var(--phinit-color-accent); }
+.phinit-card--success { border-left: 3px solid var(--phinit-color-success); }
+.phinit-card--warning { border-left: 3px solid var(--phinit-color-warning); }
+.phinit-card--danger { border-left: 3px solid var(--phinit-color-danger); }
+
+.phinit-card .phinit-card {
+  padding: var(--phinit-space-3) 0;
+  border-width: 0 0 0 3px;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.phinit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--phinit-space-2);
+  min-height: 44px;
+  padding: var(--phinit-space-3) var(--phinit-space-5);
+  border: 1px solid transparent;
+  border-radius: var(--phinit-radius-sm);
+  font-family: var(--phinit-font-body);
+  font-size: var(--phinit-text-base);
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--phinit-transition), border-color var(--phinit-transition), filter var(--phinit-transition);
+}
+
+.phinit-btn:active { transform: scale(0.98); }
+
+.phinit-btn--primary {
+  background: var(--phinit-color-accent);
+  color: var(--phinit-color-accent-ink);
+}
+
+.phinit-btn--primary:hover {
+  filter: brightness(0.95);
+  text-decoration: none;
+}
+
+.phinit-btn--secondary {
+  background: transparent;
+  border-color: var(--phinit-color-border);
+  color: var(--phinit-color-ink);
+}
+
+.phinit-btn--secondary:hover {
+  background: var(--phinit-color-bg);
+  border-color: var(--phinit-color-accent);
+  text-decoration: none;
+}
+
+.phinit-btn--link {
+  min-height: auto;
+  padding: var(--phinit-space-2) 0;
+  background: none;
+  border: none;
+  color: var(--phinit-color-link);
+}
+
+.phinit-btn--link .phinit-arrow {
+  display: inline-block;
+  transition: transform var(--phinit-transition);
+}
+
+.phinit-btn--link:hover {
+  text-decoration: none;
+}
+
+.phinit-btn--link:hover .phinit-arrow {
+  transform: translateX(4px);
+}
+
+.phinit-field { margin-bottom: var(--phinit-space-4); }
+
+.phinit-field label {
+  display: block;
+  margin-bottom: var(--phinit-space-2);
+  color: var(--phinit-color-ink-secondary);
+  font-size: var(--phinit-text-sm);
+}
+
+.phinit-required {
+  color: var(--phinit-color-ink-secondary);
+  font-weight: 400;
+}
+
+.phinit-input,
+.phinit-select,
+.phinit-textarea {
+  width: 100%;
+  padding: var(--phinit-space-3);
+  color: var(--phinit-color-ink);
+  background: var(--phinit-color-surface);
+  border: 1px solid var(--phinit-color-border);
+  border-radius: var(--phinit-radius-sm);
+  font-family: var(--phinit-font-body);
+  font-size: var(--phinit-text-base);
+}
+
+.phinit-input:focus,
+.phinit-select:focus,
+.phinit-textarea:focus {
+  outline: 2px solid var(--phinit-color-accent);
+  outline-offset: 1px;
+}
+
+.phinit-empty-state {
+  padding: var(--phinit-space-5);
+  border: 1px solid var(--phinit-color-border);
+  border-radius: var(--phinit-radius-md);
+}
+
+@media (max-width: 768px) {
+  .phinit-plugin { font-size: var(--phinit-text-base); }
+  .phinit-grid { grid-template-columns: 1fr !important; }
+  .phinit-btn { width: 100%; justify-content: center; }
+  .phinit-btn--link { width: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phinit-plugin,
+  .phinit-plugin *,
+  .phinit-plugin *::before,
+  .phinit-plugin *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .phinit-btn:active { transform: none; }
+  .phinit-btn--link:hover .phinit-arrow { transform: none; }
+}

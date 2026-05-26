@@ -593,8 +593,10 @@
 }
 
 .ev-calendar-page {
+  width: min(100%, var(--container-max, var(--max, 1140px)));
   max-width: var(--container-max, var(--max, 1140px));
   margin: 0 auto;
+  padding-inline: clamp(12px, 2vw, 24px);
 }
 
 .ev-breadcrumb {
@@ -1036,6 +1038,10 @@
   --cms-events-content-max: var(--container-max, var(--phinit-container-width, 1180px));
   color: var(--cms-events-text);
   font-family: var(--phinit-font-family, 'Poppins', sans-serif);
+  width: min(100%, var(--cms-events-content-max));
+  max-width: var(--cms-events-content-max);
+  margin-inline: auto;
+  padding-inline: clamp(12px, 2vw, 24px);
 }
 
 .cms-events-wrap *,
@@ -1054,7 +1060,7 @@
 .cms-events-grid,
 .cms-events-pagination,
 .cms-events-detail__grid {
-  width: min(100%, var(--cms-events-content-max));
+  width: 100%;
   margin-inline: auto;
 }
 

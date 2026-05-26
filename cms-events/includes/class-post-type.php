@@ -159,10 +159,7 @@ final class CMS_Events_Post_Type
         $categories     = $db_manager->get_distinct_categories();
         $event_speakers_map = $this->get_event_speakers_map($events);
 
-        $tm = \CMS\ThemeManager::instance();
-        $tm->getHeader();
-        $template_loader = CMS_Events_Template_Loader::instance();
-        $template_loader->render_template('archive-event', [
+        $this->render_public_theme_template('archive-event', [
             'events'          => $events,
             'settings'        => $settings,
             'current_page'    => $page,
@@ -179,7 +176,6 @@ final class CMS_Events_Post_Type
             'when_filter'     => $when_filter,
             'search'          => $search,
         ]);
-        $tm->getFooter();
         } catch (\Throwable $e) {
             $this->render_public_error('Events konnten nicht geladen werden.', $e);
         }
@@ -201,16 +197,12 @@ final class CMS_Events_Post_Type
 
         $events = $db_manager->get_events($args);
 
-        $tm = \CMS\ThemeManager::instance();
-        $tm->getHeader();
-        $template_loader = CMS_Events_Template_Loader::instance();
-        $template_loader->render_template('calendar-view', [
+        $this->render_public_theme_template('calendar-view', [
             'events'   => $events,
             'month'    => $month,
             'view'     => $view,
             'settings' => $settings,
         ]);
-        $tm->getFooter();
         } catch (\Throwable $e) {
             $this->render_public_error('Der Event-Kalender konnte nicht geladen werden.', $e);
         }
@@ -273,15 +265,12 @@ final class CMS_Events_Post_Type
         $settings = $db_manager->get_settings();
         $related_events = $this->get_related_events($db_manager, $event);
 
-        $tm = \CMS\ThemeManager::instance();
-        $tm->getHeader();
-        CMS_Events_Template_Loader::instance()->render_template('single-event', [
+        $this->render_public_theme_template('single-event', [
             'event'          => $event,
             'speakers'       => $speakers,
             'settings'       => $settings,
             'related_events' => $related_events,
         ]);
-        $tm->getFooter();
         } catch (\Throwable $e) {
             $this->render_public_error('Das Event konnte nicht geladen werden.', $e);
         }
@@ -1024,6 +1013,66 @@ final class CMS_Events_Post_Type
 
         echo '<!DOCTYPE html><html lang="de"><body><h1>Event-Fehler</h1><p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p></body></html>';
         exit;
+    }
+
+    private function render_public_theme_template(string $template, array $data): void
+    {
+        $templateBufferLevel = ob_get_level();
+
+        try {
+            $themeManager = \CMS\ThemeManager::instance();
+            $themeManager->getHeader($data);
+
+            ob_start();
+            CMS_Events_Template_Loader::instance()->render_template($template, $data);
+            $rendered = ob_get_clean();
+            if ($rendered !== false) {
+                echo $rendered;
+            }
+        } catch (\Throwable $e) {
+            while (ob_get_level() > $templateBufferLevel) {
+                ob_end_clean();
+            }
+
+            error_log('CMS Events public template render fallback (' . $template . '): ' . $e->getMessage());
+            echo '<section class="phinit-plugin cms-events-wrap">'
+                . '<div class="cms-events-empty phinit-empty-state" role="status" aria-live="polite">'
+                . '<i class="ti ti-alert-circle" aria-hidden="true"></i>'
+                . '<p class="cms-events-empty__title">Events konnten aktuell nicht dargestellt werden.</p>'
+                . '</div>'
+                . '</section>';
+        } finally {
+            try {
+                \CMS\ThemeManager::instance()->getFooter($data);
+            } catch (\Throwable $footerError) {
+                error_log('CMS Events footer render skipped: ' . $footerError->getMessage());
+                $this->render_public_footer_fallback();
+            }
+        }
+    }
+
+    private function render_public_footer_fallback(): void
+    {
+        $siteTitle = '';
+        try {
+            $siteTitle = \CMS\ThemeManager::instance()->getSiteTitle();
+        } catch (\Throwable) {
+            $siteTitle = '365CMS';
+        }
+
+        if ($siteTitle === '') {
+            $siteTitle = '365CMS';
+        }
+
+        $year = date('Y');
+
+        echo '<footer class="site-footer" role="contentinfo">'
+            . '<div class="footer-bottom">'
+            . '<div class="container footer-bottom-inner">'
+            . '<span>&copy; ' . (int) $year . ' ' . htmlspecialchars($siteTitle, ENT_QUOTES, 'UTF-8') . '</span>'
+            . '</div>'
+            . '</div>'
+            . '</footer>';
     }
 }
 

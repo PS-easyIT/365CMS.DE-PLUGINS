@@ -65,7 +65,7 @@ final class CMS_Events_Template_Loader
 
         if ($template_candidates === []) {
             error_log("CMS Events: Template '{$template_name}' not found");
-            $this->render_template_error('Template nicht gefunden', "Das Event-Template '{$template_name}' konnte nicht geladen werden.");
+            $this->render_inline_template_fallback($template_name);
             return;
         }
 
@@ -73,10 +73,21 @@ final class CMS_Events_Template_Loader
 
         $lastException = null;
         foreach ($template_candidates as $index => $template_file) {
+            $bufferLevel = ob_get_level();
+            ob_start();
+
             try {
                 include $template_file;
+                $html = ob_get_clean();
+                if ($html !== false) {
+                    echo $html;
+                }
                 return;
             } catch (\Throwable $e) {
+                while (ob_get_level() > $bufferLevel) {
+                    ob_end_clean();
+                }
+
                 $lastException = $e;
                 $template_role = $index === 0 && $template_file === $theme_template ? 'theme-override' : 'plugin-fallback';
                 error_log(
@@ -96,7 +107,7 @@ final class CMS_Events_Template_Loader
             error_log("CMS Events: Template '{$template_name}' exhausted all candidates.");
         }
 
-        $this->render_template_error('Template-Fehler', 'Das Event-Template konnte nicht gerendert werden.');
+        $this->render_inline_template_fallback($template_name);
     }
 
     private function locate_template(string $template_name): ?string
@@ -161,5 +172,21 @@ final class CMS_Events_Template_Loader
         }
 
         echo '<section class="cms-error"><h1>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1><p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p></section>';
+    }
+
+    private function render_inline_template_fallback(string $template_name): void
+    {
+        if (!headers_sent()) {
+            http_response_code(200);
+        }
+
+        $safeTemplate = htmlspecialchars($template_name, ENT_QUOTES, 'UTF-8');
+        echo '<section class="phinit-plugin cms-events-wrap">'
+            . '<div class="cms-events-empty phinit-empty-state" role="status" aria-live="polite">'
+            . '<i class="ti ti-alert-circle" aria-hidden="true"></i>'
+            . '<p class="cms-events-empty__title">Events konnten aktuell nicht dargestellt werden.</p>'
+            . '<p class="cms-events-muted">Template: ' . $safeTemplate . '</p>'
+            . '</div>'
+            . '</section>';
     }
 }

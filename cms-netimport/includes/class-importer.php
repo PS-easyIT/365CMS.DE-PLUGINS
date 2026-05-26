@@ -1032,11 +1032,16 @@ final class CMS_NetImport_Importer
     {
         $rows = $this->read_csv($path);
         $grouped = [];
+        $unparsedDateSamples = [];
         foreach ($rows as $row) {
             $title = $this->value($row, ['event_name', 'title']);
             $eventDate = $this->parse_german_date($this->value($row, ['wann', 'event_date']));
             if ($title === '' || $eventDate === null) {
                 $result['skipped']++;
+                $rawDate = $this->value($row, ['wann', 'event_date']);
+                if ($rawDate !== '' && count($unparsedDateSamples) < 8) {
+                    $unparsedDateSamples[] = $rawDate;
+                }
                 continue;
             }
 
@@ -1081,81 +1086,106 @@ final class CMS_NetImport_Importer
         $linkRelations = $options['link_relations'] === '1';
         $dryRun = $options['dry_run'] === '1';
 
+        if ($unparsedDateSamples !== []) {
+            $this->add_message(
+                $result,
+                'warning',
+                'Einige Datumsangaben konnten nicht eindeutig aufgelöst werden und wurden übersprungen: '
+                . implode(', ', array_unique($unparsedDateSamples))
+            );
+        }
+
         foreach ($grouped as $eventData) {
-            $existingId = $this->find_event_id((string) $eventData['title'], (string) $eventData['event_date']);
-            if ($existingId > 0 && !$updateExisting) {
-                $result['skipped']++;
-                $this->add_message($result, 'info', 'Event übersprungen: ' . $eventData['title']);
-                continue;
-            }
-
-            [$priceType, $priceValue] = $this->parse_price_fields((string) $eventData['price_raw']);
-            $payload = [
-                'title' => $eventData['title'],
-                'excerpt' => $this->truncate_text($this->build_event_excerpt((string) $eventData['organizer_name'], (string) $eventData['location'], (array) $eventData['topics']), 480),
-                'description' => $this->truncate_text($this->build_event_description($eventData), 4000),
-                'event_date' => $eventData['event_date'],
-                'end_date' => $eventData['end_date'],
-                'location' => $eventData['location'],
-                'city' => $eventData['city'],
-                'country' => 'Deutschland',
-                'category' => $this->infer_event_category((string) $eventData['event_art'], (string) $eventData['title'], (array) $eventData['topics']),
-                'tags' => $this->limit_tags(array_merge((array) $eventData['topics'], [$eventData['event_art']])),
-                'registration_url' => $eventData['website'],
-                'organizer_name' => $eventData['organizer_name'],
-                'organizer_website' => $eventData['website'],
-                'is_online' => $this->is_online_location((string) $eventData['location']) ? 1 : 0,
-                'online_url' => $this->is_online_location((string) $eventData['location']) ? $eventData['website'] : '',
-                'price_type' => $priceType,
-                'price' => $priceValue,
-                'status' => 'published',
-            ];
-
-            $savedId = $existingId;
-            if ($dryRun) {
-                if ($existingId > 0) {
-                    $result['updated']++;
-                    $this->add_message($result, 'success', 'DRY-RUN: Event würde aktualisiert: ' . $eventData['title']);
-                } else {
-                    $cacheKey = $this->event_cache_key((string) $eventData['title'], (string) $eventData['event_date']);
-                    $simulated = $this->claim_simulated_id('event', $cacheKey);
-                    $this->eventCache[$cacheKey] = $simulated['id'];
-                    $savedId = $simulated['id'];
-                    if ($simulated['is_new']) {
-                        $result['created']++;
-                        $this->add_message($result, 'success', 'DRY-RUN: Event würde angelegt: ' . $eventData['title']);
-                    } else {
-                        $result['updated']++;
-                        $this->add_message($result, 'info', 'DRY-RUN: Event würde innerhalb dieses Laufs erneut referenziert: ' . $eventData['title']);
-                    }
-                }
-            } else {
-                if ($existingId > 0) {
-                    $payload['id'] = $existingId;
-                }
-                $savedId = (int) $db->save_event($payload);
-                if ($savedId <= 0) {
-                    $result['errors']++;
-                    $this->add_message($result, 'error', 'Event konnte nicht gespeichert werden: ' . $eventData['title']);
+            try {
+                $eventTitle = $this->truncate_text((string) ($eventData['title'] ?? ''), 240);
+                if ($eventTitle === '') {
+                    $result['skipped']++;
                     continue;
                 }
 
-                $this->assign_admin_ownership('events', $savedId);
-                $this->eventCache[$this->event_cache_key((string) $eventData['title'], (string) $eventData['event_date'])] = $savedId;
-                if ($existingId > 0) {
-                    $result['updated']++;
-                    $this->add_message($result, 'success', 'Event aktualisiert: ' . $eventData['title']);
-                } else {
-                    $result['created']++;
-                    $this->track_created_record($result, 'events', $savedId);
-                    $this->add_message($result, 'success', 'Event importiert: ' . $eventData['title']);
+                $existingId = $this->find_event_id($eventTitle, (string) $eventData['event_date']);
+                if ($existingId > 0 && !$updateExisting) {
+                    $result['skipped']++;
+                    $this->add_message($result, 'info', 'Event übersprungen: ' . $eventTitle);
+                    continue;
                 }
-            }
 
-            if ($linkRelations && $savedId > 0) {
-                foreach ((array) $eventData['participants'] as $participant) {
-                    $this->link_event_participant((int) $savedId, $participant, $dryRun, $result, $options);
+                [$priceType, $priceValue] = $this->parse_price_fields((string) $eventData['price_raw']);
+                $payload = [
+                    'title' => $eventTitle,
+                    'excerpt' => $this->truncate_text($this->build_event_excerpt((string) $eventData['organizer_name'], (string) $eventData['location'], (array) $eventData['topics']), 480),
+                    'description' => $this->truncate_text($this->build_event_description($eventData), 4000),
+                    'event_date' => $eventData['event_date'],
+                    'end_date' => $eventData['end_date'],
+                    'location' => $this->truncate_text((string) ($eventData['location'] ?? ''), 240),
+                    'city' => $this->truncate_text((string) ($eventData['city'] ?? ''), 100),
+                    'country' => 'Deutschland',
+                    'category' => $this->truncate_text($this->infer_event_category((string) $eventData['event_art'], $eventTitle, (array) $eventData['topics']), 100),
+                    'tags' => $this->limit_tags(array_merge((array) $eventData['topics'], [$eventData['event_art']])),
+                    'registration_url' => $eventData['website'],
+                    'organizer_name' => $this->truncate_text((string) ($eventData['organizer_name'] ?? ''), 240),
+                    'organizer_website' => $eventData['website'],
+                    'is_online' => $this->is_online_location((string) $eventData['location']) ? 1 : 0,
+                    'online_url' => $this->is_online_location((string) $eventData['location']) ? $eventData['website'] : '',
+                    'price_type' => $priceType,
+                    'price' => $priceValue,
+                    'status' => 'published',
+                ];
+
+                $savedId = $existingId;
+                if ($dryRun) {
+                    if ($existingId > 0) {
+                        $result['updated']++;
+                        $this->add_message($result, 'success', 'DRY-RUN: Event würde aktualisiert: ' . $eventTitle);
+                    } else {
+                        $cacheKey = $this->event_cache_key($eventTitle, (string) $eventData['event_date']);
+                        $simulated = $this->claim_simulated_id('event', $cacheKey);
+                        $this->eventCache[$cacheKey] = $simulated['id'];
+                        $savedId = $simulated['id'];
+                        if ($simulated['is_new']) {
+                            $result['created']++;
+                            $this->add_message($result, 'success', 'DRY-RUN: Event würde angelegt: ' . $eventTitle);
+                        } else {
+                            $result['updated']++;
+                            $this->add_message($result, 'info', 'DRY-RUN: Event würde innerhalb dieses Laufs erneut referenziert: ' . $eventTitle);
+                        }
+                    }
+                } else {
+                    if ($existingId > 0) {
+                        $payload['id'] = $existingId;
+                    }
+                    $savedId = (int) $db->save_event($payload);
+                    if ($savedId <= 0) {
+                        $result['errors']++;
+                        $this->add_message($result, 'error', 'Event konnte nicht gespeichert werden: ' . $eventTitle);
+                        continue;
+                    }
+
+                    $this->assign_admin_ownership('events', $savedId);
+                    $this->eventCache[$this->event_cache_key($eventTitle, (string) $eventData['event_date'])] = $savedId;
+                    if ($existingId > 0) {
+                        $result['updated']++;
+                        $this->add_message($result, 'success', 'Event aktualisiert: ' . $eventTitle);
+                    } else {
+                        $result['created']++;
+                        $this->track_created_record($result, 'events', $savedId);
+                        $this->add_message($result, 'success', 'Event importiert: ' . $eventTitle);
+                    }
                 }
+
+                if ($linkRelations && $savedId > 0) {
+                    foreach ((array) $eventData['participants'] as $participant) {
+                        $this->link_event_participant((int) $savedId, $participant, $dryRun, $result, $options);
+                    }
+                }
+            } catch (\Throwable $e) {
+                $result['errors']++;
+                $this->add_message(
+                    $result,
+                    'error',
+                    'Event-Importfehler bei "' . (string) ($eventData['title'] ?? 'unbekannt') . '": ' . $e->getMessage()
+                );
+                error_log('CMS NetImport events row failed: ' . $e->getMessage());
             }
         }
     }
@@ -1172,60 +1202,66 @@ final class CMS_NetImport_Importer
             return;
         }
 
-        $preferExpert = stripos((string) ($participant['award'] ?? ''), 'mvp') !== false
-            || stripos((string) ($participant['award'] ?? ''), 'microsoft') !== false;
+        try {
+            $preferExpert = stripos((string) ($participant['award'] ?? ''), 'mvp') !== false
+                || stripos((string) ($participant['award'] ?? ''), 'microsoft') !== false;
 
-        $expertId = $this->find_expert_id($firstName, $lastName);
-        $speakerId = $this->find_speaker_id($firstName, $lastName);
-        $entityId = 0;
-        $entityType = 'speaker';
+            $expertId = $this->find_expert_id($firstName, $lastName);
+            $speakerId = $this->find_speaker_id($firstName, $lastName);
+            $entityId = 0;
+            $entityType = 'speaker';
 
-        if ($preferExpert && $expertId > 0) {
-            $entityId = $expertId;
-            $entityType = 'expert';
-        } elseif ($speakerId > 0) {
-            $entityId = $speakerId;
-        } elseif ($expertId > 0) {
-            $entityId = $expertId;
-            $entityType = 'expert';
-        }
+            if ($preferExpert && $expertId > 0) {
+                $entityId = $expertId;
+                $entityType = 'expert';
+            } elseif ($speakerId > 0) {
+                $entityId = $speakerId;
+            } elseif ($expertId > 0) {
+                $entityId = $expertId;
+                $entityType = 'expert';
+            }
 
-        if ($entityId <= 0 && (($options['auto_create_event_people'] ?? '1') === '1')) {
-            $resolved = $this->create_missing_event_participant($participant, $preferExpert, $dryRun, $result, $options);
-            $entityId = (int) ($resolved['id'] ?? 0);
-            $entityType = (string) ($resolved['type'] ?? $entityType);
-        }
+            if ($entityId <= 0 && (($options['auto_create_event_people'] ?? '1') === '1')) {
+                $resolved = $this->create_missing_event_participant($participant, $preferExpert, $dryRun, $result, $options);
+                $entityId = (int) ($resolved['id'] ?? 0);
+                $entityType = (string) ($resolved['type'] ?? $entityType);
+            }
 
-        if ($entityId <= 0) {
+            if ($entityId <= 0) {
+                $result['warnings']++;
+                $this->add_message($result, 'warning', 'Keine verknüpfbare Person gefunden: ' . $firstName . ' ' . $lastName);
+                return;
+            }
+
+            $assignmentKey = $eventId . '|' . $entityId . '|' . $entityType;
+            if ($this->assignment_exists($assignmentKey)) {
+                return;
+            }
+
+            if ($dryRun) {
+                $this->assignmentCache[$assignmentKey] = true;
+                $result['linked']++;
+                $this->add_message($result, 'info', 'DRY-RUN: Event-Verknüpfung würde erstellt: ' . $firstName . ' ' . $lastName . ' → Event #' . $eventId);
+                return;
+            }
+
+            $linked = CMS_Events_Database::instance()->assign_speaker($eventId, $entityId, $entityType, [
+                'presentation_title' => !empty($participant['topic']) ? $participant['topic'] : null,
+                'role' => 'Speaker',
+            ]);
+            if ($linked) {
+                $this->assignmentCache[$assignmentKey] = true;
+                $result['linked']++;
+                $this->track_created_link($result, $eventId, $entityId, $entityType);
+                $this->add_message($result, 'success', 'Event-Verknüpfung erstellt: ' . $firstName . ' ' . $lastName . ' → Event #' . $eventId);
+            } else {
+                $result['warnings']++;
+                $this->add_message($result, 'warning', 'Event-Verknüpfung fehlgeschlagen: ' . $firstName . ' ' . $lastName);
+            }
+        } catch (\Throwable $e) {
             $result['warnings']++;
-            $this->add_message($result, 'warning', 'Keine verknüpfbare Person gefunden: ' . $firstName . ' ' . $lastName);
-            return;
-        }
-
-        $assignmentKey = $eventId . '|' . $entityId . '|' . $entityType;
-        if ($this->assignment_exists($assignmentKey)) {
-            return;
-        }
-
-        if ($dryRun) {
-            $this->assignmentCache[$assignmentKey] = true;
-            $result['linked']++;
-            $this->add_message($result, 'info', 'DRY-RUN: Event-Verknüpfung würde erstellt: ' . $firstName . ' ' . $lastName . ' → Event #' . $eventId);
-            return;
-        }
-
-        $linked = CMS_Events_Database::instance()->assign_speaker($eventId, $entityId, $entityType, [
-            'presentation_title' => !empty($participant['topic']) ? $participant['topic'] : null,
-            'role' => 'Speaker',
-        ]);
-        if ($linked) {
-            $this->assignmentCache[$assignmentKey] = true;
-            $result['linked']++;
-            $this->track_created_link($result, $eventId, $entityId, $entityType);
-            $this->add_message($result, 'success', 'Event-Verknüpfung erstellt: ' . $firstName . ' ' . $lastName . ' → Event #' . $eventId);
-        } else {
-            $result['warnings']++;
-            $this->add_message($result, 'warning', 'Event-Verknüpfung fehlgeschlagen: ' . $firstName . ' ' . $lastName);
+            $this->add_message($result, 'warning', 'Event-Verknüpfung übersprungen (' . $firstName . ' ' . $lastName . '): ' . $e->getMessage());
+            error_log('CMS NetImport participant link skipped: ' . $e->getMessage());
         }
     }
 
@@ -1246,12 +1282,27 @@ final class CMS_NetImport_Importer
             return ['id' => 0, 'type' => $preferExpert ? 'expert' : 'speaker'];
         }
 
+        $expertsReady = $this->is_plugin_ready('cms-experts', 'CMS_Experts_Database');
+        $speakersReady = $this->is_plugin_ready('cms-speakers', 'CMS_Speakers_Database');
+
+        if ($preferExpert && !$expertsReady && $speakersReady) {
+            $preferExpert = false;
+        }
+
+        if (!$expertsReady && !$speakersReady) {
+            return ['id' => 0, 'type' => $preferExpert ? 'expert' : 'speaker'];
+        }
+
         $companyId = 0;
         if ($companyName !== '' && (($options['auto_create_companies'] ?? '1') === '1')) {
             $companyId = $this->ensure_company_reference($companyName, '', true, $dryRun, $result);
         }
 
         if ($preferExpert) {
+            if (!$expertsReady) {
+                return ['id' => 0, 'type' => 'expert'];
+            }
+
             if ($dryRun) {
                 $cacheKey = $this->person_cache_key($firstName, $lastName);
                 $simulated = $this->claim_simulated_id('expert', $cacheKey);
@@ -1296,6 +1347,10 @@ final class CMS_NetImport_Importer
             }
 
             return ['id' => 0, 'type' => 'expert'];
+        }
+
+        if (!$speakersReady) {
+            return ['id' => 0, 'type' => 'speaker'];
         }
 
         if ($dryRun) {
@@ -2066,12 +2121,82 @@ final class CMS_NetImport_Importer
         if ($value === '') {
             return null;
         }
-        foreach (['d.m.Y', 'Y-m-d', 'd/m/Y'] as $format) {
+
+        $normalized = preg_replace('/\s+/u', ' ', $value) ?? $value;
+        $normalized = trim($normalized);
+
+        // Erstes explizites Datum aus Freitext extrahieren (z. B. "Feb/März 2026", "14.01.2026 bis ...")
+        if (preg_match('/(\d{1,2}[\.\/-]\d{1,2}[\.\/-]\d{2,4})/u', $normalized, $matches) === 1) {
+            $normalized = (string) ($matches[1] ?? $normalized);
+        }
+
+        // Deutsche Saison-/Monatsangaben robust auf Startdatum abbilden
+        if (preg_match('/\b(20\d{2})\b/u', $normalized, $yearMatch) === 1) {
+            $year = (int) ($yearMatch[1] ?? 0);
+            $lower = function_exists('mb_strtolower') ? mb_strtolower($normalized, 'UTF-8') : strtolower($normalized);
+
+            $monthMap = [
+                'januar' => 1, 'jan' => 1,
+                'februar' => 2, 'feb' => 2,
+                'märz' => 3, 'maerz' => 3, 'marz' => 3, 'mrz' => 3,
+                'april' => 4, 'apr' => 4,
+                'mai' => 5,
+                'juni' => 6, 'jun' => 6,
+                'juli' => 7, 'jul' => 7,
+                'august' => 8, 'aug' => 8,
+                'september' => 9, 'sep' => 9,
+                'oktober' => 10, 'okt' => 10,
+                'november' => 11, 'nov' => 11,
+                'dezember' => 12, 'dez' => 12,
+            ];
+
+            foreach ($monthMap as $needle => $month) {
+                if (str_contains($lower, $needle)) {
+                    return sprintf('%04d-%02d-01', $year, $month);
+                }
+            }
+
+            if (str_contains($lower, 'frühjahr') || str_contains($lower, 'fruehjahr') || str_contains($lower, 'spring')) {
+                return sprintf('%04d-03-01', $year);
+            }
+            if (str_contains($lower, 'sommer') || str_contains($lower, 'summer')) {
+                return sprintf('%04d-06-01', $year);
+            }
+            if (str_contains($lower, 'herbst') || str_contains($lower, 'autumn') || str_contains($lower, 'fall')) {
+                return sprintf('%04d-09-01', $year);
+            }
+            if (str_contains($lower, 'winter')) {
+                return sprintf('%04d-12-01', $year);
+            }
+            if (str_contains($lower, 'diverse') || str_contains($lower, 'tba') || str_contains($lower, 'n/a')) {
+                return sprintf('%04d-01-01', $year);
+            }
+
+            // Reine Jahresangabe (z. B. "2026")
+            if (preg_match('/^\s*20\d{2}\s*$/u', $normalized) === 1) {
+                return sprintf('%04d-01-01', $year);
+            }
+        }
+
+        foreach (['d.m.Y', 'd.m.y', 'Y-m-d', 'd/m/Y', 'd/m/y'] as $format) {
             $date = \DateTimeImmutable::createFromFormat($format, $value);
             if ($date instanceof \DateTimeImmutable) {
                 return $date->format('Y-m-d');
             }
+
+            $date = \DateTimeImmutable::createFromFormat($format, $normalized);
+            if ($date instanceof \DateTimeImmutable) {
+                return $date->format('Y-m-d');
+            }
         }
+
+        // Letzter Fallback: DateTime-Parser (nur wenn eindeutig)
+        try {
+            $parsed = new \DateTimeImmutable($normalized);
+            return $parsed->format('Y-m-d');
+        } catch (\Throwable) {
+        }
+
         return null;
     }
 

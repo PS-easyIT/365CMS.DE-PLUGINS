@@ -266,6 +266,12 @@ if ($primarySpeaker) {
                     <h2 id="cms-related-events-heading">Ähnliche Events</h2>
                     <?php foreach ($relatedEvents as $related): ?>
                         <?php
+                        if (is_array($related)) {
+                            $related = (object) $related;
+                        }
+                        if (!is_object($related)) {
+                            continue;
+                        }
                         [, , $relatedDate] = cms_events_view_date_parts((string) ($related->event_date ?? ''));
                         $relatedImage = cms_events_view_public_url($related->image_url ?? $related->banner_url ?? null);
                         ?>
