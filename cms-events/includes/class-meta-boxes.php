@@ -304,6 +304,7 @@ final class CMS_Events_Meta_Boxes
              data-ev-speaker-event-id="<?= $event_id ?>"
              data-ev-speaker-empty-message="Noch keine Person zugeordnet.">
             <h3>&#128100; Speaker &amp; Experten</h3>
+            <div class="alert alert-error ev-speaker-message" data-ev-speaker-message hidden></div>
 
             <div id="ev-assigned-speakers">
                 <?php if (empty($assigned)): ?>
@@ -378,7 +379,7 @@ final class CMS_Events_Meta_Boxes
                 <span class="status-badge inactive">&#128336; <?= $time ?></span>
             <?php endif; ?>
             <button type="button"
-                    class="ev-sp-row-remove"
+                    class="btn btn-sm btn-danger"
                     data-ev-speaker-remove="<?= $id ?>">&#128465;</button>
         </div>
         <?php

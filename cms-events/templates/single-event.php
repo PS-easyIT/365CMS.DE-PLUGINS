@@ -49,7 +49,14 @@ if (!function_exists('cms_events_view_price_label')) {
             return 'Kostenlos';
         }
 
-        return number_format($price, 2, ',', '.') . ' ' . htmlspecialchars($currency, ENT_QUOTES, 'UTF-8');
+        $currencySymbol = match (strtoupper($currency)) {
+            'EUR' => '€',
+            'USD' => '$',
+            'CHF' => 'CHF',
+            default => preg_replace('/[^A-Z]/i', '', $currency) ?: '€',
+        };
+
+        return $currencySymbol . ' ' . number_format($price, 2, ',', '.');
     }
 }
 
@@ -116,6 +123,24 @@ $shareUrl = $eventUrl;
 $description = trim((string) ($e->description ?? $e->excerpt ?? ''));
 $tags = !empty($e->tags) ? (json_decode((string) $e->tags, true) ?: []) : [];
 $relatedEvents = array_slice((array) ($related_events ?? []), 0, 3);
+$priceLabel = cms_events_view_price_label($e);
+$isFreeEvent = $priceLabel === 'Kostenlos';
+$dateTimeLabel = trim($displayDate . ($timeLabel !== '' ? ' · ' . $timeLabel : ''));
+$primarySpeakerName = '';
+$primarySpeakerLink = '';
+$primarySpeakerImage = '';
+$primarySpeakerPosition = '';
+$primarySpeakerBio = '';
+
+if ($primarySpeaker) {
+    $primarySpeakerName = trim((string) ($primarySpeaker->speaker_name ?? (($primarySpeaker->first_name ?? '') . ' ' . ($primarySpeaker->last_name ?? ''))));
+    $primarySpeakerImage = cms_events_view_public_url($primarySpeaker->photo_url ?? null);
+    $primarySpeakerType = in_array((string) ($primarySpeaker->speaker_type ?? 'speaker'), ['speaker', 'expert'], true) ? (string) $primarySpeaker->speaker_type : 'speaker';
+    $primarySpeakerId = (int) ($primarySpeaker->speaker_id ?? 0);
+    $primarySpeakerLink = $primarySpeakerId > 0 ? $baseUrl . ($primarySpeakerType === 'expert' ? '/experts/' : '/speakers/') . $primarySpeakerId : '';
+    $primarySpeakerPosition = trim((string) ($primarySpeaker->position ?? $primarySpeaker->company ?? ''));
+    $primarySpeakerBio = trim(strip_tags((string) ($primarySpeaker->short_bio ?? '')));
+}
 ?>
 <main class="phinit-plugin cms-events-wrap cms-events-detail">
     <nav class="cms-events-breadcrumb" aria-label="Breadcrumb">
@@ -132,20 +157,21 @@ $relatedEvents = array_slice((array) ($related_events ?? []), 0, 3);
                 <div class="cms-events-detail__badges">
                     <span class="cms-events-badge"><?= $category ?></span>
                     <?php if ($isFullyBooked): ?>
-                        <span class="cms-events-badge cms-events-badge--muted">Ausgebucht</span>
+                        <span class="cms-events-badge cms-events-badge--danger">Ausgebucht</span>
                     <?php endif; ?>
                 </div>
                 <h1><?= $title ?></h1>
                 <div class="cms-events-detail__meta" aria-label="Event-Metadaten">
-                    <?php if ($machineDate !== ''): ?>
-                        <span><i class="ti ti-calendar-event" aria-hidden="true"></i><?= htmlspecialchars($displayDate, ENT_QUOTES, 'UTF-8') ?></span>
-                    <?php endif; ?>
-                    <?php if ($timeLabel !== ''): ?>
-                        <span><i class="ti ti-clock" aria-hidden="true"></i><?= htmlspecialchars($timeLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php if ($dateTimeLabel !== ''): ?>
+                        <span><i class="ti ti-calendar" aria-hidden="true"></i><?= htmlspecialchars($dateTimeLabel, ENT_QUOTES, 'UTF-8') ?></span>
                     <?php endif; ?>
                     <?php if ($locationText !== ''): ?>
                         <span><i class="ti ti-map-pin" aria-hidden="true"></i><?= htmlspecialchars($locationText, ENT_QUOTES, 'UTF-8') ?></span>
                     <?php endif; ?>
+                    <?php if ($primarySpeakerName !== ''): ?>
+                        <span><i class="ti ti-user" aria-hidden="true"></i><?php if ($primarySpeakerLink !== ''): ?><a href="<?= htmlspecialchars($primarySpeakerLink, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($primarySpeakerName, ENT_QUOTES, 'UTF-8') ?></a><?php else: ?><?= htmlspecialchars($primarySpeakerName, ENT_QUOTES, 'UTF-8') ?><?php endif; ?></span>
+                    <?php endif; ?>
+                    <span><i class="ti ti-ticket" aria-hidden="true"></i><?= htmlspecialchars($priceLabel, ENT_QUOTES, 'UTF-8') ?></span>
                 </div>
             </header>
 
@@ -160,63 +186,57 @@ $relatedEvents = array_slice((array) ($related_events ?? []), 0, 3);
             <section class="phinit-card cms-events-detail__section">
                 <h2>Über dieses Event</h2>
                 <?php if ($description !== ''): ?>
-                    <div class="cms-events-detail__content"><?= nl2br(htmlspecialchars($description, ENT_QUOTES, 'UTF-8')) ?></div>
+                    <div class="event-body cms-events-detail__content"><?= nl2br(htmlspecialchars($description, ENT_QUOTES, 'UTF-8')) ?></div>
                 <?php else: ?>
                     <p class="cms-events-muted">Weitere Details zu diesem Event folgen in Kürze.</p>
                 <?php endif; ?>
             </section>
 
-            <?php if ($primarySpeaker): ?>
-                <?php
-                $speakerName = trim((string) ($primarySpeaker->speaker_name ?? (($primarySpeaker->first_name ?? '') . ' ' . ($primarySpeaker->last_name ?? ''))));
-                $speakerImage = cms_events_view_public_url($primarySpeaker->photo_url ?? null);
-                $speakerType = in_array((string) ($primarySpeaker->speaker_type ?? 'speaker'), ['speaker', 'expert'], true) ? (string) $primarySpeaker->speaker_type : 'speaker';
-                $speakerLink = $baseUrl . ($speakerType === 'expert' ? '/experts/' : '/speakers/') . (int) ($primarySpeaker->speaker_id ?? 0);
-                ?>
+            <?php if ($primarySpeakerName !== ''): ?>
                 <section class="phinit-card cms-events-speaker-teaser" aria-labelledby="cms-event-speaker-heading">
                     <div class="cms-events-speaker-teaser__image">
-                        <?php if ($speakerImage !== ''): ?>
-                            <img src="<?= htmlspecialchars($speakerImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($speakerName, ENT_QUOTES, 'UTF-8') ?>" width="96" height="96" loading="lazy" decoding="async">
+                        <?php if ($primarySpeakerImage !== ''): ?>
+                            <img src="<?= htmlspecialchars($primarySpeakerImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($primarySpeakerName, ENT_QUOTES, 'UTF-8') ?>" width="96" height="96" loading="lazy" decoding="async">
                         <?php else: ?>
                             <i class="ti ti-user" aria-hidden="true"></i>
                         <?php endif; ?>
                     </div>
                     <div>
                         <p class="phinit-overline">Speaker</p>
-                        <h2 id="cms-event-speaker-heading"><?= htmlspecialchars($speakerName !== '' ? $speakerName : 'Speaker', ENT_QUOTES, 'UTF-8') ?></h2>
-                        <?php if (!empty($primarySpeaker->position)): ?>
-                            <p><?= htmlspecialchars((string) $primarySpeaker->position, ENT_QUOTES, 'UTF-8') ?></p>
+                        <h2 id="cms-event-speaker-heading"><?= htmlspecialchars($primarySpeakerName, ENT_QUOTES, 'UTF-8') ?></h2>
+                        <?php if ($primarySpeakerPosition !== ''): ?>
+                            <p class="cms-events-speaker-teaser__position"><?= htmlspecialchars($primarySpeakerPosition, ENT_QUOTES, 'UTF-8') ?></p>
                         <?php endif; ?>
-                        <a href="<?= htmlspecialchars($speakerLink, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary">Speaker ansehen</a>
+                        <?php if ($primarySpeakerBio !== ''): ?>
+                            <p class="cms-events-speaker-teaser__bio"><?= htmlspecialchars($primarySpeakerBio, ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php endif; ?>
+                        <?php if ($primarySpeakerLink !== ''): ?>
+                            <a href="<?= htmlspecialchars($primarySpeakerLink, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary">Zum Speaker</a>
+                        <?php endif; ?>
                     </div>
                 </section>
             <?php endif; ?>
 
             <section class="cms-events-share" id="event-share" aria-label="Event teilen">
-                <span>Teilen</span>
+                <span>Teilen:</span>
                 <a href="https://www.linkedin.com/sharing/share-offsite/?url=<?= rawurlencode($shareUrl) ?>" target="_blank" rel="noopener noreferrer" aria-label="Auf LinkedIn teilen"><i class="ti ti-brand-linkedin"></i></a>
-                <a href="https://twitter.com/intent/tweet?url=<?= rawurlencode($shareUrl) ?>&text=<?= rawurlencode($titleRaw) ?>" target="_blank" rel="noopener noreferrer" aria-label="Auf X teilen"><i class="ti ti-brand-x"></i></a>
+                <a href="https://twitter.com/intent/tweet?url=<?= rawurlencode($shareUrl) ?>&text=<?= rawurlencode($titleRaw) ?>" target="_blank" rel="noopener noreferrer" aria-label="Auf X teilen"><i class="ti ti-brand-twitter"></i></a>
                 <a href="mailto:?subject=<?= rawurlencode($titleRaw) ?>&body=<?= rawurlencode($shareUrl) ?>" aria-label="Per E-Mail teilen"><i class="ti ti-mail"></i></a>
             </section>
         </article>
 
         <aside class="cms-events-detail__aside" aria-label="Anmeldung">
             <div class="phinit-card cms-events-registration-card">
-                <div class="cms-events-registration-card__date">
-                    <span><?= htmlspecialchars($day, ENT_QUOTES, 'UTF-8') ?></span>
-                    <strong><?= htmlspecialchars($monthShort, ENT_QUOTES, 'UTF-8') ?></strong>
-                </div>
+                <p class="cms-events-registration-card__price<?= $isFreeEvent ? ' is-free' : '' ?>"><?= htmlspecialchars($priceLabel, ENT_QUOTES, 'UTF-8') ?></p>
                 <h2>Anmeldung</h2>
                 <dl>
-                    <div><dt>Preis</dt><dd><?= cms_events_view_price_label($e) ?></dd></div>
-                    <?php if ($displayDate !== ''): ?><div><dt>Datum</dt><dd><?= htmlspecialchars($displayDate, ENT_QUOTES, 'UTF-8') ?></dd></div><?php endif; ?>
-                    <?php if ($timeLabel !== ''): ?><div><dt>Zeit</dt><dd><?= htmlspecialchars($timeLabel, ENT_QUOTES, 'UTF-8') ?></dd></div><?php endif; ?>
-                    <?php if ($locationText !== ''): ?><div><dt>Ort</dt><dd><?= htmlspecialchars($locationText, ENT_QUOTES, 'UTF-8') ?></dd></div><?php endif; ?>
+                    <?php if ($dateTimeLabel !== ''): ?><div><dt><i class="ti ti-calendar" aria-hidden="true"></i>Termin</dt><dd><?= htmlspecialchars($dateTimeLabel, ENT_QUOTES, 'UTF-8') ?></dd></div><?php endif; ?>
+                    <?php if ($locationText !== ''): ?><div><dt><i class="ti ti-map-pin" aria-hidden="true"></i>Ort</dt><dd><?= htmlspecialchars($locationText, ENT_QUOTES, 'UTF-8') ?></dd></div><?php endif; ?>
                 </dl>
 
                 <?php if ($capacity > 0): ?>
                     <div class="cms-events-capacity" aria-label="Verfügbare Plätze">
-                        <span><?= (int) $seatsLeft ?> von <?= (int) $capacity ?> Plätzen frei</span>
+                        <span><?= (int) $seatsLeft ?> Plätze verfügbar</span>
                         <div class="cms-events-capacity__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= (int) $progress ?>" style="--cms-event-progress: <?= (int) $progress ?>%;"><span></span></div>
                     </div>
                 <?php endif; ?>
@@ -227,16 +247,36 @@ $relatedEvents = array_slice((array) ($related_events ?? []), 0, 3);
                     <a href="<?= htmlspecialchars($onlineUrl, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--primary cms-events-registration-card__button" target="_blank" rel="noopener noreferrer">Online teilnehmen</a>
                 <?php else: ?>
                     <button class="phinit-btn phinit-btn--primary cms-events-registration-card__button" type="button" disabled><?= $isFullyBooked ? 'Ausgebucht' : 'Anmeldung folgt' ?></button>
+                    <?php if ($isFullyBooked && $registrationUrl !== ''): ?>
+                        <a href="<?= htmlspecialchars($registrationUrl, ENT_QUOTES, 'UTF-8') ?>" class="cms-events-registration-card__waitlist" target="_blank" rel="noopener noreferrer">Warteliste</a>
+                    <?php endif; ?>
                 <?php endif; ?>
+
+                <div class="cms-events-registration-card__divider" aria-hidden="true"></div>
+                <section class="cms-events-share cms-events-share--sidebar" aria-label="Event teilen">
+                    <span>Event teilen</span>
+                    <a href="https://www.linkedin.com/sharing/share-offsite/?url=<?= rawurlencode($shareUrl) ?>" target="_blank" rel="noopener noreferrer" aria-label="Auf LinkedIn teilen"><i class="ti ti-brand-linkedin"></i></a>
+                    <a href="https://twitter.com/intent/tweet?url=<?= rawurlencode($shareUrl) ?>&text=<?= rawurlencode($titleRaw) ?>" target="_blank" rel="noopener noreferrer" aria-label="Auf X teilen"><i class="ti ti-brand-twitter"></i></a>
+                    <a href="mailto:?subject=<?= rawurlencode($titleRaw) ?>&body=<?= rawurlencode($shareUrl) ?>" aria-label="Per E-Mail teilen"><i class="ti ti-mail"></i></a>
+                </section>
             </div>
 
             <?php if (!empty($relatedEvents)): ?>
                 <section class="phinit-card cms-events-related" aria-labelledby="cms-related-events-heading">
-                    <h2 id="cms-related-events-heading">Weitere Events</h2>
+                    <h2 id="cms-related-events-heading">Ähnliche Events</h2>
                     <?php foreach ($relatedEvents as $related): ?>
-                        <?php [$relatedDay, $relatedMonth, $relatedDate] = cms_events_view_date_parts((string) ($related->event_date ?? '')); ?>
+                        <?php
+                        [, , $relatedDate] = cms_events_view_date_parts((string) ($related->event_date ?? ''));
+                        $relatedImage = cms_events_view_public_url($related->image_url ?? $related->banner_url ?? null);
+                        ?>
                         <a class="cms-events-related__item" href="<?= htmlspecialchars(function_exists('cms_event_url') ? cms_event_url($related) : $baseUrl . '/events/' . (int) ($related->id ?? 0), ENT_QUOTES, 'UTF-8') ?>">
-                            <span><strong><?= htmlspecialchars($relatedDay, ENT_QUOTES, 'UTF-8') ?></strong><?= htmlspecialchars($relatedMonth, ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="cms-events-related__image">
+                                <?php if ($relatedImage !== ''): ?>
+                                    <img src="<?= htmlspecialchars($relatedImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($related->title ?? 'Event'), ENT_QUOTES, 'UTF-8') ?>" width="72" height="72" loading="lazy" decoding="async">
+                                <?php else: ?>
+                                    <i class="ti ti-photo" aria-hidden="true"></i>
+                                <?php endif; ?>
+                            </span>
                             <span><?= htmlspecialchars((string) ($related->title ?? 'Event'), ENT_QUOTES, 'UTF-8') ?><small><?= htmlspecialchars($relatedDate, ENT_QUOTES, 'UTF-8') ?></small></span>
                         </a>
                     <?php endforeach; ?>

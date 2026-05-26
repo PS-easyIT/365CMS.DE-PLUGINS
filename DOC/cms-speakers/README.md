@@ -1,10 +1,10 @@
 # CMS Speakers – Dokumentation
 
 **Plugin:** `cms-speakers`  
-**Version:** 3.0.3  
+**Version:** 3.0.6
 **Namespace:** `CMS_Speakers`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
-**Audit-/Dokustand:** Audit-Release 3.0.3 für 365CMS 3.x ohne Core-Änderungen  
+**Audit-/Dokustand:** Publicsite-Design-Pass am 2026-05-26
 **PHP:** 8.4+
 
 ---
@@ -19,6 +19,7 @@ Das **CMS Speakers**-Plugin verwaltet professionelle Speaker-Profile mit Vortrag
 - Änderungen erfolgen ausschließlich im Plugin; **der 365CMS-Core bleibt unberührt**.
 - Der Fokus des aktuellen Durchgangs liegt auf **Security**, **HTTP-Fehlerpfaden**, **Best Practices**, **Admin-Menü-Integration** und defensiver Cross-Plugin-Integration.
 - Version 3.0.3 bringt redeclare-sicheren Bootstrap, SettingsService-Anbindung, `INFORMATION_SCHEMA`-Migrationen, 405-/JSON-Fehlerpfade und Uninstall-Cleanup.
+- Version 3.0.6 gleicht Archiv, Filterbar, Cards, Topic-Pills, Detailprofil und Anfragebox an das PHINIT-Publicsite-Design an und ergänzt E-Mail-/Kontaktlinks im Profil.
 
 ### Kernfunktionen
 

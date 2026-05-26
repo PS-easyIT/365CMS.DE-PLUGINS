@@ -6,7 +6,6 @@
  *   $event    – object
  *   $settings – array (aus archive übergeben)
  *   $event_speakers_map – array<int,array<object>> optionaler Batch-Preload
- *   $db                 – CMS_Events_Database::instance() optionaler Fallback
  *
  * @package CMS_Events
  */
@@ -21,7 +20,16 @@ if (!isset($event)) {
     return;
 }
 
-$e = $event;
+if (!function_exists('cms_events_view_lowercase')) {
+  function cms_events_view_lowercase(string $value): string
+  {
+    return function_exists('mb_strtolower')
+      ? mb_strtolower($value, 'UTF-8')
+      : strtolower($value);
+  }
+}
+
+$e = is_object($event) ? $event : (is_array($event) ? (object) $event : (object) []);
 $id = (int) ($e->id ?? 0);
 
 if (!function_exists('cms_events_view_date_parts')) {
@@ -48,8 +56,16 @@ if (!function_exists('cms_events_view_date_parts')) {
 }
 
 if (!function_exists('cms_events_view_price_label')) {
-  function cms_events_view_price_label(object $event): string
+  function cms_events_view_price_label(mixed $event): string
   {
+    if (is_array($event)) {
+      $event = (object) $event;
+    }
+
+    if (!is_object($event)) {
+      return 'Kostenlos';
+    }
+
     $priceType = (string) ($event->price_type ?? 'free');
     $price = (float) ($event->price ?? 0);
     $currency = trim((string) ($event->price_currency ?? 'EUR')) ?: 'EUR';
@@ -58,7 +74,14 @@ if (!function_exists('cms_events_view_price_label')) {
       return 'Kostenlos';
     }
 
-    return number_format($price, 2, ',', '.') . ' ' . htmlspecialchars($currency, ENT_QUOTES, 'UTF-8');
+    $currencySymbol = match (strtoupper($currency)) {
+      'EUR' => '€',
+      'USD' => '$',
+      'CHF' => 'CHF',
+      default => preg_replace('/[^A-Z]/i', '', $currency) ?: '€',
+    };
+
+    return $currencySymbol . ' ' . number_format($price, 2, ',', '.');
   }
 }
 
@@ -108,6 +131,9 @@ $locationText = trim($locationRaw . ($locationRaw !== '' && $cityRaw !== '' ? ',
 $eventUrl = function_exists('cms_event_url') ? cms_event_url($e) : $baseUrl . '/events/' . $id;
 $imageUrl = cms_events_view_public_url($e->image_url ?? $e->banner_url ?? null);
 $tags = !empty($e->tags) ? (json_decode((string) $e->tags, true) ?: []) : [];
+if (!is_array($tags)) {
+  $tags = [];
+}
 [$day, $monthShort, $displayDate, $machineDate, $year] = cms_events_view_date_parts((string) ($e->event_date ?? ''));
 $eventMonth = $machineDate !== '' ? substr($machineDate, 5, 2) : '';
 $eventTime = trim((string) ($e->event_time ?? ''));
@@ -121,12 +147,20 @@ $eventSpeakers = [];
 
 if (isset($event_speakers_map) && is_array($event_speakers_map)) {
   $eventSpeakers = $event_speakers_map[$id] ?? [];
-} elseif ($id > 0 && isset($db) && method_exists($db, 'get_event_speakers')) {
-  $eventSpeakers = $db->get_event_speakers($id) ?: [];
+}
+
+if (!is_array($eventSpeakers)) {
+  $eventSpeakers = [];
 }
 
 if (!empty($eventSpeakers)) {
   $speaker = $eventSpeakers[0];
+  if (is_array($speaker)) {
+    $speaker = (object) $speaker;
+  }
+  if (!is_object($speaker)) {
+    $speaker = (object) [];
+  }
   $speakerName = trim((string) ($speaker->speaker_name ?? (($speaker->first_name ?? '') . ' ' . ($speaker->last_name ?? ''))));
   $speakerType = in_array((string) ($speaker->speaker_type ?? 'speaker'), ['speaker', 'expert'], true) ? (string) $speaker->speaker_type : 'speaker';
   $speakerId = (int) ($speaker->speaker_id ?? 0);
@@ -135,11 +169,11 @@ if (!empty($eventSpeakers)) {
   }
 }
 
-$filterText = mb_strtolower(trim($titleRaw . ' ' . $categoryRaw . ' ' . $locationText . ' ' . $speakerName . ' ' . implode(' ', array_map('strval', $tags))), 'UTF-8');
+$filterText = cms_events_view_lowercase(trim($titleRaw . ' ' . $categoryRaw . ' ' . $locationText . ' ' . $speakerName . ' ' . implode(' ', array_map('strval', $tags))));
 ?>
 <article class="phinit-card cms-events-card"
      data-cms-events-card
-     data-category="<?= htmlspecialchars(mb_strtolower($categoryRaw, 'UTF-8'), ENT_QUOTES, 'UTF-8') ?>"
+  data-category="<?= htmlspecialchars(cms_events_view_lowercase($categoryRaw), ENT_QUOTES, 'UTF-8') ?>"
      data-month="<?= htmlspecialchars($eventMonth, ENT_QUOTES, 'UTF-8') ?>"
      data-year="<?= htmlspecialchars($year, ENT_QUOTES, 'UTF-8') ?>"
      data-name="<?= htmlspecialchars($filterText, ENT_QUOTES, 'UTF-8') ?>">
@@ -160,7 +194,6 @@ $filterText = mb_strtolower(trim($titleRaw . ' ' . $categoryRaw . ' ' . $locatio
       <?php if ($machineDate !== ''): ?>
         <time class="cms-events-card__date-block" datetime="<?= htmlspecialchars($machineDate, ENT_QUOTES, 'UTF-8') ?>">
           <span class="cms-events-card__day"><?= htmlspecialchars($day, ENT_QUOTES, 'UTF-8') ?></span>
-          <span class="cms-events-card__month"><?= htmlspecialchars($monthShort, ENT_QUOTES, 'UTF-8') ?></span>
         </time>
         <span class="cms-events-card__date-full"><?= htmlspecialchars($dateLine, ENT_QUOTES, 'UTF-8') ?></span>
       <?php endif; ?>

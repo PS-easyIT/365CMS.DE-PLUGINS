@@ -489,6 +489,8 @@ final class CMS_Events_Database
                    COALESCE(s.last_name,     e.last_name)     AS last_name,
                    COALESCE(s.photo_url,     e.photo_url)     AS photo_url,
                    COALESCE(s.position,      e.position)      AS position,
+                   COALESCE(s.short_bio,     e.biography)     AS short_bio,
+                   COALESCE(s.company,       e.company)       AS company,
                    COALESCE(s.location_city, e.location_city) AS location_city,
                    CASE
                        WHEN es.speaker_type = 'speaker' THEN CONCAT(s.first_name, ' ', s.last_name)
@@ -803,9 +805,11 @@ final class CMS_Events_Database
     {
         return [
             // Archiv
-            'archive_title'           => 'Events',
+            'archive_title'           => 'Veranstaltungen',
             'archive_description'     => 'Aktuelle Veranstaltungen entdecken',
             'archive_slug'            => 'events',
+            'show_nav_link'           => '0',
+            'nav_label'               => 'Veranstaltungen',
             'per_page'                => '12',
             'grid_columns'            => '3',
             // Header
@@ -951,9 +955,14 @@ final class CMS_Events_Database
             $bind[] = $args['category'];
         }
         if (!empty($args['search'])) {
-            $sql   .= ' AND (title LIKE ? OR description LIKE ?)';
+            $sql   .= ' AND (title LIKE ? OR description LIKE ? OR organizer_name LIKE ?)';
             $bind[] = '%' . $args['search'] . '%';
             $bind[] = '%' . $args['search'] . '%';
+            $bind[] = '%' . $args['search'] . '%';
+        }
+        if (!empty($args['month'])) {
+            $sql   .= ' AND DATE_FORMAT(event_date, \'%Y-%m\') = ?';
+            $bind[] = $args['month'];
         }
         if (!empty($args['upcoming'])) {
             $sql   .= ' AND event_date >= CURDATE()';

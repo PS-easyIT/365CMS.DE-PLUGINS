@@ -96,10 +96,25 @@ final class CMS_Events_Post_Type
 
     public function add_menu_item(): void
     {
+        $settings = [];
+        try {
+            $settings = CMS_Events_Database::instance()->get_settings();
+        } catch (\Throwable $e) {
+            error_log('CMS Events nav settings fallback: ' . $e->getMessage());
+        }
+
+        if ((string) ($settings['show_nav_link'] ?? '0') !== '1') {
+            return;
+        }
+
         $current_path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-        $is_active = strpos($current_path, '/events') === 0 ? 'active' : '';
+        $is_active = str_starts_with((string) $current_path, '/events') || str_starts_with((string) $current_path, '/event/') ? 'active' : '';
+        $label = trim((string) ($settings['nav_label'] ?? 'Veranstaltungen'));
+        if ($label === '') {
+            $label = 'Veranstaltungen';
+        }
         
-        echo '<a href="' . htmlspecialchars((string) SITE_URL, ENT_QUOTES, 'UTF-8') . '/events" class="nav-link ' . htmlspecialchars($is_active, ENT_QUOTES, 'UTF-8') . '">Events</a>';
+        echo '<a href="' . htmlspecialchars((string) SITE_URL, ENT_QUOTES, 'UTF-8') . '/events" class="nav-link ' . htmlspecialchars($is_active, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
     }
 
     public function archive_page(): void
@@ -137,10 +152,11 @@ final class CMS_Events_Post_Type
         if ($search !== '')            $args['search']     = $search;
         if ($filter_online !== null)  $args['is_online']  = $filter_online;
 
-        $events     = $db_manager->get_events($args);
-        $total      = $db_manager->count_events(array_diff_key($args, array_flip(['limit', 'offset'])));
-        $pages      = max(1, (int)ceil($total / $per_page));
-        $categories = $db_manager->get_distinct_categories();
+        $events         = $db_manager->get_events($args);
+        $total          = $db_manager->count_events(array_diff_key($args, array_flip(['limit', 'offset'])));
+        $upcoming_total = $db_manager->count_events(['status' => 'published', 'upcoming' => true]);
+        $pages          = max(1, (int)ceil($total / $per_page));
+        $categories     = $db_manager->get_distinct_categories();
         $event_speakers_map = $this->get_event_speakers_map($events);
 
         $tm = \CMS\ThemeManager::instance();
@@ -153,6 +169,7 @@ final class CMS_Events_Post_Type
             'per_page'        => $per_page,
             'pages'           => $pages,
             'total'           => $total,
+            'upcoming_total'  => $upcoming_total,
             'categories'      => $categories,
             'event_speakers_map' => $event_speakers_map,
             'filter_category' => $filter_category,
@@ -291,6 +308,8 @@ final class CMS_Events_Post_Type
                         COALESCE(s.last_name,     ex.last_name)     AS last_name,
                         COALESCE(s.photo_url,     ex.photo_url)     AS photo_url,
                         COALESCE(s.position,      ex.position)      AS position,
+                        COALESCE(s.short_bio,     ex.biography)     AS short_bio,
+                        COALESCE(s.company,       ex.company)       AS company,
                         COALESCE(s.location_city, ex.location_city) AS location_city,
                         CASE
                             WHEN es.speaker_type = 'speaker' THEN CONCAT(s.first_name, ' ', s.last_name)
@@ -672,8 +691,8 @@ final class CMS_Events_Post_Type
         // So überschreibt "Einstellungen speichern" nie Design-Werte und umgekehrt.
         $tab_fields = [
             'settings' => [
-                'text'      => ['archive_title', 'archive_description', 'archive_slug', 'per_page'],
-                'checkboxes'=> [],
+                'text'      => ['archive_title', 'archive_description', 'archive_slug', 'nav_label', 'per_page'],
+                'checkboxes'=> ['show_nav_link'],
             ],
             'design' => [
                 'text'      => [
@@ -868,7 +887,16 @@ final class CMS_Events_Post_Type
             return null;
         }
 
-        return mb_substr($text, 0, $maxLength, 'UTF-8');
+        return $this->safe_substr($text, $maxLength);
+    }
+
+    private function safe_substr(string $value, int $maxLength): string
+    {
+        if (function_exists('mb_substr')) {
+            return mb_substr($value, 0, $maxLength, 'UTF-8');
+        }
+
+        return substr($value, 0, $maxLength);
     }
 
     private function sanitize_required_text(mixed $value, int $maxLength): string
@@ -945,6 +973,10 @@ final class CMS_Events_Post_Type
             return (string) max(6, min(100, (int) $raw));
         }
 
+        if ($key === 'nav_label') {
+            return $this->safe_substr(strip_tags($raw), 40) ?: 'Veranstaltungen';
+        }
+
         if ($key === 'grid_columns') {
             return in_array($raw, ['auto', '2', '3', '4'], true) ? $raw : 'auto';
         }
@@ -953,7 +985,7 @@ final class CMS_Events_Post_Type
             return (string) max(0, min(32, (int) $raw));
         }
 
-        return mb_substr(strip_tags($raw), 0, 500, 'UTF-8');
+        return $this->safe_substr(strip_tags($raw), 500);
     }
 
     private function render_404(): void

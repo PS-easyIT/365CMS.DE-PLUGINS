@@ -1,5 +1,11 @@
 # CMS Speakers – Changelog
 
+## [3.0.6] – 2026-05-26
+
+- **Publicsite-Design:** Speaker-Archiv, Such-/Topic-Filter, Cards, Topic-Pills, Social-Icons und Pagination folgen nun dem gleichen PHINIT-Designsystem wie CMS Events.
+- **Detailseite:** Profil, Sessions, Related Speaker und Sticky-Anfragekarte wurden optisch vereinheitlicht.
+- **Kontakt:** Speaker-Profile zeigen zusätzlich E-Mail als Social-Link; die Anfragekarte enthält beschriftete Kontaktlinks für LinkedIn, Website und E-Mail.
+
 ## [3.0.3] – 2026-05-25
 
 ### Geändert

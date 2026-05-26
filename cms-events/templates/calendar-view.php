@@ -11,7 +11,20 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$events = is_array($events ?? null) ? $events : [];
+$events = array_values(array_filter(array_map(
+    static function (mixed $item): ?object {
+        if (is_object($item)) {
+            return $item;
+        }
+
+        if (is_array($item)) {
+            return (object) $item;
+        }
+
+        return null;
+    },
+    is_array($events ?? null) ? $events : []
+)));
 $settings = is_array($settings ?? null) ? $settings : [];
 $month = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string) ($month ?? '')) === 1
     ? (string) $month

@@ -157,6 +157,7 @@ $relatedSpeakers = array_slice((array) ($related_speakers ?? []), 0, 3);
                     <div class="cms-speaker-profile__social" aria-label="Social Links">
                         <?php if ($linkedin !== ''): ?><a href="<?= htmlspecialchars($linkedin, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="ti ti-brand-linkedin"></i></a><?php endif; ?>
                         <?php if ($website !== ''): ?><a href="<?= htmlspecialchars($website, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" aria-label="Website"><i class="ti ti-world"></i></a><?php endif; ?>
+                        <?php if ($email !== ''): ?><a href="mailto:<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>" aria-label="E-Mail"><i class="ti ti-mail"></i></a><?php endif; ?>
                         <?php if ($twitter !== ''): ?><a href="<?= htmlspecialchars($twitter, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" aria-label="X"><i class="ti ti-brand-x"></i></a><?php endif; ?>
                     </div>
                 </div>
@@ -213,7 +214,7 @@ $relatedSpeakers = array_slice((array) ($related_speakers ?? []), 0, 3);
 
         <aside class="cms-speaker-detail__aside" aria-label="Speaker buchen">
             <div class="phinit-card cms-speaker-booking-card">
-                <h2>Speaker anfragen</h2>
+                <h2>Interesse an einem Vortrag?</h2>
                 <p><?= $name ?> für Keynote, Workshop oder Panel anfragen.</p>
                 <?php if ($email !== ''): ?>
                     <a href="mailto:<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>?subject=<?= rawurlencode('Speaker-Anfrage: ' . $nameRaw) ?>" class="phinit-btn phinit-btn--primary cms-speaker-booking-card__button">Jetzt anfragen</a>
@@ -222,6 +223,14 @@ $relatedSpeakers = array_slice((array) ($related_speakers ?? []), 0, 3);
                 <?php endif; ?>
                 <?php if (!empty($s->speaking_fee_min) || !empty($s->speaking_fee_max)): ?>
                     <p class="cms-speaker-booking-card__note">Honorarrahmen auf Anfrage verfügbar.</p>
+                <?php endif; ?>
+                <?php if ($linkedin !== '' || $website !== '' || $email !== ''): ?>
+                    <div class="cms-speaker-booking-card__divider" aria-hidden="true"></div>
+                    <div class="cms-speaker-booking-card__links" aria-label="Kontaktlinks">
+                        <?php if ($linkedin !== ''): ?><a href="<?= htmlspecialchars($linkedin, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><i class="ti ti-brand-linkedin" aria-hidden="true"></i><span>LinkedIn</span></a><?php endif; ?>
+                        <?php if ($website !== ''): ?><a href="<?= htmlspecialchars($website, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><i class="ti ti-world" aria-hidden="true"></i><span>Website</span></a><?php endif; ?>
+                        <?php if ($email !== ''): ?><a href="mailto:<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>"><i class="ti ti-mail" aria-hidden="true"></i><span>E-Mail</span></a><?php endif; ?>
+                    </div>
                 <?php endif; ?>
             </div>
 

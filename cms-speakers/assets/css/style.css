@@ -1365,3 +1365,392 @@
     flex-basis: 112px;
   }
 }
+
+/* CMS Speakers 3.0.6 / PHINIT Design Alignment */
+.cms-speaker-wrap {
+  --cms-speaker-navy: #1a2e4a;
+  --cms-speaker-accent: #2d7dd2;
+  --cms-speaker-accent-hover: #1a5fa8;
+  --cms-speaker-bg: #f5f7fa;
+  --cms-speaker-surface: #ffffff;
+  --cms-speaker-text: #1a2e4a;
+  --cms-speaker-muted: #5a6a7a;
+  --cms-speaker-border: #e5e7eb;
+  --cms-speaker-success: #22c55e;
+  --cms-speaker-radius: 8px;
+  --cms-speaker-radius-sm: 4px;
+  --cms-speaker-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --cms-speaker-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.12);
+  color: var(--cms-speaker-text);
+  font-family: var(--phinit-font-family, 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  padding-bottom: 40px;
+}
+
+.cms-speaker-wrap .phinit-overline {
+  color: var(--cms-speaker-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cms-speaker-head,
+.cms-speaker-filter,
+.cms-speaker-grid,
+.cms-speaker-pagination,
+.cms-speaker-breadcrumb,
+.cms-speaker-detail__grid {
+  width: min(100%, 1180px);
+}
+
+.cms-speaker-head {
+  margin-bottom: 28px;
+}
+
+.cms-speaker-head h1 {
+  color: var(--cms-speaker-navy);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.cms-speaker-head__subtitle {
+  color: var(--cms-speaker-muted);
+  font-size: 14px;
+  margin: 8px 0 0;
+}
+
+.cms-speaker-filter {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.cms-speaker-filter__field {
+  flex: 0 1 220px;
+}
+
+.cms-speaker-filter__field--search {
+  flex: 1 1 320px;
+}
+
+.cms-speaker-filter__field label {
+  color: var(--cms-speaker-muted);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.cms-speaker-wrap .phinit-input,
+.cms-speaker-wrap .phinit-select {
+  min-height: 38px;
+  height: 38px;
+  border: 1px solid var(--cms-speaker-border);
+  border-radius: var(--cms-speaker-radius-sm);
+  color: var(--cms-speaker-navy);
+  font-size: 14px;
+  padding: 8px 12px;
+}
+
+.cms-speaker-wrap .phinit-input:focus,
+.cms-speaker-wrap .phinit-select:focus {
+  border-color: var(--cms-speaker-accent);
+  box-shadow: 0 0 0 3px rgba(45, 125, 210, 0.14);
+  outline: 0;
+}
+
+.cms-speaker-wrap .phinit-btn {
+  min-height: 38px;
+  border-radius: var(--cms-speaker-radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+}
+
+.cms-speaker-wrap .phinit-btn--primary {
+  background: var(--cms-speaker-accent);
+  color: #ffffff;
+}
+
+.cms-speaker-wrap .phinit-btn--primary:hover,
+.cms-speaker-wrap .phinit-btn--primary:focus-visible {
+  background: var(--cms-speaker-accent-hover);
+}
+
+.cms-speaker-wrap .phinit-btn--secondary {
+  border: 1px solid var(--cms-speaker-border);
+  background: #ffffff;
+  color: var(--cms-speaker-accent);
+}
+
+.cms-speaker-wrap .phinit-btn--secondary:hover,
+.cms-speaker-wrap .phinit-btn--secondary:focus-visible {
+  border-color: var(--cms-speaker-accent);
+  color: var(--cms-speaker-accent-hover);
+}
+
+.cms-speaker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.cms-speaker-card.phinit-card,
+.cms-speaker-card {
+  align-items: center;
+  min-height: 100%;
+  padding: 24px;
+  border: 1px solid var(--cms-speaker-border);
+  border-radius: var(--cms-speaker-radius);
+  background: var(--cms-speaker-surface);
+  box-shadow: var(--cms-speaker-shadow);
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cms-speaker-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--cms-speaker-shadow-hover);
+}
+
+.cms-speaker-card__avatar {
+  width: 100px;
+  height: 100px;
+  margin-bottom: 18px;
+  background: #eef4fb;
+  color: var(--cms-speaker-accent);
+  font-size: 2rem;
+}
+
+.cms-speaker-card h2 {
+  color: var(--cms-speaker-navy);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.cms-speaker-card__job,
+.cms-speaker-card__bio {
+  color: var(--cms-speaker-muted);
+  font-size: 14px;
+}
+
+.cms-speaker-topic {
+  border-radius: var(--cms-speaker-radius-sm);
+  background: #eef4fb;
+  color: var(--cms-speaker-accent);
+  font-size: 13px;
+  padding: 4px 8px;
+}
+
+.cms-speaker-card__social,
+.cms-speaker-profile__social {
+  gap: 8px;
+}
+
+.cms-speaker-card__social a,
+.cms-speaker-profile__social a {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  color: var(--cms-speaker-accent);
+}
+
+.cms-speaker-card__social a:hover,
+.cms-speaker-profile__social a:hover {
+  border-color: var(--cms-speaker-accent);
+  background: #eef4fb;
+}
+
+.cms-speaker-card__footer {
+  margin-top: 20px;
+}
+
+.cms-speaker-empty {
+  padding: 48px 24px;
+  border: 1px dashed var(--cms-speaker-border);
+  color: var(--cms-speaker-muted);
+}
+
+.cms-speaker-detail__grid {
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 320px);
+  gap: 40px;
+}
+
+.cms-speaker-profile.phinit-card,
+.cms-speaker-detail__section.phinit-card,
+.cms-speaker-sessions.phinit-card,
+.cms-speaker-booking-card.phinit-card,
+.cms-speaker-related.phinit-card {
+  padding: 24px;
+  border: 1px solid var(--cms-speaker-border);
+  border-radius: var(--cms-speaker-radius);
+  box-shadow: var(--cms-speaker-shadow);
+}
+
+.cms-speaker-profile {
+  align-items: center;
+  gap: 24px;
+}
+
+.cms-speaker-profile__avatar {
+  width: 140px;
+  height: 140px;
+  flex-basis: 140px;
+  background: #eef4fb;
+}
+
+.cms-speaker-profile h1 {
+  color: var(--cms-speaker-navy);
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.cms-speaker-profile__job,
+.cms-speaker-profile__meta,
+.cms-speaker-session p,
+.cms-speaker-booking-card p,
+.cms-speaker-booking-card__note {
+  color: var(--cms-speaker-muted);
+  font-size: 14px;
+}
+
+.cms-speaker-profile__meta i,
+.cms-speaker-session i,
+.cms-speaker-booking-card__links i {
+  color: var(--cms-speaker-accent);
+}
+
+.cms-speaker-detail__section h2,
+.cms-speaker-sessions h2,
+.cms-speaker-booking-card h2,
+.cms-speaker-related h2 {
+  color: var(--cms-speaker-navy);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.cms-speaker-detail__bio {
+  color: #2f3f50;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.cms-speaker-session {
+  border-color: var(--cms-speaker-border);
+  border-radius: var(--cms-speaker-radius-sm);
+}
+
+.cms-speaker-session__date {
+  background: #eef4fb;
+  color: var(--cms-speaker-navy);
+}
+
+.cms-speaker-session__date span {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.cms-speaker-detail__aside {
+  position: sticky;
+  top: 24px;
+}
+
+.cms-speaker-booking-card__button {
+  width: 100%;
+}
+
+.cms-speaker-booking-card__divider {
+  height: 1px;
+  margin: 20px 0 14px;
+  background: var(--cms-speaker-border);
+}
+
+.cms-speaker-booking-card__links {
+  display: grid;
+  gap: 10px;
+}
+
+.cms-speaker-booking-card__links a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--cms-speaker-navy);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cms-speaker-booking-card__links a:hover {
+  color: var(--cms-speaker-accent);
+}
+
+.cms-speaker-related__item {
+  gap: 12px;
+  padding: 14px 0;
+}
+
+.cms-speaker-related__avatar {
+  width: 52px;
+  height: 52px;
+  background: #eef4fb;
+}
+
+.cms-speaker-related__item strong {
+  color: var(--cms-speaker-navy);
+  font-size: 14px;
+}
+
+.cms-speaker-related__item small {
+  color: var(--cms-speaker-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .cms-speaker-filter {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .cms-speaker-filter__field,
+  .cms-speaker-filter__field--search {
+    flex: 1 1 220px;
+  }
+
+  .cms-speaker-detail__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cms-speaker-detail__aside {
+    position: static;
+  }
+}
+
+@media (max-width: 520px) {
+  .cms-speaker-filter {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .cms-speaker-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cms-speaker-profile {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cms-speaker-profile__avatar {
+    width: 112px;
+    height: 112px;
+    flex-basis: 112px;
+  }
+}

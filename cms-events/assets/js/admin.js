@@ -313,6 +313,27 @@
         var timeInput = speakerBox.querySelector('[data-ev-speaker-time]');
         var addButton = speakerBox.querySelector('[data-ev-speaker-add]');
         var assignedList = document.getElementById('ev-assigned-speakers');
+        var messageBox = speakerBox.querySelector('[data-ev-speaker-message]');
+
+        function showSpeakerMessage(message, type) {
+            if (!messageBox) {
+                return;
+            }
+
+            messageBox.textContent = message;
+            messageBox.hidden = false;
+            messageBox.classList.toggle('alert-success', type === 'success');
+            messageBox.classList.toggle('alert-error', type !== 'success');
+        }
+
+        function clearSpeakerMessage() {
+            if (!messageBox) {
+                return;
+            }
+
+            messageBox.hidden = true;
+            messageBox.textContent = '';
+        }
 
         async function readJsonResponse(response) {
             var payload = {};
@@ -381,14 +402,15 @@
                 });
                 var payload = await readJsonResponse(response);
                 if (!payload.success) {
-                    window.alert('Fehler beim Entfernen');
+                    showSpeakerMessage('Fehler beim Entfernen der Zuordnung.', 'error');
                     return;
                 }
 
                 document.getElementById('ev-sp-row-' + assignmentId)?.remove();
                 ensureEmptyMessage();
+                showSpeakerMessage('Speaker-Zuordnung entfernt.', 'success');
             } catch (error) {
-                window.alert('Netzwerkfehler');
+                showSpeakerMessage('Netzwerkfehler beim Entfernen: ' + error.message, 'error');
             }
         }
 
@@ -396,9 +418,10 @@
         syncPersonOptions();
 
         addButton?.addEventListener('click', async function () {
+            clearSpeakerMessage();
             var speakerId = personSelect?.value || '';
             if (!speakerId) {
-                window.alert('Bitte eine Person wählen.');
+                showSpeakerMessage('Bitte eine Person wählen.', 'error');
                 return;
             }
 
@@ -421,9 +444,9 @@
                     return;
                 }
 
-                window.alert('Fehler: ' + (payload.error || 'Unbekannt'));
+                showSpeakerMessage('Fehler: ' + (payload.error || 'Unbekannt'), 'error');
             } catch (error) {
-                window.alert('Netzwerkfehler: ' + error.message);
+                showSpeakerMessage('Netzwerkfehler: ' + error.message, 'error');
             }
         });
 

@@ -407,6 +407,10 @@ final class CMS_Events_Shortcode
             return '';
         }
 
-        return mb_substr($text, 0, $maxLength, 'UTF-8');
+        if (function_exists('mb_substr')) {
+            return mb_substr($text, 0, $maxLength, 'UTF-8');
+        }
+
+        return substr($text, 0, $maxLength);
     }
 }

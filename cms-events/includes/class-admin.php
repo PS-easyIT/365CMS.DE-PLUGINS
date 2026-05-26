@@ -55,6 +55,14 @@ final class CMS_Events_Admin
 
     public static function render_plugin_page_bridge(): void
     {
+        $tab = (string) ($_GET['tab'] ?? '');
+        $allowedTabs = ['overview', 'categories', 'tags', 'design', 'settings'];
+
+        if ($tab === '' || !in_array($tab, $allowedTabs, true)) {
+            CMS\Router::instance()->redirect('/admin/events?tab=overview');
+            return;
+        }
+
         if (class_exists('CMS_Events_Post_Type', false)) {
             CMS_Events_Post_Type::instance()->admin_list();
             return;
@@ -142,7 +150,7 @@ final class CMS_Events_Admin
             'slug'   => 'events',
             'label'  => 'Events',
             'icon'   => '📅',
-            'url'    => '/admin/events',
+            'url'    => '/admin/events?tab=overview',
             'active' => $isActive,
         ];
 
@@ -167,14 +175,17 @@ final class CMS_Events_Admin
         $settings    = $data['settings']    ?? [];
         $csrf        = (string) ($data['csrf'] ?? '');
         $csrfEsc     = htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8');
+        $eventsAdminBaseUrl = htmlspecialchars((string) SITE_URL . '/admin/events', ENT_QUOTES, 'UTF-8');
         $approveCsrf = htmlspecialchars((string) ($data['approve_csrf'] ?? ''), ENT_QUOTES, 'UTF-8');
         $sec         = CMS\Security::instance();
 
         // Settings mit Defaults zusammenführen
         $s = array_merge([
-            'archive_title'         => 'Events',
+            'archive_title'         => 'Veranstaltungen',
             'archive_description'   => 'Aktuelle Veranstaltungen entdecken',
             'archive_slug'          => 'events',
+            'show_nav_link'         => '0',
+            'nav_label'             => 'Veranstaltungen',
             'per_page'              => '12',
             'grid_columns'          => 'auto',
             'archive_header_icon'   => '📅',
@@ -228,13 +239,16 @@ final class CMS_Events_Admin
         $upcoming  = count(array_filter($events, fn($e) => !empty($e->event_date) && strtotime($e->event_date) >= strtotime('today')));
         ?>
 
+        <div class="ev-admin-shell">
+
         <!-- Page Header -->
         <div class="admin-page-header">
             <div>
                 <h2>📅 Events</h2>
-                <p>Veranstaltungen, Workshops und Webinare verwalten</p>
+                <p>Veranstaltungen, Workshops und Webinare zentral verwalten.</p>
             </div>
             <div class="header-actions">
+                <a href="<?= SITE_URL ?>/events" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">👁️ Öffentlich</a>
                 <a href="<?= SITE_URL ?>/admin/events/new" class="btn btn-primary">➕ Neues Event</a>
             </div>
         </div>
@@ -271,7 +285,7 @@ final class CMS_Events_Admin
                 'settings'   => ['⚙️', 'Einstellungen'],
             ];
             foreach ($tabs as $slug => [$icon, $label]): ?>
-                <a href="?tab=<?= $slug ?>" class="ev-tab <?= $tab === $slug ? 'active' : '' ?>">
+                <a href="<?= $eventsAdminBaseUrl ?>?tab=<?= rawurlencode($slug) ?>" class="ev-tab <?= $tab === $slug ? 'active' : '' ?>">
                     <?= $icon ?> <?= $label ?>
                     <?php if ($slug === 'overview' && $draft > 0): ?>
                         <span class="nav-badge ev-tab-badge"><?= $draft ?></span>
@@ -323,8 +337,9 @@ final class CMS_Events_Admin
         </div>
 
         <!-- Filter Bar -->
-        <div class="admin-card ev-admin-assets-gap">
-            <form method="GET" class="ev-admin-filter-form">
+        <div class="admin-card ev-filter-card">
+            <h3>🔎 Events filtern</h3>
+            <form method="GET" class="admin-form ev-admin-filter-form">
                 <input type="hidden" name="tab" value="overview">
                 <div class="form-group ev-form-group--inline-reset ev-form-group--grow-2">
                     <label class="form-label">Titel / Stichwort</label>
@@ -342,129 +357,128 @@ final class CMS_Events_Admin
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary">🔍 Filtern</button>
-                <?php if (($data['search'] ?? '') || $filter !== 'all'): ?><a href="?tab=overview" class="btn btn-secondary">✕ Reset</a><?php endif; ?>
+                <?php if (($data['search'] ?? '') || $filter !== 'all'): ?><a href="<?= $eventsAdminBaseUrl ?>?tab=overview" class="btn btn-secondary">✕ Reset</a><?php endif; ?>
             </form>
         </div>
 
         <?php if (empty($filtered)): ?>
-            <div class="ev-empty">
-                <div class="ev-empty-icon">📅</div>
-                <p>Keine Events <?= $filter !== 'all' ? 'in diesem Filter' : '' ?> gefunden.</p>
+            <div class="empty-state">
+                <p class="ev-empty-icon">📅</p>
+                <p><strong>Keine Events <?= $filter !== 'all' ? 'in diesem Filter' : '' ?> gefunden.</strong></p>
+                <p class="text-muted">Passe die Filter an oder lege direkt ein neues Event an.</p>
                 <?php if ($filter === 'all'): ?>
-                    <a href="<?= SITE_URL ?>/admin/events/new" class="btn btn-primary ev-admin-assets-gap">
-                        Erstes Event anlegen
-                    </a>
+                    <a href="<?= SITE_URL ?>/admin/events/new" class="btn btn-primary">➕ Erstes Event anlegen</a>
                 <?php endif; ?>
             </div>
         <?php else: ?>
-        <div class="ev-adm-grid">
-        <?php foreach ($filtered as $ev):
-            $id       = (int)($ev->id ?? 0);
-            $title    = $sec->escape($ev->title ?? '');
-            $category = $sec->escape($ev->category ?? '');
-            $city     = $sec->escape($ev->city ?? '');
-            $status   = $ev->status ?? 'draft';
-            $isPast   = !empty($ev->event_date) && strtotime($ev->event_date) < strtotime('today');
-            $isToday  = !empty($ev->event_date) && date('Y-m-d', strtotime($ev->event_date)) === date('Y-m-d');
-            $dateTs   = !empty($ev->event_date) ? strtotime($ev->event_date) : 0;
-
-            $statusCfg = [
-                'draft'     => ['Entwurf',       '#92400e', '#fef3c7'],
-                'published' => ['Veröffentlicht', '#065f46', '#d1fae5'],
-                'cancelled' => ['Abgesagt',       '#991b1b', '#fee2e2'],
-                'completed' => ['Abgeschlossen',  '#1e40af', '#dbeafe'],
-            ];
-            [$stLabel, $stColor, $stBg] = $statusCfg[$status] ?? ['Unbekannt', '#374151', '#f3f4f6'];
-            $isDraft = $status === 'draft';
-        ?>
-            <div class="ev-adm-card<?= $isPast ? ' ev-adm-card--past' : '' ?><?= !empty($ev->is_featured) ? ' ev-adm-card--featured' : '' ?><?= $isDraft ? ' ev-adm-card--draft' : '' ?>">
-                <?php if ($isDraft): ?>
-                    <div class="ev-draft-banner">⏳ Wartet auf Genehmigung</div>
-                <?php endif; ?>
-                <div class="ev-adm-head">
-                    <?php if ($dateTs): ?>
-                    <div class="ev-adm-date">
-                        <span class="ev-adm-day"><?= date('d', $dateTs) ?></span>
-                        <span class="ev-adm-mo"><?= date('M', $dateTs) ?></span>
-                        <span class="ev-adm-yr"><?= date('Y', $dateTs) ?></span>
-                    </div>
-                    <?php else: ?>
-                    <div class="ev-adm-date ev-adm-date--nodate">
-                        <span class="ev-adm-date-icon">📅</span>
-                    </div>
-                    <?php endif; ?>
-                    <div class="ev-adm-ident">
-                        <div class="ev-adm-badges">
-                            <?php if (!empty($s['show_status_badge']) && $s['show_status_badge'] !== '0'): ?>
-                                <span class="ev-adm-badge"
-                                    data-ev-badge-fg="<?= htmlspecialchars($stColor, ENT_QUOTES, 'UTF-8') ?>"
-                                    data-ev-badge-bg="<?= htmlspecialchars($stBg, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($stLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php endif; ?>
-                            <?php if (!empty($ev->is_featured) && !empty($s['show_featured_badge']) && $s['show_featured_badge'] !== '0'): ?>
-                                  <span class="ev-adm-badge"
-                                      data-ev-badge-fg="<?= htmlspecialchars((string)$s['color_badge_featured_color'], ENT_QUOTES, 'UTF-8') ?>"
-                                      data-ev-badge-bg="<?= htmlspecialchars((string)$s['color_badge_featured_bg'], ENT_QUOTES, 'UTF-8') ?>">⭐ Featured</span>
-                            <?php endif; ?>
-                            <?php if (!empty($ev->is_online) && !empty($s['show_online_badge']) && $s['show_online_badge'] !== '0'): ?>
-                                  <span class="ev-adm-badge"
-                                      data-ev-badge-fg="<?= htmlspecialchars((string)$s['color_badge_online_color'], ENT_QUOTES, 'UTF-8') ?>"
-                                      data-ev-badge-bg="<?= htmlspecialchars((string)$s['color_badge_online_bg'], ENT_QUOTES, 'UTF-8') ?>">🌐 Online</span>
-                            <?php endif; ?>
-                            <?php if ($isToday): ?>
-                                <span class="ev-adm-badge ev-adm-badge--today">🔴 Heute</span>
-                            <?php endif; ?>
-                        </div>
-                        <p class="ev-adm-title" title="<?= $title ?>"><?= $title ?></p>
-                        <?php if ($category): ?>
-                            <p class="ev-adm-sub">📂 <?= $category ?></p>
-                        <?php endif; ?>
-                    </div>
+        <div class="admin-card ev-tab-panel">
+            <div class="ev-panel-header">
+                <div>
+                    <h3>📋 Event-Übersicht</h3>
+                    <p>Alle Events mit Datum, Status und schnellen Aktionen.</p>
                 </div>
-
-                <?php
-                $pills = [];
-                if (!empty($ev->is_online) && !empty($ev->online_url)) $pills[] = ['🔗', 'Online-Link vorhanden'];
-                elseif ($city && !empty($s['show_city']) && $s['show_city'] !== '0') $pills[] = ['📍', $city];
-                if (!empty($ev->event_time) && !empty($s['show_date_pill']) && $s['show_date_pill'] !== '0') $pills[] = ['🕐', substr($ev->event_time, 0, 5) . ' Uhr'];
-                if (!empty($ev->capacity) && !empty($s['show_capacity']) && $s['show_capacity'] !== '0') $pills[] = ['👥', (int)$ev->capacity . ' Plätze'];
-                if (!empty($ev->registration_url)) $pills[] = ['🎟', 'Anmeldung'];
-                if (!empty($s['show_price']) && $s['show_price'] !== '0') {
-                    if (!empty($ev->price) && (float)$ev->price > 0) $pills[] = ['💶', number_format((float)$ev->price, 2, ',', '.') . ' ' . ($ev->price_currency ?? 'EUR')];
-                    elseif (($ev->price_type ?? 'free') === 'free') $pills[] = ['✅', 'Kostenlos'];
-                }
-                if (!empty($ev->end_date) && $ev->end_date !== $ev->event_date) $pills[] = ['📆', 'bis ' . date('d.m.Y', strtotime($ev->end_date))];
-                if ($category && !empty($s['show_category']) && $s['show_category'] !== '0') $pills[] = ['📂', $category];
-                ?>
-                <?php if ($pills): ?>
-                <div class="ev-adm-pills">
-                    <?php foreach ($pills as [$ico, $txt]): ?>
-                        <span class="ev-adm-pill"><?= $ico ?> <?= $sec->escape((string)$txt) ?></span>
-                    <?php endforeach; ?>
-                </div>
-                <?php endif; ?>
-
-                <div class="ev-adm-foot">
-                    <?php if ($isDraft): ?>
-                        <form method="POST" action="<?= SITE_URL ?>/admin/events/approve/<?= $id ?>" id="ev-approve-form-<?= $id ?>" class="ev-inline-form">
-                            <input type="hidden" name="csrf_token" value="<?= $approveCsrf ?>">
-                            <button type="button" class="ev-adm-btn ev-adm-btn-primary ev-btn-inline-success"
-                                    data-ev-approve-event
-                                    data-ev-event-name="<?= htmlspecialchars((string)($ev->title ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                                    data-ev-submit-target="ev-approve-form-<?= $id ?>">✓ Genehmigen</button>
-                        </form>
-                    <?php else: ?>
-                        <a href="<?= function_exists('cms_event_url') ? cms_event_url($ev) : SITE_URL . '/event/event-' . $id ?>"
-                                    target="_blank" rel="noopener noreferrer" class="ev-adm-btn ev-adm-btn-ghost">🌐</a>
-                    <?php endif; ?>
-                    <a href="<?= SITE_URL ?>/admin/events/edit/<?= $id ?>"
-                       class="ev-adm-btn ev-adm-btn-primary">✏️ Bearbeiten</a>
-                        <button type="button" class="ev-adm-btn ev-adm-btn-danger"
-                            data-ev-delete-event
-                            data-ev-event-name="<?= htmlspecialchars((string)($ev->title ?? ''), ENT_QUOTES, 'UTF-8') ?>"
-                            data-ev-delete-action="<?= SITE_URL ?>/admin/events/delete/<?= $id ?>">🗑️</button>
-                </div>
+                <span class="ev-result-count"><?= (int)count($filtered) ?> Einträge</span>
             </div>
-        <?php endforeach; ?>
+            <div class="users-table-container ev-events-table-wrap">
+                <table class="users-table ev-events-table">
+                    <thead>
+                        <tr>
+                            <th>Event</th>
+                            <th>Datum</th>
+                            <th>Ort / Typ</th>
+                            <th>Status</th>
+                            <th>Merkmale</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($filtered as $ev):
+                        $id       = (int)($ev->id ?? 0);
+                        $titleRaw = (string)($ev->title ?? '');
+                        $title    = htmlspecialchars($titleRaw, ENT_QUOTES, 'UTF-8');
+                        $category = htmlspecialchars((string)($ev->category ?? ''), ENT_QUOTES, 'UTF-8');
+                        $cityRaw  = trim((string)($ev->city ?? ''));
+                        $city     = htmlspecialchars($cityRaw, ENT_QUOTES, 'UTF-8');
+                        $status   = (string)($ev->status ?? 'draft');
+                        $dateTs   = !empty($ev->event_date) ? strtotime((string)$ev->event_date) : false;
+                        $endTs    = !empty($ev->end_date) ? strtotime((string)$ev->end_date) : false;
+                        $isPast   = $dateTs !== false && $dateTs < strtotime('today');
+                        $isToday  = $dateTs !== false && date('Y-m-d', $dateTs) === date('Y-m-d');
+                        $isDraft  = $status === 'draft';
+                        $statusCfg = [
+                            'draft'     => ['⏳ Entwurf', 'pending'],
+                            'published' => ['✅ Veröffentlicht', 'active'],
+                            'cancelled' => ['❌ Abgesagt', 'danger'],
+                            'completed' => ['📦 Abgeschlossen', 'inactive'],
+                        ];
+                        [$stLabel, $stClass] = $statusCfg[$status] ?? ['ℹ️ Unbekannt', 'inactive'];
+                        $dateLabel = $dateTs ? date('d.m.Y', $dateTs) : '—';
+                        $timeLabel = !empty($ev->event_time) ? substr((string)$ev->event_time, 0, 5) . ' Uhr' : '';
+                        $endLabel  = ($endTs && $dateTs && date('Y-m-d', $endTs) !== date('Y-m-d', $dateTs)) ? 'bis ' . date('d.m.Y', $endTs) : '';
+                        $publicUrl = function_exists('cms_event_url') ? cms_event_url($ev) : SITE_URL . '/event/event-' . $id;
+                    ?>
+                        <tr<?= $isDraft ? ' class="ev-row-pending"' : ($isPast ? ' class="ev-row-muted"' : '') ?>>
+                            <td>
+                                <div class="ev-table-primary">
+                                    <a href="<?= SITE_URL ?>/admin/events/edit/<?= $id ?>" class="ev-table-title"><?= $title !== '' ? $title : 'Unbenanntes Event' ?></a>
+                                    <div class="ev-table-meta">
+                                        <?php if ($category !== ''): ?><span>📂 <?= $category ?></span><?php endif; ?>
+                                        <?php if (!empty($ev->organizer_name)): ?><span>🏢 <?= htmlspecialchars((string)$ev->organizer_name, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <strong><?= htmlspecialchars($dateLabel, ENT_QUOTES, 'UTF-8') ?></strong>
+                                <?php if ($timeLabel !== ''): ?><div class="ev-table-muted">🕐 <?= htmlspecialchars($timeLabel, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
+                                <?php if ($endLabel !== ''): ?><div class="ev-table-muted"><?= htmlspecialchars($endLabel, ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if (!empty($ev->is_online)): ?>
+                                    <span class="status-badge active">🌐 Online</span>
+                                <?php elseif ($city !== ''): ?>
+                                    <span><?= $city ?></span>
+                                <?php else: ?>
+                                    <span class="ev-table-muted">—</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <span class="status-badge <?= htmlspecialchars($stClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($stLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                                <?php if ($isToday): ?><div class="ev-table-muted">🔴 Heute</div><?php endif; ?>
+                            </td>
+                            <td>
+                                <div class="ev-soft-badge-stack">
+                                    <?php if (!empty($ev->is_featured)): ?><span class="ev-soft-badge">⭐ Featured</span><?php endif; ?>
+                                    <?php if (!empty($ev->capacity)): ?><span class="ev-soft-badge">👥 <?= (int)$ev->capacity ?></span><?php endif; ?>
+                                    <?php if (!empty($ev->registration_url)): ?><span class="ev-soft-badge">🎟 Anmeldung</span><?php endif; ?>
+                                    <?php if (($ev->price_type ?? 'free') === 'free'): ?><span class="ev-soft-badge">✅ Kostenlos</span><?php endif; ?>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="ev-row-actions">
+                                    <?php if ($isDraft): ?>
+                                        <form method="POST" action="<?= SITE_URL ?>/admin/events/approve/<?= $id ?>" id="ev-approve-form-<?= $id ?>" class="ev-inline-form-compact">
+                                            <input type="hidden" name="csrf_token" value="<?= $approveCsrf ?>">
+                                            <button type="button" class="btn btn-sm btn-primary"
+                                                    data-ev-approve-event
+                                                    data-ev-event-name="<?= htmlspecialchars($titleRaw, ENT_QUOTES, 'UTF-8') ?>"
+                                                    data-ev-submit-target="ev-approve-form-<?= $id ?>">✓</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <a href="<?= htmlspecialchars((string)$publicUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary" title="Öffentlich ansehen">🌐</a>
+                                    <?php endif; ?>
+                                    <a href="<?= SITE_URL ?>/admin/events/edit/<?= $id ?>" class="btn btn-sm btn-secondary" title="Bearbeiten">✏️</a>
+                                    <button type="button" class="btn btn-sm btn-danger"
+                                            data-ev-delete-event
+                                            data-ev-event-name="<?= htmlspecialchars($titleRaw, ENT_QUOTES, 'UTF-8') ?>"
+                                            data-ev-delete-action="<?= SITE_URL ?>/admin/events/delete/<?= $id ?>"
+                                            title="Löschen">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
         <?php endif; ?>
 
@@ -472,49 +486,68 @@ final class CMS_Events_Admin
         // ══════════════════════════════════════════════════════════════════
         elseif ($tab === 'categories'):
         ?>
-        <div class="ev-layout-split-320">
-            <div>
-                <h3 class="ev-heading-reset">Vorhandene Kategorien (<?= count($categories) ?>)</h3>
-                <?php if (empty($categories)): ?>
-                    <p class="ev-note">Noch keine Kategorien vorhanden.</p>
-                <?php else: ?>
-                <div class="ev-tax-list">
-                    <?php foreach ($categories as $cat): ?>
-                    <div class="ev-tax-row">
-                        <span class="ev-tax-name"><?= $sec->escape($cat->icon ?? '📂') ?> <?= $sec->escape($cat->name) ?></span>
-                        <span class="ev-tax-slug">
-                            <?= $sec->escape($cat->slug ?? '') ?>
-                        </span>
-                        <?php if (($cat->id ?? 0) > 0): ?>
-                            <form method="POST" action="<?= SITE_URL ?>/admin/events/category/delete/<?= (int)$cat->id ?>" class="ev-inline-form-compact"
-                                  data-ev-confirm-title="Kategorie löschen?"
-                                  data-ev-confirm-message="Kategorie „<?= htmlspecialchars((string)($cat->name ?? ''), ENT_QUOTES, 'UTF-8') ?>” wirklich löschen?"
-                                  data-ev-confirm-button="Löschen"
-                                  data-ev-confirm-class="btn-danger">
-                                <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
-                                <button type="submit" class="ev-del-btn">×</button>
-                            </form>
-                        <?php endif; ?>
-                    </div>
-                    <?php endforeach; ?>
+        <div class="admin-card ev-tab-panel">
+            <div class="ev-panel-header">
+                <div>
+                    <h3>📂 Kategorien</h3>
+                    <p>Öffentliche Event-Kategorien mit Icon und Slug verwalten.</p>
                 </div>
+                <span class="ev-result-count"><?= (int)count($categories) ?> Kategorien</span>
+            </div>
+
+            <div class="ev-layout-split-320">
+            <div>
+                <?php if (empty($categories)): ?>
+                    <div class="empty-state ev-empty-state-compact">
+                        <p class="ev-empty-icon">📂</p>
+                        <p><strong>Noch keine Kategorien vorhanden</strong></p>
+                        <p class="text-muted">Lege rechts die erste Kategorie für dein Event-Archiv an.</p>
+                    </div>
+                <?php else: ?>
+                    <div class="users-table-container">
+                        <table class="users-table">
+                            <thead><tr><th>Kategorie</th><th>Slug</th><th>Aktionen</th></tr></thead>
+                            <tbody>
+                            <?php foreach ($categories as $cat): ?>
+                            <tr>
+                                <td><strong><?= $sec->escape($cat->icon ?? '📂') ?> <?= $sec->escape($cat->name) ?></strong></td>
+                                <td><code><?= $sec->escape($cat->slug ?? '') ?></code></td>
+                                <td>
+                                    <?php if (($cat->id ?? 0) > 0): ?>
+                                        <form method="POST" action="<?= SITE_URL ?>/admin/events/category/delete/<?= (int)$cat->id ?>" class="ev-inline-form-compact"
+                                              data-ev-confirm-title="Kategorie löschen?"
+                                              data-ev-confirm-message="Kategorie „<?= htmlspecialchars((string)($cat->name ?? ''), ENT_QUOTES, 'UTF-8') ?>” wirklich löschen?"
+                                              data-ev-confirm-button="Löschen"
+                                              data-ev-confirm-class="btn-danger">
+                                            <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
+                                            <button type="submit" class="btn btn-sm btn-danger">🗑️</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <span class="ev-table-muted">System</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 <?php endif; ?>
             </div>
-            <div class="ev-side-card">
-                <h3 class="ev-heading-reset">➕ Neue Kategorie</h3>
-                <form method="POST" action="<?= SITE_URL ?>/admin/events/category/add">
+            <div class="ev-side-panel">
+                <h3>➕ Neue Kategorie</h3>
+                <form method="POST" action="<?= SITE_URL ?>/admin/events/category/add" class="admin-form">
                     <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
-                    <div class="ev-form-group">
-                        <label>Icon (Emoji)</label>
-                        <input type="text" name="category_icon" value="📂" maxlength="4"
-                               class="ev-emoji-input">
+                    <div class="form-group">
+                        <label class="form-label">Icon (Emoji)</label>
+                        <input type="text" name="category_icon" value="📂" maxlength="4" class="form-control ev-emoji-input">
                     </div>
-                    <div class="ev-form-group">
-                        <label>Kategorie-Name *</label>
-                        <input type="text" name="category_name" required placeholder="z.B. Konferenz">
+                    <div class="form-group">
+                        <label class="form-label">Kategorie-Name <span class="ev-required">*</span></label>
+                        <input type="text" name="category_name" required placeholder="z.B. Konferenz" class="form-control">
                     </div>
                     <button type="submit" class="btn btn-primary ev-btn-block">➕ Anlegen</button>
                 </form>
+            </div>
             </div>
         </div>
 
@@ -527,16 +560,23 @@ final class CMS_Events_Admin
                 'format'  => ['📋', 'Format & Niveau', 'Zielgruppe und Format'],
             ];
         ?>
+        <div class="admin-card ev-tab-panel">
+            <div class="ev-panel-header">
+                <div>
+                    <h3>🏷️ Tag-Vorlagen</h3>
+                    <p>Vordefinierte Merkmale für Event-Karten und Filter pflegen.</p>
+                </div>
+            </div>
         <div class="ev-layout-split-280">
             <div>
                 <div class="ev-layout-card-grid">
                 <?php foreach ($typeLabels as $type => [$icon, $label, $desc]): ?>
-                    <div class="ev-side-card">
-                        <div class="ev-inline-stack ev-admin-assets-gap">
-                            <span class="stat-icon"><?= $icon ?></span>
+                    <div class="ev-mini-panel">
+                        <div class="ev-inline-stack">
+                            <span class="ev-mini-panel-icon"><?= $icon ?></span>
                             <div>
                                 <strong><?= $label ?></strong>
-                                <div class="ev-tax-slug"><?= $desc ?></div>
+                                <div class="ev-table-muted"><?= $desc ?></div>
                             </div>
                         </div>
                         <div class="ev-tag-list">
@@ -549,29 +589,29 @@ final class CMS_Events_Admin
                                           data-ev-confirm-button="Löschen"
                                           data-ev-confirm-class="btn-danger">
                                         <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
-                                        <button type="submit" class="ev-tag-del">×</button>
+                                        <button type="submit" class="ev-tag-del" aria-label="Tag löschen">×</button>
                                     </form>
                                 </span>
                             <?php endforeach; ?>
                             <?php if (empty($tag_presets[$type])): ?>
-                                <span class="ev-note">Noch keine Einträge.</span>
+                                <span class="ev-table-muted">Noch keine Einträge.</span>
                             <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>
                 </div>
             </div>
-            <div class="ev-side-card">
-                <h3 class="ev-heading-reset">➕ Neues Tag</h3>
-                <form method="POST" action="<?= SITE_URL ?>/admin/events/tagpreset/add">
+            <div class="ev-side-panel">
+                <h3>➕ Neues Tag</h3>
+                <form method="POST" action="<?= SITE_URL ?>/admin/events/tagpreset/add" class="admin-form">
                     <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
-                    <div class="ev-form-group">
-                        <label>Tag-Name *</label>
-                        <input type="text" name="tag_name" required placeholder="z.B. Einsteiger">
+                    <div class="form-group">
+                        <label class="form-label">Tag-Name <span class="ev-required">*</span></label>
+                        <input type="text" name="tag_name" required placeholder="z.B. Einsteiger" class="form-control">
                     </div>
-                    <div class="ev-form-group">
-                        <label>Kategorie *</label>
-                        <select name="tag_type">
+                    <div class="form-group">
+                        <label class="form-label">Kategorie <span class="ev-required">*</span></label>
+                        <select name="tag_type" class="form-control">
                             <option value="general">🔷 Allgemein</option>
                             <option value="special">⭐ Speziell</option>
                             <option value="format">📋 Format & Niveau</option>
@@ -581,17 +621,26 @@ final class CMS_Events_Admin
                 </form>
             </div>
         </div>
+        </div>
 
         <?php
         // ══════════════════════════════════════════════════════════════════
         elseif ($tab === 'design'):
         ?>
-        <form method="POST" action="<?= SITE_URL ?>/admin/events/settings/save">
+        <form method="POST" action="<?= SITE_URL ?>/admin/events/settings/save" class="admin-form">
             <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
             <input type="hidden" name="_from_tab"  value="design">
 
-            <div class="admin-card">
-                <h3>🎨 Farbpalette</h3>
+            <div class="admin-card ev-tab-panel ev-tab-panel--wide">
+                <div class="ev-panel-header">
+                    <div>
+                        <h3>🎨 Design-Einstellungen</h3>
+                        <p>Farben, Badges, Layout und Vorschau der öffentlichen Event-Ansicht.</p>
+                    </div>
+                </div>
+
+                <section class="ev-settings-section">
+                <h4>🎨 Farbpalette</h4>
                 <div class="form-grid ev-color-grid">
                     <?php
                     $colorFields = [
@@ -628,30 +677,35 @@ final class CMS_Events_Admin
                     </div>
                     <?php endforeach; ?>
                 </div>
-            </div>
+                </section>
 
-            <div class="admin-card">
-                <h3>🖼️ Archiv-Header</h3>
-                <div class="form-group ev-header-icon-field">
-                    <label class="form-label">Header-Icon (Emoji)</label>
-                          <input type="text" name="archive_header_icon" id="txt_archive_header_icon"
-                              class="form-control ev-header-icon-input"
-                           value="<?= htmlspecialchars(html_entity_decode((string)($s['archive_header_icon'] ?? '📅'), ENT_HTML5, 'UTF-8'), ENT_QUOTES, 'UTF-8') ?>"
-                              maxlength="8">
-                    <small class="form-text">z.B. 📅 🎉 🎤</small>
-                </div>
-                <div id="ev_hdr_preview" class="ev-header-preview" data-ev-preview-title="<?= htmlspecialchars((string)($s['archive_title'] ?? 'Events'), ENT_QUOTES, 'UTF-8') ?>">
-                    <span id="ev_hdr_icon" class="ev-header-preview-icon"></span>
-                    <div>
-                        <div id="ev_hdr_title" class="ev-header-preview-title"></div>
-                        <div class="ev-header-preview-note">Vorschau</div>
+                <section class="ev-settings-section">
+                    <h4>🖼️ Archiv-Header</h4>
+                    <div class="ev-grid-two">
+                        <div class="form-group ev-header-icon-field">
+                            <label class="form-label">Header-Icon (Emoji)</label>
+                            <input type="text" name="archive_header_icon" id="txt_archive_header_icon"
+                                   class="form-control ev-header-icon-input"
+                                   value="<?= htmlspecialchars(html_entity_decode((string)($s['archive_header_icon'] ?? '📅'), ENT_HTML5, 'UTF-8'), ENT_QUOTES, 'UTF-8') ?>"
+                                   maxlength="8">
+                            <small class="form-text">z.B. 📅 🎉 🎤</small>
+                        </div>
+                        <div>
+                            <label class="form-label">Live-Vorschau</label>
+                            <div id="ev_hdr_preview" class="ev-header-preview" data-ev-preview-title="<?= htmlspecialchars((string)($s['archive_title'] ?? 'Events'), ENT_QUOTES, 'UTF-8') ?>">
+                                <span id="ev_hdr_icon" class="ev-header-preview-icon"></span>
+                                <div>
+                                    <div id="ev_hdr_title" class="ev-header-preview-title"></div>
+                                    <div class="ev-header-preview-note">Archiv-Header</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
+                </section>
 
-            <div class="admin-card">
-                <h3>🏅 Badge-Farben (Status-Badges)</h3>
-                <p class="ev-note">Hintergrund- und Textfarben der Status-Badges auf der Event-Karte und Detailseite.</p>
+                <section class="ev-settings-section">
+                <h4>🏅 Badge-Farben</h4>
+                <p class="ev-note">Hintergrund- und Textfarben der Status-Badges auf Event-Karte und Detailseite.</p>
                 <div class="form-grid ev-color-grid">
                     <?php
                     $badgeColorFields = [
@@ -680,10 +734,10 @@ final class CMS_Events_Admin
                     </div>
                     <?php endforeach; ?>
                 </div>
-            </div>
+                </section>
 
-            <div class="admin-card">
-                <h3>📐 Layout &amp; Anzeige</h3>
+                <section class="ev-settings-section">
+                <h4>📐 Layout &amp; Anzeige</h4>
                 <div class="form-grid ev-grid-two">
                     <div class="form-group">
                         <label class="form-label">Ecken-Radius (px)</label>
@@ -699,7 +753,7 @@ final class CMS_Events_Admin
                         </select>
                     </div>
                 </div>
-                <h4 class="ev-heading-reset">🏷️ Badges auf der Karte</h4>
+                <h5 class="ev-subsection-title">🏷️ Badges auf der Karte</h5>
                 <div class="ev-stack-gap ev-admin-assets-gap">
                     <?php foreach ([
                         'show_status_badge'   => '📋 Status-Badge',
@@ -713,7 +767,7 @@ final class CMS_Events_Admin
                     </label>
                     <?php endforeach; ?>
                 </div>
-                <h4 class="ev-heading-reset">💊 Pills auf der Karte</h4>
+                <h5 class="ev-subsection-title">💊 Pills auf der Karte</h5>
                 <div class="ev-stack-gap">
                     <?php foreach ([
                         'show_category'  => '📂 Kategorie',
@@ -735,25 +789,30 @@ final class CMS_Events_Admin
                 <p class="ev-note-highlight">
                     ℹ️ <strong>Deaktivierte Badges/Pills</strong> werden auf der öffentlichen Übersichtskarte ausgeblendet.
                 </p>
-            </div>
+                </section>
 
-            <div class="admin-card">
-                <h3>👁️ Vorschau</h3>
-                <div class="ev-preview-shell" id="ev_design_preview">
-                    <div id="prev-header" class="ev-preview-header">
-                        <span id="prev-icon" class="ev-preview-icon-live"><?= htmlspecialchars((string)$s['archive_header_icon'], ENT_QUOTES, 'UTF-8') ?></span>
-                        <div>
-                            <div id="prev-title" class="ev-preview-title"><?= htmlspecialchars((string)($s['archive_title'] ?? 'Events'), ENT_QUOTES, 'UTF-8') ?></div>
-                            <div class="ev-preview-subtitle ev-preview-subtitle-light">Vorschau</div>
+                <section class="ev-settings-section ev-settings-section--last">
+                    <h4>👁️ Vorschau</h4>
+                    <div class="ev-preview-layout">
+                        <div class="ev-preview-shell" id="ev_design_preview">
+                            <div id="prev-header" class="ev-preview-header">
+                                <span id="prev-icon" class="ev-preview-icon-live"><?= htmlspecialchars((string)$s['archive_header_icon'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <div>
+                                    <div id="prev-title" class="ev-preview-title"><?= htmlspecialchars((string)($s['archive_title'] ?? 'Events'), ENT_QUOTES, 'UTF-8') ?></div>
+                                    <div class="ev-preview-subtitle ev-preview-subtitle-light">Öffentliche Archivkarte</div>
+                                </div>
+                            </div>
+                            <div id="prev-body" class="ev-preview-body">
+                                <span id="prev-cta" class="ev-preview-cta">Details ansehen →</span>
+                            </div>
+                        </div>
+                        <div class="ev-note-card">
+                            <strong>Hinweis</strong>
+                            <span>Die Vorschau zeigt Farben und Radius live. Inhaltliche Felder steuerst du im Bereich „Layout & Anzeige“.</span>
                         </div>
                     </div>
-                    <div id="prev-body" class="ev-preview-body">
-                        <span id="prev-cta" class="ev-preview-cta">Details ansehen →</span>
-                    </div>
-                </div>
-            </div>
+                </section>
 
-            <div class="admin-card form-actions-card">
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">💾 Design speichern</button>
                 </div>
@@ -764,12 +823,20 @@ final class CMS_Events_Admin
         // ══════════════════════════════════════════════════════════════════
         elseif ($tab === 'settings'):
         ?>
-        <form method="POST" action="<?= SITE_URL ?>/admin/events/settings/save">
+        <form method="POST" action="<?= SITE_URL ?>/admin/events/settings/save" class="admin-form">
             <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
             <input type="hidden" name="_from_tab"  value="settings">
 
-            <div class="admin-card">
-                <h3>📋 Archiv-Seite</h3>
+            <div class="admin-card ev-tab-panel">
+                <div class="ev-panel-header">
+                    <div>
+                        <h3>⚙️ Einstellungen</h3>
+                        <p>Archivseite, Navigation und Shortcode-Nutzung konfigurieren.</p>
+                    </div>
+                </div>
+
+                <section class="ev-settings-section">
+                <h4>📋 Archiv-Seite</h4>
                 <div class="form-group">
                     <label class="form-label">Seitentitel</label>
                           <input type="text" id="archive_title" name="archive_title" class="form-control"
@@ -797,9 +864,29 @@ final class CMS_Events_Admin
                                min="4" max="100" step="4">
                     </div>
                 </div>
-            </div>
-            <div class="admin-card">
-                <h3>ℹ️ Shortcode-Nutzung</h3>
+                </section>
+
+                <section class="ev-settings-section">
+                <h4>🧭 Navigation</h4>
+                <p class="ev-note">Standardmäßig wird kein Link in der öffentlichen Hauptnavigation ausgegeben. Aktiviere diese Option nur, wenn Events dort erscheinen sollen.</p>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="show_nav_link" value="1"
+                               <?= (string)($s['show_nav_link'] ?? '0') === '1' ? 'checked' : '' ?>>
+                        Link in Hauptnavigation anzeigen
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Navigations-Label</label>
+                    <input type="text" name="nav_label" class="form-control"
+                           value="<?= htmlspecialchars((string)($s['nav_label'] ?? 'Veranstaltungen'), ENT_QUOTES, 'UTF-8') ?>"
+                           maxlength="40" placeholder="Veranstaltungen">
+                    <small class="form-text">Standard: Veranstaltungen. Die Route bleibt <code>/events</code>.</small>
+                </div>
+                </section>
+
+                <section class="ev-settings-section ev-settings-section--last">
+                <h4>ℹ️ Shortcode-Nutzung</h4>
                 <p class="ev-note">Event-Liste per Shortcode in Seiteninhalte einbinden:</p>
                 <div class="ev-shortcode-box">
                     [cms_events limit="12" featured="1" category="Konferenz"]
@@ -811,8 +898,8 @@ final class CMS_Events_Admin
                     <small><strong>upcoming</strong> – Nur zukünftige Events (1/0)</small>
                     <small><strong>online</strong> – Nur Online-Events (1/0)</small>
                 </div>
-            </div>
-            <div class="admin-card form-actions-card">
+                </section>
+
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
                 </div>
@@ -853,9 +940,11 @@ final class CMS_Events_Admin
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-ev-modal-close="evApproveModal">Abbrechen</button>
-                    <button type="button" id="evApproveConfirm" class="btn btn-primary ev-btn-inline-success">✅ Genehmigen</button>
+                    <button type="button" id="evApproveConfirm" class="btn btn-primary">✅ Genehmigen</button>
                 </div>
             </div>
+        </div>
+
         </div>
         <?php
         $this->end_admin_layout();
@@ -889,8 +978,8 @@ final class CMS_Events_Admin
             <div>
                 <h2><?= $is_edit ? '✏️ Event bearbeiten' : '➕ Neues Event anlegen' ?></h2>
                 <p><?= $is_edit
-                    ? 'Event-Daten, Ort, Kapazität und Speaker bearbeiten'
-                    : 'Neues Event, Workshop oder Webinar anlegen' ?></p>
+                    ? 'Event-Daten, Ort, Kapazität und Speaker bearbeiten.'
+                    : 'Neues Event, Workshop oder Webinar anlegen.' ?></p>
             </div>
             <div class="header-actions">
                 <?php if ($is_edit): ?>
@@ -917,7 +1006,7 @@ final class CMS_Events_Admin
         <?php endif; ?>
 
         <div class="ev-content-max">
-        <form method="POST" action="<?= SITE_URL ?>/admin/events/save" id="ev-main-form">
+        <form method="POST" action="<?= SITE_URL ?>/admin/events/save" id="ev-main-form" class="admin-form">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="event_id"   value="<?= $is_edit ? (int)$event->id : 0 ?>">
 
@@ -1204,7 +1293,7 @@ final class CMS_Events_Admin
             <?php endif; ?>
 
             <!-- ── Speichern-Leiste ──────────────────────────────────── -->
-            <div class="admin-card">
+            <div class="admin-card form-actions-card">
                 <div class="ev-form-actions-row">
                     <div class="ev-form-actions-buttons">
                         <button type="submit" class="btn btn-primary">

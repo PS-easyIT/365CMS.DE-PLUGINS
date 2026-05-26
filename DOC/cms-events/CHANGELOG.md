@@ -1,5 +1,26 @@
 # CMS Events – Changelog
 
+## [3.0.11] – 2026-05-26
+
+- **Hotfix Public-Rendering:** 500-Fehler „Template-Fehler – Das Event-Template konnte nicht gerendert werden“ auf Systemen ohne `mbstring` behoben.
+- **Templates:** `archive-event.php` und `event-card.php` nutzen jetzt robuste Lowercase-Fallbacks (`mb_strtolower` → `strtolower`).
+- **Sanitizer:** `class-post-type.php` und `class-shortcode.php` nutzen Fallbacks für String-Truncation (`mb_substr` → `substr`) statt harter Abhängigkeit.
+
+## [3.0.10] – 2026-05-26
+
+- **Admin-Design:** Der Events-Adminbereich folgt nun konsequent den 365CMS Admin Design Richtlinien: Header → Alerts → Tabs → Content, konsistente `admin-card`-Panels und `admin-form`-Formulare.
+- **Overview:** Die frühere Custom-Card-Liste wurde durch eine Admin-Tabelle mit `.users-table`, klaren Status-Badges, kompakten Merkmal-Badges und standardisierten Aktionsbuttons ersetzt.
+- **Kategorien/Tags:** Taxonomie- und Tag-Presets nutzen jetzt ein gemeinsames Tab-Panel mit Tabellen, Empty States und schlanken Formular-Sidepanels.
+- **Design/Einstellungen:** Beide Tabs bestehen aus jeweils einer zusammenhängenden Settings-Card mit internen Sektionen, Live-Vorschau und Speichern-Aktion am Kartenende.
+- **Admin-Assets:** `events-admin.css` wurde auf plugin-spezifische Layout-Regeln reduziert; Speaker-AJAX-Meldungen erscheinen inline als Admin-Alerts statt per nativer Browser-Alerts.
+
+## [3.0.9] – 2026-05-26
+
+- **Navigation:** Der öffentliche Events-Link in der Hauptnavigation ist nun über die Events-Einstellungen steuerbar (`show_nav_link`) und standardmäßig deaktiviert; das Label bleibt über `nav_label` frei konfigurierbar.
+- **Publicsite-Design:** Archiv-Header, Such-/Filterleiste, Event-Cards, Badges, Tags, Buttons, Empty State und Pagination wurden auf das gewünschte PHINIT-Layout normalisiert.
+- **Detailseite:** Meta-Zeile zeigt Datum/Zeit, Ort, Speaker und Preis; die Anmeldung hebt den Preis hervor, bietet Share-Links und zeigt bei ausgebuchten Events eine Wartelisten-Option.
+- **Speaker/Related:** Speaker-Teaser nutzt Avatar, Position und Kurzbio; Related Events werden als kompakte Bild-Teaser dargestellt.
+
 ## [3.0.6] – 2026-05-25
 
 - **Admin-Menü-Dashboard:** Der Plugin-Menüeintrag `/admin/plugins/events/events` rendert den Overview-/Dashboard-Tab jetzt direkt serverseitig über `CMS_Events_Post_Type::admin_list()`.

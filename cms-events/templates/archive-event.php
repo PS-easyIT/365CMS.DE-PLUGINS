@@ -20,20 +20,61 @@ if (!isset($events, $settings)) {
     return;
 }
 
-$events = (array) $events;
-$categories = (array) ($categories ?? []);
+if (!function_exists('cms_events_view_lowercase')) {
+    function cms_events_view_lowercase(string $value): string
+    {
+        return function_exists('mb_strtolower')
+            ? mb_strtolower($value, 'UTF-8')
+            : strtolower($value);
+    }
+}
+
+$events = array_values(array_filter(array_map(
+    static function (mixed $item): ?object {
+        if (is_object($item)) {
+            return $item;
+        }
+
+        if (is_array($item)) {
+            return (object) $item;
+        }
+
+        return null;
+    },
+    (array) $events
+)));
+
+$categories = array_values(array_filter(array_map(
+    static function (mixed $category): string {
+        if (is_string($category) || is_numeric($category)) {
+            return trim((string) $category);
+        }
+
+        if (is_object($category) && isset($category->name)) {
+            return trim((string) $category->name);
+        }
+
+        if (is_array($category) && isset($category['name'])) {
+            return trim((string) $category['name']);
+        }
+
+        return '';
+    },
+    (array) ($categories ?? [])
+), static fn(string $category): bool => $category !== ''));
 $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
 $archiveSlug = preg_replace('/[^a-z0-9-]+/i', '-', (string) ($settings['archive_slug'] ?? 'events')) ?: 'events';
 $archiveUrl = $baseUrl . '/' . trim($archiveSlug, '-') . '/';
+$archiveTitle = trim((string) ($settings['archive_title'] ?? 'Veranstaltungen')) ?: 'Veranstaltungen';
 $curPage = max(1, (int) ($current_page ?? 1));
 $totalPages = max(1, (int) ($pages ?? 1));
 $today = strtotime('today');
-$upcomingCount = count(array_filter($events, static function (object $event) use ($today): bool {
+$upcomingCount = isset($upcoming_total) ? max(0, (int) $upcoming_total) : count(array_filter($events, static function ($event) use ($today): bool {
     $timestamp = !empty($event->event_date) ? strtotime((string) $event->event_date) : 0;
     return $timestamp && $today !== false && $timestamp >= $today;
 }));
 $currentYear = (int) date('Y');
-$selectedCategory = mb_strtolower((string) ($filter_category ?? ''), 'UTF-8');
+$selectedCategory = cms_events_view_lowercase((string) ($filter_category ?? ''));
 $selectedMonth = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string) ($filter_month ?? '')) === 1 ? substr((string) $filter_month, 5, 2) : '';
 $selectedYear = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string) ($filter_month ?? '')) === 1 ? substr((string) $filter_month, 0, 4) : '';
 $selectedSearch = htmlspecialchars((string) ($search ?? ''), ENT_QUOTES, 'UTF-8');
@@ -46,7 +87,7 @@ $monthLabels = [
 <main class="phinit-plugin cms-events-wrap" data-cms-events-filter-root>
     <header class="cms-events-head">
         <p class="phinit-overline">Events</p>
-        <h1>Veranstaltungen</h1>
+        <h1><?= htmlspecialchars($archiveTitle, ENT_QUOTES, 'UTF-8') ?></h1>
         <p class="cms-events-head__subtitle"><?= (int) $upcomingCount ?> bevorstehende Events</p>
     </header>
 
@@ -56,7 +97,7 @@ $monthLabels = [
             <select id="cms-event-category" class="phinit-select" data-cms-events-filter="category">
                 <option value="">Alle Kategorien</option>
                 <?php foreach ($categories as $category): ?>
-                    <?php $categoryValue = mb_strtolower((string) $category, 'UTF-8'); ?>
+                    <?php $categoryValue = cms_events_view_lowercase((string) $category); ?>
                     <option value="<?= htmlspecialchars($categoryValue, ENT_QUOTES, 'UTF-8') ?>"<?= $selectedCategory === $categoryValue ? ' selected' : '' ?>>
                         <?= htmlspecialchars((string) $category, ENT_QUOTES, 'UTF-8') ?>
                     </option>

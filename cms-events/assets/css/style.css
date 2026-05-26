@@ -593,7 +593,7 @@
 }
 
 .ev-calendar-page {
-  max-width: var(--max, 1140px);
+  max-width: var(--container-max, var(--max, 1140px));
   margin: 0 auto;
 }
 
@@ -1033,6 +1033,7 @@
   --cms-events-radius: var(--phinit-radius-md, 8px);
   --cms-events-radius-sm: var(--phinit-radius-sm, 4px);
   --cms-events-shadow: var(--phinit-shadow-card, 0 2px 8px rgba(0, 0, 0, 0.08));
+  --cms-events-content-max: var(--container-max, var(--phinit-container-width, 1180px));
   color: var(--cms-events-text);
   font-family: var(--phinit-font-family, 'Poppins', sans-serif);
 }
@@ -1053,7 +1054,7 @@
 .cms-events-grid,
 .cms-events-pagination,
 .cms-events-detail__grid {
-  width: min(100%, var(--phinit-container-width, 1180px));
+  width: min(100%, var(--cms-events-content-max));
   margin-inline: auto;
 }
 
@@ -1573,6 +1574,526 @@
   .cms-events-card__footer,
   .cms-events-registration-card dl > div {
     align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* CMS Events 3.0.9 / PHINIT Design Alignment */
+.cms-events-wrap {
+  /* Nur Legacy-Deltas – Basis kommt aus dem 3.1-Block weiter oben */
+  --cms-events-accent-hover: #1a5fa8;
+  --cms-events-warning: #f59e0b;
+  --cms-events-danger: #dc2626;
+  --cms-events-success: #22c55e;
+  --cms-events-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.12);
+  padding-bottom: 40px;
+}
+
+.cms-events-wrap .phinit-overline {
+  color: var(--cms-events-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cms-events-head {
+  margin-bottom: 28px;
+}
+
+.cms-events-head h1 {
+  color: var(--cms-events-navy);
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.cms-events-head__subtitle {
+  color: var(--cms-events-muted);
+  font-size: 14px;
+  margin: 8px 0 0;
+}
+
+.cms-events-filter {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.cms-events-filter__field {
+  flex: 0 1 180px;
+}
+
+.cms-events-filter__field--search {
+  flex: 1 1 280px;
+}
+
+.cms-events-filter__field label {
+  color: var(--cms-events-muted);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.cms-events-wrap .phinit-input,
+.cms-events-wrap .phinit-select {
+  min-height: 38px;
+  height: 38px;
+  border: 1px solid var(--cms-events-border);
+  border-radius: var(--cms-events-radius-sm);
+  color: var(--cms-events-navy);
+  font-size: 14px;
+  padding: 8px 12px;
+}
+
+.cms-events-wrap .phinit-input:focus,
+.cms-events-wrap .phinit-select:focus {
+  border-color: var(--cms-events-accent);
+  box-shadow: 0 0 0 3px rgba(45, 125, 210, 0.14);
+  outline: 0;
+}
+
+.cms-events-wrap .phinit-btn {
+  min-height: 38px;
+  border-radius: var(--cms-events-radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+}
+
+.cms-events-wrap .phinit-btn--primary {
+  background: var(--cms-events-accent);
+  color: #ffffff;
+}
+
+.cms-events-wrap .phinit-btn--primary:hover,
+.cms-events-wrap .phinit-btn--primary:focus-visible {
+  background: var(--cms-events-accent-hover);
+}
+
+.cms-events-wrap .phinit-btn--secondary {
+  border: 1px solid var(--cms-events-border);
+  background: #ffffff;
+  color: var(--cms-events-accent);
+}
+
+.cms-events-wrap .phinit-btn--secondary:hover,
+.cms-events-wrap .phinit-btn--secondary:focus-visible {
+  border-color: var(--cms-events-accent);
+  color: var(--cms-events-accent-hover);
+}
+
+.cms-events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.cms-events-card.phinit-card,
+.cms-events-card {
+  min-height: 100%;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--cms-events-border);
+  border-radius: var(--cms-events-radius);
+  background: var(--cms-events-surface);
+  box-shadow: var(--cms-events-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cms-events-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--cms-events-shadow-hover);
+}
+
+.cms-events-card__media {
+  height: 180px;
+  aspect-ratio: auto;
+  background: #e5e7eb;
+}
+
+.cms-events-card__media img {
+  display: block;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+.cms-events-card__placeholder {
+  background: #e5e7eb;
+  color: var(--cms-events-muted);
+}
+
+.cms-events-card__badge,
+.cms-events-badge {
+  border-radius: var(--cms-events-radius-sm);
+  background: var(--cms-events-navy);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 4px 8px;
+  text-transform: uppercase;
+}
+
+.cms-events-card__badge--soon {
+  background: var(--cms-events-warning);
+  color: #1a2e4a;
+}
+
+.cms-events-badge--danger {
+  background: var(--cms-events-danger);
+}
+
+.cms-events-badge--muted {
+  background: var(--cms-events-muted);
+}
+
+.cms-events-card__body {
+  padding: 20px;
+}
+
+.cms-events-card__date-row {
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.cms-events-card__date-block {
+  display: flex;
+  min-width: 48px;
+  min-height: 48px;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--cms-events-radius-sm);
+  background: #eef4fb;
+  color: var(--cms-events-navy);
+}
+
+.cms-events-card__day {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cms-events-card__date-full {
+  color: var(--cms-events-muted);
+  font-size: 14px;
+}
+
+.cms-events-card__title {
+  color: var(--cms-events-navy);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0 0 14px;
+}
+
+.cms-events-card__meta {
+  color: var(--cms-events-muted);
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.cms-events-card__meta i,
+.cms-events-detail__meta i,
+.cms-events-registration-card dt i,
+.cms-events-share i,
+.cms-events-speaker-teaser i {
+  color: var(--cms-events-accent);
+}
+
+.cms-events-tag {
+  border-radius: var(--cms-events-radius-sm);
+  background: #eef4fb;
+  color: var(--cms-events-muted);
+  font-size: 13px;
+  padding: 4px 8px;
+}
+
+.cms-events-card__footer {
+  border-top: 1px solid var(--cms-events-border);
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.cms-events-card__price {
+  color: var(--cms-events-navy);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cms-events-empty {
+  padding: 48px 24px;
+  border: 1px dashed var(--cms-events-border);
+  color: var(--cms-events-muted);
+}
+
+.cms-events-pagination {
+  margin-top: 32px;
+}
+
+.cms-events-page {
+  border-radius: var(--cms-events-radius-sm);
+  color: var(--cms-events-navy);
+}
+
+.cms-events-detail__grid {
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 320px);
+  gap: 40px;
+}
+
+.cms-events-detail__head h1 {
+  color: var(--cms-events-navy);
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.cms-events-detail__meta {
+  color: var(--cms-events-muted);
+  gap: 16px;
+}
+
+.cms-events-detail__meta a {
+  color: var(--cms-events-accent);
+  text-decoration: none;
+}
+
+.cms-events-detail__hero {
+  border-radius: 12px;
+  box-shadow: var(--cms-events-shadow);
+}
+
+.cms-events-detail__section,
+.cms-events-speaker-teaser,
+.cms-events-registration-card,
+.cms-events-related {
+  padding: 24px;
+  border: 1px solid var(--cms-events-border);
+  border-radius: var(--cms-events-radius);
+  box-shadow: var(--cms-events-shadow);
+}
+
+.cms-events-detail__section h2,
+.cms-events-speaker-teaser h2,
+.cms-events-registration-card h2,
+.cms-events-related h2 {
+  color: var(--cms-events-navy);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.event-body,
+.cms-events-detail__content {
+  color: #2f3f50;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.cms-events-speaker-teaser {
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.cms-events-speaker-teaser__image {
+  width: 72px;
+  height: 72px;
+  flex-basis: 72px;
+  border-radius: 999px;
+}
+
+.cms-events-speaker-teaser__position {
+  color: var(--cms-events-muted);
+  margin: -4px 0 8px;
+}
+
+.cms-events-speaker-teaser__bio {
+  display: -webkit-box;
+  color: var(--cms-events-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 14px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.cms-events-share {
+  color: var(--cms-events-muted);
+  font-weight: 600;
+}
+
+.cms-events-share a {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+}
+
+.cms-events-detail__aside {
+  position: sticky;
+  top: 24px;
+}
+
+.cms-events-registration-card__price {
+  color: var(--cms-events-accent);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  margin: 0 0 12px;
+}
+
+.cms-events-registration-card__price.is-free {
+  color: var(--cms-events-success);
+}
+
+.cms-events-registration-card dl {
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.cms-events-registration-card dl > div {
+  border-bottom: 1px solid var(--cms-events-border);
+  padding-bottom: 12px;
+}
+
+.cms-events-registration-card dt,
+.cms-events-registration-card dd {
+  font-size: 14px;
+}
+
+.cms-events-registration-card dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cms-events-capacity span {
+  color: var(--cms-events-muted);
+  font-size: 14px;
+}
+
+.cms-events-registration-card__button {
+  width: 100%;
+}
+
+.cms-events-registration-card__button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.cms-events-registration-card__waitlist {
+  display: inline-flex;
+  justify-content: center;
+  margin-top: 10px;
+  width: 100%;
+  color: var(--cms-events-accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cms-events-registration-card__divider {
+  height: 1px;
+  margin: 20px 0 14px;
+  background: var(--cms-events-border);
+}
+
+.cms-events-share--sidebar {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 0;
+}
+
+.cms-events-share--sidebar span {
+  width: 100%;
+}
+
+.cms-events-related__item {
+  gap: 12px;
+  padding: 14px 0;
+}
+
+.cms-events-related__image,
+.cms-events-related__item > .cms-events-related__image:first-child {
+  display: grid;
+  width: 72px;
+  min-width: 72px;
+  height: 72px;
+  min-height: 72px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--cms-events-radius-sm);
+  background: #eef4fb;
+  color: var(--cms-events-accent);
+  font-size: 1.5rem;
+}
+
+.cms-events-related__image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cms-events-related__item > span:last-child {
+  color: var(--cms-events-navy);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.cms-events-related small {
+  color: var(--cms-events-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+@media (max-width: 900px) {
+  .cms-events-filter {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .cms-events-filter__field,
+  .cms-events-filter__field--search,
+  .cms-events-filter__reset {
+    flex: 1 1 220px;
+  }
+
+  .cms-events-detail__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cms-events-detail__aside {
+    position: static;
+  }
+}
+
+@media (max-width: 520px) {
+  .cms-events-filter {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .cms-events-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cms-events-card__footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cms-events-speaker-teaser {
     flex-direction: column;
   }
 }

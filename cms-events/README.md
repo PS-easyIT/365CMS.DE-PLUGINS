@@ -1,6 +1,6 @@
 ﻿# CMS Events Manager Plugin
 
-**Version:** 3.0.6  
+**Version:** 3.0.11
 **Requires:** 365CMS 3.0+  
 **PHP:** 8.4+
 
@@ -13,7 +13,9 @@ The CMS Events Manager plugin manages events with calendar view and detail pages
 - ✅ Event management with date/time support
 - ✅ Custom database tables with proper relationships
 - ✅ Admin interface for managing events
+- ✅ Adminbereich nach 365CMS Admin Design Richtlinien mit Tabellenübersicht, Tab-Panels, Settings-Cards und inline Alerts
 - ✅ Frontend display with card grid layout
+- ✅ Öffentlicher Hauptnavigations-Link über Events-Einstellungen steuerbar und standardmäßig deaktiviert (`show_nav_link`, `nav_label`)
 - ✅ Öffentliche Übersicht mit Themen-Badges oberhalb der Veranstalter-Meta, jeweils auf kompakte Ein-Zeilen-Darstellung optimiert
 - ✅ Calendar view for events
 - ✅ Native 365CMS 404/Error-Fallbacks for plugin render failures
@@ -58,6 +60,7 @@ Navigate to `/admin/events` to manage events.
 - Calendar view: `/events/calendar`
 - View event detail: `/events/{id}`
 - Shortcode: `[cms_events]` - Displays upcoming events in a grid
+- Navigation: In den Events-Einstellungen kann der automatische Hauptmenü-Link ein-/ausgeschaltet und beschriftet werden; ohne Aktivierung wird kein Link im Hauptmenü erzeugt.
 
 ### Programmatic Access
 
@@ -103,12 +106,15 @@ Templates can be added to the `templates/` directory:
 - `event-card.php` - Card component
 - `calendar-view.php` - Calendar view
 
-## Sicherheitsstatus (2026-05-25)
+## Sicherheitsstatus (2026-05-26)
 
 - Plugin-Audit für `cms-events` auf Version `3.0.3` abgeschlossen.
 - Version `3.0.4` lädt die zentralen Admin-Menü-Helper defensiv, damit der Events-Menüeintrag in der 365CMS-Sidebar zuverlässig erscheint.
 - Version `3.0.5` korrigiert den PHP-Selbst-Guard der Hauptdatei nach dem funktionierenden `cms-feed`-Muster, damit `CMS_Events::instance()` beim Plugin-Laden wirklich ausgeführt wird.
 - Version `3.0.6` rendert den Events-Menüeintrag direkt als Dashboard/Overview, ohne JS-Weiterleitungs-Zwischenseite.
+- Version `3.0.9` ergänzt den steuerbaren, standardmäßig deaktivierten Frontend-Menülink und gleicht Archiv, Filter, Cards, Detailseite, Anmeldung sowie Related Events an das PHINIT-Design an.
+- Version `3.0.10` richtet den Events-Adminbereich komplett an den 365CMS Admin Design Richtlinien aus: Overview-Tabelle, einheitliche Admin-Cards, `admin-form`-Formulare, schlankes Admin-CSS und inline Speaker-AJAX-Meldungen.
+- Version `3.0.11` behebt einen Public-Template-500 auf Systemen ohne `mbstring` über Fallbacks für Lowercase/Substring in Templates und Sanitizern.
 - Bootstrap und Include-Dateien sind gegen doppelte Ladepfade/klassische Redeclare-Fatals abgesichert.
 - DB-Migrationen nutzen `INFORMATION_SCHEMA` statt `SHOW COLUMNS`, Foreign Keys werden idempotent und nicht-blockierend ergänzt.
 - Plugin-Settings werden primär über den 365CMS `SettingsService` gelesen/geschrieben; die alte `event_settings`-Tabelle bleibt nur als kompatibler Fallback.

@@ -49,9 +49,21 @@ final class CMS_Events_Template_Loader
 
     public function render_template(string $template_name, array $data = []): void
     {
-        $template_file = $this->locate_template($template_name);
+        $template_name = str_replace('.php', '', $template_name) . '.php';
 
-        if (!$template_file) {
+        $theme_dir = $this->getThemeTemplateDir();
+        $theme_template = $theme_dir !== '' ? $theme_dir . $template_name : '';
+        $plugin_template = $this->plugin_template_dir . $template_name;
+
+        $template_candidates = [];
+        if ($theme_template !== '' && file_exists($theme_template)) {
+            $template_candidates[] = $theme_template;
+        }
+        if (file_exists($plugin_template)) {
+            $template_candidates[] = $plugin_template;
+        }
+
+        if ($template_candidates === []) {
             error_log("CMS Events: Template '{$template_name}' not found");
             $this->render_template_error('Template nicht gefunden', "Das Event-Template '{$template_name}' konnte nicht geladen werden.");
             return;
@@ -59,12 +71,32 @@ final class CMS_Events_Template_Loader
 
         extract($data, EXTR_SKIP);
 
-        try {
-            include $template_file;
-        } catch (\Throwable $e) {
-            error_log("CMS Events: Template '{$template_name}' failed: " . $e->getMessage());
-            $this->render_template_error('Template-Fehler', 'Das Event-Template konnte nicht gerendert werden.');
+        $lastException = null;
+        foreach ($template_candidates as $index => $template_file) {
+            try {
+                include $template_file;
+                return;
+            } catch (\Throwable $e) {
+                $lastException = $e;
+                $template_role = $index === 0 && $template_file === $theme_template ? 'theme-override' : 'plugin-fallback';
+                error_log(
+                    sprintf(
+                        "CMS Events: Template '%s' (%s) failed in %s:%d – %s",
+                        $template_name,
+                        $template_role,
+                        (string) $e->getFile(),
+                        (int) $e->getLine(),
+                        (string) $e->getMessage()
+                    )
+                );
+            }
         }
+
+        if ($lastException instanceof \Throwable) {
+            error_log("CMS Events: Template '{$template_name}' exhausted all candidates.");
+        }
+
+        $this->render_template_error('Template-Fehler', 'Das Event-Template konnte nicht gerendert werden.');
     }
 
     private function locate_template(string $template_name): ?string
@@ -99,8 +131,7 @@ final class CMS_Events_Template_Loader
         foreach ($templates as $template) {
             $located = $this->locate_template($template);
             if ($located) {
-                extract($data, EXTR_SKIP);
-                include $located;
+                $this->render_template($template, $data);
                 return;
             }
         }

@@ -1,10 +1,10 @@
 # CMS Events – Dokumentation
 
 **Plugin:** `cms-events`  
-**Version:** 3.0.6  
+**Version:** 3.0.11
 **Namespace:** `CMS_Events`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
-**Audit-/Dokustand:** 365CMS-3.x-Audit abgeschlossen am 2026-05-25  
+**Audit-/Dokustand:** Admin-Design-Pass am 2026-05-26
 **PHP:** 8.4+
 
 ---
@@ -19,6 +19,9 @@ Das **CMS Events**-Plugin verwaltet Veranstaltungen – von Webinaren bis zu Kon
 - Version `3.0.4` behebt die defensive Admin-Menü-Registrierung, sodass der Events-Eintrag in der Sidebar zuverlässig sichtbar ist.
 - Version `3.0.5` behebt den Hauptdatei-Guard, damit `CMS_Events::instance()` beim Laden des Plugins tatsächlich ausgeführt wird.
 - Version `3.0.6` rendert den Events-Menüeintrag direkt als Dashboard/Overview statt über eine JS-Weiterleitung.
+- Version `3.0.9` ergänzt die steuerbare öffentliche Hauptnavigation (`show_nav_link`, `nav_label`), lässt den Link standardmäßig deaktiviert und gleicht Archiv, Cards, Detailseite, Anmeldung und Related Events an das PHINIT-Publicsite-Design an.
+- Version `3.0.10` überarbeitet den Events-Adminbereich gemäß 365CMS Admin Design Richtlinien mit Admin-Tabelle, einheitlichen Tab-Panels, Settings-Cards, `admin-form`-Formularen und inline Speaker-AJAX-Alerts.
+- Version `3.0.11` behebt einen Public-Template-500 auf Instanzen ohne `mbstring` durch robuste Fallbacks in Templates und Sanitizern.
 - Bootstrap, Include-Klassen und Lifecycle-Hooks sind idempotent und gegen Redeclare-Fatals abgesichert.
 - Datenbankmigrationen nutzen `INFORMATION_SCHEMA`, erstellen die Settings-Tabelle im Installer und ergänzen Foreign Keys nicht-blockierend.
 - Öffentliche Fehlerpfade nutzen die 365CMS-404/Error-Fallbacks und protokollieren technische Details serverseitig.
@@ -31,10 +34,11 @@ Das **CMS Events**-Plugin verwaltet Veranstaltungen – von Webinaren bis zu Kon
 | **Event-Typen** | Physisch, Online, Hybrid |
 | **Speaker-Zuordnung** | M2M zu `cms-speakers` und `cms-experts` |
 | **Kategorien** | Vordefinierte & benutzerdefinierte Kategorien |
-| **Admin-Backend** | CRUD-Oberfläche unter `/admin/events` |
+| **Admin-Backend** | CRUD-Oberfläche unter `/admin/events` im 365CMS Admin-Design |
 | **Member-Dashboard** | Eigene Events erstellen und verwalten |
 | **Shortcode** | `[cms_events]` – Grid-Ansicht kommender Events |
 | **Öffentliche Routen** | `/events`, `/events/calendar`, `/events/{id}` |
+| **Navigation** | Frontend-Menülink über Events-Einstellungen aktivierbar/deaktivierbar, Standard: aus |
 
 ---
 
