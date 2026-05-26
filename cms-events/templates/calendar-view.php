@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
 }
 
 $events = array_values(array_filter(array_map(
-    static function (mixed $item): ?object {
+    static function ($item): ?object {
         if (is_object($item)) {
             return $item;
         }

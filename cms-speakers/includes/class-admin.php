@@ -147,6 +147,7 @@ final class CMS_Speakers_Admin
         $companies = $data['companies'] ?? [];
 
         $s = array_merge([
+            'show_main_nav_item'         => '1',
             'archive_title'              => 'Speaker Directory',
             'archive_description'        => 'Finden Sie den passenden Redner für Ihr Event',
             'archive_per_page'           => '12',
@@ -558,6 +559,13 @@ final class CMS_Speakers_Admin
                 <div class="form-group">
                     <label class="form-label">Einträge pro Seite</label>
                     <input type="number" name="archive_per_page" class="form-control" value="<?= htmlspecialchars($s['archive_per_page']) ?>" min="3" max="100">
+                </div>
+                <div class="form-group" style="margin-top:.75rem;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="show_main_nav_item" value="1" <?= !empty($s['show_main_nav_item']) && $s['show_main_nav_item'] !== '0' ? 'checked' : '' ?>>
+                        Hauptmenüeintrag „Speaker" im Public-Header anzeigen
+                    </label>
+                    <small style="display:block;margin-top:.35rem;color:#64748b;">Wenn deaktiviert, bleibt die Seite erreichbar unter <code>/speakers</code>, wird aber nicht im Hauptmenü verlinkt.</small>
                 </div>
             </div>
             <div class="admin-card">

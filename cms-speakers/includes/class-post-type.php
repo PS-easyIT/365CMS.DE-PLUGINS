@@ -43,6 +43,19 @@ final class CMS_Speakers_Post_Type
     }
     public function add_menu_item(): void
     {
+        $showMainNavItem = true;
+        try {
+            $settings = CMS_Speakers_Database::instance()->get_settings();
+            $showMainNavItem = ((string) ($settings['show_main_nav_item'] ?? '1')) !== '0';
+        } catch (\Throwable $e) {
+            error_log('CMS Speakers main_nav setting fallback: ' . $e->getMessage());
+            $showMainNavItem = true;
+        }
+
+        if (!$showMainNavItem) {
+            return;
+        }
+
         $current_path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
         $is_active = str_starts_with($current_path, '/speakers') ? 'active' : '';
         echo '<a href="' . htmlspecialchars(SITE_URL . '/speakers', ENT_QUOTES, 'UTF-8') . '" class="nav-link ' . htmlspecialchars($is_active, ENT_QUOTES, 'UTF-8') . '">Speaker</a>';
@@ -419,6 +432,7 @@ final class CMS_Speakers_Post_Type
             'design_show_formats','design_show_topics',
         ];
         $settings_text_fields = ['archive_title','archive_description','archive_per_page'];
+        $settings_checkboxes = ['show_main_nav_item'];
 
         $settings = [];
         if ($tab === 'design') {
@@ -431,6 +445,9 @@ final class CMS_Speakers_Post_Type
         } else {
             foreach ($settings_text_fields as $k) {
                 $settings[$k] = $this->clean_setting((string) ($_POST[$k] ?? ''), $k);
+            }
+            foreach ($settings_checkboxes as $k) {
+                $settings[$k] = isset($_POST[$k]) ? '1' : '0';
             }
         }
 

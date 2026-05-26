@@ -180,12 +180,10 @@ final class CMS_Events_Template_Loader
             http_response_code(200);
         }
 
-        $safeTemplate = htmlspecialchars($template_name, ENT_QUOTES, 'UTF-8');
         echo '<section class="phinit-plugin cms-events-wrap">'
             . '<div class="cms-events-empty phinit-empty-state" role="status" aria-live="polite">'
             . '<i class="ti ti-alert-circle" aria-hidden="true"></i>'
             . '<p class="cms-events-empty__title">Events konnten aktuell nicht dargestellt werden.</p>'
-            . '<p class="cms-events-muted">Template: ' . $safeTemplate . '</p>'
             . '</div>'
             . '</section>';
     }

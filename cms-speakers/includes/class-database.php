@@ -264,6 +264,7 @@ final class CMS_Speakers_Database
     private function default_settings(): array
     {
         return [
+            'show_main_nav_item'         => '1',
             'design_primary_color'       => '#8b5cf6',
             'design_accent_color'        => '#7c3aed',
             'design_card_bg'             => '#faf5ff',

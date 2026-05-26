@@ -49,19 +49,26 @@ if (!function_exists('cms_events_view_price_label')) {
             return 'Kostenlos';
         }
 
-        $currencySymbol = match (strtoupper($currency)) {
-            'EUR' => '€',
-            'USD' => '$',
-            'CHF' => 'CHF',
-            default => preg_replace('/[^A-Z]/i', '', $currency) ?: '€',
-        };
+        $currencyUpper = strtoupper($currency);
+        if ($currencyUpper === 'EUR') {
+            $currencySymbol = '€';
+        } elseif ($currencyUpper === 'USD') {
+            $currencySymbol = '$';
+        } elseif ($currencyUpper === 'CHF') {
+            $currencySymbol = 'CHF';
+        } else {
+            $currencySymbol = preg_replace('/[^A-Z]/i', '', $currency) ?: '€';
+        }
 
         return $currencySymbol . ' ' . number_format($price, 2, ',', '.');
     }
 }
 
 if (!function_exists('cms_events_view_public_url')) {
-    function cms_events_view_public_url(mixed $url): string
+    /**
+     * @param mixed $url
+     */
+    function cms_events_view_public_url($url): string
     {
         $url = str_replace('\\', '/', trim((string) $url));
         if ($url === '' || strlen($url) > 1000) {
@@ -72,10 +79,10 @@ if (!function_exists('cms_events_view_public_url')) {
             return '';
         }
 
-        if (str_starts_with($url, '/') || preg_match('#^(uploads|ASSETS|assets|plugins)/#i', $url) === 1) {
+        if ((strpos($url, '/') === 0) || preg_match('#^(uploads|ASSETS|assets|plugins)/#i', $url) === 1) {
             $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
             $path = ltrim($url, '/');
-            if ($path === '' || str_contains($path, '..')) {
+            if ($path === '' || strpos($path, '..') !== false) {
                 return '';
             }
 

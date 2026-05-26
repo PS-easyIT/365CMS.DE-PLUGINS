@@ -122,7 +122,19 @@ final class CMS_Events_Post_Type
         try {
         // Öffentliche Ansicht – keine Abo-Prüfung, Erstellung ist separat geschützt
         $db_manager = CMS_Events_Database::instance();
-        $settings   = $db_manager->get_settings();
+        $settings = [
+            'archive_slug' => 'events',
+            'archive_title' => 'Veranstaltungen',
+            'per_page' => 12,
+        ];
+        try {
+            $loadedSettings = $db_manager->get_settings();
+            if (is_array($loadedSettings)) {
+                $settings = array_merge($settings, $loadedSettings);
+            }
+        } catch (\Throwable $settingsError) {
+            error_log('CMS Events archive settings fallback: ' . $settingsError->getMessage());
+        }
 
         $filter_category = $this->sanitize_text_param($_GET['category'] ?? null, 100);
         $filter_city     = $this->sanitize_text_param($_GET['city'] ?? null, 100);
@@ -152,11 +164,40 @@ final class CMS_Events_Post_Type
         if ($search !== '')            $args['search']     = $search;
         if ($filter_online !== null)  $args['is_online']  = $filter_online;
 
-        $events         = $db_manager->get_events($args);
-        $total          = $db_manager->count_events(array_diff_key($args, array_flip(['limit', 'offset'])));
-        $upcoming_total = $db_manager->count_events(['status' => 'published', 'upcoming' => true]);
-        $pages          = max(1, (int)ceil($total / $per_page));
-        $categories     = $db_manager->get_distinct_categories();
+        $events = [];
+        try {
+            $events = $db_manager->get_events($args);
+        } catch (\Throwable $eventsError) {
+            error_log('CMS Events archive events fallback: ' . $eventsError->getMessage());
+            $events = [];
+        }
+
+        $total = 0;
+        try {
+            $total = $db_manager->count_events(array_diff_key($args, array_flip(['limit', 'offset'])));
+        } catch (\Throwable $countError) {
+            error_log('CMS Events archive count fallback: ' . $countError->getMessage());
+            $total = is_array($events) ? count($events) : 0;
+        }
+
+        $upcoming_total = 0;
+        try {
+            $upcoming_total = $db_manager->count_events(['status' => 'published', 'upcoming' => true]);
+        } catch (\Throwable $upcomingError) {
+            error_log('CMS Events archive upcoming fallback: ' . $upcomingError->getMessage());
+            $upcoming_total = 0;
+        }
+
+        $pages = max(1, (int)ceil(max(0, (int) $total) / $per_page));
+
+        $categories = [];
+        try {
+            $categories = $db_manager->get_distinct_categories();
+        } catch (\Throwable $categoriesError) {
+            error_log('CMS Events archive categories fallback: ' . $categoriesError->getMessage());
+            $categories = [];
+        }
+
         $event_speakers_map = $this->get_event_speakers_map($events);
 
         $this->render_public_theme_template('archive-event', [
@@ -177,7 +218,28 @@ final class CMS_Events_Post_Type
             'search'          => $search,
         ]);
         } catch (\Throwable $e) {
-            $this->render_public_error('Events konnten nicht geladen werden.', $e);
+            error_log('CMS Events archive hard fallback: ' . $e->getMessage());
+            $this->render_public_theme_template('archive-event', [
+                'events' => [],
+                'settings' => [
+                    'archive_slug' => 'events',
+                    'archive_title' => 'Veranstaltungen',
+                    'per_page' => 12,
+                ],
+                'current_page' => 1,
+                'per_page' => 12,
+                'pages' => 1,
+                'total' => 0,
+                'upcoming_total' => 0,
+                'categories' => [],
+                'event_speakers_map' => [],
+                'filter_category' => null,
+                'filter_city' => null,
+                'filter_month' => null,
+                'filter_online' => null,
+                'when_filter' => null,
+                'search' => '',
+            ]);
         }
     }
 

@@ -30,7 +30,7 @@ if (!function_exists('cms_events_view_lowercase')) {
 }
 
 $events = array_values(array_filter(array_map(
-    static function (mixed $item): ?object {
+    static function ($item): ?object {
         if (is_object($item)) {
             return $item;
         }
@@ -45,7 +45,7 @@ $events = array_values(array_filter(array_map(
 )));
 
 $categories = array_values(array_filter(array_map(
-    static function (mixed $category): string {
+    static function ($category): string {
         if (is_string($category) || is_numeric($category)) {
             return trim((string) $category);
         }
@@ -156,6 +156,28 @@ $monthLabels = [
                         (int) $e->getLine(),
                         (string) $e->getMessage()
                     ));
+
+                    $fallbackEvent = is_object($event) ? $event : (object) [];
+                    $fallbackId = (int) ($fallbackEvent->id ?? 0);
+                    $fallbackTitleRaw = trim((string) ($fallbackEvent->title ?? 'Event'));
+                    $fallbackTitle = htmlspecialchars($fallbackTitleRaw !== '' ? $fallbackTitleRaw : 'Event', ENT_QUOTES, 'UTF-8');
+                    $fallbackDateRaw = trim((string) ($fallbackEvent->event_date ?? ''));
+                    $fallbackDateTs = $fallbackDateRaw !== '' ? strtotime($fallbackDateRaw) : 0;
+                    $fallbackDate = $fallbackDateTs ? htmlspecialchars(date('d.m.Y', $fallbackDateTs), ENT_QUOTES, 'UTF-8') : '';
+                    $fallbackUrl = htmlspecialchars($baseUrl . '/events/' . $fallbackId, ENT_QUOTES, 'UTF-8');
+
+                    echo '<article class="phinit-card cms-events-card cms-events-card--fallback">';
+                    echo '<div class="cms-events-card__body">';
+                    if ($fallbackDate !== '') {
+                        echo '<p class="cms-events-card__meta"><i class="ti ti-calendar" aria-hidden="true"></i>' . $fallbackDate . '</p>';
+                    }
+                    echo '<h2 class="cms-events-card__title"><a href="' . $fallbackUrl . '">' . $fallbackTitle . '</a></h2>';
+                    echo '<footer class="cms-events-card__footer">';
+                    echo '<a href="' . $fallbackUrl . '" class="phinit-btn phinit-btn--primary cms-events-card__button">Details</a>';
+                    echo '</footer>';
+                    echo '</div>';
+                    echo '</article>';
+                    $renderedCards++;
                 }
             endforeach;
             ?>
