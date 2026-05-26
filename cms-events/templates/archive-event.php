@@ -142,9 +142,30 @@ $monthLabels = [
                 <p class="cms-events-empty__title">Keine Events gefunden.</p>
             </div>
         <?php else: ?>
-            <?php foreach ($events as $event): ?>
-                <?php include __DIR__ . '/event-card.php'; ?>
-            <?php endforeach; ?>
+            <?php
+            $renderedCards = 0;
+            foreach ($events as $event):
+                try {
+                    include __DIR__ . '/event-card.php';
+                    $renderedCards++;
+                } catch (\Throwable $e) {
+                    error_log(sprintf(
+                        'CMS Events: event-card render skipped for event #%d in %s:%d – %s',
+                        is_object($event) ? (int) ($event->id ?? 0) : 0,
+                        (string) $e->getFile(),
+                        (int) $e->getLine(),
+                        (string) $e->getMessage()
+                    ));
+                }
+            endforeach;
+            ?>
+
+            <?php if ($renderedCards === 0): ?>
+                <div class="cms-events-empty phinit-empty-state" role="status" aria-live="polite">
+                    <i class="ti ti-alert-circle" aria-hidden="true"></i>
+                    <p class="cms-events-empty__title">Events konnten aktuell nicht dargestellt werden.</p>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
     </section>
 
