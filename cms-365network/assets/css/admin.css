@@ -1,32 +1,101 @@
-/* CMS 365NETWORK Admin Styles */
+/**
+ * CMS 365NETWORK – Admin-Bereich Styles
+ *
+ * Ergänzt die globalen 365CMS Admin-Styles analog zu cms-events nur um
+ * plugin-spezifische Tabs, Statuskarten, Layout-Grids und Codefelder.
+ * Globale Komponenten wie .admin-card, .btn, .form-control, .alert und
+ * .checkbox-label kommen aus dem Core-Admin-CSS.
+ *
+ * @package CMS_365NETWORK
+ */
 
-.cms365network-admin {
-    display: grid;
-    gap: 1.25rem;
+.n365-admin-shell {
+    padding: 25px;
 }
 
-.cms365network-admin .admin-page-header {
+.n365-admin-shell .admin-page-header {
     align-items: flex-start;
     display: flex;
     gap: 1rem;
     justify-content: space-between;
 }
 
-.n365-admin-status {
+.n365-status-grid {
     display: grid;
     gap: 1rem;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 1.25rem;
 }
 
-.n365-admin-status p {
+.n365-status-card {
+    min-width: 0;
+}
+
+.n365-status-card__label {
+    display: block;
+    margin-bottom: .25rem;
+    color: #94a3b8;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.n365-status-card strong {
+    display: block;
+    color: #1e293b;
+    font-size: 1rem;
+}
+
+.n365-status-card p {
+    margin: .35rem 0 0;
     color: #64748b;
-    margin: 0.25rem 0 0;
+    font-size: .875rem;
+    line-height: 1.5;
 }
 
-.n365-admin-tabs {
+.n365-tabs {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 0;
+    overflow-x: auto;
+}
+
+.n365-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .6rem 1.1rem;
+    font-size: .875rem;
+    font-weight: 500;
+    color: #475569;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-bottom: 2px solid transparent;
+    border-radius: 6px 6px 0 0;
+    margin-bottom: -2px;
+    white-space: nowrap;
+    transition: color .15s, background .15s;
+}
+
+.n365-tab:hover {
+    color: var(--admin-primary, #3b82f6);
+    background: #f8fafc;
+}
+
+.n365-tab.active {
+    color: var(--admin-primary, #3b82f6);
+    border-color: #e2e8f0 #e2e8f0 #fff #e2e8f0;
+    background: #fff;
+    font-weight: 600;
+}
+
+.n365-tab-panel {
+    border-radius: 0 10px 10px 10px;
+    margin-top: 0;
+    max-width: 980px;
 }
 
 .n365-admin-form {
@@ -39,14 +108,19 @@
     gap: 1rem;
 }
 
-.n365-admin-section h2 {
-    font-size: 1.25rem;
+.n365-panel-header {
+    margin-bottom: .25rem;
+}
+
+.n365-panel-header h3 {
     margin: 0;
 }
 
-.n365-admin-section > p {
+.n365-panel-header p {
+    margin: .3rem 0 0;
     color: #64748b;
-    margin: -0.35rem 0 0.35rem;
+    font-size: .875rem;
+    line-height: 1.5;
     max-width: 72ch;
 }
 
@@ -57,80 +131,64 @@
 }
 
 .n365-admin-mini-card {
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
     display: grid;
-    gap: 0.85rem;
+    gap: .85rem;
     margin: 0;
     padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
 }
 
 .n365-admin-mini-card legend {
-    color: #0f172a;
-    font-weight: 700;
-    padding: 0 0.35rem;
-}
-
-.cms365network-admin .admin-form-field,
-.cms365network-admin .admin-form-check {
-    display: grid;
-    gap: 0.4rem;
-}
-
-.cms365network-admin .admin-form-check {
-    align-items: center;
-    grid-template-columns: auto 1fr;
-}
-
-.cms365network-admin .admin-form-field span,
-.cms365network-admin .admin-form-check span {
+    padding: 0 .35rem;
+    color: #1e293b;
     font-weight: 700;
 }
 
-.cms365network-admin input[type='text'],
-.cms365network-admin input[type='url'],
-.cms365network-admin input[type='number'],
-.cms365network-admin input[type='color'],
-.cms365network-admin select,
-.cms365network-admin textarea {
-    border: 1px solid #cbd5e1;
-    border-radius: 12px;
-    font: inherit;
-    max-width: 100%;
-    padding: 0.7rem 0.85rem;
+.n365-admin-shell input[type='color'].form-control {
+    min-height: 40px;
+    max-width: 96px;
+    padding: 2px;
 }
 
-.cms365network-admin input[type='color'] {
-    min-height: 2.75rem;
-    padding: 0.2rem;
-    width: 5.5rem;
-}
-
-.cms365network-admin textarea {
-    resize: vertical;
-}
-
-.cms365network-admin .n365-code-textarea {
-    font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
-    font-size: 0.9rem;
-    line-height: 1.5;
+.n365-code-textarea {
     min-height: 18rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+    font-size: .875rem;
+    line-height: 1.5;
     white-space: pre;
 }
 
-.cms365network-admin .admin-help {
-    color: #64748b;
-    font-size: 0.9rem;
-    margin: -0.55rem 0 0.25rem;
+.n365-admin-shell .form-actions {
+    display: flex;
+    justify-content: flex-start;
+    padding-top: .25rem;
 }
 
-@media (max-width: 780px) {
-    .cms365network-admin .admin-page-header,
-    .n365-admin-status {
-        grid-template-columns: 1fr;
+@media (max-width: 960px) {
+    .n365-tabs {
+        flex-wrap: nowrap;
     }
 
-    .cms365network-admin .admin-page-header {
+    .n365-status-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .n365-admin-shell {
+        padding: 15px;
+    }
+
+    .n365-admin-shell .admin-page-header {
         display: grid;
+    }
+
+    .n365-admin-shell .header-actions,
+    .n365-admin-shell .header-actions .btn,
+    .n365-admin-shell .form-actions .btn {
+        justify-content: center;
+        width: 100%;
     }
 }

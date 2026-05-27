@@ -95,24 +95,24 @@ final class CMS_365NETWORK_Admin
             ? 'Noch keine Zusatzdomain hinterlegt. Die Vorschau ist trotzdem über die interne Route erreichbar.'
             : 'Aktive Zusatzdomain' . (count($domains) === 1 ? '' : 's') . ': ' . implode(', ', $domains);
 
-        echo '<main class="admin-page cms365network-admin">';
+        echo '<main class="admin-page n365-admin-shell">';
         echo '<header class="admin-page-header">';
-        echo '<div><p class="admin-overline">Plugin-Einstellungen</p><h1>CMS 365NETWORK</h1><p class="admin-page-subtitle">Domainbasierte Netzwerk-Landingpage mit steuerbarem Layout, Sidebar und dynamischen Karten.</p></div>';
-        echo '<a class="admin-btn admin-btn-secondary" href="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">Vorschau öffnen</a>';
+        echo '<div><h2>🌐 CMS 365NETWORK</h2><p>Domain-Landingpage, Layout und Netzwerk-Daten konfigurieren.</p></div>';
+        echo '<div class="header-actions"><a class="btn btn-secondary" href="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">👁️ Vorschau öffnen</a></div>';
         echo '</header>';
 
         if ($saved) {
-            echo '<div class="admin-alert admin-alert-success" role="status">Einstellungen gespeichert.</div>';
+            echo '<div class="alert alert-success" role="status">✅ Einstellungen gespeichert.</div>';
         }
 
-        echo '<section class="admin-card n365-admin-status">';
-        echo '<div><strong>Domain-Status</strong><p>' . htmlspecialchars($domainHint, ENT_QUOTES, 'UTF-8') . '</p></div>';
-        echo '<div><strong>Hauptdomain</strong><p>' . htmlspecialchars($mainHost !== '' ? $mainHost : 'nicht erkannt', ENT_QUOTES, 'UTF-8') . '</p></div>';
+        echo '<section class="admin-card n365-status-grid" aria-label="365NETWORK Status">';
+        echo '<div class="n365-status-card"><span class="n365-status-card__label">Domain-Status</span><strong>' . htmlspecialchars($domains === [] ? 'Interne Route aktiv' : 'Zusatzdomain aktiv', ENT_QUOTES, 'UTF-8') . '</strong><p>' . htmlspecialchars($domainHint, ENT_QUOTES, 'UTF-8') . '</p></div>';
+        echo '<div class="n365-status-card"><span class="n365-status-card__label">Hauptdomain</span><strong>' . htmlspecialchars($mainHost !== '' ? $mainHost : 'nicht erkannt', ENT_QUOTES, 'UTF-8') . '</strong><p>Auf der Hauptdomain bleibt die normale Startseite erhalten.</p></div>';
         echo '</section>';
 
         $this->render_tabs($tab);
 
-        echo '<form class="admin-card admin-form n365-admin-form" method="post" action="' . htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365network/settings/save', ENT_QUOTES, 'UTF-8') . '">';
+        echo '<form class="admin-card admin-form n365-tab-panel n365-admin-form" method="post" action="' . htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365network/settings/save', ENT_QUOTES, 'UTF-8') . '">';
         echo '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') . '">';
         echo '<input type="hidden" name="tab" value="' . htmlspecialchars($tab, ENT_QUOTES, 'UTF-8') . '">';
 
@@ -125,7 +125,7 @@ final class CMS_365NETWORK_Admin
             default => $this->render_domain_tab($settings),
         };
 
-        echo '<div class="admin-form-actions"><button class="admin-btn admin-btn-primary" type="submit">Einstellungen speichern</button></div>';
+        echo '<div class="form-actions"><button class="btn btn-primary" type="submit">💾 Einstellungen speichern</button></div>';
         echo '</form>';
         echo '</main>';
 
@@ -153,18 +153,18 @@ final class CMS_365NETWORK_Admin
     private function render_tabs(string $activeTab): void
     {
         $tabs = [
-            'domain' => 'Domain',
-            'content' => 'Inhalte',
-            'layout' => 'Layout',
-            'sidebar' => 'Sidebar & Daten',
-            'cards' => 'Bereichskarten',
-            'analytics' => 'Analytics',
+            'domain' => '🌐 Domain',
+            'content' => '📝 Inhalte',
+            'layout' => '🎨 Layout',
+            'sidebar' => '📊 Sidebar & Daten',
+            'cards' => '🧩 Bereichskarten',
+            'analytics' => '📈 Analytics',
         ];
 
-        echo '<nav class="admin-tabs n365-admin-tabs" aria-label="365NETWORK Einstellungen">';
+        echo '<nav class="n365-tabs" aria-label="365NETWORK Einstellungen">';
         foreach ($tabs as $slug => $label) {
             $url = rtrim((string) SITE_URL, '/') . '/admin/365network?tab=' . rawurlencode($slug);
-            $class = $slug === $activeTab ? 'admin-tab active' : 'admin-tab';
+            $class = $slug === $activeTab ? 'n365-tab active' : 'n365-tab';
             echo '<a class="' . htmlspecialchars($class, ENT_QUOTES, 'UTF-8') . '" href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
         }
         echo '</nav>';
@@ -172,7 +172,7 @@ final class CMS_365NETWORK_Admin
 
     private function render_domain_tab(array $settings): void
     {
-        echo '<section class="n365-admin-section"><h2>Domain-Mapping</h2><p>Tragen Sie eine oder mehrere Zusatzdomains ein, die auf diese 365CMS-Installation zeigen. Bei Root-Aufrufen dieser Domains wird die 365NETWORK-Landingpage ausgeliefert.</p>';
+        echo '<section class="n365-admin-section"><div class="n365-panel-header"><h3>🌐 Domain-Mapping</h3><p>Eine oder mehrere Zusatzdomains als Root-Landingpage für 365NETWORK nutzen.</p></div>';
         $this->checkbox('landing_enabled', 'Landingpage aktivieren', $settings);
         $this->textarea('hub_domains', 'Zusatzdomain(s)', $settings, 'network.example.com', 'Eine Domain pro Zeile oder kommasepariert. Bitte ohne https:// und ohne Pfad eintragen.');
         $this->input('route_slug', 'Interne Vorschau-Route', $settings, '365network', 'text', 'Über diese Route ist die Landingpage unabhängig von der Domain erreichbar.');
@@ -181,7 +181,7 @@ final class CMS_365NETWORK_Admin
 
     private function render_content_tab(array $settings): void
     {
-        echo '<section class="n365-admin-section"><h2>Hero & Featured Card</h2>';
+        echo '<section class="n365-admin-section"><div class="n365-panel-header"><h3>📝 Hero & Featured Card</h3><p>Texte, Buttons und die optionale Empfehlungskarte der Publicsite pflegen.</p></div>';
         $this->input('hero_eyebrow', 'Eyebrow', $settings);
         $this->input('landing_title', 'Titel', $settings);
         $this->textarea('landing_subtitle', 'Einleitung', $settings);
@@ -199,7 +199,7 @@ final class CMS_365NETWORK_Admin
 
     private function render_layout_tab(array $settings): void
     {
-        echo '<section class="n365-admin-section"><h2>Layout & Design</h2>';
+        echo '<section class="n365-admin-section"><div class="n365-panel-header"><h3>🎨 Layout & Design</h3><p>Breite, Raster, Abstände und ruhige Theme-Farbwerte festlegen.</p></div>';
         $this->select('layout_variant', 'Bereichskarten-Layout', $settings, [
             'grid-2x2' => '2 × 2 Grid',
             'grid-4x1' => '4 × 1 Reihe',
@@ -220,7 +220,7 @@ final class CMS_365NETWORK_Admin
 
     private function render_sidebar_tab(array $settings): void
     {
-        echo '<section class="n365-admin-section"><h2>Sidebar & dynamische Inhalte</h2>';
+        echo '<section class="n365-admin-section"><div class="n365-panel-header"><h3>📊 Sidebar & dynamische Inhalte</h3><p>Daten aus Events, Speakern, Firmen und Experten als Vorschau anzeigen.</p></div>';
         $this->checkbox('show_sidebar', 'Sidebar anzeigen', $settings);
         $this->select('sidebar_position', 'Sidebar-Position', $settings, ['right' => 'Rechts', 'left' => 'Links']);
         $this->select('preview_placement', 'Preview-Cards anzeigen', $settings, ['sidebar' => 'In der Sidebar', 'below' => 'Unter den vier Bereichen', 'off' => 'Nicht anzeigen']);
@@ -244,7 +244,7 @@ final class CMS_365NETWORK_Admin
             'experts' => 'Experten',
         ];
 
-        echo '<section class="n365-admin-section"><h2>Vier Netzwerk-Bereiche</h2><div class="n365-admin-card-grid">';
+        echo '<section class="n365-admin-section"><div class="n365-panel-header"><h3>🧩 Vier Netzwerk-Bereiche</h3><p>Beschriftung und Zielseiten der vier Einstiegskarten steuern.</p></div><div class="n365-admin-card-grid">';
         foreach ($cards as $key => $label) {
             echo '<fieldset class="n365-admin-mini-card"><legend>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</legend>';
             $this->input($key . '_card_title', 'Titel', $settings);
@@ -257,8 +257,7 @@ final class CMS_365NETWORK_Admin
 
     private function render_analytics_tab(array $settings): void
     {
-        echo '<section class="n365-admin-section"><h2>SEO-/Analyse-Code nur für diese Landingpage</h2>';
-        echo '<p>Hier kann z. B. der Matomo-Tracking-Code hinterlegt werden. Der Code wird ausschließlich auf der 365NETWORK-Public-Site ausgegeben: auf der internen Route und auf der Root-Seite der konfigurierten Zusatzdomain.</p>';
+        echo '<section class="n365-admin-section"><div class="n365-panel-header"><h3>📈 SEO-/Analyse-Code</h3><p>Matomo oder ähnlichen Analyse-Code ausschließlich auf der 365NETWORK-Publicsite laden.</p></div>';
         $this->checkbox('analytics_enabled', 'Analyse-Code aktivieren', $settings);
         $this->select('analytics_position', 'Ausgabe-Position', $settings, [
             'head' => 'Im head laden (typisch für Matomo)',
@@ -322,48 +321,53 @@ final class CMS_365NETWORK_Admin
     private function input(string $name, string $label, array $settings, string $placeholder = '', string $type = 'text', string $help = ''): void
     {
         $value = (string) ($settings[$name] ?? '');
-        echo '<label class="admin-form-field"><span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span><input type="' . htmlspecialchars($type, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '" placeholder="' . htmlspecialchars($placeholder, ENT_QUOTES, 'UTF-8') . '"></label>';
+        $id = 'n365-' . $name;
+        echo '<div class="form-group"><label class="form-label" for="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</label><input id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" class="form-control" type="' . htmlspecialchars($type, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '" placeholder="' . htmlspecialchars($placeholder, ENT_QUOTES, 'UTF-8') . '"></div>';
         if ($help !== '') {
-            echo '<p class="admin-help">' . htmlspecialchars($help, ENT_QUOTES, 'UTF-8') . '</p>';
+            echo '<small class="form-text">' . htmlspecialchars($help, ENT_QUOTES, 'UTF-8') . '</small>';
         }
     }
 
     private function textarea(string $name, string $label, array $settings, string $placeholder = '', string $help = ''): void
     {
         $value = (string) ($settings[$name] ?? '');
-        echo '<label class="admin-form-field"><span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span><textarea name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" rows="4" placeholder="' . htmlspecialchars($placeholder, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '</textarea></label>';
+        $id = 'n365-' . $name;
+        echo '<div class="form-group"><label class="form-label" for="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</label><textarea id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" class="form-control" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" rows="4" placeholder="' . htmlspecialchars($placeholder, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '</textarea></div>';
         if ($help !== '') {
-            echo '<p class="admin-help">' . htmlspecialchars($help, ENT_QUOTES, 'UTF-8') . '</p>';
+            echo '<small class="form-text">' . htmlspecialchars($help, ENT_QUOTES, 'UTF-8') . '</small>';
         }
     }
 
     private function tracking_code_textarea(string $name, string $label, array $settings, string $placeholder = ''): void
     {
         $value = (string) ($settings[$name] ?? '');
-        echo '<label class="admin-form-field"><span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span><textarea class="n365-code-textarea" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" rows="12" spellcheck="false" placeholder="' . htmlspecialchars($placeholder, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '</textarea></label>';
+        $id = 'n365-' . $name;
+        echo '<div class="form-group"><label class="form-label" for="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</label><textarea id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" class="form-control n365-code-textarea" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" rows="12" spellcheck="false" placeholder="' . htmlspecialchars($placeholder, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '</textarea></div>';
     }
 
     private function checkbox(string $name, string $label, array $settings): void
     {
         $checked = (string) ($settings[$name] ?? '0') === '1' ? ' checked' : '';
-        echo '<label class="admin-form-check"><input type="checkbox" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" value="1"' . $checked . '><span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span></label>';
+        echo '<label class="checkbox-label"><input type="checkbox" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" value="1"' . $checked . '> ' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</label>';
     }
 
     private function select(string $name, string $label, array $settings, array $options): void
     {
         $current = (string) ($settings[$name] ?? '');
-        echo '<label class="admin-form-field"><span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span><select name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '">';
+        $id = 'n365-' . $name;
+        echo '<div class="form-group"><label class="form-label" for="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</label><select id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" class="form-control" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '">';
         foreach ($options as $value => $optionLabel) {
             $selected = (string) $value === $current ? ' selected' : '';
             echo '<option value="' . htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') . '"' . $selected . '>' . htmlspecialchars((string) $optionLabel, ENT_QUOTES, 'UTF-8') . '</option>';
         }
-        echo '</select></label>';
+        echo '</select></div>';
     }
 
     private function number(string $name, string $label, array $settings, int $min, int $max): void
     {
         $value = (int) ($settings[$name] ?? $min);
-        echo '<label class="admin-form-field"><span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span><input type="number" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" value="' . (int) $value . '" min="' . (int) $min . '" max="' . (int) $max . '"></label>';
+        $id = 'n365-' . $name;
+        echo '<div class="form-group"><label class="form-label" for="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</label><input id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" class="form-control" type="number" name="' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" value="' . (int) $value . '" min="' . (int) $min . '" max="' . (int) $max . '"></div>';
     }
 
     private function load_admin_menu(): void
