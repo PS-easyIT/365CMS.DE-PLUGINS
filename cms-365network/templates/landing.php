@@ -52,6 +52,14 @@ $previewName = static function (array $item, string $type): string {
     $name = trim((string) (($item['first_name'] ?? '') . ' ' . ($item['last_name'] ?? '')));
     return $name !== '' ? $name : ($type === 'speaker' ? 'Speaker' : 'Expertise-Profil');
 };
+$previewInitial = static function (string $name): string {
+    $name = trim($name);
+    if ($name === '') {
+        return 'N';
+    }
+
+    return function_exists('mb_substr') ? mb_substr($name, 0, 1, 'UTF-8') : substr($name, 0, 1);
+};
 $eventDate = static function (array $event): string {
     $rawDate = trim((string) ($event['event_date'] ?? ''));
     if ($rawDate === '') {
@@ -117,7 +125,7 @@ $belowPreviews = $previewPlacement === 'below';
             <?php if ($enabled('featured_enabled') && trim((string) ($settings['featured_title'] ?? '')) !== ''): ?>
             <aside class="n365-featured-card" aria-label="Empfohlen">
                 <?php if ($featuredImage !== ''): ?>
-                <img class="n365-featured-card__image" src="<?php echo $esc($featuredImage); ?>" alt="" loading="lazy">
+                <img class="n365-featured-card__image" src="<?php echo $esc($featuredImage); ?>" alt="<?php echo $esc($settings['featured_title'] ?? 'Empfehlung'); ?>" loading="lazy" width="640" height="360">
                 <?php else: ?>
                 <div class="n365-featured-card__visual" aria-hidden="true"><i class="ti ti-world-star"></i></div>
                 <?php endif; ?>

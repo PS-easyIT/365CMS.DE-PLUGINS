@@ -31,7 +31,7 @@ $renderEmpty = static function (string $label) use ($esc): void {
                 $event = is_array($event) ? $event : [];
                 $eventId = (int) ($event['id'] ?? 0);
                 $eventTitle = trim((string) ($event['title'] ?? 'Event')) ?: 'Event';
-                $eventUrl = $eventId > 0 ? '/events/' . $eventId : '/events';
+                $eventUrl = $safeUrl($event['url'] ?? ($eventId > 0 ? '/events/' . $eventId : '/events'));
                 $eventPlace = trim((string) ($event['city'] ?? ($event['location'] ?? '')));
                 ?>
                 <li>
@@ -61,15 +61,15 @@ $renderEmpty = static function (string $label) use ($esc): void {
                 $speaker = is_array($speaker) ? $speaker : [];
                 $speakerId = (int) ($speaker['id'] ?? 0);
                 $speakerName = $previewName($speaker, 'speaker');
-                $speakerUrl = $speakerId > 0 ? '/speakers/' . $speakerId : '/speakers';
+                $speakerUrl = $safeUrl($speaker['url'] ?? ($speakerId > 0 ? '/speakers/' . $speakerId : '/speakers'));
                 $speakerImage = $safeImage($speaker['photo_url'] ?? '');
                 $speakerMeta = trim((string) ($speaker['position'] ?? ($speaker['company'] ?? '')));
                 ?>
                 <a class="n365-person-card" href="<?php echo $esc($speakerUrl); ?>">
                     <?php if ($speakerImage !== ''): ?>
-                    <img src="<?php echo $esc($speakerImage); ?>" alt="" loading="lazy">
+                    <img src="<?php echo $esc($speakerImage); ?>" alt="" loading="lazy" width="44" height="44">
                     <?php else: ?>
-                    <span class="n365-avatar" aria-hidden="true"><?php echo $esc(substr($speakerName, 0, 1)); ?></span>
+                    <span class="n365-avatar" aria-hidden="true"><?php echo $esc($previewInitial($speakerName)); ?></span>
                     <?php endif; ?>
                     <span><strong><?php echo $esc($speakerName); ?></strong><?php if ($speakerMeta !== ''): ?><small><?php echo $esc($speakerMeta); ?></small><?php endif; ?></span>
                 </a>
@@ -94,15 +94,15 @@ $renderEmpty = static function (string $label) use ($esc): void {
                 $company = is_array($company) ? $company : [];
                 $companyId = (int) ($company['id'] ?? 0);
                 $companyName = $previewName($company, 'company');
-                $companyUrl = $companyId > 0 ? '/companies/' . $companyId : '/companies';
+                $companyUrl = $safeUrl($company['url'] ?? ($companyId > 0 ? '/companies/' . $companyId : '/companies'));
                 $companyImage = $safeImage($company['logo_url'] ?? '');
                 $companyMeta = trim((string) ($company['industry'] ?? ($company['location_city'] ?? '')));
                 ?>
                 <a class="n365-person-card" href="<?php echo $esc($companyUrl); ?>">
                     <?php if ($companyImage !== ''): ?>
-                    <img src="<?php echo $esc($companyImage); ?>" alt="" loading="lazy">
+                    <img src="<?php echo $esc($companyImage); ?>" alt="" loading="lazy" width="44" height="44">
                     <?php else: ?>
-                    <span class="n365-avatar" aria-hidden="true"><?php echo $esc(substr($companyName, 0, 1)); ?></span>
+                    <span class="n365-avatar" aria-hidden="true"><?php echo $esc($previewInitial($companyName)); ?></span>
                     <?php endif; ?>
                     <span><strong><?php echo $esc($companyName); ?></strong><?php if ($companyMeta !== ''): ?><small><?php echo $esc($companyMeta); ?></small><?php endif; ?></span>
                 </a>
@@ -127,15 +127,15 @@ $renderEmpty = static function (string $label) use ($esc): void {
                 $expert = is_array($expert) ? $expert : [];
                 $expertId = (int) ($expert['id'] ?? 0);
                 $expertName = $previewName($expert, 'expert');
-                $expertUrl = $expertId > 0 ? '/experts/' . $expertId : '/experts';
+                $expertUrl = $safeUrl($expert['url'] ?? ($expertId > 0 ? '/experts/' . $expertId : '/experts'));
                 $expertImage = $safeImage($expert['photo_url'] ?? '');
                 $expertMeta = trim((string) ($expert['position'] ?? ($expert['company'] ?? '')));
                 ?>
                 <a class="n365-person-card" href="<?php echo $esc($expertUrl); ?>">
                     <?php if ($expertImage !== ''): ?>
-                    <img src="<?php echo $esc($expertImage); ?>" alt="" loading="lazy">
+                    <img src="<?php echo $esc($expertImage); ?>" alt="" loading="lazy" width="44" height="44">
                     <?php else: ?>
-                    <span class="n365-avatar" aria-hidden="true"><?php echo $esc(substr($expertName, 0, 1)); ?></span>
+                    <span class="n365-avatar" aria-hidden="true"><?php echo $esc($previewInitial($expertName)); ?></span>
                     <?php endif; ?>
                     <span><strong><?php echo $esc($expertName); ?></strong><?php if ($expertMeta !== ''): ?><small><?php echo $esc($expertMeta); ?></small><?php endif; ?></span>
                 </a>

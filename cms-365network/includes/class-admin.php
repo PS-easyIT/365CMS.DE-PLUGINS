@@ -143,8 +143,9 @@ final class CMS_365NETWORK_Admin
         }
 
         $tab = $this->sanitize_tab((string) ($_POST['tab'] ?? 'domain'));
-        $settings = $this->sanitize_settings($_POST);
-        CMS_365NETWORK_Database::instance()->save_settings($settings);
+        $database = CMS_365NETWORK_Database::instance();
+        $settings = $this->sanitize_settings($_POST, $database->get_settings(), $tab);
+        $database->save_settings($settings);
 
         header('Location: ' . rtrim((string) SITE_URL, '/') . '/admin/365network?tab=' . rawurlencode($tab) . '&saved=1');
         exit;
@@ -268,54 +269,96 @@ final class CMS_365NETWORK_Admin
         echo '</section>';
     }
 
-    private function sanitize_settings(array $post): array
+    private function sanitize_settings(array $post, array $existing = [], string $tab = 'domain'): array
     {
         $defaults = CMS_365NETWORK_Database::instance()->default_settings();
-        $settings = $defaults;
+        $settings = array_merge($defaults, array_intersect_key($existing, $defaults));
+        $activeKeys = array_flip($this->setting_keys_for_tab($tab));
+        $isActiveKey = static fn(string $key): bool => isset($activeKeys[$key]);
 
         $textKeys = [
             'hero_eyebrow', 'landing_title', 'primary_button_label', 'secondary_button_label', 'featured_title',
             'events_card_title', 'speakers_card_title', 'companies_card_title', 'experts_card_title', 'route_slug',
         ];
         foreach ($textKeys as $key) {
-            $settings[$key] = $this->clean_text((string) ($post[$key] ?? $defaults[$key] ?? ''));
+            if ($isActiveKey($key) && array_key_exists($key, $post)) {
+                $settings[$key] = $this->clean_text((string) $post[$key]);
+            }
         }
 
         $textareaKeys = ['landing_subtitle', 'featured_text', 'events_card_text', 'speakers_card_text', 'companies_card_text', 'experts_card_text'];
         foreach ($textareaKeys as $key) {
-            $settings[$key] = $this->clean_textarea((string) ($post[$key] ?? $defaults[$key] ?? ''));
+            if ($isActiveKey($key) && array_key_exists($key, $post)) {
+                $settings[$key] = $this->clean_textarea((string) $post[$key]);
+            }
         }
 
-        $settings['hub_domains'] = implode("\n", $this->normalize_domain_list((string) ($post['hub_domains'] ?? '')));
+        if ($isActiveKey('hub_domains') && array_key_exists('hub_domains', $post)) {
+            $settings['hub_domains'] = implode("\n", $this->normalize_domain_list((string) $post['hub_domains']));
+        }
 
         foreach (['primary_button_url', 'secondary_button_url', 'featured_url', 'events_card_url', 'speakers_card_url', 'companies_card_url', 'experts_card_url'] as $key) {
-            $settings[$key] = $this->safe_url((string) ($post[$key] ?? $defaults[$key] ?? ''));
+            if ($isActiveKey($key) && array_key_exists($key, $post)) {
+                $settings[$key] = $this->safe_url((string) $post[$key]);
+            }
         }
-        $settings['featured_image_url'] = $this->safe_image_url((string) ($post['featured_image_url'] ?? ''));
+        if ($isActiveKey('featured_image_url') && array_key_exists('featured_image_url', $post)) {
+            $settings['featured_image_url'] = $this->safe_image_url((string) $post['featured_image_url']);
+        }
 
-        $settings['layout_variant'] = $this->enum((string) ($post['layout_variant'] ?? ''), ['grid-2x2', 'grid-4x1', 'auto'], 'grid-2x2');
-        $settings['sidebar_position'] = $this->enum((string) ($post['sidebar_position'] ?? ''), ['right', 'left'], 'right');
-        $settings['preview_placement'] = $this->enum((string) ($post['preview_placement'] ?? ''), ['sidebar', 'below', 'off'], 'sidebar');
-        $settings['analytics_position'] = $this->enum((string) ($post['analytics_position'] ?? ''), ['head', 'body_end'], 'head');
+        if ($isActiveKey('layout_variant') && array_key_exists('layout_variant', $post)) {
+            $settings['layout_variant'] = $this->enum((string) $post['layout_variant'], ['grid-2x2', 'grid-4x1', 'auto'], (string) ($settings['layout_variant'] ?? 'grid-2x2'));
+        }
+        if ($isActiveKey('sidebar_position') && array_key_exists('sidebar_position', $post)) {
+            $settings['sidebar_position'] = $this->enum((string) $post['sidebar_position'], ['right', 'left'], (string) ($settings['sidebar_position'] ?? 'right'));
+        }
+        if ($isActiveKey('preview_placement') && array_key_exists('preview_placement', $post)) {
+            $settings['preview_placement'] = $this->enum((string) $post['preview_placement'], ['sidebar', 'below', 'off'], (string) ($settings['preview_placement'] ?? 'sidebar'));
+        }
+        if ($isActiveKey('analytics_position') && array_key_exists('analytics_position', $post)) {
+            $settings['analytics_position'] = $this->enum((string) $post['analytics_position'], ['head', 'body_end'], (string) ($settings['analytics_position'] ?? 'head'));
+        }
 
         foreach (['content_width' => [920, 1500], 'card_radius' => [0, 40], 'section_gap' => [16, 80], 'sidebar_events_count' => [0, 8], 'random_speakers_count' => [0, 4], 'random_companies_count' => [0, 4], 'random_experts_count' => [0, 4]] as $key => $range) {
-            $settings[$key] = (string) $this->clamp_int($post[$key] ?? $defaults[$key] ?? 0, (int) $range[0], (int) $range[1]);
+            if ($isActiveKey($key) && array_key_exists($key, $post)) {
+                $settings[$key] = (string) $this->clamp_int($post[$key], (int) $range[0], (int) $range[1]);
+            }
         }
 
         foreach (['primary_color', 'accent_color', 'background_color', 'surface_color', 'text_color', 'muted_color', 'border_color'] as $key) {
-            $settings[$key] = $this->hex_color((string) ($post[$key] ?? $defaults[$key] ?? ''), (string) $defaults[$key]);
+            if ($isActiveKey($key) && array_key_exists($key, $post)) {
+                $settings[$key] = $this->hex_color((string) $post[$key], (string) ($settings[$key] ?? $defaults[$key]));
+            }
         }
 
         foreach (['landing_enabled', 'featured_enabled', 'show_sidebar', 'show_events_preview', 'show_speakers_preview', 'show_companies_preview', 'show_experts_preview', 'analytics_enabled'] as $key) {
-            $settings[$key] = isset($post[$key]) && (string) $post[$key] === '1' ? '1' : '0';
+            if ($isActiveKey($key)) {
+                $settings[$key] = isset($post[$key]) && (string) $post[$key] === '1' ? '1' : '0';
+            }
         }
 
-        $settings['analytics_code'] = $this->sanitize_tracking_code((string) ($post['analytics_code'] ?? ''));
+        if ($isActiveKey('analytics_code') && array_key_exists('analytics_code', $post)) {
+            $settings['analytics_code'] = $this->sanitize_tracking_code((string) $post['analytics_code']);
+        }
 
         $routeSlug = trim((string) preg_replace('/[^a-z0-9-]+/i', '-', (string) $settings['route_slug']), '-');
         $settings['route_slug'] = $routeSlug !== '' ? strtolower($routeSlug) : '365network';
 
         return $settings;
+    }
+
+    private function setting_keys_for_tab(string $tab): array
+    {
+        $groups = [
+            'domain' => ['landing_enabled', 'hub_domains', 'route_slug'],
+            'content' => ['hero_eyebrow', 'landing_title', 'landing_subtitle', 'primary_button_label', 'primary_button_url', 'secondary_button_label', 'secondary_button_url', 'featured_enabled', 'featured_title', 'featured_text', 'featured_image_url', 'featured_url'],
+            'layout' => ['layout_variant', 'content_width', 'card_radius', 'section_gap', 'primary_color', 'accent_color', 'background_color', 'surface_color', 'text_color', 'muted_color', 'border_color'],
+            'sidebar' => ['show_sidebar', 'sidebar_position', 'preview_placement', 'show_events_preview', 'sidebar_events_count', 'show_speakers_preview', 'random_speakers_count', 'show_companies_preview', 'random_companies_count', 'show_experts_preview', 'random_experts_count'],
+            'cards' => ['events_card_title', 'events_card_text', 'events_card_url', 'speakers_card_title', 'speakers_card_text', 'speakers_card_url', 'companies_card_title', 'companies_card_text', 'companies_card_url', 'experts_card_title', 'experts_card_text', 'experts_card_url'],
+            'analytics' => ['analytics_enabled', 'analytics_position', 'analytics_code'],
+        ];
+
+        return $groups[$this->sanitize_tab($tab)] ?? $groups['domain'];
     }
 
     private function input(string $name, string $label, array $settings, string $placeholder = '', string $type = 'text', string $help = ''): void

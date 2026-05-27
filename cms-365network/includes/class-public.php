@@ -231,7 +231,7 @@ final class CMS_365NETWORK_Public
                 LIMIT %d", $limit);
             $stmt = $db->prepare($sql);
             $stmt->execute(['published']);
-            return array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []);
+            return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'event');
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK fetch events failed: ' . $e->getMessage());
             return [];
@@ -256,7 +256,7 @@ final class CMS_365NETWORK_Public
                 LIMIT %d OFFSET %d", $limit, $offset);
             $stmt = $db->prepare($sql);
             $stmt->execute(['active']);
-            return array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []);
+            return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'speaker');
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK fetch speakers failed: ' . $e->getMessage());
             return [];
@@ -281,7 +281,7 @@ final class CMS_365NETWORK_Public
                 LIMIT %d OFFSET %d", $limit, $offset);
             $stmt = $db->prepare($sql);
             $stmt->execute(['active']);
-            return array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []);
+            return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'company');
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK fetch companies failed: ' . $e->getMessage());
             return [];
@@ -306,7 +306,7 @@ final class CMS_365NETWORK_Public
                 LIMIT %d OFFSET %d", $limit, $offset);
             $stmt = $db->prepare($sql);
             $stmt->execute(['active']);
-            return array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []);
+            return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'expert');
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK fetch experts failed: ' . $e->getMessage());
             return [];
@@ -360,6 +360,68 @@ final class CMS_365NETWORK_Public
         } catch (\Throwable $e) {
             return 0;
         }
+    }
+
+    private function with_entity_urls(array $rows, string $type): array
+    {
+        foreach ($rows as $index => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $rows[$index]['url'] = $this->entity_url($type, $row);
+        }
+
+        return $rows;
+    }
+
+    private function entity_url(string $type, array $row): string
+    {
+        $id = (int) ($row['id'] ?? 0);
+        if ($id <= 0) {
+            return match ($type) {
+                'event' => '/events',
+                'speaker' => '/speakers',
+                'company' => '/companies',
+                'expert' => '/experts',
+                default => '#',
+            };
+        }
+
+        $object = (object) $row;
+        if ($type === 'event' && function_exists('cms_event_url')) {
+            return cms_event_url($object);
+        }
+        if ($type === 'company' && function_exists('cms_company_url')) {
+            return cms_company_url($object);
+        }
+        if ($type === 'speaker' && class_exists('CMS_Speakers_Database') && method_exists('CMS_Speakers_Database', 'generate_slug')) {
+            return $this->base_url() . '/speakers/' . CMS_Speakers_Database::generate_slug($object);
+        }
+        if ($type === 'expert' && class_exists('CMS_Experts_Database') && method_exists('CMS_Experts_Database', 'generate_slug')) {
+            return $this->base_url() . '/experts/' . CMS_Experts_Database::generate_slug($object);
+        }
+
+        return match ($type) {
+            'event' => $this->base_url() . '/event/' . $this->slug_from_parts([(string) ($row['title'] ?? 'event')], 'event') . '-' . $id,
+            'speaker' => $this->base_url() . '/speakers/' . $this->slug_from_parts([(string) ($row['first_name'] ?? ''), (string) ($row['last_name'] ?? '')], 'speaker') . '-' . $id,
+            'company' => $this->base_url() . '/company/' . $this->slug_from_parts([(string) ($row['name'] ?? 'company')], 'company') . '-' . $id,
+            'expert' => $this->base_url() . '/experts/' . $this->slug_from_parts([(string) ($row['first_name'] ?? ''), (string) ($row['last_name'] ?? '')], 'expert') . '-' . $id,
+            default => '#',
+        };
+    }
+
+    private function slug_from_parts(array $parts, string $fallback): string
+    {
+        $value = trim(implode(' ', array_filter(array_map('trim', $parts))));
+        $value = strtr($value, ['ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'ß' => 'ss', 'Ä' => 'ae', 'Ö' => 'oe', 'Ü' => 'ue']);
+        $slug = strtolower((string) preg_replace('/[^a-z0-9]+/i', '-', $value));
+        return trim($slug, '-') ?: $fallback;
+    }
+
+    private function base_url(): string
+    {
+        return rtrim((string) SITE_URL, '/');
     }
 
     private function table_exists(string $table): bool

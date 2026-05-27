@@ -1,6 +1,6 @@
 # CMS 365NETWORK
 
-**Version:** 1.0.1  
+**Version:** 1.0.2
 **Status:** Domainbasierte HubSite/Landingpage für Netzwerk-Portale.
 
 CMS 365NETWORK stellt eine eigene Landingpage bereit, die auf einer konfigurierten Zusatzdomain direkt als Root-Seite erscheinen kann. Sie bündelt vier zentrale Bereiche des Netzwerks:
@@ -22,6 +22,14 @@ Zusätzlich gibt es eine interne Vorschau-Route, standardmäßig `/365network`.
 - Preview-Cards alternativ unterhalb der vier Bereiche.
 - Optionaler Matomo-/SEO-Analyse-Code nur für die 365NETWORK-Public-Site.
 - Defensive Cross-Plugin-Integration: läuft auch, wenn einzelne Module deaktiviert sind.
+- Tab-basiertes Speichern im Adminbereich bewahrt bestehende Einstellungen anderer Tabs.
+- Kanonische Detail-Links für Events, Speaker, Firmen und Experten in den Vorschauen.
+
+## Aktueller Audit-Stand
+
+- **1.0.2:** Speicherbug behoben, bei dem ein Tab-Speichern Werte anderer Tabs auf Defaults zurücksetzen konnte.
+- Public-Vorschauen nutzen kanonische URLs und feste Bild-Dimensionen gegen Layout-Shift.
+- Sicherheits-/Kompatibilitätsprüfung für die geänderten Dateien ohne kritische Treffer.
 
 ## Einrichtung
 

@@ -1,5 +1,13 @@
 # Changelog – CMS 365NETWORK
 
+## 1.0.2 – 2026-05-27
+
+- Speicherbug behoben: Beim Speichern eines einzelnen Admin-Tabs bleiben alle Einstellungen anderer Tabs erhalten.
+- Checkboxen werden weiterhin korrekt pro aktivem Tab gespeichert, ohne inaktive Tab-Werte zu überschreiben.
+- Public-Vorschauen für Events, Speaker, Firmen und Experten erhalten kanonische Detail-URLs mit Fallback-Slug-Generierung.
+- Preview-Bilder mit festen `width`/`height`-Attributen ergänzt, um Layout-Shift zu reduzieren.
+- Audit auf unsichere Funktionen, `ORDER BY RAND`, Inline-Style-Ausreißer und 365CMS-Kompatibilität für die geänderten Bereiche durchgeführt.
+
 ## 1.0.1 – 2026-05-27
 
 - Analytics-Tab ergänzt.
