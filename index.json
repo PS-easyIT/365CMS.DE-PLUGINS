@@ -3,6 +3,11 @@
   "updated": "2026-05-27",
   "plugins": [
     {
+      "slug": "cms-365network",
+      "name": "CMS 365NETWORK",
+      "manifest": "PLUGINS/cms-365network/update.json"
+    },
+    {
       "slug": "cms-companies",
       "name": "CMS Companies",
       "manifest": "PLUGINS/cms-companies/update.json"

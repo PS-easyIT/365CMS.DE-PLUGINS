@@ -1,0 +1,16 @@
+{
+  "slug": "cms-365network",
+  "name": "CMS 365NETWORK",
+  "type": "plugin",
+  "license": "free",
+  "version": "1.0.1",
+  "min_cms_version": "3.0.0",
+  "min_php": "8.4",
+  "released": "2026-05-27",
+  "download_url": "",
+  "checksum_sha256": "",
+  "changelog": {
+    "1.0.1": "Analytics-Erweiterung: Admins können optional einen Matomo-/SEO-Analyse-Code hinterlegen, der ausschließlich auf der 365NETWORK-Public-Site geladen wird – entweder auf der internen Landingpage-Route oder auf der Root-Seite der konfigurierten Zusatzdomain.",
+    "1.0.0": "Erstveröffentlichung: Domainbasierte 365network-HubSite/Landingpage mit konfigurierbarer Zusatzdomain, interner Vorschau-Route, modernem Hero-/Featured-Layout, flexiblen 2x2-/4x1-/Auto-Grids, optionaler Sidebar und defensiven Datenintegrationen für Events, Speaker, Firmen und Experten."
+  }
+}

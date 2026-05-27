@@ -1,0 +1,136 @@
+/* CMS 365NETWORK Admin Styles */
+
+.cms365network-admin {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.cms365network-admin .admin-page-header {
+    align-items: flex-start;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+}
+
+.n365-admin-status {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.n365-admin-status p {
+    color: #64748b;
+    margin: 0.25rem 0 0;
+}
+
+.n365-admin-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.n365-admin-form {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.n365-admin-section {
+    display: grid;
+    gap: 1rem;
+}
+
+.n365-admin-section h2 {
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+.n365-admin-section > p {
+    color: #64748b;
+    margin: -0.35rem 0 0.35rem;
+    max-width: 72ch;
+}
+
+.n365-admin-card-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.n365-admin-mini-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    display: grid;
+    gap: 0.85rem;
+    margin: 0;
+    padding: 1rem;
+}
+
+.n365-admin-mini-card legend {
+    color: #0f172a;
+    font-weight: 700;
+    padding: 0 0.35rem;
+}
+
+.cms365network-admin .admin-form-field,
+.cms365network-admin .admin-form-check {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.cms365network-admin .admin-form-check {
+    align-items: center;
+    grid-template-columns: auto 1fr;
+}
+
+.cms365network-admin .admin-form-field span,
+.cms365network-admin .admin-form-check span {
+    font-weight: 700;
+}
+
+.cms365network-admin input[type='text'],
+.cms365network-admin input[type='url'],
+.cms365network-admin input[type='number'],
+.cms365network-admin input[type='color'],
+.cms365network-admin select,
+.cms365network-admin textarea {
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    font: inherit;
+    max-width: 100%;
+    padding: 0.7rem 0.85rem;
+}
+
+.cms365network-admin input[type='color'] {
+    min-height: 2.75rem;
+    padding: 0.2rem;
+    width: 5.5rem;
+}
+
+.cms365network-admin textarea {
+    resize: vertical;
+}
+
+.cms365network-admin .n365-code-textarea {
+    font-family: ui-monospace, SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    min-height: 18rem;
+    white-space: pre;
+}
+
+.cms365network-admin .admin-help {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin: -0.55rem 0 0.25rem;
+}
+
+@media (max-width: 780px) {
+    .cms365network-admin .admin-page-header,
+    .n365-admin-status {
+        grid-template-columns: 1fr;
+    }
+
+    .cms365network-admin .admin-page-header {
+        display: grid;
+    }
+}

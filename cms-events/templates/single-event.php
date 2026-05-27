@@ -173,6 +173,50 @@ if (!function_exists('cms_events_view_location_text')) {
     }
 }
 
+if (!function_exists('cms_events_view_tag_labels')) {
+    /**
+     * @param mixed $rawTags
+     * @return string[]
+     */
+    function cms_events_view_tag_labels($rawTags): array
+    {
+        if (is_array($rawTags)) {
+            $tags = $rawTags;
+        } else {
+            $raw = trim((string) $rawTags);
+            if ($raw === '') {
+                return [];
+            }
+
+            $decoded = json_decode($raw, true);
+            $tags = is_array($decoded) ? $decoded : (preg_split('/[,;\n]+/', $raw) ?: []);
+        }
+
+        $labels = [];
+        $seen = [];
+        foreach ($tags as $tag) {
+            if (is_array($tag)) {
+                $tag = $tag['label'] ?? $tag['name'] ?? $tag['title'] ?? '';
+            }
+
+            $label = cms_events_view_trim_text((string) $tag, 48);
+            if ($label === '') {
+                continue;
+            }
+
+            $key = cms_events_view_lowercase($label);
+            if (isset($seen[$key])) {
+                continue;
+            }
+
+            $seen[$key] = true;
+            $labels[] = $label;
+        }
+
+        return $labels;
+    }
+}
+
 $e = $event;
 $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
 $titleRaw = trim((string) ($e->title ?? ''));
@@ -222,13 +266,8 @@ $current_url = $currentUrl;
 $share_linkedin = 'https://www.linkedin.com/sharing/share-offsite/?url=' . urlencode($current_url);
 $share_twitter = 'https://twitter.com/intent/tweet?url=' . urlencode($current_url) . '&text=' . urlencode($titleRaw);
 $share_mail = 'mailto:?subject=' . rawurlencode($titleRaw) . '&body=' . rawurlencode($current_url);
-$excerpt = cms_events_view_trim_text((string) ($e->excerpt ?? ''), 500);
-$description = trim((string) ($e->description ?? $e->excerpt ?? ''));
-$tags = !empty($e->tags) ? (json_decode((string) $e->tags, true) ?: []) : [];
-if (!is_array($tags)) {
-    $tags = [];
-}
-$tagLabels = array_values(array_filter(array_map(static fn($tag): string => cms_events_view_trim_text((string) $tag, 40), $tags)));
+$description = trim((string) ($e->description ?? ''));
+$tagLabels = cms_events_view_tag_labels($e->tags ?? '');
 $relatedEvents = array_slice((array) ($related_events ?? []), 0, 3);
 $priceLabel = cms_events_view_price_label($e);
 $isFreeEvent = $priceLabel === 'Kostenlos';
@@ -282,24 +321,6 @@ if ($primarySpeaker) {
                     <?php endif; ?>
                 </div>
                 <h1><?= $title ?></h1>
-                <?php if ($excerpt !== ''): ?>
-                    <p class="cms-events-detail__teaser"><?= htmlspecialchars($excerpt, ENT_QUOTES, 'UTF-8') ?></p>
-                <?php endif; ?>
-                <div class="event-detail-meta cms-events-detail__meta" aria-label="Event-Metadaten">
-                    <?php if ($dateTimeLabel !== ''): ?>
-                        <span class="cms-events-meta-pill cms-events-meta-pill--date"><i class="ti ti-calendar" aria-hidden="true"></i><?php if ($isMultiDay && $dateTimeEndLabel !== ''): ?><span class="cms-events-date-stack"><span><strong>Start</strong><?= htmlspecialchars($dateTimeStartLabel, ENT_QUOTES, 'UTF-8') ?></span><span><strong>Ende</strong><?= htmlspecialchars($dateTimeEndLabel, ENT_QUOTES, 'UTF-8') ?></span></span><?php else: ?><?= htmlspecialchars($dateTimeLabel, ENT_QUOTES, 'UTF-8') ?><?php endif; ?></span>
-                    <?php endif; ?>
-                    <?php if ($locationText !== ''): ?>
-                        <span class="cms-events-meta-pill"><i class="ti ti-map-pin" aria-hidden="true"></i><?= htmlspecialchars($locationText, ENT_QUOTES, 'UTF-8') ?></span>
-                    <?php endif; ?>
-                    <?php if ($primarySpeakerName !== ''): ?>
-                        <span class="cms-events-meta-pill"><i class="ti ti-user" aria-hidden="true"></i><?php if ($primarySpeakerLink !== ''): ?><a href="<?= htmlspecialchars($primarySpeakerLink, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($primarySpeakerName, ENT_QUOTES, 'UTF-8') ?></a><?php else: ?><?= htmlspecialchars($primarySpeakerName, ENT_QUOTES, 'UTF-8') ?><?php endif; ?></span>
-                    <?php endif; ?>
-                    <?php if ($organizerName !== ''): ?>
-                        <span class="cms-events-meta-pill"><i class="ti ti-building" aria-hidden="true"></i><?= htmlspecialchars($organizerName, ENT_QUOTES, 'UTF-8') ?></span>
-                    <?php endif; ?>
-                    <span class="cms-events-meta-pill event-price-pill event-price-inline"><i class="ti ti-ticket" aria-hidden="true"></i><?= htmlspecialchars($priceLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                </div>
             </header>
 
             <?php if ($imageUrl !== ''): ?>
@@ -317,11 +338,14 @@ if ($primarySpeaker) {
                 <?php endif; ?>
 
                 <?php if (!empty($tagLabels)): ?>
-                    <div class="cms-events-detail__tags" aria-label="Event-Tags">
-                        <?php foreach ($tagLabels as $tagLabel): ?>
-                            <span><?= htmlspecialchars($tagLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                        <?php endforeach; ?>
-                    </div>
+                    <section class="cms-events-detail__topics" aria-labelledby="cms-event-topics-heading">
+                        <h3 id="cms-event-topics-heading">Themen</h3>
+                        <ul class="cms-events-topic-list" role="list">
+                            <?php foreach ($tagLabels as $tagLabel): ?>
+                                <li><span class="cms-events-topic-badge"><?= htmlspecialchars($tagLabel, ENT_QUOTES, 'UTF-8') ?></span></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </section>
                 <?php endif; ?>
             </section>
 
@@ -369,6 +393,7 @@ if ($primarySpeaker) {
                     <p class="cms-events-registration-card__price is-free">Kostenlos</p>
                 <?php endif; ?>
                 <h2>Anmeldung</h2>
+
                 <dl>
                     <?php if ($dateTimeLabel !== ''): ?><div><dt><i class="ti ti-calendar" aria-hidden="true"></i>Termin</dt><dd><?php if ($isMultiDay && $dateTimeEndLabel !== ''): ?><span class="cms-events-date-stack cms-events-date-stack--sidebar"><span><strong>Start</strong><?= htmlspecialchars($dateTimeStartLabel, ENT_QUOTES, 'UTF-8') ?></span><span><strong>Ende</strong><?= htmlspecialchars($dateTimeEndLabel, ENT_QUOTES, 'UTF-8') ?></span></span><?php else: ?><?= htmlspecialchars($dateTimeLabel, ENT_QUOTES, 'UTF-8') ?><?php endif; ?></dd></div><?php endif; ?>
                     <div><dt><i class="ti ti-video" aria-hidden="true"></i>Format</dt><dd><?= htmlspecialchars($eventModeLabel, ENT_QUOTES, 'UTF-8') ?></dd></div>
@@ -398,18 +423,6 @@ if ($primarySpeaker) {
 
                 <?php if ($onlineUrl !== '' && $registrationUrl !== ''): ?>
                     <a href="<?= htmlspecialchars($onlineUrl, ENT_QUOTES, 'UTF-8') ?>" class="cms-events-registration-card__secondary-link" target="_blank" rel="noopener noreferrer"><i class="ti ti-video" aria-hidden="true"></i>Online-Zugang</a>
-                <?php endif; ?>
-
-                <?php if ($hasOrganizerDetails): ?>
-                    <div class="cms-events-organizer-mini" aria-label="Veranstalter-Kontakt">
-                        <h3>Veranstalter</h3>
-                        <?php if ($organizerName !== ''): ?><p><?= htmlspecialchars($organizerName, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
-                        <div class="cms-events-organizer-mini__links">
-                            <?php if ($websiteUrl !== ''): ?><a href="<?= htmlspecialchars($websiteUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"><i class="ti ti-world" aria-hidden="true"></i>Website</a><?php endif; ?>
-                            <?php if ($organizerEmail !== ''): ?><a href="mailto:<?= htmlspecialchars($organizerEmail, ENT_QUOTES, 'UTF-8') ?>"><i class="ti ti-mail" aria-hidden="true"></i>E-Mail</a><?php endif; ?>
-                            <?php if ($organizerPhone !== ''): ?><span><i class="ti ti-phone" aria-hidden="true"></i><?= htmlspecialchars($organizerPhone, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
-                        </div>
-                    </div>
                 <?php endif; ?>
 
                 <div class="sidebar-share">

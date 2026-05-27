@@ -1,5 +1,10 @@
 # CMS Events – Changelog
 
+## [3.0.19] – 2026-05-27
+
+- **Detailseite:** Die redundanten Meta-Ausgaben direkt unter dem Eventtitel inklusive Teaser-/Excerpt-Zeile wurden entfernt; Sidebar-Meta und Veranstalter-Kontakt bleiben erhalten.
+- **Themen:** Event-Tags/Themen erscheinen nun unterhalb der Beschreibung als deduplizierte, einzelne Badges; neben JSON-Arrays werden auch kommaseparierte oder zeilenbasierte Werte robust aufbereitet.
+
 ## [3.0.18] – 2026-05-27
 
 - **Archivkarten:** Event-Bild, Featured-Status, dezente Kategorie-/Format-Badges, Uhrzeit sowie Ort und Veranstalter mit Icon sitzen kompakt direkt unter dem Titel; Tags/Themen werden aus der Übersicht entfernt.
