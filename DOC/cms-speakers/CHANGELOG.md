@@ -1,5 +1,23 @@
 # CMS Speakers – Changelog
 
+## [3.0.9] – 2026-05-27
+
+- **Speaker-Archiv:** Horizontale Listenkarte intern auf ein 3-Zonen-Layout umgestellt: 56px Avatar links, Hauptcontent mit Name/Rolle, Topic-Zeile und zweizeiliger Bio sowie Profilbutton rechts oben.
+- **Layout-Rhythmus:** Topic-Tags und Bio liegen nun in eigenen Zeilen statt gequetscht in einer gemeinsamen Meta-Ebene; die Bio bleibt per 2-Line-Clamp kompakt.
+- **Scope:** Filter-Bar, Pagination, Detailseite, DB-Queries und Klick-/Keyboard-Logik bleiben unverändert; Inline-Handler wurden weiterhin bewusst vermieden.
+
+## [3.0.8] – 2026-05-27
+
+- **Speaker-Archiv:** Vertikale 3-Spalten-Cards durch eine einspaltige, horizontale Kompaktliste ersetzt: Avatar/Initialen links, Name/Rolle/Topics/Bio/Eventzähler rechts.
+- **Interaktion:** Karten bleiben per Vanilla-JS klickbar und sind zusätzlich per Tastatur (`Enter`/`Space`) über `data-href` erreichbar; Inline-Handler wurden bewusst nicht verwendet.
+- **Filter:** Topic-/Suche-Filter zeigen sichtbare Karten als `flex`, damit das neue horizontale Layout beim Filtern erhalten bleibt.
+
+## [3.0.7] – 2026-05-27
+
+- **Speaker-Archiv:** Avatar-Placeholder durch serverseitige Initialen ersetzt, Topic-Tags auf ruhige Navy/Subtle-Tags umgestellt, Profil-CTA als goldener Outline-Button vereinheitlicht und Karten per Vanilla-JS klickbar gemacht.
+- **Filter/Empty-State:** Filterfelder und Reset-Button optisch an CMS Events angeglichen; gefilterte Leerergebnisse zeigen nun einen eigenen `ti-users-off` Empty State.
+- **Detailseite:** Hero-Profilkarte, Bio, Sessions, Social-Links, Related Speaker und Kontakt-CTA nach Screenshot-Vorgabe verfeinert; Kontaktbutton bleibt bewusst blau.
+
 ## [3.0.6] – 2026-05-26
 
 - **Publicsite-Design:** Speaker-Archiv, Such-/Topic-Filter, Cards, Topic-Pills, Social-Icons und Pagination folgen nun dem gleichen PHINIT-Designsystem wie CMS Events.

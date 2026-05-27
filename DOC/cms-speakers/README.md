@@ -1,10 +1,10 @@
 # CMS Speakers – Dokumentation
 
 **Plugin:** `cms-speakers`  
-**Version:** 3.0.6
+**Version:** 3.0.9
 **Namespace:** `CMS_Speakers`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
-**Audit-/Dokustand:** Publicsite-Design-Pass am 2026-05-26
+**Audit-/Dokustand:** Publicsite-Design-Pass am 2026-05-27
 **PHP:** 8.4+
 
 ---
@@ -20,6 +20,9 @@ Das **CMS Speakers**-Plugin verwaltet professionelle Speaker-Profile mit Vortrag
 - Der Fokus des aktuellen Durchgangs liegt auf **Security**, **HTTP-Fehlerpfaden**, **Best Practices**, **Admin-Menü-Integration** und defensiver Cross-Plugin-Integration.
 - Version 3.0.3 bringt redeclare-sicheren Bootstrap, SettingsService-Anbindung, `INFORMATION_SCHEMA`-Migrationen, 405-/JSON-Fehlerpfade und Uninstall-Cleanup.
 - Version 3.0.6 gleicht Archiv, Filterbar, Cards, Topic-Pills, Detailprofil und Anfragebox an das PHINIT-Publicsite-Design an und ergänzt E-Mail-/Kontaktlinks im Profil.
+- Version 3.0.7 verfeinert den Screenshot-Stand Mai 2026 mit Initialen-Avataren, goldenen Outline-CTAs, blauem Kontaktbutton, Empty State, Social-Icons und Related-Speaker-Hover.
+- Version 3.0.8 stellt die Speaker-Archivkarten auf ein horizontales, kompaktes Listenlayout mit 72px Avatar links, Inhaltsblock rechts und Keyboard-Navigation um.
+- Version 3.0.9 verfeinert die horizontale Speaker-Liste auf ein klar getrenntes 3-Zonen-Layout mit 56px Avatar, Name/Rolle, Topic-Zeile, zweizeiliger Bio und rechts oben ausgerichtetem Profilbutton.
 
 ### Kernfunktionen
 

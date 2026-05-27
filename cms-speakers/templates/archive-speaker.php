@@ -71,10 +71,10 @@ ksort($topicOptions, SORT_NATURAL | SORT_FLAG_CASE);
         <button type="button" class="phinit-btn phinit-btn--secondary cms-speaker-filter__reset" data-cms-speaker-reset>Filter zurücksetzen</button>
     </nav>
 
-    <section class="cms-speaker-grid" aria-label="Speaker-Liste">
+    <section class="speakers-grid cms-speaker-grid" aria-label="Speaker-Liste">
         <?php if (empty($speakers)): ?>
             <div class="cms-speaker-empty phinit-empty-state" role="status" aria-live="polite">
-                <i class="ti ti-users" aria-hidden="true"></i>
+                <i class="ti ti-users-off" aria-hidden="true"></i>
                 <p class="cms-speaker-empty__title">Keine Speaker gefunden.</p>
             </div>
         <?php else: ?>
@@ -85,8 +85,8 @@ ksort($topicOptions, SORT_NATURAL | SORT_FLAG_CASE);
     </section>
 
     <?php if (!empty($speakers)): ?>
-        <div class="cms-speaker-empty cms-speaker-empty--js phinit-empty-state" role="status" aria-live="polite" hidden data-cms-speaker-empty>
-            <i class="ti ti-users" aria-hidden="true"></i>
+        <div id="speakers-empty" class="cms-speaker-empty cms-speaker-empty--js phinit-empty-state" role="status" aria-live="polite" hidden data-cms-speaker-empty>
+            <i class="ti ti-users-off" aria-hidden="true"></i>
             <p class="cms-speaker-empty__title">Keine Speaker gefunden.</p>
             <button type="button" class="phinit-btn phinit-btn--link" data-cms-speaker-reset>Filter zurücksetzen</button>
         </div>

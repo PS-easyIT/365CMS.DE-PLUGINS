@@ -138,57 +138,76 @@ final class CMS_Events_Post_Type
 
         $filter_category = $this->sanitize_text_param($_GET['category'] ?? null, 100);
         $filter_city     = $this->sanitize_text_param($_GET['city'] ?? null, 100);
-        $filter_month    = $this->sanitize_month($_GET['month'] ?? null);
+        if ($filter_category === '0') {
+            $filter_category = null;
+        }
+        if ($filter_city === '0') {
+            $filter_city = null;
+        }
+        [$filter_month, $filter_month_number, $filter_year] = $this->sanitize_archive_date_filter($_GET['month'] ?? null, $_GET['year'] ?? null);
         $filter_online   = $this->sanitize_binary_filter($_GET['online'] ?? null);
         $when_filter     = in_array((string) ($_GET['when'] ?? ''), ['upcoming', 'past'], true) ? (string) $_GET['when'] : null;
         $search          = $this->sanitize_text_param($_GET['search'] ?? '', 120) ?? '';
         $page            = max(1, min(500, (int)($_GET['page'] ?? 1)));
         $per_page        = max(6, min(100, (int)($settings['per_page'] ?? 12)));
+        $default_from_month = date('Y-m-01');
+        $date_filter_explicit = array_key_exists('month', $_GET) || array_key_exists('year', $_GET);
+        $has_explicit_filters = $filter_category !== null
+            || $filter_city !== null
+            || $date_filter_explicit
+            || $filter_online !== null
+            || $when_filter !== null
+            || $search !== '';
 
         $args = [
             'status' => 'published',
-            'limit'  => $per_page,
-            'offset' => ($page - 1) * $per_page,
         ];
 
         if ($when_filter === 'past') {
             $args['past']     = true;
         } elseif ($when_filter === 'upcoming') {
             $args['upcoming'] = true;
+        } elseif (!$date_filter_explicit) {
+            $args['from_month'] = $default_from_month;
         }
-        // else: kein Datumsfilter → alle Events anzeigen
 
         if ($filter_category !== null) $args['category']  = $filter_category;
         if ($filter_city !== null)     $args['city']       = $filter_city;
         if ($filter_month !== null)    $args['month']      = $filter_month;
+        if ($filter_month === null && $filter_year !== null) $args['year'] = $filter_year;
+        if ($filter_month === null && $filter_month_number !== null) $args['month_number'] = $filter_month_number;
         if ($search !== '')            $args['search']     = $search;
         if ($filter_online !== null)  $args['is_online']  = $filter_online;
 
+        $total = 0;
+        try {
+            $total = $db_manager->count_events($args);
+        } catch (\Throwable $countError) {
+            error_log('CMS Events archive count fallback: ' . $countError->getMessage());
+            $total = 0;
+        }
+
+        $pages = max(1, (int) ceil(max(0, (int) $total) / $per_page));
+        $page = min($page, $pages);
+
         $events = [];
         try {
-            $events = $db_manager->get_events($args);
+            $events = $db_manager->get_events($args + [
+                'limit'  => $per_page,
+                'offset' => ($page - 1) * $per_page,
+            ]);
         } catch (\Throwable $eventsError) {
             error_log('CMS Events archive events fallback: ' . $eventsError->getMessage());
             $events = [];
         }
 
-        $total = 0;
-        try {
-            $total = $db_manager->count_events(array_diff_key($args, array_flip(['limit', 'offset'])));
-        } catch (\Throwable $countError) {
-            error_log('CMS Events archive count fallback: ' . $countError->getMessage());
-            $total = is_array($events) ? count($events) : 0;
-        }
-
         $upcoming_total = 0;
         try {
-            $upcoming_total = $db_manager->count_events(['status' => 'published', 'upcoming' => true]);
+            $upcoming_total = $db_manager->count_events(['status' => 'published', 'from_month' => $default_from_month]);
         } catch (\Throwable $upcomingError) {
             error_log('CMS Events archive upcoming fallback: ' . $upcomingError->getMessage());
             $upcoming_total = 0;
         }
-
-        $pages = max(1, (int)ceil(max(0, (int) $total) / $per_page));
 
         $categories = [];
         try {
@@ -199,6 +218,17 @@ final class CMS_Events_Post_Type
         }
 
         $event_speakers_map = $this->get_event_speakers_map($events);
+        $active_filter_params = $this->build_archive_filter_params(
+            $filter_category,
+            $filter_city,
+            $filter_month_number,
+            $filter_year,
+            $filter_online,
+            $when_filter,
+            $search,
+            $has_explicit_filters,
+            $date_filter_explicit
+        );
 
         $this->render_public_theme_template('archive-event', [
             'events'          => $events,
@@ -213,9 +243,15 @@ final class CMS_Events_Post_Type
             'filter_category' => $filter_category,
             'filter_city'     => $filter_city,
             'filter_month'    => $filter_month,
+            'filter_month_number' => $filter_month_number,
+            'filter_year'     => $filter_year,
             'filter_online'   => $filter_online,
             'when_filter'     => $when_filter,
             'search'          => $search,
+            'has_active_filters' => $has_explicit_filters,
+            'date_filter_explicit' => $date_filter_explicit,
+            'default_from_month' => $default_from_month,
+            'active_filter_params' => $active_filter_params,
         ]);
         } catch (\Throwable $e) {
             error_log('CMS Events archive hard fallback: ' . $e->getMessage());
@@ -236,9 +272,15 @@ final class CMS_Events_Post_Type
                 'filter_category' => null,
                 'filter_city' => null,
                 'filter_month' => null,
+                'filter_month_number' => null,
+                'filter_year' => null,
                 'filter_online' => null,
                 'when_filter' => null,
                 'search' => '',
+                'has_active_filters' => false,
+                'date_filter_explicit' => false,
+                'default_from_month' => date('Y-m-01'),
+                'active_filter_params' => [],
             ]);
         }
     }
@@ -1010,6 +1052,74 @@ final class CMS_Events_Post_Type
     {
         $month = trim((string) $value);
         return preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) === 1 ? $month : null;
+    }
+
+    /**
+     * @return array{0:?string,1:?int,2:?int}
+     */
+    private function sanitize_archive_date_filter(mixed $monthValue, mixed $yearValue): array
+    {
+        $legacyMonth = $this->sanitize_month($monthValue);
+        if ($legacyMonth !== null) {
+            return [
+                $legacyMonth,
+                (int) substr($legacyMonth, 5, 2),
+                (int) substr($legacyMonth, 0, 4),
+            ];
+        }
+
+        $monthRaw = trim((string) $monthValue);
+        $yearRaw = trim((string) $yearValue);
+        $monthNumber = ctype_digit($monthRaw) ? (int) $monthRaw : 0;
+        $year = ctype_digit($yearRaw) ? (int) $yearRaw : 0;
+
+        $monthNumber = $monthNumber >= 1 && $monthNumber <= 12 ? $monthNumber : null;
+        $year = $year >= 2000 && $year <= 2100 ? $year : null;
+        $month = $monthNumber !== null && $year !== null ? sprintf('%04d-%02d', $year, $monthNumber) : null;
+
+        return [$month, $monthNumber, $year];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function build_archive_filter_params(
+        ?string $category,
+        ?string $city,
+        ?int $monthNumber,
+        ?int $year,
+        ?int $online,
+        ?string $when,
+        string $search,
+        bool $hasExplicitFilters,
+        bool $dateFilterExplicit
+    ): array {
+        if (!$hasExplicitFilters) {
+            return [];
+        }
+
+        $params = [];
+        if ($category !== null) {
+            $params['category'] = $category;
+        }
+        if ($city !== null) {
+            $params['city'] = $city;
+        }
+        if ($dateFilterExplicit) {
+            $params['month'] = $monthNumber !== null ? (string) $monthNumber : '0';
+            $params['year'] = $year !== null ? (string) $year : '0';
+        }
+        if ($online !== null) {
+            $params['online'] = (string) $online;
+        }
+        if ($when !== null) {
+            $params['when'] = $when;
+        }
+        if ($search !== '') {
+            $params['search'] = $search;
+        }
+
+        return $params;
     }
 
     private function sanitize_binary_filter(mixed $value): ?int

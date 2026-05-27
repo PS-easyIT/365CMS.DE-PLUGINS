@@ -68,36 +68,58 @@ $archiveUrl = $baseUrl . '/' . trim($archiveSlug, '-') . '/';
 $archiveTitle = trim((string) ($settings['archive_title'] ?? 'Veranstaltungen')) ?: 'Veranstaltungen';
 $curPage = max(1, (int) ($current_page ?? 1));
 $totalPages = max(1, (int) ($pages ?? 1));
+$totalEvents = max(0, (int) ($total ?? count($events)));
+$perPage = max(1, (int) ($per_page ?? 12));
 $today = strtotime('today');
 $upcomingCount = isset($upcoming_total) ? max(0, (int) $upcoming_total) : count(array_filter($events, static function ($event) use ($today): bool {
     $timestamp = !empty($event->event_date) ? strtotime((string) $event->event_date) : 0;
     return $timestamp && $today !== false && $timestamp >= $today;
 }));
+$currentMonth = (int) date('n');
 $currentYear = (int) date('Y');
-$selectedCategory = cms_events_view_lowercase((string) ($filter_category ?? ''));
-$selectedMonth = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string) ($filter_month ?? '')) === 1 ? substr((string) $filter_month, 5, 2) : '';
-$selectedYear = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', (string) ($filter_month ?? '')) === 1 ? substr((string) $filter_month, 0, 4) : '';
+$selectedCategory = (string) ($filter_category ?? '');
+$dateFilterExplicit = !empty($date_filter_explicit);
+$selectedMonthNumber = isset($filter_month_number) ? (int) $filter_month_number : 0;
+$selectedYearNumber = isset($filter_year) ? (int) $filter_year : 0;
+$selectedMonth = $selectedMonthNumber > 0 ? (string) $selectedMonthNumber : ($dateFilterExplicit ? '0' : (string) $currentMonth);
+$selectedYear = $selectedYearNumber > 0 ? (string) $selectedYearNumber : ($dateFilterExplicit ? '0' : (string) $currentYear);
 $selectedSearch = htmlspecialchars((string) ($search ?? ''), ENT_QUOTES, 'UTF-8');
+$activeFilterParams = is_array($active_filter_params ?? null) ? $active_filter_params : [];
+$hasActiveFilters = !empty($has_active_filters);
+$archiveSubtitle = $hasActiveFilters
+    ? (int) $totalEvents . ' gefilterte Events'
+    : (int) $upcomingCount . ' Events ab aktuellem Monat';
+$buildArchiveUrl = static function (int $page) use ($archiveUrl, $activeFilterParams): string {
+    $params = $activeFilterParams;
+    if ($page > 1) {
+        $params['page'] = (string) $page;
+    }
+
+    return $archiveUrl . ($params !== [] ? '?' . http_build_query($params) : '');
+};
+$yearStart = $selectedYearNumber > 0 ? min($currentYear - 2, $selectedYearNumber) : $currentYear - 2;
+$yearEnd = $selectedYearNumber > 0 ? max($currentYear + 2, $selectedYearNumber) : $currentYear + 2;
 $monthLabels = [
-    '01' => 'Januar', '02' => 'Februar', '03' => 'März', '04' => 'April',
-    '05' => 'Mai', '06' => 'Juni', '07' => 'Juli', '08' => 'August',
-    '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Dezember',
+    1 => 'Januar', 2 => 'Februar', 3 => 'März', 4 => 'April',
+    5 => 'Mai', 6 => 'Juni', 7 => 'Juli', 8 => 'August',
+    9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Dezember',
 ];
 ?>
-<main class="phinit-plugin cms-events-wrap" data-cms-events-filter-root>
+<main class="phinit-plugin cms-events-wrap" data-cms-events-filter-root data-cms-events-archive-url="<?= htmlspecialchars($archiveUrl, ENT_QUOTES, 'UTF-8') ?>" data-cms-events-date-filter-active="<?= $dateFilterExplicit ? '1' : '0' ?>" data-cms-events-current-month="<?= (int) $currentMonth ?>" data-cms-events-current-year="<?= (int) $currentYear ?>">
     <header class="cms-events-head">
         <p class="phinit-overline">Events</p>
         <h1><?= htmlspecialchars($archiveTitle, ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="cms-events-head__subtitle"><?= (int) $upcomingCount ?> bevorstehende Events</p>
+        <p class="cms-events-head__subtitle"><?= htmlspecialchars($archiveSubtitle, ENT_QUOTES, 'UTF-8') ?></p>
     </header>
 
-    <nav class="cms-events-filter" aria-label="Eventfilter">
+    <nav class="cms-events-filter-nav" aria-label="Eventfilter">
+        <form class="cms-events-filter" method="get" action="<?= htmlspecialchars($archiveUrl, ENT_QUOTES, 'UTF-8') ?>" data-cms-events-filter-form>
         <div class="phinit-field cms-events-filter__field">
-            <label for="cms-event-category">Kategorie</label>
-            <select id="cms-event-category" class="phinit-select" data-cms-events-filter="category">
-                <option value="">Alle Kategorien</option>
+            <label for="filter-category">Kategorie</label>
+            <select id="filter-category" name="category" class="phinit-select" data-cms-events-filter="category">
+                <option value="0">Alle Kategorien</option>
                 <?php foreach ($categories as $category): ?>
-                    <?php $categoryValue = cms_events_view_lowercase((string) $category); ?>
+                    <?php $categoryValue = (string) $category; ?>
                     <option value="<?= htmlspecialchars($categoryValue, ENT_QUOTES, 'UTF-8') ?>"<?= $selectedCategory === $categoryValue ? ' selected' : '' ?>>
                         <?= htmlspecialchars((string) $category, ENT_QUOTES, 'UTF-8') ?>
                     </option>
@@ -106,11 +128,11 @@ $monthLabels = [
         </div>
 
         <div class="phinit-field cms-events-filter__field">
-            <label for="cms-event-month">Monat</label>
-            <select id="cms-event-month" class="phinit-select" data-cms-events-filter="month">
-                <option value="">Alle Monate</option>
+            <label for="filter-month">Monat</label>
+            <select id="filter-month" name="month" class="phinit-select" data-cms-events-filter="month">
+                <option value="0">Alle Monate</option>
                 <?php foreach ($monthLabels as $monthValue => $monthLabel): ?>
-                    <option value="<?= htmlspecialchars($monthValue, ENT_QUOTES, 'UTF-8') ?>"<?= $selectedMonth === $monthValue ? ' selected' : '' ?>>
+                    <option value="<?= (int) $monthValue ?>"<?= $selectedMonth === (string) $monthValue ? ' selected' : '' ?>>
                         <?= htmlspecialchars($monthLabel, ENT_QUOTES, 'UTF-8') ?>
                     </option>
                 <?php endforeach; ?>
@@ -118,21 +140,22 @@ $monthLabels = [
         </div>
 
         <div class="phinit-field cms-events-filter__field">
-            <label for="cms-event-year">Jahr</label>
-            <select id="cms-event-year" class="phinit-select" data-cms-events-filter="year">
-                <option value="">Alle Jahre</option>
-                <?php for ($year = $currentYear; $year <= $currentYear + 1; $year++): ?>
+            <label for="filter-year">Jahr</label>
+            <select id="filter-year" name="year" class="phinit-select" data-cms-events-filter="year">
+                <option value="0">Alle Jahre</option>
+                <?php for ($year = $yearStart; $year <= $yearEnd; $year++): ?>
                     <option value="<?= (int) $year ?>"<?= $selectedYear === (string) $year ? ' selected' : '' ?>><?= (int) $year ?></option>
                 <?php endfor; ?>
             </select>
         </div>
 
         <div class="phinit-field cms-events-filter__field cms-events-filter__field--search">
-            <label for="cms-event-search">Suche</label>
-            <input id="cms-event-search" class="phinit-input" type="search" placeholder="Suche..." value="<?= $selectedSearch ?>" data-cms-events-filter="search">
+            <label for="filter-search">Suche</label>
+            <input id="filter-search" name="search" class="phinit-input" type="search" placeholder="Event suchen..." value="<?= $selectedSearch ?>" data-cms-events-filter="search">
         </div>
 
         <button type="button" class="phinit-btn phinit-btn--secondary cms-events-filter__reset" data-cms-events-reset>Filter zurücksetzen</button>
+        </form>
     </nav>
 
     <section class="cms-events-grid" aria-label="Event-Liste">
@@ -192,23 +215,23 @@ $monthLabels = [
     </section>
 
     <?php if (!empty($events)): ?>
-        <div class="cms-events-empty cms-events-empty--js phinit-empty-state" role="status" aria-live="polite" hidden data-cms-events-empty>
+        <div id="events-empty" class="cms-events-empty cms-events-empty--js phinit-empty-state" role="status" aria-live="polite" hidden data-cms-events-empty>
             <i class="ti ti-calendar-off" aria-hidden="true"></i>
             <p class="cms-events-empty__title">Keine Events gefunden.</p>
             <button type="button" class="phinit-btn phinit-btn--link" data-cms-events-reset>Filter zurücksetzen</button>
         </div>
     <?php endif; ?>
 
-    <?php if ($totalPages > 1): ?>
-        <nav class="cms-events-pagination" aria-label="Seitennavigation">
+    <?php if ($totalEvents > $perPage): ?>
+        <nav class="cms-events-pagination events-pagination" aria-label="Seitennavigation">
             <?php if ($curPage > 1): ?>
-                <a class="cms-events-page" href="<?= htmlspecialchars($archiveUrl . '?page=' . ($curPage - 1), ENT_QUOTES, 'UTF-8') ?>" rel="prev">Zurück</a>
+                <a class="cms-events-page" href="<?= htmlspecialchars($buildArchiveUrl($curPage - 1), ENT_QUOTES, 'UTF-8') ?>" rel="prev">Zurück</a>
             <?php endif; ?>
             <?php for ($pageNumber = max(1, $curPage - 2); $pageNumber <= min($totalPages, $curPage + 2); $pageNumber++): ?>
-                <a class="cms-events-page<?= $pageNumber === $curPage ? ' is-active' : '' ?>" href="<?= htmlspecialchars($archiveUrl . '?page=' . $pageNumber, ENT_QUOTES, 'UTF-8') ?>"<?= $pageNumber === $curPage ? ' aria-current="page"' : '' ?>><?= (int) $pageNumber ?></a>
+                <a class="cms-events-page<?= $pageNumber === $curPage ? ' is-active' : '' ?>" href="<?= htmlspecialchars($buildArchiveUrl($pageNumber), ENT_QUOTES, 'UTF-8') ?>"<?= $pageNumber === $curPage ? ' aria-current="page"' : '' ?>><?= (int) $pageNumber ?></a>
             <?php endfor; ?>
             <?php if ($curPage < $totalPages): ?>
-                <a class="cms-events-page" href="<?= htmlspecialchars($archiveUrl . '?page=' . ($curPage + 1), ENT_QUOTES, 'UTF-8') ?>" rel="next">Weiter</a>
+                <a class="cms-events-page" href="<?= htmlspecialchars($buildArchiveUrl($curPage + 1), ENT_QUOTES, 'UTF-8') ?>" rel="next">Weiter</a>
             <?php endif; ?>
         </nav>
     <?php endif; ?>

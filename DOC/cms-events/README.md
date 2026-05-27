@@ -1,10 +1,10 @@
 # CMS Events – Dokumentation
 
 **Plugin:** `cms-events`  
-**Version:** 3.0.11
+**Version:** 3.0.18
 **Namespace:** `CMS_Events`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
-**Audit-/Dokustand:** Admin-Design-Pass am 2026-05-26
+**Audit-/Dokustand:** Publicsite-Polish-Fix am 2026-05-27
 **PHP:** 8.4+
 
 ---
@@ -22,6 +22,11 @@ Das **CMS Events**-Plugin verwaltet Veranstaltungen – von Webinaren bis zu Kon
 - Version `3.0.9` ergänzt die steuerbare öffentliche Hauptnavigation (`show_nav_link`, `nav_label`), lässt den Link standardmäßig deaktiviert und gleicht Archiv, Cards, Detailseite, Anmeldung und Related Events an das PHINIT-Publicsite-Design an.
 - Version `3.0.10` überarbeitet den Events-Adminbereich gemäß 365CMS Admin Design Richtlinien mit Admin-Tabelle, einheitlichen Tab-Panels, Settings-Cards, `admin-form`-Formularen und inline Speaker-AJAX-Alerts.
 - Version `3.0.11` behebt einen Public-Template-500 auf Instanzen ohne `mbstring` durch robuste Fallbacks in Templates und Sanitizern.
+- Version `3.0.14` ergänzt die final offenen Publicsite-Deltas für Eventkarten, Share-Buttons, Meta-Zeile und Related-Event-Bildplatzhalter.
+- Version `3.0.15` setzt aktuelle Monats-/Jahresfilter als Default, macht Eventkarten kompakter und klickbar, ergänzt robuste Share-Links samt Tabler-Fallback und vereinheitlicht Related-Event-Placeholder.
+- Version `3.0.16` koppelt Archivfilter und Pagination serverseitig: Standardansicht ab aktuellem Monat, Filterparameter in Seitenlinks, Seite-1-Reset bei Filterwechsel und graue Markierung vergangener Events.
+- Version `3.0.17` verhindert doppelte Ortsausgaben in Eventkarten und ergänzt pro Archivkarte oben rechts eine Kosten-/Preis-Pill für kostenlose, kostenpflichtige oder spendenbasierte Events.
+- Version `3.0.18` macht die Public-Ausgabe vollständiger und zugleich ruhiger: Archivkarten zeigen Bild, dezente Kategorie-/Format-Badges, Uhrzeit sowie Ort und Veranstalter mit Icon direkt unter dem Titel; Tags/Themen erscheinen nur noch in der Detailseite, deren Meta-Angaben als einzelne Icon-Badges inklusive zweizeiligem Start-/Endtermin für Mehrtagesevents dargestellt werden.
 - Bootstrap, Include-Klassen und Lifecycle-Hooks sind idempotent und gegen Redeclare-Fatals abgesichert.
 - Datenbankmigrationen nutzen `INFORMATION_SCHEMA`, erstellen die Settings-Tabelle im Installer und ergänzen Foreign Keys nicht-blockierend.
 - Öffentliche Fehlerpfade nutzen die 365CMS-404/Error-Fallbacks und protokollieren technische Details serverseitig.

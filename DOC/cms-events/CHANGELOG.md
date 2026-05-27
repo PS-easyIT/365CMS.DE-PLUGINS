@@ -1,5 +1,41 @@
 # CMS Events – Changelog
 
+## [3.0.18] – 2026-05-27
+
+- **Archivkarten:** Event-Bild, Featured-Status, dezente Kategorie-/Format-Badges, Uhrzeit sowie Ort und Veranstalter mit Icon sitzen kompakt direkt unter dem Titel; Tags/Themen werden aus der Übersicht entfernt.
+- **Detailseite:** Teaser, volle Adresse, Format, Veranstalter-Kontakt (Website, E-Mail, Telefon), Online-Zugang und Tags werden in der Detailansicht ergänzt; Meta-Angaben erscheinen als einzelne Icon-Badges.
+- **Mehrtagesevents:** Start- und Endtermin werden bei mehrtägigen Events zweizeilig dargestellt, damit keine unschönen Umbrüche in einer langen Datumszeile entstehen.
+
+## [3.0.17] – 2026-05-27
+
+- **Eventkarten:** Veranstaltungsort und Stadt werden in der Archivkarte vor der Ausgabe dedupliziert, damit identische Werte nicht mehr als `Ort, Ort` hintereinander erscheinen.
+- **Kostenstatus:** Archivkarten zeigen nun pro Event oben rechts eine dezente Preis-/Kosten-Pill (`Kostenlos`, `Spendenbasis`, Betrag oder `Kostenpflichtig`), während Kategorie- und Status-Badges links bleiben.
+
+## [3.0.16] – 2026-05-27
+
+- **Archiv-Standardansicht:** Ohne aktive Filter werden Events ab dem aktuellen Monat serverseitig geladen; ältere Events gelten als vergangen und werden bei expliziten Filtern/Alle-Auswahl dezent grau markiert.
+- **Filter/Pagination:** Kategorie, Monat, Jahr und Suche werden nun in die URL übernommen und in Pagination-Links beibehalten; Filteränderungen starten wieder auf Seite 1 statt auf einer alten, leeren Offset-Seite.
+- **Serverseitige Query:** Monats-, Jahres- und Ab-Monat-Filter laufen in `CMS_Events_Database::get_events()` und `count_events()`, sodass Count, Seitenzahl und Ergebnisliste konsistent sind.
+
+## [3.0.15] – 2026-05-27
+
+- **Archivfilter:** Monat und Jahr werden beim Seitenaufruf auf den aktuellen Monat bzw. das aktuelle Jahr vorbelegt; der JS-Filter läuft sofort beim Laden und Reset springt ebenfalls auf diese aktuellen Werte zurück.
+- **Eventkarten:** Karten sind kompakter gepaddet, vollständig klickbar, per Tastatur erreichbar und erhalten Hover-/Focus-Feedback; der Titel bleibt als eigener Link nutzbar.
+- **Detailseite:** Share-URLs werden einmalig berechnet und in Hauptbereich sowie Sidebar verwendet, optional inklusive Event-Website-Link und Tabler-Webfont-Fallback für sichtbare Icons.
+- **Related Events:** Bild-Platzhalter verwenden das gescopte `related-event-thumb`-Pattern mit `ti-calendar-event` statt leerer grauer Flächen.
+
+## [3.0.14] – 2026-05-27
+
+- **Eventkarten:** Kategorie-Badge nur bei vorhandener Kategorie, zweispaltiger Datum/Titel-Aufbau und kompakter Details-Button mit 6px-Radius nachgezogen.
+- **Detailseite:** Share-Leisten im Content und in der Sidebar verwenden explizite `event-share-btn`-Links mit Tabler-Icons und robust berechneter aktueller URL.
+- **Related Events:** Bildteaser auf 72×54 normalisiert; fehlende Bilder zeigen nun einen ruhigen Kalender-Placeholder mit `ti-calendar-event`.
+
+## [3.0.13] – 2026-05-27
+
+- **Archiv:** Eventfilter für Kategorie, Monat, Jahr und Suche auf die gewünschten Feld-IDs und `data-*`-Attribute normalisiert; Empty State und Pagination bleiben scoped im Event-Content.
+- **Eventkarten:** Karten zeigen nun Kategorie-Badge, Titel, Datum, Ort, Trennlinie und Details-Button in der vorgegebenen 3-Spalten-Struktur ohne Bild-/Hero-Overhead.
+- **Detailseite:** Meta-Zeile, Beschreibungskarte, Speaker-Initialen-Fallback, Share-Buttons, Related-Event-Placeholder sowie Preis-/Sitzplatzanzeige in der Anmeldung nach Screenshot-Vorgabe nachgezogen.
+
 ## [3.0.12] – 2026-05-27
 
 - **Detailrouting:** `/events/:id` rendert die Detailseite nun direkt statt per Header-Redirect auf die Slug-URL zu wechseln; dadurch entstehen keine 500er mehr, wenn Header bereits ausgegeben wurden.

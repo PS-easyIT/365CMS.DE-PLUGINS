@@ -26,11 +26,16 @@
             let visibleCount = 0;
 
             cards.forEach((card) => {
-                const matchesTopic = !selectedTopic || normalize(card.dataset.topic).includes(selectedTopic);
+                const cardCategory = card.dataset.category || card.dataset.topic;
+                const matchesTopic = !selectedTopic || normalize(cardCategory).includes(selectedTopic);
                 const matchesSearch = !searchTerm || normalize(card.dataset.name).includes(searchTerm);
                 const isVisible = matchesTopic && matchesSearch;
 
                 card.classList.toggle('hidden', !isVisible);
+                card.style.display = isVisible ? 'flex' : 'none';
+                card.querySelectorAll('[data-topic-value]').forEach((tag) => {
+                    tag.classList.toggle('is-active', selectedTopic !== '' && normalize(tag.dataset.topicValue) === selectedTopic);
+                });
                 if (isVisible) {
                     visibleCount += 1;
                 }
@@ -38,6 +43,7 @@
 
             if (empty) {
                 empty.hidden = visibleCount > 0;
+                empty.style.display = visibleCount > 0 ? 'none' : 'block';
             }
         }
 
@@ -51,13 +57,41 @@
             applyFilters();
         }
 
-        topicSelect?.addEventListener('change', applyFilters);
-        searchInput?.addEventListener('input', applyFilters);
+        [topicSelect, searchInput].forEach((control) => {
+            control?.addEventListener('input', applyFilters);
+            control?.addEventListener('change', applyFilters);
+        });
         root.querySelectorAll('[data-cms-speaker-reset]').forEach((button) => {
             button.addEventListener('click', resetFilters);
         });
 
         applyFilters();
+    }
+
+    function bindClickableSpeakerCards() {
+        document.querySelectorAll('[data-cms-speaker-card][data-speaker-url], .speaker-card[data-href]').forEach((card) => {
+            const navigate = () => {
+                const url = card.getAttribute('data-href') || card.getAttribute('data-speaker-url');
+                if (url) {
+                    window.location.href = url;
+                }
+            };
+
+            card.addEventListener('click', (event) => {
+                if (event.target instanceof Element && event.target.closest('a, button, input, select, textarea')) {
+                    return;
+                }
+
+                navigate();
+            });
+
+            card.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    navigate();
+                }
+            });
+        });
     }
 
     function bindLegacyInteractions() {
@@ -94,6 +128,7 @@
 
     function init() {
         bindPublicSpeakerFilters();
+        bindClickableSpeakerCards();
         bindLegacyInteractions();
     }
 

@@ -82,6 +82,29 @@ if (!function_exists('cms_speakers_view_speaker_url')) {
     }
 }
 
+if (!function_exists('cms_speakers_view_initials')) {
+    function cms_speakers_view_initials(string $firstName, string $lastName, string $fallbackName = ''): string
+    {
+        $letters = '';
+        foreach ([$firstName, $lastName] as $part) {
+            $part = trim($part);
+            if ($part !== '') {
+                $letters .= function_exists('mb_substr') ? mb_substr($part, 0, 1, 'UTF-8') : substr($part, 0, 1);
+            }
+        }
+
+        if ($letters === '' && $fallbackName !== '') {
+            $words = array_values(array_filter(preg_split('/\s+/', trim($fallbackName)) ?: []));
+            foreach (array_slice($words, 0, 2) as $word) {
+                $letters .= function_exists('mb_substr') ? mb_substr($word, 0, 1, 'UTF-8') : substr($word, 0, 1);
+            }
+        }
+
+        $letters = function_exists('mb_strtoupper') ? mb_strtoupper($letters, 'UTF-8') : strtoupper($letters);
+        return $letters !== '' ? $letters : 'SP';
+    }
+}
+
 $s = $speaker;
 $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
 $firstName = trim((string) ($s->first_name ?? ''));
@@ -92,6 +115,7 @@ $job = trim((string) ($s->position ?? $s->job_title ?? ''));
 $company = trim((string) ($s->company_linked_name ?? $s->company_name ?? $s->company ?? ''));
 $location = trim((string) ($s->location_city ?? ''));
 $avatar = cms_speakers_view_public_url($s->photo_url ?? $s->avatar_url ?? null);
+$initials = cms_speakers_view_initials($firstName, $lastName, $nameRaw);
 $email = filter_var((string) ($s->email ?? ''), FILTER_VALIDATE_EMAIL) ?: '';
 $website = cms_speakers_view_public_url($s->website ?? $s->website_url ?? null);
 $linkedin = cms_speakers_view_public_url($s->linkedin ?? $s->linkedin_url ?? null);
@@ -133,9 +157,9 @@ $relatedSpeakers = array_slice((array) ($related_speakers ?? []), 0, 3);
             <header class="phinit-card cms-speaker-profile">
                 <div class="cms-speaker-profile__avatar">
                     <?php if ($avatar !== ''): ?>
-                        <img src="<?= htmlspecialchars($avatar, ENT_QUOTES, 'UTF-8') ?>" alt="<?= $name ?>" width="140" height="140" loading="eager" decoding="async">
+                        <img src="<?= htmlspecialchars($avatar, ENT_QUOTES, 'UTF-8') ?>" alt="<?= $name ?>" class="speaker-avatar-img speaker-avatar-img--large" width="120" height="120" loading="eager" decoding="async">
                     <?php else: ?>
-                        <i class="ti ti-user" aria-hidden="true"></i>
+                        <div class="speaker-avatar-fallback speaker-avatar-fallback--large" aria-hidden="true"><?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?></div>
                     <?php endif; ?>
                 </div>
                 <div class="cms-speaker-profile__content">
@@ -150,11 +174,11 @@ $relatedSpeakers = array_slice((array) ($related_speakers ?? []), 0, 3);
                     <?php if (!empty($topicList)): ?>
                         <div class="cms-speaker-profile__topics" aria-label="Themen">
                             <?php foreach (array_slice($topicList, 0, 8) as $topic): ?>
-                                <span class="cms-speaker-topic"><?= htmlspecialchars((string) $topic, ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="speaker-tag cms-speaker-topic"><?= htmlspecialchars((string) $topic, ENT_QUOTES, 'UTF-8') ?></span>
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>
-                    <div class="cms-speaker-profile__social" aria-label="Social Links">
+                    <div class="speaker-social cms-speaker-profile__social" aria-label="Social Links">
                         <?php if ($linkedin !== ''): ?><a href="<?= htmlspecialchars($linkedin, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="ti ti-brand-linkedin"></i></a><?php endif; ?>
                         <?php if ($website !== ''): ?><a href="<?= htmlspecialchars($website, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" aria-label="Website"><i class="ti ti-world"></i></a><?php endif; ?>
                         <?php if ($email !== ''): ?><a href="mailto:<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>" aria-label="E-Mail"><i class="ti ti-mail"></i></a><?php endif; ?>
@@ -168,14 +192,14 @@ $relatedSpeakers = array_slice((array) ($related_speakers ?? []), 0, 3);
                 <?php if ($bio !== ''): ?>
                     <div class="cms-speaker-detail__bio"><?= nl2br(htmlspecialchars($bio, ENT_QUOTES, 'UTF-8')) ?></div>
                 <?php else: ?>
-                    <p class="cms-speaker-muted">Eine ausführliche Bio wird in Kürze ergänzt.</p>
+                    <p class="cms-speaker-muted speaker-empty-text">Keine Biografie hinterlegt.</p>
                 <?php endif; ?>
             </section>
 
             <section class="phinit-card cms-speaker-sessions" aria-labelledby="cms-speaker-sessions-heading">
                 <h2 id="cms-speaker-sessions-heading">Vorträge &amp; Sessions</h2>
                 <?php if (empty($eventList)): ?>
-                    <p class="cms-speaker-muted">Aktuell keine Events geplant.</p>
+                    <p class="cms-speaker-muted speaker-empty-text speaker-empty-text--sessions">Aktuell keine Veranstaltungen geplant.</p>
                 <?php else: ?>
                     <div class="cms-speaker-sessions__list">
                         <?php foreach ($eventList as $speakerEvent): ?>
@@ -192,18 +216,15 @@ $relatedSpeakers = array_slice((array) ($related_speakers ?? []), 0, 3);
                             ?>
                             <article class="cms-speaker-session">
                                 <time class="cms-speaker-session__date" datetime="<?= htmlspecialchars((string) ($speakerEvent->event_date ?? ''), ENT_QUOTES, 'UTF-8') ?>">
-                                    <span><?= htmlspecialchars($eventDay, ENT_QUOTES, 'UTF-8') ?></span>
-                                    <strong><?= htmlspecialchars($eventMonth, ENT_QUOTES, 'UTF-8') ?></strong>
+                                    <span class="session-day"><?= htmlspecialchars($eventDay, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <strong class="session-month"><?= htmlspecialchars($eventMonth, ENT_QUOTES, 'UTF-8') ?></strong>
                                 </time>
                                 <div class="cms-speaker-session__body">
                                     <h3><?= htmlspecialchars($eventTitle, ENT_QUOTES, 'UTF-8') ?></h3>
-                                    <p><i class="ti ti-calendar-event" aria-hidden="true"></i><?= htmlspecialchars($eventDateLabel, ENT_QUOTES, 'UTF-8') ?></p>
-                                    <?php if ($eventLocation !== ''): ?>
-                                        <p><i class="ti ti-map-pin" aria-hidden="true"></i><?= htmlspecialchars($eventLocation, ENT_QUOTES, 'UTF-8') ?></p>
-                                    <?php endif; ?>
+                                    <p class="session-meta"><span><i class="ti ti-calendar" aria-hidden="true"></i><?= htmlspecialchars($eventDateLabel, ENT_QUOTES, 'UTF-8') ?></span><?php if ($eventLocation !== ''): ?><span><i class="ti ti-map-pin" aria-hidden="true"></i><?= htmlspecialchars($eventLocation, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?></p>
                                 </div>
                                 <?php if ($eventLink !== ''): ?>
-                                    <a href="<?= htmlspecialchars($eventLink, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary cms-speaker-session__button">Zum Event</a>
+                                    <a href="<?= htmlspecialchars($eventLink, ENT_QUOTES, 'UTF-8') ?>" class="speaker-session-button phinit-btn phinit-btn--secondary cms-speaker-session__button">Zum Event</a>
                                 <?php endif; ?>
                             </article>
                         <?php endforeach; ?>
@@ -217,7 +238,7 @@ $relatedSpeakers = array_slice((array) ($related_speakers ?? []), 0, 3);
                 <h2>Interesse an einem Vortrag?</h2>
                 <p><?= $name ?> für Keynote, Workshop oder Panel anfragen.</p>
                 <?php if ($email !== ''): ?>
-                    <a href="mailto:<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>?subject=<?= rawurlencode('Speaker-Anfrage: ' . $nameRaw) ?>" class="phinit-btn phinit-btn--primary cms-speaker-booking-card__button">Jetzt anfragen</a>
+                    <a href="mailto:<?= htmlspecialchars($email, ENT_QUOTES, 'UTF-8') ?>?subject=<?= rawurlencode('Speaker-Anfrage: ' . $nameRaw) ?>" class="phinit-btn phinit-btn--primary cms-speaker-booking-card__button">Kontakt aufnehmen</a>
                 <?php else: ?>
                     <a href="<?= htmlspecialchars($baseUrl . '/contact/', ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--primary cms-speaker-booking-card__button">Kontakt aufnehmen</a>
                 <?php endif; ?>
@@ -242,13 +263,14 @@ $relatedSpeakers = array_slice((array) ($related_speakers ?? []), 0, 3);
                         $relatedName = trim((string) (($related->first_name ?? '') . ' ' . ($related->last_name ?? ''))) ?: 'Speaker';
                         $relatedAvatar = cms_speakers_view_public_url($related->photo_url ?? null);
                         $relatedUrl = function_exists('cms_speaker_url') ? cms_speaker_url($related) : cms_speakers_view_speaker_url($related);
+                        $relatedInitials = cms_speakers_view_initials((string) ($related->first_name ?? ''), (string) ($related->last_name ?? ''), $relatedName);
                         ?>
-                        <a class="cms-speaker-related__item" href="<?= htmlspecialchars($relatedUrl, ENT_QUOTES, 'UTF-8') ?>">
+                        <a class="cms-speaker-related__item" href="<?= htmlspecialchars($relatedUrl, ENT_QUOTES, 'UTF-8') ?>" data-speaker-url="<?= htmlspecialchars($relatedUrl, ENT_QUOTES, 'UTF-8') ?>">
                             <span class="cms-speaker-related__avatar">
                                 <?php if ($relatedAvatar !== ''): ?>
                                     <img src="<?= htmlspecialchars($relatedAvatar, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($relatedName, ENT_QUOTES, 'UTF-8') ?>" width="52" height="52" loading="lazy" decoding="async">
                                 <?php else: ?>
-                                    <i class="ti ti-user" aria-hidden="true"></i>
+                                    <span class="speaker-avatar-fallback speaker-avatar-fallback--small" aria-hidden="true"><?= htmlspecialchars($relatedInitials, ENT_QUOTES, 'UTF-8') ?></span>
                                 <?php endif; ?>
                             </span>
                             <span><strong><?= htmlspecialchars($relatedName, ENT_QUOTES, 'UTF-8') ?></strong><small><?= htmlspecialchars((string) ($related->position ?? ''), ENT_QUOTES, 'UTF-8') ?></small></span>

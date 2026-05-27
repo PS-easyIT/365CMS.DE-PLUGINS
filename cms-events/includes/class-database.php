@@ -350,6 +350,21 @@ final class CMS_Events_Database
             $params[] = $args['month'];
         }
 
+        if (!empty($args['year'])) {
+            $where[] = 'YEAR(event_date) = ?';
+            $params[] = (int) $args['year'];
+        }
+
+        if (!empty($args['month_number'])) {
+            $where[] = 'MONTH(event_date) = ?';
+            $params[] = (int) $args['month_number'];
+        }
+
+        if (!empty($args['from_month'])) {
+            $where[] = 'event_date >= ?';
+            $params[] = $args['from_month'];
+        }
+
         if (isset($args['is_online'])) {
             $where[] = 'is_online = ?';
             $params[] = (int)$args['is_online'];
@@ -963,6 +978,18 @@ final class CMS_Events_Database
         if (!empty($args['month'])) {
             $sql   .= ' AND DATE_FORMAT(event_date, \'%Y-%m\') = ?';
             $bind[] = $args['month'];
+        }
+        if (!empty($args['year'])) {
+            $sql   .= ' AND YEAR(event_date) = ?';
+            $bind[] = (int) $args['year'];
+        }
+        if (!empty($args['month_number'])) {
+            $sql   .= ' AND MONTH(event_date) = ?';
+            $bind[] = (int) $args['month_number'];
+        }
+        if (!empty($args['from_month'])) {
+            $sql   .= ' AND event_date >= ?';
+            $bind[] = $args['from_month'];
         }
         if (!empty($args['upcoming'])) {
             $sql   .= ' AND event_date >= CURDATE()';

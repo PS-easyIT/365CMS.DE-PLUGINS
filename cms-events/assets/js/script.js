@@ -42,8 +42,10 @@
 			return;
 		}
 
-		var cards = Array.prototype.slice.call(root.querySelectorAll('[data-cms-events-card]'));
-		var empty = root.querySelector('[data-cms-events-empty]');
+		var form = root.querySelector('[data-cms-events-filter-form]');
+		var archiveUrl = root.getAttribute('data-cms-events-archive-url') || (form ? form.getAttribute('action') : '') || window.location.pathname;
+		var dateFilterActive = root.getAttribute('data-cms-events-date-filter-active') === '1';
+		var searchTimer = 0;
 		var controls = {
 			category: root.querySelector('[data-cms-events-filter="category"]'),
 			month: root.querySelector('[data-cms-events-filter="month"]'),
@@ -51,56 +53,106 @@
 			search: root.querySelector('[data-cms-events-filter="search"]')
 		};
 
-		function applyFilters() {
-			var selectedCategory = normalize(controls.category && controls.category.value);
-			var selectedMonth = normalize(controls.month && controls.month.value);
-			var selectedYear = normalize(controls.year && controls.year.value);
-			var searchTerm = normalize(controls.search && controls.search.value);
-			var visibleCount = 0;
-
-			cards.forEach(function (card) {
-				var matchesCategory = !selectedCategory || normalize(card.dataset.category) === selectedCategory;
-				var matchesMonth = !selectedMonth || normalize(card.dataset.month) === selectedMonth;
-				var matchesYear = !selectedYear || normalize(card.dataset.year) === selectedYear;
-				var matchesSearch = !searchTerm || normalize(card.dataset.name).indexOf(searchTerm) !== -1;
-				var isVisible = matchesCategory && matchesMonth && matchesYear && matchesSearch;
-
-				card.classList.toggle('hidden', !isVisible);
-				if (isVisible) {
-					visibleCount += 1;
-				}
-			});
-
-			if (empty) {
-				empty.hidden = visibleCount > 0;
+		function appendValue(params, key, value) {
+			var normalizedValue = String(value || '').trim();
+			if (normalizedValue !== '' && normalizedValue !== '0') {
+				params.set(key, normalizedValue);
 			}
+		}
+
+		function buildFilterUrl(includeDateFilter) {
+			var params = new URLSearchParams();
+			appendValue(params, 'category', controls.category && controls.category.value);
+			appendValue(params, 'search', controls.search && controls.search.value);
+
+			if (includeDateFilter) {
+				params.set('month', String((controls.month && controls.month.value) || '0'));
+				params.set('year', String((controls.year && controls.year.value) || '0'));
+			}
+
+			var query = params.toString();
+			return archiveUrl + (query ? '?' + query : '');
+		}
+
+		function navigateWithFilters(includeDateFilter) {
+			window.location.href = buildFilterUrl(includeDateFilter);
 		}
 
 		function resetFilters() {
-			Object.keys(controls).forEach(function (key) {
-				if (controls[key]) {
-					controls[key].value = '';
-				}
-			});
-			applyFilters();
+			window.location.href = archiveUrl;
 		}
 
-		Object.keys(controls).forEach(function (key) {
-			if (controls[key]) {
-				controls[key].addEventListener(key === 'search' ? 'input' : 'change', applyFilters);
-			}
-		});
+		if (form) {
+			form.addEventListener('submit', function (event) {
+				event.preventDefault();
+				navigateWithFilters(dateFilterActive);
+			});
+		}
+
+		if (controls.category) {
+			controls.category.addEventListener('change', function () {
+				navigateWithFilters(dateFilterActive);
+			});
+		}
+
+		if (controls.month) {
+			controls.month.addEventListener('change', function () {
+				dateFilterActive = true;
+				navigateWithFilters(true);
+			});
+		}
+
+		if (controls.year) {
+			controls.year.addEventListener('change', function () {
+				dateFilterActive = true;
+				navigateWithFilters(true);
+			});
+		}
+
+		if (controls.search) {
+			controls.search.addEventListener('input', function () {
+				window.clearTimeout(searchTimer);
+				searchTimer = window.setTimeout(function () {
+					navigateWithFilters(dateFilterActive);
+				}, 350);
+			});
+		}
 
 		root.querySelectorAll('[data-cms-events-reset]').forEach(function (button) {
 			button.addEventListener('click', resetFilters);
 		});
+	}
 
-		applyFilters();
+	function bindPublicEventCards() {
+		document.querySelectorAll('[data-cms-events-card][data-event-url]').forEach(function (card) {
+			var navigate = function () {
+				var url = card.getAttribute('data-event-url');
+				if (url) {
+					window.location.href = url;
+				}
+			};
+
+			card.addEventListener('click', function (event) {
+				if (event.target instanceof Element && event.target.closest('a, button, input, select, textarea')) {
+					return;
+				}
+
+				navigate();
+			});
+
+			card.addEventListener('keydown', function (event) {
+				if (event.key === 'Enter' || event.key === ' ') {
+					event.preventDefault();
+					navigate();
+				}
+			});
+		});
 	}
 
 	function init() {
 		bindMemberEventForm();
 		bindPublicEventFilters();
+		bindPublicEventCards();
 	}
 
 	if (document.readyState === 'loading') {
