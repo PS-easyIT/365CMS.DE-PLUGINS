@@ -31,7 +31,38 @@ final class CMS_Events_Template_Loader
 
     private function __construct()
     {
-        $this->plugin_template_dir = CMS_EVENTS_PLUGIN_DIR . 'templates/';
+        $this->plugin_template_dir = defined('CMS_EVENTS_PLUGIN_DIR')
+            ? rtrim((string) CMS_EVENTS_PLUGIN_DIR, '/\\') . DIRECTORY_SEPARATOR . 'templates' . DIRECTORY_SEPARATOR
+            : dirname(__DIR__) . DIRECTORY_SEPARATOR . 'templates' . DIRECTORY_SEPARATOR;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function getPluginTemplateDirs(): array
+    {
+        $dirs = [];
+
+        if ($this->plugin_template_dir !== '') {
+            $dirs[] = $this->plugin_template_dir;
+        }
+
+        $runtimeDir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'templates' . DIRECTORY_SEPARATOR;
+        $dirs[] = $runtimeDir;
+
+        $unique = [];
+        foreach ($dirs as $dir) {
+            $normalized = str_replace('\\', '/', rtrim($dir, '/\\')) . '/';
+            if (in_array($normalized, $unique, true)) {
+                continue;
+            }
+
+            if (is_dir($dir)) {
+                $unique[] = $normalized;
+            }
+        }
+
+        return $unique;
     }
 
     /**
@@ -53,26 +84,29 @@ final class CMS_Events_Template_Loader
 
         $theme_dir = $this->getThemeTemplateDir();
         $theme_template = $theme_dir !== '' ? $theme_dir . $template_name : '';
-        $plugin_template = $this->plugin_template_dir . $template_name;
 
         $template_candidates = [];
         if ($theme_template !== '' && file_exists($theme_template)) {
             $template_candidates[] = $theme_template;
         }
-        if (file_exists($plugin_template)) {
-            $template_candidates[] = $plugin_template;
+
+        foreach ($this->getPluginTemplateDirs() as $pluginDir) {
+            $candidate = $pluginDir . $template_name;
+            if (file_exists($candidate) && !in_array($candidate, $template_candidates, true)) {
+                $template_candidates[] = $candidate;
+            }
         }
 
         if ($template_candidates === []) {
             error_log("CMS Events: Template '{$template_name}' not found");
-            $this->render_inline_template_fallback($template_name);
+            $this->render_inline_template_fallback($template_name, $data);
             return;
         }
 
         extract($data, EXTR_SKIP);
 
         $lastException = null;
-        foreach ($template_candidates as $index => $template_file) {
+        foreach ($template_candidates as $template_file) {
             $bufferLevel = ob_get_level();
             ob_start();
 
@@ -89,7 +123,7 @@ final class CMS_Events_Template_Loader
                 }
 
                 $lastException = $e;
-                $template_role = $index === 0 && $template_file === $theme_template ? 'theme-override' : 'plugin-fallback';
+                $template_role = ($theme_template !== '' && $template_file === $theme_template) ? 'theme-override' : 'plugin-fallback';
                 error_log(
                     sprintf(
                         "CMS Events: Template '%s' (%s) failed in %s:%d – %s",
@@ -107,7 +141,7 @@ final class CMS_Events_Template_Loader
             error_log("CMS Events: Template '{$template_name}' exhausted all candidates.");
         }
 
-        $this->render_inline_template_fallback($template_name);
+        $this->render_inline_template_fallback($template_name, $data);
     }
 
     private function locate_template(string $template_name): ?string
@@ -121,10 +155,11 @@ final class CMS_Events_Template_Loader
             return $theme_template;
         }
 
-        // Plugin Template als Fallback
-        $plugin_template = $this->plugin_template_dir . $template_name;
-        if (file_exists($plugin_template)) {
-            return $plugin_template;
+        foreach ($this->getPluginTemplateDirs() as $pluginDir) {
+            $plugin_template = $pluginDir . $template_name;
+            if (file_exists($plugin_template)) {
+                return $plugin_template;
+            }
         }
 
         return null;
@@ -174,10 +209,60 @@ final class CMS_Events_Template_Loader
         echo '<section class="cms-error"><h1>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1><p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p></section>';
     }
 
-    private function render_inline_template_fallback(string $template_name): void
+    private function render_inline_template_fallback(string $template_name, array $data = []): void
     {
         if (!headers_sent()) {
             http_response_code(200);
+        }
+
+        if ($template_name === 'archive-event.php') {
+            $settings = is_array($data['settings'] ?? null) ? $data['settings'] : [];
+            $archiveTitle = trim((string) ($settings['archive_title'] ?? 'Veranstaltungen'));
+            if ($archiveTitle === '') {
+                $archiveTitle = 'Veranstaltungen';
+            }
+
+            $events = is_array($data['events'] ?? null) ? $data['events'] : [];
+            $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
+
+            echo '<section class="phinit-plugin cms-events-wrap">';
+            echo '<header class="cms-events-head">';
+            echo '<p class="phinit-overline">Events</p>';
+            echo '<h1>' . htmlspecialchars($archiveTitle, ENT_QUOTES, 'UTF-8') . '</h1>';
+            echo '</header>';
+            echo '<section class="cms-events-grid" aria-label="Event-Liste">';
+
+            if ($events === []) {
+                echo '<div class="cms-events-empty phinit-empty-state" role="status" aria-live="polite">';
+                echo '<i class="ti ti-calendar-off" aria-hidden="true"></i>';
+                echo '<p class="cms-events-empty__title">Keine Events gefunden.</p>';
+                echo '</div>';
+            } else {
+                foreach ($events as $event) {
+                    $eventObject = is_object($event) ? $event : (is_array($event) ? (object) $event : (object) []);
+                    $eventId = (int) ($eventObject->id ?? 0);
+                    $title = trim((string) ($eventObject->title ?? 'Event'));
+                    if ($title === '') {
+                        $title = 'Event';
+                    }
+                    $eventUrl = function_exists('cms_event_url')
+                        ? cms_event_url($eventObject)
+                        : ($baseUrl . '/events/' . $eventId);
+
+                    echo '<article class="phinit-card cms-events-card cms-events-card--fallback">';
+                    echo '<div class="cms-events-card__body">';
+                    echo '<h2 class="cms-events-card__title"><a href="' . htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</a></h2>';
+                    echo '<footer class="cms-events-card__footer">';
+                    echo '<a href="' . htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') . '" class="phinit-btn phinit-btn--primary cms-events-card__button">Details</a>';
+                    echo '</footer>';
+                    echo '</div>';
+                    echo '</article>';
+                }
+            }
+
+            echo '</section>';
+            echo '</section>';
+            return;
         }
 
         echo '<section class="phinit-plugin cms-events-wrap">'

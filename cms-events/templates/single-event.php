@@ -182,13 +182,11 @@ if ($primarySpeaker) {
                 </div>
             </header>
 
+            <?php if ($imageUrl !== ''): ?>
             <figure class="cms-events-detail__hero">
-                <?php if ($imageUrl !== ''): ?>
                     <img src="<?= htmlspecialchars($imageUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= $title ?>" width="1200" height="675" loading="eager" decoding="async">
-                <?php else: ?>
-                    <div class="cms-events-detail__hero-placeholder" aria-hidden="true"><i class="ti ti-calendar-event"></i></div>
-                <?php endif; ?>
             </figure>
+            <?php endif; ?>
 
             <section class="phinit-card cms-events-detail__section">
                 <h2>Über dieses Event</h2>

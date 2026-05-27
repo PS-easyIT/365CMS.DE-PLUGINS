@@ -288,9 +288,7 @@ final class CMS_Events_Post_Type
             return;
         }
 
-        // 301-Redirect zur kanonischen Slug-URL
-        header('Location: ' . cms_event_url($event), true, 301);
-        exit;
+        $this->render_event_detail($db_manager, $event, $event_id);
         } catch (\Throwable $e) {
             $this->render_public_error('Das Event konnte nicht geladen werden.', $e);
         }
@@ -323,19 +321,47 @@ final class CMS_Events_Post_Type
             return;
         }
 
-        $speakers = $db_manager->get_event_speakers($event_id);
-        $settings = $db_manager->get_settings();
-        $related_events = $this->get_related_events($db_manager, $event);
-
-        $this->render_public_theme_template('single-event', [
-            'event'          => $event,
-            'speakers'       => $speakers,
-            'settings'       => $settings,
-            'related_events' => $related_events,
-        ]);
+        $this->render_event_detail($db_manager, $event, $event_id);
         } catch (\Throwable $e) {
             $this->render_public_error('Das Event konnte nicht geladen werden.', $e);
         }
+    }
+
+    private function render_event_detail(CMS_Events_Database $db_manager, object $event, int $event_id): void
+    {
+        $speakers = [];
+        try {
+            $speakers = $db_manager->get_event_speakers($event_id);
+        } catch (\Throwable $speakerError) {
+            error_log('CMS Events detail speakers fallback: ' . $speakerError->getMessage());
+        }
+
+        $settings = [
+            'archive_slug' => 'events',
+            'archive_title' => 'Veranstaltungen',
+        ];
+        try {
+            $loadedSettings = $db_manager->get_settings();
+            if (is_array($loadedSettings)) {
+                $settings = array_merge($settings, $loadedSettings);
+            }
+        } catch (\Throwable $settingsError) {
+            error_log('CMS Events detail settings fallback: ' . $settingsError->getMessage());
+        }
+
+        $related_events = [];
+        try {
+            $related_events = $this->get_related_events($db_manager, $event);
+        } catch (\Throwable $relatedError) {
+            error_log('CMS Events detail related fallback: ' . $relatedError->getMessage());
+        }
+
+        $this->render_public_theme_template('single-event', [
+            'event'          => $event,
+            'speakers'       => is_array($speakers) ? $speakers : [],
+            'settings'       => $settings,
+            'related_events' => is_array($related_events) ? $related_events : [],
+        ]);
     }
 
     private function get_event_speakers_map(array $events): array
@@ -1097,6 +1123,49 @@ final class CMS_Events_Post_Type
             }
 
             error_log('CMS Events public template render fallback (' . $template . '): ' . $e->getMessage());
+            if ($template === 'archive-event') {
+                $settings = is_array($data['settings'] ?? null) ? $data['settings'] : [];
+                $archiveTitle = trim((string) ($settings['archive_title'] ?? 'Veranstaltungen')) ?: 'Veranstaltungen';
+                $events = is_array($data['events'] ?? null) ? $data['events'] : [];
+                $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
+
+                echo '<section class="phinit-plugin cms-events-wrap">';
+                echo '<header class="cms-events-head">';
+                echo '<p class="phinit-overline">Events</p>';
+                echo '<h1>' . htmlspecialchars($archiveTitle, ENT_QUOTES, 'UTF-8') . '</h1>';
+                echo '</header>';
+                echo '<section class="cms-events-grid" aria-label="Event-Liste">';
+
+                if ($events === []) {
+                    echo '<div class="cms-events-empty phinit-empty-state" role="status" aria-live="polite">';
+                    echo '<i class="ti ti-calendar-off" aria-hidden="true"></i>';
+                    echo '<p class="cms-events-empty__title">Keine Events gefunden.</p>';
+                    echo '</div>';
+                } else {
+                    foreach ($events as $event) {
+                        $eventObject = is_object($event) ? $event : (is_array($event) ? (object) $event : (object) []);
+                        $eventId = (int) ($eventObject->id ?? 0);
+                        $title = trim((string) ($eventObject->title ?? 'Event')) ?: 'Event';
+                        $eventUrl = function_exists('cms_event_url')
+                            ? cms_event_url($eventObject)
+                            : ($baseUrl . '/events/' . $eventId);
+
+                        echo '<article class="phinit-card cms-events-card cms-events-card--fallback">';
+                        echo '<div class="cms-events-card__body">';
+                        echo '<h2 class="cms-events-card__title"><a href="' . htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</a></h2>';
+                        echo '<footer class="cms-events-card__footer">';
+                        echo '<a href="' . htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') . '" class="phinit-btn phinit-btn--primary cms-events-card__button">Details</a>';
+                        echo '</footer>';
+                        echo '</div>';
+                        echo '</article>';
+                    }
+                }
+
+                echo '</section>';
+                echo '</section>';
+                return;
+            }
+
             echo '<section class="phinit-plugin cms-events-wrap">'
                 . '<div class="cms-events-empty phinit-empty-state" role="status" aria-live="polite">'
                 . '<i class="ti ti-alert-circle" aria-hidden="true"></i>'

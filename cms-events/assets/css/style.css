@@ -2103,3 +2103,219 @@
     flex-direction: column;
   }
 }
+
+/* CMS Events 3.0.12 / PHINIT final public polish
+   Korrigiert Live-Fallback-Cards, Textkontrast und Detailseiten ohne Bild. */
+.cms-events-wrap {
+  --cms-events-accent: var(--phinit-color-accent, #f5a623);
+  --cms-events-accent-ink: var(--phinit-color-accent-ink, #1a2233);
+  --cms-events-bg: var(--phinit-color-bg, #dde6f0);
+  --cms-events-surface: var(--phinit-color-surface, #ffffff);
+  --cms-events-text: var(--phinit-color-ink, #1a2233);
+  --cms-events-navy: var(--phinit-color-ink, #1a2233);
+  --cms-events-muted: var(--phinit-color-ink-secondary, #5a6678);
+  --cms-events-border: var(--phinit-color-border, #dde3ec);
+  --cms-events-radius: var(--phinit-radius-md, 10px);
+  --cms-events-radius-sm: var(--phinit-radius-sm, 6px);
+  --cms-events-shadow: var(--phinit-shadow-card, 0 1px 2px rgba(20, 34, 68, 0.06));
+  --cms-events-shadow-hover: var(--phinit-shadow-raised, 0 4px 16px rgba(20, 34, 68, 0.10));
+  --cms-events-content-max: var(--container-max, var(--phinit-container-width, 1180px));
+  width: min(100%, var(--cms-events-content-max));
+  max-width: var(--cms-events-content-max);
+  margin-inline: auto;
+  padding: var(--phinit-space-5, 24px) clamp(16px, 2vw, 28px) var(--phinit-space-8, 48px);
+  color: var(--cms-events-text);
+  font-family: var(--phinit-font-body, system-ui, -apple-system, sans-serif);
+}
+
+.cms-events-head {
+  margin: 0 0 var(--phinit-space-6, 32px);
+}
+
+.cms-events-head .phinit-overline,
+.cms-events-wrap .phinit-overline {
+  color: var(--cms-events-accent);
+}
+
+.cms-events-head h1,
+.cms-events-detail h1,
+.cms-events-card__title,
+.cms-events-card__title a,
+.cms-events-registration-card h2,
+.cms-events-related h2,
+.cms-events-detail__section h2,
+.cms-events-speaker-teaser h2 {
+  color: var(--cms-events-navy);
+}
+
+.cms-events-head h1 {
+  font-size: clamp(1.75rem, 3vw, 2.35rem);
+  font-weight: 600;
+  line-height: 1.18;
+}
+
+.cms-events-head__subtitle,
+.cms-events-muted,
+.cms-events-card__date-full,
+.cms-events-card__meta,
+.cms-events-detail__meta,
+.cms-events-registration-card dt,
+.cms-events-related small {
+  color: var(--cms-events-muted);
+}
+
+.cms-events-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: var(--phinit-space-5, 24px);
+}
+
+.cms-events-card.phinit-card,
+.cms-events-card {
+  min-height: 100%;
+  padding: 0;
+  border: 1px solid var(--cms-events-border);
+  border-radius: var(--cms-events-radius);
+  background: var(--cms-events-surface);
+  box-shadow: var(--cms-events-shadow);
+  overflow: hidden;
+  transition: box-shadow var(--phinit-transition, 0.2s ease), transform var(--phinit-transition, 0.2s ease);
+}
+
+.cms-events-card:hover {
+  box-shadow: var(--cms-events-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.cms-events-card__body {
+  padding: var(--phinit-space-5, 24px);
+}
+
+.cms-events-card--fallback .cms-events-card__body {
+  min-height: 155px;
+}
+
+.cms-events-card__title {
+  margin: 0 0 var(--phinit-space-4, 16px);
+  font-size: clamp(1rem, 1.8vw, 1.2rem);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.cms-events-card__title a:hover {
+  color: var(--cms-events-accent);
+  text-decoration: none;
+}
+
+.cms-events-card__media {
+  height: auto;
+  aspect-ratio: 16 / 9;
+  background: var(--cms-events-bg);
+}
+
+.cms-events-card__date-block,
+.cms-events-related__image,
+.cms-events-related__item > span:first-child {
+  background: var(--cms-events-bg);
+  color: var(--cms-events-navy);
+}
+
+.cms-events-card__badge,
+.cms-events-badge {
+  border-radius: var(--cms-events-radius-sm);
+  background: var(--cms-events-bg);
+  color: var(--cms-events-navy);
+  border: 1px solid var(--cms-events-border);
+}
+
+.cms-events-wrap .phinit-btn--primary,
+.cms-events-card__button,
+.cms-events-registration-card__button {
+  background: var(--cms-events-accent);
+  color: var(--cms-events-accent-ink);
+  border-color: var(--cms-events-accent);
+}
+
+.cms-events-wrap .phinit-btn--primary:hover,
+.cms-events-card__button:hover,
+.cms-events-registration-card__button:hover {
+  filter: brightness(0.96);
+  text-decoration: none;
+}
+
+.cms-events-card__footer {
+  align-items: center;
+  border-top: 1px solid var(--cms-events-border);
+  gap: var(--phinit-space-3, 12px);
+  margin-top: auto;
+  padding-top: var(--phinit-space-4, 16px);
+}
+
+.cms-events-detail__grid {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: var(--phinit-space-6, 32px);
+}
+
+.cms-events-detail__head {
+  margin-bottom: var(--phinit-space-5, 24px);
+}
+
+.cms-events-detail__head h1 {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.cms-events-detail__meta {
+  gap: var(--phinit-space-4, 16px);
+}
+
+.cms-events-detail__section,
+.cms-events-speaker-teaser,
+.cms-events-registration-card,
+.cms-events-related {
+  border: 1px solid var(--cms-events-border);
+  border-radius: var(--cms-events-radius);
+  background: var(--cms-events-surface);
+  box-shadow: var(--cms-events-shadow);
+  padding: var(--phinit-space-5, 24px);
+}
+
+.cms-events-detail__hero {
+  margin-bottom: var(--phinit-space-5, 24px);
+  border: 1px solid var(--cms-events-border);
+  border-radius: var(--cms-events-radius);
+  box-shadow: var(--cms-events-shadow);
+}
+
+.cms-events-registration-card__price {
+  color: var(--cms-events-accent);
+}
+
+.cms-events-registration-card__price.is-free {
+  color: var(--phinit-color-success, #3b6d11);
+}
+
+.cms-events-share a {
+  border-radius: var(--cms-events-radius-sm);
+  color: var(--cms-events-navy);
+}
+
+.cms-events-related__item {
+  color: var(--cms-events-navy);
+}
+
+@media (max-width: 900px) {
+  .cms-events-detail__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cms-events-detail__aside {
+    position: static;
+  }
+}
+
+@media (max-width: 520px) {
+  .cms-events-wrap {
+    padding-inline: var(--phinit-space-3, 12px);
+  }
+}

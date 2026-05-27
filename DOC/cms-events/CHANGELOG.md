@@ -1,5 +1,11 @@
 # CMS Events – Changelog
 
+## [3.0.12] – 2026-05-27
+
+- **Detailrouting:** `/events/:id` rendert die Detailseite nun direkt statt per Header-Redirect auf die Slug-URL zu wechseln; dadurch entstehen keine 500er mehr, wenn Header bereits ausgegeben wurden.
+- **Detaildaten-Fallbacks:** Speaker, Settings und Related Events werden einzeln abgefangen und fallen bei Fehlern auf leere/default Daten zurück, statt die gesamte Detailseite abzubrechen.
+- **Publicsite-Design:** Finale PHINIT-Styles korrigieren Textkontrast, Karten, Buttons und Detailspalte; leere Bild-Hero-Flächen werden nicht mehr gerendert, wenn kein Eventbild vorhanden ist.
+
 ## [3.0.11] – 2026-05-26
 
 - **Hotfix Public-Rendering:** 500-Fehler „Template-Fehler – Das Event-Template konnte nicht gerendert werden“ auf Systemen ohne `mbstring` behoben.
