@@ -1,10 +1,10 @@
 # CMS Events – Dokumentation
 
 **Plugin:** `cms-events`  
-**Version:** 3.0.19
+**Version:** 3.0.20
 **Namespace:** `CMS_Events`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
-**Audit-/Dokustand:** Publicsite-Polish-Fix am 2026-05-27
+**Audit-/Dokustand:** Template-Loader-Audit-Fix am 2026-05-27
 **PHP:** 8.4+
 
 ---
@@ -28,6 +28,7 @@ Das **CMS Events**-Plugin verwaltet Veranstaltungen – von Webinaren bis zu Kon
 - Version `3.0.17` verhindert doppelte Ortsausgaben in Eventkarten und ergänzt pro Archivkarte oben rechts eine Kosten-/Preis-Pill für kostenlose, kostenpflichtige oder spendenbasierte Events.
 - Version `3.0.18` macht die Public-Ausgabe vollständiger und zugleich ruhiger: Archivkarten zeigen Bild, dezente Kategorie-/Format-Badges, Uhrzeit sowie Ort und Veranstalter mit Icon direkt unter dem Titel; Tags/Themen erscheinen nur noch in der Detailseite, deren Meta-Angaben als einzelne Icon-Badges inklusive zweizeiligem Start-/Endtermin für Mehrtagesevents dargestellt werden.
 - Version `3.0.19` entfernt die redundanten Meta-Ausgaben direkt unter dem Eventtitel inklusive Teaser-/Excerpt-Zeile; Sidebar-Meta und Veranstalter-Kontakt bleiben erhalten, Themen/Tags erscheinen unterhalb der Beschreibung als einzelne, deduplizierte Badges.
+- Version `3.0.20` ersetzt `extract()` im Template-Loader durch eine explizite Whitelist kontrollierter Template-Kontextvariablen für Plugin-Templates und Theme-Overrides.
 - Bootstrap, Include-Klassen und Lifecycle-Hooks sind idempotent und gegen Redeclare-Fatals abgesichert.
 - Datenbankmigrationen nutzen `INFORMATION_SCHEMA`, erstellen die Settings-Tabelle im Installer und ergänzen Foreign Keys nicht-blockierend.
 - Öffentliche Fehlerpfade nutzen die 365CMS-404/Error-Fallbacks und protokollieren technische Details serverseitig.

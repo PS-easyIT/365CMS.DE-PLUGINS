@@ -19,6 +19,41 @@ if (class_exists('CMS_Events_Template_Loader', false)) {
 final class CMS_Events_Template_Loader
 {
     private static ?self $instance = null;
+    /**
+     * Template-Kontextvariablen, die bewusst an Plugin-/Theme-Templates gebunden werden.
+     *
+     * @var array<int, string>
+     */
+    private const TEMPLATE_CONTEXT_KEYS = [
+        'active_filter_params',
+        'categories',
+        'current_page',
+        'date_filter_explicit',
+        'db',
+        'default_from_month',
+        'event',
+        'event_speakers_map',
+        'events',
+        'filter_category',
+        'filter_city',
+        'filter_month',
+        'filter_month_number',
+        'filter_online',
+        'filter_year',
+        'has_active_filters',
+        'month',
+        'pages',
+        'per_page',
+        'related_events',
+        'search',
+        'settings',
+        'show_filters',
+        'speakers',
+        'total',
+        'upcoming_total',
+        'view',
+        'when_filter',
+    ];
     private string $plugin_template_dir;
 
     public static function instance(): self
@@ -103,15 +138,13 @@ final class CMS_Events_Template_Loader
             return;
         }
 
-        extract($data, EXTR_SKIP);
-
         $lastException = null;
         foreach ($template_candidates as $template_file) {
             $bufferLevel = ob_get_level();
             ob_start();
 
             try {
-                include $template_file;
+                $this->include_template_file($template_file, $data);
                 $html = ob_get_clean();
                 if ($html !== false) {
                     echo $html;
@@ -142,6 +175,15 @@ final class CMS_Events_Template_Loader
         }
 
         $this->render_inline_template_fallback($template_name, $data);
+    }
+
+    private function include_template_file(string $template_file, array $data): void
+    {
+        foreach (self::TEMPLATE_CONTEXT_KEYS as $key) {
+            ${$key} = $data[$key] ?? null;
+        }
+
+        include $template_file;
     }
 
     private function locate_template(string $template_name): ?string

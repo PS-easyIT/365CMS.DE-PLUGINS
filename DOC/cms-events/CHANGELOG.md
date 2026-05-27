@@ -1,5 +1,11 @@
 # CMS Events – Changelog
 
+## [3.0.20] – 2026-05-27
+
+- **Audit-Fix:** Der Template-Loader verwendet kein `extract()` mehr.
+- **Kompatibilität:** Plugin-Templates und Theme-Overrides erhalten weiterhin die erwarteten Kontextvariablen, allerdings nur noch aus einer expliziten Whitelist.
+- **Sicherheit/Best Practice:** Das reduziert unbeabsichtigte Variablen-Injection und macht den Render-Kontext nachvollziehbarer.
+
 ## [3.0.19] – 2026-05-27
 
 - **Detailseite:** Die redundanten Meta-Ausgaben direkt unter dem Eventtitel inklusive Teaser-/Excerpt-Zeile wurden entfernt; Sidebar-Meta und Veranstalter-Kontakt bleiben erhalten.
