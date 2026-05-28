@@ -1,6 +1,6 @@
 # CMS 365NETWORK
 
-**Version:** 1.0.13
+**Version:** 1.0.14
 **Status:** Domainbasierte HubSite/Landingpage für Netzwerk-Portale.
 
 CMS 365NETWORK stellt eine eigene Landingpage bereit, die auf einer konfigurierten Zusatzdomain direkt als Root-Seite erscheinen kann. Sie bündelt vier zentrale Bereiche des Netzwerks:
@@ -33,6 +33,7 @@ Zusätzlich gibt es eine interne Vorschau-Route, standardmäßig `/365network`.
 
 ## Aktueller Audit-Stand
 
+- **1.0.14:** Audit-Fix: Core-kompatible Toolbox-Aktivprüfung ohne direkte Plugin-Tabellenprüfung, HTTP(S)-Only Featured-Bilder, request-lokaler Settings-Cache und kein Inline-onclick in leeren Bereichskacheln.
 - **1.0.13:** Featured Card steht als erste Hub-Komponente vor dem Hero; ohne Bild nutzt sie eine kompakte einspaltige Textvariante statt leerem Placeholder.
 - **1.0.12:** Hub-Bereiche über `cms_network_hub_settings` typisiert administrierbar; Public-Ausgabe nutzt Sichtbarkeit, Texte, URLs, Icons, Suchparameter und Toolbox-Limit aus den Settings.
 - **1.0.11:** Optionaler M365-Toolbox-Bereich nach den Direkteinstieg-Kacheln ergänzt; die Sektion erscheint nur bei aktivem Toolbox-Plugin und aktiven `show_on_hub`-Links.

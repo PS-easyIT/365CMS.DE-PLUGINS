@@ -1,5 +1,12 @@
 # CMS Events – Changelog
 
+## [3.0.24] – 2026-05-28
+
+- **Lifecycle:** Deaktivierung und Uninstall löschen keine Event-Tabellen mehr; Plugin-Daten bleiben erhalten.
+- **Datenbank:** Schema-Migration ergänzt idempotent `idx_event_date_status (event_date, status)`; Settings werden request-lokal gecacht.
+- **Admin/Member:** Formulare nutzen serverseitige Validierung mit `novalidate`; Redirects laufen über den Core-Router, wenn verfügbar.
+- **Public:** Inline-`onclick` aus Eventkarten entfernt, Datumsformatierung gegen ungültige `strtotime()`-Rückgaben abgesichert und Reset-Logik nutzt Server-Defaults.
+
 ## [3.0.23] – 2026-05-28
 
 - **Archivkarten:** Der Footer ist nun zweispaltig aufgebaut: links Speaker oder Veranstalter, rechts der Details-Button.

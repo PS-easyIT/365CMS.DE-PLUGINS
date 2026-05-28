@@ -425,6 +425,12 @@ final class CMS_365NETWORK_Database
                 continue;
             }
 
+            $cols = $pdo->prepare('SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME IN (?,?,?)');
+            $cols->execute([$table, 'show_on_hub', 'status', 'sort_order']);
+            if (count(array_unique(array_map('strval', $cols->fetchAll(\PDO::FETCH_COLUMN) ?: []))) < 3) {
+                continue;
+            }
+
             $idx = $pdo->prepare('SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ? LIMIT 1');
             $idx->execute([$table, 'idx_toolbox_hub']);
             if ($idx->fetchColumn()) {

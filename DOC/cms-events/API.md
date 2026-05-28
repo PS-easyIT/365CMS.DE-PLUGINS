@@ -65,7 +65,7 @@ $cats = CMS_Events_Database::instance()->get_event_categories();
 ```
 
 ### `drop_tables(): void`
-Wird im `plugin_uninstalled`-Lifecycle genutzt und entfernt Event-, Relation-, Meta-, Preset- und Settings-Tabellen.
+Kompatibilitäts-Stub: Deaktivierung und Uninstall behalten Event-, Relation-, Meta-, Preset- und Settings-Tabellen bewusst bei.
 
 ---
 

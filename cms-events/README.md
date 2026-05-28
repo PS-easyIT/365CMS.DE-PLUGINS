@@ -1,6 +1,6 @@
 ﻿# CMS Events Manager Plugin
 
-**Version:** 3.0.23
+**Version:** 3.0.24
 **Requires:** 365CMS 3.0+  
 **PHP:** 8.4+
 
@@ -19,6 +19,7 @@ The CMS Events Manager plugin manages events with calendar view and detail pages
 - ✅ Öffentliche Übersicht startet direkt mit der Filter-/Suchleiste ohne zusätzlichen Archivkopf
 - ✅ Öffentliche Übersicht mit kompakten Eventkarten, Kategorie-/Preis-Badges und Format-Badge direkt in der Ortszeile
 - ✅ Eventkarten-Footer mit Speaker/Veranstalter links und Details-Button rechts
+- ✅ Nicht-destruktiver De-/Uninstall; Eventdaten bleiben erhalten
 - ✅ Calendar view for events
 - ✅ Native 365CMS 404/Error-Fallbacks for plugin render failures
 - ✅ Detail pages for individual events
@@ -27,7 +28,7 @@ The CMS Events Manager plugin manages events with calendar view and detail pages
 - ✅ Meta data support
 - ✅ Shortcode support: `[cms_events]`
 - ✅ Inline-freier Admin-/Member-Workflow für Modale, Bestätigungen, Formular-Toggles und Kalendernavigation
-- ✅ Idempotenter Bootstrap mit Klassen-Guards, sauberem De-/Uninstall und robuster Schema-Migration
+- ✅ Idempotenter Bootstrap mit Klassen-Guards, nicht-destruktivem De-/Uninstall und robuster Schema-Migration
 - ✅ Settings über `CMS\Services\SettingsService` mit Legacy-Fallback auf `cms_event_settings`
 
 ## Database Tables

@@ -1,7 +1,7 @@
 # CMS Events – Dokumentation
 
 **Plugin:** `cms-events`  
-**Version:** 3.0.23
+**Version:** 3.0.24
 **Namespace:** `CMS_Events`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
 **Audit-/Dokustand:** Public-Card-Footer-Polish am 2026-05-28
@@ -32,6 +32,7 @@ Das **CMS Events**-Plugin verwaltet Veranstaltungen – von Webinaren bis zu Kon
 - Version `3.0.21` entfernt den Veranstalter aus den Archivkarten und platziert das Online-/Hybrid-/Präsenz-Badge mit Icon in der Ortszeile vor dem Veranstaltungsort.
 - Version `3.0.22` entfernt den Kopfbereich oberhalb der Events-Suche, sodass die Übersicht direkt mit der Filter-/Suchleiste beginnt.
 - Version `3.0.23` ergänzt einen zweispaltigen Card-Footer mit Speaker/Veranstalter links und Details-Button rechts; Speaker haben Priorität, leere Infos bleiben ohne Placeholder.
+- Version `3.0.24` setzt den Code-Audit um: nicht-destruktiver Uninstall, zusammengesetzter Datums-/Statusindex, Settings-Cache, sichere Datumsvergleiche, novalidate-Formulare und entfernte Inline-Handler.
 - Bootstrap, Include-Klassen und Lifecycle-Hooks sind idempotent und gegen Redeclare-Fatals abgesichert.
 - Datenbankmigrationen nutzen `INFORMATION_SCHEMA`, erstellen die Settings-Tabelle im Installer und ergänzen Foreign Keys nicht-blockierend.
 - Öffentliche Fehlerpfade nutzen die 365CMS-404/Error-Fallbacks und protokollieren technische Details serverseitig.

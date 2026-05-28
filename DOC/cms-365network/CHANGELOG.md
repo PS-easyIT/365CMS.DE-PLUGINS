@@ -1,5 +1,13 @@
 # Changelog – CMS 365NETWORK
 
+## 1.0.14 – 2026-05-28
+
+- Toolbox-Aktivierung auf Core-Statusprüfung über `cms_plugin_active()`/`CMS\PluginManager` begrenzt; direkte Plugin-Tabellenprüfung entfernt.
+- Featured-Bild-URLs im Hub-Admin und Public-Template auf absolute HTTP(S)-URLs begrenzt.
+- Request-lokalen Settings-Cache für Basis- und Hub-Settings ergänzt; Speicherpfade invalidieren den Cache.
+- Leere Bereichskacheln rendern ohne Inline-`onclick`; Escaping im Public-Template nutzt `ENT_SUBSTITUTE`.
+- Best-Effort-Index `idx_toolbox_hub (show_on_hub, status, sort_order)` für vorhandene Toolbox-Linktabellen ergänzt.
+
 ## 1.0.13 – 2026-05-28
 
 - Featured Card als erste Hub-Komponente vor dem Hero positioniert, wenn sie aktiviert ist.
