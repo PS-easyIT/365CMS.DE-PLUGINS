@@ -112,20 +112,22 @@ final class CMS_365NETWORK_Admin
 
         $this->render_tabs($tab);
 
-        $formClass = 'admin-card admin-form n365-tab-panel n365-admin-form' . ($tab === 'hub' ? ' hub-admin-form' : '');
+        $formClass = 'admin-card admin-form n365-tab-panel n365-admin-form' . ($this->is_hub_section_tab($tab) ? ' hub-admin-form' : '');
         echo '<form class="' . htmlspecialchars($formClass, ENT_QUOTES, 'UTF-8') . '" method="post" action="' . htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365network/settings/save', ENT_QUOTES, 'UTF-8') . '" novalidate>';
         echo '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') . '">';
         echo '<input type="hidden" name="tab" value="' . htmlspecialchars($tab, ENT_QUOTES, 'UTF-8') . '">';
 
-        match ($tab) {
-            'hub' => $this->render_hub_tab(CMS_365NETWORK_Database::instance()->get_hub_setting_rows()),
-            'content' => $this->render_content_tab($settings),
-            'layout' => $this->render_layout_tab($settings),
-            'sidebar' => $this->render_sidebar_tab($settings),
-            'cards' => $this->render_cards_tab($settings),
-            'analytics' => $this->render_analytics_tab($settings),
-            default => $this->render_domain_tab($settings),
-        };
+        if ($this->is_hub_section_tab($tab)) {
+            $sectionKey = $this->hub_section_for_tab($tab);
+            $this->render_hub_section_tab($sectionKey, CMS_365NETWORK_Database::instance()->get_hub_setting_rows());
+        } else {
+            match ($tab) {
+                'layout' => $this->render_layout_tab($settings),
+                'sidebar' => $this->render_sidebar_tab($settings),
+                'analytics' => $this->render_analytics_tab($settings),
+                default => $this->render_domain_tab($settings),
+            };
+        }
 
         echo '<div class="form-actions"><button class="btn btn-primary" type="submit">💾 Einstellungen speichern</button></div>';
         echo '</form>';
@@ -147,11 +149,11 @@ final class CMS_365NETWORK_Admin
         $tab = $this->sanitize_tab((string) ($_POST['tab'] ?? 'domain'));
         $database = CMS_365NETWORK_Database::instance();
 
-        if ($tab === 'hub') {
-            $settings = $this->sanitize_hub_settings($_POST, $database->get_hub_setting_rows());
+        if ($this->is_hub_section_tab($tab)) {
+            $settings = $this->sanitize_hub_settings($_POST, $this->hub_rows_for_section($database->get_hub_setting_rows(), $this->hub_section_for_tab($tab)));
             $database->save_hub_settings($settings);
 
-            $this->redirect('/admin/365network?tab=hub&saved=1');
+            $this->redirect('/admin/365network?tab=' . rawurlencode($tab) . '&saved=1');
             return;
         }
 
@@ -165,11 +167,14 @@ final class CMS_365NETWORK_Admin
     {
         $tabs = [
             'domain' => '🌐 Domain',
-            'hub' => '🧭 Hub',
-            'content' => '📝 Inhalte',
-            'layout' => '🎨 Layout',
+            'hub-featured' => '⭐ Featured',
+            'hub-hero' => '🏁 Hero',
+            'hub-stats' => '📊 Kennzahlen',
+            'hub-band' => '🔎 Teaser & Suche',
+            'hub-areas' => '🧭 Bereiche',
+            'hub-toolbox' => '🧰 Toolbox',
+            'layout' => '🎨 Seitenlayout',
             'sidebar' => '📊 Sidebar & Daten',
-            'cards' => '🧩 Bereichskarten',
             'analytics' => '📈 Analytics',
         ];
 
@@ -189,6 +194,135 @@ final class CMS_365NETWORK_Admin
         $this->textarea('hub_domains', 'Zusatzdomain(s)', $settings, 'network.example.com', 'Eine Domain pro Zeile oder kommasepariert. Bitte ohne https:// und ohne Pfad eintragen.');
         $this->input('route_slug', 'Interne Vorschau-Route', $settings, '365network', 'text', 'Über diese Route ist die Landingpage unabhängig von der Domain erreichbar.');
         echo '</section>';
+    }
+
+    /**
+     * @return array<string,array{section:string,title:string,description:string}>
+     */
+    private function hub_section_tabs(): array
+    {
+        return [
+            'hub-featured' => [
+                'section' => 'featured',
+                'title' => '⭐ Featured Card',
+                'description' => 'Content-Header oberhalb des Hero: aktivieren, Texte pflegen und Darstellung gestalten.',
+            ],
+            'hub-hero' => [
+                'section' => 'hero',
+                'title' => '🏁 Hero-Bereich',
+                'description' => 'Hauptüberschrift, CTA-Buttons, Ausrichtung und Farben des Einstiegsbereichs.',
+            ],
+            'hub-stats' => [
+                'section' => 'stats',
+                'title' => '📊 Kennzahlen',
+                'description' => 'Zähler-Kacheln, Beschriftungen, Zielseiten und Kachel-Design konfigurieren.',
+            ],
+            'hub-band' => [
+                'section' => 'band',
+                'title' => '🔎 Teaser & Suche',
+                'description' => 'Nächstes Event, Suche, Texte, Layout und visuelle Band-Darstellung steuern.',
+            ],
+            'hub-areas' => [
+                'section' => 'areas',
+                'title' => '🧭 Direkteinstieg',
+                'description' => 'Bereichskarten einzeln aktivieren, Inhalte pflegen und das Kartenraster gestalten.',
+            ],
+            'hub-toolbox' => [
+                'section' => 'toolbox',
+                'title' => '🧰 Toolbox',
+                'description' => 'Optionaler Tool-Bereich aus m365toolbox mit Limit, Link, Layout und Card-Design.',
+            ],
+        ];
+    }
+
+    private function is_hub_section_tab(string $tab): bool
+    {
+        return isset($this->hub_section_tabs()[$tab]);
+    }
+
+    private function hub_section_for_tab(string $tab): string
+    {
+        return (string) ($this->hub_section_tabs()[$tab]['section'] ?? 'featured');
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $rows
+     * @return array<int,array<string,mixed>>
+     */
+    private function hub_rows_for_section(array $rows, string $sectionKey): array
+    {
+        return array_values(array_filter($rows, static fn(array $row): bool => (string) ($row['section'] ?? '') === $sectionKey));
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $rows
+     */
+    private function render_hub_section_tab(string $sectionKey, array $rows): void
+    {
+        $tabs = $this->hub_section_tabs();
+        $activeMeta = null;
+        foreach ($tabs as $meta) {
+            if ($meta['section'] === $sectionKey) {
+                $activeMeta = $meta;
+                break;
+            }
+        }
+
+        $sectionRows = $this->hub_rows_for_section($rows, $sectionKey);
+        $groups = [
+            'activation' => [],
+            'content' => [],
+            'layout' => [],
+            'design' => [],
+        ];
+
+        foreach ($sectionRows as $row) {
+            $groups[$this->hub_field_group((string) ($row['setting_key'] ?? ''), (string) ($row['setting_type'] ?? 'text'))][] = $row;
+        }
+
+        echo '<section class="n365-admin-section n365-hub-section-tab">';
+        echo '<div class="n365-panel-header"><h3>' . htmlspecialchars((string) ($activeMeta['title'] ?? '🧭 Hub-Bereich'), ENT_QUOTES, 'UTF-8') . '</h3><p>' . htmlspecialchars((string) ($activeMeta['description'] ?? 'Diesen Bereich der öffentlichen 365NETWORK-Landingpage konfigurieren.'), ENT_QUOTES, 'UTF-8') . '</p></div>';
+        echo '<div class="alert n365-info-alert">ℹ️ Dieser Tab speichert nur diesen Bereich. Texte, Layout und Design werden direkt in der öffentlichen Hub-Ausgabe verwendet.</div>';
+
+        $groupLabels = [
+            'activation' => '✅ Aktivierung',
+            'content' => '📝 Texte & Inhalte',
+            'layout' => '📐 Layout',
+            'design' => '🎨 Design',
+        ];
+
+        foreach ($groupLabels as $groupKey => $label) {
+            if ($groups[$groupKey] === []) {
+                continue;
+            }
+
+            echo '<fieldset class="hub-admin-section hub-admin-group hub-admin-group--' . htmlspecialchars($groupKey, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<legend class="hub-admin-section-title">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</legend>';
+            echo '<div class="hub-admin-fields">';
+            foreach ($groups[$groupKey] as $field) {
+                $this->render_hub_setting_field($field);
+            }
+            echo '</div></fieldset>';
+        }
+
+        echo '</section>';
+    }
+
+    private function hub_field_group(string $key, string $type): string
+    {
+        if ($type === 'bool' || str_ends_with($key, '_visible')) {
+            return 'activation';
+        }
+
+        if ($type === 'color' || str_ends_with($key, '_radius') || str_contains($key, '_color')) {
+            return 'design';
+        }
+
+        if ($type === 'int' || str_ends_with($key, '_layout') || str_ends_with($key, '_style') || str_ends_with($key, '_width') || str_contains($key, 'limit')) {
+            return 'layout';
+        }
+
+        return 'content';
     }
 
     /**
@@ -430,7 +564,8 @@ final class CMS_365NETWORK_Admin
             }
 
             if ($type === 'int') {
-                $settings[$key] = (string) $this->clamp_int($value, 1, 50);
+                [$min, $max] = $this->hub_int_range($key);
+                $settings[$key] = (string) $this->clamp_int($value, $min, $max);
                 continue;
             }
 
@@ -439,8 +574,9 @@ final class CMS_365NETWORK_Admin
                 continue;
             }
 
-            if ($key === 'hub_featured_style') {
-                $settings[$key] = $this->enum($value, ['auto', 'text', 'image'], 'auto');
+            if ($type === 'select') {
+                $options = array_keys($this->hub_select_options($key));
+                $settings[$key] = $options === [] ? $this->clean_text($value) : $this->enum($value, $options, (string) ($row['setting_val'] ?? $options[0]));
                 continue;
             }
 
@@ -604,7 +740,8 @@ final class CMS_365NETWORK_Admin
 
     private function sanitize_tab(string $tab): string
     {
-        return in_array($tab, ['domain', 'hub', 'content', 'layout', 'sidebar', 'cards', 'analytics'], true) ? $tab : 'domain';
+        $allowed = array_merge(['domain', 'layout', 'sidebar', 'analytics'], array_keys($this->hub_section_tabs()));
+        return in_array($tab, $allowed, true) ? $tab : 'domain';
     }
 
     /**
@@ -635,15 +772,12 @@ final class CMS_365NETWORK_Admin
         } elseif ($type === 'textarea') {
             echo '<textarea id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" rows="3">' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '</textarea>';
         } elseif ($type === 'int') {
-            echo '<input type="number" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" value="' . (int) $value . '" min="1" max="50">';
+            [$min, $max] = $this->hub_int_range($key);
+            echo '<input type="number" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" value="' . (int) $value . '" min="' . (int) $min . '" max="' . (int) $max . '">';
         } elseif ($type === 'color') {
             echo '<input type="color" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars($this->hex_color($value, '#000000'), ENT_QUOTES, 'UTF-8') . '">';
-        } elseif ($type === 'select' && $key === 'hub_featured_style') {
-            $options = [
-                'auto' => 'Automatisch (Bild nur wenn URL gesetzt)',
-                'text' => 'Einspaltig ohne Bild',
-                'image' => 'Zweispaltig mit Bild',
-            ];
+        } elseif ($type === 'select') {
+            $options = $this->hub_select_options($key);
             echo '<select id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '">';
             foreach ($options as $optionValue => $optionLabel) {
                 $selected = $optionValue === $value ? ' selected' : '';
@@ -655,6 +789,67 @@ final class CMS_365NETWORK_Admin
         }
 
         echo '</div>';
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    private function hub_select_options(string $key): array
+    {
+        return match ($key) {
+            'hub_featured_style' => [
+                'auto' => 'Automatisch (Bild nur wenn URL gesetzt)',
+                'text' => 'Einspaltig ohne Bild',
+                'image' => 'Zweispaltig mit Bild',
+            ],
+            'hub_featured_width' => [
+                'full' => 'Volle Breite',
+                'compact' => 'Kompakt zentriert',
+            ],
+            'hub_hero_layout' => [
+                'left' => 'Links ausgerichtet',
+                'center' => 'Zentriert',
+            ],
+            'hub_stats_layout' => [
+                'grid' => '4er Grid',
+                'compact' => 'Kompakt',
+                'inline' => 'Inline-Reihe',
+            ],
+            'hub_band_layout' => [
+                'split' => 'Zwei Spalten',
+                'stack' => 'Unter jede andere',
+            ],
+            'hub_areas_layout' => [
+                'grid-2x2' => '2 × 2 Grid',
+                'grid-4x1' => '4er Reihe',
+                'auto' => 'Automatisch responsiv',
+            ],
+            'hub_areas_card_style' => [
+                'icon-corner' => 'Icon-Ecke',
+                'plain' => 'Ruhig/flach',
+            ],
+            'hub_toolbox_layout' => [
+                'grid' => '3er Grid',
+                'compact' => 'Kompakte Liste',
+            ],
+            default => [],
+        };
+    }
+
+    /**
+     * @return array{0:int,1:int}
+     */
+    private function hub_int_range(string $key): array
+    {
+        if (str_ends_with($key, '_radius')) {
+            return [0, 40];
+        }
+
+        if ($key === 'hub_toolbox_limit') {
+            return [1, 50];
+        }
+
+        return [1, 50];
     }
 
     private function clean_text(string $value): string

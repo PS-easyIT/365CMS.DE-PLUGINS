@@ -69,9 +69,15 @@ body:has(#cms-365network) .page-wrap {
 .cms-network-hub-wrap .hub-featured {
     overflow: hidden;
     border: 1px solid var(--hub-border);
-    border-radius: var(--hub-radius);
+    border-radius: var(--n365-featured-radius, var(--hub-radius));
     margin-bottom: 16px;
-    background: var(--hub-card-bg);
+    background: var(--n365-featured-bg, var(--hub-card-bg));
+    color: var(--n365-featured-text, var(--hub-text));
+}
+
+.cms-network-hub-wrap .hub-featured--width-compact {
+    max-width: 860px;
+    margin-inline: auto;
 }
 
 .cms-network-hub-wrap .hub-featured--text {
@@ -95,13 +101,13 @@ body:has(#cms-365network) .page-wrap {
     bottom: 0;
     left: 0;
     width: 4px;
-    border-radius: var(--hub-radius) 0 0 var(--hub-radius);
-    background: var(--hub-gold);
+    border-radius: var(--n365-featured-radius, var(--hub-radius)) 0 0 var(--n365-featured-radius, var(--hub-radius));
+    background: var(--n365-featured-accent, var(--hub-gold));
 }
 
 .cms-network-hub-wrap .hub-featured-img-wrap {
     overflow: hidden;
-    border-radius: var(--hub-radius) 0 0 var(--hub-radius);
+    border-radius: var(--n365-featured-radius, var(--hub-radius)) 0 0 var(--n365-featured-radius, var(--hub-radius));
 }
 
 .cms-network-hub-wrap .hub-featured-img-wrap img {
@@ -122,7 +128,7 @@ body:has(#cms-365network) .page-wrap {
 .cms-network-hub-wrap .hub-featured-label {
     display: block;
     margin-bottom: 8px;
-    color: var(--hub-gold);
+    color: var(--n365-featured-accent, var(--hub-gold));
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.08em;
@@ -131,7 +137,7 @@ body:has(#cms-365network) .page-wrap {
 
 .cms-network-hub-wrap .hub-featured-title {
     margin: 0 0 10px;
-    color: var(--hub-navy);
+    color: var(--n365-featured-text, var(--hub-navy));
     font-family: Poppins, var(--phinit-font-display, inherit);
     font-size: 20px;
     font-weight: 700;
@@ -140,7 +146,7 @@ body:has(#cms-365network) .page-wrap {
 
 .cms-network-hub-wrap .hub-featured-sub {
     margin: 0 0 16px;
-    color: var(--hub-muted);
+    color: var(--n365-featured-text, var(--hub-muted));
     font-size: 14px;
     line-height: 1.6;
 }
@@ -149,7 +155,7 @@ body:has(#cms-365network) .page-wrap {
     display: inline-flex;
     gap: 6px;
     align-items: center;
-    color: var(--hub-gold);
+    color: var(--n365-featured-accent, var(--hub-gold));
     font-size: 13px;
     font-weight: 600;
     text-decoration: none;
@@ -181,13 +187,29 @@ body:has(#cms-365network) .page-wrap {
 
 .cms-network-hub-wrap .n365-hero__content {
     padding: clamp(28px, 4vw, 44px);
+    border-radius: var(--n365-hero-radius, var(--hub-radius));
+    background: var(--n365-hero-bg, var(--hub-card-bg));
+    color: var(--n365-hero-text, var(--hub-text));
+}
+
+.cms-network-hub-wrap .n365-hero--layout-center .n365-hero__content {
+    text-align: center;
+}
+
+.cms-network-hub-wrap .n365-hero--layout-center .n365-hero__content h1,
+.cms-network-hub-wrap .n365-hero--layout-center .hub-sub {
+    margin-inline: auto;
+}
+
+.cms-network-hub-wrap .n365-hero--layout-center .hub-cta-row {
+    justify-content: center;
 }
 
 .cms-network-hub-wrap .hub-label,
 .cms-network-hub-wrap .hub-section-label,
 .cms-network-hub-wrap .n365-kicker {
     margin: 0 0 12px;
-    color: var(--hub-gold);
+    color: var(--n365-hero-accent, var(--hub-gold));
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.08em;
@@ -201,7 +223,7 @@ body:has(#cms-365network) .page-wrap {
 .cms-network-hub-wrap .n365-hero h1 {
     max-width: 780px;
     margin: 0 0 10px;
-    color: var(--hub-navy);
+    color: var(--n365-hero-text, var(--hub-navy));
     font-family: Poppins, var(--phinit-font-display, inherit);
     font-size: 32px;
     font-weight: 700;
@@ -211,7 +233,7 @@ body:has(#cms-365network) .page-wrap {
 .cms-network-hub-wrap .hub-sub {
     max-width: 68ch;
     margin: 0 0 24px;
-    color: var(--hub-muted);
+    color: var(--n365-hero-text, var(--hub-muted));
     font-size: 15px;
     line-height: 1.5;
 }
@@ -266,6 +288,20 @@ body:has(#cms-365network) .page-wrap {
     gap: 12px;
 }
 
+.cms-network-hub-wrap .hub-stats-grid--compact {
+    grid-template-columns: repeat(4, minmax(96px, 1fr));
+    gap: 8px;
+}
+
+.cms-network-hub-wrap .hub-stats-grid--inline {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.cms-network-hub-wrap .hub-stats-grid--inline .hub-stat-card {
+    flex: 1 1 150px;
+}
+
 .cms-network-hub-wrap .hub-stat-card {
     display: flex;
     flex-direction: column;
@@ -273,9 +309,9 @@ body:has(#cms-365network) .page-wrap {
     gap: 4px;
     padding: 16px 12px;
     border: 1px solid var(--hub-border);
-    border-radius: var(--hub-radius);
-    background: var(--hub-subtle-bg);
-    color: var(--hub-text);
+    border-radius: var(--n365-stats-radius, var(--hub-radius));
+    background: var(--n365-stats-bg, var(--hub-subtle-bg));
+    color: var(--n365-stats-text, var(--hub-text));
     text-align: center;
     text-decoration: none;
     transition: background 150ms ease, border-color 150ms ease, transform 140ms ease;
@@ -283,19 +319,19 @@ body:has(#cms-365network) .page-wrap {
 
 .cms-network-hub-wrap .hub-stat-card:hover,
 .cms-network-hub-wrap .hub-stat-card:focus-visible {
-    border-color: var(--hub-gold);
+    border-color: var(--n365-stats-accent, var(--hub-gold));
     background: var(--hub-card-bg);
     transform: translateY(-1px);
 }
 
 .cms-network-hub-wrap .hub-stat-card i {
     margin-bottom: 2px;
-    color: var(--hub-gold);
+    color: var(--n365-stats-accent, var(--hub-gold));
     font-size: 22px;
 }
 
 .cms-network-hub-wrap .hub-stat-number {
-    color: var(--hub-navy);
+    color: var(--n365-stats-text, var(--hub-navy));
     font-size: 28px;
     font-weight: 700;
     line-height: 1;
@@ -343,6 +379,10 @@ body:has(#cms-365network) .page-wrap {
     margin-bottom: 28px;
 }
 
+.cms-network-hub-wrap .hub-band--layout-stack {
+    grid-template-columns: 1fr;
+}
+
 .cms-network-hub-wrap .hub-band--search-only {
     grid-template-columns: 1fr;
 }
@@ -355,20 +395,20 @@ body:has(#cms-365network) .page-wrap {
     gap: 8px;
     padding: 18px 20px;
     border: 1px solid var(--hub-border);
-    border-radius: var(--hub-radius);
-    background: var(--hub-card-bg);
+    border-radius: var(--n365-band-radius, var(--hub-radius));
+    background: var(--n365-band-bg, var(--hub-card-bg));
     color: inherit;
     text-decoration: none;
     transition: border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .cms-network-hub-wrap .hub-band-card--event {
-    border-left: 3px solid var(--hub-gold);
+    border-left: 3px solid var(--n365-band-accent, var(--hub-gold));
 }
 
 .cms-network-hub-wrap .hub-band-card--event:hover,
 .cms-network-hub-wrap .hub-band-card--event:focus-visible {
-    border-color: var(--hub-gold);
+    border-color: var(--n365-band-accent, var(--hub-gold));
     box-shadow: 0 4px 14px rgb(0 0 0 / 0.08);
 }
 
@@ -380,7 +420,7 @@ body:has(#cms-365network) .page-wrap {
     display: inline-flex;
     gap: 5px;
     align-items: center;
-    color: var(--hub-gold);
+    color: var(--n365-band-accent, var(--hub-gold));
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.07em;
@@ -396,7 +436,7 @@ body:has(#cms-365network) .page-wrap {
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
-    color: var(--hub-navy);
+    color: var(--n365-band-text, var(--hub-navy));
     font-size: 15px;
     font-weight: 600;
     line-height: 1.35;
@@ -420,7 +460,7 @@ body:has(#cms-365network) .page-wrap {
     gap: 5px;
     align-items: center;
     margin-top: 4px;
-    color: var(--hub-gold);
+    color: var(--n365-band-accent, var(--hub-gold));
     font-size: 13px;
     font-weight: 600;
     transition: color 150ms ease;
@@ -452,7 +492,7 @@ body:has(#cms-365network) .page-wrap {
 }
 
 .cms-network-hub-wrap .hub-search-input-row:focus-within {
-    border-color: var(--hub-gold);
+    border-color: var(--n365-band-accent, var(--hub-gold));
 }
 
 .cms-network-hub-wrap .hub-search-input-row input {
@@ -479,7 +519,7 @@ body:has(#cms-365network) .page-wrap {
     align-items: center;
     justify-content: center;
     border: none;
-    background: var(--hub-gold);
+    background: var(--n365-band-accent, var(--hub-gold));
     color: var(--hub-navy);
     cursor: pointer;
     transition: background 150ms ease;
@@ -565,9 +605,13 @@ body:has(#cms-365network) .page-wrap {
     margin-bottom: 0;
 }
 
+.cms-network-hub-wrap .n365-section-head .hub-section-label {
+    color: var(--n365-areas-accent, var(--hub-gold));
+}
+
 .cms-network-hub-wrap .hub-section-title {
     margin: 0 0 24px;
-    color: var(--hub-navy);
+    color: var(--n365-areas-text, var(--hub-navy));
     font-family: Poppins, var(--phinit-font-display, inherit);
     font-size: 22px;
     font-weight: 700;
@@ -580,6 +624,14 @@ body:has(#cms-365network) .page-wrap {
     gap: 16px;
 }
 
+.cms-network-hub-wrap .hub-areas-grid--grid-4x1 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.cms-network-hub-wrap .hub-areas-grid--auto {
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
 .cms-network-hub-wrap .hub-area-card {
     position: relative;
     display: flex;
@@ -589,9 +641,9 @@ body:has(#cms-365network) .page-wrap {
     overflow: hidden;
     padding: 20px;
     border: 1px solid var(--hub-border);
-    border-radius: 10px;
-    background: var(--hub-card-bg);
-    color: var(--hub-text);
+    border-radius: var(--n365-areas-radius, 10px);
+    background: var(--n365-areas-bg, var(--hub-card-bg));
+    color: var(--n365-areas-text, var(--hub-text));
     cursor: pointer;
     text-decoration: none;
     transition: border-color 180ms ease, box-shadow 180ms ease, transform 150ms ease;
@@ -599,7 +651,7 @@ body:has(#cms-365network) .page-wrap {
 
 .cms-network-hub-wrap .hub-area-card:hover,
 .cms-network-hub-wrap .hub-area-card:focus-visible {
-    border-color: var(--hub-gold);
+    border-color: var(--n365-areas-accent, var(--hub-gold));
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.09);
     transform: translateY(-2px);
 }
@@ -630,9 +682,24 @@ body:has(#cms-365network) .page-wrap {
     transition: background 180ms ease, transform 180ms ease;
 }
 
+.cms-network-hub-wrap .hub-areas-grid--style-plain .hub-area-icon-wrap {
+    position: static;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 22px;
+    border-radius: var(--n365-areas-radius, 10px);
+    transform: none;
+}
+
+.cms-network-hub-wrap .hub-areas-grid--style-plain .hub-area-icon-wrap i,
+.cms-network-hub-wrap .hub-areas-grid--style-plain .hub-area-card:hover .hub-area-icon-wrap i,
+.cms-network-hub-wrap .hub-areas-grid--style-plain .hub-area-card:focus-visible .hub-area-icon-wrap i {
+    transform: none;
+}
+
 .cms-network-hub-wrap .hub-area-card:hover .hub-area-icon-wrap,
 .cms-network-hub-wrap .hub-area-card:focus-visible .hub-area-icon-wrap {
-    background: var(--hub-gold);
+    background: var(--n365-areas-accent, var(--hub-gold));
     transform: rotate(10deg);
 }
 
@@ -668,7 +735,7 @@ body:has(#cms-365network) .page-wrap {
 
 .cms-network-hub-wrap .hub-area-title {
     margin: 0 0 8px;
-    color: var(--hub-navy);
+    color: var(--n365-areas-text, var(--hub-navy));
     font-size: 18px;
     font-weight: 700;
     line-height: 1.2;
@@ -699,7 +766,7 @@ body:has(#cms-365network) .page-wrap {
     display: inline-flex;
     gap: 5px;
     align-items: center;
-    color: var(--hub-gold);
+    color: var(--n365-areas-accent, var(--hub-gold));
     font-size: 13px;
     font-weight: 600;
     transition: color 150ms ease;
@@ -736,7 +803,12 @@ body:has(#cms-365network) .page-wrap {
 
 .cms-network-hub-wrap .hub-toolbox-header .hub-section-title {
     margin-bottom: 0;
+    color: var(--n365-toolbox-text, var(--hub-navy));
     font-size: 20px;
+}
+
+.cms-network-hub-wrap .hub-toolbox .hub-section-label {
+    color: var(--n365-toolbox-accent, var(--hub-gold));
 }
 
 .cms-network-hub-wrap .hub-section-label i {
@@ -758,7 +830,7 @@ body:has(#cms-365network) .page-wrap {
 
 .cms-network-hub-wrap .hub-toolbox-all:hover,
 .cms-network-hub-wrap .hub-toolbox-all:focus-visible {
-    color: var(--hub-gold);
+    color: var(--n365-toolbox-accent, var(--hub-gold));
 }
 
 .cms-network-hub-wrap .hub-toolbox-all i {
@@ -777,6 +849,10 @@ body:has(#cms-365network) .page-wrap {
     gap: 10px;
 }
 
+.cms-network-hub-wrap .hub-toolbox-grid--compact {
+    grid-template-columns: 1fr;
+}
+
 .cms-network-hub-wrap .hub-toolbox-card {
     display: flex;
     gap: 12px;
@@ -784,16 +860,16 @@ body:has(#cms-365network) .page-wrap {
     min-width: 0;
     padding: 12px 14px;
     border: 1px solid var(--hub-border);
-    border-radius: var(--hub-radius);
-    background: var(--hub-card-bg);
-    color: var(--hub-text);
+    border-radius: var(--n365-toolbox-radius, var(--hub-radius));
+    background: var(--n365-toolbox-bg, var(--hub-card-bg));
+    color: var(--n365-toolbox-text, var(--hub-text));
     text-decoration: none;
     transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
 }
 
 .cms-network-hub-wrap .hub-toolbox-card:hover,
 .cms-network-hub-wrap .hub-toolbox-card:focus-visible {
-    border-color: var(--hub-gold);
+    border-color: var(--n365-toolbox-accent, var(--hub-gold));
     background: #fffdf5;
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07);
 }
@@ -838,7 +914,7 @@ body:has(#cms-365network) .page-wrap {
 
 .cms-network-hub-wrap .hub-toolbox-label {
     overflow: hidden;
-    color: var(--hub-navy);
+    color: var(--n365-toolbox-text, var(--hub-navy));
     font-size: 13px;
     font-weight: 600;
     text-overflow: ellipsis;
@@ -862,7 +938,7 @@ body:has(#cms-365network) .page-wrap {
 
 .cms-network-hub-wrap .hub-toolbox-card:hover .hub-toolbox-external,
 .cms-network-hub-wrap .hub-toolbox-card:focus-visible .hub-toolbox-external {
-    color: var(--hub-gold);
+    color: var(--n365-toolbox-accent, var(--hub-gold));
 }
 
 .cms-network-hub-wrap .n365-sidebar__sticky {

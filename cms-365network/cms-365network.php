@@ -3,7 +3,7 @@
  * Plugin Name: CMS 365NETWORK
  * Plugin URI: https://365network.de/cms-365network
  * Description: Domainbasierte 365network-HubSite/Landingpage mit konfigurierbarem Layout für Events, Speaker, Firmen und Experten.
- * Version: 1.0.14
+ * Version: 1.0.15
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_365NETWORK_VERSION', '1.0.14');
+define('CMS_365NETWORK_VERSION', '1.0.15');
 define('CMS_365NETWORK_PLUGIN_DIR', function_exists('cms_plugin_path') ? rtrim((string) cms_plugin_path('cms-365network'), '/\\') . DIRECTORY_SEPARATOR : dirname(__FILE__) . '/');
 define('CMS_365NETWORK_PLUGIN_URL', function_exists('cms_plugin_url') ? rtrim((string) cms_plugin_url('cms-365network'), '/') . '/' : '/plugins/cms-365network/');
 

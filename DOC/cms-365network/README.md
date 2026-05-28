@@ -1,6 +1,6 @@
 # CMS 365NETWORK
 
-**Version:** 1.0.14
+**Version:** 1.0.15
 **Status:** Domainbasierte HubSite/Landingpage für Netzwerk-Portale.
 
 CMS 365NETWORK stellt eine eigene Landingpage bereit, die auf einer konfigurierten Zusatzdomain direkt als Root-Seite erscheinen kann. Sie bündelt vier zentrale Bereiche des Netzwerks:
@@ -16,7 +16,8 @@ Zusätzlich gibt es eine interne Vorschau-Route, standardmäßig `/365network`.
 
 - Zusatzdomain-Mapping ohne Core-Anpassung: Root-Aufruf der Domain zeigt die Landingpage.
 - Moderne HubSite mit Hero-Bereich, klickbaren Metric-Cards, Featured Card und vier Bereichskarten.
-- Admin-Tab `Hub` zur zentralen Steuerung von Featured Card, Hero, Kennzahlen, Teaser-Band, Direkteinstieg und Toolbox.
+- Eigene Admin-Tabs für Featured Card, Hero, Kennzahlen, Teaser-Band/Suche, Direkteinstieg und Toolbox.
+- Jeder Hub-Bereich hat Aktivierung, Text-/Content-, Layout- und Design-Settings mit direkter Public-Wirkung.
 - Kompakte Landingpage-Suche und `Nächstes Event`-Teaser für konkrete Einstiegspunkte.
 - No-Sidebar-Layout mit breiter Featured Card, dezentem Featured-Inset und überarbeiteten Bereichskarten.
 - PHINIT-konformes Navy/Gold-Redesign ohne Electric-Blue-Akzente auf der Landingpage.
@@ -33,6 +34,7 @@ Zusätzlich gibt es eine interne Vorschau-Route, standardmäßig `/365network`.
 
 ## Aktueller Audit-Stand
 
+- **1.0.15:** Admin-UX: Hub-Bereiche sind eigene Tabs mit Aktivierung, Text-/Content-, Layout- und Design-Settings; Public-Ausgabe nutzt die neuen Werte direkt über Klassen und CSS-Variablen.
 - **1.0.14:** Audit-Fix: Core-kompatible Toolbox-Aktivprüfung ohne direkte Plugin-Tabellenprüfung, HTTP(S)-Only Featured-Bilder, request-lokaler Settings-Cache und kein Inline-onclick in leeren Bereichskacheln.
 - **1.0.13:** Featured Card steht als erste Hub-Komponente vor dem Hero; ohne Bild nutzt sie eine kompakte einspaltige Textvariante statt leerem Placeholder.
 - **1.0.12:** Hub-Bereiche über `cms_network_hub_settings` typisiert administrierbar; Public-Ausgabe nutzt Sichtbarkeit, Texte, URLs, Icons, Suchparameter und Toolbox-Limit aus den Settings.

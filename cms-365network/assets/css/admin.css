@@ -167,7 +167,7 @@
 }
 
 .hub-admin-form {
-    max-width: 720px;
+    max-width: 980px;
 }
 
 .hub-admin-form .n365-info-alert {
@@ -184,8 +184,26 @@
     background: #ffffff;
 }
 
+.hub-admin-group {
+    min-width: 0;
+}
+
+.hub-admin-group--activation {
+    background: #f8fafc;
+}
+
+.hub-admin-group--design .hub-admin-fields {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.hub-admin-group--design .hub-admin-field {
+    grid-template-columns: 1fr;
+    gap: 6px;
+}
+
 .hub-admin-section-title {
-    padding-bottom: 10px;
+    width: 100%;
+    padding: 0 0 10px;
     border-bottom: 1px solid #dce3ec;
     margin: 0 0 16px;
     color: #1a2e4a;
@@ -194,8 +212,7 @@
 }
 
 .hub-admin-fields {
-    display: flex;
-    flex-direction: column;
+    display: grid;
     gap: 14px;
 }
 
@@ -231,6 +248,10 @@
     width: 56px;
     min-height: 38px;
     padding: 2px;
+}
+
+.hub-admin-field select {
+    cursor: pointer;
 }
 
 .hub-admin-field input[type='text']:focus,

@@ -1,5 +1,13 @@
 # Changelog – CMS 365NETWORK
 
+## 1.0.15 – 2026-05-28
+
+- Hub-Sammel-Tab in konsistente eigene Bereichs-Tabs aufgeteilt: Featured Card, Hero, Kennzahlen, Teaser & Suche, Direkteinstieg und Toolbox.
+- Jeder Bereich besitzt jetzt eigene Aktivierungs-, Text-/Content-, Layout- und Design-Gruppen im Adminbereich.
+- Neue typisierte Hub-Settings für Layouts, Labels, Suchtexte, Stat-Labels, Kartenstile, Farben und Rundungen ergänzt.
+- Public-Landingpage nutzt die neuen Settings direkt über CSS-Variablen und Modifier-Klassen; Änderungen wirken ohne ungenutzte Admin-Felder.
+- Seitenlayout, Sidebar und Analytics bleiben als eigene übergreifende Tabs erhalten.
+
 ## 1.0.14 – 2026-05-28
 
 - Toolbox-Aktivierung auf Core-Statusprüfung über `cms_plugin_active()`/`CMS\PluginManager` begrenzt; direkte Plugin-Tabellenprüfung entfernt.

@@ -32,6 +32,10 @@ $hubValue = static function (string $key, string $default = '') use ($hubSetting
     $value = trim((string) ($hubSettings[$key] ?? ''));
     return $value !== '' ? $value : $default;
 };
+$hubChoice = static function (string $key, string $default, array $allowed) use ($hubSettings): string {
+    $value = trim((string) ($hubSettings[$key] ?? $default));
+    return in_array($value, $allowed, true) ? $value : $default;
+};
 $safeUrl = static function (mixed $value): string {
     $url = trim((string) $value);
     if ($url === '') {
@@ -132,6 +136,7 @@ $secondaryUrl = $safeUrl($hubValue('hub_hero_btn2_url', (string) ($settings['sec
 $featuredVisible = $hubEnabled('hub_featured_visible');
 $featuredStyleSetting = $hubValue('hub_featured_style', 'auto');
 $featuredStyleSetting = in_array($featuredStyleSetting, ['auto', 'text', 'image'], true) ? $featuredStyleSetting : 'auto';
+$featuredWidth = $hubChoice('hub_featured_width', 'full', ['full', 'compact']);
 $featuredLabel = $hubValue('hub_featured_label', 'Featured');
 $featuredTitle = $hubValue('hub_featured_title', (string) ($settings['featured_title'] ?? ''));
 $featuredSub = $hubValue('hub_featured_sub', (string) ($settings['featured_text'] ?? ''));
@@ -139,8 +144,14 @@ $featuredBtnLabel = $hubValue('hub_featured_btn_label', 'Mehr erfahren');
 $featuredBtnUrl = $safeUrl($hubSettings['hub_featured_btn_url'] ?? '');
 $featuredImage = $safeImage($hubSettings['hub_featured_image_url'] ?? '');
 $featuredHasImage = $featuredImage !== '' && $featuredStyleSetting !== 'text';
-$featuredClass = 'hub-featured ' . ($featuredHasImage ? 'hub-featured--image' : 'hub-featured--text');
+$featuredClass = 'hub-featured hub-featured--width-' . $featuredWidth . ' ' . ($featuredHasImage ? 'hub-featured--image' : 'hub-featured--text');
 $featuredHasContent = $featuredVisible && ($featuredTitle !== '' || $featuredSub !== '');
+$heroLayout = $hubChoice('hub_hero_layout', 'left', ['left', 'center']);
+$statsLayout = $hubChoice('hub_stats_layout', 'grid', ['grid', 'compact', 'inline']);
+$bandLayout = $hubChoice('hub_band_layout', 'split', ['split', 'stack']);
+$areasLayout = $hubChoice('hub_areas_layout', $layout, ['grid-2x2', 'grid-4x1', 'auto']);
+$areasCardStyle = $hubChoice('hub_areas_card_style', 'icon-corner', ['icon-corner', 'plain']);
+$toolboxLayout = $hubChoice('hub_toolbox_layout', 'grid', ['grid', 'compact']);
 $belowPreviews = $previewPlacement === 'below';
 $countEvents = (int) ($stats['events'] ?? 0);
 $countSpeakers = (int) ($stats['speakers'] ?? 0);
@@ -182,11 +193,16 @@ $eventBandDate = static function (array $event) use ($eventDate): string {
 $searchUrl = $safeUrl($hubValue('hub_band_search_url', (string) ($settings['search_url'] ?? '/search')));
 $searchParam = trim((string) preg_replace('/[^a-zA-Z0-9_-]+/', '', $hubValue('hub_band_search_param', 'q')));
 $searchParam = $searchParam !== '' ? $searchParam : 'q';
+$bandEventLabel = $hubValue('hub_band_event_label', 'Nächstes Event');
+$bandEventCta = $hubValue('hub_band_event_cta', 'Zum Event');
+$bandSearchLabel = $hubValue('hub_band_search_label', 'Netzwerk durchsuchen');
+$bandSearchTitle = $hubValue('hub_band_search_title', 'Events, Speaker, Firmen und Experten finden');
+$bandSearchPlaceholder = $hubValue('hub_band_search_placeholder', 'Suchbegriff eingeben ...');
 $hubStats = [
-    ['key' => 'events', 'href' => $safeUrl($hubValue('hub_stats_events_url', (string) ($areaByKey['events']['url'] ?? '/events'))), 'icon' => 'calendar-event', 'count' => $countEvents, 'label' => 'Events'],
-    ['key' => 'speakers', 'href' => $safeUrl($hubValue('hub_stats_speakers_url', (string) ($areaByKey['speakers']['url'] ?? '/speaker'))), 'icon' => 'microphone', 'count' => $countSpeakers, 'label' => 'Speaker'],
-    ['key' => 'companies', 'href' => $safeUrl($hubValue('hub_stats_companies_url', (string) ($areaByKey['companies']['url'] ?? '/firmen'))), 'icon' => 'building', 'count' => $countCompanies, 'label' => 'Firmen'],
-    ['key' => 'experts', 'href' => $safeUrl($hubValue('hub_stats_experts_url', (string) ($areaByKey['experts']['url'] ?? '/experten'))), 'icon' => 'users', 'count' => $countExperts, 'label' => 'Experten'],
+    ['key' => 'events', 'href' => $safeUrl($hubValue('hub_stats_events_url', (string) ($areaByKey['events']['url'] ?? '/events'))), 'icon' => 'calendar-event', 'count' => $countEvents, 'label' => $hubValue('hub_stats_events_label', 'Events')],
+    ['key' => 'speakers', 'href' => $safeUrl($hubValue('hub_stats_speakers_url', (string) ($areaByKey['speakers']['url'] ?? '/speaker'))), 'icon' => 'microphone', 'count' => $countSpeakers, 'label' => $hubValue('hub_stats_speakers_label', 'Speaker')],
+    ['key' => 'companies', 'href' => $safeUrl($hubValue('hub_stats_companies_url', (string) ($areaByKey['companies']['url'] ?? '/firmen'))), 'icon' => 'building', 'count' => $countCompanies, 'label' => $hubValue('hub_stats_companies_label', 'Firmen')],
+    ['key' => 'experts', 'href' => $safeUrl($hubValue('hub_stats_experts_url', (string) ($areaByKey['experts']['url'] ?? '/experten'))), 'icon' => 'users', 'count' => $countExperts, 'label' => $hubValue('hub_stats_experts_label', 'Experten')],
 ];
 $hubAreas = [
     [
@@ -267,7 +283,7 @@ $mainContentVisible = ($areasVisible && $hubAreas !== []) || ($toolboxVisible &&
         <?php endif; ?>
 
         <?php if ($heroVisible): ?>
-        <header class="n365-hero">
+        <header class="n365-hero n365-hero--layout-<?php echo $esc($heroLayout); ?>">
             <div class="n365-hero__content">
                 <?php if ($eyebrow !== ''): ?>
                 <p class="hub-label"><?php echo $esc($eyebrow); ?></p>
@@ -283,7 +299,7 @@ $mainContentVisible = ($areasVisible && $hubAreas !== []) || ($toolboxVisible &&
                     <?php endif; ?>
                 </nav>
                 <?php if ($statsVisible): ?>
-                <div class="hub-stats-grid" aria-label="Netzwerk Kennzahlen">
+                <div class="hub-stats-grid hub-stats-grid--<?php echo $esc($statsLayout); ?>" aria-label="Netzwerk Kennzahlen">
                     <?php foreach ($hubStats as $hubStat): ?>
                     <a href="<?php echo $esc($hubStat['href']); ?>" class="hub-stat-card">
                         <i class="ti ti-<?php echo $esc($hubStat['icon']); ?>" aria-hidden="true"></i>
@@ -298,21 +314,21 @@ $mainContentVisible = ($areasVisible && $hubAreas !== []) || ($toolboxVisible &&
         <?php endif; ?>
 
         <?php if ($renderBand): ?>
-        <section class="hub-band<?php echo (!$eventBandVisible || $nextEvent === null) ? ' hub-band--search-only' : ''; ?>" aria-label="Netzwerk Suche und aktueller Hinweis">
+        <section class="hub-band hub-band--layout-<?php echo $esc($bandLayout); ?><?php echo (!$eventBandVisible || $nextEvent === null) ? ' hub-band--search-only' : ''; ?>" aria-label="Netzwerk Suche und aktueller Hinweis">
             <?php if ($eventBandVisible && $nextEvent !== null): ?>
             <a href="<?php echo $esc($nextEventUrl); ?>" class="hub-band-card hub-band-card--event">
-                <span class="hub-band-label"><i class="ti ti-clock" aria-hidden="true"></i> Nächstes Event</span>
+                <span class="hub-band-label"><i class="ti ti-clock" aria-hidden="true"></i> <?php echo $esc($bandEventLabel); ?></span>
                 <span class="hub-band-title"><?php echo $esc($nextEvent['title'] ?? 'Event ansehen'); ?></span>
                 <span class="hub-band-meta"><?php echo $esc($eventBandDate($nextEvent)); ?><?php echo $nextEventLocation !== '' ? ' · ' . $esc($nextEventLocation) : ''; ?></span>
-                <span class="hub-band-cta">Zum Event <i class="ti ti-arrow-right" aria-hidden="true"></i></span>
+                <span class="hub-band-cta"><?php echo $esc($bandEventCta); ?> <i class="ti ti-arrow-right" aria-hidden="true"></i></span>
             </a>
             <?php endif; ?>
             <?php if ($searchBandVisible): ?>
             <form class="hub-band-card hub-band-card--search" role="search" method="GET" action="<?php echo $esc($searchUrl); ?>" aria-label="Netzwerk durchsuchen">
-                <span class="hub-band-label"><i class="ti ti-search" aria-hidden="true"></i> Netzwerk durchsuchen</span>
-                <span class="hub-band-title hub-band-title--search">Events, Speaker, Firmen und Experten finden</span>
+                <span class="hub-band-label"><i class="ti ti-search" aria-hidden="true"></i> <?php echo $esc($bandSearchLabel); ?></span>
+                <span class="hub-band-title hub-band-title--search"><?php echo $esc($bandSearchTitle); ?></span>
                 <div class="hub-search-input-row">
-                    <input id="hub-search-input" name="<?php echo $esc($searchParam); ?>" type="search" placeholder="Suchbegriff eingeben ..." autocomplete="off" aria-label="Suchbegriff">
+                    <input id="hub-search-input" name="<?php echo $esc($searchParam); ?>" type="search" placeholder="<?php echo $esc($bandSearchPlaceholder); ?>" autocomplete="off" aria-label="Suchbegriff">
                     <button type="submit" id="hub-search-btn" aria-label="Suche starten"><i class="ti ti-arrow-right" aria-hidden="true"></i></button>
                 </div>
             </form>
@@ -329,7 +345,7 @@ $mainContentVisible = ($areasVisible && $hubAreas !== []) || ($toolboxVisible &&
                     <h2 class="hub-section-title" id="n365-areas-title"><?php echo $esc($hubValue('hub_areas_title', 'Vier Bereiche, ein Netzwerk')); ?></h2>
                 </div>
 
-                <div class="hub-areas-grid" id="n365-areas">
+                <div class="hub-areas-grid hub-areas-grid--<?php echo $esc($areasLayout); ?> hub-areas-grid--style-<?php echo $esc($areasCardStyle); ?>" id="n365-areas">
                     <?php foreach ($hubAreas as $hubArea): ?>
                     <a href="<?php echo empty($hubArea['available']) ? '#' : $esc($hubArea['href']); ?>" class="hub-area-card hub-area-card--<?php echo $esc($hubArea['key']); ?><?php echo empty($hubArea['available']) ? ' hub-area-card--empty' : ''; ?>"<?php echo empty($hubArea['available']) ? ' aria-disabled="true" tabindex="-1"' : ''; ?>>
                         <div class="hub-area-icon-wrap" aria-hidden="true"><i class="ti <?php echo $esc($hubArea['icon']); ?>"></i></div>
@@ -348,7 +364,7 @@ $mainContentVisible = ($areasVisible && $hubAreas !== []) || ($toolboxVisible &&
                 <?php endif; ?>
 
                 <?php if ($toolboxVisible && $toolboxTools !== []): ?>
-                <section class="hub-toolbox" aria-labelledby="n365-toolbox-title">
+                <section class="hub-toolbox hub-toolbox--layout-<?php echo $esc($toolboxLayout); ?>" aria-labelledby="n365-toolbox-title">
                     <div class="hub-toolbox-header">
                         <div>
                             <p class="hub-section-label"><i class="ti ti-tools" aria-hidden="true"></i> <?php echo $esc($toolboxLabel); ?></p>
@@ -362,7 +378,7 @@ $mainContentVisible = ($areasVisible && $hubAreas !== []) || ($toolboxVisible &&
                         <?php endif; ?>
                     </div>
 
-                    <div class="hub-toolbox-grid">
+                    <div class="hub-toolbox-grid hub-toolbox-grid--<?php echo $esc($toolboxLayout); ?>">
                         <?php foreach ($toolboxTools as $tool): ?>
                         <a href="<?php echo htmlspecialchars((string) ($tool['url'] ?? '#'), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer" class="hub-toolbox-card">
                             <span class="hub-toolbox-icon" aria-hidden="true">
