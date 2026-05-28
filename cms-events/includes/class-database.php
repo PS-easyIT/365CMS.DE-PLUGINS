@@ -19,6 +19,7 @@ if (class_exists('CMS_Events_Database', false)) {
 final class CMS_Events_Database
 {
     private static ?self $instance = null;
+    private ?array $settingsCache = null;
 
     public static function instance(): self
     {
@@ -132,6 +133,7 @@ final class CMS_Events_Database
 
             // Migrate + seed defaults
             $this->maybe_add_event_columns($pdo, $prefix);
+            $this->maybe_add_indexes($pdo, $prefix);
             $this->maybe_add_foreign_keys($pdo, $prefix);
             $this->maybe_seed_default_data();
 
@@ -297,6 +299,30 @@ final class CMS_Events_Database
     private function quote_identifier(string $identifier): string
     {
         return '`' . str_replace('`', '``', $identifier) . '`';
+    }
+
+    private function maybe_add_indexes(\PDO $pdo, string $prefix): void
+    {
+        $table = $prefix . 'events';
+        if (!$this->table_exists($pdo, $table) || $this->index_exists($pdo, $table, 'idx_event_date_status')) {
+            return;
+        }
+
+        try {
+            $pdo->exec('ALTER TABLE ' . $this->quote_identifier($table) . ' ADD INDEX idx_event_date_status (event_date, status)');
+        } catch (\Throwable $e) {
+            error_log('CMS Events index idx_event_date_status skipped: ' . $e->getMessage());
+        }
+    }
+
+    private function index_exists(\PDO $pdo, string $table, string $index): bool
+    {
+        $stmt = $pdo->prepare(
+            'SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ? LIMIT 1'
+        );
+        $stmt->execute([$table, $index]);
+
+        return $stmt->fetchColumn() !== false;
     }
 
     public function get_event(int $id): ?object
@@ -566,6 +592,10 @@ final class CMS_Events_Database
 
     public function get_settings(): array
     {
+        if ($this->settingsCache !== null) {
+            return $this->settingsCache;
+        }
+
         $settings = $this->default_settings();
 
         foreach ($this->get_legacy_settings() as $key => $value) {
@@ -585,11 +615,12 @@ final class CMS_Events_Database
             }
         }
 
-        return $settings;
+        return $this->settingsCache = $settings;
     }
 
     public function save_settings(array $settings): void
     {
+        $this->settingsCache = null;
         $settingsService = $this->settings_service();
         if ($settingsService !== null) {
             try {
@@ -663,13 +694,7 @@ final class CMS_Events_Database
 
     public function drop_tables(): void
     {
-        $db     = CMS\Database::instance();
-        $pdo    = $db->getPdo();
-        $prefix = $db->prefix();
-
-        foreach (['event_meta', 'event_speakers', 'event_tag_presets', 'event_categories', 'event_settings', 'events'] as $table) {
-            $pdo->exec('DROP TABLE IF EXISTS ' . $this->quote_identifier($prefix . $table));
-        }
+        error_log('CMS Events drop_tables skipped: plugin data is retained on uninstall/deactivation.');
     }
 
     public function delete_event(int $id): bool
@@ -1022,7 +1047,7 @@ final class CMS_Events_Database
              ORDER BY city"
         );
         $stmt->execute();
-        return array_column($stmt->fetchAll(), 'city');
+        return array_values(array_filter(array_map('strval', $stmt->fetchAll(\PDO::FETCH_COLUMN) ?: [])));
     }
 
     public function get_distinct_categories(): array
@@ -1034,7 +1059,7 @@ final class CMS_Events_Database
              ORDER BY category"
         );
         $stmt->execute();
-        return array_column($stmt->fetchAll(), 'category');
+        return array_values(array_filter(array_map('strval', $stmt->fetchAll(\PDO::FETCH_COLUMN) ?: [])));
     }
 
     public function get_speaker_events(int $speaker_id): array

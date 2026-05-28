@@ -112,11 +112,13 @@ final class CMS_365NETWORK_Admin
 
         $this->render_tabs($tab);
 
-        echo '<form class="admin-card admin-form n365-tab-panel n365-admin-form" method="post" action="' . htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365network/settings/save', ENT_QUOTES, 'UTF-8') . '">';
+        $formClass = 'admin-card admin-form n365-tab-panel n365-admin-form' . ($tab === 'hub' ? ' hub-admin-form' : '');
+        echo '<form class="' . htmlspecialchars($formClass, ENT_QUOTES, 'UTF-8') . '" method="post" action="' . htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365network/settings/save', ENT_QUOTES, 'UTF-8') . '" novalidate>';
         echo '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') . '">';
         echo '<input type="hidden" name="tab" value="' . htmlspecialchars($tab, ENT_QUOTES, 'UTF-8') . '">';
 
         match ($tab) {
+            'hub' => $this->render_hub_tab(CMS_365NETWORK_Database::instance()->get_hub_setting_rows()),
             'content' => $this->render_content_tab($settings),
             'layout' => $this->render_layout_tab($settings),
             'sidebar' => $this->render_sidebar_tab($settings),
@@ -144,17 +146,26 @@ final class CMS_365NETWORK_Admin
 
         $tab = $this->sanitize_tab((string) ($_POST['tab'] ?? 'domain'));
         $database = CMS_365NETWORK_Database::instance();
+
+        if ($tab === 'hub') {
+            $settings = $this->sanitize_hub_settings($_POST, $database->get_hub_setting_rows());
+            $database->save_hub_settings($settings);
+
+            $this->redirect('/admin/365network?tab=hub&saved=1');
+            return;
+        }
+
         $settings = $this->sanitize_settings($_POST, $database->get_settings(), $tab);
         $database->save_settings($settings);
 
-        header('Location: ' . rtrim((string) SITE_URL, '/') . '/admin/365network?tab=' . rawurlencode($tab) . '&saved=1');
-        exit;
+        $this->redirect('/admin/365network?tab=' . rawurlencode($tab) . '&saved=1');
     }
 
     private function render_tabs(string $activeTab): void
     {
         $tabs = [
             'domain' => '🌐 Domain',
+            'hub' => '🧭 Hub',
             'content' => '📝 Inhalte',
             'layout' => '🎨 Layout',
             'sidebar' => '📊 Sidebar & Daten',
@@ -177,6 +188,50 @@ final class CMS_365NETWORK_Admin
         $this->checkbox('landing_enabled', 'Landingpage aktivieren', $settings);
         $this->textarea('hub_domains', 'Zusatzdomain(s)', $settings, 'network.example.com', 'Eine Domain pro Zeile oder kommasepariert. Bitte ohne https:// und ohne Pfad eintragen.');
         $this->input('route_slug', 'Interne Vorschau-Route', $settings, '365network', 'text', 'Über diese Route ist die Landingpage unabhängig von der Domain erreichbar.');
+        echo '</section>';
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $rows
+     */
+    private function render_hub_tab(array $rows): void
+    {
+        $sections = [
+            'featured' => 'Featured Card',
+            'hero' => 'Hero-Bereich',
+            'stats' => 'Zähler-Kacheln',
+            'band' => 'Teaser-Band',
+            'areas' => 'Direkteinstieg',
+            'toolbox' => 'Toolbox',
+        ];
+
+        $grouped = [];
+        foreach ($rows as $row) {
+            $section = (string) ($row['section'] ?? '');
+            if ($section !== '') {
+                $grouped[$section][] = $row;
+            }
+        }
+
+        echo '<section class="n365-admin-section"><div class="n365-panel-header"><h3>🧭 Hub-Bereiche</h3><p>Featured Card, Hero, Kennzahlen, Teaser-Band, Direkteinstieg und Toolbox zentral für die Public-Landingpage steuern.</p></div>';
+        echo '<div class="alert n365-info-alert">ℹ️ Diese Einstellungen überschreiben die Hub-Inhalte auf der öffentlichen 365NETWORK-Landingpage. Domain und Analytics bleiben in ihren eigenen Tabs.</div>';
+
+        foreach ($sections as $sectionKey => $sectionLabel) {
+            if (empty($grouped[$sectionKey])) {
+                continue;
+            }
+
+            echo '<div class="hub-admin-section">';
+            echo '<h3 class="hub-admin-section-title">' . htmlspecialchars($sectionLabel, ENT_QUOTES, 'UTF-8') . '</h3>';
+            echo '<div class="hub-admin-fields">';
+
+            foreach ($grouped[$sectionKey] as $field) {
+                $this->render_hub_setting_field($field);
+            }
+
+            echo '</div></div>';
+        }
+
         echo '</section>';
     }
 
@@ -209,13 +264,13 @@ final class CMS_365NETWORK_Admin
         $this->number('content_width', 'Maximale Breite (px)', $settings, 920, 1500);
         $this->number('card_radius', 'Rundungen (px)', $settings, 0, 40);
         $this->number('section_gap', 'Abstände (px)', $settings, 16, 80);
-        $this->input('primary_color', 'Primärfarbe', $settings, '#2563eb', 'color');
-        $this->input('accent_color', 'Akzentfarbe', $settings, '#0f766e', 'color');
-        $this->input('background_color', 'Hintergrund', $settings, '#f8fafc', 'color');
+        $this->input('primary_color', 'Primärfarbe', $settings, '#e6a817', 'color');
+        $this->input('accent_color', 'Akzentfarbe', $settings, '#e6a817', 'color');
+        $this->input('background_color', 'Hintergrund', $settings, '#e8ecf0', 'color');
         $this->input('surface_color', 'Kartenfläche', $settings, '#ffffff', 'color');
-        $this->input('text_color', 'Textfarbe', $settings, '#0f172a', 'color');
-        $this->input('muted_color', 'Sekundärtext', $settings, '#64748b', 'color');
-        $this->input('border_color', 'Rahmenfarbe', $settings, '#e2e8f0', 'color');
+        $this->input('text_color', 'Textfarbe', $settings, '#1a2e4a', 'color');
+        $this->input('muted_color', 'Sekundärtext', $settings, '#5a6a7a', 'color');
+        $this->input('border_color', 'Rahmenfarbe', $settings, '#dce3ec', 'color');
         echo '</section>';
     }
 
@@ -347,6 +402,77 @@ final class CMS_365NETWORK_Admin
         return $settings;
     }
 
+    /**
+     * @param array<string,mixed> $post
+     * @param array<int,array<string,mixed>> $rows
+     * @return array<string,string>
+     */
+    private function sanitize_hub_settings(array $post, array $rows): array
+    {
+        $settings = [];
+
+        foreach ($rows as $row) {
+            $key = (string) ($row['setting_key'] ?? '');
+            if ($key === '' || !str_starts_with($key, 'hub_')) {
+                continue;
+            }
+
+            $type = (string) ($row['setting_type'] ?? 'text');
+            $rawValue = $post[$key] ?? '';
+            if (is_array($rawValue)) {
+                $rawValue = implode(',', array_map('strval', $rawValue));
+            }
+
+            $value = (string) $rawValue;
+            if ($type === 'bool') {
+                $settings[$key] = trim($value) === '1' ? '1' : '0';
+                continue;
+            }
+
+            if ($type === 'int') {
+                $settings[$key] = (string) $this->clamp_int($value, 1, 50);
+                continue;
+            }
+
+            if ($type === 'color') {
+                $settings[$key] = $this->hex_color($value, (string) ($row['setting_val'] ?? '#000000'));
+                continue;
+            }
+
+            if ($key === 'hub_featured_style') {
+                $settings[$key] = $this->enum($value, ['auto', 'text', 'image'], 'auto');
+                continue;
+            }
+
+            if ($key === 'hub_featured_image_url') {
+                $settings[$key] = $this->safe_image_url($value);
+                continue;
+            }
+
+            if (str_ends_with($key, '_url')) {
+                $settings[$key] = $this->safe_url($value);
+                continue;
+            }
+
+            if (str_ends_with($key, '_icon')) {
+                $settings[$key] = $this->tabler_icon_class($value);
+                continue;
+            }
+
+            if ($key === 'hub_band_search_param') {
+                $param = trim((string) preg_replace('/[^a-zA-Z0-9_-]+/', '', $value));
+                $settings[$key] = $param !== '' ? $param : 'q';
+                continue;
+            }
+
+            $settings[$key] = $type === 'textarea'
+                ? $this->clean_textarea($value)
+                : $this->clean_text($value);
+        }
+
+        return $settings;
+    }
+
     private function setting_keys_for_tab(string $tab): array
     {
         $groups = [
@@ -448,20 +574,87 @@ final class CMS_365NETWORK_Admin
     {
         $css = CMS_365NETWORK_PLUGIN_DIR . 'assets/css/admin.css';
         $version = is_file($css) ? (string) filemtime($css) : CMS_365NETWORK_VERSION;
+        if (function_exists('cms_enqueue_style')) {
+            cms_enqueue_style('cms-365network-admin', CMS_365NETWORK_PLUGIN_URL . 'assets/css/admin.css', [], $version);
+            return;
+        }
+
         echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_365NETWORK_PLUGIN_URL . 'assets/css/admin.css?v=' . $version, ENT_QUOTES, 'UTF-8') . '">' . "\n";
     }
 
     private function require_admin(): void
     {
-        if (!Auth::instance()->isAdmin()) {
-            header('Location: ' . rtrim((string) SITE_URL, '/') . '/login');
-            exit;
+        $auth = Auth::instance();
+        $allowed = method_exists($auth, 'hasCapability') ? $auth->hasCapability('manage_plugins') : $auth->isAdmin();
+        if (!$allowed) {
+            $this->redirect('/login');
         }
+    }
+
+    private function redirect(string $path): void
+    {
+        if (class_exists('CMS\\Router')) {
+            CMS\Router::instance()->redirect($path);
+            return;
+        }
+
+        header('Location: ' . rtrim((string) SITE_URL, '/') . '/' . ltrim($path, '/'));
+        exit;
     }
 
     private function sanitize_tab(string $tab): string
     {
-        return in_array($tab, ['domain', 'content', 'layout', 'sidebar', 'cards', 'analytics'], true) ? $tab : 'domain';
+        return in_array($tab, ['domain', 'hub', 'content', 'layout', 'sidebar', 'cards', 'analytics'], true) ? $tab : 'domain';
+    }
+
+    /**
+     * @param array<string,mixed> $field
+     */
+    private function render_hub_setting_field(array $field): void
+    {
+        $key = (string) ($field['setting_key'] ?? '');
+        if ($key === '' || !str_starts_with($key, 'hub_')) {
+            return;
+        }
+
+        $label = (string) ($field['label'] ?? $key);
+        $type = (string) ($field['setting_type'] ?? 'text');
+        $value = (string) ($field['setting_val'] ?? '');
+        $id = 'n365-' . $key;
+
+        echo '<div class="hub-admin-field">';
+        echo '<label for="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</label>';
+
+        if ($type === 'bool') {
+            $checked = (int) $value === 1 ? ' checked' : '';
+            echo '<label class="hub-toggle" aria-label="' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" value="0">';
+            echo '<input type="checkbox" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" value="1"' . $checked . '>';
+            echo '<span class="hub-toggle-slider"></span>';
+            echo '</label>';
+        } elseif ($type === 'textarea') {
+            echo '<textarea id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" rows="3">' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '</textarea>';
+        } elseif ($type === 'int') {
+            echo '<input type="number" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" value="' . (int) $value . '" min="1" max="50">';
+        } elseif ($type === 'color') {
+            echo '<input type="color" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars($this->hex_color($value, '#000000'), ENT_QUOTES, 'UTF-8') . '">';
+        } elseif ($type === 'select' && $key === 'hub_featured_style') {
+            $options = [
+                'auto' => 'Automatisch (Bild nur wenn URL gesetzt)',
+                'text' => 'Einspaltig ohne Bild',
+                'image' => 'Zweispaltig mit Bild',
+            ];
+            echo '<select id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '">';
+            foreach ($options as $optionValue => $optionLabel) {
+                $selected = $optionValue === $value ? ' selected' : '';
+                echo '<option value="' . htmlspecialchars($optionValue, ENT_QUOTES, 'UTF-8') . '"' . $selected . '>' . htmlspecialchars($optionLabel, ENT_QUOTES, 'UTF-8') . '</option>';
+            }
+            echo '</select>';
+        } else {
+            echo '<input type="text" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '">';
+        }
+
+        echo '</div>';
     }
 
     private function clean_text(string $value): string
@@ -495,8 +688,14 @@ final class CMS_365NETWORK_Admin
 
     private function safe_image_url(string $value): string
     {
-        $url = $this->safe_url($value);
-        return $url !== '' && $url[0] !== '#' ? $url : '';
+        $url = trim($value);
+        if ($url === '' || filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        $scheme = is_array($parts) ? strtolower((string) ($parts['scheme'] ?? '')) : '';
+        return in_array($scheme, ['http', 'https'], true) ? $url : '';
     }
 
     private function enum(string $value, array $allowed, string $default): string
@@ -512,6 +711,20 @@ final class CMS_365NETWORK_Admin
     private function hex_color(string $value, string $default): string
     {
         return preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1 ? strtolower($value) : $default;
+    }
+
+    private function tabler_icon_class(string $icon): string
+    {
+        $icon = strtolower(trim($icon));
+        if ($icon === '') {
+            return 'ti-link';
+        }
+
+        if (!str_starts_with($icon, 'ti-')) {
+            $icon = 'ti-' . $icon;
+        }
+
+        return preg_match('/^ti-[a-z0-9-]+$/', $icon) === 1 ? $icon : 'ti-link';
     }
 
     private function sanitize_tracking_code(string $value): string

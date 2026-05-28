@@ -1,5 +1,23 @@
 # CMS Events – Changelog
 
+## [3.0.23] – 2026-05-28
+
+- **Archivkarten:** Der Footer ist nun zweispaltig aufgebaut: links Speaker oder Veranstalter, rechts der Details-Button.
+- **Priorität:** Speaker werden bevorzugt angezeigt; nur wenn kein Speaker vorhanden ist, erscheint der Veranstalter.
+- **Layout:** Der Details-Button bleibt durch `flex-shrink: 0` stabil rechts, während lange Namen links ellipsiert werden; leere Informationen erzeugen keinen Placeholder.
+
+## [3.0.22] – 2026-05-28
+
+- **Übersicht:** Der Kopfbereich oberhalb der Suche wurde entfernt (`Events`, Seitentitel und Ergebnis-Subtitle wie `94 Events ab aktuellem Monat`).
+- **Filter-Fokus:** Die Event-Übersicht startet nun direkt mit der Filter-/Suchleiste.
+- **Template-Cleanup:** Nicht mehr benötigte Berechnungen für Archivtitel und Subtitle wurden aus dem Archive-Template entfernt.
+
+## [3.0.21] – 2026-05-28
+
+- **Archivkarten:** Der Veranstalter wird in der Übersicht nicht mehr als eigene Zeile unter dem Ort ausgegeben.
+- **Format/Ort:** Das Online-/Hybrid-/Präsenz-Badge wandert aus der Kategorie-Zeile in die Ortszeile und steht dort mit Icon direkt vor dem Veranstaltungsort.
+- **Layout:** Kategorie und Preis bleiben oben kompakt getrennt; die Meta-Zeilen unter dem Titel wirken ruhiger und weniger redundant.
+
 ## [3.0.20] – 2026-05-27
 
 - **Audit-Fix:** Der Template-Loader verwendet kein `extract()` mehr.

@@ -55,6 +55,11 @@ final class CMS_Events_Member_Dashboard
 
         if ($cssUrl !== '') {
             $v = $cssFile && file_exists($cssFile) ? filemtime($cssFile) : '1';
+            if (function_exists('cms_enqueue_style')) {
+                cms_enqueue_style('cms-events-member', $cssUrl, [], (string) $v);
+                return;
+            }
+
             echo '<link rel="stylesheet" href="' . htmlspecialchars($cssUrl . '?v=' . $v, ENT_QUOTES, 'UTF-8') . '">' . "\n";
         }
     }
@@ -110,16 +115,16 @@ final class CMS_Events_Member_Dashboard
     public function renderPage(object $user, array $params = []): void
     {
         if (class_exists('CMS\\Auth') && method_exists(\CMS\Auth::instance(), 'isLoggedIn') && !\CMS\Auth::instance()->isLoggedIn()) {
-            header('Location: /login');
-            exit;
+            $this->redirect('/login');
+            return;
         }
 
         // ── POST: neues Event speichern ───────────────────────────────────────
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['event_create'])) {
             if (!\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'member_event_create')) {
                 $_SESSION['error'] = 'Sicherheitscheck fehlgeschlagen.';
-                header('Location: /member/plugin/events?action=new');
-                exit;
+                $this->redirect('/member/plugin/events?action=new');
+                return;
             }
             try {
                 $isAdminSave = \CMS\Auth::instance()->isAdmin();
@@ -139,8 +144,8 @@ final class CMS_Events_Member_Dashboard
                 $eventDate = $this->sanitizeDate($_POST['event_date'] ?? '');
                 if ($title === '' || $eventDate === null) {
                     $_SESSION['error'] = 'Bitte mindestens Titel und Startdatum ausfüllen.';
-                    header('Location: /member/plugin/events?action=new');
-                    exit;
+                    $this->redirect('/member/plugin/events?action=new');
+                    return;
                 }
 
                 // save_event() setzt user_id automatisch aus CMS\Auth
@@ -174,21 +179,21 @@ final class CMS_Events_Member_Dashboard
                 ]);
                 if ($id <= 0) {
                     $_SESSION['error'] = 'Das Event konnte nicht gespeichert werden. Bitte Eingaben prüfen.';
-                    header('Location: /member/plugin/events?action=new');
-                    exit;
+                    $this->redirect('/member/plugin/events?action=new');
+                    return;
                 }
                 if ($isAdminSave) {
                     $_SESSION['success'] = 'Event wurde erfolgreich angelegt.';
                 } else {
                     $_SESSION['success'] = 'Ihr Event wurde eingereicht und wird vom Admin geprüft.';
                 }
-                header('Location: /member/plugin/events');
-                exit;
+                $this->redirect('/member/plugin/events');
+                return;
             } catch (\Throwable $e) {
                 error_log('CMS Events member create error: ' . $e->getMessage());
                 $_SESSION['error'] = 'Fehler beim Speichern. Bitte später erneut versuchen.';
-                header('Location: /member/plugin/events?action=new');
-                exit;
+                $this->redirect('/member/plugin/events?action=new');
+                return;
             }
         }
 
@@ -312,7 +317,7 @@ final class CMS_Events_Member_Dashboard
         <div class="admin-card">
             <h3>📅 Neues Event einreichen</h3>
 
-            <form method="POST" action="/member/plugin/events?action=new">
+            <form method="POST" action="/member/plugin/events?action=new" novalidate>
                 <input type="hidden" name="event_create" value="1">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
 
@@ -559,5 +564,16 @@ final class CMS_Events_Member_Dashboard
     private function sanitizeHexColor(string $value, string $fallback): string
     {
         return preg_match('/^#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?$/', $value) === 1 ? $value : $fallback;
+    }
+
+    private function redirect(string $path): void
+    {
+        if (class_exists('CMS\\Router')) {
+            \CMS\Router::instance()->redirect($path);
+            return;
+        }
+
+        header('Location: ' . $path);
+        exit;
     }
 }

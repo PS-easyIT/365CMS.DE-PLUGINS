@@ -166,6 +166,152 @@
     padding-top: .25rem;
 }
 
+.hub-admin-form {
+    max-width: 720px;
+}
+
+.hub-admin-form .n365-info-alert {
+    border-left: 4px solid var(--admin-primary, #3b82f6);
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.hub-admin-section {
+    padding: 20px 24px;
+    border: 1px solid #dce3ec;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    background: #ffffff;
+}
+
+.hub-admin-section-title {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #dce3ec;
+    margin: 0 0 16px;
+    color: #1a2e4a;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.hub-admin-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.hub-admin-field {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 16px;
+    align-items: center;
+}
+
+.hub-admin-field > label:first-child {
+    color: #1a2e4a;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.hub-admin-field input[type='text'],
+.hub-admin-field input[type='number'],
+.hub-admin-field input[type='color'],
+.hub-admin-field select,
+.hub-admin-field textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #dce3ec;
+    border-radius: 6px;
+    color: #1a2e4a;
+    font-family: Poppins, system-ui, -apple-system, sans-serif;
+    font-size: 13px;
+    transition: border-color 150ms ease;
+}
+
+.hub-admin-field input[type='color'] {
+    width: 56px;
+    min-height: 38px;
+    padding: 2px;
+}
+
+.hub-admin-field input[type='text']:focus,
+.hub-admin-field input[type='number']:focus,
+.hub-admin-field input[type='color']:focus,
+.hub-admin-field select:focus,
+.hub-admin-field textarea:focus {
+    border-color: #e6a817;
+    outline: none;
+}
+
+.hub-admin-field textarea {
+    min-height: 72px;
+    resize: vertical;
+}
+
+.hub-toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    cursor: pointer;
+}
+
+.hub-toggle input[type='hidden'] {
+    display: none;
+}
+
+.hub-toggle input[type='checkbox'] {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+}
+
+.hub-toggle-slider {
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    background: #dce3ec;
+    transition: background 200ms ease;
+}
+
+.hub-toggle input[type='checkbox']:checked + .hub-toggle-slider {
+    background: #e6a817;
+}
+
+.hub-toggle-slider::before {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    content: '';
+    transition: transform 200ms ease;
+}
+
+.hub-toggle input[type='checkbox']:checked + .hub-toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.hub-toggle input[type='checkbox']:focus-visible + .hub-toggle-slider {
+    outline: 2px solid #e6a817;
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hub-admin-field input[type='text'],
+    .hub-admin-field input[type='number'],
+    .hub-admin-field input[type='color'],
+    .hub-admin-field select,
+    .hub-admin-field textarea,
+    .hub-toggle-slider,
+    .hub-toggle-slider::before {
+        transition: none;
+    }
+}
+
 @media (max-width: 960px) {
     .n365-tabs {
         flex-wrap: nowrap;
@@ -173,6 +319,11 @@
 
     .n365-status-grid {
         grid-template-columns: 1fr;
+    }
+
+    .hub-admin-field {
+        grid-template-columns: 1fr;
+        gap: 6px;
     }
 }
 

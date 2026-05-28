@@ -23,3 +23,15 @@
 | `GET` | `/{route_slug}` | Interne Landingpage-Vorschau, Standard `/365network` |
 | `GET` | `/admin/365network` | Einstellungen |
 | `POST` | `/admin/365network/settings/save` | Einstellungen speichern |
+
+## Admin-Tabs
+
+| Tab | Zweck |
+|---|---|
+| `domain` | Landingpage aktivieren, Zusatzdomains und interne Route |
+| `hub` | Featured Card, Hero, Stats, Band, Direkteinstieg und Toolbox aus `network_hub_settings` |
+| `content` | Legacy-/Featured-Inhalte |
+| `layout` | Layout- und Designvariablen |
+| `sidebar` | Sidebar und dynamische Vorschauen |
+| `cards` | Legacy-Bereichskarten-Fallbacks |
+| `analytics` | Optionaler Analyse-Code |

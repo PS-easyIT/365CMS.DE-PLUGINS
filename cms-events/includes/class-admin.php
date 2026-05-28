@@ -130,13 +130,21 @@ final class CMS_Events_Admin
         $adminCss = CMS_EVENTS_PLUGIN_DIR . 'assets/css/events-admin.css';
         if (file_exists($adminCss)) {
             $adminCssVersion = (string) filemtime($adminCss);
-            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_EVENTS_PLUGIN_URL . 'assets/css/events-admin.css?v=' . $adminCssVersion, ENT_QUOTES, 'UTF-8') . '">' . "\n";
+            if (function_exists('cms_enqueue_style')) {
+                cms_enqueue_style('cms-events-admin', CMS_EVENTS_PLUGIN_URL . 'assets/css/events-admin.css', [], $adminCssVersion);
+            } else {
+                echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_EVENTS_PLUGIN_URL . 'assets/css/events-admin.css?v=' . $adminCssVersion, ENT_QUOTES, 'UTF-8') . '">' . "\n";
+            }
         }
 
         $adminJs = CMS_EVENTS_PLUGIN_DIR . 'assets/js/admin.js';
         if (file_exists($adminJs)) {
             $adminJsVersion = (string) filemtime($adminJs);
-            echo '<script src="' . htmlspecialchars(CMS_EVENTS_PLUGIN_URL . 'assets/js/admin.js?v=' . $adminJsVersion, ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
+            if (function_exists('cms_enqueue_script')) {
+                cms_enqueue_script('cms-events-admin', CMS_EVENTS_PLUGIN_URL . 'assets/js/admin.js', [], $adminJsVersion, ['defer' => true]);
+            } else {
+                echo '<script src="' . htmlspecialchars(CMS_EVENTS_PLUGIN_URL . 'assets/js/admin.js?v=' . $adminJsVersion, ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
+            }
         }
     }
 
@@ -236,7 +244,7 @@ final class CMS_Events_Admin
         $draft     = count(array_filter($events, fn($e) => ($e->status ?? '') === 'draft'));
         $cancelled = count(array_filter($events, fn($e) => ($e->status ?? '') === 'cancelled'));
         $featured  = count(array_filter($events, fn($e) => !empty($e->is_featured)));
-        $upcoming  = count(array_filter($events, fn($e) => !empty($e->event_date) && strtotime($e->event_date) >= strtotime('today')));
+        $upcoming  = count(array_filter($events, fn($e) => $this->is_upcoming_event($e)));
         ?>
 
         <div class="ev-admin-shell">
@@ -309,8 +317,8 @@ final class CMS_Events_Admin
                     str_contains(mb_strtolower($e->organizer_name ?? ''), $q)
                 ));
             }
-            if ($filter === 'upcoming') $filtered = array_values(array_filter($filtered, fn($e) => !empty($e->event_date) && strtotime($e->event_date) >= strtotime('today')));
-            elseif ($filter === 'past') $filtered = array_values(array_filter($filtered, fn($e) => !empty($e->event_date) && strtotime($e->event_date) < strtotime('today')));
+            if ($filter === 'upcoming') $filtered = array_values(array_filter($filtered, fn($e) => $this->is_upcoming_event($e)));
+            elseif ($filter === 'past') $filtered = array_values(array_filter($filtered, fn($e) => $this->is_past_event($e)));
             elseif ($filter === 'featured') $filtered = array_values(array_filter($filtered, fn($e) => !empty($e->is_featured)));
             elseif ($filter === 'online') $filtered = array_values(array_filter($filtered, fn($e) => !empty($e->is_online)));
             elseif ($filter === 'draft') $filtered = array_values(array_filter($filtered, fn($e) => ($e->status ?? 'draft') === 'draft'));
@@ -339,7 +347,7 @@ final class CMS_Events_Admin
         <!-- Filter Bar -->
         <div class="admin-card ev-filter-card">
             <h3>🔎 Events filtern</h3>
-            <form method="GET" class="admin-form ev-admin-filter-form">
+            <form method="GET" class="admin-form ev-admin-filter-form" novalidate>
                 <input type="hidden" name="tab" value="overview">
                 <div class="form-group ev-form-group--inline-reset ev-form-group--grow-2">
                     <label class="form-label">Titel / Stichwort</label>
@@ -535,7 +543,7 @@ final class CMS_Events_Admin
             </div>
             <div class="ev-side-panel">
                 <h3>➕ Neue Kategorie</h3>
-                <form method="POST" action="<?= SITE_URL ?>/admin/events/category/add" class="admin-form">
+                <form method="POST" action="<?= SITE_URL ?>/admin/events/category/add" class="admin-form" novalidate>
                     <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                     <div class="form-group">
                         <label class="form-label">Icon (Emoji)</label>
@@ -603,7 +611,7 @@ final class CMS_Events_Admin
             </div>
             <div class="ev-side-panel">
                 <h3>➕ Neues Tag</h3>
-                <form method="POST" action="<?= SITE_URL ?>/admin/events/tagpreset/add" class="admin-form">
+                <form method="POST" action="<?= SITE_URL ?>/admin/events/tagpreset/add" class="admin-form" novalidate>
                     <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                     <div class="form-group">
                         <label class="form-label">Tag-Name <span class="ev-required">*</span></label>
@@ -627,7 +635,7 @@ final class CMS_Events_Admin
         // ══════════════════════════════════════════════════════════════════
         elseif ($tab === 'design'):
         ?>
-        <form method="POST" action="<?= SITE_URL ?>/admin/events/settings/save" class="admin-form">
+        <form method="POST" action="<?= SITE_URL ?>/admin/events/settings/save" class="admin-form" novalidate>
             <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
             <input type="hidden" name="_from_tab"  value="design">
 
@@ -823,7 +831,7 @@ final class CMS_Events_Admin
         // ══════════════════════════════════════════════════════════════════
         elseif ($tab === 'settings'):
         ?>
-        <form method="POST" action="<?= SITE_URL ?>/admin/events/settings/save" class="admin-form">
+        <form method="POST" action="<?= SITE_URL ?>/admin/events/settings/save" class="admin-form" novalidate>
             <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
             <input type="hidden" name="_from_tab"  value="settings">
 
@@ -1006,7 +1014,7 @@ final class CMS_Events_Admin
         <?php endif; ?>
 
         <div class="ev-content-max">
-        <form method="POST" action="<?= SITE_URL ?>/admin/events/save" id="ev-main-form" class="admin-form">
+        <form method="POST" action="<?= SITE_URL ?>/admin/events/save" id="ev-main-form" class="admin-form" novalidate>
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="event_id"   value="<?= $is_edit ? (int)$event->id : 0 ?>">
 
@@ -1321,5 +1329,32 @@ final class CMS_Events_Admin
         </div><!-- /max-width -->
         <?php
         $this->end_admin_layout();
+    }
+
+    private function event_timestamp(mixed $event): ?int
+    {
+        $date = trim((string) (is_object($event) ? ($event->event_date ?? '') : ''));
+        if ($date === '') {
+            return null;
+        }
+
+        $timestamp = strtotime($date);
+        return $timestamp !== false ? $timestamp : null;
+    }
+
+    private function is_upcoming_event(mixed $event): bool
+    {
+        $timestamp = $this->event_timestamp($event);
+        $today = strtotime('today');
+
+        return $timestamp !== null && $today !== false && $timestamp >= $today;
+    }
+
+    private function is_past_event(mixed $event): bool
+    {
+        $timestamp = $this->event_timestamp($event);
+        $today = strtotime('today');
+
+        return $timestamp !== null && $today !== false && $timestamp < $today;
     }
 }

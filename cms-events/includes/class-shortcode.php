@@ -286,10 +286,15 @@ final class CMS_Events_Shortcode
             <h3>Kommende Events</h3>
             <ul class="events-list">
                 <?php foreach ($events as $event): ?>
+                    <?php
+                    $eventTimestamp = !empty($event->event_date) ? strtotime((string) $event->event_date) : false;
+                    $eventDay = $eventTimestamp !== false ? date('d', $eventTimestamp) : '--';
+                    $eventMonth = $eventTimestamp !== false ? date('M', $eventTimestamp) : '';
+                    ?>
                     <li class="event-item">
                         <div class="event-date">
-                            <span class="day"><?= date('d', strtotime($event->event_date)) ?></span>
-                            <span class="month"><?= date('M', strtotime($event->event_date)) ?></span>
+                            <span class="day"><?= htmlspecialchars($eventDay, ENT_QUOTES, 'UTF-8') ?></span>
+                            <span class="month"><?= htmlspecialchars($eventMonth, ENT_QUOTES, 'UTF-8') ?></span>
                         </div>
                         <div class="event-info">
                             <h4>

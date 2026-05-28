@@ -65,16 +65,10 @@ $categories = array_values(array_filter(array_map(
 $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
 $archiveSlug = preg_replace('/[^a-z0-9-]+/i', '-', (string) ($settings['archive_slug'] ?? 'events')) ?: 'events';
 $archiveUrl = $baseUrl . '/' . trim($archiveSlug, '-') . '/';
-$archiveTitle = trim((string) ($settings['archive_title'] ?? 'Veranstaltungen')) ?: 'Veranstaltungen';
 $curPage = max(1, (int) ($current_page ?? 1));
 $totalPages = max(1, (int) ($pages ?? 1));
 $totalEvents = max(0, (int) ($total ?? count($events)));
 $perPage = max(1, (int) ($per_page ?? 12));
-$today = strtotime('today');
-$upcomingCount = isset($upcoming_total) ? max(0, (int) $upcoming_total) : count(array_filter($events, static function ($event) use ($today): bool {
-    $timestamp = !empty($event->event_date) ? strtotime((string) $event->event_date) : 0;
-    return $timestamp && $today !== false && $timestamp >= $today;
-}));
 $currentMonth = (int) date('n');
 $currentYear = (int) date('Y');
 $selectedCategory = (string) ($filter_category ?? '');
@@ -85,10 +79,6 @@ $selectedMonth = $selectedMonthNumber > 0 ? (string) $selectedMonthNumber : ($da
 $selectedYear = $selectedYearNumber > 0 ? (string) $selectedYearNumber : ($dateFilterExplicit ? '0' : (string) $currentYear);
 $selectedSearch = htmlspecialchars((string) ($search ?? ''), ENT_QUOTES, 'UTF-8');
 $activeFilterParams = is_array($active_filter_params ?? null) ? $active_filter_params : [];
-$hasActiveFilters = !empty($has_active_filters);
-$archiveSubtitle = $hasActiveFilters
-    ? (int) $totalEvents . ' gefilterte Events'
-    : (int) $upcomingCount . ' Events ab aktuellem Monat';
 $buildArchiveUrl = static function (int $page) use ($archiveUrl, $activeFilterParams): string {
     $params = $activeFilterParams;
     if ($page > 1) {
@@ -106,12 +96,6 @@ $monthLabels = [
 ];
 ?>
 <main class="phinit-plugin cms-events-wrap" data-cms-events-filter-root data-cms-events-archive-url="<?= htmlspecialchars($archiveUrl, ENT_QUOTES, 'UTF-8') ?>" data-cms-events-date-filter-active="<?= $dateFilterExplicit ? '1' : '0' ?>" data-cms-events-current-month="<?= (int) $currentMonth ?>" data-cms-events-current-year="<?= (int) $currentYear ?>">
-    <header class="cms-events-head">
-        <p class="phinit-overline">Events</p>
-        <h1><?= htmlspecialchars($archiveTitle, ENT_QUOTES, 'UTF-8') ?></h1>
-        <p class="cms-events-head__subtitle"><?= htmlspecialchars($archiveSubtitle, ENT_QUOTES, 'UTF-8') ?></p>
-    </header>
-
     <nav class="cms-events-filter-nav" aria-label="Eventfilter">
         <form class="cms-events-filter" method="get" action="<?= htmlspecialchars($archiveUrl, ENT_QUOTES, 'UTF-8') ?>" data-cms-events-filter-form>
         <div class="phinit-field cms-events-filter__field">

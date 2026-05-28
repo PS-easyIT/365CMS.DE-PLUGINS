@@ -1234,16 +1234,10 @@ final class CMS_Events_Post_Type
 
             error_log('CMS Events public template render fallback (' . $template . '): ' . $e->getMessage());
             if ($template === 'archive-event') {
-                $settings = is_array($data['settings'] ?? null) ? $data['settings'] : [];
-                $archiveTitle = trim((string) ($settings['archive_title'] ?? 'Veranstaltungen')) ?: 'Veranstaltungen';
                 $events = is_array($data['events'] ?? null) ? $data['events'] : [];
                 $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
 
                 echo '<section class="phinit-plugin cms-events-wrap">';
-                echo '<header class="cms-events-head">';
-                echo '<p class="phinit-overline">Events</p>';
-                echo '<h1>' . htmlspecialchars($archiveTitle, ENT_QUOTES, 'UTF-8') . '</h1>';
-                echo '</header>';
                 echo '<section class="cms-events-grid" aria-label="Event-Liste">';
 
                 if ($events === []) {

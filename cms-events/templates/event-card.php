@@ -174,7 +174,7 @@ if (!function_exists('cms_events_view_trim_text')) {
 
 $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
 $titleRaw = trim((string) ($e->title ?? ''));
-$title = htmlspecialchars($titleRaw !== '' ? $titleRaw : 'Event', ENT_QUOTES, 'UTF-8');
+$title = htmlspecialchars($titleRaw !== '' ? $titleRaw : 'Event', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 $categoryRaw = trim((string) ($e->category ?? ''));
 $category = htmlspecialchars($categoryRaw !== '' ? $categoryRaw : 'Event', ENT_QUOTES, 'UTF-8');
 $locationRaw = trim((string) ($e->location ?? ''));
@@ -193,6 +193,7 @@ $isFeatured = !empty($e->is_featured);
 $isOnline = !empty($e->is_online);
 $eventModeLabel = $isOnline ? ($locationText !== '' ? 'Hybrid' : 'Online') : 'Präsenz';
 $eventModeClass = $isOnline ? ($locationText !== '' ? 'event-badge--hybrid' : 'event-badge--online') : 'event-badge--onsite';
+$eventModeIcon = $isOnline ? ($locationText !== '' ? 'world' : 'video') : 'map-pin';
 $organizerName = trim((string) ($e->organizer_name ?? ''));
 $tags = !empty($e->tags) ? (json_decode((string) $e->tags, true) ?: []) : [];
 if (!is_array($tags)) {
@@ -267,8 +268,6 @@ $filterText = cms_events_view_lowercase(trim($titleRaw . ' ' . $categoryRaw . ' 
         <?php if ($categoryRaw !== ''): ?>
           <span class="event-badge cms-events-card__badge"><?= $category ?></span>
         <?php endif; ?>
-
-        <span class="event-badge <?= htmlspecialchars($eventModeClass, ENT_QUOTES, 'UTF-8') ?> cms-events-card__badge"><?= htmlspecialchars($eventModeLabel, ENT_QUOTES, 'UTF-8') ?></span>
       </div>
       <span class="event-card-price <?= htmlspecialchars($priceClass, ENT_QUOTES, 'UTF-8') ?>"><i class="ti ti-ticket" aria-hidden="true"></i><?= htmlspecialchars($priceLabel, ENT_QUOTES, 'UTF-8') ?></span>
     </div>
@@ -284,22 +283,31 @@ $filterText = cms_events_view_lowercase(trim($titleRaw . ' ' . $categoryRaw . ' 
       <div class="event-card-content">
         <h2 class="event-card-title cms-events-card__title"><a href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>"><?= $title ?></a></h2>
 
-        <?php if ($locationText !== ''): ?>
-          <p class="event-card-location event-meta-location cms-events-card__meta"><i class="ti ti-map-pin" aria-hidden="true"></i><?= htmlspecialchars($locationText, ENT_QUOTES, 'UTF-8') ?></p>
+        <?php if ($locationText !== '' || $eventModeLabel !== ''): ?>
+          <p class="event-card-location event-meta-location cms-events-card__meta">
+            <span class="event-badge event-card-mode-badge <?= htmlspecialchars($eventModeClass, ENT_QUOTES, 'UTF-8') ?> cms-events-card__badge"><i class="ti ti-<?= htmlspecialchars($eventModeIcon, ENT_QUOTES, 'UTF-8') ?>" aria-hidden="true"></i><?= htmlspecialchars($eventModeLabel, ENT_QUOTES, 'UTF-8') ?></span>
+            <?php if ($locationText !== ''): ?>
+              <span class="event-card-location-text"><i class="ti ti-map-pin" aria-hidden="true"></i><?= htmlspecialchars($locationText, ENT_QUOTES, 'UTF-8') ?></span>
+            <?php endif; ?>
+          </p>
         <?php endif; ?>
 
         <?php if ($eventTime !== ''): ?>
           <p class="event-card-time cms-events-card__meta"><i class="ti ti-clock" aria-hidden="true"></i><?= htmlspecialchars(substr($eventTime, 0, 5) . ' Uhr', ENT_QUOTES, 'UTF-8') ?></p>
         <?php endif; ?>
-
-        <?php if ($organizerName !== ''): ?>
-          <p class="event-card-organizer cms-events-card__meta"><i class="ti ti-building" aria-hidden="true"></i><?= htmlspecialchars($organizerName, ENT_QUOTES, 'UTF-8') ?></p>
-        <?php endif; ?>
       </div>
     </div>
 
-    <hr class="event-card-divider cms-events-card__rule" aria-hidden="true">
+    <footer class="event-card-footer cms-events-card__footer">
+      <div class="event-card-footer-left">
+        <?php if ($speakerName !== ''): ?>
+          <span class="event-footer-info"><i class="ti ti-user" aria-hidden="true"></i><?= htmlspecialchars($speakerName, ENT_QUOTES, 'UTF-8') ?></span>
+        <?php elseif ($organizerName !== ''): ?>
+          <span class="event-footer-info"><i class="ti ti-building" aria-hidden="true"></i><?= htmlspecialchars($organizerName, ENT_QUOTES, 'UTF-8') ?></span>
+        <?php endif; ?>
+      </div>
 
-    <a href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>" class="btn-event-details cms-events-card__button">Details</a>
+      <a href="<?= htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') ?>" class="btn-event-details cms-events-card__button">Details</a>
+    </footer>
   </div>
 </article>

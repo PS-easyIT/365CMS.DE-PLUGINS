@@ -1,10 +1,10 @@
 # CMS Events – Dokumentation
 
 **Plugin:** `cms-events`  
-**Version:** 3.0.20
+**Version:** 3.0.23
 **Namespace:** `CMS_Events`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
-**Audit-/Dokustand:** Template-Loader-Audit-Fix am 2026-05-27
+**Audit-/Dokustand:** Public-Card-Footer-Polish am 2026-05-28
 **PHP:** 8.4+
 
 ---
@@ -29,6 +29,9 @@ Das **CMS Events**-Plugin verwaltet Veranstaltungen – von Webinaren bis zu Kon
 - Version `3.0.18` macht die Public-Ausgabe vollständiger und zugleich ruhiger: Archivkarten zeigen Bild, dezente Kategorie-/Format-Badges, Uhrzeit sowie Ort und Veranstalter mit Icon direkt unter dem Titel; Tags/Themen erscheinen nur noch in der Detailseite, deren Meta-Angaben als einzelne Icon-Badges inklusive zweizeiligem Start-/Endtermin für Mehrtagesevents dargestellt werden.
 - Version `3.0.19` entfernt die redundanten Meta-Ausgaben direkt unter dem Eventtitel inklusive Teaser-/Excerpt-Zeile; Sidebar-Meta und Veranstalter-Kontakt bleiben erhalten, Themen/Tags erscheinen unterhalb der Beschreibung als einzelne, deduplizierte Badges.
 - Version `3.0.20` ersetzt `extract()` im Template-Loader durch eine explizite Whitelist kontrollierter Template-Kontextvariablen für Plugin-Templates und Theme-Overrides.
+- Version `3.0.21` entfernt den Veranstalter aus den Archivkarten und platziert das Online-/Hybrid-/Präsenz-Badge mit Icon in der Ortszeile vor dem Veranstaltungsort.
+- Version `3.0.22` entfernt den Kopfbereich oberhalb der Events-Suche, sodass die Übersicht direkt mit der Filter-/Suchleiste beginnt.
+- Version `3.0.23` ergänzt einen zweispaltigen Card-Footer mit Speaker/Veranstalter links und Details-Button rechts; Speaker haben Priorität, leere Infos bleiben ohne Placeholder.
 - Bootstrap, Include-Klassen und Lifecycle-Hooks sind idempotent und gegen Redeclare-Fatals abgesichert.
 - Datenbankmigrationen nutzen `INFORMATION_SCHEMA`, erstellen die Settings-Tabelle im Installer und ergänzen Foreign Keys nicht-blockierend.
 - Öffentliche Fehlerpfade nutzen die 365CMS-404/Error-Fallbacks und protokollieren technische Details serverseitig.

@@ -3048,8 +3048,7 @@
 }
 
 .cms-events-wrap .event-card-location,
-.cms-events-wrap .event-card-time,
-.cms-events-wrap .event-card-organizer {
+.cms-events-wrap .event-card-time {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -3059,10 +3058,29 @@
 }
 
 .cms-events-wrap .event-card-location i,
-.cms-events-wrap .event-card-time i,
-.cms-events-wrap .event-card-organizer i {
+.cms-events-wrap .event-card-time i {
   color: var(--color-accent);
   font-size: 13px;
+}
+
+.cms-events-wrap .event-card-location .event-card-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.cms-events-wrap .event-card-location .event-card-mode-badge i {
+  color: currentColor;
+  font-size: 12px;
+}
+
+.cms-events-wrap .event-card-location-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
 }
 
 .cms-events-wrap .event-card-price {
@@ -3098,24 +3116,52 @@
   color: #8a5b00;
 }
 
-.cms-events-wrap .event-card-divider {
-  margin: auto 0 14px;
-  border: 0;
+.cms-events-wrap .event-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 10px;
   border-top: 1px solid var(--color-border);
+}
+
+.cms-events-wrap .event-card-footer-left {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cms-events-wrap .event-footer-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--color-hint);
+  font-size: 11px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cms-events-wrap .event-footer-info i {
+  flex-shrink: 0;
+  color: var(--color-accent);
+  font-size: 12px;
 }
 
 .cms-events-wrap .btn-event-details {
   display: inline-block;
-  align-self: flex-end;
-  padding: 8px 18px;
+  flex-shrink: 0;
+  padding: 7px 16px;
   border: 0;
   border-radius: 6px;
   background: var(--color-accent);
   color: var(--color-navy);
   cursor: pointer;
   font-family: Poppins, var(--phinit-font-body, system-ui, -apple-system, sans-serif);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   line-height: 1.2;
   text-decoration: none;
   transition: background 150ms ease;
@@ -3295,10 +3341,6 @@
 
 .cms-events-wrap .event-card-body {
   padding: 16px 16px 14px;
-}
-
-.cms-events-wrap .event-card-divider {
-  margin: auto 0 12px;
 }
 
 .cms-events-wrap .event-card-title a {

@@ -79,6 +79,13 @@
 		}
 
 		function resetFilters() {
+			if (controls.month) {
+				controls.month.value = String(root.getAttribute('data-cms-events-current-month') || '0');
+			}
+			if (controls.year) {
+				controls.year.value = String(root.getAttribute('data-cms-events-current-year') || '0');
+			}
+			dateFilterActive = false;
 			window.location.href = archiveUrl;
 		}
 

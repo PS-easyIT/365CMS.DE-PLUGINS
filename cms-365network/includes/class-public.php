@@ -61,6 +61,7 @@ final class CMS_365NETWORK_Public
 
         $data = [
             'settings' => $settings,
+            'hub_settings' => CMS_365NETWORK_Database::instance()->get_hub_settings(),
             'areas' => $this->build_area_cards($settings),
             'events' => $this->fetch_upcoming_events((int) ($settings['sidebar_events_count'] ?? 3)),
             'speakers' => $this->fetch_random_speakers((int) ($settings['random_speakers_count'] ?? 1)),
@@ -69,18 +70,21 @@ final class CMS_365NETWORK_Public
             'stats' => $this->fetch_stats(),
             'current_host' => $this->current_host(),
         ];
+        $data['toolbox_tools'] = $this->fetch_toolbox_links((int) ($data['hub_settings']['hub_toolbox_limit'] ?? 12));
 
         $bufferLevel = ob_get_level();
         try {
-            CMS\ThemeManager::instance()->getHeader(['title' => (string) ($settings['landing_title'] ?? '365NETWORK')]);
+            CMS\ThemeManager::instance()->getHeader(['title' => (string) ($data['hub_settings']['hub_hero_title'] ?? $settings['landing_title'] ?? '365NETWORK')]);
             $template = CMS_365NETWORK_PLUGIN_DIR . 'templates/landing.php';
             if (is_file($template)) {
                 $settings = is_array($data['settings'] ?? null) ? $data['settings'] : [];
+                $hubSettings = is_array($data['hub_settings'] ?? null) ? $data['hub_settings'] : [];
                 $areas = is_array($data['areas'] ?? null) ? $data['areas'] : [];
                 $events = is_array($data['events'] ?? null) ? $data['events'] : [];
                 $speakers = is_array($data['speakers'] ?? null) ? $data['speakers'] : [];
                 $companies = is_array($data['companies'] ?? null) ? $data['companies'] : [];
                 $experts = is_array($data['experts'] ?? null) ? $data['experts'] : [];
+                $toolboxTools = is_array($data['toolbox_tools'] ?? null) ? $data['toolbox_tools'] : [];
                 $stats = is_array($data['stats'] ?? null) ? $data['stats'] : [];
                 $current_host = (string) ($data['current_host'] ?? '');
                 include $template;
@@ -106,6 +110,11 @@ final class CMS_365NETWORK_Public
 
         $css = CMS_365NETWORK_PLUGIN_DIR . 'assets/css/style.css';
         $version = is_file($css) ? (string) filemtime($css) : CMS_365NETWORK_VERSION;
+        if (function_exists('cms_enqueue_style')) {
+            cms_enqueue_style('cms-365network-public', CMS_365NETWORK_PLUGIN_URL . 'assets/css/style.css', [], $version);
+            return;
+        }
+
         echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_365NETWORK_PLUGIN_URL . 'assets/css/style.css?v=' . $version, ENT_QUOTES, 'UTF-8') . '">' . "\n";
     }
 
@@ -117,19 +126,19 @@ final class CMS_365NETWORK_Public
 
         $settings = $this->settings();
         $vars = [
-            '--n365-primary' => $this->hex_color((string) ($settings['primary_color'] ?? '#2563eb'), '#2563eb'),
-            '--n365-accent' => $this->hex_color((string) ($settings['accent_color'] ?? '#0f766e'), '#0f766e'),
-            '--n365-bg' => $this->hex_color((string) ($settings['background_color'] ?? '#f8fafc'), '#f8fafc'),
-            '--n365-surface' => $this->hex_color((string) ($settings['surface_color'] ?? '#ffffff'), '#ffffff'),
-            '--n365-text' => $this->hex_color((string) ($settings['text_color'] ?? '#0f172a'), '#0f172a'),
-            '--n365-muted' => $this->hex_color((string) ($settings['muted_color'] ?? '#64748b'), '#64748b'),
-            '--n365-border' => $this->hex_color((string) ($settings['border_color'] ?? '#e2e8f0'), '#e2e8f0'),
+            '--n365-primary' => '#e6a817',
+            '--n365-accent' => '#e6a817',
+            '--n365-bg' => '#e8ecf0',
+            '--n365-surface' => '#ffffff',
+            '--n365-text' => '#1a2e4a',
+            '--n365-muted' => '#5a6a7a',
+            '--n365-border' => '#dce3ec',
             '--n365-max' => $this->clamp_int($settings['content_width'] ?? 1180, 920, 1500) . 'px',
             '--n365-radius' => $this->clamp_int($settings['card_radius'] ?? 24, 0, 40) . 'px',
             '--n365-gap' => $this->clamp_int($settings['section_gap'] ?? 28, 16, 80) . 'px',
         ];
 
-        $css = '.n365-landing{';
+        $css = '.cms-network-hub-wrap.n365-landing{';
         foreach ($vars as $name => $value) {
             $css .= $name . ':' . $value . ';';
         }
@@ -217,20 +226,22 @@ final class CMS_365NETWORK_Public
     private function fetch_upcoming_events(int $limit): array
     {
         $limit = $this->clamp_int($limit, 0, 8);
-        if ($limit === 0 || !$this->is_plugin_active('cms-events') || !$this->table_exists('events')) {
+        if ($limit === 0 || !$this->is_integration_available('cms-events', 'CMS_Events', 'events')) {
             return [];
         }
 
         try {
             $db = CMS\Database::instance();
             $prefix = $db->prefix();
+            $params = [];
+            $statusWhere = $this->status_filter_sql('events', ['published', 'active'], $params);
             $sql = sprintf("SELECT id, title, event_date, event_time, city, location, image_url, category
                 FROM {$prefix}events
-                WHERE status = ? AND (event_date >= CURDATE() OR (end_date IS NOT NULL AND end_date >= CURDATE()))
+                WHERE {$statusWhere} AND (event_date >= CURDATE() OR (end_date IS NOT NULL AND end_date >= CURDATE()))
                 ORDER BY event_date ASC, event_time ASC
                 LIMIT %d", $limit);
             $stmt = $db->prepare($sql);
-            $stmt->execute(['published']);
+            $stmt->execute($params);
             return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'event');
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK fetch events failed: ' . $e->getMessage());
@@ -241,21 +252,23 @@ final class CMS_365NETWORK_Public
     private function fetch_random_speakers(int $limit): array
     {
         $limit = $this->clamp_int($limit, 0, 4);
-        if ($limit === 0 || !$this->is_plugin_active('cms-speakers') || !$this->table_exists('speakers')) {
+        if ($limit === 0 || !$this->is_integration_available('cms-speakers', 'CMS_Speakers', 'speakers')) {
             return [];
         }
 
         try {
             $db = CMS\Database::instance();
             $prefix = $db->prefix();
-            $offset = $this->random_offset('speakers', 'active', $limit);
+            $offset = $this->random_offset('speakers', ['active'], $limit);
+            $params = [];
+            $statusWhere = $this->status_filter_sql('speakers', ['active'], $params);
             $sql = sprintf("SELECT id, first_name, last_name, position, company, photo_url, location_city
                 FROM {$prefix}speakers
-                WHERE status = ?
+                WHERE {$statusWhere}
                 ORDER BY id ASC
                 LIMIT %d OFFSET %d", $limit, $offset);
             $stmt = $db->prepare($sql);
-            $stmt->execute(['active']);
+            $stmt->execute($params);
             return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'speaker');
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK fetch speakers failed: ' . $e->getMessage());
@@ -266,21 +279,23 @@ final class CMS_365NETWORK_Public
     private function fetch_random_companies(int $limit): array
     {
         $limit = $this->clamp_int($limit, 0, 4);
-        if ($limit === 0 || !$this->is_plugin_active('cms-companies') || !$this->table_exists('companies')) {
+        if ($limit === 0 || !$this->is_integration_available('cms-companies', 'CMS_Companies', 'companies')) {
             return [];
         }
 
         try {
             $db = CMS\Database::instance();
             $prefix = $db->prefix();
-            $offset = $this->random_offset('companies', 'active', $limit);
+            $offset = $this->random_offset('companies', ['active'], $limit);
+            $params = [];
+            $statusWhere = $this->status_filter_sql('companies', ['active'], $params);
             $sql = sprintf("SELECT id, name, industry, logo_url, location_city, is_partner, is_top_partner
                 FROM {$prefix}companies
-                WHERE status = ?
+                WHERE {$statusWhere}
                 ORDER BY id ASC
                 LIMIT %d OFFSET %d", $limit, $offset);
             $stmt = $db->prepare($sql);
-            $stmt->execute(['active']);
+            $stmt->execute($params);
             return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'company');
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK fetch companies failed: ' . $e->getMessage());
@@ -291,21 +306,23 @@ final class CMS_365NETWORK_Public
     private function fetch_random_experts(int $limit): array
     {
         $limit = $this->clamp_int($limit, 0, 4);
-        if ($limit === 0 || !$this->is_plugin_active('cms-experts') || !$this->table_exists('experts')) {
+        if ($limit === 0 || !$this->is_integration_available('cms-experts', 'CMS_Experts', 'experts')) {
             return [];
         }
 
         try {
             $db = CMS\Database::instance();
             $prefix = $db->prefix();
-            $offset = $this->random_offset('experts', 'active', $limit);
+            $offset = $this->random_offset('experts', ['active'], $limit);
+            $params = [];
+            $statusWhere = $this->status_filter_sql('experts', ['active'], $params);
             $sql = sprintf("SELECT id, first_name, last_name, position, company, photo_url, location_city
                 FROM {$prefix}experts
-                WHERE status = ?
+                WHERE {$statusWhere}
                 ORDER BY id ASC
                 LIMIT %d OFFSET %d", $limit, $offset);
             $stmt = $db->prepare($sql);
-            $stmt->execute(['active']);
+            $stmt->execute($params);
             return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'expert');
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK fetch experts failed: ' . $e->getMessage());
@@ -313,34 +330,182 @@ final class CMS_365NETWORK_Public
         }
     }
 
+    private function fetch_toolbox_links(int $limit): array
+    {
+        $limit = $this->clamp_int($limit, 1, 50);
+        if (!$this->is_m365_toolbox_active()) {
+            return [];
+        }
+
+        $resolvedTable = $this->resolve_table_name('m365toolbox_links');
+        if ($resolvedTable === '') {
+            return [];
+        }
+
+        try {
+            $db = CMS\Database::instance();
+            $stmt = $db->prepare("SELECT label, url, icon, description
+                FROM `{$resolvedTable}`
+                WHERE status = ? AND show_on_hub = ?
+                ORDER BY sort_order ASC, id ASC
+                LIMIT {$limit}");
+            $stmt->execute(['active', 1]);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            error_log('CMS 365NETWORK fetch toolbox links failed: ' . $e->getMessage());
+            return [];
+        }
+
+        $tools = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $label = trim((string) ($row['label'] ?? ''));
+            $url = $this->safe_url((string) ($row['url'] ?? ''));
+            if ($label === '' || $url === '#') {
+                continue;
+            }
+
+            $tools[] = [
+                'label' => $label,
+                'url' => $url,
+                'icon' => $this->toolbox_icon_class((string) ($row['icon'] ?? '')),
+                'description' => trim((string) ($row['description'] ?? '')),
+            ];
+        }
+
+        return $tools;
+    }
+
+    private function toolbox_icon_class(string $icon): string
+    {
+        $icon = strtolower(trim($icon));
+        if ($icon === '') {
+            return 'ti-link';
+        }
+
+        if (!str_starts_with($icon, 'ti-')) {
+            $icon = 'ti-' . $icon;
+        }
+
+        return preg_match('/^ti-[a-z0-9-]+$/', $icon) === 1 ? $icon : 'ti-link';
+    }
+
     private function fetch_stats(): array
     {
         return [
-            'events' => $this->is_plugin_active('cms-events') ? $this->count_table_by_status('events', 'published') : 0,
-            'speakers' => $this->is_plugin_active('cms-speakers') ? $this->count_table_by_status('speakers', 'active') : 0,
-            'companies' => $this->is_plugin_active('cms-companies') ? $this->count_table_by_status('companies', 'active') : 0,
-            'experts' => $this->is_plugin_active('cms-experts') ? $this->count_table_by_status('experts', 'active') : 0,
+            'events' => $this->count_events_stat(),
+            'speakers' => $this->count_speakers_stat(),
+            'companies' => $this->count_companies_stat(),
+            'experts' => $this->count_experts_stat(),
         ];
     }
 
-    private function count_table_by_status(string $table, string $status): int
+    private function count_events_stat(): int
     {
-        if (!$this->table_exists($table)) {
+        $count = $this->count_via_plugin_api('cms-events', 'CMS_Events_Database', 'count_events', [['status' => 'published'], ['status' => 'active'], []]);
+        return $count > 0 ? $count : $this->count_public_rows('events', ['published', 'active', 'completed']);
+    }
+
+    private function count_speakers_stat(): int
+    {
+        $count = $this->count_via_plugin_api('cms-speakers', 'CMS_Speakers_Database', 'count_speakers', [['status' => 'active'], ['status' => null]]);
+        return $count > 0 ? $count : $this->count_public_rows('speakers', ['active']);
+    }
+
+    private function count_companies_stat(): int
+    {
+        $count = $this->count_via_plugin_api('cms-companies', 'CMS_Companies_Database', 'get_companies_count', [['status' => 'active'], ['status' => 'any']]);
+        return $count > 0 ? $count : $this->count_public_rows('companies', ['active']);
+    }
+
+    private function count_experts_stat(): int
+    {
+        $count = $this->count_via_plugin_api('cms-experts', 'CMS_Experts_Database', 'countExperts', ['active', '']);
+        return $count > 0 ? $count : $this->count_public_rows('experts', ['active']);
+    }
+
+    /**
+     * @param array<int,mixed> $argumentVariants
+     */
+    private function count_via_plugin_api(string $slug, string $className, string $method, array $argumentVariants): int
+    {
+        if (!$this->load_integration_database($slug, $className) || !method_exists($className, $method)) {
+            return 0;
+        }
+
+        try {
+            $instance = $className::instance();
+        } catch (\Throwable $e) {
+            error_log('CMS 365NETWORK stats: ' . $className . '::instance failed: ' . $e->getMessage());
+            return 0;
+        }
+
+        foreach ($argumentVariants as $argument) {
+            try {
+                $count = is_array($argument)
+                    ? (int) $instance->{$method}($argument)
+                    : (int) $instance->{$method}((string) $argument);
+                if ($count > 0) {
+                    return $count;
+                }
+            } catch (\Throwable $e) {
+                error_log('CMS 365NETWORK stats: ' . $className . '::' . $method . ' failed: ' . $e->getMessage());
+            }
+        }
+
+        return 0;
+    }
+
+    private function load_integration_database(string $slug, string $className): bool
+    {
+        if (class_exists($className, false)) {
+            return true;
+        }
+
+        $baseDir = dirname(CMS_365NETWORK_PLUGIN_DIR);
+        $path = $baseDir . '/' . $slug . '/includes/class-database.php';
+        if (is_file($path)) {
+            require_once $path;
+        }
+
+        return class_exists($className, false);
+    }
+
+    private function count_public_rows(string $table, array $preferredStatuses): int
+    {
+        $resolvedTable = $this->resolve_table_name($table);
+        if ($resolvedTable === '') {
+            $resolvedTable = $this->default_table_name($table);
+        }
+
+        if ($resolvedTable === '') {
             return 0;
         }
 
         try {
             $db = CMS\Database::instance();
-            $prefix = $db->prefix();
-            $stmt = $db->prepare("SELECT COUNT(*) FROM {$prefix}{$table} WHERE status = ?");
-            $stmt->execute([$status]);
+            $params = [];
+            $where = $this->status_filter_sql($table, $preferredStatuses, $params);
+            $stmt = $db->prepare("SELECT COUNT(*) FROM `{$resolvedTable}` WHERE {$where}");
+            $stmt->execute($params);
+            $count = max(0, (int) $stmt->fetchColumn());
+            if ($count > 0 || !$this->column_exists($table, 'status')) {
+                return $count;
+            }
+
+            $stmt = $db->prepare("SELECT COUNT(*) FROM `{$resolvedTable}` WHERE status <> ?");
+            $stmt->execute(['deleted']);
             return max(0, (int) $stmt->fetchColumn());
         } catch (\Throwable $e) {
+            error_log('CMS 365NETWORK count ' . $table . ' failed: ' . $e->getMessage());
             return 0;
         }
     }
 
-    private function random_offset(string $table, string $status, int $limit): int
+    private function random_offset(string $table, array $statuses, int $limit): int
     {
         if (!$this->table_exists($table)) {
             return 0;
@@ -349,8 +514,10 @@ final class CMS_365NETWORK_Public
         try {
             $db = CMS\Database::instance();
             $prefix = $db->prefix();
-            $stmt = $db->prepare("SELECT COUNT(*) FROM {$prefix}{$table} WHERE status = ?");
-            $stmt->execute([$status]);
+            $params = [];
+            $where = $this->status_filter_sql($table, $statuses, $params);
+            $stmt = $db->prepare("SELECT COUNT(*) FROM {$prefix}{$table} WHERE {$where}");
+            $stmt->execute($params);
             $count = max(0, (int) $stmt->fetchColumn());
             if ($count <= $limit) {
                 return 0;
@@ -360,6 +527,28 @@ final class CMS_365NETWORK_Public
         } catch (\Throwable $e) {
             return 0;
         }
+    }
+
+    private function status_filter_sql(string $table, array $statuses, array &$params): string
+    {
+        if (!$this->column_exists($table, 'status')) {
+            return '1=1';
+        }
+
+        $statuses = array_values(array_unique(array_filter(array_map(
+            static fn(mixed $status): string => strtolower(trim((string) $status)),
+            $statuses
+        ), static fn(string $status): bool => preg_match('/^[a-z0-9_-]+$/', $status) === 1)));
+
+        if ($statuses === []) {
+            return '1=1';
+        }
+
+        foreach ($statuses as $status) {
+            $params[] = $status;
+        }
+
+        return 'status IN (' . implode(', ', array_fill(0, count($statuses), '?')) . ')';
     }
 
     private function with_entity_urls(array $rows, string $type): array
@@ -426,18 +615,82 @@ final class CMS_365NETWORK_Public
 
     private function table_exists(string $table): bool
     {
-        if (preg_match('/^[a-z0-9_]+$/', $table) !== 1) {
+        return $this->resolve_table_name($table) !== '';
+    }
+
+    private function column_exists(string $table, string $column): bool
+    {
+        if (preg_match('/^[a-z0-9_]+$/', $table) !== 1 || preg_match('/^[a-z0-9_]+$/', $column) !== 1) {
             return false;
         }
 
         try {
             $db = CMS\Database::instance();
-            $stmt = $db->prepare('SHOW TABLES LIKE ?');
-            $stmt->execute([$db->prefix() . $table]);
+            $resolvedTable = $this->resolve_table_name($table);
+            if ($resolvedTable === '') {
+                return false;
+            }
+
+            $stmt = $db->prepare(
+                'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $stmt->execute([$resolvedTable, $column]);
             return (bool) $stmt->fetchColumn();
         } catch (\Throwable $e) {
             return false;
         }
+    }
+
+    private function resolve_table_name(string $table): string
+    {
+        if (preg_match('/^[a-z0-9_]+$/', $table) !== 1) {
+            return '';
+        }
+
+        try {
+            $db = CMS\Database::instance();
+            $prefix = $db->prefix();
+            $candidates = array_values(array_unique([$prefix . $table, $table]));
+            foreach ($candidates as $candidate) {
+                if (preg_match('/^[a-zA-Z0-9_]+$/', $candidate) !== 1) {
+                    continue;
+                }
+
+                $stmt = $db->prepare(
+                    'SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? LIMIT 1'
+                );
+                $stmt->execute([$candidate]);
+                $found = $stmt->fetchColumn();
+                if (is_string($found) && $found !== '') {
+                    return $found;
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS 365NETWORK resolve table ' . $table . ' failed: ' . $e->getMessage());
+        }
+
+        return '';
+    }
+
+    private function default_table_name(string $table): string
+    {
+        if (preg_match('/^[a-z0-9_]+$/', $table) !== 1) {
+            return '';
+        }
+
+        try {
+            $candidate = CMS\Database::instance()->prefix() . $table;
+            return preg_match('/^[a-zA-Z0-9_]+$/', $candidate) === 1 ? $candidate : '';
+        } catch (\Throwable $e) {
+            return '';
+        }
+    }
+
+    private function is_integration_available(string $slug, string $className, string $table): bool
+    {
+        unset($slug, $className);
+
+        return $this->table_exists($table);
     }
 
     private function is_plugin_active(string $slug): bool
@@ -447,6 +700,27 @@ final class CMS_365NETWORK_Public
         } catch (\Throwable $e) {
             return false;
         }
+    }
+
+    private function is_m365_toolbox_active(): bool
+    {
+        $slugs = ['m365toolbox', 'cms-m365toolbox', 'cms-m365tools'];
+
+        foreach ($slugs as $slug) {
+            try {
+                if (function_exists('cms_plugin_active') && cms_plugin_active($slug)) {
+                    return true;
+                }
+            } catch (\Throwable $e) {
+                // Continue with PluginManager fallback.
+            }
+
+            if ($this->is_plugin_active($slug)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function is_domain_landing_request(): bool

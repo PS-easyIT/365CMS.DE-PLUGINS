@@ -248,7 +248,7 @@ final class CMS_Events_Template_Loader
             error_log('CMS Events template error fallback failed: ' . $e->getMessage());
         }
 
-        echo '<section class="cms-error"><h1>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1><p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p></section>';
+        echo '<section class="cms-error"><h1>' . htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</h1><p>' . htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</p></section>';
     }
 
     private function render_inline_template_fallback(string $template_name, array $data = []): void
@@ -258,20 +258,10 @@ final class CMS_Events_Template_Loader
         }
 
         if ($template_name === 'archive-event.php') {
-            $settings = is_array($data['settings'] ?? null) ? $data['settings'] : [];
-            $archiveTitle = trim((string) ($settings['archive_title'] ?? 'Veranstaltungen'));
-            if ($archiveTitle === '') {
-                $archiveTitle = 'Veranstaltungen';
-            }
-
             $events = is_array($data['events'] ?? null) ? $data['events'] : [];
             $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
 
             echo '<section class="phinit-plugin cms-events-wrap">';
-            echo '<header class="cms-events-head">';
-            echo '<p class="phinit-overline">Events</p>';
-            echo '<h1>' . htmlspecialchars($archiveTitle, ENT_QUOTES, 'UTF-8') . '</h1>';
-            echo '</header>';
             echo '<section class="cms-events-grid" aria-label="Event-Liste">';
 
             if ($events === []) {
@@ -293,9 +283,9 @@ final class CMS_Events_Template_Loader
 
                     echo '<article class="phinit-card cms-events-card cms-events-card--fallback">';
                     echo '<div class="cms-events-card__body">';
-                    echo '<h2 class="cms-events-card__title"><a href="' . htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</a></h2>';
+                    echo '<h2 class="cms-events-card__title"><a href="' . htmlspecialchars($eventUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '">' . htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</a></h2>';
                     echo '<footer class="cms-events-card__footer">';
-                    echo '<a href="' . htmlspecialchars($eventUrl, ENT_QUOTES, 'UTF-8') . '" class="phinit-btn phinit-btn--primary cms-events-card__button">Details</a>';
+                    echo '<a href="' . htmlspecialchars($eventUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '" class="phinit-btn phinit-btn--primary cms-events-card__button">Details</a>';
                     echo '</footer>';
                     echo '</div>';
                     echo '</article>';

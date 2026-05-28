@@ -380,7 +380,8 @@ final class CMS_Events_Meta_Boxes
             <?php endif; ?>
             <button type="button"
                     class="btn btn-sm btn-danger"
-                    data-ev-speaker-remove="<?= $id ?>">&#128465;</button>
+                    data-ev-speaker-remove="<?= $id ?>"
+                    aria-label="Speaker-Zuordnung entfernen">&#128465;</button>
         </div>
         <?php
     }
