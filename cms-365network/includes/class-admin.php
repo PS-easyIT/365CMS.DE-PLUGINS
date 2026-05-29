@@ -33,6 +33,17 @@ final class CMS_365NETWORK_Admin
 
     public function register_admin_menu(): void
     {
+        if (function_exists('cms_register_admin_menu')) {
+            cms_register_admin_menu([
+                'slug' => 'cms-365network',
+                'label' => '365Network Hub',
+                'icon' => 'ti-network',
+                'callback' => 'hub_admin_page',
+                'capability' => 'manage_plugins',
+            ]);
+            return;
+        }
+
         if (!function_exists('add_menu_page')) {
             return;
         }
@@ -50,9 +61,7 @@ final class CMS_365NETWORK_Admin
 
     public static function render_plugin_page_bridge(): void
     {
-        $targetUrl = rtrim((string) SITE_URL, '/') . '/admin/365network';
-        echo '<div class="admin-card"><p>Weiterleitung zu 365NETWORK … <a href="' . htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') . '">Falls nichts passiert, hier klicken</a>.</p></div>';
-        echo '<script>window.location.replace(' . json_encode($targetUrl, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ');</script>';
+        self::redirect_static('/admin/365network');
     }
 
     public function register_routes($router): void
@@ -87,7 +96,6 @@ final class CMS_365NETWORK_Admin
         $settings = CMS_365NETWORK_Database::instance()->get_settings();
         $tab = $this->sanitize_tab((string) ($_GET['tab'] ?? 'domain'));
         $saved = (string) ($_GET['saved'] ?? '') === '1';
-        $csrfToken = Security::instance()->generateToken('cms_365network_settings');
         $previewUrl = rtrim((string) SITE_URL, '/') . '/' . trim((string) ($settings['route_slug'] ?? '365network'), '/');
         $mainHost = $this->normalize_host((string) (parse_url((string) SITE_URL, PHP_URL_HOST) ?: ''));
         $domains = $this->normalize_domain_list((string) ($settings['hub_domains'] ?? ''));
@@ -102,7 +110,7 @@ final class CMS_365NETWORK_Admin
         echo '</header>';
 
         if ($saved) {
-            echo '<div class="alert alert-success" role="status">✅ Einstellungen gespeichert.</div>';
+            $this->admin_notice('Einstellungen gespeichert.', 'success');
         }
 
         echo '<section class="admin-card n365-status-grid" aria-label="365NETWORK Status">';
@@ -113,8 +121,8 @@ final class CMS_365NETWORK_Admin
         $this->render_tabs($tab);
 
         $formClass = 'admin-card admin-form n365-tab-panel n365-admin-form' . ($this->is_hub_section_tab($tab) ? ' hub-admin-form' : '');
-        echo '<form class="' . htmlspecialchars($formClass, ENT_QUOTES, 'UTF-8') . '" method="post" action="' . htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/365network/settings/save', ENT_QUOTES, 'UTF-8') . '" novalidate>';
-        echo '<input type="hidden" name="csrf_token" value="' . htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') . '">';
+        echo '<form class="' . htmlspecialchars($formClass, ENT_QUOTES, 'UTF-8') . '" method="post" action="' . htmlspecialchars($this->admin_url('/admin/365network/settings/save'), ENT_QUOTES, 'UTF-8') . '" novalidate>';
+        $this->nonce_field();
         echo '<input type="hidden" name="tab" value="' . htmlspecialchars($tab, ENT_QUOTES, 'UTF-8') . '">';
 
         if ($this->is_hub_section_tab($tab)) {
@@ -131,8 +139,10 @@ final class CMS_365NETWORK_Admin
 
         echo '<div class="form-actions"><button class="btn btn-primary" type="submit">💾 Einstellungen speichern</button></div>';
         echo '</form>';
+        $this->render_media_picker_modal();
         echo '</main>';
 
+        $this->enqueue_admin_scripts();
         $this->end_admin_layout();
     }
 
@@ -140,7 +150,7 @@ final class CMS_365NETWORK_Admin
     {
         $this->require_admin();
 
-        if (!Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'cms_365network_settings')) {
+        if (!$this->verify_nonce()) {
             http_response_code(403);
             echo '<!DOCTYPE html><html lang="de"><body><h1>403</h1><p>Sicherheitscheck fehlgeschlagen.</p></body></html>';
             exit;
@@ -167,6 +177,7 @@ final class CMS_365NETWORK_Admin
     {
         $tabs = [
             'domain' => '🌐 Domain',
+            'hub-order' => '↕️ Reihenfolge',
             'hub-featured' => '⭐ Featured',
             'hub-hero' => '🏁 Hero',
             'hub-stats' => '📊 Kennzahlen',
@@ -202,6 +213,11 @@ final class CMS_365NETWORK_Admin
     private function hub_section_tabs(): array
     {
         return [
+            'hub-order' => [
+                'section' => 'order',
+                'title' => '↕️ Bereichs-Reihenfolge',
+                'description' => 'Sortiere die sichtbaren Public-Bereiche der 365NETWORK-Landingpage. Deaktivierte Bereiche bleiben ausgeblendet.',
+            ],
             'hub-featured' => [
                 'section' => 'featured',
                 'title' => '⭐ Featured Card',
@@ -230,7 +246,7 @@ final class CMS_365NETWORK_Admin
             'hub-toolbox' => [
                 'section' => 'toolbox',
                 'title' => '🧰 Toolbox',
-                'description' => 'Optionaler Tool-Bereich aus m365toolbox mit Limit, Link, Layout und Card-Design.',
+                'description' => 'Optionaler Tool-Bereich aus cms-m365tools oder Legacy-m365toolbox mit Limit, Link, Layout und Card-Design.',
             ],
         ];
     }
@@ -310,6 +326,10 @@ final class CMS_365NETWORK_Admin
 
     private function hub_field_group(string $key, string $type): string
     {
+        if (in_array($key, ['hub_section_order', 'hub_area_card_order'], true)) {
+            return 'layout';
+        }
+
         if ($type === 'bool' || str_ends_with($key, '_visible')) {
             return 'activation';
         }
@@ -580,6 +600,16 @@ final class CMS_365NETWORK_Admin
                 continue;
             }
 
+            if ($key === 'hub_section_order') {
+                $settings[$key] = $this->sanitize_order_value($value, array_keys($this->hub_order_items('sections')));
+                continue;
+            }
+
+            if ($key === 'hub_area_card_order') {
+                $settings[$key] = $this->sanitize_order_value($value, array_keys($this->hub_order_items('areas')));
+                continue;
+            }
+
             if ($key === 'hub_featured_image_url') {
                 $settings[$key] = $this->safe_image_url($value);
                 continue;
@@ -718,8 +748,40 @@ final class CMS_365NETWORK_Admin
         echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_365NETWORK_PLUGIN_URL . 'assets/css/admin.css?v=' . $version, ENT_QUOTES, 'UTF-8') . '">' . "\n";
     }
 
+    private function enqueue_admin_scripts(): void
+    {
+        $scripts = [];
+        $adminJs = CMS_365NETWORK_PLUGIN_DIR . 'assets/js/admin.js';
+        if (is_file($adminJs)) {
+            $scripts[] = CMS_365NETWORK_PLUGIN_URL . 'assets/js/admin.js?v=' . filemtime($adminJs);
+        }
+
+        $scripts[] = $this->core_asset_url('js/admin-media-integrations.js');
+
+        foreach (array_unique(array_filter($scripts)) as $src) {
+            echo '<script src="' . htmlspecialchars((string) $src, ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
+        }
+    }
+
+    private function core_asset_url(string $asset): string
+    {
+        if (function_exists('cms_asset_url')) {
+            return (string) cms_asset_url($asset);
+        }
+
+        return rtrim((string) SITE_URL, '/') . '/assets/' . ltrim($asset, '/');
+    }
+
     private function require_admin(): void
     {
+        if (function_exists('cms_require_capability')) {
+            $allowed = cms_require_capability('manage_plugins');
+            if ($allowed === false) {
+                $this->redirect('/login');
+            }
+            return;
+        }
+
         $auth = Auth::instance();
         $allowed = method_exists($auth, 'hasCapability') ? $auth->hasCapability('manage_plugins') : $auth->isAdmin();
         if (!$allowed) {
@@ -727,15 +789,95 @@ final class CMS_365NETWORK_Admin
         }
     }
 
+    private function nonce_field(): void
+    {
+        if (function_exists('cms_nonce_field')) {
+            $field = cms_nonce_field('hub_settings_save');
+            if (is_string($field)) {
+                echo $field;
+            }
+            return;
+        }
+
+        echo '<input type="hidden" name="csrf_token" value="' . htmlspecialchars(Security::instance()->generateToken('cms_365network_settings'), ENT_QUOTES, 'UTF-8') . '">';
+    }
+
+    private function verify_nonce(): bool
+    {
+        if (function_exists('cms_verify_nonce')) {
+            try {
+                return (bool) cms_verify_nonce('hub_settings_save');
+            } catch (\Throwable $e) {
+                return false;
+            }
+        }
+
+        return Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'cms_365network_settings');
+    }
+
+    private function admin_notice(string $message, string $type): void
+    {
+        if (function_exists('cms_admin_notice')) {
+            cms_admin_notice($message, $type);
+            return;
+        }
+
+        $class = $type === 'success' ? 'alert alert-success' : 'alert alert-error';
+        echo '<div class="' . htmlspecialchars($class, ENT_QUOTES, 'UTF-8') . '" role="status">' . htmlspecialchars($message, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</div>';
+    }
+
+    private function render_media_picker_modal(): void
+    {
+        $token = Security::instance()->generateToken('editorjs_media');
+
+        echo '<div class="modal modal-blur fade" id="settingsMediaPickerModal" tabindex="-1" aria-hidden="true">';
+        echo '<div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content">';
+        echo '<div class="modal-header"><h5 class="modal-title" data-media-picker-title>Bild auswählen</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button></div>';
+        echo '<div class="modal-body"><div data-media-picker-modal data-api-url="/api/media" data-csrf-token="' . htmlspecialchars($token, ENT_QUOTES, 'UTF-8') . '">';
+        echo '<p class="text-secondary small mb-3">Ein Klick übernimmt das Bild direkt in das aktuell gewählte Bild-URL-Feld.</p>';
+        echo '<div class="row g-2 align-items-center mb-3"><div class="col-md-8"><input type="search" class="form-control" placeholder="Mediathek durchsuchen …" data-media-picker-search></div><div class="col-md-4 text-secondary small" data-media-picker-status>Lade Medien …</div></div>';
+        echo '<div class="row row-cards g-3" data-media-picker-grid></div>';
+        echo '</div></div></div></div></div>';
+    }
+
+    private function admin_url(string $path): string
+    {
+        if ($path === '/admin/365network' && function_exists('cms_admin_url')) {
+            return (string) cms_admin_url('cms-365network');
+        }
+
+        return self::absolute_url($path);
+    }
+
     private function redirect(string $path): void
     {
+        self::redirect_static($path);
+    }
+
+    private static function redirect_static(string $path): void
+    {
+        if (function_exists('cms_redirect')) {
+            cms_redirect(self::absolute_url($path));
+            exit;
+        }
+
         if (class_exists('CMS\\Router')) {
             CMS\Router::instance()->redirect($path);
             return;
         }
 
-        header('Location: ' . rtrim((string) SITE_URL, '/') . '/' . ltrim($path, '/'));
+        $targetUrl = self::absolute_url($path);
+        echo '<div class="admin-card"><p>Weiterleitung nicht automatisch möglich. <a href="' . htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8') . '">Weiter zu 365NETWORK</a>.</p></div>';
         exit;
+    }
+
+    private static function absolute_url(string $path): string
+    {
+        if (preg_match('#^https?://#i', $path) === 1) {
+            return $path;
+        }
+
+        return rtrim((string) SITE_URL, '/') . '/' . ltrim($path, '/');
     }
 
     private function sanitize_tab(string $tab): string
@@ -761,6 +903,24 @@ final class CMS_365NETWORK_Admin
 
         echo '<div class="hub-admin-field">';
         echo '<label for="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</label>';
+
+        if ($key === 'hub_section_order') {
+            $this->render_order_setting_control($key, $label, $value, $this->hub_order_items('sections'), 'Die Bereiche werden in dieser Reihenfolge ausgegeben; ausgeblendete Bereiche werden automatisch übersprungen.');
+            echo '</div>';
+            return;
+        }
+
+        if ($key === 'hub_area_card_order') {
+            $this->render_order_setting_control($key, $label, $value, $this->hub_order_items('areas'), 'Steuert die Reihenfolge der vier Direkteinstieg-Karten im Public-Bereich.');
+            echo '</div>';
+            return;
+        }
+
+        if ($this->is_image_url_field($key)) {
+            $this->render_image_url_field($key, $label, $value, $id);
+            echo '</div>';
+            return;
+        }
 
         if ($type === 'bool') {
             $checked = (int) $value === 1 ? ' checked' : '';
@@ -837,6 +997,117 @@ final class CMS_365NETWORK_Admin
     }
 
     /**
+     * @return array<string,string>
+     */
+    private function hub_order_items(string $type): array
+    {
+        if ($type === 'areas') {
+            return [
+                'events' => '📅 Events',
+                'speakers' => '🎙️ Speaker',
+                'companies' => '🏢 Firmen',
+                'experts' => '👥 Experten',
+            ];
+        }
+
+        return [
+            'featured' => '⭐ Featured Card',
+            'hero' => '🏁 Hero-Bereich',
+            'stats' => '📊 Kennzahlen',
+            'band' => '🔎 Teaser & Suche',
+            'areas' => '🧭 Direkteinstieg',
+            'toolbox' => '🧰 Toolbox',
+        ];
+    }
+
+    /**
+     * @param array<string,string> $items
+     */
+    private function render_order_setting_control(string $key, string $label, string $value, array $items, string $help): void
+    {
+        $order = $this->normalize_order_values($value, array_keys($items));
+        $id = 'n365-' . $key;
+
+        echo '<div class="n365-order-control" data-n365-order-control>';
+        echo '<input type="hidden" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars(implode(',', $order), ENT_QUOTES, 'UTF-8') . '" data-n365-order-input>';
+        echo '<ol class="n365-order-list" aria-label="' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '" data-n365-order-list>';
+
+        foreach ($order as $itemKey) {
+            $itemLabel = (string) ($items[$itemKey] ?? $itemKey);
+            echo '<li class="n365-order-item" draggable="true" data-order-key="' . htmlspecialchars($itemKey, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<span class="n365-order-handle" aria-hidden="true">☰</span>';
+            echo '<span class="n365-order-title">' . htmlspecialchars($itemLabel, ENT_QUOTES, 'UTF-8') . '</span>';
+            echo '<span class="n365-order-actions">';
+            echo '<button type="button" class="btn btn-secondary btn-sm" data-order-move="up" aria-label="' . htmlspecialchars($itemLabel . ' nach oben verschieben', ENT_QUOTES, 'UTF-8') . '">↑</button>';
+            echo '<button type="button" class="btn btn-secondary btn-sm" data-order-move="down" aria-label="' . htmlspecialchars($itemLabel . ' nach unten verschieben', ENT_QUOTES, 'UTF-8') . '">↓</button>';
+            echo '</span></li>';
+        }
+
+        echo '</ol>';
+        echo '<small class="form-text">' . htmlspecialchars($help, ENT_QUOTES, 'UTF-8') . '</small>';
+        echo '</div>';
+    }
+
+    private function render_image_url_field(string $key, string $label, string $value, string $id): void
+    {
+        $previewId = $id . '-preview';
+
+        echo '<div class="n365-media-field">';
+        echo '<div class="n365-media-input-row">';
+        echo '<input type="text" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '" placeholder="/uploads/bild.webp oder https://..." data-media-target-input>';
+        echo '<button type="button" class="btn btn-secondary" data-open-media-picker data-target-input="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" data-preview-id="' . htmlspecialchars($previewId, ENT_QUOTES, 'UTF-8') . '" data-picker-title="' . htmlspecialchars($label . ' auswählen', ENT_QUOTES, 'UTF-8') . '">🖼️ Mediathek</button>';
+        echo '<button type="button" class="btn btn-secondary" data-clear-media-input data-target-input="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" data-preview-id="' . htmlspecialchars($previewId, ENT_QUOTES, 'UTF-8') . '">Leeren</button>';
+        echo '</div>';
+        echo '<div id="' . htmlspecialchars($previewId, ENT_QUOTES, 'UTF-8') . '" class="n365-media-preview" data-media-preview data-preview-variant="image" data-input-id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '"' . ($value === '' ? ' hidden' : '') . '>';
+        if ($value !== '') {
+            echo '<img src="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '" alt="' . htmlspecialchars($label . ' Vorschau', ENT_QUOTES, 'UTF-8') . '" loading="lazy">';
+        }
+        echo '</div>';
+        echo '<small class="form-text">URL manuell eintragen oder ein vorhandenes Bild aus der Mediathek übernehmen.</small>';
+        echo '</div>';
+    }
+
+    private function is_image_url_field(string $key): bool
+    {
+        return str_ends_with($key, '_image_url') || (str_contains($key, 'image') && str_ends_with($key, '_url'));
+    }
+
+    /**
+     * @param array<int,string> $allowed
+     * @return array<int,string>
+     */
+    private function normalize_order_values(string $value, array $allowed): array
+    {
+        $parts = array_filter(array_map(
+            static fn(string $item): string => trim($item),
+            explode(',', $value)
+        ), static fn(string $item): bool => $item !== '');
+
+        $ordered = [];
+        foreach ($parts as $item) {
+            if (in_array($item, $allowed, true) && !in_array($item, $ordered, true)) {
+                $ordered[] = $item;
+            }
+        }
+
+        foreach ($allowed as $item) {
+            if (!in_array($item, $ordered, true)) {
+                $ordered[] = $item;
+            }
+        }
+
+        return $ordered;
+    }
+
+    /**
+     * @param array<int,string> $allowed
+     */
+    private function sanitize_order_value(string $value, array $allowed): string
+    {
+        return implode(',', $this->normalize_order_values($value, $allowed));
+    }
+
+    /**
      * @return array{0:int,1:int}
      */
     private function hub_int_range(string $key): array
@@ -884,7 +1155,15 @@ final class CMS_365NETWORK_Admin
     private function safe_image_url(string $value): string
     {
         $url = trim($value);
-        if ($url === '' || filter_var($url, FILTER_VALIDATE_URL) === false) {
+        if ($url === '') {
+            return '';
+        }
+
+        if (str_starts_with($url, '/') && !str_starts_with($url, '//') && !str_contains($url, "\0")) {
+            return $url;
+        }
+
+        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
             return '';
         }
 

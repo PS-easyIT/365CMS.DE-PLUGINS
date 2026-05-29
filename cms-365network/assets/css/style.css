@@ -54,12 +54,22 @@ body:has(#cms-365network) .page-wrap {
     gap: var(--n365-gap, 28px);
 }
 
+.cms-network-hub-wrap .n365-shell > *,
+.cms-network-hub-wrap .n365-main > * {
+    order: var(--n365-order, 50);
+}
+
+.cms-network-hub-wrap .n365-main {
+    display: grid;
+    gap: var(--n365-gap, 28px);
+}
+
 .cms-network-hub-wrap .n365-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--n365-gap, 28px);
     align-items: stretch;
-    margin-bottom: 40px;
+    margin-bottom: 0;
 }
 
 .cms-network-hub-wrap:not(.n365-has-sidebar) .n365-hero {
@@ -302,6 +312,10 @@ body:has(#cms-365network) .page-wrap {
     flex: 1 1 150px;
 }
 
+.cms-network-hub-wrap .hub-stats-section {
+    min-width: 0;
+}
+
 .cms-network-hub-wrap .hub-stat-card {
     display: flex;
     flex-direction: column;
@@ -375,8 +389,7 @@ body:has(#cms-365network) .page-wrap {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
-    margin-top: -16px;
-    margin-bottom: 28px;
+    margin: 0;
 }
 
 .cms-network-hub-wrap .hub-band--layout-stack {
@@ -788,7 +801,7 @@ body:has(#cms-365network) .page-wrap {
 }
 
 .cms-network-hub-wrap .hub-toolbox {
-    margin-top: 32px;
+    margin-top: 0;
     padding-top: 28px;
     border-top: 1px solid var(--hub-border);
 }

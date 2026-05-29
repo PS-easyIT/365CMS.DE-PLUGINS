@@ -42,7 +42,7 @@ Diese Tabelle steuert die sichtbaren Bereiche der 365NETWORK-Hub-Landingpage typ
 | `setting_key` | `VARCHAR(100)` | Eindeutiger Hub-Setting-Key mit Präfix `hub_` |
 | `setting_val` | `TEXT` | Wert als String |
 | `setting_type` | `ENUM` | `text`, `textarea`, `bool`, `int`, `color`, `select` |
-| `section` | `VARCHAR(50)` | Bereich: `featured`, `hero`, `stats`, `band`, `areas`, `toolbox` |
+| `section` | `VARCHAR(50)` | Bereich: `order`, `featured`, `hero`, `stats`, `band`, `areas`, `toolbox` |
 | `label` | `VARCHAR(150)` | Admin-Label |
 | `sort_order` | `INT` | Sortierung innerhalb der Section |
 | `updated_at` | `DATETIME` | Änderungsdatum |
@@ -51,12 +51,20 @@ Diese Tabelle steuert die sichtbaren Bereiche der 365NETWORK-Hub-Landingpage typ
 
 | Section | Zweck |
 |---|---|
+| `order` | Sortierbare Reihenfolge der Public-Bereiche |
 | `featured` | Sichtbarkeit, Darstellung, Label, Titel, Text, Button, Bild-URL, Breite, Farben und Rundung |
 | `hero` | Sichtbarkeit, Label, H1, Untertitel, CTA-Buttons, Ausrichtung, Farben und Rundung |
 | `stats` | Sichtbarkeit, Labels, Ziel-URLs, Layout, Farben und Rundung der Zähler-Kacheln |
 | `band` | Sichtbarkeit des Teaser-Bands, Event-/Suchtexte, Such-URL, Suchparameter, Layout, Farben und Rundung |
 | `areas` | Sichtbarkeit, Titel, Texte, Icons, URLs, Rasterlayout, Kartenstil, Farben und Rundung der Direkteinstieg-Kacheln |
 | `toolbox` | Sichtbarkeit, Überschrift, Alle-Tools-Link, Anzeige-Limit, Layout, Farben und Rundung |
+
+### Hub-Reihenfolge
+
+Seit `1.0.18` liegen die Sortierwerte ebenfalls in `cms_network_hub_settings`:
+
+- `hub_section_order`: kommagetrennte Reihenfolge der Public-Bereiche (`featured,hero,stats,band,areas,toolbox`).
+- `hub_area_card_order`: kommagetrennte Reihenfolge der Direkteinstieg-Karten (`events,speakers,companies,experts`).
 
 ## Externe Tabellen
 
@@ -66,4 +74,5 @@ Nur lesend und defensiv genutzt:
 - `cms_speakers`
 - `cms_companies`
 - `cms_experts`
-- `cms_m365toolbox_links` bzw. `m365toolbox_links` für optionale Toolbox-Hub-Links
+- `cms_m365toolbox_links` bzw. `m365toolbox_links` für optionale Legacy-Toolbox-Hub-Links
+- alternativ die `cms-m365tools`-Tool-Registry ohne zusätzliche 365NETWORK-Tabelle

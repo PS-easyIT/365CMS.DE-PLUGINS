@@ -1,6 +1,6 @@
 # CMS 365NETWORK
 
-**Version:** 1.0.15
+**Version:** 1.0.18
 **Status:** Domainbasierte HubSite/Landingpage für Netzwerk-Portale.
 
 CMS 365NETWORK stellt eine eigene Landingpage bereit, die auf einer konfigurierten Zusatzdomain direkt als Root-Seite erscheinen kann. Sie bündelt vier zentrale Bereiche des Netzwerks:
@@ -17,11 +17,14 @@ Zusätzlich gibt es eine interne Vorschau-Route, standardmäßig `/365network`.
 - Zusatzdomain-Mapping ohne Core-Anpassung: Root-Aufruf der Domain zeigt die Landingpage.
 - Moderne HubSite mit Hero-Bereich, klickbaren Metric-Cards, Featured Card und vier Bereichskarten.
 - Eigene Admin-Tabs für Featured Card, Hero, Kennzahlen, Teaser-Band/Suche, Direkteinstieg und Toolbox.
+- Sortierbare Reihenfolge für Public-Bereiche sowie für die vier Direkteinstieg-Karten.
+- Mediathek-Auswahl mit Vorschau für Bild-URL-Felder im Hub-Admin.
 - Jeder Hub-Bereich hat Aktivierung, Text-/Content-, Layout- und Design-Settings mit direkter Public-Wirkung.
 - Kompakte Landingpage-Suche und `Nächstes Event`-Teaser für konkrete Einstiegspunkte.
 - No-Sidebar-Layout mit breiter Featured Card, dezentem Featured-Inset und überarbeiteten Bereichskarten.
 - PHINIT-konformes Navy/Gold-Redesign ohne Electric-Blue-Akzente auf der Landingpage.
 - Optionaler M365-Toolbox-Bereich am Ende des Hub-Contents, wenn das Toolbox-Plugin aktiv ist und aktive Hub-Links vorhanden sind.
+- Kompatibilität mit der aktuellen `cms-m365tools`-Tool-Registry, falls keine Legacy-`m365toolbox_links` vorhanden sind.
 - Layoutvarianten: `2x2`, `4x1` oder automatisch responsiv.
 - Design steuerbar: Breite, Rundungen, Abstände, Farben.
 - Optionale Sidebar mit kommenden Events und zufälligen Speaker-/Firmen-/Experten-Karten.
@@ -30,10 +33,14 @@ Zusätzlich gibt es eine interne Vorschau-Route, standardmäßig `/365network`.
 - Defensive Cross-Plugin-Integration: läuft auch, wenn einzelne Module deaktiviert sind.
 - Robuste Statistik-Zählung für angebundene Events, Speaker, Firmen und Experten mit Status-Fallbacks.
 - Tab-basiertes Speichern im Adminbereich bewahrt bestehende Einstellungen anderer Tabs.
+- Core-kompatible Admin-Helfer für Menü, Capability, Nonce, Notice und Redirect werden genutzt, sofern im Core vorhanden.
 - Kanonische Detail-Links für Events, Speaker, Firmen und Experten in den Vorschauen.
 
 ## Aktueller Audit-Stand
 
+- **1.0.18:** Feature: Hub-Bereiche und Direkteinstieg-Karten sind im Admin sortierbar; Bild-URL-Felder können Bilder direkt aus der 365CMS-Mediathek übernehmen.
+- **1.0.17:** Fix: Hub-Suche nutzt `/search` statt `/suche`, stale Defaults werden migriert, der Toolbox-Gesamtlink zeigt auf `/m365-tools` und die Public-Toolbox kann aktive `cms-m365tools`-Registry-Tools anzeigen.
+- **1.0.16:** Audit-Fix: Core-Metadaten im Plugin-Header, `cms_register_hook`-kompatible `hub_install()`/`hub_uninstall()`-Callbacks, Core-Helper für Admin-Menü/Capability/Nonce/Notice/Redirect, kein Inline-Redirect-Script und request-lokaler Statistik-Cache.
 - **1.0.15:** Admin-UX: Hub-Bereiche sind eigene Tabs mit Aktivierung, Text-/Content-, Layout- und Design-Settings; Public-Ausgabe nutzt die neuen Werte direkt über Klassen und CSS-Variablen.
 - **1.0.14:** Audit-Fix: Core-kompatible Toolbox-Aktivprüfung ohne direkte Plugin-Tabellenprüfung, HTTP(S)-Only Featured-Bilder, request-lokaler Settings-Cache und kein Inline-onclick in leeren Bereichskacheln.
 - **1.0.13:** Featured Card steht als erste Hub-Komponente vor dem Hero; ohne Bild nutzt sie eine kompakte einspaltige Textvariante statt leerem Placeholder.
@@ -85,4 +92,4 @@ Das Plugin funktioniert eigenständig. Für dynamische Inhalte nutzt es optional
 - `m365toolbox`/`cms-m365tools` für den optionalen Tool-Link-Bereich
 
 Sind diese Plugins nicht aktiv oder fehlen Tabellen, werden die jeweiligen Vorschaukarten leer/fallbackend angezeigt.
-Für die Toolbox-Sektion müssen zusätzlich aktive Datensätze in `m365toolbox_links` mit `show_on_hub = 1` vorhanden sein.
+Für Legacy-Toolbox-Installationen werden aktive Datensätze in `m365toolbox_links` mit `show_on_hub = 1` bevorzugt. Ist stattdessen die aktuelle `cms-m365tools`-Toolbox aktiv, nutzt 365NETWORK automatisch deren Tool-Registry.

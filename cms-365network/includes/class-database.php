@@ -123,6 +123,7 @@ final class CMS_365NETWORK_Database
     public function default_hub_settings(): array
     {
         $rows = [
+            ['hub_section_order', 'featured,hero,stats,band,areas,toolbox', 'text', 'order', 'Reihenfolge der Public-Bereiche', 10],
             ['hub_featured_visible', '1', 'bool', 'featured', 'Featured-Bereich anzeigen', 10],
             ['hub_featured_style', 'auto', 'select', 'featured', 'Darstellung', 15],
             ['hub_featured_label', 'Featured', 'text', 'featured', 'Label (z.B. "Featured", "Highlight")', 20],
@@ -170,7 +171,7 @@ final class CMS_365NETWORK_Database
             ['hub_band_event_cta', 'Zum Event', 'text', 'band', 'Event-Kachel CTA', 38],
             ['hub_band_search_label', 'Netzwerk durchsuchen', 'text', 'band', 'Such-Kachel Label', 39],
             ['hub_band_search_title', 'Events, Speaker, Firmen und Experten finden', 'text', 'band', 'Such-Kachel Text', 40],
-            ['hub_band_search_url', '/suche', 'text', 'band', 'Such-Ergebnis-URL', 40],
+            ['hub_band_search_url', '/search', 'text', 'band', 'Such-Ergebnis-URL', 40],
             ['hub_band_search_param', 'q', 'text', 'band', 'Such-URL-Parameter', 50],
             ['hub_band_search_placeholder', 'Suchbegriff eingeben ...', 'text', 'band', 'Suchfeld Placeholder', 55],
             ['hub_band_layout', 'split', 'select', 'band', 'Layout', 60],
@@ -179,6 +180,7 @@ final class CMS_365NETWORK_Database
             ['hub_band_accent_color', '#e6a817', 'color', 'band', 'Akzentfarbe', 90],
             ['hub_band_radius', '8', 'int', 'band', 'Rundung (px)', 100],
             ['hub_areas_visible', '1', 'bool', 'areas', 'Direkteinstieg anzeigen', 10],
+            ['hub_area_card_order', 'events,speakers,companies,experts', 'text', 'areas', 'Reihenfolge der Bereichskarten', 15],
             ['hub_areas_label', 'Direkteinstieg', 'text', 'areas', 'Sektion-Label', 20],
             ['hub_areas_title', 'Vier Bereiche, ein Netzwerk', 'text', 'areas', 'Sektion-Überschrift', 30],
             ['hub_areas_layout', 'grid-2x2', 'select', 'areas', 'Layout', 35],
@@ -210,7 +212,7 @@ final class CMS_365NETWORK_Database
             ['hub_toolbox_visible', '1', 'bool', 'toolbox', 'Toolbox-Bereich anzeigen', 10],
             ['hub_toolbox_label', 'M365 Toolbox', 'text', 'toolbox', 'Sektion-Label', 20],
             ['hub_toolbox_title', 'Tools & Ressourcen', 'text', 'toolbox', 'Sektion-Überschrift', 30],
-            ['hub_toolbox_all_url', '/m365toolbox', 'text', 'toolbox', '"Alle Tools" Link URL', 40],
+            ['hub_toolbox_all_url', '/m365-tools', 'text', 'toolbox', '"Alle Tools" Link URL', 40],
             ['hub_toolbox_all_label', 'Alle Tools ansehen', 'text', 'toolbox', '"Alle Tools" Link Beschriftung', 50],
             ['hub_toolbox_limit', '12', 'int', 'toolbox', 'Max. angezeigte Tools', 60],
             ['hub_toolbox_layout', 'grid', 'select', 'toolbox', 'Layout', 70],
@@ -438,8 +440,31 @@ final class CMS_365NETWORK_Database
                     (int) $definition['sort_order'],
                 ]);
             }
+
+            $this->migrate_legacy_hub_defaults();
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK seed hub settings failed: ' . $e->getMessage());
+        }
+    }
+
+    private function migrate_legacy_hub_defaults(): void
+    {
+        try {
+            $db = CMS\Database::instance();
+            $migrations = [
+                ['hub_band_search_url', '/search', ['/suche', 'suche']],
+                ['hub_toolbox_all_url', '/m365-tools', ['/m365toolbox', 'm365toolbox', '/cms-m365tools', 'cms-m365tools']],
+            ];
+
+            foreach ($migrations as [$key, $target, $legacyValues]) {
+                $placeholders = implode(', ', array_fill(0, count($legacyValues), '?'));
+                $stmt = $db->prepare("UPDATE {$db->prefix()}network_hub_settings
+                    SET setting_val = ?
+                    WHERE setting_key = ? AND setting_val IN ({$placeholders})");
+                $stmt->execute(array_merge([(string) $target, (string) $key], array_map('strval', $legacyValues)));
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS 365NETWORK migrate hub defaults failed: ' . $e->getMessage());
         }
     }
 

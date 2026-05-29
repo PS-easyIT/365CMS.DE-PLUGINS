@@ -6,6 +6,9 @@
 |---|---|---|
 | `cms_init` | `CMS_365NETWORK::init_plugin()` | Admin/Public Klassen initialisieren |
 | `plugin_activated` | `CMS_365NETWORK::on_activation()` | Settings-Tabelle anlegen |
+| `plugin_deactivated` | `CMS_365NETWORK::on_deactivation()` | Deaktivierung ohne Datenlöschung signalisieren |
+| `plugin_activate` | `hub_install()` | Kompatibler Core-Hook via `cms_register_hook()`, falls verfügbar |
+| `plugin_deactivate` | `hub_uninstall()` | Kompatibler Core-Hook via `cms_register_hook()`, ohne Tabellen zu löschen |
 | `cms_admin_menu` | `CMS_365NETWORK_Admin::register_admin_menu()` | Admin-Menüeintrag registrieren |
 | `admin_menu_items` | `CMS_365NETWORK_Admin::add_menu_item()` | Sidebar-Menü ergänzen |
 | `register_routes` | `CMS_365NETWORK_Admin::register_routes()` | Admin-Routen registrieren |
@@ -29,9 +32,12 @@
 | Tab | Zweck |
 |---|---|
 | `domain` | Landingpage aktivieren, Zusatzdomains und interne Route |
-| `hub` | Featured Card, Hero, Stats, Band, Direkteinstieg und Toolbox aus `network_hub_settings` |
-| `content` | Legacy-/Featured-Inhalte |
-| `layout` | Layout- und Designvariablen |
+| `hub-featured` | Featured Card aus `network_hub_settings` |
+| `hub-hero` | Hero-Texte, CTA, Layout und Design |
+| `hub-stats` | Kennzahlen-Labels, Zielseiten, Layout und Design |
+| `hub-band` | Event-Teaser, Suche, Texte, Layout und Design |
+| `hub-areas` | Direkteinstieg-Kacheln, Raster, Kartenstil und Design |
+| `hub-toolbox` | Toolbox-Sektion, Limit, Layout und Design |
+| `layout` | Übergreifende Seitenlayout- und Designvariablen |
 | `sidebar` | Sidebar und dynamische Vorschauen |
-| `cards` | Legacy-Bereichskarten-Fallbacks |
 | `analytics` | Optionaler Analyse-Code |

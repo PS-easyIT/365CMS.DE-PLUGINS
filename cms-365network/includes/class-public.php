@@ -15,6 +15,7 @@ final class CMS_365NETWORK_Public
 {
     private static ?self $instance = null;
     private ?array $settingsCache = null;
+    private ?array $statsCache = null;
     private ?bool $domainLandingRequestCache = null;
     private ?bool $landingPathRequestCache = null;
 
@@ -371,6 +372,17 @@ final class CMS_365NETWORK_Public
             return [];
         }
 
+        $legacyTools = $this->fetch_legacy_toolbox_links($limit);
+        if ($legacyTools !== []) {
+            return $legacyTools;
+        }
+
+        return $this->fetch_m365tools_registry_links($limit);
+    }
+
+    private function fetch_legacy_toolbox_links(int $limit): array
+    {
+
         $resolvedTable = $this->resolve_table_name('m365toolbox_links');
         if ($resolvedTable === '') {
             return [];
@@ -378,11 +390,12 @@ final class CMS_365NETWORK_Public
 
         try {
             $db = CMS\Database::instance();
-            $stmt = $db->prepare("SELECT label, url, icon, description
+            $sql = sprintf("SELECT label, url, icon, description
                 FROM `{$resolvedTable}`
                 WHERE status = ? AND show_on_hub = ?
                 ORDER BY sort_order ASC, id ASC
-                LIMIT {$limit}");
+                LIMIT %d", $limit);
+            $stmt = $db->prepare($sql);
             $stmt->execute(['active', 1]);
             $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
         } catch (\Throwable $e) {
@@ -413,6 +426,69 @@ final class CMS_365NETWORK_Public
         return $tools;
     }
 
+    private function fetch_m365tools_registry_links(int $limit): array
+    {
+        if (!class_exists('CMS_M365CALCULATOR_Tool_Registry', false) || !method_exists('CMS_M365CALCULATOR_Tool_Registry', 'ordered_tools')) {
+            return [];
+        }
+
+        try {
+            $rows = CMS_M365CALCULATOR_Tool_Registry::ordered_tools(true);
+        } catch (\Throwable $e) {
+            error_log('CMS 365NETWORK fetch m365tools registry failed: ' . $e->getMessage());
+            return [];
+        }
+
+        $tools = [];
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $status = strtolower(trim((string) ($row['status'] ?? '')));
+            if (!in_array($status, ['live', 'beta'], true)) {
+                continue;
+            }
+
+            $label = trim((string) ($row['title'] ?? ''));
+            $url = $this->safe_url((string) ($row['url'] ?? ''));
+            if ($label === '' || $url === '#') {
+                continue;
+            }
+
+            $tools[] = [
+                'label' => $label,
+                'url' => $url,
+                'icon' => $this->toolbox_registry_icon_class((string) ($row['icon'] ?? '')),
+                'description' => trim((string) ($row['description'] ?? '')),
+            ];
+
+            if (count($tools) >= $limit) {
+                break;
+            }
+        }
+
+        return $tools;
+    }
+
+    private function toolbox_registry_icon_class(string $icon): string
+    {
+        $icon = strtolower(trim($icon));
+        $map = [
+            'addons' => 'ti-apps',
+            'calculator' => 'ti-calculator',
+            'comparison' => 'ti-columns-3',
+            'copilot' => 'ti-sparkles',
+            'license' => 'ti-certificate',
+            'mailbox' => 'ti-mail',
+            'phone' => 'ti-phone',
+            'roi' => 'ti-chart-line',
+            'storage' => 'ti-database',
+        ];
+
+        return $map[$icon] ?? $this->toolbox_icon_class($icon);
+    }
+
     private function toolbox_icon_class(string $icon): string
     {
         $icon = strtolower(trim($icon));
@@ -429,7 +505,11 @@ final class CMS_365NETWORK_Public
 
     private function fetch_stats(): array
     {
-        return [
+        if ($this->statsCache !== null) {
+            return $this->statsCache;
+        }
+
+        return $this->statsCache = [
             'events' => $this->count_events_stat(),
             'speakers' => $this->count_speakers_stat(),
             'companies' => $this->count_companies_stat(),

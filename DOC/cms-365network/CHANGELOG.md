@@ -1,5 +1,28 @@
 # Changelog – CMS 365NETWORK
 
+## 1.0.18 – 2026-05-29
+
+- Neuer Admin-Tab `↕️ Reihenfolge`: Featured Card, Hero, Kennzahlen, Teaser/Suche, Direkteinstieg und Toolbox können per Drag & Drop oder Hoch/Runter-Buttons sortiert werden.
+- Die vier Direkteinstieg-Karten (`Events`, `Speaker`, `Firmen`, `Experten`) besitzen im Bereiche-Tab eine eigene sortierbare Reihenfolge.
+- Bild-URL-Felder, aktuell die Featured-Bild-URL, besitzen eine direkte Auswahl aus der vorhandenen 365CMS-Mediathek inklusive Vorschau und Leeren-Aktion.
+- Bild-URL-Sanitizer akzeptieren jetzt neben absoluten HTTP(S)-URLs auch interne Medienpfade wie `/uploads/...` und `/media-file?...`, damit Mediathek-Auswahlen gespeichert und öffentlich gerendert werden.
+
+## 1.0.17 – 2026-05-29
+
+- Hub-Suche auf den Core-Routenvertrag korrigiert: neue und bestehende Alt-Defaults nutzen `/search` statt `/suche`, damit Suchanfragen nicht mehr auf 404 laufen.
+- Stale Hub-Defaults für `hub_band_search_url` und `hub_toolbox_all_url` werden beim Seed-/Settings-Lauf migriert, sofern sie noch auf den alten Standardwerten stehen.
+- `Alle Tools` zeigt standardmäßig auf die aktuelle `cms-m365tools`-Public-Route `/m365-tools`.
+- Public-Toolbox lädt weiterhin Legacy-Links aus `m365toolbox_links`, fällt aber bei aktivem `cms-m365tools` automatisch auf die aktuelle Tool-Registry zurück, wenn keine Legacy-Hub-Links vorhanden sind.
+
+## 1.0.16 – 2026-05-28
+
+- Plugin-Header um Core-Metadaten `Plugin Slug` und `Requires` ergänzt und Autor auf Andreas Hepp gesetzt.
+- Aktivierung/Deaktivierung um `cms_register_hook`-kompatible globale `hub_install()`-/`hub_uninstall()`-Callbacks erweitert; Deaktivierung löscht keine Tabellen.
+- Admin-Menü registriert sich über `cms_register_admin_menu()`, wenn der Core-Helper verfügbar ist; Fallback bleibt Core-kompatibel über bestehende Menü-Hooks.
+- Admin-Capability, Nonce-Feld, Nonce-Prüfung, Admin-Notice und Redirect nutzen Core-Helper, sofern vorhanden, mit sicheren Fallbacks für bestehende 365CMS-Installationen.
+- Inline-Redirect-Script aus der Admin-Bridge entfernt.
+- Statistikwerte werden request-lokal gecacht; Toolbox-Limit bleibt integer-geclamped und wird explizit in SQL formatiert.
+
 ## 1.0.15 – 2026-05-28
 
 - Hub-Sammel-Tab in konsistente eigene Bereichs-Tabs aufgeteilt: Featured Card, Hero, Kennzahlen, Teaser & Suche, Direkteinstieg und Toolbox.
