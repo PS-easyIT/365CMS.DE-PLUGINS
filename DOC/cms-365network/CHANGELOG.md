@@ -1,5 +1,28 @@
 # Changelog – CMS 365NETWORK
 
+## 1.0.20 – 2026-05-29
+
+- Die Suche der 365NETWORK-Landingpage ist jetzt eine eigene Plugin-Route unter `/365network/search` und damit vollständig von der globalen 365CMS-Suche `/search` getrennt.
+- Die Landingpage-Searchbox zeigt direkt auf diese neue Route; alte Defaults wie `/suche` oder `/search` werden für die Hub-Search-URL auf `/365network/search` migriert.
+- Die Suchergebnisse greifen ausschließlich auf die vier Netzwerk-Plugins zurück: `cms-events`, `cms-speakers`, `cms-companies` und `cms-experts`.
+- Events, Speaker, Firmen und Experten werden gruppiert ausgegeben; jede Gruppe nutzt nur vorhandene Tabellen/Spalten und öffentliche Statuswerte.
+- Alle Suchabfragen laufen über Prepared Statements mit LIKE-Parametern und defensiven Tabellen-/Spalten-Whitelists.
+
+## 1.0.19 – 2026-05-29
+
+- Hub- und Basis-Einstellungen leeren nach dem Speichern immer explizit den 365CMS-Public-Cache, damit Plugin-Änderungen nicht von einer global deaktivierten Auto-Clear-Option blockiert werden.
+- Bestehende Performance-Hooks `performance_cache_purged` und `performance_cdn_purge_requested` werden für `cms-365network` ausgelöst, damit angebundene CDN-/Reverse-Proxy-Caches ebenfalls reagieren können.
+- Textänderungen in Hero, Featured Card, Teaser/Suche, Direkteinstieg und Toolbox werden dadurch nicht mehr von einer alten gecachten Public-Ausgabe überdeckt.
+- Ältere `network_hub_settings`-Tabellen werden beim Laden/Speichern auf das aktuelle `setting_type`-Enum inklusive `textarea` migriert, damit Textarea-Felder zuverlässig persistieren.
+- Legacy-Dubletten in `network_hub_settings` werden bereinigt und ein UNIQUE-Key auf `setting_key` wird nachgezogen. Dadurch können neue Default-Seeds gespeicherte Admin-Texte nicht mehr in der Public-Ausgabe überdecken.
+- Hub-Speichern meldet nur noch Erfolg, wenn die geschriebenen Werte direkt aus der Datenbank zurückgelesen und verifiziert werden konnten.
+- Featured-Bild-URLs werden robuster normalisiert: `uploads/...`, `media/...`, `media-file?...` sowie Pfade mit Leerzeichen werden als nutzbare Public-URLs gespeichert/gerendert.
+- Der Mediathek-Picker erhält einen Fallback-Dialog, falls die Bootstrap-/Tabler-Modal-API auf der Plugin-Adminseite nicht global verfügbar ist.
+- Featured-Bilder erhalten im Admin eine steuerbare Bildhöhe in Pixeln; die Ausgabe nutzt `object-fit: contain` mit mittiger Ausrichtung, damit das komplette Bild sichtbar bleibt und nicht zugeschnitten wird.
+- Der Hero-Bereich bietet ein Höhen-Layout mit den Optionen `Kompakt`, `Normal` und `Groß`.
+- Die Hero-Hauptüberschrift nutzt jetzt die volle Kachelbreite statt auf `780px` begrenzt zu werden.
+- Public-Kachel-Links bleiben beim Hover/Fokus ohne Textunterstreichung, auch wenn das aktive Theme allgemeine Link-Hover-Regeln setzt.
+
 ## 1.0.18 – 2026-05-29
 
 - Neuer Admin-Tab `↕️ Reihenfolge`: Featured Card, Hero, Kennzahlen, Teaser/Suche, Direkteinstieg und Toolbox können per Drag & Drop oder Hoch/Runter-Buttons sortiert werden.

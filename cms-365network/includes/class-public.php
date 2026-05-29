@@ -39,6 +39,7 @@ final class CMS_365NETWORK_Public
         $routeSlug = $this->route_slug($settings);
 
         $router->addRoute('GET', '/', [$this, 'render_root_or_home']);
+        $router->addRoute('GET', '/' . $routeSlug . '/search', [$this, 'render_search']);
         $router->addRoute('GET', '/' . $routeSlug, [$this, 'render_landing']);
     }
 
@@ -70,6 +71,7 @@ final class CMS_365NETWORK_Public
             'experts' => $this->fetch_random_experts((int) ($settings['random_experts_count'] ?? 1)),
             'stats' => $this->fetch_stats(),
             'current_host' => $this->current_host(),
+            'network_search_url' => $this->network_search_url($settings),
         ];
         $data['toolbox_tools'] = $this->fetch_toolbox_links((int) ($data['hub_settings']['hub_toolbox_limit'] ?? 12));
 
@@ -88,6 +90,7 @@ final class CMS_365NETWORK_Public
                 $toolboxTools = is_array($data['toolbox_tools'] ?? null) ? $data['toolbox_tools'] : [];
                 $stats = is_array($data['stats'] ?? null) ? $data['stats'] : [];
                 $current_host = (string) ($data['current_host'] ?? '');
+                $networkSearchUrl = (string) ($data['network_search_url'] ?? $this->network_search_url($settings));
                 include $template;
             }
             CMS\ThemeManager::instance()->getFooter();
@@ -99,6 +102,45 @@ final class CMS_365NETWORK_Public
             error_log('CMS 365NETWORK landing render failed: ' . $e->getMessage());
             http_response_code(500);
             echo '<!DOCTYPE html><html lang="de"><body><h1>365NETWORK</h1><p>Die Landingpage konnte aktuell nicht dargestellt werden.</p></body></html>';
+            exit;
+        }
+    }
+
+    public function render_search(): void
+    {
+        $settings = $this->settings();
+        if ((string) ($settings['landing_enabled'] ?? '1') !== '1') {
+            CMS\ThemeManager::instance()->render('home');
+            return;
+        }
+
+        $hubSettings = CMS_365NETWORK_Database::instance()->get_hub_settings();
+        $searchParam = $this->search_param($hubSettings);
+        $searchQuery = $this->search_query_from_request($searchParam);
+        $searchResults = strlen($searchQuery) >= 2 ? $this->search_network($searchQuery, 10) : $this->empty_search_groups();
+        $searchTotal = 0;
+        foreach ($searchResults as $group) {
+            $searchTotal += is_array($group['items'] ?? null) ? count($group['items']) : 0;
+        }
+
+        $bufferLevel = ob_get_level();
+        try {
+            $titleSuffix = $searchQuery !== '' ? ': ' . $searchQuery : '';
+            CMS\ThemeManager::instance()->getHeader(['title' => '365NETWORK Suche' . $titleSuffix]);
+            $template = CMS_365NETWORK_PLUGIN_DIR . 'templates/search.php';
+            if (is_file($template)) {
+                $searchUrl = $this->network_search_url($settings);
+                include $template;
+            }
+            CMS\ThemeManager::instance()->getFooter();
+        } catch (\Throwable $e) {
+            while (ob_get_level() > $bufferLevel) {
+                ob_end_clean();
+            }
+
+            error_log('CMS 365NETWORK search render failed: ' . $e->getMessage());
+            http_response_code(500);
+            echo '<!DOCTYPE html><html lang="de"><body><h1>365NETWORK Suche</h1><p>Die Suche konnte aktuell nicht dargestellt werden.</p></body></html>';
             exit;
         }
     }
@@ -151,6 +193,7 @@ final class CMS_365NETWORK_Public
             '--n365-featured-text' => $this->hex_color((string) ($hubSettings['hub_featured_text_color'] ?? ''), '#1a2e4a'),
             '--n365-featured-accent' => $this->hex_color((string) ($hubSettings['hub_featured_accent_color'] ?? ''), '#e6a817'),
             '--n365-featured-radius' => $this->clamp_int($hubSettings['hub_featured_radius'] ?? 8, 0, 40) . 'px',
+            '--n365-featured-image-height' => $this->clamp_int($hubSettings['hub_featured_image_height'] ?? 320, 120, 720) . 'px',
             '--n365-hero-bg' => $this->hex_color((string) ($hubSettings['hub_hero_bg_color'] ?? ''), '#ffffff'),
             '--n365-hero-text' => $this->hex_color((string) ($hubSettings['hub_hero_text_color'] ?? ''), '#1a2e4a'),
             '--n365-hero-accent' => $this->hex_color((string) ($hubSettings['hub_hero_accent_color'] ?? ''), '#e6a817'),
@@ -573,6 +616,292 @@ final class CMS_365NETWORK_Public
         return 0;
     }
 
+    private function search_network(string $query, int $limitPerType): array
+    {
+        $limitPerType = $this->clamp_int($limitPerType, 1, 20);
+
+        return [
+            'events' => [
+                'key' => 'events',
+                'label' => 'Events',
+                'icon' => 'ti-calendar-event',
+                'items' => $this->search_events($query, $limitPerType),
+            ],
+            'speakers' => [
+                'key' => 'speakers',
+                'label' => 'Speaker',
+                'icon' => 'ti-microphone-2',
+                'items' => $this->search_people_table('speakers', 'speaker', 'Speaker', 'ti-microphone-2', $query, $limitPerType),
+            ],
+            'companies' => [
+                'key' => 'companies',
+                'label' => 'Firmen',
+                'icon' => 'ti-building-community',
+                'items' => $this->search_companies($query, $limitPerType),
+            ],
+            'experts' => [
+                'key' => 'experts',
+                'label' => 'Experten',
+                'icon' => 'ti-user-star',
+                'items' => $this->search_people_table('experts', 'expert', 'Experte', 'ti-user-star', $query, $limitPerType),
+            ],
+        ];
+    }
+
+    private function empty_search_groups(): array
+    {
+        return [
+            'events' => ['key' => 'events', 'label' => 'Events', 'icon' => 'ti-calendar-event', 'items' => []],
+            'speakers' => ['key' => 'speakers', 'label' => 'Speaker', 'icon' => 'ti-microphone-2', 'items' => []],
+            'companies' => ['key' => 'companies', 'label' => 'Firmen', 'icon' => 'ti-building-community', 'items' => []],
+            'experts' => ['key' => 'experts', 'label' => 'Experten', 'icon' => 'ti-user-star', 'items' => []],
+        ];
+    }
+
+    private function search_events(string $query, int $limit): array
+    {
+        $rows = $this->search_table(
+            'events',
+            ['published', 'active'],
+            ['id', 'title', 'excerpt', 'description', 'event_date', 'event_time', 'city', 'location', 'category', 'organizer_name'],
+            ['title', 'excerpt', 'description', 'category', 'city', 'location', 'organizer_name', 'tags'],
+            $query,
+            $limit,
+            $this->column_exists('events', 'event_date') ? 'event_date ASC, id DESC' : 'id DESC'
+        );
+
+        $items = [];
+        foreach ($rows as $row) {
+            $title = trim((string) ($row['title'] ?? '')) ?: 'Event';
+            $date = $this->format_search_date((string) ($row['event_date'] ?? ''), (string) ($row['event_time'] ?? ''));
+            $location = trim((string) (($row['city'] ?? '') ?: ($row['location'] ?? '')));
+            $meta = implode(' · ', array_filter([$date, $location, trim((string) ($row['category'] ?? ''))]));
+
+            $items[] = [
+                'type' => 'event',
+                'type_label' => 'Event',
+                'icon' => 'ti-calendar-event',
+                'title' => $title,
+                'excerpt' => $this->search_excerpt([(string) ($row['excerpt'] ?? ''), (string) ($row['description'] ?? ''), (string) ($row['organizer_name'] ?? '')]),
+                'meta' => $meta,
+                'url' => $this->entity_url('event', $row),
+            ];
+        }
+
+        return $items;
+    }
+
+    private function search_companies(string $query, int $limit): array
+    {
+        $rows = $this->search_table(
+            'companies',
+            ['active'],
+            ['id', 'name', 'industry', 'description', 'location_city', 'is_partner', 'is_top_partner'],
+            ['name', 'industry', 'description', 'location_city', 'location_country'],
+            $query,
+            $limit,
+            'name ASC, id DESC'
+        );
+
+        $items = [];
+        foreach ($rows as $row) {
+            $title = trim((string) ($row['name'] ?? '')) ?: 'Firma';
+            $flags = [];
+            if ((int) ($row['is_top_partner'] ?? 0) === 1) {
+                $flags[] = 'Top-Partner';
+            } elseif ((int) ($row['is_partner'] ?? 0) === 1) {
+                $flags[] = 'Partner';
+            }
+            $meta = implode(' · ', array_filter([trim((string) ($row['industry'] ?? '')), trim((string) ($row['location_city'] ?? '')), implode(' · ', $flags)]));
+
+            $items[] = [
+                'type' => 'company',
+                'type_label' => 'Firma',
+                'icon' => 'ti-building-community',
+                'title' => $title,
+                'excerpt' => $this->search_excerpt([(string) ($row['description'] ?? '')]),
+                'meta' => $meta,
+                'url' => $this->entity_url('company', $row),
+            ];
+        }
+
+        return $items;
+    }
+
+    private function search_people_table(string $table, string $type, string $label, string $icon, string $query, int $limit): array
+    {
+        $rows = $this->search_table(
+            $table,
+            ['active'],
+            ['id', 'first_name', 'last_name', 'position', 'company', 'location_city', 'short_bio', 'bio', 'biography', 'target_audience'],
+            ['first_name', 'last_name', 'position', 'company', 'location_city', 'short_bio', 'bio', 'biography', 'target_audience'],
+            $query,
+            $limit,
+            'last_name ASC, first_name ASC, id DESC'
+        );
+
+        $items = [];
+        foreach ($rows as $row) {
+            $name = trim((string) (($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? '')));
+            $title = $name !== '' ? $name : $label;
+            $meta = implode(' · ', array_filter([
+                trim((string) ($row['position'] ?? '')),
+                trim((string) ($row['company'] ?? '')),
+                trim((string) ($row['location_city'] ?? '')),
+            ]));
+
+            $items[] = [
+                'type' => $type,
+                'type_label' => $label,
+                'icon' => $icon,
+                'title' => $title,
+                'excerpt' => $this->search_excerpt([(string) ($row['short_bio'] ?? ''), (string) ($row['bio'] ?? ''), (string) ($row['biography'] ?? ''), (string) ($row['target_audience'] ?? '')]),
+                'meta' => $meta,
+                'url' => $this->entity_url($type, $row),
+            ];
+        }
+
+        return $items;
+    }
+
+    private function search_table(string $table, array $statuses, array $selectColumns, array $searchColumns, string $query, int $limit, string $orderBy): array
+    {
+        $resolvedTable = $this->resolve_table_name($table);
+        if ($resolvedTable === '') {
+            return [];
+        }
+
+        $selectColumns = $this->existing_columns($table, $selectColumns);
+        $searchColumns = $this->existing_columns($table, $searchColumns);
+        if (!in_array('id', $selectColumns, true)) {
+            array_unshift($selectColumns, 'id');
+        }
+        if ($searchColumns === []) {
+            return [];
+        }
+
+        $params = [];
+        $statusWhere = $this->status_filter_sql($table, $statuses, $params);
+        $like = '%' . addcslashes($query, "\\%_") . '%';
+        $likeParts = [];
+        foreach ($searchColumns as $column) {
+            $likeParts[] = '`' . $column . '` LIKE ? ESCAPE \'\\\\\'';
+            $params[] = $like;
+        }
+
+        $orderBy = $this->safe_order_by($table, $orderBy);
+        $selectSql = implode(', ', array_map(static fn(string $column): string => '`' . $column . '`', $selectColumns));
+        $sql = sprintf(
+            'SELECT %s FROM `%s` WHERE %s AND (%s) ORDER BY %s LIMIT %d',
+            $selectSql,
+            $resolvedTable,
+            $statusWhere,
+            implode(' OR ', $likeParts),
+            $orderBy,
+            $this->clamp_int($limit, 1, 20)
+        );
+
+        try {
+            $stmt = CMS\Database::instance()->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            return array_values(array_filter($rows, 'is_array'));
+        } catch (\Throwable $e) {
+            error_log('CMS 365NETWORK search ' . $table . ' failed: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function existing_columns(string $table, array $columns): array
+    {
+        $existing = [];
+        foreach ($columns as $column) {
+            $column = trim((string) $column);
+            if ($column !== '' && preg_match('/^[a-z0-9_]+$/', $column) === 1 && $this->column_exists($table, $column)) {
+                $existing[] = $column;
+            }
+        }
+
+        return array_values(array_unique($existing));
+    }
+
+    private function safe_order_by(string $table, string $orderBy): string
+    {
+        $parts = array_filter(array_map('trim', explode(',', $orderBy)));
+        $safe = [];
+        foreach ($parts as $part) {
+            if (preg_match('/^([a-z0-9_]+)\s+(ASC|DESC)$/i', $part, $matches) !== 1) {
+                continue;
+            }
+
+            $column = strtolower($matches[1]);
+            if ($this->column_exists($table, $column)) {
+                $safe[] = '`' . $column . '` ' . strtoupper($matches[2]);
+            }
+        }
+
+        return $safe !== [] ? implode(', ', $safe) : '`id` DESC';
+    }
+
+    private function search_excerpt(array $values, int $length = 180): string
+    {
+        foreach ($values as $value) {
+            $text = trim((string) preg_replace('/\s+/', ' ', strip_tags((string) $value)));
+            if ($text === '') {
+                continue;
+            }
+
+            if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+                return mb_strlen($text, 'UTF-8') > $length ? rtrim(mb_substr($text, 0, $length - 1, 'UTF-8')) . '…' : $text;
+            }
+
+            return strlen($text) > $length ? rtrim(substr($text, 0, $length - 1)) . '…' : $text;
+        }
+
+        return '';
+    }
+
+    private function format_search_date(string $date, string $time): string
+    {
+        $date = trim($date);
+        if ($date === '') {
+            return '';
+        }
+
+        $timestamp = strtotime($date);
+        $label = $timestamp !== false ? date('d.m.Y', $timestamp) : $date;
+        $time = trim($time);
+        if ($time !== '') {
+            $label .= ' · ' . substr($time, 0, 5) . ' Uhr';
+        }
+
+        return $label;
+    }
+
+    private function search_param(array $hubSettings): string
+    {
+        $param = trim((string) preg_replace('/[^a-zA-Z0-9_-]+/', '', (string) ($hubSettings['hub_band_search_param'] ?? 'q')));
+        return $param !== '' ? $param : 'q';
+    }
+
+    private function search_query_from_request(string $searchParam): string
+    {
+        $raw = $_GET[$searchParam] ?? ($_GET['q'] ?? '');
+        if (is_array($raw)) {
+            return '';
+        }
+
+        $query = trim(strip_tags((string) $raw));
+        $query = (string) preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $query);
+        $query = (string) preg_replace('/\s+/', ' ', $query);
+
+        if (function_exists('mb_substr')) {
+            return mb_substr($query, 0, 120, 'UTF-8');
+        }
+
+        return substr($query, 0, 120);
+    }
+
     private function load_integration_database(string $slug, string $className): bool
     {
         if (class_exists($className, false)) {
@@ -727,6 +1056,11 @@ final class CMS_365NETWORK_Public
         return rtrim((string) SITE_URL, '/');
     }
 
+    private function network_search_url(array $settings): string
+    {
+        return '/' . $this->route_slug($settings) . '/search';
+    }
+
     private function table_exists(string $table): bool
     {
         return $this->resolve_table_name($table) !== '';
@@ -866,8 +1200,9 @@ final class CMS_365NETWORK_Public
         $settings = $this->settings();
         $path = '/' . trim((string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/'), '/');
         $route = '/' . $this->route_slug($settings);
+        $searchRoute = $route . '/search';
 
-        return $this->landingPathRequestCache = ($path === $route || ($path === '/' && $this->is_domain_landing_request()));
+        return $this->landingPathRequestCache = ($path === $route || $path === $searchRoute || ($path === '/' && $this->is_domain_landing_request()));
     }
 
     private function settings(): array

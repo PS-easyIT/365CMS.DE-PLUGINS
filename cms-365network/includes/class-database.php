@@ -16,6 +16,7 @@ final class CMS_365NETWORK_Database
     private static ?self $instance = null;
     private ?array $settingsCache = null;
     private ?array $hubSettingsCache = null;
+    private bool $hubSchemaChecked = false;
 
     public static function instance(): self
     {
@@ -49,6 +50,8 @@ final class CMS_365NETWORK_Database
                 updated_at    DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 INDEX idx_section_sort (section, sort_order)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+            $this->ensure_hub_settings_schema($pdo, $prefix);
 
             $this->seed_default_settings();
             $this->seed_default_hub_settings();
@@ -132,6 +135,7 @@ final class CMS_365NETWORK_Database
             ['hub_featured_btn_label', 'Mehr erfahren', 'text', 'featured', 'Button Beschriftung', 50],
             ['hub_featured_btn_url', '', 'text', 'featured', 'Button URL (leer = kein Button)', 60],
             ['hub_featured_image_url', '', 'text', 'featured', 'Bild-URL (leer = einspaltig ohne Bild)', 70],
+            ['hub_featured_image_height', '320', 'int', 'featured', 'Bildhöhe (px)', 75],
             ['hub_featured_width', 'full', 'select', 'featured', 'Breite', 80],
             ['hub_featured_bg_color', '#ffffff', 'color', 'featured', 'Hintergrundfarbe', 90],
             ['hub_featured_text_color', '#1a2e4a', 'color', 'featured', 'Textfarbe', 100],
@@ -146,6 +150,7 @@ final class CMS_365NETWORK_Database
             ['hub_hero_btn2_url', '/kontakt', 'text', 'hero', 'Button 2 URL', 70],
             ['hub_hero_visible', '1', 'bool', 'hero', 'Hero-Bereich anzeigen', 80],
             ['hub_hero_layout', 'left', 'select', 'hero', 'Textausrichtung', 90],
+            ['hub_hero_height', 'normal', 'select', 'hero', 'Höhen-Layout', 95],
             ['hub_hero_bg_color', '#ffffff', 'color', 'hero', 'Hintergrundfarbe', 100],
             ['hub_hero_text_color', '#1a2e4a', 'color', 'hero', 'Textfarbe', 110],
             ['hub_hero_accent_color', '#e6a817', 'color', 'hero', 'Akzentfarbe', 120],
@@ -171,7 +176,7 @@ final class CMS_365NETWORK_Database
             ['hub_band_event_cta', 'Zum Event', 'text', 'band', 'Event-Kachel CTA', 38],
             ['hub_band_search_label', 'Netzwerk durchsuchen', 'text', 'band', 'Such-Kachel Label', 39],
             ['hub_band_search_title', 'Events, Speaker, Firmen und Experten finden', 'text', 'band', 'Such-Kachel Text', 40],
-            ['hub_band_search_url', '/search', 'text', 'band', 'Such-Ergebnis-URL', 40],
+            ['hub_band_search_url', '/365network/search', 'text', 'band', 'Such-Ergebnis-URL', 40],
             ['hub_band_search_param', 'q', 'text', 'band', 'Such-URL-Parameter', 50],
             ['hub_band_search_placeholder', 'Suchbegriff eingeben ...', 'text', 'band', 'Suchfeld Placeholder', 55],
             ['hub_band_layout', 'split', 'select', 'band', 'Layout', 60],
@@ -270,9 +275,9 @@ final class CMS_365NETWORK_Database
         return $this->settingsCache = array_merge($defaults, $settings);
     }
 
-    public function save_settings(array $settings): void
+    public function save_settings(array $settings): bool
     {
-        $this->persist_settings($settings, true);
+        return $this->persist_settings($settings, true);
     }
 
     public function get_hub_settings(): array
@@ -329,25 +334,30 @@ final class CMS_365NETWORK_Database
         }
     }
 
-    public function save_hub_settings(array $settings): void
+    public function save_hub_settings(array $settings): bool
     {
         $this->hubSettingsCache = null;
         $allowed = array_keys($this->default_hub_settings());
         $payload = array_intersect_key($settings, array_flip($allowed));
 
+        return $this->persist_hub_settings($payload, true);
+    }
+
+    private function persist_hub_settings(array $payload, bool $retryOnMissingTable): bool
+    {
+        $this->hubSettingsCache = null;
+
         try {
             $db = CMS\Database::instance();
-            $stmt = $db->prepare(
-                "INSERT INTO {$db->prefix()}network_hub_settings
-                    (setting_key, setting_val, setting_type, section, label, sort_order)
-                 VALUES (?, ?, ?, ?, ?, ?)
-                 ON DUPLICATE KEY UPDATE
-                    setting_val = VALUES(setting_val),
-                    setting_type = VALUES(setting_type),
-                    section = VALUES(section),
-                    label = VALUES(label),
-                    sort_order = VALUES(sort_order)"
-            );
+            $this->ensure_hub_settings_schema($db->getPdo(), $db->prefix());
+            $prefix = $db->prefix();
+            $existsStmt = $db->prepare("SELECT id FROM {$prefix}network_hub_settings WHERE setting_key = ? LIMIT 1");
+            $updateStmt = $db->prepare("UPDATE {$prefix}network_hub_settings
+                SET setting_val = ?, setting_type = ?, section = ?, label = ?, sort_order = ?
+                WHERE setting_key = ?");
+            $insertStmt = $db->prepare("INSERT INTO {$prefix}network_hub_settings
+                (setting_key, setting_val, setting_type, section, label, sort_order)
+                VALUES (?, ?, ?, ?, ?, ?)");
             $definitions = $this->default_hub_settings();
 
             foreach ($payload as $key => $value) {
@@ -356,7 +366,21 @@ final class CMS_365NETWORK_Database
                     continue;
                 }
 
-                $stmt->execute([
+                $existsStmt->execute([(string) $key]);
+                $existingId = $existsStmt->fetchColumn();
+                if ($existingId !== false) {
+                    $updateStmt->execute([
+                        (string) $value,
+                        (string) $definition['setting_type'],
+                        (string) $definition['section'],
+                        (string) $definition['label'],
+                        (int) $definition['sort_order'],
+                        (string) $key,
+                    ]);
+                    continue;
+                }
+
+                $insertStmt->execute([
                     (string) $key,
                     (string) $value,
                     (string) $definition['setting_type'],
@@ -365,12 +389,58 @@ final class CMS_365NETWORK_Database
                     (int) $definition['sort_order'],
                 ]);
             }
+
+            if (!$this->verify_hub_payload($payload)) {
+                error_log('CMS 365NETWORK save_hub_settings verification failed');
+                return false;
+            }
+
+            return true;
         } catch (\Throwable $e) {
+            if ($retryOnMissingTable) {
+                try {
+                    $this->create_tables();
+                    return $this->persist_hub_settings($payload, false);
+                } catch (\Throwable $nested) {
+                    error_log('CMS 365NETWORK save_hub_settings failed: ' . $nested->getMessage());
+                    return false;
+                }
+            }
+
             error_log('CMS 365NETWORK save_hub_settings failed: ' . $e->getMessage());
+            return false;
         }
     }
 
-    private function persist_settings(array $settings, bool $retryOnMissingTable): void
+    /**
+     * @param array<string,mixed> $payload
+     */
+    private function verify_hub_payload(array $payload): bool
+    {
+        if ($payload === []) {
+            return true;
+        }
+
+        try {
+            $db = CMS\Database::instance();
+            $stmt = $db->prepare("SELECT setting_val FROM {$db->prefix()}network_hub_settings WHERE setting_key = ? LIMIT 1");
+
+            foreach ($payload as $key => $expectedValue) {
+                $stmt->execute([(string) $key]);
+                $actualValue = $stmt->fetchColumn();
+                if ($actualValue === false || (string) $actualValue !== (string) $expectedValue) {
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            error_log('CMS 365NETWORK verify_hub_payload failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private function persist_settings(array $settings, bool $retryOnMissingTable): bool
     {
         $this->settingsCache = null;
         $allowed = array_keys($this->default_settings());
@@ -388,19 +458,21 @@ final class CMS_365NETWORK_Database
             foreach ($payload as $key => $value) {
                 $stmt->execute([(string) $key, (string) $value]);
             }
+
+            return true;
         } catch (\Throwable $e) {
             if ($retryOnMissingTable) {
                 try {
                     $this->create_tables();
-                    $this->persist_settings($payload, false);
-                    return;
+                    return $this->persist_settings($payload, false);
                 } catch (\Throwable $nested) {
                     error_log('CMS 365NETWORK save_settings failed: ' . $nested->getMessage());
-                    return;
+                    return false;
                 }
             }
 
             error_log('CMS 365NETWORK save_settings failed: ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -424,6 +496,7 @@ final class CMS_365NETWORK_Database
     {
         try {
             $db = CMS\Database::instance();
+            $this->ensure_hub_settings_schema($db->getPdo(), $db->prefix());
             $stmt = $db->prepare(
                 "INSERT IGNORE INTO {$db->prefix()}network_hub_settings
                     (setting_key, setting_val, setting_type, section, label, sort_order)
@@ -441,10 +514,137 @@ final class CMS_365NETWORK_Database
                 ]);
             }
 
+            $this->sync_hub_setting_metadata($db->getPdo(), $db->prefix());
+
             $this->migrate_legacy_hub_defaults();
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK seed hub settings failed: ' . $e->getMessage());
         }
+    }
+
+    private function sync_hub_setting_metadata(\PDO $pdo, string $prefix): void
+    {
+        $table = $prefix . 'network_hub_settings';
+        if (preg_match('/^[A-Za-z0-9_]+$/', $table) !== 1) {
+            return;
+        }
+
+        $stmt = $pdo->prepare("UPDATE `{$table}`
+            SET setting_type = ?, section = ?, label = ?, sort_order = ?
+            WHERE setting_key = ?");
+
+        foreach ($this->default_hub_settings() as $key => $definition) {
+            $stmt->execute([
+                (string) $definition['setting_type'],
+                (string) $definition['section'],
+                (string) $definition['label'],
+                (int) $definition['sort_order'],
+                (string) $key,
+            ]);
+        }
+    }
+
+    private function ensure_hub_settings_schema(\PDO $pdo, string $prefix): void
+    {
+        if ($this->hubSchemaChecked) {
+            return;
+        }
+
+        $table = $prefix . 'network_hub_settings';
+        if (preg_match('/^[A-Za-z0-9_]+$/', $table) !== 1) {
+            return;
+        }
+
+        try {
+            $stmt = $pdo->prepare('SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1');
+            $stmt->execute([$table, 'setting_type']);
+            $columnType = strtolower((string) ($stmt->fetchColumn() ?: ''));
+
+            if ($columnType === '') {
+                return;
+            }
+
+            if (!str_contains($columnType, "'textarea'")) {
+                $pdo->exec("ALTER TABLE `{$table}` MODIFY `setting_type` ENUM('text','textarea','bool','int','color','select') DEFAULT 'text'");
+            }
+
+            $this->deduplicate_hub_settings($pdo, $prefix);
+            $this->ensure_hub_settings_unique_index($pdo, $prefix);
+
+            $this->hubSchemaChecked = true;
+        } catch (\Throwable $e) {
+            error_log('CMS 365NETWORK hub schema migration failed: ' . $e->getMessage());
+        }
+    }
+
+    private function deduplicate_hub_settings(\PDO $pdo, string $prefix): void
+    {
+        $table = $prefix . 'network_hub_settings';
+        if (preg_match('/^[A-Za-z0-9_]+$/', $table) !== 1) {
+            return;
+        }
+
+        $definitions = $this->default_hub_settings();
+        $rows = $pdo->query("SELECT id, setting_key, setting_val FROM `{$table}` ORDER BY setting_key, id")->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        $grouped = [];
+        foreach ($rows as $row) {
+            $key = (string) ($row['setting_key'] ?? '');
+            if ($key === '') {
+                continue;
+            }
+
+            $grouped[$key][] = $row;
+        }
+
+        $deleteStmt = $pdo->prepare("DELETE FROM `{$table}` WHERE id = ?");
+        foreach ($grouped as $key => $items) {
+            if (count($items) <= 1) {
+                continue;
+            }
+
+            $defaultValue = isset($definitions[$key]) ? (string) ($definitions[$key]['setting_val'] ?? '') : null;
+            $keepId = (int) ($items[count($items) - 1]['id'] ?? 0);
+
+            if ($defaultValue !== null) {
+                for ($index = count($items) - 1; $index >= 0; $index--) {
+                    $itemValue = (string) ($items[$index]['setting_val'] ?? '');
+                    if ($itemValue !== $defaultValue) {
+                        $keepId = (int) ($items[$index]['id'] ?? $keepId);
+                        break;
+                    }
+                }
+            }
+
+            foreach ($items as $item) {
+                $id = (int) ($item['id'] ?? 0);
+                if ($id > 0 && $id !== $keepId) {
+                    $deleteStmt->execute([$id]);
+                }
+            }
+        }
+    }
+
+    private function ensure_hub_settings_unique_index(\PDO $pdo, string $prefix): void
+    {
+        $table = $prefix . 'network_hub_settings';
+        if (preg_match('/^[A-Za-z0-9_]+$/', $table) !== 1) {
+            return;
+        }
+
+        $stmt = $pdo->prepare('SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? AND NON_UNIQUE = 0 LIMIT 1');
+        $stmt->execute([$table, 'setting_key']);
+        if ($stmt->fetchColumn()) {
+            return;
+        }
+
+        $indexName = 'uniq_setting_key';
+        $nameStmt = $pdo->prepare('SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ? LIMIT 1');
+        $nameStmt->execute([$table, $indexName]);
+        if ($nameStmt->fetchColumn()) {
+            $indexName = 'uniq_n365_hub_setting_key';
+        }
+
+        $pdo->exec("ALTER TABLE `{$table}` ADD UNIQUE KEY `{$indexName}` (`setting_key`)");
     }
 
     private function migrate_legacy_hub_defaults(): void
@@ -452,7 +652,7 @@ final class CMS_365NETWORK_Database
         try {
             $db = CMS\Database::instance();
             $migrations = [
-                ['hub_band_search_url', '/search', ['/suche', 'suche']],
+                ['hub_band_search_url', '/365network/search', ['/suche', 'suche', '/search', 'search']],
                 ['hub_toolbox_all_url', '/m365-tools', ['/m365toolbox', 'm365toolbox', '/cms-m365tools', 'cms-m365tools']],
             ];
 

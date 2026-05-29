@@ -96,6 +96,7 @@ final class CMS_365NETWORK_Admin
         $settings = CMS_365NETWORK_Database::instance()->get_settings();
         $tab = $this->sanitize_tab((string) ($_GET['tab'] ?? 'domain'));
         $saved = (string) ($_GET['saved'] ?? '') === '1';
+        $saveFailed = (string) ($_GET['error'] ?? '') === 'save_failed';
         $previewUrl = rtrim((string) SITE_URL, '/') . '/' . trim((string) ($settings['route_slug'] ?? '365network'), '/');
         $mainHost = $this->normalize_host((string) (parse_url((string) SITE_URL, PHP_URL_HOST) ?: ''));
         $domains = $this->normalize_domain_list((string) ($settings['hub_domains'] ?? ''));
@@ -111,6 +112,10 @@ final class CMS_365NETWORK_Admin
 
         if ($saved) {
             $this->admin_notice('Einstellungen gespeichert.', 'success');
+        }
+
+        if ($saveFailed) {
+            $this->admin_notice('Einstellungen konnten nicht gespeichert werden. Bitte Server-Log prüfen.', 'error');
         }
 
         echo '<section class="admin-card n365-status-grid" aria-label="365NETWORK Status">';
@@ -161,16 +166,49 @@ final class CMS_365NETWORK_Admin
 
         if ($this->is_hub_section_tab($tab)) {
             $settings = $this->sanitize_hub_settings($_POST, $this->hub_rows_for_section($database->get_hub_setting_rows(), $this->hub_section_for_tab($tab)));
-            $database->save_hub_settings($settings);
+            if (!$database->save_hub_settings($settings)) {
+                $this->redirect('/admin/365network?tab=' . rawurlencode($tab) . '&error=save_failed');
+                return;
+            }
+
+            $this->clear_public_cache('hub_settings_save');
 
             $this->redirect('/admin/365network?tab=' . rawurlencode($tab) . '&saved=1');
             return;
         }
 
         $settings = $this->sanitize_settings($_POST, $database->get_settings(), $tab);
-        $database->save_settings($settings);
+        if (!$database->save_settings($settings)) {
+            $this->redirect('/admin/365network?tab=' . rawurlencode($tab) . '&error=save_failed');
+            return;
+        }
+
+        $this->clear_public_cache('settings_save');
 
         $this->redirect('/admin/365network?tab=' . rawurlencode($tab) . '&saved=1');
+    }
+
+    private function clear_public_cache(string $reason): void
+    {
+        try {
+            if (class_exists('CMS\\CacheManager')) {
+                CMS\CacheManager::instance()->clear();
+            }
+
+            if (class_exists('CMS\\Hooks')) {
+                CMS\Hooks::doAction('performance_cache_purged', 'cms-365network', [
+                    'reason' => $reason,
+                    'purged_at' => date('c'),
+                ]);
+                CMS\Hooks::doAction('performance_cdn_purge_requested', [
+                    'scope' => 'cms-365network',
+                    'source' => 'cms-365network.' . $reason,
+                    'purged_at' => date('c'),
+                ]);
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS 365NETWORK cache clear failed: ' . $e->getMessage());
+        }
     }
 
     private function render_tabs(string $activeTab): void
@@ -573,6 +611,10 @@ final class CMS_365NETWORK_Admin
 
             $type = (string) ($row['setting_type'] ?? 'text');
             $rawValue = $post[$key] ?? '';
+            if (in_array($key, ['hub_section_order', 'hub_area_card_order'], true) && isset($post[$key . '_items']) && is_array($post[$key . '_items'])) {
+                $rawValue = implode(',', array_map('strval', $post[$key . '_items']));
+            }
+
             if (is_array($rawValue)) {
                 $rawValue = implode(',', array_map('strval', $rawValue));
             }
@@ -970,6 +1012,11 @@ final class CMS_365NETWORK_Admin
                 'left' => 'Links ausgerichtet',
                 'center' => 'Zentriert',
             ],
+            'hub_hero_height' => [
+                'compact' => 'Kompakt',
+                'normal' => 'Normal',
+                'large' => 'Groß',
+            ],
             'hub_stats_layout' => [
                 'grid' => '4er Grid',
                 'compact' => 'Kompakt',
@@ -1034,7 +1081,8 @@ final class CMS_365NETWORK_Admin
 
         foreach ($order as $itemKey) {
             $itemLabel = (string) ($items[$itemKey] ?? $itemKey);
-            echo '<li class="n365-order-item" draggable="true" data-order-key="' . htmlspecialchars($itemKey, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<li class="n365-order-item" draggable="true" tabindex="-1" data-order-key="' . htmlspecialchars($itemKey, ENT_QUOTES, 'UTF-8') . '">';
+            echo '<input type="hidden" name="' . htmlspecialchars($key . '_items[]', ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars($itemKey, ENT_QUOTES, 'UTF-8') . '" data-n365-order-item-input>';
             echo '<span class="n365-order-handle" aria-hidden="true">☰</span>';
             echo '<span class="n365-order-title">' . htmlspecialchars($itemLabel, ENT_QUOTES, 'UTF-8') . '</span>';
             echo '<span class="n365-order-actions">';
@@ -1120,6 +1168,10 @@ final class CMS_365NETWORK_Admin
             return [1, 50];
         }
 
+        if ($key === 'hub_featured_image_height') {
+            return [120, 720];
+        }
+
         return [1, 50];
     }
 
@@ -1154,15 +1206,26 @@ final class CMS_365NETWORK_Admin
 
     private function safe_image_url(string $value): string
     {
-        $url = trim($value);
+        $url = trim(strip_tags($value));
+        $url = str_replace('\\', '/', $url);
+        $url = (string) preg_replace('/[\x00-\x1F\x7F]+/u', '', $url);
         if ($url === '') {
             return '';
         }
 
-        if (str_starts_with($url, '/') && !str_starts_with($url, '//') && !str_contains($url, "\0")) {
-            return $url;
+        if (str_starts_with($url, './')) {
+            $url = substr($url, 2);
         }
 
+        if (preg_match('#^(?:uploads|media)(?:/|$)#i', $url) === 1 || preg_match('#^media-file(?:\?|$)#i', $url) === 1) {
+            $url = '/' . ltrim($url, '/');
+        }
+
+        if (str_starts_with($url, '/') && !str_starts_with($url, '//') && !str_contains($url, '..')) {
+            return str_replace(' ', '%20', $url);
+        }
+
+        $url = str_replace(' ', '%20', $url);
         if (filter_var($url, FILTER_VALIDATE_URL) === false) {
             return '';
         }

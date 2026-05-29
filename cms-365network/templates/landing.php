@@ -84,16 +84,27 @@ $safeIcon = static function (mixed $value): string {
 
     return preg_match('/^ti-[a-z0-9-]+$/', $icon) === 1 ? $icon : 'ti-link';
 };
-$safeImage = static function (mixed $value) use ($safeUrl): string {
-    $raw = trim((string) $value);
+$safeImage = static function (mixed $value): string {
+    $raw = trim(strip_tags((string) $value));
+    $raw = str_replace('\\', '/', $raw);
+    $raw = (string) preg_replace('/[\x00-\x1F\x7F]+/u', '', $raw);
     if ($raw === '') {
         return '';
     }
 
-    if (str_starts_with($raw, '/') && !str_starts_with($raw, '//') && !str_contains($raw, "\0")) {
-        return $raw;
+    if (str_starts_with($raw, './')) {
+        $raw = substr($raw, 2);
     }
 
+    if (preg_match('#^(?:uploads|media)(?:/|$)#i', $raw) === 1 || preg_match('#^media-file(?:\?|$)#i', $raw) === 1) {
+        $raw = '/' . ltrim($raw, '/');
+    }
+
+    if (str_starts_with($raw, '/') && !str_starts_with($raw, '//') && !str_contains($raw, '..')) {
+        return str_replace(' ', '%20', $raw);
+    }
+
+    $raw = str_replace(' ', '%20', $raw);
     if (filter_var($raw, FILTER_VALIDATE_URL) === false) {
         return '';
     }
@@ -184,6 +195,7 @@ $featuredHasImage = $featuredImage !== '' && $featuredStyleSetting !== 'text';
 $featuredClass = 'hub-featured hub-featured--width-' . $featuredWidth . ' ' . ($featuredHasImage ? 'hub-featured--image' : 'hub-featured--text');
 $featuredHasContent = $featuredVisible && ($featuredTitle !== '' || $featuredSub !== '');
 $heroLayout = $hubChoice('hub_hero_layout', 'left', ['left', 'center']);
+$heroHeight = $hubChoice('hub_hero_height', 'normal', ['compact', 'normal', 'large']);
 $statsLayout = $hubChoice('hub_stats_layout', 'grid', ['grid', 'compact', 'inline']);
 $bandLayout = $hubChoice('hub_band_layout', 'split', ['split', 'stack']);
 $areasLayout = $hubChoice('hub_areas_layout', $layout, ['grid-2x2', 'grid-4x1', 'auto']);
@@ -227,9 +239,9 @@ $eventBandDate = static function (array $event) use ($eventDate): string {
 
     return $days[(int) date('w', $timestamp)] . ', ' . date('d', $timestamp) . '. ' . $months[((int) date('n', $timestamp)) - 1];
 };
-$searchUrl = $safeUrl($hubValue('hub_band_search_url', (string) ($settings['search_url'] ?? '/search')));
-if ($searchUrl === '#' || in_array(trim($searchUrl, '/'), ['suche'], true)) {
-    $searchUrl = '/search';
+$searchUrl = $safeUrl($networkSearchUrl ?? '/365network/search');
+if ($searchUrl === '#') {
+    $searchUrl = '/365network/search';
 }
 $searchParam = trim((string) preg_replace('/[^a-zA-Z0-9_-]+/', '', $hubValue('hub_band_search_param', 'q')));
 $searchParam = $searchParam !== '' ? $searchParam : 'q';
@@ -332,7 +344,7 @@ $toolboxTitle = $hubValue('hub_toolbox_title', 'Tools & Ressourcen');
         <?php endif; ?>
 
         <?php if ($heroVisible): ?>
-        <header class="n365-hero n365-hero--layout-<?php echo $esc($heroLayout); ?>"<?php echo $sectionOrderStyle('hero'); ?>>
+        <header class="n365-hero n365-hero--layout-<?php echo $esc($heroLayout); ?> n365-hero--height-<?php echo $esc($heroHeight); ?>"<?php echo $sectionOrderStyle('hero'); ?>>
             <div class="n365-hero__content">
                 <?php if ($eyebrow !== ''): ?>
                 <p class="hub-label"><?php echo $esc($eyebrow); ?></p>

@@ -1,6 +1,6 @@
 # CMS 365NETWORK
 
-**Version:** 1.0.18
+**Version:** 1.0.20
 **Status:** Domainbasierte HubSite/Landingpage für Netzwerk-Portale.
 
 CMS 365NETWORK stellt eine eigene Landingpage bereit, die auf einer konfigurierten Zusatzdomain direkt als Root-Seite erscheinen kann. Sie bündelt vier zentrale Bereiche des Netzwerks:
@@ -20,7 +20,8 @@ Zusätzlich gibt es eine interne Vorschau-Route, standardmäßig `/365network`.
 - Sortierbare Reihenfolge für Public-Bereiche sowie für die vier Direkteinstieg-Karten.
 - Mediathek-Auswahl mit Vorschau für Bild-URL-Felder im Hub-Admin.
 - Jeder Hub-Bereich hat Aktivierung, Text-/Content-, Layout- und Design-Settings mit direkter Public-Wirkung.
-- Kompakte Landingpage-Suche und `Nächstes Event`-Teaser für konkrete Einstiegspunkte.
+- Eigene Landingpage-Suche unter `/365network/search`, getrennt von der globalen 365CMS-Suche und begrenzt auf Events, Speaker, Firmen und Experten.
+- `Nächstes Event`-Teaser für konkrete Einstiegspunkte.
 - No-Sidebar-Layout mit breiter Featured Card, dezentem Featured-Inset und überarbeiteten Bereichskarten.
 - PHINIT-konformes Navy/Gold-Redesign ohne Electric-Blue-Akzente auf der Landingpage.
 - Optionaler M365-Toolbox-Bereich am Ende des Hub-Contents, wenn das Toolbox-Plugin aktiv ist und aktive Hub-Links vorhanden sind.
@@ -33,11 +34,14 @@ Zusätzlich gibt es eine interne Vorschau-Route, standardmäßig `/365network`.
 - Defensive Cross-Plugin-Integration: läuft auch, wenn einzelne Module deaktiviert sind.
 - Robuste Statistik-Zählung für angebundene Events, Speaker, Firmen und Experten mit Status-Fallbacks.
 - Tab-basiertes Speichern im Adminbereich bewahrt bestehende Einstellungen anderer Tabs.
+- Hub-Änderungen leeren den Public-Cache explizit, damit Texte und Sortierung direkt öffentlich sichtbar werden.
 - Core-kompatible Admin-Helfer für Menü, Capability, Nonce, Notice und Redirect werden genutzt, sofern im Core vorhanden.
 - Kanonische Detail-Links für Events, Speaker, Firmen und Experten in den Vorschauen.
 
 ## Aktueller Audit-Stand
 
+- **1.0.20:** Feature: Die 365NETWORK-Landingpage nutzt eine eigene Suchroute `/365network/search`, getrennt von der globalen 365CMS-Suche, und durchsucht ausschließlich Events, Speaker, Firmen und Experten.
+- **1.0.19:** Fix/UX: Hub-/Textänderungen leeren nach dem Speichern immer den Public-Cache; ältere Hub-Settings-Schemata werden für Textarea-Felder, Dubletten und fehlende `setting_key`-Eindeutigkeit migriert, Featured-Bildhöhe ist steuerbar und zeigt Bilder vollständig ohne Zuschnitt, Hero hat kompakt/normal/groß als Höhen-Layout und nutzt die volle H1-Kachelbreite, der Mediathek-Picker öffnet mit Fallback und Public-Kacheln bleiben ohne Hover-Unterstreichung.
 - **1.0.18:** Feature: Hub-Bereiche und Direkteinstieg-Karten sind im Admin sortierbar; Bild-URL-Felder können Bilder direkt aus der 365CMS-Mediathek übernehmen.
 - **1.0.17:** Fix: Hub-Suche nutzt `/search` statt `/suche`, stale Defaults werden migriert, der Toolbox-Gesamtlink zeigt auf `/m365-tools` und die Public-Toolbox kann aktive `cms-m365tools`-Registry-Tools anzeigen.
 - **1.0.16:** Audit-Fix: Core-Metadaten im Plugin-Header, `cms_register_hook`-kompatible `hub_install()`/`hub_uninstall()`-Callbacks, Core-Helper für Admin-Menü/Capability/Nonce/Notice/Redirect, kein Inline-Redirect-Script und request-lokaler Statistik-Cache.
