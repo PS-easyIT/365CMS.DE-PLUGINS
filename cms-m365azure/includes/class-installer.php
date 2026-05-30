@@ -91,6 +91,11 @@ final class CMS_M365Azure_Installer
         self::upgrade_database_content($db, $prefix);
         self::upgrade_ai_ml_content($db, $prefix);
         self::upgrade_devops_content($db, $prefix);
+        self::upgrade_network_security_content($db, $prefix);
+        self::upgrade_integration_communication_content($db, $prefix);
+        self::upgrade_iot_mixed_reality_content($db, $prefix);
+        self::upgrade_analytics_big_data_content($db, $prefix);
+        self::upgrade_hybrid_multicloud_content($db, $prefix);
         self::normalize_literal_newlines($db, $prefix);
     }
 
@@ -225,14 +230,14 @@ final class CMS_M365Azure_Installer
             ['ki-machine-learning', 'azure-ai-search', 'Azure AI Search', 'Such- und Retrieval-Schicht für Apps, Agents und RAG.', 'Azure AI Search ist ein vollständig verwalteter Such- und Retrieval-Dienst für Volltext-, Vektor-, Hybrid-, semantische und agentische Suche über Unternehmensdaten.', 'Azure AI Search verbindet Unternehmensdaten mit klassischen Suchanwendungen, Chatbots und generativen KI-Lösungen. Der Dienst indexiert JSON-Dokumente aus Push- oder Pull-Pipelines, unterstützt Volltextsuche, Vektorsuche, Hybridsuche, semantische Rangfolge, KI-Anreicherung und agentischen Abruf für komplexe RAG-Szenarien. Für sichere Enterprise-Lösungen sind Indexdesign, Chunking, Vektorisierung, SKU/Suchunits, regionale Featureverfügbarkeit, Private Link, Entra ID/RBAC und Security Trimming entscheidend.', 'Volltext-, Vektor-, Hybrid-, multimodale und semantische Suche; Vektorsuche selbst ist kostenlos, Embeddings/KI-Anreicherung können extra kosten\nSemantischer Ranker rerankt nur die Top-50-Ergebnisse und erzeugt keine neuen Inhalte; Captions/Answers stammen wortgetreu aus dem Index\nAgentic Retrieval nutzt Wissensquellen, Knowledge Bases und optional LLM-gestützte Query-Planung; Abrechnung kann Search- und Modellkosten kombinieren\nGrenzwerte hängen stark von SKU, Region, Erstellungsdatum, Partitionen, Replikaten und Vektorquoten ab; ältere Dienste ggf. upgraden oder neu erstellen\nTLS, AES-256, Datenresidenz, Private Link, Entra ID/RBAC, CMK und Security Trimming für geschützte Inhalte einplanen', 'Enterprise Search für Portale, Apps und Intranets\nRAG-Grounding für Copilots, Agents und Chatbots\nDokumenten-, SharePoint-, Blob-, Cosmos-DB- und OneLake-Suche\nVektor- und Hybridsuche über Wissensdatenbanken\nSicherheitsgetrimmter Zugriff auf vertrauliche Inhalte', 'https://learn.microsoft.com/de-de/azure/search/search-what-is-azure-search', 'https://azure.microsoft.com/de-de/pricing/details/search/', 30],
             ['devops-tools', 'azure-devops', 'Azure DevOps', 'Planung, Code, CI/CD, Tests und Pakete in einer Plattform.', 'Azure DevOps bündelt Boards, Repos, Pipelines, Test Plans, Artifacts und Dashboards für den Software-Lifecycle von Planung bis Deployment.', 'Azure DevOps ist eine integrierte Entwicklungsplattform für Enterprise-Teams, die Arbeit planen, Quellcode verwalten, Builds automatisieren, Releases steuern, Tests nachverfolgen und Pakete verteilen müssen. Azure Boards, Repos, Pipelines, Test Plans und Artifacts greifen ineinander, bleiben aber einzeln nutzbar. Für regulierte Umgebungen sind Organisationsgeographie, Microsoft Entra ID, Berechtigungen, Branch Policies, Pipeline-Sicherheit und Paralleljobs die zentralen Planungsgrößen.', 'Azure DevOps Services speichert Kundendaten grundsätzlich in der gewählten Geographie; Token-Daten liegen laut Microsoft in den USA, macOS-Agenten können Daten in ein GitHub-Rechenzentrum in den USA übertragen\nÖffentliche Projekte werden eingestellt: neue öffentliche Projekte sind nicht mehr möglich, bestehende werden 2027 in private Projekte konvertiert\nPipeline-Kapazität hängt von Paralleljobs ab; kostenlose Kontingente können bei neuen Organisationen nicht automatisch aktiv sein und müssen ggf. beantragt werden\nBasic enthält die ersten 5 Benutzer kostenlos; Test Plans, zusätzliche Paralleljobs, Artifacts-Speicher über 2 GiB und GitHub Advanced Security werden separat bewertet\nFür Automatisierung Microsoft Entra OAuth, Dienstprinzipale oder verwaltete Identitäten bevorzugen; PATs nur kontrolliert und mit Richtlinien nutzen', 'CI/CD für Azure, Multicloud und On-Premises mit Genehmigungen\nAgile Planung, Backlogs, Boards und Release-Transparenz\nPrivate Git-Repositories mit Pull Requests und Branch Policies\nPaketfeeds für NuGet, npm, Maven, Python und interne Komponenten\nManuelle und explorative Tests mit Rückverfolgbarkeit zu Anforderungen', 'https://learn.microsoft.com/de-de/azure/devops/user-guide/what-is-azure-devops?view=azure-devops', 'https://azure.microsoft.com/de-de/pricing/details/devops/azure-devops-services/', 10],
             ['devops-tools', 'dev-box', 'Microsoft Dev Box', 'Vorkonfigurierte Cloud-Workstations für Entwicklerteams.', 'Microsoft Dev Box stellt vorkonfigurierte Cloud-Entwicklungsarbeitsplätze über Dev Center, Projekte und Pools bereit; Microsoft empfiehlt für neue virtualisierte Entwicklerumgebungen inzwischen Windows 365.', 'Microsoft Dev Box gibt Entwicklern über ein Portal Zugriff auf vorkonfigurierte Windows-Cloud-Workstations, die aus Dev Box-Pools mit definiertem Image, Compute, Speicher und Netzwerk entstehen. Plattformteams steuern Dev Center, Projekte, Pools, Kataloge, Image-Definitionen, Netzwerke und Rollen; die Dev Boxes werden über Microsoft Intune verwaltet und über Azure Virtual Desktop-Konnektivität erreicht. Der Dienst ist weiterhin unterstützt, befindet sich laut Microsoft aber im Wartungsmodus ohne geplante neue Features, daher sollte Windows 365 für neue strategische Entwickler-Cloudumgebungen geprüft werden.', 'Stand/Hinweis: Microsoft Dev Box ist im Wartungsmodus; für neue virtualisierte Entwicklerumgebungen nennt Microsoft Windows 365 als empfohlenen Pfad\nBenutzer benötigen passende Windows Enterprise-, Microsoft Intune- und Microsoft Entra ID P1-Lizenzen; viele Microsoft 365-Pläne enthalten diese Voraussetzungen\nGeschäfts- und Schulkonten werden unterstützt; Gastzugriff über Microsoft Entra B2B wurde eingestellt\nDie Netzwerkverbindung bestimmt die Hosting-Region: Microsoft-gehostet für reine Cloud-Szenarien, Azure-Netzwerkverbindung für eigenes VNet, Hybrid Join oder Zugriff auf Unternehmensressourcen\nAbrechnung kombiniert Lizenzvoraussetzungen, Speicher pro Dev Box und aktive Compute-Stunden bis zum monatlichen Maximalpreis; Autostopp und Ruhezustand konsequent nutzen', 'Standardisierte Entwicklerumgebungen für neue Mitarbeitende und Projektteams\nIsolierte Workstations für Auftragnehmer, sensible Repositories oder Kundensysteme\nRegionale Cloud-Workstations für verteilte Entwicklerteams mit niedrigerer Latenz\nMehrere getrennte Arbeitsumgebungen pro Entwickler für parallele Projekte\nReproduzierbare Toolchains über Image-Definitionen, Kataloge und Intune-Richtlinien', 'https://learn.microsoft.com/de-de/azure/dev-box/overview-what-is-microsoft-dev-box', 'https://azure.microsoft.com/de-de/pricing/details/dev-box/', 20],
-            ['netzwerk-sicherheit', 'virtual-network', 'Azure Virtual Network', 'Private Netzwerkgrundlage in Azure.', 'Virtual Network verbindet Ressourcen sicher miteinander und bildet die Basis für Subnetze, Routing, Peering und Hybridkonnektivität.', 'Subnetze und Peering\nPrivate IP-Kommunikation\nNetzwerksicherheitsgruppen', 'Landing Zones\nApp-Netzwerke\nHybrid-Topologien', 'https://learn.microsoft.com/de-de/azure/virtual-network/', 'https://azure.microsoft.com/de-de/pricing/details/virtual-network/', 10],
-            ['netzwerk-sicherheit', 'azure-firewall', 'Azure Firewall', 'Cloudnative Netzwerk-Firewall.', 'Azure Firewall schützt virtuelle Netzwerke mit zentralen Regeln, Protokollierung und integrierter Hochverfügbarkeit.', 'Zentrale Policies\nThreat Intelligence\nHochverfügbarkeit', 'Hub-Spoke-Netze\nEgress-Kontrolle\nSegmentierung', 'https://learn.microsoft.com/de-de/azure/firewall/', 'https://azure.microsoft.com/de-de/pricing/details/azure-firewall/', 20],
-            ['netzwerk-sicherheit', 'key-vault', 'Azure Key Vault', 'Schlüssel, Zertifikate und Geheimnisse verwalten.', 'Key Vault schützt Secrets und kryptografische Schlüssel und trennt sensible Werte sauber vom Anwendungscode.', 'Secrets und Zertifikate\nManaged HSM Optionen\nRBAC und Auditing', 'App-Secrets\nZertifikatsverwaltung\nSchlüsselrotation', 'https://learn.microsoft.com/de-de/azure/key-vault/', 'https://azure.microsoft.com/de-de/pricing/details/key-vault/', 30],
-            ['integration-kommunikation', 'api-management', 'API Management', 'APIs sicher veröffentlichen und verwalten.', 'API Management bietet Gateway, Policies, Developer Portal und Monitoring für interne und externe APIs.', 'API Gateway\nRate Limits und Policies\nDeveloper Portal', 'Partner-APIs\nMicroservice-Gateways\nAPI-Produkte', 'https://learn.microsoft.com/de-de/azure/api-management/', 'https://azure.microsoft.com/de-de/pricing/details/api-management/', 10],
-            ['integration-kommunikation', 'logic-apps', 'Logic Apps', 'Designerbasierte Workflows und Integration.', 'Logic Apps automatisiert Geschäftsprozesse und verbindet Cloud- und On-Premises-Systeme über zahlreiche Connectoren.', 'Visuelle Workflows\nViele Connectoren\nB2B- und Enterprise-Integration', 'Genehmigungsprozesse\nDaten-Synchronisation\nSystemintegration', 'https://learn.microsoft.com/de-de/azure/logic-apps/', 'https://azure.microsoft.com/de-de/pricing/details/logic-apps/', 20],
-            ['integration-kommunikation', 'service-bus', 'Service Bus', 'Enterprise Messaging zwischen Systemen.', 'Service Bus entkoppelt Anwendungen über Queues und Topics und sorgt für zuverlässige asynchrone Kommunikation.', 'Queues und Topics\nDead-Lettering\nTransaktionen', 'Auftragsverarbeitung\nSystementkopplung\nEnterprise Messaging', 'https://learn.microsoft.com/de-de/azure/service-bus-messaging/', 'https://azure.microsoft.com/de-de/pricing/details/service-bus/', 30],
-            ['iot-mixed-reality', 'iot-hub', 'Azure IoT Hub', 'Geräte sicher verbinden und verwalten.', 'IoT Hub ist die zentrale Plattform für bidirektionale Kommunikation mit IoT-Geräten und Gerätemanagement.', 'Geräteidentitäten\nCloud-to-device Messaging\nMonitoring', 'Industrie 4.0\nTelemetrie\nGeräteflotten', 'https://learn.microsoft.com/de-de/azure/iot-hub/', 'https://azure.microsoft.com/de-de/pricing/details/iot-hub/', 10],
-            ['iot-mixed-reality', 'digital-twins', 'Azure Digital Twins', 'Digitale Abbilder realer Umgebungen.', 'Digital Twins modelliert Gebäude, Anlagen, Prozesse und Beziehungen, um Zustände und Simulationen nutzbar zu machen.', 'Graphbasierte Modelle\nLive-Daten-Integration\nRaum- und Anlagenmodellierung', 'Smart Buildings\nFertigung\nFacility Management', 'https://learn.microsoft.com/de-de/azure/digital-twins/', 'https://azure.microsoft.com/de-de/pricing/details/digital-twins/', 20],
+            ['netzwerk-sicherheit', 'virtual-network', 'Azure Virtual Network', 'Private Netzwerkgrundlage für Azure- und Hybrid-Architekturen.', 'Azure Virtual Network bildet private Netzwerkbereiche für Azure-Ressourcen, Subnetze, Routing, Peering, Private Link, Dienstendpunkte und Hybridkonnektivität.', 'Azure Virtual Network ist die private Netzwerkbasis in Azure. Du definierst IP-Adressräume, Subnetze, Routing, Netzwerksicherheitsgruppen und Verbindungen zu anderen VNets, Azure-Diensten oder lokalen Netzwerken. Der Dienst selbst ist kostenlos, aber Peering, ausgehender Datenverkehr, Flow Logs, Private Link, Gateways und verbundene Dienste können kostenrelevant werden.', 'VNet selbst ist kostenlos; Peering wird für eingehenden und ausgehenden Datenverkehr berechnet\nSubnetze früh planen: kleinster Bereich /29, Azure reserviert mehrere Adressen pro Subnetz\nPeering nutzt das Microsoft-Backbone, ersetzt aber keine saubere IP-Adressplanung und keine Firewall-Strategie\nNSG-Regeln sind zustandsbehaftet; Standardregeln bleiben vorhanden und werden über Prioritäten überschrieben\nNSG Flow Logs werden abgelöst; für neue Projekte VNet Flow Logs mit Network Watcher planen', 'Landing Zones und Hub-Spoke-Netzwerke\nApp-, Datenbank- und Plattformsegmentierung über Subnetze und NSGs\nHybridkonnektivität über VPN Gateway oder ExpressRoute\nPrivate Endpoints und Dienstendpunkte für PaaS-Zugriff\nNetzwerkflussanalyse mit VNet Flow Logs und SIEM-Anbindung', 'https://learn.microsoft.com/de-de/azure/virtual-network/virtual-networks-overview', 'https://azure.microsoft.com/de-de/pricing/details/virtual-network/', 10],
+            ['netzwerk-sicherheit', 'azure-firewall', 'Azure Firewall', 'Cloudnative Firewall für zentrale Netzwerk- und Egress-Kontrolle.', 'Azure Firewall ist ein verwalteter, zustandsbehafteter Firewall-Dienst für Azure Virtual Network, Hub-Spoke-Architekturen und kontrollierten Nord-Süd- sowie Ost-West-Datenverkehr.', 'Azure Firewall schützt virtuelle Netzwerke mit zentralen Regeln, Threat Intelligence, Protokollierung und integrierter Hochverfügbarkeit. Basic, Standard und Premium unterscheiden sich deutlich bei Durchsatz, DNS Proxy, FQDN-/Webkategorie-Filterung, TLS Inspection, IDPS und URL Filtering. Für produktive Architekturen musst du SKU, Routing, AzureFirewallSubnet, SNAT-Kapazität, Logging und Kosten vorab sauber dimensionieren.', 'SKUs bewusst wählen: Basic für kleine Szenarien, Standard für L3-L7-Filterung, Premium für TLS Inspection, IDPS und URL Filtering\nAzureFirewallSubnet mindestens /26 planen; Netzwerksicherheitsgruppen auf diesem Subnetz werden nicht unterstützt\nHub-Spoke pro Region bevorzugen; globales Peering über Regionen kann Latenz, Performance und Kosten verschlechtern\nDNAT mit erzwungenem Tunneling und IPv6 sind laut aktuellen Hinweisen nicht unterstützt\nPreise bestehen aus Bereitstellungsstunden, verarbeitetem Datenvolumen und optionalen Kapazitätseinheiten', 'Zentraler Internet-Egress für Azure-Workloads\nHub-Spoke-Segmentierung zwischen VNets und Subnetzen\nRegulierte Umgebungen mit zentralen Firewall Policies und Logs\nThreat-Intelligence-basierte Warnung oder Blockierung\nPremium-Szenarien mit TLS Inspection, IDPS und URL Filtering', 'https://learn.microsoft.com/de-de/azure/firewall/overview', 'https://azure.microsoft.com/de-de/pricing/details/azure-firewall/', 20],
+            ['netzwerk-sicherheit', 'key-vault', 'Azure Key Vault', 'Secrets, Schlüssel und Zertifikate sicher verwalten.', 'Azure Key Vault schützt Secrets, kryptografische Schlüssel und Zertifikate zentral, trennt sensible Werte vom Code und integriert sich mit Microsoft Entra ID, Azure RBAC, Private Link, Monitoring und Managed HSM.', 'Azure Key Vault speichert und verwaltet Secrets, kryptografische Schlüssel und Zertifikate für Anwendungen und Plattformdienste. Für normale Vaults kannst du software- oder HSM-geschützte Schlüssel, Secrets und Zertifikate verwenden; Azure Key Vault Managed HSM ist ein Single-Tenant-HSM-Dienst für HSM-geschützte Schlüssel. Plane Identitäten, Azure RBAC, Netzwerksicherheit, Soft Delete, Purge Protection, Rotation, Monitoring und Throttling, bevor Anwendungen produktiv abhängig werden.', 'Managed Identities und Azure RBAC bevorzugen; Access Policies sind Legacy und können Contributor-Risiken erzeugen\nEin Vault pro Anwendung, Region und Umgebung planen; Objektbereich-Rollen nur in Sonderfällen nutzen\nSoft Delete ist für neue Vaults standardmäßig aktiv; Purge Protection für produktive Verschlüsselungsszenarien aktivieren\nFirewall, Private Endpoint oder deaktivierter öffentlicher Zugriff schützen die Datenebene; Azure DevOps ist kein pauschal vertrauenswürdiger Dienst\nTransaktionslimits, Versionen, Backupgrenzen und Rotation beachten; Key Vault nicht als allgemeinen Konfigurations- oder Kundendatenspeicher verwenden', 'App-Secrets ohne Geheimnisse im Code oder in CI/CD-Variablen\nTLS-Zertifikatslebenszyklus und automatische Erneuerung\nCustomer-managed keys, BYOK und Verschlüsselung ruhender Daten\nGeheimnis- und Schlüsselrotation mit kontrolliertem Rollout\nHSM-/Compliance-Szenarien mit Azure Key Vault Managed HSM', 'https://learn.microsoft.com/de-de/azure/key-vault/general/overview', 'https://azure.microsoft.com/de-de/pricing/details/key-vault/', 30],
+            ['integration-kommunikation', 'api-management', 'Azure API Management', 'API-Gateways, Policies und Developer Portal für interne und externe APIs.', 'Azure API Management veröffentlicht, schützt und überwacht APIs über ein verwaltetes Gateway, Policies, Produkte, Abonnements und ein Developer Portal.', 'Azure API Management ist eine hybride Multi-Cloud-Plattform für interne und externe APIs. Du stellst APIs über Gateways bereit, steuerst Authentifizierung, Quotas, Rate Limits, Transformationen und Caching per Policies und gibst Entwicklerteams ein Portal für Dokumentation und Abonnements. Der Dienst passt, wenn APIs nicht nur erreichbar, sondern kontrolliert, messbar und produktfähig betrieben werden müssen.', 'Developer-Tarif ist nicht für Produktion gedacht und hat keine SLA\nConsumption ist serverlos und nutzungsbasiert, unterstützt aber nicht alle Funktionen der dedizierten Tarife\nVNet, Private Endpoints, Multi-Region, Availability Zones, Self-hosted Gateway und Workspaces hängen vom Tarif ab\nPolicies können Authentifizierung, Ratenbegrenzung, Transformation, Caching, Logging und Backend-Routing direkt im Gateway erzwingen\nAPI-, Operationen-, Produkt-, Abonnement- und Portalgrenzen je Tarif vor Migration prüfen', 'Partner- und Kunden-APIs sicher veröffentlichen\nMicroservice-Gateways mit zentralen Policies betreiben\nLegacy-Backends über moderne REST- oder SOAP-APIs kapseln\nAPI-Produkte mit Abonnements, Quotas und Developer Portal anbieten', 'https://learn.microsoft.com/de-de/azure/api-management/api-management-key-concepts', 'https://azure.microsoft.com/de-de/pricing/details/api-management/', 10],
+            ['integration-kommunikation', 'logic-apps', 'Azure Logic Apps', 'Workflows, Connectoren und B2B-Integration ohne eigenen Orchestrator.', 'Azure Logic Apps automatisiert Geschäftsprozesse und Integrationen über Trigger, Aktionen, integrierte Connectoren und verwaltete Connectoren.', 'Azure Logic Apps ist eine Cloudplattform für Workflows, mit der du SaaS-, Azure-, On-Premises- und B2B-Systeme ohne eigenen Orchestrator verbindest. Ein Workflow startet mit einem Trigger und führt Aktionen aus, zum Beispiel Genehmigungen, Dateiverarbeitung, EDI/XML, API-Aufrufe oder Nachrichtenübergaben. Consumption und Standard unterscheiden sich deutlich bei Hosting, Netzwerk, Datenhaltung, Skalierung und Kostenmodell.', 'Consumption rechnet pro Ausführung ab und enthält pro Ressource einen Workflow; Standard nutzt einen Workflow Service Plan und kann mehrere stateful oder stateless Workflows enthalten\nStandard bietet mehr Kontrolle für VNet, Private Endpoints und regionale Datenhaltung; verwaltete Connectoren werden separat als Azure-Dienst betrieben\nGrenzen wie 500 Aktionen pro Workflow, 90 Tage Run History bei stateful Workflows und kurze stateless Laufzeiten einplanen\nHTTP-Timeouts und Nachrichtengrößen begrenzen synchrone Integrationen; lange Prozesse asynchron oder eventbasiert modellieren\nConnector-Typen, Integrationskonten, Storage und Netzwerkanbindung können Zusatzkosten verursachen', 'Genehmigungs- und Eskalationsprozesse über Microsoft 365, Dynamics und Drittanbieter\nDaten-Synchronisation zwischen SaaS, Azure-Diensten und On-Premises-Systemen\nB2B-Integration mit EDI, XML und Integrationskonten\nEventbasierte Automatisierung rund um Dateien, Tickets, APIs und Nachrichten', 'https://learn.microsoft.com/de-de/azure/logic-apps/logic-apps-overview', 'https://azure.microsoft.com/de-de/pricing/details/logic-apps/', 20],
+            ['integration-kommunikation', 'service-bus', 'Azure Service Bus', 'Zuverlässiges Enterprise Messaging mit Queues und Topics.', 'Azure Service Bus ist ein vollständig verwalteter Enterprise-Nachrichtenbroker für entkoppelte Anwendungen, Warteschlangen und Publish/Subscribe-Kommunikation.', 'Azure Service Bus entkoppelt Anwendungen über Queues, Topics und Subscriptions, damit Sender und Empfänger unabhängig voneinander arbeiten können. Der Dienst bietet Funktionen wie Dead Letter Queues, Sessions, Duplicate Detection, Transaktionen, geplante Nachrichten und Filterregeln. Er ist sinnvoll, wenn Geschäftsnachrichten zuverlässig verarbeitet werden müssen und Consumer mit Wiederholungen, Sperren und möglichen Duplikaten umgehen können.', 'Basic unterstützt keine Topics, Transaktionen, Sessions, Duplicate Detection oder Forwarding; für Enterprise Messaging meist Standard oder Premium prüfen\nPremium bietet isolierte Ressourcen über Messaging Units, Netzwerksicherheitsfunktionen, CMK und größere AMQP-Nachrichten bis 100 MB\nStandard und Basic sind bei einzelnen Nachrichten typischerweise auf 256 KB begrenzt; große Payloads besser in Storage ablegen und Referenzen senden\nPeek-Lock arbeitet mit mindestens einmaliger Zustellung; Consumer müssen idempotent sein und Duplikate sauber behandeln\nAlte SDKs und das SBMP-Protokoll werden am 30. September 2026 eingestellt; auf aktuelle Azure SDKs und AMQP migrieren', 'Auftrags-, Bestell- und Zahlungsprozesse asynchron absichern\nFachsysteme über Queues ohne direkte Kopplung verbinden\nPub/Sub-Verteilung von Ereignissen an mehrere Backend-Systeme\nFehlerhafte Nachrichten über Dead Letter Queues analysieren und erneut verarbeiten', 'https://learn.microsoft.com/de-de/azure/service-bus-messaging/service-bus-messaging-overview', 'https://azure.microsoft.com/de-de/pricing/details/service-bus/', 30],
+            ['iot-mixed-reality', 'iot-hub', 'Azure IoT Hub', 'Sichere Gerätekommunikation und Flottensteuerung im Azure-IoT-Backend.', 'Azure IoT Hub ist ein verwalteter zentraler Nachrichtenhub für sichere Geräte-zu-Cloud- und Cloud-zu-Gerät-Kommunikation in IoT-Lösungen.', 'Azure IoT Hub verbindet IoT-Geräte, Edge-Komponenten und Backend-Anwendungen sicher und skalierbar. Der Dienst unterstützt Geräteidentitäten, SAS- oder X.509-Authentifizierung, Geräte- und Modulzwillinge, direkte Methoden, Dateiuploads, Nachrichtenrouting und Monitoring. Er eignet sich für Geräteflotten, bei denen Telemetrie, Befehle, Konfiguration und Routing zuverlässig zusammengeführt werden müssen.', 'Basic unterstützt Geräteidentität, Geräte-zu-Cloud und Routing, aber keine Cloud-to-device-Kommunikation, Device Twins, IoT Edge und Gerätemanagement; für bidirektionale Flotten Standard wählen\nGeräteauthentifizierung über SAS oder X.509 planen; für Massenbereitstellung Device Provisioning Service einbeziehen\nPro Hub maximal 1.000.000 Geräte oder Module; pro Abonnement 50 IoT Hubs und ein Free Hub beachten\nD2C-Nachrichten maximal 256 KB, C2D maximal 64 KB; Routing und Zielendpunkte auf Durchsatz dimensionieren\nNach Microsoft werden Kundendaten nicht außerhalb der Geografie der bereitgestellten Dienstinstanz gespeichert; Region für DACH/DSGVO bewusst wählen', 'Maschinen-, Sensor- und Anlagenflotten sicher anbinden\nTelemetrie in Event Hubs, Storage, Service Bus, Cosmos DB oder Analytics-Dienste routen\nGerätekonfiguration über Device Twins und direkte Methoden steuern\nIndustrie-, Gebäude- und Field-Service-Szenarien mit IoT Edge erweitern', 'https://learn.microsoft.com/de-de/azure/iot-hub/iot-concepts-and-iot-hub', 'https://azure.microsoft.com/de-de/pricing/details/iot-hub/', 10],
+            ['iot-mixed-reality', 'digital-twins', 'Azure Digital Twins', 'Digitale Graphmodelle für Gebäude, Anlagen, Prozesse und Umgebungen.', 'Azure Digital Twins modelliert reale Umgebungen als Zwillingsgraph aus DTDL-Modellen, digitalen Zwillingen, Beziehungen, Events und Abfragen.', 'Azure Digital Twins ist ein PaaS-Dienst für digitale Modelle ganzer Umgebungen wie Gebäude, Fabriken, Energieverteilnetze oder Anlagen. Du definierst Modelle mit DTDL, erstellst daraus digitale Zwillinge und verbindest sie über Beziehungen zu einem Graphen, der Livezustände und Kontext abbildet. Daten kommen häufig aus Azure IoT Hub, Geschäftssystemen oder APIs und werden über Abfragen, Ereignisrouten, Azure Functions, Event Hubs, Event Grid, Service Bus oder Azure Data Explorer weiterverarbeitet.', 'Modelle werden in DTDL definiert; DTDL v3 ist empfohlen, aber Azure Digital Twins Explorer unterstützt v3 nur eingeschränkt\nDTDL-Befehle sowie writable, minMultiplicity und maxMultiplicity werden von Azure Digital Twins nicht erzwungen\nInstanzlimits wie 2.000.000 Twins, 20.000.000 Beziehungen und 10.000 Modelle sowie 32 KB Twin-Payload beachten\nEreignisrouten unterstützen Event Hubs, Event Grid und Service Bus; Dead Lettering muss explizit eingerichtet werden\nKosten entstehen über Nachrichten, Vorgänge und Abfrageeinheiten; Graph-Abfragen und Routenaufkommen vorab modellieren', 'Smart Buildings mit Räumen, Etagen, Sensoren und Anlagen modellieren\nFertigungs- und Anlagenzustände im Kontext von Beziehungen analysieren\nIoT-Hub-Telemetrie mit Geschäftsobjekten und Standortdaten verbinden\nBetriebsdaten über Event Routes und Azure Data Explorer historisieren', 'https://learn.microsoft.com/de-de/azure/digital-twins/overview', 'https://azure.microsoft.com/de-de/pricing/details/digital-twins/', 20],
             ['analytics-big-data', 'synapse-analytics', 'Azure Synapse Analytics', 'Analytics-Plattform für Data Warehousing und Big Data.', 'Synapse verbindet Data Warehousing, Spark, Pipelines und Analysefunktionen für End-to-End-Datenplattformen.', 'SQL und Spark\nData Integration\nEnterprise Analytics', 'Data Warehousing\nBI-Plattformen\nBig-Data-Auswertung', 'https://learn.microsoft.com/de-de/azure/synapse-analytics/', 'https://azure.microsoft.com/de-de/pricing/details/synapse-analytics/', 10],
             ['analytics-big-data', 'data-factory', 'Azure Data Factory', 'Datenintegration und Pipeline-Orchestrierung.', 'Data Factory verschiebt und transformiert Daten aus vielen Quellen und automatisiert Datenpipelines.', 'Pipelines\nConnectoren\nMonitoring', 'ETL/ELT\nMigration\nDatenplattformen', 'https://learn.microsoft.com/de-de/azure/data-factory/', 'https://azure.microsoft.com/de-de/pricing/details/data-factory/', 20],
             ['analytics-big-data', 'databricks', 'Azure Databricks', 'Apache Spark-basierte Daten- und KI-Plattform.', 'Azure Databricks unterstützt kollaborative Datenentwicklung, Lakehouse-Architekturen und ML/AI-Workloads.', 'Spark-Plattform\nLakehouse\nML-Workflows', 'Data Engineering\nKI-Training\nStreaming Analytics', 'https://learn.microsoft.com/de-de/azure/databricks/', 'https://azure.microsoft.com/de-de/pricing/details/databricks/', 30],
@@ -1051,6 +1056,434 @@ final class CMS_M365Azure_Installer
             ]);
         }
 
+        $exists = $db->prepare("SELECT id FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $exists->execute([$markerKey]);
+        if ($exists->fetch()) {
+            $stmt = $db->prepare("UPDATE {$prefix}m365azure_settings SET setting_value = ? WHERE setting_key = ?");
+            $stmt->execute([$markerVersion, $markerKey]);
+        } else {
+            $stmt = $db->prepare("INSERT INTO {$prefix}m365azure_settings (setting_key, setting_value) VALUES (?, ?)");
+            $stmt->execute([$markerKey, $markerVersion]);
+        }
+    }
+
+    private static function upgrade_network_security_content(object $db, string $prefix): void
+    {
+        $markerKey = 'content_network_security_seed_version';
+        $markerVersion = '2026-05-30-network-security-v1';
+
+        $markerStmt = $db->prepare("SELECT setting_value FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $markerStmt->execute([$markerKey]);
+        if ((string) ($markerStmt->fetchColumn() ?: '') === $markerVersion) {
+            return;
+        }
+
+        $updates = [
+            'virtual-network' => [
+                'subtitle' => 'Private Netzwerkgrundlage für Azure- und Hybrid-Architekturen.',
+                'summary' => 'Azure Virtual Network bildet private Netzwerkbereiche für Azure-Ressourcen, Subnetze, Routing, Peering, Private Link, Dienstendpunkte und Hybridkonnektivität.',
+                'content' => 'Azure Virtual Network ist die private Netzwerkbasis in Azure. Du definierst IP-Adressräume, Subnetze, Routing, Netzwerksicherheitsgruppen und Verbindungen zu anderen VNets, Azure-Diensten oder lokalen Netzwerken. Der Dienst selbst ist kostenlos, aber Peering, ausgehender Datenverkehr, Flow Logs, Private Link, Gateways und verbundene Dienste können kostenrelevant werden.',
+                'features' => "VNet selbst ist kostenlos; Peering wird für eingehenden und ausgehenden Datenverkehr berechnet\nSubnetze früh planen: kleinster Bereich /29, Azure reserviert mehrere Adressen pro Subnetz\nPeering nutzt das Microsoft-Backbone, ersetzt aber keine saubere IP-Adressplanung und keine Firewall-Strategie\nNSG-Regeln sind zustandsbehaftet; Standardregeln bleiben vorhanden und werden über Prioritäten überschrieben\nNSG Flow Logs werden abgelöst; für neue Projekte VNet Flow Logs mit Network Watcher planen",
+                'use_cases' => "Landing Zones und Hub-Spoke-Netzwerke\nApp-, Datenbank- und Plattformsegmentierung über Subnetze und NSGs\nHybridkonnektivität über VPN Gateway oder ExpressRoute\nPrivate Endpoints und Dienstendpunkte für PaaS-Zugriff\nNetzwerkflussanalyse mit VNet Flow Logs und SIEM-Anbindung",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/virtual-network/virtual-networks-overview',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/virtual-network/',
+                'known' => [
+                    'subtitle' => ['Private Netzwerkgrundlage in Azure.'],
+                    'summary' => ['Virtual Network verbindet Ressourcen sicher miteinander und bildet die Basis für Subnetze, Routing, Peering und Hybridkonnektivität.'],
+                    'content' => ['Virtual Network verbindet Ressourcen sicher miteinander und bildet die Basis für Subnetze, Routing, Peering und Hybridkonnektivität.'],
+                    'features' => ["Subnetze und Peering\nPrivate IP-Kommunikation\nNetzwerksicherheitsgruppen"],
+                    'use_cases' => ["Landing Zones\nApp-Netzwerke\nHybrid-Topologien"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/virtual-network/'],
+                ],
+            ],
+            'azure-firewall' => [
+                'subtitle' => 'Cloudnative Firewall für zentrale Netzwerk- und Egress-Kontrolle.',
+                'summary' => 'Azure Firewall ist ein verwalteter, zustandsbehafteter Firewall-Dienst für Azure Virtual Network, Hub-Spoke-Architekturen und kontrollierten Nord-Süd- sowie Ost-West-Datenverkehr.',
+                'content' => 'Azure Firewall schützt virtuelle Netzwerke mit zentralen Regeln, Threat Intelligence, Protokollierung und integrierter Hochverfügbarkeit. Basic, Standard und Premium unterscheiden sich deutlich bei Durchsatz, DNS Proxy, FQDN-/Webkategorie-Filterung, TLS Inspection, IDPS und URL Filtering. Für produktive Architekturen musst du SKU, Routing, AzureFirewallSubnet, SNAT-Kapazität, Logging und Kosten vorab sauber dimensionieren.',
+                'features' => "SKUs bewusst wählen: Basic für kleine Szenarien, Standard für L3-L7-Filterung, Premium für TLS Inspection, IDPS und URL Filtering\nAzureFirewallSubnet mindestens /26 planen; Netzwerksicherheitsgruppen auf diesem Subnetz werden nicht unterstützt\nHub-Spoke pro Region bevorzugen; globales Peering über Regionen kann Latenz, Performance und Kosten verschlechtern\nDNAT mit erzwungenem Tunneling und IPv6 sind laut aktuellen Hinweisen nicht unterstützt\nPreise bestehen aus Bereitstellungsstunden, verarbeitetem Datenvolumen und optionalen Kapazitätseinheiten",
+                'use_cases' => "Zentraler Internet-Egress für Azure-Workloads\nHub-Spoke-Segmentierung zwischen VNets und Subnetzen\nRegulierte Umgebungen mit zentralen Firewall Policies und Logs\nThreat-Intelligence-basierte Warnung oder Blockierung\nPremium-Szenarien mit TLS Inspection, IDPS und URL Filtering",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/firewall/overview',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/azure-firewall/',
+                'known' => [
+                    'subtitle' => ['Cloudnative Netzwerk-Firewall.'],
+                    'summary' => ['Azure Firewall schützt virtuelle Netzwerke mit zentralen Regeln, Protokollierung und integrierter Hochverfügbarkeit.'],
+                    'content' => ['Azure Firewall schützt virtuelle Netzwerke mit zentralen Regeln, Protokollierung und integrierter Hochverfügbarkeit.'],
+                    'features' => ["Zentrale Policies\nThreat Intelligence\nHochverfügbarkeit"],
+                    'use_cases' => ["Hub-Spoke-Netze\nEgress-Kontrolle\nSegmentierung"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/firewall/'],
+                ],
+            ],
+            'key-vault' => [
+                'subtitle' => 'Secrets, Schlüssel und Zertifikate sicher verwalten.',
+                'summary' => 'Azure Key Vault schützt Secrets, kryptografische Schlüssel und Zertifikate zentral, trennt sensible Werte vom Code und integriert sich mit Microsoft Entra ID, Azure RBAC, Private Link, Monitoring und Managed HSM.',
+                'content' => 'Azure Key Vault speichert und verwaltet Secrets, kryptografische Schlüssel und Zertifikate für Anwendungen und Plattformdienste. Für normale Vaults kannst du software- oder HSM-geschützte Schlüssel, Secrets und Zertifikate verwenden; Azure Key Vault Managed HSM ist ein Single-Tenant-HSM-Dienst für HSM-geschützte Schlüssel. Plane Identitäten, Azure RBAC, Netzwerksicherheit, Soft Delete, Purge Protection, Rotation, Monitoring und Throttling, bevor Anwendungen produktiv abhängig werden.',
+                'features' => "Managed Identities und Azure RBAC bevorzugen; Access Policies sind Legacy und können Contributor-Risiken erzeugen\nEin Vault pro Anwendung, Region und Umgebung planen; Objektbereich-Rollen nur in Sonderfällen nutzen\nSoft Delete ist für neue Vaults standardmäßig aktiv; Purge Protection für produktive Verschlüsselungsszenarien aktivieren\nFirewall, Private Endpoint oder deaktivierter öffentlicher Zugriff schützen die Datenebene; Azure DevOps ist kein pauschal vertrauenswürdiger Dienst\nTransaktionslimits, Versionen, Backupgrenzen und Rotation beachten; Key Vault nicht als allgemeinen Konfigurations- oder Kundendatenspeicher verwenden",
+                'use_cases' => "App-Secrets ohne Geheimnisse im Code oder in CI/CD-Variablen\nTLS-Zertifikatslebenszyklus und automatische Erneuerung\nCustomer-managed keys, BYOK und Verschlüsselung ruhender Daten\nGeheimnis- und Schlüsselrotation mit kontrolliertem Rollout\nHSM-/Compliance-Szenarien mit Azure Key Vault Managed HSM",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/key-vault/general/overview',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/key-vault/',
+                'known' => [
+                    'subtitle' => ['Schlüssel, Zertifikate und Geheimnisse verwalten.'],
+                    'summary' => ['Key Vault schützt Secrets und kryptografische Schlüssel und trennt sensible Werte sauber vom Anwendungscode.'],
+                    'content' => ['Key Vault schützt Secrets und kryptografische Schlüssel und trennt sensible Werte sauber vom Anwendungscode.'],
+                    'features' => ["Secrets und Zertifikate\nManaged HSM Optionen\nRBAC und Auditing"],
+                    'use_cases' => ["App-Secrets\nZertifikatsverwaltung\nSchlüsselrotation"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/key-vault/'],
+                ],
+            ],
+        ];
+
+        $fields = ['subtitle', 'summary', 'content', 'features', 'use_cases', 'docs_url', 'pricing_url'];
+        $select = $db->prepare("SELECT id, subtitle, summary, content, features, use_cases, docs_url, pricing_url FROM {$prefix}m365azure_services WHERE slug = ?");
+        $update = $db->prepare("UPDATE {$prefix}m365azure_services SET subtitle = ?, summary = ?, content = ?, features = ?, use_cases = ?, docs_url = ?, pricing_url = ? WHERE id = ?");
+
+        foreach ($updates as $slug => $data) {
+            $select->execute([$slug]);
+            $row = $select->fetch(\PDO::FETCH_ASSOC);
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $values = [];
+            foreach ($fields as $field) {
+                $known = (array) ($data['known'][$field] ?? []);
+                $values[$field] = self::value_if_known((string) ($row[$field] ?? ''), $known, (string) $data[$field]);
+            }
+
+            if (
+                $values['subtitle'] === (string) ($row['subtitle'] ?? '')
+                && $values['summary'] === (string) ($row['summary'] ?? '')
+                && $values['content'] === (string) ($row['content'] ?? '')
+                && $values['features'] === (string) ($row['features'] ?? '')
+                && $values['use_cases'] === (string) ($row['use_cases'] ?? '')
+                && $values['docs_url'] === (string) ($row['docs_url'] ?? '')
+                && $values['pricing_url'] === (string) ($row['pricing_url'] ?? '')
+            ) {
+                continue;
+            }
+
+            $update->execute([
+                $values['subtitle'],
+                $values['summary'],
+                $values['content'],
+                $values['features'],
+                $values['use_cases'],
+                $values['docs_url'],
+                $values['pricing_url'],
+                (int) $row['id'],
+            ]);
+        }
+
+        $exists = $db->prepare("SELECT id FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $exists->execute([$markerKey]);
+        if ($exists->fetch()) {
+            $stmt = $db->prepare("UPDATE {$prefix}m365azure_settings SET setting_value = ? WHERE setting_key = ?");
+            $stmt->execute([$markerVersion, $markerKey]);
+        } else {
+            $stmt = $db->prepare("INSERT INTO {$prefix}m365azure_settings (setting_key, setting_value) VALUES (?, ?)");
+            $stmt->execute([$markerKey, $markerVersion]);
+        }
+    }
+
+    private static function upgrade_integration_communication_content(object $db, string $prefix): void
+    {
+        $markerKey = 'content_integration_communication_seed_version';
+        $markerVersion = '2026-05-30-integration-communication-v1';
+
+        $markerStmt = $db->prepare("SELECT setting_value FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $markerStmt->execute([$markerKey]);
+        if ((string) ($markerStmt->fetchColumn() ?: '') === $markerVersion) {
+            return;
+        }
+
+        self::apply_service_content_updates($db, $prefix, [
+            'api-management' => [
+                'title' => 'Azure API Management',
+                'subtitle' => 'API-Gateways, Policies und Developer Portal für interne und externe APIs.',
+                'summary' => 'Azure API Management veröffentlicht, schützt und überwacht APIs über ein verwaltetes Gateway, Policies, Produkte, Abonnements und ein Developer Portal.',
+                'content' => 'Azure API Management ist eine hybride Multi-Cloud-Plattform für interne und externe APIs. Du stellst APIs über Gateways bereit, steuerst Authentifizierung, Quotas, Rate Limits, Transformationen und Caching per Policies und gibst Entwicklerteams ein Portal für Dokumentation und Abonnements. Der Dienst passt, wenn APIs nicht nur erreichbar, sondern kontrolliert, messbar und produktfähig betrieben werden müssen.',
+                'features' => "Developer-Tarif ist nicht für Produktion gedacht und hat keine SLA\nConsumption ist serverlos und nutzungsbasiert, unterstützt aber nicht alle Funktionen der dedizierten Tarife\nVNet, Private Endpoints, Multi-Region, Availability Zones, Self-hosted Gateway und Workspaces hängen vom Tarif ab\nPolicies können Authentifizierung, Ratenbegrenzung, Transformation, Caching, Logging und Backend-Routing direkt im Gateway erzwingen\nAPI-, Operationen-, Produkt-, Abonnement- und Portalgrenzen je Tarif vor Migration prüfen",
+                'use_cases' => "Partner- und Kunden-APIs sicher veröffentlichen\nMicroservice-Gateways mit zentralen Policies betreiben\nLegacy-Backends über moderne REST- oder SOAP-APIs kapseln\nAPI-Produkte mit Abonnements, Quotas und Developer Portal anbieten",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/api-management/api-management-key-concepts',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/api-management/',
+                'known' => [
+                    'title' => ['API Management'],
+                    'subtitle' => ['APIs sicher veröffentlichen und verwalten.'],
+                    'summary' => ['API Management bietet Gateway, Policies, Developer Portal und Monitoring für interne und externe APIs.'],
+                    'content' => ['API Management bietet Gateway, Policies, Developer Portal und Monitoring für interne und externe APIs.'],
+                    'features' => ["API Gateway\nRate Limits und Policies\nDeveloper Portal"],
+                    'use_cases' => ["Partner-APIs\nMicroservice-Gateways\nAPI-Produkte"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/api-management/'],
+                ],
+            ],
+            'logic-apps' => [
+                'title' => 'Azure Logic Apps',
+                'subtitle' => 'Workflows, Connectoren und B2B-Integration ohne eigenen Orchestrator.',
+                'summary' => 'Azure Logic Apps automatisiert Geschäftsprozesse und Integrationen über Trigger, Aktionen, integrierte Connectoren und verwaltete Connectoren.',
+                'content' => 'Azure Logic Apps ist eine Cloudplattform für Workflows, mit der du SaaS-, Azure-, On-Premises- und B2B-Systeme ohne eigenen Orchestrator verbindest. Ein Workflow startet mit einem Trigger und führt Aktionen aus, zum Beispiel Genehmigungen, Dateiverarbeitung, EDI/XML, API-Aufrufe oder Nachrichtenübergaben. Consumption und Standard unterscheiden sich deutlich bei Hosting, Netzwerk, Datenhaltung, Skalierung und Kostenmodell.',
+                'features' => "Consumption rechnet pro Ausführung ab und enthält pro Ressource einen Workflow; Standard nutzt einen Workflow Service Plan und kann mehrere stateful oder stateless Workflows enthalten\nStandard bietet mehr Kontrolle für VNet, Private Endpoints und regionale Datenhaltung; verwaltete Connectoren werden separat als Azure-Dienst betrieben\nGrenzen wie 500 Aktionen pro Workflow, 90 Tage Run History bei stateful Workflows und kurze stateless Laufzeiten einplanen\nHTTP-Timeouts und Nachrichtengrößen begrenzen synchrone Integrationen; lange Prozesse asynchron oder eventbasiert modellieren\nConnector-Typen, Integrationskonten, Storage und Netzwerkanbindung können Zusatzkosten verursachen",
+                'use_cases' => "Genehmigungs- und Eskalationsprozesse über Microsoft 365, Dynamics und Drittanbieter\nDaten-Synchronisation zwischen SaaS, Azure-Diensten und On-Premises-Systemen\nB2B-Integration mit EDI, XML und Integrationskonten\nEventbasierte Automatisierung rund um Dateien, Tickets, APIs und Nachrichten",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/logic-apps/logic-apps-overview',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/logic-apps/',
+                'known' => [
+                    'title' => ['Logic Apps'],
+                    'subtitle' => ['Designerbasierte Workflows und Integration.'],
+                    'summary' => ['Logic Apps automatisiert Geschäftsprozesse und verbindet Cloud- und On-Premises-Systeme über zahlreiche Connectoren.'],
+                    'content' => ['Logic Apps automatisiert Geschäftsprozesse und verbindet Cloud- und On-Premises-Systeme über zahlreiche Connectoren.'],
+                    'features' => ["Visuelle Workflows\nViele Connectoren\nB2B- und Enterprise-Integration"],
+                    'use_cases' => ["Genehmigungsprozesse\nDaten-Synchronisation\nSystemintegration"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/logic-apps/'],
+                ],
+            ],
+            'service-bus' => [
+                'title' => 'Azure Service Bus',
+                'subtitle' => 'Zuverlässiges Enterprise Messaging mit Queues und Topics.',
+                'summary' => 'Azure Service Bus ist ein vollständig verwalteter Enterprise-Nachrichtenbroker für entkoppelte Anwendungen, Warteschlangen und Publish/Subscribe-Kommunikation.',
+                'content' => 'Azure Service Bus entkoppelt Anwendungen über Queues, Topics und Subscriptions, damit Sender und Empfänger unabhängig voneinander arbeiten können. Der Dienst bietet Funktionen wie Dead Letter Queues, Sessions, Duplicate Detection, Transaktionen, geplante Nachrichten und Filterregeln. Er ist sinnvoll, wenn Geschäftsnachrichten zuverlässig verarbeitet werden müssen und Consumer mit Wiederholungen, Sperren und möglichen Duplikaten umgehen können.',
+                'features' => "Basic unterstützt keine Topics, Transaktionen, Sessions, Duplicate Detection oder Forwarding; für Enterprise Messaging meist Standard oder Premium prüfen\nPremium bietet isolierte Ressourcen über Messaging Units, Netzwerksicherheitsfunktionen, CMK und größere AMQP-Nachrichten bis 100 MB\nStandard und Basic sind bei einzelnen Nachrichten typischerweise auf 256 KB begrenzt; große Payloads besser in Storage ablegen und Referenzen senden\nPeek-Lock arbeitet mit mindestens einmaliger Zustellung; Consumer müssen idempotent sein und Duplikate sauber behandeln\nAlte SDKs und das SBMP-Protokoll werden am 30. September 2026 eingestellt; auf aktuelle Azure SDKs und AMQP migrieren",
+                'use_cases' => "Auftrags-, Bestell- und Zahlungsprozesse asynchron absichern\nFachsysteme über Queues ohne direkte Kopplung verbinden\nPub/Sub-Verteilung von Ereignissen an mehrere Backend-Systeme\nFehlerhafte Nachrichten über Dead Letter Queues analysieren und erneut verarbeiten",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/service-bus-messaging/service-bus-messaging-overview',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/service-bus/',
+                'known' => [
+                    'title' => ['Service Bus'],
+                    'subtitle' => ['Enterprise Messaging zwischen Systemen.'],
+                    'summary' => ['Service Bus entkoppelt Anwendungen über Queues und Topics und sorgt für zuverlässige asynchrone Kommunikation.'],
+                    'content' => ['Service Bus entkoppelt Anwendungen über Queues und Topics und sorgt für zuverlässige asynchrone Kommunikation.'],
+                    'features' => ["Queues und Topics\nDead-Lettering\nTransaktionen"],
+                    'use_cases' => ["Auftragsverarbeitung\nSystementkopplung\nEnterprise Messaging"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/service-bus-messaging/'],
+                ],
+            ],
+        ]);
+
+        self::upsert_marker($db, $prefix, $markerKey, $markerVersion);
+    }
+
+    private static function upgrade_iot_mixed_reality_content(object $db, string $prefix): void
+    {
+        $markerKey = 'content_iot_mixed_reality_seed_version';
+        $markerVersion = '2026-05-30-iot-mixed-reality-v1';
+
+        $markerStmt = $db->prepare("SELECT setting_value FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $markerStmt->execute([$markerKey]);
+        if ((string) ($markerStmt->fetchColumn() ?: '') === $markerVersion) {
+            return;
+        }
+
+        self::apply_service_content_updates($db, $prefix, [
+            'iot-hub' => [
+                'title' => 'Azure IoT Hub',
+                'subtitle' => 'Sichere Gerätekommunikation und Flottensteuerung im Azure-IoT-Backend.',
+                'summary' => 'Azure IoT Hub ist ein verwalteter zentraler Nachrichtenhub für sichere Geräte-zu-Cloud- und Cloud-zu-Gerät-Kommunikation in IoT-Lösungen.',
+                'content' => 'Azure IoT Hub verbindet IoT-Geräte, Edge-Komponenten und Backend-Anwendungen sicher und skalierbar. Der Dienst unterstützt Geräteidentitäten, SAS- oder X.509-Authentifizierung, Geräte- und Modulzwillinge, direkte Methoden, Dateiuploads, Nachrichtenrouting und Monitoring. Er eignet sich für Geräteflotten, bei denen Telemetrie, Befehle, Konfiguration und Routing zuverlässig zusammengeführt werden müssen.',
+                'features' => "Basic unterstützt Geräteidentität, Geräte-zu-Cloud und Routing, aber keine Cloud-to-device-Kommunikation, Device Twins, IoT Edge und Gerätemanagement; für bidirektionale Flotten Standard wählen\nGeräteauthentifizierung über SAS oder X.509 planen; für Massenbereitstellung Device Provisioning Service einbeziehen\nPro Hub maximal 1.000.000 Geräte oder Module; pro Abonnement 50 IoT Hubs und ein Free Hub beachten\nD2C-Nachrichten maximal 256 KB, C2D maximal 64 KB; Routing und Zielendpunkte auf Durchsatz dimensionieren\nNach Microsoft werden Kundendaten nicht außerhalb der Geografie der bereitgestellten Dienstinstanz gespeichert; Region für DACH/DSGVO bewusst wählen",
+                'use_cases' => "Maschinen-, Sensor- und Anlagenflotten sicher anbinden\nTelemetrie in Event Hubs, Storage, Service Bus, Cosmos DB oder Analytics-Dienste routen\nGerätekonfiguration über Device Twins und direkte Methoden steuern\nIndustrie-, Gebäude- und Field-Service-Szenarien mit IoT Edge erweitern",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/iot-hub/iot-concepts-and-iot-hub',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/iot-hub/',
+                'known' => [
+                    'subtitle' => ['Geräte sicher verbinden und verwalten.'],
+                    'summary' => ['IoT Hub ist die zentrale Plattform für bidirektionale Kommunikation mit IoT-Geräten und Gerätemanagement.'],
+                    'content' => ['IoT Hub ist die zentrale Plattform für bidirektionale Kommunikation mit IoT-Geräten und Gerätemanagement.'],
+                    'features' => ["Geräteidentitäten\nCloud-to-device Messaging\nMonitoring"],
+                    'use_cases' => ["Industrie 4.0\nTelemetrie\nGeräteflotten"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/iot-hub/'],
+                ],
+            ],
+            'digital-twins' => [
+                'title' => 'Azure Digital Twins',
+                'subtitle' => 'Digitale Graphmodelle für Gebäude, Anlagen, Prozesse und Umgebungen.',
+                'summary' => 'Azure Digital Twins modelliert reale Umgebungen als Zwillingsgraph aus DTDL-Modellen, digitalen Zwillingen, Beziehungen, Events und Abfragen.',
+                'content' => 'Azure Digital Twins ist ein PaaS-Dienst für digitale Modelle ganzer Umgebungen wie Gebäude, Fabriken, Energieverteilnetze oder Anlagen. Du definierst Modelle mit DTDL, erstellst daraus digitale Zwillinge und verbindest sie über Beziehungen zu einem Graphen, der Livezustände und Kontext abbildet. Daten kommen häufig aus Azure IoT Hub, Geschäftssystemen oder APIs und werden über Abfragen, Ereignisrouten, Azure Functions, Event Hubs, Event Grid, Service Bus oder Azure Data Explorer weiterverarbeitet.',
+                'features' => "Modelle werden in DTDL definiert; DTDL v3 ist empfohlen, aber Azure Digital Twins Explorer unterstützt v3 nur eingeschränkt\nDTDL-Befehle sowie writable, minMultiplicity und maxMultiplicity werden von Azure Digital Twins nicht erzwungen\nInstanzlimits wie 2.000.000 Twins, 20.000.000 Beziehungen und 10.000 Modelle sowie 32 KB Twin-Payload beachten\nEreignisrouten unterstützen Event Hubs, Event Grid und Service Bus; Dead Lettering muss explizit eingerichtet werden\nKosten entstehen über Nachrichten, Vorgänge und Abfrageeinheiten; Graph-Abfragen und Routenaufkommen vorab modellieren",
+                'use_cases' => "Smart Buildings mit Räumen, Etagen, Sensoren und Anlagen modellieren\nFertigungs- und Anlagenzustände im Kontext von Beziehungen analysieren\nIoT-Hub-Telemetrie mit Geschäftsobjekten und Standortdaten verbinden\nBetriebsdaten über Event Routes und Azure Data Explorer historisieren",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/digital-twins/overview',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/digital-twins/',
+                'known' => [
+                    'subtitle' => ['Digitale Abbilder realer Umgebungen.'],
+                    'summary' => ['Digital Twins modelliert Gebäude, Anlagen, Prozesse und Beziehungen, um Zustände und Simulationen nutzbar zu machen.'],
+                    'content' => ['Digital Twins modelliert Gebäude, Anlagen, Prozesse und Beziehungen, um Zustände und Simulationen nutzbar zu machen.'],
+                    'features' => ["Graphbasierte Modelle\nLive-Daten-Integration\nRaum- und Anlagenmodellierung"],
+                    'use_cases' => ["Smart Buildings\nFertigung\nFacility Management"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/digital-twins/'],
+                ],
+            ],
+        ]);
+
+        self::upsert_marker($db, $prefix, $markerKey, $markerVersion);
+    }
+
+    private static function upgrade_analytics_big_data_content(object $db, string $prefix): void
+    {
+        $markerKey = 'content_analytics_big_data_seed_version';
+        $markerVersion = '2026-05-30-analytics-big-data-v1';
+
+        $markerStmt = $db->prepare("SELECT setting_value FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $markerStmt->execute([$markerKey]);
+        if ((string) ($markerStmt->fetchColumn() ?: '') === $markerVersion) {
+            return;
+        }
+
+        self::apply_service_content_updates($db, $prefix, [
+            'synapse-analytics' => [
+                'title' => 'Azure Synapse Analytics',
+                'subtitle' => 'Integrierte Analytics-Plattform für SQL, Spark, Pipelines und Data Lake.',
+                'summary' => 'Azure Synapse Analytics verbindet Enterprise Data Warehousing, Big-Data-Verarbeitung, serverlose SQL-Abfragen, Spark und Datenintegration in einem Arbeitsbereich.',
+                'content' => 'Azure Synapse Analytics ist ein integrierter Analysedienst für Data Warehousing, Data-Lake-Abfragen, Spark-basierte Datenverarbeitung und ETL/ELT-Pipelines. Du kannst Daten über dedizierte SQL-Pools mit reservierter Leistung oder serverlose SQL-Endpunkte für ad-hoc-Analysen abfragen. Synapse Studio bündelt Entwicklung, Monitoring, Zugriffskontrolle und Integration mit Power BI, Azure Machine Learning und weiteren Azure-Diensten.',
+                'features' => "Dedizierte SQL-Pools, serverlose SQL-Pools, Spark-Pools und Pipelines haben unterschiedliche Abrechnungs- und Betriebsmodelle\nDedizierte SQL-Pools verursachen Compute-Kosten, solange sie laufen; Pausieren, Skalieren und reservierte Kapazität bewusst planen\nServerlose SQL-Abfragen werden nach verarbeiteten Daten berechnet; Dateiformate, Partitionierung und Abfragefilter beeinflussen Kosten stark\nSpark-Pools brauchen passende Node-Größen, Auto-Scale, Auto-Pause und Bibliotheksverwaltung, sonst entstehen unnötige Laufzeitkosten\nData Explorer in Synapse wird in der Doku weiterhin als Vorschau beschrieben; für produktive Protokoll- und Zeitreihenanalyse Status und Zielarchitektur prüfen",
+                'use_cases' => "Enterprise Data Warehouse mit SQL-Pools und Power-BI-Anbindung\nAd-hoc-Analyse von Parquet-, CSV-, JSON- oder Delta-Daten im Data Lake\nETL- und ELT-Orchestrierung über Synapse-Pipelines und Data-Factory-Engine\nSpark-basierte Datenaufbereitung, Feature Engineering und ML-nahe Verarbeitung",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/synapse-analytics/overview-what-is',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/synapse-analytics/',
+                'known' => [
+                    'subtitle' => ['Analytics-Plattform für Data Warehousing und Big Data.'],
+                    'summary' => ['Synapse verbindet Data Warehousing, Spark, Pipelines und Analysefunktionen für End-to-End-Datenplattformen.'],
+                    'content' => ['Synapse verbindet Data Warehousing, Spark, Pipelines und Analysefunktionen für End-to-End-Datenplattformen.'],
+                    'features' => ["SQL und Spark\nData Integration\nEnterprise Analytics"],
+                    'use_cases' => ["Data Warehousing\nBI-Plattformen\nBig-Data-Auswertung"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/synapse-analytics/'],
+                ],
+            ],
+            'data-factory' => [
+                'title' => 'Azure Data Factory',
+                'subtitle' => 'Verwaltete Datenintegration, Pipeline-Orchestrierung und Hybrid-ETL.',
+                'summary' => 'Azure Data Factory erstellt, plant und überwacht Datenpipelines für ETL, ELT, Datenbewegung und Transformation über Cloud-, SaaS- und On-Premises-Quellen hinweg.',
+                'content' => 'Azure Data Factory ist ein verwalteter Dienst für Datenintegration und Pipeline-Orchestrierung. Du verbindest Quellen über verknüpfte Dienste, bewegst Daten mit Copy-Aktivitäten, transformierst sie über Mapping Data Flows oder externe Compute-Dienste und steuerst Abläufe über Trigger, Parameter und Monitoring. Der Dienst eignet sich besonders für hybride Datenplattformen, bei denen Cloud- und On-Premises-Daten zuverlässig operationalisiert werden müssen.',
+                'features' => "Stand/Hinweis: Microsoft nennt Data Factory in Microsoft Fabric als nächste Generation; neue Integrationsarchitekturen sollten Fabric Data Factory mitprüfen\nPipelines, Aktivitäten, Trigger, Datasets, verknüpfte Dienste und Integration Runtimes sauber trennen, sonst werden Betrieb und Migration schnell unübersichtlich\nSelf-hosted Integration Runtime ist für lokale oder private Quellen nötig und muss gepatcht, überwacht und hochverfügbar geplant werden\nKosten entstehen durch Orchestrierung, Aktivitätsausführung, Integration-Runtime-Stunden, Data-Flow-vCore-Stunden, Debugging und Monitoring-Vorgänge\nBei Migration zu Fabric ändern sich Architekturdetails wie Verbindungen, Datasets, globale Parameter, Identität, Zeitpläne und nicht unterstützte Aktivitäten",
+                'use_cases' => "Tägliche oder ereignisbasierte ETL-/ELT-Pipelines aus ERP, SQL, SaaS und Dateien\nDatenmigrationen zwischen On-Premises, Azure Storage, Synapse, SQL und Lakehouse-Zielen\nHybrid-Datenintegration über Self-hosted Integration Runtime und private Netzwerke\nBetrieblich überwachbare Ladeprozesse mit Alerting, Parametern und CI/CD",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/data-factory/introduction',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/data-factory/',
+                'known' => [
+                    'subtitle' => ['Datenintegration und Pipeline-Orchestrierung.'],
+                    'summary' => ['Data Factory verschiebt und transformiert Daten aus vielen Quellen und automatisiert Datenpipelines.'],
+                    'content' => ['Data Factory verschiebt und transformiert Daten aus vielen Quellen und automatisiert Datenpipelines.'],
+                    'features' => ["Pipelines\nConnectoren\nMonitoring"],
+                    'use_cases' => ["ETL/ELT\nMigration\nDatenplattformen"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/data-factory/'],
+                ],
+            ],
+            'databricks' => [
+                'title' => 'Azure Databricks',
+                'subtitle' => 'Lakehouse-, Analytics- und KI-Plattform auf Databricks in Azure.',
+                'summary' => 'Azure Databricks ist eine verwaltete Databricks-Plattform in Azure für Data Engineering, Lakehouse-Architekturen, Streaming, SQL Analytics, Machine Learning und KI-Workloads.',
+                'content' => 'Azure Databricks kombiniert die Databricks Data Intelligence Platform mit Azure-Integration für Identität, Abrechnung, Netzwerk und Speicher. Teams nutzen Notebooks, Jobs, SQL Warehouses, Delta Lake, Unity Catalog, MLflow, Lakeflow-Pipelines und serverlose oder klassische Compute-Optionen für Daten- und KI-Plattformen. Der Dienst ist stark, wenn Data Engineers, Analysten und Data Scientists gemeinsam auf einem governed Lakehouse arbeiten sollen.',
+                'features' => "Stand/Hinweis: Azure Databricks Standard-Tier läuft aus; neue Standard-Workspaces sind ab 1. April 2026 nicht mehr vorgesehen und bestehende Standard-Workspaces müssen bis 1. Oktober 2026 auf Premium wechseln\nKosten setzen sich aus Azure-VMs beziehungsweise serverlosem Compute und Databricks Units zusammen; Jobs, All-Purpose, SQL, ML und serverlose Workloads getrennt kalkulieren\nUnity Catalog für Governance, Berechtigungen, Lineage und sichere Datenfreigabe früh einplanen; Premium-Funktionen und Compliance-Add-ons können kostenrelevant sein\nVNet Injection, Private Link, Managed Identities, Storage-Credentials und Exfiltration-Schutz vor Produktivstart klären\nCluster Policies, Auto-Termination, Jobs Compute, Serverless und Reserved/Commit-Optionen aktiv nutzen, sonst laufen Kosten schnell aus dem Ruder",
+                'use_cases' => "Lakehouse-Plattform für Data Engineering, BI und Data Science\nBatch- und Streaming-Pipelines mit Delta Lake, Auto Loader und Lakeflow\nSQL Analytics und Dashboards auf Data-Lake-Daten\nML-/KI-Training, Feature Engineering, MLflow und generative KI auf Unternehmensdaten",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/databricks/introduction/',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/databricks/',
+                'known' => [
+                    'subtitle' => ['Apache Spark-basierte Daten- und KI-Plattform.'],
+                    'summary' => ['Azure Databricks unterstützt kollaborative Datenentwicklung, Lakehouse-Architekturen und ML/AI-Workloads.'],
+                    'content' => ['Azure Databricks unterstützt kollaborative Datenentwicklung, Lakehouse-Architekturen und ML/AI-Workloads.'],
+                    'features' => ["Spark-Plattform\nLakehouse\nML-Workflows"],
+                    'use_cases' => ["Data Engineering\nKI-Training\nStreaming Analytics"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/databricks/'],
+                ],
+            ],
+        ]);
+
+        self::upsert_marker($db, $prefix, $markerKey, $markerVersion);
+    }
+
+    private static function upgrade_hybrid_multicloud_content(object $db, string $prefix): void
+    {
+        $markerKey = 'content_hybrid_multicloud_seed_version';
+        $markerVersion = '2026-05-30-hybrid-multicloud-v1';
+
+        $markerStmt = $db->prepare("SELECT setting_value FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $markerStmt->execute([$markerKey]);
+        if ((string) ($markerStmt->fetchColumn() ?: '') === $markerVersion) {
+            return;
+        }
+
+        self::apply_service_content_updates($db, $prefix, [
+            'azure-arc' => [
+                'title' => 'Azure Arc',
+                'subtitle' => 'Azure-Governance und Management für On-Premises, Edge und Multicloud.',
+                'summary' => 'Azure Arc projiziert Server, Kubernetes-Cluster, SQL Server, Datendienste und bestimmte VM-Plattformen außerhalb von Azure in Azure Resource Manager.',
+                'content' => 'Azure Arc erweitert Azure-Management, Governance und Sicherheitsfunktionen auf lokale Rechenzentren, Edge-Standorte und andere Clouds. Ressourcen werden als Azure-Ressourcen sichtbar und können über Azure Portal, Azure Policy, Azure Monitor, Defender for Cloud, Tags, RBAC, Resource Graph, Erweiterungen und Automatisierung verwaltet werden. Damit eignet sich Arc für konsistente Betriebsstandards, ohne alle Workloads direkt nach Azure zu migrieren.',
+                'features' => "Die Arc-Steuerungsebene für Inventar, Organisation, RBAC, Tags und viele Verwaltungsfunktionen ist kostenlos; aktivierte Azure-Dienste wie Monitor, Defender, Sentinel, Update Manager oder Policy-Gastkonfiguration werden separat berechnet\nConnected Machine Agent, ausgehende Konnektivität, Identität, Proxy, Firewallfreigaben und Netzwerkanforderungen vor Rollout prüfen\nStand/Hinweis: Der indirekt verbundene Modus für Arc-fähige Datendienste wird laut Microsoft ab September 2025 eingestellt\nWindows Server Pay-as-you-go, SQL Server Pay-as-you-go und Extended Security Updates über Arc können Lizenz- und Kostenmodell verändern\nFür DACH/DSGVO die gewählte Azure-Region, Log-Workspace-Region, Defender/Sentinel-Datenflüsse und Aufbewahrung bewusst festlegen",
+                'use_cases' => "Zentrales Inventar und Governance für Windows-/Linux-Server in Rechenzentren, Filialen und anderen Clouds\nPatch-, Sicherheits- und Compliance-Management über Azure Policy, Update Manager und Defender for Cloud\nKubernetes-Cluster über GitOps, Policy und Cluster-Erweiterungen einheitlich betreiben\nSQL Server außerhalb von Azure inventarisieren, lizenzieren, überwachen und über Arc absichern",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/azure-arc/overview',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/azure-arc/',
+                'known' => [
+                    'subtitle' => ['Azure-Management für hybride und Multicloud-Ressourcen.'],
+                    'summary' => ['Azure Arc erweitert Azure-Management, Governance und Sicherheit auf lokale Server, Kubernetes und andere Clouds.'],
+                    'content' => ['Azure Arc erweitert Azure-Management, Governance und Sicherheit auf lokale Server, Kubernetes und andere Clouds.'],
+                    'features' => ["Server und Kubernetes überall verwalten\nPolicy und Governance\nHybrid Operations"],
+                    'use_cases' => ["Hybrid Cloud\nMulticloud Governance\nEdge-Standorte"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/azure-arc/'],
+                ],
+            ],
+            'azure-local' => [
+                'title' => 'Azure Local',
+                'subtitle' => 'Azure-Infrastruktur für eigene Standorte, Edge und souveräne Workloads.',
+                'summary' => 'Azure Local bringt Azure-Verwaltung, virtuelle Maschinen, Container und ausgewählte Azure-Dienste auf validierte oder kompatible kundeneigene Infrastruktur.',
+                'content' => 'Azure Local ist Microsofts verteilte Infrastrukturlösung für lokale, Edge- und souveräne Standorte. Du betreibst Workloads auf eigener Hardware, verwaltest Infrastruktur und Workloads aber cloudnah über Azure Arc, Azure Portal, Azure CLI, ARM-Vorlagen und integrierte Dienste wie Azure Monitor, Azure Policy und Defender for Cloud. Der Dienst passt, wenn Daten, Latenz, Verfügbarkeit oder Standortvorgaben gegen eine reine Public-Cloud-Bereitstellung sprechen.',
+                'features' => "Azure Local wird pro physischem Kern der lokalen Computer abgerechnet; nach Registrierung gibt es laut Preisseite eine kostenlose 60-Tage-Testphase\nEin Azure-Abonnement ist für Einrichtung und cloudverbundene Verwaltung erforderlich; validierte Partnerhardware oder kompatible Hardware nach Azure-Local-Katalog einplanen\nAzure Kubernetes Service aktiviert durch Azure Arc ist in Azure Local ab Version 2402 ohne zusätzliche AKS-Gebühr enthalten, verbrauchsbasierte Azure-Dienste können trotzdem kostenpflichtig sein\nWindows-Server-Gastlizenzierung, Azure-Hybridvorteil und optionale Workloads getrennt prüfen, weil Hostdienstgebühr, Gastrechte und Zusatzdienste unterschiedlich wirken\nFür getrennte Betriebsmodi, SAN-attach, sehr große Multi-Rack-Szenarien oder lokal gehostete Control Plane empfiehlt Microsoft direkte Abstimmung mit dem Account-Team",
+                'use_cases' => "Produktions-, Logistik- oder Filialstandorte mit niedriger Latenz und lokalem Weiterbetrieb bei WAN-Ausfall\nRegulierte Workloads, bei denen Daten lokal gehalten und trotzdem zentral verwaltet werden sollen\nEdge-KI-Inferenz, industrielle Qualitätssicherung und lokale Datenvorverarbeitung\nModernisierung lokaler Virtualisierung und Containerplattformen mit Azure-Managementmodell",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/azure-local/overview',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/azure-local/',
+                'known' => [
+                    'subtitle' => ['Azure-nahe Infrastruktur an verteilten Standorten.'],
+                    'summary' => ['Azure Local bringt Azure-Funktionen in lokale und Edge-Umgebungen für Workloads mit Standort- oder Latenzanforderungen.'],
+                    'content' => ['Azure Local bringt Azure-Funktionen in lokale und Edge-Umgebungen für Workloads mit Standort- oder Latenzanforderungen.'],
+                    'features' => ["Lokale Workloads\nCloudverbundene Verwaltung\nEdge-Szenarien"],
+                    'use_cases' => ["Filialen\nIndustrie-Edge\nRegulierte Workloads"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/azure-local/'],
+                ],
+            ],
+        ]);
+
+        self::upsert_marker($db, $prefix, $markerKey, $markerVersion);
+    }
+
+    /** @param array<string,array<string,mixed>> $updates */
+    private static function apply_service_content_updates(object $db, string $prefix, array $updates): void
+    {
+        $fields = ['title', 'subtitle', 'summary', 'content', 'features', 'use_cases', 'docs_url', 'pricing_url'];
+        $select = $db->prepare("SELECT id, title, subtitle, summary, content, features, use_cases, docs_url, pricing_url FROM {$prefix}m365azure_services WHERE slug = ?");
+        $update = $db->prepare("UPDATE {$prefix}m365azure_services SET title = ?, subtitle = ?, summary = ?, content = ?, features = ?, use_cases = ?, docs_url = ?, pricing_url = ? WHERE id = ?");
+
+        foreach ($updates as $slug => $data) {
+            $select->execute([$slug]);
+            $row = $select->fetch(\PDO::FETCH_ASSOC);
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $values = [];
+            foreach ($fields as $field) {
+                $known = (array) ($data['known'][$field] ?? []);
+                $values[$field] = self::value_if_known((string) ($row[$field] ?? ''), $known, (string) ($data[$field] ?? $row[$field] ?? ''));
+            }
+
+            if (
+                $values['title'] === (string) ($row['title'] ?? '')
+                && $values['subtitle'] === (string) ($row['subtitle'] ?? '')
+                && $values['summary'] === (string) ($row['summary'] ?? '')
+                && $values['content'] === (string) ($row['content'] ?? '')
+                && $values['features'] === (string) ($row['features'] ?? '')
+                && $values['use_cases'] === (string) ($row['use_cases'] ?? '')
+                && $values['docs_url'] === (string) ($row['docs_url'] ?? '')
+                && $values['pricing_url'] === (string) ($row['pricing_url'] ?? '')
+            ) {
+                continue;
+            }
+
+            $update->execute([
+                $values['title'],
+                $values['subtitle'],
+                $values['summary'],
+                $values['content'],
+                $values['features'],
+                $values['use_cases'],
+                $values['docs_url'],
+                $values['pricing_url'],
+                (int) $row['id'],
+            ]);
+        }
+    }
+
+    private static function upsert_marker(object $db, string $prefix, string $markerKey, string $markerVersion): void
+    {
         $exists = $db->prepare("SELECT id FROM {$prefix}m365azure_settings WHERE setting_key = ?");
         $exists->execute([$markerKey]);
         if ($exists->fetch()) {

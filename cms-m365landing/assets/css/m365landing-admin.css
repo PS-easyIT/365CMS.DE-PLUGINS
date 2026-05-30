@@ -104,8 +104,8 @@
 .m365landing-media-preview img {
     display: block;
     width: 100%;
-    max-height: 160px;
-    object-fit: cover;
+    max-height: 205px;
+    object-fit: fill;
 }
 
 .m365landing-target-presets {

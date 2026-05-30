@@ -79,7 +79,7 @@ final class CMS_M365Landing_Frontend
         $settings = $this->repo()->settings();
         $primary = CMS_M365Landing_Repository::color((string) ($settings['design_primary_color'] ?? ''), '#2563eb');
         $accent = CMS_M365Landing_Repository::color((string) ($settings['design_accent_color'] ?? ''), '#0f766e');
-        $background = CMS_M365Landing_Repository::color((string) ($settings['design_background_color'] ?? ''), '#ffffff');
+        $background = CMS_M365Landing_Repository::color((string) ($settings['design_background_color'] ?? ''), '#edf1f6');
         $surface = CMS_M365Landing_Repository::color((string) ($settings['design_surface_color'] ?? ''), '#ffffff');
         $surfaceAlt = CMS_M365Landing_Repository::color((string) ($settings['design_surface_alt_color'] ?? ''), '#f8fafc');
         $textColor = CMS_M365Landing_Repository::color((string) ($settings['design_text_color'] ?? ''), '#1e293b');
@@ -98,15 +98,18 @@ final class CMS_M365Landing_Frontend
         $paddingBottom = $number('layout_padding_bottom', 64, 0, 160);
         $heroImageHeight = $number('hero_image_height', 150, 80, 320);
         $iconSize = $number('card_icon_size', 42, 24, 80);
-        $imageHeight = $number('card_image_height', 150, 90, 260);
+        $imageHeight = $number('card_image_height', 205, 90, 205);
 
         echo '<style id="cms-m365landing-design">' . "\n";
+        echo ':root {' . "\n";
+        echo '    --m365landing-bg: ' . htmlspecialchars($background, ENT_QUOTES, 'UTF-8') . ';' . "\n";
+        echo '}' . "\n";
         echo ':root, body.m365tools-theme-embed, body.m365calculator-theme-embed {' . "\n";
         echo '    --m365tools-card-radius: ' . (int) $radius . 'px;' . "\n";
         echo '    --m365tools-ui-radius: ' . (int) $radius . 'px;' . "\n";
         echo '    --m365tools-primary: ' . htmlspecialchars($primary, ENT_QUOTES, 'UTF-8') . ';' . "\n";
         echo '    --m365tools-accent: ' . htmlspecialchars($accent, ENT_QUOTES, 'UTF-8') . ';' . "\n";
-        echo '    --m365tools-bg: ' . htmlspecialchars($background, ENT_QUOTES, 'UTF-8') . ';' . "\n";
+        echo '    --m365tools-bg: var(--m365landing-bg);' . "\n";
         echo '    --m365tools-surface: ' . htmlspecialchars($surface, ENT_QUOTES, 'UTF-8') . ';' . "\n";
         echo '    --m365tools-surface-alt: ' . htmlspecialchars($surfaceAlt, ENT_QUOTES, 'UTF-8') . ';' . "\n";
         echo '    --m365tools-header-bg: ' . htmlspecialchars($surfaceAlt, ENT_QUOTES, 'UTF-8') . ';' . "\n";
@@ -127,6 +130,10 @@ final class CMS_M365Landing_Frontend
         echo '    --m365landing-hero-image-height: ' . (int) $heroImageHeight . 'px;' . "\n";
         echo '    --m365landing-icon-size: ' . (int) $iconSize . 'px;' . "\n";
         echo '    --m365landing-image-height: ' . (int) $imageHeight . 'px;' . "\n";
+        echo '}' . "\n";
+        echo 'body.m365tools-module-m365landing, body.m365tools-module-m365landing #page.site, body.m365tools-module-m365landing #content.site-content, body.m365tools-module-m365landing .site-content {' . "\n";
+        echo '    --m365tools-bg: var(--m365landing-bg) !important;' . "\n";
+        echo '    background-color: var(--m365landing-bg) !important;' . "\n";
         echo '}' . "\n";
         echo '</style>' . "\n";
     }

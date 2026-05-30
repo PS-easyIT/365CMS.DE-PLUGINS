@@ -1,5 +1,17 @@
 # CMS M365 Landing – Changelog
 
+## 1.0.8 – 2026-05-30
+
+- Hintergrundfarbe nutzt eine eigene Landing-CSS-Variable, damit andere M365-Styles sie nicht wieder auf Weiß überschreiben.
+- Admin-Farbfelder speichern jetzt den Textwert bevorzugt und synchronisieren Picker und Hex-Feld in beide Richtungen.
+- Versteckte Farbwerte behalten beim Speichern anderer Tabs ihren Default statt leer auf einen Fallback zu kippen.
+
+## 1.0.7 – 2026-05-30
+
+- Seitenhintergrund nutzt jetzt `#edf1f6` als Standard und bleibt nach dem Speichern erhalten.
+- Alte leere oder weiße Hintergrund-Defaults werden defensiv auf `#edf1f6` migriert, ohne eigene Farbanpassungen zu überschreiben.
+- Bereichscard-Bilder werden nicht mehr zugeschnitten, laufen über die volle Breite und sind auf maximal `205px` Höhe begrenzt.
+
 ## 1.0.6 – 2026-05-30
 
 - Card-CTA `zum Bereich ->` sitzt jetzt rechts unten in jeder Bereichscard.

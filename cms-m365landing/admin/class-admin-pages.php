@@ -117,7 +117,9 @@ final class CMS_M365Landing_Admin_Pages
         }
 
         foreach (self::color_setting_defaults() as $key => $fallback) {
-            $posted = (string) ($_POST[$key] ?? ($_POST[$key . '_text'] ?? ''));
+            $postedText = trim((string) ($_POST[$key . '_text'] ?? ''));
+            $postedPicker = trim((string) ($_POST[$key] ?? ''));
+            $posted = $postedText !== '' ? $postedText : $postedPicker;
             $settings[$key] = CMS_M365Landing_Repository::color($posted, $fallback);
         }
 
@@ -161,7 +163,7 @@ final class CMS_M365Landing_Admin_Pages
         return [
             'design_primary_color' => '#2563eb',
             'design_accent_color' => '#0f766e',
-            'design_background_color' => '#ffffff',
+            'design_background_color' => '#edf1f6',
             'design_surface_color' => '#ffffff',
             'design_surface_alt_color' => '#f8fafc',
             'design_text_color' => '#1e293b',
@@ -181,7 +183,7 @@ final class CMS_M365Landing_Admin_Pages
             'design_border_radius' => [0, 32],
             'hero_image_height' => [80, 320],
             'card_icon_size' => [24, 80],
-            'card_image_height' => [90, 260],
+            'card_image_height' => [90, 205],
         ];
     }
 
@@ -329,7 +331,7 @@ final class CMS_M365Landing_Admin_Pages
             self::replace_number('layout_padding_bottom', 'Abstand zum Theme-Footer in px', (int) ($s['layout_padding_bottom'] ?? 64), 0, 160);
             self::replace_color('design_primary_color', 'Primärfarbe', (string) ($s['design_primary_color'] ?? '#2563eb'), '#2563eb');
             self::replace_color('design_accent_color', 'Akzentfarbe', (string) ($s['design_accent_color'] ?? '#0f766e'), '#0f766e');
-            self::replace_color('design_background_color', 'Seitenhintergrund', (string) ($s['design_background_color'] ?? '#ffffff'), '#ffffff');
+            self::replace_color('design_background_color', 'Seitenhintergrund', (string) ($s['design_background_color'] ?? '#edf1f6'), '#edf1f6');
             self::replace_color('design_surface_color', 'Card-Hintergrund', (string) ($s['design_surface_color'] ?? '#ffffff'), '#ffffff');
             self::replace_color('design_surface_alt_color', 'Alternativer Hintergrund', (string) ($s['design_surface_alt_color'] ?? '#f8fafc'), '#f8fafc');
             self::replace_color('design_text_color', 'Textfarbe', (string) ($s['design_text_color'] ?? '#1e293b'), '#1e293b');
@@ -337,7 +339,7 @@ final class CMS_M365Landing_Admin_Pages
             self::replace_color('design_border_color', 'Rahmenfarbe', (string) ($s['design_border_color'] ?? '#e2e8f0'), '#e2e8f0');
             self::replace_number('design_border_radius', 'Card-Radius in px', (int) ($s['design_border_radius'] ?? 10), 0, 32);
             self::replace_number('card_icon_size', 'Icon-Größe in px', (int) ($s['card_icon_size'] ?? 42), 24, 80);
-            self::replace_number('card_image_height', 'Bildhöhe in px', (int) ($s['card_image_height'] ?? 150), 90, 260);
+            self::replace_number('card_image_height', 'Bildhöhe in px', (int) ($s['card_image_height'] ?? 205), 90, 205);
         }
         echo '<button class="btn btn-primary" type="submit">💾 Einstellungen speichern</button></form></div>';
     }
@@ -361,7 +363,7 @@ final class CMS_M365Landing_Admin_Pages
             if ($activeTab === 'design') {
                 continue;
             }
-            echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc((string) ($s[$key] ?? '')) . '">';
+            echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc(self::setting_value($s, $key, self::color_setting_defaults()[$key])) . '">';
         }
         foreach (array_keys(self::numeric_setting_bounds()) as $key) {
             if (self::numeric_setting_key_visible_in_tab($key, $activeTab)) {
@@ -409,7 +411,7 @@ final class CMS_M365Landing_Admin_Pages
             'design_border_radius' => 10,
             'hero_image_height' => 150,
             'card_icon_size' => 42,
-            'card_image_height' => 150,
+            'card_image_height' => 205,
         ];
 
         return $defaults[$key] ?? 0;
@@ -586,7 +588,7 @@ final class CMS_M365Landing_Admin_Pages
     private static function replace_color(string $name, string $label, string $value, string $fallback): void
     {
         $value = CMS_M365Landing_Repository::color($value, $fallback);
-        echo '<div class="form-group"><label class="form-label" for="' . self::esc($name) . '">' . self::esc($label) . '</label><div class="m365landing-color-row"><input class="form-control" type="color" id="' . self::esc($name) . '" name="' . self::esc($name) . '" value="' . self::esc($value) . '"><input class="form-control m365landing-mono" type="text" name="' . self::esc($name) . '_text" value="' . self::esc($value) . '" readonly></div></div>';
+        echo '<div class="form-group"><label class="form-label" for="' . self::esc($name) . '">' . self::esc($label) . '</label><div class="m365landing-color-row"><input class="form-control" type="color" id="' . self::esc($name) . '" name="' . self::esc($name) . '" value="' . self::esc($value) . '"><input class="form-control m365landing-mono" type="text" name="' . self::esc($name) . '_text" value="' . self::esc($value) . '" pattern="^#[0-9A-Fa-f]{6}$" maxlength="7" placeholder="' . self::esc($fallback) . '"></div></div>';
     }
 
     private static function status(bool $active): string

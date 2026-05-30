@@ -52,6 +52,11 @@
             picker.addEventListener('input', function () {
                 text.value = picker.value;
             });
+            text.addEventListener('input', function () {
+                if (/^#[0-9A-Fa-f]{6}$/.test(text.value)) {
+                    picker.value = text.value;
+                }
+            });
         });
     }
 

@@ -39,6 +39,7 @@ final class CMS_M365Landing_Installer
 
         self::create_tables($pdo, $prefix);
         self::seed_settings($db, $prefix);
+        self::upgrade_background_default($db, $prefix);
         self::seed_cards($db, $prefix);
     }
 
@@ -111,7 +112,7 @@ final class CMS_M365Landing_Installer
             'show_tools_section' => '1',
             'design_primary_color' => '#2563eb',
             'design_accent_color' => '#0f766e',
-            'design_background_color' => '#ffffff',
+            'design_background_color' => '#edf1f6',
             'design_surface_color' => '#ffffff',
             'design_surface_alt_color' => '#f8fafc',
             'design_text_color' => '#1e293b',
@@ -124,7 +125,7 @@ final class CMS_M365Landing_Installer
             'layout_padding_top' => '25',
             'layout_padding_bottom' => '64',
             'card_icon_size' => '42',
-            'card_image_height' => '150',
+            'card_image_height' => '205',
             'card_button_label_default' => 'Öffnen',
         ];
 
@@ -141,6 +142,37 @@ final class CMS_M365Landing_Installer
         }
 
         $updateDbVersion->execute([CMS_M365LANDING_DB_VERSION]);
+    }
+
+    private static function upgrade_background_default(object $db, string $prefix): void
+    {
+        $markerKey = 'content_design_background_default_version';
+        $markerVersion = '2026-05-30-background-edf1f6-v1';
+
+        $markerStmt = $db->prepare("SELECT setting_value FROM {$prefix}m365landing_settings WHERE setting_key = ?");
+        $markerStmt->execute([$markerKey]);
+        if ((string) ($markerStmt->fetchColumn() ?: '') === $markerVersion) {
+            return;
+        }
+
+        $currentStmt = $db->prepare("SELECT setting_value FROM {$prefix}m365landing_settings WHERE setting_key = 'design_background_color'");
+        $currentStmt->execute();
+        $current = strtolower(trim((string) ($currentStmt->fetchColumn() ?: '')));
+
+        if ($current === '' || $current === '#ffffff') {
+            $update = $db->prepare("UPDATE {$prefix}m365landing_settings SET setting_value = ? WHERE setting_key = 'design_background_color'");
+            $update->execute(['#edf1f6']);
+        }
+
+        $exists = $db->prepare("SELECT id FROM {$prefix}m365landing_settings WHERE setting_key = ?");
+        $exists->execute([$markerKey]);
+        if ($exists->fetch()) {
+            $markerUpdate = $db->prepare("UPDATE {$prefix}m365landing_settings SET setting_value = ? WHERE setting_key = ?");
+            $markerUpdate->execute([$markerVersion, $markerKey]);
+        } else {
+            $markerInsert = $db->prepare("INSERT INTO {$prefix}m365landing_settings (setting_key, setting_value) VALUES (?, ?)");
+            $markerInsert->execute([$markerKey, $markerVersion]);
+        }
     }
 
     private static function seed_cards(object $db, string $prefix): void

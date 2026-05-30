@@ -1,5 +1,26 @@
 # Changelog – CMS M365 Azure
 
+## 1.2.0 – 2026-05-30
+
+- IoT & Mixed Reality-Kategorie serviceweise nach offiziellen Microsoft-Quellen aktualisiert.
+- Azure IoT Hub und Azure Digital Twins erweitert.
+- Hinweise zu IoT-Hub-Tiers, Device Twins, DPS, Nachrichtenlimits, Routing, Geografie/Datenhaltung, DTDL v3, Explorer-Einschränkungen, Digital-Twins-Limits, Event Routes, Dead Lettering und Abrechnung ergänzt.
+- Bestehende Admin-Anpassungen bleiben durch eine defensive Inhaltsmigration geschützt.
+
+## 1.1.9 – 2026-05-30
+
+- Integration & Kommunikation-Kategorie serviceweise nach offiziellen Microsoft-Quellen aktualisiert.
+- Azure API Management, Azure Logic Apps und Azure Service Bus erweitert.
+- Hinweise zu API-Management-Tiers, Developer/Consumption-Besonderheiten, Workspaces, Logic-Apps-Consumption/Standard, Workflowlimits, Service-Bus-Tiers, Premium Messaging, Nachrichtengrößen, Peek-Lock, alten SDKs und SBMP-Abkündigung ergänzt.
+- Bestehende Admin-Anpassungen bleiben durch eine defensive Inhaltsmigration geschützt.
+
+## 1.1.8 – 2026-05-30
+
+- Netzwerk & Sicherheit-Kategorie serviceweise nach offiziellen Microsoft-Quellen aktualisiert.
+- Azure Virtual Network, Azure Firewall und Azure Key Vault erweitert.
+- Hinweise zu VNet-Peering, Subnetzplanung, NSG/VNet Flow Logs, Azure-Firewall-SKUs, AzureFirewallSubnet, Hub-Spoke-Design, Firewall-Known-Issues, Key-Vault-RBAC, Soft Delete, Purge Protection, Private Link, Managed HSM und Transaktionslimits ergänzt.
+- Bestehende Admin-Anpassungen bleiben durch eine defensive Inhaltsmigration geschützt.
+
 ## 1.1.7 – 2026-05-30
 
 - DevOps & Entwickler-Tools-Kategorie serviceweise nach offiziellen Microsoft-Quellen aktualisiert.
