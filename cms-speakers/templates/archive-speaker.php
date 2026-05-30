@@ -15,7 +15,29 @@ if (!isset($speakers, $settings)) {
     return;
 }
 
-$speakers = (array) $speakers;
+if (!function_exists('cms_speakers_view_lowercase')) {
+    function cms_speakers_view_lowercase(string $value): string
+    {
+        return function_exists('mb_strtolower')
+            ? mb_strtolower($value, 'UTF-8')
+            : strtolower($value);
+    }
+}
+
+$speakers = array_values(array_filter(array_map(
+    static function ($item): ?object {
+        if (is_object($item)) {
+            return $item;
+        }
+
+        if (is_array($item)) {
+            return (object) $item;
+        }
+
+        return null;
+    },
+    (array) $speakers
+)));
 $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
 $archiveSlug = preg_replace('/[^a-z0-9-]+/i', '-', (string) ($settings['archive_slug'] ?? 'speakers')) ?: 'speakers';
 $archiveUrl = $baseUrl . '/' . trim($archiveSlug, '-') . '/';
@@ -45,19 +67,13 @@ foreach ($speakers as $speaker) {
 ksort($topicOptions, SORT_NATURAL | SORT_FLAG_CASE);
 ?>
 <main class="phinit-plugin cms-speaker-wrap" data-cms-speaker-filter-root>
-    <header class="cms-speaker-head">
-        <p class="phinit-overline">Speaker</p>
-        <h1>Speaker</h1>
-        <p class="cms-speaker-head__subtitle">Unsere Referenten und Experten</p>
-    </header>
-
     <nav class="cms-speaker-filter" aria-label="Speakerfilter">
         <div class="phinit-field cms-speaker-filter__field">
             <label for="cms-speaker-topic">Thema</label>
             <select id="cms-speaker-topic" class="phinit-select" data-cms-speaker-filter="topic">
                 <option value="">Alle Themen</option>
                 <?php foreach ($topicOptions as $topic): ?>
-                    <?php $topicValue = mb_strtolower((string) $topic, 'UTF-8'); ?>
+                    <?php $topicValue = cms_speakers_view_lowercase((string) $topic); ?>
                     <option value="<?= htmlspecialchars($topicValue, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $topic, ENT_QUOTES, 'UTF-8') ?></option>
                 <?php endforeach; ?>
             </select>
@@ -71,7 +87,7 @@ ksort($topicOptions, SORT_NATURAL | SORT_FLAG_CASE);
         <button type="button" class="phinit-btn phinit-btn--secondary cms-speaker-filter__reset" data-cms-speaker-reset>Filter zurücksetzen</button>
     </nav>
 
-    <section class="speakers-grid cms-speaker-grid" aria-label="Speaker-Liste">
+    <section class="speakers-grid speaker-card-grid cms-speaker-grid" aria-label="Speaker-Liste">
         <?php if (empty($speakers)): ?>
             <div class="cms-speaker-empty phinit-empty-state" role="status" aria-live="polite">
                 <i class="ti ti-users-off" aria-hidden="true"></i>

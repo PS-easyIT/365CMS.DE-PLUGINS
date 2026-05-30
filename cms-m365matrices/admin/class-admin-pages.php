@@ -578,12 +578,24 @@ final class CMS_M365MATRICES_Admin_Pages
 
     private static function generate_nonce(string $action): string
     {
-        return class_exists('CMS\\Security') ? \CMS\Security::instance()->generateToken($action) : bin2hex(random_bytes(16));
+        if (!class_exists('CMS\\Security')) {
+            error_log('CMS M365 Matrixen admin security service missing for action: ' . $action);
+
+            return '';
+        }
+
+        return (string) \CMS\Security::instance()->generateToken($action);
     }
 
     private static function verify_nonce(string $action): bool
     {
-        return !class_exists('CMS\\Security') || \CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), $action);
+        if (!class_exists('CMS\\Security')) {
+            error_log('CMS M365 Matrixen admin security service missing for action: ' . $action);
+
+            return false;
+        }
+
+        return \CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), $action);
     }
 
     private static function limit_text(string $value, int $length): string

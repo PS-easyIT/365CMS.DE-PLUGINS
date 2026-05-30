@@ -3,7 +3,7 @@
  * Plugin Name: CMS M365 Linkcollection
  * Plugin URI: https://365network.de/cms-m365linkcollection
  * Description: Kuratierte Microsoft-365-Link-Sammlung für Blogs, MVP-Sites, Community-News und Tools mit Public-Übersicht und PHINIT-Sidebar-Widget.
- * Version: 1.0.0
+ * Version: 1.0.2
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-defined('CMS_M365LINKCOLLECTION_VERSION') || define('CMS_M365LINKCOLLECTION_VERSION', '1.0.0');
+defined('CMS_M365LINKCOLLECTION_VERSION') || define('CMS_M365LINKCOLLECTION_VERSION', '1.0.2');
 defined('CMS_M365LINKCOLLECTION_PLUGIN_DIR') || define('CMS_M365LINKCOLLECTION_PLUGIN_DIR', dirname(__FILE__) . '/');
 defined('CMS_M365LINKCOLLECTION_PLUGIN_URL') || define('CMS_M365LINKCOLLECTION_PLUGIN_URL', '/plugins/cms-m365linkcollection/');
 

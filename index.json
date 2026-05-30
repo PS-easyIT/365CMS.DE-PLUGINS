@@ -98,6 +98,16 @@
       "manifest": "PLUGINS/cms-m365landing/update.json"
     },
     {
+      "slug": "cms-m365linkcollection",
+      "name": "CMS M365 Linkcollection",
+      "manifest": "PLUGINS/cms-m365linkcollection/update.json"
+    },
+    {
+      "slug": "cms-m365adminsites",
+      "name": "CMS M365 Adminsites",
+      "manifest": "PLUGINS/cms-m365adminsites/update.json"
+    },
+    {
       "slug": "cms-knowledgebase",
       "name": "CMS Knowledgebase",
       "manifest": "PLUGINS/cms-knowledgebase/update.json"

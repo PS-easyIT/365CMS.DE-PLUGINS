@@ -1,5 +1,11 @@
 # CMS Speakers – Changelog
 
+## [3.0.10] – 2026-05-30
+
+- **Speaker-Archiv:** Die öffentliche Übersicht rendert wieder als responsives Card-Grid statt als horizontale Liste und orientiert sich visuell an der CMS-Events-Übersicht.
+- **Card-Inhalte:** Cards zeigen nun Avatar/Initialen, Featured-/Verified-/Topic-Badges, Verfügbarkeit, Ort, Vortragsformate, Bio-Auszug, Footer-Meta und einen kompakten Profil-CTA.
+- **Layout-Fokus:** Der separate Archivkopf wurde entfernt, sodass die Seite wie die Event-Übersicht direkt mit Filter und Cards startet; Filter- und Keyboard-Navigation bleiben erhalten.
+
 ## [3.0.9] – 2026-05-27
 
 - **Speaker-Archiv:** Horizontale Listenkarte intern auf ein 3-Zonen-Layout umgestellt: 56px Avatar links, Hauptcontent mit Name/Rolle, Topic-Zeile und zweizeiliger Bio sowie Profilbutton rechts oben.

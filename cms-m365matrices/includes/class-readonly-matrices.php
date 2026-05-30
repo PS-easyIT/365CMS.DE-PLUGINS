@@ -51,13 +51,31 @@ final class CMS_M365MATRICES_ReadOnly_Matrices
         }
 
         $path = CMS_M365MATRICES_PLUGIN_DIR . 'data/' . $file;
-        if (!is_file($path)) {
+        if (!is_file($path) || !is_readable($path)) {
             self::$catalogCache[$file] = [];
 
             return self::$catalogCache[$file];
         }
 
-        $decoded = json_decode((string) file_get_contents($path), true);
+        $size = filesize($path);
+        if ($size === false || $size > 2_097_152) {
+            error_log('CMS M365 Matrixen rejected catalog file: ' . $file);
+            self::$catalogCache[$file] = [];
+
+            return self::$catalogCache[$file];
+        }
+
+        $json = file_get_contents($path);
+        if (!is_string($json) || trim($json) === '') {
+            self::$catalogCache[$file] = [];
+
+            return self::$catalogCache[$file];
+        }
+
+        $decoded = json_decode($json, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log('CMS M365 Matrixen invalid JSON in catalog file ' . $file . ': ' . json_last_error_msg());
+        }
         self::$catalogCache[$file] = is_array($decoded) ? $decoded : [];
 
         return self::$catalogCache[$file];

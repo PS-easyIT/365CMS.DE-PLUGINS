@@ -693,12 +693,21 @@ final class CMS_M365CALCULATOR_Catalog
     {
         static $cache = [];
 
+        $file = basename($file);
+
         if (isset($cache[$file])) {
             return $cache[$file];
         }
 
         $path = CMS_M365CALCULATOR_PLUGIN_DIR . 'data/' . $file;
-        if (!file_exists($path)) {
+        if (!is_file($path) || !is_readable($path)) {
+            return [];
+        }
+
+        $size = filesize($path);
+        if ($size === false || $size > 2_097_152) {
+            error_log('CMS M365 Tools rejected catalog file: ' . $file);
+
             return [];
         }
 
@@ -708,6 +717,9 @@ final class CMS_M365CALCULATOR_Catalog
         }
 
         $decoded = json_decode($json, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log('CMS M365 Tools invalid JSON in catalog file ' . $file . ': ' . json_last_error_msg());
+        }
 
         $cache[$file] = is_array($decoded) ? $decoded : [];
 

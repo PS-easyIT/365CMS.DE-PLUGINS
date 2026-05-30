@@ -1,0 +1,145 @@
+.mlc-admin-shell {
+    box-sizing: border-box;
+    display: grid;
+    gap: 1.25rem;
+    padding-inline: 25px;
+}
+
+.mlc-stats .stat-icon {
+    font-size: 1.75rem;
+    margin-bottom: .25rem;
+}
+
+.mlc-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 0;
+}
+
+.mlc-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .6rem 1.1rem;
+    font-size: .875rem;
+    font-weight: 500;
+    color: #475569;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-bottom: 2px solid transparent;
+    border-radius: 6px 6px 0 0;
+    margin-bottom: -2px;
+    transition: color .15s, background .15s;
+}
+
+.mlc-tab:hover {
+    color: var(--admin-primary, #3b82f6);
+    background: #f8fafc;
+}
+
+.mlc-tab.active {
+    color: var(--admin-primary, #3b82f6);
+    border-color: #e2e8f0 #e2e8f0 #fff #e2e8f0;
+    background: #fff;
+    font-weight: 600;
+}
+
+.mlc-editor-card {
+    border-radius: 0 10px 10px 10px;
+    margin-top: 0;
+}
+
+.mlc-admin-hint {
+    color: #64748b;
+    margin: -.35rem 0 1rem;
+}
+
+.mlc-section-title {
+    color: #1e293b;
+    font-size: .95rem;
+    font-weight: 700;
+    margin: 1.5rem 0 1rem;
+}
+
+.mlc-section-title:first-of-type {
+    margin-top: 0;
+}
+
+.mlc-form-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.mlc-entry-form,
+.mlc-entry-form label,
+.admin-form label {
+    display: grid;
+    gap: .35rem;
+}
+
+.mlc-check-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem 1rem;
+    margin: 1rem 0;
+}
+
+.mlc-check-row label {
+    align-items: center;
+    display: inline-flex;
+    gap: .4rem;
+}
+
+.mlc-fieldset {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin: 1rem 0;
+    padding: 1rem;
+}
+
+.mlc-fieldset legend {
+    color: #475569;
+    font-weight: 700;
+    padding: 0 .4rem;
+}
+
+.mlc-table-title {
+    color: var(--admin-primary, #3b82f6);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.mlc-action-row {
+    display: flex;
+    gap: .4rem;
+}
+
+.mlc-danger-note {
+    color: #ef4444;
+    font-size: .875rem;
+}
+
+#mlcDeleteForm {
+    display: inline;
+}
+
+.mlc-help-list {
+    display: grid;
+    gap: .65rem;
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+@media (max-width: 640px) {
+    .mlc-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+    }
+
+    .mlc-form-grid {
+        grid-template-columns: 1fr;
+    }
+}

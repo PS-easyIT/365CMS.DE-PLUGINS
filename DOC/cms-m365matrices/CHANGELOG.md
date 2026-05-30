@@ -1,5 +1,10 @@
 # Changelog – CMS M365 Matrixen
 
+## 1.2.1 – 2026-05-30
+
+- Admin-CSRF-Fallback auf fail-closed gehärtet, falls `CMS\Security` nicht verfügbar ist.
+- Read-only-JSON-Kataloglader prüft nun Dateiname, Lesbarkeit, Maximalgröße und JSON-Fehler explizit.
+
 ## 1.2.0 – 2026-05-30
 
 - Matrix-Hintergrundfarbe nutzt nun den gewünschten Standard `#edf1f6` und wird robust aus Farbwähler oder Textfeld gespeichert.

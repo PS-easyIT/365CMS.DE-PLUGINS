@@ -38,8 +38,18 @@ final class CMS_M365LINKCOLLECTION_Widget
         $siteUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
         $archiveUrl = $siteUrl . $route;
         $placeholder = trim(CMS_M365LINKCOLLECTION_Settings::get('sidebar_placeholder_image', ''));
+        $buttonLabel = CMS_M365LINKCOLLECTION_Settings::get('sidebar_button_label', 'Alle Links ansehen');
+        $controlsLabel = CMS_M365LINKCOLLECTION_Settings::get('sidebar_controls_label', 'Linkcollection steuern');
+        $prevLabel = CMS_M365LINKCOLLECTION_Settings::get('sidebar_prev_label', 'Vorherigen Link anzeigen');
+        $nextLabel = CMS_M365LINKCOLLECTION_Settings::get('sidebar_next_label', 'Nächsten Link anzeigen');
+        $style = CMS_M365LINKCOLLECTION_Settings::get('sidebar_style', 'card');
+        if (!in_array($style, ['card', 'compact', 'minimal'], true)) {
+            $style = 'card';
+        }
+        $showImage = CMS_M365LINKCOLLECTION_Settings::bool('sidebar_show_image', true);
+        $showSubtitle = CMS_M365LINKCOLLECTION_Settings::bool('sidebar_show_subtitle', true);
         ?>
-        <div class="sb-widget sb-widget--linkcollection"<?php echo $orderStyle; ?> data-mlc-sidebar-rotator data-rotate-interval="<?php echo (int) $interval; ?>">
+        <div class="sb-widget sb-widget--linkcollection sb-widget--linkcollection-<?php echo htmlspecialchars($style, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $orderStyle; ?> data-mlc-sidebar-rotator data-rotate-interval="<?php echo (int) $interval; ?>">
             <div class="sb-widget-title">
                 <span class="sb-widget-title__icon" aria-hidden="true">🔗</span>
                 <span class="sb-widget-title__text"><?php echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?></span>
@@ -52,27 +62,30 @@ final class CMS_M365LINKCOLLECTION_Widget
                 if ($url === '') {
                     continue;
                 }
-                $image = self::safe_media_url((string) ($item['image_url'] ?? ''));
+                $image = self::safe_media_url((string) ($item['resolved_image_url'] ?? $item['image_url'] ?? ''));
                 if ($image === '' && $placeholder !== '') {
                     $image = self::safe_media_url($placeholder);
                 }
                 $titleText = trim((string) ($item['title'] ?? ''));
+                $imageAlt = trim((string) (($item['resolved_image_alt'] ?? '') !== '' ? $item['resolved_image_alt'] : $titleText));
                 $category = trim((string) ($item['category_name'] ?? ''));
                 $subtitle = trim((string) ($item['subtitle'] ?? ''));
                 ?>
                 <article class="mlc-sidebar-slide<?php echo $isActive ? ' is-active' : ''; ?>" data-mlc-sidebar-slide data-slide-index="<?php echo (int) $index; ?>" aria-hidden="<?php echo $isActive ? 'false' : 'true'; ?>">
                     <a href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>" class="mlc-sidebar-card" target="_blank" rel="noopener noreferrer" tabindex="<?php echo $isActive ? '0' : '-1'; ?>">
+                        <?php if ($showImage): ?>
                         <?php if ($image !== ''): ?>
-                        <img src="<?php echo htmlspecialchars($image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($titleText, ENT_QUOTES, 'UTF-8'); ?>" class="mlc-sidebar-card__image" loading="lazy" width="260" height="132">
+                        <img src="<?php echo htmlspecialchars($image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($imageAlt, ENT_QUOTES, 'UTF-8'); ?>" class="mlc-sidebar-card__image" loading="lazy" width="260" height="132">
                         <?php else: ?>
                         <span class="mlc-sidebar-card__placeholder" aria-hidden="true"><?php echo htmlspecialchars(mb_substr($titleText !== '' ? $titleText : '?', 0, 1), ENT_QUOTES, 'UTF-8'); ?></span>
+                        <?php endif; ?>
                         <?php endif; ?>
                         <span class="mlc-sidebar-card__body">
                             <?php if ($showCategory && $category !== ''): ?>
                             <span class="mlc-sidebar-card__kicker"><?php echo htmlspecialchars($category, ENT_QUOTES, 'UTF-8'); ?></span>
                             <?php endif; ?>
                             <strong class="mlc-sidebar-card__title"><?php echo htmlspecialchars($titleText, ENT_QUOTES, 'UTF-8'); ?></strong>
-                            <?php if ($subtitle !== ''): ?>
+                            <?php if ($showSubtitle && $subtitle !== ''): ?>
                             <span class="mlc-sidebar-card__subtitle"><?php echo htmlspecialchars($subtitle, ENT_QUOTES, 'UTF-8'); ?></span>
                             <?php endif; ?>
                         </span>
@@ -81,12 +94,12 @@ final class CMS_M365LINKCOLLECTION_Widget
                 <?php endforeach; ?>
             </div>
             <?php if (count($items) > 1): ?>
-            <div class="mlc-sidebar-controls" role="group" aria-label="Linkcollection steuern">
-                <button type="button" class="mlc-sidebar-control" data-mlc-sidebar-prev aria-label="Vorherigen Link anzeigen">‹</button>
-                <button type="button" class="mlc-sidebar-control" data-mlc-sidebar-next aria-label="Nächsten Link anzeigen">›</button>
+            <div class="mlc-sidebar-controls" role="group" aria-label="<?php echo htmlspecialchars($controlsLabel, ENT_QUOTES, 'UTF-8'); ?>">
+                <button type="button" class="mlc-sidebar-control" data-mlc-sidebar-prev aria-label="<?php echo htmlspecialchars($prevLabel, ENT_QUOTES, 'UTF-8'); ?>">‹</button>
+                <button type="button" class="mlc-sidebar-control" data-mlc-sidebar-next aria-label="<?php echo htmlspecialchars($nextLabel, ENT_QUOTES, 'UTF-8'); ?>">›</button>
             </div>
             <?php endif; ?>
-            <a href="<?php echo htmlspecialchars($archiveUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sb-widget-button">Alle Links ansehen</a>
+            <a href="<?php echo htmlspecialchars($archiveUrl, ENT_QUOTES, 'UTF-8'); ?>" class="sb-widget-button"><?php echo htmlspecialchars($buttonLabel, ENT_QUOTES, 'UTF-8'); ?></a>
         </div>
         <?php
     }

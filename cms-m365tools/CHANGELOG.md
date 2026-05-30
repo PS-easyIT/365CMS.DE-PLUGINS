@@ -1,6 +1,11 @@
 
 # Changelog – CMS M365 Tools
 
+## 3.0.5 – 2026-05-30
+
+- M365-Audit-Fix: Lokale JSON-Kataloge werden defensiver geladen.
+- Der Kataloglader normalisiert Dateinamen per `basename()`, prüft Lesbarkeit und Dateigröße und protokolliert JSON-Fehler statt fehlerhafte Inhalte still weiterzureichen.
+
 ## 3.0.4 – 2026-05-30
 
 - Read-only Lizenzmatrix und Add-on-Matrix vollständig aus `cms-m365tools` entfernt; die Routen, Templates, JSON-Kataloge, Adminfelder und Matrix-Normalisierung liegen jetzt in `cms-m365matrices`.

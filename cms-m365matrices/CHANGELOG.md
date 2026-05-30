@@ -1,5 +1,10 @@
 # Changelog – CMS M365 Matrixen
 
+## 1.2.1 – 2026-05-30
+
+- M365-Audit-Fix: Admin-CSRF-Fallback arbeitet jetzt fail-closed, falls der Security-Service nicht verfügbar ist.
+- Read-only-Matrix-Kataloge werden defensiver geladen: Dateiname wird normalisiert, Lesbarkeit und Dateigröße werden geprüft und JSON-Fehler werden protokolliert.
+
 ## 1.1.9 – 2026-05-30
 
 - Fehlende Standardwerte für den Add-on-Kontakt-/Lizenzcheck-CTA werden beim Installer nachgezogen.

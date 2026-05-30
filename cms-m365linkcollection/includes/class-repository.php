@@ -96,8 +96,9 @@ final class CMS_M365LINKCOLLECTION_Repository
 
             $stmt = $db->prepare("SELECT l.*, c.name AS category_name, c.slug AS category_slug FROM {$linksTable} l INNER JOIN {$categoriesTable} c ON c.id = l.category_id {$sqlWhere} ORDER BY c.sort_order ASC, l.sort_order ASC, l.title ASC LIMIT {$limit} OFFSET {$offset}");
             $stmt->execute($params);
+            $items = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
 
-            return ['items' => $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [], 'total' => $total];
+            return ['items' => $this->attach_related_media($items), 'total' => $total];
         } catch (\Throwable $e) {
             return ['items' => [], 'total' => 0];
         }
@@ -234,6 +235,36 @@ final class CMS_M365LINKCOLLECTION_Repository
     }
 
     /**
+     * @return array<int,array{id:int,label:string,slug:string}>
+     */
+    public function speaker_options(): array
+    {
+        if (!$this->is_plugin_active('cms-speakers')) {
+            return [];
+        }
+
+        $db = $this->db();
+        if ($db === null) {
+            return [];
+        }
+
+        try {
+            $table = self::quote_identifier($this->prefix($db) . 'speakers');
+            $stmt = $db->prepare("SELECT id, first_name, last_name FROM {$table} WHERE status = 'active' ORDER BY last_name ASC, first_name ASC LIMIT 300");
+            $stmt->execute();
+            $options = [];
+            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
+                $id = (int) ($row['id'] ?? 0);
+                $name = trim((string) ($row['first_name'] ?? '') . ' ' . (string) ($row['last_name'] ?? ''));
+                $options[] = ['id' => $id, 'label' => $name, 'slug' => self::slugify($name) . '-' . $id];
+            }
+            return $options;
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
      * @param array<string,mixed> $link
      * @return array<int,array{label:string,url:string,type:string}>
      */
@@ -250,6 +281,17 @@ final class CMS_M365LINKCOLLECTION_Repository
                 'label' => CMS_M365LINKCOLLECTION_Settings::get('company_button_label', 'Company ansehen'),
                 'url' => $siteUrl . '/companies/' . (int) $link['company_id'],
                 'type' => 'company',
+            ];
+        }
+
+        if (CMS_M365LINKCOLLECTION_Settings::bool('show_speaker_buttons', true)
+            && !empty($link['show_speaker_button'])
+            && (int) ($link['speaker_id'] ?? 0) > 0
+            && $this->is_plugin_active('cms-speakers')) {
+            $buttons[] = [
+                'label' => CMS_M365LINKCOLLECTION_Settings::get('speaker_button_label', 'Speaker-Profil'),
+                'url' => $siteUrl . '/speakers/' . $this->speaker_slug((int) $link['speaker_id']),
+                'type' => 'speaker',
             ];
         }
 
@@ -289,6 +331,28 @@ final class CMS_M365LINKCOLLECTION_Repository
         }
     }
 
+    public function speaker_slug(int $speakerId): string
+    {
+        $db = $this->db();
+        if ($db === null || $speakerId <= 0) {
+            return (string) $speakerId;
+        }
+
+        try {
+            $table = self::quote_identifier($this->prefix($db) . 'speakers');
+            $stmt = $db->prepare("SELECT first_name, last_name FROM {$table} WHERE id = ? LIMIT 1");
+            $stmt->execute([$speakerId]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if (!is_array($row)) {
+                return (string) $speakerId;
+            }
+            $name = trim((string) ($row['first_name'] ?? '') . ' ' . (string) ($row['last_name'] ?? ''));
+            return self::slugify($name) . '-' . $speakerId;
+        } catch (\Throwable $e) {
+            return (string) $speakerId;
+        }
+    }
+
     public static function slugify(string $value): string
     {
         $value = trim(strip_tags($value));
@@ -309,18 +373,213 @@ final class CMS_M365LINKCOLLECTION_Repository
             'title' => self::limit(strip_tags((string) ($data['title'] ?? '')), 190),
             'subtitle' => self::limit(strip_tags((string) ($data['subtitle'] ?? '')), 190),
             'url' => self::limit(filter_var((string) ($data['url'] ?? ''), FILTER_VALIDATE_URL) ? (string) $data['url'] : '', 500),
-            'description' => self::limit(strip_tags((string) ($data['description'] ?? '')), 2000),
             'image_url' => self::limit((string) filter_var((string) ($data['image_url'] ?? ''), FILTER_SANITIZE_URL), 500),
             'image_alt' => self::limit(strip_tags((string) ($data['image_alt'] ?? '')), 190),
             'tags' => self::limit(strip_tags((string) ($data['tags'] ?? '')), 500),
             'company_id' => max(0, (int) ($data['company_id'] ?? 0)),
             'expert_id' => max(0, (int) ($data['expert_id'] ?? 0)),
+            'speaker_id' => max(0, (int) ($data['speaker_id'] ?? 0)),
             'show_company_button' => !empty($data['show_company_button']) ? 1 : 0,
             'show_expert_button' => !empty($data['show_expert_button']) ? 1 : 0,
+            'show_speaker_button' => !empty($data['show_speaker_button']) ? 1 : 0,
             'status' => in_array((string) ($data['status'] ?? 'active'), ['active', 'inactive'], true) ? (string) $data['status'] : 'active',
             'is_featured' => !empty($data['is_featured']) ? 1 : 0,
             'sort_order' => max(0, (int) ($data['sort_order'] ?? 0)),
         ];
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $items
+     * @return array<int,array<string,mixed>>
+     */
+    private function attach_related_media(array $items): array
+    {
+        if ($items === []) {
+            return [];
+        }
+
+        $speakerMedia = $this->load_speaker_media($this->collect_ids($items, 'speaker_id'));
+        $expertMedia = $this->load_expert_media($this->collect_ids($items, 'expert_id'));
+        $companyMedia = $this->load_company_media($this->collect_ids($items, 'company_id'));
+
+        foreach ($items as &$item) {
+            $resolved = $this->resolve_media_for_link($item, $speakerMedia, $expertMedia, $companyMedia);
+            $item['resolved_image_url'] = $resolved['url'];
+            $item['resolved_image_alt'] = $resolved['alt'];
+            $item['resolved_image_source'] = $resolved['source'];
+        }
+        unset($item);
+
+        return $items;
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $items
+     * @return array<int,int>
+     */
+    private function collect_ids(array $items, string $key): array
+    {
+        $ids = [];
+        foreach ($items as $item) {
+            $id = (int) ($item[$key] ?? 0);
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+        return array_values($ids);
+    }
+
+    /**
+     * @param array<int,int> $ids
+     * @return array<int,array{url:string,alt:string,source:string}>
+     */
+    private function load_speaker_media(array $ids): array
+    {
+        if ($ids === [] || !$this->is_plugin_active('cms-speakers')) {
+            return [];
+        }
+
+        $db = $this->db();
+        if ($db === null) {
+            return [];
+        }
+
+        try {
+            $table = self::quote_identifier($this->prefix($db) . 'speakers');
+            $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+            $stmt = $db->prepare("SELECT id, first_name, last_name, photo_url FROM {$table} WHERE id IN ({$placeholders}) AND status = 'active'");
+            $stmt->execute($ids);
+            $media = [];
+            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
+                $url = $this->public_media_url((string) ($row['photo_url'] ?? ''));
+                if ($url === '') {
+                    continue;
+                }
+                $name = trim((string) ($row['first_name'] ?? '') . ' ' . (string) ($row['last_name'] ?? ''));
+                $media[(int) $row['id']] = ['url' => $url, 'alt' => $name, 'source' => 'speaker'];
+            }
+            return $media;
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * @param array<int,int> $ids
+     * @return array<int,array{url:string,alt:string,source:string}>
+     */
+    private function load_expert_media(array $ids): array
+    {
+        if ($ids === [] || !$this->is_plugin_active('cms-experts')) {
+            return [];
+        }
+
+        $db = $this->db();
+        if ($db === null) {
+            return [];
+        }
+
+        try {
+            $table = self::quote_identifier($this->prefix($db) . 'experts');
+            $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+            $stmt = $db->prepare("SELECT id, first_name, last_name, photo_url FROM {$table} WHERE id IN ({$placeholders}) AND status = 'active'");
+            $stmt->execute($ids);
+            $media = [];
+            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
+                $url = $this->public_media_url((string) ($row['photo_url'] ?? ''));
+                if ($url === '') {
+                    continue;
+                }
+                $name = trim((string) ($row['first_name'] ?? '') . ' ' . (string) ($row['last_name'] ?? ''));
+                $media[(int) $row['id']] = ['url' => $url, 'alt' => $name, 'source' => 'expert'];
+            }
+            return $media;
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * @param array<int,int> $ids
+     * @return array<int,array{url:string,alt:string,source:string}>
+     */
+    private function load_company_media(array $ids): array
+    {
+        if ($ids === [] || !$this->is_plugin_active('cms-companies')) {
+            return [];
+        }
+
+        $db = $this->db();
+        if ($db === null) {
+            return [];
+        }
+
+        try {
+            $table = self::quote_identifier($this->prefix($db) . 'companies');
+            $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+            $stmt = $db->prepare("SELECT id, name, logo_url FROM {$table} WHERE id IN ({$placeholders}) AND status = 'active'");
+            $stmt->execute($ids);
+            $media = [];
+            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
+                $url = $this->public_media_url((string) ($row['logo_url'] ?? ''));
+                if ($url === '') {
+                    continue;
+                }
+                $media[(int) $row['id']] = ['url' => $url, 'alt' => (string) ($row['name'] ?? ''), 'source' => 'company'];
+            }
+            return $media;
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * @param array<string,mixed> $item
+     * @param array<int,array{url:string,alt:string,source:string}> $speakerMedia
+     * @param array<int,array{url:string,alt:string,source:string}> $expertMedia
+     * @param array<int,array{url:string,alt:string,source:string}> $companyMedia
+     * @return array{url:string,alt:string,source:string}
+     */
+    private function resolve_media_for_link(array $item, array $speakerMedia, array $expertMedia, array $companyMedia): array
+    {
+        foreach ([
+            ['id' => (int) ($item['speaker_id'] ?? 0), 'media' => $speakerMedia],
+            ['id' => (int) ($item['expert_id'] ?? 0), 'media' => $expertMedia],
+            ['id' => (int) ($item['company_id'] ?? 0), 'media' => $companyMedia],
+        ] as $candidate) {
+            $id = (int) $candidate['id'];
+            $media = $candidate['media'];
+            if ($id > 0 && isset($media[$id]) && $media[$id]['url'] !== '') {
+                return $media[$id];
+            }
+        }
+
+        $title = (string) ($item['title'] ?? '');
+        $alt = trim((string) ($item['image_alt'] ?? ''));
+        return [
+            'url' => $this->public_media_url((string) ($item['image_url'] ?? '')),
+            'alt' => $alt !== '' ? $alt : $title,
+            'source' => 'entry',
+        ];
+    }
+
+    private function public_media_url(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return '';
+        }
+
+        if (function_exists('phinit_normalize_public_media_url')) {
+            $siteUrl = defined('SITE_URL') ? (string) SITE_URL : '';
+            $url = (string) phinit_normalize_public_media_url($url, false, $siteUrl);
+        }
+
+        if (str_starts_with($url, '/') || preg_match('#^(https?:)?//#i', $url) === 1) {
+            return $url;
+        }
+
+        return '';
     }
 
     private function db(): ?\CMS\Database

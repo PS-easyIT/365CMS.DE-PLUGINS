@@ -100,6 +100,13 @@ final class CMS_M365LINKCOLLECTION_Frontend
             '--mlc-radius' => CMS_M365LINKCOLLECTION_Settings::int('border_radius', 10, 0, 24) . 'px',
             '--mlc-image-h' => CMS_M365LINKCOLLECTION_Settings::int('image_height', 96, 48, 240) . 'px',
             '--mlc-card-image-h' => CMS_M365LINKCOLLECTION_Settings::int('card_image_height', 132, 64, 260) . 'px',
+            '--mlc-spacing-top' => CMS_M365LINKCOLLECTION_Settings::int('content_spacing_top', 25, 0, 160) . 'px',
+            '--mlc-spacing-bottom' => CMS_M365LINKCOLLECTION_Settings::int('content_spacing_bottom', 50, 0, 200) . 'px',
+            '--mlc-content-pad-y' => CMS_M365LINKCOLLECTION_Settings::int('content_padding_y', 0, 0, 80) . 'px',
+            '--mlc-content-pad-x' => CMS_M365LINKCOLLECTION_Settings::int('content_padding_x', 24, 0, 80) . 'px',
+            '--mlc-section-gap' => CMS_M365LINKCOLLECTION_Settings::int('section_gap', 16, 0, 80) . 'px',
+            '--mlc-sidebar-min-h' => CMS_M365LINKCOLLECTION_Settings::int('sidebar_min_height', 208, 120, 520) . 'px',
+            '--mlc-sidebar-image-h' => CMS_M365LINKCOLLECTION_Settings::int('sidebar_image_height', 132, 0, 320) . 'px',
         ];
 
         echo '<style id="cms-m365linkcollection-public-design">' . "\n";
@@ -143,7 +150,7 @@ final class CMS_M365LINKCOLLECTION_Frontend
             $category = '';
         }
         $q = trim(strip_tags((string) ($_GET['q'] ?? '')));
-        $view = (string) ($_GET['view'] ?? ($settings['default_view'] ?? 'cards'));
+        $view = (string) ($settings['default_view'] ?? 'cards');
         if (!in_array($view, ['cards', 'table', 'both'], true)) {
             $view = 'cards';
         }

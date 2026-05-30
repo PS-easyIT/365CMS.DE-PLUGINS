@@ -1,0 +1,15 @@
+{
+  "slug": "cms-m365adminsites",
+  "name": "CMS M365 Adminsites",
+  "version": "1.0.1",
+  "date": "2026-05-30",
+  "description": "Kuratierte Microsoft Adminsites- und Portal-Sammlung mit konfigurierbarer Public-Übersicht, Tabellenansicht, Kategorien, Suche und PHINIT-Widget.",
+  "author": "365 Network",
+  "requires": "2.9.0",
+  "download_url": "https://365network.de/downloads/cms-m365adminsites.zip",
+  "changelog": [
+    "1.0.1: M365-Audit-Fix mit fail-closed Admin-CSRF-Fallback und robuster JSON-Ausgabe im Löschdialog.",
+    "Initiale Version mit Kategorien, Portal-Seeds, Adminbereich, Public-Archiv und Widget-Grundlage.",
+    "Seed-Daten aus Nutzerliste, PHINIT-KB-Seiten, Microsoft Learn und MSPortals.io ergänzt."
+  ]
+}
