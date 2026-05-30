@@ -4,6 +4,28 @@ Alle Änderungen folgen dem Format [Keep a Changelog](https://keepachangelog.com
 
 ---
 
+## [3.0.2] – 2026-05-30
+
+### Geändert
+
+- **Company-Archiv:** Die öffentliche Übersicht rendert wie die Event-Übersicht direkt mit Filterbereich und responsivem Card-Grid statt mit separatem Archivkopf.
+- **Company-Cards:** Cards zeigen nun Logo/Initialen, Partner-/Branchen-Badges, Standort-/Team-Meta, Beschreibungsauszug, Website-Hinweis und kompakten Details-CTA.
+- **Interaktion:** Cards bleiben komplett klickbar und sind zusätzlich per `Enter`/`Space` tastaturbedienbar; echte Links bleiben separat erreichbar.
+
+## [3.0.1] – 2026-05-18
+
+### Geändert
+
+- **Public-Design-Pass:** Archiv-Header und Suche sind als sauber abgegrenzter Filterbereich gruppiert, Company-Cards wachsen ohne feste Höhen, lange Namen/Pills brechen kontrolliert um und Footer-Aktionen bleiben am Kartenende.
+
+## [3.0.0] – 2026-05-17
+
+### Geändert
+
+- **365CMS-3.x-Modernisierung:** Idempotenter Bootstrap, `schema_version`-Gating, PHINIT Publicsite-Basis, semantische Archive-/Card-/Detailtemplates und Theme-Override-Harmonisierung.
+- **Public-Härtung:** Public-Logo-/Website-/Profilbild-URLs werden auf `http`/`https` beschränkt; Member-Formulare escapen CSRF-/POST-Attribute explizit und Redirects nutzen `303`.
+- **Publicsite-UX:** Öffentliche Cards und Detailseiten wurden von dekorativer Emoji-UI bereinigt und stärker an das ruhige PHINIT-Design angeglichen.
+
 ## [1.1.0] – 2026-03-28
 
 ### Geändert

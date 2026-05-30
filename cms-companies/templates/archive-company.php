@@ -6,11 +6,26 @@
  * @since 1.0.0
  */
 
+declare(strict_types=1);
+
 if (!defined('ABSPATH')) {
     exit;
 }
 
-$companies    = $companies    ?? [];
+$companies    = array_values(array_filter(array_map(
+    static function ($item): ?object {
+        if (is_object($item)) {
+            return $item;
+        }
+
+        if (is_array($item)) {
+            return (object) $item;
+        }
+
+        return null;
+    },
+    (array) ($companies ?? [])
+)));
 $total_count  = $total_count  ?? count($companies);
 $current_page = $current_page ?? 1;
 $per_page     = $per_page     ?? 12;
@@ -41,14 +56,6 @@ $s = array_merge([
     'design_sponsor_color'       => '#7c3aed',
 ], $settings);
 
-// Grid-Template-Columns aus Setting
-$grid_cols = match($s['design_grid_columns']) {
-    '2'     => 'repeat(2, 1fr)',
-    '3'     => 'repeat(3, 1fr)',
-    '4'     => 'repeat(4, 1fr)',
-    default => 'repeat(auto-fill, minmax(300px, 1fr))',
-};
-
 // Branchen für Filtermenü
 $all_industries = CMS_Companies_Database::instance()->get_all_industries();
 $companiesArchiveUrl = htmlspecialchars(rtrim((string) SITE_URL, '/') . '/companies', ENT_QUOTES, 'UTF-8');
@@ -57,36 +64,6 @@ $cityFilter = htmlspecialchars(sanitize_text_field((string) ($filters['city'] ??
 ?>
 
 <main class="phinit-plugin co-archive">
-
-    <?php
-    $has_title = !empty(trim((string)$s['archive_title']));
-    $has_desc  = !empty(trim((string)$s['archive_description']));
-    if ($has_title || $has_desc):
-    ?>
-    <!-- Gradient Header -->
-    <header class="co-archive-header phinit-card phinit-card--accent">
-        <div class="co-archive-header-inner">
-            <?php if (trim((string) $s['archive_header_icon']) !== ''): ?>
-            <div class="co-archive-header-icon"><?= htmlspecialchars((string) $s['archive_header_icon'], ENT_QUOTES, 'UTF-8') ?></div>
-            <?php endif; ?>
-            <div>
-                <?php if ($has_title): ?>
-                <h2 class="co-archive-header-title"><?= htmlspecialchars($s['archive_title']) ?></h2>
-                <?php endif; ?>
-                <?php if ($has_desc): ?>
-                <p class="co-archive-subtitle">
-                    <?= htmlspecialchars($s['archive_description']) ?>
-                </p>
-                <?php endif; ?>
-            </div>
-            <div class="co-archive-count">
-                <span class="co-archive-count-num"><?= $total_count ?></span>
-                <span class="co-archive-count-lbl">Einträge</span>
-            </div>
-        </div>
-    </header>
-    <?php endif; ?>
-
     <!-- Filter Bar -->
     <form method="GET" action="<?= $companiesArchiveUrl ?>" class="co-filter-bar phinit-card" role="search">
 
@@ -140,7 +117,7 @@ $cityFilter = htmlspecialchars(sanitize_text_field((string) ($filters['city'] ??
             <a href="<?= $companiesArchiveUrl ?>" class="phinit-btn phinit-btn--primary co-btn co-btn-primary">Alle anzeigen</a>
         </div>
     <?php else: ?>
-        <section class="co-grid phinit-grid" aria-label="Unternehmensliste">
+        <section class="co-grid company-card-grid phinit-grid" aria-label="Unternehmensliste">
             <?php
             $tpl = CMS_Companies_Template_Loader::instance();
             foreach ($companies as $company):

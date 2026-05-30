@@ -1793,7 +1793,10 @@
 }
 
 .cms-speaker-wrap .cms-speaker-filter__field {
+  display: flex;
+  flex-direction: column;
   flex: 0 1 220px;
+  gap: 6px;
 }
 
 .cms-speaker-wrap .cms-speaker-filter__field--search {
@@ -1801,14 +1804,19 @@
 }
 
 .cms-speaker-wrap .cms-speaker-filter__field label {
+  display: block;
   color: var(--color-muted);
   font-size: 12px;
   font-weight: 600;
-  margin-bottom: 6px;
+  line-height: 1.2;
+  margin: 0;
 }
 
 .cms-speaker-wrap .cms-speaker-filter select,
 .cms-speaker-wrap .cms-speaker-filter input {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
   height: 38px;
   min-height: 38px;
   padding: 0 12px;
@@ -1830,15 +1838,22 @@
 }
 
 .cms-speaker-wrap .cms-speaker-filter__reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  box-sizing: border-box;
   height: 38px;
   min-height: 38px;
   padding: 0 14px;
-  border: 1.5px solid var(--color-border);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   background: var(--color-bg-card);
   color: var(--color-muted);
   cursor: pointer;
   font-size: 13px;
+  line-height: 1.2;
+  margin: 0;
   transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
 }
 
@@ -3054,5 +3069,31 @@
   .cms-speaker-wrap .speaker-card-footer {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+/* CMS Speakers / Filter control alignment repair */
+.cms-speaker-wrap .cms-speaker-filter > .cms-speaker-filter__reset.phinit-btn,
+.cms-speaker-wrap .cms-speaker-filter > .cms-speaker-filter__reset {
+  position: relative;
+  top: -2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  box-sizing: border-box;
+  height: 38px;
+  min-height: 38px;
+  max-height: 38px;
+  margin: 0;
+  padding: 0 14px;
+  line-height: 1;
+}
+
+@media (max-width: 520px) {
+  .cms-speaker-wrap .cms-speaker-filter > .cms-speaker-filter__reset.phinit-btn,
+  .cms-speaker-wrap .cms-speaker-filter > .cms-speaker-filter__reset {
+    top: 0;
+    width: 100%;
   }
 }

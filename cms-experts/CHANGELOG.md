@@ -5,6 +5,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/de/1.0.0/)
 
 ---
 
+## [3.0.4] – 2026-05-30
+
+### Geändert
+
+- Public-Archiv wie die Event-Übersicht auf Filter-first und responsives Card-Grid umgestellt; der separate Archivkopf konkurriert nicht mehr mit dem Theme.
+- Experten-Cards zeigen jetzt Avatar/Initialen, MVP-/Premium-/Award-/Spezialisierungs-Badges, Verfügbarkeit, Standort/Firma, Erfahrung, Zertifikate, Skills und einen kompakten Profil-CTA.
+- Cards bleiben komplett klickbar und sind zusätzlich per `Enter`/`Space` tastaturbedienbar; echte Links bleiben separat erreichbar.
+
+---
+
+## [3.0.3] – 2026-05-25
+
+### Fehlerbehebungen
+
+- `CMS_Experts_Meta_Boxes` ist gegen versehentliches erneutes Laden geschützt, damit Alt-/Doppel-Include-Pfade keine `Cannot redeclare class`-Fatals erzeugen.
+
+---
+
 ## [3.0.2] – 2026-05-18
 
 ### Geändert

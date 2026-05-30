@@ -1,11 +1,11 @@
 # CMS Experts – Dokumentation
 
 **Plugin:** `cms-experts`  
-**Version:** 2.0.0  
+**Version:** 3.0.4  
 **Namespace:** `CMS_Experts`  
-**Aktueller Laufzeitstand:** 365CMS 2.0+  
-**Audit-/Dokustand:** Vorbereitung auf 365CMS V2.8.0 ohne Core-Änderungen  
-**PHP:** 8.1+
+**Aktueller Laufzeitstand:** 365CMS 3.0+  
+**Audit-/Dokustand:** Publicsite-Card-Grid-Pass am 2026-05-30  
+**PHP:** 8.4+
 
 ---
 
@@ -13,12 +13,12 @@
 
 Das **CMS Experts**-Plugin ist das zentrale Verzeichnis für IT-Experten-Profile im 365network-Ökosystem. Es entspricht funktional dem WordPress-Plugin `it-expert-cards` und bietet weit über 100 Profilfelder.
 
-## V2.8.0-Status
+## 3.0.x-Status
 
-- Die Dokumentation ist auf den **Audit- und Zielstand für 365CMS V2.8.0** angehoben.
+- Die Dokumentation ist auf den **Audit- und Zielstand für 365CMS 3.x** angehoben.
 - Änderungen erfolgen ausschließlich im Plugin; **der 365CMS-Core bleibt unberührt**.
-- Der Schwerpunkt des laufenden Durchgangs liegt auf **Security**, **Speed**, **Best Practices** und der Bereinigung von Versionsabweichungen.
-- Der zentrale Abarbeitungsplan liegt in [`../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md`](../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md).
+- Version 3.0.4 stellt die öffentliche Übersicht wie `cms-events` auf Filter-first und responsives Card-Grid um.
+- Expert-Cards nutzen Avatar/Initialen, MVP-/Premium-/Award-/Spezialisierungs-Badges, Verfügbarkeit, Standort/Firma, Erfahrung, Zertifikate, Skills und Profil-CTA.
 
 ### Kernfunktionen
 
@@ -72,7 +72,6 @@ cms-experts/
 
 | Dokument | Inhalt |
 |----------|--------|
-| [../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md](../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md) | Zentraler Audit- und Umsetzungsplan für die vier V2.8.0-Zielplugins |
 | [DATABASE.md](DATABASE.md) | Alle Tabellen (10+), Schemas, Relationen |
 | [HOOKS.md](HOOKS.md) | Actions & Filter |
 | [API.md](API.md) | Methoden-Referenz |

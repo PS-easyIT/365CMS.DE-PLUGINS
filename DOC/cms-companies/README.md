@@ -1,10 +1,10 @@
 # CMS Companies – Dokumentation
 
 **Plugin:** `cms-companies`  
-**Version:** 1.0.0  
+**Version:** 3.0.2  
 **Namespace:** `CMS_Companies`  
-**Aktueller Laufzeitstand:** 365CMS 2.0+  
-**Audit-/Dokustand:** Vorbereitung auf 365CMS V2.8.0 ohne Core-Änderungen  
+**Aktueller Laufzeitstand:** 365CMS 3.0+  
+**Audit-/Dokustand:** Publicsite-Card-Grid-Pass am 2026-05-30  
 **PHP:** 8.1+
 
 ---
@@ -13,12 +13,12 @@
 
 Das **CMS Companies**-Plugin verwaltet Firmen-Profile innerhalb des 365CMS-Ökosystems. Es stellt die zentrale Datenbasis für Unternehmen bereit, auf die andere Plugins (Events, Experts, Speakers, Organigramm) zurückgreifen.
 
-## V2.8.0-Status
+## 3.0.x-Status
 
-- Die Dokumentation ist auf den **Audit- und Zielstand für 365CMS V2.8.0** angehoben.
+- Die Dokumentation ist auf den **Audit- und Zielstand für 365CMS 3.x** angehoben.
 - Änderungen erfolgen ausschließlich im Plugin; **der 365CMS-Core bleibt unberührt**.
-- Der Schwerpunkt des aktuellen Durchgangs liegt auf **Security**, **Speed**, **Best Practices** und Query-/Ownership-Härtung.
-- Der zentrale Abarbeitungsplan liegt in [`../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md`](../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md).
+- Version 3.0.1 gruppiert Archiv-Header und Suche sauber und lässt Company-Cards ohne feste Höhe wachsen.
+- Version 3.0.2 stellt die öffentliche Übersicht wie `cms-events` auf Filter + responsives Card-Grid um, mit Company-spezifischen Badges und Meta-Informationen.
 
 ### Kernfunktionen
 
@@ -65,7 +65,6 @@ cms-companies/
 
 | Dokument | Inhalt |
 |----------|--------|
-| [../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md](../365CMS-V2.8.0-PLUGIN-AUDIT-PLAN.md) | Zentraler Audit- und Umsetzungsplan für die vier V2.8.0-Zielplugins |
 | [DATABASE.md](DATABASE.md) | Alle Tabellen, Spalten, Indizes, Relationen |
 | [HOOKS.md](HOOKS.md) | Actions & Filter mit Signaturen |
 | [API.md](API.md) | Programmatische Zugriffs-Referenz |

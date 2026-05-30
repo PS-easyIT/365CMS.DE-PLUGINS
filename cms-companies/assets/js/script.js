@@ -29,11 +29,31 @@
 
         /* ── Card click → detail link ────────────────── */
         document.querySelectorAll('.co-card').forEach(card => {
+            const navigate = () => {
+                const url = card.getAttribute('data-company-url');
+                if (url) {
+                    window.location.href = url;
+                    return;
+                }
+
+                const link = card.querySelector('.company-card-button, .co-card-footer a, .co-card-head a, .company-card-title a');
+                if (link instanceof HTMLAnchorElement) {
+                    window.location.href = link.href;
+                }
+            };
+
             card.addEventListener('click', (e) => {
-                if (e.target.closest('a, button')) return;
-                const link = card.querySelector('.co-card-footer a, .co-card-head a');
-                if (link) window.location.href = link.href;
+                if (e.target.closest('a, button, input, select, textarea')) return;
+                navigate();
             });
+
+            card.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                if (e.target !== card && e.target.closest('a, button, input, select, textarea')) return;
+                e.preventDefault();
+                navigate();
+            });
+
             card.style.cursor = 'pointer';
         });
 

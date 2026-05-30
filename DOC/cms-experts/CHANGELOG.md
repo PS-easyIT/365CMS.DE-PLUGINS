@@ -1,10 +1,24 @@
 # CMS Experts – Changelog
 
+## [3.0.4] – 2026-05-30
+
+### Geändert
+
+- **Public-Archiv:** Die öffentliche Übersicht rendert wie `cms-events` direkt mit Filterbereich und responsivem Card-Grid statt separatem Archivkopf.
+- **Expert-Cards:** Cards zeigen Avatar/Initialen, MVP-/Premium-/Award-/Spezialisierungs-Badges, Verfügbarkeit, Standort/Firma, Erfahrung, Zertifikate, Skills und Profil-CTA.
+- **Interaktion:** Cards sind komplett klickbar und zusätzlich per `Enter`/`Space` tastaturbedienbar; Website-/Company-Links bleiben separat erreichbar.
+
 ## [3.0.3] – 2026-05-25
 
 ### Fehlerbehebungen
 
 - `CMS_Experts_Meta_Boxes` ist gegen versehentliches erneutes Laden geschützt, damit Alt-/Doppel-Include-Pfade keine `Cannot redeclare class`-Fatals erzeugen.
+
+## [3.0.2] – 2026-05-18
+
+### Geändert
+
+- **Public-Design-Pass:** Archiv-Header und Suche sind als sauber abgegrenzter Filterbereich gruppiert, Experten-Cards wachsen ohne abgeschnittene Inhalte, Social-Icon-Bänder wurden aus der Übersicht entfernt und CTA/Footer bleiben stabil am Kartenende.
 
 ## [3.0.1] – 2026-05-17
 

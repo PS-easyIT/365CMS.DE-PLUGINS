@@ -2,21 +2,19 @@
 declare(strict_types=1);
 
 /**
- * Archive Template: Experten-Übersicht (Refactored to match IT Expert Cards)
- * 
+ * Expert Archive Template – Plugin-Content only for CMS-PHINIT.
+ *
  * @package CMS_Experts
  */
 
-if (!defined('ABSPATH')) { exit; }
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 // Settings & Variables
 $settings = array_merge([
     'archive_title'                => 'Experten Suche',
     'archive_description'          => '',
-    'archive_header_icon'          => '&#128100;',
-    'archive_header_bg_from'       => '#f5ecd5',
-    'archive_header_bg_to'         => '#ebe0c8',
-    'archive_header_title_color'   => '#7c4700',
     'design_primary_color'         => '#5e72e4',
     'design_accent_color'          => '#8965e0',
     'design_border_radius'         => '12',
@@ -26,83 +24,106 @@ $settings = array_merge([
     'design_show_specialization'   => '1',
 ], $settings ?? []);
 
-$city         = $filters['city'] ?? '';
+$experts = array_values(array_filter(array_map(
+    static function ($item): ?object {
+        if (is_object($item)) {
+            return $item;
+        }
+
+        if (is_array($item)) {
+            return (object) $item;
+        }
+
+        return null;
+    },
+    (array) ($experts ?? [])
+)));
+
+$city = $filters['city'] ?? '';
 $availability = $filters['availability'] ?? '';
 $expertsArchiveUrl = htmlspecialchars(rtrim((string) SITE_URL, '/') . '/experts', ENT_QUOTES, 'UTF-8');
 $expertSearchQuery = htmlspecialchars((string) ($filters['q'] ?? ''), ENT_QUOTES, 'UTF-8');
 $expertCityFilter = htmlspecialchars(sanitize_text_field((string) $city), ENT_QUOTES, 'UTF-8');
-$css_hdr_icon_raw = htmlspecialchars(html_entity_decode($settings['archive_header_icon'] ?? '', ENT_HTML5, 'UTF-8'), ENT_QUOTES, 'UTF-8');
+$currentPage = max(1, (int) ($current_page ?? 1));
+$perPage = max(1, (int) ($per_page ?? 12));
+$hasNextPage = count($experts) >= $perPage;
+$activeParams = [];
+
+if ($expertSearchQuery !== '') {
+    $activeParams['q'] = (string) ($filters['q'] ?? '');
+}
+
+if ($expertCityFilter !== '') {
+    $activeParams['city'] = (string) $city;
+}
+
+if ($availability !== '') {
+    $activeParams['availability'] = (string) $availability;
+}
+
+$buildArchiveUrl = static function (int $page) use ($expertsArchiveUrl, $activeParams): string {
+    $params = $activeParams;
+    if ($page > 1) {
+        $params['page'] = (string) $page;
+    }
+
+    return $expertsArchiveUrl . ($params !== [] ? '?' . http_build_query($params) : '');
+};
 ?>
 <main class="phinit-plugin experts-archive-wrapper">
-    
-    <!-- Title Area - WP Plugin Style: Title-Band + Description-Band -->
-    <?php if (!empty($settings['archive_title'])): ?>
-    <header class="expert-archive-header phinit-card phinit-card--accent">
-        <div class="header-title-band">
-            <div class="header-icon"><?= $css_hdr_icon_raw ?></div>
-            <h2 class="header-title"><?php echo CMS\Security::instance()->escape($settings['archive_title']); ?></h2>
-        </div>
-        <?php if (!empty($settings['archive_description'])): ?>
-        <div class="header-description-area">
-            <p class="header-description"><?php echo CMS\Security::instance()->escape($settings['archive_description']); ?></p>
-        </div>
-        <?php endif; ?>
-    </header>
-    <?php endif; ?>
+    <nav class="expert-filter-nav" aria-label="Expertenfilter">
+        <form method="GET" action="<?= $expertsArchiveUrl ?>" class="archive-filter-bar expert-card-filter" role="search">
+            <div class="filter-input-wrapper phinit-field">
+                <label for="expert-search">Experten suchen</label>
+                <input id="expert-search" class="phinit-input" type="search" name="q" placeholder="Name, Firma, Skill..." value="<?= $expertSearchQuery ?>">
+            </div>
 
-    <!-- Filter Bar (Styled like IT Expert Cards) -->
-    <form method="GET" action="<?php echo $expertsArchiveUrl; ?>" class="archive-filter-bar phinit-card" role="search">
-        
-        <!-- Search Input -->
-        <div class="filter-input-wrapper phinit-field">
-            <label for="expert-search">Experten suchen</label>
-            <input id="expert-search" class="phinit-input" type="text" name="q" placeholder="Experten suchen..." value="<?php echo $expertSearchQuery; ?>">
-        </div>
+            <div class="filter-input-wrapper filter-input-wrapper--sm phinit-field">
+                <label for="expert-city">Stadt</label>
+                <input id="expert-city" class="phinit-input" type="text" name="city" placeholder="Stadt..." value="<?= $expertCityFilter ?>">
+            </div>
 
-        <!-- City Filter -->
-        <div class="filter-input-wrapper filter-input-wrapper--sm phinit-field">
-            <label for="expert-city">Stadt</label>
-            <input id="expert-city" class="phinit-input" type="text" name="city" placeholder="Stadt..." value="<?php echo $expertCityFilter; ?>">
-        </div>
+            <div class="phinit-field filter-input-wrapper filter-input-wrapper--sm">
+                <label for="expert-availability">Verfügbarkeit</label>
+                <select id="expert-availability" name="availability" class="filter-select phinit-select">
+                    <option value="">Alle Verfügbarkeiten</option>
+                    <option value="available"<?= $availability === 'available' ? ' selected' : '' ?>>Verfügbar</option>
+                    <option value="limited"<?= $availability === 'limited' ? ' selected' : '' ?>>Begrenzt</option>
+                    <option value="booked"<?= $availability === 'booked' ? ' selected' : '' ?>>Ausgebucht</option>
+                </select>
+            </div>
 
-        <!-- Availability Filter -->
-        <label class="phinit-field" for="expert-availability"><span>Verfügbarkeit</span>
-        <select id="expert-availability" name="availability" class="filter-select phinit-select">
-            <option value="">Alle Verfügbarkeiten</option>
-            <option value="available" <?php echo $availability === 'available' ? 'selected' : ''; ?>>Verfügbar</option>
-            <option value="limited" <?php echo $availability === 'limited' ? 'selected' : ''; ?>>Begrenzt</option>
-        </select></label>
+            <button type="submit" class="phinit-btn phinit-btn--primary expert-btn">Suchen</button>
+            <?php if (!empty($city) || !empty($availability) || $expertSearchQuery !== ''): ?>
+                <a href="<?= $expertsArchiveUrl ?>" class="phinit-btn phinit-btn--secondary expert-btn expert-btn-outline expert-btn--reset">Zurücksetzen</a>
+            <?php endif; ?>
+        </form>
+    </nav>
 
-        <button type="submit" class="phinit-btn phinit-btn--primary expert-btn">Suchen</button>
-        <?php if (!empty($city) || !empty($availability) || $expertSearchQuery !== ''): ?>
-            <a href="<?php echo $expertsArchiveUrl; ?>" class="phinit-btn phinit-btn--secondary expert-btn expert-btn-outline expert-btn--reset">Reset</a>
-        <?php endif; ?>
-    </form>
-
-    <!-- Grid Layout -->
     <?php if (!empty($experts)): ?>
-        <section class="experts-grid phinit-grid" aria-label="Expertenliste">
+        <section class="experts-grid expert-card-grid phinit-grid" aria-label="Expertenliste">
             <?php foreach ($experts as $expert): ?>
-                <?php 
-                // Render card using the new template
-                // Ensure $expert object is compatible
-                include __DIR__ . '/expert-card.php'; 
-                ?>
+                <?php include __DIR__ . '/expert-card.php'; ?>
             <?php endforeach; ?>
         </section>
         
-        <!-- Pagination (Basic) -->
-        <?php if (isset($current_page) && $current_page > 1): ?>
+        <?php if ($currentPage > 1 || $hasNextPage): ?>
         <nav class="expert-pagination" aria-label="Seitennavigation">
-            <!-- Placeholder for pagination logic -->
-            <span class="page-numbers current">1</span>
+            <?php if ($currentPage > 1): ?>
+                <a class="expert-page" href="<?= htmlspecialchars($buildArchiveUrl($currentPage - 1), ENT_QUOTES, 'UTF-8') ?>" rel="prev">Zurück</a>
+            <?php endif; ?>
+            <span class="expert-page is-active" aria-current="page"><?= (int) $currentPage ?></span>
+            <?php if ($hasNextPage): ?>
+                <a class="expert-page" href="<?= htmlspecialchars($buildArchiveUrl($currentPage + 1), ENT_QUOTES, 'UTF-8') ?>" rel="next">Weiter</a>
+            <?php endif; ?>
         </nav>
         <?php endif; ?>
 
     <?php else: ?>
         <div class="no-results phinit-empty-state" role="status" aria-live="polite">
-            <h3>Keine Experten gefunden</h3>
-            <p>Bitte versuchen Sie andere Suchbegriffe.</p>
+            <i class="ti ti-user-off" aria-hidden="true"></i>
+            <p class="no-results__title">Keine Experten gefunden.</p>
+            <p>Bitte versuchen Sie andere Suchbegriffe oder setzen Sie den Filter zurück.</p>
         </div>
     <?php endif; ?>
 

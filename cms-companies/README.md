@@ -1,7 +1,7 @@
 ﻿# CMS Companies Directory Plugin
 
-**Version:** 1.0.0  
-**Requires:** 365CMS 2.0+
+**Version:** 3.0.2  
+**Requires:** 365CMS 3.0+ / PHP 8.1+
 
 ## Description
 
@@ -12,7 +12,7 @@ The CMS Companies Directory plugin manages company profiles with card views and 
 - ✅ Company profile management
 - ✅ Custom database tables with proper relationships
 - ✅ Admin interface for managing companies
-- ✅ Frontend display with card grid layout
+- ✅ Event-style responsive frontend card grid layout
 - ✅ Detail pages for individual companies
 - ✅ Expert-to-Company relationships (Many-to-Many)
 - ✅ Meta data support
@@ -41,7 +41,7 @@ Additional metadata for companies:
 Navigate to `/admin/companies` to manage company profiles.
 
 ### Frontend Display
-- List all companies: `/companies`
+- List all companies in the public card overview: `/companies`
 - View company detail: `/companies/{id}`
 - Shortcode: `[cms_companies]` - Displays all companies in a grid
 
@@ -101,6 +101,12 @@ The plugin is automatically activated during 365CMS setup. Database tables are c
 - Member-Create-Formulare escapen CSRF-Token und alte POST-Werte explizit im Attributkontext mit `ENT_QUOTES` und `UTF-8`.
 - Member-Redirects nach POST nutzen `303 See Other`, speichern technische Fehler nur ins Log und zeigen Nutzern generische Fehlermeldungen.
 - Public Cards, Archiv und Detailseite wurden von dekorativer Emoji-UI bereinigt und stärker an das ruhige PHINIT-Design angeglichen.
+
+## Publicsite-Status (2026-05-30)
+
+- Die öffentliche Übersicht `/companies` startet wie `cms-events` direkt mit Filter und responsivem Card-Grid.
+- Company-Cards zeigen Logo/Initialen, Partner-/Branchen-Badges, Standort-/Team-Meta, Beschreibungsauszug, Website-Hinweis und Details-CTA.
+- Karten sind weiterhin komplett klickbar und zusätzlich per Tastatur erreichbar.
 
 ## License
 
