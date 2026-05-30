@@ -1,0 +1,649 @@
+{
+  "meta": {
+    "title": "Microsoft Copilot Lizenzmatrix",
+    "source_checked": "2026-05-30",
+    "currency": "EUR",
+    "price_basis": "Copilot-Preise, Add-ons, Copilot Credits, Pay-as-you-go und regionale Verfügbarkeit immer im Microsoft 365 Admin Center, beim CSP/EA-Partner oder in den Microsoft Product Terms prüfen.",
+    "notes": [
+      "Diese Matrix trennt private Copilot-Nutzung, Microsoft 365 Copilot Chat, Microsoft 365 Copilot Add-on und Copilot Studio nach Datenbasis, Apps, Agent-Erstellung, Governance und Kontingenten.",
+      "Microsoft 365 Copilot Chat ist webbasiert und bei berechtigten Microsoft-365-Abonnements ohne zusätzliche Copilot-Add-on-Lizenz verfügbar; Arbeitsdaten-Grounding bleibt gegenüber Microsoft 365 Copilot begrenzt.",
+      "Microsoft 365 Copilot Business und Microsoft 365 Copilot sind Add-ons auf geeigneten Basisplänen. Die Funktionslogik ist ähnlich; Zielgruppe, Beschaffung, Basislizenz und Governance-Umfang unterscheiden sich je Tenant.",
+      "Copilot Studio nutzt Copilot Credits, Capacity, Pay-as-you-go oder enthaltene Nutzung je Szenario. Agent-Verbrauch hängt stark von Orchestrierung, Knowledge, Actions, Flow-Actions und Graph-Grounding ab.",
+      "Die Matrix ersetzt keine Lizenzberatung: Microsoft ändert Produktnamen, Labels, Modellzugang und Kontingente regelmäßig. Vor Bestellung immer aktuellen Tenant, Region und Vertrag prüfen."
+    ],
+    "sources": [
+      "https://learn.microsoft.com/en-us/copilot/overview",
+      "https://learn.microsoft.com/en-us/copilot/manage",
+      "https://learn.microsoft.com/en-us/copilot/privacy-and-protections",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/which-copilot-for-your-organization",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-overview",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-licensing",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-privacy",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-setup",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/microsoft-365-copilot-requirements",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/enterprise-data-protection",
+      "https://learn.microsoft.com/en-us/microsoft-365/copilot/manage-public-web-access",
+      "https://learn.microsoft.com/en-us/microsoft-365/admin/manage/manage-copilot-agents-integrated-apps",
+      "https://learn.microsoft.com/en-us/microsoft-365-copilot/extensibility/",
+      "https://learn.microsoft.com/en-us/microsoft-copilot-studio/requirements-licensing-subscriptions",
+      "https://learn.microsoft.com/en-us/microsoft-copilot-studio/requirements-quotas",
+      "https://learn.microsoft.com/en-us/microsoft-copilot-studio/requirements-messages-management",
+      "https://learn.microsoft.com/en-us/microsoft-copilot-studio/agent-usage-estimator",
+      "https://support.microsoft.com/de-DE/Microsoft-365-Copilot/how-copilot-chat-works-with-and-without-a-microsoft-365-copilot-license",
+      "https://support.microsoft.com/de-DE/Microsoft-365-Copilot/standard-versus-priority-access-to-features-in-microsoft-365-copilot-chat",
+      "https://support.microsoft.com/de-DE/Microsoft-365-Copilot/build-your-own-agent-with-microsoft-365-copilot",
+      "https://support.microsoft.com/de-DE/Microsoft-365-Copilot/get-started-with-agents-in-the-microsoft-365-copilot-app",
+      "https://www.microsoft.com/de-de/microsoft-365-copilot/pricing?market=de",
+      "https://www.microsoft.com/de-de/microsoft-365-copilot/pricing/enterprise?market=de",
+      "https://www.microsoft.com/de-de/microsoft-365-copilot/pricing/individuals?market=de",
+      "https://www.microsoft.com/de-de/microsoft-365-copilot/business",
+      "https://www.microsoft.com/de-de/microsoft-365-copilot/enterprise",
+      "https://www.microsoft.com/de-de/microsoft-365-copilot/microsoft-copilot-studio",
+      "https://learn.microsoft.com/de-de/microsoft-365/copilot/microsoft-365-copilot-overview",
+      "https://learn.microsoft.com/de-de/microsoft-365/copilot/manage-public-web-access",
+      "https://learn.microsoft.com/de-de/microsoft-365/copilot/pin-copilot",
+      "https://learn.microsoft.com/de-de/microsoft-copilot-studio/billing-licensing",
+      "https://learn.microsoft.com/de-de/microsoft-copilot-studio/requirements-quotas",
+      "https://learn.microsoft.com/de-de/microsoft-copilot-studio/requirements-messages-management",
+      "https://support.microsoft.com/de-DE/Microsoft-365-Copilot/ai-credits-and-limits-for-microsoft-365-subscriptions"
+    ]
+  },
+  "areas": [
+    {
+      "key": "lizenzierung",
+      "label": "Varianten, Lizenzierung & Zielgruppe",
+      "description": "Welche Copilot-Variante wofür gedacht ist, welche Lizenzbasis benötigt wird und wie die Beschaffung typischerweise läuft.",
+      "packages": [
+        { "slug": "microsoft-copilot-privat", "name": "Microsoft Copilot privat", "short": "Privat", "price_month": null, "price_label": "Privatplan prüfen", "billing": "MSA / privat" },
+        { "slug": "m365-copilot-chat", "name": "Microsoft 365 Copilot Chat", "short": "Copilot Chat", "price_month": 0, "price_label": "Enthalten", "billing": "in berechtigten M365-Plänen" },
+        { "slug": "m365-copilot-business", "name": "Microsoft 365 Copilot Business", "short": "M365 Copilot Business", "price_month": 15.60, "price_label": "15,60–18,20 € / Monat", "billing": "Add-on pro User, jährlich" },
+        { "slug": "m365-copilot-enterprise", "name": "Microsoft 365 Copilot", "short": "M365 Copilot", "price_month": 26.00, "price_label": "26,00 € / Monat", "billing": "Add-on pro User, jährlich" },
+        { "slug": "copilot-studio-teams", "name": "Copilot Studio for Teams", "short": "Studio Teams", "price_month": 0, "price_label": "Enthalten/begrenzt", "billing": "in ausgewählten M365-Plänen" },
+        { "slug": "copilot-studio-standalone", "name": "Copilot Studio Standalone", "short": "Studio Standalone", "price_month": null, "price_label": "Credits/PAYG", "billing": "Capacity / Credits / PAYG" }
+      ],
+      "rows": [
+        {
+          "label": "Primärer Zweck",
+          "description": "Grobe Einordnung: persönliche KI, sicherer Webchat, Arbeitsdaten-Copilot oder Agent-Plattform.",
+          "values": {
+            "microsoft-copilot-privat": { "status": "warning", "label": "Privat & Web", "note": "Für persönliche Aufgaben und nicht sensible Inhalte; keine Business-Governance planen." },
+            "m365-copilot-chat": { "status": "included", "label": "Sicherer Webchat", "note": "KI-Chat für Arbeit/Bildung mit Web-Grounding und Enterprise Data Protection." },
+            "m365-copilot-business": { "status": "included", "label": "KMU-Copilot", "note": "Add-on für Business-Pläne mit Arbeitsdaten, Apps und Copilot-Erweiterungen." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Enterprise-Copilot", "note": "Add-on für größere Tenants, Enterprise-Pläne und erweiterte Governance." },
+            "copilot-studio-teams": { "status": "partial", "label": "Teams-Agenten", "note": "Agenten mit klassischer Orchestrierung und Veröffentlichung in Teams." },
+            "copilot-studio-standalone": { "status": "included", "label": "Agent-Plattform", "note": "Low-Code-Plattform für Agenten, Kanäle, Premium-Connectoren und Automatisierung." }
+          }
+        },
+        {
+          "label": "Typische Zielgruppe",
+          "values": {
+            "microsoft-copilot-privat": { "status": "warning", "label": "Einzelpersonen", "note": "Persönliches Microsoft-Konto, nicht als Unternehmensstandard verwenden." },
+            "m365-copilot-chat": { "status": "included", "label": "Alle berechtigten User", "note": "Guter Einstieg für sichere KI-Nutzung ohne Copilot-Add-on." },
+            "m365-copilot-business": { "status": "included", "label": "SMB / Business", "note": "Für Business Basic, Standard, Premium oder Apps for Business als Basis." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Enterprise", "note": "Für E-/F-/Office-/Servicepläne und komplexere Compliance-Anforderungen." },
+            "copilot-studio-teams": { "status": "partial", "label": "Teams-Maker", "note": "Für schnelle interne Teams-Agenten ohne volle Studio-Funktionstiefe." },
+            "copilot-studio-standalone": { "status": "included", "label": "Maker & Entwickler", "note": "Für Fachbereiche, IT und Partner, die Agenten produktiv betreiben." }
+          }
+        },
+        {
+          "label": "Lizenzvoraussetzung",
+          "values": {
+            "microsoft-copilot-privat": { "status": "separate", "label": "MSA", "note": "Privates Microsoft-Konto; nicht an M365-Tenantlizenz gebunden." },
+            "m365-copilot-chat": { "status": "prerequisite", "label": "Berechtigter M365-Plan", "note": "Entra-Konto mit berechtigter M365-/O365-/Teams-/Education-/Government-Lizenz." },
+            "m365-copilot-business": { "status": "prerequisite", "label": "Business-Basis", "note": "Business Basic, Standard, Premium oder Apps for Business als Basis." },
+            "m365-copilot-enterprise": { "status": "prerequisite", "label": "Geeignete Basis", "note": "Unter anderem M365 E/F, O365 E/F, Teams, Exchange, SharePoint, OneDrive, Planner, Project, Visio." },
+            "copilot-studio-teams": { "status": "prerequisite", "label": "M365 + Teams", "note": "In ausgewählten M365-Abos mit Power Platform/Teams-Funktionen enthalten." },
+            "copilot-studio-standalone": { "status": "prerequisite", "label": "Studio-Lizenz", "note": "Standalone-Abo, Copilot Credits, PAYG oder Dynamics-Entitlements je Szenario." }
+          }
+        },
+        {
+          "label": "Preis-/Planhinweise Deutschland",
+          "description": "Aus den deutschen Microsoft-Preis-/Produktseiten; finale Preise immer im Tenant, CSP/EA oder Microsoft Admin Center prüfen.",
+          "values": {
+            "microsoft-copilot-privat": { "status": "partial", "label": "Single/Family/Premium", "note": "Private Pläne zeigen Jahrespreise und KI-Limits je Abonnement; KI-Vorteile gelten nur für den Abonnementbesitzer." },
+            "m365-copilot-chat": { "status": "included", "label": "Enthalten", "note": "Ohne zusätzliche Copilot-Add-on-Lizenz für berechtigte Entra-/M365-Benutzer verfügbar." },
+            "m365-copilot-business": { "status": "addon", "label": "15,60–18,20 €", "note": "Deutsche Seite nennt Rabatt-/Listenpreis je Benutzer/Monat, jährliche Abrechnung, zzgl. MwSt.; bis 300 Nutzer." },
+            "m365-copilot-enterprise": { "status": "addon", "label": "26,00 €", "note": "Je Benutzer/Monat, jährliche Abrechnung, zzgl. MwSt.; geeigneter M365-Plan erforderlich." },
+            "copilot-studio-teams": { "status": "partial", "label": "Enthalten/begrenzt", "note": "Teams-Plan ist funktionsbegrenzt und nicht mit Standalone Studio gleichzusetzen." },
+            "copilot-studio-standalone": { "status": "separate", "label": "Credits/PAYG", "note": "Vorausbezahlte Copilot-Credit-Commit-Einheiten oder nutzungsbasierte Zahlung über Azure-Abonnement." }
+          }
+        },
+        {
+          "label": "Nutzer-/Tenantgrenzen",
+          "values": {
+            "microsoft-copilot-privat": { "status": "partial", "label": "1 bis 6 Personen", "note": "Family/Premium können mehrere Personen enthalten; KI-Vorteile sind laut Microsoft nur für den Aboinhaber nutzbar." },
+            "m365-copilot-chat": { "status": "included", "label": "Tenantweit möglich", "note": "Für alle berechtigten Entra-Kontobenutzer mit qualifizierender Lizenz aktivierbar." },
+            "m365-copilot-business": { "status": "warning", "label": "Bis 300 Nutzer", "note": "Business-Angebot ist laut Microsoft für bis zu 300 Nutzer ausgelegt." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Enterprise-Skalierung", "note": "Für größere Organisationen, EA/CSP/Account-Team und Enterprise-Governance." },
+            "copilot-studio-teams": { "status": "partial", "label": "50 Agents/Team", "note": "Teams-App-Limit laut Copilot Studio Quotas: bis 50 Agents pro Team." },
+            "copilot-studio-standalone": { "status": "included", "label": "Umgebungsbasiert", "note": "Limits nach Umgebung, Credits, PAYG, Quotas und Power-Platform-Governance." }
+          }
+        },
+        {
+          "label": "Zusätzliche Copilot-Add-on-Lizenz nötig?",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Kein Microsoft-365-Copilot-Add-on, aber auch keine Business-Datenintegration." },
+            "m365-copilot-chat": { "status": "not_included", "label": "Nein", "note": "Copilot Chat ist bei berechtigten M365-Plänen ohne Add-on verfügbar." },
+            "m365-copilot-business": { "status": "addon", "label": "Ja", "note": "Microsoft 365 Copilot Business wird zusätzlich zur Basis gebucht." },
+            "m365-copilot-enterprise": { "status": "addon", "label": "Ja", "note": "Microsoft 365 Copilot wird als Add-on zur passenden Basis gebucht." },
+            "copilot-studio-teams": { "status": "not_included", "label": "Meist nein", "note": "Teams-Plan kann enthalten sein, aber stark begrenzter Funktionsumfang." },
+            "copilot-studio-standalone": { "status": "separate", "label": "Separat", "note": "Eigenständige Studio-Kapazität, Credits oder PAYG erforderlich." }
+          }
+        },
+        {
+          "label": "Beschaffung und Verwaltung",
+          "values": {
+            "microsoft-copilot-privat": { "status": "separate", "label": "Consumer", "note": "Über Consumer-Oberflächen, nicht über M365 Admin Center gesteuert." },
+            "m365-copilot-chat": { "status": "included", "label": "M365 Admin", "note": "Pinning, App-Zugriff, Websuche und Berichte über Admin-/Policy-Flächen." },
+            "m365-copilot-business": { "status": "included", "label": "Admin/CSP", "note": "Kauf und Zuweisung über M365 Admin Center, Partner oder Account-Team." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Admin/EA/CSP", "note": "Zuweisung im M365 Admin Center, häufig mit EA/CSP/Account-Team." },
+            "copilot-studio-teams": { "status": "partial", "label": "Teams/Power Platform", "note": "Umgebung und Teams-Publishing beachten." },
+            "copilot-studio-standalone": { "status": "included", "label": "M365/PPAC", "note": "Lizenzen, Credits, Umgebungen und Verbrauch im Power Platform Admin Center steuern." }
+          }
+        },
+        {
+          "label": "Empfohlener Einstieg",
+          "values": {
+            "microsoft-copilot-privat": { "status": "warning", "label": "Nicht für Firmen", "note": "Nur für private oder unsensible Recherche ohne Unternehmensdaten." },
+            "m365-copilot-chat": { "status": "included", "label": "Schneller Pilot", "note": "Als sicherer Startpunkt für webbasierte Prompts und Grundschulung." },
+            "m365-copilot-business": { "status": "included", "label": "Pilotgruppe", "note": "Für produktive Business-Nutzer mit Word, Excel, Outlook, Teams und SharePoint-Daten." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Governance-Pilot", "note": "Mit Purview, SharePoint-Governance, Champions und Nutzungsberichten starten." },
+            "copilot-studio-teams": { "status": "partial", "label": "Kleine Teams", "note": "Geeignet für einfache interne FAQ-/Prozess-Agenten in Teams." },
+            "copilot-studio-standalone": { "status": "included", "label": "Agent-Programm", "note": "Für produktive Agenten mit Budget, Monitoring, ALM und Datenquellenkonzept." }
+          }
+        }
+      ]
+    },
+    {
+      "key": "daten-sicherheit",
+      "label": "Datenbasis, Datenschutz & Governance",
+      "description": "Welche Daten Copilot verwenden darf, wie Prompts verarbeitet werden und welche Governance-Grenzen wichtig sind.",
+      "packages": [
+        { "slug": "microsoft-copilot-privat", "name": "Microsoft Copilot privat", "short": "Privat", "price_month": null, "price_label": "Privatplan prüfen", "billing": "MSA / privat" },
+        { "slug": "m365-copilot-chat", "name": "Microsoft 365 Copilot Chat", "short": "Copilot Chat", "price_month": 0, "price_label": "Enthalten", "billing": "in berechtigten M365-Plänen" },
+        { "slug": "m365-copilot-business", "name": "Microsoft 365 Copilot Business", "short": "M365 Copilot Business", "price_month": 15.60, "price_label": "15,60–18,20 € / Monat", "billing": "Add-on pro User, jährlich" },
+        { "slug": "m365-copilot-enterprise", "name": "Microsoft 365 Copilot", "short": "M365 Copilot", "price_month": 26.00, "price_label": "26,00 € / Monat", "billing": "Add-on pro User, jährlich" },
+        { "slug": "copilot-studio-teams", "name": "Copilot Studio for Teams", "short": "Studio Teams", "price_month": 0, "price_label": "Enthalten/begrenzt", "billing": "in ausgewählten M365-Plänen" },
+        { "slug": "copilot-studio-standalone", "name": "Copilot Studio Standalone", "short": "Studio Standalone", "price_month": null, "price_label": "Credits/PAYG", "billing": "Capacity / Credits / PAYG" }
+      ],
+      "rows": [
+        {
+          "label": "Web-Grounding",
+          "values": {
+            "microsoft-copilot-privat": { "status": "included", "label": "Ja", "note": "Antworten aus öffentlichen Webdaten; Consumer-Datenschutz beachten." },
+            "m365-copilot-chat": { "status": "included", "label": "Ja", "note": "Webbasiert; generierte Bing-Suchabfragen ohne Benutzer-/Tenant-IDs." },
+            "m365-copilot-business": { "status": "included", "label": "Ja", "note": "Work- und Webmodus; Admin kann Websuche steuern." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Ja", "note": "Websuche per Copilot Control System/Cloud Policy steuerbar." },
+            "copilot-studio-teams": { "status": "partial", "label": "Je Agent", "note": "Hängt von Knowledge, Orchestrierung und Konfiguration ab." },
+            "copilot-studio-standalone": { "status": "included", "label": "Konfigurierbar", "note": "Knowledge-Quellen, generative Antworten und Tools je Agent planen." }
+          }
+        },
+        {
+          "label": "Websuche: Admin- und User-Steuerung",
+          "values": {
+            "microsoft-copilot-privat": { "status": "warning", "label": "Consumer", "note": "Nicht über M365 Cloud Policy als Unternehmensdienst steuern." },
+            "m365-copilot-chat": { "status": "included", "label": "Admin-Policy", "note": "Websuche kann über Cloud Policy/Copilot Control System für Tenant, Gruppen oder Benutzer gesteuert werden." },
+            "m365-copilot-business": { "status": "included", "label": "Admin + Work-Modus", "note": "Admin kann Websuche aktivieren/deaktivieren; User-Webinhaltsschalter gilt nur im M365 Copilot Arbeitschat." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Granular", "note": "Optionen: Websuche an, aus oder im Arbeitsmodus aus und im Webmodus/Copilot Chat an." },
+            "copilot-studio-teams": { "status": "partial", "label": "Agentabhängig", "note": "Web-/Knowledge-Verhalten hängt vom Agent-Design ab." },
+            "copilot-studio-standalone": { "status": "included", "label": "Agentdesign", "note": "Web, Knowledge, Tools und Connectoren bewusst pro Agent konfigurieren." }
+          }
+        },
+        {
+          "label": "Websuchabfragen: Datenschutzdetails",
+          "values": {
+            "microsoft-copilot-privat": { "status": "warning", "label": "Consumer-Bedingungen", "note": "Nicht mit Microsoft-365-DPA/EDP gleichsetzen." },
+            "m365-copilot-chat": { "status": "included", "label": "Keine IDs", "note": "Generierte Bing-Abfragen enthalten laut Microsoft keine Benutzer-, Domänen- oder Tenant-IDs und nicht den ganzen Prompt." },
+            "m365-copilot-business": { "status": "partial", "label": "Bing separat", "note": "Prompts/Antworten bleiben M365; generierte Webqueries unterliegen separater Bing-Verarbeitung." },
+            "m365-copilot-enterprise": { "status": "partial", "label": "Audit möglich", "note": "Webquery-Protokollierung für Audit/eDiscovery/DSPM for AI möglich; EUDB/DPA gelten nicht für generierte Webqueries." },
+            "copilot-studio-teams": { "status": "partial", "label": "Quellen prüfen", "note": "Agent-Wissensquellen, Web und Connectoren separat bewerten." },
+            "copilot-studio-standalone": { "status": "partial", "label": "Datenfluss prüfen", "note": "BYO-/externe Modelle, Connectoren und Web-/Knowledge-Flows separat dokumentieren." }
+          }
+        },
+        {
+          "label": "Microsoft Graph / Arbeitsdaten",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Kein Tenant-Graph, keine M365-Berechtigungsgrenze." },
+            "m365-copilot-chat": { "status": "partial", "label": "Begrenzt", "note": "Dateiupload, offene Inhalte, Outlook-Kontext oder Agenten; kein volles Graph-Grounding." },
+            "m365-copilot-business": { "status": "included", "label": "Ja", "note": "Nutzt Mails, Dateien, Chats, Meetings und Kontakte nach Benutzerberechtigung." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Ja", "note": "Graph- und Semantic-Index-gestützt mit vorhandenen Zugriffskontrollen." },
+            "copilot-studio-teams": { "status": "partial", "label": "Dataverse/Flows", "note": "Teams-Plan nutzt Dataverse for Teams und Power Automate Cloud Flows." },
+            "copilot-studio-standalone": { "status": "included", "label": "Connectoren/Graph", "note": "Über Knowledge, Graph Connectors, Work IQ und Premium-Connectoren erweiterbar." }
+          }
+        },
+        {
+          "label": "Trainieren von Foundation Models",
+          "values": {
+            "microsoft-copilot-privat": { "status": "warning", "label": "Consumer prüfen", "note": "Nicht mit M365-EDP gleichsetzen; sensible Firmendaten vermeiden." },
+            "m365-copilot-chat": { "status": "included", "label": "Nein", "note": "Prompts und Antworten werden laut Microsoft nicht zum Training genutzt." },
+            "m365-copilot-business": { "status": "included", "label": "Nein", "note": "Prompts, Antworten und Graph-Daten trainieren keine Foundation Models." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Nein", "note": "Gleiche Zusage für Prompts, Antworten und Graph-Daten." },
+            "copilot-studio-teams": { "status": "included", "label": "EDP-Kontext", "note": "Microsoft-Online-Service-Kontext prüfen; Datenquellen und Agent-AGB beachten." },
+            "copilot-studio-standalone": { "status": "included", "label": "EDP je Dienst", "note": "Für Microsoft-Modelle; BYO-/externe Modelle separat bewerten." }
+          }
+        },
+        {
+          "label": "Enterprise Data Protection",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Private Oberfläche hat nicht dieselben M365-Unternehmenszusagen." },
+            "m365-copilot-chat": { "status": "included", "label": "Ja", "note": "EDP für Prompts und Antworten, grünes Schild in der Arbeitsoberfläche." },
+            "m365-copilot-business": { "status": "included", "label": "Ja", "note": "DPA/Product Terms, Verschlüsselung, Tenant-Isolation und Compliance-Zusagen." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Ja", "note": "Zusätzlich sinnvoll mit Purview, Audit, Retention, Labels und Governance." },
+            "copilot-studio-teams": { "status": "partial", "label": "Tenantabhängig", "note": "Für Agenten Datenschutz/Terms und verwendete Datenquellen prüfen." },
+            "copilot-studio-standalone": { "status": "included", "label": "Planbar", "note": "EDP für Microsoft Online Services; externe Connectoren separat bewerten." }
+          }
+        },
+        {
+          "label": "Purview, Audit, Retention",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Nicht in Purview/eDiscovery des Unternehmens integriert." },
+            "m365-copilot-chat": { "status": "partial", "label": "Je Plan", "note": "Prompts/Antworten werden geloggt; konkrete Kontrollen hängen vom M365-Plan ab." },
+            "m365-copilot-business": { "status": "partial", "label": "Basis/Plan prüfen", "note": "Audit und Retention hängen an den vorhandenen M365-/Purview-Rechten." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Stark", "note": "E3/E5-Features, DSPM for AI, eDiscovery, Labels und Retention einplanen." },
+            "copilot-studio-teams": { "status": "partial", "label": "Umgebung prüfen", "note": "Dataverse for Teams, Flows und Teams-Governance beachten." },
+            "copilot-studio-standalone": { "status": "included", "label": "PPAC + Purview", "note": "Agent-Verbrauch, Umgebungen, DLP und Datenquellen aktiv steuern." }
+          }
+        },
+        {
+          "label": "Berechtigungsgrenze",
+          "values": {
+            "microsoft-copilot-privat": { "status": "warning", "label": "Keine M365-Grenze", "note": "Keine automatische Begrenzung auf Tenant-Berechtigungen." },
+            "m365-copilot-chat": { "status": "partial", "label": "Bereitgestellte Inhalte", "note": "Nutzt nur vom User bereitgestellte oder offene Inhalte und bestimmte App-Kontexte." },
+            "m365-copilot-business": { "status": "included", "label": "M365-Rechte", "note": "Copilot zeigt nur Daten, für die der Benutzer mindestens Leserechte hat." },
+            "m365-copilot-enterprise": { "status": "included", "label": "M365-Rechte", "note": "Graph und Semantic Index respektieren Identität, Berechtigungen und Labels." },
+            "copilot-studio-teams": { "status": "partial", "label": "Agent/Quelle", "note": "Berechtigungen je Quelle, Flow und Teams-Umgebung prüfen." },
+            "copilot-studio-standalone": { "status": "included", "label": "Designfrage", "note": "Agent-Authentifizierung, Connectorberechtigungen und Knowledge-Scopes definieren." }
+          }
+        },
+        {
+          "label": "EU Data Boundary und Websuche",
+          "values": {
+            "microsoft-copilot-privat": { "status": "warning", "label": "Consumer prüfen", "note": "Nicht als EUDB-Unternehmensdienst bewerten." },
+            "m365-copilot-chat": { "status": "partial", "label": "EDP ja, Web extra", "note": "Prompts/Antworten EDP; Bing-Webqueries haben eigene Datenbehandlung." },
+            "m365-copilot-business": { "status": "partial", "label": "Webqueries extra", "note": "EUDB gilt nicht für generierte Bing-Websuchabfragen." },
+            "m365-copilot-enterprise": { "status": "partial", "label": "Web/Modelle prüfen", "note": "Anthropic-Modelle sind aktuell außerhalb EUDB/in-country commitments." },
+            "copilot-studio-teams": { "status": "partial", "label": "Region prüfen", "note": "Umgebung, Datenquellen und verwendete Modelle bewerten." },
+            "copilot-studio-standalone": { "status": "partial", "label": "Opt-in prüfen", "note": "Anthropic/externe LLM-Controls und Regionseinschränkungen beachten." }
+          }
+        }
+      ]
+    },
+    {
+      "key": "apps-erlebnis",
+      "label": "Apps, Features & Nutzererlebnis",
+      "description": "Wie stark Copilot in Microsoft 365 Apps integriert ist und welche Unterschiede zwischen Basic, Premium und Studio bestehen.",
+      "packages": [
+        { "slug": "microsoft-copilot-privat", "name": "Microsoft Copilot privat", "short": "Privat", "price_month": null, "price_label": "Privatplan prüfen", "billing": "MSA / privat" },
+        { "slug": "m365-copilot-chat", "name": "Microsoft 365 Copilot Chat", "short": "Copilot Chat", "price_month": 0, "price_label": "Enthalten", "billing": "in berechtigten M365-Plänen" },
+        { "slug": "m365-copilot-business", "name": "Microsoft 365 Copilot Business", "short": "M365 Copilot Business", "price_month": 15.60, "price_label": "15,60–18,20 € / Monat", "billing": "Add-on pro User, jährlich" },
+        { "slug": "m365-copilot-enterprise", "name": "Microsoft 365 Copilot", "short": "M365 Copilot", "price_month": 26.00, "price_label": "26,00 € / Monat", "billing": "Add-on pro User, jährlich" },
+        { "slug": "copilot-studio-teams", "name": "Copilot Studio for Teams", "short": "Studio Teams", "price_month": 0, "price_label": "Enthalten/begrenzt", "billing": "in ausgewählten M365-Plänen" },
+        { "slug": "copilot-studio-standalone", "name": "Copilot Studio Standalone", "short": "Studio Standalone", "price_month": null, "price_label": "Credits/PAYG", "billing": "Capacity / Credits / PAYG" }
+      ],
+      "rows": [
+        {
+          "label": "Chat-Oberflächen",
+          "values": {
+            "microsoft-copilot-privat": { "status": "included", "label": "copilot.microsoft.com", "note": "Privat-App, Edge und Bing/Copilot-Oberflächen." },
+            "m365-copilot-chat": { "status": "included", "label": "M365 App/Teams/Outlook", "note": "Web, Microsoft 365 Copilot App, Teams, Outlook und Edge mit Entra-Konto." },
+            "m365-copilot-business": { "status": "included", "label": "Work/Web", "note": "Microsoft 365 Copilot App, Apps, Edge und Bing mit Arbeitskonto." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Work/Web", "note": "Work- und Webmodus mit M365 Copilot Search und App-Integration." },
+            "copilot-studio-teams": { "status": "partial", "label": "Teams", "note": "Veröffentlichung primär in Teams." },
+            "copilot-studio-standalone": { "status": "included", "label": "Viele Kanäle", "note": "Kanäle je Copilot Studio; auch Websites, Teams, Custom und weitere Szenarien." }
+          }
+        },
+        {
+          "label": "Word, Excel, PowerPoint, OneNote",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nicht M365 Work", "note": "Keine geschäftliche App-Integration mit Tenant-Kontext." },
+            "m365-copilot-chat": { "status": "partial", "label": "Basic/Agenten", "note": "Chat in Apps hängt von Label, Tenant-Konfiguration und Standardzugriff ab." },
+            "m365-copilot-business": { "status": "included", "label": "Premium", "note": "Draft, Chat, Q&A, Formeln, Präsentationen und Notizen mit Arbeitsdaten." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Premium", "note": "Volle App-Erfahrung inklusive priorisiertem Zugriff und erweiterten Skills." },
+            "copilot-studio-teams": { "status": "not_included", "label": "Nein", "note": "Teams-Agenten ersetzen keine Copilot-App-Funktionen in Office." },
+            "copilot-studio-standalone": { "status": "separate", "label": "Agenten separat", "note": "Agenten können integrieren, aber App-Copilot ist M365-Copilot-Lizenzthema." }
+          }
+        },
+        {
+          "label": "Outlook und Teams",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Keine Unternehmens-Mails, Kalender oder Teams-Chats." },
+            "m365-copilot-chat": { "status": "partial", "label": "Outlook/Teams Chat", "note": "Copilot Chat verfügbar; Arbeitsdatenumfang begrenzt gegenüber Add-on." },
+            "m365-copilot-business": { "status": "included", "label": "Ja", "note": "Outlook-Entwürfe, Zusammenfassungen, Teams-Chat und Meetings." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Ja", "note": "Teams-Meetings, Chats, Outlook und Copilot Analytics für Rollout." },
+            "copilot-studio-teams": { "status": "included", "label": "Teams-Agent", "note": "Agenten können in Teams veröffentlicht werden." },
+            "copilot-studio-standalone": { "status": "included", "label": "Teams + Kanäle", "note": "Teams und weitere Kanäle je Konfiguration möglich." }
+          }
+        },
+        {
+          "label": "Teams Chat-Historie",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Kein Teams-Work-Kontext." },
+            "m365-copilot-chat": { "status": "partial", "label": "Begrenzt", "note": "Chat-Funktion ja, aber nicht vollständiges Work-Grounding." },
+            "m365-copilot-business": { "status": "included", "label": "bis 30 Tage", "note": "Copilot kann im Chat bis zu 30 Tage des einzelnen Threads zusammenfassen." },
+            "m365-copilot-enterprise": { "status": "included", "label": "bis 30 Tage", "note": "Nur einzelner Chatthread; keine anderen Chats, Mails oder Dateien in diesem Kontext." },
+            "copilot-studio-teams": { "status": "not_included", "label": "Nein", "note": "Agent-Funktion, keine native Teams-Chat-Zusammenfassung." },
+            "copilot-studio-standalone": { "status": "separate", "label": "Je Agent", "note": "Kann Teams-Kontext nicht automatisch wie M365 Copilot nutzen." }
+          }
+        },
+        {
+          "label": "Teams Meetings und Telefonie",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Kein Meetingtranskript aus Unternehmen." },
+            "m365-copilot-chat": { "status": "partial", "label": "App-abhängig", "note": "Ohne Add-on kein voller Teams-Meeting-Copilot." },
+            "m365-copilot-business": { "status": "included", "label": "Transkript nötig", "note": "Meeting-Q&A basiert auf Transkript; Telefonie benötigt ggf. Teams Phone." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Transkript nötig", "note": "PSTN-Szenarien brauchen Teams Phone, Calling Plan und M365 Copilot." },
+            "copilot-studio-teams": { "status": "not_included", "label": "Nein", "note": "Teams-Agent ersetzt keine Meeting-/Phone-Copilot-Lizenz." },
+            "copilot-studio-standalone": { "status": "separate", "label": "Bot/Voice separat", "note": "Voice- und Omnichannel-Szenarien verbrauchen Credits und brauchen Setup." }
+          }
+        },
+        {
+          "label": "Dateiupload, Bilder, Modelle, Reasoning",
+          "values": {
+            "microsoft-copilot-privat": { "status": "partial", "label": "Consumer-Limits", "note": "Verfügbarkeit abhängig vom persönlichen Produkt und Dienstkapazität." },
+            "m365-copilot-chat": { "status": "partial", "label": "Standardzugriff", "note": "Kann bei Spitzenlast eingeschränkt sein; Qualität/Modelle können variieren." },
+            "m365-copilot-business": { "status": "included", "label": "Priorität", "note": "M365 Copilot Lizenz bietet priorisierten Zugriff auf wichtige Chat-Features." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Priorität", "note": "Schneller und zuverlässiger, auch bei höherer Nachfrage je Dienstverfügbarkeit." },
+            "copilot-studio-teams": { "status": "partial", "label": "Begrenzt", "note": "Generative Orchestrierung und Premium-Tools nicht im Teams-Plan." },
+            "copilot-studio-standalone": { "status": "included", "label": "Je Modell/Tool", "note": "Text-/AI-Tools, Reasoning-Modelle und Content Processing verbrauchen Credits." }
+          }
+        },
+        {
+          "label": "Neueste Modelle und Zugriffsebene",
+          "description": "Microsoft nennt in der Vergleichstabelle neueste OpenAI-Modelle wie GPT-5.X; der praktische Zugriff unterscheidet sich nach Standard- und Prioritätszugriff.",
+          "values": {
+            "microsoft-copilot-privat": { "status": "partial", "label": "Consumer-Limits", "note": "Modellzugang und Limits hängen vom privaten Plan und Dienstkapazität ab." },
+            "m365-copilot-chat": { "status": "partial", "label": "Standard", "note": "Standardzugriff kann bei Spitzenlast begrenzt sein oder andere Modelle/Funktionen verwenden." },
+            "m365-copilot-business": { "status": "included", "label": "Priorität", "note": "M365 Copilot Lizenz bietet prioritätsbasierten Zugriff mit schnellerer und konsistenterer Verfügbarkeit." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Priorität", "note": "Prioritätszugriff gilt für relevante Chat-Features wie Modelle, Datei-Upload, Bildgenerierung, Sprachfeatures und erweitertes Denken." },
+            "copilot-studio-teams": { "status": "partial", "label": "Begrenzt", "note": "Nicht die volle Modell-/Tool-Auswahl von Copilot Studio Standalone." },
+            "copilot-studio-standalone": { "status": "included", "label": "Feature-/Tool-Raten", "note": "Reasoning-Modelle und Premium-AI-Tools werden zusätzlich über Copilot Credits abgerechnet." }
+          }
+        },
+        {
+          "label": "Notebooks, Pages und Erstellen",
+          "values": {
+            "microsoft-copilot-privat": { "status": "partial", "label": "Je Privatplan", "note": "Private Pläne haben unterschiedliche KI-Limits für Chat, Bilder, Audio, Vision und Apps." },
+            "m365-copilot-chat": { "status": "partial", "label": "Eingeschränkt/Standard", "note": "M365 Copilot App bietet Chat, Suche, Agents, Notebooks und Erstellen; Funktionsumfang hängt von Lizenzlabel und Tenant ab." },
+            "m365-copilot-business": { "status": "included", "label": "Enthalten", "note": "Notebooks, Erstellen, Work IQ und Apps laut Business-Seite als Produktivitätsfunktionen enthalten." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Enthalten", "note": "Umfasst Seiten/Pages, Notebooks, Erstellen und Copilot Search im Arbeitskontext." },
+            "copilot-studio-teams": { "status": "not_included", "label": "Nein", "note": "Agent-Plan, keine M365 Copilot App-Feature-Suite." },
+            "copilot-studio-standalone": { "status": "separate", "label": "Agent-Tools", "note": "Erstellt Agenten und Tools; ersetzt nicht automatisch Pages/Notebooks der M365 Copilot App." }
+          }
+        },
+        {
+          "label": "Copilot Search und Semantik",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Keine Suche über Tenant- und Drittquellen." },
+            "m365-copilot-chat": { "status": "partial", "label": "Suche/Agents", "note": "Copilot Search-Oberfläche vorhanden, aber Graph-Grounding ist Add-on-Wert." },
+            "m365-copilot-business": { "status": "included", "label": "Ja", "note": "Suche über M365- und verbundene Datenquellen je Berechtigung." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Ja", "note": "Semantic Index und M365 Copilot Search für M365- und Drittquellen." },
+            "copilot-studio-teams": { "status": "not_included", "label": "Nein", "note": "Nicht als universelle Copilot Search verwenden." },
+            "copilot-studio-standalone": { "status": "addon", "label": "Connectoren", "note": "Knowledge/Graph Connectoren und Work IQ für Agent-Antworten nutzen." }
+          }
+        }
+      ]
+    },
+    {
+      "key": "agents-studio",
+      "label": "Agents, Copilot Studio & Nutzungskontingente",
+      "description": "Wo Agenten erstellt werden, was in Teams geht und welche Quotas, Credits und Limits für Copilot Studio wichtig sind.",
+      "packages": [
+        { "slug": "microsoft-copilot-privat", "name": "Microsoft Copilot privat", "short": "Privat", "price_month": null, "price_label": "Privatplan prüfen", "billing": "MSA / privat" },
+        { "slug": "m365-copilot-chat", "name": "Microsoft 365 Copilot Chat", "short": "Copilot Chat", "price_month": 0, "price_label": "Enthalten", "billing": "in berechtigten M365-Plänen" },
+        { "slug": "m365-copilot-business", "name": "Microsoft 365 Copilot Business", "short": "M365 Copilot Business", "price_month": 15.60, "price_label": "15,60–18,20 € / Monat", "billing": "Add-on pro User, jährlich" },
+        { "slug": "m365-copilot-enterprise", "name": "Microsoft 365 Copilot", "short": "M365 Copilot", "price_month": 26.00, "price_label": "26,00 € / Monat", "billing": "Add-on pro User, jährlich" },
+        { "slug": "copilot-studio-teams", "name": "Copilot Studio for Teams", "short": "Studio Teams", "price_month": 0, "price_label": "Enthalten/begrenzt", "billing": "in ausgewählten M365-Plänen" },
+        { "slug": "copilot-studio-standalone", "name": "Copilot Studio Standalone", "short": "Studio Standalone", "price_month": null, "price_label": "Credits/PAYG", "billing": "Capacity / Credits / PAYG" }
+      ],
+      "rows": [
+        {
+          "label": "Agenten nutzen",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Keine Unternehmens-Agenten aus dem M365-Agent Store." },
+            "m365-copilot-chat": { "status": "partial", "label": "Begrenzt", "note": "Pay-as-you-go-Agenten aus Chat möglich; erweiterte Agents eingeschränkt." },
+            "m365-copilot-business": { "status": "included", "label": "Umfangreich", "note": "Built-in, Custom und Agent Builder je Tenant-Freigabe nutzbar." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Umfangreich", "note": "Umfasst erweiterte Agents wie Researcher/Analyst und Custom Agents." },
+            "copilot-studio-teams": { "status": "included", "label": "Teams-Agent", "note": "Agenten werden in Teams genutzt und veröffentlicht." },
+            "copilot-studio-standalone": { "status": "included", "label": "Alle Kanäle", "note": "Produktive Agenten über unterstützte Copilot-Studio-Kanäle." }
+          }
+        },
+        {
+          "label": "Agenten erstellen: wo?",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nicht vorgesehen", "note": "Kein M365 Agent Builder mit Tenantdaten." },
+            "m365-copilot-chat": { "status": "partial", "label": "M365 App", "note": "Neuer Agent in der Microsoft 365 Copilot App möglich, abhängig von Tenant/License." },
+            "m365-copilot-business": { "status": "included", "label": "Agent Builder", "note": "In der M365 Copilot App unter Agents > Neuer Agent per Prompt oder Vorlage." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Agent Builder + Toolkit", "note": "Agent Builder, Copilot Studio, Agents Toolkit, Graph Connectors und APIs." },
+            "copilot-studio-teams": { "status": "included", "label": "Teams/Studio", "note": "Agenten für Teams mit klassischer Orchestrierung erstellen." },
+            "copilot-studio-standalone": { "status": "included", "label": "Copilot Studio", "note": "Vollständige Low-Code-Erstellung, Tools, Knowledge, Actions und Kanäle." }
+          }
+        },
+        {
+          "label": "Azure-Abonnement für Agents",
+          "description": "Microsoft weist auf den Preis-/Produktseiten darauf hin, dass zur Verwendung bestimmter Agenten ein Azure-Abonnement erforderlich ist.",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Keine Unternehmens-Agentenabrechnung." },
+            "m365-copilot-chat": { "status": "addon", "label": "Für PAYG nötig", "note": "Agent-Nutzung kann ein Azure-Abonnement bzw. PAYG-Abrechnung erfordern." },
+            "m365-copilot-business": { "status": "partial", "label": "Je Agent", "note": "M365 Copilot enthält B2E-Agent-Nutzung in M365/Teams/SharePoint, externe/PAYG-Szenarien können Azure brauchen." },
+            "m365-copilot-enterprise": { "status": "partial", "label": "Je Agent", "note": "Interne lizenzierte Nutzung kann enthalten sein; PAYG, Prepaid und externe Kanäle über Azure/PPAC planen." },
+            "copilot-studio-teams": { "status": "partial", "label": "Meist nein", "note": "Teams-Plan begrenzt; Upgrade/PAYG-Szenarien können Azure-Abrechnung erfordern." },
+            "copilot-studio-standalone": { "status": "prerequisite", "label": "Ja für PAYG/Prepaid", "note": "PAYG- und Copilot-Credit-Commit-Modelle werden über Azure-Abonnement/Billing Policy angebunden." }
+          }
+        },
+        {
+          "label": "Enthaltene Copilot Studio Nutzung mit M365 Copilot",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Keine Copilot-Studio-Unternehmensnutzung." },
+            "m365-copilot-chat": { "status": "addon", "label": "PAYG", "note": "Ohne Add-on-Lizenz sind Agents eingeschränkt und können nutzungsbasiert abgerechnet werden." },
+            "m365-copilot-business": { "status": "included", "label": "B2E enthalten", "note": "Für lizenzierte M365 Copilot Nutzer können klassische/generative Antworten und Tenant Graph Grounding in M365/Teams/SharePoint mit Nullbewertung enthalten sein." },
+            "m365-copilot-enterprise": { "status": "included", "label": "B2E enthalten", "note": "Gilt für Agent-Funktionen in Copilot Studio bei Nutzung in Microsoft 365 Copilot, Teams oder SharePoint mit lizenzierter Identität." },
+            "copilot-studio-teams": { "status": "partial", "label": "Teams-Plan", "note": "Eigenes begrenztes Nutzungsmodell, nicht mit M365 Copilot USL-Fair-Use gleichsetzen." },
+            "copilot-studio-standalone": { "status": "separate", "label": "Credits/PAYG", "note": "Externe Kanäle, nicht lizenzierte Nutzer und produktive Standalone-Agenten benötigen Kapazität oder PAYG." }
+          }
+        },
+        {
+          "label": "Agenten veröffentlichen",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Keine Organisationsfreigabe." },
+            "m365-copilot-chat": { "status": "partial", "label": "Admin-Freigabe", "note": "Nutzung und Store-Zugriff über Integrated Apps/Agent Registry steuerbar." },
+            "m365-copilot-business": { "status": "included", "label": "Store/Share", "note": "Teilen und Store-Nutzung nach Adminrichtlinien." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Agent Registry", "note": "Admin kann erlauben, blockieren, zuweisen und Lebenszyklus steuern." },
+            "copilot-studio-teams": { "status": "partial", "label": "Nur Teams", "note": "Teams-Plan veröffentlicht in Teams, nicht in beliebige Kanäle." },
+            "copilot-studio-standalone": { "status": "included", "label": "Viele Kanäle", "note": "Alle unterstützten Copilot-Studio-Kanäle, inklusive Premium-Szenarien." }
+          }
+        },
+        {
+          "label": "Generative Orchestrierung",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Keine Copilot-Studio-Orchestrierung." },
+            "m365-copilot-chat": { "status": "partial", "label": "Agentabhängig", "note": "PAYG-Agenten können Kosten verursachen; Fähigkeiten hängen vom Agent ab." },
+            "m365-copilot-business": { "status": "included", "label": "Custom Agents", "note": "Je Agent und Erstellweg; Studio-Funktionen separat bewerten." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Custom Agents", "note": "Erweiterbarkeit über declarative agents, connectors, APIs und Studio." },
+            "copilot-studio-teams": { "status": "not_included", "label": "Nein", "note": "Teams-Plan unterstützt klassische Orchestrierung, nicht generative Orchestrierung." },
+            "copilot-studio-standalone": { "status": "included", "label": "Ja", "note": "Generative Orchestrierung und erweiterte Tools verfügbar." }
+          }
+        },
+        {
+          "label": "Premium-Connectoren und externe Daten",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Keine Unternehmensconnectoren." },
+            "m365-copilot-chat": { "status": "partial", "label": "Über Agents", "note": "Organisationsdaten über PAYG-Agenten oder bereitgestellte Dateien." },
+            "m365-copilot-business": { "status": "addon", "label": "Je Agent/Studio", "note": "Graph Connectoren und Studio-Premiumrechte separat prüfen." },
+            "m365-copilot-enterprise": { "status": "addon", "label": "Je Agent/Studio", "note": "Third-party Daten über Graph Connectoren, Agents und Copilot Studio." },
+            "copilot-studio-teams": { "status": "not_included", "label": "Nein", "note": "Premium connector tools sind im Teams-Plan nicht verfügbar." },
+            "copilot-studio-standalone": { "status": "included", "label": "Ja", "note": "Premium-Connectoren, beliebige Umgebungen und unterstützte Datenquellen." }
+          }
+        },
+        {
+          "label": "Copilot Studio Trial",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Trial braucht Arbeits-/Schulkonto." },
+            "m365-copilot-chat": { "status": "separate", "label": "Separat", "note": "Trial erlaubt Erstellen/Testen, aber kein Veröffentlichen." },
+            "m365-copilot-business": { "status": "separate", "label": "Separat", "note": "Trial ist nicht gleich produktive Copilot-Studio-Lizenz." },
+            "m365-copilot-enterprise": { "status": "separate", "label": "Separat", "note": "Trial-Agenten funktionieren nach Ablauf noch zeitweise, Publish bleibt gesperrt." },
+            "copilot-studio-teams": { "status": "not_included", "label": "Kein Trial nötig", "note": "Teams-Plan kommt aus ausgewählten Abos, aber begrenzt." },
+            "copilot-studio-standalone": { "status": "included", "label": "Test möglich", "note": "Trial für Erstellen/Testen; produktives Veröffentlichen braucht Lizenz." }
+          }
+        },
+        {
+          "label": "Copilot Credits: Beispielraten",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Keine Copilot-Studio-Creditabrechnung." },
+            "m365-copilot-chat": { "status": "addon", "label": "PAYG-Agenten", "note": "Agenten können Credits verbrauchen, wenn über Chat genutzt." },
+            "m365-copilot-business": { "status": "partial", "label": "B2E enthalten", "note": "Employee-facing Nutzung kann mit M365 Copilot USL enthalten sein, Fair Use beachten." },
+            "m365-copilot-enterprise": { "status": "partial", "label": "B2E enthalten", "note": "Agent-Nutzung mit lizenzierter Identität kann enthalten sein, Fair Use beachten." },
+            "copilot-studio-teams": { "status": "partial", "label": "Limits", "note": "Teams-Plan-Sessions sind nicht gepoolt; 10 Sessions/User/24h Service-Limit." },
+            "copilot-studio-standalone": { "status": "included", "label": "Credits", "note": "Classic 1, generativ 2, Agent Action 5, Graph Grounding 10 Credits." }
+          }
+        },
+        {
+          "label": "Weitere Copilot-Credit-Raten",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Nicht über Copilot Studio Credits abgerechnet." },
+            "m365-copilot-chat": { "status": "addon", "label": "Je Agent", "note": "Ein Agent kann mehrere Feature-Typen pro Interaktion kombinieren und damit mehrere Credit-Raten auslösen." },
+            "m365-copilot-business": { "status": "partial", "label": "Fair Use", "note": "Bei interner lizenzierter Nutzung können Kernraten enthalten sein; Premium-/externe Szenarien prüfen." },
+            "m365-copilot-enterprise": { "status": "partial", "label": "Fair Use", "note": "Tenant Graph Grounding kann 10 Credits kosten, wenn nicht durch M365 Copilot USL-Szenario enthalten." },
+            "copilot-studio-teams": { "status": "partial", "label": "Kein Premium", "note": "Teams-Plan umfasst keine Premium-Connector-Tools und keine volle generative Orchestrierung." },
+            "copilot-studio-standalone": { "status": "included", "label": "Flows/AI/Voice", "note": "Agent Flow 13 Credits pro 100 Aktionen; Standard-AI-Tools 15, Premium-AI-Tools 100, Voice je Stufe 10/35/75 Credits." }
+          }
+        },
+        {
+          "label": "Credit-Überschreitung und Enforcement",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Nicht Copilot-Studio-Credit-basiert." },
+            "m365-copilot-chat": { "status": "addon", "label": "PAYG prüfen", "note": "PAYG-Agenten werden über zugeordnete Umgebung/Abrechnung gesteuert." },
+            "m365-copilot-business": { "status": "partial", "label": "Fair Use", "note": "M365 Copilot USL-Szenarien unterliegen Fair-Use-Grenzen; externe Nutzung separat." },
+            "m365-copilot-enterprise": { "status": "partial", "label": "Fair Use", "note": "Agent-Flow-Aktionen lizenzierter M365 Copilot Nutzer sind von bestimmter Prepaid-Erzwingung ausgenommen." },
+            "copilot-studio-teams": { "status": "partial", "label": "Service-Limits", "note": "Teams-Plan-Sessions und Topics-Limits beachten." },
+            "copilot-studio-standalone": { "status": "warning", "label": "125% Schwelle", "note": "Bei Prepaid-Kapazität können benutzerdefinierte Agents bei 125% Überschreitung deaktiviert werden; PAYG vermeidet Prepaid-Blockade." }
+          }
+        },
+        {
+          "label": "Copilot Studio Quotas",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Keine Studio-Quota." },
+            "m365-copilot-chat": { "status": "addon", "label": "PAYG/Agent", "note": "Quota hängt vom Agent und Environment ab." },
+            "m365-copilot-business": { "status": "partial", "label": "100 RPM / 2000 RPH", "note": "Für Microsoft 365 Copilot users bei generativen AI-Messages laut Studio-Quota." },
+            "m365-copilot-enterprise": { "status": "partial", "label": "100 RPM / 2000 RPH", "note": "Für Microsoft 365 Copilot users; Umgebungs- und Agent-Limits zusätzlich beachten." },
+            "copilot-studio-teams": { "status": "partial", "label": "Teams-Limits", "note": "Bis 50 Agenten pro Team, 250 Topics in Dataverse for Teams." },
+            "copilot-studio-standalone": { "status": "included", "label": "Nach Packs/PAYG", "note": "Bis 100 RPM/2000 RPH je Umgebung bei PAYG oder höheren Packs." }
+          }
+        },
+        {
+          "label": "Wissensquellen und Datei-Limits",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Consumer", "note": "Keine SharePoint-/Dataverse-Knowledge-Konfiguration." },
+            "m365-copilot-chat": { "status": "partial", "label": "Upload/offene Inhalte", "note": "Dateien können bereitgestellt werden; keine volle Knowledge-Plattform." },
+            "m365-copilot-business": { "status": "partial", "label": "Graph + Agenten", "note": "Mit Work IQ/Agenten bessere SharePoint-Ergebnisse und bis 200 MB Support." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Graph + Agenten", "note": "Graph, Connectoren und Knowledge-Quellen mit Governance planen." },
+            "copilot-studio-teams": { "status": "partial", "label": "Dataverse Teams", "note": "Begrenzte Quellen und Teams-Umgebung." },
+            "copilot-studio-standalone": { "status": "included", "label": "512 MB Dateien", "note": "Unstrukturierte Quellen bis 512 MB, 500 Dateien; SharePoint-Sonderlimits beachten." }
+          }
+        }
+      ]
+    },
+    {
+      "key": "betrieb-rollout",
+      "label": "Betrieb, Monitoring & Rollout",
+      "description": "Was IT vor dem Rollout vorbereiten sollte: Admin Controls, Updatekanäle, Reports, Kostenmonitoring und Governance.",
+      "packages": [
+        { "slug": "microsoft-copilot-privat", "name": "Microsoft Copilot privat", "short": "Privat", "price_month": null, "price_label": "Privatplan prüfen", "billing": "MSA / privat" },
+        { "slug": "m365-copilot-chat", "name": "Microsoft 365 Copilot Chat", "short": "Copilot Chat", "price_month": 0, "price_label": "Enthalten", "billing": "in berechtigten M365-Plänen" },
+        { "slug": "m365-copilot-business", "name": "Microsoft 365 Copilot Business", "short": "M365 Copilot Business", "price_month": 15.60, "price_label": "15,60–18,20 € / Monat", "billing": "Add-on pro User, jährlich" },
+        { "slug": "m365-copilot-enterprise", "name": "Microsoft 365 Copilot", "short": "M365 Copilot", "price_month": 26.00, "price_label": "26,00 € / Monat", "billing": "Add-on pro User, jährlich" },
+        { "slug": "copilot-studio-teams", "name": "Copilot Studio for Teams", "short": "Studio Teams", "price_month": 0, "price_label": "Enthalten/begrenzt", "billing": "in ausgewählten M365-Plänen" },
+        { "slug": "copilot-studio-standalone", "name": "Copilot Studio Standalone", "short": "Studio Standalone", "price_month": null, "price_label": "Credits/PAYG", "billing": "Capacity / Credits / PAYG" }
+      ],
+      "rows": [
+        {
+          "label": "Admin Controls",
+          "values": {
+            "microsoft-copilot-privat": { "status": "warning", "label": "Tenant Restrictions", "note": "Private Anmeldung in Firmen-Apps ggf. über Richtlinien begrenzen." },
+            "m365-copilot-chat": { "status": "included", "label": "Pinning/App/Web", "note": "Pinning, Integrated Apps, Teams App, Edge und Websuche steuerbar." },
+            "m365-copilot-business": { "status": "included", "label": "Copilot Control System", "note": "Lizenzen, Web Grounding, Plugins, Permissions und Datenschutz prüfen." },
+            "m365-copilot-enterprise": { "status": "included", "label": "CCS + Purview", "note": "Zusätzlich Security, Compliance, SAM, Restricted Search und Agent Registry." },
+            "copilot-studio-teams": { "status": "partial", "label": "Teams/PPAC", "note": "Teams-Apps, Dataverse for Teams und DLP beachten." },
+            "copilot-studio-standalone": { "status": "included", "label": "PPAC + Admin Center", "note": "Umgebungen, Credits, Agenten, DLP, Provider und Kanäle zentral regeln." }
+          }
+        },
+        {
+          "label": "Copilot Chat anheften und App-Zugriff",
+          "values": {
+            "microsoft-copilot-privat": { "status": "separate", "label": "MSA-App", "note": "Private Copilot-App separat von M365 Copilot App betrachten." },
+            "m365-copilot-chat": { "status": "included", "label": "Standard angeheftet", "note": "Für die meisten berechtigten Nutzer angeheftet; Änderungen können bis 48 Stunden dauern." },
+            "m365-copilot-business": { "status": "included", "label": "Admin Center", "note": "Pinning, Integrated Apps, Teams-App und Outlook/M365-App-Zugriff steuern." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Gruppen/Policies", "note": "Komplexe Organisationen können Cloud Policy, Teams App Setup und Intune-Taskleistenpinning nutzen." },
+            "copilot-studio-teams": { "status": "partial", "label": "Teams-App", "note": "Teams App Permission/Setup Policies und Veröffentlichung kontrollieren." },
+            "copilot-studio-standalone": { "status": "included", "label": "Kanäle", "note": "Agent-Kanäle, Authentifizierung, DLP und Veröffentlichungsfreigaben im PPAC/Studio verwalten." }
+          }
+        },
+        {
+          "label": "Technische Voraussetzungen",
+          "values": {
+            "microsoft-copilot-privat": { "status": "separate", "label": "Browser/App", "note": "Consumer-App oder Browserzugang." },
+            "m365-copilot-chat": { "status": "prerequisite", "label": "Entra + berechtigte Lizenz", "note": "Arbeits-/Schulkonto und berechtigte M365-Lizenz." },
+            "m365-copilot-business": { "status": "prerequisite", "label": "Apps + Exchange Online", "note": "M365 Apps, Entra ID, primäre Exchange Online Mailbox und Datenschutzsettings." },
+            "m365-copilot-enterprise": { "status": "prerequisite", "label": "Apps/Netzwerk", "note": "M365 Apps, WSS/Endpoints, Updatekanal und Netzwerkfreigaben sicherstellen." },
+            "copilot-studio-teams": { "status": "prerequisite", "label": "Teams + Dataverse", "note": "Teams-Umgebung und Dataverse for Teams." },
+            "copilot-studio-standalone": { "status": "prerequisite", "label": "Power Platform", "note": "Umgebung, Dataverse, Connectoren, Dienste und Netzwerk freigeben." }
+          }
+        },
+        {
+          "label": "Updatekanal und Verfügbarkeit in Apps",
+          "values": {
+            "microsoft-copilot-privat": { "status": "note", "label": "Nicht relevant", "note": "Nicht an M365 Apps Updatekanäle gebunden." },
+            "m365-copilot-chat": { "status": "partial", "label": "App-abhängig", "note": "Entry Points und Labels hängen von App, Tenant und Rollout ab." },
+            "m365-copilot-business": { "status": "included", "label": "Current/Monthly", "note": "Current Channel oder Monthly Enterprise empfohlen; Anzeige kann bis 24h dauern." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Current/Monthly", "note": "Semi-Annual Enterprise Channel ist für Copilot nicht geeignet." },
+            "copilot-studio-teams": { "status": "note", "label": "Teams-App", "note": "Hängt von Teams-App- und Umgebungsbereitstellung ab." },
+            "copilot-studio-standalone": { "status": "note", "label": "Studio-Web", "note": "Moderner Browser, Studio-Dienste und Umgebungsrechte nötig." }
+          }
+        },
+        {
+          "label": "Nutzungsberichte",
+          "values": {
+            "microsoft-copilot-privat": { "status": "not_included", "label": "Nein", "note": "Kein M365 Admin Center Usage Dashboard." },
+            "m365-copilot-chat": { "status": "included", "label": "Chat Usage", "note": "Aktive Nutzer, Prompts und App-Nutzung im Admin Center auswertbar." },
+            "m365-copilot-business": { "status": "included", "label": "Usage/Readiness", "note": "Copilot Usage, Readiness und Viva Insights Dashboard für Adoption." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Analytics", "note": "Copilot Dashboard, Viva Insights, Readiness und Impact-Messung." },
+            "copilot-studio-teams": { "status": "partial", "label": "Studio/Teams", "note": "Agent- und Teams-Nutzung separat betrachten." },
+            "copilot-studio-standalone": { "status": "included", "label": "PPAC Verbrauch", "note": "Copilot Credit Verbrauch, Limits und Alerts im Power Platform Admin Center." }
+          }
+        },
+        {
+          "label": "Kostensteuerung",
+          "values": {
+            "microsoft-copilot-privat": { "status": "warning", "label": "Nicht zentral", "note": "Kein zentraler Firmenkostenpfad." },
+            "m365-copilot-chat": { "status": "included", "label": "Ohne Add-on", "note": "Chat selbst enthalten; PAYG-Agenten und Premium-Nutzung separat bewerten." },
+            "m365-copilot-business": { "status": "addon", "label": "User-Lizenz", "note": "Lizenz nur Pilot-/Zielgruppen zuweisen und Adoption messen." },
+            "m365-copilot-enterprise": { "status": "addon", "label": "User-Lizenz", "note": "Reassign, Gruppenlizenzierung, Nutzungsberichte und Value-Tracking verwenden." },
+            "copilot-studio-teams": { "status": "partial", "label": "Limits statt Credits", "note": "Nicht mit voller Studio-Kapazität verwechseln." },
+            "copilot-studio-standalone": { "status": "included", "label": "Credits/PAYG", "note": "Estimator nutzen, 10-20% Puffer planen, Alerts und Agent-Caps setzen." }
+          }
+        },
+        {
+          "label": "Rollout-Empfehlung",
+          "values": {
+            "microsoft-copilot-privat": { "status": "warning", "label": "Block/Leitplanken", "note": "Klare Regel: keine sensiblen Firmeninhalte in private KI." },
+            "m365-copilot-chat": { "status": "included", "label": "Breit starten", "note": "Als sicherer Webchat mit Schulung, Websuche-Policy und Zero-Trust-Basics." },
+            "m365-copilot-business": { "status": "included", "label": "Pilot -> Teams", "note": "High-Usage-Nutzer, Champions, Use Cases und Feedbackschleifen." },
+            "m365-copilot-enterprise": { "status": "included", "label": "Pilot -> Governance", "note": "Oversharing reduzieren, Labels, Audit, SharePoint Governance und Champions." },
+            "copilot-studio-teams": { "status": "partial", "label": "Kleine Use Cases", "note": "FAQ-/Support-Agenten in Teams, bevor komplexe Kanäle folgen." },
+            "copilot-studio-standalone": { "status": "included", "label": "Agent Factory", "note": "Intake, Review, Kostenmodell, ALM, Security Review und Lebenszyklus definieren." }
+          }
+        },
+        {
+          "label": "Häufige Stolperfallen",
+          "values": {
+            "microsoft-copilot-privat": { "status": "warning", "label": "Datenabfluss", "note": "Private KI ist nicht automatisch unter Unternehmens-DPA/EDP." },
+            "m365-copilot-chat": { "status": "warning", "label": "Mit M365 Copilot verwechselt", "note": "Webchat ist nicht automatisch voll in Arbeitsdaten geerdet." },
+            "m365-copilot-business": { "status": "warning", "label": "Oversharing", "note": "Falsche SharePoint-Berechtigungen werden sichtbarer, nicht automatisch korrigiert." },
+            "m365-copilot-enterprise": { "status": "warning", "label": "Governance unterschätzt", "note": "SAM, Purview, RSS, Labels und DLP vor breitem Rollout prüfen." },
+            "copilot-studio-teams": { "status": "warning", "label": "Falsche Erwartungen", "note": "Kein Premium, keine generative Orchestrierung, keine beliebigen Kanäle." },
+            "copilot-studio-standalone": { "status": "warning", "label": "Credits vergessen", "note": "Komplexe Agenten können mehrere Feature-Raten pro Interaktion verbrauchen." }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -29,14 +29,5 @@ final class CMS_M365MATRICES_Admin_Menu
             [$pages, 'render_dashboard'],
             '📚'
         );
-
-        add_submenu_page(
-            'm365matrices-dashboard',
-            'M365 Matrixen – Einstellungen',
-            '📚 Matrixen',
-            'manage_options',
-            'm365matrices-dashboard',
-            [$pages, 'render_dashboard']
-        );
     }
 }

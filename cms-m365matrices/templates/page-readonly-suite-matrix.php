@@ -192,7 +192,7 @@ if (class_exists('CMS\\ThemeManager')) {
                 <button type="button" class="phinit-btn phinit-btn--secondary" data-m365calc-print><?php echo $esc($printButtonLabel); ?></button>
                 <?php endif; ?>
                 <?php if ($showPrimaryCta && $primaryButtonUrl !== ''): ?>
-                <a class="phinit-btn phinit-btn--primary m365calc-matrix-primary-action" href="<?php echo $esc($primaryButtonUrl); ?>"><?php echo $esc($primaryButtonLabel); ?></a>
+                <a class="phinit-btn phinit-btn--primary m365calc-matrix-primary-action m365calc-contact-action" href="<?php echo $esc($primaryButtonUrl); ?>"><?php echo $esc($primaryButtonLabel); ?></a>
                 <?php endif; ?>
             </section>
             <?php endif; ?>

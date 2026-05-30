@@ -1,256 +1,341 @@
-:root {
-    --azs-primary: var(--phinit-color-link, #1f5fa8);
-    --azs-accent: var(--phinit-color-accent, #f5a623);
-    --azs-bg: var(--phinit-color-bg, #f8fafc);
-    --azs-surface: var(--phinit-color-surface, #ffffff);
-    --azs-radius: var(--phinit-radius-md, 10px);
-    --azs-max-width: 1180px;
-    --azs-image-width: 320px;
-}
-
 .azs-page {
-    background: var(--azs-bg);
-    color: var(--phinit-color-ink, #1a2233);
-    display: grid;
-    gap: var(--phinit-space-8, 3rem);
-    margin: 0 auto;
-    max-width: var(--azs-max-width);
-    padding: var(--phinit-space-8, 3rem) var(--phinit-space-4, 1rem);
+    max-width: var(--m365matrix-page-max-width, var(--phinit-content-wide, 1200px));
 }
 
-.azs-hero,
-.azs-toc,
-.azs-category__header,
-.azs-service-card {
-    background: var(--azs-surface);
-    border: 1px solid var(--phinit-color-border, #dde3ec);
-    border-radius: var(--azs-radius);
+.azs-page a,
+.azs-page a:hover,
+.azs-page a:focus,
+.azs-page a:active {
+    text-decoration: none;
 }
 
-.azs-hero {
-    border-left: 3px solid var(--azs-accent);
-    padding: var(--phinit-space-7, 2.5rem);
+.azs-page .m365calc-hero,
+.azs-page > .m365calc-result-card,
+.azs-page .m365calc-readonly-area,
+.azs-page .phinit-note {
+    border-color: var(--m365matrix-header-border, var(--m365tools-border, var(--phinit-color-border)));
 }
 
-.azs-overline {
-    color: var(--azs-primary);
-    margin-bottom: var(--phinit-space-2, .5rem);
+.azs-page .m365calc-result-heading .phinit-overline {
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
-.azs-hero h1,
-.azs-category h2,
-.azs-service-card h3,
-.azs-toc h2 {
-    color: var(--phinit-color-ink, #1a2233);
-    font-family: var(--phinit-font-display, system-ui, sans-serif);
-    line-height: var(--phinit-leading-tight, 1.25);
-    margin: 0;
-}
-
-.azs-hero h1 {
-    font-size: clamp(1.75rem, 4vw, 2.75rem);
-}
-
-.azs-hero__intro,
-.azs-category__header p,
-.azs-service-card__header p,
-.azs-service-card__text {
-    color: var(--phinit-color-ink-secondary, #5a6678);
-    line-height: var(--phinit-leading-body, 1.7);
-}
-
-.azs-hero__intro {
-    max-width: 68ch;
-}
-
-.azs-toc {
-    padding: var(--phinit-space-5, 1.5rem);
-}
-
-.azs-toc h2 {
-    font-size: var(--phinit-text-h3, 1.125rem);
-    margin-bottom: var(--phinit-space-4, 1rem);
-}
-
-.azs-toc__list {
-    display: grid;
-    gap: var(--phinit-space-3, .75rem);
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.azs-toc__list a {
-    align-items: center;
-    border: 1px solid var(--phinit-color-border, #dde3ec);
-    border-left: 3px solid var(--azs-accent);
-    border-radius: var(--phinit-radius-sm, 6px);
-    color: var(--phinit-color-ink, #1a2233);
+.azs-category .m365calc-result-heading {
+    align-items: flex-start;
     display: flex;
-    font-weight: 500;
-    min-height: 44px;
-    padding: var(--phinit-space-3, .75rem) var(--phinit-space-4, 1rem);
-    text-decoration: none;
-    transition: border-color .2s ease, transform .15s ease;
-    white-space: nowrap;
+    gap: var(--phinit-space-4);
+    justify-content: space-between;
 }
 
-.azs-toc__list a:hover,
-.azs-toc__list a:focus {
-    border-color: var(--azs-primary);
-    text-decoration: none;
-    transform: translateY(-1px);
+.azs-category-heading-copy {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
-.azs-category {
-    display: grid;
-    gap: var(--phinit-space-5, 1.5rem);
-    scroll-margin-top: var(--phinit-space-8, 3rem);
+.azs-category-gallery {
+    align-items: center;
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    gap: var(--phinit-space-2);
+    justify-content: flex-end;
+    margin-left: auto;
+    max-width: 22rem;
 }
 
-.azs-category__header {
-    padding: var(--phinit-space-6, 2rem);
-}
-
-.azs-category__header h2 {
-    font-size: clamp(1.35rem, 3vw, 2rem);
-}
-
-.azs-service-list {
-    display: grid;
-    gap: var(--phinit-space-5, 1.5rem);
-}
-
-.azs-service-card {
-    display: grid;
-    gap: 0;
-    grid-template-columns: minmax(180px, var(--azs-image-width)) minmax(0, 1fr);
-    overflow: hidden;
-    padding: 0;
-}
-
-.azs-page--image-right .azs-service-card {
-    grid-template-columns: minmax(0, 1fr) minmax(180px, var(--azs-image-width));
-}
-
-.azs-page--image-right .azs-service-card__media {
-    order: 2;
-}
-
-.azs-service-card--text-only {
+.azs-category-gallery__thumb {
+    aspect-ratio: 1;
+    background: var(--m365matrix-surface-bg, var(--phinit-color-surface));
+    border: 1px solid var(--m365tools-border, var(--phinit-color-border));
+    border-radius: var(--m365tools-ui-radius, 10px);
+    box-shadow: var(--m365tools-shadow-soft, 0 8px 22px rgba(15, 23, 42, .08));
     display: block;
-}
-
-.azs-service-card__media {
-    background: var(--phinit-color-surface-alt, #f1f5f9);
-    margin: 0;
-    min-height: 100%;
-}
-
-.azs-service-card__media img {
-    aspect-ratio: 16 / 9;
-    display: block;
-    height: 100%;
+    height: 3.25rem;
     object-fit: cover;
+    width: 3.25rem;
+}
+
+.azs-service-table-wrap {
+    overflow-x: auto;
+    overflow-y: visible;
+}
+
+.azs-service-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--azs-table-font-size, var(--phinit-text-sm, 0.875rem));
+    max-width: 100%;
+    min-width: 1080px;
+    table-layout: fixed;
+    width: max(100%, 1080px);
+}
+
+.azs-service-table th,
+.azs-service-table td {
+    border-bottom: 1px solid var(--m365tools-border, var(--phinit-color-border));
+    border-right: 1px solid var(--m365tools-border, var(--phinit-color-border));
+    padding: var(--phinit-space-3);
+    vertical-align: top;
+}
+
+.azs-service-table th:last-child,
+.azs-service-table td:last-child {
+    border-right: 0;
+}
+
+.azs-service-table thead th {
+    background: var(--m365matrix-surface-bg, var(--m365tools-surface-raised, var(--phinit-color-surface)));
+    position: sticky;
+    top: 0;
+    z-index: 4;
+}
+
+.azs-service-table th:first-child,
+.azs-service-table td:first-child {
+    left: 0;
+    position: sticky;
+    z-index: 3;
+}
+
+.azs-service-table thead th:first-child {
+    z-index: 5;
+}
+
+.azs-service-table tbody th,
+.azs-service-table tbody td:first-child {
+    background: var(--m365tools-surface-raised, var(--phinit-color-surface));
+}
+
+.azs-service-table tbody tr:nth-child(even) td,
+.azs-service-table tbody tr:nth-child(even) th {
+    background: color-mix(in srgb, var(--m365matrix-page-bg, var(--phinit-color-surface)) 82%, var(--m365matrix-surface-bg, var(--phinit-color-bg)));
+}
+
+.azs-service-table th:first-child {
+    min-width: 16rem;
+}
+
+.azs-service-title {
+    align-items: flex-start;
+    display: flex;
+    gap: var(--phinit-space-3);
+    min-width: 0;
     width: 100%;
 }
 
-.azs-service-card__body {
+.azs-image-position--right .azs-service-title {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
+.azs-service-title > span,
+.azs-service-cell,
+.azs-service-cell .azs-cell-copy,
+.azs-link-list {
     display: grid;
-    gap: var(--phinit-space-4, 1rem);
-    padding: var(--phinit-space-6, 2rem);
+    gap: var(--phinit-space-2);
+    min-width: 0;
 }
 
-.azs-service-card__header h3 {
-    font-size: clamp(1.15rem, 2vw, 1.5rem);
+.azs-service-title strong,
+.azs-service-title small,
+.azs-service-cell,
+.azs-cell-copy,
+.azs-cell-list,
+.azs-link-list {
+    overflow-wrap: anywhere;
 }
 
-.azs-service-card__header p,
-.azs-service-card__text {
-    margin: var(--phinit-space-2, .5rem) 0 0;
+.azs-service-title small,
+.azs-cell-copy,
+.azs-cell-list,
+.azs-cell-empty,
+.azs-service-accordion__item small,
+.azs-service-accordion__body p,
+.azs-service-accordion__body li {
+    color: var(--m365matrix-muted, var(--m365tools-muted, var(--phinit-color-ink-secondary)));
+    font-size: var(--phinit-text-sm, 0.875rem);
+    line-height: 1.5;
 }
 
-.azs-mini-section {
-    border-top: 1px solid var(--phinit-color-border, #dde3ec);
-    padding-top: var(--phinit-space-4, 1rem);
+.azs-service-icon {
+    aspect-ratio: 16 / 9;
+    border: 1px solid var(--m365tools-border, var(--phinit-color-border));
+    border-radius: var(--m365tools-ui-radius, 2px);
+    flex: 0 0 var(--azs-service-icon-width, 72px);
+    height: auto;
+    object-fit: cover;
+    width: var(--azs-service-icon-width, 72px);
 }
 
-.azs-mini-section h4 {
-    color: var(--phinit-color-ink, #1a2233);
-    font-size: var(--phinit-text-sm, .875rem);
-    font-weight: 600;
-    margin: 0 0 var(--phinit-space-2, .5rem);
-}
-
-.azs-mini-section ul {
-    display: grid;
-    gap: var(--phinit-space-2, .5rem);
+.azs-cell-list {
+    gap: var(--phinit-space-1);
+    list-style: none;
     margin: 0;
-    padding-left: var(--phinit-space-5, 1.5rem);
+    padding-left: 0;
 }
 
-.azs-mini-section li {
-    color: var(--phinit-color-ink-secondary, #5a6678);
+.azs-cell-list li {
+    margin: 0;
 }
 
-.azs-service-card__links {
+.azs-link-list {
+    align-items: flex-start;
+    justify-items: flex-start;
+    text-align: left;
+}
+
+.azs-link-list .phinit-btn {
+    font-size: var(--azs-link-font-size, var(--phinit-text-xs, 0.75rem));
+    justify-content: flex-start;
+    justify-self: start;
+    line-height: 1.35;
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    text-align: left;
+    white-space: normal;
+    width: auto;
+}
+
+.azs-link-list .phinit-btn:hover,
+.azs-link-list .phinit-btn:focus,
+.azs-link-list .phinit-btn:active {
+    text-decoration: none;
+}
+
+.azs-service-accordion {
+    display: none;
+}
+
+.azs-service-accordion__item {
+    border-left: 3px solid var(--m365matrix-primary-button-bg, var(--phinit-color-accent));
+    box-shadow: none;
+}
+
+.azs-service-accordion__item + .azs-service-accordion__item {
+    margin-top: var(--phinit-space-3);
+}
+
+.azs-service-accordion__item summary {
     align-items: center;
+    cursor: pointer;
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--phinit-space-3, .75rem);
-    padding-top: var(--phinit-space-2, .5rem);
+    gap: var(--phinit-space-3);
+    justify-content: space-between;
+    list-style: none;
+}
+
+.azs-service-accordion__item summary .azs-service-icon {
+    flex-basis: min(var(--azs-service-icon-width, 72px), 84px);
+    width: min(var(--azs-service-icon-width, 72px), 84px);
+}
+
+.azs-toc.m365calc-addon-toc--cols-1 .m365calc-addon-toc__links {
+    grid-template-columns: 1fr;
+}
+
+.azs-toc.m365calc-addon-toc--cols-2 .m365calc-addon-toc__links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.azs-toc.m365calc-addon-toc--cols-3 .m365calc-addon-toc__links {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.azs-toc.m365calc-addon-toc--cols-4 .m365calc-addon-toc__links {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.azs-service-accordion__item summary::-webkit-details-marker {
+    display: none;
+}
+
+.azs-service-accordion__item summary::after {
+    color: var(--m365matrix-primary-button-bg, var(--phinit-color-accent));
+    content: '›';
+    flex: 0 0 auto;
+    font-size: 1.25rem;
+    font-weight: 700;
+    transform: rotate(90deg);
+    transition: transform 0.16s ease;
+}
+
+.azs-service-accordion__item[open] summary::after {
+    transform: rotate(-90deg);
+}
+
+.azs-service-accordion__item strong,
+.azs-service-accordion__item small {
+    display: block;
+}
+
+.azs-service-accordion__body {
+    border-top: 1px solid var(--m365tools-border, var(--phinit-color-border));
+    display: grid;
+    gap: var(--phinit-space-4);
+    margin-top: var(--phinit-space-3);
+    padding-top: var(--phinit-space-3);
+}
+
+.azs-service-accordion__body h3 {
+    font-size: var(--phinit-text-sm, 0.875rem);
+    margin: 0 0 var(--phinit-space-1);
+}
+
+.azs-service-accordion__body p {
+    margin: 0;
 }
 
 @media (max-width: 900px) {
-    .azs-service-card,
-    .azs-page--image-right .azs-service-card {
-        grid-template-columns: 1fr;
+    .azs-service-table-wrap {
+        display: none;
     }
 
-    .azs-page--image-right .azs-service-card__media {
-        order: 0;
+    .azs-service-accordion {
+        display: block;
     }
 
-    .azs-service-card__media img {
-        height: auto;
+    .azs-toc.m365calc-addon-toc--cols-3 .m365calc-addon-toc__links,
+    .azs-toc.m365calc-addon-toc--cols-4 .m365calc-addon-toc__links {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
-@media (max-width: 640px) {
-    .azs-page {
-        gap: var(--phinit-space-6, 2rem);
-        padding: var(--phinit-space-5, 1.5rem) var(--phinit-space-3, .75rem);
+@media (max-width: 720px) {
+    .azs-category .m365calc-result-heading {
+        display: grid;
     }
 
-    .azs-hero,
-    .azs-category__header,
-    .azs-service-card__body,
-    .azs-toc {
-        padding: var(--phinit-space-4, 1rem);
+    .azs-category-gallery {
+        justify-content: flex-start;
+        margin-left: 0;
+        max-width: 100%;
     }
+}
 
-    .azs-toc__list {
+@media (max-width: 560px) {
+    .azs-toc .m365calc-addon-toc__links,
+    .azs-toc.m365calc-addon-toc--cols-2 .m365calc-addon-toc__links,
+    .azs-toc.m365calc-addon-toc--cols-3 .m365calc-addon-toc__links,
+    .azs-toc.m365calc-addon-toc--cols-4 .m365calc-addon-toc__links {
         grid-template-columns: 1fr;
     }
 
-    .azs-toc__list a {
-        white-space: normal;
+    .azs-page .m365calc-actions .phinit-btn,
+    .azs-link-list .phinit-btn {
+        width: 100%;
     }
 
-    .azs-service-card__links .phinit-btn {
-        justify-content: center;
-        width: 100%;
+    .azs-category-gallery__thumb {
+        height: 2.75rem;
+        width: 2.75rem;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .azs-toc__list a {
+    .azs-service-accordion__item summary::after {
         transition: none;
-    }
-
-    .azs-toc__list a:hover,
-    .azs-toc__list a:focus {
-        transform: none;
     }
 }

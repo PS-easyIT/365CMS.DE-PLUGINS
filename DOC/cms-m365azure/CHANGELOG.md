@@ -1,5 +1,12 @@
 # Changelog – CMS M365 Azure
 
+## 1.1.1 – 2026-05-30
+
+- Compute-Kategorie serviceweise nach offiziellen Microsoft-Quellen aktualisiert.
+- Sichtbare Tabellenbeschreibung in das gerenderte Feld `content` korrigiert.
+- Hinweise zu VM-SKUs/Kontingenten, AKS-Tiers/Upgrades, Functions-Hosting und Container-Apps-Skalierung ergänzt.
+- Typische Einsatzszenarien auf praxisnahe Admin- und Enterprise-Fälle verdichtet.
+
 ## 1.0.0 – 2026-05-30
 
 - Neues eigenständiges Plugin `cms-m365azure` erstellt.

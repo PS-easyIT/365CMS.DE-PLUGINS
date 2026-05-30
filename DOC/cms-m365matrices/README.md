@@ -6,6 +6,7 @@
 
 - `/m365-lizenzmatrix` – Vollpaket-Matrix
 - `/m365-addon-matrix` – Add-on-Matrix
+- `/m365-copilot-matrix` – Copilot-Lizenzmatrix
 
 ## Datenbasis
 
@@ -17,8 +18,11 @@ Der Adminpunkt `M365 Matrixen` enthält Tabs für:
 
 - Lizenzmatrix: Texte, CTAs und Sichtbarkeit der Vollpaket-Seite
 - Add-on-Matrix: Texte, Bereichs-Overlines, CTAs und Sichtbarkeit der Add-on-Seite
-- Inhaltsverzeichnis: Sichtbarkeit, Überschrift, Spaltenzahl, Textgröße und einzeilige Darstellung der Add-on-Sprungnavigation
+- Copilot-Matrix: Texte, Bereichs-Overlines, CTAs und Sichtbarkeit der Copilot-Seite
+- Inhaltsverzeichnis: Sichtbarkeit, Überschrift, Spaltenzahl, Textgröße und einzeilige Darstellung der Matrix-Sprungnavigationen
 - Design: Außenlayout, Breiten, Abstände, Farben und globale Sichtbarkeitsdefaults
+
+Die Copilot-Matrix besitzt zusätzlich eigene Design-Overrides für Header-Stil, Ausrichtung, Buttonlayout, Breiten, Abstände, Farben und Inhaltsverzeichnis. In der Admin-Übersicht gibt es für jede Publicseite eine Schnelllink-Karte zum Öffnen und Bearbeiten.
 
 ## Kompatibilität
 

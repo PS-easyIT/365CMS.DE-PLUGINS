@@ -41,6 +41,7 @@ final class CMS_M365Azure_Admin_Pages
         }
         self::enqueue_admin_assets();
 
+        echo '<div class="azs-admin-shell">';
         self::render_header($section, $notice, $error);
         self::render_nav($section);
 
@@ -51,8 +52,10 @@ final class CMS_M365Azure_Admin_Pages
             'system' => self::render_system($repo),
             default => self::render_dashboard($repo),
         };
+        echo '</div>';
 
         self::render_delete_modal();
+        self::render_media_picker_modal();
         self::enqueue_admin_scripts();
         if (function_exists('renderAdminLayoutEnd')) {
             renderAdminLayoutEnd();
@@ -98,38 +101,103 @@ final class CMS_M365Azure_Admin_Pages
     /** @return array<string,string> */
     private static function collect_settings(): array
     {
-        $keys = [
-            'route_slug', 'page_title', 'page_overline', 'page_intro', 'seo_title', 'seo_description',
-            'toc_title', 'card_image_position', 'layout_max_width', 'card_image_width',
-            'design_primary_color', 'design_accent_color', 'design_background_color', 'design_surface_color', 'design_border_radius',
-        ];
         $settings = [];
-        foreach ($keys as $key) {
+        foreach (self::text_setting_keys() as $key) {
             $value = (string) ($_POST[$key] ?? '');
-            if (str_ends_with($key, '_color')) {
-                $settings[$key] = CMS_M365Azure_Repository::color($value, (string) ($_POST[$key . '_fallback'] ?? '#ffffff'));
-                continue;
-            }
             if ($key === 'route_slug') {
                 $settings[$key] = CMS_M365Azure_Repository::slug($value);
                 continue;
             }
-            if (in_array($key, ['layout_max_width', 'card_image_width', 'design_border_radius'], true)) {
-                $settings[$key] = (string) max(0, (int) $value);
+
+            if (str_ends_with($key, '_url')) {
+                $settings[$key] = CMS_M365Azure_Repository::public_url($value);
                 continue;
             }
-            if ($key === 'card_image_position') {
-                $settings[$key] = in_array($value, ['left', 'right'], true) ? $value : 'left';
-                continue;
-            }
+
             $settings[$key] = CMS_M365Azure_Repository::long_text($value);
         }
 
-        foreach (['show_hero', 'show_toc', 'show_category_intro', 'show_service_images', 'show_service_links', 'show_feature_lists', 'show_use_cases'] as $boolKey) {
+        foreach (self::color_setting_defaults() as $key => $fallback) {
+            $settings[$key] = CMS_M365Azure_Repository::color((string) ($_POST[$key] ?? ''), $fallback);
+        }
+
+        foreach (self::numeric_setting_bounds() as $key => [$min, $max]) {
+            $value = (int) ($_POST[$key] ?? $min);
+            if ($key === 'card_image_width' && $value > $max) {
+                $value = 72;
+            }
+            $settings[$key] = (string) max($min, min($max, $value));
+        }
+
+        foreach (self::enum_setting_options() as $key => $options) {
+            $value = (string) ($_POST[$key] ?? '');
+            $settings[$key] = in_array($value, $options, true) ? $value : (string) $options[0];
+        }
+
+        foreach (self::bool_setting_keys() as $boolKey) {
             $settings[$boolKey] = !empty($_POST[$boolKey]) ? '1' : '0';
         }
 
         return $settings;
+    }
+
+    /** @return array<int,string> */
+    private static function text_setting_keys(): array
+    {
+        return [
+            'route_slug', 'page_title', 'page_overline', 'page_intro', 'seo_title', 'seo_description',
+            'hero_primary_button_text', 'hero_primary_button_url', 'hero_secondary_button_text', 'hero_secondary_button_url', 'hero_cta_button_text', 'hero_cta_button_url',
+            'toc_title', 'table_service_label', 'table_description_label', 'table_features_label', 'table_use_cases_label', 'table_links_label',
+            'docs_link_label', 'pricing_link_label', 'empty_value_label', 'note_title', 'note_items', 'source_title', 'source_intro', 'source_details_label',
+        ];
+    }
+
+    /** @return array<int,string> */
+    private static function bool_setting_keys(): array
+    {
+        return [
+            'show_hero', 'show_hero_actions', 'show_toc', 'toc_nowrap', 'show_category_intro',
+            'show_service_images', 'show_service_subtitles', 'show_description', 'show_service_links', 'show_feature_lists', 'show_use_cases',
+            'show_notes_section', 'show_info_note', 'show_sources_card',
+        ];
+    }
+
+    /** @return array<string,string> */
+    private static function color_setting_defaults(): array
+    {
+        return [
+            'design_primary_color' => '#2563eb',
+            'design_accent_color' => '#f59e0b',
+            'design_background_color' => '#ffffff',
+            'design_surface_color' => '#ffffff',
+            'design_text_color' => '#1e293b',
+            'design_muted_color' => '#64748b',
+            'design_border_color' => '#e2e8f0',
+        ];
+    }
+
+    /** @return array<string,array{0:int,1:int}> */
+    private static function numeric_setting_bounds(): array
+    {
+        return [
+            'layout_max_width' => [720, 1800],
+            'layout_padding_x' => [0, 80],
+            'layout_padding_top' => [0, 120],
+            'card_image_width' => [40, 160],
+            'design_border_radius' => [0, 32],
+            'design_toc_font_size' => [10, 18],
+            'design_table_font_size' => [11, 18],
+            'design_link_font_size' => [10, 16],
+        ];
+    }
+
+    /** @return array<string,array<int,string>> */
+    private static function enum_setting_options(): array
+    {
+        return [
+            'card_image_position' => ['left', 'right'],
+            'toc_columns' => ['1', '2', '3', '4'],
+        ];
     }
 
     private static function render_header(string $section, string $notice, string $error): void
@@ -179,10 +247,11 @@ final class CMS_M365Azure_Admin_Pages
         $token = self::csrf();
         echo '<div class="admin-card azs-card-connected"><h3>🗂️ Kategorien verwalten</h3>';
         self::render_category_form($edit, $token);
-        echo '<hr class="azs-separator"><div class="users-table-container"><table class="users-table"><thead><tr><th>Titel</th><th>Slug</th><th>Status</th><th>Sortierung</th><th>Aktionen</th></tr></thead><tbody>';
+        echo '<hr class="azs-separator"><div class="users-table-container"><table class="users-table"><thead><tr><th>Titel</th><th>Slug</th><th>Status</th><th>Bilder</th><th>Sortierung</th><th>Aktionen</th></tr></thead><tbody>';
         foreach ($repo->categories(false) as $cat) {
             $name = (string) $cat['title'];
-            echo '<tr><td><strong>' . self::esc($name) . '</strong></td><td><code>' . self::esc((string) $cat['slug']) . '</code></td><td>' . self::status((int) $cat['is_active'] === 1) . '</td><td>' . (int) $cat['sort_order'] . '</td><td><div class="azs-actions"><a class="btn btn-sm btn-secondary" href="' . self::esc(self::admin_url('categories', ['edit' => (int) $cat['id']])) . '">✏️</a><button type="button" class="btn btn-sm btn-danger" data-delete-entity="category" data-delete-id="' . (int) $cat['id'] . '" data-delete-name="' . self::esc($name) . '">🗑️</button></div></td></tr>';
+            $galleryCount = count(CMS_M365Azure_Repository::gallery_images_list($cat['gallery_images'] ?? ''));
+            echo '<tr><td><strong>' . self::esc($name) . '</strong></td><td><code>' . self::esc((string) $cat['slug']) . '</code></td><td>' . self::status((int) $cat['is_active'] === 1) . '</td><td>' . ($galleryCount > 0 ? '🖼️ ' . (int) $galleryCount : '—') . '</td><td>' . (int) $cat['sort_order'] . '</td><td><div class="azs-actions"><a class="btn btn-sm btn-secondary" href="' . self::esc(self::admin_url('categories', ['edit' => (int) $cat['id']])) . '">✏️</a><button type="button" class="btn btn-sm btn-danger" data-delete-entity="category" data-delete-id="' . (int) $cat['id'] . '" data-delete-name="' . self::esc($name) . '">🗑️</button></div></td></tr>';
         }
         echo '</tbody></table></div></div>';
     }
@@ -196,6 +265,7 @@ final class CMS_M365Azure_Admin_Pages
         self::input('overline', 'Overline', (string) ($edit['overline'] ?? 'Azure Kategorie'), false);
         self::number('sort_order', 'Sortierung', (int) ($edit['sort_order'] ?? 100));
         self::textarea('intro', 'Beschreibung', (string) ($edit['intro'] ?? ''), 3);
+        self::render_category_gallery_field(CMS_M365Azure_Repository::gallery_images_list($edit['gallery_images'] ?? ''));
         self::checkbox('is_active', 'Kategorie aktiv anzeigen', (int) ($edit['is_active'] ?? 1) === 1);
         echo '<div class="azs-form-actions"><button class="btn btn-primary" type="submit">💾 Kategorie speichern</button></div></form>';
     }
@@ -245,18 +315,37 @@ final class CMS_M365Azure_Admin_Pages
     private static function render_settings(CMS_M365Azure_Repository $repo): void
     {
         $s = $repo->settings();
-        $tab = in_array((string) ($_GET['tab'] ?? 'content'), ['content', 'toc', 'cards', 'design'], true) ? (string) ($_GET['tab'] ?? 'content') : 'content';
-        $tabs = ['content' => '📝 Inhalte', 'toc' => '🧭 Inhaltsverzeichnis', 'cards' => '🃏 Cards', 'design' => '🎨 Design'];
+        $allowedTabs = ['content', 'hero', 'table', 'visibility', 'toc', 'cards', 'notes', 'design'];
+        $tab = in_array((string) ($_GET['tab'] ?? 'content'), $allowedTabs, true) ? (string) ($_GET['tab'] ?? 'content') : 'content';
+        $tabs = [
+            'content' => '📝 Inhalte',
+            'hero' => '🔗 Hero-Buttons',
+            'table' => '🏷️ Tabellen-Texte',
+            'visibility' => '👁️ Sichtbarkeit',
+            'toc' => '🧭 Inhaltsverzeichnis',
+            'cards' => '🃏 Cards',
+            'notes' => 'ℹ️ Hinweise',
+            'design' => '🎨 Design',
+        ];
         echo '<div class="azs-subtabs">';
         foreach ($tabs as $key => $label) {
             $active = $tab === $key ? ' active' : '';
             echo '<a class="azs-subtab' . $active . '" href="' . self::esc(self::admin_url('settings', ['tab' => $key])) . '">' . self::esc($label) . '</a>';
         }
         echo '</div><div class="admin-card azs-card-connected"><form method="POST" class="admin-form"><input type="hidden" name="action" value="save_settings"><input type="hidden" name="csrf_token" value="' . self::esc(self::csrf()) . '">';
-        foreach (['show_hero', 'show_toc', 'show_category_intro', 'show_service_images', 'show_service_links', 'show_feature_lists', 'show_use_cases'] as $boolKey) {
+        foreach (self::bool_setting_keys() as $boolKey) {
             echo '<input type="hidden" name="' . self::esc($boolKey) . '" value="' . self::esc((string) ($s[$boolKey] ?? '0')) . '">';
         }
-        foreach (['route_slug', 'page_title', 'page_overline', 'page_intro', 'seo_title', 'seo_description', 'toc_title', 'card_image_position', 'layout_max_width', 'card_image_width', 'design_primary_color', 'design_accent_color', 'design_background_color', 'design_surface_color', 'design_border_radius'] as $hiddenKey) {
+        foreach (self::text_setting_keys() as $hiddenKey) {
+            echo '<input type="hidden" name="' . self::esc($hiddenKey) . '" value="' . self::esc((string) ($s[$hiddenKey] ?? '')) . '">';
+        }
+        foreach (array_keys(self::color_setting_defaults()) as $hiddenKey) {
+            echo '<input type="hidden" name="' . self::esc($hiddenKey) . '" value="' . self::esc((string) ($s[$hiddenKey] ?? '')) . '">';
+        }
+        foreach (array_keys(self::numeric_setting_bounds()) as $hiddenKey) {
+            echo '<input type="hidden" name="' . self::esc($hiddenKey) . '" value="' . self::esc((string) ($s[$hiddenKey] ?? '')) . '">';
+        }
+        foreach (array_keys(self::enum_setting_options()) as $hiddenKey) {
             echo '<input type="hidden" name="' . self::esc($hiddenKey) . '" value="' . self::esc((string) ($s[$hiddenKey] ?? '')) . '">';
         }
         if ($tab === 'content') {
@@ -267,28 +356,83 @@ final class CMS_M365Azure_Admin_Pages
             self::replace_textarea('page_intro', 'Einleitung', (string) ($s['page_intro'] ?? ''), 4);
             self::replace_input('seo_title', 'SEO-Titel', (string) ($s['seo_title'] ?? ''));
             self::replace_textarea('seo_description', 'SEO-Beschreibung', (string) ($s['seo_description'] ?? ''), 3);
+        } elseif ($tab === 'hero') {
+            echo '<h3>🔗 Hero-Buttons</h3>';
             self::replace_checkbox('show_hero', 'Headerbereich anzeigen', (string) ($s['show_hero'] ?? '1') === '1');
+            self::replace_checkbox('show_hero_actions', 'Hero-Buttons anzeigen', (string) ($s['show_hero_actions'] ?? '1') === '1');
+            self::replace_input('hero_primary_button_text', 'Button 1 Text', (string) ($s['hero_primary_button_text'] ?? 'M365 Lizenzmatrix öffnen'));
+            self::replace_input('hero_primary_button_url', 'Button 1 Ziel', (string) ($s['hero_primary_button_url'] ?? '/m365-lizenzmatrix'));
+            self::replace_input('hero_secondary_button_text', 'Button 2 Text', (string) ($s['hero_secondary_button_text'] ?? 'M365 AddOn-Übersicht öffnen'));
+            self::replace_input('hero_secondary_button_url', 'Button 2 Ziel', (string) ($s['hero_secondary_button_url'] ?? '/m365-addon-matrix'));
+            self::replace_input('hero_cta_button_text', 'CTA Button Text', (string) ($s['hero_cta_button_text'] ?? 'Azure-Beratung anfragen'));
+            self::replace_input('hero_cta_button_url', 'CTA Button Ziel', (string) ($s['hero_cta_button_url'] ?? '/kontakt'));
+        } elseif ($tab === 'table') {
+            echo '<h3>🏷️ Tabellen- und Link-Texte</h3>';
+            self::replace_input('table_service_label', 'Spalte: Dienst', (string) ($s['table_service_label'] ?? 'Dienst'));
+            self::replace_input('table_description_label', 'Spalte: Beschreibung', (string) ($s['table_description_label'] ?? 'Beschreibung'));
+            self::replace_input('table_features_label', 'Spalte: Wichtige Hinweise', (string) ($s['table_features_label'] ?? 'Wichtige Hinweise'));
+            self::replace_input('table_use_cases_label', 'Spalte: Typische Einsatzszenarien', (string) ($s['table_use_cases_label'] ?? 'Typische Einsatzszenarien'));
+            self::replace_input('table_links_label', 'Spalte: Links', (string) ($s['table_links_label'] ?? 'Links'));
+            self::replace_input('docs_link_label', 'Dokumentations-Link Text', (string) ($s['docs_link_label'] ?? 'Dokumentation'));
+            self::replace_input('pricing_link_label', 'Preis-Link Text', (string) ($s['pricing_link_label'] ?? 'Preise'));
+            self::replace_input('empty_value_label', 'Text für leere Werte', (string) ($s['empty_value_label'] ?? '—'));
+        } elseif ($tab === 'visibility') {
+            echo '<h3>👁️ Sichtbarkeit</h3>';
+            self::replace_checkbox('show_hero', 'Headerbereich anzeigen', (string) ($s['show_hero'] ?? '1') === '1');
+            self::replace_checkbox('show_hero_actions', 'Hero-Buttons anzeigen', (string) ($s['show_hero_actions'] ?? '1') === '1');
+            self::replace_checkbox('show_toc', 'Inhaltsverzeichnis anzeigen', (string) ($s['show_toc'] ?? '1') === '1');
+            self::replace_checkbox('show_category_intro', 'Kategorie-Beschreibungen anzeigen', (string) ($s['show_category_intro'] ?? '1') === '1');
+            self::replace_checkbox('show_service_images', 'Service-Bilder anzeigen', (string) ($s['show_service_images'] ?? '1') === '1');
+            self::replace_checkbox('show_service_subtitles', 'Service-Kurzzeilen anzeigen', (string) ($s['show_service_subtitles'] ?? '1') === '1');
+            self::replace_checkbox('show_description', 'Beschreibungsspalte anzeigen', (string) ($s['show_description'] ?? '1') === '1');
+            self::replace_checkbox('show_feature_lists', 'Wichtige Hinweise anzeigen', (string) ($s['show_feature_lists'] ?? '1') === '1');
+            self::replace_checkbox('show_use_cases', 'Einsatzszenarien anzeigen', (string) ($s['show_use_cases'] ?? '1') === '1');
+            self::replace_checkbox('show_service_links', 'Dokumentations-/Preislinks anzeigen', (string) ($s['show_service_links'] ?? '1') === '1');
+            self::replace_checkbox('show_notes_section', 'Hinweis-/Quellenbereich anzeigen', (string) ($s['show_notes_section'] ?? '1') === '1');
+            self::replace_checkbox('show_info_note', 'Hinweisbox anzeigen', (string) ($s['show_info_note'] ?? '1') === '1');
+            self::replace_checkbox('show_sources_card', 'Quellenbox anzeigen', (string) ($s['show_sources_card'] ?? '1') === '1');
         } elseif ($tab === 'toc') {
             echo '<h3>🧭 Inhaltsverzeichnis</h3>';
             self::replace_checkbox('show_toc', 'Inhaltsverzeichnis anzeigen', (string) ($s['show_toc'] ?? '1') === '1');
             self::replace_input('toc_title', 'Überschrift', (string) ($s['toc_title'] ?? 'Inhaltsverzeichnis'));
             self::replace_checkbox('show_category_intro', 'Kategorie-Beschreibungen anzeigen', (string) ($s['show_category_intro'] ?? '1') === '1');
+            self::replace_select('toc_columns', 'Maximale Spalten', (string) ($s['toc_columns'] ?? '3'), ['1' => '1 Spalte', '2' => '2 Spalten', '3' => '3 Spalten', '4' => '4 Spalten']);
+            self::replace_checkbox('toc_nowrap', 'Einträge einzeilig halten', (string) ($s['toc_nowrap'] ?? '1') === '1');
         } elseif ($tab === 'cards') {
             echo '<h3>🃏 Card-Layout</h3>';
             self::replace_checkbox('show_service_images', 'Service-Bilder anzeigen', (string) ($s['show_service_images'] ?? '1') === '1');
+            self::replace_checkbox('show_service_subtitles', 'Service-Kurzzeilen anzeigen', (string) ($s['show_service_subtitles'] ?? '1') === '1');
             self::replace_checkbox('show_service_links', 'Dokumentations-/Preislinks anzeigen', (string) ($s['show_service_links'] ?? '1') === '1');
             self::replace_checkbox('show_feature_lists', 'Feature-Listen anzeigen', (string) ($s['show_feature_lists'] ?? '1') === '1');
             self::replace_checkbox('show_use_cases', 'Einsatzbereiche anzeigen', (string) ($s['show_use_cases'] ?? '1') === '1');
-            echo '<div class="form-group"><label class="form-label" for="card_image_position">Bildposition</label><select class="form-control" id="card_image_position" name="card_image_position"><option value="left"' . (((string) ($s['card_image_position'] ?? 'left')) === 'left' ? ' selected' : '') . '>Links</option><option value="right"' . (((string) ($s['card_image_position'] ?? 'left')) === 'right' ? ' selected' : '') . '>Rechts</option></select></div>';
-            self::replace_number('card_image_width', 'Bildbreite in px', (int) ($s['card_image_width'] ?? 320), 180, 520);
+            self::replace_select('card_image_position', 'Bildposition', (string) ($s['card_image_position'] ?? 'left'), ['left' => 'Links', 'right' => 'Rechts']);
+            self::replace_number('card_image_width', 'Bildbreite in px', (int) ($s['card_image_width'] ?? 72), 40, 160);
+        } elseif ($tab === 'notes') {
+            echo '<h3>ℹ️ Hinweise & Quellen</h3>';
+            self::replace_checkbox('show_notes_section', 'Hinweis-/Quellenbereich anzeigen', (string) ($s['show_notes_section'] ?? '1') === '1');
+            self::replace_checkbox('show_info_note', 'Hinweisbox anzeigen', (string) ($s['show_info_note'] ?? '1') === '1');
+            self::replace_input('note_title', 'Hinweisbox Überschrift', (string) ($s['note_title'] ?? 'Hinweise zu Azure Services'));
+            self::replace_textarea('note_items', 'Hinweise – je Zeile ein Punkt', (string) ($s['note_items'] ?? ''), 4);
+            self::replace_checkbox('show_sources_card', 'Quellenbox anzeigen', (string) ($s['show_sources_card'] ?? '1') === '1');
+            self::replace_input('source_title', 'Quellenbox Überschrift', (string) ($s['source_title'] ?? 'Quellenstand'));
+            self::replace_textarea('source_intro', 'Quellenbox Text', (string) ($s['source_intro'] ?? ''), 3);
+            self::replace_input('source_details_label', 'Details-Link Text', (string) ($s['source_details_label'] ?? 'Quellen anzeigen'));
         } else {
             echo '<h3>🎨 Design</h3>';
             self::replace_number('layout_max_width', 'Maximale Inhaltsbreite in px', (int) ($s['layout_max_width'] ?? 1180), 720, 1600);
+            self::replace_number('layout_padding_x', 'Seitlicher Innenabstand in px', (int) ($s['layout_padding_x'] ?? 0), 0, 80);
+            self::replace_number('layout_padding_top', 'Oberer Innenabstand in px', (int) ($s['layout_padding_top'] ?? 25), 0, 120);
             self::replace_color('design_primary_color', 'Primärfarbe', (string) ($s['design_primary_color'] ?? '#2563eb'), '#2563eb');
             self::replace_color('design_accent_color', 'Akzentfarbe', (string) ($s['design_accent_color'] ?? '#f59e0b'), '#f59e0b');
             self::replace_color('design_background_color', 'Seitenhintergrund', (string) ($s['design_background_color'] ?? '#ffffff'), '#ffffff');
             self::replace_color('design_surface_color', 'Card-Hintergrund', (string) ($s['design_surface_color'] ?? '#ffffff'), '#ffffff');
-            self::replace_number('design_border_radius', 'Card-Radius in px', (int) ($s['design_border_radius'] ?? 10), 0, 24);
+            self::replace_color('design_text_color', 'Textfarbe', (string) ($s['design_text_color'] ?? '#1e293b'), '#1e293b');
+            self::replace_color('design_muted_color', 'Sekundärtext', (string) ($s['design_muted_color'] ?? '#64748b'), '#64748b');
+            self::replace_color('design_border_color', 'Rahmenfarbe', (string) ($s['design_border_color'] ?? '#e2e8f0'), '#e2e8f0');
+            self::replace_number('design_border_radius', 'Card-Radius in px', (int) ($s['design_border_radius'] ?? 10), 0, 32);
+            self::replace_number('design_toc_font_size', 'TOC-Schriftgröße in px', (int) ($s['design_toc_font_size'] ?? 13), 10, 18);
+            self::replace_number('design_table_font_size', 'Tabellen-Schriftgröße in px', (int) ($s['design_table_font_size'] ?? 14), 11, 18);
+            self::replace_number('design_link_font_size', 'Link-Schriftgröße in px', (int) ($s['design_link_font_size'] ?? 12), 10, 16);
         }
         echo '<button class="btn btn-primary" type="submit">💾 Einstellungen speichern</button></form></div>';
     }
@@ -304,6 +448,47 @@ final class CMS_M365Azure_Admin_Pages
         echo '<div id="azsDeleteModal" class="modal" style="display:none;"><div class="modal-content" style="max-width:480px;"><div class="modal-header"><h3>🗑️ Eintrag löschen</h3><button class="modal-close" type="button" data-azs-close>&times;</button></div><div class="modal-body"><p>Soll <strong id="azsDeleteName"></strong> wirklich gelöscht werden?</p><p style="color:#ef4444;font-size:.875rem;">⚠️ Diese Aktion kann nicht rückgängig gemacht werden.</p></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-azs-close>Abbrechen</button><form method="POST" id="azsDeleteForm"><input type="hidden" name="csrf_token" value="' . self::esc(self::csrf()) . '"><input type="hidden" name="action" id="azsDeleteAction"><input type="hidden" name="id" id="azsDeleteId"><button class="btn btn-danger" type="submit">🗑️ Endgültig löschen</button></form></div></div></div>';
     }
 
+    private static function render_media_picker_modal(): void
+    {
+        $token = class_exists('CMS\\Security') ? \CMS\Security::instance()->generateToken('editorjs_media') : '';
+
+        echo '<div class="modal modal-blur fade" id="settingsMediaPickerModal" tabindex="-1" aria-hidden="true">';
+        echo '<div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content">';
+        echo '<div class="modal-header"><h5 class="modal-title" data-media-picker-title>Bild auswählen</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button></div>';
+        echo '<div class="modal-body"><div data-media-picker-modal data-api-url="/api/media" data-csrf-token="' . self::esc($token) . '">';
+        echo '<p class="text-secondary small mb-3">Ein Klick übernimmt das Bild direkt in den gewählten Galerie-Slot.</p>';
+        echo '<div class="row g-2 align-items-center mb-3"><div class="col-md-8"><input type="search" class="form-control" placeholder="Mediathek durchsuchen …" data-media-picker-search></div><div class="col-md-4 text-secondary small" data-media-picker-status>Lade Medien …</div></div>';
+        echo '<div class="row row-cards g-3" data-media-picker-grid></div>';
+        echo '</div></div></div></div></div>';
+    }
+
+    /** @param array<int,string> $images */
+    private static function render_category_gallery_field(array $images): void
+    {
+        echo '<section class="form-group azs-wide azs-gallery-admin" aria-label="Kategorie-Bilder">';
+        echo '<label class="form-label">Kategorie-Galerie</label>';
+        echo '<p class="form-text">Bis zu 6 Bilder aus der Mediathek auswählen. Leere Slots werden öffentlich nicht angezeigt.</p>';
+        echo '<div class="azs-gallery-admin__grid">';
+        for ($i = 0; $i < 6; $i++) {
+            $value = (string) ($images[$i] ?? '');
+            $inputId = 'category_gallery_image_' . $i;
+            $previewId = $inputId . '_preview';
+            echo '<article class="azs-gallery-admin__slot">';
+            echo '<div id="' . self::esc($previewId) . '" class="azs-gallery-admin__preview" data-media-preview data-preview-variant="image" data-input-id="' . self::esc($inputId) . '"' . ($value === '' ? ' hidden' : '') . '>';
+            if ($value !== '') {
+                echo '<img src="' . self::esc($value) . '" alt="Galerie-Bild ' . (int) ($i + 1) . ' Vorschau" loading="lazy">';
+            }
+            echo '</div>';
+            echo '<label class="azs-visually-hidden" for="' . self::esc($inputId) . '">Galerie-Bild ' . (int) ($i + 1) . '</label>';
+            echo '<input class="form-control" type="text" id="' . self::esc($inputId) . '" name="gallery_images[]" value="' . self::esc($value) . '" placeholder="/uploads/bild.webp" data-media-target-input data-azs-gallery-input>';
+            echo '<div class="azs-gallery-admin__actions">';
+            echo '<button type="button" class="btn btn-secondary btn-sm" data-open-media-picker data-target-input="' . self::esc($inputId) . '" data-preview-id="' . self::esc($previewId) . '" data-picker-title="Galerie-Bild ' . (int) ($i + 1) . ' auswählen">🖼️ Mediathek</button>';
+            echo '<button type="button" class="btn btn-secondary btn-sm" data-clear-media-input data-target-input="' . self::esc($inputId) . '" data-preview-id="' . self::esc($previewId) . '">Leeren</button>';
+            echo '</div></article>';
+        }
+        echo '</div></section>';
+    }
+
     private static function input(string $name, string $label, string $value, bool $required): void
     {
         echo '<div class="form-group"><label class="form-label" for="' . self::esc($name) . '">' . self::esc($label) . '</label><input class="form-control" type="text" id="' . self::esc($name) . '" name="' . self::esc($name) . '" value="' . self::esc($value) . '"' . ($required ? ' required' : '') . '></div>';
@@ -317,6 +502,7 @@ final class CMS_M365Azure_Admin_Pages
 
     private static function textarea(string $name, string $label, string $value, int $rows): void
     {
+        $value = CMS_M365Azure_Repository::normalize_newlines($value);
         echo '<div class="form-group azs-wide"><label class="form-label" for="' . self::esc($name) . '">' . self::esc($label) . '</label><textarea class="form-control" id="' . self::esc($name) . '" name="' . self::esc($name) . '" rows="' . (int) $rows . '">' . self::esc($value) . '</textarea></div>';
     }
 
@@ -334,6 +520,17 @@ final class CMS_M365Azure_Admin_Pages
     private static function replace_number(string $name, string $label, int $value, int $min, int $max): void
     {
         echo '<div class="form-group"><label class="form-label" for="' . self::esc($name) . '">' . self::esc($label) . '</label><input class="form-control" type="number" min="' . (int) $min . '" max="' . (int) $max . '" id="' . self::esc($name) . '" name="' . self::esc($name) . '" value="' . (int) $value . '"></div>';
+    }
+
+    /** @param array<string,string> $options */
+    private static function replace_select(string $name, string $label, string $value, array $options): void
+    {
+        echo '<div class="form-group"><label class="form-label" for="' . self::esc($name) . '">' . self::esc($label) . '</label><select class="form-control" id="' . self::esc($name) . '" name="' . self::esc($name) . '">';
+        foreach ($options as $optionValue => $optionLabel) {
+            $selected = $value === $optionValue ? ' selected' : '';
+            echo '<option value="' . self::esc($optionValue) . '"' . $selected . '>' . self::esc($optionLabel) . '</option>';
+        }
+        echo '</select></div>';
     }
 
     private static function checkbox(string $name, string $label, bool $checked): void
@@ -389,10 +586,26 @@ final class CMS_M365Azure_Admin_Pages
 
     private static function enqueue_admin_scripts(): void
     {
+        $scripts = [];
         $js = CMS_M365AZURE_PLUGIN_DIR . 'assets/js/m365azure-admin.js';
         if (file_exists($js)) {
-            echo '<script src="' . self::esc(CMS_M365AZURE_PLUGIN_URL . 'assets/js/m365azure-admin.js') . '?v=' . filemtime($js) . '" defer></script>' . "\n";
+            $scripts[] = CMS_M365AZURE_PLUGIN_URL . 'assets/js/m365azure-admin.js?v=' . filemtime($js);
         }
+
+        $scripts[] = self::core_asset_url('js/admin-media-integrations.js');
+
+        foreach (array_unique(array_filter($scripts)) as $src) {
+            echo '<script src="' . self::esc((string) $src) . '" defer></script>' . "\n";
+        }
+    }
+
+    private static function core_asset_url(string $asset): string
+    {
+        if (function_exists('cms_asset_url')) {
+            return (string) cms_asset_url($asset);
+        }
+
+        return rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/') . '/assets/' . ltrim($asset, '/');
     }
 
     private static function admin_url(string $section = 'dashboard', array $params = []): string

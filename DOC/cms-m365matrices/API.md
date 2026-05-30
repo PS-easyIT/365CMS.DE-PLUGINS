@@ -32,6 +32,7 @@ Lädt die lokalen Matrix-JSON-Dateien und normalisiert sie für die Public-Templ
 
 - `suite_matrix(): array`
 - `addon_matrix(): array`
+- `copilot_matrix(): array`
 
 ## `CMS_M365MATRICES_Installer`
 
@@ -47,6 +48,7 @@ Registriert und rendert die Public-Matrixseiten.
 - `register_routes(): void`
 - `render_suite_matrix(): void`
 - `render_addon_matrix(): void`
+- `render_copilot_matrix(): void`
 - `enqueue_public_styles(): void`
 - `output_public_design_tokens(): void`
 

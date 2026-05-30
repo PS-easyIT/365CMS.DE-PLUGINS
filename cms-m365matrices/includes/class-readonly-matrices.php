@@ -35,6 +35,14 @@ final class CMS_M365MATRICES_ReadOnly_Matrices
     /**
      * @return array<string,mixed>
      */
+    public static function copilot_matrix(): array
+    {
+        return self::normalize_addon_matrix(self::load_json('readonly_copilot_matrix.json'));
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
     private static function load_json(string $file): array
     {
         $file = basename($file);

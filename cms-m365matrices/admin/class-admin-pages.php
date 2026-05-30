@@ -83,6 +83,7 @@ final class CMS_M365MATRICES_Admin_Pages
         $tabs = [
             'matrix-suite' => '📊 Lizenzmatrix',
             'matrix-addon' => '➕ Add-on-Matrix',
+            'matrix-copilot' => '🤖 Copilot-Matrix',
             'matrix-toc' => '🧭 Inhaltsverzeichnis',
             'matrix-design' => '🎨 Design',
         ];
@@ -109,16 +110,44 @@ final class CMS_M365MATRICES_Admin_Pages
         $options = class_exists('CMS_M365MATRICES_Settings') ? CMS_M365MATRICES_Settings::global_options($activeTab) : [];
         $suiteStats = class_exists('CMS_M365MATRICES_ReadOnly_Matrices') ? CMS_M365MATRICES_ReadOnly_Matrices::suite_matrix()['counts'] ?? [] : [];
         $addonStats = class_exists('CMS_M365MATRICES_ReadOnly_Matrices') ? CMS_M365MATRICES_ReadOnly_Matrices::addon_matrix()['counts'] ?? [] : [];
+        $copilotStats = class_exists('CMS_M365MATRICES_ReadOnly_Matrices') ? CMS_M365MATRICES_ReadOnly_Matrices::copilot_matrix()['counts'] ?? [] : [];
         $csrfToken = self::generate_nonce('m365matrices_' . $activeTab);
+        $publicPages = [
+            [
+                'icon' => '📊',
+                'title' => 'Lizenzmatrix',
+                'description' => 'Microsoft-365-Vollpakete, Apps, Security und Compliance vergleichen.',
+                'route' => '/m365-lizenzmatrix',
+                'tab' => 'matrix-suite',
+                'stat' => (string) (int) ($suiteStats['rows'] ?? 0) . ' Zeilen',
+            ],
+            [
+                'icon' => '➕',
+                'title' => 'Add-on-Matrix',
+                'description' => 'Add-ons nach Bereichen mit Voraussetzungen und Kaufgründen darstellen.',
+                'route' => '/m365-addon-matrix',
+                'tab' => 'matrix-addon',
+                'stat' => (string) (int) ($addonStats['areas'] ?? 0) . ' Bereiche',
+            ],
+            [
+                'icon' => '🤖',
+                'title' => 'Copilot-Matrix',
+                'description' => 'Copilot-Lizenzen, Agents, Studio, Datenschutz und Kontingente steuern.',
+                'route' => '/m365-copilot-matrix',
+                'tab' => 'matrix-copilot',
+                'stat' => (string) (int) ($copilotStats['rows'] ?? 0) . ' Zeilen',
+            ],
+        ];
         ?>
         <div class="admin-page-header">
             <div>
                 <h2>📚 M365 Matrixen</h2>
-                <p>Reine Lizenz- und Add-on-Matrixen mit gemeinsamer M365-Tools-Datenbasis.</p>
+                <p>Lizenz-, Add-on- und Copilot-Matrixen zentral steuern.</p>
             </div>
             <div class="header-actions">
                 <a href="/m365-lizenzmatrix" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">👁️ Lizenzmatrix</a>
                 <a href="/m365-addon-matrix" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">➕ Add-ons</a>
+                <a href="/m365-copilot-matrix" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">🤖 Copilot</a>
             </div>
         </div>
 
@@ -144,6 +173,38 @@ final class CMS_M365MATRICES_Admin_Pages
                 <div class="stat-icon">➕</div>
                 <div class="stat-number"><?php echo (int) ($addonStats['areas'] ?? 0); ?></div>
                 <div class="stat-label">Add-on-Bereiche</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🤖</div>
+                <div class="stat-number"><?php echo (int) ($copilotStats['rows'] ?? 0); ?></div>
+                <div class="stat-label">Copilot-Zeilen</div>
+            </div>
+        </div>
+
+        <div class="admin-card m365matrices-quicklinks-card">
+            <div class="m365matrices-panel-header">
+                <div>
+                    <h3>⚡ Publicseiten &amp; Schnelllinks</h3>
+                    <p>Jede öffentliche Matrixseite direkt öffnen oder die passenden Inhalte und Designs bearbeiten.</p>
+                </div>
+            </div>
+            <div class="m365matrices-public-grid">
+                <?php foreach ($publicPages as $page): ?>
+                <article class="m365matrices-public-card">
+                    <div class="m365matrices-public-card__head">
+                        <span class="m365matrices-public-card__icon"><?php echo self::esc($page['icon']); ?></span>
+                        <div>
+                            <h4><?php echo self::esc($page['title']); ?></h4>
+                            <span class="m365matrices-result-count"><?php echo self::esc($page['stat']); ?></span>
+                        </div>
+                    </div>
+                    <p><?php echo self::esc($page['description']); ?></p>
+                    <div class="m365matrices-public-card__actions">
+                        <a href="<?php echo self::esc_attr($page['route']); ?>" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">👁️ Öffnen</a>
+                        <a href="?tab=<?php echo self::esc_attr($page['tab']); ?>" class="btn btn-primary btn-sm">⚙️ Anpassen</a>
+                    </div>
+                </article>
+                <?php endforeach; ?>
             </div>
         </div>
 
@@ -211,6 +272,68 @@ final class CMS_M365MATRICES_Admin_Pages
                 self::checkbox('matrix_addon_show_package_cards', 'Paketkarten anzeigen', '1', 'Zeigt die kleinen Paketkarten oberhalb jeder Add-on-Tabelle.'),
                 self::checkbox('matrix_addon_show_notes', 'Hinweise anzeigen', '1', 'Zeigt den Hinweisblock unterhalb der Matrix.'),
                 self::checkbox('matrix_addon_show_sources', 'Quellenstand anzeigen', '1', 'Zeigt den Quellenblock unterhalb der Matrix.'),
+            ],
+            'matrix-copilot' => [
+                self::text('matrix_copilot_overline', 'Header-Overline', 'Copilot-Matrix', 'Kleine Zeile oberhalb der Copilot-Matrix-Überschrift.'),
+                self::text('matrix_copilot_title', 'Header-Titel', 'Microsoft Copilot Lizenzmatrix', 'Hauptüberschrift der Copilot-Matrix.'),
+                self::textarea('matrix_copilot_intro', 'Header-Intro', 'Umfangreiche Übersicht zu Microsoft Copilot, Microsoft 365 Copilot Chat, Microsoft 365 Copilot, Copilot Studio, Agents, App-Funktionen, Datenschutz und Nutzungskontingenten.', 'Einleitungstext im Contentheader.'),
+                self::text('matrix_copilot_secondary_button_label', 'Sekundärbutton Text', 'Vollpaket-Matrix öffnen', 'Beschriftung des sekundären Header-Buttons.'),
+                self::text('matrix_copilot_secondary_button_url', 'Sekundärbutton Ziel', '/m365-lizenzmatrix', 'Interne Route oder vollständige URL.'),
+                self::text('matrix_copilot_tool_button_label', 'Weiterer Button Text', 'Add-on-Matrix öffnen', 'Beschriftung des zweiten Header-Buttons.'),
+                self::text('matrix_copilot_tool_button_url', 'Weiterer Button Ziel', '/m365-addon-matrix', 'Interne Route oder vollständige URL.'),
+                self::text('matrix_copilot_result_overline', 'Matrix-Overline', 'Matrix', 'Kleine Zeile über dem Matrixbereich.'),
+                self::text('matrix_copilot_result_title', 'Matrix-Titel', 'Gesamtübersicht der Copilot-Lizenzen und Agent-Optionen', 'Überschrift vor den Copilot-Bereichen.'),
+                self::textarea('matrix_copilot_result_intro', 'Matrix-Intro', 'Vergleicht private Nutzung, Copilot Chat, Microsoft 365 Copilot Business, Microsoft 365 Copilot Enterprise sowie Copilot Studio für Teams und Standalone.', 'Beschreibung oberhalb der Copilot-Bereiche.'),
+                self::text('matrix_copilot_area_overline', 'Bereichs-Overline', 'Copilot-Bereich', 'Kleine Zeile oberhalb der Copilot-Bereichsüberschriften.'),
+                self::text('matrix_copilot_notes_title', 'Hinweisblock-Titel', 'Hinweise zur Copilot-Matrix', 'Überschrift des Hinweisblocks unterhalb der Matrixbereiche.'),
+                self::text('matrix_copilot_sources_title', 'Quellenblock-Titel', 'Quellenstand', 'Überschrift des Quellenblocks unterhalb der Matrixbereiche.'),
+                self::text('matrix_copilot_primary_button_label', 'CTA-Button Text', 'Copilot-Lizenzcheck anfragen', 'Beschriftung des primären CTA-Buttons.'),
+                self::text('matrix_copilot_primary_button_url', 'CTA-Button Ziel', '/kontakt', 'Kontaktformular, Beratungsseite oder interne Route.'),
+                self::checkbox('matrix_copilot_show_hero', 'Contentheader anzeigen', '1', 'Blendet den oberen Contentheader ein.'),
+                self::checkbox('matrix_copilot_show_hero_buttons', 'Header-Buttons anzeigen', '1', 'Blendet die Buttons im Contentheader ein.'),
+                self::checkbox('matrix_copilot_show_result_header', 'Einleitungsbereich vor Matrix anzeigen', '1', 'Blendet den kurzen Matrix-Introbereich ein.'),
+                self::checkbox('matrix_copilot_show_print_button', 'Drucken-Button anzeigen', '1', 'Zeigt den PDF-/Drucken-Button im Introbereich.'),
+                self::checkbox('matrix_copilot_show_primary_cta', 'CTA-Button anzeigen', '1', 'Zeigt den Kontakt- oder Beratungsbutton oben rechts im ersten Copilot-Paketbereich.'),
+                self::checkbox('matrix_copilot_show_area_headers', 'Bereichsheader anzeigen', '1', 'Zeigt Überschrift und Beschreibung je Copilot-Bereich.'),
+                self::checkbox('matrix_copilot_show_package_cards', 'Paketkarten anzeigen', '1', 'Zeigt die kleinen Paketkarten oberhalb jeder Copilot-Tabelle.'),
+                self::checkbox('matrix_copilot_show_notes', 'Hinweise anzeigen', '1', 'Zeigt den Hinweisblock unterhalb der Matrix.'),
+                self::checkbox('matrix_copilot_show_sources', 'Quellenstand anzeigen', '1', 'Zeigt den Quellenblock unterhalb der Matrix.'),
+                self::section('🧭 Copilot-Inhaltsverzeichnis', 'Diese Werte überschreiben das globale Inhaltsverzeichnis nur auf der Copilot-Seite.'),
+                self::checkbox('matrix_copilot_show_toc', 'Inhaltsverzeichnis anzeigen', '1', 'Zeigt die Sprungnavigation auf der Copilot-Matrix.'),
+                self::text('matrix_copilot_toc_title', 'Inhaltsverzeichnis Überschrift', 'Inhaltsverzeichnis', 'Titel oberhalb der Copilot-Sprunglinks.'),
+                self::select('matrix_copilot_toc_columns', 'Maximale Bereiche pro Reihe', '3', [
+                    '1' => '1 Bereich pro Reihe',
+                    '2' => '2 Bereiche pro Reihe',
+                    '3' => '3 Bereiche pro Reihe',
+                ], 'Desktop-Layout der Copilot-Sprungnavigation.'),
+                self::number('matrix_copilot_toc_font_size', 'TOC-Textgröße in px', '13', 11, 18, 1, 'Schriftgröße der Copilot-Sprunglinks.'),
+                self::checkbox('matrix_copilot_toc_nowrap', 'TOC-Zeilenumbruch verhindern', '1', 'Copilot-Bereichstitel bleiben in der Sprungnavigation einzeilig.'),
+                self::section('📝 Zusätzliche Copilot-Texte', 'Steuert Textbereiche außerhalb der Matrix-Tabellen.'),
+                self::textarea('matrix_copilot_notes_text', 'Zusatztext im Hinweisblock', '', 'Optionaler Text oberhalb der automatisch gepflegten Copilot-Hinweise.'),
+                self::textarea('matrix_copilot_sources_intro', 'Quellenblock-Intro', 'Preis- und Lizenzinformationen vor Bestellung prüfen.', 'Text oberhalb der Quellenliste.'),
+                self::text('matrix_copilot_print_button_label', 'Drucken-Button Text', 'Drucken / PDF speichern', 'Beschriftung der Druck-/PDF-Aktion nur auf der Copilot-Seite.'),
+                self::section('🎨 Copilot-Design', 'Diese Designwerte gelten nur für die Copilot-Publicseite und überschreiben das globale Matrix-Design.'),
+                self::select('matrix_copilot_header_style', 'Contentheader-Stil', 'plain', ['plain' => 'Schlicht', 'surface' => 'Ruhige Fläche', 'bordered' => 'Gerahmt', 'accent' => 'Akzentkante', 'inverted' => 'Dunkel / invertiert'], 'Optik des Copilot-Contentheaders.'),
+                self::select('matrix_copilot_header_alignment', 'Header-Ausrichtung', 'split', ['split' => 'Text links, Aktionen rechts', 'left' => 'Links ausgerichtet', 'center' => 'Zentriert'], 'Ausrichtung von Copilot-Headertexten und Aktionen.'),
+                self::select('matrix_copilot_button_layout', 'Button-Layout', 'inline', ['inline' => 'Nebeneinander', 'stacked' => 'Untereinander', 'right' => 'Rechts ausgerichtet'], 'Layout der Copilot-Header- und Matrix-Aktionen.'),
+                self::select('matrix_copilot_button_style', 'Button-Stil', 'default', ['default' => 'Theme-Standard', 'primary' => 'Alle Aktionen primär betonen', 'secondary' => 'Alle Aktionen ruhig darstellen', 'minimal' => 'Minimal / textnah'], 'Optische Gewichtung der Copilot-Buttons.'),
+                self::number('matrix_copilot_page_max_width', 'Seitenbreite in px', '1200', 760, 1800, 20, 'Maximale Breite des Copilot-Contents.'),
+                self::number('matrix_copilot_outer_padding_x', 'Seitlicher Innenabstand in px', '0', 0, 96, 4, 'Horizontaler Innenabstand der Copilot-Seite.'),
+                self::number('matrix_copilot_outer_padding_top', 'Abstand oben in px', '25', 0, 120, 5, 'Abstand zwischen Theme-Header und Copilot-Content.'),
+                self::number('matrix_copilot_section_gap', 'Abschnittsabstand in px', '32', 12, 96, 4, 'Vertikaler Abstand zwischen Copilot-Bereichen.'),
+                self::number('matrix_copilot_header_radius', 'Header-Rundung in px', '2', 0, 2, 1, 'Maximal 2px: Rundung für flächige oder gerahmte Header.'),
+                self::color('matrix_copilot_color_page_background', 'Seiten-Hintergrund', '#ffffff', 'Hintergrundfarbe des Copilot-Containers.'),
+                self::color('matrix_copilot_color_surface_background', 'Flächen-Hintergrund', '#f8fafc', 'Hintergrundfarbe für Copilot-Intro-, Hinweis- und Quellenbereiche.'),
+                self::color('matrix_copilot_color_text', 'Textfarbe außen', '#1e293b', 'Standard-Textfarbe außerhalb der Copilot-Tabellen.'),
+                self::color('matrix_copilot_color_muted', 'Sekundärtext außen', '#64748b', 'Beschreibungstexte, Overlines und Meta-Texte außerhalb der Copilot-Tabellen.'),
+                self::color('matrix_copilot_color_header_background', 'Header-Hintergrund', '#f8fafc', 'Hintergrundfarbe für den Copilot-Header.'),
+                self::color('matrix_copilot_color_header_text', 'Header-Text', '#1e293b', 'Textfarbe im Copilot-Header.'),
+                self::color('matrix_copilot_color_header_muted', 'Header-Sekundärtext', '#64748b', 'Farbe für Overline und Beschreibung im Copilot-Header.'),
+                self::color('matrix_copilot_color_header_border', 'Header-Rahmen', '#e2e8f0', 'Rahmen- und Akzentfarbe im Copilot-Header.'),
+                self::color('matrix_copilot_color_primary_button_bg', 'Primärbutton Hintergrund', '#2563eb', 'Hintergrundfarbe für primäre Copilot-Aktionen.'),
+                self::color('matrix_copilot_color_primary_button_text', 'Primärbutton Text', '#ffffff', 'Textfarbe für primäre Copilot-Aktionen.'),
+                self::color('matrix_copilot_color_secondary_button_bg', 'Sekundärbutton Hintergrund', '#ffffff', 'Hintergrundfarbe für sekundäre Copilot-Aktionen.'),
+                self::color('matrix_copilot_color_secondary_button_text', 'Sekundärbutton Text', '#1e293b', 'Textfarbe für sekundäre Copilot-Aktionen.'),
             ],
             'matrix-toc' => [
                 self::checkbox('matrix_toc_show', 'Inhaltsverzeichnis anzeigen', '1', 'Zeigt die Sprungnavigation unterhalb des Add-on-Headers.'),
@@ -332,6 +455,14 @@ final class CMS_M365MATRICES_Admin_Pages
     }
 
     /**
+     * @return array<string,mixed>
+     */
+    private static function section(string $label, string $help): array
+    {
+        return compact('label', 'help') + ['type' => 'section'];
+    }
+
+    /**
      * @param array<string,mixed> $field
      * @param array<string,string> $options
      */
@@ -340,6 +471,17 @@ final class CMS_M365MATRICES_Admin_Pages
         $key = (string) ($field['key'] ?? '');
         $type = (string) ($field['type'] ?? 'text');
         $value = (string) ($options[$key] ?? ($field['default'] ?? ''));
+        if ($type === 'section') {
+            ?>
+            <section class="m365matrices-settings-section" aria-label="<?php echo self::esc_attr((string) ($field['label'] ?? 'Abschnitt')); ?>">
+                <h4><?php echo self::esc((string) ($field['label'] ?? 'Abschnitt')); ?></h4>
+                <?php if ((string) ($field['help'] ?? '') !== ''): ?>
+                <p><?php echo self::esc((string) $field['help']); ?></p>
+                <?php endif; ?>
+            </section>
+            <?php
+            return;
+        }
         ?>
         <div class="form-group m365matrices-field m365matrices-field--<?php echo self::esc_attr($type); ?>">
             <?php if ($type === 'checkbox'): ?>
@@ -384,7 +526,7 @@ final class CMS_M365MATRICES_Admin_Pages
         foreach ($fields as $field) {
             $key = (string) ($field['key'] ?? '');
             $type = (string) ($field['type'] ?? 'text');
-            if ($key === '') {
+            if ($key === '' || $type === 'section') {
                 continue;
             }
 

@@ -15,6 +15,7 @@ final class CMS_M365MATRICES_Frontend
 {
     private const SUITE_ROUTE = '/m365-lizenzmatrix';
     private const ADDON_ROUTE = '/m365-addon-matrix';
+    private const COPILOT_ROUTE = '/m365-copilot-matrix';
 
     private static ?self $instance = null;
     private ?string $requestPathCache = null;
@@ -51,6 +52,9 @@ final class CMS_M365MATRICES_Frontend
         });
         $router->addRoute('GET', self::ADDON_ROUTE, function (): void {
             $this->render_addon_matrix();
+        });
+        $router->addRoute('GET', self::COPILOT_ROUTE, function (): void {
+            $this->render_copilot_matrix();
         });
     }
 
@@ -154,7 +158,7 @@ final class CMS_M365MATRICES_Frontend
 
         $classes[] = 'm365tools-theme-embed';
         $classes[] = 'm365calculator-theme-embed';
-        $classes[] = $this->path_matches(self::ADDON_ROUTE) ? 'm365tools-module-m365-addon-matrix' : 'm365tools-module-m365-lizenzmatrix';
+        $classes[] = $this->current_module_body_class();
 
         return implode(' ', array_values(array_unique($classes)));
     }
@@ -189,6 +193,21 @@ final class CMS_M365MATRICES_Frontend
         exit;
     }
 
+    private function render_copilot_matrix(): void
+    {
+        if (!CMS_M365MATRICES_Source::load_runtime()) {
+            $this->render_missing_dependency('Microsoft Copilot Lizenzmatrix');
+        }
+
+        $matrix = CMS_M365MATRICES_ReadOnly_Matrices::copilot_matrix();
+        $seoOptions = class_exists('CMS_M365MATRICES_Settings') ? CMS_M365MATRICES_Settings::global_options('matrix-copilot') : [];
+        $seoTitle = self::public_text($seoOptions, 'matrix_copilot_title', 'Microsoft Copilot Lizenzmatrix');
+        $seoDescription = self::public_text($seoOptions, 'matrix_copilot_intro', 'Umfangreiche Vergleichsmatrix für Microsoft Copilot, Microsoft 365 Copilot Chat, Microsoft 365 Copilot und Copilot Studio.');
+        $this->set_seo($seoTitle, $seoDescription);
+        include CMS_M365MATRICES_Source::template_path('page-readonly-copilot-matrix.php');
+        exit;
+    }
+
     /**
      * @param array<string,string> $options
      */
@@ -219,7 +238,22 @@ final class CMS_M365MATRICES_Frontend
 
     private function is_matrix_request(): bool
     {
-        return $this->path_matches(self::SUITE_ROUTE) || $this->path_matches(self::ADDON_ROUTE);
+        return $this->path_matches(self::SUITE_ROUTE)
+            || $this->path_matches(self::ADDON_ROUTE)
+            || $this->path_matches(self::COPILOT_ROUTE);
+    }
+
+    private function current_module_body_class(): string
+    {
+        if ($this->path_matches(self::ADDON_ROUTE)) {
+            return 'm365tools-module-m365-addon-matrix';
+        }
+
+        if ($this->path_matches(self::COPILOT_ROUTE)) {
+            return 'm365tools-module-m365-copilot-matrix';
+        }
+
+        return 'm365tools-module-m365-lizenzmatrix';
     }
 
     private function path_matches(string $route): bool

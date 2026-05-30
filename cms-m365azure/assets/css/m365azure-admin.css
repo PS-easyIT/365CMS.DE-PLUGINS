@@ -1,3 +1,14 @@
+.azs-admin-shell {
+    box-sizing: border-box;
+    max-width: none;
+    padding: 25px;
+    width: 100%;
+}
+
+.azs-admin-shell .admin-page-header {
+    margin-bottom: 1.25rem;
+}
+
 .azs-tabs,
 .azs-subtabs {
     border-bottom: 2px solid #e2e8f0;
@@ -43,6 +54,18 @@
     margin-top: 0;
 }
 
+.azs-visually-hidden {
+    clip: rect(0 0 0 0);
+    border: 0;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+}
+
 .azs-form-grid {
     display: grid;
     gap: 1rem 1.25rem;
@@ -86,6 +109,54 @@
     max-width: 110px;
 }
 
+.azs-gallery-admin {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 1rem;
+}
+
+.azs-gallery-admin__grid {
+    display: grid;
+    gap: .875rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.azs-gallery-admin__slot {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    display: grid;
+    gap: .625rem;
+    padding: .75rem;
+}
+
+.azs-gallery-admin__preview {
+    align-items: center;
+    aspect-ratio: 16 / 10;
+    background: #fff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.azs-gallery-admin__preview[hidden] {
+    display: none;
+}
+
+.azs-gallery-admin__preview img {
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+}
+
+.azs-gallery-admin__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
 .stat-icon {
     font-size: 1.75rem;
     margin-bottom: .25rem;
@@ -101,11 +172,24 @@
     .azs-form-grid {
         grid-template-columns: 1fr;
     }
+
+    .azs-gallery-admin__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 640px) {
+    .azs-admin-shell {
+        padding: 16px;
+    }
+
+    .azs-gallery-admin__grid {
+        grid-template-columns: 1fr;
+    }
+
     .azs-actions .btn,
-    .azs-quicklinks .btn {
+    .azs-quicklinks .btn,
+    .azs-gallery-admin__actions .btn {
         justify-content: center;
         width: 100%;
     }

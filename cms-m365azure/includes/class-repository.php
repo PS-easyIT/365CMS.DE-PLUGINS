@@ -92,18 +92,19 @@ final class CMS_M365Azure_Repository
             'title' => self::text((string) ($data['title'] ?? '')),
             'overline' => self::text((string) ($data['overline'] ?? '')),
             'intro' => self::long_text((string) ($data['intro'] ?? '')),
+            'gallery_images' => self::gallery_images($data['gallery_images'] ?? []),
             'sort_order' => (int) ($data['sort_order'] ?? 0),
             'is_active' => !empty($data['is_active']) ? 1 : 0,
         ];
 
         if ($id > 0) {
-            $stmt = $this->db->prepare("UPDATE {$this->prefix}m365azure_categories SET slug = ?, title = ?, overline = ?, intro = ?, sort_order = ?, is_active = ? WHERE id = ?");
-            $stmt->execute([$values['slug'], $values['title'], $values['overline'], $values['intro'], $values['sort_order'], $values['is_active'], $id]);
+            $stmt = $this->db->prepare("UPDATE {$this->prefix}m365azure_categories SET slug = ?, title = ?, overline = ?, intro = ?, gallery_images = ?, sort_order = ?, is_active = ? WHERE id = ?");
+            $stmt->execute([$values['slug'], $values['title'], $values['overline'], $values['intro'], $values['gallery_images'], $values['sort_order'], $values['is_active'], $id]);
             return $id;
         }
 
-        $stmt = $this->db->prepare("INSERT INTO {$this->prefix}m365azure_categories (slug, title, overline, intro, sort_order, is_active) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$values['slug'], $values['title'], $values['overline'], $values['intro'], $values['sort_order'], $values['is_active']]);
+        $stmt = $this->db->prepare("INSERT INTO {$this->prefix}m365azure_categories (slug, title, overline, intro, gallery_images, sort_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$values['slug'], $values['title'], $values['overline'], $values['intro'], $values['gallery_images'], $values['sort_order'], $values['is_active']]);
 
         return (int) $this->db->lastInsertId();
     }
@@ -213,12 +214,17 @@ final class CMS_M365Azure_Repository
 
     public static function text(string $value): string
     {
-        return trim(strip_tags($value));
+        return trim(strip_tags(self::normalize_newlines($value)));
     }
 
     public static function long_text(string $value): string
     {
-        return trim(strip_tags($value));
+        return trim(strip_tags(self::normalize_newlines($value)));
+    }
+
+    public static function normalize_newlines(string $value): string
+    {
+        return str_replace(["\\r\\n", "\\n", "\\r"], ["\n", "\n", "\n"], $value);
     }
 
     public static function url(string $value): string
@@ -229,6 +235,103 @@ final class CMS_M365Azure_Repository
         }
 
         return filter_var($value, FILTER_VALIDATE_URL) ? $value : '';
+    }
+
+    public static function public_url(string $value): string
+    {
+        $value = trim(strip_tags($value));
+        if ($value === '') {
+            return '';
+        }
+
+        if (str_starts_with($value, '/') && preg_match('#^/[A-Za-z0-9/_?&=.%#+:;,@~-]*$#', $value) === 1) {
+            return $value;
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            $scheme = strtolower((string) parse_url($value, PHP_URL_SCHEME));
+            return in_array($scheme, ['http', 'https'], true) ? $value : '';
+        }
+
+        return '';
+    }
+
+    public static function public_image_url(string $value): string
+    {
+        $value = trim(strip_tags($value));
+        $value = str_replace('\\', '/', $value);
+        $value = (string) preg_replace('/[\x00-\x1F\x7F]+/u', '', $value);
+        if ($value === '') {
+            return '';
+        }
+
+        if (str_starts_with($value, './')) {
+            $value = substr($value, 2);
+        }
+
+        if (preg_match('#^(?:uploads|media)(?:/|$)#i', $value) === 1 || preg_match('#^media-file(?:\?|$)#i', $value) === 1) {
+            $value = '/' . ltrim($value, '/');
+        }
+
+        $value = str_replace(' ', '%20', $value);
+        if (str_starts_with($value, '/') && !str_starts_with($value, '//') && !str_contains($value, '..')) {
+            return $value;
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            $scheme = strtolower((string) parse_url($value, PHP_URL_SCHEME));
+            return in_array($scheme, ['http', 'https'], true) ? $value : '';
+        }
+
+        return '';
+    }
+
+    public static function gallery_images(mixed $value): string
+    {
+        $items = self::gallery_images_list($value);
+        if ($items === []) {
+            return '';
+        }
+
+        return (string) json_encode($items, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    }
+
+    /** @return array<int,string> */
+    public static function gallery_images_list(mixed $value, int $max = 6): array
+    {
+        $rawItems = [];
+        if (is_array($value)) {
+            $rawItems = $value;
+        } elseif (is_string($value)) {
+            $value = trim($value);
+            if ($value !== '') {
+                $decoded = json_decode($value, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $rawItems = $decoded;
+                } else {
+                    $rawItems = preg_split('/\R+/', $value) ?: [];
+                }
+            }
+        }
+
+        $images = [];
+        foreach ($rawItems as $item) {
+            if (is_array($item)) {
+                $item = (string) ($item['url'] ?? $item['src'] ?? '');
+            }
+
+            $url = self::public_image_url((string) $item);
+            if ($url === '' || in_array($url, $images, true)) {
+                continue;
+            }
+
+            $images[] = $url;
+            if (count($images) >= max(1, $max)) {
+                break;
+            }
+        }
+
+        return $images;
     }
 
     public static function color(string $value, string $default): string

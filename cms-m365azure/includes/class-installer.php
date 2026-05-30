@@ -45,6 +45,7 @@ final class CMS_M365Azure_Installer
             title VARCHAR(190) NOT NULL,
             overline VARCHAR(190) DEFAULT NULL,
             intro TEXT DEFAULT NULL,
+            gallery_images MEDIUMTEXT DEFAULT NULL,
             sort_order INT NOT NULL DEFAULT 0,
             is_active TINYINT(1) NOT NULL DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -81,8 +82,13 @@ final class CMS_M365Azure_Installer
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+        self::upgrade_category_gallery_schema($db, $prefix);
         self::seed_settings($db, $prefix);
         self::seed_content($db, $prefix);
+        self::upgrade_compute_content($db, $prefix);
+        self::upgrade_compute_description_mapping($db, $prefix);
+        self::upgrade_storage_content($db, $prefix);
+        self::normalize_literal_newlines($db, $prefix);
     }
 
     private static function prefix(object $db): string
@@ -107,22 +113,57 @@ final class CMS_M365Azure_Installer
             'page_intro' => 'Microsoft Azure stellt mehr als 200 Cloudprodukte und Dienste bereit – von Compute, Storage und Datenbanken bis zu KI, Sicherheit, Analytics und Hybrid Cloud.',
             'seo_title' => 'Microsoft Azure Services – Übersicht und Kategorien',
             'seo_description' => 'Übersicht der wichtigsten Microsoft Azure Services mit Kategorien, Einsatzbereichen, Links und steuerbarem Card-Layout.',
+            'hero_primary_button_text' => 'M365 Lizenzmatrix öffnen',
+            'hero_primary_button_url' => '/m365-lizenzmatrix',
+            'hero_secondary_button_text' => 'M365 AddOn-Übersicht öffnen',
+            'hero_secondary_button_url' => '/m365-addon-matrix',
+            'hero_cta_button_text' => 'Azure-Beratung anfragen',
+            'hero_cta_button_url' => '/kontakt',
+            'table_service_label' => 'Dienst',
+            'table_description_label' => 'Beschreibung',
+            'table_features_label' => 'Wichtige Hinweise',
+            'table_use_cases_label' => 'Typische Einsatzszenarien',
+            'table_links_label' => 'Links',
+            'docs_link_label' => 'Dokumentation',
+            'pricing_link_label' => 'Preise',
+            'empty_value_label' => '—',
+            'note_title' => 'Hinweise zu Azure Services',
+            'note_items' => "Die Übersicht nutzt die administrativ gepflegten Diensttexte, Hinweise, Einsatzszenarien und Links aus CMS M365 Azure.\nVerfügbarkeit, Preise und technische Voraussetzungen bitte vor Projektstart über die hinterlegten Microsoft-Links prüfen.",
+            'source_title' => 'Quellenstand',
+            'source_intro' => 'Die Quellenliste basiert auf den aktuell hinterlegten Dokumentations- und Preislinks der angezeigten Azure-Dienste.',
+            'source_details_label' => 'Quellen anzeigen',
             'show_hero' => '1',
+            'show_hero_actions' => '1',
             'show_toc' => '1',
             'toc_title' => 'Inhaltsverzeichnis',
+            'toc_columns' => '3',
+            'toc_nowrap' => '1',
             'show_category_intro' => '1',
             'show_service_images' => '1',
+            'show_service_subtitles' => '1',
+            'show_description' => '1',
             'show_service_links' => '1',
             'show_feature_lists' => '1',
             'show_use_cases' => '1',
+            'show_notes_section' => '1',
+            'show_info_note' => '1',
+            'show_sources_card' => '1',
             'card_image_position' => 'left',
             'layout_max_width' => '1180',
-            'card_image_width' => '320',
+            'layout_padding_x' => '0',
+            'layout_padding_top' => '25',
+            'card_image_width' => '72',
             'design_primary_color' => '#2563eb',
             'design_accent_color' => '#f59e0b',
             'design_background_color' => '#ffffff',
             'design_surface_color' => '#ffffff',
+            'design_text_color' => '#1e293b',
+            'design_muted_color' => '#64748b',
+            'design_border_color' => '#e2e8f0',
             'design_border_radius' => '10',
+            'design_toc_font_size' => '13',
+            'design_table_font_size' => '14',
+            'design_link_font_size' => '12',
         ];
 
         $exists = $db->prepare("SELECT id FROM {$prefix}m365azure_settings WHERE setting_key = ?");
@@ -166,13 +207,13 @@ final class CMS_M365Azure_Installer
         }
 
         $services = [
-            ['compute', 'virtual-machines', 'Virtual Machines', 'Windows- und Linux-VMs in Sekunden bereitstellen.', 'Ideal für Lift-and-Shift, klassische Server-Workloads, Testumgebungen und Spezialsoftware mit Betriebssystemzugriff.', 'Flexible Größen und Images\nWindows und Linux\nSkalierung mit VM Scale Sets', 'Legacy-Anwendungen\nEntwicklungs- und Testsysteme\nRechenintensive Workloads', 'https://learn.microsoft.com/de-de/azure/virtual-machines/', 'https://azure.microsoft.com/de-de/pricing/details/virtual-machines/windows/', 10],
-            ['compute', 'azure-kubernetes-service', 'Azure Kubernetes Service (AKS)', 'Verwaltetes Kubernetes für containerisierte Anwendungen.', 'AKS reduziert den Betriebsaufwand für Kubernetes-Cluster und eignet sich für Microservices, Plattform-Teams und skalierende Container-Workloads.', 'Managed Kubernetes\nCluster-Skalierung\nIntegration mit Azure Monitor und Container Registry', 'Microservices\nPlattform Engineering\nCloudnative Anwendungen', 'https://learn.microsoft.com/de-de/azure/aks/', 'https://azure.microsoft.com/de-de/pricing/details/kubernetes-service/', 20],
-            ['compute', 'azure-functions', 'Azure Functions', 'Ereignisgesteuerte serverlose Funktionen.', 'Azure Functions führt Code auf Abruf aus, ohne dass Server verwaltet werden müssen – passend für Automatisierung, APIs und Event-Verarbeitung.', 'Serverless Runtime\nTrigger für HTTP, Timer, Queue und Events\nSkalierung nach Bedarf', 'Automatisierung\nWebhook-Backends\nEvent Processing', 'https://learn.microsoft.com/de-de/azure/azure-functions/', 'https://azure.microsoft.com/de-de/pricing/details/functions/', 30],
-            ['compute', 'container-apps', 'Azure Container Apps', 'Serverlose Container für Apps und Microservices.', 'Container Apps kombiniert Containerbetrieb mit serverloser Skalierung und eignet sich für APIs, Worker und Dapr-basierte Microservices.', 'Container ohne Clusterbetrieb\nScale-to-zero möglich\nDapr-Integration', 'APIs\nBackground Worker\nEvent-getriebene Microservices', 'https://learn.microsoft.com/de-de/azure/container-apps/', 'https://azure.microsoft.com/de-de/pricing/details/container-apps/', 40],
-            ['storage', 'blob-storage', 'Azure Blob Storage', 'Objektspeicher für unstrukturierte Daten.', 'Blob Storage speichert Bilder, Videos, Backups, Logs und Data-Lake-Dateien hochskalierbar und sicher.', 'Hot/Cool/Archive Tiers\nLifecycle Management\nStarke Integration in Analytics und Backup', 'Medienbibliotheken\nBackups\nData Lake Rohdaten', 'https://learn.microsoft.com/de-de/azure/storage/blobs/', 'https://azure.microsoft.com/de-de/pricing/details/storage/blobs/', 10],
-            ['storage', 'azure-files', 'Azure Files', 'Serverlose Dateifreigaben über SMB und NFS.', 'Azure Files ersetzt oder erweitert klassische File-Server und lässt sich in Windows-, Linux- und Hybridumgebungen einbinden.', 'SMB/NFS-Freigaben\nAzure File Sync\nIntegration mit Entra-Identitäten', 'File-Server-Ablösung\nLift-and-Shift\nGemeinsame App-Dateien', 'https://learn.microsoft.com/de-de/azure/storage/files/', 'https://azure.microsoft.com/de-de/pricing/details/storage/files/', 20],
-            ['storage', 'disk-storage', 'Azure Disk Storage', 'Blockspeicher für virtuelle Maschinen.', 'Managed Disks bieten performanten und dauerhaften Speicher für VM-Workloads – von Standard bis Ultra Disk.', 'Managed Disks\nPremium SSD und Ultra Disk\nSnapshots und Verschlüsselung', 'Datenbank-VMs\nSAP-Workloads\nEnterprise-Anwendungen', 'https://learn.microsoft.com/de-de/azure/virtual-machines/managed-disks-overview', 'https://azure.microsoft.com/de-de/pricing/details/managed-disks/', 30],
+            ['compute', 'virtual-machines', 'Virtual Machines', 'Windows- und Linux-Server mit voller Betriebssystemkontrolle.', 'Azure Virtual Machines stellt skalierbare Windows- und Linux-Server bereit, wenn du Betriebssystem, Software und Infrastrukturdetails selbst steuern musst.', 'Azure Virtual Machines stellt skalierbare Windows- und Linux-Server bereit, wenn du Betriebssystem, installierte Software oder spezielle VM-Größen selbst steuern musst. Du wählst Region, VM-Familie, Datenträger, Netzwerk und Verfügbarkeitsmodell passend zur Workload. Der Dienst ist sinnvoll für Migrationen und Spezialsoftware, bringt aber weiterhin Verantwortung für Patches, OS-Härtung, Backup und Betrieb mit.', 'VM-Größen sind je Region und Zone unterschiedlich verfügbar; SKU, Kontingent und tatsächliche Kapazität vor Projektstart prüfen\nManaged Disks, Public IPs, Bandbreite/Egress, Backups und Lizenzen separat kalkulieren\nFür produktive Systeme Availability Zones, Availability Sets, VM Scale Sets oder Site Recovery bewusst planen\nTemporärer lokaler Speicher ist nicht dauerhaft und eignet sich nur für Cache oder temporäre Daten\nVM-Größenfamilie nach Workload wählen: General Purpose, Compute, Memory, Storage, GPU oder HPC', 'Lift-and-Shift bestehender Server und Fachanwendungen\nWindows- oder Linux-Workloads mit OS-Zugriff\nDatenbank-, SAP-, GPU- oder HPC-nahe Spezialworkloads\nEntwicklungs-, Test- und Schulungsumgebungen', 'https://learn.microsoft.com/de-de/azure/virtual-machines/overview', 'https://azure.microsoft.com/de-de/pricing/details/virtual-machines/windows/', 10],
+            ['compute', 'azure-kubernetes-service', 'Azure Kubernetes Service (AKS)', 'Managed Kubernetes für produktive Containerplattformen.', 'AKS ist Microsofts verwalteter Kubernetes-Dienst für containerisierte Anwendungen und Plattformen.', 'AKS ist Microsofts verwalteter Kubernetes-Dienst für containerisierte Anwendungen und Plattformen. Azure übernimmt Control-Plane-Betrieb, Wartung und Integrationen, während du Workloads, Knotenpools, Netzwerk, Identität, Richtlinien und Release-Prozesse steuerst. AKS passt, wenn dein Team Kubernetes-Funktionen, Portabilität und klare Plattformstandards braucht, statt nur einen einfachen Container-Host.', 'Free eher für Tests ohne SLA; Standard für produktive Workloads mit SLA; Premium für Long-Term Support planen\nKosten entstehen vor allem durch Knoten-VMs, Storage, Netzwerk, Cluster-Tier und ggf. AKS Automatic\nKubernetes-Minor-Versionen können beim Upgrade nicht übersprungen werden\nVor Upgrades Compute-Quota und verfügbare Zielversionen prüfen\nAzure Linux 2.0 Knotenimages nicht neu einplanen; Migration auf unterstützte Versionen oder AzureLinux3 vorbereiten', 'Microservices- und Plattform-Engineering-Umgebungen\nModernisierung containerisierter Bestandsanwendungen\nCI/CD- und GitOps-basierte Deployments\nWindows- und Linux-Container in einem Kubernetes-Betriebsmodell', 'https://learn.microsoft.com/de-de/azure/aks/what-is-aks', 'https://azure.microsoft.com/de-de/pricing/details/kubernetes-service/', 20],
+            ['compute', 'azure-functions', 'Azure Functions', 'Event-getriebener Code ohne eigenen Serverbetrieb.', 'Azure Functions führt ereignisgesteuerten Code aus, ohne dass du eigene Server betreiben musst.', 'Azure Functions ist eine serverlose Lösung für kleine, ereignisgesteuerte Codeeinheiten, die über Trigger und Bindings mit HTTP, Timern, Storage, Queues, Event Hubs, Service Bus und weiteren Diensten verbunden werden. Du konzentrierst dich auf die Geschäftslogik; Azure übernimmt Hosting, Skalierung und Laufzeitumgebung. Der passende Hostingplan entscheidet über Kaltstart, Netzwerkzugriff, Timeout, Skalierung und Abrechnung.', 'Flex Consumption für neue serverlose Apps bevorzugen; klassischer Consumption-Plan ist veraltet beziehungsweise eingeschränkt\nLinux Consumption wird am 30. September 2028 eingestellt; Functions v3 auf Linux Consumption läuft nach dem 30. September 2026 nicht mehr\nHTTP-getriggerte Funktionen haben ein Antwortlimit von 230 Sekunden; lange Verarbeitung asynchron auslagern\nPlanwahl beeinflusst Kaltstart, VNet, Timeout, Skalierung, Slots und Kostenmodell\nStorage Account, Monitoring, Ausführungen, GB-Sekunden und Always-ready Instanzen in der Kalkulation berücksichtigen', 'Webhooks und leichte APIs\nZeitgesteuerte Automatisierung und Datenbereinigung\nQueue-, Event-Hub- und Service-Bus-Verarbeitung\nServerlose Workflows mit Durable Functions', 'https://learn.microsoft.com/de-de/azure/azure-functions/functions-overview', 'https://azure.microsoft.com/de-de/pricing/details/functions/', 30],
+            ['compute', 'container-apps', 'Azure Container Apps', 'Serverlose Container ohne eigenen Kubernetes-Betrieb.', 'Azure Container Apps betreibt containerisierte APIs, Worker, Jobs und Microservices serverlos.', 'Azure Container Apps ist eine serverlose Plattform für containerisierte APIs, Worker, Jobs und Microservices. Du bringst Containerimages mit; Azure übernimmt viele Infrastruktur-, Ingress-, Revisions-, Skalierungs- und Betriebsdetails. Der Dienst basiert auf Kubernetes-nahen Konzepten und Open-Source-Technologien wie KEDA, Dapr und Envoy, ohne dass du die Kubernetes-API direkt betreibst.', 'Skalierung über HTTP, TCP oder KEDA; Scale-to-zero ist möglich, aber nicht bei CPU-/Memory-basierten Regeln\nOhne Ingress brauchst du minReplicas ab 1 oder eine eigene Skalierungsregel, sonst kann die App auf null bleiben\nKein direkter Kubernetes-API-Zugriff; für vollständige Clusterkontrolle AKS prüfen\nRevisionen, Traffic-Splitting, Secrets, Managed Identity, Registry, VNet und Logging früh planen\nKosten entstehen je nach Plan durch aktive Ressourcen, Leerlaufreplikate, Anforderungen und ggf. Dedicated Workload Profiles', 'APIs und Web-Backends als Container\nBackground Worker und ereignisgetriebene Verarbeitung\nMicroservices mit Dapr und Service Discovery\nScheduled, manuelle oder eventbasierte Container Apps Jobs', 'https://learn.microsoft.com/de-de/azure/container-apps/overview', 'https://azure.microsoft.com/de-de/pricing/details/container-apps/', 40],
+            ['storage', 'blob-storage', 'Azure Blob Storage', 'Objektspeicher für unstrukturierte Daten.', 'Azure Blob Storage speichert große Mengen unstrukturierter Daten wie Medien, Dokumente, Backups, Logs und Data-Lake-Rohdaten.', 'Azure Blob Storage ist Microsofts hochskalierbarer Objektspeicher für unstrukturierte Text- und Binärdaten. Der Dienst eignet sich für Browser-ausgelieferte Medien, verteilten Dateizugriff, Streaming, Logdaten, Backup, Archivierung und Analytics-Daten. Zugriff ist per HTTP/HTTPS, REST, SDKs, SFTP oder NFS 3.0 möglich; mit Data Lake Storage Gen2 kann Blob Storage auch als Big-Data-Dateisystem genutzt werden.', 'Zugriffsebenen Hot, Cool, Cold, Archive und Smart Tier passend zu Nutzung und Aufbewahrung wählen\nCool, Cold und Archive haben niedrigere Speicherkosten, aber höhere Zugriffs-/Abrufkosten und Mindestaufbewahrungen\nArchive ist offline; Rehydration auf eine Online-Ebene kann bis zu 15 Stunden dauern\nLifecycle Management verschiebt oder löscht Blobs regelbasiert nach Erstellungs-, Änderungs- oder Zugriffszeit\nSchutzoptionen wie Soft Delete, Versioning, Snapshots, Point-in-Time Restore, Immutability und Azure Backup einplanen', 'Medien- und Dokumentenbibliotheken für Websites oder Portale\nBackup, Disaster Recovery und langfristige Archivierung\nData-Lake-Rohdaten für Analytics- und KI-Plattformen\nLog-, Telemetrie- und Exportdaten aus Anwendungen\nSFTP- oder NFS-basierter Datenaustausch über Storage Accounts', 'https://learn.microsoft.com/de-de/azure/storage/blobs/storage-blobs-overview', 'https://azure.microsoft.com/de-de/pricing/details/storage/blobs/', 10],
+            ['storage', 'azure-files', 'Azure Files', 'Serverlose Dateifreigaben über SMB und NFS.', 'Azure Files stellt vollständig verwaltete Dateifreigaben bereit, die Windows-, Linux- und macOS-Clients gleichzeitig nutzen können.', 'Azure Files bietet serverlose Dateifreigaben in Azure, die über SMB, NFS und die Azure Files REST API erreichbar sind. Der Dienst kann klassische File-Server oder NAS-Systeme ersetzen, Hybrid-Szenarien mit Azure File Sync unterstützen und Lift-and-Shift-Anwendungen einen vertrauten Dateipfad bereitstellen. Je nach Workload wählst du SMB oder NFS, SSD oder HDD, Redundanz, Identität, Netzwerkzugriff und Abrechnungsmodell.', 'SMB- und NFS-Protokolle verfügbar; eine einzelne Freigabe unterstützt nicht beide Protokolle gleichzeitig\nSMB unterstützt identitätsbasierte Authentifizierung über AD DS, Microsoft Entra Domain Services oder Microsoft Entra Kerberos\nPort 445 und NFS-Netzwerkzugriff früh prüfen; für On-Prem-Zugriff oft VPN, ExpressRoute oder Private Endpoint nötig\nSSD für niedrige Latenz und I/O-intensive Workloads, HDD für kostengünstige allgemeine Dateifreigaben\nAzure File Sync kann SMB-Freigaben zentralisieren und lokale Windows Server als Cache nutzen', 'Ersatz oder Ergänzung lokaler File-Server und NAS-Systeme\nLift-and-Shift-Anwendungen mit gemeinsamem Dateispeicher\nFSLogix-Profile und Benutzerdateien in Azure Virtual Desktop\nGemeinsame Konfigurations-, Diagnose- und Tool-Freigaben für Cloud-Apps\nHybrid-Standorte mit lokalem Cache über Azure File Sync', 'https://learn.microsoft.com/de-de/azure/storage/files/storage-files-introduction', 'https://azure.microsoft.com/de-de/pricing/details/storage/files/', 20],
+            ['storage', 'disk-storage', 'Azure Disk Storage', 'Blockspeicher für virtuelle Maschinen.', 'Azure Disk Storage stellt verwalteten Blockspeicher für Azure-VMs bereit – von kostengünstigen Standard-Datenträgern bis Ultra Disk.', 'Azure Managed Disks sind von Azure verwaltete Blockspeichervolumes für virtuelle Maschinen. Du wählst Datenträgertyp, Größe, Performance, Redundanz und Verschlüsselungsoptionen; Azure übernimmt Bereitstellung, Replikation und Integration in VM-Verfügbarkeit. Je nach Workload stehen Ultra Disk, Premium SSD v2, Premium SSD, Standard SSD und Standard HDD für Daten-, OS- und Spezialworkloads zur Verfügung.', 'Fünf Datenträgertypen: Ultra Disk, Premium SSD v2, Premium SSD, Standard SSD und Standard HDD\nUltra Disk und Premium SSD v2 erlauben getrennte Anpassung von Kapazität, IOPS und Durchsatz, sind aber nicht als OS-Datenträger nutzbar\nManaged Disks nutzen standardmäßig serverseitige Verschlüsselung mit AES-256; kundenseitig verwaltete Schlüssel und Hostverschlüsselung sind möglich\nSnapshots, Images, Azure Backup, Wiederherstellungspunkte und Azure Site Recovery für Backup/DR planen\nKosten hängen von Typ, bereitgestellter Größe, IOPS/Durchsatz, Snapshots, Transaktionen, Shared Disks und Egress ab', 'Datenbank-VMs mit SQL Server, Oracle, SAP HANA oder MongoDB\nPersistente Datenlaufwerke für geschäftskritische IaaS-Anwendungen\nCluster-Szenarien mit Shared Disks und Failover-Software\nDev/Test-, Web- und wenig genutzte Workloads mit Standard SSD oder HDD\nHochleistungs-Blockstorage für transaktionsintensive Workloads', 'https://learn.microsoft.com/de-de/azure/virtual-machines/managed-disks-overview', 'https://azure.microsoft.com/de-de/pricing/details/managed-disks/', 30],
             ['datenbanken', 'azure-sql-database', 'Azure SQL-Datenbank', 'Vollständig verwaltete relationale SQL-Datenbank.', 'Azure SQL-Datenbank eignet sich für moderne Apps, die SQL Server-Kompatibilität, hohe Verfügbarkeit und automatische Verwaltung benötigen.', 'Automatische Patches\nHohe Verfügbarkeit\nSkalierbare Leistungsebenen', 'Web-Apps\nGeschäftsanwendungen\nSaaS-Datenbanken', 'https://learn.microsoft.com/de-de/azure/azure-sql/database/', 'https://azure.microsoft.com/de-de/pricing/details/azure-sql-database/single/', 10],
             ['datenbanken', 'cosmos-db', 'Azure Cosmos DB', 'Global verteilte NoSQL-Datenbank.', 'Cosmos DB bietet niedrige Latenz, globale Replikation und mehrere APIs für moderne, verteilte Anwendungen.', 'Globale Verteilung\nMehrere APIs\nVektor- und KI-Szenarien', 'Personalisierung\nIoT-Daten\nGlobale Apps', 'https://learn.microsoft.com/de-de/azure/cosmos-db/', 'https://azure.microsoft.com/de-de/pricing/details/cosmos-db/', 20],
             ['datenbanken', 'postgresql', 'Azure Database for PostgreSQL', 'Verwaltete PostgreSQL-Datenbank.', 'Der Dienst modernisiert PostgreSQL-Workloads mit automatischer Verwaltung, Skalierung und Sicherheitsfunktionen.', 'Flexible Server\nBackups und Hochverfügbarkeit\nOpen-Source-Kompatibilität', 'Web-Backends\nData Apps\nKI-nahe Datenhaltung', 'https://learn.microsoft.com/de-de/azure/postgresql/', 'https://azure.microsoft.com/de-de/pricing/details/postgresql/flexible-server/', 30],
@@ -200,11 +241,570 @@ final class CMS_M365Azure_Installer
         ];
 
         $svcStmt = $db->prepare("INSERT INTO {$prefix}m365azure_services (category_id, slug, title, subtitle, summary, content, features, use_cases, docs_url, pricing_url, sort_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
-        foreach ($services as [$catSlug, $slug, $title, $subtitle, $summary, $features, $useCases, $docsUrl, $pricingUrl, $order]) {
+        foreach ($services as $service) {
+            $content = null;
+            if (count($service) === 11) {
+                [$catSlug, $slug, $title, $subtitle, $summary, $content, $features, $useCases, $docsUrl, $pricingUrl, $order] = $service;
+            } else {
+                [$catSlug, $slug, $title, $subtitle, $summary, $features, $useCases, $docsUrl, $pricingUrl, $order] = $service;
+                $content = $summary;
+            }
+
             if (!isset($catIds[$catSlug])) {
                 continue;
             }
-            $svcStmt->execute([$catIds[$catSlug], $slug, $title, $subtitle, $summary, $summary, $features, $useCases, $docsUrl, $pricingUrl, $order]);
+            $subtitle = self::normalize_newlines((string) $subtitle);
+            $summary = self::normalize_newlines((string) $summary);
+            $content = self::normalize_newlines((string) $content);
+            $features = self::normalize_newlines((string) $features);
+            $useCases = self::normalize_newlines((string) $useCases);
+            $svcStmt->execute([$catIds[$catSlug], $slug, $title, $subtitle, $summary, $content, $features, $useCases, $docsUrl, $pricingUrl, $order]);
+        }
+    }
+
+    private static function normalize_newlines(string $value): string
+    {
+        return str_replace(["\\r\\n", "\\n", "\\r"], ["\n", "\n", "\n"], $value);
+    }
+
+    private static function upgrade_category_gallery_schema(object $db, string $prefix): void
+    {
+        if (self::column_exists($db, $prefix . 'm365azure_categories', 'gallery_images')) {
+            return;
+        }
+
+        $pdo = $db->getPdo();
+        try {
+            $pdo->exec("ALTER TABLE {$prefix}m365azure_categories ADD COLUMN gallery_images MEDIUMTEXT DEFAULT NULL AFTER intro");
+        } catch (\Throwable $e) {
+            if (stripos($e->getMessage(), 'Duplicate column') === false && stripos($e->getMessage(), 'already exists') === false) {
+                throw $e;
+            }
+        }
+    }
+
+    private static function column_exists(object $db, string $table, string $column): bool
+    {
+        $database = '';
+        try {
+            $databaseStmt = $db->prepare('SELECT DATABASE()');
+            $databaseStmt->execute();
+            $database = (string) ($databaseStmt->fetchColumn() ?: '');
+        } catch (\Throwable) {
+            $database = '';
+        }
+
+        if ($database !== '') {
+            try {
+                $stmt = $db->prepare('SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?');
+                $stmt->execute([$database, $table, $column]);
+                return (int) $stmt->fetchColumn() > 0;
+            } catch (\Throwable) {
+                // Fallback auf SHOW COLUMNS, falls INFORMATION_SCHEMA nicht verfügbar ist.
+            }
+        }
+
+        try {
+            $safeTable = str_replace('`', '``', $table);
+            $safeColumn = str_replace("'", "''", $column);
+            $stmt = $db->prepare("SHOW COLUMNS FROM `{$safeTable}` LIKE '{$safeColumn}'");
+            $stmt->execute();
+            return (bool) $stmt->fetch();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private static function upgrade_compute_content(object $db, string $prefix): void
+    {
+        $markerKey = 'content_compute_seed_version';
+        $markerVersion = '2026-05-30-compute-v2';
+
+        $markerStmt = $db->prepare("SELECT setting_value FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $markerStmt->execute([$markerKey]);
+        if ((string) ($markerStmt->fetchColumn() ?: '') === $markerVersion) {
+            return;
+        }
+
+        $updates = [
+            'virtual-machines' => [
+                'old' => [
+                    'subtitle' => 'Windows- und Linux-VMs in Sekunden bereitstellen.',
+                    'summary' => ['Ideal für Lift-and-Shift, klassische Server-Workloads, Testumgebungen und Spezialsoftware mit Betriebssystemzugriff.', 'Azure Virtual Machines stellt skalierbare Compute-Ressourcen für Windows und Linux bereit, wenn du Betriebssystem, installierte Software oder spezielle VM-Größen selbst steuern musst. Geeignet für klassische Server-Workloads, Migrationen und Anwendungen mit festen Laufzeitvorgaben; Patch-, OS- und Applikationsbetrieb bleiben jedoch in deiner Verantwortung.'],
+                    'content' => ['Ideal für Lift-and-Shift, klassische Server-Workloads, Testumgebungen und Spezialsoftware mit Betriebssystemzugriff.', 'Mit VMs bekommst du IaaS-Compute inklusive Auswahl aus VM-Familien für allgemeine, compute-, speicher-, storage-, GPU- und HPC-Workloads. Plane Region, Größe, Datenträger, Netzwerk, Verfügbarkeit und Kontingente frühzeitig; Managed Disks, Public IPs, ausgehender Traffic und Betriebssystemlizenzen können separat kostenrelevant sein. Für Hochverfügbarkeit nutzt du Availability Zones, VM Scale Sets und Backup-/Recovery-Strategien.'],
+                    'features' => ["Flexible Größen und Images\nWindows und Linux\nSkalierung mit VM Scale Sets", "Volle Kontrolle über Betriebssystem, Laufzeit und installierte Software\nViele VM-Familien für General Purpose, Compute, Memory, Storage, GPU und HPC\nHochverfügbarkeit über Availability Zones und VM Scale Sets planbar\nManaged Disks, Netzwerk, Lizenzen und Egress separat kalkulieren\nKontingente und regionale Größenverfügbarkeit vor Projektstart prüfen"],
+                    'use_cases' => "Legacy-Anwendungen\nEntwicklungs- und Testsysteme\nRechenintensive Workloads",
+                    'docs_url' => 'https://learn.microsoft.com/de-de/azure/virtual-machines/',
+                    'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/virtual-machines/windows/',
+                ],
+                'new' => [
+                    'subtitle' => 'Windows- und Linux-Server mit voller Betriebssystemkontrolle.',
+                    'summary' => 'Azure Virtual Machines stellt skalierbare Compute-Ressourcen für Windows und Linux bereit, wenn du Betriebssystem, installierte Software oder spezielle VM-Größen selbst steuern musst. Azure bietet Größenfamilien für General Purpose, Compute-, Memory-, Storage-, GPU- und HPC-Workloads; du wählst Region, Verfügbarkeit, Datenträger und Netzwerk selbst. Der Dienst ist stark, wenn du maximale Kontrolle brauchst – Patch-, OS-, Sicherheits- und Applikationsbetrieb bleiben aber bei dir.',
+                    'content' => 'Plane VM-Größe, Region, Verfügbarkeitszone, Datenträger, Netzwerk und Kontingente frühzeitig, weil nicht jede SKU in jeder Region oder Zone verfügbar ist und Kapazität separat zum genehmigten Kontingent geprüft wird. Neben der VM-Laufzeit können Managed Disks, Public IPs, Bandbreite/Egress, Backups sowie Windows-, SQL- oder Drittanbieter-Lizenzen kostenrelevant sein. Für produktive Workloads brauchst du ein klares HA-/DR-Konzept mit Availability Zones, VM Scale Sets, Load Balancer, Backup und optional Azure Site Recovery.',
+                    'features' => "Volle Kontrolle über Betriebssystem, Laufzeit und installierte Software\nViele VM-Familien für General Purpose, Compute, Memory, Storage, GPU und HPC\nRegionale SKU-Verfügbarkeit, Kontingente und Kapazität vor Projektstart prüfen\nManaged Disks, Netzwerk, Public IPs, Backup, Egress und Lizenzen separat kalkulieren\nHochverfügbarkeit über Availability Zones, Availability Sets oder VM Scale Sets planen",
+                    'use_cases' => "Lift-and-Shift bestehender Server und Fachanwendungen\nWindows- oder Linux-Workloads mit OS-Zugriff\nDatenbank-, SAP-, GPU- oder HPC-nahe Spezialworkloads\nEntwicklungs-, Test- und Schulungsumgebungen\nHybrid- oder Datacenter-Erweiterung über virtuelle Netzwerke",
+                    'docs_url' => 'https://learn.microsoft.com/de-de/azure/virtual-machines/overview',
+                    'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/virtual-machines/windows/',
+                ],
+            ],
+            'azure-kubernetes-service' => [
+                'old' => [
+                    'subtitle' => 'Verwaltetes Kubernetes für containerisierte Anwendungen.',
+                    'summary' => ['AKS reduziert den Betriebsaufwand für Kubernetes-Cluster und eignet sich für Microservices, Plattform-Teams und skalierende Container-Workloads.', 'AKS ist ein verwalteter Kubernetes-Dienst für containerisierte Anwendungen, bei dem Azure zentrale Clusteraufgaben wie Control Plane, Integritätsüberwachung und Wartung übernimmt. Du behältst Kontrolle über Knotenpools, Workloads, Netzwerk, Identität und Betriebsmodell und kannst zwischen Standard- und stärker verwalteten Automatic-Ansätzen wählen.'],
+                    'content' => ['AKS reduziert den Betriebsaufwand für Kubernetes-Cluster und eignet sich für Microservices, Plattform-Teams und skalierende Container-Workloads.', 'AKS passt, wenn Teams Kubernetes-Funktionen, Portabilität und Plattformstandards brauchen: Microservices, sichere DevOps, Windows/Linux-Container, ML/Streaming oder mehrere Knotenpools. Plane Kubernetes-Versionen, Node-Images, Resource Reservations, Netzwerk, Monitoring, Policy, Skalierung und Cluster-Tarif bewusst; produktive Workloads benötigen meist SLA-/Standard- oder Premium-Optionen und verursachen Kosten für Knoten, Storage, Netzwerk und ggf. Control Plane.'],
+                    'features' => ["Managed Kubernetes\nCluster-Skalierung\nIntegration mit Azure Monitor und Container Registry", "Verwaltete Kubernetes Control Plane mit Azure-Integration\nKnotenpools für unterschiedliche VM-Größen, Betriebssysteme und Workloads\nAutoscaling über Cluster Autoscaler, Horizontal Pod Autoscaler und KEDA-Szenarien\nIntegration mit Entra ID, Azure Policy, Azure Monitor und Container Registry\nKnotenimages und Kubernetes-Versionen aktiv warten; veraltete Images nicht neu einplanen"],
+                    'use_cases' => "Microservices\nPlattform Engineering\nCloudnative Anwendungen",
+                    'docs_url' => 'https://learn.microsoft.com/de-de/azure/aks/',
+                    'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/kubernetes-service/',
+                ],
+                'new' => [
+                    'subtitle' => 'Managed Kubernetes für produktive Containerplattformen.',
+                    'summary' => 'AKS ist ein verwalteter Kubernetes-Dienst für containerisierte Anwendungen, bei dem Azure zentrale Clusteraufgaben wie Control Plane, Integritätsüberwachung und Wartung übernimmt. Du behältst Kontrolle über Workloads, Knotenpools, Netzwerk, Identität, Richtlinien und das Betriebsmodell. AKS eignet sich, wenn Teams Kubernetes-Funktionen, Portabilität, Plattformstandards und Integration mit Azure-Diensten brauchen.',
+                    'content' => 'Wähle den passenden Betriebsmodus und Tarif bewusst: Free eignet sich eher für Tests ohne SLA, Standard für produktive Workloads mit SLA und Premium für längeren Kubernetes-Support. Kosten entstehen vor allem durch Knoten-VMs, Storage, Netzwerk, ggf. Clusterverwaltung und bei AKS Automatic zusätzlich durch die stärker verwaltete Plattform. Wichtig: Azure Linux 2.0-Knotenimages erhalten ab 30. November 2025 keine Sicherheitsupdates mehr und werden ab 31. März 2026 entfernt; plane rechtzeitig ein Upgrade auf unterstützte Kubernetes-Versionen oder AzureLinux3.',
+                    'features' => "Verwaltete Kubernetes Control Plane mit Azure-Integration\nKnotenpools für unterschiedliche VM-Größen, Betriebssysteme und Workloads\nAutomatic oder Standard je nach gewünschtem Kontroll- und Betriebsgrad wählen\nIntegration mit Entra ID, Azure Policy, Azure Monitor, Container Registry und Netzwerkfeatures\nKubernetes-Versionen und Node-Images aktiv warten; Azure Linux 2.0 nicht neu einplanen",
+                    'use_cases' => "Microservices- und Plattform-Engineering-Umgebungen\nModernisierung containerisierter Bestandsanwendungen\nCI/CD- und GitOps-basierte Deployments\nWindows- und Linux-Container in einem Kubernetes-Betriebsmodell\nSkalierende APIs, Datenstreaming- oder ML-Workloads",
+                    'docs_url' => 'https://learn.microsoft.com/de-de/azure/aks/what-is-aks',
+                    'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/kubernetes-service/',
+                ],
+            ],
+            'azure-functions' => [
+                'old' => [
+                    'subtitle' => 'Ereignisgesteuerte serverlose Funktionen.',
+                    'summary' => ['Azure Functions führt Code auf Abruf aus, ohne dass Server verwaltet werden müssen – passend für Automatisierung, APIs und Event-Verarbeitung.', 'Azure Functions führt kleine, ereignisgesteuerte Codeeinheiten aus und verbindet sie über Trigger und Bindings mit Azure-Diensten, APIs, Queues, Datenbanken und Zeitplänen. Du konzentrierst dich auf den Code; Hostingplan, Laufzeit, Skalierung und Netzwerkanforderungen bestimmen Kosten, Performance und Betriebsgrenzen.'],
+                    'content' => ['Azure Functions führt Code auf Abruf aus, ohne dass Server verwaltet werden müssen – passend für Automatisierung, APIs und Event-Verarbeitung.', 'Für neue serverlose Apps ist Flex Consumption die moderne Standardwahl mit Pay-as-you-go, schneller Skalierung und VNet-Integration; Premium eignet sich bei warmen Instanzen, längeren Laufzeiten, planbarerer Performance und VNet-Bedarf. Plane Timeouts, Kaltstartverhalten, Speicher, Storage Account, Monitoring und Sprache/Laufzeit aktiv ein; lange HTTP-Verarbeitung sollte asynchron oder mit Durable Functions modelliert werden.'],
+                    'features' => ["Serverless Runtime\nTrigger für HTTP, Timer, Queue und Events\nSkalierung nach Bedarf", "Trigger und Bindings für HTTP, Timer, Storage, Queues, Event Hubs, Service Bus und mehr\nFlex Consumption für neue serverlose Apps bevorzugen; klassischer Consumption-Plan ist eingeschränkt/veraltet\nPremium-Plan bietet Always-ready Instanzen, VNet-Integration und weniger Kaltstart-Risiko\nAbrechnung je nach Plan über Ausführungen, Ressourcenverbrauch oder bereitgestellte Instanzen\nMonitoring mit Azure Monitor und Application Insights einplanen"],
+                    'use_cases' => "Automatisierung\nWebhook-Backends\nEvent Processing",
+                    'docs_url' => 'https://learn.microsoft.com/de-de/azure/azure-functions/',
+                    'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/functions/',
+                ],
+                'new' => [
+                    'subtitle' => 'Event-getriebener Code ohne eigenen Serverbetrieb.',
+                    'summary' => 'Azure Functions ist eine serverlose Lösung für kleine, ereignisgesteuerte Codeeinheiten, die über Trigger und Bindings mit HTTP, Timern, Storage, Queues, Event Hubs, Service Bus und weiteren Diensten verbunden werden. Du konzentrierst dich auf die Geschäftslogik; Azure übernimmt Hosting, Skalierung und Laufzeitumgebung. Der passende Hostingplan entscheidet über Kaltstart, Netzwerkzugriff, Timeout, Skalierung und Abrechnung.',
+                    'content' => 'Für neue serverlose Apps ist Flex Consumption die empfohlene Standardwahl mit schneller ereignisgesteuerter Skalierung, VNet-Integration und Pay-as-you-go. Der klassische Consumption-Plan ist für neue Apps nur noch eingeschränkt sinnvoll; Linux im Consumption-Plan wird zum 30. September 2028 eingestellt und Functions v3 auf Linux Consumption läuft nach dem 30. September 2026 nicht mehr. Beachte außerdem das HTTP-Limit von 230 Sekunden für Antworten und verschiebe längere Verarbeitung in Queues, Durable Functions oder asynchrone Muster.',
+                    'features' => "Trigger und Bindings für HTTP, Timer, Storage, Queues, Event Hubs, Service Bus und mehr\nFlex Consumption für neue serverlose Apps bevorzugen\nPremium-Plan bietet Always-ready Instanzen, VNet-Integration und weniger Kaltstart-Risiko\nHTTP-Antworten sind trotz längerer Funktionslaufzeiten auf 230 Sekunden begrenzt\nStorage Account, Monitoring, Ausführungen, GB-Sekunden und Always-ready Instanzen kostenrelevant einplanen",
+                    'use_cases' => "Webhooks und leichte APIs\nZeitgesteuerte Automatisierung und Datenbereinigung\nQueue-, Event-Hub- und Service-Bus-Verarbeitung\nDatei-Upload- und Datenbankänderungsreaktionen\nServerlose Workflows mit Durable Functions",
+                    'docs_url' => 'https://learn.microsoft.com/de-de/azure/azure-functions/functions-overview',
+                    'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/functions/',
+                ],
+            ],
+            'container-apps' => [
+                'old' => [
+                    'subtitle' => 'Serverlose Container für Apps und Microservices.',
+                    'summary' => ['Container Apps kombiniert Containerbetrieb mit serverloser Skalierung und eignet sich für APIs, Worker und Dapr-basierte Microservices.', 'Azure Container Apps ist eine serverlose Plattform für containerisierte APIs, Worker, Jobs und Microservices. Du bringst Containerimages mit, Azure übernimmt Infrastruktur, Ingress, Revisionen, Skalierung und optionale Dapr-Integration deutlich stärker als bei einem eigenen Kubernetes-Cluster.'],
+                    'content' => ['Container Apps kombiniert Containerbetrieb mit serverloser Skalierung und eignet sich für APIs, Worker und Dapr-basierte Microservices.', 'Container Apps skaliert anhand von HTTP/TCP, CPU/Memory oder KEDA-unterstützten Ereignisquellen und kann bei passenden Regeln bis auf null Replikate herunterfahren. Es eignet sich besonders, wenn du Container-Flexibilität brauchst, aber keinen AKS-Betrieb verantworten willst; plane Revisionsmodell, Secrets, Managed Identity, Registry, VNet, Logging, Mindestreplikate und Kosten für aktive bzw. Leerlauf-Replikate.'],
+                    'features' => ["Container ohne Clusterbetrieb\nScale-to-zero möglich\nDapr-Integration", "Serverlose Containerplattform mit HTTPS/TCP-Ingress und Revisionsmodell\nAutomatische Skalierung über KEDA; Scale-to-zero möglich, außer bei bestimmten Regeln wie CPU/Memory\nDapr-APIs für Service Invocation, Pub/Sub, State, Bindings, Secrets und Configuration verfügbar\nContainer aus öffentlichen oder privaten Registries inklusive Azure Container Registry\nKosten nach Plan, Ressourcen, Anforderungen und ggf. Leerlaufreplikaten kalkulieren"],
+                    'use_cases' => "APIs\nBackground Worker\nEvent-getriebene Microservices",
+                    'docs_url' => 'https://learn.microsoft.com/de-de/azure/container-apps/',
+                    'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/container-apps/',
+                ],
+                'new' => [
+                    'subtitle' => 'Serverlose Container ohne eigenen Kubernetes-Betrieb.',
+                    'summary' => 'Azure Container Apps ist eine serverlose Plattform für containerisierte APIs, Worker, Jobs und Microservices. Du bringst Containerimages mit; Azure übernimmt viele Infrastruktur-, Ingress-, Revisions-, Skalierungs- und Betriebsdetails. Der Dienst basiert auf Kubernetes-nahen Konzepten und Open-Source-Technologien wie KEDA, Dapr und Envoy, ohne dass du die Kubernetes-API direkt betreibst.',
+                    'content' => 'Container Apps skaliert über HTTP/TCP-Regeln oder KEDA-unterstützte Ereignisquellen und kann bei passenden Regeln bis auf null Replikate herunterfahren; CPU- oder Memory-basierte Skalierung eignet sich nicht für Scale-to-zero. Wenn du direkten Zugriff auf Kubernetes-API, Control Plane oder vollständige Clusterkonfiguration brauchst, ist AKS die passendere Plattform. Plane Revisionen, Traffic-Splitting, Secrets, Managed Identity, Registry-Zugriff, VNet, Logging, Mindest-/Maximalreplikate und Kosten für aktive oder leerlaufende Replikate.',
+                    'features' => "Serverlose Containerplattform mit HTTPS/TCP-Ingress, Revisionen und Traffic-Splitting\nAutomatische Skalierung über KEDA; Scale-to-zero möglich, aber nicht bei CPU-/Memory-Regeln\nDapr-APIs für Service Invocation, Pub/Sub, State, Bindings, Secrets und Configuration verfügbar\nKein direkter Kubernetes-API-Zugriff; bei vollem Clusterbetrieb AKS prüfen\nKosten nach Plan, Ressourcen, Anforderungen und ggf. Leerlaufreplikaten kalkulieren",
+                    'use_cases' => "APIs und Web-Backends als Container\nBackground Worker und ereignisgetriebene Verarbeitung\nMicroservices mit Dapr und Service Discovery\nScheduled, manuelle oder eventbasierte Container Apps Jobs\nContainerisierte Azure Functions oder kleine Plattformbausteine",
+                    'docs_url' => 'https://learn.microsoft.com/de-de/azure/container-apps/overview',
+                    'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/container-apps/',
+                ],
+            ],
+        ];
+
+        $fields = ['subtitle', 'summary', 'content', 'features', 'use_cases', 'docs_url', 'pricing_url'];
+        $select = $db->prepare("SELECT id, subtitle, summary, content, features, use_cases, docs_url, pricing_url FROM {$prefix}m365azure_services WHERE slug = ?");
+        $update = $db->prepare("UPDATE {$prefix}m365azure_services SET subtitle = ?, summary = ?, content = ?, features = ?, use_cases = ?, docs_url = ?, pricing_url = ? WHERE id = ?");
+
+        foreach ($updates as $slug => $data) {
+            $select->execute([$slug]);
+            $row = $select->fetch(\PDO::FETCH_ASSOC);
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $values = [];
+            $changed = false;
+            foreach ($fields as $field) {
+                $current = self::normalize_newlines((string) ($row[$field] ?? ''));
+                $oldValues = (array) ($data['old'][$field] ?? '');
+                $oldValues = array_map(static function ($value): string {
+                    return self::normalize_newlines((string) $value);
+                }, $oldValues);
+                if (trim($current) === '' || in_array($current, $oldValues, true)) {
+                    $values[$field] = self::normalize_newlines((string) ($data['new'][$field] ?? ''));
+                    $changed = true;
+                } else {
+                    $values[$field] = $current;
+                }
+            }
+
+            if ($changed) {
+                $update->execute([
+                    $values['subtitle'],
+                    $values['summary'],
+                    $values['content'],
+                    $values['features'],
+                    $values['use_cases'],
+                    $values['docs_url'],
+                    $values['pricing_url'],
+                    (int) $row['id'],
+                ]);
+            }
+        }
+
+        $exists = $db->prepare("SELECT id FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $exists->execute([$markerKey]);
+        if ($exists->fetch()) {
+            $stmt = $db->prepare("UPDATE {$prefix}m365azure_settings SET setting_value = ? WHERE setting_key = ?");
+            $stmt->execute([$markerVersion, $markerKey]);
+        } else {
+            $stmt = $db->prepare("INSERT INTO {$prefix}m365azure_settings (setting_key, setting_value) VALUES (?, ?)");
+            $stmt->execute([$markerKey, $markerVersion]);
+        }
+    }
+
+    private static function upgrade_compute_description_mapping(object $db, string $prefix): void
+    {
+        $markerKey = 'content_compute_description_version';
+        $markerVersion = '2026-05-30-compute-v3';
+
+        $markerStmt = $db->prepare("SELECT setting_value FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $markerStmt->execute([$markerKey]);
+        if ((string) ($markerStmt->fetchColumn() ?: '') === $markerVersion) {
+            return;
+        }
+
+        $updates = [
+            'virtual-machines' => [
+                'summary' => 'Azure Virtual Machines stellt skalierbare Windows- und Linux-Server bereit, wenn du Betriebssystem, Software und Infrastrukturdetails selbst steuern musst.',
+                'known_summary' => [
+                    'Ideal für Lift-and-Shift, klassische Server-Workloads, Testumgebungen und Spezialsoftware mit Betriebssystemzugriff.',
+                    'Azure Virtual Machines stellt skalierbare Compute-Ressourcen für Windows und Linux bereit, wenn du Betriebssystem, installierte Software oder spezielle VM-Größen selbst steuern musst. Geeignet für klassische Server-Workloads, Migrationen und Anwendungen mit festen Laufzeitvorgaben; Patch-, OS- und Applikationsbetrieb bleiben jedoch in deiner Verantwortung.',
+                    'Azure Virtual Machines stellt skalierbare Compute-Ressourcen für Windows und Linux bereit, wenn du Betriebssystem, installierte Software oder spezielle VM-Größen selbst steuern musst. Azure bietet Größenfamilien für General Purpose, Compute-, Memory-, Storage-, GPU- und HPC-Workloads; du wählst Region, Verfügbarkeit, Datenträger und Netzwerk selbst. Der Dienst ist stark, wenn du maximale Kontrolle brauchst – Patch-, OS-, Sicherheits- und Applikationsbetrieb bleiben aber bei dir.',
+                ],
+                'content' => 'Azure Virtual Machines stellt skalierbare Windows- und Linux-Server bereit, wenn du Betriebssystem, installierte Software oder spezielle VM-Größen selbst steuern musst. Du wählst Region, VM-Familie, Datenträger, Netzwerk und Verfügbarkeitsmodell passend zur Workload. Der Dienst ist sinnvoll für Migrationen und Spezialsoftware, bringt aber weiterhin Verantwortung für Patches, OS-Härtung, Backup und Betrieb mit.',
+                'features' => "VM-Größen sind je Region und Zone unterschiedlich verfügbar; SKU, Kontingent und tatsächliche Kapazität vor Projektstart prüfen\nManaged Disks, Public IPs, Bandbreite/Egress, Backups und Lizenzen separat kalkulieren\nFür produktive Systeme Availability Zones, Availability Sets, VM Scale Sets oder Site Recovery bewusst planen\nTemporärer lokaler Speicher ist nicht dauerhaft und eignet sich nur für Cache oder temporäre Daten\nVM-Größenfamilie nach Workload wählen: General Purpose, Compute, Memory, Storage, GPU oder HPC",
+                'use_cases' => "Lift-and-Shift bestehender Server und Fachanwendungen\nWindows- oder Linux-Workloads mit OS-Zugriff\nDatenbank-, SAP-, GPU- oder HPC-nahe Spezialworkloads\nEntwicklungs-, Test- und Schulungsumgebungen",
+                'known_content' => [
+                    'Ideal für Lift-and-Shift, klassische Server-Workloads, Testumgebungen und Spezialsoftware mit Betriebssystemzugriff.',
+                    'Mit VMs bekommst du IaaS-Compute inklusive Auswahl aus VM-Familien für allgemeine, compute-, speicher-, storage-, GPU- und HPC-Workloads. Plane Region, Größe, Datenträger, Netzwerk, Verfügbarkeit und Kontingente frühzeitig; Managed Disks, Public IPs, ausgehender Traffic und Betriebssystemlizenzen können separat kostenrelevant sein. Für Hochverfügbarkeit nutzt du Availability Zones, VM Scale Sets und Backup-/Recovery-Strategien.',
+                    'Plane VM-Größe, Region, Verfügbarkeitszone, Datenträger, Netzwerk und Kontingente frühzeitig, weil nicht jede SKU in jeder Region oder Zone verfügbar ist und Kapazität separat zum genehmigten Kontingent geprüft wird. Neben der VM-Laufzeit können Managed Disks, Public IPs, Bandbreite/Egress, Backups sowie Windows-, SQL- oder Drittanbieter-Lizenzen kostenrelevant sein. Für produktive Workloads brauchst du ein klares HA-/DR-Konzept mit Availability Zones, VM Scale Sets, Load Balancer, Backup und optional Azure Site Recovery.',
+                ],
+                'known_features' => [
+                    "Flexible Größen und Images\nWindows und Linux\nSkalierung mit VM Scale Sets",
+                    "Volle Kontrolle über Betriebssystem, Laufzeit und installierte Software\nViele VM-Familien für General Purpose, Compute, Memory, Storage, GPU und HPC\nHochverfügbarkeit über Availability Zones und VM Scale Sets planbar\nManaged Disks, Netzwerk, Lizenzen und Egress separat kalkulieren\nKontingente und regionale Größenverfügbarkeit vor Projektstart prüfen",
+                    "Volle Kontrolle über Betriebssystem, Laufzeit und installierte Software\nViele VM-Familien für General Purpose, Compute, Memory, Storage, GPU und HPC\nRegionale SKU-Verfügbarkeit, Kontingente und Kapazität vor Projektstart prüfen\nManaged Disks, Netzwerk, Public IPs, Backup, Egress und Lizenzen separat kalkulieren\nHochverfügbarkeit über Availability Zones, Availability Sets oder VM Scale Sets planen",
+                ],
+                'known_use_cases' => [
+                    "Legacy-Anwendungen\nEntwicklungs- und Testsysteme\nRechenintensive Workloads",
+                    "Lift-and-Shift bestehender Server und Fachanwendungen\nWindows- oder Linux-Workloads mit OS-Zugriff\nDatenbank-, SAP-, GPU- oder HPC-nahe Spezialworkloads\nEntwicklungs-, Test- und Schulungsumgebungen\nHybrid- oder Datacenter-Erweiterung über virtuelle Netzwerke",
+                ],
+            ],
+            'azure-kubernetes-service' => [
+                'summary' => 'AKS ist Microsofts verwalteter Kubernetes-Dienst für containerisierte Anwendungen und Plattformen.',
+                'known_summary' => [
+                    'AKS reduziert den Betriebsaufwand für Kubernetes-Cluster und eignet sich für Microservices, Plattform-Teams und skalierende Container-Workloads.',
+                    'AKS ist ein verwalteter Kubernetes-Dienst für containerisierte Anwendungen, bei dem Azure zentrale Clusteraufgaben wie Control Plane, Integritätsüberwachung und Wartung übernimmt. Du behältst Kontrolle über Knotenpools, Workloads, Netzwerk, Identität und Betriebsmodell und kannst zwischen Standard- und stärker verwalteten Automatic-Ansätzen wählen.',
+                    'AKS ist ein verwalteter Kubernetes-Dienst für containerisierte Anwendungen, bei dem Azure zentrale Clusteraufgaben wie Control Plane, Integritätsüberwachung und Wartung übernimmt. Du behältst Kontrolle über Workloads, Knotenpools, Netzwerk, Identität, Richtlinien und das Betriebsmodell. AKS eignet sich, wenn Teams Kubernetes-Funktionen, Portabilität, Plattformstandards und Integration mit Azure-Diensten brauchen.',
+                ],
+                'content' => 'AKS ist Microsofts verwalteter Kubernetes-Dienst für containerisierte Anwendungen und Plattformen. Azure übernimmt Control-Plane-Betrieb, Wartung und Integrationen, während du Workloads, Knotenpools, Netzwerk, Identität, Richtlinien und Release-Prozesse steuerst. AKS passt, wenn dein Team Kubernetes-Funktionen, Portabilität und klare Plattformstandards braucht, statt nur einen einfachen Container-Host.',
+                'features' => "Free eher für Tests ohne SLA; Standard für produktive Workloads mit SLA; Premium für Long-Term Support planen\nKosten entstehen vor allem durch Knoten-VMs, Storage, Netzwerk, Cluster-Tier und ggf. AKS Automatic\nKubernetes-Minor-Versionen können beim Upgrade nicht übersprungen werden\nVor Upgrades Compute-Quota und verfügbare Zielversionen prüfen\nAzure Linux 2.0 Knotenimages nicht neu einplanen; Migration auf unterstützte Versionen oder AzureLinux3 vorbereiten",
+                'use_cases' => "Microservices- und Plattform-Engineering-Umgebungen\nModernisierung containerisierter Bestandsanwendungen\nCI/CD- und GitOps-basierte Deployments\nWindows- und Linux-Container in einem Kubernetes-Betriebsmodell",
+                'known_content' => [
+                    'AKS reduziert den Betriebsaufwand für Kubernetes-Cluster und eignet sich für Microservices, Plattform-Teams und skalierende Container-Workloads.',
+                    'AKS passt, wenn Teams Kubernetes-Funktionen, Portabilität und Plattformstandards brauchen: Microservices, sichere DevOps, Windows/Linux-Container, ML/Streaming oder mehrere Knotenpools. Plane Kubernetes-Versionen, Node-Images, Resource Reservations, Netzwerk, Monitoring, Policy, Skalierung und Cluster-Tarif bewusst; produktive Workloads benötigen meist SLA-/Standard- oder Premium-Optionen und verursachen Kosten für Knoten, Storage, Netzwerk und ggf. Control Plane.',
+                    'Wähle den passenden Betriebsmodus und Tarif bewusst: Free eignet sich eher für Tests ohne SLA, Standard für produktive Workloads mit SLA und Premium für längeren Kubernetes-Support. Kosten entstehen vor allem durch Knoten-VMs, Storage, Netzwerk, ggf. Clusterverwaltung und bei AKS Automatic zusätzlich durch die stärker verwaltete Plattform. Wichtig: Azure Linux 2.0-Knotenimages erhalten ab 30. November 2025 keine Sicherheitsupdates mehr und werden ab 31. März 2026 entfernt; plane rechtzeitig ein Upgrade auf unterstützte Kubernetes-Versionen oder AzureLinux3.',
+                ],
+                'known_features' => [
+                    "Managed Kubernetes\nCluster-Skalierung\nIntegration mit Azure Monitor und Container Registry",
+                    "Verwaltete Kubernetes Control Plane mit Azure-Integration\nKnotenpools für unterschiedliche VM-Größen, Betriebssysteme und Workloads\nAutoscaling über Cluster Autoscaler, Horizontal Pod Autoscaler und KEDA-Szenarien\nIntegration mit Entra ID, Azure Policy, Azure Monitor und Container Registry\nKnotenimages und Kubernetes-Versionen aktiv warten; veraltete Images nicht neu einplanen",
+                    "Verwaltete Kubernetes Control Plane mit Azure-Integration\nKnotenpools für unterschiedliche VM-Größen, Betriebssysteme und Workloads\nAutomatic oder Standard je nach gewünschtem Kontroll- und Betriebsgrad wählen\nIntegration mit Entra ID, Azure Policy, Azure Monitor, Container Registry und Netzwerkfeatures\nKubernetes-Versionen und Node-Images aktiv warten; Azure Linux 2.0 nicht neu einplanen",
+                ],
+                'known_use_cases' => [
+                    "Microservices\nPlattform Engineering\nCloudnative Anwendungen",
+                    "Microservices- und Plattform-Engineering-Umgebungen\nModernisierung containerisierter Bestandsanwendungen\nCI/CD- und GitOps-basierte Deployments\nWindows- und Linux-Container in einem Kubernetes-Betriebsmodell\nSkalierende APIs, Datenstreaming- oder ML-Workloads",
+                ],
+            ],
+            'azure-functions' => [
+                'summary' => 'Azure Functions führt ereignisgesteuerten Code aus, ohne dass du eigene Server betreiben musst.',
+                'known_summary' => [
+                    'Azure Functions führt Code auf Abruf aus, ohne dass Server verwaltet werden müssen – passend für Automatisierung, APIs und Event-Verarbeitung.',
+                    'Azure Functions führt kleine, ereignisgesteuerte Codeeinheiten aus und verbindet sie über Trigger und Bindings mit Azure-Diensten, APIs, Queues, Datenbanken und Zeitplänen. Du konzentrierst dich auf den Code; Hostingplan, Laufzeit, Skalierung und Netzwerkanforderungen bestimmen Kosten, Performance und Betriebsgrenzen.',
+                    'Azure Functions ist eine serverlose Lösung für kleine, ereignisgesteuerte Codeeinheiten, die über Trigger und Bindings mit HTTP, Timern, Storage, Queues, Event Hubs, Service Bus und weiteren Diensten verbunden werden. Du konzentrierst dich auf die Geschäftslogik; Azure übernimmt Hosting, Skalierung und Laufzeitumgebung. Der passende Hostingplan entscheidet über Kaltstart, Netzwerkzugriff, Timeout, Skalierung und Abrechnung.',
+                ],
+                'content' => 'Azure Functions ist eine serverlose Lösung für kleine, ereignisgesteuerte Codeeinheiten, die über Trigger und Bindings mit HTTP, Timern, Storage, Queues, Event Hubs, Service Bus und weiteren Diensten verbunden werden. Du konzentrierst dich auf die Geschäftslogik; Azure übernimmt Hosting, Skalierung und Laufzeitumgebung. Der passende Hostingplan entscheidet über Kaltstart, Netzwerkzugriff, Timeout, Skalierung und Abrechnung.',
+                'features' => "Flex Consumption für neue serverlose Apps bevorzugen; klassischer Consumption-Plan ist veraltet beziehungsweise eingeschränkt\nLinux Consumption wird am 30. September 2028 eingestellt; Functions v3 auf Linux Consumption läuft nach dem 30. September 2026 nicht mehr\nHTTP-getriggerte Funktionen haben ein Antwortlimit von 230 Sekunden; lange Verarbeitung asynchron auslagern\nPlanwahl beeinflusst Kaltstart, VNet, Timeout, Skalierung, Slots und Kostenmodell\nStorage Account, Monitoring, Ausführungen, GB-Sekunden und Always-ready Instanzen in der Kalkulation berücksichtigen",
+                'use_cases' => "Webhooks und leichte APIs\nZeitgesteuerte Automatisierung und Datenbereinigung\nQueue-, Event-Hub- und Service-Bus-Verarbeitung\nServerlose Workflows mit Durable Functions",
+                'known_content' => [
+                    'Azure Functions führt Code auf Abruf aus, ohne dass Server verwaltet werden müssen – passend für Automatisierung, APIs und Event-Verarbeitung.',
+                    'Für neue serverlose Apps ist Flex Consumption die moderne Standardwahl mit Pay-as-you-go, schneller Skalierung und VNet-Integration; Premium eignet sich bei warmen Instanzen, längeren Laufzeiten, planbarerer Performance und VNet-Bedarf. Plane Timeouts, Kaltstartverhalten, Speicher, Storage Account, Monitoring und Sprache/Laufzeit aktiv ein; lange HTTP-Verarbeitung sollte asynchron oder mit Durable Functions modelliert werden.',
+                    'Für neue serverlose Apps ist Flex Consumption die empfohlene Standardwahl mit schneller ereignisgesteuerter Skalierung, VNet-Integration und Pay-as-you-go. Der klassische Consumption-Plan ist für neue Apps nur noch eingeschränkt sinnvoll; Linux im Consumption-Plan wird zum 30. September 2028 eingestellt und Functions v3 auf Linux Consumption läuft nach dem 30. September 2026 nicht mehr. Beachte außerdem das HTTP-Limit von 230 Sekunden für Antworten und verschiebe längere Verarbeitung in Queues, Durable Functions oder asynchrone Muster.',
+                ],
+                'known_features' => [
+                    "Serverless Runtime\nTrigger für HTTP, Timer, Queue und Events\nSkalierung nach Bedarf",
+                    "Trigger und Bindings für HTTP, Timer, Storage, Queues, Event Hubs, Service Bus und mehr\nFlex Consumption für neue serverlose Apps bevorzugen; klassischer Consumption-Plan ist eingeschränkt/veraltet\nPremium-Plan bietet Always-ready Instanzen, VNet-Integration und weniger Kaltstart-Risiko\nAbrechnung je nach Plan über Ausführungen, Ressourcenverbrauch oder bereitgestellte Instanzen\nMonitoring mit Azure Monitor und Application Insights einplanen",
+                    "Trigger und Bindings für HTTP, Timer, Storage, Queues, Event Hubs, Service Bus und mehr\nFlex Consumption für neue serverlose Apps bevorzugen\nPremium-Plan bietet Always-ready Instanzen, VNet-Integration und weniger Kaltstart-Risiko\nHTTP-Antworten sind trotz längerer Funktionslaufzeiten auf 230 Sekunden begrenzt\nStorage Account, Monitoring, Ausführungen, GB-Sekunden und Always-ready Instanzen kostenrelevant einplanen",
+                ],
+                'known_use_cases' => [
+                    "Automatisierung\nWebhook-Backends\nEvent Processing",
+                    "Webhooks und leichte APIs\nZeitgesteuerte Automatisierung und Datenbereinigung\nQueue-, Event-Hub- und Service-Bus-Verarbeitung\nDatei-Upload- und Datenbankänderungsreaktionen\nServerlose Workflows mit Durable Functions",
+                ],
+            ],
+            'container-apps' => [
+                'summary' => 'Azure Container Apps betreibt containerisierte APIs, Worker, Jobs und Microservices serverlos.',
+                'known_summary' => [
+                    'Container Apps kombiniert Containerbetrieb mit serverloser Skalierung und eignet sich für APIs, Worker und Dapr-basierte Microservices.',
+                    'Azure Container Apps ist eine serverlose Plattform für containerisierte APIs, Worker, Jobs und Microservices. Du bringst Containerimages mit, Azure übernimmt Infrastruktur, Ingress, Revisionen, Skalierung und optionale Dapr-Integration deutlich stärker als bei einem eigenen Kubernetes-Cluster.',
+                    'Azure Container Apps ist eine serverlose Plattform für containerisierte APIs, Worker, Jobs und Microservices. Du bringst Containerimages mit; Azure übernimmt viele Infrastruktur-, Ingress-, Revisions-, Skalierungs- und Betriebsdetails. Der Dienst basiert auf Kubernetes-nahen Konzepten und Open-Source-Technologien wie KEDA, Dapr und Envoy, ohne dass du die Kubernetes-API direkt betreibst.',
+                ],
+                'content' => 'Azure Container Apps ist eine serverlose Plattform für containerisierte APIs, Worker, Jobs und Microservices. Du bringst Containerimages mit; Azure übernimmt viele Infrastruktur-, Ingress-, Revisions-, Skalierungs- und Betriebsdetails. Der Dienst basiert auf Kubernetes-nahen Konzepten und Open-Source-Technologien wie KEDA, Dapr und Envoy, ohne dass du die Kubernetes-API direkt betreibst.',
+                'features' => "Skalierung über HTTP, TCP oder KEDA; Scale-to-zero ist möglich, aber nicht bei CPU-/Memory-basierten Regeln\nOhne Ingress brauchst du minReplicas ab 1 oder eine eigene Skalierungsregel, sonst kann die App auf null bleiben\nKein direkter Kubernetes-API-Zugriff; für vollständige Clusterkontrolle AKS prüfen\nRevisionen, Traffic-Splitting, Secrets, Managed Identity, Registry, VNet und Logging früh planen\nKosten entstehen je nach Plan durch aktive Ressourcen, Leerlaufreplikate, Anforderungen und ggf. Dedicated Workload Profiles",
+                'use_cases' => "APIs und Web-Backends als Container\nBackground Worker und ereignisgetriebene Verarbeitung\nMicroservices mit Dapr und Service Discovery\nScheduled, manuelle oder eventbasierte Container Apps Jobs",
+                'known_content' => [
+                    'Container Apps kombiniert Containerbetrieb mit serverloser Skalierung und eignet sich für APIs, Worker und Dapr-basierte Microservices.',
+                    'Container Apps skaliert anhand von HTTP/TCP, CPU/Memory oder KEDA-unterstützten Ereignisquellen und kann bei passenden Regeln bis auf null Replikate herunterfahren. Es eignet sich besonders, wenn du Container-Flexibilität brauchst, aber keinen AKS-Betrieb verantworten willst; plane Revisionsmodell, Secrets, Managed Identity, Registry, VNet, Logging, Mindestreplikate und Kosten für aktive bzw. Leerlauf-Replikate.',
+                    'Container Apps skaliert über HTTP/TCP-Regeln oder KEDA-unterstützte Ereignisquellen und kann bei passenden Regeln bis auf null Replikate herunterfahren; CPU- oder Memory-basierte Skalierung eignet sich nicht für Scale-to-zero. Wenn du direkten Zugriff auf Kubernetes-API, Control Plane oder vollständige Clusterkonfiguration brauchst, ist AKS die passendere Plattform. Plane Revisionen, Traffic-Splitting, Secrets, Managed Identity, Registry-Zugriff, VNet, Logging, Mindest-/Maximalreplikate und Kosten für aktive oder leerlaufende Replikate.',
+                ],
+                'known_features' => [
+                    "Container ohne Clusterbetrieb\nScale-to-zero möglich\nDapr-Integration",
+                    "Serverlose Containerplattform mit HTTPS/TCP-Ingress und Revisionsmodell\nAutomatische Skalierung über KEDA; Scale-to-zero möglich, außer bei bestimmten Regeln wie CPU/Memory\nDapr-APIs für Service Invocation, Pub/Sub, State, Bindings, Secrets und Configuration verfügbar\nContainer aus öffentlichen oder privaten Registries inklusive Azure Container Registry\nKosten nach Plan, Ressourcen, Anforderungen und ggf. Leerlaufreplikaten kalkulieren",
+                    "Serverlose Containerplattform mit HTTPS/TCP-Ingress, Revisionen und Traffic-Splitting\nAutomatische Skalierung über KEDA; Scale-to-zero möglich, aber nicht bei CPU-/Memory-Regeln\nDapr-APIs für Service Invocation, Pub/Sub, State, Bindings, Secrets und Configuration verfügbar\nKein direkter Kubernetes-API-Zugriff; bei vollem Clusterbetrieb AKS prüfen\nKosten nach Plan, Ressourcen, Anforderungen und ggf. Leerlaufreplikaten kalkulieren",
+                ],
+                'known_use_cases' => [
+                    "APIs\nBackground Worker\nEvent-getriebene Microservices",
+                    "APIs und Web-Backends als Container\nBackground Worker und ereignisgetriebene Verarbeitung\nMicroservices mit Dapr und Service Discovery\nScheduled, manuelle oder eventbasierte Container Apps Jobs\nContainerisierte Azure Functions oder kleine Plattformbausteine",
+                ],
+            ],
+        ];
+
+        $select = $db->prepare("SELECT id, summary, content, features, use_cases FROM {$prefix}m365azure_services WHERE slug = ?");
+        $update = $db->prepare("UPDATE {$prefix}m365azure_services SET summary = ?, content = ?, features = ?, use_cases = ? WHERE id = ?");
+
+        foreach ($updates as $slug => $data) {
+            $select->execute([$slug]);
+            $row = $select->fetch(\PDO::FETCH_ASSOC);
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $summary = self::value_if_known((string) ($row['summary'] ?? ''), (array) $data['known_summary'], (string) $data['summary']);
+            $content = self::value_if_known((string) ($row['content'] ?? ''), (array) $data['known_content'], (string) $data['content']);
+            $features = self::value_if_known((string) ($row['features'] ?? ''), (array) $data['known_features'], (string) $data['features']);
+            $useCases = self::value_if_known((string) ($row['use_cases'] ?? ''), (array) $data['known_use_cases'], (string) $data['use_cases']);
+
+            if (
+                $summary === (string) ($row['summary'] ?? '')
+                && $content === (string) ($row['content'] ?? '')
+                && $features === (string) ($row['features'] ?? '')
+                && $useCases === (string) ($row['use_cases'] ?? '')
+            ) {
+                continue;
+            }
+
+            $update->execute([$summary, $content, $features, $useCases, (int) $row['id']]);
+        }
+
+        $exists = $db->prepare("SELECT id FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $exists->execute([$markerKey]);
+        if ($exists->fetch()) {
+            $stmt = $db->prepare("UPDATE {$prefix}m365azure_settings SET setting_value = ? WHERE setting_key = ?");
+            $stmt->execute([$markerVersion, $markerKey]);
+        } else {
+            $stmt = $db->prepare("INSERT INTO {$prefix}m365azure_settings (setting_key, setting_value) VALUES (?, ?)");
+            $stmt->execute([$markerKey, $markerVersion]);
+        }
+    }
+
+    private static function upgrade_storage_content(object $db, string $prefix): void
+    {
+        $markerKey = 'content_storage_seed_version';
+        $markerVersion = '2026-05-30-storage-v1';
+
+        $markerStmt = $db->prepare("SELECT setting_value FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $markerStmt->execute([$markerKey]);
+        if ((string) ($markerStmt->fetchColumn() ?: '') === $markerVersion) {
+            return;
+        }
+
+        $updates = [
+            'blob-storage' => [
+                'subtitle' => 'Objektspeicher für unstrukturierte Daten.',
+                'summary' => 'Azure Blob Storage speichert große Mengen unstrukturierter Daten wie Medien, Dokumente, Backups, Logs und Data-Lake-Rohdaten.',
+                'content' => 'Azure Blob Storage ist Microsofts hochskalierbarer Objektspeicher für unstrukturierte Text- und Binärdaten. Der Dienst eignet sich für Browser-ausgelieferte Medien, verteilten Dateizugriff, Streaming, Logdaten, Backup, Archivierung und Analytics-Daten. Zugriff ist per HTTP/HTTPS, REST, SDKs, SFTP oder NFS 3.0 möglich; mit Data Lake Storage Gen2 kann Blob Storage auch als Big-Data-Dateisystem genutzt werden.',
+                'features' => "Zugriffsebenen Hot, Cool, Cold, Archive und Smart Tier passend zu Nutzung und Aufbewahrung wählen\nCool, Cold und Archive haben niedrigere Speicherkosten, aber höhere Zugriffs-/Abrufkosten und Mindestaufbewahrungen\nArchive ist offline; Rehydration auf eine Online-Ebene kann bis zu 15 Stunden dauern\nLifecycle Management verschiebt oder löscht Blobs regelbasiert nach Erstellungs-, Änderungs- oder Zugriffszeit\nSchutzoptionen wie Soft Delete, Versioning, Snapshots, Point-in-Time Restore, Immutability und Azure Backup einplanen",
+                'use_cases' => "Medien- und Dokumentenbibliotheken für Websites oder Portale\nBackup, Disaster Recovery und langfristige Archivierung\nData-Lake-Rohdaten für Analytics- und KI-Plattformen\nLog-, Telemetrie- und Exportdaten aus Anwendungen\nSFTP- oder NFS-basierter Datenaustausch über Storage Accounts",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/storage/blobs/storage-blobs-overview',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/storage/blobs/',
+                'known' => [
+                    'summary' => ['Blob Storage speichert Bilder, Videos, Backups, Logs und Data-Lake-Dateien hochskalierbar und sicher.'],
+                    'content' => ['Blob Storage speichert Bilder, Videos, Backups, Logs und Data-Lake-Dateien hochskalierbar und sicher.'],
+                    'features' => ["Hot/Cool/Archive Tiers\nLifecycle Management\nStarke Integration in Analytics und Backup"],
+                    'use_cases' => ["Medienbibliotheken\nBackups\nData Lake Rohdaten"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/storage/blobs/'],
+                ],
+            ],
+            'azure-files' => [
+                'subtitle' => 'Serverlose Dateifreigaben über SMB und NFS.',
+                'summary' => 'Azure Files stellt vollständig verwaltete Dateifreigaben bereit, die Windows-, Linux- und macOS-Clients gleichzeitig nutzen können.',
+                'content' => 'Azure Files bietet serverlose Dateifreigaben in Azure, die über SMB, NFS und die Azure Files REST API erreichbar sind. Der Dienst kann klassische File-Server oder NAS-Systeme ersetzen, Hybrid-Szenarien mit Azure File Sync unterstützen und Lift-and-Shift-Anwendungen einen vertrauten Dateipfad bereitstellen. Je nach Workload wählst du SMB oder NFS, SSD oder HDD, Redundanz, Identität, Netzwerkzugriff und Abrechnungsmodell.',
+                'features' => "SMB- und NFS-Protokolle verfügbar; eine einzelne Freigabe unterstützt nicht beide Protokolle gleichzeitig\nSMB unterstützt identitätsbasierte Authentifizierung über AD DS, Microsoft Entra Domain Services oder Microsoft Entra Kerberos\nPort 445 und NFS-Netzwerkzugriff früh prüfen; für On-Prem-Zugriff oft VPN, ExpressRoute oder Private Endpoint nötig\nSSD für niedrige Latenz und I/O-intensive Workloads, HDD für kostengünstige allgemeine Dateifreigaben\nAzure File Sync kann SMB-Freigaben zentralisieren und lokale Windows Server als Cache nutzen",
+                'use_cases' => "Ersatz oder Ergänzung lokaler File-Server und NAS-Systeme\nLift-and-Shift-Anwendungen mit gemeinsamem Dateispeicher\nFSLogix-Profile und Benutzerdateien in Azure Virtual Desktop\nGemeinsame Konfigurations-, Diagnose- und Tool-Freigaben für Cloud-Apps\nHybrid-Standorte mit lokalem Cache über Azure File Sync",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/storage/files/storage-files-introduction',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/storage/files/',
+                'known' => [
+                    'summary' => ['Azure Files ersetzt oder erweitert klassische File-Server und lässt sich in Windows-, Linux- und Hybridumgebungen einbinden.'],
+                    'content' => ['Azure Files ersetzt oder erweitert klassische File-Server und lässt sich in Windows-, Linux- und Hybridumgebungen einbinden.'],
+                    'features' => ["SMB/NFS-Freigaben\nAzure File Sync\nIntegration mit Entra-Identitäten"],
+                    'use_cases' => ["File-Server-Ablösung\nLift-and-Shift\nGemeinsame App-Dateien"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/storage/files/'],
+                ],
+            ],
+            'disk-storage' => [
+                'subtitle' => 'Blockspeicher für virtuelle Maschinen.',
+                'summary' => 'Azure Disk Storage stellt verwalteten Blockspeicher für Azure-VMs bereit – von kostengünstigen Standard-Datenträgern bis Ultra Disk.',
+                'content' => 'Azure Managed Disks sind von Azure verwaltete Blockspeichervolumes für virtuelle Maschinen. Du wählst Datenträgertyp, Größe, Performance, Redundanz und Verschlüsselungsoptionen; Azure übernimmt Bereitstellung, Replikation und Integration in VM-Verfügbarkeit. Je nach Workload stehen Ultra Disk, Premium SSD v2, Premium SSD, Standard SSD und Standard HDD für Daten-, OS- und Spezialworkloads zur Verfügung.',
+                'features' => "Fünf Datenträgertypen: Ultra Disk, Premium SSD v2, Premium SSD, Standard SSD und Standard HDD\nUltra Disk und Premium SSD v2 erlauben getrennte Anpassung von Kapazität, IOPS und Durchsatz, sind aber nicht als OS-Datenträger nutzbar\nManaged Disks nutzen standardmäßig serverseitige Verschlüsselung mit AES-256; kundenseitig verwaltete Schlüssel und Hostverschlüsselung sind möglich\nSnapshots, Images, Azure Backup, Wiederherstellungspunkte und Azure Site Recovery für Backup/DR planen\nKosten hängen von Typ, bereitgestellter Größe, IOPS/Durchsatz, Snapshots, Transaktionen, Shared Disks und Egress ab",
+                'use_cases' => "Datenbank-VMs mit SQL Server, Oracle, SAP HANA oder MongoDB\nPersistente Datenlaufwerke für geschäftskritische IaaS-Anwendungen\nCluster-Szenarien mit Shared Disks und Failover-Software\nDev/Test-, Web- und wenig genutzte Workloads mit Standard SSD oder HDD\nHochleistungs-Blockstorage für transaktionsintensive Workloads",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/virtual-machines/managed-disks-overview',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/managed-disks/',
+                'known' => [
+                    'summary' => ['Managed Disks bieten performanten und dauerhaften Speicher für VM-Workloads – von Standard bis Ultra Disk.'],
+                    'content' => ['Managed Disks bieten performanten und dauerhaften Speicher für VM-Workloads – von Standard bis Ultra Disk.'],
+                    'features' => ["Managed Disks\nPremium SSD und Ultra Disk\nSnapshots und Verschlüsselung"],
+                    'use_cases' => ["Datenbank-VMs\nSAP-Workloads\nEnterprise-Anwendungen"],
+                ],
+            ],
+        ];
+
+        $fields = ['subtitle', 'summary', 'content', 'features', 'use_cases', 'docs_url', 'pricing_url'];
+        $select = $db->prepare("SELECT id, subtitle, summary, content, features, use_cases, docs_url, pricing_url FROM {$prefix}m365azure_services WHERE slug = ?");
+        $update = $db->prepare("UPDATE {$prefix}m365azure_services SET subtitle = ?, summary = ?, content = ?, features = ?, use_cases = ?, docs_url = ?, pricing_url = ? WHERE id = ?");
+
+        foreach ($updates as $slug => $data) {
+            $select->execute([$slug]);
+            $row = $select->fetch(\PDO::FETCH_ASSOC);
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $values = [];
+            foreach ($fields as $field) {
+                $known = (array) ($data['known'][$field] ?? []);
+                $values[$field] = self::value_if_known((string) ($row[$field] ?? ''), $known, (string) $data[$field]);
+            }
+
+            if (
+                $values['subtitle'] === (string) ($row['subtitle'] ?? '')
+                && $values['summary'] === (string) ($row['summary'] ?? '')
+                && $values['content'] === (string) ($row['content'] ?? '')
+                && $values['features'] === (string) ($row['features'] ?? '')
+                && $values['use_cases'] === (string) ($row['use_cases'] ?? '')
+                && $values['docs_url'] === (string) ($row['docs_url'] ?? '')
+                && $values['pricing_url'] === (string) ($row['pricing_url'] ?? '')
+            ) {
+                continue;
+            }
+
+            $update->execute([
+                $values['subtitle'],
+                $values['summary'],
+                $values['content'],
+                $values['features'],
+                $values['use_cases'],
+                $values['docs_url'],
+                $values['pricing_url'],
+                (int) $row['id'],
+            ]);
+        }
+
+        $exists = $db->prepare("SELECT id FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $exists->execute([$markerKey]);
+        if ($exists->fetch()) {
+            $stmt = $db->prepare("UPDATE {$prefix}m365azure_settings SET setting_value = ? WHERE setting_key = ?");
+            $stmt->execute([$markerVersion, $markerKey]);
+        } else {
+            $stmt = $db->prepare("INSERT INTO {$prefix}m365azure_settings (setting_key, setting_value) VALUES (?, ?)");
+            $stmt->execute([$markerKey, $markerVersion]);
+        }
+    }
+
+    /** @param array<int,string> $knownValues */
+    private static function value_if_known(string $current, array $knownValues, string $replacement): string
+    {
+        $normalizedCurrent = self::normalize_newlines($current);
+        if (trim($normalizedCurrent) === '') {
+            return self::normalize_newlines($replacement);
+        }
+
+        foreach ($knownValues as $knownValue) {
+            if ($normalizedCurrent === self::normalize_newlines((string) $knownValue)) {
+                return self::normalize_newlines($replacement);
+            }
+        }
+
+        return $current;
+    }
+
+    private static function normalize_literal_newlines(object $db, string $prefix): void
+    {
+        $markerKey = 'content_newline_normalized_version';
+        $markerVersion = '2026-05-30-v1';
+
+        $markerStmt = $db->prepare("SELECT setting_value FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $markerStmt->execute([$markerKey]);
+        if ((string) ($markerStmt->fetchColumn() ?: '') === $markerVersion) {
+            return;
+        }
+
+        self::normalize_table_fields($db, $prefix . 'm365azure_categories', ['intro']);
+        self::normalize_table_fields($db, $prefix . 'm365azure_services', ['summary', 'content', 'features', 'use_cases']);
+
+        $settings = $db->prepare("SELECT id, setting_value FROM {$prefix}m365azure_settings WHERE setting_key IN (?, ?)");
+        $settings->execute(['page_intro', 'seo_description']);
+        $updateSetting = $db->prepare("UPDATE {$prefix}m365azure_settings SET setting_value = ? WHERE id = ?");
+        foreach ($settings->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
+            $current = (string) ($row['setting_value'] ?? '');
+            $normalized = self::normalize_newlines($current);
+            if ($normalized !== $current) {
+                $updateSetting->execute([$normalized, (int) $row['id']]);
+            }
+        }
+
+        $exists = $db->prepare("SELECT id FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $exists->execute([$markerKey]);
+        if ($exists->fetch()) {
+            $stmt = $db->prepare("UPDATE {$prefix}m365azure_settings SET setting_value = ? WHERE setting_key = ?");
+            $stmt->execute([$markerVersion, $markerKey]);
+        } else {
+            $stmt = $db->prepare("INSERT INTO {$prefix}m365azure_settings (setting_key, setting_value) VALUES (?, ?)");
+            $stmt->execute([$markerKey, $markerVersion]);
+        }
+    }
+
+    /** @param array<int,string> $fields */
+    private static function normalize_table_fields(object $db, string $table, array $fields): void
+    {
+        $columns = 'id, ' . implode(', ', $fields);
+        $rows = $db->prepare("SELECT {$columns} FROM {$table}");
+        $rows->execute();
+
+        foreach ($rows->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
+            $updates = [];
+            $params = [];
+            foreach ($fields as $field) {
+                $current = (string) ($row[$field] ?? '');
+                $normalized = self::normalize_newlines($current);
+                if ($normalized !== $current) {
+                    $updates[] = $field . ' = ?';
+                    $params[] = $normalized;
+                }
+            }
+
+            if ($updates === []) {
+                continue;
+            }
+
+            $params[] = (int) $row['id'];
+            $stmt = $db->prepare("UPDATE {$table} SET " . implode(', ', $updates) . " WHERE id = ?");
+            $stmt->execute($params);
         }
     }
 }

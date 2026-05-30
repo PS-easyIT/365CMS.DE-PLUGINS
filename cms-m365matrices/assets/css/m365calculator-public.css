@@ -345,6 +345,24 @@ body.m365calculator-theme-embed:not(.is-member) .breadcrumb-nav {
     padding-right: 0;
 }
 
+.m365calc-matrix-page .m365calc-actions .m365calc-contact-action,
+.m365calc-matrix-page .m365calc-package-actions .m365calc-contact-action {
+    background: color-mix(in srgb, var(--phinit-color-accent, #f5a623) 26%, var(--phinit-color-surface, #ffffff));
+    border-color: color-mix(in srgb, var(--phinit-color-accent, #f5a623) 62%, var(--phinit-color-border, #dde3ec));
+    color: color-mix(in srgb, var(--phinit-color-accent, #f5a623) 76%, var(--phinit-color-ink, #1a2233));
+    white-space: nowrap;
+}
+
+.m365calc-matrix-page .m365calc-actions .m365calc-contact-action:hover,
+.m365calc-matrix-page .m365calc-actions .m365calc-contact-action:focus-visible,
+.m365calc-matrix-page .m365calc-package-actions .m365calc-contact-action:hover,
+.m365calc-matrix-page .m365calc-package-actions .m365calc-contact-action:focus-visible {
+    background: color-mix(in srgb, var(--phinit-color-accent, #f5a623) 68%, #7c2d12);
+    border-color: color-mix(in srgb, var(--phinit-color-accent, #f5a623) 68%, #7c2d12);
+    color: #ffffff;
+    text-decoration: none;
+}
+
 .m365calc-tool-grid,
 .m365calc-summary-grid,
 .m365calc-result-grid {
@@ -805,6 +823,22 @@ body.m365calculator-theme-embed:not(.is-member) .breadcrumb-nav {
     align-content: start;
     display: grid;
     gap: var(--phinit-space-2);
+}
+
+.m365calc-package-actions {
+    align-items: flex-start;
+    display: flex;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+}
+
+.m365calc-package-actions--standalone {
+    margin-bottom: var(--phinit-space-4);
+}
+
+.m365calc-package-check-action {
+    font-size: var(--phinit-text-xs);
+    white-space: nowrap;
 }
 
 .m365calc-addon-toc {
@@ -1310,6 +1344,10 @@ body.m365calculator-theme-embed:not(.is-member) .breadcrumb-nav {
     .m365calc-score {
         min-width: 0;
         width: 100%;
+    }
+
+    .m365calc-package-actions {
+        justify-content: flex-start;
     }
 
     .m365calc-chart__row {
