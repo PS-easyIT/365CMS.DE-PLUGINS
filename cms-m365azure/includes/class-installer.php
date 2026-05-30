@@ -88,6 +88,9 @@ final class CMS_M365Azure_Installer
         self::upgrade_compute_content($db, $prefix);
         self::upgrade_compute_description_mapping($db, $prefix);
         self::upgrade_storage_content($db, $prefix);
+        self::upgrade_database_content($db, $prefix);
+        self::upgrade_ai_ml_content($db, $prefix);
+        self::upgrade_devops_content($db, $prefix);
         self::normalize_literal_newlines($db, $prefix);
     }
 
@@ -214,14 +217,14 @@ final class CMS_M365Azure_Installer
             ['storage', 'blob-storage', 'Azure Blob Storage', 'Objektspeicher für unstrukturierte Daten.', 'Azure Blob Storage speichert große Mengen unstrukturierter Daten wie Medien, Dokumente, Backups, Logs und Data-Lake-Rohdaten.', 'Azure Blob Storage ist Microsofts hochskalierbarer Objektspeicher für unstrukturierte Text- und Binärdaten. Der Dienst eignet sich für Browser-ausgelieferte Medien, verteilten Dateizugriff, Streaming, Logdaten, Backup, Archivierung und Analytics-Daten. Zugriff ist per HTTP/HTTPS, REST, SDKs, SFTP oder NFS 3.0 möglich; mit Data Lake Storage Gen2 kann Blob Storage auch als Big-Data-Dateisystem genutzt werden.', 'Zugriffsebenen Hot, Cool, Cold, Archive und Smart Tier passend zu Nutzung und Aufbewahrung wählen\nCool, Cold und Archive haben niedrigere Speicherkosten, aber höhere Zugriffs-/Abrufkosten und Mindestaufbewahrungen\nArchive ist offline; Rehydration auf eine Online-Ebene kann bis zu 15 Stunden dauern\nLifecycle Management verschiebt oder löscht Blobs regelbasiert nach Erstellungs-, Änderungs- oder Zugriffszeit\nSchutzoptionen wie Soft Delete, Versioning, Snapshots, Point-in-Time Restore, Immutability und Azure Backup einplanen', 'Medien- und Dokumentenbibliotheken für Websites oder Portale\nBackup, Disaster Recovery und langfristige Archivierung\nData-Lake-Rohdaten für Analytics- und KI-Plattformen\nLog-, Telemetrie- und Exportdaten aus Anwendungen\nSFTP- oder NFS-basierter Datenaustausch über Storage Accounts', 'https://learn.microsoft.com/de-de/azure/storage/blobs/storage-blobs-overview', 'https://azure.microsoft.com/de-de/pricing/details/storage/blobs/', 10],
             ['storage', 'azure-files', 'Azure Files', 'Serverlose Dateifreigaben über SMB und NFS.', 'Azure Files stellt vollständig verwaltete Dateifreigaben bereit, die Windows-, Linux- und macOS-Clients gleichzeitig nutzen können.', 'Azure Files bietet serverlose Dateifreigaben in Azure, die über SMB, NFS und die Azure Files REST API erreichbar sind. Der Dienst kann klassische File-Server oder NAS-Systeme ersetzen, Hybrid-Szenarien mit Azure File Sync unterstützen und Lift-and-Shift-Anwendungen einen vertrauten Dateipfad bereitstellen. Je nach Workload wählst du SMB oder NFS, SSD oder HDD, Redundanz, Identität, Netzwerkzugriff und Abrechnungsmodell.', 'SMB- und NFS-Protokolle verfügbar; eine einzelne Freigabe unterstützt nicht beide Protokolle gleichzeitig\nSMB unterstützt identitätsbasierte Authentifizierung über AD DS, Microsoft Entra Domain Services oder Microsoft Entra Kerberos\nPort 445 und NFS-Netzwerkzugriff früh prüfen; für On-Prem-Zugriff oft VPN, ExpressRoute oder Private Endpoint nötig\nSSD für niedrige Latenz und I/O-intensive Workloads, HDD für kostengünstige allgemeine Dateifreigaben\nAzure File Sync kann SMB-Freigaben zentralisieren und lokale Windows Server als Cache nutzen', 'Ersatz oder Ergänzung lokaler File-Server und NAS-Systeme\nLift-and-Shift-Anwendungen mit gemeinsamem Dateispeicher\nFSLogix-Profile und Benutzerdateien in Azure Virtual Desktop\nGemeinsame Konfigurations-, Diagnose- und Tool-Freigaben für Cloud-Apps\nHybrid-Standorte mit lokalem Cache über Azure File Sync', 'https://learn.microsoft.com/de-de/azure/storage/files/storage-files-introduction', 'https://azure.microsoft.com/de-de/pricing/details/storage/files/', 20],
             ['storage', 'disk-storage', 'Azure Disk Storage', 'Blockspeicher für virtuelle Maschinen.', 'Azure Disk Storage stellt verwalteten Blockspeicher für Azure-VMs bereit – von kostengünstigen Standard-Datenträgern bis Ultra Disk.', 'Azure Managed Disks sind von Azure verwaltete Blockspeichervolumes für virtuelle Maschinen. Du wählst Datenträgertyp, Größe, Performance, Redundanz und Verschlüsselungsoptionen; Azure übernimmt Bereitstellung, Replikation und Integration in VM-Verfügbarkeit. Je nach Workload stehen Ultra Disk, Premium SSD v2, Premium SSD, Standard SSD und Standard HDD für Daten-, OS- und Spezialworkloads zur Verfügung.', 'Fünf Datenträgertypen: Ultra Disk, Premium SSD v2, Premium SSD, Standard SSD und Standard HDD\nUltra Disk und Premium SSD v2 erlauben getrennte Anpassung von Kapazität, IOPS und Durchsatz, sind aber nicht als OS-Datenträger nutzbar\nManaged Disks nutzen standardmäßig serverseitige Verschlüsselung mit AES-256; kundenseitig verwaltete Schlüssel und Hostverschlüsselung sind möglich\nSnapshots, Images, Azure Backup, Wiederherstellungspunkte und Azure Site Recovery für Backup/DR planen\nKosten hängen von Typ, bereitgestellter Größe, IOPS/Durchsatz, Snapshots, Transaktionen, Shared Disks und Egress ab', 'Datenbank-VMs mit SQL Server, Oracle, SAP HANA oder MongoDB\nPersistente Datenlaufwerke für geschäftskritische IaaS-Anwendungen\nCluster-Szenarien mit Shared Disks und Failover-Software\nDev/Test-, Web- und wenig genutzte Workloads mit Standard SSD oder HDD\nHochleistungs-Blockstorage für transaktionsintensive Workloads', 'https://learn.microsoft.com/de-de/azure/virtual-machines/managed-disks-overview', 'https://azure.microsoft.com/de-de/pricing/details/managed-disks/', 30],
-            ['datenbanken', 'azure-sql-database', 'Azure SQL-Datenbank', 'Vollständig verwaltete relationale SQL-Datenbank.', 'Azure SQL-Datenbank eignet sich für moderne Apps, die SQL Server-Kompatibilität, hohe Verfügbarkeit und automatische Verwaltung benötigen.', 'Automatische Patches\nHohe Verfügbarkeit\nSkalierbare Leistungsebenen', 'Web-Apps\nGeschäftsanwendungen\nSaaS-Datenbanken', 'https://learn.microsoft.com/de-de/azure/azure-sql/database/', 'https://azure.microsoft.com/de-de/pricing/details/azure-sql-database/single/', 10],
-            ['datenbanken', 'cosmos-db', 'Azure Cosmos DB', 'Global verteilte NoSQL-Datenbank.', 'Cosmos DB bietet niedrige Latenz, globale Replikation und mehrere APIs für moderne, verteilte Anwendungen.', 'Globale Verteilung\nMehrere APIs\nVektor- und KI-Szenarien', 'Personalisierung\nIoT-Daten\nGlobale Apps', 'https://learn.microsoft.com/de-de/azure/cosmos-db/', 'https://azure.microsoft.com/de-de/pricing/details/cosmos-db/', 20],
-            ['datenbanken', 'postgresql', 'Azure Database for PostgreSQL', 'Verwaltete PostgreSQL-Datenbank.', 'Der Dienst modernisiert PostgreSQL-Workloads mit automatischer Verwaltung, Skalierung und Sicherheitsfunktionen.', 'Flexible Server\nBackups und Hochverfügbarkeit\nOpen-Source-Kompatibilität', 'Web-Backends\nData Apps\nKI-nahe Datenhaltung', 'https://learn.microsoft.com/de-de/azure/postgresql/', 'https://azure.microsoft.com/de-de/pricing/details/postgresql/flexible-server/', 30],
-            ['ki-machine-learning', 'azure-ai-foundry', 'Microsoft Foundry', 'Plattform für KI-Apps, Modelle und Agenten.', 'Microsoft Foundry bündelt Modelle, Tools, Sicherheit, Observability und Agentenentwicklung für produktive KI-Lösungen.', 'Modellkatalog\nAgentenentwicklung\nGovernance und Monitoring', 'KI-Agenten\nRAG-Anwendungen\nEnterprise Copilots', 'https://learn.microsoft.com/de-de/azure/ai-foundry/', 'https://azure.microsoft.com/de-de/pricing/details/ai-foundry/', 10],
-            ['ki-machine-learning', 'azure-openai', 'Azure OpenAI Service', 'Fortschrittliche Sprach- und Codemodelle in Azure.', 'Azure OpenAI ermöglicht generative KI mit Enterprise-Sicherheit, Datenschutz und Integration in Azure-Datenquellen.', 'GPT-Modelle\nEnterprise-Security\nIntegration in Foundry', 'Chatbots\nContent-Erstellung\nCode-Assistenz', 'https://learn.microsoft.com/de-de/azure/ai-services/openai/', 'https://azure.microsoft.com/de-de/pricing/details/cognitive-services/openai-service/', 20],
-            ['ki-machine-learning', 'azure-ai-search', 'Azure AI Search', 'Such- und Retrieval-Schicht für Apps und RAG.', 'Azure AI Search verbindet Datenquellen mit Volltextsuche, Vektorsuche und Retrieval-Augmented-Generation-Szenarien.', 'Vektorsuche\nIndexierung\nRAG-Pipelines', 'Wissenssuche\nDokumentenportale\nCopilot-Datenbasis', 'https://learn.microsoft.com/de-de/azure/search/', 'https://azure.microsoft.com/de-de/pricing/details/search/', 30],
-            ['devops-tools', 'azure-devops', 'Azure DevOps', 'Boards, Repos, Pipelines, Tests und Artefakte.', 'Azure DevOps unterstützt Teams bei Planung, Codeverwaltung, CI/CD und Qualitätssicherung.', 'Boards und Repos\nPipelines\nTest Plans und Artifacts', 'CI/CD\nAgile Planung\nEnterprise DevOps', 'https://learn.microsoft.com/de-de/azure/devops/', 'https://azure.microsoft.com/de-de/pricing/details/devops/azure-devops-services/', 10],
-            ['devops-tools', 'dev-box', 'Microsoft Dev Box', 'Cloudbasierte Entwicklungsarbeitsplätze.', 'Dev Box stellt vorkonfigurierte, sichere Entwicklungsumgebungen bereit, damit Teams schneller starten und konsistent arbeiten.', 'Ready-to-code Umgebungen\nZentrale Verwaltung\nSkalierbare Entwicklerplätze', 'Onboarding\nStandardisierte Entwicklungsumgebungen\nRemote Development', 'https://learn.microsoft.com/de-de/azure/dev-box/', 'https://azure.microsoft.com/de-de/pricing/details/dev-box/', 20],
+            ['datenbanken', 'azure-sql-database', 'Azure SQL-Datenbank', 'Vollständig verwaltete relationale SQL-Datenbank.', 'Azure SQL-Datenbank ist eine vollständig verwaltete PaaS-Datenbank für moderne Anwendungen, die SQL Server-Kompatibilität, automatische Wartung und integrierte Hochverfügbarkeit brauchen.', 'Azure SQL-Datenbank ist eine vollständig verwaltete relationale PaaS-Datenbank auf Basis der SQL Server Engine. Microsoft übernimmt Patching, Backups, Hochverfügbarkeit, Monitoring-Grundlagen und Plattformwartung, während du Schema, Datenmodell, Sicherheit, Performance und Kosten steuerst. Für neue Workloads sind vCore-Modelle mit General Purpose, Business Critical und Hyperscale relevant; Single Databases, Elastic Pools und Serverless oder Provisioned Compute müssen passend zu Lastprofil und Mandantenmodell gewählt werden.', 'vCore-Modell empfohlen; DTU nur bei einfachen vorkonfigurierten Ressourcenkategorien prüfen\nHyperscale ist für viele Business-Workloads die empfohlene Ebene und skaliert Speicher deutlich größer als klassische Ebenen\nServerless eignet sich für variable Einzel-Datenbanken; Provisioned Compute für planbare Dauerlast\nZonenredundanz, Failovergruppen, aktive Georeplikation und Point-in-Time Restore früh nach RTO/RPO planen\nCompute, Speicher, Backup-Aufbewahrung, Replikate, Egress und ggf. Lizenzvorteile separat kalkulieren', 'Cloudnative Web- und Geschäftsanwendungen mit relationalem Datenmodell\nSaaS-Anwendungen mit Single Databases oder Elastic Pools\nSQL Server Modernisierung ohne eigenen Serverbetrieb\nTransaktionssysteme mit hohen Verfügbarkeits- und Sicherheitsanforderungen\nRead-Scale-, Reporting- und Geo-DR-Szenarien mit Replikaten', 'https://learn.microsoft.com/de-de/azure/azure-sql/database/', 'https://azure.microsoft.com/de-de/pricing/details/azure-sql-database/single/', 10],
+            ['datenbanken', 'cosmos-db', 'Azure Cosmos DB', 'Global verteilte NoSQL- und Vektordatenbank.', 'Azure Cosmos DB ist eine vollständig verwaltete, global verteilbare NoSQL- und Vektordatenbank für Anwendungen mit niedriger Latenz, elastischer Skalierung und flexiblen Datenmodellen.', 'Azure Cosmos DB unterstützt Betriebsdatenmodelle wie Dokument, Schlüsselwert, Graph, Tabelle und Vektor sowie APIs wie NoSQL, MongoDB, Cassandra, Gremlin und Table. Der Dienst ist auf niedrige Latenz, globale Verteilung, automatische Indizierung, Multi-Region-Lesen und -Schreiben sowie skalierbare Durchsatzmodelle ausgelegt. Kosten und Architektur hängen stark von Partitionierung, Request Units, Konsistenzmodell, Regionen, Speicher, Sicherung und gewähltem Compute- oder Durchsatzmodell ab.', 'RU/s sind zentrale Kapazitäts- und Kosteneinheit; Itemgröße, Indexierung, Abfragen und Konsistenz beeinflussen Verbrauch\nProvisioned Throughput, Autoscale und Serverless bewusst nach Lastprofil wählen\nGlobale Verteilung repliziert Durchsatz und Speicher pro Region; Multi-Region-Write erhöht Verfügbarkeit und Kosten\nPartitionsschlüssel früh sauber modellieren, weil er Skalierung, Hot Partitions und Abfragekosten prägt\nNicht ideal für stark relationale OLTP-Modelle oder klassische OLAP-Analysen; dafür eher Azure SQL oder Analytics-Plattform prüfen', 'Globale Web-, Commerce-, Gaming- und Personalisierungsanwendungen\nIoT-/Telemetrie-Daten mit hohem Schreibdurchsatz\nKI-/RAG-Anwendungen mit operativen Daten und Vektorsuche\nEvent-getriebene Architekturen mit Change Feed\nHochverfügbare Anwendungen mit Multi-Region-Lesen oder -Schreiben', 'https://learn.microsoft.com/de-de/azure/cosmos-db/', 'https://azure.microsoft.com/de-de/pricing/details/cosmos-db/', 20],
+            ['datenbanken', 'postgresql', 'Azure Database for PostgreSQL', 'Verwalteter PostgreSQL Flexible Server.', 'Azure Database for PostgreSQL stellt PostgreSQL als vollständig verwalteten Flexible Server bereit, mit Kontrolle über Compute, Speicher, Wartungsfenster, Hochverfügbarkeit und Sicherheit.', 'Azure Database for PostgreSQL – Flexible Server ist Microsofts verwalteter PostgreSQL-Dienst auf Basis der Community-Version. Du behältst PostgreSQL-Kompatibilität, Konfigurationsparameter und Erweiterungen, während Azure Patching, automatische Backups, Verschlüsselung, Monitoring-Integration und Betriebsfunktionen bereitstellt. Für produktive Workloads sollten Compute-Tier, Speicher/IOPS, Wartungsfenster, private Netzwerkanbindung, HA-Modell und Backup-/DR-Strategie bewusst festgelegt werden.', 'Flexible Server ist der relevante Standard; Single-Server-Workloads auf Flexible Server migrieren\nCompute-Tiers Burstable, General Purpose und Memory Optimized passend zur Last wählen\nBurstable eher für Dev/Test oder unregelmäßige geringe Last; für 24/7-Produktion General Purpose oder Memory Optimized bevorzugen\nZonenredundante HA benötigt General Purpose oder Memory Optimized und erzeugt Kosten für Standby-Ressourcen\nAutomatische Backups standardmäßig 7 Tage, bis 35 Tage konfigurierbar; langfristige Sicherung und Geo-DR separat planen', 'PostgreSQL-Web-Backends und Fachanwendungen\nModernisierung bestehender PostgreSQL-Workloads aus On-Premises, VM oder anderen Clouds\nDatenbank für Open-Source-Stacks, PHP-, Python-, Node.js- und .NET-Anwendungen\nProduktionsdatenbanken mit privaten Netzwerken, HA und automatischen Backups\nKI-nahe Anwendungen mit PostgreSQL-Erweiterungen, Vektor- oder Suchszenarien', 'https://learn.microsoft.com/de-de/azure/postgresql/flexible-server/overview', 'https://azure.microsoft.com/de-de/pricing/details/postgresql/flexible-server/', 30],
+            ['ki-machine-learning', 'azure-ai-foundry', 'Microsoft Foundry', 'Plattform für KI-Apps, Modelle, Agents und Governance.', 'Microsoft Foundry ist die Azure-Plattform zum Erstellen, Evaluieren, Bereitstellen und Betreiben generativer KI-Apps, Agenten und Modelllösungen mit Modellkatalog, Tools, Observability und Governance.', 'Microsoft Foundry bündelt Modellkatalog, Azure OpenAI-/Foundry-Modelle, Agent Service, Foundry Tools, Evaluation, Tracing/Observability und Guardrails in Projekten unter einer Foundry-Ressource. Teams können Prompts, RAG, Agents und Modellbereitstellungen entwickeln, überwachen und governancenah betreiben. Die Plattform ist kein einzelner Pauschaldienst: Kosten, Verfügbarkeit und Datenverarbeitung hängen von den verwendeten Modellen, Deploymenttypen, Tools, Regionen und abhängigen Azure-Diensten ab.', 'Neues Ressourcenmodell mit Foundry-Ressource und Projekten; ältere Azure AI Foundry/Azure AI Studio-Bezeichnungen können noch in Doku und Portalen auftauchen\nModell-, Agent- und Tool-Verfügbarkeit variiert je Region, Modell, Deploymenttyp und Kontingent; Zielregion vor Produktivstart prüfen\nKosten entstehen über genutzte Modelle, Azure OpenAI, Foundry Tools, Agenten, Evaluation, Monitoring und abhängige Ressourcen; Preisrechner dienstweise verwenden\nFoundry-RBAC-Rollen wurden umbenannt; Rollen-IDs und Kernberechtigungen bleiben laut Microsoft erhalten\nUpgrade von Azure OpenAI auf Foundry ist opt-in und behält Endpunkt, Keys und Konfigurationen, hat aber Einschränkungen bei CMK, Private Link/DNS und Feature-/Regionverfügbarkeit', 'Enterprise-Copilots und KI-Agenten mit Governance\nRAG-Anwendungen mit Evaluierung und Observability\nModellkatalog-, Prompt- und Deployment-Management\nKI-Plattform für mehrere Teams, Projekte und Kostenstellen\nPrototyping bis Produktionsbetrieb generativer KI-Lösungen', 'https://learn.microsoft.com/de-de/azure/foundry/what-is-foundry', 'https://azure.microsoft.com/de-de/pricing/details/microsoft-foundry/', 10],
+            ['ki-machine-learning', 'azure-openai', 'Azure OpenAI Service', 'Generative OpenAI-Modelle mit Azure-Governance.', 'Azure OpenAI Service stellt OpenAI-Modelle in Azure bereit – von Chat, Reasoning, Embeddings und Multimodalität bis Audio, Bild/Video und agentsnahe APIs – mit Enterprise-Sicherheit, Quotas und Azure-Integration.', 'Azure OpenAI Service beziehungsweise Azure OpenAI in Microsoft Foundry Models bietet Zugriff auf von Azure gehostete OpenAI-Modelle für Text, Code, Reasoning, Embeddings, Bild, Audio und Realtime-Szenarien. Modelle werden als Deployments bereitgestellt; Bereitstellungstypen wie Global Standard, Data Zone, Regional, Provisioned und Batch bestimmen Datenverarbeitung, Latenz, Durchsatz und Kosten. Für produktive Lösungen sind Modellversionen, Content Filter, Quotas, Rate Limits, Datenzonen, Monitoring und Kostensteuerung zentrale Architekturentscheidungen.', 'Modellverfügbarkeit, Kontextlängen und Features variieren nach Region, Deploymenttyp und Modellversion; Vorschau-Modelle nicht ungeprüft produktiv nutzen\nTPM/RPM-Kontingente gelten pro Abonnement, Region, Modell und Deploymenttyp; 429-Fehler trotz scheinbar freiem Tokenbudget einplanen\nDeploymenttypen Global, Data Zone, Regional, Provisioned und Batch unterscheiden Datenverarbeitung, SLA, Latenz, Durchsatz und Preis\nContent Filtering, Prompt Shields, geschütztes Material, PII- und Abuse-Monitoring in App-Design und Fehlerbehandlung berücksichtigen\nKosten entstehen token-, batch-, PTU-, Fine-Tuning-, Tool- oder Audio/Bild/Video-spezifisch; Modellmix und Caching/Batches aktiv optimieren', 'Chatbots und interne Wissensassistenten\nText-, Code-, Bild-, Audio- und Realtime-Generierung\nRAG mit Azure AI Search und Unternehmensdaten\nAutomatisierung mit Function Calling, Tools und Agents\nEmbedding-Pipelines, Klassifikation, Extraktion und Zusammenfassung', 'https://learn.microsoft.com/de-de/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure?pivots=azure-openai', 'https://azure.microsoft.com/de-de/pricing/details/azure-openai/', 20],
+            ['ki-machine-learning', 'azure-ai-search', 'Azure AI Search', 'Such- und Retrieval-Schicht für Apps, Agents und RAG.', 'Azure AI Search ist ein vollständig verwalteter Such- und Retrieval-Dienst für Volltext-, Vektor-, Hybrid-, semantische und agentische Suche über Unternehmensdaten.', 'Azure AI Search verbindet Unternehmensdaten mit klassischen Suchanwendungen, Chatbots und generativen KI-Lösungen. Der Dienst indexiert JSON-Dokumente aus Push- oder Pull-Pipelines, unterstützt Volltextsuche, Vektorsuche, Hybridsuche, semantische Rangfolge, KI-Anreicherung und agentischen Abruf für komplexe RAG-Szenarien. Für sichere Enterprise-Lösungen sind Indexdesign, Chunking, Vektorisierung, SKU/Suchunits, regionale Featureverfügbarkeit, Private Link, Entra ID/RBAC und Security Trimming entscheidend.', 'Volltext-, Vektor-, Hybrid-, multimodale und semantische Suche; Vektorsuche selbst ist kostenlos, Embeddings/KI-Anreicherung können extra kosten\nSemantischer Ranker rerankt nur die Top-50-Ergebnisse und erzeugt keine neuen Inhalte; Captions/Answers stammen wortgetreu aus dem Index\nAgentic Retrieval nutzt Wissensquellen, Knowledge Bases und optional LLM-gestützte Query-Planung; Abrechnung kann Search- und Modellkosten kombinieren\nGrenzwerte hängen stark von SKU, Region, Erstellungsdatum, Partitionen, Replikaten und Vektorquoten ab; ältere Dienste ggf. upgraden oder neu erstellen\nTLS, AES-256, Datenresidenz, Private Link, Entra ID/RBAC, CMK und Security Trimming für geschützte Inhalte einplanen', 'Enterprise Search für Portale, Apps und Intranets\nRAG-Grounding für Copilots, Agents und Chatbots\nDokumenten-, SharePoint-, Blob-, Cosmos-DB- und OneLake-Suche\nVektor- und Hybridsuche über Wissensdatenbanken\nSicherheitsgetrimmter Zugriff auf vertrauliche Inhalte', 'https://learn.microsoft.com/de-de/azure/search/search-what-is-azure-search', 'https://azure.microsoft.com/de-de/pricing/details/search/', 30],
+            ['devops-tools', 'azure-devops', 'Azure DevOps', 'Planung, Code, CI/CD, Tests und Pakete in einer Plattform.', 'Azure DevOps bündelt Boards, Repos, Pipelines, Test Plans, Artifacts und Dashboards für den Software-Lifecycle von Planung bis Deployment.', 'Azure DevOps ist eine integrierte Entwicklungsplattform für Enterprise-Teams, die Arbeit planen, Quellcode verwalten, Builds automatisieren, Releases steuern, Tests nachverfolgen und Pakete verteilen müssen. Azure Boards, Repos, Pipelines, Test Plans und Artifacts greifen ineinander, bleiben aber einzeln nutzbar. Für regulierte Umgebungen sind Organisationsgeographie, Microsoft Entra ID, Berechtigungen, Branch Policies, Pipeline-Sicherheit und Paralleljobs die zentralen Planungsgrößen.', 'Azure DevOps Services speichert Kundendaten grundsätzlich in der gewählten Geographie; Token-Daten liegen laut Microsoft in den USA, macOS-Agenten können Daten in ein GitHub-Rechenzentrum in den USA übertragen\nÖffentliche Projekte werden eingestellt: neue öffentliche Projekte sind nicht mehr möglich, bestehende werden 2027 in private Projekte konvertiert\nPipeline-Kapazität hängt von Paralleljobs ab; kostenlose Kontingente können bei neuen Organisationen nicht automatisch aktiv sein und müssen ggf. beantragt werden\nBasic enthält die ersten 5 Benutzer kostenlos; Test Plans, zusätzliche Paralleljobs, Artifacts-Speicher über 2 GiB und GitHub Advanced Security werden separat bewertet\nFür Automatisierung Microsoft Entra OAuth, Dienstprinzipale oder verwaltete Identitäten bevorzugen; PATs nur kontrolliert und mit Richtlinien nutzen', 'CI/CD für Azure, Multicloud und On-Premises mit Genehmigungen\nAgile Planung, Backlogs, Boards und Release-Transparenz\nPrivate Git-Repositories mit Pull Requests und Branch Policies\nPaketfeeds für NuGet, npm, Maven, Python und interne Komponenten\nManuelle und explorative Tests mit Rückverfolgbarkeit zu Anforderungen', 'https://learn.microsoft.com/de-de/azure/devops/user-guide/what-is-azure-devops?view=azure-devops', 'https://azure.microsoft.com/de-de/pricing/details/devops/azure-devops-services/', 10],
+            ['devops-tools', 'dev-box', 'Microsoft Dev Box', 'Vorkonfigurierte Cloud-Workstations für Entwicklerteams.', 'Microsoft Dev Box stellt vorkonfigurierte Cloud-Entwicklungsarbeitsplätze über Dev Center, Projekte und Pools bereit; Microsoft empfiehlt für neue virtualisierte Entwicklerumgebungen inzwischen Windows 365.', 'Microsoft Dev Box gibt Entwicklern über ein Portal Zugriff auf vorkonfigurierte Windows-Cloud-Workstations, die aus Dev Box-Pools mit definiertem Image, Compute, Speicher und Netzwerk entstehen. Plattformteams steuern Dev Center, Projekte, Pools, Kataloge, Image-Definitionen, Netzwerke und Rollen; die Dev Boxes werden über Microsoft Intune verwaltet und über Azure Virtual Desktop-Konnektivität erreicht. Der Dienst ist weiterhin unterstützt, befindet sich laut Microsoft aber im Wartungsmodus ohne geplante neue Features, daher sollte Windows 365 für neue strategische Entwickler-Cloudumgebungen geprüft werden.', 'Stand/Hinweis: Microsoft Dev Box ist im Wartungsmodus; für neue virtualisierte Entwicklerumgebungen nennt Microsoft Windows 365 als empfohlenen Pfad\nBenutzer benötigen passende Windows Enterprise-, Microsoft Intune- und Microsoft Entra ID P1-Lizenzen; viele Microsoft 365-Pläne enthalten diese Voraussetzungen\nGeschäfts- und Schulkonten werden unterstützt; Gastzugriff über Microsoft Entra B2B wurde eingestellt\nDie Netzwerkverbindung bestimmt die Hosting-Region: Microsoft-gehostet für reine Cloud-Szenarien, Azure-Netzwerkverbindung für eigenes VNet, Hybrid Join oder Zugriff auf Unternehmensressourcen\nAbrechnung kombiniert Lizenzvoraussetzungen, Speicher pro Dev Box und aktive Compute-Stunden bis zum monatlichen Maximalpreis; Autostopp und Ruhezustand konsequent nutzen', 'Standardisierte Entwicklerumgebungen für neue Mitarbeitende und Projektteams\nIsolierte Workstations für Auftragnehmer, sensible Repositories oder Kundensysteme\nRegionale Cloud-Workstations für verteilte Entwicklerteams mit niedrigerer Latenz\nMehrere getrennte Arbeitsumgebungen pro Entwickler für parallele Projekte\nReproduzierbare Toolchains über Image-Definitionen, Kataloge und Intune-Richtlinien', 'https://learn.microsoft.com/de-de/azure/dev-box/overview-what-is-microsoft-dev-box', 'https://azure.microsoft.com/de-de/pricing/details/dev-box/', 20],
             ['netzwerk-sicherheit', 'virtual-network', 'Azure Virtual Network', 'Private Netzwerkgrundlage in Azure.', 'Virtual Network verbindet Ressourcen sicher miteinander und bildet die Basis für Subnetze, Routing, Peering und Hybridkonnektivität.', 'Subnetze und Peering\nPrivate IP-Kommunikation\nNetzwerksicherheitsgruppen', 'Landing Zones\nApp-Netzwerke\nHybrid-Topologien', 'https://learn.microsoft.com/de-de/azure/virtual-network/', 'https://azure.microsoft.com/de-de/pricing/details/virtual-network/', 10],
             ['netzwerk-sicherheit', 'azure-firewall', 'Azure Firewall', 'Cloudnative Netzwerk-Firewall.', 'Azure Firewall schützt virtuelle Netzwerke mit zentralen Regeln, Protokollierung und integrierter Hochverfügbarkeit.', 'Zentrale Policies\nThreat Intelligence\nHochverfügbarkeit', 'Hub-Spoke-Netze\nEgress-Kontrolle\nSegmentierung', 'https://learn.microsoft.com/de-de/azure/firewall/', 'https://azure.microsoft.com/de-de/pricing/details/azure-firewall/', 20],
             ['netzwerk-sicherheit', 'key-vault', 'Azure Key Vault', 'Schlüssel, Zertifikate und Geheimnisse verwalten.', 'Key Vault schützt Secrets und kryptografische Schlüssel und trennt sensible Werte sauber vom Anwendungscode.', 'Secrets und Zertifikate\nManaged HSM Optionen\nRBAC und Auditing', 'App-Secrets\nZertifikatsverwaltung\nSchlüsselrotation', 'https://learn.microsoft.com/de-de/azure/key-vault/', 'https://azure.microsoft.com/de-de/pricing/details/key-vault/', 30],
@@ -670,6 +673,339 @@ final class CMS_M365Azure_Installer
                     'content' => ['Managed Disks bieten performanten und dauerhaften Speicher für VM-Workloads – von Standard bis Ultra Disk.'],
                     'features' => ["Managed Disks\nPremium SSD und Ultra Disk\nSnapshots und Verschlüsselung"],
                     'use_cases' => ["Datenbank-VMs\nSAP-Workloads\nEnterprise-Anwendungen"],
+                ],
+            ],
+        ];
+
+        $fields = ['subtitle', 'summary', 'content', 'features', 'use_cases', 'docs_url', 'pricing_url'];
+        $select = $db->prepare("SELECT id, subtitle, summary, content, features, use_cases, docs_url, pricing_url FROM {$prefix}m365azure_services WHERE slug = ?");
+        $update = $db->prepare("UPDATE {$prefix}m365azure_services SET subtitle = ?, summary = ?, content = ?, features = ?, use_cases = ?, docs_url = ?, pricing_url = ? WHERE id = ?");
+
+        foreach ($updates as $slug => $data) {
+            $select->execute([$slug]);
+            $row = $select->fetch(\PDO::FETCH_ASSOC);
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $values = [];
+            foreach ($fields as $field) {
+                $known = (array) ($data['known'][$field] ?? []);
+                $values[$field] = self::value_if_known((string) ($row[$field] ?? ''), $known, (string) $data[$field]);
+            }
+
+            if (
+                $values['subtitle'] === (string) ($row['subtitle'] ?? '')
+                && $values['summary'] === (string) ($row['summary'] ?? '')
+                && $values['content'] === (string) ($row['content'] ?? '')
+                && $values['features'] === (string) ($row['features'] ?? '')
+                && $values['use_cases'] === (string) ($row['use_cases'] ?? '')
+                && $values['docs_url'] === (string) ($row['docs_url'] ?? '')
+                && $values['pricing_url'] === (string) ($row['pricing_url'] ?? '')
+            ) {
+                continue;
+            }
+
+            $update->execute([
+                $values['subtitle'],
+                $values['summary'],
+                $values['content'],
+                $values['features'],
+                $values['use_cases'],
+                $values['docs_url'],
+                $values['pricing_url'],
+                (int) $row['id'],
+            ]);
+        }
+
+        $exists = $db->prepare("SELECT id FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $exists->execute([$markerKey]);
+        if ($exists->fetch()) {
+            $stmt = $db->prepare("UPDATE {$prefix}m365azure_settings SET setting_value = ? WHERE setting_key = ?");
+            $stmt->execute([$markerVersion, $markerKey]);
+        } else {
+            $stmt = $db->prepare("INSERT INTO {$prefix}m365azure_settings (setting_key, setting_value) VALUES (?, ?)");
+            $stmt->execute([$markerKey, $markerVersion]);
+        }
+    }
+
+    private static function upgrade_database_content(object $db, string $prefix): void
+    {
+        $markerKey = 'content_database_seed_version';
+        $markerVersion = '2026-05-30-database-v1';
+
+        $markerStmt = $db->prepare("SELECT setting_value FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $markerStmt->execute([$markerKey]);
+        if ((string) ($markerStmt->fetchColumn() ?: '') === $markerVersion) {
+            return;
+        }
+
+        $updates = [
+            'azure-sql-database' => [
+                'subtitle' => 'Vollständig verwaltete relationale SQL-Datenbank.',
+                'summary' => 'Azure SQL-Datenbank ist eine vollständig verwaltete PaaS-Datenbank für moderne Anwendungen, die SQL Server-Kompatibilität, automatische Wartung und integrierte Hochverfügbarkeit brauchen.',
+                'content' => 'Azure SQL-Datenbank ist eine vollständig verwaltete relationale PaaS-Datenbank auf Basis der SQL Server Engine. Microsoft übernimmt Patching, Backups, Hochverfügbarkeit, Monitoring-Grundlagen und Plattformwartung, während du Schema, Datenmodell, Sicherheit, Performance und Kosten steuerst. Für neue Workloads sind vCore-Modelle mit General Purpose, Business Critical und Hyperscale relevant; Single Databases, Elastic Pools und Serverless oder Provisioned Compute müssen passend zu Lastprofil und Mandantenmodell gewählt werden.',
+                'features' => "vCore-Modell empfohlen; DTU nur bei einfachen vorkonfigurierten Ressourcenkategorien prüfen\nHyperscale ist für viele Business-Workloads die empfohlene Ebene und skaliert Speicher deutlich größer als klassische Ebenen\nServerless eignet sich für variable Einzel-Datenbanken; Provisioned Compute für planbare Dauerlast\nZonenredundanz, Failovergruppen, aktive Georeplikation und Point-in-Time Restore früh nach RTO/RPO planen\nCompute, Speicher, Backup-Aufbewahrung, Replikate, Egress und ggf. Lizenzvorteile separat kalkulieren",
+                'use_cases' => "Cloudnative Web- und Geschäftsanwendungen mit relationalem Datenmodell\nSaaS-Anwendungen mit Single Databases oder Elastic Pools\nSQL Server Modernisierung ohne eigenen Serverbetrieb\nTransaktionssysteme mit hohen Verfügbarkeits- und Sicherheitsanforderungen\nRead-Scale-, Reporting- und Geo-DR-Szenarien mit Replikaten",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/azure-sql/database/',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/azure-sql-database/single/',
+                'known' => [
+                    'summary' => ['Azure SQL-Datenbank eignet sich für moderne Apps, die SQL Server-Kompatibilität, hohe Verfügbarkeit und automatische Verwaltung benötigen.'],
+                    'content' => ['Azure SQL-Datenbank eignet sich für moderne Apps, die SQL Server-Kompatibilität, hohe Verfügbarkeit und automatische Verwaltung benötigen.'],
+                    'features' => ["Automatische Patches\nHohe Verfügbarkeit\nSkalierbare Leistungsebenen"],
+                    'use_cases' => ["Web-Apps\nGeschäftsanwendungen\nSaaS-Datenbanken"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/azure-sql/database/'],
+                ],
+            ],
+            'cosmos-db' => [
+                'subtitle' => 'Global verteilte NoSQL- und Vektordatenbank.',
+                'summary' => 'Azure Cosmos DB ist eine vollständig verwaltete, global verteilbare NoSQL- und Vektordatenbank für Anwendungen mit niedriger Latenz, elastischer Skalierung und flexiblen Datenmodellen.',
+                'content' => 'Azure Cosmos DB unterstützt Betriebsdatenmodelle wie Dokument, Schlüsselwert, Graph, Tabelle und Vektor sowie APIs wie NoSQL, MongoDB, Cassandra, Gremlin und Table. Der Dienst ist auf niedrige Latenz, globale Verteilung, automatische Indizierung, Multi-Region-Lesen und -Schreiben sowie skalierbare Durchsatzmodelle ausgelegt. Kosten und Architektur hängen stark von Partitionierung, Request Units, Konsistenzmodell, Regionen, Speicher, Sicherung und gewähltem Compute- oder Durchsatzmodell ab.',
+                'features' => "RU/s sind zentrale Kapazitäts- und Kosteneinheit; Itemgröße, Indexierung, Abfragen und Konsistenz beeinflussen Verbrauch\nProvisioned Throughput, Autoscale und Serverless bewusst nach Lastprofil wählen\nGlobale Verteilung repliziert Durchsatz und Speicher pro Region; Multi-Region-Write erhöht Verfügbarkeit und Kosten\nPartitionsschlüssel früh sauber modellieren, weil er Skalierung, Hot Partitions und Abfragekosten prägt\nNicht ideal für stark relationale OLTP-Modelle oder klassische OLAP-Analysen; dafür eher Azure SQL oder Analytics-Plattform prüfen",
+                'use_cases' => "Globale Web-, Commerce-, Gaming- und Personalisierungsanwendungen\nIoT-/Telemetrie-Daten mit hohem Schreibdurchsatz\nKI-/RAG-Anwendungen mit operativen Daten und Vektorsuche\nEvent-getriebene Architekturen mit Change Feed\nHochverfügbare Anwendungen mit Multi-Region-Lesen oder -Schreiben",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/cosmos-db/',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/cosmos-db/',
+                'known' => [
+                    'subtitle' => ['Global verteilte NoSQL-Datenbank.'],
+                    'summary' => ['Cosmos DB bietet niedrige Latenz, globale Replikation und mehrere APIs für moderne, verteilte Anwendungen.'],
+                    'content' => ['Cosmos DB bietet niedrige Latenz, globale Replikation und mehrere APIs für moderne, verteilte Anwendungen.'],
+                    'features' => ["Globale Verteilung\nMehrere APIs\nVektor- und KI-Szenarien"],
+                    'use_cases' => ["Personalisierung\nIoT-Daten\nGlobale Apps"],
+                ],
+            ],
+            'postgresql' => [
+                'subtitle' => 'Verwalteter PostgreSQL Flexible Server.',
+                'summary' => 'Azure Database for PostgreSQL stellt PostgreSQL als vollständig verwalteten Flexible Server bereit, mit Kontrolle über Compute, Speicher, Wartungsfenster, Hochverfügbarkeit und Sicherheit.',
+                'content' => 'Azure Database for PostgreSQL – Flexible Server ist Microsofts verwalteter PostgreSQL-Dienst auf Basis der Community-Version. Du behältst PostgreSQL-Kompatibilität, Konfigurationsparameter und Erweiterungen, während Azure Patching, automatische Backups, Verschlüsselung, Monitoring-Integration und Betriebsfunktionen bereitstellt. Für produktive Workloads sollten Compute-Tier, Speicher/IOPS, Wartungsfenster, private Netzwerkanbindung, HA-Modell und Backup-/DR-Strategie bewusst festgelegt werden.',
+                'features' => "Flexible Server ist der relevante Standard; Single-Server-Workloads auf Flexible Server migrieren\nCompute-Tiers Burstable, General Purpose und Memory Optimized passend zur Last wählen\nBurstable eher für Dev/Test oder unregelmäßige geringe Last; für 24/7-Produktion General Purpose oder Memory Optimized bevorzugen\nZonenredundante HA benötigt General Purpose oder Memory Optimized und erzeugt Kosten für Standby-Ressourcen\nAutomatische Backups standardmäßig 7 Tage, bis 35 Tage konfigurierbar; langfristige Sicherung und Geo-DR separat planen",
+                'use_cases' => "PostgreSQL-Web-Backends und Fachanwendungen\nModernisierung bestehender PostgreSQL-Workloads aus On-Premises, VM oder anderen Clouds\nDatenbank für Open-Source-Stacks, PHP-, Python-, Node.js- und .NET-Anwendungen\nProduktionsdatenbanken mit privaten Netzwerken, HA und automatischen Backups\nKI-nahe Anwendungen mit PostgreSQL-Erweiterungen, Vektor- oder Suchszenarien",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/postgresql/flexible-server/overview',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/postgresql/flexible-server/',
+                'known' => [
+                    'subtitle' => ['Verwaltete PostgreSQL-Datenbank.'],
+                    'summary' => ['Der Dienst modernisiert PostgreSQL-Workloads mit automatischer Verwaltung, Skalierung und Sicherheitsfunktionen.'],
+                    'content' => ['Der Dienst modernisiert PostgreSQL-Workloads mit automatischer Verwaltung, Skalierung und Sicherheitsfunktionen.'],
+                    'features' => ["Flexible Server\nBackups und Hochverfügbarkeit\nOpen-Source-Kompatibilität"],
+                    'use_cases' => ["Web-Backends\nData Apps\nKI-nahe Datenhaltung"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/postgresql/'],
+                ],
+            ],
+        ];
+
+        $fields = ['subtitle', 'summary', 'content', 'features', 'use_cases', 'docs_url', 'pricing_url'];
+        $select = $db->prepare("SELECT id, subtitle, summary, content, features, use_cases, docs_url, pricing_url FROM {$prefix}m365azure_services WHERE slug = ?");
+        $update = $db->prepare("UPDATE {$prefix}m365azure_services SET subtitle = ?, summary = ?, content = ?, features = ?, use_cases = ?, docs_url = ?, pricing_url = ? WHERE id = ?");
+
+        foreach ($updates as $slug => $data) {
+            $select->execute([$slug]);
+            $row = $select->fetch(\PDO::FETCH_ASSOC);
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $values = [];
+            foreach ($fields as $field) {
+                $known = (array) ($data['known'][$field] ?? []);
+                $values[$field] = self::value_if_known((string) ($row[$field] ?? ''), $known, (string) $data[$field]);
+            }
+
+            if (
+                $values['subtitle'] === (string) ($row['subtitle'] ?? '')
+                && $values['summary'] === (string) ($row['summary'] ?? '')
+                && $values['content'] === (string) ($row['content'] ?? '')
+                && $values['features'] === (string) ($row['features'] ?? '')
+                && $values['use_cases'] === (string) ($row['use_cases'] ?? '')
+                && $values['docs_url'] === (string) ($row['docs_url'] ?? '')
+                && $values['pricing_url'] === (string) ($row['pricing_url'] ?? '')
+            ) {
+                continue;
+            }
+
+            $update->execute([
+                $values['subtitle'],
+                $values['summary'],
+                $values['content'],
+                $values['features'],
+                $values['use_cases'],
+                $values['docs_url'],
+                $values['pricing_url'],
+                (int) $row['id'],
+            ]);
+        }
+
+        $exists = $db->prepare("SELECT id FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $exists->execute([$markerKey]);
+        if ($exists->fetch()) {
+            $stmt = $db->prepare("UPDATE {$prefix}m365azure_settings SET setting_value = ? WHERE setting_key = ?");
+            $stmt->execute([$markerVersion, $markerKey]);
+        } else {
+            $stmt = $db->prepare("INSERT INTO {$prefix}m365azure_settings (setting_key, setting_value) VALUES (?, ?)");
+            $stmt->execute([$markerKey, $markerVersion]);
+        }
+    }
+
+    private static function upgrade_ai_ml_content(object $db, string $prefix): void
+    {
+        $markerKey = 'content_ai_ml_seed_version';
+        $markerVersion = '2026-05-30-ai-ml-v1';
+
+        $markerStmt = $db->prepare("SELECT setting_value FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $markerStmt->execute([$markerKey]);
+        if ((string) ($markerStmt->fetchColumn() ?: '') === $markerVersion) {
+            return;
+        }
+
+        $updates = [
+            'azure-ai-foundry' => [
+                'subtitle' => 'Plattform für KI-Apps, Modelle, Agents und Governance.',
+                'summary' => 'Microsoft Foundry ist die Azure-Plattform zum Erstellen, Evaluieren, Bereitstellen und Betreiben generativer KI-Apps, Agenten und Modelllösungen mit Modellkatalog, Tools, Observability und Governance.',
+                'content' => 'Microsoft Foundry bündelt Modellkatalog, Azure OpenAI-/Foundry-Modelle, Agent Service, Foundry Tools, Evaluation, Tracing/Observability und Guardrails in Projekten unter einer Foundry-Ressource. Teams können Prompts, RAG, Agents und Modellbereitstellungen entwickeln, überwachen und governancenah betreiben. Die Plattform ist kein einzelner Pauschaldienst: Kosten, Verfügbarkeit und Datenverarbeitung hängen von den verwendeten Modellen, Deploymenttypen, Tools, Regionen und abhängigen Azure-Diensten ab.',
+                'features' => "Neues Ressourcenmodell mit Foundry-Ressource und Projekten; ältere Azure AI Foundry/Azure AI Studio-Bezeichnungen können noch in Doku und Portalen auftauchen\nModell-, Agent- und Tool-Verfügbarkeit variiert je Region, Modell, Deploymenttyp und Kontingent; Zielregion vor Produktivstart prüfen\nKosten entstehen über genutzte Modelle, Azure OpenAI, Foundry Tools, Agenten, Evaluation, Monitoring und abhängige Ressourcen; Preisrechner dienstweise verwenden\nFoundry-RBAC-Rollen wurden umbenannt; Rollen-IDs und Kernberechtigungen bleiben laut Microsoft erhalten\nUpgrade von Azure OpenAI auf Foundry ist opt-in und behält Endpunkt, Keys und Konfigurationen, hat aber Einschränkungen bei CMK, Private Link/DNS und Feature-/Regionverfügbarkeit",
+                'use_cases' => "Enterprise-Copilots und KI-Agenten mit Governance\nRAG-Anwendungen mit Evaluierung und Observability\nModellkatalog-, Prompt- und Deployment-Management\nKI-Plattform für mehrere Teams, Projekte und Kostenstellen\nPrototyping bis Produktionsbetrieb generativer KI-Lösungen",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/foundry/what-is-foundry',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/microsoft-foundry/',
+                'known' => [
+                    'subtitle' => ['Plattform für KI-Apps, Modelle und Agenten.'],
+                    'summary' => ['Microsoft Foundry bündelt Modelle, Tools, Sicherheit, Observability und Agentenentwicklung für produktive KI-Lösungen.'],
+                    'content' => ['Microsoft Foundry bündelt Modelle, Tools, Sicherheit, Observability und Agentenentwicklung für produktive KI-Lösungen.'],
+                    'features' => ["Modellkatalog\nAgentenentwicklung\nGovernance und Monitoring"],
+                    'use_cases' => ["KI-Agenten\nRAG-Anwendungen\nEnterprise Copilots"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/ai-foundry/', 'https://learn.microsoft.com/de-de/azure/foundry/'],
+                    'pricing_url' => ['https://azure.microsoft.com/de-de/pricing/details/ai-foundry/'],
+                ],
+            ],
+            'azure-openai' => [
+                'subtitle' => 'Generative OpenAI-Modelle mit Azure-Governance.',
+                'summary' => 'Azure OpenAI Service stellt OpenAI-Modelle in Azure bereit – von Chat, Reasoning, Embeddings und Multimodalität bis Audio, Bild/Video und agentsnahe APIs – mit Enterprise-Sicherheit, Quotas und Azure-Integration.',
+                'content' => 'Azure OpenAI Service beziehungsweise Azure OpenAI in Microsoft Foundry Models bietet Zugriff auf von Azure gehostete OpenAI-Modelle für Text, Code, Reasoning, Embeddings, Bild, Audio und Realtime-Szenarien. Modelle werden als Deployments bereitgestellt; Bereitstellungstypen wie Global Standard, Data Zone, Regional, Provisioned und Batch bestimmen Datenverarbeitung, Latenz, Durchsatz und Kosten. Für produktive Lösungen sind Modellversionen, Content Filter, Quotas, Rate Limits, Datenzonen, Monitoring und Kostensteuerung zentrale Architekturentscheidungen.',
+                'features' => "Modellverfügbarkeit, Kontextlängen und Features variieren nach Region, Deploymenttyp und Modellversion; Vorschau-Modelle nicht ungeprüft produktiv nutzen\nTPM/RPM-Kontingente gelten pro Abonnement, Region, Modell und Deploymenttyp; 429-Fehler trotz scheinbar freiem Tokenbudget einplanen\nDeploymenttypen Global, Data Zone, Regional, Provisioned und Batch unterscheiden Datenverarbeitung, SLA, Latenz, Durchsatz und Preis\nContent Filtering, Prompt Shields, geschütztes Material, PII- und Abuse-Monitoring in App-Design und Fehlerbehandlung berücksichtigen\nKosten entstehen token-, batch-, PTU-, Fine-Tuning-, Tool- oder Audio/Bild/Video-spezifisch; Modellmix und Caching/Batches aktiv optimieren",
+                'use_cases' => "Chatbots und interne Wissensassistenten\nText-, Code-, Bild-, Audio- und Realtime-Generierung\nRAG mit Azure AI Search und Unternehmensdaten\nAutomatisierung mit Function Calling, Tools und Agents\nEmbedding-Pipelines, Klassifikation, Extraktion und Zusammenfassung",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure?pivots=azure-openai',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/azure-openai/',
+                'known' => [
+                    'subtitle' => ['Fortschrittliche Sprach- und Codemodelle in Azure.'],
+                    'summary' => ['Azure OpenAI ermöglicht generative KI mit Enterprise-Sicherheit, Datenschutz und Integration in Azure-Datenquellen.'],
+                    'content' => ['Azure OpenAI ermöglicht generative KI mit Enterprise-Sicherheit, Datenschutz und Integration in Azure-Datenquellen.'],
+                    'features' => ["GPT-Modelle\nEnterprise-Security\nIntegration in Foundry"],
+                    'use_cases' => ["Chatbots\nContent-Erstellung\nCode-Assistenz"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/ai-services/openai/', 'https://learn.microsoft.com/de-de/azure/ai-services/openai/overview'],
+                    'pricing_url' => ['https://azure.microsoft.com/de-de/pricing/details/cognitive-services/openai-service/'],
+                ],
+            ],
+            'azure-ai-search' => [
+                'subtitle' => 'Such- und Retrieval-Schicht für Apps, Agents und RAG.',
+                'summary' => 'Azure AI Search ist ein vollständig verwalteter Such- und Retrieval-Dienst für Volltext-, Vektor-, Hybrid-, semantische und agentische Suche über Unternehmensdaten.',
+                'content' => 'Azure AI Search verbindet Unternehmensdaten mit klassischen Suchanwendungen, Chatbots und generativen KI-Lösungen. Der Dienst indexiert JSON-Dokumente aus Push- oder Pull-Pipelines, unterstützt Volltextsuche, Vektorsuche, Hybridsuche, semantische Rangfolge, KI-Anreicherung und agentischen Abruf für komplexe RAG-Szenarien. Für sichere Enterprise-Lösungen sind Indexdesign, Chunking, Vektorisierung, SKU/Suchunits, regionale Featureverfügbarkeit, Private Link, Entra ID/RBAC und Security Trimming entscheidend.',
+                'features' => "Volltext-, Vektor-, Hybrid-, multimodale und semantische Suche; Vektorsuche selbst ist kostenlos, Embeddings/KI-Anreicherung können extra kosten\nSemantischer Ranker rerankt nur die Top-50-Ergebnisse und erzeugt keine neuen Inhalte; Captions/Answers stammen wortgetreu aus dem Index\nAgentic Retrieval nutzt Wissensquellen, Knowledge Bases und optional LLM-gestützte Query-Planung; Abrechnung kann Search- und Modellkosten kombinieren\nGrenzwerte hängen stark von SKU, Region, Erstellungsdatum, Partitionen, Replikaten und Vektorquoten ab; ältere Dienste ggf. upgraden oder neu erstellen\nTLS, AES-256, Datenresidenz, Private Link, Entra ID/RBAC, CMK und Security Trimming für geschützte Inhalte einplanen",
+                'use_cases' => "Enterprise Search für Portale, Apps und Intranets\nRAG-Grounding für Copilots, Agents und Chatbots\nDokumenten-, SharePoint-, Blob-, Cosmos-DB- und OneLake-Suche\nVektor- und Hybridsuche über Wissensdatenbanken\nSicherheitsgetrimmter Zugriff auf vertrauliche Inhalte",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/search/search-what-is-azure-search',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/search/',
+                'known' => [
+                    'summary' => ['Azure AI Search verbindet Datenquellen mit Volltextsuche, Vektorsuche und Retrieval-Augmented-Generation-Szenarien.'],
+                    'content' => ['Azure AI Search verbindet Datenquellen mit Volltextsuche, Vektorsuche und Retrieval-Augmented-Generation-Szenarien.'],
+                    'features' => ["Vektorsuche\nIndexierung\nRAG-Pipelines"],
+                    'use_cases' => ["Wissenssuche\nDokumentenportale\nCopilot-Datenbasis"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/search/'],
+                ],
+            ],
+        ];
+
+        $fields = ['subtitle', 'summary', 'content', 'features', 'use_cases', 'docs_url', 'pricing_url'];
+        $select = $db->prepare("SELECT id, subtitle, summary, content, features, use_cases, docs_url, pricing_url FROM {$prefix}m365azure_services WHERE slug = ?");
+        $update = $db->prepare("UPDATE {$prefix}m365azure_services SET subtitle = ?, summary = ?, content = ?, features = ?, use_cases = ?, docs_url = ?, pricing_url = ? WHERE id = ?");
+
+        foreach ($updates as $slug => $data) {
+            $select->execute([$slug]);
+            $row = $select->fetch(\PDO::FETCH_ASSOC);
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $values = [];
+            foreach ($fields as $field) {
+                $known = (array) ($data['known'][$field] ?? []);
+                $values[$field] = self::value_if_known((string) ($row[$field] ?? ''), $known, (string) $data[$field]);
+            }
+
+            if (
+                $values['subtitle'] === (string) ($row['subtitle'] ?? '')
+                && $values['summary'] === (string) ($row['summary'] ?? '')
+                && $values['content'] === (string) ($row['content'] ?? '')
+                && $values['features'] === (string) ($row['features'] ?? '')
+                && $values['use_cases'] === (string) ($row['use_cases'] ?? '')
+                && $values['docs_url'] === (string) ($row['docs_url'] ?? '')
+                && $values['pricing_url'] === (string) ($row['pricing_url'] ?? '')
+            ) {
+                continue;
+            }
+
+            $update->execute([
+                $values['subtitle'],
+                $values['summary'],
+                $values['content'],
+                $values['features'],
+                $values['use_cases'],
+                $values['docs_url'],
+                $values['pricing_url'],
+                (int) $row['id'],
+            ]);
+        }
+
+        $exists = $db->prepare("SELECT id FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $exists->execute([$markerKey]);
+        if ($exists->fetch()) {
+            $stmt = $db->prepare("UPDATE {$prefix}m365azure_settings SET setting_value = ? WHERE setting_key = ?");
+            $stmt->execute([$markerVersion, $markerKey]);
+        } else {
+            $stmt = $db->prepare("INSERT INTO {$prefix}m365azure_settings (setting_key, setting_value) VALUES (?, ?)");
+            $stmt->execute([$markerKey, $markerVersion]);
+        }
+    }
+
+    private static function upgrade_devops_content(object $db, string $prefix): void
+    {
+        $markerKey = 'content_devops_seed_version';
+        $markerVersion = '2026-05-30-devops-v1';
+
+        $markerStmt = $db->prepare("SELECT setting_value FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $markerStmt->execute([$markerKey]);
+        if ((string) ($markerStmt->fetchColumn() ?: '') === $markerVersion) {
+            return;
+        }
+
+        $updates = [
+            'azure-devops' => [
+                'subtitle' => 'Planung, Code, CI/CD, Tests und Pakete in einer Plattform.',
+                'summary' => 'Azure DevOps bündelt Boards, Repos, Pipelines, Test Plans, Artifacts und Dashboards für den Software-Lifecycle von Planung bis Deployment.',
+                'content' => 'Azure DevOps ist eine integrierte Entwicklungsplattform für Enterprise-Teams, die Arbeit planen, Quellcode verwalten, Builds automatisieren, Releases steuern, Tests nachverfolgen und Pakete verteilen müssen. Azure Boards, Repos, Pipelines, Test Plans und Artifacts greifen ineinander, bleiben aber einzeln nutzbar. Für regulierte Umgebungen sind Organisationsgeographie, Microsoft Entra ID, Berechtigungen, Branch Policies, Pipeline-Sicherheit und Paralleljobs die zentralen Planungsgrößen.',
+                'features' => "Azure DevOps Services speichert Kundendaten grundsätzlich in der gewählten Geographie; Token-Daten liegen laut Microsoft in den USA, macOS-Agenten können Daten in ein GitHub-Rechenzentrum in den USA übertragen\nÖffentliche Projekte werden eingestellt: neue öffentliche Projekte sind nicht mehr möglich, bestehende werden 2027 in private Projekte konvertiert\nPipeline-Kapazität hängt von Paralleljobs ab; kostenlose Kontingente können bei neuen Organisationen nicht automatisch aktiv sein und müssen ggf. beantragt werden\nBasic enthält die ersten 5 Benutzer kostenlos; Test Plans, zusätzliche Paralleljobs, Artifacts-Speicher über 2 GiB und GitHub Advanced Security werden separat bewertet\nFür Automatisierung Microsoft Entra OAuth, Dienstprinzipale oder verwaltete Identitäten bevorzugen; PATs nur kontrolliert und mit Richtlinien nutzen",
+                'use_cases' => "CI/CD für Azure, Multicloud und On-Premises mit Genehmigungen\nAgile Planung, Backlogs, Boards und Release-Transparenz\nPrivate Git-Repositories mit Pull Requests und Branch Policies\nPaketfeeds für NuGet, npm, Maven, Python und interne Komponenten\nManuelle und explorative Tests mit Rückverfolgbarkeit zu Anforderungen",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/devops/user-guide/what-is-azure-devops?view=azure-devops',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/devops/azure-devops-services/',
+                'known' => [
+                    'subtitle' => ['Boards, Repos, Pipelines, Tests und Artefakte.'],
+                    'summary' => ['Azure DevOps unterstützt Teams bei Planung, Codeverwaltung, CI/CD und Qualitätssicherung.'],
+                    'content' => ['Azure DevOps unterstützt Teams bei Planung, Codeverwaltung, CI/CD und Qualitätssicherung.'],
+                    'features' => ["Boards und Repos\nPipelines\nTest Plans und Artifacts"],
+                    'use_cases' => ["CI/CD\nAgile Planung\nEnterprise DevOps"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/devops/'],
+                ],
+            ],
+            'dev-box' => [
+                'subtitle' => 'Vorkonfigurierte Cloud-Workstations für Entwicklerteams.',
+                'summary' => 'Microsoft Dev Box stellt vorkonfigurierte Cloud-Entwicklungsarbeitsplätze über Dev Center, Projekte und Pools bereit; Microsoft empfiehlt für neue virtualisierte Entwicklerumgebungen inzwischen Windows 365.',
+                'content' => 'Microsoft Dev Box gibt Entwicklern über ein Portal Zugriff auf vorkonfigurierte Windows-Cloud-Workstations, die aus Dev Box-Pools mit definiertem Image, Compute, Speicher und Netzwerk entstehen. Plattformteams steuern Dev Center, Projekte, Pools, Kataloge, Image-Definitionen, Netzwerke und Rollen; die Dev Boxes werden über Microsoft Intune verwaltet und über Azure Virtual Desktop-Konnektivität erreicht. Der Dienst ist weiterhin unterstützt, befindet sich laut Microsoft aber im Wartungsmodus ohne geplante neue Features, daher sollte Windows 365 für neue strategische Entwickler-Cloudumgebungen geprüft werden.',
+                'features' => "Stand/Hinweis: Microsoft Dev Box ist im Wartungsmodus; für neue virtualisierte Entwicklerumgebungen nennt Microsoft Windows 365 als empfohlenen Pfad\nBenutzer benötigen passende Windows Enterprise-, Microsoft Intune- und Microsoft Entra ID P1-Lizenzen; viele Microsoft 365-Pläne enthalten diese Voraussetzungen\nGeschäfts- und Schulkonten werden unterstützt; Gastzugriff über Microsoft Entra B2B wurde eingestellt\nDie Netzwerkverbindung bestimmt die Hosting-Region: Microsoft-gehostet für reine Cloud-Szenarien, Azure-Netzwerkverbindung für eigenes VNet, Hybrid Join oder Zugriff auf Unternehmensressourcen\nAbrechnung kombiniert Lizenzvoraussetzungen, Speicher pro Dev Box und aktive Compute-Stunden bis zum monatlichen Maximalpreis; Autostopp und Ruhezustand konsequent nutzen",
+                'use_cases' => "Standardisierte Entwicklerumgebungen für neue Mitarbeitende und Projektteams\nIsolierte Workstations für Auftragnehmer, sensible Repositories oder Kundensysteme\nRegionale Cloud-Workstations für verteilte Entwicklerteams mit niedrigerer Latenz\nMehrere getrennte Arbeitsumgebungen pro Entwickler für parallele Projekte\nReproduzierbare Toolchains über Image-Definitionen, Kataloge und Intune-Richtlinien",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/dev-box/overview-what-is-microsoft-dev-box',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/dev-box/',
+                'known' => [
+                    'subtitle' => ['Cloudbasierte Entwicklungsarbeitsplätze.'],
+                    'summary' => ['Dev Box stellt vorkonfigurierte, sichere Entwicklungsumgebungen bereit, damit Teams schneller starten und konsistent arbeiten.'],
+                    'content' => ['Dev Box stellt vorkonfigurierte, sichere Entwicklungsumgebungen bereit, damit Teams schneller starten und konsistent arbeiten.'],
+                    'features' => ["Ready-to-code Umgebungen\nZentrale Verwaltung\nSkalierbare Entwicklerplätze"],
+                    'use_cases' => ["Onboarding\nStandardisierte Entwicklungsumgebungen\nRemote Development"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/dev-box/'],
                 ],
             ],
         ];

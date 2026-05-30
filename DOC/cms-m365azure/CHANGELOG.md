@@ -1,5 +1,26 @@
 # Changelog – CMS M365 Azure
 
+## 1.1.7 – 2026-05-30
+
+- DevOps & Entwickler-Tools-Kategorie serviceweise nach offiziellen Microsoft-Quellen aktualisiert.
+- Azure DevOps und Microsoft Dev Box erweitert.
+- Hinweise zu Azure-DevOps-Datenstandorten, öffentlichen Projekten, Paralleljobs, Lizenz-/Preislogik, Entra/PAT-Sicherheit sowie Microsoft-Dev-Box-Wartungsmodus, Windows-365-Pfad, Intune-/Entra-Voraussetzungen und Netzwerkverbindungen ergänzt.
+- Bestehende Admin-Anpassungen bleiben durch eine defensive Inhaltsmigration geschützt.
+
+## 1.1.6 – 2026-05-30
+
+- KI & Machine Learning-Kategorie serviceweise nach offiziellen Microsoft-Quellen aktualisiert.
+- Microsoft Foundry, Azure OpenAI Service und Azure AI Search erweitert.
+- Hinweise zu Foundry-Ressourcen/Projekten, Modell- und Featureverfügbarkeit, Deploymenttypen, Quotas, Content Filtering, RAG, semantischem Ranking, Agentic Retrieval, Sicherheit und Kosten ergänzt.
+- Bestehende Admin-Anpassungen bleiben durch eine defensive Inhaltsmigration geschützt.
+
+## 1.1.5 – 2026-05-30
+
+- Datenbanken-Kategorie serviceweise nach offiziellen Microsoft-Quellen aktualisiert.
+- Azure SQL-Datenbank, Azure Cosmos DB und Azure Database for PostgreSQL erweitert.
+- Hinweise zu vCore/DTU, Hyperscale, Request Units, Multi-Region-Verteilung, Flexible Server, HA und Backup-/DR-Planung ergänzt.
+- Bestehende Admin-Anpassungen bleiben durch eine defensive Inhaltsmigration geschützt.
+
 ## 1.1.4 – 2026-05-30
 
 - Desktop-Tabellenbreiten nachjustiert: Die Dienstspalte ist schmaler, die freiwerdende Breite fließt in Beschreibung und Links.

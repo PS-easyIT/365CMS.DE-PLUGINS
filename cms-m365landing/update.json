@@ -1,15 +1,15 @@
 {
   "slug": "cms-m365landing",
   "name": "CMS M365 Landing",
-  "version": "1.0.1",
+  "version": "1.0.6",
   "requires": "2.9.0",
   "tested": "2.9.7",
   "author": "365 Network",
   "homepage": "https://365network.de/cms-m365landing",
-  "download_url": "https://365network.de/releases/cms-m365landing-1.0.1.zip",
+  "download_url": "https://365network.de/releases/cms-m365landing-1.0.6.zip",
   "last_updated": "2026-05-30",
   "sections": {
     "description": "Zentrale Landingpage für M365 Matrixen, Azure Services, Tutorials und M365 Tools mit vollständig steuerbaren Karten, Texten, Bildern und Design-Tokens.",
-    "changelog": "### 1.0.1\n- Headerbild im Content Header per URL oder Mediathek ergänzt.\n- Drei Layoutvarianten, Footer-Abstand und Standard-Ziel/Slug-Vorschläge für M365-Plugins ergänzt.\n- Seitentitel nutzt die volle Header-Card-Breite mit etwas kleinerer Typografie.\n\n### 1.0.0\n- Erstes Release mit Content Header, Matrix-Cards, dezentem Trenner, M365-Bereichen und Tool-Sammlung.\n- Adminbereich für Karten, Inhalte, Sichtbarkeit und Design.\n- Mediathek-Bilder je Karte mit Icon-Fallback."
+    "changelog": "### 1.0.6\n- Card-CTA \"zum Bereich ->\" sitzt jetzt rechts unten in jeder Bereichscard.\n\n### 1.0.5\n- Bereichscards werden jetzt selbst als Link gerendert, nicht nur mit innerem Link.\n- Ziel-URLs ohne führenden Slash und leere Ziel-URLs mit vorhandenem Slug werden automatisch auf öffentliche Pfade normalisiert.\n- Dezenter CTA-Text \"zum Bereich ->\" wird für jede verlinkbare Card sichtbar ausgegeben.\n\n### 1.0.4\n- Content-Header-Bild sitzt nun links neben Titel und Einleitung.\n- Header-Bildhöhe ist im Adminbereich steuerbar.\n- Bildbreite folgt proportional der Höhe; das Bild wird nicht beschnitten.\n\n### 1.0.3\n- Bereichscards sind jetzt vollflächig anklickbar, wenn ein Ziel-Link hinterlegt ist.\n- Dezenter CTA-Hinweis \"Zum Bereich →\" je verlinkter Card ergänzt.\n- Fokus- und Hoverzustände für klickbare Cards verbessert.\n\n### 1.0.2\n- Abstand zum Theme-Header greift nun trotz globaler M365-Tools-CSS-Overrides.\n- Header-Button-Ziele werden mit Standard-Slugs vorausgefüllt und als Presets angeboten.\n- Leere versteckte numerische Settings fallen wieder auf robuste Defaults zurück.\n\n### 1.0.1\n- Headerbild im Content Header per URL oder Mediathek ergänzt.\n- Drei Layoutvarianten, Footer-Abstand und Standard-Ziel/Slug-Vorschläge für M365-Plugins ergänzt.\n- Seitentitel nutzt die volle Header-Card-Breite mit etwas kleinerer Typografie.\n\n### 1.0.0\n- Erstes Release mit Content Header, Matrix-Cards, dezentem Trenner, M365-Bereichen und Tool-Sammlung.\n- Adminbereich für Karten, Inhalte, Sichtbarkeit und Design.\n- Mediathek-Bilder je Karte mit Icon-Fallback."
   }
 }

@@ -122,7 +122,8 @@ final class CMS_M365Landing_Admin_Pages
         }
 
         foreach (self::numeric_setting_bounds() as $key => [$min, $max]) {
-            $value = (int) ($_POST[$key] ?? $min);
+            $rawValue = trim((string) ($_POST[$key] ?? ''));
+            $value = $rawValue !== '' ? (int) $rawValue : self::numeric_setting_default($key);
             $settings[$key] = (string) max($min, min($max, $value));
         }
 
@@ -178,6 +179,7 @@ final class CMS_M365Landing_Admin_Pages
             'layout_padding_top' => [0, 120],
             'layout_padding_bottom' => [0, 160],
             'design_border_radius' => [0, 32],
+            'hero_image_height' => [80, 320],
             'card_icon_size' => [24, 80],
             'card_image_height' => [90, 260],
         ];
@@ -280,18 +282,20 @@ final class CMS_M365Landing_Admin_Pages
 
         if ($tab === 'content') {
             echo '<h3>📝 Content Header</h3>';
-            self::replace_input('route_slug', 'Öffentlicher Slug', (string) ($s['route_slug'] ?? 'm365'));
-            self::replace_input('page_overline', 'Overline', (string) ($s['page_overline'] ?? 'Microsoft 365 Hub'));
-            self::replace_input('page_title', 'Seitentitel', (string) ($s['page_title'] ?? ''));
-            self::replace_textarea('page_intro', 'Einleitung', (string) ($s['page_intro'] ?? ''), 4);
-            self::image_input('hero_image_url', 'Header Bild / Bild-URL', (string) ($s['hero_image_url'] ?? ''), 'Headerbild auswählen');
-            self::replace_input('hero_image_alt', 'Header Bild-Alt-Text', (string) ($s['hero_image_alt'] ?? ''));
-            self::replace_input('hero_primary_button_text', 'Primärbutton Text', (string) ($s['hero_primary_button_text'] ?? ''));
-            self::replace_input('hero_primary_button_url', 'Primärbutton Ziel', (string) ($s['hero_primary_button_url'] ?? ''));
-            self::replace_input('hero_secondary_button_text', 'Sekundärbutton Text', (string) ($s['hero_secondary_button_text'] ?? ''));
-            self::replace_input('hero_secondary_button_url', 'Sekundärbutton Ziel', (string) ($s['hero_secondary_button_url'] ?? ''));
-            self::replace_input('seo_title', 'SEO-Titel', (string) ($s['seo_title'] ?? ''));
-            self::replace_textarea('seo_description', 'SEO-Beschreibung', (string) ($s['seo_description'] ?? ''), 3);
+            self::replace_input('route_slug', 'Öffentlicher Slug', self::setting_value($s, 'route_slug', 'm365'));
+            self::replace_input('page_overline', 'Overline', self::setting_value($s, 'page_overline', 'Microsoft 365 Hub'));
+            self::replace_input('page_title', 'Seitentitel', self::setting_value($s, 'page_title', 'M365 im Überblick – Matrixen, Azure, Tutorials und Tools'));
+            self::replace_textarea('page_intro', 'Einleitung', self::setting_value($s, 'page_intro', 'Die zentrale Einstiegsseite für Microsoft-365-Entscheidungen: Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und praktische Rechner an einem Ort.'), 4);
+            self::image_input('hero_image_url', 'Content-Header Bild / Bild-URL', (string) ($s['hero_image_url'] ?? ''), 'Headerbild auswählen');
+            self::replace_input('hero_image_alt', 'Content-Header Bild-Alt-Text', (string) ($s['hero_image_alt'] ?? ''));
+            self::replace_number('hero_image_height', 'Header-Bildhöhe in px', (int) self::setting_value($s, 'hero_image_height', '150'), 80, 320);
+            self::replace_input('hero_primary_button_text', 'Primärbutton Text', self::setting_value($s, 'hero_primary_button_text', 'M365 Lizenzmatrix öffnen'));
+            self::preset_input('hero_primary_button_url', 'Primärbutton Ziel', self::setting_value($s, 'hero_primary_button_url', '/m365-lizenzmatrix'), 'm365landing-url-presets');
+            self::replace_input('hero_secondary_button_text', 'Sekundärbutton Text', self::setting_value($s, 'hero_secondary_button_text', 'Add-on-Matrix öffnen'));
+            self::preset_input('hero_secondary_button_url', 'Sekundärbutton Ziel', self::setting_value($s, 'hero_secondary_button_url', '/m365-addon-matrix'), 'm365landing-url-presets');
+            self::render_target_presets();
+            self::replace_input('seo_title', 'SEO-Titel', self::setting_value($s, 'seo_title', 'Microsoft 365 Hub'));
+            self::replace_textarea('seo_description', 'SEO-Beschreibung', self::setting_value($s, 'seo_description', 'Zentrale Landingpage für Microsoft 365 Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und M365 Tools.'), 3);
         } elseif ($tab === 'sections') {
             echo '<h3>🧱 Abschnittstexte</h3>';
             foreach ([
@@ -345,7 +349,7 @@ final class CMS_M365Landing_Admin_Pages
             if (self::setting_key_visible_in_tab($key, $activeTab)) {
                 continue;
             }
-            echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc((string) ($s[$key] ?? '')) . '">';
+            echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc(self::setting_value($s, $key, self::text_setting_default($key))) . '">';
         }
         foreach (self::bool_setting_keys() as $key) {
             if ($activeTab === 'visibility') {
@@ -360,11 +364,55 @@ final class CMS_M365Landing_Admin_Pages
             echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc((string) ($s[$key] ?? '')) . '">';
         }
         foreach (array_keys(self::numeric_setting_bounds()) as $key) {
-            if ($activeTab === 'design') {
+            if (self::numeric_setting_key_visible_in_tab($key, $activeTab)) {
                 continue;
             }
-            echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc((string) ($s[$key] ?? '')) . '">';
+            echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc(self::setting_value($s, $key, (string) self::numeric_setting_default($key))) . '">';
         }
+    }
+
+    /** @param array<string,string> $settings */
+    private static function setting_value(array $settings, string $key, string $default = ''): string
+    {
+        $value = trim((string) ($settings[$key] ?? ''));
+
+        return $value !== '' ? $value : $default;
+    }
+
+    private static function text_setting_default(string $key): string
+    {
+        $defaults = [
+            'route_slug' => 'm365',
+            'page_overline' => 'Microsoft 365 Hub',
+            'page_title' => 'M365 im Überblick – Matrixen, Azure, Tutorials und Tools',
+            'page_intro' => 'Die zentrale Einstiegsseite für Microsoft-365-Entscheidungen: Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und praktische Rechner an einem Ort.',
+            'hero_primary_button_text' => 'M365 Lizenzmatrix öffnen',
+            'hero_primary_button_url' => '/m365-lizenzmatrix',
+            'hero_secondary_button_text' => 'Add-on-Matrix öffnen',
+            'hero_secondary_button_url' => '/m365-addon-matrix',
+            'seo_title' => 'Microsoft 365 Hub',
+            'seo_description' => 'Zentrale Landingpage für Microsoft 365 Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und M365 Tools.',
+            'card_button_label_default' => 'Öffnen',
+            'layout_variant' => 'balanced',
+        ];
+
+        return $defaults[$key] ?? '';
+    }
+
+    private static function numeric_setting_default(string $key): int
+    {
+        $defaults = [
+            'layout_max_width' => 1180,
+            'layout_padding_x' => 0,
+            'layout_padding_top' => 25,
+            'layout_padding_bottom' => 64,
+            'design_border_radius' => 10,
+            'hero_image_height' => 150,
+            'card_icon_size' => 42,
+            'card_image_height' => 150,
+        ];
+
+        return $defaults[$key] ?? 0;
     }
 
     private static function setting_key_visible_in_tab(string $key, string $tab): bool
@@ -379,6 +427,19 @@ final class CMS_M365Landing_Admin_Pages
 
         if ($tab === 'design') {
             return $key === 'layout_variant';
+        }
+
+        return false;
+    }
+
+    private static function numeric_setting_key_visible_in_tab(string $key, string $tab): bool
+    {
+        if ($tab === 'content') {
+            return $key === 'hero_image_height';
+        }
+
+        if ($tab === 'design') {
+            return $key !== 'hero_image_height';
         }
 
         return false;
@@ -466,7 +527,7 @@ final class CMS_M365Landing_Admin_Pages
         return [
             'balanced' => 'Standard – ausgewogene Bereichscards',
             'compact' => 'Kompakt – kürzere Abstände und dichteres Hero',
-            'spotlight' => 'Spotlight – Headerbild rechts, Cards luftig',
+            'spotlight' => 'Spotlight – Headerbild links, Cards luftig',
         ];
     }
 

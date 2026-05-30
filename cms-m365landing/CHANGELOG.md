@@ -1,5 +1,34 @@
 # CMS M365 Landing – Changelog
 
+## 1.0.6 – 2026-05-30
+
+- Card-CTA `zum Bereich ->` sitzt jetzt rechts unten in jeder Bereichscard.
+
+## 1.0.5 – 2026-05-30
+
+- Bereichscards werden jetzt selbst als Link gerendert, nicht nur mit innerem Link.
+- Ziel-URLs ohne führenden Slash und leere Ziel-URLs mit vorhandenem Slug werden automatisch auf öffentliche Pfade normalisiert.
+- Dezenter CTA-Text `zum Bereich ->` wird für jede verlinkbare Card sichtbar ausgegeben.
+
+## 1.0.4 – 2026-05-30
+
+- Content-Header-Bild wird links neben Seitentitel, Untertitel und Einleitung angezeigt.
+- Header-Bildhöhe ist im Adminbereich über `Header-Bildhöhe in px` steuerbar.
+- Bildbreite passt sich proportional an die Höhe an; Headerbilder werden nicht mehr beschnitten.
+
+## 1.0.3 – 2026-05-30
+
+- Bereichscards sind jetzt vollflächig anklickbar, wenn ein Ziel-Link hinterlegt ist.
+- Dezenter CTA-Hinweis `Zum Bereich →` je verlinkter Card ergänzt.
+- Hover- und Fokuszustände für klickbare Cards verbessert.
+
+## 1.0.2 – 2026-05-30
+
+- Abstand zum Theme-Header gegen globale M365-Tools-Overrides abgesichert.
+- Header-Button-Ziele werden im Adminbereich mit Standard-Slugs vorausgefüllt.
+- Standard-Zielpresets werden direkt im Header-Tab angezeigt.
+- Leere versteckte Zahlenwerte fallen auf die vorgesehenen Defaults zurück, statt auf `0` zu kippen.
+
 ## 1.0.1 – 2026-05-30
 
 - Headerbild für den Content Header ergänzt; steuerbar per URL oder Mediathek.

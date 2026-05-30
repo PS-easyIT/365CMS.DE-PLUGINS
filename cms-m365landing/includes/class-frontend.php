@@ -85,13 +85,20 @@ final class CMS_M365Landing_Frontend
         $textColor = CMS_M365Landing_Repository::color((string) ($settings['design_text_color'] ?? ''), '#1e293b');
         $mutedColor = CMS_M365Landing_Repository::color((string) ($settings['design_muted_color'] ?? ''), '#64748b');
         $borderColor = CMS_M365Landing_Repository::color((string) ($settings['design_border_color'] ?? ''), '#e2e8f0');
-        $radius = max(0, min(32, (int) ($settings['design_border_radius'] ?? 10)));
-        $maxWidth = max(720, min(1800, (int) ($settings['layout_max_width'] ?? 1180)));
-        $paddingX = max(0, min(80, (int) ($settings['layout_padding_x'] ?? 0)));
-        $paddingTop = max(0, min(120, (int) ($settings['layout_padding_top'] ?? 25)));
-        $paddingBottom = max(0, min(160, (int) ($settings['layout_padding_bottom'] ?? 64)));
-        $iconSize = max(24, min(80, (int) ($settings['card_icon_size'] ?? 42)));
-        $imageHeight = max(90, min(260, (int) ($settings['card_image_height'] ?? 150)));
+        $number = static function (string $key, int $default, int $min, int $max) use ($settings): int {
+            $rawValue = trim((string) ($settings[$key] ?? ''));
+            $value = $rawValue !== '' ? (int) $rawValue : $default;
+
+            return max($min, min($max, $value));
+        };
+        $radius = $number('design_border_radius', 10, 0, 32);
+        $maxWidth = $number('layout_max_width', 1180, 720, 1800);
+        $paddingX = $number('layout_padding_x', 0, 0, 80);
+        $paddingTop = $number('layout_padding_top', 25, 0, 120);
+        $paddingBottom = $number('layout_padding_bottom', 64, 0, 160);
+        $heroImageHeight = $number('hero_image_height', 150, 80, 320);
+        $iconSize = $number('card_icon_size', 42, 24, 80);
+        $imageHeight = $number('card_image_height', 150, 90, 260);
 
         echo '<style id="cms-m365landing-design">' . "\n";
         echo ':root, body.m365tools-theme-embed, body.m365calculator-theme-embed {' . "\n";
@@ -117,6 +124,7 @@ final class CMS_M365Landing_Frontend
         echo '    --m365landing-padding-x: ' . (int) $paddingX . 'px;' . "\n";
         echo '    --m365landing-padding-top: ' . (int) $paddingTop . 'px;' . "\n";
         echo '    --m365landing-padding-bottom: ' . (int) $paddingBottom . 'px;' . "\n";
+        echo '    --m365landing-hero-image-height: ' . (int) $heroImageHeight . 'px;' . "\n";
         echo '    --m365landing-icon-size: ' . (int) $iconSize . 'px;' . "\n";
         echo '    --m365landing-image-height: ' . (int) $imageHeight . 'px;' . "\n";
         echo '}' . "\n";

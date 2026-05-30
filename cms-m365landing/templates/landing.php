@@ -22,14 +22,32 @@ $enabled = static function (string $key, string $default = '1') use ($settings):
 $isExternal = static function (string $url): bool {
     return filter_var($url, FILTER_VALIDATE_URL) !== false && !str_starts_with($url, '/');
 };
-$buttonLabelDefault = $value('card_button_label_default', 'Öffnen');
+$resolveCardUrl = static function (array $card): string {
+    $rawUrl = trim(strip_tags((string) ($card['url'] ?? '')));
+    $url = CMS_M365Landing_Repository::public_url($rawUrl);
+    if ($url !== '') {
+        return $url;
+    }
+
+    if ($rawUrl !== '' && !str_contains($rawUrl, '://') && preg_match('#^[A-Za-z0-9/_?&=.%#+:;,@~-]+$#', $rawUrl) === 1) {
+        return '/' . ltrim($rawUrl, '/');
+    }
+
+    $rawSlug = trim((string) ($card['slug'] ?? ''));
+    if ($rawSlug === '') {
+        return '';
+    }
+
+    return '/' . CMS_M365Landing_Repository::slug($rawSlug);
+};
+$buttonLabelDefault = $value('card_button_label_default', 'Zum Bereich');
 $layoutVariant = in_array($value('layout_variant', 'balanced'), ['balanced', 'compact', 'spotlight'], true) ? $value('layout_variant', 'balanced') : 'balanced';
 $heroImageUrl = CMS_M365Landing_Repository::public_image_url($value('hero_image_url'));
 $heroImageAlt = $value('hero_image_alt', $value('page_title', 'Microsoft 365 Hub'));
 $hasAnyCards = !empty($cardsBySection['matrix']) || !empty($cardsBySection['areas']) || !empty($cardsBySection['tools']);
 
-$renderCard = static function (array $card) use ($esc, $buttonLabelDefault, $isExternal): void {
-    $url = CMS_M365Landing_Repository::public_url((string) ($card['url'] ?? ''));
+$renderCard = static function (array $card) use ($esc, $buttonLabelDefault, $isExternal, $resolveCardUrl): void {
+    $url = $resolveCardUrl($card);
     $imageUrl = CMS_M365Landing_Repository::public_image_url((string) ($card['image_url'] ?? ''));
     $icon = trim((string) ($card['icon'] ?? ''));
     $title = trim((string) ($card['title'] ?? ''));
@@ -38,8 +56,10 @@ $renderCard = static function (array $card) use ($esc, $buttonLabelDefault, $isE
     $buttonLabel = trim((string) ($card['button_label'] ?? ''));
     $buttonLabel = $buttonLabel !== '' ? $buttonLabel : $buttonLabelDefault;
     $featuredClass = (int) ($card['is_featured'] ?? 0) === 1 ? ' m365landing-card--featured' : '';
+    $clickableClass = $url !== '' ? ' m365landing-card--clickable' : '';
+    $tagName = $url !== '' ? 'a' : 'article';
     ?>
-    <article class="m365landing-card<?php echo $featuredClass; ?>">
+    <<?php echo $tagName; ?> class="m365landing-card<?php echo $featuredClass . $clickableClass; ?>"<?php echo $url !== '' ? ' href="' . $esc($url) . '" aria-label="' . $esc($buttonLabel . ': ' . $title) . '"' . ($isExternal($url) ? ' target="_blank" rel="noopener noreferrer"' : '') : ''; ?>>
         <div class="m365landing-card__visual" aria-hidden="<?php echo $imageUrl !== '' ? 'false' : 'true'; ?>">
             <?php if ($imageUrl !== ''): ?>
             <img src="<?php echo $esc($imageUrl); ?>" alt="<?php echo $esc((string) ($card['image_alt'] ?: $title)); ?>" loading="lazy">
@@ -58,12 +78,10 @@ $renderCard = static function (array $card) use ($esc, $buttonLabelDefault, $isE
         </div>
         <?php if ($url !== ''): ?>
         <div class="m365landing-card__footer">
-            <a class="phinit-btn phinit-btn--secondary m365landing-card__button" href="<?php echo $esc($url); ?>"<?php echo $isExternal($url) ? ' target="_blank" rel="noopener noreferrer"' : ''; ?>>
-                <?php echo $esc($buttonLabel); ?>
-            </a>
+            <span class="m365landing-card__cta">zum Bereich <span aria-hidden="true">-&gt;</span></span>
         </div>
         <?php endif; ?>
-    </article>
+    </<?php echo $tagName; ?>>
     <?php
 };
 
@@ -94,7 +112,12 @@ $renderSection = static function (string $sectionKey, string $sectionClass, arra
 <main class="phinit-plugin m365landing-page m365landing-layout--<?php echo $esc($layoutVariant); ?>" id="m365landing-page">
     <?php if ($enabled('show_hero')): ?>
     <header class="m365landing-hero" aria-labelledby="m365landing-title">
-        <div class="m365landing-hero__inner">
+        <div class="m365landing-hero__inner<?php echo $heroImageUrl !== '' ? ' m365landing-hero__inner--with-image' : ''; ?>">
+            <?php if ($heroImageUrl !== ''): ?>
+            <figure class="m365landing-hero__image">
+                <img src="<?php echo $esc($heroImageUrl); ?>" alt="<?php echo $esc($heroImageAlt); ?>" loading="eager" decoding="async">
+            </figure>
+            <?php endif; ?>
             <div class="m365landing-hero__content">
                 <?php if ($value('page_overline') !== ''): ?>
                 <p class="phinit-overline m365landing-overline"><?php echo $esc($value('page_overline')); ?></p>
@@ -105,22 +128,17 @@ $renderSection = static function (string $sectionKey, string $sectionClass, arra
                 <?php endif; ?>
                 <?php if ($enabled('show_hero_actions')): ?>
                 <nav class="m365landing-hero__actions" aria-label="M365 Landing Schnellzugriff">
-                    <?php $primaryUrl = CMS_M365Landing_Repository::public_url($value('hero_primary_button_url')); ?>
+                    <?php $primaryUrl = CMS_M365Landing_Repository::public_url($value('hero_primary_button_url', '/m365-lizenzmatrix')); ?>
                     <?php if ($primaryUrl !== ''): ?>
                     <a class="phinit-btn phinit-btn--primary" href="<?php echo $esc($primaryUrl); ?>"<?php echo $isExternal($primaryUrl) ? ' target="_blank" rel="noopener noreferrer"' : ''; ?>><?php echo $esc($value('hero_primary_button_text', 'M365 Lizenzmatrix öffnen')); ?></a>
                     <?php endif; ?>
-                    <?php $secondaryUrl = CMS_M365Landing_Repository::public_url($value('hero_secondary_button_url')); ?>
+                    <?php $secondaryUrl = CMS_M365Landing_Repository::public_url($value('hero_secondary_button_url', '/m365-addon-matrix')); ?>
                     <?php if ($secondaryUrl !== ''): ?>
                     <a class="phinit-btn phinit-btn--secondary" href="<?php echo $esc($secondaryUrl); ?>"<?php echo $isExternal($secondaryUrl) ? ' target="_blank" rel="noopener noreferrer"' : ''; ?>><?php echo $esc($value('hero_secondary_button_text', 'Add-on-Matrix öffnen')); ?></a>
                     <?php endif; ?>
                 </nav>
                 <?php endif; ?>
             </div>
-            <?php if ($heroImageUrl !== ''): ?>
-            <figure class="m365landing-hero__image">
-                <img src="<?php echo $esc($heroImageUrl); ?>" alt="<?php echo $esc($heroImageAlt); ?>" loading="eager" decoding="async">
-            </figure>
-            <?php endif; ?>
         </div>
     </header>
     <?php endif; ?>

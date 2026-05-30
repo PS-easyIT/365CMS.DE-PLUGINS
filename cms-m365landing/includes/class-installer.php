@@ -84,6 +84,7 @@ final class CMS_M365Landing_Installer
             'page_intro' => 'Die zentrale Einstiegsseite für Microsoft-365-Entscheidungen: Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und praktische Rechner an einem Ort.',
             'hero_image_url' => '',
             'hero_image_alt' => '',
+            'hero_image_height' => '150',
             'hero_primary_button_text' => 'M365 Lizenzmatrix öffnen',
             'hero_primary_button_url' => '/m365-lizenzmatrix',
             'hero_secondary_button_text' => 'Add-on-Matrix öffnen',
