@@ -67,7 +67,12 @@ if (class_exists('CMS_M365MATRICES_Settings')) {
     }
 }
 $matrixValue = static fn(string $key, string $default): string => (string) ($matrixOptions[$key] ?? $default);
-$matrixEnabled = static fn(string $key, string $default = '1'): bool => (string) ($matrixOptions[$key] ?? $default) === '1';
+$matrixEnabled = static function (string $key, string $default = '1') use ($matrixOptions): bool {
+    $value = array_key_exists($key, $matrixOptions) ? (string) $matrixOptions[$key] : $default;
+    $value = $value !== '' ? $value : $default;
+
+    return $value === '1';
+};
 $matrixChoice = static function (string $key, string $default, array $allowed) use ($matrixOptions): string {
     $value = (string) ($matrixOptions[$key] ?? $default);
 
@@ -135,7 +140,7 @@ $outerPaddingX = $matrixScopedNumber('matrix_copilot_outer_padding_x', 'matrix_o
 $outerPaddingTop = $matrixScopedNumber('matrix_copilot_outer_padding_top', 'matrix_outer_padding_top', 25, 0, 120);
 $sectionGap = $matrixScopedNumber('matrix_copilot_section_gap', 'matrix_section_gap', 32, 12, 96);
 $headerRadius = $matrixScopedNumber('matrix_copilot_header_radius', 'matrix_header_radius', 2, 0, 2);
-$pageBackground = $matrixScopedColor('matrix_copilot_color_page_background', 'matrix_color_page_background', '#ffffff');
+$pageBackground = $matrixScopedColor('matrix_copilot_color_page_background', 'matrix_color_page_background', '#edf1f6');
 $surfaceBackground = $matrixScopedColor('matrix_copilot_color_surface_background', 'matrix_color_surface_background', '#f8fafc');
 $matrixText = $matrixScopedColor('matrix_copilot_color_text', 'matrix_color_text', '#1e293b');
 $matrixMuted = $matrixScopedColor('matrix_copilot_color_muted', 'matrix_color_muted', '#64748b');

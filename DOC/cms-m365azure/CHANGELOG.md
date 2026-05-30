@@ -1,5 +1,17 @@
 # Changelog – CMS M365 Azure
 
+## 1.2.5 – 2026-05-30
+
+- Azure-Service-Katalog um die neuen Kategorien Identität & Sicherheit, Web & Content Delivery und Migration erweitert.
+- 34 zusätzliche Dienste mit Kurzbeschreibung, ausführlicher Beschreibung, genau 5 wichtigen Hinweisen, 4 bis 5 Einsatzszenarien sowie Dokumentations- und Preislinks ergänzt.
+- Ergänzt wurden unter anderem Microsoft Entra ID, Microsoft Defender for Cloud, Microsoft Sentinel, Azure App Service, Azure Front Door, Azure Container Registry, Azure Virtual Desktop, Azure NetApp Files, Azure Backup, Azure SQL Managed Instance, Azure AI Services, Microsoft Fabric, Azure Migrate, Azure Site Recovery, Azure Update Manager, Azure Lighthouse und Bicep / Azure Resource Manager.
+- Bestehende Admin-Anpassungen bleiben geschützt, weil die Erweiterung fehlende Kategorien und Dienste nur neu anlegt und vorhandene Service-Einträge nicht überschreibt.
+
+## 1.2.4 – 2026-05-30
+
+- Public-Buttons der Azure-Service-Seite an das M365-Matrix-Design angeglichen.
+- Dokumentations- und Preislinks in den Service-Tabellen nutzen jetzt die Matrix-Button-Tokens für Hintergrund, Rahmen und Hover-Zustand.
+
 ## 1.2.3 – 2026-05-30
 
 - Management & Governance-Kategorie serviceweise nach offiziellen Microsoft-Quellen aktualisiert.

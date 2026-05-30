@@ -1,5 +1,12 @@
 # Changelog – CMS M365 Matrixen
 
+## 1.2.0 – 2026-05-30
+
+- Matrix-Hintergrundfarbe nutzt nun den gewünschten Standard `#edf1f6` und wird robust aus Farbwähler oder Textfeld gespeichert.
+- Lizenz-, Add-on- und Copilot-Übersichtsseiten unterstützen anpassbare Zusatztexte für Hinweisbox und Quellenintro.
+- Wenn Hinweisbox oder Quellenbox deaktiviert ist, nutzt die verbleibende Box automatisch die volle Contentbreite.
+- Public-Design-Tokens setzen den Theme-Host-Hintergrund passend zur Matrixseite, damit kein weißer Fallback mehr greift.
+
 ## 1.1.9 – 2026-05-30
 
 - Add-on-Matrix: Kontakt-/Lizenzcheck-CTA erhält fehlende Default-Optionen beim Install/Migrationslauf.

@@ -97,6 +97,9 @@ final class CMS_M365Azure_Installer
         self::upgrade_analytics_big_data_content($db, $prefix);
         self::upgrade_hybrid_multicloud_content($db, $prefix);
         self::upgrade_management_governance_content($db, $prefix);
+        if (class_exists('CMS_M365Azure_Catalog_Expansion')) {
+            CMS_M365Azure_Catalog_Expansion::apply($db, $prefix);
+        }
         self::normalize_literal_newlines($db, $prefix);
     }
 

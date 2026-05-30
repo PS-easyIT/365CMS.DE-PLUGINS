@@ -78,7 +78,12 @@ if (class_exists('CMS_M365MATRICES_Settings')) {
     }
 }
 $matrixValue = static fn(string $key, string $default): string => (string) ($matrixOptions[$key] ?? $default);
-$matrixEnabled = static fn(string $key, string $default = '1'): bool => (string) ($matrixOptions[$key] ?? $default) === '1';
+$matrixEnabled = static function (string $key, string $default = '1') use ($matrixOptions): bool {
+    $value = array_key_exists($key, $matrixOptions) ? (string) $matrixOptions[$key] : $default;
+    $value = $value !== '' ? $value : $default;
+
+    return $value === '1';
+};
 $matrixChoice = static function (string $key, string $default, array $allowed) use ($matrixOptions): string {
     $value = (string) ($matrixOptions[$key] ?? $default);
 
@@ -120,7 +125,7 @@ $outerPaddingX = $matrixNumber('matrix_outer_padding_x', 0, 0, 96);
 $outerPaddingTop = $matrixNumber('matrix_outer_padding_top', 25, 0, 120);
 $sectionGap = $matrixNumber('matrix_section_gap', 32, 12, 96);
 $headerRadius = max(0, min(2, (int) $matrixValue('matrix_header_radius', '2')));
-$pageBackground = $matrixColor('matrix_color_page_background', '#ffffff');
+$pageBackground = $matrixColor('matrix_color_page_background', '#edf1f6');
 $surfaceBackground = $matrixColor('matrix_color_surface_background', '#f8fafc');
 $matrixText = $matrixColor('matrix_color_text', '#1e293b');
 $matrixMuted = $matrixColor('matrix_color_muted', '#64748b');
@@ -151,6 +156,8 @@ $resultTitle = $matrixValue('matrix_suite_result_title', 'Gesamtübersicht der M
 $resultIntro = $matrixValue('matrix_suite_result_intro', 'Alle zentralen Paket-, App-, Security-, Compliance-, KI- und Beschaffungspunkte in einer Übersicht.');
 $notesTitle = $matrixValue('matrix_suite_notes_title', 'Hinweise zur Lizenzmatrix');
 $sourcesTitle = $matrixValue('matrix_suite_sources_title', 'Quellenstand');
+$notesText = trim($matrixValue('matrix_suite_notes_text', ''));
+$sourcesIntro = $matrixValue('matrix_suite_sources_intro', (string) ($meta['price_basis'] ?? 'Preis- und Lizenzinformationen vor Bestellung prüfen.'));
 $printButtonLabel = $matrixValue('matrix_print_button_label', 'Drucken / PDF speichern');
 $primaryButtonLabel = $matrixValue('matrix_suite_primary_button_label', 'Lizenzcheck anfragen');
 $primaryButtonUrl = $safeUrl($matrixValue('matrix_suite_primary_button_url', '/kontakt'));
@@ -255,6 +262,9 @@ if (class_exists('CMS\\ThemeManager')) {
         <?php if ($showNotes): ?>
         <article class="phinit-note phinit-note--warning">
             <h2><?php echo $esc($notesTitle); ?></h2>
+            <?php if ($notesText !== ''): ?>
+            <p><?php echo $esc($notesText); ?></p>
+            <?php endif; ?>
             <ul class="m365calc-note-list">
                 <?php foreach (($matrix['notes'] ?? []) as $note): ?>
                 <li><?php echo $esc($note); ?></li>
@@ -265,7 +275,7 @@ if (class_exists('CMS\\ThemeManager')) {
         <?php if ($showSources): ?>
         <article class="phinit-note phinit-note--info m365calc-source-card">
             <h2><?php echo $esc($sourcesTitle); ?></h2>
-            <p><?php echo $esc($meta['price_basis'] ?? 'Preis- und Lizenzinformationen vor Bestellung prüfen.'); ?></p>
+            <p><?php echo $esc($sourcesIntro); ?></p>
             <details>
                 <summary>Quellen anzeigen</summary>
                 <ul class="m365calc-note-list">

@@ -83,12 +83,11 @@ final class CMS_M365MATRICES_Frontend
         }
 
         $options = class_exists('CMS_M365MATRICES_Settings')
-            ? array_merge(
-                CMS_M365MATRICES_Settings::global_options('landing'),
-                CMS_M365MATRICES_Settings::global_options('landing-layout'),
-                CMS_M365MATRICES_Settings::global_options('landing-colors')
-            )
+            ? CMS_M365MATRICES_Settings::global_options('matrix-design')
             : [];
+        if (class_exists('CMS_M365MATRICES_Settings') && $this->path_matches(self::COPILOT_ROUTE)) {
+            $options = array_merge($options, CMS_M365MATRICES_Settings::global_options('matrix-copilot'));
+        }
 
         $color = static function (array $values, string $key, string $default): string {
             $value = (string) ($values[$key] ?? $default);
@@ -97,27 +96,59 @@ final class CMS_M365MATRICES_Frontend
         };
         $number = static fn(array $values, string $key, int $default, int $min, int $max): int => max($min, min($max, (int) ($values[$key] ?? $default)));
 
+        $pageBackground = $color($options, 'matrix_color_page_background', '#edf1f6');
+        if ($this->path_matches(self::COPILOT_ROUTE)) {
+            $pageBackground = $color($options, 'matrix_copilot_color_page_background', $pageBackground);
+        }
+
+        $surfaceBackground = $this->path_matches(self::COPILOT_ROUTE)
+            ? $color($options, 'matrix_copilot_color_surface_background', $color($options, 'matrix_color_surface_background', '#f8fafc'))
+            : $color($options, 'matrix_color_surface_background', '#f8fafc');
+        $textColor = $this->path_matches(self::COPILOT_ROUTE)
+            ? $color($options, 'matrix_copilot_color_text', $color($options, 'matrix_color_text', '#1e293b'))
+            : $color($options, 'matrix_color_text', '#1e293b');
+        $mutedColor = $this->path_matches(self::COPILOT_ROUTE)
+            ? $color($options, 'matrix_copilot_color_muted', $color($options, 'matrix_color_muted', '#64748b'))
+            : $color($options, 'matrix_color_muted', '#64748b');
+        $borderColor = $this->path_matches(self::COPILOT_ROUTE)
+            ? $color($options, 'matrix_copilot_color_header_border', $color($options, 'matrix_color_header_border', '#e2e8f0'))
+            : $color($options, 'matrix_color_header_border', '#e2e8f0');
+        $primaryButtonBackground = $this->path_matches(self::COPILOT_ROUTE)
+            ? $color($options, 'matrix_copilot_color_primary_button_bg', $color($options, 'matrix_color_primary_button_bg', '#2563eb'))
+            : $color($options, 'matrix_color_primary_button_bg', '#2563eb');
+        $primaryButtonText = $this->path_matches(self::COPILOT_ROUTE)
+            ? $color($options, 'matrix_copilot_color_primary_button_text', $color($options, 'matrix_color_primary_button_text', '#ffffff'))
+            : $color($options, 'matrix_color_primary_button_text', '#ffffff');
+        $secondaryButtonBackground = $this->path_matches(self::COPILOT_ROUTE)
+            ? $color($options, 'matrix_copilot_color_secondary_button_bg', $color($options, 'matrix_color_secondary_button_bg', '#ffffff'))
+            : $color($options, 'matrix_color_secondary_button_bg', '#ffffff');
+        $secondaryButtonText = $this->path_matches(self::COPILOT_ROUTE)
+            ? $color($options, 'matrix_copilot_color_secondary_button_text', $color($options, 'matrix_color_secondary_button_text', '#1e293b'))
+            : $color($options, 'matrix_color_secondary_button_text', '#1e293b');
+        $headerRadius = $this->path_matches(self::COPILOT_ROUTE)
+            ? $number($options, 'matrix_copilot_header_radius', $number($options, 'matrix_header_radius', 2, 0, 2), 0, 2)
+            : $number($options, 'matrix_header_radius', 2, 0, 2);
+
         $vars = [
-            '--m365tools-card-radius' => $number($options, 'landing_card_radius', 2, 0, 2) . 'px',
-            '--m365tools-ui-radius' => $number($options, 'landing_card_radius', 2, 0, 2) . 'px',
-            '--m365tools-card-min' => $number($options, 'landing_cards_min_width', 320, 220, 520) . 'px',
-            '--m365tools-section-gap' => $number($options, 'landing_section_gap', 32, 16, 96) . 'px',
-            '--m365tools-primary' => $color($options, 'landing_color_primary', '#2563eb'),
-            '--m365tools-accent' => $color($options, 'landing_color_accent', '#0f766e'),
-            '--m365tools-bg' => $color($options, 'landing_color_background', '#ffffff'),
-            '--m365tools-surface' => $color($options, 'landing_color_surface', '#ffffff'),
-            '--m365tools-surface-alt' => $color($options, 'landing_color_surface_alt', '#f8fafc'),
-            '--m365tools-header-bg' => $color($options, 'landing_color_header_background', '#f8fafc'),
-            '--m365tools-header-text' => $color($options, 'landing_color_header_text', '#1e293b'),
-            '--m365tools-header-muted' => $color($options, 'landing_color_header_muted', '#64748b'),
-            '--m365tools-header-border' => $color($options, 'landing_color_header_border', '#e2e8f0'),
-            '--m365tools-button-primary-bg' => $color($options, 'landing_color_button_primary_bg', '#2563eb'),
-            '--m365tools-button-primary-text' => $color($options, 'landing_color_button_primary_text', '#ffffff'),
-            '--m365tools-button-secondary-bg' => $color($options, 'landing_color_button_secondary_bg', '#ffffff'),
-            '--m365tools-button-secondary-text' => $color($options, 'landing_color_button_secondary_text', '#1e293b'),
-            '--m365tools-text' => $color($options, 'landing_color_text', '#1e293b'),
-            '--m365tools-muted' => $color($options, 'landing_color_muted', '#64748b'),
-            '--m365tools-border' => $color($options, 'landing_color_border', '#e2e8f0'),
+            '--m365tools-card-radius' => $headerRadius . 'px',
+            '--m365tools-ui-radius' => $headerRadius . 'px',
+            '--m365tools-section-gap' => $number($options, 'matrix_section_gap', 32, 12, 96) . 'px',
+            '--m365tools-primary' => $primaryButtonBackground,
+            '--m365tools-accent' => $primaryButtonBackground,
+            '--m365tools-bg' => $pageBackground,
+            '--m365tools-surface' => $surfaceBackground,
+            '--m365tools-surface-alt' => $surfaceBackground,
+            '--m365tools-header-bg' => $surfaceBackground,
+            '--m365tools-header-text' => $textColor,
+            '--m365tools-header-muted' => $mutedColor,
+            '--m365tools-header-border' => $borderColor,
+            '--m365tools-button-primary-bg' => $primaryButtonBackground,
+            '--m365tools-button-primary-text' => $primaryButtonText,
+            '--m365tools-button-secondary-bg' => $secondaryButtonBackground,
+            '--m365tools-button-secondary-text' => $secondaryButtonText,
+            '--m365tools-text' => $textColor,
+            '--m365tools-muted' => $mutedColor,
+            '--m365tools-border' => $borderColor,
         ];
 
         echo '<style id="cms-m365matrices-public-design">' . "\n";

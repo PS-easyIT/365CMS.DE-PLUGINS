@@ -207,14 +207,39 @@
     text-align: left;
 }
 
+.azs-page .m365calc-actions .phinit-btn--primary,
+.azs-page .m365calc-matrix-primary-action {
+    background: var(--m365matrix-primary-button-bg, var(--phinit-color-accent));
+    border-color: var(--m365matrix-primary-button-bg, var(--phinit-color-accent));
+    color: var(--m365matrix-primary-button-text, #ffffff);
+}
+
+.azs-page .m365calc-actions .phinit-btn--secondary,
+.azs-page .m365calc-matrix-action,
+.azs-link-list .phinit-btn {
+    background: var(--m365matrix-secondary-button-bg, var(--m365tools-surface, #ffffff));
+    border: 1px solid var(--m365matrix-header-border, var(--m365tools-border, var(--phinit-color-border)));
+    color: var(--m365matrix-secondary-button-text, var(--m365tools-text, var(--phinit-color-ink)));
+}
+
+.azs-page .m365calc-actions .phinit-btn:hover,
+.azs-page .m365calc-actions .phinit-btn:focus-visible,
+.azs-link-list .phinit-btn:hover,
+.azs-link-list .phinit-btn:focus-visible {
+    border-color: var(--m365matrix-primary-button-bg, var(--phinit-color-accent));
+    text-decoration: none;
+}
+
 .azs-link-list .phinit-btn {
     font-size: var(--azs-link-font-size, var(--phinit-text-xs, 0.75rem));
     justify-content: flex-start;
     justify-self: start;
     line-height: 1.35;
     max-width: 100%;
+    min-height: 36px;
     min-width: 0;
     overflow-wrap: anywhere;
+    padding: var(--phinit-space-2) var(--phinit-space-3);
     text-align: left;
     white-space: normal;
     width: auto;

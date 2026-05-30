@@ -3,7 +3,7 @@
  * Plugin Name: CMS M365 Azure
  * Plugin URI:  https://365network.de/cms-m365azure
  * Description: Steuerbare Azure-Service-Übersichten mit Kategorien, Inhaltsverzeichnis und Card-Layout.
- * Version:     1.2.3
+ * Version:     1.2.5
  * Author:      365 Network
  * Author URI:  https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_M365AZURE_VERSION', '1.2.3');
+define('CMS_M365AZURE_VERSION', '1.2.5');
 define('CMS_M365AZURE_DB_VERSION', '1');
 define('CMS_M365AZURE_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_M365AZURE_PLUGIN_URL', '/plugins/cms-m365azure/');
@@ -39,6 +39,7 @@ final class CMS_M365Azure
     private function load_dependencies(): void
     {
         $files = [
+            CMS_M365AZURE_PLUGIN_DIR . 'includes/class-catalog-expansion.php',
             CMS_M365AZURE_PLUGIN_DIR . 'includes/class-installer.php',
             CMS_M365AZURE_PLUGIN_DIR . 'includes/class-repository.php',
             CMS_M365AZURE_PLUGIN_DIR . 'includes/class-frontend.php',

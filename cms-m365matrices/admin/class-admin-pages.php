@@ -261,6 +261,9 @@ final class CMS_M365MATRICES_Admin_Pages
                 self::text('matrix_addon_area_overline', 'Bereichs-Overline', 'Add-on-Bereich', 'Kleine Zeile oberhalb der Add-on-Bereichsüberschriften.'),
                 self::text('matrix_addon_notes_title', 'Hinweisblock-Titel', 'Hinweise zur Add-on-Übersicht', 'Überschrift des Hinweisblocks unterhalb der Matrixbereiche.'),
                 self::text('matrix_addon_sources_title', 'Quellenblock-Titel', 'Quellenstand', 'Überschrift des Quellenblocks unterhalb der Matrixbereiche.'),
+                self::section('📝 Hinweis- und Quellentexte', 'Steuert die Texte in den Boxen unterhalb der Add-on-Matrix.'),
+                self::textarea('matrix_addon_notes_text', 'Zusatztext im Hinweisblock', '', 'Optionaler Text oberhalb der automatisch gepflegten Add-on-Hinweise.'),
+                self::textarea('matrix_addon_sources_intro', 'Quellenblock-Intro', 'Preis- und Lizenzinformationen vor Bestellung prüfen.', 'Text oberhalb der Quellenliste.'),
                 self::text('matrix_addon_primary_button_label', 'CTA-Button Text', 'Lizenzcheck anfragen', 'Beschriftung des primären CTA-Buttons.'),
                 self::text('matrix_addon_primary_button_url', 'CTA-Button Ziel', '/kontakt', 'Kontaktformular, Beratungsseite oder interne Route.'),
                 self::checkbox('matrix_addon_show_hero', 'Contentheader anzeigen', '1', 'Blendet den oberen Contentheader ein.'),
@@ -322,7 +325,7 @@ final class CMS_M365MATRICES_Admin_Pages
                 self::number('matrix_copilot_outer_padding_top', 'Abstand oben in px', '25', 0, 120, 5, 'Abstand zwischen Theme-Header und Copilot-Content.'),
                 self::number('matrix_copilot_section_gap', 'Abschnittsabstand in px', '32', 12, 96, 4, 'Vertikaler Abstand zwischen Copilot-Bereichen.'),
                 self::number('matrix_copilot_header_radius', 'Header-Rundung in px', '2', 0, 2, 1, 'Maximal 2px: Rundung für flächige oder gerahmte Header.'),
-                self::color('matrix_copilot_color_page_background', 'Seiten-Hintergrund', '#ffffff', 'Hintergrundfarbe des Copilot-Containers.'),
+                self::color('matrix_copilot_color_page_background', 'Seiten-Hintergrund', '#edf1f6', 'Hintergrundfarbe des Copilot-Containers.'),
                 self::color('matrix_copilot_color_surface_background', 'Flächen-Hintergrund', '#f8fafc', 'Hintergrundfarbe für Copilot-Intro-, Hinweis- und Quellenbereiche.'),
                 self::color('matrix_copilot_color_text', 'Textfarbe außen', '#1e293b', 'Standard-Textfarbe außerhalb der Copilot-Tabellen.'),
                 self::color('matrix_copilot_color_muted', 'Sekundärtext außen', '#64748b', 'Beschreibungstexte, Overlines und Meta-Texte außerhalb der Copilot-Tabellen.'),
@@ -366,7 +369,7 @@ final class CMS_M365MATRICES_Admin_Pages
                 self::number('matrix_outer_padding_top', 'Abstand oben in px', '25', 0, 120, 5, 'Abstand zwischen Theme-Header und Matrix-Content.'),
                 self::number('matrix_section_gap', 'Abschnittsabstand in px', '32', 12, 96, 4, 'Vertikaler Abstand zwischen Header, Einleitung, Bereichen, Hinweisen und Quellen.'),
                 self::number('matrix_header_radius', 'Header-Rundung in px', '2', 0, 2, 1, 'Maximal 2px: Rundung für flächige oder gerahmte Header.'),
-                self::color('matrix_color_page_background', 'Seiten-Hintergrund', '#ffffff', 'Hintergrundfarbe des äußeren Matrix-Containers.'),
+                self::color('matrix_color_page_background', 'Seiten-Hintergrund', '#edf1f6', 'Hintergrundfarbe des äußeren Matrix-Containers.'),
                 self::color('matrix_color_surface_background', 'Flächen-Hintergrund', '#f8fafc', 'Hintergrundfarbe für Contentheader, Intro-, Hinweis- und Quellenbereiche außerhalb der Tabellen.'),
                 self::color('matrix_color_text', 'Textfarbe außen', '#1e293b', 'Standard-Textfarbe außerhalb der Matrix-Tabellen.'),
                 self::color('matrix_color_muted', 'Sekundärtext außen', '#64748b', 'Beschreibungstexte, Overlines und Meta-Texte außerhalb der Tabellen.'),
@@ -392,6 +395,9 @@ final class CMS_M365MATRICES_Admin_Pages
                 self::textarea('matrix_suite_result_intro', 'Matrix-Intro', 'Alle zentralen Paket-, App-, Security-, Compliance-, KI- und Beschaffungspunkte in einer Übersicht.', 'Beschreibung direkt vor der Tabelle.'),
                 self::text('matrix_suite_notes_title', 'Hinweisblock-Titel', 'Hinweise zur Lizenzmatrix', 'Überschrift des Hinweisblocks unterhalb der Lizenzmatrix.'),
                 self::text('matrix_suite_sources_title', 'Quellenblock-Titel', 'Quellenstand', 'Überschrift des Quellenblocks unterhalb der Lizenzmatrix.'),
+                self::section('📝 Hinweis- und Quellentexte', 'Steuert die Texte in den Boxen unterhalb der Lizenzmatrix.'),
+                self::textarea('matrix_suite_notes_text', 'Zusatztext im Hinweisblock', '', 'Optionaler Text oberhalb der automatisch gepflegten Lizenzmatrix-Hinweise.'),
+                self::textarea('matrix_suite_sources_intro', 'Quellenblock-Intro', 'Preis- und Lizenzinformationen vor Bestellung prüfen.', 'Text oberhalb der Quellenliste.'),
                 self::text('matrix_suite_primary_button_label', 'CTA-Button Text', 'Lizenzcheck anfragen', 'Beschriftung des primären CTA-Buttons.'),
                 self::text('matrix_suite_primary_button_url', 'CTA-Button Ziel', '/kontakt', 'Kontaktformular, Beratungsseite oder interne Route.'),
                 self::checkbox('matrix_suite_show_hero', 'Contentheader anzeigen', '1', 'Blendet den oberen Contentheader ein.'),
@@ -503,8 +509,8 @@ final class CMS_M365MATRICES_Admin_Pages
                     <input id="<?php echo self::esc_attr($key); ?>" type="number" name="<?php echo self::esc_attr($key); ?>" class="form-control" value="<?php echo self::esc_attr($value); ?>" min="<?php echo (int) ($field['min'] ?? 0); ?>" max="<?php echo (int) ($field['max'] ?? 999); ?>" step="<?php echo (int) ($field['step'] ?? 1); ?>">
                 <?php elseif ($type === 'color'): ?>
                     <div class="m365matrices-color-control">
-                        <input id="<?php echo self::esc_attr($key); ?>" type="color" name="<?php echo self::esc_attr($key); ?>" class="form-control" value="<?php echo self::esc_attr(self::valid_color($value, (string) ($field['default'] ?? '#000000'))); ?>">
-                        <input type="text" name="<?php echo self::esc_attr($key); ?>_text" class="form-control" value="<?php echo self::esc_attr(self::valid_color($value, (string) ($field['default'] ?? '#000000'))); ?>" pattern="^#[0-9A-Fa-f]{6}$" maxlength="7" onchange="this.previousElementSibling.value=this.value">
+                        <input id="<?php echo self::esc_attr($key); ?>" type="color" name="<?php echo self::esc_attr($key); ?>" class="form-control" value="<?php echo self::esc_attr(self::valid_color($value, (string) ($field['default'] ?? '#000000'))); ?>" oninput="this.nextElementSibling.value=this.value">
+                        <input type="text" name="<?php echo self::esc_attr($key); ?>_text" class="form-control" value="<?php echo self::esc_attr(self::valid_color($value, (string) ($field['default'] ?? '#000000'))); ?>" pattern="^#[0-9A-Fa-f]{6}$" maxlength="7" oninput="if(/^#[0-9A-Fa-f]{6}$/.test(this.value)){this.previousElementSibling.value=this.value;}">
                     </div>
                 <?php else: ?>
                     <input id="<?php echo self::esc_attr($key); ?>" type="text" name="<?php echo self::esc_attr($key); ?>" class="form-control" value="<?php echo self::esc_attr($value); ?>" maxlength="500">
@@ -548,8 +554,12 @@ final class CMS_M365MATRICES_Admin_Pages
             }
 
             if ($type === 'color') {
-                $value = (string) ($posted[$key . '_text'] ?? $posted[$key] ?? ($field['default'] ?? '#000000'));
-                $options[$key] = self::valid_color($value, (string) ($field['default'] ?? '#000000'));
+                $default = (string) ($field['default'] ?? '#000000');
+                $textValue = trim((string) ($posted[$key . '_text'] ?? ''));
+                $pickerValue = trim((string) ($posted[$key] ?? ''));
+                $options[$key] = self::valid_color($textValue, '') !== ''
+                    ? self::valid_color($textValue, $default)
+                    : self::valid_color($pickerValue, self::valid_color($default, '#000000'));
                 continue;
             }
 

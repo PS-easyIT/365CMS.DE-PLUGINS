@@ -75,11 +75,16 @@ final class CMS_M365MATRICES_Installer
     private static function seed_option_defaults(\CMS\Database $db, string $optionTable): void
     {
         $defaults = [
+            ['global', 'matrix-design', 'matrix_color_page_background', '#edf1f6'],
             ['global', 'matrix-design', 'matrix_show_primary_cta', '1'],
+            ['global', 'matrix-suite', 'matrix_suite_sources_intro', 'Preis- und Lizenzinformationen vor Bestellung prüfen.'],
             ['global', 'matrix-addon', 'matrix_addon_show_result_header', '1'],
             ['global', 'matrix-addon', 'matrix_addon_show_primary_cta', '1'],
             ['global', 'matrix-addon', 'matrix_addon_primary_button_label', 'Lizenzcheck anfragen'],
             ['global', 'matrix-addon', 'matrix_addon_primary_button_url', '/kontakt'],
+            ['global', 'matrix-addon', 'matrix_addon_sources_intro', 'Preis- und Lizenzinformationen vor Bestellung prüfen.'],
+            ['global', 'matrix-copilot', 'matrix_copilot_color_page_background', '#edf1f6'],
+            ['global', 'matrix-copilot', 'matrix_copilot_sources_intro', 'Preis- und Lizenzinformationen vor Bestellung prüfen.'],
         ];
         $quotedTable = self::quote_identifier($optionTable);
         $exists = $db->prepare("SELECT id FROM {$quotedTable} WHERE module_key = ? AND option_group = ? AND option_key = ? LIMIT 1");
