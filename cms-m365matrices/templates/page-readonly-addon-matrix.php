@@ -54,7 +54,12 @@ if (class_exists('CMS_M365MATRICES_Settings')) {
     }
 }
 $matrixValue = static fn(string $key, string $default): string => (string) ($matrixOptions[$key] ?? $default);
-$matrixEnabled = static fn(string $key, string $default = '1'): bool => (string) ($matrixOptions[$key] ?? $default) === '1';
+$matrixEnabled = static function (string $key, string $default = '1') use ($matrixOptions): bool {
+    $value = array_key_exists($key, $matrixOptions) ? (string) $matrixOptions[$key] : $default;
+    $value = $value !== '' ? $value : $default;
+
+    return $value === '1';
+};
 $matrixChoice = static function (string $key, string $default, array $allowed) use ($matrixOptions): string {
     $value = (string) ($matrixOptions[$key] ?? $default);
 

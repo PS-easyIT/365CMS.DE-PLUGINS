@@ -71,9 +71,9 @@ $serviceLinksHtml = static function (array $service, string $docsLabel, string $
     return $html;
 };
 $tableColumnWidths = static function (bool $showDescription, bool $showFeatures, bool $showUseCases, bool $showLinks): array {
-    $base = ['service' => 28.0];
+    $base = ['service' => 23.0];
     if ($showDescription) {
-        $base['description'] = 22.0;
+        $base['description'] = 23.0;
     }
     if ($showFeatures) {
         $base['features'] = 20.0;
@@ -82,7 +82,7 @@ $tableColumnWidths = static function (bool $showDescription, bool $showFeatures,
         $base['use_cases'] = 20.0;
     }
     if ($showLinks) {
-        $base['links'] = 10.0;
+        $base['links'] = 14.0;
     }
 
     $sum = max(1.0, array_sum($base));

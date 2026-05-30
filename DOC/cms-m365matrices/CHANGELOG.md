@@ -1,5 +1,10 @@
 # Changelog – CMS M365 Matrixen
 
+## 1.1.9 – 2026-05-30
+
+- Add-on-Matrix: Kontakt-/Lizenzcheck-CTA erhält fehlende Default-Optionen beim Install/Migrationslauf.
+- Leere gespeicherte Boolean-Werte fallen auf den Standard zurück; explizit deaktivierte Werte bleiben deaktiviert.
+
 ## 1.1.8 – 2026-05-30
 
 - Lizenzmatrix: Erste Paket-, App-, Shared-Computer-Activation-, Exchange- und Archivzeilen fachlich mit offiziellen Microsoft-Quellen präzisiert.

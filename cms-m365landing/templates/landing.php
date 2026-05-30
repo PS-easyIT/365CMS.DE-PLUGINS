@@ -23,6 +23,9 @@ $isExternal = static function (string $url): bool {
     return filter_var($url, FILTER_VALIDATE_URL) !== false && !str_starts_with($url, '/');
 };
 $buttonLabelDefault = $value('card_button_label_default', 'Öffnen');
+$layoutVariant = in_array($value('layout_variant', 'balanced'), ['balanced', 'compact', 'spotlight'], true) ? $value('layout_variant', 'balanced') : 'balanced';
+$heroImageUrl = CMS_M365Landing_Repository::public_image_url($value('hero_image_url'));
+$heroImageAlt = $value('hero_image_alt', $value('page_title', 'Microsoft 365 Hub'));
 $hasAnyCards = !empty($cardsBySection['matrix']) || !empty($cardsBySection['areas']) || !empty($cardsBySection['tools']);
 
 $renderCard = static function (array $card) use ($esc, $buttonLabelDefault, $isExternal): void {
@@ -88,28 +91,35 @@ $renderSection = static function (string $sectionKey, string $sectionClass, arra
     <?php
 };
 ?>
-<main class="phinit-plugin m365landing-page" id="m365landing-page">
+<main class="phinit-plugin m365landing-page m365landing-layout--<?php echo $esc($layoutVariant); ?>" id="m365landing-page">
     <?php if ($enabled('show_hero')): ?>
     <header class="m365landing-hero" aria-labelledby="m365landing-title">
-        <div class="m365landing-hero__content">
-            <?php if ($value('page_overline') !== ''): ?>
-            <p class="phinit-overline m365landing-overline"><?php echo $esc($value('page_overline')); ?></p>
-            <?php endif; ?>
-            <h1 id="m365landing-title"><?php echo $esc($value('page_title', 'Microsoft 365 Hub')); ?></h1>
-            <?php if ($value('page_intro') !== ''): ?>
-            <p class="m365landing-hero__intro"><?php echo $esc($value('page_intro')); ?></p>
-            <?php endif; ?>
-            <?php if ($enabled('show_hero_actions')): ?>
-            <nav class="m365landing-hero__actions" aria-label="M365 Landing Schnellzugriff">
-                <?php $primaryUrl = CMS_M365Landing_Repository::public_url($value('hero_primary_button_url')); ?>
-                <?php if ($primaryUrl !== ''): ?>
-                <a class="phinit-btn phinit-btn--primary" href="<?php echo $esc($primaryUrl); ?>"<?php echo $isExternal($primaryUrl) ? ' target="_blank" rel="noopener noreferrer"' : ''; ?>><?php echo $esc($value('hero_primary_button_text', 'M365 Lizenzmatrix öffnen')); ?></a>
+        <div class="m365landing-hero__inner">
+            <div class="m365landing-hero__content">
+                <?php if ($value('page_overline') !== ''): ?>
+                <p class="phinit-overline m365landing-overline"><?php echo $esc($value('page_overline')); ?></p>
                 <?php endif; ?>
-                <?php $secondaryUrl = CMS_M365Landing_Repository::public_url($value('hero_secondary_button_url')); ?>
-                <?php if ($secondaryUrl !== ''): ?>
-                <a class="phinit-btn phinit-btn--secondary" href="<?php echo $esc($secondaryUrl); ?>"<?php echo $isExternal($secondaryUrl) ? ' target="_blank" rel="noopener noreferrer"' : ''; ?>><?php echo $esc($value('hero_secondary_button_text', 'M365 Tools entdecken')); ?></a>
+                <h1 id="m365landing-title"><?php echo $esc($value('page_title', 'Microsoft 365 Hub')); ?></h1>
+                <?php if ($value('page_intro') !== ''): ?>
+                <p class="m365landing-hero__intro"><?php echo $esc($value('page_intro')); ?></p>
                 <?php endif; ?>
-            </nav>
+                <?php if ($enabled('show_hero_actions')): ?>
+                <nav class="m365landing-hero__actions" aria-label="M365 Landing Schnellzugriff">
+                    <?php $primaryUrl = CMS_M365Landing_Repository::public_url($value('hero_primary_button_url')); ?>
+                    <?php if ($primaryUrl !== ''): ?>
+                    <a class="phinit-btn phinit-btn--primary" href="<?php echo $esc($primaryUrl); ?>"<?php echo $isExternal($primaryUrl) ? ' target="_blank" rel="noopener noreferrer"' : ''; ?>><?php echo $esc($value('hero_primary_button_text', 'M365 Lizenzmatrix öffnen')); ?></a>
+                    <?php endif; ?>
+                    <?php $secondaryUrl = CMS_M365Landing_Repository::public_url($value('hero_secondary_button_url')); ?>
+                    <?php if ($secondaryUrl !== ''): ?>
+                    <a class="phinit-btn phinit-btn--secondary" href="<?php echo $esc($secondaryUrl); ?>"<?php echo $isExternal($secondaryUrl) ? ' target="_blank" rel="noopener noreferrer"' : ''; ?>><?php echo $esc($value('hero_secondary_button_text', 'Add-on-Matrix öffnen')); ?></a>
+                    <?php endif; ?>
+                </nav>
+                <?php endif; ?>
+            </div>
+            <?php if ($heroImageUrl !== ''): ?>
+            <figure class="m365landing-hero__image">
+                <img src="<?php echo $esc($heroImageUrl); ?>" alt="<?php echo $esc($heroImageAlt); ?>" loading="eager" decoding="async">
+            </figure>
             <?php endif; ?>
         </div>
     </header>

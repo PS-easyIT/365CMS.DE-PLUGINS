@@ -113,7 +113,7 @@
 }
 
 .azs-service-table th:first-child {
-    min-width: 16rem;
+    min-width: 13rem;
 }
 
 .azs-service-title {
@@ -224,6 +224,19 @@
 .azs-link-list .phinit-btn:focus,
 .azs-link-list .phinit-btn:active {
     text-decoration: none;
+}
+
+@media (min-width: 901px) {
+    .azs-service-table th:last-child,
+    .azs-service-table td:last-child {
+        min-width: 9.5rem;
+    }
+
+    .azs-service-table th:last-child .phinit-btn,
+    .azs-service-table td:last-child .phinit-btn {
+        overflow-wrap: normal;
+        white-space: nowrap;
+    }
 }
 
 .azs-service-accordion {

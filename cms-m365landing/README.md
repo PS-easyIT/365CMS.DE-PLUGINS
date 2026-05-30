@@ -5,13 +5,14 @@
 ## Features
 
 - Öffentliche Route standardmäßig unter `/m365`
-- Content Header mit Overline, Titel, Intro und zwei Buttons
+- Content Header mit Overline, Titel, Intro, optionalem Headerbild und zwei Buttons
 - Drei Matrix-Cards nebeneinander für M365, Add-ons und Copilot
 - Dezenter optischer Trenner zwischen Matrixen und weiteren Bereichen
 - Bereiche für Azure Services, Tutorials und weitere M365-Themen
 - Tool-Sammlung mit maximal drei Cards pro Reihe
 - Jede Card steuerbar: Bereich, Titel, Kurzzeile, Beschreibung, Icon, Mediathek-Bild, Link, Button-Text, Sortierung und Status
-- Design steuerbar: Farben, Breite, Abstände, Radius, Icongröße und Bildhöhe
+- Design steuerbar: Farben, Breite, Header-/Footer-Abstände, Radius, Icongröße, Bildhöhe und drei Layoutvarianten
+- Standard-Slugs und Ziel-URLs der M365-Plugins als Vorschläge im Card-Admin
 - Adminbereich als direkter Sidebar-Menüpunkt `M365 Landing`
 
 ## Datenbank

@@ -1,5 +1,11 @@
 # Changelog – CMS M365 Matrixen
 
+## 1.1.9 – 2026-05-30
+
+- Fehlende Standardwerte für den Add-on-Kontakt-/Lizenzcheck-CTA werden beim Installer nachgezogen.
+- Add-on-Matrix behandelt leere gespeicherte Sichtbarkeitswerte wieder als Standardwert.
+- Kontaktbutton ist damit in der Add-on-Übersicht im Standard aktiv, ohne bewusst deaktivierte Werte zu überschreiben.
+
 ## 1.1.8 – 2026-05-30
 
 - Erste Zeilen der Microsoft-365-Lizenzmatrix fachlich auf Basis offizieller Microsoft-Quellen ausgebaut.

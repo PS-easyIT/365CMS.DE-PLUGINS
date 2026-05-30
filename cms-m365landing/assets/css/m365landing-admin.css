@@ -108,6 +108,24 @@
     object-fit: cover;
 }
 
+.m365landing-target-presets {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #475569;
+    font-size: .82rem;
+    line-height: 1.7;
+    padding: .8rem .9rem;
+}
+
+.m365landing-target-presets code {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    color: #0f172a;
+    padding: .08rem .28rem;
+}
+
 .stat-icon {
     font-size: 1.75rem;
     margin-bottom: .25rem;

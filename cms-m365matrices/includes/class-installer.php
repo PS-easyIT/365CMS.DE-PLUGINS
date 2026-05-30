@@ -68,6 +68,31 @@ final class CMS_M365MATRICES_Installer
             UNIQUE KEY idx_module_option (module_key, option_group, option_key),
             INDEX idx_module_group (module_key, option_group)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        self::seed_option_defaults($db, $optionTable);
+    }
+
+    private static function seed_option_defaults(\CMS\Database $db, string $optionTable): void
+    {
+        $defaults = [
+            ['global', 'matrix-design', 'matrix_show_primary_cta', '1'],
+            ['global', 'matrix-addon', 'matrix_addon_show_result_header', '1'],
+            ['global', 'matrix-addon', 'matrix_addon_show_primary_cta', '1'],
+            ['global', 'matrix-addon', 'matrix_addon_primary_button_label', 'Lizenzcheck anfragen'],
+            ['global', 'matrix-addon', 'matrix_addon_primary_button_url', '/kontakt'],
+        ];
+        $quotedTable = self::quote_identifier($optionTable);
+        $exists = $db->prepare("SELECT id FROM {$quotedTable} WHERE module_key = ? AND option_group = ? AND option_key = ? LIMIT 1");
+        $insert = $db->prepare("INSERT INTO {$quotedTable} (module_key, option_group, option_key, option_value, value_type) VALUES (?, ?, ?, ?, 'string')");
+
+        foreach ($defaults as [$moduleKey, $optionGroup, $optionKey, $optionValue]) {
+            $exists->execute([$moduleKey, $optionGroup, $optionKey]);
+            if ($exists->fetch()) {
+                continue;
+            }
+
+            $insert->execute([$moduleKey, $optionGroup, $optionKey, $optionValue]);
+        }
     }
 
     private static function quote_identifier(string $identifier): string

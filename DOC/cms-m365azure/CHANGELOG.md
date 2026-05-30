@@ -1,5 +1,11 @@
 # Changelog – CMS M365 Azure
 
+## 1.1.4 – 2026-05-30
+
+- Desktop-Tabellenbreiten nachjustiert: Die Dienstspalte ist schmaler, die freiwerdende Breite fließt in Beschreibung und Links.
+- Die Linkspalte erhält auf Desktop mehr Mindestbreite.
+- Der Linktext `Dokumentation` bleibt in der Desktop-Tabellenansicht einzeilig.
+
 ## 1.1.3 – 2026-05-30
 
 - Inneren `m365calc-status`-Balken in den Azure-Tabellenzellen entfernt.

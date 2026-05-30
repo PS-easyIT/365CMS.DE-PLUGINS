@@ -98,6 +98,16 @@ final class CMS_M365Landing_Admin_Pages
                 continue;
             }
 
+            if ($key === 'layout_variant') {
+                $settings[$key] = self::layout_variant($value);
+                continue;
+            }
+
+            if ($key === 'hero_image_url') {
+                $settings[$key] = CMS_M365Landing_Repository::public_image_url($value);
+                continue;
+            }
+
             if (str_ends_with($key, '_url')) {
                 $settings[$key] = CMS_M365Landing_Repository::public_url($value);
                 continue;
@@ -128,12 +138,13 @@ final class CMS_M365Landing_Admin_Pages
     {
         return [
             'route_slug', 'page_overline', 'page_title', 'page_intro',
+            'hero_image_url', 'hero_image_alt',
             'hero_primary_button_text', 'hero_primary_button_url', 'hero_secondary_button_text', 'hero_secondary_button_url',
             'matrix_section_overline', 'matrix_section_title', 'matrix_section_intro',
             'areas_section_overline', 'areas_section_title', 'areas_section_intro',
             'tools_section_overline', 'tools_section_title', 'tools_section_intro',
             'separator_label', 'empty_state_title', 'empty_state_text', 'seo_title', 'seo_description',
-            'card_button_label_default',
+            'card_button_label_default', 'layout_variant',
         ];
     }
 
@@ -165,6 +176,7 @@ final class CMS_M365Landing_Admin_Pages
             'layout_max_width' => [720, 1800],
             'layout_padding_x' => [0, 80],
             'layout_padding_top' => [0, 120],
+            'layout_padding_bottom' => [0, 160],
             'design_border_radius' => [0, 32],
             'card_icon_size' => [24, 80],
             'card_image_height' => [90, 260],
@@ -237,14 +249,15 @@ final class CMS_M365Landing_Admin_Pages
         echo '<form method="POST" class="admin-form m365landing-form-grid"><input type="hidden" name="action" value="save_card"><input type="hidden" name="csrf_token" value="' . self::esc($token) . '"><input type="hidden" name="id" value="' . (int) ($edit['id'] ?? 0) . '">';
         self::select('section', 'Bereich', (string) ($edit['section'] ?? 'tools'), ['matrix' => 'Matrixen oben', 'areas' => 'Weitere M365 Bereiche', 'tools' => 'M365 Tools Sammlung']);
         self::input('title', 'Titel', (string) ($edit['title'] ?? ''), true);
-        self::input('slug', 'Slug', (string) ($edit['slug'] ?? ''), false);
+        self::preset_input('slug', 'Slug', (string) ($edit['slug'] ?? ''), 'm365landing-slug-presets');
         self::input('subtitle', 'Kurzzeile', (string) ($edit['subtitle'] ?? ''), false);
         self::number('sort_order', 'Sortierung', (int) ($edit['sort_order'] ?? 100), 0, 9999);
         self::input('icon', 'Icon/Emoji Fallback', (string) ($edit['icon'] ?? ''), false);
         self::image_input('image_url', 'Mediathek-Bild / Bild-URL', (string) ($edit['image_url'] ?? ''));
         self::input('image_alt', 'Bild-Alt-Text', (string) ($edit['image_alt'] ?? ''), false);
-        self::input('url', 'Ziel-Link', (string) ($edit['url'] ?? ''), false);
+        self::preset_input('url', 'Ziel-Link', (string) ($edit['url'] ?? ''), 'm365landing-url-presets');
         self::input('button_label', 'Button-Text', (string) ($edit['button_label'] ?? ''), false);
+        self::render_target_presets();
         self::textarea('description', 'Beschreibung', (string) ($edit['description'] ?? ''), 4);
         self::checkbox('is_featured', 'Als hervorgehobene Karte markieren', (int) ($edit['is_featured'] ?? 0) === 1);
         self::checkbox('is_active', 'Karte öffentlich anzeigen', (int) ($edit['is_active'] ?? 1) === 1);
@@ -271,6 +284,8 @@ final class CMS_M365Landing_Admin_Pages
             self::replace_input('page_overline', 'Overline', (string) ($s['page_overline'] ?? 'Microsoft 365 Hub'));
             self::replace_input('page_title', 'Seitentitel', (string) ($s['page_title'] ?? ''));
             self::replace_textarea('page_intro', 'Einleitung', (string) ($s['page_intro'] ?? ''), 4);
+            self::image_input('hero_image_url', 'Header Bild / Bild-URL', (string) ($s['hero_image_url'] ?? ''), 'Headerbild auswählen');
+            self::replace_input('hero_image_alt', 'Header Bild-Alt-Text', (string) ($s['hero_image_alt'] ?? ''));
             self::replace_input('hero_primary_button_text', 'Primärbutton Text', (string) ($s['hero_primary_button_text'] ?? ''));
             self::replace_input('hero_primary_button_url', 'Primärbutton Ziel', (string) ($s['hero_primary_button_url'] ?? ''));
             self::replace_input('hero_secondary_button_text', 'Sekundärbutton Text', (string) ($s['hero_secondary_button_text'] ?? ''));
@@ -303,9 +318,11 @@ final class CMS_M365Landing_Admin_Pages
             self::replace_checkbox('show_tools_section', 'M365 Tools Sammlung anzeigen', (string) ($s['show_tools_section'] ?? '1') === '1');
         } else {
             echo '<h3>🎨 Layout & Design</h3>';
+            self::select('layout_variant', 'Layout', self::layout_variant((string) ($s['layout_variant'] ?? 'balanced')), self::layout_options());
             self::replace_number('layout_max_width', 'Maximale Inhaltsbreite in px', (int) ($s['layout_max_width'] ?? 1180), 720, 1800);
             self::replace_number('layout_padding_x', 'Seitlicher Innenabstand in px', (int) ($s['layout_padding_x'] ?? 0), 0, 80);
-            self::replace_number('layout_padding_top', 'Oberer Innenabstand in px', (int) ($s['layout_padding_top'] ?? 25), 0, 120);
+            self::replace_number('layout_padding_top', 'Abstand zum Theme-Header in px', (int) ($s['layout_padding_top'] ?? 25), 0, 120);
+            self::replace_number('layout_padding_bottom', 'Abstand zum Theme-Footer in px', (int) ($s['layout_padding_bottom'] ?? 64), 0, 160);
             self::replace_color('design_primary_color', 'Primärfarbe', (string) ($s['design_primary_color'] ?? '#2563eb'), '#2563eb');
             self::replace_color('design_accent_color', 'Akzentfarbe', (string) ($s['design_accent_color'] ?? '#0f766e'), '#0f766e');
             self::replace_color('design_background_color', 'Seitenhintergrund', (string) ($s['design_background_color'] ?? '#ffffff'), '#ffffff');
@@ -353,11 +370,15 @@ final class CMS_M365Landing_Admin_Pages
     private static function setting_key_visible_in_tab(string $key, string $tab): bool
     {
         if ($tab === 'content') {
-            return in_array($key, ['route_slug', 'page_overline', 'page_title', 'page_intro', 'hero_primary_button_text', 'hero_primary_button_url', 'hero_secondary_button_text', 'hero_secondary_button_url', 'seo_title', 'seo_description'], true);
+            return in_array($key, ['route_slug', 'page_overline', 'page_title', 'page_intro', 'hero_image_url', 'hero_image_alt', 'hero_primary_button_text', 'hero_primary_button_url', 'hero_secondary_button_text', 'hero_secondary_button_url', 'seo_title', 'seo_description'], true);
         }
 
         if ($tab === 'sections') {
             return str_contains($key, '_section_') || in_array($key, ['separator_label', 'empty_state_title', 'empty_state_text', 'card_button_label_default'], true);
+        }
+
+        if ($tab === 'design') {
+            return $key === 'layout_variant';
         }
 
         return false;
@@ -385,12 +406,17 @@ final class CMS_M365Landing_Admin_Pages
         echo '<div class="form-group"><label class="form-label" for="' . self::esc($name) . '">' . self::esc($label) . '</label><input class="form-control" type="text" id="' . self::esc($name) . '" name="' . self::esc($name) . '" value="' . self::esc($value) . '"' . ($required ? ' required' : '') . '></div>';
     }
 
+    private static function preset_input(string $name, string $label, string $value, string $listId): void
+    {
+        echo '<div class="form-group"><label class="form-label" for="' . self::esc($name) . '">' . self::esc($label) . '</label><input class="form-control" type="text" id="' . self::esc($name) . '" name="' . self::esc($name) . '" value="' . self::esc($value) . '" list="' . self::esc($listId) . '"></div>';
+    }
+
     private static function replace_input(string $name, string $label, string $value): void
     {
         self::input($name, $label, $value, false);
     }
 
-    private static function image_input(string $name, string $label, string $value): void
+    private static function image_input(string $name, string $label, string $value, string $pickerTitle = 'Kartenbild auswählen'): void
     {
         $previewId = $name . '_preview';
         echo '<div class="form-group"><label class="form-label" for="' . self::esc($name) . '">' . self::esc($label) . '</label>';
@@ -399,7 +425,7 @@ final class CMS_M365Landing_Admin_Pages
             echo '<img src="' . self::esc($value) . '" alt="Bildvorschau" loading="lazy">';
         }
         echo '</div><input class="form-control" type="text" id="' . self::esc($name) . '" name="' . self::esc($name) . '" value="' . self::esc($value) . '" placeholder="/uploads/bild.webp" data-media-target-input>';
-        echo '<div class="m365landing-media-actions"><button type="button" class="btn btn-secondary btn-sm" data-open-media-picker data-target-input="' . self::esc($name) . '" data-preview-id="' . self::esc($previewId) . '" data-picker-title="Kartenbild auswählen">🖼️ Mediathek</button><button type="button" class="btn btn-secondary btn-sm" data-clear-media-input data-target-input="' . self::esc($name) . '" data-preview-id="' . self::esc($previewId) . '">Leeren</button></div></div>';
+        echo '<div class="m365landing-media-actions"><button type="button" class="btn btn-secondary btn-sm" data-open-media-picker data-target-input="' . self::esc($name) . '" data-preview-id="' . self::esc($previewId) . '" data-picker-title="' . self::esc($pickerTitle) . '">🖼️ Mediathek</button><button type="button" class="btn btn-secondary btn-sm" data-clear-media-input data-target-input="' . self::esc($name) . '" data-preview-id="' . self::esc($previewId) . '">Leeren</button></div></div>';
     }
 
     private static function textarea(string $name, string $label, string $value, int $rows): void
@@ -432,6 +458,57 @@ final class CMS_M365Landing_Admin_Pages
             echo '<option value="' . self::esc($optionValue) . '"' . $selected . '>' . self::esc($optionLabel) . '</option>';
         }
         echo '</select></div>';
+    }
+
+    /** @return array<string,string> */
+    private static function layout_options(): array
+    {
+        return [
+            'balanced' => 'Standard – ausgewogene Bereichscards',
+            'compact' => 'Kompakt – kürzere Abstände und dichteres Hero',
+            'spotlight' => 'Spotlight – Headerbild rechts, Cards luftig',
+        ];
+    }
+
+    private static function layout_variant(string $value): string
+    {
+        return array_key_exists($value, self::layout_options()) ? $value : 'balanced';
+    }
+
+    /** @return array<int,array{slug:string,url:string,label:string}> */
+    private static function target_presets(): array
+    {
+        return [
+            ['slug' => 'm365-lizenzmatrix', 'url' => '/m365-lizenzmatrix', 'label' => 'M365 Lizenzmatrix'],
+            ['slug' => 'm365-addon-matrix', 'url' => '/m365-addon-matrix', 'label' => 'M365 Add-on-Matrix'],
+            ['slug' => 'm365-copilot-matrix', 'url' => '/m365-copilot-matrix', 'label' => 'Copilot Matrix'],
+            ['slug' => 'azure-services', 'url' => '/azure-services', 'label' => 'Azure Services'],
+            ['slug' => 'm365-tools', 'url' => '/m365-tools', 'label' => 'M365 Tools Hub'],
+            ['slug' => 'm365-lizenzvergleich', 'url' => '/m365-lizenzvergleich', 'label' => 'M365 Lizenzvergleich'],
+            ['slug' => 'm365-lizenzberater', 'url' => '/m365-lizenzberater', 'label' => 'M365 Lizenz-Berater'],
+            ['slug' => 'm365-add-on-konfigurator', 'url' => '/m365-add-on-konfigurator', 'label' => 'Add-on-Konfigurator'],
+            ['slug' => 'copilot-roi-rechner', 'url' => '/copilot-roi-rechner', 'label' => 'Copilot ROI-Rechner'],
+            ['slug' => 'm365-storage-bedarfsrechner', 'url' => '/m365-storage-bedarfsrechner', 'label' => 'Storage-Bedarfs-Rechner'],
+            ['slug' => 'teams-phone-lizenzberater', 'url' => '/teams-phone-lizenzberater', 'label' => 'Teams Phone-Berater'],
+        ];
+    }
+
+    private static function render_target_presets(): void
+    {
+        echo '<datalist id="m365landing-slug-presets">';
+        foreach (self::target_presets() as $preset) {
+            echo '<option value="' . self::esc($preset['slug']) . '">' . self::esc($preset['label']) . '</option>';
+        }
+        echo '</datalist><datalist id="m365landing-url-presets">';
+        foreach (self::target_presets() as $preset) {
+            echo '<option value="' . self::esc($preset['url']) . '">' . self::esc($preset['label']) . '</option>';
+        }
+        echo '</datalist><div class="m365landing-wide m365landing-target-presets"><strong>Standard-Ziele:</strong> ';
+        $links = [];
+        foreach (self::target_presets() as $preset) {
+            $links[] = '<code>' . self::esc($preset['slug']) . '</code> → <code>' . self::esc($preset['url']) . '</code>';
+        }
+        echo implode(' · ', $links) . '</div>';
     }
 
     private static function checkbox(string $name, string $label, bool $checked): void

@@ -9,6 +9,14 @@
 | `setting_value` | TEXT | Wert |
 | `updated_at` | TIMESTAMP | Aktualisierungszeitpunkt |
 
+Wichtige Einstellungsschlüssel:
+
+- `hero_image_url`, `hero_image_alt` – optionales Headerbild im Content Header
+- `layout_variant` – `balanced`, `compact` oder `spotlight`
+- `layout_padding_top`, `layout_padding_bottom` – Abstand zum Theme-Header bzw. Theme-Footer
+- `layout_max_width`, `layout_padding_x` – Seitenbreite und horizontaler Abstand
+- `card_image_height`, `card_icon_size` – Card-Bild- und Icon-Darstellung
+
 ## `cms_m365landing_cards`
 
 | Feld | Typ | Zweck |

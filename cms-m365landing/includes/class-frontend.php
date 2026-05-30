@@ -89,6 +89,7 @@ final class CMS_M365Landing_Frontend
         $maxWidth = max(720, min(1800, (int) ($settings['layout_max_width'] ?? 1180)));
         $paddingX = max(0, min(80, (int) ($settings['layout_padding_x'] ?? 0)));
         $paddingTop = max(0, min(120, (int) ($settings['layout_padding_top'] ?? 25)));
+        $paddingBottom = max(0, min(160, (int) ($settings['layout_padding_bottom'] ?? 64)));
         $iconSize = max(24, min(80, (int) ($settings['card_icon_size'] ?? 42)));
         $imageHeight = max(90, min(260, (int) ($settings['card_image_height'] ?? 150)));
 
@@ -115,6 +116,7 @@ final class CMS_M365Landing_Frontend
         echo '    --m365landing-page-max-width: ' . (int) $maxWidth . 'px;' . "\n";
         echo '    --m365landing-padding-x: ' . (int) $paddingX . 'px;' . "\n";
         echo '    --m365landing-padding-top: ' . (int) $paddingTop . 'px;' . "\n";
+        echo '    --m365landing-padding-bottom: ' . (int) $paddingBottom . 'px;' . "\n";
         echo '    --m365landing-icon-size: ' . (int) $iconSize . 'px;' . "\n";
         echo '    --m365landing-image-height: ' . (int) $imageHeight . 'px;' . "\n";
         echo '}' . "\n";
