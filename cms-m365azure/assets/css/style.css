@@ -177,7 +177,15 @@
 }
 
 .azs-cell-list li {
+    border-left: 0;
     margin: 0;
+    padding-left: 0;
+}
+
+.azs-cell-list li::before,
+.azs-cell-list li::marker {
+    content: none;
+    display: none;
 }
 
 .azs-link-list {
@@ -210,7 +218,6 @@
 }
 
 .azs-service-accordion__item {
-    border-left: 3px solid var(--m365matrix-primary-button-bg, var(--phinit-color-accent));
     box-shadow: none;
 }
 
