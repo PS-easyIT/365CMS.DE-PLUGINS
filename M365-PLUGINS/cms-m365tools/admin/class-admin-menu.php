@@ -58,17 +58,6 @@ final class CMS_M365CALCULATOR_Admin_Menu
             [$pages, 'render_landing_designer']
         );
 
-        if (!self::matrix_plugin_active()) {
-            add_submenu_page(
-                'm365tools-dashboard',
-                'M365 Tools – Read-only Matrixen',
-                '📚 Matrixen',
-                'manage_options',
-                'm365tools-readonly-matrices',
-                [$pages, 'render_readonly_matrices']
-            );
-        }
-
         add_submenu_page(
             'm365tools-dashboard',
             'M365 Tools – Paketpreise',
@@ -87,20 +76,11 @@ final class CMS_M365CALCULATOR_Admin_Menu
             [$pages, 'render_subscription_prices']
         );
 
-        if (!self::matrix_plugin_active()) {
-            self::register_matrix_alias_if_requested($pages);
-        }
-
         foreach (self::ordered_admin_tools() as $tool) {
             $moduleKey = (string) ($tool['key'] ?? '');
             if ($moduleKey === '') {
                 continue;
             }
-
-            if (in_array($moduleKey, ['m365-lizenzmatrix', 'm365-addon-matrix'], true)) {
-                continue;
-            }
-
             $title = (string) ($tool['title'] ?? $moduleKey);
             add_submenu_page(
                 'm365tools-dashboard',
@@ -113,33 +93,6 @@ final class CMS_M365CALCULATOR_Admin_Menu
                 }
             );
         }
-    }
-
-    private static function register_matrix_alias_if_requested(string $pages): void
-    {
-        $requestPath = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH), '/');
-        $aliases = [
-            'admin/plugins/m365tools-dashboard/m365tools-module-m365-lizenzmatrix' => ['matrix-suite', 'M365 Tools – Lizenzmatrix'],
-            'admin/plugins/m365tools-dashboard/m365tools-module-m365-addon-matrix' => ['matrix-addon', 'M365 Tools – Add-on-Matrix'],
-        ];
-
-        if (!isset($aliases[$requestPath])) {
-            return;
-        }
-
-        [$tab, $title] = $aliases[$requestPath];
-        $slug = basename($requestPath);
-
-        add_submenu_page(
-            'm365tools-dashboard',
-            $title,
-            '📚 Matrixen',
-            'manage_options',
-            $slug,
-            static function () use ($pages, $tab): void {
-                $pages::render_matrix_alias($tab);
-            }
-        );
     }
 
     /**
@@ -186,9 +139,7 @@ final class CMS_M365CALCULATOR_Admin_Menu
     {
         $label = match ($moduleKey) {
             'license-audit-checklist' => 'Audit',
-            'm365-lizenzmatrix' => 'Matrix',
             'm365-lizenzvergleich' => 'Vergleich',
-            'm365-addon-matrix' => 'Add-ons Matrix',
             'm365-add-on-konfigurator' => 'Add-ons',
             'm365lic' => 'Lizenzberater',
             'm365-commitment-calculator' => 'Laufzeiten',
@@ -222,22 +173,4 @@ final class CMS_M365CALCULATOR_Admin_Menu
         return strlen($label) > $length ? rtrim(substr($label, 0, $length - 1)) . '…' : $label;
     }
 
-    private static function matrix_plugin_active(): bool
-    {
-        if (defined('CMS_M365MATRICES_VERSION')) {
-            return true;
-        }
-
-        if (!class_exists('CMS\\PluginManager')) {
-            return false;
-        }
-
-        try {
-            $manager = \CMS\PluginManager::instance();
-
-            return method_exists($manager, 'isPluginActive') && $manager->isPluginActive('cms-m365matrices');
-        } catch (\Throwable $e) {
-            return false;
-        }
-    }
 }

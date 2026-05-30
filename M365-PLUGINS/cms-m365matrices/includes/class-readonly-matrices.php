@@ -1,8 +1,8 @@
 <?php
 /**
- * CMS M365 Tools – ReadOnly Lizenz- und Add-on-Matrizen.
+ * CMS M365 Matrixen – Read-only Lizenz- und Add-on-Matrizen.
  *
- * @package CMS_M365CALCULATOR
+ * @package CMS_M365MATRICES
  */
 
 declare(strict_types=1);
@@ -11,14 +11,17 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-final class CMS_M365CALCULATOR_ReadOnly_Matrices
+final class CMS_M365MATRICES_ReadOnly_Matrices
 {
+    /** @var array<string,array<string,mixed>> */
+    private static array $catalogCache = [];
+
     /**
      * @return array<string,mixed>
      */
     public static function suite_matrix(): array
     {
-        return self::normalize_suite_matrix(CMS_M365CALCULATOR_Catalog::readonly_suite_matrix());
+        return self::normalize_suite_matrix(self::load_json('readonly_suite_matrix.json'));
     }
 
     /**
@@ -26,17 +29,30 @@ final class CMS_M365CALCULATOR_ReadOnly_Matrices
      */
     public static function addon_matrix(): array
     {
-        return self::normalize_addon_matrix(CMS_M365CALCULATOR_Catalog::readonly_addon_matrix());
+        return self::normalize_addon_matrix(self::load_json('readonly_addon_matrix.json'));
     }
 
-    public static function render_suite_matrix_page(): string
+    /**
+     * @return array<string,mixed>
+     */
+    private static function load_json(string $file): array
     {
-        return CMS_M365CALCULATOR_PLUGIN_DIR . 'templates/page-readonly-suite-matrix.php';
-    }
+        $file = basename($file);
+        if (isset(self::$catalogCache[$file])) {
+            return self::$catalogCache[$file];
+        }
 
-    public static function render_addon_matrix_page(): string
-    {
-        return CMS_M365CALCULATOR_PLUGIN_DIR . 'templates/page-readonly-addon-matrix.php';
+        $path = CMS_M365MATRICES_PLUGIN_DIR . 'data/' . $file;
+        if (!is_file($path)) {
+            self::$catalogCache[$file] = [];
+
+            return self::$catalogCache[$file];
+        }
+
+        $decoded = json_decode((string) file_get_contents($path), true);
+        self::$catalogCache[$file] = is_array($decoded) ? $decoded : [];
+
+        return self::$catalogCache[$file];
     }
 
     /**

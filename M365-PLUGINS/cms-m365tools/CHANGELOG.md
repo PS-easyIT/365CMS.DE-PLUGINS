@@ -1,6 +1,12 @@
 
 # Changelog – CMS M365 Tools
 
+## 3.0.4 – 2026-05-30
+
+- Read-only Lizenzmatrix und Add-on-Matrix vollständig aus `cms-m365tools` entfernt; die Routen, Templates, JSON-Kataloge, Adminfelder und Matrix-Normalisierung liegen jetzt in `cms-m365matrices`.
+- M365 Tools behält nur die gemeinsamen Options-/Settings-Tabellen für bestehende Konfigurationen und die übrigen interaktiven Rechner-/Tool-Module.
+- Tool-Registry, Adminmenü, Frontend-Routen und Best-Practice-Modulzuordnungen um die ausgelagerten Matrixmodule bereinigt.
+
 ## 3.0.3 – 2026-05-30
 
 - Matrix-Routen, Matrix-Registry und Matrix-Admineintrag werden an `cms-m365matrices` delegiert, sobald das neue Matrix-Plugin aktiv ist.

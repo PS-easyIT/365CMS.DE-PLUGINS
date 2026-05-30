@@ -15,9 +15,7 @@ final class CMS_M365CALCULATOR_Frontend
 {
     private const TOOLBOX_ROUTE = '/m365-tools';
     private const TOOLBOX_ROUTE_ALIAS = '/m365-rechner';
-    private const READONLY_SUITE_MATRIX_ROUTE = '/m365-lizenzmatrix';
     private const LICENSE_COMPARISON_ROUTE = '/m365-lizenzvergleich';
-    private const READONLY_ADDON_MATRIX_ROUTE = '/m365-addon-matrix';
     private const ADDON_CONFIGURATOR_ROUTE = '/m365-add-on-konfigurator';
     private const COMMITMENT_ROUTE = '/m365-jahresvertrag-vs-monatsvertrag';
     private const ARCHIVE_MAILBOX_ROUTE = '/m365-archive-mailbox-rechner';
@@ -99,16 +97,6 @@ final class CMS_M365CALCULATOR_Frontend
         $router->addRoute('GET', self::LICENSE_COMPARISON_ROUTE, function (): void {
             $this->render_license_comparison();
         });
-
-        if (!$this->matrix_plugin_owns_routes()) {
-            $router->addRoute('GET', self::READONLY_SUITE_MATRIX_ROUTE, function (): void {
-                $this->render_readonly_suite_matrix();
-            });
-
-            $router->addRoute('GET', self::READONLY_ADDON_MATRIX_ROUTE, function (): void {
-                $this->render_readonly_addon_matrix();
-            });
-        }
 
         $router->addRoute('GET', self::ADDON_CONFIGURATOR_ROUTE, function (): void {
             $this->render_addon_configurator();
@@ -422,28 +410,6 @@ final class CMS_M365CALCULATOR_Frontend
 
         $this->set_seo('M365 Lizenzvergleich', 'Vergleicht Microsoft-365-Lizenzen nach Desktop Apps, Exchange, Teams, SharePoint, Copilot, Security, Power Platform und Zusatzdiensten.');
         include CMS_M365CALCULATOR_PLUGIN_DIR . 'templates/page-license-comparison.php';
-        exit;
-    }
-
-    private function render_readonly_suite_matrix(): void
-    {
-        $this->ensure_tool_available('m365-lizenzmatrix');
-
-        $matrix = CMS_M365CALCULATOR_ReadOnly_Matrices::suite_matrix();
-
-        $this->set_seo('M365 Lizenzmatrix', 'Gesamtübersicht der Microsoft-365-Vollpakete von Business Basic, Standard und Premium bis Microsoft 365 E3 und E5.');
-        include CMS_M365CALCULATOR_ReadOnly_Matrices::render_suite_matrix_page();
-        exit;
-    }
-
-    private function render_readonly_addon_matrix(): void
-    {
-        $this->ensure_tool_available('m365-addon-matrix');
-
-        $matrix = CMS_M365CALCULATOR_ReadOnly_Matrices::addon_matrix();
-
-        $this->set_seo('M365 Add-on-Matrix', 'Gesamtübersicht der Microsoft-365-Add-ons nach Exchange, SharePoint, OneDrive, Teams, Copilot, Intune, Entra ID, Defender, Purview und Power Platform.');
-        include CMS_M365CALCULATOR_ReadOnly_Matrices::render_addon_matrix_page();
         exit;
     }
 
@@ -905,11 +871,6 @@ final class CMS_M365CALCULATOR_Frontend
             trim(self::COPILOT_ROI_ROUTE, '/') => 'copilot-roi',
         ];
 
-        if (!$this->matrix_plugin_owns_routes()) {
-            $fallback[trim(self::READONLY_SUITE_MATRIX_ROUTE, '/')] = 'm365-lizenzmatrix';
-            $fallback[trim(self::READONLY_ADDON_MATRIX_ROUTE, '/')] = 'm365-addon-matrix';
-        }
-
         foreach ($fallback as $route => $moduleKey) {
             $map[$route] ??= $moduleKey;
         }
@@ -928,25 +889,6 @@ final class CMS_M365CALCULATOR_Frontend
         $this->requestPathCache = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
 
         return $this->requestPathCache;
-    }
-
-    private function matrix_plugin_owns_routes(): bool
-    {
-        if (defined('CMS_M365MATRICES_VERSION')) {
-            return true;
-        }
-
-        if (!class_exists('CMS\\PluginManager')) {
-            return false;
-        }
-
-        try {
-            $manager = \CMS\PluginManager::instance();
-
-            return method_exists($manager, 'isPluginActive') && $manager->isPluginActive('cms-m365matrices');
-        } catch (\Throwable $e) {
-            return false;
-        }
     }
 
     private function path_matches_route(string $requestPath, string $routePath): bool

@@ -1,5 +1,7 @@
 # CMS M365 Tools
 
+> Hinweis: Die reinen Read-only Lizenz- und Add-on-Matrixseiten wurden in das eigenständige Plugin `cms-m365matrices` ausgelagert. `cms-m365tools` enthält weiterhin die interaktiven Rechner, Vergleiche, Preis-/Landingpage-Verwaltung und die gemeinsamen Options-Tabellen.
+
 `cms-m365tools` ist eine modulare Microsoft-365-Rechner- und Tool-Box für 365CMS. Enthalten sind der **All-Module-Best-Practice-Kompass**, der **Power Platform Kosten-Kalkulator mit Well-Architected-Review**, der **Google Workspace ↔ Microsoft 365 TCO-Rechner**, der **M365 Storage-Bedarfs-Rechner**, der **M365 Backup-Kosten-Rechner**, die **Lizenz-Audit-Checkliste**, der **Microsoft-Preiserhöhung-Tracker**, der **Teams Phone-Lizenz-Berater**, der **On-Premise Exchange zu Exchange Online ROI-Rechner**, der **Frontline Worker Lizenz-Eignung-Check**, der **Copilot Pilot-Phase-Rechner**, der **AI Pack vs. Copilot Pro Vergleich**, der **Archive Mailbox Rechner**, die **M365 Lizenzmatrix**, die **M365 Add-on-Matrix**, der **Annual vs. Monthly Commitment Rechner**, der **M365 Add-On-Konfigurator**, der **M365-Lizenzvergleich**, der **M365-Lizenz-Berater**, der **Copilot ROI-Rechner**, der **Shared-Mailbox vs. Lizenz-Rechner** und der **Copilot Lizenz-Pflicht-Checker**. Ab `1.28.0` übernimmt das Plugin die Paketpreise bevorzugt aus dem aktiven `cms-m365lic` Seed-Katalog und pflegt sie zentral als Public-, Member- und Spezialpreise. Ab `1.29.1` steuert ein eigener `Landingpage Designer`-Unterpunkt Contentheader, Layouts, Boxen, Farben, Rundungen und Sichtbarkeit der Hub-Landingpage. Ab `1.29.3` bündelt der Admin-Unterpunkt `Matrixen` die Read-only Lizenzmatrix und Add-on-Matrix mit Bereichs-Tabs und gemeinsamem Design-Tab. Ab `1.29.12` startet der öffentliche Plugin-Content ohne sichtbaren Theme-Header-Saum, aber mit 25px internem Abstand zwischen Plugin-Hintergrundrand und Contentheader. Der `Content-Hintergrund` im Landingpage Designer gilt für Hub und Public-Modulseiten; Boxen, Headerflächen und Buttons sind auf maximal 2px Rundung begrenzt und heben sich dezent über leicht dunklere Surface-Flächen ab. Ab `1.29.13` kann jedes Modul im eigenen Admin-Tab `Public-Design` diese Public-Farben, Header-, Button-, Surface-, Radius- und Abschnittswerte gezielt übersteuern. Ab `1.29.14` sind Admin-Speicheraktionen fail-closed gehärtet, Public-Design-Routen werden aus der Registry erkannt und cachebare CSS-Resets überschreiben keine Admin-Farben mehr. Ab `1.29.15` speichern Admin-Settings migrationssicher ohne `ON DUPLICATE`-Abhängigkeit und alte Matrix-Modul-Admin-URLs werden ohne 404 in den Matrixen-Bereich geführt. Ab `1.29.16` sind Admin-Speicherungen zusätzlich transaktional abgesichert, Landingpage-Card-Ziele browserseitig validiert und alle Public-Komponenten konsequent auf maximal 2px Radius vereinheitlicht. Ab `1.29.17` verarbeitet Public keine POST-Bodies mehr, Landingpage-Card-Klicks nutzen vorhandene Links und die Public-Routenerkennung ist pro Request gecacht. Ab `1.29.18` sind die Admin-Speicher-Vorprüfungen MariaDB-kompatibel auf `INFORMATION_SCHEMA` umgestellt, sodass Matrixen, zentrale Einstellungen, Landingpage Designer und Modulübersicht ohne `SHOW ... LIKE ?`-Fehler speichern. Ab `1.29.19` sind auch Public-Basisstyles und Admin-Bedienelemente auf maximal 2px Radius vereinheitlicht; Public-Routen, Toolbox-Erkennung und Modulschlüssel werden zusätzlich pro Request gecacht. Ab `1.29.20` starten die Read-only Lizenzmatrix und Add-on-Matrix wieder am Seitenanfang, ohne den Ergebnis-Fokus interaktiver Rechner zu verändern. Ab `1.29.21` sind Admin-Redirects zusätzlich validiert, Matrixseiten stellen den Browser-Scroll-State zurück und die Landingpage-Suche arbeitet mit gecachten Section-Card-Listen. Ab `3.0.0` ist die Admin-Farbwert-Synchronisierung als cachebares `defer`-Asset ausgelagert und die Public-Token-Injection enthält nur noch konfigurierbare Designwerte.
 
 ## Enthaltene Routen
@@ -17,8 +19,6 @@
 - `/frontline-worker-lizenz-check` – F1-/F3-Eignung, Mischmodell, Enterprise-Bedarf und Sparpotenzial für Frontline Worker prüfen
 - `/copilot-pilot-rechner` – Pilotgröße, Dauer, Budget, Champions, Readiness und Rollout-Zeitplan für Microsoft 365 Copilot berechnen
 - `/ai-pack-vs-copilot-pro` – AI Pack, Copilot Pro, Copilot Chat, Microsoft 365 Copilot, Spezial-Copilots und Copilot Studio nach Use Case vergleichen
-- `/m365-lizenzmatrix` – Gesamtübersicht der Microsoft-365-Vollpakete ohne Filter oder Formular
-- `/m365-addon-matrix` – Gesamtübersicht aller Add-on-Bereiche mit Paketen nebeneinander
 - `/m365-archive-mailbox-rechner` – Archive Mailbox Rechner für Archivgröße, Auto-expanding Archive, Shared-/Resource-Mailboxen und Hold-/Purview-Hinweise
 - `/m365-jahresvertrag-vs-monatsvertrag` – Annual vs. Monthly Commitment Rechner für Monatslaufzeit, Jahresbindung und Split-Strategien
 - `/m365-add-on-konfigurator` – Add-ons, Voraussetzungen, Redundanzen, Upgrades und Verbrauchsprodukte prüfen
@@ -39,7 +39,6 @@ cms-m365tools/
 │   ├── class-frontend.php
 │   ├── class-installer.php
 │   ├── class-settings.php
-│   ├── class-readonly-matrices.php
 │   ├── class-commitment-calculator.php
 │   ├── class-archive-mailbox-calculator.php
 │   ├── class-ai-product-comparison.php
@@ -79,8 +78,6 @@ cms-m365tools/
 │   ├── plan_comparison_feature_matrix.json
 │   ├── plan_comparison_badges.json
 │   ├── plan_comparison_notes.json
-│   ├── readonly_suite_matrix.json
-│   ├── readonly_addon_matrix.json
 │   ├── archive_mailbox_plans.json
 │   ├── archive_mailbox_assumptions.json
 │   ├── ai_product_catalog.json
@@ -191,7 +188,7 @@ Ab `1.29.1` ist der `Landingpage Designer` ein eigener Untermenüpunkt. Er steue
 
 Ab `1.29.2` kann der Designer zusätzlich Header-Overline, Header-Titel, Header-Intro, Header-Buttons, einzelne Kennzahlen, Kategorie-Overline, Kategorie-Zähler, Review-Beschreibungen, Modultitel-Links, Tool-Buttons und Hinweise für inaktive Module separat ausblenden. Primär- und Sekundärbutton im Contentheader erhalten eigene Texte und Ziele. Modulbox-Buttons können zur jeweiligen Toolseite, zu einem Header-Button-Ziel oder zu einem eigenen globalen Ziel führen. Für den Contentheader stehen eigene Stile, Ausrichtungen, Button-Layouts sowie Header- und Button-Farben bereit.
 
-Ab `1.29.3` sind `M365 Lizenzmatrix` und `M365 Add-on-Matrix` im Adminbereich im Unterpunkt `Matrixen` zusammengefasst. Die Tabs `Lizenzmatrix` und `Add-on-Matrix` pflegen Texte, Buttonziele, CTA und bereichsspezifische Sichtbarkeit. Der Tab `Design` steuert Contentheader-Stil, Ausrichtung, Button-Layout, Button-Stil, Header-Rundung, Header-/Button-Farben sowie globale Schalter für Contentheader, Header-Buttons, Einleitungsbereich, Druckaktion, CTA, Hinweise, Quellenstand, Add-on-Bereichsheader und Paketkarten.
+Ab `3.0.4` sind `M365 Lizenzmatrix` und `M365 Add-on-Matrix` vollständig in das Plugin `cms-m365matrices` ausgelagert. Dort liegen Adminbereich, Public-Routen, Templates, Assets und JSON-Kataloge; die gemeinsamen Optionswerte bleiben in den bestehenden M365-Tools-Tabellen erhalten.
 
 Ab `1.29.5` besitzt die Hub-Landingpage eine sticky Live-Suche mit Kategorie-Chips, eine sticky Kategorie-Sidebar mit aktiver 3px-Navy-Kante, mobile horizontale Filter-Chips, Kategorie-Heros mit SVG-Icon und Kurzbeschreibung, Tabler-Icons im Best-Practice-Kompass, `Beliebt`-/`Neu`-Badges, klickbare Toolcards, Hero-Direkteinstieg mit Suchfokus, Kategorie-Hash, Slash-Suchshortcut und Back-to-top. Die Interaktionen laufen in `assets/js/m365tools-landing.js` ohne externe Bibliotheken. Ab `1.29.11` werden die Landingpage-Farb- und Layoutwerte zusätzlich als Public-Design-Tokens ausgegeben und von allen Modul-Publicseiten genutzt. Ab `1.29.13` können diese Tokens je Modul überschrieben werden; JSON-Kataloge und Optionswerte werden dabei pro Request gecacht. Ab `1.29.14` überschreibt kein systemseitiger Dark Mode mehr die im Adminbereich gepflegten Farben.
 
@@ -217,13 +214,7 @@ Das Frontend nutzt die PHINIT-Plugin-Komponenten (`phinit-plugin`, `phinit-card`
 
 ## Fachliche Logik
 
-Die Lizenz- und Add-on-Matrizen liefern reine Public-Vergleichsseiten ohne Interaktion:
-
-- `/m365-lizenzmatrix` stellt Microsoft-365-Vollpakete als Gesamtübersicht dar: Business Basic, Business Standard, Business Premium, Microsoft 365 E3 und Microsoft 365 E5.
-- `/m365-lizenzmatrix` enthält konkrete Planungswerte zu Mailboxgröße, Archiv, Shared-/Resource-Mailboxen, SharePoint-Tenant-Speicher, Site-/Dateilimits, OneDrive, Intune, Entra ID, Defender und Purview.
-- `/m365-addon-matrix` gruppiert Add-ons nach Bereichen wie Exchange, SharePoint/OneDrive, Teams/Telefonie, Copilot, Intune, Entra ID, Defender, Purview und Power Platform.
-- Beide Seiten nutzen dieselbe Matrix-Optik wie der Lizenzvergleich und bleiben als reine Referenzseiten besonders schnell erfassbar.
-- Ab `1.29.3` lesen beide Matrixseiten ihre Contentheader-, Button-, Design- und Sichtbarkeitswerte aus den globalen Gruppen `matrix-suite`, `matrix-addon` und `matrix-design`.
+Die reinen Lizenz- und Add-on-Matrizen sind nicht mehr Bestandteil von `cms-m365tools`. Sie werden vom Plugin `cms-m365matrices` bereitgestellt und nutzen weiterhin dieselben gemeinsamen Optionsgruppen `matrix-suite`, `matrix-addon` und `matrix-design` in den bestehenden M365-Tools-Optionstabellen.
 
 Die Lizenz-Audit-Checkliste bewertet und strukturiert unter anderem:
 

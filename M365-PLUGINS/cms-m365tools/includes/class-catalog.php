@@ -152,22 +152,6 @@ final class CMS_M365CALCULATOR_Catalog
     /**
      * @return array<string,mixed>
      */
-    public static function readonly_suite_matrix(): array
-    {
-        return self::load_json('readonly_suite_matrix.json');
-    }
-
-    /**
-     * @return array<string,mixed>
-     */
-    public static function readonly_addon_matrix(): array
-    {
-        return self::load_json('readonly_addon_matrix.json');
-    }
-
-    /**
-     * @return array<string,mixed>
-     */
     public static function commitment_pricing(): array
     {
         $pricing = self::load_json('commitment_pricing.json');

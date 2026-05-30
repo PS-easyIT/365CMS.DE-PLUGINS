@@ -2,7 +2,7 @@
 /**
  * Public Template: ReadOnly Microsoft 365 Vollpaket-Matrix.
  *
- * @package CMS_M365CALCULATOR
+ * @package CMS_M365MATRICES
  */
 
 declare(strict_types=1);
@@ -30,14 +30,14 @@ $cellHtml = static function (array $cell) use ($esc): string {
 
     return $html;
 };
-$matrixOptions = class_exists('CMS_M365CALCULATOR_Settings')
+$matrixOptions = class_exists('CMS_M365MATRICES_Settings')
     ? array_merge(
-        CMS_M365CALCULATOR_Settings::global_options('matrix-design'),
-        CMS_M365CALCULATOR_Settings::global_options('matrix-suite')
+        CMS_M365MATRICES_Settings::global_options('matrix-design'),
+        CMS_M365MATRICES_Settings::global_options('matrix-suite')
     )
     : [];
-if (class_exists('CMS_M365CALCULATOR_Settings')) {
-    $moduleDesign = CMS_M365CALCULATOR_Settings::module_options('m365-lizenzmatrix', 'design');
+if (class_exists('CMS_M365MATRICES_Settings')) {
+    $moduleDesign = CMS_M365MATRICES_Settings::module_options('m365-lizenzmatrix', 'design');
     if ((string) ($moduleDesign['design_override_enabled'] ?? '0') === '1') {
         $matrixOptions = array_merge($matrixOptions, [
             'matrix_header_radius' => (string) ($moduleDesign['design_card_radius'] ?? '2'),
@@ -86,7 +86,7 @@ $safeUrl = static function (string $url): string {
 
     return '';
 };
-$matrix = is_array($matrix ?? null) ? $matrix : CMS_M365CALCULATOR_ReadOnly_Matrices::suite_matrix();
+$matrix = is_array($matrix ?? null) ? $matrix : CMS_M365MATRICES_ReadOnly_Matrices::suite_matrix();
 $columns = is_array($matrix['columns'] ?? null) ? $matrix['columns'] : [];
 $groups = is_array($matrix['groups'] ?? null) ? $matrix['groups'] : [];
 $meta = is_array($matrix['meta'] ?? null) ? $matrix['meta'] : [];
@@ -148,7 +148,7 @@ $primaryButtonLabel = $matrixValue('matrix_suite_primary_button_label', 'Lizenzc
 $primaryButtonUrl = $safeUrl($matrixValue('matrix_suite_primary_button_url', '/kontakt'));
 
 if (class_exists('CMS\\ThemeManager')) {
-    \CMS\ThemeManager::instance()->getHeader(['title' => 'Microsoft 365 Lizenzmatrix']);
+    \CMS\ThemeManager::instance()->getHeader(['title' => $heroTitle]);
 }
 ?>
 

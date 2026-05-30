@@ -17,8 +17,18 @@ Alle Matrix-Einstellungen werden als globale M365-Tools-Optionen gespeichert:
 |---|---|---|
 | `global` | `matrix-suite` | Texte, CTAs und Sichtbarkeit der Vollpaket-Matrix |
 | `global` | `matrix-addon` | Texte, CTAs und Sichtbarkeit der Add-on-Matrix |
+| `global` | `matrix-toc` | Add-on-Inhaltsverzeichnis: Sichtbarkeit, Titel, Spalten, Textgröße und Umbruchverhalten |
 | `global` | `matrix-design` | Gemeinsames Außenlayout, Breiten, Abstände, Farben und Defaults |
 
 ## Installationsverhalten
 
-`CMS_M365MATRICES_Installer::create_tables()` stellt die beiden gemeinsamen Tabellen sicher, ohne Matrixdaten zu duplizieren.
+`CMS_M365MATRICES_Installer::create_tables()` stellt die beiden gemeinsamen Tabellen sicher, ohne separate Matrix-Optionstabellen anzulegen.
+
+## Matrix-Kataloge
+
+Die eigentlichen Read-only-Matrixdaten liegen als lokale JSON-Dateien im Plugin:
+
+- `M365-PLUGINS/cms-m365matrices/data/readonly_suite_matrix.json`
+- `M365-PLUGINS/cms-m365matrices/data/readonly_addon_matrix.json`
+
+Sie werden nicht in Datenbanktabellen gespiegelt.

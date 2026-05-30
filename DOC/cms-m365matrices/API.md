@@ -10,11 +10,28 @@ Bootstrap-Singleton des Plugins.
 
 ## `CMS_M365MATRICES_Source`
 
-Lädt die gemeinsame Runtime aus `cms-m365tools`.
+Liefert lokale Template- und Asset-Pfade des Matrix-Plugins.
 
 - `load_runtime(): bool`
-- `tools_dir(): string`
-- `tools_url(): string`
+- `template_path(string $template): string`
+- `asset_file(string $asset): string`
+- `asset_url(string $asset): string`
+
+## `CMS_M365MATRICES_Settings`
+
+Liest und speichert Matrix-Optionen in den gemeinsamen M365-Tools-Optionstabellen.
+
+- `module_options(string $moduleKey, ?string $optionGroup = null): array`
+- `save_module_options(string $moduleKey, string $optionGroup, array $options): void`
+- `global_options(?string $optionGroup = null): array`
+- `save_global_options(string $optionGroup, array $options): void`
+
+## `CMS_M365MATRICES_ReadOnly_Matrices`
+
+Lädt die lokalen Matrix-JSON-Dateien und normalisiert sie für die Public-Templates.
+
+- `suite_matrix(): array`
+- `addon_matrix(): array`
 
 ## `CMS_M365MATRICES_Installer`
 

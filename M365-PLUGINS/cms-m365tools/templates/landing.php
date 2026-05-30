@@ -382,7 +382,7 @@ if (class_exists('CMS\ThemeManager')) {
             $toolDescription = (string) ($tool['description'] ?? '');
             $toolText = strtolower(trim((string) $category . ' ' . $toolTitle . ' ' . $toolDescription . ' ' . implode(' ', $toolReviewLabels) . ' ' . implode(' ', $toolReviewChecks)));
             $isPopularTool = in_array($toolKey, ['license-audit-checklist', 'm365lic', 'm365-lizenzvergleich'], true);
-            $isNewTool = in_array($toolKey, ['m365-lizenzmatrix', 'm365-addon-matrix', 'copilot-roi'], true);
+            $isNewTool = in_array($toolKey, ['copilot-roi'], true);
             $cardButtonLabel = $openButtonLabel;
             if (!$hasCustomOpenButtonLabel) {
                 $titleLower = strtolower($toolTitle);

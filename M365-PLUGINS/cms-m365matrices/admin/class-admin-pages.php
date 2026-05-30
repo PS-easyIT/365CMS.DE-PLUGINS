@@ -78,12 +78,12 @@ final class CMS_M365MATRICES_Admin_Pages
 
     private function render_settings_page(): void
     {
-        CMS_M365MATRICES_Source::load_runtime();
         CMS_M365MATRICES_Installer::maybe_install();
 
         $tabs = [
             'matrix-suite' => '📊 Lizenzmatrix',
             'matrix-addon' => '➕ Add-on-Matrix',
+            'matrix-toc' => '🧭 Inhaltsverzeichnis',
             'matrix-design' => '🎨 Design',
         ];
         $activeTab = self::active_tab($tabs);
@@ -94,11 +94,11 @@ final class CMS_M365MATRICES_Admin_Pages
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string) ($_POST['action'] ?? '') === 'save_matrix_options') {
             if (!self::verify_nonce('m365matrices_' . $activeTab)) {
                 $error = 'Sicherheitscheck fehlgeschlagen.';
-            } elseif (!class_exists('CMS_M365CALCULATOR_Settings')) {
-                $error = 'Die gemeinsame M365-Tools-Settings-Klasse ist nicht verfügbar.';
+            } elseif (!class_exists('CMS_M365MATRICES_Settings')) {
+                $error = 'Die Matrix-Settings-Klasse ist nicht verfügbar.';
             } else {
                 try {
-                    CMS_M365CALCULATOR_Settings::save_global_options($activeTab, self::sanitize_options($fields, $_POST));
+                    CMS_M365MATRICES_Settings::save_global_options($activeTab, self::sanitize_options($fields, $_POST));
                     $notice = 'Matrix-Einstellungen gespeichert.';
                 } catch (\Throwable $e) {
                     $error = 'Einstellungen konnten nicht gespeichert werden: ' . $e->getMessage();
@@ -106,9 +106,9 @@ final class CMS_M365MATRICES_Admin_Pages
             }
         }
 
-        $options = class_exists('CMS_M365CALCULATOR_Settings') ? CMS_M365CALCULATOR_Settings::global_options($activeTab) : [];
-        $suiteStats = class_exists('CMS_M365CALCULATOR_ReadOnly_Matrices') ? CMS_M365CALCULATOR_ReadOnly_Matrices::suite_matrix()['counts'] ?? [] : [];
-        $addonStats = class_exists('CMS_M365CALCULATOR_ReadOnly_Matrices') ? CMS_M365CALCULATOR_ReadOnly_Matrices::addon_matrix()['counts'] ?? [] : [];
+        $options = class_exists('CMS_M365MATRICES_Settings') ? CMS_M365MATRICES_Settings::global_options($activeTab) : [];
+        $suiteStats = class_exists('CMS_M365MATRICES_ReadOnly_Matrices') ? CMS_M365MATRICES_ReadOnly_Matrices::suite_matrix()['counts'] ?? [] : [];
+        $addonStats = class_exists('CMS_M365MATRICES_ReadOnly_Matrices') ? CMS_M365MATRICES_ReadOnly_Matrices::addon_matrix()['counts'] ?? [] : [];
         $csrfToken = self::generate_nonce('m365matrices_' . $activeTab);
         ?>
         <div class="admin-page-header">
@@ -211,6 +211,17 @@ final class CMS_M365MATRICES_Admin_Pages
                 self::checkbox('matrix_addon_show_package_cards', 'Paketkarten anzeigen', '1', 'Zeigt die kleinen Paketkarten oberhalb jeder Add-on-Tabelle.'),
                 self::checkbox('matrix_addon_show_notes', 'Hinweise anzeigen', '1', 'Zeigt den Hinweisblock unterhalb der Matrix.'),
                 self::checkbox('matrix_addon_show_sources', 'Quellenstand anzeigen', '1', 'Zeigt den Quellenblock unterhalb der Matrix.'),
+            ],
+            'matrix-toc' => [
+                self::checkbox('matrix_toc_show', 'Inhaltsverzeichnis anzeigen', '1', 'Zeigt die Sprungnavigation unterhalb des Add-on-Headers.'),
+                self::text('matrix_toc_title', 'Überschrift', 'Inhaltsverzeichnis', 'Kurzer Titel oberhalb der Sprunglinks.'),
+                self::select('matrix_toc_columns', 'Maximale Bereiche pro Reihe', '3', [
+                    '1' => '1 Bereich pro Reihe',
+                    '2' => '2 Bereiche pro Reihe',
+                    '3' => '3 Bereiche pro Reihe',
+                ], 'Desktop-Layout: maximal drei Bereiche pro Reihe; Tablet und Mobile brechen automatisch responsiv um.'),
+                self::number('matrix_toc_font_size', 'Textgröße in px', '13', 11, 18, 1, 'Schriftgröße der Bereichstitel im Inhaltsverzeichnis.'),
+                self::checkbox('matrix_toc_nowrap', 'Zeilenumbruch verhindern', '1', 'Bereichstitel bleiben einzeilig und werden bei Bedarf mit Auslassung gekürzt.'),
             ],
             'matrix-design' => [
                 self::checkbox('matrix_show_hero', 'Contentheader standardmäßig anzeigen', '1', 'Globaler Default für den Contentheader beider Matrixseiten.'),

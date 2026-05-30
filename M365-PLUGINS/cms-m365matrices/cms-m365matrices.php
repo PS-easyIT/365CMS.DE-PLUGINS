@@ -3,10 +3,9 @@
  * Plugin Name: CMS M365 Matrixen
  * Plugin URI: https://365network.de/cms-m365matrices
  * Description: Eigenständiges Public-Plugin für die reinen Microsoft-365-Lizenz- und Add-on-Matrixen mit gemeinsamen M365-Tools-Datenbanktabellen.
- * Version: 1.0.0
+ * Version: 1.0.6
  * Author: 365 Network
  * Author URI: https://365network.de
- * Requires Plugins: cms-m365tools
  *
  * @package CMS_M365MATRICES
  */
@@ -17,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-defined('CMS_M365MATRICES_VERSION') || define('CMS_M365MATRICES_VERSION', '1.0.0');
+defined('CMS_M365MATRICES_VERSION') || define('CMS_M365MATRICES_VERSION', '1.0.6');
 defined('CMS_M365MATRICES_PLUGIN_DIR') || define('CMS_M365MATRICES_PLUGIN_DIR', dirname(__FILE__) . '/');
 defined('CMS_M365MATRICES_PLUGIN_URL') || define('CMS_M365MATRICES_PLUGIN_URL', '/plugins/cms-m365matrices/');
 
@@ -44,6 +43,8 @@ final class CMS_M365MATRICES
         $files = [
             CMS_M365MATRICES_PLUGIN_DIR . 'includes/class-source.php',
             CMS_M365MATRICES_PLUGIN_DIR . 'includes/class-installer.php',
+            CMS_M365MATRICES_PLUGIN_DIR . 'includes/class-settings.php',
+            CMS_M365MATRICES_PLUGIN_DIR . 'includes/class-readonly-matrices.php',
             CMS_M365MATRICES_PLUGIN_DIR . 'includes/class-frontend.php',
             CMS_M365MATRICES_PLUGIN_DIR . 'admin/class-admin-menu.php',
             CMS_M365MATRICES_PLUGIN_DIR . 'admin/class-admin-pages.php',
@@ -70,7 +71,6 @@ final class CMS_M365MATRICES
 
     public function init_plugin(): void
     {
-        CMS_M365MATRICES_Source::load_runtime();
         CMS_M365MATRICES_Installer::maybe_install();
         CMS_M365MATRICES_Frontend::instance();
     }
@@ -81,7 +81,6 @@ final class CMS_M365MATRICES
             return;
         }
 
-        CMS_M365MATRICES_Source::load_runtime();
         CMS_M365MATRICES_Installer::install();
     }
 }

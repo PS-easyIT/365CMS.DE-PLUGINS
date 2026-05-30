@@ -9,7 +9,7 @@
 
 ## Datenbasis
 
-Das Plugin nutzt die Runtime und gemeinsamen Options-/Settings-Tabellen von `cms-m365tools`. Es legt keine separaten Matrixdaten an.
+Das Plugin besitzt eigene Runtime-Klassen, lokale JSON-Kataloge, Public-Templates und Assets. Für Konfigurationen nutzt es weiterhin die gemeinsamen Options-/Settings-Tabellen `cms_m365tools_module_settings` und `cms_m365tools_module_options`, damit bestehende Matrix-Optionen erhalten bleiben.
 
 ## Admin
 
@@ -17,8 +17,9 @@ Der Adminpunkt `M365 Matrixen` enthält Tabs für:
 
 - Lizenzmatrix: Texte, CTAs und Sichtbarkeit der Vollpaket-Seite
 - Add-on-Matrix: Texte, Bereichs-Overlines, CTAs und Sichtbarkeit der Add-on-Seite
+- Inhaltsverzeichnis: Sichtbarkeit, Überschrift, Spaltenzahl, Textgröße und einzeilige Darstellung der Add-on-Sprungnavigation
 - Design: Außenlayout, Breiten, Abstände, Farben und globale Sichtbarkeitsdefaults
 
 ## Kompatibilität
 
-Wenn `cms-m365matrices` aktiv ist, delegiert `cms-m365tools` die Matrix-Routen, Matrix-Registry-Einträge und den Matrix-Adminpunkt an dieses Plugin.
+Seit `cms-m365tools` `3.0.4` sind Matrix-Routen, Matrix-Registry-Einträge, Matrix-Adminfelder, Templates, JSON-Kataloge und die Matrix-Normalisierung vollständig aus `cms-m365tools` entfernt. `cms-m365matrices` ist alleiniger Besitzer der reinen Matrixseiten.

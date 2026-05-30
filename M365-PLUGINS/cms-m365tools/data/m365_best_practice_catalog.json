@@ -118,9 +118,7 @@
   },
   "tool_domains": {
     "shared-mailbox": ["licensing_cost", "service_limits", "security_compliance"],
-    "m365-lizenzmatrix": ["licensing_cost", "service_limits", "security_compliance"],
     "m365-lizenzvergleich": ["licensing_cost", "service_limits", "copilot_ai"],
-    "m365-addon-matrix": ["licensing_cost", "security_compliance", "power_platform_ops"],
     "m365-add-on-konfigurator": ["licensing_cost", "security_compliance", "storage_backup"],
     "m365-commitment-calculator": ["licensing_cost", "migration_operations"],
     "m365-archive-mailbox": ["service_limits", "storage_backup", "security_compliance"],
@@ -145,20 +143,10 @@
       "Zugriffsnutzer müssen passende Exchange-Online-Rechte haben; Shared-Mailbox-Konto nicht als normales Nutzerkonto verwenden.",
       "Mail-Authentifizierung und Defender-Abdeckung für gemeinsam genutzte Domänen berücksichtigen."
     ],
-    "m365-lizenzmatrix": [
-      "Planvergleich um Nutzungsberichte, Servicegrenzen und enthaltene Schutzfunktionen ergänzen.",
-      "Copilot-, Defender-, Entra-, Purview- und Power-Platform-Abhängigkeiten nicht nur preislich, sondern fachlich einordnen.",
-      "Frontline-, Business- und Enterprise-Segmente getrennt auswerten."
-    ],
     "m365-lizenzvergleich": [
       "Featurevergleich gegen aktuelle Copilot-Basislizenzliste und Exchange-/SharePoint-/Teams-Grenzen prüfen.",
       "Datenschutz- und Reportverfügbarkeit bei Lizenzoptimierung berücksichtigen.",
       "Add-on-Pfade nur empfehlen, wenn Suite-Upgrade nicht wirtschaftlicher oder sauberer ist."
-    ],
-    "m365-addon-matrix": [
-      "Add-ons nach Prerequisites, Funktionsüberlappung und enthaltenen Suite-Funktionen prüfen.",
-      "Defender for Office 365, Safe Links, Safe Attachments und Domain-Authentifizierung als Schutzpfad ausweisen.",
-      "Power-Platform-Capacity, Request-Kontingente und Dataverse-Speicher gesondert darstellen."
     ],
     "m365-add-on-konfigurator": [
       "Prerequisites, Redundanzen, Upgrade-Alternativen und Verbrauchsmodelle gemeinsam auswerten.",

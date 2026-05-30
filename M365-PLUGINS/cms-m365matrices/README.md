@@ -10,7 +10,7 @@ Das Plugin legt **keine eigenen Matrix-Tabellen** an. Es verwendet die bestehend
 - `cms_m365tools_module_settings`
 - `cms_m365tools_module_options`
 
-Die Admin-Tabs `Lizenzmatrix`, `Add-on-Matrix` und `Design` schreiben weiterhin in die globalen Optionsgruppen `matrix-suite`, `matrix-addon` und `matrix-design`. Dadurch bleiben Darstellung, Texte, CTAs und Sichtbarkeit zwischen der bisherigen M365-Tools-Umgebung und dem neuen Matrix-Plugin identisch.
+Die Admin-Tabs `Lizenzmatrix`, `Add-on-Matrix`, `Inhaltsverzeichnis` und `Design` schreiben weiterhin in die globalen Optionsgruppen `matrix-suite`, `matrix-addon`, `matrix-toc` und `matrix-design`. Dadurch bleiben Darstellung, Texte, CTAs und Sichtbarkeit zwischen der bisherigen M365-Tools-Umgebung und dem neuen Matrix-Plugin identisch.
 
 ## Steuerbare Außenbereiche
 
@@ -19,6 +19,7 @@ Die Matrix-Tabellen selbst bleiben datengetrieben. Alles darum herum kann im Adm
 - Texte für Header, Intros, Buttons, Hinweis- und Quellenbereiche
 - Sichtbarkeit von Contentheader, Einleitungsbereich, CTA, Druckbutton, Hinweisen und Quellen
 - Add-on-spezifische Bereichs-Overline und Paketkarten-/Bereichsheader-Anzeige
+- Add-on-Inhaltsverzeichnis mit Überschrift, maximaler Spaltenzahl, Textgröße und einzeiliger Darstellung
 - Seitenbreite, seitlicher Innenabstand, Abstand oben und Abschnittsabstände
 - Außenfarben für Seitenhintergrund, Flächen, Text, Sekundärtext, Header und Buttons
 
@@ -26,7 +27,7 @@ Die Werte landen in denselben Optionsgruppen wie bisher und werden in den Public
 
 ## Abhängigkeit
 
-Die Matrix-Runtime nutzt die vorhandenen Katalog-, Settings- und Template-Klassen aus `cms-m365tools`. Wenn `cms-m365tools` parallel aktiv ist, blendet es seine eigenen Matrix-Routen aus, damit `cms-m365matrices` die öffentlichen Matrixseiten besitzt.
+Die Matrix-Runtime, JSON-Kataloge, Public-Templates und Assets liegen vollständig in `cms-m365matrices`. Das Plugin nutzt nur weiterhin die gemeinsamen Tabellen `cms_m365tools_module_settings` und `cms_m365tools_module_options`, damit bestehende Matrix-Optionen erhalten bleiben.
 
 ## Admin
 

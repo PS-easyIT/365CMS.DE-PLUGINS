@@ -78,12 +78,11 @@ final class CMS_M365MATRICES_Frontend
             return;
         }
 
-        CMS_M365MATRICES_Source::load_runtime();
-        $options = class_exists('CMS_M365CALCULATOR_Settings')
+        $options = class_exists('CMS_M365MATRICES_Settings')
             ? array_merge(
-                CMS_M365CALCULATOR_Settings::global_options('landing'),
-                CMS_M365CALCULATOR_Settings::global_options('landing-layout'),
-                CMS_M365CALCULATOR_Settings::global_options('landing-colors')
+                CMS_M365MATRICES_Settings::global_options('landing'),
+                CMS_M365MATRICES_Settings::global_options('landing-layout'),
+                CMS_M365MATRICES_Settings::global_options('landing-colors')
             )
             : [];
 
@@ -166,8 +165,11 @@ final class CMS_M365MATRICES_Frontend
             $this->render_missing_dependency('Microsoft 365 Lizenzmatrix');
         }
 
-        $matrix = CMS_M365CALCULATOR_ReadOnly_Matrices::suite_matrix();
-        $this->set_seo('M365 Lizenzmatrix', 'Gesamtübersicht der Microsoft-365-Vollpakete von Business Basic, Standard und Premium bis Microsoft 365 E3 und E5.');
+        $matrix = CMS_M365MATRICES_ReadOnly_Matrices::suite_matrix();
+        $seoOptions = class_exists('CMS_M365MATRICES_Settings') ? CMS_M365MATRICES_Settings::global_options('matrix-suite') : [];
+        $seoTitle = self::public_text($seoOptions, 'matrix_suite_title', 'M365 Lizenzmatrix');
+        $seoDescription = self::public_text($seoOptions, 'matrix_suite_intro', 'Gesamtübersicht der Microsoft-365-Vollpakete von Business Basic, Standard und Premium bis Microsoft 365 E3 und E5.');
+        $this->set_seo($seoTitle, $seoDescription);
         include CMS_M365MATRICES_Source::template_path('page-readonly-suite-matrix.php');
         exit;
     }
@@ -178,10 +180,23 @@ final class CMS_M365MATRICES_Frontend
             $this->render_missing_dependency('Microsoft 365 Add-on-Matrix');
         }
 
-        $matrix = CMS_M365CALCULATOR_ReadOnly_Matrices::addon_matrix();
-        $this->set_seo('M365 Add-on-Matrix', 'Gesamtübersicht der Microsoft-365-Add-ons nach Exchange, SharePoint, OneDrive, Teams, Copilot, Intune, Entra ID, Defender, Purview und Power Platform.');
+        $matrix = CMS_M365MATRICES_ReadOnly_Matrices::addon_matrix();
+        $seoOptions = class_exists('CMS_M365MATRICES_Settings') ? CMS_M365MATRICES_Settings::global_options('matrix-addon') : [];
+        $seoTitle = self::public_text($seoOptions, 'matrix_addon_title', 'M365 Add-on-Matrix');
+        $seoDescription = self::public_text($seoOptions, 'matrix_addon_intro', 'Gesamtübersicht der Microsoft-365-Add-ons nach Exchange, SharePoint, OneDrive, Teams, Copilot, Intune, Entra ID, Defender, Purview und Power Platform.');
+        $this->set_seo($seoTitle, $seoDescription);
         include CMS_M365MATRICES_Source::template_path('page-readonly-addon-matrix.php');
         exit;
+    }
+
+    /**
+     * @param array<string,string> $options
+     */
+    private static function public_text(array $options, string $key, string $default): string
+    {
+        $value = trim(strip_tags((string) ($options[$key] ?? '')));
+
+        return $value !== '' ? $value : $default;
     }
 
     private function render_missing_dependency(string $title): void
@@ -192,7 +207,7 @@ final class CMS_M365MATRICES_Frontend
 
         echo '<main class="phinit-plugin m365calc-page"><section class="phinit-note phinit-note--warning">';
         echo '<h1>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1>';
-        echo '<p>Die Matrix-Datenquelle aus CMS M365 Tools ist nicht verfügbar. Bitte cms-m365tools installieren oder die gemeinsamen Matrix-Dateien bereitstellen.</p>';
+        echo '<p>Die Matrix-Datenquelle ist nicht verfügbar. Bitte prüfen, ob die lokalen Matrix-Dateien im Plugin vorhanden sind.</p>';
         echo '</section></main>';
 
         if (class_exists('CMS\\ThemeManager')) {

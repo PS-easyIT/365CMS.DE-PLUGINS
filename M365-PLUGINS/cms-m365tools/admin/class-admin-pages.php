@@ -45,19 +45,6 @@ final class CMS_M365CALCULATOR_Admin_Pages
         });
     }
 
-    public static function render_readonly_matrices(): void
-    {
-        self::render_with_layout('M365 Tools – Read-only Matrixen', 'm365tools-readonly-matrices', static function (): void {
-            self::instance()->render_global_settings_page('readonly-matrices');
-        });
-    }
-
-    public static function render_matrix_alias(string $tab): void
-    {
-        $_GET['tab'] = self::clean_key($tab);
-        self::render_readonly_matrices();
-    }
-
     public static function render_package_prices(): void
     {
         self::render_with_layout('M365 Tools – Paketpreise', 'm365tools-package-prices', static function (): void {
@@ -456,11 +443,6 @@ final class CMS_M365CALCULATOR_Admin_Pages
                 'landing-colors' => '🎨 Farben',
                 'landing-visibility' => '👁️ Sichtbarkeit',
             ],
-            'readonly-matrices' => [
-                'matrix-suite' => '📊 Lizenzmatrix',
-                'matrix-addon' => '➕ Add-on-Matrix',
-                'matrix-design' => '🎨 Design',
-            ],
             default => [
                 'general' => '⚙️ Allgemein',
                 'provider' => '🏢 Dienstleister & Kontakt',
@@ -477,7 +459,6 @@ final class CMS_M365CALCULATOR_Admin_Pages
             'package-prices' => 'base-packages',
             'subscription-prices' => 'terms',
             'landing-designer' => 'landing-content',
-            'readonly-matrices' => 'matrix-suite',
             default => 'general',
         };
     }
@@ -500,10 +481,6 @@ final class CMS_M365CALCULATOR_Admin_Pages
                 'title' => '🎨 Landingpage Designer',
                 'description' => 'Hub-Content, Layouts, Farben, Boxen und sichtbare Bereiche der Public-Landingpage gestalten.',
             ],
-            'readonly-matrices' => [
-                'title' => '📚 Read-only Matrixen',
-                'description' => 'Lizenz- und Add-on-Matrix gemeinsam pflegen, gestalten und Außenbereiche steuern.',
-            ],
             default => [
                 'title' => '⚙️ Zentrale Einstellungen',
                 'description' => 'Pluginweite Defaults, Quellen-Reviews und Betriebsregeln an einer Stelle verwalten.',
@@ -517,7 +494,6 @@ final class CMS_M365CALCULATOR_Admin_Pages
             'package-prices' => 'm365tools-package-prices',
             'subscription-prices' => 'm365tools-subscription-prices',
             'landing-designer' => 'm365tools-landing-designer',
-            'readonly-matrices' => 'm365tools-readonly-matrices',
             default => 'm365tools-settings',
         };
     }
@@ -539,121 +515,7 @@ final class CMS_M365CALCULATOR_Admin_Pages
             return self::landing_designer_fields($tab);
         }
 
-        if ($area === 'readonly-matrices') {
-            return self::readonly_matrix_fields($tab);
-        }
-
         return self::plugin_setting_fields($tab);
-    }
-
-    /**
-     * @return array<int,array<string,mixed>>
-     */
-    private static function readonly_matrix_fields(string $tab): array
-    {
-        return match ($tab) {
-            'matrix-addon' => [
-                self::text('matrix_addon_overline', 'Header-Overline', 'Add-on-Matrix', 'Kleine Zeile oberhalb der Add-on-Matrix-Überschrift.'),
-                self::text('matrix_addon_title', 'Header-Titel', 'Microsoft 365 Add-on-Matrix', 'Hauptüberschrift der Add-on-Matrix.'),
-                self::textarea('matrix_addon_intro', 'Header-Intro', 'Öffentliche Übersicht aller Add-on-Bereiche: Exchange, SharePoint, OneDrive, Teams Phone, Copilot, Security, Power Platform und Spezialdienste.', 'Einleitungstext im Contentheader.'),
-                self::text('matrix_addon_secondary_button_label', 'Sekundärbutton Text', 'Vollpaket-Matrix öffnen', 'Beschriftung des sekundären Header-Buttons.'),
-                self::text('matrix_addon_secondary_button_url', 'Sekundärbutton Ziel', '/m365-lizenzmatrix', 'Interne Route oder vollständige URL.'),
-                self::text('matrix_addon_tool_button_label', 'Weiterer Button Text', 'Add-On-Konfigurator öffnen', 'Beschriftung des zweiten Header-Buttons.'),
-                self::text('matrix_addon_tool_button_url', 'Weiterer Button Ziel', '/m365-add-on-konfigurator', 'Interne Route oder vollständige URL.'),
-                self::text('matrix_addon_result_overline', 'Matrix-Overline', 'Matrix', 'Kleine Zeile über dem Matrixbereich.'),
-                self::text('matrix_addon_result_title', 'Matrix-Titel', 'Gesamtübersicht der Microsoft-365-Add-ons', 'Überschrift vor den Add-on-Bereichen.'),
-                self::textarea('matrix_addon_result_intro', 'Matrix-Intro', 'Die wichtigsten Add-ons mit Größen, Voraussetzungen, Abgrenzungen und typischen Kaufgründen.', 'Beschreibung oberhalb der Add-on-Bereiche.'),
-                self::text('matrix_addon_area_overline', 'Bereichs-Overline', 'Add-on-Bereich', 'Kleine Zeile oberhalb der Add-on-Bereichsüberschriften.'),
-                self::text('matrix_addon_notes_title', 'Hinweisblock-Titel', 'Hinweise zur Add-on-Übersicht', 'Überschrift des Hinweisblocks unterhalb der Matrixbereiche.'),
-                self::text('matrix_addon_sources_title', 'Quellenblock-Titel', 'Quellenstand', 'Überschrift des Quellenblocks unterhalb der Matrixbereiche.'),
-                self::text('matrix_addon_primary_button_label', 'CTA-Button Text', 'Lizenzcheck anfragen', 'Beschriftung des primären CTA-Buttons.'),
-                self::text('matrix_addon_primary_button_url', 'CTA-Button Ziel', '/kontakt', 'Kontaktformular, Beratungsseite oder interne Route.'),
-                self::checkbox('matrix_addon_show_hero', 'Contentheader anzeigen', '1', 'Blendet den oberen Contentheader ein.'),
-                self::checkbox('matrix_addon_show_hero_buttons', 'Header-Buttons anzeigen', '1', 'Blendet die Buttons im Contentheader ein.'),
-                self::checkbox('matrix_addon_show_result_header', 'Einleitungsbereich vor Matrix anzeigen', '1', 'Blendet den kurzen Matrix-Introbereich ein.'),
-                self::checkbox('matrix_addon_show_print_button', 'Drucken-Button anzeigen', '1', 'Zeigt den PDF-/Drucken-Button im Introbereich.'),
-                self::checkbox('matrix_addon_show_primary_cta', 'CTA-Button anzeigen', '1', 'Zeigt den Kontakt- oder Beratungsbutton im Introbereich.'),
-                self::checkbox('matrix_addon_show_area_headers', 'Bereichsheader anzeigen', '1', 'Zeigt Überschrift und Beschreibung je Add-on-Bereich.'),
-                self::checkbox('matrix_addon_show_package_cards', 'Paketkarten anzeigen', '1', 'Zeigt die kleinen Paketkarten oberhalb jeder Add-on-Tabelle.'),
-                self::checkbox('matrix_addon_show_notes', 'Hinweise anzeigen', '1', 'Zeigt den Hinweisblock unterhalb der Matrix.'),
-                self::checkbox('matrix_addon_show_sources', 'Quellenstand anzeigen', '1', 'Zeigt den Quellenblock unterhalb der Matrix.'),
-            ],
-            'matrix-design' => [
-                self::checkbox('matrix_show_hero', 'Contentheader standardmäßig anzeigen', '1', 'Globaler Default für den Contentheader beider Matrixseiten.'),
-                self::checkbox('matrix_show_hero_buttons', 'Header-Buttons standardmäßig anzeigen', '1', 'Globaler Default für Buttons im Contentheader.'),
-                self::checkbox('matrix_show_result_header', 'Einleitungsbereich vor Matrix standardmäßig anzeigen', '1', 'Globaler Default für den Bereich direkt oberhalb der Matrix.'),
-                self::checkbox('matrix_show_print_button', 'Drucken-Button standardmäßig anzeigen', '1', 'Globaler Default für die PDF-/Drucken-Aktion.'),
-                self::checkbox('matrix_show_primary_cta', 'CTA-Button standardmäßig anzeigen', '1', 'Globaler Default für Kontakt- oder Beratungsaktionen.'),
-                self::checkbox('matrix_show_notes', 'Hinweise standardmäßig anzeigen', '1', 'Globaler Default für Hinweisbereiche außerhalb der Matrix.'),
-                self::checkbox('matrix_show_sources', 'Quellenstand standardmäßig anzeigen', '1', 'Globaler Default für Quellenbereiche außerhalb der Matrix.'),
-                self::checkbox('matrix_show_addon_area_headers', 'Add-on-Bereichsheader standardmäßig anzeigen', '1', 'Globaler Default für Überschriften je Add-on-Bereich.'),
-                self::checkbox('matrix_show_addon_package_cards', 'Add-on-Paketkarten standardmäßig anzeigen', '1', 'Globaler Default für Paketkarten oberhalb der Add-on-Tabellen.'),
-                self::select('matrix_header_style', 'Contentheader-Stil', 'plain', [
-                    'plain' => 'Schlicht',
-                    'surface' => 'Ruhige Fläche',
-                    'bordered' => 'Gerahmt',
-                    'accent' => 'Akzentkante',
-                    'inverted' => 'Dunkel / invertiert',
-                ], 'Optik des Matrix-Contentheaders.'),
-                self::select('matrix_header_alignment', 'Header-Ausrichtung', 'split', [
-                    'split' => 'Text links, Aktionen rechts',
-                    'left' => 'Links ausgerichtet',
-                    'center' => 'Zentriert',
-                ], 'Ausrichtung von Headertexten und Aktionen.'),
-                self::select('matrix_button_layout', 'Button-Layout', 'inline', [
-                    'inline' => 'Nebeneinander',
-                    'stacked' => 'Untereinander',
-                    'right' => 'Rechts ausgerichtet',
-                ], 'Layout der Header- und Matrix-Aktionen.'),
-                self::select('matrix_button_style', 'Button-Stil', 'default', [
-                    'default' => 'Theme-Standard',
-                    'primary' => 'Alle Aktionen primär betonen',
-                    'secondary' => 'Alle Aktionen ruhig darstellen',
-                    'minimal' => 'Minimal / textnah',
-                ], 'Optische Gewichtung der Matrix-Buttons.'),
-                self::text('matrix_print_button_label', 'Drucken-Button Text', 'Drucken / PDF speichern', 'Beschriftung der Druck-/PDF-Aktion auf beiden Matrixseiten.'),
-                self::number('matrix_page_max_width', 'Seitenbreite in px', '1200', 760, 1800, 20, 'Maximale Breite des äußeren Matrix-Contents. Die Tabelle darf intern weiterhin scrollen.'),
-                self::number('matrix_outer_padding_x', 'Seitlicher Innenabstand in px', '0', 0, 96, 4, 'Horizontaler Innenabstand des äußeren Matrix-Containers.'),
-                self::number('matrix_outer_padding_top', 'Abstand oben in px', '25', 0, 120, 5, 'Abstand zwischen Theme-Header und Matrix-Content.'),
-                self::number('matrix_section_gap', 'Abschnittsabstand in px', '32', 12, 96, 4, 'Vertikaler Abstand zwischen Header, Einleitung, Bereichen, Hinweisen und Quellen.'),
-                self::number('matrix_header_radius', 'Header-Rundung in px', '2', 0, 2, 1, 'Maximal 2px: Rundung für flächige oder gerahmte Header.'),
-                self::color('matrix_color_page_background', 'Seiten-Hintergrund', '#ffffff', 'Hintergrundfarbe des äußeren Matrix-Containers.'),
-                self::color('matrix_color_surface_background', 'Flächen-Hintergrund', '#f8fafc', 'Hintergrundfarbe für Contentheader, Intro-, Hinweis- und Quellenbereiche außerhalb der Tabellen.'),
-                self::color('matrix_color_text', 'Textfarbe außen', '#1e293b', 'Standard-Textfarbe außerhalb der Matrix-Tabellen.'),
-                self::color('matrix_color_muted', 'Sekundärtext außen', '#64748b', 'Beschreibungstexte, Overlines und Meta-Texte außerhalb der Tabellen.'),
-                self::color('matrix_color_header_background', 'Header-Hintergrund', '#f8fafc', 'Hintergrundfarbe für flächige Header.'),
-                self::color('matrix_color_header_text', 'Header-Text', '#1e293b', 'Textfarbe im Contentheader.'),
-                self::color('matrix_color_header_muted', 'Header-Sekundärtext', '#64748b', 'Farbe für Overline und Beschreibung.'),
-                self::color('matrix_color_header_border', 'Header-Rahmen', '#e2e8f0', 'Rahmen- und Akzentfarbe im Header.'),
-                self::color('matrix_color_primary_button_bg', 'Primärbutton Hintergrund', '#2563eb', 'Hintergrundfarbe für primäre Matrix-Aktionen.'),
-                self::color('matrix_color_primary_button_text', 'Primärbutton Text', '#ffffff', 'Textfarbe für primäre Matrix-Aktionen.'),
-                self::color('matrix_color_secondary_button_bg', 'Sekundärbutton Hintergrund', '#ffffff', 'Hintergrundfarbe für sekundäre Matrix-Aktionen.'),
-                self::color('matrix_color_secondary_button_text', 'Sekundärbutton Text', '#1e293b', 'Textfarbe für sekundäre Matrix-Aktionen.'),
-            ],
-            default => [
-                self::text('matrix_suite_overline', 'Header-Overline', 'Lizenzmatrix', 'Kleine Zeile oberhalb der Lizenzmatrix-Überschrift.'),
-                self::text('matrix_suite_title', 'Header-Titel', 'Microsoft 365 Lizenzmatrix – Vollpakete', 'Hauptüberschrift der Lizenzmatrix.'),
-                self::textarea('matrix_suite_intro', 'Header-Intro', 'Öffentliche Gesamtübersicht der Microsoft-365-Vollpakete Business Basic, Business Standard, Business Premium, Microsoft 365 E3 und Microsoft 365 E5.', 'Einleitungstext im Contentheader.'),
-                self::text('matrix_suite_secondary_button_label', 'Sekundärbutton Text', 'Interaktiven Lizenzvergleich öffnen', 'Beschriftung des sekundären Header-Buttons.'),
-                self::text('matrix_suite_secondary_button_url', 'Sekundärbutton Ziel', '/m365-lizenzvergleich', 'Interne Route oder vollständige URL.'),
-                self::text('matrix_suite_tool_button_label', 'Weiterer Button Text', 'Add-on-Matrix öffnen', 'Beschriftung des zweiten Header-Buttons.'),
-                self::text('matrix_suite_tool_button_url', 'Weiterer Button Ziel', '/m365-addon-matrix', 'Interne Route oder vollständige URL.'),
-                self::text('matrix_suite_result_overline', 'Matrix-Overline', 'Matrix', 'Kleine Zeile über der Tabelle.'),
-                self::text('matrix_suite_result_title', 'Matrix-Titel', 'Gesamtübersicht der Microsoft-365-Vollpakete', 'Überschrift direkt vor der Tabelle.'),
-                self::textarea('matrix_suite_result_intro', 'Matrix-Intro', 'Alle zentralen Paket-, App-, Security-, Compliance-, KI- und Beschaffungspunkte in einer Übersicht.', 'Beschreibung direkt vor der Tabelle.'),
-                self::text('matrix_suite_notes_title', 'Hinweisblock-Titel', 'Hinweise zur Lizenzmatrix', 'Überschrift des Hinweisblocks unterhalb der Lizenzmatrix.'),
-                self::text('matrix_suite_sources_title', 'Quellenblock-Titel', 'Quellenstand', 'Überschrift des Quellenblocks unterhalb der Lizenzmatrix.'),
-                self::text('matrix_suite_primary_button_label', 'CTA-Button Text', 'Lizenzcheck anfragen', 'Beschriftung des primären CTA-Buttons.'),
-                self::text('matrix_suite_primary_button_url', 'CTA-Button Ziel', '/kontakt', 'Kontaktformular, Beratungsseite oder interne Route.'),
-                self::checkbox('matrix_suite_show_hero', 'Contentheader anzeigen', '1', 'Blendet den oberen Contentheader ein.'),
-                self::checkbox('matrix_suite_show_hero_buttons', 'Header-Buttons anzeigen', '1', 'Blendet die Buttons im Contentheader ein.'),
-                self::checkbox('matrix_suite_show_result_header', 'Einleitungsbereich vor Matrix anzeigen', '1', 'Blendet den kurzen Matrix-Introbereich ein.'),
-                self::checkbox('matrix_suite_show_print_button', 'Drucken-Button anzeigen', '1', 'Zeigt den PDF-/Drucken-Button im Matrixbereich.'),
-                self::checkbox('matrix_suite_show_primary_cta', 'CTA-Button anzeigen', '1', 'Zeigt den Kontakt- oder Beratungsbutton im Matrixbereich.'),
-                self::checkbox('matrix_suite_show_notes', 'Hinweise anzeigen', '1', 'Zeigt den Hinweisblock unterhalb der Matrix.'),
-                self::checkbox('matrix_suite_show_sources', 'Quellenstand anzeigen', '1', 'Zeigt den Quellenblock unterhalb der Matrix.'),
-            ],
-        };
     }
 
     /**
