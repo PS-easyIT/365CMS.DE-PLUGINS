@@ -138,6 +138,19 @@
     min-width: 0;
 }
 
+.azs-service-table .m365calc-status,
+.azs-service-table .m365calc-status--note {
+    border-left: 0;
+    min-width: 0;
+    padding-left: 0;
+}
+
+.azs-service-table .m365calc-status::before,
+.azs-service-table .m365calc-status--note::before {
+    content: none;
+    display: none;
+}
+
 .azs-service-title strong,
 .azs-service-title small,
 .azs-service-cell,

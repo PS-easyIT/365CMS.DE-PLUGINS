@@ -1,5 +1,17 @@
 # Changelog – CMS M365 Azure
 
+## 1.1.3 – 2026-05-30
+
+- Inneren `m365calc-status`-Balken in den Azure-Tabellenzellen entfernt.
+- Tabellenzellen nutzen weiterhin nur die dezenten vorhandenen Tabellenrahmen.
+- Listenmarker-/Pseudo-Elemente in Azure-Zellinhalten bleiben deaktiviert.
+
+## 1.1.2 – 2026-05-30
+
+- Storage-Kategorie fachlich aktualisiert.
+- Azure Blob Storage, Azure Files und Azure Disk Storage erweitert.
+- Public-Listenmarker entfernt und Adminbereich mit Events-artiger Shell versehen.
+
 ## 1.1.1 – 2026-05-30
 
 - Compute-Kategorie serviceweise nach offiziellen Microsoft-Quellen aktualisiert.

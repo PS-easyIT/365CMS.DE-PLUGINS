@@ -1,6 +1,6 @@
 {
   "slug": "cms-m365matrices",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "download_url": "https://365network.de/plugins/cms-m365matrices/cms-m365matrices.zip",
   "requires": "3.0.0",
   "tested": "3.0.0",
@@ -9,6 +9,6 @@
   "last_updated": "2026-05-30",
   "sections": {
     "description": "CMS M365 Matrixen kapselt die reinen Microsoft-365-Lizenz-, Add-on- und Copilot-Matrixseiten als eigenes Plugin, nutzt weiterhin die gemeinsamen M365-Tools-Options-Tabellen und erlaubt die zentrale Steuerung von Außenlayout, Farben, Breiten und Texten.",
-    "changelog": "1.1.7: Admin-Sidebar-Menü auf einen direkten Top-Level-Eintrag ohne eigenes Aufklapp-Untermenü reduziert. 1.1.6: Kontakt-/Lizenzcheck-Buttons auf Lizenz-, Add-on- und Copilot-Matrix vereinheitlicht: dezentes Orange, dunkeloranger Hover mit weißer Schrift und einzeilige Darstellung. 1.1.5: Copilot-Kontakt-Check-Button in den ersten Paketbereich verschoben."
+    "changelog": "1.1.8: Erste Zeilen der M365-Lizenzmatrix fachlich nach offiziellen Microsoft-Quellen ausgebaut und Add-on-Zellen mit Deep-Links zur Add-on-Matrix versehen. 1.1.7: Admin-Sidebar-Menü auf einen direkten Top-Level-Eintrag ohne eigenes Aufklapp-Untermenü reduziert. 1.1.6: Kontakt-/Lizenzcheck-Buttons vereinheitlicht."
   }
 }

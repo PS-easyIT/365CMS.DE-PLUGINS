@@ -1,0 +1,545 @@
+<?php
+/**
+ * CMS M365 Landing – Admin Pages.
+ *
+ * @package CMS_M365Landing
+ */
+
+declare(strict_types=1);
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+final class CMS_M365Landing_Admin_Pages
+{
+    public const ADMIN_BASE_URL = '/admin/plugins/m365landing/m365landing';
+
+    public static function render_dispatch(): void
+    {
+        ob_start();
+        self::check_access();
+        CMS_M365Landing_Installer::maybe_install();
+
+        $repo = CMS_M365Landing_Repository::instance();
+        $section = self::allowed_section((string) ($_GET['section'] ?? 'dashboard'));
+        $notice = '';
+        $error = '';
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                self::handle_post($repo);
+                $notice = 'Änderungen gespeichert.';
+            } catch (\Throwable $e) {
+                $error = 'Aktion konnte nicht ausgeführt werden: ' . $e->getMessage();
+            }
+        }
+
+        self::load_admin_menu();
+        if (function_exists('renderAdminLayoutStart')) {
+            renderAdminLayoutStart(self::page_title($section), 'm365landing');
+        }
+        self::enqueue_admin_assets();
+
+        echo '<div class="m365landing-admin-shell">';
+        self::render_header($repo, $section, $notice, $error);
+        self::render_nav($section);
+
+        match ($section) {
+            'cards' => self::render_cards($repo),
+            'settings' => self::render_settings($repo),
+            'system' => self::render_system($repo),
+            default => self::render_dashboard($repo),
+        };
+        echo '</div>';
+
+        self::render_delete_modal();
+        self::render_media_picker_modal();
+        self::enqueue_admin_scripts();
+        if (function_exists('renderAdminLayoutEnd')) {
+            renderAdminLayoutEnd();
+        }
+        ob_end_flush();
+    }
+
+    private static function handle_post(CMS_M365Landing_Repository $repo): void
+    {
+        if (!class_exists('CMS\\Security') || !\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'm365landing_admin')) {
+            throw new \RuntimeException('Sicherheitscheck fehlgeschlagen.');
+        }
+
+        $action = (string) ($_POST['action'] ?? '');
+        if ($action === 'save_card') {
+            $repo->save_card($_POST);
+            return;
+        }
+
+        if ($action === 'delete_card') {
+            $repo->delete_card(max(0, (int) ($_POST['id'] ?? 0)));
+            return;
+        }
+
+        if ($action === 'save_settings') {
+            $repo->save_settings(self::collect_settings());
+            return;
+        }
+
+        throw new \RuntimeException('Unbekannte Aktion.');
+    }
+
+    /** @return array<string,string> */
+    private static function collect_settings(): array
+    {
+        $settings = [];
+        foreach (self::text_setting_keys() as $key) {
+            $value = (string) ($_POST[$key] ?? '');
+            if ($key === 'route_slug') {
+                $settings[$key] = CMS_M365Landing_Repository::slug($value);
+                continue;
+            }
+
+            if (str_ends_with($key, '_url')) {
+                $settings[$key] = CMS_M365Landing_Repository::public_url($value);
+                continue;
+            }
+
+            $settings[$key] = CMS_M365Landing_Repository::long_text($value);
+        }
+
+        foreach (self::color_setting_defaults() as $key => $fallback) {
+            $posted = (string) ($_POST[$key] ?? ($_POST[$key . '_text'] ?? ''));
+            $settings[$key] = CMS_M365Landing_Repository::color($posted, $fallback);
+        }
+
+        foreach (self::numeric_setting_bounds() as $key => [$min, $max]) {
+            $value = (int) ($_POST[$key] ?? $min);
+            $settings[$key] = (string) max($min, min($max, $value));
+        }
+
+        foreach (self::bool_setting_keys() as $boolKey) {
+            $settings[$boolKey] = !empty($_POST[$boolKey]) ? '1' : '0';
+        }
+
+        return $settings;
+    }
+
+    /** @return array<int,string> */
+    private static function text_setting_keys(): array
+    {
+        return [
+            'route_slug', 'page_overline', 'page_title', 'page_intro',
+            'hero_primary_button_text', 'hero_primary_button_url', 'hero_secondary_button_text', 'hero_secondary_button_url',
+            'matrix_section_overline', 'matrix_section_title', 'matrix_section_intro',
+            'areas_section_overline', 'areas_section_title', 'areas_section_intro',
+            'tools_section_overline', 'tools_section_title', 'tools_section_intro',
+            'separator_label', 'empty_state_title', 'empty_state_text', 'seo_title', 'seo_description',
+            'card_button_label_default',
+        ];
+    }
+
+    /** @return array<int,string> */
+    private static function bool_setting_keys(): array
+    {
+        return ['show_hero', 'show_hero_actions', 'show_matrix_section', 'show_separator', 'show_areas_section', 'show_tools_section'];
+    }
+
+    /** @return array<string,string> */
+    private static function color_setting_defaults(): array
+    {
+        return [
+            'design_primary_color' => '#2563eb',
+            'design_accent_color' => '#0f766e',
+            'design_background_color' => '#ffffff',
+            'design_surface_color' => '#ffffff',
+            'design_surface_alt_color' => '#f8fafc',
+            'design_text_color' => '#1e293b',
+            'design_muted_color' => '#64748b',
+            'design_border_color' => '#e2e8f0',
+        ];
+    }
+
+    /** @return array<string,array{0:int,1:int}> */
+    private static function numeric_setting_bounds(): array
+    {
+        return [
+            'layout_max_width' => [720, 1800],
+            'layout_padding_x' => [0, 80],
+            'layout_padding_top' => [0, 120],
+            'design_border_radius' => [0, 32],
+            'card_icon_size' => [24, 80],
+            'card_image_height' => [90, 260],
+        ];
+    }
+
+    private static function render_header(CMS_M365Landing_Repository $repo, string $section, string $notice, string $error): void
+    {
+        $settings = $repo->settings();
+        $slug = CMS_M365Landing_Repository::slug((string) ($settings['route_slug'] ?? 'm365'));
+        $publicUrl = '/' . ($slug !== '' ? $slug : 'm365');
+        echo '<div class="admin-page-header"><div><h2>🏠 ' . self::esc(self::page_title($section)) . '</h2><p>Zentrale M365-Landingpage mit Matrixen, Bereichen, Tools, Texten und Design steuern.</p></div>';
+        echo '<div class="header-actions"><a class="btn btn-secondary" href="' . self::esc($publicUrl) . '" target="_blank" rel="noopener noreferrer">👁️ Public ansehen</a><a class="btn btn-primary" href="' . self::esc(self::admin_url('cards', ['edit' => 0])) . '">➕ Karte anlegen</a></div></div>';
+        if ($notice !== '') {
+            echo '<div class="alert alert-success">✅ ' . self::esc($notice) . '</div>';
+        }
+        if ($error !== '') {
+            echo '<div class="alert alert-error">❌ ' . self::esc($error) . '</div>';
+        }
+    }
+
+    private static function render_nav(string $section): void
+    {
+        $tabs = [
+            'dashboard' => '📊 Dashboard',
+            'cards' => '🃏 Karten & Bereiche',
+            'settings' => '⚙️ Inhalte & Design',
+            'system' => '🖥️ System',
+        ];
+        echo '<div class="m365landing-tabs">';
+        foreach ($tabs as $key => $label) {
+            $active = $section === $key ? ' active' : '';
+            echo '<a class="m365landing-tab' . $active . '" href="' . self::esc(self::admin_url($key)) . '">' . self::esc($label) . '</a>';
+        }
+        echo '</div>';
+    }
+
+    private static function render_dashboard(CMS_M365Landing_Repository $repo): void
+    {
+        $stats = $repo->stats();
+        echo '<div class="admin-card m365landing-card-connected"><h3>📊 Übersicht</h3><div class="dashboard-grid">';
+        foreach ([['📊', 'Matrix-Karten', $stats['matrix'] ?? 0], ['🧭', 'Bereiche', $stats['areas'] ?? 0], ['🧰', 'Tools', $stats['tools'] ?? 0], ['✅', 'Aktive Karten', $stats['active_cards'] ?? 0]] as [$icon, $label, $value]) {
+            echo '<div class="stat-card"><div class="stat-icon">' . self::esc((string) $icon) . '</div><div class="stat-number">' . (int) $value . '</div><div class="stat-label">' . self::esc((string) $label) . '</div></div>';
+        }
+        echo '</div></div>';
+        echo '<div class="admin-card"><h3>⚡ Schnellzugriff</h3><div class="m365landing-quicklinks"><a class="btn btn-secondary" href="' . self::esc(self::admin_url('cards', ['edit' => 0])) . '">➕ Karte erstellen</a><a class="btn btn-secondary" href="' . self::esc(self::admin_url('settings', ['tab' => 'content'])) . '">📝 Texte bearbeiten</a><a class="btn btn-primary" href="' . self::esc(self::admin_url('settings', ['tab' => 'design'])) . '">🎨 Design anpassen</a></div></div>';
+    }
+
+    private static function render_cards(CMS_M365Landing_Repository $repo): void
+    {
+        $editId = isset($_GET['edit']) ? max(0, (int) $_GET['edit']) : -1;
+        $edit = $editId > 0 ? $repo->card($editId) : null;
+        $cards = $repo->cards(null, false);
+        echo '<div class="admin-card m365landing-card-connected"><h3>🃏 Karten verwalten</h3>';
+        self::render_card_form($edit, self::csrf());
+        echo '<hr class="m365landing-separator"><div class="users-table-container"><table class="users-table"><thead><tr><th>Karte</th><th>Bereich</th><th>Ziel</th><th>Status</th><th>Sortierung</th><th>Aktionen</th></tr></thead><tbody>';
+        if ($cards === []) {
+            echo '<tr><td colspan="6"><div class="empty-state"><p><strong>Noch keine Karten vorhanden</strong></p><p>Lege die erste Karte über das Formular oben an.</p></div></td></tr>';
+        }
+        foreach ($cards as $card) {
+            $name = (string) $card['title'];
+            echo '<tr><td><strong>' . self::esc($name) . '</strong><br><small>' . self::esc((string) $card['slug']) . '</small></td><td>' . self::section_badge((string) $card['section']) . '</td><td>' . self::esc((string) ($card['url'] ?: '—')) . '</td><td>' . self::status((int) $card['is_active'] === 1) . '</td><td>' . (int) $card['sort_order'] . '</td><td><div class="m365landing-actions"><a class="btn btn-sm btn-secondary" href="' . self::esc(self::admin_url('cards', ['edit' => (int) $card['id']])) . '">✏️</a><button type="button" class="btn btn-sm btn-danger" data-delete-card data-delete-id="' . (int) $card['id'] . '" data-delete-name="' . self::esc($name) . '">🗑️</button></div></td></tr>';
+        }
+        echo '</tbody></table></div></div>';
+    }
+
+    /** @param array<string,mixed>|null $edit */
+    private static function render_card_form(?array $edit, string $token): void
+    {
+        echo '<form method="POST" class="admin-form m365landing-form-grid"><input type="hidden" name="action" value="save_card"><input type="hidden" name="csrf_token" value="' . self::esc($token) . '"><input type="hidden" name="id" value="' . (int) ($edit['id'] ?? 0) . '">';
+        self::select('section', 'Bereich', (string) ($edit['section'] ?? 'tools'), ['matrix' => 'Matrixen oben', 'areas' => 'Weitere M365 Bereiche', 'tools' => 'M365 Tools Sammlung']);
+        self::input('title', 'Titel', (string) ($edit['title'] ?? ''), true);
+        self::input('slug', 'Slug', (string) ($edit['slug'] ?? ''), false);
+        self::input('subtitle', 'Kurzzeile', (string) ($edit['subtitle'] ?? ''), false);
+        self::number('sort_order', 'Sortierung', (int) ($edit['sort_order'] ?? 100), 0, 9999);
+        self::input('icon', 'Icon/Emoji Fallback', (string) ($edit['icon'] ?? ''), false);
+        self::image_input('image_url', 'Mediathek-Bild / Bild-URL', (string) ($edit['image_url'] ?? ''));
+        self::input('image_alt', 'Bild-Alt-Text', (string) ($edit['image_alt'] ?? ''), false);
+        self::input('url', 'Ziel-Link', (string) ($edit['url'] ?? ''), false);
+        self::input('button_label', 'Button-Text', (string) ($edit['button_label'] ?? ''), false);
+        self::textarea('description', 'Beschreibung', (string) ($edit['description'] ?? ''), 4);
+        self::checkbox('is_featured', 'Als hervorgehobene Karte markieren', (int) ($edit['is_featured'] ?? 0) === 1);
+        self::checkbox('is_active', 'Karte öffentlich anzeigen', (int) ($edit['is_active'] ?? 1) === 1);
+        echo '<div class="m365landing-form-actions"><button class="btn btn-primary" type="submit">💾 Karte speichern</button></div></form>';
+    }
+
+    private static function render_settings(CMS_M365Landing_Repository $repo): void
+    {
+        $s = $repo->settings();
+        $allowedTabs = ['content', 'sections', 'visibility', 'design'];
+        $tab = in_array((string) ($_GET['tab'] ?? 'content'), $allowedTabs, true) ? (string) ($_GET['tab'] ?? 'content') : 'content';
+        $tabs = ['content' => '📝 Header', 'sections' => '🧱 Sektionen', 'visibility' => '👁️ Sichtbarkeit', 'design' => '🎨 Design'];
+        echo '<div class="m365landing-subtabs">';
+        foreach ($tabs as $key => $label) {
+            $active = $tab === $key ? ' active' : '';
+            echo '<a class="m365landing-subtab' . $active . '" href="' . self::esc(self::admin_url('settings', ['tab' => $key])) . '">' . self::esc($label) . '</a>';
+        }
+        echo '</div><div class="admin-card m365landing-card-connected"><form method="POST" class="admin-form"><input type="hidden" name="action" value="save_settings"><input type="hidden" name="csrf_token" value="' . self::esc(self::csrf()) . '">';
+        self::render_hidden_settings($s, $tab);
+
+        if ($tab === 'content') {
+            echo '<h3>📝 Content Header</h3>';
+            self::replace_input('route_slug', 'Öffentlicher Slug', (string) ($s['route_slug'] ?? 'm365'));
+            self::replace_input('page_overline', 'Overline', (string) ($s['page_overline'] ?? 'Microsoft 365 Hub'));
+            self::replace_input('page_title', 'Seitentitel', (string) ($s['page_title'] ?? ''));
+            self::replace_textarea('page_intro', 'Einleitung', (string) ($s['page_intro'] ?? ''), 4);
+            self::replace_input('hero_primary_button_text', 'Primärbutton Text', (string) ($s['hero_primary_button_text'] ?? ''));
+            self::replace_input('hero_primary_button_url', 'Primärbutton Ziel', (string) ($s['hero_primary_button_url'] ?? ''));
+            self::replace_input('hero_secondary_button_text', 'Sekundärbutton Text', (string) ($s['hero_secondary_button_text'] ?? ''));
+            self::replace_input('hero_secondary_button_url', 'Sekundärbutton Ziel', (string) ($s['hero_secondary_button_url'] ?? ''));
+            self::replace_input('seo_title', 'SEO-Titel', (string) ($s['seo_title'] ?? ''));
+            self::replace_textarea('seo_description', 'SEO-Beschreibung', (string) ($s['seo_description'] ?? ''), 3);
+        } elseif ($tab === 'sections') {
+            echo '<h3>🧱 Abschnittstexte</h3>';
+            foreach ([
+                ['matrix', 'Matrixen'],
+                ['areas', 'Weitere M365 Bereiche'],
+                ['tools', 'M365 Tools Sammlung'],
+            ] as [$prefix, $label]) {
+                echo '<h4>' . self::esc((string) $label) . '</h4>';
+                self::replace_input($prefix . '_section_overline', 'Overline', (string) ($s[$prefix . '_section_overline'] ?? ''));
+                self::replace_input($prefix . '_section_title', 'Titel', (string) ($s[$prefix . '_section_title'] ?? ''));
+                self::replace_textarea($prefix . '_section_intro', 'Intro', (string) ($s[$prefix . '_section_intro'] ?? ''), 3);
+            }
+            self::replace_input('separator_label', 'Text im optischen Trenner', (string) ($s['separator_label'] ?? ''));
+            self::replace_input('empty_state_title', 'Leerer-Zustand Titel', (string) ($s['empty_state_title'] ?? ''));
+            self::replace_textarea('empty_state_text', 'Leerer-Zustand Text', (string) ($s['empty_state_text'] ?? ''), 2);
+            self::replace_input('card_button_label_default', 'Standard-Buttontext', (string) ($s['card_button_label_default'] ?? 'Öffnen'));
+        } elseif ($tab === 'visibility') {
+            echo '<h3>👁️ Sichtbarkeit</h3>';
+            self::replace_checkbox('show_hero', 'Content Header anzeigen', (string) ($s['show_hero'] ?? '1') === '1');
+            self::replace_checkbox('show_hero_actions', 'Header-Buttons anzeigen', (string) ($s['show_hero_actions'] ?? '1') === '1');
+            self::replace_checkbox('show_matrix_section', 'Matrix-Bereich anzeigen', (string) ($s['show_matrix_section'] ?? '1') === '1');
+            self::replace_checkbox('show_separator', 'Dezenten Trenner anzeigen', (string) ($s['show_separator'] ?? '1') === '1');
+            self::replace_checkbox('show_areas_section', 'Weitere M365 Bereiche anzeigen', (string) ($s['show_areas_section'] ?? '1') === '1');
+            self::replace_checkbox('show_tools_section', 'M365 Tools Sammlung anzeigen', (string) ($s['show_tools_section'] ?? '1') === '1');
+        } else {
+            echo '<h3>🎨 Layout & Design</h3>';
+            self::replace_number('layout_max_width', 'Maximale Inhaltsbreite in px', (int) ($s['layout_max_width'] ?? 1180), 720, 1800);
+            self::replace_number('layout_padding_x', 'Seitlicher Innenabstand in px', (int) ($s['layout_padding_x'] ?? 0), 0, 80);
+            self::replace_number('layout_padding_top', 'Oberer Innenabstand in px', (int) ($s['layout_padding_top'] ?? 25), 0, 120);
+            self::replace_color('design_primary_color', 'Primärfarbe', (string) ($s['design_primary_color'] ?? '#2563eb'), '#2563eb');
+            self::replace_color('design_accent_color', 'Akzentfarbe', (string) ($s['design_accent_color'] ?? '#0f766e'), '#0f766e');
+            self::replace_color('design_background_color', 'Seitenhintergrund', (string) ($s['design_background_color'] ?? '#ffffff'), '#ffffff');
+            self::replace_color('design_surface_color', 'Card-Hintergrund', (string) ($s['design_surface_color'] ?? '#ffffff'), '#ffffff');
+            self::replace_color('design_surface_alt_color', 'Alternativer Hintergrund', (string) ($s['design_surface_alt_color'] ?? '#f8fafc'), '#f8fafc');
+            self::replace_color('design_text_color', 'Textfarbe', (string) ($s['design_text_color'] ?? '#1e293b'), '#1e293b');
+            self::replace_color('design_muted_color', 'Sekundärtext', (string) ($s['design_muted_color'] ?? '#64748b'), '#64748b');
+            self::replace_color('design_border_color', 'Rahmenfarbe', (string) ($s['design_border_color'] ?? '#e2e8f0'), '#e2e8f0');
+            self::replace_number('design_border_radius', 'Card-Radius in px', (int) ($s['design_border_radius'] ?? 10), 0, 32);
+            self::replace_number('card_icon_size', 'Icon-Größe in px', (int) ($s['card_icon_size'] ?? 42), 24, 80);
+            self::replace_number('card_image_height', 'Bildhöhe in px', (int) ($s['card_image_height'] ?? 150), 90, 260);
+        }
+        echo '<button class="btn btn-primary" type="submit">💾 Einstellungen speichern</button></form></div>';
+    }
+
+    /** @param array<string,string> $s */
+    private static function render_hidden_settings(array $s, string $activeTab): void
+    {
+        foreach (self::text_setting_keys() as $key) {
+            if (self::setting_key_visible_in_tab($key, $activeTab)) {
+                continue;
+            }
+            echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc((string) ($s[$key] ?? '')) . '">';
+        }
+        foreach (self::bool_setting_keys() as $key) {
+            if ($activeTab === 'visibility') {
+                continue;
+            }
+            echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc((string) ($s[$key] ?? '0')) . '">';
+        }
+        foreach (array_keys(self::color_setting_defaults()) as $key) {
+            if ($activeTab === 'design') {
+                continue;
+            }
+            echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc((string) ($s[$key] ?? '')) . '">';
+        }
+        foreach (array_keys(self::numeric_setting_bounds()) as $key) {
+            if ($activeTab === 'design') {
+                continue;
+            }
+            echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc((string) ($s[$key] ?? '')) . '">';
+        }
+    }
+
+    private static function setting_key_visible_in_tab(string $key, string $tab): bool
+    {
+        if ($tab === 'content') {
+            return in_array($key, ['route_slug', 'page_overline', 'page_title', 'page_intro', 'hero_primary_button_text', 'hero_primary_button_url', 'hero_secondary_button_text', 'hero_secondary_button_url', 'seo_title', 'seo_description'], true);
+        }
+
+        if ($tab === 'sections') {
+            return str_contains($key, '_section_') || in_array($key, ['separator_label', 'empty_state_title', 'empty_state_text', 'card_button_label_default'], true);
+        }
+
+        return false;
+    }
+
+    private static function render_system(CMS_M365Landing_Repository $repo): void
+    {
+        $stats = $repo->stats();
+        echo '<div class="admin-card m365landing-card-connected"><h3>🖥️ System-Informationen</h3><div class="info-grid"><div class="info-card"><h4>Plugin</h4><ul class="info-list"><li><strong>Version:</strong> ' . self::esc(CMS_M365LANDING_VERSION) . '</li><li><strong>DB-Version:</strong> ' . self::esc(CMS_M365LANDING_DB_VERSION) . '</li></ul></div><div class="info-card"><h4>Inhalte</h4><ul class="info-list"><li><strong>Matrix-Karten:</strong> ' . (int) ($stats['matrix'] ?? 0) . '</li><li><strong>Bereiche:</strong> ' . (int) ($stats['areas'] ?? 0) . '</li><li><strong>Tools:</strong> ' . (int) ($stats['tools'] ?? 0) . '</li></ul></div></div></div>';
+    }
+
+    private static function render_delete_modal(): void
+    {
+        echo '<div id="m365landingDeleteModal" class="modal" style="display:none;"><div class="modal-content" style="max-width:480px;"><div class="modal-header"><h3>🗑️ Karte löschen</h3><button class="modal-close" type="button" data-m365landing-close>&times;</button></div><div class="modal-body"><p>Soll <strong id="m365landingDeleteName"></strong> wirklich gelöscht werden?</p><p style="color:#ef4444;font-size:.875rem;">⚠️ Diese Aktion kann nicht rückgängig gemacht werden.</p></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-m365landing-close>Abbrechen</button><form method="POST" id="m365landingDeleteForm"><input type="hidden" name="csrf_token" value="' . self::esc(self::csrf()) . '"><input type="hidden" name="action" value="delete_card"><input type="hidden" name="id" id="m365landingDeleteId"><button class="btn btn-danger" type="submit">🗑️ Endgültig löschen</button></form></div></div></div>';
+    }
+
+    private static function render_media_picker_modal(): void
+    {
+        $token = class_exists('CMS\\Security') ? \CMS\Security::instance()->generateToken('editorjs_media') : '';
+        echo '<div class="modal modal-blur fade" id="settingsMediaPickerModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" data-media-picker-title>Bild auswählen</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Schließen"></button></div><div class="modal-body"><div data-media-picker-modal data-api-url="/api/media" data-csrf-token="' . self::esc($token) . '"><p class="text-secondary small mb-3">Ein Klick übernimmt das Bild in das Kartenfeld.</p><div class="row g-2 align-items-center mb-3"><div class="col-md-8"><input type="search" class="form-control" placeholder="Mediathek durchsuchen …" data-media-picker-search></div><div class="col-md-4 text-secondary small" data-media-picker-status>Lade Medien …</div></div><div class="row row-cards g-3" data-media-picker-grid></div></div></div></div></div></div>';
+    }
+
+    private static function input(string $name, string $label, string $value, bool $required): void
+    {
+        echo '<div class="form-group"><label class="form-label" for="' . self::esc($name) . '">' . self::esc($label) . '</label><input class="form-control" type="text" id="' . self::esc($name) . '" name="' . self::esc($name) . '" value="' . self::esc($value) . '"' . ($required ? ' required' : '') . '></div>';
+    }
+
+    private static function replace_input(string $name, string $label, string $value): void
+    {
+        self::input($name, $label, $value, false);
+    }
+
+    private static function image_input(string $name, string $label, string $value): void
+    {
+        $previewId = $name . '_preview';
+        echo '<div class="form-group"><label class="form-label" for="' . self::esc($name) . '">' . self::esc($label) . '</label>';
+        echo '<div id="' . self::esc($previewId) . '" class="m365landing-media-preview" data-media-preview data-preview-variant="image" data-input-id="' . self::esc($name) . '"' . ($value === '' ? ' hidden' : '') . '>';
+        if ($value !== '') {
+            echo '<img src="' . self::esc($value) . '" alt="Bildvorschau" loading="lazy">';
+        }
+        echo '</div><input class="form-control" type="text" id="' . self::esc($name) . '" name="' . self::esc($name) . '" value="' . self::esc($value) . '" placeholder="/uploads/bild.webp" data-media-target-input>';
+        echo '<div class="m365landing-media-actions"><button type="button" class="btn btn-secondary btn-sm" data-open-media-picker data-target-input="' . self::esc($name) . '" data-preview-id="' . self::esc($previewId) . '" data-picker-title="Kartenbild auswählen">🖼️ Mediathek</button><button type="button" class="btn btn-secondary btn-sm" data-clear-media-input data-target-input="' . self::esc($name) . '" data-preview-id="' . self::esc($previewId) . '">Leeren</button></div></div>';
+    }
+
+    private static function textarea(string $name, string $label, string $value, int $rows): void
+    {
+        $value = CMS_M365Landing_Repository::normalize_newlines($value);
+        echo '<div class="form-group m365landing-wide"><label class="form-label" for="' . self::esc($name) . '">' . self::esc($label) . '</label><textarea class="form-control" id="' . self::esc($name) . '" name="' . self::esc($name) . '" rows="' . (int) $rows . '">' . self::esc($value) . '</textarea></div>';
+    }
+
+    private static function replace_textarea(string $name, string $label, string $value, int $rows): void
+    {
+        self::textarea($name, $label, $value, $rows);
+    }
+
+    private static function number(string $name, string $label, int $value, int $min, int $max): void
+    {
+        echo '<div class="form-group"><label class="form-label" for="' . self::esc($name) . '">' . self::esc($label) . '</label><input class="form-control" type="number" min="' . (int) $min . '" max="' . (int) $max . '" id="' . self::esc($name) . '" name="' . self::esc($name) . '" value="' . (int) $value . '"></div>';
+    }
+
+    private static function replace_number(string $name, string $label, int $value, int $min, int $max): void
+    {
+        self::number($name, $label, $value, $min, $max);
+    }
+
+    /** @param array<string,string> $options */
+    private static function select(string $name, string $label, string $value, array $options): void
+    {
+        echo '<div class="form-group"><label class="form-label" for="' . self::esc($name) . '">' . self::esc($label) . '</label><select class="form-control" id="' . self::esc($name) . '" name="' . self::esc($name) . '">';
+        foreach ($options as $optionValue => $optionLabel) {
+            $selected = $value === $optionValue ? ' selected' : '';
+            echo '<option value="' . self::esc($optionValue) . '"' . $selected . '>' . self::esc($optionLabel) . '</option>';
+        }
+        echo '</select></div>';
+    }
+
+    private static function checkbox(string $name, string $label, bool $checked): void
+    {
+        echo '<label class="checkbox-label m365landing-wide"><input type="checkbox" name="' . self::esc($name) . '" value="1"' . ($checked ? ' checked' : '') . '> ' . self::esc($label) . '</label>';
+    }
+
+    private static function replace_checkbox(string $name, string $label, bool $checked): void
+    {
+        echo '<input type="hidden" name="' . self::esc($name) . '" value="0">';
+        self::checkbox($name, $label, $checked);
+    }
+
+    private static function replace_color(string $name, string $label, string $value, string $fallback): void
+    {
+        $value = CMS_M365Landing_Repository::color($value, $fallback);
+        echo '<div class="form-group"><label class="form-label" for="' . self::esc($name) . '">' . self::esc($label) . '</label><div class="m365landing-color-row"><input class="form-control" type="color" id="' . self::esc($name) . '" name="' . self::esc($name) . '" value="' . self::esc($value) . '"><input class="form-control m365landing-mono" type="text" name="' . self::esc($name) . '_text" value="' . self::esc($value) . '" readonly></div></div>';
+    }
+
+    private static function status(bool $active): string
+    {
+        return $active ? '<span class="status-badge active">✅ Aktiv</span>' : '<span class="status-badge inactive">⏸️ Inaktiv</span>';
+    }
+
+    private static function section_badge(string $section): string
+    {
+        $labels = ['matrix' => '📊 Matrix', 'areas' => '🧭 Bereich', 'tools' => '🧰 Tool'];
+        return '<span class="status-badge active">' . self::esc($labels[$section] ?? '🧰 Tool') . '</span>';
+    }
+
+    private static function csrf(): string
+    {
+        return class_exists('CMS\\Security') ? \CMS\Security::instance()->generateToken('m365landing_admin') : '';
+    }
+
+    private static function check_access(): void
+    {
+        if (!class_exists('CMS\\Auth') || !\CMS\Auth::instance()->isAdmin()) {
+            header('Location: ' . (defined('SITE_URL') ? SITE_URL : '/'));
+            exit;
+        }
+    }
+
+    private static function load_admin_menu(): void
+    {
+        $menuFile = ABSPATH . 'admin/partials/admin-menu.php';
+        if (file_exists($menuFile) && !function_exists('renderAdminLayoutStart')) {
+            require_once $menuFile;
+        }
+    }
+
+    private static function enqueue_admin_assets(): void
+    {
+        $css = CMS_M365LANDING_PLUGIN_DIR . 'assets/css/m365landing-admin.css';
+        if (file_exists($css)) {
+            echo '<link rel="stylesheet" href="' . self::esc(CMS_M365LANDING_PLUGIN_URL . 'assets/css/m365landing-admin.css') . '?v=' . filemtime($css) . '">' . "\n";
+        }
+    }
+
+    private static function enqueue_admin_scripts(): void
+    {
+        $scripts = [];
+        $js = CMS_M365LANDING_PLUGIN_DIR . 'assets/js/m365landing-admin.js';
+        if (file_exists($js)) {
+            $scripts[] = CMS_M365LANDING_PLUGIN_URL . 'assets/js/m365landing-admin.js?v=' . filemtime($js);
+        }
+        $scripts[] = self::core_asset_url('js/admin-media-integrations.js');
+
+        foreach (array_unique(array_filter($scripts)) as $src) {
+            echo '<script src="' . self::esc((string) $src) . '" defer></script>' . "\n";
+        }
+    }
+
+    private static function core_asset_url(string $asset): string
+    {
+        if (function_exists('cms_asset_url')) {
+            return (string) cms_asset_url($asset);
+        }
+
+        return rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/') . '/assets/' . ltrim($asset, '/');
+    }
+
+    private static function admin_url(string $section = 'dashboard', array $params = []): string
+    {
+        $url = self::ADMIN_BASE_URL . '?section=' . urlencode($section);
+        foreach ($params as $key => $value) {
+            $url .= '&' . urlencode((string) $key) . '=' . urlencode((string) $value);
+        }
+        return $url;
+    }
+
+    private static function page_title(string $section): string
+    {
+        return match ($section) {
+            'cards' => 'M365 Landing Karten',
+            'settings' => 'M365 Landing Steuerung',
+            'system' => 'M365 Landing System',
+            default => 'M365 Landing',
+        };
+    }
+
+    private static function allowed_section(string $section): string
+    {
+        return in_array($section, ['dashboard', 'cards', 'settings', 'system'], true) ? $section : 'dashboard';
+    }
+
+    private static function esc(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    }
+}

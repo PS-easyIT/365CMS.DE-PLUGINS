@@ -1,0 +1,15 @@
+{
+  "slug": "cms-m365landing",
+  "name": "CMS M365 Landing",
+  "version": "1.0.0",
+  "requires": "2.9.0",
+  "tested": "2.9.7",
+  "author": "365 Network",
+  "homepage": "https://365network.de/cms-m365landing",
+  "download_url": "https://365network.de/releases/cms-m365landing-1.0.0.zip",
+  "last_updated": "2026-05-30",
+  "sections": {
+    "description": "Zentrale Landingpage für M365 Matrixen, Azure Services, Tutorials und M365 Tools mit vollständig steuerbaren Karten, Texten, Bildern und Design-Tokens.",
+    "changelog": "### 1.0.0\n- Erstes Release mit Content Header, Matrix-Cards, dezentem Trenner, M365-Bereichen und Tool-Sammlung.\n- Adminbereich für Karten, Inhalte, Sichtbarkeit und Design.\n- Mediathek-Bilder je Karte mit Icon-Fallback."
+  }
+}

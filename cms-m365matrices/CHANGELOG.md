@@ -1,5 +1,12 @@
 # Changelog – CMS M365 Matrixen
 
+## 1.1.8 – 2026-05-30
+
+- Erste Zeilen der Microsoft-365-Lizenzmatrix fachlich auf Basis offizieller Microsoft-Quellen ausgebaut.
+- Zellquellen für Zielgruppe, Benutzerlimit, Web-/Desktop-Apps, Shared Computer Activation, Exchange-Mailbox, Mailboxgröße und Archivpfade ergänzt.
+- Add-on-Zellen der Lizenzmatrix mit Deep-Links zu den passenden Bereichen der Add-on-Matrix versehen.
+- Public-Renderer unterstützt optionale Zell-Links ohne Änderung der bestehenden Matrix-Grundstruktur.
+
 ## 1.1.7 – 2026-05-30
 
 - Admin-Sidebar-Menü auf einen direkten Top-Level-Eintrag reduziert.

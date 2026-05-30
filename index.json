@@ -93,6 +93,11 @@
       "manifest": "PLUGINS/cms-m365azure/update.json"
     },
     {
+      "slug": "cms-m365landing",
+      "name": "CMS M365 Landing",
+      "manifest": "PLUGINS/cms-m365landing/update.json"
+    },
+    {
       "slug": "cms-knowledgebase",
       "name": "CMS Knowledgebase",
       "manifest": "PLUGINS/cms-knowledgebase/update.json"

@@ -19,12 +19,37 @@ $money = static function (mixed $value): string {
 
     return number_format((float) $value, 2, ',', '.') . ' €';
 };
-$cellHtml = static function (array $cell) use ($esc): string {
+$safeUrl = static function (string $url): string {
+    $url = trim($url);
+    if ($url === '') {
+        return '';
+    }
+
+    if (str_starts_with($url, '/') && !str_starts_with($url, '//') && !str_contains($url, "\0")) {
+        return $url;
+    }
+
+    $scheme = strtolower((string) (parse_url($url, PHP_URL_SCHEME) ?: ''));
+    if (in_array($scheme, ['http', 'https'], true) && filter_var($url, FILTER_VALIDATE_URL) !== false) {
+        return $url;
+    }
+
+    return '';
+};
+$cellHtml = static function (array $cell) use ($esc, $safeUrl): string {
     $status = preg_replace('/[^a-z0-9_-]+/i', '', (string) ($cell['status'] ?? 'note')) ?: 'note';
+    $linkUrl = $safeUrl((string) ($cell['link_url'] ?? ''));
+    $linkLabel = trim((string) ($cell['link_label'] ?? 'Zur Add-on-Übersicht'));
+
     $html = '<span class="m365calc-status m365calc-status--' . $esc($status) . '">';
     $html .= '<strong>' . $esc($cell['label'] ?? '—') . '</strong>';
     if ((string) ($cell['note'] ?? '') !== '') {
         $html .= '<small>' . $esc($cell['note']) . '</small>';
+    }
+    if ($linkUrl !== '') {
+        $html .= '<a class="phinit-btn phinit-btn--link" href="' . $esc($linkUrl) . '">';
+        $html .= $esc($linkLabel !== '' ? $linkLabel : 'Zur Add-on-Übersicht');
+        $html .= ' <span class="phinit-arrow" aria-hidden="true">→</span></a>';
     }
     $html .= '</span>';
 
@@ -68,23 +93,6 @@ $matrixNumber = static function (string $key, int $default, int $min, int $max) 
     $value = is_numeric($matrixOptions[$key] ?? null) ? (int) $matrixOptions[$key] : $default;
 
     return max($min, min($max, $value));
-};
-$safeUrl = static function (string $url): string {
-    $url = trim($url);
-    if ($url === '') {
-        return '';
-    }
-
-    if (str_starts_with($url, '/') && !str_starts_with($url, '//') && !str_contains($url, "\0")) {
-        return $url;
-    }
-
-    $scheme = strtolower((string) (parse_url($url, PHP_URL_SCHEME) ?: ''));
-    if (in_array($scheme, ['http', 'https'], true) && filter_var($url, FILTER_VALIDATE_URL) !== false) {
-        return $url;
-    }
-
-    return '';
 };
 $matrix = is_array($matrix ?? null) ? $matrix : CMS_M365MATRICES_ReadOnly_Matrices::suite_matrix();
 $columns = is_array($matrix['columns'] ?? null) ? $matrix['columns'] : [];

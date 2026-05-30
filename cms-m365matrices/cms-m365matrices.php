@@ -3,7 +3,7 @@
  * Plugin Name: CMS M365 Matrixen
  * Plugin URI: https://365network.de/cms-m365matrices
  * Description: Eigenständiges Public-Plugin für Microsoft-365-Lizenz-, Add-on- und Copilot-Matrixen mit gemeinsamen M365-Tools-Datenbanktabellen.
- * Version: 1.1.7
+ * Version: 1.1.8
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-defined('CMS_M365MATRICES_VERSION') || define('CMS_M365MATRICES_VERSION', '1.1.7');
+defined('CMS_M365MATRICES_VERSION') || define('CMS_M365MATRICES_VERSION', '1.1.8');
 defined('CMS_M365MATRICES_PLUGIN_DIR') || define('CMS_M365MATRICES_PLUGIN_DIR', dirname(__FILE__) . '/');
 defined('CMS_M365MATRICES_PLUGIN_URL') || define('CMS_M365MATRICES_PLUGIN_URL', '/plugins/cms-m365matrices/');
 

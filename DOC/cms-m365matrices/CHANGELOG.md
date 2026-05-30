@@ -1,5 +1,11 @@
 # Changelog – CMS M365 Matrixen
 
+## 1.1.8 – 2026-05-30
+
+- Lizenzmatrix: Erste Paket-, App-, Shared-Computer-Activation-, Exchange- und Archivzeilen fachlich mit offiziellen Microsoft-Quellen präzisiert.
+- Add-on-Verlinkung: Alle Add-on-Zellen der Lizenzmatrix verweisen nun auf stabile Bereichsanker der Add-on-Matrix.
+- Renderer/Normalizer erlauben optionale Zell-Links und Quellenfelder für zukünftige fachliche Erweiterungen.
+
 ## 1.1.6 – 2026-05-30
 
 - Kontakt-/Lizenzcheck-CTAs auf allen Matrixseiten vereinheitlicht.

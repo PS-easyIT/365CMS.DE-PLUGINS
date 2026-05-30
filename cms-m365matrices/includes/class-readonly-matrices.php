@@ -218,18 +218,40 @@ final class CMS_M365MATRICES_ReadOnly_Matrices
 
     /**
      * @param array<string,mixed> $cell
-     * @return array<string,string>
+     * @return array<string,mixed>
      */
     private static function normalize_cell(array $cell): array
     {
         $allowed = ['included', 'partial', 'addon', 'prerequisite', 'not_included', 'warning', 'separate', 'note'];
         $status = self::clean_key((string) ($cell['status'] ?? 'note'));
+        $linkUrl = self::normalize_url((string) ($cell['link_url'] ?? ''));
 
-        return [
+        $normalized = [
             'status' => in_array($status, $allowed, true) ? $status : 'note',
             'label' => self::limit_text(trim(strip_tags((string) ($cell['label'] ?? '—'))), 100),
             'note' => self::limit_text(trim(strip_tags((string) ($cell['note'] ?? ''))), 220),
         ];
+
+        if ($linkUrl !== '') {
+            $normalized['link_url'] = $linkUrl;
+            $normalized['link_label'] = self::limit_text(trim(strip_tags((string) ($cell['link_label'] ?? 'Zur Add-on-Übersicht'))), 80);
+        }
+
+        if (is_array($cell['sources'] ?? null)) {
+            $sources = [];
+            foreach ($cell['sources'] as $source) {
+                $sourceUrl = self::normalize_url((string) $source);
+                if ($sourceUrl !== '') {
+                    $sources[] = $sourceUrl;
+                }
+            }
+
+            if ($sources !== []) {
+                $normalized['sources'] = array_values(array_unique($sources));
+            }
+        }
+
+        return $normalized;
     }
 
     /**
@@ -243,6 +265,25 @@ final class CMS_M365MATRICES_ReadOnly_Matrices
     private static function clean_key(string $value): string
     {
         return trim((string) preg_replace('/[^a-z0-9_-]+/i', '-', strtolower($value)), '-');
+    }
+
+    private static function normalize_url(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '' || str_contains($url, "\0")) {
+            return '';
+        }
+
+        if (str_starts_with($url, '/') && !str_starts_with($url, '//')) {
+            return self::limit_text($url, 240);
+        }
+
+        $scheme = strtolower((string) (parse_url($url, PHP_URL_SCHEME) ?: ''));
+        if (in_array($scheme, ['http', 'https'], true) && filter_var($url, FILTER_VALIDATE_URL) !== false) {
+            return self::limit_text($url, 300);
+        }
+
+        return '';
     }
 
     private static function limit_text(string $value, int $length): string
