@@ -22,8 +22,7 @@ final class Menu
             'manage_options',
             'knowledgebase-dashboard',
             [Pages::class, 'renderDashboard'],
-            '📚',
-            58
+            '📚'
         );
 
         add_submenu_page('knowledgebase-dashboard', 'Dashboard', '📊 Dashboard', 'manage_options', 'knowledgebase-dashboard', [Pages::class, 'renderDashboard']);

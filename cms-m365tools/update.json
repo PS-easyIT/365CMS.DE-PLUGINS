@@ -1,4 +1,5 @@
 {
+  "slug": "cms-m365tools",
   "version": "3.0.4",
   "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
   "requires": "3.0.0",
@@ -7,7 +8,7 @@
   "requires_php": "8.4",
   "last_updated": "2026-05-30",
   "sections": {
-    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit Core-kompatiblem Root-Bootstrap für 365CMS 3.x.x und kanonischem Code unter M365-PLUGINS/cms-m365tools.",
-    "changelog": "3.0.4: Root-Bootstrap auf die kanonische M365-Tools-Version ohne Matrix-Runtime synchronisiert. 3.0.3: Übergangsdelegation an cms-m365matrices."
+    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme, zentraler Dienstleister- und Kontaktformular-CTA, eigenem Landingpage-Designer, UX-optimierter Live-Suche, Tag-Filtern, Sticky-Kategorie-Navigation, globalen Paketpreis- und Abopreisbereichen, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass und Public-Modulen. Reine Matrixseiten liegen im Plugin cms-m365matrices.",
+    "changelog": "3.0.4: Read-only Lizenzmatrix und Add-on-Matrix vollständig in cms-m365matrices ausgelagert; M365 Tools enthält keine Matrix-Routen, Templates, JSON-Kataloge, Adminfelder oder Matrix-Normalisierung mehr. 3.0.3: Übergangsdelegation an cms-m365matrices."
   }
 }

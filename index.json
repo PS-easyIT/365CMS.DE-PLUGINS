@@ -78,11 +78,6 @@
       "manifest": "PLUGINS/cms-marketplace/update.json"
     },
     {
-      "slug": "cms-m365lic",
-      "name": "CMS M365 License",
-      "manifest": "PLUGINS/cms-m365lic/update.json"
-    },
-    {
       "slug": "cms-m365tools",
       "name": "CMS M365 Tools",
       "manifest": "PLUGINS/cms-m365tools/update.json"
@@ -91,6 +86,11 @@
       "slug": "cms-m365matrices",
       "name": "CMS M365 Matrixen",
       "manifest": "PLUGINS/cms-m365matrices/update.json"
+    },
+    {
+      "slug": "cms-m365azure",
+      "name": "CMS M365 Azure",
+      "manifest": "PLUGINS/cms-m365azure/update.json"
     },
     {
       "slug": "cms-knowledgebase",

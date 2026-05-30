@@ -1,4 +1,5 @@
 {
+  "slug": "cms-m365matrices",
   "version": "1.0.6",
   "download_url": "https://365network.de/plugins/cms-m365matrices/cms-m365matrices.zip",
   "requires": "3.0.0",
@@ -7,7 +8,7 @@
   "requires_php": "8.4",
   "last_updated": "2026-05-30",
   "sections": {
-    "description": "CMS M365 Matrixen ist der Core-kompatible Root-Bootstrap für die eigenständigen Microsoft-365-Lizenz- und Add-on-Matrixseiten. Der kanonische Plugin-Code liegt unter M365-PLUGINS/cms-m365matrices und nutzt die gemeinsamen M365-Tools-Options-Tabellen.",
-    "changelog": "1.0.6: Root-Bootstrap auf die kanonische Matrix-Version mit responsiv gehärteten Tabellen synchronisiert. 1.0.5: Steuerbares Add-on-Inhaltsverzeichnis synchronisiert."
+    "description": "CMS M365 Matrixen kapselt die reinen Microsoft-365-Lizenz- und Add-on-Matrixseiten als eigenes Plugin, nutzt weiterhin die gemeinsamen M365-Tools-Options-Tabellen und erlaubt die zentrale Steuerung von Außenlayout, Farben, Breiten und Texten.",
+    "changelog": "1.0.6: Matrix-Tabellen responsiv gehärtet: Desktop und mittlere Breiten erhalten sauberen horizontalen Scroll-Schutz, kleine Viewports nutzen die Kartenansicht. 1.0.5: Eigener Adminbereich für das Add-on-Inhaltsverzeichnis ergänzt."
   }
 }

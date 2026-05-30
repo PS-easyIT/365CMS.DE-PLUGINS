@@ -1,0 +1,112 @@
+.azs-tabs,
+.azs-subtabs {
+    border-bottom: 2px solid #e2e8f0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin-bottom: 0;
+}
+
+.azs-tab,
+.azs-subtab {
+    align-items: center;
+    border: 1px solid transparent;
+    border-bottom: 2px solid transparent;
+    border-radius: 6px 6px 0 0;
+    color: #475569;
+    display: inline-flex;
+    font-size: .875rem;
+    font-weight: 500;
+    gap: .35rem;
+    margin-bottom: -2px;
+    padding: .6rem 1.1rem;
+    text-decoration: none;
+    transition: color .15s, background .15s;
+}
+
+.azs-tab:hover,
+.azs-subtab:hover {
+    background: #f8fafc;
+    color: var(--admin-primary, #3b82f6);
+}
+
+.azs-tab.active,
+.azs-subtab.active {
+    background: #fff;
+    border-color: #e2e8f0 #e2e8f0 #fff #e2e8f0;
+    color: var(--admin-primary, #3b82f6);
+    font-weight: 600;
+}
+
+.azs-card-connected {
+    border-radius: 0 10px 10px 10px;
+    margin-top: 0;
+}
+
+.azs-form-grid {
+    display: grid;
+    gap: 1rem 1.25rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.azs-wide,
+.azs-form-actions {
+    grid-column: 1 / -1;
+}
+
+.azs-form-actions,
+.azs-actions,
+.azs-quicklinks {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.azs-separator {
+    border: 0;
+    border-top: 1px solid #f1f5f9;
+    margin: 1.5rem 0;
+}
+
+.azs-color-row {
+    align-items: center;
+    display: flex;
+    gap: .625rem;
+}
+
+.azs-color-row input[type="color"] {
+    height: 40px;
+    padding: .125rem;
+    width: 56px;
+}
+
+.azs-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    max-width: 110px;
+}
+
+.stat-icon {
+    font-size: 1.75rem;
+    margin-bottom: .25rem;
+}
+
+@media (max-width: 960px) {
+    .azs-tabs,
+    .azs-subtabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+
+    .azs-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .azs-actions .btn,
+    .azs-quicklinks .btn {
+        justify-content: center;
+        width: 100%;
+    }
+}

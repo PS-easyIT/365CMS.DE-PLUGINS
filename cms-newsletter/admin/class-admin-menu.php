@@ -17,7 +17,7 @@ final class CMS_Newsletter_Admin_Menu
             return;
         }
 
-        add_menu_page('Newsletter', 'Newsletter', 'manage_options', 'newsletter-dashboard', [CMS_Newsletter_Admin_Pages::class, 'render_dashboard'], 'NL', 57);
+        add_menu_page('Newsletter', 'Newsletter', 'manage_options', 'newsletter-dashboard', [CMS_Newsletter_Admin_Pages::class, 'render_dashboard'], 'NL');
         add_submenu_page('newsletter-dashboard', 'Dashboard', 'Dashboard', 'manage_options', 'newsletter-dashboard', [CMS_Newsletter_Admin_Pages::class, 'render_dashboard']);
         add_submenu_page('newsletter-dashboard', 'Abonnenten', 'Abonnenten', 'manage_options', 'newsletter-subscribers', [CMS_Newsletter_Admin_Pages::class, 'render_subscribers']);
         add_submenu_page('newsletter-dashboard', 'Templates', 'Templates', 'manage_options', 'newsletter-templates', [CMS_Newsletter_Admin_Pages::class, 'render_templates']);

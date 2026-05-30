@@ -1,14 +1,34 @@
-# CMS M365 Matrixen – Root Bootstrap
+# CMS M365 Matrixen
 
-Dieser Ordner ist ein 365CMS-3.x-kompatibler Bootstrap für den Core-PluginManager.
+`cms-m365matrices` kapselt die reinen Microsoft-365-Read-only-Matrixseiten als eigenes Plugin aus:
 
-Der eigentliche Plugin-Code liegt unter:
+- `/m365-lizenzmatrix` – Vollpaket-Matrix für Microsoft 365 Business und Enterprise
+- `/m365-addon-matrix` – Add-on-Matrix nach Exchange, SharePoint/OneDrive, Teams, Copilot, Security, Purview und Power Platform
 
-- `M365-PLUGINS/cms-m365matrices/`
+Das Plugin legt **keine eigenen Matrix-Tabellen** an. Es verwendet die bestehenden gemeinsamen Tabellen von `cms-m365tools`:
 
-Warum dieser Proxy existiert:
+- `cms_m365tools_module_settings`
+- `cms_m365tools_module_options`
 
-- Der Core-PluginManager erwartet aktive Plugins unter `PLUGIN_PATH/<slug>/<slug>.php`.
-- Ohne diesen Root-Bootstrap kann `cms-m365matrices` nicht über den Slug `cms-m365matrices` aktiviert werden.
-- Der Bootstrap lädt die kanonische Plugin-Datei und setzt kompatible Asset-URLs für das verschachtelte Repository-Layout.
-- Die Matrixdaten und Matrixoptionen bleiben weiterhin in den gemeinsamen `cms_m365tools_*` Tabellen.
+Die Admin-Tabs `Lizenzmatrix`, `Add-on-Matrix`, `Inhaltsverzeichnis` und `Design` schreiben weiterhin in die globalen Optionsgruppen `matrix-suite`, `matrix-addon`, `matrix-toc` und `matrix-design`. Dadurch bleiben Darstellung, Texte, CTAs und Sichtbarkeit zwischen der bisherigen M365-Tools-Umgebung und dem neuen Matrix-Plugin identisch.
+
+## Steuerbare Außenbereiche
+
+Die Matrix-Tabellen selbst bleiben datengetrieben. Alles darum herum kann im Adminbereich gesteuert werden:
+
+- Texte für Header, Intros, Buttons, Hinweis- und Quellenbereiche
+- Sichtbarkeit von Contentheader, Einleitungsbereich, CTA, Druckbutton, Hinweisen und Quellen
+- Add-on-spezifische Bereichs-Overline und Paketkarten-/Bereichsheader-Anzeige
+- Add-on-Inhaltsverzeichnis mit Überschrift, maximaler Spaltenzahl, Textgröße und einzeiliger Darstellung
+- Seitenbreite, seitlicher Innenabstand, Abstand oben und Abschnittsabstände
+- Außenfarben für Seitenhintergrund, Flächen, Text, Sekundärtext, Header und Buttons
+
+Die Werte landen in denselben Optionsgruppen wie bisher und werden in den Public-Templates ausschließlich als CSS-Variablen ausgegeben.
+
+## Abhängigkeit
+
+Die Matrix-Runtime, JSON-Kataloge, Public-Templates und Assets liegen vollständig in `cms-m365matrices`. Das Plugin nutzt nur weiterhin die gemeinsamen Tabellen `cms_m365tools_module_settings` und `cms_m365tools_module_options`, damit bestehende Matrix-Optionen erhalten bleiben.
+
+## Admin
+
+Der neue Adminpunkt heißt `M365 Matrixen` und pflegt nur die Matrix-Konfiguration. Komplexe Rechner-, Landingpage- und Preisbereiche bleiben im Plugin `cms-m365tools`.

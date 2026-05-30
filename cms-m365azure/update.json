@@ -1,0 +1,18 @@
+{
+  "slug": "cms-m365azure",
+  "name": "CMS M365 Azure",
+  "version": "1.0.0",
+  "description": "Redaktionell steuerbarer Azure-Service-Katalog mit Kategorien, Inhaltsverzeichnis und responsiven Service-Cards.",
+  "author": "365 Network",
+  "author_uri": "https://365network.de",
+  "plugin_uri": "https://365network.de/cms-m365azure",
+  "requires_cms": "2.9.0",
+  "requires_php": "8.1",
+  "tested_cms": "2.9.7",
+  "download_url": "",
+  "last_updated": "2026-05-30",
+  "sections": {
+    "description": "CMS M365 Azure stellt Azure-Dienste in einem administrierbaren Public-Katalog dar.",
+    "changelog": "1.0.0: Erstes Release mit DB-Schema, Seed-Daten, Admin-Steuerung, Public-Route und responsive Card-Layout."
+  }
+}

@@ -22,8 +22,7 @@ class CMS_JPG_Admin_Menu
             'manage_options',
             'jpg-dashboard',
             [CMS_JPG_Admin_Pages::class, 'render_dashboard'],
-            '',
-            35
+            ''
         );
 
         // Untermenüs
