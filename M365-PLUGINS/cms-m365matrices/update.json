@@ -1,0 +1,14 @@
+{
+  "version": "1.0.0",
+  "download_url": "https://365network.de/plugins/cms-m365matrices/cms-m365matrices.zip",
+  "requires": "3.0.0",
+  "tested": "3.0.0",
+  "min_php": "8.4",
+  "requires_php": "8.4",
+  "requires_plugins": ["cms-m365tools"],
+  "last_updated": "2026-05-30",
+  "sections": {
+    "description": "CMS M365 Matrixen kapselt die reinen Microsoft-365-Lizenz- und Add-on-Matrixseiten als eigenes Plugin, nutzt weiterhin die gemeinsamen M365-Tools-Options-Tabellen und erlaubt die zentrale Steuerung von Außenlayout, Farben, Breiten und Texten.",
+    "changelog": "1.0.0: Eigenständiges Matrix-Plugin mit gemeinsamen cms_m365tools_module_options-Gruppen matrix-suite, matrix-addon und matrix-design sowie Admin-Steuerung für Texte, Breiten, Abstände und Außenfarben ergänzt."
+  }
+}

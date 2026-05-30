@@ -1,13 +1,13 @@
 {
-  "version": "3.0.2",
+  "version": "3.0.3",
   "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
   "requires": "3.0.0",
   "tested": "3.0.0",
   "min_php": "8.4",
   "requires_php": "8.4",
-  "last_updated": "2026-05-18",
+  "last_updated": "2026-05-30",
   "sections": {
-    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme, zentraler Dienstleister- und Kontaktformular-CTA, eigenem Landingpage-Designer, UX-optimierter Live-Suche, Tag-Filtern, Sticky-Kategorie-Navigation, zusammengeführtem Read-only-Matrix-Unterpunkt, globalen Paketpreis- und Abopreisbereichen, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass und 21 Public-Modulen.",
-    "changelog": "365CMS-3.0.2 Activation-Fix: Root-Bootstrap unter cms-m365tools ergänzt, damit der 365CMS PluginManager den Slug cms-m365tools über PLUGIN_PATH/cms-m365tools/cms-m365tools.php aktivieren kann. 3.0.1: PHP-8.4-Anforderung ergänzt, Security-Hotspots erneut geprüft und vorhandene v3-Sanitizer-/CSRF-/DOM-XSS-Härtungen als Release-Stand bestätigt."
+    "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme, zentraler Dienstleister- und Kontaktformular-CTA, eigenem Landingpage-Designer, UX-optimierter Live-Suche, Tag-Filtern, Sticky-Kategorie-Navigation, Read-only-Matrix-Runtime, globalen Paketpreis- und Abopreisbereichen, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass und Public-Modulen.",
+    "changelog": "3.0.3: Matrix-Routen/Admin/Registry an cms-m365matrices delegiert, wenn das eigenständige Matrix-Plugin aktiv ist. Read-only-Matrix-Templates und Admin-Felder unterstützen nun gemeinsame Optionen für Außenlayout, Breiten, Abstände, Farben und Texte außerhalb der Tabellen. 3.0.2: Activation-Fix für Root-Bootstrap."
   }
 }

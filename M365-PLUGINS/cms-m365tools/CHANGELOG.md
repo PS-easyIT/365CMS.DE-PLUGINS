@@ -1,6 +1,16 @@
 
 # Changelog – CMS M365 Tools
 
+## 3.0.3 – 2026-05-30
+
+- Matrix-Routen, Matrix-Registry und Matrix-Admineintrag werden an `cms-m365matrices` delegiert, sobald das neue Matrix-Plugin aktiv ist.
+- Read-only-Matrix-Templates um gemeinsame Optionswerte für Außenlayout, Breiten, Abstände, Farben und zusätzliche Texte außerhalb der Tabellen erweitert.
+- Bestehende Matrix-Admin-Feldliste hält dieselben Shared-Option-Keys vor, damit Alt-Admin und neues Matrix-Plugin kompatibel bleiben.
+
+## 3.0.2 – 2026-05-18
+
+- Root-Bootstrap unter `cms-m365tools` ergänzt, damit der 365CMS PluginManager den Slug `cms-m365tools` über `PLUGIN_PATH/cms-m365tools/cms-m365tools.php` aktivieren kann.
+
 ## 3.0.1 – 2026-05-18
 
 - Compatibility-/Validation-Pass für 365CMS v3.x.x und PHP 8.4 abgeschlossen.

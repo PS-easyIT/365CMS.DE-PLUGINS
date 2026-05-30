@@ -128,9 +128,13 @@ final class CMS_M365CALCULATOR_Tool_Registry
         self::$bootstrapped = true;
 
         self::register_shared_mailbox_module();
-        self::register_readonly_suite_matrix_module();
+        if (!self::matrix_plugin_active()) {
+            self::register_readonly_suite_matrix_module();
+        }
         self::register_license_comparison_module();
-        self::register_readonly_addon_matrix_module();
+        if (!self::matrix_plugin_active()) {
+            self::register_readonly_addon_matrix_module();
+        }
         self::register_addon_configurator_module();
         self::register_commitment_calculator_module();
         self::register_archive_mailbox_calculator_module();
@@ -504,5 +508,24 @@ final class CMS_M365CALCULATOR_Tool_Registry
         }
 
         return '';
+    }
+
+    private static function matrix_plugin_active(): bool
+    {
+        if (defined('CMS_M365MATRICES_VERSION')) {
+            return true;
+        }
+
+        if (!class_exists('CMS\\PluginManager')) {
+            return false;
+        }
+
+        try {
+            $manager = \CMS\PluginManager::instance();
+
+            return method_exists($manager, 'isPluginActive') && $manager->isPluginActive('cms-m365matrices');
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 }

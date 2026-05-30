@@ -64,6 +64,11 @@ $matrixColor = static function (string $key, string $default) use ($matrixOption
 
     return preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1 ? strtolower($value) : $default;
 };
+$matrixNumber = static function (string $key, int $default, int $min, int $max) use ($matrixOptions): int {
+    $value = is_numeric($matrixOptions[$key] ?? null) ? (int) $matrixOptions[$key] : $default;
+
+    return max($min, min($max, $value));
+};
 $safeUrl = static function (string $url): string {
     $url = trim($url);
     if ($url === '') {
@@ -102,7 +107,15 @@ $headerStyle = $matrixChoice('matrix_header_style', 'plain', ['plain', 'surface'
 $headerAlignment = $matrixChoice('matrix_header_alignment', 'split', ['split', 'left', 'center']);
 $buttonLayout = $matrixChoice('matrix_button_layout', 'inline', ['inline', 'stacked', 'right']);
 $buttonStyle = $matrixChoice('matrix_button_style', 'default', ['default', 'primary', 'secondary', 'minimal']);
+$pageMaxWidth = $matrixNumber('matrix_page_max_width', 1200, 760, 1800);
+$outerPaddingX = $matrixNumber('matrix_outer_padding_x', 0, 0, 96);
+$outerPaddingTop = $matrixNumber('matrix_outer_padding_top', 25, 0, 120);
+$sectionGap = $matrixNumber('matrix_section_gap', 32, 12, 96);
 $headerRadius = max(0, min(2, (int) $matrixValue('matrix_header_radius', '2')));
+$pageBackground = $matrixColor('matrix_color_page_background', '#ffffff');
+$surfaceBackground = $matrixColor('matrix_color_surface_background', '#f8fafc');
+$matrixText = $matrixColor('matrix_color_text', '#1e293b');
+$matrixMuted = $matrixColor('matrix_color_muted', '#64748b');
 $headerBackground = $matrixColor('matrix_color_header_background', '#f8fafc');
 $headerText = $matrixColor('matrix_color_header_text', '#1e293b');
 $headerMuted = $matrixColor('matrix_color_header_muted', '#64748b');
@@ -128,6 +141,9 @@ $toolButtonUrl = $safeUrl($matrixValue('matrix_suite_tool_button_url', '/m365-ad
 $resultOverline = $matrixValue('matrix_suite_result_overline', 'Matrix');
 $resultTitle = $matrixValue('matrix_suite_result_title', 'Gesamtübersicht der Microsoft-365-Vollpakete');
 $resultIntro = $matrixValue('matrix_suite_result_intro', 'Alle zentralen Paket-, App-, Security-, Compliance-, KI- und Beschaffungspunkte in einer Übersicht.');
+$notesTitle = $matrixValue('matrix_suite_notes_title', 'Hinweise zur Lizenzmatrix');
+$sourcesTitle = $matrixValue('matrix_suite_sources_title', 'Quellenstand');
+$printButtonLabel = $matrixValue('matrix_print_button_label', 'Drucken / PDF speichern');
 $primaryButtonLabel = $matrixValue('matrix_suite_primary_button_label', 'Lizenzcheck anfragen');
 $primaryButtonUrl = $safeUrl($matrixValue('matrix_suite_primary_button_url', '/kontakt'));
 
@@ -136,7 +152,7 @@ if (class_exists('CMS\\ThemeManager')) {
 }
 ?>
 
-<main class="phinit-plugin m365calc-page m365calc-comparison-page m365calc-readonly-page m365calc-matrix-page m365calc-matrix-header--<?php echo $esc($headerStyle); ?> m365calc-matrix-align--<?php echo $esc($headerAlignment); ?> m365calc-matrix-buttons--<?php echo $esc($buttonLayout); ?> m365calc-matrix-button-style--<?php echo $esc($buttonStyle); ?>" id="m365-license-matrix" style="--m365matrix-header-bg: <?php echo $esc($headerBackground); ?>; --m365matrix-header-text: <?php echo $esc($headerText); ?>; --m365matrix-header-muted: <?php echo $esc($headerMuted); ?>; --m365matrix-header-border: <?php echo $esc($headerBorder); ?>; --m365matrix-header-radius: <?php echo (int) $headerRadius; ?>px; --m365matrix-primary-button-bg: <?php echo $esc($primaryButtonBackground); ?>; --m365matrix-primary-button-text: <?php echo $esc($primaryButtonText); ?>; --m365matrix-secondary-button-bg: <?php echo $esc($secondaryButtonBackground); ?>; --m365matrix-secondary-button-text: <?php echo $esc($secondaryButtonText); ?>;">
+<main class="phinit-plugin m365calc-page m365calc-comparison-page m365calc-readonly-page m365calc-matrix-page m365calc-matrix-header--<?php echo $esc($headerStyle); ?> m365calc-matrix-align--<?php echo $esc($headerAlignment); ?> m365calc-matrix-buttons--<?php echo $esc($buttonLayout); ?> m365calc-matrix-button-style--<?php echo $esc($buttonStyle); ?>" id="m365-license-matrix" style="--m365matrix-page-max-width: <?php echo (int) $pageMaxWidth; ?>px; --m365matrix-padding-x: <?php echo (int) $outerPaddingX; ?>px; --m365matrix-padding-top: <?php echo (int) $outerPaddingTop; ?>px; --m365matrix-section-gap: <?php echo (int) $sectionGap; ?>px; --m365matrix-page-bg: <?php echo $esc($pageBackground); ?>; --m365matrix-surface-bg: <?php echo $esc($surfaceBackground); ?>; --m365matrix-text: <?php echo $esc($matrixText); ?>; --m365matrix-muted: <?php echo $esc($matrixMuted); ?>; --m365matrix-header-bg: <?php echo $esc($headerBackground); ?>; --m365matrix-header-text: <?php echo $esc($headerText); ?>; --m365matrix-header-muted: <?php echo $esc($headerMuted); ?>; --m365matrix-header-border: <?php echo $esc($headerBorder); ?>; --m365matrix-header-radius: <?php echo (int) $headerRadius; ?>px; --m365matrix-primary-button-bg: <?php echo $esc($primaryButtonBackground); ?>; --m365matrix-primary-button-text: <?php echo $esc($primaryButtonText); ?>; --m365matrix-secondary-button-bg: <?php echo $esc($secondaryButtonBackground); ?>; --m365matrix-secondary-button-text: <?php echo $esc($secondaryButtonText); ?>;">
     <?php if (!$showHero): ?>
     <h1 class="m365calc-visually-hidden"><?php echo $esc($heroTitle); ?></h1>
     <?php endif; ?>
@@ -173,7 +189,7 @@ if (class_exists('CMS\\ThemeManager')) {
             <?php if ($showPrintButton || ($showPrimaryCta && $primaryButtonUrl !== '')): ?>
             <section class="m365calc-actions">
                 <?php if ($showPrintButton): ?>
-                <button type="button" class="phinit-btn phinit-btn--secondary" data-m365calc-print>Drucken / PDF speichern</button>
+                <button type="button" class="phinit-btn phinit-btn--secondary" data-m365calc-print><?php echo $esc($printButtonLabel); ?></button>
                 <?php endif; ?>
                 <?php if ($showPrimaryCta && $primaryButtonUrl !== ''): ?>
                 <a class="phinit-btn phinit-btn--primary m365calc-matrix-primary-action" href="<?php echo $esc($primaryButtonUrl); ?>"><?php echo $esc($primaryButtonLabel); ?></a>
@@ -230,7 +246,7 @@ if (class_exists('CMS\\ThemeManager')) {
     <section class="m365calc-result-grid" aria-label="Hinweise und Quellen">
         <?php if ($showNotes): ?>
         <article class="phinit-note phinit-note--warning">
-            <h2>Hinweise zur Lizenzmatrix</h2>
+            <h2><?php echo $esc($notesTitle); ?></h2>
             <ul class="m365calc-note-list">
                 <?php foreach (($matrix['notes'] ?? []) as $note): ?>
                 <li><?php echo $esc($note); ?></li>
@@ -240,7 +256,7 @@ if (class_exists('CMS\\ThemeManager')) {
         <?php endif; ?>
         <?php if ($showSources): ?>
         <article class="phinit-note phinit-note--info m365calc-source-card">
-            <h2>Quellenstand</h2>
+            <h2><?php echo $esc($sourcesTitle); ?></h2>
             <p><?php echo $esc($meta['price_basis'] ?? 'Preis- und Lizenzinformationen vor Bestellung prüfen.'); ?></p>
             <details>
                 <summary>Quellen anzeigen</summary>

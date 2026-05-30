@@ -58,14 +58,16 @@ final class CMS_M365CALCULATOR_Admin_Menu
             [$pages, 'render_landing_designer']
         );
 
-        add_submenu_page(
-            'm365tools-dashboard',
-            'M365 Tools – Read-only Matrixen',
-            '📚 Matrixen',
-            'manage_options',
-            'm365tools-readonly-matrices',
-            [$pages, 'render_readonly_matrices']
-        );
+        if (!self::matrix_plugin_active()) {
+            add_submenu_page(
+                'm365tools-dashboard',
+                'M365 Tools – Read-only Matrixen',
+                '📚 Matrixen',
+                'manage_options',
+                'm365tools-readonly-matrices',
+                [$pages, 'render_readonly_matrices']
+            );
+        }
 
         add_submenu_page(
             'm365tools-dashboard',
@@ -85,7 +87,9 @@ final class CMS_M365CALCULATOR_Admin_Menu
             [$pages, 'render_subscription_prices']
         );
 
-        self::register_matrix_alias_if_requested($pages);
+        if (!self::matrix_plugin_active()) {
+            self::register_matrix_alias_if_requested($pages);
+        }
 
         foreach (self::ordered_admin_tools() as $tool) {
             $moduleKey = (string) ($tool['key'] ?? '');
@@ -216,5 +220,24 @@ final class CMS_M365CALCULATOR_Admin_Menu
         }
 
         return strlen($label) > $length ? rtrim(substr($label, 0, $length - 1)) . '…' : $label;
+    }
+
+    private static function matrix_plugin_active(): bool
+    {
+        if (defined('CMS_M365MATRICES_VERSION')) {
+            return true;
+        }
+
+        if (!class_exists('CMS\\PluginManager')) {
+            return false;
+        }
+
+        try {
+            $manager = \CMS\PluginManager::instance();
+
+            return method_exists($manager, 'isPluginActive') && $manager->isPluginActive('cms-m365matrices');
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 }
