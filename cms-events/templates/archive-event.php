@@ -29,6 +29,14 @@ if (!function_exists('cms_events_view_lowercase')) {
     }
 }
 
+if (!function_exists('cms_events_view_css_color')) {
+    function cms_events_view_css_color(mixed $value, string $fallback): string
+    {
+        $color = trim((string) $value);
+        return preg_match('/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/', $color) === 1 ? $color : $fallback;
+    }
+}
+
 $events = array_values(array_filter(array_map(
     static function ($item): ?object {
         if (is_object($item)) {
@@ -94,7 +102,28 @@ $monthLabels = [
     5 => 'Mai', 6 => 'Juni', 7 => 'Juli', 8 => 'August',
     9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Dezember',
 ];
+$designPrimary = cms_events_view_css_color($settings['design_primary_color'] ?? null, '#3b82f6');
+$designAccent = cms_events_view_css_color($settings['design_accent_color'] ?? null, '#1d4ed8');
+$designCardBg = cms_events_view_css_color($settings['design_card_bg'] ?? null, '#f0f7ff');
+$archiveHeaderFrom = cms_events_view_css_color($settings['archive_header_bg_from'] ?? null, '#1d4ed8');
+$archiveHeaderTo = cms_events_view_css_color($settings['archive_header_bg_to'] ?? null, '#3b82f6');
+$archiveHeaderTitle = cms_events_view_css_color($settings['archive_header_title_color'] ?? null, '#ffffff');
+$designCta = cms_events_view_css_color($settings['design_cta_color'] ?? null, $designPrimary);
+$designRadius = max(0, min(32, (int) ($settings['design_border_radius'] ?? 12)));
 ?>
+<style>
+:root {
+    --ev-primary: <?= htmlspecialchars($designPrimary, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-primary-h: <?= htmlspecialchars($designAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-accent: <?= htmlspecialchars($designAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-card-bg: <?= htmlspecialchars($designCardBg, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-hdr-from: <?= htmlspecialchars($archiveHeaderFrom, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-hdr-to: <?= htmlspecialchars($archiveHeaderTo, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-hdr-title: <?= htmlspecialchars($archiveHeaderTitle, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-cta: <?= htmlspecialchars($designCta, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-radius: <?= (int) $designRadius ?>px;
+}
+</style>
 <main class="phinit-plugin cms-events-wrap" data-cms-events-filter-root data-cms-events-archive-url="<?= htmlspecialchars($archiveUrl, ENT_QUOTES, 'UTF-8') ?>" data-cms-events-date-filter-active="<?= $dateFilterExplicit ? '1' : '0' ?>" data-cms-events-current-month="<?= (int) $currentMonth ?>" data-cms-events-current-year="<?= (int) $currentYear ?>">
     <nav class="cms-events-filter-nav" aria-label="Eventfilter">
         <form class="cms-events-filter" method="get" action="<?= htmlspecialchars($archiveUrl, ENT_QUOTES, 'UTF-8') ?>" data-cms-events-filter-form>

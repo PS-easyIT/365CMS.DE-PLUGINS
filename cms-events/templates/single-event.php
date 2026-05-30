@@ -75,6 +75,14 @@ if (!function_exists('cms_events_view_lowercase')) {
     }
 }
 
+if (!function_exists('cms_events_view_css_color')) {
+    function cms_events_view_css_color(mixed $value, string $fallback): string
+    {
+        $color = trim((string) $value);
+        return preg_match('/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/', $color) === 1 ? $color : $fallback;
+    }
+}
+
 if (!function_exists('cms_events_view_trim_text')) {
     function cms_events_view_trim_text(string $text, int $length): string
     {
@@ -286,6 +294,14 @@ $primarySpeakerLink = '';
 $primarySpeakerImage = '';
 $primarySpeakerPosition = '';
 $primarySpeakerBio = '';
+$settings = is_array($settings ?? null) ? $settings : [];
+$designPrimary = cms_events_view_css_color($settings['design_primary_color'] ?? null, '#3b82f6');
+$designAccent = cms_events_view_css_color($settings['design_accent_color'] ?? null, '#1d4ed8');
+$designCardBg = cms_events_view_css_color($settings['design_card_bg'] ?? null, '#f0f7ff');
+$detailHeaderBg = cms_events_view_css_color($settings['design_detail_header_bg'] ?? ($settings['detail_header_bg_from'] ?? null), '#f8fafc');
+$detailHeaderColor = cms_events_view_css_color($settings['design_detail_header_color'] ?? ($settings['detail_header_title_color'] ?? null), '#1e293b');
+$designCta = cms_events_view_css_color($settings['design_cta_color'] ?? null, $designPrimary);
+$designRadius = max(0, min(32, (int) ($settings['design_border_radius'] ?? 12)));
 
 if ($primarySpeaker) {
     $primarySpeakerName = trim((string) ($primarySpeaker->speaker_name ?? (($primarySpeaker->first_name ?? '') . ' ' . ($primarySpeaker->last_name ?? ''))));
@@ -298,6 +314,19 @@ if ($primarySpeaker) {
     $primarySpeakerBio = trim(strip_tags((string) ($primarySpeaker->short_bio ?? '')));
 }
 ?>
+<style>
+:root {
+    --ev-primary: <?= htmlspecialchars($designPrimary, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-primary-h: <?= htmlspecialchars($designAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-accent: <?= htmlspecialchars($designAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-card-bg: <?= htmlspecialchars($designCardBg, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-detail-hdr-bg: <?= htmlspecialchars($detailHeaderBg, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-detail-hdr-text: <?= htmlspecialchars($detailHeaderColor, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-detail-accent: <?= htmlspecialchars($designPrimary, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-cta: <?= htmlspecialchars($designCta, ENT_QUOTES, 'UTF-8') ?>;
+    --ev-radius: <?= (int) $designRadius ?>px;
+}
+</style>
 <main class="phinit-plugin cms-events-wrap cms-events-detail">
     <nav class="cms-events-breadcrumb" aria-label="Breadcrumb">
         <a href="<?= htmlspecialchars($baseUrl . '/', ENT_QUOTES, 'UTF-8') ?>">Home</a>

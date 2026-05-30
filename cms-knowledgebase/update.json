@@ -1,13 +1,13 @@
 {
     "name": "CMS Knowledgebase",
     "slug": "cms-knowledgebase",
-    "version": "3.0.2",
+    "version": "3.0.3",
     "requires_cms": "3.0.0",
     "tested_cms": "3.0.0",
     "min_php": "8.4",
     "author": "365 Network",
     "author_uri": "https://365network.de",
-    "download_url": "https://365network.de/plugins/cms-knowledgebase/cms-knowledgebase-3.0.2.zip",
-    "last_updated": "2026-05-17",
-    "changelog": "365CMS-3.0.2: Der öffentliche Hauptmenü-Link ist jetzt standardmäßig deaktiviert und bleibt ausschließlich über die Knowledgebase-Einstellungen aktivierbar."
+    "download_url": "https://365network.de/plugins/cms-knowledgebase/cms-knowledgebase-3.0.3.zip",
+    "last_updated": "2026-05-30",
+    "changelog": "365CMS-3.0.3: Knowledgebase-Adminseiten erhalten eine robuste Callback-Fallback-Zuordnung für /admin/plugins/knowledgebase-dashboard/* und laden die Admin-Menü-Kompatibilität zuverlässig."
 }

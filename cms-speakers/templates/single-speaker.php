@@ -70,6 +70,14 @@ if (!function_exists('cms_speakers_view_public_url')) {
     }
 }
 
+if (!function_exists('cms_speakers_view_css_color')) {
+    function cms_speakers_view_css_color(mixed $value, string $fallback): string
+    {
+        $color = trim((string) $value);
+        return preg_match('/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/', $color) === 1 ? $color : $fallback;
+    }
+}
+
 if (!function_exists('cms_speakers_view_speaker_url')) {
     function cms_speakers_view_speaker_url(object $speaker): string
     {
@@ -138,11 +146,33 @@ if (empty($topicList) && !empty($s->topics)) {
     $decoded = json_decode((string) $s->topics, true);
     $topicList = is_array($decoded) ? $decoded : array_filter(array_map('trim', explode(',', (string) $s->topics)));
 }
-
+$settings = is_array($settings ?? null) ? $settings : [];
+$speakerPrimary = cms_speakers_view_css_color($settings['design_primary_color'] ?? null, '#8b5cf6');
+$speakerAccent = cms_speakers_view_css_color($settings['design_accent_color'] ?? null, '#7c3aed');
+$speakerCardBg = cms_speakers_view_css_color($settings['design_card_bg'] ?? null, '#faf5ff');
+$speakerHeaderFrom = cms_speakers_view_css_color($settings['detail_header_bg_from'] ?? ($settings['archive_header_bg_from'] ?? null), '#4c1d95');
+$speakerHeaderTo = cms_speakers_view_css_color($settings['detail_header_bg_to'] ?? ($settings['archive_header_bg_to'] ?? null), '#7c3aed');
+$speakerHeaderTitle = cms_speakers_view_css_color($settings['detail_header_title_color'] ?? ($settings['archive_header_title_color'] ?? null), '#ffffff');
+$speakerRadius = max(0, min(32, (int) ($settings['design_border_radius'] ?? 12)));
 $topicList = array_values(array_unique(array_filter(array_map(static fn($topic): string => trim((string) $topic), $topicList))));
 $eventList = array_values((array) ($events ?? []));
 $relatedSpeakers = array_slice((array) ($related_speakers ?? []), 0, 3);
 ?>
+<style>
+:root {
+    --sp-primary: <?= htmlspecialchars($speakerPrimary, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-primary-h: <?= htmlspecialchars($speakerAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-accent: <?= htmlspecialchars($speakerAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-secondary: <?= htmlspecialchars($speakerAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-card-bg: <?= htmlspecialchars($speakerCardBg, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-card-top-bg: <?= htmlspecialchars($speakerCardBg, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-hdr-from: <?= htmlspecialchars($speakerHeaderFrom, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-hdr-to: <?= htmlspecialchars($speakerHeaderTo, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-hdr-title: <?= htmlspecialchars($speakerHeaderTitle, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-border: <?= htmlspecialchars($speakerAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-radius: <?= (int) $speakerRadius ?>px;
+}
+</style>
 <main class="phinit-plugin cms-speaker-wrap cms-speaker-detail">
     <nav class="cms-speaker-breadcrumb" aria-label="Breadcrumb">
         <a href="<?= htmlspecialchars($baseUrl . '/', ENT_QUOTES, 'UTF-8') ?>">Home</a>

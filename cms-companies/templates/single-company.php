@@ -51,210 +51,192 @@ $companyLogoUrl     = cms_companies_public_url((string) ($company->logo_url ?? '
 $companyWebsiteUrl  = cms_companies_public_url((string) ($company->website ?? ''));
 $companyEmail       = filter_var(trim((string) ($company->email ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
 $companyPhoneHref   = preg_replace('/[^0-9+]/', '', trim((string) ($company->phone ?? ''))) ?: '';
+$companyNameRaw     = trim((string) ($company->name ?? 'Unternehmen')) ?: 'Unternehmen';
+$companyDescription = trim((string) ($company->description ?? ''));
+$companyIndustry    = trim((string) ($company->industry ?? ''));
+$companySize        = trim((string) ($company->company_size ?? ''));
+$companyCity        = trim((string) ($company->location_city ?? ''));
+$companyZip         = trim((string) ($company->location_zip ?? ''));
+$companyCountry     = trim((string) ($company->location_country ?? ''));
+$companyLocation    = trim($companyZip . ($companyZip !== '' && $companyCity !== '' ? ' ' : '') . $companyCity);
+if ($companyCountry !== '' && $companyCountry !== 'Deutschland') {
+    $companyLocation .= ($companyLocation !== '' ? ', ' : '') . $companyCountry;
+}
+$partnerLabel = $is_sponsor ? 'Sponsor' : ($is_top_partner ? 'Top-Partner' : ($is_partner ? 'Partner' : 'Unternehmen'));
+$coCssColor = static function (mixed $value, string $fallback): string {
+    $color = trim((string) $value);
+    return preg_match('/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/', $color) === 1 ? $color : $fallback;
+};
+$coPrimary = $coCssColor($settings['design_primary_color'] ?? null, '#0891b2');
+$coAccent = $coCssColor($settings['design_accent_color'] ?? null, '#e0f2fe');
+$coCta = $coCssColor($settings['design_cta_color'] ?? null, $coPrimary);
+$coCardBg = $coCssColor($settings['design_card_bg'] ?? null, '#ffffff');
+$coDetailBg = $coCssColor($settings['design_detail_header_bg'] ?? null, '#f8fafc');
+$coDetailColor = $coCssColor($settings['design_detail_header_color'] ?? null, '#1e293b');
+$coRadius = max(0, min(32, (int) ($settings['design_border_radius'] ?? 12)));
 ?>
-<main class="phinit-plugin co-single-v2">
+<style>
+:root {
+    --co-primary: <?= htmlspecialchars($coPrimary, ENT_QUOTES, 'UTF-8') ?>;
+    --co-primary-d: <?= htmlspecialchars($coCta, ENT_QUOTES, 'UTF-8') ?>;
+    --co-primary-x: <?= htmlspecialchars($coCta, ENT_QUOTES, 'UTF-8') ?>;
+    --co-accent: <?= htmlspecialchars($coAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --co-card-bg: <?= htmlspecialchars($coCardBg, ENT_QUOTES, 'UTF-8') ?>;
+    --co-detail-hdr-bg: <?= htmlspecialchars($coDetailBg, ENT_QUOTES, 'UTF-8') ?>;
+    --co-detail-hdr-color: <?= htmlspecialchars($coDetailColor, ENT_QUOTES, 'UTF-8') ?>;
+    --co-radius: <?= (int) $coRadius ?>px;
+}
+</style>
+<main class="phinit-plugin co-single-v2 co-single-v3 co-company-detail">
+    <nav class="co-breadcrumb co-company-detail__breadcrumb" aria-label="Breadcrumb">
+        <a href="<?= htmlspecialchars($base_url . '/companies', ENT_QUOTES, 'UTF-8') ?>">Unternehmen</a>
+        <span class="co-breadcrumb__sep" aria-hidden="true">›</span>
+        <span class="co-breadcrumb__cur" aria-current="page"><?= htmlspecialchars($companyNameRaw, ENT_QUOTES, 'UTF-8') ?></span>
+    </nav>
 
-  <nav class="co-breadcrumb">
-    <a href="<?= htmlspecialchars($base_url . '/companies', ENT_QUOTES, 'UTF-8') ?>">← Unternehmen</a>
-    <span class="co-breadcrumb__sep">/</span>
-    <span class="co-breadcrumb__cur"><?= $sec->escape(mb_strimwidth($company->name ?? '', 0, 60, '…')) ?></span>
-  </nav>
-
-  <header class="co-hero-v2 phinit-card phinit-card--accent">
-    <div class="co-hero-v2__badges">
-      <?php if ($is_sponsor): ?>
-        <span class="co-hero-v2__badge co-hero-v2__badge--sponsor">★ Sponsor</span>
-      <?php elseif ($is_top_partner): ?>
-        <span class="co-hero-v2__badge co-hero-v2__badge--top-partner">◆ Top-Partner</span>
-      <?php elseif ($is_partner): ?>
-        <span class="co-hero-v2__badge co-hero-v2__badge--partner">● Partner</span>
-      <?php endif; ?>
-    </div>
-    <div class="co-hero-v2__inner">
-      <?php if ($companyLogoUrl !== ''): ?>
-        <div class="co-hero-v2__avatar"><img src="<?= $sec->escape($companyLogoUrl) ?>" alt="<?= $sec->escape($company->name) ?>" width="120" height="120" loading="eager" decoding="async"></div>
-      <?php else: ?>
-        <div class="co-hero-v2__avatar co-hero-v2__avatar--placeholder"><?= $sec->escape($initials) ?></div>
-      <?php endif; ?>
-      <div class="co-hero-v2__meta">
-        <h1 class="co-hero-v2__title"><?= $sec->escape($company->name) ?></h1>
-      </div>
-    </div>
-  </header>
-
-  <!-- Bridge Cards (überlappen Hero, wie Expert-Single) -->
-  <div class="co-bridge-v2">
-    <section class="co-bridge-v2__about phinit-card">
-      <h2 class="co-bridge-v2__title">Über das Unternehmen</h2>
-      <?php $companyDescription = trim((string) ($company->description ?? '')); ?>
-      <?php if ($companyDescription !== ''): ?>
-        <div class="co-bridge-v2__text co-wysiwyg-content"><?= nl2br(htmlspecialchars($companyDescription, ENT_QUOTES, 'UTF-8')) ?></div>
-      <?php else: ?>
-        <p class="co-bridge-v2__text co-empty-text">Noch keine Beschreibung hinterlegt.</p>
-      <?php endif; ?>
-    </section>
-    <section class="co-bridge-v2__contact phinit-card">
-      <h2 class="co-bridge-v2__title">&#128203; Details &amp; Kontakt</h2>
-      <div class="co-bridge-v2__contact-body">
-
-        <!-- Buchungs-Button -->
-        <a href="#contact" class="phinit-btn phinit-btn--primary co-bridge-v2__book-btn">Nachricht / Buchen</a>
-
-        <!-- Kontakt-Icons in einer Reihe -->
-        <?php if ($companyWebsiteUrl !== '' || $companyEmail !== '' || $companyPhoneHref !== ''): ?>
-        <div class="co-bridge-v2__icon-row">
-          <?php if ($companyWebsiteUrl !== ''): ?>
-            <a href="<?= $sec->escape($companyWebsiteUrl) ?>" target="_blank" rel="noopener noreferrer" class="co-bridge-v2__icon-btn">Web</a>
-          <?php endif; ?>
-          <?php if ($companyEmail !== ''): ?>
-            <a href="mailto:<?= $sec->escape($companyEmail) ?>" class="co-bridge-v2__icon-btn">Mail</a>
-          <?php endif; ?>
-          <?php if ($companyPhoneHref !== ''): ?>
-            <a href="tel:<?= $sec->escape($companyPhoneHref) ?>" class="co-bridge-v2__icon-btn">Anruf</a>
-          <?php endif; ?>
-        </div>
-        <?php endif; ?>
-
-        <hr class="co-bridge-v2__divider">
-
-        <!-- Unternehmensdaten -->
-        <?php
-        $facts = [];
-        if (!empty($company->industry))       $facts[] = ['Branche',    $sec->escape($company->industry)];
-        if (!empty($company->company_size))   $facts[] = ['Größe',      $sec->escape($company->company_size)];
-        if (!empty($company->employee_count)) $facts[] = ['Mitarbeiter', number_format((int)$company->employee_count, 0, ',', '.')];
-        if (!empty($company->founded_year))   $facts[] = ['Gegründet',  (string)(int)$company->founded_year];
-        if (!empty($company->location_city)) {
-            $loc = trim(($company->location_zip ?? '') . ' ' . $company->location_city);
-            if (!empty($company->location_country) && $company->location_country !== 'Deutschland') {
-                $loc .= ', ' . $company->location_country;
-            }
-            $facts[] = ['Standort', $sec->escape($loc)];
-        }
-        if (!empty($facts)): ?>
-        <div class="co-bridge-v2__facts">
-          <?php foreach ($facts as [$lbl, $val]): ?>
-            <div class="co-bridge-v2__fact">
-              <span class="co-bridge-v2__fact-lbl"><?= $lbl ?></span>
-              <span class="co-bridge-v2__fact-val"><?= $val ?></span>
-            </div>
-          <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
-
-      </div>
-    </section>
-  </div>
-
-  <div class="co-people-v2">
-
-      <?php if (!empty($experts)): ?>
-        <div class="co-sec-v2">
-          <h2 class="co-sec-v2__title">
-            Unsere Experten
-            <span class="co-section-count"><?= count($experts) ?></span>
-          </h2>
-          <div class="co-expert-grid-v2">
-            <?php foreach ($experts as $exp):
-              $expFirstName = $exp->first_name ?? '';
-              $expLastName  = $exp->last_name  ?? '';
-              $expName      = $sec->escape(trim($expFirstName . ' ' . $expLastName) ?: 'Experte');
-              $expRole      = !empty($exp->role)     ? $sec->escape($exp->role)     : null;
-              $expCity      = !empty($exp->location_city) ? $sec->escape($exp->location_city) : null;
-              $expAvail     = $exp->availability ?? 'available';
-              $expPhoto     = cms_companies_public_url((string) ($exp->photo_url ?? ''));
-              $expId        = (int)($exp->id ?? 0);
-              $letter       = mb_strtoupper(mb_substr($expFirstName ?: $expLastName, 0, 1) ?: 'E');
-              $expColors    = [['#5e72e4','#8965e0'],['#0891b2','#06b6d4'],['#16a34a','#22c55e'],['#7c3aed','#a855f7'],['#d97706','#f59e0b']];
-              $ec           = $expColors[abs(crc32($expFirstName . $expLastName)) % count($expColors)];
-              $expGradient  = "linear-gradient(135deg,{$ec[0]},{$ec[1]})";
-            ?>
-              <div class="co-exp-row">
-                <div class="co-exp-row__top">
-                  <?php if ($expPhoto): ?>
-                    <div class="co-exp-row__av"><img src="<?= $expPhoto ?>" alt="<?= $expName ?>" width="56" height="56" loading="lazy" decoding="async"></div>
-                  <?php else: ?>
-                    <div class="co-exp-row__av co-exp-row__av--placeholder"><?= $letter ?></div>
-                  <?php endif; ?>
-                  <div class="co-exp-row__info">
-                    <div class="co-exp-row__name">
-                      <?php if ($expId > 0): ?>
-                        <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/experts/' . $expId, ENT_QUOTES, 'UTF-8') ?>"><?= $expName ?></a>
-                      <?php else: ?>
-                        <?= $expName ?>
-                      <?php endif; ?>
-                    </div>
-                    <?php if ($expRole): ?><div class="co-exp-row__sub"><?= $expRole ?></div><?php endif; ?>
-                    <?php if ($expCity): ?><div class="co-exp-row__sub"><?= $expCity ?></div><?php endif; ?>
-                  </div>
+    <div class="co-company-detail__grid">
+        <article class="co-company-detail__main">
+            <header class="co-company-detail__head phinit-card">
+                <div class="co-company-detail__badges">
+                    <span class="co-company-detail__badge co-company-detail__badge--<?= $is_sponsor ? 'sponsor' : ($is_top_partner ? 'top' : ($is_partner ? 'partner' : 'standard')) ?>"><?= htmlspecialchars($partnerLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php if ($companyIndustry !== ''): ?>
+                        <span class="co-company-detail__badge co-company-detail__badge--industry"><?= htmlspecialchars($companyIndustry, ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php endif; ?>
                 </div>
-                <?php if ($expId > 0): ?>
-                  <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/experts/' . $expId, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary co-btn-v2 co-btn-v2--ghost co-btn-v2--sm co-btn-v2--full">Profil →</a>
-                <?php endif; ?>
-              </div>
-            <?php endforeach; ?>
-          </div>
-        </div>
-      <?php endif; ?>
-
-      <?php if (!empty($speakers)): ?>
-        <div class="co-sec-v2">
-          <h2 class="co-sec-v2__title">
-            Unsere Speaker
-            <span class="co-section-count"><?= count($speakers) ?></span>
-          </h2>
-          <div class="co-expert-grid-v2">
-            <?php foreach ($speakers as $spk):
-              $spkFirst  = $spk->first_name ?? '';
-              $spkLast   = $spk->last_name  ?? '';
-              $spkName   = $sec->escape(trim($spkFirst . ' ' . $spkLast) ?: 'Speaker');
-              $spkRole   = !empty($spk->position)      ? $sec->escape($spk->position)      : null;
-              $spkCity   = !empty($spk->location_city) ? $sec->escape($spk->location_city) : null;
-              $spkAvail  = $spk->availability ?? 'available';
-              $spkPhoto  = cms_companies_public_url((string) ($spk->photo_url ?? ''));
-              $spkId     = (int)($spk->id ?? 0);
-              $letter    = mb_strtoupper(mb_substr($spkFirst ?: $spkLast, 0, 1) ?: 'S');
-              $spkColors = [['#5e72e4','#8965e0'],['#0891b2','#06b6d4'],['#16a34a','#22c55e'],['#7c3aed','#a855f7'],['#d97706','#f59e0b']];
-              $sc        = $spkColors[abs(crc32($spkFirst . $spkLast)) % count($spkColors)];
-              $spkGrad   = "linear-gradient(135deg,{$sc[0]},{$sc[1]})";
-            ?>
-              <div class="co-exp-row">
-                <div class="co-exp-row__top">
-                  <?php if ($spkPhoto): ?>
-                    <div class="co-exp-row__av"><img src="<?= $spkPhoto ?>" alt="<?= $spkName ?>" width="56" height="56" loading="lazy" decoding="async"></div>
-                  <?php else: ?>
-                    <div class="co-exp-row__av co-exp-row__av--placeholder"><?= $letter ?></div>
-                  <?php endif; ?>
-                  <div class="co-exp-row__info">
-                    <div class="co-exp-row__name">
-                      <?php if ($spkId > 0): ?>
-                        <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/speakers/' . $spkId, ENT_QUOTES, 'UTF-8') ?>"><?= $spkName ?></a>
-                      <?php else: ?>
-                        <?= $spkName ?>
-                      <?php endif; ?>
+                <div class="co-company-detail__title-row">
+                    <div class="co-company-detail__logo-box">
+                        <?php if ($companyLogoUrl !== ''): ?>
+                            <img src="<?= htmlspecialchars($companyLogoUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($companyNameRaw, ENT_QUOTES, 'UTF-8') ?> Logo" width="120" height="80" loading="eager" decoding="async">
+                        <?php else: ?>
+                            <span aria-hidden="true"><?= htmlspecialchars($initials, ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php endif; ?>
                     </div>
-                    <?php if ($spkRole): ?><div class="co-exp-row__sub"><?= $spkRole ?></div><?php endif; ?>
-                    <?php if ($spkCity): ?><div class="co-exp-row__sub"><?= $spkCity ?></div><?php endif; ?>
-                  </div>
+                    <div>
+                        <p class="phinit-overline">Unternehmensprofil</p>
+                        <h1><?= htmlspecialchars($companyNameRaw, ENT_QUOTES, 'UTF-8') ?></h1>
+                        <?php if ($companyLocation !== '' || $companySize !== ''): ?>
+                            <p class="co-company-detail__subtitle"><?= htmlspecialchars(trim($companyLocation . ($companyLocation !== '' && $companySize !== '' ? ' · ' : '') . $companySize), ENT_QUOTES, 'UTF-8') ?></p>
+                        <?php endif; ?>
+                    </div>
                 </div>
-                <?php if ($spkId > 0): ?>
-                  <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/speakers/' . $spkId, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary co-btn-v2 co-btn-v2--ghost co-btn-v2--sm co-btn-v2--full">Profil →</a>
+            </header>
+
+            <section class="phinit-card co-company-detail__section">
+                <h2>Über das Unternehmen</h2>
+                <?php if ($companyDescription !== ''): ?>
+                    <div class="co-company-detail__content co-wysiwyg-content"><?= nl2br(htmlspecialchars($companyDescription, ENT_QUOTES, 'UTF-8')) ?></div>
+                <?php else: ?>
+                    <p class="co-empty-text">Für dieses Unternehmen ist noch keine Beschreibung hinterlegt.</p>
                 <?php endif; ?>
-              </div>
-            <?php endforeach; ?>
-          </div>
-        </div>
-      <?php endif; ?>
+            </section>
 
-  </div>
+            <?php if (!empty($experts)): ?>
+                <section class="phinit-card co-company-detail__section" aria-labelledby="co-company-experts-heading">
+                    <h2 id="co-company-experts-heading">Experten <span class="co-section-count"><?= count($experts) ?></span></h2>
+                    <div class="co-company-people-grid">
+                        <?php foreach ($experts as $exp): ?>
+                            <?php
+                            $personFirst = trim((string) ($exp->first_name ?? ''));
+                            $personLast = trim((string) ($exp->last_name ?? ''));
+                            $personName = trim($personFirst . ' ' . $personLast) ?: 'Experte';
+                            $personRole = trim((string) ($exp->role ?? $exp->position ?? ''));
+                            $personCity = trim((string) ($exp->location_city ?? ''));
+                            $personPhoto = cms_companies_public_url((string) ($exp->photo_url ?? ''));
+                            $personId = (int) ($exp->id ?? 0);
+                            $personInitial = mb_strtoupper(mb_substr($personFirst !== '' ? $personFirst : ($personLast !== '' ? $personLast : 'E'), 0, 1));
+                            ?>
+                            <article class="co-company-person-card">
+                                <div class="co-company-person-card__avatar">
+                                    <?php if ($personPhoto !== ''): ?>
+                                        <img src="<?= htmlspecialchars($personPhoto, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($personName, ENT_QUOTES, 'UTF-8') ?>" width="56" height="56" loading="lazy" decoding="async">
+                                    <?php else: ?>
+                                        <span aria-hidden="true"><?= htmlspecialchars($personInitial, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="co-company-person-card__body">
+                                    <h3><?= htmlspecialchars($personName, ENT_QUOTES, 'UTF-8') ?></h3>
+                                    <?php if ($personRole !== ''): ?><p><?= htmlspecialchars($personRole, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+                                    <?php if ($personCity !== ''): ?><p><?= htmlspecialchars($personCity, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+                                </div>
+                                <?php if ($personId > 0): ?>
+                                    <a href="<?= htmlspecialchars($base_url . '/experts/' . $personId, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary">Profil</a>
+                                <?php endif; ?>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
 
-  <?php if (!(int)($company->user_id ?? 0)): ?>
-  <div class="co-claim-banner">
-    <div class="co-claim-banner__text">
-      <strong>Dieses Unternehmensprofil wurde von der Redaktion angelegt.</strong>
-      Gehört es Ihnen? Registrieren Sie sich kostenlos und übernehmen Sie die Verwaltung.
+            <?php if (!empty($speakers)): ?>
+                <section class="phinit-card co-company-detail__section" aria-labelledby="co-company-speakers-heading">
+                    <h2 id="co-company-speakers-heading">Speaker <span class="co-section-count"><?= count($speakers) ?></span></h2>
+                    <div class="co-company-people-grid">
+                        <?php foreach ($speakers as $spk): ?>
+                            <?php
+                            $personFirst = trim((string) ($spk->first_name ?? ''));
+                            $personLast = trim((string) ($spk->last_name ?? ''));
+                            $personName = trim($personFirst . ' ' . $personLast) ?: 'Speaker';
+                            $personRole = trim((string) ($spk->position ?? ''));
+                            $personCity = trim((string) ($spk->location_city ?? ''));
+                            $personPhoto = cms_companies_public_url((string) ($spk->photo_url ?? ''));
+                            $personId = (int) ($spk->id ?? 0);
+                            $personInitial = mb_strtoupper(mb_substr($personFirst !== '' ? $personFirst : ($personLast !== '' ? $personLast : 'S'), 0, 1));
+                            ?>
+                            <article class="co-company-person-card">
+                                <div class="co-company-person-card__avatar">
+                                    <?php if ($personPhoto !== ''): ?>
+                                        <img src="<?= htmlspecialchars($personPhoto, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($personName, ENT_QUOTES, 'UTF-8') ?>" width="56" height="56" loading="lazy" decoding="async">
+                                    <?php else: ?>
+                                        <span aria-hidden="true"><?= htmlspecialchars($personInitial, ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="co-company-person-card__body">
+                                    <h3><?= htmlspecialchars($personName, ENT_QUOTES, 'UTF-8') ?></h3>
+                                    <?php if ($personRole !== ''): ?><p><?= htmlspecialchars($personRole, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+                                    <?php if ($personCity !== ''): ?><p><?= htmlspecialchars($personCity, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
+                                </div>
+                                <?php if ($personId > 0): ?>
+                                    <a href="<?= htmlspecialchars($base_url . '/speakers/' . $personId, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary">Profil</a>
+                                <?php endif; ?>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
+        </article>
+
+        <aside class="co-company-detail__aside" aria-label="Unternehmensdaten">
+            <section class="phinit-card co-company-profile-card" id="contact">
+                <h2>Details &amp; Kontakt</h2>
+                <dl class="co-company-profile-card__facts">
+                    <?php if ($companyIndustry !== ''): ?><div><dt>Branche</dt><dd><?= htmlspecialchars($companyIndustry, ENT_QUOTES, 'UTF-8') ?></dd></div><?php endif; ?>
+                    <?php if ($companySize !== ''): ?><div><dt>Größe</dt><dd><?= htmlspecialchars($companySize, ENT_QUOTES, 'UTF-8') ?></dd></div><?php endif; ?>
+                    <?php if (!empty($company->employee_count)): ?><div><dt>Mitarbeiter</dt><dd><?= number_format((int) $company->employee_count, 0, ',', '.') ?></dd></div><?php endif; ?>
+                    <?php if (!empty($company->founded_year)): ?><div><dt>Gegründet</dt><dd><?= (int) $company->founded_year ?></dd></div><?php endif; ?>
+                    <?php if ($companyLocation !== ''): ?><div><dt>Standort</dt><dd><?= htmlspecialchars($companyLocation, ENT_QUOTES, 'UTF-8') ?></dd></div><?php endif; ?>
+                    <div><dt>Status</dt><dd><?= htmlspecialchars($partnerLabel, ENT_QUOTES, 'UTF-8') ?></dd></div>
+                </dl>
+
+                <div class="co-company-profile-card__actions">
+                    <?php if ($companyWebsiteUrl !== ''): ?>
+                        <a href="<?= htmlspecialchars($companyWebsiteUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="phinit-btn phinit-btn--primary">Website besuchen</a>
+                    <?php endif; ?>
+                    <?php if ($companyEmail !== ''): ?>
+                        <a href="mailto:<?= htmlspecialchars($companyEmail, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary">E-Mail</a>
+                    <?php endif; ?>
+                    <?php if ($companyPhoneHref !== ''): ?>
+                        <a href="tel:<?= htmlspecialchars($companyPhoneHref, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary">Anrufen</a>
+                    <?php endif; ?>
+                </div>
+            </section>
+
+            <?php if (!(int) ($company->user_id ?? 0)): ?>
+                <section class="phinit-card co-company-claim-card">
+                    <h2>Profil beanspruchen</h2>
+                    <p>Dieses Unternehmensprofil wurde redaktionell angelegt. Registrieren Sie sich, um die Verwaltung zu übernehmen.</p>
+                    <a href="<?= htmlspecialchars($base_url . '/register', ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary">Jetzt registrieren</a>
+                </section>
+            <?php endif; ?>
+        </aside>
     </div>
-    <a href="<?= htmlspecialchars(rtrim(SITE_URL, '/') . '/register', ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--primary co-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
-  </div>
-  <?php endif; ?>
 </main>

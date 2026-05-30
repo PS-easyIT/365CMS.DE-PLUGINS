@@ -762,8 +762,16 @@
   padding-inline: clamp(12px, 2vw, 24px);
 }
 
-.co-archive .co-filter-bar {
+.co-archive .co-filter-nav {
   margin: 0 0 28px;
+}
+
+.co-archive .co-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -775,8 +783,31 @@
   display: none;
 }
 
+.co-archive .co-filter__field,
 .co-archive .co-filter-bar .phinit-field {
-  min-width: min(100%, 180px);
+  display: flex;
+  flex: 1 1 160px;
+  flex-direction: column;
+  gap: 4px;
+  min-width: min(100%, 160px);
+  margin: 0;
+}
+
+.co-archive .co-filter__field--search {
+  flex: 1.4 1 220px;
+}
+
+.co-archive .co-filter__field--city {
+  flex: 1 1 170px;
+}
+
+.co-archive .co-filter__field label,
+.co-archive .co-filter-bar .phinit-field > label,
+.co-archive .co-filter-bar .phinit-field > span {
+  color: var(--color-text-muted, var(--co-text-m, #475569));
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .co-archive .co-filter-input--sm {
@@ -802,6 +833,14 @@
   border-color: var(--company-card-accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--company-card-accent) 18%, transparent);
   outline: 0;
+}
+
+.co-archive .co-filter__actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .co-archive .co-btn {
@@ -841,7 +880,7 @@
 .co-archive .company-card-grid.co-grid,
 .co-archive .co-grid.company-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
   padding: 0;
   align-items: stretch;
@@ -1152,7 +1191,16 @@
   .co-archive .co-filter-bar {
     display: grid;
     grid-template-columns: 1fr;
-    margin: 0 0 var(--phinit-space-5, 24px);
+    margin: 0;
+  }
+
+  .co-archive .co-filter__field,
+  .co-archive .co-filter__actions {
+    width: 100%;
+  }
+
+  .co-archive .co-filter__actions .co-btn {
+    flex: 1 1 100%;
   }
 
   .co-archive .company-card-grid.co-grid,

@@ -24,6 +24,19 @@ $settings = array_merge([
     'design_show_specialization'   => '1',
 ], $settings ?? []);
 
+$expertCssColor = static function (mixed $value, string $fallback): string {
+    $color = trim((string) $value);
+    return preg_match('/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/', $color) === 1 ? $color : $fallback;
+};
+$expertPrimary = $expertCssColor($settings['design_primary_color'] ?? null, '#5e72e4');
+$expertAccent = $expertCssColor($settings['design_accent_color'] ?? null, '#8965e0');
+$expertCta = $expertCssColor($settings['design_cta_color'] ?? null, '#c2410c');
+$expertCardBg = $expertCssColor($settings['design_card_bg'] ?? null, '#fffdf4');
+$expertHeaderFrom = $expertCssColor($settings['archive_header_bg_from'] ?? null, '#f5ecd5');
+$expertHeaderTo = $expertCssColor($settings['archive_header_bg_to'] ?? null, '#ebe0c8');
+$expertHeaderTitle = $expertCssColor($settings['archive_header_title_color'] ?? null, '#7c4700');
+$expertRadius = max(0, min(32, (int) ($settings['design_border_radius'] ?? 12)));
+
 $experts = array_values(array_filter(array_map(
     static function ($item): ?object {
         if (is_object($item)) {
@@ -70,6 +83,21 @@ $buildArchiveUrl = static function (int $page) use ($expertsArchiveUrl, $activeP
     return $expertsArchiveUrl . ($params !== [] ? '?' . http_build_query($params) : '');
 };
 ?>
+<style>
+:root {
+    --expert-primary: <?= htmlspecialchars($expertPrimary, ENT_QUOTES, 'UTF-8') ?>;
+    --expert-primary-hover: <?= htmlspecialchars($expertAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --expert-accent: <?= htmlspecialchars($expertAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --expert-secondary: <?= htmlspecialchars($expertAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --expert-cta-color: <?= htmlspecialchars($expertCta, ENT_QUOTES, 'UTF-8') ?>;
+    --expert-cta: <?= htmlspecialchars($expertCta, ENT_QUOTES, 'UTF-8') ?>;
+    --expert-card-bg: <?= htmlspecialchars($expertCardBg, ENT_QUOTES, 'UTF-8') ?>;
+    --expert-hdr-bg: linear-gradient(135deg, <?= htmlspecialchars($expertHeaderFrom, ENT_QUOTES, 'UTF-8') ?> 0%, <?= htmlspecialchars($expertHeaderTo, ENT_QUOTES, 'UTF-8') ?> 100%);
+    --expert-hdr-title: <?= htmlspecialchars($expertHeaderTitle, ENT_QUOTES, 'UTF-8') ?>;
+    --expert-radius: <?= (int) $expertRadius ?>px;
+    --expert-card-radius: <?= (int) $expertRadius ?>px;
+}
+</style>
 <main class="phinit-plugin experts-archive-wrapper">
     <nav class="expert-filter-nav" aria-label="Expertenfilter">
         <form method="GET" action="<?= $expertsArchiveUrl ?>" class="archive-filter-bar expert-card-filter" role="search">

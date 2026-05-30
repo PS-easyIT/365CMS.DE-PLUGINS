@@ -24,6 +24,14 @@ if (!function_exists('cms_speakers_view_lowercase')) {
     }
 }
 
+if (!function_exists('cms_speakers_view_css_color')) {
+    function cms_speakers_view_css_color(mixed $value, string $fallback): string
+    {
+        $color = trim((string) $value);
+        return preg_match('/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/', $color) === 1 ? $color : $fallback;
+    }
+}
+
 $speakers = array_values(array_filter(array_map(
     static function ($item): ?object {
         if (is_object($item)) {
@@ -65,7 +73,29 @@ foreach ($speakers as $speaker) {
 }
 
 ksort($topicOptions, SORT_NATURAL | SORT_FLAG_CASE);
+$speakerPrimary = cms_speakers_view_css_color($settings['design_primary_color'] ?? null, '#8b5cf6');
+$speakerAccent = cms_speakers_view_css_color($settings['design_accent_color'] ?? null, '#7c3aed');
+$speakerCardBg = cms_speakers_view_css_color($settings['design_card_bg'] ?? null, '#faf5ff');
+$speakerHeaderFrom = cms_speakers_view_css_color($settings['archive_header_bg_from'] ?? null, '#4c1d95');
+$speakerHeaderTo = cms_speakers_view_css_color($settings['archive_header_bg_to'] ?? null, '#8b5cf6');
+$speakerHeaderTitle = cms_speakers_view_css_color($settings['archive_header_title_color'] ?? null, '#ffffff');
+$speakerRadius = max(0, min(32, (int) ($settings['design_border_radius'] ?? 12)));
 ?>
+<style>
+:root {
+    --sp-primary: <?= htmlspecialchars($speakerPrimary, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-primary-h: <?= htmlspecialchars($speakerAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-accent: <?= htmlspecialchars($speakerAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-secondary: <?= htmlspecialchars($speakerAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-card-bg: <?= htmlspecialchars($speakerCardBg, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-card-top-bg: <?= htmlspecialchars($speakerCardBg, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-hdr-from: <?= htmlspecialchars($speakerHeaderFrom, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-hdr-to: <?= htmlspecialchars($speakerHeaderTo, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-hdr-title: <?= htmlspecialchars($speakerHeaderTitle, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-border: <?= htmlspecialchars($speakerAccent, ENT_QUOTES, 'UTF-8') ?>;
+    --sp-radius: <?= (int) $speakerRadius ?>px;
+}
+</style>
 <main class="phinit-plugin cms-speaker-wrap" data-cms-speaker-filter-root>
     <nav class="cms-speaker-filter" aria-label="Speakerfilter">
         <div class="phinit-field cms-speaker-filter__field">

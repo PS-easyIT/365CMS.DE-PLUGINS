@@ -12,6 +12,8 @@ final class Menu
 {
     public static function register(): void
     {
+        self::ensureAdminMenuFunctions();
+
         if (!function_exists('add_menu_page')) {
             return;
         }
@@ -30,5 +32,27 @@ final class Menu
         add_submenu_page('knowledgebase-dashboard', 'Kategorien', '🗂️ Kategorien', 'manage_options', 'knowledgebase-categories', [Pages::class, 'renderCategories']);
         add_submenu_page('knowledgebase-dashboard', 'Eintrag bearbeiten', '➕ Neuer Eintrag', 'manage_options', 'knowledgebase-entry-editor', [Pages::class, 'renderEntryEditor']);
         add_submenu_page('knowledgebase-dashboard', 'Einstellungen', '⚙️ Einstellungen', 'manage_options', 'knowledgebase-settings', [Pages::class, 'renderSettings']);
+    }
+
+    private static function ensureAdminMenuFunctions(): void
+    {
+        if (function_exists('add_menu_page') && function_exists('renderAdminLayoutStart')) {
+            return;
+        }
+
+        $candidates = [
+            ABSPATH . 'includes/functions/admin-menu.php',
+            ABSPATH . 'CMS/includes/functions/admin-menu.php',
+        ];
+
+        foreach ($candidates as $file) {
+            if (is_file($file)) {
+                require_once $file;
+            }
+
+            if (function_exists('add_menu_page') && function_exists('renderAdminLayoutStart')) {
+                return;
+            }
+        }
     }
 }

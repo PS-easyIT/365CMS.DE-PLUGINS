@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.0.3] - 2026-05-30
+
+- Admin-Routing für `/admin/plugins/knowledgebase-dashboard/*` gehärtet: Dashboard, Einträge, Kategorien, Editor und Einstellungen erhalten eine Core-Fallback-Zuordnung, falls der Menü-Hook keinen Callback liefert.
+- Knowledgebase-Admin-Menü lädt die zentralen Admin-Kompatibilitätsfunktionen nun defensiv, bevor Menüseiten registriert werden.
+- Plugin-Metadaten auf Release `3.0.3` aktualisiert.
+
 ## [3.0.1] - 2026-05-17
 
 - Öffentliche Such-, Kategorie-, Pagination- und Slug-Parameter werden begrenzt normalisiert.

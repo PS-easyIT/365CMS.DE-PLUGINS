@@ -188,9 +188,23 @@ final class Pages
 
     private static function loadAdminMenu(): void
     {
-        $menuFile = ABSPATH . 'admin/partials/admin-menu.php';
-        if (is_file($menuFile) && !function_exists('renderAdminLayoutStart')) {
-            require_once $menuFile;
+        if (function_exists('add_menu_page') && function_exists('renderAdminLayoutStart') && function_exists('renderAdminLayoutEnd')) {
+            return;
+        }
+
+        $candidates = [
+            ABSPATH . 'includes/functions/admin-menu.php',
+            ABSPATH . 'CMS/includes/functions/admin-menu.php',
+        ];
+
+        foreach ($candidates as $menuFile) {
+            if (is_file($menuFile)) {
+                require_once $menuFile;
+            }
+
+            if (function_exists('renderAdminLayoutStart') && function_exists('renderAdminLayoutEnd')) {
+                return;
+            }
         }
     }
 

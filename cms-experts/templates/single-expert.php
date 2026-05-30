@@ -36,7 +36,40 @@ $hdr_from           = $settings['detail_header_bg_from'] ?? $settings['archive_h
 $hdr_to             = $settings['detail_header_bg_to']   ?? $settings['archive_header_bg_to']   ?? '#f8f1e4';
 $hdr_title          = $settings['archive_header_title_color']    ?? '#7c4700';
 $border_radius      = (int)($settings['design_border_radius']    ?? 12);
+$expertCssColor = static function (mixed $value, string $fallback): string {
+  $color = trim((string) $value);
+  return preg_match('/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/', $color) === 1 ? $color : $fallback;
+};
+$detail_header_bg = $expertCssColor($detail_header_bg, '#f8fafc');
+$detail_header_col = $expertCssColor($detail_header_col, '#1e293b');
+$detail_accent = $expertCssColor($detail_accent, '#5e72e4');
+$cta_color = $expertCssColor($cta_color, '#c2410c');
+$primary_color = $expertCssColor($primary_color, '#5e72e4');
+$accent_color = $expertCssColor($accent_color, '#8965e0');
+$card_bg_color = $expertCssColor($card_bg_color, '#fffdf4');
+$hdr_from = $expertCssColor($hdr_from, '#fefbf5');
+$hdr_to = $expertCssColor($hdr_to, '#f8f1e4');
+$hdr_title = $expertCssColor($hdr_title, '#7c4700');
+$border_radius = max(0, min(32, $border_radius));
 ?>
+<style>
+:root {
+  --expert-primary: <?= htmlspecialchars($primary_color, ENT_QUOTES, 'UTF-8') ?>;
+  --expert-primary-hover: <?= htmlspecialchars($accent_color, ENT_QUOTES, 'UTF-8') ?>;
+  --expert-accent: <?= htmlspecialchars($accent_color, ENT_QUOTES, 'UTF-8') ?>;
+  --expert-secondary: <?= htmlspecialchars($accent_color, ENT_QUOTES, 'UTF-8') ?>;
+  --expert-cta-color: <?= htmlspecialchars($cta_color, ENT_QUOTES, 'UTF-8') ?>;
+  --expert-cta: <?= htmlspecialchars($cta_color, ENT_QUOTES, 'UTF-8') ?>;
+  --expert-card-bg: <?= htmlspecialchars($card_bg_color, ENT_QUOTES, 'UTF-8') ?>;
+  --expert-hdr-bg: linear-gradient(135deg, <?= htmlspecialchars($hdr_from, ENT_QUOTES, 'UTF-8') ?> 0%, <?= htmlspecialchars($hdr_to, ENT_QUOTES, 'UTF-8') ?> 100%);
+  --expert-hdr-title: <?= htmlspecialchars($hdr_title, ENT_QUOTES, 'UTF-8') ?>;
+  --expert-detail-hdr-bg: <?= htmlspecialchars($detail_header_bg, ENT_QUOTES, 'UTF-8') ?>;
+  --expert-detail-hdr-color: <?= htmlspecialchars($detail_header_col, ENT_QUOTES, 'UTF-8') ?>;
+  --expert-detail-accent: <?= htmlspecialchars($detail_accent, ENT_QUOTES, 'UTF-8') ?>;
+  --expert-radius: <?= (int) $border_radius ?>px;
+  --expert-card-radius: <?= (int) $border_radius ?>px;
+}
+</style>
 
 <?php
 // ── Data Extraction ──────────────────────────────────────────────────────────
