@@ -147,7 +147,9 @@ final class CMS_Speakers_Admin
         $companies = $data['companies'] ?? [];
 
         $s = array_merge([
-            'show_main_nav_item'         => '1',
+            'show_nav_link'              => '0',
+            'show_main_nav_item'         => '0',
+            'nav_label'                  => 'Speaker',
             'archive_title'              => 'Speaker Directory',
             'archive_description'        => 'Finden Sie den passenden Redner für Ihr Event',
             'archive_per_page'           => '12',
@@ -560,12 +562,20 @@ final class CMS_Speakers_Admin
                     <label class="form-label">Einträge pro Seite</label>
                     <input type="number" name="archive_per_page" class="form-control" value="<?= htmlspecialchars($s['archive_per_page']) ?>" min="3" max="100">
                 </div>
+            </div>
+            <div class="admin-card">
+                <h3>🧭 Navigation</h3>
+                <p style="color:#64748b;font-size:.875rem;margin-bottom:1rem;">Standardmäßig wird kein Link in der öffentlichen Hauptnavigation ausgegeben.</p>
                 <div class="form-group" style="margin-top:.75rem;">
                     <label class="checkbox-label">
-                        <input type="checkbox" name="show_main_nav_item" value="1" <?= !empty($s['show_main_nav_item']) && $s['show_main_nav_item'] !== '0' ? 'checked' : '' ?>>
-                        Hauptmenüeintrag „Speaker" im Public-Header anzeigen
+                        <input type="checkbox" name="show_nav_link" value="1" <?= (string)($s['show_nav_link'] ?? '0') === '1' ? 'checked' : '' ?>>
+                        Link in Hauptnavigation anzeigen
                     </label>
                     <small style="display:block;margin-top:.35rem;color:#64748b;">Wenn deaktiviert, bleibt die Seite erreichbar unter <code>/speakers</code>, wird aber nicht im Hauptmenü verlinkt.</small>
+                </div>
+                <div class="form-group" style="margin-top:.75rem;">
+                    <label class="form-label">Navigations-Label</label>
+                    <input type="text" name="nav_label" class="form-control" value="<?= htmlspecialchars((string)($s['nav_label'] ?? 'Speaker'), ENT_QUOTES, 'UTF-8') ?>" placeholder="Speaker">
                 </div>
             </div>
             <div class="admin-card">

@@ -73,6 +73,19 @@
                 <small class="form-text">Eine Domain pro Zeile oder komma-separiert. Leer = alle gültigen externen Hosts erlauben. Subdomains eines erlaubten Hosts sind ebenfalls zulässig.</small>
             </div>
 
+            <div class="admin-card">
+                <h3>🧭 Navigation</h3>
+                <p style="color:#64748b;font-size:.875rem;margin-bottom:1rem;">Standardmäßig wird kein Link in der öffentlichen Hauptnavigation ausgegeben.</p>
+                <div class="form-group" style="margin-top:.75rem;">
+                    <label class="checkbox-label dl-checkbox-stack"><input type="checkbox" name="show_nav_link" value="1" <?php echo ($settings['show_nav_link'] ?? '0') === '1' ? 'checked' : ''; ?>> Link in Hauptnavigation anzeigen</label>
+                    <small style="display:block;margin-top:.35rem;color:#64748b;">Wenn deaktiviert, bleibt die Seite erreichbar unter <code>/downloads</code>, wird aber nicht im Hauptmenü verlinkt.</small>
+                </div>
+                <div class="form-group" style="margin-top:.75rem;">
+                    <label class="form-label">Navigations-Label</label>
+                    <input type="text" name="nav_label" class="form-control" value="<?php echo htmlspecialchars((string) ($settings['nav_label'] ?? 'Downloads'), ENT_QUOTES, 'UTF-8'); ?>" placeholder="Downloads">
+                </div>
+            </div>
+
             <div class="alert alert-success">
                 💡 Die PowerShell-, Webprojekt-, Dokument- und eBook-Typen kommen als vordefinierte Download-Templates direkt aus dem Plugin und stehen bei jedem Download-Eintrag zur Auswahl bereit. Externe Ziele kannst du hier zusätzlich auf definierte Domains eingrenzen.
             </div>

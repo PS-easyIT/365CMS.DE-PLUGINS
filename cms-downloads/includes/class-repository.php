@@ -35,6 +35,8 @@ final class CMS_Downloads_Repository
         'show_category_overview' => '1',
         'show_external_notice' => '1',
         'external_allowed_domains' => '',
+        'show_nav_link' => '0',
+        'nav_label' => 'Downloads',
     ];
 
     public static function instance(): self
@@ -101,6 +103,8 @@ final class CMS_Downloads_Repository
             'show_category_overview' => !empty($post['show_category_overview']) ? '1' : '0',
             'show_external_notice' => !empty($post['show_external_notice']) ? '1' : '0',
             'external_allowed_domains' => $this->normalize_domain_allowlist($post['external_allowed_domains'] ?? ''),
+            'show_nav_link' => !empty($post['show_nav_link']) ? '1' : '0',
+            'nav_label' => $this->clean_text($post['nav_label'] ?? 'Downloads'),
         ];
 
         foreach ($settings as $key => $value) {

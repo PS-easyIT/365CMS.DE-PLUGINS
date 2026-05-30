@@ -84,7 +84,10 @@ ksort($topicOptions, SORT_NATURAL | SORT_FLAG_CASE);
             <input id="cms-speaker-search" class="phinit-input" type="search" placeholder="Name, Unternehmen, Thema..." data-cms-speaker-filter="search">
         </div>
 
-        <button type="button" class="phinit-btn phinit-btn--secondary cms-speaker-filter__reset" data-cms-speaker-reset>Filter zurücksetzen</button>
+        <div class="cms-speaker-filter__actions" aria-label="Filteraktionen">
+            <span class="cms-speaker-filter__actions-spacer" aria-hidden="true">Aktionen</span>
+            <button type="button" class="phinit-btn phinit-btn--secondary cms-speaker-filter__reset" data-cms-speaker-reset>Filter zurücksetzen</button>
+        </div>
     </nav>
 
     <section class="speakers-grid speaker-card-grid cms-speaker-grid" aria-label="Speaker-Liste">

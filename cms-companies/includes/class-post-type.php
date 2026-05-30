@@ -60,10 +60,16 @@ final class CMS_Companies_Post_Type
 
     public function add_menu_item(): void
     {
+        $settings = CMS_Companies_Database::instance()->get_settings();
+        if ((string) ($settings['show_nav_link'] ?? '0') !== '1') {
+            return;
+        }
+
+        $nav_label = trim((string) ($settings['nav_label'] ?? 'Unternehmen')) ?: 'Unternehmen';
         $current_path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
         $is_active = strpos($current_path, '/companies') === 0 ? 'active' : '';
         
-        echo '<a href="' . SITE_URL . '/companies" class="nav-link ' . $is_active . '">Unternehmen</a>';
+        echo '<a href="' . htmlspecialchars(rtrim((string) SITE_URL, '/') . '/companies', ENT_QUOTES, 'UTF-8') . '" class="nav-link ' . htmlspecialchars($is_active, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($nav_label, ENT_QUOTES, 'UTF-8') . '</a>';
     }
 
     public function archive_page(): void
@@ -435,9 +441,10 @@ final class CMS_Companies_Post_Type
                 $db->save_setting($k, isset($_POST[$k]) ? '1' : '0');
             }
         } else {
-            foreach (['archive_title', 'archive_description', 'archive_per_page'] as $k) {
+            foreach (['archive_title', 'archive_description', 'archive_per_page', 'nav_label'] as $k) {
                 $db->save_setting($k, $sec->sanitize($_POST[$k] ?? '', 'text'));
             }
+            $db->save_setting('show_nav_link', isset($_POST['show_nav_link']) ? '1' : '0');
         }
 
         CMS\Router::instance()->redirect('/admin/companies?tab=' . $tab . '&saved=1');

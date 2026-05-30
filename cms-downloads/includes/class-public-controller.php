@@ -27,10 +27,16 @@ final class CMS_Downloads_Public_Controller
 
     public function render_nav_item(): void
     {
+        $settings = CMS_Downloads_Repository::instance()->get_settings();
+        if (($settings['show_nav_link'] ?? '0') !== '1') {
+            return;
+        }
+
+        $label = trim((string) ($settings['nav_label'] ?? 'Downloads')) ?: 'Downloads';
         $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
         $active = strpos($currentPath, '/downloads') === 0 ? 'active' : '';
 
-        echo '<a href="' . htmlspecialchars((string) SITE_URL, ENT_QUOTES, 'UTF-8') . '/downloads" class="nav-link ' . htmlspecialchars($active, ENT_QUOTES, 'UTF-8') . '">Downloads</a>';
+        echo '<a href="' . htmlspecialchars(rtrim((string) SITE_URL, '/') . '/downloads', ENT_QUOTES, 'UTF-8') . '" class="nav-link ' . htmlspecialchars($active, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
     }
 
     public function archive_page(string $slug = ''): void

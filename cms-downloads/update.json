@@ -1,12 +1,12 @@
 {
     "name": "CMS Downloads",
     "slug": "cms-downloads",
-    "version": "3.0.1",
+    "version": "3.0.2",
     "requires_cms": "3.0.0",
     "tested_cms": "3.0.0",
     "author": "365 Network",
     "author_uri": "https://365network.de",
-    "download_url": "https://365network.de/plugins/cms-downloads/cms-downloads-3.0.1.zip",
+    "download_url": "https://365network.de/plugins/cms-downloads/cms-downloads-3.0.2.zip",
     "last_updated": "2026-05-17",
-    "changelog": "365CMS-3.0.1-Kompatibilität: Download-Auslieferung setzt nosniff, validiert MIME-Headerwerte defensiv und nutzt sichere ASCII-/UTF-8-Dateinamen im Content-Disposition-Header. Public-Templates wurden von dekorativen Emoji-Labels bereinigt und restliche Admin-Inline-Styles in CSS-Klassen ausgelagert."
+    "changelog": "365CMS-3.0.2: Der öffentliche Hauptmenü-Link ist nun standardmäßig deaktiviert und kann in den Download-Einstellungen inklusive Label explizit aktiviert werden."
 }

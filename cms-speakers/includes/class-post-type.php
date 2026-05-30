@@ -43,22 +43,24 @@ final class CMS_Speakers_Post_Type
     }
     public function add_menu_item(): void
     {
-        $showMainNavItem = true;
+        $showNavLink = false;
+        $navLabel = 'Speaker';
         try {
             $settings = CMS_Speakers_Database::instance()->get_settings();
-            $showMainNavItem = ((string) ($settings['show_main_nav_item'] ?? '1')) !== '0';
+            $showNavLink = ((string) ($settings['show_nav_link'] ?? '0')) === '1';
+            $navLabel = trim((string) ($settings['nav_label'] ?? $navLabel)) ?: $navLabel;
         } catch (\Throwable $e) {
             error_log('CMS Speakers main_nav setting fallback: ' . $e->getMessage());
-            $showMainNavItem = true;
+            $showNavLink = false;
         }
 
-        if (!$showMainNavItem) {
+        if (!$showNavLink) {
             return;
         }
 
         $current_path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
         $is_active = str_starts_with($current_path, '/speakers') ? 'active' : '';
-        echo '<a href="' . htmlspecialchars(SITE_URL . '/speakers', ENT_QUOTES, 'UTF-8') . '" class="nav-link ' . htmlspecialchars($is_active, ENT_QUOTES, 'UTF-8') . '">Speaker</a>';
+        echo '<a href="' . htmlspecialchars(SITE_URL . '/speakers', ENT_QUOTES, 'UTF-8') . '" class="nav-link ' . htmlspecialchars($is_active, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($navLabel, ENT_QUOTES, 'UTF-8') . '</a>';
     }
     public function archive_page(): void
     {
@@ -431,8 +433,8 @@ final class CMS_Speakers_Post_Type
             'design_show_availability','design_show_mvp_badge',
             'design_show_formats','design_show_topics',
         ];
-        $settings_text_fields = ['archive_title','archive_description','archive_per_page'];
-        $settings_checkboxes = ['show_main_nav_item'];
+        $settings_text_fields = ['archive_title','archive_description','archive_per_page','nav_label'];
+        $settings_checkboxes = ['show_nav_link'];
 
         $settings = [];
         if ($tab === 'design') {
@@ -449,6 +451,7 @@ final class CMS_Speakers_Post_Type
             foreach ($settings_checkboxes as $k) {
                 $settings[$k] = isset($_POST[$k]) ? '1' : '0';
             }
+            $settings['show_main_nav_item'] = $settings['show_nav_link'] ?? '0';
         }
 
         CMS_Speakers_Database::instance()->save_settings($settings);

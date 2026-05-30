@@ -1857,6 +1857,22 @@
   transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
 }
 
+.cms-speaker-wrap .cms-speaker-filter__actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cms-speaker-wrap .cms-speaker-filter__actions-spacer {
+  display: block;
+  visibility: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+}
+
 .cms-speaker-wrap .cms-speaker-filter__reset:hover,
 .cms-speaker-wrap .cms-speaker-filter__reset:focus-visible {
   border-color: var(--color-navy);
@@ -2266,7 +2282,8 @@
   }
 
   .cms-speaker-wrap .cms-speaker-filter__field,
-  .cms-speaker-wrap .cms-speaker-filter__field--search {
+  .cms-speaker-wrap .cms-speaker-filter__field--search,
+  .cms-speaker-wrap .cms-speaker-filter__actions {
     flex: 1 1 100%;
   }
 }
@@ -3073,14 +3090,12 @@
 }
 
 /* CMS Speakers / Filter control alignment repair */
-.cms-speaker-wrap .cms-speaker-filter > .cms-speaker-filter__reset.phinit-btn,
-.cms-speaker-wrap .cms-speaker-filter > .cms-speaker-filter__reset {
-  position: relative;
-  top: -2px;
+.cms-speaker-wrap .cms-speaker-filter__actions > .cms-speaker-filter__reset.phinit-btn,
+.cms-speaker-wrap .cms-speaker-filter__actions > .cms-speaker-filter__reset {
+  position: static;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  align-self: flex-end;
   box-sizing: border-box;
   height: 38px;
   min-height: 38px;
@@ -3091,9 +3106,12 @@
 }
 
 @media (max-width: 520px) {
-  .cms-speaker-wrap .cms-speaker-filter > .cms-speaker-filter__reset.phinit-btn,
-  .cms-speaker-wrap .cms-speaker-filter > .cms-speaker-filter__reset {
-    top: 0;
+  .cms-speaker-wrap .cms-speaker-filter__actions > .cms-speaker-filter__reset.phinit-btn,
+  .cms-speaker-wrap .cms-speaker-filter__actions > .cms-speaker-filter__reset {
     width: 100%;
+  }
+
+  .cms-speaker-wrap .cms-speaker-filter__actions-spacer {
+    display: none;
   }
 }

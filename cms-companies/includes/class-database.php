@@ -533,15 +533,20 @@ final class CMS_Companies_Database
 
     public function get_settings(): array
     {
+        $defaults = [
+            'show_nav_link' => '0',
+            'nav_label'     => 'Unternehmen',
+        ];
+
         $db = CMS\Database::instance();
         try {
             $stmt = $db->prepare("SELECT setting_key, setting_value FROM {$db->prefix()}company_plugin_settings");
             $stmt->execute([]);
             $rows = $stmt->fetchAll(\PDO::FETCH_OBJ);
         } catch (\Throwable $e) {
-            return [];
+            return $defaults;
         }
-        $out = [];
+        $out = $defaults;
         foreach ($rows as $row) {
             $out[$row->setting_key] = $row->setting_value;
         }

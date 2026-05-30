@@ -78,6 +78,7 @@ final class Installer
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
         $this->seedDefaults();
+        $this->disableDefaultNavLink();
         $this->syncCategoriesFromEntries();
         $this->storeVersion();
     }
@@ -110,6 +111,14 @@ final class Installer
                 'setting_value' => $value,
             ]);
         }
+    }
+
+    private function disableDefaultNavLink(): void
+    {
+        $db = Database::instance();
+        $table = $db->prefix() . 'kb_settings';
+        $stmt = $db->prepare("UPDATE {$table} SET setting_value = '0' WHERE setting_key = 'show_nav_link'");
+        $stmt->execute();
     }
 
     private function syncCategoriesFromEntries(): void

@@ -132,6 +132,8 @@ final class CMS_Companies_Admin
             'archive_title'                 => 'Unternehmen & Partner',
             'archive_description'           => 'Entdecken Sie Unternehmen und IT-Partner in unserem Netzwerk.',
             'archive_per_page'              => '12',
+            'show_nav_link'                 => '0',
+            'nav_label'                     => 'Unternehmen',
             'archive_header_icon'           => '🏢',
             'archive_header_bg_from'        => '#e0f2fe',
             'archive_header_bg_to'          => '#bae6fd',
@@ -680,6 +682,21 @@ final class CMS_Companies_Admin
                     <input type="number" name="archive_per_page" class="form-control"
                            value="<?= (int)($s['archive_per_page'] ?? 12) ?>"
                            min="4" max="100" step="4" style="width:120px;">
+                </div>
+            </div>
+            <div class="admin-card">
+                <h3>🧭 Navigation</h3>
+                <p style="color:#64748b;font-size:.875rem;margin-bottom:1rem;">Standardmäßig wird kein Link in der öffentlichen Hauptnavigation ausgegeben.</p>
+                <div class="form-group" style="margin-top:.75rem;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="show_nav_link" value="1" <?= (string)($s['show_nav_link'] ?? '0') === '1' ? 'checked' : '' ?>>
+                        Link in Hauptnavigation anzeigen
+                    </label>
+                    <small style="display:block;margin-top:.35rem;color:#64748b;">Wenn deaktiviert, bleibt die Seite erreichbar unter <code>/companies</code>, wird aber nicht im Hauptmenü verlinkt.</small>
+                </div>
+                <div class="form-group" style="margin-top:.75rem;">
+                    <label class="form-label">Navigations-Label</label>
+                    <input type="text" name="nav_label" class="form-control" value="<?= htmlspecialchars((string)($s['nav_label'] ?? 'Unternehmen'), ENT_QUOTES, 'UTF-8') ?>" placeholder="Unternehmen">
                 </div>
             </div>
             <div class="admin-card">

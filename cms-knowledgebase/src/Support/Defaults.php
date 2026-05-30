@@ -31,7 +31,7 @@ final class Defaults
             'show_keyword_badges' => '1',
             'show_related_entries' => '1',
             'related_posts_limit' => '4',
-            'show_nav_link' => '1',
+            'show_nav_link' => '0',
             'nav_label' => 'Knowledgebase',
             'content_max_width' => '1200',
             'sidebar_width' => '300',

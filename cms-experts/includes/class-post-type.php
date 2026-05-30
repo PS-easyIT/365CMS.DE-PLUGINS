@@ -70,10 +70,16 @@ final class CMS_Experts_Post_Type
      */
     public function add_menu_item(): void
     {
+        $settings = CMS_Experts_Database::instance()->get_all_plugin_settings();
+        if ((string) ($settings['show_nav_link'] ?? '0') !== '1') {
+            return;
+        }
+
+        $nav_label = trim((string) ($settings['nav_label'] ?? 'Experten')) ?: 'Experten';
         $current_path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
         $is_active = strpos($current_path, '/experts') === 0 ? 'active' : '';
         
-        echo '<a href="' . htmlspecialchars(rtrim((string) SITE_URL, '/') . '/experts', ENT_QUOTES, 'UTF-8') . '" class="nav-link ' . htmlspecialchars($is_active, ENT_QUOTES, 'UTF-8') . '">Experten</a>';
+        echo '<a href="' . htmlspecialchars(rtrim((string) SITE_URL, '/') . '/experts', ENT_QUOTES, 'UTF-8') . '" class="nav-link ' . htmlspecialchars($is_active, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($nav_label, ENT_QUOTES, 'UTF-8') . '</a>';
     }
 
     /**
@@ -92,6 +98,8 @@ final class CMS_Experts_Post_Type
             'archive_title'                => 'IT-Experten Directory',
             'archive_description'          => 'Finden Sie den passenden IT-Experten für Ihr Projekt',
             'archive_per_page'             => '12',
+            'show_nav_link'                => '0',
+            'nav_label'                    => 'Experten',
             'archive_header_icon'          => '&#128100;',
             'archive_header_bg_from'       => '#f5ecd5',
             'archive_header_bg_to'         => '#ebe0c8',
@@ -562,7 +570,7 @@ final class CMS_Experts_Post_Type
 
         // ── Einstellungen-Tab: Text-Felder ──
         $settings_text_fields = [
-            'archive_title', 'archive_description', 'archive_per_page',
+            'archive_title', 'archive_description', 'archive_per_page', 'nav_label',
         ];
 
         $save = [];
@@ -582,6 +590,7 @@ final class CMS_Experts_Post_Type
                     $save[$key] = $sec->sanitize((string)$_POST[$key], 'text');
                 }
             }
+            $save['show_nav_link'] = isset($_POST['show_nav_link']) ? '1' : '0';
         }
         if (!empty($save)) {
             CMS_Experts_Database::instance()->save_plugin_settings($save);
