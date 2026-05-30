@@ -1,5 +1,26 @@
 # Changelog – CMS M365 Azure
 
+## 1.2.3 – 2026-05-30
+
+- Management & Governance-Kategorie serviceweise nach offiziellen Microsoft-Quellen aktualisiert.
+- Azure Monitor, Azure Policy und Microsoft Cost Management erweitert.
+- Hinweise zu Azure-Monitor-Workspace-Typen, Log-Plänen, Retention, Alerting-Kosten, Azure-Monitor-Agent, Policy-Definitionen/-Initiativen, Remediation über verwaltete Identitäten, kostenloser Policy-Nutzung für Azure-Ressourcen, Cost-Management-Datenlatenz, Tags, Budgets, Exports und FinOps-Optimierung ergänzt.
+- Bestehende Admin-Anpassungen bleiben durch eine defensive Inhaltsmigration geschützt.
+
+## 1.2.2 – 2026-05-30
+
+- Hybrid & Multicloud-Kategorie serviceweise nach offiziellen Microsoft-Quellen aktualisiert.
+- Azure Arc und Azure Local erweitert.
+- Hinweise zu Arc-Steuerungsebene, Connected Machine Agent, Arc-Datendienste-Modus, Pay-as-you-go-Lizenzierung, ESU, DACH-/DSGVO-Logregionen, Azure-Local-Core-Abrechnung, 60-Tage-Testphase, AKS via Arc, Azure-Hybridvorteil und disconnected beziehungsweise Multi-Rack-Sonderfällen ergänzt.
+- Bestehende Admin-Anpassungen bleiben durch eine defensive Inhaltsmigration geschützt.
+
+## 1.2.1 – 2026-05-30
+
+- Analytics & Big Data-Kategorie serviceweise nach offiziellen Microsoft-Quellen aktualisiert.
+- Azure Synapse Analytics, Azure Data Factory und Azure Databricks erweitert.
+- Hinweise zu Synapse SQL/Spark/Pipelines, serverlosen Abfragen, Data-Explorer-Status, Fabric Data Factory als nächster Generation, ADF-Migrationsunterschieden, Databricks-DBU-/VM-Abrechnung, Unity Catalog und Standard-Tier-Retirement ergänzt.
+- Bestehende Admin-Anpassungen bleiben durch eine defensive Inhaltsmigration geschützt.
+
 ## 1.2.0 – 2026-05-30
 
 - IoT & Mixed Reality-Kategorie serviceweise nach offiziellen Microsoft-Quellen aktualisiert.

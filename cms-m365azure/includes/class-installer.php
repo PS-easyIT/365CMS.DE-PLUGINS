@@ -96,6 +96,7 @@ final class CMS_M365Azure_Installer
         self::upgrade_iot_mixed_reality_content($db, $prefix);
         self::upgrade_analytics_big_data_content($db, $prefix);
         self::upgrade_hybrid_multicloud_content($db, $prefix);
+        self::upgrade_management_governance_content($db, $prefix);
         self::normalize_literal_newlines($db, $prefix);
     }
 
@@ -1428,6 +1429,76 @@ final class CMS_M365Azure_Installer
                     'features' => ["Lokale Workloads\nCloudverbundene Verwaltung\nEdge-Szenarien"],
                     'use_cases' => ["Filialen\nIndustrie-Edge\nRegulierte Workloads"],
                     'docs_url' => ['https://learn.microsoft.com/de-de/azure/azure-local/'],
+                ],
+            ],
+        ]);
+
+        self::upsert_marker($db, $prefix, $markerKey, $markerVersion);
+    }
+
+    private static function upgrade_management_governance_content(object $db, string $prefix): void
+    {
+        $markerKey = 'content_management_governance_seed_version';
+        $markerVersion = '2026-05-30-management-governance-v1';
+
+        $markerStmt = $db->prepare("SELECT setting_value FROM {$prefix}m365azure_settings WHERE setting_key = ?");
+        $markerStmt->execute([$markerKey]);
+        if ((string) ($markerStmt->fetchColumn() ?: '') === $markerVersion) {
+            return;
+        }
+
+        self::apply_service_content_updates($db, $prefix, [
+            'azure-monitor' => [
+                'title' => 'Azure Monitor',
+                'subtitle' => 'Zentrale Observability für Azure-, Hybrid-, App- und Infrastruktur-Telemetrie.',
+                'summary' => 'Azure Monitor sammelt, analysiert und visualisiert Metriken, Logs, Traces und Events aus Cloud- und Hybridumgebungen und löst daraus Warnungen oder Betriebsaktionen aus.',
+                'content' => 'Azure Monitor ist Microsofts zentrale Observability-Plattform für Anwendungen, Infrastruktur, Netzwerke, Kubernetes, virtuelle Maschinen und hybride Ressourcen. Der Dienst bündelt Metriken, Logs, Traces und Events in Azure Monitor- und Log-Analytics-Arbeitsbereichen, macht sie über Dashboards, Workbooks, Grafana, Metrik-Explorer und KQL-Abfragen auswertbar und reagiert über Alerts, Action Groups, Autoscale und Insights. Für produktive Umgebungen sind Datenquellen, Arbeitsbereichsstrategie, Datenaufbewahrung, Alert-Design und Kostenkontrolle genauso wichtig wie die eigentliche technische Aktivierung.',
+                'features' => "Azure Monitor nutzt getrennte Plattformen für Log Analytics-Arbeitsbereiche mit KQL und Azure-Monitor-Arbeitsbereiche für Prometheus/OpenTelemetry-Metriken; Arbeitsbereichstyp und Abfragesprache bewusst wählen\nKosten entstehen vor allem durch Log-Erfassung, Aufbewahrung, Export, Plattformprotokollstreaming, Warnungen, Webtests und einzelne Zusatzfeatures; Standardmetriken und Aktivitätsprotokolle sind grundsätzlich ohne Zusatzkosten verfügbar\nAnalytics-, Basic- und Auxiliary-Protokollpläne unterscheiden sich bei Kosten, Aufbewahrung, Abfragefunktionen und Alerting; Tabellenstrategie vor großem Rollout planen\nAzure Monitor Agent und Data Collection Rules bevorzugen, um VM- und Serverdaten granular zu filtern und doppelte Datensammlung zu vermeiden\nFür Kostenkontrolle Sampling, Datenfilterung, Tageslimits mit Warnungen, Arbeitsbereichseinblicke, Advisor-Empfehlungen und passende Retention konsequent nutzen",
+                'use_cases' => "Zentrales Betriebsmonitoring für Azure-Ressourcen, VMs, AKS, Netzwerke und hybride Systeme\nApplication Performance Monitoring mit Application Insights, OpenTelemetry, Traces, Abhängigkeiten und Fehlerraten\nKQL-basierte Fehleranalyse in Log Analytics, Workbooks und Dashboards für Operations-Teams\nAlerting, Eskalation, Autoscale und Automatisierung über Action Groups und Metrik-/Logregeln\nKosten- und Datenvolumensteuerung für Log-Analytics-, Sentinel- und Application-Insights-Workspaces",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/azure-monitor/overview',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/monitor/',
+                'known' => [
+                    'subtitle' => ['Monitoring für Anwendungen, Infrastruktur und Netzwerke.'],
+                    'summary' => ['Azure Monitor sammelt Metriken, Logs und Traces und macht Betrieb, Verfügbarkeit und Performance sichtbar.'],
+                    'content' => ['Azure Monitor sammelt Metriken, Logs und Traces und macht Betrieb, Verfügbarkeit und Performance sichtbar.'],
+                    'features' => ["Metriken und Logs\nAlerts\nApplication Insights"],
+                    'use_cases' => ["Betriebsmonitoring\nPerformance-Analyse\nSLA-Überwachung"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/azure-monitor/'],
+                ],
+            ],
+            'azure-policy' => [
+                'title' => 'Azure Policy',
+                'subtitle' => 'Governance, Compliance und Ressourcenstandards per Richtlinie erzwingen.',
+                'summary' => 'Azure Policy bewertet Azure-Ressourcen gegen definierte Geschäftsregeln, fasst Regeln in Initiativen zusammen und kann nicht konforme Ressourcen auditieren, blockieren, ändern oder remediieren.',
+                'content' => 'Azure Policy hilft dir, organisatorische Standards in Azure konsistent umzusetzen. Richtliniendefinitionen beschreiben in JSON, welche Ressourceneigenschaften erlaubt, erforderlich oder zu korrigieren sind; Initiativen bündeln mehrere Definitionen zu einem Governance-Ziel. Zuweisungen gelten auf Verwaltungsgruppen, Abonnements, Ressourcengruppen oder einzelnen Ressourcen. Je nach Effekt kann Azure Policy nur auditieren, Bereitstellungen verweigern, Tags oder Einstellungen ändern, verwandte Ressourcen bereitstellen oder vorhandene Ressourcen über Remediation Tasks korrigieren.',
+                'features' => "Mit audit/auditIfNotExists starten und deny, modify oder deployIfNotExists erst nach Auswirkungsprüfung scharf schalten, damit Automatisierungen und Deployments nicht unerwartet brechen\nInitiativen vereinfachen Landing-Zone-, Sicherheits-, Tagging-, Regionen- und Compliance-Standards; Richtlinien als Code versionieren und reviewed ausrollen\nCompliance wird bei Ressourcenerstellung/-änderung, Policy-Änderungen und regelmäßig etwa alle 24 Stunden neu bewertet\nRemediation für modify und deployIfNotExists benötigt eine verwaltete Identität mit passenden RBAC-Rollen; bei SDK/IaC-Zuweisungen Berechtigungen manuell prüfen\nAzure Policy für Azure-Ressourcen ist gebührenfrei; Azure Automanage-/Maschinenkonfiguration für Server kann separat pro registriertem Server berechnet werden",
+                'use_cases' => "Landing-Zones mit erlaubten Regionen, Ressourcentypen, SKUs, Tags und Diagnoseeinstellungen standardisieren\nCompliance-Dashboard für Managementgruppen, Abonnements und Ressourcengruppen bereitstellen\nNicht konforme Ressourcen erkennen, Berichte erstellen und Remediation Tasks ausführen\nKosten-Governance durch Pflicht-Tags, erlaubte SKUs und Budget-/Monitoring-nahe Standards unterstützen\nHybrid- und Multicloud-Governance über Azure Arc und Maschinenkonfiguration erweitern",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/governance/policy/overview',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/pricing/details/azure-policy/',
+                'known' => [
+                    'subtitle' => ['Governance und Standards automatisch durchsetzen.'],
+                    'summary' => ['Azure Policy prüft und erzwingt Regeln für Ressourcen, um Compliance und Architekturstandards sicherzustellen.'],
+                    'content' => ['Azure Policy prüft und erzwingt Regeln für Ressourcen, um Compliance und Architekturstandards sicherzustellen.'],
+                    'features' => ["Policy-Definitionen\nCompliance-Auswertung\nRemediation"],
+                    'use_cases' => ["Landing Zones\nCompliance\nGovernance"],
+                    'docs_url' => ['https://learn.microsoft.com/de-de/azure/governance/policy/'],
+                ],
+            ],
+            'cost-management' => [
+                'title' => 'Microsoft Cost Management',
+                'subtitle' => 'FinOps-Werkzeuge für Kostenanalyse, Budgets, Exporte und Optimierung.',
+                'summary' => 'Microsoft Cost Management zeigt Cloudkosten über unterstützte Abrechnungsbereiche, Abonnements, Ressourcengruppen und Tags, warnt bei Budgets und stellt Daten für FinOps-Prozesse bereit.',
+                'content' => 'Microsoft Cost Management ist die FinOps- und Kostensteuerungsschicht für Microsoft-Cloud-Ausgaben. Du analysierst Kosten nach Bereichen, Diensten, Ressourcengruppen, Regionen, Tags oder eigenen Filtern, richtest Budgets und Warnungen ein, exportierst Kostendetails in Storage oder externe Systeme und nutzt Empfehlungen aus Advisor, Reservierungen, Savings Plans und Hybridvorteil zur Optimierung. Die Daten sind betriebsnah, aber während des laufenden Monats geschätzt und hängen von Abrechnungsmodell, Dienstmeldung, Tags und Datenaktualisierung ab.',
+                'features' => "Microsoft Cost Management ist ohne zusätzliche Kosten verfügbar; die eigentlichen Azure-, Marketplace-, Reservierungs-, Savings-Plan- und Support-/Steuerpositionen folgen den jeweiligen Abrechnungsregeln\nKosten des laufenden Monats sind Schätzwerte und können sich bis zur Rechnungsstellung ändern; EA- und MCA-Daten sind meist nach 8 bis 24 Stunden verfügbar, nutzungsbasierte Abonnements können bis zu 72 Stunden benötigen\nTags werden nicht automatisch von Ressourcengruppen geerbt, gelten nicht rückwirkend und erscheinen erst nach Datenaktualisierung; Taggingstrategie und ggf. Tagvererbung früh planen\nKostenanalyse zeigt im Portal typischerweise die letzten 13 Monate, während Daten länger aufbewahrt und für ältere Zeiträume per Export/API benötigt werden können\nBudgets, Anomalieerkennung, geplante Warnungen, Exporte, Kostenanalyse, Advisor-Empfehlungen, Reservierungen und Savings Plans gemeinsam als FinOps-Prozess betreiben",
+                'use_cases' => "Kostenanalyse nach Abonnement, Ressourcengruppe, Dienst, Region, Tag, Kostenstelle oder Projekt\nBudgetwarnungen und geplante Kostenberichte für Fachbereiche, Plattformteams und Finanzen\nChargeback und Showback über Tags, Abrechnungsprofile, Rechnungsabschnitte und Kostenzuteilung\nAutomatisierte Exporte für BI, Data Warehouse, ERP, Ticketsysteme oder interne FinOps-Dashboards\nOptimierung über Reservierungen, Azure Savings Plans, Azure Hybrid Benefit, Advisor-Empfehlungen und Rechte-Sizing",
+                'docs_url' => 'https://learn.microsoft.com/de-de/azure/cost-management-billing/cost-management-billing-overview',
+                'pricing_url' => 'https://azure.microsoft.com/de-de/products/cost-management/',
+                'known' => [
+                    'subtitle' => ['Cloudkosten überwachen und optimieren.'],
+                    'summary' => ['Cost Management schafft Transparenz über Budgets, Kostenstellen und Optimierungspotenziale in Azure.'],
+                    'content' => ['Cost Management schafft Transparenz über Budgets, Kostenstellen und Optimierungspotenziale in Azure.'],
+                    'features' => ["Budgets\nKostenanalyse\nExports und Empfehlungen"],
+                    'use_cases' => ["FinOps\nKostenkontrolle\nBudgetüberwachung"],
                 ],
             ],
         ]);
