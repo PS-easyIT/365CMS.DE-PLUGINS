@@ -93,11 +93,14 @@ final class CMS_365NETWORK_Admin
         $this->start_admin_layout('365NETWORK', 'cms-365network');
         $this->enqueue_admin_css();
 
-        $settings = CMS_365NETWORK_Database::instance()->get_settings();
-        $tab = $this->sanitize_tab((string) ($_GET['tab'] ?? 'domain'));
+        $database = CMS_365NETWORK_Database::instance();
+        $settings = $database->get_settings();
+        $hubSettings = $database->get_hub_settings();
+        $tab = $this->sanitize_tab((string) ($_GET['tab'] ?? 'overview'));
         $saved = (string) ($_GET['saved'] ?? '') === '1';
         $saveFailed = (string) ($_GET['error'] ?? '') === 'save_failed';
         $previewUrl = rtrim((string) SITE_URL, '/') . '/' . trim((string) ($settings['route_slug'] ?? '365network'), '/');
+        $searchUrl = rtrim($previewUrl, '/') . '/search';
         $mainHost = $this->normalize_host((string) (parse_url((string) SITE_URL, PHP_URL_HOST) ?: ''));
         $domains = $this->normalize_domain_list((string) ($settings['hub_domains'] ?? ''));
         $domainHint = $domains === []
@@ -105,9 +108,9 @@ final class CMS_365NETWORK_Admin
             : 'Aktive Zusatzdomain' . (count($domains) === 1 ? '' : 's') . ': ' . implode(', ', $domains);
 
         echo '<main class="admin-page n365-admin-shell">';
-        echo '<header class="admin-page-header">';
-        echo '<div><h2>🌐 CMS 365NETWORK</h2><p>Domain-Landingpage, Layout und Netzwerk-Daten konfigurieren.</p></div>';
-        echo '<div class="header-actions"><a class="btn btn-secondary" href="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">👁️ Vorschau öffnen</a></div>';
+        echo '<header class="admin-page-header n365-admin-hero">';
+        echo '<div><span class="n365-admin-kicker">Hub Control Center <em>v' . htmlspecialchars(CMS_365NETWORK_VERSION, ENT_QUOTES, 'UTF-8') . '</em></span><h2>🌐 CMS 365NETWORK</h2><p>Domain-Landingpage, Public-Bereiche, Beiträge, Toolbox und Analyse zentral konfigurieren.</p></div>';
+        echo '<div class="header-actions"><a class="btn btn-secondary" href="' . htmlspecialchars($searchUrl, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">🔎 Suche testen</a><a class="btn btn-primary" href="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">👁️ Vorschau öffnen</a></div>';
         echo '</header>';
 
         if ($saved) {
@@ -118,12 +121,19 @@ final class CMS_365NETWORK_Admin
             $this->admin_notice('Einstellungen konnten nicht gespeichert werden. Bitte Server-Log prüfen.', 'error');
         }
 
-        echo '<section class="admin-card n365-status-grid" aria-label="365NETWORK Status">';
-        echo '<div class="n365-status-card"><span class="n365-status-card__label">Domain-Status</span><strong>' . htmlspecialchars($domains === [] ? 'Interne Route aktiv' : 'Zusatzdomain aktiv', ENT_QUOTES, 'UTF-8') . '</strong><p>' . htmlspecialchars($domainHint, ENT_QUOTES, 'UTF-8') . '</p></div>';
-        echo '<div class="n365-status-card"><span class="n365-status-card__label">Hauptdomain</span><strong>' . htmlspecialchars($mainHost !== '' ? $mainHost : 'nicht erkannt', ENT_QUOTES, 'UTF-8') . '</strong><p>Auf der Hauptdomain bleibt die normale Startseite erhalten.</p></div>';
-        echo '</section>';
-
         $this->render_tabs($tab);
+
+        if ($tab === 'overview') {
+            $this->render_overview_tab($settings, $hubSettings, $domains, $domainHint, $mainHost, $previewUrl, $searchUrl);
+            $this->render_media_picker_modal();
+            echo '</main>';
+
+            $this->enqueue_admin_scripts();
+            $this->end_admin_layout();
+            return;
+        }
+
+        $this->render_status_strip($settings, $hubSettings, $domains, $domainHint, $mainHost);
 
         $formClass = 'admin-card admin-form n365-tab-panel n365-admin-form' . ($this->is_hub_section_tab($tab) ? ' hub-admin-form' : '');
         echo '<form class="' . htmlspecialchars($formClass, ENT_QUOTES, 'UTF-8') . '" method="post" action="' . htmlspecialchars($this->admin_url('/admin/365network/settings/save'), ENT_QUOTES, 'UTF-8') . '" novalidate>';
@@ -213,31 +223,48 @@ final class CMS_365NETWORK_Admin
 
     private function render_tabs(string $activeTab): void
     {
-        $tabs = [
-            'domain' => '🌐 Domain',
-            'hub-order' => '↕️ Reihenfolge',
-            'hub-featured' => '⭐ Featured',
-            'hub-hero' => '🏁 Hero',
-            'hub-stats' => '📊 Kennzahlen',
-            'hub-partnerband' => '🤝 Partnerband',
-            'hub-band' => '🔎 Teaser & Suche',
-            'hub-areas' => '🧭 Bereiche',
-            'hub-next-events' => '📅 Events',
-            'hub-spotlight' => '🔦 Fokus',
-            'hub-partner-columns' => '🏢 Partner',
-            'hub-toolbox' => '🧰 Toolbox',
-            'layout' => '🎨 Seitenlayout',
-            'sidebar' => '📊 Sidebar & Daten',
-            'analytics' => '📈 Analytics',
+        $tabGroups = [
+            'Start' => [
+                'overview' => '🏠 Übersicht',
+                'domain' => '🌐 Domain',
+            ],
+            'Public-Bereiche' => [
+                'hub-order' => '↕️ Reihenfolge',
+                'hub-partnerband' => '🤝 Partnerband',
+                'hub-hero' => '🏁 Hero',
+                'hub-areas' => '🧭 Bereiche',
+                'hub-next-events' => '📅 Events',
+                'hub-spotlight' => '🔦 Fokus',
+                'hub-partner-columns' => '🏢 Partner',
+                'hub-toolbox' => '🧰 Toolbox',
+                'hub-posts' => '📰 Beiträge',
+                'hub-featured' => '⭐ Featured',
+                'hub-stats' => '📊 Kennzahlen',
+                'hub-band' => '🔎 Teaser & Suche',
+            ],
+            'System' => [
+                'layout' => '🎨 Seitenlayout',
+                'sidebar' => '📊 Sidebar & Daten',
+                'analytics' => '📈 Analytics',
+            ],
         ];
 
         echo '<nav class="n365-tabs" aria-label="365NETWORK Einstellungen">';
-        foreach ($tabs as $slug => $label) {
-            $url = rtrim((string) SITE_URL, '/') . '/admin/365network?tab=' . rawurlencode($slug);
-            $class = $slug === $activeTab ? 'n365-tab active' : 'n365-tab';
-            echo '<a class="' . htmlspecialchars($class, ENT_QUOTES, 'UTF-8') . '" href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
+        foreach ($tabGroups as $groupLabel => $tabs) {
+            echo '<div class="n365-tab-group">';
+            echo '<span class="n365-tab-group__label">' . htmlspecialchars($groupLabel, ENT_QUOTES, 'UTF-8') . '</span>';
+            foreach ($tabs as $slug => $label) {
+                $class = $slug === $activeTab ? 'n365-tab active' : 'n365-tab';
+                echo '<a class="' . htmlspecialchars($class, ENT_QUOTES, 'UTF-8') . '" href="' . htmlspecialchars($this->tab_url($slug), ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
+            }
+            echo '</div>';
         }
         echo '</nav>';
+    }
+
+    private function tab_url(string $tab): string
+    {
+        return rtrim((string) SITE_URL, '/') . '/admin/365network?tab=' . rawurlencode($tab);
     }
 
     private function render_domain_tab(array $settings): void
@@ -247,6 +274,128 @@ final class CMS_365NETWORK_Admin
         $this->textarea('hub_domains', 'Zusatzdomain(s)', $settings, 'network.example.com', 'Eine Domain pro Zeile oder kommasepariert. Bitte ohne https:// und ohne Pfad eintragen.');
         $this->input('route_slug', 'Interne Vorschau-Route', $settings, '365network', 'text', 'Über diese Route ist die Landingpage unabhängig von der Domain erreichbar.');
         echo '</section>';
+    }
+
+    /**
+     * @param array<string,mixed> $settings
+     * @param array<string,mixed> $hubSettings
+     * @param array<int,string> $domains
+     */
+    private function render_overview_tab(array $settings, array $hubSettings, array $domains, string $domainHint, string $mainHost, string $previewUrl, string $searchUrl): void
+    {
+        $activeSections = 0;
+        $totalSections = 0;
+        foreach ($this->hub_section_tabs() as $tab => $meta) {
+            if ($tab === 'hub-order') {
+                continue;
+            }
+            $totalSections++;
+            if ($this->hub_section_is_visible((string) $meta['section'], $hubSettings)) {
+                $activeSections++;
+            }
+        }
+
+        $landingActive = (string) ($settings['landing_enabled'] ?? '1') === '1';
+        $postsVisible = $this->hub_section_is_visible('posts', $hubSettings);
+        $postsStyle = (string) ($hubSettings['hub_posts_style'] ?? 'separated');
+        $routeSlug = trim((string) ($settings['route_slug'] ?? '365network'), '/');
+
+        echo '<section class="admin-card n365-overview-hero" aria-label="365NETWORK Admin Übersicht">';
+        echo '<div><span class="n365-admin-kicker">Statusübersicht</span><h3>Alles Wichtige auf einen Blick</h3><p>Von hier aus springst du direkt in die relevanten Einstellungen. Änderungen in den Bereichs-Tabs werden sofort für die öffentliche Hub-Ausgabe genutzt.</p></div>';
+        echo '<div class="n365-overview-actions"><a class="btn btn-secondary" href="' . htmlspecialchars($this->tab_url('hub-order'), ENT_QUOTES, 'UTF-8') . '">↕️ Reihenfolge bearbeiten</a><a class="btn btn-primary" href="' . htmlspecialchars($previewUrl, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">👁️ Publicsite ansehen</a></div>';
+        echo '</section>';
+
+        echo '<section class="n365-overview-grid" aria-label="Kennzahlen">';
+        $this->overview_metric('Landingpage', $landingActive ? 'Aktiv' : 'Inaktiv', $landingActive ? 'Wird für interne Route/Zusatzdomains ausgeliefert.' : 'Aktuell wird auf die normale Startseite umgeleitet.', $landingActive ? 'active' : 'inactive');
+        $this->overview_metric('Public-Bereiche', $activeSections . ' / ' . $totalSections, 'Aktive Bereiche der 365NETWORK-Landingpage.', 'active');
+        $this->overview_metric('Domains', (string) count($domains), $domainHint, $domains === [] ? 'neutral' : 'active');
+        $this->overview_metric('Beiträge', $postsVisible ? ucfirst(str_replace('-', ' ', $postsStyle)) : 'Aus', $postsVisible ? 'Letzte Beiträge sind aktiv und konfigurierbar.' : 'Der Beiträge-Bereich ist deaktiviert.', $postsVisible ? 'active' : 'inactive');
+        echo '</section>';
+
+        echo '<section class="admin-card n365-admin-map" aria-labelledby="n365-admin-map-title">';
+        echo '<div class="n365-panel-header"><h3 id="n365-admin-map-title">🧭 Schnellzugriff</h3><p>Die wichtigsten Arbeitsbereiche im 365NETWORK-Admin.</p></div>';
+        echo '<div class="n365-quick-grid">';
+        $this->quick_link_card('🌐', 'Domain & Route', 'Zusatzdomains, Aktivierung und interne Vorschau-Route.', 'domain');
+        $this->quick_link_card('🏁', 'Hero gestalten', 'Titel, Logo/Bild, Suchband, Höhe und Farben.', 'hub-hero');
+        $this->quick_link_card('🧭', 'Bereichskarten', 'Direkteinstieg, Reihenfolge, Texte und Zielseiten.', 'hub-areas');
+        $this->quick_link_card('📰', 'Beiträge', 'Blog-Button, letzte Beiträge und optische Hervorhebung.', 'hub-posts');
+        $this->quick_link_card('🧰', 'Toolbox', 'M365-Tools, Link, Limit und Darstellung.', 'hub-toolbox');
+        $this->quick_link_card('📈', 'Analytics', 'Analyse-Code nur für die 365NETWORK-Publicsite.', 'analytics');
+        echo '</div>';
+        echo '</section>';
+
+        echo '<section class="admin-card n365-admin-map" aria-labelledby="n365-section-map-title">';
+        echo '<div class="n365-panel-header"><h3 id="n365-section-map-title">📋 Public-Bereiche</h3><p>Status und direkter Einstieg in alle konfigurierbaren Hub-Abschnitte.</p></div>';
+        echo '<div class="n365-section-map">';
+        foreach ($this->hub_section_tabs() as $tab => $meta) {
+            if ($tab === 'hub-order') {
+                continue;
+            }
+            $section = (string) $meta['section'];
+            $visible = $this->hub_section_is_visible($section, $hubSettings);
+            echo '<a class="n365-section-map-card" href="' . htmlspecialchars($this->tab_url($tab), ENT_QUOTES, 'UTF-8') . '">';
+            echo '<span class="n365-section-map-card__state ' . ($visible ? 'is-active' : 'is-inactive') . '">' . ($visible ? 'Aktiv' : 'Aus') . '</span>';
+            echo '<strong>' . htmlspecialchars((string) $meta['title'], ENT_QUOTES, 'UTF-8') . '</strong>';
+            echo '<small>' . htmlspecialchars((string) $meta['description'], ENT_QUOTES, 'UTF-8') . '</small>';
+            echo '</a>';
+        }
+        echo '</div>';
+        echo '</section>';
+
+        echo '<section class="admin-card n365-system-summary" aria-label="Systeminformationen">';
+        echo '<div><strong>Hauptdomain</strong><span>' . htmlspecialchars($mainHost !== '' ? $mainHost : 'nicht erkannt', ENT_QUOTES, 'UTF-8') . '</span></div>';
+        echo '<div><strong>Interne Route</strong><span>/' . htmlspecialchars($routeSlug !== '' ? $routeSlug : '365network', ENT_QUOTES, 'UTF-8') . '</span></div>';
+        echo '<div><strong>Suche</strong><a href="' . htmlspecialchars($searchUrl, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer">' . htmlspecialchars($searchUrl, ENT_QUOTES, 'UTF-8') . '</a></div>';
+        echo '</section>';
+    }
+
+    private function overview_metric(string $label, string $value, string $description, string $state): void
+    {
+        echo '<article class="admin-card n365-overview-metric n365-overview-metric--' . htmlspecialchars($state, ENT_QUOTES, 'UTF-8') . '">';
+        echo '<span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</span><strong>' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '</strong><p>' . htmlspecialchars($description, ENT_QUOTES, 'UTF-8') . '</p>';
+        echo '</article>';
+    }
+
+    private function quick_link_card(string $icon, string $title, string $description, string $tab): void
+    {
+        echo '<a class="n365-quick-card" href="' . htmlspecialchars($this->tab_url($tab), ENT_QUOTES, 'UTF-8') . '"><span aria-hidden="true">' . htmlspecialchars($icon, ENT_QUOTES, 'UTF-8') . '</span><strong>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</strong><small>' . htmlspecialchars($description, ENT_QUOTES, 'UTF-8') . '</small></a>';
+    }
+
+    /**
+     * @param array<string,mixed> $settings
+     * @param array<string,mixed> $hubSettings
+     * @param array<int,string> $domains
+     */
+    private function render_status_strip(array $settings, array $hubSettings, array $domains, string $domainHint, string $mainHost): void
+    {
+        $landingActive = (string) ($settings['landing_enabled'] ?? '1') === '1';
+        $postsVisible = $this->hub_section_is_visible('posts', $hubSettings);
+
+        echo '<section class="admin-card n365-status-grid" aria-label="365NETWORK Status">';
+        echo '<div class="n365-status-card"><span class="n365-status-card__label">Landingpage</span><strong>' . htmlspecialchars($landingActive ? 'Aktiv' : 'Inaktiv', ENT_QUOTES, 'UTF-8') . '</strong><p>' . htmlspecialchars($landingActive ? 'Public-Ausgabe ist aktiv.' : 'Anfragen fallen auf die normale Startseite zurück.', ENT_QUOTES, 'UTF-8') . '</p></div>';
+        echo '<div class="n365-status-card"><span class="n365-status-card__label">Domain-Status</span><strong>' . htmlspecialchars($domains === [] ? 'Interne Route aktiv' : 'Zusatzdomain aktiv', ENT_QUOTES, 'UTF-8') . '</strong><p>' . htmlspecialchars($domainHint, ENT_QUOTES, 'UTF-8') . '</p></div>';
+        echo '<div class="n365-status-card"><span class="n365-status-card__label">Hauptdomain</span><strong>' . htmlspecialchars($mainHost !== '' ? $mainHost : 'nicht erkannt', ENT_QUOTES, 'UTF-8') . '</strong><p>Auf der Hauptdomain bleibt die normale Startseite erhalten.</p></div>';
+        echo '<div class="n365-status-card"><span class="n365-status-card__label">Beiträge</span><strong>' . htmlspecialchars($postsVisible ? 'Aktiv' : 'Aus', ENT_QUOTES, 'UTF-8') . '</strong><p>Letzte Beiträge und Hero-Blogbutton werden im Tab Beiträge gesteuert.</p></div>';
+        echo '</section>';
+    }
+
+    /**
+     * @param array<string,mixed> $hubSettings
+     */
+    private function hub_section_is_visible(string $section, array $hubSettings): bool
+    {
+        $key = $this->hub_section_visibility_key($section);
+        return $key === null || (bool) ($hubSettings[$key] ?? true);
+    }
+
+    private function hub_section_visibility_key(string $section): ?string
+    {
+        return match ($section) {
+            'order' => null,
+            'next-events' => 'hub_next_events_visible',
+            'partner-columns' => 'hub_partner_columns_visible',
+            default => 'hub_' . str_replace('-', '_', $section) . '_visible',
+        };
     }
 
     /**
@@ -310,6 +459,11 @@ final class CMS_365NETWORK_Admin
                 'title' => '🧰 Toolbox',
                 'description' => 'Optionaler Tool-Bereich aus cms-m365tools oder Legacy-m365toolbox mit Limit, Link, Layout und Card-Design.',
             ],
+            'hub-posts' => [
+                'section' => 'posts',
+                'title' => '📰 Beiträge',
+                'description' => 'Blog-Button im Hero und die textbasierte „Letzte Beiträge“-Sektion am Ende der Hub-Seite konfigurieren.',
+            ],
         ];
     }
 
@@ -358,9 +512,13 @@ final class CMS_365NETWORK_Admin
             $groups[$this->hub_field_group((string) ($row['setting_key'] ?? ''), (string) ($row['setting_type'] ?? 'text'))][] = $row;
         }
 
-        echo '<section class="n365-admin-section n365-hub-section-tab">';
+        echo '<section class="n365-admin-section n365-hub-section-tab n365-hub-section-tab--' . htmlspecialchars($sectionKey, ENT_QUOTES, 'UTF-8') . '">';
         echo '<div class="n365-panel-header"><h3>' . htmlspecialchars((string) ($activeMeta['title'] ?? '🧭 Hub-Bereich'), ENT_QUOTES, 'UTF-8') . '</h3><p>' . htmlspecialchars((string) ($activeMeta['description'] ?? 'Diesen Bereich der öffentlichen 365NETWORK-Landingpage konfigurieren.'), ENT_QUOTES, 'UTF-8') . '</p></div>';
         echo '<div class="alert n365-info-alert">ℹ️ Dieser Tab speichert nur diesen Bereich. Texte, Layout und Design werden direkt in der öffentlichen Hub-Ausgabe verwendet.</div>';
+        $sectionTip = $this->hub_section_tip($sectionKey);
+        if ($sectionTip !== '') {
+            echo '<div class="n365-section-tip">' . htmlspecialchars($sectionTip, ENT_QUOTES, 'UTF-8') . '</div>';
+        }
 
         $groupLabels = [
             'activation' => '✅ Aktivierung',
@@ -405,6 +563,17 @@ final class CMS_365NETWORK_Admin
         }
 
         return 'content';
+    }
+
+    private function hub_section_tip(string $section): string
+    {
+        return match ($section) {
+            'order' => 'Tipp: Ziehe die Bereiche per Drag & Drop oder nutze die Pfeile. Ausgeblendete Bereiche bleiben in der Reihenfolge erhalten, werden aber nicht ausgegeben.',
+            'posts' => 'Tipp: „Dezent getrennt“ zeigt oberhalb der Beiträge eine feine Linie in Contentbreite. Box-/Band-Varianten bleiben ebenfalls innerhalb der eingestellten Contentbreite; die Beitragskarten passen sich darin automatisch an.',
+            'hero' => 'Tipp: Bei gesetztem Logo/Bild kannst du mit „Bild ersetzt sichtbare H1“ eine saubere Logo-Stage bauen, ohne SEO-Überschrift zu verlieren.',
+            'areas' => 'Tipp: Das Layout bleibt bewusst maximal zweispaltig, damit die vier Direkteinstiege ruhig und hochwertig wirken.',
+            default => '',
+        };
     }
 
     /**
@@ -948,8 +1117,8 @@ final class CMS_365NETWORK_Admin
 
     private function sanitize_tab(string $tab): string
     {
-        $allowed = array_merge(['domain', 'layout', 'sidebar', 'analytics'], array_keys($this->hub_section_tabs()));
-        return in_array($tab, $allowed, true) ? $tab : 'domain';
+        $allowed = array_merge(['overview', 'domain', 'layout', 'sidebar', 'analytics'], array_keys($this->hub_section_tabs()));
+        return in_array($tab, $allowed, true) ? $tab : 'overview';
     }
 
     /**
@@ -1001,7 +1170,11 @@ final class CMS_365NETWORK_Admin
             [$min, $max] = $this->hub_int_range($key);
             echo '<input type="number" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" value="' . (int) $value . '" min="' . (int) $min . '" max="' . (int) $max . '">';
         } elseif ($type === 'color') {
-            echo '<input type="color" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars($this->hex_color($value, '#000000'), ENT_QUOTES, 'UTF-8') . '">';
+            $color = $this->hex_color($value, '#000000');
+            echo '<div class="n365-color-control">';
+            echo '<input type="color" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars($color, ENT_QUOTES, 'UTF-8') . '" data-n365-color-picker>';
+            echo '<input type="text" value="' . htmlspecialchars($color, ENT_QUOTES, 'UTF-8') . '" pattern="^#[0-9A-Fa-f]{6}$" maxlength="7" aria-label="' . htmlspecialchars($label . ' als Hex-Farbwert', ENT_QUOTES, 'UTF-8') . '" data-n365-color-text>';
+            echo '</div>';
         } elseif ($type === 'select') {
             $options = $this->hub_select_options($key);
             echo '<select id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '">';
@@ -1014,7 +1187,28 @@ final class CMS_365NETWORK_Admin
             echo '<input type="text" id="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '" name="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '" value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '">';
         }
 
+        $help = $this->hub_field_help($key);
+        if ($help !== '') {
+            echo '<small class="form-text n365-field-help">' . htmlspecialchars($help, ENT_QUOTES, 'UTF-8') . '</small>';
+        }
+
         echo '</div>';
+    }
+
+    private function hub_field_help(string $key): string
+    {
+        return match ($key) {
+            'hub_posts_style' => 'Steuert, wie stark die „Letzte Beiträge“-Sektion optisch hervorgehoben wird.',
+            'hub_posts_limit' => 'Maximal sechs Beiträge bleiben bewusst als 2×3 Grid lesbar.',
+            'hub_posts_all_url' => 'Externe Blog-URL oder interne Route. Standard ist https://phinit.de/blog.',
+            'hub_posts_hero_button_visible' => 'Blendet den Blogbutton oben rechts im Hero ein oder aus.',
+            'hub_section_order' => 'Die gespeicherte Reihenfolge steuert die Ausgabe von oben nach unten.',
+            'hub_hero_image_mode' => '„Ersetzt H1“ zeigt das Bild prominent, hält die H1 aber für Screenreader/SEO vorhanden.',
+            'hub_hero_search_visible' => 'Die Suche nutzt die Netzwerk-Suchroute und kann im Hero ein- oder ausgeblendet werden.',
+            'hub_area_card_order' => 'Sortiert die vier Direkteinstieg-Karten innerhalb des Bereichs.',
+            'hub_toolbox_limit' => 'Die Toolbox liest bevorzugt aktive Hub-Tools aus dem M365-Tools/Toolbox-Plugin.',
+            default => '',
+        };
     }
 
     /**
@@ -1068,6 +1262,12 @@ final class CMS_365NETWORK_Admin
                 'grid' => '3er Grid',
                 'compact' => 'Kompakte Liste',
             ],
+            'hub_posts_style' => [
+                'separated' => 'Dezent getrennt (feine Linie + Abstand)',
+                'soft-band' => 'Helles Band im Inhaltsbereich',
+                'full-band' => 'Hintergrundband in Contentbreite',
+                'accent-box' => 'Akzentbox mit Seitenkante',
+            ],
             default => [],
         };
     }
@@ -1097,6 +1297,7 @@ final class CMS_365NETWORK_Admin
             'spotlight' => '🔦 Im Fokus',
             'partner-columns' => '🏢 Partner-Spalten',
             'toolbox' => '🧰 Toolbox',
+            'posts' => '📰 Beiträge',
         ];
     }
 
@@ -1199,6 +1400,10 @@ final class CMS_365NETWORK_Admin
 
         if ($key === 'hub_toolbox_limit') {
             return [1, 50];
+        }
+
+        if ($key === 'hub_posts_limit') {
+            return [1, 6];
         }
 
         if (in_array($key, ['hub_partnerband_limit', 'hub_next_events_limit', 'hub_spotlight_limit', 'hub_partner_companies_limit', 'hub_partner_experts_limit'], true)) {

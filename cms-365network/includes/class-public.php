@@ -83,6 +83,9 @@ final class CMS_365NETWORK_Public
         }
 
         $hubSettings = CMS_365NETWORK_Database::instance()->get_hub_settings();
+        $postsLimit = (bool) ($hubSettings['hub_posts_visible'] ?? true)
+            ? $this->clamp_int((int) ($hubSettings['hub_posts_limit'] ?? 6), 1, 6)
+            : 0;
         $eventLimit = max(
             (int) ($settings['sidebar_events_count'] ?? 3),
             (int) ($hubSettings['hub_next_events_limit'] ?? 3),
@@ -117,6 +120,7 @@ final class CMS_365NETWORK_Public
             'stats' => $this->fetch_stats(),
             'current_host' => $this->current_host(),
             'network_search_url' => $this->network_search_url($settings),
+            'latest_posts' => $postsLimit > 0 ? $this->fetch_latest_posts($postsLimit) : [],
         ];
         $data['toolbox_tools'] = $this->fetch_toolbox_links((int) ($data['hub_settings']['hub_toolbox_limit'] ?? 12));
 
@@ -136,6 +140,7 @@ final class CMS_365NETWORK_Public
                 $partnerCompanies = is_array($data['partner_companies'] ?? null) ? $data['partner_companies'] : [];
                 $partnerExperts = is_array($data['partner_experts'] ?? null) ? $data['partner_experts'] : [];
                 $toolboxTools = is_array($data['toolbox_tools'] ?? null) ? $data['toolbox_tools'] : [];
+                $latestPosts = is_array($data['latest_posts'] ?? null) ? $data['latest_posts'] : [];
                 $stats = is_array($data['stats'] ?? null) ? $data['stats'] : [];
                 $current_host = (string) ($data['current_host'] ?? '');
                 $networkSearchUrl = (string) ($data['network_search_url'] ?? $this->network_search_url($settings));
@@ -653,6 +658,157 @@ final class CMS_365NETWORK_Public
         }
 
         return $tools;
+    }
+
+    private function fetch_latest_posts(int $limit = 6): array
+    {
+        $limit = $this->clamp_int($limit, 1, 6);
+        $postsTable = $this->resolve_table_name('posts');
+        if ($postsTable === '') {
+            $postsTable = $this->default_table_name('posts');
+        }
+        if ($postsTable === '') {
+            return [];
+        }
+
+        $categoriesTable = $this->resolve_table_name('post_categories');
+        $categorySelect = $categoriesTable !== '' ? ', c.name AS category_name, c.slug AS category_slug' : ', NULL AS category_name, NULL AS category_slug';
+        $categoryJoin = $categoriesTable !== '' ? " LEFT JOIN `{$categoriesTable}` c ON c.id = p.category_id" : '';
+        $publicationWhere = function_exists('cms_post_publication_where')
+            ? \cms_post_publication_where('p')
+            : "p.status = 'published'";
+
+        try {
+            $stmt = CMS\Database::instance()->prepare("SELECT p.id, p.title, p.slug, p.slug_en, p.excerpt, p.content, p.published_at, p.created_at{$categorySelect}
+                FROM `{$postsTable}` p{$categoryJoin}
+                WHERE {$publicationWhere}
+                ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC
+                LIMIT {$limit}");
+            $stmt->execute([]);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            error_log('CMS 365NETWORK latest posts failed: ' . $e->getMessage());
+            return [];
+        }
+
+        return $this->prepare_latest_posts(array_values(array_filter($rows, 'is_array')));
+    }
+
+    private function prepare_latest_posts(array $rows): array
+    {
+        $posts = [];
+        $locale = function_exists('phinit_get_current_locale') ? (string) phinit_get_current_locale() : 'de';
+        foreach ($rows as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            if (class_exists('CMS\\Services\\ContentLocalizationService')) {
+                try {
+                    $row = \CMS\Services\ContentLocalizationService::getInstance()->localizePost($row, $locale);
+                } catch (\Throwable $e) {
+                    // Lokale Fallback-Werte verwenden.
+                }
+            }
+
+            $title = trim((string) ($row['title'] ?? ''));
+            $url = $this->post_url($row, $locale);
+            if ($title === '' || $url === '#') {
+                continue;
+            }
+
+            $dateRaw = trim((string) ($row['published_at'] ?? ($row['created_at'] ?? '')));
+            $timestamp = $dateRaw !== '' ? strtotime($dateRaw) : false;
+            $dateLabel = $dateRaw !== '' && function_exists('phinit_format_date')
+                ? (string) phinit_format_date($dateRaw, 'long', $locale)
+                : ($timestamp !== false ? date('d.m.Y', $timestamp) : '');
+            $excerptSource = trim((string) ($row['excerpt'] ?? ''));
+            $contentSource = trim((string) ($row['content'] ?? ''));
+            $excerpt = $this->plain_excerpt($excerptSource !== '' ? $excerptSource : $contentSource, 180);
+            $categoryName = trim((string) ($row['category_name'] ?? ''));
+            $categorySlug = trim((string) ($row['category_slug'] ?? ''));
+
+            $posts[] = [
+                'title' => $title,
+                'url' => $url,
+                'excerpt' => $excerpt,
+                'date_label' => $dateLabel,
+                'date_iso' => $timestamp !== false ? date('Y-m-d', $timestamp) : '',
+                'read_time' => $this->reading_time($contentSource !== '' ? $contentSource : $excerpt),
+                'category_name' => $categoryName,
+                'category_url' => $categorySlug !== '' ? rtrim((string) SITE_URL, '/') . '/category/' . rawurlencode($categorySlug) : '',
+            ];
+
+            if (count($posts) >= 6) {
+                break;
+            }
+        }
+
+        return $posts;
+    }
+
+    private function post_url(array $post, string $locale): string
+    {
+        if (class_exists('CMS\\Services\\PermalinkService')) {
+            try {
+                $url = \CMS\Services\PermalinkService::getInstance()->buildPostUrl($post, $locale);
+                return $this->safe_url($url);
+            } catch (\Throwable $e) {
+                // Fallback unten verwenden.
+            }
+        }
+
+        $slug = trim((string) ($post['slug'] ?? ''));
+        if ($slug === '') {
+            return '#';
+        }
+
+        return rtrim((string) SITE_URL, '/') . '/blog/' . rawurlencode($slug);
+    }
+
+    private function plain_excerpt(string $content, int $length = 180): string
+    {
+        $content = trim($content);
+        if ($content === '') {
+            return '';
+        }
+
+        $decoded = json_decode($content, true);
+        if (is_array($decoded) && isset($decoded['blocks']) && is_array($decoded['blocks'])) {
+            $parts = [];
+            foreach ($decoded['blocks'] as $block) {
+                if (!is_array($block) || !is_array($block['data'] ?? null)) {
+                    continue;
+                }
+                foreach (['text', 'caption', 'message', 'title'] as $key) {
+                    if (isset($block['data'][$key]) && is_string($block['data'][$key])) {
+                        $parts[] = $block['data'][$key];
+                    }
+                }
+            }
+            $content = implode(' ', $parts);
+        }
+
+        $text = trim((string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($content), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+        if ($text === '') {
+            return '';
+        }
+
+        if (function_exists('mb_strimwidth')) {
+            return mb_strimwidth($text, 0, $length, '…', 'UTF-8');
+        }
+
+        return strlen($text) > $length ? rtrim(substr($text, 0, max(0, $length - 1))) . '…' : $text;
+    }
+
+    private function reading_time(string $content): int
+    {
+        $plain = $this->plain_excerpt($content, 5000);
+        if ($plain === '') {
+            return 0;
+        }
+
+        return max(1, (int) ceil(str_word_count($plain) / 220));
     }
 
     private function toolbox_registry_icon_class(string $icon): string

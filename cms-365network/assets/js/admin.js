@@ -201,8 +201,32 @@
         });
     }
 
+    function initColorControls() {
+        document.querySelectorAll('.n365-color-control').forEach(function (control) {
+            var picker = control.querySelector('[data-n365-color-picker]');
+            var text = control.querySelector('[data-n365-color-text]');
+
+            if (!picker || !text) {
+                return;
+            }
+
+            picker.addEventListener('input', function () {
+                text.value = picker.value;
+            });
+
+            text.addEventListener('input', function () {
+                var value = String(text.value || '').trim();
+                if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+                    picker.value = value;
+                    picker.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         initOrderControls();
+        initColorControls();
         initMediaPickerModalFallback();
     });
 })();

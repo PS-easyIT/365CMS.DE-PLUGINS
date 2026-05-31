@@ -22,6 +22,8 @@ $experts = is_array($experts ?? null) ? $experts : [];
 $partnerCompanies = is_array($partnerCompanies ?? null) ? $partnerCompanies : [];
 $partnerExperts = is_array($partnerExperts ?? null) ? $partnerExperts : [];
 $toolboxTools = is_array($toolboxTools ?? null) ? $toolboxTools : [];
+$latestPostsLimit = max(1, min(6, (int) ($hubSettings['hub_posts_limit'] ?? 6)));
+$latestPosts = is_array($latestPosts ?? null) ? array_slice(array_values(array_filter($latestPosts, 'is_array')), 0, $latestPostsLimit) : [];
 $stats = is_array($stats ?? null) ? $stats : [];
 
 $hubEnabled = static fn(string $key, bool $default = true): bool => array_key_exists($key, $hubSettings) ? (bool) $hubSettings[$key] : $default;
@@ -86,6 +88,10 @@ $safeImage = static function (mixed $value): string {
     $parts = parse_url($raw);
     $scheme = is_array($parts) ? strtolower((string) ($parts['scheme'] ?? '')) : '';
     return in_array($scheme, ['http', 'https'], true) ? $raw : '';
+};
+$cssColor = static function (mixed $value, string $default): string {
+    $color = trim((string) $value);
+    return preg_match('/^#[0-9A-Fa-f]{6}$/', $color) === 1 ? $color : $default;
 };
 $icon = static function (string $name): string {
     $icons = [
@@ -186,6 +192,9 @@ $highlightTitle = static function (string $title) use ($esc): string {
 };
 $searchUrl = $safeUrl($networkSearchUrl ?? '/365network/search');
 $searchUrl = $searchUrl === '#' ? '/365network/search' : $searchUrl;
+$blogUrl = $safeUrl($hubValue('hub_posts_all_url', 'https://phinit.de/blog'));
+$blogUrl = $blogUrl === '#' ? 'https://phinit.de/blog' : $blogUrl;
+$blogButtonLabel = $hubValue('hub_posts_hero_button_label', 'Blog Beiträge');
 $searchParam = trim((string) preg_replace('/[^a-zA-Z0-9_-]+/', '', $hubValue('hub_band_search_param', 'q')));
 $searchParam = $searchParam !== '' ? $searchParam : 'q';
 
@@ -250,7 +259,7 @@ while (count($spotlightItems) < $spotlightLimit) {
     }
 }
 
-$sectionOrderKeys = ['partnerband', 'hero', 'areas', 'next-events', 'spotlight', 'partner-columns', 'toolbox', 'featured', 'stats', 'band'];
+$sectionOrderKeys = ['partnerband', 'hero', 'areas', 'next-events', 'spotlight', 'partner-columns', 'toolbox', 'featured', 'stats', 'band', 'posts'];
 $sectionOrder = $normalizeOrder($hubValue('hub_section_order', implode(',', $sectionOrderKeys)), $sectionOrderKeys);
 if (in_array('partnerband', $sectionOrder, true)) {
     $sectionOrder = array_values(array_diff($sectionOrder, ['partnerband']));
@@ -294,11 +303,17 @@ $featuredLayoutClass = $featuredHasImage ? 'hub-featured--image' : 'hub-featured
 $featuredWidthClass = $hubChoice('hub_featured_width', 'full', ['full', 'compact']) === 'compact' ? ' hub-featured--width-compact' : '';
 $featuredHasContent = $featuredTitle !== '' || $featuredSub !== '' || $featuredHasImage;
 $toolboxVisible = $hubEnabled('hub_toolbox_visible') && $toolboxTools !== [];
+$postsStyle = $hubChoice('hub_posts_style', 'separated', ['separated', 'soft-band', 'full-band', 'accent-box']);
+$postsSectionClass = 'n365-block n365-block--tight n365-latest-posts n365-latest-posts--' . $postsStyle;
+$postsSectionStyle = '--n365-posts-bg: ' . $cssColor($hubSettings['hub_posts_bg_color'] ?? '#f7f9fc', '#f7f9fc')
+    . '; --n365-posts-text: ' . $cssColor($hubSettings['hub_posts_text_color'] ?? '#16202e', '#16202e')
+    . '; --n365-posts-accent: ' . $cssColor($hubSettings['hub_posts_accent_color'] ?? '#d6951a', '#d6951a') . ';';
 ?>
 <main class="phinit-plugin <?php echo $esc($mainClass); ?>" id="cms-365network" aria-labelledby="n365-title">
     <?php foreach ($sectionOrder as $sectionKey): ?>
         <?php if ($sectionKey === 'hero' && $hubEnabled('hub_hero_visible')): ?>
         <header class="n365-hero n365-hero--<?php echo $esc($hubChoice('hub_hero_height', 'normal', ['compact', 'normal', 'large'])); ?> n365-hero--layout-<?php echo $esc($heroLayout); ?><?php echo ($heroShowsSeparateImage || $heroUsesSideMedia) ? ' n365-hero--has-media' : ''; ?><?php echo $heroImage !== '' ? ' n365-hero--has-image' : ''; ?><?php echo $heroLabel === '' ? ' n365-hero--no-label' : ''; ?><?php echo $heroUsesSearchBand ? ' n365-hero--search-band' : ''; ?>">
+            <?php if ($hubEnabled('hub_posts_hero_button_visible') && $blogButtonLabel !== ''): ?><a class="n365-hero-blog-link" href="<?php echo $esc($blogUrl); ?>" target="_blank" rel="noopener noreferrer"><?php echo $esc($blogButtonLabel); ?> <?php echo $icon('arrow'); ?></a><?php endif; ?>
             <div class="n365-wrap n365-hero__inner">
             <?php if ($heroUsesSideMedia && $heroLayout === 'image-left'): ?><?php $heroMedia('n365-hero__media'); ?><?php endif; ?>
                 <div class="n365-hero__copy">
@@ -441,6 +456,55 @@ $toolboxVisible = $hubEnabled('hub_toolbox_visible') && $toolboxTools !== [];
                 </div>
             </div>
         </section>
+        <?php elseif ($sectionKey === 'posts' && $hubEnabled('hub_posts_visible') && $latestPosts !== []): ?>
+    <section id="n365-latest-posts" class="<?php echo $esc($postsSectionClass); ?>" style="<?php echo $esc($postsSectionStyle); ?>" aria-labelledby="n365-latest-posts-title">
+        <div class="n365-wrap">
+            <div class="n365-section-head">
+                <div>
+                    <h2 id="n365-latest-posts-title"><?php echo $esc($hubValue('hub_posts_title', 'Letzte Beiträge')); ?></h2>
+                    <?php if ($hubValue('hub_posts_sub', 'Aktuelle Artikel und Einblicke aus dem PHINIT Blog.') !== ''): ?><p><?php echo $esc($hubValue('hub_posts_sub', 'Aktuelle Artikel und Einblicke aus dem PHINIT Blog.')); ?></p><?php endif; ?>
+                </div>
+                <?php if ($hubValue('hub_posts_all_label', 'Alle Beiträge') !== ''): ?><a class="n365-more" href="<?php echo $esc($blogUrl); ?>" target="_blank" rel="noopener noreferrer"><?php echo $esc($hubValue('hub_posts_all_label', 'Alle Beiträge')); ?> <?php echo $icon('arrow'); ?></a><?php endif; ?>
+            </div>
+            <div class="n365-post-grid" role="list">
+                <?php foreach ($latestPosts as $post): ?>
+                <?php
+                $postTitle = trim((string) ($post['title'] ?? ''));
+                $postUrl = $safeUrl($post['url'] ?? '#');
+                if ($postTitle === '' || $postUrl === '#') {
+                    continue;
+                }
+                $dateLabel = trim((string) ($post['date_label'] ?? ''));
+                $dateIso = trim((string) ($post['date_iso'] ?? ''));
+                $readTime = max(0, (int) ($post['read_time'] ?? 0));
+                $categoryName = trim((string) ($post['category_name'] ?? ''));
+                $categoryUrl = $safeUrl($post['category_url'] ?? '#');
+                $excerpt = trim((string) ($post['excerpt'] ?? ''));
+                ?>
+                <article class="n365-post-card" role="listitem">
+                    <div class="n365-post-card__body">
+                        <h3 class="n365-post-card__title"><a href="<?php echo $esc($postUrl); ?>"><?php echo $esc($postTitle); ?></a></h3>
+                        <?php if (($dateLabel !== '' && $dateIso !== '') || $readTime > 0): ?>
+                        <p class="n365-post-card__meta">
+                            <?php if ($dateLabel !== '' && $dateIso !== ''): ?><time datetime="<?php echo $esc($dateIso); ?>"><?php echo $esc($dateLabel); ?></time><?php endif; ?>
+                            <?php if ($readTime > 0): ?><span><?php echo (int) $readTime; ?> Min.</span><?php endif; ?>
+                        </p>
+                        <?php endif; ?>
+                        <?php if ($excerpt !== ''): ?><p class="n365-post-card__excerpt"><?php echo $esc($excerpt); ?></p><?php endif; ?>
+                        <div class="n365-post-card__foot">
+                            <?php if ($categoryName !== '' && $categoryUrl !== '#'): ?>
+                            <a class="n365-post-card__cat" href="<?php echo $esc($categoryUrl); ?>"><?php echo $esc($categoryName); ?></a>
+                            <?php elseif ($categoryName !== ''): ?>
+                            <span class="n365-post-card__cat"><?php echo $esc($categoryName); ?></span>
+                            <?php endif; ?>
+                            <a class="n365-post-card__more" href="<?php echo $esc($postUrl); ?>" aria-label="<?php echo $esc('Beitrag lesen: ' . $postTitle); ?>">Weiterlesen <?php echo $icon('arrow'); ?></a>
+                        </div>
+                    </div>
+                </article>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
         <?php endif; ?>
     <?php endforeach; ?>
 </main>

@@ -126,7 +126,7 @@ final class CMS_365NETWORK_Database
     public function default_hub_settings(): array
     {
         $rows = [
-            ['hub_section_order', 'partnerband,hero,areas,next-events,spotlight,partner-columns,toolbox,featured,stats,band', 'text', 'order', 'Reihenfolge der Public-Bereiche', 10],
+            ['hub_section_order', 'partnerband,hero,areas,next-events,spotlight,partner-columns,toolbox,featured,stats,band,posts', 'text', 'order', 'Reihenfolge der Public-Bereiche', 10],
             ['hub_featured_visible', '1', 'bool', 'featured', 'Featured-Bereich anzeigen', 10],
             ['hub_featured_style', 'auto', 'select', 'featured', 'Darstellung', 15],
             ['hub_featured_label', 'Featured', 'text', 'featured', 'Label (z.B. "Featured", "Highlight")', 20],
@@ -267,6 +267,18 @@ final class CMS_365NETWORK_Database
             ['hub_toolbox_text_color', '#1a2e4a', 'color', 'toolbox', 'Textfarbe', 90],
             ['hub_toolbox_accent_color', '#e6a817', 'color', 'toolbox', 'Akzentfarbe', 100],
             ['hub_toolbox_radius', '2', 'int', 'toolbox', 'Rundung (px, max. 2)', 110],
+            ['hub_posts_visible', '1', 'bool', 'posts', 'Beiträge-Sektion anzeigen', 10],
+            ['hub_posts_title', 'Letzte Beiträge', 'text', 'posts', 'Sektion-Überschrift', 20],
+            ['hub_posts_sub', 'Aktuelle Artikel und Einblicke aus dem PHINIT Blog.', 'textarea', 'posts', 'Sektion-Beschreibung', 30],
+            ['hub_posts_all_label', 'Alle Beiträge', 'text', 'posts', 'Alle-Beiträge Link Label', 40],
+            ['hub_posts_all_url', 'https://phinit.de/blog', 'text', 'posts', 'Blog-Übersicht URL', 50],
+            ['hub_posts_limit', '6', 'int', 'posts', 'Maximale Beiträge (1–6)', 60],
+            ['hub_posts_hero_button_visible', '1', 'bool', 'posts', 'Hero-Blogbutton anzeigen', 70],
+            ['hub_posts_hero_button_label', 'Blog Beiträge', 'text', 'posts', 'Hero-Blogbutton Label', 80],
+            ['hub_posts_style', 'separated', 'select', 'posts', 'Optische Hervorhebung', 90],
+            ['hub_posts_bg_color', '#f7f9fc', 'color', 'posts', 'Hintergrundfarbe für Band/Box', 100],
+            ['hub_posts_text_color', '#16202e', 'color', 'posts', 'Textfarbe im Bereich', 110],
+            ['hub_posts_accent_color', '#d6951a', 'color', 'posts', 'Akzentfarbe für Hervorhebung', 120],
         ];
 
         $settings = [];

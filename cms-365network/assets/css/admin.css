@@ -20,6 +20,43 @@
     justify-content: space-between;
 }
 
+.n365-admin-hero {
+    border: 1px solid #dbe4ef;
+    border-radius: 12px;
+    padding: 1.35rem 1.5rem;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 1px 3px rgb(15 23 42 / 0.04), 0 12px 28px rgb(15 23 42 / 0.06);
+}
+
+.n365-admin-kicker {
+    display: inline-flex;
+    gap: .45rem;
+    align-items: center;
+    margin-bottom: .35rem;
+    color: #64748b;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.n365-admin-kicker em {
+    padding: .1rem .4rem;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: var(--admin-primary, #3b82f6);
+    font-style: normal;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.n365-admin-shell .header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    justify-content: flex-end;
+}
+
 .n365-status-grid {
     display: grid;
     gap: 1rem;
@@ -55,12 +92,29 @@
 }
 
 .n365-tabs {
+    display: grid;
+    gap: .75rem;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 0;
+    padding: .25rem 0 0;
+}
+
+.n365-tab-group {
     display: flex;
     flex-wrap: wrap;
     gap: 0;
-    border-bottom: 2px solid #e2e8f0;
-    margin-bottom: 0;
-    overflow-x: auto;
+    align-items: flex-end;
+}
+
+.n365-tab-group__label {
+    align-self: center;
+    min-width: 112px;
+    padding-right: .85rem;
+    color: #94a3b8;
+    font-size: .68rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
 }
 
 .n365-tab {
@@ -96,6 +150,183 @@
     border-radius: 0 10px 10px 10px;
     margin-top: 0;
     max-width: 980px;
+}
+
+.n365-overview-hero {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-top: 1.25rem;
+    border-left: 4px solid var(--admin-primary, #3b82f6);
+}
+
+.n365-overview-hero h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 1.25rem;
+}
+
+.n365-overview-hero p {
+    max-width: 70ch;
+    margin: .4rem 0 0;
+    color: #64748b;
+    line-height: 1.55;
+}
+
+.n365-overview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    justify-content: flex-end;
+}
+
+.n365-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 1.25rem 0;
+}
+
+.n365-overview-metric {
+    margin: 0;
+    border-top: 3px solid #cbd5e1;
+}
+
+.n365-overview-metric--active {
+    border-top-color: #22c55e;
+}
+
+.n365-overview-metric--inactive {
+    border-top-color: #f97316;
+}
+
+.n365-overview-metric span,
+.n365-overview-metric p {
+    color: #64748b;
+}
+
+.n365-overview-metric span {
+    display: block;
+    margin-bottom: .35rem;
+    font-size: .74rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.n365-overview-metric strong {
+    display: block;
+    color: #0f172a;
+    font-size: 1.35rem;
+}
+
+.n365-overview-metric p {
+    margin: .35rem 0 0;
+    font-size: .84rem;
+    line-height: 1.45;
+}
+
+.n365-admin-map {
+    margin-bottom: 1.25rem;
+}
+
+.n365-quick-grid,
+.n365-section-map {
+    display: grid;
+    gap: .85rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.n365-quick-card,
+.n365-section-map-card {
+    display: grid;
+    gap: .35rem;
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #1e293b;
+    text-decoration: none;
+    transition: border-color .15s ease, background .15s ease, transform .15s ease;
+}
+
+.n365-quick-card:hover,
+.n365-quick-card:focus-visible,
+.n365-section-map-card:hover,
+.n365-section-map-card:focus-visible {
+    border-color: var(--admin-primary, #3b82f6);
+    background: #ffffff;
+    transform: translateY(-1px);
+}
+
+.n365-quick-card > span {
+    font-size: 1.35rem;
+}
+
+.n365-quick-card strong,
+.n365-section-map-card strong {
+    color: #0f172a;
+}
+
+.n365-quick-card small,
+.n365-section-map-card small {
+    color: #64748b;
+    line-height: 1.45;
+}
+
+.n365-section-map-card__state {
+    width: fit-content;
+    padding: .15rem .5rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: .7rem;
+    font-weight: 800;
+}
+
+.n365-section-map-card__state.is-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.n365-section-map-card__state.is-inactive {
+    background: #ffedd5;
+    color: #9a3412;
+}
+
+.n365-system-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.n365-system-summary div {
+    min-width: 0;
+}
+
+.n365-system-summary strong,
+.n365-system-summary span,
+.n365-system-summary a {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.n365-system-summary strong {
+    margin-bottom: .25rem;
+    color: #94a3b8;
+    font-size: .72rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.n365-system-summary span,
+.n365-system-summary a {
+    color: #1e293b;
+    font-size: .9rem;
 }
 
 .n365-admin-form {
@@ -201,6 +432,17 @@
     gap: 6px;
 }
 
+.n365-section-tip {
+    padding: .85rem 1rem;
+    border: 1px solid #bfdbfe;
+    border-left: 4px solid var(--admin-primary, #3b82f6);
+    border-radius: 8px;
+    background: #eff6ff;
+    color: #1e40af;
+    font-size: .875rem;
+    line-height: 1.5;
+}
+
 .hub-admin-section-title {
     width: 100%;
     padding: 0 0 10px;
@@ -248,6 +490,26 @@
     width: 56px;
     min-height: 38px;
     padding: 2px;
+}
+
+.n365-color-control {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    align-items: center;
+}
+
+.n365-color-control input[type='text'] {
+    max-width: 110px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+}
+
+.n365-field-help {
+    display: block;
+    grid-column: 2;
+    margin-top: -8px;
+    color: #64748b;
+    font-size: .78rem;
 }
 
 .hub-admin-field select {
@@ -416,9 +678,19 @@
         grid-template-columns: 1fr;
     }
 
+    .n365-overview-grid,
+    .n365-system-summary {
+        grid-template-columns: 1fr 1fr;
+    }
+
     .hub-admin-field {
         grid-template-columns: 1fr;
         gap: 6px;
+    }
+
+    .n365-field-help {
+        grid-column: 1;
+        margin-top: 0;
     }
 
     .n365-media-input-row {
@@ -435,8 +707,25 @@
         display: grid;
     }
 
+    .n365-overview-hero,
+    .n365-tab-group {
+        display: grid;
+    }
+
+    .n365-overview-grid,
+    .n365-system-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .n365-tab-group__label {
+        min-width: 0;
+        padding: .2rem 0;
+    }
+
     .n365-admin-shell .header-actions,
+    .n365-overview-actions,
     .n365-admin-shell .header-actions .btn,
+    .n365-overview-actions .btn,
     .n365-admin-shell .form-actions .btn {
         justify-content: center;
         width: 100%;
