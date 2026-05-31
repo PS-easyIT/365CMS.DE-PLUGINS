@@ -271,7 +271,7 @@ final class CMS_M365Landing_Repository
     {
         foreach ($posts as &$post) {
             $post['permalink'] = self::main_site_url($this->post_path($post));
-            $post['featured_image'] = self::main_site_media_url((string) ($post['featured_image'] ?? ''));
+            $post['featured_image'] = '';
             $excerptSource = trim((string) ($post['excerpt'] ?? ''));
             $contentSource = trim((string) ($post['content'] ?? ''));
             $post['excerpt_plain'] = self::excerpt_plain_text($excerptSource !== '' ? $excerptSource : $contentSource);

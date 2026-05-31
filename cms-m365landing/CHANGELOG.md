@@ -1,5 +1,31 @@
 # CMS M365 Landing – Changelog
 
+## 1.0.22 – 2026-05-31
+
+- SEO-/PageSpeed-Audit umgesetzt: Zusatzdomains setzen die PHINIT-Head-Metadaten jetzt auf die kanonische Hauptdomain-Route statt auf die Startseite.
+- JSON-LD für die Landingpage ergänzt; vorhandene Latest Posts werden als sichtbare `ItemList` strukturiert ausgegeben.
+- Hero- und Card-Bilder erhalten `width`/`height`-Attribute mit PHINIT-Dimensionsermittlung/Fallbacks; das Hero-Bild wird als LCP-Kandidat mit `fetchpriority="high"` priorisiert.
+- Ungenutzte alte Beitragsbild-CSS-Regeln entfernt, Empty-State-Emoji beseitigt und Reduced-Motion-Regeln ergänzt.
+
+## 1.0.21 – 2026-05-31
+
+- Auf hinterlegten Zusatzdomains erscheint im Content-Header ein Badge `zu den letzten Beiträgen`, wenn die Beitragssektion vorhanden ist.
+- Der Badge springt direkt zur Beitragssektion `#m365landing-latest-posts` und bleibt auf Mobile sauber im Headerfluss.
+
+## 1.0.20 – 2026-05-31
+
+- Titel der bildlosen Beitragskarten sind jetzt fett, um 2px größer und werden strikt auf maximal zwei Zeilen gekappt.
+
+## 1.0.19 – 2026-05-31
+
+- Titel-Links der bildlosen Beitragskarten behalten jetzt dauerhaft die normale Titeloptik ohne Linkfarbe oder Unterstreichung.
+- Tastaturfokus bleibt aus Barrierefreiheitsgründen sichtbar, ohne den Titel wie einen klassischen Textlink zu gestalten.
+
+## 1.0.18 – 2026-05-31
+
+- Beitragsbilder in der M365-Landing-Beitragssektion vollständig entfernt, damit Zusatzdomains keine Importer-Bilder mehr über `/media-file` anfragen.
+- Bildlose Beitragskarten behalten die PHINIT-Startseiten-Grid-Titelstruktur und erhalten ein sauberes Text-Only-Layout ohne Thumbnail-/Platzhalterfläche.
+
 ## 1.0.17 – 2026-05-31
 
 - Importer-/Medienbildpfade in der Beitragssektion robuster normalisiert: `images/importer/...`, `media-file?path=...` und absolute Medien-URLs werden als Hauptdomain-`/uploads/...`-URLs ausgegeben.

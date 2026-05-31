@@ -16,6 +16,8 @@ final class CMS_M365Landing_Frontend
     private static ?self $instance = null;
     private ?string $requestPathCache = null;
     private ?bool $domainLandingRequestCache = null;
+    /** @var array<string,mixed> */
+    private array $currentHeadContext = [];
 
     public static function instance(?\CMS\Router $router = null): self
     {
@@ -31,8 +33,11 @@ final class CMS_M365Landing_Frontend
     private function __construct()
     {
         if (class_exists('CMS\\Hooks')) {
+            \CMS\Hooks::addFilter('page_title', [$this, 'filter_page_title'], 20);
+            \CMS\Hooks::addFilter('phinit_head_meta_data', [$this, 'filter_phinit_head_meta_data'], 20);
             \CMS\Hooks::addFilter('body_class', [$this, 'filter_body_class'], 20);
             \CMS\Hooks::addAction('head', [$this, 'enqueue_styles'], 20);
+            \CMS\Hooks::addAction('head', [$this, 'output_structured_data'], 27);
             \CMS\Hooks::addAction('head', [$this, 'output_design_tokens'], 30);
         }
     }
@@ -77,6 +82,113 @@ final class CMS_M365Landing_Frontend
             echo '<link rel="stylesheet" href="'
                 . htmlspecialchars(CMS_M365LANDING_PLUGIN_URL . 'assets/css/style.css', ENT_QUOTES, 'UTF-8')
                 . '?v=' . filemtime($css) . '">' . "\n";
+        }
+    }
+
+    public function filter_page_title(mixed $title): string
+    {
+        if (!$this->is_request()) {
+            return (string) $title;
+        }
+
+        $headContext = $this->head_context();
+        $seoTitle = trim((string) ($headContext['title'] ?? ''));
+
+        return $seoTitle !== '' ? $seoTitle : (string) $title;
+    }
+
+    /** @param mixed $metaData @return array<string,mixed> */
+    public function filter_phinit_head_meta_data(mixed $metaData, mixed $context = null): array
+    {
+        $metaData = is_array($metaData) ? $metaData : [];
+        if (!$this->is_request()) {
+            return $metaData;
+        }
+
+        $headContext = $this->head_context();
+        $title = trim((string) ($headContext['title'] ?? ''));
+        $description = trim((string) ($headContext['description'] ?? ''));
+        $canonicalUrl = trim((string) ($headContext['canonical_url'] ?? ''));
+        $imageUrl = trim((string) ($headContext['image_url'] ?? ''));
+
+        if ($description !== '') {
+            $metaData['description'] = $description;
+            $metaData['og_description'] = $description;
+            $metaData['twitter_description'] = $description;
+        }
+        if ($title !== '') {
+            $metaData['og_title'] = $title;
+            $metaData['twitter_title'] = $title;
+        }
+        if ($canonicalUrl !== '') {
+            $metaData['canonical_url'] = $canonicalUrl;
+            $metaData['og_url'] = $canonicalUrl;
+            $metaData['canonical_self'] = true;
+        }
+        if ($imageUrl !== '') {
+            $metaData['og_image'] = $imageUrl;
+            $metaData['twitter_image'] = $imageUrl;
+            $metaData['twitter_card'] = 'summary_large_image';
+        }
+
+        $metaData['robots'] = 'index,follow';
+        $metaData['og_type'] = 'website';
+
+        return $metaData;
+    }
+
+    public function output_structured_data(): void
+    {
+        if (!$this->is_request()) {
+            return;
+        }
+
+        $headContext = $this->head_context();
+        $canonicalUrl = trim((string) ($headContext['canonical_url'] ?? ''));
+        $title = trim((string) ($headContext['title'] ?? ''));
+        $description = trim((string) ($headContext['description'] ?? ''));
+        if ($canonicalUrl === '' || $title === '') {
+            return;
+        }
+
+        $siteUrl = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/');
+        $siteName = (string) (defined('SITE_NAME') ? SITE_NAME : '365CMS');
+        $locale = function_exists('phinit_get_current_locale') ? (string) phinit_get_current_locale() : 'de';
+        $schema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'WebPage',
+            '@id' => $canonicalUrl . '#webpage',
+            'url' => $canonicalUrl,
+            'name' => $title,
+            'description' => $description,
+            'inLanguage' => $locale,
+            'isPartOf' => [
+                '@type' => 'WebSite',
+                '@id' => $siteUrl . '#website',
+                'url' => $siteUrl . '/',
+                'name' => $siteName,
+            ],
+        ];
+
+        $imageUrl = trim((string) ($headContext['image_url'] ?? ''));
+        if ($imageUrl !== '') {
+            $schema['primaryImageOfPage'] = [
+                '@type' => 'ImageObject',
+                'url' => $imageUrl,
+            ];
+        }
+
+        $items = is_array($headContext['latest_posts_schema'] ?? null) ? $headContext['latest_posts_schema'] : [];
+        if ($items !== []) {
+            $schema['mainEntity'] = [
+                '@type' => 'ItemList',
+                'itemListElement' => $items,
+            ];
+        }
+
+        $json = json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+        if (is_string($json) && $json !== '') {
+            echo '<script type="application/ld+json" id="cms-m365landing-schema">' . $json . '</script>' . "\n";
         }
     }
 
@@ -187,7 +299,7 @@ final class CMS_M365Landing_Frontend
 
         $title = $this->setting($settings, 'seo_title', $this->setting($settings, 'page_title', 'Microsoft 365 Hub'));
         $description = $this->setting($settings, 'seo_description', $this->setting($settings, 'page_intro', 'Zentrale Übersicht für Microsoft 365 Inhalte und Tools.'));
-        $this->set_seo($title, $description);
+        $this->currentHeadContext = $this->build_head_context($settings, $latestPosts, $title, $description);
 
         if (class_exists('CMS\\ThemeManager')) {
             \CMS\ThemeManager::instance()->getHeader(['title' => $title, 'description' => $description]);
@@ -289,19 +401,66 @@ final class CMS_M365Landing_Frontend
         return CMS_M365Landing_Repository::instance();
     }
 
-    private function set_seo(string $title, string $description): void
+    /** @param array<string,string>|null $settings @param array<int,array<string,mixed>> $latestPosts @return array<string,mixed> */
+    private function head_context(?array $settings = null, array $latestPosts = []): array
     {
-        if (!class_exists('CMS\\Services\\SEOService')) {
-            return;
+        if ($this->currentHeadContext !== [] && $settings === null) {
+            return $this->currentHeadContext;
         }
 
-        try {
-            $seo = \CMS\Services\SEOService::instance();
-            $seo->setTitle($title);
-            $seo->setDescription($description);
-        } catch (\Throwable $e) {
-            // SEO darf die öffentliche Seite nicht blockieren.
+        $settings ??= $this->repo()->settings();
+        $title = $this->setting($settings, 'seo_title', $this->setting($settings, 'page_title', 'Microsoft 365 Hub'));
+        $description = $this->setting($settings, 'seo_description', $this->setting($settings, 'page_intro', 'Zentrale Übersicht für Microsoft 365 Inhalte und Tools.'));
+
+        return $this->build_head_context($settings, $latestPosts, $title, $description);
+    }
+
+    /** @param array<string,string> $settings @param array<int,array<string,mixed>> $latestPosts @return array<string,mixed> */
+    private function build_head_context(array $settings, array $latestPosts, string $title, string $description): array
+    {
+        $imageUrl = CMS_M365Landing_Repository::main_site_media_url((string) ($settings['hero_image_url'] ?? ''));
+
+        return [
+            'title' => $title,
+            'description' => $description,
+            'canonical_url' => $this->canonical_url(),
+            'image_url' => $imageUrl,
+            'latest_posts_schema' => $this->latest_posts_schema($latestPosts),
+        ];
+    }
+
+    private function canonical_url(): string
+    {
+        $base = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/');
+        if ($base === '') {
+            return '';
         }
+
+        return $base . '/' . rawurlencode($this->route_slug());
+    }
+
+    /** @param array<int,array<string,mixed>> $posts @return array<int,array<string,mixed>> */
+    private function latest_posts_schema(array $posts): array
+    {
+        $items = [];
+        $position = 1;
+        foreach ($posts as $post) {
+            $title = trim((string) ($post['title'] ?? ''));
+            $url = CMS_M365Landing_Repository::main_site_url(CMS_M365Landing_Repository::public_url((string) ($post['permalink'] ?? '')));
+            if ($title === '' || $url === '') {
+                continue;
+            }
+
+            $items[] = [
+                '@type' => 'ListItem',
+                'position' => $position,
+                'name' => $title,
+                'url' => $url,
+            ];
+            $position++;
+        }
+
+        return $items;
     }
 
     /** @return array<int,array{path:string,url:string}> */
