@@ -16,6 +16,8 @@ if (!defined('ABSPATH')) exit;
 
 $totalAll       = array_sum($stats);
 $companiesCount = (int) ($companiesCount ?? 0);
+$qualityMonitor = $qualityMonitor ?? ['checked' => 0, 'total_issues' => 0, 'critical' => 0, 'warning' => 0, 'items' => []];
+$bottleneckAlerts = $bottleneckAlerts ?? ['delayed_new' => 0, 'delayed_reviewing' => 0, 'items' => []];
 $statDef  = [
     'draft'     => ['📝', 'Entwürfe'],
     'published' => ['✅', 'Veröffentlicht'],
@@ -55,6 +57,61 @@ $statDef  = [
         <div style="font-size:1.75rem;margin-bottom:.25rem;">📋</div>
         <div class="stat-number"><?php echo $totalAll; ?></div>
         <div class="stat-label">Gesamt</div>
+    </div>
+</div>
+
+<!-- Feature: JobPosting Quality Monitor + Bottleneck Alerts -->
+<div class="dashboard-grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-bottom:1.5rem;align-items:start;">
+    <div class="admin-card" style="padding:1rem 1.1rem;">
+        <h3 style="margin:0 0 .6rem;">🧪 JobPosting Quality Monitor</h3>
+        <p style="margin:.2rem 0;color:#64748b;font-size:.86rem;">
+            Geprüft: <strong><?php echo (int) $qualityMonitor['checked']; ?></strong> ·
+            Issues: <strong><?php echo (int) $qualityMonitor['total_issues']; ?></strong>
+            (kritisch <?php echo (int) $qualityMonitor['critical']; ?> / Warnung <?php echo (int) $qualityMonitor['warning']; ?>)
+        </p>
+        <?php if (empty($qualityMonitor['items'])): ?>
+            <p style="margin:.6rem 0 0;color:#059669;font-size:.86rem;">Keine auffälligen JobPosting-Qualitätsprobleme gefunden.</p>
+        <?php else: ?>
+            <ul style="margin:.65rem 0 0;padding-left:1rem;">
+                <?php foreach ($qualityMonitor['items'] as $item): ?>
+                    <li style="margin:.45rem 0;font-size:.84rem;color:#334155;">
+                        <a href="<?php echo esc_url($item['editUrl']); ?>" style="font-weight:600;color:var(--admin-primary);">
+                            <?php echo esc_html($item['title'] ?: ('#' . (int) $item['id'])); ?>
+                        </a>
+                        <div style="color:#64748b;">
+                            <?php echo esc_html(implode(' · ', array_map(static fn($it) => (string) ($it['message'] ?? ''), $item['issues'] ?? []))); ?>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </div>
+
+    <div class="admin-card" style="padding:1rem 1.1rem;">
+        <h3 style="margin:0 0 .6rem;">⏱️ Hiring Funnel Bottlenecks</h3>
+        <p style="margin:.2rem 0;color:#64748b;font-size:.86rem;">
+            Neu &gt; 7 Tage: <strong><?php echo (int) $bottleneckAlerts['delayed_new']; ?></strong> ·
+            In Prüfung &gt; 14 Tage: <strong><?php echo (int) $bottleneckAlerts['delayed_reviewing']; ?></strong>
+        </p>
+        <?php if (empty($bottleneckAlerts['items'])): ?>
+            <p style="margin:.6rem 0 0;color:#059669;font-size:.86rem;">Keine kritischen Stage-Verzögerungen erkannt.</p>
+        <?php else: ?>
+            <ul style="margin:.65rem 0 0;padding-left:1rem;">
+                <?php foreach ($bottleneckAlerts['items'] as $item): ?>
+                    <li style="margin:.45rem 0;font-size:.84rem;color:#334155;">
+                        <a href="<?php echo esc_url($item['link']); ?>" style="font-weight:600;color:var(--admin-primary);">
+                            <?php echo esc_html($item['job_title'] ?: ('Job #' . (int) $item['job_id'])); ?>
+                        </a>
+                        <div style="color:#64748b;">
+                            <?php
+                            $statusLabel = ($item['status'] ?? '') === 'reviewing' ? 'In Prüfung' : 'Neu';
+                            echo esc_html(($item['applicant_name'] ?: 'Unbekannt') . ' · ' . $statusLabel . ' seit ' . (int) ($item['age_days'] ?? 0) . ' Tagen');
+                            ?>
+                        </div>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
     </div>
 </div>
 

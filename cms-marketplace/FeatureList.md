@@ -5,6 +5,8 @@
 - **Short description:** Allow marketplace entries to include a detached signature and signer certificate fingerprint; verify ZIP integrity and signer trust before publish.
 - **Why it fits this plugin:** The plugin already manages ZIP delivery and SHA-256 checksums, so signature verification is a natural supply-chain hardening step for downloadable packages.
 - **Rough effort (low/medium/high):** High
+- **Status:** Nicht umgesetzt (bewusst zurückgestellt)
+- **Begründung:** Hoher Implementierungsaufwand (Signatur-Truststore, Zertifikatsvalidierung, Build-/Release-Prozess-Anpassungen) im Vergleich zu den in diesem Sprint priorisierten low/medium Features.
 - **Source link(s):**
   - https://plugins.jetbrains.com/docs/intellij/plugin-signing.html
   - https://docs.upbound.io/manuals/marketplace/security-features/
@@ -14,6 +16,8 @@
 - **Short description:** Support uploading and exposing SPDX/CycloneDX SBOM files per release, with a small viewer in admin and optional public metadata links.
 - **Why it fits this plugin:** The plugin already publishes release metadata (`manifest.json`, `update.json`); SBOM references extend this metadata without changing existing consumer APIs.
 - **Rough effort (low/medium/high):** Medium
+- **Status:** Nicht umgesetzt (zurückgestellt)
+- **Begründung:** Sinnvoll, aber nachrangig gegenüber sofort wirksamen Sicherheits- und Freigabe-Kontrollen. Für einen sauberen Rollout sollten erst Format-/Upload-Guidelines finalisiert werden.
 - **Source link(s):**
   - https://docs.upbound.io/manuals/marketplace/security-features/
   - https://www.cybeats.com/blog/prevent-bad-actors-from-hacking-your-sbom
@@ -23,6 +27,8 @@
 - **Short description:** Add optional background checks against known advisories and store a simple risk status per published version for admin triage.
 - **Why it fits this plugin:** This plugin is a release registry; surfacing basic vulnerability status directly in release management helps operators decide what should stay published.
 - **Rough effort (low/medium/high):** High
+- **Status:** Nicht umgesetzt (bewusst zurückgestellt)
+- **Begründung:** Erfordert externe Advisory-Integrationen, Job-Scheduling und belastbare False-Positive-Strategie; für diesen Umsetzungszyklus zu umfangreich.
 - **Source link(s):**
   - https://docs.github.com/code-security/dependabot/dependabot-alerts/about-dependabot-alerts
   - https://docs.jfrog.com/security/docs/features-and-capabilities
@@ -32,6 +38,9 @@
 - **Short description:** Add a dedicated security-report intake path per entry (separate from general purchase/contact links) with admin-only review states.
 - **Why it fits this plugin:** The plugin already stores entry metadata and submitter fields; a disclosure workflow strengthens incident handling for listed packages.
 - **Rough effort (low/medium/high):** Medium
+- **Status:** Umgesetzt
+- **Umsetzung:** Dedizierter öffentlicher Security-Intake mit eigenem Pfad, separatem Formular, CSRF/Honeypot/Rate-Limit, persistenter Ablage und adminseitigen Review-Status (`new`, `triaged`, `resolved`, `rejected`) inkl. Notiz.
+- **Bilingual Public (de/en):** Öffentliche Security-Seite ist de/en-fähig über `shared/public/plugin-public-i18n.php`; Links auf Security-Meldung sind in Public-Ansichten integriert.
 - **Source link(s):**
   - https://make.wordpress.org/plugins/handbook/performing-reviews/security-and-guideline-violation-reports/
   - https://developer.wordpress.org/plugins/wordpress.org/detailed-plugin-guidelines/
@@ -41,6 +50,9 @@
 - **Short description:** Introduce configurable publish rules (for example: required docs URL, minimum package age, required checksum/signature fields) that block publish until criteria pass.
 - **Why it fits this plugin:** It already has a draft/published workflow and centralized save/publish actions, so policy gates can be added without changing public routes or feed formats.
 - **Rough effort (low/medium/high):** Medium
+- **Status:** Umgesetzt
+- **Umsetzung:** Konfigurierbare Publish-Guardrails in Einstellungen ergänzt (`docs_url` Pflicht, `changelog_url` Pflicht, `SHA-256` Pflicht, Mindestalter in Stunden). Freigaben werden bei Verstoß in `saveItem` und `togglePublished` zuverlässig blockiert.
+- **API-/Hook-Stabilität:** Bestehende Slugs/Hooks/Public-Endpoints unverändert; nur additive Felder/Validierungen ergänzt.
 - **Source link(s):**
   - https://docs.jfrog.com/security/docs/features-and-capabilities
   - https://make.wordpress.org/plugins/handbook/performing-reviews/review-checklist/

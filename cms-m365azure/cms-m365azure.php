@@ -40,6 +40,7 @@ final class CMS_M365Azure
     {
         $files = [
             CMS_M365AZURE_PLUGIN_DIR . '../shared/admin/plugin-admin-contract.php',
+            CMS_M365AZURE_PLUGIN_DIR . '../shared/public/plugin-public-i18n.php',
             CMS_M365AZURE_PLUGIN_DIR . 'includes/class-catalog-expansion.php',
             CMS_M365AZURE_PLUGIN_DIR . 'includes/class-installer.php',
             CMS_M365AZURE_PLUGIN_DIR . 'includes/class-repository.php',

@@ -27,6 +27,8 @@ trait CMS_Contact_Page_Dashboard_Trait
         $allForms    = $forms->get_all();
         $globalStats = $submissions->get_global_stats();
         $trend       = $submissions->get_trend(7);
+        $securityStats = $submissions->get_security_event_stats(24);
+        $recentSecurityEvents = $submissions->get_recent_security_events(8);
 
         // Pro-Formular-Statistiken
         $formIds = array_map(static fn (array $form): int => (int) ($form['id'] ?? 0), $allForms);

@@ -44,15 +44,19 @@ class CMS_JPG_Frontend
 
         // Öffentliche Job-Übersicht: /jobs (muss vor /jobs/:slug registriert werden)
         $router->addRoute('GET', '/jobs', [$this, 'render_jobs_list']);
+        $router->addRoute('GET', '/en/jobs', [$this, 'render_jobs_list']);
 
         // Theme-integriert: /jobs/:slug
         $router->addRoute('GET', '/jobs/:slug', [$this, 'render_integrated']);
+        $router->addRoute('GET', '/en/jobs/:slug', [$this, 'render_integrated']);
 
         // Bewerbungs-POST: /jobs/:slug/apply
         $router->addRoute('POST', '/jobs/:slug/apply', [$this, 'handle_apply']);
+        $router->addRoute('POST', '/en/jobs/:slug/apply', [$this, 'handle_apply']);
 
         // AJAX-Registrierung für Bewerber: /jobs/register
         $router->addRoute('POST', '/jobs/register', [$this, 'handle_applicant_register']);
+        $router->addRoute('POST', '/en/jobs/register', [$this, 'handle_applicant_register']);
 
         // Whitelabel: /career/:slug
         $router->addRoute('GET', '/career/:slug', [$this, 'render_whitelabel']);
@@ -133,7 +137,13 @@ class CMS_JPG_Frontend
 
             // HTML-Block aufbauen
             $html = '<section class="jpg-company-jobs" style="margin-top:2.5rem;">';
-            $html .= '<h2 style="font-size:1.25rem;font-weight:700;margin-bottom:1rem;color:#1e293b;">💼 Offene Stellen bei ' . htmlspecialchars($company->name, ENT_QUOTES) . '</h2>';
+            $lang = function_exists('jpg_public_lang') ? jpg_public_lang() : 'de';
+            $jobsHeadline = function_exists('jpg_public_t')
+                ? jpg_public_t('jobs_open_positions', [], $lang)
+                : 'Offene Stellen';
+            $html .= '<h2 style="font-size:1.25rem;font-weight:700;margin-bottom:1rem;color:#1e293b;">💼 '
+                . htmlspecialchars($jobsHeadline . ' ' . ($lang === 'en' ? 'at' : 'bei') . ' ' . $company->name, ENT_QUOTES)
+                . '</h2>';
             $html .= '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;">';
 
             foreach ($jobs as $job) {
@@ -148,7 +158,10 @@ class CMS_JPG_Frontend
                 };
                 $loc  = htmlspecialchars($job->location ?? '', ENT_QUOTES);
                 $type = htmlspecialchars($typeLabel, ENT_QUOTES);
-                $url  = htmlspecialchars(SITE_URL . '/jobs/' . $job->slug, ENT_QUOTES);
+                $jobPath = function_exists('jpg_public_path')
+                    ? jpg_public_path('jobs/' . (string) $job->slug, $lang)
+                    : '/jobs/' . (string) $job->slug;
+                $url  = htmlspecialchars(SITE_URL . $jobPath, ENT_QUOTES);
                 $html .= '<a href="' . $url . '" style="display:block;background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1.25rem;text-decoration:none;color:inherit;transition:box-shadow .2s;" '
                     . 'onmouseover="this.style.boxShadow=\'0 4px 12px rgba(0,0,0,.1)\'" onmouseout="this.style.boxShadow=\'none\'">';
                 $html .= '<div style="font-weight:700;font-size:1rem;color:#1e293b;margin-bottom:.4rem;">' . htmlspecialchars($job->title, ENT_QUOTES) . '</div>';
@@ -158,7 +171,10 @@ class CMS_JPG_Frontend
                 if ($type) {
                     $html .= '<div style="font-size:.85rem;color:#64748b;margin-top:.2rem;">💼 ' . $type . '</div>';
                 }
-                $html .= '<div style="margin-top:.75rem;font-size:.82rem;color:var(--admin-primary,#3b82f6);font-weight:600;">Zur Stelle →</div>';
+                $toJobLabel = ($lang === 'en') ? 'View position' : 'Zur Stelle';
+                $html .= '<div style="margin-top:.75rem;font-size:.82rem;color:var(--admin-primary,#3b82f6);font-weight:600;">'
+                    . htmlspecialchars($toJobLabel, ENT_QUOTES)
+                    . ' →</div>';
                 $html .= '</a>';
             }
 
@@ -179,6 +195,8 @@ class CMS_JPG_Frontend
     {
         $db  = \CMS\Database::instance();
         $p   = $db->getPrefix();
+        $publicLang  = function_exists('jpg_public_lang') ? jpg_public_lang() : 'de';
+        $jobsBasePath = function_exists('jpg_public_path') ? jpg_public_path('jobs', $publicLang) : '/jobs';
 
         // Filter aus GET-Parametern (optional, bewerberseitig)
         $companyFilter  = sanitize_text_field((string) ($_GET['company']  ?? ''));
@@ -272,16 +290,16 @@ class CMS_JPG_Frontend
 
         $pages          = (int) ceil($totalCount / $perPage);
         $typeLabels     = [
-            'fulltime'    => 'Vollzeit',
-            'parttime'    => 'Teilzeit',
-            'freelance'   => 'Freiberuflich',
-            'internship'  => 'Praktikum',
-            'mini'        => 'Minijob',
+            'fulltime'    => function_exists('jpg_public_t') ? jpg_public_t('type_fulltime', [], $publicLang) : 'Vollzeit',
+            'parttime'    => function_exists('jpg_public_t') ? jpg_public_t('type_parttime', [], $publicLang) : 'Teilzeit',
+            'freelance'   => function_exists('jpg_public_t') ? jpg_public_t('type_freelance', [], $publicLang) : 'Freiberuflich',
+            'internship'  => function_exists('jpg_public_t') ? jpg_public_t('type_internship', [], $publicLang) : 'Praktikum',
+            'mini'        => function_exists('jpg_public_t') ? jpg_public_t('type_mini', [], $publicLang) : 'Minijob',
         ];
         $remoteLabels   = [
-            'onsite'  => 'Vor Ort',
-            'hybrid'  => 'Hybrid',
-            'remote'  => 'Remote',
+            'onsite'  => function_exists('jpg_public_t') ? jpg_public_t('remote_onsite', [], $publicLang) : 'Vor Ort',
+            'hybrid'  => function_exists('jpg_public_t') ? jpg_public_t('remote_hybrid', [], $publicLang) : 'Hybrid',
+            'remote'  => function_exists('jpg_public_t') ? jpg_public_t('remote_remote', [], $publicLang) : 'Remote',
         ];
 
         // Design-Einstellungen wurden oben bereits für per_page geladen
@@ -301,7 +319,7 @@ class CMS_JPG_Frontend
                     'companyFilter', 'typeFilter', 'locationFilter',
                     'categoryFilter', 'remoteFilter', 'salaryMin',
                     'typeLabels', 'remoteLabels', 'allCategories',
-                    'designSettings'
+                    'designSettings', 'publicLang', 'jobsBasePath'
                 ));
             } else {
                 $tm->getHeader();
@@ -310,7 +328,7 @@ class CMS_JPG_Frontend
                     'companyFilter', 'typeFilter', 'locationFilter',
                     'categoryFilter', 'remoteFilter', 'salaryMin',
                     'typeLabels', 'remoteLabels', 'allCategories',
-                    'designSettings'
+                    'designSettings', 'publicLang', 'jobsBasePath'
                 ), EXTR_SKIP);
                 include JPG_DIR . 'views/public/jobs-list.php';
                 $tm->getFooter();
@@ -321,7 +339,7 @@ class CMS_JPG_Frontend
                 'companyFilter', 'typeFilter', 'locationFilter',
                 'categoryFilter', 'remoteFilter', 'salaryMin',
                 'typeLabels', 'remoteLabels', 'allCategories',
-                'designSettings'
+                'designSettings', 'publicLang', 'jobsBasePath'
             ));
             include JPG_DIR . 'views/public/jobs-list.php';
         }
@@ -951,6 +969,7 @@ class CMS_JPG_Frontend
             'applyCsrf'      => class_exists('CMS\Security')
                 ? \CMS\Security::instance()->generateToken('jpg_apply_' . $this->sanitize_slug((string) $profile->slug))
                 : bin2hex(random_bytes(16)),
+            'publicLang'     => function_exists('jpg_public_lang') ? jpg_public_lang() : 'de',
         ];
     }
 
@@ -1000,7 +1019,10 @@ class CMS_JPG_Frontend
             $seo         = \CMS\Services\SEOService::instance();
             $title       = $profile->title . ' – Stellenanzeige';
             $description = mb_substr(strip_tags($profile->summary ?? $profile->description ?? ''), 0, 160);
-            $url         = SITE_URL . '/jobs/' . $profile->slug;
+            $path        = function_exists('jpg_public_path')
+                ? jpg_public_path('jobs/' . (string) $profile->slug)
+                : '/jobs/' . (string) $profile->slug;
+            $url         = SITE_URL . $path;
 
             $seo->setTitle($title);
             $seo->setDescription($description);
@@ -1175,6 +1197,12 @@ class CMS_JPG_Frontend
      */
     private function resolve_single_template(array $designSettings): string
     {
+        $lang = function_exists('jpg_public_lang') ? jpg_public_lang() : 'de';
+        if ($lang === 'en') {
+            // Für EN-Routen einheitlich das i18n-fähige Template nutzen.
+            return JPG_DIR . 'views/public/single-integrated.php';
+        }
+
         $layout = $designSettings['pd_single_layout'] ?? 'classic';
 
         // Mapping: Layout-Slug → Template-Datei
@@ -1436,7 +1464,9 @@ class CMS_JPG_Frontend
         $path = '/' . trim($path, '/');
 
         return $path === '/jobs'
+            || $path === '/en/jobs'
             || str_starts_with($path, '/jobs/')
+            || str_starts_with($path, '/en/jobs/')
             || str_starts_with($path, '/career/');
     }
 }

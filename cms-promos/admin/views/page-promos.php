@@ -60,12 +60,32 @@
                 <input type="hidden" name="promo_id" value="<?php echo (int) ($promo['id'] ?? 0); ?>">
 
                 <div class="form-group"><label class="form-label">Titel</label><input type="text" name="title" class="form-control" required value="<?php echo htmlspecialchars((string) ($promo['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></div>
+                <div class="form-group"><label class="form-label">Titel (EN)</label><input type="text" name="title_en" class="form-control" value="<?php echo htmlspecialchars((string) ($promo['title_en'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></div>
                 <div class="form-group"><label class="form-label">Slug</label><input type="text" name="slug" class="form-control" value="<?php echo htmlspecialchars((string) ($promo['slug'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></div>
                 <div class="form-group"><label class="form-label">Teaser</label><textarea name="teaser" class="form-control" rows="3"><?php echo htmlspecialchars((string) ($promo['teaser'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea></div>
+                <div class="form-group"><label class="form-label">Teaser (EN)</label><textarea name="teaser_en" class="form-control" rows="3"><?php echo htmlspecialchars((string) ($promo['teaser_en'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea></div>
                 <div class="form-group"><label class="form-label">Inhalt / Zusatztext</label><textarea name="content_html" class="form-control" rows="6"><?php echo htmlspecialchars((string) ($promo['content_html'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea></div>
+                <div class="form-group"><label class="form-label">Inhalt / Zusatztext (EN)</label><textarea name="content_html_en" class="form-control" rows="6"><?php echo htmlspecialchars((string) ($promo['content_html_en'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea></div>
                 <div class="pr-form-grid">
-                    <div class="form-group"><label class="form-label">Ziel-URL</label><input type="url" name="target_url" class="form-control" value="<?php echo htmlspecialchars((string) ($promo['target_url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></div>
+                    <div class="form-group"><label class="form-label">Ziel-URL</label><input id="promo-target-url" type="url" name="target_url" class="form-control" value="<?php echo htmlspecialchars((string) ($promo['target_url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></div>
                     <div class="form-group"><label class="form-label">Button-Label</label><input type="text" name="button_label" class="form-control" value="<?php echo htmlspecialchars((string) ($promo['button_label'] ?? 'Mehr erfahren'), ENT_QUOTES, 'UTF-8'); ?>"></div>
+                </div>
+                <div class="form-group"><label class="form-label">Button-Label (EN)</label><input type="text" name="button_label_en" class="form-control" value="<?php echo htmlspecialchars((string) ($promo['button_label_en'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></div>
+
+                <div class="admin-card">
+                    <div class="pr-panel-header"><div><h3>UTM URL Builder</h3><p>Hilft bei konsistenten Kampagnen-Parametern. Bestehende URL-Parameter bleiben erhalten.</p></div></div>
+                    <div class="pr-form-grid">
+                        <div class="form-group"><label class="form-label">UTM Source</label><input id="promo-utm-source" type="text" name="utm_source" class="form-control" value="<?php echo htmlspecialchars((string) ($promo['utm_source'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" placeholder="newsletter"></div>
+                        <div class="form-group"><label class="form-label">UTM Medium</label><input id="promo-utm-medium" type="text" name="utm_medium" class="form-control" value="<?php echo htmlspecialchars((string) ($promo['utm_medium'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" placeholder="email"></div>
+                    </div>
+                    <div class="pr-form-grid">
+                        <div class="form-group"><label class="form-label">UTM Campaign</label><input id="promo-utm-campaign" type="text" name="utm_campaign" class="form-control" value="<?php echo htmlspecialchars((string) ($promo['utm_campaign'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" placeholder="sommer-aktion-2026"></div>
+                        <div class="form-group"><label class="form-label">UTM Term</label><input id="promo-utm-term" type="text" name="utm_term" class="form-control" value="<?php echo htmlspecialchars((string) ($promo['utm_term'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" placeholder="optional"></div>
+                    </div>
+                    <div class="pr-form-grid">
+                        <div class="form-group"><label class="form-label">UTM Content</label><input id="promo-utm-content" type="text" name="utm_content" class="form-control" value="<?php echo htmlspecialchars((string) ($promo['utm_content'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" placeholder="cta-button"></div>
+                        <div class="form-group"><button id="promo-build-utm" type="button" class="btn btn-sm btn-secondary">UTM in Ziel-URL übernehmen</button></div>
+                    </div>
                 </div>
                 <div class="pr-form-grid">
                     <div class="form-group"><label class="form-label">Bild-URL</label><input type="url" name="image_url" class="form-control" value="<?php echo htmlspecialchars((string) ($promo['image_url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></div>
@@ -79,6 +99,10 @@
                     <div class="form-group"><label class="form-label">Start</label><?php $startTimestamp = !empty($promo['start_at']) ? strtotime((string) $promo['start_at']) : false; $startValue = $startTimestamp !== false ? date('Y-m-d\TH:i', $startTimestamp) : ''; ?><input type="datetime-local" name="start_at" class="form-control" value="<?php echo htmlspecialchars($startValue, ENT_QUOTES, 'UTF-8'); ?>"></div>
                     <div class="form-group"><label class="form-label">Ende</label><?php $endTimestamp = !empty($promo['end_at']) ? strtotime((string) $promo['end_at']) : false; $endValue = $endTimestamp !== false ? date('Y-m-d\TH:i', $endTimestamp) : ''; ?><input type="datetime-local" name="end_at" class="form-control" value="<?php echo htmlspecialchars($endValue, ENT_QUOTES, 'UTF-8'); ?>"></div>
                 </div>
+                <div class="pr-form-grid">
+                    <div class="form-group"><label class="form-label">Frequency Cap (pro Besucher)</label><input type="number" name="frequency_cap" class="form-control" min="0" max="50" value="<?php echo (int) ($promo['frequency_cap'] ?? 0); ?>"><small class="pr-table-meta">0 = deaktiviert</small></div>
+                    <div class="form-group"><label class="form-label">Cap-Zeitfenster (Stunden)</label><input type="number" name="frequency_window_hours" class="form-control" min="1" max="<?php echo 24 * 14; ?>" value="<?php echo max(1, (int) ($promo['frequency_window_hours'] ?? 24)); ?>"></div>
+                </div>
                 <label class="checkbox-label pr-checkbox-stack"><input type="checkbox" name="is_featured" value="1" <?php echo !empty($promo['is_featured']) ? 'checked' : ''; ?>> Als Featured-Promo hervorheben</label>
 
                 <button type="submit" class="btn btn-primary">Promo speichern</button>
@@ -86,3 +110,42 @@
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    var targetInput = document.getElementById('promo-target-url');
+    var buildButton = document.getElementById('promo-build-utm');
+    if (!targetInput || !buildButton) {
+        return;
+    }
+
+    var utmFields = ['source', 'medium', 'campaign', 'term', 'content'];
+    buildButton.addEventListener('click', function () {
+        var rawUrl = (targetInput.value || '').trim();
+        if (!rawUrl) {
+            return;
+        }
+
+        var parsed;
+        try {
+            parsed = new URL(rawUrl);
+        } catch (e) {
+            return;
+        }
+
+        utmFields.forEach(function (field) {
+            var input = document.getElementById('promo-utm-' + field);
+            if (!input) {
+                return;
+            }
+            var value = (input.value || '').trim();
+            var key = 'utm_' + field;
+            if (value && !parsed.searchParams.get(key)) {
+                parsed.searchParams.set(key, value.toLowerCase().replace(/\s+/g, '-'));
+            }
+        });
+
+        targetInput.value = parsed.toString();
+    });
+})();
+</script>

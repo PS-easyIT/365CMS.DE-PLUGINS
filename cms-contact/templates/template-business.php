@@ -9,6 +9,7 @@ declare(strict_types=1);
 if (!defined('ABSPATH')) exit;
 
 $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
+$t = static fn(string $de, string $en): string => CMS_Contact_Frontend::t($de, $en);
 $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
 
 $db = CMS\Database::instance();
@@ -42,11 +43,11 @@ $theme->getHeader();
 
         <div class="contact-container contact-business">
             <!-- Info-Karten -->
-            <section class="contact-business-cards" aria-label="Kontaktinformationen">
+            <section class="contact-business-cards" aria-label="<?php echo $e($t('Kontaktinformationen', 'Contact information')); ?>">
                 <?php if ($companyEmail): ?>
                 <article class="contact-business-card">
                     <span class="contact-business-card-icon" aria-hidden="true">Mail</span>
-                    <h4>E-Mail</h4>
+                    <h4><?php echo $e($t('E-Mail', 'Email')); ?></h4>
                     <a href="mailto:<?php echo $e($companyEmail); ?>"><?php echo $e($companyEmail); ?></a>
                 </article>
                 <?php endif; ?>
@@ -54,7 +55,7 @@ $theme->getHeader();
                 <?php if ($companyPhone): ?>
                 <article class="contact-business-card">
                     <span class="contact-business-card-icon" aria-hidden="true">Tel</span>
-                    <h4>Telefon</h4>
+                    <h4><?php echo $e($t('Telefon', 'Phone')); ?></h4>
                     <a href="tel:<?php echo $e(preg_replace('/[^+0-9]/', '', $companyPhone)); ?>"><?php echo $e($companyPhone); ?></a>
                 </article>
                 <?php endif; ?>
@@ -62,7 +63,7 @@ $theme->getHeader();
                 <?php if ($companyAddr): ?>
                 <article class="contact-business-card">
                     <span class="contact-business-card-icon" aria-hidden="true">Ort</span>
-                    <h4>Adresse</h4>
+                    <h4><?php echo $e($t('Adresse', 'Address')); ?></h4>
                     <address class="contact-address"><?php echo nl2br($e($companyAddr)); ?></address>
                 </article>
                 <?php endif; ?>
@@ -70,7 +71,7 @@ $theme->getHeader();
 
             <!-- Formular -->
             <section class="contact-card contact-card-elevated" aria-labelledby="contact-business-form-title">
-                <h2 class="contact-business-form-title" id="contact-business-form-title">Schreiben Sie uns</h2>
+                <h2 class="contact-business-form-title" id="contact-business-form-title"><?php echo $e($t('Schreiben Sie uns', 'Write to us')); ?></h2>
 
                 <?php if (!empty($success)): ?>
                 <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1"><?php echo $e($success); ?></div>
@@ -89,6 +90,8 @@ $theme->getHeader();
                     </div>
                     <?php endif; ?>
 
+                    <?php echo CMS_Contact_Frontend::render_error_summary($fieldErrors ?? [], 'contact-business-form-title'); ?>
+
                     <div class="contact-fields">
                         <?php foreach ($fields as $field): ?>
                         <div class="contact-field contact-field-<?php echo $e($field['field_width'] ?? 'full'); ?>">
@@ -97,18 +100,12 @@ $theme->getHeader();
                         <?php endforeach; ?>
                     </div>
 
-                    <?php if (!empty($form['enable_captcha'])): ?>
-                    <div class="contact-field contact-field-full contact-captcha">
-                        <?php $a = rand(1, 10); $b = rand(1, 10); $_SESSION['captcha_expected_' . $form['slug']] = $a + $b; ?>
-                        <label class="contact-label" for="contact-captcha-answer">Sicherheitsfrage: <?php echo $a; ?> + <?php echo $b; ?> = ? <span class="contact-required">*</span></label>
-                        <input type="number" id="contact-captcha-answer" name="captcha_answer" class="contact-input" inputmode="numeric" required>
-                    </div>
-                    <?php endif; ?>
+                    <?php echo CMS_Contact_Frontend::render_captcha_field($form); ?>
 
                     <?php echo CMS_Contact_Frontend::render_privacy_consent($form, $old); ?>
 
                     <div class="contact-submit">
-                        <button type="submit" class="contact-btn contact-btn-primary">Nachricht senden</button>
+                        <button type="submit" class="contact-btn contact-btn-primary"><?php echo $e($t('Nachricht senden', 'Send message')); ?></button>
                     </div>
                 </form>
                 <?php endif; ?>
@@ -116,8 +113,8 @@ $theme->getHeader();
 
             <!-- Kartenbereich -->
             <?php if ($mapEmbed): ?>
-            <section class="contact-business-map" aria-label="Standortkarte">
-                <iframe src="<?php echo $e($mapEmbed); ?>" width="100%" height="350" class="contact-embed-frame" title="Kartenansicht des Standorts" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <section class="contact-business-map" aria-label="<?php echo $e($t('Standortkarte', 'Location map')); ?>">
+                <iframe src="<?php echo $e($mapEmbed); ?>" width="100%" height="350" class="contact-embed-frame" title="<?php echo $e($t('Kartenansicht des Standorts', 'Map view of the location')); ?>" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </section>
             <?php endif; ?>
         </div>

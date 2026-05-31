@@ -27,6 +27,7 @@ if (!defined('ABSPATH')) {
 
 use CMS_Forum\Helpers\TimeHelper;
 use CMS_Forum\Helpers\AvatarHelper;
+use CMS_Forum\Helpers\PublicI18n;
 
 $auth = \CMS\Auth::instance();
 $isLoggedIn = $auth->isLoggedIn();
@@ -36,6 +37,9 @@ $likeCsrf = $isLoggedIn ? \CMS\Security::instance()->generateToken('forum_like')
 $subscribeCsrf = $isLoggedIn ? \CMS\Security::instance()->generateToken('forum_subscribe') : '';
 $reportCsrf = $isLoggedIn ? \CMS\Security::instance()->generateToken('forum_report') : '';
 $pollCsrf = $isLoggedIn ? \CMS\Security::instance()->generateToken('forum_poll_vote') : '';
+$acceptCsrf = $isLoggedIn ? \CMS\Security::instance()->generateToken('forum_accept_answer') : '';
+$isThreadOwner = $isLoggedIn && (int) $thread->user_id === $userId;
+$canModerate = \CMS_Forum\Services\PermissionService::instance()->canModerate((int) $forum->id);
 
 // Attachments nach Post-ID gruppieren
 $attachmentsByPost = [];
@@ -44,16 +48,16 @@ foreach ($attachments as $att) {
 }
 ?>
 
-<div class="cmsforum">
+<div class="cmsforum" data-api-base="<?php echo htmlspecialchars(PublicI18n::forumPath('api'), ENT_QUOTES, 'UTF-8'); ?>">
     <div class="cmsforum-container">
 
         <!-- Breadcrumb -->
-        <nav class="cmsforum-breadcrumb" aria-label="Breadcrumb">
-            <a href="<?php echo $siteUrl; ?>/">Startseite</a>
+        <nav class="cmsforum-breadcrumb" aria-label="<?php echo htmlspecialchars(PublicI18n::t('breadcrumb.label', 'Breadcrumb'), ENT_QUOTES, 'UTF-8'); ?>">
+            <a href="<?php echo $siteUrl; ?>/"><?php echo htmlspecialchars(PublicI18n::t('breadcrumb.homepage', 'Startseite'), ENT_QUOTES, 'UTF-8'); ?></a>
             <span class="cmsforum-breadcrumb__sep" aria-hidden="true">›</span>
-            <a href="<?php echo $siteUrl; ?>/forum">Forum</a>
+            <a href="<?php echo $siteUrl . PublicI18n::forumPath(); ?>"><?php echo htmlspecialchars(PublicI18n::t('forum', 'Forum'), ENT_QUOTES, 'UTF-8'); ?></a>
             <span class="cmsforum-breadcrumb__sep" aria-hidden="true">›</span>
-            <a href="<?php echo $siteUrl; ?>/forum/<?php echo htmlspecialchars((string) $forum->slug, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) $forum->name, ENT_QUOTES, 'UTF-8'); ?></a>
+            <a href="<?php echo $siteUrl . PublicI18n::forumPath((string) $forum->slug); ?>"><?php echo htmlspecialchars((string) $forum->name, ENT_QUOTES, 'UTF-8'); ?></a>
             <span class="cmsforum-breadcrumb__sep" aria-hidden="true">›</span>
             <span class="cmsforum-breadcrumb__current" aria-current="page"><?php echo htmlspecialchars((string) $thread->title, ENT_QUOTES, 'UTF-8'); ?></span>
         </nav>
@@ -64,7 +68,8 @@ foreach ($attachments as $att) {
                 <h1 class="cmsforum-thread-header__title">
                     <?php if ($thread->type === 'sticky'): ?>📌 <?php elseif ($thread->type === 'announcement'): ?>📢 <?php endif; ?>
                     <?php echo htmlspecialchars((string) $thread->title, ENT_QUOTES, 'UTF-8'); ?>
-                    <?php if ($thread->status === 'closed'): ?><span class="cmsforum-badge cmsforum-badge--closed">🔒 Geschlossen</span><?php endif; ?>
+                    <?php if ($thread->status === 'closed'): ?><span class="cmsforum-badge cmsforum-badge--closed">🔒 <?php echo htmlspecialchars(PublicI18n::t('thread.status.closed', 'Geschlossen'), ENT_QUOTES, 'UTF-8'); ?></span><?php endif; ?>
+                    <?php if (!empty($thread->accepted_post_id)): ?><span class="cmsforum-badge cmsforum-badge--accepted">✅ <?php echo htmlspecialchars(PublicI18n::t('thread.status.solved', 'Gelöst'), ENT_QUOTES, 'UTF-8'); ?></span><?php endif; ?>
                 </h1>
             </div>
             <div class="cmsforum-thread-header__actions">
@@ -72,8 +77,8 @@ foreach ($attachments as $att) {
                         <button class="cmsforum-btn cmsforum-btn--secondary cmsforum-btn--sm js-subscribe"
                             data-action="subscribe" data-type="thread" data-item-id="<?php echo (int)$thread->id; ?>"
                             data-csrf="<?php echo htmlspecialchars($subscribeCsrf, ENT_QUOTES, 'UTF-8'); ?>"
-                            aria-label="<?php echo $isSubscribed ? 'Abbestellen' : 'Abonnieren'; ?>">
-                        <?php echo $isSubscribed ? '🔔 Abonniert' : '🔕 Abonnieren'; ?>
+                            aria-label="<?php echo $isSubscribed ? htmlspecialchars(PublicI18n::t('action.unsubscribe', 'Abo beenden'), ENT_QUOTES, 'UTF-8') : htmlspecialchars(PublicI18n::t('action.subscribe', 'Abonnieren'), ENT_QUOTES, 'UTF-8'); ?>">
+                        <?php echo $isSubscribed ? '🔔 ' . htmlspecialchars(PublicI18n::t('action.subscribed', 'Abonniert'), ENT_QUOTES, 'UTF-8') : '🔕 ' . htmlspecialchars(PublicI18n::t('action.subscribe', 'Abonnieren'), ENT_QUOTES, 'UTF-8'); ?>
                     </button>
                 <?php endif; ?>
             </div>
@@ -135,7 +140,7 @@ foreach ($attachments as $att) {
                         <?php echo AvatarHelper::render($post->username ?? 'U', $post->avatar_url ?? null, 64); ?>
                     </div>
                     <div class="cmsforum-post__author-name">
-                        <a href="<?php echo $siteUrl; ?>/forum/user/<?php echo (int)$post->user_id; ?>"><?php echo htmlspecialchars((string) ($post->username ?? 'Gelöscht'), ENT_QUOTES, 'UTF-8'); ?></a>
+                        <a href="<?php echo $siteUrl . PublicI18n::forumPath('user/' . (int) $post->user_id); ?>"><?php echo htmlspecialchars((string) ($post->username ?? PublicI18n::t('user.deleted', 'Gelöscht')), ENT_QUOTES, 'UTF-8'); ?></a>
                     </div>
                     <?php if (!empty($post->rank_title)): ?>
                         <span class="cmsforum-post__rank <?php echo htmlspecialchars($post->rank_css_class ?? ''); ?>">
@@ -161,6 +166,12 @@ foreach ($attachments as $att) {
                     <div class="cmsforum-post__body">
                         <?php echo $post->content_html; ?>
                     </div>
+
+                    <?php if ((int) ($thread->accepted_post_id ?? 0) === (int) $post->id): ?>
+                    <div class="cmsforum-alert cmsforum-alert--success">
+                        ✅ <?php echo htmlspecialchars(PublicI18n::t('thread.accepted_answer', 'Diese Antwort wurde als Lösung markiert.'), ENT_QUOTES, 'UTF-8'); ?>
+                    </div>
+                    <?php endif; ?>
 
                     <!-- Anhänge -->
                     <?php $postAttachments = $attachmentsByPost[(int)$post->id] ?? []; ?>
@@ -200,15 +211,32 @@ foreach ($attachments as $att) {
                             <?php endif; ?>
 
                             <?php if ($isLoggedIn && (int)$post->user_id === $userId): ?>
-                                <a href="<?php echo $siteUrl; ?>/forum/post/<?php echo (int)$post->id; ?>/edit" class="cmsforum-post__action-btn">Bearbeiten</a>
+                                <a href="<?php echo $siteUrl . PublicI18n::forumPath('post/' . (int) $post->id . '/edit'); ?>" class="cmsforum-post__action-btn"><?php echo htmlspecialchars(PublicI18n::t('action.edit', 'Bearbeiten'), ENT_QUOTES, 'UTF-8'); ?></a>
                             <?php endif; ?>
 
                             <?php if ($isLoggedIn && (int)$post->user_id !== $userId): ?>
-                                <button class="cmsforum-post__action-btn js-report" data-action="report" data-post-id="<?php echo (int)$post->id; ?>">Melden</button>
+                                <button class="cmsforum-post__action-btn js-report" data-action="report" data-post-id="<?php echo (int)$post->id; ?>"><?php echo htmlspecialchars(PublicI18n::t('action.report', 'Melden'), ENT_QUOTES, 'UTF-8'); ?></button>
                             <?php endif; ?>
 
                             <?php if ($thread->status === 'open' && $isLoggedIn): ?>
-                                <a href="#reply-form" class="cmsforum-post__action-btn">↩️ Zitieren</a>
+                                <a href="#reply-form" class="cmsforum-post__action-btn">↩️ <?php echo htmlspecialchars(PublicI18n::t('action.quote', 'Zitieren'), ENT_QUOTES, 'UTF-8'); ?></a>
+                            <?php endif; ?>
+
+                            <?php if (($isThreadOwner || $canModerate) && !$post->is_first_post): ?>
+                                <?php if ((int) ($thread->accepted_post_id ?? 0) === (int) $post->id): ?>
+                                    <form method="POST" style="display:inline;">
+                                        <input type="hidden" name="action" value="unaccept_answer">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($acceptCsrf, ENT_QUOTES, 'UTF-8'); ?>">
+                                        <button type="submit" class="cmsforum-post__action-btn"><?php echo htmlspecialchars(PublicI18n::t('thread.unmark_solution', 'Lösung entfernen'), ENT_QUOTES, 'UTF-8'); ?></button>
+                                    </form>
+                                <?php else: ?>
+                                    <form method="POST" style="display:inline;">
+                                        <input type="hidden" name="action" value="accept_answer">
+                                        <input type="hidden" name="post_id" value="<?php echo (int) $post->id; ?>">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($acceptCsrf, ENT_QUOTES, 'UTF-8'); ?>">
+                                        <button type="submit" class="cmsforum-post__action-btn"><?php echo htmlspecialchars(PublicI18n::t('thread.mark_as_solution', 'Als Lösung markieren'), ENT_QUOTES, 'UTF-8'); ?></button>
+                                    </form>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </div>
                     </footer>
@@ -218,12 +246,12 @@ foreach ($attachments as $att) {
         </div>
 
         <!-- Paginierung -->
-        <?php echo $pagination->render(rtrim((string) SITE_URL, '/') . '/forum/thread/' . (int)$thread->id); ?>
+        <?php echo $pagination->render(rtrim((string) SITE_URL, '/') . PublicI18n::forumPath('thread/' . (int) $thread->id)); ?>
 
         <!-- Antwort-Formular -->
         <?php if ($thread->status === 'open' && $isLoggedIn): ?>
         <div class="cmsforum-reply" id="reply-form">
-            <h3 class="cmsforum-reply__title">↩️ Antworten</h3>
+            <h3 class="cmsforum-reply__title">↩️ <?php echo htmlspecialchars(PublicI18n::t('action.reply', 'Antworten'), ENT_QUOTES, 'UTF-8'); ?></h3>
             <form method="POST" class="cmsforum-reply__form" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="reply">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) \CMS\Security::instance()->generateToken('forum_reply'), ENT_QUOTES, 'UTF-8'); ?>">
@@ -242,20 +270,20 @@ foreach ($attachments as $att) {
                         <button type="button" class="cmsforum-editor__btn" data-bbcode="list" title="Liste">📋</button>
                     </div>
                     <textarea name="content" id="reply-content" class="cmsforum-editor__textarea"
-                              rows="8" placeholder="Deine Antwort..." required
+                              rows="8" placeholder="<?php echo htmlspecialchars(PublicI18n::t('thread.reply_placeholder', 'Deine Antwort...'), ENT_QUOTES, 'UTF-8'); ?>" required
                               minlength="3" maxlength="50000"></textarea>
                 </div>
 
                 <div class="cmsforum-reply__actions">
-                    <button type="submit" class="cmsforum-btn cmsforum-btn--primary">💬 Antwort absenden</button>
+                    <button type="submit" class="cmsforum-btn cmsforum-btn--primary">💬 <?php echo htmlspecialchars(PublicI18n::t('thread.reply_submit', 'Antwort absenden'), ENT_QUOTES, 'UTF-8'); ?></button>
                 </div>
             </form>
         </div>
         <?php elseif ($thread->status === 'closed'): ?>
-            <div class="cmsforum-alert cmsforum-alert--info">🔒 Dieser Thread ist geschlossen. Neue Antworten sind nicht möglich.</div>
+            <div class="cmsforum-alert cmsforum-alert--info">🔒 <?php echo htmlspecialchars(PublicI18n::t('thread.closed_info', 'Dieses Thema ist geschlossen. Neue Antworten sind nicht möglich.'), ENT_QUOTES, 'UTF-8'); ?></div>
         <?php elseif (!$isLoggedIn): ?>
             <div class="cmsforum-alert cmsforum-alert--info">
-                <a href="<?php echo $siteUrl; ?>/login">Anmelden</a>, um zu antworten.
+                <a href="<?php echo $siteUrl . PublicI18n::loginPath(); ?>"><?php echo htmlspecialchars(PublicI18n::t('action.login', 'Anmelden'), ENT_QUOTES, 'UTF-8'); ?></a>, <?php echo htmlspecialchars(PublicI18n::t('thread.login_to_reply', 'um zu antworten.'), ENT_QUOTES, 'UTF-8'); ?>
             </div>
         <?php endif; ?>
 
@@ -265,7 +293,7 @@ foreach ($attachments as $att) {
 <!-- Report Modal -->
 <div class="cmsforum-modal" id="reportModal" hidden role="dialog" aria-modal="true" aria-labelledby="reportModalTitle">
     <div class="cmsforum-modal__content">
-        <form id="reportForm" method="POST" action="<?php echo $siteUrl; ?>/forum/api/report">
+        <form id="reportForm" method="POST" action="<?php echo $siteUrl . PublicI18n::forumPath('api/report'); ?>">
             <div class="cmsforum-modal__header">
                 <h3 id="reportModalTitle">Beitrag melden</h3>
                 <button class="cmsforum-modal__close" type="button" data-action="close-modal" aria-label="Schließen">&times;</button>

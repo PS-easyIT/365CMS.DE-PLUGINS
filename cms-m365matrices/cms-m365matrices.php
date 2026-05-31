@@ -42,6 +42,7 @@ final class CMS_M365MATRICES
     {
         $files = [
             dirname(CMS_M365MATRICES_PLUGIN_DIR) . '/shared/admin/plugin-admin-contract.php',
+            dirname(CMS_M365MATRICES_PLUGIN_DIR) . '/shared/public/plugin-public-i18n.php',
             CMS_M365MATRICES_PLUGIN_DIR . 'includes/class-source.php',
             CMS_M365MATRICES_PLUGIN_DIR . 'includes/class-installer.php',
             CMS_M365MATRICES_PLUGIN_DIR . 'includes/class-settings.php',

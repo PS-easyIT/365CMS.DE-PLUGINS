@@ -4,13 +4,22 @@ declare(strict_types=1);
 if (!defined('ABSPATH')) {
     exit;
 }
+
+$lang = ($lang ?? 'de') === 'en' ? 'en' : 'de';
+$t = static function (string $de, string $en) use ($lang): string {
+    if (function_exists('cms_plugin_public_i18n_value')) {
+        return cms_plugin_public_i18n_value(['text' => $de, 'text_en' => $en], 'text', $lang, $de);
+    }
+
+    return $lang === 'en' ? $en : $de;
+};
 ?>
 <!DOCTYPE html>
-<html lang="de">
+<html lang="<?php echo htmlspecialchars($lang, ENT_QUOTES, 'UTF-8'); ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Marketplace Einreichung</title>
+    <title><?php echo htmlspecialchars($t('Marketplace Einreichung', 'Marketplace submission'), ENT_QUOTES, 'UTF-8'); ?></title>
     <?php if (!empty($publicCssUrl)): ?>
         <link rel="stylesheet" href="<?php echo htmlspecialchars((string) $publicCssUrl, ENT_QUOTES, 'UTF-8'); ?>">
     <?php endif; ?>
@@ -21,14 +30,14 @@ if (!defined('ABSPATH')) {
             <div class="hero-panel">
                 <span class="eyebrow">Plugin-eigene Public-Seite</span>
                 <div>
-                    <h1>Marketplace Einreichung</h1>
-                    <p>Hier kannst du Plugins, Themes und CMS-Pakete für den zentralen 365CMS Marketplace einreichen. Öffentliche Einreichungen werden nie sofort veröffentlicht, sondern müssen zuerst von einem Administrator geprüft und freigeschaltet werden.</p>
+                    <h1><?php echo htmlspecialchars($t('Marketplace Einreichung', 'Marketplace submission'), ENT_QUOTES, 'UTF-8'); ?></h1>
+                    <p><?php echo htmlspecialchars($t('Hier kannst du Plugins, Themes und CMS-Pakete für den zentralen 365CMS Marketplace einreichen. Öffentliche Einreichungen werden nie sofort veröffentlicht, sondern müssen zuerst von einem Administrator geprüft und freigeschaltet werden.', 'Here you can submit plugins, themes, and CMS packages for the central 365CMS marketplace. Public submissions are never published immediately and must first be reviewed by an administrator.'), ENT_QUOTES, 'UTF-8'); ?></p>
                 </div>
                 <div class="hero-badges">
-                    <span class="hero-badge">Theme-unabhängige Ausgabe</span>
-                    <span class="hero-badge">Admin-Freigabe erforderlich</span>
+                    <span class="hero-badge"><?php echo htmlspecialchars($t('Theme-unabhängige Ausgabe', 'Theme-independent output'), ENT_QUOTES, 'UTF-8'); ?></span>
+                    <span class="hero-badge"><?php echo htmlspecialchars($t('Admin-Freigabe erforderlich', 'Admin approval required'), ENT_QUOTES, 'UTF-8'); ?></span>
                     <span class="hero-badge">CMS, Plugins oder Themes</span>
-                    <span class="hero-badge">Kostenlos oder kostenpflichtig</span>
+                    <span class="hero-badge"><?php echo htmlspecialchars($t('Kostenlos oder kostenpflichtig', 'Free or paid'), ENT_QUOTES, 'UTF-8'); ?></span>
                 </div>
             </div>
         </div>
@@ -41,19 +50,19 @@ if (!defined('ABSPATH')) {
 
         <div class="grid">
             <aside class="card card-accent">
-                <h2>Hinweise</h2>
+                <h2><?php echo htmlspecialchars($t('Hinweise', 'Notes'), ENT_QUOTES, 'UTF-8'); ?></h2>
                 <div class="facts">
                     <div class="fact-item">
-                        <strong>Öffentliche Einreichung</strong>
-                        <div class="muted">Alle Einreichungen bleiben zunächst im Status Entwurf und müssen im Marketplace-Adminbereich freigegeben werden.</div>
+                        <strong><?php echo htmlspecialchars($t('Öffentliche Einreichung', 'Public submission'), ENT_QUOTES, 'UTF-8'); ?></strong>
+                        <div class="muted"><?php echo htmlspecialchars($t('Alle Einreichungen bleiben zunächst im Status Entwurf und müssen im Marketplace-Adminbereich freigegeben werden.', 'All submissions stay in draft state and must be approved in the marketplace admin area.'), ENT_QUOTES, 'UTF-8'); ?></div>
                     </div>
                     <div class="fact-item">
-                        <strong>Kostenpflichtige Einträge</strong>
-                        <div class="muted">Bei kostenpflichtigen CMS-, Plugin- oder Theme-Einträgen ist kein Paket zwingend erforderlich. Statt Download wird im Marketplace ein Kauf-/Anfrage-Link auf dein Kontaktformular ausgegeben.</div>
+                        <strong><?php echo htmlspecialchars($t('Kostenpflichtige Einträge', 'Paid entries'), ENT_QUOTES, 'UTF-8'); ?></strong>
+                        <div class="muted"><?php echo htmlspecialchars($t('Bei kostenpflichtigen CMS-, Plugin- oder Theme-Einträgen ist kein Paket zwingend erforderlich. Statt Download wird im Marketplace ein Kauf-/Anfrage-Link auf dein Kontaktformular ausgegeben.', 'For paid CMS, plugin, or theme entries, a package is optional. Instead of a download, a buy/request link to your contact form is shown.'), ENT_QUOTES, 'UTF-8'); ?></div>
                     </div>
                     <div class="fact-item">
-                        <strong>Kostenlose Einträge</strong>
-                        <div class="muted">Für kostenlose oder direkt installierbare Pakete ist ein ZIP-Upload erforderlich. Das ZIP muss einen Root-Ordner enthalten, der exakt dem Slug entspricht.</div>
+                        <strong><?php echo htmlspecialchars($t('Kostenlose Einträge', 'Free entries'), ENT_QUOTES, 'UTF-8'); ?></strong>
+                        <div class="muted"><?php echo htmlspecialchars($t('Für kostenlose oder direkt installierbare Pakete ist ein ZIP-Upload erforderlich. Das ZIP muss einen Root-Ordner enthalten, der exakt dem Slug entspricht.', 'A ZIP upload is required for free or directly installable packages. The ZIP must contain a root folder that exactly matches the slug.'), ENT_QUOTES, 'UTF-8'); ?></div>
                     </div>
                     <div class="fact-item">
                         <strong>Öffentliche URL</strong>
@@ -63,7 +72,7 @@ if (!defined('ABSPATH')) {
             </aside>
 
             <section class="card">
-                <h2>Einreichungsformular</h2>
+                <h2><?php echo htmlspecialchars($t('Einreichungsformular', 'Submission form'), ENT_QUOTES, 'UTF-8'); ?></h2>
                 <form method="post" enctype="multipart/form-data" action="<?php echo htmlspecialchars((string) $submitUrl, ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="MAX_FILE_SIZE" value="52428800">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
@@ -74,11 +83,11 @@ if (!defined('ABSPATH')) {
 
                     <div class="form-grid cols-2">
                         <label>
-                            <span>Dein Name</span>
+                            <span><?php echo htmlspecialchars($t('Dein Name', 'Your name'), ENT_QUOTES, 'UTF-8'); ?></span>
                             <input type="text" name="submitter_name" required value="<?php echo htmlspecialchars((string) ($values['submitter_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                         </label>
                         <label>
-                            <span>Deine E-Mail</span>
+                            <span><?php echo htmlspecialchars($t('Deine E-Mail', 'Your email'), ENT_QUOTES, 'UTF-8'); ?></span>
                             <input type="email" name="submitter_email" required value="<?php echo htmlspecialchars((string) ($values['submitter_email'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                         </label>
                     </div>
@@ -200,9 +209,9 @@ if (!defined('ABSPATH')) {
                     <div class="hint">Beispiel: <code>kontakt/plugin-anfrage</code> oder eine vollständige URL. Dieser Link wird bei kostenpflichtigen Einträgen als Kauf-/Anfrageziel verwendet.</div>
 
                     <div class="actions">
-                        <button type="submit" class="button button-primary">Einreichen</button>
+                        <button type="submit" class="button button-primary"><?php echo htmlspecialchars($t('Einreichen', 'Submit'), ENT_QUOTES, 'UTF-8'); ?></button>
                         <?php if ($siteUrl !== ''): ?>
-                            <a class="button" href="<?php echo htmlspecialchars($siteUrl, ENT_QUOTES, 'UTF-8'); ?>">Zur Startseite</a>
+                            <a class="button" href="<?php echo htmlspecialchars($siteUrl, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($t('Zur Startseite', 'Back to home'), ENT_QUOTES, 'UTF-8'); ?></a>
                         <?php endif; ?>
                     </div>
                 </form>

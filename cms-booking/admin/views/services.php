@@ -19,6 +19,16 @@
 <div class="alert alert-error">❌ <?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
 
+<?php
+$serviceDailyLimit = 0;
+if ($editService && !empty($editService['settings_json'])) {
+    $decodedSettings = json_decode((string) $editService['settings_json'], true);
+    if (is_array($decodedSettings) && isset($decodedSettings['daily_booking_limit'])) {
+        $serviceDailyLimit = max(0, (int) $decodedSettings['daily_booking_limit']);
+    }
+}
+?>
+
 <!-- Tabelle -->
 <div class="admin-card">
     <?php if (empty($items)): ?>
@@ -174,6 +184,13 @@
                    placeholder="https://zoom.us/j/...">
         </div>
 
+        <div class="form-group">
+            <label class="form-label">Tageslimit (Leistung)</label>
+            <input type="number" name="daily_booking_limit" class="form-control" min="0"
+                   value="<?php echo (int) $serviceDailyLimit; ?>">
+            <small class="form-text">Max. aktive Buchungen pro Tag für diese Leistung (0 = unbegrenzt)</small>
+        </div>
+
         <div class="admin-card form-actions-card">
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">💾 Speichern</button>
@@ -254,6 +271,11 @@
                 <div class="form-group">
                     <label class="form-label">Meeting-URL</label>
                     <input type="url" name="meeting_url" class="form-control" placeholder="https://zoom.us/j/...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tageslimit (Leistung)</label>
+                    <input type="number" name="daily_booking_limit" class="form-control" min="0" value="0">
+                    <small class="form-text">0 = unbegrenzt</small>
                 </div>
             </form>
         </div>

@@ -539,7 +539,7 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
                     <?php self::input('sidebar_placeholder_image', 'Sidebar Platzhalter-Bild', $settings); ?>
                 </div>
                 <div class="mlc-check-row">
-                    <?php foreach (['page_enabled' => 'Public-Seite aktiv', 'show_category_nav' => 'Kategorienavigation', 'show_cards' => 'Cards anzeigen', 'show_table' => 'Tabelle anzeigen', 'show_images' => 'Bilder anzeigen', 'show_company_buttons' => 'Company-Buttons', 'show_speaker_buttons' => 'Speaker-Buttons', 'show_expert_buttons' => 'Expert-Buttons', 'sidebar_enabled' => 'PHINIT-Sidebar-Widget aktiv', 'sidebar_show_image' => 'Bild im Widget', 'sidebar_show_category' => 'Kategorie im Widget', 'sidebar_show_subtitle' => 'Untertitel im Widget'] as $key => $label): ?>
+                    <?php foreach (['page_enabled' => 'Public-Seite aktiv', 'show_category_nav' => 'Kategorienavigation', 'show_cards' => 'Cards anzeigen', 'show_table' => 'Tabelle anzeigen', 'show_images' => 'Bilder anzeigen', 'show_structured_data' => 'Structured Data (JSON-LD) ausgeben', 'accessibility_validation_mode' => 'Accessibility Validation Mode (Public Diagnostics)', 'show_company_buttons' => 'Company-Buttons', 'show_speaker_buttons' => 'Speaker-Buttons', 'show_expert_buttons' => 'Expert-Buttons', 'sidebar_enabled' => 'PHINIT-Sidebar-Widget aktiv', 'sidebar_show_image' => 'Bild im Widget', 'sidebar_show_category' => 'Kategorie im Widget', 'sidebar_show_subtitle' => 'Untertitel im Widget'] as $key => $label): ?>
                     <label><input type="checkbox" name="<?php echo self::esc_attr($key); ?>" value="1"<?php echo !empty($settings[$key]) && $settings[$key] !== '0' ? ' checked' : ''; ?>> <?php echo self::esc($label); ?></label>
                     <?php endforeach; ?>
                 </div>
@@ -666,6 +666,8 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
             'show_cards',
             'show_table',
             'show_images',
+            'show_structured_data',
+            'accessibility_validation_mode',
             'show_company_buttons',
             'show_speaker_buttons',
             'show_expert_buttons',
@@ -706,7 +708,7 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
             if ($section === 'design' && !in_array($key, $designKeys, true)) {
                 continue;
             }
-            if (str_starts_with($key, 'show_') || in_array($key, ['page_enabled', 'sidebar_enabled', 'sidebar_show_image', 'sidebar_show_category', 'sidebar_show_subtitle'], true)) {
+            if (str_starts_with($key, 'show_') || in_array($key, ['page_enabled', 'sidebar_enabled', 'sidebar_show_image', 'sidebar_show_category', 'sidebar_show_subtitle', 'accessibility_validation_mode'], true)) {
                 $settings[$key] = !empty($post[$key]) ? '1' : '0';
                 continue;
             }

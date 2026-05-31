@@ -92,6 +92,39 @@ final class Thread
     }
 
     /**
+     * Ähnliche Threads anhand Titel für Dubletten-Hinweis.
+     *
+     * @return array<int, object>
+     */
+    public function findSimilarByTitle(int $forumId, string $title, int $excludeThreadId = 0, int $limit = 5): array
+    {
+        $title = mb_substr(trim($title), 0, 200);
+        if ($title === '') {
+            return [];
+        }
+
+        $limit = max(1, min(10, $limit));
+        $term = '%' . $title . '%';
+        $sql = "SELECT id, title, status, reply_count, view_count, last_post_at
+                FROM {$this->table()}
+                WHERE forum_id = ? AND status != 'deleted' AND title LIKE ?";
+        $params = [$forumId, $term];
+
+        if ($excludeThreadId > 0) {
+            $sql .= " AND id != ?";
+            $params[] = $excludeThreadId;
+        }
+
+        $sql .= " ORDER BY is_pinned DESC, last_post_at DESC LIMIT ?";
+        $params[] = $limit;
+
+        $stmt = $this->db()->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(\PDO::FETCH_OBJ);
+    }
+
+    /**
      * Neuen Thread erstellen.
      */
     public function create(array $data): int
@@ -184,6 +217,24 @@ final class Thread
             WHERE id = ?"
         );
         $stmt->execute([$threadId, $threadId, $threadId, $threadId, $threadId]);
+    }
+
+    public function markAcceptedPost(int $threadId, int $postId): bool
+    {
+        $stmt = $this->db()->prepare(
+            "UPDATE {$this->table()} SET accepted_post_id = ?, accepted_at = NOW(), updated_at = NOW() WHERE id = ?"
+        );
+
+        return $stmt->execute([$postId, $threadId]);
+    }
+
+    public function clearAcceptedPost(int $threadId): bool
+    {
+        $stmt = $this->db()->prepare(
+            "UPDATE {$this->table()} SET accepted_post_id = NULL, accepted_at = NULL, updated_at = NOW() WHERE id = ?"
+        );
+
+        return $stmt->execute([$threadId]);
     }
 
     /**

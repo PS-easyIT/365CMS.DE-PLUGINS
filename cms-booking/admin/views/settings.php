@@ -106,7 +106,7 @@ $s = function (string $key, string $default = '') use ($settings): string {
     <div class="admin-card">
         <h3>📏 Buchungsregeln</h3>
 
-        <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.25rem;">
+        <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:1.25rem;">
             <div class="form-group">
                 <label class="form-label">Min. Vorlaufzeit (Tage)</label>
                 <input type="number" name="booking_advance_min" class="form-control" min="0"
@@ -124,6 +124,18 @@ $s = function (string $key, string $default = '') use ($settings): string {
                 <input type="number" name="cancellation_hours" class="form-control" min="0"
                        value="<?php echo $s('cancellation_hours', '24'); ?>">
                 <small class="form-text">Stunden vor Termin, bis wann storniert werden kann</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Min. Vorlaufzeit (Std.)</label>
+                <input type="number" name="booking_min_notice_hours" class="form-control" min="0"
+                       value="<?php echo $s('booking_min_notice_hours', '0'); ?>">
+                <small class="form-text">Feinsteuerung für kurzfristige Buchungen (0 = aus)</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tageslimit gesamt</label>
+                <input type="number" name="booking_daily_limit" class="form-control" min="0"
+                       value="<?php echo $s('booking_daily_limit', '0'); ?>">
+                <small class="form-text">Max. aktive Buchungen pro Anbieter/Tag (0 = unbegrenzt)</small>
             </div>
         </div>
 

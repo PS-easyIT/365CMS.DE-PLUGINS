@@ -376,6 +376,8 @@ final class CMS_Booking_Installer
             'default_currency'     => 'EUR',
             'booking_advance_min'  => '1',
             'booking_advance_max'  => '90',
+            'booking_min_notice_hours' => '0',
+            'booking_daily_limit'  => '0',
             'cancellation_hours'   => '24',
             'auto_confirm'         => '0',
             'send_reminders'       => '1',

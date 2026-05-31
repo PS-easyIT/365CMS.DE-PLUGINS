@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 define('CMS_FORUM_VERSION',    '3.0.2');
-define('CMS_FORUM_DB_VERSION', '1.0.1');
+define('CMS_FORUM_DB_VERSION', '1.0.2');
 define('CMS_FORUM_DIR',        dirname(__FILE__) . '/');
 define('CMS_FORUM_URL',        '/plugins/cms-forum/');
 
@@ -58,6 +58,7 @@ final class CMS_Forum
         require_once CMS_FORUM_DIR . 'src/Helpers/TimeHelper.php';
         require_once CMS_FORUM_DIR . 'src/Helpers/AvatarHelper.php';
         require_once CMS_FORUM_DIR . 'src/Helpers/SlugHelper.php';
+        require_once CMS_FORUM_DIR . 'src/Helpers/PublicI18n.php';
 
         // Models
         require_once CMS_FORUM_DIR . 'src/Models/Category.php';
@@ -88,9 +89,6 @@ final class CMS_Forum
         require_once CMS_FORUM_DIR . 'src/Controllers/PostController.php';
         require_once CMS_FORUM_DIR . 'src/Controllers/ModeratorController.php';
         require_once CMS_FORUM_DIR . 'src/Controllers/AdminController.php';
-
-        // Sprache
-        require_once CMS_FORUM_DIR . 'lang/de_DE.php';
 
         // Admin-Bereich
         require_once CMS_FORUM_DIR . 'admin/class-admin-menu.php';
@@ -217,7 +215,10 @@ final class CMS_Forum
             return false;
         }
 
-        return $path === '/forum' || str_starts_with($path, '/forum/');
+        return $path === '/forum'
+            || str_starts_with($path, '/forum/')
+            || $path === '/en/forum'
+            || str_starts_with($path, '/en/forum/');
     }
 
     /**

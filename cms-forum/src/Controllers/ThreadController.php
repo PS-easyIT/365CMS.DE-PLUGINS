@@ -23,6 +23,7 @@ use CMS_Forum\Models\Poll;
 use CMS_Forum\Models\Subscription;
 use CMS_Forum\Models\Attachment;
 use CMS_Forum\Helpers\Pagination;
+use CMS_Forum\Helpers\PublicI18n;
 use CMS_Forum\Helpers\SlugHelper;
 use CMS_Forum\Services\BBCodeParser;
 use CMS_Forum\Services\PermissionService;
@@ -107,8 +108,14 @@ final class ThreadController
         $error = null;
         $success = null;
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'reply') {
-            [$error, $success] = $this->handleReply($threadId, (int) $forum->id, $thread->title);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+            $action = (string) $_POST['action'];
+            if ($action === 'reply') {
+                [$error, $success] = $this->handleReply($threadId, (int) $forum->id, $thread->title);
+            } elseif ($action === 'accept_answer' || $action === 'unaccept_answer') {
+                [$error, $success] = $this->handleAcceptedAnswer($threadId, (int) $forum->id, $action);
+                $thread = Thread::instance()->findById($threadId) ?? $thread;
+            }
         }
 
         $viewData = [
@@ -144,23 +151,23 @@ final class ThreadController
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_thread') {
             if (!\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'forum_new_thread')) {
-                $error = 'Sicherheitscheck fehlgeschlagen.';
+                $error = PublicI18n::t('error.csrf', 'Sicherheitscheck fehlgeschlagen.');
             } else {
                 // Flood-Control
                 $wait = FloodControl::instance()->checkThread($userId);
                 if ($wait > 0) {
-                    $error = "Bitte warte noch {$wait} Sekunden, bevor du einen neuen Thread erstellst.";
+                    $error = PublicI18n::t('error.flood.thread_wait', 'Bitte warte noch %d Sekunden, bevor du einen neuen Thread erstellst.', $wait);
                 } else {
                     $title   = mb_substr(sanitize_text_field((string) ($_POST['title'] ?? '')), 0, 200);
                     $content = mb_substr(trim((string) ($_POST['content'] ?? '')), 0, 50000);
                     $type    = in_array($_POST['type'] ?? '', ['normal', 'sticky', 'announcement'], true) ? $_POST['type'] : 'normal';
 
                     if (empty($title)) {
-                        $error = 'Bitte gib einen Titel ein.';
+                        $error = PublicI18n::t('error.empty_title', 'Bitte gib einen Titel ein.');
                     } elseif (mb_strlen($title) < 3) {
-                        $error = 'Der Titel muss mindestens 3 Zeichen lang sein.';
+                        $error = PublicI18n::t('error.title_too_short', 'Der Titel ist zu kurz (min. %d Zeichen).', 3);
                     } elseif (empty($content)) {
-                        $error = 'Bitte gib einen Beitrag ein.';
+                        $error = PublicI18n::t('error.empty_content', 'Bitte gib einen Beitrag ein.');
                     } else {
                         // Nur Admins/Moderatoren dürfen sticky/announcement erstellen
                         if ($type !== 'normal' && !PermissionService::instance()->canModerate($forumId)) {
@@ -205,10 +212,10 @@ final class ThreadController
                             // Auto-Abo
                             Subscription::instance()->subscribe($userId, 'thread', $threadId);
 
-                            header('Location: ' . rtrim((string) SITE_URL, '/') . '/forum/thread/' . $threadId, true, 303);
+                            header('Location: ' . rtrim((string) SITE_URL, '/') . PublicI18n::forumPath('thread/' . $threadId), true, 303);
                             exit;
                         } else {
-                            $error = 'Thread konnte nicht erstellt werden.';
+                            $error = PublicI18n::t('error.thread_create_failed', 'Thread konnte nicht erstellt werden.');
                         }
                     }
                 }
@@ -221,7 +228,8 @@ final class ThreadController
             'forum'     => $forum,
             'csrfToken' => $csrfToken,
             'error'     => $error,
-            'pageTitle' => 'Neuer Thread in ' . htmlspecialchars((string) $forum->name, ENT_QUOTES, 'UTF-8'),
+            'similarApiUrl' => rtrim((string) SITE_URL, '/') . PublicI18n::forumPath('api/similar-threads'),
+            'pageTitle' => PublicI18n::t('thread.create_in_forum', 'Neuer Thread in %s', (string) $forum->name),
         ];
 
         extract($viewData, EXTR_SKIP);
@@ -294,12 +302,12 @@ final class ThreadController
         $auth = \CMS\Auth::instance();
 
         if (!$auth->isLoggedIn()) {
-            $this->sendJson(['success' => false, 'error' => 'Nicht eingeloggt.'], 401);
+            $this->sendJson(['success' => false, 'error' => PublicI18n::t('error.not_logged_in', 'Nicht eingeloggt.')], 401);
             exit;
         }
 
         if (!\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'forum_poll_vote')) {
-            $this->sendJson(['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen.'], 403);
+            $this->sendJson(['success' => false, 'error' => PublicI18n::t('error.csrf', 'Sicherheitscheck fehlgeschlagen.')], 403);
             exit;
         }
 
@@ -311,31 +319,31 @@ final class ThreadController
         $optionIds = array_slice($optionIds, 0, 10);
 
         if ($pollId <= 0 || empty($optionIds)) {
-            $this->sendJson(['success' => false, 'error' => 'Ungültige Anfrage.'], 400);
+            $this->sendJson(['success' => false, 'error' => PublicI18n::t('error.invalid_request', 'Ungültige Anfrage.')], 400);
             exit;
         }
 
         $pollEntity = Poll::instance()->findById($pollId);
         if ($pollEntity === null) {
-            $this->sendJson(['success' => false, 'error' => 'Umfrage nicht gefunden.'], 404);
+            $this->sendJson(['success' => false, 'error' => PublicI18n::t('error.poll_not_found', 'Umfrage nicht gefunden.')], 404);
             exit;
         }
 
         $thread = Thread::instance()->findById((int) ($pollEntity->thread_id ?? 0));
         $forum = $thread ? Forum::instance()->findById((int) ($thread->forum_id ?? 0)) : null;
         if ($forum === null || !PermissionService::instance()->canRead((int) $forum->id)) {
-            $this->sendJson(['success' => false, 'error' => 'Keine Berechtigung.'], 403);
+            $this->sendJson(['success' => false, 'error' => PublicI18n::t('error.no_permission', 'Du hast keine Berechtigung für diese Aktion.')], 403);
             exit;
         }
 
         if (!PermissionService::instance()->canVote((int) $forum->id)) {
-            $this->sendJson(['success' => false, 'error' => 'Abstimmungen sind in diesem Forum nicht erlaubt.'], 403);
+            $this->sendJson(['success' => false, 'error' => PublicI18n::t('error.poll_not_allowed', 'Abstimmungen sind in diesem Forum nicht erlaubt.')], 403);
             exit;
         }
 
         $maxChoices = max(1, min(10, (int) ($pollEntity->max_choices ?? 1)));
         if (count($optionIds) > $maxChoices) {
-            $this->sendJson(['success' => false, 'error' => 'Zu viele Optionen ausgewählt.'], 400);
+            $this->sendJson(['success' => false, 'error' => PublicI18n::t('error.poll_too_many', 'Zu viele Optionen ausgewählt.')], 400);
             exit;
         }
 
@@ -343,7 +351,7 @@ final class ThreadController
         $poll   = Poll::instance();
 
         if ($poll->hasVoted($pollId, $userId)) {
-            $this->sendJson(['success' => false, 'error' => 'Du hast bereits abgestimmt.']);
+            $this->sendJson(['success' => false, 'error' => PublicI18n::t('poll.already_voted', 'Du hast bereits abgestimmt.')]);
             exit;
         }
 
@@ -367,15 +375,15 @@ final class ThreadController
         $auth = \CMS\Auth::instance();
 
         if (!$auth->isLoggedIn()) {
-            return ['Du musst eingeloggt sein, um zu antworten.', null];
+            return [PublicI18n::t('error.reply_login_required', 'Du musst eingeloggt sein, um zu antworten.'), null];
         }
 
         if (!\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'forum_reply')) {
-            return ['Sicherheitscheck fehlgeschlagen.', null];
+            return [PublicI18n::t('error.csrf', 'Sicherheitscheck fehlgeschlagen.'), null];
         }
 
         if (!PermissionService::instance()->canPost($forumId)) {
-            return ['Du hast keine Berechtigung, hier zu schreiben.', null];
+            return [PublicI18n::t('error.no_permission', 'Du hast keine Berechtigung für diese Aktion.'), null];
         }
 
         $userId = (int)$auth->currentUser()->id;
@@ -383,12 +391,12 @@ final class ThreadController
         // Flood-Control
         $wait = FloodControl::instance()->checkPost($userId);
         if ($wait > 0) {
-            return ["Bitte warte noch {$wait} Sekunden.", null];
+            return [PublicI18n::t('error.flood.post_wait', 'Bitte warte noch %d Sekunden.', $wait), null];
         }
 
         $content = mb_substr(trim((string) ($_POST['content'] ?? '')), 0, 50000);
         if (empty($content)) {
-            return ['Bitte gib einen Beitrag ein.', null];
+            return [PublicI18n::t('error.empty_content', 'Bitte gib einen Beitrag ein.'), null];
         }
 
         $postId = Post::instance()->create([
@@ -399,7 +407,7 @@ final class ThreadController
         ]);
 
         if (!$postId) {
-            return ['Beitrag konnte nicht erstellt werden.', null];
+            return [PublicI18n::t('error.post_create_failed', 'Beitrag konnte nicht erstellt werden.'), null];
         }
 
         // Zähler aktualisieren
@@ -410,7 +418,91 @@ final class ThreadController
         // Benachrichtigungen
         NotificationService::instance()->notifyNewPost($threadId, $userId, $threadTitle);
 
-        return [null, 'Antwort wurde veröffentlicht.'];
+        return [null, PublicI18n::t('success.post_created', 'Antwort wurde gesendet.')];
+    }
+
+    /**
+     * Accepted Answer setzen/entfernen.
+     *
+     * @return array{0: ?string, 1: ?string}
+     */
+    private function handleAcceptedAnswer(int $threadId, int $forumId, string $action): array
+    {
+        $auth = \CMS\Auth::instance();
+        if (!$auth->isLoggedIn()) {
+            return [PublicI18n::t('error.not_logged_in', 'Nicht eingeloggt.'), null];
+        }
+
+        if (!\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'forum_accept_answer')) {
+            return [PublicI18n::t('error.csrf', 'Sicherheitscheck fehlgeschlagen.'), null];
+        }
+
+        $thread = Thread::instance()->findById($threadId);
+        if ($thread === null) {
+            return [PublicI18n::t('error.not_found', 'Nicht gefunden.'), null];
+        }
+
+        $currentUserId = (int) $auth->currentUser()->id;
+        $isThreadOwner = (int) ($thread->user_id ?? 0) === $currentUserId;
+        $isModerator = PermissionService::instance()->canModerate($forumId);
+
+        if (!$isThreadOwner && !$isModerator) {
+            return [PublicI18n::t('error.no_permission', 'Du hast keine Berechtigung für diese Aktion.'), null];
+        }
+
+        if ($action === 'unaccept_answer') {
+            Thread::instance()->clearAcceptedPost($threadId);
+            return [null, PublicI18n::t('success.accepted_answer_removed', 'Akzeptierte Antwort entfernt.')];
+        }
+
+        $postId = (int) ($_POST['post_id'] ?? 0);
+        if ($postId <= 0) {
+            return [PublicI18n::t('error.invalid_request', 'Ungültige Anfrage.'), null];
+        }
+
+        $post = Post::instance()->findByThreadAndId($threadId, $postId);
+        if ($post === null || (int) ($post->is_first_post ?? 0) === 1) {
+            return [PublicI18n::t('error.invalid_answer_selection', 'Dieser Beitrag kann nicht als Lösung markiert werden.'), null];
+        }
+
+        Thread::instance()->markAcceptedPost($threadId, $postId);
+        return [null, PublicI18n::t('success.accepted_answer_set', 'Antwort als Lösung markiert.')];
+    }
+
+    /**
+     * Similar-Thread API für Composer-Hinweise.
+     */
+    public function similarThreads(): void
+    {
+        $this->sendJsonHeaders();
+
+        $forumId = (int) ($_GET['forum_id'] ?? 0);
+        $query = mb_substr(trim((string) ($_GET['q'] ?? '')), 0, 200);
+
+        if ($forumId <= 0 || mb_strlen($query) < 4) {
+            $this->sendJson(['success' => true, 'threads' => []]);
+            exit;
+        }
+
+        if (!PermissionService::instance()->canRead($forumId)) {
+            $this->sendJson(['success' => false, 'error' => PublicI18n::t('error.no_permission', 'Du hast keine Berechtigung für diese Aktion.')], 403);
+            exit;
+        }
+
+        $threads = Thread::instance()->findSimilarByTitle($forumId, $query, 0, 5);
+        $payload = array_map(
+            static fn (object $thread): array => [
+                'id' => (int) $thread->id,
+                'title' => (string) $thread->title,
+                'status' => (string) $thread->status,
+                'reply_count' => (int) ($thread->reply_count ?? 0),
+                'url' => PublicI18n::forumPath('thread/' . (int) $thread->id),
+            ],
+            $threads
+        );
+
+        $this->sendJson(['success' => true, 'threads' => $payload]);
+        exit;
     }
 
     /**

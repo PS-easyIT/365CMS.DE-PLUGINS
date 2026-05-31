@@ -32,6 +32,7 @@ trait CMS_Booking_Page_Services_Trait
                 if (!in_array($action, $allowedActions, true)) {
                     $error = 'Ungültige Aktion.';
                 } else {
+                    $serviceDailyLimit = max(0, (int) ($_POST['daily_booking_limit'] ?? 0));
                     $locationType = sanitize_text_field($_POST['location_type'] ?? 'online');
                     if (!in_array($locationType, ['online', 'onsite', 'hybrid'], true)) {
                         $locationType = 'online';
@@ -41,6 +42,19 @@ trait CMS_Booking_Page_Services_Trait
                     if (!in_array($bookingType, ['confirmation', 'instant', 'request'], true)) {
                         $bookingType = 'confirmation';
                     }
+
+                    $buildSettingsJson = static function (?string $existingJson = null) use ($serviceDailyLimit): ?string {
+                        $settings = [];
+                        if (is_string($existingJson) && trim($existingJson) !== '') {
+                            $decoded = json_decode($existingJson, true);
+                            if (is_array($decoded)) {
+                                $settings = $decoded;
+                            }
+                        }
+                        $settings['daily_booking_limit'] = $serviceDailyLimit;
+
+                        return (string) json_encode($settings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                    };
 
                     try {
                         switch ($action) {
@@ -62,6 +76,7 @@ trait CMS_Booking_Page_Services_Trait
                                     'meeting_url'      => filter_var($_POST['meeting_url'] ?? '', FILTER_VALIDATE_URL) ?: '',
                                     'booking_type'     => $bookingType,
                                     'contact_template' => sanitize_text_field($_POST['contact_template'] ?? ''),
+                                    'settings_json'    => $buildSettingsJson(),
                                 ]);
                                 $success = 'Leistung erfolgreich erstellt.';
                                 break;
@@ -76,6 +91,11 @@ trait CMS_Booking_Page_Services_Trait
                                 if (!in_array($status, ['active', 'inactive'], true)) {
                                     $status = 'active';
                                 }
+                                $existingService = $servicesSvc->get($id);
+                                if (!$existingService) {
+                                    $error = 'Ungültige Leistung.';
+                                    break;
+                                }
                                 $servicesSvc->update($id, [
                                     'title'            => sanitize_text_field($_POST['title'] ?? ''),
                                     'description'      => strip_tags($_POST['description'] ?? '', '<p><a><strong><em><ul><ol><li><br>'),
@@ -87,6 +107,7 @@ trait CMS_Booking_Page_Services_Trait
                                     'meeting_url'      => filter_var($_POST['meeting_url'] ?? '', FILTER_VALIDATE_URL) ?: '',
                                     'booking_type'     => $bookingType,
                                     'contact_template' => sanitize_text_field($_POST['contact_template'] ?? ''),
+                                    'settings_json'    => $buildSettingsJson($existingService['settings_json'] ?? null),
                                     'status'           => $status,
                                 ]);
                                 $success = 'Leistung aktualisiert.';

@@ -124,6 +124,7 @@ final class CMS_Newsletter_Admin_Pages
         self::render_with_layout('Newsletter-Einstellungen', $defaultSlug, static function () use ($defaultSlug): void {
             $repository = CMS_Newsletter_Repository::instance();
             $settings = $repository->get_settings();
+            $diagnostics = self::build_sender_domain_diagnostics($settings);
             $activeSlug = self::resolve_current_slug($defaultSlug);
             $tab = self::SETTINGS_SECTION_MAP[$activeSlug] ?? self::SETTINGS_SECTION_MAP[$defaultSlug] ?? 'general';
             $csrfToken = Security::instance()->generateToken('newsletter_admin');
@@ -401,9 +402,13 @@ final class CMS_Newsletter_Admin_Pages
             'require_double_opt_in' => !empty($post['require_double_opt_in']) ? '1' : '0',
             'default_segment' => (string) ($post['default_segment'] ?? ''),
             'archive_title' => (string) ($post['archive_title'] ?? ''),
+            'archive_title_en' => (string) ($post['archive_title_en'] ?? ''),
             'archive_description' => (string) ($post['archive_description'] ?? ''),
+            'archive_description_en' => (string) ($post['archive_description_en'] ?? ''),
             'subscribe_intro' => (string) ($post['subscribe_intro'] ?? ''),
+            'subscribe_intro_en' => (string) ($post['subscribe_intro_en'] ?? ''),
             'footer_note' => (string) ($post['footer_note'] ?? ''),
+            'footer_note_en' => (string) ($post['footer_note_en'] ?? ''),
         ];
     }
 
@@ -411,5 +416,126 @@ final class CMS_Newsletter_Admin_Pages
     {
         $payload = $context !== [] ? ' ' . json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : '';
         error_log('[cms-newsletter] ' . $event . $payload);
+    }
+
+    /**
+     * @param array<string,string> $settings
+     * @return array<string,mixed>
+     */
+    private static function build_sender_domain_diagnostics(array $settings): array
+    {
+        $senderEmail = trim((string) ($settings['sender_email'] ?? ''));
+        $domain = self::extract_domain_from_email($senderEmail);
+        if ($domain === '') {
+            return [
+                'domain' => '',
+                'spf' => ['ok' => false, 'detail' => 'Keine gueltige Sender-Domain aus der Absender-E-Mail ableitbar.'],
+                'dmarc' => ['ok' => false, 'detail' => 'Keine gueltige Sender-Domain aus der Absender-E-Mail ableitbar.'],
+                'dkim' => ['ok' => false, 'detail' => 'Pruefung erfordert konfigurierbaren Selector; aktuell nur Hinweis.'],
+                'bimi' => ['ok' => false, 'detail' => 'Pruefung auf default._bimi erfolgt erst mit gueltiger Domain.'],
+            ];
+        }
+
+        $spfTxt = self::lookup_txt_records($domain);
+        $hasSpf = self::txt_records_contain($spfTxt, 'v=spf1');
+
+        $dmarcTxt = self::lookup_txt_records('_dmarc.' . $domain);
+        $hasDmarc = self::txt_records_contain($dmarcTxt, 'v=dmarc1');
+
+        $bimiTxt = self::lookup_txt_records('default._bimi.' . $domain);
+        $hasBimi = self::txt_records_contain($bimiTxt, 'v=bimi1');
+
+        return [
+            'domain' => $domain,
+            'spf' => [
+                'ok' => $hasSpf,
+                'detail' => $hasSpf
+                    ? 'SPF-Record gefunden.'
+                    : 'Kein SPF-TXT (v=spf1) auf der Domain gefunden.',
+            ],
+            'dmarc' => [
+                'ok' => $hasDmarc,
+                'detail' => $hasDmarc
+                    ? 'DMARC-Record gefunden.'
+                    : 'Kein DMARC-TXT (v=DMARC1) auf _dmarc.' . $domain . ' gefunden.',
+            ],
+            'dkim' => [
+                'ok' => false,
+                'detail' => 'DKIM ist selector-abhaengig; pruefe deinen ESP-spezifischen Selector.',
+            ],
+            'bimi' => [
+                'ok' => $hasBimi,
+                'detail' => $hasBimi
+                    ? 'BIMI-TXT auf default._bimi.' . $domain . ' gefunden.'
+                    : 'Kein BIMI-TXT (v=BIMI1) auf default._bimi.' . $domain . ' gefunden.',
+            ],
+        ];
+    }
+
+    private static function extract_domain_from_email(string $email): string
+    {
+        $email = trim($email);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return '';
+        }
+
+        $parts = explode('@', $email);
+        if (count($parts) !== 2) {
+            return '';
+        }
+
+        $domain = strtolower(trim((string) $parts[1]));
+        if ($domain === '' || str_contains($domain, ' ')) {
+            return '';
+        }
+
+        return $domain;
+    }
+
+    /**
+     * @return string[]
+     */
+    private static function lookup_txt_records(string $host): array
+    {
+        if ($host === '' || !function_exists('dns_get_record')) {
+            return [];
+        }
+
+        $records = @dns_get_record($host, DNS_TXT);
+        if (!is_array($records)) {
+            return [];
+        }
+
+        $values = [];
+        foreach ($records as $record) {
+            if (!is_array($record)) {
+                continue;
+            }
+            $txt = (string) ($record['txt'] ?? '');
+            if ($txt !== '') {
+                $values[] = strtolower($txt);
+            }
+        }
+
+        return $values;
+    }
+
+    /**
+     * @param string[] $records
+     */
+    private static function txt_records_contain(array $records, string $needle): bool
+    {
+        $needle = strtolower(trim($needle));
+        if ($needle === '') {
+            return false;
+        }
+
+        foreach ($records as $record) {
+            if (str_contains(strtolower($record), $needle)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

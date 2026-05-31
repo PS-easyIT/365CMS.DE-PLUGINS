@@ -12,6 +12,11 @@ if (!defined('ABSPATH')) {
 }
 
 $esc = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$lang = function_exists('cms_plugin_public_language') ? cms_plugin_public_language() : 'de';
+$t = static fn(string $de, string $en): string => $lang === 'en' ? $en : $de;
+$path = static fn(string $route): string => function_exists('cms_plugin_public_localized_path')
+    ? cms_plugin_public_localized_path($route, $lang)
+    : ($lang === 'en' ? '/en/' . ltrim($route, '/') : '/' . ltrim($route, '/'));
 $categoryId = static function (string $category): string {
     $normalized = strtolower(trim((string) preg_replace('/[^a-z0-9]+/i', '-', $category), '-'));
     return $normalized !== '' ? 'cat-' . $normalized : 'cat-tools';
@@ -51,7 +56,7 @@ $safeUrl = static function (mixed $value): string {
 };
 $statusLabel = static fn(string $status): string => match ($status) {
     'beta' => 'Beta',
-    'soon' => 'bald',
+    'soon' => $lang === 'en' ? 'soon' : 'bald',
     default => '',
 };
 $reviewLabels = static function (array $domainKeys, array $domains): array {
@@ -175,16 +180,16 @@ foreach (($groupedTools ?? []) as $category => $tools) {
 }
 $reviewDomainCount = is_array($bestPracticeDomains ?? null) ? count($bestPracticeDomains) : 0;
 
-$landingTitle = $landingValue('landing_title', 'M365 Tools');
-$landingOverline = $landingValue('landing_overline', 'Rechner & Tools');
-$landingIntro = $landingValue('landing_intro', 'Eine kuratierte Sammlung für Microsoft-365-Lizenzierung, Kosten, Speicher, Backup, Copilot, Telefonie, Migration und Betrieb.');
-$landingPrimaryButtonLabel = $landingValue('landing_primary_button_label', 'Alle ' . (string) $toolCount . ' Tools durchsuchen ↓');
+$landingTitle = $landingValue('landing_title', $t('M365 Tools', 'M365 Tools'));
+$landingOverline = $landingValue('landing_overline', $t('Rechner & Tools', 'Calculators & Tools'));
+$landingIntro = $landingValue('landing_intro', $t('Eine kuratierte Sammlung fuer Microsoft-365-Lizenzierung, Kosten, Speicher, Backup, Copilot, Telefonie, Migration und Betrieb.', 'A curated collection for Microsoft 365 licensing, cost, storage, backup, Copilot, telephony, migration and operations.'));
+$landingPrimaryButtonLabel = $landingValue('landing_primary_button_label', $t('Alle ', 'Browse all ') . (string) $toolCount . $t(' Tools durchsuchen ↓', ' tools ↓'));
 $landingPrimaryButtonUrl = $safeUrl($landingValue('landing_primary_button_url', '#direkteinstieg'));
-$landingSecondaryButtonLabel = $landingValue('landing_secondary_button_label', 'Kontakt aufnehmen');
-$landingSecondaryButtonUrl = $safeUrl($landingValue('landing_secondary_button_url', '/kontakt'));
+$landingSecondaryButtonLabel = $landingValue('landing_secondary_button_label', $t('Kontakt aufnehmen', 'Contact us'));
+$landingSecondaryButtonUrl = $safeUrl($landingValue('landing_secondary_button_url', $path('/kontakt')));
 $primaryLabelNormalized = strtolower(trim($landingPrimaryButtonLabel));
-if ($landingPrimaryButtonUrl === '' || $landingPrimaryButtonUrl === '/kontakt' || $landingPrimaryButtonUrl === '#m365tools-explorer' || $primaryLabelNormalized === 'kontakt aufnehmen') {
-    $landingPrimaryButtonLabel = 'Alle ' . (string) $toolCount . ' Tools durchsuchen ↓';
+if ($landingPrimaryButtonUrl === '' || $landingPrimaryButtonUrl === '/kontakt' || $landingPrimaryButtonUrl === '/en/kontakt' || $landingPrimaryButtonUrl === '#m365tools-explorer' || $primaryLabelNormalized === 'kontakt aufnehmen') {
+    $landingPrimaryButtonLabel = $t('Alle ', 'Browse all ') . (string) $toolCount . $t(' Tools durchsuchen ↓', ' tools ↓');
     $landingPrimaryButtonUrl = '#direkteinstieg';
 } elseif (str_contains($primaryLabelNormalized, 'tools durchsuchen') && !str_contains($landingPrimaryButtonLabel, '↓')) {
     $landingPrimaryButtonLabel .= ' ↓';
@@ -199,7 +204,7 @@ if (class_exists('CMS\ThemeManager')) {
 }
 ?>
 
-<main class="phinit-plugin m365tools-page--<?php echo $esc($pageLayout); ?> m365tools-landing--<?php echo $esc($landingLayout); ?> m365tools-header--<?php echo $esc($headerStyle); ?> m365tools-header-align--<?php echo $esc($headerAlignment); ?> m365tools-buttons--<?php echo $esc($buttonLayout); ?> m365tools-category--<?php echo $esc($categoryLayout); ?> m365tools-tools--<?php echo $esc($toolLayout); ?> m365tools-cards--<?php echo $esc($cardStyle); ?> m365tools-tool-buttons--<?php echo $esc($toolButtonStyle); ?> m365tools-density--<?php echo $esc($density); ?>" id="m365tools-landing" style="--m365tools-card-radius: <?php echo (int) $cardRadius; ?>px; --m365tools-ui-radius: <?php echo (int) $cardRadius; ?>px; --m365tools-card-min: <?php echo (int) $cardsMinWidth; ?>px; --m365tools-section-gap: <?php echo (int) $sectionGap; ?>px; --m365tools-primary: <?php echo $esc($landingPrimary); ?>; --m365tools-accent: <?php echo $esc($landingAccent); ?>; --m365tools-bg: <?php echo $esc($landingBackground); ?>; --m365tools-surface: <?php echo $esc($landingSurface); ?>; --m365tools-surface-alt: <?php echo $esc($landingSurfaceAlt); ?>; --m365tools-header-bg: <?php echo $esc($landingHeaderBg); ?>; --m365tools-header-text: <?php echo $esc($landingHeaderText); ?>; --m365tools-header-muted: <?php echo $esc($landingHeaderMuted); ?>; --m365tools-header-border: <?php echo $esc($landingHeaderBorder); ?>; --m365tools-button-primary-bg: <?php echo $esc($landingPrimaryButtonBg); ?>; --m365tools-button-primary-text: <?php echo $esc($landingPrimaryButtonText); ?>; --m365tools-button-secondary-bg: <?php echo $esc($landingSecondaryButtonBg); ?>; --m365tools-button-secondary-text: <?php echo $esc($landingSecondaryButtonText); ?>; --m365tools-text: <?php echo $esc($landingText); ?>; --m365tools-muted: <?php echo $esc($landingMuted); ?>; --m365tools-border: <?php echo $esc($landingBorder); ?>;">
+<main class="phinit-plugin m365tools-page--<?php echo $esc($pageLayout); ?> m365tools-landing--<?php echo $esc($landingLayout); ?> m365tools-header--<?php echo $esc($headerStyle); ?> m365tools-header-align--<?php echo $esc($headerAlignment); ?> m365tools-buttons--<?php echo $esc($buttonLayout); ?> m365tools-category--<?php echo $esc($categoryLayout); ?> m365tools-tools--<?php echo $esc($toolLayout); ?> m365tools-cards--<?php echo $esc($cardStyle); ?> m365tools-tool-buttons--<?php echo $esc($toolButtonStyle); ?> m365tools-density--<?php echo $esc($density); ?>" id="m365tools-landing" style="--m365tools-card-radius: <?php echo (int) $cardRadius; ?>px; --m365tools-ui-radius: <?php echo (int) $cardRadius; ?>px; --m365tools-card-min: <?php echo (int) $cardsMinWidth; ?>px; --m365tools-section-gap: <?php echo (int) $sectionGap; ?>px; --m365tools-primary: var(--phinit-color-accent); --m365tools-accent: var(--phinit-color-accent); --m365tools-bg: var(--phinit-color-bg); --m365tools-surface: var(--phinit-color-surface); --m365tools-surface-alt: var(--phinit-color-surface); --m365tools-header-bg: var(--phinit-color-surface); --m365tools-header-text: var(--phinit-color-ink); --m365tools-header-muted: var(--phinit-color-ink-secondary); --m365tools-header-border: var(--phinit-color-border); --m365tools-button-primary-bg: var(--phinit-color-accent); --m365tools-button-primary-text: var(--phinit-color-accent-ink); --m365tools-button-secondary-bg: var(--phinit-color-surface); --m365tools-button-secondary-text: var(--phinit-color-ink); --m365tools-text: var(--phinit-color-ink); --m365tools-muted: var(--phinit-color-ink-secondary); --m365tools-border: var(--phinit-color-border);">
     <header class="m365tools-landing__header">
         <section class="m365tools-landing__intro" aria-labelledby="m365tools-title">
             <?php if ($showHeaderOverline): ?>
@@ -214,7 +219,7 @@ if (class_exists('CMS\ThemeManager')) {
             <p class="phinit-prose"><?php echo $esc($landingIntro); ?></p>
             <?php endif; ?>
             <?php if ($showHeaderButtons && ($landingPrimaryButtonUrl !== '' || $landingSecondaryButtonUrl !== '')): ?>
-            <nav class="m365tools-landing__buttons" aria-label="Landingpage Aktionen">
+            <nav class="m365tools-landing__buttons" aria-label="<?php echo $esc($t('Landingpage Aktionen', 'Landing actions')); ?>">
                 <?php if ($landingPrimaryButtonUrl !== ''): ?>
                 <a class="phinit-btn phinit-btn--primary m365tools-btn m365tools-btn--primary" href="<?php echo $esc($landingPrimaryButtonUrl); ?>"<?php echo $landingPrimaryButtonUrl === '#direkteinstieg' ? ' data-m365tools-primary-search' : ''; ?>><?php echo $esc($landingPrimaryButtonLabel); ?></a>
                 <?php endif; ?>
@@ -225,10 +230,10 @@ if (class_exists('CMS\ThemeManager')) {
             <?php endif; ?>
         </section>
         <?php if ($showFacts && ($showFactModules || $showFactLive || $showFactReviews)): ?>
-        <dl class="m365tools-landing__facts" aria-label="Übersicht Kennzahlen">
+        <dl class="m365tools-landing__facts" aria-label="<?php echo $esc($t('Uebersicht Kennzahlen', 'Key metrics')); ?>">
             <?php if ($showFactModules): ?>
             <div>
-                <dt>Module</dt>
+                <dt><?php echo $esc($t('Module', 'Modules')); ?></dt>
                 <dd><?php echo (int) $toolCount; ?></dd>
             </div>
             <?php endif; ?>
@@ -240,7 +245,7 @@ if (class_exists('CMS\ThemeManager')) {
             <?php endif; ?>
             <?php if ($showFactReviews): ?>
             <div>
-                <dt>Review-Bereiche</dt>
+                <dt><?php echo $esc($t('Review-Bereiche', 'Review domains')); ?></dt>
                 <dd><?php echo (int) $reviewDomainCount; ?></dd>
             </div>
             <?php endif; ?>
@@ -253,20 +258,20 @@ if (class_exists('CMS\ThemeManager')) {
     <section class="m365tools-finder" id="direkteinstieg" aria-labelledby="m365tools-finder-title" data-m365tools-finder>
         <div class="m365tools-finder__head">
             <section>
-                <p class="phinit-overline">Direkteinstieg</p>
-                <h2 id="m365tools-finder-title">Alle Tools durchsuchen</h2>
+                <p class="phinit-overline"><?php echo $esc($t('Direkteinstieg', 'Quick access')); ?></p>
+                <h2 id="m365tools-finder-title"><?php echo $esc($t('Alle Tools durchsuchen', 'Browse all tools')); ?></h2>
             </section>
-            <p class="m365tools-finder__count" data-m365tools-result-count><?php echo (int) $toolCount; ?> Tools sichtbar</p>
+            <p class="m365tools-finder__count" data-m365tools-result-count><?php echo (int) $toolCount; ?> <?php echo $esc($t('Tools sichtbar', 'tools visible')); ?></p>
         </div>
         <label class="m365tools-search" for="tool-search">
-            <span class="m365tools-visually-hidden">Tools suchen</span>
+            <span class="m365tools-visually-hidden"><?php echo $esc($t('Tools suchen', 'Search tools')); ?></span>
             <span class="m365tools-search__control">
-                <input id="tool-search" type="search" autocomplete="off" placeholder="Nach Tool, Thema oder Kategorie suchen …" data-m365tools-search>
+                <input id="tool-search" type="search" autocomplete="off" placeholder="<?php echo $esc($t('Nach Tool, Thema oder Kategorie suchen ...', 'Search by tool, topic, or category ...')); ?>" data-m365tools-search>
                 <kbd class="m365tools-search__hint" aria-hidden="true">/</kbd>
             </span>
         </label>
-        <div class="m365tools-tag-filter" role="radiogroup" aria-label="Nach Kategorie filtern" data-m365tools-chip-group>
-            <button type="button" class="m365tools-tag-chip is-active" role="radio" aria-checked="true" data-m365tools-tag="all">Alle</button>
+        <div class="m365tools-tag-filter" role="radiogroup" aria-label="<?php echo $esc($t('Nach Kategorie filtern', 'Filter by category')); ?>" data-m365tools-chip-group>
+            <button type="button" class="m365tools-tag-chip is-active" role="radio" aria-checked="true" data-m365tools-tag="all"><?php echo $esc($t('Alle', 'All')); ?></button>
             <?php foreach ($categoryCounts as $category => $count): ?>
             <button type="button" class="m365tools-tag-chip" role="radio" aria-checked="false" data-m365tools-tag="<?php echo $esc(strtolower((string) $category)); ?>">
                 <?php echo $esc($category); ?>
@@ -281,7 +286,7 @@ if (class_exists('CMS\ThemeManager')) {
 
     <div class="m365tools-directory">
         <?php if ($showCategoryNav && !empty($categoryCounts)): ?>
-        <nav class="m365tools-category-nav" aria-label="Modulkategorien" data-m365tools-toc>
+        <nav class="m365tools-category-nav" aria-label="<?php echo $esc($t('Modulkategorien', 'Module categories')); ?>" data-m365tools-toc>
             <ol>
                 <?php foreach ($categoryCounts as $category => $count): ?>
                 <?php $sectionId = $categoryId((string) $category); ?>
@@ -329,8 +334,8 @@ if (class_exists('CMS\ThemeManager')) {
 
     <?php if (empty($groupedTools)): ?>
     <section class="phinit-empty-state" role="status" aria-live="polite">
-        <h2>Keine Rechner verfügbar</h2>
-        <p>Aktuell sind noch keine öffentlichen Module registriert.</p>
+        <h2><?php echo $esc($t('Keine Rechner verfuegbar', 'No calculators available')); ?></h2>
+        <p><?php echo $esc($t('Aktuell sind noch keine oeffentlichen Module registriert.', 'No public modules are currently registered.')); ?></p>
     </section>
     <?php endif; ?>
 
@@ -451,11 +456,11 @@ if (class_exists('CMS\ThemeManager')) {
     </div>
 
     <section class="phinit-empty-state m365tools-no-results" role="status" aria-live="polite" hidden data-m365tools-empty>
-        <h2>Keine passenden Tools gefunden</h2>
-        <p>Bitte Suchbegriff anpassen oder einen anderen Kategorie-Chip wählen.</p>
+        <h2><?php echo $esc($t('Keine passenden Tools gefunden', 'No matching tools found')); ?></h2>
+        <p><?php echo $esc($t('Bitte Suchbegriff anpassen oder einen anderen Kategorie-Chip waehlen.', 'Adjust your query or choose a different category chip.')); ?></p>
     </section>
 
-    <button type="button" class="m365tools-back-to-top" aria-label="Nach oben" data-m365tools-top>↑</button>
+    <button type="button" class="m365tools-back-to-top" aria-label="<?php echo $esc($t('Nach oben', 'Back to top')); ?>" data-m365tools-top>↑</button>
 </main>
 
 <?php

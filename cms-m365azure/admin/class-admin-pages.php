@@ -195,6 +195,9 @@ final class CMS_M365Azure_Admin_Pages
             'hero_primary_button_text', 'hero_primary_button_url', 'hero_secondary_button_text', 'hero_secondary_button_url', 'hero_cta_button_text', 'hero_cta_button_url',
             'toc_title', 'table_service_label', 'table_description_label', 'table_features_label', 'table_use_cases_label', 'table_links_label',
             'docs_link_label', 'pricing_link_label', 'empty_value_label', 'note_title', 'note_items', 'source_title', 'source_intro', 'source_details_label',
+            'well_architected_title', 'well_architected_intro',
+            'well_architected_pillar_reliability', 'well_architected_pillar_security', 'well_architected_pillar_cost',
+            'well_architected_pillar_operational', 'well_architected_pillar_performance',
         ];
     }
 
@@ -204,7 +207,7 @@ final class CMS_M365Azure_Admin_Pages
         return [
             'show_hero', 'show_hero_actions', 'show_toc', 'toc_nowrap', 'show_category_intro',
             'show_service_images', 'show_service_subtitles', 'show_description', 'show_service_links', 'show_feature_lists', 'show_use_cases',
-            'show_notes_section', 'show_info_note', 'show_sources_card',
+            'show_notes_section', 'show_info_note', 'show_sources_card', 'show_well_architected_checklist',
         ];
     }
 
@@ -486,6 +489,7 @@ final class CMS_M365Azure_Admin_Pages
             self::replace_checkbox('show_notes_section', 'Hinweis-/Quellenbereich anzeigen', (string) ($s['show_notes_section'] ?? '1') === '1');
             self::replace_checkbox('show_info_note', 'Hinweisbox anzeigen', (string) ($s['show_info_note'] ?? '1') === '1');
             self::replace_checkbox('show_sources_card', 'Quellenbox anzeigen', (string) ($s['show_sources_card'] ?? '1') === '1');
+            self::replace_checkbox('show_well_architected_checklist', 'Well-Architected-Checkliste anzeigen', (string) ($s['show_well_architected_checklist'] ?? '1') === '1');
         } elseif ($pane === 'toc') {
             echo '<h3>🧭 Inhaltsverzeichnis</h3>';
             self::replace_checkbox('show_toc', 'Inhaltsverzeichnis anzeigen', (string) ($s['show_toc'] ?? '1') === '1');
@@ -512,6 +516,14 @@ final class CMS_M365Azure_Admin_Pages
             self::replace_input('source_title', 'Quellenbox Überschrift', (string) ($s['source_title'] ?? 'Quellenstand'));
             self::replace_textarea('source_intro', 'Quellenbox Text', (string) ($s['source_intro'] ?? ''), 3);
             self::replace_input('source_details_label', 'Details-Link Text', (string) ($s['source_details_label'] ?? 'Quellen anzeigen'));
+            self::replace_checkbox('show_well_architected_checklist', 'Well-Architected-Checkliste anzeigen', (string) ($s['show_well_architected_checklist'] ?? '1') === '1');
+            self::replace_input('well_architected_title', 'Checklisten-Überschrift', (string) ($s['well_architected_title'] ?? 'Well-Architected Verbesserungs-Checkliste'));
+            self::replace_textarea('well_architected_intro', 'Checklisten-Einleitung', (string) ($s['well_architected_intro'] ?? ''), 2);
+            self::replace_input('well_architected_pillar_reliability', 'Pillar: Reliability', (string) ($s['well_architected_pillar_reliability'] ?? 'Reliability: Betriebsrisiken, Wiederherstellung und Abhängigkeiten prüfen.'));
+            self::replace_input('well_architected_pillar_security', 'Pillar: Security', (string) ($s['well_architected_pillar_security'] ?? 'Security: Identitäten, Netzwerkzugriff, Secrets und Datenzugriffe härten.'));
+            self::replace_input('well_architected_pillar_cost', 'Pillar: Cost Optimization', (string) ($s['well_architected_pillar_cost'] ?? 'Cost Optimization: Kostenhebel, Abschaltregeln und Reserved Capacity bewerten.'));
+            self::replace_input('well_architected_pillar_operational', 'Pillar: Operational Excellence', (string) ($s['well_architected_pillar_operational'] ?? 'Operational Excellence: Monitoring, Alerts, Runbooks und Verantwortlichkeiten festlegen.'));
+            self::replace_input('well_architected_pillar_performance', 'Pillar: Performance Efficiency', (string) ($s['well_architected_pillar_performance'] ?? 'Performance Efficiency: Skalierung, Lastprofile und Engpässe validieren.'));
         } else {
             echo '<h3>🎨 Design</h3>';
             self::replace_number('layout_max_width', 'Maximale Inhaltsbreite in px', (int) ($s['layout_max_width'] ?? 1180), 720, 1600);

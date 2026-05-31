@@ -24,7 +24,12 @@ final class CMS_Marketplace_Public
 
     public function shouldHandleBeforeRouting(): bool
     {
-        return (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') && $this->resolveCurrentSection() === 'submit';
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            return false;
+        }
+
+        $section = $this->resolveCurrentSection();
+        return in_array($section, ['submit', 'security_report'], true);
     }
 
     public function registerRoutes(object $router): void
@@ -41,16 +46,29 @@ final class CMS_Marketplace_Public
                 continue;
             }
 
-            $router->addRoute('GET', $path, function () use ($section): void {
-                $this->handleRequest($section);
-            });
+            foreach ($this->expandLocalizedPaths($path) as $localizedPath) {
+                $router->addRoute('GET', $localizedPath, function () use ($section): void {
+                    $this->handleRequest($section);
+                });
+            }
         }
 
         $submitPath = (string) ($routes['submit'] ?? '');
         if ($submitPath !== '') {
-            $router->addRoute('GET', $submitPath, function (): void {
-                $this->handleRequest('submit');
-            });
+            foreach ($this->expandLocalizedPaths($submitPath) as $localizedPath) {
+                $router->addRoute('GET', $localizedPath, function (): void {
+                    $this->handleRequest('submit');
+                });
+            }
+        }
+
+        $securityPath = (string) ($routes['security_report'] ?? '');
+        if ($securityPath !== '') {
+            foreach ($this->expandLocalizedPaths($securityPath) as $localizedPath) {
+                $router->addRoute('GET', $localizedPath, function (): void {
+                    $this->handleRequest('security_report');
+                });
+            }
         }
     }
 
@@ -60,6 +78,7 @@ final class CMS_Marketplace_Public
         if ($section === null) {
             return;
         }
+        $lang = $this->resolveCurrentLanguage();
         $publicCssUrl = $this->resolvePublicCssUrl($section);
 
         if (!headers_sent()) {
@@ -68,24 +87,29 @@ final class CMS_Marketplace_Public
             header('X-Content-Type-Options: nosniff');
         }
 
+        if ($section === 'security_report') {
+            $this->renderSecurityReportPage($lang, $publicCssUrl);
+            exit;
+        }
+
         if ($section !== 'submit') {
             $pageTitle = match ($section) {
-                'plugins' => 'Marketplace Plugins',
-                'themes' => 'Marketplace Themes',
-                'cms' => 'Marketplace CMS',
+                'plugins' => $this->i18nText($lang, 'Marketplace Plugins', 'Marketplace Plugins'),
+                'themes' => $this->i18nText($lang, 'Marketplace Themes', 'Marketplace Themes'),
+                'cms' => $this->i18nText($lang, 'Marketplace CMS', 'Marketplace CMS'),
                 default => '365CMS Marketplace',
             };
             $pageDescription = match ($section) {
-                'plugins' => 'Alle freigegebenen 365CMS-Plugins mit Installations- und Update-Metadaten.',
-                'themes' => 'Alle freigegebenen 365CMS-Themes mit Installations- und Update-Metadaten.',
-                'cms' => 'Freigegebene 365CMS-Core-Pakete und Update-Dateien.',
-                default => 'Öffentliche Übersicht aller freigegebenen Bereiche des 365CMS Marketplace.',
+                'plugins' => $this->i18nText($lang, 'Alle freigegebenen 365CMS-Plugins mit Installations- und Update-Metadaten.', 'All published 365CMS plugins with install and update metadata.'),
+                'themes' => $this->i18nText($lang, 'Alle freigegebenen 365CMS-Themes mit Installations- und Update-Metadaten.', 'All published 365CMS themes with install and update metadata.'),
+                'cms' => $this->i18nText($lang, 'Freigegebene 365CMS-Core-Pakete und Update-Dateien.', 'Published 365CMS core packages and update files.'),
+                default => $this->i18nText($lang, 'Öffentliche Übersicht aller freigegebenen Bereiche des 365CMS Marketplace.', 'Public overview of all published sections of the 365CMS marketplace.'),
             };
             $overview = $this->service->getPublicOverviewPayload();
-            $sections = $this->service->getPublicSections();
+            $sections = $this->service->getPublicSections($lang);
             $entries = $this->service->getPublicSectionEntries($section);
             $publicUrls = $this->service->getPublicUrls();
-            $publicRouteMap = $this->service->getPublicRouteMap();
+            $publicRouteMap = $this->service->getLocalizedPublicRouteMap($lang);
             $siteUrl = defined('SITE_URL') ? (string) SITE_URL : '';
 
             $templatePath = CMS_MARKETPLACE_PLUGIN_DIR . 'templates/public-marketplace.php';
@@ -103,18 +127,18 @@ final class CMS_Marketplace_Public
             $values = array_merge($values, $this->extractSubmittedValues($_POST));
 
             if ($this->isHoneypotFilled($_POST)) {
-                $message = 'Danke, deine Einreichung wurde entgegengenommen.';
+                $message = $this->i18nText($lang, 'Danke, deine Einreichung wurde entgegengenommen.', 'Thanks, your submission has been received.');
                 $messageType = 'success';
                 $values = $this->getDefaultValues();
             } elseif ($this->recordAndCheckRateLimit()) {
-                $message = 'Bitte warte kurz, bevor du eine weitere Einreichung absendest.';
+                $message = $this->i18nText($lang, 'Bitte warte kurz, bevor du eine weitere Einreichung absendest.', 'Please wait a moment before sending another submission.');
                 $messageType = 'error';
             } elseif (!class_exists('CMS\\Security') || !\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'cms_marketplace_public_submit')) {
-                $message = 'Sicherheitscheck fehlgeschlagen.';
+                $message = $this->i18nText($lang, 'Sicherheitscheck fehlgeschlagen.', 'Security check failed.');
                 $messageType = 'error';
             } else {
                 $result = $this->service->submitPublicItem($_POST, $_FILES['package_zip'] ?? null);
-                $message = (string) ($result['message'] ?? 'Aktion abgeschlossen.');
+                $message = (string) ($result['message'] ?? $this->i18nText($lang, 'Aktion abgeschlossen.', 'Action completed.'));
                 $messageType = !empty($result['success']) ? 'success' : 'error';
 
                 if (!empty($result['success'])) {
@@ -137,6 +161,35 @@ final class CMS_Marketplace_Public
     private function resolveCurrentSection(): ?string
     {
         return $this->service->resolvePublicSectionFromRequestUri((string) ($_SERVER['REQUEST_URI'] ?? '/'));
+    }
+
+    private function resolveCurrentLanguage(): string
+    {
+        if (function_exists('cms_plugin_public_language')) {
+            return cms_plugin_public_language();
+        }
+
+        return 'de';
+    }
+
+    private function expandLocalizedPaths(string $path): array
+    {
+        if (!function_exists('cms_plugin_public_localized_path')) {
+            return [$path];
+        }
+
+        $de = cms_plugin_public_localized_path($path, 'de');
+        $en = cms_plugin_public_localized_path($path, 'en');
+        return array_values(array_unique(array_filter([$de, $en], static fn (string $value): bool => $value !== '')));
+    }
+
+    private function i18nText(string $lang, string $de, string $en): string
+    {
+        if (function_exists('cms_plugin_public_i18n_value')) {
+            return cms_plugin_public_i18n_value(['text' => $de, 'text_en' => $en], 'text', $lang, $de);
+        }
+
+        return $lang === 'en' ? $en : $de;
     }
 
     private function getDefaultValues(): array
@@ -166,6 +219,70 @@ final class CMS_Marketplace_Public
             'submitter_name' => '',
             'submitter_email' => '',
         ];
+    }
+
+    private function getDefaultSecurityReportValues(): array
+    {
+        return [
+            'type' => $this->sanitizeSubmittedType($_GET['type'] ?? ''),
+            'slug' => $this->sanitizeSubmittedText($_GET['slug'] ?? '', 120),
+            'version' => $this->sanitizeSubmittedText($_GET['version'] ?? '', 50),
+            'title' => '',
+            'details' => '',
+            'reporter_name' => '',
+            'reporter_email' => '',
+        ];
+    }
+
+    private function extractSubmittedSecurityValues(array $input): array
+    {
+        return [
+            'type' => $this->sanitizeSubmittedType($input['type'] ?? ''),
+            'slug' => $this->sanitizeSubmittedText($input['slug'] ?? '', 120),
+            'version' => $this->sanitizeSubmittedText($input['version'] ?? '', 50),
+            'title' => $this->sanitizeSubmittedText($input['title'] ?? '', 190),
+            'details' => $this->sanitizeSubmittedTextarea($input['details'] ?? '', 4000),
+            'reporter_name' => $this->sanitizeSubmittedText($input['reporter_name'] ?? '', 190),
+            'reporter_email' => $this->sanitizeSubmittedText($input['reporter_email'] ?? '', 190),
+        ];
+    }
+
+    private function renderSecurityReportPage(string $lang, string $publicCssUrl): void
+    {
+        $message = null;
+        $messageType = 'success';
+        $values = $this->getDefaultSecurityReportValues();
+
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+            $values = array_merge($values, $this->extractSubmittedSecurityValues($_POST));
+
+            if ($this->isHoneypotFilled($_POST)) {
+                $message = $this->i18nText($lang, 'Danke. Die Sicherheitsmeldung wurde entgegengenommen.', 'Thanks. The security report has been received.');
+                $messageType = 'success';
+                $values = $this->getDefaultSecurityReportValues();
+            } elseif ($this->recordAndCheckRateLimit()) {
+                $message = $this->i18nText($lang, 'Bitte warte kurz, bevor du eine weitere Meldung sendest.', 'Please wait a moment before sending another report.');
+                $messageType = 'error';
+            } elseif (!class_exists('CMS\\Security') || !\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'cms_marketplace_public_security_report')) {
+                $message = $this->i18nText($lang, 'Sicherheitscheck fehlgeschlagen.', 'Security check failed.');
+                $messageType = 'error';
+            } else {
+                $result = $this->service->submitSecurityReport($_POST, $lang);
+                $message = (string) ($result['message'] ?? $this->i18nText($lang, 'Aktion abgeschlossen.', 'Action completed.'));
+                $messageType = !empty($result['success']) ? 'success' : 'error';
+                if (!empty($result['success'])) {
+                    $values = $this->getDefaultSecurityReportValues();
+                }
+            }
+        }
+
+        $csrfToken = class_exists('CMS\Security') ? \CMS\Security::instance()->generateToken('cms_marketplace_public_security_report') : '';
+        $submitUrl = $this->service->getPublicSecurityReportUrl([], $lang);
+        $siteUrl = defined('SITE_URL') ? (string) SITE_URL : '';
+        $templatePath = CMS_MARKETPLACE_PLUGIN_DIR . 'templates/public-security-report.php';
+        if (is_file($templatePath)) {
+            include $templatePath;
+        }
     }
 
     private function extractSubmittedValues(array $input): array
@@ -279,7 +396,7 @@ final class CMS_Marketplace_Public
 
     private function resolvePublicCssUrl(string $section): string
     {
-        $fileName = $section === 'submit' ? 'public-submit.css' : 'public-marketplace.css';
+        $fileName = in_array($section, ['submit', 'security_report'], true) ? 'public-submit.css' : 'public-marketplace.css';
         $cssFile = CMS_MARKETPLACE_PLUGIN_DIR . 'assets/css/' . $fileName;
         if (!is_file($cssFile)) {
             return '';

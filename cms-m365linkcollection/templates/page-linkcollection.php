@@ -15,19 +15,41 @@ $settings = isset($settings) && is_array($settings) ? $settings : CMS_M365LINKCO
 $categories = isset($categories) && is_array($categories) ? $categories : [];
 $items = isset($items) && is_array($items) ? $items : [];
 $repo = isset($repo) && $repo instanceof CMS_M365LINKCOLLECTION_Repository ? $repo : CMS_M365LINKCOLLECTION_Repository::instance();
+$lang = isset($lang) && in_array($lang, ['de', 'en'], true) ? $lang : (function_exists('cms_plugin_public_language') ? cms_plugin_public_language() : 'de');
+$mlcText = static function (string $key, string $fallback = '') use ($settings, $lang): string {
+    if (function_exists('cms_plugin_public_i18n_value')) {
+        return cms_plugin_public_i18n_value($settings, $key, $lang, $fallback);
+    }
+    if ($lang === 'en' && isset($settings[$key . '_en']) && $settings[$key . '_en'] !== '') {
+        return (string) $settings[$key . '_en'];
+    }
+    if (isset($settings[$key]) && $settings[$key] !== '') {
+        return (string) $settings[$key];
+    }
+
+    return $fallback;
+};
 $view = isset($view) ? (string) $view : 'cards';
 $category = isset($category) ? (string) $category : '';
 $q = isset($q) ? (string) $q : '';
 $page = isset($page) ? (int) $page : 1;
 $totalPages = isset($totalPages) ? (int) $totalPages : 1;
+$total = isset($total) ? (int) $total : count($items);
+$structuredDataJson = isset($structuredDataJson) ? (string) $structuredDataJson : '';
 $showCards = !empty($settings['show_cards']) && $settings['show_cards'] !== '0' && in_array($view, ['cards', 'both'], true);
 $showTable = !empty($settings['show_table']) && $settings['show_table'] !== '0' && in_array($view, ['table', 'both'], true);
 $showImages = !empty($settings['show_images']) && $settings['show_images'] !== '0';
+$accessibilityValidationMode = !empty($settings['accessibility_validation_mode']) && $settings['accessibility_validation_mode'] !== '0';
 $visibleColumns = array_filter(array_map('trim', explode(',', (string) ($settings['visible_columns'] ?? 'image,title,subtitle,url,actions'))));
 $hasColumn = static fn(string $column): bool => in_array($column, $visibleColumns, true);
 $baseRoute = CMS_M365LINKCOLLECTION_Settings::route();
+if (function_exists('cms_plugin_public_localized_path')) {
+    $baseRoute = cms_plugin_public_localized_path(trim($baseRoute, '/'), $lang);
+}
 $siteUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
 $baseUrl = $siteUrl . $baseRoute;
+$resultsCountTemplate = $mlcText('label_results_count', '%d links found');
+$resultsCountText = str_replace('%d', (string) $total, $resultsCountTemplate);
 $buildUrl = static function (array $overrides = []) use ($baseUrl, $category, $q, $page): string {
     $query = array_filter([
         'category' => $category,
@@ -87,22 +109,27 @@ $tableDensity = in_array((string) ($settings['table_density'] ?? 'comfortable'),
     ? (string) ($settings['table_density'] ?? 'comfortable')
     : 'comfortable';
 ?>
-<main class="phinit-plugin mlc-page" id="m365-linkcollection">
+<?php if ($structuredDataJson !== ''): ?>
+<script type="application/ld+json"><?php echo htmlspecialchars($structuredDataJson, ENT_NOQUOTES, 'UTF-8'); ?></script>
+<?php endif; ?>
+<main class="phinit-plugin mlc-page" id="m365-linkcollection" data-mlc-a11y-validation="<?php echo $accessibilityValidationMode ? '1' : '0'; ?>" data-mlc-total-results="<?php echo (int) $total; ?>">
+    <p class="mlc-visually-hidden" data-mlc-results-status role="status" aria-live="polite"><?php echo htmlspecialchars($resultsCountText, ENT_QUOTES, 'UTF-8'); ?></p>
     <header class="mlc-header">
-        <p class="phinit-overline mlc-overline"><?php echo htmlspecialchars((string) ($settings['page_overline'] ?? 'MS365 Linkverzeichnis'), ENT_QUOTES, 'UTF-8'); ?></p>
-        <h1><?php echo htmlspecialchars((string) ($settings['page_title'] ?? 'MS365 | SITES & BLOGS'), ENT_QUOTES, 'UTF-8'); ?></h1>
-        <?php if (!empty($settings['page_intro'])): ?>
-        <p class="mlc-intro"><?php echo htmlspecialchars((string) $settings['page_intro'], ENT_QUOTES, 'UTF-8'); ?></p>
+        <p class="phinit-overline mlc-overline"><?php echo htmlspecialchars($mlcText('page_overline', 'MS365 Linkverzeichnis'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <h1><?php echo htmlspecialchars($mlcText('page_title', 'MS365 | SITES & BLOGS'), ENT_QUOTES, 'UTF-8'); ?></h1>
+        <?php $introText = $mlcText('page_intro', (string) ($settings['page_intro'] ?? '')); ?>
+        <?php if ($introText !== ''): ?>
+        <p class="mlc-intro"><?php echo htmlspecialchars($introText, ENT_QUOTES, 'UTF-8'); ?></p>
         <?php endif; ?>
     </header>
 
-    <nav class="mlc-filter" aria-label="<?php echo htmlspecialchars((string) ($settings['label_filter_nav'] ?? 'Linkcollection filtern'), ENT_QUOTES, 'UTF-8'); ?>">
+    <nav class="mlc-filter" aria-label="<?php echo htmlspecialchars($mlcText('label_filter_nav', 'Linkcollection filtern'), ENT_QUOTES, 'UTF-8'); ?>">
         <div class="mlc-filter-grid">
         <?php if (!empty($settings['show_category_nav']) && $settings['show_category_nav'] !== '0'): ?>
-        <section class="mlc-filter-card mlc-filter-card--categories" aria-label="<?php echo htmlspecialchars((string) ($settings['label_category_nav'] ?? 'Kategorien'), ENT_QUOTES, 'UTF-8'); ?>">
-            <span class="mlc-filter-card__label"><?php echo htmlspecialchars((string) ($settings['label_category_nav'] ?? 'Kategorien'), ENT_QUOTES, 'UTF-8'); ?></span>
+        <section class="mlc-filter-card mlc-filter-card--categories" aria-label="<?php echo htmlspecialchars($mlcText('label_category_nav', 'Kategorien'), ENT_QUOTES, 'UTF-8'); ?>">
+            <span class="mlc-filter-card__label"><?php echo htmlspecialchars($mlcText('label_category_nav', 'Kategorien'), ENT_QUOTES, 'UTF-8'); ?></span>
             <div class="mlc-category-nav" role="list">
-                <a role="listitem" href="<?php echo htmlspecialchars($buildUrl(['category' => null, 'p' => null]), ENT_QUOTES, 'UTF-8'); ?>" class="mlc-chip mlc-chip--all<?php echo $category === '' ? ' is-active' : ''; ?>"><?php echo htmlspecialchars((string) ($settings['label_all_categories'] ?? 'Alle'), ENT_QUOTES, 'UTF-8'); ?></a>
+                <a role="listitem" href="<?php echo htmlspecialchars($buildUrl(['category' => null, 'p' => null]), ENT_QUOTES, 'UTF-8'); ?>" class="mlc-chip mlc-chip--all<?php echo $category === '' ? ' is-active' : ''; ?>"><?php echo htmlspecialchars($mlcText('label_all_categories', 'Alle'), ENT_QUOTES, 'UTF-8'); ?></a>
                 <div class="mlc-category-list">
             <?php foreach ($categories as $cat): ?>
             <?php $slug = (string) ($cat['slug'] ?? ''); ?>
@@ -114,11 +141,11 @@ $tableDensity = in_array((string) ($settings['table_density'] ?? 'comfortable'),
         <?php endif; ?>
         <form method="GET" action="<?php echo htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8'); ?>" role="search" class="mlc-filter-card mlc-filter-card--search mlc-search-form">
             <?php if ($category !== ''): ?><input type="hidden" name="category" value="<?php echo htmlspecialchars($category, ENT_QUOTES, 'UTF-8'); ?>"><?php endif; ?>
-            <label for="mlc-q"><?php echo htmlspecialchars((string) ($settings['label_search'] ?? 'Suchbegriff'), ENT_QUOTES, 'UTF-8'); ?></label>
-            <input type="search" id="mlc-q" name="q" value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>" placeholder="<?php echo htmlspecialchars((string) ($settings['label_search_placeholder'] ?? 'z. B. Intune, MVP, Security'), ENT_QUOTES, 'UTF-8'); ?>">
-            <button type="submit" class="phinit-btn phinit-btn--primary mlc-btn mlc-btn--primary"><?php echo htmlspecialchars((string) ($settings['label_search_button'] ?? 'Suchen'), ENT_QUOTES, 'UTF-8'); ?></button>
+            <label for="mlc-q"><?php echo htmlspecialchars($mlcText('label_search', 'Suchbegriff'), ENT_QUOTES, 'UTF-8'); ?></label>
+            <input type="search" id="mlc-q" name="q" value="<?php echo htmlspecialchars($q, ENT_QUOTES, 'UTF-8'); ?>" placeholder="<?php echo htmlspecialchars($mlcText('label_search_placeholder', 'z. B. Intune, MVP, Security'), ENT_QUOTES, 'UTF-8'); ?>">
+            <button type="submit" class="phinit-btn phinit-btn--primary mlc-btn mlc-btn--primary"><?php echo htmlspecialchars($mlcText('label_search_button', 'Suchen'), ENT_QUOTES, 'UTF-8'); ?></button>
             <?php if ($q !== '' || $category !== ''): ?>
-            <a href="<?php echo htmlspecialchars($buildUrl(['category' => null, 'q' => null, 'p' => null]), ENT_QUOTES, 'UTF-8'); ?>" class="phinit-btn phinit-btn--link mlc-btn mlc-btn--link"><?php echo htmlspecialchars((string) ($settings['label_reset_button'] ?? 'Zurücksetzen'), ENT_QUOTES, 'UTF-8'); ?></a>
+            <a href="<?php echo htmlspecialchars($buildUrl(['category' => null, 'q' => null, 'p' => null]), ENT_QUOTES, 'UTF-8'); ?>" class="phinit-btn phinit-btn--link mlc-btn mlc-btn--link"><?php echo htmlspecialchars($mlcText('label_reset_button', 'Zurücksetzen'), ENT_QUOTES, 'UTF-8'); ?></a>
             <?php endif; ?>
         </form>
         </div>
@@ -126,14 +153,14 @@ $tableDensity = in_array((string) ($settings['table_density'] ?? 'comfortable'),
 
     <?php if ($items === []): ?>
     <section class="phinit-empty-state mlc-empty" role="status" aria-live="polite">
-        <p class="phinit-empty-state__title"><?php echo htmlspecialchars((string) ($settings['label_empty_title'] ?? 'Keine Links gefunden'), ENT_QUOTES, 'UTF-8'); ?></p>
-        <p class="phinit-empty-state__body"><?php echo htmlspecialchars((string) ($settings['label_empty_body'] ?? 'Bitte Filter anpassen oder die Suche zurücksetzen.'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <p class="phinit-empty-state__title"><?php echo htmlspecialchars($mlcText('label_empty_title', 'Keine Links gefunden'), ENT_QUOTES, 'UTF-8'); ?></p>
+        <p class="phinit-empty-state__body"><?php echo htmlspecialchars($mlcText('label_empty_body', 'Bitte Filter anpassen oder die Suche zurücksetzen.'), ENT_QUOTES, 'UTF-8'); ?></p>
     </section>
     <?php endif; ?>
 
     <?php if ($showCards && $items !== []): ?>
     <section class="mlc-card-section" aria-labelledby="mlc-card-heading">
-        <h2 id="mlc-card-heading"><?php echo htmlspecialchars((string) ($settings['label_cards_heading'] ?? 'Linkübersicht'), ENT_QUOTES, 'UTF-8'); ?></h2>
+        <h2 id="mlc-card-heading"><?php echo htmlspecialchars($mlcText('label_cards_heading', 'Linkübersicht'), ENT_QUOTES, 'UTF-8'); ?></h2>
         <div class="mlc-grid">
             <?php foreach ($items as $item): ?>
             <?php
@@ -161,10 +188,21 @@ $tableDensity = in_array((string) ($settings['table_density'] ?? 'comfortable'),
                     <h3><a href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?></a></h3>
                     <?php if (!empty($item['subtitle'])): ?><p class="mlc-card__subtitle"><?php echo htmlspecialchars((string) $item['subtitle'], ENT_QUOTES, 'UTF-8'); ?></p><?php endif; ?>
                     <footer class="mlc-card__actions">
-                        <a href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>" class="phinit-btn phinit-btn--secondary mlc-btn" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars((string) ($settings['external_button_label'] ?? 'Site öffnen'), ENT_QUOTES, 'UTF-8'); ?> <span aria-hidden="true">→</span></a>
+                        <a href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>" class="phinit-btn phinit-btn--secondary mlc-btn" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars($mlcText('external_button_label', 'Site öffnen'), ENT_QUOTES, 'UTF-8'); ?> <span aria-hidden="true">→</span></a>
                         <?php foreach ($buttons as $button): ?>
                         <?php $buttonUrl = $safeNavUrl((string) ($button['url'] ?? '')); if ($buttonUrl === '') { continue; } ?>
-                        <a href="<?php echo htmlspecialchars($buttonUrl, ENT_QUOTES, 'UTF-8'); ?>" class="phinit-btn phinit-btn--link mlc-btn mlc-btn--<?php echo htmlspecialchars((string) ($button['type'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($button['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a>
+                        <?php
+                        $buttonType = (string) ($button['type'] ?? '');
+                        $buttonLabel = (string) ($button['label'] ?? '');
+                        if ($buttonType === 'company') {
+                            $buttonLabel = $mlcText('company_button_label', $buttonLabel !== '' ? $buttonLabel : 'Company ansehen');
+                        } elseif ($buttonType === 'speaker') {
+                            $buttonLabel = $mlcText('speaker_button_label', $buttonLabel !== '' ? $buttonLabel : 'Speaker-Profil');
+                        } elseif ($buttonType === 'expert') {
+                            $buttonLabel = $mlcText('expert_button_label', $buttonLabel !== '' ? $buttonLabel : 'Expert-Profil');
+                        }
+                        ?>
+                        <a href="<?php echo htmlspecialchars($buttonUrl, ENT_QUOTES, 'UTF-8'); ?>" class="phinit-btn phinit-btn--link mlc-btn mlc-btn--<?php echo htmlspecialchars($buttonType, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($buttonLabel, ENT_QUOTES, 'UTF-8'); ?></a>
                         <?php endforeach; ?>
                     </footer>
                 </div>
@@ -176,15 +214,15 @@ $tableDensity = in_array((string) ($settings['table_density'] ?? 'comfortable'),
 
     <?php if ($showTable && $items !== []): ?>
     <section class="mlc-table-section" aria-labelledby="mlc-table-heading">
-        <h2 id="mlc-table-heading"><?php echo htmlspecialchars((string) ($settings['label_table_heading'] ?? 'Tabellarische Übersicht'), ENT_QUOTES, 'UTF-8'); ?></h2>
+        <h2 id="mlc-table-heading"><?php echo htmlspecialchars($mlcText('label_table_heading', 'Tabellarische Übersicht'), ENT_QUOTES, 'UTF-8'); ?></h2>
         <div class="mlc-table-wrap mlc-table-wrap--<?php echo htmlspecialchars($tableDensity, ENT_QUOTES, 'UTF-8'); ?>">
             <table class="phinit-table mlc-table">
                 <thead><tr>
-                    <?php if ($showImages && $hasColumn('image')): ?><th><?php echo htmlspecialchars((string) ($settings['label_table_image'] ?? 'Bild'), ENT_QUOTES, 'UTF-8'); ?></th><?php endif; ?>
-                    <?php if ($hasColumn('title')): ?><th><?php echo htmlspecialchars((string) ($settings['label_table_title'] ?? 'Name'), ENT_QUOTES, 'UTF-8'); ?></th><?php endif; ?>
-                    <?php if ($hasColumn('subtitle')): ?><th><?php echo htmlspecialchars((string) ($settings['label_table_subtitle'] ?? 'Schwerpunkt'), ENT_QUOTES, 'UTF-8'); ?></th><?php endif; ?>
-                    <?php if ($hasColumn('url')): ?><th><?php echo htmlspecialchars((string) ($settings['label_table_url'] ?? 'URL'), ENT_QUOTES, 'UTF-8'); ?></th><?php endif; ?>
-                    <?php if ($hasColumn('actions')): ?><th><?php echo htmlspecialchars((string) ($settings['label_table_actions'] ?? 'Aktionen'), ENT_QUOTES, 'UTF-8'); ?></th><?php endif; ?>
+                    <?php if ($showImages && $hasColumn('image')): ?><th><?php echo htmlspecialchars($mlcText('label_table_image', 'Bild'), ENT_QUOTES, 'UTF-8'); ?></th><?php endif; ?>
+                    <?php if ($hasColumn('title')): ?><th><?php echo htmlspecialchars($mlcText('label_table_title', 'Name'), ENT_QUOTES, 'UTF-8'); ?></th><?php endif; ?>
+                    <?php if ($hasColumn('subtitle')): ?><th><?php echo htmlspecialchars($mlcText('label_table_subtitle', 'Schwerpunkt'), ENT_QUOTES, 'UTF-8'); ?></th><?php endif; ?>
+                    <?php if ($hasColumn('url')): ?><th><?php echo htmlspecialchars($mlcText('label_table_url', 'URL'), ENT_QUOTES, 'UTF-8'); ?></th><?php endif; ?>
+                    <?php if ($hasColumn('actions')): ?><th><?php echo htmlspecialchars($mlcText('label_table_actions', 'Aktionen'), ENT_QUOTES, 'UTF-8'); ?></th><?php endif; ?>
                 </tr></thead>
                 <tbody>
                 <?php foreach ($items as $item): ?>
@@ -194,7 +232,7 @@ $tableDensity = in_array((string) ($settings['table_density'] ?? 'comfortable'),
                     <?php if ($hasColumn('title')): ?><td><strong><?php echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?></strong><br><small><?php echo htmlspecialchars((string) ($item['category_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></small></td><?php endif; ?>
                     <?php if ($hasColumn('subtitle')): ?><td><?php echo htmlspecialchars((string) ($item['subtitle'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td><?php endif; ?>
                     <?php if ($hasColumn('url')): ?><td><a href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars((string) parse_url($url, PHP_URL_HOST), ENT_QUOTES, 'UTF-8'); ?></a></td><?php endif; ?>
-                    <?php if ($hasColumn('actions')): ?><td><div class="mlc-table-actions"><a href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>" class="mlc-table-action" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars((string) ($settings['external_button_label'] ?? 'Site öffnen'), ENT_QUOTES, 'UTF-8'); ?></a><?php foreach ($buttons as $button): ?><?php $buttonUrl = $safeNavUrl((string) ($button['url'] ?? '')); if ($buttonUrl === '') { continue; } ?><a href="<?php echo htmlspecialchars($buttonUrl, ENT_QUOTES, 'UTF-8'); ?>" class="mlc-table-action"><?php echo htmlspecialchars((string) ($button['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a><?php endforeach; ?></div></td><?php endif; ?>
+                    <?php if ($hasColumn('actions')): ?><td><div class="mlc-table-actions"><a href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>" class="mlc-table-action" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars($mlcText('external_button_label', 'Site öffnen'), ENT_QUOTES, 'UTF-8'); ?></a><?php foreach ($buttons as $button): ?><?php $buttonUrl = $safeNavUrl((string) ($button['url'] ?? '')); if ($buttonUrl === '') { continue; } ?><?php $buttonType = (string) ($button['type'] ?? ''); $buttonLabel = (string) ($button['label'] ?? ''); if ($buttonType === 'company') { $buttonLabel = $mlcText('company_button_label', $buttonLabel !== '' ? $buttonLabel : 'Company ansehen'); } elseif ($buttonType === 'speaker') { $buttonLabel = $mlcText('speaker_button_label', $buttonLabel !== '' ? $buttonLabel : 'Speaker-Profil'); } elseif ($buttonType === 'expert') { $buttonLabel = $mlcText('expert_button_label', $buttonLabel !== '' ? $buttonLabel : 'Expert-Profil'); } ?><a href="<?php echo htmlspecialchars($buttonUrl, ENT_QUOTES, 'UTF-8'); ?>" class="mlc-table-action"><?php echo htmlspecialchars($buttonLabel, ENT_QUOTES, 'UTF-8'); ?></a><?php endforeach; ?></div></td><?php endif; ?>
                 </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -204,10 +242,10 @@ $tableDensity = in_array((string) ($settings['table_density'] ?? 'comfortable'),
     <?php endif; ?>
 
     <?php if ($totalPages > 1): ?>
-    <nav class="phinit-pagination mlc-pagination" aria-label="<?php echo htmlspecialchars((string) ($settings['label_pagination_nav'] ?? 'Seitennavigation'), ENT_QUOTES, 'UTF-8'); ?>">
-        <?php if ($page > 1): ?><a href="<?php echo htmlspecialchars($buildUrl(['p' => (string) ($page - 1)]), ENT_QUOTES, 'UTF-8'); ?>" rel="prev" class="phinit-btn phinit-btn--secondary mlc-btn"><?php echo htmlspecialchars((string) ($settings['label_pagination_prev'] ?? '← Zurück'), ENT_QUOTES, 'UTF-8'); ?></a><?php endif; ?>
-        <span class="mlc-pagination__info"><?php echo htmlspecialchars((string) ($settings['label_pagination_page'] ?? 'Seite'), ENT_QUOTES, 'UTF-8'); ?> <?php echo (int) $page; ?> <?php echo htmlspecialchars((string) ($settings['label_pagination_of'] ?? 'von'), ENT_QUOTES, 'UTF-8'); ?> <?php echo (int) $totalPages; ?></span>
-        <?php if ($page < $totalPages): ?><a href="<?php echo htmlspecialchars($buildUrl(['p' => (string) ($page + 1)]), ENT_QUOTES, 'UTF-8'); ?>" rel="next" class="phinit-btn phinit-btn--secondary mlc-btn"><?php echo htmlspecialchars((string) ($settings['label_pagination_next'] ?? 'Weiter →'), ENT_QUOTES, 'UTF-8'); ?></a><?php endif; ?>
+    <nav class="phinit-pagination mlc-pagination" aria-label="<?php echo htmlspecialchars($mlcText('label_pagination_nav', 'Seitennavigation'), ENT_QUOTES, 'UTF-8'); ?>">
+        <?php if ($page > 1): ?><a href="<?php echo htmlspecialchars($buildUrl(['p' => (string) ($page - 1)]), ENT_QUOTES, 'UTF-8'); ?>" rel="prev" class="phinit-btn phinit-btn--secondary mlc-btn"><?php echo htmlspecialchars($mlcText('label_pagination_prev', '← Zurück'), ENT_QUOTES, 'UTF-8'); ?></a><?php endif; ?>
+        <span class="mlc-pagination__info"><?php echo htmlspecialchars($mlcText('label_pagination_page', 'Seite'), ENT_QUOTES, 'UTF-8'); ?> <?php echo (int) $page; ?> <?php echo htmlspecialchars($mlcText('label_pagination_of', 'von'), ENT_QUOTES, 'UTF-8'); ?> <?php echo (int) $totalPages; ?></span>
+        <?php if ($page < $totalPages): ?><a href="<?php echo htmlspecialchars($buildUrl(['p' => (string) ($page + 1)]), ENT_QUOTES, 'UTF-8'); ?>" rel="next" class="phinit-btn phinit-btn--secondary mlc-btn"><?php echo htmlspecialchars($mlcText('label_pagination_next', 'Weiter →'), ENT_QUOTES, 'UTF-8'); ?></a><?php endif; ?>
     </nav>
     <?php endif; ?>
 </main>

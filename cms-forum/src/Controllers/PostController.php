@@ -21,6 +21,7 @@ use CMS_Forum\Models\Forum;
 use CMS_Forum\Models\Like;
 use CMS_Forum\Models\Report;
 use CMS_Forum\Models\Attachment;
+use CMS_Forum\Helpers\PublicI18n;
 use CMS_Forum\Services\PermissionService;
 
 final class PostController
@@ -57,7 +58,7 @@ final class PostController
 
         $auth = \CMS\Auth::instance();
         if (!$auth->isLoggedIn()) {
-            header('Location: ' . rtrim((string) SITE_URL, '/') . '/login', true, 303);
+            header('Location: ' . rtrim((string) SITE_URL, '/') . PublicI18n::loginPath(), true, 303);
             exit;
         }
 
@@ -65,7 +66,11 @@ final class PostController
         if (!PermissionService::instance()->canEditOwnPost((int) $forum->id, (int) $post->user_id, $post->created_at)) {
             http_response_code(403);
             \CMS\ThemeManager::instance()->getHeader();
-            echo '<div class="cmsforum-error"><h2>Zugriff verweigert</h2><p>Du darfst diesen Beitrag nicht bearbeiten.</p></div>';
+            echo '<div class="cmsforum-error"><h2>'
+                . htmlspecialchars(PublicI18n::t('error.forbidden', 'Zugriff verweigert.'), ENT_QUOTES, 'UTF-8')
+                . '</h2><p>'
+                . htmlspecialchars(PublicI18n::t('error.no_permission', 'Du hast keine Berechtigung für diese Aktion.'), ENT_QUOTES, 'UTF-8')
+                . '</p></div>';
             \CMS\ThemeManager::instance()->getFooter();
             return;
         }
@@ -75,11 +80,11 @@ final class PostController
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit_post') {
             if (!\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'forum_edit_post')) {
-                $error = 'Sicherheitscheck fehlgeschlagen.';
+                $error = PublicI18n::t('error.csrf', 'Sicherheitscheck fehlgeschlagen.');
             } else {
                 $content = mb_substr(trim((string) ($_POST['content'] ?? '')), 0, 50000);
                 if (empty($content)) {
-                    $error = 'Bitte gib einen Beitrag ein.';
+                    $error = PublicI18n::t('error.empty_content', 'Bitte gib einen Beitrag ein.');
                 } else {
                     $parser = \CMS_Forum\Services\BBCodeParser::instance();
                     Post::instance()->update(
@@ -89,7 +94,7 @@ final class PostController
                         (int)$auth->currentUser()->id
                     );
 
-                    header('Location: ' . rtrim((string) SITE_URL, '/') . '/forum/thread/' . (int) $thread->id . '#post-' . $postId, true, 303);
+                    header('Location: ' . rtrim((string) SITE_URL, '/') . PublicI18n::forumPath('thread/' . (int) $thread->id) . '#post-' . $postId, true, 303);
                     exit;
                 }
             }
@@ -103,7 +108,7 @@ final class PostController
             'forum'     => $forum,
             'csrfToken' => $csrfToken,
             'error'     => $error,
-            'pageTitle' => 'Beitrag bearbeiten',
+            'pageTitle' => PublicI18n::t('action.edit', 'Bearbeiten'),
         ];
 
         extract($viewData, EXTR_SKIP);

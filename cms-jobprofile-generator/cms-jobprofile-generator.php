@@ -70,6 +70,7 @@ final class CMS_JobProfileGenerator
         $admin    = $this->plugin_dir . 'admin/';
 
         $files = [
+            $this->plugin_dir . 'shared/public/plugin-public-i18n.php',
             $includes . 'class-installer.php',
             $includes . 'class-workflow.php',
             $includes . 'class-profiles.php',

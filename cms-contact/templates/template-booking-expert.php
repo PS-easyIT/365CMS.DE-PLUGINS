@@ -12,6 +12,7 @@ declare(strict_types=1);
 if (!defined('ABSPATH')) exit;
 
 $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
+$t = static fn(string $de, string $en): string => CMS_Contact_Frontend::t($de, $en);
 $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
 
 $theme = CMS\ThemeManager::instance();
@@ -24,22 +25,22 @@ $theme->getHeader();
 
             <!-- Linke Seite: Experten-Info -->
             <aside class="booking-expert-sidebar" aria-labelledby="contact-form-title">
-                <span class="booking-expert-badge" aria-hidden="true">Experten-Beratung</span>
+                <span class="booking-expert-badge" aria-hidden="true"><?php echo $e($t('Experten-Beratung', 'Expert consulting')); ?></span>
                 <h1 id="contact-form-title"><?php echo $e($form['title']); ?></h1>
                 <?php if (!empty($form['description'])): ?>
                 <p><?php echo $e($form['description']); ?></p>
                 <?php endif; ?>
                 <ul class="booking-expert-features">
-                    <li>Individuelle Beratung</li>
-                    <li>Persönlicher Ansprechpartner</li>
-                    <li>Flexible Terminwahl</li>
-                    <li>Online oder vor Ort</li>
+                    <li><?php echo $e($t('Individuelle Beratung', 'Individual consulting')); ?></li>
+                    <li><?php echo $e($t('Persönlicher Ansprechpartner', 'Personal contact person')); ?></li>
+                    <li><?php echo $e($t('Flexible Terminwahl', 'Flexible appointment scheduling')); ?></li>
+                    <li><?php echo $e($t('Online oder vor Ort', 'Online or on-site')); ?></li>
                 </ul>
             </aside>
 
             <!-- Rechte Seite: Formular -->
             <section class="booking-expert-form" aria-labelledby="booking-expert-form-title">
-                <h2 id="booking-expert-form-title">Beratungstermin anfragen</h2>
+                <h2 id="booking-expert-form-title"><?php echo $e($t('Beratungstermin anfragen', 'Request consultation appointment')); ?></h2>
 
                 <?php if (!empty($success)): ?>
                 <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1"><?php echo $e($success); ?></div>
@@ -58,6 +59,8 @@ $theme->getHeader();
                     </div>
                     <?php endif; ?>
 
+                    <?php echo CMS_Contact_Frontend::render_error_summary($fieldErrors ?? [], 'booking-expert-form-title'); ?>
+
                     <div class="contact-fields">
                         <?php foreach ($fields as $field): ?>
                         <div class="contact-field contact-field-<?php echo $e($field['field_width'] ?? 'full'); ?>">
@@ -66,18 +69,12 @@ $theme->getHeader();
                         <?php endforeach; ?>
                     </div>
 
-                    <?php if (!empty($form['enable_captcha'])): ?>
-                    <div class="contact-field contact-field-full contact-captcha">
-                        <?php $a = rand(1, 10); $b = rand(1, 10); $_SESSION['captcha_expected_' . $form['slug']] = $a + $b; ?>
-                        <label class="contact-label" for="contact-captcha-answer">Spamschutz: <?php echo $a; ?> + <?php echo $b; ?> = ? <span class="contact-required">*</span></label>
-                        <input type="number" id="contact-captcha-answer" name="captcha_answer" class="contact-input" inputmode="numeric" required>
-                    </div>
-                    <?php endif; ?>
+                    <?php echo CMS_Contact_Frontend::render_captcha_field($form); ?>
 
                     <?php echo CMS_Contact_Frontend::render_privacy_consent($form, $old); ?>
 
                     <div class="contact-submit">
-                        <button type="submit" class="contact-btn contact-btn-primary">Beratung anfragen</button>
+                        <button type="submit" class="contact-btn contact-btn-primary"><?php echo $e($t('Beratung anfragen', 'Request consultation')); ?></button>
                     </div>
                 </form>
                 <?php endif; ?>

@@ -24,6 +24,26 @@
         const providerId    = parseInt(el.dataset.providerId, 10);
         const serviceId     = parseInt(el.dataset.serviceId, 10);
         const apiUrl        = el.dataset.apiUrl || '/api/booking/slots';
+        let i18n = {};
+        try {
+            i18n = JSON.parse(el.dataset.i18n || '{}');
+        } catch (error) {
+            i18n = {};
+        }
+        const monthNames = Array.isArray(i18n.monthNames) && i18n.monthNames.length === 12
+            ? i18n.monthNames
+            : [
+                'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+                'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+            ];
+        const dayLabels = Array.isArray(i18n.dayLabels) && i18n.dayLabels.length === 7
+            ? i18n.dayLabels
+            : ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+        const clockLabel = i18n.clockLabel || 'Uhr';
+        const loadingSlotsText = i18n.loadingSlots || 'Zeitfenster werden geladen…';
+        const noSlotsText = i18n.noSlots || 'Keine freien Zeiten an diesem Tag.';
+        const slotLoadErrorText = i18n.slotLoadError || 'Fehler beim Laden der Zeitfenster.';
+        const summaryAtText = i18n.summaryAt || 'um';
         let availableDates = [];
         try {
             availableDates = JSON.parse(el.dataset.availableDates || '[]');
@@ -57,12 +77,6 @@
             const daysInMonth = lastDay.getDate();
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-
-            const monthNames = [
-                'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-                'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
-            ];
-            const dayLabels = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
             const header = createNode('div', 'booking-cal-header');
             const prevButton = createNode('button', '', '‹');
@@ -139,7 +153,7 @@
         const container = document.getElementById('bookingSlots');
         if (!container) return;
 
-        renderMessage(container, 'Zeitfenster werden geladen…');
+        renderMessage(container, loadingSlotsText);
 
         const url = apiUrl + '/' + encodeURIComponent(providerId) + '/' + encodeURIComponent(date)
             + '?service_id=' + encodeURIComponent(serviceId);
@@ -148,7 +162,7 @@
             .then(function (res) { return res.json(); })
             .then(function (data) {
                 if (!data.success || !data.slots || data.slots.length === 0) {
-                    renderMessage(container, 'Keine freien Zeiten an diesem Tag.');
+                    renderMessage(container, noSlotsText);
                     return;
                 }
 
@@ -158,7 +172,7 @@
                     btn.type = 'button';
                     btn.className = 'booking-slot-btn';
                     btn.dataset.time = String(slot);
-                    btn.textContent = String(slot) + ' Uhr';
+                    btn.textContent = String(slot) + ' ' + clockLabel;
                     container.appendChild(btn);
                 });
 
@@ -176,7 +190,7 @@
                 });
             })
             .catch(function () {
-                renderMessage(container, 'Fehler beim Laden der Zeitfenster.');
+                renderMessage(container, slotLoadErrorText);
             });
     }
 
@@ -210,7 +224,7 @@
         if (date && time) {
             var parts = date.split('-');
             var formatted = parts[2] + '.' + parts[1] + '.' + parts[0];
-            summary.textContent = formatted + ' um ' + time + ' Uhr';
+            summary.textContent = formatted + ' ' + summaryAtText + ' ' + time + ' ' + clockLabel;
         }
     }
 

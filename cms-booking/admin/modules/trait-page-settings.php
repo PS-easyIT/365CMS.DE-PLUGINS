@@ -31,6 +31,7 @@ trait CMS_Booking_Page_Settings_Trait
                     'admin_email', 'from_name', 'from_email',
                     'default_duration', 'default_buffer', 'default_timezone',
                     'default_currency', 'booking_advance_min', 'booking_advance_max',
+                    'booking_min_notice_hours', 'booking_daily_limit',
                     'cancellation_hours', 'auto_confirm', 'send_reminders',
                     'reminder_hours', 'primary_color',
                 ];
@@ -47,6 +48,8 @@ trait CMS_Booking_Page_Settings_Trait
                         'default_buffer' => (string) max(0, (int) ($_POST[$key] ?? 15)),
                         'booking_advance_min' => (string) max(0, (int) ($_POST[$key] ?? 1)),
                         'booking_advance_max' => (string) max(1, (int) ($_POST[$key] ?? 90)),
+                        'booking_min_notice_hours' => (string) max(0, (int) ($_POST[$key] ?? 0)),
+                        'booking_daily_limit' => (string) max(0, (int) ($_POST[$key] ?? 0)),
                         'cancellation_hours' => (string) max(0, (int) ($_POST[$key] ?? 24)),
                         'reminder_hours' => (string) max(1, (int) ($_POST[$key] ?? 24)),
                         'default_timezone' => in_array((string) ($_POST[$key] ?? ''), timezone_identifiers_list(), true)

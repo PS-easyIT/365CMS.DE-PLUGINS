@@ -31,6 +31,8 @@ return [
     // Navigation
     'breadcrumb.home'           => 'Forum',
     'breadcrumb.search'         => 'Search',
+    'breadcrumb.label'          => 'Breadcrumb',
+    'breadcrumb.homepage'       => 'Home',
 
     // Actions
     'action.create'             => 'Create',
@@ -49,6 +51,8 @@ return [
     'action.subscribe'          => 'Subscribe',
     'action.unsubscribe'        => 'Unsubscribe',
     'action.report'             => 'Report',
+    'action.login'              => 'Log in',
+    'action.subscribed'         => 'Subscribed',
     'action.lock'               => 'Lock',
     'action.unlock'             => 'Unlock',
     'action.pin'                => 'Pin',
@@ -63,6 +67,24 @@ return [
     'thread.type.normal'        => 'Normal',
     'thread.type.sticky'        => 'Sticky',
     'thread.type.announcement'  => 'Announcement',
+    'thread.type'               => 'Type',
+    'thread.title'              => 'Title',
+    'thread.title_placeholder'  => 'Enter thread title...',
+    'thread.content_placeholder'=> 'Your post...',
+    'thread.create_in_forum'    => 'New thread in %s',
+    'thread.create_in_forum_short' => 'in %s',
+    'thread.create_first'       => 'Create first thread',
+    'thread.status.solved'      => 'Solved',
+    'thread.accepted_answer'    => 'This reply was marked as the solution.',
+    'thread.mark_as_solution'   => 'Mark as solution',
+    'thread.unmark_solution'    => 'Remove solution',
+    'thread.last_post_by'       => 'by %s',
+    'thread.reply_placeholder'  => 'Your reply...',
+    'thread.reply_submit'       => 'Submit reply',
+    'thread.closed_info'        => 'This thread is closed. New replies are not possible.',
+    'thread.login_to_reply'     => 'to reply.',
+    'thread.similar.title'      => 'Similar threads found',
+    'thread.similar.hint'       => 'Check existing discussions before creating a new thread.',
 
     // Thread status
     'thread.status.open'        => 'Open',
@@ -77,7 +99,10 @@ return [
     // Poll
     'poll'                      => 'Poll',
     'poll.question'             => 'Question',
+    'poll.question_placeholder' => 'Your poll question...',
     'poll.options'              => 'Options',
+    'poll.option_number'        => 'Option %d',
+    'poll.option_prefix'        => 'Option',
     'poll.add_option'           => 'Add option',
     'poll.remove_option'        => 'Remove',
     'poll.vote'                 => 'Vote',
@@ -152,6 +177,17 @@ return [
     'error.thread_closed'       => 'This thread is closed.',
     'error.banned'              => 'Your account is banned.',
     'error.no_permission'       => 'You do not have permission for this action.',
+    'error.not_logged_in'       => 'Not logged in.',
+    'error.invalid_request'     => 'Invalid request.',
+    'error.poll_not_found'      => 'Poll not found.',
+    'error.poll_not_allowed'    => 'Poll voting is not allowed in this forum.',
+    'error.poll_too_many'       => 'Too many options selected.',
+    'error.thread_create_failed'=> 'Thread could not be created.',
+    'error.post_create_failed'  => 'Post could not be created.',
+    'error.reply_login_required'=> 'You must be logged in to reply.',
+    'error.flood.thread_wait'   => 'Please wait %d more seconds before creating a new thread.',
+    'error.flood.post_wait'     => 'Please wait %d more seconds.',
+    'error.invalid_answer_selection' => 'This post cannot be marked as a solution.',
 
     // Success
     'success.thread_created'    => 'Thread has been created.',
@@ -163,6 +199,11 @@ return [
     'success.thread_pinned'     => 'Thread has been pinned.',
     'success.thread_unpinned'   => 'Thread has been unpinned.',
     'success.thread_moved'      => 'Thread has been moved.',
+    'success.accepted_answer_set' => 'Reply marked as solution.',
+    'success.accepted_answer_removed' => 'Accepted answer removed.',
+
+    // User fallback
+    'user.deleted'              => 'Deleted',
 
     // Time (relative)
     'time.just_now'             => 'Just now',

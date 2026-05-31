@@ -22,6 +22,11 @@ defined('CMS_MARKETPLACE_VERSION') || define('CMS_MARKETPLACE_VERSION', '3.0.2')
 defined('CMS_MARKETPLACE_PLUGIN_DIR') || define('CMS_MARKETPLACE_PLUGIN_DIR', __DIR__ . DIRECTORY_SEPARATOR);
 defined('CMS_MARKETPLACE_PLUGIN_URL') || define('CMS_MARKETPLACE_PLUGIN_URL', '/plugins/cms-marketplace/');
 
+$sharedPublicI18nPath = dirname(rtrim(CMS_MARKETPLACE_PLUGIN_DIR, '/\\')) . DIRECTORY_SEPARATOR . 'shared' . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'plugin-public-i18n.php';
+if (is_file($sharedPublicI18nPath)) {
+    require_once $sharedPublicI18nPath;
+}
+
 require_once CMS_MARKETPLACE_PLUGIN_DIR . 'includes/class-marketplace-repository.php';
 require_once CMS_MARKETPLACE_PLUGIN_DIR . 'includes/class-marketplace-service.php';
 require_once CMS_MARKETPLACE_PLUGIN_DIR . 'shared/admin/plugin-admin-contract.php';

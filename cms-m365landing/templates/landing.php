@@ -12,6 +12,18 @@ if (!defined('ABSPATH')) {
 }
 
 $esc = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$publicLang = in_array((string) ($publicLang ?? 'de'), ['de', 'en'], true) ? (string) $publicLang : 'de';
+$t = static function (string $de, string $en) use ($publicLang): string {
+    return $publicLang === 'en' ? $en : $de;
+};
+$i18nValue = static function (string $key, string $fallback = '') use ($settings, $publicLang): string {
+    if (function_exists('cms_plugin_public_i18n_value')) {
+        return cms_plugin_public_i18n_value($settings, $key, $publicLang, $fallback);
+    }
+
+    $value = trim((string) ($settings[$key] ?? ''));
+    return $value !== '' ? $value : $fallback;
+};
 $value = static function (string $key, string $default = '') use ($settings): string {
     $raw = trim((string) ($settings[$key] ?? ''));
     return $raw !== '' ? $raw : $default;
@@ -40,7 +52,7 @@ $resolveCardUrl = static function (array $card): string {
 
     return '/' . CMS_M365Landing_Repository::slug($rawSlug);
 };
-$buttonLabelDefault = $value('card_button_label_default', 'Zum Bereich');
+$buttonLabelDefault = $i18nValue('card_button_label_default', $t('Zum Bereich', 'Open section'));
 $layoutVariant = in_array($value('layout_variant', 'balanced'), ['balanced', 'compact', 'spotlight'], true) ? $value('layout_variant', 'balanced') : 'balanced';
 $heroImageUrl = CMS_M365Landing_Repository::public_image_url($value('hero_image_url'));
 $heroImageAlt = $value('hero_image_alt', $value('page_title', 'Microsoft 365 Hub'));
@@ -59,12 +71,17 @@ $imageDimensions = static function (string $url, int $fallbackWidth, int $fallba
     return [max(1, $fallbackWidth), max(1, $fallbackHeight)];
 };
 $latestPosts = is_array($latestPosts ?? null) ? $latestPosts : [];
+$serviceHealthItems = is_array($serviceHealthItems ?? null) ? $serviceHealthItems : [];
+$serviceHealthError = trim((string) ($serviceHealthError ?? ''));
+$messageCenterItems = is_array($messageCenterItems ?? null) ? $messageCenterItems : [];
+$messageCenterError = trim((string) ($messageCenterError ?? ''));
 $isDomainLandingRequest = !empty($isDomainLandingRequest);
 $showPostsJumpBadge = $isDomainLandingRequest && $latestPosts !== [];
 $hasAnyCards = !empty($cardsBySection['matrix']) || !empty($cardsBySection['areas']) || !empty($cardsBySection['tools']);
-$hasAnyContent = $hasAnyCards || $latestPosts !== [];
+$hasGraphPanels = $enabled('show_service_health_panel', '0') || $enabled('show_message_center_panel', '0');
+$hasAnyContent = $hasAnyCards || $latestPosts !== [] || $hasGraphPanels;
 
-$renderCard = static function (array $card, string $cardLayout = 'media', bool $hideTitle = false) use ($esc, $buttonLabelDefault, $isExternal, $resolveCardUrl, $imageDimensions): void {
+$renderCard = static function (array $card, string $cardLayout = 'media', bool $hideTitle = false) use ($esc, $buttonLabelDefault, $isExternal, $resolveCardUrl, $imageDimensions, $t): void {
     $url = $resolveCardUrl($card);
     $imageUrl = CMS_M365Landing_Repository::public_image_url((string) ($card['image_url'] ?? ''));
     $icon = trim((string) ($card['icon'] ?? ''));
@@ -79,7 +96,7 @@ $renderCard = static function (array $card, string $cardLayout = 'media', bool $
     $cardLayout = in_array($cardLayout, ['media', 'stacked'], true) ? $cardLayout : 'media';
     $layoutClass = $cardLayout === 'stacked' ? ' m365landing-card--stacked-layout' : ' m365landing-card--media-layout';
     $titleHiddenClass = $hideTitle ? ' m365landing-card--title-hidden' : '';
-    $ariaLabelTitle = $title !== '' ? $title : ($subtitle !== '' ? $subtitle : 'M365 Bereich');
+    $ariaLabelTitle = $title !== '' ? $title : ($subtitle !== '' ? $subtitle : $t('M365 Bereich', 'M365 section'));
     $imageAltLabel = $imageAlt !== '' ? $imageAlt : $ariaLabelTitle;
     $showTitleWrap = !$hideTitle && ($title !== '' || ($cardLayout === 'stacked' && $subtitle !== ''));
     $tagName = $url !== '' ? 'a' : 'article';
@@ -115,24 +132,28 @@ $renderCard = static function (array $card, string $cardLayout = 'media', bool $
         </div>
         <?php if ($url !== ''): ?>
         <div class="m365landing-card__footer">
-            <span class="m365landing-card__cta">zum Bereich <span aria-hidden="true">-&gt;</span></span>
+            <span class="m365landing-card__cta"><?php echo $esc($buttonLabel); ?> <span aria-hidden="true">-&gt;</span></span>
         </div>
         <?php endif; ?>
     </<?php echo $tagName; ?>>
     <?php
 };
 
-$renderSection = static function (string $sectionKey, string $sectionClass, array $cards) use ($esc, $value, $enabled, $renderCard): void {
+$renderSection = static function (string $sectionKey, string $sectionClass, array $cards) use ($esc, $value, $enabled, $renderCard, $t): void {
     if ($cards === []) {
         return;
     }
-    $sectionLabels = ['matrix' => 'M365 Matrixen', 'areas' => 'Weitere M365 Bereiche', 'tools' => 'M365 Tools Sammlung'];
+    $sectionLabels = [
+        'matrix' => $t('M365 Matrixen', 'M365 matrices'),
+        'areas' => $t('Weitere M365 Bereiche', 'Additional M365 areas'),
+        'tools' => $t('M365 Tools Sammlung', 'M365 tools collection'),
+    ];
     $sectionOverline = $value($sectionKey . '_section_overline');
     $sectionTitle = $value($sectionKey . '_section_title');
     $sectionIntro = $value($sectionKey . '_section_intro');
     $sectionAria = $sectionTitle !== ''
         ? ' aria-labelledby="m365landing-' . $esc($sectionKey) . '-title"'
-        : ' aria-label="' . $esc($sectionLabels[$sectionKey] ?? 'M365 Landing Abschnitt') . '"';
+        : ' aria-label="' . $esc($sectionLabels[$sectionKey] ?? $t('M365 Landing Abschnitt', 'M365 landing section')) . '"';
     ?>
     <section class="m365landing-section <?php echo $esc($sectionClass); ?>"<?php echo $sectionAria; ?>>
         <?php if ($sectionOverline !== '' || $sectionTitle !== '' || $sectionIntro !== ''): ?>
@@ -161,10 +182,10 @@ $renderSection = static function (string $sectionKey, string $sectionClass, arra
     <?php
 };
 
-$renderPostCard = static function (array $post) use ($esc): void {
-    $currentLocale = function_exists('phinit_get_current_locale') ? (string) phinit_get_current_locale() : 'de';
+$renderPostCard = static function (array $post) use ($esc, $publicLang, $t): void {
+    $currentLocale = $publicLang;
     $title = trim((string) ($post['title'] ?? ''));
-    $title = $title !== '' ? $title : 'Ohne Titel';
+    $title = $title !== '' ? $title : $t('Ohne Titel', 'Untitled');
     $url = CMS_M365Landing_Repository::main_site_url(CMS_M365Landing_Repository::public_url((string) ($post['permalink'] ?? '')));
     $url = $url !== '' ? $url : CMS_M365Landing_Repository::main_site_url('/blog/' . CMS_M365Landing_Repository::slug((string) ($post['slug'] ?? $title)));
     $categoryName = trim((string) ($post['category_name'] ?? ''));
@@ -175,7 +196,7 @@ $renderPostCard = static function (array $post) use ($esc): void {
     $categoryUrl = $categorySlug !== ''
         ? (function_exists('cms_get_archive_url')
             ? (string) cms_get_archive_url('category', $categorySlug, $currentLocale)
-            : '/kategorie/' . rawurlencode($categorySlug))
+            : ($publicLang === 'en' ? '/en/category/' . rawurlencode($categorySlug) : '/kategorie/' . rawurlencode($categorySlug)))
         : '';
     $categoryUrl = $categoryUrl !== '' ? CMS_M365Landing_Repository::main_site_url($categoryUrl) : '';
     $dateRaw = trim((string) ($post['published_at'] ?? ($post['created_at'] ?? '')));
@@ -199,7 +220,7 @@ $renderPostCard = static function (array $post) use ($esc): void {
     $readTimeAria = $readTime > 0
         ? (function_exists('phinit_t') ? (string) phinit_t('read_time_aria', ['minutes' => $readTime], $currentLocale) : $readTime . ' Minuten Lesezeit')
         : '';
-    $continueLabel = function_exists('phinit_t') ? (string) phinit_t('continue_reading', [], $currentLocale) : 'Weiter lesen →';
+    $continueLabel = function_exists('phinit_t') ? (string) phinit_t('continue_reading', [], $currentLocale) : $t('Weiter lesen →', 'Continue reading →');
     ?>
     <article class="post-card post-card--text-only" role="listitem">
         <div class="post-card-body">
@@ -239,7 +260,7 @@ $renderPostCard = static function (array $post) use ($esc): void {
     <?php if ($enabled('show_hero')): ?>
     <header class="m365landing-hero" aria-labelledby="m365landing-title">
         <?php if ($showPostsJumpBadge): ?>
-        <a class="m365landing-posts-jump-badge" href="#m365landing-latest-posts">zu den letzten Beiträgen</a>
+        <a class="m365landing-posts-jump-badge" href="#m365landing-latest-posts"><?php echo $esc($t('zu den letzten Beiträgen', 'jump to latest posts')); ?></a>
         <?php endif; ?>
         <div class="m365landing-hero__inner<?php echo $heroImageUrl !== '' ? ' m365landing-hero__inner--with-image' : ''; ?>">
             <?php if ($heroImageUrl !== ''): ?>
@@ -257,7 +278,7 @@ $renderPostCard = static function (array $post) use ($esc): void {
                 <p class="m365landing-hero__intro"><?php echo $esc($value('page_intro')); ?></p>
                 <?php endif; ?>
                 <?php if ($enabled('show_hero_actions')): ?>
-                <nav class="m365landing-hero__actions" aria-label="M365 Landing Schnellzugriff">
+                <nav class="m365landing-hero__actions" aria-label="<?php echo $esc($t('M365 Landing Schnellzugriff', 'M365 landing quick access')); ?>">
                     <?php $primaryUrl = CMS_M365Landing_Repository::public_url($value('hero_primary_button_url', '/m365-lizenzmatrix')); ?>
                     <?php if ($primaryUrl !== ''): ?>
                     <a class="phinit-btn phinit-btn--primary" href="<?php echo $esc($primaryUrl); ?>"<?php echo $isExternal($primaryUrl) ? ' target="_blank" rel="noopener noreferrer"' : ''; ?>><?php echo $esc($value('hero_primary_button_text', 'M365 Lizenzmatrix öffnen')); ?></a>
@@ -279,7 +300,7 @@ $renderPostCard = static function (array $post) use ($esc): void {
 
     <?php if ($enabled('show_separator')): ?>
     <div class="m365landing-soft-separator" role="presentation">
-        <span><?php echo $esc($value('separator_label', 'Weitere Microsoft-365-Bereiche')); ?></span>
+        <span><?php echo $esc($i18nValue('separator_label', $t('Weitere Microsoft-365-Bereiche', 'Additional Microsoft 365 areas'))); ?></span>
     </div>
     <?php endif; ?>
 
@@ -291,11 +312,109 @@ $renderPostCard = static function (array $post) use ($esc): void {
         <?php $renderSection('tools', 'm365landing-section--tools', $cardsBySection['tools'] ?? []); ?>
     <?php endif; ?>
 
+    <?php if ($enabled('show_service_health_panel', '0')): ?>
+        <?php
+        $serviceOverline = $i18nValue('service_health_section_overline', $t('Live-Status', 'Live status'));
+        $serviceTitle = $i18nValue('service_health_section_title', $t('Tenant Service Health', 'Tenant service health'));
+        $serviceIntro = $i18nValue('service_health_section_intro', $t('Aktuelle Vorfälle und Advisories aus Microsoft 365 Services.', 'Current incidents and advisories from Microsoft 365 services.'));
+        $serviceEmpty = $i18nValue('service_health_empty_text', $t('Der Service-Health-Feed ist aktuell nicht verfügbar.', 'The service health feed is currently unavailable.'));
+        ?>
+    <section class="m365landing-section m365landing-section--service-health" aria-labelledby="m365landing-service-health-title">
+        <?php if ($serviceOverline !== '' || $serviceTitle !== '' || $serviceIntro !== ''): ?>
+        <div class="m365landing-section__head">
+            <?php if ($serviceOverline !== ''): ?>
+            <p class="phinit-overline m365landing-overline"><?php echo $esc($serviceOverline); ?></p>
+            <?php endif; ?>
+            <?php if ($serviceTitle !== ''): ?>
+            <h2 id="m365landing-service-health-title"><?php echo $esc($serviceTitle); ?></h2>
+            <?php endif; ?>
+            <?php if ($serviceIntro !== ''): ?>
+            <p class="m365landing-section__intro"><?php echo $esc($serviceIntro); ?></p>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+        <?php if ($serviceHealthItems !== []): ?>
+        <div class="m365landing-status-list" role="list">
+            <?php foreach ($serviceHealthItems as $item): ?>
+                <?php
+                $itemTitle = trim((string) ($item['title'] ?? ''));
+                $itemTitle = $itemTitle !== '' ? $itemTitle : $t('Ohne Titel', 'Untitled');
+                $itemService = trim((string) ($item['service'] ?? ''));
+                $itemState = trim((string) ($item['status'] ?? ''));
+                $itemClass = trim((string) ($item['classification'] ?? ''));
+                ?>
+            <article class="m365landing-status-card" role="listitem">
+                <h3><?php echo $esc($itemTitle); ?></h3>
+                <p class="m365landing-status-card__meta">
+                    <?php if ($itemService !== ''): ?><span><?php echo $esc($itemService); ?></span><?php endif; ?>
+                    <?php if ($itemState !== ''): ?><span><?php echo $esc($itemState); ?></span><?php endif; ?>
+                    <?php if ($itemClass !== ''): ?><span><?php echo $esc($itemClass); ?></span><?php endif; ?>
+                </p>
+            </article>
+            <?php endforeach; ?>
+        </div>
+        <?php else: ?>
+        <p class="m365landing-status-empty"><?php echo $esc($serviceEmpty); ?></p>
+        <?php endif; ?>
+    </section>
+    <?php endif; ?>
+
+    <?php if ($enabled('show_message_center_panel', '0')): ?>
+        <?php
+        $messageOverline = $i18nValue('message_center_section_overline', $t('Änderungsankündigungen', 'Change announcements'));
+        $messageTitle = $i18nValue('message_center_section_title', $t('Message Center Highlights', 'Message center highlights'));
+        $messageIntro = $i18nValue('message_center_section_intro', $t('Wichtige angekündigte Änderungen mit Relevanz für Betrieb und Governance.', 'Important upcoming Microsoft 365 changes for operations and governance.'));
+        $messageEmpty = $i18nValue('message_center_empty_text', $t('Der Message-Center-Feed ist aktuell nicht verfügbar.', 'The message center feed is currently unavailable.'));
+        ?>
+    <section class="m365landing-section m365landing-section--message-center" aria-labelledby="m365landing-message-center-title">
+        <?php if ($messageOverline !== '' || $messageTitle !== '' || $messageIntro !== ''): ?>
+        <div class="m365landing-section__head">
+            <?php if ($messageOverline !== ''): ?>
+            <p class="phinit-overline m365landing-overline"><?php echo $esc($messageOverline); ?></p>
+            <?php endif; ?>
+            <?php if ($messageTitle !== ''): ?>
+            <h2 id="m365landing-message-center-title"><?php echo $esc($messageTitle); ?></h2>
+            <?php endif; ?>
+            <?php if ($messageIntro !== ''): ?>
+            <p class="m365landing-section__intro"><?php echo $esc($messageIntro); ?></p>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+        <?php if ($messageCenterItems !== []): ?>
+        <div class="m365landing-status-list" role="list">
+            <?php foreach ($messageCenterItems as $item): ?>
+                <?php
+                $itemTitle = trim((string) ($item['title'] ?? ''));
+                $itemTitle = $itemTitle !== '' ? $itemTitle : $t('Ohne Titel', 'Untitled');
+                $itemCategory = trim((string) ($item['category'] ?? ''));
+                $itemServices = [];
+                foreach ((array) ($item['services'] ?? []) as $service) {
+                    $service = trim((string) $service);
+                    if ($service !== '') {
+                        $itemServices[] = $service;
+                    }
+                }
+                ?>
+            <article class="m365landing-status-card" role="listitem">
+                <h3><?php echo $esc($itemTitle); ?></h3>
+                <p class="m365landing-status-card__meta">
+                    <?php if ($itemCategory !== ''): ?><span><?php echo $esc($itemCategory); ?></span><?php endif; ?>
+                    <?php if ($itemServices !== []): ?><span><?php echo $esc(implode(' · ', $itemServices)); ?></span><?php endif; ?>
+                </p>
+            </article>
+            <?php endforeach; ?>
+        </div>
+        <?php else: ?>
+        <p class="m365landing-status-empty"><?php echo $esc($messageEmpty); ?></p>
+        <?php endif; ?>
+    </section>
+    <?php endif; ?>
+
     <?php if ($latestPosts !== []): ?>
         <?php $postsOverline = $value('posts_section_overline'); ?>
         <?php $postsTitle = $value('posts_section_title'); ?>
         <?php $postsIntro = $value('posts_section_intro'); ?>
-    <section id="m365landing-latest-posts" class="m365landing-section m365landing-section--posts home-section--grid"<?php echo $postsTitle !== '' ? ' aria-labelledby="m365landing-posts-title"' : ' aria-label="Aktuelle Beiträge"'; ?>>
+    <section id="m365landing-latest-posts" class="m365landing-section m365landing-section--posts home-section--grid"<?php echo $postsTitle !== '' ? ' aria-labelledby="m365landing-posts-title"' : ' aria-label="' . $esc($t('Aktuelle Beiträge', 'Latest posts')) . '"'; ?>>
         <?php if ($postsOverline !== '' || $postsTitle !== '' || $postsIntro !== ''): ?>
         <div class="m365landing-section__head">
             <?php if ($postsOverline !== ''): ?>
@@ -319,8 +438,8 @@ $renderPostCard = static function (array $post) use ($esc): void {
 
     <?php if (!$hasAnyContent): ?>
     <section class="m365landing-empty phinit-card">
-        <h2><?php echo $esc($value('empty_state_title', 'Noch keine aktiven Karten vorhanden')); ?></h2>
-        <p><?php echo $esc($value('empty_state_text', 'Aktiviere oder erstelle Karten im Adminbereich, damit die Landingpage Inhalte anzeigen kann.')); ?></p>
+        <h2><?php echo $esc($i18nValue('empty_state_title', $t('Noch keine aktiven Karten vorhanden', 'No active cards yet'))); ?></h2>
+        <p><?php echo $esc($i18nValue('empty_state_text', $t('Aktiviere oder erstelle Karten im Adminbereich, damit die Landingpage Inhalte anzeigen kann.', 'Activate or create cards in the admin area so the landing page can show content.'))); ?></p>
     </section>
     <?php endif; ?>
 </main>

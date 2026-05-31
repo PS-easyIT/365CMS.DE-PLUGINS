@@ -25,11 +25,18 @@
             <input type="hidden" name="action" value="save_settings">
 
             <div class="form-group"><label class="form-label">Archiv-Titel</label><input type="text" name="archive_title" class="form-control" value="<?php echo htmlspecialchars((string) ($settings['archive_title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></div>
+            <div class="form-group"><label class="form-label">Archiv-Titel (EN)</label><input type="text" name="archive_title_en" class="form-control" value="<?php echo htmlspecialchars((string) ($settings['archive_title_en'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></div>
             <div class="form-group"><label class="form-label">Archiv-Beschreibung</label><textarea name="archive_description" class="form-control" rows="3"><?php echo htmlspecialchars((string) ($settings['archive_description'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea></div>
+            <div class="form-group"><label class="form-label">Archiv-Beschreibung (EN)</label><textarea name="archive_description_en" class="form-control" rows="3"><?php echo htmlspecialchars((string) ($settings['archive_description_en'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea></div>
             <div class="pr-form-grid">
                 <div class="form-group"><label class="form-label">Button-Standard</label><input type="text" name="default_button_label" class="form-control" value="<?php echo htmlspecialchars((string) ($settings['default_button_label'] ?? 'Mehr erfahren'), ENT_QUOTES, 'UTF-8'); ?>"></div>
-                <div class="form-group"><label class="form-label">Zielverhalten</label><select name="default_target_behavior" class="form-control"><option value="same_tab" <?php echo (($settings['default_target_behavior'] ?? 'same_tab') === 'same_tab') ? 'selected' : ''; ?>>Im gleichen Tab öffnen</option><option value="new_tab" <?php echo (($settings['default_target_behavior'] ?? '') === 'new_tab') ? 'selected' : ''; ?>>In neuem Tab öffnen</option></select></div>
+                <div class="form-group"><label class="form-label">Button-Standard (EN)</label><input type="text" name="default_button_label_en" class="form-control" value="<?php echo htmlspecialchars((string) ($settings['default_button_label_en'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"></div>
             </div>
+            <div class="pr-form-grid">
+                <div class="form-group"><label class="form-label">Zielverhalten</label><select name="default_target_behavior" class="form-control"><option value="same_tab" <?php echo (($settings['default_target_behavior'] ?? 'same_tab') === 'same_tab') ? 'selected' : ''; ?>>Im gleichen Tab öffnen</option><option value="new_tab" <?php echo (($settings['default_target_behavior'] ?? '') === 'new_tab') ? 'selected' : ''; ?>>In neuem Tab öffnen</option></select></div>
+                <div class="form-group"><label class="form-label">Click-Event Export Webhook (optional)</label><input type="url" name="click_export_webhook_url" class="form-control" value="<?php echo htmlspecialchars((string) ($settings['click_export_webhook_url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" placeholder="https://example.com/webhooks/promo-click"></div>
+            </div>
+            <label class="checkbox-label pr-checkbox-stack"><input type="checkbox" name="click_export_enabled" value="1" <?php echo (($settings['click_export_enabled'] ?? '0') === '1') ? 'checked' : ''; ?>> Outbound Click Event Export aktivieren (GA4-freundliches Payload via Hook/Webhook)</label>
 
             <button type="submit" class="btn btn-primary">Einstellungen speichern</button>
         </form>

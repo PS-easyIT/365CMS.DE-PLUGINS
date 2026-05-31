@@ -49,13 +49,16 @@ final class CMS_M365CALCULATOR
         $inc = CMS_M365CALCULATOR_PLUGIN_DIR . 'includes/';
         $admin = CMS_M365CALCULATOR_PLUGIN_DIR . 'admin/';
         $sharedAdmin = dirname(CMS_M365CALCULATOR_PLUGIN_DIR) . '/shared/admin/plugin-admin-contract.php';
+        $sharedPublicI18n = dirname(CMS_M365CALCULATOR_PLUGIN_DIR) . '/shared/public/plugin-public-i18n.php';
         $trustedRoots = [
             rtrim(str_replace('\\', '/', CMS_M365CALCULATOR_PLUGIN_DIR), '/'),
             rtrim(str_replace('\\', '/', dirname(CMS_M365CALCULATOR_PLUGIN_DIR) . '/shared/admin'), '/'),
+            rtrim(str_replace('\\', '/', dirname(CMS_M365CALCULATOR_PLUGIN_DIR) . '/shared/public'), '/'),
         ];
 
         $files = [
             $sharedAdmin,
+            $sharedPublicI18n,
             $inc . 'class-catalog.php',
             $inc . 'class-installer.php',
             $inc . 'class-settings.php',

@@ -163,6 +163,7 @@ final class CMS_Projects_Admin
         $projectStatuses = $this->service->getProjectStatuses();
         $projectVisibilities = $this->service->getProjectVisibilities();
         $widgetScopes = $this->service->getWidgetScopes();
+        $auditLogs = $this->service->getAdminAuditLogs(120);
         $pageLinks = [
             'overview' => '?page=cms-projects',
             'projects' => '?page=cms-projects-projects',

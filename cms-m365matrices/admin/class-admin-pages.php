@@ -14,6 +14,7 @@ if (!defined('ABSPATH')) {
 final class CMS_M365MATRICES_Admin_Pages
 {
     private const ROOT_PAGE = 'm365matrices-dashboard';
+    private const FEATURE_ACTION_NONCE = 'm365matrices_feature_tools';
 
     private static ?self $instance = null;
 
@@ -266,6 +267,36 @@ final class CMS_M365MATRICES_Admin_Pages
         $fields = self::fields($activeTab);
         $notice = '';
         $error = '';
+        $featureNotice = '';
+        $featureError = '';
+        $sourceHealthReport = null;
+        $isDashboard = $pageSlug === self::ROOT_PAGE;
+
+        if (self::is_post_request() && (string) ($_POST['action'] ?? '') === 'matrix_export_snapshot') {
+            if (!self::has_admin_access()) {
+                $featureError = 'Sie haben keine Berechtigung für diese Aktion.';
+            } elseif (!self::verify_nonce(self::FEATURE_ACTION_NONCE)) {
+                $featureError = 'Sicherheitscheck für Export fehlgeschlagen.';
+            } else {
+                self::download_export_snapshot((string) ($_POST['export_format'] ?? 'json'));
+            }
+        }
+
+        if (self::is_post_request() && (string) ($_POST['action'] ?? '') === 'matrix_run_source_health') {
+            if (!self::has_admin_access()) {
+                $featureError = 'Sie haben keine Berechtigung für diese Aktion.';
+            } elseif (!self::verify_nonce(self::FEATURE_ACTION_NONCE)) {
+                $featureError = 'Sicherheitscheck für Quellenprüfung fehlgeschlagen.';
+            } else {
+                try {
+                    $sourceHealthReport = self::run_source_health_checks();
+                    $featureNotice = 'Quellenprüfung abgeschlossen: ' . (string) ($sourceHealthReport['summary'] ?? 'ohne Ergebnis');
+                } catch (\Throwable $e) {
+                    self::log_error('source health check failed: ' . $e->getMessage());
+                    $featureError = 'Quellenprüfung konnte nicht ausgeführt werden.';
+                }
+            }
+        }
 
         if (self::is_post_request() && (string) ($_POST['action'] ?? '') === 'save_matrix_options') {
             if (!self::has_admin_access()) {
@@ -290,6 +321,8 @@ final class CMS_M365MATRICES_Admin_Pages
         $addonStats = class_exists('CMS_M365MATRICES_ReadOnly_Matrices') ? CMS_M365MATRICES_ReadOnly_Matrices::addon_matrix()['counts'] ?? [] : [];
         $copilotStats = class_exists('CMS_M365MATRICES_ReadOnly_Matrices') ? CMS_M365MATRICES_ReadOnly_Matrices::copilot_matrix()['counts'] ?? [] : [];
         $csrfToken = self::generate_nonce('m365matrices_' . $activeTab);
+        $featureToken = self::generate_nonce(self::FEATURE_ACTION_NONCE);
+        $changeLogItems = self::matrix_change_log_items();
         $publicPages = [
             [
                 'icon' => '📊',
@@ -316,7 +349,7 @@ final class CMS_M365MATRICES_Admin_Pages
                 'stat' => (string) (int) ($copilotStats['rows'] ?? 0) . ' Zeilen',
             ],
         ];
-        self::render_with_layout($section['page_title'], $pageSlug, static function () use ($section, $notice, $error, $suiteStats, $addonStats, $copilotStats, $publicPages, $fields, $options, $csrfToken): void {
+        self::render_with_layout($section['page_title'], $pageSlug, static function () use ($section, $notice, $error, $suiteStats, $addonStats, $copilotStats, $publicPages, $fields, $options, $csrfToken, $isDashboard, $featureNotice, $featureError, $sourceHealthReport, $featureToken, $changeLogItems): void {
             ?>
             <div class="admin-page-header">
                 <div>
@@ -335,6 +368,12 @@ final class CMS_M365MATRICES_Admin_Pages
             <?php endif; ?>
             <?php if ($error !== ''): ?>
             <div class="alert alert-error">❌ <?php echo self::esc($error); ?></div>
+            <?php endif; ?>
+            <?php if ($featureNotice !== ''): ?>
+            <div class="alert alert-success">✅ <?php echo self::esc($featureNotice); ?></div>
+            <?php endif; ?>
+            <?php if ($featureError !== ''): ?>
+            <div class="alert alert-error">❌ <?php echo self::esc($featureError); ?></div>
             <?php endif; ?>
 
             <div class="dashboard-grid m365matrices-stats">
@@ -386,6 +425,88 @@ final class CMS_M365MATRICES_Admin_Pages
                     <?php endforeach; ?>
                 </div>
             </div>
+
+            <?php if ($isDashboard): ?>
+            <div class="admin-card m365matrices-feature-card">
+                <div class="m365matrices-panel-header">
+                    <div>
+                        <h3>🕒 Matrix Change Log</h3>
+                        <p>Zeigt den letzten Aktualisierungszeitpunkt je Matrix-Datensatz (Suite, Add-on, Copilot).</p>
+                    </div>
+                </div>
+                <ul class="m365matrices-change-log">
+                    <?php foreach ($changeLogItems as $item): ?>
+                    <li>
+                        <strong><?php echo self::esc((string) ($item['label'] ?? 'Matrix')); ?></strong>
+                        <span><?php echo self::esc((string) ($item['updated_label'] ?? 'unbekannt')); ?></span>
+                        <small><?php echo self::esc((string) ($item['meta'] ?? '')); ?></small>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+
+            <div class="admin-card m365matrices-feature-card">
+                <div class="m365matrices-panel-header">
+                    <div>
+                        <h3>📤 Export Snapshot (CSV / JSON)</h3>
+                        <p>Exportiert die aktuell normalisierten Matrixdaten für Audit und Offline-Review.</p>
+                    </div>
+                </div>
+                <div class="m365matrices-export-actions">
+                    <form method="POST">
+                        <input type="hidden" name="action" value="matrix_export_snapshot">
+                        <input type="hidden" name="csrf_token" value="<?php echo self::esc_attr($featureToken); ?>">
+                        <input type="hidden" name="export_format" value="json">
+                        <button type="submit" class="btn btn-secondary btn-sm">JSON exportieren</button>
+                    </form>
+                    <form method="POST">
+                        <input type="hidden" name="action" value="matrix_export_snapshot">
+                        <input type="hidden" name="csrf_token" value="<?php echo self::esc_attr($featureToken); ?>">
+                        <input type="hidden" name="export_format" value="csv">
+                        <button type="submit" class="btn btn-secondary btn-sm">CSV exportieren</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="admin-card m365matrices-feature-card">
+                <div class="m365matrices-panel-header">
+                    <div>
+                        <h3>🔎 Source Health Checks</h3>
+                        <p>Prüft Quelllinks aus allen Matrixen auf HTTP-Status und Redirect-Ziele.</p>
+                    </div>
+                    <form method="POST">
+                        <input type="hidden" name="action" value="matrix_run_source_health">
+                        <input type="hidden" name="csrf_token" value="<?php echo self::esc_attr($featureToken); ?>">
+                        <button type="submit" class="btn btn-primary btn-sm">Quellenprüfung starten</button>
+                    </form>
+                </div>
+                <?php if (is_array($sourceHealthReport) && !empty($sourceHealthReport['checks'])): ?>
+                <div class="m365matrices-source-health-summary"><?php echo self::esc((string) ($sourceHealthReport['summary'] ?? '')); ?></div>
+                <div class="table-wrap">
+                    <table class="table m365matrices-source-health-table">
+                        <thead>
+                            <tr>
+                                <th>URL</th>
+                                <th>Status</th>
+                                <th>Ziel</th>
+                                <th>Ergebnis</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ((array) $sourceHealthReport['checks'] as $check): ?>
+                            <tr>
+                                <td><code><?php echo self::esc((string) ($check['url'] ?? '')); ?></code></td>
+                                <td><?php echo self::esc((string) ($check['status'] ?? 'n/a')); ?></td>
+                                <td><?php echo self::esc((string) ($check['target'] ?? '')); ?></td>
+                                <td><?php echo self::esc((string) ($check['result'] ?? '')); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
 
             <div class="admin-card m365matrices-settings-card">
                 <form method="POST" class="admin-form">
@@ -782,6 +903,310 @@ final class CMS_M365MATRICES_Admin_Pages
     private static function is_post_request(): bool
     {
         return strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST';
+    }
+
+    /**
+     * @return array<int,array<string,string>>
+     */
+    private static function matrix_change_log_items(): array
+    {
+        $items = [];
+        foreach (self::matrix_data_file_map() as $label => $file) {
+            $path = CMS_M365MATRICES_PLUGIN_DIR . 'data/' . $file;
+            if (!is_file($path)) {
+                $items[] = [
+                    'label' => $label,
+                    'updated_label' => 'Datei fehlt',
+                    'meta' => $file,
+                ];
+                continue;
+            }
+
+            $updatedAt = filemtime($path);
+            $size = filesize($path);
+            $items[] = [
+                'label' => $label,
+                'updated_label' => $updatedAt !== false ? date('d.m.Y H:i', $updatedAt) : 'Unbekannt',
+                'meta' => $file . ' · ' . (string) round(((int) $size) / 1024, 1) . ' KB',
+            ];
+        }
+
+        return $items;
+    }
+
+    private static function download_export_snapshot(string $format): void
+    {
+        $format = strtolower(trim($format));
+        $format = in_array($format, ['json', 'csv'], true) ? $format : 'json';
+
+        $snapshot = self::snapshot_payload();
+        $timestamp = date('Ymd-His');
+        $filename = 'm365-matrix-snapshot-' . $timestamp . '.' . $format;
+
+        if ($format === 'csv') {
+            $csv = self::snapshot_csv($snapshot);
+            header('Content-Type: text/csv; charset=UTF-8');
+            header('Content-Disposition: attachment; filename="' . self::esc_attr($filename) . '"');
+            echo "\xEF\xBB\xBF";
+            echo $csv;
+            exit;
+        }
+
+        header('Content-Type: application/json; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . self::esc_attr($filename) . '"');
+        echo json_encode($snapshot, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private static function snapshot_payload(): array
+    {
+        return [
+            'generated_at' => date(DATE_ATOM),
+            'plugin' => 'cms-m365matrices',
+            'suite' => class_exists('CMS_M365MATRICES_ReadOnly_Matrices') ? CMS_M365MATRICES_ReadOnly_Matrices::suite_matrix() : [],
+            'addon' => class_exists('CMS_M365MATRICES_ReadOnly_Matrices') ? CMS_M365MATRICES_ReadOnly_Matrices::addon_matrix() : [],
+            'copilot' => class_exists('CMS_M365MATRICES_ReadOnly_Matrices') ? CMS_M365MATRICES_ReadOnly_Matrices::copilot_matrix() : [],
+        ];
+    }
+
+    /**
+     * @param array<string,mixed> $snapshot
+     */
+    private static function snapshot_csv(array $snapshot): string
+    {
+        $rows = [];
+        $generatedAt = (string) ($snapshot['generated_at'] ?? '');
+        $suite = is_array($snapshot['suite'] ?? null) ? $snapshot['suite'] : [];
+        $addon = is_array($snapshot['addon'] ?? null) ? $snapshot['addon'] : [];
+        $copilot = is_array($snapshot['copilot'] ?? null) ? $snapshot['copilot'] : [];
+
+        $suiteColumns = [];
+        foreach ((array) ($suite['columns'] ?? []) as $column) {
+            if (!is_array($column)) {
+                continue;
+            }
+            $slug = (string) ($column['slug'] ?? '');
+            if ($slug !== '') {
+                $suiteColumns[$slug] = $column;
+            }
+        }
+
+        foreach ((array) ($suite['groups'] ?? []) as $group) {
+            if (!is_array($group)) {
+                continue;
+            }
+            foreach ((array) ($group['rows'] ?? []) as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                foreach ($suiteColumns as $slug => $column) {
+                    $cell = is_array($row['values'][$slug] ?? null) ? $row['values'][$slug] : [];
+                    $rows[] = [
+                        'matrix_type' => 'suite',
+                        'section' => (string) ($group['label'] ?? ''),
+                        'row_label' => (string) ($row['label'] ?? ''),
+                        'row_description' => (string) ($row['description'] ?? ''),
+                        'package_slug' => $slug,
+                        'package_name' => (string) ($column['name'] ?? $column['short'] ?? ''),
+                        'status' => (string) ($cell['status'] ?? ''),
+                        'cell_label' => (string) ($cell['label'] ?? ''),
+                        'cell_note' => (string) ($cell['note'] ?? ''),
+                        'price_month' => (string) ($column['price_month'] ?? ''),
+                        'generated_at' => $generatedAt,
+                    ];
+                }
+            }
+        }
+
+        foreach (['addon' => $addon, 'copilot' => $copilot] as $type => $matrix) {
+            foreach ((array) ($matrix['areas'] ?? []) as $area) {
+                if (!is_array($area)) {
+                    continue;
+                }
+
+                $packages = [];
+                foreach ((array) ($area['packages'] ?? []) as $package) {
+                    if (!is_array($package)) {
+                        continue;
+                    }
+                    $slug = (string) ($package['slug'] ?? '');
+                    if ($slug !== '') {
+                        $packages[$slug] = $package;
+                    }
+                }
+
+                foreach ((array) ($area['rows'] ?? []) as $row) {
+                    if (!is_array($row)) {
+                        continue;
+                    }
+                    foreach ($packages as $slug => $package) {
+                        $cell = is_array($row['values'][$slug] ?? null) ? $row['values'][$slug] : [];
+                        $rows[] = [
+                            'matrix_type' => $type,
+                            'section' => (string) ($area['label'] ?? ''),
+                            'row_label' => (string) ($row['label'] ?? ''),
+                            'row_description' => (string) ($row['description'] ?? ''),
+                            'package_slug' => $slug,
+                            'package_name' => (string) ($package['name'] ?? $package['short'] ?? ''),
+                            'status' => (string) ($cell['status'] ?? ''),
+                            'cell_label' => (string) ($cell['label'] ?? ''),
+                            'cell_note' => (string) ($cell['note'] ?? ''),
+                            'price_month' => (string) ($package['price_month'] ?? ''),
+                            'generated_at' => $generatedAt,
+                        ];
+                    }
+                }
+            }
+        }
+
+        $handle = fopen('php://temp', 'r+');
+        if ($handle === false) {
+            return '';
+        }
+
+        $headers = ['matrix_type', 'section', 'row_label', 'row_description', 'package_slug', 'package_name', 'status', 'cell_label', 'cell_note', 'price_month', 'generated_at'];
+        fputcsv($handle, $headers, ';');
+        foreach ($rows as $row) {
+            $csvRow = [];
+            foreach ($headers as $header) {
+                $csvRow[] = (string) ($row[$header] ?? '');
+            }
+            fputcsv($handle, $csvRow, ';');
+        }
+
+        rewind($handle);
+        $csv = stream_get_contents($handle);
+        fclose($handle);
+
+        return is_string($csv) ? $csv : '';
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private static function run_source_health_checks(): array
+    {
+        $snapshot = self::snapshot_payload();
+        $urls = [];
+        self::collect_urls_recursive($snapshot, $urls);
+        ksort($urls);
+
+        $checks = [];
+        $okCount = 0;
+        foreach (array_keys($urls) as $url) {
+            $probe = self::probe_source_url($url);
+            if (($probe['ok'] ?? false) === true) {
+                $okCount++;
+            }
+            $checks[] = [
+                'url' => $url,
+                'status' => (string) ($probe['status'] ?? 'n/a'),
+                'target' => (string) ($probe['target'] ?? ''),
+                'result' => ($probe['ok'] ?? false) ? 'OK' : ((string) ($probe['error'] ?? 'Fehler')),
+            ];
+        }
+
+        $total = count($checks);
+        $failed = $total - $okCount;
+
+        return [
+            'checked_at' => date(DATE_ATOM),
+            'summary' => $total . ' URLs geprüft, ' . $okCount . ' OK, ' . $failed . ' auffällig.',
+            'checks' => $checks,
+        ];
+    }
+
+    /**
+     * @param mixed $value
+     * @param array<string,bool> $urls
+     */
+    private static function collect_urls_recursive(mixed $value, array &$urls): void
+    {
+        if (is_string($value)) {
+            $candidate = trim($value);
+            $scheme = strtolower((string) (parse_url($candidate, PHP_URL_SCHEME) ?: ''));
+            if (in_array($scheme, ['http', 'https'], true) && filter_var($candidate, FILTER_VALIDATE_URL) !== false) {
+                $urls[$candidate] = true;
+            }
+            return;
+        }
+
+        if (!is_array($value)) {
+            return;
+        }
+
+        foreach ($value as $entry) {
+            self::collect_urls_recursive($entry, $urls);
+        }
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private static function probe_source_url(string $url): array
+    {
+        if (function_exists('curl_init')) {
+            $ch = curl_init($url);
+            if ($ch !== false) {
+                curl_setopt($ch, CURLOPT_NOBODY, true);
+                curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                curl_setopt($ch, CURLOPT_MAXREDIRS, 5);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+                curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+                curl_setopt($ch, CURLOPT_USERAGENT, 'cms-m365matrices-source-health/1.0');
+                curl_exec($ch);
+                $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $effectiveUrl = (string) curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+                $error = curl_error($ch);
+                curl_close($ch);
+
+                return [
+                    'status' => $status > 0 ? $status : 'n/a',
+                    'target' => $effectiveUrl,
+                    'ok' => $status >= 200 && $status < 400,
+                    'error' => $error !== '' ? $error : ($status >= 400 || $status === 0 ? 'HTTP ' . $status : ''),
+                ];
+            }
+        }
+
+        $headers = @get_headers($url, true);
+        if (!is_array($headers) || $headers === []) {
+            return [
+                'status' => 'n/a',
+                'target' => '',
+                'ok' => false,
+                'error' => 'Keine Antwort',
+            ];
+        }
+
+        $firstLine = (string) array_values($headers)[0];
+        preg_match('/\s(\d{3})\s/', $firstLine, $matches);
+        $status = isset($matches[1]) ? (int) $matches[1] : 0;
+        $location = $headers['Location'] ?? '';
+        $target = is_array($location) ? (string) end($location) : (string) $location;
+
+        return [
+            'status' => $status > 0 ? $status : 'n/a',
+            'target' => $target,
+            'ok' => $status >= 200 && $status < 400,
+            'error' => $status >= 400 || $status === 0 ? 'HTTP ' . $status : '',
+        ];
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    private static function matrix_data_file_map(): array
+    {
+        return [
+            'Suite Matrix' => 'readonly_suite_matrix.json',
+            'Add-on Matrix' => 'readonly_addon_matrix.json',
+            'Copilot Matrix' => 'readonly_copilot_matrix.json',
+        ];
     }
 
     private static function log_error(string $message): void

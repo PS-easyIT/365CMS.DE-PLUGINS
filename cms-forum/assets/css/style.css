@@ -1093,3 +1093,38 @@ body.dark-mode .cmsforum-poll__bar { background: rgba(59, 130, 246, .15); }
     font-weight: 700;
     margin: 0 0 1.25rem;
 }
+
+/* ── Feature: Solved + Similar Threads ─────────────────────── */
+
+.cmsforum-badge--accepted {
+    background: var(--cmsforum-success-bg);
+    color: #065f46;
+    border: 1px solid rgb(16 185 129 / 35%);
+}
+
+.cmsforum-similar-threads {
+    border: 1px solid var(--cmsforum-border);
+    border-radius: var(--cmsforum-radius);
+    background: var(--cmsforum-bg-secondary);
+    padding: .75rem 1rem;
+}
+
+.cmsforum-similar-threads__title {
+    display: block;
+    margin-bottom: .25rem;
+}
+
+.cmsforum-similar-threads__hint {
+    margin: 0 0 .5rem;
+    color: var(--cmsforum-text-secondary);
+    font-size: .9rem;
+}
+
+.cmsforum-similar-threads__list {
+    margin: 0;
+    padding-left: 1rem;
+}
+
+.cmsforum-similar-threads__list li {
+    margin-bottom: .25rem;
+}

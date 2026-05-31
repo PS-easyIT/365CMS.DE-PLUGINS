@@ -17,17 +17,23 @@ if (!defined('ABSPATH')) exit;
  */
 
 $ds = fn(string $k, string $d = '') => $designSettings['pd_' . $k] ?? $d;
+$publicLang = $publicLang ?? (function_exists('jpg_public_lang') ? jpg_public_lang() : 'de');
+$t = static fn(string $key, array $replace = []): string
+    => function_exists('jpg_public_t') ? jpg_public_t($key, $replace, $publicLang) : $key;
 $requireLogin  = ($ds('modal_require_login', '1') === '1');
 $showRegister  = ($ds('modal_show_register', '1') === '1');
 $showPhone     = ($ds('modal_show_phone', '1') === '1');
 $showCv        = ($ds('modal_show_cv', '1') === '1');
 $requireCv     = ($ds('modal_require_cv', '0') === '1');
-$privacyUrl    = $ds('modal_privacy_url', '/datenschutz');
+$privacyUrlDefault = function_exists('jpg_public_path') ? jpg_public_path('datenschutz', $publicLang) : '/datenschutz';
+$privacyUrl    = $ds('modal_privacy_url', $privacyUrlDefault);
 $privacyUrl    = preg_match('#^/[A-Za-z0-9/_\-.]*$#', $privacyUrl) || (filter_var($privacyUrl, FILTER_VALIDATE_URL) && in_array(strtolower((string) parse_url($privacyUrl, PHP_URL_SCHEME)), ['http', 'https'], true))
     ? $privacyUrl
     : '/datenschutz';
-$privacyText   = $ds('modal_privacy_text', 'Mit dem Absenden stimmst du der Verarbeitung deiner Daten gemäß unserer Datenschutzerklärung zu.');
-$successText   = $ds('modal_success_text', 'Bewerbung eingereicht! Wir melden uns so schnell wie möglich.');
+$privacyText   = $ds('modal_privacy_text', ($publicLang === 'en'
+    ? 'By submitting, you agree to the processing of your data according to our privacy policy.'
+    : 'Mit dem Absenden stimmst du der Verarbeitung deiner Daten gemäß unserer Datenschutzerklärung zu.'));
+$successText   = $ds('modal_success_text', $t('apply_success_default'));
 $coverMinChars = max(0, (int) $ds('modal_cover_min_chars', '20'));
 
 $isLoggedIn  = false;
@@ -45,8 +51,8 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
 <div id="jpgApplyModal" class="jpg-modal">
     <div class="jpg-modal__box">
         <div class="jpg-modal__header">
-            <h3 class="jpg-modal__title">Bewerbung: <?php echo htmlspecialchars((string) $profile->title, ENT_QUOTES, 'UTF-8'); ?></h3>
-            <button type="button" data-jpg-modal-close class="jpg-modal__close" aria-label="Schließen">&times;</button>
+            <h3 class="jpg-modal__title"><?php echo htmlspecialchars($t('apply_title', ['title' => (string) $profile->title]), ENT_QUOTES, 'UTF-8'); ?></h3>
+            <button type="button" data-jpg-modal-close class="jpg-modal__close" aria-label="<?php echo htmlspecialchars($t('apply_close'), ENT_QUOTES, 'UTF-8'); ?>">&times;</button>
         </div>
 
         <!-- Erfolgs-Banner -->
@@ -60,8 +66,8 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
         <!-- Registrierungs-/Login-Tabs -->
         <div class="jpg-modal__auth-tabs" id="jpgAuthTabs">
             <div class="jpg-modal__tab-nav">
-                <button type="button" class="jpg-modal__tab-btn active" data-tab="register">Registrieren & Bewerben</button>
-                <button type="button" class="jpg-modal__tab-btn" data-tab="login">Bereits Mitglied?</button>
+                <button type="button" class="jpg-modal__tab-btn active" data-tab="register"><?php echo htmlspecialchars($t('apply_register_and_apply'), ENT_QUOTES, 'UTF-8'); ?></button>
+                <button type="button" class="jpg-modal__tab-btn" data-tab="login"><?php echo htmlspecialchars($t('apply_already_member'), ENT_QUOTES, 'UTF-8'); ?></button>
             </div>
 
             <!-- Tab: Registrierung -->
@@ -71,47 +77,47 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
                     <input type="hidden" name="job_slug" value="<?php echo $jobSlugEsc; ?>">
                     <input type="text" name="_hp_name" class="jpg-honeypot" aria-hidden="true" tabindex="-1" autocomplete="off">
 
-                    <p class="jpg-modal__info">Erstelle ein Konto, um dich zu bewerben und deine Bewerbungen zu verwalten.</p>
+                    <p class="jpg-modal__info"><?php echo htmlspecialchars($t('apply_register_info'), ENT_QUOTES, 'UTF-8'); ?></p>
 
                     <div class="jpg-form-group">
-                        <label class="jpg-form-label">Vollständiger Name <span class="jpg-required">*</span></label>
+                        <label class="jpg-form-label"><?php echo htmlspecialchars($t('apply_name'), ENT_QUOTES, 'UTF-8'); ?> <span class="jpg-required">*</span></label>
                         <input type="text" name="display_name" required autocomplete="name" class="jpg-form-input" placeholder="Max Mustermann">
                     </div>
                     <div class="jpg-form-group">
-                        <label class="jpg-form-label">E-Mail-Adresse <span class="jpg-required">*</span></label>
+                        <label class="jpg-form-label"><?php echo htmlspecialchars($t('apply_email'), ENT_QUOTES, 'UTF-8'); ?> <span class="jpg-required">*</span></label>
                         <input type="email" name="email" required autocomplete="email" class="jpg-form-input" placeholder="max@beispiel.de">
                     </div>
                     <?php if ($showPhone): ?>
                     <div class="jpg-form-group">
-                        <label class="jpg-form-label">Telefon (optional)</label>
+                        <label class="jpg-form-label"><?php echo htmlspecialchars($t('apply_phone_optional'), ENT_QUOTES, 'UTF-8'); ?></label>
                         <input type="tel" name="phone" autocomplete="tel" class="jpg-form-input" placeholder="+49 123 456789">
                     </div>
                     <?php endif; ?>
                     <div class="jpg-form-group">
-                        <label class="jpg-form-label">Passwort <span class="jpg-required">*</span></label>
+                        <label class="jpg-form-label"><?php echo htmlspecialchars($t('apply_password'), ENT_QUOTES, 'UTF-8'); ?> <span class="jpg-required">*</span></label>
                         <input type="password" name="password" required autocomplete="new-password" class="jpg-form-input" placeholder="Mind. 12 Zeichen" minlength="12">
                         <small class="jpg-form-hint">Mindestens 12 Zeichen, Groß-/Kleinbuchstaben, Zahl, Sonderzeichen</small>
                     </div>
 
                     <hr style="border:0;border-top:1px solid var(--jpg-border,#e2e8f0);margin:1rem 0;">
-                    <p class="jpg-modal__info" style="font-weight:600;">Bewerbungsdaten</p>
+                    <p class="jpg-modal__info" style="font-weight:600;"><?php echo htmlspecialchars($t('apply_apply_data'), ENT_QUOTES, 'UTF-8'); ?></p>
 
                     <div class="jpg-form-group">
-                        <label class="jpg-form-label">Anschreiben <span class="jpg-required">*</span></label>
+                        <label class="jpg-form-label"><?php echo htmlspecialchars($t('apply_cover_letter'), ENT_QUOTES, 'UTF-8'); ?> <span class="jpg-required">*</span></label>
                         <textarea name="cover_letter" rows="4" required class="jpg-form-input jpg-form-textarea"
                                   placeholder="Warum möchtest du bei uns arbeiten?"
                                   minlength="<?php echo $coverMinChars; ?>"></textarea>
                     </div>
                     <?php if ($showCv): ?>
                     <div class="jpg-form-group jpg-form-group--file">
-                        <label class="jpg-form-label">Lebenslauf / CV (PDF oder Word, max. 5 MB)<?php echo $requireCv ? ' <span class="jpg-required">*</span>' : ''; ?></label>
+                        <label class="jpg-form-label"><?php echo htmlspecialchars($t('apply_cv'), ENT_QUOTES, 'UTF-8'); ?><?php echo $requireCv ? ' <span class="jpg-required">*</span>' : ''; ?></label>
                         <input type="file" name="cv_file" accept=".pdf,.doc,.docx" class="jpg-form-file" <?php echo $requireCv ? 'required' : ''; ?>>
                     </div>
                     <?php endif; ?>
 
                     <div class="jpg-modal__footer">
-                        <button type="button" data-jpg-modal-close class="jpg-modal__btn jpg-modal__btn--cancel">Abbrechen</button>
-                        <button type="submit" id="jpgRegSubmit" class="jpg-modal__btn jpg-modal__btn--submit">📩 Registrieren & Bewerben</button>
+                        <button type="button" data-jpg-modal-close class="jpg-modal__btn jpg-modal__btn--cancel"><?php echo htmlspecialchars($t('apply_cancel'), ENT_QUOTES, 'UTF-8'); ?></button>
+                        <button type="submit" id="jpgRegSubmit" class="jpg-modal__btn jpg-modal__btn--submit">📩 <?php echo htmlspecialchars($t('apply_register_and_apply'), ENT_QUOTES, 'UTF-8'); ?></button>
                     </div>
                     <p class="jpg-modal__privacy"><?php echo htmlspecialchars((string) $privacyText, ENT_QUOTES, 'UTF-8'); ?>
                         <a href="<?php echo htmlspecialchars((string) $privacyUrl, ENT_QUOTES, 'UTF-8'); ?>" class="jpg-modal__privacy-link">Datenschutzerklärung</a>
@@ -124,20 +130,20 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
                 <form id="jpgLoginForm" class="jpg-modal__form" novalidate>
                     <input type="hidden" name="_jpg_csrf" value="<?php echo htmlspecialchars((string) ($applyCsrf ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
 
-                    <p class="jpg-modal__info">Melde dich an, um dich auf diese Stelle zu bewerben.</p>
+                    <p class="jpg-modal__info"><?php echo htmlspecialchars($t('apply_login_info'), ENT_QUOTES, 'UTF-8'); ?></p>
 
                     <div class="jpg-form-group">
-                        <label class="jpg-form-label">E-Mail-Adresse <span class="jpg-required">*</span></label>
+                        <label class="jpg-form-label"><?php echo htmlspecialchars($t('apply_email'), ENT_QUOTES, 'UTF-8'); ?> <span class="jpg-required">*</span></label>
                         <input type="email" name="login_email" required autocomplete="email" class="jpg-form-input" placeholder="max@beispiel.de">
                     </div>
                     <div class="jpg-form-group">
-                        <label class="jpg-form-label">Passwort <span class="jpg-required">*</span></label>
+                        <label class="jpg-form-label"><?php echo htmlspecialchars($t('apply_password'), ENT_QUOTES, 'UTF-8'); ?> <span class="jpg-required">*</span></label>
                         <input type="password" name="login_password" required autocomplete="current-password" class="jpg-form-input">
                     </div>
 
                     <div class="jpg-modal__footer">
-                        <button type="button" data-jpg-modal-close class="jpg-modal__btn jpg-modal__btn--cancel">Abbrechen</button>
-                        <button type="submit" id="jpgLoginSubmit" class="jpg-modal__btn jpg-modal__btn--submit">🔐 Anmelden</button>
+                        <button type="button" data-jpg-modal-close class="jpg-modal__btn jpg-modal__btn--cancel"><?php echo htmlspecialchars($t('apply_cancel'), ENT_QUOTES, 'UTF-8'); ?></button>
+                        <button type="submit" id="jpgLoginSubmit" class="jpg-modal__btn jpg-modal__btn--submit">🔐 <?php echo htmlspecialchars($t('apply_login'), ENT_QUOTES, 'UTF-8'); ?></button>
                     </div>
                 </form>
             </div>
@@ -150,40 +156,40 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
             <input type="text" name="_hp_name" class="jpg-honeypot" aria-hidden="true" tabindex="-1" autocomplete="off">
 
             <div class="jpg-form-group">
-                <label class="jpg-form-label">Vollständiger Name <span class="jpg-required">*</span></label>
+                <label class="jpg-form-label"><?php echo htmlspecialchars($t('apply_name'), ENT_QUOTES, 'UTF-8'); ?> <span class="jpg-required">*</span></label>
                 <input type="text" name="applicant_name" required autocomplete="name" class="jpg-form-input"
                        placeholder="Max Mustermann"
                        value="<?php echo $currentUser ? htmlspecialchars((string) ($currentUser->display_name ?? ''), ENT_QUOTES, 'UTF-8') : ''; ?>">
             </div>
             <div class="jpg-form-group">
-                <label class="jpg-form-label">E-Mail-Adresse <span class="jpg-required">*</span></label>
+                <label class="jpg-form-label"><?php echo htmlspecialchars($t('apply_email'), ENT_QUOTES, 'UTF-8'); ?> <span class="jpg-required">*</span></label>
                 <input type="email" name="applicant_email" required autocomplete="email" class="jpg-form-input"
                        placeholder="max@beispiel.de"
                        value="<?php echo $currentUser ? htmlspecialchars((string) ($currentUser->email ?? ''), ENT_QUOTES, 'UTF-8') : ''; ?>">
             </div>
             <?php if ($showPhone): ?>
             <div class="jpg-form-group">
-                <label class="jpg-form-label">Telefon (optional)</label>
+                <label class="jpg-form-label"><?php echo htmlspecialchars($t('apply_phone_optional'), ENT_QUOTES, 'UTF-8'); ?></label>
                 <input type="tel" name="applicant_phone" autocomplete="tel" class="jpg-form-input" placeholder="+49 123 456789">
             </div>
             <?php endif; ?>
             <div class="jpg-form-group">
-                <label class="jpg-form-label">Anschreiben <span class="jpg-required">*</span></label>
+                <label class="jpg-form-label"><?php echo htmlspecialchars($t('apply_cover_letter'), ENT_QUOTES, 'UTF-8'); ?> <span class="jpg-required">*</span></label>
                 <textarea name="cover_letter" rows="5" required class="jpg-form-input jpg-form-textarea"
                           placeholder="Warum möchtest du bei uns arbeiten? Was bringst du mit?"
                           minlength="<?php echo $coverMinChars; ?>"></textarea>
             </div>
             <?php if ($showCv): ?>
             <div class="jpg-form-group jpg-form-group--file">
-                <label class="jpg-form-label">Lebenslauf / CV (PDF oder Word, max. 5 MB)<?php echo $requireCv ? ' <span class="jpg-required">*</span>' : ''; ?></label>
+                <label class="jpg-form-label"><?php echo htmlspecialchars($t('apply_cv'), ENT_QUOTES, 'UTF-8'); ?><?php echo $requireCv ? ' <span class="jpg-required">*</span>' : ''; ?></label>
                 <input type="file" name="cv_file" accept=".pdf,.doc,.docx" class="jpg-form-file" <?php echo $requireCv ? 'required' : ''; ?>>
-                <small class="jpg-form-hint">Max. 5 MB, PDF oder Word</small>
+                <small class="jpg-form-hint"><?php echo htmlspecialchars($t('apply_cv_hint'), ENT_QUOTES, 'UTF-8'); ?></small>
             </div>
             <?php endif; ?>
 
             <div class="jpg-modal__footer">
-                <button type="button" data-jpg-modal-close class="jpg-modal__btn jpg-modal__btn--cancel">Abbrechen</button>
-                <button type="submit" id="jpgApplySubmit" class="jpg-modal__btn jpg-modal__btn--submit">📩 Bewerbung absenden</button>
+                <button type="button" data-jpg-modal-close class="jpg-modal__btn jpg-modal__btn--cancel"><?php echo htmlspecialchars($t('apply_cancel'), ENT_QUOTES, 'UTF-8'); ?></button>
+                <button type="submit" id="jpgApplySubmit" class="jpg-modal__btn jpg-modal__btn--submit">📩 <?php echo htmlspecialchars($t('apply_submit'), ENT_QUOTES, 'UTF-8'); ?></button>
             </div>
             <p class="jpg-modal__privacy"><?php echo htmlspecialchars((string) $privacyText, ENT_QUOTES, 'UTF-8'); ?>
                 <a href="<?php echo htmlspecialchars((string) $privacyUrl, ENT_QUOTES, 'UTF-8'); ?>" class="jpg-modal__privacy-link">Datenschutzerklärung</a>
@@ -200,6 +206,11 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
     var errBox     = document.getElementById('jpgApplyError');
     var siteUrl    = '<?php echo defined('SITE_URL') ? htmlspecialchars((string) SITE_URL, ENT_QUOTES, 'UTF-8') : ''; ?>';
     var jobSlug    = '<?php echo $jobSlugEsc; ?>';
+    var jobsBasePath = '<?php echo htmlspecialchars((function_exists('jpg_public_path') ? jpg_public_path('jobs', $publicLang) : '/jobs'), ENT_QUOTES, 'UTF-8'); ?>';
+    var registerPath = '<?php echo htmlspecialchars((function_exists('jpg_public_path') ? jpg_public_path('jobs/register', $publicLang) : '/jobs/register'), ENT_QUOTES, 'UTF-8'); ?>';
+    var submitText = '📩 <?php echo htmlspecialchars($t('apply_submit'), ENT_QUOTES, 'UTF-8'); ?>';
+    var loginText = '🔐 <?php echo htmlspecialchars($t('apply_login'), ENT_QUOTES, 'UTF-8'); ?>';
+    var registerApplyText = '📩 <?php echo htmlspecialchars($t('apply_register_and_apply'), ENT_QUOTES, 'UTF-8'); ?>';
 
     window.jpgOpenApplyModal = function () {
         modal.style.display = 'flex';
@@ -253,18 +264,18 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
             btn.disabled = true;
             btn.textContent = '⏳ Sende…';
             try {
-                var res  = await fetch(siteUrl + '/jobs/' + jobSlug + '/apply', { method: 'POST', body: new FormData(applyForm) });
+                var res  = await fetch(siteUrl + jobsBasePath + '/' + jobSlug + '/apply', { method: 'POST', body: new FormData(applyForm) });
                 var data = await res.json();
                 if (data.success) {
                     applyForm.style.display = 'none';
                     success.style.display   = 'block';
                 } else {
                     showError(data.error || 'Unbekannter Fehler.');
-                    btn.disabled = false; btn.textContent = '📩 Bewerbung absenden';
+                    btn.disabled = false; btn.textContent = submitText;
                 }
             } catch (err) {
                 showError('Netzwerkfehler: ' + err.message);
-                btn.disabled = false; btn.textContent = '📩 Bewerbung absenden';
+                btn.disabled = false; btn.textContent = submitText;
             }
         });
     }
@@ -289,11 +300,11 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
                 var phoneEl = regForm.querySelector('[name="phone"]');
                 if (phoneEl) regFd.append('phone', phoneEl.value);
 
-                var regRes  = await fetch(siteUrl + '/jobs/register', { method: 'POST', body: regFd });
+                var regRes  = await fetch(siteUrl + registerPath, { method: 'POST', body: regFd });
                 var regData = await regRes.json();
                 if (!regData.success) {
                     showError(regData.error || 'Registrierung fehlgeschlagen.');
-                    btn.disabled = false; btn.textContent = '📩 Registrieren & Bewerben';
+                    btn.disabled = false; btn.textContent = registerApplyText;
                     return;
                 }
 
@@ -308,7 +319,7 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
                 var cvEl = regForm.querySelector('[name="cv_file"]');
                 if (cvEl && cvEl.files.length) applyFd.append('cv_file', cvEl.files[0]);
 
-                var applyRes  = await fetch(siteUrl + '/jobs/' + jobSlug + '/apply', { method: 'POST', body: applyFd });
+                var applyRes  = await fetch(siteUrl + jobsBasePath + '/' + jobSlug + '/apply', { method: 'POST', body: applyFd });
                 var applyData = await applyRes.json();
 
                 if (applyData.success) {
@@ -318,14 +329,14 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
                     if (authTabs) authTabs.querySelector('.jpg-modal__tab-nav').style.display = 'none';
                 } else if (applyData.require_auth) {
                     showError('Konto erstellt. Bitte melde dich erneut an und sende die Bewerbung danach ab.');
-                    btn.disabled = false; btn.textContent = 'Bewerbung absenden';
+                    btn.disabled = false; btn.textContent = submitText;
                 } else {
                     showError(applyData.error || 'Bewerbung konnte nicht abgeschickt werden.');
-                    btn.disabled = false; btn.textContent = '📩 Registrieren & Bewerben';
+                    btn.disabled = false; btn.textContent = registerApplyText;
                 }
             } catch (err) {
                 showError('Netzwerkfehler: ' + err.message);
-                btn.disabled = false; btn.textContent = '📩 Registrieren & Bewerben';
+                btn.disabled = false; btn.textContent = registerApplyText;
             }
         });
     }
@@ -352,11 +363,11 @@ if (class_exists('CMS\\Auth') && \CMS\Auth::instance()->isLoggedIn()) {
                     window.location.reload();
                 } else {
                     showError(data.error || 'Anmeldung fehlgeschlagen.');
-                    btn.disabled = false; btn.textContent = '🔐 Anmelden';
+                    btn.disabled = false; btn.textContent = loginText;
                 }
             } catch (err) {
                 showError('Netzwerkfehler: ' + err.message);
-                btn.disabled = false; btn.textContent = '🔐 Anmelden';
+                btn.disabled = false; btn.textContent = loginText;
             }
         });
     }

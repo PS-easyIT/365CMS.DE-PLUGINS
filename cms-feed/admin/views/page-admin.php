@@ -903,8 +903,19 @@ elseif ($tab === 'settings'):
                 <small class="form-text">Überschrift der öffentlichen Feed-Seite</small>
             </div>
             <div class="form-group">
+                <label class="form-label">Seitentitel (EN)</label>
+                <input type="text" name="archive_title_en" class="form-control"
+                       value="<?php echo htmlspecialchars($settings['archive_title_en'] ?? ''); ?>"
+                       placeholder="Feed overview">
+                <small class="form-text">Optional. Wird auf <code>/en</code> genutzt, sonst Fallback auf Deutsch.</small>
+            </div>
+            <div class="form-group">
                 <label class="form-label">Beschreibung</label>
                 <textarea name="archive_description" class="form-control" rows="2"><?php echo htmlspecialchars($settings['archive_description'] ?? ''); ?></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Beschreibung (EN)</label>
+                <textarea name="archive_description_en" class="form-control" rows="2"><?php echo htmlspecialchars($settings['archive_description_en'] ?? ''); ?></textarea>
             </div>
             <div class="form-group">
                   <label class="form-label">URL-Slug <span class="feed-required">*</span></label>
@@ -944,6 +955,23 @@ elseif ($tab === 'settings'):
                     <?php echo $label; ?>
                 </label>
                 <?php endforeach; ?>
+            </div>
+
+            <hr class="feed-divider">
+            <h4 class="feed-section-title--compact">🔇 Noise-Filter (vor Anzeige)</h4>
+            <div class="form-group">
+                <label class="form-label">Keywords ausschließen</label>
+                <textarea name="noise_exclude_keywords" class="form-control" rows="3" placeholder="Werbung&#10;Sponsored&#10;Clickbait"><?php echo htmlspecialchars($settings['noise_exclude_keywords'] ?? ''); ?></textarea>
+                <small class="form-text">Ein Begriff pro Zeile. Beiträge mit Treffern in Titel/Teaser/Inhalt werden beim Import übersprungen.</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Autoren ausschließen</label>
+                <textarea name="noise_exclude_authors" class="form-control" rows="2" placeholder="Gastautor&#10;PR-Team"><?php echo htmlspecialchars($settings['noise_exclude_authors'] ?? ''); ?></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Domains ausschließen</label>
+                <textarea name="noise_exclude_domains" class="form-control" rows="2" placeholder="example.com&#10;spam-news.net"><?php echo htmlspecialchars($settings['noise_exclude_domains'] ?? ''); ?></textarea>
+                <small class="form-text">Domain ohne Protokoll eintragen, z.B. <code>example.com</code>.</small>
             </div>
 
             <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
@@ -1093,6 +1121,22 @@ elseif ($tab === 'settings'):
                 <input type="hidden" name="cleanup_days" value="30">
                 <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
                 <button type="submit" class="btn btn-danger">🧹 Beiträge älter 30 Tage entfernen</button>
+            </form>
+        </div>
+
+        <hr class="feed-divider">
+        <h4 class="feed-section-title--compact">📦 OPML Import/Export</h4>
+        <div class="feed-inline-actions">
+            <form method="POST" class="feed-inline-form-block">
+                <input type="hidden" name="action" value="export_opml">
+                <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
+                <button type="submit" class="btn btn-secondary">⬇️ OPML exportieren</button>
+            </form>
+            <form method="POST" enctype="multipart/form-data" class="feed-inline-form-block">
+                <input type="hidden" name="action" value="import_opml">
+                <input type="hidden" name="csrf_token" value="<?php echo $csrfEsc; ?>">
+                <input type="file" name="opml_file" accept=".opml,text/xml,application/xml" required>
+                <button type="submit" class="btn btn-primary">⬆️ OPML importieren</button>
             </form>
         </div>
         </div>

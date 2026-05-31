@@ -31,17 +31,39 @@ final class CMS_M365ADMINSITES_Widget
             return;
         }
 
-        $title = CMS_M365ADMINSITES_Settings::get('sidebar_title', 'M365 Adminsites');
+        $lang = function_exists('cms_plugin_public_language')
+            ? (string) cms_plugin_public_language()
+            : 'de';
+        $lang = $lang === 'en' ? 'en' : 'de';
+
+        $settings = CMS_M365ADMINSITES_Settings::all();
+        $i18n = static function (string $key, string $fallback = '') use ($settings, $lang): string {
+            if (function_exists('cms_plugin_public_i18n_value')) {
+                return (string) cms_plugin_public_i18n_value($settings, $key, $lang, $fallback);
+            }
+            if ($lang === 'en' && isset($settings[$key . '_en']) && $settings[$key . '_en'] !== '') {
+                return (string) $settings[$key . '_en'];
+            }
+            if (isset($settings[$key]) && $settings[$key] !== '') {
+                return (string) $settings[$key];
+            }
+            return $fallback;
+        };
+
+        $title = $i18n('sidebar_title', 'M365 Adminsites');
         $interval = CMS_M365ADMINSITES_Settings::int('sidebar_rotate_seconds', 7, 3, 60) * 1000;
         $showCategory = CMS_M365ADMINSITES_Settings::bool('sidebar_show_category', true);
         $route = CMS_M365ADMINSITES_Settings::route();
+        $localizedRoute = function_exists('cms_plugin_public_localized_path')
+            ? (string) cms_plugin_public_localized_path($route, $lang)
+            : $route;
         $siteUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
-        $archiveUrl = $siteUrl . $route;
+        $archiveUrl = $siteUrl . $localizedRoute;
         $placeholder = trim(CMS_M365ADMINSITES_Settings::get('sidebar_placeholder_image', ''));
-        $buttonLabel = CMS_M365ADMINSITES_Settings::get('sidebar_button_label', 'Alle Portale ansehen');
-        $controlsLabel = CMS_M365ADMINSITES_Settings::get('sidebar_controls_label', 'Adminsites steuern');
-        $prevLabel = CMS_M365ADMINSITES_Settings::get('sidebar_prev_label', 'Vorheriges Portal anzeigen');
-        $nextLabel = CMS_M365ADMINSITES_Settings::get('sidebar_next_label', 'Nächstes Portal anzeigen');
+        $buttonLabel = $i18n('sidebar_button_label', 'Alle Portale ansehen');
+        $controlsLabel = $i18n('sidebar_controls_label', 'Adminsites steuern');
+        $prevLabel = $i18n('sidebar_prev_label', 'Vorheriges Portal anzeigen');
+        $nextLabel = $i18n('sidebar_next_label', 'Nächstes Portal anzeigen');
         $style = CMS_M365ADMINSITES_Settings::get('sidebar_style', 'card');
         if (!in_array($style, ['card', 'compact', 'minimal'], true)) {
             $style = 'card';

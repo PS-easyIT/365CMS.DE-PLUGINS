@@ -21,6 +21,7 @@ final class CMS_M365MATRICES_Frontend
     private ?string $requestPathCache = null;
     private ?string $siteBasePathCache = null;
     private ?string $activeRouteCache = null;
+    private ?string $currentLangCache = null;
 
     public static function instance(): self
     {
@@ -49,13 +50,13 @@ final class CMS_M365MATRICES_Frontend
         }
 
         $router = \CMS\Router::instance();
-        $router->addRoute('GET', self::SUITE_ROUTE, function (): void {
+        $this->register_public_route($router, self::SUITE_ROUTE, function (): void {
             $this->render_suite_matrix();
         });
-        $router->addRoute('GET', self::ADDON_ROUTE, function (): void {
+        $this->register_public_route($router, self::ADDON_ROUTE, function (): void {
             $this->render_addon_matrix();
         });
-        $router->addRoute('GET', self::COPILOT_ROUTE, function (): void {
+        $this->register_public_route($router, self::COPILOT_ROUTE, function (): void {
             $this->render_copilot_matrix();
         });
     }
@@ -265,20 +266,28 @@ final class CMS_M365MATRICES_Frontend
      */
     private static function public_text(array $options, string $key, string $default): string
     {
-        $value = trim(strip_tags((string) ($options[$key] ?? '')));
+        $lang = self::current_lang();
+        $value = function_exists('cms_plugin_public_i18n_value')
+            ? (string) cms_plugin_public_i18n_value($options, $key, $lang, $default)
+            : (string) ($options[$key] ?? $default);
+        $value = trim(strip_tags($value));
 
         return $value !== '' ? $value : $default;
     }
 
     private function render_missing_dependency(string $title): void
     {
+        $lang = self::current_lang();
+        $message = $lang === 'en'
+            ? 'The matrix data source is not available. Please verify that local matrix files exist in this plugin.'
+            : 'Die Matrix-Datenquelle ist nicht verfügbar. Bitte prüfen, ob die lokalen Matrix-Dateien im Plugin vorhanden sind.';
         if (class_exists('CMS\\ThemeManager')) {
             \CMS\ThemeManager::instance()->getHeader(['title' => $title]);
         }
 
         echo '<main class="phinit-plugin m365calc-page"><section class="phinit-note phinit-note--warning">';
         echo '<h1>' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . '</h1>';
-        echo '<p>Die Matrix-Datenquelle ist nicht verfügbar. Bitte prüfen, ob die lokalen Matrix-Dateien im Plugin vorhanden sind.</p>';
+        echo '<p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p>';
         echo '</section></main>';
 
         if (class_exists('CMS\\ThemeManager')) {
@@ -309,9 +318,17 @@ final class CMS_M365MATRICES_Frontend
 
     private function path_matches(string $route): bool
     {
-        $path = $this->normalized_request_path();
         $routePath = trim($route, '/');
-        if ($path === $routePath) {
+        if ($routePath === '') {
+            return false;
+        }
+
+        if (function_exists('cms_plugin_public_path_without_lang')) {
+            return cms_plugin_public_path_without_lang($this->normalized_request_path()) === $routePath;
+        }
+
+        $path = $this->normalized_request_path();
+        if ($path === $routePath || $path === 'en/' . $routePath) {
             return true;
         }
 
@@ -346,6 +363,12 @@ final class CMS_M365MATRICES_Frontend
             return $this->requestPathCache;
         }
 
+        if (function_exists('cms_plugin_public_request_path')) {
+            $this->requestPathCache = (string) cms_plugin_public_request_path();
+
+            return $this->requestPathCache;
+        }
+
         $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
         $path = parse_url($requestUri, PHP_URL_PATH);
         $this->requestPathCache = trim(is_string($path) ? $path : '/', '/');
@@ -364,6 +387,35 @@ final class CMS_M365MATRICES_Frontend
         $this->siteBasePathCache = $basePath;
 
         return $this->siteBasePathCache;
+    }
+
+    public static function current_lang(): string
+    {
+        $instance = self::instance();
+        if ($instance->currentLangCache !== null) {
+            return $instance->currentLangCache;
+        }
+
+        if (function_exists('cms_plugin_public_language')) {
+            $instance->currentLangCache = cms_plugin_public_language();
+            return $instance->currentLangCache;
+        }
+
+        $instance->currentLangCache = 'de';
+        return $instance->currentLangCache;
+    }
+
+    private function register_public_route(\CMS\Router $router, string $route, callable $handler): void
+    {
+        $paths = [$route, '/en' . $route];
+        if (function_exists('cms_plugin_public_localized_path')) {
+            $paths[] = cms_plugin_public_localized_path($route, 'de');
+            $paths[] = cms_plugin_public_localized_path($route, 'en');
+        }
+
+        foreach (array_values(array_unique(array_filter($paths, static fn(string $path): bool => $path !== ''))) as $path) {
+            $router->addRoute('GET', $path, $handler);
+        }
     }
 
     private function set_seo(string $title, string $description): void

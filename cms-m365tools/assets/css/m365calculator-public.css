@@ -1,11 +1,11 @@
 .m365calc-page {
-    --m365tools-navy: #1a3a5c;
-    --m365tools-focus: #2563eb;
-    --m365tools-content-top-gap: 25px;
+    --m365tools-navy: var(--phinit-color-ink);
+    --m365tools-focus: var(--phinit-color-accent);
+    --m365tools-content-top-gap: var(--phinit-space-5);
     --m365tools-ui-radius: min(var(--m365tools-card-radius, 2px), 2px);
-    --m365tools-surface-raised: color-mix(in srgb, var(--m365tools-surface, var(--m365tools-bg, #ffffff)) 96%, #0f172a 4%);
-    --m365tools-shadow-hover: 0 1px 6px rgb(15 23 42 / 0.08);
-    background: var(--m365tools-bg, #ffffff);
+    --m365tools-surface-raised: var(--phinit-color-surface);
+    --m365tools-shadow-hover: var(--phinit-shadow-raised);
+    background: var(--m365tools-bg, var(--phinit-color-surface));
     color: var(--m365tools-text, var(--phinit-color-ink));
     display: grid;
     gap: var(--m365tools-section-gap, var(--phinit-space-6));
@@ -34,7 +34,7 @@
 .m365calc-page .phinit-card,
 .m365calc-page .phinit-result,
 .m365calc-page .phinit-empty-state {
-    box-shadow: 0 1px 4px rgb(15 23 42 / 0.05);
+    box-shadow: var(--phinit-shadow-card);
 }
 
 .m365calc-page .phinit-card:hover,

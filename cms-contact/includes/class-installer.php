@@ -59,6 +59,7 @@ final class CMS_Contact_Installer
         $p   = $db->getPrefix();
 
         $tables = [
+            'contact_security_events',
             'contact_submission_meta',
             'contact_submissions',
             'contact_fields',
@@ -182,6 +183,21 @@ final class CMS_Contact_Installer
             setting_key    VARCHAR(100)  NOT NULL,
             setting_value  TEXT          DEFAULT NULL,
             UNIQUE KEY idx_key (setting_key)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        // 6. Sicherheitsereignisse (Dashboard-Auswertung)
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$p}contact_security_events (
+            id             BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            form_id        INT UNSIGNED  DEFAULT NULL,
+            event_type     VARCHAR(50)   NOT NULL,
+            reason         VARCHAR(100)  DEFAULT NULL,
+            ip_address     VARCHAR(45)   DEFAULT NULL,
+            user_agent     VARCHAR(255)  DEFAULT NULL,
+            details_json   JSON          DEFAULT NULL,
+            created_at     TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_created (created_at),
+            INDEX idx_type_created (event_type, created_at),
+            INDEX idx_form_created (form_id, created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
 

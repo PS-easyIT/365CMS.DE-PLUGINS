@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 
 // ── Konstanten ────────────────────────────────────────────────────────────────
 define('CMS_CONTACT_VERSION',    '3.0.1');
-define('CMS_CONTACT_DB_VERSION', '3');
+define('CMS_CONTACT_DB_VERSION', '4');
 define('CMS_CONTACT_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_CONTACT_PLUGIN_URL', '/plugins/cms-contact/');
 
@@ -48,6 +48,11 @@ final class CMS_Contact
     {
         $includes = $this->plugin_dir . 'includes/';
         $admin    = $this->plugin_dir . 'admin/';
+        $sharedI18n = dirname($this->plugin_dir) . '/shared/public/plugin-public-i18n.php';
+
+        if (file_exists($sharedI18n)) {
+            require_once $sharedI18n;
+        }
 
         $files = [
             $includes . 'class-installer.php',
@@ -140,11 +145,11 @@ final class CMS_Contact
             return false;
         }
 
-        if ($path === '/contact' || $path === '/kontakt') {
+        if ($path === '/contact' || $path === '/kontakt' || $path === '/en/contact') {
             return true;
         }
 
-        return preg_match('#^/(?:contact|kontakt)/[^/]+(?:/.*)?$#', $path) === 1;
+        return preg_match('#^/(?:en/contact|contact|kontakt)/[^/]+(?:/.*)?$#', $path) === 1;
     }
 
     public function enqueue_styles(): void

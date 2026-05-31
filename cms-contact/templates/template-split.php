@@ -9,6 +9,7 @@ declare(strict_types=1);
 if (!defined('ABSPATH')) exit;
 
 $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
+$t = static fn(string $de, string $en): string => CMS_Contact_Frontend::t($de, $en);
 $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
 
 // Kontaktinfo aus Settings laden
@@ -44,7 +45,7 @@ $theme->getHeader();
                         <div class="contact-info-item">
                             <span class="contact-info-icon" aria-hidden="true">Mail</span>
                             <div>
-                                <strong>E-Mail</strong>
+                                <strong><?php echo $e($t('E-Mail', 'Email')); ?></strong>
                                 <a href="mailto:<?php echo $e($companyEmail); ?>"><?php echo $e($companyEmail); ?></a>
                             </div>
                         </div>
@@ -54,7 +55,7 @@ $theme->getHeader();
                         <div class="contact-info-item">
                             <span class="contact-info-icon" aria-hidden="true">Tel</span>
                             <div>
-                                <strong>Telefon</strong>
+                                <strong><?php echo $e($t('Telefon', 'Phone')); ?></strong>
                                 <a href="tel:<?php echo $e(preg_replace('/[^+0-9]/', '', $companyPhone)); ?>"><?php echo $e($companyPhone); ?></a>
                             </div>
                         </div>
@@ -64,7 +65,7 @@ $theme->getHeader();
                         <div class="contact-info-item">
                             <span class="contact-info-icon" aria-hidden="true">Ort</span>
                             <div>
-                                <strong>Adresse</strong>
+                                <strong><?php echo $e($t('Adresse', 'Address')); ?></strong>
                                 <address class="contact-address"><?php echo nl2br($e($companyAddr)); ?></address>
                             </div>
                         </div>
@@ -75,7 +76,7 @@ $theme->getHeader();
 
             <!-- Rechte Seite: Formular -->
             <section class="contact-split-form" aria-labelledby="contact-split-form-title">
-                <h2 class="contact-visually-hidden" id="contact-split-form-title">Kontaktformular</h2>
+                <h2 class="contact-visually-hidden" id="contact-split-form-title"><?php echo $e($t('Kontaktformular', 'Contact form')); ?></h2>
                 <?php if (!empty($success)): ?>
                 <div class="contact-alert contact-alert-success" role="status" aria-live="polite" data-contact-message tabindex="-1"><?php echo $e($success); ?></div>
                 <?php endif; ?>
@@ -93,6 +94,8 @@ $theme->getHeader();
                     </div>
                     <?php endif; ?>
 
+                    <?php echo CMS_Contact_Frontend::render_error_summary($fieldErrors ?? [], 'contact-split-form-title'); ?>
+
                     <div class="contact-fields">
                         <?php foreach ($fields as $field): ?>
                         <div class="contact-field contact-field-<?php echo $e($field['field_width'] ?? 'full'); ?>">
@@ -101,18 +104,12 @@ $theme->getHeader();
                         <?php endforeach; ?>
                     </div>
 
-                    <?php if (!empty($form['enable_captcha'])): ?>
-                    <div class="contact-field contact-field-full contact-captcha">
-                        <?php $a = rand(1, 10); $b = rand(1, 10); $_SESSION['captcha_expected_' . $form['slug']] = $a + $b; ?>
-                        <label class="contact-label" for="contact-captcha-answer">Was ist <?php echo $a; ?> + <?php echo $b; ?>? <span class="contact-required">*</span></label>
-                        <input type="number" id="contact-captcha-answer" name="captcha_answer" class="contact-input" inputmode="numeric" required>
-                    </div>
-                    <?php endif; ?>
+                    <?php echo CMS_Contact_Frontend::render_captcha_field($form); ?>
 
                     <?php echo CMS_Contact_Frontend::render_privacy_consent($form, $old); ?>
 
                     <div class="contact-submit">
-                        <button type="submit" class="contact-btn contact-btn-primary">Absenden</button>
+                        <button type="submit" class="contact-btn contact-btn-primary"><?php echo $e($t('Absenden', 'Submit')); ?></button>
                     </div>
                 </form>
                 <?php endif; ?>

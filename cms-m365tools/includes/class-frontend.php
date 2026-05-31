@@ -13,6 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class CMS_M365CALCULATOR_Frontend
 {
+    private const EN_PREFIX = '/en';
     private const TOOLBOX_ROUTE = '/m365-tools';
     private const TOOLBOX_ROUTE_ALIAS = '/m365-rechner';
     private const LICENSE_COMPARISON_ROUTE = '/m365-lizenzvergleich';
@@ -84,105 +85,111 @@ final class CMS_M365CALCULATOR_Frontend
 
         $router = \CMS\Router::instance();
 
-        $router->addRoute('GET', self::TOOLBOX_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::TOOLBOX_ROUTE, function (): void {
             $this->render_toolbox();
         });
 
-        $router->addRoute('GET', self::TOOLBOX_ROUTE_ALIAS, function (): void {
+        $this->register_public_route($router, 'GET', self::TOOLBOX_ROUTE_ALIAS, function (): void {
             $this->render_toolbox();
         });
 
-        $router->addRoute('GET', self::LICENSE_ADVISOR_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::LICENSE_ADVISOR_ROUTE, function (): void {
             $this->render_license_advisor();
         });
 
-        $router->addRoute('GET', self::LICENSE_COMPARISON_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::LICENSE_COMPARISON_ROUTE, function (): void {
             $this->render_license_comparison();
         });
 
-        $router->addRoute('GET', self::ADDON_CONFIGURATOR_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::ADDON_CONFIGURATOR_ROUTE, function (): void {
             $this->render_addon_configurator();
         });
 
-        $router->addRoute('GET', self::COMMITMENT_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::COMMITMENT_ROUTE, function (): void {
             $this->render_commitment_calculator();
         });
 
-        $router->addRoute('GET', self::ARCHIVE_MAILBOX_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::ARCHIVE_MAILBOX_ROUTE, function (): void {
             $this->render_archive_mailbox_calculator();
         });
 
-        $router->addRoute('GET', self::AI_PRODUCT_COMPARISON_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::AI_PRODUCT_COMPARISON_ROUTE, function (): void {
             $this->render_ai_product_comparison();
         });
 
-        $router->addRoute('GET', self::COPILOT_PILOT_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::COPILOT_PILOT_ROUTE, function (): void {
             $this->render_copilot_pilot_calculator();
         });
 
-        $router->addRoute('GET', self::FRONTLINE_WORKER_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::FRONTLINE_WORKER_ROUTE, function (): void {
             $this->render_frontline_worker_check();
         });
 
-        $router->addRoute('GET', self::EXCHANGE_ONLINE_ROI_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::EXCHANGE_ONLINE_ROI_ROUTE, function (): void {
             $this->render_exchange_online_roi();
         });
 
-        $router->addRoute('GET', self::TEAMS_PHONE_ADVISOR_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::TEAMS_PHONE_ADVISOR_ROUTE, function (): void {
             $this->render_teams_phone_advisor();
         });
 
-        $router->addRoute('GET', self::MICROSOFT_PRICE_TRACKER_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::MICROSOFT_PRICE_TRACKER_ROUTE, function (): void {
             $this->render_microsoft_price_tracker();
         });
 
-        $router->addRoute('GET', self::LICENSE_AUDIT_CHECKLIST_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::LICENSE_AUDIT_CHECKLIST_ROUTE, function (): void {
             $this->render_license_audit_checklist();
         });
 
-        $router->addRoute('GET', self::STORAGE_NEEDS_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::STORAGE_NEEDS_ROUTE, function (): void {
             $this->render_storage_needs_calculator();
         });
 
-        $router->addRoute('GET', self::BACKUP_COST_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::BACKUP_COST_ROUTE, function (): void {
             $this->render_backup_cost_calculator();
         });
 
-        $router->addRoute('GET', self::WORKSPACE_M365_TCO_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::WORKSPACE_M365_TCO_ROUTE, function (): void {
             $this->render_workspace_m365_tco_calculator();
         });
 
-        $router->addRoute('GET', self::POWER_PLATFORM_COST_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::POWER_PLATFORM_COST_ROUTE, function (): void {
             $this->render_power_platform_cost_calculator();
         });
 
-        $router->addRoute('POST', self::LICENSE_ADVISOR_ROUTE, function (): void {
+        $this->register_public_route($router, 'POST', self::LICENSE_ADVISOR_ROUTE, function (): void {
             $this->redirect_current_public_path();
         });
 
-        $router->addRoute('GET', self::SHARED_MAILBOX_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::SHARED_MAILBOX_ROUTE, function (): void {
             $this->render_shared_mailbox();
         });
 
-        $router->addRoute('POST', self::SHARED_MAILBOX_ROUTE, function (): void {
+        $this->register_public_route($router, 'POST', self::SHARED_MAILBOX_ROUTE, function (): void {
             $this->redirect_current_public_path();
         });
 
-        $router->addRoute('GET', self::COPILOT_LICENSE_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::COPILOT_LICENSE_ROUTE, function (): void {
             $this->render_copilot_license_check();
         });
 
-        $router->addRoute('POST', self::COPILOT_LICENSE_ROUTE, function (): void {
+        $this->register_public_route($router, 'POST', self::COPILOT_LICENSE_ROUTE, function (): void {
             $this->redirect_current_public_path();
         });
 
-        $router->addRoute('GET', self::COPILOT_ROI_ROUTE, function (): void {
+        $this->register_public_route($router, 'GET', self::COPILOT_ROI_ROUTE, function (): void {
             $this->render_copilot_roi();
         });
 
-        $router->addRoute('POST', self::COPILOT_ROI_ROUTE, function (): void {
+        $this->register_public_route($router, 'POST', self::COPILOT_ROI_ROUTE, function (): void {
             $this->redirect_current_public_path();
         });
+    }
+
+    private function register_public_route(object $router, string $method, string $route, callable $handler): void
+    {
+        $router->addRoute($method, $route, $handler);
+        $router->addRoute($method, self::EN_PREFIX . $route, $handler);
     }
 
     public function enqueue_public_styles(): void
@@ -228,12 +235,6 @@ final class CMS_M365CALCULATOR_Frontend
             }
         }
 
-        $color = static function (array $values, string $key, string $default): string {
-            $value = (string) ($values[$key] ?? $default);
-
-            return preg_match('/^#[0-9a-fA-F]{6}$/', $value) === 1 ? strtolower($value) : $default;
-        };
-
         $number = static function (array $values, string $key, int $default, int $min, int $max): int {
             return max($min, min($max, (int) ($values[$key] ?? $default)));
         };
@@ -243,22 +244,22 @@ final class CMS_M365CALCULATOR_Frontend
             '--m365tools-ui-radius' => $number($options, 'landing_card_radius', 2, 0, 2) . 'px',
             '--m365tools-card-min' => $number($options, 'landing_cards_min_width', 320, 220, 520) . 'px',
             '--m365tools-section-gap' => $number($options, 'landing_section_gap', 32, 16, 96) . 'px',
-            '--m365tools-primary' => $color($options, 'landing_color_primary', '#2563eb'),
-            '--m365tools-accent' => $color($options, 'landing_color_accent', '#0f766e'),
-            '--m365tools-bg' => $color($options, 'landing_color_background', '#ffffff'),
-            '--m365tools-surface' => $color($options, 'landing_color_surface', '#ffffff'),
-            '--m365tools-surface-alt' => $color($options, 'landing_color_surface_alt', '#f8fafc'),
-            '--m365tools-header-bg' => $color($options, 'landing_color_header_background', '#f8fafc'),
-            '--m365tools-header-text' => $color($options, 'landing_color_header_text', '#1e293b'),
-            '--m365tools-header-muted' => $color($options, 'landing_color_header_muted', '#64748b'),
-            '--m365tools-header-border' => $color($options, 'landing_color_header_border', '#e2e8f0'),
-            '--m365tools-button-primary-bg' => $color($options, 'landing_color_button_primary_bg', '#2563eb'),
-            '--m365tools-button-primary-text' => $color($options, 'landing_color_button_primary_text', '#ffffff'),
-            '--m365tools-button-secondary-bg' => $color($options, 'landing_color_button_secondary_bg', '#ffffff'),
-            '--m365tools-button-secondary-text' => $color($options, 'landing_color_button_secondary_text', '#1e293b'),
-            '--m365tools-text' => $color($options, 'landing_color_text', '#1e293b'),
-            '--m365tools-muted' => $color($options, 'landing_color_muted', '#64748b'),
-            '--m365tools-border' => $color($options, 'landing_color_border', '#e2e8f0'),
+            '--m365tools-primary' => 'var(--phinit-color-accent)',
+            '--m365tools-accent' => 'var(--phinit-color-accent)',
+            '--m365tools-bg' => 'var(--phinit-color-bg)',
+            '--m365tools-surface' => 'var(--phinit-color-surface)',
+            '--m365tools-surface-alt' => 'var(--phinit-color-surface)',
+            '--m365tools-header-bg' => 'var(--phinit-color-surface)',
+            '--m365tools-header-text' => 'var(--phinit-color-ink)',
+            '--m365tools-header-muted' => 'var(--phinit-color-ink-secondary)',
+            '--m365tools-header-border' => 'var(--phinit-color-border)',
+            '--m365tools-button-primary-bg' => 'var(--phinit-color-accent)',
+            '--m365tools-button-primary-text' => 'var(--phinit-color-accent-ink)',
+            '--m365tools-button-secondary-bg' => 'var(--phinit-color-surface)',
+            '--m365tools-button-secondary-text' => 'var(--phinit-color-ink)',
+            '--m365tools-text' => 'var(--phinit-color-ink)',
+            '--m365tools-muted' => 'var(--phinit-color-ink-secondary)',
+            '--m365tools-border' => 'var(--phinit-color-border)',
         ];
 
         echo '<style id="cms-m365tools-public-design">' . "\n";
@@ -598,7 +599,9 @@ final class CMS_M365CALCULATOR_Frontend
             $source = $_GET;
             $input = CMS_M365CALCULATOR_License_Advisor::normalize_input($source);
             $result = CMS_M365CALCULATOR_License_Advisor::evaluate($input);
-            $notice = 'Die M365-Lizenzempfehlung wurde erstellt.';
+            $notice = $this->current_language() === 'en'
+                ? 'The M365 license recommendation has been generated.'
+                : 'Die M365-Lizenzempfehlung wurde erstellt.';
         }
 
         $this->set_seo('M365 Lizenzberater', 'Empfiehlt passende Microsoft-365-Basislizenzen, Add-ons und Mischmodelle anhand konkreter Nutzergruppen und Anforderungen.');
@@ -893,6 +896,16 @@ final class CMS_M365CALCULATOR_Frontend
         return $this->requestPathCache;
     }
 
+    private function current_language(): string
+    {
+        if (function_exists('cms_plugin_public_language')) {
+            return cms_plugin_public_language($this->normalized_request_path());
+        }
+
+        $path = $this->normalized_request_path();
+        return $path === 'en' || str_starts_with($path, 'en/') ? 'en' : 'de';
+    }
+
     private function path_matches_route(string $requestPath, string $routePath): bool
     {
         if ($requestPath === '' || $routePath === '') {
@@ -918,10 +931,11 @@ final class CMS_M365CALCULATOR_Frontend
             return [];
         }
 
-        $candidates = [$routePath];
+        $candidates = [$routePath, 'en/' . $routePath];
         $prefix = $this->site_path_prefix();
         if ($prefix !== '') {
             $candidates[] = $prefix . '/' . $routePath;
+            $candidates[] = $prefix . '/en/' . $routePath;
         }
 
         return array_values(array_unique($candidates));

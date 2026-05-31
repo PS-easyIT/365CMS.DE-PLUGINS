@@ -5,6 +5,8 @@
 - **Short description:** Add an optional background job that periodically checks stored links, flags non-200 responses, and highlights affected entries in admin.
 - **Why it fits this plugin:** The plugin is a curated link directory; link integrity is core content quality and reduces stale entries.
 - **Rough effort:** Medium
+- **Status:** skipped
+- **Reason:** Braucht scheduler/background-infrastructure, neue Persistenz für Prüfstände und Admin-UI für Health-States; höheres Risiko für Hook/API-Nebenwirkungen als die priorisierten Quick Wins.
 - **Source link(s):**
   - https://support.microsoft.com/en-gb/topic/improve-your-sharepoint-site-with-knowledge-agent-4c801323-68f8-4274-96bf-b04d78b8d62b
   - https://www.npmjs.com/package/linkinator
@@ -14,6 +16,8 @@
 - **Short description:** Add optional JSON-LD output for `ItemList` and `BreadcrumbList` on the public archive page.
 - **Why it fits this plugin:** The plugin renders a navigable list of links; structured data can improve search understanding of list hierarchy.
 - **Rough effort:** Low
+- **Status:** implemented
+- **Reason:** Optionales JSON-LD für `BreadcrumbList` + `ItemList` wird jetzt auf der Public-Seite ausgegeben und kann per Setting (`show_structured_data`) aktiviert werden.
 - **Source link(s):**
   - https://schema.org/BreadcrumbList
   - https://schema.org/ItemList
@@ -23,6 +27,8 @@
 - **Short description:** Provide an admin-side helper that fetches target metadata (title/description/image hints) before saving a new link.
 - **Why it fits this plugin:** It reduces manual curation effort and improves consistency of entry quality.
 - **Rough effort:** Medium
+- **Status:** skipped
+- **Reason:** Erfordert externe Fetch-/Parsing-Logik (OG/Twitter/HTML), Fehlerbehandlung/Timeouts und zusätzliche Admin-Interaktionen; nicht so risikoarm wie die priorisierten Features.
 - **Source link(s):**
   - https://ogp.me/
   - https://devblogs.microsoft.com/microsoft365dev/boost-your-microsoft-teams-app-experience-with-new-link-unfurling-capabilities/
@@ -32,6 +38,8 @@
 - **Short description:** Add optional diagnostics for filter/search UX (live-region announcements, keyboard flow checks, and result-count status updates).
 - **Why it fits this plugin:** The public page already offers filtering and tabular/card views; accessibility checks help keep interactions robust over time.
 - **Rough effort:** Medium
+- **Status:** implemented
+- **Reason:** Optionaler Diagnostics-Mode (`accessibility_validation_mode`) ergänzt Live-Region mit Ergebnisstatus, JS-basierte Keyboard/ARIA-Prüfhinweise und nicht-invasive Status-Updates.
 - **Source link(s):**
   - https://www.w3.org/WAI/ARIA/apg/patterns/grid/
   - https://www.accessible-data-interfaces.com/accessible-data-tables-grid-systems/
@@ -41,5 +49,7 @@
 - **Short description:** For selected Microsoft 365 links, optionally render embeddable preview cards using Microsoft Graph preview endpoints.
 - **Why it fits this plugin:** Many curated resources are Microsoft ecosystem assets; native previews can improve trust and context without opening links immediately.
 - **Rough effort:** High
+- **Status:** skipped
+- **Reason:** High-Effort-Feature mit OAuth/Graph-Abhängigkeiten und zusätzlichen API-Scopes; explizit außerhalb Low/Medium-Priorisierung.
 - **Source link(s):**
   - https://learn.microsoft.com/en-us/graph/api/driveitem-preview?view=graph-rest-1.0

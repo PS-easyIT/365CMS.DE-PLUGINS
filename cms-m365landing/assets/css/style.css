@@ -195,6 +195,52 @@ body.m365calculator-theme-embed.m365tools-module-m365landing:not(.is-member) .si
     line-height: 1.65;
 }
 
+.m365landing-status-list {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.m365landing-status-card {
+    background: var(--m365tools-surface, #ffffff);
+    border: 1px solid var(--m365tools-border, #e2e8f0);
+    border-radius: var(--m365tools-card-radius, 10px);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .05), 0 4px 12px rgba(15, 23, 42, .06);
+    padding: 1rem 1.1rem;
+}
+
+.m365landing-status-card h3 {
+    font-size: 1rem;
+    line-height: 1.38;
+    margin: 0;
+}
+
+.m365landing-status-card__meta {
+    color: var(--m365tools-muted, #64748b);
+    display: flex;
+    flex-wrap: wrap;
+    gap: .55rem;
+    margin: .6rem 0 0;
+}
+
+.m365landing-status-card__meta span {
+    background: var(--m365tools-surface-alt, #f8fafc);
+    border: 1px solid var(--m365tools-border, #e2e8f0);
+    border-radius: 999px;
+    font-size: .78rem;
+    line-height: 1.2;
+    padding: .25rem .55rem;
+}
+
+.m365landing-status-empty {
+    background: var(--m365tools-surface, #ffffff);
+    border: 1px dashed var(--m365tools-border, #e2e8f0);
+    border-radius: var(--m365tools-card-radius, 10px);
+    color: var(--m365tools-muted, #64748b);
+    margin: 0;
+    padding: .95rem 1.1rem;
+}
+
 .m365landing-grid {
     display: grid;
     gap: 1rem;

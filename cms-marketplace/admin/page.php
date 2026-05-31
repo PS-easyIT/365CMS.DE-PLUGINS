@@ -193,12 +193,23 @@ $entryListTitle = match ($section ?? '') {
                             <span>Kontaktformular-Basis-URL</span>
                             <input type="url" name="contact_form_base_url" value="<?php echo htmlspecialchars((string) ($settings['contact_form_base_url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                         </label>
+                        <label class="checkbox-row">
+                            <input type="checkbox" name="security_reports_enabled" value="1" <?php echo !empty($settings['security_reports_enabled']) ? 'checked' : ''; ?>>
+                            <span>Öffentlichen Security-Report-Intake aktivieren</span>
+                        </label>
+                        <label>
+                            <span>Security-Report-Pfad</span>
+                            <input type="text" name="security_report_path" value="<?php echo htmlspecialchars((string) ($settings['security_report_path'] ?? '/marketplace-security-report'), ENT_QUOTES, 'UTF-8'); ?>">
+                        </label>
                         <div class="package-info">
                             <strong>Öffentliche Seiten</strong>
                             <span><code><?php echo htmlspecialchars((string) ($publicRouteMap['overview'] ?? '/marketplace-public'), ENT_QUOTES, 'UTF-8'); ?></code></span>
                             <span><code><?php echo htmlspecialchars((string) ($publicRouteMap['plugins'] ?? '/marketplace-public/plugins'), ENT_QUOTES, 'UTF-8'); ?></code></span>
                             <span><code><?php echo htmlspecialchars((string) ($publicRouteMap['themes'] ?? '/marketplace-public/themes'), ENT_QUOTES, 'UTF-8'); ?></code></span>
                             <span><code><?php echo htmlspecialchars((string) ($publicRouteMap['cms'] ?? '/marketplace-public/cms'), ENT_QUOTES, 'UTF-8'); ?></code></span>
+                            <?php if (!empty($publicRouteMap['security_report'])): ?>
+                                <span><code><?php echo htmlspecialchars((string) ($publicRouteMap['security_report'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></code></span>
+                            <?php endif; ?>
                         </div>
                     </div>
 
@@ -215,6 +226,30 @@ $entryListTitle = match ($section ?? '') {
                         <label class="checkbox-row">
                             <input type="checkbox" name="show_file_sizes" value="1" <?php echo !empty($settings['show_file_sizes']) ? 'checked' : ''; ?>>
                             <span>Dateigrößen in der Verzeichnisansicht anzeigen</span>
+                        </label>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3>Publish Guardrails</h3>
+                        <label class="checkbox-row">
+                            <input type="checkbox" name="publish_guardrails_enabled" value="1" <?php echo !empty($settings['publish_guardrails_enabled']) ? 'checked' : ''; ?>>
+                            <span>Guardrails beim Veröffentlichen aktivieren</span>
+                        </label>
+                        <label class="checkbox-row">
+                            <input type="checkbox" name="guardrail_require_docs_url" value="1" <?php echo !empty($settings['guardrail_require_docs_url']) ? 'checked' : ''; ?>>
+                            <span>Dokumentations-URL verpflichtend</span>
+                        </label>
+                        <label class="checkbox-row">
+                            <input type="checkbox" name="guardrail_require_changelog_url" value="1" <?php echo !empty($settings['guardrail_require_changelog_url']) ? 'checked' : ''; ?>>
+                            <span>Changelog-URL verpflichtend</span>
+                        </label>
+                        <label class="checkbox-row">
+                            <input type="checkbox" name="guardrail_require_checksum" value="1" <?php echo !empty($settings['guardrail_require_checksum']) ? 'checked' : ''; ?>>
+                            <span>SHA-256 Checksum verpflichtend</span>
+                        </label>
+                        <label>
+                            <span>Mindestalter vor Freigabe (Stunden)</span>
+                            <input type="number" min="0" max="720" name="guardrail_min_age_hours" value="<?php echo (int) ($settings['guardrail_min_age_hours'] ?? 0); ?>">
                         </label>
                     </div>
 
@@ -295,6 +330,62 @@ $entryListTitle = match ($section ?? '') {
                     <button type="submit" class="button button-primary">Einstellungen speichern</button>
                 </div>
             </form>
+
+            <h3>Sicherheitsmeldungen (Admin-Review)</h3>
+            <div class="table-wrap">
+                <table class="marketplace-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Paket</th>
+                            <th>Meldung</th>
+                            <th>Reporter</th>
+                            <th>Status</th>
+                            <th>Aktion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($securityReports)): ?>
+                            <tr>
+                                <td colspan="6" class="empty-state">Keine Sicherheitsmeldungen vorhanden.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($securityReports as $report): ?>
+                                <tr>
+                                    <td><?php echo (int) ($report['id'] ?? 0); ?></td>
+                                    <td>
+                                        <div><code><?php echo htmlspecialchars((string) (($report['type'] ?? '') . ':' . ($report['slug'] ?? '') . '@' . ($report['version'] ?? '')), ENT_QUOTES, 'UTF-8'); ?></code></div>
+                                        <div class="subline"><?php echo htmlspecialchars((string) ($report['item_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                                    </td>
+                                    <td>
+                                        <div><strong><?php echo htmlspecialchars((string) ($report['title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></strong></div>
+                                        <div class="subline"><?php echo htmlspecialchars((string) ($report['details'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                                    </td>
+                                    <td>
+                                        <div><?php echo htmlspecialchars((string) ($report['reporter_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                                        <div class="subline"><?php echo htmlspecialchars((string) ($report['reporter_email'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+                                    </td>
+                                    <td><span class="status-pill"><?php echo htmlspecialchars((string) ($report['status'] ?? 'new'), ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                    <td>
+                                        <form method="post" class="action-stack">
+                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars((string) $csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                                            <input type="hidden" name="cms_marketplace_action" value="update_security_report_status">
+                                            <input type="hidden" name="report_id" value="<?php echo (int) ($report['id'] ?? 0); ?>">
+                                            <select name="security_status">
+                                                <?php foreach (['new', 'triaged', 'resolved', 'rejected'] as $status): ?>
+                                                    <option value="<?php echo $status; ?>" <?php echo (($report['status'] ?? 'new') === $status) ? 'selected' : ''; ?>><?php echo $status; ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <input type="text" name="security_status_note" placeholder="Interne Notiz" value="<?php echo htmlspecialchars((string) ($report['status_note'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+                                            <button type="submit" class="button button-small">Status speichern</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </section>
     <?php elseif ($isDirectorySection): ?>
         <section class="cms-marketplace-card">

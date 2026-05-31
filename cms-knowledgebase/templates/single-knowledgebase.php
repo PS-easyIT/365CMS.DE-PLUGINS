@@ -8,6 +8,13 @@ $synonymItems = array_values(array_filter(array_map(
 $showRelatedEntries = ($settings['show_related_entries'] ?? '1') === '1';
 $relatedPostsLimit = max(3, min(6, (int) ($settings['related_posts_limit'] ?? 4)));
 $showKeywordBadges = ($settings['show_keyword_badges'] ?? '1') === '1';
+$uiText = isset($uiText) && is_array($uiText) ? $uiText : [];
+$t = static function (string $key, string $fallback) use ($uiText): string {
+    return isset($uiText[$key]) && is_string($uiText[$key]) && $uiText[$key] !== '' ? $uiText[$key] : $fallback;
+};
+$kbUrl = $kbUrl ?? (SITE_URL . '/kb');
+$singleUrl = $singleUrl ?? (SITE_URL . '/kb/' . rawurlencode((string) ($entry['slug'] ?? '')));
+$structuredDataJson = isset($structuredDataJson) ? (string) $structuredDataJson : '';
 $renderedContent = (string) ($entry['content'] ?? '');
 $cmsPrefix = \CMS\Database::instance()->prefix();
 $renderedContent = str_replace(
@@ -73,12 +80,15 @@ $estimateRelatedReadTime = static function (array $post): int {
 ?>
 
 <main class="cms-kb-content cms-kb-content--single">
+    <?php if ($structuredDataJson !== ''): ?>
+        <script type="application/ld+json"><?php echo $structuredDataJson; ?></script>
+    <?php endif; ?>
     <article class="cms-kb-article">
-        <nav class="cms-kb-breadcrumbs" aria-label="Breadcrumb">
+        <nav class="cms-kb-breadcrumbs" aria-label="<?php echo htmlspecialchars($t('breadcrumb_aria', 'Breadcrumb'), ENT_QUOTES, 'UTF-8'); ?>">
             <ol class="cms-kb-breadcrumbs__list">
-                <li><a href="<?php echo htmlspecialchars(SITE_URL, ENT_QUOTES, 'UTF-8'); ?>">Start</a></li>
+                <li><a href="<?php echo htmlspecialchars(SITE_URL, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($t('breadcrumb_home', 'Start'), ENT_QUOTES, 'UTF-8'); ?></a></li>
                 <li aria-hidden="true">/</li>
-                <li><a href="<?php echo htmlspecialchars(SITE_URL . '/kb', ENT_QUOTES, 'UTF-8'); ?>">Knowledgebase</a></li>
+                <li><a href="<?php echo htmlspecialchars($kbUrl, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($t('breadcrumb_kb', 'Knowledgebase'), ENT_QUOTES, 'UTF-8'); ?></a></li>
                 <li aria-hidden="true">/</li>
                 <li><span aria-current="page"><?php echo htmlspecialchars((string) $entry['title'], ENT_QUOTES, 'UTF-8'); ?></span></li>
             </ol>
@@ -106,7 +116,7 @@ $estimateRelatedReadTime = static function (array $post): int {
 
                 <?php if ($showRelatedEntries && !empty($relatedPosts)): ?>
                     <section class="cms-kb-related-block" aria-labelledby="cms-kb-related-heading">
-                        <h2 id="cms-kb-related-heading" class="cms-kb-related-block__title">Verwandte Artikel</h2>
+                        <h2 id="cms-kb-related-heading" class="cms-kb-related-block__title"><?php echo htmlspecialchars($t('related_heading', 'Verwandte Artikel'), ENT_QUOTES, 'UTF-8'); ?></h2>
                         <div class="cms-kb-related-posts">
                             <?php foreach (array_slice($relatedPosts, 0, $relatedPostsLimit) as $related): ?>
                                 <?php
@@ -126,7 +136,7 @@ $estimateRelatedReadTime = static function (array $post): int {
                                         <?php if (!empty($related['category_name'])): ?>
                                             <span><?php echo htmlspecialchars((string) $related['category_name'], ENT_QUOTES, 'UTF-8'); ?></span>
                                         <?php else: ?>
-                                            <span>365CMS Beitrag</span>
+                                            <span><?php echo htmlspecialchars($t('related_fallback_category', '365CMS Beitrag'), ENT_QUOTES, 'UTF-8'); ?></span>
                                         <?php endif; ?>
                                     </p>
                                     <h3 class="cms-kb-related-post__title">
@@ -135,7 +145,7 @@ $estimateRelatedReadTime = static function (array $post): int {
                                         </a>
                                     </h3>
                                     <?php if ($relatedDateLabel !== '' || $relatedReadTime > 0): ?>
-                                        <div class="cms-kb-related-post__details" aria-label="Metainformationen zum Eintrag">
+                                        <div class="cms-kb-related-post__details" aria-label="<?php echo htmlspecialchars($t('related_meta_aria', 'Metainformationen zum Eintrag'), ENT_QUOTES, 'UTF-8'); ?>">
                                             <?php if ($relatedDateLabel !== ''): ?>
                                                 <time class="cms-kb-related-post__detail"<?php echo $relatedDateIso !== '' ? ' datetime="' . htmlspecialchars($relatedDateIso, ENT_QUOTES, 'UTF-8') . '"' : ''; ?>><?php echo htmlspecialchars($relatedDateLabel, ENT_QUOTES, 'UTF-8'); ?></time>
                                             <?php endif; ?>
@@ -144,7 +154,7 @@ $estimateRelatedReadTime = static function (array $post): int {
                                             <?php endif; ?>
                                         </div>
                                     <?php endif; ?>
-                                    <a class="cms-kb-related-post__cta" href="<?php echo htmlspecialchars((string) ($related['url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><span aria-hidden="true">… </span>zum Eintrag</a>
+                                    <a class="cms-kb-related-post__cta" href="<?php echo htmlspecialchars((string) ($related['url'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><span aria-hidden="true">… </span><?php echo htmlspecialchars($t('entry_cta', 'zum Eintrag'), ENT_QUOTES, 'UTF-8'); ?></a>
                                 </article>
                             <?php endforeach; ?>
                         </div>
@@ -156,12 +166,12 @@ $estimateRelatedReadTime = static function (array $post): int {
             <aside class="cms-kb-sidebar">
                 <?php if ($showKeywordBadges): ?>
                     <section class="cms-kb-sidebar__section">
-                        <h2>Begriffsdetails</h2>
+                        <h2><?php echo htmlspecialchars($t('details_heading', 'Begriffsdetails'), ENT_QUOTES, 'UTF-8'); ?></h2>
                         <ul class="cms-kb-sidebar__facts">
-                            <li><strong>Keyword</strong><span><?php echo htmlspecialchars((string) $entry['keyword'], ENT_QUOTES, 'UTF-8'); ?></span></li>
-                            <li><strong>Bereich</strong><span><?php echo htmlspecialchars((string) ($entry['category'] ?? 'Allgemein'), ENT_QUOTES, 'UTF-8'); ?></span></li>
+                            <li><strong><?php echo htmlspecialchars($t('details_keyword', 'Keyword'), ENT_QUOTES, 'UTF-8'); ?></strong><span><?php echo htmlspecialchars((string) $entry['keyword'], ENT_QUOTES, 'UTF-8'); ?></span></li>
+                            <li><strong><?php echo htmlspecialchars($t('details_category', 'Bereich'), ENT_QUOTES, 'UTF-8'); ?></strong><span><?php echo htmlspecialchars((string) ($entry['category'] ?? $t('fallback_category', 'Allgemein')), ENT_QUOTES, 'UTF-8'); ?></span></li>
                             <?php if ($synonymItems !== []): ?>
-                                <li><strong>Synonyme</strong><span><?php echo htmlspecialchars(implode(', ', array_slice($synonymItems, 0, 4)), ENT_QUOTES, 'UTF-8'); ?></span></li>
+                                <li><strong><?php echo htmlspecialchars($t('details_synonyms', 'Synonyme'), ENT_QUOTES, 'UTF-8'); ?></strong><span><?php echo htmlspecialchars(implode(', ', array_slice($synonymItems, 0, 4)), ENT_QUOTES, 'UTF-8'); ?></span></li>
                             <?php endif; ?>
                         </ul>
                     </section>
@@ -169,7 +179,7 @@ $estimateRelatedReadTime = static function (array $post): int {
 
                 <?php if (!empty($entry['tooltip_text'])): ?>
                     <section class="cms-kb-sidebar__section">
-                        <h2>Kurz erklärt</h2>
+                        <h2><?php echo htmlspecialchars($t('quick_explained_heading', 'Kurz erklärt'), ENT_QUOTES, 'UTF-8'); ?></h2>
                         <p><?php echo htmlspecialchars((string) $entry['tooltip_text'], ENT_QUOTES, 'UTF-8'); ?></p>
                     </section>
                 <?php endif; ?>
@@ -178,7 +188,7 @@ $estimateRelatedReadTime = static function (array $post): int {
         </div>
 
         <footer class="cms-kb-article__footer">
-            <a class="cms-kb-entry__cta" href="<?php echo htmlspecialchars(SITE_URL . '/kb', ENT_QUOTES, 'UTF-8'); ?>">← Zurück zur Übersicht</a>
+            <a class="cms-kb-entry__cta" href="<?php echo htmlspecialchars($kbUrl, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($t('back_to_overview', '← Zurück zur Übersicht'), ENT_QUOTES, 'UTF-8'); ?></a>
         </footer>
     </article>
 </main>

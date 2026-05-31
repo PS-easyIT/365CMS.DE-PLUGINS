@@ -34,10 +34,15 @@ final class PublicController
             return;
         }
 
-        $router->addRoute('GET', '/kb', [$this, 'archivePage']);
-        $router->addRoute('GET', '/glossar', [$this, 'glossaryPage']);
-        $router->addRoute('GET', '/glossar-sitemap.xml', [$this, 'glossarySitemap']);
-        $router->addRoute('GET', '/kb/:slug', [$this, 'singlePage']);
+        $router->addRoute('GET', $this->publicPath('kb', 'de'), [$this, 'archivePage']);
+        $router->addRoute('GET', $this->publicPath('glossar', 'de'), [$this, 'glossaryPage']);
+        $router->addRoute('GET', $this->publicPath('glossar-sitemap.xml', 'de'), [$this, 'glossarySitemap']);
+        $router->addRoute('GET', $this->publicPath('kb/:slug', 'de'), [$this, 'singlePage']);
+
+        $router->addRoute('GET', $this->publicPath('kb', 'en'), [$this, 'archivePage']);
+        $router->addRoute('GET', $this->publicPath('glossar', 'en'), [$this, 'glossaryPage']);
+        $router->addRoute('GET', $this->publicPath('glossar-sitemap.xml', 'en'), [$this, 'glossarySitemap']);
+        $router->addRoute('GET', $this->publicPath('kb/:slug', 'en'), [$this, 'singlePage']);
     }
 
     public function renderNavItem(string $context = 'desktop'): void
@@ -47,10 +52,11 @@ final class PublicController
             return;
         }
 
-        $currentPath = \CmsKnowledgebase\Support\RequestInspector::currentBasePath();
+        $publicLang = $this->resolvePublicLanguage();
+        $currentPath = $this->resolvePublicPathWithoutLanguage();
         $active = (str_starts_with($currentPath, '/kb') || $currentPath === '/glossar') ? 'active' : '';
-        $label = htmlspecialchars((string) ($settings['nav_label'] ?? 'Knowledgebase'), ENT_QUOTES, 'UTF-8');
-        $href = htmlspecialchars(SITE_URL . '/kb', ENT_QUOTES, 'UTF-8');
+        $label = htmlspecialchars($this->resolvePublicI18nText($settings, 'nav_label', $publicLang, 'Knowledgebase', 'Knowledgebase'), ENT_QUOTES, 'UTF-8');
+        $href = htmlspecialchars($this->publicUrl('kb', $publicLang), ENT_QUOTES, 'UTF-8');
 
         if ($context === 'mobile') {
             echo '<a href="' . $href . '" class="mobile-menu__kb-link">' . $label . '</a>';
@@ -64,7 +70,10 @@ final class PublicController
     {
         $repository = EntryRepository::instance();
         $settings = $repository->getSettings();
+        $publicLang = $this->resolvePublicLanguage();
+        $uiText = $this->publicUiText($publicLang);
         $search = $this->sanitizeSearchTerm($_GET['q'] ?? '');
+        $searchMode = $this->sanitizeSearchMode($_GET['search_mode'] ?? 'default');
         $category = $this->sanitizeCategoryFilter($_GET['category'] ?? '');
         $allowedPerPage = [25, 50, 100, 200];
         $requestedPerPage = (int) ($_GET['per_page'] ?? 25);
@@ -72,6 +81,7 @@ final class PublicController
         $filters = [
             'status' => 'active',
             'search' => $search,
+            'search_mode' => $searchMode,
             'category' => $category,
         ];
         $totalEntries = $repository->countEntries($filters);
@@ -84,13 +94,23 @@ final class PublicController
             'offset' => ($currentPage - 1) * $perPage,
         ]);
         $categories = $repository->getCategories();
-        $archiveHeroEyebrow = 'Knowledgebase';
-        $archiveIntro = (string) ($settings['archive_intro'] ?? '');
+        $archiveHeroEyebrow = $uiText['archive_eyebrow_knowledgebase'];
+        $archiveIntro = $this->resolvePublicI18nText(
+            $settings,
+            'archive_intro',
+            $publicLang,
+            (string) ($settings['archive_intro'] ?? ''),
+            (string) ($settings['archive_intro_en'] ?? (string) ($settings['archive_intro'] ?? ''))
+        );
+        $archiveTitle = $this->resolvePublicI18nText($settings, 'archive_title', $publicLang, 'Knowledgebase', 'Knowledgebase');
         $archiveResultsLabel = $search !== '' || $category !== ''
-            ? 'Gefilterte Knowledgebase-Treffer'
-            : 'Knowledgebase-Übersicht';
+            ? $uiText['results_label_kb_filtered']
+            : $uiText['results_label_kb_default'];
         $perPageOptions = $allowedPerPage;
-        $pageBaseUrl = SITE_URL . '/kb';
+        $pageBaseUrl = $this->publicUrl('kb', $publicLang);
+        $archiveUrl = $this->publicUrl('kb', $publicLang);
+        $entryBaseUrl = $this->publicUrl('kb', $publicLang);
+        $searchModeOptions = ['default', 'strict'];
         $theme = class_exists('CMS\\ThemeManager') ? \CMS\ThemeManager::instance() : null;
 
         if ($theme !== null) {
@@ -108,7 +128,10 @@ final class PublicController
     {
         $repository = EntryRepository::instance();
         $settings = $repository->getSettings();
+        $publicLang = $this->resolvePublicLanguage();
+        $uiText = $this->publicUiText($publicLang);
         $search = $this->sanitizeSearchTerm($_GET['q'] ?? '');
+        $searchMode = $this->sanitizeSearchMode($_GET['search_mode'] ?? 'default');
         $category = $this->sanitizeCategoryFilter($_GET['category'] ?? '');
         $allowedPerPage = [25, 50, 100, 200];
         $requestedPerPage = (int) ($_GET['per_page'] ?? 25);
@@ -116,6 +139,7 @@ final class PublicController
         $filters = [
             'status' => 'active',
             'search' => $search,
+            'search_mode' => $searchMode,
             'category' => $category,
         ];
         $totalEntries = $repository->countEntries($filters);
@@ -129,15 +153,24 @@ final class PublicController
         ]);
         $categories = $repository->getCategories();
         $archiveVariant = 'glossary';
-        $archiveBasePath = '/glossar';
-        $pageBaseUrl = SITE_URL . '/glossar';
+        $archiveBasePath = $this->publicPath('glossar', $publicLang);
+        $archiveUrl = $this->publicUrl('glossar', $publicLang);
+        $entryBaseUrl = $this->publicUrl('kb', $publicLang);
+        $pageBaseUrl = $archiveUrl;
         $perPageOptions = $allowedPerPage;
-        $archiveHeroEyebrow = 'Glossar';
-        $archiveTitle = (string) ($settings['glossary_title'] ?? 'Glossar');
-        $archiveIntro = (string) ($settings['glossary_intro'] ?? '');
+        $searchModeOptions = ['default', 'strict'];
+        $archiveHeroEyebrow = $uiText['archive_eyebrow_glossary'];
+        $archiveTitle = $this->resolvePublicI18nText($settings, 'glossary_title', $publicLang, 'Glossar', 'Glossary');
+        $archiveIntro = $this->resolvePublicI18nText(
+            $settings,
+            'glossary_intro',
+            $publicLang,
+            (string) ($settings['glossary_intro'] ?? ''),
+            (string) ($settings['glossary_intro_en'] ?? (string) ($settings['glossary_intro'] ?? ''))
+        );
         $archiveResultsLabel = $search !== '' || $category !== ''
-            ? 'Gefilterte Glossar-Einträge'
-            : 'Glossar-Übersicht';
+            ? $uiText['results_label_glossary_filtered']
+            : $uiText['results_label_glossary_default'];
         $theme = class_exists('CMS\\ThemeManager') ? \CMS\ThemeManager::instance() : null;
 
         if ($theme !== null) {
@@ -156,7 +189,8 @@ final class PublicController
         $repository = EntryRepository::instance();
         $entries = $repository->getEntryList(['status' => 'active']);
         $generatedAt = function_exists('gmdate') ? gmdate('c') : date('c');
-        $glossaryUrl = SITE_URL . '/glossar';
+        $publicLang = $this->resolvePublicLanguage();
+        $glossaryUrl = $this->publicUrl('glossar', $publicLang);
 
         $latestGlossaryTimestamp = null;
         foreach ($entries as $entry) {
@@ -185,7 +219,7 @@ final class PublicController
 
             $timestamp = $this->resolveLastModified((string) ($entry['updated_at'] ?? ''), (string) ($entry['created_at'] ?? ''));
             $urls[] = [
-                'loc' => SITE_URL . '/kb/' . rawurlencode($slug),
+                'loc' => $this->publicUrl('kb/' . rawurlencode($slug), $publicLang),
                 'lastmod' => $timestamp !== null ? gmdate('c', $timestamp) : $generatedAt,
                 'changefreq' => 'weekly',
                 'priority' => '0.7',
@@ -221,18 +255,24 @@ final class PublicController
         $repository = EntryRepository::instance();
         $entry = $repository->getEntryBySlug($slug);
         $settings = $repository->getSettings();
+        $publicLang = $this->resolvePublicLanguage();
+        $uiText = $this->publicUiText($publicLang);
         if ($entry === null) {
-            $this->renderNotFound();
+            $this->renderNotFound($publicLang, $uiText);
             return;
         }
 
         $requestPath = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/kb/' . $slug), PHP_URL_PATH);
         $requestContext = class_exists('CMS\\Services\\ContentLocalizationService')
             ? \CMS\Services\ContentLocalizationService::getInstance()->resolveRequestContext($requestPath)
-            : ['locale' => 'de'];
-        $contentLocale = (string) ($requestContext['locale'] ?? 'de');
+            : ['locale' => $publicLang];
+        $contentLocale = (string) ($requestContext['locale'] ?? $publicLang);
         $relatedPostsLimit = max(3, min(6, (int) ($settings['related_posts_limit'] ?? 4)));
         $relatedPosts = $repository->getRelatedPosts($entry, $contentLocale, $relatedPostsLimit);
+        $kbUrl = $this->publicUrl('kb', $publicLang);
+        $singleUrl = $this->publicUrl('kb/' . rawurlencode($slug), $publicLang);
+        $structuredDataEnabled = ($settings['enable_structured_data'] ?? '1') === '1';
+        $structuredDataJson = $structuredDataEnabled ? $this->buildStructuredDataJson($entry, $singleUrl, $publicLang) : '';
         $theme = class_exists('CMS\\ThemeManager') ? \CMS\ThemeManager::instance() : null;
 
         if ($theme !== null) {
@@ -286,6 +326,13 @@ final class PublicController
         return max(1, min(10000, (int) $value));
     }
 
+    private function sanitizeSearchMode(mixed $value): string
+    {
+        $mode = strtolower(trim((string) $value));
+
+        return in_array($mode, ['default', 'strict'], true) ? $mode : 'default';
+    }
+
     private function sanitizePublicSlug(string $slug): string
     {
         $slug = trim(rawurldecode($slug));
@@ -300,18 +347,209 @@ final class PublicController
         header('X-Content-Type-Options: nosniff');
     }
 
-    private function renderNotFound(): void
+    private function renderNotFound(string $publicLang = 'de', ?array $uiText = null): void
     {
         http_response_code(404);
+        $uiText = $uiText ?? $this->publicUiText($publicLang);
         $theme = class_exists('CMS\\ThemeManager') ? \CMS\ThemeManager::instance() : null;
         if ($theme !== null) {
             $theme->getHeader();
         }
 
-        echo '<main class="cms-kb-content cms-kb-content--single"><article class="cms-kb-article"><h1>Knowledgebase-Eintrag nicht gefunden</h1><p>Der angeforderte Eintrag ist nicht verfügbar oder wurde verschoben.</p><p><a class="cms-kb-entry__cta" href="' . htmlspecialchars(SITE_URL . '/kb', ENT_QUOTES, 'UTF-8') . '">Zur Knowledgebase</a></p></article></main>';
+        echo '<main class="cms-kb-content cms-kb-content--single"><article class="cms-kb-article"><h1>' . htmlspecialchars($uiText['not_found_title'], ENT_QUOTES, 'UTF-8') . '</h1><p>' . htmlspecialchars($uiText['not_found_body'], ENT_QUOTES, 'UTF-8') . '</p><p><a class="cms-kb-entry__cta" href="' . htmlspecialchars($this->publicUrl('kb', $publicLang), ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($uiText['back_to_kb'], ENT_QUOTES, 'UTF-8') . '</a></p></article></main>';
 
         if ($theme !== null) {
             $theme->getFooter();
         }
+    }
+
+    private function resolvePublicLanguage(): string
+    {
+        $requestPath = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+        $normalizedPath = function_exists('cms_plugin_public_normalize_path')
+            ? cms_plugin_public_normalize_path($requestPath)
+            : trim($requestPath, '/');
+
+        if (function_exists('cms_plugin_public_language')) {
+            return cms_plugin_public_language($normalizedPath);
+        }
+
+        if ($normalizedPath === 'en' || str_starts_with($normalizedPath, 'en/')) {
+            return 'en';
+        }
+
+        return 'de';
+    }
+
+    private function resolvePublicPathWithoutLanguage(): string
+    {
+        $requestPath = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+        $normalizedPath = function_exists('cms_plugin_public_normalize_path')
+            ? cms_plugin_public_normalize_path($requestPath)
+            : trim($requestPath, '/');
+
+        if (function_exists('cms_plugin_public_path_without_lang')) {
+            $withoutLang = cms_plugin_public_path_without_lang($normalizedPath);
+            return '/' . ltrim($withoutLang, '/');
+        }
+
+        return '/' . ltrim($normalizedPath, '/');
+    }
+
+    private function publicPath(string $path, string $lang = 'de'): string
+    {
+        if (function_exists('cms_plugin_public_localized_path')) {
+            return cms_plugin_public_localized_path($path, $lang);
+        }
+
+        $path = '/' . ltrim($path, '/');
+        if ($lang === 'en') {
+            return '/en' . $path;
+        }
+
+        return $path;
+    }
+
+    private function publicUrl(string $path, string $lang = 'de'): string
+    {
+        return SITE_URL . $this->publicPath($path, $lang);
+    }
+
+    /**
+     * @param array<string, string> $values
+     */
+    private function resolvePublicI18nText(array $values, string $key, string $lang, string $deFallback, string $enFallback): string
+    {
+        $fallback = $lang === 'en' ? $enFallback : $deFallback;
+        if (function_exists('cms_plugin_public_i18n_value')) {
+            return cms_plugin_public_i18n_value($values, $key, $lang, $fallback);
+        }
+
+        if ($lang === 'en' && isset($values[$key . '_en']) && trim((string) $values[$key . '_en']) !== '') {
+            return (string) $values[$key . '_en'];
+        }
+
+        if (isset($values[$key]) && trim((string) $values[$key]) !== '') {
+            return (string) $values[$key];
+        }
+
+        return $fallback;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function publicUiText(string $lang): array
+    {
+        /** @var array<string, array{de: string, en: string}> $dictionary */
+        $dictionary = [
+            'archive_eyebrow_knowledgebase' => ['de' => 'Knowledgebase', 'en' => 'Knowledgebase'],
+            'archive_eyebrow_glossary' => ['de' => 'Glossar', 'en' => 'Glossary'],
+            'results_label_kb_filtered' => ['de' => 'Gefilterte Knowledgebase-Treffer', 'en' => 'Filtered knowledgebase matches'],
+            'results_label_kb_default' => ['de' => 'Knowledgebase-Übersicht', 'en' => 'Knowledgebase overview'],
+            'results_label_glossary_filtered' => ['de' => 'Gefilterte Glossar-Einträge', 'en' => 'Filtered glossary entries'],
+            'results_label_glossary_default' => ['de' => 'Glossar-Übersicht', 'en' => 'Glossary overview'],
+            'active_filters_aria' => ['de' => 'Aktive Filter', 'en' => 'Active filters'],
+            'filter_search_prefix' => ['de' => 'Suche', 'en' => 'Search'],
+            'filter_category_prefix' => ['de' => 'Kategorie', 'en' => 'Category'],
+            'filters_aria' => ['de' => 'Knowledgebase-Filter', 'en' => 'Knowledgebase filters'],
+            'search_label' => ['de' => 'Begriff suchen', 'en' => 'Search term'],
+            'search_placeholder' => ['de' => 'Begriff suchen …', 'en' => 'Search term ...'],
+            'category_label' => ['de' => 'Kategorie', 'en' => 'Category'],
+            'all_categories_option' => ['de' => 'Alle Kategorien', 'en' => 'All categories'],
+            'search_mode_label' => ['de' => 'Suchmodus', 'en' => 'Search mode'],
+            'search_mode_default' => ['de' => 'Standard (tolerant)', 'en' => 'Default (tolerant)'],
+            'search_mode_strict' => ['de' => 'Strikt', 'en' => 'Strict'],
+            'per_page_label' => ['de' => 'Anzahl', 'en' => 'Count'],
+            'entries_suffix' => ['de' => 'Einträge', 'en' => 'entries'],
+            'search_button' => ['de' => 'Suchen', 'en' => 'Search'],
+            'reset_button' => ['de' => 'Zurücksetzen', 'en' => 'Reset'],
+            'categories_aria' => ['de' => 'Kategorien', 'en' => 'Categories'],
+            'all_categories_chip' => ['de' => 'Alle', 'en' => 'All'],
+            'empty_title' => ['de' => 'Keine Einträge gefunden', 'en' => 'No entries found'],
+            'empty_body' => ['de' => 'Versuche es mit einem anderen Suchbegriff oder entferne den Kategorie-Filter.', 'en' => 'Try another search term or remove the category filter.'],
+            'fallback_category' => ['de' => 'Allgemein', 'en' => 'General'],
+            'entry_cta' => ['de' => 'zum Eintrag', 'en' => 'open entry'],
+            'pagination_aria' => ['de' => 'Seitennavigation', 'en' => 'Pagination'],
+            'pagination_prev' => ['de' => '← Zurück', 'en' => '← Previous'],
+            'pagination_next' => ['de' => 'Weiter →', 'en' => 'Next →'],
+            'pagination_page_prefix' => ['de' => 'Seite', 'en' => 'Page'],
+            'pagination_page_connector' => ['de' => 'von', 'en' => 'of'],
+            'breadcrumb_aria' => ['de' => 'Breadcrumb', 'en' => 'Breadcrumb'],
+            'breadcrumb_home' => ['de' => 'Start', 'en' => 'Home'],
+            'breadcrumb_kb' => ['de' => 'Knowledgebase', 'en' => 'Knowledgebase'],
+            'related_heading' => ['de' => 'Verwandte Artikel', 'en' => 'Related articles'],
+            'related_fallback_category' => ['de' => '365CMS Beitrag', 'en' => '365CMS post'],
+            'related_meta_aria' => ['de' => 'Metainformationen zum Eintrag', 'en' => 'Meta information about the entry'],
+            'details_heading' => ['de' => 'Begriffsdetails', 'en' => 'Term details'],
+            'details_keyword' => ['de' => 'Keyword', 'en' => 'Keyword'],
+            'details_category' => ['de' => 'Bereich', 'en' => 'Area'],
+            'details_synonyms' => ['de' => 'Synonyme', 'en' => 'Synonyms'],
+            'quick_explained_heading' => ['de' => 'Kurz erklärt', 'en' => 'Quick explanation'],
+            'back_to_overview' => ['de' => '← Zurück zur Übersicht', 'en' => '← Back to overview'],
+            'not_found_title' => ['de' => 'Knowledgebase-Eintrag nicht gefunden', 'en' => 'Knowledgebase entry not found'],
+            'not_found_body' => ['de' => 'Der angeforderte Eintrag ist nicht verfügbar oder wurde verschoben.', 'en' => 'The requested entry is unavailable or has been moved.'],
+            'back_to_kb' => ['de' => 'Zur Knowledgebase', 'en' => 'Back to knowledgebase'],
+        ];
+
+        $translated = [];
+        foreach ($dictionary as $key => $label) {
+            $translated[$key] = $this->resolvePublicI18nText(
+                [$key => $label['de'], $key . '_en' => $label['en']],
+                $key,
+                $lang,
+                $label['de'],
+                $label['en']
+            );
+        }
+
+        return $translated;
+    }
+
+    private function buildStructuredDataJson(array $entry, string $singleUrl, string $lang): string
+    {
+        $title = trim((string) ($entry['title'] ?? ''));
+        if ($title === '') {
+            return '';
+        }
+
+        $excerpt = trim(strip_tags((string) ($entry['excerpt'] ?? '')));
+        $tooltip = trim(strip_tags((string) ($entry['tooltip_text'] ?? '')));
+        $definition = $excerpt !== '' ? $excerpt : $tooltip;
+        $articleBody = trim(strip_tags((string) ($entry['content'] ?? '')));
+        $articleBody = preg_replace('/\s+/u', ' ', $articleBody) ?? '';
+        $articleBody = trim($articleBody);
+
+        $graph = [];
+        $graph[] = [
+            '@type' => 'DefinedTerm',
+            '@id' => $singleUrl . '#defined-term',
+            'name' => $title,
+            'url' => $singleUrl,
+            'inDefinedTermSet' => $this->publicUrl('glossar', $lang),
+            'description' => $definition !== '' ? $definition : $articleBody,
+        ];
+
+        if ($definition !== '' || $articleBody !== '') {
+            $graph[] = [
+                '@type' => 'FAQPage',
+                '@id' => $singleUrl . '#faq',
+                'mainEntity' => [[
+                    '@type' => 'Question',
+                    'name' => $title,
+                    'acceptedAnswer' => [
+                        '@type' => 'Answer',
+                        'text' => $definition !== '' ? $definition : $articleBody,
+                    ],
+                ]],
+            ];
+        }
+
+        $payload = [
+            '@context' => 'https://schema.org',
+            '@graph' => $graph,
+        ];
+
+        return (string) json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 }

@@ -21,6 +21,7 @@ use CMS_Forum\Models\Forum;
 use CMS_Forum\Models\Thread;
 use CMS_Forum\Models\UserMeta;
 use CMS_Forum\Helpers\Pagination;
+use CMS_Forum\Helpers\PublicI18n;
 use CMS_Forum\Services\PermissionService;
 use CMS_Forum\Services\ReadTracker;
 
@@ -43,34 +44,35 @@ final class ForumController
         $router = \CMS\Router::instance();
 
         // Forum-Übersicht
-        $router->addRoute('GET', '/forum', [$this, 'index']);
+        $this->addLocalizedRoute($router, 'GET', '/forum', [$this, 'index']);
 
         // Forum anzeigen (Thread-Liste)
-        $router->addRoute('GET', '/forum/:slug', [$this, 'showForum']);
+        $this->addLocalizedRoute($router, 'GET', '/forum/:slug', [$this, 'showForum']);
 
         // Neuen Thread erstellen
-        $router->addRoute('GET', '/forum/:slug/new-thread', [$this, 'newThread']);
-        $router->addRoute('POST', '/forum/:slug/new-thread', [$this, 'newThread']);
+        $this->addLocalizedRoute($router, 'GET', '/forum/:slug/new-thread', [$this, 'newThread']);
+        $this->addLocalizedRoute($router, 'POST', '/forum/:slug/new-thread', [$this, 'newThread']);
 
         // Thread anzeigen
-        $router->addRoute('GET', '/forum/thread/:id', [$this, 'showThread']);
-        $router->addRoute('POST', '/forum/thread/:id', [$this, 'showThread']);
+        $this->addLocalizedRoute($router, 'GET', '/forum/thread/:id', [$this, 'showThread']);
+        $this->addLocalizedRoute($router, 'POST', '/forum/thread/:id', [$this, 'showThread']);
 
         // Beitrag bearbeiten
-        $router->addRoute('GET', '/forum/post/:id/edit', [$this, 'editPost']);
-        $router->addRoute('POST', '/forum/post/:id/edit', [$this, 'editPost']);
+        $this->addLocalizedRoute($router, 'GET', '/forum/post/:id/edit', [$this, 'editPost']);
+        $this->addLocalizedRoute($router, 'POST', '/forum/post/:id/edit', [$this, 'editPost']);
 
         // Suche
-        $router->addRoute('GET', '/forum/search', [$this, 'search']);
+        $this->addLocalizedRoute($router, 'GET', '/forum/search', [$this, 'search']);
 
         // Benutzerprofil
-        $router->addRoute('GET', '/forum/user/:id', [$this, 'userProfile']);
+        $this->addLocalizedRoute($router, 'GET', '/forum/user/:id', [$this, 'userProfile']);
 
         // AJAX-Endpunkte
-        $router->addRoute('POST', '/forum/api/like', [$this, 'ajaxLike']);
-        $router->addRoute('POST', '/forum/api/subscribe', [$this, 'ajaxSubscribe']);
-        $router->addRoute('POST', '/forum/api/report', [$this, 'ajaxReport']);
-        $router->addRoute('POST', '/forum/api/poll-vote', [$this, 'ajaxPollVote']);
+        $this->addLocalizedRoute($router, 'POST', '/forum/api/like', [$this, 'ajaxLike']);
+        $this->addLocalizedRoute($router, 'POST', '/forum/api/subscribe', [$this, 'ajaxSubscribe']);
+        $this->addLocalizedRoute($router, 'POST', '/forum/api/report', [$this, 'ajaxReport']);
+        $this->addLocalizedRoute($router, 'POST', '/forum/api/poll-vote', [$this, 'ajaxPollVote']);
+        $this->addLocalizedRoute($router, 'GET', '/forum/api/similar-threads', [$this, 'ajaxSimilarThreads']);
     }
 
     /**
@@ -101,7 +103,7 @@ final class ForumController
             'categories' => $categories,
             'grouped'    => $grouped,
             'stats'      => $stats,
-            'pageTitle'  => 'Forum',
+            'pageTitle'  => PublicI18n::t('forum', 'Forum'),
         ];
 
         $this->render('forum-index', $viewData);
@@ -166,7 +168,7 @@ final class ForumController
 
         $auth = \CMS\Auth::instance();
         if (!$auth->isLoggedIn()) {
-            header('Location: ' . rtrim((string) SITE_URL, '/') . '/login', true, 303);
+            header('Location: ' . rtrim((string) SITE_URL, '/') . PublicI18n::loginPath(), true, 303);
             exit;
         }
 
@@ -225,7 +227,7 @@ final class ForumController
             'filters'    => $filters,
             'threads'    => $results['threads'],
             'pagination' => $pag,
-            'pageTitle'  => 'Suche' . ($query ? ': ' . htmlspecialchars($query, ENT_QUOTES, 'UTF-8') : ''),
+            'pageTitle'  => PublicI18n::t('search', 'Suche') . ($query ? ': ' . htmlspecialchars($query, ENT_QUOTES, 'UTF-8') : ''),
         ];
 
         $this->render('forum-search', $viewData);
@@ -292,6 +294,14 @@ final class ForumController
     public function ajaxPollVote(): void
     {
         ThreadController::instance()->pollVote();
+    }
+
+    /**
+     * Ähnliche Threads für den Composer (AJAX).
+     */
+    public function ajaxSimilarThreads(): void
+    {
+        ThreadController::instance()->similarThreads();
     }
 
     // ── Private Helfer ──────────────────────────────────────────────
@@ -366,8 +376,20 @@ final class ForumController
     {
         http_response_code(403);
         \CMS\ThemeManager::instance()->getHeader();
-        echo '<main class="cmsforum"><div class="cmsforum-error"><h2>Zugriff verweigert</h2><p>Du hast keine Berechtigung, dieses Forum zu sehen.</p></div></main>';
+        echo '<main class="cmsforum"><div class="cmsforum-error"><h2>'
+            . htmlspecialchars(PublicI18n::t('error.forbidden', 'Zugriff verweigert.'), ENT_QUOTES, 'UTF-8')
+            . '</h2><p>'
+            . htmlspecialchars(PublicI18n::t('error.no_permission', 'Du hast keine Berechtigung für diese Aktion.'), ENT_QUOTES, 'UTF-8')
+            . '</p></div></main>';
         \CMS\ThemeManager::instance()->getFooter();
+    }
+
+    private function addLocalizedRoute(object $router, string $method, string $path, array $handler): void
+    {
+        $router->addRoute($method, $path, $handler);
+        if (!str_starts_with($path, '/en/')) {
+            $router->addRoute($method, '/en' . $path, $handler);
+        }
     }
 
     private function sanitizeDate(string $value): ?string

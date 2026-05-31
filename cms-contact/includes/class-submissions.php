@@ -288,6 +288,7 @@ final class CMS_Contact_Submissions
     {
         $allowed = ['unread', 'read', 'replied', 'archived', 'spam'];
         if (!in_array($status, $allowed, true)) {
+            $this->log_security_event('invalid_status_attempt', null, $status, ['submission_id' => $id]);
             return false;
         }
 
@@ -567,6 +568,106 @@ final class CMS_Contact_Submissions
             $trend[$row['day']] = (int) $row['cnt'];
         }
         return $trend;
+    }
+
+    /**
+     * Sicherheitsereignis protokollieren (z. B. CSRF/Captcha/Rate-Limit/Antispam).
+     *
+     * @param array<string, scalar|null> $details
+     */
+    public function log_security_event(string $eventType, ?int $formId = null, string $reason = '', array $details = []): void
+    {
+        try {
+            $normalizedType = strtolower(trim($eventType));
+            if (!preg_match('/^[a-z0-9_-]{2,50}$/', $normalizedType)) {
+                $normalizedType = 'unknown';
+            }
+
+            $normalizedReason = trim($reason);
+            if ($normalizedReason === '') {
+                $normalizedReason = null;
+            } else {
+                $normalizedReason = mb_substr($normalizedReason, 0, 100);
+            }
+
+            $eventDetails = [];
+            foreach ($details as $key => $value) {
+                if ($value === null) {
+                    continue;
+                }
+                $eventDetails[(string) $key] = (string) $value;
+            }
+
+            $detailsJson = $eventDetails !== []
+                ? (json_encode($eventDetails, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: null)
+                : null;
+
+            $stmt = $this->pdo->prepare(
+                "INSERT INTO {$this->prefix}contact_security_events
+                 (form_id, event_type, reason, ip_address, user_agent, details_json)
+                 VALUES (?, ?, ?, ?, ?, ?)"
+            );
+
+            $stmt->execute([
+                $formId !== null && $formId > 0 ? $formId : null,
+                $normalizedType,
+                $normalizedReason,
+                $this->get_client_ip(),
+                mb_substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
+                $detailsJson,
+            ]);
+        } catch (\Throwable $e) {
+            $this->log_error('failed to log security event', ['event_type' => $eventType, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Sicherheits-Statistik für Dashboard.
+     *
+     * @return array<string,int>
+     */
+    public function get_security_event_stats(int $hours = 24): array
+    {
+        $hours = max(1, $hours);
+
+        $stmt = $this->pdo->prepare(
+            "SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN event_type = 'csrf_failed' THEN 1 ELSE 0 END) AS csrf_failed,
+                SUM(CASE WHEN event_type = 'captcha_failed' THEN 1 ELSE 0 END) AS captcha_failed,
+                SUM(CASE WHEN event_type = 'rate_limited' THEN 1 ELSE 0 END) AS rate_limited,
+                SUM(CASE WHEN event_type = 'antispam_rejected' THEN 1 ELSE 0 END) AS antispam_rejected,
+                SUM(CASE WHEN event_type = 'invalid_status_attempt' THEN 1 ELSE 0 END) AS invalid_status_attempt
+             FROM {$this->prefix}contact_security_events
+             WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? HOUR)"
+        );
+        $stmt->execute([$hours]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'total' => (int) ($row['total'] ?? 0),
+            'csrf_failed' => (int) ($row['csrf_failed'] ?? 0),
+            'captcha_failed' => (int) ($row['captcha_failed'] ?? 0),
+            'rate_limited' => (int) ($row['rate_limited'] ?? 0),
+            'antispam_rejected' => (int) ($row['antispam_rejected'] ?? 0),
+            'invalid_status_attempt' => (int) ($row['invalid_status_attempt'] ?? 0),
+        ];
+    }
+
+    public function get_recent_security_events(int $limit = 20): array
+    {
+        $limit = max(1, min($limit, 100));
+        $stmt = $this->pdo->prepare(
+            "SELECT e.*, f.title AS form_title
+             FROM {$this->prefix}contact_security_events e
+             LEFT JOIN {$this->prefix}contact_forms f ON f.id = e.form_id
+             ORDER BY e.created_at DESC, e.id DESC
+             LIMIT ?"
+        );
+        $stmt->bindValue(1, $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
     // ── Hilfsmethoden ─────────────────────────────────────────────────────────

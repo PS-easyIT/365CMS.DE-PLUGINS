@@ -305,6 +305,22 @@ final class CMS_M365CALCULATOR_Catalog
     /**
      * @return array<string,mixed>
      */
+    public static function offer_matrix_rules(): array
+    {
+        return self::load_json('offer_matrix_validation_rules.json');
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public static function license_assignment_risk_rules(): array
+    {
+        return self::load_json('license_assignment_risk_rules.json');
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
     public static function consumption_modules(): array
     {
         return self::load_json('consumption_modules.json');

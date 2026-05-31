@@ -37,9 +37,14 @@ final class CMS_Promos_Repository
     /** @var array<string,string> */
     private const DEFAULT_SETTINGS = [
         'archive_title' => 'Promotions & Highlights',
+        'archive_title_en' => 'Promotions & Highlights',
         'archive_description' => 'Zentrale Übersicht aktiver Kampagnen, CTA-Flächen und Teaser-Aktionen.',
+        'archive_description_en' => 'Central overview of active campaigns, CTA slots, and teaser actions.',
         'default_button_label' => 'Mehr erfahren',
+        'default_button_label_en' => 'Learn more',
         'default_target_behavior' => 'same_tab',
+        'click_export_enabled' => '0',
+        'click_export_webhook_url' => '',
     ];
 
     public static function instance(): self
@@ -141,9 +146,14 @@ final class CMS_Promos_Repository
         try {
             $settings = [
                 'archive_title' => $this->clean_text($post['archive_title'] ?? ''),
+                'archive_title_en' => $this->clean_text($post['archive_title_en'] ?? ''),
                 'archive_description' => $this->clean_textarea($post['archive_description'] ?? ''),
+                'archive_description_en' => $this->clean_textarea($post['archive_description_en'] ?? ''),
                 'default_button_label' => $this->clean_text($post['default_button_label'] ?? 'Mehr erfahren'),
+                'default_button_label_en' => $this->clean_text($post['default_button_label_en'] ?? ''),
                 'default_target_behavior' => in_array(($post['default_target_behavior'] ?? 'same_tab'), ['same_tab', 'new_tab'], true) ? (string) $post['default_target_behavior'] : 'same_tab',
+                'click_export_enabled' => !empty($post['click_export_enabled']) ? '1' : '0',
+                'click_export_webhook_url' => $this->clean_url($post['click_export_webhook_url'] ?? ''),
             ];
 
             foreach ($settings as $key => $value) {
@@ -417,27 +427,38 @@ final class CMS_Promos_Repository
             $values = [
                 $placementId,
                 $title,
+                $this->clean_text($post['title_en'] ?? ''),
                 $slug,
                 $this->clean_text($post['teaser'] ?? ''),
+                $this->clean_text($post['teaser_en'] ?? ''),
                 $this->clean_html($post['content_html'] ?? ''),
+                $this->clean_html($post['content_html_en'] ?? ''),
                 $this->clean_url($post['target_url'] ?? ''),
                 $this->clean_text($post['button_label'] ?? 'Mehr erfahren'),
+                $this->clean_text($post['button_label_en'] ?? ''),
                 $this->clean_url($post['image_url'] ?? ''),
                 $status,
                 $startAt,
                 $endAt,
                 max(0, (int) ($post['priority'] ?? 0)),
                 !empty($post['is_featured']) ? 1 : 0,
+                max(0, min(50, (int) ($post['frequency_cap'] ?? 0))),
+                max(1, min(24 * 14, (int) ($post['frequency_window_hours'] ?? 24))),
+                $this->clean_utm_token($post['utm_source'] ?? '', 80),
+                $this->clean_utm_token($post['utm_medium'] ?? '', 80),
+                $this->clean_utm_token($post['utm_campaign'] ?? '', 120),
+                $this->clean_utm_token($post['utm_term'] ?? '', 120),
+                $this->clean_utm_token($post['utm_content'] ?? '', 120),
             ];
 
             if ($id > 0) {
-                $stmt = $this->db->prepare("UPDATE {$this->prefix}promos SET placement_id = ?, title = ?, slug = ?, teaser = ?, content_html = ?, target_url = ?, button_label = ?, image_url = ?, status = ?, start_at = ?, end_at = ?, priority = ?, is_featured = ? WHERE id = ?");
+                $stmt = $this->db->prepare("UPDATE {$this->prefix}promos SET placement_id = ?, title = ?, title_en = ?, slug = ?, teaser = ?, teaser_en = ?, content_html = ?, content_html_en = ?, target_url = ?, button_label = ?, button_label_en = ?, image_url = ?, status = ?, start_at = ?, end_at = ?, priority = ?, is_featured = ?, frequency_cap = ?, frequency_window_hours = ?, utm_source = ?, utm_medium = ?, utm_campaign = ?, utm_term = ?, utm_content = ? WHERE id = ?");
                 $stmt->execute([...$values, $id]);
                 $this->invalidate_read_caches();
                 return ['success' => true, 'message' => 'Promo aktualisiert.'];
             }
 
-            $stmt = $this->db->prepare("INSERT INTO {$this->prefix}promos (placement_id, title, slug, teaser, content_html, target_url, button_label, image_url, status, start_at, end_at, priority, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $this->db->prepare("INSERT INTO {$this->prefix}promos (placement_id, title, title_en, slug, teaser, teaser_en, content_html, content_html_en, target_url, button_label, button_label_en, image_url, status, start_at, end_at, priority, is_featured, frequency_cap, frequency_window_hours, utm_source, utm_medium, utm_campaign, utm_term, utm_content) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute($values);
             $this->invalidate_read_caches();
             return ['success' => true, 'message' => 'Promo angelegt.'];
@@ -576,6 +597,16 @@ final class CMS_Promos_Repository
         }
 
         return $url;
+    }
+
+    private function clean_utm_token(string $value, int $maxLength = 120): string
+    {
+        $token = strtolower(trim(strip_tags($value)));
+        $token = preg_replace('/\s+/', '-', $token) ?? '';
+        $token = preg_replace('/[^a-z0-9._~-]+/', '-', $token) ?? '';
+        $token = trim($token, '-');
+
+        return mb_substr($token, 0, max(1, $maxLength));
     }
 
     private function normalize_theme_hook(string $value): string

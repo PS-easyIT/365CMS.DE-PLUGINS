@@ -42,6 +42,10 @@ final class CMS_M365Landing
         if (is_file($sharedAdminContract)) {
             require_once $sharedAdminContract;
         }
+        $sharedPublicI18n = dirname(rtrim(CMS_M365LANDING_PLUGIN_DIR, '/\\')) . '/shared/public/plugin-public-i18n.php';
+        if (is_file($sharedPublicI18n)) {
+            require_once $sharedPublicI18n;
+        }
 
         foreach ([
             'includes/class-installer.php',

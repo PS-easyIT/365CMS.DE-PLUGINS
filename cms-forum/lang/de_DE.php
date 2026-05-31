@@ -31,6 +31,8 @@ return [
     // Navigation
     'breadcrumb.home'           => 'Forum',
     'breadcrumb.search'         => 'Suche',
+    'breadcrumb.label'          => 'Brotkrumen-Navigation',
+    'breadcrumb.homepage'       => 'Startseite',
 
     // Actions
     'action.create'             => 'Erstellen',
@@ -49,6 +51,8 @@ return [
     'action.subscribe'          => 'Abonnieren',
     'action.unsubscribe'        => 'Abo beenden',
     'action.report'             => 'Melden',
+    'action.login'              => 'Anmelden',
+    'action.subscribed'         => 'Abonniert',
     'action.lock'               => 'Schließen',
     'action.unlock'             => 'Öffnen',
     'action.pin'                => 'Anheften',
@@ -63,6 +67,24 @@ return [
     'thread.type.normal'        => 'Normal',
     'thread.type.sticky'        => 'Angepinnt',
     'thread.type.announcement'  => 'Ankündigung',
+    'thread.type'               => 'Typ',
+    'thread.title'              => 'Titel',
+    'thread.title_placeholder'  => 'Themen-Titel eingeben...',
+    'thread.content_placeholder'=> 'Dein Beitrag...',
+    'thread.create_in_forum'    => 'Neuer Thread in %s',
+    'thread.create_in_forum_short' => 'in %s',
+    'thread.create_first'       => 'Erstes Thema erstellen',
+    'thread.status.solved'      => 'Gelöst',
+    'thread.accepted_answer'    => 'Diese Antwort wurde als Lösung markiert.',
+    'thread.mark_as_solution'   => 'Als Lösung markieren',
+    'thread.unmark_solution'    => 'Lösung entfernen',
+    'thread.last_post_by'       => 'von %s',
+    'thread.reply_placeholder'  => 'Deine Antwort...',
+    'thread.reply_submit'       => 'Antwort absenden',
+    'thread.closed_info'        => 'Dieses Thema ist geschlossen. Neue Antworten sind nicht möglich.',
+    'thread.login_to_reply'     => 'um zu antworten.',
+    'thread.similar.title'      => 'Ähnliche Themen gefunden',
+    'thread.similar.hint'       => 'Prüfe bestehende Diskussionen, bevor du ein neues Thema erstellst.',
 
     // Thread status
     'thread.status.open'        => 'Offen',
@@ -77,7 +99,10 @@ return [
     // Poll
     'poll'                      => 'Umfrage',
     'poll.question'             => 'Frage',
+    'poll.question_placeholder' => 'Deine Umfrage-Frage...',
     'poll.options'              => 'Optionen',
+    'poll.option_number'        => 'Option %d',
+    'poll.option_prefix'        => 'Option',
     'poll.add_option'           => 'Option hinzufügen',
     'poll.remove_option'        => 'Entfernen',
     'poll.vote'                 => 'Abstimmen',
@@ -152,6 +177,17 @@ return [
     'error.thread_closed'       => 'Dieses Thema ist geschlossen.',
     'error.banned'              => 'Dein Konto ist gesperrt.',
     'error.no_permission'       => 'Du hast keine Berechtigung für diese Aktion.',
+    'error.not_logged_in'       => 'Nicht eingeloggt.',
+    'error.invalid_request'     => 'Ungültige Anfrage.',
+    'error.poll_not_found'      => 'Umfrage nicht gefunden.',
+    'error.poll_not_allowed'    => 'Abstimmungen sind in diesem Forum nicht erlaubt.',
+    'error.poll_too_many'       => 'Zu viele Optionen ausgewählt.',
+    'error.thread_create_failed'=> 'Thread konnte nicht erstellt werden.',
+    'error.post_create_failed'  => 'Beitrag konnte nicht erstellt werden.',
+    'error.reply_login_required'=> 'Du musst eingeloggt sein, um zu antworten.',
+    'error.flood.thread_wait'   => 'Bitte warte noch %d Sekunden, bevor du einen neuen Thread erstellst.',
+    'error.flood.post_wait'     => 'Bitte warte noch %d Sekunden.',
+    'error.invalid_answer_selection' => 'Dieser Beitrag kann nicht als Lösung markiert werden.',
 
     // Success
     'success.thread_created'    => 'Thema wurde erstellt.',
@@ -163,6 +199,11 @@ return [
     'success.thread_pinned'     => 'Thema wurde angepinnt.',
     'success.thread_unpinned'   => 'Thema wurde gelöst.',
     'success.thread_moved'      => 'Thema wurde verschoben.',
+    'success.accepted_answer_set' => 'Antwort als Lösung markiert.',
+    'success.accepted_answer_removed' => 'Akzeptierte Antwort entfernt.',
+
+    // User fallback
+    'user.deleted'              => 'Gelöscht',
 
     // Time (relative)
     'time.just_now'             => 'Gerade eben',

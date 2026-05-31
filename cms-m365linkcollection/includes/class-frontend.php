@@ -15,6 +15,7 @@ final class CMS_M365LINKCOLLECTION_Frontend
 {
     private static ?self $instance = null;
     private ?string $requestPathCache = null;
+    private ?string $requestLangCache = null;
 
     public static function instance(): self
     {
@@ -43,12 +44,22 @@ final class CMS_M365LINKCOLLECTION_Frontend
         }
 
         $router = \CMS\Router::instance();
-        $router->addRoute('GET', CMS_M365LINKCOLLECTION_Settings::route(), function (): void {
-            $this->render_archive();
-        });
-        $router->addRoute('GET', '/m365-linkcollection', function (): void {
-            $this->render_archive();
-        });
+        $routes = [
+            CMS_M365LINKCOLLECTION_Settings::route(),
+            '/m365-linkcollection',
+        ];
+
+        foreach (['de', 'en'] as $lang) {
+            foreach ($routes as $route) {
+                $localizedRoute = $this->localized_route($route, $lang);
+                if ($localizedRoute === '') {
+                    continue;
+                }
+                $router->addRoute('GET', $localizedRoute, function (): void {
+                    $this->render_archive();
+                });
+            }
+        }
     }
 
     public function filter_body_class(mixed $bodyClass): string
@@ -145,6 +156,7 @@ final class CMS_M365LINKCOLLECTION_Frontend
 
         $repo = CMS_M365LINKCOLLECTION_Repository::instance();
         $settings = CMS_M365LINKCOLLECTION_Settings::all();
+        $lang = $this->current_language();
         $category = CMS_M365LINKCOLLECTION_Repository::slugify((string) ($_GET['category'] ?? ''));
         if ($category === 'link') {
             $category = '';
@@ -161,14 +173,22 @@ final class CMS_M365LINKCOLLECTION_Frontend
         $total = $payload['total'];
         $categories = $repo->categories(true);
         $totalPages = max(1, (int) ceil($total / $perPage));
+        $localizedRoute = $this->localized_route(CMS_M365LINKCOLLECTION_Settings::route(), $lang);
+        $siteUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
+        $pageUrl = $siteUrl . $localizedRoute;
 
         $this->set_seo(
-            (string) ($settings['page_title'] ?? 'MS365 | SITES & BLOGS'),
-            (string) ($settings['page_intro'] ?? '')
+            $this->i18n($settings, 'page_title', $lang, 'MS365 | SITES & BLOGS'),
+            $this->i18n($settings, 'page_intro', $lang, '')
         );
 
         if (class_exists('CMS\\ThemeManager')) {
-            \CMS\ThemeManager::instance()->getHeader(['title' => (string) ($settings['page_title'] ?? 'MS365 | SITES & BLOGS')]);
+            \CMS\ThemeManager::instance()->getHeader(['title' => $this->i18n($settings, 'page_title', $lang, 'MS365 | SITES & BLOGS')]);
+        }
+
+        $structuredDataJson = '';
+        if (CMS_M365LINKCOLLECTION_Settings::bool('show_structured_data', false)) {
+            $structuredDataJson = $this->build_structured_data_json($items, $settings, $lang, $pageUrl);
         }
 
         $template = CMS_M365LINKCOLLECTION_PLUGIN_DIR . 'templates/page-linkcollection.php';
@@ -199,24 +219,16 @@ final class CMS_M365LINKCOLLECTION_Frontend
 
     private function path_matches(string $route): bool
     {
-        $path = $this->normalized_request_path();
-        $routePath = trim($route, '/');
-        if ($path === $routePath) {
-            return true;
-        }
-
-        $basePath = $this->normalized_site_base_path();
-        if ($basePath === '') {
+        $normalizedRoute = trim($route, '/');
+        if ($normalizedRoute === '') {
             return false;
         }
 
-        $prefix = $basePath . '/';
-        if (!str_starts_with($path, $prefix)) {
-            return false;
+        if (function_exists('cms_plugin_public_path_without_lang')) {
+            return cms_plugin_public_path_without_lang($this->normalized_request_path()) === strtolower($normalizedRoute);
         }
 
-        $relativePath = trim(substr($path, strlen($prefix)), '/');
-        return $relativePath === $routePath;
+        return $this->normalized_request_path() === strtolower($normalizedRoute);
     }
 
     private function normalized_request_path(): string
@@ -225,7 +237,12 @@ final class CMS_M365LINKCOLLECTION_Frontend
             return $this->requestPathCache;
         }
 
-        $this->requestPathCache = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
+        if (function_exists('cms_plugin_public_request_path')) {
+            $this->requestPathCache = cms_plugin_public_request_path();
+            return $this->requestPathCache;
+        }
+
+        $this->requestPathCache = strtolower(trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/'));
         return $this->requestPathCache;
     }
 
@@ -256,15 +273,130 @@ final class CMS_M365LINKCOLLECTION_Frontend
 
     private function render_404(): void
     {
+        $lang = $this->current_language();
+        $title = $lang === 'en' ? 'Not found' : 'Nicht gefunden';
+        $message = $lang === 'en' ? 'Link collection not available' : 'Linkcollection nicht verfügbar';
+
         http_response_code(404);
         if (class_exists('CMS\\ThemeManager')) {
-            \CMS\ThemeManager::instance()->getHeader(['title' => 'Nicht gefunden']);
+            \CMS\ThemeManager::instance()->getHeader(['title' => $title]);
         }
-        echo '<main class="phinit-plugin mlc-page"><section class="phinit-empty-state"><p class="phinit-empty-state__title">Linkcollection nicht verfügbar</p></section></main>';
+        echo '<main class="phinit-plugin mlc-page"><section class="phinit-empty-state"><p class="phinit-empty-state__title">'
+            . htmlspecialchars($message, ENT_QUOTES, 'UTF-8')
+            . '</p></section></main>';
         if (class_exists('CMS\\ThemeManager')) {
             \CMS\ThemeManager::instance()->getFooter();
         }
         exit;
+    }
+
+    private function current_language(): string
+    {
+        if ($this->requestLangCache !== null) {
+            return $this->requestLangCache;
+        }
+
+        if (function_exists('cms_plugin_public_language')) {
+            $this->requestLangCache = cms_plugin_public_language($this->normalized_request_path());
+            return $this->requestLangCache;
+        }
+
+        $this->requestLangCache = str_starts_with($this->normalized_request_path(), 'en/') ? 'en' : 'de';
+        return $this->requestLangCache;
+    }
+
+    private function localized_route(string $route, string $lang): string
+    {
+        $normalized = trim($route, '/');
+        if ($normalized === '') {
+            return '';
+        }
+
+        if (function_exists('cms_plugin_public_localized_path')) {
+            return cms_plugin_public_localized_path($normalized, $lang);
+        }
+
+        return $lang === 'en' ? '/en/' . $normalized : '/' . $normalized;
+    }
+
+    /**
+     * @param array<string,string> $values
+     */
+    private function i18n(array $values, string $key, string $lang, string $fallback = ''): string
+    {
+        if (function_exists('cms_plugin_public_i18n_value')) {
+            return cms_plugin_public_i18n_value($values, $key, $lang, $fallback);
+        }
+
+        if ($lang === 'en' && isset($values[$key . '_en']) && $values[$key . '_en'] !== '') {
+            return (string) $values[$key . '_en'];
+        }
+
+        if (isset($values[$key]) && $values[$key] !== '') {
+            return (string) $values[$key];
+        }
+
+        return $fallback;
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $items
+     * @param array<string,string> $settings
+     */
+    private function build_structured_data_json(array $items, array $settings, string $lang, string $pageUrl): string
+    {
+        $itemList = [];
+        $position = 1;
+
+        foreach ($items as $item) {
+            $url = trim((string) ($item['url'] ?? ''));
+            if ($url === '' || filter_var($url, FILTER_VALIDATE_URL) === false || preg_match('#^https?://#i', $url) !== 1) {
+                continue;
+            }
+
+            $name = trim((string) ($item['title'] ?? ''));
+            if ($name === '') {
+                $name = $url;
+            }
+
+            $itemList[] = [
+                '@type' => 'ListItem',
+                'position' => $position++,
+                'name' => $name,
+                'url' => $url,
+            ];
+        }
+
+        $graph = [
+            [
+                '@context' => 'https://schema.org',
+                '@type' => 'BreadcrumbList',
+                'itemListElement' => [
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 1,
+                        'name' => 'Home',
+                        'item' => defined('SITE_URL') ? rtrim((string) SITE_URL, '/') . '/' : '/',
+                    ],
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 2,
+                        'name' => $this->i18n($settings, 'page_title', $lang, 'MS365 | SITES & BLOGS'),
+                        'item' => $pageUrl,
+                    ],
+                ],
+            ],
+            [
+                '@context' => 'https://schema.org',
+                '@type' => 'ItemList',
+                'name' => $this->i18n($settings, 'label_cards_heading', $lang, 'Link overview'),
+                'numberOfItems' => count($itemList),
+                'itemListElement' => $itemList,
+            ],
+        ];
+
+        $json = json_encode($graph, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        return is_string($json) ? $json : '';
     }
 
     private function log_error(string $message): void

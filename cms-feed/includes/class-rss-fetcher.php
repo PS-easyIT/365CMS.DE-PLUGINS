@@ -162,9 +162,15 @@ final class CMS_Feed_RSS_Fetcher
 
             $items = $this->parse_feed($xml);
             $newCount = 0;
+            $filteredCount = 0;
             $maxItems = (int) ($channel['max_items'] ?: 50);
+            $noiseControls = $this->get_noise_controls();
 
             foreach (array_slice($items, 0, $maxItems) as $item) {
+                if ($this->should_exclude_item($item, $noiseControls)) {
+                    $filteredCount++;
+                    continue;
+                }
                 $item['channel_id']  = $channelId;
                 $item['category_id'] = (int) $channel['category_id'];
                 if ($db->insert_item($item)) {
@@ -198,7 +204,7 @@ final class CMS_Feed_RSS_Fetcher
             $totalItems = $db->count_items(['channel_id' => $channelId]);
             $db->update_channel_fetch($channelId, null, $totalItems);
 
-            return ['success' => true, 'error' => null, 'new_items' => $newCount];
+            return ['success' => true, 'error' => null, 'new_items' => $newCount, 'filtered_items' => $filteredCount];
 
         } catch (\Throwable $e) {
             $error = $e->getMessage();
@@ -549,6 +555,97 @@ final class CMS_Feed_RSS_Fetcher
     // ──────────────────────────────────────────────────────────────────────
     // Hilfsfunktionen
     // ──────────────────────────────────────────────────────────────────────
+
+    /**
+     * @return array{keywords: array<int,string>, authors: array<int,string>, domains: array<int,string>}
+     */
+    private function get_noise_controls(): array
+    {
+        $settings = CMS_Feed_Database::instance()->get_settings();
+
+        return [
+            'keywords' => $this->parse_newline_list((string) ($settings['noise_exclude_keywords'] ?? '')),
+            'authors' => $this->parse_newline_list((string) ($settings['noise_exclude_authors'] ?? '')),
+            'domains' => $this->parse_newline_list((string) ($settings['noise_exclude_domains'] ?? '')),
+        ];
+    }
+
+    /**
+     * @param array{keywords: array<int,string>, authors: array<int,string>, domains: array<int,string>} $controls
+     */
+    private function should_exclude_item(array $item, array $controls): bool
+    {
+        $haystack = $this->normalize_search_text(
+            trim(
+                (string) ($item['title'] ?? '') . "\n"
+                . (string) ($item['description'] ?? '') . "\n"
+                . (string) ($item['content'] ?? '')
+            ),
+        );
+        foreach ($controls['keywords'] as $keyword) {
+            if ($keyword !== '' && $this->contains_case_insensitive($haystack, $keyword)) {
+                return true;
+            }
+        }
+
+        $author = $this->normalize_search_text(trim((string) ($item['author'] ?? '')));
+        if ($author !== '') {
+            foreach ($controls['authors'] as $blockedAuthor) {
+                if ($blockedAuthor !== '' && $this->contains_case_insensitive($author, $blockedAuthor)) {
+                    return true;
+                }
+            }
+        }
+
+        $host = strtolower((string) parse_url((string) ($item['link'] ?? ''), PHP_URL_HOST));
+        if ($host !== '') {
+            foreach ($controls['domains'] as $blockedDomain) {
+                $blockedDomain = strtolower(trim($blockedDomain));
+                if ($blockedDomain === '') {
+                    continue;
+                }
+
+                if ($host === $blockedDomain || str_ends_with($host, '.' . $blockedDomain)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private function parse_newline_list(string $value): array
+    {
+        $normalized = str_replace(["\r\n", "\r"], "\n", $value);
+        $entries = array_filter(array_map('trim', explode("\n", $normalized)), static fn (string $line): bool => $line !== '');
+        $entries = array_values(array_unique($entries));
+
+        return array_map(
+            fn (string $entry): string => $this->normalize_search_text($entry),
+            $entries
+        );
+    }
+
+    private function contains_case_insensitive(string $haystack, string $needle): bool
+    {
+        if (function_exists('mb_stripos')) {
+            return mb_stripos($haystack, $needle, 0, 'UTF-8') !== false;
+        }
+
+        return stripos($haystack, $needle) !== false;
+    }
+
+    private function normalize_search_text(string $text): string
+    {
+        if (function_exists('mb_strtolower')) {
+            return mb_strtolower($text, 'UTF-8');
+        }
+
+        return strtolower($text);
+    }
 
     private function sanitize_guid(string $guid): string
     {

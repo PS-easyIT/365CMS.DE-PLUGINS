@@ -41,6 +41,7 @@ final class CMS_Newsletter
         $pluginRoot = realpath(CMS_NEWSLETTER_PLUGIN_DIR) ?: CMS_NEWSLETTER_PLUGIN_DIR;
         $files = [
             dirname(__DIR__) . '/shared/admin/plugin-admin-contract.php',
+            dirname(__DIR__) . '/shared/public/plugin-public-i18n.php',
             CMS_NEWSLETTER_PLUGIN_DIR . 'includes/class-installer.php',
             CMS_NEWSLETTER_PLUGIN_DIR . 'includes/class-repository.php',
             CMS_NEWSLETTER_PLUGIN_DIR . 'includes/class-public-controller.php',
@@ -114,10 +115,14 @@ final class CMS_Newsletter
             return false;
         }
 
-        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
-        $path = '/' . trim($path, '/');
+        if (function_exists('cms_plugin_public_path_without_lang')) {
+            $path = cms_plugin_public_path_without_lang();
+            return $path === 'newsletter' || str_starts_with($path, 'newsletter/');
+        }
 
-        return $path === '/newsletter';
+        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
+        $path = trim($path, '/');
+        return $path === 'newsletter' || str_starts_with($path, 'newsletter/') || $path === 'en/newsletter' || str_starts_with($path, 'en/newsletter/');
     }
 
     private function safe_require_file(string $file, string $pluginRoot): void
@@ -128,9 +133,11 @@ final class CMS_Newsletter
         }
 
         $sharedContractPath = realpath(dirname(__DIR__) . '/shared/admin/plugin-admin-contract.php');
+        $sharedPublicI18nPath = realpath(dirname(__DIR__) . '/shared/public/plugin-public-i18n.php');
         $isInPlugin = str_starts_with($resolved, rtrim($pluginRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
         $isAllowedSharedContract = $sharedContractPath !== false && $resolved === $sharedContractPath;
-        if (!$isInPlugin && !$isAllowedSharedContract) {
+        $isAllowedSharedPublicI18n = $sharedPublicI18nPath !== false && $resolved === $sharedPublicI18nPath;
+        if (!$isInPlugin && !$isAllowedSharedContract && !$isAllowedSharedPublicI18n) {
             return;
         }
 

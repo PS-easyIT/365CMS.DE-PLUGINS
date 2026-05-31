@@ -11,6 +11,7 @@ if (!defined('ABSPATH')) {
 
 final class CMS_Promos_Public_Controller
 {
+    private const FREQUENCY_COOKIE = 'cms_promos_freq';
     private static ?self $instance = null;
 
     private function __construct()
@@ -42,18 +43,22 @@ final class CMS_Promos_Public_Controller
         }
 
         $router->addRoute('GET', '/promos', [$this, 'archive_page']);
+        $router->addRoute('GET', '/en/promos', [$this, 'archive_page']);
         $router->addRoute('GET', '/promos/placement/:slug', [$this, 'archive_page']);
+        $router->addRoute('GET', '/en/promos/placement/:slug', [$this, 'archive_page']);
         $router->addRoute('GET', '/promo/click/:slug', [$this, 'redirect_promo']);
+        $router->addRoute('GET', '/en/promo/click/:slug', [$this, 'redirect_promo']);
     }
 
     public function archive_page(string $slug = ''): void
     {
+        $lang = $this->current_public_lang();
         $slug = $this->normalize_slug($slug);
         $repository = CMS_Promos_Repository::instance();
         $settings = $repository->get_settings();
         $placements = $repository->get_placements();
         $currentPlacement = $slug !== '' ? $repository->get_placement_by_slug($slug) : null;
-        $promos = $repository->get_active_promos($slug !== '' ? $slug : null);
+        $promos = $this->apply_frequency_cap($repository->get_active_promos($slug !== '' ? $slug : null));
         $repository->increment_impressions(array_map(static fn (array $promo): int => (int) ($promo['id'] ?? 0), $promos));
 
         $theme = class_exists('CMS\\ThemeManager') ? \CMS\ThemeManager::instance() : null;
@@ -75,19 +80,22 @@ final class CMS_Promos_Public_Controller
 
     public function redirect_promo(string $slug): void
     {
+        $lang = $this->current_public_lang();
         $slug = $this->normalize_slug($slug);
         $promo = CMS_Promos_Repository::instance()->get_promo_by_slug($slug);
-        $targetUrl = $promo !== null ? $this->sanitize_redirect_url((string) ($promo['target_url'] ?? '')) : '';
+        $targetUrl = $promo !== null ? $this->build_target_url($promo) : '';
         if ($promo === null || $targetUrl === '') {
             http_response_code(404);
-            echo '<h1>404 – Promo nicht gefunden</h1>';
+            echo '<h1>' . $this->escape_html($this->public_label('not_found_title', $lang)) . '</h1>';
             return;
         }
 
-        CMS_Promos_Repository::instance()->increment_click((int) $promo['id']);
+        $repository = CMS_Promos_Repository::instance();
+        $repository->increment_click((int) $promo['id']);
+        $this->dispatch_click_export_event($promo, $targetUrl, $lang, $repository->get_settings());
         if (headers_sent()) {
             $this->log_error('Cannot redirect promo click because headers were already sent');
-            echo '<a href="' . $this->escape_attr($targetUrl) . '">Weiter zur Promo</a>';
+            echo '<a href="' . $this->escape_attr($targetUrl) . '">' . $this->escape_html($this->public_label('continue_cta', $lang)) . '</a>';
             return;
         }
 
@@ -117,6 +125,7 @@ final class CMS_Promos_Public_Controller
 
     private function render_theme_hook(string $themeHook): void
     {
+        $lang = $this->current_public_lang();
         $repository = CMS_Promos_Repository::instance();
         $placements = $repository->get_hook_placements($themeHook);
         if ($placements === []) {
@@ -131,7 +140,7 @@ final class CMS_Promos_Public_Controller
                 continue;
             }
 
-            $promos = $repository->get_active_promos_for_placement($placementId, (int) ($placement['max_items'] ?? 0));
+            $promos = $this->apply_frequency_cap($repository->get_active_promos_for_placement($placementId, (int) ($placement['max_items'] ?? 0)));
             if ($promos === []) {
                 continue;
             }
@@ -141,10 +150,11 @@ final class CMS_Promos_Public_Controller
             echo '<section class="promos-hook-zone promos-hook-zone--' . $this->escape_attr($themeHook) . '">';
             echo '<div class="promos-hook-zone__inner">';
             echo '<div class="promos-hook-zone__header">';
-            echo '<span class="promos-kicker">Promo-Platzierung</span>';
-            echo '<h2 class="promos-hook-zone__title">' . $this->escape_html((string) ($placement['name'] ?? 'Promo-Platzierung')) . '</h2>';
-            if (!empty($placement['description'])) {
-                echo '<p class="promos-hook-zone__lead">' . $this->escape_html((string) $placement['description']) . '</p>';
+            echo '<span class="promos-kicker">' . $this->escape_html($this->public_label('placement_kicker', $lang)) . '</span>';
+            echo '<h2 class="promos-hook-zone__title">' . $this->escape_html($this->i18n_value($placement, 'name', $lang, $this->public_label('placement_kicker', $lang))) . '</h2>';
+            $placementDescription = $this->i18n_value($placement, 'description', $lang);
+            if ($placementDescription !== '') {
+                echo '<p class="promos-hook-zone__lead">' . $this->escape_html($placementDescription) . '</p>';
             }
             echo '</div>';
             echo '<div class="promos-hook-grid">';
@@ -152,28 +162,32 @@ final class CMS_Promos_Public_Controller
             foreach ($promos as $promo) {
                 $buttonLabel = trim((string) ($promo['button_label'] ?? ''));
                 if ($buttonLabel === '') {
-                    $buttonLabel = (string) ($settings['default_button_label'] ?? 'Mehr erfahren');
+                    $buttonLabel = $this->i18n_value($settings, 'default_button_label', $lang, $this->public_label('default_button', $lang));
+                } else {
+                    $buttonLabel = $this->i18n_value($promo, 'button_label', $lang, $buttonLabel);
                 }
 
                 $targetBehavior = ((string) ($settings['default_target_behavior'] ?? 'same_tab') === 'new_tab') ? ' target="_blank" rel="noopener noreferrer"' : '';
                 $redirectUrl = !empty($promo['target_url'])
-                    ? '/promo/click/' . rawurlencode((string) ($promo['slug'] ?? ''))
-                    : '/promos';
+                    ? $this->localized_path('promo/click/' . rawurlencode((string) ($promo['slug'] ?? '')), $lang)
+                    : $this->localized_path('promos', $lang);
 
                 echo '<article class="promos-hook-card' . (!empty($promo['is_featured']) ? ' promos-hook-card--featured' : '') . '">';
                 if (!empty($promo['image_url'])) {
                     echo '<div class="promos-hook-card__media">';
-                    echo '<img src="' . $this->escape_attr((string) $promo['image_url']) . '" alt="' . $this->escape_attr((string) ($promo['title'] ?? 'Promo')) . '" loading="lazy">';
+                    echo '<img src="' . $this->escape_attr((string) $promo['image_url']) . '" alt="' . $this->escape_attr($this->i18n_value($promo, 'title', $lang, $this->public_label('promo_generic', $lang))) . '" loading="lazy">';
                     echo '</div>';
                 }
                 echo '<div class="promos-hook-card__content">';
-                echo '<span class="promos-card__eyebrow">' . $this->escape_html((string) ($promo['placement_name'] ?? 'Promo')) . '</span>';
-                echo '<h3 class="promos-card__title">' . $this->escape_html((string) ($promo['title'] ?? 'Promo')) . '</h3>';
-                if (!empty($promo['teaser'])) {
-                    echo '<p>' . $this->escape_html((string) $promo['teaser']) . '</p>';
+                echo '<span class="promos-card__eyebrow">' . $this->escape_html($this->i18n_value($promo, 'placement_name', $lang, $this->public_label('promo_generic', $lang))) . '</span>';
+                echo '<h3 class="promos-card__title">' . $this->escape_html($this->i18n_value($promo, 'title', $lang, $this->public_label('promo_generic', $lang))) . '</h3>';
+                $teaser = $this->i18n_value($promo, 'teaser', $lang);
+                if ($teaser !== '') {
+                    echo '<p>' . $this->escape_html($teaser) . '</p>';
                 }
-                if (!empty($promo['content_html'])) {
-                    echo '<div class="promos-hook-card__body">' . $this->sanitize_public_html((string) $promo['content_html']) . '</div>';
+                $contentHtml = $this->i18n_value($promo, 'content_html', $lang);
+                if ($contentHtml !== '') {
+                    echo '<div class="promos-hook-card__body">' . $this->sanitize_public_html($contentHtml) . '</div>';
                 }
                 echo '<a class="promos-card__button" href="' . $this->escape_attr($redirectUrl) . '"' . $targetBehavior . '>' . $this->escape_html($buttonLabel) . '</a>';
                 echo '</div>';
@@ -240,6 +254,369 @@ final class CMS_Promos_Public_Controller
         }
 
         return $url;
+    }
+
+    private function build_target_url(array $promo): string
+    {
+        $targetUrl = $this->sanitize_redirect_url((string) ($promo['target_url'] ?? ''));
+        if ($targetUrl === '') {
+            return '';
+        }
+
+        $utm = [
+            'utm_source' => (string) ($promo['utm_source'] ?? ''),
+            'utm_medium' => (string) ($promo['utm_medium'] ?? ''),
+            'utm_campaign' => (string) ($promo['utm_campaign'] ?? ''),
+            'utm_term' => (string) ($promo['utm_term'] ?? ''),
+            'utm_content' => (string) ($promo['utm_content'] ?? ''),
+        ];
+        $utm = array_filter($utm, static fn (string $value): bool => trim($value) !== '');
+        if ($utm === []) {
+            return $targetUrl;
+        }
+
+        $parts = parse_url($targetUrl);
+        if (!is_array($parts)) {
+            return $targetUrl;
+        }
+
+        $existing = [];
+        parse_str((string) ($parts['query'] ?? ''), $existing);
+        foreach ($utm as $key => $value) {
+            if (!array_key_exists($key, $existing) || trim((string) $existing[$key]) === '') {
+                $existing[$key] = $value;
+            }
+        }
+
+        $parts['query'] = http_build_query($existing);
+        return $this->unparse_url($parts);
+    }
+
+    /**
+     * @param array<string,mixed> $parts
+     */
+    private function unparse_url(array $parts): string
+    {
+        $scheme = isset($parts['scheme']) ? $parts['scheme'] . '://' : '';
+        $user = (string) ($parts['user'] ?? '');
+        $pass = (string) ($parts['pass'] ?? '');
+        $auth = $user !== '' ? $user . ($pass !== '' ? ':' . $pass : '') . '@' : '';
+        $host = (string) ($parts['host'] ?? '');
+        $port = isset($parts['port']) ? ':' . (int) $parts['port'] : '';
+        $path = (string) ($parts['path'] ?? '');
+        $query = isset($parts['query']) && $parts['query'] !== '' ? '?' . (string) $parts['query'] : '';
+        $fragment = isset($parts['fragment']) && $parts['fragment'] !== '' ? '#' . (string) $parts['fragment'] : '';
+
+        return $scheme . $auth . $host . $port . $path . $query . $fragment;
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $promos
+     * @return array<int,array<string,mixed>>
+     */
+    private function apply_frequency_cap(array $promos): array
+    {
+        if ($promos === []) {
+            return [];
+        }
+
+        $history = $this->read_frequency_history();
+        $now = time();
+        $changed = false;
+        $filtered = [];
+
+        foreach ($promos as $promo) {
+            $promoId = (int) ($promo['id'] ?? 0);
+            if ($promoId <= 0) {
+                continue;
+            }
+
+            $cap = max(0, (int) ($promo['frequency_cap'] ?? 0));
+            $windowHours = max(1, (int) ($promo['frequency_window_hours'] ?? 24));
+            if ($cap <= 0) {
+                $filtered[] = $promo;
+                continue;
+            }
+
+            $windowStart = $now - ($windowHours * 3600);
+            $key = (string) $promoId;
+            $timestamps = array_values(array_filter(
+                $history[$key] ?? [],
+                static fn (int $timestamp): bool => $timestamp >= $windowStart
+            ));
+
+            if (count($timestamps) >= $cap) {
+                $history[$key] = $timestamps;
+                $changed = true;
+                continue;
+            }
+
+            $timestamps[] = $now;
+            $history[$key] = array_slice($timestamps, -20);
+            $filtered[] = $promo;
+            $changed = true;
+        }
+
+        if ($changed) {
+            $this->write_frequency_history($history);
+        }
+
+        return $filtered;
+    }
+
+    /**
+     * @return array<string,array<int,int>>
+     */
+    private function read_frequency_history(): array
+    {
+        $sessionHistory = $this->read_frequency_history_from_session();
+        if ($sessionHistory !== []) {
+            return $sessionHistory;
+        }
+
+        $raw = (string) ($_COOKIE[self::FREQUENCY_COOKIE] ?? '');
+        if ($raw === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $history = [];
+        foreach ($decoded as $promoId => $timestamps) {
+            if (!is_array($timestamps)) {
+                continue;
+            }
+            $key = preg_replace('/[^0-9]/', '', (string) $promoId) ?? '';
+            if ($key === '') {
+                continue;
+            }
+            $history[$key] = array_values(array_filter(array_map('intval', $timestamps), static fn (int $timestamp): bool => $timestamp > 0));
+        }
+
+        return $history;
+    }
+
+    /**
+     * @param array<string,array<int,int>> $history
+     */
+    private function write_frequency_history(array $history): void
+    {
+        $now = time();
+        $cutoff = $now - (14 * 24 * 3600);
+        $normalized = [];
+        foreach ($history as $promoId => $timestamps) {
+            $clean = array_values(array_filter(array_map('intval', $timestamps), static fn (int $timestamp): bool => $timestamp >= $cutoff));
+            if ($clean !== []) {
+                $normalized[$promoId] = array_slice($clean, -20);
+            }
+        }
+        if (count($normalized) > 200) {
+            $normalized = array_slice($normalized, -200, null, true);
+        }
+
+        $this->write_frequency_history_to_session($normalized);
+
+        if (headers_sent()) {
+            return;
+        }
+
+        $payload = json_encode($normalized, JSON_UNESCAPED_SLASHES);
+        if (!is_string($payload)) {
+            return;
+        }
+
+        setcookie(self::FREQUENCY_COOKIE, $payload, [
+            'expires' => $now + (30 * 24 * 3600),
+            'path' => '/',
+            'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+        $_COOKIE[self::FREQUENCY_COOKIE] = $payload;
+    }
+
+    /**
+     * @return array<string,array<int,int>>
+     */
+    private function read_frequency_history_from_session(): array
+    {
+        $this->ensure_public_session();
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return [];
+        }
+
+        $value = $_SESSION[self::FREQUENCY_COOKIE] ?? null;
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $history = [];
+        foreach ($value as $promoId => $timestamps) {
+            if (!is_array($timestamps)) {
+                continue;
+            }
+            $key = preg_replace('/[^0-9]/', '', (string) $promoId) ?? '';
+            if ($key === '') {
+                continue;
+            }
+            $history[$key] = array_values(array_filter(array_map('intval', $timestamps), static fn (int $timestamp): bool => $timestamp > 0));
+        }
+
+        return $history;
+    }
+
+    /**
+     * @param array<string,array<int,int>> $history
+     */
+    private function write_frequency_history_to_session(array $history): void
+    {
+        $this->ensure_public_session();
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return;
+        }
+
+        $_SESSION[self::FREQUENCY_COOKIE] = $history;
+    }
+
+    private function ensure_public_session(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE || headers_sent()) {
+            return;
+        }
+
+        session_start();
+    }
+
+    private function dispatch_click_export_event(array $promo, string $targetUrl, string $lang, array $settings): void
+    {
+        $payload = [
+            'event' => 'promo_click',
+            'timestamp' => gmdate('c'),
+            'lang' => $lang,
+            'promo_id' => (int) ($promo['id'] ?? 0),
+            'promo_slug' => (string) ($promo['slug'] ?? ''),
+            'promo_title' => $this->i18n_value($promo, 'title', $lang),
+            'placement_id' => isset($promo['placement_id']) ? (int) $promo['placement_id'] : null,
+            'target_url' => $targetUrl,
+            'request_path' => (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/'),
+            'utm_source' => (string) ($promo['utm_source'] ?? ''),
+            'utm_medium' => (string) ($promo['utm_medium'] ?? ''),
+            'utm_campaign' => (string) ($promo['utm_campaign'] ?? ''),
+            'utm_term' => (string) ($promo['utm_term'] ?? ''),
+            'utm_content' => (string) ($promo['utm_content'] ?? ''),
+        ];
+
+        if (class_exists('CMS\\Hooks') && method_exists('CMS\\Hooks', 'doAction')) {
+            \CMS\Hooks::doAction('cms_promos_click_export', $payload);
+        }
+
+        if ((string) ($settings['click_export_enabled'] ?? '0') !== '1') {
+            return;
+        }
+
+        $webhookUrl = $this->sanitize_redirect_url((string) ($settings['click_export_webhook_url'] ?? ''));
+        if ($webhookUrl === '') {
+            return;
+        }
+
+        $this->send_webhook_json($webhookUrl, $payload);
+    }
+
+    /**
+     * @param array<string,mixed> $payload
+     */
+    private function send_webhook_json(string $url, array $payload): void
+    {
+        $body = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        if (!is_string($body)) {
+            return;
+        }
+
+        if (function_exists('curl_init')) {
+            $ch = curl_init($url);
+            if ($ch === false) {
+                return;
+            }
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+                CURLOPT_POSTFIELDS => $body,
+                CURLOPT_TIMEOUT_MS => 1200,
+                CURLOPT_CONNECTTIMEOUT_MS => 600,
+            ]);
+            curl_exec($ch);
+            curl_close($ch);
+            return;
+        }
+
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'POST',
+                'header' => "Content-Type: application/json\r\n",
+                'content' => $body,
+                'timeout' => 1.2,
+                'ignore_errors' => true,
+            ],
+        ]);
+        @file_get_contents($url, false, $context);
+    }
+
+    private function current_public_lang(): string
+    {
+        if (function_exists('cms_plugin_public_language')) {
+            return cms_plugin_public_language();
+        }
+
+        $path = trim((string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/'), '/');
+        return $path === 'en' || str_starts_with($path, 'en/') ? 'en' : 'de';
+    }
+
+    private function localized_path(string $path, string $lang): string
+    {
+        if (function_exists('cms_plugin_public_localized_path')) {
+            return cms_plugin_public_localized_path($path, $lang);
+        }
+
+        $path = trim($path, '/');
+        if ($path === '') {
+            return $lang === 'en' ? '/en' : '/';
+        }
+        return $lang === 'en' ? '/en/' . $path : '/' . $path;
+    }
+
+    /**
+     * @param array<string,mixed> $values
+     */
+    private function i18n_value(array $values, string $key, string $lang, string $fallback = ''): string
+    {
+        if (function_exists('cms_plugin_public_i18n_value')) {
+            return cms_plugin_public_i18n_value($values, $key, $lang, $fallback);
+        }
+
+        if ($lang === 'en' && isset($values[$key . '_en']) && (string) $values[$key . '_en'] !== '') {
+            return (string) $values[$key . '_en'];
+        }
+        if (isset($values[$key]) && (string) $values[$key] !== '') {
+            return (string) $values[$key];
+        }
+        return $fallback;
+    }
+
+    private function public_label(string $key, string $lang): string
+    {
+        $labels = [
+            'placement_kicker' => ['de' => 'Promo-Platzierung', 'en' => 'Promo placement'],
+            'default_button' => ['de' => 'Mehr erfahren', 'en' => 'Learn more'],
+            'promo_generic' => ['de' => 'Promo', 'en' => 'Promo'],
+            'not_found_title' => ['de' => '404 - Promo nicht gefunden', 'en' => '404 - Promo not found'],
+            'continue_cta' => ['de' => 'Weiter zur Promo', 'en' => 'Continue to promo'],
+        ];
+
+        return $labels[$key][$lang] ?? $labels[$key]['de'] ?? '';
     }
 
     private function sanitize_public_html(string $html): string

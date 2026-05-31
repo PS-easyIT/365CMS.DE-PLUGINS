@@ -15,6 +15,7 @@ final class CMS_Marketplace_Service
     private const MAX_PREVIEW_SOURCE_BYTES = 524288;
     private const MAX_PREVIEW_BYTES = 4000;
     private const SYNC_STATE_FILE = '.marketplace-sync-state.json';
+    private const SECURITY_REPORTS_FILE = 'security-reports.json';
 
     private ?array $settingsCache = null;
     private ?string $lastSyncedStateDigest = null;
@@ -127,14 +128,33 @@ final class CMS_Marketplace_Service
             'submit' => !empty($settings['public_submission_enabled'])
                 ? $this->normalizePublicPath((string) ($settings['public_submission_path'] ?? '/marketplace-submit'))
                 : '',
+            'security_report' => !empty($settings['security_reports_enabled'])
+                ? $this->normalizePublicPath((string) ($settings['security_report_path'] ?? '/marketplace-security-report'))
+                : '',
         ];
+    }
+
+    public function getLocalizedPublicRouteMap(string $lang = 'de'): array
+    {
+        $routes = $this->getPublicRouteMap();
+        $localized = [];
+        foreach ($routes as $key => $route) {
+            if (!is_string($route) || $route === '') {
+                $localized[$key] = '';
+                continue;
+            }
+
+            $localized[$key] = $this->localizePublicPath($route, $lang);
+        }
+
+        return $localized;
     }
 
     public function resolvePublicSectionFromRequestUri(string $requestUri): ?string
     {
-        $path = $this->normalizeRequestPath($requestUri);
+        $path = $this->normalizeComparableRequestPath($requestUri);
         foreach ($this->getPublicRouteMap() as $section => $route) {
-            if ($path === $route) {
+            if ($path === $this->normalizeComparableRoutePath($route)) {
                 return $section;
             }
         }
@@ -142,34 +162,47 @@ final class CMS_Marketplace_Service
         return null;
     }
 
-    public function getPublicSections(): array
+    public function getPublicSections(string $lang = 'de'): array
     {
-        $routes = $this->getPublicRouteMap();
+        $routes = $this->getLocalizedPublicRouteMap($lang);
         $siteUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
         $summary = $this->getSummary();
         $publicUrls = $this->getPublicUrls();
 
+        $text = [
+            'plugins_label' => $this->i18nText('plugins_label', $lang, 'Plugins', 'Plugins'),
+            'plugins_description' => $this->i18nText('plugins_description', $lang, 'Verfügbare 365CMS-Plugins mit Installations- und Update-Metadaten.', 'Available 365CMS plugins with install and update metadata.'),
+            'themes_label' => $this->i18nText('themes_label', $lang, 'Themes', 'Themes'),
+            'themes_description' => $this->i18nText('themes_description', $lang, 'Verfügbare 365CMS-Themes mit Installations- und Update-Metadaten.', 'Available 365CMS themes with install and update metadata.'),
+            'cms_label' => $this->i18nText('cms_label', $lang, 'CMS', 'CMS'),
+            'cms_description' => $this->i18nText('cms_description', $lang, '365CMS-Core-Pakete, Update-Kanäle und zentrale Update-Metadaten.', '365CMS core packages, update channels, and central update metadata.'),
+            'submit_label' => $this->i18nText('submit_label', $lang, 'Einreichung', 'Submission'),
+            'submit_description' => $this->i18nText('submit_description', $lang, 'Öffentliche Einreichung für neue Plugins, Themes und CMS-Pakete.', 'Public submission for new plugins, themes, and CMS packages.'),
+            'security_label' => $this->i18nText('security_label', $lang, 'Sicherheitsmeldung', 'Security Report'),
+            'security_description' => $this->i18nText('security_description', $lang, 'Melde Sicherheitsprobleme zu veröffentlichten Paketen mit separatem Intake-Workflow.', 'Report security issues for published packages through a dedicated intake workflow.'),
+        ];
+
         $sections = [
             [
                 'key' => 'plugins',
-                'label' => 'Plugins',
-                'description' => 'Verfügbare 365CMS-Plugins mit Installations- und Update-Metadaten.',
+                'label' => $text['plugins_label'],
+                'description' => $text['plugins_description'],
                 'count' => (int) ($summary['plugins'] ?? 0),
                 'url' => $siteUrl . ($routes['plugins'] ?? '/marketplace/plugins'),
                 'feed_url' => $publicUrls['plugins_index'] ?? '',
             ],
             [
                 'key' => 'themes',
-                'label' => 'Themes',
-                'description' => 'Verfügbare 365CMS-Themes mit Installations- und Update-Metadaten.',
+                'label' => $text['themes_label'],
+                'description' => $text['themes_description'],
                 'count' => (int) ($summary['themes'] ?? 0),
                 'url' => $siteUrl . ($routes['themes'] ?? '/marketplace/themes'),
                 'feed_url' => $publicUrls['themes_index'] ?? '',
             ],
             [
                 'key' => 'cms',
-                'label' => 'CMS',
-                'description' => '365CMS-Core-Pakete, Update-Kanäle und zentrale Update-Metadaten.',
+                'label' => $text['cms_label'],
+                'description' => $text['cms_description'],
                 'count' => (int) ($summary['cms'] ?? 0),
                 'url' => $siteUrl . ($routes['cms'] ?? '/marketplace/cms'),
                 'feed_url' => $publicUrls['cms_update'] ?? '',
@@ -179,10 +212,21 @@ final class CMS_Marketplace_Service
         if (!empty($routes['submit'])) {
             $sections[] = [
                 'key' => 'submit',
-                'label' => 'Einreichung',
-                'description' => 'Öffentliche Einreichung für neue Plugins, Themes und CMS-Pakete.',
+                'label' => $text['submit_label'],
+                'description' => $text['submit_description'],
                 'count' => 0,
                 'url' => $siteUrl . $routes['submit'],
+                'feed_url' => '',
+            ];
+        }
+
+        if (!empty($routes['security_report'])) {
+            $sections[] = [
+                'key' => 'security_report',
+                'label' => $text['security_label'],
+                'description' => $text['security_description'],
+                'count' => 0,
+                'url' => $siteUrl . $routes['security_report'],
                 'feed_url' => '',
             ];
         }
@@ -348,6 +392,23 @@ final class CMS_Marketplace_Service
             $releasedOn = date('Y-m-d');
         }
 
+        if ($isPublished) {
+            $guardrailCandidate = [
+                'type' => $type,
+                'slug' => $slug,
+                'name' => $name,
+                'version' => $version,
+                'docs_url' => $this->sanitizeUrl((string) ($input['docs_url'] ?? '')),
+                'changelog_url' => $this->sanitizeUrl((string) ($input['changelog_url'] ?? '')),
+                'package_sha256' => (string) ($packageData['package_sha256'] ?? ''),
+                'created_at' => (string) ($existing['created_at'] ?? ''),
+            ];
+            $guardrailViolations = $this->getPublishGuardrailViolations($guardrailCandidate);
+            if ($guardrailViolations !== []) {
+                return ['success' => false, 'message' => 'Freigabe blockiert: ' . implode(' ', $guardrailViolations)];
+            }
+        }
+
         $saveId = $this->repository->save([
             'type' => $type,
             'slug' => $slug,
@@ -406,6 +467,13 @@ final class CMS_Marketplace_Service
             return ['success' => false, 'message' => 'Der Marketplace-Eintrag wurde nicht gefunden.'];
         }
 
+        if ($published) {
+            $guardrailViolations = $this->getPublishGuardrailViolations($item);
+            if ($guardrailViolations !== []) {
+                return ['success' => false, 'message' => 'Freigabe blockiert: ' . implode(' ', $guardrailViolations)];
+            }
+        }
+
         $result = $this->repository->setPublished($id, $published);
         if (!$result) {
             return ['success' => false, 'message' => 'Der Veröffentlichungsstatus konnte nicht geändert werden.'];
@@ -417,6 +485,43 @@ final class CMS_Marketplace_Service
             'success' => true,
             'message' => $published ? 'Eintrag wurde für den Marketplace freigegeben.' : 'Eintrag wurde aus dem Marketplace zurückgezogen.',
         ];
+    }
+
+    public function getPublishGuardrailViolations(array $item): array
+    {
+        $settings = $this->getSettings();
+        if (empty($settings['publish_guardrails_enabled'])) {
+            return [];
+        }
+
+        $violations = [];
+        if (!empty($settings['guardrail_require_docs_url']) && (string) ($item['docs_url'] ?? '') === '') {
+            $violations[] = 'Dokumentations-URL ist erforderlich.';
+        }
+
+        if (!empty($settings['guardrail_require_changelog_url']) && (string) ($item['changelog_url'] ?? '') === '') {
+            $violations[] = 'Changelog-URL ist erforderlich.';
+        }
+
+        if (!empty($settings['guardrail_require_checksum']) && (string) ($item['package_sha256'] ?? '') === '') {
+            $violations[] = 'SHA-256-Prüfsumme ist erforderlich.';
+        }
+
+        $minimumAgeHours = max(0, (int) ($settings['guardrail_min_age_hours'] ?? 0));
+        if ($minimumAgeHours > 0) {
+            $createdAt = trim((string) ($item['created_at'] ?? ''));
+            $createdTimestamp = $createdAt !== '' ? strtotime($createdAt) : false;
+            if (!is_int($createdTimestamp) || $createdTimestamp <= 0) {
+                $violations[] = 'Mindestalter-Regel konnte nicht geprüft werden (fehlendes Erstellungsdatum).';
+            } else {
+                $ageHours = (int) floor(max(0, time() - $createdTimestamp) / 3600);
+                if ($ageHours < $minimumAgeHours) {
+                    $violations[] = 'Eintrag muss mindestens ' . $minimumAgeHours . ' Stunde(n) alt sein.';
+                }
+            }
+        }
+
+        return $violations;
     }
 
     public function syncPublicCatalogs(): void
@@ -468,6 +573,7 @@ final class CMS_Marketplace_Service
             'cms_root' => $this->getStorageBaseUrl() . '/core/365cms',
             'cms_update' => $this->getStorageBaseUrl() . '/core/365cms/update.json',
             'submit' => $this->getPublicSubmissionUrl(),
+            'security_report' => $this->getPublicSecurityReportUrl(),
         ];
     }
 
@@ -479,7 +585,26 @@ final class CMS_Marketplace_Service
         }
 
         $siteUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
-        return $siteUrl . $this->normalizePublicPath((string) ($settings['public_submission_path'] ?? '/marketplace-submit'));
+        $path = $this->normalizePublicPath((string) ($settings['public_submission_path'] ?? '/marketplace-submit'));
+        return $siteUrl . $this->localizePublicPath($path);
+    }
+
+    public function getPublicSecurityReportUrl(array $query = [], ?string $lang = null): string
+    {
+        $settings = $this->getSettings();
+        if (empty($settings['security_reports_enabled'])) {
+            return '';
+        }
+
+        $siteUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
+        $path = $this->normalizePublicPath((string) ($settings['security_report_path'] ?? '/marketplace-security-report'));
+        $url = $siteUrl . $this->localizePublicPath($path, $lang);
+        if ($query === []) {
+            return $url;
+        }
+
+        $queryString = http_build_query($query);
+        return $queryString !== '' ? ($url . '?' . $queryString) : $url;
     }
 
     public function getPublicSubmissionPaths(): array
@@ -628,6 +753,99 @@ final class CMS_Marketplace_Service
         ];
     }
 
+    public function getSecurityReports(): array
+    {
+        $reports = $this->readSecurityReports();
+        usort($reports, static function (array $a, array $b): int {
+            return strcmp((string) ($b['created_at'] ?? ''), (string) ($a['created_at'] ?? ''));
+        });
+
+        return $reports;
+    }
+
+    public function submitSecurityReport(array $input, string $lang = 'de'): array
+    {
+        $type = $this->normalizeType((string) ($input['type'] ?? ''));
+        $slug = $this->normalizeSlug((string) ($input['slug'] ?? ''));
+        $version = $this->normalizeVersion((string) ($input['version'] ?? ''));
+        $title = $this->sanitizeText((string) ($input['title'] ?? ''), 190);
+        $details = $this->sanitizeTextarea((string) ($input['details'] ?? ''), 4000);
+        $reporterName = $this->sanitizeText((string) ($input['reporter_name'] ?? ''), 190);
+        $reporterEmail = $this->sanitizeEmail((string) ($input['reporter_email'] ?? ''));
+
+        if ($type === '' || $slug === '' || $version === '' || $title === '' || $details === '' || $reporterName === '' || $reporterEmail === '') {
+            return ['success' => false, 'message' => $this->i18nText('security_required_fields', $lang, 'Bitte fülle alle Pflichtfelder aus.', 'Please fill out all required fields.')];
+        }
+
+        $item = $this->repository->findByTypeSlugVersion($type, $slug, $version);
+        if ($item === null || empty($item['is_published'])) {
+            return ['success' => false, 'message' => $this->i18nText('security_item_not_found', $lang, 'Für Typ, Slug und Version wurde kein veröffentlichtes Paket gefunden.', 'No published package was found for type, slug, and version.')];
+        }
+
+        $reports = $this->readSecurityReports();
+        $nextId = 1;
+        foreach ($reports as $report) {
+            $nextId = max($nextId, (int) ($report['id'] ?? 0) + 1);
+        }
+
+        $now = gmdate('c');
+        $reports[] = [
+            'id' => $nextId,
+            'created_at' => $now,
+            'updated_at' => $now,
+            'status' => 'new',
+            'status_note' => '',
+            'lang' => $lang === 'en' ? 'en' : 'de',
+            'type' => $type,
+            'slug' => $slug,
+            'version' => $version,
+            'title' => $title,
+            'details' => $details,
+            'reporter_name' => $reporterName,
+            'reporter_email' => $reporterEmail,
+            'item_name' => (string) ($item['name'] ?? ''),
+        ];
+
+        if (!$this->writeSecurityReports($reports)) {
+            return ['success' => false, 'message' => $this->i18nText('security_save_failed', $lang, 'Die Sicherheitsmeldung konnte nicht gespeichert werden.', 'The security report could not be saved.')];
+        }
+
+        return ['success' => true, 'message' => $this->i18nText('security_saved', $lang, 'Danke. Die Sicherheitsmeldung wurde übermittelt und wird intern geprüft.', 'Thank you. The security report was submitted and will be reviewed internally.')];
+    }
+
+    public function updateSecurityReportStatus(int $reportId, string $status, string $statusNote = ''): array
+    {
+        $allowedStatuses = ['new', 'triaged', 'resolved', 'rejected'];
+        if (!in_array($status, $allowedStatuses, true)) {
+            return ['success' => false, 'message' => 'Ungültiger Sicherheitsstatus.'];
+        }
+
+        $reports = $this->readSecurityReports();
+        $updated = false;
+        foreach ($reports as &$report) {
+            if ((int) ($report['id'] ?? 0) !== $reportId) {
+                continue;
+            }
+
+            $report['status'] = $status;
+            $report['status_note'] = $this->sanitizeTextarea($statusNote, 500);
+            $report['updated_at'] = gmdate('c');
+            $updated = true;
+            break;
+        }
+        unset($report);
+
+        if (!$updated) {
+            return ['success' => false, 'message' => 'Sicherheitsmeldung wurde nicht gefunden.'];
+        }
+
+        if (!$this->writeSecurityReports($reports)) {
+            return ['success' => false, 'message' => 'Sicherheitsstatus konnte nicht gespeichert werden.'];
+        }
+
+        return ['success' => true, 'message' => 'Sicherheitsstatus wurde aktualisiert.'];
+    }
+
     public function getPublicEntryUrls(array $item): array
     {
         $type = $this->normalizeType((string) ($item['type'] ?? ''));
@@ -773,6 +991,11 @@ final class CMS_Marketplace_Service
         $priceAmount = $isPaid ? $this->normalizePriceAmount($item['price_amount'] ?? null) : null;
         $priceCurrency = $isPaid ? $this->normalizeCurrency((string) ($item['price_currency'] ?? 'EUR')) : 'EUR';
         $priceLabel = $isPaid && $priceAmount !== null ? $this->formatPriceLabel($priceAmount, $priceCurrency) : '';
+        $securityReportUrl = $this->getPublicSecurityReportUrl([
+            'type' => (string) ($item['type'] ?? ''),
+            'slug' => (string) ($item['slug'] ?? ''),
+            'version' => (string) ($item['version'] ?? ''),
+        ]);
 
         return [
             'slug' => (string) ($item['slug'] ?? ''),
@@ -787,6 +1010,8 @@ final class CMS_Marketplace_Service
             'manifest' => (string) ($urls['manifest'] ?? ''),
             'update_url' => (string) ($urls['update'] ?? ''),
             'purchase_url' => (string) ($urls['purchase'] ?? ''),
+            'security_report_url' => $securityReportUrl,
+            'security_disclosure_url' => $securityReportUrl,
             'is_paid' => $isPaid,
             'is_commercial' => $isPaid,
             'price_amount' => $priceAmount,
@@ -1290,10 +1515,17 @@ final class CMS_Marketplace_Service
         return [
             'public_submission_enabled' => true,
             'public_submission_path' => '/marketplace-submit',
+            'security_reports_enabled' => true,
+            'security_report_path' => '/marketplace-security-report',
             'default_currency' => 'EUR',
             'contact_form_base_url' => defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '',
             'directory_view_depth' => 3,
             'show_file_sizes' => true,
+            'publish_guardrails_enabled' => true,
+            'guardrail_require_docs_url' => true,
+            'guardrail_require_changelog_url' => false,
+            'guardrail_require_checksum' => true,
+            'guardrail_min_age_hours' => 0,
             'cms_updates_enabled' => false,
             'cms_update_channel' => 'stable',
             'cms_update_notes' => '',
@@ -1318,10 +1550,17 @@ final class CMS_Marketplace_Service
         return [
             'public_submission_enabled' => !empty($merged['public_submission_enabled']),
             'public_submission_path' => $this->normalizePublicPath((string) ($merged['public_submission_path'] ?? '/marketplace-submit')),
+            'security_reports_enabled' => !empty($merged['security_reports_enabled']),
+            'security_report_path' => $this->normalizePublicPath((string) ($merged['security_report_path'] ?? '/marketplace-security-report')),
             'default_currency' => $this->sanitizeCurrencyCode((string) ($merged['default_currency'] ?? 'EUR')),
             'contact_form_base_url' => $this->sanitizeUrl((string) ($merged['contact_form_base_url'] ?? '')),
             'directory_view_depth' => max(1, min(6, (int) ($merged['directory_view_depth'] ?? 3))),
             'show_file_sizes' => !empty($merged['show_file_sizes']),
+            'publish_guardrails_enabled' => !empty($merged['publish_guardrails_enabled']),
+            'guardrail_require_docs_url' => !empty($merged['guardrail_require_docs_url']),
+            'guardrail_require_changelog_url' => !empty($merged['guardrail_require_changelog_url']),
+            'guardrail_require_checksum' => !empty($merged['guardrail_require_checksum']),
+            'guardrail_min_age_hours' => max(0, min(720, (int) ($merged['guardrail_min_age_hours'] ?? 0))),
             'cms_updates_enabled' => !empty($merged['cms_updates_enabled']),
             'cms_update_channel' => in_array((string) ($merged['cms_update_channel'] ?? 'stable'), ['stable', 'beta', 'dev'], true) ? (string) $merged['cms_update_channel'] : 'stable',
             'cms_update_notes' => trim((string) ($merged['cms_update_notes'] ?? '')),
@@ -1389,6 +1628,70 @@ final class CMS_Marketplace_Service
         return $path !== '' ? $path : '/';
     }
 
+    private function normalizeComparableRequestPath(string $requestUri): string
+    {
+        $path = (string) (parse_url($requestUri, PHP_URL_PATH) ?? '/');
+        $path = $this->normalizeComparableRoutePath($path);
+
+        if (function_exists('cms_plugin_public_path_without_lang')) {
+            return cms_plugin_public_path_without_lang($path);
+        }
+
+        if ($path === 'en') {
+            return '';
+        }
+
+        if (str_starts_with($path, 'en/')) {
+            return substr($path, 3) ?: '';
+        }
+
+        return $path;
+    }
+
+    private function normalizeComparableRoutePath(string $path): string
+    {
+        if (function_exists('cms_plugin_public_normalize_path')) {
+            return cms_plugin_public_normalize_path($path);
+        }
+
+        $path = trim($path);
+        $path = (string) preg_replace('#/+#', '/', $path);
+        return strtolower(trim($path, '/'));
+    }
+
+    private function localizePublicPath(string $path, ?string $lang = null): string
+    {
+        $path = $this->normalizePublicPath($path);
+        $language = $lang ?? $this->resolveCurrentPublicLanguage();
+        if (function_exists('cms_plugin_public_localized_path')) {
+            return cms_plugin_public_localized_path($path, $language);
+        }
+
+        if ($language === 'en') {
+            return '/en' . $path;
+        }
+
+        return $path;
+    }
+
+    private function resolveCurrentPublicLanguage(): string
+    {
+        if (function_exists('cms_plugin_public_language')) {
+            return cms_plugin_public_language();
+        }
+
+        return 'de';
+    }
+
+    private function i18nText(string $key, string $lang, string $de, string $en): string
+    {
+        if (function_exists('cms_plugin_public_i18n_value')) {
+            return cms_plugin_public_i18n_value([$key => $de, $key . '_en' => $en], $key, $lang, $de);
+        }
+
+        return $lang === 'en' ? $en : $de;
+    }
+
     private function normalizeDirectoryRelativePath(string $path): string
     {
         $path = str_replace('\\', '/', trim($path));
@@ -1406,6 +1709,76 @@ final class CMS_Marketplace_Service
         }
 
         return $this->limitUtf8(implode('/', $segments), 512);
+    }
+
+    private function getSecurityReportsFilePath(): string
+    {
+        return CMS_MARKETPLACE_PLUGIN_DIR . 'data' . DIRECTORY_SEPARATOR . self::SECURITY_REPORTS_FILE;
+    }
+
+    private function readSecurityReports(): array
+    {
+        $file = $this->getSecurityReportsFilePath();
+        if (!is_file($file)) {
+            return [];
+        }
+
+        $size = @filesize($file);
+        if (!is_int($size) || $size < 0 || $size > 1024 * 1024) {
+            return [];
+        }
+
+        $raw = @file_get_contents($file);
+        if (!is_string($raw) || trim($raw) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $reports = [];
+        foreach ($decoded as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            $reports[] = [
+                'id' => (int) ($entry['id'] ?? 0),
+                'created_at' => (string) ($entry['created_at'] ?? ''),
+                'updated_at' => (string) ($entry['updated_at'] ?? ''),
+                'status' => (string) ($entry['status'] ?? 'new'),
+                'status_note' => (string) ($entry['status_note'] ?? ''),
+                'lang' => (string) ($entry['lang'] ?? 'de'),
+                'type' => (string) ($entry['type'] ?? ''),
+                'slug' => (string) ($entry['slug'] ?? ''),
+                'version' => (string) ($entry['version'] ?? ''),
+                'title' => (string) ($entry['title'] ?? ''),
+                'details' => (string) ($entry['details'] ?? ''),
+                'reporter_name' => (string) ($entry['reporter_name'] ?? ''),
+                'reporter_email' => (string) ($entry['reporter_email'] ?? ''),
+                'item_name' => (string) ($entry['item_name'] ?? ''),
+            ];
+        }
+
+        return $reports;
+    }
+
+    private function writeSecurityReports(array $reports): bool
+    {
+        $file = $this->getSecurityReportsFilePath();
+        $dir = dirname($file);
+        if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
+            return false;
+        }
+
+        $json = json_encode(array_values($reports), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        if (!is_string($json)) {
+            return false;
+        }
+
+        return file_put_contents($file, $json . PHP_EOL, LOCK_EX) !== false;
     }
 
     private function buildFilePreview(string $absolutePath): string

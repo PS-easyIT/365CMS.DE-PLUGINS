@@ -42,17 +42,19 @@ final class RequestInspector
     public static function isKnowledgebaseRequest(?string $path = null): bool
     {
         $path = $path ?? self::currentBasePath();
+        $normalizedPath = self::normalizePublicPath($path);
 
-        return $path === '/kb'
-            || str_starts_with($path, '/kb/')
-            || $path === '/glossar';
+        return $normalizedPath === '/kb'
+            || str_starts_with($normalizedPath, '/kb/')
+            || $normalizedPath === '/glossar';
     }
 
     public static function isGlossaryRequest(?string $path = null): bool
     {
         $path = $path ?? self::currentBasePath();
+        $normalizedPath = self::normalizePublicPath($path);
 
-        return $path === '/glossar';
+        return $normalizedPath === '/glossar';
     }
 
     public static function shouldLoadTooltipAssets(): bool
@@ -161,5 +163,22 @@ final class RequestInspector
 
             return false;
         }
+    }
+
+    private static function normalizePublicPath(string $path): string
+    {
+        $path = trim($path);
+        if ($path === '') {
+            return '/';
+        }
+
+        if (function_exists('cms_plugin_public_normalize_path') && function_exists('cms_plugin_public_path_without_lang')) {
+            $normalizedPath = cms_plugin_public_normalize_path($path);
+            $withoutLang = cms_plugin_public_path_without_lang($normalizedPath);
+
+            return '/' . ltrim($withoutLang, '/');
+        }
+
+        return $path;
     }
 }

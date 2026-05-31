@@ -15,6 +15,20 @@ if (!defined('ABSPATH')) exit;
 
 // $category, $items, $settings, $pagination, $search werden vom Public-Controller bereitgestellt
 
+$lang               = ($lang ?? 'de') === 'en' ? 'en' : 'de';
+$i18n               = [
+    'all_feeds' => $lang === 'en' ? 'All feeds' : 'Alle Feeds',
+    'search_placeholder' => $lang === 'en' ? 'Search in %s…' : 'In %s suchen…',
+    'search_aria' => $lang === 'en' ? 'Search section' : 'Bereich durchsuchen',
+    'search_button' => $lang === 'en' ? 'Search' : 'Suchen',
+    'results_for' => $lang === 'en' ? 'Results for' : 'Ergebnisse für',
+    'reset' => $lang === 'en' ? 'Reset' : 'Zurücksetzen',
+    'empty_search' => $lang === 'en' ? 'No posts found for this search.' : 'Keine Beiträge für diese Suche gefunden.',
+    'empty_default' => $lang === 'en' ? 'No posts in this section yet.' : 'Noch keine Beiträge in diesem Bereich.',
+    'prev' => $lang === 'en' ? '← Previous' : '← Zurück',
+    'next' => $lang === 'en' ? 'Next →' : 'Weiter →',
+    'page_of' => $lang === 'en' ? 'Page %d of %d' : 'Seite %d von %d',
+];
 $archiveSlug        = $settings['archive_slug'] ?? 'feeds';
 $archivePath        = $archivePath ?? '/' . (preg_replace('/[^a-z0-9\-]/', '', strtolower(trim((string) $archiveSlug, '/'))) ?: 'feeds');
 $publicCategoryPath = $publicCategoryPath ?? '/feed/' . rawurlencode((string) ($category['slug'] ?? ''));
@@ -29,7 +43,7 @@ $newTab             = !empty($settings['open_in_new_tab']);
 <header class="fd-header">
     <div class="fd-header__inner">
         <div class="fd-header__breadcrumb">
-            <a href="<?php echo htmlspecialchars((string) $archivePath, ENT_QUOTES, 'UTF-8'); ?>">Alle Feeds</a>
+            <a href="<?php echo htmlspecialchars((string) $archivePath, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($i18n['all_feeds'], ENT_QUOTES, 'UTF-8'); ?></a>
         </div>
         <h1 class="fd-header__title">
             <span class="fd-header__icon"><?php echo htmlspecialchars((string) ($category['icon'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></span>
@@ -43,8 +57,8 @@ $newTab             = !empty($settings['open_in_new_tab']);
         <form method="GET" action="<?php echo htmlspecialchars((string) $publicCategoryPath, ENT_QUOTES, 'UTF-8'); ?>" class="fd-search">
             <input type="text" name="q" class="fd-search__input"
                      value="<?php echo htmlspecialchars((string) ($search ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
-                     placeholder="In <?php echo htmlspecialchars((string) ($category['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?> suchen…">
-                 <button type="submit" class="fd-search__btn" aria-label="Bereich durchsuchen">Suchen</button>
+                     placeholder="<?php echo htmlspecialchars(sprintf($i18n['search_placeholder'], (string) ($category['name'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>">
+                 <button type="submit" class="fd-search__btn" aria-label="<?php echo htmlspecialchars($i18n['search_aria'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($i18n['search_button'], ENT_QUOTES, 'UTF-8'); ?></button>
         </form>
     </div>
 </header>
@@ -54,8 +68,8 @@ $newTab             = !empty($settings['open_in_new_tab']);
     <!-- Suchergebnis-Hinweis -->
     <?php if (!empty($search)): ?>
     <div class="fd-search-hint">
-        Ergebnisse für „<strong><?php echo htmlspecialchars((string) $search, ENT_QUOTES, 'UTF-8'); ?></strong>"
-        <a href="<?php echo htmlspecialchars((string) $publicCategoryPath, ENT_QUOTES, 'UTF-8'); ?>" class="fd-search-hint__reset">Zurücksetzen</a>
+        <?php echo htmlspecialchars($i18n['results_for'], ENT_QUOTES, 'UTF-8'); ?> „<strong><?php echo htmlspecialchars((string) $search, ENT_QUOTES, 'UTF-8'); ?></strong>"
+        <a href="<?php echo htmlspecialchars((string) $publicCategoryPath, ENT_QUOTES, 'UTF-8'); ?>" class="fd-search-hint__reset"><?php echo htmlspecialchars($i18n['reset'], ENT_QUOTES, 'UTF-8'); ?></a>
     </div>
     <?php endif; ?>
 
@@ -63,7 +77,7 @@ $newTab             = !empty($settings['open_in_new_tab']);
     <div class="fd-empty">
         <p class="fd-empty__icon"><?php echo htmlspecialchars((string) ($category['icon'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
         <p class="fd-empty__text">
-            <?php echo !empty($search) ? 'Keine Beiträge für diese Suche gefunden.' : 'Noch keine Beiträge in diesem Bereich.'; ?>
+            <?php echo !empty($search) ? $i18n['empty_search'] : $i18n['empty_default']; ?>
         </p>
     </div>
     <?php else: ?>
@@ -76,9 +90,9 @@ $newTab             = !empty($settings['open_in_new_tab']);
             $isMagazineHero = ($layout === 'magazine' && $isFirst);
         ?>
         <?php if ($isMagazineHero): ?>
-            <?php CMS_Feed_Template_Loader::instance()->get_template_part('feed-card', '', ['item' => $item, 'settings' => $settings, 'isMagazineHero' => true]); ?>
+            <?php CMS_Feed_Template_Loader::instance()->get_template_part('feed-card', '', ['item' => $item, 'settings' => $settings, 'isMagazineHero' => true, 'lang' => $lang]); ?>
         <?php else: ?>
-            <?php CMS_Feed_Template_Loader::instance()->get_template_part('feed-card', '', ['item' => $item, 'settings' => $settings, 'isMagazineHero' => false]); ?>
+            <?php CMS_Feed_Template_Loader::instance()->get_template_part('feed-card', '', ['item' => $item, 'settings' => $settings, 'isMagazineHero' => false, 'lang' => $lang]); ?>
         <?php endif; ?>
         <?php
             $isFirst = false;
@@ -92,16 +106,16 @@ $newTab             = !empty($settings['open_in_new_tab']);
     <div class="fd-pagination">
         <?php if ($page > 1): ?>
         <a href="?page=<?php echo max(1, (int) $page - 1); ?><?php echo !empty($search) ? '&q=' . rawurlencode((string) $search) : ''; ?>"
-           class="fd-pagination__btn">← Zurück</a>
+           class="fd-pagination__btn"><?php echo htmlspecialchars($i18n['prev'], ENT_QUOTES, 'UTF-8'); ?></a>
         <?php endif; ?>
 
         <span class="fd-pagination__info">
-            Seite <?php echo (int) $page; ?> von <?php echo (int) $pages; ?>
+            <?php echo htmlspecialchars(sprintf($i18n['page_of'], (int) $page, (int) $pages), ENT_QUOTES, 'UTF-8'); ?>
         </span>
 
         <?php if ($page < $pages): ?>
         <a href="?page=<?php echo (int) $page + 1; ?><?php echo !empty($search) ? '&q=' . rawurlencode((string) $search) : ''; ?>"
-           class="fd-pagination__btn">Weiter →</a>
+           class="fd-pagination__btn"><?php echo htmlspecialchars($i18n['next'], ENT_QUOTES, 'UTF-8'); ?></a>
         <?php endif; ?>
     </div>
     <?php endif; ?>

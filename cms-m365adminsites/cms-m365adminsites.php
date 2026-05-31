@@ -42,9 +42,11 @@ final class CMS_M365ADMINSITES
     {
         $pluginBase = realpath(CMS_M365ADMINSITES_PLUGIN_DIR) ?: CMS_M365ADMINSITES_PLUGIN_DIR;
         $sharedContract = realpath(CMS_M365ADMINSITES_PLUGIN_DIR . '../shared/admin/plugin-admin-contract.php') ?: '';
+        $sharedPublicI18n = realpath(CMS_M365ADMINSITES_PLUGIN_DIR . '../shared/public/plugin-public-i18n.php') ?: '';
 
         $files = [
             CMS_M365ADMINSITES_PLUGIN_DIR . '../shared/admin/plugin-admin-contract.php',
+            CMS_M365ADMINSITES_PLUGIN_DIR . '../shared/public/plugin-public-i18n.php',
             CMS_M365ADMINSITES_PLUGIN_DIR . 'includes/class-settings.php',
             CMS_M365ADMINSITES_PLUGIN_DIR . 'includes/class-repository.php',
             CMS_M365ADMINSITES_PLUGIN_DIR . 'includes/class-installer.php',
@@ -61,7 +63,8 @@ final class CMS_M365ADMINSITES
             }
 
             $isPluginFile = str_starts_with($resolved, rtrim((string) $pluginBase, '\\/') . DIRECTORY_SEPARATOR);
-            $isAllowedShared = $sharedContract !== '' && $resolved === $sharedContract;
+            $isAllowedShared = ($sharedContract !== '' && $resolved === $sharedContract)
+                || ($sharedPublicI18n !== '' && $resolved === $sharedPublicI18n);
 
             if (!$isPluginFile && !$isAllowedShared) {
                 error_log('CMS M365 Adminsites skipped unsafe include: ' . $resolved);

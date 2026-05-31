@@ -93,6 +93,9 @@ final class CMS_Forum_Database
         if (version_compare($current, '1.0.1', '<')) {
             $this->migrate_to_101();
         }
+        if (version_compare($current, '1.0.2', '<')) {
+            $this->migrate_to_102();
+        }
 
         $this->store_db_version(CMS_FORUM_DB_VERSION);
     }
@@ -157,6 +160,8 @@ final class CMS_Forum_Database
             is_pinned     TINYINT(1)   NOT NULL DEFAULT 0,
             is_locked     TINYINT(1)   NOT NULL DEFAULT 0,
             has_poll      TINYINT(1)   NOT NULL DEFAULT 0,
+            accepted_post_id INT UNSIGNED DEFAULT NULL,
+            accepted_at   DATETIME     DEFAULT NULL,
             view_count    INT UNSIGNED NOT NULL DEFAULT 0,
             reply_count   INT UNSIGNED NOT NULL DEFAULT 0,
             last_post_id  INT UNSIGNED DEFAULT NULL,
@@ -431,6 +436,26 @@ final class CMS_Forum_Database
             $pdo->exec("ALTER TABLE `{$tbl}`
                 CHANGE `like_received` `likes_received` INT UNSIGNED NOT NULL DEFAULT 0,
                 CHANGE `like_given`    `likes_given`    INT UNSIGNED NOT NULL DEFAULT 0");
+        }
+    }
+
+    /**
+     * v1.0.2 – Accepted-Answer-Spalten ergänzen.
+     */
+    private function migrate_to_102(): void
+    {
+        $db  = \CMS\Database::instance();
+        $pdo = $db->getPdo();
+        $tbl = $db->prefix() . 'cmsforum_threads';
+
+        $accepted = $pdo->query("SHOW COLUMNS FROM `{$tbl}` LIKE 'accepted_post_id'")->fetchAll();
+        if (empty($accepted)) {
+            $pdo->exec("ALTER TABLE `{$tbl}` ADD `accepted_post_id` INT UNSIGNED DEFAULT NULL AFTER `has_poll`");
+        }
+
+        $acceptedAt = $pdo->query("SHOW COLUMNS FROM `{$tbl}` LIKE 'accepted_at'")->fetchAll();
+        if (empty($acceptedAt)) {
+            $pdo->exec("ALTER TABLE `{$tbl}` ADD `accepted_at` DATETIME DEFAULT NULL AFTER `accepted_post_id`");
         }
     }
 

@@ -27,6 +27,8 @@ final class CMS_M365CALCULATOR_License_Advisor
             'billing_cycle' => 'annual',
             'pstn_provider' => 'third_party',
             'tenant_storage_tb' => 1.0,
+            'assignment_model' => 'mixed',
+            'inactive_license_ratio' => 5,
             'groups' => [
                 [
                     'label' => 'Knowledge Worker',
@@ -51,6 +53,8 @@ final class CMS_M365CALCULATOR_License_Advisor
         $input['billing_cycle'] = self::enum((string) ($source['billing_cycle'] ?? 'annual'), ['annual', 'annual_monthly', 'monthly', 'three_year'], 'annual');
         $input['pstn_provider'] = self::enum((string) ($source['pstn_provider'] ?? 'third_party'), ['microsoft', 'third_party', 'none'], 'third_party');
         $input['tenant_storage_tb'] = max(0.0, min(9999.0, (float) str_replace(',', '.', (string) ($source['tenant_storage_tb'] ?? 1))));
+        $input['assignment_model'] = self::enum((string) ($source['assignment_model'] ?? 'mixed'), ['direct', 'mixed', 'group'], 'mixed');
+        $input['inactive_license_ratio'] = max(0, min(100, (int) ($source['inactive_license_ratio'] ?? 5)));
 
         $labels = is_array($source['group_label'] ?? null) ? $source['group_label'] : [];
         $quantities = is_array($source['group_quantity'] ?? null) ? $source['group_quantity'] : [];
@@ -169,6 +173,7 @@ final class CMS_M365CALCULATOR_License_Advisor
 
         $status = self::resolve_overall_status($rows, count($baseSlugs), $hasAddons, $hasCritical);
         $annual = $grandMonthly * 12;
+        $riskSignals = self::build_license_assignment_risk_signals($input);
 
         return [
             'status' => $status,
@@ -178,7 +183,11 @@ final class CMS_M365CALCULATOR_License_Advisor
             'annual_total' => round($annual, 2),
             'three_year_total' => round($annual * 3, 2),
             'billing' => $billing,
-            'warnings' => array_values(array_unique($warnings)),
+            'warnings' => array_values(array_unique(array_merge(
+                $warnings,
+                array_values(array_map(static fn(array $signal): string => (string) ($signal['message'] ?? ''), $riskSignals['entries'] ?? []))
+            ))),
+            'risk_signals' => $riskSignals,
             'sources' => is_array($commercialRules['sources'] ?? null) ? $commercialRules['sources'] : [],
         ];
     }
@@ -464,6 +473,19 @@ final class CMS_M365CALCULATOR_License_Advisor
         $audiencePenalty = self::audience_penalty($plan, (string) ($requirements['audience'] ?? 'knowledge'));
         $preferredBonus = in_array((string) ($plan['family'] ?? ''), array_map('strval', $requirements['preferred_families'] ?? []), true) ? 5 : 0;
         $fitScore = max(0, min(100, (int) round(($featureCoverage * 80) + $preferredBonus + 15 - $addonPenalty - $criticalPenalty - $missingPenalty - $audiencePenalty)));
+        $matrixValidation = CMS_M365CALCULATOR_Addon_Configurator::validate_offer_matrix(
+            $plan,
+            array_values(array_keys($selectedAddons)),
+            $quantity,
+            [
+                'pstn_provider' => (string) ($input['pstn_provider'] ?? 'third_party'),
+                'requirements' => array_values(array_map('strval', $requirements['features'] ?? [])),
+            ]
+        );
+        $warnings = array_merge(
+            $warnings,
+            array_values(array_map(static fn(array $entry): string => (string) ($entry['message'] ?? ''), $matrixValidation['entries'] ?? []))
+        );
 
         return [
             'base' => $plan,
@@ -474,6 +496,7 @@ final class CMS_M365CALCULATOR_License_Advisor
             'fit_score' => $fitScore,
             'warnings' => $warnings,
             'critical' => $critical,
+            'offer_matrix' => $matrixValidation,
             'missing_base_features' => $missingBase,
             'explanation' => self::build_candidate_explanation($plan, array_values($selectedAddons), $missingBase, $critical),
             'rank' => ($monthlyTotal * 100) + ((100 - $fitScore) * 10) + (count($critical) * 100000) + $audiencePenalty,
@@ -634,6 +657,58 @@ final class CMS_M365CALCULATOR_License_Advisor
         }
 
         return ['key' => 'base', 'label' => 'Basislizenz reicht aus', 'tone' => 'success'];
+    }
+
+    /**
+     * @param array<string,mixed> $input
+     * @return array<string,mixed>
+     */
+    private static function build_license_assignment_risk_signals(array $input): array
+    {
+        $ruleset = CMS_M365CALCULATOR_Catalog::license_assignment_risk_rules();
+        $rules = is_array($ruleset['rules'] ?? null) ? $ruleset['rules'] : [];
+        $entries = [];
+        $score = 0;
+        $assignmentModel = (string) ($input['assignment_model'] ?? 'mixed');
+        $inactiveRatio = (int) ($input['inactive_license_ratio'] ?? 0);
+
+        $assignmentRules = is_array($rules['assignment_model'] ?? null) ? $rules['assignment_model'] : [];
+        if (is_array($assignmentRules[$assignmentModel] ?? null)) {
+            $rule = $assignmentRules[$assignmentModel];
+            $entry = [
+                'key' => 'assignment-model-' . $assignmentModel,
+                'severity' => self::enum((string) ($rule['severity'] ?? 'info'), ['info', 'success', 'warning', 'danger'], 'info'),
+                'score' => max(0, (int) ($rule['score'] ?? 0)),
+                'message' => (string) ($rule['message_de'] ?? ''),
+            ];
+            $entries[] = $entry;
+            $score += (int) $entry['score'];
+        }
+
+        $inactiveRules = is_array($rules['inactive_ratio'] ?? null) ? $rules['inactive_ratio'] : [];
+        usort($inactiveRules, static fn(array $left, array $right): int => ((int) ($right['min'] ?? 0)) <=> ((int) ($left['min'] ?? 0)));
+        foreach ($inactiveRules as $rule) {
+            if (!is_array($rule) || $inactiveRatio < (int) ($rule['min'] ?? 0)) {
+                continue;
+            }
+
+            $entry = [
+                'key' => 'inactive-ratio',
+                'severity' => self::enum((string) ($rule['severity'] ?? 'info'), ['info', 'success', 'warning', 'danger'], 'info'),
+                'score' => max(0, (int) ($rule['score'] ?? 0)),
+                'message' => (string) ($rule['message_de'] ?? ''),
+            ];
+            $entries[] = $entry;
+            $score += (int) $entry['score'];
+            break;
+        }
+
+        return [
+            'score' => max(0, min(100, $score)),
+            'entries' => $entries,
+            'inactive_ratio' => $inactiveRatio,
+            'assignment_model' => $assignmentModel,
+        ];
     }
 
     /**

@@ -90,6 +90,17 @@ final class Post
         return $row ?: null;
     }
 
+    public function findByThreadAndId(int $threadId, int $postId): ?object
+    {
+        $stmt = $this->db()->prepare(
+            "SELECT * FROM {$this->table()} WHERE thread_id = ? AND id = ? AND is_deleted = 0 AND is_approved = 1"
+        );
+        $stmt->execute([$threadId, $postId]);
+        $row = $stmt->fetch(\PDO::FETCH_OBJ);
+
+        return $row ?: null;
+    }
+
     /**
      * Neuen Beitrag erstellen.
      */

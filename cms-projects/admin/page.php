@@ -27,8 +27,22 @@ $renderBoardPreview = static function (array $board): string {
     foreach ($groups as $group) {
         $title = htmlspecialchars((string) ($group['title'] ?? 'Block'), ENT_QUOTES, 'UTF-8');
         $columnKey = htmlspecialchars((string) ($group['key'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $wipLimit = max(0, (int) ($group['wip_limit'] ?? 0));
+        $wipCount = max(0, (int) ($group['wip_count'] ?? count((array) ($group['tasks'] ?? []))));
+        $wipReached = !empty($group['wip_limit_reached']);
+        $wipOverLimit = !empty($group['wip_over_limit']);
         echo '<article class="cp-board-preview-column" data-drop-board-id="' . $boardId . '" data-drop-column-key="' . $columnKey . '">';
         echo '<h4>' . $title . '</h4>';
+        if ($wipLimit > 0) {
+            echo '<div class="cp-ticket-meta">';
+            echo '<span class="cp-badge">WIP ' . $wipCount . '/' . $wipLimit . '</span>';
+            if ($wipOverLimit) {
+                echo '<span class="cp-badge">Limit ueberschritten</span>';
+            } elseif ($wipReached) {
+                echo '<span class="cp-badge">Limit erreicht</span>';
+            }
+            echo '</div>';
+        }
         echo '<ul>';
         foreach ((array) ($group['items'] ?? []) as $item) {
             echo '<li>' . htmlspecialchars((string) $item, ENT_QUOTES, 'UTF-8') . '</li>';
@@ -311,9 +325,13 @@ $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
   "columns": [
     {
       "title": "Backlog",
+      "wip_limit": 5,
       "items": ["Feature definieren", "Team briefen"]
     }
-  ]
+  ],
+  "meta": {
+    "note": "wip_limit ist optional und blendet nur Warnungen ein."
+  }
 }</textarea><small class="cp-field-hint">Nur gültiges JSON. Nicht erlaubte Inhalte werden serverseitig gefiltert.</small></label>
                     <label class="cp-checkbox-row"><input type="checkbox" name="is_public" value="1" checked><span>Auch im Public-Dashboard zeigen</span></label>
                     <label class="cp-checkbox-row"><input type="checkbox" name="is_active" value="1" checked><span>Board aktiv</span></label>
@@ -432,6 +450,47 @@ $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
         </div>
 
         <div class="cp-admin-grid cp-admin-grid-bottom">
+            <section class="cp-panel cp-panel-wide">
+                <div class="cp-panel-head"><h2>Audit Trail</h2></div>
+                <?php if (($auditLogs ?? []) === []): ?>
+                    <div class="cp-empty-state">Noch keine Audit-Einträge vorhanden.</div>
+                <?php else: ?>
+                    <div class="cp-table-wrap">
+                        <table class="widefat striped cp-table">
+                            <thead>
+                                <tr>
+                                    <th>Zeitpunkt</th>
+                                    <th>User</th>
+                                    <th>Aktion</th>
+                                    <th>Entität</th>
+                                    <th>Projekt</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ((array) $auditLogs as $auditLog): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars((string) ($auditLog['created_at'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?php echo htmlspecialchars((string) (($auditLog['actor_name'] ?? '') !== '' ? ($auditLog['actor_name'] ?? '') : 'system'), ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><code><?php echo htmlspecialchars((string) ($auditLog['action'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></code></td>
+                                        <td>
+                                            <?php echo htmlspecialchars((string) ($auditLog['entity_type'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                                            <?php if ((int) ($auditLog['entity_id'] ?? 0) > 0): ?>
+                                                #<?php echo (int) ($auditLog['entity_id'] ?? 0); ?>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?php echo (int) ($auditLog['project_id'] ?? 0); ?></td>
+                                        <td>
+                                            <span class="cp-badge"><?php echo htmlspecialchars((string) ($auditLog['result'] ?? 'success'), ENT_QUOTES, 'UTF-8'); ?></span>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </section>
+
             <section class="cp-panel cp-panel-wide">
                 <div class="cp-panel-head"><h2>Projektboards</h2></div>
                 <?php if ($projectBoards === []): ?>

@@ -13,10 +13,12 @@ final class CMS_Projects_Repository
     private string $boardsTable = 'projects_boards';
     private string $widgetsTable = 'projects_widgets';
     private string $tasksTable = 'projects_tasks';
+    private string $auditLogTable = 'projects_audit_logs';
     private string $projectsTableFull;
     private string $boardsTableFull;
     private string $widgetsTableFull;
     private string $tasksTableFull;
+    private string $auditLogTableFull;
 
     public function __construct()
     {
@@ -26,6 +28,7 @@ final class CMS_Projects_Repository
         $this->boardsTableFull = $this->sanitizeSqlIdentifier($prefix . $this->boardsTable);
         $this->widgetsTableFull = $this->sanitizeSqlIdentifier($prefix . $this->widgetsTable);
         $this->tasksTableFull = $this->sanitizeSqlIdentifier($prefix . $this->tasksTable);
+        $this->auditLogTableFull = $this->sanitizeSqlIdentifier($prefix . $this->auditLogTable);
     }
 
     public function ensureTables(): void
@@ -103,6 +106,22 @@ final class CMS_Projects_Repository
             KEY `idx_project_board_column` (`project_id`, `board_id`, `column_key`),
             KEY `idx_board_public_active` (`board_id`, `is_public`, `is_active`),
             KEY `idx_project_sort` (`project_id`, `sort_order`, `id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $this->db->query("CREATE TABLE IF NOT EXISTS `{$this->auditLogTableFull}` (
+            `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            `actor_id` INT UNSIGNED NOT NULL DEFAULT 0,
+            `actor_name` VARCHAR(190) NOT NULL DEFAULT '',
+            `action` VARCHAR(80) NOT NULL,
+            `entity_type` VARCHAR(50) NOT NULL,
+            `entity_id` INT UNSIGNED NOT NULL DEFAULT 0,
+            `project_id` INT UNSIGNED NOT NULL DEFAULT 0,
+            `result` VARCHAR(20) NOT NULL DEFAULT 'success',
+            `context_json` LONGTEXT DEFAULT NULL,
+            `created_at` DATETIME NOT NULL,
+            PRIMARY KEY (`id`),
+            KEY `idx_created_at` (`created_at`),
+            KEY `idx_project_result` (`project_id`, `result`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
 
@@ -459,6 +478,31 @@ final class CMS_Projects_Repository
         ];
     }
 
+    public function insertAuditLog(array $payload): int|false
+    {
+        return $this->db->insert($this->auditLogTable, [
+            'actor_id' => max(0, (int) ($payload['actor_id'] ?? 0)),
+            'actor_name' => (string) ($payload['actor_name'] ?? ''),
+            'action' => (string) ($payload['action'] ?? ''),
+            'entity_type' => (string) ($payload['entity_type'] ?? ''),
+            'entity_id' => max(0, (int) ($payload['entity_id'] ?? 0)),
+            'project_id' => max(0, (int) ($payload['project_id'] ?? 0)),
+            'result' => (string) ($payload['result'] ?? 'success'),
+            'context_json' => (string) ($payload['context_json'] ?? ''),
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+    }
+
+    public function getAuditLogs(int $limit = 100): array
+    {
+        $limit = max(1, min(500, $limit));
+        $rows = $this->db->get_results(
+            "SELECT * FROM `{$this->auditLogTableFull}` ORDER BY id DESC LIMIT {$limit}"
+        ) ?: [];
+
+        return array_map([$this, 'mapAuditLogRow'], $rows);
+    }
+
     private function mapProjectRow(object $row): array
     {
         return [
@@ -530,6 +574,22 @@ final class CMS_Projects_Repository
             'payload' => (string) ($row->payload ?? ''),
             'created_at' => (string) ($row->created_at ?? ''),
             'updated_at' => (string) ($row->updated_at ?? ''),
+        ];
+    }
+
+    private function mapAuditLogRow(object $row): array
+    {
+        return [
+            'id' => (int) ($row->id ?? 0),
+            'actor_id' => (int) ($row->actor_id ?? 0),
+            'actor_name' => (string) ($row->actor_name ?? ''),
+            'action' => (string) ($row->action ?? ''),
+            'entity_type' => (string) ($row->entity_type ?? ''),
+            'entity_id' => (int) ($row->entity_id ?? 0),
+            'project_id' => (int) ($row->project_id ?? 0),
+            'result' => (string) ($row->result ?? 'success'),
+            'context_json' => (string) ($row->context_json ?? ''),
+            'created_at' => (string) ($row->created_at ?? ''),
         ];
     }
 

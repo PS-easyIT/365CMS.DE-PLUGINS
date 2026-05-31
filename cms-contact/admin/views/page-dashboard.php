@@ -246,4 +246,85 @@ $inactiveForms = max(0, count($allForms) - $activeForms);
 </div>
 </div>
 
+<div class="admin-card">
+    <div class="contact-panel-header">
+        <div>
+            <h3>🛡️ Security-Events (24h)</h3>
+            <p>Rate-Limits, CSRF-, Captcha- und Antispam-Blockierungen im Überblick.</p>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="stat-card">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-number"><?php echo number_format($securityStats['total'] ?? 0); ?></div>
+            <div class="stat-label">Events gesamt</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🧾</div>
+            <div class="stat-number"><?php echo number_format($securityStats['csrf_failed'] ?? 0); ?></div>
+            <div class="stat-label">CSRF fehlgeschlagen</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🧠</div>
+            <div class="stat-number"><?php echo number_format($securityStats['captcha_failed'] ?? 0); ?></div>
+            <div class="stat-label">Captcha fehlgeschlagen</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🚦</div>
+            <div class="stat-number"><?php echo number_format($securityStats['rate_limited'] ?? 0); ?></div>
+            <div class="stat-label">Rate-Limit ausgelöst</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🛑</div>
+            <div class="stat-number"><?php echo number_format($securityStats['invalid_status_attempt'] ?? 0); ?></div>
+            <div class="stat-label">Ungültige Statusversuche</div>
+        </div>
+    </div>
+
+    <?php if (!empty($recentSecurityEvents)): ?>
+    <div class="users-table-container">
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>Zeitpunkt</th>
+                    <th>Typ</th>
+                    <th>Grund</th>
+                    <th>Formular</th>
+                    <th>IP</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($recentSecurityEvents as $event): ?>
+                <?php
+                    $type = (string) ($event['event_type'] ?? '');
+                    $typeLabel = match ($type) {
+                        'csrf_failed' => 'CSRF fehlgeschlagen',
+                        'captcha_failed' => 'Captcha fehlgeschlagen',
+                        'rate_limited' => 'Rate-Limit',
+                        'antispam_rejected' => 'Antispam blockiert',
+                        'invalid_status_attempt' => 'Ungültiger Statusversuch',
+                        default => $type !== '' ? $type : 'Unbekannt',
+                    };
+                ?>
+                <tr>
+                    <td><?php echo htmlspecialchars(date('d.m.Y H:i', strtotime((string) ($event['created_at'] ?? 'now'))), ENT_QUOTES); ?></td>
+                    <td><?php echo htmlspecialchars($typeLabel, ENT_QUOTES); ?></td>
+                    <td><?php echo htmlspecialchars((string) ($event['reason'] ?? '—'), ENT_QUOTES); ?></td>
+                    <td><?php echo htmlspecialchars((string) ($event['form_title'] ?? '—'), ENT_QUOTES); ?></td>
+                    <td><?php echo htmlspecialchars((string) ($event['ip_address'] ?? '—'), ENT_QUOTES); ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php else: ?>
+    <div class="contact-empty-card">
+        <p class="dl-empty-icon">✅</p>
+        <p><strong>Keine Security-Events in den letzten 24 Stunden</strong></p>
+        <p class="contact-muted-text">Sobald Blockierungen auftreten, erscheinen sie hier automatisch.</p>
+    </div>
+    <?php endif; ?>
+</div>
+
 </div>

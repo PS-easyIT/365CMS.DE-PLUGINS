@@ -13,6 +13,7 @@ declare(strict_types=1);
 if (!defined('ABSPATH')) exit;
 
 $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
+$t = static fn(string $de, string $en): string => CMS_Contact_Frontend::t($de, $en);
 $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
 
 $theme = CMS\ThemeManager::instance();
@@ -23,7 +24,7 @@ $theme->getHeader();
     <main class="contact-main" aria-labelledby="contact-form-title">
         <article class="booking-contact-card">
             <header class="booking-contact-header">
-                <span class="booking-contact-badge" aria-hidden="true">Buchungsanfrage</span>
+                <span class="booking-contact-badge" aria-hidden="true"><?php echo $e($t('Buchungsanfrage', 'Booking request')); ?></span>
                 <h1 id="contact-form-title"><?php echo $e($form['title']); ?></h1>
                 <?php if (!empty($form['description'])): ?>
                 <p><?php echo $e($form['description']); ?></p>
@@ -48,6 +49,8 @@ $theme->getHeader();
                     </div>
                     <?php endif; ?>
 
+                    <?php echo CMS_Contact_Frontend::render_error_summary($fieldErrors ?? [], 'contact-form-title'); ?>
+
                     <div class="contact-fields">
                         <?php foreach ($fields as $field): ?>
                         <div class="contact-field contact-field-<?php echo $e($field['field_width'] ?? 'full'); ?>">
@@ -56,18 +59,12 @@ $theme->getHeader();
                         <?php endforeach; ?>
                     </div>
 
-                    <?php if (!empty($form['enable_captcha'])): ?>
-                    <div class="contact-field contact-field-full contact-captcha">
-                        <?php $a = rand(1, 10); $b = rand(1, 10); $_SESSION['captcha_expected_' . $form['slug']] = $a + $b; ?>
-                        <label class="contact-label" for="contact-captcha-answer">Spamschutz: <?php echo $a; ?> + <?php echo $b; ?> = ? <span class="contact-required">*</span></label>
-                        <input type="number" id="contact-captcha-answer" name="captcha_answer" class="contact-input" inputmode="numeric" required>
-                    </div>
-                    <?php endif; ?>
+                    <?php echo CMS_Contact_Frontend::render_captcha_field($form); ?>
 
                     <?php echo CMS_Contact_Frontend::render_privacy_consent($form, $old); ?>
 
                     <div class="contact-submit">
-                        <button type="submit" class="contact-btn contact-btn-primary">Anfrage absenden</button>
+                        <button type="submit" class="contact-btn contact-btn-primary"><?php echo $e($t('Anfrage absenden', 'Submit request')); ?></button>
                     </div>
                 </form>
                 <?php endif; ?>

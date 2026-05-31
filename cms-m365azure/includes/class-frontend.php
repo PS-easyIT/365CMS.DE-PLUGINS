@@ -16,6 +16,7 @@ final class CMS_M365Azure_Frontend
     private static ?self $instance = null;
     private bool $isArchiveRenderActive = false;
     private ?string $requestPathCache = null;
+    private ?string $requestLangCache = null;
 
     public static function instance(): self
     {
@@ -43,7 +44,19 @@ final class CMS_M365Azure_Frontend
         }
 
         $slug = $this->route_slug();
-        \CMS\Router::instance()->addRoute('GET', '/' . $slug, function (): void {
+        $defaultRoute = function_exists('cms_plugin_public_localized_path')
+            ? cms_plugin_public_localized_path($slug, 'de')
+            : '/' . $slug;
+        $englishRoute = function_exists('cms_plugin_public_localized_path')
+            ? cms_plugin_public_localized_path($slug, 'en')
+            : '/en/' . $slug;
+        $router = \CMS\Router::instance();
+        $router->addRoute('GET', $defaultRoute, function (): void {
+            $this->requestLangCache = 'de';
+            $this->render_archive();
+        });
+        $router->addRoute('GET', $englishRoute, function (): void {
+            $this->requestLangCache = 'en';
             $this->render_archive();
         });
     }
@@ -158,13 +171,31 @@ final class CMS_M365Azure_Frontend
             $settings = $repo->settings();
             $categories = $repo->categories(true);
             $services = $repo->services(null, true);
+            $lang = $this->current_language();
             $servicesByCategory = [];
             foreach ($services as $service) {
                 $servicesByCategory[(int) $service['category_id']][] = $service;
             }
 
-            $title = $this->setting($settings, 'seo_title', $this->setting($settings, 'page_title', 'Microsoft Azure Services'));
-            $description = $this->setting($settings, 'seo_description', $this->setting($settings, 'page_intro', 'Übersicht der wichtigsten Microsoft Azure Services.'));
+            $title = $this->localized_setting(
+                $settings,
+                'seo_title',
+                $lang,
+                $this->localized_setting($settings, 'page_title', $lang, $lang === 'en' ? 'Microsoft Azure Services' : 'Microsoft Azure Services')
+            );
+            $description = $this->localized_setting(
+                $settings,
+                'seo_description',
+                $lang,
+                $this->localized_setting(
+                    $settings,
+                    'page_intro',
+                    $lang,
+                    $lang === 'en'
+                        ? 'Overview of key Microsoft Azure services.'
+                        : 'Übersicht der wichtigsten Microsoft Azure Services.'
+                )
+            );
             $this->set_seo($title, $description);
 
             if (class_exists('CMS\\ThemeManager')) {
@@ -204,6 +235,19 @@ final class CMS_M365Azure_Frontend
         return $value !== '' ? $value : $default;
     }
 
+    /** @param array<string,string> $settings */
+    private function localized_setting(array $settings, string $key, string $lang, string $default = ''): string
+    {
+        if ($lang === 'en') {
+            $translated = $this->setting($settings, $key . '_en', '');
+            if ($translated !== '') {
+                return $translated;
+            }
+        }
+
+        return $this->setting($settings, $key, $default);
+    }
+
     private function route_slug(): string
     {
         try {
@@ -222,18 +266,10 @@ final class CMS_M365Azure_Frontend
             return true;
         }
 
-        $path = $this->request_path();
+        $path = $this->request_path_without_lang();
         $slug = $this->route_slug();
-        if ($path === $slug) {
-            return true;
-        }
 
-        $sitePath = trim((string) parse_url((string) (defined('SITE_URL') ? SITE_URL : ''), PHP_URL_PATH), '/');
-        if ($sitePath !== '' && str_starts_with($path, $sitePath . '/')) {
-            return trim(substr($path, strlen($sitePath) + 1), '/') === $slug;
-        }
-
-        return false;
+        return $path === $slug;
     }
 
     private function request_path(): string
@@ -245,6 +281,54 @@ final class CMS_M365Azure_Frontend
         $this->requestPathCache = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
 
         return $this->requestPathCache;
+    }
+
+    private function request_path_without_lang(): string
+    {
+        if (function_exists('cms_plugin_public_path_without_lang')) {
+            return cms_plugin_public_path_without_lang($this->request_path());
+        }
+
+        $path = $this->request_path();
+        $sitePath = trim((string) parse_url((string) (defined('SITE_URL') ? SITE_URL : ''), PHP_URL_PATH), '/');
+        if ($sitePath !== '' && str_starts_with($path, $sitePath . '/')) {
+            $path = trim(substr($path, strlen($sitePath) + 1), '/');
+        } elseif ($path === $sitePath) {
+            $path = '';
+        }
+
+        if ($path === 'en') {
+            return '';
+        }
+        if (str_starts_with($path, 'en/')) {
+            return substr($path, 3) ?: '';
+        }
+
+        return $path;
+    }
+
+    private function current_language(): string
+    {
+        if ($this->requestLangCache !== null) {
+            return $this->requestLangCache;
+        }
+
+        if (function_exists('cms_plugin_public_language')) {
+            $this->requestLangCache = cms_plugin_public_language($this->request_path());
+            return $this->requestLangCache;
+        }
+
+        $path = $this->request_path();
+        $sitePath = trim((string) parse_url((string) (defined('SITE_URL') ? SITE_URL : ''), PHP_URL_PATH), '/');
+        if ($sitePath !== '' && str_starts_with($path, $sitePath . '/')) {
+            $path = trim(substr($path, strlen($sitePath) + 1), '/');
+        } elseif ($path === $sitePath) {
+            $path = '';
+        }
+
+        $this->requestLangCache = ($path === 'en' || str_starts_with($path, 'en/')) ? 'en' : 'de';
+
+        return $this->requestLangCache;
     }
 
     private function repo(): CMS_M365Azure_Repository

@@ -12,6 +12,17 @@ if (!defined('ABSPATH')) {
 }
 
 $esc = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$lang = function_exists('cms_plugin_public_language') ? cms_plugin_public_language() : 'de';
+$t = static function (string $de, string $en, string $lang): string {
+    return $lang === 'en' ? $en : $de;
+};
+$i18nOption = static function (array $options, string $key, string $defaultDe, string $defaultEn, string $lang): string {
+    if (function_exists('cms_plugin_public_i18n_value')) {
+        return trim((string) cms_plugin_public_i18n_value($options, $key, $lang, $lang === 'en' ? $defaultEn : $defaultDe));
+    }
+
+    return trim((string) ($options[$key] ?? ($lang === 'en' ? $defaultEn : $defaultDe)));
+};
 $money = static function (mixed $value): string {
     if ($value === null || $value === '') {
         return '—';
@@ -127,26 +138,26 @@ $showAreaHeaders = $matrixEnabled('matrix_addon_show_area_headers', $matrixValue
 $showPackageCards = $matrixEnabled('matrix_addon_show_package_cards', $matrixValue('matrix_show_addon_package_cards', '1'));
 $showNotes = $matrixEnabled('matrix_addon_show_notes', $matrixValue('matrix_show_notes', '1'));
 $showSources = $matrixEnabled('matrix_addon_show_sources', $matrixValue('matrix_show_sources', '1'));
-$heroTitle = $matrixValue('matrix_addon_title', 'Microsoft 365 Add-on-Matrix');
-$heroOverline = $matrixValue('matrix_addon_overline', 'Add-on-Matrix');
-$heroIntro = $matrixValue('matrix_addon_intro', 'Öffentliche Übersicht aller Add-on-Bereiche: Exchange, SharePoint, OneDrive, Teams Phone, Copilot, Security, Power Platform und Spezialdienste.');
-$secondaryButtonLabel = $matrixValue('matrix_addon_secondary_button_label', 'Vollpaket-Matrix öffnen');
-$secondaryButtonUrl = $safeUrl($matrixValue('matrix_addon_secondary_button_url', '/m365-lizenzmatrix'));
-$toolButtonLabel = $matrixValue('matrix_addon_tool_button_label', 'Add-On-Konfigurator öffnen');
+$heroTitle = $i18nOption($matrixOptions, 'matrix_addon_title', 'Microsoft 365 Add-on-Matrix', 'Microsoft 365 Add-on Matrix', $lang);
+$heroOverline = $i18nOption($matrixOptions, 'matrix_addon_overline', 'Add-on-Matrix', 'Add-on Matrix', $lang);
+$heroIntro = $i18nOption($matrixOptions, 'matrix_addon_intro', 'Öffentliche Übersicht aller Add-on-Bereiche: Exchange, SharePoint, OneDrive, Teams Phone, Copilot, Security, Power Platform und Spezialdienste.', 'Public overview of all add-on categories: Exchange, SharePoint, OneDrive, Teams Phone, Copilot, Security, Power Platform, and specialty services.', $lang);
+$secondaryButtonLabel = $i18nOption($matrixOptions, 'matrix_addon_secondary_button_label', 'Vollpaket-Matrix öffnen', 'Open full-suite matrix', $lang);
+$secondaryButtonUrl = $safeUrl($matrixValue('matrix_addon_secondary_button_url', function_exists('cms_plugin_public_localized_path') ? cms_plugin_public_localized_path('/m365-lizenzmatrix', $lang) : '/m365-lizenzmatrix'));
+$toolButtonLabel = $i18nOption($matrixOptions, 'matrix_addon_tool_button_label', 'Add-On-Konfigurator öffnen', 'Open add-on configurator', $lang);
 $toolButtonUrl = $safeUrl($matrixValue('matrix_addon_tool_button_url', '/m365-add-on-konfigurator'));
-$resultOverline = $matrixValue('matrix_addon_result_overline', 'Matrix');
-$resultTitle = $matrixValue('matrix_addon_result_title', 'Gesamtübersicht der Microsoft-365-Add-ons');
-$resultIntro = $matrixValue('matrix_addon_result_intro', 'Die wichtigsten Add-ons mit Größen, Voraussetzungen, Abgrenzungen und typischen Kaufgründen.');
-$areaOverline = $matrixValue('matrix_addon_area_overline', 'Add-on-Bereich');
-$notesTitle = $matrixValue('matrix_addon_notes_title', 'Hinweise zur Add-on-Übersicht');
-$sourcesTitle = $matrixValue('matrix_addon_sources_title', 'Quellenstand');
+$resultOverline = $i18nOption($matrixOptions, 'matrix_addon_result_overline', 'Matrix', 'Matrix', $lang);
+$resultTitle = $i18nOption($matrixOptions, 'matrix_addon_result_title', 'Gesamtübersicht der Microsoft-365-Add-ons', 'Complete overview of Microsoft 365 add-ons', $lang);
+$resultIntro = $i18nOption($matrixOptions, 'matrix_addon_result_intro', 'Die wichtigsten Add-ons mit Größen, Voraussetzungen, Abgrenzungen und typischen Kaufgründen.', 'Key add-ons with sizing, prerequisites, differentiation, and typical purchase reasons.', $lang);
+$areaOverline = $i18nOption($matrixOptions, 'matrix_addon_area_overline', 'Add-on-Bereich', 'Add-on area', $lang);
+$notesTitle = $i18nOption($matrixOptions, 'matrix_addon_notes_title', 'Hinweise zur Add-on-Übersicht', 'Notes on add-on overview', $lang);
+$sourcesTitle = $i18nOption($matrixOptions, 'matrix_addon_sources_title', 'Quellenstand', 'Source status', $lang);
 $notesText = trim($matrixValue('matrix_addon_notes_text', ''));
-$sourcesIntro = $matrixValue('matrix_addon_sources_intro', (string) ($meta['price_basis'] ?? 'Preis- und Lizenzinformationen vor Bestellung prüfen.'));
-$printButtonLabel = $matrixValue('matrix_print_button_label', 'Drucken / PDF speichern');
-$primaryButtonLabel = $matrixValue('matrix_addon_primary_button_label', 'Lizenzcheck anfragen');
+$sourcesIntro = $i18nOption($matrixOptions, 'matrix_addon_sources_intro', (string) ($meta['price_basis'] ?? 'Preis- und Lizenzinformationen vor Bestellung prüfen.'), 'Verify pricing and licensing details before ordering.', $lang);
+$printButtonLabel = $i18nOption($matrixOptions, 'matrix_print_button_label', 'Drucken / PDF speichern', 'Print / save as PDF', $lang);
+$primaryButtonLabel = $i18nOption($matrixOptions, 'matrix_addon_primary_button_label', 'Lizenzcheck anfragen', 'Request license check', $lang);
 $primaryButtonUrl = $safeUrl($matrixValue('matrix_addon_primary_button_url', '/kontakt'));
 $showToc = $matrixEnabled('matrix_toc_show', '1');
-$tocTitle = $matrixValue('matrix_toc_title', 'Inhaltsverzeichnis');
+$tocTitle = $i18nOption($matrixOptions, 'matrix_toc_title', 'Inhaltsverzeichnis', 'Table of contents', $lang);
 $tocColumns = $matrixChoice('matrix_toc_columns', '3', ['1', '2', '3']);
 $tocFontSize = $matrixNumber('matrix_toc_font_size', 13, 11, 18);
 $tocNoWrap = $matrixEnabled('matrix_toc_nowrap', '1');
@@ -197,7 +208,7 @@ if (class_exists('CMS\\ThemeManager')) {
                 <p class="phinit-prose"><?php echo $esc($heroIntro); ?></p>
             </section>
             <?php if ($showHeroButtons && ($secondaryButtonUrl !== '' || $toolButtonUrl !== '')): ?>
-            <nav class="m365calc-actions" aria-label="Weitere Lizenztools">
+            <nav class="m365calc-actions" aria-label="<?php echo $esc($t('Weitere Lizenztools', 'More license tools', $lang)); ?>">
                 <?php if ($secondaryButtonUrl !== ''): ?>
                 <a class="phinit-btn phinit-btn--secondary m365calc-matrix-action" href="<?php echo $esc($secondaryButtonUrl); ?>"><?php echo $esc($secondaryButtonLabel); ?></a>
                 <?php endif; ?>
@@ -258,7 +269,7 @@ if (class_exists('CMS\\ThemeManager')) {
         <header class="m365calc-result-heading">
             <section>
                 <p class="phinit-overline"><?php echo $esc($areaOverline); ?></p>
-                <h2 id="<?php echo $esc($areaId); ?>-title"><?php echo $esc($area['label'] ?? 'Add-ons'); ?></h2>
+                        <h2 id="<?php echo $esc($areaId); ?>-title"><?php echo $esc($area['label'] ?? $t('Add-ons', 'Add-ons', $lang)); ?></h2>
                 <p><?php echo $esc($area['description'] ?? ''); ?></p>
             </section>
         </header>
@@ -267,23 +278,23 @@ if (class_exists('CMS\\ThemeManager')) {
         <?php endif; ?>
 
         <?php if ($showPackageCards): ?>
-        <section class="m365calc-summary-grid m365calc-readonly-package-grid" aria-label="Pakete in <?php echo $esc($area['label'] ?? 'Add-ons'); ?>">
+        <section class="m365calc-summary-grid m365calc-readonly-package-grid" aria-label="<?php echo $esc($t('Pakete in', 'Packages in', $lang) . ' ' . (string) ($area['label'] ?? 'Add-ons')); ?>">
             <?php foreach ($packages as $package): ?>
             <?php if (!is_array($package)) { continue; } ?>
             <article class="phinit-card m365calc-mini-card">
                 <span><?php echo $esc($package['billing'] ?? 'Add-on'); ?></span>
                 <strong><?php echo $esc($package['short'] ?? $package['name'] ?? ''); ?></strong>
-                <p><?php echo $money($package['price_month'] ?? null); ?> / Monat</p>
+                <p><?php echo $money($package['price_month'] ?? null); ?> <?php echo $esc($t('/ Monat', '/ month', $lang)); ?></p>
             </article>
             <?php endforeach; ?>
         </section>
         <?php endif; ?>
 
-        <section class="phinit-table-wrap m365calc-compare-wrap m365calc-readonly-wrap" aria-label="Add-on-Matrix <?php echo $esc($area['label'] ?? ''); ?>">
+        <section class="phinit-table-wrap m365calc-compare-wrap m365calc-readonly-wrap" aria-label="<?php echo $esc($t('Add-on-Matrix', 'Add-on matrix', $lang) . ' ' . (string) ($area['label'] ?? '')); ?>">
             <table class="phinit-table m365calc-compare-table m365calc-readonly-table">
                 <thead>
                     <tr>
-                        <th scope="col">Vergleichspunkt</th>
+                        <th scope="col"><?php echo $esc($t('Vergleichspunkt', 'Comparison point', $lang)); ?></th>
                         <?php foreach ($packages as $package): ?>
                         <?php if (!is_array($package)) { continue; } ?>
                         <th scope="col">
@@ -320,7 +331,7 @@ if (class_exists('CMS\\ThemeManager')) {
     <?php endforeach; ?>
 
     <?php if ($showNotes || $showSources): ?>
-    <section class="m365calc-result-grid" aria-label="Hinweise und Quellen">
+    <section class="m365calc-result-grid" aria-label="<?php echo $esc($t('Hinweise und Quellen', 'Notes and sources', $lang)); ?>">
         <?php if ($showNotes): ?>
         <article class="phinit-note phinit-note--warning">
             <h2><?php echo $esc($notesTitle); ?></h2>
@@ -339,7 +350,7 @@ if (class_exists('CMS\\ThemeManager')) {
             <h2><?php echo $esc($sourcesTitle); ?></h2>
             <p><?php echo $esc($sourcesIntro); ?></p>
             <details>
-                <summary>Quellen anzeigen</summary>
+                <summary><?php echo $esc($t('Quellen anzeigen', 'Show sources', $lang)); ?></summary>
                 <ul class="m365calc-note-list">
                     <?php foreach ($sources as $source): ?>
                     <li><a href="<?php echo $esc($source); ?>" target="_blank" rel="noopener noreferrer"><?php echo $esc($source); ?></a></li>

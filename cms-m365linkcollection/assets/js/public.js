@@ -1,6 +1,58 @@
 (function () {
     'use strict';
 
+    function updateLiveRegionStatus(root) {
+        var statusNode = root.querySelector('[data-mlc-results-status]');
+        if (!statusNode) {
+            return;
+        }
+
+        var total = parseInt(root.getAttribute('data-mlc-total-results') || '0', 10);
+        var template = statusNode.textContent || '%d links found';
+        var text = template.indexOf('%d') >= 0
+            ? template.replace('%d', String(Math.max(0, total)))
+            : template;
+
+        statusNode.textContent = text.trim();
+    }
+
+    function initAccessibilityValidation(root) {
+        if (!root || root.getAttribute('data-mlc-a11y-validation') !== '1') {
+            return;
+        }
+
+        updateLiveRegionStatus(root);
+
+        var focusables = root.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (focusables.length === 0) {
+            console.warn('[mlc a11y] No focusable elements found in public view.');
+        }
+
+        var issues = [];
+        if (!root.querySelector('.mlc-filter[aria-label]')) {
+            issues.push('Filter container misses aria-label.');
+        }
+        if (root.querySelector('.mlc-table') && !root.querySelector('.mlc-table thead th')) {
+            issues.push('Table headings are missing.');
+        }
+        if (!root.querySelector('[data-mlc-results-status]')) {
+            issues.push('Live results status region is missing.');
+        }
+
+        if (issues.length > 0) {
+            console.warn('[mlc a11y] Validation hints:', issues);
+        } else {
+            console.info('[mlc a11y] Validation checks passed.');
+        }
+
+        root.addEventListener('submit', function () {
+            var statusNode = root.querySelector('[data-mlc-results-status]');
+            if (statusNode) {
+                statusNode.textContent = (statusNode.textContent || '').trim();
+            }
+        });
+    }
+
     function initRotator(root) {
         var slides = Array.prototype.slice.call(root.querySelectorAll('[data-mlc-sidebar-slide]'));
         if (slides.length <= 1) {
@@ -55,6 +107,10 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        var pageRoot = document.getElementById('m365-linkcollection');
+        if (pageRoot) {
+            initAccessibilityValidation(pageRoot);
+        }
         document.querySelectorAll('[data-mlc-sidebar-rotator]').forEach(initRotator);
     });
 }());

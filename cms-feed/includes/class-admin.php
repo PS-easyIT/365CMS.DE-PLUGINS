@@ -369,6 +369,8 @@ final class CMS_Feed_Admin
             'save_digest_settings' => 'handle_save_digest_settings_post',
             'cleanup' => 'handle_cleanup_post',
             'import_catalog' => 'handle_import_catalog_post',
+            'import_opml' => 'handle_import_opml_post',
+            'export_opml' => 'handle_export_opml_post',
             'bulk_delete_channels' => 'handle_bulk_delete_channels_post',
             'bulk_activate_channels' => 'handle_bulk_activate_channels_post',
             'bulk_deactivate_channels' => 'handle_bulk_deactivate_channels_post',
@@ -570,7 +572,9 @@ final class CMS_Feed_Admin
     {
         CMS_Feed_Database::instance()->update_settings([
             'archive_title'       => $this->post_text('archive_title'),
+            'archive_title_en'    => $this->post_text('archive_title_en'),
             'archive_description' => $this->post_text('archive_description'),
+            'archive_description_en' => $this->post_text('archive_description_en'),
             'archive_slug'        => $this->sanitize_slug($this->post_string('archive_slug', 'feeds')) ?: 'feeds',
             'per_page'            => (string) max(4, min(100, $this->post_int('per_page', 20))),
             'open_in_new_tab'     => $this->post_bool('open_in_new_tab') ? '1' : '0',
@@ -579,6 +583,9 @@ final class CMS_Feed_Admin
             'show_image'          => $this->post_bool('show_image') ? '1' : '0',
             'show_excerpt'        => $this->post_bool('show_excerpt') ? '1' : '0',
             'excerpt_length'      => (string) max(50, min(500, $this->post_int('excerpt_length', 160))),
+            'noise_exclude_keywords' => $this->post_list_text('noise_exclude_keywords', 4000),
+            'noise_exclude_authors' => $this->post_list_text('noise_exclude_authors', 4000),
+            'noise_exclude_domains' => $this->post_list_text('noise_exclude_domains', 2000),
         ]);
 
         return ['notice' => 'Einstellungen gespeichert.', 'stab' => 'general'];
@@ -675,6 +682,201 @@ final class CMS_Feed_Admin
         }
 
         return ['notice' => $message . '.'];
+    }
+
+    private function handle_import_opml_post(): array
+    {
+        if (!isset($_FILES['opml_file']) || !is_array($_FILES['opml_file'])) {
+            return ['error' => 'Bitte eine OPML-Datei auswählen.'];
+        }
+
+        $upload = $_FILES['opml_file'];
+        $tmpName = $upload['tmp_name'] ?? '';
+        $size = (int) ($upload['size'] ?? 0);
+        $errorCode = (int) ($upload['error'] ?? UPLOAD_ERR_NO_FILE);
+
+        if ($errorCode !== UPLOAD_ERR_OK) {
+            return ['error' => 'OPML-Upload fehlgeschlagen.'];
+        }
+        if (!is_string($tmpName) || $tmpName === '' || !is_uploaded_file($tmpName)) {
+            return ['error' => 'Ungültige Upload-Datei.'];
+        }
+        if ($size <= 0 || $size > 2 * 1024 * 1024) {
+            return ['error' => 'Die OPML-Datei darf maximal 2 MB groß sein.'];
+        }
+
+        $opmlContent = file_get_contents($tmpName);
+        if (!is_string($opmlContent) || trim($opmlContent) === '') {
+            return ['error' => 'Die OPML-Datei ist leer oder konnte nicht gelesen werden.'];
+        }
+
+        libxml_use_internal_errors(true);
+        $xml = simplexml_load_string($opmlContent, 'SimpleXMLElement', LIBXML_NONET | LIBXML_NOCDATA);
+        libxml_clear_errors();
+        if (!$xml instanceof \SimpleXMLElement) {
+            return ['error' => 'Die OPML-Datei ist ungültig.'];
+        }
+
+        $outlines = $xml->xpath('//body/outline');
+        if (!is_array($outlines) || $outlines === []) {
+            return ['error' => 'Keine OPML-Outlines gefunden.'];
+        }
+
+        $feeds = [];
+        foreach ($outlines as $outline) {
+            $this->collect_opml_feeds($outline, '', $feeds);
+        }
+
+        if ($feeds === []) {
+            return ['error' => 'Keine RSS-Feeds (xmlUrl) in der OPML-Datei gefunden.'];
+        }
+
+        $db = CMS_Feed_Database::instance();
+        $fetcher = CMS_Feed_RSS_Fetcher::instance();
+        $categories = $db->get_categories();
+        $categoryBySlug = [];
+        foreach ($categories as $category) {
+            $categoryBySlug[(string) ($category['slug'] ?? '')] = (int) ($category['id'] ?? 0);
+        }
+
+        $imported = 0;
+        $skipped = 0;
+        $invalid = 0;
+
+        foreach ($feeds as $feed) {
+            $validation = $fetcher->validate_feed_url((string) ($feed['feed_url'] ?? ''));
+            if (!$validation['success']) {
+                $invalid++;
+                continue;
+            }
+
+            $feedUrl = (string) ($validation['url'] ?? '');
+            if ($feedUrl === '' || $db->channel_url_exists($feedUrl)) {
+                $skipped++;
+                continue;
+            }
+
+            $categoryName = trim((string) ($feed['category_name'] ?? ''));
+            if ($categoryName === '') {
+                $categoryName = 'Importiert';
+            }
+
+            $categorySlug = $this->sanitize_slug($categoryName);
+            if ($categorySlug === '') {
+                $categorySlug = 'importiert';
+            }
+
+            $categoryId = $categoryBySlug[$categorySlug] ?? 0;
+            if ($categoryId <= 0) {
+                $categoryId = $db->save_category([
+                    'id' => null,
+                    'name' => $categoryName,
+                    'slug' => $categorySlug,
+                    'description' => '',
+                    'icon' => '📰',
+                    'is_public' => 1,
+                    'sort_order' => 0,
+                    'layout' => 'grid',
+                    'items_per_page' => 20,
+                ]);
+                $categoryBySlug[$categorySlug] = $categoryId;
+            }
+
+            $channelName = trim((string) ($feed['name'] ?? ''));
+            if ($channelName === '') {
+                $host = (string) parse_url($feedUrl, PHP_URL_HOST);
+                $channelName = $host !== '' ? $host : 'OPML Feed';
+            }
+
+            $db->save_channel([
+                'id' => null,
+                'category_id' => $categoryId,
+                'name' => cms_feed_substr($channelName, 0, 255),
+                'feed_url' => $feedUrl,
+                'site_url' => $this->sanitize_public_url((string) ($feed['site_url'] ?? '')) ?: null,
+                'description' => cms_feed_substr((string) ($feed['description'] ?? ''), 0, 1000),
+                'is_active' => 1,
+                'fetch_interval' => 60,
+                'max_items' => 50,
+            ]);
+            $imported++;
+        }
+
+        return ['notice' => $imported . ' Feed(s) importiert, ' . $skipped . ' übersprungen, ' . $invalid . ' ungültig.'];
+    }
+
+    private function handle_export_opml_post(): array
+    {
+        $db = CMS_Feed_Database::instance();
+        $categories = $db->get_categories();
+        $channels = $db->get_channels();
+
+        $channelsByCategory = [];
+        foreach ($channels as $channel) {
+            $categoryId = (int) ($channel['category_id'] ?? 0);
+            $channelsByCategory[$categoryId][] = $channel;
+        }
+
+        $xml = [];
+        $xml[] = '<?xml version="1.0" encoding="UTF-8"?>';
+        $xml[] = '<opml version="2.0">';
+        $xml[] = '  <head>';
+        $xml[] = '    <title>CMS Feed Export</title>';
+        $xml[] = '    <dateCreated>' . gmdate('D, d M Y H:i:s') . ' GMT</dateCreated>';
+        $xml[] = '  </head>';
+        $xml[] = '  <body>';
+
+        foreach ($categories as $category) {
+            $categoryId = (int) ($category['id'] ?? 0);
+            $categoryName = (string) ($category['name'] ?? 'Kategorie');
+            $categoryLines = $channelsByCategory[$categoryId] ?? [];
+            if ($categoryLines === []) {
+                continue;
+            }
+
+            $escapedCategoryName = htmlspecialchars($categoryName, ENT_QUOTES, 'UTF-8');
+            $xml[] = '    <outline text="' . $escapedCategoryName . '" title="' . $escapedCategoryName . '">';
+
+            foreach ($categoryLines as $channel) {
+                $feedUrl = trim((string) ($channel['feed_url'] ?? ''));
+                if ($feedUrl === '') {
+                    continue;
+                }
+
+                $attrs = [
+                    'type' => 'rss',
+                    'text' => (string) ($channel['name'] ?? 'Feed'),
+                    'title' => (string) ($channel['name'] ?? 'Feed'),
+                    'xmlUrl' => $feedUrl,
+                ];
+                $siteUrl = trim((string) ($channel['site_url'] ?? ''));
+                if ($siteUrl !== '') {
+                    $attrs['htmlUrl'] = $siteUrl;
+                }
+
+                $parts = [];
+                foreach ($attrs as $key => $value) {
+                    $parts[] = $key . '="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '"';
+                }
+                $xml[] = '      <outline ' . implode(' ', $parts) . ' />';
+            }
+
+            $xml[] = '    </outline>';
+        }
+
+        $xml[] = '  </body>';
+        $xml[] = '</opml>';
+        $payload = implode("\n", $xml) . "\n";
+
+        if (!headers_sent()) {
+            header('Content-Type: text/x-opml; charset=UTF-8');
+            header('Content-Disposition: attachment; filename="cms-feed-export-' . gmdate('Ymd-His') . '.opml"');
+            header('Cache-Control: no-store, no-cache, must-revalidate');
+            header('Pragma: no-cache');
+        }
+
+        echo $payload;
+        exit;
     }
 
     private function handle_bulk_delete_channels_post(): array
@@ -887,6 +1089,17 @@ final class CMS_Feed_Admin
             : trim(strip_tags($value));
     }
 
+    private function post_list_text(string $key, int $maxLength = 4000): string
+    {
+        $value = $this->post_string($key);
+        $value = str_replace(["\r\n", "\r"], "\n", $value);
+        $lines = array_filter(array_map('trim', explode("\n", $value)), static fn (string $line): bool => $line !== '');
+        $unique = array_values(array_unique($lines));
+        $normalized = implode("\n", $unique);
+
+        return cms_feed_substr($normalized, 0, max(0, $maxLength));
+    }
+
     private function post_color(string $key, string $default): string
     {
         $value = $this->post_string($key, $default);
@@ -908,6 +1121,32 @@ final class CMS_Feed_Admin
     {
         $slug = preg_replace('/[^a-z0-9\-]/', '', strtolower(trim($slug, '/'))) ?: '';
         return $slug !== 'feed' ? $slug : 'feeds';
+    }
+
+    /**
+     * @param array<int,array{name:string,feed_url:string,site_url:string,description:string,category_name:string}> $feeds
+     */
+    private function collect_opml_feeds(\SimpleXMLElement $outline, string $parentCategory, array &$feeds): void
+    {
+        $attrs = $outline->attributes();
+        $currentLabel = trim((string) ($attrs['text'] ?? $attrs['title'] ?? ''));
+        $nextCategory = $parentCategory !== '' ? $parentCategory : $currentLabel;
+
+        $xmlUrl = trim((string) ($attrs['xmlUrl'] ?? ''));
+        if ($xmlUrl !== '') {
+            $feeds[] = [
+                'name' => trim((string) ($attrs['title'] ?? $attrs['text'] ?? '')),
+                'feed_url' => $xmlUrl,
+                'site_url' => trim((string) ($attrs['htmlUrl'] ?? '')),
+                'description' => trim((string) ($attrs['description'] ?? '')),
+                'category_name' => $parentCategory !== '' ? $parentCategory : 'Importiert',
+            ];
+            return;
+        }
+
+        foreach ($outline->outline as $child) {
+            $this->collect_opml_feeds($child, $nextCategory !== '' ? $nextCategory : 'Importiert', $feeds);
+        }
     }
 
     private function sanitize_public_url(string $url): string

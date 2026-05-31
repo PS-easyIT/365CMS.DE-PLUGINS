@@ -13,6 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class CMS_365NETWORK_Public
 {
+    private const SHARED_PUBLIC_I18N_CONTRACT = 'shared/public/plugin-public-i18n.php';
     private static ?self $instance = null;
     private ?array $settingsCache = null;
     private ?array $statsCache = null;
@@ -23,6 +24,9 @@ final class CMS_365NETWORK_Public
     private array $resolvedTableCache = [];
     /** @var array<string,bool> */
     private array $columnExistsCache = [];
+    /** @var array<int,array<string,mixed>> */
+    private array $landingEventsForSchema = [];
+    private ?string $requestLanguageCache = null;
 
     public static function instance(): self
     {
@@ -31,9 +35,11 @@ final class CMS_365NETWORK_Public
 
     private function __construct()
     {
+        $this->load_public_i18n_contract();
         CMS\Hooks::addAction('register_routes', [$this, 'register_routes'], 10);
         CMS\Hooks::addAction('head', [$this, 'enqueue_styles'], 10);
         CMS\Hooks::addAction('head', [$this, 'output_dynamic_styles'], 20);
+        CMS\Hooks::addAction('head', [$this, 'output_event_structured_data'], 30);
         CMS\Hooks::addAction('head', [$this, 'output_analytics_head'], 90);
         CMS\Hooks::addAction('body_end', [$this, 'enqueue_scripts'], 20);
         CMS\Hooks::addAction('body_end', [$this, 'output_analytics_body_end'], 90);
@@ -67,10 +73,16 @@ final class CMS_365NETWORK_Public
 
         $settings = $this->settings();
         $routeSlug = $this->route_slug($settings);
+        $localizedBasePath = $this->localized_public_path($routeSlug, 'en');
+        $localizedSearchPath = $this->localized_public_path($routeSlug . '/search', 'en');
+        $localizedRootPath = $this->localized_public_path('', 'en');
 
         $router->addRoute('GET', '/', [$this, 'render_root_or_home']);
         $router->addRoute('GET', '/' . $routeSlug . '/search', [$this, 'render_search']);
         $router->addRoute('GET', '/' . $routeSlug, [$this, 'render_landing']);
+        $router->addRoute('GET', $localizedRootPath, [$this, 'render_landing']);
+        $router->addRoute('GET', $localizedBasePath, [$this, 'render_landing']);
+        $router->addRoute('GET', $localizedSearchPath, [$this, 'render_search']);
     }
 
     public function render_root_or_home(): void
@@ -92,6 +104,7 @@ final class CMS_365NETWORK_Public
         }
 
         $hubSettings = CMS_365NETWORK_Database::instance()->get_hub_settings();
+        $lang = $this->public_language();
         $postsLimit = (bool) ($hubSettings['hub_posts_visible'] ?? true)
             ? $this->clamp_int((int) ($hubSettings['hub_posts_limit'] ?? 6), 1, 6)
             : 0;
@@ -128,10 +141,13 @@ final class CMS_365NETWORK_Public
             'partner_experts' => $this->fetch_partner_experts($expertLimit),
             'stats' => $this->fetch_stats(),
             'current_host' => $this->current_host(),
-            'network_search_url' => $this->network_search_url($settings),
+            'network_search_url' => $this->network_search_url($settings, $lang),
             'latest_posts' => $postsLimit > 0 ? $this->fetch_latest_posts($postsLimit) : [],
+            'public_lang' => $lang,
+            'public_i18n' => $this->public_i18n_values(),
         ];
         $data['toolbox_tools'] = $this->fetch_toolbox_links((int) ($data['hub_settings']['hub_toolbox_limit'] ?? 12));
+        $this->landingEventsForSchema = is_array($data['events']) ? $data['events'] : [];
 
         $bufferLevel = ob_get_level();
         $this->renderingPublicPage = true;
@@ -152,13 +168,17 @@ final class CMS_365NETWORK_Public
                 $latestPosts = is_array($data['latest_posts'] ?? null) ? $data['latest_posts'] : [];
                 $stats = is_array($data['stats'] ?? null) ? $data['stats'] : [];
                 $current_host = (string) ($data['current_host'] ?? '');
-                $networkSearchUrl = (string) ($data['network_search_url'] ?? $this->network_search_url($settings));
+                $networkSearchUrl = (string) ($data['network_search_url'] ?? $this->network_search_url($settings, $lang));
+                $publicLang = (string) ($data['public_lang'] ?? $lang);
+                $publicI18n = is_array($data['public_i18n'] ?? null) ? $data['public_i18n'] : $this->public_i18n_values();
                 include $template;
             }
             CMS\ThemeManager::instance()->getFooter();
             $this->renderingPublicPage = false;
+            $this->landingEventsForSchema = [];
         } catch (\Throwable $e) {
             $this->renderingPublicPage = false;
+            $this->landingEventsForSchema = [];
             while (ob_get_level() > $bufferLevel) {
                 ob_end_clean();
             }
@@ -179,6 +199,7 @@ final class CMS_365NETWORK_Public
         }
 
         $hubSettings = CMS_365NETWORK_Database::instance()->get_hub_settings();
+        $lang = $this->public_language();
         $searchParam = $this->search_param($hubSettings);
         $searchQuery = $this->search_query_from_request($searchParam);
         $searchResults = strlen($searchQuery) >= 2 ? $this->search_network($searchQuery, 10) : $this->empty_search_groups();
@@ -191,10 +212,12 @@ final class CMS_365NETWORK_Public
         $this->renderingPublicPage = true;
         try {
             $titleSuffix = $searchQuery !== '' ? ': ' . $searchQuery : '';
-            CMS\ThemeManager::instance()->getHeader(['title' => '365NETWORK Suche' . $titleSuffix]);
+            CMS\ThemeManager::instance()->getHeader(['title' => $this->tr('search.page_title', $lang, '365NETWORK Suche', '365NETWORK Search') . $titleSuffix]);
             $template = CMS_365NETWORK_PLUGIN_DIR . 'templates/search.php';
             if (is_file($template)) {
-                $searchUrl = $this->network_search_url($settings);
+                $searchUrl = $this->network_search_url($settings, $lang);
+                $publicLang = $lang;
+                $publicI18n = $this->public_i18n_values();
                 include $template;
             }
             CMS\ThemeManager::instance()->getFooter();
@@ -419,7 +442,7 @@ final class CMS_365NETWORK_Public
             $params = [];
             $statusWhere = $this->status_filter_sql('events', ['published', 'active'], $params);
             $params[] = $limit;
-            $sql = "SELECT id, title, event_date, event_time, city, location, image_url, category
+            $sql = "SELECT id, title, event_date, end_date, event_time, city, location, image_url, category
                 FROM `{$eventsTable}`
                 WHERE {$statusWhere} AND (event_date >= CURDATE() OR (end_date IS NOT NULL AND end_date >= CURDATE()))
                 ORDER BY event_date ASC, event_time ASC
@@ -962,27 +985,27 @@ final class CMS_365NETWORK_Public
         return [
             'events' => [
                 'key' => 'events',
-                'label' => 'Events',
+                'label' => $this->tr('entity.events', $this->public_language(), 'Events', 'Events'),
                 'icon' => 'ti-calendar-event',
                 'items' => $this->search_events($query, $limitPerType),
             ],
             'speakers' => [
                 'key' => 'speakers',
-                'label' => 'Speaker',
+                'label' => $this->tr('entity.speakers', $this->public_language(), 'Speaker', 'Speakers'),
                 'icon' => 'ti-microphone-2',
-                'items' => $this->search_people_table('speakers', 'speaker', 'Speaker', 'ti-microphone-2', $query, $limitPerType),
+                'items' => $this->search_people_table('speakers', 'speaker', $this->tr('entity.speaker', $this->public_language(), 'Speaker', 'Speaker'), 'ti-microphone-2', $query, $limitPerType),
             ],
             'companies' => [
                 'key' => 'companies',
-                'label' => 'Firmen',
+                'label' => $this->tr('entity.companies', $this->public_language(), 'Firmen', 'Companies'),
                 'icon' => 'ti-building-community',
                 'items' => $this->search_companies($query, $limitPerType),
             ],
             'experts' => [
                 'key' => 'experts',
-                'label' => 'Experten',
+                'label' => $this->tr('entity.experts', $this->public_language(), 'Experten', 'Experts'),
                 'icon' => 'ti-user-star',
-                'items' => $this->search_people_table('experts', 'expert', 'Experte', 'ti-user-star', $query, $limitPerType),
+                'items' => $this->search_people_table('experts', 'expert', $this->tr('entity.expert', $this->public_language(), 'Experte', 'Expert'), 'ti-user-star', $query, $limitPerType),
             ],
         ];
     }
@@ -990,10 +1013,10 @@ final class CMS_365NETWORK_Public
     private function empty_search_groups(): array
     {
         return [
-            'events' => ['key' => 'events', 'label' => 'Events', 'icon' => 'ti-calendar-event', 'items' => []],
-            'speakers' => ['key' => 'speakers', 'label' => 'Speaker', 'icon' => 'ti-microphone-2', 'items' => []],
-            'companies' => ['key' => 'companies', 'label' => 'Firmen', 'icon' => 'ti-building-community', 'items' => []],
-            'experts' => ['key' => 'experts', 'label' => 'Experten', 'icon' => 'ti-user-star', 'items' => []],
+            'events' => ['key' => 'events', 'label' => $this->tr('entity.events', $this->public_language(), 'Events', 'Events'), 'icon' => 'ti-calendar-event', 'items' => []],
+            'speakers' => ['key' => 'speakers', 'label' => $this->tr('entity.speakers', $this->public_language(), 'Speaker', 'Speakers'), 'icon' => 'ti-microphone-2', 'items' => []],
+            'companies' => ['key' => 'companies', 'label' => $this->tr('entity.companies', $this->public_language(), 'Firmen', 'Companies'), 'icon' => 'ti-building-community', 'items' => []],
+            'experts' => ['key' => 'experts', 'label' => $this->tr('entity.experts', $this->public_language(), 'Experten', 'Experts'), 'icon' => 'ti-user-star', 'items' => []],
         ];
     }
 
@@ -1011,14 +1034,14 @@ final class CMS_365NETWORK_Public
 
         $items = [];
         foreach ($rows as $row) {
-            $title = trim((string) ($row['title'] ?? '')) ?: 'Event';
+            $title = trim((string) ($row['title'] ?? '')) ?: $this->tr('entity.event', $this->public_language(), 'Event', 'Event');
             $date = $this->format_search_date((string) ($row['event_date'] ?? ''), (string) ($row['event_time'] ?? ''));
             $location = trim((string) (($row['city'] ?? '') ?: ($row['location'] ?? '')));
             $meta = implode(' · ', array_filter([$date, $location, trim((string) ($row['category'] ?? ''))]));
 
             $items[] = [
                 'type' => 'event',
-                'type_label' => 'Event',
+                'type_label' => $this->tr('entity.event', $this->public_language(), 'Event', 'Event'),
                 'icon' => 'ti-calendar-event',
                 'title' => $title,
                 'excerpt' => $this->search_excerpt([(string) ($row['excerpt'] ?? ''), (string) ($row['description'] ?? ''), (string) ($row['organizer_name'] ?? '')]),
@@ -1044,18 +1067,18 @@ final class CMS_365NETWORK_Public
 
         $items = [];
         foreach ($rows as $row) {
-            $title = trim((string) ($row['name'] ?? '')) ?: 'Firma';
+            $title = trim((string) ($row['name'] ?? '')) ?: $this->tr('entity.company', $this->public_language(), 'Firma', 'Company');
             $flags = [];
             if ((int) ($row['is_top_partner'] ?? 0) === 1) {
-                $flags[] = 'Top-Partner';
+                $flags[] = $this->tr('partner.top', $this->public_language(), 'Top-Partner', 'Top Partner');
             } elseif ((int) ($row['is_partner'] ?? 0) === 1) {
-                $flags[] = 'Partner';
+                $flags[] = $this->tr('partner.label', $this->public_language(), 'Partner', 'Partner');
             }
             $meta = implode(' · ', array_filter([trim((string) ($row['industry'] ?? '')), trim((string) ($row['location_city'] ?? '')), implode(' · ', $flags)]));
 
             $items[] = [
                 'type' => 'company',
-                'type_label' => 'Firma',
+                'type_label' => $this->tr('entity.company', $this->public_language(), 'Firma', 'Company'),
                 'icon' => 'ti-building-community',
                 'title' => $title,
                 'excerpt' => $this->search_excerpt([(string) ($row['description'] ?? '')]),
@@ -1395,9 +1418,15 @@ final class CMS_365NETWORK_Public
         return rtrim((string) SITE_URL, '/');
     }
 
-    private function network_search_url(array $settings): string
+    private function network_search_url(array $settings, ?string $lang = null): string
     {
-        return '/' . $this->route_slug($settings) . '/search';
+        $resolvedLang = $lang === 'en' ? 'en' : ($lang === 'de' ? 'de' : $this->public_language());
+        return $this->network_search_url_for_lang($settings, $resolvedLang);
+    }
+
+    private function network_search_url_for_lang(array $settings, string $lang): string
+    {
+        return $this->localized_public_path($this->route_slug($settings) . '/search', $lang);
     }
 
     private function table_exists(string $table): bool
@@ -1659,5 +1688,239 @@ final class CMS_365NETWORK_Public
     private function object_to_array(object $row): array
     {
         return get_object_vars($row);
+    }
+
+    private function load_public_i18n_contract(): void
+    {
+        if (function_exists('cms_plugin_public_language') && function_exists('cms_plugin_public_i18n_value') && function_exists('cms_plugin_public_localized_path')) {
+            return;
+        }
+
+        $path = dirname(CMS_365NETWORK_PLUGIN_DIR) . DIRECTORY_SEPARATOR . self::SHARED_PUBLIC_I18N_CONTRACT;
+        if (is_file($path)) {
+            require_once $path;
+        }
+    }
+
+    private function public_language(): string
+    {
+        if ($this->requestLanguageCache !== null) {
+            return $this->requestLanguageCache;
+        }
+
+        $this->load_public_i18n_contract();
+        if (function_exists('cms_plugin_public_language')) {
+            $lang = (string) cms_plugin_public_language();
+            if ($lang === 'en') {
+                return $this->requestLanguageCache = 'en';
+            }
+        }
+
+        return $this->requestLanguageCache = 'de';
+    }
+
+    private function localized_public_path(string $path, string $lang): string
+    {
+        $this->load_public_i18n_contract();
+        if (function_exists('cms_plugin_public_localized_path')) {
+            return (string) cms_plugin_public_localized_path($path, $lang === 'en' ? 'en' : 'de');
+        }
+
+        $path = trim($path, '/');
+        if ($lang === 'en') {
+            return '/en' . ($path !== '' ? '/' . $path : '');
+        }
+
+        return '/' . $path;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    private function public_i18n_values(): array
+    {
+        return [
+            'search.page_title' => '365NETWORK Suche',
+            'search.page_title_en' => '365NETWORK Search',
+            'search.keyboard_help' => 'In den Ergebnissen mit Pfeil hoch/runter navigieren. Pos1 und Ende springen zum ersten bzw. letzten Ergebnis.',
+            'search.keyboard_help_en' => 'Navigate results with Arrow Up/Down. Home and End jump to first/last result.',
+            'search.live_prefix' => 'Treffer',
+            'search.live_prefix_en' => 'Result',
+            'search.live_of' => 'von',
+            'search.live_of_en' => 'of',
+            'search.overline' => '365NETWORK Suche',
+            'search.overline_en' => '365NETWORK Search',
+            'search.title' => 'Events, Speaker, Firmen und Experten finden',
+            'search.title_en' => 'Find events, speakers, companies and experts',
+            'search.intro' => 'Diese Suche ist vom globalen 365CMS getrennt und durchsucht ausschließlich die vier Netzwerk-Bereiche.',
+            'search.intro_en' => 'This search is separate from global 365CMS search and only scans the four network areas.',
+            'search.form_aria' => '365NETWORK durchsuchen',
+            'search.form_aria_en' => 'Search 365NETWORK',
+            'search.label' => 'Suchbegriff',
+            'search.label_en' => 'Search term',
+            'search.placeholder' => 'z. B. Azure, Copilot, Workshop',
+            'search.placeholder_en' => 'e.g. Azure, Copilot, workshop',
+            'search.submit' => 'Suchen',
+            'search.submit_en' => 'Search',
+            'search.empty.title' => 'Suchbegriff eingeben',
+            'search.empty.title_en' => 'Enter a search term',
+            'search.empty.text' => 'Starte mit mindestens zwei Zeichen. Angezeigt werden nur Treffer aus Events, Speakern, Firmen und Experten.',
+            'search.empty.text_en' => 'Start with at least two characters. Results are limited to events, speakers, companies and experts.',
+            'search.too_short.title' => 'Suchbegriff zu kurz',
+            'search.too_short.title_en' => 'Search term too short',
+            'search.too_short.text' => 'Bitte gib mindestens zwei Zeichen ein, damit die Netzwerk-Suche starten kann.',
+            'search.too_short.text_en' => 'Please enter at least two characters to start searching the network.',
+            'search.summary.aria' => 'Suchzusammenfassung',
+            'search.summary.aria_en' => 'Search summary',
+            'search.summary.for' => 'Treffer für',
+            'search.summary.for_en' => 'results for',
+            'search.no_results.title' => 'Keine Netzwerk-Treffer gefunden',
+            'search.no_results.title_en' => 'No network results found',
+            'search.no_results.text' => 'Versuche einen anderen Begriff oder suche allgemeiner, zum Beispiel nach Thema, Stadt, Firmenname oder Rolle.',
+            'search.no_results.text_en' => 'Try another term or search more broadly, e.g. by topic, city, company name or role.',
+            'search.results.aria' => '365NETWORK Suchergebnisse',
+            'search.results.aria_en' => '365NETWORK search results',
+            'entity.event' => 'Event',
+            'entity.event_en' => 'Event',
+            'entity.events' => 'Events',
+            'entity.events_en' => 'Events',
+            'entity.speaker' => 'Speaker',
+            'entity.speaker_en' => 'Speaker',
+            'entity.speakers' => 'Speaker',
+            'entity.speakers_en' => 'Speakers',
+            'entity.company' => 'Firma',
+            'entity.company_en' => 'Company',
+            'entity.companies' => 'Firmen',
+            'entity.companies_en' => 'Companies',
+            'entity.expert' => 'Experte',
+            'entity.expert_en' => 'Expert',
+            'entity.experts' => 'Experten',
+            'entity.experts_en' => 'Experts',
+            'partner.label' => 'Partner',
+            'partner.label_en' => 'Partner',
+            'partner.top' => 'Top-Partner',
+            'partner.top_en' => 'Top Partner',
+            'spotlight.prev' => 'Zurück',
+            'spotlight.prev_en' => 'Previous',
+            'spotlight.next' => 'Weiter',
+            'spotlight.next_en' => 'Next',
+            'spotlight.cta.event' => 'Zum Event',
+            'spotlight.cta.event_en' => 'View event',
+            'spotlight.cta.profile' => 'Profil ansehen',
+            'spotlight.cta.profile_en' => 'View profile',
+        ];
+    }
+
+    private function tr(string $key, string $lang, string $fallbackDe, string $fallbackEn): string
+    {
+        $fallback = $lang === 'en' ? $fallbackEn : $fallbackDe;
+        $values = $this->public_i18n_values();
+        $this->load_public_i18n_contract();
+        if (function_exists('cms_plugin_public_i18n_value')) {
+            return (string) cms_plugin_public_i18n_value($values, $key, $lang, $fallback);
+        }
+
+        return $fallback;
+    }
+
+    public function output_event_structured_data(): void
+    {
+        if (!$this->is_public_page_request() || !$this->is_landing_path_request()) {
+            return;
+        }
+
+        $hubSettings = CMS_365NETWORK_Database::instance()->get_hub_settings();
+        if ((string) ($hubSettings['hub_event_schema_enabled'] ?? '1') !== '1') {
+            return;
+        }
+
+        $events = $this->landingEventsForSchema !== [] ? $this->landingEventsForSchema : $this->fetch_upcoming_events(max(1, (int) ($hubSettings['hub_next_events_limit'] ?? 3)));
+        if ($events === []) {
+            return;
+        }
+
+        $structuredEvents = [];
+        foreach ($events as $event) {
+            if (!is_array($event)) {
+                continue;
+            }
+
+            $name = trim((string) ($event['title'] ?? ''));
+            $startDate = $this->schema_datetime((string) ($event['event_date'] ?? ''), (string) ($event['event_time'] ?? ''));
+            if ($name === '' || $startDate === '') {
+                continue;
+            }
+
+            $locationName = trim((string) (($event['location'] ?? '') ?: ($event['city'] ?? '')));
+            $city = trim((string) ($event['city'] ?? ''));
+
+            $entry = [
+                '@type' => 'Event',
+                'name' => $name,
+                'startDate' => $startDate,
+                'eventStatus' => 'https://schema.org/EventScheduled',
+                'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
+                'url' => $this->safe_url((string) ($event['url'] ?? '#')),
+            ];
+
+            if (trim((string) ($event['end_date'] ?? '')) !== '') {
+                $entry['endDate'] = $this->schema_datetime((string) ($event['end_date'] ?? ''), (string) ($event['event_time'] ?? ''));
+            }
+
+            if ($locationName !== '' || $city !== '') {
+                $entry['location'] = [
+                    '@type' => 'Place',
+                    'name' => $locationName !== '' ? $locationName : $city,
+                    'address' => [
+                        '@type' => 'PostalAddress',
+                        'addressLocality' => $city,
+                    ],
+                ];
+            }
+
+            $image = $this->safe_url((string) ($event['image_url'] ?? '#'));
+            if ($image !== '#') {
+                $entry['image'] = [$image];
+            }
+
+            $structuredEvents[] = $entry;
+        }
+
+        if ($structuredEvents === []) {
+            return;
+        }
+
+        $json = json_encode([
+            '@context' => 'https://schema.org',
+            '@graph' => $structuredEvents,
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        if (!is_string($json) || $json === '') {
+            return;
+        }
+
+        echo '<script type="application/ld+json" id="cms-365network-event-schema">' . $json . '</script>' . "\n";
+    }
+
+    private function schema_datetime(string $date, string $time): string
+    {
+        $date = trim($date);
+        if ($date === '') {
+            return '';
+        }
+
+        $time = trim($time);
+        if ($time === '') {
+            $time = '09:00:00';
+        } elseif (preg_match('/^\d{2}:\d{2}$/', $time) === 1) {
+            $time .= ':00';
+        }
+
+        $timestamp = strtotime($date . ' ' . $time);
+        if ($timestamp === false) {
+            return '';
+        }
+
+        return gmdate('c', $timestamp);
     }
 }

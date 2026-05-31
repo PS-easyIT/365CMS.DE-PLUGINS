@@ -23,6 +23,9 @@ $showExcerpt = !empty($settings['show_excerpt']);
 $newTab      = !empty($settings['open_in_new_tab']);
 $excerptLen  = (int)($settings['excerpt_length'] ?? 160);
 $isHero      = !empty($isMagazineHero);
+$lang        = ($lang ?? 'de') === 'en' ? 'en' : 'de';
+$featuredLabel = $lang === 'en' ? 'Featured' : 'Empfohlen';
+$byLabel = $lang === 'en' ? 'by' : 'von';
 
 $sanitizeFeedUrl = static function (mixed $value): string {
     $url = trim((string) $value);
@@ -76,7 +79,7 @@ if (cms_feed_strlen($excerpt) > $excerptLen) {
 
     <div class="fd-card__body">
         <?php if ($isFeatured): ?>
-        <span class="fd-card__badge">Featured</span>
+        <span class="fd-card__badge"><?php echo htmlspecialchars($featuredLabel, ENT_QUOTES, 'UTF-8'); ?></span>
         <?php endif; ?>
 
         <h3 class="fd-card__title">
@@ -102,7 +105,7 @@ if (cms_feed_strlen($excerpt) > $excerptLen) {
             <?php endif; ?>
 
             <?php if (!empty($author) && $showSource): ?>
-            <span class="fd-card__author">von <?php echo htmlspecialchars((string) $author, ENT_QUOTES, 'UTF-8'); ?></span>
+            <span class="fd-card__author"><?php echo htmlspecialchars($byLabel, ENT_QUOTES, 'UTF-8'); ?> <?php echo htmlspecialchars((string) $author, ENT_QUOTES, 'UTF-8'); ?></span>
             <?php endif; ?>
         </div>
     </div>

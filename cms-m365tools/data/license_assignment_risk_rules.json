@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "source_checked": "2026-05-31",
+    "description": "Risikoregeln fuer direkte vs. gruppenbasierte Lizenzzuweisung und inaktive Nutzer."
+  },
+  "rules": {
+    "assignment_model": {
+      "direct": {
+        "severity": "warning",
+        "score": 25,
+        "message_de": "Direkte Nutzerzuweisungen erhoehen den Betriebsaufwand und das Risiko inkonsistenter Lizenzstaende.",
+        "message_en": "Direct user assignments increase operational overhead and risk inconsistent license states."
+      },
+      "mixed": {
+        "severity": "info",
+        "score": 10,
+        "message_de": "Mischbetrieb ist praktikabel, sollte aber in Richtung gruppenbasierter Zuweisung standardisiert werden.",
+        "message_en": "Mixed assignment can work, but should be standardized towards group-based assignment."
+      },
+      "group": {
+        "severity": "success",
+        "score": 0,
+        "message_de": "Gruppenbasierte Zuweisung reduziert Drift und vereinfacht Audit sowie Offboarding.",
+        "message_en": "Group-based assignment reduces drift and simplifies audit and offboarding."
+      }
+    },
+    "inactive_ratio": [
+      {
+        "min": 15,
+        "severity": "danger",
+        "score": 35,
+        "message_de": "Hoher Anteil inaktiver lizenzierter Nutzer: Lizenz- und Aktivitaets-Audit priorisieren.",
+        "message_en": "High share of inactive licensed users: prioritize license and activity audit."
+      },
+      {
+        "min": 7,
+        "severity": "warning",
+        "score": 20,
+        "message_de": "Erhoehter Anteil inaktiver lizenzierter Nutzer: Reclamation-Run und Offboarding-Pruefung einplanen.",
+        "message_en": "Elevated share of inactive licensed users: plan a reclamation run and offboarding review."
+      },
+      {
+        "min": 1,
+        "severity": "info",
+        "score": 8,
+        "message_de": "Leichte Inaktivitaet sichtbar: Monitoring fuer ungenutzte Lizenzen beibehalten.",
+        "message_en": "Some inactivity detected: keep monitoring unused licenses."
+      }
+    ]
+  }
+}

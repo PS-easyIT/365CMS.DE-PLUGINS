@@ -25,9 +25,11 @@ Der Import arbeitet mit vorhandenen CSV-Dateien im Ordner `files_import/` und un
 
 - Semikolon-CSV-Parsing mit Header-Normalisierung
 - Pflichtspalten-Prüfung pro CSV-Typ vor dem Import
+- Validierungsprofile `strict` / `balanced` / `permissive` mit zeilen- und feldgenauer Vorabprüfung
 - Dry-Run / Preview ohne Schreibzugriffe
 - Dry-Run nutzt simulierte IDs und Laufzeit-Caches, damit wiederholte Referenzen und Event-Verknüpfungen innerhalb desselben Laufs realitätsnah bewertet werden
 - JSON-/Report-Speicherung ist gegen ungültige UTF-8-Zeichen aus CSV-Daten gehärtet und nutzt sichere Fallbacks statt stiller Encode-Fehler
+- optionaler CSV-Formula-Guard neutralisiert potenziell gefährliche Spreadsheet-Formeln vor Verarbeitung
 - Upsert nach Name/Datum/Website
 - automatische Erkennung neuerer CSV-Dateien derselben Dateifamilie als `UPDATE`
 - optionale Auto-Anlage fehlender Companies
@@ -56,6 +58,7 @@ In der Admin-Tabelle wird die erkannte Datei inklusive `UPDATE`-Hinweis angezeig
 
 - akzeptiert nur lesbare CSV-Dateien innerhalb von `files_import/`
 - Dateigröße aktuell auf maximal 10 MB begrenzt
+- optionale Quarantäne-Prüfung (MIME, Signatur, Binary-Indikatoren, externer Hook-Scan)
 - CSRF-Prüfung vor jedem Run
 - DB-basiertes Rate-Limiting für Importstarts
 - separates DB-basiertes Rate-Limiting für Historien-Aktionen wie `Reset` und `Historie löschen`

@@ -14,6 +14,7 @@
 
     const $ = (sel, ctx = document) => ctx.querySelector(sel);
     const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
+    const apiBase = document.querySelector('.cmsforum[data-api-base]')?.dataset?.apiBase || '/forum/api';
 
     function showAlert(container, type, msg) {
         if (!container) return;
@@ -51,7 +52,7 @@
 
             btn.disabled = true;
             try {
-                const data = await postJSON('/forum/api/like', {
+                const data = await postJSON(`${apiBase}/like`, {
                     post_id: postId,
                     csrf_token: csrfToken,
                     ajax: '1'
@@ -85,7 +86,7 @@
 
             btn.disabled = true;
             try {
-                const data = await postJSON('/forum/api/subscribe', {
+                const data = await postJSON(`${apiBase}/subscribe`, {
                     type,
                     item_id: itemId,
                     csrf_token: csrfToken,
@@ -243,7 +244,7 @@
 
             btn.disabled = true;
             try {
-                const data = await postJSON('/forum/api/poll-vote', {
+                const data = await postJSON(`${apiBase}/poll-vote`, {
                     poll_id: pollId,
                     option_ids: optionId,
                     csrf_token: csrfToken,

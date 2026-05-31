@@ -25,6 +25,11 @@ if (is_file($sharedAdminContract)) {
     require_once $sharedAdminContract;
 }
 
+$sharedPublicI18n = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'shared' . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'plugin-public-i18n.php';
+if (is_file($sharedPublicI18n)) {
+    require_once $sharedPublicI18n;
+}
+
 $psrLoggerInterface = ABSPATH . 'assets/psr/Log/LoggerInterface.php';
 if (is_file($psrLoggerInterface)) {
     require_once $psrLoggerInterface;

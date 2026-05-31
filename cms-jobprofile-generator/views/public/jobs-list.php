@@ -20,34 +20,12 @@ if (!defined('ABSPATH')) exit;
  */
 
 $esc = fn(string|null $v): string => htmlspecialchars((string)($v ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+$publicLang = $publicLang ?? (function_exists('jpg_public_lang') ? jpg_public_lang() : 'de');
+$t = static fn(string $key, array $replace = []): string
+    => function_exists('jpg_public_t') ? jpg_public_t($key, $replace, $publicLang) : $key;
 
 // Aktuelle Seiten-URL ohne page-Parameter für Filter-Links
-$baseListUrl = '/jobs';
-
-// Beschäftigungstyp-Optionen für Filter-Dropdown
-$filterTypes = [
-    ''            => 'Alle Arten',
-    'fulltime'    => 'Vollzeit',
-    'parttime'    => 'Teilzeit',
-    'freelance'   => 'Freiberuflich',
-    'internship'  => 'Praktikum',
-    'mini'        => 'Minijob',
-];
-
-/**
- * Erzeugt eine Filter-URL mit beliebigen GET-Parametern.
- */
-$filterUrl = function (array $overrides) use ($companyFilter, $typeFilter, $locationFilter, $categoryFilter, $remoteFilter, $salaryMin): string {
-    $params = array_filter(array_merge([
-        'company'    => $companyFilter,
-        'type'       => $typeFilter,
-        'location'   => $locationFilter,
-        'category'   => $categoryFilter ?? '',
-        'remote'     => $remoteFilter   ?? '',
-        'salary_min' => ($salaryMin ?? 0) > 0 ? (string)$salaryMin : '',
-    ], $overrides));
-    return '/jobs' . ($params ? '?' . http_build_query($params) : '');
-};
+$baseListUrl = $jobsBasePath ?? (function_exists('jpg_public_path') ? jpg_public_path('jobs', $publicLang) : '/jobs');
 
 // Phase 14.3: neue Filtervariablen mit Fallback
 $categoryFilter = $categoryFilter ?? '';
@@ -56,6 +34,31 @@ $salaryMin      = (int)($salaryMin ?? 0);
 $allCategories  = $allCategories  ?? [];
 $hasFilter      = $companyFilter !== '' || $typeFilter !== '' || $locationFilter !== ''
                || $categoryFilter !== '' || $remoteFilter !== '' || $salaryMin > 0;
+
+// Beschäftigungstyp-Optionen für Filter-Dropdown
+$filterTypes = [
+    ''            => $t('jobs_filter_type_all'),
+    'fulltime'    => $t('type_fulltime'),
+    'parttime'    => $t('type_parttime'),
+    'freelance'   => $t('type_freelance'),
+    'internship'  => $t('type_internship'),
+    'mini'        => $t('type_mini'),
+];
+
+/**
+ * Erzeugt eine Filter-URL mit beliebigen GET-Parametern.
+ */
+$filterUrl = function (array $overrides) use ($companyFilter, $typeFilter, $locationFilter, $categoryFilter, $remoteFilter, $salaryMin, $baseListUrl): string {
+    $params = array_filter(array_merge([
+        'company'    => $companyFilter,
+        'type'       => $typeFilter,
+        'location'   => $locationFilter,
+        'category'   => $categoryFilter ?? '',
+        'remote'     => $remoteFilter   ?? '',
+        'salary_min' => ($salaryMin ?? 0) > 0 ? (string)$salaryMin : '',
+    ], $overrides));
+    return $baseListUrl . ($params ? '?' . http_build_query($params) : '');
+};
 ?>
 <?php
 // Design-Settings Helfer (Keys in DB mit pd_-Prefix gespeichert)
@@ -77,14 +80,14 @@ $cardStyle   = $ds['pd_list_card_style']     ?? 'horizontal';
     <div class="jpg-jobs-list__header">
         <div>
             <?php if ($showTitle): ?>
-            <h1>💼 Offene Stellen</h1>
+            <h1>💼 <?php echo $esc($t('jobs_open_positions')); ?></h1>
             <?php endif; ?>
             <?php if ($showCount): ?>
             <p class="jpg-jobs-list__subtitle">
                 <?php if ($totalCount > 0): ?>
-                    <?php echo $totalCount; ?> <?php echo $totalCount === 1 ? 'Stelle gefunden' : 'Stellen gefunden'; ?>
+                    <?php echo $totalCount; ?> <?php echo $esc($totalCount === 1 ? $t('jobs_found_singular') : $t('jobs_found_plural')); ?>
                 <?php else: ?>
-                    Keine Stellen gefunden
+                    <?php echo $esc($t('jobs_none_found')); ?>
                 <?php endif; ?>
             </p>
             <?php endif; ?>
@@ -94,14 +97,14 @@ $cardStyle   = $ds['pd_list_card_style']     ?? 'horizontal';
 
     <!-- Filter -->
     <?php if ($showFilters): ?>
-    <form method="GET" action="/jobs" class="jpg-jobs-list__filters">
+    <form method="GET" action="<?php echo $esc($baseListUrl); ?>" class="jpg-jobs-list__filters">
         <div class="jpg-jobs-list__filter-row">
             <input type="text" name="company" class="jpg-filter-input"
-                   placeholder="🏢 Unternehmen …"
+                   placeholder="🏢 <?php echo $esc($t('jobs_filter_company')); ?>"
                    value="<?php echo $esc($companyFilter); ?>">
 
             <input type="text" name="location" class="jpg-filter-input"
-                   placeholder="📍 Standort …"
+                   placeholder="📍 <?php echo $esc($t('jobs_filter_location')); ?>"
                    value="<?php echo $esc($locationFilter); ?>">
 
             <select name="type" class="jpg-filter-select">
@@ -115,7 +118,7 @@ $cardStyle   = $ds['pd_list_card_style']     ?? 'horizontal';
             <?php if (!empty($allCategories)): ?>
             <!-- Phase 14.3: Kategorie-Filter -->
             <select name="category" class="jpg-filter-select">
-                <option value="">🗂️ Alle Kategorien</option>
+                <option value="">🗂️ <?php echo $esc($t('jobs_filter_category_all')); ?></option>
                 <?php foreach ($allCategories as $cat): ?>
                 <option value="<?php echo $esc($cat->name); ?>"
                         <?php echo $categoryFilter === $cat->name ? 'selected' : ''; ?>>
@@ -127,7 +130,7 @@ $cardStyle   = $ds['pd_list_card_style']     ?? 'horizontal';
 
             <!-- Phase 14.3: Remote-Filter -->
             <select name="remote" class="jpg-filter-select">
-                <option value="">🌍 Alle Arbeitsmodelle</option>
+                <option value="">🌍 <?php echo $esc($t('jobs_filter_remote_all')); ?></option>
                 <?php foreach ($remoteLabels as $rVal => $rLbl): ?>
                 <option value="<?php echo $esc($rVal); ?>" <?php echo $remoteFilter === $rVal ? 'selected' : ''; ?>>
                     <?php echo $esc($rLbl); ?>
@@ -137,13 +140,13 @@ $cardStyle   = $ds['pd_list_card_style']     ?? 'horizontal';
 
             <!-- Phase 14.3: Gehalt-Filter -->
             <input type="number" name="salary_min" class="jpg-filter-input jpg-filter-input--salary"
-                   placeholder="💰 Gehalt ab (€)" min="0" step="500"
+                   placeholder="💰 <?php echo $esc($t('jobs_filter_salary_min')); ?>" min="0" step="500"
                    value="<?php echo $salaryMin > 0 ? $salaryMin : ''; ?>">
 
-            <button type="submit" class="jpg-filter-btn">🔍 Filtern</button>
+            <button type="submit" class="jpg-filter-btn">🔍 <?php echo $esc($t('jobs_filter_button')); ?></button>
 
             <?php if ($hasFilter): ?>
-            <a href="/jobs" class="jpg-filter-reset">✕ Zurücksetzen</a>
+            <a href="<?php echo $esc($baseListUrl); ?>" class="jpg-filter-reset">✕ <?php echo $esc($t('jobs_filter_reset')); ?></a>
             <?php endif; ?>
         </div>
     </form>
@@ -153,10 +156,10 @@ $cardStyle   = $ds['pd_list_card_style']     ?? 'horizontal';
     <?php if (empty($profiles)): ?>
     <div class="jpg-jobs-list__empty">
         <p class="jpg-empty-icon">📭</p>
-        <p><strong>Keine passenden Stellen gefunden</strong></p>
-        <p>Versuche es mit anderen Filtereinstellungen oder schau später wieder vorbei.</p>
+        <p><strong><?php echo $esc($t('jobs_no_match_title')); ?></strong></p>
+        <p><?php echo $esc($t('jobs_no_match_text')); ?></p>
         <?php if ($hasFilter): ?>
-        <a href="/jobs" class="jpg-btn jpg-btn-secondary">Alle Stellen anzeigen</a>
+        <a href="<?php echo $esc($baseListUrl); ?>" class="jpg-btn jpg-btn-secondary"><?php echo $esc($t('jobs_show_all')); ?></a>
         <?php endif; ?>
     </div>
     <?php else: ?>
@@ -164,7 +167,9 @@ $cardStyle   = $ds['pd_list_card_style']     ?? 'horizontal';
         <?php foreach ($profiles as $job): ?>
         <?php
             $jobSlug = preg_replace('/[^a-z0-9\-_]/', '', strtolower((string) ($job->slug ?? ''))) ?? '';
-            $jobUrl  = '/jobs/' . rawurlencode($jobSlug);
+            $jobUrl  = (function_exists('jpg_public_path')
+                ? jpg_public_path('jobs/' . rawurlencode($jobSlug), $publicLang)
+                : '/jobs/' . rawurlencode($jobSlug));
             $typeLabel   = $typeLabels[$job->employment_type ?? ''] ?? ($job->employment_type ?? '');
             $remoteLabel = $remoteLabels[$job->remote_option ?? ''] ?? ($job->remote_option ?? '');
         ?>
@@ -201,11 +206,11 @@ $cardStyle   = $ds['pd_list_card_style']     ?? 'horizontal';
                             $salMin = (int) ($job->salary_min ?? 0);
                             $salMax = (int) ($job->salary_max ?? 0);
                             if ($salMin > 0 && $salMax > 0) {
-                                echo number_format($salMin, 0, ',', '.') . ' – ' . number_format($salMax, 0, ',', '.') . ' €/Jahr';
+                                echo number_format($salMin, 0, ',', '.') . ' – ' . number_format($salMax, 0, ',', '.') . ' €/' . $t('salary_year');
                             } elseif ($salMin > 0) {
-                                echo 'ab ' . number_format($salMin, 0, ',', '.') . ' €/Jahr';
+                                echo $t('salary_from') . ' ' . number_format($salMin, 0, ',', '.') . ' €/' . $t('salary_year');
                             } elseif ($salMax > 0) {
-                                echo 'bis ' . number_format($salMax, 0, ',', '.') . ' €/Jahr';
+                                echo $t('salary_to') . ' ' . number_format($salMax, 0, ',', '.') . ' €/' . $t('salary_year');
                             }
                         ?>
                     </span>
@@ -226,7 +231,7 @@ $cardStyle   = $ds['pd_list_card_style']     ?? 'horizontal';
 
             <div class="jpg-job-card-list__action">
                 <a href="<?php echo $esc($jobUrl); ?>" class="jpg-btn jpg-btn-primary">
-                    Details &amp; Bewerben →
+                    <?php echo $esc($t('jobs_details_apply')); ?> →
                 </a>
             </div>
         </article>
@@ -235,20 +240,20 @@ $cardStyle   = $ds['pd_list_card_style']     ?? 'horizontal';
 
     <!-- Pagination -->
     <?php if ($pages > 1): ?>
-    <nav class="jpg-pagination" aria-label="Seitennavigation">
+    <nav class="jpg-pagination" aria-label="<?php echo $esc($t('jobs_pagination_page', ['page' => $page, 'pages' => $pages])); ?>">
         <?php if ($page > 1): ?>
         <a href="<?php echo $esc($filterUrl(['page' => $page - 1])); ?>" class="jpg-pagination__btn">
-            ← Zurück
+            ← <?php echo $esc($t('jobs_pagination_prev')); ?>
         </a>
         <?php endif; ?>
 
         <span class="jpg-pagination__info">
-            Seite <?php echo $page; ?> von <?php echo $pages; ?>
+            <?php echo $esc($t('jobs_pagination_page', ['page' => $page, 'pages' => $pages])); ?>
         </span>
 
         <?php if ($page < $pages): ?>
         <a href="<?php echo $esc($filterUrl(['page' => $page + 1])); ?>" class="jpg-pagination__btn">
-            Weiter →
+            <?php echo $esc($t('jobs_pagination_next')); ?> →
         </a>
         <?php endif; ?>
     </nav>

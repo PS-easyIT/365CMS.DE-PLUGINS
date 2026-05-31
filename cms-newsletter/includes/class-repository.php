@@ -26,9 +26,13 @@ final class CMS_Newsletter_Repository
         'require_double_opt_in' => '1',
         'default_segment' => 'general',
         'archive_title' => 'Newsletter',
+        'archive_title_en' => 'Newsletter',
         'archive_description' => 'Bleib über neue Inhalte, Events und Produkt-Updates auf dem Laufenden.',
+        'archive_description_en' => 'Stay up to date with new content, events, and product updates.',
         'subscribe_intro' => 'Melde dich für Produkt-News, Event-Hinweise und neue Fachbeiträge an.',
+        'subscribe_intro_en' => 'Sign up for product news, event updates, and new expert content.',
         'footer_note' => 'Du kannst dich jederzeit wieder mit einem Klick abmelden.',
+        'footer_note_en' => 'You can unsubscribe anytime with one click.',
     ];
 
     public static function instance(): self
@@ -118,9 +122,13 @@ final class CMS_Newsletter_Repository
                 'require_double_opt_in' => !empty($post['require_double_opt_in']) ? '1' : '0',
                 'default_segment' => $this->clean_slug($post['default_segment'] ?? 'general', 'general'),
                 'archive_title' => $this->clean_text($post['archive_title'] ?? 'Newsletter'),
+                'archive_title_en' => $this->clean_text($post['archive_title_en'] ?? ''),
                 'archive_description' => $this->clean_textarea($post['archive_description'] ?? ''),
+                'archive_description_en' => $this->clean_textarea($post['archive_description_en'] ?? ''),
                 'subscribe_intro' => $this->clean_textarea($post['subscribe_intro'] ?? ''),
+                'subscribe_intro_en' => $this->clean_textarea($post['subscribe_intro_en'] ?? ''),
                 'footer_note' => $this->clean_textarea($post['footer_note'] ?? ''),
+                'footer_note_en' => $this->clean_textarea($post['footer_note_en'] ?? ''),
             ];
 
             foreach ($settings as $key => $value) {
@@ -250,6 +258,61 @@ final class CMS_Newsletter_Repository
         $stmt = $this->db->prepare("UPDATE {$this->prefix}newsletter_subscribers SET status = 'unsubscribed' WHERE optin_token = ?");
         $stmt->execute([$token]);
         $this->clear_runtime_cache();
+    }
+
+    public function find_subscriber_by_token(string $token): ?array
+    {
+        $stmt = $this->db->prepare("SELECT * FROM {$this->prefix}newsletter_subscribers WHERE optin_token = ? LIMIT 1");
+        $stmt->execute([$token]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return is_array($row) ? $row : null;
+    }
+
+    public function build_unsubscribe_url(string $token, string $lang = 'de'): string
+    {
+        $token = trim($token);
+        if ($token === '') {
+            return '';
+        }
+
+        $siteUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
+        if (function_exists('cms_plugin_public_localized_path')) {
+            return $siteUrl . cms_plugin_public_localized_path('newsletter/unsubscribe/' . rawurlencode($token), $lang);
+        }
+
+        $basePath = $lang === 'en' ? '/en/newsletter/unsubscribe/' : '/newsletter/unsubscribe/';
+        return $siteUrl . $basePath . rawurlencode($token);
+    }
+
+    /**
+     * @param array<string,mixed> $subscriber
+     * @return array<string,string>
+     */
+    public function get_rfc8058_unsubscribe_headers(array $subscriber, string $lang = 'de'): array
+    {
+        $token = trim((string) ($subscriber['optin_token'] ?? ''));
+        if ($token === '') {
+            return [];
+        }
+
+        $unsubscribeUrl = $this->build_unsubscribe_url($token, $lang);
+        if ($unsubscribeUrl === '') {
+            return [];
+        }
+
+        $settings = $this->get_settings();
+        $senderEmail = $this->clean_email((string) ($settings['sender_email'] ?? ''));
+        $mailto = $senderEmail !== '' ? '<mailto:' . rawurlencode($senderEmail) . '?subject=unsubscribe>' : '';
+
+        $listUnsubscribeParts = ['<' . $unsubscribeUrl . '>'];
+        if ($mailto !== '') {
+            $listUnsubscribeParts[] = $mailto;
+        }
+
+        return [
+            'List-Unsubscribe' => implode(', ', $listUnsubscribeParts),
+            'List-Unsubscribe-Post' => 'List-Unsubscribe=One-Click',
+        ];
     }
 
     public function get_templates(): array

@@ -12,6 +12,17 @@ if (!defined('ABSPATH')) {
 }
 
 $esc = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+$lang = function_exists('cms_plugin_public_language') ? cms_plugin_public_language() : 'de';
+$t = static function (string $de, string $en, string $lang): string {
+    return $lang === 'en' ? $en : $de;
+};
+$i18nOption = static function (array $options, string $key, string $defaultDe, string $defaultEn, string $lang): string {
+    if (function_exists('cms_plugin_public_i18n_value')) {
+        return trim((string) cms_plugin_public_i18n_value($options, $key, $lang, $lang === 'en' ? $defaultEn : $defaultDe));
+    }
+
+    return trim((string) ($options[$key] ?? ($lang === 'en' ? $defaultEn : $defaultDe)));
+};
 $money = static function (mixed $value): string {
     if ($value === null || $value === '') {
         return '—';
@@ -163,29 +174,29 @@ $showAreaHeaders = $matrixEnabled('matrix_copilot_show_area_headers', $matrixVal
 $showPackageCards = $matrixEnabled('matrix_copilot_show_package_cards', $matrixValue('matrix_show_addon_package_cards', '1'));
 $showNotes = $matrixEnabled('matrix_copilot_show_notes', $matrixValue('matrix_show_notes', '1'));
 $showSources = $matrixEnabled('matrix_copilot_show_sources', $matrixValue('matrix_show_sources', '1'));
-$heroTitle = $matrixValue('matrix_copilot_title', 'Microsoft Copilot Lizenzmatrix');
-$heroOverline = $matrixValue('matrix_copilot_overline', 'Copilot-Matrix');
-$heroIntro = $matrixValue('matrix_copilot_intro', 'Umfangreiche Übersicht zu Microsoft Copilot, Microsoft 365 Copilot Chat, Microsoft 365 Copilot, Copilot Studio, Agents, App-Funktionen, Datenschutz und Nutzungskontingenten.');
-$secondaryButtonLabel = $matrixValue('matrix_copilot_secondary_button_label', 'Vollpaket-Matrix öffnen');
-$secondaryButtonUrl = $safeUrl($matrixValue('matrix_copilot_secondary_button_url', '/m365-lizenzmatrix'));
-$toolButtonLabel = $matrixValue('matrix_copilot_tool_button_label', 'Add-on-Matrix öffnen');
-$toolButtonUrl = $safeUrl($matrixValue('matrix_copilot_tool_button_url', '/m365-addon-matrix'));
-$resultOverline = $matrixValue('matrix_copilot_result_overline', 'Matrix');
-$resultTitle = $matrixValue('matrix_copilot_result_title', 'Gesamtübersicht der Copilot-Lizenzen und Agent-Optionen');
-$resultIntro = $matrixValue('matrix_copilot_result_intro', 'Vergleicht private Nutzung, Copilot Chat, Microsoft 365 Copilot Business, Microsoft 365 Copilot Enterprise sowie Copilot Studio für Teams und Standalone.');
-$areaOverline = $matrixValue('matrix_copilot_area_overline', 'Copilot-Bereich');
-$notesTitle = $matrixValue('matrix_copilot_notes_title', 'Hinweise zur Copilot-Matrix');
-$sourcesTitle = $matrixValue('matrix_copilot_sources_title', 'Quellenstand');
-$printButtonLabel = $matrixScopedValue('matrix_copilot_print_button_label', 'matrix_print_button_label', 'Drucken / PDF speichern');
-$primaryButtonLabel = $matrixValue('matrix_copilot_primary_button_label', 'Copilot-Lizenzcheck anfragen');
+$heroTitle = $i18nOption($matrixOptions, 'matrix_copilot_title', 'Microsoft Copilot Lizenzmatrix', 'Microsoft Copilot License Matrix', $lang);
+$heroOverline = $i18nOption($matrixOptions, 'matrix_copilot_overline', 'Copilot-Matrix', 'Copilot Matrix', $lang);
+$heroIntro = $i18nOption($matrixOptions, 'matrix_copilot_intro', 'Umfangreiche Übersicht zu Microsoft Copilot, Microsoft 365 Copilot Chat, Microsoft 365 Copilot, Copilot Studio, Agents, App-Funktionen, Datenschutz und Nutzungskontingenten.', 'Comprehensive overview of Microsoft Copilot, Microsoft 365 Copilot Chat, Microsoft 365 Copilot, Copilot Studio, agents, app features, privacy, and usage quotas.', $lang);
+$secondaryButtonLabel = $i18nOption($matrixOptions, 'matrix_copilot_secondary_button_label', 'Vollpaket-Matrix öffnen', 'Open full-suite matrix', $lang);
+$secondaryButtonUrl = $safeUrl($matrixValue('matrix_copilot_secondary_button_url', function_exists('cms_plugin_public_localized_path') ? cms_plugin_public_localized_path('/m365-lizenzmatrix', $lang) : '/m365-lizenzmatrix'));
+$toolButtonLabel = $i18nOption($matrixOptions, 'matrix_copilot_tool_button_label', 'Add-on-Matrix öffnen', 'Open add-on matrix', $lang);
+$toolButtonUrl = $safeUrl($matrixValue('matrix_copilot_tool_button_url', function_exists('cms_plugin_public_localized_path') ? cms_plugin_public_localized_path('/m365-addon-matrix', $lang) : '/m365-addon-matrix'));
+$resultOverline = $i18nOption($matrixOptions, 'matrix_copilot_result_overline', 'Matrix', 'Matrix', $lang);
+$resultTitle = $i18nOption($matrixOptions, 'matrix_copilot_result_title', 'Gesamtübersicht der Copilot-Lizenzen und Agent-Optionen', 'Complete overview of Copilot licenses and agent options', $lang);
+$resultIntro = $i18nOption($matrixOptions, 'matrix_copilot_result_intro', 'Vergleicht private Nutzung, Copilot Chat, Microsoft 365 Copilot Business, Microsoft 365 Copilot Enterprise sowie Copilot Studio für Teams und Standalone.', 'Compares private use, Copilot Chat, Microsoft 365 Copilot Business, Microsoft 365 Copilot Enterprise, and Copilot Studio for Teams and standalone.', $lang);
+$areaOverline = $i18nOption($matrixOptions, 'matrix_copilot_area_overline', 'Copilot-Bereich', 'Copilot area', $lang);
+$notesTitle = $i18nOption($matrixOptions, 'matrix_copilot_notes_title', 'Hinweise zur Copilot-Matrix', 'Notes on the Copilot matrix', $lang);
+$sourcesTitle = $i18nOption($matrixOptions, 'matrix_copilot_sources_title', 'Quellenstand', 'Source status', $lang);
+$printButtonLabel = $i18nOption($matrixOptions, 'matrix_copilot_print_button_label', 'Drucken / PDF speichern', 'Print / save as PDF', $lang);
+$primaryButtonLabel = $i18nOption($matrixOptions, 'matrix_copilot_primary_button_label', 'Copilot-Lizenzcheck anfragen', 'Request Copilot license check', $lang);
 $primaryButtonUrl = $safeUrl($matrixValue('matrix_copilot_primary_button_url', '/kontakt'));
 $showToc = $matrixEnabled('matrix_copilot_show_toc', $matrixValue('matrix_toc_show', '1'));
-$tocTitle = $matrixScopedValue('matrix_copilot_toc_title', 'matrix_toc_title', 'Inhaltsverzeichnis');
+$tocTitle = $i18nOption($matrixOptions, 'matrix_copilot_toc_title', 'Inhaltsverzeichnis', 'Table of contents', $lang);
 $tocColumns = $matrixScopedChoice('matrix_copilot_toc_columns', 'matrix_toc_columns', '3', ['1', '2', '3']);
 $tocFontSize = $matrixScopedNumber('matrix_copilot_toc_font_size', 'matrix_toc_font_size', 13, 11, 18);
 $tocNoWrap = $matrixEnabled('matrix_copilot_toc_nowrap', $matrixValue('matrix_toc_nowrap', '1'));
 $notesText = trim($matrixValue('matrix_copilot_notes_text', ''));
-$sourcesIntro = $matrixValue('matrix_copilot_sources_intro', (string) ($meta['price_basis'] ?? 'Preis- und Lizenzinformationen vor Bestellung prüfen.'));
+$sourcesIntro = $i18nOption($matrixOptions, 'matrix_copilot_sources_intro', (string) ($meta['price_basis'] ?? 'Preis- und Lizenzinformationen vor Bestellung prüfen.'), 'Verify pricing and licensing details before ordering.', $lang);
 $areaNavItems = [];
 $areaNavIds = [];
 $usedAreaIds = [];
@@ -233,7 +244,7 @@ if (class_exists('CMS\\ThemeManager')) {
                 <p class="phinit-prose"><?php echo $esc($heroIntro); ?></p>
             </section>
             <?php if ($showHeroButtons && ($secondaryButtonUrl !== '' || $toolButtonUrl !== '')): ?>
-            <nav class="m365calc-actions" aria-label="Weitere Lizenztools">
+            <nav class="m365calc-actions" aria-label="<?php echo $esc($t('Weitere Lizenztools', 'More license tools', $lang)); ?>">
                 <?php if ($secondaryButtonUrl !== ''): ?>
                 <a class="phinit-btn phinit-btn--secondary m365calc-matrix-action" href="<?php echo $esc($secondaryButtonUrl); ?>"><?php echo $esc($secondaryButtonLabel); ?></a>
                 <?php endif; ?>
@@ -294,7 +305,7 @@ if (class_exists('CMS\\ThemeManager')) {
                 <p><?php echo $esc($area['description'] ?? ''); ?></p>
             </section>
             <?php if ($showAreaContactCta): ?>
-            <nav class="m365calc-package-actions" aria-label="Kontakt zur Copilot-Lizenzberatung">
+            <nav class="m365calc-package-actions" aria-label="<?php echo $esc($t('Kontakt zur Copilot-Lizenzberatung', 'Contact Copilot licensing advisory', $lang)); ?>">
                 <a class="phinit-btn phinit-btn--secondary m365calc-package-check-action m365calc-contact-action" href="<?php echo $esc($primaryButtonUrl); ?>"><?php echo $esc($primaryButtonLabel); ?></a>
             </nav>
             <?php endif; ?>
@@ -302,14 +313,14 @@ if (class_exists('CMS\\ThemeManager')) {
         <?php else: ?>
         <h2 id="<?php echo $esc($areaId); ?>-title" class="m365calc-visually-hidden"><?php echo $esc($area['label'] ?? 'Copilot'); ?></h2>
         <?php if ($showAreaContactCta): ?>
-        <nav class="m365calc-package-actions m365calc-package-actions--standalone" aria-label="Kontakt zur Copilot-Lizenzberatung">
+        <nav class="m365calc-package-actions m365calc-package-actions--standalone" aria-label="<?php echo $esc($t('Kontakt zur Copilot-Lizenzberatung', 'Contact Copilot licensing advisory', $lang)); ?>">
             <a class="phinit-btn phinit-btn--secondary m365calc-package-check-action m365calc-contact-action" href="<?php echo $esc($primaryButtonUrl); ?>"><?php echo $esc($primaryButtonLabel); ?></a>
         </nav>
         <?php endif; ?>
         <?php endif; ?>
 
         <?php if ($showPackageCards): ?>
-        <section class="m365calc-summary-grid m365calc-readonly-package-grid" aria-label="Copilot-Varianten in <?php echo $esc($area['label'] ?? 'Copilot'); ?>">
+        <section class="m365calc-summary-grid m365calc-readonly-package-grid" aria-label="<?php echo $esc($t('Copilot-Varianten in', 'Copilot variants in', $lang) . ' ' . (string) ($area['label'] ?? 'Copilot')); ?>">
             <?php foreach ($packages as $package): ?>
             <?php if (!is_array($package)) { continue; } ?>
             <article class="phinit-card m365calc-mini-card">
@@ -321,11 +332,11 @@ if (class_exists('CMS\\ThemeManager')) {
         </section>
         <?php endif; ?>
 
-        <section class="phinit-table-wrap m365calc-compare-wrap m365calc-readonly-wrap" aria-label="Copilot-Matrix <?php echo $esc($area['label'] ?? ''); ?>">
+        <section class="phinit-table-wrap m365calc-compare-wrap m365calc-readonly-wrap" aria-label="<?php echo $esc($t('Copilot-Matrix', 'Copilot matrix', $lang) . ' ' . (string) ($area['label'] ?? '')); ?>">
             <table class="phinit-table m365calc-compare-table m365calc-readonly-table">
                 <thead>
                     <tr>
-                        <th scope="col">Vergleichspunkt</th>
+                        <th scope="col"><?php echo $esc($t('Vergleichspunkt', 'Comparison point', $lang)); ?></th>
                         <?php foreach ($packages as $package): ?>
                         <?php if (!is_array($package)) { continue; } ?>
                         <th scope="col">
@@ -362,7 +373,7 @@ if (class_exists('CMS\\ThemeManager')) {
     <?php endforeach; ?>
 
     <?php if ($showNotes || $showSources): ?>
-    <section class="m365calc-result-grid" aria-label="Hinweise und Quellen">
+    <section class="m365calc-result-grid" aria-label="<?php echo $esc($t('Hinweise und Quellen', 'Notes and sources', $lang)); ?>">
         <?php if ($showNotes): ?>
         <article class="phinit-note phinit-note--warning">
             <h2><?php echo $esc($notesTitle); ?></h2>
@@ -381,7 +392,7 @@ if (class_exists('CMS\\ThemeManager')) {
             <h2><?php echo $esc($sourcesTitle); ?></h2>
             <p><?php echo $esc($sourcesIntro); ?></p>
             <details>
-                <summary>Quellen anzeigen</summary>
+                <summary><?php echo $esc($t('Quellen anzeigen', 'Show sources', $lang)); ?></summary>
                 <ul class="m365calc-note-list">
                     <?php foreach ($sources as $source): ?>
                     <li><a href="<?php echo $esc($source); ?>" target="_blank" rel="noopener noreferrer"><?php echo $esc($source); ?></a></li>

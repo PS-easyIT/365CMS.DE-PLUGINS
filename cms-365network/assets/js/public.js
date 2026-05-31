@@ -84,7 +84,103 @@
         start();
     }
 
+    function initSearchKeyboard() {
+        var page = document.querySelector('[data-n365-search-page]');
+        var input = document.getElementById('n365-search-query');
+        var liveStatus = document.querySelector('[data-n365-search-live-status]');
+        var links;
+        var livePrefix;
+        var liveOf;
+
+        if (!page || !input) {
+            return;
+        }
+
+        links = Array.prototype.slice.call(document.querySelectorAll('[data-n365-search-result-link]')).filter(function (link) {
+            return link && typeof link.focus === 'function';
+        });
+        livePrefix = page.getAttribute('data-live-prefix') || 'Treffer';
+        liveOf = page.getAttribute('data-live-of') || 'von';
+
+        function announce(link) {
+            var label;
+            var index;
+            if (!liveStatus || !link) {
+                return;
+            }
+
+            index = links.indexOf(link);
+            if (index < 0) {
+                return;
+            }
+
+            label = (link.textContent || '').trim();
+            liveStatus.textContent = livePrefix + ' ' + (index + 1) + ' ' + liveOf + ' ' + links.length + ': ' + label;
+        }
+
+        function focusResult(index) {
+            if (links.length === 0) {
+                return;
+            }
+            index = (index + links.length) % links.length;
+            links[index].focus();
+            announce(links[index]);
+        }
+
+        input.addEventListener('keydown', function (event) {
+            if (links.length === 0) {
+                return;
+            }
+
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                focusResult(0);
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            var target = event.target;
+            var index;
+            if (target === input && event.key !== 'ArrowDown') {
+                return;
+            }
+            if (!target || !target.matches || !target.matches('[data-n365-search-result-link]')) {
+                return;
+            }
+
+            index = links.indexOf(target);
+            if (index < 0) {
+                return;
+            }
+
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                focusResult(index + 1);
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                if (index === 0) {
+                    input.focus();
+                    return;
+                }
+                focusResult(index - 1);
+            } else if (event.key === 'Home') {
+                event.preventDefault();
+                focusResult(0);
+            } else if (event.key === 'End') {
+                event.preventDefault();
+                focusResult(links.length - 1);
+            }
+        });
+
+        links.forEach(function (link) {
+            link.addEventListener('focus', function () {
+                announce(link);
+            });
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('[data-n365-spotlight]').forEach(initSpotlight);
+        initSearchKeyboard();
     });
 })();

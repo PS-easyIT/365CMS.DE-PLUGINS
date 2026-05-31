@@ -312,6 +312,18 @@ final class CMS_M365CALCULATOR_Addon_Configurator
         $totals = self::calculate_addon_bundle_total($input, $evaluated, $basePlan);
         $upgrade = self::compare_addons_vs_upgrade($input, $basePlan, $evaluated);
         $warnings = self::build_warnings($input, $basePlan, $selectedAddons);
+        $matrixValidation = self::validate_offer_matrix(
+            $basePlan,
+            $selectedAddons,
+            (int) ($input['users'] ?? 1),
+            [
+                'pstn_provider' => (string) ($input['pstn_provider'] ?? 'none'),
+                'requirements' => [
+                    !empty($input['premium_connectors']) ? 'power_apps' : '',
+                    !empty($input['dataverse_required']) ? 'power_apps' : '',
+                ],
+            ]
+        );
         $rules = CMS_M365CALCULATOR_Catalog::addon_overlap_rules();
 
         return [
@@ -326,12 +338,57 @@ final class CMS_M365CALCULATOR_Addon_Configurator
             'totals' => $totals,
             'consumption' => $consumption,
             'upgrade' => $upgrade,
-            'warnings' => array_values(array_merge($warnings, is_array($rules['global_warnings'] ?? null) ? $rules['global_warnings'] : [])),
+            'warnings' => array_values(array_merge(
+                $warnings,
+                array_values(array_map(static fn(array $entry): string => (string) ($entry['message'] ?? ''), $matrixValidation['entries'] ?? [])),
+                is_array($rules['global_warnings'] ?? null) ? $rules['global_warnings'] : []
+            )),
+            'offer_matrix' => $matrixValidation,
             'sources' => array_values(array_unique(array_merge(
                 is_array($rules['sources'] ?? null) ? $rules['sources'] : [],
                 ['https://learn.microsoft.com/en-us/microsoft-365/backup/backup-overview']
             ))),
             'status_counts' => self::status_counts($evaluated),
+        ];
+    }
+
+    /**
+     * @param array<string,mixed> $basePlan
+     * @param array<int,string> $selectedAddons
+     * @param array<string,mixed> $context
+     * @return array<string,mixed>
+     */
+    public static function validate_offer_matrix(array $basePlan, array $selectedAddons, int $users, array $context = []): array
+    {
+        $ruleset = CMS_M365CALCULATOR_Catalog::offer_matrix_rules();
+        $rules = is_array($ruleset['rules'] ?? null) ? $ruleset['rules'] : [];
+        $planTags = self::values($basePlan, 'tags');
+        $requirements = array_values(array_filter(array_map('strval', is_array($context['requirements'] ?? null) ? $context['requirements'] : [])));
+        $entries = [];
+
+        foreach ($rules as $rule) {
+            if (!is_array($rule)) {
+                continue;
+            }
+
+            if (!self::offer_rule_applies($rule, $planTags, $selectedAddons, $users, $requirements, $context)) {
+                continue;
+            }
+
+            $entries[] = [
+                'key' => (string) ($rule['key'] ?? ''),
+                'severity' => self::enum((string) ($rule['severity'] ?? 'warning'), ['info', 'success', 'warning', 'danger'], 'warning'),
+                'message' => (string) ($rule['message'] ?? 'Offer-Matrix-Regel pruefen.'),
+            ];
+        }
+
+        return [
+            'entries' => $entries,
+            'has_blockers' => array_reduce(
+                $entries,
+                static fn(bool $carry, array $entry): bool => $carry || (string) ($entry['severity'] ?? '') === 'danger',
+                false
+            ),
         ];
     }
 
@@ -560,6 +617,64 @@ final class CMS_M365CALCULATOR_Addon_Configurator
         }
 
         return $warnings;
+    }
+
+    /**
+     * @param array<string,mixed> $rule
+     * @param array<int,string> $planTags
+     * @param array<int,string> $selectedAddons
+     * @param array<int,string> $requirements
+     * @param array<string,mixed> $context
+     */
+    private static function offer_rule_applies(
+        array $rule,
+        array $planTags,
+        array $selectedAddons,
+        int $users,
+        array $requirements,
+        array $context
+    ): bool {
+        $matchTag = self::rule_values($rule, 'when_base_tag_any');
+        if ($matchTag !== [] && array_intersect($matchTag, $planTags) === []) {
+            return false;
+        }
+
+        $matchAddon = self::rule_values($rule, 'when_addon_any');
+        if ($matchAddon !== [] && array_intersect($matchAddon, $selectedAddons) === []) {
+            return false;
+        }
+
+        $matchReq = self::rule_values($rule, 'when_requirements_any');
+        if ($matchReq !== [] && array_intersect($matchReq, $requirements) === []) {
+            return false;
+        }
+
+        $maxUsers = (int) ($rule['max_users'] ?? 0);
+        if ($maxUsers > 0 && $users <= $maxUsers) {
+            return false;
+        }
+
+        $pstn = (string) ($rule['when_pstn_provider'] ?? '');
+        if ($pstn !== '' && (string) ($context['pstn_provider'] ?? '') !== $pstn) {
+            return false;
+        }
+
+        $requiresTags = self::rule_values($rule, 'requires_base_tag_any');
+        if ($requiresTags !== [] && array_intersect($requiresTags, $planTags) === []) {
+            return true;
+        }
+
+        $requiresAddons = self::rule_values($rule, 'requires_addon_any');
+        if ($requiresAddons !== [] && array_intersect($requiresAddons, $selectedAddons) === []) {
+            return true;
+        }
+
+        $forbidsAddons = self::rule_values($rule, 'forbids_addon_any');
+        if ($forbidsAddons !== [] && array_intersect($forbidsAddons, $selectedAddons) !== []) {
+            return true;
+        }
+
+        return $maxUsers > 0;
     }
 
     /**

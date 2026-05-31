@@ -42,14 +42,20 @@ final class CMS_Contact_Frontend
         // Legacy-Alias für deutschsprachige Theme-/Menülinks: /kontakt → /contact
         $router->addRoute('GET',  '/kontakt',              [$this, 'redirect_legacy_default']);
         $router->addRoute('GET',  '/kontakt/:slug',        [$this, 'redirect_legacy_form']);
+        $router->addRoute('GET',  '/en/kontakt',           [$this, 'redirect_legacy_default']);
+        $router->addRoute('GET',  '/en/kontakt/:slug',     [$this, 'redirect_legacy_form']);
 
         // Basis-Route: /contact (ohne Slug) – erstes aktives Formular als Fallback
         $router->addRoute('GET',  '/contact',              [$this, 'render_default_form']);
         $router->addRoute('POST', '/contact',              [$this, 'handle_default_submit']);
+        $router->addRoute('GET',  '/en/contact',           [$this, 'render_default_form']);
+        $router->addRoute('POST', '/en/contact',           [$this, 'handle_default_submit']);
 
         // Dynamische Route: /contact/:slug
         $router->addRoute('GET',  '/contact/:slug',        [$this, 'render_form']);
         $router->addRoute('POST', '/contact/:slug',        [$this, 'handle_submit']);
+        $router->addRoute('GET',  '/en/contact/:slug',     [$this, 'render_form']);
+        $router->addRoute('POST', '/en/contact/:slug',     [$this, 'handle_submit']);
 
         // AJAX-Submit-Endpoint
         $router->addRoute('POST', '/api/contact/:slug/submit', [$this, 'handle_ajax_submit']);
@@ -69,7 +75,7 @@ final class CMS_Contact_Frontend
     private function redirect_legacy_contact_path(string $targetPath): void
     {
         $query = (string) ($_SERVER['QUERY_STRING'] ?? '');
-        $location = $this->build_local_redirect_path($targetPath, $query);
+        $location = $this->build_local_redirect_path($targetPath, $query, $this->get_public_lang());
 
         if (!headers_sent()) {
             $this->send_security_headers();
@@ -133,7 +139,7 @@ final class CMS_Contact_Frontend
             if (function_exists('render_404')) {
                 render_404();
             } else {
-                echo '<h1>404 – Kein Kontaktformular vorhanden</h1>';
+                echo '<h1>404 – ' . htmlspecialchars($this->public_t('Kein Kontaktformular vorhanden', 'No contact form available'), ENT_QUOTES, 'UTF-8') . '</h1>';
             }
         }
     }
@@ -164,7 +170,7 @@ final class CMS_Contact_Frontend
             if (function_exists('render_404')) {
                 render_404();
             } else {
-                echo '<h1>404 – Formular nicht gefunden</h1>';
+                echo '<h1>404 – ' . htmlspecialchars($this->public_t('Formular nicht gefunden', 'Form not found'), ENT_QUOTES, 'UTF-8') . '</h1>';
             }
             return;
         }
@@ -214,9 +220,9 @@ final class CMS_Contact_Frontend
 
         if ($result['success']) {
             $_SESSION['contact_success'] = $form['success_message']
-                ?? 'Vielen Dank für Ihre Nachricht!';
+                ?? $this->public_t('Vielen Dank für Ihre Nachricht!', 'Thank you for your message!');
 
-            $redirectUrl = $this->resolve_form_redirect($form, '/contact/' . rawurlencode($slug) . '?sent=1');
+            $redirectUrl = $this->resolve_form_redirect($form, $this->public_localized_path('/contact/' . rawurlencode($slug)) . '?sent=1');
             if (function_exists('safe_redirect')) {
                 safe_redirect($redirectUrl);
             } else {
@@ -226,7 +232,7 @@ final class CMS_Contact_Frontend
             $_SESSION['contact_error'] = $result['error'];
             $_SESSION['contact_old']   = $result['old_data'] ?? [];
             $_SESSION['contact_field_errors'] = $result['field_errors'] ?? [];
-            $fallbackUrl = '/contact/' . rawurlencode($slug);
+            $fallbackUrl = $this->public_localized_path('/contact/' . rawurlencode($slug));
             if (function_exists('safe_redirect')) {
                 safe_redirect($fallbackUrl);
             } else {
@@ -248,7 +254,7 @@ final class CMS_Contact_Frontend
 
         if (!$form) {
             http_response_code(404);
-            echo json_encode(['success' => false, 'error' => 'Formular nicht gefunden'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            echo json_encode(['success' => false, 'error' => $this->public_t('Formular nicht gefunden', 'Form not found')], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             exit;
         }
 
@@ -257,7 +263,7 @@ final class CMS_Contact_Frontend
         if ($result['success']) {
             echo json_encode([
                 'success' => true,
-                'message' => $form['success_message'] ?? 'Vielen Dank für Ihre Nachricht!',
+                'message' => $form['success_message'] ?? $this->public_t('Vielen Dank für Ihre Nachricht!', 'Thank you for your message!'),
             ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         } else {
             http_response_code(422);
@@ -279,11 +285,13 @@ final class CMS_Contact_Frontend
     {
         $formId = (int) $form['id'];
         $slug   = $form['slug'];
+        $submissionsService = CMS_Contact_Submissions::instance();
 
         // CSRF-Check
         $csrfToken = (string) ($_POST['csrf_token'] ?? '');
         if (!\CMS\Security::instance()->verifyToken($csrfToken, 'contact_' . $slug)) {
-            return ['success' => false, 'error' => 'Sicherheitscheck fehlgeschlagen. Bitte laden Sie die Seite neu.'];
+            $submissionsService->log_security_event('csrf_failed', $formId, 'token_invalid');
+            return ['success' => false, 'error' => $this->public_t('Sicherheitscheck fehlgeschlagen. Bitte laden Sie die Seite neu.', 'Security check failed. Please reload the page.')];
         }
 
         // CAPTCHA-Check (session-basiert)
@@ -292,13 +300,15 @@ final class CMS_Contact_Frontend
             $expected = (int) ($_SESSION['captcha_expected_' . $slug] ?? -1);
             unset($_SESSION['captcha_expected_' . $slug]);
             if ($answer !== $expected || $expected < 0) {
-                return ['success' => false, 'error' => 'Die Captcha-Antwort ist falsch. Bitte versuchen Sie es erneut.'];
+                $submissionsService->log_security_event('captcha_failed', $formId, 'wrong_answer');
+                return ['success' => false, 'error' => $this->public_t('Die Captcha-Antwort ist falsch. Bitte versuchen Sie es erneut.', 'The CAPTCHA answer is incorrect. Please try again.')];
             }
         }
 
         // Rate-Limiting
         if (!$this->check_rate_limit($formId, (int) ($form['rate_limit'] ?? 3))) {
-            return ['success' => false, 'error' => 'Zu viele Anfragen. Bitte versuchen Sie es später erneut.'];
+            $submissionsService->log_security_event('rate_limited', $formId, 'too_many_requests');
+            return ['success' => false, 'error' => $this->public_t('Zu viele Anfragen. Bitte versuchen Sie es später erneut.', 'Too many requests. Please try again later.')];
         }
         $this->register_rate_limit_hit($formId);
 
@@ -328,7 +338,7 @@ final class CMS_Contact_Frontend
 
             // Pflichtfeld-Prüfung
             if (!empty($field['is_required']) && ($value === '' || $value === null)) {
-                $fieldErrors[$name] = htmlspecialchars($field['field_label']) . ' ist ein Pflichtfeld.';
+                $fieldErrors[$name] = htmlspecialchars($field['field_label']) . ' ' . $this->public_t('ist ein Pflichtfeld.', 'is required.');
                 continue;
             }
 
@@ -370,7 +380,7 @@ final class CMS_Contact_Frontend
         if (!empty($fieldErrors)) {
             return [
                 'success'      => false,
-                'error'        => 'Bitte korrigieren Sie die markierten Felder.',
+                'error'        => $this->public_t('Bitte korrigieren Sie die markierten Felder.', 'Please correct the highlighted fields.'),
                 'field_errors' => $fieldErrors,
                 'old_data'     => $oldData,
             ];
@@ -379,7 +389,10 @@ final class CMS_Contact_Frontend
         if (!empty($privacySettings['required']) && empty($_POST['privacy_consent'])) {
             return [
                 'success'  => false,
-                'error'    => 'Bitte bestätigen Sie die Verarbeitung Ihrer personenbezogenen Daten und lesen Sie die Datenschutzerklärung.',
+                'error'    => $this->public_t(
+                    'Bitte bestätigen Sie die Verarbeitung Ihrer personenbezogenen Daten und lesen Sie die Datenschutzerklärung.',
+                    'Please confirm the processing of your personal data and review the privacy policy.'
+                ),
                 'old_data' => $oldData,
             ];
         }
@@ -409,6 +422,12 @@ final class CMS_Contact_Frontend
             ]);
 
             if (!empty($antispamResult['rejected'])) {
+                $submissionsService->log_security_event(
+                    'antispam_rejected',
+                    $formId,
+                    (string) ($antispamResult['reason'] ?? 'unknown'),
+                    ['provider' => (string) ($antispamResult['provider'] ?? '')]
+                );
                 return [
                     'success' => false,
                     'error' => $this->get_antispam_error_message((string) ($antispamResult['reason'] ?? '')),
@@ -425,8 +444,7 @@ final class CMS_Contact_Frontend
         }
 
         // Submission speichern
-        $submissions  = CMS_Contact_Submissions::instance();
-        $submissionId = $submissions->create([
+        $submissionId = $submissionsService->create([
             'form_id'      => $formId,
             'user_id'      => $userId,
             'sender_name'  => $senderName,
@@ -438,7 +456,7 @@ final class CMS_Contact_Frontend
         ], $meta);
 
         // E-Mail-Benachrichtigung
-        $submissions->send_notification($form, [
+        $submissionsService->send_notification($form, [
             'sender_name'  => $senderName,
             'sender_email' => $senderEmail,
             'subject'      => $subject,
@@ -448,7 +466,7 @@ final class CMS_Contact_Frontend
         ], $meta);
 
         // Bestätigungs-E-Mail
-        $submissions->send_confirmation($form, [
+        $submissionsService->send_confirmation($form, [
             'sender_name'  => $senderName,
             'sender_email' => $senderEmail,
         ]);
@@ -475,12 +493,20 @@ final class CMS_Contact_Frontend
         return $fallback;
     }
 
-    private function build_local_redirect_path(string $targetPath, string $rawQuery = ''): string
+    private function build_local_redirect_path(string $targetPath, string $rawQuery = '', ?string $lang = null): string
     {
         $targetPath = '/' . ltrim($targetPath, '/');
         $path = parse_url($targetPath, PHP_URL_PATH);
-        if (!is_string($path) || !str_starts_with($path, '/contact')) {
+        if (!is_string($path)) {
             $path = '/contact';
+        }
+
+        if (!preg_match('#^/(?:en/)?contact(?:/.*)?$#', $path)) {
+            $path = '/contact';
+        }
+
+        if (!str_starts_with($path, '/en/') && ($lang ?? $this->get_public_lang()) === 'en') {
+            $path = '/en' . $path;
         }
 
         $queryString = '';
@@ -492,6 +518,38 @@ final class CMS_Contact_Frontend
         }
 
         return $path . ($queryString !== '' ? '?' . $queryString : '');
+    }
+
+    private function get_public_lang(): string
+    {
+        if (function_exists('cms_plugin_public_language')) {
+            return cms_plugin_public_language();
+        }
+
+        $requestPath = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+        $normalized = strtolower(trim((string) preg_replace('#/+#', '/', $requestPath), '/'));
+
+        return ($normalized === 'en' || str_starts_with($normalized, 'en/')) ? 'en' : 'de';
+    }
+
+    private function public_localized_path(string $path, ?string $lang = null): string
+    {
+        $lang = $lang ?? $this->get_public_lang();
+        if (function_exists('cms_plugin_public_localized_path')) {
+            return cms_plugin_public_localized_path($path, $lang);
+        }
+
+        $path = '/' . trim($path, '/');
+        if ($lang === 'en') {
+            return '/en' . ($path === '/' ? '' : $path);
+        }
+
+        return $path;
+    }
+
+    private function public_t(string $de, string $en): string
+    {
+        return $this->get_public_lang() === 'en' ? $en : $de;
     }
 
     private function resolve_template_file(string $template): string
@@ -553,9 +611,18 @@ final class CMS_Contact_Frontend
     private function get_antispam_error_message(string $reason): string
     {
         return match ($reason) {
-            'minimum_time' => 'Bitte warten Sie einen Moment und senden Sie das Formular erneut.',
-            'max_links' => 'Zu viele Links in der Anfrage. Bitte kürzen Sie den Inhalt und versuchen Sie es erneut.',
-            default => 'Ihre Anfrage wurde aus Sicherheitsgründen blockiert. Bitte prüfen Sie Ihre Eingaben und versuchen Sie es erneut.',
+            'minimum_time' => $this->public_t(
+                'Bitte warten Sie einen Moment und senden Sie das Formular erneut.',
+                'Please wait a moment and submit the form again.'
+            ),
+            'max_links' => $this->public_t(
+                'Zu viele Links in der Anfrage. Bitte kürzen Sie den Inhalt und versuchen Sie es erneut.',
+                'Too many links in the request. Please shorten the content and try again.'
+            ),
+            default => $this->public_t(
+                'Ihre Anfrage wurde aus Sicherheitsgründen blockiert. Bitte prüfen Sie Ihre Eingaben und versuchen Sie es erneut.',
+                'Your request was blocked for security reasons. Please review your input and try again.'
+            ),
         };
     }
 
@@ -578,31 +645,31 @@ final class CMS_Contact_Frontend
         switch ($field['field_type']) {
             case 'email':
                 if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
-                    return "{$label}: Bitte geben Sie eine gültige E-Mail-Adresse ein.";
+                    return "{$label}: " . $this->public_t('Bitte geben Sie eine gültige E-Mail-Adresse ein.', 'Please enter a valid email address.');
                 }
                 break;
 
             case 'url':
                 if ($this->sanitize_public_url((string) $value) === '') {
-                    return "{$label}: Bitte geben Sie eine gültige URL ein.";
+                    return "{$label}: " . $this->public_t('Bitte geben Sie eine gültige URL ein.', 'Please enter a valid URL.');
                 }
                 break;
 
             case 'tel':
                 if (!preg_match('/^[\+\d\s\-\/\(\)]{6,30}$/', $value)) {
-                    return "{$label}: Bitte geben Sie eine gültige Telefonnummer ein.";
+                    return "{$label}: " . $this->public_t('Bitte geben Sie eine gültige Telefonnummer ein.', 'Please enter a valid phone number.');
                 }
                 break;
 
             case 'number':
                 if (!is_numeric($value)) {
-                    return "{$label}: Bitte geben Sie eine gültige Zahl ein.";
+                    return "{$label}: " . $this->public_t('Bitte geben Sie eine gültige Zahl ein.', 'Please enter a valid number.');
                 }
                 break;
 
             case 'date':
                 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
-                    return "{$label}: Bitte geben Sie ein gültiges Datum ein.";
+                    return "{$label}: " . $this->public_t('Bitte geben Sie ein gültiges Datum ein.', 'Please enter a valid date.');
                 }
                 break;
 
@@ -617,7 +684,7 @@ final class CMS_Contact_Frontend
                     }
                 }
                 if (!empty($options) && !in_array($value, $options, true)) {
-                    return "{$label}: Ungültige Auswahl.";
+                    return "{$label}: " . $this->public_t('Ungültige Auswahl.', 'Invalid selection.');
                 }
                 break;
         }
@@ -626,11 +693,11 @@ final class CMS_Contact_Frontend
         if (!empty($field['validation'])) {
             $pattern = (string) $field['validation'];
             if (@preg_match($pattern, '') === false) {
-                return "{$label}: Die konfigurierte Validierungsregel ist ungültig.";
+                return "{$label}: " . $this->public_t('Die konfigurierte Validierungsregel ist ungültig.', 'The configured validation rule is invalid.');
             }
 
             if (preg_match($pattern, (string) $value) !== 1) {
-                return "{$label}: Eingabe entspricht nicht dem erwarteten Format.";
+                return "{$label}: " . $this->public_t('Eingabe entspricht nicht dem erwarteten Format.', 'Input does not match the expected format.');
             }
         }
 
@@ -928,6 +995,56 @@ final class CMS_Contact_Frontend
         return $html;
     }
 
+    public static function t(string $de, string $en): string
+    {
+        return self::instance()->public_t($de, $en);
+    }
+
+    public static function render_error_summary(array $fieldErrors, string $formId = 'contact-form'): string
+    {
+        if ($fieldErrors === []) {
+            return '';
+        }
+
+        $title = self::t('Bitte korrigieren Sie folgende Felder:', 'Please correct the following fields:');
+        $jumpPrefix = 'cf-';
+        $html = "<section class=\"contact-error-summary\" role=\"alert\" aria-live=\"assertive\" data-contact-error-summary tabindex=\"-1\">\n";
+        $html .= '  <h2 class="contact-error-summary__title">' . htmlspecialchars($title, ENT_QUOTES, 'UTF-8') . "</h2>\n";
+        $html .= "  <ul class=\"contact-error-summary__list\">\n";
+
+        foreach ($fieldErrors as $name => $message) {
+            $targetId = $jumpPrefix . preg_replace('/[^a-z0-9\-_]/i', '-', (string) $name);
+            $html .= '    <li><a href="#' . htmlspecialchars((string) $targetId, ENT_QUOTES, 'UTF-8') . '" data-contact-error-link="' . htmlspecialchars((string) $targetId, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars((string) $message, ENT_QUOTES, 'UTF-8') . "</a></li>\n";
+        }
+
+        $html .= "  </ul>\n";
+        $html .= '  <a class="contact-visually-hidden" href="#' . htmlspecialchars($formId, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars(self::t('Zum Formular springen', 'Jump to form'), ENT_QUOTES, 'UTF-8') . "</a>\n";
+        $html .= "</section>\n";
+
+        return $html;
+    }
+
+    public static function render_captcha_field(array $form): string
+    {
+        if (empty($form['enable_captcha'])) {
+            return '';
+        }
+
+        $a = random_int(1, 10);
+        $b = random_int(1, 10);
+        $_SESSION['captcha_expected_' . $form['slug']] = $a + $b;
+
+        $labelText = self::t('Spamschutz: Was ist %d + %d?', 'Anti-spam: What is %d + %d?');
+        $label = sprintf($labelText, $a, $b);
+
+        $html = "<div class=\"contact-field contact-field-full contact-captcha\">\n";
+        $html .= '  <label class="contact-label" for="contact-captcha-answer">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . " <span class=\"contact-required\">*</span></label>\n";
+        $html .= "  <input type=\"number\" id=\"contact-captcha-answer\" name=\"captcha_answer\" class=\"contact-input\" inputmode=\"numeric\" required>\n";
+        $html .= "</div>\n";
+
+        return $html;
+    }
+
     private static function normalize_public_field_type(string $type): string
     {
         $type = strtolower(trim($type));
@@ -950,12 +1067,26 @@ final class CMS_Contact_Frontend
         $html .= "  <div class=\"contact-privacy-box\">\n";
         $html .= "    <label class=\"contact-checkbox-label contact-privacy-checkbox\">";
         $html .= "<input type=\"checkbox\" id=\"cf-privacy-consent\" name=\"privacy_consent\" value=\"1\" required{$checked}>";
-        $html .= "<span class=\"contact-privacy-text\">Ich stimme der Verarbeitung meiner personenbezogenen Daten zum Zweck der Bearbeitung meiner Anfrage zu.";
+        $html .= '<span class="contact-privacy-text">' . htmlspecialchars(
+            self::t(
+                'Ich stimme der Verarbeitung meiner personenbezogenen Daten zum Zweck der Bearbeitung meiner Anfrage zu.',
+                'I agree to the processing of my personal data for handling my request.'
+            ),
+            ENT_QUOTES,
+            'UTF-8'
+        );
         if ($policyUrl !== '') {
-            $html .= " <a href=\"{$policyUrl}\" class=\"contact-privacy-link\" target=\"_blank\" rel=\"noopener noreferrer\">Datenschutzerklärung ansehen</a>.";
+            $html .= ' <a href="' . $policyUrl . '" class="contact-privacy-link" target="_blank" rel="noopener noreferrer">' . htmlspecialchars(self::t('Datenschutzerklärung ansehen', 'View privacy policy'), ENT_QUOTES, 'UTF-8') . '</a>.';
         }
         $html .= "</span></label>\n";
-        $html .= "    <small class=\"contact-hint\">Ohne diese Bestätigung kann das Formular nicht abgesendet werden.</small>\n";
+        $html .= '    <small class="contact-hint">' . htmlspecialchars(
+            self::t(
+                'Ohne diese Bestätigung kann das Formular nicht abgesendet werden.',
+                'The form cannot be submitted without this confirmation.'
+            ),
+            ENT_QUOTES,
+            'UTF-8'
+        ) . "</small>\n";
         $html .= "  </div>\n";
         $html .= "</div>\n";
 

@@ -108,7 +108,10 @@ final class CMS_Projects
         $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
         $path = '/' . trim($path, '/');
 
-        return $path === '/projects' || str_starts_with($path, '/projects/');
+        return $path === '/projects'
+            || str_starts_with($path, '/projects/')
+            || $path === '/en/projects'
+            || str_starts_with($path, '/en/projects/');
     }
 
     private function shouldLoadPublicStyles(): bool

@@ -31,17 +31,19 @@ final class CMS_M365LINKCOLLECTION_Widget
             return;
         }
 
-        $title = CMS_M365LINKCOLLECTION_Settings::get('sidebar_title', 'M365 Sites & Blogs');
         $interval = CMS_M365LINKCOLLECTION_Settings::int('sidebar_rotate_seconds', 7, 3, 60) * 1000;
         $showCategory = CMS_M365LINKCOLLECTION_Settings::bool('sidebar_show_category', true);
-        $route = CMS_M365LINKCOLLECTION_Settings::route();
+        $settings = CMS_M365LINKCOLLECTION_Settings::all();
+        $lang = self::current_language();
+        $route = self::localized_route(CMS_M365LINKCOLLECTION_Settings::route(), $lang);
         $siteUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
         $archiveUrl = $siteUrl . $route;
         $placeholder = trim(CMS_M365LINKCOLLECTION_Settings::get('sidebar_placeholder_image', ''));
-        $buttonLabel = CMS_M365LINKCOLLECTION_Settings::get('sidebar_button_label', 'Alle Links ansehen');
-        $controlsLabel = CMS_M365LINKCOLLECTION_Settings::get('sidebar_controls_label', 'Linkcollection steuern');
-        $prevLabel = CMS_M365LINKCOLLECTION_Settings::get('sidebar_prev_label', 'Vorherigen Link anzeigen');
-        $nextLabel = CMS_M365LINKCOLLECTION_Settings::get('sidebar_next_label', 'Nächsten Link anzeigen');
+        $title = self::i18n($settings, 'sidebar_title', $lang, 'M365 Sites & Blogs');
+        $buttonLabel = self::i18n($settings, 'sidebar_button_label', $lang, 'Alle Links ansehen');
+        $controlsLabel = self::i18n($settings, 'sidebar_controls_label', $lang, 'Linkcollection steuern');
+        $prevLabel = self::i18n($settings, 'sidebar_prev_label', $lang, 'Vorherigen Link anzeigen');
+        $nextLabel = self::i18n($settings, 'sidebar_next_label', $lang, 'Nächsten Link anzeigen');
         $style = CMS_M365LINKCOLLECTION_Settings::get('sidebar_style', 'card');
         if (!in_array($style, ['card', 'compact', 'minimal'], true)) {
             $style = 'card';
@@ -153,5 +155,49 @@ final class CMS_M365LINKCOLLECTION_Widget
         }
 
         return $value;
+    }
+
+    private static function current_language(): string
+    {
+        if (function_exists('cms_plugin_public_language')) {
+            return cms_plugin_public_language();
+        }
+
+        $path = strtolower(trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/'));
+        return str_starts_with($path, 'en/') ? 'en' : 'de';
+    }
+
+    private static function localized_route(string $route, string $lang): string
+    {
+        $normalized = trim($route, '/');
+        if ($normalized === '') {
+            return '/';
+        }
+
+        if (function_exists('cms_plugin_public_localized_path')) {
+            return cms_plugin_public_localized_path($normalized, $lang);
+        }
+
+        return $lang === 'en' ? '/en/' . $normalized : '/' . $normalized;
+    }
+
+    /**
+     * @param array<string,string> $settings
+     */
+    private static function i18n(array $settings, string $key, string $lang, string $fallback): string
+    {
+        if (function_exists('cms_plugin_public_i18n_value')) {
+            return cms_plugin_public_i18n_value($settings, $key, $lang, $fallback);
+        }
+
+        if ($lang === 'en' && isset($settings[$key . '_en']) && $settings[$key . '_en'] !== '') {
+            return (string) $settings[$key . '_en'];
+        }
+
+        if (isset($settings[$key]) && $settings[$key] !== '') {
+            return (string) $settings[$key];
+        }
+
+        return $fallback;
     }
 }

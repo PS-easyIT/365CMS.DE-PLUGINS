@@ -167,8 +167,22 @@ final class CMS_Projects_Shortcode
         echo '<div class="cp-board-card__head"><strong>' . htmlspecialchars((string) ($board['title'] ?? ''), ENT_QUOTES, 'UTF-8') . '</strong><span>' . htmlspecialchars((string) ($board['board_label'] ?? 'Board'), ENT_QUOTES, 'UTF-8') . '</span></div>';
         echo '<div class="cp-board-columns">';
         foreach ($groups as $group) {
+            $wipLimit = max(0, (int) ($group['wip_limit'] ?? 0));
+            $wipCount = max(0, (int) ($group['wip_count'] ?? count((array) ($group['tasks'] ?? []))));
+            $wipReached = !empty($group['wip_limit_reached']);
+            $wipOverLimit = !empty($group['wip_over_limit']);
             echo '<div class="cp-board-column">';
             echo '<h4>' . htmlspecialchars((string) ($group['title'] ?? 'Block'), ENT_QUOTES, 'UTF-8') . '</h4>';
+            if ($wipLimit > 0) {
+                echo '<div class="cp-ticket-meta">';
+                echo '<span class="cp-badge">WIP ' . $wipCount . '/' . $wipLimit . '</span>';
+                if ($wipOverLimit) {
+                    echo '<span class="cp-badge">WIP limit exceeded</span>';
+                } elseif ($wipReached) {
+                    echo '<span class="cp-badge">WIP limit reached</span>';
+                }
+                echo '</div>';
+            }
             echo '<ul>';
             foreach ((array) ($group['items'] ?? []) as $item) {
                 echo '<li>' . htmlspecialchars((string) $item, ENT_QUOTES, 'UTF-8') . '</li>';

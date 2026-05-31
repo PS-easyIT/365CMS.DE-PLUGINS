@@ -13,8 +13,27 @@ if (!defined('ABSPATH')) {
 
 $esc = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 $normalizeText = static fn(string $value): string => str_replace(["\\r\\n", "\\n", "\\r"], ["\n", "\n", "\n"], $value);
-$text = static function (array $settings, string $key, string $default = '') use ($normalizeText): string {
+$lang = isset($lang) && $lang === 'en' ? 'en' : 'de';
+$tr = static fn(string $de, string $en): string => $lang === 'en' ? $en : $de;
+$text = static function (array $settings, string $key, string $default = '') use ($normalizeText, $lang): string {
+    if ($lang === 'en') {
+        $translated = trim(strip_tags($normalizeText((string) ($settings[$key . '_en'] ?? ''))));
+        if ($translated !== '') {
+            return $translated;
+        }
+    }
     $value = trim(strip_tags($normalizeText((string) ($settings[$key] ?? ''))));
+    return $value !== '' ? $value : $default;
+};
+$rowText = static function (array $row, string $key, string $default = '') use ($normalizeText, $lang): string {
+    if ($lang === 'en') {
+        $translated = trim(strip_tags($normalizeText((string) ($row[$key . '_en'] ?? ''))));
+        if ($translated !== '') {
+            return $translated;
+        }
+    }
+
+    $value = trim(strip_tags($normalizeText((string) ($row[$key] ?? ''))));
     return $value !== '' ? $value : $default;
 };
 $enabled = static fn(array $settings, string $key, string $default = '1'): bool => (string) ($settings[$key] ?? $default) === '1';
@@ -44,13 +63,25 @@ $listHtml = static function (array $items, string $emptyLabel) use ($esc): strin
 
     return $html;
 };
-$serviceDescription = static function (array $service) use ($normalizeText): string {
-    $content = trim(strip_tags($normalizeText((string) ($service['content'] ?? ''))));
+$serviceDescription = static function (array $service) use ($normalizeText, $rowText): string {
+    $content = trim(strip_tags($normalizeText($rowText($service, 'content'))));
     if ($content !== '') {
         return $content;
     }
 
-    return trim(strip_tags($normalizeText((string) ($service['summary'] ?? ''))));
+    return trim(strip_tags($normalizeText($rowText($service, 'summary'))));
+};
+$localizedInternalUrl = static function (string $url) use ($lang): string {
+    $normalized = CMS_M365Azure_Repository::public_url($url);
+    if ($normalized === '' || $lang !== 'en' || !str_starts_with($normalized, '/')) {
+        return $normalized;
+    }
+
+    if (function_exists('cms_plugin_public_localized_path')) {
+        return cms_plugin_public_localized_path($normalized, $lang);
+    }
+
+    return '/en' . ($normalized === '/' ? '' : $normalized);
 };
 $serviceLinksHtml = static function (array $service, string $docsLabel, string $pricingLabel, string $emptyLabel) use ($esc): string {
     $docsUrl = CMS_M365Azure_Repository::public_url((string) ($service['docs_url'] ?? ''));
@@ -108,29 +139,40 @@ $showNotesSection = $enabled($settings, 'show_notes_section', '1');
 $showInfoNote = $enabled($settings, 'show_info_note', '1');
 $showSourcesCard = $enabled($settings, 'show_sources_card', '1');
 $heroTitle = $text($settings, 'page_title', 'Microsoft Azure Services');
-$heroOverline = $text($settings, 'page_overline', 'Azure Überblick');
-$heroIntro = $text($settings, 'page_intro', 'Übersicht der wichtigsten Microsoft Azure Services.');
-$tocTitle = $text($settings, 'toc_title', 'Inhaltsverzeichnis');
+$heroOverline = $text($settings, 'page_overline', $tr('Azure Überblick', 'Azure Overview'));
+$heroIntro = $text($settings, 'page_intro', $tr('Übersicht der wichtigsten Microsoft Azure Services.', 'Overview of key Microsoft Azure services.'));
+$tocTitle = $text($settings, 'toc_title', $tr('Inhaltsverzeichnis', 'Table of contents'));
 $tocColumns = in_array((string) ($settings['toc_columns'] ?? '3'), ['1', '2', '3', '4'], true) ? (string) $settings['toc_columns'] : '3';
 $imagePosition = ((string) ($settings['card_image_position'] ?? 'left')) === 'right' ? 'right' : 'left';
-$tableServiceLabel = $text($settings, 'table_service_label', 'Dienst');
-$tableDescriptionLabel = $text($settings, 'table_description_label', 'Beschreibung');
-$tableFeaturesLabel = $text($settings, 'table_features_label', 'Wichtige Hinweise');
-$tableUseCasesLabel = $text($settings, 'table_use_cases_label', 'Typische Einsatzszenarien');
+$tableServiceLabel = $text($settings, 'table_service_label', $tr('Dienst', 'Service'));
+$tableDescriptionLabel = $text($settings, 'table_description_label', $tr('Beschreibung', 'Description'));
+$tableFeaturesLabel = $text($settings, 'table_features_label', $tr('Wichtige Hinweise', 'Key notes'));
+$tableUseCasesLabel = $text($settings, 'table_use_cases_label', $tr('Typische Einsatzszenarien', 'Typical use cases'));
 $tableLinksLabel = $text($settings, 'table_links_label', 'Links');
-$docsLinkLabel = $text($settings, 'docs_link_label', 'Dokumentation');
-$pricingLinkLabel = $text($settings, 'pricing_link_label', 'Preise');
+$docsLinkLabel = $text($settings, 'docs_link_label', $tr('Dokumentation', 'Documentation'));
+$pricingLinkLabel = $text($settings, 'pricing_link_label', $tr('Preise', 'Pricing'));
 $emptyLabel = $text($settings, 'empty_value_label', '—');
 $tableColumns = $tableColumnWidths($showDescription, $showFeatures, $showUseCases, $showLinks);
-$noteTitle = $text($settings, 'note_title', 'Hinweise zu Azure Services');
+$noteTitle = $text($settings, 'note_title', $tr('Hinweise zu Azure Services', 'Notes on Azure services'));
 $noteItems = $lines((string) ($settings['note_items'] ?? ''));
-$sourceTitle = $text($settings, 'source_title', 'Quellenstand');
-$sourceIntro = $text($settings, 'source_intro', 'Die Quellenliste basiert auf den aktuell hinterlegten Dokumentations- und Preislinks der angezeigten Azure-Dienste.');
-$sourceDetailsLabel = $text($settings, 'source_details_label', 'Quellen anzeigen');
+$sourceTitle = $text($settings, 'source_title', $tr('Quellenstand', 'Source status'));
+$sourceIntro = $text($settings, 'source_intro', $tr('Die Quellenliste basiert auf den aktuell hinterlegten Dokumentations- und Preislinks der angezeigten Azure-Dienste.', 'The source list is based on the currently maintained documentation and pricing links of the displayed Azure services.'));
+$sourceDetailsLabel = $text($settings, 'source_details_label', $tr('Quellen anzeigen', 'Show sources'));
+$showWellArchitectedChecklist = $enabled($settings, 'show_well_architected_checklist', '1');
+$wellArchitectedTitle = $text($settings, 'well_architected_title', $tr('Well-Architected Verbesserungs-Checkliste', 'Well-Architected improvement checklist'));
+$wellArchitectedIntro = $text($settings, 'well_architected_intro', $tr('Diskussionsgrundlage für Architektur-Workshops je Kategorie.', 'Discussion baseline for architecture workshops per category.'));
+$wellArchitectedPillars = [
+    $text($settings, 'well_architected_pillar_reliability', $tr('Reliability: Betriebsrisiken, Wiederherstellung und Abhängigkeiten prüfen.', 'Reliability: review operational risks, recovery, and dependencies.')),
+    $text($settings, 'well_architected_pillar_security', $tr('Security: Identitäten, Netzwerkzugriff, Secrets und Datenzugriffe härten.', 'Security: harden identities, network access, secrets, and data access.')),
+    $text($settings, 'well_architected_pillar_cost', $tr('Cost Optimization: Kostenhebel, Abschaltregeln und Reserved Capacity bewerten.', 'Cost Optimization: evaluate cost levers, shutdown policies, and reserved capacity.')),
+    $text($settings, 'well_architected_pillar_operational', $tr('Operational Excellence: Monitoring, Alerts, Runbooks und Verantwortlichkeiten festlegen.', 'Operational Excellence: define monitoring, alerts, runbooks, and ownership.')),
+    $text($settings, 'well_architected_pillar_performance', $tr('Performance Efficiency: Skalierung, Lastprofile und Engpässe validieren.', 'Performance Efficiency: validate scaling, load profiles, and bottlenecks.')),
+];
+$wellArchitectedItems = array_values(array_filter(array_map(static fn(string $item): string => trim($item), $wellArchitectedPillars)));
 $heroButtons = [
-    ['secondary', $text($settings, 'hero_primary_button_text', 'M365 Lizenzmatrix öffnen'), $text($settings, 'hero_primary_button_url', '/m365-lizenzmatrix')],
-    ['secondary', $text($settings, 'hero_secondary_button_text', 'M365 AddOn-Übersicht öffnen'), $text($settings, 'hero_secondary_button_url', '/m365-addon-matrix')],
-    ['primary', $text($settings, 'hero_cta_button_text', 'Azure-Beratung anfragen'), $text($settings, 'hero_cta_button_url', '/kontakt')],
+    ['secondary', $text($settings, 'hero_primary_button_text', $tr('M365 Lizenzmatrix öffnen', 'Open M365 license matrix')), $localizedInternalUrl($text($settings, 'hero_primary_button_url', '/m365-lizenzmatrix'))],
+    ['secondary', $text($settings, 'hero_secondary_button_text', $tr('M365 AddOn-Übersicht öffnen', 'Open M365 add-on overview')), $localizedInternalUrl($text($settings, 'hero_secondary_button_url', '/m365-addon-matrix'))],
+    ['primary', $text($settings, 'hero_cta_button_text', $tr('Azure-Beratung anfragen', 'Request Azure consulting')), $localizedInternalUrl($text($settings, 'hero_cta_button_url', '/kontakt'))],
 ];
 $mainClasses = 'phinit-plugin m365calc-page m365calc-comparison-page m365calc-readonly-page m365calc-matrix-page m365calc-matrix-header--accent m365calc-matrix-align--split m365calc-matrix-buttons--inline m365calc-matrix-button-style--default azs-page azs-image-position--' . $imagePosition;
 $visibleCategories = [];
@@ -186,7 +228,7 @@ foreach ($categories as $category) {
             <?php foreach ($visibleCategories as $category): ?>
             <?php $categoryId = 'azs-cat-' . $safeId((string) $category['slug'], (string) $category['id']); ?>
             <a class="m365calc-addon-toc__link" href="#<?php echo $esc($categoryId); ?>">
-                <span><?php echo $esc((string) $category['title']); ?></span>
+                <span><?php echo $esc($rowText($category, 'title')); ?></span>
             </a>
             <?php endforeach; ?>
         </div>
@@ -202,25 +244,25 @@ foreach ($categories as $category) {
     <section class="phinit-result m365calc-result-card m365calc-readonly-area azs-category" id="<?php echo $esc($categoryId); ?>" aria-labelledby="<?php echo $esc($categoryId); ?>-title">
         <header class="m365calc-result-heading">
             <section class="azs-category-heading-copy">
-                <p class="phinit-overline"><?php echo $esc((string) ($category['overline'] ?? 'Azure Kategorie')); ?></p>
-                <h2 id="<?php echo $esc($categoryId); ?>-title"><?php echo $esc((string) $category['title']); ?></h2>
-                <?php $categoryIntro = $normalizeText((string) ($category['intro'] ?? '')); ?>
+                <p class="phinit-overline"><?php echo $esc($rowText($category, 'overline', $tr('Azure Kategorie', 'Azure category'))); ?></p>
+                <h2 id="<?php echo $esc($categoryId); ?>-title"><?php echo $esc($rowText($category, 'title')); ?></h2>
+                <?php $categoryIntro = $normalizeText($rowText($category, 'intro')); ?>
                 <?php if ($showCategoryIntro && trim(strip_tags($categoryIntro)) !== ''): ?>
                 <p><?php echo $copyHtml($categoryIntro); ?></p>
                 <?php endif; ?>
             </section>
             <?php if ($categoryGallery !== []): ?>
-            <aside class="azs-category-gallery" aria-label="Bilder zu <?php echo $esc((string) $category['title']); ?>">
+            <aside class="azs-category-gallery" aria-label="<?php echo $esc($tr('Bilder zu ', 'Images for ') . $rowText($category, 'title')); ?>">
                 <?php foreach ($categoryGallery as $imageIndex => $imageUrl): ?>
-                <img class="azs-category-gallery__thumb" src="<?php echo $esc($imageUrl); ?>" alt="<?php echo $esc((string) $category['title'] . ' Bild ' . ((int) $imageIndex + 1)); ?>" loading="lazy" decoding="async" width="56" height="56">
+                <img class="azs-category-gallery__thumb" src="<?php echo $esc($imageUrl); ?>" alt="<?php echo $esc($rowText($category, 'title') . ' ' . $tr('Bild', 'Image') . ' ' . ((int) $imageIndex + 1)); ?>" loading="lazy" decoding="async" width="56" height="56">
                 <?php endforeach; ?>
             </aside>
             <?php endif; ?>
         </header>
 
-        <section class="phinit-table-wrap m365calc-compare-wrap m365calc-readonly-wrap azs-service-table-wrap" aria-label="Azure Services im Bereich <?php echo $esc((string) $category['title']); ?>">
+        <section class="phinit-table-wrap m365calc-compare-wrap m365calc-readonly-wrap azs-service-table-wrap" aria-label="<?php echo $esc($tr('Azure Services im Bereich ', 'Azure services in ') . $rowText($category, 'title')); ?>">
             <table class="phinit-table m365calc-compare-table m365calc-readonly-table azs-service-table">
-                <caption class="m365calc-visually-hidden">Azure Services im Bereich <?php echo $esc((string) $category['title']); ?></caption>
+                <caption class="m365calc-visually-hidden"><?php echo $esc($tr('Azure Services im Bereich ', 'Azure services in ') . $rowText($category, 'title')); ?></caption>
                 <colgroup>
                     <?php foreach ($tableColumns as $columnKey => $columnWidth): ?>
                     <col class="azs-col-<?php echo $esc((string) $columnKey); ?>" style="width: <?php echo $esc((string) $columnWidth); ?>%;">
@@ -249,20 +291,23 @@ foreach ($categories as $category) {
                     $imageUrl = CMS_M365Azure_Repository::public_image_url((string) ($service['image_url'] ?? ''));
                     $hasImage = $showImages && $imageUrl !== '';
                     $description = $serviceDescription($service);
-                    $featureItems = $showFeatures ? $lines((string) ($service['features'] ?? '')) : [];
-                    $useCaseItems = $showUseCases ? $lines((string) ($service['use_cases'] ?? '')) : [];
+                    $featureItems = $showFeatures ? $lines($rowText($service, 'features')) : [];
+                    $useCaseItems = $showUseCases ? $lines($rowText($service, 'use_cases')) : [];
                     $serviceId = 'azs-service-' . $safeId((string) $service['slug'], (string) $service['id']);
+                    $serviceTitle = $rowText($service, 'title');
+                    $serviceSubtitle = $rowText($service, 'subtitle');
+                    $serviceImageAlt = $rowText($service, 'image_alt', $serviceTitle);
                     ?>
                     <tr id="<?php echo $esc($serviceId); ?>">
                         <th scope="row">
                             <span class="m365calc-status m365calc-status--note azs-service-title">
                                 <?php if ($hasImage): ?>
-                                <img class="azs-service-icon" src="<?php echo $esc($imageUrl); ?>" alt="<?php echo $esc((string) ($service['image_alt'] ?: $service['title'])); ?>" loading="lazy" width="96" height="54">
+                                <img class="azs-service-icon" src="<?php echo $esc($imageUrl); ?>" alt="<?php echo $esc($serviceImageAlt); ?>" loading="lazy" width="96" height="54">
                                 <?php endif; ?>
                                 <span>
-                                    <strong><?php echo $esc((string) $service['title']); ?></strong>
-                                    <?php if ($showSubtitles && (string) ($service['subtitle'] ?? '') !== ''): ?>
-                                    <small><?php echo $esc((string) $service['subtitle']); ?></small>
+                                    <strong><?php echo $esc($serviceTitle); ?></strong>
+                                    <?php if ($showSubtitles && $serviceSubtitle !== ''): ?>
+                                    <small><?php echo $esc($serviceSubtitle); ?></small>
                                     <?php endif; ?>
                                 </span>
                             </span>
@@ -305,28 +350,31 @@ foreach ($categories as $category) {
             </table>
         </section>
 
-        <section class="azs-service-accordion" aria-label="Mobile Azure Services im Bereich <?php echo $esc((string) $category['title']); ?>">
+        <section class="azs-service-accordion" aria-label="<?php echo $esc($tr('Mobile Azure Services im Bereich ', 'Mobile Azure services in ') . $rowText($category, 'title')); ?>">
             <?php foreach ($categoryServices as $service): ?>
             <?php
             $description = $serviceDescription($service);
-            $featureItems = $showFeatures ? $lines((string) ($service['features'] ?? '')) : [];
-            $useCaseItems = $showUseCases ? $lines((string) ($service['use_cases'] ?? '')) : [];
+            $featureItems = $showFeatures ? $lines($rowText($service, 'features')) : [];
+            $useCaseItems = $showUseCases ? $lines($rowText($service, 'use_cases')) : [];
             $imageUrl = CMS_M365Azure_Repository::public_image_url((string) ($service['image_url'] ?? ''));
             $hasImage = $showImages && $imageUrl !== '';
+            $serviceTitle = $rowText($service, 'title');
+            $serviceSubtitle = $rowText($service, 'subtitle');
+            $serviceImageAlt = $rowText($service, 'image_alt', $serviceTitle);
             ?>
             <details class="phinit-card azs-service-accordion__item">
                 <summary>
                     <?php if ($hasImage): ?>
-                    <img class="azs-service-icon" src="<?php echo $esc($imageUrl); ?>" alt="<?php echo $esc((string) ($service['image_alt'] ?: $service['title'])); ?>" loading="lazy" width="96" height="54">
+                    <img class="azs-service-icon" src="<?php echo $esc($imageUrl); ?>" alt="<?php echo $esc($serviceImageAlt); ?>" loading="lazy" width="96" height="54">
                     <?php endif; ?>
                     <span>
-                        <strong><?php echo $esc((string) $service['title']); ?></strong>
-                        <?php if ($showSubtitles && (string) ($service['subtitle'] ?? '') !== ''): ?>
-                        <small><?php echo $esc((string) $service['subtitle']); ?></small>
+                        <strong><?php echo $esc($serviceTitle); ?></strong>
+                        <?php if ($showSubtitles && $serviceSubtitle !== ''): ?>
+                        <small><?php echo $esc($serviceSubtitle); ?></small>
                         <?php endif; ?>
                     </span>
                 </summary>
-                <section class="azs-service-accordion__body" aria-label="Details zu <?php echo $esc((string) $service['title']); ?>">
+                <section class="azs-service-accordion__body" aria-label="<?php echo $esc($tr('Details zu ', 'Details for ') . $serviceTitle); ?>">
                     <?php if ($showDescription): ?>
                     <article>
                         <h3><?php echo $esc($tableDescriptionLabel); ?></h3>
@@ -355,11 +403,21 @@ foreach ($categories as $category) {
             </details>
             <?php endforeach; ?>
         </section>
+
+        <?php if ($showWellArchitectedChecklist && $wellArchitectedItems !== []): ?>
+        <article class="phinit-note phinit-note--info azs-well-architected">
+            <h3><?php echo $esc($wellArchitectedTitle . ': ' . $rowText($category, 'title')); ?></h3>
+            <?php if ($wellArchitectedIntro !== ''): ?>
+            <p><?php echo $esc($wellArchitectedIntro); ?></p>
+            <?php endif; ?>
+            <?php echo $listHtml($wellArchitectedItems, $emptyLabel); ?>
+        </article>
+        <?php endif; ?>
     </section>
     <?php endforeach; ?>
 
     <?php if ($showNotesSection && ($showInfoNote || $showSourcesCard)): ?>
-    <section class="m365calc-result-grid" aria-label="Hinweise und Quellen">
+    <section class="m365calc-result-grid" aria-label="<?php echo $esc($tr('Hinweise und Quellen', 'Notes and sources')); ?>">
         <?php if ($showInfoNote): ?>
         <article class="phinit-note phinit-note--warning">
             <h2><?php echo $esc($noteTitle); ?></h2>

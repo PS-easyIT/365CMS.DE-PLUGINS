@@ -19,6 +19,11 @@ $money = static function (mixed $value, string $currency = 'EUR'): string {
 $isChecked = static fn(array $values, string $value): string => in_array($value, $values, true) ? ' checked' : '';
 $isSelected = static fn(string $left, string $right): string => $left === $right ? ' selected' : '';
 $boolChecked = static fn(bool $value): string => $value ? ' checked' : '';
+$lang = function_exists('cms_plugin_public_language') ? cms_plugin_public_language() : 'de';
+$t = static fn(string $de, string $en): string => $lang === 'en' ? $en : $de;
+$path = static fn(string $route): string => function_exists('cms_plugin_public_localized_path')
+    ? cms_plugin_public_localized_path($route, $lang)
+    : ($lang === 'en' ? '/en/' . ltrim($route, '/') : '/' . ltrim($route, '/'));
 $input = is_array($input ?? null) ? $input : CMS_M365CALCULATOR_Addon_Configurator::default_input();
 $result = is_array($result ?? null) ? $result : [];
 $selectedAddons = array_values(array_map('strval', $input['addons'] ?? []));
@@ -32,21 +37,21 @@ $consumption = is_array($result['consumption'] ?? null) ? $result['consumption']
 $statusCounts = is_array($result['status_counts'] ?? null) ? $result['status_counts'] : [];
 
 if (class_exists('CMS\\ThemeManager')) {
-    \CMS\ThemeManager::instance()->getHeader(['title' => 'M365 Add-On-Konfigurator']);
+    \CMS\ThemeManager::instance()->getHeader(['title' => $t('M365 Add-On-Konfigurator', 'M365 Add-on Configurator')]);
 }
 ?>
 
 <main class="phinit-plugin m365calc-page m365calc-addon-page" id="m365-addon-configurator">
     <header class="m365calc-hero">
-        <p class="phinit-overline">Add-On-Konfigurator</p>
+        <p class="phinit-overline"><?php echo $esc($t('Add-On-Konfigurator', 'Add-on Configurator')); ?></p>
         <section class="m365calc-hero__content" aria-labelledby="m365addon-title">
             <section>
-                <h1 id="m365addon-title">Microsoft 365 Add-On-Konfigurator</h1>
-                <p class="phinit-prose">Basislizenz wählen, Zusatzbedarf markieren und sofort sehen, welche Add-ons wirklich nötig, redundant, inkompatibel oder besser als Upgrade zu lösen sind.</p>
+                <h1 id="m365addon-title"><?php echo $esc($t('Microsoft 365 Add-On-Konfigurator', 'Microsoft 365 Add-on Configurator')); ?></h1>
+                <p class="phinit-prose"><?php echo $esc($t('Basislizenz waehlen, Zusatzbedarf markieren und sofort sehen, welche Add-ons wirklich noetig, redundant, inkompatibel oder besser als Upgrade zu loesen sind.', 'Choose a base license, mark additional needs, and immediately see which add-ons are required, redundant, incompatible, or better handled via an upgrade.')); ?></p>
             </section>
-            <nav class="m365calc-actions" aria-label="Weitere Lizenztools">
-                <a class="phinit-btn phinit-btn--secondary" href="/m365-lizenzvergleich">Lizenzvergleich öffnen</a>
-                <a class="phinit-btn phinit-btn--secondary" href="/m365-lizenzberater">Lizenzberater öffnen</a>
+            <nav class="m365calc-actions" aria-label="<?php echo $esc($t('Weitere Lizenztools', 'Related license tools')); ?>">
+                <a class="phinit-btn phinit-btn--secondary" href="<?php echo $esc($path('/m365-lizenzvergleich')); ?>"><?php echo $esc($t('Lizenzvergleich oeffnen', 'Open license comparison')); ?></a>
+                <a class="phinit-btn phinit-btn--secondary" href="<?php echo $esc($path('/m365-lizenzberater')); ?>"><?php echo $esc($t('Lizenzberater oeffnen', 'Open license advisor')); ?></a>
             </nav>
         </section>
     </header>
@@ -187,7 +192,7 @@ if (class_exists('CMS\\ThemeManager')) {
 
                 <section class="m365calc-actions">
                     <button type="submit" class="phinit-btn phinit-btn--primary">Add-ons prüfen</button>
-                    <a class="phinit-btn phinit-btn--secondary" href="/m365-add-on-konfigurator">Zurücksetzen</a>
+                    <a class="phinit-btn phinit-btn--secondary" href="<?php echo $esc($path('/m365-add-on-konfigurator')); ?>">Zurücksetzen</a>
                 </section>
             </form>
         </section>
@@ -236,6 +241,18 @@ if (class_exists('CMS\\ThemeManager')) {
                     <li>Aktueller Stapel: <?php echo $money($upgrade['current_monthly'] ?? 0); ?> / Monat</li>
                     <li>Upgrade-Szenario: <?php echo $money($upgrade['upgrade_monthly'] ?? 0); ?> / Monat</li>
                     <li>Differenz: <?php echo $money($upgrade['monthly_delta'] ?? 0); ?> / Monat</li>
+                </ul>
+            </article>
+            <?php endif; ?>
+
+            <?php if (!empty($result['offer_matrix']['entries']) && is_array($result['offer_matrix']['entries'])): ?>
+            <article class="phinit-note <?php echo !empty($result['offer_matrix']['has_blockers']) ? 'phinit-note--danger' : 'phinit-note--warning'; ?>">
+                <h2><?php echo $esc($t('Offer-Matrix-Validierung', 'Offer matrix validation')); ?></h2>
+                <ul class="m365calc-note-list">
+                    <?php foreach ($result['offer_matrix']['entries'] as $entry): ?>
+                    <?php if (!is_array($entry)) { continue; } ?>
+                    <li><?php echo $esc((string) ($entry['message'] ?? '')); ?></li>
+                    <?php endforeach; ?>
                 </ul>
             </article>
             <?php endif; ?>

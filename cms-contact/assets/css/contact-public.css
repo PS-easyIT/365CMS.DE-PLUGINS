@@ -282,6 +282,30 @@
     margin-top: .25rem;
 }
 
+.contact-error-summary {
+    margin-bottom: 1rem;
+    padding: .9rem 1rem;
+    border: 1px solid rgb(239 68 68 / .35);
+    border-left: 4px solid var(--contact-error);
+    border-radius: var(--contact-radius);
+    background: rgb(254 226 226 / .45);
+}
+
+.contact-error-summary__title {
+    margin: 0 0 .5rem;
+    font-size: .95rem;
+}
+
+.contact-error-summary__list {
+    margin: 0;
+    padding-left: 1rem;
+}
+
+.contact-error-summary__list a {
+    color: #991b1b;
+    text-decoration: underline;
+}
+
 /* Checkbox / Radio / File */
 .contact-checkbox-group,
 .contact-radio-group {

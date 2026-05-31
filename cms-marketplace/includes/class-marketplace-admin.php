@@ -216,6 +216,7 @@ final class CMS_Marketplace_Admin
         $publicUrls = $this->service->getPublicUrls();
         $publicRouteMap = $this->service->getPublicRouteMap();
         $settings = $this->service->getSettings();
+        $securityReports = $this->service->getSecurityReports();
         $directoryScope = $section === self::PAGE_PLUGINS ? 'plugin' : ($section === self::PAGE_THEMES ? 'theme' : ($section === self::PAGE_CMS ? 'cms' : $directoryScope));
         $directorySnapshot = $this->service->getDirectorySnapshot($directoryScope);
         $directoryEntryDetails = $this->service->getDirectoryEntryDetails($directoryScope, $inspectPath);
@@ -269,7 +270,7 @@ final class CMS_Marketplace_Admin
         }
 
         $action = strtolower(trim((string) ($_POST['cms_marketplace_action'] ?? '')));
-        if (!in_array($action, ['save_item', 'toggle_publish', 'save_settings'], true)) {
+        if (!in_array($action, ['save_item', 'toggle_publish', 'save_settings', 'update_security_report_status'], true)) {
             return ['Unbekannte Aktion.', 'error', $editId, $filterType, $section];
         }
 
@@ -292,6 +293,16 @@ final class CMS_Marketplace_Admin
 
         if ($action === 'save_settings') {
             $result = $this->service->saveSettings($_POST);
+            $message = (string) ($result['message'] ?? 'Aktion abgeschlossen.');
+            $messageType = !empty($result['success']) ? 'success' : 'error';
+            return [$message, $messageType, $editId, $filterType, self::PAGE_SETTINGS];
+        }
+
+        if ($action === 'update_security_report_status') {
+            $reportId = max(0, (int) ($_POST['report_id'] ?? 0));
+            $status = strtolower(trim((string) ($_POST['security_status'] ?? '')));
+            $statusNote = (string) ($_POST['security_status_note'] ?? '');
+            $result = $this->service->updateSecurityReportStatus($reportId, $status, $statusNote);
             $message = (string) ($result['message'] ?? 'Aktion abgeschlossen.');
             $messageType = !empty($result['success']) ? 'success' : 'error';
             return [$message, $messageType, $editId, $filterType, self::PAGE_SETTINGS];

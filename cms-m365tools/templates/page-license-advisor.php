@@ -16,6 +16,11 @@ $money = static function (mixed $value): string {
     return number_format((float) $value, 2, ',', '.') . ' €';
 };
 $isChecked = static fn(array $features, string $feature): string => in_array($feature, $features, true) ? ' checked' : '';
+$lang = function_exists('cms_plugin_public_language') ? cms_plugin_public_language() : 'de';
+$t = static fn(string $de, string $en): string => $lang === 'en' ? $en : $de;
+$path = static fn(string $route): string => function_exists('cms_plugin_public_localized_path')
+    ? cms_plugin_public_localized_path($route, $lang)
+    : ($lang === 'en' ? '/en/' . ltrim($route, '/') : '/' . ltrim($route, '/'));
 $statusTone = (string) ($result['status']['tone'] ?? 'info');
 $statusClass = in_array($statusTone, ['success', 'warning', 'danger'], true) ? $statusTone : 'accent';
 $groupRows = $input['groups'] ?? [];
@@ -24,21 +29,21 @@ while (count($groupRows) < 3) {
 }
 
 if (class_exists('CMS\\ThemeManager')) {
-    \CMS\ThemeManager::instance()->getHeader(['title' => 'M365 Lizenzberater']);
+    \CMS\ThemeManager::instance()->getHeader(['title' => $t('M365 Lizenzberater', 'M365 License Advisor')]);
 }
 ?>
 
 <main class="phinit-plugin m365calc-page m365lic-advisor" id="m365-license-advisor">
     <header class="m365calc-hero">
-        <p class="phinit-overline">M365 Lizenzberater</p>
+        <p class="phinit-overline"><?php echo $esc($t('M365 Lizenzberater', 'M365 License Advisor')); ?></p>
         <section class="m365calc-hero__content" aria-labelledby="m365lic-title">
             <section>
-                <h1 id="m365lic-title">Microsoft 365 Lizenzberater</h1>
-                <p class="phinit-prose">Erfasst mehrere Nutzergruppen, prüft Basislizenzen, Add-ons und harte Sonderfälle wie Copilot, Teams Phone und Power Platform.</p>
+                <h1 id="m365lic-title"><?php echo $esc($t('Microsoft 365 Lizenzberater', 'Microsoft 365 License Advisor')); ?></h1>
+                <p class="phinit-prose"><?php echo $esc($t('Erfasst mehrere Nutzergruppen, prueft Basislizenzen, Add-ons und harte Sonderfaelle wie Copilot, Teams Phone und Power Platform.', 'Capture multiple user groups and validate base licenses, add-ons and hard edge cases like Copilot, Teams Phone and Power Platform.')); ?></p>
             </section>
-            <nav class="m365calc-actions" aria-label="Weitere Rechner">
-                <a class="phinit-btn phinit-btn--secondary" href="/copilot-lizenz-check">Copilot prüfen</a>
-                <a class="phinit-btn phinit-btn--secondary" href="/shared-mailbox-vs-lizenz">Shared Mailbox prüfen</a>
+            <nav class="m365calc-actions" aria-label="<?php echo $esc($t('Weitere Rechner', 'Related calculators')); ?>">
+                <a class="phinit-btn phinit-btn--secondary" href="<?php echo $esc($path('/copilot-lizenz-check')); ?>"><?php echo $esc($t('Copilot pruefen', 'Check Copilot')); ?></a>
+                <a class="phinit-btn phinit-btn--secondary" href="<?php echo $esc($path('/shared-mailbox-vs-lizenz')); ?>"><?php echo $esc($t('Shared Mailbox pruefen', 'Check shared mailbox')); ?></a>
             </nav>
         </section>
     </header>
@@ -103,6 +108,18 @@ if (class_exists('CMS\\ThemeManager')) {
                             SharePoint-Bedarf in TB
                             <input class="phinit-input" type="number" min="0" max="9999" step="0.1" name="tenant_storage_tb" value="<?php echo $esc((string) ($input['tenant_storage_tb'] ?? '1')); ?>">
                         </label>
+                        <label class="phinit-field">
+                            <?php echo $esc($t('Lizenzzuweisungsmodell', 'License assignment model')); ?>
+                            <select class="phinit-select" name="assignment_model">
+                                <?php foreach (['direct' => $t('Direkt je Nutzer', 'Direct per user'), 'mixed' => $t('Gemischt', 'Mixed'), 'group' => $t('Gruppenbasiert', 'Group-based')] as $key => $label): ?>
+                                <option value="<?php echo $esc($key); ?>"<?php echo (string) ($input['assignment_model'] ?? 'mixed') === $key ? ' selected' : ''; ?>><?php echo $esc($label); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+                        <label class="phinit-field">
+                            <?php echo $esc($t('Inaktive lizenzierte Nutzer (%)', 'Inactive licensed users (%)')); ?>
+                            <input class="phinit-input" type="number" min="0" max="100" step="1" name="inactive_license_ratio" value="<?php echo (int) ($input['inactive_license_ratio'] ?? 5); ?>">
+                        </label>
                     </section>
                 </fieldset>
 
@@ -145,8 +162,8 @@ if (class_exists('CMS\\ThemeManager')) {
                 <?php endforeach; ?>
 
                 <section class="m365calc-actions">
-                    <button type="submit" class="phinit-btn phinit-btn--primary">Empfehlung berechnen</button>
-                    <button type="reset" class="phinit-btn phinit-btn--secondary" data-m365calc-reset>Zurücksetzen</button>
+                <button type="submit" class="phinit-btn phinit-btn--primary"><?php echo $esc($t('Empfehlung berechnen', 'Calculate recommendation')); ?></button>
+                <button type="reset" class="phinit-btn phinit-btn--secondary" data-m365calc-reset><?php echo $esc($t('Zuruecksetzen', 'Reset')); ?></button>
                 </section>
             </form>
         </section>
@@ -178,7 +195,7 @@ if (class_exists('CMS\\ThemeManager')) {
             </section>
             <section class="m365calc-actions">
                 <button type="button" class="phinit-btn phinit-btn--secondary" data-m365calc-print>Drucken / PDF speichern</button>
-                <a class="phinit-btn phinit-btn--primary" href="/kontakt">Lizenz-Audit anfragen</a>
+                <a class="phinit-btn phinit-btn--primary" href="<?php echo $esc($path('/kontakt')); ?>"><?php echo $esc($t('Lizenz-Audit anfragen', 'Request license audit')); ?></a>
             </section>
         </header>
 
@@ -200,6 +217,19 @@ if (class_exists('CMS\\ThemeManager')) {
                 <strong><?php echo $money($result['three_year_total'] ?? 0); ?></strong>
             </article>
         </section>
+
+        <?php if (!empty($result['risk_signals']['entries']) && is_array($result['risk_signals']['entries'])): ?>
+        <aside class="phinit-note phinit-note--warning">
+            <h3><?php echo $esc($t('License Assignment Risk Signals', 'License Assignment Risk Signals')); ?></h3>
+            <p><?php echo $esc($t('Risikowert', 'Risk score')); ?>: <?php echo (int) ($result['risk_signals']['score'] ?? 0); ?>/100</p>
+            <ul class="m365calc-note-list">
+                <?php foreach ($result['risk_signals']['entries'] as $signal): ?>
+                <?php if (!is_array($signal)) { continue; } ?>
+                <li><?php echo $esc((string) ($signal['message'] ?? '')); ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </aside>
+        <?php endif; ?>
 
         <?php foreach ($result['rows'] ?? [] as $row): ?>
         <?php if (!is_array($row)) { continue; } ?>

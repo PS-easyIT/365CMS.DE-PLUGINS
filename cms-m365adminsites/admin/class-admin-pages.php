@@ -435,10 +435,10 @@ final class CMS_M365ADMINSITES_Admin_Pages
                 <h4 class="mas-section-title">Seitenkopf</h4>
                 <div class="mas-form-grid">
                     <?php self::input('page_route', 'Public Route', $settings); ?>
-                    <?php self::input('page_overline', 'Header-Overline', $settings); ?>
-                    <?php self::input('page_title', 'Seitentitel', $settings); ?>
+                    <?php self::bilingual_input('page_overline', 'Header-Overline', $settings); ?>
+                    <?php self::bilingual_input('page_title', 'Seitentitel', $settings); ?>
                 </div>
-                <?php self::textarea('page_intro', 'Introtext', $settings, 3); ?>
+                <?php self::bilingual_textarea('page_intro', 'Introtext', $settings, 3); ?>
 
                 <h4 class="mas-section-title">Filter, Ansichten und Leerzustand</h4>
                 <div class="mas-form-grid">
@@ -452,10 +452,10 @@ final class CMS_M365ADMINSITES_Admin_Pages
                         'label_reset_button' => 'Reset-Link',
                         'label_empty_title' => 'Leerzustand Titel',
                     ] as $key => $label): ?>
-                    <?php self::input($key, $label, $settings); ?>
+                    <?php self::bilingual_input($key, $label, $settings); ?>
                     <?php endforeach; ?>
                 </div>
-                <?php self::textarea('label_empty_body', 'Leerzustand Text', $settings, 2); ?>
+                <?php self::bilingual_textarea('label_empty_body', 'Leerzustand Text', $settings, 2); ?>
 
                 <h4 class="mas-section-title">Überschriften, Tabelle und Pagination</h4>
                 <div class="mas-form-grid">
@@ -473,7 +473,7 @@ final class CMS_M365ADMINSITES_Admin_Pages
                         'label_pagination_prev' => 'Pagination: Zurück',
                         'label_pagination_next' => 'Pagination: Weiter',
                     ] as $key => $label): ?>
-                    <?php self::input($key, $label, $settings); ?>
+                    <?php self::bilingual_input($key, $label, $settings); ?>
                     <?php endforeach; ?>
                 </div>
 
@@ -487,8 +487,49 @@ final class CMS_M365ADMINSITES_Admin_Pages
                         'sidebar_prev_label' => 'Sidebar Zurück ARIA',
                         'sidebar_next_label' => 'Sidebar Weiter ARIA',
                     ] as $key => $label): ?>
-                    <?php self::input($key, $label, $settings); ?>
+                    <?php self::bilingual_input($key, $label, $settings); ?>
                     <?php endforeach; ?>
+                </div>
+
+                <h4 class="mas-section-title">Feature: Conditional Access What-If Shortcuts</h4>
+                <div class="mas-form-grid">
+                    <?php foreach ([
+                        'feature_ca_shortcuts_title' => 'Bereichstitel',
+                        'feature_ca_shortcuts_intro' => 'Einleitung',
+                        'feature_ca_shortcuts_primary_label' => 'Primärer Button',
+                        'feature_ca_shortcuts_identity_label' => 'Preset Identität (Titel)',
+                        'feature_ca_shortcuts_identity_hint' => 'Preset Identität (Hinweis)',
+                        'feature_ca_shortcuts_app_label' => 'Preset Cloud-App (Titel)',
+                        'feature_ca_shortcuts_app_hint' => 'Preset Cloud-App (Hinweis)',
+                        'feature_ca_shortcuts_platform_label' => 'Preset Plattform (Titel)',
+                        'feature_ca_shortcuts_platform_hint' => 'Preset Plattform (Hinweis)',
+                    ] as $key => $label): ?>
+                    <?php self::bilingual_input($key, $label, $settings); ?>
+                    <?php endforeach; ?>
+                </div>
+                <div class="mas-check-row">
+                    <label><input type="checkbox" name="feature_ca_shortcuts_enabled" value="1"<?php echo !empty($settings['feature_ca_shortcuts_enabled']) && $settings['feature_ca_shortcuts_enabled'] !== '0' ? ' checked' : ''; ?>> What-If-Shortcuts anzeigen</label>
+                </div>
+
+                <h4 class="mas-section-title">Feature: Message Center Highlights</h4>
+                <div class="mas-form-grid">
+                    <?php foreach ([
+                        'feature_message_center_title' => 'Bereichstitel',
+                        'feature_message_center_intro' => 'Einleitung',
+                        'feature_message_center_filter_label' => 'Filter Label',
+                        'feature_message_center_severity_label' => 'Filter Priorität',
+                        'feature_message_center_workload_label' => 'Filter Workload',
+                        'feature_message_center_filter_all' => 'Filter: Alle',
+                        'feature_message_center_open_label' => 'Linktext',
+                        'feature_message_center_empty' => 'Leerzustand',
+                    ] as $key => $label): ?>
+                    <?php self::bilingual_input($key, $label, $settings); ?>
+                    <?php endforeach; ?>
+                    <?php self::number('feature_message_center_max_items', 'Max. Highlights', $settings, 1, 12, 1); ?>
+                </div>
+                <?php self::textarea('feature_message_center_items', 'Highlights (Format: severity|workload|title|url, je Zeile)', $settings, 6); ?>
+                <div class="mas-check-row">
+                    <label><input type="checkbox" name="feature_message_center_enabled" value="1"<?php echo !empty($settings['feature_message_center_enabled']) && $settings['feature_message_center_enabled'] !== '0' ? ' checked' : ''; ?>> Message-Center-Highlights anzeigen</label>
                 </div>
 
                 <button type="submit" class="btn btn-primary">💾 Texte speichern</button>
@@ -601,6 +642,20 @@ final class CMS_M365ADMINSITES_Admin_Pages
     }
 
     /** @param array<string,string> $settings */
+    private static function bilingual_input(string $key, string $label, array $settings): void
+    {
+        self::input($key, $label . ' (DE)', $settings);
+        self::input($key . '_en', $label . ' (EN)', $settings);
+    }
+
+    /** @param array<string,string> $settings */
+    private static function bilingual_textarea(string $key, string $label, array $settings, int $rows = 3): void
+    {
+        self::textarea($key, $label . ' (DE)', $settings, $rows);
+        self::textarea($key . '_en', $label . ' (EN)', $settings, $rows);
+    }
+
+    /** @param array<string,string> $settings */
     private static function number(string $key, string $label, array $settings, int $min, int $max, int $step): void
     {
         echo '<label>' . self::esc($label) . '<input type="number" name="' . self::esc_attr($key) . '" class="form-control" value="' . (int) ($settings[$key] ?? 0) . '" min="' . $min . '" max="' . $max . '" step="' . $step . '"></label>';
@@ -633,6 +688,12 @@ final class CMS_M365ADMINSITES_Admin_Pages
             'sidebar_show_image',
             'sidebar_show_category',
             'sidebar_show_subtitle',
+            'feature_ca_shortcuts_enabled',
+            'feature_message_center_enabled',
+        ];
+        $contentBooleanKeys = [
+            'feature_ca_shortcuts_enabled',
+            'feature_message_center_enabled',
         ];
         $intRanges = [
             'items_per_page' => [12, 500],
@@ -648,6 +709,7 @@ final class CMS_M365ADMINSITES_Admin_Pages
             'sidebar_rotate_seconds' => [3, 60],
             'sidebar_min_height' => [120, 520],
             'sidebar_image_height' => [0, 320],
+            'feature_message_center_max_items' => [1, 12],
         ];
         $enumOptions = [
             'default_view' => ['cards', 'table', 'both'],
@@ -702,7 +764,7 @@ final class CMS_M365ADMINSITES_Admin_Pages
             'sidebar_show_subtitle',
         ];
         foreach ($defaults as $key => $default) {
-            if ($section === 'content' && !array_key_exists($key, $post)) {
+            if ($section === 'content' && !array_key_exists($key, $post) && !in_array($key, $contentBooleanKeys, true)) {
                 continue;
             }
             if ($section === 'design' && !in_array($key, $designKeys, true)) {
@@ -738,6 +800,10 @@ final class CMS_M365ADMINSITES_Admin_Pages
             }
             if ($key === 'sidebar_placeholder_image') {
                 $settings[$key] = self::sanitize_media_url((string) ($post[$key] ?? $default));
+                continue;
+            }
+            if ($key === 'feature_message_center_items') {
+                $settings[$key] = self::sanitize_multiline_text((string) ($post[$key] ?? $default), 5000);
                 continue;
             }
 
@@ -854,6 +920,24 @@ final class CMS_M365ADMINSITES_Admin_Pages
         }
 
         return substr($value, 0, $maxLength);
+    }
+
+    private static function sanitize_multiline_text(string $value, int $maxLength): string
+    {
+        $value = strip_tags(str_replace(["\r\n", "\r"], "\n", $value));
+        $lines = [];
+        foreach (explode("\n", $value) as $line) {
+            $line = trim((string) preg_replace('/\s+/u', ' ', $line));
+            if ($line !== '') {
+                $lines[] = $line;
+            }
+        }
+        $normalized = implode("\n", $lines);
+        if (function_exists('mb_substr')) {
+            return mb_substr($normalized, 0, $maxLength);
+        }
+
+        return substr($normalized, 0, $maxLength);
     }
 
     private static function sanitize_route(string $value, string $fallback): string

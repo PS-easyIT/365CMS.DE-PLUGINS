@@ -3,7 +3,14 @@
 <?php
 $archiveVariant = $archiveVariant ?? 'knowledgebase';
 $archiveBasePath = $archiveBasePath ?? '/kb';
-$archiveUrl = SITE_URL . $archiveBasePath;
+$archiveUrl = $archiveUrl ?? (SITE_URL . $archiveBasePath);
+$entryBaseUrl = $entryBaseUrl ?? $archiveUrl;
+$searchMode = $searchMode ?? 'default';
+$searchModeOptions = isset($searchModeOptions) && is_array($searchModeOptions) ? $searchModeOptions : ['default', 'strict'];
+$uiText = isset($uiText) && is_array($uiText) ? $uiText : [];
+$t = static function (string $key, string $fallback) use ($uiText): string {
+    return isset($uiText[$key]) && is_string($uiText[$key]) && $uiText[$key] !== '' ? $uiText[$key] : $fallback;
+};
 $archiveHeroEyebrow = $archiveHeroEyebrow ?? 'Wissen & Orientierung';
 $archiveTitle = $archiveTitle ?? (string) ($settings['archive_title'] ?? 'Knowledgebase');
 $archiveIntro = $archiveIntro ?? (string) ($settings['archive_intro'] ?? '');
@@ -27,6 +34,7 @@ if ($search !== '') {
 if ($category !== '') {
     $pageQuery['category'] = $category;
 }
+$pageQuery['search_mode'] = $searchMode;
 $perPageOptions = isset($perPageOptions) && is_array($perPageOptions) ? $perPageOptions : [25, 50, 100, 200];
 $pageQuery['per_page'] = $perPage;
 $pageWindowStart = $totalEntries > 0 ? (($currentPage - 1) * $perPage) + 1 : 0;
@@ -47,29 +55,29 @@ $pageWindowEnd = $totalEntries > 0 ? min($totalEntries, $pageWindowStart + count
                 <?php endif; ?>
 
                 <?php if ($hasFilters): ?>
-                    <div class="cms-kb-chip-row" aria-label="Aktive Filter">
+                    <div class="cms-kb-chip-row" aria-label="<?php echo htmlspecialchars($t('active_filters_aria', 'Aktive Filter'), ENT_QUOTES, 'UTF-8'); ?>">
                         <?php if ($search !== ''): ?>
-                            <span class="cms-kb-chip">Suche: <?php echo htmlspecialchars($search, ENT_QUOTES, 'UTF-8'); ?></span>
+                            <span class="cms-kb-chip"><?php echo htmlspecialchars($t('filter_search_prefix', 'Suche') . ': ' . $search, ENT_QUOTES, 'UTF-8'); ?></span>
                         <?php endif; ?>
                         <?php if ($category !== ''): ?>
-                            <span class="cms-kb-chip">Kategorie: <?php echo htmlspecialchars($category, ENT_QUOTES, 'UTF-8'); ?></span>
+                            <span class="cms-kb-chip"><?php echo htmlspecialchars($t('filter_category_prefix', 'Kategorie') . ': ' . $category, ENT_QUOTES, 'UTF-8'); ?></span>
                         <?php endif; ?>
                     </div>
                 <?php endif; ?>
             </div>
 
             <?php if (($settings['show_search'] ?? '1') === '1'): ?>
-            <nav class="cms-kb-filters cms-kb-filters--inline" aria-label="Knowledgebase-Filter">
+            <nav class="cms-kb-filters cms-kb-filters--inline" aria-label="<?php echo htmlspecialchars($t('filters_aria', 'Knowledgebase-Filter'), ENT_QUOTES, 'UTF-8'); ?>">
                 <form method="get" role="search" class="cms-kb-filters__form" action="<?php echo htmlspecialchars($archiveUrl, ENT_QUOTES, 'UTF-8'); ?>">
                     <div class="cms-kb-filters__field cms-kb-filters__field--search">
-                        <label for="kb-search-query">Begriff suchen</label>
-                        <input id="kb-search-query" type="search" name="q" value="<?php echo htmlspecialchars($search, ENT_QUOTES, 'UTF-8'); ?>" placeholder="Begriff suchen …">
+                        <label for="kb-search-query"><?php echo htmlspecialchars($t('search_label', 'Begriff suchen'), ENT_QUOTES, 'UTF-8'); ?></label>
+                        <input id="kb-search-query" type="search" name="q" value="<?php echo htmlspecialchars($search, ENT_QUOTES, 'UTF-8'); ?>" placeholder="<?php echo htmlspecialchars($t('search_placeholder', 'Begriff suchen …'), ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
 
                     <div class="cms-kb-filters__field cms-kb-filters__field--category">
-                        <label for="kb-category-filter">Kategorie</label>
+                        <label for="kb-category-filter"><?php echo htmlspecialchars($t('category_label', 'Kategorie'), ENT_QUOTES, 'UTF-8'); ?></label>
                         <select id="kb-category-filter" name="category">
-                            <option value="">Alle Kategorien</option>
+                            <option value=""><?php echo htmlspecialchars($t('all_categories_option', 'Alle Kategorien'), ENT_QUOTES, 'UTF-8'); ?></option>
                             <?php foreach ($categories as $item): ?>
                                 <?php $categoryValue = (string) ($item['category'] ?? ''); ?>
                                 <option value="<?php echo htmlspecialchars($categoryValue, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $category === $categoryValue ? 'selected' : ''; ?>>
@@ -79,22 +87,35 @@ $pageWindowEnd = $totalEntries > 0 ? min($totalEntries, $pageWindowStart + count
                         </select>
                     </div>
 
+                    <div class="cms-kb-filters__field cms-kb-filters__field--search-mode">
+                        <label for="kb-search-mode-filter"><?php echo htmlspecialchars($t('search_mode_label', 'Suchmodus'), ENT_QUOTES, 'UTF-8'); ?></label>
+                        <select id="kb-search-mode-filter" name="search_mode">
+                            <?php foreach ($searchModeOptions as $modeOption): ?>
+                                <?php $modeOption = (string) $modeOption; ?>
+                                <?php if (!in_array($modeOption, ['default', 'strict'], true)) { continue; } ?>
+                                <option value="<?php echo htmlspecialchars($modeOption, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $searchMode === $modeOption ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($modeOption === 'strict' ? $t('search_mode_strict', 'Strict') : $t('search_mode_default', 'Standard (tolerant)'), ENT_QUOTES, 'UTF-8'); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
                     <div class="cms-kb-filters__field cms-kb-filters__field--per-page">
-                        <label for="kb-per-page-filter">Anzahl</label>
+                        <label for="kb-per-page-filter"><?php echo htmlspecialchars($t('per_page_label', 'Anzahl'), ENT_QUOTES, 'UTF-8'); ?></label>
                         <select id="kb-per-page-filter" name="per_page">
                             <?php foreach ($perPageOptions as $option): ?>
                                 <option value="<?php echo (int) $option; ?>" <?php echo $perPage === (int) $option ? 'selected' : ''; ?>>
-                                    <?php echo (int) $option; ?> Einträge
+                                    <?php echo htmlspecialchars((int) $option . ' ' . $t('entries_suffix', 'Einträge'), ENT_QUOTES, 'UTF-8'); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
 
                     <div class="cms-kb-filters__actions">
-                        <button type="submit">Suchen</button>
+                        <button type="submit"><?php echo htmlspecialchars($t('search_button', 'Suchen'), ENT_QUOTES, 'UTF-8'); ?></button>
 
                         <?php if ($search !== '' || $category !== ''): ?>
-                            <a href="<?php echo htmlspecialchars($archiveUrl, ENT_QUOTES, 'UTF-8'); ?>">Zurücksetzen</a>
+                            <a href="<?php echo htmlspecialchars($archiveUrl, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($t('reset_button', 'Zurücksetzen'), ENT_QUOTES, 'UTF-8'); ?></a>
                         <?php endif; ?>
                     </div>
                 </form>
@@ -102,12 +123,12 @@ $pageWindowEnd = $totalEntries > 0 ? min($totalEntries, $pageWindowStart + count
             <?php endif; ?>
 
             <?php if (!empty($categories)): ?>
-                <div class="cms-kb-chip-row cms-kb-chip-row--categories" aria-label="Kategorien">
-                    <?php $allQuery = ['per_page' => $perPage]; if ($search !== '') { $allQuery['q'] = $search; } ?>
-                    <a class="cms-kb-chip<?php echo $category === '' ? ' is-active' : ''; ?>" href="<?php echo htmlspecialchars($archiveUrl . '?' . http_build_query($allQuery), ENT_QUOTES, 'UTF-8'); ?>">Alle</a>
+                <div class="cms-kb-chip-row cms-kb-chip-row--categories" aria-label="<?php echo htmlspecialchars($t('categories_aria', 'Kategorien'), ENT_QUOTES, 'UTF-8'); ?>">
+                    <?php $allQuery = ['per_page' => $perPage, 'search_mode' => $searchMode]; if ($search !== '') { $allQuery['q'] = $search; } ?>
+                    <a class="cms-kb-chip<?php echo $category === '' ? ' is-active' : ''; ?>" href="<?php echo htmlspecialchars($archiveUrl . '?' . http_build_query($allQuery), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($t('all_categories_chip', 'Alle'), ENT_QUOTES, 'UTF-8'); ?></a>
                     <?php foreach ($categories as $item): ?>
                         <?php $categoryValue = (string) ($item['category'] ?? ''); ?>
-                        <?php $categoryLinkQuery = ['category' => $categoryValue, 'per_page' => $perPage]; if ($search !== '') { $categoryLinkQuery['q'] = $search; } ?>
+                        <?php $categoryLinkQuery = ['category' => $categoryValue, 'per_page' => $perPage, 'search_mode' => $searchMode]; if ($search !== '') { $categoryLinkQuery['q'] = $search; } ?>
                         <a class="cms-kb-chip<?php echo $category === $categoryValue ? ' is-active' : ''; ?>" href="<?php echo htmlspecialchars($archiveUrl . '?' . http_build_query($categoryLinkQuery), ENT_QUOTES, 'UTF-8'); ?>">
                             <?php echo htmlspecialchars($categoryValue, ENT_QUOTES, 'UTF-8'); ?>
                         </a>
@@ -123,8 +144,8 @@ $pageWindowEnd = $totalEntries > 0 ? min($totalEntries, $pageWindowStart + count
 
             <?php if (empty($entries)): ?>
                 <div class="cms-kb-empty-state" role="status" aria-live="polite">
-                    <p class="cms-kb-empty-state__title">Keine Einträge gefunden</p>
-                    <p class="cms-kb-empty-state__body">Versuche es mit einem anderen Suchbegriff oder entferne den Kategorie-Filter.</p>
+                    <p class="cms-kb-empty-state__title"><?php echo htmlspecialchars($t('empty_title', 'Keine Einträge gefunden'), ENT_QUOTES, 'UTF-8'); ?></p>
+                    <p class="cms-kb-empty-state__body"><?php echo htmlspecialchars($t('empty_body', 'Versuche es mit einem anderen Suchbegriff oder entferne den Kategorie-Filter.'), ENT_QUOTES, 'UTF-8'); ?></p>
                 </div>
             <?php else: ?>
                 <div class="cms-kb-entry-grid <?php echo htmlspecialchars($gridClass, ENT_QUOTES, 'UTF-8'); ?>">
@@ -133,10 +154,10 @@ $pageWindowEnd = $totalEntries > 0 ? min($totalEntries, $pageWindowStart + count
                             <div class="cms-kb-entry__main">
                                 <header class="cms-kb-entry__header">
                                     <p class="cms-kb-entry__meta">
-                                        <?php echo htmlspecialchars((string) ($item['category'] ?? 'Allgemein'), ENT_QUOTES, 'UTF-8'); ?>
+                                        <?php echo htmlspecialchars((string) ($item['category'] ?? $t('fallback_category', 'Allgemein')), ENT_QUOTES, 'UTF-8'); ?>
                                     </p>
                                     <h2>
-                                        <a href="<?php echo htmlspecialchars(SITE_URL . '/kb/' . rawurlencode((string) $item['slug']), ENT_QUOTES, 'UTF-8'); ?>">
+                                        <a href="<?php echo htmlspecialchars($entryBaseUrl . '/' . rawurlencode((string) $item['slug']), ENT_QUOTES, 'UTF-8'); ?>">
                                             <?php echo htmlspecialchars((string) $item['title'], ENT_QUOTES, 'UTF-8'); ?>
                                         </a>
                                     </h2>
@@ -149,7 +170,7 @@ $pageWindowEnd = $totalEntries > 0 ? min($totalEntries, $pageWindowStart + count
 
                             <div class="cms-kb-entry__aside">
                                 <footer class="cms-kb-entry__footer">
-                                    <a class="cms-kb-entry__cta" href="<?php echo htmlspecialchars(SITE_URL . '/kb/' . rawurlencode((string) $item['slug']), ENT_QUOTES, 'UTF-8'); ?>"><span aria-hidden="true">… </span>zum Eintrag</a>
+                                    <a class="cms-kb-entry__cta" href="<?php echo htmlspecialchars($entryBaseUrl . '/' . rawurlencode((string) $item['slug']), ENT_QUOTES, 'UTF-8'); ?>"><span aria-hidden="true">… </span><?php echo htmlspecialchars($t('entry_cta', 'zum Eintrag'), ENT_QUOTES, 'UTF-8'); ?></a>
                                 </footer>
                             </div>
                         </article>
@@ -157,17 +178,17 @@ $pageWindowEnd = $totalEntries > 0 ? min($totalEntries, $pageWindowStart + count
                 </div>
 
                 <?php if ($totalPages > 1): ?>
-                    <nav class="cms-kb-chip-row" aria-label="Seitennavigation">
+                    <nav class="cms-kb-chip-row" aria-label="<?php echo htmlspecialchars($t('pagination_aria', 'Seitennavigation'), ENT_QUOTES, 'UTF-8'); ?>">
                         <?php if ($currentPage > 1): ?>
                             <?php $prevQuery = $pageQuery; $prevQuery['page'] = $currentPage - 1; ?>
-                            <a class="cms-kb-chip" href="<?php echo htmlspecialchars($pageBaseUrl . '?' . http_build_query($prevQuery), ENT_QUOTES, 'UTF-8'); ?>" rel="prev">← Zurück</a>
+                            <a class="cms-kb-chip" href="<?php echo htmlspecialchars($pageBaseUrl . '?' . http_build_query($prevQuery), ENT_QUOTES, 'UTF-8'); ?>" rel="prev"><?php echo htmlspecialchars($t('pagination_prev', '← Zurück'), ENT_QUOTES, 'UTF-8'); ?></a>
                         <?php endif; ?>
 
-                        <span class="cms-kb-chip" aria-current="page">Seite <?php echo number_format($currentPage); ?> von <?php echo number_format($totalPages); ?></span>
+                        <span class="cms-kb-chip" aria-current="page"><?php echo htmlspecialchars($t('pagination_page_prefix', 'Seite') . ' ' . number_format($currentPage) . ' ' . $t('pagination_page_connector', 'von') . ' ' . number_format($totalPages), ENT_QUOTES, 'UTF-8'); ?></span>
 
                         <?php if ($currentPage < $totalPages): ?>
                             <?php $nextQuery = $pageQuery; $nextQuery['page'] = $currentPage + 1; ?>
-                            <a class="cms-kb-chip" href="<?php echo htmlspecialchars($pageBaseUrl . '?' . http_build_query($nextQuery), ENT_QUOTES, 'UTF-8'); ?>" rel="next">Weiter →</a>
+                            <a class="cms-kb-chip" href="<?php echo htmlspecialchars($pageBaseUrl . '?' . http_build_query($nextQuery), ENT_QUOTES, 'UTF-8'); ?>" rel="next"><?php echo htmlspecialchars($t('pagination_next', 'Weiter →'), ENT_QUOTES, 'UTF-8'); ?></a>
                         <?php endif; ?>
                     </nav>
                 <?php endif; ?>

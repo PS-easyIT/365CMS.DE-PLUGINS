@@ -15,6 +15,7 @@ final class CMS_M365ADMINSITES_Frontend
 {
     private static ?self $instance = null;
     private ?string $requestPathCache = null;
+    private string $requestLang = 'de';
     /** @var array<int,string> */
     private array $publicRoutes = [];
 
@@ -40,18 +41,30 @@ final class CMS_M365ADMINSITES_Frontend
 
     private function register_routes(): void
     {
-        $this->publicRoutes = [
+        $baseRoutes = [
             CMS_M365ADMINSITES_Settings::route(),
             '/m365-admin-sites',
             '/m365-admin-portale',
         ];
+        $this->publicRoutes = array_values(array_unique($baseRoutes));
 
         if (!class_exists('CMS\\Router')) {
             return;
         }
 
         $router = \CMS\Router::instance();
+        $routes = [];
         foreach ($this->publicRoutes as $route) {
+            $routes[] = $route;
+            if (function_exists('cms_plugin_public_localized_path')) {
+                $localizedEn = (string) cms_plugin_public_localized_path($route, 'en');
+                if ($localizedEn !== '') {
+                    $routes[] = $localizedEn;
+                }
+            }
+        }
+
+        foreach (array_values(array_unique($routes)) as $route) {
             $router->addRoute('GET', $route, function (): void {
                 $this->render_archive();
             });
@@ -152,6 +165,7 @@ final class CMS_M365ADMINSITES_Frontend
 
         $repo = CMS_M365ADMINSITES_Repository::instance();
         $settings = CMS_M365ADMINSITES_Settings::all();
+        $lang = $this->request_language();
         $category = CMS_M365ADMINSITES_Repository::slugify((string) ($_GET['category'] ?? ''));
         if ($category === 'site') {
             $category = '';
@@ -170,12 +184,12 @@ final class CMS_M365ADMINSITES_Frontend
         $totalPages = max(1, (int) ceil($total / $perPage));
 
         $this->set_seo(
-            (string) ($settings['page_title'] ?? 'MS365 | Admin Sites & Portale'),
-            (string) ($settings['page_intro'] ?? '')
+            $this->i18n_value($settings, 'page_title', $lang, 'MS365 | Admin Sites & Portale'),
+            $this->i18n_value($settings, 'page_intro', $lang, '')
         );
 
         if (class_exists('CMS\\ThemeManager')) {
-            \CMS\ThemeManager::instance()->getHeader(['title' => (string) ($settings['page_title'] ?? 'MS365 | Admin Sites & Portale')]);
+            \CMS\ThemeManager::instance()->getHeader(['title' => $this->i18n_value($settings, 'page_title', $lang, 'MS365 | Admin Sites & Portale')]);
         }
 
         $template = realpath(CMS_M365ADMINSITES_PLUGIN_DIR . 'templates/page-adminsites.php');
@@ -223,14 +237,38 @@ final class CMS_M365ADMINSITES_Frontend
             return $this->requestPathCache;
         }
 
+        if (function_exists('cms_plugin_public_request_path')) {
+            $normalizedPath = (string) cms_plugin_public_request_path();
+            $this->requestLang = function_exists('cms_plugin_public_language')
+                ? (string) cms_plugin_public_language($normalizedPath)
+                : 'de';
+
+            if (function_exists('cms_plugin_public_path_without_lang')) {
+                $this->requestPathCache = (string) cms_plugin_public_path_without_lang($normalizedPath);
+                return $this->requestPathCache;
+            }
+        }
+
         $path = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
         $siteBasePath = trim((string) parse_url((string) (defined('SITE_URL') ? SITE_URL : ''), PHP_URL_PATH), '/');
         if ($siteBasePath !== '' && ($path === $siteBasePath || str_starts_with($path, $siteBasePath . '/'))) {
             $path = ltrim(substr($path, strlen($siteBasePath)), '/');
         }
+        if ($path === 'en' || str_starts_with($path, 'en/')) {
+            $this->requestLang = 'en';
+            $path = $path === 'en' ? '' : (string) substr($path, 3);
+        } else {
+            $this->requestLang = 'de';
+        }
 
-        $this->requestPathCache = $path;
+        $this->requestPathCache = trim($path, '/');
         return $this->requestPathCache;
+    }
+
+    private function request_language(): string
+    {
+        $this->normalized_request_path();
+        return $this->requestLang === 'en' ? 'en' : 'de';
     }
 
     private function set_seo(string $title, string $description): void
@@ -250,15 +288,36 @@ final class CMS_M365ADMINSITES_Frontend
 
     private function render_404(): void
     {
+        $lang = $this->request_language();
+        $title = $lang === 'en' ? 'Not found' : 'Nicht gefunden';
+        $label = $lang === 'en' ? 'Admin sites unavailable' : 'Adminsites nicht verfügbar';
         http_response_code(404);
         if (class_exists('CMS\\ThemeManager')) {
-            \CMS\ThemeManager::instance()->getHeader(['title' => 'Nicht gefunden']);
+            \CMS\ThemeManager::instance()->getHeader(['title' => $title]);
         }
-        echo '<main class="phinit-plugin mas-page"><section class="phinit-empty-state"><p class="phinit-empty-state__title">Adminsites nicht verfügbar</p></section></main>';
+        echo '<main class="phinit-plugin mas-page"><section class="phinit-empty-state"><p class="phinit-empty-state__title">'
+            . htmlspecialchars($label, ENT_QUOTES, 'UTF-8')
+            . '</p></section></main>';
         if (class_exists('CMS\\ThemeManager')) {
             \CMS\ThemeManager::instance()->getFooter();
         }
         exit;
+    }
+
+    /**
+     * @param array<string,string> $values
+     */
+    private function i18n_value(array $values, string $key, string $lang, string $fallback = ''): string
+    {
+        if (function_exists('cms_plugin_public_i18n_value')) {
+            return (string) cms_plugin_public_i18n_value($values, $key, $lang, $fallback);
+        }
+
+        if ($lang === 'en' && isset($values[$key . '_en']) && $values[$key . '_en'] !== '') {
+            return (string) $values[$key . '_en'];
+        }
+
+        return (string) ($values[$key] ?? $fallback);
     }
 
     private function log_error(string $message): void

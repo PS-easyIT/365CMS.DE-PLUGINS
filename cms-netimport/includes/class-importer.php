@@ -21,7 +21,19 @@ final class CMS_NetImport_Importer
 
     private const MAX_FILE_SIZE = 10485760; // 10 MB
     private const MAX_PREVIEW_MESSAGES = 200;
+    private const MAX_VALIDATION_DETAIL_MESSAGES = 40;
+    private const MAX_FORMULA_DETAIL_MESSAGES = 20;
     private const JSON_FLAGS = JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE;
+    /** @var list<string> */
+    private const VALIDATION_PROFILES = ['strict', 'balanced', 'permissive'];
+    /** @var list<string> */
+    private const QUARANTINE_ALLOWED_MIME_TYPES = [
+        'text/csv',
+        'text/plain',
+        'application/csv',
+        'application/vnd.ms-excel',
+        'text/x-csv',
+    ];
 
     /** @var array<string, array<string, mixed>> */
     private array $sourceDefinitions = [
@@ -76,6 +88,11 @@ final class CMS_NetImport_Importer
     private array $csvCache = [];
 
     private ?int $adminUserIdCache = null;
+    /** @var array<string, string> */
+    private array $runtimeOptions = [];
+    private string $currentImportType = '';
+    /** @var array<string, array<int, true>> */
+    private array $rowSkipIndexByType = [];
 
     private function __construct()
     {
@@ -216,8 +233,13 @@ final class CMS_NetImport_Importer
             'link_relations' => '1',
             'auto_create_event_people' => '1',
             'dry_run' => '0',
+            'validation_profile' => 'balanced',
+            'quarantine_mode' => '1',
+            'formula_guard' => '1',
             '_internal' => '0',
         ], $options);
+        $options['validation_profile'] = $this->normalize_validation_profile((string) ($options['validation_profile'] ?? 'balanced'));
+        $this->runtimeOptions = $options;
 
         $sourceForReport = [
             'selected_file' => '',
@@ -233,6 +255,7 @@ final class CMS_NetImport_Importer
             if ($options['_internal'] !== '1') {
                 $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
             }
+            $this->runtimeOptions = [];
             return $result;
         }
 
@@ -243,6 +266,7 @@ final class CMS_NetImport_Importer
             if ($options['_internal'] !== '1') {
                 $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
             }
+            $this->runtimeOptions = [];
             return $result;
         }
 
@@ -259,6 +283,7 @@ final class CMS_NetImport_Importer
             if ($options['_internal'] !== '1') {
                 $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
             }
+            $this->runtimeOptions = [];
             return $result;
         }
 
@@ -268,6 +293,7 @@ final class CMS_NetImport_Importer
             if ($options['_internal'] !== '1') {
                 $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
             }
+            $this->runtimeOptions = [];
             return $result;
         }
 
@@ -278,6 +304,7 @@ final class CMS_NetImport_Importer
             if ($options['_internal'] !== '1') {
                 $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
             }
+            $this->runtimeOptions = [];
             return $result;
         }
 
@@ -288,6 +315,23 @@ final class CMS_NetImport_Importer
             if ($options['_internal'] !== '1') {
                 $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
             }
+            $this->runtimeOptions = [];
+            return $result;
+        }
+
+        $csvPayload = $this->apply_formula_guardrails($csvPayload, $type, $options, $result);
+        $validationOutcome = $this->apply_validation_profile($type, $csvPayload, $options, $result);
+        $csvPayload['rows'] = $validationOutcome['rows'];
+        if (!empty($validationOutcome['skip_indices'])) {
+            $this->rowSkipIndexByType[$type] = $validationOutcome['skip_indices'];
+            $result['skipped'] += count($validationOutcome['skip_indices']);
+        }
+        $this->csvCache[(string) $source['path']] = $csvPayload;
+        if (!empty($validationOutcome['abort'])) {
+            if ($options['_internal'] !== '1') {
+                $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
+            }
+            $this->runtimeOptions = [];
             return $result;
         }
 
@@ -328,16 +372,23 @@ final class CMS_NetImport_Importer
             }
         };
 
-        if ($options['dry_run'] === '1') {
-            $executor();
-        } else {
-            $this->run_in_transaction($executor, $result);
+        $this->currentImportType = $type;
+        try {
+            if ($options['dry_run'] === '1') {
+                $executor();
+            } else {
+                $this->run_in_transaction($executor, $result);
+            }
+        } finally {
+            $this->currentImportType = '';
+            unset($this->rowSkipIndexByType[$type]);
         }
 
         if ($options['_internal'] !== '1') {
             $this->persist_run_report($result, $options, $sourceForReport, $startedAt, $startedAtSql);
         }
 
+        $this->runtimeOptions = [];
         return $result;
     }
 
@@ -1815,6 +1866,9 @@ final class CMS_NetImport_Importer
         $this->simulatedIdSequence = 1000000000;
         $this->csvCache = [];
         $this->adminUserIdCache = null;
+        $this->runtimeOptions = [];
+        $this->currentImportType = '';
+        $this->rowSkipIndexByType = [];
     }
 
     /**
@@ -1913,6 +1967,13 @@ final class CMS_NetImport_Importer
         if ($size > self::MAX_FILE_SIZE) {
             return 'Quelldatei ist größer als 10 MB und wird aus Sicherheitsgründen nicht verarbeitet.';
         }
+
+        if ($this->is_quarantine_enabled()) {
+            $quarantineError = $this->run_quarantine_checks($real, $size);
+            if ($quarantineError !== null) {
+                return 'Quarantäne-Prüfung fehlgeschlagen: ' . $quarantineError;
+            }
+        }
         return null;
     }
 
@@ -1928,7 +1989,300 @@ final class CMS_NetImport_Importer
     private function read_csv(string $path): array
     {
         $payload = $this->get_csv_payload($path);
-        return (array) ($payload['rows'] ?? []);
+        $rows = (array) ($payload['rows'] ?? []);
+        if ($this->currentImportType === '' || !isset($this->rowSkipIndexByType[$this->currentImportType])) {
+            return $rows;
+        }
+
+        $skipMap = $this->rowSkipIndexByType[$this->currentImportType];
+        if ($skipMap === []) {
+            return $rows;
+        }
+
+        $filtered = [];
+        foreach ($rows as $index => $row) {
+            if (isset($skipMap[$index])) {
+                continue;
+            }
+            $filtered[] = $row;
+        }
+
+        return $filtered;
+    }
+
+    private function normalize_validation_profile(string $profile): string
+    {
+        $normalized = strtolower(trim($profile));
+        return in_array($normalized, self::VALIDATION_PROFILES, true) ? $normalized : 'balanced';
+    }
+
+    private function is_quarantine_enabled(): bool
+    {
+        return (string) ($this->runtimeOptions['quarantine_mode'] ?? '1') === '1';
+    }
+
+    private function run_quarantine_checks(string $realPath, int $size): ?string
+    {
+        $sample = (string) @file_get_contents($realPath, false, null, 0, 512);
+        if ($sample === '') {
+            return null;
+        }
+
+        if (str_contains($sample, "\0")) {
+            return 'Binäre Null-Bytes erkannt (kein valides CSV-Textformat).';
+        }
+
+        foreach (['MZ', "\x7FELF", 'PK' . "\x03\x04", '%PDF', '<?php'] as $signature) {
+            if (str_starts_with($sample, $signature)) {
+                return 'Dateisignatur entspricht keinem erwarteten CSV-Textformat.';
+            }
+        }
+
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo !== false) {
+                $mime = (string) finfo_file($finfo, $realPath);
+                finfo_close($finfo);
+                if ($mime !== '' && !in_array($mime, self::QUARANTINE_ALLOWED_MIME_TYPES, true)) {
+                    return 'MIME-Typ nicht erlaubt: ' . $mime;
+                }
+            }
+        }
+
+        if (class_exists('CMS\\Hooks') && method_exists('CMS\\Hooks', 'applyFilters')) {
+            $scanResult = CMS\Hooks::applyFilters('netimport_quarantine_scan', [
+                'ok' => true,
+                'reason' => '',
+            ], [
+                'path' => $realPath,
+                'size' => $size,
+            ]);
+            if (is_array($scanResult) && array_key_exists('ok', $scanResult) && empty($scanResult['ok'])) {
+                $reason = trim((string) ($scanResult['reason'] ?? ''));
+                return $reason !== '' ? $reason : 'Externer Quarantäne-Scan hat die Datei blockiert.';
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $csvPayload
+     * @param array<string, string> $options
+     * @param array<string, mixed> $result
+     * @return array<string, mixed>
+     */
+    private function apply_formula_guardrails(array $csvPayload, string $type, array $options, array &$result): array
+    {
+        if ((string) ($options['formula_guard'] ?? '1') !== '1') {
+            return $csvPayload;
+        }
+
+        $rows = (array) ($csvPayload['rows'] ?? []);
+        if ($rows === []) {
+            return $csvPayload;
+        }
+
+        $neutralizedCount = 0;
+        $detailMessages = 0;
+        foreach ($rows as $rowIndex => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            foreach ($row as $header => $value) {
+                $cell = (string) $value;
+                if (!$this->is_formula_like_cell($cell)) {
+                    continue;
+                }
+                $rows[$rowIndex][$header] = "'" . $cell;
+                $neutralizedCount++;
+                if ($detailMessages < self::MAX_FORMULA_DETAIL_MESSAGES) {
+                    $this->add_message(
+                        $result,
+                        'warning',
+                        'Formula-Guard: potenziell gefährlicher Zellwert neutralisiert (Typ: ' . $type . ', Zeile ' . ($rowIndex + 2) . ', Feld "' . $header . '").'
+                    );
+                    $detailMessages++;
+                }
+            }
+        }
+
+        if ($neutralizedCount > 0) {
+            $result['warnings']++;
+            $this->add_message(
+                $result,
+                'warning',
+                'Formula-Guard aktiv: ' . $neutralizedCount . ' Zellen wurden mit Apostroph-Präfix neutralisiert.'
+            );
+        }
+
+        $csvPayload['rows'] = $rows;
+        return $csvPayload;
+    }
+
+    private function is_formula_like_cell(string $value): bool
+    {
+        $trimmedLeft = ltrim($value);
+        if ($trimmedLeft === '') {
+            return false;
+        }
+
+        if (str_starts_with($trimmedLeft, '=') || str_starts_with($trimmedLeft, '@')) {
+            return true;
+        }
+
+        if (str_starts_with($trimmedLeft, "\t") || str_starts_with($trimmedLeft, "\r")) {
+            return true;
+        }
+
+        if (str_starts_with($trimmedLeft, '+') || str_starts_with($trimmedLeft, '-')) {
+            return preg_match('/^[\+\-]?\d+(?:[.,]\d+)?$/', $trimmedLeft) !== 1;
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<string, mixed> $csvPayload
+     * @param array<string, string> $options
+     * @param array<string, mixed> $result
+     * @return array{abort: bool, rows: list<array<string, string>>, skip_indices: array<int, true>}
+     */
+    private function apply_validation_profile(string $type, array $csvPayload, array $options, array &$result): array
+    {
+        $profile = $this->normalize_validation_profile((string) ($options['validation_profile'] ?? 'balanced'));
+        $rows = (array) ($csvPayload['rows'] ?? []);
+        if ($rows === []) {
+            return [
+                'abort' => false,
+                'rows' => [],
+                'skip_indices' => [],
+            ];
+        }
+
+        $requiredGroups = $this->required_field_groups_by_type($type);
+        $errorRows = [];
+        $detailMessages = 0;
+
+        foreach ($rows as $rowIndex => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $rowHasError = false;
+            foreach ($requiredGroups as $fieldGroup) {
+                $resolved = $this->value($row, $fieldGroup);
+                if ($resolved !== '') {
+                    continue;
+                }
+
+                $rowHasError = true;
+                if ($detailMessages < self::MAX_VALIDATION_DETAIL_MESSAGES) {
+                    $label = count($fieldGroup) > 1 ? implode(' | ', $fieldGroup) : (string) ($fieldGroup[0] ?? 'unbekannt');
+                    $this->add_message(
+                        $result,
+                        $profile === 'strict' ? 'error' : 'warning',
+                        'Validierung: Zeile ' . ($rowIndex + 2) . ' enthält keinen Wert für Pflichtfeld "' . $label . '".'
+                    );
+                    $detailMessages++;
+                }
+            }
+
+            $website = $this->value($row, ['website', 'url']);
+            if ($website !== '' && $this->sanitize_url($website) === '') {
+                if ($detailMessages < self::MAX_VALIDATION_DETAIL_MESSAGES) {
+                    $this->add_message(
+                        $result,
+                        $profile === 'strict' ? 'error' : 'warning',
+                        'Validierung: Zeile ' . ($rowIndex + 2) . ' enthält eine ungültige URL im Feld "website/url".'
+                    );
+                    $detailMessages++;
+                }
+                if ($profile === 'strict') {
+                    $rowHasError = true;
+                }
+            }
+
+            if ($type === 'events') {
+                $rawDate = $this->value($row, ['wann', 'event_date']);
+                if ($rawDate !== '' && $this->parse_german_date($rawDate) === null) {
+                    $rowHasError = true;
+                    if ($detailMessages < self::MAX_VALIDATION_DETAIL_MESSAGES) {
+                        $this->add_message(
+                            $result,
+                            $profile === 'strict' ? 'error' : 'warning',
+                            'Validierung: Zeile ' . ($rowIndex + 2) . ' enthält ein nicht parsebares Datum "' . $rawDate . '".'
+                        );
+                        $detailMessages++;
+                    }
+                }
+            }
+
+            if ($rowHasError) {
+                $errorRows[(int) $rowIndex] = true;
+            }
+        }
+
+        if ($errorRows === []) {
+            return [
+                'abort' => false,
+                'rows' => $rows,
+                'skip_indices' => [],
+            ];
+        }
+
+        $errorCount = count($errorRows);
+        if ($profile === 'strict') {
+            $result['errors']++;
+            $this->add_message(
+                $result,
+                'error',
+                'Validierungsprofil "strict": Import wegen ' . $errorCount . ' fehlerhafter Zeilen vor dem Commit gestoppt.'
+            );
+            return [
+                'abort' => true,
+                'rows' => $rows,
+                'skip_indices' => [],
+            ];
+        }
+
+        $result['warnings']++;
+        if ($profile === 'balanced') {
+            $this->add_message(
+                $result,
+                'warning',
+                'Validierungsprofil "balanced": ' . $errorCount . ' fehlerhafte Zeilen werden übersprungen, Import läuft mit gültigen Zeilen weiter.'
+            );
+            return [
+                'abort' => false,
+                'rows' => $rows,
+                'skip_indices' => $errorRows,
+            ];
+        }
+
+        $this->add_message(
+            $result,
+            'warning',
+            'Validierungsprofil "permissive": ' . $errorCount . ' fehlerhafte Zeilen wurden protokolliert, aber nicht vorab herausgefiltert.'
+        );
+        return [
+            'abort' => false,
+            'rows' => $rows,
+            'skip_indices' => [],
+        ];
+    }
+
+    /**
+     * @return list<list<string>>
+     */
+    private function required_field_groups_by_type(string $type): array
+    {
+        return match ($type) {
+            'companies_example' => [['name', 'firma', 'company']],
+            'experts_mvps', 'experts_example', 'speakers' => [['vorname', 'first_name'], ['nachname', 'last_name']],
+            'events' => [['event_name', 'title'], ['wann', 'event_date']],
+            default => [],
+        };
     }
 
     /**

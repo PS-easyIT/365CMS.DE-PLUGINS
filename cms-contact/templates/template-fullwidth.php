@@ -9,6 +9,7 @@ declare(strict_types=1);
 if (!defined('ABSPATH')) exit;
 
 $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES, 'UTF-8');
+$t = static fn(string $de, string $en): string => CMS_Contact_Frontend::t($de, $en);
 $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
 
 $theme = CMS\ThemeManager::instance();
@@ -35,7 +36,7 @@ $theme->getHeader();
                     <?php if (!empty($success)): ?>
                     <div class="contact-alert contact-alert-success contact-alert-modern" role="status" aria-live="polite" data-contact-message tabindex="-1">
                         <div>
-                            <strong>Vielen Dank!</strong><br>
+                            <strong><?php echo $e($t('Vielen Dank!', 'Thank you!')); ?></strong><br>
                             <?php echo $e($success); ?>
                         </div>
                     </div>
@@ -54,6 +55,8 @@ $theme->getHeader();
                         </div>
                         <?php endif; ?>
 
+                        <?php echo CMS_Contact_Frontend::render_error_summary($fieldErrors ?? [], 'contact-form-title'); ?>
+
                         <div class="contact-fields contact-fields-fullwidth">
                             <?php foreach ($fields as $field): ?>
                             <div class="contact-field contact-field-<?php echo $e($field['field_width'] ?? 'full'); ?>">
@@ -62,19 +65,13 @@ $theme->getHeader();
                             <?php endforeach; ?>
                         </div>
 
-                        <?php if (!empty($form['enable_captcha'])): ?>
-                        <div class="contact-field contact-field-full contact-captcha">
-                            <?php $a = rand(1, 10); $b = rand(1, 10); $_SESSION['captcha_expected_' . $form['slug']] = $a + $b; ?>
-                            <label class="contact-label" for="contact-captcha-answer"><?php echo $a; ?> + <?php echo $b; ?> = ? <span class="contact-required">*</span></label>
-                            <input type="number" id="contact-captcha-answer" name="captcha_answer" class="contact-input" inputmode="numeric" required>
-                        </div>
-                        <?php endif; ?>
+                        <?php echo CMS_Contact_Frontend::render_captcha_field($form); ?>
 
                         <?php echo CMS_Contact_Frontend::render_privacy_consent($form, $old); ?>
 
                         <div class="contact-submit contact-submit-centered">
                             <button type="submit" class="contact-btn contact-btn-primary contact-btn-lg">
-                                Nachricht senden
+                                <?php echo $e($t('Nachricht senden', 'Send message')); ?>
                             </button>
                         </div>
                     </form>

@@ -204,6 +204,7 @@ final class EntryRepository
         $db = Database::instance();
         $table = $this->entriesTable();
         $conditions = [];
+        /** @var array<string, array{mixed, int}> $params */
         $params = [];
 
         if (($filters['status'] ?? '') === 'active') {
@@ -211,19 +212,21 @@ final class EntryRepository
         }
 
         $search = trim((string) ($filters['search'] ?? ''));
+        $searchMode = $this->normalizeSearchMode((string) ($filters['search_mode'] ?? 'default'));
         if ($search !== '') {
-            $conditions[] = '(title LIKE ? OR keyword LIKE ? OR synonyms LIKE ? OR excerpt LIKE ?)';
-            $needle = '%' . $search . '%';
-            $params[] = $needle;
-            $params[] = $needle;
-            $params[] = $needle;
-            $params[] = $needle;
+            $searchCondition = $this->buildSearchCondition($search, $searchMode, 'count_search');
+            if ($searchCondition['sql'] !== '') {
+                $conditions[] = $searchCondition['sql'];
+                foreach ($searchCondition['params'] as $paramName => $paramConfig) {
+                    $params[$paramName] = $paramConfig;
+                }
+            }
         }
 
         $category = trim((string) ($filters['category'] ?? ''));
         if ($category !== '') {
-            $conditions[] = 'category = ?';
-            $params[] = $category;
+            $conditions[] = 'category = :count_category';
+            $params[':count_category'] = [$category, PDO::PARAM_STR];
         }
 
         $sql = 'SELECT COUNT(*) FROM ' . $table;
@@ -232,7 +235,10 @@ final class EntryRepository
         }
 
         $stmt = $db->prepare($sql);
-        $stmt->execute($params);
+        foreach ($params as $name => [$value, $type]) {
+            $stmt->bindValue($name, $value, $type);
+        }
+        $stmt->execute();
         $count = $stmt->fetchColumn();
 
         return (int) $count;
@@ -436,8 +442,12 @@ final class EntryRepository
                 'open_links_new_tab',
                 'archive_title',
                 'archive_intro',
+                'archive_title_en',
+                'archive_intro_en',
                 'glossary_title',
                 'glossary_intro',
+                'glossary_title_en',
+                'glossary_intro_en',
                 'show_search',
                 'show_category_sidebar',
                 'show_keyword_badges',
@@ -445,6 +455,7 @@ final class EntryRepository
                 'related_posts_limit',
                 'show_nav_link',
                 'nav_label',
+                'nav_label_en',
             ],
             'design' => [
                 'content_max_width',
@@ -494,12 +505,22 @@ final class EntryRepository
                 $value = $this->sanitizeText((string) $value, 40);
             } elseif ($key === 'archive_title') {
                 $value = $this->sanitizeText((string) $value, 120);
+            } elseif ($key === 'archive_title_en') {
+                $value = $this->sanitizeText((string) $value, 120);
             } elseif ($key === 'glossary_title') {
+                $value = $this->sanitizeText((string) $value, 120);
+            } elseif ($key === 'glossary_title_en') {
                 $value = $this->sanitizeText((string) $value, 120);
             } elseif ($key === 'archive_intro') {
                 $value = $this->sanitizeTextarea((string) $value);
+            } elseif ($key === 'archive_intro_en') {
+                $value = $this->sanitizeTextarea((string) $value);
             } elseif ($key === 'glossary_intro') {
                 $value = $this->sanitizeTextarea((string) $value);
+            } elseif ($key === 'glossary_intro_en') {
+                $value = $this->sanitizeTextarea((string) $value);
+            } elseif ($key === 'nav_label_en') {
+                $value = $this->sanitizeText((string) $value, 40);
             } else {
                 $value = $this->sanitizeText((string) $value, 1000);
             }
@@ -900,13 +921,15 @@ final class EntryRepository
         }
 
         $search = trim((string) ($filters['search'] ?? ''));
+        $searchMode = $this->normalizeSearchMode((string) ($filters['search_mode'] ?? 'default'));
         if ($search !== '') {
-            $conditions[] = '(title LIKE :search_title OR keyword LIKE :search_keyword OR synonyms LIKE :search_synonyms OR excerpt LIKE :search_excerpt)';
-            $needle = '%' . $search . '%';
-            $params[':search_title'] = [$needle, PDO::PARAM_STR];
-            $params[':search_keyword'] = [$needle, PDO::PARAM_STR];
-            $params[':search_synonyms'] = [$needle, PDO::PARAM_STR];
-            $params[':search_excerpt'] = [$needle, PDO::PARAM_STR];
+            $searchCondition = $this->buildSearchCondition($search, $searchMode, 'entry_search');
+            if ($searchCondition['sql'] !== '') {
+                $conditions[] = $searchCondition['sql'];
+                foreach ($searchCondition['params'] as $paramName => $paramConfig) {
+                    $params[$paramName] = $paramConfig;
+                }
+            }
         }
 
         $category = trim((string) ($filters['category'] ?? ''));
@@ -940,6 +963,57 @@ final class EntryRepository
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return is_array($rows) ? $rows : [];
+    }
+
+    private function normalizeSearchMode(string $mode): string
+    {
+        $mode = strtolower(trim($mode));
+
+        return in_array($mode, ['default', 'strict'], true) ? $mode : 'default';
+    }
+
+    /**
+     * @return array{sql: string, params: array<string, array{mixed, int}>}
+     */
+    private function buildSearchCondition(string $search, string $searchMode, string $paramPrefix): array
+    {
+        $needle = '%' . $search . '%';
+        $sqlParts = [
+            "title LIKE :{$paramPrefix}_title",
+            "keyword LIKE :{$paramPrefix}_keyword",
+            "synonyms LIKE :{$paramPrefix}_synonyms",
+            "excerpt LIKE :{$paramPrefix}_excerpt",
+        ];
+        /** @var array<string, array{mixed, int}> $params */
+        $params = [
+            ":{$paramPrefix}_title" => [$needle, PDO::PARAM_STR],
+            ":{$paramPrefix}_keyword" => [$needle, PDO::PARAM_STR],
+            ":{$paramPrefix}_synonyms" => [$needle, PDO::PARAM_STR],
+            ":{$paramPrefix}_excerpt" => [$needle, PDO::PARAM_STR],
+        ];
+
+        if ($searchMode === 'default') {
+            $tokens = preg_split('/\s+/u', mb_strtolower($search, 'UTF-8')) ?: [];
+            $tokens = array_values(array_unique(array_filter(array_map(
+                static fn(string $token): string => trim($token),
+                $tokens
+            ), static fn(string $token): bool => mb_strlen($token, 'UTF-8') >= 3)));
+
+            foreach ($tokens as $index => $token) {
+                $paramToken = ":{$paramPrefix}_token_{$index}";
+                $paramTokenNeedle = ":{$paramPrefix}_token_{$index}_needle";
+                $sqlParts[] = "SOUNDEX(keyword) = SOUNDEX({$paramToken})";
+                $sqlParts[] = "SOUNDEX(title) = SOUNDEX({$paramToken})";
+                $sqlParts[] = "synonyms LIKE {$paramTokenNeedle}";
+                $params[$paramToken] = [$token, PDO::PARAM_STR];
+                $params[$paramTokenNeedle] = ['%' . $token . '%', PDO::PARAM_STR];
+            }
+        }
+
+        return [
+            'sql' => '(' . implode(' OR ', $sqlParts) . ')',
+            'params' => $params,
+        ];
     }
 
     private function settingsTable(): string

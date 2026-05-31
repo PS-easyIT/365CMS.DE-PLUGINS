@@ -25,6 +25,25 @@ $toolboxTools = is_array($toolboxTools ?? null) ? $toolboxTools : [];
 $latestPostsLimit = max(1, min(6, (int) ($hubSettings['hub_posts_limit'] ?? 6)));
 $latestPosts = is_array($latestPosts ?? null) ? array_slice(array_values(array_filter($latestPosts, 'is_array')), 0, $latestPostsLimit) : [];
 $stats = is_array($stats ?? null) ? $stats : [];
+$publicLang = isset($publicLang) && $publicLang === 'en' ? 'en' : 'de';
+$publicI18n = is_array($publicI18n ?? null) ? $publicI18n : [];
+$t = static function (string $key, string $fallbackDe, string $fallbackEn = '') use ($publicLang, $publicI18n): string {
+    $fallback = $publicLang === 'en' ? ($fallbackEn !== '' ? $fallbackEn : $fallbackDe) : $fallbackDe;
+    if (function_exists('cms_plugin_public_i18n_value')) {
+        return (string) cms_plugin_public_i18n_value($publicI18n, $key, $publicLang, $fallback);
+    }
+
+    return $fallback;
+};
+$hubText = static function (string $key, string $fallbackDe, string $fallbackEn = '') use ($hubSettings, $publicLang, $t): string {
+    $fallback = $t($key, $fallbackDe, $fallbackEn);
+    if (function_exists('cms_plugin_public_i18n_value')) {
+        return (string) cms_plugin_public_i18n_value($hubSettings, $key, $publicLang, $fallback);
+    }
+
+    $value = trim((string) ($hubSettings[$key] ?? ''));
+    return $value !== '' ? $value : $fallback;
+};
 
 $hubEnabled = static fn(string $key, bool $default = true): bool => array_key_exists($key, $hubSettings) ? (bool) $hubSettings[$key] : $default;
 $hubValue = static function (string $key, string $default = '') use ($hubSettings): string {
@@ -191,10 +210,10 @@ $highlightTitle = static function (string $title) use ($esc): string {
     return $html;
 };
 $searchUrl = $safeUrl($networkSearchUrl ?? '/365network/search');
-$searchUrl = $searchUrl === '#' ? '/365network/search' : $searchUrl;
+$searchUrl = $searchUrl === '#' ? ($publicLang === 'en' ? '/en/365network/search' : '/365network/search') : $searchUrl;
 $blogUrl = $safeUrl($hubValue('hub_posts_all_url', 'https://phinit.de/blog'));
 $blogUrl = $blogUrl === '#' ? 'https://phinit.de/blog' : $blogUrl;
-$blogButtonLabel = $hubValue('hub_posts_hero_button_label', 'Blog Beiträge');
+$blogButtonLabel = $hubText('hub_posts_hero_button_label', 'Blog Beiträge', 'Blog Posts');
 $searchParam = trim((string) preg_replace('/[^a-zA-Z0-9_-]+/', '', $hubValue('hub_band_search_param', 'q')));
 $searchParam = $searchParam !== '' ? $searchParam : 'q';
 
@@ -238,23 +257,89 @@ $spotlightSources = [
     'speaker' => array_values(array_filter($speakers, 'is_array')),
     'expert' => array_values(array_filter($partnerExperts !== [] ? $partnerExperts : $experts, 'is_array')),
 ];
-$spotlightItems = [];
 $spotlightLimit = max(1, (int) ($hubSettings['hub_spotlight_limit'] ?? 7));
-while (count($spotlightItems) < $spotlightLimit) {
-    $added = false;
-    foreach ($spotlightSources as $type => $sourceItems) {
-        $item = array_shift($sourceItems);
-        $spotlightSources[$type] = $sourceItems;
-        if (!is_array($item)) {
+$spotlightFreshnessWeight = max(0, min(100, (int) ($hubSettings['hub_spotlight_freshness_weight'] ?? 60)));
+$spotlightPartnerWeight = max(0, min(100, (int) ($hubSettings['hub_spotlight_partner_weight'] ?? 25)));
+$spotlightSectionWeight = max(0, min(100, (int) ($hubSettings['hub_spotlight_section_weight'] ?? 15)));
+$spotlightTypePriorityRaw = trim((string) ($hubSettings['hub_spotlight_type_priority'] ?? 'event,company,speaker,expert'));
+$spotlightTypePriorityParts = array_filter(array_map('trim', explode(',', $spotlightTypePriorityRaw)));
+$spotlightTypePriority = [];
+foreach ($spotlightTypePriorityParts as $typeKey) {
+    if (in_array($typeKey, ['event', 'company', 'speaker', 'expert'], true) && !in_array($typeKey, $spotlightTypePriority, true)) {
+        $spotlightTypePriority[] = $typeKey;
+    }
+}
+foreach (['event', 'company', 'speaker', 'expert'] as $fallbackType) {
+    if (!in_array($fallbackType, $spotlightTypePriority, true)) {
+        $spotlightTypePriority[] = $fallbackType;
+    }
+}
+$spotlightPriorityMap = [];
+foreach ($spotlightTypePriority as $priorityIndex => $priorityType) {
+    $spotlightPriorityMap[$priorityType] = $priorityIndex + 1;
+}
+$spotlightCandidates = [];
+foreach ($spotlightSources as $spotlightType => $sourceItems) {
+    foreach ($sourceItems as $sourceItem) {
+        if (!is_array($sourceItem)) {
             continue;
         }
-        $spotlightItems[] = ['type' => $type, 'item' => $item];
-        $added = true;
-        if (count($spotlightItems) >= $spotlightLimit) {
-            break;
+        $id = (int) ($sourceItem['id'] ?? 0);
+        $title = $spotlightType === 'company'
+            ? trim((string) ($sourceItem['name'] ?? ''))
+            : ($spotlightType === 'event'
+                ? trim((string) ($sourceItem['title'] ?? ''))
+                : trim((string) (($sourceItem['first_name'] ?? '') . ' ' . ($sourceItem['last_name'] ?? ''))));
+        $partnerSignal = 0.0;
+        if ($spotlightType === 'company') {
+            $partnerSignal = (int) ($sourceItem['is_top_partner'] ?? 0) === 1 ? 1.0 : ((int) ($sourceItem['is_partner'] ?? 0) === 1 ? 0.65 : 0.0);
+        } elseif ($spotlightType === 'expert') {
+            $partnerSignal = 0.55;
         }
+        $freshnessSignal = 0.1;
+        if ($spotlightType === 'event') {
+            $eventDateRaw = trim((string) ($sourceItem['event_date'] ?? ''));
+            $eventTs = $eventDateRaw !== '' ? strtotime($eventDateRaw) : false;
+            if ($eventTs !== false) {
+                $daysUntil = (int) floor(($eventTs - time()) / 86400);
+                if ($daysUntil < 0) {
+                    $daysUntil = abs($daysUntil);
+                }
+                $freshnessSignal = max(0.1, 1 - min(90, $daysUntil) / 90);
+            }
+        } elseif ($id > 0) {
+            $freshnessSignal = max(0.1, min(1.0, $id / 1000));
+        }
+        $sectionWeightRank = (float) (count($spotlightTypePriority) - ((int) ($spotlightPriorityMap[$spotlightType] ?? count($spotlightTypePriority)))) / max(1, count($spotlightTypePriority));
+        $totalScore = ($freshnessSignal * $spotlightFreshnessWeight)
+            + ($partnerSignal * $spotlightPartnerWeight)
+            + ($sectionWeightRank * $spotlightSectionWeight);
+        $spotlightCandidates[] = [
+            'type' => $spotlightType,
+            'item' => $sourceItem,
+            '_score' => $totalScore,
+            '_priority' => (int) ($spotlightPriorityMap[$spotlightType] ?? 999),
+            '_id' => $id,
+            '_title' => strtolower($title),
+        ];
     }
-    if (!$added) {
+}
+usort($spotlightCandidates, static function (array $a, array $b): int {
+    if ($a['_score'] !== $b['_score']) {
+        return $a['_score'] < $b['_score'] ? 1 : -1;
+    }
+    if ($a['_priority'] !== $b['_priority']) {
+        return $a['_priority'] <=> $b['_priority'];
+    }
+    if ($a['_id'] !== $b['_id']) {
+        return $a['_id'] < $b['_id'] ? 1 : -1;
+    }
+    return strcmp((string) $a['_title'], (string) $b['_title']);
+});
+$spotlightItems = [];
+foreach ($spotlightCandidates as $candidate) {
+    $spotlightItems[] = ['type' => (string) $candidate['type'], 'item' => (array) $candidate['item']];
+    if (count($spotlightItems) >= $spotlightLimit) {
         break;
     }
 }
@@ -266,8 +351,8 @@ if (in_array('partnerband', $sectionOrder, true)) {
     array_unshift($sectionOrder, 'partnerband');
 }
 $mainClass = 'cms-network-hub-wrap n365-landing n365-preview-layout';
-$heroTitle = $hubValue('hub_hero_title', 'Finde Speaker, Experts, Unternehmen und Events');
-$heroSub = $hubValue('hub_hero_sub', 'Ein zentraler Hub, der die Microsoft-365-Community verbindet — gebündelt, durchsuchbar, an einem Ort.');
+$heroTitle = $hubText('hub_hero_title', 'Finde Speaker, Experts, Unternehmen und Events', 'Find speakers, experts, companies and events');
+$heroSub = $hubText('hub_hero_sub', 'Ein zentraler Hub, der die Microsoft-365-Community verbindet — gebündelt, durchsuchbar, an einem Ort.', 'A central hub connecting the Microsoft 365 community — bundled, searchable and in one place.');
 $heroLabel = trim((string) ($hubSettings['hub_hero_label'] ?? ''));
 $heroImage = $safeImage($hubValue('hub_hero_image_url', ''));
 $heroLayout = $hubChoice('hub_hero_layout', 'center', ['center', 'image-right', 'image-left']);
@@ -291,10 +376,10 @@ $heroMedia = static function (string $class) use ($esc, $heroImage, $heroImageWi
 };
 $legacyFeaturedEnabled = (string) ($settings['featured_enabled'] ?? '1') === '1';
 $featuredVisible = $hubEnabled('hub_featured_visible', $legacyFeaturedEnabled);
-$featuredLabel = $hubValue('hub_featured_label', 'Featured');
+$featuredLabel = $hubText('hub_featured_label', 'Featured', 'Featured');
 $featuredTitle = $hubValue('hub_featured_title', trim((string) ($settings['featured_title'] ?? '')));
 $featuredSub = $hubValue('hub_featured_sub', trim((string) ($settings['featured_text'] ?? '')));
-$featuredButtonLabel = $hubValue('hub_featured_btn_label', 'Mehr erfahren');
+$featuredButtonLabel = $hubText('hub_featured_btn_label', 'Mehr erfahren', 'Learn more');
 $featuredButtonUrl = $safeUrl($hubValue('hub_featured_btn_url', trim((string) ($settings['featured_url'] ?? ''))));
 $featuredImage = $safeImage($hubValue('hub_featured_image_url', trim((string) ($settings['featured_image_url'] ?? ''))));
 $featuredStyle = $hubChoice('hub_featured_style', 'auto', ['auto', 'text', 'image']);
@@ -385,10 +470,10 @@ $postsSectionStyle = '--n365-posts-bg: ' . $cssColor($hubSettings['hub_posts_bg_
         <?php elseif ($sectionKey === 'spotlight' && $hubEnabled('hub_spotlight_visible') && $spotlightItems !== []): ?>
         <section class="n365-block n365-block--tight" aria-labelledby="n365-spotlight-title">
             <div class="n365-wrap">
-                <div class="n365-section-head"><div><h2 id="n365-spotlight-title"><?php echo $esc($hubValue('hub_spotlight_title', 'Im Fokus')); ?></h2><p><?php echo $esc($hubValue('hub_spotlight_sub', 'Rotierend aus Events, Speakern, Experts und Unternehmen.')); ?></p></div></div>
+                <div class="n365-section-head"><div><h2 id="n365-spotlight-title"><?php echo $esc($hubText('hub_spotlight_title', 'Im Fokus', 'Spotlight')); ?></h2><p><?php echo $esc($hubText('hub_spotlight_sub', 'Rotierend aus Events, Speakern, Experts und Unternehmen.', 'Rotating across events, speakers, experts and companies.')); ?></p></div></div>
                 <div class="n365-spotlight" data-n365-spotlight data-autoplay="<?php echo $hubEnabled('hub_spotlight_autoplay', false) ? '1' : '0'; ?>">
-                    <button class="n365-spotlight-nav n365-spotlight-nav--prev" type="button" data-n365-spotlight-action="prev" aria-label="Zurück"><?php echo $icon('chevron-left'); ?></button>
-                    <button class="n365-spotlight-nav n365-spotlight-nav--next" type="button" data-n365-spotlight-action="next" aria-label="Weiter"><?php echo $icon('chevron-right'); ?></button>
+                    <button class="n365-spotlight-nav n365-spotlight-nav--prev" type="button" data-n365-spotlight-action="prev" aria-label="<?php echo $esc($t('spotlight.prev', 'Zurück', 'Previous')); ?>"><?php echo $icon('chevron-left'); ?></button>
+                    <button class="n365-spotlight-nav n365-spotlight-nav--next" type="button" data-n365-spotlight-action="next" aria-label="<?php echo $esc($t('spotlight.next', 'Weiter', 'Next')); ?>"><?php echo $icon('chevron-right'); ?></button>
                     <div class="n365-spotlight-slides">
                         <?php foreach ($spotlightItems as $index => $spotlight): ?>
                         <?php
@@ -402,7 +487,7 @@ $postsSectionStyle = '--n365-posts-bg: ' . $cssColor($hubSettings['hub_posts_bg_
                         ?>
                         <article class="n365-spotlight-slide<?php echo $index === 0 ? ' is-active' : ''; ?>" data-n365-spotlight-slide<?php echo $index === 0 ? '' : ' hidden'; ?>>
                             <div class="n365-spotlight-visual" aria-hidden="true"><?php if ($isEvent): ?><span class="n365-spotlight-date"><strong><?php echo $esc($parts['day'] ?? '–'); ?></strong><small><?php echo $esc(trim((string) (($parts['month'] ?? '') . ' ' . ($parts['year'] ?? '')))); ?></small></span><?php else: ?><span class="n365-spotlight-mark<?php echo $type !== 'company' ? ' n365-spotlight-mark--round' : ''; ?>"><?php echo $esc($initials($title)); ?></span><?php endif; ?></div>
-                            <div class="n365-spotlight-content"><p><span></span><?php echo $esc(ucfirst($type)); ?></p><h3><?php echo $esc($title); ?></h3><?php if ($role !== ''): ?><small><?php echo $esc($role); ?></small><?php endif; ?><?php if ($url !== '#'): ?><a class="n365-btn n365-btn--primary n365-btn--small" href="<?php echo $esc($url); ?>"><?php echo $esc($isEvent ? 'Zum Event' : 'Profil ansehen'); ?></a><?php endif; ?></div>
+                            <div class="n365-spotlight-content"><p><span></span><?php echo $esc($type === 'event' ? $t('entity.event', 'Event', 'Event') : ($type === 'company' ? $t('entity.company', 'Firma', 'Company') : ($type === 'speaker' ? $t('entity.speaker', 'Speaker', 'Speaker') : $t('entity.expert', 'Experte', 'Expert')))); ?></p><h3><?php echo $esc($title); ?></h3><?php if ($role !== ''): ?><small><?php echo $esc($role); ?></small><?php endif; ?><?php if ($url !== '#'): ?><a class="n365-btn n365-btn--primary n365-btn--small" href="<?php echo $esc($url); ?>"><?php echo $esc($isEvent ? $t('spotlight.cta.event', 'Zum Event', 'View event') : $t('spotlight.cta.profile', 'Profil ansehen', 'View profile')); ?></a><?php endif; ?></div>
                         </article>
                         <?php endforeach; ?>
                     </div>

@@ -397,7 +397,9 @@ final class CMS_Feed_Database
 
         $defaults = [
             'archive_title'       => 'Feed-Übersicht',
+            'archive_title_en'    => 'Feed overview',
             'archive_description' => 'Aktuelle Nachrichten und Beiträge aus verschiedenen Quellen',
+            'archive_description_en' => 'Latest news and posts from different sources',
             'archive_slug'        => 'feeds',
             'per_page'            => '20',
             'color_primary'       => '#0891b2',
@@ -419,6 +421,9 @@ final class CMS_Feed_Database
             'digest_from_email'   => '',
             'digest_subject'      => 'Dein Feed-Digest – {date}',
             'digest_max_items'    => '20',
+            'noise_exclude_keywords' => '',
+            'noise_exclude_authors' => '',
+            'noise_exclude_domains' => '',
         ];
 
         $stmt = $db->prepare(

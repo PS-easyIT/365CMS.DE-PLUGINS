@@ -241,9 +241,25 @@ final class CMS_Projects_Service
 
         if ($saveId === false) {
             $this->logOperationFailure('save_task', ['project_id' => $projectId, 'task_id' => $taskId]);
+            $this->recordAuditLog(
+                $taskId > 0 ? 'task.update' : 'task.create',
+                'task',
+                $taskId,
+                $projectId,
+                false,
+                ['board_id' => $boardId, 'column_key' => $columnKey]
+            );
             return ['success' => false, 'message' => 'Ticket konnte nicht gespeichert werden.'];
         }
 
+        $this->recordAuditLog(
+            $taskId > 0 ? 'task.update' : 'task.create',
+            'task',
+            (int) $saveId,
+            $projectId,
+            true,
+            ['board_id' => $boardId, 'column_key' => $columnKey]
+        );
         return ['success' => true, 'message' => $taskId > 0 ? 'Ticket wurde aktualisiert.' : 'Ticket wurde gespeichert.', 'id' => (int) $saveId];
     }
 
@@ -256,9 +272,11 @@ final class CMS_Projects_Service
 
         if (!$this->repository->deleteTask($taskId)) {
             $this->logOperationFailure('delete_task', ['project_id' => $projectId, 'task_id' => $taskId]);
+            $this->recordAuditLog('task.delete', 'task', $taskId, $projectId, false, []);
             return ['success' => false, 'message' => 'Ticket konnte nicht gelöscht werden.'];
         }
 
+        $this->recordAuditLog('task.delete', 'task', $taskId, $projectId, true, []);
         return ['success' => true, 'message' => 'Ticket wurde gelöscht.', 'id' => $taskId];
     }
 
@@ -292,6 +310,10 @@ final class CMS_Projects_Service
 
         if (!$this->persistTaskOrder($finalTargetTaskIds, $targetBoardId, $resolvedColumnKey)) {
             $this->logOperationFailure('move_task_target', ['project_id' => $projectId, 'task_id' => $taskId, 'board_id' => $targetBoardId, 'column_key' => $resolvedColumnKey]);
+            $this->recordAuditLog('task.move', 'task', $taskId, $projectId, false, [
+                'target_board_id' => $targetBoardId,
+                'target_column_key' => $resolvedColumnKey,
+            ]);
             return ['success' => false, 'message' => 'Ticket konnte nicht verschoben werden.'];
         }
 
@@ -301,10 +323,22 @@ final class CMS_Projects_Service
 
             if (!$this->persistTaskOrder($sourceTaskIds, $sourceBoardId, $sourceColumnKey)) {
                 $this->logOperationFailure('move_task_source', ['project_id' => $projectId, 'task_id' => $taskId, 'board_id' => $sourceBoardId, 'column_key' => $sourceColumnKey]);
+                $this->recordAuditLog('task.move', 'task', $taskId, $projectId, false, [
+                    'source_board_id' => $sourceBoardId,
+                    'source_column_key' => $sourceColumnKey,
+                    'target_board_id' => $targetBoardId,
+                    'target_column_key' => $resolvedColumnKey,
+                ]);
                 return ['success' => false, 'message' => 'Quell-Spalte konnte nach dem Verschieben nicht neu sortiert werden.'];
             }
         }
 
+        $this->recordAuditLog('task.move', 'task', $taskId, $projectId, true, [
+            'source_board_id' => $sourceBoardId,
+            'source_column_key' => $sourceColumnKey,
+            'target_board_id' => $targetBoardId,
+            'target_column_key' => $resolvedColumnKey,
+        ]);
         return ['success' => true, 'message' => 'Ticket wurde verschoben.', 'id' => $taskId];
     }
 
@@ -391,9 +425,25 @@ final class CMS_Projects_Service
 
         if ($saveId === false) {
             $this->logOperationFailure('save_project', ['project_id' => $id ?? 0, 'slug' => $slug]);
+            $this->recordAuditLog(
+                $id !== null ? 'project.update' : 'project.create',
+                'project',
+                (int) ($id ?? 0),
+                (int) ($id ?? 0),
+                false,
+                ['slug' => $slug]
+            );
             return ['success' => false, 'message' => 'Projekt konnte nicht gespeichert werden.'];
         }
 
+        $this->recordAuditLog(
+            $id !== null ? 'project.update' : 'project.create',
+            'project',
+            (int) $saveId,
+            (int) $saveId,
+            true,
+            ['slug' => $slug]
+        );
         return ['success' => true, 'message' => 'Projekt wurde gespeichert.', 'id' => (int) $saveId];
     }
 
@@ -443,9 +493,11 @@ final class CMS_Projects_Service
 
         if ($saveId === false) {
             $this->logOperationFailure('save_board', ['project_id' => $projectId, 'board_type' => $boardType]);
+            $this->recordAuditLog('board.create', 'board', 0, $projectId, false, ['board_type' => $boardType]);
             return ['success' => false, 'message' => 'Board konnte nicht gespeichert werden.'];
         }
 
+        $this->recordAuditLog('board.create', 'board', (int) $saveId, $projectId, true, ['board_type' => $boardType]);
         return ['success' => true, 'message' => 'Board wurde gespeichert.', 'id' => (int) $saveId];
     }
 
@@ -500,9 +552,11 @@ final class CMS_Projects_Service
 
         if ($saveId === false) {
             $this->logOperationFailure('save_widget', ['project_id' => $projectId, 'widget_type' => $widgetType]);
+            $this->recordAuditLog('widget.create', 'widget', 0, $projectId, false, ['widget_type' => $widgetType, 'scope' => $scope]);
             return ['success' => false, 'message' => 'Widget konnte nicht gespeichert werden.'];
         }
 
+        $this->recordAuditLog('widget.create', 'widget', (int) $saveId, $projectId, true, ['widget_type' => $widgetType, 'scope' => $scope]);
         return ['success' => true, 'message' => 'Widget wurde gespeichert.', 'id' => (int) $saveId];
     }
 
@@ -513,6 +567,17 @@ final class CMS_Projects_Service
             'public' => $slug !== '' ? '/projects/' . rawurlencode($slug) : '/projects',
             'member' => $slug !== '' ? '/member/plugin/projects?project=' . rawurlencode($slug) : '/member/plugin/projects',
         ];
+    }
+
+    public function getAdminAuditLogs(int $limit = 100): array
+    {
+        $logs = $this->repository->getAuditLogs($limit);
+
+        return array_map(function (array $log): array {
+            $context = $this->decodePayload((string) ($log['context_json'] ?? ''));
+            $log['context'] = is_array($context) ? $context : [];
+            return $log;
+        }, $logs);
     }
 
     private function decorateProjects(array $projects): array
@@ -658,6 +723,7 @@ final class CMS_Projects_Service
             $sanitized[] = [
                 'key' => $this->buildColumnKey((string) ($group['key'] ?? ''), $title, $index),
                 'title' => $title !== '' ? $title : 'Block',
+                'wip_limit' => $this->normalizeWipLimit($group['wip_limit'] ?? null),
                 'items' => $items,
             ];
         }
@@ -700,8 +766,15 @@ final class CMS_Projects_Service
 
             $payload[$key] = array_map(function (array $group, int $index) use ($taskGroups): array {
                 $columnKey = $this->buildColumnKey((string) ($group['key'] ?? ''), (string) ($group['title'] ?? 'Block'), $index);
+                $wipLimit = $this->normalizeWipLimit($group['wip_limit'] ?? null);
+                $tasks = $taskGroups[$columnKey] ?? [];
+                $wipCount = count($tasks);
                 $group['key'] = $columnKey;
-                $group['tasks'] = $taskGroups[$columnKey] ?? [];
+                $group['wip_limit'] = $wipLimit;
+                $group['wip_count'] = $wipCount;
+                $group['wip_limit_reached'] = $wipLimit > 0 && $wipCount >= $wipLimit;
+                $group['wip_over_limit'] = $wipLimit > 0 && $wipCount > $wipLimit;
+                $group['tasks'] = $tasks;
                 return $group;
             }, array_values($payload[$key]), array_keys(array_values($payload[$key])));
 
@@ -873,6 +946,19 @@ final class CMS_Projects_Service
         }
 
         return $date->format('Y-m-d');
+    }
+
+    private function normalizeWipLimit(mixed $value): int
+    {
+        if ($value === null || $value === '') {
+            return 0;
+        }
+
+        if (!is_scalar($value)) {
+            return 0;
+        }
+
+        return max(0, min(9999, (int) $value));
     }
 
     private function sanitizeWidgetPayload(string $widgetType, array $payload): array
@@ -1049,5 +1135,63 @@ final class CMS_Projects_Service
         }
 
         error_log('[cms-projects] operation_failed=' . $operation . ($segments !== [] ? ' ' . implode(' ', $segments) : ''));
+    }
+
+    private function getActorContext(): array
+    {
+        if (!class_exists('CMS\\Auth')) {
+            return ['id' => 0, 'name' => 'system'];
+        }
+
+        $auth = \CMS\Auth::instance();
+        if (!method_exists($auth, 'currentUser')) {
+            return ['id' => 0, 'name' => 'system'];
+        }
+
+        $user = $auth->currentUser();
+        if (!is_object($user)) {
+            return ['id' => 0, 'name' => 'system'];
+        }
+
+        $id = isset($user->id) ? (int) $user->id : 0;
+        $name = '';
+        foreach (['display_name', 'name', 'username', 'email'] as $field) {
+            if (isset($user->{$field}) && is_string($user->{$field}) && trim($user->{$field}) !== '') {
+                $name = trim((string) $user->{$field});
+                break;
+            }
+        }
+
+        if ($name === '') {
+            $name = $id > 0 ? 'user-' . $id : 'system';
+        }
+
+        return ['id' => max(0, $id), 'name' => $this->truncate($name, self::MAX_SHORT_TEXT_LENGTH)];
+    }
+
+    private function recordAuditLog(
+        string $action,
+        string $entityType,
+        int $entityId,
+        int $projectId,
+        bool $success,
+        array $context = []
+    ): void {
+        $actor = $this->getActorContext();
+        $contextJson = json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (!is_string($contextJson)) {
+            $contextJson = '{}';
+        }
+
+        $this->repository->insertAuditLog([
+            'actor_id' => (int) ($actor['id'] ?? 0),
+            'actor_name' => (string) ($actor['name'] ?? 'system'),
+            'action' => $action,
+            'entity_type' => $entityType,
+            'entity_id' => max(0, $entityId),
+            'project_id' => max(0, $projectId),
+            'result' => $success ? 'success' : 'failure',
+            'context_json' => $contextJson,
+        ]);
     }
 }

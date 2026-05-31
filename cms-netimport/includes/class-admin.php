@@ -548,12 +548,20 @@ final class CMS_NetImport_Admin
 
     private function read_options(): array
     {
+        $validationProfile = strtolower(trim((string) ($_POST['validation_profile'] ?? 'balanced')));
+        if (!in_array($validationProfile, ['strict', 'balanced', 'permissive'], true)) {
+            $validationProfile = 'balanced';
+        }
+
         return [
             'update_existing'      => isset($_POST['update_existing']) ? '1' : '0',
             'auto_create_companies' => isset($_POST['auto_create_companies']) ? '1' : '0',
             'link_relations'       => isset($_POST['link_relations']) ? '1' : '0',
             'auto_create_event_people' => isset($_POST['auto_create_event_people']) ? '1' : '0',
             'dry_run'              => isset($_POST['dry_run']) ? '1' : '0',
+            'validation_profile'   => $validationProfile,
+            'quarantine_mode'      => isset($_POST['quarantine_mode']) ? '1' : '0',
+            'formula_guard'        => isset($_POST['formula_guard']) ? '1' : '0',
         ];
     }
 
@@ -684,6 +692,9 @@ final class CMS_NetImport_Admin
             'link_relations' => '1',
             'auto_create_event_people' => '1',
             'dry_run' => '0',
+            'validation_profile' => 'balanced',
+            'quarantine_mode' => '1',
+            'formula_guard' => '1',
         ], $selectedOptions);
 
         $this->start_admin_layout('NetImport', self::MENU_SLUG);
@@ -776,6 +787,22 @@ final class CMS_NetImport_Admin
                     <label class="checkbox-label">
                         <input type="checkbox" name="dry_run" value="1" <?= $selectedOptions['dry_run'] === '1' ? 'checked' : '' ?>>
                         Nur Vorschau / Dry-Run ausführen (keine Schreibzugriffe)
+                    </label>
+                    <div class="ni-form-row-inline">
+                        <label class="form-label" for="ni_validation_profile">Validierungsprofil</label>
+                        <select name="validation_profile" id="ni_validation_profile" class="form-control">
+                            <option value="strict" <?= $selectedOptions['validation_profile'] === 'strict' ? 'selected' : '' ?>>Strict (stoppt bei Validierungsfehlern)</option>
+                            <option value="balanced" <?= $selectedOptions['validation_profile'] === 'balanced' ? 'selected' : '' ?>>Balanced (überspringt fehlerhafte Zeilen)</option>
+                            <option value="permissive" <?= $selectedOptions['validation_profile'] === 'permissive' ? 'selected' : '' ?>>Permissive (protokolliert, importiert weiter)</option>
+                        </select>
+                    </div>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="quarantine_mode" value="1" <?= $selectedOptions['quarantine_mode'] === '1' ? 'checked' : '' ?>>
+                        Quarantäneprüfung für CSV-Datei aktivieren (MIME, Signatur, Hook-Scan)
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="formula_guard" value="1" <?= $selectedOptions['formula_guard'] === '1' ? 'checked' : '' ?>>
+                        CSV-Formula-Guard aktivieren (verdächtige Zellen werden neutralisiert)
                     </label>
                 </div>
 

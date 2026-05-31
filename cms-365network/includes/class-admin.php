@@ -924,6 +924,11 @@ final class CMS_365NETWORK_Admin
                 continue;
             }
 
+            if ($key === 'hub_spotlight_type_priority') {
+                $settings[$key] = $this->sanitize_order_value($value, ['event', 'company', 'speaker', 'expert']);
+                continue;
+            }
+
             if ($this->is_image_url_field($key)) {
                 $settings[$key] = $this->safe_image_url($value);
                 continue;
@@ -1316,6 +1321,11 @@ final class CMS_365NETWORK_Admin
             'hub_hero_search_visible' => 'Die Suche nutzt die Netzwerk-Suchroute und kann im Hero ein- oder ausgeblendet werden.',
             'hub_area_card_order' => 'Sortiert die vier Direkteinstieg-Karten innerhalb des Bereichs.',
             'hub_toolbox_limit' => 'Die Toolbox liest bevorzugt aktive Hub-Tools aus dem M365-Tools/Toolbox-Plugin.',
+            'hub_spotlight_freshness_weight' => 'Je höher, desto stärker werden frische Inhalte priorisiert.',
+            'hub_spotlight_partner_weight' => 'Je höher, desto stärker werden Partner-Inhalte im Fokus bevorzugt.',
+            'hub_spotlight_section_weight' => 'Je höher, desto stärker wirkt die Bereichsreihenfolge im Ranking.',
+            'hub_spotlight_type_priority' => 'Kommagetrennte Reihenfolge: event,company,speaker,expert.',
+            'hub_event_schema_enabled' => 'Gibt validierungsfreundliches JSON-LD vom Typ Event für sichtbare Event-Teaser aus.',
             default => '',
         };
     }
@@ -1513,6 +1523,10 @@ final class CMS_365NETWORK_Admin
 
         if ($key === 'hub_posts_limit') {
             return [1, 6];
+        }
+
+        if (in_array($key, ['hub_spotlight_freshness_weight', 'hub_spotlight_partner_weight', 'hub_spotlight_section_weight'], true)) {
+            return [0, 100];
         }
 
         if (in_array($key, ['hub_partnerband_limit', 'hub_next_events_limit', 'hub_spotlight_limit', 'hub_partner_companies_limit', 'hub_partner_experts_limit'], true)) {

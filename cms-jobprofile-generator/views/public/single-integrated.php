@@ -21,6 +21,9 @@ if (!defined('ABSPATH')) exit;
 $esc = function (string $v): string {
     return htmlspecialchars($v, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 };
+$publicLang = $publicLang ?? (function_exists('jpg_public_lang') ? jpg_public_lang() : 'de');
+$t = static fn(string $key, array $replace = []): string
+    => function_exists('jpg_public_t') ? jpg_public_t($key, $replace, $publicLang) : $key;
 ?>
 <div class="jpg-public">
     <div class="jpg-job-card">
@@ -35,21 +38,21 @@ $esc = function (string $v): string {
                     <?php endif; ?>
                     <?php if (!empty($profile->employment_type)): ?>
                     <span>💼 <?php echo $esc(match ($profile->employment_type) {
-                        'fulltime'  => 'Vollzeit',
-                        'parttime'  => 'Teilzeit',
+                        'fulltime'  => $t('type_fulltime'),
+                        'parttime'  => $t('type_parttime'),
                         'contract'  => 'Freelance',
                         'temporary' => 'Befristet',
-                        'intern'    => 'Praktikum',
+                        'intern'    => $t('type_internship'),
                         'minijob'   => 'Minijob',
                         default     => $profile->employment_type,
                     }); ?></span>
                     <?php endif; ?>
                     <?php if (!empty($profile->experience_level)): ?>
                     <span>⭐ <?php echo $esc(match ($profile->experience_level) {
-                        'junior' => 'Junior',
-                        'mid'    => 'Mid-Level',
-                        'senior' => 'Senior',
-                        'lead'   => 'Lead',
+                        'junior' => $t('exp_junior'),
+                        'mid'    => $t('exp_mid'),
+                        'senior' => $t('exp_senior'),
+                        'lead'   => $t('exp_lead'),
                         default  => $profile->experience_level,
                     }); ?></span>
                     <?php endif; ?>
@@ -63,9 +66,9 @@ $esc = function (string $v): string {
                         echo number_format((float) $profile->salary_min, 0, ',', '.') . ' – '
                            . number_format((float) $profile->salary_max, 0, ',', '.') . ' €';
                     } elseif ($profile->salary_min) {
-                        echo 'ab ' . number_format((float) $profile->salary_min, 0, ',', '.') . ' €';
+                        echo $t('salary_from') . ' ' . number_format((float) $profile->salary_min, 0, ',', '.') . ' €';
                     } else {
-                        echo 'bis ' . number_format((float) $profile->salary_max, 0, ',', '.') . ' €';
+                        echo $t('salary_to') . ' ' . number_format((float) $profile->salary_max, 0, ',', '.') . ' €';
                     }
                     ?>
                 </span>
@@ -78,7 +81,7 @@ $esc = function (string $v): string {
 
             <?php if (!empty($profile->summary)): ?>
             <div class="jpg-section">
-                <h2>Über die Stelle</h2>
+                <h2><?php echo $esc($t('single_about_role')); ?></h2>
                 <p><?php echo nl2br($esc($profile->summary)); ?></p>
             </div>
             <?php endif; ?>
@@ -88,7 +91,7 @@ $esc = function (string $v): string {
                     <!-- Aufgaben -->
                     <?php if (!empty($tasks)): ?>
                     <div class="jpg-section">
-                        <h2>Ihre Aufgaben</h2>
+                        <h2><?php echo $esc($t('single_tasks')); ?></h2>
                         <ul>
                         <?php foreach ($tasks as $task): ?>
                             <li><?php echo $esc($task->task_text); ?></li>
@@ -100,13 +103,13 @@ $esc = function (string $v): string {
                     <!-- Anforderungen -->
                     <?php if (!empty($requirements)): ?>
                     <div class="jpg-section">
-                        <h2>Ihr Profil</h2>
+                        <h2><?php echo $esc($t('single_profile')); ?></h2>
                         <?php
                         $must = array_filter($requirements, fn($r) => ($r->type ?? 'must') === 'must');
                         $nice = array_filter($requirements, fn($r) => ($r->type ?? 'must') === 'nice');
                         ?>
                         <?php if ($must): ?>
-                        <h3>Anforderungen</h3>
+                        <h3><?php echo $esc($t('single_requirements')); ?></h3>
                         <ul>
                         <?php foreach ($must as $r): ?>
                             <li><?php echo $esc($r->description ?? $r->requirement_text ?? ''); ?></li>
@@ -114,7 +117,7 @@ $esc = function (string $v): string {
                         </ul>
                         <?php endif; ?>
                         <?php if ($nice): ?>
-                        <h3>Von Vorteil</h3>
+                        <h3><?php echo $esc($t('single_nice_to_have')); ?></h3>
                         <ul>
                         <?php foreach ($nice as $r): ?>
                             <li><?php echo $esc($r->description ?? $r->requirement_text ?? ''); ?></li>
@@ -129,7 +132,7 @@ $esc = function (string $v): string {
                     <!-- Benefits -->
                     <?php if (!empty($benefits)): ?>
                     <div class="jpg-aside-box">
-                        <h2>Das bieten wir</h2>
+                        <h2><?php echo $esc($t('single_benefits')); ?></h2>
                         <ul>
                         <?php foreach ($benefits as $b): ?>
                             <li class="jpg-benefit jpg-benefit-<?php echo $esc($b->source ?? 'job'); ?>"><?php echo (!empty($b->icon) ? $esc($b->icon) . ' ' : ''); echo $esc($b->title ?? ''); ?></li>
@@ -141,7 +144,7 @@ $esc = function (string $v): string {
                     <!-- Skills -->
                     <?php if (!empty($skills)): ?>
                     <div class="jpg-aside-box">
-                        <h2>Gefragt</h2>
+                        <h2><?php echo $esc($t('single_skills')); ?></h2>
                         <div class="jpg-skill-tags">
                         <?php foreach ($skills as $s): ?>
                             <span class="jpg-skill-tag"><?php echo $esc($s->skill_name ?? ''); ?></span>
@@ -156,7 +159,7 @@ $esc = function (string $v): string {
         <!-- Phase 6.3: Lerne dein Team kennen (cms-experts) -->
         <?php if (!empty($experts)): ?>
         <div class="jpg-section">
-            <h2>👥 Lerne dein Team kennen</h2>
+            <h2>👥 <?php echo $esc($t('single_team')); ?></h2>
             <div class="jpg-team-grid">
                 <?php foreach ($experts as $expert): ?>
                 <div class="jpg-team-card">
@@ -182,12 +185,12 @@ $esc = function (string $v): string {
 
         <!-- Bewerben / Apply-Modal -->
         <div class="jpg-apply-section" id="apply">
-            <h2>Jetzt bewerben</h2>
+            <h2><?php echo $esc($t('single_apply_now')); ?></h2>
             <?php if (!empty($profile->description)): ?>
             <div class="jpg-apply-desc"><?php echo nl2br($esc(strip_tags((string) $profile->description))); ?></div>
             <?php endif; ?>
             <button type="button" class="jpg-btn-apply" onclick="jpgOpenApplyModal()">
-                📩 Jetzt bewerben
+                📩 <?php echo $esc($t('single_apply_now')); ?>
             </button>
         </div>
 

@@ -362,6 +362,25 @@ final class CMS_Booking_Bookings
         ], $rows);
     }
 
+    public function count_active_for_date(int $providerId, string $date, int $serviceId = 0): int
+    {
+        $db = \CMS\Database::instance();
+        $sql = "SELECT COUNT(*)
+                FROM {$db->getPrefix()}bookings
+                WHERE provider_id = ? AND booking_date = ? AND status IN ('pending', 'confirmed')";
+        $params = [$providerId, $date];
+
+        if ($serviceId > 0) {
+            $sql .= ' AND service_id = ?';
+            $params[] = $serviceId;
+        }
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     /* ================================================================== */
     /*  Statistiken                                                        */
     /* ================================================================== */

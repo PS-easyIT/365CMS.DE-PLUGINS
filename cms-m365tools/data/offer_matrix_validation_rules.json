@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "source_checked": "2026-05-31",
+    "description": "Offer-Matrix-Regeln fuer Basislizenz- und Add-on-Kombinationen."
+  },
+  "rules": [
+    {
+      "key": "business-seat-cap",
+      "severity": "danger",
+      "when_base_tag_any": ["business", "smb"],
+      "max_users": 300,
+      "message": "Business- und SMB-Basislizenzen sind i.d.R. auf 300 Seats pro Tenant begrenzt."
+    },
+    {
+      "key": "copilot-needs-eligible-base",
+      "severity": "danger",
+      "when_addon_any": ["m365-copilot", "m365-copilot-business"],
+      "requires_base_tag_any": ["copilot_business_eligible", "copilot_enterprise_eligible"],
+      "message": "Microsoft 365 Copilot braucht eine berechtigte Basislizenz mit Copilot-Eligibility."
+    },
+    {
+      "key": "teams-calling-plan-needed",
+      "severity": "warning",
+      "when_addon_any": ["teams-phone-standard", "teams-phone"],
+      "when_pstn_provider": "microsoft",
+      "requires_addon_any": ["teams-calling-plan-domestic", "teams-calling-plan-international", "teams-calling-plan-payg"],
+      "message": "Bei Microsoft als PSTN-Pfad wird zusaetzlich ein Calling Plan oder PAYG benoetigt."
+    },
+    {
+      "key": "resource-account-no-phone-standard",
+      "severity": "warning",
+      "when_addon_any": ["teams-phone-resource-account"],
+      "forbids_addon_any": ["teams-phone-standard", "teams-phone"],
+      "message": "Resource Accounts sollten nicht mit Teams Phone Standard kalkuliert werden."
+    },
+    {
+      "key": "power-premium-required",
+      "severity": "danger",
+      "when_requirements_any": ["power_apps", "automation"],
+      "requires_addon_any": ["power-apps-premium", "power-automate-premium"],
+      "message": "Power Platform Premium-Connectoren und eigene Dataverse-Workloads brauchen i.d.R. Premium-Add-ons."
+    }
+  ]
+}

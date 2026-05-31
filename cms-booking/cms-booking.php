@@ -46,14 +46,16 @@ final class CMS_Booking
     {
         $inc   = CMS_BOOKING_PLUGIN_DIR . 'includes/';
         $admin = CMS_BOOKING_PLUGIN_DIR . 'admin/';
-        $shared = dirname(CMS_BOOKING_PLUGIN_DIR) . '/shared/admin/';
+        $sharedAdmin = dirname(CMS_BOOKING_PLUGIN_DIR) . '/shared/admin/';
+        $sharedPublic = dirname(CMS_BOOKING_PLUGIN_DIR) . '/shared/public/';
         $allowedRoots = [
             realpath(CMS_BOOKING_PLUGIN_DIR) ?: CMS_BOOKING_PLUGIN_DIR,
             realpath(dirname(CMS_BOOKING_PLUGIN_DIR) . '/shared/') ?: dirname(CMS_BOOKING_PLUGIN_DIR) . '/shared/',
         ];
 
         $files = [
-            $shared . 'plugin-admin-contract.php',
+            $sharedAdmin . 'plugin-admin-contract.php',
+            $sharedPublic . 'plugin-public-i18n.php',
             $inc   . 'class-installer.php',
             $inc   . 'class-providers.php',
             $inc   . 'class-services.php',
@@ -192,11 +194,23 @@ final class CMS_Booking
         $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
         $path = '/' . trim($path, '/');
 
-        if ($path === '/booking' || $path === '/booking/' || preg_match('#^/booking/[^/]+(?:/[^/]+)?$#', $path) === 1) {
+        if (
+            $path === '/booking'
+            || $path === '/booking/'
+            || preg_match('#^/(?:en/)?booking/[^/]+(?:/[^/]+)?$#', $path) === 1
+        ) {
             return true;
         }
 
-        return preg_match('#^/booking/confirm/\d+$#', $path) === 1;
+        if (preg_match('#^/(?:en/)?booking/confirm/\d+$#', $path) === 1) {
+            return true;
+        }
+
+        if (preg_match('#^/(?:en/)?booking/ical/\d+$#', $path) === 1) {
+            return true;
+        }
+
+        return preg_match('#^/(?:en/)?api/booking/slots/\d+/\d{4}-\d{2}-\d{2}$#', $path) === 1;
     }
 
     /* ------------------------------------------------------------------ */
