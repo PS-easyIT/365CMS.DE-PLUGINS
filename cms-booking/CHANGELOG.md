@@ -2,6 +2,12 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [3.0.6] – 2026-05-31
+
+### Geändert
+
+- Der Booking-Admin-Menüeintrag wird in der Core-Sidebar mit `365NET | ` vorangestellt, damit 365-Network-Plugins gemeinsam sortiert werden.
+
 ## [3.0.5] – 2026-05-25
 
 ### Fehlerbehebungen

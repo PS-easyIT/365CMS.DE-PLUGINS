@@ -1,5 +1,11 @@
 # Changelog – CMS Downloads
 
+## [3.0.3] – 2026-05-31
+
+### Geändert
+
+- Admin-Menüeintrag wird in der Core-Sidebar mit `365CMS | ` vorangestellt, damit 365CMS-Plugins gemeinsam sortiert werden.
+
 ## [3.0.1] – 2026-05-17
 
 ### Geändert

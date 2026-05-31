@@ -2,6 +2,12 @@
 
 Alle nennenswerten Änderungen an diesem Plugin werden hier dokumentiert.
 
+## [3.0.1] – 2026-05-31
+
+### Geändert
+
+- Der Admin-Menüeintrag wird in der Core-Sidebar mit `365CMS | ` vorangestellt, damit 365CMS-Plugins gemeinsam sortiert werden.
+
 ## [Unreleased] – 2026-05-15
 
 ### Sicherheitsfixes

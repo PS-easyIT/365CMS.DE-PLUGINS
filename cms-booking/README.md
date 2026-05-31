@@ -1,6 +1,6 @@
 # CMS Booking – Universelles Buchungssystem
 
-> **Version:** 3.0.5  
+> **Version:** 3.0.6
 > **Autor:** 365 Network  
 > **Abhängigkeiten:** 365CMS Core ≥ 2.0  
 > **Optionale Integration:** cms-contact, cms-experts, cms-speakers, cms-events, cms-companies

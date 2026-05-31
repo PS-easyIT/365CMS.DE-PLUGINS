@@ -1,5 +1,9 @@
 # Changelog – CMS Projects
 
+## 3.0.2 – 2026-05-31
+
+- Admin-Menüeintrag wird in der Core-Sidebar mit `365CMS | ` vorangestellt, damit 365CMS-Plugins gemeinsam sortiert werden.
+
 ## 3.0.1 – 2026-05-18
 
 - PHP-Anforderung auf 8.4 angehoben und Plugin-Version auf `3.0.1` aktualisiert.

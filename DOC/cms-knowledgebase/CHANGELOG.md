@@ -1,5 +1,9 @@
 # Changelog
 
+## [3.0.4] - 2026-05-31
+
+- Admin-Menüeintrag wird in der Core-Sidebar kurz als `365CMS | KB` angezeigt, damit 365CMS-Plugins gemeinsam sortiert werden.
+
 ## [3.0.1] - 2026-05-17
 
 - Security/Performance-Pass für 365CMS v3.x.x und PHP 8.4.

@@ -1,7 +1,7 @@
 {
   "name": "CMS Newsletter",
   "slug": "cms-newsletter",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "author": "365 Network",
   "homepage": "https://365network.de/cms-newsletter",
   "download_url": "https://365network.de/downloads/cms-newsletter.zip",
@@ -9,8 +9,9 @@
   "tested": "3.0.0",
   "min_php": "8.4",
   "requires_php": "8.4",
-  "last_updated": "2026-05-18",
+  "last_updated": "2026-05-31",
   "changelog": {
+    "3.0.2": "Admin-Menü: Der Newsletter-Eintrag wird für die Core-Sidebar-Sortierung mit 365CMS | vorangestellt.",
     "3.0.1": "365CMS-3.0.1/PHP-8.4-Härtung: Admin-CSRF-Token werden string-cast geprüft, Redirects nutzen 303, Public-Rate-Limits schreiben mit Lock/Größenlimit, Eingaben sind begrenzt, Template-HTML blockiert Event-/Style-Attribute und unsichere href-Schemata, Public/Admin-UI ist ruhiger und ohne Emoji-Deko.",
     "3.0.0": "Kompatibilität auf 365CMS 3.0.0 angehoben, öffentliche Anmeldung fail-closed mit CSRF, Honeypot und einfachem Rate-Limit gehärtet."
   }

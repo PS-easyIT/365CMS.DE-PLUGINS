@@ -113,5 +113,6 @@ cms-contact/
 
 ## Version
 
+- **3.0.1** – Admin-Menüeintrag wird zur besseren Core-Sidebar-Sortierung mit `365CMS | ` vorangestellt
 - **1.1.8** – Öffentliche Kontaktformulare nutzen jetzt zusätzlich den zentralen 365CMS-AntiSpam-Service, damit Mindestzeit, Linklimit, User-Agent- und Blacklist-Prüfung nicht länger nur im Kommentarpfad greifen
 - **1.1.7** – Kontakt-Benachrichtigungen und Bestätigungsmails hängen jetzt an der zentralen Mail-Queue, damit Cron-Retries, SMTP/OAuth-Konfiguration und Mail-Logging konsistent greifen

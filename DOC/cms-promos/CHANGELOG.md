@@ -1,5 +1,9 @@
 # CMS Promos – Changelog
 
+## 3.0.2 - 2026-05-31
+
+- Admin-Menüeintrag wird in der Core-Sidebar mit `365CMS | ` vorangestellt, damit 365CMS-Plugins gemeinsam sortiert werden.
+
 ## 3.0.1 - 2026-05-18
 - Security-Pass für 365CMS v3.x.x ergänzt: CSRF-Casts, 303-Redirects und sichere externe Promo-Ziele
 - URL-, Slug- und Richtext-Sanitizing begrenzt und gegen unsichere Attribute/Schemata gehärtet
