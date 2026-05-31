@@ -23,7 +23,7 @@ final class CMS_Projects_Admin
 
         add_menu_page(
             'CMS Projects',
-            'Projects',
+            '365CMS | Projects',
             'admin',
             'cms-projects',
             [$this, 'renderOverviewPage'],

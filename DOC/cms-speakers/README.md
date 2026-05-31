@@ -1,7 +1,7 @@
 # CMS Speakers – Dokumentation
 
 **Plugin:** `cms-speakers`  
-**Version:** 3.0.18
+**Version:** 3.0.19
 **Namespace:** `CMS_Speakers`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
 **Audit-/Dokustand:** Public-Detailseiten-Referenzlayout am 2026-05-31

@@ -1,7 +1,7 @@
 # CMS Events – Dokumentation
 
 **Plugin:** `cms-events`  
-**Version:** 3.0.30
+**Version:** 3.0.31
 **Namespace:** `CMS_Events`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
 **Audit-/Dokustand:** PHINIT-Preview-Detailseite am 2026-05-31

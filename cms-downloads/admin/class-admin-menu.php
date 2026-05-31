@@ -19,7 +19,7 @@ final class CMS_Downloads_Admin_Menu
 
         add_menu_page(
             'Downloads',
-            'Downloads',
+            '365CMS | Downloads',
             'manage_options',
             'downloads-dashboard',
             [CMS_Downloads_Admin_Pages::class, 'render_dashboard'],

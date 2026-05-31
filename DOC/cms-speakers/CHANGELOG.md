@@ -1,5 +1,9 @@
 # CMS Speakers – Changelog
 
+## [3.0.19] – 2026-05-31
+
+- **Admin-Menü:** Der Speaker-Eintrag wird in der Sidebar mit `365NET | ` vorangestellt, damit 365-Network-Plugins gemeinsam sortiert werden.
+
 ## [3.0.18] – 2026-05-31
 
 - **Hotfix i18n:** `single-speaker.php` löst Detailseiten-Labels jetzt zusätzlich direkt über den zentralen `CMS/lang`-YAML-Katalog auf, falls `TranslationService` oder `__()` den Original-Key zurückgeben.

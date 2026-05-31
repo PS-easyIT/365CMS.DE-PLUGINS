@@ -20,7 +20,7 @@ final class Menu
 
         add_menu_page(
             'Knowledgebase',
-            'Knowledgebase',
+            '365CMS | Knowledgebase',
             'manage_options',
             'knowledgebase-dashboard',
             [Pages::class, 'renderDashboard'],

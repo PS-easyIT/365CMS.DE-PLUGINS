@@ -1,5 +1,13 @@
 # Changelog – CMS Experts Directory Plugin
 
+## [3.0.11] – 2026-05-31
+
+### Geändert
+
+- Admin-Menüeintrag wird mit `365NET | ` vorangestellt, damit 365-Network-Plugins gemeinsam sortiert werden.
+
+---
+
 ## [3.0.10] – 2026-05-31
 
 ### Behoben

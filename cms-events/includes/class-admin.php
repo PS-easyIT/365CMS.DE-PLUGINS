@@ -44,7 +44,7 @@ final class CMS_Events_Admin
 
         add_menu_page(
             'Events',
-            'Events',
+            '365NET | Events',
             'manage_options',
             'events',
             [self::class, 'render_plugin_page_bridge'],
@@ -156,7 +156,7 @@ final class CMS_Events_Admin
         $menuItems[] = [
             'type'   => 'item',
             'slug'   => 'events',
-            'label'  => 'Events',
+            'label'  => '365NET | Events',
             'icon'   => '📅',
             'url'    => '/admin/events?tab=overview',
             'active' => $isActive,

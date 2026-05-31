@@ -4,6 +4,14 @@ Alle Änderungen folgen dem Format [Keep a Changelog](https://keepachangelog.com
 
 ---
 
+## [3.0.11] – 2026-05-31
+
+### Geändert
+
+- **Admin-Menü:** Der Unternehmen-Eintrag wird in der Sidebar mit `365NET | ` vorangestellt, damit 365-Network-Plugins gemeinsam sortiert werden.
+
+---
+
 ## [3.0.10] – 2026-05-31
 
 ### Geändert

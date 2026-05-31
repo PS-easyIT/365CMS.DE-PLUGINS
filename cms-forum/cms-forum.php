@@ -3,7 +3,7 @@
  * Plugin Name: CMS Forum
  * Plugin URI: https://365network.de/cms-forum
  * Description: Vollwertiges Community-Forum mit Kategorien, Subforen, Threads, BBCode-Editor, Berechtigungssystem, Moderationstools und Rang-System.
- * Version: 3.0.1
+ * Version: 3.0.2
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_FORUM_VERSION',    '3.0.1');
+define('CMS_FORUM_VERSION',    '3.0.2');
 define('CMS_FORUM_DB_VERSION', '1.0.1');
 define('CMS_FORUM_DIR',        dirname(__FILE__) . '/');
 define('CMS_FORUM_URL',        '/plugins/cms-forum/');

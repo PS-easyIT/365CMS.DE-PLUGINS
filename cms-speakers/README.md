@@ -1,6 +1,6 @@
 ﻿# CMS Speakers Directory Plugin
 
-**Version:** 3.0.18
+**Version:** 3.0.19
 **Requires:** 365CMS 3.0+ / PHP 8.4+
 
 ## Description

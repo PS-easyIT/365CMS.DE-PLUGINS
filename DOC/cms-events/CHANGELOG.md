@@ -1,5 +1,9 @@
 # CMS Events – Changelog
 
+## [3.0.31] – 2026-05-31
+
+- **Admin-Menü:** Der Events-Eintrag wird in der Sidebar mit `365NET | ` vorangestellt, damit 365-Network-Plugins gemeinsam sortiert werden.
+
 ## [3.0.30] – 2026-05-31
 
 - **Assets:** Der Tabler-Icons-Fallback lädt keine externe jsDelivr-/CDN-URL mehr.

@@ -82,7 +82,7 @@ final class CMS_Speakers_Admin
 
         add_menu_page(
             'Speaker',
-            'Speaker',
+            '365NET | Speaker',
             'manage_options',
             'speakers',
             [self::class, 'render_plugin_page_bridge'],
@@ -117,7 +117,7 @@ final class CMS_Speakers_Admin
         $items[] = [
             'type'   => 'item',
             'slug'   => 'speakers',
-            'label'  => 'Speaker',
+            'label'  => '365NET | Speaker',
             'icon'   => 'SP',
             'url'    => '/admin/speakers',
             'active' => str_starts_with($path, '/admin/speakers'),

@@ -1,6 +1,6 @@
 ﻿# CMS Events Manager Plugin
 
-**Version:** 3.0.30
+**Version:** 3.0.31
 **Requires:** 365CMS 3.0+  
 **PHP:** 8.4+
 

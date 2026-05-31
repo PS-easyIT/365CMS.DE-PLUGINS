@@ -25,7 +25,7 @@ final class CMS_Contact_Admin_Menu
 
         add_menu_page(
             'Kontakt',
-            'Kontakt',
+            '365CMS | Kontakt',
             'manage_options',
             'contact',
             [CMS_Contact_Admin_Pages::class, 'render_dispatch'],

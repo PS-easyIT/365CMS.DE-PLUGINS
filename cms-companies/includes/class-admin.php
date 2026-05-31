@@ -39,7 +39,7 @@ final class CMS_Companies_Admin
 
         add_menu_page(
             'Unternehmen',
-            'Unternehmen',
+            '365NET | Unternehmen',
             'manage_options',
             'companies',
             [self::class, 'render_plugin_page_bridge'],
@@ -96,7 +96,7 @@ final class CMS_Companies_Admin
         $menuItems[] = [
             'type'   => 'item',
             'slug'   => 'companies',
-            'label'  => 'Unternehmen',
+            'label'  => '365NET | Unternehmen',
             'icon'   => '🏢',
             'url'    => '/admin/companies',
             'active' => $isActive,

@@ -1,6 +1,6 @@
 ﻿# CMS Companies Directory Plugin
 
-**Version:** 3.0.10  
+**Version:** 3.0.11
 **Requires:** 365CMS 3.0+ / PHP 8.1+
 
 ## Description

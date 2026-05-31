@@ -3,7 +3,7 @@
   "name": "CMS Speakers",
   "type": "plugin",
   "license": "free",
-  "version": "3.0.18",
+  "version": "3.0.19",
   "min_cms_version": "3.0.0",
   "min_php": "8.4",
   "requires_php": "8.4",
@@ -11,6 +11,7 @@
   "download_url": "",
   "checksum_sha256": "",
   "changelog": {
+    "3.0.19": "Admin-Menü: Der Speaker-Eintrag trägt nun den Prefix 365NET | für eine gruppierte 365-Network-Sortierung in der Sidebar.",
     "3.0.18": "Hotfix: Speaker-Detailseite nutzt einen lokalen CMS/lang-YAML-Fallback, wenn der globale Translator oder __()-Helper den Translation-Key unverändert zurückgibt; rohe cms_speakers.detail.* Keys werden dadurch in Breadcrumb, Hero, Content und Sidebar verhindert.",
     "3.0.17": "Public-Speakers-Detailseite: PHINIT-Referenzlayout mit Navy-Hero, Avatar, Auftritte-Pill, Verfügbarkeitsbadge, Themen-/Format-Tags, zweispaltigem Content-/Sidebar-Grid, Inline-SVG-Icons und übersetzbaren de/en-Labels umgesetzt; single.css wird nur noch auf Detailseiten geladen.",
     "3.0.16": "Public-Speakers-Detailseite: Template-Struktur an die Experts-Detailseite angeglichen mit Hero, Bridge-Karten, Haupt-/Sidebar-Grid, Themen/Formate/Vortragsprofil/Auftritten und Speaker-spezifischem Feldmapping; Farben bleiben über Speaker-Variablen erhalten und Dark Mode/responsive 1160px-Layout sind abgesichert.",

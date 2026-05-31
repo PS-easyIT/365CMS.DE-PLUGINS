@@ -58,7 +58,7 @@ final class CMS_Experts_Admin
 
         add_menu_page(
             'Experten',
-            'Experten',
+            '365NET | Experten',
             'manage_options',
             'experts',
             [self::class, 'render_plugin_page_bridge'],
@@ -81,7 +81,7 @@ final class CMS_Experts_Admin
         $items[] = [
             'type'   => 'item',
             'slug'   => 'experts',
-            'label'  => 'Experten',
+            'label'  => '365NET | Experten',
             'icon'   => '👨‍💻',
             'url'    => '/admin/experts',
             'active' => str_starts_with($path, '/admin/experts'),

@@ -26,7 +26,7 @@ final class CMS_Forum_Admin_Menu
 
         add_menu_page(
             'Forum',
-            'Forum',
+            '365CMS | Forum',
             'manage_options',
             'forum-dashboard',
             [CMS_Forum_Admin_Pages::class, 'render_dashboard'],

@@ -1,7 +1,7 @@
 # CMS Companies – Dokumentation
 
 **Plugin:** `cms-companies`  
-**Version:** 3.0.10  
+**Version:** 3.0.11
 **Namespace:** `CMS_Companies`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
 **Audit-/Dokustand:** PHINIT-Preview-Detailseiten-Pass am 2026-05-31  
