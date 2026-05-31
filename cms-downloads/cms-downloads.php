@@ -95,6 +95,10 @@ final class CMS_Downloads
 
     public function enqueue_styles(): void
     {
+        if (!$this->is_downloads_public_route()) {
+            return;
+        }
+
         $css = CMS_DOWNLOADS_PLUGIN_DIR . 'assets/css/downloads-public.css';
         if (!file_exists($css)) {
             return;
@@ -103,6 +107,14 @@ final class CMS_Downloads
         echo '<link rel="stylesheet" href="'
             . htmlspecialchars(CMS_DOWNLOADS_PLUGIN_URL . 'assets/css/downloads-public.css?v=' . filemtime($css), ENT_QUOTES, 'UTF-8')
             . '">' . "\n";
+    }
+
+    private function is_downloads_public_route(): bool
+    {
+        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
+        $path = '/' . trim($path, '/');
+
+        return $path === '/downloads' || str_starts_with($path, '/downloads/');
     }
 }
 

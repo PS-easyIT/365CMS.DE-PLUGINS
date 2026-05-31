@@ -4,7 +4,7 @@
  * Plugin Slug: cms-365network
  * Plugin URI: https://365network.de/cms-365network
  * Description: Domainbasierte 365network-HubSite/Landingpage mit konfigurierbarem Layout für Events, Speaker, Firmen und Experten.
- * Version: 1.0.21
+ * Version: 1.0.38
  * Author: Andreas Hepp
  * Author URI: https://365network.de
  * Requires: 365CMS >= 2.0
@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('CMS_365NETWORK_VERSION', '1.0.21');
+define('CMS_365NETWORK_VERSION', '1.0.38');
 define('CMS_365NETWORK_PLUGIN_DIR', function_exists('cms_plugin_path') ? rtrim((string) cms_plugin_path('cms-365network'), '/\\') . DIRECTORY_SEPARATOR : dirname(__FILE__) . '/');
 define('CMS_365NETWORK_PLUGIN_URL', function_exists('cms_plugin_url') ? rtrim((string) cms_plugin_url('cms-365network'), '/') . '/' : '/plugins/cms-365network/');
 

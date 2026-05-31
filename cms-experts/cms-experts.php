@@ -251,6 +251,10 @@ final class CMS_Experts
      */
     public function enqueue_scripts(): void
     {
+        if (!$this->is_expert_frontend_route()) {
+            return;
+        }
+
         $js_file = $this->plugin_dir . 'assets/js/script.js';
         if (file_exists($js_file)) {
             $js_url = $this->plugin_url . 'assets/js/script.js';

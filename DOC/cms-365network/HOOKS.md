@@ -16,6 +16,7 @@
 | `head` | `CMS_365NETWORK_Public::enqueue_styles()` | Public CSS laden |
 | `head` | `CMS_365NETWORK_Public::output_dynamic_styles()` | Konfigurations-CSS-Variablen ausgeben |
 | `head` | `CMS_365NETWORK_Public::output_analytics_head()` | Optionalen Analyse-Code nur auf der Plugin-Public-Site im Head ausgeben |
+| `body_end` | `CMS_365NETWORK_Public::enqueue_scripts()` | Public-JavaScript für Landingpage-/Suchroute laden, aktuell Spotlight-Rotator |
 | `body_end` | `CMS_365NETWORK_Public::output_analytics_body_end()` | Optionalen Analyse-Code nur auf der Plugin-Public-Site vor `</body>` ausgeben |
 
 ## Registrierte Routen
@@ -24,6 +25,7 @@
 |---|---|---|
 | `GET` | `/` | Auf konfigurierter Zusatzdomain Landingpage, sonst normale Startseite |
 | `GET` | `/{route_slug}` | Interne Landingpage-Vorschau, Standard `/365network` |
+| `GET` | `/{route_slug}/search` | Eigene 365NETWORK-Suche, Standard `/365network/search` |
 | `GET` | `/admin/365network` | Einstellungen |
 | `POST` | `/admin/365network/settings/save` | Einstellungen speichern |
 
@@ -37,6 +39,10 @@
 | `hub-stats` | Kennzahlen-Labels, Zielseiten, Layout und Design |
 | `hub-band` | Event-Teaser, Suche, Texte, Layout und Design |
 | `hub-areas` | Direkteinstieg-Kacheln, Raster, Kartenstil und Design |
+| `hub-partnerband` | Partnerband direkt unter dem Theme-Header mit Limit und Farben |
+| `hub-next-events` | Nächste Events mit Titel, Linkziel, Limit und Farben |
+| `hub-spotlight` | Fokus-Rotator mit Limit, optionalem Autoplay und Farben |
+| `hub-partner-columns` | Companies-/Experts-Spalten mit Limits, Links, Badge und Farben |
 | `hub-toolbox` | Toolbox-Sektion, Limit, Layout und Design |
 | `layout` | Übergreifende Seitenlayout- und Designvariablen |
 | `sidebar` | Sidebar und dynamische Vorschauen |

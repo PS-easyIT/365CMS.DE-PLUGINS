@@ -94,6 +94,10 @@ final class CMS_Newsletter
 
     public function enqueue_styles(): void
     {
+        if (!$this->is_newsletter_public_route()) {
+            return;
+        }
+
         $css = CMS_NEWSLETTER_PLUGIN_DIR . 'assets/css/newsletter-public.css';
         if (!file_exists($css)) {
             return;
@@ -102,6 +106,14 @@ final class CMS_Newsletter
         echo '<link rel="stylesheet" href="'
             . htmlspecialchars(CMS_NEWSLETTER_PLUGIN_URL . 'assets/css/newsletter-public.css?v=' . filemtime($css), ENT_QUOTES, 'UTF-8')
             . '">' . "\n";
+    }
+
+    private function is_newsletter_public_route(): bool
+    {
+        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
+        $path = '/' . trim($path, '/');
+
+        return $path === '/newsletter' || str_starts_with($path, '/newsletter/');
     }
 }
 

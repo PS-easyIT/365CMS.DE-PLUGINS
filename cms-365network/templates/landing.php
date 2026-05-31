@@ -200,7 +200,7 @@ foreach ($areas as $areaItem) {
     }
 }
 $areaCounts = ['events' => $countEvents, 'speakers' => $countSpeakers, 'companies' => $countCompanies, 'experts' => $countExperts];
-$areaOrderKeys = ['events', 'speakers', 'companies', 'experts'];
+$areaOrderKeys = ['events', 'speakers', 'experts', 'companies'];
 $areaOrder = $normalizeOrder($hubValue('hub_area_card_order', implode(',', $areaOrderKeys)), $areaOrderKeys);
 $hubAreas = [];
 foreach ($areaOrder as $key) {
@@ -250,59 +250,78 @@ while (count($spotlightItems) < $spotlightLimit) {
     }
 }
 
-$sectionOrderKeys = ['topbar', 'hero', 'partnerband', 'areas', 'next-events', 'spotlight', 'partner-columns', 'toolbox', 'featured', 'stats', 'band'];
+$sectionOrderKeys = ['partnerband', 'hero', 'areas', 'next-events', 'spotlight', 'partner-columns', 'toolbox', 'featured', 'stats', 'band'];
 $sectionOrder = $normalizeOrder($hubValue('hub_section_order', implode(',', $sectionOrderKeys)), $sectionOrderKeys);
+if (in_array('partnerband', $sectionOrder, true)) {
+    $sectionOrder = array_values(array_diff($sectionOrder, ['partnerband']));
+    array_unshift($sectionOrder, 'partnerband');
+}
 $mainClass = 'cms-network-hub-wrap n365-landing n365-preview-layout';
-$brandPrefix = $hubValue('hub_topbar_brand_prefix', '365');
-$brandAccent = $hubValue('hub_topbar_brand_accent', 'NETWORK');
-$brandSubline = $hubValue('hub_topbar_subline', 'HUB');
 $heroTitle = $hubValue('hub_hero_title', 'Finde Speaker, Experts, Unternehmen und Events');
 $heroSub = $hubValue('hub_hero_sub', 'Ein zentraler Hub, der die Microsoft-365-Community verbindet — gebündelt, durchsuchbar, an einem Ort.');
-$heroLabel = $hubValue('hub_hero_label', 'Das Microsoft-365-Netzwerk im DACH-Raum');
+$heroLabel = trim((string) ($hubSettings['hub_hero_label'] ?? ''));
+$heroImage = $safeImage($hubValue('hub_hero_image_url', ''));
+$heroLayout = $hubChoice('hub_hero_layout', 'center', ['center', 'image-right', 'image-left']);
+$heroImageMode = $hubChoice('hub_hero_image_mode', 'replace-title', ['replace-title', 'with-title']);
+$heroImageWidth = max(80, min(1200, (int) ($hubSettings['hub_hero_image_width'] ?? 250)));
+$heroImageHeight = max(80, min(800, (int) ($hubSettings['hub_hero_image_height'] ?? 200)));
+$heroImageReplacesTitle = $heroImage !== '' && $heroImageMode === 'replace-title';
+$heroShowsSeparateImage = $heroImage !== '' && $heroImageMode === 'with-title';
+$heroUsesSideMedia = $heroImage !== '' && in_array($heroLayout, ['image-right', 'image-left'], true);
+$heroSearchVisible = $hubEnabled('hub_hero_search_visible');
+$heroUsesSearchBand = $heroImage !== '' && !$heroUsesSideMedia && $heroSearchVisible;
+$heroMedia = static function (string $class) use ($esc, $heroImage, $heroImageWidth, $heroImageHeight): void {
+    if ($heroImage === '') {
+        return;
+    }
+    ?>
+                <figure class="<?php echo $esc($class); ?>">
+                    <img class="n365-hero-image" src="<?php echo $esc($heroImage); ?>" alt="" loading="eager" fetchpriority="high" width="<?php echo (int) $heroImageWidth; ?>" height="<?php echo (int) $heroImageHeight; ?>">
+                </figure>
+    <?php
+};
+$legacyFeaturedEnabled = (string) ($settings['featured_enabled'] ?? '1') === '1';
+$featuredVisible = $hubEnabled('hub_featured_visible', $legacyFeaturedEnabled);
+$featuredLabel = $hubValue('hub_featured_label', 'Featured');
+$featuredTitle = $hubValue('hub_featured_title', trim((string) ($settings['featured_title'] ?? '')));
+$featuredSub = $hubValue('hub_featured_sub', trim((string) ($settings['featured_text'] ?? '')));
+$featuredButtonLabel = $hubValue('hub_featured_btn_label', 'Mehr erfahren');
+$featuredButtonUrl = $safeUrl($hubValue('hub_featured_btn_url', trim((string) ($settings['featured_url'] ?? ''))));
+$featuredImage = $safeImage($hubValue('hub_featured_image_url', trim((string) ($settings['featured_image_url'] ?? ''))));
+$featuredStyle = $hubChoice('hub_featured_style', 'auto', ['auto', 'text', 'image']);
+$featuredHasImage = $featuredImage !== '' && $featuredStyle !== 'text';
+$featuredLayoutClass = $featuredHasImage ? 'hub-featured--image' : 'hub-featured--text';
+$featuredWidthClass = $hubChoice('hub_featured_width', 'full', ['full', 'compact']) === 'compact' ? ' hub-featured--width-compact' : '';
+$featuredHasContent = $featuredTitle !== '' || $featuredSub !== '' || $featuredHasImage;
 $toolboxVisible = $hubEnabled('hub_toolbox_visible') && $toolboxTools !== [];
 ?>
 <main class="phinit-plugin <?php echo $esc($mainClass); ?>" id="cms-365network" aria-labelledby="n365-title">
     <?php foreach ($sectionOrder as $sectionKey): ?>
-        <?php if ($sectionKey === 'topbar' && $hubEnabled('hub_topbar_visible')): ?>
-        <header class="n365-topbar" aria-label="365NETWORK Hub-Navigation">
-            <div class="n365-wrap n365-topbar__inner">
-                <a class="n365-logo" href="<?php echo $esc($safeUrl($hubValue('hub_topbar_home_url', '/'))); ?>" aria-label="365NETWORK Hub Startseite">
-                    <span class="n365-glyph" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22"></circle><path d="M24 24V8"></path><path d="m24 24 14 8"></path><path d="m24 24-14 8"></path><circle cx="24" cy="8" r="4"></circle><circle cx="38" cy="32" r="4"></circle><circle cx="10" cy="32" r="4"></circle><circle cx="24" cy="24" r="6"></circle></svg></span>
-                    <span class="n365-wordmark"><span><?php echo $esc($brandPrefix); ?><b><?php echo $esc($brandAccent); ?></b></span><small><?php echo $esc($brandSubline); ?></small></span>
-                </a>
-                <nav class="n365-hub-nav" aria-label="Hub-Bereiche">
-                    <?php for ($i = 1; $i <= 5; $i++): ?>
-                    <?php $navLabel = $hubValue('hub_topbar_nav' . $i . '_label', ''); $navUrl = $safeUrl($hubValue('hub_topbar_nav' . $i . '_url', '#')); ?>
-                    <?php if ($navLabel !== '' && $navUrl !== '#'): ?><a href="<?php echo $esc($navUrl); ?>"><?php echo $esc($navLabel); ?></a><?php endif; ?>
-                    <?php endfor; ?>
-                </nav>
-                <div class="n365-topbar__actions">
-                    <?php if ($hubEnabled('hub_topbar_search_visible')): ?>
-                    <form class="n365-top-search" method="GET" action="<?php echo $esc($searchUrl); ?>" role="search" aria-label="Netzwerk durchsuchen">
-                        <?php echo $icon('search'); ?>
-                        <label class="n365-sr-only" for="n365-top-search-input">Suche</label>
-                        <input id="n365-top-search-input" type="search" name="<?php echo $esc($searchParam); ?>" placeholder="<?php echo $esc($hubValue('hub_topbar_search_placeholder', 'Netzwerk durchsuchen …')); ?>">
-                    </form>
-                    <?php endif; ?>
-                    <?php if ($hubEnabled('hub_topbar_login_visible')): ?>
-                    <?php $loginUrl = $safeUrl($hubValue('hub_topbar_login_url', '/login')); ?>
-                    <?php if ($loginUrl !== '#'): ?><a class="n365-btn n365-btn--line" href="<?php echo $esc($loginUrl); ?>"><?php echo $esc($hubValue('hub_topbar_login_label', 'Anmelden')); ?></a><?php endif; ?>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </header>
-        <?php elseif ($sectionKey === 'hero' && $hubEnabled('hub_hero_visible')): ?>
-        <header class="n365-hero n365-hero--<?php echo $esc($hubChoice('hub_hero_height', 'normal', ['compact', 'normal', 'large'])); ?>">
+        <?php if ($sectionKey === 'hero' && $hubEnabled('hub_hero_visible')): ?>
+        <header class="n365-hero n365-hero--<?php echo $esc($hubChoice('hub_hero_height', 'normal', ['compact', 'normal', 'large'])); ?> n365-hero--layout-<?php echo $esc($heroLayout); ?><?php echo ($heroShowsSeparateImage || $heroUsesSideMedia) ? ' n365-hero--has-media' : ''; ?><?php echo $heroImage !== '' ? ' n365-hero--has-image' : ''; ?><?php echo $heroLabel === '' ? ' n365-hero--no-label' : ''; ?><?php echo $heroUsesSearchBand ? ' n365-hero--search-band' : ''; ?>">
             <div class="n365-wrap n365-hero__inner">
+            <?php if ($heroUsesSideMedia && $heroLayout === 'image-left'): ?><?php $heroMedia('n365-hero__media'); ?><?php endif; ?>
+                <div class="n365-hero__copy">
                 <?php if ($heroLabel !== ''): ?><p class="n365-kick"><span aria-hidden="true"></span><?php echo $esc($heroLabel); ?></p><?php endif; ?>
+                <?php if ($heroImageReplacesTitle): ?>
+                <h1 id="n365-title" class="n365-sr-only"><?php echo $esc($heroTitle); ?></h1>
+            <?php if (!$heroUsesSideMedia): ?>
+                <figure class="n365-hero__title-media"><img class="n365-hero-title-image" src="<?php echo $esc($heroImage); ?>" alt="" loading="eager" fetchpriority="high" width="<?php echo (int) $heroImageWidth; ?>" height="<?php echo (int) $heroImageHeight; ?>"></figure>
+            <?php endif; ?>
+                <?php else: ?>
                 <h1 id="n365-title"><?php echo $highlightTitle($heroTitle); ?></h1>
+                <?php endif; ?>
                 <?php if ($heroSub !== ''): ?><p class="n365-hero__sub"><?php echo $esc($heroSub); ?></p><?php endif; ?>
-                <?php if ($hubEnabled('hub_hero_search_visible')): ?>
+                <?php if ($heroSearchVisible): ?>
+                <?php if ($heroUsesSearchBand): ?><div class="n365-hero-search-band"><?php endif; ?>
                 <form class="n365-hero-search" method="GET" action="<?php echo $esc($searchUrl); ?>" role="search" aria-label="Hub-Suche">
                     <div class="n365-hero-search__box"><?php echo $icon('search'); ?><label class="n365-sr-only" for="n365-hero-search-input">Hub-Suche</label><input id="n365-hero-search-input" type="search" name="<?php echo $esc($searchParam); ?>" placeholder="<?php echo $esc($hubValue('hub_hero_search_placeholder', 'Name, Thema oder Unternehmen suchen …')); ?>"></div>
                     <button class="n365-btn n365-btn--primary" type="submit"><?php echo $esc($hubValue('hub_hero_btn1_label', 'Suchen')); ?></button>
                 </form>
+                <?php if ($heroUsesSearchBand): ?></div><?php endif; ?>
                 <?php endif; ?>
+                </div>
+                <?php if ($heroUsesSideMedia && $heroLayout !== 'image-left'): ?><?php $heroMedia('n365-hero__media'); ?><?php elseif ($heroShowsSeparateImage && !$heroUsesSideMedia): ?><?php $heroMedia('n365-hero__media'); ?><?php endif; ?>
             </div>
         </header>
         <?php elseif ($sectionKey === 'partnerband' && $hubEnabled('hub_partnerband_visible') && $partnerLogoItems !== []): ?>
@@ -372,7 +391,6 @@ $toolboxVisible = $hubEnabled('hub_toolbox_visible') && $toolboxTools !== [];
                         </article>
                         <?php endforeach; ?>
                     </div>
-                    <div class="n365-spotlight-dots" data-n365-spotlight-dots></div>
                 </div>
             </div>
         </section>
@@ -392,6 +410,24 @@ $toolboxVisible = $hubEnabled('hub_toolbox_visible') && $toolboxTools !== [];
                     </div>
                 </section>
                 <?php endforeach; ?>
+            </div>
+        </section>
+        <?php elseif ($sectionKey === 'featured' && $featuredVisible && $featuredHasContent): ?>
+        <section class="n365-block n365-block--tight n365-featured-section" <?php echo $featuredTitle !== '' ? 'aria-labelledby="n365-featured-title"' : 'aria-label="' . $esc($featuredLabel !== '' ? $featuredLabel : 'Featured') . '"'; ?>>
+            <div class="n365-wrap">
+                <article class="hub-featured <?php echo $esc($featuredLayoutClass . $featuredWidthClass); ?>">
+                    <?php if ($featuredHasImage): ?>
+                    <div class="hub-featured-img-wrap"><img src="<?php echo $esc($featuredImage); ?>" alt="<?php echo $esc($featuredTitle !== '' ? $featuredTitle : $featuredLabel); ?>" loading="lazy"></div>
+                    <?php else: ?>
+                    <span class="hub-featured-accent" aria-hidden="true"></span>
+                    <?php endif; ?>
+                    <div class="hub-featured-content">
+                        <?php if ($featuredLabel !== ''): ?><span class="hub-featured-label"><?php echo $esc($featuredLabel); ?></span><?php endif; ?>
+                        <?php if ($featuredTitle !== ''): ?><h2 class="hub-featured-title" id="n365-featured-title"><?php echo $esc($featuredTitle); ?></h2><?php endif; ?>
+                        <?php if ($featuredSub !== ''): ?><p class="hub-featured-sub"><?php echo $esc($featuredSub); ?></p><?php endif; ?>
+                        <?php if ($featuredButtonUrl !== '#' && $featuredButtonLabel !== ''): ?><a class="hub-featured-btn" href="<?php echo $esc($featuredButtonUrl); ?>"><?php echo $esc($featuredButtonLabel); ?> <?php echo $icon('arrow'); ?></a><?php endif; ?>
+                    </div>
+                </article>
             </div>
         </section>
         <?php elseif ($sectionKey === 'toolbox' && $toolboxVisible): ?>

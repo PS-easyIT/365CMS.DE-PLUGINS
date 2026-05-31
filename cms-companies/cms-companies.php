@@ -156,12 +156,26 @@ final class CMS_Companies
 
     public function enqueue_styles(): void
     {
+        if (!$this->is_company_frontend_route()) {
+            return;
+        }
+
         $this->enqueue_style_file('plugin-base.css');
         $this->enqueue_style_file('style.css');
 
         if ($this->is_company_detail_route()) {
             $this->enqueue_style_file('single.css');
         }
+    }
+
+    private function is_company_frontend_route(): bool
+    {
+        $path = (string) (parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '');
+        $path = '/' . trim($path, '/');
+
+        return $path === '/companies'
+            || str_starts_with($path, '/companies/')
+            || str_starts_with($path, '/company/');
     }
 
     private function is_company_detail_route(): bool
@@ -189,6 +203,10 @@ final class CMS_Companies
 
     public function enqueue_scripts(): void
     {
+        if (!$this->is_company_frontend_route()) {
+            return;
+        }
+
         $js_file = $this->plugin_dir . 'assets/js/script.js';
         if (file_exists($js_file)) {
             $js_url = $this->plugin_url . 'assets/js/script.js';

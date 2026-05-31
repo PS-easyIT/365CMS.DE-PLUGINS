@@ -15,6 +15,7 @@ final class CMS_M365Landing_Frontend
 {
     private static ?self $instance = null;
     private ?string $requestPathCache = null;
+    private ?bool $domainLandingRequestCache = null;
 
     public static function instance(): self
     {
@@ -44,6 +45,12 @@ final class CMS_M365Landing_Frontend
         \CMS\Router::instance()->addRoute('GET', '/' . $this->route_slug(), function (): void {
             $this->render_landing();
         });
+
+        if ($this->is_domain_landing_request()) {
+            \CMS\Router::instance()->addRoute('GET', '/', function (): void {
+                $this->render_landing();
+            });
+        }
     }
 
     public function enqueue_styles(): void
@@ -203,7 +210,28 @@ final class CMS_M365Landing_Frontend
         $path = $this->request_path();
         $slug = $this->route_slug();
 
-        return $path === $slug || str_ends_with($path, '/' . $slug);
+        return $path === $slug || str_ends_with($path, '/' . $slug) || ($path === '' && $this->is_domain_landing_request());
+    }
+
+    private function is_domain_landing_request(): bool
+    {
+        if ($this->domainLandingRequestCache !== null) {
+            return $this->domainLandingRequestCache;
+        }
+
+        $settings = $this->repo()->settings();
+        $host = CMS_M365Landing_Repository::normalize_host((string) ($_SERVER['HTTP_HOST'] ?? ''));
+        $mainHost = CMS_M365Landing_Repository::normalize_host((string) (parse_url((string) SITE_URL, PHP_URL_HOST) ?: ''));
+        if ($host === '' || $host === $mainHost) {
+            $this->domainLandingRequestCache = false;
+
+            return $this->domainLandingRequestCache;
+        }
+
+        $domains = CMS_M365Landing_Repository::normalize_domain_list((string) ($settings['landing_domains'] ?? ''));
+        $this->domainLandingRequestCache = in_array($host, $domains, true);
+
+        return $this->domainLandingRequestCache;
     }
 
     private function request_path(): string

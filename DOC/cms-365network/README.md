@@ -1,6 +1,6 @@
 # CMS 365NETWORK
 
-**Version:** 1.0.20
+**Version:** 1.0.38
 **Status:** Domainbasierte HubSite/Landingpage für Netzwerk-Portale.
 
 CMS 365NETWORK stellt eine eigene Landingpage bereit, die auf einer konfigurierten Zusatzdomain direkt als Root-Seite erscheinen kann. Sie bündelt vier zentrale Bereiche des Netzwerks:
@@ -15,14 +15,15 @@ Zusätzlich gibt es eine interne Vorschau-Route, standardmäßig `/365network`.
 ## Features
 
 - Zusatzdomain-Mapping ohne Core-Anpassung: Root-Aufruf der Domain zeigt die Landingpage.
-- Moderne HubSite mit Hero-Bereich, klickbaren Metric-Cards, Featured Card und vier Bereichskarten.
-- Eigene Admin-Tabs für Featured Card, Hero, Kennzahlen, Teaser-Band/Suche, Direkteinstieg und Toolbox.
+- Moderne Preview-nahe HubSite ohne eigenen Plugin-Header: Der Theme-Header bleibt zuständig, der Hub startet direkt mit dem Partnerband und danach mit Hero, vier blauen Bereichskarten im 2×2-Raster, nächsten Events, Spotlight-Rotator und Partner-Spalten.
+- Optionales Hero-Bild aus URL oder 365CMS-Mediathek mit konfigurierbarer Größe (`250 × 200px` Default), drei Layouts und wahlweise Ersatz der sichtbaren H1 oder zusätzlicher Anzeige neben Titel/Suche; Split-Layouts nutzen fest `33%` Bild und `67%` Text.
+- Eigene Admin-Tabs für Featured Card, Hero, Kennzahlen, Teaser-Band/Suche, Direkteinstieg, Partnerband, Events, Spotlight, Partner-Spalten und Toolbox.
 - Sortierbare Reihenfolge für Public-Bereiche sowie für die vier Direkteinstieg-Karten.
 - Mediathek-Auswahl mit Vorschau für Bild-URL-Felder im Hub-Admin.
 - Jeder Hub-Bereich hat Aktivierung, Text-/Content-, Layout- und Design-Settings mit direkter Public-Wirkung.
 - Eigene Landingpage-Suche unter `/365network/search`, getrennt von der globalen 365CMS-Suche und begrenzt auf Events, Speaker, Firmen und Experten.
 - `Nächstes Event`-Teaser für konkrete Einstiegspunkte.
-- No-Sidebar-Layout mit breiter Featured Card, dezentem Featured-Inset und überarbeiteten Bereichskarten.
+- No-Sidebar-Layout mit breiter Featured Card, dezentem Featured-Inset und überarbeiteten blauen Bereichskarten mit Icon-Corner oben rechts.
 - PHINIT-konformes Navy/Gold-Redesign ohne Electric-Blue-Akzente auf der Landingpage.
 - Optionaler M365-Toolbox-Bereich am Ende des Hub-Contents, wenn das Toolbox-Plugin aktiv ist und aktive Hub-Links vorhanden sind.
 - Kompatibilität mit der aktuellen `cms-m365tools`-Tool-Registry, falls keine Legacy-`m365toolbox_links` vorhanden sind.
@@ -37,9 +38,30 @@ Zusätzlich gibt es eine interne Vorschau-Route, standardmäßig `/365network`.
 - Hub-Änderungen leeren den Public-Cache explizit, damit Texte und Sortierung direkt öffentlich sichtbar werden.
 - Core-kompatible Admin-Helfer für Menü, Capability, Nonce, Notice und Redirect werden genutzt, sofern im Core vorhanden.
 - Kanonische Detail-Links für Events, Speaker, Firmen und Experten in den Vorschauen.
+- Eigene Public-JS-Schicht für den Spotlight-Rotator ohne Icon-Font-Abhängigkeit; sichtbar bleiben nur die Pfeile links/rechts, Autoplay ist optional und respektiert Reduced-Motion.
+- Public-Rundungen sind bewusst kantig und auf maximal `2px` begrenzt, auch wenn ältere Admin-Settings höhere Radiuswerte enthalten.
+- Companies-Partnerlisten nutzen echte `is_partner`-/`is_top_partner`-Felder; Expert-Partnerlisten fallen schema-schonend auf aktive Expertenprofile zurück.
 
 ## Aktueller Audit-Stand
 
+- **1.0.38:** UI-Fix: Bei Bild-oben erscheint die Hero-Suche als eigenes helleres Band unter Logo/Untertext; der Untertext steht wieder direkt unter dem Logo.
+- **1.0.37:** UI-Fix: Bereichskarten-CTA (`… entdecken`) sitzt immer rechts unten in der Card.
+- **1.0.36:** Fix: Bei Bild-oben/Text-unten nutzt die Hero-Suche die volle Contentbreite; der Untertext steht unter dem Suchfeld statt unter dem Logo.
+- **1.0.35:** Fix: Hero-Suche in Split-Layouts nutzt die volle Textspaltenbreite, Suchfeld/Button `4px`, Bild unten maximal `50px` Abstand.
+- **1.0.34:** Fix: `image-left` links bündig, `image-right` rechts bündig am Content-Rand; Bild-/Textabstand bleibt maximal `50px`.
+- **1.0.33:** Fix: `image-left` startet Bild/Logo bündig am linken Content-Rand, passend zum darunterliegenden Content.
+- **1.0.32:** UI-Polish: Hero ohne Farbverlauf; Hintergrund, Text, Label, Suche und Button nutzen passende Hero-Farbsettings.
+- **1.0.31:** Fix: Suchband in `image-left`/`image-right` bündig am Textanfang; Logo-/Textabstand pixelbasiert maximal `50px`.
+- **1.0.30:** Fix: Bei Hero-Bild/Logo ohne `Label über H1` ist der obere Bildabstand zum Hero-Hintergrundrand maximal `25px`.
+- **1.0.29:** Fix: Leeres Hero-Feld `Label über H1` blendet das Label aus, statt auf den Default-Text zurückzufallen.
+- **1.0.28:** Fix: Hero-Split-Layouts nutzen fest `33%` Bild links/rechts und `67%` Text daneben.
+- **1.0.27:** Fix: Hero-Bildgröße und Hero-Bildposition folgen der Admin-Auswahl zuverlässig; Split-Layouts zeigen das Bild auch bei `H1 ersetzen` seitlich.
+- **1.0.26:** UI-Polish: Bereichskarten auf blaue Töne umgestellt; Icon sitzt oben rechts als Corner-Badge auf diagonaler Dreieck-Fläche.
+- **1.0.25:** Feature: Hero-Bildgröße, drei Hero-Layouts und Bildmodus `H1 ersetzen` oder `mit Titel anzeigen` ergänzt.
+- **1.0.24:** UI-Polish: Bereichskarten optisch überarbeitet und als `Events/Speaker` sowie `Experts/Firmen` im zweispaltigen 2×2-Raster ausgegeben.
+- **1.0.23:** Fix: Jahreszahl im Kalender-Icon von `Nächstes Event` wieder mittig ausgerichtet.
+- **1.0.22:** UI-Polish: Public-Rundungen maximal `2px`; `Im Fokus` ohne Dot-/Pagination-Leiste, nur mit Pfeilen links und rechts.
+- **1.0.21:** Redesign: Die Public-HubSite folgt dem HTML-Preview ohne eigenen Plugin-Header oder Menüband; das Partnerband sitzt ohne äußeren Abstand direkt unter dem Theme-Header und über den weiteren Hub-Bereichen.
 - **1.0.20:** Feature: Die 365NETWORK-Landingpage nutzt eine eigene Suchroute `/365network/search`, getrennt von der globalen 365CMS-Suche, und durchsucht ausschließlich Events, Speaker, Firmen und Experten.
 - **1.0.19:** Fix/UX: Hub-/Textänderungen leeren nach dem Speichern immer den Public-Cache; ältere Hub-Settings-Schemata werden für Textarea-Felder, Dubletten und fehlende `setting_key`-Eindeutigkeit migriert, Featured-Bildhöhe ist steuerbar und zeigt Bilder vollständig ohne Zuschnitt, Hero hat kompakt/normal/groß als Höhen-Layout und nutzt die volle H1-Kachelbreite, der Mediathek-Picker öffnet mit Fallback und Public-Kacheln bleiben ohne Hover-Unterstreichung.
 - **1.0.18:** Feature: Hub-Bereiche und Direkteinstieg-Karten sind im Admin sortierbar; Bild-URL-Felder können Bilder direkt aus der 365CMS-Mediathek übernehmen.

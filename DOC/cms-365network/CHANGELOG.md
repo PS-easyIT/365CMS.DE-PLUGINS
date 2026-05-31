@@ -1,5 +1,117 @@
 # Changelog – CMS 365NETWORK
 
+## 1.0.38 – 2026-05-31
+
+- Im Hero-Layout mit Bild oben wird die Suche jetzt als eigenes, leicht helleres Band unter Logo und Untertext angezeigt.
+- Suchfeld und Button bleiben im Suchband angepasst in einer Reihe.
+- Der Untertext steht wieder direkt unter dem Logo, wenn er aktiviert ist.
+
+## 1.0.37 – 2026-05-31
+
+- Der CTA der Bereichskarten (`… entdecken`) sitzt jetzt immer in der rechten unteren Ecke der Card.
+- Die CTA-Ausrichtung bleibt unabhängig von Textlänge und Card-Höhe stabil.
+
+## 1.0.36 – 2026-05-31
+
+- Im Hero-Layout mit Bild oben und Text darunter nutzt die Suche jetzt die volle Contentbreite in einer Zeile mit Button daneben.
+- Der Untertext wird in dieser Darstellung unter dem Suchfeld angezeigt, nicht mehr direkt unter dem Logo/Bild.
+- Suchfeld und Button behalten die angepasste `4px`-Rundung.
+
+## 1.0.35 – 2026-05-31
+
+- In den Hero-Split-Layouts nutzt das Suchband jetzt die volle verfügbare Text-/Restspaltenbreite und bleibt bündig zum darunterliegenden Content.
+- Suchfeld und Suchbutton im Hero haben jetzt `4px` Rundung.
+- Hero-Bilder werden in Split-Layouts unten ausgerichtet; bei großer Hero-Höhe ist der Abstand zum unteren Hero-Rand auf maximal `50px` begrenzt.
+
+## 1.0.34 – 2026-05-31
+
+- Die Hero-Split-Layouts sind jetzt sauber gespiegelt: `image-left` startet links bündig am Content-Rand, `image-right` endet rechts bündig am Content-Rand.
+- Der Abstand zwischen Bildspalte und Textbereich bleibt in beiden Richtungen pixelbasiert auf maximal `50px` begrenzt.
+
+## 1.0.33 – 2026-05-31
+
+- Im Hero-Layout `image-left` beginnt das Bild jetzt bündig am linken Content-Rand.
+- Die Bildspalte und das enthaltene Logo/Bild werden links ausgerichtet und damit mit dem darunterliegenden Content-Container abgestimmt.
+
+## 1.0.32 – 2026-05-31
+
+- Der Hero-Bereich verwendet keinen Farbverlauf mehr; der Hintergrund ist jetzt eine klare Farbe aus `hub_hero_bg_color`.
+- Hero-Titel, Untertitel, Label, Highlight, Suchbox-Icon und Hero-Button sind farblich auf `hub_hero_text_color` und `hub_hero_accent_color` abgestimmt.
+- Die Hero-Farb-Fallbacks verwenden wieder das passende Navy/Weiß/Akzent-Set, falls keine Adminwerte vorhanden sind.
+
+## 1.0.31 – 2026-05-31
+
+- In den Hero-Layouts `image-left` und `image-right` startet das Suchband jetzt bündig am Text-/Content-Anfang.
+- Der Abstand zwischen Logo/Bild und Textbereich ist pixelbasiert auf `50px` begrenzt.
+- Das Logo/Bild wird in seitlichen Layouts zur Textseite ausgerichtet, damit keine zusätzliche optische Lücke durch zentriertes `object-fit: contain` entsteht.
+
+## 1.0.30 – 2026-05-31
+
+- Wenn ein Hero-Bild/Logo gesetzt ist und `Label über H1` leer bleibt, ist der Abstand zwischen Bild und oberem Hero-Hintergrundrand auf maximal `25px` begrenzt.
+- Das gilt auch für die seitlichen Hero-Bildlayouts `image-left` und `image-right`.
+
+## 1.0.29 – 2026-05-31
+
+- Ein leerer Wert im Hero-Feld `Label über H1` blendet das Label jetzt wirklich aus.
+- Das Landing-Template verwendet für dieses Feld keinen Default-Fallback mehr, wenn im Admin bewusst kein Text gesetzt ist.
+
+## 1.0.28 – 2026-05-31
+
+- Die Hero-Split-Layouts nutzen jetzt fest `67%` Text und `33%` Bild.
+- Bei `image-right` steht das Bild rechts in der 33%-Spalte, bei `image-left` links; der Text nutzt jeweils den restlichen Bereich.
+- Das Hero-Bild füllt im Seitenlayout die Bildspalte aus, bleibt aber weiterhin per Höhe und Objekt-Anpassung kontrolliert.
+
+## 1.0.27 – 2026-05-31
+
+- Hero-Bildposition und Bildgröße respektieren die Admin-Auswahl jetzt zuverlässig auf Public-Landing- und Suchseiten.
+- Die dynamischen Public-CSS-Variablen werden während des tatsächlichen Renderpfads garantiert ausgegeben, damit `hub_hero_image_width` und `hub_hero_image_height` nicht auf CSS-Fallbacks zurückfallen.
+- Die Layouts `image-left` und `image-right` rendern das Hero-Bild auch im Modus `Bild ersetzt sichtbare H1` seitlich statt oben im Titelbereich.
+
+## 1.0.26 – 2026-05-31
+
+- Die Bereichskarten `Events`, `Speaker`, `Firmen` und `Experten` nutzen jetzt abgestufte Blautöne statt der bisherigen goldenen Akzente.
+- Das Bereichs-Icon sitzt oben rechts als kompaktes Corner-Badge auf einer diagonalen Dreieck-Fläche.
+- Count-Badge, CTA-Farbe, Hover-Border und Dark Mode wurden passend zum blauen Card-System abgestimmt.
+
+## 1.0.25 – 2026-05-31
+
+- Der Hero-Bereich unterstützt konfigurierbare Bildmaße über `hub_hero_image_width` und `hub_hero_image_height`; der Default ist `250 × 200px`.
+- `hub_hero_layout` besitzt jetzt drei Public-Layouts: zentriert untereinander, Titel/Suche links mit Bild rechts und Bild links mit Titel/Suche rechts.
+- Über `hub_hero_image_mode` kann das Hero-Bild entweder die sichtbare H1 ersetzen oder zusätzlich gemeinsam mit Titel, Untertitel und Suche angezeigt werden.
+- Die Hero-Ausgabe nutzt weiterhin eine Screenreader-H1, wenn das Bild die sichtbare H1 ersetzt, und setzt `width`/`height`-Attribute gegen Layout-Shift.
+
+## 1.0.24 – 2026-05-31
+
+- Die Direkteinstieg-Bereichskarten sind im Public-Hub optisch überarbeitet: klares Icon-Feld, dezente Akzentkante, Count-Badge rechts und bessere Text-/CTA-Hierarchie.
+- Das Bereichskarten-Raster ist jetzt auf maximal zwei Karten pro Reihe begrenzt; Desktop zeigt ein ruhiges `2 × 2`-Layout, mobil wird weiterhin sauber gestapelt.
+- Die Standard- und Legacy-Reihenfolge der vier Karten ist `Events`, `Speaker`, `Experts`, `Firmen`, damit die Reihen `Events/Speaker` und `Experts/Firmen` entstehen.
+
+## 1.0.23 – 2026-05-31
+
+- Im Bereich `Nächstes Event` bleibt die Jahreszahl in der Kalender-Datebox wieder mittig ausgerichtet.
+- Die allgemeine Meta-`small`-Regel wirkt nur noch auf den Event-Text neben dem Kalender und nicht mehr auf Monat/Tag/Jahr innerhalb der Datebox.
+
+## 1.0.22 – 2026-05-31
+
+- Die 365NETWORK-Publicsite begrenzt alle sichtbaren Rundungen auf maximal `2px`; gespeicherte Hub-Radius-Settings und dynamische CSS-Variablen werden serverseitig gekappt.
+- Harte Preview-Radien für Buttons, Karten, Badges, Avatare, Icon-Flächen und Rotator-Pfeile wurden auf `2px` vereinheitlicht.
+- Der Bereich `Im Fokus` zeigt keine Pagination-/Dot-Leiste unter dem Band mehr; die Steuerung bleibt ausschließlich über die Pfeile links und rechts erhalten.
+- Das Public-JavaScript erzeugt keine Spotlight-Dots mehr und aktualisiert nur noch die Slides per Pfeilsteuerung bzw. optionalem Autoplay.
+
+## 1.0.21 – 2026-05-31
+
+- Die Public-HubSite wurde an das `365network-hub-vorschau.html`-Design angelehnt, jedoch bewusst ohne eigenen Plugin-Header und ohne Menüband: Header und Navigation kommen ausschließlich vom aktiven Theme.
+- Der Hub startet direkt mit dem nahtlosen Partnerband unter dem Theme-Header; danach folgen dunkler zentrierter Hero, vier Bereichskarten, nächste Events, Spotlight-Rotator und Partner-Spalten.
+- Neue Hub-Settings-Sections `partnerband`, `next-events`, `spotlight` und `partner-columns` ergänzt; alle sichtbaren Texte, Links, Sichtbarkeiten, Limits und Farben sind im Adminbereich steuerbar.
+- Die Standard-Reihenfolge der Hub-Bereiche folgt jetzt dem headerlosen Preview-Aufbau: `partnerband,hero,areas,next-events,spotlight,partner-columns,toolbox,featured,stats,band`; das Partnerband wird zusätzlich bei älteren gespeicherten Reihenfolgen öffentlich nach oben gezogen.
+- Das Landing-Template wurde datengetrieben neu aufgebaut und nutzt Inline-SVGs statt Tabler-Icon-Fonts oder Inline-Styles.
+- Die Featured Card wird in der Preview-Landingpage wieder innerhalb der konfigurierten Bereichs-Reihenfolge ausgegeben; leere neue Hub-Felder fallen auf ältere `featured_*`-Settings zurück.
+- Der Hero-Bereich unterstützt `hub_hero_image_url`: Ein Bild aus URL oder 365CMS-Mediathek ersetzt die sichtbare H1, während die H1 barrierefrei als Screenreader-Überschrift erhalten bleibt.
+- Die Companies-/Experts-Cards in den Partner-Spalten verwenden ein gleichmäßiges Grid mit festen Mindesthöhen, damit die Zeilen auf beiden Seiten bündig wirken.
+- Public-CSS ergänzt ein Full-Bleed-Layout mit maximaler Content-Breite, responsiven Kartenrastern und Dark-Mode-Variablen.
+- Neues Public-JavaScript steuert den Spotlight-Rotator, unterstützt optionale Autoplay-Pausen und respektiert `prefers-reduced-motion`.
+- Partner Companies werden aus echten `cms_companies`-Partnerflags (`is_partner`, `is_top_partner`) geladen; Partner Experts verwenden bewusst aktive Expertenprofile, da die Experten-Tabelle kein Partner-Flag besitzt.
+
 ## 1.0.20 – 2026-05-29
 
 - Die Suche der 365NETWORK-Landingpage ist jetzt eine eigene Plugin-Route unter `/365network/search` und damit vollständig von der globalen 365CMS-Suche `/search` getrennt.

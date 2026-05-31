@@ -80,6 +80,7 @@ final class CMS_M365Landing_Installer
         $defaults = [
             'db_version' => CMS_M365LANDING_DB_VERSION,
             'route_slug' => 'm365',
+            'landing_domains' => '',
             'page_overline' => 'Microsoft 365 Hub',
             'page_title' => 'M365 im Überblick – Matrixen, Azure, Tutorials und Tools',
             'page_intro' => 'Die zentrale Einstiegsseite für Microsoft-365-Entscheidungen: Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und praktische Rechner an einem Ort.',

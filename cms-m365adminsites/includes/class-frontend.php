@@ -190,13 +190,7 @@ final class CMS_M365ADMINSITES_Frontend
 
     private function should_load_assets(): bool
     {
-        return $this->is_adminsites_request() || $this->is_home_request();
-    }
-
-    private function is_home_request(): bool
-    {
-        $path = $this->normalized_request_path();
-        return $path === '' || $path === 'home' || $path === 'index.php';
+        return $this->is_adminsites_request();
     }
 
     private function path_matches(string $route): bool

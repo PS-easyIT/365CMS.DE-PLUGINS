@@ -1,5 +1,10 @@
 # CMS Events – Changelog
 
+## [3.0.30] – 2026-05-31
+
+- **Assets:** Der Tabler-Icons-Fallback lädt keine externe jsDelivr-/CDN-URL mehr.
+- **Runtime:** Icons-Kompatibilität wird ausschließlich über das lokale Core-Asset `/assets/tabler-icons/tabler-icons.min.css` eingebunden.
+
 ## [3.0.29] – 2026-05-31
 
 - **Public-Detailseite:** Die Event-Detailseite folgt nun der PHINIT-HTML-Preview mit Navy/Amber-Hero, großem Datebox-Block, Status-Badge, Meta-Zeile und ruhigen Tag-Chips.

@@ -176,6 +176,10 @@ final class CMS_JobProfileGenerator
 
     public function enqueue_styles(): void
     {
+        if (!$this->should_enqueue_shell_assets()) {
+            return;
+        }
+
         $css_file = $this->plugin_dir . 'assets/css/jobprofile-admin.css';
         if (file_exists($css_file)) {
             echo '<link rel="stylesheet" href="'
@@ -186,12 +190,31 @@ final class CMS_JobProfileGenerator
 
     public function enqueue_scripts(): void
     {
+        if (!$this->should_enqueue_shell_assets()) {
+            return;
+        }
+
         $js_file = $this->plugin_dir . 'assets/js/jobprofile-admin.js';
         if (file_exists($js_file)) {
             echo '<script src="'
                 . htmlspecialchars($this->plugin_url . 'assets/js/jobprofile-admin.js', ENT_QUOTES, 'UTF-8')
                 . '?v=' . filemtime($js_file) . '" defer></script>' . "\n";
         }
+    }
+
+    private function should_enqueue_shell_assets(): bool
+    {
+        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
+        $path = '/' . trim($path, '/');
+
+        return $path === '/jobs'
+            || str_starts_with($path, '/jobs/')
+            || str_starts_with($path, '/career/')
+            || $path === '/member/jobs'
+            || str_starts_with($path, '/member/jobs/')
+            || str_starts_with($path, '/member/plugin/member-jobs')
+            || str_starts_with($path, '/admin/plugins/jobprofile')
+            || str_starts_with($path, '/admin/jobprofile');
     }
 
     public function get_version(): string    { return $this->version; }

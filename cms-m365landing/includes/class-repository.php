@@ -231,6 +231,40 @@ final class CMS_M365Landing_Repository
         return '';
     }
 
+    /** @return array<int,string> */
+    public static function normalize_domain_list(string $value): array
+    {
+        $parts = preg_split('/[\s,;]+/', $value) ?: [];
+        $domains = [];
+        foreach ($parts as $part) {
+            $domain = self::normalize_host($part);
+            if ($domain !== '' && !in_array($domain, $domains, true)) {
+                $domains[] = $domain;
+            }
+        }
+
+        return $domains;
+    }
+
+    public static function normalize_host(string $host): string
+    {
+        $host = trim(strtolower(strip_tags($host)));
+        if ($host === '') {
+            return '';
+        }
+
+        if (str_contains($host, '://')) {
+            $parsedHost = parse_url($host, PHP_URL_HOST);
+            $host = is_string($parsedHost) ? $parsedHost : '';
+        }
+
+        $host = preg_replace('/:\d+$/', '', $host) ?? '';
+        $host = trim($host, '.');
+        $host = preg_replace('/^www\./', '', $host) ?? '';
+
+        return preg_match('/^[a-z0-9.-]+$/', $host) === 1 ? $host : '';
+    }
+
     public static function color(string $value, string $default): string
     {
         return preg_match('/^#[0-9A-Fa-f]{6}$/', $value) === 1 ? strtolower($value) : $default;

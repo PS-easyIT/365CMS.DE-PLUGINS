@@ -1,5 +1,11 @@
 # CMS M365 Landing – Changelog
 
+## 1.0.9 – 2026-05-31
+
+- Domain-Mapping ergänzt: Eine oder mehrere Zusatzdomains können die M365-Landingpage direkt auf `/` ausliefern.
+- Die Hauptdomain bleibt geschützt und nutzt weiterhin die normale Startseite.
+- Admin-Tab `Domains` ergänzt; Eingaben werden wie bei Hubsites normalisiert und dedupliziert.
+
 ## 1.0.8 – 2026-05-30
 
 - Hintergrundfarbe nutzt eine eigene Landing-CSS-Variable, damit andere M365-Styles sie nicht wieder auf Weiß überschreiben.

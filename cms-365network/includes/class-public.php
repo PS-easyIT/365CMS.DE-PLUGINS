@@ -18,6 +18,7 @@ final class CMS_365NETWORK_Public
     private ?array $statsCache = null;
     private ?bool $domainLandingRequestCache = null;
     private ?bool $landingPathRequestCache = null;
+    private bool $renderingPublicPage = false;
 
     public static function instance(): self
     {
@@ -32,6 +33,25 @@ final class CMS_365NETWORK_Public
         CMS\Hooks::addAction('head', [$this, 'output_analytics_head'], 90);
         CMS\Hooks::addAction('body_end', [$this, 'enqueue_scripts'], 20);
         CMS\Hooks::addAction('body_end', [$this, 'output_analytics_body_end'], 90);
+        CMS\Hooks::addFilter('body_class', [$this, 'body_class'], 30);
+    }
+
+    public function body_class(string $classes): string
+    {
+        if (!$this->is_landing_path_request()) {
+            return $classes;
+        }
+
+        $classList = preg_split('/\s+/', trim($classes)) ?: [];
+        $classList = array_values(array_filter($classList, static fn(string $class): bool => $class !== ''));
+
+        foreach (['cms-365network-public', 'cms-365network-no-theme-gap'] as $class) {
+            if (!in_array($class, $classList, true)) {
+                $classList[] = $class;
+            }
+        }
+
+        return implode(' ', $classList);
     }
 
     public function register_routes($router): void
@@ -101,6 +121,7 @@ final class CMS_365NETWORK_Public
         $data['toolbox_tools'] = $this->fetch_toolbox_links((int) ($data['hub_settings']['hub_toolbox_limit'] ?? 12));
 
         $bufferLevel = ob_get_level();
+        $this->renderingPublicPage = true;
         try {
             CMS\ThemeManager::instance()->getHeader(['title' => (string) ($data['hub_settings']['hub_hero_title'] ?? $settings['landing_title'] ?? '365NETWORK')]);
             $template = CMS_365NETWORK_PLUGIN_DIR . 'templates/landing.php';
@@ -121,7 +142,9 @@ final class CMS_365NETWORK_Public
                 include $template;
             }
             CMS\ThemeManager::instance()->getFooter();
+            $this->renderingPublicPage = false;
         } catch (\Throwable $e) {
+            $this->renderingPublicPage = false;
             while (ob_get_level() > $bufferLevel) {
                 ob_end_clean();
             }
@@ -151,6 +174,7 @@ final class CMS_365NETWORK_Public
         }
 
         $bufferLevel = ob_get_level();
+        $this->renderingPublicPage = true;
         try {
             $titleSuffix = $searchQuery !== '' ? ': ' . $searchQuery : '';
             CMS\ThemeManager::instance()->getHeader(['title' => '365NETWORK Suche' . $titleSuffix]);
@@ -160,7 +184,9 @@ final class CMS_365NETWORK_Public
                 include $template;
             }
             CMS\ThemeManager::instance()->getFooter();
+            $this->renderingPublicPage = false;
         } catch (\Throwable $e) {
+            $this->renderingPublicPage = false;
             while (ob_get_level() > $bufferLevel) {
                 ob_end_clean();
             }
@@ -174,7 +200,7 @@ final class CMS_365NETWORK_Public
 
     public function enqueue_styles(): void
     {
-        if (!$this->is_landing_path_request()) {
+        if (!$this->is_public_page_request()) {
             return;
         }
 
@@ -190,7 +216,7 @@ final class CMS_365NETWORK_Public
 
     public function output_dynamic_styles(): void
     {
-        if (!$this->is_landing_path_request()) {
+        if (!$this->is_public_page_request()) {
             return;
         }
 
@@ -205,7 +231,7 @@ final class CMS_365NETWORK_Public
             '--hub-navy' => $this->hex_color((string) ($settings['text_color'] ?? ''), '#1a2e4a'),
             '--hub-muted' => $this->hex_color((string) ($settings['muted_color'] ?? ''), '#5a6a7a'),
             '--hub-border' => $this->hex_color((string) ($settings['border_color'] ?? ''), '#dce3ec'),
-            '--hub-radius' => $this->clamp_int($settings['card_radius'] ?? 8, 0, 40) . 'px',
+            '--hub-radius' => $this->clamp_int($settings['card_radius'] ?? 2, 0, 2) . 'px',
             '--n365-primary' => $this->hex_color((string) ($settings['primary_color'] ?? ''), '#e6a817'),
             '--n365-accent' => $this->hex_color((string) ($settings['accent_color'] ?? ''), '#e6a817'),
             '--n365-bg' => $this->hex_color((string) ($settings['background_color'] ?? ''), '#e8ecf0'),
@@ -214,36 +240,35 @@ final class CMS_365NETWORK_Public
             '--n365-muted' => $this->hex_color((string) ($settings['muted_color'] ?? ''), '#5a6a7a'),
             '--n365-border' => $this->hex_color((string) ($settings['border_color'] ?? ''), '#dce3ec'),
             '--n365-max' => $this->clamp_int($settings['content_width'] ?? 1180, 920, 1500) . 'px',
-            '--n365-radius' => $this->clamp_int($settings['card_radius'] ?? 24, 0, 40) . 'px',
+            '--n365-radius' => $this->clamp_int($settings['card_radius'] ?? 2, 0, 2) . 'px',
             '--n365-gap' => $this->clamp_int($settings['section_gap'] ?? 28, 16, 80) . 'px',
             '--n365-featured-bg' => $this->hex_color((string) ($hubSettings['hub_featured_bg_color'] ?? ''), '#ffffff'),
             '--n365-featured-text' => $this->hex_color((string) ($hubSettings['hub_featured_text_color'] ?? ''), '#1a2e4a'),
             '--n365-featured-accent' => $this->hex_color((string) ($hubSettings['hub_featured_accent_color'] ?? ''), '#e6a817'),
-            '--n365-featured-radius' => $this->clamp_int($hubSettings['hub_featured_radius'] ?? 8, 0, 40) . 'px',
+            '--n365-featured-radius' => $this->clamp_int($hubSettings['hub_featured_radius'] ?? 2, 0, 2) . 'px',
             '--n365-featured-image-height' => $this->clamp_int($hubSettings['hub_featured_image_height'] ?? 320, 120, 720) . 'px',
-            '--n365-hero-bg' => $this->hex_color((string) ($hubSettings['hub_hero_bg_color'] ?? ''), '#ffffff'),
-            '--n365-hero-text' => $this->hex_color((string) ($hubSettings['hub_hero_text_color'] ?? ''), '#1a2e4a'),
-            '--n365-hero-accent' => $this->hex_color((string) ($hubSettings['hub_hero_accent_color'] ?? ''), '#e6a817'),
-            '--n365-hero-radius' => $this->clamp_int($hubSettings['hub_hero_radius'] ?? 8, 0, 40) . 'px',
+            '--n365-hero-bg' => $this->hex_color((string) ($hubSettings['hub_hero_bg_color'] ?? ''), '#0d1d33'),
+            '--n365-hero-text' => $this->hex_color((string) ($hubSettings['hub_hero_text_color'] ?? ''), '#ffffff'),
+            '--n365-hero-accent' => $this->hex_color((string) ($hubSettings['hub_hero_accent_color'] ?? ''), '#d6951a'),
+            '--n365-hero-radius' => $this->clamp_int($hubSettings['hub_hero_radius'] ?? 0, 0, 2) . 'px',
+            '--n365-hero-image-width' => $this->clamp_int($hubSettings['hub_hero_image_width'] ?? 250, 80, 1200) . 'px',
+            '--n365-hero-image-height' => $this->clamp_int($hubSettings['hub_hero_image_height'] ?? 200, 80, 800) . 'px',
             '--n365-stats-bg' => $this->hex_color((string) ($hubSettings['hub_stats_bg_color'] ?? ''), '#f0f3f7'),
             '--n365-stats-text' => $this->hex_color((string) ($hubSettings['hub_stats_text_color'] ?? ''), '#1a2e4a'),
             '--n365-stats-accent' => $this->hex_color((string) ($hubSettings['hub_stats_accent_color'] ?? ''), '#e6a817'),
-            '--n365-stats-radius' => $this->clamp_int($hubSettings['hub_stats_radius'] ?? 8, 0, 40) . 'px',
+            '--n365-stats-radius' => $this->clamp_int($hubSettings['hub_stats_radius'] ?? 2, 0, 2) . 'px',
             '--n365-band-bg' => $this->hex_color((string) ($hubSettings['hub_band_bg_color'] ?? ''), '#ffffff'),
             '--n365-band-text' => $this->hex_color((string) ($hubSettings['hub_band_text_color'] ?? ''), '#1a2e4a'),
             '--n365-band-accent' => $this->hex_color((string) ($hubSettings['hub_band_accent_color'] ?? ''), '#e6a817'),
-            '--n365-band-radius' => $this->clamp_int($hubSettings['hub_band_radius'] ?? 8, 0, 40) . 'px',
+            '--n365-band-radius' => $this->clamp_int($hubSettings['hub_band_radius'] ?? 2, 0, 2) . 'px',
             '--n365-areas-bg' => $this->hex_color((string) ($hubSettings['hub_areas_bg_color'] ?? ''), '#ffffff'),
             '--n365-areas-text' => $this->hex_color((string) ($hubSettings['hub_areas_text_color'] ?? ''), '#1a2e4a'),
             '--n365-areas-accent' => $this->hex_color((string) ($hubSettings['hub_areas_accent_color'] ?? ''), '#e6a817'),
-            '--n365-areas-radius' => $this->clamp_int($hubSettings['hub_areas_radius'] ?? 10, 0, 40) . 'px',
+            '--n365-areas-radius' => $this->clamp_int($hubSettings['hub_areas_radius'] ?? 2, 0, 2) . 'px',
             '--n365-toolbox-bg' => $this->hex_color((string) ($hubSettings['hub_toolbox_bg_color'] ?? ''), '#ffffff'),
             '--n365-toolbox-text' => $this->hex_color((string) ($hubSettings['hub_toolbox_text_color'] ?? ''), '#1a2e4a'),
             '--n365-toolbox-accent' => $this->hex_color((string) ($hubSettings['hub_toolbox_accent_color'] ?? ''), '#e6a817'),
-            '--n365-toolbox-radius' => $this->clamp_int($hubSettings['hub_toolbox_radius'] ?? 8, 0, 40) . 'px',
-            '--n365-topbar-bg' => $this->hex_color((string) ($hubSettings['hub_topbar_bg_color'] ?? ''), '#0a1626'),
-            '--n365-topbar-text' => $this->hex_color((string) ($hubSettings['hub_topbar_text_color'] ?? ''), '#dfe8f2'),
-            '--n365-topbar-accent' => $this->hex_color((string) ($hubSettings['hub_topbar_accent_color'] ?? ''), '#d6951a'),
+            '--n365-toolbox-radius' => $this->clamp_int($hubSettings['hub_toolbox_radius'] ?? 2, 0, 2) . 'px',
             '--n365-partnerband-bg' => $this->hex_color((string) ($hubSettings['hub_partnerband_bg_color'] ?? ''), '#0a1626'),
             '--n365-partnerband-text' => $this->hex_color((string) ($hubSettings['hub_partnerband_text_color'] ?? ''), '#dfe8f2'),
             '--n365-partnerband-accent' => $this->hex_color((string) ($hubSettings['hub_partnerband_accent_color'] ?? ''), '#d6951a'),
@@ -269,7 +294,7 @@ final class CMS_365NETWORK_Public
 
     public function enqueue_scripts(): void
     {
-        if (!$this->is_landing_path_request()) {
+        if (!$this->is_public_page_request()) {
             return;
         }
 
@@ -299,7 +324,7 @@ final class CMS_365NETWORK_Public
 
     private function output_analytics_code(string $position): void
     {
-        if (!$this->is_landing_path_request()) {
+        if (!$this->is_public_page_request()) {
             return;
         }
 
@@ -1319,6 +1344,11 @@ final class CMS_365NETWORK_Public
         $searchRoute = $route . '/search';
 
         return $this->landingPathRequestCache = ($path === $route || $path === $searchRoute || ($path === '/' && $this->is_domain_landing_request()));
+    }
+
+    private function is_public_page_request(): bool
+    {
+        return $this->renderingPublicPage || $this->is_landing_path_request();
     }
 
     private function settings(): array

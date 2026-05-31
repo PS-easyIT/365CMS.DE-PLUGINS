@@ -92,6 +92,10 @@ final class CMS_Promos
 
     public function enqueue_styles(): void
     {
+        if (!$this->is_promos_public_route()) {
+            return;
+        }
+
         $css = CMS_PROMOS_PLUGIN_DIR . 'assets/css/promos-public.css';
         if (!file_exists($css)) {
             return;
@@ -100,6 +104,14 @@ final class CMS_Promos
         echo '<link rel="stylesheet" href="'
             . htmlspecialchars(CMS_PROMOS_PLUGIN_URL . 'assets/css/promos-public.css?v=' . filemtime($css), ENT_QUOTES, 'UTF-8')
             . '">' . "\n";
+    }
+
+    private function is_promos_public_route(): bool
+    {
+        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
+        $path = '/' . trim($path, '/');
+
+        return $path === '/promos' || str_starts_with($path, '/promos/');
     }
 }
 

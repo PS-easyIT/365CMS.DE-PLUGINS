@@ -142,6 +142,10 @@ final class CMS_Booking
 
     public function enqueue_styles(): void
     {
+        if (!$this->is_booking_public_route()) {
+            return;
+        }
+
         $css = CMS_BOOKING_PLUGIN_DIR . 'assets/css/booking-public.css';
         if (file_exists($css)) {
             echo '<link rel="stylesheet" href="'
@@ -152,12 +156,24 @@ final class CMS_Booking
 
     public function enqueue_scripts(): void
     {
+        if (!$this->is_booking_public_route()) {
+            return;
+        }
+
         $js = CMS_BOOKING_PLUGIN_DIR . 'assets/js/booking-public.js';
         if (file_exists($js)) {
             echo '<script src="'
                 . htmlspecialchars(CMS_BOOKING_PLUGIN_URL . 'assets/js/booking-public.js', ENT_QUOTES, 'UTF-8')
                 . '?v=' . filemtime($js) . '" defer></script>' . "\n";
         }
+    }
+
+    private function is_booking_public_route(): bool
+    {
+        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
+        $path = '/' . trim($path, '/');
+
+        return $path === '/booking' || str_starts_with($path, '/booking/');
     }
 
     /* ------------------------------------------------------------------ */

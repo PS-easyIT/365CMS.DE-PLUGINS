@@ -216,7 +216,6 @@ final class CMS_365NETWORK_Admin
         $tabs = [
             'domain' => '🌐 Domain',
             'hub-order' => '↕️ Reihenfolge',
-            'hub-topbar' => '🧭 Topbar',
             'hub-featured' => '⭐ Featured',
             'hub-hero' => '🏁 Hero',
             'hub-stats' => '📊 Kennzahlen',
@@ -259,12 +258,7 @@ final class CMS_365NETWORK_Admin
             'hub-order' => [
                 'section' => 'order',
                 'title' => '↕️ Bereichs-Reihenfolge',
-                'description' => 'Sortiere die sichtbaren Public-Bereiche der 365NETWORK-Landingpage. Deaktivierte Bereiche bleiben ausgeblendet.',
-            ],
-            'hub-topbar' => [
-                'section' => 'topbar',
-                'title' => '🧭 Hub-Topbar',
-                'description' => 'Logo, interne Hub-Navigation, Topbar-Suche und Login-Link gemäß HTML-Preview steuern.',
+                'description' => 'Sortiere die sichtbaren Public-Bereiche der 365NETWORK-Landingpage. Das Partnerband bleibt immer direkt unter dem Theme-Header; deaktivierte Bereiche bleiben ausgeblendet.',
             ],
             'hub-featured' => [
                 'section' => 'featured',
@@ -289,7 +283,7 @@ final class CMS_365NETWORK_Admin
             'hub-partnerband' => [
                 'section' => 'partnerband',
                 'title' => '🤝 Partnerband',
-                'description' => 'Nahtloses Partnerband direkt unter dem Hero konfigurieren.',
+                'description' => 'Nahtloses Partnerband direkt unter dem Theme-Header konfigurieren.',
             ],
             'hub-areas' => [
                 'section' => 'areas',
@@ -596,7 +590,7 @@ final class CMS_365NETWORK_Admin
             $settings['analytics_position'] = $this->enum((string) $post['analytics_position'], ['head', 'body_end'], (string) ($settings['analytics_position'] ?? 'head'));
         }
 
-        foreach (['content_width' => [920, 1500], 'card_radius' => [0, 40], 'section_gap' => [16, 80], 'sidebar_events_count' => [0, 8], 'random_speakers_count' => [0, 4], 'random_companies_count' => [0, 4], 'random_experts_count' => [0, 4]] as $key => $range) {
+        foreach (['content_width' => [920, 1500], 'card_radius' => [0, 2], 'section_gap' => [16, 80], 'sidebar_events_count' => [0, 8], 'random_speakers_count' => [0, 4], 'random_companies_count' => [0, 4], 'random_experts_count' => [0, 4]] as $key => $range) {
             if ($isActiveKey($key) && array_key_exists($key, $post)) {
                 $settings[$key] = (string) $this->clamp_int($post[$key], (int) $range[0], (int) $range[1]);
             }
@@ -682,7 +676,7 @@ final class CMS_365NETWORK_Admin
                 continue;
             }
 
-            if ($key === 'hub_featured_image_url') {
+            if ($this->is_image_url_field($key)) {
                 $settings[$key] = $this->safe_image_url($value);
                 continue;
             }
@@ -1039,8 +1033,13 @@ final class CMS_365NETWORK_Admin
                 'compact' => 'Kompakt zentriert',
             ],
             'hub_hero_layout' => [
-                'left' => 'Links ausgerichtet',
-                'center' => 'Zentriert',
+                'center' => 'Zentriert untereinander',
+                'image-right' => 'Titel/Suche links, Bild rechts',
+                'image-left' => 'Bild links, Titel/Suche rechts',
+            ],
+            'hub_hero_image_mode' => [
+                'replace-title' => 'Bild ersetzt sichtbare H1',
+                'with-title' => 'Bild zusätzlich mit Titel anzeigen',
             ],
             'hub_hero_height' => [
                 'compact' => 'Kompakt',
@@ -1058,8 +1057,8 @@ final class CMS_365NETWORK_Admin
             ],
             'hub_areas_layout' => [
                 'grid-2x2' => '2 × 2 Grid',
-                'grid-4x1' => '4er Reihe',
-                'auto' => 'Automatisch responsiv',
+                'grid-4x1' => '2 × 2 Grid (Legacy)',
+                'auto' => 'Max. 2 Spalten responsiv',
             ],
             'hub_areas_card_style' => [
                 'icon-corner' => 'Icon-Ecke',
@@ -1082,16 +1081,15 @@ final class CMS_365NETWORK_Admin
             return [
                 'events' => '📅 Events',
                 'speakers' => '🎙️ Speaker',
-                'companies' => '🏢 Firmen',
                 'experts' => '👥 Experten',
+                'companies' => '🏢 Firmen',
             ];
         }
 
         return [
-            'topbar' => '🧭 Topbar',
+            'partnerband' => '🤝 Partnerband',
             'featured' => '⭐ Featured Card',
             'hero' => '🏁 Hero-Bereich',
-            'partnerband' => '🤝 Partnerband',
             'stats' => '📊 Kennzahlen',
             'band' => '🔎 Teaser & Suche',
             'areas' => '🧭 Direkteinstieg',
@@ -1196,7 +1194,7 @@ final class CMS_365NETWORK_Admin
     private function hub_int_range(string $key): array
     {
         if (str_ends_with($key, '_radius')) {
-            return [0, 40];
+            return [0, 2];
         }
 
         if ($key === 'hub_toolbox_limit') {
@@ -1209,6 +1207,14 @@ final class CMS_365NETWORK_Admin
 
         if ($key === 'hub_featured_image_height') {
             return [120, 720];
+        }
+
+        if ($key === 'hub_hero_image_width') {
+            return [80, 1200];
+        }
+
+        if ($key === 'hub_hero_image_height') {
+            return [80, 800];
         }
 
         return [1, 50];

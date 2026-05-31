@@ -3,7 +3,7 @@
  * Plugin Name: CMS Events
  * Plugin URI: https://365network.de/cms-events
  * Description: Verwaltung von Events mit Speakeranbindung, Veranstaltern aus cms-companies und voller Metaverwaltung
- * Version: 3.0.29
+ * Version: 3.0.30
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -12,7 +12,7 @@
 declare(strict_types=1);
 if (!defined('ABSPATH')) exit;
 
-defined('CMS_EVENTS_VERSION') || define('CMS_EVENTS_VERSION', '3.0.29');
+defined('CMS_EVENTS_VERSION') || define('CMS_EVENTS_VERSION', '3.0.30');
 defined('CMS_EVENTS_PLUGIN_DIR') || define('CMS_EVENTS_PLUGIN_DIR', function_exists('cms_plugin_path') ? rtrim((string) cms_plugin_path('cms-events'), '/\\') . DIRECTORY_SEPARATOR : dirname(__FILE__) . '/');
 defined('CMS_EVENTS_PLUGIN_URL') || define('CMS_EVENTS_PLUGIN_URL', function_exists('cms_plugin_url') ? rtrim((string) cms_plugin_url('cms-events'), '/') . '/' : '/plugins/cms-events/');
 
@@ -20,7 +20,7 @@ if (!class_exists('CMS_Events', false)) {
 final class CMS_Events {
     private static ?self $instance = null;
     private bool $components_bootstrapped = false;
-    private string $version = '3.0.29';
+    private string $version = '3.0.30';
     private string $plugin_dir;
     private string $plugin_url;
 
@@ -165,12 +165,25 @@ final class CMS_Events {
     }
 
     public function enqueue_styles(): void {
+        if (!$this->is_event_frontend_route()) {
+            return;
+        }
+
         $this->enqueue_tabler_icons_fallback();
         $this->enqueue_style_file('plugin-base.css');
         $this->enqueue_style_file('style.css');
         if ($this->is_event_detail_request()) {
             $this->enqueue_style_file('single.css');
         }
+    }
+
+    private function is_event_frontend_route(): bool {
+        $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+        $path = '/' . trim($path, '/');
+
+        return $path === '/events'
+            || str_starts_with($path, '/events/')
+            || str_starts_with($path, '/event/');
     }
 
     private function is_event_detail_request(): bool {
@@ -187,12 +200,16 @@ final class CMS_Events {
         }
 
         define('CMS_TABLER_ICONS_LOADED', true);
+        $iconsUrl = function_exists('cms_asset_url')
+            ? cms_asset_url('tabler-icons/tabler-icons.min.css')
+            : rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/') . '/assets/tabler-icons/tabler-icons.min.css';
+
         if (function_exists('cms_enqueue_style')) {
-            cms_enqueue_style('cms-events-tabler-icons', 'https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.41.1/dist/tabler-icons.min.css', [], '3.41.1');
+            cms_enqueue_style('cms-events-tabler-icons', $iconsUrl, [], '3.0.30');
             return;
         }
 
-        echo '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.41.1/dist/tabler-icons.min.css" data-cms-events-tabler-icons-fallback>' . "\n";
+        echo '<link rel="stylesheet" href="' . htmlspecialchars($iconsUrl, ENT_QUOTES, 'UTF-8') . '" data-cms-events-tabler-icons-fallback>' . "\n";
     }
 
     private function enqueue_style_file(string $file): void {
@@ -210,6 +227,10 @@ final class CMS_Events {
     }
 
     public function enqueue_scripts(): void {
+        if (!$this->is_event_frontend_route()) {
+            return;
+        }
+
         $js = $this->plugin_dir . 'assets/js/script.js';
         if (file_exists($js)) {
             $jsVersion = (string) filemtime($js);

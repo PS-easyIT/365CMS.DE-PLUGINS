@@ -98,6 +98,11 @@ final class CMS_M365Landing_Admin_Pages
                 continue;
             }
 
+            if ($key === 'landing_domains') {
+                $settings[$key] = implode("\n", CMS_M365Landing_Repository::normalize_domain_list($value));
+                continue;
+            }
+
             if ($key === 'layout_variant') {
                 $settings[$key] = self::layout_variant($value);
                 continue;
@@ -140,7 +145,7 @@ final class CMS_M365Landing_Admin_Pages
     private static function text_setting_keys(): array
     {
         return [
-            'route_slug', 'page_overline', 'page_title', 'page_intro',
+            'route_slug', 'landing_domains', 'page_overline', 'page_title', 'page_intro',
             'hero_image_url', 'hero_image_alt',
             'hero_primary_button_text', 'hero_primary_button_url', 'hero_secondary_button_text', 'hero_secondary_button_url',
             'matrix_section_overline', 'matrix_section_title', 'matrix_section_intro',
@@ -271,9 +276,9 @@ final class CMS_M365Landing_Admin_Pages
     private static function render_settings(CMS_M365Landing_Repository $repo): void
     {
         $s = $repo->settings();
-        $allowedTabs = ['content', 'sections', 'visibility', 'design'];
+        $allowedTabs = ['content', 'domains', 'sections', 'visibility', 'design'];
         $tab = in_array((string) ($_GET['tab'] ?? 'content'), $allowedTabs, true) ? (string) ($_GET['tab'] ?? 'content') : 'content';
-        $tabs = ['content' => '📝 Header', 'sections' => '🧱 Sektionen', 'visibility' => '👁️ Sichtbarkeit', 'design' => '🎨 Design'];
+        $tabs = ['content' => '📝 Header', 'domains' => '🌐 Domains', 'sections' => '🧱 Sektionen', 'visibility' => '👁️ Sichtbarkeit', 'design' => '🎨 Design'];
         echo '<div class="m365landing-subtabs">';
         foreach ($tabs as $key => $label) {
             $active = $tab === $key ? ' active' : '';
@@ -298,6 +303,15 @@ final class CMS_M365Landing_Admin_Pages
             self::render_target_presets();
             self::replace_input('seo_title', 'SEO-Titel', self::setting_value($s, 'seo_title', 'Microsoft 365 Hub'));
             self::replace_textarea('seo_description', 'SEO-Beschreibung', self::setting_value($s, 'seo_description', 'Zentrale Landingpage für Microsoft 365 Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und M365 Tools.'), 3);
+        } elseif ($tab === 'domains') {
+            echo '<h3>🌐 Domain-Mapping</h3>';
+            $domains = CMS_M365Landing_Repository::normalize_domain_list((string) ($s['landing_domains'] ?? ''));
+            $mainHost = CMS_M365Landing_Repository::normalize_host((string) (parse_url((string) SITE_URL, PHP_URL_HOST) ?: ''));
+            $status = $domains === [] ? 'Keine Zusatzdomain aktiv' : 'Aktive Zusatzdomain' . (count($domains) === 1 ? '' : 's') . ': ' . implode(', ', $domains);
+            echo '<div class="alert" style="background:#dbeafe;color:#1e40af;border-left:4px solid #3b82f6;margin-bottom:1.25rem;">ℹ️ Hinterlegte Zusatzdomains zeigen die M365-Landingpage direkt auf der Domain-Startseite. Die Hauptdomain ' . self::esc($mainHost !== '' ? $mainHost : 'bleibt unverändert') . ' behält ihre normale Startseite.</div>';
+            echo '<p class="form-text" style="margin-bottom:1rem;"><strong>' . self::esc($status) . '</strong></p>';
+            self::replace_textarea('landing_domains', 'Zusatzdomain(s)', implode("\n", $domains), 4);
+            echo '<p class="form-text">Eine Domain pro Zeile oder kommasepariert eintragen, ohne <code>https://</code> und ohne Pfad. <code>www.</code> und Ports werden automatisch normalisiert.</p>';
         } elseif ($tab === 'sections') {
             echo '<h3>🧱 Abschnittstexte</h3>';
             foreach ([
@@ -385,6 +399,7 @@ final class CMS_M365Landing_Admin_Pages
     {
         $defaults = [
             'route_slug' => 'm365',
+            'landing_domains' => '',
             'page_overline' => 'Microsoft 365 Hub',
             'page_title' => 'M365 im Überblick – Matrixen, Azure, Tutorials und Tools',
             'page_intro' => 'Die zentrale Einstiegsseite für Microsoft-365-Entscheidungen: Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und praktische Rechner an einem Ort.',
@@ -421,6 +436,10 @@ final class CMS_M365Landing_Admin_Pages
     {
         if ($tab === 'content') {
             return in_array($key, ['route_slug', 'page_overline', 'page_title', 'page_intro', 'hero_image_url', 'hero_image_alt', 'hero_primary_button_text', 'hero_primary_button_url', 'hero_secondary_button_text', 'hero_secondary_button_url', 'seo_title', 'seo_description'], true);
+        }
+
+        if ($tab === 'domains') {
+            return $key === 'landing_domains';
         }
 
         if ($tab === 'sections') {
