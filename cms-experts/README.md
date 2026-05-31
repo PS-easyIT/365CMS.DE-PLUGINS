@@ -1,6 +1,6 @@
 ﻿# CMS Experts Directory Plugin
 
-**Version:** 3.0.4  
+**Version:** 3.0.8  
 **Requires:** 365CMS 3.0+  
 **PHP:** 8.4+
 
@@ -92,7 +92,7 @@ Das CMS Experts Directory Plugin verwaltet IT-Experten-Profile mit umfangreichen
 
 ### Öffentliche Ansicht
 - ✅ Event-style Card-Übersicht (`/experts`) mit Filter nach Suche, Verfügbarkeit und Stadt
-- ✅ Detailseite (`/experts/{vorname}-{nachname}-{id}`) mit allen Sektionen
+- ✅ Detailseite (`/experts/{vorname}-{nachname}-{id}`) mit allen Sektionen, maximal 1160px Contentbreite, Responsive Layout und Dark Mode
 - ✅ Visual Level-Balken für Technische Expertise
 - ✅ Karriere-Timeline
 - ✅ Referenzen- & Testimonials-Grid
@@ -110,11 +110,12 @@ Das CMS Experts Directory Plugin verwaltet IT-Experten-Profile mit umfangreichen
 - ✅ Soft-Delete (Status `deleted`, kein physischer DB-Eintrag entfernt)
 - ✅ Slug-Format: `vorname-nachname-{id}`
 
-### Publicsite-Status (2026-05-30)
+### Publicsite-Status (2026-05-31)
 
 - Die öffentliche Übersicht `/experts` startet wie `cms-events` direkt mit Filter und responsivem Card-Grid.
 - Expert-Cards zeigen Avatar/Initialen, MVP-/Premium-/Award-/Spezialisierungs-Badges, Verfügbarkeit, Standort/Firma, Erfahrung, Zertifikate, Skills und Profil-CTA.
 - Cards sind komplett klickbar und zusätzlich per `Enter`/`Space` tastaturbedienbar.
+- Die öffentliche Detailseite nutzt eine bündige Hintergrund-Shell ohne Abstand zu Theme-Header/-Footer; Breadcrumb, Hero, Bridge-Cards, Inhalt, Sidebar und Claim-Banner bleiben auf maximal `1160px` begrenzt.
 
 ---
 

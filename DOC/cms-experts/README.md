@@ -1,10 +1,10 @@
 # CMS Experts – Dokumentation
 
 **Plugin:** `cms-experts`  
-**Version:** 3.0.4  
+**Version:** 3.0.8  
 **Namespace:** `CMS_Experts`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
-**Audit-/Dokustand:** Publicsite-Card-Grid-Pass am 2026-05-30  
+**Audit-/Dokustand:** Public-Detailseiten-Polish am 2026-05-31  
 **PHP:** 8.4+
 
 ---
@@ -19,6 +19,7 @@ Das **CMS Experts**-Plugin ist das zentrale Verzeichnis für IT-Experten-Profile
 - Änderungen erfolgen ausschließlich im Plugin; **der 365CMS-Core bleibt unberührt**.
 - Version 3.0.4 stellt die öffentliche Übersicht wie `cms-events` auf Filter-first und responsives Card-Grid um.
 - Expert-Cards nutzen Avatar/Initialen, MVP-/Premium-/Award-/Spezialisierungs-Badges, Verfügbarkeit, Standort/Firma, Erfahrung, Zertifikate, Skills und Profil-CTA.
+- Version 3.0.8 begrenzt die Public-Experts-Detailseite auf maximal `1160px`, entfernt Hintergrundabstände zu Theme-Header/-Footer, füllt kurze Seiten bis zum Footer und sichert Responsive Layout sowie Dark Mode ab.
 
 ### Kernfunktionen
 

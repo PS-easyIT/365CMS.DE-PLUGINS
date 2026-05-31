@@ -457,3 +457,352 @@
   .ev-hero-v2__inner { padding-right: var(--phinit-space-4); }
   .ev-hero-v2__thumb { position: static; width: 96px; height: 96px; margin: var(--phinit-space-4); }
 }
+
+/* CMS Events 3.0.28 / Public detail constrained theme content */
+.page-wrap:has(.cms-events-wrap.cms-events-detail) {
+  min-height: calc(100vh - 280px);
+  padding-top: 0;
+  padding-bottom: 0;
+  background: var(--phinit-color-bg, #e8ecf0);
+}
+
+.page-wrap:has(.cms-events-wrap.cms-events-detail) > #main-content {
+  display: flex;
+  flex-direction: column;
+  min-height: inherit;
+  background: var(--phinit-color-bg, #e8ecf0);
+}
+
+.cms-events-wrap.cms-events-detail {
+  --cms-events-content-max: 1160px;
+  --cms-events-detail-bg: var(--phinit-color-bg, var(--color-bg-page, #e8ecf0));
+  --cms-events-detail-surface: var(--phinit-color-surface, var(--color-bg-card, #ffffff));
+  --cms-events-detail-surface-alt: var(--phinit-color-surface-alt, var(--color-bg-subtle, #f0f3f7));
+  --cms-events-detail-text: var(--phinit-color-ink, var(--color-text, #1a2e4a));
+  --cms-events-detail-muted: var(--phinit-color-ink-secondary, var(--color-muted, #5a6a7a));
+  --cms-events-detail-border: var(--phinit-color-border, var(--color-border, #dce3ec));
+  width: auto;
+  max-width: none;
+  min-height: inherit;
+  flex: 1 1 auto;
+  margin: 0 calc(50% - 50vw);
+  padding: 25px clamp(16px, 2vw, 28px) var(--phinit-space-8, 48px);
+  background: var(--cms-events-detail-bg);
+  color: var(--cms-events-detail-text);
+  box-sizing: border-box;
+  overflow-x: clip;
+}
+
+.cms-events-wrap.cms-events-detail *,
+.cms-events-wrap.cms-events-detail *::before,
+.cms-events-wrap.cms-events-detail *::after {
+  box-sizing: border-box;
+}
+
+.cms-events-wrap.cms-events-detail > .cms-events-breadcrumb,
+.cms-events-wrap.cms-events-detail > .cms-events-detail__grid {
+  width: min(100%, var(--cms-events-content-max));
+  max-width: var(--cms-events-content-max);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.cms-events-wrap.cms-events-detail > .cms-events-breadcrumb {
+  margin-bottom: 24px;
+  padding: 0;
+}
+
+.cms-events-wrap.cms-events-detail > .cms-events-detail__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: clamp(20px, 2.6vw, 40px);
+  align-items: start;
+}
+
+.cms-events-wrap.cms-events-detail .cms-events-detail__main,
+.cms-events-wrap.cms-events-detail .cms-events-detail__aside,
+.cms-events-wrap.cms-events-detail .cms-events-detail__section,
+.cms-events-wrap.cms-events-detail .cms-events-registration-card,
+.cms-events-wrap.cms-events-detail .cms-events-related,
+.cms-events-wrap.cms-events-detail .cms-events-speaker-teaser {
+  min-width: 0;
+}
+
+.cms-events-wrap.cms-events-detail .cms-events-detail__head,
+.cms-events-wrap.cms-events-detail .cms-events-detail__hero,
+.cms-events-wrap.cms-events-detail .cms-events-detail__section,
+.cms-events-wrap.cms-events-detail .cms-events-speaker-teaser,
+.cms-events-wrap.cms-events-detail .cms-events-share,
+.cms-events-wrap.cms-events-detail .cms-events-registration-card,
+.cms-events-wrap.cms-events-detail .cms-events-related {
+  margin-right: 0;
+  margin-left: 0;
+}
+
+.cms-events-wrap.cms-events-detail .cms-events-detail__head h1,
+.cms-events-wrap.cms-events-detail .cms-events-detail__section h2,
+.cms-events-wrap.cms-events-detail .cms-events-speaker-teaser h2,
+.cms-events-wrap.cms-events-detail .cms-events-registration-card h2,
+.cms-events-wrap.cms-events-detail .cms-events-related h2,
+.cms-events-wrap.cms-events-detail .cms-events-registration-card dd,
+.cms-events-wrap.cms-events-detail .cms-events-related__item > span:last-child,
+.cms-events-wrap.cms-events-detail .event-price-large,
+.cms-events-wrap.cms-events-detail .event-price-pill,
+.cms-events-wrap.cms-events-detail .cms-events-date-stack strong {
+  color: var(--cms-events-detail-text);
+  overflow-wrap: anywhere;
+}
+
+.cms-events-wrap.cms-events-detail .cms-events-breadcrumb,
+.cms-events-wrap.cms-events-detail .cms-events-muted,
+.cms-events-wrap.cms-events-detail .cms-events-detail__meta,
+.cms-events-wrap.cms-events-detail .event-body,
+.cms-events-wrap.cms-events-detail .cms-events-detail__content,
+.cms-events-wrap.cms-events-detail .cms-events-speaker-teaser__position,
+.cms-events-wrap.cms-events-detail .cms-events-speaker-teaser__bio,
+.cms-events-wrap.cms-events-detail .cms-events-registration-card dt,
+.cms-events-wrap.cms-events-detail .cms-events-related small,
+.cms-events-wrap.cms-events-detail .event-share-label,
+.cms-events-wrap.cms-events-detail .sidebar-share-label,
+.cms-events-wrap.cms-events-detail .seats-label {
+  color: var(--cms-events-detail-muted);
+}
+
+.cms-events-wrap.cms-events-detail .cms-events-detail__section,
+.cms-events-wrap.cms-events-detail .cms-events-speaker-teaser,
+.cms-events-wrap.cms-events-detail .cms-events-registration-card,
+.cms-events-wrap.cms-events-detail .cms-events-related,
+.cms-events-wrap.cms-events-detail .cms-events-share a,
+.cms-events-wrap.cms-events-detail .event-share-btn {
+  border-color: var(--cms-events-detail-border);
+  background: var(--cms-events-detail-surface);
+  color: var(--cms-events-detail-text);
+  box-shadow: var(--phinit-shadow-card, 0 1px 2px rgba(20, 34, 68, 0.06));
+}
+
+.cms-events-wrap.cms-events-detail .cms-events-detail__hero,
+.cms-events-wrap.cms-events-detail .cms-events-related__image,
+.cms-events-wrap.cms-events-detail .related-event-thumb--placeholder,
+.cms-events-wrap.cms-events-detail .cms-events-topic-badge,
+.cms-events-wrap.cms-events-detail .cms-events-detail__tags span,
+.cms-events-wrap.cms-events-detail .event-detail-meta .cms-events-meta-pill,
+.cms-events-wrap.cms-events-detail .cms-events-capacity__bar,
+.cms-events-wrap.cms-events-detail .seats-bar {
+  border-color: var(--cms-events-detail-border);
+  background: var(--cms-events-detail-surface-alt);
+  color: var(--cms-events-detail-text);
+}
+
+.cms-events-wrap.cms-events-detail .event-body,
+.cms-events-wrap.cms-events-detail .cms-events-detail__content,
+.cms-events-wrap.cms-events-detail .cms-events-topic-badge,
+.cms-events-wrap.cms-events-detail .cms-events-related__item,
+.cms-events-wrap.cms-events-detail .cms-events-registration-card dd {
+  overflow-wrap: anywhere;
+}
+
+.cms-events-wrap.cms-events-detail .cms-events-detail__topics,
+.cms-events-wrap.cms-events-detail .event-description-card h2,
+.cms-events-wrap.cms-events-detail .cms-events-registration-card dl > div,
+.cms-events-wrap.cms-events-detail .sidebar-share {
+  border-color: var(--cms-events-detail-border);
+}
+
+.cms-events-wrap.cms-events-detail .cms-events-detail__aside {
+  position: sticky;
+  top: 24px;
+}
+
+.cms-events-wrap.cms-events-detail .cms-events-registration-card__button,
+.cms-events-wrap.cms-events-detail .phinit-btn--primary {
+  background: var(--cms-events-accent, var(--color-accent, #e6a817));
+  border-color: var(--cms-events-accent, var(--color-accent, #e6a817));
+  color: var(--cms-events-accent-ink, var(--color-navy, #1a2e4a));
+}
+
+.cms-events-wrap.cms-events-detail .cms-events-registration-card__button:hover,
+.cms-events-wrap.cms-events-detail .phinit-btn--primary:hover,
+.cms-events-wrap.cms-events-detail .phinit-btn--primary:focus-visible {
+  background: var(--cms-events-accent-hover, var(--color-accent-dark, #c48f0f));
+  border-color: var(--cms-events-accent-hover, var(--color-accent-dark, #c48f0f));
+  color: var(--cms-events-accent-ink, var(--color-navy, #1a2e4a));
+}
+
+@media (max-width: 900px) {
+  .cms-events-wrap.cms-events-detail > .cms-events-detail__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cms-events-wrap.cms-events-detail .cms-events-detail__aside {
+    position: static;
+  }
+}
+
+@media (max-width: 680px) {
+  .cms-events-wrap.cms-events-detail .cms-events-detail__head h1 {
+    font-size: clamp(1.65rem, 8vw, 2.25rem);
+  }
+
+  .cms-events-wrap.cms-events-detail .cms-events-speaker-teaser,
+  .cms-events-wrap.cms-events-detail .cms-events-registration-card dl > div,
+  .cms-events-wrap.cms-events-detail .cms-events-date-stack span {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cms-events-wrap.cms-events-detail .cms-events-registration-card dd,
+  .cms-events-wrap.cms-events-detail .cms-events-date-stack--sidebar {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .cms-events-wrap.cms-events-detail .cms-events-share,
+  .cms-events-wrap.cms-events-detail .event-share-bar {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 520px) {
+  .cms-events-wrap.cms-events-detail {
+    width: 100%;
+    margin-right: 0;
+    margin-left: 0;
+    padding: 25px 12px var(--phinit-space-6, 32px);
+  }
+
+  .cms-events-wrap.cms-events-detail .cms-events-detail__section,
+  .cms-events-wrap.cms-events-detail .cms-events-speaker-teaser,
+  .cms-events-wrap.cms-events-detail .cms-events-registration-card,
+  .cms-events-wrap.cms-events-detail .cms-events-related {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .cms-events-wrap.cms-events-detail .cms-events-related__item {
+    align-items: flex-start;
+  }
+}
+
+body.dark-mode .page-wrap:has(.cms-events-wrap.cms-events-detail),
+html.dark-mode body:not(.light-mode) .page-wrap:has(.cms-events-wrap.cms-events-detail),
+body.dark-mode .page-wrap:has(.cms-events-wrap.cms-events-detail) > #main-content,
+html.dark-mode body:not(.light-mode) .page-wrap:has(.cms-events-wrap.cms-events-detail) > #main-content,
+body.dark-mode .cms-events-wrap.cms-events-detail,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail {
+  --color-bg-page: var(--phinit-color-bg, #0f172a);
+  --color-bg-card: var(--phinit-color-surface, #111827);
+  --color-bg-subtle: var(--phinit-color-surface-alt, #1e293b);
+  --color-text: var(--phinit-color-ink, #f8fafc);
+  --color-navy: var(--phinit-color-ink, #f8fafc);
+  --color-muted: var(--phinit-color-ink-secondary, #cbd5e1);
+  --color-hint: var(--phinit-color-ink-secondary, #94a3b8);
+  --color-border: var(--phinit-color-border, #334155);
+  --cms-events-detail-bg: var(--phinit-color-bg, #0f172a);
+  --cms-events-detail-surface: var(--phinit-color-surface, #111827);
+  --cms-events-detail-surface-alt: var(--phinit-color-surface-alt, #1e293b);
+  --cms-events-detail-text: var(--phinit-color-ink, #f8fafc);
+  --cms-events-detail-muted: var(--phinit-color-ink-secondary, #cbd5e1);
+  --cms-events-detail-border: var(--phinit-color-border, #334155);
+  background: var(--cms-events-detail-bg);
+  color: var(--cms-events-detail-text);
+}
+
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-detail__section,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-speaker-teaser,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-registration-card,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-related,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-share a,
+body.dark-mode .cms-events-wrap.cms-events-detail .event-share-btn,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-detail__section,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-speaker-teaser,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-registration-card,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-related,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-share a,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .event-share-btn {
+  border-color: var(--cms-events-detail-border);
+  background: var(--cms-events-detail-surface);
+  color: var(--cms-events-detail-text);
+  box-shadow: none;
+}
+
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-detail__hero,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-related__image,
+body.dark-mode .cms-events-wrap.cms-events-detail .related-event-thumb--placeholder,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-topic-badge,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-detail__tags span,
+body.dark-mode .cms-events-wrap.cms-events-detail .event-detail-meta .cms-events-meta-pill,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-capacity__bar,
+body.dark-mode .cms-events-wrap.cms-events-detail .seats-bar,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-detail__hero,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-related__image,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .related-event-thumb--placeholder,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-topic-badge,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-detail__tags span,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .event-detail-meta .cms-events-meta-pill,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-capacity__bar,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .seats-bar {
+  border-color: var(--cms-events-detail-border);
+  background: var(--cms-events-detail-surface-alt);
+  color: var(--cms-events-detail-text);
+}
+
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-detail__head h1,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-detail__section h2,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-speaker-teaser h2,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-registration-card h2,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-related h2,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-registration-card dd,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-related__item > span:last-child,
+body.dark-mode .cms-events-wrap.cms-events-detail .event-price-large,
+body.dark-mode .cms-events-wrap.cms-events-detail .event-price-pill,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-date-stack strong,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-detail__head h1,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-detail__section h2,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-speaker-teaser h2,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-registration-card h2,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-related h2,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-registration-card dd,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-related__item > span:last-child,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .event-price-large,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .event-price-pill,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-date-stack strong {
+  color: var(--cms-events-detail-text);
+}
+
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-breadcrumb,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-muted,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-detail__meta,
+body.dark-mode .cms-events-wrap.cms-events-detail .event-body,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-detail__content,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-speaker-teaser__position,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-speaker-teaser__bio,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-registration-card dt,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-related small,
+body.dark-mode .cms-events-wrap.cms-events-detail .event-share-label,
+body.dark-mode .cms-events-wrap.cms-events-detail .sidebar-share-label,
+body.dark-mode .cms-events-wrap.cms-events-detail .seats-label,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-breadcrumb,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-muted,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-detail__meta,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .event-body,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-detail__content,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-speaker-teaser__position,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-speaker-teaser__bio,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-registration-card dt,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-related small,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .event-share-label,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .sidebar-share-label,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .seats-label {
+  color: var(--cms-events-detail-muted);
+}
+
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-detail__topics,
+body.dark-mode .cms-events-wrap.cms-events-detail .event-description-card h2,
+body.dark-mode .cms-events-wrap.cms-events-detail .cms-events-registration-card dl > div,
+body.dark-mode .cms-events-wrap.cms-events-detail .sidebar-share,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-detail__topics,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .event-description-card h2,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .cms-events-registration-card dl > div,
+html.dark-mode body:not(.light-mode) .cms-events-wrap.cms-events-detail .sidebar-share {
+  border-color: var(--cms-events-detail-border);
+}

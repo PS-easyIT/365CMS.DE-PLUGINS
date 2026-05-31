@@ -1,5 +1,25 @@
 # CMS Speakers – Changelog
 
+## [3.0.15] – 2026-05-31
+
+- **Public-Detailseite:** Breadcrumb, Profil-/Contentbereich und Anfrage-Spalte liegen nun durchgehend in der Theme-Contentbreite von maximal `1160px`.
+- **Responsive:** Das Detailseiten-Grid wechselt unterhalb von Tablet-Breiten sauber auf eine Spalte; Profilkopf, Sessions und CTA-Buttons bleiben auf kleinen Displays lesbar.
+- **Dark Mode:** Profilkopf, Inhaltskarten, Sessions, Booking-Card, Related Speaker, Tags, Social-Links und Textfarben nutzen explizite Dark-Mode-Tokens.
+
+## [3.0.14] – 2026-05-31
+
+- **Public-Suchbereich:** Die Hauptaktion der Speakers-Filterleiste ist nun ein primärer Button „Suchen“ statt „Filter zurücksetzen“.
+- **Layout:** Die Speakers-Filterleiste wird final auf die `1160px`-Contentbreite begrenzt und kann nicht mehr durch spätere Button-/Filterregeln auf volle Fensterbreite laufen.
+
+## [3.0.13] – 2026-05-31
+
+- **Public-Suchbereich:** Die Speakers-Übersicht nutzt nun das einheitliche Companies-basierte Filterdesign mit gleicher Feldhöhe, Label-Rhythmik, Button-Optik, voller `1160px`-Contentbreite und responsiven Umbrüchen.
+- **Plugin-Anpassung:** Topic-Auswahl und Speaker-Suche behalten ihre Speaker-spezifische Filterlogik und verwenden die Speaker-Akzentfarben.
+
+## [3.0.12] – 2026-05-31
+
+- **Public-Übersicht:** Die Shell liegt bündig an Theme-Header und -Footer an; der eigentliche Content startet intern bei `25px`, bleibt responsiv und ist auf maximal `1160px` begrenzt.
+
 ## [3.0.10] – 2026-05-30
 
 - **Speaker-Archiv:** Die öffentliche Übersicht rendert wieder als responsives Card-Grid statt als horizontale Liste und orientiert sich visuell an der CMS-Events-Übersicht.

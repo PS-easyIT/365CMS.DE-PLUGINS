@@ -750,3 +750,423 @@
   .ex-bridge { padding: 0 var(--phinit-space-4); }
   .ex-hero__inner { min-height: 0; }
 }
+
+/* CMS Experts 3.0.8 / Public detail flush theme shell */
+.page-wrap:has(.ex-v2) {
+  min-height: calc(100vh - 280px);
+  padding-top: 0;
+  padding-bottom: 0;
+  background: var(--phinit-color-bg, #f8fafc);
+}
+
+.page-wrap:has(.ex-v2) > #main-content {
+  display: flex;
+  flex-direction: column;
+  min-height: inherit;
+  background: var(--phinit-color-bg, #f8fafc);
+}
+
+.ex-v2 {
+  --expert-detail-content-max: 1160px;
+  width: auto;
+  max-width: none;
+  min-height: inherit;
+  flex: 1 1 auto;
+  margin: 0 calc(50% - 50vw);
+  padding: 25px clamp(16px, 2vw, 28px) var(--phinit-space-8, 48px);
+  border: 0;
+  background: var(--phinit-color-bg, #f8fafc);
+  color: var(--phinit-color-ink, #1e293b);
+  box-sizing: border-box;
+  overflow-x: clip;
+}
+
+.ex-v2 *,
+.ex-v2 *::before,
+.ex-v2 *::after {
+  box-sizing: border-box;
+}
+
+.ex-v2 > .ex-bc,
+.ex-v2 > .ex-hero,
+.ex-v2 > .ex-bridge,
+.ex-v2 > .ex-body,
+.ex-v2 > .ex-claim-banner {
+  width: min(100%, var(--expert-detail-content-max));
+  max-width: var(--expert-detail-content-max);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.ex-v2 > .ex-bc {
+  margin-bottom: 0;
+  border: 1px solid var(--phinit-color-border, #e2e8f0);
+  border-radius: var(--expert-radius, var(--phinit-radius-md, 10px));
+}
+
+.ex-v2 > .ex-hero {
+  margin-top: 16px;
+  border: 1px solid var(--phinit-color-border, #e2e8f0);
+  border-bottom: 3px solid var(--expert-primary, var(--phinit-color-accent, #5e72e4));
+  border-radius: var(--expert-radius, var(--phinit-radius-md, 10px));
+  background: var(--phinit-color-surface, #ffffff);
+}
+
+.ex-v2 .ex-hero__inner {
+  min-height: 220px;
+  padding: clamp(24px, 3vw, 34px);
+}
+
+.ex-v2 > .ex-bridge {
+  margin-top: 24px;
+  padding: 0;
+}
+
+.ex-v2 > .ex-body {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: clamp(20px, 2.4vw, 32px);
+  padding: 24px 0 0;
+}
+
+.ex-v2 .ex-main,
+.ex-v2 .ex-aside,
+.ex-v2 .ex-hero__meta,
+.ex-v2 .ex-bridge__about,
+.ex-v2 .ex-bridge__contact {
+  min-width: 0;
+}
+
+.ex-v2 .ex-bridge__about,
+.ex-v2 .ex-bridge__contact,
+.ex-v2 .ex-sec,
+.ex-v2 .ex-sc,
+.ex-v2 .ex-ev-v2,
+.ex-v2 .ex-cert-item,
+.ex-v2 .ex-skill-item,
+.ex-v2 .ex-proj-item,
+.ex-v2 .ex-edu-item,
+.ex-v2 .ex-testi-item,
+.ex-v2 .ex-conf-item {
+  background: var(--phinit-color-surface, #ffffff);
+  border-color: var(--phinit-color-border, #e2e8f0);
+  color: var(--phinit-color-ink, #1e293b);
+}
+
+.ex-v2 .ex-hero__name,
+.ex-v2 .ex-bridge__title,
+.ex-v2 .ex-sec__title,
+.ex-v2 .ex-sc__title,
+.ex-v2 .ex-ev-v2__title,
+.ex-v2 .ex-skill-item__name,
+.ex-v2 .ex-cert-item__name,
+.ex-v2 .ex-proj-item__name,
+.ex-v2 .ex-edu-item__deg,
+.ex-v2 .ex-career-item__role,
+.ex-v2 .ex-conf-item__title,
+.ex-v2 .ex-info-row__val {
+  color: var(--phinit-color-ink, #1e293b);
+  overflow-wrap: anywhere;
+}
+
+.ex-v2 .ex-bridge__text,
+.ex-v2 .ex-prose-muted,
+.ex-v2 .ex-hero__motto,
+.ex-v2 .ex-hero__pos,
+.ex-v2 .ex-hero__co,
+.ex-v2 .ex-ev-subhead,
+.ex-v2 .ex-ev-v2__meta,
+.ex-v2 .ex-proj-item__desc,
+.ex-v2 .ex-edu-item__inst,
+.ex-v2 .ex-edu-item__meta,
+.ex-v2 .ex-edu-desc,
+.ex-v2 .ex-career-item__co,
+.ex-v2 .ex-career-item__meta,
+.ex-v2 .ex-career-item__desc,
+.ex-v2 .ex-testi-item__text,
+.ex-v2 .ex-testi-item__by,
+.ex-v2 .ex-conf-item__meta,
+.ex-v2 .ex-info-row__lbl,
+.ex-v2 .ex-bc__cur,
+.ex-v2 .ex-svc-row {
+  color: var(--phinit-color-ink-secondary, #64748b);
+}
+
+.ex-v2 .ex-bridge__text,
+.ex-v2 .ex-proj-item__desc,
+.ex-v2 .ex-career-item__desc,
+.ex-v2 .ex-testi-item__text,
+.ex-v2 .ex-info-row__val {
+  overflow-wrap: anywhere;
+}
+
+.ex-v2 .ex-bridge__text::after {
+  background: linear-gradient(to bottom, transparent, var(--phinit-color-surface, #ffffff));
+}
+
+.ex-v2 .ex-hero__spec-pill,
+.ex-v2 .ex-hero__ev-count,
+.ex-v2 .ex-hero__badge,
+.ex-v2 .ex-bridge__link,
+.ex-v2 .ex-si,
+.ex-v2 .ex-pill,
+.ex-v2 .ex-proj-item__tag {
+  background: var(--phinit-color-surface-alt, #f8fafc);
+  border-color: var(--phinit-color-border, #e2e8f0);
+  color: var(--phinit-color-ink, #1e293b);
+  backdrop-filter: none;
+}
+
+.ex-v2 .ex-btn,
+.ex-v2 .ex-bridge__row .phinit-btn--primary,
+.ex-v2 .ex-claim-banner__btn {
+  background: var(--phinit-color-accent, var(--expert-primary, #5e72e4));
+  color: var(--phinit-color-accent-ink, #ffffff);
+  box-shadow: none;
+}
+
+.ex-v2 .ex-btn:hover,
+.ex-v2 .ex-bridge__row .phinit-btn--primary:hover,
+.ex-v2 .ex-claim-banner__btn:hover {
+  transform: none;
+  box-shadow: none;
+  color: var(--phinit-color-accent-ink, #ffffff);
+}
+
+.ex-v2 > .ex-claim-banner {
+  margin-top: 24px;
+  border: 1px solid var(--phinit-color-border, #e2e8f0);
+  border-radius: var(--expert-radius, var(--phinit-radius-md, 10px));
+}
+
+@media (max-width: 960px) {
+  .ex-v2 > .ex-body,
+  .ex-v2 > .ex-bridge {
+    grid-template-columns: 1fr;
+  }
+
+  .ex-v2 .ex-aside {
+    position: static;
+  }
+}
+
+@media (max-width: 680px) {
+  .ex-v2 .ex-hero__inner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ex-v2 .ex-hero__badges {
+    position: static;
+    justify-content: flex-start;
+    max-width: none;
+    order: -1;
+  }
+
+  .ex-v2 .ex-hero__name-row,
+  .ex-v2 .ex-hero__spec-pills,
+  .ex-v2 .ex-bridge__links,
+  .ex-v2 .ex-bridge__socials {
+    align-items: stretch;
+  }
+
+  .ex-v2 .ex-bridge__links {
+    grid-template-columns: 1fr;
+  }
+
+  .ex-v2 .ex-skills-grid,
+  .ex-v2 .ex-skills-grid.ex-skills-grid--soft,
+  .ex-v2 .ex-cert-grid,
+  .ex-v2 .ex-ev-grid-v2 {
+    grid-template-columns: 1fr;
+  }
+
+  .ex-v2 .ex-info-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .ex-v2 .ex-info-row__val {
+    text-align: left;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 520px) {
+  .ex-v2 {
+    width: 100%;
+    margin-right: 0;
+    margin-left: 0;
+    padding: 25px 12px var(--phinit-space-6, 32px);
+  }
+
+  .ex-v2 .ex-bc,
+  .ex-v2 .ex-hero__inner,
+  .ex-v2 .ex-bridge__about,
+  .ex-v2 .ex-bridge__contact,
+  .ex-v2 .ex-sec,
+  .ex-v2 .ex-sc,
+  .ex-v2 .ex-claim-banner {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .ex-v2 .ex-hero__av {
+    width: 92px;
+    height: 92px;
+  }
+}
+
+body.dark-mode .page-wrap:has(.ex-v2),
+html.dark-mode body:not(.light-mode) .page-wrap:has(.ex-v2),
+body.dark-mode .page-wrap:has(.ex-v2) > #main-content,
+html.dark-mode body:not(.light-mode) .page-wrap:has(.ex-v2) > #main-content,
+body.dark-mode .ex-v2,
+html.dark-mode body:not(.light-mode) .ex-v2 {
+  background: var(--phinit-color-bg, #0f172a);
+  color: var(--phinit-color-ink, #f8fafc);
+}
+
+body.dark-mode .ex-v2 > .ex-bc,
+body.dark-mode .ex-v2 > .ex-hero,
+body.dark-mode .ex-v2 .ex-bridge__about,
+body.dark-mode .ex-v2 .ex-bridge__contact,
+body.dark-mode .ex-v2 .ex-sec,
+body.dark-mode .ex-v2 .ex-sc,
+body.dark-mode .ex-v2 .ex-ev-v2,
+body.dark-mode .ex-v2 .ex-cert-item,
+body.dark-mode .ex-v2 .ex-skill-item,
+body.dark-mode .ex-v2 .ex-proj-item,
+body.dark-mode .ex-v2 .ex-edu-item,
+body.dark-mode .ex-v2 .ex-testi-item,
+body.dark-mode .ex-v2 .ex-conf-item,
+html.dark-mode body:not(.light-mode) .ex-v2 > .ex-bc,
+html.dark-mode body:not(.light-mode) .ex-v2 > .ex-hero,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-bridge__about,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-bridge__contact,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-sec,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-sc,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-ev-v2,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-cert-item,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-skill-item,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-proj-item,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-edu-item,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-testi-item,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-conf-item {
+  background: var(--phinit-color-surface, #111827);
+  border-color: var(--phinit-color-border, #334155);
+  color: var(--phinit-color-ink, #f8fafc);
+  box-shadow: none;
+}
+
+body.dark-mode .ex-v2 .ex-hero__name,
+body.dark-mode .ex-v2 .ex-bridge__title,
+body.dark-mode .ex-v2 .ex-sec__title,
+body.dark-mode .ex-v2 .ex-sc__title,
+body.dark-mode .ex-v2 .ex-ev-v2__title,
+body.dark-mode .ex-v2 .ex-skill-item__name,
+body.dark-mode .ex-v2 .ex-cert-item__name,
+body.dark-mode .ex-v2 .ex-proj-item__name,
+body.dark-mode .ex-v2 .ex-edu-item__deg,
+body.dark-mode .ex-v2 .ex-career-item__role,
+body.dark-mode .ex-v2 .ex-conf-item__title,
+body.dark-mode .ex-v2 .ex-info-row__val,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-hero__name,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-bridge__title,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-sec__title,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-sc__title,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-ev-v2__title,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-skill-item__name,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-cert-item__name,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-proj-item__name,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-edu-item__deg,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-career-item__role,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-conf-item__title,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-info-row__val {
+  color: var(--phinit-color-ink, #f8fafc);
+}
+
+body.dark-mode .ex-v2 .ex-bridge__text,
+body.dark-mode .ex-v2 .ex-prose-muted,
+body.dark-mode .ex-v2 .ex-hero__motto,
+body.dark-mode .ex-v2 .ex-hero__pos,
+body.dark-mode .ex-v2 .ex-hero__co,
+body.dark-mode .ex-v2 .ex-ev-subhead,
+body.dark-mode .ex-v2 .ex-ev-v2__meta,
+body.dark-mode .ex-v2 .ex-proj-item__desc,
+body.dark-mode .ex-v2 .ex-edu-item__inst,
+body.dark-mode .ex-v2 .ex-edu-item__meta,
+body.dark-mode .ex-v2 .ex-edu-desc,
+body.dark-mode .ex-v2 .ex-career-item__co,
+body.dark-mode .ex-v2 .ex-career-item__meta,
+body.dark-mode .ex-v2 .ex-career-item__desc,
+body.dark-mode .ex-v2 .ex-testi-item__text,
+body.dark-mode .ex-v2 .ex-testi-item__by,
+body.dark-mode .ex-v2 .ex-conf-item__meta,
+body.dark-mode .ex-v2 .ex-info-row__lbl,
+body.dark-mode .ex-v2 .ex-bc__cur,
+body.dark-mode .ex-v2 .ex-svc-row,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-bridge__text,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-prose-muted,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-hero__motto,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-hero__pos,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-hero__co,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-ev-subhead,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-ev-v2__meta,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-proj-item__desc,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-edu-item__inst,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-edu-item__meta,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-edu-desc,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-career-item__co,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-career-item__meta,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-career-item__desc,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-testi-item__text,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-testi-item__by,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-conf-item__meta,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-info-row__lbl,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-bc__cur,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-svc-row {
+  color: var(--phinit-color-ink-secondary, #cbd5e1);
+}
+
+body.dark-mode .ex-v2 .ex-hero__spec-pill,
+body.dark-mode .ex-v2 .ex-hero__ev-count,
+body.dark-mode .ex-v2 .ex-hero__badge,
+body.dark-mode .ex-v2 .ex-bridge__link,
+body.dark-mode .ex-v2 .ex-si,
+body.dark-mode .ex-v2 .ex-pill,
+body.dark-mode .ex-v2 .ex-proj-item__tag,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-hero__spec-pill,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-hero__ev-count,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-hero__badge,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-bridge__link,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-si,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-pill,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-proj-item__tag {
+  background: var(--phinit-color-surface-alt, #1e293b);
+  border-color: var(--phinit-color-border, #334155);
+  color: var(--phinit-color-ink, #f8fafc);
+}
+
+body.dark-mode .ex-v2 .ex-bridge__text::after,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-bridge__text::after {
+  background: linear-gradient(to bottom, transparent, var(--phinit-color-surface, #111827));
+}
+
+body.dark-mode .ex-v2 .ex-info-row,
+body.dark-mode .ex-v2 .ex-sec__title,
+body.dark-mode .ex-v2 .ex-sc__title,
+body.dark-mode .ex-v2 .ex-bridge__title,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-info-row,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-sec__title,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-sc__title,
+html.dark-mode body:not(.light-mode) .ex-v2 .ex-bridge__title {
+  border-color: var(--phinit-color-border, #334155);
+}
+
+body.dark-mode .ex-v2 > .ex-claim-banner,
+html.dark-mode body:not(.light-mode) .ex-v2 > .ex-claim-banner {
+  background: color-mix(in srgb, var(--phinit-color-warning, #f59e0b) 12%, var(--phinit-color-surface, #111827));
+  border-color: color-mix(in srgb, var(--phinit-color-warning, #f59e0b) 35%, var(--phinit-color-border, #334155));
+  color: var(--phinit-color-ink, #f8fafc);
+}

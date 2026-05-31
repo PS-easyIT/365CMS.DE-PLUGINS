@@ -1,5 +1,26 @@
 # CMS Experts – Changelog
 
+## [3.0.8] – 2026-05-31
+
+### Geändert
+
+- **Public-Detailseite:** Die Experts-Detailseite liegt mit ihrem Hintergrund bündig an Theme-Header und -Footer an und füllt bei kurzem Inhalt den Bereich bis zum Footer.
+- **Layout:** Breadcrumb, Hero, Bridge-Cards, Content-/Sidebar-Grid und Claim-Banner sind auf maximal `1160px` Theme-Contentbreite zentriert.
+- **Responsive/Dark Mode:** Detail-Grid, Bridge-Cards, Skills, Zertifikate, Events, Sidebar-Karten, Tags und Texte brechen mobil sauber um und nutzen explizite Dark-Mode-Tokens.
+
+## [3.0.7] – 2026-05-31
+
+### Geändert
+
+- **Public-Suchbereich:** Die Experts-Übersicht nutzt nun das einheitliche Companies-basierte Filterdesign mit gleicher Feldhöhe, Label-Rhythmik, Button-Optik, voller `1160px`-Contentbreite und responsiven Umbrüchen.
+- **Plugin-Anpassung:** Expertensuche, Stadt und Verfügbarkeit behalten ihre Experts-spezifische Funktion und verwenden die Experts-Akzentfarben.
+
+## [3.0.6] – 2026-05-31
+
+### Geändert
+
+- **Public-Übersicht:** Die Shell liegt bündig an Theme-Header und -Footer an; der eigentliche Content startet intern bei `25px`, bleibt responsiv und ist auf maximal `1160px` begrenzt.
+
 ## [3.0.4] – 2026-05-30
 
 ### Geändert

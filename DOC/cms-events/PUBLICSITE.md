@@ -3,7 +3,8 @@
 > Gilt für alle öffentlich zugänglichen Seiten des Events-Plugins:
 > Archiv-/Übersichtsseite, Grid-Cards und Event-Detailseite (Single).
 >
-> Letzte Aktualisierung: 2026-02-27  
+> Letzte Aktualisierung: 2026-05-31  
+> Stand: `cms-events` 3.0.28  
 > Übergeordnete Richtlinie: `.github/instructions/plugin-cms-network-public.instructions.md`
 
 ---
@@ -310,6 +311,8 @@ echo "<style>:root{
 ---
 
 ## 4. Single Site (`single-event.php`)
+
+> Aktueller Publicsite-Stand ab `cms-events` 3.0.28: Das aktive Detail-Template rendert `main.phinit-plugin.cms-events-wrap.cms-events-detail`. Die Detail-Shell liegt bündig am Theme-Header und -Footer, füllt kurze Seiten bis zum Footer und begrenzt Breadcrumb sowie Detail-Grid auf maximal `1160px` Contentbreite. Responsive und Dark Mode werden im finalen Detail-Override in `assets/css/single.css` abgesichert.
 
 ### 4.1 Header-Zone
 

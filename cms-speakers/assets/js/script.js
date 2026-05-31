@@ -19,6 +19,7 @@
         const empty = root.querySelector('[data-cms-speaker-empty]');
         const topicSelect = root.querySelector('[data-cms-speaker-filter="topic"]');
         const searchInput = root.querySelector('[data-cms-speaker-filter="search"]');
+        const applyButtons = root.querySelectorAll('[data-cms-speaker-apply]');
 
         function applyFilters() {
             const selectedTopic = normalize(topicSelect?.value);
@@ -63,6 +64,9 @@
         });
         root.querySelectorAll('[data-cms-speaker-reset]').forEach((button) => {
             button.addEventListener('click', resetFilters);
+        });
+        applyButtons.forEach((button) => {
+            button.addEventListener('click', applyFilters);
         });
 
         applyFilters();

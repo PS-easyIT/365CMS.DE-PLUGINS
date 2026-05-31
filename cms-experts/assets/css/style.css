@@ -2254,3 +2254,182 @@
         height: 60px;
     }
 }
+
+/* CMS Experts 3.0.6 / Public overview flush theme shell */
+body.is-plugin-content .page-wrap:has(.experts-archive-wrapper) {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.experts-archive-wrapper {
+    --expert-card-content-max: 1160px;
+    width: auto;
+    max-width: none;
+    margin: 0 calc(50% - 50vw);
+    padding: 25px clamp(16px, 2vw, 28px) var(--phinit-space-8, 48px);
+    background: var(--color-bg-page, #e8ecf0);
+    box-sizing: border-box;
+    overflow-x: clip;
+}
+
+.experts-archive-wrapper > .expert-filter-nav,
+.experts-archive-wrapper > .experts-grid,
+.experts-archive-wrapper > .no-results,
+.experts-archive-wrapper > .expert-pagination {
+    width: min(100%, var(--expert-card-content-max));
+    max-width: var(--expert-card-content-max);
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.experts-archive-wrapper > .expert-filter-nav {
+    margin-top: 0;
+}
+
+/* CMS Experts 3.0.7 / Unified public search controls */
+.experts-archive-wrapper > .expert-filter-nav > .archive-filter-bar,
+.experts-archive-wrapper > .expert-filter-nav > .archive-filter-bar.expert-card-filter {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+    margin: 0 0 28px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.experts-archive-wrapper > .expert-filter-nav .phinit-field,
+.experts-archive-wrapper > .expert-filter-nav .filter-input-wrapper {
+    display: flex;
+    flex: 0 1 180px;
+    flex-direction: column;
+    gap: 4px;
+    min-width: min(100%, 160px);
+    margin: 0;
+}
+
+.experts-archive-wrapper > .expert-filter-nav .filter-input-wrapper:first-child {
+    flex: 1 1 320px;
+    min-width: min(100%, 220px);
+}
+
+.experts-archive-wrapper > .expert-filter-nav .filter-input-wrapper--sm {
+    max-width: none;
+}
+
+.experts-archive-wrapper > .expert-filter-nav label,
+.experts-archive-wrapper > .expert-filter-nav .phinit-field > span {
+    display: block;
+    margin: 0 0 2px;
+    color: var(--expert-card-muted, #5a6a7a);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.experts-archive-wrapper > .expert-filter-nav .phinit-input,
+.experts-archive-wrapper > .expert-filter-nav .phinit-select,
+.experts-archive-wrapper > .expert-filter-nav .filter-select,
+.experts-archive-wrapper > .expert-filter-nav input,
+.experts-archive-wrapper > .expert-filter-nav select {
+    display: block;
+    width: 100%;
+    min-height: 38px;
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid var(--expert-card-border, #dce3ec);
+    border-radius: var(--expert-card-radius-sm, 6px);
+    background: var(--expert-card-surface, var(--color-bg-card, #ffffff));
+    color: var(--expert-card-text, #1a2e4a);
+    font-family: Poppins, var(--phinit-font-body, system-ui, -apple-system, sans-serif);
+    font-size: 13px;
+    box-shadow: none;
+}
+
+.experts-archive-wrapper > .expert-filter-nav .phinit-input:focus,
+.experts-archive-wrapper > .expert-filter-nav .phinit-select:focus,
+.experts-archive-wrapper > .expert-filter-nav .filter-select:focus,
+.experts-archive-wrapper > .expert-filter-nav input:focus,
+.experts-archive-wrapper > .expert-filter-nav select:focus {
+    border-color: var(--expert-card-accent, var(--expert-cta-color, #c2410c));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--expert-card-accent, var(--expert-cta-color, #c2410c)) 18%, transparent);
+    outline: 0;
+}
+
+.experts-archive-wrapper > .expert-filter-nav .expert-btn,
+.experts-archive-wrapper > .expert-filter-nav .phinit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-height: 38px;
+    margin: 0;
+    padding: 8px 14px;
+    border-radius: var(--expert-card-radius-sm, 6px);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    box-shadow: none;
+}
+
+.experts-archive-wrapper > .expert-filter-nav .phinit-btn--primary,
+.experts-archive-wrapper > .expert-filter-nav .expert-btn:not(.expert-btn-outline):not(.phinit-btn--secondary) {
+    border: 1px solid var(--expert-card-accent, var(--expert-cta-color, #c2410c));
+    background: var(--expert-card-accent, var(--expert-cta-color, #c2410c));
+    color: #ffffff;
+}
+
+.experts-archive-wrapper > .expert-filter-nav .phinit-btn--primary:hover,
+.experts-archive-wrapper > .expert-filter-nav .phinit-btn--primary:focus-visible,
+.experts-archive-wrapper > .expert-filter-nav .expert-btn:not(.expert-btn-outline):not(.phinit-btn--secondary):hover,
+.experts-archive-wrapper > .expert-filter-nav .expert-btn:not(.expert-btn-outline):not(.phinit-btn--secondary):focus-visible {
+    border-color: var(--expert-card-accent-hover, var(--expert-primary-hover, #9a3412));
+    background: var(--expert-card-accent-hover, var(--expert-primary-hover, #9a3412));
+    color: #ffffff;
+}
+
+.experts-archive-wrapper > .expert-filter-nav .phinit-btn--secondary,
+.experts-archive-wrapper > .expert-filter-nav .expert-btn-outline,
+.experts-archive-wrapper > .expert-filter-nav .expert-btn--reset {
+    border: 1px solid var(--expert-card-border, #dce3ec);
+    background: var(--expert-card-surface, var(--color-bg-card, #ffffff));
+    color: var(--expert-card-accent, var(--expert-cta-color, #c2410c));
+}
+
+.experts-archive-wrapper > .expert-filter-nav .phinit-btn--secondary:hover,
+.experts-archive-wrapper > .expert-filter-nav .phinit-btn--secondary:focus-visible,
+.experts-archive-wrapper > .expert-filter-nav .expert-btn-outline:hover,
+.experts-archive-wrapper > .expert-filter-nav .expert-btn-outline:focus-visible,
+.experts-archive-wrapper > .expert-filter-nav .expert-btn--reset:hover,
+.experts-archive-wrapper > .expert-filter-nav .expert-btn--reset:focus-visible {
+    border-color: var(--expert-card-accent, var(--expert-cta-color, #c2410c));
+    color: var(--expert-card-accent-hover, var(--expert-primary-hover, #9a3412));
+}
+
+@media (max-width: 900px) {
+    .experts-archive-wrapper > .expert-filter-nav .phinit-field,
+    .experts-archive-wrapper > .expert-filter-nav .filter-input-wrapper,
+    .experts-archive-wrapper > .expert-filter-nav .expert-btn,
+    .experts-archive-wrapper > .expert-filter-nav .phinit-btn {
+        flex: 1 1 220px;
+    }
+}
+
+@media (max-width: 520px) {
+    .experts-archive-wrapper > .expert-filter-nav > .archive-filter-bar,
+    .experts-archive-wrapper > .expert-filter-nav > .archive-filter-bar.expert-card-filter {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .experts-archive-wrapper > .expert-filter-nav .phinit-field,
+    .experts-archive-wrapper > .expert-filter-nav .filter-input-wrapper,
+    .experts-archive-wrapper > .expert-filter-nav .expert-btn,
+    .experts-archive-wrapper > .expert-filter-nav .phinit-btn {
+        min-width: 100%;
+    }
+}

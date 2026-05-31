@@ -315,6 +315,8 @@ Speaker haben ein umfangreicheres Social-Profil als Experts:
 
 ## 4. Single Site (`single-speaker.php`)
 
+Aktueller PHINIT-Stand: Die aktive Detailseite rendert über `.cms-speaker-wrap.cms-speaker-detail`. Der Seitenhintergrund läuft bündig im Plugin-Shell-Bereich, während Breadcrumb und Detail-Grid auf maximal `1160px` Theme-Contentbreite zentriert sind. Dark Mode wird über `body.dark-mode` sowie `html.dark-mode body:not(.light-mode)` abgesichert.
+
 ### 4.1 Header-Zone
 
 ```
@@ -338,7 +340,7 @@ Speaker haben ein umfangreicheres Social-Profil als Experts:
     grid-template-columns: 1fr 300px;
     gap: 2rem;
     padding: 2rem 1.5rem;
-    max-width: 1140px;
+    max-width: 1160px;
     margin: 0 auto;
     align-items: start;
 }

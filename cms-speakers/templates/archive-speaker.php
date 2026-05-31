@@ -116,7 +116,7 @@ $speakerRadius = max(0, min(32, (int) ($settings['design_border_radius'] ?? 12))
 
         <div class="cms-speaker-filter__actions" aria-label="Filteraktionen">
             <span class="cms-speaker-filter__actions-spacer" aria-hidden="true">Aktionen</span>
-            <button type="button" class="phinit-btn phinit-btn--secondary cms-speaker-filter__reset" data-cms-speaker-reset>Filter zurücksetzen</button>
+            <button type="button" class="phinit-btn phinit-btn--primary cms-speaker-filter__submit" data-cms-speaker-apply>Suchen</button>
         </div>
     </nav>
 

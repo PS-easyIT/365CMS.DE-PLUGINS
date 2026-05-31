@@ -163,15 +163,15 @@ $coRadius = max(0, min(32, (int) ($s['design_border_radius'] ?? 12)));
         <!-- Pagination -->
         <?php if ($current_page > 1 || count($companies) >= $per_page): ?>
         <?php $companyPaginationBase = '?industry=' . rawurlencode((string) ($filters['industry'] ?? '')) . '&city=' . rawurlencode((string) ($filters['city'] ?? '')) . '&partner=' . rawurlencode((string) ($filters['partner'] ?? '')) . '&q=' . rawurlencode((string) ($_GET['q'] ?? '')); ?>
-        <div class="co-pagination">
+        <nav class="co-pagination" aria-label="Seitennavigation">
             <?php if ($current_page > 1): ?>
                 <a href="<?= htmlspecialchars($companyPaginationBase . '&page=' . ($current_page - 1), ENT_QUOTES, 'UTF-8') ?>" class="co-page-btn phinit-btn phinit-btn--secondary">&larr; Zurück</a>
             <?php endif; ?>
-            <span class="co-page-info">Seite <?= $current_page ?></span>
+            <span class="co-page-info" aria-current="page">Seite <?= (int) $current_page ?></span>
             <?php if (count($companies) >= $per_page): ?>
                 <a href="<?= htmlspecialchars($companyPaginationBase . '&page=' . ($current_page + 1), ENT_QUOTES, 'UTF-8') ?>" class="co-page-btn phinit-btn phinit-btn--secondary">Weiter &rarr;</a>
             <?php endif; ?>
-        </div>
+        </nav>
         <?php endif; ?>
     <?php endif; ?>
 

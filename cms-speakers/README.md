@@ -1,6 +1,6 @@
 ﻿# CMS Speakers Directory Plugin
 
-**Version:** 3.0.10
+**Version:** 3.0.15
 **Requires:** 365CMS 3.0+ / PHP 8.4+
 
 ## Description
@@ -14,7 +14,8 @@ The CMS Speakers Directory plugin manages speaker profiles with card views and d
 - ✅ Admin interface for managing speakers
 - ✅ Frontend display with event-style responsive card grid layout
 - ✅ PHINIT-abgestimmtes Publicsite-Design für Archiv, Filter, Cards und Detailseite
-- ✅ Detail pages for individual speakers
+- ✅ Public-Filterleiste mit primärem „Suchen“-Button und maximal 1160px Contentbreite
+- ✅ Detail pages for individual speakers mit maximal 1160px Contentbreite, Responsive Layout und Dark Mode
 - ✅ Speaking topics management
 - ✅ Past presentations tracking
 - ✅ Expert profile linking (speakers can be linked to expert profiles)

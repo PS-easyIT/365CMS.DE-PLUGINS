@@ -2,8 +2,8 @@
 
 > Gilt für die öffentliche Experten-Übersicht (`/experts`), die Expert-Cards und die Expert-Detailseite.
 >
-> Letzte Aktualisierung: 2026-05-30  
-> Stand: `cms-experts` 3.0.4
+> Letzte Aktualisierung: 2026-05-31  
+> Stand: `cms-experts` 3.0.8
 
 ---
 
@@ -139,7 +139,17 @@ Alte Gradient-Hero-Flächen und feste Bannerbereiche werden auf der Übersicht n
 
 ## 7. Detailseite
 
-Die Detailseite (`single-expert.php`) bleibt eigenständig dokumentiert und wurde durch diesen Pass nicht grundlegend umgebaut. Cross-Plugin-Integrationen zu Companies oder Events müssen weiterhin defensiv über aktive Plugins und sichere URLs abgesichert werden.
+Die Detailseite (`single-expert.php`) rendert über `main.phinit-plugin.ex-v2`. Die Shell liegt bündig an Theme-Header und -Footer an, entfernt die PHINIT-Wrapper-Abstände per scoped `:has()` und füllt bei kurzem Inhalt den Bereich bis zum Theme-Footer.
+
+Direkte Inhaltsbereiche bleiben zentriert auf maximal `1160px`:
+
+- `nav.ex-bc` für Breadcrumb,
+- `header.ex-hero` für Profilkopf,
+- `.ex-bridge` für Über-mich/Kontakt,
+- `.ex-body` für Hauptinhalt und Sidebar,
+- `.ex-claim-banner` für Profil-Claim.
+
+Unterhalb von Tablet-Breiten wechseln Bridge und Body auf eine Spalte. Mobile werden Skills, Zertifikate, Events, Kontaktlinks und Info-Rows ebenfalls einspaltig. Dark Mode ist für Shell, Cards, Sidebar, Tags, Social-Links, Projekt-/Eventkarten, Claim-Banner und Textfarben über `body.dark-mode` sowie `html.dark-mode body:not(.light-mode)` abgesichert.
 
 ---
 

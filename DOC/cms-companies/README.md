@@ -1,10 +1,10 @@
 # CMS Companies – Dokumentation
 
 **Plugin:** `cms-companies`  
-**Version:** 3.0.2  
+**Version:** 3.0.9  
 **Namespace:** `CMS_Companies`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
-**Audit-/Dokustand:** Publicsite-Card-Grid-Pass am 2026-05-30  
+**Audit-/Dokustand:** Publicsite-Overview- und Detail-Shell-Pass am 2026-05-31  
 **PHP:** 8.1+
 
 ---
@@ -19,6 +19,9 @@ Das **CMS Companies**-Plugin verwaltet Firmen-Profile innerhalb des 365CMS-Ökos
 - Änderungen erfolgen ausschließlich im Plugin; **der 365CMS-Core bleibt unberührt**.
 - Version 3.0.1 gruppiert Archiv-Header und Suche sauber und lässt Company-Cards ohne feste Höhe wachsen.
 - Version 3.0.2 stellt die öffentliche Übersicht wie `cms-events` auf Filter + responsives Card-Grid um, mit Company-spezifischen Badges und Meta-Informationen.
+- Version 3.0.6 begrenzt die Public-Übersicht intern auf `1160px` und legt den Hintergrund bündig bis Theme-Header/-Footer.
+- Version 3.0.8 finalisiert den einheitlichen Companies-basierten Public-Suchbereich.
+- Version 3.0.9 überträgt die bündige Full-Bleed-Hintergrund-Shell auf die Public-Detailseite; Breadcrumb und Detail-Grid bleiben auf maximal `1160px` begrenzt.
 
 ### Kernfunktionen
 

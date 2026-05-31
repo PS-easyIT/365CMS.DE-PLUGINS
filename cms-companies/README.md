@@ -1,6 +1,6 @@
 ﻿# CMS Companies Directory Plugin
 
-**Version:** 3.0.2  
+**Version:** 3.0.9  
 **Requires:** 365CMS 3.0+ / PHP 8.1+
 
 ## Description
@@ -13,7 +13,7 @@ The CMS Companies Directory plugin manages company profiles with card views and 
 - ✅ Custom database tables with proper relationships
 - ✅ Admin interface for managing companies
 - ✅ Event-style responsive frontend card grid layout
-- ✅ Detail pages for individual companies
+- ✅ Flush public detail pages with 1160px content width
 - ✅ Expert-to-Company relationships (Many-to-Many)
 - ✅ Meta data support
 - ✅ Shortcode support: `[cms_companies]`

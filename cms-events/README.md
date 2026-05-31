@@ -1,6 +1,6 @@
 ﻿# CMS Events Manager Plugin
 
-**Version:** 3.0.24
+**Version:** 3.0.28
 **Requires:** 365CMS 3.0+  
 **PHP:** 8.4+
 
@@ -17,6 +17,8 @@ The CMS Events Manager plugin manages events with calendar view and detail pages
 - ✅ Frontend display with card grid layout
 - ✅ Öffentlicher Hauptnavigations-Link über Events-Einstellungen steuerbar und standardmäßig deaktiviert (`show_nav_link`, `nav_label`)
 - ✅ Öffentliche Übersicht startet direkt mit der Filter-/Suchleiste ohne zusätzlichen Archivkopf
+- ✅ Öffentliche Filterleiste mit primärem „Suchen“-Button und Reset nur im Empty-State
+- ✅ Öffentliche Detailseite mit maximal 1160px Contentbreite, bündiger Theme-Shell, responsivem Layout und Dark Mode
 - ✅ Öffentliche Übersicht mit kompakten Eventkarten, Kategorie-/Preis-Badges und Format-Badge direkt in der Ortszeile
 - ✅ Eventkarten-Footer mit Speaker/Veranstalter links und Details-Button rechts
 - ✅ Nicht-destruktiver De-/Uninstall; Eventdaten bleiben erhalten
@@ -118,6 +120,8 @@ Templates can be added to the `templates/` directory:
 - Version `3.0.9` ergänzt den steuerbaren, standardmäßig deaktivierten Frontend-Menülink und gleicht Archiv, Filter, Cards, Detailseite, Anmeldung sowie Related Events an das PHINIT-Design an.
 - Version `3.0.10` richtet den Events-Adminbereich komplett an den 365CMS Admin Design Richtlinien aus: Overview-Tabelle, einheitliche Admin-Cards, `admin-form`-Formulare, schlankes Admin-CSS und inline Speaker-AJAX-Meldungen.
 - Version `3.0.11` behebt einen Public-Template-500 auf Systemen ohne `mbstring` über Fallbacks für Lowercase/Substring in Templates und Sanitizern.
+- Version `3.0.27` setzt in der Public-Events-Filterleiste einen primären „Suchen“-Button als Hauptaktion; Zurücksetzen bleibt gezielt im Empty-State.
+- Version `3.0.28` begrenzt die Public-Events-Detailseite auf maximal `1160px`, hält die Hintergrund-Shell bündig zum Theme, füllt kurze Seiten bis zum Footer und sichert Responsive Layout sowie Dark Mode ab.
 - Bootstrap und Include-Dateien sind gegen doppelte Ladepfade/klassische Redeclare-Fatals abgesichert.
 - DB-Migrationen nutzen `INFORMATION_SCHEMA` statt `SHOW COLUMNS`, Foreign Keys werden idempotent und nicht-blockierend ergänzt.
 - Plugin-Settings werden primär über den 365CMS `SettingsService` gelesen/geschrieben; die alte `event_settings`-Tabelle bleibt nur als kompatibler Fallback.

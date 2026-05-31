@@ -5,6 +5,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/de/1.0.0/)
 
 ---
 
+## [3.0.8] – 2026-05-31
+
+### Geändert
+
+- Public-Detailseite als bündige Theme-Shell umgesetzt: kein Hintergrundabstand zu Header/Footer, kurze Seiten füllen bis zum Footer.
+- Breadcrumb, Hero, Bridge-Cards, Content-/Sidebar-Grid und Claim-Banner sind responsiv auf maximal `1160px` Contentbreite begrenzt.
+- Dark Mode für Detailkarten, Sidebar, Tags, Social-Links, Event-/Projektkarten und Textfarben explizit abgesichert.
+
+---
+
 ## [3.0.4] – 2026-05-30
 
 ### Geändert

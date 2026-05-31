@@ -167,7 +167,7 @@ $designRadius = max(0, min(32, (int) ($settings['design_border_radius'] ?? 12)))
             <input id="filter-search" name="search" class="phinit-input" type="search" placeholder="Event suchen..." value="<?= $selectedSearch ?>" data-cms-events-filter="search">
         </div>
 
-        <button type="button" class="phinit-btn phinit-btn--secondary cms-events-filter__reset" data-cms-events-reset>Filter zurücksetzen</button>
+        <button type="submit" class="phinit-btn phinit-btn--primary cms-events-filter__submit">Suchen</button>
         </form>
     </nav>
 

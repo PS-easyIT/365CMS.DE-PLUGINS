@@ -1,10 +1,10 @@
 # CMS Speakers – Dokumentation
 
 **Plugin:** `cms-speakers`  
-**Version:** 3.0.10
+**Version:** 3.0.15
 **Namespace:** `CMS_Speakers`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
-**Audit-/Dokustand:** Publicsite-Card-Grid-Pass am 2026-05-30
+**Audit-/Dokustand:** Public-Detailseiten-Polish am 2026-05-31
 **PHP:** 8.4+
 
 ---
@@ -24,6 +24,8 @@ Das **CMS Speakers**-Plugin verwaltet professionelle Speaker-Profile mit Vortrag
 - Version 3.0.8 stellt die Speaker-Archivkarten auf ein horizontales, kompaktes Listenlayout mit 72px Avatar links, Inhaltsblock rechts und Keyboard-Navigation um.
 - Version 3.0.9 verfeinert die horizontale Speaker-Liste auf ein klar getrenntes 3-Zonen-Layout mit 56px Avatar, Name/Rolle, Topic-Zeile, zweizeiliger Bio und rechts oben ausgerichtetem Profilbutton.
 - Version 3.0.10 stellt die öffentliche Speaker-Übersicht wieder auf ein responsives Event-ähnliches Card-Grid um: Filter zuerst, danach Cards mit Avatar/Initialen, Speaker-Badges, Verfügbarkeit, Ort/Formaten, Bio, Footer-Meta und Profil-CTA.
+- Version 3.0.14 setzt in der Public-Speakers-Filterleiste einen primären „Suchen“-Button als Hauptaktion und begrenzt den Suchbereich final auf maximal `1160px` Contentbreite.
+- Version 3.0.15 begrenzt die Public-Speakers-Detailseite inklusive Breadcrumb, Profil-/Contentbereich und Anfrage-Spalte auf maximal `1160px`, verbessert die responsiven Umbrüche und sichert die Dark-Mode-Darstellung der Detailkarten ab.
 
 ### Kernfunktionen
 

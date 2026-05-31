@@ -1,5 +1,25 @@
 # CMS Events – Changelog
 
+## [3.0.28] – 2026-05-31
+
+- **Public-Detailseite:** Breadcrumb und Detail-Grid der Event-Detailseite sind auf maximal `1160px` Contentbreite zentriert.
+- **Theme-Shell:** Die Detailseite nutzt eine bündige Hintergrund-Shell ohne Theme-Header/-Footer-Gaps und füllt kurze Inhalte bis zum Footer.
+- **Responsive/Dark Mode:** Hauptspalte, Sidebar, Anmeldung, Speaker-Teaser, Share-Leisten, Related Events und Themen-Badges brechen mobil sauber um und sind für `body.dark-mode` sowie `html.dark-mode body:not(.light-mode)` abgesichert.
+
+## [3.0.27] – 2026-05-31
+
+- **Public-Suchbereich:** Die Hauptaktion der Events-Filterleiste ist nun ein primärer Button „Suchen“ statt „Filter zurücksetzen“.
+- **Reset-Verhalten:** Zurücksetzen bleibt gezielt im Empty-State verfügbar, damit die normale Filterleiste wie Companies/Speakers/Experts mit Suche startet.
+
+## [3.0.26] – 2026-05-31
+
+- **Public-Suchbereich:** Die Events-Übersicht nutzt nun das einheitliche Companies-basierte Filterdesign mit gleicher Feldhöhe, Label-Rhythmik, Button-Optik, voller `1160px`-Contentbreite und responsiven Umbrüchen.
+- **Plugin-Anpassung:** Kategorie, Monat, Jahr und Eventsuche behalten ihre Event-spezifische Funktion und verwenden die Event-Akzentfarben.
+
+## [3.0.25] – 2026-05-31
+
+- **Public-Übersicht:** Die Shell liegt bündig an Theme-Header und -Footer an; der eigentliche Content startet intern bei `25px`, bleibt responsiv und ist auf maximal `1160px` begrenzt.
+
 ## [3.0.24] – 2026-05-28
 
 - **Lifecycle:** Deaktivierung und Uninstall löschen keine Event-Tabellen mehr; Plugin-Daten bleiben erhalten.

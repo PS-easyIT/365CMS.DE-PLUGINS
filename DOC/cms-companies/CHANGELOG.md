@@ -4,6 +4,41 @@ Alle Änderungen folgen dem Format [Keep a Changelog](https://keepachangelog.com
 
 ---
 
+## [3.0.9] – 2026-05-31
+
+### Geändert
+
+- **Public-Detailseite:** Die Companies-Detailseite nutzt nun wie die Übersichten eine bündige Full-Bleed-Hintergrund-Shell ohne Theme-Abstände zu Header und Footer.
+- **Kurze Inhalte:** Der Detail-Hintergrund füllt den Bereich bis zum Theme-Footer auch dann, wenn das Unternehmensprofil nur wenig Inhalt enthält.
+- **Contentbreite:** Breadcrumb und Detail-Grid bleiben weiterhin responsiv auf maximal `1160px` begrenzt; Abstände entstehen nur noch durch internes Content-Padding.
+
+## [3.0.8] – 2026-05-31
+
+### Geändert
+
+- **Public-Suchbereich:** Das Companies-Referenzdesign für Filterleisten wurde finalisiert: gleiche Feldhöhe, Label-Rhythmik, Button-Optik, volle `1160px`-Contentbreite und responsive Umbrüche.
+- **Plugin-Anpassung:** Unternehmen-Suche, Stadt, Branche und Partnerstatus behalten ihre Companies-spezifische Funktion und Akzentfarben.
+
+## [3.0.7] – 2026-05-31
+
+### Geändert
+
+- **Public-Detailseite:** Die Companies-Detailansicht ist jetzt responsiv auf die Theme-Contentbreite von maximal `1160px` begrenzt statt über die volle Fensterbreite zu laufen.
+- **Dark Mode:** Header, Detailkarten, Logo-Box, Badges, Facts und Textfarben der Detailseite verwenden nun explizite Dark-Mode-kompatible PHINIT-Farbvariablen.
+
+## [3.0.6] – 2026-05-31
+
+### Geändert
+
+- **Public-Übersicht:** Die Archiv-Shell liegt bündig an Theme-Header und -Footer an; der eigentliche Content startet intern bei `25px`, bleibt responsiv und ist auf maximal `1160px` begrenzt.
+- **Companies-Filter:** Der Such-/Filterbereich der Publicsite-Übersicht nutzt die volle Contentbreite mit wachsendem Suchfeld.
+
+## [3.0.5] – 2026-05-31
+
+### Geändert
+
+- **Public-Übersicht:** Hintergrund, Filter, Empty-State und Pagination der Companies-Übersicht wurden an den finalen `cms-events` Publicsite-Look angeglichen; Cards bleiben unverändert.
+
 ## [3.0.2] – 2026-05-30
 
 ### Geändert
