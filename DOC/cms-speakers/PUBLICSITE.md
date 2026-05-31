@@ -3,12 +3,14 @@
 > Gilt für alle öffentlich zugänglichen Seiten des Speaker-Plugins:
 > Archiv-/Übersichtsseite, Grid-Cards und Speaker-Detailseite (Single).
 >
-> Letzte Aktualisierung: 2026-02-27  
+> Letzte Aktualisierung: 2026-05-31  
 > Übergeordnete Richtlinie: `.github/instructions/plugin-cms-network-public.instructions.md`
 
 ---
 
 ## 1. Farbprofil – Violett / Lila
+
+**Stand 3.0.16:** Die Detailseite nutzt strukturell die gleiche Section-Reihenfolge wie die Experts-Detailseite (`Hero → Bridge → Body Grid → Sidebar`), verwendet aber weiterhin ausschließlich Speaker-Farbvariablen und Speaker-spezifische Klassen (`sp-*`, `cms-speaker-*`).
 
 Das Speaker-Plugin nutzt eine edle Violett-Palette, die für Kreativität,
 Charisma und Thought Leadership steht.

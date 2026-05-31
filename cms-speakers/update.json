@@ -3,7 +3,7 @@
   "name": "CMS Speakers",
   "type": "plugin",
   "license": "free",
-  "version": "3.0.15",
+  "version": "3.0.16",
   "min_cms_version": "3.0.0",
   "min_php": "8.4",
   "requires_php": "8.4",
@@ -11,6 +11,7 @@
   "download_url": "",
   "checksum_sha256": "",
   "changelog": {
+    "3.0.16": "Public-Speakers-Detailseite: Template-Struktur an die Experts-Detailseite angeglichen mit Hero, Bridge-Karten, Haupt-/Sidebar-Grid, Themen/Formate/Vortragsprofil/Auftritten und Speaker-spezifischem Feldmapping; Farben bleiben über Speaker-Variablen erhalten und Dark Mode/responsive 1160px-Layout sind abgesichert.",
     "3.0.15": "Public-Speakers-Detailseite: Inhalt, Breadcrumb und zweispaltiges Profil-/Anfrage-Layout sind responsiv auf maximal 1160px Theme-Contentbreite begrenzt; Dark Mode für Profilkopf, Inhaltskarten, Sessions, Booking-Card, Related Speaker, Badges und Texte abgesichert.",
     "3.0.14": "Public-Speakers-Suchbereich: Hauptaktion ist nun ein primärer Suchen-Button statt Zurücksetzen; die Filterleiste bleibt final auf maximal 1160px Contentbreite begrenzt.",
     "3.0.13": "Public-Suchbereich der Speakers-Übersicht an das einheitliche Companies-basierte Filterdesign angepasst: gleiche Feld-/Button-Rhythmik, volle 1160px-Contentbreite, responsive Umbrüche und Speaker-Akzentfarben.",

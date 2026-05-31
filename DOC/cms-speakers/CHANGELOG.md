@@ -1,5 +1,12 @@
 # CMS Speakers – Changelog
 
+## [3.0.16] – 2026-05-31
+
+- **Public-Detailseite:** `single-speaker.php` nutzt nun die vollständige Experts-Detailseiten-Struktur mit Hero, Bio-/Kontakt-Bridge, Haupt-/Sidebar-Grid, Inhaltssektionen und Auftrittskarten.
+- **Speaker-Feldmapping:** Experts-spezifische Blöcke wurden auf Speaker-Daten abgebildet: Themen, Formate, Skills, Zielgruppe, Vortragsstil, Sprachen, Reisebereitschaft, Verfügbarkeit, Honorar, Vortragstitel (`speaker_events.topic`), Events und Social Links.
+- **Designsystem:** Die Struktur-/Spacing-/Typografie-Regeln wurden übernommen, die Farbgebung bleibt jedoch vollständig über Speaker-Variablen (`--sp-*`, `--cms-speaker-*`) gesteuert.
+- **Responsive & Dark Mode:** Die 1160px-Contentbegrenzung, full-bleed Shell, mobile Grid-Umbrüche und Dark-Mode-Tokens sind für die neue Struktur final abgesichert.
+
 ## [3.0.15] – 2026-05-31
 
 - **Public-Detailseite:** Breadcrumb, Profil-/Contentbereich und Anfrage-Spalte liegen nun durchgehend in der Theme-Contentbreite von maximal `1160px`.
