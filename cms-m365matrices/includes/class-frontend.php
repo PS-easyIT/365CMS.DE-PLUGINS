@@ -19,6 +19,8 @@ final class CMS_M365MATRICES_Frontend
 
     private static ?self $instance = null;
     private ?string $requestPathCache = null;
+    private ?string $siteBasePathCache = null;
+    private ?string $activeRouteCache = null;
 
     public static function instance(): self
     {
@@ -82,10 +84,11 @@ final class CMS_M365MATRICES_Frontend
             return;
         }
 
+        $isCopilotRoute = $this->active_matrix_route() === self::COPILOT_ROUTE;
         $options = class_exists('CMS_M365MATRICES_Settings')
             ? CMS_M365MATRICES_Settings::global_options('matrix-design')
             : [];
-        if (class_exists('CMS_M365MATRICES_Settings') && $this->path_matches(self::COPILOT_ROUTE)) {
+        if (class_exists('CMS_M365MATRICES_Settings') && $isCopilotRoute) {
             $options = array_merge($options, CMS_M365MATRICES_Settings::global_options('matrix-copilot'));
         }
 
@@ -97,35 +100,35 @@ final class CMS_M365MATRICES_Frontend
         $number = static fn(array $values, string $key, int $default, int $min, int $max): int => max($min, min($max, (int) ($values[$key] ?? $default)));
 
         $pageBackground = $color($options, 'matrix_color_page_background', '#edf1f6');
-        if ($this->path_matches(self::COPILOT_ROUTE)) {
+        if ($isCopilotRoute) {
             $pageBackground = $color($options, 'matrix_copilot_color_page_background', $pageBackground);
         }
 
-        $surfaceBackground = $this->path_matches(self::COPILOT_ROUTE)
+        $surfaceBackground = $isCopilotRoute
             ? $color($options, 'matrix_copilot_color_surface_background', $color($options, 'matrix_color_surface_background', '#f8fafc'))
             : $color($options, 'matrix_color_surface_background', '#f8fafc');
-        $textColor = $this->path_matches(self::COPILOT_ROUTE)
+        $textColor = $isCopilotRoute
             ? $color($options, 'matrix_copilot_color_text', $color($options, 'matrix_color_text', '#1e293b'))
             : $color($options, 'matrix_color_text', '#1e293b');
-        $mutedColor = $this->path_matches(self::COPILOT_ROUTE)
+        $mutedColor = $isCopilotRoute
             ? $color($options, 'matrix_copilot_color_muted', $color($options, 'matrix_color_muted', '#64748b'))
             : $color($options, 'matrix_color_muted', '#64748b');
-        $borderColor = $this->path_matches(self::COPILOT_ROUTE)
+        $borderColor = $isCopilotRoute
             ? $color($options, 'matrix_copilot_color_header_border', $color($options, 'matrix_color_header_border', '#e2e8f0'))
             : $color($options, 'matrix_color_header_border', '#e2e8f0');
-        $primaryButtonBackground = $this->path_matches(self::COPILOT_ROUTE)
+        $primaryButtonBackground = $isCopilotRoute
             ? $color($options, 'matrix_copilot_color_primary_button_bg', $color($options, 'matrix_color_primary_button_bg', '#2563eb'))
             : $color($options, 'matrix_color_primary_button_bg', '#2563eb');
-        $primaryButtonText = $this->path_matches(self::COPILOT_ROUTE)
+        $primaryButtonText = $isCopilotRoute
             ? $color($options, 'matrix_copilot_color_primary_button_text', $color($options, 'matrix_color_primary_button_text', '#ffffff'))
             : $color($options, 'matrix_color_primary_button_text', '#ffffff');
-        $secondaryButtonBackground = $this->path_matches(self::COPILOT_ROUTE)
+        $secondaryButtonBackground = $isCopilotRoute
             ? $color($options, 'matrix_copilot_color_secondary_button_bg', $color($options, 'matrix_color_secondary_button_bg', '#ffffff'))
             : $color($options, 'matrix_color_secondary_button_bg', '#ffffff');
-        $secondaryButtonText = $this->path_matches(self::COPILOT_ROUTE)
+        $secondaryButtonText = $isCopilotRoute
             ? $color($options, 'matrix_copilot_color_secondary_button_text', $color($options, 'matrix_color_secondary_button_text', '#1e293b'))
             : $color($options, 'matrix_color_secondary_button_text', '#1e293b');
-        $headerRadius = $this->path_matches(self::COPILOT_ROUTE)
+        $headerRadius = $isCopilotRoute
             ? $number($options, 'matrix_copilot_header_radius', $number($options, 'matrix_header_radius', 2, 0, 2), 0, 2)
             : $number($options, 'matrix_header_radius', 2, 0, 2);
 
@@ -205,7 +208,13 @@ final class CMS_M365MATRICES_Frontend
         $seoTitle = self::public_text($seoOptions, 'matrix_suite_title', 'M365 Lizenzmatrix');
         $seoDescription = self::public_text($seoOptions, 'matrix_suite_intro', 'Gesamtübersicht der Microsoft-365-Vollpakete von Business Basic, Standard und Premium bis Microsoft 365 E3 und E5.');
         $this->set_seo($seoTitle, $seoDescription);
-        include CMS_M365MATRICES_Source::template_path('page-readonly-suite-matrix.php');
+        $template = CMS_M365MATRICES_Source::template_path('page-readonly-suite-matrix.php');
+        if ($template === '' || !is_readable($template)) {
+            error_log('CMS M365 Matrixen template missing: page-readonly-suite-matrix.php');
+            $this->render_missing_dependency('Microsoft 365 Lizenzmatrix');
+        }
+
+        include $template;
         exit;
     }
 
@@ -220,7 +229,13 @@ final class CMS_M365MATRICES_Frontend
         $seoTitle = self::public_text($seoOptions, 'matrix_addon_title', 'M365 Add-on-Matrix');
         $seoDescription = self::public_text($seoOptions, 'matrix_addon_intro', 'Gesamtübersicht der Microsoft-365-Add-ons nach Exchange, SharePoint, OneDrive, Teams, Copilot, Intune, Entra ID, Defender, Purview und Power Platform.');
         $this->set_seo($seoTitle, $seoDescription);
-        include CMS_M365MATRICES_Source::template_path('page-readonly-addon-matrix.php');
+        $template = CMS_M365MATRICES_Source::template_path('page-readonly-addon-matrix.php');
+        if ($template === '' || !is_readable($template)) {
+            error_log('CMS M365 Matrixen template missing: page-readonly-addon-matrix.php');
+            $this->render_missing_dependency('Microsoft 365 Add-on-Matrix');
+        }
+
+        include $template;
         exit;
     }
 
@@ -235,7 +250,13 @@ final class CMS_M365MATRICES_Frontend
         $seoTitle = self::public_text($seoOptions, 'matrix_copilot_title', 'Microsoft Copilot Lizenzmatrix');
         $seoDescription = self::public_text($seoOptions, 'matrix_copilot_intro', 'Umfangreiche Vergleichsmatrix für Microsoft Copilot, Microsoft 365 Copilot Chat, Microsoft 365 Copilot und Copilot Studio.');
         $this->set_seo($seoTitle, $seoDescription);
-        include CMS_M365MATRICES_Source::template_path('page-readonly-copilot-matrix.php');
+        $template = CMS_M365MATRICES_Source::template_path('page-readonly-copilot-matrix.php');
+        if ($template === '' || !is_readable($template)) {
+            error_log('CMS M365 Matrixen template missing: page-readonly-copilot-matrix.php');
+            $this->render_missing_dependency('Microsoft Copilot Lizenzmatrix');
+        }
+
+        include $template;
         exit;
     }
 
@@ -269,18 +290,17 @@ final class CMS_M365MATRICES_Frontend
 
     private function is_matrix_request(): bool
     {
-        return $this->path_matches(self::SUITE_ROUTE)
-            || $this->path_matches(self::ADDON_ROUTE)
-            || $this->path_matches(self::COPILOT_ROUTE);
+        return $this->active_matrix_route() !== null;
     }
 
     private function current_module_body_class(): string
     {
-        if ($this->path_matches(self::ADDON_ROUTE)) {
+        $activeRoute = $this->active_matrix_route();
+        if ($activeRoute === self::ADDON_ROUTE) {
             return 'm365tools-module-m365-addon-matrix';
         }
 
-        if ($this->path_matches(self::COPILOT_ROUTE)) {
+        if ($activeRoute === self::COPILOT_ROUTE) {
             return 'm365tools-module-m365-copilot-matrix';
         }
 
@@ -291,8 +311,33 @@ final class CMS_M365MATRICES_Frontend
     {
         $path = $this->normalized_request_path();
         $routePath = trim($route, '/');
+        if ($path === $routePath) {
+            return true;
+        }
 
-        return $path === $routePath || str_ends_with($path, '/' . $routePath);
+        $basePath = $this->normalized_site_base_path();
+        if ($basePath === '') {
+            return false;
+        }
+
+        return $path === $basePath . '/' . $routePath;
+    }
+
+    private function active_matrix_route(): ?string
+    {
+        if ($this->activeRouteCache !== null) {
+            return $this->activeRouteCache !== '' ? $this->activeRouteCache : null;
+        }
+
+        foreach ([self::SUITE_ROUTE, self::ADDON_ROUTE, self::COPILOT_ROUTE] as $route) {
+            if ($this->path_matches($route)) {
+                $this->activeRouteCache = $route;
+                return $route;
+            }
+        }
+
+        $this->activeRouteCache = '';
+        return null;
     }
 
     private function normalized_request_path(): string
@@ -301,9 +346,24 @@ final class CMS_M365MATRICES_Frontend
             return $this->requestPathCache;
         }
 
-        $this->requestPathCache = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
+        $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+        $path = parse_url($requestUri, PHP_URL_PATH);
+        $this->requestPathCache = trim(is_string($path) ? $path : '/', '/');
 
         return $this->requestPathCache;
+    }
+
+    private function normalized_site_base_path(): string
+    {
+        if ($this->siteBasePathCache !== null) {
+            return $this->siteBasePathCache;
+        }
+
+        $siteUrl = defined('SITE_URL') ? trim((string) SITE_URL) : '';
+        $basePath = trim((string) (parse_url($siteUrl, PHP_URL_PATH) ?: ''), '/');
+        $this->siteBasePathCache = $basePath;
+
+        return $this->siteBasePathCache;
     }
 
     private function set_seo(string $title, string $description): void

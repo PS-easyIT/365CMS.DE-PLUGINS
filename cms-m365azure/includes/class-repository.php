@@ -16,6 +16,12 @@ final class CMS_M365Azure_Repository
     private static ?self $instance = null;
     private object $db;
     private string $prefix;
+    /** @var array<string,string>|null */
+    private ?array $settingsCache = null;
+    /** @var array<string,array<int,array<string,mixed>>> */
+    private array $categoriesCache = [];
+    /** @var array<string,array<int,array<string,mixed>>> */
+    private array $servicesCache = [];
 
     public static function instance(): self
     {
@@ -31,6 +37,10 @@ final class CMS_M365Azure_Repository
     /** @return array<string,string> */
     public function settings(): array
     {
+        if (is_array($this->settingsCache)) {
+            return $this->settingsCache;
+        }
+
         $stmt = $this->db->prepare("SELECT setting_key, setting_value FROM {$this->prefix}m365azure_settings");
         $stmt->execute();
         $settings = [];
@@ -38,29 +48,45 @@ final class CMS_M365Azure_Repository
             $settings[(string) $row['setting_key']] = (string) ($row['setting_value'] ?? '');
         }
 
+        $this->settingsCache = $settings;
+
         return $settings;
     }
 
     /** @param array<string,string> $settings */
     public function save_settings(array $settings): void
     {
-        $exists = $this->db->prepare("SELECT id FROM {$this->prefix}m365azure_settings WHERE setting_key = ?");
         $insert = $this->db->prepare("INSERT INTO {$this->prefix}m365azure_settings (setting_key, setting_value) VALUES (?, ?)");
         $update = $this->db->prepare("UPDATE {$this->prefix}m365azure_settings SET setting_value = ? WHERE setting_key = ?");
+        $existingStmt = $this->db->prepare("SELECT setting_key FROM {$this->prefix}m365azure_settings");
+        $existingStmt->execute();
+        $existingKeys = [];
+        foreach ($existingStmt->fetchAll(\PDO::FETCH_COLUMN) ?: [] as $key) {
+            $existingKeys[(string) $key] = true;
+        }
 
         foreach ($settings as $key => $value) {
-            $exists->execute([$key]);
-            if ($exists->fetch()) {
-                $update->execute([$value, $key]);
+            $settingKey = (string) $key;
+            $settingValue = (string) $value;
+            if (isset($existingKeys[$settingKey])) {
+                $update->execute([$settingValue, $settingKey]);
             } else {
-                $insert->execute([$key, $value]);
+                $insert->execute([$settingKey, $settingValue]);
+                $existingKeys[$settingKey] = true;
             }
         }
+
+        $this->invalidate_caches();
     }
 
     /** @return array<int,array<string,mixed>> */
     public function categories(bool $activeOnly = false): array
     {
+        $cacheKey = $activeOnly ? '1' : '0';
+        if (isset($this->categoriesCache[$cacheKey])) {
+            return $this->categoriesCache[$cacheKey];
+        }
+
         $sql = "SELECT * FROM {$this->prefix}m365azure_categories";
         if ($activeOnly) {
             $sql .= ' WHERE is_active = 1';
@@ -69,13 +95,19 @@ final class CMS_M365Azure_Repository
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
+        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        $this->categoriesCache[$cacheKey] = $result;
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        return $result;
     }
 
     /** @return array<string,mixed>|null */
     public function category(int $id): ?array
     {
+        if ($id <= 0) {
+            return null;
+        }
+
         $stmt = $this->db->prepare("SELECT * FROM {$this->prefix}m365azure_categories WHERE id = ?");
         $stmt->execute([$id]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -87,9 +119,14 @@ final class CMS_M365Azure_Repository
     public function save_category(array $data): int
     {
         $id = (int) ($data['id'] ?? 0);
+        $title = self::text((string) ($data['title'] ?? ''));
+        if ($title === '') {
+            throw new \InvalidArgumentException('Kategorie-Titel darf nicht leer sein.');
+        }
+
         $values = [
-            'slug' => self::slug((string) ($data['slug'] ?? $data['title'] ?? 'kategorie')),
-            'title' => self::text((string) ($data['title'] ?? '')),
+            'slug' => self::slug((string) ($data['slug'] ?? $title)),
+            'title' => $title,
             'overline' => self::text((string) ($data['overline'] ?? '')),
             'intro' => self::long_text((string) ($data['intro'] ?? '')),
             'gallery_images' => self::gallery_images($data['gallery_images'] ?? []),
@@ -100,24 +137,37 @@ final class CMS_M365Azure_Repository
         if ($id > 0) {
             $stmt = $this->db->prepare("UPDATE {$this->prefix}m365azure_categories SET slug = ?, title = ?, overline = ?, intro = ?, gallery_images = ?, sort_order = ?, is_active = ? WHERE id = ?");
             $stmt->execute([$values['slug'], $values['title'], $values['overline'], $values['intro'], $values['gallery_images'], $values['sort_order'], $values['is_active'], $id]);
+            $this->invalidate_caches();
+
             return $id;
         }
 
         $stmt = $this->db->prepare("INSERT INTO {$this->prefix}m365azure_categories (slug, title, overline, intro, gallery_images, sort_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$values['slug'], $values['title'], $values['overline'], $values['intro'], $values['gallery_images'], $values['sort_order'], $values['is_active']]);
+        $this->invalidate_caches();
 
         return (int) $this->db->lastInsertId();
     }
 
     public function delete_category(int $id): void
     {
+        if ($id <= 0) {
+            return;
+        }
+
         $stmt = $this->db->prepare("DELETE FROM {$this->prefix}m365azure_categories WHERE id = ?");
         $stmt->execute([$id]);
+        $this->invalidate_caches();
     }
 
     /** @return array<int,array<string,mixed>> */
     public function services(?int $categoryId = null, bool $activeOnly = false): array
     {
+        $cacheKey = ($categoryId !== null ? (string) max(0, $categoryId) : 'all') . ':' . ($activeOnly ? '1' : '0');
+        if (isset($this->servicesCache[$cacheKey])) {
+            return $this->servicesCache[$cacheKey];
+        }
+
         $where = [];
         $params = [];
         if ($categoryId !== null && $categoryId > 0) {
@@ -139,13 +189,19 @@ final class CMS_M365Azure_Repository
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
+        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        $this->servicesCache[$cacheKey] = $result;
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        return $result;
     }
 
     /** @return array<string,mixed>|null */
     public function service(int $id): ?array
     {
+        if ($id <= 0) {
+            return null;
+        }
+
         $stmt = $this->db->prepare("SELECT * FROM {$this->prefix}m365azure_services WHERE id = ?");
         $stmt->execute([$id]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -158,8 +214,16 @@ final class CMS_M365Azure_Repository
     {
         $id = (int) ($data['id'] ?? 0);
         $title = self::text((string) ($data['title'] ?? ''));
+        if ($title === '') {
+            throw new \InvalidArgumentException('Service-Titel darf nicht leer sein.');
+        }
+        $categoryId = max(1, (int) ($data['category_id'] ?? 0));
+        if ($this->category($categoryId) === null) {
+            throw new \InvalidArgumentException('Ungültige Kategorie für Service.');
+        }
+
         $values = [
-            'category_id' => max(1, (int) ($data['category_id'] ?? 0)),
+            'category_id' => $categoryId,
             'slug' => self::slug((string) ($data['slug'] ?? $title)),
             'title' => $title,
             'subtitle' => self::text((string) ($data['subtitle'] ?? '')),
@@ -180,19 +244,27 @@ final class CMS_M365Azure_Repository
                 SET category_id = ?, slug = ?, title = ?, subtitle = ?, image_url = ?, image_alt = ?, summary = ?, content = ?, features = ?, use_cases = ?, docs_url = ?, pricing_url = ?, sort_order = ?, is_active = ?
                 WHERE id = ?");
             $stmt->execute([$values['category_id'], $values['slug'], $values['title'], $values['subtitle'], $values['image_url'], $values['image_alt'], $values['summary'], $values['content'], $values['features'], $values['use_cases'], $values['docs_url'], $values['pricing_url'], $values['sort_order'], $values['is_active'], $id]);
+            $this->invalidate_caches();
+
             return $id;
         }
 
         $stmt = $this->db->prepare("INSERT INTO {$this->prefix}m365azure_services (category_id, slug, title, subtitle, image_url, image_alt, summary, content, features, use_cases, docs_url, pricing_url, sort_order, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$values['category_id'], $values['slug'], $values['title'], $values['subtitle'], $values['image_url'], $values['image_alt'], $values['summary'], $values['content'], $values['features'], $values['use_cases'], $values['docs_url'], $values['pricing_url'], $values['sort_order'], $values['is_active']]);
+        $this->invalidate_caches();
 
         return (int) $this->db->lastInsertId();
     }
 
     public function delete_service(int $id): void
     {
+        if ($id <= 0) {
+            return;
+        }
+
         $stmt = $this->db->prepare("DELETE FROM {$this->prefix}m365azure_services WHERE id = ?");
         $stmt->execute([$id]);
+        $this->invalidate_caches();
     }
 
     /** @return array<string,int> */
@@ -234,7 +306,13 @@ final class CMS_M365Azure_Repository
             return '';
         }
 
-        return filter_var($value, FILTER_VALIDATE_URL) ? $value : '';
+        if (!filter_var($value, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $scheme = strtolower((string) parse_url($value, PHP_URL_SCHEME));
+
+        return in_array($scheme, ['http', 'https'], true) ? $value : '';
     }
 
     public static function public_url(string $value): string
@@ -352,14 +430,31 @@ final class CMS_M365Azure_Repository
 
     private function resolve_prefix(object $db): string
     {
+        $prefix = '';
         if (method_exists($db, 'getPrefix')) {
-            return (string) $db->getPrefix();
+            $prefix = (string) $db->getPrefix();
+        } elseif (method_exists($db, 'prefix')) {
+            $prefix = (string) $db->prefix();
         }
 
-        if (method_exists($db, 'prefix')) {
-            return (string) $db->prefix();
+        if ($prefix !== '' && preg_match('/^[A-Za-z0-9_]+$/', $prefix) === 1) {
+            return $prefix;
         }
+
+        $this->log_error('Invalid DB prefix detected, fallback to cms_.');
 
         return 'cms_';
+    }
+
+    private function invalidate_caches(): void
+    {
+        $this->settingsCache = null;
+        $this->categoriesCache = [];
+        $this->servicesCache = [];
+    }
+
+    private function log_error(string $message): void
+    {
+        error_log('[cms-m365azure] repository :: ' . $message);
     }
 }

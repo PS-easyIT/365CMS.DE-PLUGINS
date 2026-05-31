@@ -158,8 +158,8 @@ foreach ($meta as $key => $value) {
                 <input type="hidden" name="csrf_token" value="<?php echo $e($csrfToken); ?>">
                 <select name="status" class="form-control contact-status-select">
                     <?php foreach ($statusMap as $key => $s): ?>
-                    <option value="<?php echo $key; ?>" <?php echo $submission['status'] === $key ? 'selected' : ''; ?>>
-                        <?php echo $s['icon'] . ' ' . $s['label']; ?>
+                    <option value="<?php echo $e($key); ?>" <?php echo ($submission['status'] ?? '') === $key ? 'selected' : ''; ?>>
+                        <?php echo $e($s['icon'] . ' ' . $s['label']); ?>
                     </option>
                     <?php endforeach; ?>
                 </select>

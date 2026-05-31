@@ -95,6 +95,8 @@ $safeUrl = static function (string $url): string {
 $matrix = is_array($matrix ?? null) ? $matrix : CMS_M365MATRICES_ReadOnly_Matrices::addon_matrix();
 $areas = is_array($matrix['areas'] ?? null) ? $matrix['areas'] : [];
 $meta = is_array($matrix['meta'] ?? null) ? $matrix['meta'] : [];
+$notes = is_array($matrix['notes'] ?? null) ? $matrix['notes'] : [];
+$sources = is_array($matrix['sources'] ?? null) ? $matrix['sources'] : [];
 $headerStyle = $matrixChoice('matrix_header_style', 'plain', ['plain', 'surface', 'bordered', 'accent', 'inverted']);
 $headerAlignment = $matrixChoice('matrix_header_alignment', 'split', ['split', 'left', 'center']);
 $buttonLayout = $matrixChoice('matrix_button_layout', 'inline', ['inline', 'stacked', 'right']);
@@ -326,7 +328,7 @@ if (class_exists('CMS\\ThemeManager')) {
             <p><?php echo $esc($notesText); ?></p>
             <?php endif; ?>
             <ul class="m365calc-note-list">
-                <?php foreach (($matrix['notes'] ?? []) as $note): ?>
+                <?php foreach ($notes as $note): ?>
                 <li><?php echo $esc($note); ?></li>
                 <?php endforeach; ?>
             </ul>
@@ -339,7 +341,7 @@ if (class_exists('CMS\\ThemeManager')) {
             <details>
                 <summary>Quellen anzeigen</summary>
                 <ul class="m365calc-note-list">
-                    <?php foreach (($matrix['sources'] ?? []) as $source): ?>
+                    <?php foreach ($sources as $source): ?>
                     <li><a href="<?php echo $esc($source); ?>" target="_blank" rel="noopener noreferrer"><?php echo $esc($source); ?></a></li>
                     <?php endforeach; ?>
                 </ul>

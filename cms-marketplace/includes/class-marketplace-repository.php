@@ -175,6 +175,24 @@ final class CMS_Marketplace_Repository
         return $this->db->update('marketplace_items', $data, ['id' => $id]);
     }
 
+    public function getStateDigest(): string
+    {
+        $row = $this->db->get_row(
+            "SELECT MAX(updated_at) AS latest_updated_at, COUNT(*) AS total_count, COALESCE(SUM(is_published), 0) AS published_count
+             FROM `{$this->table}`"
+        );
+
+        if (!is_object($row)) {
+            return sha1('empty');
+        }
+
+        $latestUpdatedAt = (string) ($row->latest_updated_at ?? '');
+        $totalCount = (int) ($row->total_count ?? 0);
+        $publishedCount = (int) ($row->published_count ?? 0);
+
+        return sha1($latestUpdatedAt . '|' . $totalCount . '|' . $publishedCount);
+    }
+
     private function mapRow(object $row): array
     {
         return [

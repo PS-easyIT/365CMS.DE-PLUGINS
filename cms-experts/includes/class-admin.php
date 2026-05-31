@@ -13,6 +13,13 @@ if (!defined('ABSPATH')) { exit; }
 final class CMS_Experts_Admin
 {
     private static ?self $instance = null;
+    private const ADMIN_SECTIONS = [
+        'overview' => 'Uebersicht',
+        'taxonomies' => 'Fachrichtungen',
+        'skills' => 'Skills Vorlagen',
+        'design' => 'Design',
+        'settings' => 'Einstellungen',
+    ];
     public static function instance(): self
     {
         if (self::$instance === null) { self::$instance = new self(); }
@@ -20,18 +27,65 @@ final class CMS_Experts_Admin
     }
     private function __construct()
     {
-        $menu_file = ABSPATH . 'admin/partials/admin-menu.php';
-        if (file_exists($menu_file) && !function_exists('renderAdminLayoutStart')) {
-            require_once $menu_file;
-        }
+        $this->load_shared_admin_contract();
         CMS\Hooks::addAction('cms_admin_menu', [$this, 'register_admin_menu'], 10);
         CMS\Hooks::addFilter('admin_menu_items', [$this, 'add_menu_item'], 10);
     }
 
+    private function load_shared_admin_contract(): void
+    {
+        $contractFile = dirname(__DIR__, 2) . '/shared/admin/plugin-admin-contract.php';
+        if (is_file($contractFile)) {
+            require_once $contractFile;
+        }
+
+        $menuFile = ABSPATH . 'admin/partials/admin-menu.php';
+        if (file_exists($menuFile) && !function_exists('renderAdminLayoutStart')) {
+            require_once $menuFile;
+        }
+    }
+
+    private static function normalize_section(string $section): string
+    {
+        $section = strtolower(trim($section));
+        return array_key_exists($section, self::ADMIN_SECTIONS) ? $section : 'overview';
+    }
+
+    private static function section_base_url(string $section): string
+    {
+        return rtrim((string) SITE_URL, '/') . '/admin/experts?section=' . rawurlencode(self::normalize_section($section));
+    }
+
+    private static function output_bridge_notice(string $targetUrl): void
+    {
+        $safeTarget = htmlspecialchars($targetUrl, ENT_QUOTES, 'UTF-8');
+        echo '<div class="admin-card"><p>Weiterleitung zur Experten-Verwaltung … <a href="' . $safeTarget . '">Falls nichts passiert, hier klicken</a>.</p></div>';
+        echo '<script>window.location.replace(' . json_encode($targetUrl, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ');</script>';
+    }
+
+    private static function bridge_to_section(string $section): void
+    {
+        $section = self::normalize_section($section);
+        $targetPath = '/admin/experts?section=' . rawurlencode($section);
+
+        if (class_exists('CMS\\Router')) {
+            CMS\Router::instance()->redirect($targetPath);
+            return;
+        }
+
+        self::output_bridge_notice(self::section_base_url($section));
+    }
+
     private function start_admin_layout(string $title, string $activePage): void
     {
+        if (function_exists('cms_plugin_admin_layout_start')) {
+            cms_plugin_admin_layout_start($title, $activePage);
+            return;
+        }
+
         if (function_exists('renderAdminLayoutStart')) {
             renderAdminLayoutStart($title, $activePage);
+            echo '<div class="cms-plugin-admin-layout"><div class="cms-plugin-admin-layout__content">';
             return;
         }
 
@@ -42,12 +96,43 @@ final class CMS_Experts_Admin
 
     private function end_admin_layout(): void
     {
+        if (function_exists('cms_plugin_admin_layout_end')) {
+            cms_plugin_admin_layout_end();
+            return;
+        }
+
+        echo '</div></div>';
+
         if (function_exists('renderAdminLayoutEnd')) {
             renderAdminLayoutEnd();
             return;
         }
 
         require_once ABSPATH . 'admin/partials/footer.php';
+    }
+
+    private function output_admin_assets(): void
+    {
+        static $printed = false;
+        if ($printed) {
+            return;
+        }
+        $printed = true;
+
+        $admin_css = CMS_EXPERTS_PLUGIN_DIR . 'assets/css/experts-admin.css';
+        if (!file_exists($admin_css)) {
+            return;
+        }
+
+        $version = (string) filemtime($admin_css);
+        $href = CMS_EXPERTS_PLUGIN_URL . 'assets/css/experts-admin.css';
+
+        if (function_exists('cms_enqueue_style')) {
+            cms_enqueue_style('cms-experts-admin', $href, [], $version);
+            return;
+        }
+
+        echo '<link rel="stylesheet" href="' . htmlspecialchars($href . '?v=' . $version, ENT_QUOTES, 'UTF-8') . '">' . "\n";
     }
 
     public function register_admin_menu(): void
@@ -65,14 +150,68 @@ final class CMS_Experts_Admin
             '👨‍💻',
             44
         );
+
+        if (!function_exists('add_submenu_page')) {
+            return;
+        }
+
+        add_submenu_page('experts', 'Experten Übersicht', 'Übersicht', 'manage_options', 'experts', [self::class, 'render_overview_bridge']);
+        add_submenu_page('experts', 'Fachrichtungen', 'Fachrichtungen', 'manage_options', 'experts-taxonomies', [self::class, 'render_taxonomies_bridge']);
+        add_submenu_page('experts', 'Skills Vorlagen', 'Skills Vorlagen', 'manage_options', 'experts-skills', [self::class, 'render_skills_bridge']);
+        add_submenu_page('experts', 'Design', 'Design', 'manage_options', 'experts-design', [self::class, 'render_design_bridge']);
+        add_submenu_page('experts', 'Einstellungen', 'Einstellungen', 'manage_options', 'experts-settings', [self::class, 'render_settings_bridge']);
+    }
+
+    public static function render_overview_bridge(): void
+    {
+        self::bridge_to_section('overview');
+    }
+
+    public static function render_taxonomies_bridge(): void
+    {
+        self::bridge_to_section('taxonomies');
+    }
+
+    public static function render_skills_bridge(): void
+    {
+        self::bridge_to_section('skills');
+    }
+
+    public static function render_design_bridge(): void
+    {
+        self::bridge_to_section('design');
+    }
+
+    public static function render_settings_bridge(): void
+    {
+        self::bridge_to_section('settings');
     }
 
     public static function render_plugin_page_bridge(): void
     {
-        $targetUrl = htmlspecialchars(SITE_URL . '/admin/experts', ENT_QUOTES, 'UTF-8');
+        $callbackMap = [
+            'experts' => [self::class, 'render_overview_bridge'],
+            'experts-overview' => [self::class, 'render_overview_bridge'],
+            'experts-taxonomies' => [self::class, 'render_taxonomies_bridge'],
+            'experts-skills' => [self::class, 'render_skills_bridge'],
+            'experts-design' => [self::class, 'render_design_bridge'],
+            'experts-settings' => [self::class, 'render_settings_bridge'],
+        ];
 
-        echo '<div class="admin-card"><p>Weiterleitung zur Experten-Verwaltung … <a href="' . $targetUrl . '">Falls nichts passiert, hier klicken</a>.</p></div>';
-        echo '<script>window.location.replace(' . json_encode(SITE_URL . '/admin/experts', JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ');</script>';
+        if (function_exists('cms_plugin_admin_dispatch_page')) {
+            cms_plugin_admin_dispatch_page($callbackMap, 'experts-overview', 'experts');
+            return;
+        }
+
+        $requested = strtolower(trim((string) ($_GET['page'] ?? 'experts')));
+        $requested = array_key_exists($requested, $callbackMap) ? $requested : 'experts-overview';
+        $callback = $callbackMap[$requested] ?? null;
+        if (is_callable($callback)) {
+            call_user_func($callback);
+            return;
+        }
+
+        self::output_bridge_notice(self::section_base_url('overview'));
     }
 
     public function add_menu_item(array $items): array
@@ -93,16 +232,10 @@ final class CMS_Experts_Admin
     public function render_list(array $data): void
     {
         $this->start_admin_layout('Experten', 'experts');
-
-        // Admin-CSS einbinden
-        $admin_css = CMS_EXPERTS_PLUGIN_DIR . 'assets/css/experts-admin.css';
-        if (file_exists($admin_css)) {
-            $adminCssVersion = (string) filemtime($admin_css);
-            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_EXPERTS_PLUGIN_URL . 'assets/css/experts-admin.css?v=' . $adminCssVersion, ENT_QUOTES, 'UTF-8') . '">' . "\n";
-        }
+        $this->output_admin_assets();
 
         $experts   = $data['experts']  ?? [];
-        $tab       = $data['tab']      ?? 'overview';
+        $section   = self::normalize_section((string) ($data['section'] ?? ($data['tab'] ?? 'overview')));
         $filter    = $data['filter']   ?? 'all';
         $search    = $data['search']   ?? '';
         $specs     = $data['specs']    ?? [];
@@ -111,6 +244,8 @@ final class CMS_Experts_Admin
         $csrf      = $data['csrf']     ?? '';
         $sort      = $data['sort']     ?? 'updated_desc';
         $companies = $data['companies'] ?? [];
+        $sectionLabel = self::ADMIN_SECTIONS[$section] ?? self::ADMIN_SECTIONS['overview'];
+        $baseAdminUrl = htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/experts', ENT_QUOTES, 'UTF-8');
 
         $s = array_merge([
             'archive_title'                => 'IT-Experten Netzwerk',
@@ -192,24 +327,11 @@ final class CMS_Experts_Admin
             <div class="alert alert-error"><strong>❌ Aktion fehlgeschlagen.</strong> <?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
         <?php endif; ?>
 
-        <!-- Tabs -->
-        <div class="exp-tabs">
-            <?php
-            $tabs = [
-                'overview'   => ['👀', 'Übersicht',      $pending > 0 ? " <span class='exp-tab-badge'>{$pending}</span>" : ''],
-                'taxonomies' => ['📋', 'Fachrichtungen', ''],
-                'skills'     => ['🔧', 'Skills Vorlagen', ''],
-                'design'     => ['🎨', 'Design',         ''],
-                'settings'   => ['⚙️', 'Einstellungen',  ''],
-            ];
-            foreach ($tabs as $slug => [$icon, $label, $badge]): ?>
-                <a href="?tab=<?= $slug ?>" class="exp-tab <?= $tab === $slug ? 'active' : '' ?>">
-                    <?= $icon ?> <?= $label ?><?= $badge ?>
-                </a>
-            <?php endforeach; ?>
+        <div class="exp-section-indicator">
+            <strong>Bereich:</strong> <?= htmlspecialchars($sectionLabel, ENT_QUOTES, 'UTF-8') ?>
         </div>
 
-        <?php if ($tab === 'overview'): ?>
+        <?php if ($section === 'overview'): ?>
         <!-- Stats -->
         <div class="dashboard-grid">
             <?php
@@ -232,10 +354,10 @@ final class CMS_Experts_Admin
         <!-- Filter Bar -->
         <div class="admin-card" style="margin-bottom:1.25rem;">
             <form method="GET" style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;">
-                <input type="hidden" name="tab" value="overview">
+                <input type="hidden" name="section" value="overview">
                 <div class="form-group" style="margin:0;flex:2;min-width:220px;">
                     <label class="form-label">Name / Stichwort</label>
-                    <input type="text" name="search" class="form-control" placeholder="Name, Ort, Position, Skill…" value="<?= htmlspecialchars($search) ?>">
+                    <input type="text" name="search" class="form-control" placeholder="Name, Ort, Position, Skill…" value="<?= htmlspecialchars((string) $search, ENT_QUOTES, 'UTF-8') ?>">
                 </div>
                 <div class="form-group" style="margin:0;flex:1;min-width:160px;">
                     <label class="form-label">Status</label>
@@ -260,7 +382,7 @@ final class CMS_Experts_Admin
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary">🔍 Filtern</button>
-                <?php if ($search || $filter !== 'all' || $sort !== 'updated_desc'): ?><a href="?tab=overview" class="btn btn-secondary">✕ Reset</a><?php endif; ?>
+                <?php if ($search || $filter !== 'all' || $sort !== 'updated_desc'): ?><a href="<?= $baseAdminUrl ?>?section=overview" class="btn btn-secondary">✕ Reset</a><?php endif; ?>
             </form>
         </div>
 
@@ -291,8 +413,8 @@ final class CMS_Experts_Admin
                     </thead>
                     <tbody>
                     <?php foreach ($experts as $ex):
-                        $firstName = htmlspecialchars((string)($ex->first_name ?? ''));
-                        $lastName  = htmlspecialchars((string)($ex->last_name ?? ''));
+                        $firstName = trim((string)($ex->first_name ?? ''));
+                        $lastName  = trim((string)($ex->last_name ?? ''));
                         $name = trim($firstName . ' ' . $lastName);
                         if ($name === '') {
                             $name = 'Unbekannt';
@@ -435,7 +557,7 @@ final class CMS_Experts_Admin
         // ══════════════════════════════════════════════════════════════
         // TAB: FACHRICHTUNGEN
         // ══════════════════════════════════════════════════════════════
-        elseif ($tab === 'taxonomies'):
+        elseif ($section === 'taxonomies'):
             $roots    = [];
             $children = [];
             foreach ($specs as $sp) {
@@ -507,7 +629,7 @@ final class CMS_Experts_Admin
         // ══════════════════════════════════════════════════════════════
         // TAB: SKILLS VORLAGEN
         // ══════════════════════════════════════════════════════════════
-        elseif ($tab === 'skills'):
+        elseif ($section === 'skills'):
             $typeLabels = [
                 'general' => ['🔷','Programmierung','Programmiersprachen & Grundlagen'],
                 'tech'    => ['⚙️','Skills','Frameworks, Tools & Plattformen'],
@@ -570,7 +692,7 @@ final class CMS_Experts_Admin
         // ══════════════════════════════════════════════════════════════
         // TAB: DESIGN
         // ══════════════════════════════════════════════════════════════
-        elseif ($tab === 'design'):
+        elseif ($section === 'design'):
         ?>
         <form method="POST" action="<?= SITE_URL ?>/admin/experts/settings/save">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
@@ -593,7 +715,7 @@ final class CMS_Experts_Admin
                         'detail_header_title_color'  => ['Detailseite Titelfarbe',             '#ffffff'],
                     ];
                     foreach ($colorFields as $key => [$label, $default]):
-                        $val = htmlspecialchars($s[$key] ?? $default);
+                        $val = htmlspecialchars((string)($s[$key] ?? $default), ENT_QUOTES, 'UTF-8');
                     ?>
                     <div class="form-group">
                         <label class="form-label"><?= $label ?></label>
@@ -626,7 +748,7 @@ final class CMS_Experts_Admin
                         'design_badge_mvp_color'         => ['⭐ MVP – Textfarbe',           '#fbbf24'],
                     ];
                     foreach ($badgeColorFields as $key => [$label, $default]):
-                        $val = htmlspecialchars($s[$key] ?? $default);
+                        $val = htmlspecialchars((string)($s[$key] ?? $default), ENT_QUOTES, 'UTF-8');
                     ?>
                     <div class="form-group">
                         <label class="form-label"><?= $label ?></label>
@@ -647,7 +769,7 @@ final class CMS_Experts_Admin
                 <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
                     <div class="form-group">
                         <label class="form-label">Border-Radius (px)</label>
-                        <input type="number" name="design_border_radius" class="form-control" value="<?= htmlspecialchars($s['design_border_radius']) ?>" min="0" max="32">
+                        <input type="number" name="design_border_radius" class="form-control" value="<?= htmlspecialchars((string)($s['design_border_radius'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" min="0" max="32">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Grid-Spalten</label>
@@ -667,7 +789,7 @@ final class CMS_Experts_Admin
                     </div>
                     <div class="form-group">
                         <label class="form-label">Header-Icon (Emoji)</label>
-                        <input type="text" name="archive_header_icon" class="form-control" value="<?= htmlspecialchars(html_entity_decode($s['archive_header_icon'] ?? '👨‍💻', ENT_HTML5, 'UTF-8')) ?>" placeholder="👨‍💻">
+                        <input type="text" name="archive_header_icon" class="form-control" value="<?= htmlspecialchars(html_entity_decode((string)($s['archive_header_icon'] ?? '👨‍💻'), ENT_HTML5, 'UTF-8'), ENT_QUOTES, 'UTF-8') ?>" placeholder="👨‍💻">
                     </div>
                 </div>
                 <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:.75rem;">
@@ -721,7 +843,7 @@ final class CMS_Experts_Admin
         // ══════════════════════════════════════════════════════════════
         // TAB: EINSTELLUNGEN
         // ══════════════════════════════════════════════════════════════
-        elseif ($tab === 'settings'):
+        elseif ($section === 'settings'):
         ?>
         <form method="POST" action="<?= SITE_URL ?>/admin/experts/settings/save">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
@@ -802,7 +924,7 @@ final class CMS_Experts_Admin
 
             <?php
             $allColorKeys = [];
-            if ($tab === 'design') {
+            if ($section === 'design') {
                 $allColorKeys = array_merge(array_keys($colorFields), array_keys($badgeColorFields));
             }
             ?>
@@ -849,13 +971,7 @@ final class CMS_Experts_Admin
         $page_title  = $is_edit ? '✏️ Experte bearbeiten' : '👨‍💻 Neuer Experte';
 
         $this->start_admin_layout($is_edit ? 'Experte bearbeiten' : 'Neuer Experte', 'experts');
-
-        // Admin-CSS einbinden
-        $admin_css = CMS_EXPERTS_PLUGIN_DIR . 'assets/css/experts-admin.css';
-        if (file_exists($admin_css)) {
-            $adminCssVersion = (string) filemtime($admin_css);
-            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_EXPERTS_PLUGIN_URL . 'assets/css/experts-admin.css?v=' . $adminCssVersion, ENT_QUOTES, 'UTF-8') . '">' . "\n";
-        }
+        $this->output_admin_assets();
 
         $slug = '';
         if ($is_edit && method_exists('CMS_Experts_Database', 'generate_slug')) {

@@ -21,6 +21,7 @@ final class CMS_Feed_Admin
 {
     private static ?self $instance = null;
     public const MENU_SLUG = 'feeds';
+    private const SHARED_ADMIN_CONTRACT = '/shared/admin/plugin-admin-contract.php';
 
     public static function instance(): self
     {
@@ -29,7 +30,7 @@ final class CMS_Feed_Admin
 
     private function __construct()
     {
-        $this->loadAdminMenu();
+        $this->load_shared_admin_contract();
         if (class_exists('CMS\Hooks')) {
             CMS\Hooks::addAction('cms_admin_menu', [$this, 'register_menu'], 10);
             CMS\Hooks::addFilter('admin_menu_items', [$this, 'add_menu_item'], 10);
@@ -47,16 +48,31 @@ final class CMS_Feed_Admin
             'Feeds',
             'manage_options',
             self::MENU_SLUG,
-            [self::class, 'render_dispatch'],
+            [self::class, 'dispatch_admin_page'],
             '📡',
             38
         );
     }
 
+    public static function dispatch_admin_page(): void
+    {
+        $callbackMap = [
+            self::MENU_SLUG => [self::class, 'render_dispatch'],
+            'plugins-feeds' => [self::class, 'render_dispatch'],
+        ];
+
+        if (function_exists('cms_plugin_admin_dispatch_page')) {
+            cms_plugin_admin_dispatch_page($callbackMap, self::MENU_SLUG, self::MENU_SLUG);
+            return;
+        }
+
+        self::render_dispatch();
+    }
+
     public static function render_dispatch(): void
     {
-        if (!CMS\Auth::instance()->isAdmin()) {
-            CMS\Router::instance()->redirect('/login');
+        if (!self::instance()->ensure_admin_access()) {
+            self::instance()->redirect_to_login();
             return;
         }
 
@@ -69,39 +85,36 @@ final class CMS_Feed_Admin
 
     public function admin_page(): void
     {
-        if (!CMS\Auth::instance()->isAdmin()) {
-            CMS\Router::instance()->redirect('/login');
+        if (!$this->ensure_admin_access()) {
+            $this->redirect_to_login();
             return;
         }
 
         $this->render_view(true);
     }
 
-    private function loadAdminMenu(): void
+    private function load_shared_admin_contract(): void
     {
-        if (function_exists('renderAdminLayoutStart') && function_exists('renderAdminLayoutEnd')) {
+        if (
+            function_exists('cms_plugin_admin_layout_start')
+            && function_exists('cms_plugin_admin_layout_end')
+            && function_exists('cms_plugin_admin_dispatch_page')
+        ) {
             return;
         }
 
-        $menuFiles = [
-            ABSPATH . 'includes/functions/admin-menu.php',
-            ABSPATH . 'CMS/includes/functions/admin-menu.php',
-        ];
-
-        foreach ($menuFiles as $menuFile) {
-            if (file_exists($menuFile)) {
-                require_once $menuFile;
-                if (function_exists('renderAdminLayoutStart')) {
-                    return;
-                }
-            }
+        $contractPath = dirname(CMS_FEED_PLUGIN_DIR) . self::SHARED_ADMIN_CONTRACT;
+        if (is_file($contractPath)) {
+            require_once $contractPath;
         }
     }
 
     public function add_menu_item(array $menuItems): array
     {
         $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
-        $isActive    = str_starts_with($currentPath, '/admin/feeds');
+        $normalizedPath = '/' . trim($currentPath, '/');
+        $isActive    = str_starts_with($normalizedPath, '/admin/feeds')
+            || str_starts_with($normalizedPath, '/admin/plugins/feeds');
 
         $menuItems[] = [
             'type'   => 'item',
@@ -126,7 +139,7 @@ final class CMS_Feed_Admin
 
     private function render_view(bool $withLayout, array $data = []): void
     {
-        $this->loadAdminMenu();
+        $this->load_shared_admin_contract();
 
         try {
             $db   = CMS_Feed_Database::instance();
@@ -246,8 +259,13 @@ final class CMS_Feed_Admin
     private function render_layout_start(): void
     {
         try {
+            if (function_exists('cms_plugin_admin_layout_start')) {
+                cms_plugin_admin_layout_start('Feeds', self::MENU_SLUG);
+                return;
+            }
             if (function_exists('renderAdminLayoutStart')) {
                 renderAdminLayoutStart('Feeds', self::MENU_SLUG);
+                echo '<div class="cms-plugin-admin-layout"><div class="cms-plugin-admin-layout__content">';
                 return;
             }
         } catch (\Throwable $e) {
@@ -260,7 +278,12 @@ final class CMS_Feed_Admin
     private function render_layout_end(): void
     {
         try {
+            if (function_exists('cms_plugin_admin_layout_end')) {
+                cms_plugin_admin_layout_end();
+                return;
+            }
             if (function_exists('renderAdminLayoutEnd')) {
+                echo '</div></div>';
                 renderAdminLayoutEnd();
                 return;
             }
@@ -320,6 +343,13 @@ final class CMS_Feed_Admin
     private function handle_post(string $tab): array
     {
         unset($tab);
+
+        if (!$this->ensure_admin_access()) {
+            CMS_Feed_Error_Handler::instance()->log('warning', 'CMS Feed Admin: POST-Aktion ohne ausreichende Berechtigung blockiert.', [
+                'scope' => 'admin.post.permission',
+            ]);
+            return ['error' => 'Keine Berechtigung für diese Aktion.', 'status' => 403];
+        }
 
         $action = $this->post_string('action');
         $handlers = [
@@ -760,6 +790,53 @@ final class CMS_Feed_Admin
         return ['ids' => $ids];
     }
 
+    private function ensure_admin_access(): bool
+    {
+        if (!class_exists('CMS\\Auth') || !method_exists('CMS\\Auth', 'instance')) {
+            CMS_Feed_Error_Handler::instance()->log_exception(
+                'CMS Feed Admin: Auth-Service fehlt.',
+                new \RuntimeException('CMS\\Auth is not available'),
+                'error',
+                ['scope' => 'admin.auth.bootstrap']
+            );
+            return false;
+        }
+
+        try {
+            return CMS\Auth::instance()->isAdmin();
+        } catch (\Throwable $e) {
+            CMS_Feed_Error_Handler::instance()->log_exception(
+                'CMS Feed Admin: Admin-Rechte konnten nicht geprueft werden.',
+                $e,
+                'warning',
+                ['scope' => 'admin.auth.check']
+            );
+            return false;
+        }
+    }
+
+    private function redirect_to_login(): void
+    {
+        try {
+            if (class_exists('CMS\\Router') && method_exists('CMS\\Router', 'instance')) {
+                CMS\Router::instance()->redirect('/login');
+                return;
+            }
+        } catch (\Throwable $e) {
+            CMS_Feed_Error_Handler::instance()->log_exception(
+                'CMS Feed Admin: Login-Redirect ueber Router fehlgeschlagen.',
+                $e,
+                'warning',
+                ['scope' => 'admin.redirect.router']
+            );
+        }
+
+        if (!headers_sent()) {
+            $target = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') . '/login' : '/login';
+            header('Location: ' . $target, true, 302);
+        }
+    }
+
     private function post_string(string $key, string $default = ''): string
     {
         $value = $_POST[$key] ?? $default;
@@ -787,8 +864,18 @@ final class CMS_Feed_Admin
     private function post_array(string $key): array
     {
         $value = $_POST[$key] ?? [];
+        if (!is_array($value)) {
+            return [];
+        }
 
-        return is_array($value) ? $value : [];
+        $normalized = [];
+        foreach ($value as $entry) {
+            if (is_scalar($entry)) {
+                $normalized[] = (string) $entry;
+            }
+        }
+
+        return $normalized;
     }
 
     private function post_text(string $key, string $default = ''): string

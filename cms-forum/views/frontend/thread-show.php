@@ -278,7 +278,7 @@ foreach ($attachments as $att) {
                 <select id="reportReason" name="reason" class="cmsforum-input">
                     <option value="spam">Spam</option>
                     <option value="offensive">Beleidigend</option>
-                    <option value="off_topic">Off-Topic</option>
+                    <option value="off-topic">Off-Topic</option>
                     <option value="harassment">Belästigung</option>
                     <option value="other">Sonstiges</option>
                 </select>

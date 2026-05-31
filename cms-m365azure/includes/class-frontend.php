@@ -14,6 +14,7 @@ if (!defined('ABSPATH')) {
 final class CMS_M365Azure_Frontend
 {
     private static ?self $instance = null;
+    private bool $isArchiveRenderActive = false;
     private ?string $requestPathCache = null;
 
     public static function instance(): self
@@ -151,27 +152,45 @@ final class CMS_M365Azure_Frontend
 
     private function render_archive(): void
     {
-        $repo = $this->repo();
-        $settings = $repo->settings();
-        $categories = $repo->categories(true);
-        $services = $repo->services(null, true);
-        $servicesByCategory = [];
-        foreach ($services as $service) {
-            $servicesByCategory[(int) $service['category_id']][] = $service;
-        }
+        $this->isArchiveRenderActive = true;
+        try {
+            $repo = $this->repo();
+            $settings = $repo->settings();
+            $categories = $repo->categories(true);
+            $services = $repo->services(null, true);
+            $servicesByCategory = [];
+            foreach ($services as $service) {
+                $servicesByCategory[(int) $service['category_id']][] = $service;
+            }
 
-        $title = $this->setting($settings, 'seo_title', $this->setting($settings, 'page_title', 'Microsoft Azure Services'));
-        $description = $this->setting($settings, 'seo_description', $this->setting($settings, 'page_intro', 'Übersicht der wichtigsten Microsoft Azure Services.'));
-        $this->set_seo($title, $description);
+            $title = $this->setting($settings, 'seo_title', $this->setting($settings, 'page_title', 'Microsoft Azure Services'));
+            $description = $this->setting($settings, 'seo_description', $this->setting($settings, 'page_intro', 'Übersicht der wichtigsten Microsoft Azure Services.'));
+            $this->set_seo($title, $description);
 
-        if (class_exists('CMS\\ThemeManager')) {
-            \CMS\ThemeManager::instance()->getHeader(['title' => $title, 'description' => $description]);
-        }
+            if (class_exists('CMS\\ThemeManager')) {
+                \CMS\ThemeManager::instance()->getHeader(['title' => $title, 'description' => $description]);
+            }
 
-        include CMS_M365AZURE_PLUGIN_DIR . 'templates/archive.php';
+            $template = CMS_M365AZURE_PLUGIN_DIR . 'templates/archive.php';
+            $resolvedTemplate = realpath($template);
+            $pluginRoot = realpath(CMS_M365AZURE_PLUGIN_DIR);
+            if (
+                $resolvedTemplate === false
+                || $pluginRoot === false
+                || !str_starts_with(str_replace('\\', '/', $resolvedTemplate), rtrim(str_replace('\\', '/', $pluginRoot), '/') . '/')
+            ) {
+                throw new \RuntimeException('Archive template path is invalid.');
+            }
+            include $resolvedTemplate;
 
-        if (class_exists('CMS\\ThemeManager')) {
-            \CMS\ThemeManager::instance()->getFooter();
+            if (class_exists('CMS\\ThemeManager')) {
+                \CMS\ThemeManager::instance()->getFooter();
+            }
+        } catch (\Throwable $e) {
+            $this->log_error('archive render failed :: ' . $e->getMessage());
+            throw $e;
+        } finally {
+            $this->isArchiveRenderActive = false;
         }
 
         exit;
@@ -192,16 +211,29 @@ final class CMS_M365Azure_Frontend
             $slug = CMS_M365Azure_Repository::slug((string) ($settings['route_slug'] ?? 'azure-services'));
             return $slug !== '' ? $slug : 'azure-services';
         } catch (\Throwable $e) {
+            $this->log_error('route slug fallback :: ' . $e->getMessage());
             return 'azure-services';
         }
     }
 
     private function is_request(): bool
     {
+        if ($this->isArchiveRenderActive) {
+            return true;
+        }
+
         $path = $this->request_path();
         $slug = $this->route_slug();
+        if ($path === $slug) {
+            return true;
+        }
 
-        return $path === $slug || str_ends_with($path, '/' . $slug);
+        $sitePath = trim((string) parse_url((string) (defined('SITE_URL') ? SITE_URL : ''), PHP_URL_PATH), '/');
+        if ($sitePath !== '' && str_starts_with($path, $sitePath . '/')) {
+            return trim(substr($path, strlen($sitePath) + 1), '/') === $slug;
+        }
+
+        return false;
     }
 
     private function request_path(): string
@@ -235,7 +267,7 @@ final class CMS_M365Azure_Frontend
             $seo->setTitle($title);
             $seo->setDescription($description);
         } catch (\Throwable $e) {
-            // SEO darf die öffentliche Seite nicht blockieren.
+            $this->log_error('seo update skipped :: ' . $e->getMessage());
         }
     }
 
@@ -260,5 +292,10 @@ final class CMS_M365Azure_Frontend
         }
 
         return $assets;
+    }
+
+    private function log_error(string $message): void
+    {
+        error_log('[cms-m365azure] frontend :: ' . $message);
     }
 }

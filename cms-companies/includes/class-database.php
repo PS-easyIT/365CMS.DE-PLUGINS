@@ -15,6 +15,8 @@ if (!defined('ABSPATH')) {
 final class CMS_Companies_Database
 {
     private static ?self $instance = null;
+    private ?array $settings_cache = null;
+    private ?array $industries_cache = null;
 
     public static function instance(): self
     {
@@ -27,6 +29,61 @@ final class CMS_Companies_Database
     private function __construct()
     {
         // Constructor
+    }
+
+    private function log_error(string $context, \Throwable $e): void
+    {
+        error_log('CMS Companies [' . $context . ']: ' . $e->getMessage());
+    }
+
+    private function normalize_company_status(mixed $status): string
+    {
+        $status = strtolower(trim((string) $status));
+        return in_array($status, ['active', 'inactive', 'pending', 'deleted'], true) ? $status : 'active';
+    }
+
+    private function normalize_company_payload(array $data): array
+    {
+        $allowedCompanySizes = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+', '1001-5000', '5001+'];
+        $currentYear = (int) date('Y');
+
+        $foundedYear = isset($data['founded_year']) && $data['founded_year'] !== ''
+            ? (int) $data['founded_year']
+            : null;
+        if ($foundedYear !== null && ($foundedYear < 1800 || $foundedYear > $currentYear)) {
+            $foundedYear = null;
+        }
+
+        $employeeCount = isset($data['employee_count']) && $data['employee_count'] !== ''
+            ? max(0, (int) $data['employee_count'])
+            : null;
+
+        $status = $this->normalize_company_status($data['status'] ?? 'active');
+        $industry = trim((string) ($data['industry'] ?? ''));
+        $companySize = trim((string) ($data['company_size'] ?? ''));
+
+        return [
+            'user_id' => isset($data['user_id']) ? (int) $data['user_id'] : null,
+            'name' => trim((string) ($data['name'] ?? '')),
+            'email' => trim((string) ($data['email'] ?? '')),
+            'phone' => trim((string) ($data['phone'] ?? '')) ?: null,
+            'industry' => $industry !== '' ? mb_substr($industry, 0, 150) : null,
+            'company_size' => in_array($companySize, $allowedCompanySizes, true) ? $companySize : null,
+            'description' => isset($data['description']) && $data['description'] !== ''
+                ? mb_substr((string) $data['description'], 0, 10000)
+                : null,
+            'logo_url' => trim((string) ($data['logo_url'] ?? '')) ?: null,
+            'website' => trim((string) ($data['website'] ?? '')) ?: null,
+            'location_city' => trim((string) ($data['location_city'] ?? '')) ?: null,
+            'location_zip' => trim((string) ($data['location_zip'] ?? '')) ?: null,
+            'location_country' => trim((string) ($data['location_country'] ?? '')) ?: null,
+            'founded_year' => $foundedYear,
+            'employee_count' => $employeeCount,
+            'is_partner' => !empty($data['is_partner']) ? 1 : 0,
+            'is_top_partner' => !empty($data['is_top_partner']) ? 1 : 0,
+            'is_sponsor' => !empty($data['is_sponsor']) ? 1 : 0,
+            'status' => $status,
+        ];
     }
 
     /**
@@ -138,7 +195,7 @@ final class CMS_Companies_Database
             $pdo->exec($sql);
 
         } catch (\PDOException $e) {
-            error_log('CMS Companies Database Error: ' . $e->getMessage());
+            $this->log_error('create_tables', $e);
         }
     }
 
@@ -175,9 +232,16 @@ final class CMS_Companies_Database
             $where[]  = 'status = ?';
             $params[] = 'active';
         }
-        if (isset($args['industry'])) {
+        if (isset($args['industry_values']) && is_array($args['industry_values'])) {
+            $industryValues = array_values(array_filter(array_map(static fn($value) => trim((string) $value), $args['industry_values'])));
+            if ($industryValues !== []) {
+                $placeholders = implode(',', array_fill(0, count($industryValues), '?'));
+                $where[] = 'industry IN (' . $placeholders . ')';
+                $params = array_merge($params, $industryValues);
+            }
+        } elseif (isset($args['industry'])) {
             $where[]  = 'industry = ?';
-            $params[] = $args['industry'];
+            $params[] = (string) $args['industry'];
         }
         if (isset($args['city'])) {
             $where[]  = 'location_city = ?';
@@ -197,7 +261,7 @@ final class CMS_Companies_Database
         }
         if (!empty($args['q'])) {
             $where[]  = '(name LIKE ? OR description LIKE ? OR location_city LIKE ?)';
-            $like     = '%' . $args['q'] . '%';
+            $like     = '%' . mb_substr((string) $args['q'], 0, 190) . '%';
             $params[] = $like;
             $params[] = $like;
             $params[] = $like;
@@ -237,9 +301,16 @@ final class CMS_Companies_Database
         }
 
         // Industry Filter
-        if (isset($args['industry'])) {
+        if (isset($args['industry_values']) && is_array($args['industry_values'])) {
+            $industryValues = array_values(array_filter(array_map(static fn($value) => trim((string) $value), $args['industry_values'])));
+            if ($industryValues !== []) {
+                $placeholders = implode(',', array_fill(0, count($industryValues), '?'));
+                $where[] = 'industry IN (' . $placeholders . ')';
+                $params = array_merge($params, $industryValues);
+            }
+        } elseif (isset($args['industry'])) {
             $where[] = 'industry = ?';
-            $params[] = $args['industry'];
+            $params[] = (string) $args['industry'];
         }
 
         // Location Filter
@@ -264,7 +335,7 @@ final class CMS_Companies_Database
 
         if (!empty($args['q'])) {
             $where[]  = '(name LIKE ? OR description LIKE ? OR location_city LIKE ?)';
-            $like     = '%' . $args['q'] . '%';
+            $like     = '%' . mb_substr((string) $args['q'], 0, 190) . '%';
             $params[] = $like;
             $params[] = $like;
             $params[] = $like;
@@ -327,26 +398,8 @@ final class CMS_Companies_Database
     {
         $db = CMS\Database::instance();
         
-        $result = $db->insert('companies', [
-            'user_id' => $data['user_id'] ?? null,
-            'name' => $data['name'] ?? '',
-            'email' => $data['email'] ?? '',
-            'phone' => $data['phone'] ?? null,
-            'industry' => $data['industry'] ?? null,
-            'company_size' => $data['company_size'] ?? null,
-            'description' => $data['description'] ?? null,
-            'logo_url' => $data['logo_url'] ?? null,
-            'website' => $data['website'] ?? null,
-            'location_city' => $data['location_city'] ?? null,
-            'location_zip' => $data['location_zip'] ?? null,
-            'location_country' => $data['location_country'] ?? null,
-            'founded_year' => $data['founded_year'] ?? null,
-            'employee_count' => $data['employee_count'] ?? null,
-            'is_partner' => isset($data['is_partner']) ? ($data['is_partner'] ? 1 : 0) : 0,
-            'is_top_partner' => isset($data['is_top_partner']) ? ($data['is_top_partner'] ? 1 : 0) : 0,
-            'is_sponsor' => isset($data['is_sponsor']) ? ($data['is_sponsor'] ? 1 : 0) : 0,
-            'status' => $data['status'] ?? 'active',
-        ]);
+        $payload = $this->normalize_company_payload($data);
+        $result = $db->insert('companies', $payload);
 
         if ($result) {
             $company_id = (int) $db->getPdo()->lastInsertId();
@@ -368,6 +421,7 @@ final class CMS_Companies_Database
         $db = CMS\Database::instance();
         
         $update_data = [];
+        $payload = $this->normalize_company_payload($data);
         $allowed_fields = [
             'name', 'email', 'phone', 'industry', 'company_size',
             'description', 'logo_url', 'website',
@@ -377,8 +431,8 @@ final class CMS_Companies_Database
         ];
 
         foreach ($allowed_fields as $field) {
-            if (array_key_exists($field, $data)) {
-                $update_data[$field] = $data[$field];
+            if (array_key_exists($field, $data) || array_key_exists($field, $payload)) {
+                $update_data[$field] = $payload[$field] ?? null;
             }
         }
 
@@ -389,7 +443,7 @@ final class CMS_Companies_Database
         $result = $db->update('companies', $update_data, ['id' => $id]);
 
         if ($result === false) {
-            error_log('CMS_Companies update_company failed for id=' . $id . ': ' . $db->last_error);
+            error_log('CMS Companies [update_company] id=' . $id . ': ' . $db->last_error);
             return 0;
         }
 
@@ -433,6 +487,19 @@ final class CMS_Companies_Database
         }
 
         return false;
+    }
+
+    public function remove_expert(int $company_id, int $expert_id): bool
+    {
+        if ($company_id <= 0 || $expert_id <= 0) {
+            return false;
+        }
+
+        $db = CMS\Database::instance();
+        return $db->delete('company_experts', [
+            'company_id' => $company_id,
+            'expert_id' => $expert_id,
+        ]) !== false;
     }
 
     /**
@@ -494,16 +561,23 @@ final class CMS_Companies_Database
         $stmt->execute([$company_id, $key]);
         $existing = $stmt->fetch();
 
+        $metaValue = is_array($value)
+            ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+            : (string) $value;
+        if ($metaValue === false) {
+            $metaValue = '[]';
+        }
+
         if ($existing) {
             return $db->update('company_meta', 
-                ['meta_value' => is_array($value) ? json_encode($value) : $value],
+                ['meta_value' => $metaValue],
                 ['id' => $existing->id]
             ) !== false;
         } else {
             return $db->insert('company_meta', [
                 'company_id' => $company_id,
                 'meta_key' => $key,
-                'meta_value' => is_array($value) ? json_encode($value) : $value,
+                'meta_value' => $metaValue,
             ]) !== false;
         }
     }
@@ -533,6 +607,10 @@ final class CMS_Companies_Database
 
     public function get_settings(): array
     {
+        if ($this->settings_cache !== null) {
+            return $this->settings_cache;
+        }
+
         $defaults = [
             'show_nav_link' => '0',
             'nav_label'     => 'Unternehmen',
@@ -544,13 +622,14 @@ final class CMS_Companies_Database
             $stmt->execute([]);
             $rows = $stmt->fetchAll(\PDO::FETCH_OBJ);
         } catch (\Throwable $e) {
-            return $defaults;
+            $this->log_error('get_settings', $e);
+            return $this->settings_cache = $defaults;
         }
         $out = $defaults;
         foreach ($rows as $row) {
             $out[$row->setting_key] = $row->setting_value;
         }
-        return $out;
+        return $this->settings_cache = $out;
     }
 
     public function get_setting(string $key, $default = null)
@@ -569,6 +648,7 @@ final class CMS_Companies_Database
                  ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
             );
             $stmt->execute([$key, $value]);
+            $this->settings_cache = null;
         } catch (\Throwable $e) {
             // Tabelle fehlt → einmalig anlegen und erneut versuchen
             try {
@@ -579,8 +659,9 @@ final class CMS_Companies_Database
                      ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
                 );
                 $stmt->execute([$key, $value]);
+                $this->settings_cache = null;
             } catch (\Throwable $e2) {
-                error_log('CMS Companies save_setting failed: ' . $e2->getMessage());
+                $this->log_error('save_setting', $e2);
             }
         }
     }
@@ -592,6 +673,10 @@ final class CMS_Companies_Database
     /** Gibt alle Branchen aus DB zurück; fällt auf eingebaute Liste zurück falls leer */
     public function get_all_industries(): array
     {
+        if ($this->industries_cache !== null) {
+            return $this->industries_cache;
+        }
+
         $db = CMS\Database::instance();
         try {
             $stmt = $db->prepare("SELECT * FROM {$db->prefix()}company_industries ORDER BY sort_order ASC, name ASC");
@@ -601,7 +686,7 @@ final class CMS_Companies_Database
             $rows = [];
         }
         if (!empty($rows)) {
-            return $rows;
+            return $this->industries_cache = $rows;
         }
         // Eingebaute Fallback-Liste als Pseudo-Objekte
         $defaults = [
@@ -630,7 +715,7 @@ final class CMS_Companies_Database
             $obj->sort_order = $i++;
             $out[] = $obj;
         }
-        return $out;
+        return $this->industries_cache = $out;
     }
 
     public function add_industry(string $name): int
@@ -643,13 +728,18 @@ final class CMS_Companies_Database
             'name' => $name,
             'slug' => $slug,
         ]);
+        $this->industries_cache = null;
         return (int)$db->getPdo()->lastInsertId();
     }
 
     public function delete_industry(int $id): bool
     {
         $db = CMS\Database::instance();
-        return $db->delete('company_industries', ['id' => $id]) !== false;
+        $deleted = $db->delete('company_industries', ['id' => $id]) !== false;
+        if ($deleted) {
+            $this->industries_cache = null;
+        }
+        return $deleted;
     }
 
     // ─────────────────────────────────────────────────────────────────────────

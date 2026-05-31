@@ -24,13 +24,15 @@ trait CMS_Forum_Page_Threads_Trait
             $success = null;
 
             // POST-Handler
-            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forum_action'])) {
+            $requestMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+            if ($requestMethod === 'POST' && isset($_POST['forum_action'])) {
+                $forumAction = sanitize_key((string) ($_POST['forum_action'] ?? ''));
                 if (!self::verify_nonce('forum_threads')) {
                     $error = 'Sicherheitscheck fehlgeschlagen.';
                 } else {
                     $moderator = \CMS_Forum\Controllers\ModeratorController::instance();
 
-                    switch ($_POST['forum_action']) {
+                    switch ($forumAction) {
                         case 'delete_thread':
                             $result = $moderator->deleteThread((int) ($_POST['thread_id'] ?? 0));
                             $result['success'] ? $success = 'Thread gelöscht.' : $error = $result['error'];
@@ -52,6 +54,10 @@ trait CMS_Forum_Page_Threads_Trait
                                 (int) ($_POST['target_forum_id'] ?? 0)
                             );
                             $result['success'] ? $success = 'Thread verschoben.' : $error = $result['error'];
+                            break;
+
+                        default:
+                            $error = 'Unbekannte Aktion.';
                             break;
                     }
                 }
@@ -86,7 +92,8 @@ trait CMS_Forum_Page_Threads_Trait
             $whereSql = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
 
             // Paginierung
-            $page    = max(1, (int) ($_GET['page'] ?? 1));
+            $pageParam = $_GET['paged'] ?? $_GET['page_num'] ?? 1;
+            $page    = max(1, (int) $pageParam);
             $perPage = 25;
             $offset  = ($page - 1) * $perPage;
 

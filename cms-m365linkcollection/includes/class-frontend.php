@@ -171,7 +171,14 @@ final class CMS_M365LINKCOLLECTION_Frontend
             \CMS\ThemeManager::instance()->getHeader(['title' => (string) ($settings['page_title'] ?? 'MS365 | SITES & BLOGS')]);
         }
 
-        include CMS_M365LINKCOLLECTION_PLUGIN_DIR . 'templates/page-linkcollection.php';
+        $template = CMS_M365LINKCOLLECTION_PLUGIN_DIR . 'templates/page-linkcollection.php';
+        if (!is_file($template) || !is_readable($template)) {
+            $this->log_error('Template not found or unreadable: ' . $template);
+            $this->render_404();
+            return;
+        }
+
+        include $template;
 
         if (class_exists('CMS\\ThemeManager')) {
             \CMS\ThemeManager::instance()->getFooter();
@@ -194,7 +201,22 @@ final class CMS_M365LINKCOLLECTION_Frontend
     {
         $path = $this->normalized_request_path();
         $routePath = trim($route, '/');
-        return $path === $routePath || str_ends_with($path, '/' . $routePath);
+        if ($path === $routePath) {
+            return true;
+        }
+
+        $basePath = $this->normalized_site_base_path();
+        if ($basePath === '') {
+            return false;
+        }
+
+        $prefix = $basePath . '/';
+        if (!str_starts_with($path, $prefix)) {
+            return false;
+        }
+
+        $relativePath = trim(substr($path, strlen($prefix)), '/');
+        return $relativePath === $routePath;
     }
 
     private function normalized_request_path(): string
@@ -205,6 +227,16 @@ final class CMS_M365LINKCOLLECTION_Frontend
 
         $this->requestPathCache = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
         return $this->requestPathCache;
+    }
+
+    private function normalized_site_base_path(): string
+    {
+        $siteUrl = defined('SITE_URL') ? (string) SITE_URL : '';
+        if ($siteUrl === '') {
+            return '';
+        }
+
+        return trim((string) parse_url($siteUrl, PHP_URL_PATH), '/');
     }
 
     private function set_seo(string $title, string $description): void
@@ -218,7 +250,7 @@ final class CMS_M365LINKCOLLECTION_Frontend
             $seo->setTitle($title);
             $seo->setDescription($description);
         } catch (\Throwable $e) {
-            // SEO darf die Public-Ausgabe nicht blockieren.
+            $this->log_error('SEO integration failed: ' . $e->getMessage());
         }
     }
 
@@ -233,5 +265,10 @@ final class CMS_M365LINKCOLLECTION_Frontend
             \CMS\ThemeManager::instance()->getFooter();
         }
         exit;
+    }
+
+    private function log_error(string $message): void
+    {
+        error_log('CMS M365 Linkcollection frontend: ' . $message);
     }
 }

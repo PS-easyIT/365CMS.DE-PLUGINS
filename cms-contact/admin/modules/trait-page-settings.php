@@ -28,7 +28,7 @@ trait CMS_Contact_Page_Settings_Trait
         }
 
         // POST-Handler
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $postResult = self::process_settings_post();
             $notice = $postResult['notice'] ?? '';
             $error = $postResult['error'] ?? '';

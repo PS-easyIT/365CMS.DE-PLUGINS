@@ -104,7 +104,7 @@ $renderWidgetBlock = static function (array $widget): void {
     <section class="cp-public-hero">
         <div class="cp-hero-copy">
             <span class="cp-kicker">365CMS Projects</span>
-            <h1><?php echo $view === 'single' && $currentProject !== null ? htmlspecialchars((string) ($currentProject['public_headline'] ?: $currentProject['name']), ENT_QUOTES, 'UTF-8') : 'Öffentliche Projektübersicht'; ?></h1>
+            <h1><?php echo $view === 'single' && $currentProject !== null ? htmlspecialchars((string) (($currentProject['public_headline'] ?? '') !== '' ? ($currentProject['public_headline'] ?? '') : ($currentProject['name'] ?? '')), ENT_QUOTES, 'UTF-8') : 'Öffentliche Projektübersicht'; ?></h1>
             <p><?php echo $view === 'single' && $currentProject !== null ? htmlspecialchars((string) ($currentProject['summary'] ?? ''), ENT_QUOTES, 'UTF-8') : 'Projekt-Dashboards, Statusinformationen und Boards im öffentlichen Zugriff.'; ?></p>
         </div>
         <div class="cp-hero-meta">
@@ -127,7 +127,7 @@ $renderWidgetBlock = static function (array $widget): void {
                         <span class="cp-project-color" style="<?php echo htmlspecialchars($projectAccentStyle($project), ENT_QUOTES, 'UTF-8'); ?>"></span>
                         <div class="cp-card-meta-row">
                             <span class="cp-badge"><?php echo htmlspecialchars((string) ($project['status'] ?? 'active'), ENT_QUOTES, 'UTF-8'); ?></span>
-                            <span class="cp-badge"><?php echo htmlspecialchars((string) ($project['owner_name'] ?: 'Projektteam'), ENT_QUOTES, 'UTF-8'); ?></span>
+                            <span class="cp-badge"><?php echo htmlspecialchars((string) (($project['owner_name'] ?? '') !== '' ? ($project['owner_name'] ?? '') : 'Projektteam'), ENT_QUOTES, 'UTF-8'); ?></span>
                         </div>
                         <h2><?php echo htmlspecialchars((string) ($project['name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></h2>
                         <p><?php echo htmlspecialchars((string) ($project['summary'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>

@@ -82,7 +82,7 @@ foreach ($submissions as $submissionItem) {
             <select name="status" class="form-control contact-filter-select contact-filter-select--status">
                 <option value="">Alle</option>
                 <?php foreach ($statusMap as $key => $s): ?>
-                <option value="<?php echo $key; ?>" <?php echo $filterStatus === $key ? 'selected' : ''; ?>><?php echo $s['label']; ?></option>
+                <option value="<?php echo $e($key); ?>" <?php echo $filterStatus === $key ? 'selected' : ''; ?>><?php echo $e($s['label']); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -165,9 +165,13 @@ foreach ($submissions as $submissionItem) {
                                 break;
                             }
                         }
-                        $st = $statusMap[$sub['status']] ?? $statusMap['unread'];
+                        $submissionStatus = (string) ($sub['status'] ?? 'unread');
+                        $st = $statusMap[$submissionStatus] ?? $statusMap['unread'];
+                        $markReadToken = class_exists('CMS\\Security')
+                            ? \CMS\Security::instance()->generateToken('contact_submissions_mark_read_' . (int) ($sub['id'] ?? 0))
+                            : '';
                     ?>
-                    <tr class="<?php echo $sub['status'] === 'unread' ? 'contact-submission-row--unread' : ''; ?>">
+                    <tr class="<?php echo $submissionStatus === 'unread' ? 'contact-submission-row--unread' : ''; ?>">
                         <td><input type="checkbox" name="submission_ids[]" value="<?php echo (int)$sub['id']; ?>"></td>
                         <td>
                             <div class="contact-table-primary"><?php echo $e($senderName); ?></div>
@@ -209,7 +213,7 @@ foreach ($submissions as $submissionItem) {
                         <td class="contact-table-date"><?php echo date('d.m.Y H:i', strtotime($sub['created_at'])); ?></td>
                         <td>
                             <div class="contact-inline-actions">
-                                <a href="?section=submissions&action=view&id=<?php echo (int)$sub['id']; ?>"
+                                <a href="?section=submissions&action=view&id=<?php echo (int)$sub['id']; ?>&mark_read=1&mark_token=<?php echo rawurlencode($markReadToken); ?>"
                                    class="btn btn-sm btn-secondary" title="Anzeigen">👁️</a>
                             </div>
                         </td>
@@ -225,14 +229,14 @@ foreach ($submissions as $submissionItem) {
 <?php if ($pages > 1): ?>
 <div class="contact-pagination">
     <?php if ($page > 1): ?>
-    <a href="?section=submissions&paged=<?php echo $page - 1; ?>&form_id=<?php echo $filterFormId; ?>&status=<?php echo $e($filterStatus); ?>&search=<?php echo urlencode($filterSearch); ?>"
+    <a href="?section=submissions&paged=<?php echo $page - 1; ?>&form_id=<?php echo $filterFormId; ?>&status=<?php echo rawurlencode((string) $filterStatus); ?>&search=<?php echo rawurlencode((string) $filterSearch); ?>"
        class="btn btn-secondary btn-sm">← Zurück</a>
     <?php endif; ?>
     <span class="contact-pagination__status">
         Seite <?php echo $page; ?> von <?php echo $pages; ?>
     </span>
     <?php if ($page < $pages): ?>
-    <a href="?section=submissions&paged=<?php echo $page + 1; ?>&form_id=<?php echo $filterFormId; ?>&status=<?php echo $e($filterStatus); ?>&search=<?php echo urlencode($filterSearch); ?>"
+    <a href="?section=submissions&paged=<?php echo $page + 1; ?>&form_id=<?php echo $filterFormId; ?>&status=<?php echo rawurlencode((string) $filterStatus); ?>&search=<?php echo rawurlencode((string) $filterSearch); ?>"
        class="btn btn-secondary btn-sm">Weiter →</a>
     <?php endif; ?>
 </div>

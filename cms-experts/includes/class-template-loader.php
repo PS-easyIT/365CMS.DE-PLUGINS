@@ -36,23 +36,51 @@ final class CMS_Experts_Template_Loader
 
     private function locate_template(string $template_name): ?string
     {
-        $template_name = str_replace('.php', '', $template_name) . '.php';
+        $template_name = preg_replace('/[^a-z0-9_-]+/i', '', str_replace('.php', '', $template_name));
+        if ($template_name === null || $template_name === '') {
+            return null;
+        }
+        $template_name .= '.php';
 
-        $theme_template = $this->theme_template_dir !== '' ? $this->theme_template_dir . $template_name : '';
-        if ($theme_template !== '' && file_exists($theme_template)) {
+        $theme_template = $this->theme_template_dir !== '' ? $this->resolve_template_path($this->theme_template_dir, $template_name) : null;
+        if ($theme_template !== null) {
             return $theme_template;
         }
 
-        $legacy_theme_template = '';
+        $legacy_theme_template = null;
         if (class_exists('CMS\\ThemeManager')) {
-            $legacy_theme_template = \CMS\ThemeManager::instance()->getThemePath() . 'experts/' . $template_name;
+            $legacy_theme_template = $this->resolve_template_path(\CMS\ThemeManager::instance()->getThemePath() . 'experts/', $template_name);
         }
-        if ($legacy_theme_template !== '' && file_exists($legacy_theme_template)) {
+        if ($legacy_theme_template !== null) {
             return $legacy_theme_template;
         }
 
-        $plugin_template = $this->template_dir . $template_name;
-        return file_exists($plugin_template) ? $plugin_template : null;
+        return $this->resolve_template_path($this->template_dir, $template_name);
+    }
+
+    private function resolve_template_path(string $base_dir, string $template_name): ?string
+    {
+        $base_real = realpath($base_dir);
+        if ($base_real === false || !is_dir($base_real)) {
+            return null;
+        }
+
+        $candidate = $base_real . DIRECTORY_SEPARATOR . $template_name;
+        if (!is_file($candidate)) {
+            return null;
+        }
+
+        $candidate_real = realpath($candidate);
+        if ($candidate_real === false) {
+            return null;
+        }
+
+        $prefix = rtrim($base_real, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if (!str_starts_with($candidate_real, $prefix) || pathinfo($candidate_real, PATHINFO_EXTENSION) !== 'php') {
+            return null;
+        }
+
+        return $candidate_real;
     }
 
     /**

@@ -1,24 +1,5 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
-<!-- Section-Nav -->
-<nav class="lp-section-nav">
-    <a href="/admin/plugins/booking/booking" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">📊</span> Dashboard
-    </a>
-    <a href="/admin/plugins/booking/bookings" class="lp-section-nav__item active">
-        <span class="lp-section-nav__icon">📋</span> Buchungen
-    </a>
-    <a href="/admin/plugins/booking/providers" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">👥</span> Anbieter
-    </a>
-    <a href="/admin/plugins/booking/services" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">🛠️</span> Leistungen
-    </a>
-    <a href="/admin/plugins/booking/settings" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">⚙️</span> Einstellungen
-    </a>
-</nav>
-
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -38,8 +19,6 @@
 <!-- Filter-Bar -->
 <div class="admin-card">
     <form method="GET" class="booking-admin-filter-form">
-        <input type="hidden" name="section" value="bookings">
-
         <div class="form-group booking-admin-filter-group booking-admin-filter-group--status">
             <label class="form-label">Status</label>
             <select name="status" class="form-control" onchange="this.form.submit()">
@@ -109,13 +88,13 @@
                         <td><?php echo htmlspecialchars($item['provider_name'] ?? '—'); ?></td>
                         <td><?php echo htmlspecialchars($item['service_title'] ?? '—'); ?></td>
                         <td>
-                            <?php echo date('d.m.Y', strtotime($item['booking_date'])); ?>
+                            <?php echo htmlspecialchars((string) date('d.m.Y', strtotime((string) $item['booking_date'])), ENT_QUOTES, 'UTF-8'); ?>
                             <div class="booking-admin-muted">
-                                <?php echo substr($item['start_time'], 0, 5); ?> – <?php echo substr($item['end_time'], 0, 5); ?>
+                                <?php echo htmlspecialchars((string) substr((string) $item['start_time'], 0, 5), ENT_QUOTES, 'UTF-8'); ?> – <?php echo htmlspecialchars((string) substr((string) $item['end_time'], 0, 5), ENT_QUOTES, 'UTF-8'); ?>
                             </div>
                         </td>
                         <td>
-                            <span class="status-badge <?php echo CMS_Booking_Bookings::status_badge_class($item['status']); ?>">
+                            <span class="status-badge <?php echo htmlspecialchars(CMS_Booking_Bookings::status_badge_class((string) $item['status']), ENT_QUOTES, 'UTF-8'); ?>">
                                 <?php echo htmlspecialchars($statusLabels[$item['status']] ?? $item['status']); ?>
                             </span>
                         </td>
@@ -159,13 +138,13 @@
         <?php if ($pages > 1): ?>
         <div class="pagination booking-admin-pagination">
             <?php if ($page > 1): ?>
-                <a href="?section=bookings&page=<?php echo (int) ($page - 1); ?>&status=<?php echo rawurlencode($status); ?>&q=<?php echo rawurlencode($search); ?>" class="btn btn-secondary btn-sm">← Zurück</a>
+                <a href="<?php echo htmlspecialchars(CMS_Booking_Admin_Pages::admin_url('bookings', ['paged' => (int) ($page - 1), 'status' => $status, 'q' => $search, 'provider_id' => $providerId]), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary btn-sm">← Zurück</a>
             <?php endif; ?>
             <span class="booking-admin-pagination-info">
                 Seite <?php echo (int) $page; ?> von <?php echo (int) $pages; ?>
             </span>
             <?php if ($page < $pages): ?>
-                <a href="?section=bookings&page=<?php echo (int) ($page + 1); ?>&status=<?php echo rawurlencode($status); ?>&q=<?php echo rawurlencode($search); ?>" class="btn btn-secondary btn-sm">Weiter →</a>
+                <a href="<?php echo htmlspecialchars(CMS_Booking_Admin_Pages::admin_url('bookings', ['paged' => (int) ($page + 1), 'status' => $status, 'q' => $search, 'provider_id' => $providerId]), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary btn-sm">Weiter →</a>
             <?php endif; ?>
         </div>
         <?php endif; ?>

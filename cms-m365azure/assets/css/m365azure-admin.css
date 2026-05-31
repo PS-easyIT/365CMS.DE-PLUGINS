@@ -1,56 +1,88 @@
 .azs-admin-shell {
     box-sizing: border-box;
     max-width: none;
-    padding: 25px;
+    padding: 0;
     width: 100%;
 }
 
 .azs-admin-shell .admin-page-header {
-    margin-bottom: 1.25rem;
+    margin-bottom: 25px;
 }
 
-.azs-tabs,
-.azs-subtabs {
-    border-bottom: 2px solid #e2e8f0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0;
-    margin-bottom: 0;
+.cms-plugin-admin-layout .azs-admin-shell .admin-card {
+    margin-bottom: 25px;
 }
 
-.azs-tab,
-.azs-subtab {
-    align-items: center;
+.azs-admin-layout {
+    display: grid;
+    gap: 25px;
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+    align-items: start;
+}
+
+.azs-admin-content {
+    min-width: 0;
+}
+
+.azs-sidebar {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    display: grid;
+    gap: 20px;
+    padding: 16px;
+}
+
+.azs-sidebar-nav,
+.azs-sidebar-submenu-links {
+    display: grid;
+    gap: 6px;
+}
+
+.azs-sidebar-link,
+.azs-sidebar-sublink {
     border: 1px solid transparent;
-    border-bottom: 2px solid transparent;
-    border-radius: 6px 6px 0 0;
-    color: #475569;
-    display: inline-flex;
-    font-size: .875rem;
+    border-radius: 8px;
+    color: #334155;
+    display: block;
+    font-size: .9rem;
     font-weight: 500;
-    gap: .35rem;
-    margin-bottom: -2px;
-    padding: .6rem 1.1rem;
+    padding: 10px 12px;
     text-decoration: none;
-    transition: color .15s, background .15s;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
 }
 
-.azs-tab:hover,
-.azs-subtab:hover {
+.azs-sidebar-link:hover,
+.azs-sidebar-sublink:hover {
     background: #f8fafc;
-    color: var(--admin-primary, #3b82f6);
+    border-color: #e2e8f0;
+    color: #1e293b;
 }
 
-.azs-tab.active,
-.azs-subtab.active {
-    background: #fff;
-    border-color: #e2e8f0 #e2e8f0 #fff #e2e8f0;
-    color: var(--admin-primary, #3b82f6);
+.azs-sidebar-link.active,
+.azs-sidebar-sublink.active {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
     font-weight: 600;
 }
 
+.azs-sidebar-submenu {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 16px;
+}
+
+.azs-sidebar-submenu h3 {
+    color: #64748b;
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    margin: 0 0 10px;
+    text-transform: uppercase;
+}
+
 .azs-card-connected {
-    border-radius: 0 10px 10px 10px;
+    border-radius: 10px;
     margin-top: 0;
 }
 
@@ -163,10 +195,8 @@
 }
 
 @media (max-width: 960px) {
-    .azs-tabs,
-    .azs-subtabs {
-        flex-wrap: nowrap;
-        overflow-x: auto;
+    .azs-admin-layout {
+        grid-template-columns: 1fr;
     }
 
     .azs-form-grid {
@@ -179,10 +209,6 @@
 }
 
 @media (max-width: 640px) {
-    .azs-admin-shell {
-        padding: 16px;
-    }
-
     .azs-gallery-admin__grid {
         grid-template-columns: 1fr;
     }

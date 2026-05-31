@@ -18,6 +18,26 @@ $pageLinks = [
     'directory' => '?page=cms-marketplace-directory',
     'settings' => '?page=cms-marketplace-settings',
 ];
+$sidebarGroups = [
+    [
+        'label' => 'Marketplace Bereiche',
+        'open' => in_array(($section ?? ''), ['overview', 'cms', 'plugins', 'themes'], true),
+        'items' => [
+            ['key' => 'overview', 'label' => 'Übersicht'],
+            ['key' => 'cms', 'label' => 'CMS'],
+            ['key' => 'plugins', 'label' => 'Plugins'],
+            ['key' => 'themes', 'label' => 'Themes'],
+        ],
+    ],
+    [
+        'label' => 'System',
+        'open' => in_array(($section ?? ''), ['directory', 'settings'], true),
+        'items' => [
+            ['key' => 'directory', 'label' => 'Verzeichnis'],
+            ['key' => 'settings', 'label' => 'Einstellungen'],
+        ],
+    ],
+];
 
 $defaultEditValues = [
     'id' => 0,
@@ -85,39 +105,48 @@ $entryListTitle = match ($section ?? '') {
     default => 'Einträge',
 };
 ?>
-<div class="cms-marketplace-admin">
-    <div class="cms-marketplace-header">
-        <div>
-            <h1><?php echo htmlspecialchars((string) ($sectionConfig['title'] ?? '365CMS Marketplace'), ENT_QUOTES, 'UTF-8'); ?></h1>
-            <p><?php echo htmlspecialchars((string) ($sectionConfig['description'] ?? 'Zentrale Verwaltung für veröffentlichte Plugins und Themes unter /marketplace.'), ENT_QUOTES, 'UTF-8'); ?></p>
-        </div>
-        <div class="cms-marketplace-header-actions">
-            <?php if (!empty($publicRouteMap['overview'])): ?>
-                <a class="button button-primary" href="<?php echo htmlspecialchars((string) ($publicRouteMap['overview'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">Public Marketplace</a>
-            <?php endif; ?>
-            <?php if (!empty($publicUrls['submit'])): ?>
-                <a class="button" href="<?php echo htmlspecialchars((string) ($publicUrls['submit'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">Public Einreichung</a>
-            <?php endif; ?>
-            <?php if (!empty($publicUrls['plugins_index'])): ?>
-                <a class="button" href="<?php echo htmlspecialchars((string) ($publicUrls['plugins_index'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">Plugins Feed</a>
-            <?php endif; ?>
-            <?php if (!empty($publicUrls['themes_index'])): ?>
-                <a class="button" href="<?php echo htmlspecialchars((string) ($publicUrls['themes_index'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">Themes Feed</a>
-            <?php endif; ?>
-            <?php if (!empty($publicUrls['cms_update'])): ?>
-                <a class="button" href="<?php echo htmlspecialchars((string) ($publicUrls['cms_update'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">CMS Feed</a>
-            <?php endif; ?>
-        </div>
-    </div>
+<div class="cms-marketplace-admin-shell">
+    <aside class="cms-marketplace-sidebar">
+        <div class="cms-marketplace-sidebar-title">Navigation</div>
+        <?php foreach ($sidebarGroups as $sidebarGroup): ?>
+            <details class="cms-marketplace-sidebar-group" <?php echo !empty($sidebarGroup['open']) ? 'open' : ''; ?>>
+                <summary><?php echo htmlspecialchars((string) ($sidebarGroup['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></summary>
+                <div class="cms-marketplace-sidebar-links">
+                    <?php foreach ((array) ($sidebarGroup['items'] ?? []) as $sidebarItem): ?>
+                        <?php $itemKey = (string) ($sidebarItem['key'] ?? 'overview'); ?>
+                        <a href="<?php echo htmlspecialchars((string) ($pageLinks[$itemKey] ?? $pageLinks['overview']), ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo ($section ?? '') === $itemKey ? 'active' : ''; ?>">
+                            <?php echo htmlspecialchars((string) ($sidebarItem['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+            </details>
+        <?php endforeach; ?>
+    </aside>
 
-    <nav class="cms-marketplace-section-nav">
-        <a href="<?php echo htmlspecialchars($pageLinks['overview'], ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo ($section ?? '') === 'overview' ? 'active' : ''; ?>">Übersicht</a>
-        <a href="<?php echo htmlspecialchars($pageLinks['cms'], ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo $isCmsSection ? 'active' : ''; ?>">CMS</a>
-        <a href="<?php echo htmlspecialchars($pageLinks['plugins'], ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo ($section ?? '') === 'plugins' ? 'active' : ''; ?>">Plugins</a>
-        <a href="<?php echo htmlspecialchars($pageLinks['themes'], ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo ($section ?? '') === 'themes' ? 'active' : ''; ?>">Themes</a>
-        <a href="<?php echo htmlspecialchars($pageLinks['directory'], ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo $isDirectorySection ? 'active' : ''; ?>">Verzeichnis</a>
-        <a href="<?php echo htmlspecialchars($pageLinks['settings'], ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo $isSettingsSection ? 'active' : ''; ?>">Einstellungen</a>
-    </nav>
+    <main class="cms-marketplace-admin">
+        <div class="cms-marketplace-header">
+            <div>
+                <h1><?php echo htmlspecialchars((string) ($sectionConfig['title'] ?? '365CMS Marketplace'), ENT_QUOTES, 'UTF-8'); ?></h1>
+                <p><?php echo htmlspecialchars((string) ($sectionConfig['description'] ?? 'Zentrale Verwaltung für veröffentlichte Plugins und Themes unter /marketplace.'), ENT_QUOTES, 'UTF-8'); ?></p>
+            </div>
+            <div class="cms-marketplace-header-actions">
+                <?php if (!empty($publicRouteMap['overview'])): ?>
+                    <a class="button button-primary" href="<?php echo htmlspecialchars((string) ($publicRouteMap['overview'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">Public Marketplace</a>
+                <?php endif; ?>
+                <?php if (!empty($publicUrls['submit'])): ?>
+                    <a class="button" href="<?php echo htmlspecialchars((string) ($publicUrls['submit'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">Public Einreichung</a>
+                <?php endif; ?>
+                <?php if (!empty($publicUrls['plugins_index'])): ?>
+                    <a class="button" href="<?php echo htmlspecialchars((string) ($publicUrls['plugins_index'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">Plugins Feed</a>
+                <?php endif; ?>
+                <?php if (!empty($publicUrls['themes_index'])): ?>
+                    <a class="button" href="<?php echo htmlspecialchars((string) ($publicUrls['themes_index'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">Themes Feed</a>
+                <?php endif; ?>
+                <?php if (!empty($publicUrls['cms_update'])): ?>
+                    <a class="button" href="<?php echo htmlspecialchars((string) ($publicUrls['cms_update'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer">CMS Feed</a>
+                <?php endif; ?>
+            </div>
+        </div>
 
     <section class="cms-marketplace-hero-card">
         <div class="cms-marketplace-hero-copy">
@@ -931,4 +960,5 @@ $entryListTitle = match ($section ?? '') {
             </div>
         </section>
     <?php endif; ?>
+    </main>
 </div>

@@ -41,7 +41,20 @@ final class AdminController
             return ['success' => false, 'error' => 'Keine Berechtigung.'];
         }
 
-        $expires = $expiresAt ? new \DateTimeImmutable($expiresAt) : null;
+        if ($userId <= 0) {
+            return ['success' => false, 'error' => 'Ungültiger Benutzer.'];
+        }
+
+        $expires = null;
+        if ($expiresAt !== null && trim($expiresAt) !== '') {
+            try {
+                $expires = new \DateTimeImmutable($expiresAt);
+            } catch (\Throwable $e) {
+                $this->logError('Invalid ban expiry value.', ['user_id' => $userId, 'value' => $expiresAt], $e);
+                return ['success' => false, 'error' => 'Ungültiges Sperrdatum.'];
+            }
+        }
+
         UserMeta::instance()->ban($userId, $reason, $expires);
 
         return ['success' => true];
@@ -54,6 +67,10 @@ final class AdminController
     {
         if (!$this->isAdmin()) {
             return ['success' => false, 'error' => 'Keine Berechtigung.'];
+        }
+
+        if ($userId <= 0) {
+            return ['success' => false, 'error' => 'Ungültiger Benutzer.'];
         }
 
         UserMeta::instance()->unban($userId);
@@ -151,5 +168,15 @@ final class AdminController
     {
         $auth = \CMS\Auth::instance();
         return $auth->isLoggedIn() && $auth->isAdmin();
+    }
+
+    private function logError(string $message, array $context = [], ?\Throwable $e = null): void
+    {
+        $payload = ['context' => $context];
+        if ($e !== null) {
+            $payload['exception'] = $e->getMessage();
+        }
+
+        error_log('[cms-forum][admin-controller] ' . $message . ' ' . json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 }

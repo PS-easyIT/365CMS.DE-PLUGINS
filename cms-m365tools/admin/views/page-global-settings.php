@@ -110,59 +110,62 @@ $renderPriceInput = static function (array $field, string $tierLabel) use ($esc,
 <div class="alert alert-error">❌ <?php echo $esc($error); ?></div>
 <?php endif; ?>
 
-<div class="m365calculator-admin-tabs">
-    <?php foreach ($tabs as $tabKey => $tabLabel): ?>
-    <a href="<?php echo $esc($baseAdminUrl . '?tab=' . rawurlencode((string) $tabKey)); ?>" class="m365calculator-admin-tab<?php echo $activeTab === $tabKey ? ' active' : ''; ?>">
-        <?php echo $esc($tabLabel); ?>
-    </a>
-    <?php endforeach; ?>
-</div>
+<div class="m365calculator-admin-subnav-layout">
+    <aside class="m365calculator-admin-submenu" aria-label="Einstellungsbereiche">
+        <h3>Bereiche</h3>
+        <?php foreach ($tabs as $tabKey => $tabLabel): ?>
+        <a href="<?php echo $esc($baseAdminUrl . '?tab=' . rawurlencode((string) $tabKey)); ?>" class="m365calculator-admin-submenu-link<?php echo $activeTab === $tabKey ? ' active' : ''; ?>">
+            <?php echo $esc($tabLabel); ?>
+        </a>
+        <?php endforeach; ?>
+    </aside>
 
-<div class="admin-card m365calculator-admin-tab-card<?php echo $isPackagePriceGrid ? ' m365calculator-admin-tab-card--wide' : ''; ?>">
-    <div class="m365calculator-admin-callout">
-        <strong>Zentrale Vorgabe</strong>
-        <span>Diese Werte gelten pluginweit als Standard und können je Modul gezielt übersteuert werden.</span>
-    </div>
+    <div class="admin-card m365calculator-admin-tab-card<?php echo $isPackagePriceGrid ? ' m365calculator-admin-tab-card--wide' : ''; ?>">
+        <div class="m365calculator-admin-callout">
+            <strong>Zentrale Vorgabe</strong>
+            <span>Diese Werte gelten pluginweit als Standard und können je Modul gezielt übersteuert werden.</span>
+        </div>
 
-    <form method="POST" class="admin-form">
-        <input type="hidden" name="action" value="save_global_options">
-        <input type="hidden" name="settings_group" value="<?php echo $esc($activeTab); ?>">
-        <input type="hidden" name="csrf_token" value="<?php echo $esc($csrfToken); ?>">
+        <form method="POST" class="admin-form">
+            <input type="hidden" name="action" value="save_global_options">
+            <input type="hidden" name="settings_group" value="<?php echo $esc($activeTab); ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo $esc($csrfToken); ?>">
 
-        <?php if ($isPackagePriceGrid && $packagePriceRows !== []): ?>
-            <div class="m365calculator-price-table" role="table" aria-label="Paketpreise nach Preisstufe">
-                <div class="m365calculator-price-table__head" role="row">
-                    <span role="columnheader">Paket</span>
-                    <span role="columnheader">Public</span>
-                    <span role="columnheader">Member</span>
-                    <span role="columnheader">Spezial</span>
-                </div>
-                <?php foreach ($packagePriceRows as $row): ?>
-                    <div class="m365calculator-price-row" role="row">
-                        <div class="m365calculator-price-product" role="cell">
-                            <strong><?php echo $esc($row['label'] ?? 'Paket'); ?></strong>
-                            <?php if ((string) ($row['help'] ?? '') !== ''): ?>
-                                <small class="form-text"><?php echo $esc($row['help']); ?></small>
-                            <?php endif; ?>
-                        </div>
-                        <?php foreach (['public' => 'Public', 'member' => 'Member', 'group' => 'Spezial'] as $tier => $tierLabel): ?>
-                            <?php if (is_array($row['tiers'][$tier] ?? null)): ?>
-                                <?php $renderPriceInput($row['tiers'][$tier], $tierLabel); ?>
-                            <?php else: ?>
-                                <div class="m365calculator-price-cell m365calculator-price-cell--empty" role="cell">—</div>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
+            <?php if ($isPackagePriceGrid && $packagePriceRows !== []): ?>
+                <div class="m365calculator-price-table" role="table" aria-label="Paketpreise nach Preisstufe">
+                    <div class="m365calculator-price-table__head" role="row">
+                        <span role="columnheader">Paket</span>
+                        <span role="columnheader">Public</span>
+                        <span role="columnheader">Member</span>
+                        <span role="columnheader">Spezial</span>
                     </div>
-                <?php endforeach; ?>
-            </div>
-        <?php else: ?>
-            <div class="m365calculator-admin-form-grid">
-                <?php foreach ($fields as $field): ?>
-                    <?php $renderField($field); ?>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
+                    <?php foreach ($packagePriceRows as $row): ?>
+                        <div class="m365calculator-price-row" role="row">
+                            <div class="m365calculator-price-product" role="cell">
+                                <strong><?php echo $esc($row['label'] ?? 'Paket'); ?></strong>
+                                <?php if ((string) ($row['help'] ?? '') !== ''): ?>
+                                    <small class="form-text"><?php echo $esc($row['help']); ?></small>
+                                <?php endif; ?>
+                            </div>
+                            <?php foreach (['public' => 'Public', 'member' => 'Member', 'group' => 'Spezial'] as $tier => $tierLabel): ?>
+                                <?php if (is_array($row['tiers'][$tier] ?? null)): ?>
+                                    <?php $renderPriceInput($row['tiers'][$tier], $tierLabel); ?>
+                                <?php else: ?>
+                                    <div class="m365calculator-price-cell m365calculator-price-cell--empty" role="cell">—</div>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <div class="m365calculator-admin-form-grid">
+                    <?php foreach ($fields as $field): ?>
+                        <?php $renderField($field); ?>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
 
-        <button type="submit" class="btn btn-primary">💾 Globale Einstellungen speichern</button>
-    </form>
+            <button type="submit" class="btn btn-primary">💾 Globale Einstellungen speichern</button>
+        </form>
+    </div>
 </div>

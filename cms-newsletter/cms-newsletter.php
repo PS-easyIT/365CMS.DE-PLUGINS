@@ -38,7 +38,9 @@ final class CMS_Newsletter
 
     private function load_dependencies(): void
     {
+        $pluginRoot = realpath(CMS_NEWSLETTER_PLUGIN_DIR) ?: CMS_NEWSLETTER_PLUGIN_DIR;
         $files = [
+            dirname(__DIR__) . '/shared/admin/plugin-admin-contract.php',
             CMS_NEWSLETTER_PLUGIN_DIR . 'includes/class-installer.php',
             CMS_NEWSLETTER_PLUGIN_DIR . 'includes/class-repository.php',
             CMS_NEWSLETTER_PLUGIN_DIR . 'includes/class-public-controller.php',
@@ -47,9 +49,7 @@ final class CMS_Newsletter
         ];
 
         foreach ($files as $file) {
-            if (file_exists($file)) {
-                require_once $file;
-            }
+            $this->safe_require_file($file, $pluginRoot);
         }
     }
 
@@ -110,10 +110,31 @@ final class CMS_Newsletter
 
     private function is_newsletter_public_route(): bool
     {
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'GET') {
+            return false;
+        }
+
         $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
         $path = '/' . trim($path, '/');
 
-        return $path === '/newsletter' || str_starts_with($path, '/newsletter/');
+        return $path === '/newsletter';
+    }
+
+    private function safe_require_file(string $file, string $pluginRoot): void
+    {
+        $resolved = realpath($file);
+        if ($resolved === false || !is_file($resolved) || !is_readable($resolved)) {
+            return;
+        }
+
+        $sharedContractPath = realpath(dirname(__DIR__) . '/shared/admin/plugin-admin-contract.php');
+        $isInPlugin = str_starts_with($resolved, rtrim($pluginRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR);
+        $isAllowedSharedContract = $sharedContractPath !== false && $resolved === $sharedContractPath;
+        if (!$isInPlugin && !$isAllowedSharedContract) {
+            return;
+        }
+
+        require_once $resolved;
     }
 }
 

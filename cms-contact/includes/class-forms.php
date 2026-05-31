@@ -276,4 +276,53 @@ final class CMS_Contact_Forms
             'last_submission' => $row['last_submission'] ?? null,
         ];
     }
+
+    /**
+     * Statistiken für mehrere Formulare in einer Sammelabfrage.
+     *
+     * @param int[] $formIds
+     * @return array<int, array{total:int,unread:int,read:int,replied:int,spam:int,last_submission:?string}>
+     */
+    public function get_stats_for_form_ids(array $formIds): array
+    {
+        $formIds = array_values(array_filter(array_map('intval', $formIds), static fn (int $id): bool => $id > 0));
+        if ($formIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($formIds), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT
+                form_id,
+                COUNT(*)                                           AS total,
+                SUM(CASE WHEN status = 'unread' THEN 1 ELSE 0 END)  AS unread,
+                SUM(CASE WHEN status = 'read' THEN 1 ELSE 0 END)    AS read_count,
+                SUM(CASE WHEN status = 'replied' THEN 1 ELSE 0 END) AS replied,
+                SUM(CASE WHEN is_spam = 1 THEN 1 ELSE 0 END)        AS spam,
+                MAX(created_at)                                      AS last_submission
+             FROM {$this->prefix}contact_submissions
+             WHERE form_id IN ({$placeholders})
+             GROUP BY form_id"
+        );
+        $stmt->execute($formIds);
+
+        $stats = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $formId = (int) ($row['form_id'] ?? 0);
+            if ($formId <= 0) {
+                continue;
+            }
+
+            $stats[$formId] = [
+                'total' => (int) ($row['total'] ?? 0),
+                'unread' => (int) ($row['unread'] ?? 0),
+                'read' => (int) ($row['read_count'] ?? 0),
+                'replied' => (int) ($row['replied'] ?? 0),
+                'spam' => (int) ($row['spam'] ?? 0),
+                'last_submission' => isset($row['last_submission']) ? (string) $row['last_submission'] : null,
+            ];
+        }
+
+        return $stats;
+    }
 }

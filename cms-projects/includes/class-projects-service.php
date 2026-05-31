@@ -26,27 +26,7 @@ final class CMS_Projects_Service
 
     public function getSummary(): array
     {
-        $projects = $this->repository->getProjects();
-        $active = 0;
-        $public = 0;
-
-        foreach ($projects as $project) {
-            if (($project['status'] ?? '') === 'active') {
-                $active++;
-            }
-            if (($project['visibility'] ?? '') === 'public') {
-                $public++;
-            }
-        }
-
-        return [
-            'projects' => $this->repository->countProjects(),
-            'boards' => $this->repository->countBoards(),
-            'widgets' => $this->repository->countWidgets(),
-            'tasks' => $this->repository->countTasks(),
-            'active_projects' => $active,
-            'public_projects' => $public,
-        ];
+        return $this->repository->getSummaryCounts();
     }
 
     public function getBoardTypes(): array
@@ -260,6 +240,7 @@ final class CMS_Projects_Service
         ], $taskId > 0 ? $taskId : null);
 
         if ($saveId === false) {
+            $this->logOperationFailure('save_task', ['project_id' => $projectId, 'task_id' => $taskId]);
             return ['success' => false, 'message' => 'Ticket konnte nicht gespeichert werden.'];
         }
 
@@ -274,6 +255,7 @@ final class CMS_Projects_Service
         }
 
         if (!$this->repository->deleteTask($taskId)) {
+            $this->logOperationFailure('delete_task', ['project_id' => $projectId, 'task_id' => $taskId]);
             return ['success' => false, 'message' => 'Ticket konnte nicht gelöscht werden.'];
         }
 
@@ -309,6 +291,7 @@ final class CMS_Projects_Service
         $finalTargetTaskIds = $this->buildOrderedTaskIds($orderedTaskIds, $targetTasks, $taskId);
 
         if (!$this->persistTaskOrder($finalTargetTaskIds, $targetBoardId, $resolvedColumnKey)) {
+            $this->logOperationFailure('move_task_target', ['project_id' => $projectId, 'task_id' => $taskId, 'board_id' => $targetBoardId, 'column_key' => $resolvedColumnKey]);
             return ['success' => false, 'message' => 'Ticket konnte nicht verschoben werden.'];
         }
 
@@ -317,6 +300,7 @@ final class CMS_Projects_Service
             $sourceTaskIds = array_map(static fn (array $columnTask): int => (int) ($columnTask['id'] ?? 0), $sourceTasks);
 
             if (!$this->persistTaskOrder($sourceTaskIds, $sourceBoardId, $sourceColumnKey)) {
+                $this->logOperationFailure('move_task_source', ['project_id' => $projectId, 'task_id' => $taskId, 'board_id' => $sourceBoardId, 'column_key' => $sourceColumnKey]);
                 return ['success' => false, 'message' => 'Quell-Spalte konnte nach dem Verschieben nicht neu sortiert werden.'];
             }
         }
@@ -406,6 +390,7 @@ final class CMS_Projects_Service
         ], $id);
 
         if ($saveId === false) {
+            $this->logOperationFailure('save_project', ['project_id' => $id ?? 0, 'slug' => $slug]);
             return ['success' => false, 'message' => 'Projekt konnte nicht gespeichert werden.'];
         }
 
@@ -457,6 +442,7 @@ final class CMS_Projects_Service
         ]);
 
         if ($saveId === false) {
+            $this->logOperationFailure('save_board', ['project_id' => $projectId, 'board_type' => $boardType]);
             return ['success' => false, 'message' => 'Board konnte nicht gespeichert werden.'];
         }
 
@@ -513,6 +499,7 @@ final class CMS_Projects_Service
         ]);
 
         if ($saveId === false) {
+            $this->logOperationFailure('save_widget', ['project_id' => $projectId, 'widget_type' => $widgetType]);
             return ['success' => false, 'message' => 'Widget konnte nicht gespeichert werden.'];
         }
 
@@ -802,29 +789,6 @@ final class CMS_Projects_Service
         return true;
     }
 
-    private function getNextTaskSortOrder(int $projectId, int $boardId, string $columnKey, int $excludedTaskId = 0): int
-    {
-        $maxSortOrder = 0;
-
-        foreach ($this->getProjectTasks($projectId, 'admin') as $task) {
-            if ((int) ($task['id'] ?? 0) === $excludedTaskId) {
-                continue;
-            }
-
-            if ((int) ($task['board_id'] ?? 0) !== $boardId) {
-                continue;
-            }
-
-            if ($this->normalizeColumnKey((string) ($task['column_key'] ?? '')) !== $columnKey) {
-                continue;
-            }
-
-            $maxSortOrder = max($maxSortOrder, (int) ($task['sort_order'] ?? 0));
-        }
-
-        return $maxSortOrder + 1;
-    }
-
     private function findBoardForProject(int $projectId, int $boardId): ?array
     {
         if ($boardId <= 0) {
@@ -1072,5 +1036,18 @@ final class CMS_Projects_Service
             'timeline' => ['items' => [['date' => '2026-04-01', 'label' => 'Kickoff'], ['date' => '2026-04-12', 'label' => 'MVP Review'], ['date' => '2026-04-30', 'label' => 'Release-Kandidat']]],
             default => ['items' => []],
         };
+    }
+
+    private function logOperationFailure(string $operation, array $context = []): void
+    {
+        $segments = [];
+        foreach ($context as $key => $value) {
+            if (!is_scalar($value)) {
+                continue;
+            }
+            $segments[] = $key . '=' . (string) $value;
+        }
+
+        error_log('[cms-projects] operation_failed=' . $operation . ($segments !== [] ? ' ' . implode(' ', $segments) : ''));
     }
 }

@@ -308,32 +308,69 @@ HTML;
 
     private function send(string $to, string $subject, string $htmlBody): bool
     {
+        $to = $this->sanitize_email($to);
         if ($to === '') {
             return false;
         }
 
-        $fromName  = $this->get_setting('from_name')  ?: (defined('SITE_NAME') ? SITE_NAME : '365CMS');
-        $fromEmail = $this->get_setting('from_email')  ?: (defined('ADMIN_EMAIL') ? ADMIN_EMAIL : 'noreply@localhost');
+        $fromName  = $this->sanitize_header_value(
+            $this->get_setting('from_name') ?: (defined('SITE_NAME') ? SITE_NAME : '365CMS')
+        );
+        $fromEmail = $this->sanitize_email(
+            $this->get_setting('from_email') ?: (defined('ADMIN_EMAIL') ? ADMIN_EMAIL : '')
+        );
+        if ($fromEmail === '') {
+            $fromEmail = 'noreply@localhost';
+        }
+        $subject = $this->sanitize_header_value($subject);
 
         $headers   = [];
         $headers[] = 'MIME-Version: 1.0';
         $headers[] = 'Content-Type: text/html; charset=UTF-8';
         $headers[] = "From: {$fromName} <{$fromEmail}>";
 
-        return @mail($to, $subject, $htmlBody, implode("\r\n", $headers));
+        $sent = mail($to, $subject, $htmlBody, implode("\r\n", $headers));
+        if (!$sent) {
+            $this->log_notice('booking notification mail not sent');
+        }
+
+        return $sent;
     }
 
     private function get_setting(string $key): string
     {
+        static $settings = null;
+        if (is_array($settings)) {
+            return (string) ($settings[$key] ?? '');
+        }
+
         try {
             $db   = \CMS\Database::instance();
-            $stmt = $db->prepare(
-                "SELECT setting_value FROM {$db->getPrefix()}booking_settings WHERE setting_key = ?"
-            );
-            $stmt->execute([$key]);
-            return (string) ($stmt->fetchColumn() ?: '');
+            $stmt = $db->prepare("SELECT setting_key, setting_value FROM {$db->getPrefix()}booking_settings");
+            $stmt->execute();
+            $settings = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
         } catch (\Throwable $e) {
-            return '';
+            $settings = [];
+            $this->log_notice('booking settings not readable for notifications');
         }
+
+        return (string) ($settings[$key] ?? '');
+    }
+
+    private function sanitize_email(string $email): string
+    {
+        $clean = filter_var(trim($email), FILTER_VALIDATE_EMAIL);
+        return is_string($clean) ? $clean : '';
+    }
+
+    private function sanitize_header_value(string $value): string
+    {
+        $value = str_replace(["\r", "\n"], ' ', trim($value));
+        return $value === '' ? '365CMS' : $value;
+    }
+
+    private function log_notice(string $message): void
+    {
+        error_log('[cms-booking] ' . $message);
     }
 }

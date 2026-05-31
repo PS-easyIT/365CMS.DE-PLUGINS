@@ -13,6 +13,16 @@ if (!defined('ABSPATH')) {
 
 final class CMS_NetImport_Admin
 {
+    private const MENU_SLUG = 'netimport';
+    private const MENU_IMPORT_SLUG = 'netimport-import';
+    private const MENU_HISTORY_SLUG = 'netimport-history';
+    private const MENU_SOURCES_SLUG = 'netimport-sources';
+
+    private const VIEW_OVERVIEW = 'overview';
+    private const VIEW_IMPORT = 'import';
+    private const VIEW_HISTORY = 'history';
+    private const VIEW_SOURCES = 'sources';
+
     private static ?self $instance = null;
 
     public static function instance(): self
@@ -22,10 +32,74 @@ final class CMS_NetImport_Admin
 
     private function __construct()
     {
+        $this->load_shared_admin_contract();
         $this->load_admin_menu();
         CMS\Hooks::addAction('register_routes', [$this, 'register_routes'], 10);
         CMS\Hooks::addAction('cms_admin_menu', [$this, 'register_admin_menu'], 10);
         CMS\Hooks::addFilter('admin_menu_items', [$this, 'add_menu_item'], 10);
+    }
+
+    private function log_error(string $message, ?\Throwable $exception = null): void
+    {
+        $safeMessage = preg_replace('/\s+/', ' ', trim($message)) ?? 'Unknown error';
+        if ($exception !== null) {
+            $exceptionMessage = preg_replace('/\s+/', ' ', trim($exception->getMessage())) ?? 'Unknown exception';
+            $safeMessage .= ' | ' . $exceptionMessage;
+        }
+
+        error_log('[cms-netimport] ' . $safeMessage);
+    }
+
+    private function is_admin_user(): bool
+    {
+        if (!class_exists('CMS\\Auth')) {
+            return false;
+        }
+
+        try {
+            return CMS\Auth::instance()->isAdmin();
+        } catch (\Throwable $e) {
+            $this->log_error('Admin check failed', $e);
+            return false;
+        }
+    }
+
+    private function redirect_to(string $path): void
+    {
+        if (class_exists('CMS\\Router')) {
+            CMS\Router::instance()->redirect($path);
+            return;
+        }
+
+        if (!headers_sent()) {
+            header('Location: ' . $path, true, 303);
+        }
+    }
+
+    private function verify_csrf_token(string $token, string $scope): bool
+    {
+        if (!class_exists('CMS\\Security')) {
+            $this->log_error('Security component missing while verifying CSRF token');
+            return false;
+        }
+
+        try {
+            return CMS\Security::instance()->verifyToken($token, $scope);
+        } catch (\Throwable $e) {
+            $this->log_error('CSRF verification failed for ' . $scope, $e);
+            return false;
+        }
+    }
+
+    private function load_shared_admin_contract(): void
+    {
+        $contractFile = dirname(CMS_NETIMPORT_PLUGIN_DIR) . '/shared/admin/plugin-admin-contract.php';
+        if (is_file($contractFile)) {
+            require_once $contractFile;
+            return;
+        }
+
+        $this->log_error('Shared admin contract not found: ' . $contractFile);
     }
 
     public function register_admin_menu(): void
@@ -38,21 +112,158 @@ final class CMS_NetImport_Admin
             'NetImport',
             'NetImport',
             'manage_options',
-            'netimport',
-            [self::class, 'render_plugin_page_bridge'],
+            self::MENU_SLUG,
+            [self::class, 'dispatch_plugin_page_bridge'],
             'NI',
             46
         );
+
+        if (!function_exists('add_submenu_page')) {
+            return;
+        }
+
+        add_submenu_page(
+            self::MENU_SLUG,
+            'NetImport Übersicht',
+            'Übersicht',
+            'manage_options',
+            self::MENU_SLUG,
+            [self::class, 'dispatch_plugin_page_bridge']
+        );
+
+        add_submenu_page(
+            self::MENU_SLUG,
+            'NetImport Import',
+            'Import starten',
+            'manage_options',
+            self::MENU_IMPORT_SLUG,
+            [self::class, 'dispatch_import_page_bridge']
+        );
+
+        add_submenu_page(
+            self::MENU_SLUG,
+            'NetImport Historie',
+            'Historie',
+            'manage_options',
+            self::MENU_HISTORY_SLUG,
+            [self::class, 'dispatch_history_page_bridge']
+        );
+
+        add_submenu_page(
+            self::MENU_SLUG,
+            'NetImport Quellen',
+            'CSV-Quellen',
+            'manage_options',
+            self::MENU_SOURCES_SLUG,
+            [self::class, 'dispatch_sources_page_bridge']
+        );
     }
 
-    public static function render_plugin_page_bridge(): void
+    public static function dispatch_plugin_page_bridge(): void
     {
+        self::instance()->dispatch_admin_page();
+    }
+
+    public static function dispatch_import_page_bridge(): void
+    {
+        self::instance()->dispatch_admin_page(self::MENU_IMPORT_SLUG);
+    }
+
+    public static function dispatch_history_page_bridge(): void
+    {
+        self::instance()->dispatch_admin_page(self::MENU_HISTORY_SLUG);
+    }
+
+    public static function dispatch_sources_page_bridge(): void
+    {
+        self::instance()->dispatch_admin_page(self::MENU_SOURCES_SLUG);
+    }
+
+    private function dispatch_admin_page(?string $forcedPageSlug = null): void
+    {
+        $callbackMap = [
+            self::MENU_SLUG => function (): void {
+                $this->render_plugin_page_bridge(self::VIEW_OVERVIEW);
+            },
+            self::MENU_IMPORT_SLUG => function (): void {
+                $this->render_plugin_page_bridge(self::VIEW_IMPORT);
+            },
+            self::MENU_HISTORY_SLUG => function (): void {
+                $this->render_plugin_page_bridge(self::VIEW_HISTORY);
+            },
+            self::MENU_SOURCES_SLUG => function (): void {
+                $this->render_plugin_page_bridge(self::VIEW_SOURCES);
+            },
+        ];
+
+        if ($forcedPageSlug !== null && $forcedPageSlug !== '') {
+            $_GET['page'] = $forcedPageSlug;
+        }
+
+        if (function_exists('cms_plugin_admin_dispatch_page')) {
+            cms_plugin_admin_dispatch_page($callbackMap, self::MENU_SLUG, self::MENU_SLUG);
+            return;
+        }
+
+        $requested = $this->normalize_admin_slug((string) ($_GET['page'] ?? self::MENU_SLUG));
+        $resolved = array_key_exists($requested, $callbackMap) ? $requested : self::MENU_SLUG;
+        $callback = $callbackMap[$resolved] ?? null;
+        if (!is_callable($callback)) {
+            $this->start_admin_layout('NetImport', self::MENU_SLUG);
+            $this->emit_dispatch_notice($requested, $resolved);
+            $this->end_admin_layout();
+            return;
+        }
+
+        call_user_func($callback);
+    }
+
+    private function normalize_admin_slug(string $slug): string
+    {
+        if (function_exists('cms_plugin_admin_normalize_slug')) {
+            return cms_plugin_admin_normalize_slug($slug);
+        }
+
+        $slug = strtolower(trim($slug));
+        $slug = (string) preg_replace('/[^a-z0-9_-]+/', '-', $slug);
+        return trim($slug, '-');
+    }
+
+    private function emit_dispatch_notice(string $requested, string $resolved): void
+    {
+        $message = 'Die angeforderte NetImport-Seite ist nicht verfügbar. Bitte Plugin-Konfiguration prüfen.';
+        $context = sprintf(
+            'missing admin callback plugin=%s requested=%s resolved=%s default=%s',
+            self::MENU_SLUG,
+            $requested,
+            $resolved,
+            self::MENU_SLUG
+        );
+
+        if (function_exists('cms_plugin_admin_emit_notice')) {
+            cms_plugin_admin_emit_notice($message, 'error', $context);
+            return;
+        }
+
+        $this->log_error($context);
+        echo '<div class="alert alert-error" role="alert">' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</div>';
+    }
+
+    private function render_plugin_page_bridge(string $view): void
+    {
+        $targetPath = '/admin/netimport';
+        if ($view !== self::VIEW_OVERVIEW) {
+            $targetPath .= '?view=' . rawurlencode($view);
+        }
+
+        $target = SITE_URL . $targetPath;
+
         if (!headers_sent()) {
-            header('Location: ' . SITE_URL . '/admin/netimport', true, 303);
+            header('Location: ' . $target, true, 303);
             exit;
         }
 
-        $targetUrl = htmlspecialchars(SITE_URL . '/admin/netimport', ENT_QUOTES, 'UTF-8');
+        $targetUrl = htmlspecialchars($target, ENT_QUOTES, 'UTF-8');
 
         echo '<div class="admin-card"><p>Weiterleitung zur NetImport-Verwaltung … <a href="' . $targetUrl . '">Falls nichts passiert, hier klicken</a>.</p></div>';
     }
@@ -60,37 +271,67 @@ final class CMS_NetImport_Admin
     private function load_admin_menu(): void
     {
         $menuFile = ABSPATH . 'admin/partials/admin-menu.php';
-        if (file_exists($menuFile) && !function_exists('renderAdminLayoutStart')) {
+        if (is_file($menuFile) && is_readable($menuFile) && !function_exists('renderAdminLayoutStart')) {
             require_once $menuFile;
         }
     }
 
     private function start_admin_layout(string $title, string $activePage): void
     {
+        if (function_exists('cms_plugin_admin_layout_start')) {
+            cms_plugin_admin_layout_start($title, $activePage);
+            return;
+        }
+
         $this->load_admin_menu();
 
         if (function_exists('renderAdminLayoutStart')) {
             renderAdminLayoutStart($title, $activePage);
+            echo '<div class="cms-plugin-admin-layout"><div class="cms-plugin-admin-layout__content">';
+            if (function_exists('cms_plugin_admin_shared_styles')) {
+                cms_plugin_admin_shared_styles();
+            }
             return;
         }
 
         $pageTitle = $title;
         require_once ABSPATH . 'admin/partials/header.php';
         require_once ABSPATH . 'admin/partials/sidebar.php';
+
+        echo '<div class="cms-plugin-admin-layout"><div class="cms-plugin-admin-layout__content">';
+
+        if (function_exists('cms_plugin_admin_shared_styles')) {
+            cms_plugin_admin_shared_styles();
+        }
     }
 
     private function end_admin_layout(): void
     {
+        if (function_exists('cms_plugin_admin_layout_end')) {
+            cms_plugin_admin_layout_end();
+            return;
+        }
+
+        echo '</div></div>';
+
         if (function_exists('renderAdminLayoutEnd')) {
             renderAdminLayoutEnd();
             return;
         }
 
-        require_once ABSPATH . 'admin/partials/footer.php';
+        $footer = ABSPATH . 'admin/partials/footer.php';
+        if (is_file($footer)) {
+            require_once $footer;
+        }
     }
 
     public function register_routes($router): void
     {
+        if (!is_object($router) || !method_exists($router, 'addRoute')) {
+            $this->log_error('Router missing addRoute in register_routes');
+            return;
+        }
+
         $router->addRoute('GET', '/admin/netimport', [$this, 'render_page']);
         $router->addRoute('POST', '/admin/netimport/run', [$this, 'handle_run']);
         $router->addRoute('POST', '/admin/netimport/history-action', [$this, 'handle_history_action']);
@@ -101,7 +342,7 @@ final class CMS_NetImport_Admin
         $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
         $menuItems[] = [
             'type'   => 'item',
-            'slug'   => 'netimport',
+            'slug'   => self::MENU_SLUG,
             'label'  => 'NetImport',
             'icon'   => 'NI',
             'url'    => '/admin/netimport',
@@ -113,15 +354,38 @@ final class CMS_NetImport_Admin
 
     public function handle_run(): void
     {
-        if (!CMS\Auth::instance()->isAdmin()) {
-            CMS\Router::instance()->redirect('/login');
+        if (!$this->is_admin_user()) {
+            $this->redirect_to('/login');
+            return;
+        }
+
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST') {
+            $this->redirect_to('/admin/netimport');
+            return;
+        }
+
+        if (!class_exists('CMS_NetImport_Importer')) {
+            $this->render_page([
+                'errors'   => 1,
+                'warnings' => 0,
+                'created'  => 0,
+                'updated'  => 0,
+                'linked'   => 0,
+                'skipped'  => 0,
+                'dry_run'  => false,
+                'messages' => [
+                    ['level' => 'error', 'text' => 'Importer-Komponente nicht verfügbar. Bitte Plugin-Konfiguration prüfen.'],
+                ],
+                'type'     => 'run',
+                'file'     => '',
+            ], $this->read_options(), $this->read_history_filters(), self::VIEW_IMPORT);
             return;
         }
 
         $options = $this->read_options();
 
         $csrfToken = (string) ($_POST['csrf_token'] ?? '');
-        if (!CMS\Security::instance()->verifyToken($csrfToken, 'netimport_run')) {
+        if (!$this->verify_csrf_token($csrfToken, 'netimport_run')) {
             $this->render_page([
                 'errors'   => 1,
                 'warnings' => 0,
@@ -135,7 +399,7 @@ final class CMS_NetImport_Admin
                 ],
                 'type'     => 'csrf',
                 'file'     => '',
-            ], $options);
+            ], $options, $this->read_history_filters(), self::VIEW_IMPORT);
             return;
         }
 
@@ -153,7 +417,7 @@ final class CMS_NetImport_Admin
                 ],
                 'type'     => 'rate_limit',
                 'file'     => '',
-            ], $options);
+            ], $options, $this->read_history_filters(), self::VIEW_IMPORT);
             return;
         }
 
@@ -165,21 +429,44 @@ final class CMS_NetImport_Admin
             $importType = 'full';
         }
 
-        $result  = CMS_NetImport_Importer::instance()->run_import($importType, $options);
+        $result = CMS_NetImport_Importer::instance()->run_import($importType, $options);
 
-        $this->render_page($result, $options);
+        $this->render_page($result, $options, $this->read_history_filters(), self::VIEW_IMPORT);
     }
 
     public function handle_history_action(): void
     {
-        if (!CMS\Auth::instance()->isAdmin()) {
-            CMS\Router::instance()->redirect('/login');
+        if (!$this->is_admin_user()) {
+            $this->redirect_to('/login');
+            return;
+        }
+
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST') {
+            $this->redirect_to('/admin/netimport?view=history');
+            return;
+        }
+
+        if (!class_exists('CMS_NetImport_Importer')) {
+            $this->render_page([
+                'errors' => 1,
+                'warnings' => 0,
+                'created' => 0,
+                'updated' => 0,
+                'linked' => 0,
+                'skipped' => 0,
+                'dry_run' => false,
+                'messages' => [
+                    ['level' => 'error', 'text' => 'Importer-Komponente für Historien-Aktion nicht verfügbar.'],
+                ],
+                'type' => 'history_action',
+                'file' => '',
+            ], $this->read_options(), $this->read_history_filters(), self::VIEW_HISTORY);
             return;
         }
 
         $filters = $this->read_history_filters();
         $csrfToken = (string) ($_POST['csrf_token'] ?? '');
-        if (!CMS\Security::instance()->verifyToken($csrfToken, 'netimport_history_action')) {
+        if (!$this->verify_csrf_token($csrfToken, 'netimport_history_action')) {
             $this->render_page([
                 'errors' => 1,
                 'warnings' => 0,
@@ -193,7 +480,7 @@ final class CMS_NetImport_Admin
                 ],
                 'type' => 'history_action',
                 'file' => '',
-            ], $this->read_options(), $filters);
+            ], $this->read_options(), $filters, self::VIEW_HISTORY);
             return;
         }
 
@@ -211,7 +498,7 @@ final class CMS_NetImport_Admin
                 ],
                 'type' => 'history_action',
                 'file' => '',
-            ], $this->read_options(), $filters);
+            ], $this->read_options(), $filters, self::VIEW_HISTORY);
             return;
         }
 
@@ -237,6 +524,12 @@ final class CMS_NetImport_Admin
             $result['messages'][] = ['level' => 'success', 'text' => 'Import-Historie gelöscht. Entfernte Einträge: ' . $deleted . '.'];
         } elseif ($action === 'reset_run') {
             $runId = max(0, (int) ($_POST['run_id'] ?? 0));
+            if ($runId <= 0) {
+                $result['warnings'] = 1;
+                $result['messages'][] = ['level' => 'warning', 'text' => 'Ungültige Lauf-ID für Reset-Aktion.'];
+                $this->render_page($result, $this->read_options(), $filters, self::VIEW_HISTORY);
+                return;
+            }
             $summary = $importer->reset_run($runId);
             $result['messages'][] = [
                 'level' => !empty($summary['success']) ? 'success' : 'warning',
@@ -250,7 +543,7 @@ final class CMS_NetImport_Admin
             $result['messages'][] = ['level' => 'warning', 'text' => 'Unbekannte Historien-Aktion.'];
         }
 
-        $this->render_page($result, $this->read_options(), $filters);
+        $this->render_page($result, $this->read_options(), $filters, self::VIEW_HISTORY);
     }
 
     private function read_options(): array
@@ -295,6 +588,10 @@ final class CMS_NetImport_Admin
 
     private function output_admin_assets(): void
     {
+        if (!$this->is_own_admin_page_request()) {
+            return;
+        }
+
         $adminCss = CMS_NETIMPORT_PLUGIN_DIR . 'assets/css/netimport-admin.css';
         if (file_exists($adminCss)) {
             $version = (string) filemtime($adminCss);
@@ -308,29 +605,78 @@ final class CMS_NetImport_Admin
         }
     }
 
-    public function render_page(?array $result = null, array $selectedOptions = [], array $historyFilters = []): void
+    private function is_own_admin_page_request(): bool
     {
-        if (!CMS\Auth::instance()->isAdmin()) {
-            CMS\Router::instance()->redirect('/login');
+        $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        if ($requestUri !== '') {
+            $path = (string) (parse_url($requestUri, PHP_URL_PATH) ?? '');
+            if ($path !== '' && str_starts_with($path, '/admin/netimport')) {
+                return true;
+            }
+        }
+
+        $page = $this->normalize_admin_slug((string) ($_GET['page'] ?? ''));
+        return in_array($page, [self::MENU_SLUG, self::MENU_IMPORT_SLUG, self::MENU_HISTORY_SLUG, self::MENU_SOURCES_SLUG], true);
+    }
+
+    private function resolve_admin_view(?string $forcedView = null): string
+    {
+        $rawView = $forcedView ?? (string) ($_POST['active_view'] ?? $_GET['view'] ?? self::VIEW_OVERVIEW);
+        $view = strtolower(trim($rawView));
+
+        return in_array($view, [self::VIEW_OVERVIEW, self::VIEW_IMPORT, self::VIEW_HISTORY, self::VIEW_SOURCES], true)
+            ? $view
+            : self::VIEW_OVERVIEW;
+    }
+
+    public function render_page(?array $result = null, array $selectedOptions = [], array $historyFilters = [], ?string $forcedView = null): void
+    {
+        if (!$this->is_admin_user()) {
+            $this->redirect_to('/login');
             return;
         }
 
-        $security  = CMS\Security::instance();
+        if (!class_exists('CMS\\Security')) {
+            $this->start_admin_layout('NetImport', self::MENU_SLUG);
+            $this->emit_dispatch_notice(self::MENU_SLUG, self::MENU_SLUG);
+            $this->end_admin_layout();
+            return;
+        }
+
+        if (!class_exists('CMS_NetImport_Importer')) {
+            $this->start_admin_layout('NetImport', self::MENU_SLUG);
+            $this->emit_dispatch_notice(self::MENU_SLUG, self::MENU_SLUG);
+            $this->end_admin_layout();
+            return;
+        }
+
+        $activeView = $this->resolve_admin_view($forcedView);
+
+        $security = CMS\Security::instance();
         $csrfToken = $security->generateToken('netimport_run');
         $historyCsrfToken = $security->generateToken('netimport_history_action');
-        $adminNetimportUrl = htmlspecialchars(SITE_URL . '/admin/netimport', ENT_QUOTES, 'UTF-8');
-        $adminRunUrl = htmlspecialchars(SITE_URL . '/admin/netimport/run', ENT_QUOTES, 'UTF-8');
-        $adminHistoryActionUrl = htmlspecialchars(SITE_URL . '/admin/netimport/history-action', ENT_QUOTES, 'UTF-8');
-        $importer  = CMS_NetImport_Importer::instance();
-        $sources   = $importer->get_sources();
+        $adminBaseUrl = SITE_URL . '/admin/netimport';
+        $adminCurrentViewUrl = $activeView === self::VIEW_OVERVIEW
+            ? $adminBaseUrl
+            : $adminBaseUrl . '?view=' . rawurlencode($activeView);
+        $adminNetimportUrl = htmlspecialchars($adminBaseUrl, ENT_QUOTES, 'UTF-8');
+        $adminCurrentViewUrlEscaped = htmlspecialchars($adminCurrentViewUrl, ENT_QUOTES, 'UTF-8');
+        $adminRunUrl = htmlspecialchars($adminBaseUrl . '/run', ENT_QUOTES, 'UTF-8');
+        $adminHistoryActionUrl = htmlspecialchars($adminBaseUrl . '/history-action', ENT_QUOTES, 'UTF-8');
+        $importer = CMS_NetImport_Importer::instance();
+        $needsSources = in_array($activeView, [self::VIEW_OVERVIEW, self::VIEW_IMPORT, self::VIEW_SOURCES], true);
+        $needsHistory = in_array($activeView, [self::VIEW_OVERVIEW, self::VIEW_HISTORY], true);
+        $sources = $needsSources ? $importer->get_sources() : [];
         $historyFilters = array_merge([
             'type' => '',
             'mode' => '',
             'errors' => '',
         ], $historyFilters === [] ? $this->read_history_filters() : $historyFilters);
-        $history   = $importer->get_run_history(25, $historyFilters);
-        $historyStats = $importer->get_history_stats($historyFilters);
-        $rowTotal  = array_sum(array_map(static fn(array $source): int => (int) ($source['rows'] ?? 0), $sources));
+        $history = $needsHistory ? $importer->get_run_history(25, $historyFilters) : [];
+        $historyStats = $needsHistory
+            ? $importer->get_history_stats($historyFilters)
+            : ['total_runs' => 0, 'last_run_at' => null, 'dry_runs' => 0, 'live_runs' => 0, 'total_errors' => 0];
+        $rowTotal = array_sum(array_map(static fn(array $source): int => (int) ($source['rows'] ?? 0), $sources));
         $activeTargets = count(array_filter($sources, static fn(array $source): bool => !empty($source['plugin_ready'])));
         $selectedOptions = array_merge([
             'update_existing' => '1',
@@ -340,7 +686,7 @@ final class CMS_NetImport_Admin
             'dry_run' => '0',
         ], $selectedOptions);
 
-        $this->start_admin_layout('NetImport', 'netimport');
+        $this->start_admin_layout('NetImport', self::MENU_SLUG);
         $this->output_admin_assets();
         ?>
         <div class="admin-page-header">
@@ -349,7 +695,7 @@ final class CMS_NetImport_Admin
                 <p>Importiert vorbereitete CSV-Daten in Events, Speaker, Companies und Experts.</p>
             </div>
             <div class="header-actions">
-                <a href="<?= $adminNetimportUrl ?>" class="btn btn-secondary">Ansicht aktualisieren</a>
+                <a href="<?= $adminCurrentViewUrlEscaped ?>" class="btn btn-secondary">Ansicht aktualisieren</a>
             </div>
         </div>
 
@@ -365,33 +711,37 @@ final class CMS_NetImport_Admin
             </div>
         <?php endif; ?>
 
-        <div class="dashboard-grid">
-            <div class="stat-card">
-                <div class="stat-icon" aria-hidden="true">CSV</div>
-                <div class="stat-number"><?= count($sources) ?></div>
-                <div class="stat-label">Vorbereitete Quellen</div>
+        <?php if ($activeView === self::VIEW_OVERVIEW): ?>
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" aria-hidden="true">CSV</div>
+                    <div class="stat-number"><?= count($sources) ?></div>
+                    <div class="stat-label">Vorbereitete Quellen</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" aria-hidden="true">Σ</div>
+                    <div class="stat-number"><?= (int) $rowTotal ?></div>
+                    <div class="stat-label">CSV-Zeilen gesamt</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" aria-hidden="true">PL</div>
+                    <div class="stat-number"><?= (int) $activeTargets ?></div>
+                    <div class="stat-label">Aktive Ziel-Plugins</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" aria-hidden="true">RUN</div>
+                    <div class="stat-number"><?= (int) ($historyStats['total_runs'] ?? 0) ?></div>
+                    <div class="stat-label">Gespeicherte Läufe</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon" aria-hidden="true">Σ</div>
-                <div class="stat-number"><?= (int) $rowTotal ?></div>
-                <div class="stat-label">CSV-Zeilen gesamt</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" aria-hidden="true">PL</div>
-                <div class="stat-number"><?= (int) $activeTargets ?></div>
-                <div class="stat-label">Aktive Ziel-Plugins</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" aria-hidden="true">RUN</div>
-                <div class="stat-number"><?= (int) ($historyStats['total_runs'] ?? 0) ?></div>
-                <div class="stat-label">Gespeicherte Läufe</div>
-            </div>
-        </div>
+        <?php endif; ?>
 
+        <?php if (in_array($activeView, [self::VIEW_OVERVIEW, self::VIEW_IMPORT], true)): ?>
         <div class="admin-card ni-card-spacer">
             <h3>Import starten</h3>
             <form method="POST" action="<?= $adminRunUrl ?>" class="admin-form ni-form-grid">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="active_view" value="<?= htmlspecialchars(self::VIEW_IMPORT, ENT_QUOTES, 'UTF-8') ?>">
 
                 <div class="form-group ni-form-group-wide">
                     <label class="form-label" for="ni_import_type">Datensatz / Aufgabe</label>
@@ -434,10 +784,13 @@ final class CMS_NetImport_Admin
                 </div>
             </form>
         </div>
+        <?php endif; ?>
 
+        <?php if (in_array($activeView, [self::VIEW_OVERVIEW, self::VIEW_HISTORY], true)): ?>
         <div class="admin-card ni-card-spacer">
             <h3>Import-Historie</h3>
             <form method="GET" action="<?= $adminNetimportUrl ?>" class="admin-form ni-form-grid ni-history-filter-form">
+                <input type="hidden" name="view" value="<?= htmlspecialchars(self::VIEW_HISTORY, ENT_QUOTES, 'UTF-8') ?>">
                 <div class="form-group">
                     <label class="form-label" for="ni_history_type">Typ</label>
                     <select name="history_type" id="ni_history_type" class="form-control">
@@ -468,7 +821,7 @@ final class CMS_NetImport_Admin
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-secondary">Filter anwenden</button>
-                    <a href="<?= $adminNetimportUrl ?>" class="btn btn-secondary">Filter zurücksetzen</a>
+                    <a href="<?= htmlspecialchars($adminBaseUrl . '?view=' . self::VIEW_HISTORY, ENT_QUOTES, 'UTF-8') ?>" class="btn btn-secondary">Filter zurücksetzen</a>
                 </div>
             </form>
 
@@ -478,6 +831,7 @@ final class CMS_NetImport_Admin
                   data-confirm-message="Diese Aktion entfernt alle gespeicherten Importläufe dauerhaft. Bereits gespeicherte Reports gehen dabei verloren."
                   data-confirm-button="Historie endgültig löschen">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($historyCsrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="active_view" value="<?= htmlspecialchars(self::VIEW_HISTORY, ENT_QUOTES, 'UTF-8') ?>">
                 <input type="hidden" name="history_action" value="clear_history">
                 <?php $this->render_history_filter_inputs($historyFilters); ?>
                 <button type="submit" class="btn btn-secondary">Historie löschen</button>
@@ -684,7 +1038,9 @@ final class CMS_NetImport_Admin
                 </p>
             <?php endif; ?>
         </div>
+        <?php endif; ?>
 
+        <?php if (in_array($activeView, [self::VIEW_OVERVIEW, self::VIEW_SOURCES], true)): ?>
         <div class="admin-card ni-card-spacer">
             <h3>Vorbereitete CSV-Quellen</h3>
             <div class="users-table-container">
@@ -733,6 +1089,7 @@ final class CMS_NetImport_Admin
                 </table>
             </div>
         </div>
+        <?php endif; ?>
 
         <?php if ($result !== null && !empty($result['messages'])): ?>
             <div class="admin-card ni-card-spacer">

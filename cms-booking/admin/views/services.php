@@ -1,24 +1,5 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
-<!-- Section-Nav -->
-<nav class="lp-section-nav">
-    <a href="/admin/plugins/booking/booking" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">📊</span> Dashboard
-    </a>
-    <a href="/admin/plugins/booking/bookings" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">📋</span> Buchungen
-    </a>
-    <a href="/admin/plugins/booking/providers" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">👥</span> Anbieter
-    </a>
-    <a href="/admin/plugins/booking/services" class="lp-section-nav__item active">
-        <span class="lp-section-nav__icon">🛠️</span> Leistungen
-    </a>
-    <a href="/admin/plugins/booking/settings" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">⚙️</span> Einstellungen
-    </a>
-</nav>
-
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -81,19 +62,19 @@
                                 'onsite' => '📍 Vor Ort',
                                 'hybrid' => '🔀 Hybrid',
                             ];
-                            echo $typeLabels[$item['location_type']] ?? $item['location_type'];
+                            echo htmlspecialchars((string) ($typeLabels[$item['location_type']] ?? $item['location_type']), ENT_QUOTES, 'UTF-8');
                             ?>
                         </td>
                         <td>
-                            <span class="status-badge <?php echo $item['status'] === 'active' ? 'active' : 'inactive'; ?>">
+                            <span class="status-badge <?php echo htmlspecialchars($item['status'] === 'active' ? 'active' : 'inactive', ENT_QUOTES, 'UTF-8'); ?>">
                                 <?php echo $item['status'] === 'active' ? 'Aktiv' : 'Inaktiv'; ?>
                             </span>
                         </td>
                         <td>
                             <div style="display:flex;gap:.4rem;">
-                                <a href="?section=services&edit=<?php echo (int) $item['id']; ?>" class="btn btn-sm btn-secondary" title="Bearbeiten">✏️</a>
+                                <a href="<?php echo htmlspecialchars(CMS_Booking_Admin_Pages::admin_url('services', ['edit' => (int) $item['id']]), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-sm btn-secondary" title="Bearbeiten">✏️</a>
                                 <form method="POST" style="margin:0;">
-                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                     <input type="hidden" name="service_id" value="<?php echo (int) $item['id']; ?>">
                                     <input type="hidden" name="service_action" value="delete">
                                     <button type="submit" class="btn btn-sm btn-danger" title="Löschen">🗑️</button>
@@ -109,11 +90,11 @@
         <?php if ($pages > 1): ?>
         <div class="pagination" style="display:flex;gap:.5rem;justify-content:center;margin-top:1.5rem;">
             <?php if ($page > 1): ?>
-                <a href="?section=services&page=<?php echo $page - 1; ?>" class="btn btn-secondary btn-sm">← Zurück</a>
+                <a href="<?php echo htmlspecialchars(CMS_Booking_Admin_Pages::admin_url('services', ['paged' => (int) ($page - 1), 'q' => $search]), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary btn-sm">← Zurück</a>
             <?php endif; ?>
-            <span style="padding:.375rem .875rem;color:#64748b;font-size:.875rem;">Seite <?php echo $page; ?> von <?php echo $pages; ?></span>
+            <span style="padding:.375rem .875rem;color:#64748b;font-size:.875rem;">Seite <?php echo (int) $page; ?> von <?php echo (int) $pages; ?></span>
             <?php if ($page < $pages): ?>
-                <a href="?section=services&page=<?php echo $page + 1; ?>" class="btn btn-secondary btn-sm">Weiter →</a>
+                <a href="<?php echo htmlspecialchars(CMS_Booking_Admin_Pages::admin_url('services', ['paged' => (int) ($page + 1), 'q' => $search]), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary btn-sm">Weiter →</a>
             <?php endif; ?>
         </div>
         <?php endif; ?>
@@ -125,7 +106,7 @@
 <div class="admin-card">
     <h3>✏️ Leistung bearbeiten: <?php echo htmlspecialchars($editService['title']); ?></h3>
     <form method="POST" class="admin-form">
-        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
         <input type="hidden" name="service_action" value="update">
         <input type="hidden" name="service_id" value="<?php echo (int) $editService['id']; ?>">
 
@@ -196,7 +177,7 @@
         <div class="admin-card form-actions-card">
             <div class="form-actions">
                 <button type="submit" class="btn btn-primary">💾 Speichern</button>
-                <a href="?section=services" class="btn btn-secondary">↩️ Abbrechen</a>
+                <a href="<?php echo htmlspecialchars(CMS_Booking_Admin_Pages::admin_url('services'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary">↩️ Abbrechen</a>
             </div>
         </div>
     </form>
@@ -212,7 +193,7 @@
         </div>
         <div class="modal-body">
             <form method="POST" id="createServiceForm" class="admin-form">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="service_action" value="create">
 
                 <div class="form-group">

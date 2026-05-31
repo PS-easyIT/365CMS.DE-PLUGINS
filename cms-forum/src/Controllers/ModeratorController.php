@@ -211,7 +211,25 @@ final class ModeratorController
             return ['success' => false, 'error' => 'Keine Berechtigung.'];
         }
 
-        Report::instance()->resolve($reportId, (int)$auth->currentUser()->id, $resolution);
+        if ($reportId <= 0) {
+            return ['success' => false, 'error' => 'Ungültige Meldung.'];
+        }
+
+        $allowedStatuses = ['resolved', 'open'];
+        $status = in_array($resolution, $allowedStatuses, true) ? $resolution : 'resolved';
+
+        $report = Report::instance()->findById($reportId);
+        if ($report === null) {
+            return ['success' => false, 'error' => 'Meldung nicht gefunden.'];
+        }
+
+        $currentUser = $auth->currentUser();
+        $handledBy = isset($currentUser->id) ? (int) $currentUser->id : 0;
+        if ($handledBy <= 0) {
+            return ['success' => false, 'error' => 'Ungültiger Benutzerkontext.'];
+        }
+
+        Report::instance()->resolve($reportId, $handledBy, $status);
 
         return ['success' => true];
     }

@@ -129,15 +129,18 @@ final class CMS_Experts_Taxonomies
      */
     public function assign_specialization(int $expert_id, int $specialization_id, bool $is_primary = false): bool
     {
+        if ($expert_id <= 0 || $specialization_id <= 0) {
+            return false;
+        }
+
         $db = CMS\Database::instance();
         
         // Wenn primary, entferne primary-Flag von anderen
         if ($is_primary) {
-            $db->getPdo()->exec("
-                UPDATE {$db->prefix()}expert_specialization_rel 
-                SET is_primary = FALSE 
-                WHERE expert_id = {$expert_id}
-            ");
+            $db->execute(
+                "UPDATE {$db->prefix()}expert_specialization_rel SET is_primary = FALSE WHERE expert_id = ?",
+                [$expert_id]
+            );
         }
 
         return $db->insert('expert_specialization_rel', [

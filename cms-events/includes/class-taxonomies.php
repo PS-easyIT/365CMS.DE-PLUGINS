@@ -102,28 +102,39 @@ final class CMS_Events_Taxonomies
             'seminar' => 'Seminar',
         ];
 
-        foreach ($default_categories as $slug => $name) {
-            $stmt = $db->prepare("SELECT id FROM {$db->prefix()}event_categories WHERE slug = ? LIMIT 1");
-            $stmt->execute([$slug]);
-            $exists = $stmt->fetch();
+        try {
+            foreach ($default_categories as $slug => $name) {
+                $stmt = $db->prepare("SELECT id FROM {$db->prefix()}event_categories WHERE slug = ? LIMIT 1");
+                $stmt->execute([$slug]);
+                $exists = $stmt->fetch();
 
-            if (empty($exists)) {
-                $db->insert(
-                    'event_categories',
-                    [
-                        'name' => $name,
-                        'slug' => $slug,
-                        'created_at' => date('Y-m-d H:i:s'),
-                    ]
-                );
+                if (empty($exists)) {
+                    $db->insert(
+                        'event_categories',
+                        [
+                            'name' => $name,
+                            'slug' => $slug,
+                            'created_at' => date('Y-m-d H:i:s'),
+                        ]
+                    );
+                }
             }
+        } catch (\Throwable $e) {
+            error_log('CMS Events taxonomies seed skipped: ' . $e->getMessage());
         }
     }
 
     public function get_categories(): array
     {
         $db = CMS\Database::instance();
-        return $db->query("SELECT * FROM {$db->prefix()}event_categories ORDER BY name ASC");
+        try {
+            $stmt = $db->prepare("SELECT * FROM {$db->prefix()}event_categories ORDER BY name ASC");
+            $stmt->execute();
+            return $stmt->fetchAll() ?: [];
+        } catch (\Throwable $e) {
+            error_log('CMS Events taxonomies get_categories failed: ' . $e->getMessage());
+            return [];
+        }
     }
 
     public function get_category(int $category_id): ?object

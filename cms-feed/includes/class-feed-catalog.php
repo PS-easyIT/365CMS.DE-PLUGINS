@@ -112,6 +112,7 @@ final class CMS_Feed_Catalog
     {
         $feeds  = $this->get_feeds($catalogCategoryKey);
         $db     = CMS_Feed_Database::instance();
+        $fetcher = CMS_Feed_RSS_Fetcher::instance();
         $result = ['imported' => 0, 'skipped' => 0, 'errors' => []];
 
         foreach ($feeds as $idx => $feed) {
@@ -126,13 +127,21 @@ final class CMS_Feed_Catalog
                 continue;
             }
 
+            $feedUrlValidation = $fetcher->validate_feed_url((string) ($feed['feed_url'] ?? ''));
+            if (empty($feedUrlValidation['success'])) {
+                $result['skipped']++;
+                $result['errors'][] = ((string) ($feed['name'] ?? 'Feed')) . ': '
+                    . (string) ($feedUrlValidation['error'] ?? 'Feed-URL ist nicht zulässig.');
+                continue;
+            }
+
             try {
                 $db->save_channel([
                     'id'             => null,
                     'category_id'    => $dbCategoryId,
                     'name'           => $feed['name'],
-                    'feed_url'       => $feed['feed_url'],
-                    'site_url'       => $feed['site_url'] ?? null,
+                    'feed_url'       => (string) ($feedUrlValidation['url'] ?? ''),
+                    'site_url'       => $this->sanitize_catalog_site_url((string) ($feed['site_url'] ?? '')) ?: null,
                     'description'    => $feed['description'] ?? '',
                     'is_active'      => 1,
                     'fetch_interval' => 60,
@@ -141,10 +150,53 @@ final class CMS_Feed_Catalog
                 $result['imported']++;
             } catch (\Throwable $e) {
                 $result['errors'][] = $feed['name'] . ': ' . $e->getMessage();
+                CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed Catalog: Katalog-Feed konnte nicht importiert werden.', $e, 'warning', [
+                    'scope' => 'catalog.import',
+                    'catalog_category' => $catalogCategoryKey,
+                    'feed_name' => (string) ($feed['name'] ?? ''),
+                ]);
             }
         }
 
         return $result;
+    }
+
+    private function sanitize_catalog_site_url(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '' || strlen($url) > 2048 || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host'])) {
+            return '';
+        }
+
+        if (!in_array(strtolower((string) $parts['scheme']), ['http', 'https'], true)) {
+            return '';
+        }
+
+        if (!empty($parts['user']) || !empty($parts['pass'])) {
+            return '';
+        }
+
+        $host = strtolower(trim((string) $parts['host'], '[]'));
+        if ($host === 'localhost'
+            || str_ends_with($host, '.localhost')
+            || str_ends_with($host, '.local')
+            || str_ends_with($host, '.internal')
+        ) {
+            return '';
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP)
+            && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false
+        ) {
+            return '';
+        }
+
+        return $url;
     }
 
     // ══════════════════════════════════════════════════════════════════════

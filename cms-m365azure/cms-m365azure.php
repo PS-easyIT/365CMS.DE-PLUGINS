@@ -39,6 +39,7 @@ final class CMS_M365Azure
     private function load_dependencies(): void
     {
         $files = [
+            CMS_M365AZURE_PLUGIN_DIR . '../shared/admin/plugin-admin-contract.php',
             CMS_M365AZURE_PLUGIN_DIR . 'includes/class-catalog-expansion.php',
             CMS_M365AZURE_PLUGIN_DIR . 'includes/class-installer.php',
             CMS_M365AZURE_PLUGIN_DIR . 'includes/class-repository.php',
@@ -48,9 +49,7 @@ final class CMS_M365Azure
         ];
 
         foreach ($files as $file) {
-            if (file_exists($file)) {
-                require_once $file;
-            }
+            $this->safe_require($file);
         }
     }
 
@@ -78,6 +77,30 @@ final class CMS_M365Azure
         if ($plugin === 'cms-m365azure' && class_exists('CMS_M365Azure_Installer')) {
             CMS_M365Azure_Installer::install();
         }
+    }
+
+    private function safe_require(string $path): void
+    {
+        $resolved = realpath($path);
+        if ($resolved === false || !is_file($resolved)) {
+            $this->log_error('Dependency missing: ' . $path);
+            return;
+        }
+
+        $normalizedResolved = str_replace('\\', '/', $resolved);
+        $pluginRoot = rtrim(str_replace('\\', '/', realpath(CMS_M365AZURE_PLUGIN_DIR) ?: CMS_M365AZURE_PLUGIN_DIR), '/') . '/';
+        $sharedRoot = rtrim(str_replace('\\', '/', realpath(dirname(CMS_M365AZURE_PLUGIN_DIR) . '/shared') ?: dirname(CMS_M365AZURE_PLUGIN_DIR) . '/shared'), '/') . '/';
+        if (!str_starts_with($normalizedResolved, $pluginRoot) && !str_starts_with($normalizedResolved, $sharedRoot)) {
+            $this->log_error('Blocked dependency outside allowed roots: ' . $resolved);
+            return;
+        }
+
+        require_once $resolved;
+    }
+
+    private function log_error(string $message): void
+    {
+        error_log('[cms-m365azure] bootstrap :: ' . $message);
     }
 }
 

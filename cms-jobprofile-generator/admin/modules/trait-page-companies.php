@@ -166,7 +166,26 @@ trait CMS_JPG_Page_Companies_Trait
             $allReqItems = CMS_JPG_RequirementItems::instance()->get_grouped();
         }
 
-        include JPG_DIR . 'admin/views/page-company-overview.php';
+        self::render_admin_view(
+            'Unternehmens-Übersicht',
+            'jpg-companies',
+            JPG_DIR . 'admin/views/page-company-overview.php',
+            compact(
+                'notice',
+                'error',
+                'companies',
+                'linkedUser',
+                'allBenefits',
+                'assignmentsMap',
+                'jobCountsMap',
+                'selectedCompanyId',
+                'departments',
+                'allDeptBenefitIds',
+                'allDeptReqIds',
+                'companySettings',
+                'allReqItems'
+            )
+        );
     }
 
     /** @return array{string, string} [notice, error] */

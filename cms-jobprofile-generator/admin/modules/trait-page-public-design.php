@@ -50,7 +50,12 @@ trait CMS_JPG_Page_Public_Design_Trait
 
         $settings = self::get_public_design_settings();
 
-        include JPG_DIR . 'admin/views/page-public-design.php';
+        self::render_admin_view(
+            'Public Design',
+            'jpg-public-design',
+            JPG_DIR . 'admin/views/page-public-design.php',
+            compact('tab', 'notice', 'error', 'tabs', 'settings')
+        );
     }
 
     // ── Settings Laden ───────────────────────────────────────────────────────
@@ -103,19 +108,14 @@ trait CMS_JPG_Page_Public_Design_Trait
         // Checkbox-Felder erkennen (Standard-Wert '1' oder '0')
         $checkboxFields = self::get_checkbox_fields_for_tab($tab);
 
-        // Felder die NICHT durch strip_tags laufen dürfen (HTML/CSS-Inhalt)
-        $rawFields = ['custom_css', 'custom_head_code'];
-
         $data = [];
         foreach ($fields as $key => $default) {
             if (in_array($key, $checkboxFields, true)) {
                 // Unchecked Checkboxen senden keinen POST-Wert → '0' speichern
                 $data[$key] = isset($_POST[$key]) ? '1' : '0';
-            } elseif (in_array($key, $rawFields, true)) {
-                // HTML/CSS-Felder: nur trimmen, nicht strip_tags
-                $data[$key] = trim((string) ($_POST[$key] ?? $default));
             } else {
-                $data[$key] = sanitize_text_field($_POST[$key] ?? $default);
+                $raw = (string) ($_POST[$key] ?? $default);
+                $data[$key] = self::sanitize_public_design_field($key, $raw);
             }
         }
 
@@ -265,19 +265,175 @@ trait CMS_JPG_Page_Public_Design_Trait
         try {
             $db  = \CMS\Database::instance();
             $p   = $db->getPrefix();
-            $pdo = $db->getPdo();
-
+            $stmt = $db->prepare(
+                "INSERT INTO {$p}jpg_settings (setting_key, setting_value)
+                 VALUES (?, ?)
+                 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)"
+            );
             foreach ($data as $key => $value) {
                 $dbKey = 'pd_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($key));
-                $pdo->exec(
-                    "INSERT INTO {$p}jpg_settings (setting_key, setting_value)
-                     VALUES (" . $pdo->quote($dbKey) . ", " . $pdo->quote((string) $value) . ")
-                     ON DUPLICATE KEY UPDATE setting_value = " . $pdo->quote((string) $value)
-                );
+                $stmt->execute([(string) $dbKey, (string) $value]);
             }
         } catch (\Throwable $e) {
             error_log('CMS_JPG: save_public_design_settings error: ' . $e->getMessage());
         }
+    }
+
+    private static function sanitize_public_design_field(string $key, string $value): string
+    {
+        $value = trim($value);
+
+        $hexColorKeys = [
+            'primary_color', 'primary_dark', 'secondary_color', 'accent_color',
+            'bg_color', 'card_bg', 'text_color', 'text_muted', 'border_color',
+            'header_bg', 'header_text', 'salary_badge_bg', 'salary_badge_text',
+            'btn_primary_bg', 'btn_primary_text',
+        ];
+        if (in_array($key, $hexColorKeys, true)) {
+            return preg_match('/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i', $value) ? strtolower($value) : '';
+        }
+
+        if ($key === 'modal_privacy_url') {
+            return self::sanitize_public_url_value($value);
+        }
+
+        if ($key === 'single_layout') {
+            $allowed = ['classic', 'modern', 'compact', 'sidebar'];
+            return in_array($value, $allowed, true) ? $value : 'classic';
+        }
+
+        if ($key === 'list_card_style') {
+            $allowed = ['horizontal', 'compact', 'minimal'];
+            return in_array($value, $allowed, true) ? $value : 'horizontal';
+        }
+
+        if ($key === 'single_header_style') {
+            $allowed = ['colored', 'minimal', 'plain'];
+            return in_array($value, $allowed, true) ? $value : 'colored';
+        }
+
+        if ($key === 'btn_apply_size') {
+            $allowed = ['small', 'normal', 'large'];
+            return in_array($value, $allowed, true) ? $value : 'normal';
+        }
+
+        if ($key === 'custom_css') {
+            return self::sanitize_custom_css($value);
+        }
+
+        if ($key === 'custom_head_code') {
+            return self::sanitize_custom_head_code($value);
+        }
+
+        $intRangeMap = [
+            'font_size_base' => [10, 30],
+            'content_max_width' => [480, 1920],
+            'card_border_radius' => [0, 64],
+            'sidebar_width' => [180, 640],
+            'single_max_width' => [480, 1920],
+            'single_two_col_breakpoint' => [320, 1280],
+            'list_max_width' => [480, 1920],
+            'list_per_page' => [5, 100],
+            'modal_max_width' => [320, 1200],
+            'modal_border_radius' => [0, 64],
+            'modal_cover_min_chars' => [10, 2000],
+        ];
+        if (isset($intRangeMap[$key])) {
+            [$min, $max] = $intRangeMap[$key];
+            $int = (int) $value;
+            return (string) max($min, min($max, $int));
+        }
+
+        $floatRangeMap = [
+            'font_size_h1' => [0.8, 4.0],
+            'font_size_h2' => [0.7, 3.0],
+            'font_size_h3' => [0.6, 2.5],
+            'font_size_meta' => [0.6, 2.0],
+            'font_size_small' => [0.5, 1.8],
+            'line_height' => [1.0, 2.2],
+            'section_padding' => [0.0, 8.0],
+            'content_padding' => [0.0, 8.0],
+            'grid_gap' => [0.0, 6.0],
+            'btn_padding_x' => [0.2, 8.0],
+            'btn_padding_y' => [0.2, 4.0],
+            'btn_font_size' => [0.6, 2.0],
+        ];
+        if (isset($floatRangeMap[$key])) {
+            [$min, $max] = $floatRangeMap[$key];
+            $float = (float) str_replace(',', '.', $value);
+            $float = max($min, min($max, $float));
+            return rtrim(rtrim(sprintf('%.3F', $float), '0'), '.');
+        }
+
+        if ($key === 'heading_weight' || $key === 'btn_font_weight') {
+            $weight = (int) $value;
+            if ($weight < 100 || $weight > 900) {
+                return '700';
+            }
+            return (string) ($weight - ($weight % 100));
+        }
+
+        $cssValueFields = ['font_body', 'font_heading', 'card_shadow', 'card_shadow_hover', 'list_card_shadow'];
+        if (in_array($key, $cssValueFields, true)) {
+            return self::sanitize_css_value($value);
+        }
+
+        return sanitize_text_field($value);
+    }
+
+    private static function sanitize_css_value(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+        $value = preg_replace('/[\x00-\x1F\x7F]/', '', $value) ?? '';
+        if ($value === '' || str_contains($value, '</style')) {
+            return '';
+        }
+        if (!preg_match('/^[a-zA-Z0-9\s,."\'\-\(\)#%:\/]+$/', $value)) {
+            return '';
+        }
+        return mb_substr($value, 0, 255);
+    }
+
+    private static function sanitize_custom_css(string $value): string
+    {
+        $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $value) ?? '';
+        $value = preg_replace('/<\/style/i', '', $value) ?? '';
+        return mb_substr(trim($value), 0, 20000);
+    }
+
+    private static function sanitize_custom_head_code(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+        $value = preg_replace('/<script\b[^>]*>.*?<\/script>/si', '', $value) ?? '';
+        $value = preg_replace('/\bon\w+\s*=\s*["\'][^"\']*["\']/i', '', $value) ?? '';
+        $value = str_ireplace(['javascript:', 'vbscript:', 'data:text/html'], '', $value);
+        $value = preg_replace('/<\/style/i', '', $value) ?? '';
+        return mb_substr(trim($value), 0, 12000);
+    }
+
+    private static function sanitize_public_url_value(string $value): string
+    {
+        if ($value === '') {
+            return '';
+        }
+        if (str_starts_with($value, '/')) {
+            return '/' . ltrim($value, '/');
+        }
+        if (!filter_var($value, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+        $parts = parse_url($value);
+        if (!is_array($parts)) {
+            return '';
+        }
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        return in_array($scheme, ['http', 'https'], true) ? $value : '';
     }
 
     /**

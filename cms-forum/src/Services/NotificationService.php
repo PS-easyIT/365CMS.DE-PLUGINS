@@ -79,6 +79,13 @@ final class NotificationService
      */
     private function sendEmail(string $to, string $subject, string $body): void
     {
+        $to = filter_var($to, FILTER_VALIDATE_EMAIL) ?: '';
+        if ($to === '') {
+            return;
+        }
+
+        $subject = mb_substr(trim(strip_tags($subject)), 0, 200);
+
         // CMS-eigene Mail-Funktion aufrufen, wenn vorhanden
         if (function_exists('cms_mail')) {
             cms_mail($to, $subject, $body);
@@ -86,13 +93,21 @@ final class NotificationService
         }
 
         // Fallback: PHP mail()
+        $siteName = defined('SITE_NAME') ? (string) SITE_NAME : '365CMS';
+        $siteName = trim(preg_replace('/[\r\n]+/', ' ', $siteName) ?? '365CMS');
+        $siteName = $siteName !== '' ? $siteName : '365CMS';
+        $host = $this->resolveSafeHost();
+
         $headers = [
             'MIME-Version: 1.0',
             'Content-type: text/html; charset=utf-8',
-            'From: ' . (defined('SITE_NAME') ? SITE_NAME : '365CMS') . ' <noreply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . '>',
+            'From: ' . $siteName . ' <noreply@' . $host . '>',
         ];
 
-        @mail($to, $subject, $body, implode("\r\n", $headers));
+        $sent = mail($to, $subject, $body, implode("\r\n", $headers));
+        if (!$sent) {
+            error_log('[cms-forum][notifications] Failed to send mail to ' . $to);
+        }
     }
 
     /**
@@ -125,5 +140,17 @@ final class NotificationService
         <p><a href="{$url}">Zum Thread</a></p>
         <p style="color:#64748b;font-size:.85rem;">Du erhältst diese E-Mail, weil du das Forum abonniert hast.</p>
         HTML;
+    }
+
+    private function resolveSafeHost(): string
+    {
+        $host = strtolower(trim((string) ($_SERVER['HTTP_HOST'] ?? '')));
+        $host = preg_replace('/:\d+$/', '', $host) ?? '';
+
+        if ($host === '' || preg_match('/^[a-z0-9.-]+$/', $host) !== 1) {
+            return 'localhost';
+        }
+
+        return $host;
     }
 }

@@ -16,6 +16,8 @@ if (!defined('ABSPATH')) {
 final class CMS_Contact_Frontend
 {
     private static ?self $instance = null;
+    /** @var array<string, string> */
+    private array $settingCache = [];
 
     public static function instance(): self
     {
@@ -90,6 +92,7 @@ final class CMS_Contact_Frontend
     private function resolve_default_slug(): ?string
     {
         $forms = CMS_Contact_Forms::instance();
+        $activeForms = $forms->get_all('active');
 
         // Versuche passendes Booking-Template anhand Query-Parameter
         $templateMap = [
@@ -101,8 +104,7 @@ final class CMS_Contact_Frontend
         foreach ($templateMap as $param => $template) {
             if (!empty($_GET[$param])) {
                 // Suche ein aktives Formular mit diesem Template
-                $all = $forms->get_all('active');
-                foreach ($all as $f) {
+                foreach ($activeForms as $f) {
                     if (($f['template'] ?? '') === $template) {
                         return $f['slug'];
                     }
@@ -111,9 +113,8 @@ final class CMS_Contact_Frontend
         }
 
         // Fallback: erstes aktives Formular
-        $all = $forms->get_all('active');
-        if (!empty($all)) {
-            return $all[0]['slug'];
+        if (!empty($activeForms)) {
+            return $activeForms[0]['slug'];
         }
 
         return null;
@@ -179,12 +180,7 @@ final class CMS_Contact_Frontend
         $fieldErrors = $_SESSION['contact_field_errors'] ?? [];
         unset($_SESSION['contact_success'], $_SESSION['contact_error'], $_SESSION['contact_old'], $_SESSION['contact_field_errors']);
 
-        $template = $form['template'] ?? 'classic';
-        $templateFile = CMS_CONTACT_PLUGIN_DIR . 'templates/template-' . $template . '.php';
-
-        if (!file_exists($templateFile)) {
-            $templateFile = CMS_CONTACT_PLUGIN_DIR . 'templates/template-classic.php';
-        }
+        $templateFile = $this->resolve_template_file((string) ($form['template'] ?? 'classic'));
 
         // Theme-Manager für Header/Footer
         $theme = null;
@@ -496,6 +492,26 @@ final class CMS_Contact_Frontend
         }
 
         return $path . ($queryString !== '' ? '?' . $queryString : '');
+    }
+
+    private function resolve_template_file(string $template): string
+    {
+        $template = strtolower(trim($template));
+        if ($template === '' || !preg_match('/^[a-z0-9_-]+$/', $template)) {
+            $template = 'classic';
+        }
+
+        $availableTemplates = array_keys(CMS_Contact_Forms::get_available_templates());
+        if (!in_array($template, $availableTemplates, true)) {
+            $template = 'classic';
+        }
+
+        $templateFile = CMS_CONTACT_PLUGIN_DIR . 'templates/template-' . $template . '.php';
+        if (is_file($templateFile)) {
+            return $templateFile;
+        }
+
+        return CMS_CONTACT_PLUGIN_DIR . 'templates/template-classic.php';
     }
 
     private function send_security_headers(): void
@@ -969,15 +985,23 @@ final class CMS_Contact_Frontend
 
     private function get_contact_setting(string $key, string $default = ''): string
     {
+        if (array_key_exists($key, $this->settingCache)) {
+            return $this->settingCache[$key];
+        }
+
         try {
             $db = \CMS\Database::instance();
             $p  = $db->getPrefix();
             $stmt = $db->prepare("SELECT setting_value FROM {$p}contact_settings WHERE setting_key = ?");
             $stmt->execute([$key]);
             $value = $stmt->fetchColumn();
+            $resolved = $value !== false ? (string) $value : $default;
+            $this->settingCache[$key] = $resolved;
 
-            return $value !== false ? (string) $value : $default;
+            return $resolved;
         } catch (\Throwable $e) {
+            error_log('[cms-contact][frontend] failed to fetch setting key=' . $key . ' error=' . $e->getMessage());
+            $this->settingCache[$key] = $default;
             return $default;
         }
     }

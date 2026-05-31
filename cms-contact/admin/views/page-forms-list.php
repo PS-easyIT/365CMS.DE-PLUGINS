@@ -5,13 +5,15 @@
 <?php
 $fieldsService = CMS_Contact_Fields::instance();
 $tplList = CMS_Contact_Forms::get_available_templates();
+$formIds = array_map(static fn(array $form): int => (int) ($form['id'] ?? 0), $allForms);
+$fieldCountsByFormId = $fieldsService->count_by_form_ids($formIds);
 $activeCount = 0;
 $totalFields = 0;
 foreach ($allForms as $formItem) {
     if (($formItem['status'] ?? 'inactive') === 'active') {
         $activeCount++;
     }
-    $totalFields += $fieldsService->count_by_form((int) $formItem['id']);
+    $totalFields += (int) ($fieldCountsByFormId[(int) ($formItem['id'] ?? 0)] ?? 0);
 }
 ?>
 
@@ -105,8 +107,7 @@ foreach ($allForms as $formItem) {
             </thead>
             <tbody>
             <?php foreach ($allForms as $f):
-                $fieldCount = $fieldsService->count_by_form((int)$f['id']);
-                $tplName = ($tplList[$f['template']]['icon'] ?? '') . ' ' . ($tplList[$f['template']]['name'] ?? $f['template']);
+                $fieldCount = (int) ($fieldCountsByFormId[(int) ($f['id'] ?? 0)] ?? 0);
             ?>
             <tr>
                 <td>

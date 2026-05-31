@@ -23,12 +23,15 @@ trait CMS_Contact_Page_Submissions_Trait
         self::check_access();
         self::enqueue_admin_assets();
 
-        $action = $_GET['action'] ?? 'list';
+        $action = sanitize_text_field((string) ($_GET['action'] ?? 'list'));
+        if (!in_array($action, ['list', 'view'], true)) {
+            $action = 'list';
+        }
         $notice = '';
         $error  = '';
 
         // POST-Aktionen
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $postResult = self::process_submissions_post();
             $notice = $postResult['notice'] ?? '';
             $error = $postResult['error'] ?? '';
@@ -55,7 +58,7 @@ trait CMS_Contact_Page_Submissions_Trait
             }
 
             // Als gelesen markieren
-            if ($submission['status'] === 'unread') {
+            if (($submission['status'] ?? '') === 'unread' && self::should_mark_submission_as_read($id)) {
                 CMS_Contact_Submissions::instance()->mark_read($id);
                 $submission['status'] = 'read';
             }
@@ -98,8 +101,16 @@ trait CMS_Contact_Page_Submissions_Trait
         }
 
         $id     = (int) ($_POST['id'] ?? 0);
-        $status = sanitize_text_field($_POST['status'] ?? '');
-        CMS_Contact_Submissions::instance()->update_status($id, $status);
+        $status = sanitize_text_field((string) ($_POST['status'] ?? ''));
+        if ($id <= 0) {
+            return ['error' => 'Ungültige Nachrichten-ID.'];
+        }
+        if ($status === '') {
+            return ['error' => 'Ungültiger Status.'];
+        }
+        if (!CMS_Contact_Submissions::instance()->update_status($id, $status)) {
+            return ['error' => 'Status konnte nicht aktualisiert werden.'];
+        }
 
         return ['notice' => 'Status aktualisiert.'];
     }
@@ -114,6 +125,9 @@ trait CMS_Contact_Page_Submissions_Trait
         }
 
         $id = (int) ($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            return ['error' => 'Ungültige Nachrichten-ID.'];
+        }
         CMS_Contact_Submissions::instance()->delete($id);
         self::redirect_to_admin('submissions', ['notice' => 'deleted']);
     }
@@ -128,7 +142,10 @@ trait CMS_Contact_Page_Submissions_Trait
         }
 
         $ids = is_array($_POST['submission_ids'] ?? null) ? $_POST['submission_ids'] : [];
-        $bulkAction = sanitize_text_field($_POST['bulk'] ?? '');
+        $bulkAction = sanitize_text_field((string) ($_POST['bulk'] ?? ''));
+        if (!in_array($bulkAction, ['mark_read', 'mark_spam', 'delete'], true)) {
+            return ['error' => 'Ungültige Sammelaktion.'];
+        }
         $count = 0;
 
         foreach ($ids as $id) {
@@ -174,10 +191,13 @@ trait CMS_Contact_Page_Submissions_Trait
 
         $filters = [
             'form_id' => (int) ($_GET['form_id'] ?? 0) ?: null,
-            'status'  => sanitize_text_field($_GET['status'] ?? ''),
+            'status'  => sanitize_text_field((string) ($_GET['status'] ?? '')),
             'search'  => sanitize_text_field($_GET['search'] ?? ''),
             'is_spam' => isset($_GET['spam']) ? (int) $_GET['spam'] : null,
         ];
+        if (!empty($filters['status']) && !in_array($filters['status'], ['unread', 'read', 'replied', 'archived', 'spam'], true)) {
+            $filters['status'] = '';
+        }
 
         // Null-Werte entfernen
         $filters = array_filter($filters, fn($v) => $v !== null && $v !== '' && $v !== 0);
@@ -193,6 +213,9 @@ trait CMS_Contact_Page_Submissions_Trait
         // View-kompatible Filter-Variablen
         $filterFormId = (int) ($_GET['form_id'] ?? 0);
         $filterStatus = sanitize_text_field($_GET['status'] ?? '');
+        if ($filterStatus !== '' && !in_array($filterStatus, ['unread', 'read', 'replied', 'archived', 'spam'], true)) {
+            $filterStatus = '';
+        }
         $filterSearch = sanitize_text_field($_GET['search'] ?? '');
 
         $activeSection = 'submissions';
@@ -312,5 +335,29 @@ trait CMS_Contact_Page_Submissions_Trait
         }
 
         return false;
+    }
+
+    private static function should_mark_submission_as_read(int $submissionId): bool
+    {
+        if ($submissionId <= 0) {
+            return false;
+        }
+
+        if (!class_exists('CMS\\Security')) {
+            return false;
+        }
+
+        $markRead = (string) ($_GET['mark_read'] ?? '');
+        $token = is_scalar($_GET['mark_token'] ?? null) ? (string) ($_GET['mark_token'] ?? '') : '';
+        if ($markRead !== '1' || $token === '') {
+            return false;
+        }
+
+        try {
+            return (bool) \CMS\Security::instance()->verifyToken($token, 'contact_submissions_mark_read_' . $submissionId);
+        } catch (\Throwable $e) {
+            self::log_admin_error('failed mark-read token verification', ['id' => $submissionId, 'error' => $e->getMessage()]);
+            return false;
+        }
     }
 }

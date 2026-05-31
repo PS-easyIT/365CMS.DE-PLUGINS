@@ -24,6 +24,15 @@ final class CMS_Promos_Repository
 
     private \CMS\Database $db;
     private string $prefix;
+    private ?array $settingsCache = null;
+    private ?array $placementsCache = null;
+    private ?array $promosCache = null;
+    /** @var array<string,array<int,array<string,mixed>>> */
+    private array $activePromosCache = [];
+    /** @var array<string,array<int,array<string,mixed>>> */
+    private array $hookPlacementsCache = [];
+    /** @var array<string,array<int,array<string,mixed>>> */
+    private array $placementPromosCache = [];
 
     /** @var array<string,string> */
     private const DEFAULT_SETTINGS = [
@@ -71,60 +80,110 @@ final class CMS_Promos_Repository
 
     public function get_dashboard_stats(): array
     {
-        return [
-            'promos' => (int) $this->db->get_var("SELECT COUNT(*) FROM {$this->prefix}promos"),
-            'active_promos' => (int) $this->db->get_var("SELECT COUNT(*) FROM {$this->prefix}promos WHERE status = 'active'"),
-            'featured_promos' => (int) $this->db->get_var("SELECT COUNT(*) FROM {$this->prefix}promos WHERE is_featured = 1"),
-            'placements' => (int) $this->db->get_var("SELECT COUNT(*) FROM {$this->prefix}promo_placements"),
-            'impressions' => (int) $this->db->get_var("SELECT COALESCE(SUM(impression_count), 0) FROM {$this->prefix}promos"),
-            'clicks' => (int) $this->db->get_var("SELECT COALESCE(SUM(click_count), 0) FROM {$this->prefix}promos"),
-        ];
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT 
+                    COUNT(*) AS promos,
+                    COALESCE(SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END), 0) AS active_promos,
+                    COALESCE(SUM(CASE WHEN is_featured = 1 THEN 1 ELSE 0 END), 0) AS featured_promos,
+                    COALESCE(SUM(impression_count), 0) AS impressions,
+                    COALESCE(SUM(click_count), 0) AS clicks
+                FROM {$this->prefix}promos"
+            );
+            $stmt->execute();
+            $promoStats = $stmt->fetch(\PDO::FETCH_ASSOC) ?: [];
+
+            return [
+                'promos' => (int) ($promoStats['promos'] ?? 0),
+                'active_promos' => (int) ($promoStats['active_promos'] ?? 0),
+                'featured_promos' => (int) ($promoStats['featured_promos'] ?? 0),
+                'placements' => (int) $this->db->get_var("SELECT COUNT(*) FROM {$this->prefix}promo_placements"),
+                'impressions' => (int) ($promoStats['impressions'] ?? 0),
+                'clicks' => (int) ($promoStats['clicks'] ?? 0),
+            ];
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to load dashboard stats', $e);
+            return [
+                'promos' => 0,
+                'active_promos' => 0,
+                'featured_promos' => 0,
+                'placements' => 0,
+                'impressions' => 0,
+                'clicks' => 0,
+            ];
+        }
     }
 
     public function get_settings(): array
     {
-        $stmt = $this->db->prepare("SELECT setting_key, setting_value FROM {$this->prefix}promo_settings");
-        $stmt->execute();
-        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
-        $settings = self::DEFAULT_SETTINGS;
-        foreach ($rows as $row) {
-            $settings[(string) $row['setting_key']] = (string) ($row['setting_value'] ?? '');
+        if ($this->settingsCache !== null) {
+            return $this->settingsCache;
         }
-        return $settings;
+
+        try {
+            $stmt = $this->db->prepare("SELECT setting_key, setting_value FROM {$this->prefix}promo_settings");
+            $stmt->execute();
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            $settings = self::DEFAULT_SETTINGS;
+            foreach ($rows as $row) {
+                $settings[(string) $row['setting_key']] = (string) ($row['setting_value'] ?? '');
+            }
+            $this->settingsCache = $settings;
+            return $this->settingsCache;
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to load settings', $e);
+            return self::DEFAULT_SETTINGS;
+        }
     }
 
     public function save_settings(array $post): array
     {
-        $settings = [
-            'archive_title' => $this->clean_text($post['archive_title'] ?? ''),
-            'archive_description' => $this->clean_textarea($post['archive_description'] ?? ''),
-            'default_button_label' => $this->clean_text($post['default_button_label'] ?? 'Mehr erfahren'),
-            'default_target_behavior' => in_array(($post['default_target_behavior'] ?? 'same_tab'), ['same_tab', 'new_tab'], true) ? (string) $post['default_target_behavior'] : 'same_tab',
-        ];
+        try {
+            $settings = [
+                'archive_title' => $this->clean_text($post['archive_title'] ?? ''),
+                'archive_description' => $this->clean_textarea($post['archive_description'] ?? ''),
+                'default_button_label' => $this->clean_text($post['default_button_label'] ?? 'Mehr erfahren'),
+                'default_target_behavior' => in_array(($post['default_target_behavior'] ?? 'same_tab'), ['same_tab', 'new_tab'], true) ? (string) $post['default_target_behavior'] : 'same_tab',
+            ];
 
-        foreach ($settings as $key => $value) {
-            $exists = $this->db->prepare("SELECT id FROM {$this->prefix}promo_settings WHERE setting_key = ? LIMIT 1");
-            $exists->execute([$key]);
-            if ($exists->fetchColumn() !== false) {
-                $stmt = $this->db->prepare("UPDATE {$this->prefix}promo_settings SET setting_value = ? WHERE setting_key = ?");
-                $stmt->execute([$value, $key]);
-            } else {
-                $stmt = $this->db->prepare("INSERT INTO {$this->prefix}promo_settings (setting_key, setting_value) VALUES (?, ?)");
-                $stmt->execute([$key, $value]);
+            foreach ($settings as $key => $value) {
+                $exists = $this->db->prepare("SELECT id FROM {$this->prefix}promo_settings WHERE setting_key = ? LIMIT 1");
+                $exists->execute([$key]);
+                if ($exists->fetchColumn() !== false) {
+                    $stmt = $this->db->prepare("UPDATE {$this->prefix}promo_settings SET setting_value = ? WHERE setting_key = ?");
+                    $stmt->execute([$value, $key]);
+                } else {
+                    $stmt = $this->db->prepare("INSERT INTO {$this->prefix}promo_settings (setting_key, setting_value) VALUES (?, ?)");
+                    $stmt->execute([$key, $value]);
+                }
             }
-        }
 
-        return ['success' => true, 'message' => 'Promo-Einstellungen gespeichert.'];
+            $this->settingsCache = null;
+            return ['success' => true, 'message' => 'Promo-Einstellungen gespeichert.'];
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to save settings', $e);
+            return ['success' => false, 'error' => 'Die Einstellungen konnten nicht gespeichert werden.'];
+        }
     }
 
     public function get_placements(): array
     {
-        $sql = "SELECT p.*, (SELECT COUNT(*) FROM {$this->prefix}promos pr WHERE pr.placement_id = p.id) AS promo_count
-                FROM {$this->prefix}promo_placements p
-                ORDER BY CASE WHEN p.theme_hook = 'manual' THEN 1 ELSE 0 END ASC, p.theme_hook ASC, p.hook_priority ASC, p.name ASC";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        if ($this->placementsCache !== null) {
+            return $this->placementsCache;
+        }
+
+        try {
+            $sql = "SELECT p.*, (SELECT COUNT(*) FROM {$this->prefix}promos pr WHERE pr.placement_id = p.id) AS promo_count
+                    FROM {$this->prefix}promo_placements p
+                    ORDER BY CASE WHEN p.theme_hook = 'manual' THEN 1 ELSE 0 END ASC, p.theme_hook ASC, p.hook_priority ASC, p.name ASC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $this->placementsCache = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            return $this->placementsCache;
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to load placements', $e);
+            return [];
+        }
     }
 
     public function get_theme_hook_options(): array
@@ -156,50 +215,82 @@ final class CMS_Promos_Repository
 
     public function save_placement(array $post): array
     {
-        $id = (int) ($post['placement_id'] ?? 0);
-        $name = $this->clean_text($post['name'] ?? '');
-        if ($name === '') {
-            return ['success' => false, 'error' => 'Bitte einen Platzierungsnamen angeben.'];
+        try {
+            $id = (int) ($post['placement_id'] ?? 0);
+            $name = $this->clean_text($post['name'] ?? '');
+            if ($name === '') {
+                return ['success' => false, 'error' => 'Bitte einen Platzierungsnamen angeben.'];
+            }
+
+            $slug = $this->ensure_unique_placement_slug($this->slugify($post['slug'] ?? $name), $id);
+            $status = ($post['status'] ?? 'active') === 'inactive' ? 'inactive' : 'active';
+            $themeHook = $this->normalize_theme_hook($post['theme_hook'] ?? 'manual');
+            $values = [$name, $slug, $this->clean_textarea($post['description'] ?? ''), $status, $themeHook, (int) ($post['hook_priority'] ?? 10), max(1, (int) ($post['max_items'] ?? 3))];
+
+            if ($id > 0) {
+                $stmt = $this->db->prepare("UPDATE {$this->prefix}promo_placements SET name = ?, slug = ?, description = ?, status = ?, theme_hook = ?, hook_priority = ?, max_items = ? WHERE id = ?");
+                $stmt->execute([...$values, $id]);
+                $this->invalidate_read_caches();
+                return ['success' => true, 'message' => 'Platzierung aktualisiert.'];
+            }
+
+            $stmt = $this->db->prepare("INSERT INTO {$this->prefix}promo_placements (name, slug, description, status, theme_hook, hook_priority, max_items) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute($values);
+            $this->invalidate_read_caches();
+            return ['success' => true, 'message' => 'Platzierung angelegt.'];
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to save placement', $e);
+            return ['success' => false, 'error' => 'Die Platzierung konnte nicht gespeichert werden.'];
         }
-
-        $slug = $this->ensure_unique_placement_slug($this->slugify($post['slug'] ?? $name), $id);
-        $status = ($post['status'] ?? 'active') === 'inactive' ? 'inactive' : 'active';
-        $themeHook = $this->normalize_theme_hook($post['theme_hook'] ?? 'manual');
-        $values = [$name, $slug, $this->clean_textarea($post['description'] ?? ''), $status, $themeHook, (int) ($post['hook_priority'] ?? 10), max(1, (int) ($post['max_items'] ?? 3))];
-
-        if ($id > 0) {
-            $stmt = $this->db->prepare("UPDATE {$this->prefix}promo_placements SET name = ?, slug = ?, description = ?, status = ?, theme_hook = ?, hook_priority = ?, max_items = ? WHERE id = ?");
-            $stmt->execute([...$values, $id]);
-            return ['success' => true, 'message' => 'Platzierung aktualisiert.'];
-        }
-
-        $stmt = $this->db->prepare("INSERT INTO {$this->prefix}promo_placements (name, slug, description, status, theme_hook, hook_priority, max_items) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute($values);
-        return ['success' => true, 'message' => 'Platzierung angelegt.'];
     }
 
     public function delete_placement(int $id): array
     {
-        $stmt = $this->db->prepare("UPDATE {$this->prefix}promos SET placement_id = NULL WHERE placement_id = ?");
-        $stmt->execute([$id]);
-        $stmt = $this->db->prepare("DELETE FROM {$this->prefix}promo_placements WHERE id = ?");
-        $stmt->execute([$id]);
-        return ['success' => true, 'message' => 'Platzierung gelöscht.'];
+        if ($id <= 0) {
+            return ['success' => false, 'error' => 'Ungueltige Platzierung.'];
+        }
+
+        try {
+            $stmt = $this->db->prepare("UPDATE {$this->prefix}promos SET placement_id = NULL WHERE placement_id = ?");
+            $stmt->execute([$id]);
+            $stmt = $this->db->prepare("DELETE FROM {$this->prefix}promo_placements WHERE id = ?");
+            $stmt->execute([$id]);
+            $this->invalidate_read_caches();
+            return ['success' => true, 'message' => 'Platzierung gelöscht.'];
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to delete placement', $e);
+            return ['success' => false, 'error' => 'Die Platzierung konnte nicht gelöscht werden.'];
+        }
     }
 
     public function get_promos(): array
     {
-        $sql = "SELECT pr.*, p.name AS placement_name, p.slug AS placement_slug, p.theme_hook AS placement_theme_hook
-                FROM {$this->prefix}promos pr
-                LEFT JOIN {$this->prefix}promo_placements p ON p.id = pr.placement_id
-                ORDER BY pr.priority DESC, pr.updated_at DESC, pr.id DESC";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        if ($this->promosCache !== null) {
+            return $this->promosCache;
+        }
+
+        try {
+            $sql = "SELECT pr.*, p.name AS placement_name, p.slug AS placement_slug, p.theme_hook AS placement_theme_hook
+                    FROM {$this->prefix}promos pr
+                    LEFT JOIN {$this->prefix}promo_placements p ON p.id = pr.placement_id
+                    ORDER BY pr.priority DESC, pr.updated_at DESC, pr.id DESC";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $this->promosCache = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            return $this->promosCache;
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to load promos', $e);
+            return [];
+        }
     }
 
     public function get_active_promos(?string $placementSlug = null): array
     {
+        $cacheKey = $placementSlug ?? '__all__';
+        if (array_key_exists($cacheKey, $this->activePromosCache)) {
+            return $this->activePromosCache[$cacheKey];
+        }
+
         $sql = "SELECT pr.*, p.name AS placement_name, p.slug AS placement_slug, p.max_items
                 FROM {$this->prefix}promos pr
                 LEFT JOIN {$this->prefix}promo_placements p ON p.id = pr.placement_id
@@ -212,9 +303,15 @@ final class CMS_Promos_Repository
             $params[] = $placementSlug;
         }
         $sql .= ' ORDER BY pr.is_featured DESC, pr.priority DESC, pr.updated_at DESC';
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            $this->activePromosCache[$cacheKey] = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            return $this->activePromosCache[$cacheKey];
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to load active promos', $e);
+            return [];
+        }
     }
 
     public function get_hook_placements(string $themeHook): array
@@ -223,18 +320,33 @@ final class CMS_Promos_Repository
         if ($themeHook === 'manual') {
             return [];
         }
+        if (array_key_exists($themeHook, $this->hookPlacementsCache)) {
+            return $this->hookPlacementsCache[$themeHook];
+        }
 
         $sql = "SELECT p.*, (SELECT COUNT(*) FROM {$this->prefix}promos pr WHERE pr.placement_id = p.id AND pr.status = 'active') AS promo_count
                 FROM {$this->prefix}promo_placements p
                 WHERE p.status = 'active' AND p.theme_hook = ?
                 ORDER BY p.hook_priority ASC, p.name ASC";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$themeHook]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$themeHook]);
+            $this->hookPlacementsCache[$themeHook] = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            return $this->hookPlacementsCache[$themeHook];
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to load hook placements', $e);
+            return [];
+        }
     }
 
     public function get_active_promos_for_placement(int $placementId, int $limit = 0): array
     {
+        $safeLimit = max(0, min(100, $limit));
+        $cacheKey = $placementId . ':' . $safeLimit;
+        if (array_key_exists($cacheKey, $this->placementPromosCache)) {
+            return $this->placementPromosCache[$cacheKey];
+        }
+
         $sql = "SELECT pr.*, p.name AS placement_name, p.slug AS placement_slug, p.theme_hook AS placement_theme_hook
                 FROM {$this->prefix}promos pr
                 INNER JOIN {$this->prefix}promo_placements p ON p.id = pr.placement_id
@@ -245,13 +357,19 @@ final class CMS_Promos_Repository
                   AND (pr.end_at IS NULL OR pr.end_at >= NOW())
                 ORDER BY pr.is_featured DESC, pr.priority DESC, pr.updated_at DESC, pr.id DESC";
 
-        if ($limit > 0) {
-            $sql .= ' LIMIT ' . max(1, $limit);
+        if ($safeLimit > 0) {
+            $sql .= sprintf(' LIMIT %d', $safeLimit);
         }
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$placementId]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$placementId]);
+            $this->placementPromosCache[$cacheKey] = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            return $this->placementPromosCache[$cacheKey];
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to load placement promos', $e);
+            return [];
+        }
     }
 
     public function get_promo(int $id): ?array
@@ -272,67 +390,120 @@ final class CMS_Promos_Repository
 
     public function save_promo(array $post): array
     {
-        $id = (int) ($post['promo_id'] ?? 0);
-        $title = $this->clean_text($post['title'] ?? '');
-        if ($title === '') {
-            return ['success' => false, 'error' => 'Bitte einen Promo-Titel angeben.'];
+        try {
+            $id = (int) ($post['promo_id'] ?? 0);
+            $title = $this->clean_text($post['title'] ?? '');
+            if ($title === '') {
+                return ['success' => false, 'error' => 'Bitte einen Promo-Titel angeben.'];
+            }
+
+            $slug = $this->ensure_unique_promo_slug($this->slugify($post['slug'] ?? $title), $id);
+            $status = (string) ($post['status'] ?? 'draft');
+            if (!in_array($status, ['draft', 'active', 'paused', 'archived'], true)) {
+                $status = 'draft';
+            }
+
+            $placementId = max(0, (int) ($post['placement_id'] ?? 0));
+            if ($placementId === 0) {
+                $placementId = null;
+            }
+
+            $startAt = $this->normalize_datetime((string) ($post['start_at'] ?? ''));
+            $endAt = $this->normalize_datetime((string) ($post['end_at'] ?? ''));
+            if ($startAt !== null && $endAt !== null && strtotime($endAt) < strtotime($startAt)) {
+                return ['success' => false, 'error' => 'Das Enddatum darf nicht vor dem Startdatum liegen.'];
+            }
+
+            $values = [
+                $placementId,
+                $title,
+                $slug,
+                $this->clean_text($post['teaser'] ?? ''),
+                $this->clean_html($post['content_html'] ?? ''),
+                $this->clean_url($post['target_url'] ?? ''),
+                $this->clean_text($post['button_label'] ?? 'Mehr erfahren'),
+                $this->clean_url($post['image_url'] ?? ''),
+                $status,
+                $startAt,
+                $endAt,
+                max(0, (int) ($post['priority'] ?? 0)),
+                !empty($post['is_featured']) ? 1 : 0,
+            ];
+
+            if ($id > 0) {
+                $stmt = $this->db->prepare("UPDATE {$this->prefix}promos SET placement_id = ?, title = ?, slug = ?, teaser = ?, content_html = ?, target_url = ?, button_label = ?, image_url = ?, status = ?, start_at = ?, end_at = ?, priority = ?, is_featured = ? WHERE id = ?");
+                $stmt->execute([...$values, $id]);
+                $this->invalidate_read_caches();
+                return ['success' => true, 'message' => 'Promo aktualisiert.'];
+            }
+
+            $stmt = $this->db->prepare("INSERT INTO {$this->prefix}promos (placement_id, title, slug, teaser, content_html, target_url, button_label, image_url, status, start_at, end_at, priority, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute($values);
+            $this->invalidate_read_caches();
+            return ['success' => true, 'message' => 'Promo angelegt.'];
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to save promo', $e);
+            return ['success' => false, 'error' => 'Die Promo konnte nicht gespeichert werden.'];
         }
-
-        $slug = $this->ensure_unique_promo_slug($this->slugify($post['slug'] ?? $title), $id);
-        $status = (string) ($post['status'] ?? 'draft');
-        if (!in_array($status, ['draft', 'active', 'paused', 'archived'], true)) {
-            $status = 'draft';
-        }
-
-        $placementId = max(0, (int) ($post['placement_id'] ?? 0));
-        if ($placementId === 0) {
-            $placementId = null;
-        }
-
-        $values = [
-            $placementId,
-            $title,
-            $slug,
-            $this->clean_text($post['teaser'] ?? ''),
-            $this->clean_html($post['content_html'] ?? ''),
-            $this->clean_url($post['target_url'] ?? ''),
-            $this->clean_text($post['button_label'] ?? 'Mehr erfahren'),
-            $this->clean_url($post['image_url'] ?? ''),
-            $status,
-            $this->normalize_datetime($post['start_at'] ?? ''),
-            $this->normalize_datetime($post['end_at'] ?? ''),
-            max(0, (int) ($post['priority'] ?? 0)),
-            !empty($post['is_featured']) ? 1 : 0,
-        ];
-
-        if ($id > 0) {
-            $stmt = $this->db->prepare("UPDATE {$this->prefix}promos SET placement_id = ?, title = ?, slug = ?, teaser = ?, content_html = ?, target_url = ?, button_label = ?, image_url = ?, status = ?, start_at = ?, end_at = ?, priority = ?, is_featured = ? WHERE id = ?");
-            $stmt->execute([...$values, $id]);
-            return ['success' => true, 'message' => 'Promo aktualisiert.'];
-        }
-
-        $stmt = $this->db->prepare("INSERT INTO {$this->prefix}promos (placement_id, title, slug, teaser, content_html, target_url, button_label, image_url, status, start_at, end_at, priority, is_featured) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute($values);
-        return ['success' => true, 'message' => 'Promo angelegt.'];
     }
 
     public function delete_promo(int $id): array
     {
-        $stmt = $this->db->prepare("DELETE FROM {$this->prefix}promos WHERE id = ?");
-        $stmt->execute([$id]);
-        return ['success' => true, 'message' => 'Promo gelöscht.'];
+        if ($id <= 0) {
+            return ['success' => false, 'error' => 'Ungueltige Promo.'];
+        }
+
+        try {
+            $stmt = $this->db->prepare("DELETE FROM {$this->prefix}promos WHERE id = ?");
+            $stmt->execute([$id]);
+            $this->invalidate_read_caches();
+            return ['success' => true, 'message' => 'Promo gelöscht.'];
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to delete promo', $e);
+            return ['success' => false, 'error' => 'Die Promo konnte nicht gelöscht werden.'];
+        }
     }
 
     public function increment_click(int $id): void
     {
-        $stmt = $this->db->prepare("UPDATE {$this->prefix}promos SET click_count = click_count + 1 WHERE id = ?");
-        $stmt->execute([$id]);
+        try {
+            $stmt = $this->db->prepare("UPDATE {$this->prefix}promos SET click_count = click_count + 1 WHERE id = ?");
+            $stmt->execute([$id]);
+            $this->invalidate_read_caches();
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to increment click count', $e);
+        }
     }
 
     public function increment_impression(int $id): void
     {
-        $stmt = $this->db->prepare("UPDATE {$this->prefix}promos SET impression_count = impression_count + 1 WHERE id = ?");
-        $stmt->execute([$id]);
+        try {
+            $stmt = $this->db->prepare("UPDATE {$this->prefix}promos SET impression_count = impression_count + 1 WHERE id = ?");
+            $stmt->execute([$id]);
+            $this->invalidate_read_caches();
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to increment impression count', $e);
+        }
+    }
+
+    /**
+     * @param array<int,mixed> $ids
+     */
+    public function increment_impressions(array $ids): void
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($ids === []) {
+            return;
+        }
+
+        try {
+            $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+            $stmt = $this->db->prepare("UPDATE {$this->prefix}promos SET impression_count = impression_count + 1 WHERE id IN ({$placeholders})");
+            $stmt->execute($ids);
+            $this->invalidate_read_caches();
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to increment impressions', $e);
+        }
     }
 
     private function normalize_datetime(string $value): ?string
@@ -462,5 +633,20 @@ final class CMS_Promos_Repository
             $slug = $base . '-' . $i;
             $i++;
         }
+    }
+
+    private function invalidate_read_caches(): void
+    {
+        $this->settingsCache = null;
+        $this->placementsCache = null;
+        $this->promosCache = null;
+        $this->activePromosCache = [];
+        $this->hookPlacementsCache = [];
+        $this->placementPromosCache = [];
+    }
+
+    private function log_error(string $message, \Throwable $e): void
+    {
+        error_log('[cms-promos] ' . $message . ': ' . $e->getMessage());
     }
 }

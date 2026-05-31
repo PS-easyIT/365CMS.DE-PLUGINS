@@ -183,7 +183,9 @@ final class CMS_Forum
 
         $cssPath = CMS_FORUM_DIR . 'assets/css/style.css';
         if (file_exists($cssPath)) {
-            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_FORUM_URL . 'assets/css/style.css?v=' . filemtime($cssPath), ENT_QUOTES, 'UTF-8') . '">' . "\n";
+            static $cssVersion = null;
+            $cssVersion ??= (string) filemtime($cssPath);
+            echo '<link rel="stylesheet" href="' . htmlspecialchars(CMS_FORUM_URL . 'assets/css/style.css?v=' . $cssVersion, ENT_QUOTES, 'UTF-8') . '">' . "\n";
         }
     }
 
@@ -198,14 +200,22 @@ final class CMS_Forum
 
         $jsPath = CMS_FORUM_DIR . 'assets/js/forum.js';
         if (file_exists($jsPath)) {
-            echo '<script src="' . htmlspecialchars(CMS_FORUM_URL . 'assets/js/forum.js?v=' . filemtime($jsPath), ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
+            static $jsVersion = null;
+            $jsVersion ??= (string) filemtime($jsPath);
+            echo '<script src="' . htmlspecialchars(CMS_FORUM_URL . 'assets/js/forum.js?v=' . $jsVersion, ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
         }
     }
 
     private function is_forum_public_route(): bool
     {
-        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
-        $path = '/' . trim($path, '/');
+        $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        $path = (string) (parse_url($requestUri, PHP_URL_PATH) ?: '');
+        $path = '/' . trim(rawurldecode($path), '/');
+
+        // Nur öffentliche Forumseiten beliefern, niemals Admin-/Plugin-Bereiche.
+        if ($path === '/admin' || str_starts_with($path, '/admin/')) {
+            return false;
+        }
 
         return $path === '/forum' || str_starts_with($path, '/forum/');
     }

@@ -8,8 +8,15 @@ if (!defined('ABSPATH')) {
 
 final class CMS_Projects_Public
 {
+    private static bool $renderingPublicProjectsPage = false;
+
     public function __construct(private readonly CMS_Projects_Service $service)
     {
+    }
+
+    public static function isRenderingPublicProjectsPage(): bool
+    {
+        return self::$renderingPublicProjectsPage;
     }
 
     public function registerRoutes(object $router): void
@@ -55,15 +62,20 @@ final class CMS_Projects_Public
 
     private function renderTemplate(array $projects, ?array $currentProject, ?array $dashboard, string $view): void
     {
+        self::$renderingPublicProjectsPage = true;
         $theme = class_exists('CMS\\ThemeManager') ? \CMS\ThemeManager::instance() : null;
-        if ($theme !== null) {
-            $theme->getHeader();
-        }
+        try {
+            if ($theme !== null) {
+                $theme->getHeader();
+            }
 
-        include CMS_PROJECTS_PLUGIN_DIR . 'templates/public-projects.php';
+            include CMS_PROJECTS_PLUGIN_DIR . 'templates/public-projects.php';
 
-        if ($theme !== null) {
-            $theme->getFooter();
+            if ($theme !== null) {
+                $theme->getFooter();
+            }
+        } finally {
+            self::$renderingPublicProjectsPage = false;
         }
     }
 }

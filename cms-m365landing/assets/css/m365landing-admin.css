@@ -2,51 +2,11 @@
     width: 100%;
     max-width: none;
     box-sizing: border-box;
-    padding: 25px;
-}
-
-.m365landing-tabs,
-.m365landing-subtabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0;
-    border-bottom: 2px solid #e2e8f0;
-    margin-bottom: 0;
-}
-
-.m365landing-tab,
-.m365landing-subtab {
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    padding: .6rem 1.1rem;
-    font-size: .875rem;
-    font-weight: 500;
-    color: #475569;
-    text-decoration: none;
-    border: 1px solid transparent;
-    border-bottom: 2px solid transparent;
-    border-radius: 6px 6px 0 0;
-    margin-bottom: -2px;
-    transition: color .15s, background .15s;
-}
-
-.m365landing-tab:hover,
-.m365landing-subtab:hover {
-    color: var(--admin-primary, #3b82f6);
-    background: #f8fafc;
-}
-
-.m365landing-tab.active,
-.m365landing-subtab.active {
-    color: var(--admin-primary, #3b82f6);
-    border-color: #e2e8f0 #e2e8f0 #fff #e2e8f0;
-    background: #fff;
-    font-weight: 600;
+    padding: 0;
 }
 
 .m365landing-card-connected {
-    border-radius: 0 10px 10px 10px;
+    border-radius: 10px;
     margin-top: 0;
 }
 
@@ -129,18 +89,6 @@
 .stat-icon {
     font-size: 1.75rem;
     margin-bottom: .25rem;
-}
-
-@media (max-width: 960px) {
-    .m365landing-admin-shell {
-        padding: 16px;
-    }
-
-    .m365landing-tabs,
-    .m365landing-subtabs {
-        overflow-x: auto;
-        flex-wrap: nowrap;
-    }
 }
 
 @media (max-width: 640px) {

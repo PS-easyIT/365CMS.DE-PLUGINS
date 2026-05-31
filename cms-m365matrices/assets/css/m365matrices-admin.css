@@ -2,15 +2,21 @@
     width: 100%;
     max-width: none;
     box-sizing: border-box;
-    padding: 25px;
+    padding: 0;
+}
+
+.cms-plugin-admin-layout .m365matrices-admin-shell .admin-page-header,
+.cms-plugin-admin-layout .m365matrices-admin-shell .admin-card,
+.cms-plugin-admin-layout .m365matrices-admin-shell .alert {
+    margin-bottom: 25px;
 }
 
 .m365matrices-stats {
-    margin-bottom: 1.5rem;
+    margin-bottom: 25px;
 }
 
 .m365matrices-quicklinks-card {
-    margin-bottom: 1.5rem;
+    margin-bottom: 25px;
 }
 
 .m365matrices-panel-header {
@@ -90,45 +96,8 @@
     white-space: nowrap;
 }
 
-.m365matrices-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0;
-    border-bottom: 2px solid #e2e8f0;
-    margin-bottom: 0;
-    overflow-x: auto;
-}
-
-.m365matrices-tab {
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    padding: .6rem 1.1rem;
-    font-size: .875rem;
-    font-weight: 500;
-    color: #475569;
-    text-decoration: none;
-    border: 1px solid transparent;
-    border-bottom: 2px solid transparent;
-    border-radius: 6px 6px 0 0;
-    margin-bottom: -2px;
-    transition: color .15s, background .15s;
-}
-
-.m365matrices-tab:hover {
-    color: var(--admin-primary, #3b82f6);
-    background: #f8fafc;
-}
-
-.m365matrices-tab.active {
-    color: var(--admin-primary, #3b82f6);
-    border-color: #e2e8f0 #e2e8f0 #fff #e2e8f0;
-    background: #fff;
-    font-weight: 600;
-}
-
 .m365matrices-settings-card {
-    border-radius: 0 10px 10px 10px;
+    border-radius: 10px;
     margin-top: 0;
     width: 100%;
     max-width: none;
@@ -190,18 +159,7 @@
     margin-bottom: .25rem;
 }
 
-@media (max-width: 960px) {
-    .m365matrices-tabs {
-        overflow-x: auto;
-        flex-wrap: nowrap;
-    }
-}
-
 @media (max-width: 640px) {
-    .m365matrices-admin-shell {
-        padding: 16px;
-    }
-
     .m365matrices-color-control {
         align-items: flex-start;
         flex-direction: column;

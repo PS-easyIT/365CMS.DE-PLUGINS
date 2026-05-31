@@ -15,6 +15,7 @@ if (!defined('ABSPATH')) {
 final class CMS_Experts_Post_Type
 {
     private static ?self $instance = null;
+    private const ADMIN_SECTIONS = ['overview', 'taxonomies', 'skills', 'design', 'settings'];
 
     public static function instance(): self
     {
@@ -27,6 +28,11 @@ final class CMS_Experts_Post_Type
     private function __construct()
     {
         $this->init_hooks();
+    }
+
+    private function logError(string $context, \Throwable $error): void
+    {
+        error_log('CMS Experts Post Type [' . $context . ']: ' . $error->getMessage());
     }
 
     /**
@@ -358,6 +364,7 @@ final class CMS_Experts_Post_Type
             $stmt->execute([$expert_id]);
             return $stmt->fetchAll();
         } catch (\Throwable $e) {
+            $this->logError('get_related_experts', $e);
             return [];
         }
     }
@@ -387,6 +394,7 @@ final class CMS_Experts_Post_Type
             $stmt->execute([$expert_id]);
             return $stmt->fetchAll();
         } catch (\Throwable $e) {
+            $this->logError('get_expert_events', $e);
             return [];
         }
     }
@@ -403,9 +411,9 @@ final class CMS_Experts_Post_Type
 
         display_resource_limit_warning('experts', 'Experten');
 
-        $tab    = (string) ($_GET['tab'] ?? 'overview');
-        if (!in_array($tab, ['overview', 'taxonomies', 'skills', 'design', 'settings'], true)) {
-            $tab = 'overview';
+        $section = (string) ($_GET['section'] ?? ($_GET['tab'] ?? 'overview'));
+        if (!in_array($section, self::ADMIN_SECTIONS, true)) {
+            $section = 'overview';
         }
         $filter = (string) ($_GET['filter'] ?? 'all');
         if (!in_array($filter, ['all', 'active', 'inactive', 'pending'], true)) {
@@ -481,7 +489,7 @@ final class CMS_Experts_Post_Type
 
         CMS_Experts_Admin::instance()->render_list([
             'experts'  => $experts,
-            'tab'      => $tab,
+            'section'  => $section,
             'filter'   => $filter,
             'search'   => $search,
             'sort'     => $sort,
@@ -502,11 +510,15 @@ final class CMS_Experts_Post_Type
         $expert_id  = $id_param !== '' ? (int)$id_param : (int)($_POST['id'] ?? 0);
         $csrf_token = (string) ($_POST['csrf_token'] ?? '');
         if (!CMS\Security::instance()->verifyToken($csrf_token, 'experts_admin')) {
-            CMS\Router::instance()->redirect('/admin/experts?tab=overview&error=csrf');
+            CMS\Router::instance()->redirect('/admin/experts?section=overview&error=csrf');
+            return;
+        }
+        if ($expert_id <= 0) {
+            CMS\Router::instance()->redirect('/admin/experts?section=overview&error=invalid_id');
             return;
         }
         CMS_Experts_Database::instance()->set_expert_status($expert_id, 'active');
-        CMS\Router::instance()->redirect('/admin/experts?tab=overview&approved=1');
+        CMS\Router::instance()->redirect('/admin/experts?section=overview&approved=1');
     }
 
     /** Fachrichtung hinzufügen */
@@ -517,7 +529,7 @@ final class CMS_Experts_Post_Type
             return;
         }
         if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'experts_admin')) {
-            CMS\Router::instance()->redirect('/admin/experts?tab=taxonomies&error=csrf');
+            CMS\Router::instance()->redirect('/admin/experts?section=taxonomies&error=csrf');
             return;
         }
         $name      = mb_substr(trim(strip_tags((string) ($_POST['spec_name'] ?? ''))), 0, 120);
@@ -529,7 +541,7 @@ final class CMS_Experts_Post_Type
                 $name, $slug, null, $parent_id > 0 ? $parent_id : null
             );
         }
-        CMS\Router::instance()->redirect('/admin/experts?tab=taxonomies&saved=1');
+        CMS\Router::instance()->redirect('/admin/experts?section=taxonomies&saved=1');
     }
 
     /** Fachrichtung löschen */
@@ -540,12 +552,16 @@ final class CMS_Experts_Post_Type
             return;
         }
         if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'experts_admin')) {
-            CMS\Router::instance()->redirect('/admin/experts?tab=taxonomies&error=csrf');
+            CMS\Router::instance()->redirect('/admin/experts?section=taxonomies&error=csrf');
             return;
         }
         $id = $id_param !== '' ? (int)$id_param : (int)($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            CMS\Router::instance()->redirect('/admin/experts?section=taxonomies&error=invalid_id');
+            return;
+        }
         CMS_Experts_Taxonomies::instance()->delete_specialization($id);
-        CMS\Router::instance()->redirect('/admin/experts?tab=taxonomies&deleted=1');
+        CMS\Router::instance()->redirect('/admin/experts?section=taxonomies&deleted=1');
     }
 
     /** Skill-Preset hinzufügen */
@@ -556,7 +572,7 @@ final class CMS_Experts_Post_Type
             return;
         }
         if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'experts_admin')) {
-            CMS\Router::instance()->redirect('/admin/experts?tab=skills&error=csrf');
+            CMS\Router::instance()->redirect('/admin/experts?section=skills&error=csrf');
             return;
         }
         $name = mb_substr(trim(strip_tags((string) ($_POST['skill_name'] ?? ''))), 0, 120);
@@ -564,7 +580,7 @@ final class CMS_Experts_Post_Type
         if ($name !== '') {
             CMS_Experts_Taxonomies::instance()->save_skill_preset($name, $type);
         }
-        CMS\Router::instance()->redirect('/admin/experts?tab=skills&saved=1');
+        CMS\Router::instance()->redirect('/admin/experts?section=skills&saved=1');
     }
 
     /** Skill-Preset löschen */
@@ -575,12 +591,16 @@ final class CMS_Experts_Post_Type
             return;
         }
         if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'experts_admin')) {
-            CMS\Router::instance()->redirect('/admin/experts?tab=skills&error=csrf');
+            CMS\Router::instance()->redirect('/admin/experts?section=skills&error=csrf');
             return;
         }
         $id = $id_param !== '' ? (int)$id_param : (int)($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            CMS\Router::instance()->redirect('/admin/experts?section=skills&error=invalid_id');
+            return;
+        }
         CMS_Experts_Taxonomies::instance()->delete_skill_preset($id);
-        CMS\Router::instance()->redirect('/admin/experts?tab=skills&deleted=1');
+        CMS\Router::instance()->redirect('/admin/experts?section=skills&deleted=1');
     }
 
     /** Plugin-Einstellungen + Design speichern */
@@ -591,11 +611,11 @@ final class CMS_Experts_Post_Type
             return;
         }
         if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'experts_admin')) {
-            CMS\Router::instance()->redirect('/admin/experts?tab=settings&error=csrf');
+            CMS\Router::instance()->redirect('/admin/experts?section=settings&error=csrf');
             return;
         }
         $sec      = CMS\Security::instance();
-        $tab      = in_array($_POST['settings_tab'] ?? '', ['settings', 'design'], true)
+        $section  = in_array($_POST['settings_tab'] ?? '', ['settings', 'design'], true)
                     ? $_POST['settings_tab'] : 'settings';
         // ── Design-Tab: Text-Felder ──
         $design_text_fields = [
@@ -627,7 +647,7 @@ final class CMS_Experts_Post_Type
 
         $save = [];
 
-        if ($tab === 'design') {
+        if ($section === 'design') {
             foreach ($design_text_fields as $key) {
                 if (isset($_POST[$key])) {
                     $save[$key] = $sec->sanitize((string)$_POST[$key], 'text');
@@ -636,7 +656,7 @@ final class CMS_Experts_Post_Type
             foreach ($design_checkboxes as $key) {
                 $save[$key] = isset($_POST[$key]) && $_POST[$key] !== '0' ? '1' : '0';
             }
-        } elseif ($tab === 'settings') {
+        } elseif ($section === 'settings') {
             foreach ($settings_text_fields as $key) {
                 if (isset($_POST[$key])) {
                     $save[$key] = $sec->sanitize((string)$_POST[$key], 'text');
@@ -647,7 +667,7 @@ final class CMS_Experts_Post_Type
         if (!empty($save)) {
             CMS_Experts_Database::instance()->save_plugin_settings($save);
         }
-        CMS\Router::instance()->redirect("/admin/experts?tab={$tab}&saved=1");
+        CMS\Router::instance()->redirect('/admin/experts?section=' . rawurlencode((string) $section) . '&saved=1');
     }
 
     /**
@@ -686,7 +706,7 @@ final class CMS_Experts_Post_Type
         $projects       = $this->get_expert_projects($expert_id);
         $education      = $this->get_expert_education($expert_id);
         $meta           = $db_manager->get_all_meta($expert_id);
-        $skills         = $this->get_expert_skills($expert_id);
+        $skills         = $db_manager->get_expert_skills_grouped($expert_id);
 
         CMS_Experts_Admin::instance()->render_form($expert, [
             'certifications' => $certifications,
@@ -709,7 +729,7 @@ final class CMS_Experts_Post_Type
         }
 
         // CSRF Token Check – Action muss mit generateToken('expert_form') übereinstimmen
-        $csrf_token = $_POST['csrf_token'] ?? '';
+        $csrf_token = (string) ($_POST['csrf_token'] ?? '');
         if (!CMS\Security::instance()->verifyToken($csrf_token, 'expert_form')) {
             http_response_code(403);
             echo json_encode(['error' => 'Invalid CSRF token']);
@@ -725,10 +745,11 @@ final class CMS_Experts_Post_Type
         }
 
         $security = CMS\Security::instance();
+        $db_manager = CMS_Experts_Database::instance();
 
         // ── Firmen-Auflösung ──────────────────────────────────────────────────
         // company_id: '__freelance__' | numeric string | '' (Freitext-Fallback)
-        $raw_company_id = trim($_POST['company_id'] ?? '');
+        $raw_company_id = trim((string) ($_POST['company_id'] ?? ''));
         $company_id_int = null; // null = nicht verändert / Freitext
         $company_name   = '';
 
@@ -779,14 +800,17 @@ final class CMS_Experts_Post_Type
                                     ? $_POST['status'] : 'active',
         ];
 
-        $expert_id = CMS_Experts_Database::instance()->save_expert($data);
+        $expert_id = $db_manager->save_expert($data);
 
         if ($expert_id > 0) {
             // Skills speichern (komma-getrennte Tag-Werte)
             $parse_tags = static fn(string $raw): array =>
-                array_values(array_filter(array_map('trim', explode(',', $raw))));
+                array_values(array_filter(array_map(
+                    static fn(string $tag): string => $security->sanitize(trim($tag), 'text'),
+                    explode(',', $raw)
+                )));
 
-            CMS_Experts_Database::instance()->save_expert_skills($expert_id, [
+            $db_manager->save_expert_skills($expert_id, [
                 'general' => $parse_tags($_POST['skills_general'] ?? ''),
                 'tech'    => $parse_tags($_POST['skills_tech'] ?? ''),
                 'soft'    => $parse_tags($_POST['skills_soft'] ?? ''),
@@ -794,7 +818,7 @@ final class CMS_Experts_Post_Type
 
             // Fachrichtungen speichern
             $spec_ids = array_map('intval', (array)($_POST['spec_ids'] ?? []));
-            CMS_Experts_Database::instance()->save_expert_specializations($expert_id, $spec_ids);
+            $db_manager->save_expert_specializations($expert_id, $spec_ids);
 
             // Meta: alle erlaubten Felder speichern –––––––––––––––––––––––––––––
             // Text-Felder (single values)
@@ -836,6 +860,22 @@ final class CMS_Experts_Post_Type
             ];
 
             $raw_meta = (array)($_POST['meta'] ?? []);
+            $sanitize_meta_recursive = function ($value) use (&$sanitize_meta_recursive, $security) {
+                if (is_array($value)) {
+                    $sanitized = [];
+                    foreach ($value as $itemKey => $itemValue) {
+                        $safeKey = is_string($itemKey) ? $security->sanitize($itemKey, 'text') : (int) $itemKey;
+                        $sanitized[$safeKey] = $sanitize_meta_recursive($itemValue);
+                    }
+                    return $sanitized;
+                }
+
+                if ($value === null) {
+                    return '';
+                }
+
+                return $security->sanitize((string) $value, 'text');
+            };
 
             // Text-Felder
             foreach ($text_meta_keys as $key) {
@@ -865,16 +905,24 @@ final class CMS_Experts_Post_Type
                 $val = $raw_meta[$key];
                 if (is_array($val)) {
                     // Checkbox-Array (z.B. preferred_company_sizes[])
-                    $val = array_values(array_map('strval', $val));
-                    $db_manager->save_meta($expert_id, $key, json_encode($val, JSON_UNESCAPED_UNICODE));
+                    $safeArray = $sanitize_meta_recursive($val);
+                    if (is_array($safeArray)) {
+                        $db_manager->save_meta($expert_id, $key, json_encode($safeArray, JSON_UNESCAPED_UNICODE));
+                    }
                 } elseif (is_string($val)) {
                     // Bereits JSON von Repeater-Feldern (kommt schon als JSON-String)
                     $decoded = json_decode($val, true);
                     if (is_array($decoded)) {
-                        $db_manager->save_meta($expert_id, $key, $val); // gültig → direkt speichern
+                        $safeDecoded = $sanitize_meta_recursive($decoded);
+                        if (is_array($safeDecoded)) {
+                            $db_manager->save_meta($expert_id, $key, json_encode($safeDecoded, JSON_UNESCAPED_UNICODE));
+                        }
                     } else {
                         // Plain-String (Tags komma-getrennt): als JSON-Array speichern
-                        $tags = array_values(array_filter(array_map('trim', explode(',', $val))));
+                        $tags = array_values(array_filter(array_map(
+                            static fn(string $tag): string => $security->sanitize(trim($tag), 'text'),
+                            explode(',', $val)
+                        )));
                         $db_manager->save_meta($expert_id, $key, json_encode($tags, JSON_UNESCAPED_UNICODE));
                     }
                 }
@@ -900,6 +948,9 @@ final class CMS_Experts_Post_Type
             if (isset($_POST['certifications']) && is_array($_POST['certifications'])) {
                 $certs_clean = [];
                 foreach ($_POST['certifications'] as $cert) {
+                    if (!is_array($cert)) {
+                        continue;
+                    }
                     if (empty($cert['cert_name'])) { continue; }
                     $certs_clean[] = [
                         'cert_name'   => $security->sanitize($cert['cert_name']   ?? '', 'text'),
@@ -917,6 +968,9 @@ final class CMS_Experts_Post_Type
             if (isset($_POST['projects']) && is_array($_POST['projects'])) {
                 $projects_clean = [];
                 foreach ($_POST['projects'] as $proj) {
+                    if (!is_array($proj)) {
+                        continue;
+                    }
                     if (empty($proj['project_name'])) { continue; }
                     $projects_clean[] = [
                         'project_name'        => $security->sanitize($proj['project_name']        ?? '', 'text'),
@@ -936,6 +990,9 @@ final class CMS_Experts_Post_Type
             if (isset($_POST['education']) && is_array($_POST['education'])) {
                 $edu_clean = [];
                 foreach ($_POST['education'] as $edu) {
+                    if (!is_array($edu)) {
+                        continue;
+                    }
                     if (empty($edu['degree']) && empty($edu['institution'])) { continue; }
                     $edu_clean[] = [
                         'degree'        => $security->sanitize($edu['degree']        ?? '', 'text'),
@@ -971,12 +1028,12 @@ final class CMS_Experts_Post_Type
         // CSRF Token Check
         $csrf_token = (string) ($_POST['csrf_token'] ?? '');
         if (!CMS\Security::instance()->verifyToken($csrf_token, 'experts_admin')) {
-            CMS\Router::instance()->redirect('/admin/experts?tab=overview&error=csrf');
+            CMS\Router::instance()->redirect('/admin/experts?section=overview&error=csrf');
             return;
         }
 
         if ($expert_id <= 0) {
-            CMS\Router::instance()->redirect('/admin/experts?tab=overview&error=invalid_id');
+            CMS\Router::instance()->redirect('/admin/experts?section=overview&error=invalid_id');
             return;
         }
 
@@ -984,9 +1041,9 @@ final class CMS_Experts_Post_Type
         $result = $db_manager->delete_expert($expert_id);
 
         if ($result) {
-            CMS\Router::instance()->redirect('/admin/experts?tab=overview&deleted=1');
+            CMS\Router::instance()->redirect('/admin/experts?section=overview&deleted=1');
         } else {
-            CMS\Router::instance()->redirect('/admin/experts?tab=overview&error=delete_failed');
+            CMS\Router::instance()->redirect('/admin/experts?section=overview&error=delete_failed');
         }
     }
 

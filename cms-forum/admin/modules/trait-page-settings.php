@@ -49,16 +49,15 @@ trait CMS_Forum_Page_Settings_Trait
             ];
 
             // POST-Handler
-            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forum_action'])) {
+            $requestMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+            if ($requestMethod === 'POST' && isset($_POST['forum_action'])) {
+                $forumAction = sanitize_key((string) ($_POST['forum_action'] ?? ''));
                 if (!self::verify_nonce('forum_settings')) {
                     $error = 'Sicherheitscheck fehlgeschlagen.';
                 } else {
-                    if ($_POST['forum_action'] === 'save_settings') {
+                    if ($forumAction === 'save_settings') {
                         foreach ($settingKeys as $key => $default) {
-                            $value = $_POST[$key] ?? $default;
-                            if (is_string($value)) {
-                                $value = sanitize_text_field($value);
-                            }
+                            $value = self::sanitize_setting_value($key, $_POST[$key] ?? $default, $default);
                             self::save_setting($key, (string) $value);
                         }
 
@@ -73,9 +72,11 @@ trait CMS_Forum_Page_Settings_Trait
                         }
 
                         $success = 'Einstellungen gespeichert.';
-                    } elseif ($_POST['forum_action'] === 'recalculate_counters') {
+                    } elseif ($forumAction === 'recalculate_counters') {
                         $result = \CMS_Forum\Controllers\AdminController::instance()->recalculateCounters();
                         $success = $result['message'] ?? 'Zähler aktualisiert.';
+                    } else {
+                        $error = 'Unbekannte Aktion.';
                     }
                 }
             }
@@ -90,5 +91,57 @@ trait CMS_Forum_Page_Settings_Trait
 
             include CMS_FORUM_DIR . 'admin/views/page-settings.php';
         });
+    }
+
+    /**
+     * Sanitized und begrenzt Setting-Input auf sichere Werte.
+     */
+    private static function sanitize_setting_value(string $key, mixed $value, string $default): string
+    {
+        $value = is_scalar($value) ? (string) $value : $default;
+        $value = trim($value);
+
+        switch ($key) {
+            case 'forum_name':
+                $name = sanitize_text_field($value);
+                $name = mb_substr($name, 0, 120);
+                return $name !== '' ? $name : $default;
+
+            case 'threads_per_page':
+            case 'posts_per_page':
+                return (string) max(5, min(100, (int) $value));
+
+            case 'flood_interval_post':
+            case 'flood_interval_thread':
+                return (string) max(0, min(86400, (int) $value));
+
+            case 'max_attachment_size':
+                return (string) max(0, min(104857600, (int) $value));
+
+            case 'max_title_length':
+                return (string) max(10, min(255, (int) $value));
+
+            case 'min_post_length':
+                return (string) max(1, min(2000, (int) $value));
+
+            case 'max_post_length':
+                return (string) max(100, min(200000, (int) $value));
+
+            case 'members_can_edit_time':
+                return (string) max(0, min(10080, (int) $value));
+
+            case 'allowed_extensions':
+                $parts = preg_split('/\s*,\s*/', strtolower($value)) ?: [];
+                $parts = array_filter($parts, static fn(string $part): bool => preg_match('/^[a-z0-9]{2,10}$/', $part) === 1);
+                $parts = array_values(array_unique($parts));
+                $parts = array_slice($parts, 0, 20);
+                return !empty($parts) ? implode(',', $parts) : $default;
+
+            case 'primary_color':
+                return preg_match('/^#[0-9a-f]{6}$/i', $value) === 1 ? strtolower($value) : $default;
+
+            default:
+                return sanitize_text_field($value);
+        }
     }
 }

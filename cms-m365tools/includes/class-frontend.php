@@ -45,6 +45,8 @@ final class CMS_M365CALCULATOR_Frontend
 
     private ?string $requestPathCache = null;
 
+    private ?string $sitePathPrefixCache = null;
+
     private ?bool $calculatorRequestCache = null;
 
     private ?bool $toolboxRequestCache = null;
@@ -886,14 +888,69 @@ final class CMS_M365CALCULATOR_Frontend
             return $this->requestPathCache;
         }
 
-        $this->requestPathCache = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
+        $this->requestPathCache = $this->normalize_path((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH));
 
         return $this->requestPathCache;
     }
 
     private function path_matches_route(string $requestPath, string $routePath): bool
     {
-        return $requestPath === $routePath || str_ends_with($requestPath, '/' . $routePath);
+        if ($requestPath === '' || $routePath === '') {
+            return false;
+        }
+
+        foreach ($this->route_candidates($routePath) as $candidate) {
+            if ($requestPath === $candidate) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private function route_candidates(string $routePath): array
+    {
+        $routePath = $this->normalize_path($routePath);
+        if ($routePath === '') {
+            return [];
+        }
+
+        $candidates = [$routePath];
+        $prefix = $this->site_path_prefix();
+        if ($prefix !== '') {
+            $candidates[] = $prefix . '/' . $routePath;
+        }
+
+        return array_values(array_unique($candidates));
+    }
+
+    private function site_path_prefix(): string
+    {
+        if ($this->sitePathPrefixCache !== null) {
+            return $this->sitePathPrefixCache;
+        }
+
+        $siteUrl = defined('SITE_URL') ? (string) SITE_URL : '';
+        $path = (string) parse_url($siteUrl, PHP_URL_PATH);
+        $this->sitePathPrefixCache = $this->normalize_path($path);
+
+        return $this->sitePathPrefixCache;
+    }
+
+    private function normalize_path(string $path): string
+    {
+        $path = trim($path);
+        if ($path === '') {
+            return '';
+        }
+
+        $normalized = (string) preg_replace('#/+#', '/', $path);
+        $normalized = trim($normalized, '/');
+
+        return strtolower($normalized);
     }
 
     private function set_seo(string $title, string $description): void

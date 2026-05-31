@@ -17,76 +17,73 @@ final class CMS_M365Azure_Admin_Pages
 
     public static function render_dispatch(): void
     {
-        ob_start();
         self::check_access();
         CMS_M365Azure_Installer::maybe_install();
 
         $repo = CMS_M365Azure_Repository::instance();
         $section = self::allowed_section((string) ($_GET['section'] ?? 'dashboard'));
+        $settingsPane = self::allowed_settings_pane((string) ($_GET['pane'] ?? 'content'));
         $notice = '';
         $error = '';
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST') {
             try {
                 self::handle_post($repo);
                 $notice = 'Änderungen gespeichert.';
             } catch (\Throwable $e) {
-                $error = 'Aktion konnte nicht ausgeführt werden: ' . $e->getMessage();
+                $error = 'Aktion konnte nicht ausgeführt werden. Bitte Eingaben prüfen und erneut versuchen.';
+                self::log_error('admin action failed :: ' . $e->getMessage());
             }
         }
 
-        self::load_admin_menu();
-        if (function_exists('renderAdminLayoutStart')) {
-            renderAdminLayoutStart(self::page_title($section), 'm365azure');
-        }
+        self::start_admin_layout(self::page_title($section));
         self::enqueue_admin_assets();
 
         echo '<div class="azs-admin-shell">';
         self::render_header($section, $notice, $error);
-        self::render_nav($section);
-
-        match ($section) {
-            'categories' => self::render_categories($repo),
-            'services' => self::render_services($repo),
-            'settings' => self::render_settings($repo),
-            'system' => self::render_system($repo),
-            default => self::render_dashboard($repo),
-        };
+        echo '<div class="azs-admin-layout">';
+        self::render_sidebar($section, $settingsPane);
+        echo '<div class="azs-admin-content">';
+        self::render_section($repo, $section, $settingsPane);
+        echo '</div>';
+        echo '</div>';
         echo '</div>';
 
         self::render_delete_modal();
         self::render_media_picker_modal();
         self::enqueue_admin_scripts();
-        if (function_exists('renderAdminLayoutEnd')) {
-            renderAdminLayoutEnd();
-        }
-        ob_end_flush();
+        self::end_admin_layout();
     }
 
     private static function handle_post(CMS_M365Azure_Repository $repo): void
     {
+        self::assert_manage_permissions();
+
         if (!class_exists('CMS\\Security') || !\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'm365azure_admin')) {
             throw new \RuntimeException('Sicherheitscheck fehlgeschlagen.');
         }
 
-        $action = (string) ($_POST['action'] ?? '');
+        $action = self::allowed_action((string) ($_POST['action'] ?? ''));
         if ($action === 'save_category') {
-            $repo->save_category($_POST);
+            $repo->save_category(self::category_payload());
             return;
         }
 
         if ($action === 'delete_category') {
-            $repo->delete_category(max(0, (int) ($_POST['id'] ?? 0)));
+            $repo->delete_category(self::positive_id($_POST['id'] ?? 0));
             return;
         }
 
         if ($action === 'save_service') {
-            $repo->save_service($_POST);
+            if ($repo->categories(false) === []) {
+                throw new \RuntimeException('Services benötigen mindestens eine Kategorie.');
+            }
+            $repo->save_service(self::service_payload());
             return;
         }
 
         if ($action === 'delete_service') {
-            $repo->delete_service(max(0, (int) ($_POST['id'] ?? 0)));
+            $repo->delete_service(self::positive_id($_POST['id'] ?? 0));
             return;
         }
 
@@ -96,6 +93,55 @@ final class CMS_M365Azure_Admin_Pages
         }
 
         throw new \RuntimeException('Unbekannte Aktion.');
+    }
+
+    private static function allowed_action(string $action): string
+    {
+        return in_array($action, ['save_category', 'delete_category', 'save_service', 'delete_service', 'save_settings'], true)
+            ? $action
+            : '';
+    }
+
+    /** @return array<string,mixed> */
+    private static function category_payload(): array
+    {
+        return [
+            'id' => self::positive_id($_POST['id'] ?? 0),
+            'slug' => (string) ($_POST['slug'] ?? ''),
+            'title' => (string) ($_POST['title'] ?? ''),
+            'overline' => (string) ($_POST['overline'] ?? ''),
+            'intro' => (string) ($_POST['intro'] ?? ''),
+            'gallery_images' => is_array($_POST['gallery_images'] ?? null) ? $_POST['gallery_images'] : [],
+            'sort_order' => (int) ($_POST['sort_order'] ?? 0),
+            'is_active' => !empty($_POST['is_active']) ? 1 : 0,
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    private static function service_payload(): array
+    {
+        return [
+            'id' => self::positive_id($_POST['id'] ?? 0),
+            'category_id' => self::positive_id($_POST['category_id'] ?? 0),
+            'slug' => (string) ($_POST['slug'] ?? ''),
+            'title' => (string) ($_POST['title'] ?? ''),
+            'subtitle' => (string) ($_POST['subtitle'] ?? ''),
+            'sort_order' => (int) ($_POST['sort_order'] ?? 0),
+            'image_url' => (string) ($_POST['image_url'] ?? ''),
+            'image_alt' => (string) ($_POST['image_alt'] ?? ''),
+            'summary' => (string) ($_POST['summary'] ?? ''),
+            'content' => (string) ($_POST['content'] ?? ''),
+            'features' => (string) ($_POST['features'] ?? ''),
+            'use_cases' => (string) ($_POST['use_cases'] ?? ''),
+            'docs_url' => (string) ($_POST['docs_url'] ?? ''),
+            'pricing_url' => (string) ($_POST['pricing_url'] ?? ''),
+            'is_active' => !empty($_POST['is_active']) ? 1 : 0,
+        ];
+    }
+
+    private static function positive_id(mixed $value): int
+    {
+        return max(0, (int) $value);
     }
 
     /** @return array<string,string> */
@@ -203,7 +249,7 @@ final class CMS_M365Azure_Admin_Pages
     private static function render_header(string $section, string $notice, string $error): void
     {
         echo '<div class="admin-page-header"><div><h2>☁️ ' . self::esc(self::page_title($section)) . '</h2><p>Azure-Service-Kategorien, Service-Cards, Texte, Bilder und Design zentral steuern.</p></div>';
-        echo '<div class="header-actions"><a class="btn btn-secondary" href="/azure-services" target="_blank" rel="noopener noreferrer">👁️ Public ansehen</a></div></div>';
+        echo '<div class="header-actions"><a class="btn btn-secondary" href="' . self::esc(self::public_archive_url()) . '" target="_blank" rel="noopener noreferrer">👁️ Public ansehen</a></div></div>';
         if ($notice !== '') {
             echo '<div class="alert alert-success">✅ ' . self::esc($notice) . '</div>';
         }
@@ -212,21 +258,82 @@ final class CMS_M365Azure_Admin_Pages
         }
     }
 
-    private static function render_nav(string $section): void
+    private static function render_sidebar(string $section, string $settingsPane): void
     {
-        $tabs = [
+        $items = [
             'dashboard' => '📊 Dashboard',
             'categories' => '🗂️ Kategorien',
             'services' => '☁️ Services',
             'settings' => '⚙️ Steuerung & Design',
             'system' => '🖥️ System',
         ];
-        echo '<div class="azs-tabs">';
-        foreach ($tabs as $key => $label) {
+
+        echo '<aside class="azs-sidebar" aria-label="M365 Azure Navigation">';
+        echo '<nav class="azs-sidebar-nav">';
+        foreach ($items as $key => $label) {
             $active = $section === $key ? ' active' : '';
-            echo '<a class="azs-tab' . $active . '" href="' . self::esc(self::admin_url($key)) . '">' . self::esc($label) . '</a>';
+            echo '<a class="azs-sidebar-link' . $active . '" href="' . self::esc(self::admin_url($key)) . '">' . self::esc($label) . '</a>';
         }
-        echo '</div>';
+        echo '</nav>';
+
+        if ($section === 'settings') {
+            self::render_settings_submenu($settingsPane);
+        }
+
+        echo '</aside>';
+    }
+
+    private static function render_settings_submenu(string $activePane): void
+    {
+        $panes = [
+            'content' => '📝 Inhalte',
+            'hero' => '🔗 Hero-Buttons',
+            'table' => '🏷️ Tabellen-Texte',
+            'visibility' => '👁️ Sichtbarkeit',
+            'toc' => '🧭 Inhaltsverzeichnis',
+            'cards' => '🃏 Cards',
+            'notes' => 'ℹ️ Hinweise',
+            'design' => '🎨 Design',
+        ];
+
+        echo '<section class="azs-sidebar-submenu" aria-label="Einstellungen Untermenü">';
+        echo '<h3>Untermenü</h3>';
+        echo '<nav class="azs-sidebar-submenu-links">';
+        foreach ($panes as $pane => $label) {
+            $active = $activePane === $pane ? ' active' : '';
+            echo '<a class="azs-sidebar-sublink' . $active . '" href="'
+                . self::esc(self::admin_url('settings', ['pane' => $pane]))
+                . '">' . self::esc($label) . '</a>';
+        }
+        echo '</nav></section>';
+    }
+
+    private static function render_section(CMS_M365Azure_Repository $repo, string $section, string $settingsPane): void
+    {
+        $callbacks = [
+            'dashboard' => static fn() => self::render_dashboard($repo),
+            'categories' => static fn() => self::render_categories($repo),
+            'services' => static fn() => self::render_services($repo),
+            'settings' => static fn() => self::render_settings($repo, $settingsPane),
+            'system' => static fn() => self::render_system($repo),
+        ];
+        $callback = $callbacks[$section] ?? null;
+
+        if (!is_callable($callback)) {
+            if (function_exists('cms_plugin_admin_emit_notice')) {
+                cms_plugin_admin_emit_notice(
+                    'Die angeforderte Admin-Sektion ist nicht verfügbar. Dashboard wird angezeigt.',
+                    'error',
+                    'missing section callback section=' . $section
+                );
+            } else {
+                echo '<div class="alert alert-error">Die angeforderte Admin-Sektion ist nicht verfügbar. Dashboard wird angezeigt.</div>';
+            }
+            self::render_dashboard($repo);
+            return;
+        }
+
+        $callback();
     }
 
     private static function render_dashboard(CMS_M365Azure_Repository $repo): void
@@ -277,6 +384,11 @@ final class CMS_M365Azure_Admin_Pages
         $categories = $repo->categories(false);
         $token = self::csrf();
         echo '<div class="admin-card azs-card-connected"><h3>☁️ Azure Services verwalten</h3>';
+        if ($categories === []) {
+            echo '<div class="alert alert-error">Bitte zuerst mindestens eine Kategorie anlegen, bevor Services erstellt werden.</div>';
+            echo '</div>';
+            return;
+        }
         self::render_service_form($edit, $categories, $token);
         echo '<hr class="azs-separator"><div class="users-table-container"><table class="users-table"><thead><tr><th>Service</th><th>Kategorie</th><th>Status</th><th>Bild</th><th>Aktionen</th></tr></thead><tbody>';
         foreach ($repo->services(null, false) as $service) {
@@ -312,27 +424,10 @@ final class CMS_M365Azure_Admin_Pages
         echo '<div class="azs-form-actions"><button class="btn btn-primary" type="submit">💾 Service speichern</button></div></form>';
     }
 
-    private static function render_settings(CMS_M365Azure_Repository $repo): void
+    private static function render_settings(CMS_M365Azure_Repository $repo, string $pane): void
     {
         $s = $repo->settings();
-        $allowedTabs = ['content', 'hero', 'table', 'visibility', 'toc', 'cards', 'notes', 'design'];
-        $tab = in_array((string) ($_GET['tab'] ?? 'content'), $allowedTabs, true) ? (string) ($_GET['tab'] ?? 'content') : 'content';
-        $tabs = [
-            'content' => '📝 Inhalte',
-            'hero' => '🔗 Hero-Buttons',
-            'table' => '🏷️ Tabellen-Texte',
-            'visibility' => '👁️ Sichtbarkeit',
-            'toc' => '🧭 Inhaltsverzeichnis',
-            'cards' => '🃏 Cards',
-            'notes' => 'ℹ️ Hinweise',
-            'design' => '🎨 Design',
-        ];
-        echo '<div class="azs-subtabs">';
-        foreach ($tabs as $key => $label) {
-            $active = $tab === $key ? ' active' : '';
-            echo '<a class="azs-subtab' . $active . '" href="' . self::esc(self::admin_url('settings', ['tab' => $key])) . '">' . self::esc($label) . '</a>';
-        }
-        echo '</div><div class="admin-card azs-card-connected"><form method="POST" class="admin-form"><input type="hidden" name="action" value="save_settings"><input type="hidden" name="csrf_token" value="' . self::esc(self::csrf()) . '">';
+        echo '<div class="admin-card azs-card-connected"><form method="POST" class="admin-form"><input type="hidden" name="action" value="save_settings"><input type="hidden" name="csrf_token" value="' . self::esc(self::csrf()) . '">';
         foreach (self::bool_setting_keys() as $boolKey) {
             echo '<input type="hidden" name="' . self::esc($boolKey) . '" value="' . self::esc((string) ($s[$boolKey] ?? '0')) . '">';
         }
@@ -348,7 +443,7 @@ final class CMS_M365Azure_Admin_Pages
         foreach (array_keys(self::enum_setting_options()) as $hiddenKey) {
             echo '<input type="hidden" name="' . self::esc($hiddenKey) . '" value="' . self::esc((string) ($s[$hiddenKey] ?? '')) . '">';
         }
-        if ($tab === 'content') {
+        if ($pane === 'content') {
             echo '<h3>📝 Seiteninhalte</h3>';
             self::replace_input('route_slug', 'Öffentlicher Slug', (string) ($s['route_slug'] ?? 'azure-services'));
             self::replace_input('page_overline', 'Overline', (string) ($s['page_overline'] ?? 'Azure Überblick'));
@@ -356,7 +451,7 @@ final class CMS_M365Azure_Admin_Pages
             self::replace_textarea('page_intro', 'Einleitung', (string) ($s['page_intro'] ?? ''), 4);
             self::replace_input('seo_title', 'SEO-Titel', (string) ($s['seo_title'] ?? ''));
             self::replace_textarea('seo_description', 'SEO-Beschreibung', (string) ($s['seo_description'] ?? ''), 3);
-        } elseif ($tab === 'hero') {
+        } elseif ($pane === 'hero') {
             echo '<h3>🔗 Hero-Buttons</h3>';
             self::replace_checkbox('show_hero', 'Headerbereich anzeigen', (string) ($s['show_hero'] ?? '1') === '1');
             self::replace_checkbox('show_hero_actions', 'Hero-Buttons anzeigen', (string) ($s['show_hero_actions'] ?? '1') === '1');
@@ -366,7 +461,7 @@ final class CMS_M365Azure_Admin_Pages
             self::replace_input('hero_secondary_button_url', 'Button 2 Ziel', (string) ($s['hero_secondary_button_url'] ?? '/m365-addon-matrix'));
             self::replace_input('hero_cta_button_text', 'CTA Button Text', (string) ($s['hero_cta_button_text'] ?? 'Azure-Beratung anfragen'));
             self::replace_input('hero_cta_button_url', 'CTA Button Ziel', (string) ($s['hero_cta_button_url'] ?? '/kontakt'));
-        } elseif ($tab === 'table') {
+        } elseif ($pane === 'table') {
             echo '<h3>🏷️ Tabellen- und Link-Texte</h3>';
             self::replace_input('table_service_label', 'Spalte: Dienst', (string) ($s['table_service_label'] ?? 'Dienst'));
             self::replace_input('table_description_label', 'Spalte: Beschreibung', (string) ($s['table_description_label'] ?? 'Beschreibung'));
@@ -376,7 +471,7 @@ final class CMS_M365Azure_Admin_Pages
             self::replace_input('docs_link_label', 'Dokumentations-Link Text', (string) ($s['docs_link_label'] ?? 'Dokumentation'));
             self::replace_input('pricing_link_label', 'Preis-Link Text', (string) ($s['pricing_link_label'] ?? 'Preise'));
             self::replace_input('empty_value_label', 'Text für leere Werte', (string) ($s['empty_value_label'] ?? '—'));
-        } elseif ($tab === 'visibility') {
+        } elseif ($pane === 'visibility') {
             echo '<h3>👁️ Sichtbarkeit</h3>';
             self::replace_checkbox('show_hero', 'Headerbereich anzeigen', (string) ($s['show_hero'] ?? '1') === '1');
             self::replace_checkbox('show_hero_actions', 'Hero-Buttons anzeigen', (string) ($s['show_hero_actions'] ?? '1') === '1');
@@ -391,14 +486,14 @@ final class CMS_M365Azure_Admin_Pages
             self::replace_checkbox('show_notes_section', 'Hinweis-/Quellenbereich anzeigen', (string) ($s['show_notes_section'] ?? '1') === '1');
             self::replace_checkbox('show_info_note', 'Hinweisbox anzeigen', (string) ($s['show_info_note'] ?? '1') === '1');
             self::replace_checkbox('show_sources_card', 'Quellenbox anzeigen', (string) ($s['show_sources_card'] ?? '1') === '1');
-        } elseif ($tab === 'toc') {
+        } elseif ($pane === 'toc') {
             echo '<h3>🧭 Inhaltsverzeichnis</h3>';
             self::replace_checkbox('show_toc', 'Inhaltsverzeichnis anzeigen', (string) ($s['show_toc'] ?? '1') === '1');
             self::replace_input('toc_title', 'Überschrift', (string) ($s['toc_title'] ?? 'Inhaltsverzeichnis'));
             self::replace_checkbox('show_category_intro', 'Kategorie-Beschreibungen anzeigen', (string) ($s['show_category_intro'] ?? '1') === '1');
             self::replace_select('toc_columns', 'Maximale Spalten', (string) ($s['toc_columns'] ?? '3'), ['1' => '1 Spalte', '2' => '2 Spalten', '3' => '3 Spalten', '4' => '4 Spalten']);
             self::replace_checkbox('toc_nowrap', 'Einträge einzeilig halten', (string) ($s['toc_nowrap'] ?? '1') === '1');
-        } elseif ($tab === 'cards') {
+        } elseif ($pane === 'cards') {
             echo '<h3>🃏 Card-Layout</h3>';
             self::replace_checkbox('show_service_images', 'Service-Bilder anzeigen', (string) ($s['show_service_images'] ?? '1') === '1');
             self::replace_checkbox('show_service_subtitles', 'Service-Kurzzeilen anzeigen', (string) ($s['show_service_subtitles'] ?? '1') === '1');
@@ -407,7 +502,7 @@ final class CMS_M365Azure_Admin_Pages
             self::replace_checkbox('show_use_cases', 'Einsatzbereiche anzeigen', (string) ($s['show_use_cases'] ?? '1') === '1');
             self::replace_select('card_image_position', 'Bildposition', (string) ($s['card_image_position'] ?? 'left'), ['left' => 'Links', 'right' => 'Rechts']);
             self::replace_number('card_image_width', 'Bildbreite in px', (int) ($s['card_image_width'] ?? 72), 40, 160);
-        } elseif ($tab === 'notes') {
+        } elseif ($pane === 'notes') {
             echo '<h3>ℹ️ Hinweise & Quellen</h3>';
             self::replace_checkbox('show_notes_section', 'Hinweis-/Quellenbereich anzeigen', (string) ($s['show_notes_section'] ?? '1') === '1');
             self::replace_checkbox('show_info_note', 'Hinweisbox anzeigen', (string) ($s['show_info_note'] ?? '1') === '1');
@@ -450,7 +545,14 @@ final class CMS_M365Azure_Admin_Pages
 
     private static function render_media_picker_modal(): void
     {
-        $token = class_exists('CMS\\Security') ? \CMS\Security::instance()->generateToken('editorjs_media') : '';
+        $token = '';
+        if (class_exists('CMS\\Security')) {
+            try {
+                $token = \CMS\Security::instance()->generateToken('editorjs_media');
+            } catch (\Throwable $e) {
+                self::log_error('media token generation failed :: ' . $e->getMessage());
+            }
+        }
 
         echo '<div class="modal modal-blur fade" id="settingsMediaPickerModal" tabindex="-1" aria-hidden="true">';
         echo '<div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content">';
@@ -562,17 +664,71 @@ final class CMS_M365Azure_Admin_Pages
 
     private static function check_access(): void
     {
-        if (!class_exists('CMS\\Auth') || !\CMS\Auth::instance()->isAdmin()) {
+        if (!self::has_manage_permissions()) {
             header('Location: ' . (defined('SITE_URL') ? SITE_URL : '/'));
             exit;
         }
     }
 
-    private static function load_admin_menu(): void
+    private static function assert_manage_permissions(): void
     {
+        if (!self::has_manage_permissions()) {
+            throw new \RuntimeException('Keine Berechtigung für diese Aktion.');
+        }
+    }
+
+    private static function has_manage_permissions(): bool
+    {
+        if (function_exists('current_user_can') && current_user_can('manage_options')) {
+            return true;
+        }
+
+        if (!class_exists('CMS\\Auth')) {
+            return false;
+        }
+
+        try {
+            return (bool) \CMS\Auth::instance()->isAdmin();
+        } catch (\Throwable $e) {
+            self::log_error('auth check failed :: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    private static function start_admin_layout(string $title): void
+    {
+        if (function_exists('cms_plugin_admin_layout_start')) {
+            cms_plugin_admin_layout_start($title, 'm365azure');
+            return;
+        }
+
         $menuFile = ABSPATH . 'admin/partials/admin-menu.php';
-        if (file_exists($menuFile) && !function_exists('renderAdminLayoutStart')) {
-            require_once $menuFile;
+        $resolved = realpath($menuFile);
+        $basePath = realpath((string) ABSPATH);
+        if (
+            $resolved !== false
+            && $basePath !== false
+            && str_starts_with(str_replace('\\', '/', $resolved), rtrim(str_replace('\\', '/', $basePath), '/') . '/')
+            && is_file($resolved)
+            && !function_exists('renderAdminLayoutStart')
+        ) {
+            require_once $resolved;
+        }
+
+        if (function_exists('renderAdminLayoutStart')) {
+            renderAdminLayoutStart($title, 'm365azure');
+        }
+    }
+
+    private static function end_admin_layout(): void
+    {
+        if (function_exists('cms_plugin_admin_layout_end')) {
+            cms_plugin_admin_layout_end();
+            return;
+        }
+
+        if (function_exists('renderAdminLayoutEnd')) {
+            renderAdminLayoutEnd();
         }
     }
 
@@ -628,13 +784,34 @@ final class CMS_M365Azure_Admin_Pages
         };
     }
 
+    private static function public_archive_url(): string
+    {
+        try {
+            $settings = CMS_M365Azure_Repository::instance()->settings();
+            $slug = CMS_M365Azure_Repository::slug((string) ($settings['route_slug'] ?? 'azure-services'));
+            return '/' . ($slug !== '' ? $slug : 'azure-services');
+        } catch (\Throwable $e) {
+            return '/azure-services';
+        }
+    }
+
     private static function allowed_section(string $section): string
     {
         return in_array($section, ['dashboard', 'categories', 'services', 'settings', 'system'], true) ? $section : 'dashboard';
     }
 
+    private static function allowed_settings_pane(string $pane): string
+    {
+        return in_array($pane, ['content', 'hero', 'table', 'visibility', 'toc', 'cards', 'notes', 'design'], true) ? $pane : 'content';
+    }
+
     private static function esc(string $value): string
     {
         return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    }
+
+    private static function log_error(string $message): void
+    {
+        error_log('[cms-m365azure] admin :: ' . $message);
     }
 }

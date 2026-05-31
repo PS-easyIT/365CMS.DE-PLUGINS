@@ -39,6 +39,7 @@ final class CMS_Downloads
     private function load_dependencies(): void
     {
         $files = [
+            dirname(__DIR__) . '/shared/admin/plugin-admin-contract.php',
             CMS_DOWNLOADS_PLUGIN_DIR . 'includes/class-installer.php',
             CMS_DOWNLOADS_PLUGIN_DIR . 'includes/class-repository.php',
             CMS_DOWNLOADS_PLUGIN_DIR . 'includes/class-public-controller.php',
@@ -47,9 +48,12 @@ final class CMS_Downloads
         ];
 
         foreach ($files as $file) {
-            if (file_exists($file)) {
+            if (is_string($file) && $file !== '' && is_readable($file)) {
                 require_once $file;
+                continue;
             }
+
+            error_log('CMS Downloads: Missing or unreadable dependency file "' . preg_replace('/[\x00-\x1F\x7F]+/', ' ', (string) $file) . '".');
         }
     }
 
@@ -114,7 +118,15 @@ final class CMS_Downloads
         $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
         $path = '/' . trim($path, '/');
 
-        return $path === '/downloads' || str_starts_with($path, '/downloads/');
+        if ($path === '/downloads' || str_starts_with($path, '/downloads/category/')) {
+            return true;
+        }
+
+        if (!str_starts_with($path, '/downloads/file/')) {
+            return false;
+        }
+
+        return ((string) ($_GET['external'] ?? '')) !== 'continue';
     }
 }
 

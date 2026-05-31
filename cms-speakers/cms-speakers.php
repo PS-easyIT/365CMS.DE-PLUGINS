@@ -37,6 +37,7 @@ final class CMS_Speakers
     private string $plugin_dir;
     private string $plugin_url;
     private string $text_domain = 'cms-speakers';
+    private ?string $request_path_cache = null;
 
     public static function instance(): self
     {
@@ -246,16 +247,36 @@ final class CMS_Speakers
 
     private function is_speaker_frontend_route(): bool
     {
-        $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $requestMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+        if (!in_array($requestMethod, ['GET', 'HEAD'], true)) {
+            return false;
+        }
+
+        $path = $this->get_request_path();
+        if ($path === '' || str_starts_with($path, '/admin/')) {
+            return false;
+        }
 
         return $path === '/speakers' || str_starts_with($path, '/speakers/');
     }
 
     private function is_speaker_detail_route(): bool
     {
-        $path = rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/');
+        $path = rtrim($this->get_request_path(), '/');
 
         return preg_match('#^/speakers/[^/]+$#', $path) === 1;
+    }
+
+    private function get_request_path(): string
+    {
+        if ($this->request_path_cache !== null) {
+            return $this->request_path_cache;
+        }
+
+        $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $this->request_path_cache = $path !== '' ? $path : '/';
+
+        return $this->request_path_cache;
     }
 
     public function get_version(): string

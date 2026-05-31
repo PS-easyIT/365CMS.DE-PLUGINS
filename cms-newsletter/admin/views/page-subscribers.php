@@ -43,7 +43,7 @@
                             <tr>
                                 <td><a href="?edit=<?php echo (int) $item['id']; ?>" class="nl-admin-link"><?php echo htmlspecialchars((string) $item['email'], ENT_QUOTES, 'UTF-8'); ?></a></td>
                                 <td><?php echo htmlspecialchars(trim((string) (($item['first_name'] ?? '') . ' ' . ($item['last_name'] ?? ''))) ?: '—', ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td><?php echo htmlspecialchars((string) ($item['segment_slug'] ?: 'general'), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars((string) (($item['segment_slug'] ?? '') !== '' ? $item['segment_slug'] : 'general'), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><span class="nl-soft-badge nl-soft-badge--<?php echo htmlspecialchars((string) ($item['status'] ?? 'pending'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($item['status'] ?? 'pending'), ENT_QUOTES, 'UTF-8'); ?></span></td>
                                 <td>
                                     <div class="nl-action-group">
@@ -51,6 +51,7 @@
                                         <form method="post">
                                             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                             <input type="hidden" name="action" value="delete_subscriber">
+                                            <input type="hidden" name="redirect_slug" value="<?php echo htmlspecialchars((string) ($activeSlug ?? 'newsletter-subscribers'), ENT_QUOTES, 'UTF-8'); ?>">
                                             <input type="hidden" name="subscriber_id" value="<?php echo (int) $item['id']; ?>">
                                             <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
                                         </form>
@@ -74,6 +75,7 @@
             <form method="post" class="admin-form">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="action" value="save_subscriber">
+                <input type="hidden" name="redirect_slug" value="<?php echo htmlspecialchars((string) ($activeSlug ?? 'newsletter-subscribers'), ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="subscriber_id" value="<?php echo (int) ($subscriber['id'] ?? 0); ?>">
                 <input type="hidden" name="source" value="admin">
 

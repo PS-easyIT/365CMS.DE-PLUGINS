@@ -73,7 +73,7 @@ final class CMS_M365CALCULATOR_Settings
 
         try {
             $db = \CMS\Database::instance();
-            $table = self::table_name($db);
+            $table = self::validated_table_name(self::table_name($db));
             $quotedTable = self::quote_identifier($table);
             $stmt = $db->getPdo()->query("SELECT module_key, is_enabled, status_override, priority_override, title_override, description_override FROM {$quotedTable}");
             $rows = $stmt !== false ? $stmt->fetchAll(\PDO::FETCH_ASSOC) : [];
@@ -99,6 +99,7 @@ final class CMS_M365CALCULATOR_Settings
 
             return self::$moduleSettingsCache;
         } catch (\Throwable $e) {
+            self::log_error('read module settings', $e);
             return [];
         }
     }
@@ -143,13 +144,16 @@ final class CMS_M365CALCULATOR_Settings
 
         $modules = is_array($posted['modules'] ?? null) ? $posted['modules'] : [];
         $db = \CMS\Database::instance();
-        $table = self::table_name($db);
+        $table = self::validated_table_name(self::table_name($db));
         $quotedTable = self::quote_identifier($table);
         $pdo = $db->getPdo();
         $ownsTransaction = !$pdo->inTransaction();
 
         $delete = $db->prepare("DELETE FROM {$quotedTable} WHERE module_key = ?");
         $insert = $db->prepare("INSERT INTO {$quotedTable} (module_key, is_enabled, status_override, priority_override, title_override, description_override) VALUES (?, ?, ?, ?, ?, ?)");
+        if (!$delete instanceof \PDOStatement || !$insert instanceof \PDOStatement) {
+            throw new \RuntimeException('Failed to prepare module settings statements.');
+        }
 
         try {
             if ($ownsTransaction) {
@@ -235,7 +239,7 @@ final class CMS_M365CALCULATOR_Settings
 
         try {
             $db = \CMS\Database::instance();
-            $table = self::option_table_name($db);
+            $table = self::validated_table_name(self::option_table_name($db));
             $quotedTable = self::quote_identifier($table);
             $params = [$key];
             $where = 'module_key = ?';
@@ -246,6 +250,9 @@ final class CMS_M365CALCULATOR_Settings
             }
 
             $stmt = $db->getPdo()->prepare("SELECT option_group, option_key, option_value FROM {$quotedTable} WHERE {$where}");
+            if (!$stmt instanceof \PDOStatement) {
+                throw new \RuntimeException('Failed to prepare module options query.');
+            }
             $stmt->execute($params);
             $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
             $options = [];
@@ -262,6 +269,9 @@ final class CMS_M365CALCULATOR_Settings
                 }
 
                 $optionGroup = self::clean_key((string) ($row['option_group'] ?? ''));
+                if ($optionGroup === '') {
+                    continue;
+                }
                 $options[$optionGroup . '.' . $optionKey] = (string) ($row['option_value'] ?? '');
             }
 
@@ -269,6 +279,7 @@ final class CMS_M365CALCULATOR_Settings
 
             return self::$optionCache[$cacheKey];
         } catch (\Throwable $e) {
+            self::log_error('read module options', $e);
             return [];
         }
     }
@@ -289,12 +300,15 @@ final class CMS_M365CALCULATOR_Settings
         }
 
         $db = \CMS\Database::instance();
-        $table = self::option_table_name($db);
+        $table = self::validated_table_name(self::option_table_name($db));
         $quotedTable = self::quote_identifier($table);
         $pdo = $db->getPdo();
         $ownsTransaction = !$pdo->inTransaction();
         $delete = $db->prepare("DELETE FROM {$quotedTable} WHERE module_key = ? AND option_group = ?");
         $insert = $db->prepare("INSERT INTO {$quotedTable} (module_key, option_group, option_key, option_value, value_type) VALUES (?, ?, ?, ?, ?)");
+        if (!$delete instanceof \PDOStatement || !$insert instanceof \PDOStatement) {
+            throw new \RuntimeException('Failed to prepare module options statements.');
+        }
 
         try {
             if ($ownsTransaction) {
@@ -372,6 +386,15 @@ final class CMS_M365CALCULATOR_Settings
         return '`' . str_replace('`', '``', $identifier) . '`';
     }
 
+    private static function validated_table_name(string $table): string
+    {
+        if (preg_match('/^[A-Za-z0-9_]+$/', $table) !== 1) {
+            throw new \RuntimeException('Invalid table identifier configured.');
+        }
+
+        return $table;
+    }
+
     private static function normalize_status(string $status): string
     {
         $status = strtolower(trim($status));
@@ -391,5 +414,10 @@ final class CMS_M365CALCULATOR_Settings
         }
 
         return substr($value, 0, $length);
+    }
+
+    private static function log_error(string $context, \Throwable $e): void
+    {
+        error_log('CMS M365 Tools settings ' . $context . ' failed: ' . $e->getMessage());
     }
 }

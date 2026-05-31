@@ -59,9 +59,8 @@ final class CMS_Companies
 
     private function load_dependencies(): void
     {
-        $includes_dir = $this->plugin_dir . 'includes/';
-
         $files = [
+            'shared/admin/plugin-admin-contract.php',
             'class-database.php',
             'class-post-type.php',
             'class-meta-boxes.php',
@@ -72,7 +71,9 @@ final class CMS_Companies
         ];
 
         foreach ($files as $file) {
-            $filepath = $includes_dir . $file;
+            $filepath = str_contains($file, '/')
+                ? $this->plugin_dir . $file
+                : $this->plugin_dir . 'includes/' . $file;
             if (file_exists($filepath)) {
                 require_once $filepath;
             }
@@ -170,12 +171,17 @@ final class CMS_Companies
 
     private function is_company_frontend_route(): bool
     {
+        $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+        if ($method !== 'GET' && $method !== 'HEAD') {
+            return false;
+        }
+
         $path = (string) (parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '');
         $path = '/' . trim($path, '/');
 
         return $path === '/companies'
-            || str_starts_with($path, '/companies/')
-            || str_starts_with($path, '/company/');
+            || preg_match('#^/companies/(?:\d+)?$#', $path) === 1
+            || preg_match('#^/company/[^/]+$#', $path) === 1;
     }
 
     private function is_company_detail_route(): bool

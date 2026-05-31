@@ -20,6 +20,7 @@ final class Poll
     public const string VOTES_TABLE   = 'cmsforum_poll_votes';
 
     private static ?self $instance = null;
+    private ?string $optionTextColumn = null;
 
     public static function instance(): static
     {
@@ -53,7 +54,11 @@ final class Poll
     public function getOptions(int $pollId): array
     {
         $p = $this->db()->prefix();
-        $stmt = $this->db()->prepare("SELECT * FROM {$p}" . self::OPTIONS_TABLE . " WHERE poll_id = ? ORDER BY sort_order ASC");
+        $textColumn = $this->resolveOptionTextColumn();
+        $stmt = $this->db()->prepare(
+            "SELECT id, poll_id, {$textColumn} AS option_text, vote_count, sort_order
+             FROM {$p}" . self::OPTIONS_TABLE . " WHERE poll_id = ? ORDER BY sort_order ASC"
+        );
         $stmt->execute([$pollId]);
         return $stmt->fetchAll(\PDO::FETCH_OBJ);
     }
@@ -77,8 +82,9 @@ final class Poll
     public function addOption(int $pollId, string $text, int $sortOrder = 0): int
     {
         $p = $this->db()->prefix();
+        $textColumn = $this->resolveOptionTextColumn();
         $stmt = $this->db()->prepare(
-            "INSERT INTO {$p}" . self::OPTIONS_TABLE . " (poll_id, option_text, sort_order) VALUES (?, ?, ?)"
+            "INSERT INTO {$p}" . self::OPTIONS_TABLE . " (poll_id, {$textColumn}, sort_order) VALUES (?, ?, ?)"
         );
         $stmt->execute([$pollId, $text, $sortOrder]);
         return (int) $this->db()->getPdo()->lastInsertId();
@@ -164,5 +170,20 @@ final class Poll
         );
         $stmt->execute([$pollId, $userId]);
         return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+    }
+
+    private function resolveOptionTextColumn(): string
+    {
+        if ($this->optionTextColumn !== null) {
+            return $this->optionTextColumn;
+        }
+
+        $p = $this->db()->prefix();
+        $table = $p . self::OPTIONS_TABLE;
+        $check = $this->db()->prepare("SHOW COLUMNS FROM `{$table}` LIKE ?");
+        $check->execute(['option_text']);
+        $this->optionTextColumn = $check->fetch(\PDO::FETCH_ASSOC) ? 'option_text' : 'text';
+
+        return $this->optionTextColumn;
     }
 }

@@ -105,13 +105,18 @@ final class CMS_M365Azure_Installer
 
     private static function prefix(object $db): string
     {
+        $prefix = '';
         if (method_exists($db, 'getPrefix')) {
-            return (string) $db->getPrefix();
+            $prefix = (string) $db->getPrefix();
+        } elseif (method_exists($db, 'prefix')) {
+            $prefix = (string) $db->prefix();
         }
 
-        if (method_exists($db, 'prefix')) {
-            return (string) $db->prefix();
+        if ($prefix !== '' && preg_match('/^[A-Za-z0-9_]+$/', $prefix) === 1) {
+            return $prefix;
         }
+
+        self::log_error('Invalid DB prefix detected, fallback to cms_.');
 
         return 'cms_';
     }
@@ -1625,18 +1630,28 @@ final class CMS_M365Azure_Installer
     /** @param array<int,string> $fields */
     private static function normalize_table_fields(object $db, string $table, array $fields): void
     {
-        $columns = 'id, ' . implode(', ', $fields);
-        $rows = $db->prepare("SELECT {$columns} FROM {$table}");
+        $safeTable = self::safe_identifier($table, 'table');
+        $safeFields = [];
+        foreach ($fields as $field) {
+            $safeFields[] = self::safe_identifier($field, 'column');
+        }
+
+        if ($safeFields === []) {
+            return;
+        }
+
+        $columns = '`id`, `' . implode('`, `', $safeFields) . '`';
+        $rows = $db->prepare("SELECT {$columns} FROM `{$safeTable}`");
         $rows->execute();
 
         foreach ($rows->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
             $updates = [];
             $params = [];
-            foreach ($fields as $field) {
+            foreach ($safeFields as $field) {
                 $current = (string) ($row[$field] ?? '');
                 $normalized = self::normalize_newlines($current);
                 if ($normalized !== $current) {
-                    $updates[] = $field . ' = ?';
+                    $updates[] = "`{$field}` = ?";
                     $params[] = $normalized;
                 }
             }
@@ -1646,8 +1661,22 @@ final class CMS_M365Azure_Installer
             }
 
             $params[] = (int) $row['id'];
-            $stmt = $db->prepare("UPDATE {$table} SET " . implode(', ', $updates) . " WHERE id = ?");
+            $stmt = $db->prepare("UPDATE `{$safeTable}` SET " . implode(', ', $updates) . " WHERE `id` = ?");
             $stmt->execute($params);
         }
+    }
+
+    private static function safe_identifier(string $value, string $type): string
+    {
+        if (preg_match('/^[A-Za-z0-9_]+$/', $value) === 1) {
+            return $value;
+        }
+
+        throw new \RuntimeException('Unsafe ' . $type . ' identifier blocked.');
+    }
+
+    private static function log_error(string $message): void
+    {
+        error_log('[cms-m365azure] installer :: ' . $message);
     }
 }

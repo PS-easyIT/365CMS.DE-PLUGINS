@@ -23,7 +23,7 @@ trait CMS_JPG_Page_Settings_Trait
         $notice = '';
         $error  = '';
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tab !== 'health') {
             if (!self::verify_nonce('jpg_settings_save')) {
                 $error = 'Sicherheitscheck fehlgeschlagen.';
             } else {
@@ -83,7 +83,22 @@ trait CMS_JPG_Page_Settings_Trait
             }
         }
 
-        include JPG_DIR . 'admin/views/page-settings.php';
+        self::render_admin_view(
+            'Einstellungen',
+            'jpg-settings',
+            JPG_DIR . 'admin/views/page-settings.php',
+            compact(
+                'tab',
+                'notice',
+                'error',
+                'tabs',
+                'settings',
+                'auditLog',
+                'filterCompany',
+                'filterOptions',
+                'healthData'
+            )
+        );
     }
 
     /** @return array{string, string} */
@@ -93,7 +108,6 @@ trait CMS_JPG_Page_Settings_Trait
         $error  = '';
         $db     = \CMS\Database::instance();
         $p      = $db->getPrefix();
-        $pdo    = $db->getPdo();
 
         $allowed = [
             'general'       => ['default_status', 'profiles_per_page', 'slug_prefix'],
@@ -144,7 +158,7 @@ trait CMS_JPG_Page_Settings_Trait
     {
         $db      = \CMS\Database::instance();
         $p       = $db->getPrefix();
-        $uploads = defined('UPLOADS_PATH') ? UPLOADS_PATH . 'jpg/' : '';
+        $uploads = self::get_cv_upload_dir();
 
         // Verwaiste CV-Dateien
         $orphanFiles = [];
@@ -216,7 +230,8 @@ trait CMS_JPG_Page_Settings_Trait
         $data    = self::get_health_data();
         $deleted = 0;
         foreach ($data['orphanFiles'] ?? [] as $f) {
-            if (is_file($f['path']) && @unlink($f['path'])) {
+            $realPath = self::resolve_upload_path((string) ($f['path'] ?? ''), self::get_cv_upload_base_dir());
+            if ($realPath !== '' && is_file($realPath) && unlink($realPath)) {
                 $deleted++;
             }
         }
@@ -231,6 +246,8 @@ trait CMS_JPG_Page_Settings_Trait
     {
         $db = \CMS\Database::instance();
         $p  = $db->getPrefix();
+        $uploadBaseDir = self::get_cv_upload_base_dir();
+
         try {
             $expired = $db->get_results(
                 "SELECT cv_file_path FROM {$p}jpg_applications
@@ -240,21 +257,88 @@ trait CMS_JPG_Page_Settings_Trait
                 [$days]
             ) ?: [];
             foreach ($expired as $row) {
-                if (!empty($row->cv_file_path) && is_file($row->cv_file_path)) {
-                    @unlink($row->cv_file_path);
+                $storedPath = trim((string) ($row->cv_file_path ?? ''));
+                if ($storedPath === '') {
+                    continue;
                 }
+
+                $candidatePath = $storedPath;
+                $isAbsolute = preg_match('#^[A-Za-z]:[\\\\/]#', $candidatePath) === 1
+                    || str_starts_with($candidatePath, '/');
+                if (!$isAbsolute) {
+                    $candidatePath = $uploadBaseDir . ltrim($candidatePath, '/\\');
+                }
+
+                $realPath = self::resolve_upload_path($candidatePath, $uploadBaseDir);
+                if ($realPath === '' || !is_file($realPath)) {
+                    continue;
+                }
+
+                unlink($realPath);
             }
-            $db->query(
+
+            $deletedRows = (int) $db->query(
                 "DELETE FROM {$p}jpg_applications
                  WHERE created_at < DATE_SUB(NOW(), INTERVAL ? DAY)
                    AND status IN ('rejected', 'accepted')",
                 [$days]
             );
-            $count = count($expired);
-            return ["✅ {$count} abgelaufene Bewerbung(en) nach {$days} Tagen gelöscht (DSGVO).", ''];
+
+            if ($deletedRows <= 0) {
+                return ['Keine abgelaufenen Bewerbungen gefunden.', ''];
+            }
+
+            return ["✅ {$deletedRows} abgelaufene Bewerbung(en) nach {$days} Tagen gelöscht (DSGVO).", ''];
         } catch (\Throwable $e) {
             error_log('CMS_JPG cleanup_expired_applications: ' . $e->getMessage());
             return ['', 'Die Bereinigung konnte nicht abgeschlossen werden. Bitte Logs prüfen.'];
         }
+    }
+
+    private static function get_cv_upload_dir(): string
+    {
+        return self::get_cv_upload_base_dir() . 'applications/';
+    }
+
+    private static function get_cv_upload_base_dir(): string
+    {
+        if (defined('UPLOADS_PATH')) {
+            return rtrim((string) UPLOADS_PATH, '/\\') . '/';
+        }
+
+        $basePath = (defined('ABSPATH') ? ABSPATH : dirname(__DIR__, 4)) . '/uploads/';
+        return rtrim($basePath, '/\\') . '/';
+    }
+
+    private static function resolve_upload_path(string $path, string $baseDir): string
+    {
+        $baseReal = realpath($baseDir);
+        if ($baseReal === false) {
+            return '';
+        }
+
+        $candidate = trim($path);
+        if ($candidate === '') {
+            return '';
+        }
+
+        $isAbsolute = preg_match('#^[A-Za-z]:[\\\\/]#', $candidate) === 1
+            || str_starts_with($candidate, '/');
+        if (!$isAbsolute) {
+            $candidate = $baseDir . ltrim($candidate, '/\\');
+        }
+
+        $realPath = realpath($candidate);
+        if ($realPath === false) {
+            return '';
+        }
+
+        $normalizedReal = str_replace('\\', '/', $realPath);
+        $normalizedBase = rtrim(str_replace('\\', '/', $baseReal), '/') . '/';
+        if (!str_starts_with($normalizedReal, $normalizedBase)) {
+            return '';
+        }
+
+        return $realPath;
     }
 }

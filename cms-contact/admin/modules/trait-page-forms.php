@@ -23,14 +23,17 @@ trait CMS_Contact_Page_Forms_Trait
         self::check_access();
         self::enqueue_admin_assets();
 
-        $action = $_GET['action'] ?? 'list';
+        $action = sanitize_text_field((string) ($_GET['action'] ?? 'list'));
+        if (!in_array($action, ['list', 'new', 'edit', 'fields'], true)) {
+            $action = 'list';
+        }
         $formId = (int) ($_GET['id'] ?? 0);
 
         $notice = '';
         $error  = '';
 
         // POST-Aktionen verarbeiten
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $postResult = self::process_forms_post($formId);
             $notice = $postResult['notice'] ?? '';
             $error = $postResult['error'] ?? '';
@@ -327,8 +330,8 @@ trait CMS_Contact_Page_Forms_Trait
             'enable_captcha'  => (int) ($_POST['enable_captcha'] ?? 0),
             'enable_honeypot' => (int) ($_POST['enable_honeypot'] ?? 1),
             'rate_limit'      => max(0, (int) ($_POST['rate_limit'] ?? 3)),
-            'status'          => in_array($_POST['status'] ?? '', ['active', 'inactive'], true)
-                ? $_POST['status'] : 'active',
+            'status'          => in_array((string) ($_POST['status'] ?? ''), ['active', 'inactive'], true)
+                ? (string) $_POST['status'] : 'active',
             'custom_css'      => CMS_Contact_Frontend::sanitize_custom_css((string) ($_POST['custom_css'] ?? '')),
         ]);
 

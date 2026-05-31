@@ -96,7 +96,7 @@ final class CMS_Contact
      */
     public function start_admin_output_buffer(): void
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
             return;
         }
         $uri = $_SERVER['REQUEST_URI'] ?? '';
@@ -135,7 +135,16 @@ final class CMS_Contact
             return false;
         }
 
-        return $path === '/contact' || str_starts_with($path, '/contact/');
+        $path = '/' . trim($path, '/');
+        if ($path === '/') {
+            return false;
+        }
+
+        if ($path === '/contact' || $path === '/kontakt') {
+            return true;
+        }
+
+        return preg_match('#^/(?:contact|kontakt)/[^/]+(?:/.*)?$#', $path) === 1;
     }
 
     public function enqueue_styles(): void

@@ -21,19 +21,58 @@ final class CMS_M365MATRICES_Source
 
     public static function template_path(string $template): string
     {
-        return CMS_M365MATRICES_PLUGIN_DIR . 'templates/' . ltrim($template, '/\\');
+        $relativePath = self::sanitize_relative_path($template);
+        if ($relativePath === '') {
+            return '';
+        }
+
+        return CMS_M365MATRICES_PLUGIN_DIR . 'templates/' . $relativePath;
     }
 
     public static function asset_file(string $asset): string
     {
-        return CMS_M365MATRICES_PLUGIN_DIR . 'assets/' . ltrim($asset, '/\\');
+        $relativePath = self::sanitize_relative_path($asset);
+        if ($relativePath === '') {
+            return '';
+        }
+
+        return CMS_M365MATRICES_PLUGIN_DIR . 'assets/' . $relativePath;
     }
 
     public static function asset_url(string $asset): string
     {
-        $asset = ltrim($asset, '/');
+        $asset = self::sanitize_relative_path($asset);
+        if ($asset === '') {
+            return '';
+        }
+
         $baseUrl = defined('CMS_M365MATRICES_PLUGIN_URL') ? (string) CMS_M365MATRICES_PLUGIN_URL : '/plugins/cms-m365matrices/';
 
         return rtrim($baseUrl, '/') . '/assets/' . $asset;
+    }
+
+    private static function sanitize_relative_path(string $path): string
+    {
+        $path = trim(str_replace('\\', '/', $path));
+        $path = ltrim($path, '/');
+        if ($path === '' || str_contains($path, "\0")) {
+            return '';
+        }
+
+        $segments = explode('/', $path);
+        $safeSegments = [];
+        foreach ($segments as $segment) {
+            if ($segment === '' || $segment === '.' || $segment === '..') {
+                return '';
+            }
+
+            if (preg_match('/^[a-zA-Z0-9._-]+$/', $segment) !== 1) {
+                return '';
+            }
+
+            $safeSegments[] = $segment;
+        }
+
+        return implode('/', $safeSegments);
     }
 }

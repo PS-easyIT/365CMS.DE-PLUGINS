@@ -16,6 +16,10 @@ final class CMS_M365Landing_Repository
     private static ?self $instance = null;
     private object $db;
     private string $prefix;
+    /** @var array<string,string>|null */
+    private ?array $settingsCache = null;
+    /** @var array<int,array<string,mixed>>|null */
+    private ?array $postCategoriesCache = null;
 
     public static function instance(): self
     {
@@ -31,10 +35,15 @@ final class CMS_M365Landing_Repository
     /** @return array<string,string> */
     public function settings(): array
     {
+        if ($this->settingsCache !== null) {
+            return $this->settingsCache;
+        }
+
         try {
             $stmt = $this->db->prepare("SELECT setting_key, setting_value FROM {$this->prefix}m365landing_settings");
             $stmt->execute();
         } catch (\Throwable $e) {
+            self::log_exception('settings_load_failed', $e);
             return [];
         }
 
@@ -43,7 +52,9 @@ final class CMS_M365Landing_Repository
             $settings[(string) $row['setting_key']] = (string) ($row['setting_value'] ?? '');
         }
 
-        return $settings;
+        $this->settingsCache = $settings;
+
+        return $this->settingsCache;
     }
 
     /** @param array<string,string> $settings */
@@ -61,6 +72,8 @@ final class CMS_M365Landing_Repository
                 $insert->execute([$key, $value]);
             }
         }
+
+        $this->settingsCache = null;
     }
 
     /** @return array<int,array<string,mixed>> */
@@ -88,6 +101,7 @@ final class CMS_M365Landing_Repository
 
             return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
         } catch (\Throwable $e) {
+            self::log_exception('cards_load_failed', $e);
             return [];
         }
     }
@@ -112,6 +126,7 @@ final class CMS_M365Landing_Repository
             $stmt->execute([$id]);
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
         } catch (\Throwable $e) {
+            self::log_exception('card_load_failed', $e);
             return null;
         }
 
@@ -166,37 +181,47 @@ final class CMS_M365Landing_Repository
     /** @return array<string,int> */
     public function stats(): array
     {
-        $stats = [];
-        foreach (['matrix', 'areas', 'tools'] as $section) {
-            try {
-                $stmt = $this->db->prepare("SELECT COUNT(*) FROM {$this->prefix}m365landing_cards WHERE section = ?");
-                $stmt->execute([$section]);
-                $stats[$section] = (int) $stmt->fetchColumn();
-            } catch (\Throwable $e) {
-                $stats[$section] = 0;
-            }
-        }
-
         try {
-            $stmt = $this->db->prepare("SELECT COUNT(*) FROM {$this->prefix}m365landing_cards WHERE is_active = 1");
+            $stmt = $this->db->prepare("SELECT
+                    SUM(CASE WHEN section = 'matrix' THEN 1 ELSE 0 END) AS matrix_count,
+                    SUM(CASE WHEN section = 'areas' THEN 1 ELSE 0 END) AS areas_count,
+                    SUM(CASE WHEN section = 'tools' THEN 1 ELSE 0 END) AS tools_count,
+                    SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS active_cards
+                FROM {$this->prefix}m365landing_cards");
             $stmt->execute();
-            $stats['active_cards'] = (int) $stmt->fetchColumn();
-        } catch (\Throwable $e) {
-            $stats['active_cards'] = 0;
-        }
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+            if (!is_array($row)) {
+                return ['matrix' => 0, 'areas' => 0, 'tools' => 0, 'active_cards' => 0];
+            }
 
-        return $stats;
+            return [
+                'matrix' => (int) ($row['matrix_count'] ?? 0),
+                'areas' => (int) ($row['areas_count'] ?? 0),
+                'tools' => (int) ($row['tools_count'] ?? 0),
+                'active_cards' => (int) ($row['active_cards'] ?? 0),
+            ];
+        } catch (\Throwable $e) {
+            self::log_exception('stats_load_failed', $e);
+            return ['matrix' => 0, 'areas' => 0, 'tools' => 0, 'active_cards' => 0];
+        }
     }
 
     /** @return array<int,array<string,mixed>> */
     public function post_categories(): array
     {
+        if ($this->postCategoriesCache !== null) {
+            return $this->postCategoriesCache;
+        }
+
         try {
             $stmt = $this->db->prepare("SELECT id, name, slug, parent_id, sort_order FROM {$this->prefix}post_categories ORDER BY COALESCE(parent_id, 0) ASC, sort_order ASC, name ASC");
             $stmt->execute();
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            $this->postCategoriesCache = $rows;
 
-            return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            return $this->postCategoriesCache;
         } catch (\Throwable $e) {
+            self::log_exception('post_categories_load_failed', $e);
             return [];
         }
     }
@@ -236,6 +261,7 @@ final class CMS_M365Landing_Repository
             $stmt->execute(array_merge($categoryIds, $categoryIds));
             $posts = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
         } catch (\Throwable $e) {
+            self::log_exception('latest_posts_by_category_load_failed', $e);
             return [];
         }
 
@@ -260,6 +286,7 @@ final class CMS_M365Landing_Repository
             $stmt->execute();
             $posts = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
         } catch (\Throwable $e) {
+            self::log_exception('latest_posts_load_failed', $e);
             return [];
         }
 
@@ -297,12 +324,14 @@ final class CMS_M365Landing_Repository
         }
 
         $ids = [];
+        $visited = [];
         $stack = [$categoryId];
         while ($stack !== []) {
             $id = (int) array_pop($stack);
-            if ($id <= 0 || in_array($id, $ids, true)) {
+            if ($id <= 0 || isset($visited[$id])) {
                 continue;
             }
+            $visited[$id] = true;
             $ids[] = $id;
             foreach ($childrenByParent[$id] ?? [] as $childId) {
                 $stack[] = (int) $childId;
@@ -538,7 +567,12 @@ final class CMS_M365Landing_Repository
         }
 
         $value = str_replace(' ', '%20', $value);
-        if (str_starts_with($value, '/') && !str_starts_with($value, '//') && !str_contains($value, '..')) {
+        if (str_starts_with($value, '/') && !str_starts_with($value, '//')) {
+            $decodedPath = rawurldecode((string) (parse_url($value, PHP_URL_PATH) ?: $value));
+            if (str_contains($decodedPath, '..') || preg_match('#[<>`"\']#', $decodedPath) === 1) {
+                return '';
+            }
+
             return $value;
         }
 
@@ -639,14 +673,27 @@ final class CMS_M365Landing_Repository
 
     private function resolve_prefix(object $db): string
     {
+        $prefix = '';
         if (method_exists($db, 'getPrefix')) {
-            return (string) $db->getPrefix();
+            $prefix = (string) $db->getPrefix();
+        } elseif (method_exists($db, 'prefix')) {
+            $prefix = (string) $db->prefix();
         }
 
-        if (method_exists($db, 'prefix')) {
-            return (string) $db->prefix();
+        $prefix = trim($prefix);
+        if ($prefix === '') {
+            return 'cms_';
         }
 
-        return 'cms_';
+        $prefix = (string) preg_replace('/[^A-Za-z0-9_]/', '', $prefix);
+
+        return $prefix !== '' ? $prefix : 'cms_';
+    }
+
+    private static function log_exception(string $context, \Throwable $e): void
+    {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('CMS M365 Landing [' . $context . ']: ' . $e->getMessage());
+        }
     }
 }

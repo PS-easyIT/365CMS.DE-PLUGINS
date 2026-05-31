@@ -72,15 +72,21 @@ final class CMS_Feed_Template_Loader
         }
 
         // Theme-Override
-        $theme_template = $this->getThemeTemplateDir() . $template_name;
-        if (file_exists($theme_template)) {
-            return $theme_template;
+        $themeTemplate = $this->resolve_template_path(
+            $this->getThemeTemplateDir() . $template_name,
+            $this->getThemeTemplateDir()
+        );
+        if ($themeTemplate !== null) {
+            return $themeTemplate;
         }
 
         // Plugin Template als Fallback
-        $plugin_template = $this->plugin_template_dir . $template_name;
-        if (file_exists($plugin_template)) {
-            return $plugin_template;
+        $pluginTemplate = $this->resolve_template_path(
+            $this->plugin_template_dir . $template_name,
+            $this->plugin_template_dir
+        );
+        if ($pluginTemplate !== null) {
+            return $pluginTemplate;
         }
 
         return null;
@@ -122,6 +128,32 @@ final class CMS_Feed_Template_Loader
         }
 
         return $template_name . '.php';
+    }
+
+    private function resolve_template_path(string $candidatePath, string $baseDirectory): ?string
+    {
+        if (!is_file($candidatePath) || !is_readable($candidatePath)) {
+            return null;
+        }
+
+        $resolvedBase = realpath($baseDirectory);
+        $resolvedCandidate = realpath($candidatePath);
+        if ($resolvedBase === false || $resolvedCandidate === false) {
+            return null;
+        }
+
+        $normalizedBase = rtrim(str_replace('\\', '/', $resolvedBase), '/');
+        $normalizedCandidate = str_replace('\\', '/', $resolvedCandidate);
+        if ($normalizedCandidate !== $normalizedBase
+            && !str_starts_with($normalizedCandidate, $normalizedBase . '/')
+        ) {
+            CMS_Feed_Error_Handler::instance()->log('warning', 'CMS Feed Template: Pfad außerhalb erlaubter Template-Verzeichnisse blockiert.', [
+                'scope' => 'template.path_guard',
+            ]);
+            return null;
+        }
+
+        return $resolvedCandidate;
     }
 
     private function render_template_error(string $title, string $message, ?\Throwable $exception = null, array $context = []): void

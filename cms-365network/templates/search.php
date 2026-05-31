@@ -12,12 +12,13 @@ if (!defined('ABSPATH')) {
 }
 
 $searchQuery = trim((string) ($searchQuery ?? ''));
-$searchParam = trim((string) ($searchParam ?? 'q')) ?: 'q';
+$searchParam = trim((string) preg_replace('/[^a-zA-Z0-9_-]+/', '', (string) ($searchParam ?? 'q'))) ?: 'q';
 $searchUrl = trim((string) ($searchUrl ?? '/365network/search')) ?: '/365network/search';
 $searchResults = is_array($searchResults ?? null) ? $searchResults : [];
 $searchTotal = max(0, (int) ($searchTotal ?? 0));
 $hasQuery = $searchQuery !== '';
-$queryTooShort = $hasQuery && strlen($searchQuery) < 2;
+$queryLength = function_exists('mb_strlen') ? mb_strlen($searchQuery, 'UTF-8') : strlen($searchQuery);
+$queryTooShort = $hasQuery && $queryLength < 2;
 ?>
 <main id="cms-365network-search" class="cms-network-hub-wrap n365-landing n365-search-page" aria-labelledby="n365-search-title">
     <header class="n365-search-hero">

@@ -50,6 +50,20 @@ $safeUrl = static function (string $url): string {
     }
     return $url;
 };
+$safeNavUrl = static function (string $url): string {
+    $url = trim($url);
+    if ($url === '') {
+        return '';
+    }
+    if (str_starts_with($url, '/')) {
+        return $url;
+    }
+    if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+        return '';
+    }
+
+    return preg_match('#^https?://#i', $url) === 1 ? $url : '';
+};
 $safeMedia = static function (string $url): string {
     $url = trim($url);
     if ($url === '') {
@@ -65,8 +79,13 @@ $safeMedia = static function (string $url): string {
 };
 $initial = static function (string $title): string {
     $clean = trim(strip_tags($title));
-    return mb_substr($clean !== '' ? $clean : '?', 0, 1);
+    $text = $clean !== '' ? $clean : '?';
+
+    return function_exists('mb_substr') ? (string) mb_substr($text, 0, 1) : substr($text, 0, 1);
 };
+$tableDensity = in_array((string) ($settings['table_density'] ?? 'comfortable'), ['comfortable', 'compact'], true)
+    ? (string) ($settings['table_density'] ?? 'comfortable')
+    : 'comfortable';
 ?>
 <main class="phinit-plugin mlc-page" id="m365-linkcollection">
     <header class="mlc-header">
@@ -124,7 +143,7 @@ $initial = static function (string $title): string {
             }
             $title = (string) ($item['title'] ?? '');
             $image = $safeMedia((string) ($item['resolved_image_url'] ?? $item['image_url'] ?? ''));
-            $imageAlt = (string) (($item['resolved_image_alt'] ?? '') !== '' ? $item['resolved_image_alt'] : ($item['image_alt'] ?: $title));
+            $imageAlt = (string) (($item['resolved_image_alt'] ?? '') !== '' ? $item['resolved_image_alt'] : (($item['image_alt'] ?? '') !== '' ? $item['image_alt'] : $title));
             $buttons = $repo->related_buttons($item);
             ?>
             <article class="phinit-card mlc-card">
@@ -144,7 +163,8 @@ $initial = static function (string $title): string {
                     <footer class="mlc-card__actions">
                         <a href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>" class="phinit-btn phinit-btn--secondary mlc-btn" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars((string) ($settings['external_button_label'] ?? 'Site öffnen'), ENT_QUOTES, 'UTF-8'); ?> <span aria-hidden="true">→</span></a>
                         <?php foreach ($buttons as $button): ?>
-                        <a href="<?php echo htmlspecialchars($button['url'], ENT_QUOTES, 'UTF-8'); ?>" class="phinit-btn phinit-btn--link mlc-btn mlc-btn--<?php echo htmlspecialchars($button['type'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($button['label'], ENT_QUOTES, 'UTF-8'); ?></a>
+                        <?php $buttonUrl = $safeNavUrl((string) ($button['url'] ?? '')); if ($buttonUrl === '') { continue; } ?>
+                        <a href="<?php echo htmlspecialchars($buttonUrl, ENT_QUOTES, 'UTF-8'); ?>" class="phinit-btn phinit-btn--link mlc-btn mlc-btn--<?php echo htmlspecialchars((string) ($button['type'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($button['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a>
                         <?php endforeach; ?>
                     </footer>
                 </div>
@@ -157,7 +177,7 @@ $initial = static function (string $title): string {
     <?php if ($showTable && $items !== []): ?>
     <section class="mlc-table-section" aria-labelledby="mlc-table-heading">
         <h2 id="mlc-table-heading"><?php echo htmlspecialchars((string) ($settings['label_table_heading'] ?? 'Tabellarische Übersicht'), ENT_QUOTES, 'UTF-8'); ?></h2>
-        <div class="mlc-table-wrap mlc-table-wrap--<?php echo htmlspecialchars((string) ($settings['table_density'] ?? 'comfortable'), ENT_QUOTES, 'UTF-8'); ?>">
+        <div class="mlc-table-wrap mlc-table-wrap--<?php echo htmlspecialchars($tableDensity, ENT_QUOTES, 'UTF-8'); ?>">
             <table class="phinit-table mlc-table">
                 <thead><tr>
                     <?php if ($showImages && $hasColumn('image')): ?><th><?php echo htmlspecialchars((string) ($settings['label_table_image'] ?? 'Bild'), ENT_QUOTES, 'UTF-8'); ?></th><?php endif; ?>
@@ -168,13 +188,13 @@ $initial = static function (string $title): string {
                 </tr></thead>
                 <tbody>
                 <?php foreach ($items as $item): ?>
-                <?php $url = $safeUrl((string) ($item['url'] ?? '')); if ($url === '') { continue; } $title = (string) ($item['title'] ?? ''); $image = $safeMedia((string) ($item['resolved_image_url'] ?? $item['image_url'] ?? '')); $imageAlt = (string) (($item['resolved_image_alt'] ?? '') !== '' ? $item['resolved_image_alt'] : ($item['image_alt'] ?: $title)); $buttons = $repo->related_buttons($item); ?>
+                <?php $url = $safeUrl((string) ($item['url'] ?? '')); if ($url === '') { continue; } $title = (string) ($item['title'] ?? ''); $image = $safeMedia((string) ($item['resolved_image_url'] ?? $item['image_url'] ?? '')); $imageAlt = (string) (($item['resolved_image_alt'] ?? '') !== '' ? $item['resolved_image_alt'] : (($item['image_alt'] ?? '') !== '' ? $item['image_alt'] : $title)); $buttons = $repo->related_buttons($item); ?>
                 <tr>
                     <?php if ($showImages && $hasColumn('image')): ?><td><?php if ($image !== ''): ?><img src="<?php echo htmlspecialchars($image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($imageAlt, ENT_QUOTES, 'UTF-8'); ?>" loading="lazy" width="96" height="64" class="mlc-table-image"><?php else: ?><span class="mlc-table-placeholder" aria-hidden="true"><?php echo htmlspecialchars($initial($title), ENT_QUOTES, 'UTF-8'); ?></span><?php endif; ?></td><?php endif; ?>
                     <?php if ($hasColumn('title')): ?><td><strong><?php echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?></strong><br><small><?php echo htmlspecialchars((string) ($item['category_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></small></td><?php endif; ?>
                     <?php if ($hasColumn('subtitle')): ?><td><?php echo htmlspecialchars((string) ($item['subtitle'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></td><?php endif; ?>
                     <?php if ($hasColumn('url')): ?><td><a href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars((string) parse_url($url, PHP_URL_HOST), ENT_QUOTES, 'UTF-8'); ?></a></td><?php endif; ?>
-                    <?php if ($hasColumn('actions')): ?><td><div class="mlc-table-actions"><a href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>" class="mlc-table-action" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars((string) ($settings['external_button_label'] ?? 'Site öffnen'), ENT_QUOTES, 'UTF-8'); ?></a><?php foreach ($buttons as $button): ?><a href="<?php echo htmlspecialchars($button['url'], ENT_QUOTES, 'UTF-8'); ?>" class="mlc-table-action"><?php echo htmlspecialchars($button['label'], ENT_QUOTES, 'UTF-8'); ?></a><?php endforeach; ?></div></td><?php endif; ?>
+                    <?php if ($hasColumn('actions')): ?><td><div class="mlc-table-actions"><a href="<?php echo htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>" class="mlc-table-action" target="_blank" rel="noopener noreferrer"><?php echo htmlspecialchars((string) ($settings['external_button_label'] ?? 'Site öffnen'), ENT_QUOTES, 'UTF-8'); ?></a><?php foreach ($buttons as $button): ?><?php $buttonUrl = $safeNavUrl((string) ($button['url'] ?? '')); if ($buttonUrl === '') { continue; } ?><a href="<?php echo htmlspecialchars($buttonUrl, ENT_QUOTES, 'UTF-8'); ?>" class="mlc-table-action"><?php echo htmlspecialchars((string) ($button['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></a><?php endforeach; ?></div></td><?php endif; ?>
                 </tr>
                 <?php endforeach; ?>
                 </tbody>

@@ -16,6 +16,7 @@ final class CMS_Experts_Database
 {
     private static ?self $instance = null;
     private const MAX_LIST_LIMIT = 200;
+    private ?array $settingsCache = null;
 
     public static function instance(): self
     {
@@ -43,6 +44,11 @@ final class CMS_Experts_Database
     private function normalizeOffset(mixed $offset): int
     {
         return max(0, (int) $offset);
+    }
+
+    private function logError(string $context, \Throwable $error): void
+    {
+        error_log('CMS Experts Database [' . $context . ']: ' . $error->getMessage());
     }
 
     /**
@@ -181,7 +187,7 @@ final class CMS_Experts_Database
             }
 
         } catch (\PDOException $e) {
-            error_log('CMS Experts Database Error: ' . $e->getMessage());
+            $this->logError('create_tables', $e);
         }
     }
 
@@ -505,7 +511,7 @@ final class CMS_Experts_Database
                 // Migration direkt nachholen
                 $this->maybe_migrate_skill_type();
             } catch (\Throwable $inner) {
-                error_log('CMS Experts get_expert_skills_grouped fallback error: ' . $inner->getMessage());
+                $this->logError('get_expert_skills_grouped_fallback', $inner);
             }
         }
         return $grouped;
@@ -589,20 +595,27 @@ final class CMS_Experts_Database
                 updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         } catch (\PDOException $e) {
-            error_log('expert_plugin_settings table: ' . $e->getMessage());
+            $this->logError('maybe_create_settings_table', $e);
         }
     }
 
     public function get_plugin_setting(string $key, $default = null)
     {
         $this->maybe_create_settings_table();
+        if ($this->settingsCache !== null && array_key_exists($key, $this->settingsCache)) {
+            return $this->settingsCache[$key];
+        }
         $db = CMS\Database::instance();
         try {
             $row = $db->get_row(
                 "SELECT setting_value FROM {$db->prefix()}expert_plugin_settings WHERE setting_key = ?",
                 [$key]
             );
-            return $row ? $row->setting_value : $default;
+            $value = $row ? $row->setting_value : $default;
+            if ($this->settingsCache !== null && $row) {
+                $this->settingsCache[$key] = $row->setting_value;
+            }
+            return $value;
         } catch (\Throwable $e) {
             return $default;
         }
@@ -611,6 +624,7 @@ final class CMS_Experts_Database
     public function save_plugin_settings(array $settings): void
     {
         $this->maybe_create_settings_table();
+        $this->settingsCache = null;
         $db     = CMS\Database::instance();
         $pdo    = $db->getPdo();
         $prefix = $db->prefix();
@@ -623,13 +637,17 @@ final class CMS_Experts_Database
             try {
                 $stmt->execute([(string)$key, (string)$value]);
             } catch (\PDOException $e) {
-                error_log("save_plugin_settings [{$key}]: " . $e->getMessage());
+                $this->logError('save_plugin_settings:' . (string) $key, $e);
             }
         }
     }
 
     public function get_all_plugin_settings(): array
     {
+        if ($this->settingsCache !== null) {
+            return $this->settingsCache;
+        }
+
         $this->maybe_create_settings_table();
         $db   = CMS\Database::instance();
         $out  = [];
@@ -641,6 +659,8 @@ final class CMS_Experts_Database
                 $out[$r->setting_key] = $r->setting_value;
             }
         } catch (\Throwable $e) { /* silent */ }
+
+        $this->settingsCache = $out;
         return $out;
     }
 
@@ -669,7 +689,7 @@ final class CMS_Experts_Database
                     [$expert_id, $spec_id, $i === 0 ? 1 : 0]
                 );
             } catch (\PDOException $e) {
-                error_log('save_expert_specializations: ' . $e->getMessage());
+                $this->logError('save_expert_specializations', $e);
             }
         }
     }

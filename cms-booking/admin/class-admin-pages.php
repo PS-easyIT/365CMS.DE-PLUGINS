@@ -15,9 +15,16 @@ if (!defined('ABSPATH')) {
 
 // Traits laden
 $traitsDir = CMS_BOOKING_PLUGIN_DIR . 'admin/modules/';
-if (is_dir($traitsDir)) {
-    foreach (glob($traitsDir . 'trait-*.php') as $traitFile) {
-        require_once $traitFile;
+$traitsDirReal = is_dir($traitsDir) ? realpath($traitsDir) : false;
+if ($traitsDirReal !== false) {
+    $traitFiles = glob($traitsDirReal . DIRECTORY_SEPARATOR . 'trait-*.php') ?: [];
+    sort($traitFiles);
+    foreach ($traitFiles as $traitFile) {
+        $traitReal = realpath($traitFile);
+        if ($traitReal === false || strpos($traitReal, $traitsDirReal . DIRECTORY_SEPARATOR) !== 0) {
+            continue;
+        }
+        require_once $traitReal;
     }
 }
 
@@ -30,6 +37,14 @@ final class CMS_Booking_Admin_Pages
     use CMS_Booking_Page_Settings_Trait;
 
     private static ?self $instance = null;
+    private const DEFAULT_PAGE_SLUG = 'booking';
+    private const PAGE_CALLBACKS = [
+        'booking'   => 'render_dashboard',
+        'bookings'  => 'render_bookings',
+        'providers' => 'render_providers',
+        'services'  => 'render_services',
+        'settings'  => 'render_settings',
+    ];
 
     public static function instance(): self
     {
@@ -50,6 +65,14 @@ final class CMS_Booking_Admin_Pages
             exit;
         }
         return true;
+    }
+
+    /**
+     * Zusätzlicher Capability-Check für zustandsverändernde Admin-Aktionen.
+     */
+    protected static function can_manage_admin_actions(): bool
+    {
+        return class_exists('CMS\Auth') && \CMS\Auth::instance()->isAdmin();
     }
 
     /**
@@ -89,6 +112,9 @@ final class CMS_Booking_Admin_Pages
      */
     protected static function generate_nonce(string $action): string
     {
+        if (!class_exists('CMS\Security')) {
+            return '';
+        }
         return \CMS\Security::instance()->generateToken($action);
     }
 
@@ -97,7 +123,30 @@ final class CMS_Booking_Admin_Pages
      */
     protected static function verify_nonce(string $action): bool
     {
+        if (!class_exists('CMS\Security')) {
+            return false;
+        }
         return \CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', $action);
+    }
+
+    /**
+     * Erzeugt eine Admin-URL für die Sidebar-Subpages.
+     *
+     * @param array<string, string|int> $query
+     */
+    public static function admin_url(string $slug, array $query = []): string
+    {
+        $slug = self::normalize_slug($slug);
+        if ($slug === '') {
+            $slug = self::DEFAULT_PAGE_SLUG;
+        }
+
+        $url = '/admin/plugins/' . CMS_Booking_Admin_Menu::MENU_SLUG . '/' . rawurlencode($slug);
+        if (!empty($query)) {
+            $url .= '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+        }
+
+        return $url;
     }
 
     /**
@@ -109,6 +158,67 @@ final class CMS_Booking_Admin_Pages
     }
 
     // ── Statische Entry-Points (aufgerufen vom Router) ────────────────────────
+
+    /**
+     * Zentraler Dispatcher für add_menu_page/add_submenu_page.
+     * Er nutzt den Shared-Contract inkl. Missing-Callback-Fallback.
+     */
+    public static function dispatch(): void
+    {
+        self::ensure_shared_contract_loaded();
+
+        $callbacks = self::resolve_dispatch_callbacks();
+
+        if (function_exists('cms_plugin_admin_dispatch_page')) {
+            cms_plugin_admin_dispatch_page($callbacks, self::DEFAULT_PAGE_SLUG, CMS_Booking_Admin_Menu::MENU_SLUG);
+            return;
+        }
+
+        // Fallback ohne Shared Contract (defensiv).
+        $activeSlug = self::normalize_slug((string) ($_GET['page'] ?? self::DEFAULT_PAGE_SLUG));
+        if ($activeSlug === '') {
+            $activeSlug = self::DEFAULT_PAGE_SLUG;
+        }
+        $resolvedSlug = array_key_exists($activeSlug, $callbacks) ? $activeSlug : self::DEFAULT_PAGE_SLUG;
+        $callback = $callbacks[$resolvedSlug] ?? null;
+
+        if (!is_callable($callback)) {
+            self::render_missing_callback_notice($activeSlug, $resolvedSlug);
+            return;
+        }
+
+        call_user_func($callback);
+    }
+
+    public static function dispatch_dashboard(): void
+    {
+        $_GET['page'] = 'booking';
+        self::dispatch();
+    }
+
+    public static function dispatch_bookings(): void
+    {
+        $_GET['page'] = 'bookings';
+        self::dispatch();
+    }
+
+    public static function dispatch_providers(): void
+    {
+        $_GET['page'] = 'providers';
+        self::dispatch();
+    }
+
+    public static function dispatch_services(): void
+    {
+        $_GET['page'] = 'services';
+        self::dispatch();
+    }
+
+    public static function dispatch_settings(): void
+    {
+        $_GET['page'] = 'settings';
+        self::dispatch();
+    }
 
     public static function render_dashboard(): void
     {
@@ -150,34 +260,31 @@ final class CMS_Booking_Admin_Pages
      */
     public function render(): void
     {
-        $section = sanitize_text_field($_GET['section'] ?? 'dashboard');
-
-        switch ($section) {
-            case 'bookings':
-                $this->render_bookings_page();
-                break;
-            case 'providers':
-                $this->render_providers_page();
-                break;
-            case 'services':
-                $this->render_services_page();
-                break;
-            case 'settings':
-                $this->render_settings_page();
-                break;
-            default:
-                $this->render_dashboard_page();
-                break;
+        $legacySection = self::normalize_slug((string) ($_GET['section'] ?? self::DEFAULT_PAGE_SLUG));
+        if ($legacySection === '') {
+            $legacySection = self::DEFAULT_PAGE_SLUG;
         }
+
+        $_GET['page'] = $legacySection;
+        self::dispatch();
     }
 
     private static function render_with_layout(string $title, string $activePage, callable $renderer): void
     {
         self::check_access();
+        self::ensure_shared_contract_loaded();
+
+        $activePage = self::normalize_slug($activePage);
+        if ($activePage === '') {
+            $activePage = self::DEFAULT_PAGE_SLUG;
+        }
 
         $layoutStarted = false;
         if (!headers_sent()) {
-            if (function_exists('renderAdminLayoutStart')) {
+            if (function_exists('cms_plugin_admin_layout_start')) {
+                cms_plugin_admin_layout_start($title, $activePage);
+                $layoutStarted = true;
+            } elseif (function_exists('renderAdminLayoutStart')) {
                 renderAdminLayoutStart($title, $activePage);
                 $layoutStarted = true;
             } else {
@@ -193,12 +300,80 @@ final class CMS_Booking_Admin_Pages
         self::enqueue_admin_scripts();
 
         if ($layoutStarted) {
-            if (function_exists('renderAdminLayoutEnd')) {
+            if (function_exists('cms_plugin_admin_layout_end')) {
+                cms_plugin_admin_layout_end();
+            } elseif (function_exists('renderAdminLayoutEnd')) {
                 renderAdminLayoutEnd();
             } else {
                 self::render_core_layout_end();
             }
         }
+    }
+
+    /**
+     * @return array<string, callable|null>
+     */
+    private static function resolve_dispatch_callbacks(): array
+    {
+        $callbacks = [];
+
+        foreach (self::PAGE_CALLBACKS as $slug => $method) {
+            $callbacks[$slug] = is_callable([self::class, $method]) ? [self::class, $method] : null;
+        }
+
+        return $callbacks;
+    }
+
+    private static function render_missing_callback_notice(string $requestedSlug, string $resolvedSlug): void
+    {
+        self::render_with_layout('Booking Administration', self::DEFAULT_PAGE_SLUG, static function () use ($requestedSlug, $resolvedSlug): void {
+            if (function_exists('cms_plugin_admin_emit_notice')) {
+                cms_plugin_admin_emit_notice(
+                    'Die angeforderte Admin-Seite ist derzeit nicht verfuegbar. Bitte pruefen Sie die Plugin-Konfiguration.',
+                    'error',
+                    sprintf(
+                        'missing admin callback plugin=%s requested=%s resolved=%s default=%s',
+                        CMS_Booking_Admin_Menu::MENU_SLUG,
+                        $requestedSlug,
+                        $resolvedSlug,
+                        self::DEFAULT_PAGE_SLUG
+                    )
+                );
+                return;
+            }
+
+            echo '<div class="alert alert-error" role="alert">';
+            echo htmlspecialchars(
+                'Die angeforderte Admin-Seite ist derzeit nicht verfuegbar. Bitte pruefen Sie die Plugin-Konfiguration.',
+                ENT_QUOTES,
+                'UTF-8'
+            );
+            echo '</div>';
+        });
+    }
+
+    private static function ensure_shared_contract_loaded(): void
+    {
+        if (function_exists('cms_plugin_admin_dispatch_page')) {
+            return;
+        }
+
+        $sharedContract = dirname(CMS_BOOKING_PLUGIN_DIR) . '/shared/admin/plugin-admin-contract.php';
+        $sharedReal = realpath($sharedContract);
+        $allowedRoot = realpath(dirname(CMS_BOOKING_PLUGIN_DIR) . '/shared/');
+        if ($sharedReal !== false && is_file($sharedReal) && $allowedRoot !== false) {
+            $allowedPrefix = rtrim($allowedRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+            if (strpos($sharedReal, $allowedPrefix) === 0) {
+                require_once $sharedReal;
+            }
+        }
+    }
+
+    private static function normalize_slug(string $slug): string
+    {
+        $slug = strtolower(trim($slug));
+        $slug = (string) preg_replace('/[^a-z0-9_-]+/', '-', $slug);
+        return trim($slug, '-');
     }
 
     private static function render_core_layout_start(string $title, string $activePage): void

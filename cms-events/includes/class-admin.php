@@ -19,6 +19,15 @@ if (class_exists('CMS_Events_Admin', false)) {
 
 final class CMS_Events_Admin
 {
+    private const MENU_PARENT_SLUG = 'events';
+    private const MENU_SECTIONS = [
+        'events'            => 'overview',
+        'events-categories' => 'categories',
+        'events-tags'       => 'tags',
+        'events-design'     => 'design',
+        'events-settings'   => 'settings',
+    ];
+
     private static ?self $instance = null;
 
     public static function instance(): self
@@ -31,7 +40,7 @@ final class CMS_Events_Admin
 
     private function __construct()
     {
-        $this->loadAdminMenu();
+        $this->load_shared_admin_contract();
         CMS\Hooks::addAction('cms_admin_menu', [$this, 'register_admin_menu'], 10);
         CMS\Hooks::addFilter('admin_menu_items', [$this, 'add_menu_item'], 10);
     }
@@ -46,55 +55,74 @@ final class CMS_Events_Admin
             'Events',
             '365NET | Events',
             'manage_options',
-            'events',
+            self::MENU_PARENT_SLUG,
             [self::class, 'render_plugin_page_bridge'],
             '📅',
             43
         );
+
+        if (!function_exists('add_submenu_page')) {
+            return;
+        }
+
+        add_submenu_page(self::MENU_PARENT_SLUG, 'Event Uebersicht', '📅 Uebersicht', 'manage_options', 'events', [self::class, 'render_plugin_page_bridge']);
+        add_submenu_page(self::MENU_PARENT_SLUG, 'Event Kategorien', '📂 Kategorien', 'manage_options', 'events-categories', [self::class, 'render_plugin_page_bridge']);
+        add_submenu_page(self::MENU_PARENT_SLUG, 'Event Tags', '🏷️ Tags', 'manage_options', 'events-tags', [self::class, 'render_plugin_page_bridge']);
+        add_submenu_page(self::MENU_PARENT_SLUG, 'Event Design', '🎨 Design', 'manage_options', 'events-design', [self::class, 'render_plugin_page_bridge']);
+        add_submenu_page(self::MENU_PARENT_SLUG, 'Event Einstellungen', '⚙️ Einstellungen', 'manage_options', 'events-settings', [self::class, 'render_plugin_page_bridge']);
     }
 
     public static function render_plugin_page_bridge(): void
     {
-        $tab = (string) ($_GET['tab'] ?? '');
-        $allowedTabs = ['overview', 'categories', 'tags', 'design', 'settings'];
-
-        if ($tab === '' || !in_array($tab, $allowedTabs, true)) {
-            CMS\Router::instance()->redirect('/admin/events?tab=overview');
-            return;
-        }
-
-        if (class_exists('CMS_Events_Post_Type', false)) {
-            CMS_Events_Post_Type::instance()->admin_list();
-            return;
-        }
-
-        CMS\Router::instance()->redirect('/admin/events');
-    }
-
-    private function loadAdminMenu(): void
-    {
-        if (function_exists('add_menu_page') && function_exists('renderAdminLayoutStart') && function_exists('renderAdminLayoutEnd')) {
-            return;
-        }
-
-        $menuFiles = [
-            ABSPATH . 'includes/functions/admin-menu.php',
-            ABSPATH . 'CMS/includes/functions/admin-menu.php',
+        $callbackMap = [
+            'events'            => [self::class, 'render_overview_bridge'],
+            'events-categories' => [self::class, 'render_categories_bridge'],
+            'events-tags'       => [self::class, 'render_tags_bridge'],
+            'events-design'     => [self::class, 'render_design_bridge'],
+            'events-settings'   => [self::class, 'render_settings_bridge'],
         ];
 
-        foreach ($menuFiles as $menuFile) {
-            if (is_file($menuFile)) {
-                require_once $menuFile;
-                if (function_exists('add_menu_page') && function_exists('renderAdminLayoutStart')) {
-                    return;
-                }
-            }
+        if (function_exists('cms_plugin_admin_dispatch_page')) {
+            cms_plugin_admin_dispatch_page($callbackMap, 'events', self::MENU_PARENT_SLUG);
+            return;
+        }
+
+        $requestedSlug = self::requested_admin_slug();
+        $callback = $callbackMap[$requestedSlug] ?? $callbackMap['events'];
+        if (is_callable($callback)) {
+            call_user_func($callback);
+            return;
+        }
+
+        self::render_admin_bridge_fallback_notice();
+    }
+
+    private static function requested_admin_slug(): string
+    {
+        $requested = (string) ($_GET['page'] ?? self::MENU_PARENT_SLUG);
+        if (function_exists('cms_plugin_admin_normalize_slug')) {
+            return cms_plugin_admin_normalize_slug($requested);
+        }
+
+        $normalized = strtolower(trim($requested));
+        $normalized = (string) preg_replace('/[^a-z0-9_-]+/', '-', $normalized);
+        return trim($normalized, '-');
+    }
+
+    private function load_shared_admin_contract(): void
+    {
+        $sharedContract = dirname(rtrim(CMS_EVENTS_PLUGIN_DIR, '/\\')) . '/shared/admin/plugin-admin-contract.php';
+        if (is_file($sharedContract)) {
+            require_once $sharedContract;
         }
     }
 
     private function start_admin_layout(string $title, string $activePage): void
     {
-        $this->loadAdminMenu();
+        if (function_exists('cms_plugin_admin_layout_start')) {
+            cms_plugin_admin_layout_start($title, $activePage);
+            return;
+        }
 
         if (function_exists('renderAdminLayoutStart')) {
             renderAdminLayoutStart($title, $activePage);
@@ -114,6 +142,11 @@ final class CMS_Events_Admin
 
     private function end_admin_layout(): void
     {
+        if (function_exists('cms_plugin_admin_layout_end')) {
+            cms_plugin_admin_layout_end();
+            return;
+        }
+
         if (function_exists('renderAdminLayoutEnd')) {
             renderAdminLayoutEnd();
             return;
@@ -150,15 +183,15 @@ final class CMS_Events_Admin
 
     public function add_menu_item(array $menuItems): array
     {
-        $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $currentPath = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
         $isActive    = str_starts_with($currentPath, '/admin/events');
 
         $menuItems[] = [
             'type'   => 'item',
-            'slug'   => 'events',
+            'slug'   => self::MENU_PARENT_SLUG,
             'label'  => '365NET | Events',
             'icon'   => '📅',
-            'url'    => '/admin/events?tab=overview',
+            'url'    => '/admin/events',
             'active' => $isActive,
         ];
 
@@ -176,7 +209,9 @@ final class CMS_Events_Admin
 
         // Daten aus dem assoziativen Array lesen
         $events      = $data['events']      ?? [];
-        $tab         = $data['tab']         ?? 'overview';
+        $tab         = in_array((string) ($data['tab'] ?? 'overview'), ['overview', 'categories', 'tags', 'design', 'settings'], true)
+            ? (string) $data['tab']
+            : 'overview';
         $filter      = $data['filter']      ?? 'all';
         $categories  = $data['categories']  ?? [];
         $tag_presets = $data['tag_presets'] ?? ['general' => [], 'special' => [], 'format' => []];
@@ -186,6 +221,7 @@ final class CMS_Events_Admin
         $eventsAdminBaseUrl = htmlspecialchars((string) SITE_URL . '/admin/events', ENT_QUOTES, 'UTF-8');
         $approveCsrf = htmlspecialchars((string) ($data['approve_csrf'] ?? ''), ENT_QUOTES, 'UTF-8');
         $sec         = CMS\Security::instance();
+        $listErrorCode = self::query_param_string('error', 40);
 
         // Settings mit Defaults zusammenführen
         $s = array_merge([
@@ -270,10 +306,10 @@ final class CMS_Events_Admin
         <?php if (isset($_GET['deleted'])): ?>
             <div class="alert alert-success">✅ Event gelöscht.</div>
         <?php endif; ?>
-        <?php if (isset($_GET['error'])): ?>
+        <?php if ($listErrorCode !== ''): ?>
             <div class="alert alert-error">
                 ❌ Fehler:
-                <?php match($_GET['error']) {
+                <?php match($listErrorCode) {
                     'csrf'       => print 'Sicherheitscheck fehlgeschlagen.',
                     'save'       => print 'Datenbank-Fehler beim Speichern.',
                     'validation' => print 'Pflichtfelder prüfen.',
@@ -281,26 +317,6 @@ final class CMS_Events_Admin
                 }; ?>
             </div>
         <?php endif; ?>
-
-        <!-- Tabs -->
-        <div class="ev-tabs">
-            <?php
-            $tabs = [
-                'overview'   => ['📅', 'Übersicht'],
-                'categories' => ['📂', 'Kategorien'],
-                'tags'       => ['🏷️', 'Tags'],
-                'design'     => ['🎨', 'Design'],
-                'settings'   => ['⚙️', 'Einstellungen'],
-            ];
-            foreach ($tabs as $slug => [$icon, $label]): ?>
-                <a href="<?= $eventsAdminBaseUrl ?>?tab=<?= rawurlencode($slug) ?>" class="ev-tab <?= $tab === $slug ? 'active' : '' ?>">
-                    <?= $icon ?> <?= $label ?>
-                    <?php if ($slug === 'overview' && $draft > 0): ?>
-                        <span class="nav-badge ev-tab-badge"><?= $draft ?></span>
-                    <?php endif; ?>
-                </a>
-            <?php endforeach; ?>
-        </div>
 
         <?php
         // ══════════════════════════════════════════════════════════════════
@@ -958,6 +974,70 @@ final class CMS_Events_Admin
         $this->end_admin_layout();
     }
 
+    public static function admin_section_for_slug(string $slug): string
+    {
+        $normalized = function_exists('cms_plugin_admin_normalize_slug')
+            ? cms_plugin_admin_normalize_slug($slug)
+            : trim((string) preg_replace('/[^a-z0-9_-]+/', '-', strtolower(trim($slug))), '-');
+
+        return self::MENU_SECTIONS[$normalized] ?? 'overview';
+    }
+
+    public static function render_overview_bridge(): void
+    {
+        self::redirect_to_admin_section('overview');
+    }
+
+    public static function render_categories_bridge(): void
+    {
+        self::redirect_to_admin_section('categories');
+    }
+
+    public static function render_tags_bridge(): void
+    {
+        self::redirect_to_admin_section('tags');
+    }
+
+    public static function render_design_bridge(): void
+    {
+        self::redirect_to_admin_section('design');
+    }
+
+    public static function render_settings_bridge(): void
+    {
+        self::redirect_to_admin_section('settings');
+    }
+
+    private static function redirect_to_admin_section(string $section): void
+    {
+        $url = '/admin/events' . ($section === 'overview' ? '' : '?tab=' . rawurlencode($section));
+
+        if (class_exists('CMS\\Router')) {
+            CMS\Router::instance()->redirect($url);
+            return;
+        }
+
+        $safeTarget = htmlspecialchars((string) SITE_URL . $url, ENT_QUOTES, 'UTF-8');
+        echo '<div class="admin-card"><p>Weiterleitung zur Event-Verwaltung... <a href="' . $safeTarget . '">Falls nichts passiert, hier klicken</a>.</p></div>';
+        echo '<script>window.location.replace(' . json_encode((string) SITE_URL . $url, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ');</script>';
+    }
+
+    private static function render_admin_bridge_fallback_notice(): void
+    {
+        if (function_exists('cms_plugin_admin_layout_start') && function_exists('cms_plugin_admin_emit_notice') && function_exists('cms_plugin_admin_layout_end')) {
+            cms_plugin_admin_layout_start('Events', self::MENU_PARENT_SLUG);
+            cms_plugin_admin_emit_notice(
+                'Die angeforderte Event-Admin-Seite ist derzeit nicht verfuegbar. Bitte Plugin-Setup pruefen.',
+                'error',
+                'cms-events admin bridge fallback without valid callback'
+            );
+            cms_plugin_admin_layout_end();
+            return;
+        }
+
+        echo '<div class="alert alert-error" role="alert">Die angeforderte Event-Admin-Seite ist derzeit nicht verfuegbar.</div>';
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     // render_form – Neu anlegen + Bearbeiten
     // ══════════════════════════════════════════════════════════════════════════
@@ -967,6 +1047,7 @@ final class CMS_Events_Admin
         $is_edit    = ($event !== null);
         $page_title = $is_edit ? 'Event bearbeiten' : 'Neues Event anlegen';
         $csrf_token = CMS\Security::instance()->generateToken('save_event');
+        $formErrorCode = self::query_param_string('error', 40);
 
         $db = CMS_Events_Database::instance();
         $categories_db = $db->get_event_categories();
@@ -1001,10 +1082,10 @@ final class CMS_Events_Admin
         <?php if (isset($_GET['success'])): ?>
             <div class="alert alert-success">✅ Event erfolgreich gespeichert.</div>
         <?php endif; ?>
-        <?php if (isset($_GET['error'])): ?>
+        <?php if ($formErrorCode !== ''): ?>
             <div class="alert alert-error">
                 ❌ Fehler beim Speichern
-                <?php match($_GET['error']) {
+                <?php match($formErrorCode) {
                     'csrf'       => print ' – Sicherheitscheck fehlgeschlagen.',
                     'save'       => print ' – Datenbank-Fehler.',
                     'validation' => print ' – Pflichtfeld "Titel" fehlt.',
@@ -1356,5 +1437,24 @@ final class CMS_Events_Admin
         $today = strtotime('today');
 
         return $timestamp !== null && $today !== false && $timestamp < $today;
+    }
+
+    private static function query_param_string(string $key, int $maxLength = 64): string
+    {
+        $value = $_GET[$key] ?? '';
+        if (!is_scalar($value)) {
+            return '';
+        }
+
+        $normalized = trim((string) $value);
+        if ($normalized === '') {
+            return '';
+        }
+
+        if (function_exists('mb_substr')) {
+            return mb_substr($normalized, 0, $maxLength, 'UTF-8');
+        }
+
+        return substr($normalized, 0, $maxLength);
     }
 }

@@ -9,10 +9,6 @@
  * @package CMS_365NETWORK
  */
 
-.n365-admin-shell {
-    padding: 25px;
-}
-
 .n365-admin-shell .admin-page-header {
     align-items: flex-start;
     display: flex;
@@ -699,10 +695,6 @@
 }
 
 @media (max-width: 640px) {
-    .n365-admin-shell {
-        padding: 15px;
-    }
-
     .n365-admin-shell .admin-page-header {
         display: grid;
     }

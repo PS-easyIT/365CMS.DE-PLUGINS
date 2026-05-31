@@ -91,7 +91,12 @@ trait CMS_JPG_Page_Subscription_Trait
         }
         unset($roleData);
 
-        require JPG_DIR . 'admin/views/page-subscription.php';
+        self::render_admin_view(
+            'Abosystem',
+            'jpg-subscription',
+            JPG_DIR . 'admin/views/page-subscription.php',
+            compact('notice', 'error', 'pluginRoles', 'nonce', 'plans', 'planLimitsAll', 'cmsRoles')
+        );
     }
 
     /**

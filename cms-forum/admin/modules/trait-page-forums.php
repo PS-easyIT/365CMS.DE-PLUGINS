@@ -24,11 +24,13 @@ trait CMS_Forum_Page_Forums_Trait
             $success = null;
 
             // POST-Handler
-            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forum_action'])) {
+            $requestMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+            if ($requestMethod === 'POST' && isset($_POST['forum_action'])) {
+                $forumAction = sanitize_key((string) ($_POST['forum_action'] ?? ''));
                 if (!self::verify_nonce('forum_forums')) {
                     $error = 'Sicherheitscheck fehlgeschlagen.';
                 } else {
-                    switch ($_POST['forum_action']) {
+                    switch ($forumAction) {
                         case 'create_forum':
                             $name = sanitize_text_field($_POST['name'] ?? '');
                             $desc = sanitize_text_field($_POST['description'] ?? '');
@@ -71,6 +73,10 @@ trait CMS_Forum_Page_Forums_Trait
                                 \CMS_Forum\Models\Forum::instance()->delete($id);
                                 $success = 'Forum gelöscht.';
                             }
+                            break;
+
+                        default:
+                            $error = 'Unbekannte Aktion.';
                             break;
                     }
                 }

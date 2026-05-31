@@ -370,28 +370,25 @@ final class CMS_Booking_Bookings
     {
         $db = \CMS\Database::instance();
         $p  = $db->getPrefix();
+        $stmt = $db->prepare(
+            "SELECT
+                COUNT(*) AS total,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS pending,
+                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS confirmed,
+                SUM(CASE WHEN booking_date = CURDATE() THEN 1 ELSE 0 END) AS today,
+                SUM(CASE WHEN booking_date >= CURDATE() AND booking_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY) THEN 1 ELSE 0 END) AS week
+             FROM {$p}bookings"
+        );
+        $stmt->execute([self::STATUS_PENDING, self::STATUS_CONFIRMED]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: [];
 
-        $stmt = $db->prepare("SELECT COUNT(*) FROM {$p}bookings");
-        $stmt->execute();
-        $total = (int) $stmt->fetchColumn();
-
-        $stmt = $db->prepare("SELECT COUNT(*) FROM {$p}bookings WHERE status = ?");
-        $stmt->execute([self::STATUS_PENDING]);
-        $pending = (int) $stmt->fetchColumn();
-
-        $stmt = $db->prepare("SELECT COUNT(*) FROM {$p}bookings WHERE status = ?");
-        $stmt->execute([self::STATUS_CONFIRMED]);
-        $confirmed = (int) $stmt->fetchColumn();
-
-        $stmt = $db->prepare("SELECT COUNT(*) FROM {$p}bookings WHERE booking_date = CURDATE()");
-        $stmt->execute();
-        $today = (int) $stmt->fetchColumn();
-
-        $stmt = $db->prepare("SELECT COUNT(*) FROM {$p}bookings WHERE booking_date >= CURDATE() AND booking_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)");
-        $stmt->execute();
-        $week = (int) $stmt->fetchColumn();
-
-        return compact('total', 'pending', 'confirmed', 'today', 'week');
+        return [
+            'total'     => (int) ($row['total'] ?? 0),
+            'pending'   => (int) ($row['pending'] ?? 0),
+            'confirmed' => (int) ($row['confirmed'] ?? 0),
+            'today'     => (int) ($row['today'] ?? 0),
+            'week'      => (int) ($row['week'] ?? 0),
+        ];
     }
 
     /**

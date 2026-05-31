@@ -21,15 +21,43 @@ final class CMS_Downloads_Admin_Menu
             'Downloads',
             '365CMS | Downloads',
             'manage_options',
-            'downloads-dashboard',
-            [CMS_Downloads_Admin_Pages::class, 'render_dashboard'],
+            CMS_Downloads_Admin_Pages::PAGE_DASHBOARD,
+            [CMS_Downloads_Admin_Pages::class, 'dispatch'],
             '⬇️',
             56
         );
 
-        add_submenu_page('downloads-dashboard', 'Dashboard', '📊 Dashboard', 'manage_options', 'downloads-dashboard', [CMS_Downloads_Admin_Pages::class, 'render_dashboard']);
-        add_submenu_page('downloads-dashboard', 'Downloads', '📦 Downloads', 'manage_options', 'downloads-items', [CMS_Downloads_Admin_Pages::class, 'render_downloads']);
-        add_submenu_page('downloads-dashboard', 'Kategorien', '🗂️ Kategorien', 'manage_options', 'downloads-categories', [CMS_Downloads_Admin_Pages::class, 'render_categories']);
-        add_submenu_page('downloads-dashboard', 'Einstellungen', '⚙️ Einstellungen', 'manage_options', 'downloads-settings', [CMS_Downloads_Admin_Pages::class, 'render_settings']);
+        add_submenu_page(
+            CMS_Downloads_Admin_Pages::PAGE_DASHBOARD,
+            'Dashboard',
+            'Dashboard',
+            'manage_options',
+            CMS_Downloads_Admin_Pages::PAGE_DASHBOARD,
+            [CMS_Downloads_Admin_Pages::class, 'dispatch']
+        );
+        add_submenu_page(
+            CMS_Downloads_Admin_Pages::PAGE_DASHBOARD,
+            'Downloads',
+            'Downloads',
+            'manage_options',
+            CMS_Downloads_Admin_Pages::PAGE_DOWNLOADS,
+            [CMS_Downloads_Admin_Pages::class, 'dispatch']
+        );
+        add_submenu_page(
+            CMS_Downloads_Admin_Pages::PAGE_DASHBOARD,
+            'Kategorien',
+            'Kategorien',
+            'manage_options',
+            CMS_Downloads_Admin_Pages::PAGE_CATEGORIES,
+            [CMS_Downloads_Admin_Pages::class, 'dispatch']
+        );
+        add_submenu_page(
+            CMS_Downloads_Admin_Pages::PAGE_DASHBOARD,
+            'Einstellungen',
+            'Einstellungen',
+            'manage_options',
+            CMS_Downloads_Admin_Pages::PAGE_SETTINGS,
+            [CMS_Downloads_Admin_Pages::class, 'dispatch']
+        );
     }
 }

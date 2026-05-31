@@ -13,6 +13,8 @@ if (!defined('ABSPATH')) {
 
 final class CMS_M365MATRICES_Admin_Pages
 {
+    private const ROOT_PAGE = 'm365matrices-dashboard';
+
     private static ?self $instance = null;
 
     public static function instance(): self
@@ -26,17 +28,55 @@ final class CMS_M365MATRICES_Admin_Pages
 
     public static function render_dashboard(): void
     {
-        self::render_with_layout('M365 Matrixen', 'm365matrices-dashboard', static function (): void {
-            self::instance()->render_settings_page();
-        });
+        self::render_dispatch();
+    }
+
+    public static function render_dispatch(): void
+    {
+        self::check_access();
+        self::load_shared_admin_contract();
+
+        $callbackMap = self::dispatch_callback_map();
+        if (function_exists('cms_plugin_admin_dispatch_page')) {
+            cms_plugin_admin_dispatch_page($callbackMap, self::ROOT_PAGE, self::ROOT_PAGE);
+            return;
+        }
+
+        $requestedPage = self::current_admin_page_slug(self::ROOT_PAGE);
+        $resolvedPage = array_key_exists($requestedPage, $callbackMap) ? $requestedPage : self::ROOT_PAGE;
+        $callback = $callbackMap[$resolvedPage] ?? null;
+
+        if (!is_callable($callback)) {
+            self::render_with_layout('M365 Matrixen', self::ROOT_PAGE, static function () use ($requestedPage, $resolvedPage): void {
+                self::emit_admin_notice(
+                    'Die angeforderte Admin-Seite ist derzeit nicht verfügbar. Bitte prüfen Sie die Plugin-Konfiguration.',
+                    'error',
+                    sprintf(
+                        'missing admin callback plugin=%s requested=%s resolved=%s fallback-without-contract=1',
+                        self::ROOT_PAGE,
+                        $requestedPage,
+                        $resolvedPage
+                    )
+                );
+            });
+            return;
+        }
+
+        call_user_func($callback);
     }
 
     private static function render_with_layout(string $title, string $slug, callable $renderer): void
     {
         self::check_access();
-        self::load_admin_menu();
+        self::load_shared_admin_contract();
 
-        if (function_exists('renderAdminLayoutStart')) {
+        if (function_exists('cms_plugin_admin_layout_start')) {
+            cms_plugin_admin_layout_start($title, $slug);
+        } else {
+            self::load_admin_menu();
+        }
+
+        if (!function_exists('cms_plugin_admin_layout_start') && function_exists('renderAdminLayoutStart')) {
             renderAdminLayoutStart($title, $slug);
         }
 
@@ -45,6 +85,11 @@ final class CMS_M365MATRICES_Admin_Pages
         $renderer();
         echo '</div>';
 
+        if (function_exists('cms_plugin_admin_layout_end')) {
+            cms_plugin_admin_layout_end();
+            return;
+        }
+
         if (function_exists('renderAdminLayoutEnd')) {
             renderAdminLayoutEnd();
         }
@@ -52,10 +97,53 @@ final class CMS_M365MATRICES_Admin_Pages
 
     private static function check_access(): void
     {
-        if (!class_exists('CMS\\Auth') || !\CMS\Auth::instance()->isAdmin()) {
-            header('Location: ' . (defined('SITE_URL') ? SITE_URL : '/'));
+        if (!self::has_admin_access()) {
+            header('Location: ' . self::safe_admin_redirect_url(), true, 302);
             exit;
         }
+    }
+
+    private static function has_admin_access(): bool
+    {
+        if (!class_exists('CMS\\Auth') || !\CMS\Auth::instance()->isAdmin()) {
+            return false;
+        }
+
+        if (function_exists('current_user_can')) {
+            return current_user_can('manage_options');
+        }
+
+        return true;
+    }
+
+    private static function safe_admin_redirect_url(): string
+    {
+        $url = defined('SITE_URL') ? trim((string) SITE_URL) : '/';
+        if ($url === '' || str_contains($url, "\0") || preg_match('/[\r\n]/', $url) === 1) {
+            return '/';
+        }
+
+        if (str_starts_with($url, '/') && !str_starts_with($url, '//')) {
+            return $url;
+        }
+
+        $scheme = strtolower((string) (parse_url($url, PHP_URL_SCHEME) ?: ''));
+        if (in_array($scheme, ['http', 'https'], true) && filter_var($url, FILTER_VALIDATE_URL) !== false) {
+            return $url;
+        }
+
+        return '/';
+    }
+
+    private static function load_shared_admin_contract(): void
+    {
+        $sharedPath = dirname(CMS_M365MATRICES_PLUGIN_DIR) . '/shared/admin/plugin-admin-contract.php';
+        if (is_file($sharedPath)) {
+            require_once $sharedPath;
+            return;
+        }
+
+        self::log_error('shared admin contract missing: ' . $sharedPath);
     }
 
     private static function load_admin_menu(): void
@@ -76,24 +164,113 @@ final class CMS_M365MATRICES_Admin_Pages
         }
     }
 
-    private function render_settings_page(): void
+    /**
+     * @return array<string,array{option_group:string,menu_label:string,page_title:string}>
+     */
+    private static function section_map(): array
+    {
+        return [
+            self::ROOT_PAGE => [
+                'option_group' => 'matrix-suite',
+                'menu_label' => 'Übersicht',
+                'page_title' => 'M365 Matrixen – Übersicht',
+            ],
+            'm365matrices-suite' => [
+                'option_group' => 'matrix-suite',
+                'menu_label' => 'Lizenzmatrix',
+                'page_title' => 'M365 Matrixen – Lizenzmatrix',
+            ],
+            'm365matrices-addon' => [
+                'option_group' => 'matrix-addon',
+                'menu_label' => 'Add-on-Matrix',
+                'page_title' => 'M365 Matrixen – Add-on-Matrix',
+            ],
+            'm365matrices-copilot' => [
+                'option_group' => 'matrix-copilot',
+                'menu_label' => 'Copilot-Matrix',
+                'page_title' => 'M365 Matrixen – Copilot-Matrix',
+            ],
+            'm365matrices-toc' => [
+                'option_group' => 'matrix-toc',
+                'menu_label' => 'Inhaltsverzeichnis',
+                'page_title' => 'M365 Matrixen – Inhaltsverzeichnis',
+            ],
+            'm365matrices-design' => [
+                'option_group' => 'matrix-design',
+                'menu_label' => 'Design',
+                'page_title' => 'M365 Matrixen – Design',
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string,callable|null>
+     */
+    private static function dispatch_callback_map(): array
+    {
+        $map = [];
+        foreach (array_keys(self::section_map()) as $pageSlug) {
+            $map[$pageSlug] = static function () use ($pageSlug): void {
+                self::instance()->render_settings_page_for($pageSlug);
+            };
+        }
+
+        return $map;
+    }
+
+    /**
+     * @return array{option_group:string,menu_label:string,page_title:string}
+     */
+    private static function section_for_page(string $pageSlug): array
+    {
+        return self::section_map()[$pageSlug] ?? self::section_map()[self::ROOT_PAGE];
+    }
+
+    private static function current_admin_page_slug(string $fallback): string
+    {
+        $page = strtolower(trim((string) ($_GET['page'] ?? $fallback)));
+        $page = (string) preg_replace('/[^a-z0-9_-]+/', '-', $page);
+        $fallback = strtolower(trim($fallback));
+
+        return $page !== '' ? $page : $fallback;
+    }
+
+    private static function admin_page_url(string $pageSlug): string
+    {
+        return '?page=' . rawurlencode($pageSlug);
+    }
+
+    private static function emit_admin_notice(string $message, string $type = 'error', string $logContext = ''): void
+    {
+        if (function_exists('cms_plugin_admin_emit_notice')) {
+            cms_plugin_admin_emit_notice($message, $type, $logContext);
+            return;
+        }
+
+        if ($logContext !== '') {
+            self::log_error('[cms-plugin-admin] ' . $logContext . ' :: ' . $message);
+        }
+
+        $safeMessage = self::esc($message);
+        $safeType = $type === 'success' ? 'success' : 'error';
+        $class = $safeType === 'success' ? 'alert alert-success' : 'alert alert-error';
+        echo '<div class="' . $class . '" role="alert">' . $safeMessage . '</div>';
+    }
+
+    private function render_settings_page_for(string $pageSlug): void
     {
         CMS_M365MATRICES_Installer::maybe_install();
 
-        $tabs = [
-            'matrix-suite' => '📊 Lizenzmatrix',
-            'matrix-addon' => '➕ Add-on-Matrix',
-            'matrix-copilot' => '🤖 Copilot-Matrix',
-            'matrix-toc' => '🧭 Inhaltsverzeichnis',
-            'matrix-design' => '🎨 Design',
-        ];
-        $activeTab = self::active_tab($tabs);
+        $section = self::section_for_page($pageSlug);
+        $activeTab = $section['option_group'];
         $fields = self::fields($activeTab);
         $notice = '';
         $error = '';
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string) ($_POST['action'] ?? '') === 'save_matrix_options') {
-            if (!self::verify_nonce('m365matrices_' . $activeTab)) {
+        if (self::is_post_request() && (string) ($_POST['action'] ?? '') === 'save_matrix_options') {
+            if (!self::has_admin_access()) {
+                $error = 'Sie haben keine Berechtigung für diese Aktion.';
+            } elseif (!self::verify_nonce('m365matrices_' . $activeTab)) {
                 $error = 'Sicherheitscheck fehlgeschlagen.';
             } elseif (!class_exists('CMS_M365MATRICES_Settings')) {
                 $error = 'Die Matrix-Settings-Klasse ist nicht verfügbar.';
@@ -102,7 +279,8 @@ final class CMS_M365MATRICES_Admin_Pages
                     CMS_M365MATRICES_Settings::save_global_options($activeTab, self::sanitize_options($fields, $_POST));
                     $notice = 'Matrix-Einstellungen gespeichert.';
                 } catch (\Throwable $e) {
-                    $error = 'Einstellungen konnten nicht gespeichert werden: ' . $e->getMessage();
+                    self::log_error('save settings failed for tab ' . $activeTab . ': ' . $e->getMessage());
+                    $error = 'Einstellungen konnten nicht gespeichert werden.';
                 }
             }
         }
@@ -118,7 +296,7 @@ final class CMS_M365MATRICES_Admin_Pages
                 'title' => 'Lizenzmatrix',
                 'description' => 'Microsoft-365-Vollpakete, Apps, Security und Compliance vergleichen.',
                 'route' => '/m365-lizenzmatrix',
-                'tab' => 'matrix-suite',
+                'page_slug' => 'm365matrices-suite',
                 'stat' => (string) (int) ($suiteStats['rows'] ?? 0) . ' Zeilen',
             ],
             [
@@ -126,7 +304,7 @@ final class CMS_M365MATRICES_Admin_Pages
                 'title' => 'Add-on-Matrix',
                 'description' => 'Add-ons nach Bereichen mit Voraussetzungen und Kaufgründen darstellen.',
                 'route' => '/m365-addon-matrix',
-                'tab' => 'matrix-addon',
+                'page_slug' => 'm365matrices-addon',
                 'stat' => (string) (int) ($addonStats['areas'] ?? 0) . ' Bereiche',
             ],
             [
@@ -134,111 +312,95 @@ final class CMS_M365MATRICES_Admin_Pages
                 'title' => 'Copilot-Matrix',
                 'description' => 'Copilot-Lizenzen, Agents, Studio, Datenschutz und Kontingente steuern.',
                 'route' => '/m365-copilot-matrix',
-                'tab' => 'matrix-copilot',
+                'page_slug' => 'm365matrices-copilot',
                 'stat' => (string) (int) ($copilotStats['rows'] ?? 0) . ' Zeilen',
             ],
         ];
-        ?>
-        <div class="admin-page-header">
-            <div>
-                <h2>📚 M365 Matrixen</h2>
-                <p>Lizenz-, Add-on- und Copilot-Matrixen zentral steuern.</p>
-            </div>
-            <div class="header-actions">
-                <a href="/m365-lizenzmatrix" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">👁️ Lizenzmatrix</a>
-                <a href="/m365-addon-matrix" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">➕ Add-ons</a>
-                <a href="/m365-copilot-matrix" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">🤖 Copilot</a>
-            </div>
-        </div>
-
-        <?php if ($notice !== ''): ?>
-        <div class="alert alert-success">✅ <?php echo self::esc($notice); ?></div>
-        <?php endif; ?>
-        <?php if ($error !== ''): ?>
-        <div class="alert alert-error">❌ <?php echo self::esc($error); ?></div>
-        <?php endif; ?>
-
-        <div class="dashboard-grid m365matrices-stats">
-            <div class="stat-card">
-                <div class="stat-icon">📊</div>
-                <div class="stat-number"><?php echo (int) ($suiteStats['rows'] ?? 0); ?></div>
-                <div class="stat-label">Lizenzmatrix-Zeilen</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">📦</div>
-                <div class="stat-number"><?php echo (int) ($suiteStats['columns'] ?? 0); ?></div>
-                <div class="stat-label">Vollpakete</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">➕</div>
-                <div class="stat-number"><?php echo (int) ($addonStats['areas'] ?? 0); ?></div>
-                <div class="stat-label">Add-on-Bereiche</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🤖</div>
-                <div class="stat-number"><?php echo (int) ($copilotStats['rows'] ?? 0); ?></div>
-                <div class="stat-label">Copilot-Zeilen</div>
-            </div>
-        </div>
-
-        <div class="admin-card m365matrices-quicklinks-card">
-            <div class="m365matrices-panel-header">
+        self::render_with_layout($section['page_title'], $pageSlug, static function () use ($section, $notice, $error, $suiteStats, $addonStats, $copilotStats, $publicPages, $fields, $options, $csrfToken): void {
+            ?>
+            <div class="admin-page-header">
                 <div>
-                    <h3>⚡ Publicseiten &amp; Schnelllinks</h3>
-                    <p>Jede öffentliche Matrixseite direkt öffnen oder die passenden Inhalte und Designs bearbeiten.</p>
+                    <h2>📚 M365 Matrixen</h2>
+                    <p>Lizenz-, Add-on- und Copilot-Matrixen zentral steuern. Bereich: <strong><?php echo self::esc($section['menu_label']); ?></strong>.</p>
+                </div>
+                <div class="header-actions">
+                    <a href="/m365-lizenzmatrix" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">👁️ Lizenzmatrix</a>
+                    <a href="/m365-addon-matrix" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">➕ Add-ons</a>
+                    <a href="/m365-copilot-matrix" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">🤖 Copilot</a>
                 </div>
             </div>
-            <div class="m365matrices-public-grid">
-                <?php foreach ($publicPages as $page): ?>
-                <article class="m365matrices-public-card">
-                    <div class="m365matrices-public-card__head">
-                        <span class="m365matrices-public-card__icon"><?php echo self::esc($page['icon']); ?></span>
-                        <div>
-                            <h4><?php echo self::esc($page['title']); ?></h4>
-                            <span class="m365matrices-result-count"><?php echo self::esc($page['stat']); ?></span>
-                        </div>
-                    </div>
-                    <p><?php echo self::esc($page['description']); ?></p>
-                    <div class="m365matrices-public-card__actions">
-                        <a href="<?php echo self::esc_attr($page['route']); ?>" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">👁️ Öffnen</a>
-                        <a href="?tab=<?php echo self::esc_attr($page['tab']); ?>" class="btn btn-primary btn-sm">⚙️ Anpassen</a>
-                    </div>
-                </article>
-                <?php endforeach; ?>
+
+            <?php if ($notice !== ''): ?>
+            <div class="alert alert-success">✅ <?php echo self::esc($notice); ?></div>
+            <?php endif; ?>
+            <?php if ($error !== ''): ?>
+            <div class="alert alert-error">❌ <?php echo self::esc($error); ?></div>
+            <?php endif; ?>
+
+            <div class="dashboard-grid m365matrices-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-number"><?php echo (int) ($suiteStats['rows'] ?? 0); ?></div>
+                    <div class="stat-label">Lizenzmatrix-Zeilen</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-number"><?php echo (int) ($suiteStats['columns'] ?? 0); ?></div>
+                    <div class="stat-label">Vollpakete</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">➕</div>
+                    <div class="stat-number"><?php echo (int) ($addonStats['areas'] ?? 0); ?></div>
+                    <div class="stat-label">Add-on-Bereiche</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🤖</div>
+                    <div class="stat-number"><?php echo (int) ($copilotStats['rows'] ?? 0); ?></div>
+                    <div class="stat-label">Copilot-Zeilen</div>
+                </div>
             </div>
-        </div>
 
-        <div class="m365matrices-tabs">
-            <?php foreach ($tabs as $tabKey => $label): ?>
-            <a href="?tab=<?php echo self::esc_attr($tabKey); ?>" class="m365matrices-tab<?php echo $activeTab === $tabKey ? ' active' : ''; ?>">
-                <?php echo self::esc($label); ?>
-            </a>
-            <?php endforeach; ?>
-        </div>
+            <div class="admin-card m365matrices-quicklinks-card">
+                <div class="m365matrices-panel-header">
+                    <div>
+                        <h3>⚡ Publicseiten &amp; Schnelllinks</h3>
+                        <p>Jede öffentliche Matrixseite direkt öffnen oder die passenden Inhalte und Designs bearbeiten.</p>
+                    </div>
+                </div>
+                <div class="m365matrices-public-grid">
+                    <?php foreach ($publicPages as $page): ?>
+                    <article class="m365matrices-public-card">
+                        <div class="m365matrices-public-card__head">
+                            <span class="m365matrices-public-card__icon"><?php echo self::esc($page['icon']); ?></span>
+                            <div>
+                                <h4><?php echo self::esc($page['title']); ?></h4>
+                                <span class="m365matrices-result-count"><?php echo self::esc($page['stat']); ?></span>
+                            </div>
+                        </div>
+                        <p><?php echo self::esc($page['description']); ?></p>
+                        <div class="m365matrices-public-card__actions">
+                            <a href="<?php echo self::esc_attr($page['route']); ?>" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">👁️ Öffnen</a>
+                            <a href="<?php echo self::esc_attr(self::admin_page_url((string) $page['page_slug'])); ?>" class="btn btn-primary btn-sm">⚙️ Anpassen</a>
+                        </div>
+                    </article>
+                    <?php endforeach; ?>
+                </div>
+            </div>
 
-        <div class="admin-card m365matrices-settings-card">
-            <form method="POST" class="admin-form">
-                <input type="hidden" name="action" value="save_matrix_options">
-                <input type="hidden" name="csrf_token" value="<?php echo self::esc_attr($csrfToken); ?>">
+            <div class="admin-card m365matrices-settings-card">
+                <form method="POST" class="admin-form">
+                    <input type="hidden" name="action" value="save_matrix_options">
+                    <input type="hidden" name="csrf_token" value="<?php echo self::esc_attr($csrfToken); ?>">
 
-                <?php foreach ($fields as $field): ?>
-                    <?php self::render_field($field, $options); ?>
-                <?php endforeach; ?>
+                    <?php foreach ($fields as $field): ?>
+                        <?php self::render_field($field, $options); ?>
+                    <?php endforeach; ?>
 
-                <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
-            </form>
-        </div>
-        <?php
-    }
-
-    /**
-     * @param array<string,string> $tabs
-     */
-    private static function active_tab(array $tabs): string
-    {
-        $tab = preg_replace('/[^a-z0-9_-]+/i', '', (string) ($_GET['tab'] ?? 'matrix-suite')) ?: 'matrix-suite';
-
-        return isset($tabs[$tab]) ? $tab : 'matrix-suite';
+                    <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
+                </form>
+            </div>
+            <?php
+        });
     }
 
     /**
@@ -579,7 +741,7 @@ final class CMS_M365MATRICES_Admin_Pages
     private static function generate_nonce(string $action): string
     {
         if (!class_exists('CMS\\Security')) {
-            error_log('CMS M365 Matrixen admin security service missing for action: ' . $action);
+            self::log_error('admin security service missing for action: ' . $action);
 
             return '';
         }
@@ -590,7 +752,7 @@ final class CMS_M365MATRICES_Admin_Pages
     private static function verify_nonce(string $action): bool
     {
         if (!class_exists('CMS\\Security')) {
-            error_log('CMS M365 Matrixen admin security service missing for action: ' . $action);
+            self::log_error('admin security service missing for action: ' . $action);
 
             return false;
         }
@@ -615,5 +777,15 @@ final class CMS_M365MATRICES_Admin_Pages
     private static function esc_attr(string $value): string
     {
         return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    }
+
+    private static function is_post_request(): bool
+    {
+        return strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST';
+    }
+
+    private static function log_error(string $message): void
+    {
+        error_log('CMS M365 Matrixen admin: ' . $message);
     }
 }

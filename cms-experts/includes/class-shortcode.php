@@ -72,8 +72,11 @@ final class CMS_Experts_Shortcode
         // Parse Attribute
         $attributes = $this->parse_shortcode_attributes($matches[1] ?? '');
         
-        $limit = (int)($attributes['limit'] ?? 12);
-        $availability = $attributes['availability'] ?? null;
+        $limit = max(1, min(60, (int)($attributes['limit'] ?? 12)));
+        $availability = (string) ($attributes['availability'] ?? '');
+        if (!in_array($availability, ['available', 'limited', 'booked'], true)) {
+            $availability = '';
+        }
 
         $db_manager = CMS_Experts_Database::instance();
         $args = [
@@ -81,7 +84,7 @@ final class CMS_Experts_Shortcode
             'limit' => $limit,
         ];
 
-        if ($availability) {
+        if ($availability !== '') {
             $args['availability'] = $availability;
         }
 
@@ -112,7 +115,7 @@ final class CMS_Experts_Shortcode
         $db_manager = CMS_Experts_Database::instance();
         $expert = $db_manager->get_expert($expert_id);
 
-        if (!$expert) {
+        if (!$expert || (string) ($expert->status ?? 'active') !== 'active') {
             return '';
         }
 

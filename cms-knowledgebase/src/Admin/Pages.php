@@ -8,6 +8,7 @@ use CMS\Auth;
 use CMS\Security;
 use CmsKnowledgebase\Repository\EntryRepository;
 use CmsKnowledgebase\Service\StandardPackages;
+use CmsKnowledgebase\Support\LoggerFactory;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -15,6 +16,10 @@ if (!defined('ABSPATH')) {
 
 final class Pages
 {
+    private const DEFAULT_PAGE = 'knowledgebase-dashboard';
+
+    private static ?array $requestNotice = null;
+
     public static function renderDashboard(): void
     {
         self::renderWithLayout('Knowledgebase', static function (): void {
@@ -69,24 +74,41 @@ final class Pages
 
     public static function renderSettings(): void
     {
-        self::renderWithLayout('Knowledgebase-Einstellungen', static function (): void {
+        self::renderSettingsSection('general');
+    }
+
+    public static function renderSettingsGeneral(): void
+    {
+        self::renderSettingsSection('general');
+    }
+
+    public static function renderSettingsDesign(): void
+    {
+        self::renderSettingsSection('design');
+    }
+
+    public static function renderSettingsImport(): void
+    {
+        self::renderSettingsSection('import');
+    }
+
+    public static function renderSettingsSystem(): void
+    {
+        self::renderSettingsSection('system');
+    }
+
+    private static function renderSettingsSection(string $settingsSection): void
+    {
+        $settingsSection = self::sanitizeSettingsSection($settingsSection);
+
+        self::renderWithLayout('Knowledgebase-Einstellungen', static function () use ($settingsSection): void {
             $repository = EntryRepository::instance();
             $settings = $repository->getSettings();
             $stats = $repository->getDashboardStats();
             $standardPackagesService = StandardPackages::instance();
             $standardPackages = $standardPackagesService->getPackages();
             $csvFilenameWarnings = $standardPackagesService->getCsvFilenameWarnings();
-            $tab = (string) ($_GET['tab'] ?? 'general');
-            $tabs = [
-                'general' => '⚙️ Allgemein',
-                'design' => '🎨 Design',
-                'import' => '📦 Import',
-                'system' => '🖥️ System',
-            ];
-            if (!isset($tabs[$tab])) {
-                $tab = 'general';
-            }
-
+            $activeSettingsPage = self::sanitizeAdminPageSlug((string) ($_GET['page'] ?? self::settingsPageSlugForSection($settingsSection)));
             $designTokens = $repository->getPublicDesignTokens();
             $lastImportAtRaw = trim((string) ($settings['csv_last_import_at'] ?? ''));
             $lastImportAt = 'Noch kein CSV-Import';
@@ -124,14 +146,18 @@ final class Pages
         self::handlePost();
         self::loadAdminMenu();
 
-        if (function_exists('renderAdminLayoutStart')) {
-            renderAdminLayoutStart($title, 'knowledgebase-dashboard');
+        if (function_exists('cms_plugin_admin_layout_start')) {
+            cms_plugin_admin_layout_start($title, Menu::ROOT_SLUG);
+        } elseif (function_exists('renderAdminLayoutStart')) {
+            renderAdminLayoutStart($title, Menu::ROOT_SLUG);
         }
 
         self::enqueueAdminAssets();
         $renderer();
 
-        if (function_exists('renderAdminLayoutEnd')) {
+        if (function_exists('cms_plugin_admin_layout_end')) {
+            cms_plugin_admin_layout_end();
+        } elseif (function_exists('renderAdminLayoutEnd')) {
             renderAdminLayoutEnd();
         }
     }
@@ -142,6 +168,11 @@ final class Pages
             return;
         }
 
+        if (!Auth::instance()->isAdmin()) {
+            self::storeNotice(false, 'Keine Berechtigung für diese Aktion.');
+            self::redirectBack();
+        }
+
         if (!Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'knowledgebase_admin')) {
             self::storeNotice(false, 'Sicherheitscheck fehlgeschlagen.');
             self::redirectBack();
@@ -149,22 +180,36 @@ final class Pages
 
         $repository = EntryRepository::instance();
         $action = (string) ($_POST['action'] ?? '');
-        $redirectTab = self::sanitizeTab((string) ($_POST['redirect_tab'] ?? $_GET['tab'] ?? ''));
-        $result = match ($action) {
-            'save_entry' => $repository->saveEntry($_POST),
-            'delete_entry' => $repository->deleteEntry((int) ($_POST['entry_id'] ?? 0)),
-            'save_category' => $repository->saveCategory($_POST),
-            'delete_category' => $repository->deleteCategory((int) ($_POST['category_id'] ?? 0)),
-            'hard_reset_entries' => $repository->hardResetEntries(),
-            'hard_reset_and_import_all' => self::hardResetAndImportAll(),
-            'save_settings' => $repository->saveSettings($_POST),
-            'create_standard_package' => StandardPackages::instance()->importPackage((string) ($_POST['package_key'] ?? '')),
-            'create_all_standard_packages' => StandardPackages::instance()->importAllPackages(),
-            default => ['success' => false, 'error' => 'Unbekannte Aktion.'],
-        };
+        $redirectPage = self::sanitizeAdminPageSlug((string) ($_POST['redirect_page'] ?? $_GET['page'] ?? self::DEFAULT_PAGE));
+        $redirectSectionRaw = trim((string) ($_POST['redirect_section'] ?? $_POST['redirect_tab'] ?? ''));
+        $redirectSection = $redirectSectionRaw !== '' ? self::sanitizeSettingsSection($redirectSectionRaw) : '';
+        if ($redirectSection !== '' && str_starts_with($redirectPage, 'knowledgebase-settings')) {
+            $redirectPage = self::settingsPageSlugForSection($redirectSection);
+        }
 
-        self::storeNotice((bool) ($result['success'] ?? false), (string) ($result['message'] ?? $result['error'] ?? '')); 
-        self::redirectBack((int) ($result['id'] ?? 0), $redirectTab);
+        try {
+            $result = match ($action) {
+                'save_entry' => $repository->saveEntry($_POST),
+                'delete_entry' => $repository->deleteEntry((int) ($_POST['entry_id'] ?? 0)),
+                'save_category' => $repository->saveCategory($_POST),
+                'delete_category' => $repository->deleteCategory((int) ($_POST['category_id'] ?? 0)),
+                'hard_reset_entries' => $repository->hardResetEntries(),
+                'hard_reset_and_import_all' => self::hardResetAndImportAll(),
+                'save_settings' => $repository->saveSettings($_POST),
+                'create_standard_package' => StandardPackages::instance()->importPackage((string) ($_POST['package_key'] ?? '')),
+                'create_all_standard_packages' => StandardPackages::instance()->importAllPackages(),
+                default => ['success' => false, 'error' => 'Unbekannte Aktion.'],
+            };
+        } catch (\Throwable $exception) {
+            self::logDispatchProblem('Post-Aktion fehlgeschlagen', [
+                'action' => $action,
+                'exception' => $exception->getMessage(),
+            ]);
+            $result = ['success' => false, 'error' => 'Die Aktion konnte nicht verarbeitet werden.'];
+        }
+
+        self::storeNotice((bool) ($result['success'] ?? false), (string) ($result['message'] ?? $result['error'] ?? ''));
+        self::redirectBack((int) ($result['id'] ?? 0), $redirectPage);
     }
 
     private static function enqueueAdminAssets(): void
@@ -192,7 +237,15 @@ final class Pages
             return;
         }
 
+        if (function_exists('cms_plugin_admin_require_layout_helpers')) {
+            cms_plugin_admin_require_layout_helpers();
+            if (function_exists('renderAdminLayoutStart') && function_exists('renderAdminLayoutEnd')) {
+                return;
+            }
+        }
+
         $candidates = [
+            ABSPATH . 'admin/partials/admin-menu.php',
             ABSPATH . 'includes/functions/admin-menu.php',
             ABSPATH . 'CMS/includes/functions/admin-menu.php',
         ];
@@ -218,33 +271,86 @@ final class Pages
 
     private static function storeNotice(bool $success, string $message): void
     {
-        $_SESSION['knowledgebase_admin_notice'] = [
+        $payload = [
             'type' => $success ? 'success' : 'error',
             'message' => $message,
         ];
+
+        if (isset($_SESSION) && is_array($_SESSION)) {
+            $_SESSION['knowledgebase_admin_notice'] = $payload;
+            return;
+        }
+
+        self::$requestNotice = $payload;
     }
 
     private static function pullNotice(): ?array
     {
-        if (empty($_SESSION['knowledgebase_admin_notice']) || !is_array($_SESSION['knowledgebase_admin_notice'])) {
-            return null;
+        if (isset($_SESSION) && is_array($_SESSION)) {
+            if (empty($_SESSION['knowledgebase_admin_notice']) || !is_array($_SESSION['knowledgebase_admin_notice'])) {
+                return null;
+            }
+
+            $notice = $_SESSION['knowledgebase_admin_notice'];
+            unset($_SESSION['knowledgebase_admin_notice']);
+
+            return self::normalizeNotice($notice);
         }
 
-        $notice = $_SESSION['knowledgebase_admin_notice'];
-        unset($_SESSION['knowledgebase_admin_notice']);
+        if (self::$requestNotice !== null) {
+            $notice = self::$requestNotice;
+            self::$requestNotice = null;
+            return self::normalizeNotice($notice);
+        }
 
-        return $notice;
+        return null;
     }
 
-    private static function redirectBack(int $editId = 0, string $tab = ''): void
+    private static function redirectBack(int $editId = 0, string $page = self::DEFAULT_PAGE): void
     {
-        header('Location: ' . SITE_URL . '/admin/plugins/knowledgebase-dashboard/knowledgebase-dashboard', true, 303);
+        $page = self::sanitizeAdminPageSlug($page);
+        $url = SITE_URL . '/admin/plugins/' . Menu::ROOT_SLUG . '/' . $page;
+        if ($page === 'knowledgebase-entry-editor' && $editId > 0) {
+            $url .= '?edit=' . $editId;
+        }
+
+        header('Location: ' . $url, true, 303);
         exit;
     }
 
-    private static function sanitizeTab(string $tab): string
+    private static function sanitizeAdminPageSlug(string $slug): string
     {
-        return in_array($tab, ['general', 'design', 'import', 'system'], true) ? $tab : '';
+        $normalized = Menu::normalizePageSlug($slug);
+        $allowed = Menu::registeredPageSlugs();
+
+        if (in_array($normalized, $allowed, true)) {
+            return $normalized;
+        }
+
+        self::logDispatchProblem('Unbekannter Admin-Slug angefordert', [
+            'requested' => $slug,
+            'normalized' => $normalized,
+        ]);
+
+        return self::DEFAULT_PAGE;
+    }
+
+    private static function sanitizeSettingsSection(string $section): string
+    {
+        return in_array($section, ['general', 'design', 'import', 'system'], true) ? $section : 'general';
+    }
+
+    private static function settingsPageSlugForSection(string $section): string
+    {
+        return 'knowledgebase-settings-' . self::sanitizeSettingsSection($section);
+    }
+
+    /**
+     * @param array<string, scalar> $context
+     */
+    private static function logDispatchProblem(string $message, array $context = []): void
+    {
+        LoggerFactory::create()->warning($message, $context);
     }
 
     /**
@@ -270,6 +376,28 @@ final class Pages
         return [
             'success' => true,
             'message' => trim(((string) ($resetResult['message'] ?? '')) . ' ' . ((string) ($importResult['message'] ?? ''))),
+        ];
+    }
+
+    /**
+     * @param mixed $notice
+     * @return array{type: string, message: string}|null
+     */
+    private static function normalizeNotice(mixed $notice): ?array
+    {
+        if (!is_array($notice)) {
+            return null;
+        }
+
+        $type = ((string) ($notice['type'] ?? '')) === 'success' ? 'success' : 'error';
+        $message = trim((string) ($notice['message'] ?? ''));
+        if ($message === '') {
+            return null;
+        }
+
+        return [
+            'type' => $type,
+            'message' => mb_substr($message, 0, 500, 'UTF-8'),
         ];
     }
 }

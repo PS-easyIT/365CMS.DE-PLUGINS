@@ -46,10 +46,18 @@ final class CMS_Promos
             CMS_PROMOS_PLUGIN_DIR . 'admin/class-admin-pages.php',
         ];
 
+        $pluginRoot = realpath(CMS_PROMOS_PLUGIN_DIR) ?: CMS_PROMOS_PLUGIN_DIR;
+        $pluginRoot = rtrim(str_replace('\\', '/', $pluginRoot), '/') . '/';
+
         foreach ($files as $file) {
-            if (file_exists($file)) {
-                require_once $file;
+            $resolved = realpath($file);
+            $resolvedNormalized = $resolved !== false ? str_replace('\\', '/', $resolved) : '';
+            if ($resolved !== false && str_starts_with($resolvedNormalized, $pluginRoot) && is_file($resolved)) {
+                require_once $resolved;
+                continue;
             }
+
+            error_log('[cms-promos] Missing dependency file: ' . $file);
         }
     }
 
@@ -92,7 +100,7 @@ final class CMS_Promos
 
     public function enqueue_styles(): void
     {
-        if (!$this->is_promos_public_route()) {
+        if (!$this->should_load_public_assets()) {
             return;
         }
 
@@ -112,6 +120,23 @@ final class CMS_Promos
         $path = '/' . trim($path, '/');
 
         return $path === '/promos' || str_starts_with($path, '/promos/');
+    }
+
+    private function should_load_public_assets(): bool
+    {
+        if ($this->is_admin_request()) {
+            return false;
+        }
+
+        return $this->is_promos_public_route();
+    }
+
+    private function is_admin_request(): bool
+    {
+        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
+        $path = '/' . trim($path, '/');
+
+        return $path === '/admin' || str_starts_with($path, '/admin/');
     }
 }
 

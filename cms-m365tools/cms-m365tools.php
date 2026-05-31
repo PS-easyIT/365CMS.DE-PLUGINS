@@ -48,8 +48,14 @@ final class CMS_M365CALCULATOR
     {
         $inc = CMS_M365CALCULATOR_PLUGIN_DIR . 'includes/';
         $admin = CMS_M365CALCULATOR_PLUGIN_DIR . 'admin/';
+        $sharedAdmin = dirname(CMS_M365CALCULATOR_PLUGIN_DIR) . '/shared/admin/plugin-admin-contract.php';
+        $trustedRoots = [
+            rtrim(str_replace('\\', '/', CMS_M365CALCULATOR_PLUGIN_DIR), '/'),
+            rtrim(str_replace('\\', '/', dirname(CMS_M365CALCULATOR_PLUGIN_DIR) . '/shared/admin'), '/'),
+        ];
 
         $files = [
+            $sharedAdmin,
             $inc . 'class-catalog.php',
             $inc . 'class-installer.php',
             $inc . 'class-settings.php',
@@ -81,10 +87,34 @@ final class CMS_M365CALCULATOR
         ];
 
         foreach ($files as $file) {
-            if (file_exists($file)) {
+            if ($this->is_trusted_dependency_file($file, $trustedRoots)) {
                 require_once $file;
             }
         }
+    }
+
+    /**
+     * @param array<int,string> $trustedRoots
+     */
+    private function is_trusted_dependency_file(string $file, array $trustedRoots): bool
+    {
+        if (!is_file($file) || !is_readable($file)) {
+            return false;
+        }
+
+        $realPath = realpath($file);
+        if (!is_string($realPath) || $realPath === '') {
+            return false;
+        }
+
+        $normalizedPath = str_replace('\\', '/', $realPath);
+        foreach ($trustedRoots as $root) {
+            if (str_starts_with($normalizedPath, $root . '/')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function init_hooks(): void

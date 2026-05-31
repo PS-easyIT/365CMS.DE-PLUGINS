@@ -353,16 +353,37 @@ final class CMS_M365Landing_Frontend
             $slug = CMS_M365Landing_Repository::slug((string) ($settings['route_slug'] ?? 'm365'));
             return $slug !== '' ? $slug : 'm365';
         } catch (\Throwable $e) {
+            self::log_exception('route_slug_fallback', $e);
             return 'm365';
         }
     }
 
     private function is_request(): bool
     {
+        if ($this->is_admin_request()) {
+            return false;
+        }
+
         $path = $this->request_path();
         $slug = $this->route_slug();
+        $lastSegment = $path;
+        if (str_contains($path, '/')) {
+            $parts = explode('/', $path);
+            $lastSegment = (string) end($parts);
+        }
 
-        return $path === $slug || str_ends_with($path, '/' . $slug) || ($path === '' && $this->is_domain_landing_request());
+        return $path === $slug || $lastSegment === $slug || ($path === '' && $this->is_domain_landing_request());
+    }
+
+    private function is_admin_request(): bool
+    {
+        $path = $this->request_path();
+        if ($path === 'admin' || str_starts_with($path, 'admin/')) {
+            return true;
+        }
+
+        $uri = strtolower((string) ($_SERVER['REQUEST_URI'] ?? ''));
+        return str_contains($uri, '/admin/');
     }
 
     /** @param array<string,string> $settings */
@@ -392,7 +413,8 @@ final class CMS_M365Landing_Frontend
 
         $settings = $this->repo()->settings();
         $host = CMS_M365Landing_Repository::normalize_host((string) ($_SERVER['HTTP_HOST'] ?? ''));
-        $mainHost = CMS_M365Landing_Repository::normalize_host((string) (parse_url((string) SITE_URL, PHP_URL_HOST) ?: ''));
+        $siteUrl = defined('SITE_URL') ? (string) SITE_URL : '';
+        $mainHost = CMS_M365Landing_Repository::normalize_host((string) (parse_url($siteUrl, PHP_URL_HOST) ?: ''));
         if ($host === '' || $host === $mainHost) {
             $this->domainLandingRequestCache = false;
 
@@ -540,5 +562,12 @@ final class CMS_M365Landing_Frontend
         }
 
         return $assets;
+    }
+
+    private static function log_exception(string $context, \Throwable $e): void
+    {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('CMS M365 Landing [' . $context . ']: ' . $e->getMessage());
+        }
     }
 }

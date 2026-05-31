@@ -133,7 +133,8 @@ final class CMS_Events_Shortcode
             'show_filters'    => $this->normalize_bool($atts['show_filters']),
         ]);
 
-        return ob_get_clean();
+        $buffer = ob_get_clean();
+        return is_string($buffer) ? $buffer : '';
     }
 
     public function render_single_event(array $atts = []): string
@@ -165,7 +166,8 @@ final class CMS_Events_Shortcode
             'settings' => $settings,
         ]);
 
-        return ob_get_clean();
+        $buffer = ob_get_clean();
+        return is_string($buffer) ? $buffer : '';
     }
 
     public function render_events_calendar(array $atts = []): string
@@ -228,12 +230,19 @@ final class CMS_Events_Shortcode
             </div>
         </div>
         <?php
-        return ob_get_clean();
+        $buffer = ob_get_clean();
+        return is_string($buffer) ? $buffer : '';
     }
 
     private function buildCalendarNavigationUrl(string $month, string $view, string $category): string
     {
-        $params = $_GET;
+        $params = [];
+        foreach (['search', 'online', 'when', 'page'] as $key) {
+            if (!array_key_exists($key, $_GET) || is_array($_GET[$key])) {
+                continue;
+            }
+            $params[$key] = (string) $_GET[$key];
+        }
         $params['month'] = $month;
 
         if ($view !== '') {

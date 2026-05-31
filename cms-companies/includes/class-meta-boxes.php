@@ -55,6 +55,9 @@ final class CMS_Companies_Meta_Boxes
         $website        = $company->website        ?? '';
         $founded_year   = $company->founded_year   ?? '';
         $employee_count = $company->employee_count ?? '';
+        $logoPreviewUrl = function_exists('cms_companies_public_url')
+            ? cms_companies_public_url((string) ($company->logo_url ?? ''))
+            : $sec->escape((string) ($company->logo_url ?? ''));
         ?>
         <div class="admin-card">
             <h3>🏢 Unternehmensinformationen</h3>
@@ -129,9 +132,9 @@ final class CMS_Companies_Meta_Boxes
                        placeholder="https://cdn.beispiel.de/logo.png"
                        id="logo_url_input">
                 <small class="form-text">Direktlink zu einem Firmenlogo (PNG/SVG empfohlen, mind. 120×60 px).</small>
-                <?php if (!empty($company->logo_url)): ?>
+                <?php if ($logoPreviewUrl !== ''): ?>
                 <div style="margin-top:.6rem;">
-                    <img src="<?= $sec->escape($company->logo_url) ?>" alt="Logo Vorschau" id="logo_preview"
+                    <img src="<?= $sec->escape($logoPreviewUrl) ?>" alt="Logo Vorschau" id="logo_preview"
                          style="max-height:60px;max-width:200px;border:1px solid #e2e8f0;border-radius:6px;padding:4px;background:#fff;">
                 </div>
                 <?php else: ?>
@@ -289,6 +292,7 @@ final class CMS_Companies_Meta_Boxes
         $assignedIds = array_map(fn($e) => (int)$e->id, $assigned);
         $available   = array_filter($experts, fn($e) => !in_array((int)$e->id, $assignedIds, true));
         $csrf        = CMS\Security::instance()->generateToken('company_expert');
+        $csrfEsc     = htmlspecialchars((string) $csrf, ENT_QUOTES, 'UTF-8');
         ?>
         <div class="admin-card">
             <h3>👥 Experten-Zuordnung</h3>
@@ -318,7 +322,7 @@ final class CMS_Companies_Meta_Boxes
                         <?php if ($isCurr): ?><span style="display:inline-block;margin-left:.5rem;font-size:.68rem;background:#dcfce7;color:#166534;padding:.1rem .4rem;border-radius:4px;font-weight:700;">✓ Aktiv</span><?php endif; ?>
                     </div>
                     <form method="POST" action="<?= SITE_URL ?>/admin/companies/expert/remove" style="display:contents;">
-                        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                        <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                         <input type="hidden" name="company_id" value="<?= $company_id ?>">
                         <input type="hidden" name="expert_id"  value="<?= (int)$exp->id ?>">
                         <button type="submit" class="btn btn-secondary"
@@ -340,7 +344,7 @@ final class CMS_Companies_Meta_Boxes
             <hr style="border:0;border-top:1px solid #f1f5f9;margin:1.25rem 0;">
             <h4 style="font-size:.875rem;font-weight:700;color:#1e293b;margin:0 0 1rem;">➕ Experten zuordnen</h4>
             <form method="POST" action="<?= SITE_URL ?>/admin/companies/expert/assign">
-                <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                 <input type="hidden" name="company_id" value="<?= $company_id ?>">
                 <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:.875rem;align-items:end;">
                     <div class="form-group" style="margin:0;">

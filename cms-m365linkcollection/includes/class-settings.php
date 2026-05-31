@@ -183,7 +183,12 @@ final class CMS_M365LINKCOLLECTION_Settings
     public static function route(): string
     {
         $route = '/' . trim(self::get('page_route', '/m365-sites-blogs'), '/');
-        return $route === '/' ? '/m365-sites-blogs' : $route;
+        $route = preg_replace('#/+#', '/', $route);
+        if (!is_string($route) || preg_match('#^/[a-z0-9/_-]{1,200}$#i', $route) !== 1) {
+            return '/m365-sites-blogs';
+        }
+
+        return $route;
     }
 
     public static function table_name(\CMS\Database $db): string

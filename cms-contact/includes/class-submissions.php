@@ -420,6 +420,7 @@ final class CMS_Contact_Submissions
         }
 
         if (empty($recipient) || !filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+            $this->log_error('notification skipped due to missing recipient');
             return false;
         }
 
@@ -580,6 +581,7 @@ final class CMS_Contact_Submissions
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             return $row ? (string) $row['setting_value'] : '';
         } catch (\Throwable $e) {
+            $this->log_error('failed to fetch setting', ['key' => $key, 'error' => $e->getMessage()]);
             return '';
         }
     }
@@ -632,6 +634,24 @@ final class CMS_Contact_Submissions
             return cms_mail($to, $subject, $body, $headers);
         }
 
+        $this->log_error('mail send skipped because no mail backend is available');
         return false;
+    }
+
+    /**
+     * @param array<string, scalar|null> $context
+     */
+    private function log_error(string $message, array $context = []): void
+    {
+        $parts = [];
+        foreach ($context as $key => $value) {
+            if ($value === null) {
+                continue;
+            }
+            $parts[] = $key . '=' . (string) $value;
+        }
+
+        $contextText = $parts !== [] ? ' [' . implode(' ', $parts) . ']' : '';
+        error_log('[cms-contact][submissions] ' . $message . $contextText);
     }
 }

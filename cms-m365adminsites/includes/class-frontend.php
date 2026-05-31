@@ -15,6 +15,8 @@ final class CMS_M365ADMINSITES_Frontend
 {
     private static ?self $instance = null;
     private ?string $requestPathCache = null;
+    /** @var array<int,string> */
+    private array $publicRoutes = [];
 
     public static function instance(): self
     {
@@ -38,20 +40,22 @@ final class CMS_M365ADMINSITES_Frontend
 
     private function register_routes(): void
     {
+        $this->publicRoutes = [
+            CMS_M365ADMINSITES_Settings::route(),
+            '/m365-admin-sites',
+            '/m365-admin-portale',
+        ];
+
         if (!class_exists('CMS\\Router')) {
             return;
         }
 
         $router = \CMS\Router::instance();
-        $router->addRoute('GET', CMS_M365ADMINSITES_Settings::route(), function (): void {
-            $this->render_archive();
-        });
-        $router->addRoute('GET', '/m365-admin-sites', function (): void {
-            $this->render_archive();
-        });
-        $router->addRoute('GET', '/m365-admin-portale', function (): void {
-            $this->render_archive();
-        });
+        foreach ($this->publicRoutes as $route) {
+            $router->addRoute('GET', $route, function (): void {
+                $this->render_archive();
+            });
+        }
     }
 
     public function filter_body_class(mixed $bodyClass): string
@@ -174,7 +178,17 @@ final class CMS_M365ADMINSITES_Frontend
             \CMS\ThemeManager::instance()->getHeader(['title' => (string) ($settings['page_title'] ?? 'MS365 | Admin Sites & Portale')]);
         }
 
-        include CMS_M365ADMINSITES_PLUGIN_DIR . 'templates/page-adminsites.php';
+        $template = realpath(CMS_M365ADMINSITES_PLUGIN_DIR . 'templates/page-adminsites.php');
+        $pluginBase = realpath(CMS_M365ADMINSITES_PLUGIN_DIR);
+        $allowedPrefix = is_string($pluginBase) ? rtrim($pluginBase, '\\/') . DIRECTORY_SEPARATOR : '';
+
+        if (!is_string($template) || $allowedPrefix === '' || !str_starts_with($template, $allowedPrefix) || !is_file($template)) {
+            $this->log_error('archive template missing or invalid path.');
+            $this->render_404();
+            return;
+        }
+
+        include $template;
 
         if (class_exists('CMS\\ThemeManager')) {
             \CMS\ThemeManager::instance()->getFooter();
@@ -185,7 +199,12 @@ final class CMS_M365ADMINSITES_Frontend
 
     private function is_adminsites_request(): bool
     {
-        return $this->path_matches(CMS_M365ADMINSITES_Settings::route()) || $this->path_matches('/m365-admin-sites') || $this->path_matches('/m365-admin-portale');
+        foreach ($this->publicRoutes as $route) {
+            if ($this->path_matches($route)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private function should_load_assets(): bool
@@ -195,9 +214,7 @@ final class CMS_M365ADMINSITES_Frontend
 
     private function path_matches(string $route): bool
     {
-        $path = $this->normalized_request_path();
-        $routePath = trim($route, '/');
-        return $path === $routePath || str_ends_with($path, '/' . $routePath);
+        return $this->normalized_request_path() === trim($route, '/');
     }
 
     private function normalized_request_path(): string
@@ -206,7 +223,13 @@ final class CMS_M365ADMINSITES_Frontend
             return $this->requestPathCache;
         }
 
-        $this->requestPathCache = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
+        $path = trim((string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH), '/');
+        $siteBasePath = trim((string) parse_url((string) (defined('SITE_URL') ? SITE_URL : ''), PHP_URL_PATH), '/');
+        if ($siteBasePath !== '' && ($path === $siteBasePath || str_starts_with($path, $siteBasePath . '/'))) {
+            $path = ltrim(substr($path, strlen($siteBasePath)), '/');
+        }
+
+        $this->requestPathCache = $path;
         return $this->requestPathCache;
     }
 
@@ -221,7 +244,7 @@ final class CMS_M365ADMINSITES_Frontend
             $seo->setTitle($title);
             $seo->setDescription($description);
         } catch (\Throwable $e) {
-            // SEO darf die Public-Ausgabe nicht blockieren.
+            $this->log_error('seo set failed: ' . $e->getMessage());
         }
     }
 
@@ -236,5 +259,10 @@ final class CMS_M365ADMINSITES_Frontend
             \CMS\ThemeManager::instance()->getFooter();
         }
         exit;
+    }
+
+    private function log_error(string $message): void
+    {
+        error_log('CMS M365 Adminsites frontend: ' . $message);
     }
 }

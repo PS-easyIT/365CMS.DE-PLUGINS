@@ -14,6 +14,10 @@ final class CMS_Marketplace_Service
     private const MAX_ZIP_ENTRY_NAME_LENGTH = 512;
     private const MAX_PREVIEW_SOURCE_BYTES = 524288;
     private const MAX_PREVIEW_BYTES = 4000;
+    private const SYNC_STATE_FILE = '.marketplace-sync-state.json';
+
+    private ?array $settingsCache = null;
+    private ?string $lastSyncedStateDigest = null;
 
     public function __construct(private readonly CMS_Marketplace_Repository $repository)
     {
@@ -23,7 +27,10 @@ final class CMS_Marketplace_Service
     {
         $this->repository->ensureTable();
         $this->ensureStorageDirectories();
-        $this->syncPublicCatalogs();
+
+        if ($this->shouldSyncPublicCatalogs()) {
+            $this->syncPublicCatalogs();
+        }
     }
 
     public function getItems(?string $type = null): array
@@ -140,6 +147,7 @@ final class CMS_Marketplace_Service
         $routes = $this->getPublicRouteMap();
         $siteUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
         $summary = $this->getSummary();
+        $publicUrls = $this->getPublicUrls();
 
         $sections = [
             [
@@ -148,7 +156,7 @@ final class CMS_Marketplace_Service
                 'description' => 'Verfügbare 365CMS-Plugins mit Installations- und Update-Metadaten.',
                 'count' => (int) ($summary['plugins'] ?? 0),
                 'url' => $siteUrl . ($routes['plugins'] ?? '/marketplace/plugins'),
-                'feed_url' => $this->getPublicUrls()['plugins_index'] ?? '',
+                'feed_url' => $publicUrls['plugins_index'] ?? '',
             ],
             [
                 'key' => 'themes',
@@ -156,7 +164,7 @@ final class CMS_Marketplace_Service
                 'description' => 'Verfügbare 365CMS-Themes mit Installations- und Update-Metadaten.',
                 'count' => (int) ($summary['themes'] ?? 0),
                 'url' => $siteUrl . ($routes['themes'] ?? '/marketplace/themes'),
-                'feed_url' => $this->getPublicUrls()['themes_index'] ?? '',
+                'feed_url' => $publicUrls['themes_index'] ?? '',
             ],
             [
                 'key' => 'cms',
@@ -164,7 +172,7 @@ final class CMS_Marketplace_Service
                 'description' => '365CMS-Core-Pakete, Update-Kanäle und zentrale Update-Metadaten.',
                 'count' => (int) ($summary['cms'] ?? 0),
                 'url' => $siteUrl . ($routes['cms'] ?? '/marketplace/cms'),
-                'feed_url' => $this->getPublicUrls()['cms_update'] ?? '',
+                'feed_url' => $publicUrls['cms_update'] ?? '',
             ],
         ];
 
@@ -413,6 +421,10 @@ final class CMS_Marketplace_Service
 
     public function syncPublicCatalogs(): void
     {
+        if (!$this->shouldSyncPublicCatalogs()) {
+            return;
+        }
+
         $this->ensureStorageDirectories();
 
         foreach (['cms', 'plugin', 'theme'] as $type) {
@@ -440,6 +452,10 @@ final class CMS_Marketplace_Service
         }
 
         $this->writeJsonFile($this->getStorageBasePath() . DIRECTORY_SEPARATOR . 'index.json', $this->getPublicOverviewPayload());
+
+        $stateDigest = $this->repository->getStateDigest();
+        $this->lastSyncedStateDigest = $stateDigest;
+        $this->writeSyncStateDigest($stateDigest);
     }
 
     public function getPublicUrls(): array
@@ -485,28 +501,37 @@ final class CMS_Marketplace_Service
 
     public function getSettings(): array
     {
+        if ($this->settingsCache !== null) {
+            return $this->settingsCache;
+        }
+
         $defaults = $this->getDefaultSettings();
         $file = $this->getSettingsFilePath();
         if (!is_file($file)) {
-            return $defaults;
+            $this->settingsCache = $defaults;
+            return $this->settingsCache;
         }
 
         $size = @filesize($file);
         if (!is_int($size) || $size < 0 || $size > 65536) {
-            return $defaults;
+            $this->settingsCache = $defaults;
+            return $this->settingsCache;
         }
 
         $raw = file_get_contents($file);
         if (!is_string($raw) || trim($raw) === '') {
-            return $defaults;
+            $this->settingsCache = $defaults;
+            return $this->settingsCache;
         }
 
         $decoded = json_decode($raw, true);
         if (!is_array($decoded)) {
-            return $defaults;
+            $this->settingsCache = $defaults;
+            return $this->settingsCache;
         }
 
-        return $this->normalizeSettings(array_merge($defaults, $decoded));
+        $this->settingsCache = $this->normalizeSettings(array_merge($defaults, $decoded));
+        return $this->settingsCache;
     }
 
     public function saveSettings(array $input): array
@@ -523,6 +548,8 @@ final class CMS_Marketplace_Service
         if (!is_string($json) || file_put_contents($file, $json . PHP_EOL, LOCK_EX) === false) {
             return ['success' => false, 'message' => 'Die Marketplace-Einstellungen konnten nicht gespeichert werden.'];
         }
+
+        $this->settingsCache = $settings;
 
         return ['success' => true, 'message' => 'Die Marketplace-Einstellungen wurden gespeichert.', 'settings' => $settings];
     }
@@ -564,7 +591,7 @@ final class CMS_Marketplace_Service
                 'preview' => '',
                 'sha256' => '',
                 'size' => 0,
-                'modified_at' => is_dir($rootPath) ? date('Y-m-d H:i', (int) filemtime($rootPath)) : '',
+                'modified_at' => is_dir($rootPath) ? date('Y-m-d H:i', $this->safeFileMTime($rootPath)) : '',
             ];
         }
 
@@ -596,8 +623,8 @@ final class CMS_Marketplace_Service
             'public_url' => $this->buildDirectoryPublicUrl($rootUrl, $relativePath),
             'preview' => $isFile ? $this->buildFilePreview($absolutePath) : '',
             'sha256' => $isFile ? (string) (hash_file('sha256', $absolutePath) ?: '') : '',
-            'size' => $isFile ? (int) filesize($absolutePath) : 0,
-            'modified_at' => date('Y-m-d H:i', (int) filemtime($absolutePath)),
+            'size' => $isFile ? $this->safeFileSize($absolutePath) : 0,
+            'modified_at' => date('Y-m-d H:i', $this->safeFileMTime($absolutePath)),
         ];
     }
 
@@ -852,7 +879,7 @@ final class CMS_Marketplace_Service
             foreach (['manifest.json', 'update.json'] as $fileName) {
                 $filePath = $dir . DIRECTORY_SEPARATOR . $fileName;
                 if (is_file($filePath)) {
-                    unlink($filePath);
+                    $this->safeUnlink($filePath);
                 }
             }
         }
@@ -861,8 +888,8 @@ final class CMS_Marketplace_Service
     private function ensureStorageDirectories(): void
     {
         foreach ([$this->getStorageBasePath(), $this->getTypeBasePath('cms'), $this->getTypeBasePath('plugin'), $this->getTypeBasePath('theme')] as $path) {
-            if (!is_dir($path)) {
-                mkdir($path, 0775, true);
+            if (!is_dir($path) && !mkdir($path, 0775, true) && !is_dir($path)) {
+                $this->logError('Failed creating storage directory: ' . $path);
             }
         }
     }
@@ -931,7 +958,9 @@ final class CMS_Marketplace_Service
         }
 
         if (is_file($target)) {
-            unlink($target);
+            if (!$this->safeUnlink($target)) {
+                return false;
+            }
         }
 
         if (is_uploaded_file($source)) {
@@ -942,22 +971,35 @@ final class CMS_Marketplace_Service
             return false;
         }
 
-        return rename($source, $target) || copy($source, $target);
+        if (rename($source, $target)) {
+            return true;
+        }
+
+        if (!copy($source, $target)) {
+            return false;
+        }
+
+        $this->safeUnlink($source);
+        return true;
     }
 
     private function writeJsonFile(string $path, array $payload): void
     {
         $directory = dirname($path);
         if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
+            $this->logError('Failed creating JSON target directory: ' . $directory);
             return;
         }
 
         $json = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         if (!is_string($json)) {
+            $this->logError('Failed encoding JSON payload for path: ' . $path);
             return;
         }
 
-        file_put_contents($path, $json . PHP_EOL, LOCK_EX);
+        if (file_put_contents($path, $json . PHP_EOL, LOCK_EX) === false) {
+            $this->logError('Failed writing JSON file: ' . $path);
+        }
     }
 
     private function validateZipEntries(\ZipArchive $zip, string $expectedSlug): bool
@@ -1307,7 +1349,7 @@ final class CMS_Marketplace_Service
         $path = preg_replace('/[[:cntrl:]?#]+/', '', $path) ?? '';
         $path = '/' . ltrim($path, '/');
         $path = preg_replace('~/+~', '/', $path) ?? '/marketplace-submit';
-        $path = rtrim(mb_substr($path, 0, 120, 'UTF-8'), '/');
+        $path = rtrim($this->limitUtf8($path, 120), '/');
         $segments = array_values(array_filter(explode('/', ltrim($path, '/')), static fn (string $segment): bool => $segment !== ''));
         foreach ($segments as $segment) {
             if ($segment === '.' || $segment === '..') {
@@ -1363,7 +1405,7 @@ final class CMS_Marketplace_Service
             }
         }
 
-        return mb_substr(implode('/', $segments), 0, 512, 'UTF-8');
+        return $this->limitUtf8(implode('/', $segments), 512);
     }
 
     private function buildFilePreview(string $absolutePath): string
@@ -1395,7 +1437,7 @@ final class CMS_Marketplace_Service
             return '';
         }
 
-        return mb_substr($contents, 0, self::MAX_PREVIEW_BYTES);
+        return $this->limitUtf8($contents, self::MAX_PREVIEW_BYTES);
     }
 
     private function resolveContainedExistingPath(string $rootPath, string $relativePath): ?string
@@ -1470,8 +1512,12 @@ final class CMS_Marketplace_Service
         }
 
         $entries = [];
-        $iterator = new \FilesystemIterator($path, \FilesystemIterator::SKIP_DOTS);
-        $items = iterator_to_array($iterator, false);
+        try {
+            $iterator = new \FilesystemIterator($path, \FilesystemIterator::SKIP_DOTS);
+            $items = iterator_to_array($iterator, false);
+        } catch (\Throwable) {
+            return [];
+        }
 
         usort($items, static function (\SplFileInfo $a, \SplFileInfo $b): int {
             if ($a->isDir() !== $b->isDir()) {
@@ -1507,6 +1553,122 @@ final class CMS_Marketplace_Service
         return $entries;
     }
 
+    private function shouldSyncPublicCatalogs(): bool
+    {
+        $stateDigest = $this->repository->getStateDigest();
+        if ($stateDigest === '') {
+            return true;
+        }
+
+        if ($this->lastSyncedStateDigest === $stateDigest) {
+            return false;
+        }
+
+        $storedDigest = $this->readSyncStateDigest();
+        if ($storedDigest === $stateDigest && $this->hasCoreCatalogFiles()) {
+            $this->lastSyncedStateDigest = $stateDigest;
+            return false;
+        }
+
+        return true;
+    }
+
+    private function hasCoreCatalogFiles(): bool
+    {
+        $requiredFiles = [
+            $this->getStorageBasePath() . DIRECTORY_SEPARATOR . 'index.json',
+            $this->getTypeBasePath('plugin') . DIRECTORY_SEPARATOR . 'index.json',
+            $this->getTypeBasePath('theme') . DIRECTORY_SEPARATOR . 'index.json',
+        ];
+
+        foreach ($requiredFiles as $requiredFile) {
+            if (!is_file($requiredFile)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function getSyncStateFilePath(): string
+    {
+        return $this->getStorageBasePath() . DIRECTORY_SEPARATOR . self::SYNC_STATE_FILE;
+    }
+
+    private function readSyncStateDigest(): string
+    {
+        $file = $this->getSyncStateFilePath();
+        if (!is_file($file)) {
+            return '';
+        }
+
+        $raw = file_get_contents($file);
+        if (!is_string($raw) || trim($raw) === '') {
+            return '';
+        }
+
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            return '';
+        }
+
+        $digest = (string) ($decoded['state_digest'] ?? '');
+        return preg_match('/^[a-f0-9]{40}$/', $digest) === 1 ? $digest : '';
+    }
+
+    private function writeSyncStateDigest(string $digest): void
+    {
+        if (preg_match('/^[a-f0-9]{40}$/', $digest) !== 1) {
+            return;
+        }
+
+        $file = $this->getSyncStateFilePath();
+        $payload = [
+            'state_digest' => $digest,
+            'synced_at' => gmdate('c'),
+        ];
+
+        $json = json_encode($payload, JSON_UNESCAPED_SLASHES);
+        if (!is_string($json)) {
+            return;
+        }
+
+        if (file_put_contents($file, $json . PHP_EOL, LOCK_EX) === false) {
+            $this->logError('Failed writing sync state file: ' . $file);
+        }
+    }
+
+    private function safeUnlink(string $path): bool
+    {
+        if (!is_file($path)) {
+            return true;
+        }
+
+        if (!@unlink($path)) {
+            $this->logError('Failed deleting file: ' . $path);
+            return false;
+        }
+
+        return true;
+    }
+
+    private function safeFileSize(string $path): int
+    {
+        $size = @filesize($path);
+        return is_int($size) && $size >= 0 ? $size : 0;
+    }
+
+    private function safeFileMTime(string $path): int
+    {
+        $mtime = @filemtime($path);
+        return is_int($mtime) && $mtime > 0 ? $mtime : time();
+    }
+
+    private function logError(string $message): void
+    {
+        error_log('[cms-marketplace] ' . $message);
+    }
+
     private function normalizeSubmissionSource(string $value): string
     {
         $value = strtolower(trim($value));
@@ -1531,12 +1693,12 @@ final class CMS_Marketplace_Service
 
     private function normalizeSlug(string $slug): string
     {
-        return mb_substr(preg_replace('/[^a-z0-9_-]/', '', strtolower(trim($slug))) ?? '', 0, 120, 'UTF-8');
+        return $this->limitUtf8(preg_replace('/[^a-z0-9_-]/', '', strtolower(trim($slug))) ?? '', 120);
     }
 
     private function normalizeVersion(string $version): string
     {
-        return mb_substr(preg_replace('/[^0-9A-Za-z._-]/', '', trim($version)) ?? '', 0, 50, 'UTF-8');
+        return $this->limitUtf8(preg_replace('/[^0-9A-Za-z._-]/', '', trim($version)) ?? '', 50);
     }
 
     private function sanitizeText(string $value, int $maxLength): string
@@ -1545,7 +1707,7 @@ final class CMS_Marketplace_Service
         $value = preg_replace('/[[:cntrl:]]+/u', ' ', $value) ?? '';
         $value = preg_replace('/\s+/u', ' ', $value) ?? '';
 
-        return mb_substr(trim($value), 0, max(1, $maxLength), 'UTF-8');
+        return $this->limitUtf8(trim($value), max(1, $maxLength));
     }
 
     private function sanitizeTextarea(string $value, int $maxLength): string
@@ -1553,7 +1715,7 @@ final class CMS_Marketplace_Service
         $value = str_replace(["\r\n", "\r"], "\n", strip_tags($value));
         $value = str_replace("\0", '', $value);
 
-        return mb_substr(trim($value), 0, max(1, $maxLength), 'UTF-8');
+        return $this->limitUtf8(trim($value), max(1, $maxLength));
     }
 
     private function buildDirectoryPublicUrl(string $rootUrl, string $relativePath): string
@@ -1562,5 +1724,18 @@ final class CMS_Marketplace_Service
         $encoded = array_map(static fn (string $segment): string => rawurlencode($segment), $segments);
 
         return rtrim($rootUrl, '/') . ($encoded !== [] ? '/' . implode('/', $encoded) : '');
+    }
+
+    private function limitUtf8(string $value, int $maxLength): string
+    {
+        if ($maxLength < 1) {
+            return '';
+        }
+
+        if (function_exists('mb_substr')) {
+            return mb_substr($value, 0, $maxLength, 'UTF-8');
+        }
+
+        return substr($value, 0, $maxLength);
     }
 }

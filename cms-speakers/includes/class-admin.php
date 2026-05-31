@@ -9,6 +9,12 @@ if (!defined('ABSPATH')) { exit; }
 
 final class CMS_Speakers_Admin
 {
+    private const MENU_SLUG = 'speakers';
+    private const PAGE_OVERVIEW = 'speakers';
+    private const PAGE_TOPICS = 'speakers-topics';
+    private const PAGE_DESIGN = 'speakers-design';
+    private const PAGE_SETTINGS = 'speakers-settings';
+
     private static ?self $instance = null;
     public static function instance(): self
     {
@@ -24,6 +30,11 @@ final class CMS_Speakers_Admin
 
     private function load_admin_menu_helpers(): void
     {
+        $sharedContract = dirname(CMS_SPEAKERS_PLUGIN_DIR) . '/shared/admin/plugin-admin-contract.php';
+        if (is_file($sharedContract)) {
+            require_once $sharedContract;
+        }
+
         if (function_exists('renderAdminLayoutStart') && function_exists('add_menu_page')) {
             return;
         }
@@ -45,6 +56,11 @@ final class CMS_Speakers_Admin
 
     private function start_admin_layout(string $title, string $activePage): void
     {
+        if (function_exists('cms_plugin_admin_layout_start')) {
+            cms_plugin_admin_layout_start($title, $activePage);
+            return;
+        }
+
         if (function_exists('renderAdminLayoutStart')) {
             renderAdminLayoutStart($title, $activePage);
             return;
@@ -63,6 +79,11 @@ final class CMS_Speakers_Admin
 
     private function end_admin_layout(): void
     {
+        if (function_exists('cms_plugin_admin_layout_end')) {
+            cms_plugin_admin_layout_end();
+            return;
+        }
+
         if (function_exists('renderAdminLayoutEnd')) {
             renderAdminLayoutEnd();
             return;
@@ -84,11 +105,53 @@ final class CMS_Speakers_Admin
             'Speaker',
             '365NET | Speaker',
             'manage_options',
-            'speakers',
-            [self::class, 'render_plugin_page_bridge'],
+            self::MENU_SLUG,
+            [self::class, 'render_admin_menu_dispatch'],
             'SP',
             45
         );
+
+        if (!function_exists('add_submenu_page')) {
+            return;
+        }
+
+        add_submenu_page(self::MENU_SLUG, 'Speaker Übersicht', 'Übersicht', 'manage_options', self::PAGE_OVERVIEW, [self::class, 'render_admin_menu_dispatch']);
+        add_submenu_page(self::MENU_SLUG, 'Speaker Themen', 'Themen', 'manage_options', self::PAGE_TOPICS, [self::class, 'render_admin_menu_dispatch']);
+        add_submenu_page(self::MENU_SLUG, 'Speaker Design', 'Design', 'manage_options', self::PAGE_DESIGN, [self::class, 'render_admin_menu_dispatch']);
+        add_submenu_page(self::MENU_SLUG, 'Speaker Einstellungen', 'Einstellungen', 'manage_options', self::PAGE_SETTINGS, [self::class, 'render_admin_menu_dispatch']);
+    }
+
+    public static function render_admin_menu_dispatch(): void
+    {
+        $instance = self::instance();
+        $instance->load_admin_menu_helpers();
+
+        if (function_exists('cms_plugin_admin_dispatch_page')) {
+            cms_plugin_admin_dispatch_page(
+                [
+                    self::PAGE_OVERVIEW => static function (): void { self::render_admin_section_bridge('overview'); },
+                    self::PAGE_TOPICS => static function (): void { self::render_admin_section_bridge('topics'); },
+                    self::PAGE_DESIGN => static function (): void { self::render_admin_section_bridge('design'); },
+                    self::PAGE_SETTINGS => static function (): void { self::render_admin_section_bridge('settings'); },
+                ],
+                self::PAGE_OVERVIEW,
+                self::MENU_SLUG
+            );
+            return;
+        }
+
+        self::render_admin_section_bridge('overview');
+    }
+
+    private static function render_admin_section_bridge(string $section): void
+    {
+        $allowedSections = ['overview', 'topics', 'design', 'settings'];
+        if (!in_array($section, $allowedSections, true)) {
+            $section = 'overview';
+        }
+
+        $_GET['tab'] = $section;
+        self::render_plugin_page_bridge();
     }
 
     public static function render_plugin_page_bridge(): void
@@ -107,20 +170,68 @@ final class CMS_Speakers_Admin
             }
         }
 
+        if (function_exists('cms_plugin_admin_layout_start') && function_exists('cms_plugin_admin_emit_notice') && function_exists('cms_plugin_admin_layout_end')) {
+            cms_plugin_admin_layout_start('Speaker Administration', self::MENU_SLUG);
+            cms_plugin_admin_emit_notice(
+                'Die angeforderte Admin-Seite ist derzeit nicht verfuegbar. Bitte pruefen Sie die Plugin-Konfiguration.',
+                'error',
+                'missing admin bridge callback plugin=speakers class=CMS_Speakers_Post_Type method=admin_list'
+            );
+            cms_plugin_admin_layout_end();
+            return;
+        }
+
         $targetUrl = htmlspecialchars(SITE_URL . '/admin/speakers', ENT_QUOTES, 'UTF-8');
         echo '<div class="admin-card"><p>Die Speaker-Verwaltung konnte nicht direkt geladen werden. <a href="' . $targetUrl . '">Zur Speaker-Verwaltung wechseln</a>.</p></div>';
     }
 
     public function add_menu_item(array $items): array
     {
-        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $activePage = function_exists('cms_plugin_admin_normalize_slug')
+            ? cms_plugin_admin_normalize_slug((string) ($_GET['page'] ?? self::PAGE_OVERVIEW))
+            : strtolower(trim((string) ($_GET['page'] ?? self::PAGE_OVERVIEW)));
+        $currentTab = trim((string) ($_GET['tab'] ?? 'overview'));
+
+        $childItems = [
+            [
+                'type' => 'item',
+                'slug' => self::PAGE_OVERVIEW,
+                'label' => 'Übersicht',
+                'url' => '/admin/speakers',
+                'active' => str_starts_with($path, '/admin/speakers') && ($currentTab === '' || $currentTab === 'overview'),
+            ],
+            [
+                'type' => 'item',
+                'slug' => self::PAGE_TOPICS,
+                'label' => 'Themen',
+                'url' => '/admin/speakers?tab=topics',
+                'active' => str_starts_with($path, '/admin/speakers') && $currentTab === 'topics',
+            ],
+            [
+                'type' => 'item',
+                'slug' => self::PAGE_DESIGN,
+                'label' => 'Design',
+                'url' => '/admin/speakers?tab=design',
+                'active' => str_starts_with($path, '/admin/speakers') && $currentTab === 'design',
+            ],
+            [
+                'type' => 'item',
+                'slug' => self::PAGE_SETTINGS,
+                'label' => 'Einstellungen',
+                'url' => '/admin/speakers?tab=settings',
+                'active' => str_starts_with($path, '/admin/speakers') && $currentTab === 'settings',
+            ],
+        ];
+
         $items[] = [
             'type'   => 'item',
-            'slug'   => 'speakers',
+            'slug'   => self::MENU_SLUG,
             'label'  => '365NET | Speaker',
             'icon'   => 'SP',
             'url'    => '/admin/speakers',
-            'active' => str_starts_with($path, '/admin/speakers'),
+            'active' => str_starts_with($path, '/admin/speakers') || str_starts_with($activePage, self::MENU_SLUG),
+            'children' => $childItems,
         ];
         return $items;
     }
@@ -207,25 +318,6 @@ final class CMS_Speakers_Admin
         <?php if (isset($_GET['approved'])): ?><div class="alert alert-success">Speaker genehmigt und aktiviert.</div><?php endif; ?>
         <?php if (isset($_GET['deleted'])): ?><div class="alert alert-success">Speaker gelöscht.</div><?php endif; ?>
         <?php if (isset($_GET['error'])): ?><div class="alert alert-error">Fehler: <?= htmlspecialchars((string) $_GET['error'], ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
-
-        <!-- Tabs -->
-        <div class="spk-tabs">
-            <?php
-            $tabs = [
-                'overview'  => ['OV', 'Übersicht'],
-                'topics'    => ['TG', 'Themen'],
-                'design'    => ['UI', 'Design'],
-                'settings'  => ['CFG', 'Einstellungen'],
-            ];
-            foreach ($tabs as $slug => [$icon, $label]): ?>
-                <a href="?tab=<?= $slug ?>" class="spk-tab <?= $tab === $slug ? 'active' : '' ?>">
-                    <?= $icon ?> <?= $label ?>
-                    <?php if ($slug === 'overview' && $pending > 0): ?>
-                        <span class="nav-badge" style="background:#f59e0b;color:#fff;font-size:.7rem;padding:1px 6px;border-radius:9px;margin-left:4px;"><?= $pending ?></span>
-                    <?php endif; ?>
-                </a>
-            <?php endforeach; ?>
-        </div>
 
         <?php if ($tab === 'overview'): ?>
         <!-- Stats -->
@@ -401,7 +493,7 @@ final class CMS_Speakers_Admin
                     <tr>
                         <td><span class="spk-topic-tag"><?= htmlspecialchars($t->topic_name) ?></span></td>
                         <td><?= htmlspecialchars($t->speaker_name ?? '') ?></td>
-                        <td><a href="<?= SITE_URL ?>/admin/speakers/edit/<?= (int)$t->sid ?>" class="btn btn-sm btn-secondary">✏️ Speaker bearbeiten</a></td>
+                        <td><a href="<?= htmlspecialchars(SITE_URL . '/admin/speakers/edit/' . (int)$t->sid, ENT_QUOTES, 'UTF-8') ?>" class="btn btn-sm btn-secondary">✏️ Speaker bearbeiten</a></td>
                     </tr>
                     <?php endforeach; ?>
                     </tbody>
@@ -412,8 +504,8 @@ final class CMS_Speakers_Admin
 
         <?php elseif ($tab === 'design'): ?>
         <!-- Design Tab -->
-        <form method="POST" action="<?= SITE_URL ?>/admin/speakers/settings/save">
-            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+        <form method="POST" action="<?= htmlspecialchars(SITE_URL . '/admin/speakers/settings/save', ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string) $csrf, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="_from_tab" value="design">
             <div class="admin-card">
                 <h3>🎨 Farbpalette</h3>
@@ -545,8 +637,8 @@ final class CMS_Speakers_Admin
 
         <?php elseif ($tab === 'settings'): ?>
         <!-- Settings Tab -->
-        <form method="POST" action="<?= SITE_URL ?>/admin/speakers/settings/save">
-            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+        <form method="POST" action="<?= htmlspecialchars(SITE_URL . '/admin/speakers/settings/save', ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string) $csrf, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="_from_tab" value="settings">
             <div class="admin-card">
                 <h3>📋 Archive-Seite</h3>
@@ -694,8 +786,8 @@ final class CMS_Speakers_Admin
         }
 
         // Decode JSON fields
-        $formats   = is_string($speaker->formats  ?? null) ? (json_decode($speaker->formats,  true) ?? []) : [];
-        $langs     = is_string($speaker->languages ?? null) ? (json_decode($speaker->languages, true) ?? []) : [];
+        $formats   = is_string($speaker?->formats ?? null) ? (json_decode((string) $speaker?->formats, true) ?? []) : [];
+        $langs     = is_string($speaker?->languages ?? null) ? (json_decode((string) $speaker?->languages, true) ?? []) : [];
         $langs_str = implode(', ', $langs);
 
         $all_formats = [
@@ -738,7 +830,7 @@ final class CMS_Speakers_Admin
                 <?php if ($is_edit): ?><p>ID #<?= (int)$speaker->id ?> · <?= (int)($speaker->profile_views ?? 0) ?> Profilaufrufe</p><?php endif; ?>
             </div>
             <div class="header-actions">
-                <a href="<?= SITE_URL ?>/admin/speakers" class="btn btn-secondary">← Zurück</a>
+                <a href="<?= htmlspecialchars(SITE_URL . '/admin/speakers', ENT_QUOTES, 'UTF-8') ?>" class="btn btn-secondary">← Zurück</a>
                 <?php if ($is_edit): ?>
                 <a href="<?= htmlspecialchars(SITE_URL . '/speakers/' . CMS_Speakers_Database::generate_slug($speaker), ENT_QUOTES, 'UTF-8') ?>" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">Ansehen</a>
                 <?php endif; ?>
@@ -748,9 +840,9 @@ final class CMS_Speakers_Admin
         <?php if (isset($_GET['saved'])): ?><div class="alert alert-success">Gespeichert.</div><?php endif; ?>
         <?php if (isset($_GET['error'])): ?><div class="alert alert-error">Fehler: <?= htmlspecialchars((string) $_GET['error'], ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
 
-        <form method="POST" action="<?= SITE_URL ?>/admin/speakers/save">
+        <form method="POST" action="<?= htmlspecialchars(SITE_URL . '/admin/speakers/save', ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="speaker_id" value="<?= (int)($speaker->id ?? 0) ?>">
-            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string) $csrf, ENT_QUOTES, 'UTF-8') ?>">
 
             <!-- 2-Spalten-Layout: linke + rechte Spalte -->
             <div class="spk-form-2col">
@@ -777,7 +869,7 @@ final class CMS_Speakers_Admin
             <div class="admin-card form-actions-card">
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Speaker speichern</button>
-                    <a href="<?= SITE_URL ?>/admin/speakers" class="btn btn-secondary">Abbrechen</a>
+                    <a href="<?= htmlspecialchars(SITE_URL . '/admin/speakers', ENT_QUOTES, 'UTF-8') ?>" class="btn btn-secondary">Abbrechen</a>
                     <?php if ($is_edit): ?><span class="form-actions__hint">Zuletzt gespeichert: <?= htmlspecialchars(date('d.m.Y H:i', strtotime($speaker->updated_at ?? 'now')), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
                 </div>
             </div>

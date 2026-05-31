@@ -120,7 +120,7 @@ final class CMS_Events_Member_Dashboard
         }
 
         // ── POST: neues Event speichern ───────────────────────────────────────
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['event_create'])) {
+        if ((string) ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['event_create'])) {
             if (!\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'member_event_create')) {
                 $_SESSION['error'] = 'Sicherheitscheck fehlgeschlagen.';
                 $this->redirect('/member/plugin/events?action=new');
@@ -130,17 +130,14 @@ final class CMS_Events_Member_Dashboard
                 $isAdminSave = \CMS\Auth::instance()->isAdmin();
                 $allowedPriceTypes = ['free', 'paid', 'donation'];
                 $normalizedTags = isset($_POST['tags']) && is_array($_POST['tags'])
-                    ? array_values(array_unique(array_filter(array_map(static fn($tag) => sanitize_text_field(trim((string) $tag)), $_POST['tags']))))
+                    ? array_values(array_unique(array_filter(array_map(fn($tag) => $this->sanitizeText($tag, 80), $_POST['tags']))))
                     : [];
                 $onlineUrl = function_exists('cms_events_public_url') ? (cms_events_public_url($_POST['online_url'] ?? '') ?: null) : null;
                 $registrationUrl = function_exists('cms_events_public_url') ? (cms_events_public_url($_POST['registration_url'] ?? '') ?: null) : null;
                 $organizerWebsite = function_exists('cms_events_public_url') ? (cms_events_public_url($_POST['organizer_website'] ?? '') ?: null) : null;
                 $organizerEmail = filter_var(trim((string) ($_POST['organizer_email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
-                $priceCurrency = strtoupper(substr(sanitize_text_field($_POST['price_currency'] ?? 'EUR'), 0, 10));
-                if ($priceCurrency === '') {
-                    $priceCurrency = 'EUR';
-                }
-                $title = sanitize_text_field($_POST['title'] ?? '');
+                $priceCurrency = $this->sanitizeCurrency($_POST['price_currency'] ?? 'EUR');
+                $title = $this->sanitizeRequiredText($_POST['title'] ?? '', 255);
                 $eventDate = $this->sanitizeDate($_POST['event_date'] ?? '');
                 if ($title === '' || $eventDate === null) {
                     $_SESSION['error'] = 'Bitte mindestens Titel und Startdatum ausfüllen.';
@@ -151,18 +148,18 @@ final class CMS_Events_Member_Dashboard
                 // save_event() setzt user_id automatisch aus CMS\Auth
                 $id = CMS_Events_Database::instance()->save_event([
                     'title'             => $title,
-                    'excerpt'           => strip_tags($_POST['excerpt']             ?? ''),
+                    'excerpt'           => $this->sanitizeText($_POST['excerpt'] ?? '', 500),
                     'event_date'        => $eventDate,
                     'event_time'        => $this->sanitizeTime($_POST['event_time'] ?? ''),
                     'end_date'          => $this->sanitizeDate($_POST['end_date']   ?? ''),
                     'end_time'          => $this->sanitizeTime($_POST['end_time']   ?? ''),
-                    'location'          => sanitize_text_field($_POST['location']   ?? ''),
-                    'address'           => sanitize_text_field($_POST['address']    ?? ''),
-                    'city'              => sanitize_text_field($_POST['city']       ?? ''),
-                    'zip'               => sanitize_text_field($_POST['zip']        ?? ''),
-                    'country'           => sanitize_text_field($_POST['country']    ?? 'Deutschland'),
-                    'description'       => strip_tags($_POST['description']         ?? ''),
-                    'category'          => sanitize_text_field($_POST['category']   ?? ''),
+                    'location'          => $this->sanitizeText($_POST['location'] ?? '', 255),
+                    'address'           => $this->sanitizeText($_POST['address'] ?? '', 500),
+                    'city'              => $this->sanitizeText($_POST['city'] ?? '', 100),
+                    'zip'               => $this->sanitizeText($_POST['zip'] ?? '', 20),
+                    'country'           => $this->sanitizeText($_POST['country'] ?? 'Deutschland', 100),
+                    'description'       => $this->sanitizeText($_POST['description'] ?? '', 5000),
+                    'category'          => $this->sanitizeText($_POST['category'] ?? '', 100),
                     'tags'              => $normalizedTags,
                     'capacity'          => is_numeric($_POST['capacity'] ?? '') ? (int)$_POST['capacity'] : null,
                     'price_type'        => in_array($_POST['price_type'] ?? '', $allowedPriceTypes, true) ? $_POST['price_type'] : 'free',
@@ -171,9 +168,9 @@ final class CMS_Events_Member_Dashboard
                     'is_online'         => isset($_POST['is_online']) ? 1 : 0,
                     'online_url'        => $onlineUrl,
                     'registration_url'  => $registrationUrl,
-                    'organizer_name'    => sanitize_text_field($_POST['organizer_name']    ?? ''),
+                    'organizer_name'    => $this->sanitizeText($_POST['organizer_name'] ?? '', 255),
                     'organizer_email'   => $organizerEmail,
-                    'organizer_phone'   => sanitize_text_field($_POST['organizer_phone']   ?? ''),
+                    'organizer_phone'   => $this->sanitizeText($_POST['organizer_phone'] ?? '', 50),
                     'organizer_website' => $organizerWebsite,
                     'status'            => $isAdminSave ? 'published' : 'draft',
                 ]);
@@ -197,7 +194,7 @@ final class CMS_Events_Member_Dashboard
             }
         }
 
-        $action  = sanitize_text_field($_GET['action'] ?? '');
+        $action  = $this->sanitizeText($_GET['action'] ?? '', 20);
         $isAdmin = \CMS\Auth::instance()->isAdmin();
 
         // ── Formular: Neues Event ─────────────────────────────────────────────
@@ -564,6 +561,35 @@ final class CMS_Events_Member_Dashboard
     private function sanitizeHexColor(string $value, string $fallback): string
     {
         return preg_match('/^#[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?$/', $value) === 1 ? $value : $fallback;
+    }
+
+    private function sanitizeText(mixed $value, int $maxLength): string
+    {
+        $text = trim(strip_tags((string) $value));
+        if ($text === '') {
+            return '';
+        }
+
+        if (function_exists('mb_substr')) {
+            return mb_substr($text, 0, $maxLength, 'UTF-8');
+        }
+
+        return substr($text, 0, $maxLength);
+    }
+
+    private function sanitizeRequiredText(mixed $value, int $maxLength): string
+    {
+        return $this->sanitizeText($value, $maxLength);
+    }
+
+    private function sanitizeCurrency(mixed $value): string
+    {
+        $normalized = strtoupper((string) preg_replace('/[^A-Z]/i', '', (string) $value));
+        if ($normalized === '') {
+            return 'EUR';
+        }
+
+        return substr($normalized, 0, 3);
     }
 
     private function redirect(string $path): void

@@ -8,7 +8,7 @@
 
 .contact-admin-shell {
     display: grid;
-    gap: 1.25rem;
+    gap: 25px;
 }
 
 .contact-card-grid,
@@ -156,39 +156,8 @@
     font-size: 0.9rem;
 }
 
-.contact-tab-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-    margin-bottom: 0;
-    padding: 0.35rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px 14px 0 0;
-    border-bottom: 0;
-    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-}
-
-.contact-tab-btn {
-    border: 0;
-    border-radius: 10px;
-    background: transparent;
-    color: #475569;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 0.65rem 0.9rem;
-    transition: all 0.18s ease;
-}
-
-.contact-tab-btn:hover,
-.contact-tab-btn.active {
-    background: #ffffff;
-    color: #0f172a;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
-}
-
 .tab-content {
-    display: none;
+    display: block !important;
 }
 
 .tab-content.active {
@@ -196,8 +165,13 @@
 }
 
 .contact-tab-panel {
-    border-radius: 0 0 14px 14px;
+    border-radius: 14px;
     margin-top: 0;
+}
+
+.contact-tab-bar,
+.contact-inline-tabs {
+    display: none !important;
 }
 
 .contact-section-divider {

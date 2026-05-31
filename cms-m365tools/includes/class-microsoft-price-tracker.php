@@ -408,7 +408,8 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
     {
         $renewal = new \DateTimeImmutable((string) $input['renewal_date']);
         $mainEffective = new \DateTimeImmutable('2026-07-01');
-        $daysToRenewal = max(0, (int) (new \DateTimeImmutable('2026-05-17'))->diff($renewal)->format('%r%a'));
+        $today = new \DateTimeImmutable('today');
+        $daysToRenewal = max(0, (int) $today->diff($renewal)->format('%r%a'));
         $appliesAtRenewal = $renewal >= $mainEffective;
         $annualDelta = (float) ($impact['annual_delta'] ?? 0);
 

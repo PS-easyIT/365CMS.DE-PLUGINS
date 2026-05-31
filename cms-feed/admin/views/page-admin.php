@@ -68,21 +68,22 @@ $feedGetInt = static function (string $key, int $default = 0): int {
 <div class="alert alert-error">❌ <?php echo htmlspecialchars($error); ?></div>
 <?php endif; ?>
 
-<!-- Tab-Navigation -->
-<div class="feed-tabs">
+<!-- Sidebar-Submenu + Content -->
+<div class="feed-admin-main">
+<aside class="feed-submenu" aria-label="Feed-Navigation">
+    <span class="feed-submenu__title">Bereiche</span>
     <?php foreach ($tabs as $key => $label): ?>
     <a href="?tab=<?php echo htmlspecialchars($key); ?>"
-       class="feed-tab<?php echo $tab === $key ? ' active' : ''; ?>">
-        <?php echo htmlspecialchars($label); ?>
+       class="feed-submenu-link<?php echo $tab === $key ? ' active' : ''; ?>">
+        <span><?php echo htmlspecialchars($label); ?></span>
         <?php if ($key === 'channels' && ($stats['channels_errors'] ?? 0) > 0): ?>
             <span class="feed-tab-badge"><?php echo (int) ($stats['channels_errors'] ?? 0); ?></span>
         <?php endif; ?>
     </a>
     <?php endforeach; ?>
-</div>
+</aside>
 
-<!-- Content -->
-<div class="admin-card feed-admin-shell feed-admin-shell--tabbed">
+<div class="admin-card feed-admin-shell">
 <div class="feed-admin-view">
 
 <?php
@@ -874,15 +875,15 @@ elseif ($tab === 'settings'):
         </div>
     </div>
 
-    <!-- Sub-Tabs -->
-    <div class="feed-settings-tabs">
-        <button class="tab-btn <?php echo $settingsTab === 'general' ? 'active' : ''; ?>" data-feed-tab-target="stab-general" type="button">⚙️ Allgemein</button>
-        <button class="tab-btn <?php echo $settingsTab === 'design' ? 'active' : ''; ?>" data-feed-tab-target="stab-design" type="button">🎨 Design</button>
-        <button class="tab-btn <?php echo $settingsTab === 'system' ? 'active' : ''; ?>" data-feed-tab-target="stab-system" type="button">🖥️ System</button>
+    <!-- Sidebar-Submenu -->
+    <div class="feed-settings-submenu">
+        <a href="?tab=settings&amp;stab=general" class="feed-submenu-link <?php echo $settingsTab === 'general' ? 'active' : ''; ?>">⚙️ Allgemein</a>
+        <a href="?tab=settings&amp;stab=design" class="feed-submenu-link <?php echo $settingsTab === 'design' ? 'active' : ''; ?>">🎨 Design</a>
+        <a href="?tab=settings&amp;stab=system" class="feed-submenu-link <?php echo $settingsTab === 'system' ? 'active' : ''; ?>">🖥️ System</a>
     </div>
 
     <!-- Allgemein -->
-    <div id="stab-general" class="tab-content <?php echo $settingsTab === 'general' ? 'active' : ''; ?>">
+    <?php if ($settingsTab === 'general'): ?>
         <div class="feed-settings-layout">
         <form method="POST" class="admin-form feed-settings-form admin-card feed-settings-panel">
             <input type="hidden" name="action" value="save_settings">
@@ -955,10 +956,8 @@ elseif ($tab === 'settings'):
             </div>
         </div>
         </div>
-    </div>
-
+    <?php elseif ($settingsTab === 'design'): ?>
     <!-- Design -->
-    <div id="stab-design" class="tab-content <?php echo $settingsTab === 'design' ? 'active' : ''; ?>">
         <div class="feed-settings-layout">
         <form method="POST" class="admin-form feed-settings-form feed-settings-form--wide admin-card feed-settings-panel">
             <input type="hidden" name="action" value="save_design">
@@ -1034,10 +1033,8 @@ elseif ($tab === 'settings'):
             </div>
         </div>
         </div>
-    </div>
-
+    <?php else: ?>
     <!-- System -->
-    <div id="stab-system" class="tab-content <?php echo $settingsTab === 'system' ? 'active' : ''; ?>">
         <div class="feed-info-grid">
         <div class="admin-card feed-settings-panel">
         <div class="feed-panel-header">
@@ -1107,13 +1104,14 @@ elseif ($tab === 'settings'):
             </div>
         </div>
         </div>
-    </div>
+    <?php endif; ?>
 
 <?php endif; // end tab switch ?>
 
 </div>
 
 </div><!-- /.admin-card -->
+</div><!-- /.feed-admin-main -->
 
 
 <!-- ══════════════════════════════════════════════════════════════════════ -->

@@ -33,8 +33,26 @@ final class CMS_Contact_Admin_Pages
     use CMS_Contact_Page_Submissions_Trait;
     use CMS_Contact_Page_Settings_Trait;
 
-    /** Admin-Basis-URL für alle Kontakt-Seiten */
-    public const ADMIN_BASE_URL = '/admin/plugins/contact/contact';
+    public const MENU_SLUG = 'contact';
+    private const DEFAULT_PAGE_SLUG = 'contact';
+    private const PAGE_SLUG_FOR_SECTION = [
+        'dashboard' => 'contact',
+        'forms' => 'contact-forms',
+        'submissions' => 'contact-submissions',
+        'settings' => 'contact-settings',
+    ];
+    private const PAGE_TITLES = [
+        'contact' => 'Kontakt',
+        'contact-forms' => 'Kontaktformulare',
+        'contact-submissions' => 'Kontakt-Nachrichten',
+        'contact-settings' => 'Kontakt-Einstellungen',
+    ];
+    private const PAGE_RENDERERS = [
+        'contact' => 'render_dashboard_page',
+        'contact-forms' => 'render_forms_page',
+        'contact-submissions' => 'render_submissions_page',
+        'contact-settings' => 'render_settings_page',
+    ];
 
     /**
      * Zentrale Dispatch: leitet anhand ?section= an den richtigen Trait weiter.
@@ -44,29 +62,28 @@ final class CMS_Contact_Admin_Pages
      */
     public static function render_dispatch(): void
     {
-        ob_start();
-        $section = sanitize_text_field($_GET['section'] ?? 'dashboard');
+        self::ensure_shared_contract_loaded();
+        self::sync_legacy_section_to_page();
 
-        self::load_admin_menu();
-        if (function_exists('renderAdminLayoutStart')) {
-            renderAdminLayoutStart(self::get_page_title($section), 'contact');
+        $callbacks = self::resolve_dispatch_callbacks();
+        if (function_exists('cms_plugin_admin_dispatch_page')) {
+            cms_plugin_admin_dispatch_page($callbacks, self::DEFAULT_PAGE_SLUG, self::MENU_SLUG);
+            return;
         }
 
-        self::enqueue_admin_assets();
-
-        match ($section) {
-            'forms'       => self::render_forms(),
-            'submissions' => self::render_submissions(),
-            'settings'    => self::render_settings(),
-            default       => self::render_dashboard(),
-        };
-
-        self::enqueue_admin_scripts();
-        if (function_exists('renderAdminLayoutEnd')) {
-            renderAdminLayoutEnd();
+        $activeSlug = self::normalize_slug((string) ($_GET['page'] ?? self::DEFAULT_PAGE_SLUG));
+        if ($activeSlug === '') {
+            $activeSlug = self::DEFAULT_PAGE_SLUG;
         }
 
-        ob_end_flush();
+        $resolvedSlug = array_key_exists($activeSlug, $callbacks) ? $activeSlug : self::DEFAULT_PAGE_SLUG;
+        $callback = $callbacks[$resolvedSlug] ?? null;
+        if (!is_callable($callback)) {
+            self::render_missing_callback_notice($activeSlug, $resolvedSlug);
+            return;
+        }
+
+        call_user_func($callback);
     }
 
     /**
@@ -74,10 +91,14 @@ final class CMS_Contact_Admin_Pages
      */
     public static function admin_url(string $section = 'dashboard', array $params = []): string
     {
-        $url = self::ADMIN_BASE_URL . '?section=' . urlencode($section);
-        foreach ($params as $k => $v) {
-            $url .= '&' . urlencode($k) . '=' . urlencode((string) $v);
+        $section = self::normalize_slug($section);
+        $slug = self::PAGE_SLUG_FOR_SECTION[$section] ?? self::DEFAULT_PAGE_SLUG;
+        $url = '/admin/plugins/' . self::MENU_SLUG . '/' . rawurlencode($slug);
+
+        if ($params !== []) {
+            $url .= '?' . http_build_query($params, '', '&', PHP_QUERY_RFC3986);
         }
+
         return $url;
     }
 
@@ -85,6 +106,75 @@ final class CMS_Contact_Admin_Pages
     {
         header('Location: ' . self::admin_url($section, $params));
         exit;
+    }
+
+    /**
+     * @return array<int, array{slug:string,title:string,menu_title:string}>
+     */
+    public static function get_menu_pages(): array
+    {
+        return [
+            ['slug' => 'contact', 'title' => 'Dashboard', 'menu_title' => '📊 Dashboard'],
+            ['slug' => 'contact-forms', 'title' => 'Formulare', 'menu_title' => '📋 Formulare'],
+            ['slug' => 'contact-submissions', 'title' => 'Nachrichten', 'menu_title' => '📩 Nachrichten'],
+            ['slug' => 'contact-settings', 'title' => 'Einstellungen', 'menu_title' => '⚙️ Einstellungen'],
+        ];
+    }
+
+    public static function render_dashboard_page(): void
+    {
+        self::render_with_layout('contact', static function (): void {
+            self::render_dashboard();
+        });
+    }
+
+    public static function render_forms_page(): void
+    {
+        self::render_with_layout('contact-forms', static function (): void {
+            self::render_forms();
+        });
+    }
+
+    public static function render_submissions_page(): void
+    {
+        self::render_with_layout('contact-submissions', static function (): void {
+            self::render_submissions();
+        });
+    }
+
+    public static function render_settings_page(): void
+    {
+        self::render_with_layout('contact-settings', static function (): void {
+            self::render_settings();
+        });
+    }
+
+    private static function render_with_layout(string $activePage, callable $renderer): void
+    {
+        $activePage = self::normalize_slug($activePage);
+        if ($activePage === '') {
+            $activePage = self::DEFAULT_PAGE_SLUG;
+        }
+
+        $title = self::PAGE_TITLES[$activePage] ?? self::PAGE_TITLES[self::DEFAULT_PAGE_SLUG];
+
+        ob_start();
+        if (function_exists('cms_plugin_admin_layout_start')) {
+            cms_plugin_admin_layout_start($title, $activePage);
+        } elseif (function_exists('renderAdminLayoutStart')) {
+            renderAdminLayoutStart($title, $activePage);
+        }
+
+        self::enqueue_admin_assets();
+        $renderer();
+        self::enqueue_admin_scripts();
+
+        if (function_exists('cms_plugin_admin_layout_end')) {
+            cms_plugin_admin_layout_end();
+        } elseif (function_exists('renderAdminLayoutEnd')) {
+            renderAdminLayoutEnd();
+        }
+        ob_end_flush();
     }
 
     // ── Gemeinsame Hilfsmethoden ──────────────────────────────────────────────
@@ -109,30 +199,6 @@ final class CMS_Contact_Admin_Pages
     }
 
     /**
-     * Admin-Menü/Layout-Funktionen laden.
-     */
-    protected static function load_admin_menu(): void
-    {
-        $menuFile = ABSPATH . 'admin/partials/admin-menu.php';
-        if (file_exists($menuFile) && !function_exists('renderAdminLayoutStart')) {
-            require_once $menuFile;
-        }
-    }
-
-    /**
-     * Titel je Abschnitt für das Admin-Layout.
-     */
-    protected static function get_page_title(string $section): string
-    {
-        return match ($section) {
-            'forms' => 'Kontaktformulare',
-            'submissions' => 'Kontakt-Nachrichten',
-            'settings' => 'Kontakt-Einstellungen',
-            default => 'Kontakt',
-        };
-    }
-
-    /**
      * Admin-JS am Seitenende einbinden
      */
     protected static function enqueue_admin_scripts(): void
@@ -143,6 +209,72 @@ final class CMS_Contact_Admin_Pages
                 . htmlspecialchars(CMS_CONTACT_PLUGIN_URL . 'assets/js/contact-admin.js', ENT_QUOTES, 'UTF-8')
                 . '?v=' . filemtime($js) . '" defer></script>' . "\n";
         }
+    }
+
+    /**
+     * @return array<string, callable|null>
+     */
+    private static function resolve_dispatch_callbacks(): array
+    {
+        $callbacks = [];
+        foreach (self::PAGE_RENDERERS as $slug => $method) {
+            $callbacks[$slug] = is_callable([self::class, $method]) ? [self::class, $method] : null;
+        }
+
+        return $callbacks;
+    }
+
+    private static function render_missing_callback_notice(string $requestedSlug, string $resolvedSlug): void
+    {
+        self::render_with_layout(self::DEFAULT_PAGE_SLUG, static function () use ($requestedSlug, $resolvedSlug): void {
+            $message = 'Die angeforderte Admin-Seite ist derzeit nicht verfuegbar. Bitte pruefen Sie die Plugin-Konfiguration.';
+            $logContext = sprintf(
+                'missing admin callback plugin=%s requested=%s resolved=%s default=%s',
+                self::MENU_SLUG,
+                $requestedSlug,
+                $resolvedSlug,
+                self::DEFAULT_PAGE_SLUG
+            );
+
+            if (function_exists('cms_plugin_admin_emit_notice')) {
+                cms_plugin_admin_emit_notice($message, 'error', $logContext);
+                return;
+            }
+
+            error_log('[cms-plugin-admin] ' . $logContext . ' :: ' . $message);
+            echo '<div class="alert alert-error" role="alert">' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</div>';
+        });
+    }
+
+    private static function sync_legacy_section_to_page(): void
+    {
+        $legacySection = self::normalize_slug((string) ($_GET['section'] ?? ''));
+        if ($legacySection !== '') {
+            $_GET['page'] = self::PAGE_SLUG_FOR_SECTION[$legacySection] ?? self::DEFAULT_PAGE_SLUG;
+        }
+    }
+
+    private static function ensure_shared_contract_loaded(): void
+    {
+        if (function_exists('cms_plugin_admin_dispatch_page') && function_exists('cms_plugin_admin_layout_start')) {
+            return;
+        }
+
+        $sharedContract = dirname(CMS_CONTACT_PLUGIN_DIR) . '/shared/admin/plugin-admin-contract.php';
+        if (is_file($sharedContract)) {
+            require_once $sharedContract;
+        }
+    }
+
+    private static function normalize_slug(string $slug): string
+    {
+        if (function_exists('cms_plugin_admin_normalize_slug')) {
+            return cms_plugin_admin_normalize_slug($slug);
+        }
+
+        $slug = strtolower(trim($slug));
+        $slug = (string) preg_replace('/[^a-z0-9_-]+/', '-', $slug);
+        return trim($slug, '-');
     }
 
     /**
@@ -162,7 +294,17 @@ final class CMS_Contact_Admin_Pages
      */
     protected static function generate_nonce(string $action): string
     {
-        return \CMS\Security::instance()->generateToken($action);
+        if (!class_exists('CMS\\Security')) {
+            self::log_admin_error('missing security class while generating nonce', ['action' => $action]);
+            return '';
+        }
+
+        try {
+            return (string) \CMS\Security::instance()->generateToken($action);
+        } catch (\Throwable $e) {
+            self::log_admin_error('failed to generate nonce', ['action' => $action, 'error' => $e->getMessage()]);
+            return '';
+        }
     }
 
     /**
@@ -170,7 +312,22 @@ final class CMS_Contact_Admin_Pages
      */
     protected static function verify_nonce(string $action): bool
     {
-        return \CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', $action);
+        if (!class_exists('CMS\\Security')) {
+            self::log_admin_error('missing security class while verifying nonce', ['action' => $action]);
+            return false;
+        }
+
+        $token = is_scalar($_POST['csrf_token'] ?? null) ? (string) ($_POST['csrf_token'] ?? '') : '';
+        if ($token === '') {
+            return false;
+        }
+
+        try {
+            return (bool) \CMS\Security::instance()->verifyToken($token, $action);
+        } catch (\Throwable $e) {
+            self::log_admin_error('failed to verify nonce', ['action' => $action, 'error' => $e->getMessage()]);
+            return false;
+        }
     }
 
     /**
@@ -194,6 +351,7 @@ final class CMS_Contact_Admin_Pages
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             return $row ? (string) $row['setting_value'] : $default;
         } catch (\Throwable $e) {
+            self::log_admin_error('failed to fetch contact setting', ['key' => $key, 'error' => $e->getMessage()]);
             return $default;
         }
     }
@@ -203,18 +361,39 @@ final class CMS_Contact_Admin_Pages
      */
     protected static function save_setting(string $key, string $value): void
     {
-        $db = \CMS\Database::instance();
-        $p  = $db->getPrefix();
+        try {
+            $db = \CMS\Database::instance();
+            $p  = $db->getPrefix();
 
-        $exists = $db->prepare("SELECT id FROM {$p}contact_settings WHERE setting_key = ?");
-        $exists->execute([$key]);
+            $exists = $db->prepare("SELECT id FROM {$p}contact_settings WHERE setting_key = ?");
+            $exists->execute([$key]);
 
-        if ($exists->fetch()) {
-            $db->prepare("UPDATE {$p}contact_settings SET setting_value = ? WHERE setting_key = ?")
-               ->execute([$value, $key]);
-        } else {
-            $db->prepare("INSERT INTO {$p}contact_settings (setting_key, setting_value) VALUES (?, ?)")
-               ->execute([$key, $value]);
+            if ($exists->fetch()) {
+                $db->prepare("UPDATE {$p}contact_settings SET setting_value = ? WHERE setting_key = ?")
+                   ->execute([$value, $key]);
+            } else {
+                $db->prepare("INSERT INTO {$p}contact_settings (setting_key, setting_value) VALUES (?, ?)")
+                   ->execute([$key, $value]);
+            }
+        } catch (\Throwable $e) {
+            self::log_admin_error('failed to save contact setting', ['key' => $key, 'error' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * @param array<string, scalar|null> $context
+     */
+    protected static function log_admin_error(string $message, array $context = []): void
+    {
+        $contextParts = [];
+        foreach ($context as $key => $value) {
+            if ($value === null) {
+                continue;
+            }
+            $contextParts[] = $key . '=' . (string) $value;
+        }
+
+        $contextText = $contextParts !== [] ? ' [' . implode(' ', $contextParts) . ']' : '';
+        error_log('[cms-contact][admin] ' . $message . $contextText);
     }
 }

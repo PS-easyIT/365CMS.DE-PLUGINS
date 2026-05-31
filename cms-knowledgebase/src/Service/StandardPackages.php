@@ -62,17 +62,10 @@ final class StandardPackages
      */
     public function getCsvFilenameWarnings(): array
     {
-        $directory = CMS_KNOWLEDGEBASE_PLUGIN_DIR . 'csv_kb';
-        if (!is_dir($directory)) {
+        $files = $this->listCsvFiles('csv');
+        if ($files === []) {
             return [];
         }
-
-        $files = glob($directory . DIRECTORY_SEPARATOR . '*.csv');
-        if (!is_array($files) || $files === []) {
-            return [];
-        }
-
-        natcasesort($files);
         $warnings = [];
 
         foreach ($files as $filePath) {
@@ -207,17 +200,10 @@ final class StandardPackages
      */
     private function discoverCsvPackages(): array
     {
-        $directory = CMS_KNOWLEDGEBASE_PLUGIN_DIR . 'csv_kb';
-        if (!is_dir($directory)) {
+        $files = $this->listCsvFiles('_Glossar.csv');
+        if ($files === []) {
             return [];
         }
-
-        $files = glob($directory . DIRECTORY_SEPARATOR . '*_Glossar.csv');
-        if (!is_array($files) || $files === []) {
-            return [];
-        }
-
-        natcasesort($files);
         $packages = [];
 
         foreach ($files as $filePath) {
@@ -304,8 +290,9 @@ final class StandardPackages
      */
     private function loadCsvEntries(string $fileName): array
     {
-        $path = CMS_KNOWLEDGEBASE_PLUGIN_DIR . 'csv_kb/' . $fileName;
+        $path = $this->resolveCsvPath($fileName);
         if (!is_file($path)) {
+            $this->logger->warning('CSV-Datei für Standardpaket konnte nicht sicher aufgelöst werden.', ['file_name' => $fileName]);
             return [];
         }
 
@@ -357,6 +344,91 @@ final class StandardPackages
         fclose($handle);
 
         return $entries;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function listCsvFiles(string $suffix = 'csv'): array
+    {
+        $directory = $this->csvDirectory();
+        if ($directory === '') {
+            return [];
+        }
+
+        $files = [];
+        $iterator = new \DirectoryIterator($directory);
+        foreach ($iterator as $item) {
+            if (!$item->isFile()) {
+                continue;
+            }
+
+            $fileName = $item->getFilename();
+            if (!$this->isAllowedCsvFileName($fileName)) {
+                continue;
+            }
+
+            if ($suffix !== '' && !str_ends_with(mb_strtolower($fileName, 'UTF-8'), mb_strtolower($suffix, 'UTF-8'))) {
+                continue;
+            }
+
+            $path = $this->resolveCsvPath($fileName);
+            if ($path === '') {
+                continue;
+            }
+
+            $files[] = $path;
+        }
+
+        natcasesort($files);
+
+        return array_values($files);
+    }
+
+    private function csvDirectory(): string
+    {
+        $baseDirectory = CMS_KNOWLEDGEBASE_PLUGIN_DIR . 'csv_kb';
+        if (!is_dir($baseDirectory)) {
+            return '';
+        }
+
+        $realDirectory = realpath($baseDirectory);
+
+        return is_string($realDirectory) ? $realDirectory : '';
+    }
+
+    private function resolveCsvPath(string $fileName): string
+    {
+        $fileName = trim($fileName);
+        if (!$this->isAllowedCsvFileName($fileName)) {
+            return '';
+        }
+
+        $directory = $this->csvDirectory();
+        if ($directory === '') {
+            return '';
+        }
+
+        $candidatePath = $directory . DIRECTORY_SEPARATOR . $fileName;
+        if (!is_file($candidatePath)) {
+            return '';
+        }
+
+        $realPath = realpath($candidatePath);
+        if (!is_string($realPath) || $realPath === '') {
+            return '';
+        }
+
+        if (!str_starts_with($realPath, $directory . DIRECTORY_SEPARATOR)) {
+            return '';
+        }
+
+        return $realPath;
+    }
+
+    private function isAllowedCsvFileName(string $fileName): bool
+    {
+        return preg_match('/^[A-Za-z0-9._-]+\.csv$/', $fileName) === 1;
     }
 
     private function detectDelimiter(string $path): string

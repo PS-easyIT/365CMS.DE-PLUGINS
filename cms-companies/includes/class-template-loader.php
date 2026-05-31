@@ -59,17 +59,32 @@ final class CMS_Companies_Template_Loader
 
     private function locate_template(string $template_name): ?string
     {
-        $template_name = str_replace('.php', '', $template_name) . '.php';
+        $template_name = trim(str_replace('.php', '', $template_name));
+        if ($template_name === '' || preg_match('/[^a-z0-9_-]/i', $template_name) === 1) {
+            return null;
+        }
+        $template_name .= '.php';
+
+        $is_safe_template = static function (string $candidate, string $base): bool {
+            $baseReal = realpath($base);
+            $candidateReal = realpath($candidate);
+            if ($baseReal === false || $candidateReal === false) {
+                return false;
+            }
+
+            $baseReal = rtrim($baseReal, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+            return str_starts_with($candidateReal, $baseReal);
+        };
 
         // Theme-Override: Pfad wird zur Laufzeit vom ThemeManager ermittelt
         $theme_dir = $this->getThemeTemplateDir();
         $theme_template = $theme_dir !== '' ? $theme_dir . $template_name : '';
-        if ($theme_template !== '' && file_exists($theme_template)) {
+        if ($theme_template !== '' && file_exists($theme_template) && $is_safe_template($theme_template, $theme_dir)) {
             return $theme_template;
         }
 
         $plugin_template = $this->plugin_template_dir . $template_name;
-        if (file_exists($plugin_template)) {
+        if (file_exists($plugin_template) && $is_safe_template($plugin_template, $this->plugin_template_dir)) {
             return $plugin_template;
         }
 

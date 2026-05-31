@@ -78,105 +78,108 @@ $renderField = static function (array $field) use ($esc, $fieldValue): void {
 <div class="alert alert-error">❌ <?php echo $esc($error); ?></div>
 <?php endif; ?>
 
-<div class="m365calculator-admin-tabs">
-    <?php foreach ($tabs as $tabKey => $tabLabel): ?>
-    <a href="<?php echo $esc($moduleAdminUrl . '?tab=' . rawurlencode((string) $tabKey)); ?>" class="m365calculator-admin-tab<?php echo $activeTab === $tabKey ? ' active' : ''; ?>">
-        <?php echo $esc($tabLabel); ?>
-    </a>
-    <?php endforeach; ?>
-</div>
+<div class="m365calculator-admin-subnav-layout">
+    <aside class="m365calculator-admin-submenu" aria-label="Modulbereiche">
+        <h3>Bereiche</h3>
+        <?php foreach ($tabs as $tabKey => $tabLabel): ?>
+        <a href="<?php echo $esc($moduleAdminUrl . '?tab=' . rawurlencode((string) $tabKey)); ?>" class="m365calculator-admin-submenu-link<?php echo $activeTab === $tabKey ? ' active' : ''; ?>">
+            <?php echo $esc($tabLabel); ?>
+        </a>
+        <?php endforeach; ?>
+    </aside>
 
-<div class="admin-card m365calculator-admin-tab-card">
-    <?php if ($activeTab === 'overview'): ?>
-        <h3>📌 Modulübersicht</h3>
-        <div class="m365calculator-admin-summary-grid">
-            <div>
-                <strong>Kategorie</strong>
-                <span><?php echo $esc($tool['category'] ?? ''); ?></span>
-            </div>
-            <div>
-                <strong>Status</strong>
-                <span><?php echo $esc($moduleSettings['status_override'] ?? ($tool['status'] ?? 'live')); ?></span>
-            </div>
-            <div>
-                <strong>Sortierung</strong>
-                <span><?php echo (int) ($moduleSettings['priority_override'] ?? ($tool['priority'] ?? 100)); ?></span>
-            </div>
-            <div>
-                <strong>Route</strong>
-                <span><code><?php echo $esc($tool['url'] ?? ''); ?></code></span>
-            </div>
-        </div>
-        <p class="m365calculator-admin-muted">Dieses Modul hat einen eigenen Admin-Unterpunkt. Anzeige, Preisannahmen, Workflow und Datenstand werden in den Tabs dieser Seite gepflegt.</p>
-        <div class="m365calculator-admin-next-actions">
-            <a class="btn btn-secondary" href="<?php echo $esc($moduleAdminUrl . '?tab=display'); ?>">🖥️ Anzeige bearbeiten</a>
-            <a class="btn btn-secondary" href="<?php echo $esc($moduleAdminUrl . '?tab=design'); ?>">🎨 Public-Design</a>
-            <a class="btn btn-secondary" href="<?php echo $esc($moduleAdminUrl . '?tab=pricing'); ?>">💶 Preise anpassen</a>
-            <a class="btn btn-secondary" href="<?php echo $esc($moduleAdminUrl . '?tab=workflow'); ?>">🔁 Workflow pflegen</a>
-        </div>
-    <?php elseif ($activeTab === 'display'): ?>
-        <h3>🖥️ Anzeige & Modulkarte</h3>
-        <form method="POST" class="admin-form">
-            <input type="hidden" name="action" value="save_module_display">
-            <input type="hidden" name="csrf_token" value="<?php echo $esc($csrfToken); ?>">
-
-            <div class="form-group">
-                <label class="checkbox-label">
-                    <input type="checkbox" name="is_enabled" value="1"<?php echo (int) ($moduleSettings['is_enabled'] ?? 1) === 1 ? ' checked' : ''; ?>>
-                    Modul öffentlich anzeigen
-                </label>
-                <small class="form-text">Steuert die Sichtbarkeit auf der Hub-Landingpage und in der Registry.</small>
-            </div>
-
-            <div class="m365calculator-admin-form-grid">
-                <div class="form-group">
-                    <label class="form-label" for="status_override">Status</label>
-                    <select id="status_override" name="status_override" class="form-control m365calculator-admin-control">
-                        <?php foreach (['live' => 'Live', 'beta' => 'Beta', 'soon' => 'Bald'] as $status => $label): ?>
-                        <option value="<?php echo $esc($status); ?>"<?php echo (string) ($moduleSettings['status_override'] ?? ($tool['status'] ?? 'live')) === $status ? ' selected' : ''; ?>><?php echo $esc($label); ?></option>
-                        <?php endforeach; ?>
-                    </select>
+    <div class="admin-card m365calculator-admin-tab-card">
+        <?php if ($activeTab === 'overview'): ?>
+            <h3>📌 Modulübersicht</h3>
+            <div class="m365calculator-admin-summary-grid">
+                <div>
+                    <strong>Kategorie</strong>
+                    <span><?php echo $esc($tool['category'] ?? ''); ?></span>
                 </div>
-                <div class="form-group">
-                    <label class="form-label" for="priority_override">Sortierung</label>
-                    <input type="number" id="priority_override" name="priority_override" class="form-control m365calculator-admin-control" value="<?php echo (int) ($moduleSettings['priority_override'] ?? ($tool['priority'] ?? 100)); ?>" min="0" max="1000">
+                <div>
+                    <strong>Status</strong>
+                    <span><?php echo $esc($moduleSettings['status_override'] ?? ($tool['status'] ?? 'live')); ?></span>
+                </div>
+                <div>
+                    <strong>Sortierung</strong>
+                    <span><?php echo (int) ($moduleSettings['priority_override'] ?? ($tool['priority'] ?? 100)); ?></span>
+                </div>
+                <div>
+                    <strong>Route</strong>
+                    <span><code><?php echo $esc($tool['url'] ?? ''); ?></code></span>
                 </div>
             </div>
-
-            <div class="form-group">
-                <label class="form-label" for="title_override">Öffentlicher Titel</label>
-                <input type="text" id="title_override" name="title_override" class="form-control m365calculator-admin-control" value="<?php echo $esc($moduleSettings['title_override'] ?? ''); ?>" maxlength="90" placeholder="<?php echo $esc($tool['title'] ?? ''); ?>">
+            <p class="m365calculator-admin-muted">Dieses Modul hat einen eigenen Admin-Unterpunkt. Anzeige, Preisannahmen, Workflow und Datenstand werden in den Bereichen dieser Seite gepflegt.</p>
+            <div class="m365calculator-admin-next-actions">
+                <a class="btn btn-secondary" href="<?php echo $esc($moduleAdminUrl . '?tab=display'); ?>">🖥️ Anzeige bearbeiten</a>
+                <a class="btn btn-secondary" href="<?php echo $esc($moduleAdminUrl . '?tab=design'); ?>">🎨 Public-Design</a>
+                <a class="btn btn-secondary" href="<?php echo $esc($moduleAdminUrl . '?tab=pricing'); ?>">💶 Preise anpassen</a>
+                <a class="btn btn-secondary" href="<?php echo $esc($moduleAdminUrl . '?tab=workflow'); ?>">🔁 Workflow pflegen</a>
             </div>
+        <?php elseif ($activeTab === 'display'): ?>
+            <h3>🖥️ Anzeige & Modulkarte</h3>
+            <form method="POST" class="admin-form">
+                <input type="hidden" name="action" value="save_module_display">
+                <input type="hidden" name="csrf_token" value="<?php echo $esc($csrfToken); ?>">
 
-            <div class="form-group">
-                <label class="form-label" for="description_override">Öffentliche Beschreibung</label>
-                <textarea id="description_override" name="description_override" class="form-control m365calculator-admin-control" rows="3" maxlength="140" placeholder="<?php echo $esc($tool['description'] ?? ''); ?>"><?php echo $esc($moduleSettings['description_override'] ?? ''); ?></textarea>
-            </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="is_enabled" value="1"<?php echo (int) ($moduleSettings['is_enabled'] ?? 1) === 1 ? ' checked' : ''; ?>>
+                        Modul öffentlich anzeigen
+                    </label>
+                    <small class="form-text">Steuert die Sichtbarkeit auf der Hub-Landingpage und in der Registry.</small>
+                </div>
 
-            <button type="submit" class="btn btn-primary">💾 Anzeige speichern</button>
-        </form>
-    <?php else: ?>
-        <?php
-        $tabTitles = [
-            'design' => '🎨 Public-Design dieses Moduls',
-            'pricing' => '💶 Preise & Annahmen',
-            'workflow' => '🔁 Workflow-Einstellungen',
-            'data' => '🧾 Datenstand & Regeln',
-        ];
-        ?>
-        <h3><?php echo $esc($tabTitles[$activeTab] ?? '⚙️ Einstellungen'); ?></h3>
-        <form method="POST" class="admin-form">
-            <input type="hidden" name="action" value="save_module_options">
-            <input type="hidden" name="settings_group" value="<?php echo $esc($activeTab); ?>">
-            <input type="hidden" name="csrf_token" value="<?php echo $esc($csrfToken); ?>">
+                <div class="m365calculator-admin-form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="status_override">Status</label>
+                        <select id="status_override" name="status_override" class="form-control m365calculator-admin-control">
+                            <?php foreach (['live' => 'Live', 'beta' => 'Beta', 'soon' => 'Bald'] as $status => $label): ?>
+                            <option value="<?php echo $esc($status); ?>"<?php echo (string) ($moduleSettings['status_override'] ?? ($tool['status'] ?? 'live')) === $status ? ' selected' : ''; ?>><?php echo $esc($label); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="priority_override">Sortierung</label>
+                        <input type="number" id="priority_override" name="priority_override" class="form-control m365calculator-admin-control" value="<?php echo (int) ($moduleSettings['priority_override'] ?? ($tool['priority'] ?? 100)); ?>" min="0" max="1000">
+                    </div>
+                </div>
 
-            <div class="m365calculator-admin-form-grid">
-                <?php foreach ($fields as $field): ?>
-                    <?php $renderField($field); ?>
-                <?php endforeach; ?>
-            </div>
+                <div class="form-group">
+                    <label class="form-label" for="title_override">Öffentlicher Titel</label>
+                    <input type="text" id="title_override" name="title_override" class="form-control m365calculator-admin-control" value="<?php echo $esc($moduleSettings['title_override'] ?? ''); ?>" maxlength="90" placeholder="<?php echo $esc($tool['title'] ?? ''); ?>">
+                </div>
 
-            <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
-        </form>
-    <?php endif; ?>
+                <div class="form-group">
+                    <label class="form-label" for="description_override">Öffentliche Beschreibung</label>
+                    <textarea id="description_override" name="description_override" class="form-control m365calculator-admin-control" rows="3" maxlength="140" placeholder="<?php echo $esc($tool['description'] ?? ''); ?>"><?php echo $esc($moduleSettings['description_override'] ?? ''); ?></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">💾 Anzeige speichern</button>
+            </form>
+        <?php else: ?>
+            <?php
+            $tabTitles = [
+                'design' => '🎨 Public-Design dieses Moduls',
+                'pricing' => '💶 Preise & Annahmen',
+                'workflow' => '🔁 Workflow-Einstellungen',
+                'data' => '🧾 Datenstand & Regeln',
+            ];
+            ?>
+            <h3><?php echo $esc($tabTitles[$activeTab] ?? '⚙️ Einstellungen'); ?></h3>
+            <form method="POST" class="admin-form">
+                <input type="hidden" name="action" value="save_module_options">
+                <input type="hidden" name="settings_group" value="<?php echo $esc($activeTab); ?>">
+                <input type="hidden" name="csrf_token" value="<?php echo $esc($csrfToken); ?>">
+
+                <div class="m365calculator-admin-form-grid">
+                    <?php foreach ($fields as $field): ?>
+                        <?php $renderField($field); ?>
+                    <?php endforeach; ?>
+                </div>
+
+                <button type="submit" class="btn btn-primary">💾 Einstellungen speichern</button>
+            </form>
+        <?php endif; ?>
+    </div>
 </div>

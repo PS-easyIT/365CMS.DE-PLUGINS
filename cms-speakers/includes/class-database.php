@@ -16,6 +16,10 @@ final class CMS_Speakers_Database
 {
     private static ?self $instance = null;
     private const MAX_LIST_LIMIT = 200;
+    /** @var array<string, bool> */
+    private array $tableExistsCache = [];
+    /** @var array<string, string>|null */
+    private ?array $settingsCache = null;
 
     public static function instance(): self
     {
@@ -246,14 +250,20 @@ final class CMS_Speakers_Database
 
     private function table_exists(string $table): bool
     {
+        if (array_key_exists($table, $this->tableExistsCache)) {
+            return $this->tableExistsCache[$table];
+        }
+
         try {
             $stmt = CMS\Database::instance()->prepare(
                 'SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?'
             );
             $stmt->execute([$table]);
-
-            return (int) $stmt->fetchColumn() > 0;
+            $exists = (int) $stmt->fetchColumn() > 0;
+            $this->tableExistsCache[$table] = $exists;
+            return $exists;
         } catch (\Throwable) {
+            $this->tableExistsCache[$table] = false;
             return false;
         }
     }
@@ -408,8 +418,8 @@ final class CMS_Speakers_Database
             if ($args['format'])              { $where[] = 's.formats LIKE ?';       $params[] = '%' . $args['format'] . '%'; }
             if ($args['search']) {
                 $like = '%' . $args['search'] . '%';
-                $where[] = '(s.first_name LIKE ? OR s.last_name LIKE ? OR s.position LIKE ? OR s.company LIKE ? OR s.location_city LIKE ?)';
-                $params  = array_merge($params, [$like, $like, $like, $like, $like]);
+                $where[] = '(s.first_name LIKE ? OR s.last_name LIKE ? OR s.position LIKE ? OR s.company LIKE ? OR s.location_city LIKE ? OR s.target_audience LIKE ?)';
+                $params  = array_merge($params, [$like, $like, $like, $like, $like, $like]);
             }
             if (!empty($args['user_id'])) {
                 $where[] = 's.user_id = ?'; $params[] = (int) $args['user_id'];
@@ -548,11 +558,13 @@ final class CMS_Speakers_Database
         try {
             $db->prepare("DELETE FROM {$p}speaker_topics WHERE speaker_id = ?")->execute([$speaker_id]);
             foreach ($topics as $i => $topic) {
-                $name = trim($topic['name'] ?? $topic);
+                $name = $this->clean_text((string) ($topic['name'] ?? $topic), 200);
                 if ($name === '') { continue; }
-                $desc = $topic['desc'] ?? null;
+                $descRaw = is_array($topic) ? ($topic['desc'] ?? null) : null;
+                $desc = $descRaw !== null ? $this->clean_textarea((string) $descRaw, 2000) : null;
+                $sortOrder = is_numeric($i) ? (int) $i : 0;
                 $db->prepare("INSERT INTO {$p}speaker_topics (speaker_id, topic_name, topic_desc, sort_order) VALUES (?,?,?,?)")
-                   ->execute([$speaker_id, $name, $desc, $i]);
+                   ->execute([$speaker_id, $name, $desc, $sortOrder]);
             }
         } catch (\Throwable $e) { error_log('CMS_Speakers save_topics: ' . $e->getMessage()); }
     }
@@ -647,6 +659,10 @@ final class CMS_Speakers_Database
 
     public function get_settings(): array
     {
+        if ($this->settingsCache !== null) {
+            return $this->settingsCache;
+        }
+
         $settings = $this->default_settings();
 
         foreach ($this->get_legacy_settings() as $key => $value) {
@@ -666,6 +682,7 @@ final class CMS_Speakers_Database
             }
         }
 
+        $this->settingsCache = $settings;
         return $settings;
     }
 
@@ -683,6 +700,7 @@ final class CMS_Speakers_Database
         if ($settingsService !== null) {
             try {
                 if ($settingsService->setMany('cms-speakers', $normalized, [], 0)) {
+                    $this->settingsCache = null;
                     return;
                 }
             } catch (\Throwable $e) {
@@ -699,6 +717,7 @@ final class CMS_Speakers_Database
                      VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?"
                 )->execute([$key, $value, $value]);
             }
+            $this->settingsCache = null;
         } catch (\Throwable $e) { error_log('CMS_Speakers save_settings: ' . $e->getMessage()); }
     }
 

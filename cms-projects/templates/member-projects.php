@@ -101,7 +101,7 @@ $renderWidgetBlock = static function (array $widget): void {
     <section class="cp-public-hero">
         <div class="cp-hero-copy">
             <span class="cp-kicker">Member Projects</span>
-            <h1><?php echo $currentProject !== null ? htmlspecialchars((string) (($currentProject['member_headline'] ?: $currentProject['name'])), ENT_QUOTES, 'UTF-8') : 'Projekte'; ?></h1>
+            <h1><?php echo $currentProject !== null ? htmlspecialchars((string) ((($currentProject['member_headline'] ?? '') !== '' ? ($currentProject['member_headline'] ?? '') : ($currentProject['name'] ?? ''))), ENT_QUOTES, 'UTF-8') : 'Projekte'; ?></h1>
             <p><?php echo $currentProject !== null ? htmlspecialchars((string) ($currentProject['summary'] ?? ''), ENT_QUOTES, 'UTF-8') : 'Projektboards und Widgets im Member-Bereich.'; ?></p>
         </div>
         <div class="cp-hero-meta">

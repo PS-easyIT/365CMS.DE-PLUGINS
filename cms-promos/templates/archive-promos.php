@@ -1,19 +1,46 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit;
 
-$sanitizePromoHtml = static function (string $html): string {
+$sanitizePromoUrl = static function (string $url): string {
+    $url = trim($url);
+    if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]]/', $url) === 1 || !filter_var($url, FILTER_VALIDATE_URL)) {
+        return '';
+    }
+
+    $parts = parse_url($url);
+    if (!is_array($parts)) {
+        return '';
+    }
+
+    $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+    if (!in_array($scheme, ['http', 'https'], true)) {
+        return '';
+    }
+
+    if (($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
+        return '';
+    }
+
+    $host = strtolower(trim((string) ($parts['host'] ?? ''), '[]'));
+    if ($host === '' || in_array($host, ['localhost', 'localhost.localdomain'], true) || str_ends_with($host, '.local')) {
+        return '';
+    }
+
+    $ip = filter_var($host, FILTER_VALIDATE_IP);
+    if ($ip !== false && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+        return '';
+    }
+
+    return $url;
+};
+
+$sanitizePromoHtml = static function (string $html) use ($sanitizePromoUrl): string {
     $html = trim(strip_tags($html, '<p><a><strong><em><ul><ol><li><br><h2><h3><h4><span>'));
     $html = preg_replace('/\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $html) ?? '';
     $html = preg_replace('/\s+style\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $html) ?? '';
-    return preg_replace_callback('/\s+href\s*=\s*("([^"]*)"|\'([^\']*)\'|([^\s>]+))/i', static function (array $matches): string {
+    return preg_replace_callback('/\s+href\s*=\s*("([^"]*)"|\'([^\']*)\'|([^\s>]+))/i', static function (array $matches) use ($sanitizePromoUrl): string {
         $href = html_entity_decode((string) ($matches[2] ?? $matches[3] ?? $matches[4] ?? ''), ENT_QUOTES, 'UTF-8');
-        if ($href === '' || strlen($href) > 2048 || preg_match('/[[:cntrl:]]/', $href) === 1 || !filter_var($href, FILTER_VALIDATE_URL)) {
-            return '';
-        }
-        $scheme = strtolower((string) (parse_url($href, PHP_URL_SCHEME) ?? ''));
-        if (!in_array($scheme, ['http', 'https'], true)) {
-            return '';
-        }
-        return ' href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '"';
+        $safeHref = $sanitizePromoUrl($href);
+        return $safeHref !== '' ? ' href="' . htmlspecialchars($safeHref, ENT_QUOTES, 'UTF-8') . '"' : '';
     }, $html) ?? '';
 };
 ?>

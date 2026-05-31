@@ -20,13 +20,14 @@ $slug                   = $slug === 'feed' ? 'feeds' : $slug;
 $archivePath            = $archivePath ?? '/' . $slug;
 $publicCategoryBasePath = $publicCategoryBasePath ?? '/feed';
 $newTab                 = !empty($settings['open_in_new_tab']);
+$siteName               = defined('SITE_NAME') ? (string) SITE_NAME : '365CMS';
 ?>
 <!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars((string) $archiveTitle, ENT_QUOTES, 'UTF-8'); ?> – <?php echo htmlspecialchars((string) SITE_NAME, ENT_QUOTES, 'UTF-8'); ?></title>
+    <title><?php echo htmlspecialchars((string) $archiveTitle, ENT_QUOTES, 'UTF-8'); ?> – <?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?></title>
     <?php \CMS\Hooks::doAction('head'); ?>
 </head>
 <body class="fd-body">

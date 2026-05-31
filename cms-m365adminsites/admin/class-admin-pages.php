@@ -13,6 +13,11 @@ if (!defined('ABSPATH')) {
 
 final class CMS_M365ADMINSITES_Admin_Pages
 {
+    private const PAGE_DASHBOARD = 'm365adminsites-dashboard';
+    private const PAGE_CONTENT = 'm365adminsites-content';
+    private const PAGE_SETTINGS = 'm365adminsites-settings';
+    private const PAGE_HELP = 'm365adminsites-help';
+
     private static ?self $instance = null;
 
     public static function instance(): self
@@ -24,27 +29,77 @@ final class CMS_M365ADMINSITES_Admin_Pages
     {
     }
 
-    public static function render_dashboard(): void
-    {
-        self::render_with_layout('M365 Adminsites', 'm365adminsites-dashboard', static function (): void {
-            self::instance()->render_page();
-        });
-    }
-
-    private static function render_with_layout(string $title, string $slug, callable $renderer): void
+    public static function render_dispatcher(): void
     {
         self::check_access();
         self::load_admin_menu();
 
+        $defaultSlug = self::PAGE_DASHBOARD;
+        $callbackMap = [
+            self::PAGE_DASHBOARD => [self::class, 'render_entries_screen'],
+            self::PAGE_CONTENT => [self::class, 'render_content_screen'],
+            self::PAGE_SETTINGS => [self::class, 'render_settings_screen'],
+            self::PAGE_HELP => [self::class, 'render_help_screen'],
+        ];
+
+        if (function_exists('cms_plugin_admin_dispatch_page')) {
+            cms_plugin_admin_dispatch_page($callbackMap, $defaultSlug, self::PAGE_DASHBOARD);
+            return;
+        }
+
+        self::fallback_dispatch($callbackMap, $defaultSlug);
+    }
+
+    public static function render_dashboard(): void
+    {
+        self::render_dispatcher();
+    }
+
+    /**
+     * @param array<string,callable|null> $callbackMap
+     */
+    private static function fallback_dispatch(array $callbackMap, string $defaultSlug): void
+    {
+        $requested = preg_replace('/[^a-z0-9_-]+/i', '', (string) ($_GET['page'] ?? $defaultSlug)) ?: $defaultSlug;
+        $resolved = array_key_exists($requested, $callbackMap) ? $requested : $defaultSlug;
+        $callback = $callbackMap[$resolved] ?? null;
+
+        if (!is_callable($callback)) {
+            self::render_with_layout('M365 Adminsites', self::PAGE_DASHBOARD, static function (): void {
+                echo '<div class="alert alert-error">Die angeforderte Admin-Seite ist derzeit nicht verfügbar.</div>';
+            });
+            error_log(
+                sprintf(
+                    'CMS M365 Adminsites fallback dispatch failed requested=%s resolved=%s',
+                    $requested,
+                    $resolved
+                )
+            );
+            return;
+        }
+
+        call_user_func($callback);
+    }
+
+    private static function render_with_layout(string $title, string $slug, callable $renderer): void
+    {
+        self::enqueue_admin_assets();
+
+        if (function_exists('cms_plugin_admin_layout_start')) {
+            cms_plugin_admin_layout_start($title, $slug);
+            echo '<div class="admin-content mas-admin-shell">';
+            $renderer();
+            echo '</div>';
+            cms_plugin_admin_layout_end();
+            return;
+        }
+
         if (function_exists('renderAdminLayoutStart')) {
             renderAdminLayoutStart($title, $slug);
         }
-
-        self::enqueue_admin_assets();
         echo '<div class="admin-content mas-admin-shell">';
         $renderer();
         echo '</div>';
-
         if (function_exists('renderAdminLayoutEnd')) {
             renderAdminLayoutEnd();
         }
@@ -52,7 +107,8 @@ final class CMS_M365ADMINSITES_Admin_Pages
 
     private static function check_access(): void
     {
-        if (!class_exists('CMS\\Auth') || !\CMS\Auth::instance()->isAdmin()) {
+        $isAdmin = class_exists('CMS\\Auth') && \CMS\Auth::instance()->isAdmin();
+        if (!$isAdmin || !self::has_manage_capability()) {
             header('Location: ' . (defined('SITE_URL') ? SITE_URL : '/'));
             exit;
         }
@@ -61,9 +117,23 @@ final class CMS_M365ADMINSITES_Admin_Pages
     private static function load_admin_menu(): void
     {
         $menuFile = ABSPATH . 'admin/partials/admin-menu.php';
-        if (file_exists($menuFile) && !function_exists('renderAdminLayoutStart')) {
-            require_once $menuFile;
+        if (!file_exists($menuFile) || function_exists('renderAdminLayoutStart')) {
+            return;
         }
+
+        $resolved = realpath($menuFile);
+        $allowedBase = realpath(ABSPATH . 'admin/partials');
+        if (!is_string($resolved) || !is_string($allowedBase)) {
+            return;
+        }
+
+        $allowedPrefix = rtrim($allowedBase, '\\/') . DIRECTORY_SEPARATOR;
+        if (!str_starts_with($resolved, $allowedPrefix)) {
+            error_log('CMS M365 Adminsites skipped admin menu include: ' . $resolved);
+            return;
+        }
+
+        require_once $resolved;
     }
 
     private static function enqueue_admin_assets(): void
@@ -76,25 +146,45 @@ final class CMS_M365ADMINSITES_Admin_Pages
         }
     }
 
-    private function render_page(): void
+    public static function render_entries_screen(): void
+    {
+        self::render_with_layout('M365 Adminsites', self::PAGE_DASHBOARD, static function (): void {
+            self::instance()->render_entries_page();
+        });
+    }
+
+    public static function render_content_screen(): void
+    {
+        self::render_with_layout('Inhalte & Texte', self::PAGE_CONTENT, static function (): void {
+            self::instance()->render_content_page();
+        });
+    }
+
+    public static function render_settings_screen(): void
+    {
+        self::render_with_layout('Anzeige & Design', self::PAGE_SETTINGS, static function (): void {
+            self::instance()->render_settings_page();
+        });
+    }
+
+    public static function render_help_screen(): void
+    {
+        self::render_with_layout('Hinweise', self::PAGE_HELP, static function (): void {
+            self::instance()->render_help_page();
+        });
+    }
+
+    private function render_entries_page(): void
     {
         CMS_M365ADMINSITES_Installer::maybe_install();
         $repo = CMS_M365ADMINSITES_Repository::instance();
-        $tabs = [
-            'entries' => '🧭 Portale',
-            'content' => '✍️ Inhalte & Texte',
-            'settings' => '🎨 Anzeige & Design',
-            'help' => 'ℹ️ Hinweise',
-        ];
-        $activeTab = self::active_tab($tabs);
         $notice = '';
         $error = '';
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST') {
             [$notice, $error] = $this->handle_post();
         }
 
-        $settings = CMS_M365ADMINSITES_Settings::all();
         $categories = $repo->categories(false);
         $editId = max(0, (int) ($_GET['edit'] ?? 0));
         $editItem = $editId > 0 ? $repo->find($editId) : null;
@@ -109,7 +199,7 @@ final class CMS_M365ADMINSITES_Admin_Pages
             </div>
             <div class="header-actions">
                 <a href="<?php echo self::esc_attr($publicUrl); ?>" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">👁️ Public öffnen</a>
-                <a href="?tab=entries" class="btn btn-primary">➕ Portal anlegen</a>
+                <a href="<?php echo self::esc_attr(self::admin_page_url(self::PAGE_DASHBOARD)); ?>" class="btn btn-primary">➕ Portal anlegen</a>
             </div>
         </div>
 
@@ -126,21 +216,7 @@ final class CMS_M365ADMINSITES_Admin_Pages
             <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-number"><?php echo (int) count(array_filter($items, static fn(array $item): bool => !empty($item['is_featured']))); ?></div><div class="stat-label">Widget-Pool</div></div>
         </div>
 
-        <div class="mas-tabs">
-            <?php foreach ($tabs as $key => $label): ?>
-            <a href="?tab=<?php echo self::esc_attr($key); ?>" class="mas-tab<?php echo $activeTab === $key ? ' active' : ''; ?>"><?php echo self::esc($label); ?></a>
-            <?php endforeach; ?>
-        </div>
-
-        <?php if ($activeTab === 'settings'): ?>
-            <?php $this->render_settings($settings); ?>
-        <?php elseif ($activeTab === 'content'): ?>
-            <?php $this->render_content($settings); ?>
-        <?php elseif ($activeTab === 'help'): ?>
-            <?php $this->render_help(); ?>
-        <?php else: ?>
-            <?php $this->render_entries($items, $categories, $editItem); ?>
-        <?php endif; ?>
+        <?php $this->render_entries($items, $categories, $editItem); ?>
         <?php
     }
 
@@ -149,7 +225,15 @@ final class CMS_M365ADMINSITES_Admin_Pages
      */
     private function handle_post(): array
     {
-        $action = (string) ($_POST['action'] ?? '');
+        if (!self::has_manage_capability()) {
+            return ['', 'Keine Berechtigung für diese Aktion.'];
+        }
+
+        $action = self::clean_action((string) ($_POST['action'] ?? ''));
+        if ($action === '') {
+            return ['', 'Ungültige Aktion.'];
+        }
+
         $tokenAction = $action === 'save_settings' ? 'm365adminsites_settings' : 'm365adminsites_entries';
         if (!self::verify_nonce($tokenAction)) {
             return ['', 'Sicherheitscheck fehlgeschlagen.'];
@@ -157,12 +241,21 @@ final class CMS_M365ADMINSITES_Admin_Pages
 
         try {
             if ($action === 'save_site') {
-                CMS_M365ADMINSITES_Repository::instance()->save($_POST);
+                $savedId = CMS_M365ADMINSITES_Repository::instance()->save($_POST);
+                if ($savedId <= 0) {
+                    return ['', 'Portal konnte nicht gespeichert werden.'];
+                }
+
                 return ['Portal gespeichert.', ''];
             }
 
             if ($action === 'delete_site') {
-                CMS_M365ADMINSITES_Repository::instance()->delete((int) ($_POST['id'] ?? 0));
+                $deleteId = max(0, (int) ($_POST['id'] ?? 0));
+                if ($deleteId <= 0) {
+                    return ['', 'Ungültige Portal-ID.'];
+                }
+
+                CMS_M365ADMINSITES_Repository::instance()->delete($deleteId);
                 return ['Portal gelöscht.', ''];
             }
 
@@ -171,7 +264,8 @@ final class CMS_M365ADMINSITES_Admin_Pages
                 return ['Einstellungen gespeichert.', ''];
             }
         } catch (\Throwable $e) {
-            return ['', 'Aktion konnte nicht ausgeführt werden: ' . $e->getMessage()];
+            error_log('CMS M365 Adminsites admin action failed (' . $action . '): ' . $e->getMessage());
+            return ['', 'Aktion konnte nicht ausgeführt werden. Bitte Logs prüfen.'];
         }
 
         return ['', 'Unbekannte Aktion.'];
@@ -246,7 +340,7 @@ final class CMS_M365ADMINSITES_Admin_Pages
                 </div>
                 <button type="submit" class="btn btn-primary">💾 Portal speichern</button>
                 <?php if ((int) ($item['id'] ?? 0) > 0): ?>
-                <a href="?tab=entries" class="btn btn-secondary">Neu anlegen</a>
+                <a href="<?php echo self::esc_attr(self::admin_page_url(self::PAGE_DASHBOARD)); ?>" class="btn btn-secondary">Neu anlegen</a>
                 <?php endif; ?>
             </form>
         </div>
@@ -261,13 +355,21 @@ final class CMS_M365ADMINSITES_Admin_Pages
                     <thead><tr><th>Titel</th><th>Kategorie</th><th>URL</th><th>Status</th><th>Widget</th><th>Aktionen</th></tr></thead>
                     <tbody>
                     <?php foreach ($items as $row): ?>
+                    <?php $externalUrl = self::safe_external_url((string) ($row['url'] ?? '')); ?>
+                    <?php $rowStatus = (string) ($row['status'] ?? '') === 'active' ? 'active' : 'inactive'; ?>
                     <tr>
-                        <td><a href="?tab=entries&amp;edit=<?php echo (int) $row['id']; ?>" class="mas-table-title"><?php echo self::esc((string) $row['title']); ?></a><br><small><?php echo self::esc((string) ($row['subtitle'] ?? '')); ?></small></td>
+                        <td><a href="<?php echo self::esc_attr(self::admin_page_url(self::PAGE_DASHBOARD, ['edit' => (string) ((int) $row['id'])])); ?>" class="mas-table-title"><?php echo self::esc((string) $row['title']); ?></a><br><small><?php echo self::esc((string) ($row['subtitle'] ?? '')); ?></small></td>
                         <td><?php echo self::esc((string) ($row['category_name'] ?? '')); ?></td>
-                        <td><a href="<?php echo self::esc_attr((string) $row['url']); ?>" target="_blank" rel="noopener noreferrer">öffnen</a></td>
-                        <td><span class="status-badge <?php echo (string) $row['status'] === 'active' ? 'active' : 'inactive'; ?>"><?php echo (string) $row['status'] === 'active' ? 'Aktiv' : 'Inaktiv'; ?></span></td>
+                        <td>
+                            <?php if ($externalUrl !== ''): ?>
+                            <a href="<?php echo self::esc_attr($externalUrl); ?>" target="_blank" rel="noopener noreferrer">öffnen</a>
+                            <?php else: ?>
+                            —
+                            <?php endif; ?>
+                        </td>
+                        <td><span class="status-badge <?php echo $rowStatus; ?>"><?php echo $rowStatus === 'active' ? 'Aktiv' : 'Inaktiv'; ?></span></td>
                         <td><?php echo !empty($row['is_featured']) ? '⭐' : '—'; ?></td>
-                        <td><div class="mas-action-row"><a href="?tab=entries&amp;edit=<?php echo (int) $row['id']; ?>" class="btn btn-sm btn-secondary">✏️</a><button type="button" class="btn btn-sm btn-danger" onclick="openMasDeleteModal(<?php echo (int) $row['id']; ?>, <?php echo self::json((string) $row['title']); ?>)">🗑️</button></div></td>
+                        <td><div class="mas-action-row"><a href="<?php echo self::esc_attr(self::admin_page_url(self::PAGE_DASHBOARD, ['edit' => (string) ((int) $row['id'])])); ?>" class="btn btn-sm btn-secondary">✏️</a><button type="button" class="btn btn-sm btn-danger" onclick="openMasDeleteModal(<?php echo (int) $row['id']; ?>, <?php echo self::json((string) $row['title']); ?>)">🗑️</button></div></td>
                     </tr>
                     <?php endforeach; ?>
                     </tbody>
@@ -305,10 +407,23 @@ final class CMS_M365ADMINSITES_Admin_Pages
     }
 
     /** @param array<string,string> $settings */
-    private function render_content(array $settings): void
+    private function render_content_page(): void
     {
+        CMS_M365ADMINSITES_Installer::maybe_install();
+        $settings = CMS_M365ADMINSITES_Settings::all();
+        $notice = '';
+        $error = '';
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST') {
+            [$notice, $error] = $this->handle_post();
+        }
         $csrfToken = self::generate_nonce('m365adminsites_settings');
         ?>
+        <?php if ($notice !== ''): ?>
+        <div class="alert alert-success">✅ <?php echo self::esc($notice); ?></div>
+        <?php endif; ?>
+        <?php if ($error !== ''): ?>
+        <div class="alert alert-error">❌ <?php echo self::esc($error); ?></div>
+        <?php endif; ?>
         <div class="admin-card mas-editor-card">
             <h3>✍️ Öffentliche Texte bearbeiten</h3>
             <p class="mas-admin-hint">Diese Inhalte erscheinen auf der Adminsites-Seite und im PHINIT-Sidebar-Widget.</p>
@@ -383,12 +498,25 @@ final class CMS_M365ADMINSITES_Admin_Pages
     }
 
     /** @param array<string,string> $settings */
-    private function render_settings(array $settings): void
+    private function render_settings_page(): void
     {
+        CMS_M365ADMINSITES_Installer::maybe_install();
+        $settings = CMS_M365ADMINSITES_Settings::all();
+        $notice = '';
+        $error = '';
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST') {
+            [$notice, $error] = $this->handle_post();
+        }
         $csrfToken = self::generate_nonce('m365adminsites_settings');
         $columns = ['image' => 'Bild', 'title' => 'Portal', 'subtitle' => 'Bereich', 'url' => 'URL', 'actions' => 'Buttons'];
         $visible = array_filter(array_map('trim', explode(',', (string) ($settings['visible_columns'] ?? ''))));
         ?>
+        <?php if ($notice !== ''): ?>
+        <div class="alert alert-success">✅ <?php echo self::esc($notice); ?></div>
+        <?php endif; ?>
+        <?php if ($error !== ''): ?>
+        <div class="alert alert-error">❌ <?php echo self::esc($error); ?></div>
+        <?php endif; ?>
         <div class="admin-card mas-editor-card">
             <h3>🎨 Anzeige, Design & Widget-Verhalten</h3>
             <p class="mas-admin-hint">Hier steuerst du Layout, Farben, Tabellenoptionen und die Sidebar-Rotation.</p>
@@ -444,7 +572,7 @@ final class CMS_M365ADMINSITES_Admin_Pages
         <?php
     }
 
-    private function render_help(): void
+    private function render_help_page(): void
     {
         ?>
         <div class="admin-card">
@@ -495,6 +623,47 @@ final class CMS_M365ADMINSITES_Admin_Pages
         $defaults = CMS_M365ADMINSITES_Settings::defaults();
         $settings = [];
         $section = (string) ($post['settings_section'] ?? 'all');
+        $booleanKeys = [
+            'page_enabled',
+            'show_category_nav',
+            'show_cards',
+            'show_table',
+            'show_images',
+            'sidebar_enabled',
+            'sidebar_show_image',
+            'sidebar_show_category',
+            'sidebar_show_subtitle',
+        ];
+        $intRanges = [
+            'items_per_page' => [12, 500],
+            'image_height' => [48, 240],
+            'card_image_height' => [64, 260],
+            'content_spacing_top' => [0, 160],
+            'content_spacing_bottom' => [0, 200],
+            'content_padding_y' => [0, 80],
+            'content_padding_x' => [0, 80],
+            'section_gap' => [0, 80],
+            'border_radius' => [0, 24],
+            'sidebar_limit' => [1, 20],
+            'sidebar_rotate_seconds' => [3, 60],
+            'sidebar_min_height' => [120, 520],
+            'sidebar_image_height' => [0, 320],
+        ];
+        $enumOptions = [
+            'default_view' => ['cards', 'table', 'both'],
+            'table_density' => ['comfortable', 'compact'],
+            'sidebar_style' => ['card', 'compact', 'minimal'],
+        ];
+        $colorKeys = [
+            'color_page_background',
+            'color_surface',
+            'color_text',
+            'color_muted',
+            'color_border',
+            'color_accent',
+            'color_button_bg',
+            'color_button_text',
+        ];
         $designKeys = [
             'default_view',
             'table_density',
@@ -539,8 +708,23 @@ final class CMS_M365ADMINSITES_Admin_Pages
             if ($section === 'design' && !in_array($key, $designKeys, true)) {
                 continue;
             }
-            if (str_starts_with($key, 'show_') || in_array($key, ['page_enabled', 'sidebar_enabled', 'sidebar_show_image', 'sidebar_show_category', 'sidebar_show_subtitle'], true)) {
+            if (in_array($key, $booleanKeys, true)) {
                 $settings[$key] = !empty($post[$key]) ? '1' : '0';
+                continue;
+            }
+            if (array_key_exists($key, $intRanges)) {
+                [$min, $max] = $intRanges[$key];
+                $settings[$key] = (string) max((int) $min, min((int) $max, (int) ($post[$key] ?? $default)));
+                continue;
+            }
+            if (array_key_exists($key, $enumOptions)) {
+                $candidate = trim((string) ($post[$key] ?? $default));
+                $settings[$key] = in_array($candidate, $enumOptions[$key], true) ? $candidate : (string) $default;
+                continue;
+            }
+            if (in_array($key, $colorKeys, true)) {
+                $candidate = strtolower(trim((string) ($post[$key] ?? $default)));
+                $settings[$key] = preg_match('/^#[0-9a-f]{6}$/', $candidate) === 1 ? $candidate : (string) $default;
                 continue;
             }
             if ($key === 'visible_columns') {
@@ -548,16 +732,35 @@ final class CMS_M365ADMINSITES_Admin_Pages
                 $settings[$key] = implode(',', $columns !== [] ? $columns : explode(',', $default));
                 continue;
             }
-            $settings[$key] = trim(strip_tags((string) ($post[$key] ?? $default)));
+            if ($key === 'page_route') {
+                $settings[$key] = self::sanitize_route((string) ($post[$key] ?? $default), (string) $default);
+                continue;
+            }
+            if ($key === 'sidebar_placeholder_image') {
+                $settings[$key] = self::sanitize_media_url((string) ($post[$key] ?? $default));
+                continue;
+            }
+
+            $settings[$key] = self::sanitize_text((string) ($post[$key] ?? $default), 5000);
         }
         return $settings;
     }
 
-    /** @param array<string,string> $tabs */
-    private static function active_tab(array $tabs): string
+    /**
+     * @param array<string,string|null> $params
+     */
+    private static function admin_page_url(string $slug, array $params = []): string
     {
-        $tab = preg_replace('/[^a-z0-9_-]+/i', '', (string) ($_GET['tab'] ?? 'entries')) ?: 'entries';
-        return isset($tabs[$tab]) ? $tab : 'entries';
+        $query = ['page' => preg_replace('/[^a-z0-9_-]+/i', '', $slug) ?: self::PAGE_DASHBOARD];
+        foreach ($params as $key => $value) {
+            $safeKey = preg_replace('/[^a-z0-9_-]+/i', '', (string) $key);
+            if ($safeKey === '') {
+                continue;
+            }
+            $query[$safeKey] = (string) ($value ?? '');
+        }
+
+        return '?' . http_build_query($query);
     }
 
     private static function generate_nonce(string $action): string
@@ -595,5 +798,94 @@ final class CMS_M365ADMINSITES_Admin_Pages
     private static function esc_attr(string $value): string
     {
         return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    }
+
+    private static function safe_external_url(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return '';
+        }
+        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return '';
+        }
+        return preg_match('#^https?://#i', $url) === 1 ? $url : '';
+    }
+
+    private static function has_manage_capability(): bool
+    {
+        if (function_exists('current_user_can')) {
+            return (bool) current_user_can('manage_options');
+        }
+
+        if (class_exists('CMS\\Auth')) {
+            $auth = \CMS\Auth::instance();
+            foreach (['hasCapability', 'can', 'hasPermission'] as $method) {
+                if (method_exists($auth, $method)) {
+                    try {
+                        return (bool) $auth->{$method}('manage_options');
+                    } catch (\Throwable $e) {
+                        error_log('CMS M365 Adminsites capability check failed: ' . $e->getMessage());
+                        return false;
+                    }
+                }
+            }
+
+            if (method_exists($auth, 'isAdmin')) {
+                return (bool) $auth->isAdmin();
+            }
+        }
+
+        return false;
+    }
+
+    private static function clean_action(string $action): string
+    {
+        $action = preg_replace('/[^a-z_]+/i', '', strtolower(trim($action))) ?: '';
+        return in_array($action, ['save_site', 'delete_site', 'save_settings'], true) ? $action : '';
+    }
+
+    private static function sanitize_text(string $value, int $maxLength): string
+    {
+        $value = strip_tags($value);
+        $value = preg_replace('/\s+/u', ' ', trim($value)) ?? '';
+        if (function_exists('mb_substr')) {
+            return mb_substr($value, 0, $maxLength);
+        }
+
+        return substr($value, 0, $maxLength);
+    }
+
+    private static function sanitize_route(string $value, string $fallback): string
+    {
+        $trimmed = trim($value);
+        if ($trimmed === '') {
+            return $fallback;
+        }
+
+        $normalized = '/' . trim($trimmed, '/');
+        if ($normalized === '/') {
+            return $fallback;
+        }
+
+        if (preg_match('#^/[a-z0-9/_-]+$#i', $normalized) !== 1) {
+            return $fallback;
+        }
+
+        return $normalized;
+    }
+
+    private static function sanitize_media_url(string $url): string
+    {
+        $url = trim((string) filter_var($url, FILTER_SANITIZE_URL));
+        if ($url === '') {
+            return '';
+        }
+
+        if (str_starts_with($url, '/')) {
+            return $url;
+        }
+
+        return preg_match('#^https?://#i', $url) === 1 ? $url : '';
     }
 }

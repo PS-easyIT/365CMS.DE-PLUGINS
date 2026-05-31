@@ -27,6 +27,10 @@ use CMS_Forum\Models\UserMeta;
 final class PermissionService
 {
     private static ?self $instance = null;
+    /** @var array<string, bool> */
+    private array $permissionCache = [];
+    /** @var array<string, string> */
+    private array $settingCache = [];
 
     public static function instance(): static
     {
@@ -73,6 +77,14 @@ final class PermissionService
     public function canModerate(int $forumId): bool
     {
         return $this->checkPermission($forumId, 'can_moderate');
+    }
+
+    /**
+     * Kann der aktuelle Benutzer in Umfragen/Likes abstimmen?
+     */
+    public function canVote(int $forumId): bool
+    {
+        return $this->checkPermission($forumId, 'can_vote');
     }
 
     /**
@@ -148,17 +160,28 @@ final class PermissionService
     private function checkPermission(int $forumId, string $permissionKey): bool
     {
         $auth = \CMS\Auth::instance();
+        $currentUserId = 0;
+        if ($auth->isLoggedIn()) {
+            $currentUser = $auth->currentUser();
+            $currentUserId = (is_object($currentUser) && isset($currentUser->id)) ? (int) $currentUser->id : 0;
+        }
+
+        $cacheKey = $forumId . ':' . $permissionKey . ':' . ($auth->isLoggedIn() ? '1' : '0') . ':' . $currentUserId . ':' . ($auth->isAdmin() ? '1' : '0');
+        if (array_key_exists($cacheKey, $this->permissionCache)) {
+            return $this->permissionCache[$cacheKey];
+        }
 
         // 1. Gebannt?
         if ($auth->isLoggedIn()) {
-            $userId = (int)$auth->currentUser()->id;
-            if (UserMeta::instance()->isBanned($userId)) {
+            if (UserMeta::instance()->isBanned($currentUserId)) {
+                $this->permissionCache[$cacheKey] = false;
                 return false;
             }
         }
 
         // 2. Admin? → alles erlaubt
         if ($auth->isLoggedIn() && $auth->isAdmin()) {
+            $this->permissionCache[$cacheKey] = true;
             return true;
         }
 
@@ -166,6 +189,7 @@ final class PermissionService
         if ($auth->isLoggedIn() && $permissionKey !== 'can_moderate') {
             $perm = Permission::instance()->findByForumAndGroup($forumId, 'moderator');
             if ($perm && $perm->can_moderate) {
+                $this->permissionCache[$cacheKey] = true;
                 return true;
             }
         }
@@ -175,11 +199,15 @@ final class PermissionService
         $perm = Permission::instance()->findByForumAndGroup($forumId, $groupType);
 
         if ($perm && property_exists($perm, $permissionKey)) {
-            return (bool) $perm->{$permissionKey};
+            $result = (bool) $perm->{$permissionKey};
+            $this->permissionCache[$cacheKey] = $result;
+            return $result;
         }
 
         // 6. Standard-Rechte aus Konfiguration
-        return $this->getDefaultPermission($groupType, $permissionKey);
+        $result = $this->getDefaultPermission($groupType, $permissionKey);
+        $this->permissionCache[$cacheKey] = $result;
+        return $result;
     }
 
     /**
@@ -218,13 +246,20 @@ final class PermissionService
      */
     private function getSetting(string $key, string $default = ''): string
     {
+        if (array_key_exists($key, $this->settingCache)) {
+            return $this->settingCache[$key];
+        }
+
         try {
             $db = \CMS\Database::instance();
             $p  = $db->prefix();
             $stmt = $db->prepare("SELECT setting_value FROM {$p}cmsforum_settings WHERE setting_key = ?");
             $stmt->execute([$key]);
-            return $stmt->fetchColumn() ?: $default;
+            $value = (string) ($stmt->fetchColumn() ?: $default);
+            $this->settingCache[$key] = $value;
+            return $value;
         } catch (\PDOException) {
+            $this->settingCache[$key] = $default;
             return $default;
         }
     }

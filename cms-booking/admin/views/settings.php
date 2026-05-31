@@ -1,24 +1,5 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
-<!-- Section-Nav -->
-<nav class="lp-section-nav">
-    <a href="/admin/plugins/booking/booking" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">📊</span> Dashboard
-    </a>
-    <a href="/admin/plugins/booking/bookings" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">📋</span> Buchungen
-    </a>
-    <a href="/admin/plugins/booking/providers" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">👥</span> Anbieter
-    </a>
-    <a href="/admin/plugins/booking/services" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">🛠️</span> Leistungen
-    </a>
-    <a href="/admin/plugins/booking/settings" class="lp-section-nav__item active">
-        <span class="lp-section-nav__icon">⚙️</span> Einstellungen
-    </a>
-</nav>
-
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -42,7 +23,7 @@ $s = function (string $key, string $default = '') use ($settings): string {
 ?>
 
 <form method="POST" class="admin-form">
-    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken); ?>">
+    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
     <input type="hidden" name="settings_action" value="save">
 
     <!-- E-Mail -->
@@ -99,7 +80,7 @@ $s = function (string $key, string $default = '') use ($settings): string {
                     ];
                     $currentTz = $settings['default_timezone'] ?? 'Europe/Berlin';
                     foreach ($tzOptions as $tz => $label): ?>
-                        <option value="<?php echo $tz; ?>" <?php echo $currentTz === $tz ? 'selected' : ''; ?>>
+                        <option value="<?php echo htmlspecialchars($tz, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $currentTz === $tz ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($label); ?>
                         </option>
                     <?php endforeach; ?>
@@ -112,7 +93,7 @@ $s = function (string $key, string $default = '') use ($settings): string {
                     $currencies = ['EUR' => '€ Euro', 'CHF' => 'CHF Schweizer Franken', 'USD' => '$ US-Dollar', 'GBP' => '£ Britisches Pfund'];
                     $currentCur = $settings['default_currency'] ?? 'EUR';
                     foreach ($currencies as $code => $label): ?>
-                        <option value="<?php echo $code; ?>" <?php echo $currentCur === $code ? 'selected' : ''; ?>>
+                        <option value="<?php echo htmlspecialchars($code, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $currentCur === $code ? 'selected' : ''; ?>>
                             <?php echo htmlspecialchars($label); ?>
                         </option>
                     <?php endforeach; ?>
@@ -207,7 +188,15 @@ $s = function (string $key, string $default = '') use ($settings): string {
 </form>
 
 <script>
-document.querySelector('input[name="primary_color"]').addEventListener('input', function() {
-    document.getElementById('colorPreview').value = this.value;
-});
+(function () {
+    var colorInput = document.querySelector('input[name="primary_color"]');
+    var preview = document.getElementById('colorPreview');
+    if (!colorInput || !preview) {
+        return;
+    }
+
+    colorInput.addEventListener('input', function () {
+        preview.value = this.value;
+    });
+})();
 </script>

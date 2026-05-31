@@ -100,7 +100,7 @@ final class CMS_M365MATRICES_ReadOnly_Matrices
                 'groups' => count($groups),
                 'rows' => self::count_rows($groups),
             ],
-            'sources' => is_array($meta['sources'] ?? null) ? array_values(array_map('strval', $meta['sources'])) : [],
+            'sources' => self::normalize_source_list(is_array($meta['sources'] ?? null) ? $meta['sources'] : []),
             'notes' => is_array($meta['notes'] ?? null) ? array_values(array_map('strval', $meta['notes'])) : [],
         ];
     }
@@ -137,7 +137,7 @@ final class CMS_M365MATRICES_ReadOnly_Matrices
                 'packages' => array_sum(array_map(static fn(array $area): int => count($area['packages'] ?? []), $areas)),
                 'rows' => array_sum(array_map(static fn(array $area): int => count($area['rows'] ?? []), $areas)),
             ],
-            'sources' => is_array($meta['sources'] ?? null) ? array_values(array_map('strval', $meta['sources'])) : [],
+            'sources' => self::normalize_source_list(is_array($meta['sources'] ?? null) ? $meta['sources'] : []),
             'notes' => is_array($meta['notes'] ?? null) ? array_values(array_map('strval', $meta['notes'])) : [],
         ];
     }
@@ -278,6 +278,23 @@ final class CMS_M365MATRICES_ReadOnly_Matrices
     private static function count_rows(array $groups): int
     {
         return array_sum(array_map(static fn(array $group): int => count($group['rows'] ?? []), $groups));
+    }
+
+    /**
+     * @param array<int,mixed> $sources
+     * @return array<int,string>
+     */
+    private static function normalize_source_list(array $sources): array
+    {
+        $normalized = [];
+        foreach ($sources as $source) {
+            $sourceUrl = self::normalize_url((string) $source);
+            if ($sourceUrl !== '') {
+                $normalized[] = $sourceUrl;
+            }
+        }
+
+        return array_values(array_unique($normalized));
     }
 
     private static function clean_key(string $value): string

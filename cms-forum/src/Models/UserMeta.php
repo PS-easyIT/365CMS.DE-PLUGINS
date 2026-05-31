@@ -173,7 +173,13 @@ final class UserMeta
 
         // Temporäre Sperre: Abgelaufen?
         if ($meta->ban_expires !== null) {
-            $expires = new \DateTimeImmutable($meta->ban_expires);
+            try {
+                $expires = new \DateTimeImmutable((string) $meta->ban_expires);
+            } catch (\Throwable) {
+                // Defekter Zeitstempel darf nicht zu Laufzeitfehlern führen.
+                $this->unban($userId);
+                return false;
+            }
             if ($expires < new \DateTimeImmutable()) {
                 $this->unban($userId);
                 return false;

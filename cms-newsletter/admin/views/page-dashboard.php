@@ -95,7 +95,7 @@
                         <?php foreach ($subscribers as $subscriber): ?>
                             <tr>
                                 <td><a href="/admin/plugins/newsletter-dashboard/newsletter-subscribers?edit=<?php echo (int) $subscriber['id']; ?>" class="nl-admin-link"><?php echo htmlspecialchars((string) $subscriber['email'], ENT_QUOTES, 'UTF-8'); ?></a></td>
-                                <td><?php echo htmlspecialchars((string) ($subscriber['segment_slug'] ?: 'general'), ENT_QUOTES, 'UTF-8'); ?></td>
+                                <td><?php echo htmlspecialchars((string) (($subscriber['segment_slug'] ?? '') !== '' ? $subscriber['segment_slug'] : 'general'), ENT_QUOTES, 'UTF-8'); ?></td>
                                 <td><span class="status-badge <?php echo ($subscriber['status'] ?? '') === 'active' ? 'active' : 'inactive'; ?>"><?php echo htmlspecialchars((string) $subscriber['status'], ENT_QUOTES, 'UTF-8'); ?></span></td>
                                 <td><?php echo htmlspecialchars((string) ($subscriber['source'] ?? 'admin'), ENT_QUOTES, 'UTF-8'); ?></td>
                             </tr>

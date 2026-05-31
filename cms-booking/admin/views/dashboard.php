@@ -1,24 +1,5 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
-<!-- Section-Nav -->
-<nav class="lp-section-nav">
-    <a href="/admin/plugins/booking/booking" class="lp-section-nav__item active">
-        <span class="lp-section-nav__icon">📊</span> Dashboard
-    </a>
-    <a href="/admin/plugins/booking/bookings" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">📋</span> Buchungen
-    </a>
-    <a href="/admin/plugins/booking/providers" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">👥</span> Anbieter
-    </a>
-    <a href="/admin/plugins/booking/services" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">🛠️</span> Leistungen
-    </a>
-    <a href="/admin/plugins/booking/settings" class="lp-section-nav__item">
-        <span class="lp-section-nav__icon">⚙️</span> Einstellungen
-    </a>
-</nav>
-
 <!-- Page Header -->
 <div class="admin-page-header">
     <div>
@@ -68,8 +49,8 @@
     <div style="display:flex;flex-wrap:wrap;gap:1rem;margin-top:1rem;">
         <?php foreach ($types as $slug => $type): ?>
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:1rem 1.25rem;min-width:200px;">
-            <div style="font-size:1.5rem;margin-bottom:.25rem;"><?php echo $type['icon']; ?></div>
-            <strong><?php echo htmlspecialchars($type['label']); ?></strong>
+            <div style="font-size:1.5rem;margin-bottom:.25rem;"><?php echo htmlspecialchars((string) ($type['icon'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></div>
+            <strong><?php echo htmlspecialchars((string) ($type['label'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></strong>
             <div style="color:#64748b;font-size:.85rem;"><?php echo htmlspecialchars($slug); ?></div>
         </div>
         <?php endforeach; ?>
@@ -110,13 +91,13 @@
                         <td><?php echo htmlspecialchars($item['provider_name'] ?? '—'); ?></td>
                         <td><?php echo htmlspecialchars($item['service_title'] ?? '—'); ?></td>
                         <td>
-                            <?php echo date('d.m.Y', strtotime($item['booking_date'])); ?>
+                            <?php echo htmlspecialchars((string) date('d.m.Y', strtotime((string) $item['booking_date'])), ENT_QUOTES, 'UTF-8'); ?>
                             <div style="color:#64748b;font-size:.8rem;">
-                                <?php echo substr($item['start_time'], 0, 5); ?> – <?php echo substr($item['end_time'], 0, 5); ?>
+                                <?php echo htmlspecialchars((string) substr((string) $item['start_time'], 0, 5), ENT_QUOTES, 'UTF-8'); ?> – <?php echo htmlspecialchars((string) substr((string) $item['end_time'], 0, 5), ENT_QUOTES, 'UTF-8'); ?>
                             </div>
                         </td>
                         <td>
-                            <span class="status-badge <?php echo CMS_Booking_Bookings::status_badge_class($item['status']); ?>">
+                            <span class="status-badge <?php echo htmlspecialchars(CMS_Booking_Bookings::status_badge_class((string) $item['status']), ENT_QUOTES, 'UTF-8'); ?>">
                                 <?php echo htmlspecialchars(CMS_Booking_Bookings::status_labels()[$item['status']] ?? $item['status']); ?>
                             </span>
                         </td>
@@ -126,7 +107,7 @@
             </table>
         </div>
         <div style="margin-top:1rem;">
-            <a href="?section=bookings" class="btn btn-secondary btn-sm">📋 Alle Buchungen ansehen</a>
+            <a href="<?php echo htmlspecialchars(CMS_Booking_Admin_Pages::admin_url('bookings'), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary btn-sm">📋 Alle Buchungen ansehen</a>
         </div>
     <?php endif; ?>
 </div>

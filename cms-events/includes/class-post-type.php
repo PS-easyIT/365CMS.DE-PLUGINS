@@ -864,11 +864,11 @@ final class CMS_Events_Post_Type
         if (!CMS\Auth::instance()->isAdmin()) { CMS\Router::instance()->redirect('/login'); return; }
 
         $db      = CMS_Events_Database::instance();
-        $tab     = in_array((string) ($_GET['tab'] ?? 'overview'), ['overview', 'categories', 'tags', 'design', 'settings'], true) ? (string) $_GET['tab'] : 'overview';
+        $tab     = $this->resolve_admin_tab();
         $filter  = in_array((string) ($_GET['filter'] ?? 'all'), ['all', 'upcoming', 'past', 'featured', 'online', 'draft'], true) ? (string) $_GET['filter'] : 'all';
         $search  = $this->sanitize_text_param($_GET['search'] ?? '', 120) ?? '';
 
-        $events     = $db->get_events(['limit' => 200]);
+        $events     = $tab === 'overview' ? $db->get_events(['limit' => 200]) : [];
         $categories = $db->get_event_categories();
         $tag_presets= $db->get_event_tag_presets_grouped();
         $settings   = $db->get_settings();
@@ -888,9 +888,29 @@ final class CMS_Events_Post_Type
         ]);
     }
 
+    private function resolve_admin_tab(): string
+    {
+        $allowedTabs = ['overview', 'categories', 'tags', 'design', 'settings'];
+        $tabFromQuery = (string) ($_GET['tab'] ?? '');
+        if (in_array($tabFromQuery, $allowedTabs, true)) {
+            return $tabFromQuery;
+        }
+
+        $pageSlug = (string) ($_GET['page'] ?? '');
+        if ($pageSlug !== '' && class_exists('CMS_Events_Admin', false) && method_exists('CMS_Events_Admin', 'admin_section_for_slug')) {
+            $resolved = (string) CMS_Events_Admin::admin_section_for_slug($pageSlug);
+            if (in_array($resolved, $allowedTabs, true)) {
+                return $resolved;
+            }
+        }
+
+        return 'overview';
+    }
+
     public function admin_category_add(): void
     {
         if (!CMS\Auth::instance()->isAdmin()) { CMS\Router::instance()->redirect('/login'); return; }
+        if ((string) ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') { CMS\Router::instance()->redirect('/admin/events?tab=categories'); return; }
         $csrf = $_POST['csrf_token'] ?? '';
         if (!CMS\Security::instance()->verifyToken($csrf, 'event_settings')) {
             CMS\Router::instance()->redirect('/admin/events?tab=categories&error=csrf');
@@ -905,6 +925,7 @@ final class CMS_Events_Post_Type
     public function admin_category_delete(string $id = ''): void
     {
         if (!CMS\Auth::instance()->isAdmin()) { CMS\Router::instance()->redirect('/login'); return; }
+        if ((string) ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') { CMS\Router::instance()->redirect('/admin/events?tab=categories'); return; }
         $csrf = $_POST['csrf_token'] ?? '';
         if (!CMS\Security::instance()->verifyToken($csrf, 'event_settings')) {
             CMS\Router::instance()->redirect('/admin/events?tab=categories&error=csrf');
@@ -917,6 +938,7 @@ final class CMS_Events_Post_Type
     public function admin_tagpreset_add(): void
     {
         if (!CMS\Auth::instance()->isAdmin()) { CMS\Router::instance()->redirect('/login'); return; }
+        if ((string) ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') { CMS\Router::instance()->redirect('/admin/events?tab=tags'); return; }
         $csrf = $_POST['csrf_token'] ?? '';
         if (!CMS\Security::instance()->verifyToken($csrf, 'event_settings')) {
             CMS\Router::instance()->redirect('/admin/events?tab=tags&error=csrf');
@@ -931,6 +953,7 @@ final class CMS_Events_Post_Type
     public function admin_tagpreset_delete(string $id = ''): void
     {
         if (!CMS\Auth::instance()->isAdmin()) { CMS\Router::instance()->redirect('/login'); return; }
+        if ((string) ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') { CMS\Router::instance()->redirect('/admin/events?tab=tags'); return; }
         $csrf = $_POST['csrf_token'] ?? '';
         if (!CMS\Security::instance()->verifyToken($csrf, 'event_settings')) {
             CMS\Router::instance()->redirect('/admin/events?tab=tags&error=csrf');
@@ -945,13 +968,18 @@ final class CMS_Events_Post_Type
         if (!CMS\Auth::instance()->isAdmin()) {
             $this->json_response(['success' => false, 'error' => 'Unauthorized'], 403);
         }
+        if ((string) ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            $this->json_response(['success' => false, 'error' => 'Method not allowed'], 405);
+        }
         if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'event_speaker')) {
             $this->json_response(['success' => false, 'error' => 'CSRF'], 403);
         }
         $event_id    = (int)($_POST['event_id']    ?? 0);
         $speaker_id  = (int)($_POST['speaker_id']  ?? 0);
-        $speaker_type = in_array($_POST['speaker_type'] ?? '', ['speaker','expert'], true)
-            ? $_POST['speaker_type'] : 'speaker';
+        $speakerTypeRaw = (string) ($_POST['speaker_type'] ?? '');
+        $speaker_type = in_array($speakerTypeRaw, ['speaker', 'expert'], true)
+            ? $speakerTypeRaw
+            : 'speaker';
         if ($event_id <= 0 || $speaker_id <= 0) {
             $this->json_response(['success' => false, 'error' => 'Invalid data'], 400);
         }
@@ -973,6 +1001,9 @@ final class CMS_Events_Post_Type
     {
         if (!CMS\Auth::instance()->isAdmin()) {
             $this->json_response(['success' => false, 'error' => 'Unauthorized'], 403);
+        }
+        if ((string) ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            $this->json_response(['success' => false, 'error' => 'Method not allowed'], 405);
         }
         if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'event_speaker')) {
             $this->json_response(['success' => false, 'error' => 'CSRF'], 403);
@@ -1317,7 +1348,8 @@ if (!function_exists('cms_event_url')) {
     {
         $map   = ['ä'=>'ae','ö'=>'oe','ü'=>'ue','ß'=>'ss','Ä'=>'ae','Ö'=>'oe','Ü'=>'ue'];
         $title = str_replace(array_keys($map), array_values($map), (string)($event->title ?? ''));
-        $slug  = strtolower(preg_replace('/[^a-z0-9]+/i', '-', $title));
+        $slug  = (string) preg_replace('/[^a-z0-9]+/i', '-', $title);
+        $slug  = strtolower($slug);
         $slug  = trim($slug, '-') ?: 'event';
         return SITE_URL . '/event/' . $slug . '-' . (int)$event->id;
     }

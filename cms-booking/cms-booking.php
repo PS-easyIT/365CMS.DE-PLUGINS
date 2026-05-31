@@ -46,8 +46,14 @@ final class CMS_Booking
     {
         $inc   = CMS_BOOKING_PLUGIN_DIR . 'includes/';
         $admin = CMS_BOOKING_PLUGIN_DIR . 'admin/';
+        $shared = dirname(CMS_BOOKING_PLUGIN_DIR) . '/shared/admin/';
+        $allowedRoots = [
+            realpath(CMS_BOOKING_PLUGIN_DIR) ?: CMS_BOOKING_PLUGIN_DIR,
+            realpath(dirname(CMS_BOOKING_PLUGIN_DIR) . '/shared/') ?: dirname(CMS_BOOKING_PLUGIN_DIR) . '/shared/',
+        ];
 
         $files = [
+            $shared . 'plugin-admin-contract.php',
             $inc   . 'class-installer.php',
             $inc   . 'class-providers.php',
             $inc   . 'class-services.php',
@@ -62,8 +68,16 @@ final class CMS_Booking
         ];
 
         foreach ($files as $f) {
-            if (file_exists($f)) {
-                require_once $f;
+            $real = realpath($f);
+            if ($real === false || !is_file($real)) {
+                continue;
+            }
+            foreach ($allowedRoots as $root) {
+                $rootPrefix = rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+                if (strpos($real, $rootPrefix) === 0) {
+                    require_once $real;
+                    break;
+                }
             }
         }
     }
@@ -113,7 +127,7 @@ final class CMS_Booking
             try {
                 CMS_Booking_Installer::install();
             } catch (\Throwable $e) {
-                error_log('cms-booking activation skipped: ' . $e->getMessage());
+                error_log('[cms-booking] activation skipped: ' . $e->getMessage());
             }
         }
     }
@@ -131,7 +145,7 @@ final class CMS_Booking
             try {
                 CMS_Booking_Installer::maybe_install();
             } catch (\Throwable $e) {
-                error_log('cms-booking init install skipped: ' . $e->getMessage());
+                error_log('[cms-booking] init install skipped: ' . $e->getMessage());
             }
         }
     }
@@ -170,10 +184,19 @@ final class CMS_Booking
 
     private function is_booking_public_route(): bool
     {
+        $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+        if ($method !== 'GET') {
+            return false;
+        }
+
         $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
         $path = '/' . trim($path, '/');
 
-        return $path === '/booking' || str_starts_with($path, '/booking/');
+        if ($path === '/booking' || $path === '/booking/' || preg_match('#^/booking/[^/]+(?:/[^/]+)?$#', $path) === 1) {
+            return true;
+        }
+
+        return preg_match('#^/booking/confirm/\d+$#', $path) === 1;
     }
 
     /* ------------------------------------------------------------------ */

@@ -35,7 +35,12 @@ trait CMS_JPG_Page_Approvals_Trait
         $allRoles        = class_exists('CMS_JPG_Workflow') ? CMS_JPG_Workflow::get_all_cms_roles() : ['admin' => 'Admin'];
         $wfSteps         = class_exists('CMS_JPG_Workflow') ? CMS_JPG_Workflow::instance()->get_steps() : [];
 
-        include JPG_DIR . 'admin/views/page-approvals.php';
+        self::render_admin_view(
+            'Genehmigungen',
+            'jpg-approvals',
+            JPG_DIR . 'admin/views/page-approvals.php',
+            compact('notice', 'error', 'pendingProfiles', 'allRoles', 'wfSteps')
+        );
     }
 
     /** @return array{string, string} [notice, error] */

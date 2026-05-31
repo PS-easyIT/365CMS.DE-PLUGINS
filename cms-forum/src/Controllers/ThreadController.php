@@ -257,6 +257,21 @@ final class ThreadController
             exit;
         }
 
+        if ($type === 'thread') {
+            $thread = Thread::instance()->findById($itemId);
+            $forum = $thread ? Forum::instance()->findById((int) ($thread->forum_id ?? 0)) : null;
+            if ($forum === null || !PermissionService::instance()->canRead((int) $forum->id)) {
+                $this->sendJson(['success' => false, 'error' => 'Keine Berechtigung.'], 403);
+                exit;
+            }
+        } else {
+            $forum = Forum::instance()->findById($itemId);
+            if ($forum === null || !PermissionService::instance()->canRead((int) $forum->id)) {
+                $this->sendJson(['success' => false, 'error' => 'Keine Berechtigung.'], 403);
+                exit;
+            }
+        }
+
         $userId = (int)$auth->currentUser()->id;
         $sub    = Subscription::instance();
 
@@ -297,6 +312,30 @@ final class ThreadController
 
         if ($pollId <= 0 || empty($optionIds)) {
             $this->sendJson(['success' => false, 'error' => 'Ungültige Anfrage.'], 400);
+            exit;
+        }
+
+        $pollEntity = Poll::instance()->findById($pollId);
+        if ($pollEntity === null) {
+            $this->sendJson(['success' => false, 'error' => 'Umfrage nicht gefunden.'], 404);
+            exit;
+        }
+
+        $thread = Thread::instance()->findById((int) ($pollEntity->thread_id ?? 0));
+        $forum = $thread ? Forum::instance()->findById((int) ($thread->forum_id ?? 0)) : null;
+        if ($forum === null || !PermissionService::instance()->canRead((int) $forum->id)) {
+            $this->sendJson(['success' => false, 'error' => 'Keine Berechtigung.'], 403);
+            exit;
+        }
+
+        if (!PermissionService::instance()->canVote((int) $forum->id)) {
+            $this->sendJson(['success' => false, 'error' => 'Abstimmungen sind in diesem Forum nicht erlaubt.'], 403);
+            exit;
+        }
+
+        $maxChoices = max(1, min(10, (int) ($pollEntity->max_choices ?? 1)));
+        if (count($optionIds) > $maxChoices) {
+            $this->sendJson(['success' => false, 'error' => 'Zu viele Optionen ausgewählt.'], 400);
             exit;
         }
 

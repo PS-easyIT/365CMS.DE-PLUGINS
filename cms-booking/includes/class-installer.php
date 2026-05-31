@@ -292,7 +292,7 @@ final class CMS_Booking_Installer
             try {
                 $pdo->exec($sql);
             } catch (\Throwable $e) {
-                error_log('CMS Booking foreign key skipped (' . $constraint . '): ' . $e->getMessage());
+                error_log('[cms-booking] foreign key skipped (' . $constraint . '): ' . $e->getMessage());
             }
         }
     }
@@ -426,6 +426,6 @@ final class CMS_Booking_Installer
 
     private static function log_install_error(\Throwable $e): void
     {
-        error_log('CMS Booking installer skipped: ' . $e->getMessage());
+        error_log('[cms-booking] installer skipped: ' . $e->getMessage());
     }
 }

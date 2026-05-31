@@ -24,17 +24,19 @@ trait CMS_Forum_Page_Reports_Trait
             $success = null;
 
             // POST-Handler
-            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forum_action'])) {
+            $requestMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+            if ($requestMethod === 'POST' && isset($_POST['forum_action'])) {
+                $forumAction = sanitize_key((string) ($_POST['forum_action'] ?? ''));
                 if (!self::verify_nonce('forum_reports')) {
                     $error = 'Sicherheitscheck fehlgeschlagen.';
                 } else {
                     $moderator = \CMS_Forum\Controllers\ModeratorController::instance();
 
-                    switch ($_POST['forum_action']) {
+                    switch ($forumAction) {
                         case 'resolve_report':
                             $result = $moderator->resolveReport(
                                 (int) ($_POST['report_id'] ?? 0),
-                                sanitize_text_field($_POST['resolution'] ?? 'dismissed')
+                                sanitize_key((string) ($_POST['resolution'] ?? 'resolved'))
                             );
                             $result['success'] ? $success = 'Meldung bearbeitet.' : $error = $result['error'];
                             break;
@@ -46,9 +48,13 @@ trait CMS_Forum_Page_Reports_Trait
                                 $moderator->deletePost($postId);
                             }
                             if ($reportId > 0) {
-                                $moderator->resolveReport($reportId, 'Post gelöscht');
+                                $moderator->resolveReport($reportId, 'resolved');
                             }
                             $success = 'Beitrag gelöscht und Meldung geschlossen.';
+                            break;
+
+                        default:
+                            $error = 'Unbekannte Aktion.';
                             break;
                     }
                 }

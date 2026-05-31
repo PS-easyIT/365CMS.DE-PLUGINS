@@ -58,7 +58,7 @@ final class CMS_Speakers_Post_Type
             return;
         }
 
-        $current_path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $current_path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
         $is_active = str_starts_with($current_path, '/speakers') ? 'active' : '';
         echo '<a href="' . htmlspecialchars(SITE_URL . '/speakers', ENT_QUOTES, 'UTF-8') . '" class="nav-link ' . htmlspecialchars($is_active, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($navLabel, ENT_QUOTES, 'UTF-8') . '</a>';
     }
@@ -308,8 +308,8 @@ final class CMS_Speakers_Post_Type
                                     : ($_POST['bio'] ?? ''),
             'short_bio'         => trim(strip_tags($_POST['short_bio'] ?? '')),
             'photo_url'         => $this->clean_url((string) ($_POST['photo_url'] ?? '')),
-            'formats'           => json_encode($formats),
-            'languages'         => json_encode($langs),
+            'formats'           => $this->encode_string_array($formats),
+            'languages'         => $this->encode_string_array($langs),
             'target_audience'   => $this->clean_text((string) ($_POST['target_audience'] ?? ''), 400),
             'speaking_style'    => $this->clean_text((string) ($_POST['speaking_style'] ?? ''), 200),
             'awards'            => $this->clean_textarea((string) ($_POST['awards'] ?? ''), 4000),
@@ -321,12 +321,12 @@ final class CMS_Speakers_Post_Type
             'status'            => $status,
             'is_featured'       => isset($_POST['is_featured']) ? 1 : 0,
             'is_verified'       => isset($_POST['is_verified'])  ? 1 : 0,
-            'recognitions'      => json_encode(
+            'recognitions'      => $this->encode_string_array(
                 is_array($_POST['recognitions'] ?? null)
                     ? array_values(array_filter(array_map(static fn($value) => trim((string) $value), $_POST['recognitions'])))
                     : []
             ),
-            'skills'            => json_encode(
+            'skills'            => $this->encode_string_array(
                 is_array($_POST['skills'] ?? null)
                     ? array_values(array_filter(array_map(static fn($value) => trim((string) $value), $_POST['skills'])))
                     : []
@@ -336,7 +336,12 @@ final class CMS_Speakers_Post_Type
         $saved_id = $db->save_speaker($data, $id);
         if ($saved_id > 0) {
             $tj = trim($_POST['topics_json'] ?? '');
-            if ($tj !== '') $db->save_topics($saved_id, json_decode($tj, true) ?? []);
+            if ($tj !== '') {
+                $decodedTopics = json_decode($tj, true);
+                if (is_array($decodedTopics)) {
+                    $db->save_topics($saved_id, $decodedTopics);
+                }
+            }
             CMS\Router::instance()->redirect('/admin/speakers/edit/' . $saved_id . '?saved=1');
         } else {
             CMS\Router::instance()->redirect('/admin/speakers?error=save');
@@ -347,12 +352,27 @@ final class CMS_Speakers_Post_Type
     {
         $this->require_admin();
         $speaker_id  = $id_param !== '' ? (int)$id_param : (int)($_POST['id'] ?? 0);
+        if ($speaker_id <= 0) {
+            CMS\Router::instance()->redirect('/admin/speakers?tab=overview&error=invalid_id');
+            return;
+        }
         $csrf_token  = (string) ($_POST['csrf_token'] ?? '');
         if (!CMS\Security::instance()->verifyToken($csrf_token, 'approve_speaker')) {
             CMS\Router::instance()->redirect('/admin/speakers?tab=overview&error=csrf');
             return;
         }
-        CMS_Speakers_Database::instance()->set_speaker_status($speaker_id, 'active');
+        $db = CMS_Speakers_Database::instance();
+        $speaker = $db->get_speaker($speaker_id);
+        if ($speaker === null) {
+            CMS\Router::instance()->redirect('/admin/speakers?tab=overview&error=not_found');
+            return;
+        }
+        if (($speaker->status ?? '') !== 'pending') {
+            CMS\Router::instance()->redirect('/admin/speakers?tab=overview&error=invalid_status');
+            return;
+        }
+
+        $db->set_speaker_status($speaker_id, 'active');
         CMS\Router::instance()->redirect('/admin/speakers?tab=overview&approved=1');
     }
 
@@ -362,8 +382,14 @@ final class CMS_Speakers_Post_Type
         if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'delete_speaker')) {
             CMS\Router::instance()->redirect('/admin/speakers?error=csrf'); return;
         }
-        if ($id <= 0) $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
-        if ($id > 0) CMS_Speakers_Database::instance()->delete_speaker($id);
+        if ($id <= 0) {
+            $id = (int)($_POST['id'] ?? 0);
+        }
+        if ($id <= 0) {
+            CMS\Router::instance()->redirect('/admin/speakers?error=invalid_id');
+            return;
+        }
+        CMS_Speakers_Database::instance()->delete_speaker($id);
         CMS\Router::instance()->redirect('/admin/speakers?deleted=1');
     }
     public function admin_event_add(): void
@@ -400,7 +426,9 @@ final class CMS_Speakers_Post_Type
     {
         $this->require_admin();
         if (!CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'speaker_event')) $this->json_error('CSRF', 403);
-        if ($id <= 0) $id = (int)($_GET['id'] ?? 0);
+        if ($id <= 0) {
+            $id = (int)($_POST['id'] ?? 0);
+        }
         if ($id <= 0) $this->json_error('Ungueltige ID', 422);
         $deleted = CMS_Speakers_Database::instance()->delete_event($id);
         $this->json_response(['success' => $deleted], $deleted ? 200 : 500);
@@ -593,5 +621,16 @@ final class CMS_Speakers_Post_Type
     private function json_error(string $msg, int $status = 400): void
     {
         $this->json_response(['success' => false, 'error' => $msg], $status);
+    }
+
+    private function encode_string_array(array $items): string
+    {
+        $normalized = array_values(array_filter(array_map(
+            fn($item): string => $this->clean_text((string) $item, 255),
+            $items
+        )));
+        $encoded = json_encode($normalized, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        return is_string($encoded) ? $encoded : '[]';
     }
 }

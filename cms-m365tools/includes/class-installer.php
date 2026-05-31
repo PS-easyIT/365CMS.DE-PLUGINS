@@ -47,9 +47,9 @@ final class CMS_M365CALCULATOR_Installer
         $pdo = $db->getPdo();
         $prefix = method_exists($db, 'getPrefix') ? $db->getPrefix() : (method_exists($db, 'prefix') ? $db->prefix() : 'cms_');
 
-        $newTable = $prefix . 'm365tools_module_settings';
-        $oldTable = $prefix . 'm365calculator_module_settings';
-        $optionTable = $prefix . 'm365tools_module_options';
+        $newTable = self::validated_table_name($prefix . 'm365tools_module_settings');
+        $oldTable = self::validated_table_name($prefix . 'm365calculator_module_settings');
+        $optionTable = self::validated_table_name($prefix . 'm365tools_module_options');
         $quotedNewTable = self::quote_identifier($newTable);
 
         $pdo->exec("CREATE TABLE IF NOT EXISTS {$quotedNewTable} (
@@ -163,6 +163,9 @@ final class CMS_M365CALCULATOR_Installer
               AND TABLE_NAME = ?
               AND COLUMN_NAME = ?
             LIMIT 1');
+        if (!$stmt instanceof \PDOStatement) {
+            throw new \RuntimeException('Failed to prepare INFORMATION_SCHEMA column query.');
+        }
         $stmt->execute([$table, $column]);
 
         return $stmt->fetchColumn() !== false;
@@ -175,6 +178,9 @@ final class CMS_M365CALCULATOR_Installer
             WHERE TABLE_SCHEMA = DATABASE()
               AND TABLE_NAME = ?
             LIMIT 1');
+        if (!$stmt instanceof \PDOStatement) {
+            throw new \RuntimeException('Failed to prepare INFORMATION_SCHEMA table query.');
+        }
         $stmt->execute([$table]);
 
         return $stmt->fetchColumn() !== false;
@@ -212,6 +218,15 @@ final class CMS_M365CALCULATOR_Installer
     private static function quote_identifier(string $identifier): string
     {
         return '`' . str_replace('`', '``', $identifier) . '`';
+    }
+
+    private static function validated_table_name(string $table): string
+    {
+        if (preg_match('/^[A-Za-z0-9_]+$/', $table) !== 1) {
+            throw new \RuntimeException('Invalid table identifier configured.');
+        }
+
+        return $table;
     }
 
     private static function log_install_error(\Throwable $e): void

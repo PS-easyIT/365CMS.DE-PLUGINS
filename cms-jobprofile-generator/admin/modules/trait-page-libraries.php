@@ -13,6 +13,8 @@ if (!defined('ABSPATH')) {
  */
 trait CMS_JPG_Page_Libraries_Trait
 {
+    private const IMPORT_JSON_MAX_BYTES = 2_097_152; // 2 MB
+
     // ── 3. BIBLIOTHEKEN ──────────────────────────────────────────────────────
 
     public static function render_libraries(): void
@@ -52,7 +54,12 @@ trait CMS_JPG_Page_Libraries_Trait
             default             => [],
         };
 
-        include JPG_DIR . 'admin/views/page-libraries.php';
+        self::render_admin_view(
+            'Bibliotheken',
+            'jpg-libraries',
+            JPG_DIR . 'admin/views/page-libraries.php',
+            compact('tab', 'notice', 'error', 'tabs', 'data')
+        );
     }
 
     /** @return array{string, string} */
@@ -187,7 +194,31 @@ trait CMS_JPG_Page_Libraries_Trait
 
             case 'import-export':
                 if (!empty($_POST['import_json']) && !empty($_FILES['import_file']['tmp_name'])) {
-                    $json  = file_get_contents($_FILES['import_file']['tmp_name']);
+                    $uploadError = (int) ($_FILES['import_file']['error'] ?? UPLOAD_ERR_NO_FILE);
+                    if ($uploadError !== UPLOAD_ERR_OK) {
+                        $error = 'Import fehlgeschlagen – Upload konnte nicht verarbeitet werden.';
+                        break;
+                    }
+                    $tmpName = (string) ($_FILES['import_file']['tmp_name'] ?? '');
+                    if ($tmpName === '' || !is_uploaded_file($tmpName)) {
+                        $error = 'Import fehlgeschlagen – ungültige Upload-Datei.';
+                        break;
+                    }
+                    $size = (int) ($_FILES['import_file']['size'] ?? 0);
+                    if ($size <= 0 || $size > self::IMPORT_JSON_MAX_BYTES) {
+                        $error = 'Import fehlgeschlagen – Datei ist leer oder zu groß (max. 2 MB).';
+                        break;
+                    }
+                    $json = file_get_contents($tmpName);
+                    if (!is_string($json) || trim($json) === '') {
+                        $error = 'Import fehlgeschlagen – Datei konnte nicht gelesen werden.';
+                        break;
+                    }
+                    json_decode($json, true);
+                    if (json_last_error() !== JSON_ERROR_NONE) {
+                        $error = 'Import fehlgeschlagen – ungültiges JSON.';
+                        break;
+                    }
                     $auth  = \CMS\Auth::instance();
                     $uId   = method_exists($auth, 'getUserId') ? (int) $auth->getUserId() : 0;
                     $newId = CMS_JPG_Export::instance()->import_json($json, $uId);

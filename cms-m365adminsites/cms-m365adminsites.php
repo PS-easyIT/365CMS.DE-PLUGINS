@@ -40,7 +40,11 @@ final class CMS_M365ADMINSITES
 
     private function load_dependencies(): void
     {
+        $pluginBase = realpath(CMS_M365ADMINSITES_PLUGIN_DIR) ?: CMS_M365ADMINSITES_PLUGIN_DIR;
+        $sharedContract = realpath(CMS_M365ADMINSITES_PLUGIN_DIR . '../shared/admin/plugin-admin-contract.php') ?: '';
+
         $files = [
+            CMS_M365ADMINSITES_PLUGIN_DIR . '../shared/admin/plugin-admin-contract.php',
             CMS_M365ADMINSITES_PLUGIN_DIR . 'includes/class-settings.php',
             CMS_M365ADMINSITES_PLUGIN_DIR . 'includes/class-repository.php',
             CMS_M365ADMINSITES_PLUGIN_DIR . 'includes/class-installer.php',
@@ -51,9 +55,20 @@ final class CMS_M365ADMINSITES
         ];
 
         foreach ($files as $file) {
-            if (file_exists($file)) {
-                require_once $file;
+            $resolved = realpath($file);
+            if (!is_string($resolved) || !is_file($resolved)) {
+                continue;
             }
+
+            $isPluginFile = str_starts_with($resolved, rtrim((string) $pluginBase, '\\/') . DIRECTORY_SEPARATOR);
+            $isAllowedShared = $sharedContract !== '' && $resolved === $sharedContract;
+
+            if (!$isPluginFile && !$isAllowedShared) {
+                error_log('CMS M365 Adminsites skipped unsafe include: ' . $resolved);
+                continue;
+            }
+
+            require_once $resolved;
         }
     }
 

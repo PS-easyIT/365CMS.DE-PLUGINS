@@ -37,6 +37,10 @@ final class CMS_Promos_Public_Controller
 
     public function register_routes($router): void
     {
+        if (!is_object($router) || !method_exists($router, 'addRoute')) {
+            return;
+        }
+
         $router->addRoute('GET', '/promos', [$this, 'archive_page']);
         $router->addRoute('GET', '/promos/placement/:slug', [$this, 'archive_page']);
         $router->addRoute('GET', '/promo/click/:slug', [$this, 'redirect_promo']);
@@ -50,16 +54,19 @@ final class CMS_Promos_Public_Controller
         $placements = $repository->get_placements();
         $currentPlacement = $slug !== '' ? $repository->get_placement_by_slug($slug) : null;
         $promos = $repository->get_active_promos($slug !== '' ? $slug : null);
-        foreach ($promos as $promo) {
-            $repository->increment_impression((int) ($promo['id'] ?? 0));
-        }
+        $repository->increment_impressions(array_map(static fn (array $promo): int => (int) ($promo['id'] ?? 0), $promos));
 
         $theme = class_exists('CMS\\ThemeManager') ? \CMS\ThemeManager::instance() : null;
         if ($theme !== null) {
             $theme->getHeader();
         }
 
-        include CMS_PROMOS_PLUGIN_DIR . 'templates/archive-promos.php';
+        $template = CMS_PROMOS_PLUGIN_DIR . 'templates/archive-promos.php';
+        if (is_file($template)) {
+            include $template;
+        } else {
+            $this->log_error('Archive template missing: ' . $template);
+        }
 
         if ($theme !== null) {
             $theme->getFooter();
@@ -78,6 +85,12 @@ final class CMS_Promos_Public_Controller
         }
 
         CMS_Promos_Repository::instance()->increment_click((int) $promo['id']);
+        if (headers_sent()) {
+            $this->log_error('Cannot redirect promo click because headers were already sent');
+            echo '<a href="' . $this->escape_attr($targetUrl) . '">Weiter zur Promo</a>';
+            return;
+        }
+
         header('Location: ' . $targetUrl, true, 302);
         exit;
     }
@@ -123,9 +136,7 @@ final class CMS_Promos_Public_Controller
                 continue;
             }
 
-            foreach ($promos as $promo) {
-                $repository->increment_impression((int) ($promo['id'] ?? 0));
-            }
+            $repository->increment_impressions(array_map(static fn (array $promo): int => (int) ($promo['id'] ?? 0), $promos));
 
             echo '<section class="promos-hook-zone promos-hook-zone--' . $this->escape_attr($themeHook) . '">';
             echo '<div class="promos-hook-zone__inner">';
@@ -242,5 +253,10 @@ final class CMS_Promos_Public_Controller
             $safeHref = $this->sanitize_redirect_url($href);
             return $safeHref !== '' ? ' href="' . $this->escape_attr($safeHref) . '"' : '';
         }, $html) ?? '';
+    }
+
+    private function log_error(string $message): void
+    {
+        error_log('[cms-promos] ' . $message);
     }
 }

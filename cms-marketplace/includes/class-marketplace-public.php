@@ -11,6 +11,7 @@ final class CMS_Marketplace_Public
     private const PUBLIC_SUBMIT_MIN_INTERVAL = 30;
     private const PUBLIC_SUBMIT_WINDOW = 3600;
     private const PUBLIC_SUBMIT_MAX_ATTEMPTS = 10;
+    private const PUBLIC_RATE_FILE_MAX_BYTES = 4096;
 
     public function __construct(private readonly CMS_Marketplace_Service $service)
     {
@@ -59,6 +60,7 @@ final class CMS_Marketplace_Public
         if ($section === null) {
             return;
         }
+        $publicCssUrl = $this->resolvePublicCssUrl($section);
 
         if (!headers_sent()) {
             http_response_code(200);
@@ -86,7 +88,10 @@ final class CMS_Marketplace_Public
             $publicRouteMap = $this->service->getPublicRouteMap();
             $siteUrl = defined('SITE_URL') ? (string) SITE_URL : '';
 
-            include CMS_MARKETPLACE_PLUGIN_DIR . 'templates/public-marketplace.php';
+            $templatePath = CMS_MARKETPLACE_PLUGIN_DIR . 'templates/public-marketplace.php';
+            if (is_file($templatePath)) {
+                include $templatePath;
+            }
             exit;
         }
 
@@ -122,13 +127,11 @@ final class CMS_Marketplace_Public
         $submitUrl = $this->service->getPublicSubmissionUrl();
         $siteUrl = defined('SITE_URL') ? (string) SITE_URL : '';
 
-        include CMS_MARKETPLACE_PLUGIN_DIR . 'templates/public-submit.php';
+        $templatePath = CMS_MARKETPLACE_PLUGIN_DIR . 'templates/public-submit.php';
+        if (is_file($templatePath)) {
+            include $templatePath;
+        }
         exit;
-    }
-
-    private function isPublicSubmissionRequest(): bool
-    {
-        return $this->resolveCurrentSection() === 'submit';
     }
 
     private function resolveCurrentSection(): ?string
@@ -206,7 +209,7 @@ final class CMS_Marketplace_Public
         $value = preg_replace('/[[:cntrl:]]+/u', ' ', $value) ?? '';
         $value = preg_replace('/\s+/u', ' ', $value) ?? '';
 
-        return mb_substr(trim($value), 0, max(1, $maxLength), 'UTF-8');
+        return $this->limitUtf8(trim($value), max(1, $maxLength));
     }
 
     private function sanitizeSubmittedTextarea(mixed $value, int $maxLength): string
@@ -214,7 +217,7 @@ final class CMS_Marketplace_Public
         $value = str_replace(["\r\n", "\r"], "\n", strip_tags((string) $value));
         $value = str_replace("\0", '', $value);
 
-        return mb_substr(trim($value), 0, max(1, $maxLength), 'UTF-8');
+        return $this->limitUtf8(trim($value), max(1, $maxLength));
     }
 
     private function sanitizeSubmittedDate(mixed $value): string
@@ -231,7 +234,7 @@ final class CMS_Marketplace_Public
     private function recordAndCheckRateLimit(): bool
     {
         $ip = trim((string) ($_SERVER['REMOTE_ADDR'] ?? ''));
-        if ($ip === '') {
+        if ($ip === '' || filter_var($ip, FILTER_VALIDATE_IP) === false) {
             return false;
         }
 
@@ -246,7 +249,7 @@ final class CMS_Marketplace_Public
 
         if (is_file($file)) {
             $size = @filesize($file);
-            $raw = is_int($size) && $size >= 0 && $size <= 4096 ? file_get_contents($file) : '';
+            $raw = is_int($size) && $size >= 0 && $size <= self::PUBLIC_RATE_FILE_MAX_BYTES ? @file_get_contents($file) : '';
             $decoded = is_string($raw) ? json_decode($raw, true) : null;
             if (is_array($decoded)) {
                 $attempts = array_values(array_filter(array_map('intval', $decoded), static function (int $timestamp) use ($now): bool {
@@ -268,8 +271,33 @@ final class CMS_Marketplace_Public
         $json = json_encode($attempts);
         if (is_string($json)) {
             file_put_contents($file, $json, LOCK_EX);
+            @chmod($file, 0600);
         }
 
         return false;
+    }
+
+    private function resolvePublicCssUrl(string $section): string
+    {
+        $fileName = $section === 'submit' ? 'public-submit.css' : 'public-marketplace.css';
+        $cssFile = CMS_MARKETPLACE_PLUGIN_DIR . 'assets/css/' . $fileName;
+        if (!is_file($cssFile)) {
+            return '';
+        }
+
+        return CMS_MARKETPLACE_PLUGIN_URL . 'assets/css/' . rawurlencode($fileName) . '?v=' . (int) filemtime($cssFile);
+    }
+
+    private function limitUtf8(string $value, int $maxLength): string
+    {
+        if ($maxLength < 1) {
+            return '';
+        }
+
+        if (function_exists('mb_substr')) {
+            return mb_substr($value, 0, $maxLength, 'UTF-8');
+        }
+
+        return substr($value, 0, $maxLength);
     }
 }

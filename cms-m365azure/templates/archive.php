@@ -53,8 +53,8 @@ $serviceDescription = static function (array $service) use ($normalizeText): str
     return trim(strip_tags($normalizeText((string) ($service['summary'] ?? ''))));
 };
 $serviceLinksHtml = static function (array $service, string $docsLabel, string $pricingLabel, string $emptyLabel) use ($esc): string {
-    $docsUrl = trim((string) ($service['docs_url'] ?? ''));
-    $pricingUrl = trim((string) ($service['pricing_url'] ?? ''));
+    $docsUrl = CMS_M365Azure_Repository::public_url((string) ($service['docs_url'] ?? ''));
+    $pricingUrl = CMS_M365Azure_Repository::public_url((string) ($service['pricing_url'] ?? ''));
     if ($docsUrl === '' && $pricingUrl === '') {
         return '<span class="azs-cell-empty">' . $esc($emptyLabel) . '</span>';
     }
@@ -246,7 +246,7 @@ foreach ($categories as $category) {
                 <tbody>
                     <?php foreach ($categoryServices as $service): ?>
                     <?php
-                    $imageUrl = trim((string) ($service['image_url'] ?? ''));
+                    $imageUrl = CMS_M365Azure_Repository::public_image_url((string) ($service['image_url'] ?? ''));
                     $hasImage = $showImages && $imageUrl !== '';
                     $description = $serviceDescription($service);
                     $featureItems = $showFeatures ? $lines((string) ($service['features'] ?? '')) : [];
@@ -311,7 +311,7 @@ foreach ($categories as $category) {
             $description = $serviceDescription($service);
             $featureItems = $showFeatures ? $lines((string) ($service['features'] ?? '')) : [];
             $useCaseItems = $showUseCases ? $lines((string) ($service['use_cases'] ?? '')) : [];
-            $imageUrl = trim((string) ($service['image_url'] ?? ''));
+            $imageUrl = CMS_M365Azure_Repository::public_image_url((string) ($service['image_url'] ?? ''));
             $hasImage = $showImages && $imageUrl !== '';
             ?>
             <details class="phinit-card azs-service-accordion__item">

@@ -119,8 +119,9 @@ trait CMS_JPG_Member_Dsgvo_Trait
                 ) ?: [];
 
                 foreach ($cvFiles as $cv) {
-                    if (!empty($cv->cv_file_path) && file_exists($cv->cv_file_path)) {
-                        @unlink($cv->cv_file_path);
+                    $safePath = $this->resolve_cv_storage_path((string) ($cv->cv_file_path ?? ''));
+                    if ($safePath !== '' && is_file($safePath) && !unlink($safePath)) {
+                        error_log('CMS_JPG_Member_Controller::handle_account_deletion() failed to delete CV file.');
                     }
                 }
 
@@ -142,5 +143,41 @@ trait CMS_JPG_Member_Dsgvo_Trait
         } catch (\Throwable $e) {
             error_log('CMS_JPG_Member_Controller::handle_account_deletion() error: ' . $e->getMessage());
         }
+    }
+
+    private function resolve_cv_storage_path(string $storedPath): string
+    {
+        $storedPath = trim($storedPath);
+        if ($storedPath === '') {
+            return '';
+        }
+
+        $baseDir = defined('UPLOADS_PATH')
+            ? rtrim((string) UPLOADS_PATH, '/\\') . '/'
+            : rtrim((defined('ABSPATH') ? ABSPATH : dirname(__DIR__, 4)) . '/uploads/', '/\\') . '/';
+
+        $baseReal = realpath($baseDir);
+        if ($baseReal === false) {
+            return '';
+        }
+
+        $candidate = $storedPath;
+        $isAbsolute = preg_match('#^[A-Za-z]:[\\\\/]#', $candidate) === 1 || str_starts_with($candidate, '/');
+        if (!$isAbsolute) {
+            $candidate = $baseDir . ltrim($candidate, '/\\');
+        }
+
+        $realPath = realpath($candidate);
+        if ($realPath === false) {
+            return '';
+        }
+
+        $normalizedBase = rtrim(str_replace('\\', '/', $baseReal), '/') . '/';
+        $normalizedReal = str_replace('\\', '/', $realPath);
+        if (!str_starts_with($normalizedReal, $normalizedBase)) {
+            return '';
+        }
+
+        return $realPath;
     }
 }

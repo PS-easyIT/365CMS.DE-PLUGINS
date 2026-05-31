@@ -60,7 +60,7 @@ $val      = fn(string $key, string $default = ''): string => $e($old[$key] ?? $d
                             $typeLabels = ['online' => 'Online-Termin', 'onsite' => 'Vor Ort', 'hybrid' => 'Online oder vor Ort'];
                             $lt = $service['location_type'] ?? 'online';
                             ?>
-                            <li><?php echo $typeLabels[$lt] ?? $lt; ?></li>
+                            <li><?php echo $e((string) ($typeLabels[$lt] ?? $lt)); ?></li>
                         </ul>
                         <div class="booking-info-provider">
                             <strong><?php echo $e($provider['display_name']); ?></strong>

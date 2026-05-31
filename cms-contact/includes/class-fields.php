@@ -211,6 +211,36 @@ final class CMS_Contact_Fields
     }
 
     /**
+     * Anzahl der Felder pro Formular in einer Sammelabfrage.
+     *
+     * @param int[] $formIds
+     * @return array<int, int>
+     */
+    public function count_by_form_ids(array $formIds): array
+    {
+        $formIds = array_values(array_filter(array_map('intval', $formIds), static fn (int $id): bool => $id > 0));
+        if ($formIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(', ', array_fill(0, count($formIds), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT form_id, COUNT(*) AS cnt
+             FROM {$this->prefix}contact_fields
+             WHERE form_id IN ({$placeholders})
+             GROUP BY form_id"
+        );
+        $stmt->execute($formIds);
+
+        $counts = [];
+        foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $counts[(int) ($row['form_id'] ?? 0)] = (int) ($row['cnt'] ?? 0);
+        }
+
+        return $counts;
+    }
+
+    /**
      * Standard-Felder für ein neues Formular anlegen
      */
     public function create_default_fields(int $formId): void

@@ -59,8 +59,9 @@ $s = array_merge([
 // Branchen für Filtermenü
 $all_industries = CMS_Companies_Database::instance()->get_all_industries();
 $companiesArchiveUrl = htmlspecialchars(rtrim((string) SITE_URL, '/') . '/companies', ENT_QUOTES, 'UTF-8');
-$searchQuery = htmlspecialchars(sanitize_text_field((string) ($_GET['q'] ?? '')), ENT_QUOTES, 'UTF-8');
-$cityFilter = htmlspecialchars(sanitize_text_field((string) ($filters['city'] ?? '')), ENT_QUOTES, 'UTF-8');
+$searchFilter = (string) ($filters['q'] ?? '');
+$searchQuery = htmlspecialchars($searchFilter, ENT_QUOTES, 'UTF-8');
+$cityFilter = htmlspecialchars((string) ($filters['city'] ?? ''), ENT_QUOTES, 'UTF-8');
 $coCssColor = static function (mixed $value, string $fallback): string {
     $color = trim((string) $value);
     return preg_match('/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/', $color) === 1 ? $color : $fallback;
@@ -135,7 +136,7 @@ $coRadius = max(0, min(32, (int) ($s['design_border_radius'] ?? 12)));
 
             <div class="co-filter__actions">
                 <button type="submit" class="phinit-btn phinit-btn--primary co-btn co-btn-primary">Suchen</button>
-                <?php if (!empty($filters['industry']) || !empty($filters['city']) || !empty($filters['partner']) || !empty($_GET['q'])): ?>
+                <?php if (!empty($filters['industry']) || !empty($filters['city']) || !empty($filters['partner']) || $searchFilter !== ''): ?>
                     <a href="<?= $companiesArchiveUrl ?>" class="phinit-btn phinit-btn--secondary co-btn co-btn-ghost co-filter-reset">Filter zurücksetzen</a>
                 <?php endif; ?>
             </div>
@@ -162,7 +163,7 @@ $coRadius = max(0, min(32, (int) ($s['design_border_radius'] ?? 12)));
 
         <!-- Pagination -->
         <?php if ($current_page > 1 || count($companies) >= $per_page): ?>
-        <?php $companyPaginationBase = '?industry=' . rawurlencode((string) ($filters['industry'] ?? '')) . '&city=' . rawurlencode((string) ($filters['city'] ?? '')) . '&partner=' . rawurlencode((string) ($filters['partner'] ?? '')) . '&q=' . rawurlencode((string) ($_GET['q'] ?? '')); ?>
+        <?php $companyPaginationBase = '?industry=' . rawurlencode((string) ($filters['industry'] ?? '')) . '&city=' . rawurlencode((string) ($filters['city'] ?? '')) . '&partner=' . rawurlencode((string) ($filters['partner'] ?? '')) . '&q=' . rawurlencode($searchFilter); ?>
         <nav class="co-pagination" aria-label="Seitennavigation">
             <?php if ($current_page > 1): ?>
                 <a href="<?= htmlspecialchars($companyPaginationBase . '&page=' . ($current_page - 1), ENT_QUOTES, 'UTF-8') ?>" class="co-page-btn phinit-btn phinit-btn--secondary">&larr; Zurück</a>

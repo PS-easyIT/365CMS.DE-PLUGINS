@@ -19,6 +19,10 @@ final class CMS_365NETWORK_Public
     private ?bool $domainLandingRequestCache = null;
     private ?bool $landingPathRequestCache = null;
     private bool $renderingPublicPage = false;
+    /** @var array<string,string> */
+    private array $resolvedTableCache = [];
+    /** @var array<string,bool> */
+    private array $columnExistsCache = [];
 
     public static function instance(): self
     {
@@ -56,6 +60,11 @@ final class CMS_365NETWORK_Public
 
     public function register_routes($router): void
     {
+        if (!is_object($router) || !method_exists($router, 'addRoute')) {
+            error_log('[cms-365network] public routes could not be registered: invalid router instance');
+            return;
+        }
+
         $settings = $this->settings();
         $routeSlug = $this->route_slug($settings);
 
@@ -400,16 +409,21 @@ final class CMS_365NETWORK_Public
             return [];
         }
 
+        $eventsTable = $this->resolve_table_name('events');
+        if ($eventsTable === '') {
+            return [];
+        }
+
         try {
             $db = CMS\Database::instance();
-            $prefix = $db->prefix();
             $params = [];
             $statusWhere = $this->status_filter_sql('events', ['published', 'active'], $params);
-            $sql = sprintf("SELECT id, title, event_date, event_time, city, location, image_url, category
-                FROM {$prefix}events
+            $params[] = $limit;
+            $sql = "SELECT id, title, event_date, event_time, city, location, image_url, category
+                FROM `{$eventsTable}`
                 WHERE {$statusWhere} AND (event_date >= CURDATE() OR (end_date IS NOT NULL AND end_date >= CURDATE()))
                 ORDER BY event_date ASC, event_time ASC
-                LIMIT %d", $limit);
+                LIMIT ?";
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'event');
@@ -426,17 +440,23 @@ final class CMS_365NETWORK_Public
             return [];
         }
 
+        $speakersTable = $this->resolve_table_name('speakers');
+        if ($speakersTable === '') {
+            return [];
+        }
+
         try {
             $db = CMS\Database::instance();
-            $prefix = $db->prefix();
             $offset = $this->random_offset('speakers', ['active'], $limit);
             $params = [];
             $statusWhere = $this->status_filter_sql('speakers', ['active'], $params);
-            $sql = sprintf("SELECT id, first_name, last_name, position, company, photo_url, location_city
-                FROM {$prefix}speakers
+            $params[] = $limit;
+            $params[] = $offset;
+            $sql = "SELECT id, first_name, last_name, position, company, photo_url, location_city
+                FROM `{$speakersTable}`
                 WHERE {$statusWhere}
                 ORDER BY id ASC
-                LIMIT %d OFFSET %d", $limit, $offset);
+                LIMIT ? OFFSET ?";
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'speaker');
@@ -453,17 +473,23 @@ final class CMS_365NETWORK_Public
             return [];
         }
 
+        $companiesTable = $this->resolve_table_name('companies');
+        if ($companiesTable === '') {
+            return [];
+        }
+
         try {
             $db = CMS\Database::instance();
-            $prefix = $db->prefix();
             $offset = $this->random_offset('companies', ['active'], $limit);
             $params = [];
             $statusWhere = $this->status_filter_sql('companies', ['active'], $params);
-            $sql = sprintf("SELECT id, name, industry, logo_url, location_city, is_partner, is_top_partner
-                FROM {$prefix}companies
+            $params[] = $limit;
+            $params[] = $offset;
+            $sql = "SELECT id, name, industry, logo_url, location_city, is_partner, is_top_partner
+                FROM `{$companiesTable}`
                 WHERE {$statusWhere}
                 ORDER BY id ASC
-                LIMIT %d OFFSET %d", $limit, $offset);
+                LIMIT ? OFFSET ?";
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'company');
@@ -480,17 +506,23 @@ final class CMS_365NETWORK_Public
             return [];
         }
 
+        $expertsTable = $this->resolve_table_name('experts');
+        if ($expertsTable === '') {
+            return [];
+        }
+
         try {
             $db = CMS\Database::instance();
-            $prefix = $db->prefix();
             $offset = $this->random_offset('experts', ['active'], $limit);
             $params = [];
             $statusWhere = $this->status_filter_sql('experts', ['active'], $params);
-            $sql = sprintf("SELECT id, first_name, last_name, position, company, photo_url, location_city
-                FROM {$prefix}experts
+            $params[] = $limit;
+            $params[] = $offset;
+            $sql = "SELECT id, first_name, last_name, position, company, photo_url, location_city
+                FROM `{$expertsTable}`
                 WHERE {$statusWhere}
                 ORDER BY id ASC
-                LIMIT %d OFFSET %d", $limit, $offset);
+                LIMIT ? OFFSET ?";
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'expert');
@@ -507,16 +539,21 @@ final class CMS_365NETWORK_Public
             return [];
         }
 
+        $companiesTable = $this->resolve_table_name('companies');
+        if ($companiesTable === '') {
+            return [];
+        }
+
         try {
             $db = CMS\Database::instance();
-            $prefix = $db->prefix();
             $params = [];
             $statusWhere = $this->status_filter_sql('companies', ['active'], $params);
-            $sql = sprintf("SELECT id, name, industry, logo_url, location_city, is_partner, is_top_partner
-                FROM {$prefix}companies
+            $params[] = $limit;
+            $sql = "SELECT id, name, industry, logo_url, location_city, is_partner, is_top_partner
+                FROM `{$companiesTable}`
                 WHERE {$statusWhere} AND (is_partner = 1 OR is_top_partner = 1)
                 ORDER BY is_top_partner DESC, is_partner DESC, name ASC
-                LIMIT %d", $limit);
+                LIMIT ?";
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             $rows = array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []);
@@ -534,16 +571,21 @@ final class CMS_365NETWORK_Public
             return [];
         }
 
+        $expertsTable = $this->resolve_table_name('experts');
+        if ($expertsTable === '') {
+            return [];
+        }
+
         try {
             $db = CMS\Database::instance();
-            $prefix = $db->prefix();
             $params = [];
             $statusWhere = $this->status_filter_sql('experts', ['active'], $params);
-            $sql = sprintf("SELECT id, first_name, last_name, position, company, photo_url, location_city
-                FROM {$prefix}experts
+            $params[] = $limit;
+            $sql = "SELECT id, first_name, last_name, position, company, photo_url, location_city
+                FROM `{$expertsTable}`
                 WHERE {$statusWhere}
                 ORDER BY last_name ASC, first_name ASC, id ASC
-                LIMIT %d", $limit);
+                LIMIT ?";
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             $rows = array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []);
@@ -683,8 +725,8 @@ final class CMS_365NETWORK_Public
                 FROM `{$postsTable}` p{$categoryJoin}
                 WHERE {$publicationWhere}
                 ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC
-                LIMIT {$limit}");
-            $stmt->execute([]);
+                LIMIT ?");
+            $stmt->execute([$limit]);
             $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK latest posts failed: ' . $e->getMessage());
@@ -1247,16 +1289,16 @@ final class CMS_365NETWORK_Public
 
     private function random_offset(string $table, array $statuses, int $limit): int
     {
-        if (!$this->table_exists($table)) {
+        $resolvedTable = $this->resolve_table_name($table);
+        if ($resolvedTable === '') {
             return 0;
         }
 
         try {
             $db = CMS\Database::instance();
-            $prefix = $db->prefix();
             $params = [];
             $where = $this->status_filter_sql($table, $statuses, $params);
-            $stmt = $db->prepare("SELECT COUNT(*) FROM {$prefix}{$table} WHERE {$where}");
+            $stmt = $db->prepare("SELECT COUNT(*) FROM `{$resolvedTable}` WHERE {$where}");
             $stmt->execute($params);
             $count = max(0, (int) $stmt->fetchColumn());
             if ($count <= $limit) {
@@ -1369,20 +1411,25 @@ final class CMS_365NETWORK_Public
             return false;
         }
 
+        $cacheKey = $table . '.' . $column;
+        if (array_key_exists($cacheKey, $this->columnExistsCache)) {
+            return $this->columnExistsCache[$cacheKey];
+        }
+
         try {
             $db = CMS\Database::instance();
             $resolvedTable = $this->resolve_table_name($table);
             if ($resolvedTable === '') {
-                return false;
+                return $this->columnExistsCache[$cacheKey] = false;
             }
 
             $stmt = $db->prepare(
                 'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
             );
             $stmt->execute([$resolvedTable, $column]);
-            return (bool) $stmt->fetchColumn();
+            return $this->columnExistsCache[$cacheKey] = (bool) $stmt->fetchColumn();
         } catch (\Throwable $e) {
-            return false;
+            return $this->columnExistsCache[$cacheKey] = false;
         }
     }
 
@@ -1390,6 +1437,10 @@ final class CMS_365NETWORK_Public
     {
         if (preg_match('/^[a-z0-9_]+$/', $table) !== 1) {
             return '';
+        }
+
+        if (array_key_exists($table, $this->resolvedTableCache)) {
+            return $this->resolvedTableCache[$table];
         }
 
         try {
@@ -1407,14 +1458,14 @@ final class CMS_365NETWORK_Public
                 $stmt->execute([$candidate]);
                 $found = $stmt->fetchColumn();
                 if (is_string($found) && $found !== '') {
-                    return $found;
+                    return $this->resolvedTableCache[$table] = $found;
                 }
             }
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK resolve table ' . $table . ' failed: ' . $e->getMessage());
         }
 
-        return '';
+        return $this->resolvedTableCache[$table] = '';
     }
 
     private function default_table_name(string $table): string
@@ -1495,6 +1546,10 @@ final class CMS_365NETWORK_Public
         }
 
         $settings = $this->settings();
+        if ((string) ($settings['landing_enabled'] ?? '1') !== '1') {
+            return $this->landingPathRequestCache = false;
+        }
+
         $path = '/' . trim((string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/'), '/');
         $route = '/' . $this->route_slug($settings);
         $searchRoute = $route . '/search';

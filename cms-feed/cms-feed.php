@@ -245,9 +245,8 @@ final class CMS_Feed
     {
         try {
             $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
-            $isAdmin     = str_starts_with($currentPath, '/admin/feeds')
-                || str_starts_with($currentPath, '/admin/plugins/feeds');
-            $isFeedRoute = $this->is_feed_public_route($currentPath);
+            $isAdmin     = $this->is_feed_admin_route($currentPath);
+            $isFeedRoute = $this->is_own_public_feed_route($currentPath);
 
             if ($isAdmin) {
                 $adminCss = $this->plugin_dir . 'assets/css/feed-admin.css';
@@ -271,9 +270,8 @@ final class CMS_Feed
     {
         try {
             $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
-            $isAdmin     = str_starts_with($currentPath, '/admin/feeds')
-                || str_starts_with($currentPath, '/admin/plugins/feeds');
-            $isFeedRoute = $this->is_feed_public_route($currentPath);
+            $isAdmin     = $this->is_feed_admin_route($currentPath);
+            $isFeedRoute = $this->is_own_public_feed_route($currentPath);
 
             if ($isAdmin) {
                 $js = $this->plugin_dir . 'assets/js/admin.js';
@@ -345,6 +343,30 @@ final class CMS_Feed
         }
 
         return $currentPath === $archivePath || str_starts_with($currentPath, $archivePath . '/');
+    }
+
+    private function is_feed_admin_route(string $currentPath): bool
+    {
+        $path = '/' . trim($currentPath, '/');
+        if ($path === '/') {
+            return false;
+        }
+
+        return str_starts_with($path, '/admin/feeds')
+            || str_starts_with($path, '/admin/plugins/feeds');
+    }
+
+    private function is_own_public_feed_route(string $currentPath): bool
+    {
+        if (class_exists('CMS_Feed_Public_Controller')) {
+            try {
+                return CMS_Feed_Public_Controller::instance()->matches_public_path($currentPath);
+            } catch (\Throwable $e) {
+                CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed: Public-Route-Pruefung ueber Controller fehlgeschlagen.', $e, 'warning', ['scope' => 'assets.route_detect']);
+            }
+        }
+
+        return $this->is_feed_public_route($currentPath);
     }
 
     public function has_public_feed_consent(): bool

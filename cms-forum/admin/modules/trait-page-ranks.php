@@ -24,11 +24,13 @@ trait CMS_Forum_Page_Ranks_Trait
             $success = null;
 
             // POST-Handler
-            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forum_action'])) {
+            $requestMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+            if ($requestMethod === 'POST' && isset($_POST['forum_action'])) {
+                $forumAction = sanitize_key((string) ($_POST['forum_action'] ?? ''));
                 if (!self::verify_nonce('forum_ranks')) {
                     $error = 'Sicherheitscheck fehlgeschlagen.';
                 } else {
-                    switch ($_POST['forum_action']) {
+                    switch ($forumAction) {
                         case 'create_rank':
                             $title = sanitize_text_field($_POST['title'] ?? '');
                             if (empty($title)) {
@@ -71,6 +73,10 @@ trait CMS_Forum_Page_Ranks_Trait
                         case 'recalculate_ranks':
                             $result = \CMS_Forum\Controllers\AdminController::instance()->recalculateRanks();
                             $success = $result['message'] ?? 'Ränge aktualisiert.';
+                            break;
+
+                        default:
+                            $error = 'Unbekannte Aktion.';
                             break;
                     }
                 }

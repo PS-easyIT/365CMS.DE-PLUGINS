@@ -831,12 +831,22 @@ class CMS_JPG_Frontend
             return ['success' => false, 'error' => 'Datei zu groß (max. 5 MB).'];
         }
 
-        $uploadDir = (defined('ABSPATH') ? ABSPATH : dirname(__DIR__, 4)) . '/uploads/applications/';
+        $uploadBase = defined('UPLOADS_PATH')
+            ? rtrim((string) UPLOADS_PATH, '/\\') . '/'
+            : rtrim((defined('ABSPATH') ? ABSPATH : dirname(__DIR__, 4)) . '/uploads/', '/\\') . '/';
+        $uploadDir = $uploadBase . 'applications/';
         if (!is_dir($uploadDir)) {
-            @mkdir($uploadDir, 0750, true);
+            if (!mkdir($uploadDir, 0750, true) && !is_dir($uploadDir)) {
+                return ['success' => false, 'error' => 'Upload-Verzeichnis ist nicht verfügbar.'];
+            }
         }
 
-        $token    = bin2hex(random_bytes(24));
+        try {
+            $token = bin2hex(random_bytes(24));
+        } catch (\Throwable $e) {
+            error_log('CMS_JPG_Frontend::handle_cv_upload() token error: ' . $e->getMessage());
+            return ['success' => false, 'error' => 'Datei konnte nicht verarbeitet werden.'];
+        }
         $ext      = $allowed[$mimeType];
         $fileName = $token . '.' . $ext;
         $destPath = $uploadDir . $fileName;
@@ -1064,6 +1074,10 @@ class CMS_JPG_Frontend
      */
     private function enqueue_jobs_list_css(): void
     {
+        if (!$this->is_jpg_public_request()) {
+            return;
+        }
+
         if (!class_exists('CMS\\Hooks')) {
             return;
         }
@@ -1089,6 +1103,10 @@ class CMS_JPG_Frontend
 
     private function enqueue_public_css(object $profile): void
     {
+        if (!$this->is_jpg_public_request()) {
+            return;
+        }
+
         $cssFile = JPG_DIR . 'assets/css/public.css';
         if (!file_exists($cssFile)) {
             return;
@@ -1410,5 +1428,15 @@ class CMS_JPG_Frontend
         $value = preg_replace('/[^a-zA-Z0-9._-]/', '-', $value) ?? '';
         $value = trim($value, '.-');
         return $value !== '' ? substr($value, 0, 120) : $fallback;
+    }
+
+    private function is_jpg_public_request(): bool
+    {
+        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
+        $path = '/' . trim($path, '/');
+
+        return $path === '/jobs'
+            || str_starts_with($path, '/jobs/')
+            || str_starts_with($path, '/career/');
     }
 }

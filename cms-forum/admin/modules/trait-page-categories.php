@@ -24,11 +24,13 @@ trait CMS_Forum_Page_Categories_Trait
             $success = null;
 
             // POST-Handler
-            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forum_action'])) {
+            $requestMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+            if ($requestMethod === 'POST' && isset($_POST['forum_action'])) {
+                $forumAction = sanitize_key((string) ($_POST['forum_action'] ?? ''));
                 if (!self::verify_nonce('forum_categories')) {
                     $error = 'Sicherheitscheck fehlgeschlagen.';
                 } else {
-                    switch ($_POST['forum_action']) {
+                    switch ($forumAction) {
                         case 'create_category':
                             $name = sanitize_text_field($_POST['name'] ?? '');
                             $slug = \CMS_Forum\Helpers\SlugHelper::unique($name, 'cmsforum_categories');
@@ -65,6 +67,10 @@ trait CMS_Forum_Page_Categories_Trait
                                 \CMS_Forum\Models\Category::instance()->delete($id);
                                 $success = 'Kategorie gelöscht.';
                             }
+                            break;
+
+                        default:
+                            $error = 'Unbekannte Aktion.';
                             break;
                     }
                 }

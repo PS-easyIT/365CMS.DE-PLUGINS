@@ -74,6 +74,7 @@ final class CMS_M365MATRICES_Settings
 
             return self::$optionCache[$cacheKey];
         } catch (\Throwable $e) {
+            self::log_error('load options failed for ' . $cacheKey . ': ' . $e->getMessage());
             return [];
         }
     }
@@ -141,6 +142,7 @@ final class CMS_M365MATRICES_Settings
                 $pdo->rollBack();
             }
 
+            self::log_error('save options failed for ' . $key . '|' . $group . ': ' . $e->getMessage());
             throw $e;
         }
 
@@ -182,5 +184,10 @@ final class CMS_M365MATRICES_Settings
         }
 
         return substr($value, 0, $length);
+    }
+
+    private static function log_error(string $message): void
+    {
+        error_log('CMS M365 Matrixen settings: ' . $message);
     }
 }

@@ -76,8 +76,8 @@
                     <div class="form-group"><label class="form-label">Priorität</label><input type="number" name="priority" class="form-control" min="0" value="<?php echo (int) ($promo['priority'] ?? 0); ?>"></div>
                 </div>
                 <div class="pr-form-grid">
-                    <div class="form-group"><label class="form-label">Start</label><?php $startValue = !empty($promo['start_at']) ? date('Y-m-d\TH:i', strtotime((string) $promo['start_at'])) : ''; ?><input type="datetime-local" name="start_at" class="form-control" value="<?php echo htmlspecialchars($startValue, ENT_QUOTES, 'UTF-8'); ?>"></div>
-                    <div class="form-group"><label class="form-label">Ende</label><?php $endValue = !empty($promo['end_at']) ? date('Y-m-d\TH:i', strtotime((string) $promo['end_at'])) : ''; ?><input type="datetime-local" name="end_at" class="form-control" value="<?php echo htmlspecialchars($endValue, ENT_QUOTES, 'UTF-8'); ?>"></div>
+                    <div class="form-group"><label class="form-label">Start</label><?php $startTimestamp = !empty($promo['start_at']) ? strtotime((string) $promo['start_at']) : false; $startValue = $startTimestamp !== false ? date('Y-m-d\TH:i', $startTimestamp) : ''; ?><input type="datetime-local" name="start_at" class="form-control" value="<?php echo htmlspecialchars($startValue, ENT_QUOTES, 'UTF-8'); ?>"></div>
+                    <div class="form-group"><label class="form-label">Ende</label><?php $endTimestamp = !empty($promo['end_at']) ? strtotime((string) $promo['end_at']) : false; $endValue = $endTimestamp !== false ? date('Y-m-d\TH:i', $endTimestamp) : ''; ?><input type="datetime-local" name="end_at" class="form-control" value="<?php echo htmlspecialchars($endValue, ENT_QUOTES, 'UTF-8'); ?>"></div>
                 </div>
                 <label class="checkbox-label pr-checkbox-stack"><input type="checkbox" name="is_featured" value="1" <?php echo !empty($promo['is_featured']) ? 'checked' : ''; ?>> Als Featured-Promo hervorheben</label>
 

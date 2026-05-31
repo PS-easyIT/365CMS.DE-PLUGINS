@@ -17,6 +17,8 @@ use CMS\Security;
 final class CMS_365NETWORK_Admin
 {
     private static ?self $instance = null;
+    private const ADMIN_SLUG = 'cms-365network';
+    private const ADMIN_ROUTE = '/admin/365network';
 
     public static function instance(): self
     {
@@ -25,17 +27,42 @@ final class CMS_365NETWORK_Admin
 
     private function __construct()
     {
+        $this->load_shared_admin_contract();
         $this->load_admin_menu();
         CMS\Hooks::addAction('cms_admin_menu', [$this, 'register_admin_menu'], 10);
         CMS\Hooks::addAction('register_routes', [$this, 'register_routes'], 10);
         CMS\Hooks::addFilter('admin_menu_items', [$this, 'add_menu_item'], 10);
     }
 
+    public static function dispatch_admin_request(): void
+    {
+        $instance = self::instance();
+        $callbackMap = [];
+
+        foreach ($instance->submenu_pages() as $slug => $meta) {
+            $tab = (string) ($meta['tab'] ?? 'overview');
+            $callbackMap[$slug] = static function () use ($instance, $tab): void {
+                $instance->render_settings_for_tab($tab);
+            };
+        }
+
+        $callbackMap[self::ADMIN_SLUG] = static function () use ($instance): void {
+            $instance->render_settings();
+        };
+
+        if (function_exists('cms_plugin_admin_dispatch_page')) {
+            cms_plugin_admin_dispatch_page($callbackMap, self::ADMIN_SLUG, self::ADMIN_SLUG);
+            return;
+        }
+
+        $instance->render_settings();
+    }
+
     public function register_admin_menu(): void
     {
         if (function_exists('cms_register_admin_menu')) {
             cms_register_admin_menu([
-                'slug' => 'cms-365network',
+                'slug' => self::ADMIN_SLUG,
                 'label' => '365Network Hub',
                 'icon' => 'ti-network',
                 'callback' => 'hub_admin_page',
@@ -52,7 +79,7 @@ final class CMS_365NETWORK_Admin
             '365NETWORK',
             '365NETWORK',
             'manage_options',
-            'cms-365network',
+            self::ADMIN_SLUG,
             [self::class, 'render_plugin_page_bridge'],
             '🌐',
             48
@@ -61,42 +88,131 @@ final class CMS_365NETWORK_Admin
 
     public static function render_plugin_page_bridge(): void
     {
-        self::redirect_static('/admin/365network');
+        self::redirect_static(self::ADMIN_ROUTE);
     }
 
     public function register_routes($router): void
     {
-        $router->addRoute('GET', '/admin/365network', [$this, 'render_settings']);
-        $router->addRoute('POST', '/admin/365network/settings/save', [$this, 'save_settings']);
+        if (!is_object($router) || !method_exists($router, 'addRoute')) {
+            error_log('[cms-365network] admin routes could not be registered: invalid router instance');
+            return;
+        }
+
+        $router->addRoute('GET', self::ADMIN_ROUTE, [$this, 'render_settings']);
+        $router->addRoute('POST', self::ADMIN_ROUTE . '/settings/save', [$this, 'save_settings']);
     }
 
     public function add_menu_item(array $menuItems): array
     {
         $currentPath = parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
-        $isActive = is_string($currentPath) && strpos($currentPath, '/admin/365network') === 0;
+        $isPluginPath = is_string($currentPath) && strpos($currentPath, self::ADMIN_ROUTE) === 0;
+        $requestedPage = function_exists('cms_plugin_admin_active_slug')
+            ? cms_plugin_admin_active_slug(self::ADMIN_SLUG)
+            : $this->normalize_admin_slug((string) ($_GET['page'] ?? self::ADMIN_SLUG));
+        $resolvedTab = $this->resolve_admin_tab();
 
         $menuItems[] = [
             'type' => 'item',
-            'slug' => 'cms-365network',
+            'slug' => self::ADMIN_SLUG,
             'label' => '365NETWORK',
             'icon' => '🌐',
-            'url' => '/admin/365network',
-            'active' => $isActive,
+            'url' => self::ADMIN_ROUTE,
+            'active' => $isPluginPath && ($requestedPage === self::ADMIN_SLUG || $resolvedTab === 'overview'),
         ];
+
+        foreach ($this->submenu_pages() as $slug => $meta) {
+            $tab = (string) ($meta['tab'] ?? 'overview');
+            $menuItems[] = [
+                'type' => 'item',
+                'slug' => $slug,
+                'parent' => self::ADMIN_SLUG,
+                'label' => '↳ ' . (string) ($meta['label'] ?? $tab),
+                'icon' => '',
+                'url' => $this->admin_page_url($slug, $tab),
+                'active' => $isPluginPath && ($requestedPage === $slug || $resolvedTab === $tab),
+            ];
+        }
 
         return $menuItems;
     }
 
+    /**
+     * @return array<string,array{tab:string,label:string}>
+     */
+    private function submenu_pages(): array
+    {
+        return [
+            self::ADMIN_SLUG . '-overview' => ['tab' => 'overview', 'label' => 'Übersicht'],
+            self::ADMIN_SLUG . '-domain' => ['tab' => 'domain', 'label' => 'Domain'],
+            self::ADMIN_SLUG . '-hub-order' => ['tab' => 'hub-order', 'label' => 'Reihenfolge'],
+            self::ADMIN_SLUG . '-hub-partnerband' => ['tab' => 'hub-partnerband', 'label' => 'Partnerband'],
+            self::ADMIN_SLUG . '-hub-hero' => ['tab' => 'hub-hero', 'label' => 'Hero'],
+            self::ADMIN_SLUG . '-hub-areas' => ['tab' => 'hub-areas', 'label' => 'Bereiche'],
+            self::ADMIN_SLUG . '-hub-next-events' => ['tab' => 'hub-next-events', 'label' => 'Events'],
+            self::ADMIN_SLUG . '-hub-spotlight' => ['tab' => 'hub-spotlight', 'label' => 'Fokus'],
+            self::ADMIN_SLUG . '-hub-partner-columns' => ['tab' => 'hub-partner-columns', 'label' => 'Partner-Spalten'],
+            self::ADMIN_SLUG . '-hub-toolbox' => ['tab' => 'hub-toolbox', 'label' => 'Toolbox'],
+            self::ADMIN_SLUG . '-hub-posts' => ['tab' => 'hub-posts', 'label' => 'Beiträge'],
+            self::ADMIN_SLUG . '-hub-featured' => ['tab' => 'hub-featured', 'label' => 'Featured'],
+            self::ADMIN_SLUG . '-hub-stats' => ['tab' => 'hub-stats', 'label' => 'Kennzahlen'],
+            self::ADMIN_SLUG . '-hub-band' => ['tab' => 'hub-band', 'label' => 'Teaser & Suche'],
+            self::ADMIN_SLUG . '-layout' => ['tab' => 'layout', 'label' => 'Seitenlayout'],
+            self::ADMIN_SLUG . '-sidebar' => ['tab' => 'sidebar', 'label' => 'Sidebar & Daten'],
+            self::ADMIN_SLUG . '-analytics' => ['tab' => 'analytics', 'label' => 'Analytics'],
+        ];
+    }
+
+    private function resolve_admin_tab(): string
+    {
+        $requestedPage = function_exists('cms_plugin_admin_active_slug')
+            ? cms_plugin_admin_active_slug(self::ADMIN_SLUG)
+            : $this->normalize_admin_slug((string) ($_GET['page'] ?? self::ADMIN_SLUG));
+        $fallbackTab = $this->sanitize_tab((string) ($_GET['tab'] ?? 'overview'));
+        $submenu = $this->submenu_pages();
+
+        if (isset($submenu[$requestedPage])) {
+            return $this->sanitize_tab((string) ($submenu[$requestedPage]['tab'] ?? $fallbackTab));
+        }
+
+        return $fallbackTab;
+    }
+
+    private function normalize_admin_slug(string $slug): string
+    {
+        if (function_exists('cms_plugin_admin_normalize_slug')) {
+            return cms_plugin_admin_normalize_slug($slug);
+        }
+
+        $slug = strtolower(trim($slug));
+        $slug = (string) preg_replace('/[^a-z0-9_-]+/', '-', $slug);
+        return trim($slug, '-');
+    }
+
+    private function admin_page_url(string $pageSlug, string $tab): string
+    {
+        $query = http_build_query([
+            'page' => $pageSlug,
+            'tab' => $tab,
+        ]);
+
+        return self::ADMIN_ROUTE . ($query !== '' ? '?' . $query : '');
+    }
+
     public function render_settings(): void
     {
+        $this->render_settings_for_tab($this->resolve_admin_tab());
+    }
+
+    private function render_settings_for_tab(string $tab): void
+    {
         $this->require_admin();
-        $this->start_admin_layout('365NETWORK', 'cms-365network');
+        $this->start_admin_layout('365NETWORK', self::ADMIN_SLUG);
         $this->enqueue_admin_css();
 
         $database = CMS_365NETWORK_Database::instance();
         $settings = $database->get_settings();
         $hubSettings = $database->get_hub_settings();
-        $tab = $this->sanitize_tab((string) ($_GET['tab'] ?? 'overview'));
+        $tab = $this->sanitize_tab($tab);
         $saved = (string) ($_GET['saved'] ?? '') === '1';
         $saveFailed = (string) ($_GET['error'] ?? '') === 'save_failed';
         $previewUrl = rtrim((string) SITE_URL, '/') . '/' . trim((string) ($settings['route_slug'] ?? '365network'), '/');
@@ -121,8 +237,6 @@ final class CMS_365NETWORK_Admin
             $this->admin_notice('Einstellungen konnten nicht gespeichert werden. Bitte Server-Log prüfen.', 'error');
         }
 
-        $this->render_tabs($tab);
-
         if ($tab === 'overview') {
             $this->render_overview_tab($settings, $hubSettings, $domains, $domainHint, $mainHost, $previewUrl, $searchUrl);
             $this->render_media_picker_modal();
@@ -136,7 +250,7 @@ final class CMS_365NETWORK_Admin
         $this->render_status_strip($settings, $hubSettings, $domains, $domainHint, $mainHost);
 
         $formClass = 'admin-card admin-form n365-tab-panel n365-admin-form' . ($this->is_hub_section_tab($tab) ? ' hub-admin-form' : '');
-        echo '<form class="' . htmlspecialchars($formClass, ENT_QUOTES, 'UTF-8') . '" method="post" action="' . htmlspecialchars($this->admin_url('/admin/365network/settings/save'), ENT_QUOTES, 'UTF-8') . '" novalidate>';
+        echo '<form class="' . htmlspecialchars($formClass, ENT_QUOTES, 'UTF-8') . '" method="post" action="' . htmlspecialchars($this->admin_url(self::ADMIN_ROUTE . '/settings/save'), ENT_QUOTES, 'UTF-8') . '" novalidate>';
         $this->nonce_field();
         echo '<input type="hidden" name="tab" value="' . htmlspecialchars($tab, ENT_QUOTES, 'UTF-8') . '">';
 
@@ -177,25 +291,25 @@ final class CMS_365NETWORK_Admin
         if ($this->is_hub_section_tab($tab)) {
             $settings = $this->sanitize_hub_settings($_POST, $this->hub_rows_for_section($database->get_hub_setting_rows(), $this->hub_section_for_tab($tab)));
             if (!$database->save_hub_settings($settings)) {
-                $this->redirect('/admin/365network?tab=' . rawurlencode($tab) . '&error=save_failed');
+                $this->redirect(self::ADMIN_ROUTE . '?tab=' . rawurlencode($tab) . '&error=save_failed');
                 return;
             }
 
             $this->clear_public_cache('hub_settings_save');
 
-            $this->redirect('/admin/365network?tab=' . rawurlencode($tab) . '&saved=1');
+            $this->redirect(self::ADMIN_ROUTE . '?tab=' . rawurlencode($tab) . '&saved=1');
             return;
         }
 
         $settings = $this->sanitize_settings($_POST, $database->get_settings(), $tab);
         if (!$database->save_settings($settings)) {
-            $this->redirect('/admin/365network?tab=' . rawurlencode($tab) . '&error=save_failed');
+            $this->redirect(self::ADMIN_ROUTE . '?tab=' . rawurlencode($tab) . '&error=save_failed');
             return;
         }
 
         $this->clear_public_cache('settings_save');
 
-        $this->redirect('/admin/365network?tab=' . rawurlencode($tab) . '&saved=1');
+        $this->redirect(self::ADMIN_ROUTE . '?tab=' . rawurlencode($tab) . '&saved=1');
     }
 
     private function clear_public_cache(string $reason): void
@@ -221,50 +335,15 @@ final class CMS_365NETWORK_Admin
         }
     }
 
-    private function render_tabs(string $activeTab): void
-    {
-        $tabGroups = [
-            'Start' => [
-                'overview' => '🏠 Übersicht',
-                'domain' => '🌐 Domain',
-            ],
-            'Public-Bereiche' => [
-                'hub-order' => '↕️ Reihenfolge',
-                'hub-partnerband' => '🤝 Partnerband',
-                'hub-hero' => '🏁 Hero',
-                'hub-areas' => '🧭 Bereiche',
-                'hub-next-events' => '📅 Events',
-                'hub-spotlight' => '🔦 Fokus',
-                'hub-partner-columns' => '🏢 Partner',
-                'hub-toolbox' => '🧰 Toolbox',
-                'hub-posts' => '📰 Beiträge',
-                'hub-featured' => '⭐ Featured',
-                'hub-stats' => '📊 Kennzahlen',
-                'hub-band' => '🔎 Teaser & Suche',
-            ],
-            'System' => [
-                'layout' => '🎨 Seitenlayout',
-                'sidebar' => '📊 Sidebar & Daten',
-                'analytics' => '📈 Analytics',
-            ],
-        ];
-
-        echo '<nav class="n365-tabs" aria-label="365NETWORK Einstellungen">';
-        foreach ($tabGroups as $groupLabel => $tabs) {
-            echo '<div class="n365-tab-group">';
-            echo '<span class="n365-tab-group__label">' . htmlspecialchars($groupLabel, ENT_QUOTES, 'UTF-8') . '</span>';
-            foreach ($tabs as $slug => $label) {
-                $class = $slug === $activeTab ? 'n365-tab active' : 'n365-tab';
-                echo '<a class="' . htmlspecialchars($class, ENT_QUOTES, 'UTF-8') . '" href="' . htmlspecialchars($this->tab_url($slug), ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
-            }
-            echo '</div>';
-        }
-        echo '</nav>';
-    }
-
     private function tab_url(string $tab): string
     {
-        return rtrim((string) SITE_URL, '/') . '/admin/365network?tab=' . rawurlencode($tab);
+        foreach ($this->submenu_pages() as $slug => $meta) {
+            if ((string) ($meta['tab'] ?? '') === $tab) {
+                return $this->admin_url($this->admin_page_url($slug, $tab));
+            }
+        }
+
+        return $this->admin_url(self::ADMIN_ROUTE . '?tab=' . rawurlencode($tab));
     }
 
     private function render_domain_tab(array $settings): void
@@ -948,9 +1027,32 @@ final class CMS_365NETWORK_Admin
         }
     }
 
+    private function load_shared_admin_contract(): void
+    {
+        if (function_exists('cms_plugin_admin_layout_start') && function_exists('cms_plugin_admin_dispatch_page')) {
+            return;
+        }
+
+        if (defined('CMS_365NETWORK_SHARED_ADMIN_CONTRACT') && is_file((string) CMS_365NETWORK_SHARED_ADMIN_CONTRACT)) {
+            require_once (string) CMS_365NETWORK_SHARED_ADMIN_CONTRACT;
+            return;
+        }
+
+        $fallback = dirname(CMS_365NETWORK_PLUGIN_DIR) . '/shared/admin/plugin-admin-contract.php';
+        if (is_file($fallback)) {
+            require_once $fallback;
+        }
+    }
+
     private function start_admin_layout(string $title, string $activePage): void
     {
+        $this->load_shared_admin_contract();
         $this->load_admin_menu();
+        if (function_exists('cms_plugin_admin_layout_start')) {
+            cms_plugin_admin_layout_start($title, $activePage);
+            return;
+        }
+
         if (function_exists('renderAdminLayoutStart')) {
             renderAdminLayoutStart($title, $activePage);
             return;
@@ -963,6 +1065,11 @@ final class CMS_365NETWORK_Admin
 
     private function end_admin_layout(): void
     {
+        if (function_exists('cms_plugin_admin_layout_end')) {
+            cms_plugin_admin_layout_end();
+            return;
+        }
+
         if (function_exists('renderAdminLayoutEnd')) {
             renderAdminLayoutEnd();
             return;
@@ -1077,8 +1184,10 @@ final class CMS_365NETWORK_Admin
 
     private function admin_url(string $path): string
     {
-        if ($path === '/admin/365network' && function_exists('cms_admin_url')) {
-            return (string) cms_admin_url('cms-365network');
+        if ((str_starts_with($path, self::ADMIN_ROUTE) || $path === self::ADMIN_ROUTE) && function_exists('cms_admin_url')) {
+            $base = (string) cms_admin_url(self::ADMIN_SLUG);
+            $query = (string) parse_url($path, PHP_URL_QUERY);
+            return $query !== '' ? $base . (str_contains($base, '?') ? '&' : '?') . $query : $base;
         }
 
         return self::absolute_url($path);

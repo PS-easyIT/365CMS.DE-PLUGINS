@@ -14,6 +14,10 @@ if (!defined('ABSPATH')) {
 final class CMS_M365LINKCOLLECTION_Repository
 {
     private static ?self $instance = null;
+    /** @var array<int,string> */
+    private array $speakerSlugCache = [];
+    /** @var array<int,string> */
+    private array $expertSlugCache = [];
 
     public static function instance(): self
     {
@@ -97,9 +101,11 @@ final class CMS_M365LINKCOLLECTION_Repository
             $stmt = $db->prepare("SELECT l.*, c.name AS category_name, c.slug AS category_slug FROM {$linksTable} l INNER JOIN {$categoriesTable} c ON c.id = l.category_id {$sqlWhere} ORDER BY c.sort_order ASC, l.sort_order ASC, l.title ASC LIMIT {$limit} OFFSET {$offset}");
             $stmt->execute($params);
             $items = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            $this->warm_related_slug_cache($items);
 
             return ['items' => $this->attach_related_media($items), 'total' => $total];
         } catch (\Throwable $e) {
+            $this->log_error('Failed to fetch links: ' . $e->getMessage());
             return ['items' => [], 'total' => 0];
         }
     }
@@ -125,6 +131,7 @@ final class CMS_M365LINKCOLLECTION_Repository
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             return is_array($row) ? $row : null;
         } catch (\Throwable $e) {
+            $this->log_error('Failed to fetch link #' . $id . ': ' . $e->getMessage());
             return null;
         }
     }
@@ -315,6 +322,9 @@ final class CMS_M365LINKCOLLECTION_Repository
         if ($db === null || $expertId <= 0) {
             return (string) $expertId;
         }
+        if (isset($this->expertSlugCache[$expertId])) {
+            return $this->expertSlugCache[$expertId];
+        }
 
         try {
             $table = self::quote_identifier($this->prefix($db) . 'experts');
@@ -322,11 +332,16 @@ final class CMS_M365LINKCOLLECTION_Repository
             $stmt->execute([$expertId]);
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             if (!is_array($row)) {
+                $this->expertSlugCache[$expertId] = (string) $expertId;
                 return (string) $expertId;
             }
             $name = trim((string) ($row['first_name'] ?? '') . ' ' . (string) ($row['last_name'] ?? ''));
-            return self::slugify($name) . '-' . $expertId;
+            $slug = self::slugify($name) . '-' . $expertId;
+            $this->expertSlugCache[$expertId] = $slug;
+
+            return $slug;
         } catch (\Throwable $e) {
+            $this->log_error('Failed to load expert slug #' . $expertId . ': ' . $e->getMessage());
             return (string) $expertId;
         }
     }
@@ -337,6 +352,9 @@ final class CMS_M365LINKCOLLECTION_Repository
         if ($db === null || $speakerId <= 0) {
             return (string) $speakerId;
         }
+        if (isset($this->speakerSlugCache[$speakerId])) {
+            return $this->speakerSlugCache[$speakerId];
+        }
 
         try {
             $table = self::quote_identifier($this->prefix($db) . 'speakers');
@@ -344,11 +362,16 @@ final class CMS_M365LINKCOLLECTION_Repository
             $stmt->execute([$speakerId]);
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             if (!is_array($row)) {
+                $this->speakerSlugCache[$speakerId] = (string) $speakerId;
                 return (string) $speakerId;
             }
             $name = trim((string) ($row['first_name'] ?? '') . ' ' . (string) ($row['last_name'] ?? ''));
-            return self::slugify($name) . '-' . $speakerId;
+            $slug = self::slugify($name) . '-' . $speakerId;
+            $this->speakerSlugCache[$speakerId] = $slug;
+
+            return $slug;
         } catch (\Throwable $e) {
+            $this->log_error('Failed to load speaker slug #' . $speakerId . ': ' . $e->getMessage());
             return (string) $speakerId;
         }
     }
@@ -368,12 +391,15 @@ final class CMS_M365LINKCOLLECTION_Repository
     private function sanitize_link_data(array $data): array
     {
         $categoryId = max(1, (int) ($data['category_id'] ?? 0));
+        $url = $this->normalize_public_url((string) ($data['url'] ?? ''));
+        $imageUrl = $this->normalize_public_url((string) ($data['image_url'] ?? ''));
+
         return [
             'category_id' => $categoryId,
             'title' => self::limit(strip_tags((string) ($data['title'] ?? '')), 190),
             'subtitle' => self::limit(strip_tags((string) ($data['subtitle'] ?? '')), 190),
-            'url' => self::limit(filter_var((string) ($data['url'] ?? ''), FILTER_VALIDATE_URL) ? (string) $data['url'] : '', 500),
-            'image_url' => self::limit((string) filter_var((string) ($data['image_url'] ?? ''), FILTER_SANITIZE_URL), 500),
+            'url' => self::limit($url, 500),
+            'image_url' => self::limit($imageUrl, 500),
             'image_alt' => self::limit(strip_tags((string) ($data['image_alt'] ?? '')), 190),
             'tags' => self::limit(strip_tags((string) ($data['tags'] ?? '')), 500),
             'company_id' => max(0, (int) ($data['company_id'] ?? 0)),
@@ -623,5 +649,103 @@ final class CMS_M365LINKCOLLECTION_Repository
     private static function limit(string $value, int $length): string
     {
         return function_exists('mb_substr') ? mb_substr($value, 0, $length) : substr($value, 0, $length);
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $items
+     */
+    private function warm_related_slug_cache(array $items): void
+    {
+        $this->prime_speaker_slug_cache($this->collect_ids($items, 'speaker_id'));
+        $this->prime_expert_slug_cache($this->collect_ids($items, 'expert_id'));
+    }
+
+    /**
+     * @param array<int,int> $ids
+     */
+    private function prime_speaker_slug_cache(array $ids): void
+    {
+        $missing = array_values(array_filter($ids, fn(int $id): bool => !isset($this->speakerSlugCache[$id])));
+        if ($missing === [] || !$this->is_plugin_active('cms-speakers')) {
+            return;
+        }
+
+        $db = $this->db();
+        if ($db === null) {
+            return;
+        }
+
+        try {
+            $table = self::quote_identifier($this->prefix($db) . 'speakers');
+            $placeholders = implode(', ', array_fill(0, count($missing), '?'));
+            $stmt = $db->prepare("SELECT id, first_name, last_name FROM {$table} WHERE id IN ({$placeholders})");
+            $stmt->execute($missing);
+            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
+                $id = (int) ($row['id'] ?? 0);
+                if ($id <= 0) {
+                    continue;
+                }
+                $name = trim((string) ($row['first_name'] ?? '') . ' ' . (string) ($row['last_name'] ?? ''));
+                $this->speakerSlugCache[$id] = self::slugify($name) . '-' . $id;
+            }
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to prime speaker slug cache: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * @param array<int,int> $ids
+     */
+    private function prime_expert_slug_cache(array $ids): void
+    {
+        $missing = array_values(array_filter($ids, fn(int $id): bool => !isset($this->expertSlugCache[$id])));
+        if ($missing === [] || !$this->is_plugin_active('cms-experts')) {
+            return;
+        }
+
+        $db = $this->db();
+        if ($db === null) {
+            return;
+        }
+
+        try {
+            $table = self::quote_identifier($this->prefix($db) . 'experts');
+            $placeholders = implode(', ', array_fill(0, count($missing), '?'));
+            $stmt = $db->prepare("SELECT id, first_name, last_name FROM {$table} WHERE id IN ({$placeholders})");
+            $stmt->execute($missing);
+            foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [] as $row) {
+                $id = (int) ($row['id'] ?? 0);
+                if ($id <= 0) {
+                    continue;
+                }
+                $name = trim((string) ($row['first_name'] ?? '') . ' ' . (string) ($row['last_name'] ?? ''));
+                $this->expertSlugCache[$id] = self::slugify($name) . '-' . $id;
+            }
+        } catch (\Throwable $e) {
+            $this->log_error('Failed to prime expert slug cache: ' . $e->getMessage());
+        }
+    }
+
+    private function normalize_public_url(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return '';
+        }
+
+        if (str_starts_with($url, '/')) {
+            return $url;
+        }
+
+        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return '';
+        }
+
+        return preg_match('#^https?://#i', $url) === 1 ? $url : '';
+    }
+
+    private function log_error(string $message): void
+    {
+        error_log('CMS M365 Linkcollection repository: ' . $message);
     }
 }

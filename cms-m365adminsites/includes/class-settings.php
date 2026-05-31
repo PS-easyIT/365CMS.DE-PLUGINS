@@ -119,7 +119,7 @@ final class CMS_M365ADMINSITES_Settings
                 $settings[$key] = (string) ($row['setting_value'] ?? '');
             }
         } catch (\Throwable $e) {
-            // Defaults sind ausreichend, wenn die Tabelle noch nicht existiert.
+            self::log_error('settings load failed: ' . $e->getMessage());
         }
 
         self::$cache = $settings;
@@ -141,19 +141,23 @@ final class CMS_M365ADMINSITES_Settings
             return;
         }
 
-        $allowed = array_keys(self::defaults());
-        $db = \CMS\Database::instance();
-        $table = self::quote_identifier(self::table_name($db));
-        $stmt = $db->prepare("INSERT INTO {$table} (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP");
+        try {
+            $allowed = array_keys(self::defaults());
+            $db = \CMS\Database::instance();
+            $table = self::quote_identifier(self::table_name($db));
+            $stmt = $db->prepare("INSERT INTO {$table} (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP");
 
-        foreach ($allowed as $key) {
-            if (!array_key_exists($key, $settings)) {
-                continue;
+            foreach ($allowed as $key) {
+                if (!array_key_exists($key, $settings)) {
+                    continue;
+                }
+                $stmt->execute([$key, self::limit((string) $settings[$key], 5000)]);
             }
-            $stmt->execute([$key, self::limit((string) $settings[$key], 5000)]);
-        }
 
-        self::$cache = null;
+            self::$cache = null;
+        } catch (\Throwable $e) {
+            self::log_error('settings save failed: ' . $e->getMessage());
+        }
     }
 
     public static function bool(string $key, bool $default = false): bool
@@ -175,7 +179,11 @@ final class CMS_M365ADMINSITES_Settings
     public static function route(): string
     {
         $route = '/' . trim(self::get('page_route', '/m365-adminsites'), '/');
-        return $route === '/' ? '/m365-adminsites' : $route;
+        if ($route === '/' || preg_match('#^/[a-z0-9/_-]+$#i', $route) !== 1) {
+            return '/m365-adminsites';
+        }
+
+        return $route;
     }
 
     public static function table_name(\CMS\Database $db): string
@@ -197,5 +205,10 @@ final class CMS_M365ADMINSITES_Settings
     private static function limit(string $value, int $length): string
     {
         return function_exists('mb_substr') ? mb_substr($value, 0, $length) : substr($value, 0, $length);
+    }
+
+    private static function log_error(string $message): void
+    {
+        error_log('CMS M365 Adminsites settings: ' . $message);
     }
 }

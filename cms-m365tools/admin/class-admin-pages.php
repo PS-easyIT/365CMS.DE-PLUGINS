@@ -73,10 +73,12 @@ final class CMS_M365CALCULATOR_Admin_Pages
     private static function render_with_layout(string $title, string $slug, callable $renderer): void
     {
         self::check_access();
-        self::load_admin_menu();
+        $activeSlug = self::resolve_active_admin_slug($slug);
 
-        if (function_exists('renderAdminLayoutStart')) {
-            renderAdminLayoutStart($title, $slug);
+        if (function_exists('cms_plugin_admin_layout_start')) {
+            cms_plugin_admin_layout_start($title, $activeSlug);
+        } elseif (function_exists('renderAdminLayoutStart')) {
+            renderAdminLayoutStart($title, $activeSlug);
         }
 
         self::enqueue_admin_assets();
@@ -84,17 +86,32 @@ final class CMS_M365CALCULATOR_Admin_Pages
         $renderer();
         echo '</div>';
 
-        if (function_exists('renderAdminLayoutEnd')) {
+        if (function_exists('cms_plugin_admin_layout_end')) {
+            cms_plugin_admin_layout_end();
+        } elseif (function_exists('renderAdminLayoutEnd')) {
             renderAdminLayoutEnd();
         }
     }
 
     private static function check_access(): void
     {
-        if (!class_exists('CMS\\Auth') || !\CMS\Auth::instance()->isAdmin()) {
+        if (!self::has_admin_capability()) {
             header('Location: ' . self::safe_admin_redirect_url(), true, 302);
             exit;
         }
+    }
+
+    private static function has_admin_capability(): bool
+    {
+        if (function_exists('current_user_can') && !current_user_can('manage_options')) {
+            return false;
+        }
+
+        if (!class_exists('CMS\\Auth')) {
+            return false;
+        }
+
+        return \CMS\Auth::instance()->isAdmin();
     }
 
     private static function safe_admin_redirect_url(): string
@@ -114,14 +131,6 @@ final class CMS_M365CALCULATOR_Admin_Pages
         }
 
         return '/';
-    }
-
-    private static function load_admin_menu(): void
-    {
-        $menuFile = ABSPATH . 'admin/partials/admin-menu.php';
-        if (file_exists($menuFile) && !function_exists('renderAdminLayoutStart')) {
-            require_once $menuFile;
-        }
     }
 
     private static function enqueue_admin_assets(): void
@@ -152,6 +161,14 @@ final class CMS_M365CALCULATOR_Admin_Pages
 
     private static function verify_admin_request(string $action): bool
     {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+            return false;
+        }
+
+        if (!self::has_admin_capability()) {
+            return false;
+        }
+
         if (!class_exists('CMS\\Security')) {
             error_log('CMS M365 Tools admin security service missing for action: ' . $action);
 
@@ -165,6 +182,7 @@ final class CMS_M365CALCULATOR_Admin_Pages
     {
         $notice = '';
         $error = '';
+        $dispatchFallback = (string) ($_GET['m365tools_dispatch_fallback'] ?? '') === '1';
         $csrfAction = 'm365tools_admin_modules';
         $csrfToken = self::csrf_token($csrfAction);
 
@@ -178,6 +196,10 @@ final class CMS_M365CALCULATOR_Admin_Pages
                     $notice = 'Moduleinstellungen gespeichert.';
                 }
             }
+        }
+
+        if ($dispatchFallback && $notice === '' && $error === '') {
+            $notice = 'Die angeforderte Admin-Unterseite war nicht verfügbar. Es wurde die Übersicht geladen.';
         }
 
         $allTools = CMS_M365CALCULATOR_Tool_Registry::ordered_tools(false);
@@ -973,6 +995,19 @@ final class CMS_M365CALCULATOR_Admin_Pages
     private static function clean_key(string $value): string
     {
         return trim((string) preg_replace('/[^a-z0-9_-]+/i', '-', strtolower($value)), '-');
+    }
+
+    private static function resolve_active_admin_slug(string $fallback): string
+    {
+        $fallback = self::clean_key($fallback);
+        if (function_exists('cms_plugin_admin_active_slug')) {
+            return cms_plugin_admin_active_slug($fallback);
+        }
+
+        $requested = (string) ($_GET['page'] ?? $fallback);
+        $requested = self::clean_key($requested);
+
+        return $requested !== '' ? $requested : $fallback;
     }
 
     private static function limit_text(string $value, int $length): string

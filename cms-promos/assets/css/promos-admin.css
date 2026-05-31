@@ -2,7 +2,69 @@
 
 .pr-admin-shell {
     display: grid;
-    gap: 1.5rem;
+    gap: 25px;
+}
+
+.pr-admin-layout {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 25px;
+    align-items: start;
+}
+
+.pr-admin-layout__content {
+    min-width: 0;
+}
+
+.pr-admin-sidebar {
+    position: sticky;
+    top: 25px;
+}
+
+.pr-admin-submenu {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .05), 0 8px 20px rgba(15, 23, 42, .04);
+}
+
+.pr-admin-submenu__title {
+    margin: 0 0 8px;
+    font-size: .75rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.pr-admin-submenu__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 4px;
+}
+
+.pr-admin-submenu__item {
+    margin: 0;
+}
+
+.pr-admin-submenu__link {
+    display: block;
+    padding: 9px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: #334155;
+    font-weight: 600;
+}
+
+.pr-admin-submenu__link:hover {
+    background: #f1f5f9;
+}
+
+.pr-admin-submenu__link.is-active {
+    background: #eff6ff;
+    color: #1d4ed8;
 }
 
 .pr-admin-shell .stat-icon {
@@ -226,10 +288,15 @@
 }
 
 @media (max-width: 980px) {
+    .pr-admin-layout,
     .pr-panel-grid,
     .pr-panel-grid--wide,
     .pr-form-grid {
         grid-template-columns: 1fr;
+    }
+
+    .pr-admin-sidebar {
+        position: static;
     }
 }
 

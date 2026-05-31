@@ -94,6 +94,10 @@ final class CMS_Experts
     private function load_dependencies(): void
     {
         $includes_dir = $this->plugin_dir . 'includes/';
+        $includes_real = realpath($includes_dir);
+        if ($includes_real === false || !is_dir($includes_real)) {
+            return;
+        }
 
         $files = [
             'class-database.php',
@@ -107,9 +111,10 @@ final class CMS_Experts
         ];
 
         foreach ($files as $file) {
-            $filepath = $includes_dir . $file;
-            if (file_exists($filepath)) {
-                require_once $filepath;
+            $filepath = $includes_real . DIRECTORY_SEPARATOR . $file;
+            $real_path = realpath($filepath);
+            if ($real_path !== false && str_starts_with($real_path, $includes_real . DIRECTORY_SEPARATOR) && is_file($real_path)) {
+                require_once $real_path;
             }
         }
     }
@@ -219,20 +224,35 @@ final class CMS_Experts
 
     private function is_expert_frontend_route(): bool
     {
-        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-        $path = '/' . trim((string) $path, '/');
+        $path = $this->current_request_path();
 
         return $path === '/experts'
             || str_starts_with($path, '/experts/')
             || str_starts_with($path, '/expert/');
     }
 
+    private function is_expert_archive_route(): bool
+    {
+        return $this->current_request_path() === '/experts';
+    }
+
     private function is_expert_detail_route(): bool
     {
-        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
-        $path = '/' . trim((string) $path, '/');
+        $path = $this->current_request_path();
 
         return str_starts_with($path, '/experts/') || str_starts_with($path, '/expert/');
+    }
+
+    private function current_request_path(): string
+    {
+        static $path = null;
+        if (is_string($path)) {
+            return $path;
+        }
+
+        $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $path = '/' . trim((string) $requestPath, '/');
+        return $path;
     }
 
     private function enqueue_style_file(string $file): void
@@ -251,7 +271,7 @@ final class CMS_Experts
      */
     public function enqueue_scripts(): void
     {
-        if (!$this->is_expert_frontend_route()) {
+        if (!$this->is_expert_archive_route()) {
             return;
         }
 

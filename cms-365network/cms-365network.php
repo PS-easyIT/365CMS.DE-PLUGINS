@@ -21,6 +21,7 @@ if (!defined('ABSPATH')) {
 define('CMS_365NETWORK_VERSION', '1.0.45');
 define('CMS_365NETWORK_PLUGIN_DIR', function_exists('cms_plugin_path') ? rtrim((string) cms_plugin_path('cms-365network'), '/\\') . DIRECTORY_SEPARATOR : dirname(__FILE__) . '/');
 define('CMS_365NETWORK_PLUGIN_URL', function_exists('cms_plugin_url') ? rtrim((string) cms_plugin_url('cms-365network'), '/') . '/' : '/plugins/cms-365network/');
+define('CMS_365NETWORK_SHARED_ADMIN_CONTRACT', dirname(CMS_365NETWORK_PLUGIN_DIR) . '/shared/admin/plugin-admin-contract.php');
 
 if (!class_exists('CMS_365NETWORK', false)) {
     final class CMS_365NETWORK
@@ -124,9 +125,28 @@ if (!function_exists('hub_uninstall')) {
 if (!function_exists('hub_admin_page')) {
     function hub_admin_page(): void
     {
-        if (class_exists('CMS_365NETWORK_Admin', false)) {
-            CMS_365NETWORK_Admin::instance()->render_settings();
+        if (class_exists('CMS_365NETWORK_Admin', false) && method_exists('CMS_365NETWORK_Admin', 'dispatch_admin_request')) {
+            CMS_365NETWORK_Admin::dispatch_admin_request();
+            return;
         }
+
+        if (is_file(CMS_365NETWORK_SHARED_ADMIN_CONTRACT)) {
+            require_once CMS_365NETWORK_SHARED_ADMIN_CONTRACT;
+        }
+
+        if (function_exists('cms_plugin_admin_layout_start') && function_exists('cms_plugin_admin_emit_notice') && function_exists('cms_plugin_admin_layout_end')) {
+            cms_plugin_admin_layout_start('365NETWORK', 'cms-365network');
+            cms_plugin_admin_emit_notice(
+                'Die 365NETWORK-Adminseite konnte nicht initialisiert werden. Bitte Plugin-Dateien und Server-Log prüfen.',
+                'error',
+                'cms-365network admin callback missing class=CMS_365NETWORK_Admin method=dispatch_admin_request'
+            );
+            cms_plugin_admin_layout_end();
+            return;
+        }
+
+        error_log('[cms-365network] admin callback missing class=CMS_365NETWORK_Admin method=dispatch_admin_request');
+        echo '<div class="alert alert-error" role="alert">Die 365NETWORK-Adminseite konnte nicht geladen werden.</div>';
     }
 }
 

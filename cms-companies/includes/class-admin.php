@@ -37,11 +37,15 @@ final class CMS_Companies_Admin
             return;
         }
 
+        $menuSlug = class_exists('CMS_Companies_Plugin_Admin_Contract')
+            ? CMS_Companies_Plugin_Admin_Contract::ADMIN_SLUG
+            : 'companies';
+
         add_menu_page(
             'Unternehmen',
             '365NET | Unternehmen',
             'manage_options',
-            'companies',
+            $menuSlug,
             [self::class, 'render_plugin_page_bridge'],
             '🏢',
             42
@@ -50,10 +54,13 @@ final class CMS_Companies_Admin
 
     public static function render_plugin_page_bridge(): void
     {
-        $targetUrl = htmlspecialchars(SITE_URL . '/admin/companies', ENT_QUOTES, 'UTF-8');
+        $targetPath = class_exists('CMS_Companies_Plugin_Admin_Contract')
+            ? CMS_Companies_Plugin_Admin_Contract::admin_url('overview')
+            : SITE_URL . '/admin/companies';
+        $targetUrl = htmlspecialchars($targetPath, ENT_QUOTES, 'UTF-8');
 
         echo '<div class="admin-card"><p>Weiterleitung zur Unternehmen-Verwaltung … <a href="' . $targetUrl . '">Falls nichts passiert, hier klicken</a>.</p></div>';
-        echo '<script>window.location.replace(' . json_encode(SITE_URL . '/admin/companies', JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ');</script>';
+        echo '<script>window.location.replace(' . json_encode($targetPath, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ');</script>';
     }
 
     private function loadAdminMenu(): void
@@ -88,14 +95,50 @@ final class CMS_Companies_Admin
         require_once ABSPATH . 'admin/partials/footer.php';
     }
 
+    private function admin_url(string $view = 'overview', array $query = []): string
+    {
+        if (class_exists('CMS_Companies_Plugin_Admin_Contract')) {
+            return CMS_Companies_Plugin_Admin_Contract::admin_url($view, $query);
+        }
+
+        $params = $query;
+        if ($view !== 'overview') {
+            $params['view'] = $view;
+        }
+        $queryString = http_build_query($params);
+        $path = '/admin/companies' . ($queryString !== '' ? '?' . $queryString : '');
+
+        return rtrim((string) SITE_URL, '/') . $path;
+    }
+
+    private function render_admin_styles(): void
+    {
+        $styles = [
+            ['path' => 'shared/admin/plugin-admin-shared.css', 'url' => 'shared/admin/plugin-admin-shared.css'],
+            ['path' => 'assets/css/companies-admin.css', 'url' => 'assets/css/companies-admin.css'],
+        ];
+
+        foreach ($styles as $style) {
+            $file = CMS_COMPANIES_PLUGIN_DIR . $style['path'];
+            if (!file_exists($file)) {
+                continue;
+            }
+
+            $href = CMS_COMPANIES_PLUGIN_URL . $style['url'] . '?v=' . (string) filemtime($file);
+            echo '<link rel="stylesheet" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '">' . "\n";
+        }
+    }
+
     public function add_menu_item(array $menuItems): array
     {
-        $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $currentPath = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
         $isActive    = strpos($currentPath, '/admin/companies') === 0;
 
         $menuItems[] = [
             'type'   => 'item',
-            'slug'   => 'companies',
+            'slug'   => class_exists('CMS_Companies_Plugin_Admin_Contract')
+                ? CMS_Companies_Plugin_Admin_Contract::ADMIN_SLUG
+                : 'companies',
             'label'  => '365NET | Unternehmen',
             'icon'   => '🏢',
             'url'    => '/admin/companies',
@@ -113,19 +156,20 @@ final class CMS_Companies_Admin
     {
         $this->start_admin_layout('Unternehmen', 'companies');
 
-        // Admin-CSS laden
-        $adminCss = CMS_COMPANIES_PLUGIN_DIR . 'assets/css/companies-admin.css';
-        $adminCssVersion = file_exists($adminCss) ? (string) filemtime($adminCss) : '1';
-        echo '<link rel="stylesheet" href="' . CMS_COMPANIES_PLUGIN_URL . 'assets/css/companies-admin.css?v=' . $adminCssVersion . '">' . "\n";
+        $this->render_admin_styles();
 
         $companies  = $data['companies']  ?? [];
-        $tab        = $data['tab']        ?? 'overview';
+        $view       = $data['view']       ?? 'overview';
         $filter     = $data['filter']     ?? 'all';
         $search     = $data['search']     ?? '';
         $industries = $data['industries'] ?? [];
         $presets    = $data['presets']    ?? ['general' => [], 'special' => [], 'quality' => []];
         $settings   = $data['settings']   ?? [];
         $csrf       = $data['csrf']       ?? '';
+        $csrfEsc    = htmlspecialchars((string) $csrf, ENT_QUOTES, 'UTF-8');
+        if (class_exists('CMS_Companies_Plugin_Admin_Contract')) {
+            $view = CMS_Companies_Plugin_Admin_Contract::normalize_view((string) $view);
+        }
         $sec        = CMS\Security::instance();
 
         $s = array_merge([
@@ -177,8 +221,16 @@ final class CMS_Companies_Admin
         $topPartner = count(array_filter($companies, fn($c) => !$c->is_sponsor && (bool)$c->is_top_partner));
         $partner    = count(array_filter($companies, fn($c) => !$c->is_sponsor && !$c->is_top_partner && (bool)$c->is_partner));
         $pending    = count(array_filter($companies, fn($c) => ($c->status ?? 'active') === 'pending'));
+        $sidebarItems = [
+            'overview'   => ['🏢', 'Übersicht'],
+            'industries' => ['🏭', 'Branchen'],
+            'tags'       => ['🏷️', 'Merkmale'],
+            'design'     => ['🎨', 'Design'],
+            'settings'   => ['⚙️', 'Einstellungen'],
+        ];
         ?>
 
+        <div class="plugin-admin-shell">
         <!-- Page Header -->
         <div class="admin-page-header">
             <div>
@@ -194,31 +246,26 @@ final class CMS_Companies_Admin
         <?php if (isset($_GET['saved'])): ?><div class="alert alert-success">✅ Einstellungen gespeichert.</div><?php endif; ?>
         <?php if (isset($_GET['approved'])): ?><div class="alert alert-success">✅ Unternehmen genehmigt und aktiviert.</div><?php endif; ?>
         <?php if (isset($_GET['deleted'])): ?><div class="alert alert-success">✅ Eintrag gelöscht.</div><?php endif; ?>
-        <?php if (isset($_GET['error'])): ?><div class="alert alert-error">❌ Fehler: <?= htmlspecialchars($_GET['error']) ?></div><?php endif; ?>
+        <?php if (isset($_GET['error'])): ?><div class="alert alert-error">❌ Fehler: <?= htmlspecialchars((string) $_GET['error'], ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
 
-        <!-- Tabs -->
-        <div class="co-tabs">
-            <?php
-            $tabs = [
-                'overview'   => ['🏢', 'Übersicht',    ''],
-                'industries' => ['🏭', 'Branchen',      ''],
-                'tags'       => ['🏷️', 'Merkmale',      ''],
-                'design'     => ['🎨', 'Design',        ''],
-                'settings'   => ['⚙️', 'Einstellungen', ''],
-            ];
-            foreach ($tabs as $slug => [$icon, $label, $badge]): ?>
-                <a href="?tab=<?= $slug ?>" class="co-tab <?= $tab === $slug ? 'active' : '' ?>">
-                    <?= $icon ?> <?= $label ?>
-                    <?php if ($slug === 'overview' && $pending > 0): ?>
-                        <span class="nav-badge" style="background:#f59e0b;color:#fff;font-size:.7rem;padding:1px 6px;border-radius:9px;margin-left:4px;"><?= $pending ?></span>
-                    <?php endif; ?>
-                </a>
-            <?php endforeach; ?>
-        </div>
-
-        <?php
+            <div class="plugin-admin-layout">
+                <aside class="plugin-admin-sidebar">
+                    <nav class="plugin-admin-submenu" aria-label="Unternehmen Subnavigation">
+                        <?php foreach ($sidebarItems as $slug => [$icon, $label]): ?>
+                            <a href="<?= htmlspecialchars($this->admin_url($slug), ENT_QUOTES, 'UTF-8') ?>"
+                               class="plugin-admin-submenu-link<?= $view === $slug ? ' is-active' : '' ?>">
+                                <span><?= $icon ?> <?= $label ?></span>
+                                <?php if ($slug === 'overview' && $pending > 0): ?>
+                                    <span class="plugin-admin-submenu-badge"><?= (int) $pending ?></span>
+                                <?php endif; ?>
+                            </a>
+                        <?php endforeach; ?>
+                    </nav>
+                </aside>
+                <div class="plugin-admin-content">
+                    <?php
         // ══════════════════════════════════════════════════════════════════════
-        if ($tab === 'overview'):
+        if ($view === 'overview'):
             $filtered = $companies;
             if ($filter === 'sponsor')     $filtered = array_values(array_filter($companies, fn($c) => (bool)$c->is_sponsor));
             elseif ($filter === 'top')     $filtered = array_values(array_filter($companies, fn($c) => !$c->is_sponsor && (bool)$c->is_top_partner));
@@ -248,7 +295,7 @@ final class CMS_Companies_Admin
         <!-- Filter Bar -->
         <div class="admin-card" style="margin-bottom:1.25rem;">
             <form method="GET" style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;">
-                <input type="hidden" name="tab" value="overview">
+                <input type="hidden" name="view" value="overview">
                 <div class="form-group" style="margin:0;flex:2;min-width:220px;">
                     <label class="form-label">Name / Stichwort</label>
                     <input type="text" name="search" class="form-control" placeholder="Name, Stadt, Beschreibung…" value="<?= htmlspecialchars($search) ?>">
@@ -264,7 +311,7 @@ final class CMS_Companies_Admin
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary">🔍 Filtern</button>
-                <?php if ($search || $filter !== 'all'): ?><a href="?tab=overview" class="btn btn-secondary">✕ Reset</a><?php endif; ?>
+                <?php if ($search || $filter !== 'all'): ?><a href="<?= htmlspecialchars($this->admin_url('overview'), ENT_QUOTES, 'UTF-8') ?>" class="btn btn-secondary">✕ Reset</a><?php endif; ?>
             </form>
         </div>
 
@@ -342,7 +389,7 @@ final class CMS_Companies_Admin
                 <div class="co-adm-foot">
                     <?php if ($isPending): ?>
                         <form method="POST" action="<?= SITE_URL ?>/admin/companies/approve/<?= (int)$co->id ?>" style="display:contents;">
-                            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                            <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                             <button type="button" class="co-adm-btn co-adm-btn-primary" style="background:#16a34a;border-color:#16a34a;"
                                     onclick="openCoApproveModal(<?= (int)$co->id ?>, '<?= $sec->escape(addslashes($co->name)) ?>', this.closest('form'))">✓ Genehmigen</button>
                         </form>
@@ -364,7 +411,7 @@ final class CMS_Companies_Admin
 
         <?php
         // ══════════════════════════════════════════════════════════════════════
-        elseif ($tab === 'industries'):
+        elseif ($view === 'industries'):
         ?>
         <div style="display:grid;grid-template-columns:1fr 320px;gap:1.5rem;align-items:start;">
             <div>
@@ -378,7 +425,7 @@ final class CMS_Companies_Admin
                             <span class="co-tax-name">🏭 <?= $sec->escape($ind->name) ?></span>
                             <?php if ($ind->id > 0): ?>
                                 <form method="POST" action="<?= SITE_URL ?>/admin/companies/industry/delete/<?= (int)$ind->id ?>" style="display:inline;">
-                                    <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                                    <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                                     <button type="submit" class="co-del-btn"
                                             onclick="return confirm('Branche «<?= $sec->escape(addslashes($ind->name)) ?>» löschen?')">×</button>
                                 </form>
@@ -393,7 +440,7 @@ final class CMS_Companies_Admin
             <div class="co-side-card">
                 <h3 style="margin:0 0 1rem;">+ Neue Branche</h3>
                 <form method="POST" action="<?= SITE_URL ?>/admin/companies/industry/add">
-                    <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                    <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                     <div class="co-form-group">
                         <label>Branchen-Name *</label>
                         <input type="text" name="industry_name" required placeholder="z.B. Cybersecurity">
@@ -405,7 +452,7 @@ final class CMS_Companies_Admin
 
         <?php
         // ══════════════════════════════════════════════════════════════════════
-        elseif ($tab === 'tags'):
+        elseif ($view === 'tags'):
             $typeLabels = [
                 'general' => ['🔷','Allgemein','Allgemeine Unternehmensmerkmale'],
                 'special' => ['⭐','Spezialisierung','Spezielle Kompetenzen & Ausrichtungen'],
@@ -429,7 +476,7 @@ final class CMS_Companies_Admin
                                 <span class="co-tag">
                                     <?= $sec->escape($tg->tag_name) ?>
                                     <form method="POST" action="<?= SITE_URL ?>/admin/companies/tagpreset/delete/<?= (int)$tg->id ?>" style="display:inline;">
-                                        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                                        <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                                         <button type="submit" class="co-tag-del"
                                                 onclick="return confirm('«<?= $sec->escape(addslashes($tg->tag_name)) ?>» löschen?')">×</button>
                                     </form>
@@ -446,7 +493,7 @@ final class CMS_Companies_Admin
             <div class="co-side-card">
                 <h3 style="margin:0 0 1rem;">+ Neues Merkmal</h3>
                 <form method="POST" action="<?= SITE_URL ?>/admin/companies/tagpreset/add">
-                    <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                    <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
                     <div class="co-form-group">
                         <label>Merkmal *</label>
                         <input type="text" name="tag_name" required placeholder="z.B. ISO 27001">
@@ -466,11 +513,11 @@ final class CMS_Companies_Admin
 
         <?php
         // ══════════════════════════════════════════════════════════════════════
-        elseif ($tab === 'design'):
+        elseif ($view === 'design'):
         ?>
         <!-- Design Tab -->
         <form method="POST" action="<?= SITE_URL ?>/admin/companies/settings/save">
-            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+            <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
             <input type="hidden" name="_from_tab"  value="design">
 
             <div class="admin-card">
@@ -656,11 +703,11 @@ final class CMS_Companies_Admin
 
         <?php
         // ══════════════════════════════════════════════════════════════════════
-        elseif ($tab === 'settings'):
+        elseif ($view === 'settings'):
         ?>
         <!-- Settings Tab -->
         <form method="POST" action="<?= SITE_URL ?>/admin/companies/settings/save">
-            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+            <input type="hidden" name="csrf_token" value="<?= $csrfEsc ?>">
             <input type="hidden" name="_from_tab"  value="settings">
 
             <div class="admin-card">
@@ -719,6 +766,9 @@ final class CMS_Companies_Admin
             </div>
         </form>
         <?php endif; ?>
+                </div>
+            </div>
+        </div>
 
         <!-- Dynamische Partner-Farben per CSS-Variable (aus DB) -->
         <style>
@@ -743,7 +793,7 @@ final class CMS_Companies_Admin
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('coDeleteModal')">Abbrechen</button>
                     <form id="coDeleteForm" method="POST" style="display:inline;">
-                        <input type="hidden" name="csrf_token" value="<?= CMS\Security::instance()->generateToken('delete_company') ?>">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string) CMS\Security::instance()->generateToken('delete_company'), ENT_QUOTES, 'UTF-8') ?>">
                         <button type="submit" class="btn btn-danger">🗑️ Endgültig löschen</button>
                     </form>
                 </div>
@@ -797,6 +847,7 @@ final class CMS_Companies_Admin
         $is_edit    = ($company !== null);
         $page_title = $is_edit ? 'Unternehmen bearbeiten' : 'Neues Unternehmen anlegen';
         $csrf_token = CMS\Security::instance()->generateToken('save_company');
+        $csrfTokenEsc = htmlspecialchars((string) $csrf_token, ENT_QUOTES, 'UTF-8');
 
         // Experten für Zuordnungs-Sektion laden
         $db       = CMS_Companies_Database::instance();
@@ -804,12 +855,9 @@ final class CMS_Companies_Admin
         $assigned = $is_edit ? $db->get_company_experts((int)$company->id, false) : [];
 
         $this->start_admin_layout($page_title, 'companies');
-
-        // Admin-CSS laden
-        $adminCss = CMS_COMPANIES_PLUGIN_DIR . 'assets/css/companies-admin.css';
-        $adminCssVersion = file_exists($adminCss) ? (string) filemtime($adminCss) : '1';
-        echo '<link rel="stylesheet" href="' . CMS_COMPANIES_PLUGIN_URL . 'assets/css/companies-admin.css?v=' . $adminCssVersion . '">' . "\n";
+        $this->render_admin_styles();
         ?>
+        <div class="plugin-admin-shell">
         <div class="admin-page-header">
             <div>
                 <h2><?= $is_edit ? '✏️ Unternehmen bearbeiten' : '➕ Neues Unternehmen anlegen' ?></h2>
@@ -822,7 +870,7 @@ final class CMS_Companies_Admin
                 <a href="<?= SITE_URL ?>/companies/<?= (int)$company->id ?>" target="_blank"
                    class="btn btn-secondary">👁 Ansehen</a>
                 <?php endif; ?>
-                <a href="<?= SITE_URL ?>/admin/companies" class="btn btn-secondary">← Zurück</a>
+                <a href="<?= htmlspecialchars($this->admin_url('overview'), ENT_QUOTES, 'UTF-8') ?>" class="btn btn-secondary">← Zurück</a>
             </div>
         </div>
 
@@ -831,8 +879,8 @@ final class CMS_Companies_Admin
         <?php endif; ?>
         <?php if (isset($_GET['error'])): ?>
             <div class="alert alert-error">✕ Fehler beim Speichern
-                <?php if ($_GET['error'] === 'csrf'): ?> &ndash; Sicherheitscheck fehlgeschlagen. Bitte Seite neu laden.
-                <?php elseif ($_GET['error'] === 'save'): ?> &ndash; Datenbank-Fehler. Bitte Log prüfen.
+                <?php if ((string) $_GET['error'] === 'csrf'): ?> &ndash; Sicherheitscheck fehlgeschlagen. Bitte Seite neu laden.
+                <?php elseif ((string) $_GET['error'] === 'save'): ?> &ndash; Datenbank-Fehler. Bitte Log prüfen.
                 <?php else: ?> &ndash; Bitte Pflichtfelder prüfen.
                 <?php endif; ?>
             </div>
@@ -840,7 +888,7 @@ final class CMS_Companies_Admin
 
         <div style="max-width:900px;">
             <form method="POST" action="<?= SITE_URL ?>/admin/companies/save" id="co-main-form">
-                <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
+                <input type="hidden" name="csrf_token" value="<?= $csrfTokenEsc ?>">
                 <input type="hidden" name="company_id" value="<?= $is_edit ? (int)$company->id : 0 ?>">
 
                 <?php CMS_Companies_Meta_Boxes::instance()->render_company_form_fields($company, $experts, $assigned); ?>
@@ -851,7 +899,7 @@ final class CMS_Companies_Admin
                             <button type="submit" class="btn btn-primary">
                                 <?= $is_edit ? '💾 Änderungen speichern' : '➕ Unternehmen anlegen' ?>
                             </button>
-                            <a href="<?= SITE_URL ?>/admin/companies" class="btn btn-secondary">Abbrechen</a>
+                            <a href="<?= htmlspecialchars($this->admin_url('overview'), ENT_QUOTES, 'UTF-8') ?>" class="btn btn-secondary">Abbrechen</a>
                         </div>
                         <span class="form-text">Alle Pflichtfelder (*) müssen ausgefüllt sein.</span>
                     </div>
@@ -865,6 +913,7 @@ final class CMS_Companies_Admin
                 CMS_Companies_Meta_Boxes::instance()->render_expert_fields($company, $experts, $assigned);
             endif;
             ?>
+        </div>
         </div>
         <?php
         $this->end_admin_layout();

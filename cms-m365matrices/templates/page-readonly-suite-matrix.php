@@ -103,6 +103,8 @@ $matrix = is_array($matrix ?? null) ? $matrix : CMS_M365MATRICES_ReadOnly_Matric
 $columns = is_array($matrix['columns'] ?? null) ? $matrix['columns'] : [];
 $groups = is_array($matrix['groups'] ?? null) ? $matrix['groups'] : [];
 $meta = is_array($matrix['meta'] ?? null) ? $matrix['meta'] : [];
+$notes = is_array($matrix['notes'] ?? null) ? $matrix['notes'] : [];
+$sources = is_array($matrix['sources'] ?? null) ? $matrix['sources'] : [];
 $rows = [];
 foreach ($groups as $group) {
     if (!is_array($group) || empty($group['rows']) || !is_array($group['rows'])) {
@@ -266,7 +268,7 @@ if (class_exists('CMS\\ThemeManager')) {
             <p><?php echo $esc($notesText); ?></p>
             <?php endif; ?>
             <ul class="m365calc-note-list">
-                <?php foreach (($matrix['notes'] ?? []) as $note): ?>
+                <?php foreach ($notes as $note): ?>
                 <li><?php echo $esc($note); ?></li>
                 <?php endforeach; ?>
             </ul>
@@ -279,7 +281,7 @@ if (class_exists('CMS\\ThemeManager')) {
             <details>
                 <summary>Quellen anzeigen</summary>
                 <ul class="m365calc-note-list">
-                    <?php foreach (($matrix['sources'] ?? []) as $source): ?>
+                    <?php foreach ($sources as $source): ?>
                     <li><a href="<?php echo $esc($source); ?>" target="_blank" rel="noopener noreferrer"><?php echo $esc($source); ?></a></li>
                     <?php endforeach; ?>
                 </ul>

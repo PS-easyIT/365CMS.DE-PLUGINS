@@ -15,6 +15,8 @@ final class CMS_Downloads_Repository
 
     private \CMS\Database $db;
     private string $prefix;
+    /** @var array<string,string>|null */
+    private ?array $settingsCache = null;
 
     /** @var array<string,array<string,string>> */
     private const DOWNLOAD_TYPES = [
@@ -57,39 +59,74 @@ final class CMS_Downloads_Repository
 
     public function get_dashboard_stats(): array
     {
-        return [
-            'downloads' => (int) $this->db->get_var("SELECT COUNT(*) FROM {$this->prefix}downloads"),
-            'active_downloads' => (int) $this->db->get_var("SELECT COUNT(*) FROM {$this->prefix}downloads WHERE status = 'active'"),
-            'categories' => (int) $this->db->get_var("SELECT COUNT(*) FROM {$this->prefix}download_categories"),
-            'downloads_total' => (int) $this->db->get_var("SELECT COALESCE(SUM(download_count), 0) FROM {$this->prefix}downloads"),
-        ];
+        try {
+            return [
+                'downloads' => $this->fetch_count("SELECT COUNT(*) FROM {$this->prefix}downloads"),
+                'active_downloads' => $this->fetch_count("SELECT COUNT(*) FROM {$this->prefix}downloads WHERE status = ?", ['active']),
+                'categories' => $this->fetch_count("SELECT COUNT(*) FROM {$this->prefix}download_categories"),
+                'downloads_total' => $this->fetch_count("SELECT COALESCE(SUM(download_count), 0) FROM {$this->prefix}downloads"),
+            ];
+        } catch (\Throwable $e) {
+            $this->log_error('get_dashboard_stats failed', $e);
+            return [
+                'downloads' => 0,
+                'active_downloads' => 0,
+                'categories' => 0,
+                'downloads_total' => 0,
+            ];
+        }
     }
 
     public function get_settings(): array
     {
-        $stmt = $this->db->prepare("SELECT setting_key, setting_value FROM {$this->prefix}download_settings");
-        $stmt->execute();
-        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
-        $settings = self::DEFAULT_SETTINGS;
-
-        foreach ($rows as $row) {
-            $settings[(string) $row['setting_key']] = (string) ($row['setting_value'] ?? '');
+        if ($this->settingsCache !== null) {
+            return $this->settingsCache;
         }
 
-        return $settings;
+        try {
+            $stmt = $this->db->prepare("SELECT setting_key, setting_value FROM {$this->prefix}download_settings");
+            $stmt->execute();
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            $settings = self::DEFAULT_SETTINGS;
+
+            foreach ($rows as $row) {
+                $key = (string) ($row['setting_key'] ?? '');
+                if ($key === '') {
+                    continue;
+                }
+
+                $settings[$key] = (string) ($row['setting_value'] ?? '');
+            }
+
+            $this->settingsCache = $settings;
+            return $settings;
+        } catch (\Throwable $e) {
+            $this->log_error('get_settings failed', $e);
+            return self::DEFAULT_SETTINGS;
+        }
     }
 
     public function seed_settings(array $settings): void
     {
-        foreach ($settings as $key => $value) {
-            $exists = $this->db->prepare("SELECT id FROM {$this->prefix}download_settings WHERE setting_key = ? LIMIT 1");
-            $exists->execute([$key]);
-            if ($exists->fetchColumn() !== false) {
-                continue;
+        try {
+            $stmt = $this->db->prepare("SELECT setting_key FROM {$this->prefix}download_settings");
+            $stmt->execute();
+            $existingRows = $stmt->fetchAll(\PDO::FETCH_COLUMN) ?: [];
+            $existing = array_flip(array_map('strval', $existingRows));
+
+            foreach ($settings as $key => $value) {
+                $cleanKey = trim((string) $key);
+                if ($cleanKey === '' || isset($existing[$cleanKey])) {
+                    continue;
+                }
+
+                $insert = $this->db->prepare("INSERT INTO {$this->prefix}download_settings (setting_key, setting_value) VALUES (?, ?)");
+                $insert->execute([$cleanKey, (string) $value]);
             }
 
-            $stmt = $this->db->prepare("INSERT INTO {$this->prefix}download_settings (setting_key, setting_value) VALUES (?, ?)");
-            $stmt->execute([$key, (string) $value]);
+            $this->settingsCache = null;
+        } catch (\Throwable $e) {
+            $this->log_error('seed_settings failed', $e);
         }
     }
 
@@ -107,16 +144,43 @@ final class CMS_Downloads_Repository
             'nav_label' => $this->clean_text($post['nav_label'] ?? 'Downloads'),
         ];
 
-        foreach ($settings as $key => $value) {
-            $exists = $this->db->prepare("SELECT id FROM {$this->prefix}download_settings WHERE setting_key = ? LIMIT 1");
-            $exists->execute([$key]);
-            if ($exists->fetchColumn() !== false) {
-                $stmt = $this->db->prepare("UPDATE {$this->prefix}download_settings SET setting_value = ? WHERE setting_key = ?");
-                $stmt->execute([$value, $key]);
-            } else {
-                $stmt = $this->db->prepare("INSERT INTO {$this->prefix}download_settings (setting_key, setting_value) VALUES (?, ?)");
-                $stmt->execute([$key, $value]);
+        $startedTransaction = false;
+        try {
+            $pdo = $this->db->getPdo();
+            if ($pdo instanceof \PDO && !$pdo->inTransaction()) {
+                $pdo->beginTransaction();
+                $startedTransaction = true;
             }
+
+            $existingStmt = $this->db->prepare("SELECT setting_key FROM {$this->prefix}download_settings");
+            $existingStmt->execute();
+            $existingRows = $existingStmt->fetchAll(\PDO::FETCH_COLUMN) ?: [];
+            $existing = array_flip(array_map('strval', $existingRows));
+
+            $updateStmt = $this->db->prepare("UPDATE {$this->prefix}download_settings SET setting_value = ? WHERE setting_key = ?");
+            $insertStmt = $this->db->prepare("INSERT INTO {$this->prefix}download_settings (setting_key, setting_value) VALUES (?, ?)");
+
+            foreach ($settings as $key => $value) {
+                if (isset($existing[$key])) {
+                    $updateStmt->execute([$value, $key]);
+                    continue;
+                }
+
+                $insertStmt->execute([$key, $value]);
+            }
+
+            if ($startedTransaction && $pdo instanceof \PDO && $pdo->inTransaction()) {
+                $pdo->commit();
+            }
+
+            $this->settingsCache = null;
+        } catch (\Throwable $e) {
+            $pdo = $this->db->getPdo();
+            if ($startedTransaction && $pdo instanceof \PDO && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $this->log_error('save_settings failed', $e);
+            return ['success' => false, 'error' => 'Download-Einstellungen konnten nicht gespeichert werden.'];
         }
 
         return ['success' => true, 'message' => 'Download-Einstellungen gespeichert.'];
@@ -179,48 +243,58 @@ final class CMS_Downloads_Repository
 
     public function save_category(array $post): array
     {
-        $id = (int) ($post['category_id'] ?? 0);
-        $name = $this->clean_text($post['name'] ?? '');
-        if ($name === '') {
-            return ['success' => false, 'error' => 'Bitte einen Kategorienamen angeben.'];
-        }
+        try {
+            $id = (int) ($post['category_id'] ?? 0);
+            $name = $this->clean_text($post['name'] ?? '');
+            if ($name === '') {
+                return ['success' => false, 'error' => 'Bitte einen Kategorienamen angeben.'];
+            }
 
-        $slug = $this->slugify($post['slug'] ?? $name);
-        $slug = $this->ensure_unique_category_slug($slug, $id);
-        $description = $this->clean_textarea($post['description'] ?? '');
-        $icon = $this->clean_text($post['icon'] ?? '📁');
-        $status = ($post['status'] ?? 'active') === 'inactive' ? 'inactive' : 'active';
-        $sortOrder = max(0, (int) ($post['sort_order'] ?? 0));
+            $slug = $this->slugify($post['slug'] ?? $name);
+            $slug = $this->ensure_unique_category_slug($slug, $id);
+            $description = $this->clean_textarea($post['description'] ?? '');
+            $icon = $this->clean_text($post['icon'] ?? '📁');
+            $status = ($post['status'] ?? 'active') === 'inactive' ? 'inactive' : 'active';
+            $sortOrder = max(0, (int) ($post['sort_order'] ?? 0));
 
-        if ($id > 0) {
+            if ($id > 0) {
+                $stmt = $this->db->prepare(
+                    "UPDATE {$this->prefix}download_categories SET name = ?, slug = ?, description = ?, icon = ?, status = ?, sort_order = ? WHERE id = ?"
+                );
+                $stmt->execute([$name, $slug, $description, $icon, $status, $sortOrder, $id]);
+                return ['success' => true, 'message' => 'Kategorie aktualisiert.'];
+            }
+
             $stmt = $this->db->prepare(
-                "UPDATE {$this->prefix}download_categories SET name = ?, slug = ?, description = ?, icon = ?, status = ?, sort_order = ? WHERE id = ?"
+                "INSERT INTO {$this->prefix}download_categories (name, slug, description, icon, status, sort_order) VALUES (?, ?, ?, ?, ?, ?)"
             );
-            $stmt->execute([$name, $slug, $description, $icon, $status, $sortOrder, $id]);
-            return ['success' => true, 'message' => 'Kategorie aktualisiert.'];
+            $stmt->execute([$name, $slug, $description, $icon, $status, $sortOrder]);
+
+            return ['success' => true, 'message' => 'Kategorie erstellt.'];
+        } catch (\Throwable $e) {
+            $this->log_error('save_category failed', $e);
+            return ['success' => false, 'error' => 'Kategorie konnte nicht gespeichert werden.'];
         }
-
-        $stmt = $this->db->prepare(
-            "INSERT INTO {$this->prefix}download_categories (name, slug, description, icon, status, sort_order) VALUES (?, ?, ?, ?, ?, ?)"
-        );
-        $stmt->execute([$name, $slug, $description, $icon, $status, $sortOrder]);
-
-        return ['success' => true, 'message' => 'Kategorie erstellt.'];
     }
 
     public function delete_category(int $id): array
     {
-        if ($id <= 0) {
-            return ['success' => false, 'error' => 'Ungültige Kategorie.'];
+        try {
+            if ($id <= 0) {
+                return ['success' => false, 'error' => 'Ungültige Kategorie.'];
+            }
+
+            $stmt = $this->db->prepare("UPDATE {$this->prefix}downloads SET category_id = NULL WHERE category_id = ?");
+            $stmt->execute([$id]);
+
+            $stmt = $this->db->prepare("DELETE FROM {$this->prefix}download_categories WHERE id = ?");
+            $stmt->execute([$id]);
+
+            return ['success' => true, 'message' => 'Kategorie gelöscht.'];
+        } catch (\Throwable $e) {
+            $this->log_error('delete_category failed', $e);
+            return ['success' => false, 'error' => 'Kategorie konnte nicht gelöscht werden.'];
         }
-
-        $stmt = $this->db->prepare("UPDATE {$this->prefix}downloads SET category_id = NULL WHERE category_id = ?");
-        $stmt->execute([$id]);
-
-        $stmt = $this->db->prepare("DELETE FROM {$this->prefix}download_categories WHERE id = ?");
-        $stmt->execute([$id]);
-
-        return ['success' => true, 'message' => 'Kategorie gelöscht.'];
     }
 
     public function get_downloads(array $filters = []): array
@@ -327,89 +401,103 @@ final class CMS_Downloads_Repository
 
     public function save_download(array $post, array $files = []): array
     {
-        $id = (int) ($post['download_id'] ?? 0);
-        $existing = $id > 0 ? $this->get_download($id) : null;
-        $title = $this->clean_text($post['title'] ?? '');
-        if ($title === '') {
-            return ['success' => false, 'error' => 'Bitte einen Titel angeben.'];
-        }
-
-        $slug = $this->ensure_unique_download_slug($this->slugify($post['slug'] ?? $title), $id);
-        $categoryId = (int) ($post['category_id'] ?? 0);
-        $summary = $this->clean_textarea($post['summary'] ?? '');
-        $description = $this->clean_html($post['description'] ?? '');
-        $downloadType = array_key_exists((string) ($post['download_type'] ?? 'generic'), self::DOWNLOAD_TYPES)
-            ? (string) $post['download_type']
-            : 'generic';
-        $versionLabel = $this->clean_text($post['version_label'] ?? '');
-        $externalUrl = $this->clean_url($post['external_url'] ?? '');
-        $status = ($post['status'] ?? 'active') === 'inactive' ? 'inactive' : 'active';
-        $requiresLogin = !empty($post['requires_login']) ? 1 : 0;
-        $isFeatured = !empty($post['is_featured']) ? 1 : 0;
-        $sortOrder = max(0, (int) ($post['sort_order'] ?? 0));
-
-        $fileName = (string) ($existing['file_name'] ?? '');
-        $filePath = (string) ($existing['file_path'] ?? '');
-        $fileUrl = (string) ($existing['file_url'] ?? '');
-        $fileExt = (string) ($existing['file_ext'] ?? '');
-        $fileSize = (int) ($existing['file_size'] ?? 0);
-
-        if (!empty($files['download_file']) && is_array($files['download_file']) && (int) ($files['download_file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
-            $uploadResult = $this->handle_upload($files['download_file']);
-            if (!($uploadResult['success'] ?? false)) {
-                return $uploadResult;
+        try {
+            $id = (int) ($post['download_id'] ?? 0);
+            $existing = $id > 0 ? $this->get_download($id) : null;
+            $title = $this->clean_text($post['title'] ?? '');
+            if ($title === '') {
+                return ['success' => false, 'error' => 'Bitte einen Titel angeben.'];
             }
 
-            $fileName = (string) $uploadResult['file_name'];
-            $filePath = (string) $uploadResult['file_path'];
-            $fileUrl = (string) $uploadResult['file_url'];
-            $fileExt = (string) $uploadResult['file_ext'];
-            $fileSize = (int) $uploadResult['file_size'];
-        }
+            $slug = $this->ensure_unique_download_slug($this->slugify($post['slug'] ?? $title), $id);
+            $categoryId = (int) ($post['category_id'] ?? 0);
+            $summary = $this->clean_textarea($post['summary'] ?? '');
+            $description = $this->clean_html($post['description'] ?? '');
+            $downloadType = array_key_exists((string) ($post['download_type'] ?? 'generic'), self::DOWNLOAD_TYPES)
+                ? (string) $post['download_type']
+                : 'generic';
+            $versionLabel = $this->clean_text($post['version_label'] ?? '');
+            $externalUrl = $this->clean_url($post['external_url'] ?? '');
+            $status = ($post['status'] ?? 'active') === 'inactive' ? 'inactive' : 'active';
+            $requiresLogin = !empty($post['requires_login']) ? 1 : 0;
+            $isFeatured = !empty($post['is_featured']) ? 1 : 0;
+            $sortOrder = max(0, (int) ($post['sort_order'] ?? 0));
 
-        if ($filePath === '' && $externalUrl === '') {
-            return ['success' => false, 'error' => 'Bitte eine Datei hochladen oder eine externe Download-URL angeben.'];
-        }
+            $fileName = (string) ($existing['file_name'] ?? '');
+            $filePath = (string) ($existing['file_path'] ?? '');
+            $fileUrl = (string) ($existing['file_url'] ?? '');
+            $fileExt = (string) ($existing['file_ext'] ?? '');
+            $fileSize = (int) ($existing['file_size'] ?? 0);
 
-        if ($categoryId <= 0) {
-            $categoryId = null;
-        }
+            if (!empty($files['download_file']) && is_array($files['download_file']) && (int) ($files['download_file']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                $uploadResult = $this->handle_upload($files['download_file']);
+                if (!($uploadResult['success'] ?? false)) {
+                    return $uploadResult;
+                }
 
-        if ($id > 0) {
+                $fileName = (string) $uploadResult['file_name'];
+                $filePath = (string) $uploadResult['file_path'];
+                $fileUrl = (string) $uploadResult['file_url'];
+                $fileExt = (string) $uploadResult['file_ext'];
+                $fileSize = (int) $uploadResult['file_size'];
+            }
+
+            if ($filePath === '' && $externalUrl === '') {
+                return ['success' => false, 'error' => 'Bitte eine Datei hochladen oder eine externe Download-URL angeben.'];
+            }
+
+            if ($categoryId <= 0) {
+                $categoryId = null;
+            }
+
+            if ($id > 0) {
+                $stmt = $this->db->prepare(
+                    "UPDATE {$this->prefix}downloads
+                     SET category_id = ?, title = ?, slug = ?, summary = ?, description = ?, file_name = ?, file_path = ?, file_url = ?, external_url = ?, file_size = ?, file_ext = ?, version_label = ?, download_type = ?, requires_login = ?, is_featured = ?, status = ?, sort_order = ?
+                     WHERE id = ?"
+                );
+                $stmt->execute([$categoryId, $title, $slug, $summary, $description, $fileName, $filePath, $fileUrl, $externalUrl, $fileSize, $fileExt, $versionLabel, $downloadType, $requiresLogin, $isFeatured, $status, $sortOrder, $id]);
+                return ['success' => true, 'message' => 'Download aktualisiert.'];
+            }
+
             $stmt = $this->db->prepare(
-                "UPDATE {$this->prefix}downloads
-                 SET category_id = ?, title = ?, slug = ?, summary = ?, description = ?, file_name = ?, file_path = ?, file_url = ?, external_url = ?, file_size = ?, file_ext = ?, version_label = ?, download_type = ?, requires_login = ?, is_featured = ?, status = ?, sort_order = ?
-                 WHERE id = ?"
+                "INSERT INTO {$this->prefix}downloads (category_id, title, slug, summary, description, file_name, file_path, file_url, external_url, file_size, file_ext, version_label, download_type, requires_login, is_featured, status, sort_order)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
-            $stmt->execute([$categoryId, $title, $slug, $summary, $description, $fileName, $filePath, $fileUrl, $externalUrl, $fileSize, $fileExt, $versionLabel, $downloadType, $requiresLogin, $isFeatured, $status, $sortOrder, $id]);
-            return ['success' => true, 'message' => 'Download aktualisiert.'];
+            $stmt->execute([$categoryId, $title, $slug, $summary, $description, $fileName, $filePath, $fileUrl, $externalUrl, $fileSize, $fileExt, $versionLabel, $downloadType, $requiresLogin, $isFeatured, $status, $sortOrder]);
+
+            return ['success' => true, 'message' => 'Download erstellt.'];
+        } catch (\Throwable $e) {
+            $this->log_error('save_download failed', $e);
+            return ['success' => false, 'error' => 'Download konnte nicht gespeichert werden.'];
         }
-
-        $stmt = $this->db->prepare(
-            "INSERT INTO {$this->prefix}downloads (category_id, title, slug, summary, description, file_name, file_path, file_url, external_url, file_size, file_ext, version_label, download_type, requires_login, is_featured, status, sort_order)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        );
-        $stmt->execute([$categoryId, $title, $slug, $summary, $description, $fileName, $filePath, $fileUrl, $externalUrl, $fileSize, $fileExt, $versionLabel, $downloadType, $requiresLogin, $isFeatured, $status, $sortOrder]);
-
-        return ['success' => true, 'message' => 'Download erstellt.'];
     }
 
     public function delete_download(int $id): array
     {
-        if ($id <= 0) {
-            return ['success' => false, 'error' => 'Ungültiger Download.'];
+        try {
+            if ($id <= 0) {
+                return ['success' => false, 'error' => 'Ungültiger Download.'];
+            }
+
+            $stmt = $this->db->prepare("DELETE FROM {$this->prefix}downloads WHERE id = ?");
+            $stmt->execute([$id]);
+
+            return ['success' => true, 'message' => 'Download gelöscht.'];
+        } catch (\Throwable $e) {
+            $this->log_error('delete_download failed', $e);
+            return ['success' => false, 'error' => 'Download konnte nicht gelöscht werden.'];
         }
-
-        $stmt = $this->db->prepare("DELETE FROM {$this->prefix}downloads WHERE id = ?");
-        $stmt->execute([$id]);
-
-        return ['success' => true, 'message' => 'Download gelöscht.'];
     }
 
     public function increment_download_count(int $id): void
     {
-        $stmt = $this->db->prepare("UPDATE {$this->prefix}downloads SET download_count = download_count + 1 WHERE id = ?");
-        $stmt->execute([$id]);
+        try {
+            $stmt = $this->db->prepare("UPDATE {$this->prefix}downloads SET download_count = download_count + 1 WHERE id = ?");
+            $stmt->execute([$id]);
+        } catch (\Throwable $e) {
+            $this->log_error('increment_download_count failed', $e);
+        }
     }
 
     private function handle_upload(array $file): array
@@ -445,7 +533,7 @@ final class CMS_Downloads_Repository
             'success' => true,
             'file_name' => basename($storedName),
             'file_path' => str_replace('\\', '/', $relativePath),
-            'file_url' => rtrim((string) UPLOAD_URL, '/') . '/downloads/' . str_replace('\\', '/', $storedName),
+            'file_url' => rtrim((string) UPLOAD_URL, '/') . '/downloads/' . $this->encode_url_path($storedName),
             'file_ext' => strtolower(pathinfo($storedName, PATHINFO_EXTENSION)),
             'file_size' => is_file($absolutePathReal) ? (int) filesize($absolutePathReal) : 0,
         ];
@@ -554,5 +642,31 @@ final class CMS_Downloads_Repository
         sort($domains);
 
         return implode("\n", $domains);
+    }
+
+    private function fetch_count(string $sql, array $params = []): int
+    {
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+    }
+
+    private function encode_url_path(string $path): string
+    {
+        $segments = explode('/', str_replace('\\', '/', $path));
+        $encoded = [];
+        foreach ($segments as $segment) {
+            if ($segment === '') {
+                continue;
+            }
+            $encoded[] = rawurlencode($segment);
+        }
+
+        return implode('/', $encoded);
+    }
+
+    private function log_error(string $message, \Throwable $e): void
+    {
+        error_log('CMS Downloads: ' . $message . ' - ' . $e->getMessage());
     }
 }

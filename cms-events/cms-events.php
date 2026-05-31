@@ -178,20 +178,60 @@ final class CMS_Events {
     }
 
     private function is_event_frontend_route(): bool {
-        $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
-        $path = '/' . trim($path, '/');
+        $path = $this->current_request_path();
+        if (str_starts_with($path, '/admin/')) {
+            return false;
+        }
 
-        return $path === '/events'
-            || str_starts_with($path, '/events/')
+        $archiveSlug = $this->event_archive_slug();
+        $archiveBase = '/' . $archiveSlug;
+
+        return $path === $archiveBase
+            || str_starts_with($path, $archiveBase . '/')
             || str_starts_with($path, '/event/');
     }
 
     private function is_event_detail_request(): bool {
-        $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
-        $path = '/' . trim($path, '/');
+        $path = $this->current_request_path();
+        $archiveSlug = preg_quote($this->event_archive_slug(), '#');
 
-        return preg_match('#^/events/\d+(?:/)?$#', $path) === 1
+        return preg_match('#^/' . $archiveSlug . '/\d+(?:/)?$#', $path) === 1
             || preg_match('#^/event/[a-z0-9][a-z0-9-]*-\d+(?:/)?$#i', $path) === 1;
+    }
+
+    private function current_request_path(): string {
+        $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+        if (!is_string($path) || $path === '') {
+            return '/';
+        }
+
+        return '/' . trim($path, '/');
+    }
+
+    private function event_archive_slug(): string {
+        static $cachedSlug = null;
+        if (is_string($cachedSlug)) {
+            return $cachedSlug;
+        }
+
+        $slug = 'events';
+        if (class_exists('CMS_Events_Database', false) && method_exists('CMS_Events_Database', 'instance')) {
+            try {
+                $settings = CMS_Events_Database::instance()->get_settings();
+                if (is_array($settings)) {
+                    $candidate = strtolower(trim((string) ($settings['archive_slug'] ?? '')));
+                    $candidate = trim((string) preg_replace('/[^a-z0-9-]+/', '-', $candidate), '-');
+                    if ($candidate !== '') {
+                        $slug = $candidate;
+                    }
+                }
+            } catch (\Throwable $e) {
+                error_log('CMS Events archive slug fallback: ' . $e->getMessage());
+            }
+        }
+
+        $cachedSlug = $slug;
+        return $cachedSlug;
     }
 
     private function enqueue_tabler_icons_fallback(): void {

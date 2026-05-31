@@ -20,34 +20,45 @@ trait CMS_Booking_Page_Bookings_Trait
         $success  = '';
 
         // POST-Handler
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['booking_action'])) {
-            if (!class_exists('CMS\Security') || !\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'booking_admin')) {
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST' && isset($_POST['booking_action'])) {
+            if (!self::can_manage_admin_actions()) {
+                $error = 'Keine Berechtigung für diese Aktion.';
+            } elseif (!class_exists('CMS\Security') || !\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'booking_admin')) {
                 $error = 'Sicherheitscheck fehlgeschlagen.';
             } else {
                 $id     = (int) ($_POST['booking_id'] ?? 0);
                 $action = sanitize_text_field($_POST['booking_action']);
+                $allowedActions = ['confirm', 'cancel', 'complete', 'no_show', 'delete'];
 
-                switch ($action) {
-                    case 'confirm':
-                        $bookings->confirm($id);
-                        $success = 'Buchung #' . $id . ' wurde bestätigt.';
-                        break;
-                    case 'cancel':
-                        $bookings->cancel($id);
-                        $success = 'Buchung #' . $id . ' wurde storniert.';
-                        break;
-                    case 'complete':
-                        $bookings->complete($id);
-                        $success = 'Buchung #' . $id . ' wurde abgeschlossen.';
-                        break;
-                    case 'no_show':
-                        $bookings->no_show($id);
-                        $success = 'Buchung #' . $id . ' als „Nicht erschienen" markiert.';
-                        break;
-                    case 'delete':
-                        $bookings->delete($id);
-                        $success = 'Buchung #' . $id . ' wurde gelöscht.';
-                        break;
+                if ($id <= 0 || !in_array($action, $allowedActions, true)) {
+                    $error = 'Ungültige Aktion.';
+                } else {
+                    try {
+                        switch ($action) {
+                            case 'confirm':
+                                $bookings->confirm($id);
+                                $success = 'Buchung #' . $id . ' wurde bestätigt.';
+                                break;
+                            case 'cancel':
+                                $bookings->cancel($id);
+                                $success = 'Buchung #' . $id . ' wurde storniert.';
+                                break;
+                            case 'complete':
+                                $bookings->complete($id);
+                                $success = 'Buchung #' . $id . ' wurde abgeschlossen.';
+                                break;
+                            case 'no_show':
+                                $bookings->no_show($id);
+                                $success = 'Buchung #' . $id . ' als „Nicht erschienen" markiert.';
+                                break;
+                            case 'delete':
+                                $bookings->delete($id);
+                                $success = 'Buchung #' . $id . ' wurde gelöscht.';
+                                break;
+                        }
+                    } catch (\Throwable $e) {
+                        $error = 'Buchungsaktion konnte nicht ausgeführt werden.';
+                    }
                 }
             }
         }
@@ -58,7 +69,7 @@ trait CMS_Booking_Page_Bookings_Trait
         }
 
         // Filter
-        $page       = max(1, (int) ($_GET['page'] ?? 1));
+        $page       = max(1, (int) ($_GET['paged'] ?? 1));
         $perPage    = 20;
         $offset     = ($page - 1) * $perPage;
         $status     = sanitize_text_field($_GET['status'] ?? '');

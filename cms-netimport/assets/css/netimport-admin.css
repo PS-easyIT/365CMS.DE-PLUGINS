@@ -1,10 +1,16 @@
+.cms-plugin-admin-layout .admin-page-header,
+.cms-plugin-admin-layout .admin-card,
+.cms-plugin-admin-layout .alert {
+    margin-bottom: 25px;
+}
+
 .ni-card-spacer {
-    margin-bottom: 1.5rem;
+    margin-bottom: 25px;
 }
 
 .ni-form-grid {
     display: grid;
-    gap: 1rem;
+    gap: 25px;
 }
 
 .ni-form-group-wide {
@@ -13,7 +19,7 @@
 
 .ni-history-filter-form,
 .ni-history-action-form {
-    margin-bottom: 1rem;
+    margin-bottom: 25px;
 }
 
 .ni-inline-form {
@@ -21,7 +27,7 @@
 }
 
 .ni-history-meta {
-    margin-top: 0.75rem;
+    margin-top: 25px;
 }
 
 .stat-icon {
@@ -49,7 +55,7 @@
     margin: 0;
     padding: 0;
     display: grid;
-    gap: 0.65rem;
+    gap: 25px;
 }
 
 .ni-log-item {
@@ -119,15 +125,15 @@
 .ni-history-panels {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1rem;
-    padding: 0 1rem 1rem;
+    gap: 25px;
+    padding: 0 25px 25px;
 }
 
 .ni-history-panel {
     border: 1px solid #e2e8f0;
     border-radius: 12px;
     background: #ffffff;
-    padding: 1rem;
+    padding: 25px;
 }
 
 .ni-history-panel h4 {
@@ -141,7 +147,7 @@
     margin: 0;
     padding: 0;
     display: grid;
-    gap: 0.45rem;
+    gap: 12px;
 }
 
 .ni-kv-list li {
@@ -150,7 +156,7 @@
 }
 
 .ni-inline-note {
-    margin-top: 0.9rem;
+    margin-top: 25px;
     padding: 0.75rem 0.9rem;
     border-radius: 10px;
     background: #eff6ff;
@@ -165,7 +171,7 @@
 }
 
 .ni-log-list-compact {
-    padding: 0 1rem 1rem;
+    padding: 0 25px 25px;
 }
 
 .ni-btn-danger {

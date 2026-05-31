@@ -139,7 +139,32 @@ trait CMS_JPG_Page_Generator_Trait
             'review'       => 'Review & Export',
         ];
 
-        include JPG_DIR . 'admin/views/page-generator.php';
+        self::render_admin_view(
+            'Profil-Generator',
+            'jpg-generator',
+            JPG_DIR . 'admin/views/page-generator.php',
+            compact(
+                'tab',
+                'id',
+                'showPrivate',
+                'notice',
+                'error',
+                'profile',
+                'tasks',
+                'requirements',
+                'profileSkills',
+                'benefitIds',
+                'categories',
+                'allSkills',
+                'allBenefits',
+                'textModules',
+                'requirementItems',
+                'companies',
+                'companiesJson',
+                'companyDefaultBenefitIds',
+                'tabs'
+            )
+        );
     }
 
     private static function duplicate_profile_admin(int $id): int

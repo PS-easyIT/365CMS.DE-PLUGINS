@@ -15,6 +15,51 @@ if (!defined('ABSPATH')) {
 final class CMS_Companies_Post_Type
 {
     private static ?self $instance = null;
+    private const ALLOWED_PARTNER_FILTERS = ['sponsor', 'top_partner', 'partner'];
+
+    private function log_error(string $context, \Throwable $e): void
+    {
+        error_log('CMS Companies [' . $context . ']: ' . $e->getMessage());
+    }
+
+    private function normalize_public_filter_string(mixed $value, int $maxLen = 120): string
+    {
+        $raw = trim((string) $value);
+        if ($raw === '') {
+            return '';
+        }
+
+        if (class_exists('CMS\\Security')) {
+            $raw = trim((string) CMS\Security::instance()->sanitize($raw, 'text'));
+        }
+
+        return mb_substr($raw, 0, $maxLen);
+    }
+
+    private function resolve_industry_filters(string $rawFilter, CMS_Companies_Database $db): array
+    {
+        $rawFilter = $this->normalize_public_filter_string($rawFilter, 150);
+        if ($rawFilter === '') {
+            return [];
+        }
+
+        $filters = [$rawFilter];
+        foreach ($db->get_all_industries() as $industry) {
+            $slug = trim((string) ($industry->slug ?? ''));
+            $name = trim((string) ($industry->name ?? ''));
+            if ($rawFilter === $slug || $rawFilter === $name) {
+                if ($slug !== '') {
+                    $filters[] = $slug;
+                }
+                if ($name !== '') {
+                    $filters[] = $name;
+                }
+                break;
+            }
+        }
+
+        return array_values(array_unique(array_filter($filters)));
+    }
 
     public static function instance(): self
     {
@@ -76,11 +121,12 @@ final class CMS_Companies_Post_Type
     {
         // Öffentliche Ansicht – keine Abo-Prüfung, Erstellung ist separat geschützt
         $db_manager = CMS_Companies_Database::instance();
-        
-        $filter_industry = $_GET['industry'] ?? null;
-        $filter_city     = $_GET['city']     ?? null;
-        $filter_partner  = $_GET['partner']  ?? null;
-        $filter_q        = trim($_GET['q']   ?? '');
+
+        $filter_industry_raw = $this->normalize_public_filter_string($_GET['industry'] ?? '', 150);
+        $filter_city         = $this->normalize_public_filter_string($_GET['city'] ?? '', 100);
+        $filter_partner_raw  = strtolower($this->normalize_public_filter_string($_GET['partner'] ?? '', 30));
+        $filter_partner      = in_array($filter_partner_raw, self::ALLOWED_PARTNER_FILTERS, true) ? $filter_partner_raw : '';
+        $filter_q            = $this->normalize_public_filter_string($_GET['q'] ?? '', 190);
         $page     = max(1, (int)($_GET['page'] ?? 1));
         $per_page = 12;
 
@@ -90,9 +136,12 @@ final class CMS_Companies_Post_Type
             'offset' => ($page - 1) * $per_page,
         ];
 
-        if ($filter_industry) { $args['industry'] = $filter_industry; }
-        if ($filter_city)     { $args['city']     = $filter_city; }
-        if ($filter_partner)  { $args['partner']  = $filter_partner; }
+        $industryFilters = $this->resolve_industry_filters($filter_industry_raw, $db_manager);
+        if ($industryFilters !== []) {
+            $args['industry_values'] = $industryFilters;
+        }
+        if ($filter_city !== '') { $args['city'] = $filter_city; }
+        if ($filter_partner !== '') { $args['partner'] = $filter_partner; }
         if ($filter_q !== '') { $args['q']        = $filter_q; }
 
         $companies   = $db_manager->get_companies($args);
@@ -107,7 +156,7 @@ final class CMS_Companies_Post_Type
             'current_page' => $page,
             'per_page'     => $per_page,
             'filters'      => [
-                'industry' => $filter_industry,
+                'industry' => $filter_industry_raw,
                 'city'     => $filter_city,
                 'partner'  => $filter_partner,
                 'q'        => $filter_q,
@@ -191,7 +240,7 @@ final class CMS_Companies_Post_Type
                 $stmt->execute([(int)$company->id]);
                 $speakers = $stmt->fetchAll();
             } catch (\Throwable $e) {
-                error_log('CMS_Companies: Speaker-Query failed: ' . $e->getMessage());
+                $this->log_error('speaker_query', $e);
             }
         }
 
@@ -243,7 +292,7 @@ final class CMS_Companies_Post_Type
             $stmt->execute([$company_id]);
             return $stmt->fetchAll();
         } catch (\Throwable $e) {
-            error_log('CMS_Companies related companies failed: ' . $e->getMessage());
+            $this->log_error('related_companies', $e);
             return [];
         }
     }
@@ -255,9 +304,17 @@ final class CMS_Companies_Post_Type
             return;
         }
 
-        $tab    = $_GET['tab']    ?? 'overview';
-        $filter = $_GET['filter'] ?? 'all';
-        $search = trim($_GET['search'] ?? '');
+        $sec = CMS\Security::instance();
+        $requestedView = $_GET['view'] ?? $_GET['tab'] ?? 'overview';
+        $view = class_exists('CMS_Companies_Plugin_Admin_Contract')
+            ? CMS_Companies_Plugin_Admin_Contract::normalize_view(is_string($requestedView) ? $requestedView : 'overview')
+            : (is_string($requestedView) ? $requestedView : 'overview');
+
+        $filter = (string) ($_GET['filter'] ?? 'all');
+        if (!in_array($filter, ['all', 'sponsor', 'top', 'partner', 'pending'], true)) {
+            $filter = 'all';
+        }
+        $search = trim($sec->sanitize($_GET['search'] ?? '', 'text'));
 
         $db  = CMS_Companies_Database::instance();
 
@@ -277,16 +334,24 @@ final class CMS_Companies_Post_Type
         $settings = $db->get_settings();
         $csrf     = CMS\Security::instance()->generateToken('company_admin');
 
-        CMS_Companies_Admin::instance()->render_list([
+        $payload = [
             'companies'  => $companies,
-            'tab'        => $tab,
+            'view'       => $view,
             'filter'     => $filter,
             'search'     => $search,
             'industries' => $industries,
             'presets'    => $presets,
             'settings'   => $settings,
             'csrf'       => $csrf,
-        ]);
+        ];
+
+        try {
+            CMS_Companies_Admin::instance()->render_list($payload);
+        } catch (\Throwable $e) {
+            $this->log_error('admin_list', $e);
+            $payload['view'] = 'overview';
+            CMS_Companies_Admin::instance()->render_list($payload);
+        }
     }
 
     public function admin_create(): void
@@ -342,29 +407,60 @@ final class CMS_Companies_Post_Type
         // Beschreibung: HTML-Sanitierung + Inline-Style-Attribute entfernen.
         // html_entity_decode() als Schutt: falls Browser/Editor die Entities
         // bereits kodiert übermittelt hat, wird das vor dem Sanitize rückgängig gemacht.
-        $desc_raw    = html_entity_decode($_POST['description'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $desc_raw    = \CMS\Services\EditorService::getInstance()->sanitize($desc_raw);
+        $desc_raw = html_entity_decode((string) ($_POST['description'] ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        if (class_exists('\CMS\Services\EditorService')) {
+            $desc_raw = \CMS\Services\EditorService::getInstance()->sanitize($desc_raw);
+        } else {
+            $desc_raw = strip_tags($desc_raw);
+        }
         $description = preg_replace('/\s+style\s*=\s*(?:"[^"]*"|\x27[^\x27]*\x27)/i', '', $desc_raw) ?? $desc_raw;
+        $description = mb_substr($description, 0, 10000);
+
+        $industryInput = $sec->sanitize($_POST['industry'] ?? '', 'text');
+        $allowedIndustries = [];
+        foreach (CMS_Companies_Database::instance()->get_all_industries() as $industryOption) {
+            $slug = trim((string) ($industryOption->slug ?? ''));
+            $name = trim((string) ($industryOption->name ?? ''));
+            if ($slug !== '') {
+                $allowedIndustries[] = $slug;
+            }
+            if ($name !== '') {
+                $allowedIndustries[] = $name;
+            }
+        }
+        $industry = in_array($industryInput, $allowedIndustries, true) ? $industryInput : '';
+        $foundedYear = !empty($_POST['founded_year']) ? (int) $_POST['founded_year'] : null;
+        $currentYear = (int) date('Y');
+        if ($foundedYear !== null && ($foundedYear < 1800 || $foundedYear > $currentYear)) {
+            $foundedYear = null;
+        }
+        $employeeCount = !empty($_POST['employee_count']) ? max(0, (int) $_POST['employee_count']) : null;
+        $website = function_exists('cms_companies_public_url')
+            ? cms_companies_public_url((string) ($_POST['website'] ?? ''))
+            : (string) $sec->sanitize($_POST['website'] ?? '', 'url');
+        $logoUrl = function_exists('cms_companies_public_url')
+            ? cms_companies_public_url((string) ($_POST['logo_url'] ?? ''))
+            : (string) $sec->sanitize($_POST['logo_url'] ?? '', 'url');
 
         $data = [
             'id'               => (int)($_POST['company_id'] ?? 0),
             'name'             => $sec->sanitize($_POST['name']             ?? '', 'text'),
             'email'            => $sec->sanitize($_POST['email']            ?? '', 'email'),
             'phone'            => $sec->sanitize($_POST['phone']            ?? '', 'text'),
-            'industry'         => $sec->sanitize($_POST['industry']         ?? '', 'text'),
+            'industry'         => $industry,
             'company_size'     => $sec->sanitize($_POST['company_size']     ?? '', 'text'),
             'description'      => $description,
-            'website'          => $sec->sanitize($_POST['website']          ?? '', 'url'),
+            'website'          => $website ?: null,
             'location_city'    => $sec->sanitize($_POST['location_city']    ?? '', 'text'),
             'location_zip'     => $sec->sanitize($_POST['location_zip']     ?? '', 'text'),
             'location_country' => $sec->sanitize($_POST['location_country'] ?? '', 'text'),
-            'founded_year'     => !empty($_POST['founded_year'])  ? (int)$_POST['founded_year']  : null,
-            'employee_count'   => !empty($_POST['employee_count']) ? (int)$_POST['employee_count'] : null,
+            'founded_year'     => $foundedYear,
+            'employee_count'   => $employeeCount,
             // Checkboxen ohne Hidden-Feld: isset() prüft ob das Feld gesendet wurde
             'is_partner'       => isset($_POST['is_partner'])     ? 1 : 0,
             'is_top_partner'   => isset($_POST['is_top_partner']) ? 1 : 0,
             'is_sponsor'       => isset($_POST['is_sponsor'])     ? 1 : 0,
-            'logo_url'         => $sec->sanitize($_POST['logo_url'] ?? '', 'url') ?: null,
+            'logo_url'         => $logoUrl ?: null,
             'status'           => in_array($_POST['company_status'] ?? 'active', ['active', 'inactive'], true)
                                   ? $_POST['company_status'] : 'active',
         ];
@@ -397,6 +493,11 @@ final class CMS_Companies_Post_Type
         if (!CMS\Security::instance()->verifyToken($csrf_token, 'delete_company')) {
             http_response_code(403);
             echo json_encode(['error' => 'Invalid CSRF token']);
+            return;
+        }
+
+        if ($company_id <= 0) {
+            CMS\Router::instance()->redirect('/admin/companies?error=invalid_id');
             return;
         }
 
@@ -448,16 +549,16 @@ final class CMS_Companies_Post_Type
         if (!CMS\Auth::instance()->isAdmin()) { http_response_code(403); return; }
 
         if (!CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'company_admin')) {
-            CMS\Router::instance()->redirect('/admin/companies?tab=settings&error=csrf'); return;
+            CMS\Router::instance()->redirect('/admin/companies?view=settings&error=csrf'); return;
         }
 
-        $tab = (isset($_POST['_from_tab']) && in_array($_POST['_from_tab'], ['design', 'settings'], true))
+        $view = (isset($_POST['_from_tab']) && in_array($_POST['_from_tab'], ['design', 'settings'], true))
             ? $_POST['_from_tab'] : 'settings';
 
         $db  = CMS_Companies_Database::instance();
         $sec = CMS\Security::instance();
 
-        if ($tab === 'design') {
+        if ($view === 'design') {
             $design_text_fields = [
                 'archive_header_icon', 'archive_header_bg_from', 'archive_header_bg_to',
                 'archive_header_title_color',
@@ -491,7 +592,7 @@ final class CMS_Companies_Post_Type
             $db->save_setting('show_nav_link', isset($_POST['show_nav_link']) ? '1' : '0');
         }
 
-        CMS\Router::instance()->redirect('/admin/companies?tab=' . $tab . '&saved=1');
+        CMS\Router::instance()->redirect('/admin/companies?view=' . $view . '&saved=1');
     }
 
     public function admin_industry_add(): void
@@ -504,7 +605,7 @@ final class CMS_Companies_Post_Type
         if ($name !== '') {
             CMS_Companies_Database::instance()->add_industry($name);
         }
-        CMS\Router::instance()->redirect('/admin/companies?tab=industries');
+        CMS\Router::instance()->redirect('/admin/companies?view=industries');
     }
 
     public function admin_industry_delete(string $id = ''): void
@@ -517,7 +618,7 @@ final class CMS_Companies_Post_Type
         if ($iid > 0) {
             CMS_Companies_Database::instance()->delete_industry($iid);
         }
-        CMS\Router::instance()->redirect('/admin/companies?tab=industries');
+        CMS\Router::instance()->redirect('/admin/companies?view=industries');
     }
 
     public function admin_tagpreset_add(): void
@@ -532,7 +633,7 @@ final class CMS_Companies_Post_Type
         if ($name !== '') {
             CMS_Companies_Database::instance()->add_tag_preset($name, $type);
         }
-        CMS\Router::instance()->redirect('/admin/companies?tab=tags');
+        CMS\Router::instance()->redirect('/admin/companies?view=tags');
     }
 
     public function admin_tagpreset_delete(string $id = ''): void
@@ -545,7 +646,7 @@ final class CMS_Companies_Post_Type
         if ($tid > 0) {
             CMS_Companies_Database::instance()->delete_tag_preset($tid);
         }
-        CMS\Router::instance()->redirect('/admin/companies?tab=tags');
+        CMS\Router::instance()->redirect('/admin/companies?view=tags');
     }
 
     public function admin_expert_assign(): void
@@ -557,7 +658,10 @@ final class CMS_Companies_Post_Type
         }
         $company_id = (int)($_POST['company_id'] ?? 0);
         $expert_id  = (int)($_POST['expert_id']  ?? 0);
-        $role       = trim($_POST['role'] ?? '');
+        $role       = trim((string) CMS\Security::instance()->sanitize($_POST['role'] ?? '', 'text'));
+        if (mb_strlen($role) > 150) {
+            $role = mb_substr($role, 0, 150);
+        }
         $is_current = (int)($_POST['is_current'] ?? 1) === 1;
 
         if ($company_id > 0 && $expert_id > 0) {

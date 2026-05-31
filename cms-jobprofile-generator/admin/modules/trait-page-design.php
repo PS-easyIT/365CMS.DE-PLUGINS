@@ -58,7 +58,12 @@ trait CMS_JPG_Page_Design_Trait
 
         $cd_settings = self::get_cd_settings();
 
-        include JPG_DIR . 'admin/views/page-design.php';
+        self::render_admin_view(
+            'Vorlagen und Design',
+            'jpg-design',
+            JPG_DIR . 'admin/views/page-design.php',
+            compact('tab', 'notice', 'error', 'tabs', 'templates', 'cd_settings')
+        );
     }
 
     /** @return array{string, string} */

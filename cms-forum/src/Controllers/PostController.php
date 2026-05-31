@@ -142,17 +142,31 @@ final class PostController
             exit;
         }
 
+        $thread = Thread::instance()->findById((int) ($post->thread_id ?? 0));
+        $forum = $thread ? Forum::instance()->findById((int) ($thread->forum_id ?? 0)) : null;
+        if ($forum === null || !PermissionService::instance()->canRead((int) $forum->id)) {
+            $this->sendJson(['success' => false, 'error' => 'Keine Berechtigung.'], 403);
+            exit;
+        }
+
+        if (!PermissionService::instance()->canVote((int) $forum->id)) {
+            $this->sendJson(['success' => false, 'error' => 'Likes sind in diesem Forum nicht erlaubt.'], 403);
+            exit;
+        }
+
         $userId = (int)$auth->currentUser()->id;
         $result = Like::instance()->toggle($postId, $userId);
 
         // Like-Zähler aktualisieren
         Post::instance()->refreshLikeCount($postId);
+        $updatedPost = Post::instance()->findById($postId);
+        $likeCount = (int) ($updatedPost?->like_count ?? 0);
 
-        echo json_encode([
+        $this->sendJson([
             'success' => true,
             'liked'   => $result,
-            'count'   => (int) (Post::instance()->findById($postId)->like_count ?? 0),
-        ]);
+            'count'   => $likeCount,
+        ], 200);
         exit;
     }
 
@@ -175,7 +189,11 @@ final class PostController
         }
 
         $postId = (int) ($_POST['post_id'] ?? 0);
-        $reason = in_array($_POST['reason'] ?? '', Report::REASONS, true) ? $_POST['reason'] : 'other';
+        $rawReason = sanitize_key((string) ($_POST['reason'] ?? 'other'));
+        $reason = $rawReason === 'off_topic' ? 'off-topic' : $rawReason;
+        if (!in_array($reason, Report::REASONS, true)) {
+            $reason = 'other';
+        }
         $detail = mb_substr(sanitize_text_field((string) ($_POST['detail'] ?? '')), 0, 500);
 
         if ($postId <= 0) {
@@ -189,9 +207,22 @@ final class PostController
             exit;
         }
 
+        $thread = Thread::instance()->findById((int) ($post->thread_id ?? 0));
+        $forum = $thread ? Forum::instance()->findById((int) ($thread->forum_id ?? 0)) : null;
+        if ($forum === null || !PermissionService::instance()->canRead((int) $forum->id)) {
+            $this->sendJson(['success' => false, 'error' => 'Keine Berechtigung.'], 403);
+            exit;
+        }
+
+        $userId = (int) $auth->currentUser()->id;
+        if (Report::instance()->hasReported($postId, $userId)) {
+            $this->sendJson(['success' => false, 'error' => 'Du hast diesen Beitrag bereits gemeldet.'], 409);
+            exit;
+        }
+
         $reportId = Report::instance()->create([
             'post_id'     => $postId,
-            'user_id'     => (int)$auth->currentUser()->id,
+            'user_id'     => $userId,
             'reason'      => $reason,
             'description' => $detail,
         ]);

@@ -115,19 +115,24 @@ final class CMS_Events_Template_Loader
 
     public function render_template(string $template_name, array $data = []): void
     {
-        $template_name = str_replace('.php', '', $template_name) . '.php';
+        $template_name = $this->normalize_template_name($template_name);
+        if ($template_name === '') {
+            error_log('CMS Events: invalid template name requested');
+            $this->render_inline_template_fallback('archive-event.php', $data);
+            return;
+        }
 
         $theme_dir = $this->getThemeTemplateDir();
         $theme_template = $theme_dir !== '' ? $theme_dir . $template_name : '';
 
         $template_candidates = [];
-        if ($theme_template !== '' && file_exists($theme_template)) {
+        if ($theme_template !== '' && $this->is_allowed_template_path($theme_template)) {
             $template_candidates[] = $theme_template;
         }
 
         foreach ($this->getPluginTemplateDirs() as $pluginDir) {
             $candidate = $pluginDir . $template_name;
-            if (file_exists($candidate) && !in_array($candidate, $template_candidates, true)) {
+            if ($this->is_allowed_template_path($candidate) && !in_array($candidate, $template_candidates, true)) {
                 $template_candidates[] = $candidate;
             }
         }
@@ -188,18 +193,21 @@ final class CMS_Events_Template_Loader
 
     private function locate_template(string $template_name): ?string
     {
-        $template_name = str_replace('.php', '', $template_name) . '.php';
+        $template_name = $this->normalize_template_name($template_name);
+        if ($template_name === '') {
+            return null;
+        }
 
         // Theme-Override: Pfad wird zur Laufzeit vom ThemeManager ermittelt
         $theme_dir = $this->getThemeTemplateDir();
         $theme_template = $theme_dir !== '' ? $theme_dir . $template_name : '';
-        if ($theme_template !== '' && file_exists($theme_template)) {
+        if ($theme_template !== '' && $this->is_allowed_template_path($theme_template)) {
             return $theme_template;
         }
 
         foreach ($this->getPluginTemplateDirs() as $pluginDir) {
             $plugin_template = $pluginDir . $template_name;
-            if (file_exists($plugin_template)) {
+            if ($this->is_allowed_template_path($plugin_template)) {
                 return $plugin_template;
             }
         }
@@ -229,7 +237,47 @@ final class CMS_Events_Template_Loader
     {
         ob_start();
         $this->render_template($template_name, $data);
-        return ob_get_clean();
+        $buffer = ob_get_clean();
+        return is_string($buffer) ? $buffer : '';
+    }
+
+    private function normalize_template_name(string $template_name): string
+    {
+        $normalized = trim(str_replace('\\', '/', str_replace('.php', '', $template_name)));
+        $normalized = ltrim($normalized, '/');
+        if ($normalized === '' || str_contains($normalized, '..')) {
+            return '';
+        }
+
+        if (preg_match('/^[a-z0-9][a-z0-9_-]*(?:\/[a-z0-9][a-z0-9_-]*)*$/i', $normalized) !== 1) {
+            return '';
+        }
+
+        return $normalized . '.php';
+    }
+
+    private function is_allowed_template_path(string $template_file): bool
+    {
+        $realFile = realpath($template_file);
+        if ($realFile === false || !is_file($realFile) || !is_readable($realFile)) {
+            return false;
+        }
+
+        $allowedDirs = $this->getPluginTemplateDirs();
+        $themeDir = $this->getThemeTemplateDir();
+        if ($themeDir !== '') {
+            $allowedDirs[] = str_replace('\\', '/', rtrim($themeDir, '/\\')) . '/';
+        }
+
+        $normalizedFile = str_replace('\\', '/', $realFile);
+        foreach ($allowedDirs as $dir) {
+            $normalizedDir = str_replace('\\', '/', rtrim($dir, '/\\')) . '/';
+            if (str_starts_with($normalizedFile, $normalizedDir)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function render_template_error(string $title, string $message): void

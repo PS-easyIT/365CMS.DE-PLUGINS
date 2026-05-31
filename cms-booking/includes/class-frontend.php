@@ -264,15 +264,16 @@ final class CMS_Booking_Frontend
                 }
 
                 // Benachrichtigungen senden
+                $booking = CMS_Booking_Bookings::instance()->get($bookingId);
+                if (!$booking) {
+                    throw new \RuntimeException('Booking record missing after creation.');
+                }
+
                 if (class_exists('CMS_Booking_Notifications')) {
-                    $booking = CMS_Booking_Bookings::instance()->get($bookingId);
-                    if ($booking) {
-                        CMS_Booking_Notifications::instance()->send_booking_created($booking);
-                    }
+                    CMS_Booking_Notifications::instance()->send_booking_created($booking);
                 }
 
                 // Zugangs-Token für Bestätigungsseite generieren
-                $booking     = $booking ?? CMS_Booking_Bookings::instance()->get($bookingId);
                 $accessToken = $this->generate_access_token($bookingId, $booking['ical_uid'] ?? '');
 
                 // Weiterleitung zur Bestätigungsseite
@@ -369,9 +370,16 @@ final class CMS_Booking_Frontend
         $this->send_security_headers();
         header('Content-Type: application/json; charset=utf-8');
 
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+        if ($providerId <= 0 || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
             http_response_code(400);
-            echo json_encode(['error' => 'Ungültiges Datum']);
+            echo json_encode(['error' => 'Ungültige Anfrage']);
+            exit;
+        }
+
+        $provider = CMS_Booking_Providers::instance()->get($providerId);
+        if (!$provider || ($provider['status'] ?? '') !== 'active') {
+            http_response_code(404);
+            echo json_encode(['error' => 'Anbieter nicht gefunden']);
             exit;
         }
 
@@ -382,9 +390,13 @@ final class CMS_Booking_Frontend
 
         if ($serviceId > 0) {
             $service = CMS_Booking_Services::instance()->get($serviceId);
-            if ($service) {
+            if ($service && (int) ($service['provider_id'] ?? 0) === $providerId && ($service['status'] ?? '') === 'active') {
                 $durationMin = (int) $service['duration_min'];
                 $bufferMin   = (int) $service['buffer_min'];
+            } else {
+                http_response_code(404);
+                echo json_encode(['error' => 'Leistung nicht gefunden']);
+                exit;
             }
         }
 
@@ -490,10 +502,14 @@ final class CMS_Booking_Frontend
     {
         static $cache = null;
         if ($cache === null) {
-            $db   = \CMS\Database::instance();
-            $stmt = $db->prepare("SELECT setting_key, setting_value FROM {$db->getPrefix()}booking_settings");
-            $stmt->execute();
-            $cache = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+            try {
+                $db   = \CMS\Database::instance();
+                $stmt = $db->prepare("SELECT setting_key, setting_value FROM {$db->getPrefix()}booking_settings");
+                $stmt->execute();
+                $cache = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
+            } catch (\Throwable $e) {
+                $cache = [];
+            }
         }
         return $cache[$key] ?? $default;
     }

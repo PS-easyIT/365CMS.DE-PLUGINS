@@ -29,7 +29,7 @@ final class CMS_Forum_Admin_Menu
             '365CMS | Forum',
             'manage_options',
             'forum-dashboard',
-            [CMS_Forum_Admin_Pages::class, 'render_dashboard'],
+            [CMS_Forum_Admin_Pages::class, 'dispatch'],
             '💬',
             40
         );
@@ -40,7 +40,7 @@ final class CMS_Forum_Admin_Menu
             '📊 Dashboard',
             'manage_options',
             'forum-dashboard',
-            [CMS_Forum_Admin_Pages::class, 'render_dashboard']
+            [CMS_Forum_Admin_Pages::class, 'dispatch']
         );
 
         add_submenu_page(
@@ -49,7 +49,7 @@ final class CMS_Forum_Admin_Menu
             '🗂️ Kategorien',
             'manage_options',
             'forum-categories',
-            [CMS_Forum_Admin_Pages::class, 'render_categories']
+            [CMS_Forum_Admin_Pages::class, 'dispatch']
         );
 
         add_submenu_page(
@@ -58,7 +58,7 @@ final class CMS_Forum_Admin_Menu
             '📁 Foren',
             'manage_options',
             'forum-forums',
-            [CMS_Forum_Admin_Pages::class, 'render_forums']
+            [CMS_Forum_Admin_Pages::class, 'dispatch']
         );
 
         add_submenu_page(
@@ -67,7 +67,7 @@ final class CMS_Forum_Admin_Menu
             '📝 Threads',
             'manage_options',
             'forum-threads',
-            [CMS_Forum_Admin_Pages::class, 'render_threads']
+            [CMS_Forum_Admin_Pages::class, 'dispatch']
         );
 
         add_submenu_page(
@@ -76,7 +76,7 @@ final class CMS_Forum_Admin_Menu
             '👥 Benutzer',
             'manage_options',
             'forum-users',
-            [CMS_Forum_Admin_Pages::class, 'render_users']
+            [CMS_Forum_Admin_Pages::class, 'dispatch']
         );
 
         add_submenu_page(
@@ -85,7 +85,7 @@ final class CMS_Forum_Admin_Menu
             '🏅 Ränge',
             'manage_options',
             'forum-ranks',
-            [CMS_Forum_Admin_Pages::class, 'render_ranks']
+            [CMS_Forum_Admin_Pages::class, 'dispatch']
         );
 
         add_submenu_page(
@@ -94,7 +94,7 @@ final class CMS_Forum_Admin_Menu
             '🔒 Berechtigungen',
             'manage_options',
             'forum-permissions',
-            [CMS_Forum_Admin_Pages::class, 'render_permissions']
+            [CMS_Forum_Admin_Pages::class, 'dispatch']
         );
 
         add_submenu_page(
@@ -103,7 +103,7 @@ final class CMS_Forum_Admin_Menu
             '🚩 Meldungen',
             'manage_options',
             'forum-reports',
-            [CMS_Forum_Admin_Pages::class, 'render_reports']
+            [CMS_Forum_Admin_Pages::class, 'dispatch']
         );
 
         add_submenu_page(
@@ -112,7 +112,7 @@ final class CMS_Forum_Admin_Menu
             '⚙️ Einstellungen',
             'manage_options',
             'forum-settings',
-            [CMS_Forum_Admin_Pages::class, 'render_settings']
+            [CMS_Forum_Admin_Pages::class, 'dispatch']
         );
     }
 }

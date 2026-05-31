@@ -52,9 +52,10 @@
     box-shadow: var(--feed-admin-shadow);
 }
 
-.feed-admin-shell--tabbed {
-    margin-top: 0;
-    border-radius: 0 var(--feed-admin-radius) var(--feed-admin-radius) var(--feed-admin-radius);
+.feed-admin-main {
+    display: grid;
+    gap: 25px;
+    grid-template-columns: minmax(220px, .24fr) minmax(0, .76fr);
 }
 
 .feed-admin-view {
@@ -392,26 +393,35 @@
 }
 
 /* -------------------------------------------------------------------------
- * Tab-Navigation
+ * Sidebar-Submenu Navigation
  * ---------------------------------------------------------------------- */
-.feed-tabs,
-.feed-settings-tabs {
-    display: flex;
-    flex-wrap: wrap;
+.feed-submenu,
+.feed-settings-submenu {
+    display: grid;
     gap: 8px;
-    margin-bottom: 0;
+    align-content: start;
+    height: fit-content;
     padding: 25px;
     border: 1px solid var(--feed-admin-border);
-    border-bottom: 0;
-    border-radius: var(--feed-admin-radius) var(--feed-admin-radius) 0 0;
+    border-radius: var(--feed-admin-radius);
     background: var(--feed-admin-card-bg);
+    box-shadow: var(--feed-admin-shadow);
 }
 
-.feed-tab,
-.tab-btn {
+.feed-submenu__title {
+    margin-bottom: 6px;
+    color: var(--feed-admin-subtext);
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.feed-submenu-link {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    justify-content: space-between;
+    gap: 10px;
     padding: 10px 16px;
     border: 1px solid transparent;
     border-radius: var(--feed-admin-radius);
@@ -426,26 +436,21 @@
     transition: color .15s ease, background-color .15s ease, border-color .15s ease;
 }
 
-.feed-tab:hover,
-.tab-btn:hover {
+.feed-submenu-link:hover {
     border-color: var(--feed-admin-border);
     background: var(--feed-admin-bg);
     color: var(--feed-admin-text);
 }
 
-.feed-tab.active,
-.tab-btn.active {
+.feed-submenu-link.active {
     border-color: var(--feed-admin-accent);
     background: #eef2ff;
     color: var(--feed-admin-accent);
 }
 
-.tab-content {
-    display: none;
-}
-
-.tab-content.active {
-    display: block;
+.feed-settings-submenu {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 25px;
 }
 
 /* -------------------------------------------------------------------------
@@ -562,13 +567,8 @@
 /* -------------------------------------------------------------------------
  * Settings-Ansicht und Formulare
  * ---------------------------------------------------------------------- */
-.feed-settings-tabs {
-    margin-bottom: 0;
-}
-
 .feed-settings-panel {
     margin-top: 0 !important;
-    border-radius: 0 0 var(--feed-admin-radius) var(--feed-admin-radius);
 }
 
 .feed-settings-form {
@@ -888,6 +888,7 @@
  * Responsive Anpassungen
  * ---------------------------------------------------------------------- */
 @media (max-width: 960px) {
+    .feed-admin-main,
     .feed-panel-grid,
     .feed-settings-layout,
     .feed-info-grid {
@@ -909,14 +910,8 @@
 }
 
 @media (max-width: 640px) {
-    .feed-tabs,
-    .feed-settings-tabs {
-        border-bottom: 1px solid var(--feed-admin-border);
-        border-radius: var(--feed-admin-radius);
-    }
-
-    .feed-admin-shell--tabbed {
-        border-radius: var(--feed-admin-radius);
+    .feed-settings-submenu {
+        grid-template-columns: 1fr;
     }
 
     .feed-inline-actions,

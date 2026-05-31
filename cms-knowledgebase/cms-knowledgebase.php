@@ -20,6 +20,11 @@ define('CMS_KNOWLEDGEBASE_VERSION', '3.0.4');
 define('CMS_KNOWLEDGEBASE_PLUGIN_DIR', __DIR__ . DIRECTORY_SEPARATOR);
 define('CMS_KNOWLEDGEBASE_PLUGIN_URL', '/plugins/cms-knowledgebase/');
 
+$sharedAdminContract = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'shared' . DIRECTORY_SEPARATOR . 'admin' . DIRECTORY_SEPARATOR . 'plugin-admin-contract.php';
+if (is_file($sharedAdminContract)) {
+    require_once $sharedAdminContract;
+}
+
 $psrLoggerInterface = ABSPATH . 'assets/psr/Log/LoggerInterface.php';
 if (is_file($psrLoggerInterface)) {
     require_once $psrLoggerInterface;

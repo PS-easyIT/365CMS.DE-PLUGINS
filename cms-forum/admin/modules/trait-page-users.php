@@ -24,18 +24,26 @@ trait CMS_Forum_Page_Users_Trait
             $success = null;
 
             // POST-Handler
-            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['forum_action'])) {
+            $requestMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+            if ($requestMethod === 'POST' && isset($_POST['forum_action'])) {
+                $forumAction = sanitize_key((string) ($_POST['forum_action'] ?? ''));
                 if (!self::verify_nonce('forum_users')) {
                     $error = 'Sicherheitscheck fehlgeschlagen.';
                 } else {
                     $admin = \CMS_Forum\Controllers\AdminController::instance();
 
-                    switch ($_POST['forum_action']) {
+                    switch ($forumAction) {
                         case 'ban_user':
+                            $banExpires = self::sanitize_ban_expires($_POST['ban_expires'] ?? null);
+                            if (($banExpires === null) && !empty($_POST['ban_expires'])) {
+                                $error = 'Ungültiges Sperrdatum.';
+                                break;
+                            }
+
                             $result = $admin->banUser(
                                 (int) ($_POST['user_id'] ?? 0),
-                                sanitize_text_field($_POST['ban_reason'] ?? ''),
-                                !empty($_POST['ban_expires']) ? $_POST['ban_expires'] : null
+                                sanitize_text_field((string) ($_POST['ban_reason'] ?? '')),
+                                $banExpires
                             );
                             $result['success'] ? $success = 'Benutzer gesperrt.' : $error = $result['error'];
                             break;
@@ -43,6 +51,10 @@ trait CMS_Forum_Page_Users_Trait
                         case 'unban_user':
                             $result = $admin->unbanUser((int) ($_POST['user_id'] ?? 0));
                             $result['success'] ? $success = 'Benutzer entsperrt.' : $error = $result['error'];
+                            break;
+
+                        default:
+                            $error = 'Unbekannte Aktion.';
                             break;
                     }
                 }
@@ -53,7 +65,8 @@ trait CMS_Forum_Page_Users_Trait
             $p  = self::prefix();
 
             $search = sanitize_text_field($_GET['q'] ?? '');
-            $page    = max(1, (int) ($_GET['page'] ?? 1));
+            $pageParam = $_GET['paged'] ?? $_GET['page_num'] ?? 1;
+            $page    = max(1, (int) $pageParam);
             $perPage = 25;
             $offset  = ($page - 1) * $perPage;
 
@@ -90,5 +103,20 @@ trait CMS_Forum_Page_Users_Trait
 
             include CMS_FORUM_DIR . 'admin/views/page-users.php';
         });
+    }
+
+    private static function sanitize_ban_expires(mixed $value): ?string
+    {
+        if (!is_scalar($value)) {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        $dt = \DateTimeImmutable::createFromFormat('Y-m-d', $value);
+        return ($dt && $dt->format('Y-m-d') === $value) ? $dt->format('Y-m-d 00:00:00') : null;
     }
 }

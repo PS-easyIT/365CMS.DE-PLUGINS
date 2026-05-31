@@ -13,7 +13,15 @@ if (!defined('ABSPATH')) {
 
 final class CMS_M365LINKCOLLECTION_Admin_Pages
 {
+    public const PLUGIN_SLUG = 'cms-m365linkcollection';
+    public const SLUG_DASHBOARD = 'cms-m365linkcollection-dashboard';
+    public const SLUG_ENTRIES = 'cms-m365linkcollection-entries';
+    public const SLUG_CONTENT = 'cms-m365linkcollection-content';
+    public const SLUG_SETTINGS = 'cms-m365linkcollection-settings';
+    public const SLUG_HELP = 'cms-m365linkcollection-help';
+
     private static ?self $instance = null;
+    private static bool $contractLoaded = false;
 
     public static function instance(): self
     {
@@ -24,20 +32,73 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
     {
     }
 
+    public static function render_dispatch(): void
+    {
+        self::check_access();
+        self::load_admin_contract();
+
+        $callbackMap = [
+            self::SLUG_DASHBOARD => [self::class, 'render_dashboard'],
+            self::SLUG_ENTRIES => [self::class, 'render_entries_page'],
+            self::SLUG_CONTENT => [self::class, 'render_content_page'],
+            self::SLUG_SETTINGS => [self::class, 'render_settings_page'],
+            self::SLUG_HELP => [self::class, 'render_help_page'],
+            'm365linkcollection-dashboard' => [self::class, 'render_dashboard'], // legacy slug
+        ];
+
+        if (function_exists('cms_plugin_admin_dispatch_page')) {
+            cms_plugin_admin_dispatch_page($callbackMap, self::SLUG_DASHBOARD, self::PLUGIN_SLUG);
+            return;
+        }
+
+        self::render_dashboard();
+    }
+
     public static function render_dashboard(): void
     {
-        self::render_with_layout('M365 Linkcollection', 'm365linkcollection-dashboard', static function (): void {
-            self::instance()->render_page();
+        self::render_with_layout('M365 Linkcollection - Uebersicht', self::SLUG_DASHBOARD, static function (): void {
+            self::instance()->render_page('dashboard');
+        });
+    }
+
+    public static function render_entries_page(): void
+    {
+        self::render_with_layout('M365 Linkcollection - Eintraege', self::SLUG_ENTRIES, static function (): void {
+            self::instance()->render_page('entries');
+        });
+    }
+
+    public static function render_content_page(): void
+    {
+        self::render_with_layout('M365 Linkcollection - Inhalte', self::SLUG_CONTENT, static function (): void {
+            self::instance()->render_page('content');
+        });
+    }
+
+    public static function render_settings_page(): void
+    {
+        self::render_with_layout('M365 Linkcollection - Anzeige', self::SLUG_SETTINGS, static function (): void {
+            self::instance()->render_page('settings');
+        });
+    }
+
+    public static function render_help_page(): void
+    {
+        self::render_with_layout('M365 Linkcollection - Hinweise', self::SLUG_HELP, static function (): void {
+            self::instance()->render_page('help');
         });
     }
 
     private static function render_with_layout(string $title, string $slug, callable $renderer): void
     {
         self::check_access();
-        self::load_admin_menu();
+        self::load_admin_contract();
 
-        if (function_exists('renderAdminLayoutStart')) {
+        if (function_exists('cms_plugin_admin_layout_start')) {
+            cms_plugin_admin_layout_start($title, $slug);
+        } elseif (function_exists('renderAdminLayoutStart')) {
             renderAdminLayoutStart($title, $slug);
+            echo '<div class="cms-plugin-admin-layout"><div class="cms-plugin-admin-layout__content">';
         }
 
         self::enqueue_admin_assets();
@@ -45,25 +106,38 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
         $renderer();
         echo '</div>';
 
-        if (function_exists('renderAdminLayoutEnd')) {
+        if (function_exists('cms_plugin_admin_layout_end')) {
+            cms_plugin_admin_layout_end();
+        } elseif (function_exists('renderAdminLayoutEnd')) {
+            echo '</div></div>';
             renderAdminLayoutEnd();
         }
     }
 
     private static function check_access(): void
     {
-        if (!class_exists('CMS\\Auth') || !\CMS\Auth::instance()->isAdmin()) {
-            header('Location: ' . (defined('SITE_URL') ? SITE_URL : '/'));
-            exit;
+        $isAdmin = class_exists('CMS\\Auth') && \CMS\Auth::instance()->isAdmin();
+        if (!$isAdmin) {
+            self::deny_access();
+        }
+
+        if (function_exists('current_user_can') && !current_user_can('manage_options')) {
+            self::deny_access();
         }
     }
 
-    private static function load_admin_menu(): void
+    private static function load_admin_contract(): void
     {
-        $menuFile = ABSPATH . 'admin/partials/admin-menu.php';
-        if (file_exists($menuFile) && !function_exists('renderAdminLayoutStart')) {
-            require_once $menuFile;
+        if (self::$contractLoaded) {
+            return;
         }
+
+        $contract = dirname(CMS_M365LINKCOLLECTION_PLUGIN_DIR) . '/shared/admin/plugin-admin-contract.php';
+        if (is_file($contract)) {
+            require_once $contract;
+        }
+
+        self::$contractLoaded = true;
     }
 
     private static function enqueue_admin_assets(): void
@@ -76,22 +150,16 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
         }
     }
 
-    private function render_page(): void
+    private function render_page(string $section): void
     {
         CMS_M365LINKCOLLECTION_Installer::maybe_install();
         $repo = CMS_M365LINKCOLLECTION_Repository::instance();
-        $tabs = [
-            'entries' => '🔗 Einträge',
-            'content' => '✍️ Inhalte & Texte',
-            'settings' => '🎨 Anzeige & Design',
-            'help' => 'ℹ️ Hinweise',
-        ];
-        $activeTab = self::active_tab($tabs);
+        $section = self::normalize_section($section);
         $notice = '';
         $error = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            [$notice, $error] = $this->handle_post($activeTab);
+            [$notice, $error] = $this->handle_post();
         }
 
         $settings = CMS_M365LINKCOLLECTION_Settings::all();
@@ -112,7 +180,7 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
             </div>
             <div class="header-actions">
                 <a href="<?php echo self::esc_attr($publicUrl); ?>" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">👁️ Public öffnen</a>
-                <a href="?tab=entries" class="btn btn-primary">➕ Eintrag anlegen</a>
+                <a href="<?php echo self::esc_attr(self::menu_url(self::SLUG_ENTRIES)); ?>" class="btn btn-primary">➕ Eintrag anlegen</a>
             </div>
         </div>
 
@@ -129,17 +197,13 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
             <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-number"><?php echo (int) count(array_filter($items, static fn(array $item): bool => !empty($item['is_featured']))); ?></div><div class="stat-label">Widget-Pool</div></div>
         </div>
 
-        <div class="mlc-tabs">
-            <?php foreach ($tabs as $key => $label): ?>
-            <a href="?tab=<?php echo self::esc_attr($key); ?>" class="mlc-tab<?php echo $activeTab === $key ? ' active' : ''; ?>"><?php echo self::esc($label); ?></a>
-            <?php endforeach; ?>
-        </div>
-
-        <?php if ($activeTab === 'settings'): ?>
+        <?php if ($section === 'dashboard'): ?>
+            <?php $this->render_dashboard_quicklinks(); ?>
+        <?php elseif ($section === 'settings'): ?>
             <?php $this->render_settings($settings); ?>
-        <?php elseif ($activeTab === 'content'): ?>
+        <?php elseif ($section === 'content'): ?>
             <?php $this->render_content($settings); ?>
-        <?php elseif ($activeTab === 'help'): ?>
+        <?php elseif ($section === 'help'): ?>
             <?php $this->render_help(); ?>
         <?php else: ?>
             <?php $this->render_entries($items, $categories, $editItem, $companyOptions, $speakerOptions, $expertOptions); ?>
@@ -150,9 +214,15 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
     /**
      * @return array{0:string,1:string}
      */
-    private function handle_post(string $activeTab): array
+    private function handle_post(): array
     {
         $action = (string) ($_POST['action'] ?? '');
+        if (!in_array($action, ['save_link', 'delete_link', 'save_settings'], true)) {
+            return ['', 'Unbekannte Aktion.'];
+        }
+
+        self::check_access();
+
         $tokenAction = $action === 'save_settings' ? 'm365linkcollection_settings' : 'm365linkcollection_entries';
         if (!self::verify_nonce($tokenAction)) {
             return ['', 'Sicherheitscheck fehlgeschlagen.'];
@@ -160,7 +230,7 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
 
         try {
             if ($action === 'save_link') {
-                CMS_M365LINKCOLLECTION_Repository::instance()->save($_POST);
+                CMS_M365LINKCOLLECTION_Repository::instance()->save((array) $_POST);
                 return ['Eintrag gespeichert.', ''];
             }
 
@@ -174,7 +244,8 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
                 return ['Einstellungen gespeichert.', ''];
             }
         } catch (\Throwable $e) {
-            return ['', 'Aktion konnte nicht ausgeführt werden: ' . $e->getMessage()];
+            self::log_error('Admin action failed (' . $action . '): ' . $e->getMessage());
+            return ['', 'Aktion konnte nicht ausgefuehrt werden. Details wurden protokolliert.'];
         }
 
         return ['', 'Unbekannte Aktion.'];
@@ -285,7 +356,7 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
                 </div>
                 <button type="submit" class="btn btn-primary">💾 Eintrag speichern</button>
                 <?php if ((int) ($item['id'] ?? 0) > 0): ?>
-                <a href="?tab=entries" class="btn btn-secondary">Neu anlegen</a>
+                <a href="<?php echo self::esc_attr(self::menu_url(self::SLUG_ENTRIES)); ?>" class="btn btn-secondary">Neu anlegen</a>
                 <?php endif; ?>
             </form>
         </div>
@@ -301,12 +372,12 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
                     <tbody>
                     <?php foreach ($items as $row): ?>
                     <tr>
-                        <td><a href="?tab=entries&amp;edit=<?php echo (int) $row['id']; ?>" class="mlc-table-title"><?php echo self::esc((string) $row['title']); ?></a><br><small><?php echo self::esc((string) ($row['subtitle'] ?? '')); ?></small></td>
+                        <td><a href="<?php echo self::esc_attr(self::menu_url(self::SLUG_ENTRIES) . '&edit=' . (int) $row['id']); ?>" class="mlc-table-title"><?php echo self::esc((string) $row['title']); ?></a><br><small><?php echo self::esc((string) ($row['subtitle'] ?? '')); ?></small></td>
                         <td><?php echo self::esc((string) ($row['category_name'] ?? '')); ?></td>
                         <td><a href="<?php echo self::esc_attr((string) $row['url']); ?>" target="_blank" rel="noopener noreferrer">öffnen</a></td>
                         <td><span class="status-badge <?php echo (string) $row['status'] === 'active' ? 'active' : 'inactive'; ?>"><?php echo (string) $row['status'] === 'active' ? 'Aktiv' : 'Inaktiv'; ?></span></td>
                         <td><?php echo !empty($row['is_featured']) ? '⭐' : '—'; ?></td>
-                        <td><div class="mlc-action-row"><a href="?tab=entries&amp;edit=<?php echo (int) $row['id']; ?>" class="btn btn-sm btn-secondary">✏️</a><button type="button" class="btn btn-sm btn-danger" onclick="openMlcDeleteModal(<?php echo (int) $row['id']; ?>, <?php echo self::json((string) $row['title']); ?>)">🗑️</button></div></td>
+                        <td><div class="mlc-action-row"><a href="<?php echo self::esc_attr(self::menu_url(self::SLUG_ENTRIES) . '&edit=' . (int) $row['id']); ?>" class="btn btn-sm btn-secondary">✏️</a><button type="button" class="btn btn-sm btn-danger" onclick="openMlcDeleteModal(<?php echo (int) $row['id']; ?>, <?php echo self::json((string) $row['title']); ?>)">🗑️</button></div></td>
                     </tr>
                     <?php endforeach; ?>
                     </tbody>
@@ -501,6 +572,33 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
         <?php
     }
 
+    private function render_dashboard_quicklinks(): void
+    {
+        ?>
+        <div class="admin-card mlc-dashboard-links">
+            <h3>🧭 Schnellzugriffe</h3>
+            <div class="mlc-quicklink-grid">
+                <a class="mlc-quicklink" href="<?php echo self::esc_attr(self::menu_url(self::SLUG_ENTRIES)); ?>">
+                    <strong>🔗 Eintraege</strong>
+                    <span>Links anlegen, bearbeiten und loeschen.</span>
+                </a>
+                <a class="mlc-quicklink" href="<?php echo self::esc_attr(self::menu_url(self::SLUG_CONTENT)); ?>">
+                    <strong>✍️ Inhalte</strong>
+                    <span>Texte und Labels der Public-Seite pflegen.</span>
+                </a>
+                <a class="mlc-quicklink" href="<?php echo self::esc_attr(self::menu_url(self::SLUG_SETTINGS)); ?>">
+                    <strong>🎨 Anzeige</strong>
+                    <span>Layout, Farben, Tabellenoptionen und Widget konfigurieren.</span>
+                </a>
+                <a class="mlc-quicklink" href="<?php echo self::esc_attr(self::menu_url(self::SLUG_HELP)); ?>">
+                    <strong>ℹ️ Hinweise</strong>
+                    <span>Routing- und Integrationshinweise einsehen.</span>
+                </a>
+            </div>
+        </div>
+        <?php
+    }
+
     /** @param array<string,string> $settings */
     private static function input(string $key, string $label, array $settings, string $type = 'text'): void
     {
@@ -576,6 +674,31 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
             'sidebar_show_category',
             'sidebar_show_subtitle',
         ];
+        $intRanges = [
+            'items_per_page' => [12, 500],
+            'image_height' => [48, 240],
+            'card_image_height' => [64, 260],
+            'content_spacing_top' => [0, 160],
+            'content_spacing_bottom' => [0, 200],
+            'content_padding_y' => [0, 80],
+            'content_padding_x' => [0, 80],
+            'section_gap' => [0, 80],
+            'border_radius' => [0, 24],
+            'sidebar_limit' => [1, 20],
+            'sidebar_rotate_seconds' => [3, 60],
+            'sidebar_min_height' => [120, 520],
+            'sidebar_image_height' => [0, 320],
+        ];
+        $colorKeys = [
+            'color_page_background',
+            'color_surface',
+            'color_text',
+            'color_muted',
+            'color_border',
+            'color_accent',
+            'color_button_bg',
+            'color_button_text',
+        ];
         foreach ($defaults as $key => $default) {
             if ($section === 'content' && !array_key_exists($key, $post)) {
                 continue;
@@ -587,27 +710,89 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
                 $settings[$key] = !empty($post[$key]) ? '1' : '0';
                 continue;
             }
+
+            if ($key === 'page_route') {
+                $settings[$key] = self::sanitize_route((string) ($post[$key] ?? $default), (string) $default);
+                continue;
+            }
+
+            if ($key === 'default_view') {
+                $candidate = (string) ($post[$key] ?? $default);
+                $settings[$key] = in_array($candidate, ['cards', 'table', 'both'], true) ? $candidate : (string) $default;
+                continue;
+            }
+
+            if ($key === 'table_density') {
+                $candidate = (string) ($post[$key] ?? $default);
+                $settings[$key] = in_array($candidate, ['comfortable', 'compact'], true) ? $candidate : (string) $default;
+                continue;
+            }
+
+            if ($key === 'sidebar_style') {
+                $candidate = (string) ($post[$key] ?? $default);
+                $settings[$key] = in_array($candidate, ['card', 'compact', 'minimal'], true) ? $candidate : (string) $default;
+                continue;
+            }
+
+            if (isset($intRanges[$key])) {
+                [$min, $max] = $intRanges[$key];
+                $settings[$key] = (string) self::clamp_int((int) ($post[$key] ?? $default), $min, $max);
+                continue;
+            }
+
+            if (in_array($key, $colorKeys, true)) {
+                $settings[$key] = self::sanitize_color((string) ($post[$key] ?? $default), (string) $default);
+                continue;
+            }
+
+            if ($key === 'sidebar_placeholder_image') {
+                $settings[$key] = self::sanitize_optional_url((string) ($post[$key] ?? $default), (string) $default);
+                continue;
+            }
+
             if ($key === 'visible_columns') {
                 $columns = array_values(array_intersect((array) ($post['visible_columns'] ?? []), ['image', 'title', 'subtitle', 'url', 'actions']));
                 $settings[$key] = implode(',', $columns !== [] ? $columns : explode(',', $default));
                 continue;
             }
-            $settings[$key] = trim(strip_tags((string) ($post[$key] ?? $default)));
+            $settings[$key] = self::sanitize_text((string) ($post[$key] ?? $default), 5000);
         }
         return $settings;
     }
 
-    /** @param array<string,string> $tabs */
-    private static function active_tab(array $tabs): string
+    private static function normalize_section(string $section): string
     {
-        $tab = preg_replace('/[^a-z0-9_-]+/i', '', (string) ($_GET['tab'] ?? 'entries')) ?: 'entries';
-        return isset($tabs[$tab]) ? $tab : 'entries';
+        $map = [
+            'dashboard' => 'dashboard',
+            'entries' => 'entries',
+            'content' => 'content',
+            'settings' => 'settings',
+            'help' => 'help',
+        ];
+
+        // Legacy deep-links: ?tab=... should still work.
+        $legacyTab = preg_replace('/[^a-z0-9_-]+/i', '', (string) ($_GET['tab'] ?? ''));
+        if (is_string($legacyTab) && isset($map[$legacyTab])) {
+            return $map[$legacyTab];
+        }
+
+        return $map[$section] ?? 'entries';
+    }
+
+    private static function menu_url(string $slug): string
+    {
+        $query = 'page=' . rawurlencode($slug);
+        if (function_exists('admin_url')) {
+            return (string) admin_url('admin.php?' . $query);
+        }
+
+        return '/wp-admin/admin.php?' . $query;
     }
 
     private static function generate_nonce(string $action): string
     {
         if (!class_exists('CMS\\Security')) {
-            error_log('CMS M365 Linkcollection admin security service missing for action: ' . $action);
+            self::log_error('Admin security service missing for nonce generation: ' . $action);
 
             return '';
         }
@@ -617,11 +802,16 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
     private static function verify_nonce(string $action): bool
     {
         if (!class_exists('CMS\\Security')) {
-            error_log('CMS M365 Linkcollection admin security service missing for action: ' . $action);
+            self::log_error('Admin security service missing for nonce verification: ' . $action);
 
             return false;
         }
-        return \CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), $action);
+        $token = (string) ($_POST['csrf_token'] ?? '');
+        if ($token === '') {
+            return false;
+        }
+
+        return \CMS\Security::instance()->verifyToken($token, $action);
     }
 
     private static function json(string $value): string
@@ -639,5 +829,78 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
     private static function esc_attr(string $value): string
     {
         return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    }
+
+    private static function deny_access(): void
+    {
+        if (function_exists('http_response_code')) {
+            http_response_code(403);
+        }
+
+        $fallback = '/';
+        if (defined('SITE_URL')) {
+            $candidate = filter_var((string) SITE_URL, FILTER_VALIDATE_URL);
+            if (is_string($candidate) && $candidate !== '') {
+                $fallback = $candidate;
+            }
+        }
+
+        header('Location: ' . $fallback);
+        exit;
+    }
+
+    private static function clamp_int(int $value, int $min, int $max): int
+    {
+        return max($min, min($max, $value));
+    }
+
+    private static function sanitize_text(string $value, int $maxLength): string
+    {
+        $clean = trim(strip_tags($value));
+        if (function_exists('mb_substr')) {
+            return mb_substr($clean, 0, $maxLength);
+        }
+
+        return substr($clean, 0, $maxLength);
+    }
+
+    private static function sanitize_route(string $value, string $fallback): string
+    {
+        $route = '/' . trim($value, '/');
+        $route = preg_replace('#/+#', '/', $route);
+        if (!is_string($route) || preg_match('#^/[a-z0-9/_-]{1,200}$#i', $route) !== 1) {
+            return $fallback;
+        }
+
+        return $route;
+    }
+
+    private static function sanitize_color(string $value, string $fallback): string
+    {
+        $value = strtolower(trim($value));
+        if (preg_match('/^#[0-9a-f]{6}$/', $value) !== 1) {
+            return $fallback;
+        }
+
+        return $value;
+    }
+
+    private static function sanitize_optional_url(string $value, string $fallback): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        if (filter_var($value, FILTER_VALIDATE_URL) !== false || str_starts_with($value, '/')) {
+            return $value;
+        }
+
+        return $fallback;
+    }
+
+    private static function log_error(string $message): void
+    {
+        error_log('CMS M365 Linkcollection: ' . $message);
     }
 }

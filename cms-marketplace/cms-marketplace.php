@@ -24,6 +24,7 @@ defined('CMS_MARKETPLACE_PLUGIN_URL') || define('CMS_MARKETPLACE_PLUGIN_URL', '/
 
 require_once CMS_MARKETPLACE_PLUGIN_DIR . 'includes/class-marketplace-repository.php';
 require_once CMS_MARKETPLACE_PLUGIN_DIR . 'includes/class-marketplace-service.php';
+require_once CMS_MARKETPLACE_PLUGIN_DIR . 'shared/admin/plugin-admin-contract.php';
 require_once CMS_MARKETPLACE_PLUGIN_DIR . 'includes/class-marketplace-admin.php';
 require_once CMS_MARKETPLACE_PLUGIN_DIR . 'includes/class-marketplace-public.php';
 
@@ -81,7 +82,7 @@ final class CMS_Marketplace
                 $this->admin->boot();
             }
         } catch (\Throwable $e) {
-            error_log('cms-marketplace boot error: ' . $e->getMessage());
+            error_log('[cms-marketplace] boot error: ' . $e->getMessage());
         }
     }
 
@@ -94,7 +95,7 @@ final class CMS_Marketplace
         try {
             $this->admin->boot();
         } catch (\Throwable $e) {
-            error_log('cms-marketplace activation error: ' . $e->getMessage());
+            error_log('[cms-marketplace] activation error: ' . $e->getMessage());
         }
     }
 }

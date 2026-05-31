@@ -13,67 +13,67 @@ if (!defined('ABSPATH')) {
 
 final class CMS_M365CALCULATOR_Admin_Menu
 {
+    private const ROOT_PAGE_SLUG = 'm365tools-dashboard';
+
     public static function register(): void
     {
         if (!function_exists('add_menu_page')) {
             return;
         }
 
-        $pages = CMS_M365CALCULATOR_Admin_Pages::class;
-
         add_menu_page(
             'M365 Tools',
             'M365 Tools',
             'manage_options',
-            'm365tools-dashboard',
-            [$pages, 'render_dashboard'],
+            self::ROOT_PAGE_SLUG,
+            [self::class, 'dispatch_current_page'],
             '🧮',
             57
         );
 
         add_submenu_page(
-            'm365tools-dashboard',
+            self::ROOT_PAGE_SLUG,
             'M365 Tools – Übersicht',
             '📊 Übersicht',
             'manage_options',
-            'm365tools-dashboard',
-            [$pages, 'render_dashboard']
+            self::ROOT_PAGE_SLUG,
+            [self::class, 'dispatch_current_page']
         );
 
         add_submenu_page(
-            'm365tools-dashboard',
+            self::ROOT_PAGE_SLUG,
             'M365 Tools – Zentrale Einstellungen',
             '⚙️ Zentrale Einstellungen',
             'manage_options',
             'm365tools-settings',
-            [$pages, 'render_plugin_settings']
+            [self::class, 'dispatch_current_page']
         );
 
         add_submenu_page(
-            'm365tools-dashboard',
+            self::ROOT_PAGE_SLUG,
             'M365 Tools – Landingpage Designer',
             '🎨 Landingpage Designer',
             'manage_options',
             'm365tools-landing-designer',
-            [$pages, 'render_landing_designer']
+            [self::class, 'dispatch_current_page']
         );
 
         add_submenu_page(
-            'm365tools-dashboard',
+            self::ROOT_PAGE_SLUG,
             'M365 Tools – Paketpreise',
             '💶 Paketpreise',
             'manage_options',
             'm365tools-package-prices',
-            [$pages, 'render_package_prices']
+            [self::class, 'dispatch_current_page']
         );
 
         add_submenu_page(
-            'm365tools-dashboard',
+            self::ROOT_PAGE_SLUG,
             'M365 Tools – Abopreise & Laufzeiten',
             '🔁 Abopreise & Laufzeiten',
             'manage_options',
             'm365tools-subscription-prices',
-            [$pages, 'render_subscription_prices']
+            [self::class, 'dispatch_current_page']
         );
 
         foreach (self::ordered_admin_tools() as $tool) {
@@ -83,15 +83,43 @@ final class CMS_M365CALCULATOR_Admin_Menu
             }
             $title = (string) ($tool['title'] ?? $moduleKey);
             add_submenu_page(
-                'm365tools-dashboard',
+                self::ROOT_PAGE_SLUG,
                 $title . ' – Einstellungen',
                 '🧩 ' . self::module_menu_label($moduleKey, $tool),
                 'manage_options',
                 'm365tools-module-' . $moduleKey,
-                static function () use ($moduleKey): void {
-                    CMS_M365CALCULATOR_Admin_Pages::render_module_settings($moduleKey);
-                }
+                [self::class, 'dispatch_current_page']
             );
+        }
+    }
+
+    public static function dispatch_current_page(): void
+    {
+        $callbacks = self::callback_map();
+        $defaultSlug = self::ROOT_PAGE_SLUG;
+
+        if (function_exists('cms_plugin_admin_dispatch_page')) {
+            cms_plugin_admin_dispatch_page($callbacks, $defaultSlug, self::ROOT_PAGE_SLUG);
+            return;
+        }
+
+        $requested = strtolower(trim((string) ($_GET['page'] ?? $defaultSlug)));
+        $requested = (string) preg_replace('/[^a-z0-9_-]+/', '-', $requested);
+        $requested = trim($requested, '-');
+        $resolved = array_key_exists($requested, $callbacks) ? $requested : $defaultSlug;
+        if ($requested !== '' && $requested !== $resolved && !isset($_GET['m365tools_dispatch_fallback'])) {
+            $_GET['m365tools_dispatch_fallback'] = '1';
+        }
+        $callback = $callbacks[$resolved] ?? null;
+
+        if (is_callable($callback)) {
+            call_user_func($callback);
+            return;
+        }
+
+        $fallbackCallback = $callbacks[$defaultSlug] ?? null;
+        if (is_callable($fallbackCallback)) {
+            call_user_func($fallbackCallback);
         }
     }
 
@@ -171,6 +199,34 @@ final class CMS_M365CALCULATOR_Admin_Menu
         }
 
         return strlen($label) > $length ? rtrim(substr($label, 0, $length - 1)) . '…' : $label;
+    }
+
+    /**
+     * @return array<string,callable|null>
+     */
+    private static function callback_map(): array
+    {
+        $pages = CMS_M365CALCULATOR_Admin_Pages::class;
+        $map = [
+            self::ROOT_PAGE_SLUG => [$pages, 'render_dashboard'],
+            'm365tools-settings' => [$pages, 'render_plugin_settings'],
+            'm365tools-landing-designer' => [$pages, 'render_landing_designer'],
+            'm365tools-package-prices' => [$pages, 'render_package_prices'],
+            'm365tools-subscription-prices' => [$pages, 'render_subscription_prices'],
+        ];
+
+        foreach (self::ordered_admin_tools() as $tool) {
+            $moduleKey = (string) ($tool['key'] ?? '');
+            if ($moduleKey === '') {
+                continue;
+            }
+
+            $map['m365tools-module-' . $moduleKey] = static function () use ($moduleKey): void {
+                CMS_M365CALCULATOR_Admin_Pages::render_module_settings($moduleKey);
+            };
+        }
+
+        return $map;
     }
 
 }

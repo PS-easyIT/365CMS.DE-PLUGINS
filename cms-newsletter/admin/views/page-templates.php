@@ -44,6 +44,7 @@
                                         <form method="post">
                                             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                             <input type="hidden" name="action" value="delete_template">
+                                            <input type="hidden" name="redirect_slug" value="<?php echo htmlspecialchars((string) ($activeSlug ?? 'newsletter-templates'), ENT_QUOTES, 'UTF-8'); ?>">
                                             <input type="hidden" name="template_id" value="<?php echo (int) $item['id']; ?>">
                                             <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
                                         </form>
@@ -67,6 +68,7 @@
             <form method="post" class="admin-form">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="action" value="save_template">
+                <input type="hidden" name="redirect_slug" value="<?php echo htmlspecialchars((string) ($activeSlug ?? 'newsletter-templates'), ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="template_id" value="<?php echo (int) ($template['id'] ?? 0); ?>">
 
                 <div class="form-group">

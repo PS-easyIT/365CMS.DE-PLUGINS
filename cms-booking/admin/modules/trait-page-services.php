@@ -20,57 +20,91 @@ trait CMS_Booking_Page_Services_Trait
         $success = '';
 
         // POST-Handler
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['service_action'])) {
-            if (!class_exists('CMS\Security') || !\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'booking_services')) {
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST' && isset($_POST['service_action'])) {
+            if (!self::can_manage_admin_actions()) {
+                $error = 'Keine Berechtigung für diese Aktion.';
+            } elseif (!class_exists('CMS\Security') || !\CMS\Security::instance()->verifyToken($_POST['csrf_token'] ?? '', 'booking_services')) {
                 $error = 'Sicherheitscheck fehlgeschlagen.';
             } else {
                 $action = sanitize_text_field($_POST['service_action']);
+                $allowedActions = ['create', 'update', 'delete'];
 
-                switch ($action) {
-                    case 'create':
-                        try {
-                            $servicesSvc->create([
-                                'provider_id'      => (int) ($_POST['provider_id'] ?? 0),
-                                'title'            => sanitize_text_field($_POST['title'] ?? ''),
-                                'description'      => strip_tags($_POST['description'] ?? '', '<p><a><strong><em><ul><ol><li><br>'),
-                                'duration_min'     => (int) ($_POST['duration_min'] ?? 60),
-                                'buffer_min'       => (int) ($_POST['buffer_min'] ?? 15),
-                                'max_bookings'     => (int) ($_POST['max_bookings'] ?? 1),
-                                'price_cents'      => (int) (((float) ($_POST['price'] ?? 0)) * 100),
-                                'location_type'    => sanitize_text_field($_POST['location_type'] ?? 'online'),
-                                'meeting_url'      => filter_var($_POST['meeting_url'] ?? '', FILTER_VALIDATE_URL) ?: '',
-                                'booking_type'     => sanitize_text_field($_POST['booking_type'] ?? 'confirmation'),
-                                'contact_template' => sanitize_text_field($_POST['contact_template'] ?? ''),
-                            ]);
-                            $success = 'Leistung erfolgreich erstellt.';
-                        } catch (\Throwable $e) {
-                            $error = 'Fehler: ' . htmlspecialchars($e->getMessage());
+                if (!in_array($action, $allowedActions, true)) {
+                    $error = 'Ungültige Aktion.';
+                } else {
+                    $locationType = sanitize_text_field($_POST['location_type'] ?? 'online');
+                    if (!in_array($locationType, ['online', 'onsite', 'hybrid'], true)) {
+                        $locationType = 'online';
+                    }
+
+                    $bookingType = sanitize_text_field($_POST['booking_type'] ?? 'confirmation');
+                    if (!in_array($bookingType, ['confirmation', 'instant', 'request'], true)) {
+                        $bookingType = 'confirmation';
+                    }
+
+                    try {
+                        switch ($action) {
+                            case 'create':
+                                $providerId = (int) ($_POST['provider_id'] ?? 0);
+                                if ($providerId <= 0) {
+                                    $error = 'Bitte einen gueltigen Anbieter wählen.';
+                                    break;
+                                }
+                                $servicesSvc->create([
+                                    'provider_id'      => $providerId,
+                                    'title'            => sanitize_text_field($_POST['title'] ?? ''),
+                                    'description'      => strip_tags($_POST['description'] ?? '', '<p><a><strong><em><ul><ol><li><br>'),
+                                    'duration_min'     => max(5, (int) ($_POST['duration_min'] ?? 60)),
+                                    'buffer_min'       => max(0, (int) ($_POST['buffer_min'] ?? 15)),
+                                    'max_bookings'     => max(1, (int) ($_POST['max_bookings'] ?? 1)),
+                                    'price_cents'      => max(0, (int) round(((float) ($_POST['price'] ?? 0)) * 100)),
+                                    'location_type'    => $locationType,
+                                    'meeting_url'      => filter_var($_POST['meeting_url'] ?? '', FILTER_VALIDATE_URL) ?: '',
+                                    'booking_type'     => $bookingType,
+                                    'contact_template' => sanitize_text_field($_POST['contact_template'] ?? ''),
+                                ]);
+                                $success = 'Leistung erfolgreich erstellt.';
+                                break;
+
+                            case 'update':
+                                $id = (int) ($_POST['service_id'] ?? 0);
+                                if ($id <= 0) {
+                                    $error = 'Ungültige Leistung.';
+                                    break;
+                                }
+                                $status = sanitize_text_field($_POST['status'] ?? 'active');
+                                if (!in_array($status, ['active', 'inactive'], true)) {
+                                    $status = 'active';
+                                }
+                                $servicesSvc->update($id, [
+                                    'title'            => sanitize_text_field($_POST['title'] ?? ''),
+                                    'description'      => strip_tags($_POST['description'] ?? '', '<p><a><strong><em><ul><ol><li><br>'),
+                                    'duration_min'     => max(5, (int) ($_POST['duration_min'] ?? 60)),
+                                    'buffer_min'       => max(0, (int) ($_POST['buffer_min'] ?? 15)),
+                                    'max_bookings'     => max(1, (int) ($_POST['max_bookings'] ?? 1)),
+                                    'price_cents'      => max(0, (int) round(((float) ($_POST['price'] ?? 0)) * 100)),
+                                    'location_type'    => $locationType,
+                                    'meeting_url'      => filter_var($_POST['meeting_url'] ?? '', FILTER_VALIDATE_URL) ?: '',
+                                    'booking_type'     => $bookingType,
+                                    'contact_template' => sanitize_text_field($_POST['contact_template'] ?? ''),
+                                    'status'           => $status,
+                                ]);
+                                $success = 'Leistung aktualisiert.';
+                                break;
+
+                            case 'delete':
+                                $id = (int) ($_POST['service_id'] ?? 0);
+                                if ($id <= 0) {
+                                    $error = 'Ungültige Leistung.';
+                                    break;
+                                }
+                                $servicesSvc->delete($id);
+                                $success = 'Leistung gelöscht.';
+                                break;
                         }
-                        break;
-
-                    case 'update':
-                        $id = (int) ($_POST['service_id'] ?? 0);
-                        $servicesSvc->update($id, [
-                            'title'            => sanitize_text_field($_POST['title'] ?? ''),
-                            'description'      => strip_tags($_POST['description'] ?? '', '<p><a><strong><em><ul><ol><li><br>'),
-                            'duration_min'     => (int) ($_POST['duration_min'] ?? 60),
-                            'buffer_min'       => (int) ($_POST['buffer_min'] ?? 15),
-                            'max_bookings'     => (int) ($_POST['max_bookings'] ?? 1),
-                            'price_cents'      => (int) (((float) ($_POST['price'] ?? 0)) * 100),
-                            'location_type'    => sanitize_text_field($_POST['location_type'] ?? 'online'),
-                            'meeting_url'      => filter_var($_POST['meeting_url'] ?? '', FILTER_VALIDATE_URL) ?: '',
-                            'booking_type'     => sanitize_text_field($_POST['booking_type'] ?? 'confirmation'),
-                            'contact_template' => sanitize_text_field($_POST['contact_template'] ?? ''),
-                            'status'           => sanitize_text_field($_POST['status'] ?? 'active'),
-                        ]);
-                        $success = 'Leistung aktualisiert.';
-                        break;
-
-                    case 'delete':
-                        $id = (int) ($_POST['service_id'] ?? 0);
-                        $servicesSvc->delete($id);
-                        $success = 'Leistung gelöscht.';
-                        break;
+                    } catch (\Throwable $e) {
+                        $error = 'Leistungsaktion konnte nicht ausgeführt werden.';
+                    }
                 }
             }
         }
@@ -80,7 +114,7 @@ trait CMS_Booking_Page_Services_Trait
             $csrfToken = \CMS\Security::instance()->generateToken('booking_services');
         }
 
-        $page    = max(1, (int) ($_GET['page'] ?? 1));
+        $page    = max(1, (int) ($_GET['paged'] ?? 1));
         $perPage = 20;
         $offset  = ($page - 1) * $perPage;
         $search  = sanitize_text_field($_GET['q'] ?? '');

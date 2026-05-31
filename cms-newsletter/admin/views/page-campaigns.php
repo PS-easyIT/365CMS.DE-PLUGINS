@@ -46,6 +46,7 @@
                                         <form method="post">
                                             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                                             <input type="hidden" name="action" value="delete_campaign">
+                                            <input type="hidden" name="redirect_slug" value="<?php echo htmlspecialchars((string) ($activeSlug ?? 'newsletter-campaigns'), ENT_QUOTES, 'UTF-8'); ?>">
                                             <input type="hidden" name="campaign_id" value="<?php echo (int) $item['id']; ?>">
                                             <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
                                         </form>
@@ -69,6 +70,7 @@
             <form method="post" class="admin-form">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="action" value="save_campaign">
+                <input type="hidden" name="redirect_slug" value="<?php echo htmlspecialchars((string) ($activeSlug ?? 'newsletter-campaigns'), ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="campaign_id" value="<?php echo (int) ($campaign['id'] ?? 0); ?>">
 
                 <div class="form-group">
@@ -109,7 +111,16 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Geplanter Versand</label>
-                        <?php $scheduledValue = !empty($campaign['scheduled_at']) ? date('Y-m-d\TH:i', strtotime((string) $campaign['scheduled_at'])) : ''; ?>
+                        <?php
+                        $scheduledValue = '';
+                        if (!empty($campaign['scheduled_at'])) {
+                            try {
+                                $scheduledValue = (new DateTimeImmutable((string) $campaign['scheduled_at']))->format('Y-m-d\TH:i');
+                            } catch (Throwable) {
+                                $scheduledValue = '';
+                            }
+                        }
+                        ?>
                         <input type="datetime-local" name="scheduled_at" class="form-control" value="<?php echo htmlspecialchars($scheduledValue, ENT_QUOTES, 'UTF-8'); ?>">
                     </div>
                 </div>

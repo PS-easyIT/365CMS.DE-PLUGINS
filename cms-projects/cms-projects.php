@@ -90,7 +90,7 @@ final class CMS_Projects
 
     public function enqueuePublicStyles(): void
     {
-        if (!$this->isPublicProjectsRoute()) {
+        if (!$this->shouldLoadPublicStyles()) {
             return;
         }
 
@@ -109,6 +109,19 @@ final class CMS_Projects
         $path = '/' . trim($path, '/');
 
         return $path === '/projects' || str_starts_with($path, '/projects/');
+    }
+
+    private function shouldLoadPublicStyles(): bool
+    {
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'GET') {
+            return false;
+        }
+
+        if (!$this->isPublicProjectsRoute()) {
+            return false;
+        }
+
+        return CMS_Projects_Public::isRenderingPublicProjectsPage();
     }
 }
 

@@ -127,12 +127,18 @@ trait CMS_JPG_Page_Users_Trait
         $userMeta = [];
         if (!empty($users)) {
             try {
-                $ids   = implode(',', array_map(fn($u) => (int)$u->id, $users));
-                $metas = $db->get_results(
-                    "SELECT user_id, meta_key, meta_value FROM {$p}user_meta
-                     WHERE user_id IN ({$ids}) AND meta_key = 'jpg_plugin_role'",
-                    []
-                ) ?: [];
+                $ids = array_values(array_map(static fn($u): int => (int) $u->id, $users));
+                $ids = array_filter($ids, static fn(int $id): bool => $id > 0);
+                if (empty($ids)) {
+                    $metas = [];
+                } else {
+                    $placeholders = implode(', ', array_fill(0, count($ids), '?'));
+                    $metas = $db->get_results(
+                        "SELECT user_id, meta_key, meta_value FROM {$p}user_meta
+                         WHERE user_id IN ({$placeholders}) AND meta_key = 'jpg_plugin_role'",
+                        $ids
+                    ) ?: [];
+                }
                 foreach ($metas as $m) {
                     $userMeta[(int)$m->user_id] = $m->meta_value;
                 }
@@ -160,7 +166,21 @@ trait CMS_JPG_Page_Users_Trait
             ) ?: [];
         } catch (\Throwable $e) { /* ignore */ }
 
-        require JPG_DIR . 'admin/views/page-users.php';
+        self::render_admin_view(
+            'Benutzer und Mandanten',
+            'jpg-users',
+            JPG_DIR . 'admin/views/page-users.php',
+            compact(
+                'notice',
+                'error',
+                'nonce',
+                'users',
+                'userMeta',
+                'unassignedCompanies',
+                'pluginRoles',
+                'cmsRoles'
+            )
+        );
     }
 
     /**

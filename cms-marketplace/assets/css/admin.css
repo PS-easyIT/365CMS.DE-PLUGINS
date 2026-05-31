@@ -1,3 +1,73 @@
+.cms-marketplace-admin-shell {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.cms-marketplace-sidebar {
+    position: sticky;
+    top: 20px;
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.cms-marketplace-sidebar-title {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 800;
+    padding: 2px 4px;
+}
+
+.cms-marketplace-sidebar-group {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #f8fafc;
+}
+
+.cms-marketplace-sidebar-group summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 10px 12px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.cms-marketplace-sidebar-group summary::-webkit-details-marker {
+    display: none;
+}
+
+.cms-marketplace-sidebar-links {
+    display: grid;
+    gap: 8px;
+    padding: 0 10px 10px;
+}
+
+.cms-marketplace-sidebar-links a {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 10px;
+    padding: 8px 10px;
+    text-decoration: none;
+    color: #334155;
+    font-weight: 700;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+}
+
+.cms-marketplace-sidebar-links a.active {
+    background: #dbeafe;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
 .cms-marketplace-admin {
     display: grid;
     gap: 24px;
@@ -15,33 +85,6 @@
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
-}
-
-.cms-marketplace-section-nav {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    padding: 6px;
-    border-radius: 18px;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
-}
-
-.cms-marketplace-section-nav a {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 14px;
-    border-radius: 12px;
-    color: #334155;
-    text-decoration: none;
-    font-weight: 700;
-}
-
-.cms-marketplace-section-nav a.active {
-    background: #dbeafe;
-    color: #1d4ed8;
 }
 
 .cms-marketplace-header h1 {
@@ -444,6 +487,14 @@
 }
 
 @media (max-width: 1200px) {
+    .cms-marketplace-admin-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .cms-marketplace-sidebar {
+        position: static;
+    }
+
     .cms-marketplace-hero-card,
     .directory-meta-grid,
     .settings-grid,

@@ -1,6 +1,13 @@
 <?php declare(strict_types=1); if (!defined('ABSPATH')) exit; ?>
 
-<?php $tabs = ['general' => 'Allgemein', 'content' => 'Inhalte', 'compliance' => 'Compliance']; ?>
+<?php
+$sectionTitles = [
+    'general' => 'Allgemein',
+    'content' => 'Inhalte',
+    'compliance' => 'Compliance',
+];
+$activeSectionTitle = $sectionTitles[$tab] ?? 'Allgemein';
+?>
 
 <div class="nl-admin-shell">
     <div class="admin-page-header">
@@ -16,16 +23,15 @@
     </div>
     <?php endif; ?>
 
-    <div class="nl-tabs">
-        <?php foreach ($tabs as $key => $label): ?>
-            <a href="?tab=<?php echo urlencode($key); ?>" class="nl-tab<?php echo $tab === $key ? ' active' : ''; ?>"><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a>
-        <?php endforeach; ?>
+    <div class="alert alert-success nl-settings-note">
+        Aktiver Bereich: <strong><?php echo htmlspecialchars($activeSectionTitle, ENT_QUOTES, 'UTF-8'); ?></strong>. Die Navigation erfolgt ueber das Sidebar-Submenu.
     </div>
 
     <div class="admin-card nl-tab-panel">
         <form method="post" class="admin-form">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
             <input type="hidden" name="action" value="save_settings">
+            <input type="hidden" name="redirect_slug" value="<?php echo htmlspecialchars((string) ($activeSlug ?? 'newsletter-settings-general'), ENT_QUOTES, 'UTF-8'); ?>">
 
             <?php if ($tab === 'general'): ?>
                 <h3>Allgemein</h3>

@@ -126,15 +126,29 @@ class CMS_Experts_Member_Dashboard
      */
     public function renderPage(object $user, array $params = []): void
     {
+        $setFlash = static function (string $key, string $message): void {
+            if (session_status() !== PHP_SESSION_ACTIVE) {
+                @session_start();
+            }
+            $_SESSION[$key] = $message;
+        };
+
         // ── POST: neuen Experten speichern ────────────────────────────────────
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['expert_create'])) {
+        $requestMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+        if ($requestMethod === 'POST' && isset($_POST['expert_create'])) {
             if (!\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'member_expert_create')) {
-                $_SESSION['error'] = 'Sicherheitscheck fehlgeschlagen.';
+                $setFlash('error', 'Sicherheitscheck fehlgeschlagen.');
                 header('Location: /member/plugin/experts?action=new');
                 exit;
             }
             try {
                 $isAdminSave = \CMS\Auth::instance()->isAdmin();
+                $ownerUserId = (int) ($user->id ?? 0);
+                if ($ownerUserId <= 0) {
+                    $setFlash('error', 'Benutzerkonto konnte nicht zugeordnet werden.');
+                    header('Location: /member/plugin/experts?action=new');
+                    exit;
+                }
                 $validatedEmail = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
                 $validatedPhotoUrl = cms_experts_public_url((string) ($_POST['photo_url'] ?? '')) ?: null;
                 $availabilityMap = [
@@ -146,7 +160,7 @@ class CMS_Experts_Member_Dashboard
                 ];
                 $availability = $availabilityMap[$_POST['availability'] ?? 'available'] ?? 'available';
                 $id = CMS_Experts_Database::instance()->save_expert([
-                    'user_id'          => (int) $user->id,
+                    'user_id'          => $ownerUserId,
                     'first_name'       => sanitize_text_field($_POST['first_name'] ?? ''),
                     'last_name'        => sanitize_text_field($_POST['last_name']  ?? ''),
                     'email'            => $validatedEmail,
@@ -195,14 +209,15 @@ class CMS_Experts_Member_Dashboard
                     }
                 }
                 if ($isAdminSave) {
-                    $_SESSION['success'] = 'Experte wurde erfolgreich angelegt.';
+                    $setFlash('success', 'Experte wurde erfolgreich angelegt.');
                 } else {
-                    $_SESSION['success'] = 'Ihr Experten-Profil wurde eingereicht und wird vom Admin geprüft.';
+                    $setFlash('success', 'Ihr Experten-Profil wurde eingereicht und wird vom Admin geprüft.');
                 }
                 header('Location: /member/plugin/experts');
                 exit;
             } catch (\Throwable $e) {
-                $_SESSION['error'] = 'Fehler beim Speichern: ' . $e->getMessage();
+                error_log('CMS Experts member save failed: ' . $e->getMessage());
+                $setFlash('error', 'Fehler beim Speichern. Bitte später erneut versuchen.');
                 header('Location: /member/plugin/experts?action=new');
                 exit;
             }
@@ -257,11 +272,11 @@ class CMS_Experts_Member_Dashboard
 
         $cssVars = sprintf(
             ':root{--expert-primary:%s;--expert-accent:%s;--expert-radius:%dpx;--expert-cta-color:%s;--expert-card-bg:%s;}',
-            htmlspecialchars($settings['design_primary_color']),
-            htmlspecialchars($settings['design_accent_color']),
+            htmlspecialchars((string) $settings['design_primary_color'], ENT_QUOTES, 'UTF-8'),
+            htmlspecialchars((string) $settings['design_accent_color'], ENT_QUOTES, 'UTF-8'),
             (int) $settings['design_border_radius'],
-            htmlspecialchars($settings['design_cta_color']),
-            htmlspecialchars($settings['design_card_bg'])
+            htmlspecialchars((string) $settings['design_cta_color'], ENT_QUOTES, 'UTF-8'),
+            htmlspecialchars((string) $settings['design_card_bg'], ENT_QUOTES, 'UTF-8')
         );
         echo '<style>' . $cssVars . '</style>';
         ?>
@@ -269,7 +284,7 @@ class CMS_Experts_Member_Dashboard
         <?php if ($error): ?>
         <div class="member-alert member-alert-error">
             <span class="alert-icon">✕</span>
-            <span><?php echo htmlspecialchars($error); ?></span>
+            <span><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></span>
         </div>
         <?php else: ?>
 
@@ -659,7 +674,7 @@ class CMS_Experts_Member_Dashboard
 
         try {
             $db          = \CMS\Database::instance();
-            $prefix      = $db->getPrefix();
+            $prefix      = method_exists($db, 'prefix') ? $db->prefix() : $db->getPrefix();
             $expertIds   = array_map(static fn($e) => (int) $e->id, $experts);
             $placeholders = implode(',', array_fill(0, count($expertIds), '?'));
 

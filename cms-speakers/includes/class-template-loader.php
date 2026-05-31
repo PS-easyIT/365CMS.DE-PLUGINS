@@ -36,10 +36,13 @@ final class CMS_Speakers_Template_Loader
 
     private function locate_template(string $template_name): ?string
     {
-        $template_name = str_replace('.php', '', $template_name) . '.php';
+        $template_name = $this->sanitize_template_name($template_name);
+        if ($template_name === '') {
+            return null;
+        }
 
         $theme_template = $this->theme_template_path !== '' ? $this->theme_template_path . $template_name : '';
-        if ($theme_template !== '' && file_exists($theme_template)) {
+        if ($theme_template !== '' && $this->is_allowed_template_path($theme_template)) {
             return $theme_template;
         }
 
@@ -47,12 +50,12 @@ final class CMS_Speakers_Template_Loader
         if (class_exists('CMS\\ThemeManager')) {
             $legacy_theme_template = \CMS\ThemeManager::instance()->getThemePath() . 'speakers/' . $template_name;
         }
-        if ($legacy_theme_template !== '' && file_exists($legacy_theme_template)) {
+        if ($legacy_theme_template !== '' && $this->is_allowed_template_path($legacy_theme_template)) {
             return $legacy_theme_template;
         }
 
         $plugin_template = $this->template_path . $template_name;
-        return file_exists($plugin_template) ? $plugin_template : null;
+        return $this->is_allowed_template_path($plugin_template) ? $plugin_template : null;
     }
 
     /**
@@ -72,6 +75,47 @@ final class CMS_Speakers_Template_Loader
 
         // Lade Template
         include $template_file;
+    }
+
+    private function sanitize_template_name(string $template_name): string
+    {
+        $template_name = trim(str_replace('\\', '/', $template_name));
+        $template_name = preg_replace('/\.php$/i', '', $template_name) ?? '';
+        if ($template_name === '' || str_contains($template_name, '..')) {
+            return '';
+        }
+        if (preg_match('/^[a-z0-9_-]+$/i', $template_name) !== 1) {
+            return '';
+        }
+
+        return $template_name . '.php';
+    }
+
+    private function is_allowed_template_path(string $path): bool
+    {
+        $realPath = realpath($path);
+        if ($realPath === false || !is_file($realPath)) {
+            return false;
+        }
+
+        $allowedRoots = [realpath($this->template_path)];
+        if ($this->theme_template_path !== '') {
+            $allowedRoots[] = realpath($this->theme_template_path);
+        }
+        if (class_exists('CMS\\ThemeManager')) {
+            $legacyRoot = realpath(\CMS\ThemeManager::instance()->getThemePath() . 'speakers/');
+            if ($legacyRoot !== false) {
+                $allowedRoots[] = $legacyRoot;
+            }
+        }
+
+        foreach ($allowedRoots as $root) {
+            if ($root !== false && str_starts_with($realPath, $root . DIRECTORY_SEPARATOR)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

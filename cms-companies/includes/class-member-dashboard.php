@@ -21,6 +21,25 @@ class CMS_Companies_Member_Dashboard
 {
     private static ?self $instance = null;
 
+    private function sanitize_text(mixed $value, int $maxLen = 255): string
+    {
+        $text = trim((string) $value);
+        if ($text === '') {
+            return '';
+        }
+
+        if (class_exists('CMS\\Security')) {
+            $text = trim((string) \CMS\Security::instance()->sanitize($text, 'text'));
+        }
+
+        return mb_substr($text, 0, $maxLen);
+    }
+
+    private function log_error(string $context, \Throwable $e): void
+    {
+        error_log('CMS Companies [' . $context . ']: ' . $e->getMessage());
+    }
+
     public static function instance(): self
     {
         if (self::$instance === null) {
@@ -105,14 +124,23 @@ class CMS_Companies_Member_Dashboard
 
     public function renderPage(object $user, array $params = []): void
     {
+        $requestMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+
         // ── POST: neues Unternehmen speichern ─────────────────────────────────
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['company_create'])) {
+        if ($requestMethod === 'POST' && isset($_POST['company_create'])) {
             if (!\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'member_company_create')) {
                 $_SESSION['error'] = 'Sicherheitscheck fehlgeschlagen.';
                 header('Location: /member/plugin/companies?action=new', true, 303);
                 exit;
             }
             try {
+                $userId = (int) ($user->id ?? 0);
+                if ($userId <= 0) {
+                    $_SESSION['error'] = 'Sitzung ungültig. Bitte erneut anmelden.';
+                    header('Location: /member/plugin/companies?action=new', true, 303);
+                    exit;
+                }
+
                 $isAdminSave = \CMS\Auth::instance()->isAdmin();
                 $companyDb = CMS_Companies_Database::instance();
                 $allowedCompanySizes = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
@@ -120,7 +148,7 @@ class CMS_Companies_Member_Dashboard
                 $validatedEmail = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
                 $validatedWebsite = cms_companies_public_url((string) ($_POST['website'] ?? '')) ?: null;
                 $validatedLogoUrl = cms_companies_public_url((string) ($_POST['logo_url'] ?? '')) ?: null;
-                $selectedIndustry = sanitize_text_field($_POST['industry'] ?? '');
+                $selectedIndustry = $this->sanitize_text($_POST['industry'] ?? '', 150);
                 if ($selectedIndustry !== '' && !in_array($selectedIndustry, $availableIndustries, true)) {
                     $selectedIndustry = '';
                 }
@@ -132,25 +160,30 @@ class CMS_Companies_Member_Dashboard
                 }
                 $employeeCount = is_numeric($_POST['employee_count'] ?? '') ? max(0, (int) $_POST['employee_count']) : null;
                 $id = $companyDb->save_company([
-                    'user_id'          => (int) $user->id,
-                    'name'             => sanitize_text_field($_POST['name']         ?? ''),
+                    'user_id'          => $userId,
+                    'name'             => $this->sanitize_text($_POST['name'] ?? '', 255),
                     'email'            => $validatedEmail,
-                    'phone'            => sanitize_text_field($_POST['phone']         ?? ''),
+                    'phone'            => $this->sanitize_text($_POST['phone'] ?? '', 50),
                     'website'          => $validatedWebsite,
                     'logo_url'         => $validatedLogoUrl,
                     'industry'         => $selectedIndustry,
                     'company_size'     => $companySize,
                     'description'      => mb_substr(trim(strip_tags((string) ($_POST['description'] ?? ''))), 0, 5000),
-                    'location_city'    => sanitize_text_field($_POST['location_city'] ?? ''),
-                    'location_zip'     => sanitize_text_field($_POST['location_zip']  ?? ''),
-                    'location_country' => sanitize_text_field($_POST['location_country'] ?? 'Deutschland'),
+                    'location_city'    => $this->sanitize_text($_POST['location_city'] ?? '', 100),
+                    'location_zip'     => $this->sanitize_text($_POST['location_zip'] ?? '', 20),
+                    'location_country' => $this->sanitize_text($_POST['location_country'] ?? 'Deutschland', 100),
                     'founded_year'     => $foundedYear,
                     'employee_count'   => $employeeCount,
                     'status'           => $isAdminSave ? 'active' : 'pending',
                 ]);
                 // Tags (Merkmale) als Meta speichern
                 if ($id > 0 && !empty($_POST['tags']) && is_array($_POST['tags'])) {
-                    $tags = array_values(array_unique(array_filter(array_map(static fn($tag) => sanitize_text_field(trim((string) $tag)), $_POST['tags']))));
+                    $allowedTags = array_map(static fn($preset) => (string) ($preset->tag_name ?? ''), $companyDb->get_tag_presets());
+                    $tags = array_values(array_unique(array_filter(array_map(
+                        fn($tag) => $this->sanitize_text($tag, 150),
+                        $_POST['tags']
+                    ))));
+                    $tags = array_values(array_filter($tags, static fn($tag) => in_array($tag, $allowedTags, true)));
                     $companyDb->save_meta($id, 'tags', $tags);
                 }
                 if ($isAdminSave) {
@@ -161,14 +194,14 @@ class CMS_Companies_Member_Dashboard
                 header('Location: /member/plugin/companies', true, 303);
                 exit;
             } catch (\Throwable $e) {
-                error_log('CMS Companies member save failed: ' . $e->getMessage());
+                $this->log_error('member_save', $e);
                 $_SESSION['error'] = 'Fehler beim Speichern. Bitte prüfen Sie Ihre Angaben und versuchen Sie es erneut.';
                 header('Location: /member/plugin/companies?action=new', true, 303);
                 exit;
             }
         }
 
-        $action  = sanitize_text_field($_GET['action'] ?? '');
+        $action  = $this->sanitize_text($_GET['action'] ?? '', 30);
         $isAdmin = \CMS\Auth::instance()->isAdmin();
 
         // ── Formular: Neues Unternehmen ───────────────────────────────────────

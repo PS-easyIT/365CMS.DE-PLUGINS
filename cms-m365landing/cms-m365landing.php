@@ -38,6 +38,11 @@ final class CMS_M365Landing
 
     private function load_dependencies(): void
     {
+        $sharedAdminContract = dirname(rtrim(CMS_M365LANDING_PLUGIN_DIR, '/\\')) . '/shared/admin/plugin-admin-contract.php';
+        if (is_file($sharedAdminContract)) {
+            require_once $sharedAdminContract;
+        }
+
         foreach ([
             'includes/class-installer.php',
             'includes/class-repository.php',
@@ -46,7 +51,7 @@ final class CMS_M365Landing
             'admin/class-admin-menu.php',
         ] as $file) {
             $path = CMS_M365LANDING_PLUGIN_DIR . $file;
-            if (file_exists($path)) {
+            if (is_file($path)) {
                 require_once $path;
             }
         }
@@ -78,7 +83,7 @@ final class CMS_M365Landing
                 CMS_M365Landing_Frontend::instance();
             }
         } catch (\Throwable $e) {
-            error_log('CMS M365 Landing init skipped: ' . $e->getMessage());
+            self::log_exception('init_plugin_failed', $e);
         }
     }
 
@@ -93,6 +98,13 @@ final class CMS_M365Landing
         }
         if (class_exists('CMS_M365Landing_Frontend')) {
             CMS_M365Landing_Frontend::instance();
+        }
+    }
+
+    private static function log_exception(string $context, \Throwable $e): void
+    {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('CMS M365 Landing [' . $context . ']: ' . $e->getMessage());
         }
     }
 }

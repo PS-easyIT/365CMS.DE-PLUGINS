@@ -20,6 +20,11 @@ final class CMS_Downloads_Public_Controller
 
     public function register_routes($router): void
     {
+        if (!is_object($router) || !method_exists($router, 'addRoute')) {
+            $this->log_event('register_routes aborted: invalid router instance.');
+            return;
+        }
+
         $router->addRoute('GET', '/downloads', [$this, 'archive_page']);
         $router->addRoute('GET', '/downloads/category/:slug', [$this, 'archive_page']);
         $router->addRoute('GET', '/downloads/file/:slug', [$this, 'download_file']);
@@ -82,6 +87,13 @@ final class CMS_Downloads_Public_Controller
 
     public function download_file(string $slug): void
     {
+        $slug = trim($slug);
+        if ($slug === '' || preg_match('/^[\p{L}0-9-]{1,190}$/u', $slug) !== 1) {
+            http_response_code(404);
+            echo '<h1>404 – Datei nicht verfügbar</h1>';
+            return;
+        }
+
         $repository = CMS_Downloads_Repository::instance();
         $settings = $repository->get_settings();
         $download = $repository->get_download_by_slug($slug);
@@ -99,7 +111,7 @@ final class CMS_Downloads_Public_Controller
         $externalUrl = trim((string) ($download['external_url'] ?? ''));
         if ($externalUrl !== '') {
             if (!$this->is_allowed_external_url($externalUrl, $settings)) {
-                error_log('CMS Downloads: Blocked invalid external download URL for slug ' . $slug . ': ' . $externalUrl);
+                $this->log_event('Blocked invalid external download URL for slug "' . $this->safe_log_fragment($slug) . '"');
                 http_response_code(404);
                 echo '<h1>404 – Datei nicht verfügbar</h1>';
                 return;
@@ -154,11 +166,22 @@ final class CMS_Downloads_Public_Controller
     {
         $baseDirectory = realpath((string) UPLOAD_PATH);
         if ($baseDirectory === false) {
-            error_log('CMS Downloads: UPLOAD_PATH could not be resolved.');
+            $this->log_event('UPLOAD_PATH could not be resolved.');
             return null;
         }
 
         $normalizedRelativePath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, ltrim($relativePath, '/\\'));
+        if ($normalizedRelativePath === '' || str_contains($normalizedRelativePath, '..' . DIRECTORY_SEPARATOR) || str_starts_with($normalizedRelativePath, '..')) {
+            $this->log_event('Blocked invalid relative download path.');
+            return null;
+        }
+
+        $requiredPrefix = 'downloads' . DIRECTORY_SEPARATOR;
+        if (!str_starts_with($normalizedRelativePath, $requiredPrefix)) {
+            $this->log_event('Blocked access to file outside downloads directory.');
+            return null;
+        }
+
         $candidatePath = $baseDirectory . DIRECTORY_SEPARATOR . $normalizedRelativePath;
         $resolvedPath = realpath($candidatePath);
 
@@ -168,7 +191,7 @@ final class CMS_Downloads_Public_Controller
 
         $allowedPrefix = rtrim($baseDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
         if ($resolvedPath !== $baseDirectory && !str_starts_with($resolvedPath, $allowedPrefix)) {
-            error_log('CMS Downloads: Blocked path traversal attempt for relative path ' . $relativePath);
+            $this->log_event('Blocked path traversal attempt for relative path "' . $this->safe_log_fragment($relativePath) . '"');
             return null;
         }
 
@@ -211,7 +234,7 @@ final class CMS_Downloads_Public_Controller
         }
 
         if (!$this->is_public_external_host($normalizedHost)) {
-            error_log('CMS Downloads: Blocked non-public external download host ' . $normalizedHost . '.');
+            $this->log_event('Blocked non-public external download host "' . $this->safe_log_fragment($normalizedHost) . '"');
             return false;
         }
 
@@ -226,7 +249,7 @@ final class CMS_Downloads_Public_Controller
             }
         }
 
-        error_log('CMS Downloads: Blocked external download host ' . $normalizedHost . ' because it is not in the allowlist.');
+        $this->log_event('Blocked external download host "' . $this->safe_log_fragment($normalizedHost) . '" because it is not in the allowlist.');
         return false;
     }
 
@@ -284,10 +307,24 @@ final class CMS_Downloads_Public_Controller
                 continue;
             }
 
+            if (preg_match('/[^a-z0-9.-]/', $domain) === 1) {
+                continue;
+            }
+
             $domains[] = $domain;
         }
 
         return array_values(array_unique($domains));
+    }
+
+    private function log_event(string $message): void
+    {
+        error_log('CMS Downloads: ' . $message);
+    }
+
+    private function safe_log_fragment(string $value): string
+    {
+        return preg_replace('/[\x00-\x1F\x7F]+/', ' ', $value) ?? '';
     }
 
     private function render_external_redirect_notice(array $download, string $externalUrl, array $settings): void

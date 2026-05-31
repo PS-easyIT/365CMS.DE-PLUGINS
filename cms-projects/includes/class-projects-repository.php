@@ -21,11 +21,11 @@ final class CMS_Projects_Repository
     public function __construct()
     {
         $this->db = \CMS\Database::instance();
-        $prefix = $this->db->getPrefix();
-        $this->projectsTableFull = $prefix . $this->projectsTable;
-        $this->boardsTableFull = $prefix . $this->boardsTable;
-        $this->widgetsTableFull = $prefix . $this->widgetsTable;
-        $this->tasksTableFull = $prefix . $this->tasksTable;
+        $prefix = $this->sanitizeSqlIdentifier((string) $this->db->getPrefix());
+        $this->projectsTableFull = $this->sanitizeSqlIdentifier($prefix . $this->projectsTable);
+        $this->boardsTableFull = $this->sanitizeSqlIdentifier($prefix . $this->boardsTable);
+        $this->widgetsTableFull = $this->sanitizeSqlIdentifier($prefix . $this->widgetsTable);
+        $this->tasksTableFull = $this->sanitizeSqlIdentifier($prefix . $this->tasksTable);
     }
 
     public function ensureTables(): void
@@ -366,7 +366,7 @@ final class CMS_Projects_Repository
             return [];
         }
 
-        $idList = implode(',', $projectIds);
+        $inPlaceholders = implode(', ', array_fill(0, count($projectIds), '?'));
         $counts = [];
 
         foreach ($projectIds as $projectId) {
@@ -380,8 +380,9 @@ final class CMS_Projects_Repository
         $boardRows = $this->db->get_results(
             "SELECT project_id, COUNT(*) AS aggregate_count
              FROM `{$this->boardsTableFull}`
-             WHERE project_id IN ({$idList})
-             GROUP BY project_id"
+             WHERE project_id IN ({$inPlaceholders})
+             GROUP BY project_id",
+            $projectIds
         ) ?: [];
 
         foreach ($boardRows as $row) {
@@ -394,8 +395,9 @@ final class CMS_Projects_Repository
         $widgetRows = $this->db->get_results(
             "SELECT project_id, COUNT(*) AS aggregate_count
              FROM `{$this->widgetsTableFull}`
-             WHERE project_id IN ({$idList})
-             GROUP BY project_id"
+             WHERE project_id IN ({$inPlaceholders})
+             GROUP BY project_id",
+            $projectIds
         ) ?: [];
 
         foreach ($widgetRows as $row) {
@@ -408,8 +410,9 @@ final class CMS_Projects_Repository
         $taskRows = $this->db->get_results(
             "SELECT project_id, COUNT(*) AS aggregate_count
              FROM `{$this->tasksTableFull}`
-             WHERE project_id IN ({$idList})
-             GROUP BY project_id"
+             WHERE project_id IN ({$inPlaceholders})
+             GROUP BY project_id",
+            $projectIds
         ) ?: [];
 
         foreach ($taskRows as $row) {
@@ -420,6 +423,40 @@ final class CMS_Projects_Repository
         }
 
         return $counts;
+    }
+
+    public function getSummaryCounts(): array
+    {
+        $row = $this->db->get_row(
+            "SELECT
+                (SELECT COUNT(*) FROM `{$this->projectsTableFull}`) AS projects,
+                (SELECT COUNT(*) FROM `{$this->boardsTableFull}`) AS boards,
+                (SELECT COUNT(*) FROM `{$this->widgetsTableFull}`) AS widgets,
+                (SELECT COUNT(*) FROM `{$this->tasksTableFull}`) AS tasks,
+                (SELECT COUNT(*) FROM `{$this->projectsTableFull}` WHERE status = ?) AS active_projects,
+                (SELECT COUNT(*) FROM `{$this->projectsTableFull}` WHERE visibility = ?) AS public_projects",
+            ['active', 'public']
+        );
+
+        if (!$row) {
+            return [
+                'projects' => 0,
+                'boards' => 0,
+                'widgets' => 0,
+                'tasks' => 0,
+                'active_projects' => 0,
+                'public_projects' => 0,
+            ];
+        }
+
+        return [
+            'projects' => (int) ($row->projects ?? 0),
+            'boards' => (int) ($row->boards ?? 0),
+            'widgets' => (int) ($row->widgets ?? 0),
+            'tasks' => (int) ($row->tasks ?? 0),
+            'active_projects' => (int) ($row->active_projects ?? 0),
+            'public_projects' => (int) ($row->public_projects ?? 0),
+        ];
     }
 
     private function mapProjectRow(object $row): array
@@ -494,5 +531,11 @@ final class CMS_Projects_Repository
             'created_at' => (string) ($row->created_at ?? ''),
             'updated_at' => (string) ($row->updated_at ?? ''),
         ];
+    }
+
+    private function sanitizeSqlIdentifier(string $identifier): string
+    {
+        $sanitized = preg_replace('/[^a-zA-Z0-9_]+/', '', $identifier) ?? '';
+        return $sanitized !== '' ? $sanitized : 'cms_projects';
     }
 }

@@ -29,10 +29,8 @@ trait CMS_Contact_Page_Dashboard_Trait
         $trend       = $submissions->get_trend(7);
 
         // Pro-Formular-Statistiken
-        $formStats = [];
-        foreach ($allForms as $form) {
-            $formStats[$form['id']] = $forms->get_stats((int) $form['id']);
-        }
+        $formIds = array_map(static fn (array $form): int => (int) ($form['id'] ?? 0), $allForms);
+        $formStats = $forms->get_stats_for_form_ids($formIds);
 
         // Letzte Nachrichten
         $recentSubmissions = $submissions->get_all(['is_spam' => 0], 0, 5);

@@ -35,7 +35,7 @@ final class CMS_Newsletter_Public_Controller
         $repository = CMS_Newsletter_Repository::instance();
         $settings = $repository->get_settings();
         $stats = $repository->get_dashboard_stats();
-        $campaigns = array_slice($repository->get_campaigns(), 0, 3);
+        $campaigns = $repository->get_recent_campaigns(3);
         $notice = (string) ($_GET['newsletter_notice'] ?? '');
         $message = match ($notice) {
             'subscribed' => 'Danke! Deine Anmeldung wurde gespeichert.',
@@ -63,6 +63,10 @@ final class CMS_Newsletter_Public_Controller
 
     public function handle_subscribe(): void
     {
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST') {
+            $this->redirect_with_notice('invalid');
+        }
+
         $security = class_exists('CMS\\Security') ? \CMS\Security::instance() : null;
         if ($this->isHoneypotFilled($_POST)) {
             $this->redirect_with_notice('subscribed');
@@ -85,17 +89,22 @@ final class CMS_Newsletter_Public_Controller
         $repository = CMS_Newsletter_Repository::instance();
         $settings = $repository->get_settings();
         $status = !empty($settings['require_double_opt_in']) ? 'pending' : 'active';
-        $result = $repository->save_subscriber([
+        $payload = [
             'email' => $email,
-            'first_name' => trim((string) ($_POST['first_name'] ?? '')),
-            'last_name' => trim((string) ($_POST['last_name'] ?? '')),
-            'segment_slug' => trim((string) ($_POST['segment_slug'] ?? 'general')),
+            'first_name' => $this->sanitize_plain_text((string) ($_POST['first_name'] ?? '')),
+            'last_name' => $this->sanitize_plain_text((string) ($_POST['last_name'] ?? '')),
+            'segment_slug' => $this->sanitize_slug((string) ($_POST['segment_slug'] ?? 'general')),
             'status' => $status,
             'source' => 'public',
-        ]);
+        ];
+        $result = $repository->save_subscriber($payload);
 
         if (!($result['success'] ?? false) && str_contains((string) ($result['error'] ?? ''), 'bereits')) {
             $this->redirect_with_notice('exists');
+        }
+        if (!($result['success'] ?? false)) {
+            $this->log_error('subscribe_failed', ['error' => (string) ($result['error'] ?? 'unknown')]);
+            $this->redirect_with_notice('invalid');
         }
 
         $this->redirect_with_notice(!empty($settings['require_double_opt_in']) ? 'double-opt-in' : 'subscribed');
@@ -193,5 +202,30 @@ final class CMS_Newsletter_Public_Controller
         $token = preg_replace('/[^a-f0-9]/i', '', trim($token)) ?? '';
         $length = strlen($token);
         return ($length >= 32 && $length <= 120) ? $token : '';
+    }
+
+    private function sanitize_plain_text(string $value, int $maxLength = 120): string
+    {
+        $value = trim(strip_tags($value));
+        $value = preg_replace('/[[:cntrl:]]/', '', $value) ?? '';
+        return mb_substr($value, 0, $maxLength);
+    }
+
+    private function sanitize_slug(string $value): string
+    {
+        $value = strtolower(trim($value));
+        $value = preg_replace('/[^a-z0-9_-]+/', '-', $value) ?? '';
+        $value = trim($value, '-');
+        if ($value === '') {
+            return 'general';
+        }
+
+        return mb_substr($value, 0, 80);
+    }
+
+    private function log_error(string $event, array $context = []): void
+    {
+        $payload = $context !== [] ? ' ' . json_encode($context, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : '';
+        error_log('[cms-newsletter] ' . $event . $payload);
     }
 }

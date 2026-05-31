@@ -803,7 +803,7 @@ final class CMS_M365CALCULATOR_Catalog
         ];
 
         foreach ($candidates as $file) {
-            if (is_string($file) && file_exists($file)) {
+            if (is_string($file) && self::is_safe_catalog_include($file)) {
                 require_once $file;
                 break;
             }
@@ -905,5 +905,21 @@ final class CMS_M365CALCULATOR_Catalog
     private static function clean_key(string $value): string
     {
         return trim((string) preg_replace('/[^a-z0-9_-]+/i', '-', strtolower($value)), '-');
+    }
+
+    private static function is_safe_catalog_include(string $path): bool
+    {
+        if (!is_file($path) || !is_readable($path)) {
+            return false;
+        }
+
+        $realPath = realpath($path);
+        if (!is_string($realPath) || $realPath === '') {
+            return false;
+        }
+
+        $normalized = str_replace('\\', '/', strtolower($realPath));
+
+        return str_ends_with($normalized, '/cms-m365lic/includes/class-catalog.php');
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CmsKnowledgebase\Http;
 
 use CmsKnowledgebase\Repository\EntryRepository;
+use CmsKnowledgebase\Support\LoggerFactory;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -14,13 +15,25 @@ final class PublicController
 {
     private static ?self $instance = null;
 
+    private $logger;
+
     public static function instance(): self
     {
         return self::$instance ??= new self();
     }
 
+    private function __construct()
+    {
+        $this->logger = LoggerFactory::create();
+    }
+
     public function registerRoutes($router): void
     {
+        if (!is_object($router) || !method_exists($router, 'addRoute')) {
+            $this->logger->error('Knowledgebase-Router ohne addRoute in registerRoutes erhalten.');
+            return;
+        }
+
         $router->addRoute('GET', '/kb', [$this, 'archivePage']);
         $router->addRoute('GET', '/glossar', [$this, 'glossaryPage']);
         $router->addRoute('GET', '/glossar-sitemap.xml', [$this, 'glossarySitemap']);

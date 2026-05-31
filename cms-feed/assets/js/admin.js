@@ -1,7 +1,7 @@
 /**
  * CMS Feed – Admin JavaScript
  *
- * Modal-Funktionen, Tab-Switching, Color-Sync und Admin-Helfer.
+ * Modal-Funktionen, Submenu-UI, Color-Sync und Admin-Helfer.
  *
  * @package CMS_Feed
  * @since   1.0.0
@@ -62,22 +62,6 @@
             });
         }
     });
-
-    // ══════════════════════════════════════════════════════════════════════
-    // Settings Sub-Tab-Switching
-    // ══════════════════════════════════════════════════════════════════════
-
-    window.switchTab = function(tabId, btn) {
-        document.querySelectorAll('.tab-content').forEach(function(t) {
-            t.classList.remove('active');
-        });
-        document.querySelectorAll('.tab-btn').forEach(function(b) {
-            b.classList.remove('active');
-        });
-        var el = document.getElementById(tabId);
-        if (el) el.classList.add('active');
-        if (btn) btn.classList.add('active');
-    };
 
     // ══════════════════════════════════════════════════════════════════════
     // Color-Picker / Text-Input Synchronisation
@@ -461,11 +445,6 @@
             });
         });
 
-        document.querySelectorAll('[data-feed-tab-target]').forEach(function(button) {
-            button.addEventListener('click', function() {
-                switchTab(button.getAttribute('data-feed-tab-target') || '', button);
-            });
-        });
     }
 
     function initFeedAdminView() {

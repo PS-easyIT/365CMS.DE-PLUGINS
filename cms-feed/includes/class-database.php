@@ -20,6 +20,8 @@ final class CMS_Feed_Database
 {
     private static ?self $instance = null;
     private const PROCESSING_TIMEOUT_MINUTES = 20;
+    /** @var array<string,string>|null */
+    private ?array $settingsCache = null;
 
     public static function instance(): self
     {
@@ -433,16 +435,26 @@ final class CMS_Feed_Database
 
     public function get_settings(): array
     {
+        if ($this->settingsCache !== null) {
+            return $this->settingsCache;
+        }
+
         $db     = \CMS\Database::instance();
         $prefix = $db->prefix();
         $stmt   = $db->prepare("SELECT setting_key, setting_value FROM {$prefix}feed_settings");
         $stmt->execute();
         $rows = $stmt->fetchAll(\PDO::FETCH_KEY_PAIR);
-        return $rows ?: [];
+        $this->settingsCache = is_array($rows) ? array_map('strval', $rows) : [];
+
+        return $this->settingsCache;
     }
 
     public function get_setting(string $key, string $default = ''): string
     {
+        if ($this->settingsCache !== null && array_key_exists($key, $this->settingsCache)) {
+            return (string) $this->settingsCache[$key];
+        }
+
         $db     = \CMS\Database::instance();
         $prefix = $db->prefix();
         $stmt   = $db->prepare("SELECT setting_value FROM {$prefix}feed_settings WHERE setting_key = ?");
@@ -462,6 +474,8 @@ final class CMS_Feed_Database
         foreach ($data as $key => $value) {
             $stmt->execute([$key, $value]);
         }
+
+        $this->settingsCache = null;
     }
 
     // ──────────────────────────────────────────────────────────────────────

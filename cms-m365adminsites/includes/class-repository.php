@@ -14,6 +14,8 @@ if (!defined('ABSPATH')) {
 final class CMS_M365ADMINSITES_Repository
 {
     private static ?self $instance = null;
+    /** @var array<int,array<int,array<string,mixed>>> */
+    private array $categoriesCache = [];
 
     public static function instance(): self
     {
@@ -29,6 +31,11 @@ final class CMS_M365ADMINSITES_Repository
      */
     public function categories(bool $activeOnly = false): array
     {
+        $cacheKey = $activeOnly ? 1 : 0;
+        if (array_key_exists($cacheKey, $this->categoriesCache)) {
+            return $this->categoriesCache[$cacheKey];
+        }
+
         $db = $this->db();
         if ($db === null) {
             return [];
@@ -39,8 +46,12 @@ final class CMS_M365ADMINSITES_Repository
             $where = $activeOnly ? 'WHERE is_active = 1' : '';
             $stmt = $db->prepare("SELECT * FROM {$table} {$where} ORDER BY sort_order ASC, name ASC");
             $stmt->execute();
-            return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            $this->categoriesCache[$cacheKey] = is_array($rows) ? $rows : [];
+
+            return $this->categoriesCache[$cacheKey];
         } catch (\Throwable $e) {
+            $this->log_error('categories query failed: ' . $e->getMessage());
             return [];
         }
     }
@@ -94,10 +105,11 @@ final class CMS_M365ADMINSITES_Repository
             $count->execute($params);
             $total = (int) $count->fetchColumn();
 
-            $stmt = $db->prepare("SELECT s.*, c.name AS category_name, c.slug AS category_slug FROM {$sitesTable} s INNER JOIN {$categoriesTable} c ON c.id = s.category_id {$sqlWhere} ORDER BY c.sort_order ASC, s.sort_order ASC, s.title ASC LIMIT {$limit} OFFSET {$offset}");
-            $stmt->execute($params);
+            $stmt = $db->prepare("SELECT s.*, c.name AS category_name, c.slug AS category_slug FROM {$sitesTable} s INNER JOIN {$categoriesTable} c ON c.id = s.category_id {$sqlWhere} ORDER BY c.sort_order ASC, s.sort_order ASC, s.title ASC LIMIT ? OFFSET ?");
+            $stmt->execute(array_merge($params, [$limit, $offset]));
             return ['items' => $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [], 'total' => $total];
         } catch (\Throwable $e) {
+            $this->log_error('sites query failed: ' . $e->getMessage());
             return ['items' => [], 'total' => 0];
         }
     }
@@ -134,6 +146,7 @@ final class CMS_M365ADMINSITES_Repository
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
             return is_array($row) ? $row : null;
         } catch (\Throwable $e) {
+            $this->log_error('find query failed: ' . $e->getMessage());
             return null;
         }
     }
@@ -148,29 +161,38 @@ final class CMS_M365ADMINSITES_Repository
             return 0;
         }
 
-        $id = (int) ($data['id'] ?? 0);
-        $fields = $this->sanitize_site_data($data);
-        $table = self::quote_identifier($this->sites_table($db));
-
-        if ($id > 0) {
-            $sets = [];
-            $params = [];
-            foreach ($fields as $key => $value) {
-                $sets[] = self::quote_identifier($key) . ' = ?';
-                $params[] = $value;
+        try {
+            $id = (int) ($data['id'] ?? 0);
+            $fields = $this->sanitize_site_data($data);
+            if (!$this->category_exists($db, (int) ($fields['category_id'] ?? 0))) {
+                throw new \InvalidArgumentException('Invalid category_id for admin site.');
             }
-            $params[] = $id;
-            $stmt = $db->prepare("UPDATE {$table} SET " . implode(', ', $sets) . ', updated_at = CURRENT_TIMESTAMP WHERE id = ?');
-            $stmt->execute($params);
-            return $id;
-        }
+            $table = self::quote_identifier($this->sites_table($db));
 
-        $columns = array_keys($fields);
-        $placeholders = implode(', ', array_fill(0, count($columns), '?'));
-        $quotedColumns = implode(', ', array_map([self::class, 'quote_identifier'], $columns));
-        $stmt = $db->prepare("INSERT INTO {$table} ({$quotedColumns}) VALUES ({$placeholders})");
-        $stmt->execute(array_values($fields));
-        return (int) $db->getPdo()->lastInsertId();
+            if ($id > 0) {
+                $sets = [];
+                $params = [];
+                foreach ($fields as $key => $value) {
+                    $sets[] = self::quote_identifier($key) . ' = ?';
+                    $params[] = $value;
+                }
+                $params[] = $id;
+                $stmt = $db->prepare("UPDATE {$table} SET " . implode(', ', $sets) . ', updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+                $stmt->execute($params);
+                return $id;
+            }
+
+            $columns = array_keys($fields);
+            $placeholders = implode(', ', array_fill(0, count($columns), '?'));
+            $quotedColumns = implode(', ', array_map([self::class, 'quote_identifier'], $columns));
+            $stmt = $db->prepare("INSERT INTO {$table} ({$quotedColumns}) VALUES ({$placeholders})");
+            $stmt->execute(array_values($fields));
+            return (int) $db->getPdo()->lastInsertId();
+        } catch (\Throwable $e) {
+            $this->log_error('save failed: ' . $e->getMessage());
+
+            return 0;
+        }
     }
 
     public function delete(int $id): void
@@ -184,9 +206,13 @@ final class CMS_M365ADMINSITES_Repository
             return;
         }
 
-        $table = self::quote_identifier($this->sites_table($db));
-        $stmt = $db->prepare("DELETE FROM {$table} WHERE id = ?");
-        $stmt->execute([$id]);
+        try {
+            $table = self::quote_identifier($this->sites_table($db));
+            $stmt = $db->prepare("DELETE FROM {$table} WHERE id = ?");
+            $stmt->execute([$id]);
+        } catch (\Throwable $e) {
+            $this->log_error('delete failed: ' . $e->getMessage());
+        }
     }
 
     public static function slugify(string $value): string
@@ -207,14 +233,38 @@ final class CMS_M365ADMINSITES_Repository
             'category_id' => max(1, (int) ($data['category_id'] ?? 0)),
             'title' => self::limit(strip_tags((string) ($data['title'] ?? '')), 190),
             'subtitle' => self::limit(strip_tags((string) ($data['subtitle'] ?? '')), 190),
-            'url' => self::limit(filter_var((string) ($data['url'] ?? ''), FILTER_VALIDATE_URL) ? (string) $data['url'] : '', 500),
-            'image_url' => self::limit((string) filter_var((string) ($data['image_url'] ?? ''), FILTER_SANITIZE_URL), 500),
+            'url' => self::limit($this->sanitize_external_url((string) ($data['url'] ?? '')), 500),
+            'image_url' => self::limit($this->sanitize_media_url((string) ($data['image_url'] ?? '')), 500),
             'image_alt' => self::limit(strip_tags((string) ($data['image_alt'] ?? '')), 190),
             'tags' => self::limit(strip_tags((string) ($data['tags'] ?? '')), 500),
             'status' => in_array((string) ($data['status'] ?? 'active'), ['active', 'inactive'], true) ? (string) $data['status'] : 'active',
             'is_featured' => !empty($data['is_featured']) ? 1 : 0,
             'sort_order' => max(0, (int) ($data['sort_order'] ?? 0)),
         ];
+    }
+
+    private function sanitize_external_url(string $url): string
+    {
+        $url = trim((string) filter_var($url, FILTER_SANITIZE_URL));
+        if ($url === '' || filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return '';
+        }
+
+        return preg_match('#^https?://#i', $url) === 1 ? $url : '';
+    }
+
+    private function sanitize_media_url(string $url): string
+    {
+        $url = trim((string) filter_var($url, FILTER_SANITIZE_URL));
+        if ($url === '') {
+            return '';
+        }
+
+        if (str_starts_with($url, '/')) {
+            return $url;
+        }
+
+        return preg_match('#^https?://#i', $url) === 1 ? $url : '';
     }
 
     public function public_media_url(string $url): string
@@ -264,5 +314,23 @@ final class CMS_M365ADMINSITES_Repository
     private static function limit(string $value, int $length): string
     {
         return function_exists('mb_substr') ? mb_substr($value, 0, $length) : substr($value, 0, $length);
+    }
+
+    private function category_exists(\CMS\Database $db, int $categoryId): bool
+    {
+        if ($categoryId <= 0) {
+            return false;
+        }
+
+        $table = self::quote_identifier($this->categories_table($db));
+        $stmt = $db->prepare("SELECT id FROM {$table} WHERE id = ? LIMIT 1");
+        $stmt->execute([$categoryId]);
+
+        return $stmt->fetchColumn() !== false;
+    }
+
+    private function log_error(string $message): void
+    {
+        error_log('CMS M365 Adminsites repository: ' . $message);
     }
 }

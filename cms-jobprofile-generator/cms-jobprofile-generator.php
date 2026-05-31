@@ -176,7 +176,7 @@ final class CMS_JobProfileGenerator
 
     public function enqueue_styles(): void
     {
-        if (!$this->should_enqueue_shell_assets()) {
+        if (!$this->should_enqueue_admin_shell_assets()) {
             return;
         }
 
@@ -190,7 +190,7 @@ final class CMS_JobProfileGenerator
 
     public function enqueue_scripts(): void
     {
-        if (!$this->should_enqueue_shell_assets()) {
+        if (!$this->should_enqueue_admin_shell_assets()) {
             return;
         }
 
@@ -202,17 +202,14 @@ final class CMS_JobProfileGenerator
         }
     }
 
-    private function should_enqueue_shell_assets(): bool
+    private function should_enqueue_admin_shell_assets(): bool
     {
         $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
         $path = '/' . trim($path, '/');
 
-        return $path === '/jobs'
-            || str_starts_with($path, '/jobs/')
-            || str_starts_with($path, '/career/')
-            || $path === '/member/jobs'
+        return $path === '/member/jobs'
             || str_starts_with($path, '/member/jobs/')
-            || str_starts_with($path, '/member/plugin/member-jobs')
+            || str_starts_with($path, '/member/plugin/member-job')
             || str_starts_with($path, '/admin/plugins/jobprofile')
             || str_starts_with($path, '/admin/jobprofile');
     }

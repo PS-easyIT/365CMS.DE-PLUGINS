@@ -132,7 +132,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
                 <label class="form-label" for="subject_prefix">Betreff-Präfix</label>
                 <input type="text" id="subject_prefix" name="subject_prefix" class="form-control"
                        value="<?php echo $e($form['subject_prefix'] ?? '[Kontakt]'); ?>"
-                       placeholder="[Kontakt]" class="contact-input-compact">
+                       placeholder="[Kontakt]">
             </div>
         </div>
     </div>
@@ -162,9 +162,9 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 
             <div class="form-group">
                 <label class="form-label" for="rate_limit">Rate-Limit (pro Stunde/Sitzung)</label>
-                <input type="number" id="rate_limit" name="rate_limit" class="form-control"
+                <input type="number" id="rate_limit" name="rate_limit" class="form-control contact-input-number-sm"
                        value="<?php echo (int)($form['rate_limit'] ?? 3); ?>"
-                       min="0" max="100" class="contact-input-number-sm">
+                       min="0" max="100">
                 <small class="form-text">0 = kein Limit. Standard: 3 Nachrichten pro Stunde pro Browser-Sitzung.</small>
             </div>
         </div>
@@ -177,8 +177,7 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 
             <div class="form-group">
                 <label class="form-label" for="custom_css">Benutzerdefiniertes CSS</label>
-                <textarea id="custom_css" name="custom_css" class="form-control" rows="6"
-                          class="contact-textarea-code"
+                <textarea id="custom_css" name="custom_css" class="form-control contact-textarea-code" rows="6"
                           placeholder="/* Eigene Styles für dieses Formular */"><?php echo $e($form['custom_css'] ?? ''); ?></textarea>
                 <small class="form-text">Wird nur auf der Seite dieses Formulars geladen.</small>
             </div>

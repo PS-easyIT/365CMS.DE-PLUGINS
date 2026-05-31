@@ -40,7 +40,10 @@ final class CMS_M365LINKCOLLECTION
 
     private function load_dependencies(): void
     {
+        $pluginBase = realpath(CMS_M365LINKCOLLECTION_PLUGIN_DIR) ?: CMS_M365LINKCOLLECTION_PLUGIN_DIR;
+        $sharedBase = realpath(dirname(CMS_M365LINKCOLLECTION_PLUGIN_DIR) . '/shared') ?: dirname(CMS_M365LINKCOLLECTION_PLUGIN_DIR) . '/shared';
         $files = [
+            dirname(CMS_M365LINKCOLLECTION_PLUGIN_DIR) . '/shared/admin/plugin-admin-contract.php',
             CMS_M365LINKCOLLECTION_PLUGIN_DIR . 'includes/class-settings.php',
             CMS_M365LINKCOLLECTION_PLUGIN_DIR . 'includes/class-repository.php',
             CMS_M365LINKCOLLECTION_PLUGIN_DIR . 'includes/class-installer.php',
@@ -51,9 +54,19 @@ final class CMS_M365LINKCOLLECTION
         ];
 
         foreach ($files as $file) {
-            if (file_exists($file)) {
-                require_once $file;
+            $resolved = realpath($file);
+            if (!is_string($resolved) || !is_file($resolved) || !is_readable($resolved) || strtolower((string) pathinfo($resolved, PATHINFO_EXTENSION)) !== 'php') {
+                continue;
             }
+
+            $isPluginFile = str_starts_with($resolved, (string) $pluginBase);
+            $isSharedContract = $resolved === $sharedBase . DIRECTORY_SEPARATOR . 'admin' . DIRECTORY_SEPARATOR . 'plugin-admin-contract.php';
+            if (!$isPluginFile && !$isSharedContract) {
+                error_log('CMS M365 Linkcollection: blocked dependency outside allowed paths: ' . $resolved);
+                continue;
+            }
+
+            require_once $resolved;
         }
     }
 

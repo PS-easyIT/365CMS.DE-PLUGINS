@@ -48,20 +48,25 @@ final class CMS_M365LINKCOLLECTION_Widget
         }
         $showImage = CMS_M365LINKCOLLECTION_Settings::bool('sidebar_show_image', true);
         $showSubtitle = CMS_M365LINKCOLLECTION_Settings::bool('sidebar_show_subtitle', true);
+        $slides = array_values(array_filter($items, static function (array $item): bool {
+            return self::safe_url((string) ($item['url'] ?? '')) !== '';
+        }));
+        if ($slides === []) {
+            return;
+        }
+
+        $safeOrderStyle = self::safe_order_style($orderStyle);
         ?>
-        <div class="sb-widget sb-widget--linkcollection sb-widget--linkcollection-<?php echo htmlspecialchars($style, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $orderStyle; ?> data-mlc-sidebar-rotator data-rotate-interval="<?php echo (int) $interval; ?>">
+        <div class="sb-widget sb-widget--linkcollection sb-widget--linkcollection-<?php echo htmlspecialchars($style, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $safeOrderStyle; ?> data-mlc-sidebar-rotator data-rotate-interval="<?php echo (int) $interval; ?>">
             <div class="sb-widget-title">
                 <span class="sb-widget-title__icon" aria-hidden="true">🔗</span>
                 <span class="sb-widget-title__text"><?php echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?></span>
             </div>
             <div class="mlc-sidebar-rotator" aria-live="polite">
-                <?php foreach (array_values($items) as $index => $item): ?>
+                <?php foreach ($slides as $index => $item): ?>
                 <?php
                 $isActive = (int) $index === 0;
                 $url = self::safe_url((string) ($item['url'] ?? ''));
-                if ($url === '') {
-                    continue;
-                }
                 $image = self::safe_media_url((string) ($item['resolved_image_url'] ?? $item['image_url'] ?? ''));
                 if ($image === '' && $placeholder !== '') {
                     $image = self::safe_media_url($placeholder);
@@ -77,7 +82,7 @@ final class CMS_M365LINKCOLLECTION_Widget
                         <?php if ($image !== ''): ?>
                         <img src="<?php echo htmlspecialchars($image, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($imageAlt, ENT_QUOTES, 'UTF-8'); ?>" class="mlc-sidebar-card__image" loading="lazy" width="260" height="132">
                         <?php else: ?>
-                        <span class="mlc-sidebar-card__placeholder" aria-hidden="true"><?php echo htmlspecialchars(mb_substr($titleText !== '' ? $titleText : '?', 0, 1), ENT_QUOTES, 'UTF-8'); ?></span>
+                        <span class="mlc-sidebar-card__placeholder" aria-hidden="true"><?php echo htmlspecialchars(self::first_character($titleText !== '' ? $titleText : '?'), ENT_QUOTES, 'UTF-8'); ?></span>
                         <?php endif; ?>
                         <?php endif; ?>
                         <span class="mlc-sidebar-card__body">
@@ -93,7 +98,7 @@ final class CMS_M365LINKCOLLECTION_Widget
                 </article>
                 <?php endforeach; ?>
             </div>
-            <?php if (count($items) > 1): ?>
+            <?php if (count($slides) > 1): ?>
             <div class="mlc-sidebar-controls" role="group" aria-label="<?php echo htmlspecialchars($controlsLabel, ENT_QUOTES, 'UTF-8'); ?>">
                 <button type="button" class="mlc-sidebar-control" data-mlc-sidebar-prev aria-label="<?php echo htmlspecialchars($prevLabel, ENT_QUOTES, 'UTF-8'); ?>">‹</button>
                 <button type="button" class="mlc-sidebar-control" data-mlc-sidebar-next aria-label="<?php echo htmlspecialchars($nextLabel, ENT_QUOTES, 'UTF-8'); ?>">›</button>
@@ -130,5 +135,23 @@ final class CMS_M365LINKCOLLECTION_Widget
         }
 
         return '';
+    }
+
+    private static function first_character(string $value): string
+    {
+        return function_exists('mb_substr') ? (string) mb_substr($value, 0, 1) : substr($value, 0, 1);
+    }
+
+    private static function safe_order_style(string $value): string
+    {
+        if ($value === '') {
+            return '';
+        }
+
+        if (preg_match('/^\sstyle="[^"<>]{1,200}"\s*$/', $value) !== 1) {
+            return '';
+        }
+
+        return $value;
     }
 }

@@ -57,6 +57,11 @@ trait CMS_JPG_Page_Dashboard_Trait
             );
         } catch (\Throwable $e) { /* cms-companies ggf. nicht aktiv */ }
 
-        include JPG_DIR . 'admin/views/page-dashboard.php';
+        self::render_admin_view(
+            'Job Profile Dashboard',
+            'jpg-dashboard',
+            JPG_DIR . 'admin/views/page-dashboard.php',
+            compact('tab', 'showPrivate', 'stats', 'tabs', 'profiles', 'total', 'companiesCount')
+        );
     }
 }

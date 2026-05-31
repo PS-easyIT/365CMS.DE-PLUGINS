@@ -14,13 +14,20 @@ $e = fn(?string $v): string => htmlspecialchars((string) ($v ?? ''), ENT_QUOTES,
 $siteName = defined('SITE_NAME') ? SITE_NAME : '365CMS';
 
 $statusLabels = CMS_Booking_Bookings::status_labels();
-$statusClass  = CMS_Booking_Bookings::status_badge_class($booking['status']);
+$statusClass  = CMS_Booking_Bookings::status_badge_class((string) $booking['status']);
 $meetingUrl   = '';
 if (!empty($booking['meeting_url']) && filter_var($booking['meeting_url'], FILTER_VALIDATE_URL)) {
     $meetingScheme = strtolower((string) parse_url($booking['meeting_url'], PHP_URL_SCHEME));
     if (in_array($meetingScheme, ['http', 'https'], true)) {
         $meetingUrl = (string) $booking['meeting_url'];
     }
+}
+try {
+    $bookingDate = new DateTime((string) $booking['booking_date']);
+    $dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+    $formattedDate = $dayNames[(int) $bookingDate->format('w')] . ', ' . $bookingDate->format('d.m.Y');
+} catch (\Throwable $e) {
+    $formattedDate = (string) ($booking['booking_date'] ?? '');
 }
 ?>
 <!DOCTYPE html>
@@ -59,7 +66,7 @@ if (!empty($booking['meeting_url']) && filter_var($booking['meeting_url'], FILTE
                         <tr>
                             <th>Status</th>
                             <td>
-                                <span class="booking-badge booking-badge--<?php echo $statusClass; ?>">
+                                <span class="booking-badge booking-badge--<?php echo $e($statusClass); ?>">
                                     <?php echo $e($statusLabels[$booking['status']] ?? $booking['status']); ?>
                                 </span>
                             </td>
@@ -79,17 +86,13 @@ if (!empty($booking['meeting_url']) && filter_var($booking['meeting_url'], FILTE
                         <tr>
                             <th>Datum</th>
                             <td>
-                                <?php
-                                $date = new DateTime($booking['booking_date']);
-                                $dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
-                                echo $dayNames[(int) $date->format('w')] . ', ' . $date->format('d.m.Y');
-                                ?>
+                                <?php echo $e($formattedDate); ?>
                             </td>
                         </tr>
                         <tr>
                             <th>Uhrzeit</th>
                             <td>
-                                <?php echo substr($booking['start_time'], 0, 5); ?> – <?php echo substr($booking['end_time'], 0, 5); ?> Uhr
+                                <?php echo $e(substr((string) $booking['start_time'], 0, 5)); ?> – <?php echo $e(substr((string) $booking['end_time'], 0, 5)); ?> Uhr
                                 (<?php echo (int) $booking['duration_min']; ?> Min.)
                             </td>
                         </tr>

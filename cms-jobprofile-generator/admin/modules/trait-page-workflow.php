@@ -35,7 +35,12 @@ trait CMS_JPG_Page_Workflow_Trait
         $steps    = class_exists('CMS_JPG_Workflow') ? CMS_JPG_Workflow::instance()->get_all_steps() : [];
         $allRoles = class_exists('CMS_JPG_Workflow') ? CMS_JPG_Workflow::get_all_cms_roles() : ['admin' => 'Admin'];
 
-        include JPG_DIR . 'admin/views/page-workflow-editor.php';
+        self::render_admin_view(
+            'Workflow-Editor',
+            'jpg-workflow',
+            JPG_DIR . 'admin/views/page-workflow-editor.php',
+            compact('notice', 'error', 'steps', 'allRoles')
+        );
     }
 
     /** @return array{string, string} [notice, error] */

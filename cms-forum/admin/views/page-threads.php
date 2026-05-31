@@ -3,6 +3,12 @@
 <?php
 $openThreads = count(array_filter($threads, static fn($thread) => ($thread->status ?? '') === 'open'));
 $closedThreads = count(array_filter($threads, static fn($thread) => ($thread->status ?? '') === 'closed'));
+$queryBase = [
+    'page'   => 'forum-threads',
+    'forum'  => $filterForum > 0 ? $filterForum : null,
+    'status' => $filterStatus !== '' ? $filterStatus : null,
+    'q'      => $search !== '' ? $search : null,
+];
 ?>
 
 <div class="forum-admin-shell">
@@ -147,11 +153,11 @@ $closedThreads = count(array_filter($threads, static fn($thread) => ($thread->st
         <?php if ($pages > 1): ?>
         <div class="pagination forum-inline-actions" style="justify-content:center;margin-top:1.5rem;">
             <?php if ($page > 1): ?>
-                <a href="?page=forum-threads&page=<?php echo $page - 1; ?>" class="btn btn-secondary btn-sm">← Zurück</a>
+                <a href="?<?php echo htmlspecialchars(http_build_query(array_filter($queryBase, static fn($value) => $value !== null) + ['paged' => $page - 1]), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary btn-sm">← Zurück</a>
             <?php endif; ?>
             <span style="padding:.375rem .875rem;color:#64748b;font-size:.875rem;">Seite <?php echo $page; ?> von <?php echo $pages; ?></span>
             <?php if ($page < $pages): ?>
-                <a href="?page=forum-threads&page=<?php echo $page + 1; ?>" class="btn btn-secondary btn-sm">Weiter →</a>
+                <a href="?<?php echo htmlspecialchars(http_build_query(array_filter($queryBase, static fn($value) => $value !== null) + ['paged' => $page + 1]), ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary btn-sm">Weiter →</a>
             <?php endif; ?>
         </div>
         <?php endif; ?>

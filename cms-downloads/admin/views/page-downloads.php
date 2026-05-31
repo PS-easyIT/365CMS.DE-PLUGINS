@@ -173,13 +173,14 @@ $loginProtected = count(array_filter($downloads, static fn(array $item): bool =>
                         <thead><tr><th>Titel</th><th>Kategorie</th><th>Typ</th><th>Status</th><th>Aktionen</th></tr></thead>
                         <tbody>
                         <?php foreach ($downloads as $item): ?>
+                            <?php $itemTypeKey = (string) ($item['download_type'] ?? 'generic'); ?>
                             <tr>
                                 <td>
                                     <strong><?php echo htmlspecialchars((string) $item['title']); ?></strong>
                                     <div class="dl-admin-muted"><?php echo htmlspecialchars((string) ($item['file_name'] ?? $item['external_url'] ?? '')); ?></div>
                                 </td>
                                 <td><?php echo htmlspecialchars((string) ($item['category_name'] ?? '—')); ?></td>
-                                <td><?php echo htmlspecialchars((string) ($typeTemplates[$item['download_type']]['label'] ?? $item['download_type'])); ?></td>
+                                <td><?php echo htmlspecialchars((string) ($typeTemplates[$itemTypeKey]['label'] ?? $itemTypeKey)); ?></td>
                                 <td><span class="status-badge <?php echo ($item['status'] ?? 'active') === 'active' ? 'active' : 'inactive'; ?>"><?php echo htmlspecialchars((string) ($item['status'] ?? 'active')); ?></span></td>
                                 <td>
                                     <div class="dl-admin-row-actions">
@@ -212,7 +213,7 @@ $loginProtected = count(array_filter($downloads, static fn(array $item): bool =>
                 <div class="dl-template-card">
                     <div class="dl-template-card__icon"><?php echo htmlspecialchars((string) ($typeConfig['icon'] ?? '📦')); ?></div>
                     <p class="dl-template-card__title"><?php echo htmlspecialchars((string) ($typeConfig['label'] ?? 'Download')); ?></p>
-                    <p class="dl-template-card__text"><?php echo htmlspecialchars((string) ($typeConfig['description'] ?? 'Vordefinierter Download-Typ.')); ?></p>
+                    <p class="dl-template-card__text"><?php echo htmlspecialchars((string) ($typeConfig['hint'] ?? 'Vordefinierter Download-Typ.')); ?></p>
                 </div>
                 <?php endforeach; ?>
             </div>

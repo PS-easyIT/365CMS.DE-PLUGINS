@@ -15,13 +15,15 @@ class CMS_JPG_Admin_Menu
 {
     public static function register(): void
     {
+        $callback = [CMS_JPG_Admin_Pages::class, 'dispatch_admin_page'];
+
         // Hauptmenü
         add_menu_page(
             'Job Profile Generator',
-            '📄 Job Profile',
+            'Job Profile',
             'manage_options',
             'jpg-dashboard',
-            [CMS_JPG_Admin_Pages::class, 'render_dashboard'],
+            $callback,
             ''
         );
 
@@ -32,97 +34,97 @@ class CMS_JPG_Admin_Menu
             'Dashboard',
             'manage_options',
             'jpg-dashboard',
-            [CMS_JPG_Admin_Pages::class, 'render_dashboard']
+            $callback
         );
 
         add_submenu_page(
             'jpg-dashboard',
             'Stellenanzeigen',
-            '📄 Stellenanzeigen',
+            'Stellenanzeigen',
             'manage_options',
             'jpg-generator',
-            [CMS_JPG_Admin_Pages::class, 'render_generator']
+            $callback
         );
 
         add_submenu_page(
             'jpg-dashboard',
             'Bibliotheken',
-            '📚 Bibliotheken',
+            'Bibliotheken',
             'manage_options',
             'jpg-libraries',
-            [CMS_JPG_Admin_Pages::class, 'render_libraries']
+            $callback
         );
 
         add_submenu_page(
             'jpg-dashboard',
             'Vorlagen & Design',
-            '🎨 Vorlagen & Design',
+            'Vorlagen & Design',
             'manage_options',
             'jpg-design',
-            [CMS_JPG_Admin_Pages::class, 'render_design']
+            $callback
         );
 
         add_submenu_page(
             'jpg-dashboard',
             'Workflow-Editor',
-            '🔄 Workflow-Editor',
+            'Workflow-Editor',
             'manage_options',
             'jpg-workflow',
-            [CMS_JPG_Admin_Pages::class, 'render_workflow']
+            $callback
         );
 
         add_submenu_page(
             'jpg-dashboard',
             'Genehmigungen',
-            '✅ Genehmigungen',
+            'Genehmigungen',
             'manage_options',
             'jpg-approvals',
-            [CMS_JPG_Admin_Pages::class, 'render_approvals']
+            $callback
         );
 
         add_submenu_page(
             'jpg-dashboard',
             'Unternehmens-Übersicht',
-            '🏢 Unternehmens-Übersicht',
+            'Unternehmens-Übersicht',
             'manage_options',
             'jpg-companies',
-            [CMS_JPG_Admin_Pages::class, 'render_company_overview']
+            $callback
         );
 
         add_submenu_page(
             'jpg-dashboard',
             'Benutzer & Mandanten',
-            '👥 Benutzer & Mandanten',
+            'Benutzer & Mandanten',
             'manage_options',
             'jpg-users',
-            [CMS_JPG_Admin_Pages::class, 'render_users']
+            $callback
         );
 
         add_submenu_page(
             'jpg-dashboard',
             'Abosystem & Pakete',
-            '📦 Abosystem',
+            'Abosystem',
             'manage_options',
             'jpg-subscription',
-            [CMS_JPG_Admin_Pages::class, 'render_subscription']
+            $callback
         );
 
         add_submenu_page(
             'jpg-dashboard',
             'Public Design',
-            '🌐 Public Design',
+            'Public Design',
             'manage_options',
             'jpg-public-design',
-            [CMS_JPG_Admin_Pages::class, 'render_public_design']
+            $callback
         );
 
         add_submenu_page(
             'jpg-dashboard',
             'Einstellungen',
-            '⚙️ Einstellungen',
+            'Einstellungen',
             'manage_options',
             'jpg-settings',
-            [CMS_JPG_Admin_Pages::class, 'render_settings']
+            $callback
         );
     }
 }

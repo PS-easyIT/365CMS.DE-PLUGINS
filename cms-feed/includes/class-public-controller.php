@@ -64,6 +64,53 @@ final class CMS_Feed_Public_Controller
     }
 
     /**
+     * Prüft, ob ein Request-Pfad zu einer Plugin-Public-Route gehört.
+     */
+    public function matches_public_path(string $path): bool
+    {
+        $path = parse_url($path, PHP_URL_PATH) ?: '';
+        if ($path === '') {
+            return false;
+        }
+
+        $path = '/' . trim($path, '/');
+        if ($path === '/') {
+            return false;
+        }
+
+        static $cachedArchiveSlug = null;
+        if (!is_string($cachedArchiveSlug)) {
+            $cachedArchiveSlug = 'feeds';
+            try {
+                $db               = CMS_Feed_Database::instance();
+                $s                = $db->get_settings();
+                $cachedArchiveSlug = $this->sanitize_slug((string) ($s['archive_slug'] ?? 'feeds'));
+            } catch (\Throwable $e) {
+                CMS_Feed_Error_Handler::instance()->log_exception('CMS Feed: Public-Pfadpruefung konnte Einstellungen nicht laden.', $e, 'warning', [
+                    'scope' => 'public.path_detect',
+                ]);
+            }
+        }
+
+        $slug = $cachedArchiveSlug;
+
+        if ($slug === '' || $slug === 'feed') {
+            $slug = 'feeds';
+        }
+
+        $archivePath = '/' . trim($slug, '/');
+        if ($path === $archivePath || $path === $archivePath . '/embed') {
+            return true;
+        }
+
+        if (str_starts_with($path, '/feed/')) {
+            return true;
+        }
+
+        return str_starts_with($path, $archivePath . '/');
+    }
+
+    /**
      * Router-Callback: Hauptarchiv.
      */
     public function route_archive(): void

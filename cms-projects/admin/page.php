@@ -142,16 +142,12 @@ foreach (($projectBoards ?? []) as $board) {
 $taskFormValues = is_array($taskFormValues ?? null) ? $taskFormValues : [];
 $activeTaskId = (int) ($taskFormValues['id'] ?? 0);
 ?>
-<div class="wrap cp-admin-shell">
+<div class="cp-admin-shell">
     <div class="cp-header-card">
         <div>
             <span class="cp-kicker">CMS Projects</span>
             <h1><?php echo htmlspecialchars((string) ($sectionConfig['title'] ?? 'Projects'), ENT_QUOTES, 'UTF-8'); ?></h1>
             <p><?php echo htmlspecialchars((string) ($sectionConfig['description'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></p>
-        </div>
-        <div class="cp-nav-links">
-            <a class="button <?php echo ($section ?? 'overview') === 'overview' ? 'button-primary' : ''; ?>" href="<?php echo htmlspecialchars((string) ($pageLinks['overview'] ?? '?page=cms-projects'), ENT_QUOTES, 'UTF-8'); ?>">Übersicht</a>
-            <a class="button <?php echo ($section ?? '') === 'projects' ? 'button-primary' : ''; ?>" href="<?php echo htmlspecialchars((string) ($pageLinks['projects'] ?? '?page=cms-projects-projects'), ENT_QUOTES, 'UTF-8'); ?>">Projekte</a>
         </div>
     </div>
 

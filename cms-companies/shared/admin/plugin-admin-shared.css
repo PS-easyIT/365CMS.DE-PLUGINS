@@ -1,0 +1,85 @@
+/**
+ * Shared admin layout for companies plugin.
+ *
+ * @package CMS_Companies
+ */
+
+.plugin-admin-shell {
+  padding: 25px;
+}
+
+.plugin-admin-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.plugin-admin-sidebar {
+  position: sticky;
+  top: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.plugin-admin-content {
+  min-width: 0;
+}
+
+.plugin-admin-submenu {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: .75rem;
+}
+
+.plugin-admin-submenu-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  width: 100%;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #334155;
+  font-size: .875rem;
+  font-weight: 600;
+  padding: .6rem .7rem;
+  margin-bottom: .35rem;
+}
+
+.plugin-admin-submenu-link:last-child {
+  margin-bottom: 0;
+}
+
+.plugin-admin-submenu-link:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.plugin-admin-submenu-link.is-active {
+  background: #e0f2fe;
+  color: #0c4a6e;
+}
+
+.plugin-admin-submenu-badge {
+  background: #f59e0b;
+  color: #fff;
+  border-radius: 12px;
+  font-size: .7rem;
+  line-height: 1;
+  padding: .2rem .45rem;
+  min-width: 1.4rem;
+  text-align: center;
+}
+
+@media (max-width: 1024px) {
+  .plugin-admin-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .plugin-admin-sidebar {
+    position: static;
+  }
+}

@@ -127,7 +127,8 @@ class CMS_Speakers_Member_Dashboard
     public function renderPage(object $user, array $params = []): void
     {
         // ── POST: neuen Speaker speichern ─────────────────────────────────────
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['speaker_create'])) {
+        $requestMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+        if ($requestMethod === 'POST' && isset($_POST['speaker_create'])) {
             if (!\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'member_speaker_create')) {
                 $_SESSION['error'] = 'Sicherheitscheck fehlgeschlagen.';
                 header('Location: /member/plugin/speakers?action=new', true, 303);
@@ -140,52 +141,55 @@ class CMS_Speakers_Member_Dashboard
                 $allowedTravelRadii = ['local', 'regional', 'national', 'international', 'worldwide'];
                 $allowedAvailability = ['available', 'limited', 'booked'];
                 $validatedEmail = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
-                $validatedPhotoUrl = filter_var(trim((string) ($_POST['photo_url'] ?? '')), FILTER_VALIDATE_URL) ?: null;
-                $validatedWebsite = filter_var(trim((string) ($_POST['website'] ?? '')), FILTER_VALIDATE_URL) ?: null;
-                $validatedLinkedin = filter_var(trim((string) ($_POST['linkedin'] ?? '')), FILTER_VALIDATE_URL) ?: null;
-                $validatedTwitter = filter_var(trim((string) ($_POST['twitter'] ?? '')), FILTER_VALIDATE_URL) ?: null;
-                $validatedXing = filter_var(trim((string) ($_POST['xing'] ?? '')), FILTER_VALIDATE_URL) ?: null;
-                $normalizedFormats = array_values(array_unique(array_filter(array_map(static fn($format) => sanitize_text_field(trim((string) $format)), (array) ($_POST['formats'] ?? [])))));
+                $validatedPhotoUrl = $this->cleanPublicUrl((string) ($_POST['photo_url'] ?? ''));
+                $validatedWebsite = $this->cleanPublicUrl((string) ($_POST['website'] ?? ''));
+                $validatedLinkedin = $this->cleanPublicUrl((string) ($_POST['linkedin'] ?? ''));
+                $validatedTwitter = $this->cleanPublicUrl((string) ($_POST['twitter'] ?? ''));
+                $validatedXing = $this->cleanPublicUrl((string) ($_POST['xing'] ?? ''));
+                $normalizedFormats = array_values(array_unique(array_filter(array_map(fn($format) => $this->cleanText((string) $format, 80), (array) ($_POST['formats'] ?? [])))));
                 $normalizedFormats = array_values(array_filter($normalizedFormats, static fn(string $format): bool => in_array($format, $allowedFormats, true)));
-                $normalizedSkills = array_values(array_unique(array_filter(array_map(static fn($skill) => sanitize_text_field(trim((string) $skill)), (array) ($_POST['skills'] ?? [])))));
-                $normalizedRecognitions = array_values(array_unique(array_filter(array_map(static fn($recognition) => sanitize_text_field(trim((string) $recognition)), (array) ($_POST['recognitions'] ?? [])))));
+                $normalizedSkills = array_values(array_unique(array_filter(array_map(fn($skill) => $this->cleanText((string) $skill, 120), (array) ($_POST['skills'] ?? [])))));
+                $normalizedRecognitions = array_values(array_unique(array_filter(array_map(fn($recognition) => $this->cleanText((string) $recognition, 120), (array) ($_POST['recognitions'] ?? [])))));
                 $id = CMS_Speakers_Database::instance()->save_speaker([
                     'user_id'           => (int) $user->id,
-                    'first_name'        => sanitize_text_field($_POST['first_name']  ?? ''),
-                    'last_name'         => sanitize_text_field($_POST['last_name']   ?? ''),
-                    'title'             => sanitize_text_field($_POST['title']       ?? ''),
+                    'first_name'        => $this->cleanText((string) ($_POST['first_name'] ?? ''), 100),
+                    'last_name'         => $this->cleanText((string) ($_POST['last_name'] ?? ''), 100),
+                    'title'             => $this->cleanText((string) ($_POST['title'] ?? ''), 100),
                     'gender'            => in_array($_POST['gender'] ?? '', $allowedGenders, true) ? (string) ($_POST['gender'] ?? '') : '',
                     'email'             => $validatedEmail,
-                    'phone'             => sanitize_text_field($_POST['phone']       ?? ''),
-                    'position'          => sanitize_text_field($_POST['position']    ?? ''),
-                    'company'           => sanitize_text_field($_POST['company']     ?? ''),
+                    'phone'             => $this->cleanPhone((string) ($_POST['phone'] ?? '')),
+                    'position'          => $this->cleanText((string) ($_POST['position'] ?? ''), 200),
+                    'company'           => $this->cleanText((string) ($_POST['company'] ?? ''), 200),
                     'photo_url'         => $validatedPhotoUrl,
-                    'location_city'     => sanitize_text_field($_POST['location_city']     ?? ''),
-                    'location_zip'      => sanitize_text_field($_POST['location_zip']      ?? ''),
-                    'location_country'  => sanitize_text_field($_POST['location_country']  ?? 'Deutschland'),
+                    'location_city'     => $this->cleanText((string) ($_POST['location_city'] ?? ''), 100),
+                    'location_zip'      => $this->cleanText((string) ($_POST['location_zip'] ?? ''), 20),
+                    'location_country'  => $this->cleanText((string) ($_POST['location_country'] ?? 'Deutschland'), 100),
                     'website'           => $validatedWebsite,
                     'linkedin'          => $validatedLinkedin,
                     'twitter'           => $validatedTwitter,
                     'xing'              => $validatedXing,
-                    'languages'         => sanitize_text_field($_POST['languages']   ?? ''),
+                    'languages'         => $this->cleanText((string) ($_POST['languages'] ?? ''), 400),
                     'formats'           => json_encode($normalizedFormats),
                     'skills'            => json_encode($normalizedSkills),
                     'recognitions'      => json_encode($normalizedRecognitions),
-                    'target_audience'   => sanitize_text_field($_POST['target_audience'] ?? ''),
-                    'speaking_style'    => sanitize_text_field($_POST['speaking_style']  ?? ''),
+                    'target_audience'   => $this->cleanText((string) ($_POST['target_audience'] ?? ''), 400),
+                    'speaking_style'    => $this->cleanText((string) ($_POST['speaking_style'] ?? ''), 200),
                     'travel_radius'     => in_array($_POST['travel_radius'] ?? '', $allowedTravelRadii, true) ? (string) ($_POST['travel_radius'] ?? 'national') : 'national',
                     'max_audience_size' => is_numeric($_POST['max_audience'] ?? '')  ? (int)$_POST['max_audience']  : null,
                     'availability'      => in_array($_POST['availability'] ?? '', $allowedAvailability, true) ? (string) ($_POST['availability'] ?? 'available') : 'available',
                     'speaking_fee_min'  => is_numeric($_POST['fee_min'] ?? '') ? (float)$_POST['fee_min'] : null,
                     'speaking_fee_max'  => is_numeric($_POST['fee_max'] ?? '') ? (float)$_POST['fee_max'] : null,
-                    'short_bio'         => strip_tags($_POST['short_bio'] ?? ''),
-                    'bio'               => strip_tags($_POST['bio']       ?? ''),
+                    'short_bio'         => $this->cleanText((string) ($_POST['short_bio'] ?? ''), 600),
+                    'bio'               => $this->cleanTextarea((string) ($_POST['bio'] ?? ''), 6000),
                     'status'            => $isAdminSave ? 'active' : 'pending',
                 ]);
 
                 // Topics speichern
                 if ($id > 0) {
-                    $topicNames = array_values(array_unique(array_filter(array_map(static fn(string $topic): string => sanitize_text_field(trim($topic)), explode(',', $_POST['speaker_topics'] ?? '')))));
+                    $topicNames = array_values(array_unique(array_filter(array_map(
+                        fn(string $topic): string => $this->cleanText($topic, 200),
+                        explode(',', (string) ($_POST['speaker_topics'] ?? ''))
+                    ))));
                     if (!empty($topicNames)) {
                         CMS_Speakers_Database::instance()->save_topics($id, $topicNames);
                     }
@@ -204,7 +208,7 @@ class CMS_Speakers_Member_Dashboard
             }
         }
 
-        $action  = sanitize_text_field($_GET['action'] ?? '');
+        $action  = $this->cleanText((string) ($_GET['action'] ?? ''), 40);
         $isAdmin = \CMS\Auth::instance()->isAdmin();
 
         // ── Formular: Neuer Speaker ───────────────────────────────────────────
@@ -737,18 +741,19 @@ class CMS_Speakers_Member_Dashboard
 
         try {
             $db          = \CMS\Database::instance();
-            $prefix      = $db->getPrefix();
+            $prefix      = $db->prefix();
             $speakerIds  = array_map(static fn($s) => (int) $s->id, $speakers);
             $placeholders = implode(',', array_fill(0, count($speakerIds), '?'));
 
             // Topics
-            $topicRows = $db->get_results(
+            $stmt = $db->prepare(
                 "SELECT speaker_id, topic_name, topic_desc, sort_order
                    FROM {$prefix}speaker_topics
                   WHERE speaker_id IN ({$placeholders})
                   ORDER BY sort_order ASC, topic_name ASC",
-                $speakerIds
             );
+            $stmt->execute($speakerIds);
+            $topicRows = $stmt->fetchAll();
             $topicsMap = [];
             foreach ($topicRows as $row) {
                 $topicsMap[(int)$row->speaker_id][] = $row;
@@ -761,6 +766,51 @@ class CMS_Speakers_Member_Dashboard
         } catch (\Throwable $e) {
             // Kein Fatal – Cards zeigen sich ohne Topics
         }
+    }
+
+    private function cleanText(string $value, int $maxLength = 255): string
+    {
+        return mb_substr(trim(strip_tags($value)), 0, $maxLength);
+    }
+
+    private function cleanTextarea(string $value, int $maxLength = 4000): string
+    {
+        return mb_substr(trim(strip_tags($value)), 0, $maxLength);
+    }
+
+    private function cleanPhone(string $value): string
+    {
+        return preg_replace('/[^0-9+()\s.\-]/', '', $value) ?: '';
+    }
+
+    private function cleanPublicUrl(string $value): ?string
+    {
+        $url = trim($value);
+        if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]]/', $url) === 1 || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts)) {
+            return null;
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || ($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
+            return null;
+        }
+
+        $host = strtolower(trim((string) ($parts['host'] ?? ''), '[]'));
+        if ($host === '' || in_array($host, ['localhost', 'localhost.localdomain'], true) || str_ends_with($host, '.local')) {
+            return null;
+        }
+
+        $ip = filter_var($host, FILTER_VALIDATE_IP);
+        if ($ip !== false && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return null;
+        }
+
+        return $url;
     }
 }
 

@@ -22,6 +22,7 @@ final class CMS_M365Landing_Installer
                 return;
             }
         } catch (\Throwable $e) {
+            self::log_exception('maybe_install_probe_failed', $e);
             // Tabellen fehlen vermutlich noch.
         }
 
@@ -221,14 +222,27 @@ final class CMS_M365Landing_Installer
 
     private static function resolve_prefix(object $db): string
     {
+        $prefix = '';
         if (method_exists($db, 'getPrefix')) {
-            return (string) $db->getPrefix();
+            $prefix = (string) $db->getPrefix();
+        } elseif (method_exists($db, 'prefix')) {
+            $prefix = (string) $db->prefix();
         }
 
-        if (method_exists($db, 'prefix')) {
-            return (string) $db->prefix();
+        $prefix = trim($prefix);
+        if ($prefix === '') {
+            return 'cms_';
         }
 
-        return 'cms_';
+        $prefix = (string) preg_replace('/[^A-Za-z0-9_]/', '', $prefix);
+
+        return $prefix !== '' ? $prefix : 'cms_';
+    }
+
+    private static function log_exception(string $context, \Throwable $e): void
+    {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('CMS M365 Landing [' . $context . ']: ' . $e->getMessage());
+        }
     }
 }

@@ -72,7 +72,7 @@ final class RequestInspector
             return self::$cachedTooltipAssets;
         }
 
-        self::$cachedTooltipAssets = self::isPostSingleRequest($path);
+        self::$cachedTooltipAssets = self::isKnowledgebaseRequest($path);
 
         return self::$cachedTooltipAssets;
     }
@@ -94,7 +94,7 @@ final class RequestInspector
             return self::$cachedStyleVariables;
         }
 
-        self::$cachedStyleVariables = self::isKnowledgebaseRequest($path) || self::isPostSingleRequest($path);
+        self::$cachedStyleVariables = self::isKnowledgebaseRequest($path);
 
         return self::$cachedStyleVariables;
     }

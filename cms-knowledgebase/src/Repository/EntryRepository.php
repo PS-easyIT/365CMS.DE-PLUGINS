@@ -21,6 +21,15 @@ final class EntryRepository
 
     private $logger;
 
+    /** @var array<string, string>|null */
+    private ?array $settingsCache = null;
+
+    /** @var array<int, array<string, mixed>>|null */
+    private ?array $activeEntriesForLinkingCache = null;
+
+    /** @var array<string, int>|null */
+    private ?array $dashboardStatsCache = null;
+
     public static function instance(): self
     {
         return self::$instance ??= new self();
@@ -36,6 +45,10 @@ final class EntryRepository
      */
     public function getDashboardStats(): array
     {
+        if ($this->dashboardStatsCache !== null) {
+            return $this->dashboardStatsCache;
+        }
+
         $db = Database::instance();
         $entriesTable = $this->entriesTable();
         $categoriesTable = $this->categoriesTable();
@@ -68,6 +81,8 @@ final class EntryRepository
         $categoryStmt = $db->prepare("SELECT COUNT(*) FROM {$categoriesTable}");
         $categoryStmt->execute();
         $stats['categories'] = (int) $categoryStmt->fetchColumn();
+
+        $this->dashboardStatsCache = $stats;
 
         return $stats;
     }
@@ -116,6 +131,10 @@ final class EntryRepository
      */
     public function getActiveEntriesForLinking(): array
     {
+        if ($this->activeEntriesForLinkingCache !== null) {
+            return $this->activeEntriesForLinkingCache;
+        }
+
         $entries = $this->getEntriesByColumns(
             'id, title, keyword, slug, excerpt, tooltip_text, synonyms, is_case_sensitive, is_whole_word, max_links_per_page',
             ['status' => 'active']
@@ -137,6 +156,8 @@ final class EntryRepository
             $entry['url'] = SITE_URL . '/kb/' . rawurlencode((string) ($entry['slug'] ?? ''));
         }
         unset($entry);
+
+        $this->activeEntriesForLinkingCache = $entries;
 
         return $entries;
     }
@@ -226,13 +247,19 @@ final class EntryRepository
         $table = $this->entriesTable();
         $category = trim((string) ($entry['category'] ?? ''));
         $limit = max(1, min(20, $limit));
+        $entryId = (int) ($entry['id'] ?? 0);
 
         if ($category !== '') {
-            $stmt = $db->prepare("SELECT * FROM {$table} WHERE is_active = 1 AND id <> ? AND category = ? ORDER BY priority ASC, title ASC LIMIT {$limit}");
-            $stmt->execute([(int) ($entry['id'] ?? 0), $category]);
+            $stmt = $db->prepare("SELECT * FROM {$table} WHERE is_active = 1 AND id <> :entry_id AND category = :category ORDER BY priority ASC, title ASC LIMIT :entry_limit");
+            $stmt->bindValue(':entry_id', $entryId, PDO::PARAM_INT);
+            $stmt->bindValue(':category', $category, PDO::PARAM_STR);
+            $stmt->bindValue(':entry_limit', $limit, PDO::PARAM_INT);
+            $stmt->execute();
         } else {
-            $stmt = $db->prepare("SELECT * FROM {$table} WHERE is_active = 1 AND id <> ? ORDER BY priority ASC, title ASC LIMIT {$limit}");
-            $stmt->execute([(int) ($entry['id'] ?? 0)]);
+            $stmt = $db->prepare("SELECT * FROM {$table} WHERE is_active = 1 AND id <> :entry_id ORDER BY priority ASC, title ASC LIMIT :entry_limit");
+            $stmt->bindValue(':entry_id', $entryId, PDO::PARAM_INT);
+            $stmt->bindValue(':entry_limit', $limit, PDO::PARAM_INT);
+            $stmt->execute();
         }
 
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -333,6 +360,10 @@ final class EntryRepository
      */
     public function getSettings(): array
     {
+        if ($this->settingsCache !== null) {
+            return $this->settingsCache;
+        }
+
         $db = Database::instance();
         $table = $this->settingsTable();
         $settings = Defaults::settings();
@@ -350,6 +381,8 @@ final class EntryRepository
             }
         }
 
+        $this->settingsCache = $settings;
+
         return $settings;
     }
 
@@ -361,7 +394,7 @@ final class EntryRepository
             VALUES (:setting_key, :setting_value)
             ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
         $existingSettings = $this->getSettings();
-        $submittedTab = (string) ($input['redirect_tab'] ?? 'general');
+        $submittedTab = (string) ($input['redirect_section'] ?? $input['redirect_tab'] ?? 'general');
 
         $checkboxKeys = [
             'enable_autolink',
@@ -471,11 +504,18 @@ final class EntryRepository
                 $value = $this->sanitizeText((string) $value, 1000);
             }
 
+            $normalizedValue = (string) $value;
+            if (($existingSettings[$key] ?? (string) $default) === $normalizedValue) {
+                continue;
+            }
+
             $stmt->execute([
                 'setting_key' => $key,
-                'setting_value' => (string) $value,
+                'setting_value' => $normalizedValue,
             ]);
         }
+
+        $this->resetCaches();
 
         return ['success' => true, 'message' => 'Knowledgebase-Einstellungen gespeichert.'];
     }
@@ -584,6 +624,7 @@ final class EntryRepository
                 'is_whole_word' => $wholeWord,
                 'max_links_per_page' => $maxLinksPerPage,
             ]);
+            $this->resetCaches();
 
             $this->logger->info('Knowledgebase-Eintrag aktualisiert.', ['entry_id' => $id, 'slug' => $slug]);
 
@@ -609,6 +650,7 @@ final class EntryRepository
             'is_whole_word' => $wholeWord,
             'max_links_per_page' => $maxLinksPerPage,
         ]);
+        $this->resetCaches();
 
         $newId = (int) $db->lastInsertId();
         $this->logger->info('Knowledgebase-Eintrag erstellt.', ['entry_id' => $newId, 'slug' => $slug]);
@@ -662,6 +704,7 @@ final class EntryRepository
                 $entryStmt = $db->prepare('UPDATE ' . $this->entriesTable() . ' SET category = ? WHERE category = ?');
                 $entryStmt->execute([$name, (string) ($current['category'] ?? '')]);
             }
+            $this->resetCaches();
 
             return ['success' => true, 'message' => 'Kategorie aktualisiert.', 'id' => $id];
         }
@@ -672,6 +715,7 @@ final class EntryRepository
             'slug' => $slug,
             'sort_order' => $sortOrder,
         ]);
+        $this->resetCaches();
 
         return ['success' => true, 'message' => 'Kategorie angelegt.', 'id' => (int) $db->lastInsertId()];
     }
@@ -689,6 +733,7 @@ final class EntryRepository
 
         $deleteStmt = $db->prepare('DELETE FROM ' . $this->categoriesTable() . ' WHERE id = ?');
         $deleteStmt->execute([$id]);
+        $this->resetCaches();
 
         return ['success' => true, 'message' => 'Kategorie gelöscht.'];
     }
@@ -702,6 +747,7 @@ final class EntryRepository
         $db = Database::instance();
         $stmt = $db->prepare('DELETE FROM ' . $this->entriesTable() . ' WHERE id = ?');
         $stmt->execute([$id]);
+        $this->resetCaches();
 
         $this->logger->info('Knowledgebase-Eintrag gelöscht.', ['entry_id' => $id]);
 
@@ -724,6 +770,7 @@ final class EntryRepository
         }
 
         $this->logger->warning('Knowledgebase-Hardreset ausgeführt.', ['deleted_entries' => (int) $deleted]);
+        $this->resetCaches();
 
         return [
             'success' => true,
@@ -839,7 +886,13 @@ final class EntryRepository
     {
         $db = Database::instance();
         $table = $this->entriesTable();
+        if (preg_match('/^[a-z0-9_,\s*]+$/i', $columns) !== 1) {
+            $this->logger->warning('Unsichere Spaltenliste für Knowledgebase-Abfrage verworfen.', ['columns' => $columns]);
+            return [];
+        }
+
         $conditions = [];
+        /** @var array<string, array{mixed, int}> $params */
         $params = [];
 
         if (($filters['status'] ?? '') === 'active') {
@@ -848,18 +901,18 @@ final class EntryRepository
 
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
-            $conditions[] = '(title LIKE ? OR keyword LIKE ? OR synonyms LIKE ? OR excerpt LIKE ?)';
+            $conditions[] = '(title LIKE :search_title OR keyword LIKE :search_keyword OR synonyms LIKE :search_synonyms OR excerpt LIKE :search_excerpt)';
             $needle = '%' . $search . '%';
-            $params[] = $needle;
-            $params[] = $needle;
-            $params[] = $needle;
-            $params[] = $needle;
+            $params[':search_title'] = [$needle, PDO::PARAM_STR];
+            $params[':search_keyword'] = [$needle, PDO::PARAM_STR];
+            $params[':search_synonyms'] = [$needle, PDO::PARAM_STR];
+            $params[':search_excerpt'] = [$needle, PDO::PARAM_STR];
         }
 
         $category = trim((string) ($filters['category'] ?? ''));
         if ($category !== '') {
-            $conditions[] = 'category = ?';
-            $params[] = $category;
+            $conditions[] = 'category = :category';
+            $params[':category'] = [$category, PDO::PARAM_STR];
         }
 
         $sql = "SELECT {$columns} FROM {$table}";
@@ -871,14 +924,19 @@ final class EntryRepository
         $limit = isset($filters['limit']) ? max(1, min(200, (int) $filters['limit'])) : 0;
         $offset = isset($filters['offset']) ? max(0, (int) $filters['offset']) : 0;
         if ($limit > 0) {
-            $sql .= ' LIMIT ' . $limit;
+            $sql .= ' LIMIT :entry_limit';
+            $params[':entry_limit'] = [$limit, PDO::PARAM_INT];
             if ($offset > 0) {
-                $sql .= ' OFFSET ' . $offset;
+                $sql .= ' OFFSET :entry_offset';
+                $params[':entry_offset'] = [$offset, PDO::PARAM_INT];
             }
         }
 
         $stmt = $db->prepare($sql);
-        $stmt->execute($params);
+        foreach ($params as $name => [$value, $type]) {
+            $stmt->bindValue($name, $value, $type);
+        }
+        $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return is_array($rows) ? $rows : [];
@@ -900,6 +958,7 @@ final class EntryRepository
             'setting_key' => $key,
             'setting_value' => $value,
         ]);
+        $this->settingsCache = null;
     }
 
     private function generateUniqueSlug(string $source, int $ignoreId = 0): string
@@ -940,7 +999,7 @@ final class EntryRepository
         $value = mb_strtolower(trim($value), 'UTF-8');
         $value = preg_replace('/[^\p{L}\p{N}]+/u', '-', $value) ?? '';
         $value = trim($value, '-');
-        return substr($value, 0, 190);
+        return mb_substr($value, 0, 190, 'UTF-8');
     }
 
     /**
@@ -1398,15 +1457,18 @@ final class EntryRepository
         $locale = $this->normalizeContentLocale($locale);
         $localeAvailability = $this->buildPostLocaleAvailabilityExpression('p', $locale);
         $conditions = ["p.status = 'published'", $localeAvailability];
+        /** @var array<string, int> $params */
         $params = [];
 
         $excludeIds = array_values(array_filter(array_map(static fn(mixed $id): int => (int) $id, $excludeIds)));
         if ($excludeIds !== []) {
-            $placeholders = implode(', ', array_fill(0, count($excludeIds), '?'));
-            $conditions[] = "p.id NOT IN ({$placeholders})";
-            foreach ($excludeIds as $excludeId) {
-                $params[] = $excludeId;
+            $placeholders = [];
+            foreach ($excludeIds as $index => $excludeId) {
+                $placeholder = ':exclude_id_' . $index;
+                $placeholders[] = $placeholder;
+                $params[$placeholder] = $excludeId;
             }
+            $conditions[] = 'p.id NOT IN (' . implode(', ', $placeholders) . ')';
         }
 
         $sql = "SELECT
@@ -1427,10 +1489,14 @@ final class EntryRepository
             LEFT JOIN {$prefix}post_categories c ON c.id = p.category_id
             WHERE " . implode(' AND ', $conditions) . "
             ORDER BY COALESCE(p.published_at, p.created_at) DESC
-            LIMIT " . max(1, $limit * 3);
+            LIMIT :fallback_limit";
 
         $stmt = $db->prepare($sql);
-        $stmt->execute($params);
+        foreach ($params as $name => $value) {
+            $stmt->bindValue($name, $value, PDO::PARAM_INT);
+        }
+        $stmt->bindValue(':fallback_limit', max(1, $limit * 3), PDO::PARAM_INT);
+        $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         if (!is_array($rows)) {
             return [];
@@ -1470,6 +1536,7 @@ final class EntryRepository
 
         $stmt = $db->prepare('INSERT INTO ' . $this->categoriesTable() . ' (name, slug, sort_order) VALUES (?, ?, 0)');
         $stmt->execute([$name, $this->generateUniqueCategorySlug($name)]);
+        $this->resetCaches();
     }
 
     private function generateUniqueCategorySlug(string $source, int $ignoreId = 0): string
@@ -1521,5 +1588,12 @@ final class EntryRepository
     private function isTruthy(mixed $value): bool
     {
         return in_array((string) $value, ['1', 'true', 'yes', 'on'], true);
+    }
+
+    private function resetCaches(): void
+    {
+        $this->settingsCache = null;
+        $this->activeEntriesForLinkingCache = null;
+        $this->dashboardStatsCache = null;
     }
 }

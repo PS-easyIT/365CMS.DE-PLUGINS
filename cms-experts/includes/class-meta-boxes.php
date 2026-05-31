@@ -59,7 +59,12 @@ final class CMS_Experts_Meta_Boxes
         // Lazy-Load: Meta, Skills, Spezialisierungen nur im Edit-Fall
         // Falls $extras bereits Daten enthält, werden diese bevorzugt
         $meta      = $extras['meta']   ?? ($is_edit ? CMS_Experts_Database::instance()->get_all_meta($eid) : []);
-        $skills    = $is_edit ? CMS_Experts_Database::instance()->get_expert_skills_grouped($eid) : ['general' => [], 'tech' => [], 'soft' => []];
+        $skills = ['general' => [], 'tech' => [], 'soft' => []];
+        if (isset($extras['skills']) && is_array($extras['skills']) && array_key_exists('general', $extras['skills'])) {
+            $skills = array_merge($skills, $extras['skills']);
+        } elseif ($is_edit) {
+            $skills = CMS_Experts_Database::instance()->get_expert_skills_grouped($eid);
+        }
         $spec_ids  = $is_edit ? CMS_Experts_Database::instance()->get_expert_specialization_ids($eid) : [];
         $all_specs = class_exists('CMS_Experts_Taxonomies') ? CMS_Experts_Taxonomies::instance()->get_specializations() : [];
         $skill_presets = class_exists('CMS_Experts_Taxonomies') ? CMS_Experts_Taxonomies::instance()->get_skill_presets_grouped() : ['general' => [], 'tech' => [], 'soft' => []];
@@ -322,7 +327,7 @@ final class CMS_Experts_Meta_Boxes
                     <select id="availability" name="availability">
                         <option value="available"   <?php echo $availability === 'available'   ? 'selected' : ''; ?>>✅ Verfügbar</option>
                         <option value="limited"     <?php echo $availability === 'limited'     ? 'selected' : ''; ?>>🟨 Begrenzt verfügbar</option>
-                        <option value="unavailable" <?php echo $availability === 'unavailable' ? 'selected' : ''; ?>>🔴 Nicht verfügbar</option>
+                        <option value="booked" <?php echo $availability === 'booked' ? 'selected' : ''; ?>>🔴 Nicht verfügbar</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -1693,7 +1698,6 @@ final class CMS_Experts_Meta_Boxes
                 <?php
                 $tFields = ['text' => 'Zitat *', 'client_name' => 'Name des Kunden', 'position' => 'Position', 'company' => 'Unternehmen', 'rating' => 'Bewertung'];
                 $repeater('testimonials', $testimonials, $tFields, '+ Referenz hinzufügen');
-                $this->render_repeater_script('testimonials', $testimonials);
                 ?>
             </div>
 
@@ -1803,9 +1807,6 @@ final class CMS_Experts_Meta_Boxes
         </script>
         <?php
     }
-
-    /** Inline-rendered hidden scripts for references (noop stub, JS is inlined above) */
-    private function render_repeater_script(string $id, array $items): void {}
 
     // ─── Services ─────────────────────────────────────────────────────────────
 

@@ -95,10 +95,51 @@ final class CMS_NetImport_Importer
     /** @var array<string, int> */
     private array $simulatedIdCache = [];
     private int $simulatedIdSequence = 1000000000;
+    /** @var list<string> */
+    private const ALLOWED_TABLES = [
+        'netimport_runs',
+        'users',
+        'companies',
+        'experts',
+        'speakers',
+        'events',
+        'event_speakers',
+    ];
 
     public static function instance(): self
     {
         return self::$instance ??= new self();
+    }
+
+    private function log_error(string $message, ?\Throwable $exception = null): void
+    {
+        $safeMessage = preg_replace('/\s+/', ' ', trim($message)) ?? 'Unknown error';
+        if ($exception !== null) {
+            $exceptionMessage = preg_replace('/\s+/', ' ', trim($exception->getMessage())) ?? 'Unknown exception';
+            $safeMessage .= ' | ' . $exceptionMessage;
+        }
+
+        error_log('[cms-netimport] ' . $safeMessage);
+    }
+
+    private function validated_prefix($db): string
+    {
+        $prefix = (string) $db->prefix();
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $prefix)) {
+            throw new \RuntimeException('Invalid database table prefix');
+        }
+
+        return $prefix;
+    }
+
+    private function table(string $table): string
+    {
+        if (!in_array($table, self::ALLOWED_TABLES, true)) {
+            throw new \InvalidArgumentException('Unsupported table requested: ' . $table);
+        }
+
+        $db = CMS\Database::instance();
+        return $this->validated_prefix($db) . $table;
     }
 
     public function ensure_storage(): void
@@ -110,7 +151,7 @@ final class CMS_NetImport_Importer
         try {
             $db = CMS\Database::instance();
             $pdo = $db->getPdo();
-            $prefix = $db->prefix();
+            $prefix = $this->validated_prefix($db);
             $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}netimport_runs (
                 id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 user_id          INT UNSIGNED DEFAULT NULL,
@@ -138,7 +179,7 @@ final class CMS_NetImport_Importer
                 INDEX idx_dry_run (is_dry_run)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
         } catch (\Throwable $e) {
-            error_log('CMS NetImport storage init failed: ' . $e->getMessage());
+            $this->log_error('Storage initialization failed', $e);
         }
     }
 
@@ -342,31 +383,42 @@ final class CMS_NetImport_Importer
     {
         $this->ensure_storage();
         $limit = max(1, min(100, $limit));
-        $db = CMS\Database::instance();
-        $filterData = $this->build_history_filters($filters);
-        $stmt = $db->prepare(
-            "SELECT nr.*, u.username AS admin_username
-             FROM {$db->prefix()}netimport_runs nr
-             LEFT JOIN {$db->prefix()}users u ON nr.user_id = u.id
-             {$filterData['whereSql']}
-             ORDER BY nr.started_at DESC, nr.id DESC
-             LIMIT {$limit}"
-        );
-        $stmt->execute($filterData['params']);
-        $rows = $stmt->fetchAll();
-
-        foreach ($rows as $entry) {
-            $reportData = $this->safe_json_decode((string) ($entry->report_json ?? ''));
-            $entry->report_data = $reportData;
-            $entry->report_messages = is_array($reportData['messages'] ?? null) ? $reportData['messages'] : [];
-            $entry->report_steps = is_array($reportData['steps'] ?? null) ? $reportData['steps'] : [];
-            $entry->report_cleanup = is_array($reportData['cleanup_data'] ?? null) ? $reportData['cleanup_data'] : [];
-            $entry->report_reset_summary = is_array($reportData['reset_summary'] ?? null) ? $reportData['reset_summary'] : [];
-            $entry->report_message_count = count($entry->report_messages);
-            $entry->report_step_count = count($entry->report_steps);
+        try {
+            $db = CMS\Database::instance();
+            $filterData = $this->build_history_filters($filters);
+            $runsTable = $this->table('netimport_runs');
+            $usersTable = $this->table('users');
+            $stmt = $db->prepare(
+                "SELECT nr.*, u.username AS admin_username
+                 FROM {$runsTable} nr
+                 LEFT JOIN {$usersTable} u ON nr.user_id = u.id
+                 {$filterData['whereSql']}
+                 ORDER BY nr.started_at DESC, nr.id DESC
+                 LIMIT {$limit}"
+            );
+            $stmt->execute($filterData['params']);
+            $rows = $stmt->fetchAll();
+        } catch (\Throwable $e) {
+            $this->log_error('Fetching import history failed', $e);
+            return [];
         }
 
-        return $rows;
+        $normalizedRows = [];
+        foreach ($rows as $entry) {
+            $entryData = is_object($entry) ? get_object_vars($entry) : (is_array($entry) ? $entry : []);
+            $entryObject = (object) $entryData;
+            $reportData = $this->safe_json_decode((string) ($entryData['report_json'] ?? ''));
+            $entryObject->report_data = $reportData;
+            $entryObject->report_messages = is_array($reportData['messages'] ?? null) ? $reportData['messages'] : [];
+            $entryObject->report_steps = is_array($reportData['steps'] ?? null) ? $reportData['steps'] : [];
+            $entryObject->report_cleanup = is_array($reportData['cleanup_data'] ?? null) ? $reportData['cleanup_data'] : [];
+            $entryObject->report_reset_summary = is_array($reportData['reset_summary'] ?? null) ? $reportData['reset_summary'] : [];
+            $entryObject->report_message_count = count($entryObject->report_messages);
+            $entryObject->report_step_count = count($entryObject->report_steps);
+            $normalizedRows[] = $entryObject;
+        }
+
+        return $normalizedRows;
     }
 
     /**
@@ -375,19 +427,25 @@ final class CMS_NetImport_Importer
     public function get_history_stats(array $filters = []): array
     {
         $this->ensure_storage();
-        $db = CMS\Database::instance();
-        $filterData = $this->build_history_filters($filters);
-        $stmt = $db->prepare(
-            "SELECT COUNT(*) AS total_runs,
-                    SUM(CASE WHEN is_dry_run = 1 THEN 1 ELSE 0 END) AS dry_runs,
-                    SUM(CASE WHEN is_dry_run = 0 THEN 1 ELSE 0 END) AS live_runs,
-                    SUM(error_count) AS total_errors,
-                    MAX(started_at) AS last_run_at
-             FROM {$db->prefix()}netimport_runs nr
-             {$filterData['whereSql']}"
-        );
-        $stmt->execute($filterData['params']);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: [];
+        try {
+            $db = CMS\Database::instance();
+            $filterData = $this->build_history_filters($filters);
+            $runsTable = $this->table('netimport_runs');
+            $stmt = $db->prepare(
+                "SELECT COUNT(*) AS total_runs,
+                        SUM(CASE WHEN is_dry_run = 1 THEN 1 ELSE 0 END) AS dry_runs,
+                        SUM(CASE WHEN is_dry_run = 0 THEN 1 ELSE 0 END) AS live_runs,
+                        SUM(error_count) AS total_errors,
+                        MAX(started_at) AS last_run_at
+                 FROM {$runsTable} nr
+                 {$filterData['whereSql']}"
+            );
+            $stmt->execute($filterData['params']);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            $this->log_error('Fetching history stats failed', $e);
+            $row = [];
+        }
 
         return [
             'total_runs' => (int) ($row['total_runs'] ?? 0),
@@ -439,11 +497,12 @@ final class CMS_NetImport_Importer
 
         try {
             $db = CMS\Database::instance();
-            $stmt = $db->prepare("DELETE FROM {$db->prefix()}netimport_runs");
+            $runsTable = $this->table('netimport_runs');
+            $stmt = $db->prepare("DELETE FROM {$runsTable}");
             $stmt->execute();
             return (int) $stmt->rowCount();
         } catch (\Throwable $e) {
-            error_log('CMS NetImport clear history failed: ' . $e->getMessage());
+            $this->log_error('Clearing history failed', $e);
             return 0;
         }
     }
@@ -454,11 +513,17 @@ final class CMS_NetImport_Importer
     public function get_run_entry(int $runId): ?array
     {
         $this->ensure_storage();
-        $db = CMS\Database::instance();
-        $stmt = $db->prepare("SELECT * FROM {$db->prefix()}netimport_runs WHERE id = ? LIMIT 1");
-        $stmt->execute([$runId]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-        return $row ?: null;
+        try {
+            $db = CMS\Database::instance();
+            $runsTable = $this->table('netimport_runs');
+            $stmt = $db->prepare("SELECT * FROM {$runsTable} WHERE id = ? LIMIT 1");
+            $stmt->execute([$runId]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (\Throwable $e) {
+            $this->log_error('Reading run entry failed', $e);
+            return null;
+        }
     }
 
     public function reset_run(int $runId): array
@@ -545,8 +610,8 @@ final class CMS_NetImport_Importer
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            error_log('CMS NetImport reset run failed: ' . $e->getMessage());
-            $summary['message'] = 'Reset fehlgeschlagen: ' . $e->getMessage();
+            $this->log_error('Resetting import run failed', $e);
+            $summary['message'] = 'Reset fehlgeschlagen. Details wurden im Server-Log protokolliert.';
             return $summary;
         }
     }
@@ -559,11 +624,12 @@ final class CMS_NetImport_Importer
 
         try {
             $db = CMS\Database::instance();
-            $stmt = $db->prepare("DELETE FROM {$db->prefix()}event_speakers WHERE event_id = ? AND speaker_id = ? AND speaker_type = ?");
+            $eventSpeakersTable = $this->table('event_speakers');
+            $stmt = $db->prepare("DELETE FROM {$eventSpeakersTable} WHERE event_id = ? AND speaker_id = ? AND speaker_type = ?");
             $stmt->execute([$eventId, $speakerId, $speakerType]);
             return $stmt->rowCount() > 0;
         } catch (\Throwable $e) {
-            error_log('CMS NetImport remove_event_link failed: ' . $e->getMessage());
+            $this->log_error('Removing event link failed', $e);
             return false;
         }
     }
@@ -1183,9 +1249,9 @@ final class CMS_NetImport_Importer
                 $this->add_message(
                     $result,
                     'error',
-                    'Event-Importfehler bei "' . (string) ($eventData['title'] ?? 'unbekannt') . '": ' . $e->getMessage()
+                    'Event-Importfehler bei "' . (string) ($eventData['title'] ?? 'unbekannt') . '". Details wurden im Server-Log protokolliert.'
                 );
-                error_log('CMS NetImport events row failed: ' . $e->getMessage());
+                $this->log_error('Event row import failed', $e);
             }
         }
     }
@@ -1260,8 +1326,8 @@ final class CMS_NetImport_Importer
             }
         } catch (\Throwable $e) {
             $result['warnings']++;
-            $this->add_message($result, 'warning', 'Event-Verknüpfung übersprungen (' . $firstName . ' ' . $lastName . '): ' . $e->getMessage());
-            error_log('CMS NetImport participant link skipped: ' . $e->getMessage());
+            $this->add_message($result, 'warning', 'Event-Verknüpfung übersprungen (' . $firstName . ' ' . $lastName . '). Details wurden im Server-Log protokolliert.');
+            $this->log_error('Participant link skipped', $e);
         }
     }
 
@@ -1566,8 +1632,8 @@ final class CMS_NetImport_Importer
                 $pdo->rollBack();
             }
             $result['errors']++;
-            $this->add_message($result, 'error', 'Import abgebrochen: ' . $e->getMessage());
-            error_log('CMS NetImport transaction failed: ' . $e->getMessage());
+            $this->add_message($result, 'error', 'Import abgebrochen. Details wurden im Server-Log protokolliert.');
+            $this->log_error('Transaction failed', $e);
         }
     }
 
@@ -1642,9 +1708,17 @@ final class CMS_NetImport_Importer
      */
     private function add_message(array &$result, string $level, string $text): void
     {
+        $result['messages'] = is_array($result['messages'] ?? null) ? $result['messages'] : [];
         if (count($result['messages']) >= self::MAX_PREVIEW_MESSAGES) {
             return;
         }
+
+        $allowedLevels = ['info', 'success', 'warning', 'error'];
+        if (!in_array($level, $allowedLevels, true)) {
+            $level = 'info';
+        }
+
+        $text = $this->truncate_text($text, 2000);
         $result['messages'][] = [
             'level' => $level,
             'text' => $text,
@@ -1726,7 +1800,7 @@ final class CMS_NetImport_Importer
                 'report_json' => $this->safe_json_encode($reportPayload, '{}'),
             ]);
         } catch (\Throwable $e) {
-            error_log('CMS NetImport report persistence failed: ' . $e->getMessage());
+            $this->log_error('Persisting run report failed', $e);
         }
     }
 
@@ -1750,21 +1824,25 @@ final class CMS_NetImport_Importer
     {
         $directory = CMS_NETIMPORT_PLUGIN_DIR . 'files_import';
         $canonicalPath = $directory . DIRECTORY_SEPARATOR . $canonicalFile;
+        $canonicalExists = is_file($canonicalPath);
         $canonicalFamily = $this->file_family_key(pathinfo($canonicalFile, PATHINFO_FILENAME));
         $selected = [
             'path' => $canonicalPath,
             'relative_path' => 'files_import/' . $canonicalFile,
             'selected_file' => $canonicalFile,
             'canonical_file' => $canonicalFile,
-            'exists' => file_exists($canonicalPath),
+            'exists' => $canonicalExists,
             'mode' => 'base',
             'detected_date' => null,
-            'file_size' => file_exists($canonicalPath) ? filesize($canonicalPath) : 0,
+            'file_size' => $canonicalExists ? (int) filesize($canonicalPath) : 0,
         ];
 
         $candidates = [];
         if (is_dir($directory)) {
             foreach (glob($directory . DIRECTORY_SEPARATOR . '*.csv') ?: [] as $filePath) {
+                if (!is_file($filePath) || !is_readable($filePath)) {
+                    continue;
+                }
                 $fileName = basename($filePath);
                 $family = $this->file_family_key(pathinfo($fileName, PATHINFO_FILENAME));
                 if ($family !== $canonicalFamily) {
@@ -2253,21 +2331,27 @@ final class CMS_NetImport_Importer
         if (!$this->is_plugin_ready('cms-companies')) {
             return 0;
         }
-        $db = CMS\Database::instance();
-        if ($website !== '') {
-            $stmt = $db->prepare("SELECT id FROM {$db->prefix()}companies WHERE website = ? LIMIT 1");
-            $stmt->execute([$website]);
-            $id = (int) ($stmt->fetchColumn() ?: 0);
-            if ($id > 0) {
-                return $this->companyCache[$cacheKey] = $id;
+        try {
+            $db = CMS\Database::instance();
+            $companiesTable = $this->table('companies');
+            if ($website !== '') {
+                $stmt = $db->prepare("SELECT id FROM {$companiesTable} WHERE website = ? LIMIT 1");
+                $stmt->execute([$website]);
+                $id = (int) ($stmt->fetchColumn() ?: 0);
+                if ($id > 0) {
+                    return $this->companyCache[$cacheKey] = $id;
+                }
             }
-        }
-        if ($name === '') {
+            if ($name === '') {
+                return 0;
+            }
+            $stmt = $db->prepare("SELECT id FROM {$companiesTable} WHERE LOWER(name) = LOWER(?) LIMIT 1");
+            $stmt->execute([$name]);
+            return $this->companyCache[$cacheKey] = (int) ($stmt->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {
+            $this->log_error('Company lookup failed', $e);
             return 0;
         }
-        $stmt = $db->prepare("SELECT id FROM {$db->prefix()}companies WHERE LOWER(name) = LOWER(?) LIMIT 1");
-        $stmt->execute([$name]);
-        return $this->companyCache[$cacheKey] = (int) ($stmt->fetchColumn() ?: 0);
     }
 
     /**
@@ -2317,10 +2401,16 @@ final class CMS_NetImport_Importer
         if (!$this->is_plugin_ready('cms-experts')) {
             return 0;
         }
-        $db = CMS\Database::instance();
-        $stmt = $db->prepare("SELECT id FROM {$db->prefix()}experts WHERE LOWER(first_name) = LOWER(?) AND LOWER(last_name) = LOWER(?) LIMIT 1");
-        $stmt->execute([$firstName, $lastName]);
-        return $this->expertCache[$cacheKey] = (int) ($stmt->fetchColumn() ?: 0);
+        try {
+            $db = CMS\Database::instance();
+            $expertsTable = $this->table('experts');
+            $stmt = $db->prepare("SELECT id FROM {$expertsTable} WHERE LOWER(first_name) = LOWER(?) AND LOWER(last_name) = LOWER(?) LIMIT 1");
+            $stmt->execute([$firstName, $lastName]);
+            return $this->expertCache[$cacheKey] = (int) ($stmt->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {
+            $this->log_error('Expert lookup failed', $e);
+            return 0;
+        }
     }
 
     private function find_speaker_id(string $firstName, string $lastName): int
@@ -2332,10 +2422,16 @@ final class CMS_NetImport_Importer
         if (!$this->is_plugin_ready('cms-speakers')) {
             return 0;
         }
-        $db = CMS\Database::instance();
-        $stmt = $db->prepare("SELECT id FROM {$db->prefix()}speakers WHERE LOWER(first_name) = LOWER(?) AND LOWER(last_name) = LOWER(?) LIMIT 1");
-        $stmt->execute([$firstName, $lastName]);
-        return $this->speakerCache[$cacheKey] = (int) ($stmt->fetchColumn() ?: 0);
+        try {
+            $db = CMS\Database::instance();
+            $speakersTable = $this->table('speakers');
+            $stmt = $db->prepare("SELECT id FROM {$speakersTable} WHERE LOWER(first_name) = LOWER(?) AND LOWER(last_name) = LOWER(?) LIMIT 1");
+            $stmt->execute([$firstName, $lastName]);
+            return $this->speakerCache[$cacheKey] = (int) ($stmt->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {
+            $this->log_error('Speaker lookup failed', $e);
+            return 0;
+        }
     }
 
     private function find_event_id(string $title, string $eventDate): int
@@ -2347,10 +2443,16 @@ final class CMS_NetImport_Importer
         if (!$this->is_plugin_ready('cms-events')) {
             return 0;
         }
-        $db = CMS\Database::instance();
-        $stmt = $db->prepare("SELECT id FROM {$db->prefix()}events WHERE LOWER(title) = LOWER(?) AND event_date = ? LIMIT 1");
-        $stmt->execute([$title, $eventDate]);
-        return $this->eventCache[$cacheKey] = (int) ($stmt->fetchColumn() ?: 0);
+        try {
+            $db = CMS\Database::instance();
+            $eventsTable = $this->table('events');
+            $stmt = $db->prepare("SELECT id FROM {$eventsTable} WHERE LOWER(title) = LOWER(?) AND event_date = ? LIMIT 1");
+            $stmt->execute([$title, $eventDate]);
+            return $this->eventCache[$cacheKey] = (int) ($stmt->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {
+            $this->log_error('Event lookup failed', $e);
+            return 0;
+        }
     }
 
     private function assignment_exists(string $assignmentKey): bool
@@ -2362,10 +2464,16 @@ final class CMS_NetImport_Importer
         if ((int) $eventId >= 1000000000 || (int) $entityId >= 1000000000) {
             return $this->assignmentCache[$assignmentKey] = false;
         }
-        $db = CMS\Database::instance();
-        $stmt = $db->prepare("SELECT id FROM {$db->prefix()}event_speakers WHERE event_id = ? AND speaker_id = ? AND speaker_type = ? LIMIT 1");
-        $stmt->execute([(int) $eventId, (int) $entityId, $entityType]);
-        return $this->assignmentCache[$assignmentKey] = ((int) ($stmt->fetchColumn() ?: 0) > 0);
+        try {
+            $db = CMS\Database::instance();
+            $eventSpeakersTable = $this->table('event_speakers');
+            $stmt = $db->prepare("SELECT id FROM {$eventSpeakersTable} WHERE event_id = ? AND speaker_id = ? AND speaker_type = ? LIMIT 1");
+            $stmt->execute([(int) $eventId, (int) $entityId, $entityType]);
+            return $this->assignmentCache[$assignmentKey] = ((int) ($stmt->fetchColumn() ?: 0) > 0);
+        } catch (\Throwable $e) {
+            $this->log_error('Assignment lookup failed', $e);
+            return $this->assignmentCache[$assignmentKey] = false;
+        }
     }
 
     /**
@@ -2397,7 +2505,7 @@ final class CMS_NetImport_Importer
             return $json;
         }
 
-        error_log('CMS NetImport json_encode failed: ' . json_last_error_msg());
+        $this->log_error('json_encode failed: ' . json_last_error_msg());
         return $fallback;
     }
 
@@ -2415,7 +2523,7 @@ final class CMS_NetImport_Importer
             return $decoded;
         }
 
-        error_log('CMS NetImport json_decode failed: ' . json_last_error_msg());
+        $this->log_error('json_decode failed: ' . json_last_error_msg());
         return [];
     }
 
@@ -2442,10 +2550,16 @@ final class CMS_NetImport_Importer
             return $currentUserId;
         }
 
-        $db = CMS\Database::instance();
-        $stmt = $db->prepare("SELECT id FROM {$db->prefix()}users WHERE role = ? AND status = ? ORDER BY id ASC LIMIT 1");
-        $stmt->execute(['admin', 'active']);
-        $this->adminUserIdCache = (int) ($stmt->fetchColumn() ?: 0);
+        try {
+            $db = CMS\Database::instance();
+            $usersTable = $this->table('users');
+            $stmt = $db->prepare("SELECT id FROM {$usersTable} WHERE role = ? AND status = ? ORDER BY id ASC LIMIT 1");
+            $stmt->execute(['admin', 'active']);
+            $this->adminUserIdCache = (int) ($stmt->fetchColumn() ?: 0);
+        } catch (\Throwable $e) {
+            $this->log_error('Admin user lookup failed', $e);
+            $this->adminUserIdCache = 0;
+        }
 
         return $this->adminUserIdCache > 0 ? $this->adminUserIdCache : null;
     }
@@ -2460,7 +2574,7 @@ final class CMS_NetImport_Importer
         try {
             CMS\Database::instance()->update($table, ['user_id' => $adminUserId], ['id' => $recordId]);
         } catch (\Throwable $e) {
-            error_log('CMS NetImport ownership update failed for ' . $table . '#' . $recordId . ': ' . $e->getMessage());
+            $this->log_error('Ownership update failed for ' . $table . '#' . $recordId, $e);
         }
     }
 }

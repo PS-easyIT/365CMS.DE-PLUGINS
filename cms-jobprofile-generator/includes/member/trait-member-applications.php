@@ -18,6 +18,13 @@ if (!defined('ABSPATH')) {
  */
 trait CMS_JPG_Member_Applications_Trait
 {
+    /** @var string[] */
+    private array $allowedDownloadMimes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+
     /**
      * GET /member/jobs/applications – Bewerbungs-Postfach (standalone)
      */
@@ -140,7 +147,7 @@ trait CMS_JPG_Member_Applications_Trait
                     if ($app && filter_var($app->applicant_email ?? '', FILTER_VALIDATE_EMAIL)) {
                         $fromEmail = filter_var($app->owner_email ?? '', FILTER_VALIDATE_EMAIL)
                             ? $app->owner_email
-                            : 'noreply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+                            : 'noreply@' . $this->safe_mail_host((string) ($_SERVER['HTTP_HOST'] ?? 'localhost'));
 
                         // Firmenspezifische E-Mail-Templates laden (Phase 13.1)
                         $settings            = null;
@@ -176,7 +183,11 @@ trait CMS_JPG_Member_Applications_Trait
                         }
                         $subject  = str_replace(array_keys($placeholders), array_values($placeholders), $rawSubject !== '' ? $rawSubject : $defaultSubject);
                         $body     = str_replace(array_keys($placeholders), array_values($placeholders), $rawBody);
-                        $fromName = $senderName !== '' ? $senderName : $companyNameFallback;
+                        $fromName = $this->sanitize_mail_header_value($senderName !== '' ? $senderName : $companyNameFallback);
+                        $fromEmail = (string) filter_var((string) $fromEmail, FILTER_VALIDATE_EMAIL);
+                        if ($fromEmail === '') {
+                            $fromEmail = 'noreply@localhost';
+                        }
                         $headers  = ($fromName !== '' ? 'From: ' . $fromName . ' <' . $fromEmail . '>' : 'From: ' . $fromEmail)
                                   . "\r\nContent-Type: text/plain; charset=UTF-8";
                         @mail($app->applicant_email, $subject, $body, $headers);
@@ -229,22 +240,15 @@ trait CMS_JPG_Member_Applications_Trait
             exit;
         }
 
-        $filePath = $application->cv_file_path;
-
-        // Sicherstellen, dass der Pfad nicht außerhalb uploads/ liegt
-        $uploadsBase = defined('UPLOADS_PATH') ? UPLOADS_PATH : (ABSPATH . 'uploads/');
-        $realFile    = realpath($uploadsBase . ltrim($filePath, '/'));
-        $realBase    = realpath($uploadsBase);
-
-        if (!$realFile || !str_starts_with($realFile, (string) $realBase) || !is_file($realFile)) {
+        $realFile = $this->resolve_cv_real_path((string) ($application->cv_file_path ?? ''));
+        if ($realFile === '' || !is_file($realFile)) {
             http_response_code(404);
             exit;
         }
 
         $mime = mime_content_type($realFile) ?: 'application/octet-stream';
         // Nur PDF und gängige Dokument-Typen erlauben
-        if (!in_array($mime, ['application/pdf', 'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'], true)) {
+        if (!in_array($mime, $this->allowedDownloadMimes, true)) {
             http_response_code(403);
             exit;
         }
@@ -303,5 +307,61 @@ trait CMS_JPG_Member_Applications_Trait
         $csrf    = $this->generate_token('app_status');
         $baseUrl = '/member/plugin/member-jobs';
         include JPG_DIR . 'views/member/page-jobs-applications.php';
+    }
+
+    private function sanitize_mail_header_value(string $value): string
+    {
+        $value = trim(preg_replace('/[\r\n]+/', ' ', $value) ?? '');
+        if ($value === '') {
+            return '';
+        }
+        $value = preg_replace('/[^\p{L}\p{N}\s._\-]/u', '', $value) ?? '';
+        return mb_substr($value, 0, 120);
+    }
+
+    private function safe_mail_host(string $host): string
+    {
+        $host = strtolower(trim((string) (preg_replace('/:\d+$/', '', $host) ?? '')));
+        $host = trim((string) preg_replace('/[^a-z0-9.\-]/', '', $host), '.');
+        if ($host === '' || str_contains($host, '..')) {
+            return 'localhost';
+        }
+        return $host;
+    }
+
+    private function resolve_cv_real_path(string $storedPath): string
+    {
+        $storedPath = trim($storedPath);
+        if ($storedPath === '') {
+            return '';
+        }
+
+        $uploadsBase = defined('UPLOADS_PATH')
+            ? rtrim((string) UPLOADS_PATH, '/\\') . '/'
+            : rtrim((defined('ABSPATH') ? ABSPATH : dirname(__DIR__, 4)) . '/uploads/', '/\\') . '/';
+
+        $baseReal = realpath($uploadsBase);
+        if ($baseReal === false) {
+            return '';
+        }
+
+        $candidate = $storedPath;
+        $isAbsolute = preg_match('#^[A-Za-z]:[\\\\/]#', $candidate) === 1 || str_starts_with($candidate, '/');
+        if (!$isAbsolute) {
+            $candidate = $uploadsBase . ltrim($candidate, '/\\');
+        }
+
+        $realFile = realpath($candidate);
+        if ($realFile === false) {
+            return '';
+        }
+
+        $normalizedBase = rtrim(str_replace('\\', '/', $baseReal), '/') . '/';
+        $normalizedReal = str_replace('\\', '/', $realFile);
+        if (!str_starts_with($normalizedReal, $normalizedBase)) {
+            return '';
+        }
+
+        return $realFile;
     }
 }

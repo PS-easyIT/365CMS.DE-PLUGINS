@@ -8,6 +8,14 @@ if (!defined('ABSPATH')) {
 
 final class CMS_Marketplace_Admin
 {
+    private const REQUIRED_CAPABILITY = 'admin';
+    private const ROOT_SLUG = 'cms-marketplace';
+    private const SLUG_CMS = 'cms-marketplace-cms';
+    private const SLUG_PLUGINS = 'cms-marketplace-plugins';
+    private const SLUG_THEMES = 'cms-marketplace-themes';
+    private const SLUG_DIRECTORY = 'cms-marketplace-directory';
+    private const SLUG_SETTINGS = 'cms-marketplace-settings';
+
     private const PAGE_OVERVIEW = 'overview';
     private const PAGE_CMS = 'cms';
     private const PAGE_PLUGINS = 'plugins';
@@ -39,65 +47,96 @@ final class CMS_Marketplace_Admin
             '365CMS Marketplace',
             'Marketplace',
             'admin',
-            'cms-marketplace',
-            [$this, 'renderPage'],
+            self::ROOT_SLUG,
+            [$this, 'renderRequestedPage'],
             '🛒',
             82
         );
 
         add_submenu_page(
-            'cms-marketplace',
+            self::ROOT_SLUG,
             'Marketplace Übersicht',
             'Übersicht',
             'admin',
-            'cms-marketplace',
-            [$this, 'renderOverviewPage']
+            self::ROOT_SLUG,
+            [$this, 'renderRequestedPage']
         );
 
         add_submenu_page(
-            'cms-marketplace',
+            self::ROOT_SLUG,
             'Marketplace CMS',
             'CMS',
             'admin',
-            'cms-marketplace-cms',
-            [$this, 'renderCmsPage']
+            self::SLUG_CMS,
+            [$this, 'renderRequestedPage']
         );
 
         add_submenu_page(
-            'cms-marketplace',
+            self::ROOT_SLUG,
             'Marketplace Plugins',
             'Plugins',
             'admin',
-            'cms-marketplace-plugins',
-            [$this, 'renderPluginsPage']
+            self::SLUG_PLUGINS,
+            [$this, 'renderRequestedPage']
         );
 
         add_submenu_page(
-            'cms-marketplace',
+            self::ROOT_SLUG,
             'Marketplace Themes',
             'Themes',
             'admin',
-            'cms-marketplace-themes',
-            [$this, 'renderThemesPage']
+            self::SLUG_THEMES,
+            [$this, 'renderRequestedPage']
         );
 
         add_submenu_page(
-            'cms-marketplace',
+            self::ROOT_SLUG,
             'Marketplace Verzeichnis',
             'Verzeichnis',
             'admin',
-            'cms-marketplace-directory',
-            [$this, 'renderDirectoryPage']
+            self::SLUG_DIRECTORY,
+            [$this, 'renderRequestedPage']
         );
 
         add_submenu_page(
-            'cms-marketplace',
+            self::ROOT_SLUG,
             'Marketplace Einstellungen',
             'Einstellungen',
             'admin',
-            'cms-marketplace-settings',
-            [$this, 'renderSettingsPage']
+            self::SLUG_SETTINGS,
+            [$this, 'renderRequestedPage']
         );
+    }
+
+    public function renderRequestedPage(): void
+    {
+        if (!$this->currentUserCanManage()) {
+            cms_plugin_admin_emit_notice('Du hast keine Berechtigung für diesen Bereich.', 'error', 'permission denied on renderRequestedPage');
+            return;
+        }
+
+        $callbackMap = [
+            self::ROOT_SLUG => [$this, 'renderOverviewPage'],
+            self::SLUG_CMS => [$this, 'renderCmsPage'],
+            self::SLUG_PLUGINS => [$this, 'renderPluginsPage'],
+            self::SLUG_THEMES => [$this, 'renderThemesPage'],
+            self::SLUG_DIRECTORY => [$this, 'renderDirectoryPage'],
+            self::SLUG_SETTINGS => [$this, 'renderSettingsPage'],
+        ];
+
+        if (function_exists('cms_plugin_admin_dispatch_page')) {
+            cms_plugin_admin_dispatch_page($callbackMap, self::ROOT_SLUG, self::ROOT_SLUG);
+            return;
+        }
+
+        $requestedSlug = strtolower(trim((string) ($_GET['page'] ?? self::ROOT_SLUG)));
+        $callback = $callbackMap[$requestedSlug] ?? $callbackMap[self::ROOT_SLUG];
+        if (is_callable($callback)) {
+            call_user_func($callback);
+            return;
+        }
+
+        $this->renderOverviewPage();
     }
 
     public function renderOverviewPage(): void
@@ -147,6 +186,11 @@ final class CMS_Marketplace_Admin
 
     public function renderPage(?string $forcedSection = null): void
     {
+        if (!$this->currentUserCanManage()) {
+            cms_plugin_admin_emit_notice('Du hast keine Berechtigung für diesen Bereich.', 'error', 'permission denied on renderPage');
+            return;
+        }
+
         $message = null;
         $messageType = 'success';
         $section = $this->resolveSection($forcedSection);
@@ -179,7 +223,30 @@ final class CMS_Marketplace_Admin
         $sectionConfig = $this->getSectionConfig($section);
         $csrfToken = class_exists('CMS\Security') ? \CMS\Security::instance()->generateToken('cms_marketplace_admin') : '';
 
-        include CMS_MARKETPLACE_PLUGIN_DIR . 'admin/page.php';
+        cms_plugin_admin_layout_start('365CMS Marketplace', self::ROOT_SLUG);
+
+        $templatePath = CMS_MARKETPLACE_PLUGIN_DIR . 'admin/page.php';
+        if (!is_file($templatePath)) {
+            cms_plugin_admin_emit_notice(
+                'Die Marketplace-Adminseite konnte nicht geladen werden.',
+                'error',
+                'renderPage missing template: ' . $templatePath
+            );
+            cms_plugin_admin_layout_end();
+            return;
+        }
+
+        try {
+            include $templatePath;
+        } catch (\Throwable $e) {
+            cms_plugin_admin_emit_notice(
+                'Die Marketplace-Adminseite konnte nicht geladen werden.',
+                'error',
+                'renderPage failed: ' . $e->getMessage()
+            );
+        }
+
+        cms_plugin_admin_layout_end();
     }
 
     private function handlePost(string $section, string $currentFilterType, int $currentEditId): array
@@ -189,11 +256,22 @@ final class CMS_Marketplace_Admin
         $filterType = $this->resolveFilterTypeForSection($section, (string) ($_POST['filter_type'] ?? $currentFilterType));
         $editId = max(0, (int) ($_POST['edit_id'] ?? $currentEditId));
 
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            return ['Ungültige Anfrage-Methode.', 'error', $editId, $filterType, $section];
+        }
+
+        if (!$this->currentUserCanManage()) {
+            return ['Unzureichende Berechtigung für diese Aktion.', 'error', $editId, $filterType, $section];
+        }
+
         if (!class_exists('CMS\Security') || !\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'cms_marketplace_admin')) {
             return ['Sicherheitscheck fehlgeschlagen.', 'error', $editId, $filterType, $section];
         }
 
-        $action = (string) ($_POST['cms_marketplace_action'] ?? '');
+        $action = strtolower(trim((string) ($_POST['cms_marketplace_action'] ?? '')));
+        if (!in_array($action, ['save_item', 'toggle_publish', 'save_settings'], true)) {
+            return ['Unbekannte Aktion.', 'error', $editId, $filterType, $section];
+        }
 
         if ($action === 'save_item') {
             $result = $this->service->saveItem($_POST, $_FILES['package_zip'] ?? null, $editId > 0 ? $editId : null);
@@ -275,17 +353,30 @@ final class CMS_Marketplace_Admin
     private function resolveSection(?string $forcedSection = null): string
     {
         if ($forcedSection !== null && $forcedSection !== '') {
-            return $forcedSection;
+            return in_array($forcedSection, [
+                self::PAGE_OVERVIEW,
+                self::PAGE_CMS,
+                self::PAGE_PLUGINS,
+                self::PAGE_THEMES,
+                self::PAGE_DIRECTORY,
+                self::PAGE_SETTINGS,
+            ], true) ? $forcedSection : self::PAGE_OVERVIEW;
         }
 
-        return match ((string) ($_GET['page'] ?? 'cms-marketplace')) {
-            'cms-marketplace-cms' => self::PAGE_CMS,
-            'cms-marketplace-plugins' => self::PAGE_PLUGINS,
-            'cms-marketplace-themes' => self::PAGE_THEMES,
-            'cms-marketplace-directory' => self::PAGE_DIRECTORY,
-            'cms-marketplace-settings' => self::PAGE_SETTINGS,
-            default => self::PAGE_OVERVIEW,
-        };
+        $requestedSlug = function_exists('cms_plugin_admin_active_slug')
+            ? cms_plugin_admin_active_slug(self::ROOT_SLUG)
+            : strtolower(trim((string) ($_GET['page'] ?? self::ROOT_SLUG)));
+
+        $sectionBySlug = [
+            self::ROOT_SLUG => self::PAGE_OVERVIEW,
+            self::SLUG_CMS => self::PAGE_CMS,
+            self::SLUG_PLUGINS => self::PAGE_PLUGINS,
+            self::SLUG_THEMES => self::PAGE_THEMES,
+            self::SLUG_DIRECTORY => self::PAGE_DIRECTORY,
+            self::SLUG_SETTINGS => self::PAGE_SETTINGS,
+        ];
+
+        return $sectionBySlug[$requestedSlug] ?? self::PAGE_OVERVIEW;
     }
 
     private function resolveDirectoryScope(string $value): string
@@ -297,12 +388,12 @@ final class CMS_Marketplace_Admin
     private function getSectionConfig(string $section): array
     {
         $pages = [
-            self::PAGE_OVERVIEW => ['slug' => 'cms-marketplace', 'label' => 'Übersicht', 'title' => 'Marketplace Übersicht', 'description' => 'Zentraler Überblick über CMS-, Plugin- und Theme-Bereiche.'],
-            self::PAGE_CMS => ['slug' => 'cms-marketplace-cms', 'label' => 'CMS', 'title' => '365CMS Bereich', 'description' => 'Vorbereitung und Verwaltung des späteren zentralen 365CMS-Update-Bereichs.'],
-            self::PAGE_PLUGINS => ['slug' => 'cms-marketplace-plugins', 'label' => 'Plugins', 'title' => 'Plugin Marketplace', 'description' => 'Verwalte Plugin-Einträge, Versionen, ZIPs und öffentliche Feeds.'],
-            self::PAGE_THEMES => ['slug' => 'cms-marketplace-themes', 'label' => 'Themes', 'title' => 'Theme Marketplace', 'description' => 'Verwalte Theme-Einträge, Versionen, ZIPs und öffentliche Feeds.'],
-            self::PAGE_DIRECTORY => ['slug' => 'cms-marketplace-directory', 'label' => 'Verzeichnis', 'title' => 'Marketplace Verzeichnis', 'description' => 'Datei- und Verzeichnisansicht der generierten Marketplace-Struktur.'],
-            self::PAGE_SETTINGS => ['slug' => 'cms-marketplace-settings', 'label' => 'Einstellungen', 'title' => 'Marketplace Einstellungen', 'description' => 'Steuere Public-Submission, Pfade, Währung und Directory-Ansicht.'],
+            self::PAGE_OVERVIEW => ['slug' => self::ROOT_SLUG, 'label' => 'Übersicht', 'title' => 'Marketplace Übersicht', 'description' => 'Zentraler Überblick über CMS-, Plugin- und Theme-Bereiche.'],
+            self::PAGE_CMS => ['slug' => self::SLUG_CMS, 'label' => 'CMS', 'title' => '365CMS Bereich', 'description' => 'Vorbereitung und Verwaltung des späteren zentralen 365CMS-Update-Bereichs.'],
+            self::PAGE_PLUGINS => ['slug' => self::SLUG_PLUGINS, 'label' => 'Plugins', 'title' => 'Plugin Marketplace', 'description' => 'Verwalte Plugin-Einträge, Versionen, ZIPs und öffentliche Feeds.'],
+            self::PAGE_THEMES => ['slug' => self::SLUG_THEMES, 'label' => 'Themes', 'title' => 'Theme Marketplace', 'description' => 'Verwalte Theme-Einträge, Versionen, ZIPs und öffentliche Feeds.'],
+            self::PAGE_DIRECTORY => ['slug' => self::SLUG_DIRECTORY, 'label' => 'Verzeichnis', 'title' => 'Marketplace Verzeichnis', 'description' => 'Datei- und Verzeichnisansicht der generierten Marketplace-Struktur.'],
+            self::PAGE_SETTINGS => ['slug' => self::SLUG_SETTINGS, 'label' => 'Einstellungen', 'title' => 'Marketplace Einstellungen', 'description' => 'Steuere Public-Submission, Pfade, Währung und Directory-Ansicht.'],
         ];
 
         return $pages[$section] ?? $pages[self::PAGE_OVERVIEW];
@@ -310,16 +401,43 @@ final class CMS_Marketplace_Admin
 
     private function isMarketplaceAdminRequest(): bool
     {
+        $requestedPage = (string) ($_GET['page'] ?? '');
+        if ($requestedPage !== '') {
+            $normalizedPage = function_exists('cms_plugin_admin_normalize_slug')
+                ? cms_plugin_admin_normalize_slug($requestedPage)
+                : strtolower(trim($requestedPage));
+            if (str_starts_with($normalizedPage, self::ROOT_SLUG)) {
+                return true;
+            }
+        }
+
         $requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '');
         if ($requestUri === '') {
             return false;
         }
 
-        $path = (string) (parse_url($requestUri, PHP_URL_PATH) ?? '');
-        if ($path === '') {
-            return false;
+        $query = (string) (parse_url($requestUri, PHP_URL_QUERY) ?? '');
+        if ($query !== '') {
+            parse_str($query, $queryParams);
+            $queryPage = is_array($queryParams) ? (string) ($queryParams['page'] ?? '') : '';
+            $normalizedQueryPage = function_exists('cms_plugin_admin_normalize_slug')
+                ? cms_plugin_admin_normalize_slug($queryPage)
+                : strtolower(trim($queryPage));
+            if ($normalizedQueryPage !== '' && str_starts_with($normalizedQueryPage, self::ROOT_SLUG)) {
+                return true;
+            }
         }
 
-        return str_contains($path, '/admin/plugins/cms-marketplace');
+        $path = (string) (parse_url($requestUri, PHP_URL_PATH) ?? '');
+        return $path !== '' && str_contains($path, '/admin/plugins/cms-marketplace');
+    }
+
+    private function currentUserCanManage(): bool
+    {
+        if (function_exists('current_user_can')) {
+            return (bool) current_user_can(self::REQUIRED_CAPABILITY);
+        }
+
+        return true;
     }
 }

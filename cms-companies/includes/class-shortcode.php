@@ -66,7 +66,11 @@ final class CMS_Companies_Shortcode
         $parsed = [];
         preg_match_all('/(\w+)\s*=\s*["\']?([^"\'>\s]*)["\']?/', $str, $p, PREG_SET_ORDER);
         foreach ($p as $pair) {
-            $parsed[$pair[1]] = $pair[2];
+            $key = strtolower(trim((string) ($pair[1] ?? '')));
+            if ($key === '') {
+                continue;
+            }
+            $parsed[$key] = trim((string) ($pair[2] ?? ''));
         }
         return $parsed;
     }
@@ -86,7 +90,7 @@ final class CMS_Companies_Shortcode
         
         $args = [
             'status' => 'active',
-            'limit' => (int)$atts['limit'],
+            'limit' => max(1, min(100, (int) $atts['limit'])),
         ];
 
         if (!empty($atts['industry'])) {
@@ -97,8 +101,9 @@ final class CMS_Companies_Shortcode
             $args['city'] = $atts['city'];
         }
 
-        if ($atts['partner_only']) {
-            $args['partner_only'] = true;
+        $partnerOnlyRaw = strtolower((string) ($atts['partner_only'] ?? ''));
+        if (in_array($partnerOnlyRaw, ['1', 'true', 'yes', 'on'], true)) {
+            $args['partner'] = 'partner';
         }
 
         $companies = $db_manager->get_companies($args);
@@ -169,36 +174,26 @@ final class CMS_Companies_Shortcode
         ], $atts);
 
         $db = CMS\Database::instance();
-        
-        $where = ["status = 'active'"];
-        
-        switch ($atts['type']) {
-            case 'sponsor':
-                $where[] = "is_sponsor = 1";
-                break;
-            case 'top_partner':
-                $where[] = "is_top_partner = 1";
-                break;
-            case 'partner':
-                $where[] = "is_partner = 1";
-                break;
-            default:
-                $where[] = "(is_partner = 1 OR is_top_partner = 1 OR is_sponsor = 1)";
-        }
+        $type = in_array((string) ($atts['type'] ?? 'all'), ['all', 'sponsor', 'top_partner', 'partner'], true)
+            ? (string) $atts['type']
+            : 'all';
+        $limit = max(1, min(100, (int) ($atts['limit'] ?? 20)));
 
-        $where_clause = implode(' AND ', $where);
-        $limit = (int)$atts['limit'];
+        $whereClause = match ($type) {
+            'sponsor' => 'status = ? AND is_sponsor = 1',
+            'top_partner' => 'status = ? AND is_top_partner = 1',
+            'partner' => 'status = ? AND is_partner = 1',
+            default => "status = ? AND (is_partner = 1 OR is_top_partner = 1 OR is_sponsor = 1)",
+        };
 
-        $companies = $db->query("
-            SELECT * FROM {$db->prefix()}companies 
-            WHERE {$where_clause}
-            ORDER BY 
-                is_sponsor DESC,
-                is_top_partner DESC,
-                is_partner DESC, 
-                name ASC
-            LIMIT {$limit}
-        ");
+        $stmt = $db->prepare(
+            "SELECT * FROM {$db->prefix()}companies
+             WHERE {$whereClause}
+             ORDER BY is_sponsor DESC, is_top_partner DESC, is_partner DESC, name ASC
+             LIMIT {$limit}"
+        );
+        $stmt->execute(['active']);
+        $companies = $stmt->fetchAll();
 
         if (empty($companies)) {
             return '<p class="no-companies">Keine Partner gefunden.</p>';

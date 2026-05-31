@@ -13,13 +13,80 @@ if (!defined('ABSPATH')) {
 
 final class CMS_M365Landing_Admin_Pages
 {
-    public const ADMIN_BASE_URL = '/admin/plugins/m365landing/m365landing';
+    public const ADMIN_BASE_URL = '/admin/plugins/m365landing-dashboard';
+    private const MENU_BASE_SLUG = 'm365landing-dashboard';
+
+    private static string $dispatchNotice = '';
+
+    /** @return array<string,string> */
+    private static function section_page_slugs(): array
+    {
+        return [
+            'dashboard' => 'm365landing-dashboard',
+            'cards' => 'm365landing-cards',
+            'settings' => 'm365landing-settings',
+            'system' => 'm365landing-system',
+        ];
+    }
 
     public static function render_dispatch(): void
     {
+        self::check_access();
+
+        $callbackMap = [
+            'm365landing-dashboard' => [self::class, 'render_dashboard'],
+            'm365landing-cards' => [self::class, 'render_cards'],
+            'm365landing-settings' => [self::class, 'render_settings'],
+            'm365landing-system' => [self::class, 'render_system'],
+        ];
+        $defaultSlug = self::section_page_slugs()['dashboard'] ?? 'm365landing-dashboard';
+        $requestedSlug = function_exists('cms_plugin_admin_active_slug')
+            ? cms_plugin_admin_active_slug($defaultSlug)
+            : self::clean_slug((string) ($_GET['page'] ?? $defaultSlug));
+
+        if (!isset($callbackMap[$requestedSlug])) {
+            self::$dispatchNotice = 'Die angeforderte Unterseite ist nicht verfügbar. Dashboard wird angezeigt.';
+        }
+
+        if (function_exists('cms_plugin_admin_dispatch_page')) {
+            cms_plugin_admin_dispatch_page($callbackMap, $defaultSlug, self::MENU_BASE_SLUG);
+            return;
+        }
+
+        $callback = $callbackMap[$requestedSlug] ?? $callbackMap[$defaultSlug];
+        if (is_callable($callback)) {
+            call_user_func($callback);
+            return;
+        }
+
+        self::render_recovery_page(new \RuntimeException('Admin-Dispatch konnte nicht aufgelöst werden.'));
+    }
+
+    public static function render_dashboard(): void
+    {
+        self::render_dispatch_for('dashboard');
+    }
+
+    public static function render_cards(): void
+    {
+        self::render_dispatch_for('cards');
+    }
+
+    public static function render_settings(): void
+    {
+        self::render_dispatch_for('settings');
+    }
+
+    public static function render_system(): void
+    {
+        self::render_dispatch_for('system');
+    }
+
+    private static function render_dispatch_for(string $section): void
+    {
         $bufferLevel = ob_get_level();
         try {
-            self::render_admin_page();
+            self::render_admin_page($section);
         } catch (\Throwable $e) {
             while (ob_get_level() > $bufferLevel) {
                 ob_end_clean();
@@ -28,7 +95,7 @@ final class CMS_M365Landing_Admin_Pages
         }
     }
 
-    private static function render_admin_page(): void
+    private static function render_admin_page(string $section): void
     {
         ob_start();
         self::check_access();
@@ -36,15 +103,21 @@ final class CMS_M365Landing_Admin_Pages
         try {
             CMS_M365Landing_Installer::maybe_install();
         } catch (\Throwable $e) {
+            self::log_exception('installer_boot_failed', $e);
             $bootError = 'Initialisierung konnte nicht vollständig ausgeführt werden: ' . $e->getMessage();
         }
 
         $repo = CMS_M365Landing_Repository::instance();
-        $section = self::allowed_section((string) ($_GET['section'] ?? 'dashboard'));
+        $section = self::allowed_section($section);
         $notice = '';
         $error = $bootError;
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (self::$dispatchNotice !== '') {
+            $notice = self::$dispatchNotice;
+            self::$dispatchNotice = '';
+        }
+
+        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             try {
                 self::handle_post($repo);
                 $notice = 'Änderungen gespeichert.';
@@ -53,30 +126,24 @@ final class CMS_M365Landing_Admin_Pages
             }
         }
 
-        self::load_admin_menu();
-        if (function_exists('renderAdminLayoutStart')) {
-            renderAdminLayoutStart(self::page_title($section), 'm365landing');
-        }
+        self::layout_start(self::page_title($section), self::section_slug($section));
         self::enqueue_admin_assets();
 
         echo '<div class="m365landing-admin-shell">';
         self::render_header($repo, $section, $notice, $error);
-        self::render_nav($section);
 
         match ($section) {
-            'cards' => self::render_cards($repo),
-            'settings' => self::render_settings($repo),
-            'system' => self::render_system($repo),
-            default => self::render_dashboard($repo),
+            'cards' => self::render_cards_section($repo),
+            'settings' => self::render_settings_section($repo),
+            'system' => self::render_system_section($repo),
+            default => self::render_dashboard_section($repo),
         };
         echo '</div>';
 
         self::render_delete_modal();
         self::render_media_picker_modal();
         self::enqueue_admin_scripts();
-        if (function_exists('renderAdminLayoutEnd')) {
-            renderAdminLayoutEnd();
-        }
+        self::layout_end();
         ob_end_flush();
     }
 
@@ -84,11 +151,8 @@ final class CMS_M365Landing_Admin_Pages
     {
         $layoutStarted = false;
         try {
-            self::load_admin_menu();
-            if (function_exists('renderAdminLayoutStart')) {
-                renderAdminLayoutStart('M365 Landing – Wiederherstellung', 'm365landing');
-                $layoutStarted = true;
-            }
+            self::layout_start('M365 Landing – Wiederherstellung', self::MENU_BASE_SLUG);
+            $layoutStarted = true;
         } catch (\Throwable $layoutError) {
             $layoutStarted = false;
         }
@@ -116,9 +180,9 @@ final class CMS_M365Landing_Admin_Pages
         echo '</div></div>';
         echo '</div></main>';
 
-        if ($layoutStarted && function_exists('renderAdminLayoutEnd')) {
+        if ($layoutStarted) {
             try {
-                renderAdminLayoutEnd();
+                self::layout_end();
             } catch (\Throwable $layoutError) {
                 // Recovery darf nie wieder in die Core-Fehlerkarte fallen.
             }
@@ -127,18 +191,27 @@ final class CMS_M365Landing_Admin_Pages
 
     private static function handle_post(CMS_M365Landing_Repository $repo): void
     {
+        self::check_access();
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST') {
+            throw new \RuntimeException('Ungültige Anfragemethode.');
+        }
+
         if (!class_exists('CMS\\Security') || !\CMS\Security::instance()->verifyToken((string) ($_POST['csrf_token'] ?? ''), 'm365landing_admin')) {
             throw new \RuntimeException('Sicherheitscheck fehlgeschlagen.');
         }
 
-        $action = (string) ($_POST['action'] ?? '');
+        $action = trim((string) ($_POST['action'] ?? ''));
         if ($action === 'save_card') {
-            $repo->save_card($_POST);
+            $repo->save_card(self::collect_card_payload());
             return;
         }
 
         if ($action === 'delete_card') {
-            $repo->delete_card(max(0, (int) ($_POST['id'] ?? 0)));
+            $id = max(0, (int) ($_POST['id'] ?? 0));
+            if ($id <= 0) {
+                throw new \RuntimeException('Ungültige Karten-ID.');
+            }
+            $repo->delete_card($id);
             return;
         }
 
@@ -148,6 +221,22 @@ final class CMS_M365Landing_Admin_Pages
         }
 
         throw new \RuntimeException('Unbekannte Aktion.');
+    }
+
+    /** @return array<string,mixed> */
+    private static function collect_card_payload(): array
+    {
+        $keys = [
+            'id', 'section', 'slug', 'title', 'subtitle', 'description', 'icon',
+            'image_url', 'image_alt', 'url', 'button_label', 'sort_order',
+            'is_featured', 'is_active',
+        ];
+        $payload = [];
+        foreach ($keys as $key) {
+            $payload[$key] = $_POST[$key] ?? null;
+        }
+
+        return $payload;
     }
 
     /** @return array<string,string> */
@@ -287,23 +376,7 @@ final class CMS_M365Landing_Admin_Pages
         }
     }
 
-    private static function render_nav(string $section): void
-    {
-        $tabs = [
-            'dashboard' => '📊 Dashboard',
-            'cards' => '🃏 Karten & Bereiche',
-            'settings' => '⚙️ Inhalte & Design',
-            'system' => '🖥️ System',
-        ];
-        echo '<div class="m365landing-tabs">';
-        foreach ($tabs as $key => $label) {
-            $active = $section === $key ? ' active' : '';
-            echo '<a class="m365landing-tab' . $active . '" href="' . self::esc(self::admin_url($key)) . '">' . self::esc($label) . '</a>';
-        }
-        echo '</div>';
-    }
-
-    private static function render_dashboard(CMS_M365Landing_Repository $repo): void
+    private static function render_dashboard_section(CMS_M365Landing_Repository $repo): void
     {
         $stats = self::safe_stats($repo);
         echo '<div class="admin-card m365landing-card-connected"><h3>📊 Übersicht</h3><div class="dashboard-grid">';
@@ -311,10 +384,10 @@ final class CMS_M365Landing_Admin_Pages
             echo '<div class="stat-card"><div class="stat-icon">' . self::esc((string) $icon) . '</div><div class="stat-number">' . (int) $value . '</div><div class="stat-label">' . self::esc((string) $label) . '</div></div>';
         }
         echo '</div></div>';
-        echo '<div class="admin-card"><h3>⚡ Schnellzugriff</h3><div class="m365landing-quicklinks"><a class="btn btn-secondary" href="' . self::esc(self::admin_url('cards', ['edit' => 0])) . '">➕ Karte erstellen</a><a class="btn btn-secondary" href="' . self::esc(self::admin_url('settings', ['tab' => 'content'])) . '">📝 Texte bearbeiten</a><a class="btn btn-primary" href="' . self::esc(self::admin_url('settings', ['tab' => 'design'])) . '">🎨 Design anpassen</a></div></div>';
+        echo '<div class="admin-card"><h3>⚡ Schnellzugriff</h3><div class="m365landing-quicklinks"><a class="btn btn-secondary" href="' . self::esc(self::admin_url('cards', ['edit' => 0])) . '">➕ Karte erstellen</a><a class="btn btn-secondary" href="' . self::esc(self::admin_url('settings')) . '#content">📝 Texte bearbeiten</a><a class="btn btn-primary" href="' . self::esc(self::admin_url('settings')) . '#design">🎨 Design anpassen</a></div></div>';
     }
 
-    private static function render_cards(CMS_M365Landing_Repository $repo): void
+    private static function render_cards_section(CMS_M365Landing_Repository $repo): void
     {
         $editId = isset($_GET['edit']) ? max(0, (int) $_GET['edit']) : -1;
         $edit = $editId > 0 ? self::safe_card($repo, $editId) : null;
@@ -353,142 +426,98 @@ final class CMS_M365Landing_Admin_Pages
         echo '<div class="m365landing-form-actions"><button class="btn btn-primary" type="submit">💾 Karte speichern</button></div></form>';
     }
 
-    private static function render_settings(CMS_M365Landing_Repository $repo): void
+    private static function render_settings_section(CMS_M365Landing_Repository $repo): void
     {
         $s = self::safe_settings($repo);
-        $allowedTabs = ['content', 'domains', 'sections', 'posts', 'visibility', 'design'];
-        $tab = in_array((string) ($_GET['tab'] ?? 'content'), $allowedTabs, true) ? (string) ($_GET['tab'] ?? 'content') : 'content';
-        $tabs = ['content' => '📝 Header', 'domains' => '🌐 Domains', 'sections' => '🧱 Sektionen', 'posts' => '📰 Beiträge', 'visibility' => '👁️ Sichtbarkeit', 'design' => '🎨 Design'];
-        echo '<div class="m365landing-subtabs">';
-        foreach ($tabs as $key => $label) {
-            $active = $tab === $key ? ' active' : '';
-            echo '<a class="m365landing-subtab' . $active . '" href="' . self::esc(self::admin_url('settings', ['tab' => $key])) . '">' . self::esc($label) . '</a>';
-        }
-        echo '</div><div class="admin-card m365landing-card-connected"><form method="POST" class="admin-form"><input type="hidden" name="action" value="save_settings"><input type="hidden" name="csrf_token" value="' . self::esc(self::csrf()) . '">';
-        self::render_hidden_settings($s, $tab);
+        echo '<div class="admin-card"><form method="POST" class="admin-form">';
+        echo '<input type="hidden" name="action" value="save_settings"><input type="hidden" name="csrf_token" value="' . self::esc(self::csrf()) . '">';
+        echo '<h3 id="content">📝 Content Header</h3>';
+        self::replace_input('route_slug', 'Öffentlicher Slug', self::setting_value($s, 'route_slug', 'm365'));
+        self::replace_input('page_overline', 'Overline', self::setting_value($s, 'page_overline', 'Microsoft 365 Hub'));
+        self::replace_input('page_title', 'Seitentitel', self::setting_value($s, 'page_title', 'M365 im Überblick – Matrixen, Azure, Tutorials und Tools'));
+        self::replace_textarea('page_intro', 'Einleitung', self::setting_value($s, 'page_intro', 'Die zentrale Einstiegsseite für Microsoft-365-Entscheidungen: Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und praktische Rechner an einem Ort.'), 4);
+        self::image_input('hero_image_url', 'Content-Header Bild / Bild-URL', (string) ($s['hero_image_url'] ?? ''), 'Headerbild auswählen');
+        self::replace_input('hero_image_alt', 'Content-Header Bild-Alt-Text', (string) ($s['hero_image_alt'] ?? ''));
+        self::replace_number('hero_image_height', 'Header-Bildhöhe in px', (int) self::setting_value($s, 'hero_image_height', '150'), 80, 320);
+        self::replace_input('hero_primary_button_text', 'Primärbutton Text', self::setting_value($s, 'hero_primary_button_text', 'M365 Lizenzmatrix öffnen'));
+        self::preset_input('hero_primary_button_url', 'Primärbutton Ziel', self::setting_value($s, 'hero_primary_button_url', '/m365-lizenzmatrix'), 'm365landing-url-presets');
+        self::replace_input('hero_secondary_button_text', 'Sekundärbutton Text', self::setting_value($s, 'hero_secondary_button_text', 'Add-on-Matrix öffnen'));
+        self::preset_input('hero_secondary_button_url', 'Sekundärbutton Ziel', self::setting_value($s, 'hero_secondary_button_url', '/m365-addon-matrix'), 'm365landing-url-presets');
+        self::render_target_presets();
+        self::replace_input('seo_title', 'SEO-Titel', self::setting_value($s, 'seo_title', 'Microsoft 365 Hub'));
+        self::replace_textarea('seo_description', 'SEO-Beschreibung', self::setting_value($s, 'seo_description', 'Zentrale Landingpage für Microsoft 365 Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und M365 Tools.'), 3);
 
-        if ($tab === 'content') {
-            echo '<h3>📝 Content Header</h3>';
-            self::replace_input('route_slug', 'Öffentlicher Slug', self::setting_value($s, 'route_slug', 'm365'));
-            self::replace_input('page_overline', 'Overline', self::setting_value($s, 'page_overline', 'Microsoft 365 Hub'));
-            self::replace_input('page_title', 'Seitentitel', self::setting_value($s, 'page_title', 'M365 im Überblick – Matrixen, Azure, Tutorials und Tools'));
-            self::replace_textarea('page_intro', 'Einleitung', self::setting_value($s, 'page_intro', 'Die zentrale Einstiegsseite für Microsoft-365-Entscheidungen: Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und praktische Rechner an einem Ort.'), 4);
-            self::image_input('hero_image_url', 'Content-Header Bild / Bild-URL', (string) ($s['hero_image_url'] ?? ''), 'Headerbild auswählen');
-            self::replace_input('hero_image_alt', 'Content-Header Bild-Alt-Text', (string) ($s['hero_image_alt'] ?? ''));
-            self::replace_number('hero_image_height', 'Header-Bildhöhe in px', (int) self::setting_value($s, 'hero_image_height', '150'), 80, 320);
-            self::replace_input('hero_primary_button_text', 'Primärbutton Text', self::setting_value($s, 'hero_primary_button_text', 'M365 Lizenzmatrix öffnen'));
-            self::preset_input('hero_primary_button_url', 'Primärbutton Ziel', self::setting_value($s, 'hero_primary_button_url', '/m365-lizenzmatrix'), 'm365landing-url-presets');
-            self::replace_input('hero_secondary_button_text', 'Sekundärbutton Text', self::setting_value($s, 'hero_secondary_button_text', 'Add-on-Matrix öffnen'));
-            self::preset_input('hero_secondary_button_url', 'Sekundärbutton Ziel', self::setting_value($s, 'hero_secondary_button_url', '/m365-addon-matrix'), 'm365landing-url-presets');
-            self::render_target_presets();
-            self::replace_input('seo_title', 'SEO-Titel', self::setting_value($s, 'seo_title', 'Microsoft 365 Hub'));
-            self::replace_textarea('seo_description', 'SEO-Beschreibung', self::setting_value($s, 'seo_description', 'Zentrale Landingpage für Microsoft 365 Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und M365 Tools.'), 3);
-        } elseif ($tab === 'domains') {
-            echo '<h3>🌐 Domain-Mapping</h3>';
-            $domains = CMS_M365Landing_Repository::normalize_domain_list((string) ($s['landing_domains'] ?? ''));
-            $siteUrl = defined('SITE_URL') ? (string) SITE_URL : '';
-            $mainHost = CMS_M365Landing_Repository::normalize_host((string) (parse_url($siteUrl, PHP_URL_HOST) ?: ''));
-            $status = $domains === [] ? 'Keine Zusatzdomain aktiv' : 'Aktive Zusatzdomain' . (count($domains) === 1 ? '' : 's') . ': ' . implode(', ', $domains);
-            echo '<div class="alert" style="background:#dbeafe;color:#1e40af;border-left:4px solid #3b82f6;margin-bottom:1.25rem;">ℹ️ Hinterlegte Zusatzdomains zeigen die M365-Landingpage direkt auf der Domain-Startseite. Die Hauptdomain ' . self::esc($mainHost !== '' ? $mainHost : 'bleibt unverändert') . ' behält ihre normale Startseite.</div>';
-            echo '<p class="form-text" style="margin-bottom:1rem;"><strong>' . self::esc($status) . '</strong></p>';
-            self::replace_textarea('landing_domains', 'Zusatzdomain(s)', implode("\n", $domains), 4);
-            echo '<p class="form-text">Eine Domain pro Zeile oder kommasepariert eintragen, ohne <code>https://</code> und ohne Pfad. <code>www.</code> und Ports werden automatisch normalisiert.</p>';
-        } elseif ($tab === 'sections') {
-            echo '<h3>🧱 Abschnittstexte</h3>';
-            foreach ([
-                ['matrix', 'Matrixen'],
-                ['areas', 'Weitere M365 Bereiche'],
-                ['tools', 'M365 Tools Sammlung'],
-            ] as [$prefix, $label]) {
-                echo '<h4>' . self::esc((string) $label) . '</h4>';
-                self::replace_input($prefix . '_section_overline', 'Overline', (string) ($s[$prefix . '_section_overline'] ?? ''));
-                self::replace_input($prefix . '_section_title', 'Titel', (string) ($s[$prefix . '_section_title'] ?? ''));
-                self::replace_textarea($prefix . '_section_intro', 'Intro', (string) ($s[$prefix . '_section_intro'] ?? ''), 3);
-                self::select($prefix . '_card_layout', 'Card-Layout', self::card_layout((string) ($s[$prefix . '_card_layout'] ?? 'media')), self::card_layout_options());
-                self::replace_checkbox($prefix . '_card_hide_title', 'Kartentitel in diesem Bereich ausblenden', (string) ($s[$prefix . '_card_hide_title'] ?? '0') === '1');
-            }
-            self::replace_input('separator_label', 'Text im optischen Trenner', (string) ($s['separator_label'] ?? ''));
-            self::replace_input('empty_state_title', 'Leerer-Zustand Titel', (string) ($s['empty_state_title'] ?? ''));
-            self::replace_textarea('empty_state_text', 'Leerer-Zustand Text', (string) ($s['empty_state_text'] ?? ''), 2);
-            self::replace_input('card_button_label_default', 'Standard-Buttontext', (string) ($s['card_button_label_default'] ?? 'Öffnen'));
-        } elseif ($tab === 'posts') {
-            echo '<h3>📰 Aktuelle Beiträge</h3>';
-            echo '<div class="alert" style="background:#dbeafe;color:#1e40af;border-left:4px solid #3b82f6;margin-bottom:1.25rem;">ℹ️ Dieser Bereich zeigt die letzten veröffentlichten Beiträge als PHINIT-Grid-Cards. Bei Auswahl einer Hauptkategorie werden alle Beiträge aus Unterkategorien automatisch mitgeladen. Alternativ können alle News angezeigt werden.</div>';
-            self::replace_checkbox('show_posts_section', 'Beitragsbereich anzeigen', (string) ($s['show_posts_section'] ?? '0') === '1');
-            self::replace_checkbox('posts_section_domain_only', 'Nur auf hinterlegten Zusatzdomains anzeigen', (string) ($s['posts_section_domain_only'] ?? '1') === '1');
-            self::select('posts_section_mode', 'Beitragsquelle', self::setting_value($s, 'posts_section_mode', 'category'), ['category' => 'Ausgewählte Kategorie inkl. Unterkategorien', 'all' => 'Alle News / alle veröffentlichten Beiträge']);
-            self::select('posts_section_limit', 'Anzahl Beiträge', self::setting_value($s, 'posts_section_limit', '6'), ['6' => 'Letzte 6 Beiträge', '9' => 'Letzte 9 Beiträge']);
-            $categoryOptions = ['0' => '— Kategorie auswählen —'];
-            $categories = method_exists($repo, 'post_categories') ? $repo->post_categories() : [];
-            foreach ($categories as $category) {
-                $id = (int) ($category['id'] ?? 0);
-                if ($id <= 0) {
-                    continue;
-                }
-                $categoryOptions[(string) $id] = (string) ($category['name'] ?? ('Kategorie #' . $id));
-            }
-            self::select('posts_section_category_id', 'Kategorie inkl. Unterkategorien', self::setting_value($s, 'posts_section_category_id', '0'), $categoryOptions);
-            self::replace_input('posts_section_overline', 'Overline', (string) ($s['posts_section_overline'] ?? ''));
-            self::replace_input('posts_section_title', 'Titel', (string) ($s['posts_section_title'] ?? ''));
-            self::replace_textarea('posts_section_intro', 'Intro', (string) ($s['posts_section_intro'] ?? ''), 3);
-        } elseif ($tab === 'visibility') {
-            echo '<h3>👁️ Sichtbarkeit</h3>';
-            self::replace_checkbox('show_hero', 'Content Header anzeigen', (string) ($s['show_hero'] ?? '1') === '1');
-            self::replace_checkbox('show_hero_actions', 'Header-Buttons anzeigen', (string) ($s['show_hero_actions'] ?? '1') === '1');
-            self::replace_checkbox('show_matrix_section', 'Matrix-Bereich anzeigen', (string) ($s['show_matrix_section'] ?? '1') === '1');
-            self::replace_checkbox('show_separator', 'Dezenten Trenner anzeigen', (string) ($s['show_separator'] ?? '1') === '1');
-            self::replace_checkbox('show_areas_section', 'Weitere M365 Bereiche anzeigen', (string) ($s['show_areas_section'] ?? '1') === '1');
-            self::replace_checkbox('show_tools_section', 'M365 Tools Sammlung anzeigen', (string) ($s['show_tools_section'] ?? '1') === '1');
-        } else {
-            echo '<h3>🎨 Layout & Design</h3>';
-            self::select('layout_variant', 'Layout', self::layout_variant((string) ($s['layout_variant'] ?? 'balanced')), self::layout_options());
-            self::replace_number('layout_max_width', 'Maximale Inhaltsbreite in px', (int) ($s['layout_max_width'] ?? 1180), 720, 1800);
-            self::replace_number('layout_padding_x', 'Seitlicher Innenabstand in px', (int) ($s['layout_padding_x'] ?? 0), 0, 80);
-            self::replace_number('layout_padding_top', 'Abstand zum Theme-Header in px', (int) ($s['layout_padding_top'] ?? 25), 0, 120);
-            self::replace_number('layout_padding_bottom', 'Abstand zum Theme-Footer in px', (int) ($s['layout_padding_bottom'] ?? 64), 0, 160);
-            self::replace_color('design_primary_color', 'Primärfarbe', (string) ($s['design_primary_color'] ?? '#2563eb'), '#2563eb');
-            self::replace_color('design_accent_color', 'Akzentfarbe', (string) ($s['design_accent_color'] ?? '#0f766e'), '#0f766e');
-            self::replace_color('design_background_color', 'Seitenhintergrund', (string) ($s['design_background_color'] ?? '#edf1f6'), '#edf1f6');
-            self::replace_color('design_surface_color', 'Card-Hintergrund', (string) ($s['design_surface_color'] ?? '#ffffff'), '#ffffff');
-            self::replace_color('design_surface_alt_color', 'Alternativer Hintergrund', (string) ($s['design_surface_alt_color'] ?? '#f8fafc'), '#f8fafc');
-            self::replace_color('design_text_color', 'Textfarbe', (string) ($s['design_text_color'] ?? '#1e293b'), '#1e293b');
-            self::replace_color('design_muted_color', 'Sekundärtext', (string) ($s['design_muted_color'] ?? '#64748b'), '#64748b');
-            self::replace_color('design_border_color', 'Rahmenfarbe', (string) ($s['design_border_color'] ?? '#e2e8f0'), '#e2e8f0');
-            self::replace_number('design_border_radius', 'Card-Radius in px', (int) ($s['design_border_radius'] ?? 10), 0, 32);
-            self::replace_number('card_icon_size', 'Icon-Größe in px', (int) ($s['card_icon_size'] ?? 42), 24, 80);
-            self::replace_number('card_image_height', 'Bildhöhe in px', (int) ($s['card_image_height'] ?? 205), 90, 420);
-            self::replace_number('card_image_width', 'Bildbreite links in px', (int) ($s['card_image_width'] ?? 120), 72, 220);
+        echo '<hr class="m365landing-separator"><h3 id="domains">🌐 Domain-Mapping</h3>';
+        $domains = CMS_M365Landing_Repository::normalize_domain_list((string) ($s['landing_domains'] ?? ''));
+        $siteUrl = defined('SITE_URL') ? (string) SITE_URL : '';
+        $mainHost = CMS_M365Landing_Repository::normalize_host((string) (parse_url($siteUrl, PHP_URL_HOST) ?: ''));
+        $status = $domains === [] ? 'Keine Zusatzdomain aktiv' : 'Aktive Zusatzdomain' . (count($domains) === 1 ? '' : 's') . ': ' . implode(', ', $domains);
+        echo '<div class="alert" style="background:#dbeafe;color:#1e40af;border-left:4px solid #3b82f6;margin-bottom:1.25rem;">ℹ️ Hinterlegte Zusatzdomains zeigen die M365-Landingpage direkt auf der Domain-Startseite. Die Hauptdomain ' . self::esc($mainHost !== '' ? $mainHost : 'bleibt unverändert') . ' behält ihre normale Startseite.</div>';
+        echo '<p class="form-text" style="margin-bottom:1rem;"><strong>' . self::esc($status) . '</strong></p>';
+        self::replace_textarea('landing_domains', 'Zusatzdomain(s)', implode("\n", $domains), 4);
+        echo '<p class="form-text">Eine Domain pro Zeile oder kommasepariert eintragen, ohne <code>https://</code> und ohne Pfad. <code>www.</code> und Ports werden automatisch normalisiert.</p>';
+
+        echo '<hr class="m365landing-separator"><h3 id="sections">🧱 Abschnittstexte</h3>';
+        foreach ([['matrix', 'Matrixen'], ['areas', 'Weitere M365 Bereiche'], ['tools', 'M365 Tools Sammlung']] as [$prefix, $label]) {
+            echo '<h4>' . self::esc((string) $label) . '</h4>';
+            self::replace_input($prefix . '_section_overline', 'Overline', (string) ($s[$prefix . '_section_overline'] ?? ''));
+            self::replace_input($prefix . '_section_title', 'Titel', (string) ($s[$prefix . '_section_title'] ?? ''));
+            self::replace_textarea($prefix . '_section_intro', 'Intro', (string) ($s[$prefix . '_section_intro'] ?? ''), 3);
+            self::select($prefix . '_card_layout', 'Card-Layout', self::card_layout((string) ($s[$prefix . '_card_layout'] ?? 'media')), self::card_layout_options());
+            self::replace_checkbox($prefix . '_card_hide_title', 'Kartentitel in diesem Bereich ausblenden', (string) ($s[$prefix . '_card_hide_title'] ?? '0') === '1');
         }
+        self::replace_input('separator_label', 'Text im optischen Trenner', (string) ($s['separator_label'] ?? ''));
+        self::replace_input('empty_state_title', 'Leerer-Zustand Titel', (string) ($s['empty_state_title'] ?? ''));
+        self::replace_textarea('empty_state_text', 'Leerer-Zustand Text', (string) ($s['empty_state_text'] ?? ''), 2);
+        self::replace_input('card_button_label_default', 'Standard-Buttontext', (string) ($s['card_button_label_default'] ?? 'Öffnen'));
+
+        echo '<hr class="m365landing-separator"><h3 id="posts">📰 Aktuelle Beiträge</h3>';
+        echo '<div class="alert" style="background:#dbeafe;color:#1e40af;border-left:4px solid #3b82f6;margin-bottom:1.25rem;">ℹ️ Dieser Bereich zeigt die letzten veröffentlichten Beiträge als PHINIT-Grid-Cards. Bei Auswahl einer Hauptkategorie werden alle Beiträge aus Unterkategorien automatisch mitgeladen. Alternativ können alle News angezeigt werden.</div>';
+        self::replace_checkbox('show_posts_section', 'Beitragsbereich anzeigen', (string) ($s['show_posts_section'] ?? '0') === '1');
+        self::replace_checkbox('posts_section_domain_only', 'Nur auf hinterlegten Zusatzdomains anzeigen', (string) ($s['posts_section_domain_only'] ?? '1') === '1');
+        self::select('posts_section_mode', 'Beitragsquelle', self::setting_value($s, 'posts_section_mode', 'category'), ['category' => 'Ausgewählte Kategorie inkl. Unterkategorien', 'all' => 'Alle News / alle veröffentlichten Beiträge']);
+        self::select('posts_section_limit', 'Anzahl Beiträge', self::setting_value($s, 'posts_section_limit', '6'), ['6' => 'Letzte 6 Beiträge', '9' => 'Letzte 9 Beiträge']);
+        $categoryOptions = ['0' => '— Kategorie auswählen —'];
+        $categories = method_exists($repo, 'post_categories') ? $repo->post_categories() : [];
+        foreach ($categories as $category) {
+            $id = (int) ($category['id'] ?? 0);
+            if ($id <= 0) {
+                continue;
+            }
+            $categoryOptions[(string) $id] = (string) ($category['name'] ?? ('Kategorie #' . $id));
+        }
+        self::select('posts_section_category_id', 'Kategorie inkl. Unterkategorien', self::setting_value($s, 'posts_section_category_id', '0'), $categoryOptions);
+        self::replace_input('posts_section_overline', 'Overline', (string) ($s['posts_section_overline'] ?? ''));
+        self::replace_input('posts_section_title', 'Titel', (string) ($s['posts_section_title'] ?? ''));
+        self::replace_textarea('posts_section_intro', 'Intro', (string) ($s['posts_section_intro'] ?? ''), 3);
+
+        echo '<hr class="m365landing-separator"><h3 id="visibility">👁️ Sichtbarkeit</h3>';
+        self::replace_checkbox('show_hero', 'Content Header anzeigen', (string) ($s['show_hero'] ?? '1') === '1');
+        self::replace_checkbox('show_hero_actions', 'Header-Buttons anzeigen', (string) ($s['show_hero_actions'] ?? '1') === '1');
+        self::replace_checkbox('show_matrix_section', 'Matrix-Bereich anzeigen', (string) ($s['show_matrix_section'] ?? '1') === '1');
+        self::replace_checkbox('show_separator', 'Dezenten Trenner anzeigen', (string) ($s['show_separator'] ?? '1') === '1');
+        self::replace_checkbox('show_areas_section', 'Weitere M365 Bereiche anzeigen', (string) ($s['show_areas_section'] ?? '1') === '1');
+        self::replace_checkbox('show_tools_section', 'M365 Tools Sammlung anzeigen', (string) ($s['show_tools_section'] ?? '1') === '1');
+
+        echo '<hr class="m365landing-separator"><h3 id="design">🎨 Layout & Design</h3>';
+        self::select('layout_variant', 'Layout', self::layout_variant((string) ($s['layout_variant'] ?? 'balanced')), self::layout_options());
+        self::replace_number('layout_max_width', 'Maximale Inhaltsbreite in px', (int) ($s['layout_max_width'] ?? 1180), 720, 1800);
+        self::replace_number('layout_padding_x', 'Seitlicher Innenabstand in px', (int) ($s['layout_padding_x'] ?? 0), 0, 80);
+        self::replace_number('layout_padding_top', 'Abstand zum Theme-Header in px', (int) ($s['layout_padding_top'] ?? 25), 0, 120);
+        self::replace_number('layout_padding_bottom', 'Abstand zum Theme-Footer in px', (int) ($s['layout_padding_bottom'] ?? 64), 0, 160);
+        self::replace_color('design_primary_color', 'Primärfarbe', (string) ($s['design_primary_color'] ?? '#2563eb'), '#2563eb');
+        self::replace_color('design_accent_color', 'Akzentfarbe', (string) ($s['design_accent_color'] ?? '#0f766e'), '#0f766e');
+        self::replace_color('design_background_color', 'Seitenhintergrund', (string) ($s['design_background_color'] ?? '#edf1f6'), '#edf1f6');
+        self::replace_color('design_surface_color', 'Card-Hintergrund', (string) ($s['design_surface_color'] ?? '#ffffff'), '#ffffff');
+        self::replace_color('design_surface_alt_color', 'Alternativer Hintergrund', (string) ($s['design_surface_alt_color'] ?? '#f8fafc'), '#f8fafc');
+        self::replace_color('design_text_color', 'Textfarbe', (string) ($s['design_text_color'] ?? '#1e293b'), '#1e293b');
+        self::replace_color('design_muted_color', 'Sekundärtext', (string) ($s['design_muted_color'] ?? '#64748b'), '#64748b');
+        self::replace_color('design_border_color', 'Rahmenfarbe', (string) ($s['design_border_color'] ?? '#e2e8f0'), '#e2e8f0');
+        self::replace_number('design_border_radius', 'Card-Radius in px', (int) ($s['design_border_radius'] ?? 10), 0, 32);
+        self::replace_number('card_icon_size', 'Icon-Größe in px', (int) ($s['card_icon_size'] ?? 42), 24, 80);
+        self::replace_number('card_image_height', 'Bildhöhe in px', (int) ($s['card_image_height'] ?? 205), 90, 420);
+        self::replace_number('card_image_width', 'Bildbreite links in px', (int) ($s['card_image_width'] ?? 120), 72, 220);
         echo '<button class="btn btn-primary" type="submit">💾 Einstellungen speichern</button></form></div>';
-    }
-
-    /** @param array<string,string> $s */
-    private static function render_hidden_settings(array $s, string $activeTab): void
-    {
-        foreach (self::text_setting_keys() as $key) {
-            if (self::setting_key_visible_in_tab($key, $activeTab)) {
-                continue;
-            }
-            echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc(self::setting_value($s, $key, self::text_setting_default($key))) . '">';
-        }
-        foreach (self::bool_setting_keys() as $key) {
-            if (self::bool_setting_key_visible_in_tab($key, $activeTab)) {
-                continue;
-            }
-            echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc((string) ($s[$key] ?? '0')) . '">';
-        }
-        foreach (array_keys(self::color_setting_defaults()) as $key) {
-            if ($activeTab === 'design') {
-                continue;
-            }
-            echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc(self::setting_value($s, $key, self::color_setting_defaults()[$key])) . '">';
-        }
-        foreach (array_keys(self::numeric_setting_bounds()) as $key) {
-            if (self::numeric_setting_key_visible_in_tab($key, $activeTab)) {
-                continue;
-            }
-            echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc(self::setting_value($s, $key, (string) self::numeric_setting_default($key))) . '">';
-        }
     }
 
     /** @param array<string,string> $settings */
@@ -497,34 +526,6 @@ final class CMS_M365Landing_Admin_Pages
         $value = trim((string) ($settings[$key] ?? ''));
 
         return $value !== '' ? $value : $default;
-    }
-
-    private static function text_setting_default(string $key): string
-    {
-        $defaults = [
-            'route_slug' => 'm365',
-            'landing_domains' => '',
-            'page_overline' => 'Microsoft 365 Hub',
-            'page_title' => 'M365 im Überblick – Matrixen, Azure, Tutorials und Tools',
-            'page_intro' => 'Die zentrale Einstiegsseite für Microsoft-365-Entscheidungen: Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und praktische Rechner an einem Ort.',
-            'hero_primary_button_text' => 'M365 Lizenzmatrix öffnen',
-            'hero_primary_button_url' => '/m365-lizenzmatrix',
-            'hero_secondary_button_text' => 'Add-on-Matrix öffnen',
-            'hero_secondary_button_url' => '/m365-addon-matrix',
-            'posts_section_overline' => '',
-            'posts_section_title' => '',
-            'posts_section_intro' => '',
-            'posts_section_mode' => 'category',
-            'seo_title' => 'Microsoft 365 Hub',
-            'seo_description' => 'Zentrale Landingpage für Microsoft 365 Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und M365 Tools.',
-            'card_button_label_default' => 'Öffnen',
-            'layout_variant' => 'balanced',
-            'matrix_card_layout' => 'media',
-            'areas_card_layout' => 'media',
-            'tools_card_layout' => 'media',
-        ];
-
-        return $defaults[$key] ?? '';
     }
 
     private static function numeric_setting_default(string $key): int
@@ -546,66 +547,7 @@ final class CMS_M365Landing_Admin_Pages
         return $defaults[$key] ?? 0;
     }
 
-    private static function setting_key_visible_in_tab(string $key, string $tab): bool
-    {
-        if ($tab === 'content') {
-            return in_array($key, ['route_slug', 'page_overline', 'page_title', 'page_intro', 'hero_image_url', 'hero_image_alt', 'hero_primary_button_text', 'hero_primary_button_url', 'hero_secondary_button_text', 'hero_secondary_button_url', 'seo_title', 'seo_description'], true);
-        }
-
-        if ($tab === 'domains') {
-            return $key === 'landing_domains';
-        }
-
-        if ($tab === 'sections') {
-            return preg_match('/^(matrix|areas|tools)_section_/', $key) === 1 || preg_match('/^(matrix|areas|tools)_card_layout$/', $key) === 1 || in_array($key, ['separator_label', 'empty_state_title', 'empty_state_text', 'card_button_label_default'], true);
-        }
-
-        if ($tab === 'posts') {
-            return str_starts_with($key, 'posts_section_');
-        }
-
-        if ($tab === 'design') {
-            return $key === 'layout_variant';
-        }
-
-        return false;
-    }
-
-    private static function bool_setting_key_visible_in_tab(string $key, string $tab): bool
-    {
-        if ($tab === 'visibility') {
-            return in_array($key, ['show_hero', 'show_hero_actions', 'show_matrix_section', 'show_separator', 'show_areas_section', 'show_tools_section'], true);
-        }
-
-        if ($tab === 'posts') {
-            return in_array($key, ['show_posts_section', 'posts_section_domain_only'], true);
-        }
-
-        if ($tab === 'sections') {
-            return preg_match('/^(matrix|areas|tools)_card_hide_title$/', $key) === 1;
-        }
-
-        return false;
-    }
-
-    private static function numeric_setting_key_visible_in_tab(string $key, string $tab): bool
-    {
-        if ($tab === 'content') {
-            return $key === 'hero_image_height';
-        }
-
-        if ($tab === 'posts') {
-            return in_array($key, ['posts_section_category_id', 'posts_section_limit'], true);
-        }
-
-        if ($tab === 'design') {
-            return !in_array($key, ['hero_image_height', 'posts_section_category_id'], true);
-        }
-
-        return false;
-    }
-
-    private static function render_system(CMS_M365Landing_Repository $repo): void
+    private static function render_system_section(CMS_M365Landing_Repository $repo): void
     {
         $stats = self::safe_stats($repo);
         echo '<div class="admin-card m365landing-card-connected"><h3>🖥️ System-Informationen</h3><div class="info-grid"><div class="info-card"><h4>Plugin</h4><ul class="info-list"><li><strong>Version:</strong> ' . self::esc(CMS_M365LANDING_VERSION) . '</li><li><strong>DB-Version:</strong> ' . self::esc(CMS_M365LANDING_DB_VERSION) . '</li></ul></div><div class="info-card"><h4>Inhalte</h4><ul class="info-list"><li><strong>Matrix-Karten:</strong> ' . (int) ($stats['matrix'] ?? 0) . '</li><li><strong>Bereiche:</strong> ' . (int) ($stats['areas'] ?? 0) . '</li><li><strong>Tools:</strong> ' . (int) ($stats['tools'] ?? 0) . '</li></ul></div></div></div>';
@@ -617,6 +559,7 @@ final class CMS_M365Landing_Admin_Pages
         try {
             return $repo->settings();
         } catch (\Throwable $e) {
+            self::log_exception('settings_safe_load_failed', $e);
             return [];
         }
     }
@@ -627,6 +570,7 @@ final class CMS_M365Landing_Admin_Pages
         try {
             return $repo->stats();
         } catch (\Throwable $e) {
+            self::log_exception('stats_safe_load_failed', $e);
             return ['matrix' => 0, 'areas' => 0, 'tools' => 0, 'active_cards' => 0];
         }
     }
@@ -637,6 +581,7 @@ final class CMS_M365Landing_Admin_Pages
         try {
             return $repo->card($id);
         } catch (\Throwable $e) {
+            self::log_exception('card_safe_load_failed', $e);
             return null;
         }
     }
@@ -647,6 +592,7 @@ final class CMS_M365Landing_Admin_Pages
         try {
             return $repo->cards(null, false);
         } catch (\Throwable $e) {
+            self::log_exception('cards_safe_load_failed', $e);
             return [];
         }
     }
@@ -821,6 +767,7 @@ final class CMS_M365Landing_Admin_Pages
         try {
             return class_exists('CMS\\Security') ? \CMS\Security::instance()->generateToken('m365landing_admin') : '';
         } catch (\Throwable $e) {
+            self::log_exception('csrf_generate_failed', $e);
             return '';
         }
     }
@@ -828,16 +775,74 @@ final class CMS_M365Landing_Admin_Pages
     private static function check_access(): void
     {
         if (!class_exists('CMS\\Auth') || !\CMS\Auth::instance()->isAdmin()) {
-            header('Location: ' . (defined('SITE_URL') ? SITE_URL : '/'));
+            header('Location: ' . self::safe_admin_redirect_url(), true, 302);
             exit;
         }
+    }
+
+    private static function safe_admin_redirect_url(): string
+    {
+        $url = defined('SITE_URL') ? trim((string) SITE_URL) : '/';
+        if ($url === '' || str_contains($url, "\0") || preg_match('/[\r\n]/', $url) === 1) {
+            return '/';
+        }
+
+        if (str_starts_with($url, '/') && !str_starts_with($url, '//')) {
+            return $url;
+        }
+
+        $scheme = strtolower((string) (parse_url($url, PHP_URL_SCHEME) ?: ''));
+        if (in_array($scheme, ['http', 'https'], true) && filter_var($url, FILTER_VALIDATE_URL) !== false) {
+            return $url;
+        }
+
+        return '/';
     }
 
     private static function load_admin_menu(): void
     {
         $menuFile = ABSPATH . 'admin/partials/admin-menu.php';
-        if (file_exists($menuFile) && !function_exists('renderAdminLayoutStart')) {
-            require_once $menuFile;
+        if (!is_file($menuFile) || function_exists('renderAdminLayoutStart')) {
+            return;
+        }
+
+        $menuReal = realpath($menuFile);
+        $baseReal = realpath((string) ABSPATH);
+        if ($menuReal === false || $baseReal === false) {
+            return;
+        }
+
+        $normalizedBase = rtrim(str_replace('\\', '/', $baseReal), '/') . '/';
+        $normalizedMenu = str_replace('\\', '/', $menuReal);
+        if (!str_starts_with($normalizedMenu, $normalizedBase)) {
+            return;
+        }
+
+        require_once $menuReal;
+    }
+
+    private static function layout_start(string $title, string $slug): void
+    {
+        self::load_admin_menu();
+        if (function_exists('cms_plugin_admin_layout_start')) {
+            cms_plugin_admin_layout_start($title, $slug);
+            return;
+        }
+
+        if (function_exists('renderAdminLayoutStart')) {
+            renderAdminLayoutStart($title, $slug);
+        }
+    }
+
+    private static function layout_end(): void
+    {
+        if (function_exists('cms_plugin_admin_layout_end')) {
+            cms_plugin_admin_layout_end();
+            return;
+        }
+
+        if (function_exists('renderAdminLayoutEnd')) {
+            renderAdminLayoutEnd();
         }
     }
 
@@ -874,11 +879,30 @@ final class CMS_M365Landing_Admin_Pages
 
     private static function admin_url(string $section = 'dashboard', array $params = []): string
     {
-        $url = self::ADMIN_BASE_URL . '?section=' . urlencode($section);
-        foreach ($params as $key => $value) {
-            $url .= '&' . urlencode((string) $key) . '=' . urlencode((string) $value);
+        $slug = self::section_slug($section);
+        $url = self::ADMIN_BASE_URL . '/' . rawurlencode($slug);
+        if ($params !== []) {
+            $url .= '?' . http_build_query($params, '', '&', PHP_QUERY_RFC3986);
         }
+
         return $url;
+    }
+
+    private static function section_slug(string $section): string
+    {
+        $section = self::allowed_section($section);
+        $map = self::section_page_slugs();
+
+        return $map[$section] ?? ($map['dashboard'] ?? 'm365landing-dashboard');
+    }
+
+    private static function clean_slug(string $value): string
+    {
+        if (function_exists('cms_plugin_admin_normalize_slug')) {
+            return cms_plugin_admin_normalize_slug($value);
+        }
+
+        return trim((string) preg_replace('/[^a-z0-9_-]+/i', '-', strtolower(trim($value))), '-');
     }
 
     private static function page_title(string $section): string
@@ -907,5 +931,12 @@ final class CMS_M365Landing_Admin_Pages
         }
 
         return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    }
+
+    private static function log_exception(string $context, \Throwable $e): void
+    {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('CMS M365 Landing [' . $context . ']: ' . $e->getMessage());
+        }
     }
 }

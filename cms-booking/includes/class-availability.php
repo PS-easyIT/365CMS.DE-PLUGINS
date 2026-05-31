@@ -16,6 +16,12 @@ if (!defined('ABSPATH')) {
 final class CMS_Booking_Availability
 {
     private static ?self $instance = null;
+    /** @var array<int, array<int, array<string, mixed>>> */
+    private array $weeklyCache = [];
+    /** @var array<string, array<int, array<string, mixed>>> */
+    private array $overrideCache = [];
+    /** @var array<string, array<int, string>> */
+    private array $slotCache = [];
 
     public static function instance(): self
     {
@@ -49,6 +55,7 @@ final class CMS_Booking_Availability
         $ph   = implode(', ', array_fill(0, count($fields), '?'));
         $db->prepare("INSERT INTO {$p}booking_availability ({$cols}) VALUES ({$ph})")
             ->execute(array_values($fields));
+        $this->clear_provider_cache((int) ($data['provider_id'] ?? 0));
 
         return (int) $db->getPdo()->lastInsertId();
     }
@@ -59,8 +66,12 @@ final class CMS_Booking_Availability
     public function delete(int $id): bool
     {
         $db   = \CMS\Database::instance();
+        $providerId = $this->provider_id_by_availability_id($id);
         $stmt = $db->prepare("DELETE FROM {$db->getPrefix()}booking_availability WHERE id = ?");
         $stmt->execute([$id]);
+        if ($providerId > 0) {
+            $this->clear_provider_cache($providerId);
+        }
         return $stmt->rowCount() > 0;
     }
 
@@ -75,6 +86,7 @@ final class CMS_Booking_Availability
              WHERE provider_id = ? AND specific_date IS NULL"
         );
         $stmt->execute([$providerId]);
+        $this->clear_provider_cache($providerId);
         return $stmt->rowCount() > 0;
     }
 
@@ -104,6 +116,10 @@ final class CMS_Booking_Availability
      */
     public function get_weekly(int $providerId): array
     {
+        if (isset($this->weeklyCache[$providerId])) {
+            return $this->weeklyCache[$providerId];
+        }
+
         $db   = \CMS\Database::instance();
         $stmt = $db->prepare(
             "SELECT * FROM {$db->getPrefix()}booking_availability
@@ -111,7 +127,9 @@ final class CMS_Booking_Availability
              ORDER BY day_of_week ASC, start_time ASC"
         );
         $stmt->execute([$providerId]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $this->weeklyCache[$providerId] = $rows;
+        return $rows;
     }
 
     /**
@@ -119,6 +137,11 @@ final class CMS_Booking_Availability
      */
     public function get_date_overrides(int $providerId, string $from, string $to): array
     {
+        $cacheKey = $providerId . '|' . $from . '|' . $to;
+        if (isset($this->overrideCache[$cacheKey])) {
+            return $this->overrideCache[$cacheKey];
+        }
+
         $db   = \CMS\Database::instance();
         $stmt = $db->prepare(
             "SELECT * FROM {$db->getPrefix()}booking_availability
@@ -126,7 +149,9 @@ final class CMS_Booking_Availability
              ORDER BY specific_date ASC, start_time ASC"
         );
         $stmt->execute([$providerId, $from, $to]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $this->overrideCache[$cacheKey] = $rows;
+        return $rows;
     }
 
     /**
@@ -162,6 +187,11 @@ final class CMS_Booking_Availability
         int    $durationMin = 60,
         int    $bufferMin   = 15
     ): array {
+        $slotCacheKey = implode('|', [$providerId, $date, $durationMin, $bufferMin]);
+        if (isset($this->slotCache[$slotCacheKey])) {
+            return $this->slotCache[$slotCacheKey];
+        }
+
         // 1. Wochentag bestimmen (0=Mo … 6=So)
         $ts  = strtotime($date);
         $dow = ((int) date('N', $ts)) - 1; // 1=Mo → 0
@@ -216,7 +246,9 @@ final class CMS_Booking_Availability
         }
 
         sort($slots);
-        return array_unique($slots);
+        $result = array_values(array_unique($slots));
+        $this->slotCache[$slotCacheKey] = $result;
+        return $result;
     }
 
     /**
@@ -306,5 +338,42 @@ final class CMS_Booking_Availability
     public static function day_label(int $day): string
     {
         return self::day_labels()[$day] ?? '';
+    }
+
+    private function provider_id_by_availability_id(int $id): int
+    {
+        if ($id <= 0) {
+            return 0;
+        }
+
+        $db = \CMS\Database::instance();
+        $stmt = $db->prepare("SELECT provider_id FROM {$db->getPrefix()}booking_availability WHERE id = ?");
+        $stmt->execute([$id]);
+
+        return (int) ($stmt->fetchColumn() ?: 0);
+    }
+
+    private function clear_provider_cache(int $providerId): void
+    {
+        if ($providerId <= 0) {
+            $this->weeklyCache = [];
+            $this->overrideCache = [];
+            $this->slotCache = [];
+            return;
+        }
+
+        unset($this->weeklyCache[$providerId]);
+
+        $prefix = $providerId . '|';
+        foreach (array_keys($this->overrideCache) as $key) {
+            if (strpos($key, $prefix) === 0) {
+                unset($this->overrideCache[$key]);
+            }
+        }
+        foreach (array_keys($this->slotCache) as $key) {
+            if (strpos($key, $prefix) === 0) {
+                unset($this->slotCache[$key]);
+            }
+        }
     }
 }
