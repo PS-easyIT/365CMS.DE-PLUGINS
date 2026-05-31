@@ -167,6 +167,59 @@ final class CMS_M365Landing_Repository
         return $stats;
     }
 
+    /** @return array<int,array<string,mixed>> */
+    public function post_categories(): array
+    {
+        try {
+            $stmt = $this->db->prepare("SELECT id, name, slug, parent_id, sort_order FROM {$this->prefix}post_categories ORDER BY COALESCE(parent_id, 0) ASC, sort_order ASC, name ASC");
+            $stmt->execute();
+
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public function latest_posts_by_category(int $categoryId, int $limit = 6): array
+    {
+        $categoryId = max(0, $categoryId);
+        $limit = max(1, min(12, $limit));
+        if ($categoryId <= 0) {
+            return [];
+        }
+
+        $publicationWhere = function_exists('cms_post_publication_where')
+            ? \cms_post_publication_where('p')
+            : "p.status = 'published'";
+
+        try {
+            $stmt = $this->db->prepare("SELECT p.id, p.title, p.slug, p.excerpt, p.content, p.featured_image, p.published_at, p.created_at, c.name AS category_name, c.slug AS category_slug
+                FROM {$this->prefix}posts p
+                LEFT JOIN {$this->prefix}post_categories c ON c.id = p.category_id
+                WHERE {$publicationWhere}
+                  AND (p.category_id = ? OR EXISTS (
+                      SELECT 1
+                      FROM {$this->prefix}post_category_rel pcr
+                      WHERE pcr.post_id = p.id AND pcr.category_id = ?
+                  ))
+                ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC
+                LIMIT {$limit}");
+            $stmt->execute([$categoryId, $categoryId]);
+            $posts = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        foreach ($posts as &$post) {
+            $post['permalink'] = $this->post_path($post);
+            $post['featured_image'] = self::public_image_url((string) ($post['featured_image'] ?? ''));
+        }
+        unset($post);
+
+        return $posts;
+    }
+
     public static function text(string $value): string
     {
         return trim(strip_tags(self::normalize_newlines($value)));
@@ -283,6 +336,22 @@ final class CMS_M365Landing_Repository
     public static function section(string $value): string
     {
         return in_array($value, ['matrix', 'areas', 'tools'], true) ? $value : 'tools';
+    }
+
+    /** @param array<string,mixed> $post */
+    private function post_path(array $post): string
+    {
+        try {
+            if (class_exists('CMS\\Services\\PermalinkService')) {
+                return \CMS\Services\PermalinkService::getInstance()->buildPostPath($post);
+            }
+        } catch (\Throwable $e) {
+            // Fallback unten verwenden.
+        }
+
+        $slug = self::slug((string) ($post['slug'] ?? ''));
+
+        return '/blog/' . $slug;
     }
 
     private function resolve_prefix(object $db): string

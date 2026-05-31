@@ -151,6 +151,7 @@ final class CMS_M365Landing_Admin_Pages
             'matrix_section_overline', 'matrix_section_title', 'matrix_section_intro',
             'areas_section_overline', 'areas_section_title', 'areas_section_intro',
             'tools_section_overline', 'tools_section_title', 'tools_section_intro',
+            'posts_section_overline', 'posts_section_title', 'posts_section_intro',
             'separator_label', 'empty_state_title', 'empty_state_text', 'seo_title', 'seo_description',
             'card_button_label_default', 'layout_variant',
         ];
@@ -159,7 +160,7 @@ final class CMS_M365Landing_Admin_Pages
     /** @return array<int,string> */
     private static function bool_setting_keys(): array
     {
-        return ['show_hero', 'show_hero_actions', 'show_matrix_section', 'show_separator', 'show_areas_section', 'show_tools_section'];
+        return ['show_hero', 'show_hero_actions', 'show_matrix_section', 'show_separator', 'show_areas_section', 'show_tools_section', 'show_posts_section', 'posts_section_domain_only'];
     }
 
     /** @return array<string,string> */
@@ -189,6 +190,7 @@ final class CMS_M365Landing_Admin_Pages
             'hero_image_height' => [80, 320],
             'card_icon_size' => [24, 80],
             'card_image_height' => [90, 205],
+            'posts_section_category_id' => [0, 999999],
         ];
     }
 
@@ -276,9 +278,9 @@ final class CMS_M365Landing_Admin_Pages
     private static function render_settings(CMS_M365Landing_Repository $repo): void
     {
         $s = $repo->settings();
-        $allowedTabs = ['content', 'domains', 'sections', 'visibility', 'design'];
+        $allowedTabs = ['content', 'domains', 'sections', 'posts', 'visibility', 'design'];
         $tab = in_array((string) ($_GET['tab'] ?? 'content'), $allowedTabs, true) ? (string) ($_GET['tab'] ?? 'content') : 'content';
-        $tabs = ['content' => '📝 Header', 'domains' => '🌐 Domains', 'sections' => '🧱 Sektionen', 'visibility' => '👁️ Sichtbarkeit', 'design' => '🎨 Design'];
+        $tabs = ['content' => '📝 Header', 'domains' => '🌐 Domains', 'sections' => '🧱 Sektionen', 'posts' => '📰 Beiträge', 'visibility' => '👁️ Sichtbarkeit', 'design' => '🎨 Design'];
         echo '<div class="m365landing-subtabs">';
         foreach ($tabs as $key => $label) {
             $active = $tab === $key ? ' active' : '';
@@ -328,6 +330,23 @@ final class CMS_M365Landing_Admin_Pages
             self::replace_input('empty_state_title', 'Leerer-Zustand Titel', (string) ($s['empty_state_title'] ?? ''));
             self::replace_textarea('empty_state_text', 'Leerer-Zustand Text', (string) ($s['empty_state_text'] ?? ''), 2);
             self::replace_input('card_button_label_default', 'Standard-Buttontext', (string) ($s['card_button_label_default'] ?? 'Öffnen'));
+        } elseif ($tab === 'posts') {
+            echo '<h3>📰 Aktuelle Beiträge</h3>';
+            echo '<div class="alert" style="background:#dbeafe;color:#1e40af;border-left:4px solid #3b82f6;margin-bottom:1.25rem;">ℹ️ Dieser Bereich zeigt maximal die letzten sechs veröffentlichten Beiträge einer ausgewählten CMS-Kategorie als PHINIT-Grid-Cards. Standardmäßig erscheint er nur auf hinterlegten Zusatzdomains.</div>';
+            self::replace_checkbox('show_posts_section', 'Beitragsbereich anzeigen', (string) ($s['show_posts_section'] ?? '0') === '1');
+            self::replace_checkbox('posts_section_domain_only', 'Nur auf hinterlegten Zusatzdomains anzeigen', (string) ($s['posts_section_domain_only'] ?? '1') === '1');
+            $categoryOptions = ['0' => '— Kategorie auswählen —'];
+            foreach ($repo->post_categories() as $category) {
+                $id = (int) ($category['id'] ?? 0);
+                if ($id <= 0) {
+                    continue;
+                }
+                $categoryOptions[(string) $id] = (string) ($category['name'] ?? ('Kategorie #' . $id));
+            }
+            self::select('posts_section_category_id', 'Kategorie für die 6 neuesten Beiträge', self::setting_value($s, 'posts_section_category_id', '0'), $categoryOptions);
+            self::replace_input('posts_section_overline', 'Overline', self::setting_value($s, 'posts_section_overline', 'Aktuelles'));
+            self::replace_input('posts_section_title', 'Titel', self::setting_value($s, 'posts_section_title', 'Neue Beiträge aus der Kategorie'));
+            self::replace_textarea('posts_section_intro', 'Intro', self::setting_value($s, 'posts_section_intro', 'Die letzten sechs veröffentlichten Beiträge der ausgewählten Kategorie – im PHINIT-Grid-Card-Design.'), 3);
         } elseif ($tab === 'visibility') {
             echo '<h3>👁️ Sichtbarkeit</h3>';
             self::replace_checkbox('show_hero', 'Content Header anzeigen', (string) ($s['show_hero'] ?? '1') === '1');
@@ -368,7 +387,7 @@ final class CMS_M365Landing_Admin_Pages
             echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc(self::setting_value($s, $key, self::text_setting_default($key))) . '">';
         }
         foreach (self::bool_setting_keys() as $key) {
-            if ($activeTab === 'visibility') {
+            if (self::bool_setting_key_visible_in_tab($key, $activeTab)) {
                 continue;
             }
             echo '<input type="hidden" name="' . self::esc($key) . '" value="' . self::esc((string) ($s[$key] ?? '0')) . '">';
@@ -407,6 +426,9 @@ final class CMS_M365Landing_Admin_Pages
             'hero_primary_button_url' => '/m365-lizenzmatrix',
             'hero_secondary_button_text' => 'Add-on-Matrix öffnen',
             'hero_secondary_button_url' => '/m365-addon-matrix',
+            'posts_section_overline' => 'Aktuelles',
+            'posts_section_title' => 'Neue Beiträge aus der Kategorie',
+            'posts_section_intro' => 'Die letzten sechs veröffentlichten Beiträge der ausgewählten Kategorie – im PHINIT-Grid-Card-Design.',
             'seo_title' => 'Microsoft 365 Hub',
             'seo_description' => 'Zentrale Landingpage für Microsoft 365 Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und M365 Tools.',
             'card_button_label_default' => 'Öffnen',
@@ -427,6 +449,7 @@ final class CMS_M365Landing_Admin_Pages
             'hero_image_height' => 150,
             'card_icon_size' => 42,
             'card_image_height' => 205,
+            'posts_section_category_id' => 0,
         ];
 
         return $defaults[$key] ?? 0;
@@ -443,11 +466,28 @@ final class CMS_M365Landing_Admin_Pages
         }
 
         if ($tab === 'sections') {
-            return str_contains($key, '_section_') || in_array($key, ['separator_label', 'empty_state_title', 'empty_state_text', 'card_button_label_default'], true);
+            return preg_match('/^(matrix|areas|tools)_section_/', $key) === 1 || in_array($key, ['separator_label', 'empty_state_title', 'empty_state_text', 'card_button_label_default'], true);
+        }
+
+        if ($tab === 'posts') {
+            return str_starts_with($key, 'posts_section_');
         }
 
         if ($tab === 'design') {
             return $key === 'layout_variant';
+        }
+
+        return false;
+    }
+
+    private static function bool_setting_key_visible_in_tab(string $key, string $tab): bool
+    {
+        if ($tab === 'visibility') {
+            return in_array($key, ['show_hero', 'show_hero_actions', 'show_matrix_section', 'show_separator', 'show_areas_section', 'show_tools_section'], true);
+        }
+
+        if ($tab === 'posts') {
+            return in_array($key, ['show_posts_section', 'posts_section_domain_only'], true);
         }
 
         return false;
@@ -459,8 +499,12 @@ final class CMS_M365Landing_Admin_Pages
             return $key === 'hero_image_height';
         }
 
+        if ($tab === 'posts') {
+            return $key === 'posts_section_category_id';
+        }
+
         if ($tab === 'design') {
-            return $key !== 'hero_image_height';
+            return !in_array($key, ['hero_image_height', 'posts_section_category_id'], true);
         }
 
         return false;

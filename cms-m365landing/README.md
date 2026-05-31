@@ -6,6 +6,8 @@
 
 - Öffentliche Route standardmäßig unter `/m365`
 - Optionale Zusatzdomains, die die Landingpage direkt auf der Domain-Startseite ausliefern
+- Optionaler Beitragsbereich mit den letzten 6 Posts einer im Adminbereich ausgewählten CMS-Kategorie
+- Beitragsbereich wahlweise nur auf hinterlegten Zusatzdomains sichtbar
 - Content Header mit Overline, Titel, Intro, optionalem Headerbild und zwei Buttons
 - Drei Matrix-Cards nebeneinander für M365, Add-ons und Copilot
 - Dezenter optischer Trenner zwischen Matrixen und weiteren Bereichen
@@ -20,7 +22,7 @@
 
 Das Plugin legt zwei Tabellen an:
 
-- `cms_m365landing_settings` – globale Texte, Domain-Mapping, Sichtbarkeit und Designwerte
+- `cms_m365landing_settings` – globale Texte, Domain-Mapping, Beitragsbereich, Sichtbarkeit und Designwerte
 - `cms_m365landing_cards` – Matrix-, Bereichs- und Tool-Cards
 
 Der Tabellenpräfix wird über die 365CMS-Datenbankklasse ermittelt.

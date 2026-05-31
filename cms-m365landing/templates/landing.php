@@ -44,7 +44,9 @@ $buttonLabelDefault = $value('card_button_label_default', 'Zum Bereich');
 $layoutVariant = in_array($value('layout_variant', 'balanced'), ['balanced', 'compact', 'spotlight'], true) ? $value('layout_variant', 'balanced') : 'balanced';
 $heroImageUrl = CMS_M365Landing_Repository::public_image_url($value('hero_image_url'));
 $heroImageAlt = $value('hero_image_alt', $value('page_title', 'Microsoft 365 Hub'));
+$latestPosts = is_array($latestPosts ?? null) ? $latestPosts : [];
 $hasAnyCards = !empty($cardsBySection['matrix']) || !empty($cardsBySection['areas']) || !empty($cardsBySection['tools']);
+$hasAnyContent = $hasAnyCards || $latestPosts !== [];
 
 $renderCard = static function (array $card) use ($esc, $buttonLabelDefault, $isExternal, $resolveCardUrl): void {
     $url = $resolveCardUrl($card);
@@ -108,6 +110,54 @@ $renderSection = static function (string $sectionKey, string $sectionClass, arra
     </section>
     <?php
 };
+
+$renderPostCard = static function (array $post) use ($esc): void {
+    $title = trim((string) ($post['title'] ?? ''));
+    $title = $title !== '' ? $title : 'Ohne Titel';
+    $url = CMS_M365Landing_Repository::public_url((string) ($post['permalink'] ?? ''));
+    $url = $url !== '' ? $url : '/blog/' . CMS_M365Landing_Repository::slug((string) ($post['slug'] ?? $title));
+    $imageUrl = CMS_M365Landing_Repository::public_image_url((string) ($post['featured_image'] ?? ''));
+    $categoryName = trim((string) ($post['category_name'] ?? ''));
+    $dateRaw = trim((string) ($post['published_at'] ?? ($post['created_at'] ?? '')));
+    $timestamp = $dateRaw !== '' ? strtotime($dateRaw) : false;
+    $dateLabel = $timestamp !== false ? date('d.m.Y', $timestamp) : '';
+    $dateIso = $timestamp !== false ? date('Y-m-d', $timestamp) : '';
+    $excerpt = trim(strip_tags((string) ($post['excerpt'] ?? '')));
+    if ($excerpt === '') {
+        $excerpt = trim(strip_tags((string) ($post['content'] ?? '')));
+    }
+    if (function_exists('mb_strimwidth')) {
+        $excerpt = mb_strimwidth($excerpt, 0, 150, '…', 'UTF-8');
+    } else {
+        $excerpt = strlen($excerpt) > 150 ? substr($excerpt, 0, 147) . '…' : $excerpt;
+    }
+    ?>
+    <article class="article-card m365landing-post-card">
+        <a class="article-thumb<?php echo $imageUrl !== '' ? ' article-thumb--has-image' : ''; ?>" href="<?php echo $esc($url); ?>" aria-label="<?php echo $esc($title); ?>">
+            <?php if ($imageUrl !== ''): ?>
+            <img src="<?php echo $esc($imageUrl); ?>" alt="<?php echo $esc($title); ?>" loading="lazy" decoding="async">
+            <?php else: ?>
+            <span class="article-thumb-placeholder" aria-hidden="true"><span>📄</span></span>
+            <?php endif; ?>
+            <?php if ($categoryName !== ''): ?>
+            <span class="thumb-badge badge-teal"><?php echo $esc($categoryName); ?></span>
+            <?php endif; ?>
+        </a>
+        <div class="article-body">
+            <h3><a href="<?php echo $esc($url); ?>"><?php echo $esc($title); ?></a></h3>
+            <?php if ($excerpt !== ''): ?>
+            <p><?php echo $esc($excerpt); ?></p>
+            <?php endif; ?>
+            <div class="article-footer">
+                <?php if ($dateLabel !== '' && $dateIso !== ''): ?>
+                <time class="article-meta__primary" datetime="<?php echo $esc($dateIso); ?>"><?php echo $esc($dateLabel); ?></time>
+                <?php endif; ?>
+                <a class="article-meta__more" href="<?php echo $esc($url); ?>" aria-label="<?php echo $esc('Weiterlesen: ' . $title); ?>">Weiter lesen →</a>
+            </div>
+        </div>
+    </article>
+    <?php
+};
 ?>
 <main class="phinit-plugin m365landing-page m365landing-layout--<?php echo $esc($layoutVariant); ?>" id="m365landing-page">
     <?php if ($enabled('show_hero')): ?>
@@ -161,7 +211,26 @@ $renderSection = static function (string $sectionKey, string $sectionClass, arra
         <?php $renderSection('tools', 'm365landing-section--tools', $cardsBySection['tools'] ?? []); ?>
     <?php endif; ?>
 
-    <?php if (!$hasAnyCards): ?>
+    <?php if ($latestPosts !== []): ?>
+    <section class="m365landing-section m365landing-section--posts home-section--grid" aria-labelledby="m365landing-posts-title">
+        <div class="m365landing-section__head">
+            <?php if ($value('posts_section_overline', 'Aktuelles') !== ''): ?>
+            <p class="phinit-overline m365landing-overline"><?php echo $esc($value('posts_section_overline', 'Aktuelles')); ?></p>
+            <?php endif; ?>
+            <h2 id="m365landing-posts-title"><?php echo $esc($value('posts_section_title', 'Neue Beiträge aus der Kategorie')); ?></h2>
+            <?php if ($value('posts_section_intro') !== ''): ?>
+            <p class="m365landing-section__intro"><?php echo $esc($value('posts_section_intro')); ?></p>
+            <?php endif; ?>
+        </div>
+        <div class="m365landing-posts-grid posts-grid" role="list">
+            <?php foreach ($latestPosts as $post): ?>
+                <div role="listitem"><?php $renderPostCard($post); ?></div>
+            <?php endforeach; ?>
+        </div>
+    </section>
+    <?php endif; ?>
+
+    <?php if (!$hasAnyContent): ?>
     <section class="m365landing-empty phinit-card">
         <p class="m365landing-empty__icon" aria-hidden="true">🧭</p>
         <h2><?php echo $esc($value('empty_state_title', 'Noch keine aktiven Karten vorhanden')); ?></h2>

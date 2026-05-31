@@ -21,8 +21,9 @@ final class CMS_M365Landing_Frontend
     {
         if (self::$instance === null) {
             self::$instance = new self();
-            self::$instance->register_routes();
         }
+
+        self::$instance->register_routes();
 
         return self::$instance;
     }
@@ -168,6 +169,12 @@ final class CMS_M365Landing_Frontend
         $repo = $this->repo();
         $settings = $repo->settings();
         $cardsBySection = $repo->cards_by_section(true);
+        $isDomainLandingRequest = $this->is_domain_landing_request();
+        $latestPosts = [];
+
+        if ($this->should_render_posts_section($settings, $isDomainLandingRequest)) {
+            $latestPosts = $repo->latest_posts_by_category((int) ($settings['posts_section_category_id'] ?? 0), 6);
+        }
 
         $title = $this->setting($settings, 'seo_title', $this->setting($settings, 'page_title', 'Microsoft 365 Hub'));
         $description = $this->setting($settings, 'seo_description', $this->setting($settings, 'page_intro', 'Zentrale Übersicht für Microsoft 365 Inhalte und Tools.'));
@@ -211,6 +218,24 @@ final class CMS_M365Landing_Frontend
         $slug = $this->route_slug();
 
         return $path === $slug || str_ends_with($path, '/' . $slug) || ($path === '' && $this->is_domain_landing_request());
+    }
+
+    /** @param array<string,string> $settings */
+    private function should_render_posts_section(array $settings, bool $isDomainLandingRequest): bool
+    {
+        if ((string) ($settings['show_posts_section'] ?? '0') !== '1') {
+            return false;
+        }
+
+        if ((int) ($settings['posts_section_category_id'] ?? 0) <= 0) {
+            return false;
+        }
+
+        if ((string) ($settings['posts_section_domain_only'] ?? '1') === '1' && !$isDomainLandingRequest) {
+            return false;
+        }
+
+        return true;
     }
 
     private function is_domain_landing_request(): bool

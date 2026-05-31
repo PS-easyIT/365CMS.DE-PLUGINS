@@ -1,5 +1,11 @@
 # CMS M365 Landing – Changelog
 
+## 1.0.10 – 2026-05-31
+
+- Root-Routing für hinterlegte Zusatzdomains robuster gemacht, indem die Frontend-Routen auch im eigentlichen `register_routes`-Hook erneut registriert werden.
+- Optionalen Beitragsbereich ergänzt: Admin-Auswahl einer CMS-Kategorie, Ausgabe der letzten sechs veröffentlichten Beiträge als PHINIT-Grid-Cards mit drei Spalten.
+- Beitragsbereich kann gezielt nur auf hinterlegten Zusatzdomains angezeigt werden.
+
 ## 1.0.9 – 2026-05-31
 
 - Domain-Mapping ergänzt: Eine oder mehrere Zusatzdomains können die M365-Landingpage direkt auf `/` ausliefern.
