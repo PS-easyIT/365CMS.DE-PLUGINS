@@ -3,7 +3,7 @@
  * Plugin Name: CMS M365 Landing
  * Plugin URI: https://365network.de/cms-m365landing
  * Description: Zentrale, vollständig steuerbare Landingpage für M365-Matrixen, Azure Services, Tutorials und M365 Tools.
- * Version: 1.0.10
+ * Version: 1.0.17
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,8 +16,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-defined('CMS_M365LANDING_VERSION') || define('CMS_M365LANDING_VERSION', '1.0.10');
-defined('CMS_M365LANDING_DB_VERSION') || define('CMS_M365LANDING_DB_VERSION', '1.0.6');
+defined('CMS_M365LANDING_VERSION') || define('CMS_M365LANDING_VERSION', '1.0.17');
+defined('CMS_M365LANDING_DB_VERSION') || define('CMS_M365LANDING_DB_VERSION', '1.0.7');
 defined('CMS_M365LANDING_PLUGIN_DIR') || define('CMS_M365LANDING_PLUGIN_DIR', dirname(__FILE__) . '/');
 defined('CMS_M365LANDING_PLUGIN_URL') || define('CMS_M365LANDING_PLUGIN_URL', '/plugins/cms-m365landing/');
 
@@ -60,14 +60,26 @@ final class CMS_M365Landing
 
         \CMS\Hooks::addAction('cms_init', [$this, 'init_plugin'], 10);
         \CMS\Hooks::addAction('plugin_activated', [$this, 'on_activation'], 10);
-        \CMS\Hooks::addAction('cms_admin_menu', [CMS_M365Landing_Admin_Menu::class, 'register'], 10);
-        \CMS\Hooks::addAction('register_routes', [CMS_M365Landing_Frontend::class, 'instance'], 10);
+        if (class_exists('CMS_M365Landing_Admin_Menu')) {
+            \CMS\Hooks::addAction('cms_admin_menu', [CMS_M365Landing_Admin_Menu::class, 'register'], 10);
+        }
+        if (class_exists('CMS_M365Landing_Frontend')) {
+            \CMS\Hooks::addAction('register_routes', [CMS_M365Landing_Frontend::class, 'instance'], 99);
+        }
     }
 
     public function init_plugin(): void
     {
-        CMS_M365Landing_Installer::maybe_install();
-        CMS_M365Landing_Frontend::instance();
+        try {
+            if (class_exists('CMS_M365Landing_Installer')) {
+                CMS_M365Landing_Installer::maybe_install();
+            }
+            if (class_exists('CMS_M365Landing_Frontend')) {
+                CMS_M365Landing_Frontend::instance();
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS M365 Landing init skipped: ' . $e->getMessage());
+        }
     }
 
     public function on_activation(string $pluginSlug): void
@@ -76,8 +88,12 @@ final class CMS_M365Landing
             return;
         }
 
-        CMS_M365Landing_Installer::install();
-        CMS_M365Landing_Frontend::instance();
+        if (class_exists('CMS_M365Landing_Installer')) {
+            CMS_M365Landing_Installer::install();
+        }
+        if (class_exists('CMS_M365Landing_Frontend')) {
+            CMS_M365Landing_Frontend::instance();
+        }
     }
 }
 

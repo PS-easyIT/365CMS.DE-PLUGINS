@@ -112,47 +112,86 @@ $renderSection = static function (string $sectionKey, string $sectionClass, arra
 };
 
 $renderPostCard = static function (array $post) use ($esc): void {
+    $siteUrl = defined('SITE_URL') ? (string) SITE_URL : '';
+    $currentLocale = function_exists('phinit_get_current_locale') ? (string) phinit_get_current_locale() : 'de';
     $title = trim((string) ($post['title'] ?? ''));
     $title = $title !== '' ? $title : 'Ohne Titel';
-    $url = CMS_M365Landing_Repository::public_url((string) ($post['permalink'] ?? ''));
-    $url = $url !== '' ? $url : '/blog/' . CMS_M365Landing_Repository::slug((string) ($post['slug'] ?? $title));
-    $imageUrl = CMS_M365Landing_Repository::public_image_url((string) ($post['featured_image'] ?? ''));
+    $url = CMS_M365Landing_Repository::main_site_url(CMS_M365Landing_Repository::public_url((string) ($post['permalink'] ?? '')));
+    $url = $url !== '' ? $url : CMS_M365Landing_Repository::main_site_url('/blog/' . CMS_M365Landing_Repository::slug((string) ($post['slug'] ?? $title)));
+    $imageUrl = CMS_M365Landing_Repository::main_site_media_url((string) ($post['featured_image'] ?? ''));
     $categoryName = trim((string) ($post['category_name'] ?? ''));
+    $categorySlug = trim((string) ($post['category_slug'] ?? ''));
+    if ($categorySlug === '' && $categoryName !== '') {
+        $categorySlug = function_exists('phinit_display_text') ? (string) phinit_display_text($categoryName) : CMS_M365Landing_Repository::slug($categoryName);
+    }
+    $categoryUrl = $categorySlug !== ''
+        ? (function_exists('cms_get_archive_url')
+            ? (string) cms_get_archive_url('category', $categorySlug, $currentLocale)
+            : '/kategorie/' . rawurlencode($categorySlug))
+        : '';
+    $categoryUrl = $categoryUrl !== '' ? CMS_M365Landing_Repository::main_site_url($categoryUrl) : '';
     $dateRaw = trim((string) ($post['published_at'] ?? ($post['created_at'] ?? '')));
     $timestamp = $dateRaw !== '' ? strtotime($dateRaw) : false;
-    $dateLabel = $timestamp !== false ? date('d.m.Y', $timestamp) : '';
+    $dateLabel = $dateRaw !== '' && function_exists('phinit_format_date')
+        ? (string) phinit_format_date($dateRaw, 'long', $currentLocale)
+        : ($timestamp !== false ? date('d.m.Y', $timestamp) : '');
     $dateIso = $timestamp !== false ? date('Y-m-d', $timestamp) : '';
-    $excerpt = trim(strip_tags((string) ($post['excerpt'] ?? '')));
-    if ($excerpt === '') {
-        $excerpt = trim(strip_tags((string) ($post['content'] ?? '')));
-    }
+    $excerpt = trim((string) ($post['excerpt_plain'] ?? ''));
+    $excerpt = $excerpt !== '' ? $excerpt : CMS_M365Landing_Repository::excerpt_plain_text((string) ($post['excerpt'] ?? ''));
+    $excerpt = $excerpt !== '' ? $excerpt : CMS_M365Landing_Repository::excerpt_plain_text((string) ($post['content'] ?? ''));
     if (function_exists('mb_strimwidth')) {
-        $excerpt = mb_strimwidth($excerpt, 0, 150, '…', 'UTF-8');
+        $excerpt = mb_strimwidth($excerpt, 0, 180, '…', 'UTF-8');
     } else {
-        $excerpt = strlen($excerpt) > 150 ? substr($excerpt, 0, 147) . '…' : $excerpt;
+        $excerpt = strlen($excerpt) > 180 ? substr($excerpt, 0, 177) . '…' : $excerpt;
     }
+    $readTime = (int) ($post['read_time'] ?? 0);
+    $readTimeLabel = $readTime > 0
+        ? (function_exists('phinit_t') ? (string) phinit_t('read_time_short', ['minutes' => $readTime], $currentLocale) : $readTime . ' Min.')
+        : '';
+    $readTimeAria = $readTime > 0
+        ? (function_exists('phinit_t') ? (string) phinit_t('read_time_aria', ['minutes' => $readTime], $currentLocale) : $readTime . ' Minuten Lesezeit')
+        : '';
+    $continueLabel = function_exists('phinit_t') ? (string) phinit_t('continue_reading', [], $currentLocale) : 'Weiter lesen →';
     ?>
-    <article class="article-card m365landing-post-card">
-        <a class="article-thumb<?php echo $imageUrl !== '' ? ' article-thumb--has-image' : ''; ?>" href="<?php echo $esc($url); ?>" aria-label="<?php echo $esc($title); ?>">
-            <?php if ($imageUrl !== ''): ?>
-            <img src="<?php echo $esc($imageUrl); ?>" alt="<?php echo $esc($title); ?>" loading="lazy" decoding="async">
-            <?php else: ?>
-            <span class="article-thumb-placeholder" aria-hidden="true"><span>📄</span></span>
-            <?php endif; ?>
-            <?php if ($categoryName !== ''): ?>
-            <span class="thumb-badge badge-teal"><?php echo $esc($categoryName); ?></span>
-            <?php endif; ?>
-        </a>
-        <div class="article-body">
-            <h3><a href="<?php echo $esc($url); ?>"><?php echo $esc($title); ?></a></h3>
-            <?php if ($excerpt !== ''): ?>
-            <p><?php echo $esc($excerpt); ?></p>
-            <?php endif; ?>
-            <div class="article-footer">
+    <article class="post-card" role="listitem">
+        <?php if ($imageUrl !== ''): ?>
+        <div class="post-card-thumb">
+            <a href="<?php echo $esc($url); ?>" aria-label="<?php echo $esc($title); ?>">
+                <img src="<?php echo $esc($imageUrl); ?>" alt="<?php echo $esc($title); ?>" loading="lazy" decoding="async" width="320" height="180">
+            </a>
+        </div>
+        <?php else: ?>
+        <div class="post-card-thumb post-card-thumb--placeholder" aria-hidden="true">
+            <span class="post-card-thumb__icon">📄</span>
+        </div>
+        <?php endif; ?>
+        <div class="post-card-body">
+            <h3 class="post-card-title"><a href="<?php echo $esc($url); ?>"><?php echo $esc($title); ?></a></h3>
+            <?php if (($dateLabel !== '' && $dateIso !== '') || $readTimeLabel !== ''): ?>
+            <div class="post-card-top-meta">
                 <?php if ($dateLabel !== '' && $dateIso !== ''): ?>
-                <time class="article-meta__primary" datetime="<?php echo $esc($dateIso); ?>"><?php echo $esc($dateLabel); ?></time>
+                <time class="post-card-top-meta__date" datetime="<?php echo $esc($dateIso); ?>"><?php echo $esc($dateLabel); ?></time>
                 <?php endif; ?>
-                <a class="article-meta__more" href="<?php echo $esc($url); ?>" aria-label="<?php echo $esc('Weiterlesen: ' . $title); ?>">Weiter lesen →</a>
+                <?php if ($readTimeLabel !== ''): ?>
+                <span class="post-card-top-meta__read" aria-label="<?php echo $esc($readTimeAria); ?>"><?php echo $esc($readTimeLabel); ?></span>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+            <?php if ($excerpt !== ''): ?>
+            <p class="post-card-excerpt"><?php echo $esc($excerpt); ?></p>
+            <?php endif; ?>
+            <div class="post-card-meta">
+                <div class="post-card-meta__left">
+                    <?php if ($categoryName !== '' && $categoryUrl !== ''): ?>
+                    <a class="cat" href="<?php echo $esc($categoryUrl); ?>"><?php echo $esc($categoryName); ?></a>
+                    <?php elseif ($categoryName !== ''): ?>
+                    <span class="cat"><?php echo $esc($categoryName); ?></span>
+                    <?php endif; ?>
+                </div>
+                <a class="post-card-meta__more" href="<?php echo $esc($url); ?>" aria-label="<?php echo $esc($title); ?>">
+                    <span class="post-card-meta__more-label post-card-meta__more-label--desktop"><?php echo $esc($continueLabel); ?></span>
+                    <span class="post-card-meta__more-label post-card-meta__more-label--mobile"><?php echo $esc($continueLabel); ?></span>
+                </a>
             </div>
         </div>
     </article>
@@ -212,19 +251,26 @@ $renderPostCard = static function (array $post) use ($esc): void {
     <?php endif; ?>
 
     <?php if ($latestPosts !== []): ?>
-    <section class="m365landing-section m365landing-section--posts home-section--grid" aria-labelledby="m365landing-posts-title">
+        <?php $postsOverline = $value('posts_section_overline'); ?>
+        <?php $postsTitle = $value('posts_section_title'); ?>
+        <?php $postsIntro = $value('posts_section_intro'); ?>
+    <section class="m365landing-section m365landing-section--posts home-section--grid"<?php echo $postsTitle !== '' ? ' aria-labelledby="m365landing-posts-title"' : ' aria-label="Aktuelle Beiträge"'; ?>>
+        <?php if ($postsOverline !== '' || $postsTitle !== '' || $postsIntro !== ''): ?>
         <div class="m365landing-section__head">
-            <?php if ($value('posts_section_overline', 'Aktuelles') !== ''): ?>
-            <p class="phinit-overline m365landing-overline"><?php echo $esc($value('posts_section_overline', 'Aktuelles')); ?></p>
+            <?php if ($postsOverline !== ''): ?>
+            <p class="phinit-overline m365landing-overline"><?php echo $esc($postsOverline); ?></p>
             <?php endif; ?>
-            <h2 id="m365landing-posts-title"><?php echo $esc($value('posts_section_title', 'Neue Beiträge aus der Kategorie')); ?></h2>
-            <?php if ($value('posts_section_intro') !== ''): ?>
-            <p class="m365landing-section__intro"><?php echo $esc($value('posts_section_intro')); ?></p>
+            <?php if ($postsTitle !== ''): ?>
+            <h2 id="m365landing-posts-title"><?php echo $esc($postsTitle); ?></h2>
+            <?php endif; ?>
+            <?php if ($postsIntro !== ''): ?>
+            <p class="m365landing-section__intro"><?php echo $esc($postsIntro); ?></p>
             <?php endif; ?>
         </div>
-        <div class="m365landing-posts-grid posts-grid" role="list">
+        <?php endif; ?>
+        <div class="posts-grid posts-grid--cols-3" role="list">
             <?php foreach ($latestPosts as $post): ?>
-                <div role="listitem"><?php $renderPostCard($post); ?></div>
+                <?php $renderPostCard($post); ?>
             <?php endforeach; ?>
         </div>
     </section>

@@ -31,8 +31,13 @@ final class CMS_M365Landing_Repository
     /** @return array<string,string> */
     public function settings(): array
     {
-        $stmt = $this->db->prepare("SELECT setting_key, setting_value FROM {$this->prefix}m365landing_settings");
-        $stmt->execute();
+        try {
+            $stmt = $this->db->prepare("SELECT setting_key, setting_value FROM {$this->prefix}m365landing_settings");
+            $stmt->execute();
+        } catch (\Throwable $e) {
+            return [];
+        }
+
         $settings = [];
         foreach ($stmt->fetchAll(\PDO::FETCH_ASSOC) as $row) {
             $settings[(string) $row['setting_key']] = (string) ($row['setting_value'] ?? '');
@@ -77,10 +82,14 @@ final class CMS_M365Landing_Repository
         }
         $sql .= ' ORDER BY section ASC, sort_order ASC, title ASC';
 
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
 
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+            return $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     /** @return array<string,array<int,array<string,mixed>>> */
@@ -98,9 +107,13 @@ final class CMS_M365Landing_Repository
     /** @return array<string,mixed>|null */
     public function card(int $id): ?array
     {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->prefix}m365landing_cards WHERE id = ?");
-        $stmt->execute([$id]);
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        try {
+            $stmt = $this->db->prepare("SELECT * FROM {$this->prefix}m365landing_cards WHERE id = ?");
+            $stmt->execute([$id]);
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            return null;
+        }
 
         return is_array($row) ? $row : null;
     }
@@ -155,14 +168,22 @@ final class CMS_M365Landing_Repository
     {
         $stats = [];
         foreach (['matrix', 'areas', 'tools'] as $section) {
-            $stmt = $this->db->prepare("SELECT COUNT(*) FROM {$this->prefix}m365landing_cards WHERE section = ?");
-            $stmt->execute([$section]);
-            $stats[$section] = (int) $stmt->fetchColumn();
+            try {
+                $stmt = $this->db->prepare("SELECT COUNT(*) FROM {$this->prefix}m365landing_cards WHERE section = ?");
+                $stmt->execute([$section]);
+                $stats[$section] = (int) $stmt->fetchColumn();
+            } catch (\Throwable $e) {
+                $stats[$section] = 0;
+            }
         }
 
-        $stmt = $this->db->prepare("SELECT COUNT(*) FROM {$this->prefix}m365landing_cards WHERE is_active = 1");
-        $stmt->execute();
-        $stats['active_cards'] = (int) $stmt->fetchColumn();
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM {$this->prefix}m365landing_cards WHERE is_active = 1");
+            $stmt->execute();
+            $stats['active_cards'] = (int) $stmt->fetchColumn();
+        } catch (\Throwable $e) {
+            $stats['active_cards'] = 0;
+        }
 
         return $stats;
     }
@@ -184,10 +205,17 @@ final class CMS_M365Landing_Repository
     public function latest_posts_by_category(int $categoryId, int $limit = 6): array
     {
         $categoryId = max(0, $categoryId);
-        $limit = max(1, min(12, $limit));
+        $limit = $this->normalize_posts_limit($limit);
         if ($categoryId <= 0) {
             return [];
         }
+
+        $categoryIds = $this->category_ids_with_descendants($categoryId);
+        if ($categoryIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($categoryIds), '?'));
 
         $publicationWhere = function_exists('cms_post_publication_where')
             ? \cms_post_publication_where('p')
@@ -198,26 +226,260 @@ final class CMS_M365Landing_Repository
                 FROM {$this->prefix}posts p
                 LEFT JOIN {$this->prefix}post_categories c ON c.id = p.category_id
                 WHERE {$publicationWhere}
-                  AND (p.category_id = ? OR EXISTS (
+                  AND (p.category_id IN ({$placeholders}) OR EXISTS (
                       SELECT 1
                       FROM {$this->prefix}post_category_rel pcr
-                      WHERE pcr.post_id = p.id AND pcr.category_id = ?
+                      WHERE pcr.post_id = p.id AND pcr.category_id IN ({$placeholders})
                   ))
                 ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC
                 LIMIT {$limit}");
-            $stmt->execute([$categoryId, $categoryId]);
+            $stmt->execute(array_merge($categoryIds, $categoryIds));
             $posts = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
         } catch (\Throwable $e) {
             return [];
         }
 
+        return $this->prepare_public_posts($posts);
+    }
+
+    /** @return array<int,array<string,mixed>> */
+    public function latest_posts(int $limit = 6): array
+    {
+        $limit = $this->normalize_posts_limit($limit);
+        $publicationWhere = function_exists('cms_post_publication_where')
+            ? \cms_post_publication_where('p')
+            : "p.status = 'published'";
+
+        try {
+            $stmt = $this->db->prepare("SELECT p.id, p.title, p.slug, p.excerpt, p.content, p.featured_image, p.published_at, p.created_at, c.name AS category_name, c.slug AS category_slug
+                FROM {$this->prefix}posts p
+                LEFT JOIN {$this->prefix}post_categories c ON c.id = p.category_id
+                WHERE {$publicationWhere}
+                ORDER BY COALESCE(p.published_at, p.created_at) DESC, p.id DESC
+                LIMIT {$limit}");
+            $stmt->execute();
+            $posts = $stmt->fetchAll(\PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        return $this->prepare_public_posts($posts);
+    }
+
+    /** @param array<int,array<string,mixed>> $posts @return array<int,array<string,mixed>> */
+    private function prepare_public_posts(array $posts): array
+    {
         foreach ($posts as &$post) {
-            $post['permalink'] = $this->post_path($post);
-            $post['featured_image'] = self::public_image_url((string) ($post['featured_image'] ?? ''));
+            $post['permalink'] = self::main_site_url($this->post_path($post));
+            $post['featured_image'] = self::main_site_media_url((string) ($post['featured_image'] ?? ''));
+            $excerptSource = trim((string) ($post['excerpt'] ?? ''));
+            $contentSource = trim((string) ($post['content'] ?? ''));
+            $post['excerpt_plain'] = self::excerpt_plain_text($excerptSource !== '' ? $excerptSource : $contentSource);
+            $post['read_time'] = self::reading_time($contentSource !== '' ? $contentSource : (string) ($post['excerpt_plain'] ?? ''));
         }
         unset($post);
 
         return $posts;
+    }
+
+    /** @return array<int,int> */
+    private function category_ids_with_descendants(int $categoryId): array
+    {
+        $categories = $this->post_categories();
+        $childrenByParent = [];
+        foreach ($categories as $category) {
+            $id = (int) ($category['id'] ?? 0);
+            $parentId = (int) ($category['parent_id'] ?? 0);
+            if ($id <= 0) {
+                continue;
+            }
+            $childrenByParent[$parentId][] = $id;
+        }
+
+        $ids = [];
+        $stack = [$categoryId];
+        while ($stack !== []) {
+            $id = (int) array_pop($stack);
+            if ($id <= 0 || in_array($id, $ids, true)) {
+                continue;
+            }
+            $ids[] = $id;
+            foreach ($childrenByParent[$id] ?? [] as $childId) {
+                $stack[] = (int) $childId;
+            }
+        }
+
+        return $ids;
+    }
+
+    private function normalize_posts_limit(int $limit): int
+    {
+        return in_array($limit, [6, 9], true) ? $limit : 6;
+    }
+
+    public static function main_site_url(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return '';
+        }
+
+        $base = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/');
+        if ($base === '') {
+            return $url;
+        }
+
+        if (str_starts_with($url, '/') && !str_starts_with($url, '//')) {
+            return $base . $url;
+        }
+
+        if (filter_var($url, FILTER_VALIDATE_URL)) {
+            $path = (string) (parse_url($url, PHP_URL_PATH) ?: '/');
+            $query = (string) (parse_url($url, PHP_URL_QUERY) ?: '');
+            $fragment = (string) (parse_url($url, PHP_URL_FRAGMENT) ?: '');
+
+            return $base . $path . ($query !== '' ? '?' . $query : '') . ($fragment !== '' ? '#' . $fragment : '');
+        }
+
+        return $url;
+    }
+
+    public static function main_site_media_url(string $value): string
+    {
+        $value = self::public_image_url($value);
+        if ($value === '') {
+            return '';
+        }
+
+        $base = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/');
+        if ($base === '') {
+            return $value;
+        }
+
+        $path = '';
+        $query = '';
+        $fragment = '';
+
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            $path = (string) (parse_url($value, PHP_URL_PATH) ?: '');
+            $query = (string) (parse_url($value, PHP_URL_QUERY) ?: '');
+            $fragment = (string) (parse_url($value, PHP_URL_FRAGMENT) ?: '');
+        } elseif (str_starts_with($value, '/') && !str_starts_with($value, '//')) {
+            $path = (string) (parse_url($value, PHP_URL_PATH) ?: $value);
+            $query = (string) (parse_url($value, PHP_URL_QUERY) ?: '');
+            $fragment = (string) (parse_url($value, PHP_URL_FRAGMENT) ?: '');
+        } else {
+            return $value;
+        }
+
+        $path = '/' . ltrim($path, '/');
+        if ($path === '/media-file') {
+            parse_str($query, $params);
+            $mediaPath = self::normalize_media_relative_path((string) ($params['path'] ?? ''));
+            if ($mediaPath !== '') {
+                $path = '/uploads/' . $mediaPath;
+                $query = '';
+                $fragment = '';
+            }
+        } elseif (!str_starts_with($path, '/uploads/') && preg_match('#^/(?:images/importer|importer|media)(?:/|$)#i', $path) === 1) {
+            $path = '/uploads' . $path;
+        }
+
+        return $base . $path . ($query !== '' ? '?' . $query : '') . ($fragment !== '' ? '#' . $fragment : '');
+    }
+
+    public static function excerpt_plain_text(string $content): string
+    {
+        $content = trim($content);
+        if ($content === '') {
+            return '';
+        }
+
+        if (function_exists('phinit_excerpt_plain_text')) {
+            try {
+                return trim((string) phinit_excerpt_plain_text($content));
+            } catch (\Throwable $e) {
+                // Lokale Fallback-Extraktion verwenden.
+            }
+        }
+
+        $decoded = json_decode($content, true);
+        if (is_array($decoded) && isset($decoded['blocks']) && is_array($decoded['blocks'])) {
+            $parts = [];
+            foreach ($decoded['blocks'] as $block) {
+                if (!is_array($block)) {
+                    continue;
+                }
+                $data = $block['data'] ?? null;
+                if (!is_array($data)) {
+                    continue;
+                }
+                foreach (['text', 'caption', 'message', 'title'] as $key) {
+                    if (!empty($data[$key]) && is_string($data[$key])) {
+                        $parts[] = $data[$key];
+                    }
+                }
+                if (!empty($data['items']) && is_array($data['items'])) {
+                    foreach ($data['items'] as $item) {
+                        if (is_string($item) && trim($item) !== '') {
+                            $parts[] = $item;
+                        }
+                    }
+                }
+            }
+            $content = implode(' ', $parts);
+        } elseif (str_contains($content, '"blocks"') && (str_starts_with($content, '{') || str_starts_with($content, '['))) {
+            $recovered = self::extract_malformed_editorjs_text($content);
+            if ($recovered !== '') {
+                $content = $recovered;
+            }
+        }
+
+        $text = trim(html_entity_decode(strip_tags($content), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+        return preg_replace('/\s+/u', ' ', $text) ?? '';
+    }
+
+    public static function reading_time(string $content, int $wordsPerMinute = 220): int
+    {
+        $plain = self::excerpt_plain_text($content);
+        if ($plain === '') {
+            return 0;
+        }
+
+        return max(1, (int) round(str_word_count($plain) / max(1, $wordsPerMinute)));
+    }
+
+    private static function extract_malformed_editorjs_text(string $raw): string
+    {
+        $parts = [];
+        foreach (['text', 'caption', 'message', 'title'] as $key) {
+            if (preg_match_all('/"' . preg_quote($key, '/') . '"\s*:\s*"((?:\\\\.|[^"\\\\])*)"/u', $raw, $matches)) {
+                foreach ($matches[1] as $value) {
+                    $decoded = json_decode('"' . $value . '"');
+                    if (is_string($decoded) && trim($decoded) !== '') {
+                        $parts[] = $decoded;
+                    }
+                }
+            }
+        }
+
+        if (preg_match_all('/"items"\s*:\s*\[(.*?)\]/us', $raw, $itemGroups)) {
+            foreach ($itemGroups[1] as $group) {
+                if (preg_match_all('/"((?:\\\\.|[^"\\\\])*)"/u', $group, $itemMatches)) {
+                    foreach ($itemMatches[1] as $value) {
+                        $decoded = json_decode('"' . $value . '"');
+                        if (is_string($decoded) && trim($decoded) !== '') {
+                            $parts[] = $decoded;
+                        }
+                    }
+                }
+            }
+        }
+
+        $text = trim(html_entity_decode(strip_tags(implode(' ', $parts)), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+        return preg_replace('/\s+/u', ' ', $text) ?? '';
     }
 
     public static function text(string $value): string
@@ -267,7 +529,11 @@ final class CMS_M365Landing_Repository
             $value = substr($value, 2);
         }
 
-        if (preg_match('#^(?:uploads|media)(?:/|$)#i', $value) === 1 || preg_match('#^media-file(?:\?|$)#i', $value) === 1) {
+        if (preg_match('#^media-file(?:\?|$)#i', $value) === 1) {
+            $value = '/' . ltrim($value, '/');
+        }
+
+        if (preg_match('#^(?:uploads|images/importer|importer|media)(?:/|$)#i', $value) === 1) {
             $value = '/' . ltrim($value, '/');
         }
 
@@ -282,6 +548,21 @@ final class CMS_M365Landing_Repository
         }
 
         return '';
+    }
+
+    private static function normalize_media_relative_path(string $path): string
+    {
+        $path = trim(str_replace('\\', '/', rawurldecode($path)), '/');
+        $path = (string) preg_replace('#/+#', '/', $path);
+        if ($path === '' || str_contains($path, '..') || preg_match('#^[a-z][a-z0-9+.-]*:#i', $path) === 1) {
+            return '';
+        }
+
+        if (str_starts_with($path, 'uploads/')) {
+            $path = substr($path, strlen('uploads/'));
+        }
+
+        return $path;
     }
 
     /** @return array<int,string> */
@@ -310,6 +591,8 @@ final class CMS_M365Landing_Repository
             $parsedHost = parse_url($host, PHP_URL_HOST);
             $host = is_string($parsedHost) ? $parsedHost : '';
         }
+
+        $host = preg_split('#[/?#]#', $host, 2)[0] ?? $host;
 
         $host = preg_replace('/:\d+$/', '', $host) ?? '';
         $host = trim($host, '.');

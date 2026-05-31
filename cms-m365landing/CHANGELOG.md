@@ -1,5 +1,41 @@
 # CMS M365 Landing – Changelog
 
+## 1.0.17 – 2026-05-31
+
+- Importer-/Medienbildpfade in der Beitragssektion robuster normalisiert: `images/importer/...`, `media-file?path=...` und absolute Medien-URLs werden als Hauptdomain-`/uploads/...`-URLs ausgegeben.
+- Beitragsbilder werden im Template nicht mehr erneut durch die Theme-Media-Normalisierung geschickt, damit Zusatzdomains keine Media-Proxy-404 für Importer-Pfade auslösen.
+
+## 1.0.16 – 2026-05-31
+
+- Beitragsquelle erweitert: Kategorie inkl. aller Unterkategorien oder alle News/alle veröffentlichten Beiträge.
+- Beitragsanzahl im Adminbereich auf letzte 6 oder 9 Beiträge steuerbar.
+- Leere Beitrags-Overline, Titel und Intro bleiben leer und werden public nicht ausgegeben.
+- Beitragslinks, Kategorie-Links und Beitragsbilder werden für SEO und Medienverfügbarkeit konsequent über die Hauptdomain aufgebaut.
+
+## 1.0.15 – 2026-05-31
+
+- PHINIT-Card-Styles (`content-cards.css`, `homepage-blog.css`) werden auf der M365-Landingseite gezielt mitgeladen, damit das Startseiten-Grid-Design auch auf Plugin-Domains greift.
+
+## 1.0.14 – 2026-05-31
+
+- Beitragssektion auf das echte CMS-PHINIT-Startseiten-Grid-Markup (`post-card`, `post-card-thumb`, `post-card-meta`) umgestellt.
+- EditorJS-/JSON-Inhalte werden für Teaser jetzt als Klartext extrahiert, damit keine Rohdaten in den Cards sichtbar sind.
+
+## 1.0.13 – 2026-05-31
+
+- TypeError in der Admin-Auswahl behoben: numerische Select-Optionswerte werden vor dem Escaping sicher in Strings gewandelt.
+- Escaping-Helfer akzeptiert jetzt skalare Werte defensiv, damit Admin-Rendering nicht wegen Integer-Werten abbricht.
+
+## 1.0.12 – 2026-05-31
+
+- Adminseite mit eigenem Wiederherstellungsmodus versehen, damit selbst Repository-/Layout-/CSRF-Fehler nicht mehr in die Core-Fehlerkarte fallen.
+- Plugin-Hooks für FTP-Mischstände defensiv registriert; fehlende oder zeitversetzt hochgeladene Klassen lösen beim Init keine harte Admin-Ausnahme mehr aus.
+
+## 1.0.11 – 2026-05-31
+
+- Adminseite gegen unvollständige FTP-Uploads, fehlende Logs und Live-Datenbank-Zwischenstände gehärtet.
+- Installer-/Repository-Lesefehler brechen die Admin-Shell nicht mehr ab; die Seite bleibt mit Fallback-Werten nutzbar und zeigt den Initialisierungsfehler als Admin-Hinweis.
+
 ## 1.0.10 – 2026-05-31
 
 - Root-Routing für hinterlegte Zusatzdomains robuster gemacht, indem die Frontend-Routen auch im eigentlichen `register_routes`-Hook erneut registriert werden.

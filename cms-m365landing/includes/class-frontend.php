@@ -17,13 +17,13 @@ final class CMS_M365Landing_Frontend
     private ?string $requestPathCache = null;
     private ?bool $domainLandingRequestCache = null;
 
-    public static function instance(): self
+    public static function instance(?\CMS\Router $router = null): self
     {
         if (self::$instance === null) {
             self::$instance = new self();
         }
 
-        self::$instance->register_routes();
+        self::$instance->register_routes($router);
 
         return self::$instance;
     }
@@ -37,18 +37,20 @@ final class CMS_M365Landing_Frontend
         }
     }
 
-    private function register_routes(): void
+    private function register_routes(?\CMS\Router $router = null): void
     {
         if (!class_exists('CMS\\Router')) {
             return;
         }
 
-        \CMS\Router::instance()->addRoute('GET', '/' . $this->route_slug(), function (): void {
+        $router = $router instanceof \CMS\Router ? $router : \CMS\Router::instance();
+
+        $router->addRoute('GET', '/' . $this->route_slug(), function (): void {
             $this->render_landing();
         });
 
         if ($this->is_domain_landing_request()) {
-            \CMS\Router::instance()->addRoute('GET', '/', function (): void {
+            $router->addRoute('GET', '/', function (): void {
                 $this->render_landing();
             });
         }
@@ -60,7 +62,7 @@ final class CMS_M365Landing_Frontend
             return;
         }
 
-        foreach ($this->m365_style_assets() as $asset) {
+        foreach (array_merge($this->phinit_card_style_assets(), $this->m365_style_assets()) as $asset) {
             if (!file_exists($asset['path'])) {
                 continue;
             }
@@ -173,7 +175,14 @@ final class CMS_M365Landing_Frontend
         $latestPosts = [];
 
         if ($this->should_render_posts_section($settings, $isDomainLandingRequest)) {
-            $latestPosts = $repo->latest_posts_by_category((int) ($settings['posts_section_category_id'] ?? 0), 6);
+            $postsLimit = (int) ($settings['posts_section_limit'] ?? 6);
+            $postsLimit = in_array($postsLimit, [6, 9], true) ? $postsLimit : 6;
+            $postsMode = (string) ($settings['posts_section_mode'] ?? 'category');
+            if ($postsMode === 'all' && method_exists($repo, 'latest_posts')) {
+                $latestPosts = $repo->latest_posts($postsLimit);
+            } elseif (method_exists($repo, 'latest_posts_by_category')) {
+                $latestPosts = $repo->latest_posts_by_category((int) ($settings['posts_section_category_id'] ?? 0), $postsLimit);
+            }
         }
 
         $title = $this->setting($settings, 'seo_title', $this->setting($settings, 'page_title', 'Microsoft 365 Hub'));
@@ -227,7 +236,8 @@ final class CMS_M365Landing_Frontend
             return false;
         }
 
-        if ((int) ($settings['posts_section_category_id'] ?? 0) <= 0) {
+        $postsMode = (string) ($settings['posts_section_mode'] ?? 'category');
+        if ($postsMode !== 'all' && (int) ($settings['posts_section_category_id'] ?? 0) <= 0) {
             return false;
         }
 
@@ -292,6 +302,26 @@ final class CMS_M365Landing_Frontend
         } catch (\Throwable $e) {
             // SEO darf die öffentliche Seite nicht blockieren.
         }
+    }
+
+    /** @return array<int,array{path:string,url:string}> */
+    private function phinit_card_style_assets(): array
+    {
+        if (!defined('CMS_PHINIT_THEME_DIR') || !defined('CMS_PHINIT_THEME_URL')) {
+            return [];
+        }
+
+        $themeDir = rtrim((string) CMS_PHINIT_THEME_DIR, '/\\') . '/';
+        $themeUrl = rtrim((string) CMS_PHINIT_THEME_URL, '/') . '/';
+        $assets = [];
+        foreach (['assets/css/content-cards.css', 'assets/css/homepage-blog.css'] as $file) {
+            $assets[] = [
+                'path' => $themeDir . $file,
+                'url' => $themeUrl . $file,
+            ];
+        }
+
+        return $assets;
     }
 
     /** @return array<int,array{path:string,url:string}> */

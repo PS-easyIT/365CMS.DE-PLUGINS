@@ -340,13 +340,29 @@ a.m365landing-card:focus-visible {
 }
 
 .m365landing-post-card {
+    background: var(--m365tools-surface, #ffffff);
+    border: 1px solid var(--m365tools-border, #e2e8f0);
+    border-radius: var(--m365tools-card-radius, 10px);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .05), 0 4px 12px rgba(15, 23, 42, .06);
+    display: flex;
+    flex-direction: column;
     height: 100%;
+    overflow: hidden;
+    transition: box-shadow .2s ease, transform .15s ease, border-color .15s ease;
+}
+
+.m365landing-post-card:hover {
+    border-color: color-mix(in srgb, var(--m365tools-primary, #2563eb) 24%, var(--m365tools-border, #e2e8f0));
+    box-shadow: 0 4px 16px rgba(15, 23, 42, .10);
+    transform: translateY(-2px);
 }
 
 .m365landing-post-card .article-thumb {
     aspect-ratio: 16 / 9;
     display: block;
     overflow: hidden;
+    position: relative;
+    text-decoration: none;
 }
 
 .m365landing-post-card .article-thumb img {
@@ -358,10 +374,77 @@ a.m365landing-card:focus-visible {
 
 .m365landing-post-card .article-thumb-placeholder {
     align-items: center;
+    background: var(--m365tools-surface-alt, #f8fafc);
+    color: var(--m365tools-muted, #64748b);
     display: flex;
     height: 100%;
     justify-content: center;
     width: 100%;
+}
+
+.m365landing-post-card .thumb-badge {
+    background: var(--m365tools-primary, #2563eb);
+    border-radius: 999px;
+    bottom: .75rem;
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 700;
+    left: .75rem;
+    letter-spacing: .035em;
+    max-width: calc(100% - 1.5rem);
+    overflow: hidden;
+    padding: .28rem .58rem;
+    position: absolute;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.m365landing-post-card .article-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 1.15rem;
+}
+
+.m365landing-post-card .article-body h3 {
+    font-size: 1.08rem;
+    line-height: 1.35;
+    margin: 0;
+}
+
+.m365landing-post-card .article-body h3 a {
+    color: var(--m365tools-text, #1e293b);
+    text-decoration: none;
+}
+
+.m365landing-post-card .article-body h3 a:hover {
+    color: var(--m365tools-primary, #2563eb);
+}
+
+.m365landing-post-card .article-body p {
+    color: var(--m365tools-muted, #64748b);
+    font-size: .94rem;
+    line-height: 1.58;
+    margin: .7rem 0 0;
+}
+
+.m365landing-post-card .article-footer {
+    align-items: center;
+    color: var(--m365tools-muted, #64748b);
+    display: flex;
+    font-size: .84rem;
+    gap: .75rem;
+    justify-content: space-between;
+    margin-top: auto;
+    padding-top: 1rem;
+}
+
+.m365landing-post-card .article-meta__more {
+    color: var(--m365tools-primary, #2563eb);
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
 }
 
 .m365landing-empty {
