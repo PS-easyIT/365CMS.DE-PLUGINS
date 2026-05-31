@@ -1,5 +1,29 @@
 # CMS M365 Landing – Changelog
 
+## 1.0.26 – 2026-05-31
+
+- Google-/PageSpeed-Audit umgesetzt: Hero-Bild wird im Head mit `rel="preload"` und hoher Priorität angekündigt, damit der LCP-Kandidat früher verfügbar ist.
+- Abschnitts-Rendering gehärtet: leere Abschnittstitel erzeugen keine leeren `h2` mehr; stattdessen erhält die Section ein sinnvolles `aria-label`.
+- Card-Bilder erhalten auch bei ausgeblendeten oder leeren Titeln einen stabilen Alt-Fallback; Offscreen-Sektionen nutzen `content-visibility:auto` mit reservierter Intrinsic Size für weniger Rendering-Arbeit und stabileres Scrolling.
+
+## 1.0.25 – 2026-05-31
+
+- Je Abschnitt kann der Kartentitel jetzt ausgeblendet werden; die Option gilt bereichsweit für Matrixen, Weitere M365 Bereiche oder Tools.
+- Titel-ausgeblendete Karten rendern Kurzzeile oberhalb, Bild oben und Beschreibung darunter – ohne pro-Kachel-Sonderlogik.
+- Bestehende Layoutwahl pro Abschnitt bleibt erhalten; die Titel-Ausblendung überschreibt nur die sichtbare Titelzeile.
+
+## 1.0.24 – 2026-05-31
+
+- Card-Layout je Abschnitt steuerbar: Matrixen, Weitere M365 Bereiche und Tools können separat zwischen `Bild links, Titel rechts` und klassischem `Bild oben, Inhalt darunter` wechseln.
+- Die bisher falsch verstandene Card-Breite wurde durch eine echte `Bildbreite links in px` ersetzt.
+- Grid-Logik fixiert: bei 1/2/3 Karten volle Breite mit entsprechender Spaltenzahl, ab 4 Karten maximal vier Cards pro Reihe.
+
+## 1.0.23 – 2026-05-31
+
+- Card-Bildhöhe im Adminbereich von bisher effektiv maximal 205px auf bis zu 420px erweitert; die öffentliche CSS-Ausgabe respektiert den gespeicherten Wert jetzt ohne zusätzliches 205px-Limit.
+- Bilder in Landing-Cards werden nicht mehr gestreckt oder abgeschnitten, sondern proportional mit `object-fit: contain` dargestellt.
+- Bereichs-Cards (`Weitere M365 Bereiche`) erhalten ein neues Layout: Kurzzeile dezent oberhalb, darunter Bild links und Titel rechts, Beschreibung/CTA darunter.
+
 ## 1.0.22 – 2026-05-31
 
 - SEO-/PageSpeed-Audit umgesetzt: Zusatzdomains setzen die PHINIT-Head-Metadaten jetzt auf die kanonische Hauptdomain-Route statt auf die Startseite.

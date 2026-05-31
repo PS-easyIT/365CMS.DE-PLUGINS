@@ -186,6 +186,11 @@ final class CMS_M365Landing_Admin_Pages
                 continue;
             }
 
+            if (str_ends_with($key, '_card_layout')) {
+                $settings[$key] = self::card_layout($value);
+                continue;
+            }
+
             $settings[$key] = CMS_M365Landing_Repository::long_text($value);
         }
 
@@ -221,14 +226,17 @@ final class CMS_M365Landing_Admin_Pages
             'tools_section_overline', 'tools_section_title', 'tools_section_intro',
             'posts_section_overline', 'posts_section_title', 'posts_section_intro', 'posts_section_mode',
             'separator_label', 'empty_state_title', 'empty_state_text', 'seo_title', 'seo_description',
-            'card_button_label_default', 'layout_variant',
+            'card_button_label_default', 'layout_variant', 'matrix_card_layout', 'areas_card_layout', 'tools_card_layout',
         ];
     }
 
     /** @return array<int,string> */
     private static function bool_setting_keys(): array
     {
-        return ['show_hero', 'show_hero_actions', 'show_matrix_section', 'show_separator', 'show_areas_section', 'show_tools_section', 'show_posts_section', 'posts_section_domain_only'];
+        return [
+            'show_hero', 'show_hero_actions', 'show_matrix_section', 'show_separator', 'show_areas_section', 'show_tools_section',
+            'show_posts_section', 'posts_section_domain_only', 'matrix_card_hide_title', 'areas_card_hide_title', 'tools_card_hide_title',
+        ];
     }
 
     /** @return array<string,string> */
@@ -257,7 +265,8 @@ final class CMS_M365Landing_Admin_Pages
             'design_border_radius' => [0, 32],
             'hero_image_height' => [80, 320],
             'card_icon_size' => [24, 80],
-            'card_image_height' => [90, 205],
+            'card_image_height' => [90, 420],
+            'card_image_width' => [72, 220],
             'posts_section_category_id' => [0, 999999],
             'posts_section_limit' => [6, 9],
         ];
@@ -395,6 +404,8 @@ final class CMS_M365Landing_Admin_Pages
                 self::replace_input($prefix . '_section_overline', 'Overline', (string) ($s[$prefix . '_section_overline'] ?? ''));
                 self::replace_input($prefix . '_section_title', 'Titel', (string) ($s[$prefix . '_section_title'] ?? ''));
                 self::replace_textarea($prefix . '_section_intro', 'Intro', (string) ($s[$prefix . '_section_intro'] ?? ''), 3);
+                self::select($prefix . '_card_layout', 'Card-Layout', self::card_layout((string) ($s[$prefix . '_card_layout'] ?? 'media')), self::card_layout_options());
+                self::replace_checkbox($prefix . '_card_hide_title', 'Kartentitel in diesem Bereich ausblenden', (string) ($s[$prefix . '_card_hide_title'] ?? '0') === '1');
             }
             self::replace_input('separator_label', 'Text im optischen Trenner', (string) ($s['separator_label'] ?? ''));
             self::replace_input('empty_state_title', 'Leerer-Zustand Titel', (string) ($s['empty_state_title'] ?? ''));
@@ -445,7 +456,8 @@ final class CMS_M365Landing_Admin_Pages
             self::replace_color('design_border_color', 'Rahmenfarbe', (string) ($s['design_border_color'] ?? '#e2e8f0'), '#e2e8f0');
             self::replace_number('design_border_radius', 'Card-Radius in px', (int) ($s['design_border_radius'] ?? 10), 0, 32);
             self::replace_number('card_icon_size', 'Icon-Größe in px', (int) ($s['card_icon_size'] ?? 42), 24, 80);
-            self::replace_number('card_image_height', 'Bildhöhe in px', (int) ($s['card_image_height'] ?? 205), 90, 205);
+            self::replace_number('card_image_height', 'Bildhöhe in px', (int) ($s['card_image_height'] ?? 205), 90, 420);
+            self::replace_number('card_image_width', 'Bildbreite links in px', (int) ($s['card_image_width'] ?? 120), 72, 220);
         }
         echo '<button class="btn btn-primary" type="submit">💾 Einstellungen speichern</button></form></div>';
     }
@@ -507,6 +519,9 @@ final class CMS_M365Landing_Admin_Pages
             'seo_description' => 'Zentrale Landingpage für Microsoft 365 Lizenzmatrixen, Add-ons, Copilot, Azure Services, Tutorials und M365 Tools.',
             'card_button_label_default' => 'Öffnen',
             'layout_variant' => 'balanced',
+            'matrix_card_layout' => 'media',
+            'areas_card_layout' => 'media',
+            'tools_card_layout' => 'media',
         ];
 
         return $defaults[$key] ?? '';
@@ -523,6 +538,7 @@ final class CMS_M365Landing_Admin_Pages
             'hero_image_height' => 150,
             'card_icon_size' => 42,
             'card_image_height' => 205,
+            'card_image_width' => 120,
             'posts_section_category_id' => 0,
             'posts_section_limit' => 6,
         ];
@@ -541,7 +557,7 @@ final class CMS_M365Landing_Admin_Pages
         }
 
         if ($tab === 'sections') {
-            return preg_match('/^(matrix|areas|tools)_section_/', $key) === 1 || in_array($key, ['separator_label', 'empty_state_title', 'empty_state_text', 'card_button_label_default'], true);
+            return preg_match('/^(matrix|areas|tools)_section_/', $key) === 1 || preg_match('/^(matrix|areas|tools)_card_layout$/', $key) === 1 || in_array($key, ['separator_label', 'empty_state_title', 'empty_state_text', 'card_button_label_default'], true);
         }
 
         if ($tab === 'posts') {
@@ -563,6 +579,10 @@ final class CMS_M365Landing_Admin_Pages
 
         if ($tab === 'posts') {
             return in_array($key, ['show_posts_section', 'posts_section_domain_only'], true);
+        }
+
+        if ($tab === 'sections') {
+            return preg_match('/^(matrix|areas|tools)_card_hide_title$/', $key) === 1;
         }
 
         return false;
@@ -716,6 +736,20 @@ final class CMS_M365Landing_Admin_Pages
     private static function layout_variant(string $value): string
     {
         return array_key_exists($value, self::layout_options()) ? $value : 'balanced';
+    }
+
+    /** @return array<string,string> */
+    private static function card_layout_options(): array
+    {
+        return [
+            'media' => 'Bild links, Titel rechts',
+            'stacked' => 'Bild oben, Inhalt darunter',
+        ];
+    }
+
+    private static function card_layout(string $value): string
+    {
+        return array_key_exists($value, self::card_layout_options()) ? $value : 'media';
     }
 
     /** @return array<int,array{slug:string,url:string,label:string}> */

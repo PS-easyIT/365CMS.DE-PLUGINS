@@ -64,7 +64,7 @@ $showPostsJumpBadge = $isDomainLandingRequest && $latestPosts !== [];
 $hasAnyCards = !empty($cardsBySection['matrix']) || !empty($cardsBySection['areas']) || !empty($cardsBySection['tools']);
 $hasAnyContent = $hasAnyCards || $latestPosts !== [];
 
-$renderCard = static function (array $card) use ($esc, $buttonLabelDefault, $isExternal, $resolveCardUrl, $imageDimensions): void {
+$renderCard = static function (array $card, string $cardLayout = 'media', bool $hideTitle = false) use ($esc, $buttonLabelDefault, $isExternal, $resolveCardUrl, $imageDimensions): void {
     $url = $resolveCardUrl($card);
     $imageUrl = CMS_M365Landing_Repository::public_image_url((string) ($card['image_url'] ?? ''));
     $icon = trim((string) ($card['icon'] ?? ''));
@@ -76,22 +76,39 @@ $renderCard = static function (array $card) use ($esc, $buttonLabelDefault, $isE
     $buttonLabel = $buttonLabel !== '' ? $buttonLabel : $buttonLabelDefault;
     $featuredClass = (int) ($card['is_featured'] ?? 0) === 1 ? ' m365landing-card--featured' : '';
     $clickableClass = $url !== '' ? ' m365landing-card--clickable' : '';
+    $cardLayout = in_array($cardLayout, ['media', 'stacked'], true) ? $cardLayout : 'media';
+    $layoutClass = $cardLayout === 'stacked' ? ' m365landing-card--stacked-layout' : ' m365landing-card--media-layout';
+    $titleHiddenClass = $hideTitle ? ' m365landing-card--title-hidden' : '';
+    $ariaLabelTitle = $title !== '' ? $title : ($subtitle !== '' ? $subtitle : 'M365 Bereich');
+    $imageAltLabel = $imageAlt !== '' ? $imageAlt : $ariaLabelTitle;
+    $showTitleWrap = !$hideTitle && ($title !== '' || ($cardLayout === 'stacked' && $subtitle !== ''));
     $tagName = $url !== '' ? 'a' : 'article';
     [$imageWidth, $imageHeight] = $imageDimensions($imageUrl, 640, 205);
     ?>
-    <<?php echo $tagName; ?> class="m365landing-card<?php echo $featuredClass . $clickableClass; ?>"<?php echo $url !== '' ? ' href="' . $esc($url) . '" aria-label="' . $esc($buttonLabel . ': ' . $title) . '"' . ($isExternal($url) ? ' target="_blank" rel="noopener noreferrer"' : '') : ''; ?>>
-        <div class="m365landing-card__visual" aria-hidden="<?php echo $imageUrl !== '' ? 'false' : 'true'; ?>">
-            <?php if ($imageUrl !== ''): ?>
-            <img src="<?php echo $esc($imageUrl); ?>" alt="<?php echo $esc($imageAlt !== '' ? $imageAlt : $title); ?>" loading="lazy" decoding="async" width="<?php echo (int) $imageWidth; ?>" height="<?php echo (int) $imageHeight; ?>">
-            <?php else: ?>
-            <span class="m365landing-card__icon"><?php echo $esc($icon !== '' ? $icon : '▦'); ?></span>
+    <<?php echo $tagName; ?> class="m365landing-card<?php echo $featuredClass . $clickableClass . $layoutClass . $titleHiddenClass; ?>"<?php echo $url !== '' ? ' href="' . $esc($url) . '" aria-label="' . $esc($buttonLabel . ': ' . $ariaLabelTitle) . '"' . ($isExternal($url) ? ' target="_blank" rel="noopener noreferrer"' : '') : ''; ?>>
+        <?php if (($cardLayout === 'media' || $hideTitle) && $subtitle !== ''): ?>
+        <p class="m365landing-card__subtitle m365landing-card__subtitle--topline"><?php echo $esc($subtitle); ?></p>
+        <?php endif; ?>
+        <div class="m365landing-card__head">
+            <div class="m365landing-card__visual" aria-hidden="<?php echo $imageUrl !== '' ? 'false' : 'true'; ?>">
+                <?php if ($imageUrl !== ''): ?>
+                <img src="<?php echo $esc($imageUrl); ?>" alt="<?php echo $esc($imageAltLabel); ?>" loading="lazy" decoding="async" width="<?php echo (int) $imageWidth; ?>" height="<?php echo (int) $imageHeight; ?>">
+                <?php else: ?>
+                <span class="m365landing-card__icon"><?php echo $esc($icon !== '' ? $icon : '▦'); ?></span>
+                <?php endif; ?>
+            </div>
+            <?php if ($showTitleWrap): ?>
+            <div class="m365landing-card__titlewrap">
+                <?php if ($cardLayout === 'stacked' && $subtitle !== ''): ?>
+                <p class="m365landing-card__subtitle m365landing-card__subtitle--topline"><?php echo $esc($subtitle); ?></p>
+                <?php endif; ?>
+                <?php if ($title !== ''): ?>
+                <h3><?php echo $esc($title); ?></h3>
+                <?php endif; ?>
+            </div>
             <?php endif; ?>
         </div>
         <div class="m365landing-card__body">
-            <?php if ($subtitle !== ''): ?>
-            <p class="m365landing-card__subtitle"><?php echo $esc($subtitle); ?></p>
-            <?php endif; ?>
-            <h3><?php echo $esc($title); ?></h3>
             <?php if ($description !== ''): ?>
             <p class="m365landing-card__description"><?php echo nl2br($esc($description)); ?></p>
             <?php endif; ?>
@@ -105,24 +122,39 @@ $renderCard = static function (array $card) use ($esc, $buttonLabelDefault, $isE
     <?php
 };
 
-$renderSection = static function (string $sectionKey, string $sectionClass, array $cards) use ($esc, $value, $renderCard): void {
+$renderSection = static function (string $sectionKey, string $sectionClass, array $cards) use ($esc, $value, $enabled, $renderCard): void {
     if ($cards === []) {
         return;
     }
+    $sectionLabels = ['matrix' => 'M365 Matrixen', 'areas' => 'Weitere M365 Bereiche', 'tools' => 'M365 Tools Sammlung'];
+    $sectionOverline = $value($sectionKey . '_section_overline');
+    $sectionTitle = $value($sectionKey . '_section_title');
+    $sectionIntro = $value($sectionKey . '_section_intro');
+    $sectionAria = $sectionTitle !== ''
+        ? ' aria-labelledby="m365landing-' . $esc($sectionKey) . '-title"'
+        : ' aria-label="' . $esc($sectionLabels[$sectionKey] ?? 'M365 Landing Abschnitt') . '"';
     ?>
-    <section class="m365landing-section <?php echo $esc($sectionClass); ?>" aria-labelledby="m365landing-<?php echo $esc($sectionKey); ?>-title">
+    <section class="m365landing-section <?php echo $esc($sectionClass); ?>"<?php echo $sectionAria; ?>>
+        <?php if ($sectionOverline !== '' || $sectionTitle !== '' || $sectionIntro !== ''): ?>
         <div class="m365landing-section__head">
-            <?php if ($value($sectionKey . '_section_overline') !== ''): ?>
-            <p class="phinit-overline m365landing-overline"><?php echo $esc($value($sectionKey . '_section_overline')); ?></p>
+            <?php if ($sectionOverline !== ''): ?>
+            <p class="phinit-overline m365landing-overline"><?php echo $esc($sectionOverline); ?></p>
             <?php endif; ?>
-            <h2 id="m365landing-<?php echo $esc($sectionKey); ?>-title"><?php echo $esc($value($sectionKey . '_section_title')); ?></h2>
-            <?php if ($value($sectionKey . '_section_intro') !== ''): ?>
-            <p class="m365landing-section__intro"><?php echo $esc($value($sectionKey . '_section_intro')); ?></p>
+            <?php if ($sectionTitle !== ''): ?>
+            <h2 id="m365landing-<?php echo $esc($sectionKey); ?>-title"><?php echo $esc($sectionTitle); ?></h2>
+            <?php endif; ?>
+            <?php if ($sectionIntro !== ''): ?>
+            <p class="m365landing-section__intro"><?php echo $esc($sectionIntro); ?></p>
             <?php endif; ?>
         </div>
-        <div class="m365landing-grid" role="list">
+        <?php endif; ?>
+        <?php $cardCount = count($cards); ?>
+        <?php $gridColumns = max(1, min(4, $cardCount)); ?>
+        <?php $sectionCardLayout = in_array($value($sectionKey . '_card_layout', 'media'), ['media', 'stacked'], true) ? $value($sectionKey . '_card_layout', 'media') : 'media'; ?>
+        <?php $sectionHideTitle = $enabled($sectionKey . '_card_hide_title', '0'); ?>
+        <div class="m365landing-grid m365landing-grid--cols-<?php echo (int) $gridColumns; ?>" role="list" data-card-count="<?php echo (int) $cardCount; ?>">
             <?php foreach ($cards as $card): ?>
-                <div role="listitem"><?php $renderCard($card); ?></div>
+                <div role="listitem"><?php $renderCard($card, $sectionCardLayout, $sectionHideTitle); ?></div>
             <?php endforeach; ?>
         </div>
     </section>

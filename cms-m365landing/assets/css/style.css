@@ -6,6 +6,7 @@
     --m365landing-hero-image-height: 150px;
     --m365landing-icon-size: 42px;
     --m365landing-image-height: 205px;
+    --m365landing-image-width: 120px;
 }
 
 .m365landing-page {
@@ -167,6 +168,8 @@ body.m365calculator-theme-embed.m365tools-module-m365landing:not(.is-member) .si
 }
 
 .m365landing-section {
+    contain-intrinsic-size: 1px 760px;
+    content-visibility: auto;
     margin-top: clamp(2rem, 5vw, 3rem);
 }
 
@@ -194,8 +197,23 @@ body.m365calculator-theme-embed.m365tools-module-m365landing:not(.is-member) .si
 
 .m365landing-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1rem;
+}
+
+.m365landing-grid--cols-1 {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.m365landing-grid--cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.m365landing-grid--cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.m365landing-grid--cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .m365landing-card {
@@ -257,8 +275,7 @@ a.m365landing-card:focus-visible {
     justify-content: center;
     background: var(--m365tools-surface-alt, #f8fafc);
     border-bottom: 1px solid var(--m365tools-border, #e2e8f0);
-    height: min(var(--m365landing-image-height, 205px), 205px);
-    max-height: 205px;
+    height: var(--m365landing-image-height, 205px);
     min-height: 90px;
 }
 
@@ -266,8 +283,95 @@ a.m365landing-card:focus-visible {
     display: block;
     width: 100%;
     height: 100%;
-    max-height: 205px;
-    object-fit: fill;
+    object-fit: contain;
+}
+
+.m365landing-card--media-layout .m365landing-card__subtitle--topline {
+    color: var(--m365tools-muted, #64748b);
+    font-size: .76rem;
+    font-weight: 600;
+    letter-spacing: .015em;
+    line-height: 1.35;
+    margin: 1rem 1.15rem .65rem;
+    text-transform: none;
+}
+
+.m365landing-card--media-layout .m365landing-card__head {
+    align-items: center;
+    display: grid;
+    gap: .95rem;
+    grid-template-columns: minmax(72px, min(var(--m365landing-image-width, 120px), 45%)) minmax(0, 1fr);
+    padding: 0 1.15rem;
+}
+
+.m365landing-card--media-layout > .m365landing-card__head:first-child {
+    padding-top: 1.15rem;
+}
+
+.m365landing-card--media-layout .m365landing-card__visual {
+    align-self: stretch;
+    border: 1px solid var(--m365tools-border, #e2e8f0);
+    border-radius: calc(var(--m365tools-card-radius, 10px) - 2px);
+    min-height: 72px;
+    overflow: hidden;
+}
+
+.m365landing-card--media-layout .m365landing-card__titlewrap {
+    min-width: 0;
+}
+
+.m365landing-card--media-layout .m365landing-card__body {
+    padding-top: .95rem;
+}
+
+.m365landing-card--stacked-layout .m365landing-card__head {
+    display: flex;
+    flex-direction: column;
+}
+
+.m365landing-card--stacked-layout .m365landing-card__visual {
+    border-bottom: 1px solid var(--m365tools-border, #e2e8f0);
+    width: 100%;
+}
+
+.m365landing-card--stacked-layout .m365landing-card__titlewrap {
+    padding: 1.15rem 1.15rem 0;
+    width: 100%;
+}
+
+.m365landing-card--stacked-layout .m365landing-card__titlewrap .m365landing-card__subtitle--topline {
+    margin: 0 0 .45rem;
+}
+
+.m365landing-card--title-hidden .m365landing-card__subtitle--topline {
+    color: var(--m365tools-muted, #64748b);
+    font-size: .76rem;
+    font-weight: 600;
+    letter-spacing: .015em;
+    line-height: 1.35;
+    margin: 1rem 1.15rem .65rem;
+    text-transform: none;
+}
+
+.m365landing-card--title-hidden .m365landing-card__head {
+    display: flex;
+    flex-direction: column;
+    padding: 0 1.15rem;
+}
+
+.m365landing-card--title-hidden > .m365landing-card__head:first-child {
+    padding-top: 1.15rem;
+}
+
+.m365landing-card--title-hidden .m365landing-card__visual {
+    border: 1px solid var(--m365tools-border, #e2e8f0);
+    border-radius: calc(var(--m365tools-card-radius, 10px) - 2px);
+    overflow: hidden;
+    width: 100%;
+}
+
+.m365landing-card--title-hidden .m365landing-card__body {
+    padding-top: .95rem;
 }
 
 .m365landing-card__icon {
@@ -426,7 +530,8 @@ a.m365landing-card:focus-visible {
 }
 
 @media (max-width: 1024px) {
-    .m365landing-grid {
+    .m365landing-grid--cols-3,
+    .m365landing-grid--cols-4 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
@@ -437,7 +542,11 @@ a.m365landing-card:focus-visible {
         padding-bottom: min(var(--m365landing-padding-bottom, 64px), 3rem);
     }
 
-    .m365landing-grid {
+    .m365landing-grid,
+    .m365landing-grid--cols-1,
+    .m365landing-grid--cols-2,
+    .m365landing-grid--cols-3,
+    .m365landing-grid--cols-4 {
         grid-template-columns: 1fr;
     }
 
@@ -453,6 +562,10 @@ a.m365landing-card:focus-visible {
     .m365landing-hero__actions,
     .m365landing-card__button {
         width: 100%;
+    }
+
+    .m365landing-card--media-layout .m365landing-card__head {
+        grid-template-columns: minmax(72px, min(var(--m365landing-image-width, 120px), 42%)) minmax(0, 1fr);
     }
 
     .m365landing-posts-jump-badge {

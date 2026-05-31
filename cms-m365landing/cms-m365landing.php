@@ -3,7 +3,7 @@
  * Plugin Name: CMS M365 Landing
  * Plugin URI: https://365network.de/cms-m365landing
  * Description: Zentrale, vollständig steuerbare Landingpage für M365-Matrixen, Azure Services, Tutorials und M365 Tools.
- * Version: 1.0.22
+ * Version: 1.0.26
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-defined('CMS_M365LANDING_VERSION') || define('CMS_M365LANDING_VERSION', '1.0.22');
+defined('CMS_M365LANDING_VERSION') || define('CMS_M365LANDING_VERSION', '1.0.26');
 defined('CMS_M365LANDING_DB_VERSION') || define('CMS_M365LANDING_DB_VERSION', '1.0.7');
 defined('CMS_M365LANDING_PLUGIN_DIR') || define('CMS_M365LANDING_PLUGIN_DIR', dirname(__FILE__) . '/');
 defined('CMS_M365LANDING_PLUGIN_URL') || define('CMS_M365LANDING_PLUGIN_URL', '/plugins/cms-m365landing/');

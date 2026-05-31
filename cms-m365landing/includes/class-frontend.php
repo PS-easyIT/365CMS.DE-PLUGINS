@@ -36,6 +36,7 @@ final class CMS_M365Landing_Frontend
             \CMS\Hooks::addFilter('page_title', [$this, 'filter_page_title'], 20);
             \CMS\Hooks::addFilter('phinit_head_meta_data', [$this, 'filter_phinit_head_meta_data'], 20);
             \CMS\Hooks::addFilter('body_class', [$this, 'filter_body_class'], 20);
+            \CMS\Hooks::addAction('head', [$this, 'output_resource_hints'], 18);
             \CMS\Hooks::addAction('head', [$this, 'enqueue_styles'], 20);
             \CMS\Hooks::addAction('head', [$this, 'output_structured_data'], 27);
             \CMS\Hooks::addAction('head', [$this, 'output_design_tokens'], 30);
@@ -83,6 +84,27 @@ final class CMS_M365Landing_Frontend
                 . htmlspecialchars(CMS_M365LANDING_PLUGIN_URL . 'assets/css/style.css', ENT_QUOTES, 'UTF-8')
                 . '?v=' . filemtime($css) . '">' . "\n";
         }
+    }
+
+    public function output_resource_hints(): void
+    {
+        if (!$this->is_request()) {
+            return;
+        }
+
+        $settings = $this->repo()->settings();
+        if ((string) ($settings['show_hero'] ?? '1') !== '1') {
+            return;
+        }
+
+        $heroImageUrl = CMS_M365Landing_Repository::main_site_media_url((string) ($settings['hero_image_url'] ?? ''));
+        if ($heroImageUrl === '' || str_starts_with($heroImageUrl, 'data:')) {
+            return;
+        }
+
+        echo '<link rel="preload" as="image" fetchpriority="high" href="'
+            . htmlspecialchars($heroImageUrl, ENT_QUOTES, 'UTF-8')
+            . '">' . "\n";
     }
 
     public function filter_page_title(mixed $title): string
@@ -220,7 +242,8 @@ final class CMS_M365Landing_Frontend
         $paddingBottom = $number('layout_padding_bottom', 64, 0, 160);
         $heroImageHeight = $number('hero_image_height', 150, 80, 320);
         $iconSize = $number('card_icon_size', 42, 24, 80);
-        $imageHeight = $number('card_image_height', 205, 90, 205);
+        $imageHeight = $number('card_image_height', 205, 90, 420);
+        $imageWidth = $number('card_image_width', 120, 72, 220);
 
         echo '<style id="cms-m365landing-design">' . "\n";
         echo ':root {' . "\n";
@@ -252,6 +275,7 @@ final class CMS_M365Landing_Frontend
         echo '    --m365landing-hero-image-height: ' . (int) $heroImageHeight . 'px;' . "\n";
         echo '    --m365landing-icon-size: ' . (int) $iconSize . 'px;' . "\n";
         echo '    --m365landing-image-height: ' . (int) $imageHeight . 'px;' . "\n";
+        echo '    --m365landing-image-width: ' . (int) $imageWidth . 'px;' . "\n";
         echo '}' . "\n";
         echo 'body.m365tools-module-m365landing, body.m365tools-module-m365landing #page.site, body.m365tools-module-m365landing #content.site-content, body.m365tools-module-m365landing .site-content {' . "\n";
         echo '    --m365tools-bg: var(--m365landing-bg) !important;' . "\n";

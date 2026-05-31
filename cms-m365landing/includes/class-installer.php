@@ -135,7 +135,14 @@ final class CMS_M365Landing_Installer
             'layout_padding_bottom' => '64',
             'card_icon_size' => '42',
             'card_image_height' => '205',
+            'card_image_width' => '120',
             'card_button_label_default' => 'Öffnen',
+            'matrix_card_layout' => 'media',
+            'areas_card_layout' => 'media',
+            'tools_card_layout' => 'media',
+            'matrix_card_hide_title' => '0',
+            'areas_card_hide_title' => '0',
+            'tools_card_hide_title' => '0',
         ];
 
         $exists = $db->prepare("SELECT id FROM {$prefix}m365landing_settings WHERE setting_key = ?");
