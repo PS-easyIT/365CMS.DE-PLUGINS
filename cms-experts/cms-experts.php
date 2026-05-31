@@ -3,7 +3,7 @@
  * Plugin Name: CMS Experts
  * Plugin URI: https://365network.de/cms-experts
  * Description: Verwaltung von IT-Experten-Profilen mit Card-Ansicht, Detailseiten und umfangreichen Meta-Daten
- * Version: 3.0.8
+ * Version: 3.0.10
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin Constants
-define('CMS_EXPERTS_VERSION', '3.0.8');
+define('CMS_EXPERTS_VERSION', '3.0.10');
 define('CMS_EXPERTS_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_EXPERTS_PLUGIN_URL', '/plugins/cms-experts/');
 define('CMS_EXPERTS_TEXT_DOMAIN', 'cms-experts');
@@ -66,7 +66,7 @@ final class CMS_Experts
     private static ?self $instance = null;
     private bool $components_bootstrapped = false;
 
-    private string $version = '3.0.8';
+    private string $version = '3.0.10';
     private string $plugin_dir;
     private string $plugin_url;
     private string $text_domain = 'cms-experts';
@@ -196,17 +196,43 @@ final class CMS_Experts
      */
     public function enqueue_styles(): void
     {
-        // SunEditor-Stylesheet für korrekte Formatierung von WYSIWYG-Inhalten auf Public-Seiten
-        $sun_css = function_exists('cms_asset_url')
-            ? cms_asset_url('suneditor/css/suneditor.min.css')
-            : (defined('SITE_URL') ? SITE_URL . '/assets/suneditor/css/suneditor.min.css' : '');
-        if ($sun_css) {
-            echo '<link rel="stylesheet" href="' . htmlspecialchars($sun_css) . '">' . "\n";
+        if (!$this->is_expert_frontend_route()) {
+            return;
+        }
+
+        if ($this->is_expert_detail_route()) {
+            // SunEditor-Stylesheet für korrekte Formatierung von WYSIWYG-Inhalten auf Public-Detailseiten
+            $sun_css = function_exists('cms_asset_url')
+                ? cms_asset_url('suneditor/css/suneditor.min.css')
+                : (defined('SITE_URL') ? SITE_URL . '/assets/suneditor/css/suneditor.min.css' : '');
+            if ($sun_css) {
+                echo '<link rel="stylesheet" href="' . htmlspecialchars($sun_css, ENT_QUOTES, 'UTF-8') . '">' . "\n";
+            }
         }
 
         $this->enqueue_style_file('plugin-base.css');
         $this->enqueue_style_file('style.css');
-        $this->enqueue_style_file('single.css');
+        if ($this->is_expert_detail_route()) {
+            $this->enqueue_style_file('single.css');
+        }
+    }
+
+    private function is_expert_frontend_route(): bool
+    {
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $path = '/' . trim((string) $path, '/');
+
+        return $path === '/experts'
+            || str_starts_with($path, '/experts/')
+            || str_starts_with($path, '/expert/');
+    }
+
+    private function is_expert_detail_route(): bool
+    {
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $path = '/' . trim((string) $path, '/');
+
+        return str_starts_with($path, '/experts/') || str_starts_with($path, '/expert/');
     }
 
     private function enqueue_style_file(string $file): void

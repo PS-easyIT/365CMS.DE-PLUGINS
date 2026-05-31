@@ -1,6 +1,6 @@
 <?php
 /**
- * Single Event Template – Plugin-Content only for CMS-PHINIT.
+ * Single Event Template – PHINIT preview-aligned detail view.
  *
  * @package CMS_Events
  */
@@ -11,80 +11,167 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-if (empty($event)) {
+if (empty($event) || !is_object($event)) {
     return;
 }
 
-if (!function_exists('cms_events_view_date_parts')) {
-    function cms_events_view_date_parts(?string $date): array
+if (!function_exists('cms_events_detail_t')) {
+    function cms_events_detail_t(string $key, array $parameters = []): string
     {
-        $timestamp = $date ? strtotime($date) : 0;
-        if (!$timestamp) {
-            return ['', '', '', '', ''];
+        $translated = $key;
+
+        if (class_exists('CMS\\Services\\TranslationService')) {
+            try {
+                $translated = \CMS\Services\TranslationService::getInstance()->translate($key, 'default', $parameters);
+            } catch (\Throwable) {
+                $translated = $key;
+            }
         }
 
-        $weekdays = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
-        $monthsFull = [1 => 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
-        $monthsShort = [1 => 'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
-        $month = (int) date('n', $timestamp);
+        if ($translated === $key && function_exists('__')) {
+            try {
+                $translated = __($key, 'default');
+            } catch (\Throwable) {
+                $translated = $key;
+            }
+        }
 
-        return [
-            date('d', $timestamp),
-            $monthsShort[$month] ?? date('M', $timestamp),
-            $weekdays[(int) date('w', $timestamp)] . ', ' . date('d', $timestamp) . '. ' . ($monthsFull[$month] ?? date('F', $timestamp)) . ' ' . date('Y', $timestamp),
-            date('Y-m-d', $timestamp),
-            date('Y', $timestamp),
-        ];
+        if ($translated === $key) {
+            $catalogValue = cms_events_detail_catalog_value($key);
+            if ($catalogValue !== null) {
+                $translated = $catalogValue;
+            }
+        }
+
+        if ($parameters !== []) {
+            $replace = [];
+            foreach ($parameters as $name => $value) {
+                $replace['{' . (string) $name . '}'] = (string) $value;
+                $replace['%' . (string) $name . '%'] = (string) $value;
+            }
+            $translated = strtr($translated, $replace);
+        }
+
+        return $translated;
     }
 }
 
-if (!function_exists('cms_events_view_price_label')) {
-    function cms_events_view_price_label(object $event): string
+if (!function_exists('cms_events_detail_catalog_value')) {
+    function cms_events_detail_catalog_value(string $key): ?string
     {
-        $priceType = strtolower(trim((string) ($event->price_type ?? 'free')));
-        $price = (float) ($event->price ?? 0);
-        $currency = trim((string) ($event->price_currency ?? 'EUR')) ?: 'EUR';
-
-        if ($priceType === 'free') {
-            return 'Kostenlos';
-        }
-
-        if ($price <= 0) {
-            return $priceType === 'donation' ? 'Spendenbasis' : 'Kostenpflichtig';
-        }
-
-        $currencyUpper = strtoupper($currency);
-        if ($currencyUpper === 'EUR') {
-            $currencySymbol = '€';
-        } elseif ($currencyUpper === 'USD') {
-            $currencySymbol = '$';
-        } elseif ($currencyUpper === 'CHF') {
-            $currencySymbol = 'CHF';
-        } else {
-            $currencySymbol = preg_replace('/[^A-Z]/i', '', $currency) ?: '€';
-        }
-
-        return $currencySymbol . ' ' . number_format($price, 2, ',', '.');
+        $catalog = cms_events_detail_load_catalog(cms_events_detail_locale());
+        return $catalog['default'][$key] ?? null;
     }
 }
 
-if (!function_exists('cms_events_view_lowercase')) {
-    function cms_events_view_lowercase(string $value): string
+if (!function_exists('cms_events_detail_load_catalog')) {
+    function cms_events_detail_load_catalog(string $locale): array
+    {
+        static $cache = [];
+
+        if (isset($cache[$locale])) {
+            return $cache[$locale];
+        }
+
+        $file = cms_events_detail_lang_file($locale);
+        if ($file === '') {
+            return $cache[$locale] = [];
+        }
+
+        $catalog = [];
+        $domain = 'default';
+        $lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+            if ($trimmed === '' || str_starts_with($trimmed, '#')) {
+                continue;
+            }
+
+            if (preg_match('/^([A-Za-z0-9_.-]+):\s*$/', $trimmed, $matches) === 1) {
+                $domain = $matches[1];
+                $catalog[$domain] ??= [];
+                continue;
+            }
+
+            if (preg_match('/^"([^"]+)":\s*"(.*)"\s*$/', $trimmed, $matches) === 1) {
+                $catalog[$domain][$matches[1]] = stripcslashes($matches[2]);
+            }
+        }
+
+        return $cache[$locale] = $catalog;
+    }
+}
+
+if (!function_exists('cms_events_detail_lang_file')) {
+    function cms_events_detail_lang_file(string $locale): string
+    {
+        $candidates = [];
+
+        if (defined('CMS_PATH')) {
+            $candidates[] = rtrim((string) CMS_PATH, '\\/') . DIRECTORY_SEPARATOR . 'lang' . DIRECTORY_SEPARATOR . $locale . '.yaml';
+        }
+
+        if (defined('ABSPATH')) {
+            $base = rtrim((string) ABSPATH, '\\/');
+            $candidates[] = $base . DIRECTORY_SEPARATOR . 'lang' . DIRECTORY_SEPARATOR . $locale . '.yaml';
+            $candidates[] = $base . DIRECTORY_SEPARATOR . 'CMS' . DIRECTORY_SEPARATOR . 'lang' . DIRECTORY_SEPARATOR . $locale . '.yaml';
+        }
+
+        $candidates[] = dirname(__DIR__, 3) . DIRECTORY_SEPARATOR . '365CMS.DE' . DIRECTORY_SEPARATOR . 'CMS' . DIRECTORY_SEPARATOR . 'lang' . DIRECTORY_SEPARATOR . $locale . '.yaml';
+
+        foreach ($candidates as $candidate) {
+            if (is_file($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('cms_events_detail_locale')) {
+    function cms_events_detail_locale(): string
+    {
+        if (class_exists('CMS\\Services\\TranslationService')) {
+            try {
+                return \CMS\Services\TranslationService::getInstance()->getLocale();
+            } catch (\Throwable) {
+                // Fallback below.
+            }
+        }
+
+        $lang = preg_replace('/[^a-zA-Z_]/', '', (string) ($_GET['lang'] ?? ''));
+        return $lang !== '' ? $lang : 'de';
+    }
+}
+
+if (!function_exists('cms_events_detail_e')) {
+    function cms_events_detail_e(string $value): string
+    {
+        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('cms_events_detail_plain')) {
+    function cms_events_detail_plain(mixed $value): string
+    {
+        $value = html_entity_decode((string) $value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $value = strip_tags($value);
+        $value = preg_replace('/\s+/', ' ', $value) ?? $value;
+        return trim($value);
+    }
+}
+
+if (!function_exists('cms_events_detail_lower')) {
+    function cms_events_detail_lower(string $value): string
     {
         return function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value);
     }
 }
 
-if (!function_exists('cms_events_view_css_color')) {
-    function cms_events_view_css_color(mixed $value, string $fallback): string
-    {
-        $color = trim((string) $value);
-        return preg_match('/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/', $color) === 1 ? $color : $fallback;
-    }
-}
-
-if (!function_exists('cms_events_view_trim_text')) {
-    function cms_events_view_trim_text(string $text, int $length): string
+if (!function_exists('cms_events_detail_trim_text')) {
+    function cms_events_detail_trim_text(string $text, int $length): string
     {
         $text = trim(preg_replace('/\s+/', ' ', strip_tags($text)) ?? '');
         if ($text === '' || $length <= 0) {
@@ -101,29 +188,21 @@ if (!function_exists('cms_events_view_trim_text')) {
     }
 }
 
-if (!function_exists('cms_events_view_public_url')) {
-    /**
-     * @param mixed $url
-     */
-    function cms_events_view_public_url($url): string
+if (!function_exists('cms_events_detail_public_url')) {
+    function cms_events_detail_public_url(mixed $url): string
     {
         $url = str_replace('\\', '/', trim((string) $url));
-        if ($url === '' || strlen($url) > 1000) {
+        if ($url === '' || strlen($url) > 2048 || preg_match('/[\x00-\x1F\x7F]/', $url) === 1) {
             return '';
         }
 
-        if (preg_match('/[\x00-\x1F\x7F]/', $url) === 1) {
-            return '';
-        }
-
-        if ((strpos($url, '/') === 0) || preg_match('#^(uploads|ASSETS|assets|plugins)/#i', $url) === 1) {
-            $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
-            $path = ltrim($url, '/');
-            if ($path === '' || strpos($path, '..') !== false) {
+        if ((str_starts_with($url, '/') && !str_starts_with($url, '//')) || preg_match('#^(uploads|ASSETS|assets|plugins)/#i', $url) === 1) {
+            if (str_contains($url, '..')) {
                 return '';
             }
 
-            return $baseUrl . '/' . $path;
+            $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
+            return $baseUrl . '/' . ltrim($url, '/');
         }
 
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
@@ -139,26 +218,82 @@ if (!function_exists('cms_events_view_public_url')) {
     }
 }
 
-if (!function_exists('cms_events_view_initials')) {
-    function cms_events_view_initials(string $name): string
+if (!function_exists('cms_events_detail_initials')) {
+    function cms_events_detail_initials(string $name, string $fallback = 'EV'): string
     {
-        $words = array_values(array_filter(preg_split('/\s+/', trim($name)) ?: []));
-        if ($words === []) {
-            return 'EV';
+        $parts = preg_split('/\s+/', trim($name)) ?: [];
+        $initials = '';
+        foreach ($parts as $part) {
+            if ($part === '') {
+                continue;
+            }
+
+            $initials .= function_exists('mb_substr') ? mb_substr($part, 0, 1, 'UTF-8') : substr($part, 0, 1);
+            $length = function_exists('mb_strlen') ? mb_strlen($initials, 'UTF-8') : strlen($initials);
+            if ($length >= 2) {
+                break;
+            }
         }
 
-        $letters = '';
-        foreach (array_slice($words, 0, 2) as $word) {
-            $letters .= function_exists('mb_substr') ? mb_substr($word, 0, 1, 'UTF-8') : substr($word, 0, 1);
-        }
-
-        $letters = function_exists('mb_strtoupper') ? mb_strtoupper($letters, 'UTF-8') : strtoupper($letters);
-        return $letters !== '' ? $letters : 'EV';
+        $initials = $initials !== '' ? $initials : $fallback;
+        return function_exists('mb_strtoupper') ? mb_strtoupper($initials, 'UTF-8') : strtoupper($initials);
     }
 }
 
-if (!function_exists('cms_events_view_location_text')) {
-    function cms_events_view_location_text(string $location, string $city): string
+if (!function_exists('cms_events_detail_date_parts')) {
+    /**
+     * @return array{day:string,month_short:string,month_full:string,year:string,machine:string,display:string}
+     */
+    function cms_events_detail_date_parts(?string $date): array
+    {
+        $timestamp = $date ? strtotime($date) : 0;
+        if (!$timestamp) {
+            return ['day' => '', 'month_short' => '', 'month_full' => '', 'year' => '', 'machine' => '', 'display' => ''];
+        }
+
+        $month = (int) date('n', $timestamp);
+        $monthShort = cms_events_detail_t('cms_events.detail.month_short.' . $month);
+        $monthFull = cms_events_detail_t('cms_events.detail.month_full.' . $month);
+
+        return [
+            'day' => date('d', $timestamp),
+            'month_short' => $monthShort,
+            'month_full' => $monthFull,
+            'year' => date('Y', $timestamp),
+            'machine' => date('Y-m-d', $timestamp),
+            'display' => date('d', $timestamp) . '. ' . $monthFull . ' ' . date('Y', $timestamp),
+        ];
+    }
+}
+
+if (!function_exists('cms_events_detail_time')) {
+    function cms_events_detail_time(?string $time): string
+    {
+        $time = trim((string) $time);
+        if ($time === '') {
+            return '';
+        }
+
+        return substr($time, 0, 5);
+    }
+}
+
+if (!function_exists('cms_events_detail_time_range')) {
+    function cms_events_detail_time_range(?string $start, ?string $end): string
+    {
+        $startLabel = cms_events_detail_time($start);
+        $endLabel = cms_events_detail_time($end);
+
+        if ($startLabel === '') {
+            return '';
+        }
+
+        return $endLabel !== '' ? $startLabel . '–' . $endLabel : $startLabel;
+    }
+}
+
+if (!function_exists('cms_events_detail_location_text')) {
+    function cms_events_detail_location_text(string $location, string $city): string
     {
         $parts = array_filter(array_map('trim', array_merge(
             preg_split('/\s*,\s*/', $location) ?: [],
@@ -168,7 +303,7 @@ if (!function_exists('cms_events_view_location_text')) {
         $seen = [];
         $unique = [];
         foreach ($parts as $part) {
-            $key = trim(cms_events_view_lowercase(preg_replace('/\s+/', ' ', $part) ?? $part));
+            $key = cms_events_detail_lower(preg_replace('/\s+/', ' ', $part) ?? $part);
             if ($key === '' || isset($seen[$key])) {
                 continue;
             }
@@ -181,317 +316,463 @@ if (!function_exists('cms_events_view_location_text')) {
     }
 }
 
-if (!function_exists('cms_events_view_tag_labels')) {
+if (!function_exists('cms_events_detail_list')) {
     /**
-     * @param mixed $rawTags
      * @return string[]
      */
-    function cms_events_view_tag_labels($rawTags): array
+    function cms_events_detail_list(mixed $value): array
     {
-        if (is_array($rawTags)) {
-            $tags = $rawTags;
-        } else {
-            $raw = trim((string) $rawTags);
-            if ($raw === '') {
-                return [];
+        if (is_array($value)) {
+            $items = [];
+            foreach ($value as $item) {
+                if (is_array($item)) {
+                    $item = $item['label'] ?? $item['name'] ?? $item['title'] ?? $item['value'] ?? '';
+                }
+                $items[] = cms_events_detail_trim_text((string) $item, 48);
             }
 
-            $decoded = json_decode($raw, true);
-            $tags = is_array($decoded) ? $decoded : (preg_split('/[,;\n]+/', $raw) ?: []);
+            return array_values(array_filter($items));
         }
 
-        $labels = [];
-        $seen = [];
-        foreach ($tags as $tag) {
-            if (is_array($tag)) {
-                $tag = $tag['label'] ?? $tag['name'] ?? $tag['title'] ?? '';
-            }
-
-            $label = cms_events_view_trim_text((string) $tag, 48);
-            if ($label === '') {
-                continue;
-            }
-
-            $key = cms_events_view_lowercase($label);
-            if (isset($seen[$key])) {
-                continue;
-            }
-
-            $seen[$key] = true;
-            $labels[] = $label;
+        $raw = trim((string) $value);
+        if ($raw === '') {
+            return [];
         }
 
-        return $labels;
+        $decoded = json_decode($raw, true);
+        if (is_array($decoded)) {
+            return cms_events_detail_list($decoded);
+        }
+
+        return array_values(array_filter(array_map(
+            static fn(string $item): string => cms_events_detail_trim_text($item, 48),
+            preg_split('/[,;\n]+/', $raw) ?: []
+        )));
+    }
+}
+
+if (!function_exists('cms_events_detail_price_label')) {
+    function cms_events_detail_price_label(object $event): string
+    {
+        $priceType = cms_events_detail_lower(trim((string) ($event->price_type ?? 'free')));
+        $price = max(0.0, (float) ($event->price ?? 0));
+        $currency = strtoupper(preg_replace('/[^A-Z]/i', '', (string) ($event->price_currency ?? 'EUR')) ?: 'EUR');
+
+        if ($priceType === 'free') {
+            return cms_events_detail_t('cms_events.detail.price.free');
+        }
+
+        if ($priceType === 'donation' && $price <= 0) {
+            return cms_events_detail_t('cms_events.detail.price.donation');
+        }
+
+        if ($price <= 0) {
+            return cms_events_detail_t('cms_events.detail.price.paid');
+        }
+
+        $symbol = match ($currency) {
+            'EUR' => '€',
+            'USD' => '$',
+            'CHF' => 'CHF',
+            default => $currency,
+        };
+
+        return $symbol . ' ' . number_format($price, 2, ',', '.');
+    }
+}
+
+if (!function_exists('cms_events_detail_normalize_key')) {
+    function cms_events_detail_normalize_key(string $value): string
+    {
+        $value = cms_events_detail_lower(trim($value));
+        $value = str_replace(['ä', 'ö', 'ü', 'ß'], ['ae', 'oe', 'ue', 'ss'], $value);
+        return trim((string) preg_replace('/[^a-z0-9]+/', '_', $value), '_');
+    }
+}
+
+if (!function_exists('cms_events_detail_category_label')) {
+    function cms_events_detail_category_label(string $category): string
+    {
+        $category = trim($category);
+        if ($category === '') {
+            return cms_events_detail_t('cms_events.detail.fallback_event');
+        }
+
+        $key = 'cms_events.detail.category.' . cms_events_detail_normalize_key($category);
+        $translated = cms_events_detail_t($key);
+
+        return $translated !== $key ? $translated : $category;
+    }
+}
+
+if (!function_exists('cms_events_detail_mode')) {
+    /**
+     * @return array{label:string,key:string}
+     */
+    function cms_events_detail_mode(bool $isOnline, string $locationText): array
+    {
+        if ($isOnline && $locationText !== '') {
+            return ['label' => cms_events_detail_t('cms_events.detail.mode.hybrid'), 'key' => 'hybrid'];
+        }
+
+        if ($isOnline) {
+            return ['label' => cms_events_detail_t('cms_events.detail.mode.online'), 'key' => 'online'];
+        }
+
+        return ['label' => cms_events_detail_t('cms_events.detail.mode.onsite'), 'key' => 'onsite'];
+    }
+}
+
+if (!function_exists('cms_events_detail_status')) {
+    /**
+     * @return array{label:string,key:string}
+     */
+    function cms_events_detail_status(object $event, bool $fullyBooked, string $registrationUrl, string $onlineUrl): array
+    {
+        $status = cms_events_detail_lower((string) ($event->status ?? ''));
+        $machineDate = cms_events_detail_date_parts((string) ($event->event_date ?? ''))['machine'];
+        $eventTs = $machineDate !== '' ? strtotime($machineDate) : 0;
+        $todayTs = strtotime('today') ?: 0;
+
+        if ($status === 'cancelled') {
+            return ['label' => cms_events_detail_t('cms_events.detail.status.cancelled'), 'key' => 'cancelled'];
+        }
+
+        if ($status === 'completed' || ($eventTs && $todayTs && $eventTs < $todayTs)) {
+            return ['label' => cms_events_detail_t('cms_events.detail.status.completed'), 'key' => 'completed'];
+        }
+
+        if ($fullyBooked) {
+            return ['label' => cms_events_detail_t('cms_events.detail.status.sold_out'), 'key' => 'sold-out'];
+        }
+
+        if ($registrationUrl !== '') {
+            return ['label' => cms_events_detail_t('cms_events.detail.status.registration_open'), 'key' => 'open'];
+        }
+
+        if ($onlineUrl !== '') {
+            return ['label' => cms_events_detail_t('cms_events.detail.status.online_available'), 'key' => 'online'];
+        }
+
+        return ['label' => cms_events_detail_t('cms_events.detail.status.registration_soon'), 'key' => 'soon'];
+    }
+}
+
+if (!function_exists('cms_events_detail_speaker_name')) {
+    function cms_events_detail_speaker_name(object $speaker): string
+    {
+        $name = trim((string) ($speaker->speaker_name ?? ''));
+        if ($name !== '') {
+            return $name;
+        }
+
+        return trim((string) ($speaker->first_name ?? '') . ' ' . (string) ($speaker->last_name ?? ''));
+    }
+}
+
+if (!function_exists('cms_events_detail_speaker_link')) {
+    function cms_events_detail_speaker_link(object $speaker, string $baseUrl): string
+    {
+        $id = (int) ($speaker->speaker_id ?? 0);
+        if ($id <= 0) {
+            return '';
+        }
+
+        $type = (string) ($speaker->speaker_type ?? 'speaker');
+        return $baseUrl . ($type === 'expert' ? '/experts/' : '/speakers/') . $id;
+    }
+}
+
+if (!function_exists('cms_events_detail_icon')) {
+    function cms_events_detail_icon(string $name): string
+    {
+        $icons = [
+            'calendar' => '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 9h18M8 3v4M16 3v4"></path></svg>',
+            'clock' => '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>',
+            'details' => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"></path></svg>',
+            'globe' => '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"></path></svg>',
+            'info' => '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg>',
+            'mail' => '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3 7 9 6 9-6"></path></svg>',
+            'pin' => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>',
+            'ticket' => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 6v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-6z"></path><path d="M12 4v16" stroke-dasharray="2 3"></path></svg>',
+            'users' => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
+            'linkedin' => '<svg viewBox="0 0 24 24" aria-hidden="true" class="ev-detail-fill"><path d="M4.98 3.5A2.5 2.5 0 1 1 0 3.5a2.5 2.5 0 0 1 4.98 0ZM0 8h5v16H0V8Zm7.5 0h4.8v2.2h.07c.67-1.2 2.3-2.46 4.73-2.46 5.06 0 6 3.33 6 7.66V24h-5v-7.2c0-1.72-.03-3.93-2.4-3.93-2.4 0-2.77 1.87-2.77 3.8V24h-5V8Z"></path></svg>',
+            'x' => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4l16 16M20 4 4 20"></path></svg>',
+        ];
+
+        return $icons[$name] ?? $icons['info'];
     }
 }
 
 $e = $event;
 $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
-$titleRaw = trim((string) ($e->title ?? ''));
-$title = htmlspecialchars($titleRaw !== '' ? $titleRaw : 'Event', ENT_QUOTES, 'UTF-8');
+$eventId = (int) ($e->id ?? 0);
+$titleRaw = trim((string) ($e->title ?? '')) ?: cms_events_detail_t('cms_events.detail.fallback_event');
 $categoryRaw = trim((string) ($e->category ?? ''));
-$category = htmlspecialchars($categoryRaw !== '' ? $categoryRaw : 'Event', ENT_QUOTES, 'UTF-8');
+$categoryLabel = cms_events_detail_category_label($categoryRaw);
+$description = trim((string) ($e->description ?? ''));
 $locationRaw = trim((string) ($e->location ?? ''));
 $cityRaw = trim((string) ($e->city ?? ''));
-$locationText = cms_events_view_location_text($locationRaw, $cityRaw);
+$locationText = cms_events_detail_location_text($locationRaw, $cityRaw);
 $addressRaw = trim((string) ($e->address ?? ''));
 $zipRaw = trim((string) ($e->zip ?? ''));
 $countryRaw = trim((string) ($e->country ?? ''));
 $cityLine = trim($zipRaw . ($zipRaw !== '' && $cityRaw !== '' ? ' ' : '') . $cityRaw);
 $addressParts = array_values(array_filter([$addressRaw, $cityLine, $countryRaw], static fn(string $part): bool => trim($part) !== ''));
 $fullAddressText = implode(', ', $addressParts);
-$imageUrl = cms_events_view_public_url($e->banner_url ?? $e->image_url ?? null);
-$registrationUrl = cms_events_view_public_url($e->registration_url ?? null);
-$onlineUrl = cms_events_view_public_url($e->online_url ?? null);
-$websiteUrl = cms_events_view_public_url($e->website_url ?? $e->organizer_website ?? $e->website ?? null);
-[$day, $monthShort, $displayDate, $machineDate] = cms_events_view_date_parts((string) ($e->event_date ?? ''));
-[, , $displayEndDate, $endMachineDate] = cms_events_view_date_parts((string) ($e->end_date ?? ''));
-$eventTime = trim((string) ($e->event_time ?? ''));
-$endTime = trim((string) ($e->end_time ?? ''));
-$startTimeLabel = $eventTime !== '' ? substr($eventTime, 0, 5) . ' Uhr' : '';
-$endTimeLabel = $endTime !== '' ? substr($endTime, 0, 5) . ' Uhr' : '';
-$isMultiDay = $displayDate !== '' && $displayEndDate !== '' && $endMachineDate !== '' && $endMachineDate !== $machineDate;
-$dateTimeStartLabel = trim($displayDate . ($startTimeLabel !== '' ? ' · ' . $startTimeLabel : ''));
-$dateTimeEndLabel = $isMultiDay ? trim($displayEndDate . ($endTimeLabel !== '' ? ' · ' . $endTimeLabel : '')) : '';
-$timeLabel = $startTimeLabel !== '' ? $startTimeLabel . (!$isMultiDay && $endTimeLabel !== '' ? ' – ' . $endTimeLabel : '') : '';
-$dateTimeLabel = $isMultiDay && $dateTimeEndLabel !== '' ? $dateTimeStartLabel . ' – ' . $dateTimeEndLabel : $dateTimeStartLabel;
-$speakerList = (array) ($speakers ?? []);
-$primarySpeaker = $speakerList[0] ?? null;
-$eventPrice = max(0.0, (float) ($e->price ?? 0));
+$registrationUrl = cms_events_detail_public_url($e->registration_url ?? null);
+$onlineUrl = cms_events_detail_public_url($e->online_url ?? null);
+$websiteUrl = cms_events_detail_public_url($e->website_url ?? $e->organizer_website ?? $e->website ?? null);
+$dateParts = cms_events_detail_date_parts((string) ($e->event_date ?? ''));
+$endDateParts = cms_events_detail_date_parts((string) ($e->end_date ?? ''));
+$timeLabel = cms_events_detail_time_range((string) ($e->event_time ?? ''), (string) ($e->end_time ?? ''));
+$isMultiDay = $dateParts['machine'] !== '' && $endDateParts['machine'] !== '' && $endDateParts['machine'] !== $dateParts['machine'];
+$dateLabel = $dateParts['display'];
+if ($isMultiDay && $endDateParts['display'] !== '') {
+    $dateLabel .= ' – ' . $endDateParts['display'];
+}
+$dateTimeLabel = trim($dateLabel . ($timeLabel !== '' ? ', ' . $timeLabel : ''));
+$speakerList = array_values(array_filter((array) ($speakers ?? []), 'is_object'));
 $capacity = max(0, (int) ($e->seats_total ?? $e->capacity ?? 0));
 $registered = max(0, (int) ($e->seats_booked ?? $e->registered_count ?? $e->registrations_count ?? 0));
 $seatsLeft = $capacity > 0 ? max(0, $capacity - $registered) : 0;
-$progress = $capacity > 0 ? min(100, (int) round(($registered / $capacity) * 100)) : 0;
 $isFullyBooked = $capacity > 0 && $seatsLeft <= 0;
-$eventUrl = function_exists('cms_event_url') ? cms_event_url($e) : $baseUrl . '/events/' . (int) ($e->id ?? 0);
+$priceLabel = cms_events_detail_price_label($e);
+$mode = cms_events_detail_mode(!empty($e->is_online), $locationText);
+$status = cms_events_detail_status($e, $isFullyBooked, $registrationUrl, $onlineUrl);
+$language = trim((string) ($e->language ?? $e->event_language ?? '')) ?: cms_events_detail_t('cms_events.detail.language.default');
+$organizerName = trim((string) ($e->organizer_name ?? ''));
+$tags = cms_events_detail_list($e->tags ?? '');
+$eventUrl = function_exists('cms_event_url') ? cms_event_url($e) : $baseUrl . '/events/' . $eventId;
+$calendarUrl = $eventId > 0 ? $baseUrl . '/events/' . $eventId . '/ical' : '';
 $requestScheme = (!empty($_SERVER['HTTPS']) && (string) $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $fallbackHost = parse_url($baseUrl, PHP_URL_HOST);
 $requestHost = preg_replace('/[^a-z0-9.:-]/i', '', (string) ($_SERVER['HTTP_HOST'] ?? ($fallbackHost ?: '')));
 $fallbackPath = parse_url($eventUrl, PHP_URL_PATH);
 $requestUri = str_replace(["\r", "\n"], '', (string) ($_SERVER['REQUEST_URI'] ?? ($fallbackPath ?: '')));
 $currentUrl = $requestHost !== '' && $requestUri !== '' ? $requestScheme . '://' . $requestHost . $requestUri : $eventUrl;
-$current_url = $currentUrl;
-$share_linkedin = 'https://www.linkedin.com/sharing/share-offsite/?url=' . urlencode($current_url);
-$share_twitter = 'https://twitter.com/intent/tweet?url=' . urlencode($current_url) . '&text=' . urlencode($titleRaw);
-$share_mail = 'mailto:?subject=' . rawurlencode($titleRaw) . '&body=' . rawurlencode($current_url);
-$description = trim((string) ($e->description ?? ''));
-$tagLabels = cms_events_view_tag_labels($e->tags ?? '');
-$relatedEvents = array_slice((array) ($related_events ?? []), 0, 3);
-$priceLabel = cms_events_view_price_label($e);
-$isFreeEvent = $priceLabel === 'Kostenlos';
-$isFeatured = !empty($e->is_featured);
-$isOnline = !empty($e->is_online);
-$eventModeLabel = $isOnline ? ($locationText !== '' ? 'Hybrid' : 'Online') : 'Präsenz';
-$eventModeClass = $isOnline ? ($locationText !== '' ? 'cms-events-badge--hybrid' : 'cms-events-badge--online') : 'cms-events-badge--onsite';
-$organizerName = trim((string) ($e->organizer_name ?? ''));
-$organizerEmailRaw = trim((string) ($e->organizer_email ?? ''));
-$organizerEmail = filter_var($organizerEmailRaw, FILTER_VALIDATE_EMAIL) ? $organizerEmailRaw : '';
-$organizerPhone = trim((string) ($e->organizer_phone ?? ''));
-$hasOrganizerDetails = $organizerName !== '' || $websiteUrl !== '' || $organizerEmail !== '' || $organizerPhone !== '';
-$primarySpeakerName = '';
-$primarySpeakerInitials = 'EV';
-$primarySpeakerLink = '';
-$primarySpeakerImage = '';
-$primarySpeakerPosition = '';
-$primarySpeakerBio = '';
-$settings = is_array($settings ?? null) ? $settings : [];
-$designPrimary = cms_events_view_css_color($settings['design_primary_color'] ?? null, '#3b82f6');
-$designAccent = cms_events_view_css_color($settings['design_accent_color'] ?? null, '#1d4ed8');
-$designCardBg = cms_events_view_css_color($settings['design_card_bg'] ?? null, '#f0f7ff');
-$detailHeaderBg = cms_events_view_css_color($settings['design_detail_header_bg'] ?? ($settings['detail_header_bg_from'] ?? null), '#f8fafc');
-$detailHeaderColor = cms_events_view_css_color($settings['design_detail_header_color'] ?? ($settings['detail_header_title_color'] ?? null), '#1e293b');
-$designCta = cms_events_view_css_color($settings['design_cta_color'] ?? null, $designPrimary);
-$designRadius = max(0, min(32, (int) ($settings['design_border_radius'] ?? 12)));
+$shareLinkedin = 'https://www.linkedin.com/sharing/share-offsite/?url=' . rawurlencode($currentUrl);
+$shareX = 'https://twitter.com/intent/tweet?url=' . rawurlencode($currentUrl) . '&text=' . rawurlencode($titleRaw);
+$shareMail = 'mailto:?subject=' . rawurlencode($titleRaw) . '&body=' . rawurlencode($currentUrl);
+$relatedEvents = array_slice(array_values(array_filter((array) ($related_events ?? []), static fn($item): bool => is_object($item) || is_array($item))), 0, 3);
 
-if ($primarySpeaker) {
-    $primarySpeakerName = trim((string) ($primarySpeaker->speaker_name ?? (($primarySpeaker->first_name ?? '') . ' ' . ($primarySpeaker->last_name ?? ''))));
-    $primarySpeakerInitials = cms_events_view_initials($primarySpeakerName);
-    $primarySpeakerImage = cms_events_view_public_url($primarySpeaker->photo_url ?? null);
-    $primarySpeakerType = in_array((string) ($primarySpeaker->speaker_type ?? 'speaker'), ['speaker', 'expert'], true) ? (string) $primarySpeaker->speaker_type : 'speaker';
-    $primarySpeakerId = (int) ($primarySpeaker->speaker_id ?? 0);
-    $primarySpeakerLink = $primarySpeakerId > 0 ? $baseUrl . ($primarySpeakerType === 'expert' ? '/experts/' : '/speakers/') . $primarySpeakerId : '';
-    $primarySpeakerPosition = trim((string) ($primarySpeaker->position ?? $primarySpeaker->company ?? ''));
-    $primarySpeakerBio = trim(strip_tags((string) ($primarySpeaker->short_bio ?? '')));
+$agendaItems = [];
+foreach ($speakerList as $speaker) {
+    $sessionTime = cms_events_detail_time((string) ($speaker->session_time ?? ''));
+    $presentation = cms_events_detail_plain($speaker->presentation_title ?? '');
+    $role = cms_events_detail_plain($speaker->role ?? '');
+    if ($sessionTime === '' && $presentation === '') {
+        continue;
+    }
+
+    $speakerName = cms_events_detail_speaker_name($speaker);
+    $speakerContext = trim(implode(' · ', array_filter([
+        $speakerName,
+        cms_events_detail_plain($speaker->position ?? $speaker->company ?? ''),
+    ])));
+    $agendaItems[] = [
+        'time' => $sessionTime !== '' ? $sessionTime : cms_events_detail_t('cms_events.detail.time_on_request'),
+        'label' => $role !== '' ? $role : cms_events_detail_t('cms_events.detail.session'),
+        'title' => $presentation !== '' ? $presentation : ($role !== '' ? $role : $speakerName),
+        'who' => $speakerContext,
+    ];
 }
+
+$heroTags = array_values(array_filter(array_merge([$mode['label']], array_slice($tags, 0, 4))));
+$facts = array_filter([
+    cms_events_detail_t('cms_events.detail.label.date') => $dateLabel,
+    cms_events_detail_t('cms_events.detail.label.time') => $timeLabel,
+    cms_events_detail_t('cms_events.detail.label.format') => $mode['label'],
+    cms_events_detail_t('cms_events.detail.label.language') => $language,
+    cms_events_detail_t('cms_events.detail.label.organizer') => $organizerName,
+    cms_events_detail_t('cms_events.detail.label.participants') => $capacity > 0 ? cms_events_detail_t('cms_events.detail.capacity_count', ['count' => (string) $capacity]) : '',
+    cms_events_detail_t('cms_events.detail.label.price') => $priceLabel,
+], static fn(string $value): bool => $value !== '');
 ?>
-<style>
-:root {
-    --ev-primary: <?= htmlspecialchars($designPrimary, ENT_QUOTES, 'UTF-8') ?>;
-    --ev-primary-h: <?= htmlspecialchars($designAccent, ENT_QUOTES, 'UTF-8') ?>;
-    --ev-accent: <?= htmlspecialchars($designAccent, ENT_QUOTES, 'UTF-8') ?>;
-    --ev-card-bg: <?= htmlspecialchars($designCardBg, ENT_QUOTES, 'UTF-8') ?>;
-    --ev-detail-hdr-bg: <?= htmlspecialchars($detailHeaderBg, ENT_QUOTES, 'UTF-8') ?>;
-    --ev-detail-hdr-text: <?= htmlspecialchars($detailHeaderColor, ENT_QUOTES, 'UTF-8') ?>;
-    --ev-detail-accent: <?= htmlspecialchars($designPrimary, ENT_QUOTES, 'UTF-8') ?>;
-    --ev-cta: <?= htmlspecialchars($designCta, ENT_QUOTES, 'UTF-8') ?>;
-    --ev-radius: <?= (int) $designRadius ?>px;
-}
-</style>
-<main class="phinit-plugin cms-events-wrap cms-events-detail">
-    <nav class="cms-events-breadcrumb" aria-label="Breadcrumb">
-        <a href="<?= htmlspecialchars($baseUrl . '/', ENT_QUOTES, 'UTF-8') ?>">Home</a>
+<main class="phinit-plugin ev-detail" aria-labelledby="ev-detail-title">
+    <nav class="ev-detail-breadcrumb" aria-label="<?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.aria.breadcrumb')) ?>">
+        <a href="<?= cms_events_detail_e($baseUrl . '/') ?>"><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.breadcrumb.home')) ?></a>
         <span aria-hidden="true">›</span>
-        <a href="<?= htmlspecialchars($baseUrl . '/events/', ENT_QUOTES, 'UTF-8') ?>">Veranstaltungen</a>
+        <a href="<?= cms_events_detail_e($baseUrl . '/events') ?>"><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.breadcrumb.events')) ?></a>
         <span aria-hidden="true">›</span>
-        <span aria-current="page"><?= $title ?></span>
+        <span aria-current="page"><?= cms_events_detail_e($titleRaw) ?></span>
     </nav>
 
-    <div class="cms-events-detail__grid">
-        <article class="cms-events-detail__main">
-            <header class="cms-events-detail__head">
-                <div class="cms-events-detail__badges">
-                    <?php if ($isFeatured): ?>
-                        <span class="cms-events-badge cms-events-badge--featured">Featured</span>
+    <section class="ev-detail-hero" aria-labelledby="ev-detail-title">
+        <span class="ev-detail-status ev-detail-status--<?= cms_events_detail_e($status['key']) ?>"><span aria-hidden="true"></span><?= cms_events_detail_e($status['label']) ?></span>
+        <div class="ev-detail-hero__body">
+            <time class="ev-detail-datebox" datetime="<?= cms_events_detail_e($dateParts['machine']) ?>" aria-label="<?= cms_events_detail_e($dateParts['display']) ?>">
+                <span class="ev-detail-datebox__month"><?= cms_events_detail_e($dateParts['month_short']) ?></span>
+                <span class="ev-detail-datebox__day"><?= cms_events_detail_e($dateParts['day']) ?></span>
+                <span class="ev-detail-datebox__year"><?= cms_events_detail_e($dateParts['year']) ?></span>
+            </time>
+            <div class="ev-detail-hero__content">
+                <p class="ev-detail-eyebrow"><?= cms_events_detail_e($categoryLabel) ?> · <?= cms_events_detail_e($mode['label']) ?></p>
+                <h1 id="ev-detail-title"><?= cms_events_detail_e($titleRaw) ?></h1>
+                <div class="ev-detail-hero-meta">
+                    <?php if ($dateTimeLabel !== ''): ?>
+                        <span><?= cms_events_detail_icon('calendar') ?><?= cms_events_detail_e($dateTimeLabel) ?></span>
                     <?php endif; ?>
-                    <span class="cms-events-badge"><?= $category ?></span>
-                    <span class="cms-events-badge <?= htmlspecialchars($eventModeClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($eventModeLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                    <?php if ($isFullyBooked): ?>
-                        <span class="cms-events-badge cms-events-badge--danger">Ausgebucht</span>
+                    <?php if ($locationText !== ''): ?>
+                        <span><?= cms_events_detail_icon('pin') ?><?= cms_events_detail_e($locationText) ?></span>
+                    <?php elseif (!empty($e->is_online)): ?>
+                        <span><?= cms_events_detail_icon('globe') ?><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.mode.online')) ?></span>
                     <?php endif; ?>
                 </div>
-                <h1><?= $title ?></h1>
-            </header>
-
-            <?php if ($imageUrl !== ''): ?>
-            <figure class="cms-events-detail__hero">
-                    <img src="<?= htmlspecialchars($imageUrl, ENT_QUOTES, 'UTF-8') ?>" alt="<?= $title ?>" width="1200" height="675" loading="eager" decoding="async">
-            </figure>
-            <?php endif; ?>
-
-            <section class="phinit-card event-description-card cms-events-detail__section">
-                <h2>Über dieses Event</h2>
-                <?php if ($description !== ''): ?>
-                    <div class="event-body cms-events-detail__content"><?= nl2br(htmlspecialchars($description, ENT_QUOTES, 'UTF-8')) ?></div>
-                <?php else: ?>
-                    <p class="cms-events-muted">Weitere Details zu diesem Event folgen in Kürze.</p>
+                <?php if ($heroTags !== []): ?>
+                    <ul class="ev-detail-tags ev-detail-tags--hero" aria-label="<?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.aria.hero_tags')) ?>">
+                        <?php foreach ($heroTags as $tag): ?>
+                            <li><?= cms_events_detail_e($tag) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
                 <?php endif; ?>
+            </div>
+        </div>
+    </section>
 
-                <?php if (!empty($tagLabels)): ?>
-                    <section class="cms-events-detail__topics" aria-labelledby="cms-event-topics-heading">
-                        <h3 id="cms-event-topics-heading">Themen</h3>
-                        <ul class="cms-events-topic-list" role="list">
-                            <?php foreach ($tagLabels as $tagLabel): ?>
-                                <li><span class="cms-events-topic-badge"><?= htmlspecialchars($tagLabel, ENT_QUOTES, 'UTF-8') ?></span></li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </section>
+    <div class="ev-detail-grid">
+        <div class="ev-detail-main">
+            <section class="ev-detail-card" aria-labelledby="ev-detail-about-heading">
+                <h2 id="ev-detail-about-heading" class="ev-detail-card-title"><?= cms_events_detail_icon('info') ?><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.heading_about')) ?></h2>
+                <?php if ($description !== ''): ?>
+                    <div class="ev-detail-copy"><?= nl2br(cms_events_detail_e(cms_events_detail_plain($description))) ?></div>
+                <?php else: ?>
+                    <p class="ev-detail-empty"><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.empty_description')) ?></p>
+                <?php endif; ?>
+                <?php if ($tags !== []): ?>
+                    <p class="ev-detail-sub-label"><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.subheading_tracks')) ?></p>
+                    <ul class="ev-detail-tags" role="list">
+                        <?php foreach ($tags as $tag): ?>
+                            <li><?= cms_events_detail_e($tag) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
                 <?php endif; ?>
             </section>
 
-            <?php if ($primarySpeakerName !== ''): ?>
-                <section class="phinit-card cms-events-speaker-teaser" aria-labelledby="cms-event-speaker-heading">
-                    <div class="cms-events-speaker-teaser__image">
-                        <?php if ($primarySpeakerImage !== ''): ?>
-                            <img src="<?= htmlspecialchars($primarySpeakerImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($primarySpeakerName, ENT_QUOTES, 'UTF-8') ?>" width="96" height="96" loading="lazy" decoding="async">
-                        <?php else: ?>
-                            <div class="speaker-avatar-fallback" aria-hidden="true"><?= htmlspecialchars($primarySpeakerInitials, ENT_QUOTES, 'UTF-8') ?></div>
-                        <?php endif; ?>
-                    </div>
-                    <div>
-                        <p class="phinit-overline">Speaker</p>
-                        <h2 id="cms-event-speaker-heading"><?= htmlspecialchars($primarySpeakerName, ENT_QUOTES, 'UTF-8') ?></h2>
-                        <?php if ($primarySpeakerPosition !== ''): ?>
-                            <p class="cms-events-speaker-teaser__position"><?= htmlspecialchars($primarySpeakerPosition, ENT_QUOTES, 'UTF-8') ?></p>
-                        <?php endif; ?>
-                        <?php if ($primarySpeakerBio !== ''): ?>
-                            <p class="cms-events-speaker-teaser__bio"><?= htmlspecialchars($primarySpeakerBio, ENT_QUOTES, 'UTF-8') ?></p>
-                        <?php endif; ?>
-                        <?php if ($primarySpeakerLink !== ''): ?>
-                            <a href="<?= htmlspecialchars($primarySpeakerLink, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--secondary speaker-link-button">Zum Speaker</a>
-                        <?php endif; ?>
-                    </div>
+            <?php if ($agendaItems !== []): ?>
+                <section class="ev-detail-card" aria-labelledby="ev-detail-agenda-heading">
+                    <h2 id="ev-detail-agenda-heading" class="ev-detail-card-title"><?= cms_events_detail_icon('clock') ?><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.heading_agenda')) ?></h2>
+                    <ol class="ev-detail-agenda">
+                        <?php foreach ($agendaItems as $item): ?>
+                            <li>
+                                <p><?= cms_events_detail_e($item['time']) ?> · <?= cms_events_detail_e($item['label']) ?></p>
+                                <h3><?= cms_events_detail_e($item['title']) ?></h3>
+                                <?php if ($item['who'] !== ''): ?>
+                                    <span><?= cms_events_detail_e($item['who']) ?></span>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ol>
                 </section>
             <?php endif; ?>
 
-            <div class="event-share-bar cms-events-share" id="event-share" aria-label="Event teilen">
-                <span class="event-share-label">Teilen:</span>
-                <a href="<?= htmlspecialchars($share_linkedin, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="event-share-btn" aria-label="Auf LinkedIn teilen"><i class="ti ti-brand-linkedin" aria-hidden="true"></i></a>
-                <a href="<?= htmlspecialchars($share_twitter, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="event-share-btn" aria-label="Auf X / Twitter teilen"><i class="ti ti-brand-x" aria-hidden="true"></i></a>
-                <a href="<?= htmlspecialchars($share_mail, ENT_QUOTES, 'UTF-8') ?>" class="event-share-btn" aria-label="Per E-Mail teilen"><i class="ti ti-mail" aria-hidden="true"></i></a>
-                <?php if ($websiteUrl !== ''): ?>
-                    <a href="<?= htmlspecialchars($websiteUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="event-share-btn" aria-label="Event-Website"><i class="ti ti-world" aria-hidden="true"></i></a>
-                <?php endif; ?>
-            </div>
-        </article>
+            <?php if ($speakerList !== []): ?>
+                <section class="ev-detail-card" aria-labelledby="ev-detail-speakers-heading">
+                    <h2 id="ev-detail-speakers-heading" class="ev-detail-card-title">
+                        <?= cms_events_detail_icon('users') ?><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.heading_speakers')) ?>
+                        <span><?= (int) count($speakerList) ?></span>
+                    </h2>
+                    <div class="ev-detail-team">
+                        <?php foreach ($speakerList as $speaker): ?>
+                            <?php
+                            $speakerName = cms_events_detail_speaker_name($speaker) ?: cms_events_detail_t('cms_events.detail.fallback_speaker');
+                            $speakerSubtitle = cms_events_detail_plain($speaker->presentation_title ?? $speaker->role ?? $speaker->position ?? $speaker->company ?? '');
+                            $speakerLink = cms_events_detail_speaker_link($speaker, $baseUrl);
+                            ?>
+                            <?php if ($speakerLink !== ''): ?>
+                                <a class="ev-detail-speaker" href="<?= cms_events_detail_e($speakerLink) ?>">
+                            <?php else: ?>
+                                <article class="ev-detail-speaker">
+                            <?php endif; ?>
+                                    <span class="ev-detail-speaker__avatar" aria-hidden="true"><?= cms_events_detail_e(cms_events_detail_initials($speakerName, 'SP')) ?></span>
+                                    <span>
+                                        <strong><?= cms_events_detail_e($speakerName) ?></strong>
+                                        <?php if ($speakerSubtitle !== ''): ?><small><?= cms_events_detail_e($speakerSubtitle) ?></small><?php endif; ?>
+                                    </span>
+                            <?php if ($speakerLink !== ''): ?>
+                                </a>
+                            <?php else: ?>
+                                </article>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
+        </div>
 
-        <aside class="cms-events-detail__aside" aria-label="Anmeldung">
-            <div class="phinit-card cms-events-registration-card">
-                <?php if (!$isFreeEvent): ?>
-                    <span class="event-price-large cms-events-registration-card__price"><?= htmlspecialchars($priceLabel, ENT_QUOTES, 'UTF-8') ?></span>
-                <?php else: ?>
-                    <p class="cms-events-registration-card__price is-free">Kostenlos</p>
-                <?php endif; ?>
-                <h2>Anmeldung</h2>
-
-                <dl>
-                    <?php if ($dateTimeLabel !== ''): ?><div><dt><i class="ti ti-calendar" aria-hidden="true"></i>Termin</dt><dd><?php if ($isMultiDay && $dateTimeEndLabel !== ''): ?><span class="cms-events-date-stack cms-events-date-stack--sidebar"><span><strong>Start</strong><?= htmlspecialchars($dateTimeStartLabel, ENT_QUOTES, 'UTF-8') ?></span><span><strong>Ende</strong><?= htmlspecialchars($dateTimeEndLabel, ENT_QUOTES, 'UTF-8') ?></span></span><?php else: ?><?= htmlspecialchars($dateTimeLabel, ENT_QUOTES, 'UTF-8') ?><?php endif; ?></dd></div><?php endif; ?>
-                    <div><dt><i class="ti ti-video" aria-hidden="true"></i>Format</dt><dd><?= htmlspecialchars($eventModeLabel, ENT_QUOTES, 'UTF-8') ?></dd></div>
-                    <?php if ($locationText !== ''): ?><div><dt><i class="ti ti-map-pin" aria-hidden="true"></i>Ort</dt><dd><?= htmlspecialchars($locationText, ENT_QUOTES, 'UTF-8') ?></dd></div><?php endif; ?>
-                    <?php if ($fullAddressText !== ''): ?><div><dt><i class="ti ti-address-book" aria-hidden="true"></i>Adresse</dt><dd><?= htmlspecialchars($fullAddressText, ENT_QUOTES, 'UTF-8') ?></dd></div><?php endif; ?>
-                    <?php if ($organizerName !== ''): ?><div><dt><i class="ti ti-building" aria-hidden="true"></i>Veranstalter</dt><dd><?= htmlspecialchars($organizerName, ENT_QUOTES, 'UTF-8') ?></dd></div><?php endif; ?>
-                    <?php if ($capacity > 0): ?><div><dt><i class="ti ti-users" aria-hidden="true"></i>Kapazität</dt><dd><?= (int) $capacity ?> Plätze</dd></div><?php endif; ?>
-                </dl>
-
+        <aside class="ev-detail-sidebar" aria-label="<?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.aria.sidebar')) ?>">
+            <section class="ev-detail-card ev-detail-cta" aria-labelledby="ev-detail-cta-heading">
+                <h2 id="ev-detail-cta-heading" class="ev-detail-card-title"><?= cms_events_detail_icon('ticket') ?><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.heading_participation')) ?></h2>
+                <p class="ev-detail-price"><?= cms_events_detail_e($priceLabel) ?> <small><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.registration_required')) ?></small></p>
                 <?php if ($capacity > 0): ?>
-                    <div class="cms-events-capacity" aria-label="Verfügbare Plätze">
-                        <div class="seats-bar cms-events-capacity__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= (int) $progress ?>" style="--cms-event-progress: <?= (int) $progress ?>%;"><div class="seats-fill"></div></div>
-                        <p class="seats-label"><?= (int) $seatsLeft ?> Plätze verfügbar</p>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (!$isFullyBooked && $registrationUrl !== ''): ?>
-                    <a href="<?= htmlspecialchars($registrationUrl, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--primary cms-events-registration-card__button" target="_blank" rel="noopener noreferrer">Jetzt anmelden</a>
-                <?php elseif (!$isFullyBooked && $onlineUrl !== ''): ?>
-                    <a href="<?= htmlspecialchars($onlineUrl, ENT_QUOTES, 'UTF-8') ?>" class="phinit-btn phinit-btn--primary cms-events-registration-card__button" target="_blank" rel="noopener noreferrer">Online teilnehmen</a>
+                    <p><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.seats_left', ['count' => (string) $seatsLeft])) ?></p>
                 <?php else: ?>
-                    <button class="phinit-btn phinit-btn--primary cms-events-registration-card__button" type="button" disabled><?= $isFullyBooked ? 'Ausgebucht' : 'Anmeldung folgt' ?></button>
-                    <?php if ($isFullyBooked): ?>
-                        <a href="?waitlist=1" class="waitlist-link cms-events-registration-card__waitlist">Auf Warteliste setzen</a>
+                    <p><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.capacity_unlimited')) ?></p>
+                <?php endif; ?>
+                <div class="ev-detail-actions">
+                    <?php if (!$isFullyBooked && $registrationUrl !== ''): ?>
+                        <a class="ev-detail-button ev-detail-button--primary" href="<?= cms_events_detail_e($registrationUrl) ?>" target="_blank" rel="noopener noreferrer"><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.button_register')) ?></a>
+                    <?php elseif (!$isFullyBooked && $onlineUrl !== ''): ?>
+                        <a class="ev-detail-button ev-detail-button--primary" href="<?= cms_events_detail_e($onlineUrl) ?>" target="_blank" rel="noopener noreferrer"><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.button_join_online')) ?></a>
+                    <?php else: ?>
+                        <button class="ev-detail-button ev-detail-button--primary" type="button" disabled><?= cms_events_detail_e($isFullyBooked ? cms_events_detail_t('cms_events.detail.status.sold_out') : cms_events_detail_t('cms_events.detail.status.registration_soon')) ?></button>
                     <?php endif; ?>
-                <?php endif; ?>
-
-                <?php if ($onlineUrl !== '' && $registrationUrl !== ''): ?>
-                    <a href="<?= htmlspecialchars($onlineUrl, ENT_QUOTES, 'UTF-8') ?>" class="cms-events-registration-card__secondary-link" target="_blank" rel="noopener noreferrer"><i class="ti ti-video" aria-hidden="true"></i>Online-Zugang</a>
-                <?php endif; ?>
-
-                <div class="sidebar-share">
-                    <p class="sidebar-share-label">Event teilen</p>
-                    <div class="event-share-bar event-share-bar--sidebar cms-events-share cms-events-share--sidebar" aria-label="Event teilen">
-                        <a href="<?= htmlspecialchars($share_linkedin, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="event-share-btn" aria-label="LinkedIn"><i class="ti ti-brand-linkedin" aria-hidden="true"></i></a>
-                        <a href="<?= htmlspecialchars($share_twitter, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="event-share-btn" aria-label="X / Twitter"><i class="ti ti-brand-x" aria-hidden="true"></i></a>
-                        <a href="<?= htmlspecialchars($share_mail, ENT_QUOTES, 'UTF-8') ?>" class="event-share-btn" aria-label="E-Mail"><i class="ti ti-mail" aria-hidden="true"></i></a>
-                        <?php if ($websiteUrl !== ''): ?>
-                            <a href="<?= htmlspecialchars($websiteUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="event-share-btn" aria-label="Website"><i class="ti ti-world" aria-hidden="true"></i></a>
-                        <?php endif; ?>
-                    </div>
+                    <?php if ($calendarUrl !== ''): ?>
+                        <a class="ev-detail-button ev-detail-button--ghost" href="<?= cms_events_detail_e($calendarUrl) ?>"><?= cms_events_detail_icon('calendar') ?><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.button_calendar')) ?></a>
+                    <?php endif; ?>
                 </div>
-            </div>
+            </section>
 
-            <?php if (!empty($relatedEvents)): ?>
-                <section class="phinit-card cms-events-related" aria-labelledby="cms-related-events-heading">
-                    <h2 id="cms-related-events-heading">Ähnliche Events</h2>
-                    <?php foreach ($relatedEvents as $related): ?>
-                        <?php
-                        if (is_array($related)) {
-                            $related = (object) $related;
-                        }
-                        if (!is_object($related)) {
-                            continue;
-                        }
-                        [, , $relatedDate] = cms_events_view_date_parts((string) ($related->event_date ?? ''));
-                        $relatedImage = cms_events_view_public_url($related->image_url ?? $related->banner_url ?? null);
-                        ?>
-                        <a class="cms-events-related__item" href="<?= htmlspecialchars(function_exists('cms_event_url') ? cms_event_url($related) : $baseUrl . '/events/' . (int) ($related->id ?? 0), ENT_QUOTES, 'UTF-8') ?>">
-                            <span class="cms-events-related__image">
-                                <?php if ($relatedImage !== ''): ?>
-                                    <img src="<?= htmlspecialchars($relatedImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars((string) ($related->title ?? 'Event'), ENT_QUOTES, 'UTF-8') ?>" class="related-event-thumb related-event-img" width="72" height="54" loading="lazy" decoding="async">
-                                <?php else: ?>
-                                    <div class="related-event-thumb related-event-thumb--placeholder related-event-img-placeholder" aria-hidden="true"><i class="ti ti-calendar-event"></i></div>
-                                <?php endif; ?>
-                            </span>
-                            <span><?= htmlspecialchars((string) ($related->title ?? 'Event'), ENT_QUOTES, 'UTF-8') ?><small><?= htmlspecialchars($relatedDate, ENT_QUOTES, 'UTF-8') ?></small></span>
-                        </a>
+            <section class="ev-detail-card" aria-labelledby="ev-detail-social-heading">
+                <h2 id="ev-detail-social-heading" class="ev-detail-card-title"><?= cms_events_detail_icon('globe') ?><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.heading_social')) ?></h2>
+                <div class="ev-detail-social" aria-label="<?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.aria.social_links')) ?>">
+                    <?php if ($websiteUrl !== ''): ?>
+                        <a class="ev-detail-social__website" href="<?= cms_events_detail_e($websiteUrl) ?>" target="_blank" rel="noopener noreferrer" aria-label="<?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.social.website')) ?>"><?= cms_events_detail_icon('globe') ?></a>
+                    <?php endif; ?>
+                    <a href="<?= cms_events_detail_e($shareLinkedin) ?>" target="_blank" rel="noopener noreferrer" aria-label="<?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.social.linkedin')) ?>"><?= cms_events_detail_icon('linkedin') ?></a>
+                    <a href="<?= cms_events_detail_e($shareX) ?>" target="_blank" rel="noopener noreferrer" aria-label="<?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.social.x')) ?>"><?= cms_events_detail_icon('x') ?></a>
+                    <a href="<?= cms_events_detail_e($shareMail) ?>" aria-label="<?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.social.mail')) ?>"><?= cms_events_detail_icon('mail') ?></a>
+                </div>
+            </section>
+
+            <section class="ev-detail-card" aria-labelledby="ev-detail-facts-heading">
+                <h2 id="ev-detail-facts-heading" class="ev-detail-card-title"><?= cms_events_detail_icon('details') ?><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.heading_details')) ?></h2>
+                <dl class="ev-detail-facts">
+                    <?php foreach ($facts as $label => $value): ?>
+                        <div><dt><?= cms_events_detail_e((string) $label) ?></dt><dd><?= cms_events_detail_e($value) ?></dd></div>
                     <?php endforeach; ?>
+                </dl>
+            </section>
+
+            <?php if ($locationText !== '' || $fullAddressText !== ''): ?>
+                <section class="ev-detail-card" aria-labelledby="ev-detail-location-heading">
+                    <h2 id="ev-detail-location-heading" class="ev-detail-card-title"><?= cms_events_detail_icon('pin') ?><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.heading_venue')) ?></h2>
+                    <div class="ev-detail-map" role="img" aria-label="<?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.map_aria', ['location' => $locationText !== '' ? $locationText : $fullAddressText])) ?>"><span><?= cms_events_detail_icon('pin') ?></span></div>
+                    <?php if ($locationText !== ''): ?><p class="ev-detail-location-name"><?= cms_events_detail_e($locationText) ?></p><?php endif; ?>
+                    <?php if ($fullAddressText !== ''): ?><p class="ev-detail-location-address"><?= cms_events_detail_e($fullAddressText) ?></p><?php endif; ?>
+                </section>
+            <?php endif; ?>
+
+            <?php if ($relatedEvents !== []): ?>
+                <section class="ev-detail-card" aria-labelledby="ev-detail-related-heading">
+                    <h2 id="ev-detail-related-heading" class="ev-detail-card-title"><?= cms_events_detail_icon('calendar') ?><?= cms_events_detail_e(cms_events_detail_t('cms_events.detail.heading_related')) ?></h2>
+                    <div class="ev-detail-related">
+                        <?php foreach ($relatedEvents as $related): ?>
+                            <?php
+                            $related = is_array($related) ? (object) $related : $related;
+                            if (!is_object($related)) {
+                                continue;
+                            }
+                            $relatedParts = cms_events_detail_date_parts((string) ($related->event_date ?? ''));
+                            $relatedUrl = function_exists('cms_event_url') ? cms_event_url($related) : $baseUrl . '/events/' . (int) ($related->id ?? 0);
+                            $relatedPlace = cms_events_detail_location_text((string) ($related->location ?? ''), (string) ($related->city ?? ''));
+                            ?>
+                            <a class="ev-detail-related__item" href="<?= cms_events_detail_e($relatedUrl) ?>">
+                                <span class="ev-detail-related__date" aria-hidden="true"><strong><?= cms_events_detail_e($relatedParts['day']) ?></strong><small><?= cms_events_detail_e($relatedParts['month_short']) ?></small></span>
+                                <span><strong><?= cms_events_detail_e(trim((string) ($related->title ?? '')) ?: cms_events_detail_t('cms_events.detail.fallback_event')) ?></strong><?php if ($relatedPlace !== ''): ?><small><?= cms_events_detail_e($relatedPlace) ?></small><?php endif; ?></span>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
                 </section>
             <?php endif; ?>
         </aside>

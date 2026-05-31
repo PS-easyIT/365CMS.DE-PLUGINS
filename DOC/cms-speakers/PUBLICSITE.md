@@ -8,7 +8,30 @@
 
 ---
 
-## 1. Farbprofil – Violett / Lila
+## 1. Farbprofil – Archiv Violett, Detail PHINIT Navy/Amber
+
+**Stand 3.0.18:** Die Speaker-Detailseite (`single-speaker.php` + `assets/css/single.css`) folgt dem fertigen PHINIT-Referenzlayout. Sie nutzt eine feste Navy-/Amber-Palette, lädt `single.css` ausschließlich auf `/speakers/{slug}` und rendert alle sichtbaren Labels über die zentrale Übersetzung (`CMS/lang/de.yaml`, `CMS/lang/en.yaml`) mit lokalem YAML-Fallback, falls der globale Translator den Key unverändert zurückgibt.
+
+```css
+:root {
+    --sp-detail-navy-900: #0a1626;
+    --sp-detail-navy-800: #0d1d33;
+    --sp-detail-navy-700: #14283f;
+    --sp-detail-body-bg:  #e8edf3;
+    --sp-detail-card:     #ffffff;
+    --sp-detail-ink:      #16202e;
+    --sp-detail-ink-soft: #475262;
+    --sp-detail-ink-muted:#7b8696;
+    --sp-detail-line:     #e3e8ef;
+    --sp-detail-accent:   #d6951a;
+    --sp-detail-accent-soft:#fbf3e2;
+    --sp-detail-accent-ink:#8a5e08;
+    --sp-detail-radius:   14px;
+    --sp-detail-content-max: 1160px;
+}
+```
+
+### 1.1 Archiv-Farbprofil – Violett / Lila
 
 **Stand 3.0.16:** Die Detailseite nutzt strukturell die gleiche Section-Reihenfolge wie die Experts-Detailseite (`Hero → Bridge → Body Grid → Sidebar`), verwendet aber weiterhin ausschließlich Speaker-Farbvariablen und Speaker-spezifische Klassen (`sp-*`, `cms-speaker-*`).
 
@@ -316,6 +339,55 @@ Speaker haben ein umfangreicheres Social-Profil als Experts:
 ---
 
 ## 4. Single Site (`single-speaker.php`)
+
+Aktueller PHINIT-Stand 3.0.18: Die aktive Detailseite rendert über `.cms-speaker-wrap.cms-speaker-detail.sp-detail`. Der Seitenhintergrund läuft bündig im Plugin-Shell-Bereich, während Breadcrumb, Hero und Detail-Grid auf maximal `1160px` Theme-Contentbreite zentriert sind. Es gibt keine Inline-Styles im Template; alle statischen Designwerte liegen in `assets/css/single.css`. Die UI-Labels besitzen zusätzlich einen lokalen `CMS/lang`-Fallback gegen rohe `cms_speakers.detail.*` Keys.
+
+### 4.0 Referenz-Struktur 3.0.18
+
+```
+.sp-detail
+    ├── .sp-detail__breadcrumb
+    ├── .sp-detail-hero
+    │   ├── .sp-detail-status
+    │   └── .sp-detail-hero__body
+    │       ├── .sp-detail-avatar
+    │       └── .sp-detail-hero__content
+    │           ├── h1 + .sp-detail-pill
+    │           ├── .sp-detail-hero__role
+    │           └── .sp-detail-hero__tags
+    └── .sp-detail-grid
+            ├── .sp-detail-main
+            │   ├── Über {Name}
+            │   ├── Themen & Formate
+            │   └── Vorträge & Sessions
+            └── .sp-detail-sidebar
+                    ├── Vortrag anfragen
+                    ├── Social Media
+                    ├── Details
+                    └── Weitere Speaker
+```
+
+### 4.0.1 Feldmapping 3.0.18
+
+| Referenz-Element | Backend-Feld/Quelle |
+|------------------|---------------------|
+| Avatar | `speakers.photo_url`, Fallback Initialen aus `first_name`/`last_name` |
+| Name | `first_name`, `last_name` |
+| Auftritte-Pill | Anzahl aus `speaker_events` + `cms_event_speakers`/`cms_events` |
+| Verfügbarkeit | `speakers.availability` |
+| Rolle/Unternehmen | `speakers.position`, `company_linked_name`/`company_name`/`company` |
+| Themen-Tags | `cms_speaker_topics.topic_name` bzw. Fallback `speaker->topics` |
+| Formate | `speakers.formats` JSON |
+| Über-Text | `speakers.bio`, Fallback `short_bio` |
+| Speaker-Skills | `speakers.skills` JSON + `CMS_Speakers_Meta_Boxes::get_skill_labels()` |
+| Vorträge/Sessions | `speaker_events` und verknüpfte `cms_events` |
+| Event-Link | `cms_event_id` → `/events/{id}`, sonst `speaker_events.event_url` |
+| Buchungs-CTA | `speakers.email`, Fallback `/contact/` |
+| Social Media | `website`, `linkedin`, `xing`, `twitter`, `instagram`, `youtube`, `github`, `gitlab` |
+| Details | `position`, `company`, `availability`, `travel_radius`, Topic-/Auftritt-Zähler |
+| Weitere Speaker | Controller-Variable `related_speakers` |
+
+Nicht abbildbar aus bestehenden Speaker-Feldern: Mastodon und RSS aus der statischen Referenz haben aktuell kein Backend-Feld und werden daher nicht gerendert.
 
 Aktueller PHINIT-Stand: Die aktive Detailseite rendert über `.cms-speaker-wrap.cms-speaker-detail`. Der Seitenhintergrund läuft bündig im Plugin-Shell-Bereich, während Breadcrumb und Detail-Grid auf maximal `1160px` Theme-Contentbreite zentriert sind. Dark Mode wird über `body.dark-mode` sowie `html.dark-mode body:not(.light-mode)` abgesichert.
 

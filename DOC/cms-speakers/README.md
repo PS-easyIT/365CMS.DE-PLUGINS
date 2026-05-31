@@ -1,10 +1,10 @@
 # CMS Speakers – Dokumentation
 
 **Plugin:** `cms-speakers`  
-**Version:** 3.0.16
+**Version:** 3.0.18
 **Namespace:** `CMS_Speakers`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
-**Audit-/Dokustand:** Public-Detailseiten-Strukturabgleich am 2026-05-31
+**Audit-/Dokustand:** Public-Detailseiten-Referenzlayout am 2026-05-31
 **PHP:** 8.4+
 
 ---
@@ -27,6 +27,8 @@ Das **CMS Speakers**-Plugin verwaltet professionelle Speaker-Profile mit Vortrag
 - Version 3.0.14 setzt in der Public-Speakers-Filterleiste einen primären „Suchen“-Button als Hauptaktion und begrenzt den Suchbereich final auf maximal `1160px` Contentbreite.
 - Version 3.0.15 begrenzt die Public-Speakers-Detailseite inklusive Breadcrumb, Profil-/Contentbereich und Anfrage-Spalte auf maximal `1160px`, verbessert die responsiven Umbrüche und sichert die Dark-Mode-Darstellung der Detailkarten ab.
 - Version 3.0.16 übernimmt die vollständige Struktur der Experts-Detailseite für Speaker: Hero, Bio-/Kontakt-Bridge, Haupt-/Sidebar-Grid, Themen/Formate, Vortragsprofil, Sessions/Auftritte und Buchungs-/Linkkarten bleiben auf Speaker-Felder gemappt und verwenden weiterhin die Speaker-Farbvariablen.
+- Version 3.0.17 baut die Detailseite auf das fertige PHINIT-Referenzlayout um: Navy-Hero mit Avatar, Auftritte-Pill, Verfügbarkeitsbadge und Tags, darunter Bio/Themen/Sessions links sowie Buchung, Social Media, Details und weitere Speaker rechts. Alle sichtbaren Labels laufen über die zentrale de/en-Übersetzung; `single.css` lädt nur noch auf Detailseiten.
+- Version 3.0.18 ergänzt einen lokalen `CMS/lang`-YAML-Fallback im Detailtemplate, damit rohe `cms_speakers.detail.*` Keys auch dann nicht erscheinen, wenn der globale Translator den Key unverändert zurückliefert.
 
 ### Kernfunktionen
 

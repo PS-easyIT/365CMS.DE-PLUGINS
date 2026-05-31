@@ -3,12 +3,14 @@
 > Gilt für alle öffentlich zugänglichen Seiten des Company-Plugins:
 > Archiv-/Übersichtsseite, Grid-Cards und Company-Detailseite (Single).
 >
-> Letzte Aktualisierung: 2026-02-27  
+> Letzte Aktualisierung: 2026-05-31  
 > Übergeordnete Richtlinie: `.github/instructions/plugin-cms-network-public.instructions.md`
 
 ---
 
 ## 1. Farbprofil – Cyan / Teal
+
+> Hinweis: Die Archiv- und Card-Ansicht behalten ihre Companies-spezifische Cyan/Teal-Basis. Die Detailseite verwendet ab Version 3.0.10 das PHINIT-Preview-Profil Navy/Amber aus `company-detail-vorschau.html`.
 
 Das Company-Plugin nutzt eine frische Cyan-Palette, die Verlässlichkeit,
 Professionalität und Klarheit kommuniziert.
@@ -301,71 +303,54 @@ $cp = $palettes[abs(crc32($company->name)) % count($palettes)];
 
 ---
 
-## 4. Single Site (`single-company.php`)
+## 4. Detailseite (`single-company.php` + `single.css`)
 
-### 4.1 Header-Zone
+### 4.1 Zielbild
 
-```
-.co-single-header   min-height: 300px
-  background: linear-gradient(135deg, #e0f2fe, #bae6fd)
-              oder: Keyvisual-Bild + rgba(14,116,144,.8) Overlay
+Die Detailseite orientiert sich ab Version 3.0.10 an `company-detail-vorschau.html` und nutzt eine eigenständige `.co-detail`-Shell:
 
-  ├── .co-sh-logo         (max 120×80px, weißer Hintergrund, padding, runder Schatten)
-  ├── .co-sh-text
-  │     ├── h1            (Firmenname – clamp(1.5rem,4vw,2.25rem), fw:800)
-  │     ├── .co-sh-industry  (Branche-Badge)
-  │     └── .co-sh-meta   (📍 Stadt · 👥 Mitarbeiter · 📅 Gründungsjahr)
-  └── .co-sh-tier-badge   (Sponsor / Top-Partner / Partner Badge)
-```
-
-### 4.2 2-Spalten-Layout
-
-```css
-.co-single-layout {
-    display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 2rem;
-    padding: 2rem 1.5rem;
-    max-width: 1140px;
-    margin: 0 auto;
-    align-items: start;
-}
-@media (max-width: 768px) {
-    .co-single-layout { grid-template-columns: 1fr; }
-}
+```text
+.co-detail
+  ├── .co-detail-breadcrumb
+  ├── .co-detail-hero
+  │   ├── .co-detail-status
+  │   └── Logo/Initialen + Name + Tags
+  └── .co-detail-grid
+      ├── .co-detail-main
+      │   ├── Über das Unternehmen
+      │   ├── Leistungen & Lösungen
+      │   ├── Experten im Unternehmen
+      │   └── Zertifizierungen & Partnerschaften
+      └── .co-detail-sidebar
+          ├── Kontakt-CTA
+          ├── Social Media
+          ├── Eckdaten
+          ├── Standorte
+          └── Weitere Unternehmen
 ```
 
-### 4.3 Content-Sektionen (Main)
+### 4.2 Feldmapping
 
-| Sektion | Icon | Inhalt |
-|---------|------|--------|
-| Unternehmensprofil | 🏢 | Volltext-Beschreibung (WYSIWYG) |
-| Leistungen & Produkte | ⚙️ | Tags / Pills + Freitext |
-| Philosophie & Werte | 💡 | Freitext |
-| Team-Highlights | 👥 | Optionale Expert-Verlinkungen |
+| Preview-Bereich | Backend-Feld/Quelle | Hinweis |
+|-----------------|---------------------|---------|
+| Name, Logo | `companies.name`, `companies.logo_url` | ohne Logo werden Initialen erzeugt |
+| Status/Badge | `is_sponsor`, `is_top_partner`, `is_partner` | Priorität Sponsor > Top-Partner > Partner |
+| Branche, Größe | `industry`, `company_size` | zusätzlich als Hero-Tags und Fakten |
+| Beschreibung | `description` | sicher als Text gerendert |
+| Team | `company_experts`, `speakers.company_id` | echte Cross-Plugin-Relationen |
+| Kontakt | `email`, `phone`, `website` | Mailto mit übersetztem Betreff |
+| Standort | `location_zip`, `location_city`, `location_country` | ein Hauptstandort |
+| Social Links | `company_meta.social_*` | optional: LinkedIn, XING, X/Twitter, GitHub, Mastodon |
+| Zertifizierungen | `company_meta.certifications` | optionales JSON-/Listen-Meta |
+| Weitere Unternehmen | aktive Companies, bevorzugt gleiche Branche | Fallback auf aktive Firmen |
 
-### 4.4 Sidebar-Cards
+Nicht direkt abbildbar ohne neue Felder: mehrere Standorte mit Straße, echte Service-Kataloge, Sprachlisten, frei gepflegte Partnerlogos und zusätzliche Social-Kanäle. Diese Bereiche werden nur angezeigt, wenn passende Meta-Daten vorhanden sind oder aus vorhandenen Kernfeldern abgeleitet werden können.
 
-```html
-<!-- Kontakt & Website -->
-<div class="co-sidebar-card">
-    <h3 class="co-sidebar-title">Kontakt</h3>
-    <a href="{website}" class="co-btn-primary co-btn-block">🌐 Website besuchen</a>
-    <!-- E-Mail, Telefon, Adresse -->
-</div>
+### 4.3 Übersetzungen und Assets
 
-<!-- Experten (cross-plugin: cms-experts) -->
-<div class="co-sidebar-card">
-    <h3 class="co-sidebar-title">Unsere Experten</h3>
-    <!-- Kompakte Expert-Cards: Avatar + Name + Link -->
-</div>
-
-<!-- Events (cross-plugin: cms-events) -->
-<div class="co-sidebar-card">
-    <h3 class="co-sidebar-title">Gesponserte Events</h3>
-    <!-- Event-Liste: Datum + Titel + Link -->
-</div>
-```
+- Alle sichtbaren Labels kommen aus `CMS/lang/de.yaml` und `CMS/lang/en.yaml` unter `cms_companies.detail.*`.
+- Das Template enthält einen lokalen YAML-Fallback, falls der zentrale Translator unbekannte Keys unverändert zurückgibt.
+- `single.css` wird nur auf `/company/{slug-id}` und der Legacy-Route `/companies/{id}` eingebunden.
 
 ---
 

@@ -1,6 +1,6 @@
 ﻿# CMS Experts Directory Plugin
 
-**Version:** 3.0.8  
+**Version:** 3.0.10  
 **Requires:** 365CMS 3.0+  
 **PHP:** 8.4+
 
@@ -92,11 +92,11 @@ Das CMS Experts Directory Plugin verwaltet IT-Experten-Profile mit umfangreichen
 
 ### Öffentliche Ansicht
 - ✅ Event-style Card-Übersicht (`/experts`) mit Filter nach Suche, Verfügbarkeit und Stadt
-- ✅ Detailseite (`/experts/{vorname}-{nachname}-{id}`) mit allen Sektionen, maximal 1160px Contentbreite, Responsive Layout und Dark Mode
+- ✅ Detailseite (`/experts/{vorname}-{nachname}-{id}`) im PHINIT-Preview-Look mit Navy/Amber-Hero, übersetzten Labels, Inline-SVG-Icons, maximal 1160px Contentbreite, Responsive Layout und Dark Mode
 - ✅ Visual Level-Balken für Technische Expertise
 - ✅ Karriere-Timeline
 - ✅ Referenzen- & Testimonials-Grid
-- ✅ RSS-Feed-Vorschau (Blog)
+- ✅ Blog/RSS-Link in der Social-Sidebar, sofern hinterlegt
 - ✅ Vollständige Sidebar (Konditionen, Services, Netzwerk, Social)
 
 ### Weitere Features
@@ -115,7 +115,8 @@ Das CMS Experts Directory Plugin verwaltet IT-Experten-Profile mit umfangreichen
 - Die öffentliche Übersicht `/experts` startet wie `cms-events` direkt mit Filter und responsivem Card-Grid.
 - Expert-Cards zeigen Avatar/Initialen, MVP-/Premium-/Award-/Spezialisierungs-Badges, Verfügbarkeit, Standort/Firma, Erfahrung, Zertifikate, Skills und Profil-CTA.
 - Cards sind komplett klickbar und zusätzlich per `Enter`/`Space` tastaturbedienbar.
-- Die öffentliche Detailseite nutzt eine bündige Hintergrund-Shell ohne Abstand zu Theme-Header/-Footer; Breadcrumb, Hero, Bridge-Cards, Inhalt, Sidebar und Claim-Banner bleiben auf maximal `1160px` begrenzt.
+- Die öffentliche Detailseite nutzt ab `3.0.9` die statische PHINIT-HTML-Preview als Zielbild: dunkler Navy/Amber-Profilkopf, Karten für Profil, Expertise, Zertifikate, Leistungen und Projekte/Referenzen sowie Sidebar für Anfrage, Social Media, Details und ähnliche Experten; ab `3.0.10` verhindert ein lokaler YAML-Fallback rohe Translation-Keys im Frontend.
+- Alle sichtbaren Detailseiten-Labels kommen aus `CMS/lang/de.yaml` und `CMS/lang/en.yaml` (`cms_experts.detail.*`), Icons werden inline als SVG gerendert und `assets/css/single.css` wird nur auf Expert-Detailseiten geladen.
 
 ---
 

@@ -3,7 +3,7 @@
 > Gilt für die öffentliche Experten-Übersicht (`/experts`), die Expert-Cards und die Expert-Detailseite.
 >
 > Letzte Aktualisierung: 2026-05-31  
-> Stand: `cms-experts` 3.0.8
+> Stand: `cms-experts` 3.0.10
 
 ---
 
@@ -139,17 +139,45 @@ Alte Gradient-Hero-Flächen und feste Bannerbereiche werden auf der Übersicht n
 
 ## 7. Detailseite
 
-Die Detailseite (`single-expert.php`) rendert über `main.phinit-plugin.ex-v2`. Die Shell liegt bündig an Theme-Header und -Footer an, entfernt die PHINIT-Wrapper-Abstände per scoped `:has()` und füllt bei kurzem Inhalt den Bereich bis zum Theme-Footer.
+Die Detailseite (`single-expert.php`) rendert ab `3.0.9` über `main.phinit-plugin.ex-detail` und orientiert sich an `365CMS.DE-THEME/cms-phinit_Preview_html/experts-detail-vorschau.html`. Ab `3.0.10` besitzt das Template zusätzlich einen lokalen `CMS/lang`-YAML-Fallback, damit rohe `cms_experts.detail.*` Keys nicht im Frontend erscheinen, falls der globale Translator den Key unverändert zurückgibt.
 
 Direkte Inhaltsbereiche bleiben zentriert auf maximal `1160px`:
 
-- `nav.ex-bc` für Breadcrumb,
-- `header.ex-hero` für Profilkopf,
-- `.ex-bridge` für Über-mich/Kontakt,
-- `.ex-body` für Hauptinhalt und Sidebar,
-- `.ex-claim-banner` für Profil-Claim.
+- `nav.ex-detail-breadcrumb` für Breadcrumb,
+- `section.ex-detail-hero` für Navy/Amber-Profilkopf,
+- `.ex-detail-grid` für Hauptinhalt und Sidebar,
+- `.ex-detail-card` für Profil, Expertise, Zertifizierungen, Leistungen und Projekte/Referenzen,
+- `.ex-detail-sidebar` für Anfrage, Social Media, Details und ähnliche Experten.
 
-Unterhalb von Tablet-Breiten wechseln Bridge und Body auf eine Spalte. Mobile werden Skills, Zertifikate, Events, Kontaktlinks und Info-Rows ebenfalls einspaltig. Dark Mode ist für Shell, Cards, Sidebar, Tags, Social-Links, Projekt-/Eventkarten, Claim-Banner und Textfarben über `body.dark-mode` sowie `html.dark-mode body:not(.light-mode)` abgesichert.
+Die Detail-Shell liegt bündig an Theme-Header und -Footer an, entfernt die PHINIT-Wrapper-Abstände per scoped `:has()` und füllt bei kurzem Inhalt den Bereich bis zum Theme-Footer. Unterhalb von Tablet-Breiten wechselt das Grid auf eine Spalte; Hero, Services, Detail-Rows und Referenzlisten brechen mobil ohne horizontales Scrollen um. Dark Mode ist für Shell, Hero, Cards, Sidebar, Tags, Social-Links, Referenzkarten und Textfarben über `body.dark-mode` sowie `html.dark-mode body:not(.light-mode)` abgesichert.
+
+### Feldmapping Detailseite
+
+| Preview-Bereich | Backend-Felder |
+|---|---|
+| Hero-Avatar | `photo_url`, fallback Initialen aus `first_name`/`last_name` |
+| Name | `first_name`, `last_name` |
+| Status | `availability` (`available`, `limited`, `booked`) |
+| Badges | `is_mvp`, `is_certified`, `is_premium`, `partner_status`, `custom_award` |
+| Rolle / Unternehmen | `position`, `company`, optional `company_id` für Company-Link |
+| Hero-Tags | `specializations`, `programming_languages`, `frameworks`, `databases`, `cloud_platforms`, `tools_preferred` |
+| Profil | `motto`, `biography` |
+| Expertise-Balken | `programming_languages`, `frameworks`, `databases`, `cloud_platforms`, fallback `expert_skills.skill_level` |
+| Technologien | `specializations`, Tech-JSON-Meta, `tools_preferred` |
+| Branchen | `industry_experience` |
+| Zertifizierungen | `expert_certifications` |
+| Leistungen | `services_consulting`, `services_implementation`, `services_training`, `services_support`, `services_audit`, `emergency_support`, `workshop_offerings` |
+| Projekte & Referenzen | `expert_projects`, `case_studies`, `conference_talks`, `cms-events`-Verknüpfungen |
+| Social Media | `social_website`, `social_linkedin`, `social_xing`, `social_github`, `social_gitlab`, `social_stackoverflow`, `social_twitter`, `social_youtube`, `social_blog_rss` |
+| Details | `position`, `company`, `location_city`, `location_country`, `experience_years`, `languages`, `remote_work`, `work_type`, `travel_willingness`, Zertifikatsanzahl |
+| Weitere Experten | ähnliche aktive Experten nach gemeinsamer Spezialisierung, fallback aktuelle aktive Experten |
+
+### Nicht gemappte Preview-Felder
+
+- `Mastodon`: kein Backend-Feld vorhanden, daher nicht gerendert.
+- Statische Blogartikel aus der Preview: kein direkter Experten-Artikel-Relationstyp vorhanden; der Bereich wird mit Projekten, Case Studies, Konferenzvorträgen und Event-Auftritten befüllt.
+
+Alle sichtbaren Labels kommen aus den zentralen Übersetzungen `CMS/lang/de.yaml` und `CMS/lang/en.yaml` (`cms_experts.detail.*`). Icons werden inline als SVG ausgegeben; es gibt keine Icon-Font-Abhängigkeit und keine statischen Inline-Styles.
 
 ---
 

@@ -1,6 +1,6 @@
 ﻿# CMS Events Manager Plugin
 
-**Version:** 3.0.28
+**Version:** 3.0.29
 **Requires:** 365CMS 3.0+  
 **PHP:** 8.4+
 
@@ -19,6 +19,7 @@ The CMS Events Manager plugin manages events with calendar view and detail pages
 - ✅ Öffentliche Übersicht startet direkt mit der Filter-/Suchleiste ohne zusätzlichen Archivkopf
 - ✅ Öffentliche Filterleiste mit primärem „Suchen“-Button und Reset nur im Empty-State
 - ✅ Öffentliche Detailseite mit maximal 1160px Contentbreite, bündiger Theme-Shell, responsivem Layout und Dark Mode
+- ✅ Öffentliche Detailseite im PHINIT-Preview-Layout mit Navy/Amber-Hero, Datebox, Agenda aus Speaker-Sessiondaten, Inline-SVGs und lokalem Übersetzungsfallback
 - ✅ Öffentliche Übersicht mit kompakten Eventkarten, Kategorie-/Preis-Badges und Format-Badge direkt in der Ortszeile
 - ✅ Eventkarten-Footer mit Speaker/Veranstalter links und Details-Button rechts
 - ✅ Nicht-destruktiver De-/Uninstall; Eventdaten bleiben erhalten
@@ -122,6 +123,7 @@ Templates can be added to the `templates/` directory:
 - Version `3.0.11` behebt einen Public-Template-500 auf Systemen ohne `mbstring` über Fallbacks für Lowercase/Substring in Templates und Sanitizern.
 - Version `3.0.27` setzt in der Public-Events-Filterleiste einen primären „Suchen“-Button als Hauptaktion; Zurücksetzen bleibt gezielt im Empty-State.
 - Version `3.0.28` begrenzt die Public-Events-Detailseite auf maximal `1160px`, hält die Hintergrund-Shell bündig zum Theme, füllt kurze Seiten bis zum Footer und sichert Responsive Layout sowie Dark Mode ab.
+- Version `3.0.29` baut die Event-Detailseite nach der PHINIT-HTML-Preview neu: Navy/Amber-Hero mit Datebox, Status, Agenda aus `cms_event_speakers.presentation_title/session_time/role`, Speaker-Lineup, Teilnahme-/Social-/Details-/Venue-/Related-Sidebar, lokaler YAML-Übersetzungsfallback und Inline-SVGs statt Icon-Font. Nicht direkt vorhandene Preview-Felder wie separate Agenda-Abschnitte, Sprache und Anmeldeschluss werden nicht erfunden; Sprache fällt auf den lokalen Default zurück.
 - Bootstrap und Include-Dateien sind gegen doppelte Ladepfade/klassische Redeclare-Fatals abgesichert.
 - DB-Migrationen nutzen `INFORMATION_SCHEMA` statt `SHOW COLUMNS`, Foreign Keys werden idempotent und nicht-blockierend ergänzt.
 - Plugin-Settings werden primär über den 365CMS `SettingsService` gelesen/geschrieben; die alte `event_settings`-Tabelle bleibt nur als kompatibler Fallback.

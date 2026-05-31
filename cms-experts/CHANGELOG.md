@@ -1,7 +1,26 @@
 # Changelog – CMS Experts Directory Plugin
 
+## [3.0.10] – 2026-05-31
+
+### Behoben
+
+- Expert-Detailseite löst UI-Labels jetzt zusätzlich direkt über den zentralen `CMS/lang`-YAML-Katalog auf, wenn `TranslationService` oder `__()` den Original-Key zurückgeben.
+- Dadurch erscheinen in Breadcrumb, Contentkarten und Sidebar keine rohen `cms_experts.detail.*` Keys mehr.
+
 Alle wesentlichen Änderungen an diesem Plugin werden in dieser Datei dokumentiert.
 Format: [Keep a Changelog](https://keepachangelog.com/de/1.0.0/)
+
+---
+
+## [3.0.9] – 2026-05-31
+
+### Geändert
+
+- Public-Experts-Detailseite nach `experts-detail-vorschau.html` neu aufgebaut: Navy/Amber-Hero, Profil-, Expertise-, Zertifikats-, Leistungs- und Projekte/Referenzen-Karten.
+- Alle sichtbaren Labels der Detailseite kommen aus zentralen `cms_experts.detail.*` Übersetzungsschlüsseln in `CMS/lang/de.yaml` und `CMS/lang/en.yaml`.
+- Inline-SVG-Icons ersetzen Icon-/Emoji-Muster; statische Inline-Styles wurden aus dem Template entfernt.
+- `assets/css/single.css` wird nur noch auf Expert-Detailseiten geladen.
+- Sidebar erweitert um ähnliche Experten; Preview-Felder ohne Backend-Entsprechung sind in `DOC/cms-experts/PUBLICSITE.md` dokumentiert.
 
 ---
 

@@ -1,6 +1,6 @@
 ﻿# CMS Companies Directory Plugin
 
-**Version:** 3.0.9  
+**Version:** 3.0.10  
 **Requires:** 365CMS 3.0+ / PHP 8.1+
 
 ## Description
@@ -13,7 +13,8 @@ The CMS Companies Directory plugin manages company profiles with card views and 
 - ✅ Custom database tables with proper relationships
 - ✅ Admin interface for managing companies
 - ✅ Event-style responsive frontend card grid layout
-- ✅ Flush public detail pages with 1160px content width
+- ✅ PHINIT preview-aligned public detail pages with 1160px content width
+- ✅ Detail CSS loads only on company detail routes
 - ✅ Expert-to-Company relationships (Many-to-Many)
 - ✅ Meta data support
 - ✅ Shortcode support: `[cms_companies]`
@@ -107,6 +108,13 @@ The plugin is automatically activated during 365CMS setup. Database tables are c
 - Die öffentliche Übersicht `/companies` startet wie `cms-events` direkt mit Filter und responsivem Card-Grid.
 - Company-Cards zeigen Logo/Initialen, Partner-/Branchen-Badges, Standort-/Team-Meta, Beschreibungsauszug, Website-Hinweis und Details-CTA.
 - Karten sind weiterhin komplett klickbar und zusätzlich per Tastatur erreichbar.
+
+## Detailseiten-Status (2026-05-31)
+
+- Die Company-Detailseite folgt der PHINIT-Preview `company-detail-vorschau.html` mit Navy/Amber-Hero, Profilkarten, Leistungs-/Netzwerkbereich, Partner-/Zertifizierungsblock und Kontakt-Sidebar.
+- Sichtbare Labels nutzen `cms_companies.detail.*` Übersetzungen in `CMS/lang/de.yaml` und `CMS/lang/en.yaml`; das Template enthält zusätzlich einen lokalen YAML-Fallback gegen rohe Translation-Keys.
+- `single.css` wird nur noch auf `/company/{slug}` beziehungsweise der Legacy-Detailroute `/companies/{id}` geladen.
+- Preview-Felder ohne direkte Backend-Spalte werden nicht erfunden: Mehrfachstandorte, echte Service-Kataloge und zusätzliche Social-Kanäle erscheinen nur, wenn passende Meta-Daten vorhanden sind.
 
 ## License
 

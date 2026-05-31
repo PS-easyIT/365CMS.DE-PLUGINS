@@ -1,5 +1,22 @@
 # CMS Experts – Changelog
 
+## [3.0.10] – 2026-05-31
+
+### Behoben
+
+- **Hotfix i18n:** `single-expert.php` nutzt einen lokalen `CMS/lang`-YAML-Fallback, falls `TranslationService` oder `__()` den Original-Key zurückgeben.
+- **Frontend:** Breadcrumb, Contentbereiche und Sidebar zeigen dadurch keine rohen `cms_experts.detail.*` Keys mehr.
+
+## [3.0.9] – 2026-05-31
+
+### Geändert
+
+- **Public-Detailseite:** Die Experts-Detailseite wurde nach `experts-detail-vorschau.html` neu aufgebaut: Navy/Amber-Hero, Profil-, Expertise-, Zertifikats-, Leistungs- und Projekte/Referenzen-Karten.
+- **Internationalisierung:** Alle sichtbaren Detailseiten-Labels nutzen zentrale `cms_experts.detail.*`-Keys in `CMS/lang/de.yaml` und `CMS/lang/en.yaml`.
+- **Assets:** `assets/css/single.css` wird nur noch auf Expert-Detailseiten geladen; Archivseiten laden weiterhin nur Basis- und Archiv-CSS.
+- **Sidebar:** Kontakt-CTA, Social-Media-Links, Detaildaten und ähnliche Experten orientieren sich an der HTML-Preview und nutzen Inline-SVG-Icons statt Icon-Fonts.
+- **Mapping:** Preview-Felder ohne Backend-Entsprechung sind dokumentiert: Mastodon wird nicht gerendert, statische Blogartikel werden durch Projekte, Case Studies, Konferenzvorträge und Event-Auftritte ersetzt.
+
 ## [3.0.8] – 2026-05-31
 
 ### Geändert

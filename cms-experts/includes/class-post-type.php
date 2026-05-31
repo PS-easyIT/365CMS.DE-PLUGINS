@@ -293,6 +293,7 @@ final class CMS_Experts_Post_Type
             ? CMS_Experts_Taxonomies::instance()->get_expert_specializations($expert_id)
             : [];
         $events          = $this->get_expert_events($expert_id);
+        $related_experts = $this->get_related_experts($expert_id, $specializations);
 
         $template_loader = CMS_Experts_Template_Loader::instance();
         $template_loader->render_template('single-expert', [
@@ -304,10 +305,61 @@ final class CMS_Experts_Post_Type
             'meta'            => $meta,
             'specializations' => $specializations,
             'events'          => $events,
+            'related_experts' => $related_experts,
             'settings'        => $settings,
         ]);
 
         $themeManager->getFooter();
+    }
+
+    /**
+     * Holt ähnliche Experten für die Detailseiten-Sidebar.
+     */
+    private function get_related_experts(int $expert_id, array $specializations): array
+    {
+        try {
+            $db = CMS\Database::instance();
+            $p  = $db->prefix();
+            $specialization_ids = [];
+
+            foreach ($specializations as $specialization) {
+                $id = (int) ($specialization->id ?? 0);
+                if ($id > 0) {
+                    $specialization_ids[$id] = $id;
+                }
+            }
+
+            if (!empty($specialization_ids)) {
+                $placeholders = implode(',', array_fill(0, count($specialization_ids), '?'));
+                $stmt = $db->prepare(
+                    "SELECT DISTINCT e.*
+                     FROM {$p}experts e
+                     INNER JOIN {$p}expert_specialization_rel r ON r.expert_id = e.id
+                     WHERE e.id <> ?
+                       AND e.status = 'active'
+                       AND r.specialization_id IN ({$placeholders})
+                     ORDER BY e.updated_at DESC
+                     LIMIT 3"
+                );
+                $stmt->execute(array_merge([$expert_id], array_values($specialization_ids)));
+                $rows = $stmt->fetchAll();
+                if (!empty($rows)) {
+                    return $rows;
+                }
+            }
+
+            $stmt = $db->prepare(
+                "SELECT *
+                 FROM {$p}experts
+                 WHERE id <> ? AND status = 'active'
+                 ORDER BY updated_at DESC
+                 LIMIT 3"
+            );
+            $stmt->execute([$expert_id]);
+            return $stmt->fetchAll();
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     /**

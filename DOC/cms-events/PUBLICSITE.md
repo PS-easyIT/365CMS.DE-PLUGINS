@@ -4,7 +4,7 @@
 > Archiv-/Übersichtsseite, Grid-Cards und Event-Detailseite (Single).
 >
 > Letzte Aktualisierung: 2026-05-31  
-> Stand: `cms-events` 3.0.28  
+> Stand: `cms-events` 3.0.29  
 > Übergeordnete Richtlinie: `.github/instructions/plugin-cms-network-public.instructions.md`
 
 ---
@@ -312,89 +312,78 @@ echo "<style>:root{
 
 ## 4. Single Site (`single-event.php`)
 
-> Aktueller Publicsite-Stand ab `cms-events` 3.0.28: Das aktive Detail-Template rendert `main.phinit-plugin.cms-events-wrap.cms-events-detail`. Die Detail-Shell liegt bündig am Theme-Header und -Footer, füllt kurze Seiten bis zum Footer und begrenzt Breadcrumb sowie Detail-Grid auf maximal `1160px` Contentbreite. Responsive und Dark Mode werden im finalen Detail-Override in `assets/css/single.css` abgesichert.
+> Aktueller Publicsite-Stand ab `cms-events` 3.0.29: Das aktive Detail-Template rendert `main.phinit-plugin.ev-detail`. Die Detail-Shell liegt bündig am Theme-Header und -Footer, startet intern bei `25px`, begrenzt Breadcrumb, Hero und Content-Grid auf maximal `1160px` und nutzt das PHINIT-Preview-Layout mit Navy/Amber-Hero, Datebox, Agenda, Speaker-Lineup und Sidebar-Cards. Responsive und Dark Mode werden in `assets/css/single.css` abgesichert; die Datei wird nur auf Event-Detailrouten geladen.
 
 ### 4.1 Header-Zone
 
 ```
-.ev-single-header   min-height: 300px
-  background: linear-gradient(135deg, #1d4ed8, #3b82f6)
-              oder: Event-Keyvisual + rgba(30,64,175,.8) Overlay
-
-  ├── .ev-sh-date-block    (großer Datum-Block, 80×80px)
-  ├── .ev-sh-text
-  │     ├── h1             (Event-Titel – clamp(1.5rem,4vw,2.25rem), fw:800, color:#fff)
-  │     ├── .ev-sh-category (Kategorie-Badge)
-  │     └── .ev-sh-meta    (📍 Ort · 🕐 Uhrzeit · 💶 Preis-Badge)
-  └── .ev-sh-actions
-        ├── [Anmelden-Button]
-        └── [Teilen-Button]
+.ev-detail-hero
+  ├── .ev-detail-status           (Anmeldung offen / Ausgebucht / Event beendet)
+  └── .ev-detail-hero__body
+      ├── time.ev-detail-datebox (Monat, Tag, Jahr)
+      └── .ev-detail-hero__content
+          ├── .ev-detail-eyebrow (Kategorie · Format)
+          ├── h1
+          ├── .ev-detail-hero-meta (Datum/Uhrzeit, Ort/Online)
+          └── .ev-detail-tags--hero
 ```
 
-### 4.2 2-Spalten-Layout
+### 4.2 Feld-Mapping der Preview
+
+| Preview-Bereich | Quelle im Plugin | Hinweis |
+|-----------------|------------------|---------|
+| Titel | `events.title` | Pflichtfeld |
+| Datum/Datebox | `events.event_date` | Lokalisierte Monatsnamen über `cms_events.detail.month_*` |
+| Uhrzeit | `events.event_time`, `events.end_time` | Start-Ende als kompakte Range |
+| Format | `events.is_online` + vorhandener Ort | Online, Hybrid oder Präsenz |
+| Tags/Tracks | `events.tags` | JSON, kommasepariert oder Zeilen-Fallback |
+| Beschreibung | `events.description` | Als sicher escapeter Text ausgegeben |
+| Programm | `event_speakers.session_time`, `presentation_title`, `role` | Nur sichtbar, wenn Sessiondaten vorhanden sind |
+| Speaker | `event_speakers` + `speakers/experts` Join | Link zu `/speakers/{id}` oder `/experts/{id}` |
+| Teilnahme | `registration_url`, `online_url`, `capacity`, Preisfelder | Ohne Progress-Inline-Style |
+| Social | Event-Website + Share-Links | Website aus `website_url/organizer_website/website` |
+| Event-Details | Datum, Uhrzeit, Format, Sprache, Veranstalter, Kapazität, Preis | Sprache hat aktuell keinen DB-Standard und fällt auf Default zurück |
+| Veranstaltungsort | `location`, `address`, `zip`, `city`, `country` | Karte ist ein CSS-Platzhalter ohne externen Dienst |
+| Weitere Events | vorbereitete `related_events` | Bis zu drei Einträge |
+
+Nicht direkt gemappt: separate Agenda-Blöcke ohne Speaker-Zuordnung, Anmeldeschluss, Mastodon-/RSS-Eventprofile und echte Kartendaten. Diese Felder werden nicht simuliert, damit die Ausgabe auf echten Daten basiert.
+
+### 4.3 2-Spalten-Layout
 
 ```css
-.ev-single-layout {
+.ev-detail-grid {
     display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 2rem;
-    padding: 2rem 1.5rem;
-    max-width: 1140px;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 26px;
+    max-width: 1160px;
     margin: 0 auto;
     align-items: start;
 }
-@media (max-width: 768px) {
-    .ev-single-layout { grid-template-columns: 1fr; }
-    /* Sidebar über Main auf Mobile */
-    .ev-single-sidebar { order: -1; }
+@media (max-width: 980px) {
+    .ev-detail-grid { grid-template-columns: 1fr; }
+    .ev-detail-sidebar { position: static; }
 }
 ```
 
-### 4.3 Content-Sektionen (Main)
+### 4.4 Content-Sektionen (Main)
 
-| Sektion | Icon | Inhalt |
-|---------|------|--------|
-| Beschreibung | 📋 | Volltext (WYSIWYG) |
-| Agenda | 📅 | Zeitplan als Liste (Uhrzeit + Punkt) |
-| Speaker-Lane | 🎤 | Speaker-Cards (Mini-Version, cross-plugin) |
-| Location | 📍 | Adresse + Karte (wenn vorhanden) |
+| Sektion | Klasse | Inhalt |
+|---------|--------|--------|
+| Beschreibung | `.ev-detail-copy` | sicher escapeter Beschreibungstext |
+| Tags/Tracks | `.ev-detail-tags` | Event-Tags aus `events.tags` |
+| Programm | `.ev-detail-agenda` | Session-Zeit, Vortragstitel und Rolle aus Speaker-Zuordnungen |
+| Speaker-Lineup | `.ev-detail-team` | kompakte Speaker-/Expert-Cards mit Profil-Link |
 
-### 4.4 Sidebar-Cards
+### 4.5 Sidebar-Cards
 
 ```html
-<!-- Anmelde-CTA -->
-<div class="ev-sidebar-card ev-sidebar-card--cta">
-    <div class="ev-price-display">
-        <!-- Kostenlos / Preis in EUR -->
-    </div>
-    <a href="{reg_url}" class="ev-btn ev-btn-primary ev-btn-block" target="_blank" rel="noopener noreferrer">
-        🎟️ Jetzt anmelden
-    </a>
-    <p class="ev-sidebar-hint">🪑 Noch {n} Plätze verfügbar</p>
-</div>
-
-<!-- Key-Facts -->
-<div class="ev-sidebar-card">
-    <h3 class="ev-sidebar-title">Key-Facts</h3>
-    <ul class="ev-facts-list">
-        <li>📅 {Datum} · {Uhrzeit}</li>
-        <li>📍 {Ort / Online}</li>
-        <li>🎤 {Anzahl} Speaker</li>
-        <li>🪑 {Kapazität} Plätze</li>
-    </ul>
-</div>
-
-<!-- Sponsoren (cross-plugin: cms-companies) -->
-<div class="ev-sidebar-card">
-    <h3 class="ev-sidebar-title">Sponsoren</h3>
-    <!-- Company-Logo-Raster -->
-</div>
-
-<!-- Speaker (cross-plugin: cms-speakers / cms-experts) -->
-<div class="ev-sidebar-card">
-    <h3 class="ev-sidebar-title">Speaker</h3>
-    <!-- Avatar + Name + Position je Speaker -->
-</div>
+<aside class="ev-detail-sidebar">
+    <section class="ev-detail-card ev-detail-cta">Teilnahme + Buttons</section>
+    <section class="ev-detail-card">Social / Share</section>
+    <section class="ev-detail-card">Event-Details als Definition List</section>
+    <section class="ev-detail-card">Veranstaltungsort mit CSS-Kartenplatzhalter</section>
+    <section class="ev-detail-card">Weitere Events</section>
+</aside>
 ```
 
 ---

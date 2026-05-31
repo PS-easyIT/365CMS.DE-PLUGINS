@@ -90,9 +90,12 @@ $event['image_url'], $event['price_type'], $event['price'], $event['is_featured'
 **`single-event.php`:**
 ```php
 /** @var object $event  Vollständiger Datensatz */
-/** @var array $speakers Speaker-Liste mit role/presentation_title */
+/** @var array $speakers Speaker-Liste mit role/presentation_title/session_time */
 /** @var array $settings Plugin-Settings */
+/** @var array $related_events Vorbereitete verwandte Events */
 ```
+
+Die Detailseite `3.0.29+` erzeugt das Preview-Programm ausschließlich aus vorhandenen `cms_event_speakers`-Feldern (`session_time`, `presentation_title`, `role`). Separate Agenda-, Sprach- oder Anmeldeschlussfelder sind im aktuellen Schema nicht vorhanden.
 
 **`calendar-view.php`:**
 ```php

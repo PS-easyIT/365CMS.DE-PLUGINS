@@ -3,7 +3,7 @@
  * Plugin Name: CMS Companies
  * Plugin URI: https://365network.de/cms-companies
  * Description: Verwaltung von Firmen-Profilen mit Experten-Zuordnung, Partner-Status und Unternehmens-Informationen
- * Version: 3.0.9
+ * Version: 3.0.10
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin Constants
-define('CMS_COMPANIES_VERSION', '3.0.9');
+define('CMS_COMPANIES_VERSION', '3.0.10');
 define('CMS_COMPANIES_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_COMPANIES_PLUGIN_URL', '/plugins/cms-companies/');
 define('CMS_COMPANIES_TEXT_DOMAIN', 'cms-companies');
@@ -32,7 +32,7 @@ final class CMS_Companies
     private static ?self $instance = null;
     private bool $components_bootstrapped = false;
 
-    private string $version = '3.0.9';
+    private string $version = '3.0.10';
     private string $plugin_dir;
     private string $plugin_url;
     private string $text_domain = 'cms-companies';
@@ -158,7 +158,22 @@ final class CMS_Companies
     {
         $this->enqueue_style_file('plugin-base.css');
         $this->enqueue_style_file('style.css');
-        $this->enqueue_style_file('single.css');
+
+        if ($this->is_company_detail_route()) {
+            $this->enqueue_style_file('single.css');
+        }
+    }
+
+    private function is_company_detail_route(): bool
+    {
+        $path = (string) (parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '');
+        $path = '/' . trim($path, '/');
+
+        if (preg_match('#^/company/[^/]+$#', $path) === 1) {
+            return true;
+        }
+
+        return preg_match('#^/companies/\d+$#', $path) === 1;
     }
 
     private function enqueue_style_file(string $file): void

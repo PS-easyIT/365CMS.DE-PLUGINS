@@ -3,7 +3,7 @@
  * Plugin Name: CMS Events
  * Plugin URI: https://365network.de/cms-events
  * Description: Verwaltung von Events mit Speakeranbindung, Veranstaltern aus cms-companies und voller Metaverwaltung
- * Version: 3.0.28
+ * Version: 3.0.29
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -12,7 +12,7 @@
 declare(strict_types=1);
 if (!defined('ABSPATH')) exit;
 
-defined('CMS_EVENTS_VERSION') || define('CMS_EVENTS_VERSION', '3.0.28');
+defined('CMS_EVENTS_VERSION') || define('CMS_EVENTS_VERSION', '3.0.29');
 defined('CMS_EVENTS_PLUGIN_DIR') || define('CMS_EVENTS_PLUGIN_DIR', function_exists('cms_plugin_path') ? rtrim((string) cms_plugin_path('cms-events'), '/\\') . DIRECTORY_SEPARATOR : dirname(__FILE__) . '/');
 defined('CMS_EVENTS_PLUGIN_URL') || define('CMS_EVENTS_PLUGIN_URL', function_exists('cms_plugin_url') ? rtrim((string) cms_plugin_url('cms-events'), '/') . '/' : '/plugins/cms-events/');
 
@@ -20,7 +20,7 @@ if (!class_exists('CMS_Events', false)) {
 final class CMS_Events {
     private static ?self $instance = null;
     private bool $components_bootstrapped = false;
-    private string $version = '3.0.28';
+    private string $version = '3.0.29';
     private string $plugin_dir;
     private string $plugin_url;
 
@@ -168,7 +168,17 @@ final class CMS_Events {
         $this->enqueue_tabler_icons_fallback();
         $this->enqueue_style_file('plugin-base.css');
         $this->enqueue_style_file('style.css');
-        $this->enqueue_style_file('single.css');
+        if ($this->is_event_detail_request()) {
+            $this->enqueue_style_file('single.css');
+        }
+    }
+
+    private function is_event_detail_request(): bool {
+        $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+        $path = '/' . trim($path, '/');
+
+        return preg_match('#^/events/\d+(?:/)?$#', $path) === 1
+            || preg_match('#^/event/[a-z0-9][a-z0-9-]*-\d+(?:/)?$#i', $path) === 1;
     }
 
     private function enqueue_tabler_icons_fallback(): void {

@@ -30,6 +30,7 @@ final class CMS_365NETWORK_Public
         CMS\Hooks::addAction('head', [$this, 'enqueue_styles'], 10);
         CMS\Hooks::addAction('head', [$this, 'output_dynamic_styles'], 20);
         CMS\Hooks::addAction('head', [$this, 'output_analytics_head'], 90);
+        CMS\Hooks::addAction('body_end', [$this, 'enqueue_scripts'], 20);
         CMS\Hooks::addAction('body_end', [$this, 'output_analytics_body_end'], 90);
     }
 
@@ -61,14 +62,38 @@ final class CMS_365NETWORK_Public
             return;
         }
 
+        $hubSettings = CMS_365NETWORK_Database::instance()->get_hub_settings();
+        $eventLimit = max(
+            (int) ($settings['sidebar_events_count'] ?? 3),
+            (int) ($hubSettings['hub_next_events_limit'] ?? 3),
+            (int) ($hubSettings['hub_spotlight_limit'] ?? 7)
+        );
+        $companyLimit = max(
+            (int) ($settings['random_companies_count'] ?? 1),
+            (int) ($hubSettings['hub_partnerband_limit'] ?? 4),
+            (int) ($hubSettings['hub_partner_companies_limit'] ?? 3),
+            (int) ($hubSettings['hub_spotlight_limit'] ?? 7)
+        );
+        $expertLimit = max(
+            (int) ($settings['random_experts_count'] ?? 1),
+            (int) ($hubSettings['hub_partner_experts_limit'] ?? 3),
+            (int) ($hubSettings['hub_spotlight_limit'] ?? 7)
+        );
+        $speakerLimit = max(
+            (int) ($settings['random_speakers_count'] ?? 1),
+            (int) ($hubSettings['hub_spotlight_limit'] ?? 7)
+        );
+
         $data = [
             'settings' => $settings,
-            'hub_settings' => CMS_365NETWORK_Database::instance()->get_hub_settings(),
+            'hub_settings' => $hubSettings,
             'areas' => $this->build_area_cards($settings),
-            'events' => $this->fetch_upcoming_events((int) ($settings['sidebar_events_count'] ?? 3)),
-            'speakers' => $this->fetch_random_speakers((int) ($settings['random_speakers_count'] ?? 1)),
-            'companies' => $this->fetch_random_companies((int) ($settings['random_companies_count'] ?? 1)),
-            'experts' => $this->fetch_random_experts((int) ($settings['random_experts_count'] ?? 1)),
+            'events' => $this->fetch_upcoming_events($eventLimit),
+            'speakers' => $this->fetch_random_speakers($speakerLimit),
+            'companies' => $this->fetch_random_companies($companyLimit),
+            'experts' => $this->fetch_random_experts($expertLimit),
+            'partner_companies' => $this->fetch_partner_companies($companyLimit),
+            'partner_experts' => $this->fetch_partner_experts($expertLimit),
             'stats' => $this->fetch_stats(),
             'current_host' => $this->current_host(),
             'network_search_url' => $this->network_search_url($settings),
@@ -87,6 +112,8 @@ final class CMS_365NETWORK_Public
                 $speakers = is_array($data['speakers'] ?? null) ? $data['speakers'] : [];
                 $companies = is_array($data['companies'] ?? null) ? $data['companies'] : [];
                 $experts = is_array($data['experts'] ?? null) ? $data['experts'] : [];
+                $partnerCompanies = is_array($data['partner_companies'] ?? null) ? $data['partner_companies'] : [];
+                $partnerExperts = is_array($data['partner_experts'] ?? null) ? $data['partner_experts'] : [];
                 $toolboxTools = is_array($data['toolbox_tools'] ?? null) ? $data['toolbox_tools'] : [];
                 $stats = is_array($data['stats'] ?? null) ? $data['stats'] : [];
                 $current_host = (string) ($data['current_host'] ?? '');
@@ -214,6 +241,21 @@ final class CMS_365NETWORK_Public
             '--n365-toolbox-text' => $this->hex_color((string) ($hubSettings['hub_toolbox_text_color'] ?? ''), '#1a2e4a'),
             '--n365-toolbox-accent' => $this->hex_color((string) ($hubSettings['hub_toolbox_accent_color'] ?? ''), '#e6a817'),
             '--n365-toolbox-radius' => $this->clamp_int($hubSettings['hub_toolbox_radius'] ?? 8, 0, 40) . 'px',
+            '--n365-topbar-bg' => $this->hex_color((string) ($hubSettings['hub_topbar_bg_color'] ?? ''), '#0a1626'),
+            '--n365-topbar-text' => $this->hex_color((string) ($hubSettings['hub_topbar_text_color'] ?? ''), '#dfe8f2'),
+            '--n365-topbar-accent' => $this->hex_color((string) ($hubSettings['hub_topbar_accent_color'] ?? ''), '#d6951a'),
+            '--n365-partnerband-bg' => $this->hex_color((string) ($hubSettings['hub_partnerband_bg_color'] ?? ''), '#0a1626'),
+            '--n365-partnerband-text' => $this->hex_color((string) ($hubSettings['hub_partnerband_text_color'] ?? ''), '#dfe8f2'),
+            '--n365-partnerband-accent' => $this->hex_color((string) ($hubSettings['hub_partnerband_accent_color'] ?? ''), '#d6951a'),
+            '--n365-next-bg' => $this->hex_color((string) ($hubSettings['hub_next_events_bg_color'] ?? ''), '#ffffff'),
+            '--n365-next-text' => $this->hex_color((string) ($hubSettings['hub_next_events_text_color'] ?? ''), '#1a2e4a'),
+            '--n365-next-accent' => $this->hex_color((string) ($hubSettings['hub_next_events_accent_color'] ?? ''), '#d6951a'),
+            '--n365-spotlight-bg' => $this->hex_color((string) ($hubSettings['hub_spotlight_bg_color'] ?? ''), '#ffffff'),
+            '--n365-spotlight-text' => $this->hex_color((string) ($hubSettings['hub_spotlight_text_color'] ?? ''), '#1a2e4a'),
+            '--n365-spotlight-accent' => $this->hex_color((string) ($hubSettings['hub_spotlight_accent_color'] ?? ''), '#d6951a'),
+            '--n365-partner-cols-bg' => $this->hex_color((string) ($hubSettings['hub_partner_columns_bg_color'] ?? ''), '#ffffff'),
+            '--n365-partner-cols-text' => $this->hex_color((string) ($hubSettings['hub_partner_columns_text_color'] ?? ''), '#1a2e4a'),
+            '--n365-partner-cols-accent' => $this->hex_color((string) ($hubSettings['hub_partner_columns_accent_color'] ?? ''), '#d6951a'),
         ];
 
         $css = '.cms-network-hub-wrap.n365-landing{';
@@ -223,6 +265,26 @@ final class CMS_365NETWORK_Public
         $css .= '}';
 
         echo '<style id="cms-365network-vars">' . htmlspecialchars($css, ENT_NOQUOTES, 'UTF-8') . '</style>' . "\n";
+    }
+
+    public function enqueue_scripts(): void
+    {
+        if (!$this->is_landing_path_request()) {
+            return;
+        }
+
+        $js = CMS_365NETWORK_PLUGIN_DIR . 'assets/js/public.js';
+        if (!is_file($js)) {
+            return;
+        }
+
+        $version = (string) filemtime($js);
+        if (function_exists('cms_enqueue_script')) {
+            cms_enqueue_script('cms-365network-public', CMS_365NETWORK_PLUGIN_URL . 'assets/js/public.js', [], $version, true);
+            return;
+        }
+
+        echo '<script src="' . htmlspecialchars(CMS_365NETWORK_PLUGIN_URL . 'assets/js/public.js?v=' . $version, ENT_QUOTES, 'UTF-8') . '" defer></script>' . "\n";
     }
 
     public function output_analytics_head(): void
@@ -404,6 +466,60 @@ final class CMS_365NETWORK_Public
             return $this->with_entity_urls(array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []), 'expert');
         } catch (\Throwable $e) {
             error_log('CMS 365NETWORK fetch experts failed: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function fetch_partner_companies(int $limit): array
+    {
+        $limit = $this->clamp_int($limit, 0, 12);
+        if ($limit === 0 || !$this->is_integration_available('cms-companies', 'CMS_Companies', 'companies')) {
+            return [];
+        }
+
+        try {
+            $db = CMS\Database::instance();
+            $prefix = $db->prefix();
+            $params = [];
+            $statusWhere = $this->status_filter_sql('companies', ['active'], $params);
+            $sql = sprintf("SELECT id, name, industry, logo_url, location_city, is_partner, is_top_partner
+                FROM {$prefix}companies
+                WHERE {$statusWhere} AND (is_partner = 1 OR is_top_partner = 1)
+                ORDER BY is_top_partner DESC, is_partner DESC, name ASC
+                LIMIT %d", $limit);
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $rows = array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []);
+            return $this->with_entity_urls($rows, 'company');
+        } catch (\Throwable $e) {
+            error_log('CMS 365NETWORK fetch partner companies failed: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function fetch_partner_experts(int $limit): array
+    {
+        $limit = $this->clamp_int($limit, 0, 12);
+        if ($limit === 0 || !$this->is_integration_available('cms-experts', 'CMS_Experts', 'experts')) {
+            return [];
+        }
+
+        try {
+            $db = CMS\Database::instance();
+            $prefix = $db->prefix();
+            $params = [];
+            $statusWhere = $this->status_filter_sql('experts', ['active'], $params);
+            $sql = sprintf("SELECT id, first_name, last_name, position, company, photo_url, location_city
+                FROM {$prefix}experts
+                WHERE {$statusWhere}
+                ORDER BY last_name ASC, first_name ASC, id ASC
+                LIMIT %d", $limit);
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $rows = array_map([$this, 'object_to_array'], $stmt->fetchAll(\PDO::FETCH_OBJ) ?: []);
+            return $this->with_entity_urls($rows, 'expert');
+        } catch (\Throwable $e) {
+            error_log('CMS 365NETWORK fetch partner experts failed: ' . $e->getMessage());
             return [];
         }
     }

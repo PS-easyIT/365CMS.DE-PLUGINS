@@ -216,11 +216,16 @@ final class CMS_365NETWORK_Admin
         $tabs = [
             'domain' => '🌐 Domain',
             'hub-order' => '↕️ Reihenfolge',
+            'hub-topbar' => '🧭 Topbar',
             'hub-featured' => '⭐ Featured',
             'hub-hero' => '🏁 Hero',
             'hub-stats' => '📊 Kennzahlen',
+            'hub-partnerband' => '🤝 Partnerband',
             'hub-band' => '🔎 Teaser & Suche',
             'hub-areas' => '🧭 Bereiche',
+            'hub-next-events' => '📅 Events',
+            'hub-spotlight' => '🔦 Fokus',
+            'hub-partner-columns' => '🏢 Partner',
             'hub-toolbox' => '🧰 Toolbox',
             'layout' => '🎨 Seitenlayout',
             'sidebar' => '📊 Sidebar & Daten',
@@ -256,6 +261,11 @@ final class CMS_365NETWORK_Admin
                 'title' => '↕️ Bereichs-Reihenfolge',
                 'description' => 'Sortiere die sichtbaren Public-Bereiche der 365NETWORK-Landingpage. Deaktivierte Bereiche bleiben ausgeblendet.',
             ],
+            'hub-topbar' => [
+                'section' => 'topbar',
+                'title' => '🧭 Hub-Topbar',
+                'description' => 'Logo, interne Hub-Navigation, Topbar-Suche und Login-Link gemäß HTML-Preview steuern.',
+            ],
             'hub-featured' => [
                 'section' => 'featured',
                 'title' => '⭐ Featured Card',
@@ -276,10 +286,30 @@ final class CMS_365NETWORK_Admin
                 'title' => '🔎 Teaser & Suche',
                 'description' => 'Nächstes Event, Suche, Texte, Layout und visuelle Band-Darstellung steuern.',
             ],
+            'hub-partnerband' => [
+                'section' => 'partnerband',
+                'title' => '🤝 Partnerband',
+                'description' => 'Nahtloses Partnerband direkt unter dem Hero konfigurieren.',
+            ],
             'hub-areas' => [
                 'section' => 'areas',
                 'title' => '🧭 Direkteinstieg',
                 'description' => 'Bereichskarten einzeln aktivieren, Inhalte pflegen und das Kartenraster gestalten.',
+            ],
+            'hub-next-events' => [
+                'section' => 'next-events',
+                'title' => '📅 Nächste Events',
+                'description' => 'Drei-Karten-Eventreihe der Preview mit Titel, Link und Limit steuern.',
+            ],
+            'hub-spotlight' => [
+                'section' => 'spotlight',
+                'title' => '🔦 Im Fokus',
+                'description' => 'Rotator-Inhalte, Beschriftung und optionales Auto-Rotieren konfigurieren.',
+            ],
+            'hub-partner-columns' => [
+                'section' => 'partner-columns',
+                'title' => '🏢 Partner-Spalten',
+                'description' => 'Unternehmen- und Experts-Spalten der Preview konfigurieren.',
             ],
             'hub-toolbox' => [
                 'section' => 'toolbox',
@@ -1058,11 +1088,16 @@ final class CMS_365NETWORK_Admin
         }
 
         return [
+            'topbar' => '🧭 Topbar',
             'featured' => '⭐ Featured Card',
             'hero' => '🏁 Hero-Bereich',
+            'partnerband' => '🤝 Partnerband',
             'stats' => '📊 Kennzahlen',
             'band' => '🔎 Teaser & Suche',
             'areas' => '🧭 Direkteinstieg',
+            'next-events' => '📅 Nächste Events',
+            'spotlight' => '🔦 Im Fokus',
+            'partner-columns' => '🏢 Partner-Spalten',
             'toolbox' => '🧰 Toolbox',
         ];
     }
@@ -1166,6 +1201,10 @@ final class CMS_365NETWORK_Admin
 
         if ($key === 'hub_toolbox_limit') {
             return [1, 50];
+        }
+
+        if (in_array($key, ['hub_partnerband_limit', 'hub_next_events_limit', 'hub_spotlight_limit', 'hub_partner_companies_limit', 'hub_partner_experts_limit'], true)) {
+            return [1, 12];
         }
 
         if ($key === 'hub_featured_image_height') {

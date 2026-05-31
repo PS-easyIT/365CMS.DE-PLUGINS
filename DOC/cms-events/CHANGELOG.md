@@ -1,5 +1,12 @@
 # CMS Events – Changelog
 
+## [3.0.29] – 2026-05-31
+
+- **Public-Detailseite:** Die Event-Detailseite folgt nun der PHINIT-HTML-Preview mit Navy/Amber-Hero, großem Datebox-Block, Status-Badge, Meta-Zeile und ruhigen Tag-Chips.
+- **Daten-Mapping:** Das Programm wird aus vorhandenen Speaker-Zuordnungen (`presentation_title`, `session_time`, `role`) erzeugt; dedizierte Agenda-, Sprach- und Anmeldeschluss-Felder existieren im aktuellen Schema nicht und werden nicht künstlich befüllt.
+- **Sidebar:** Teilnahme, Social/Share, Event-Details, Veranstaltungsort und weitere Events wurden in preview-nahe Cards überführt.
+- **I18n & Assets:** Sichtbare Labels laufen über `cms_events.detail.*` mit lokalem YAML-Fallback; die Detailseite nutzt Inline-SVGs statt Tabler-Icon-Font und `assets/css/single.css` wird nur noch auf Event-Detailrouten geladen.
+
 ## [3.0.28] – 2026-05-31
 
 - **Public-Detailseite:** Breadcrumb und Detail-Grid der Event-Detailseite sind auf maximal `1160px` Contentbreite zentriert.

@@ -4,6 +4,15 @@ Alle Änderungen folgen dem Format [Keep a Changelog](https://keepachangelog.com
 
 ---
 
+## [3.0.10] – 2026-05-31
+
+### Geändert
+
+- **Public-Detailseite:** Die Companies-Detailseite wurde nach der PHINIT-HTML-Preview neu aufgebaut: Navy/Amber-Hero, Profil-, Leistungs-, Team-, Partnerschafts-, Kontakt-, Social-, Fakten-, Standort- und Related-Company-Bereiche.
+- **Übersetzungen:** Alle sichtbaren Labels nutzen neue `cms_companies.detail.*` Keys in `CMS/lang/de.yaml` und `CMS/lang/en.yaml`; das Template besitzt zusätzlich einen lokalen YAML-Fallback, damit bei Cache-/Translator-Problemen keine rohen Keys erscheinen.
+- **Assets:** `single.css` wird nur noch auf Company-Detailrouten (`/company/{slug-id}` und Legacy `/companies/{id}`) geladen.
+- **Datenmapping:** Services, Social Links und Zertifizierungen nutzen vorhandene Company-Meta-Keys, fallen ansonsten auf echte Kernfelder wie Branche, Team-Verknüpfungen, Website, Standort und Partnerstatus zurück.
+
 ## [3.0.9] – 2026-05-31
 
 ### Geändert

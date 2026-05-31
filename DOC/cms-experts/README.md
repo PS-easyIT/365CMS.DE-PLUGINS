@@ -1,10 +1,10 @@
 # CMS Experts – Dokumentation
 
 **Plugin:** `cms-experts`  
-**Version:** 3.0.8  
+**Version:** 3.0.10  
 **Namespace:** `CMS_Experts`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
-**Audit-/Dokustand:** Public-Detailseiten-Polish am 2026-05-31  
+**Audit-/Dokustand:** PHINIT-Preview-Detailseite am 2026-05-31  
 **PHP:** 8.4+
 
 ---
@@ -20,6 +20,8 @@ Das **CMS Experts**-Plugin ist das zentrale Verzeichnis für IT-Experten-Profile
 - Version 3.0.4 stellt die öffentliche Übersicht wie `cms-events` auf Filter-first und responsives Card-Grid um.
 - Expert-Cards nutzen Avatar/Initialen, MVP-/Premium-/Award-/Spezialisierungs-Badges, Verfügbarkeit, Standort/Firma, Erfahrung, Zertifikate, Skills und Profil-CTA.
 - Version 3.0.8 begrenzt die Public-Experts-Detailseite auf maximal `1160px`, entfernt Hintergrundabstände zu Theme-Header/-Footer, füllt kurze Seiten bis zum Footer und sichert Responsive Layout sowie Dark Mode ab.
+- Version 3.0.9 baut die Detailseite nach der PHINIT-HTML-Preview neu auf: Navy/Amber-Hero, Karten für Profil, Expertise, Zertifikate, Leistungen und Projekte/Referenzen, Sidebar für Anfrage, Social, Details und ähnliche Experten, zentrale de/en-Übersetzungen und Detail-CSS nur auf `/experts/{slug}`.
+- Version 3.0.10 ergänzt einen lokalen `CMS/lang`-YAML-Fallback im Detailtemplate, damit rohe `cms_experts.detail.*` Keys auch dann nicht erscheinen, wenn der globale Translator den Key unverändert zurückliefert.
 
 ### Kernfunktionen
 

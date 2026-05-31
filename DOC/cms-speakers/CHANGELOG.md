@@ -1,5 +1,18 @@
 # CMS Speakers – Changelog
 
+## [3.0.18] – 2026-05-31
+
+- **Hotfix i18n:** `single-speaker.php` löst Detailseiten-Labels jetzt zusätzlich direkt über den zentralen `CMS/lang`-YAML-Katalog auf, falls `TranslationService` oder `__()` den Original-Key zurückgeben.
+- **Frontend:** Breadcrumb, Hero, Content-Bereiche und Sidebar zeigen dadurch keine rohen `cms_speakers.detail.*` Keys mehr, auch wenn der globale Translator-Fallback auf der Laufzeitumgebung nicht greift.
+
+## [3.0.17] – 2026-05-31
+
+- **Public-Detailseite:** `single-speaker.php` wurde auf das fertige PHINIT-Referenzlayout umgebaut: Navy-Hero mit Avatar/Initialen, Name, Auftritte-Pill, Verfügbarkeitsbadge, Rollenlinie und Topic-/Format-Tags.
+- **Content-Struktur:** Unterhalb des Heros rendert ein responsives Zwei-Spalten-Grid mit Bio, Themen/Formaten/Skills und Vorträgen links sowie Buchungs-CTA, Social Media, Details und weiteren Speakern rechts.
+- **i18n & Icons:** Alle sichtbaren UI-Labels laufen über die zentrale Übersetzungsmechanik (`CMS/lang/de.yaml`, `CMS/lang/en.yaml`); Icon-Fonts wurden im Detailtemplate durch Inline-SVG ersetzt.
+- **Assets:** `single.css` wird nur noch auf Speaker-Detailseiten (`/speakers/{slug}`) geladen, nicht mehr auf der Übersicht.
+- **Designsystem:** Die Detailseite nutzt die PHINIT Navy-/Amber-Palette aus der Referenz, bleibt auf maximal `1160px` Contentbreite und enthält Dark-Mode-Tokens.
+
 ## [3.0.16] – 2026-05-31
 
 - **Public-Detailseite:** `single-speaker.php` nutzt nun die vollständige Experts-Detailseiten-Struktur mit Hero, Bio-/Kontakt-Bridge, Haupt-/Sidebar-Grid, Inhaltssektionen und Auftrittskarten.

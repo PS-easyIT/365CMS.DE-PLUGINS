@@ -1,704 +1,928 @@
-﻿<?php
+<?php
 /**
- * Single Expert Template: Detail-Ansicht – vollständige Daten
+ * Single Expert Template – PHINIT-style detail page.
  *
  * @package CMS_Experts
  * @var object $expert
- * @var array  $skills          [{skill_name, skill_type}]
- * @var array  $certifications  [{cert_name, cert_issuer, cert_date, cert_expiry, cert_url}]
- * @var array  $projects        [{project_name, project_description, project_role, project_start, project_end, project_url, technologies}]
- * @var array  $education       [{degree, institution, field_of_study, start_year, end_year, description}]
- * @var array  $meta            assoc: social_linkedin, social_xing, social_github, social_twitter, social_website, partner_status, languages, remote_work, notice_period, travel_willingness
- * @var array  $specializations [{id, name, slug, parent_id}]
- * @var array  $settings        Plugin-Design-Settings
+ * @var array  $skills
+ * @var array  $certifications
+ * @var array  $projects
+ * @var array  $education
+ * @var array  $meta
+ * @var array  $specializations
+ * @var array  $events
+ * @var array  $related_experts
  */
 
-if (!defined('ABSPATH')) { exit; }
+declare(strict_types=1);
 
-$sec      = CMS\Security::instance();
-$settings = $settings ?? [];
-
-// ── CSS-Variablen aus Settings ──────────────────────────────────────────────
-$detail_header_bg   = $settings['design_detail_header_bg']       ?? '#f8fafc';
-$detail_header_col  = $settings['design_detail_header_color']    ?? '#1e293b';
-$detail_accent      = $settings['design_detail_accent']          ?? ($settings['design_primary_color'] ?? '#5e72e4');
-$status_avail_color = $settings['design_status_available_color'] ?? '#14532d';
-$status_limit_color = $settings['design_status_limited_color']   ?? '#7c4a03';
-$status_book_color  = $settings['design_status_booked_color']    ?? '#7f1d1d';
-$partner_color      = $settings['design_partner_color']          ?? '#9ca3af';
-$top_partner_color  = $settings['design_top_partner_color']      ?? '#d97706';
-$sponsor_color      = $settings['design_sponsor_color']          ?? '#7c3aed';
-$cta_color          = $settings['design_cta_color']              ?? '#c2410c';
-$primary_color      = $settings['design_primary_color']          ?? '#5e72e4';
-$accent_color       = $settings['design_accent_color']           ?? '#8965e0';
-$card_bg_color      = $settings['design_card_bg']                ?? '#fffdf4';
-$hdr_from           = $settings['detail_header_bg_from'] ?? $settings['archive_header_bg_from'] ?? '#fefbf5';
-$hdr_to             = $settings['detail_header_bg_to']   ?? $settings['archive_header_bg_to']   ?? '#f8f1e4';
-$hdr_title          = $settings['archive_header_title_color']    ?? '#7c4700';
-$border_radius      = (int)($settings['design_border_radius']    ?? 12);
-$expertCssColor = static function (mixed $value, string $fallback): string {
-  $color = trim((string) $value);
-  return preg_match('/^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/', $color) === 1 ? $color : $fallback;
-};
-$detail_header_bg = $expertCssColor($detail_header_bg, '#f8fafc');
-$detail_header_col = $expertCssColor($detail_header_col, '#1e293b');
-$detail_accent = $expertCssColor($detail_accent, '#5e72e4');
-$cta_color = $expertCssColor($cta_color, '#c2410c');
-$primary_color = $expertCssColor($primary_color, '#5e72e4');
-$accent_color = $expertCssColor($accent_color, '#8965e0');
-$card_bg_color = $expertCssColor($card_bg_color, '#fffdf4');
-$hdr_from = $expertCssColor($hdr_from, '#fefbf5');
-$hdr_to = $expertCssColor($hdr_to, '#f8f1e4');
-$hdr_title = $expertCssColor($hdr_title, '#7c4700');
-$border_radius = max(0, min(32, $border_radius));
-?>
-<style>
-:root {
-  --expert-primary: <?= htmlspecialchars($primary_color, ENT_QUOTES, 'UTF-8') ?>;
-  --expert-primary-hover: <?= htmlspecialchars($accent_color, ENT_QUOTES, 'UTF-8') ?>;
-  --expert-accent: <?= htmlspecialchars($accent_color, ENT_QUOTES, 'UTF-8') ?>;
-  --expert-secondary: <?= htmlspecialchars($accent_color, ENT_QUOTES, 'UTF-8') ?>;
-  --expert-cta-color: <?= htmlspecialchars($cta_color, ENT_QUOTES, 'UTF-8') ?>;
-  --expert-cta: <?= htmlspecialchars($cta_color, ENT_QUOTES, 'UTF-8') ?>;
-  --expert-card-bg: <?= htmlspecialchars($card_bg_color, ENT_QUOTES, 'UTF-8') ?>;
-  --expert-hdr-bg: linear-gradient(135deg, <?= htmlspecialchars($hdr_from, ENT_QUOTES, 'UTF-8') ?> 0%, <?= htmlspecialchars($hdr_to, ENT_QUOTES, 'UTF-8') ?> 100%);
-  --expert-hdr-title: <?= htmlspecialchars($hdr_title, ENT_QUOTES, 'UTF-8') ?>;
-  --expert-detail-hdr-bg: <?= htmlspecialchars($detail_header_bg, ENT_QUOTES, 'UTF-8') ?>;
-  --expert-detail-hdr-color: <?= htmlspecialchars($detail_header_col, ENT_QUOTES, 'UTF-8') ?>;
-  --expert-detail-accent: <?= htmlspecialchars($detail_accent, ENT_QUOTES, 'UTF-8') ?>;
-  --expert-radius: <?= (int) $border_radius ?>px;
-  --expert-card-radius: <?= (int) $border_radius ?>px;
+if (!defined('ABSPATH')) {
+    exit;
 }
-</style>
 
-<?php
-// ── Data Extraction ──────────────────────────────────────────────────────────
-$full_name      = trim(($expert->first_name ?? '') . ' ' . ($expert->last_name ?? ''));
-$photo          = cms_experts_public_url((string) ($expert->photo_url ?? ''));
-$position       = $expert->position ?? '';
-$company        = $expert->company  ?? '';
-$company_id     = (int)($meta['company_id'] ?? 0);
-$company_url    = '';
-
-if ($company_id > 0) {
-    $company_url = rtrim(SITE_URL, '/') . '/company/' . strtolower(trim(preg_replace('/[^a-z0-9]+/i', '-', str_replace(['ä','ö','ü','ß','Ä','Ö','Ü'], ['ae','oe','ue','ss','ae','oe','ue'], $company)), '-')) . '-' . $company_id;
+if (empty($expert)) {
+    return;
 }
-$avail          = $expert->availability ?? 'available';
-$avail_map      = [
-    'available' => ['label' => 'Verfügbar',          'css' => 'status-available'],
-    'limited'   => ['label' => 'Begrenzt verfügbar', 'css' => 'status-limited'],
-    'booked'    => ['label' => 'Nicht verfügbar',    'css' => 'status-booked'],
-];
-$avail_info     = $avail_map[$avail] ?? ['label' => ucfirst($avail), 'css' => 'status-available'];
-$partner_status = $meta['partner_status'] ?? '';
-$hourly_rate    = !empty($expert->hourly_rate) ? (float)$expert->hourly_rate : null;
-$daily_rate     = !empty($expert->daily_rate)  ? (float)$expert->daily_rate  : null;
 
-// Skills nach Typ gruppieren
-$skills_by_type = ['general' => [], 'tech' => [], 'soft' => []];
-if (!empty($skills) && is_array($skills)) {
-    foreach ($skills as $s) {
-        $type = !empty($s->skill_type) ? (string)$s->skill_type : 'general';
-        if (!array_key_exists($type, $skills_by_type)) { $type = 'general'; }
-        $skills_by_type[$type][] = $s;
+if (!function_exists('cms_experts_detail_t')) {
+    function cms_experts_detail_t(string $key, array $parameters = []): string
+    {
+        $translated = null;
+
+        if (class_exists('CMS\\Services\\TranslationService')) {
+            try {
+                $translated = \CMS\Services\TranslationService::getInstance()->translate($key, 'default', $parameters);
+            } catch (\Throwable) {
+                $translated = null;
+            }
+        }
+
+        if (($translated === null || $translated === $key) && function_exists('__')) {
+            try {
+                $translated = __($key);
+            } catch (\Throwable) {
+                $translated = null;
+            }
+        }
+
+        if ($translated === null || $translated === $key) {
+            $translated = cms_experts_detail_catalog_value($key) ?? $key;
+        }
+
+        if ($parameters !== []) {
+            $translated = strtr($translated, $parameters);
+        }
+
+        return $translated;
     }
 }
 
-// Social Links
-$social = [
-    'linkedin' => cms_experts_public_url((string) ($meta['social_linkedin'] ?? '')),
-    'xing'     => cms_experts_public_url((string) ($meta['social_xing'] ?? '')),
-    'github'   => cms_experts_public_url((string) ($meta['social_github'] ?? '')),
-    'twitter'  => cms_experts_public_url((string) ($meta['social_twitter'] ?? '')),
-    'website'  => cms_experts_public_url((string) ($meta['social_website'] ?? '')),
-];
-$has_social = !empty(array_filter($social));
+if (!function_exists('cms_experts_detail_catalog_value')) {
+    function cms_experts_detail_catalog_value(string $key): ?string
+    {
+        static $catalogs = [];
 
-// Weitere Angaben
-$languages          = $meta['languages']          ?? '';
-$remote_work        = $meta['remote_work']         ?? '';
-$notice_period      = $meta['notice_period']       ?? '';
-$travel_willingness = $meta['travel_willingness']  ?? '';
-
-// Erweiterte Meta-Felder (WP-kompatibel)
-$motto              = $meta['motto']                   ?? '';
-$timezone           = $meta['timezone']                ?? '';
-$work_type          = $meta['work_type']               ?? '';
-$contact_times      = $meta['contact_times']           ?? '';
-$is_certified       = !empty($meta['is_certified']);
-$is_premium         = !empty($meta['is_premium']);
-$is_mvp             = !empty($meta['is_mvp']);
-$custom_award       = $meta['custom_award']            ?? '';
-$retainer           = !empty($meta['retainer']);
-$weekly_hours       = $meta['weekly_hours']            ?? '';
-$min_proj_dur       = $meta['min_project_duration']    ?? '';
-$max_proj_dur       = $meta['max_project_duration']    ?? '';
-$payment_terms      = $meta['payment_terms']           ?? '';
-$min_booking        = $meta['min_booking_duration']    ?? '';
-$fixed_price        = !empty($meta['fixed_price_projects']);
-$time_material_flag = !empty($meta['time_material']);
-$travel_cost_model  = $meta['travel_cost_model']       ?? '';
-$max_travel_km      = $meta['max_travel_distance_km']  ?? '';
-$pref_sizes_raw     = $meta['preferred_company_sizes'] ?? '';
-$pref_sizes         = is_array($pref_sizes_raw) ? $pref_sizes_raw : (json_decode((string)$pref_sizes_raw, true) ?: []);
-$next_avail_date    = $meta['avail_date']              ?? '';
-$svc_consulting     = !empty($meta['services_consulting']);
-$svc_impl           = !empty($meta['services_implementation']);
-$svc_training       = !empty($meta['services_training']);
-$svc_support        = !empty($meta['services_support']);
-$svc_audit          = !empty($meta['services_audit']);
-$emergency_support  = !empty($meta['emergency_support']);
-$workshop_offerings = !empty($meta['workshop_offerings']);
-$subcontractors     = !empty($meta['subcontractors_available']);
-$team_expansion     = !empty($meta['team_expansion_possible']);
-$max_team_size      = $meta['max_team_size']           ?? '';
-$partner_networks   = $meta['partner_networks']        ?? '';
-$team_size_led      = $meta['team_size_led']           ?? '';
-$total_projects_cnt = $meta['total_projects']          ?? '';
-
-// Erweiterte Social Links
-$social['gitlab']        = cms_experts_public_url((string) ($meta['social_gitlab'] ?? ''));
-$social['stackoverflow'] = cms_experts_public_url((string) ($meta['social_stackoverflow'] ?? ''));
-$social['youtube']       = cms_experts_public_url((string) ($meta['social_youtube'] ?? ''));
-$social['blog_rss']      = cms_experts_public_url((string) ($meta['social_blog_rss'] ?? ''));
-$has_social = !empty(array_filter($social));
-
-$ex_email = filter_var(trim((string) ($expert->email ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
-$ex_phone = preg_replace('/[^0-9+]/', '', trim((string) ($expert->phone ?? ''))) ?: '';
-
-// Technische Expertise (JSON aus Meta)
-$prog_languages_raw = $meta['programming_languages'] ?? '';
-$prog_languages     = is_array($prog_languages_raw) ? $prog_languages_raw : (json_decode((string)$prog_languages_raw, true) ?: []);
-$frameworks_raw     = $meta['frameworks'] ?? '';
-$expert_frameworks  = is_array($frameworks_raw) ? $frameworks_raw : (json_decode((string)$frameworks_raw, true) ?: []);
-$databases_raw      = $meta['databases'] ?? '';
-$expert_databases   = is_array($databases_raw) ? $databases_raw : (json_decode((string)$databases_raw, true) ?: []);
-$cloud_raw          = $meta['cloud_platforms'] ?? '';
-$cloud_platforms    = is_array($cloud_raw) ? $cloud_raw : (json_decode((string)$cloud_raw, true) ?: []);
-$industry_raw       = $meta['industry_experience'] ?? '';
-$industry_experience= is_array($industry_raw) ? $industry_raw : (json_decode((string)$industry_raw, true) ?: []);
-$tools_raw          = $meta['tools_preferred'] ?? '';
-$tools_preferred    = is_array($tools_raw) ? $tools_raw : (json_decode((string)$tools_raw, true) ?: []);
-
-// Karrierestationen & Referenzen (JSON)
-$career_raw         = $meta['career_stations'] ?? '';
-$career_stations_data = is_array($career_raw) ? $career_raw : (json_decode((string)$career_raw, true) ?: []);
-$testimonials_raw   = $meta['testimonials'] ?? '';
-$testimonials_data  = is_array($testimonials_raw) ? $testimonials_raw : (json_decode((string)$testimonials_raw, true) ?: []);
-$case_studies_raw   = $meta['case_studies'] ?? '';
-$case_studies_data  = is_array($case_studies_raw) ? $case_studies_raw : (json_decode((string)$case_studies_raw, true) ?: []);
-$conf_talks_raw     = $meta['conference_talks'] ?? '';
-$conference_talks   = is_array($conf_talks_raw) ? $conf_talks_raw : (json_decode((string)$conf_talks_raw, true) ?: []);
-
-// Partner-Badge HTML
-$partner_badge_html = match ($partner_status) {
-    'sponsor'    => '<span class="detail-partner-badge badge-sponsor">&#11088; Sponsor</span>',
-    'top_partner'=> '<span class="detail-partner-badge badge-top-partner">&#9733; Top-Partner</span>',
-    'partner'    => '<span class="detail-partner-badge badge-partner">&#10003; Partner</span>',
-    default      => '',
-};
-// Avatar Gradient + Initialen
-$_ex_first  = $expert->first_name ?? '';
-$_ex_last   = $expert->last_name  ?? '';
-$_ex_inits  = strtoupper(mb_substr($_ex_first, 0, 1) . mb_substr($_ex_last, 0, 1));
-$_base_url  = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
-$events     = $events ?? [];
-?>
-
-<main class="phinit-plugin ex-v2">
-
-  <nav class="ex-bc">
-    <a href="<?= $sec->escape($_base_url . '/experts') ?>">← Experten</a>
-    <span class="ex-bc__sep">/</span>
-    <span class="ex-bc__cur"><?= $sec->escape(mb_strimwidth($full_name, 0, 60, '…')) ?></span>
-  </nav>
-
-  <header class="ex-hero">
-    <div class="ex-hero__inner">
-      <div class="ex-hero__badges">
-        <span class="ex-hero__badge ex-hero__badge--avail-<?= $sec->escape($avail) ?>"><?= $sec->escape($avail_info['label']) ?></span>
-        <?php if ($partner_status === 'sponsor'):    ?><span class="ex-hero__badge ex-hero__badge--partner">★ Sponsor</span><?php endif; ?>
-        <?php if ($partner_status === 'top_partner'):?><span class="ex-hero__badge ex-hero__badge--partner">◆ Top-Partner</span><?php endif; ?>
-        <?php if ($partner_status === 'partner'):    ?><span class="ex-hero__badge ex-hero__badge--partner">✓ Partner</span><?php endif; ?>
-        <?php if ($is_mvp):       ?><span class="ex-hero__badge ex-hero__badge--mvp">⚡ MVP</span><?php endif; ?>
-        <?php if ($is_certified): ?><span class="ex-hero__badge ex-hero__badge--cert">✅ Zertifiziert</span><?php endif; ?>
-        <?php if ($is_premium):   ?><span class="ex-hero__badge ex-hero__badge--premium">⭐ Premium</span><?php endif; ?>
-      </div>
-      <?php if ($photo !== ''): ?>
-        <div class="ex-hero__av"><img src="<?= $sec->escape($photo) ?>" alt="<?= $sec->escape($full_name) ?>" width="120" height="120" loading="eager" decoding="async"></div>
-      <?php else: ?>
-        <div class="ex-hero__av ex-hero__av--placeholder"><?= htmlspecialchars($_ex_inits ?: '?') ?></div>
-      <?php endif; ?>
-      <div class="ex-hero__meta">
-        <?php if ($custom_award): ?><div class="ex-award">🏆 <?= $sec->escape($custom_award) ?></div><?php endif; ?>
-        <div class="ex-hero__name-row">
-          <h1 class="ex-hero__name"><?= $sec->escape($full_name) ?></h1>
-          <?php if (!empty($specializations)): ?>
-            <div class="ex-hero__spec-pills">
-              <?php foreach ($specializations as $sp): ?><span class="ex-hero__spec-pill"><?= $sec->escape($sp->name ?? '') ?></span><?php endforeach; ?>
-            </div>
-          <?php endif; ?>
-          <?php if (!empty($events)): ?>
-            <span class="ex-hero__ev-count" title="<?= $sec->escape((string) count($events) . ' zugewiesene Events') ?>">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <?= count($events) ?>
-            </span>
-          <?php endif; ?>
-        </div>
-        <?php if ($motto): ?><p class="ex-hero__motto">"<?= $sec->escape($motto) ?>"</p><?php endif; ?>
-        <?php if ($position): ?><p class="ex-hero__pos"><?= $sec->escape($position) ?></p><?php endif; ?>
-        <?php if ($company): ?>
-          <p class="ex-hero__co">🏢
-            <?php if ($company_url): ?>
-              <a href="<?= $sec->escape($company_url) ?>"><?= $sec->escape($company) ?></a>
-            <?php elseif ($social['website'] !== ''): ?>
-              <a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener noreferrer"><?= $sec->escape($company) ?></a>
-            <?php else: ?>
-              <?= $sec->escape($company) ?>
-            <?php endif; ?>
-          </p>
-        <?php endif; ?>
-      </div>
-    </div>
-  </header>
-
-  <!-- ── Bridge Cards (overlap hero) ──────────────────────────── -->
-  <div class="ex-bridge">
-    <?php if (!empty($expert->biography) && trim((string)$expert->biography) !== ''): ?>
-      <div class="ex-bridge__about">
-        <h2 class="ex-bridge__title">Über mich</h2>
-        <div class="ex-bridge__text">
-          <?php
-          $bio = trim((string) $expert->biography);
-          echo nl2br($sec->escape($bio));
-          ?>
-        </div>
-      </div>
-    <?php else: ?>
-      <div class="ex-bridge__about">
-        <h2 class="ex-bridge__title">Über <?= $sec->escape(explode(' ', $full_name)[0] ?? 'mich') ?></h2>
-        <p class="ex-bridge__text ex-prose-muted">Noch keine Beschreibung hinterlegt.</p>
-      </div>
-    <?php endif; ?>
-
-    <div class="ex-bridge__contact">
-      <h2 class="ex-bridge__title">Kontakt & Social</h2>
-      <div class="ex-bridge__contact-body">
-
-        <!-- Reihe 1: Kontakt / Buchung -->
-        <div class="ex-bridge__row">
-          <a href="<?= $sec->escape($_base_url . '/contact?expert=' . (int)$expert->id) ?>" class="phinit-btn phinit-btn--primary ex-btn ex-btn--sm ex-btn--block">Kontakt / Buchung</a>
-        </div>
-
-        <!-- Reihe 2: Website · E-Mail · Telefon -->
-        <div class="ex-bridge__row ex-bridge__links">
-          <?php if ($social['website'] !== ''): ?>
-            <a href="<?= $sec->escape($social['website']) ?>" target="_blank" rel="noopener noreferrer" class="ex-bridge__link" title="Website ansehen">Website</a>
-          <?php else: ?>
-            <span class="ex-bridge__link ex-bridge__link--empty">Website</span>
-          <?php endif; ?>
-          <?php if ($ex_email !== ''): ?>
-            <a href="mailto:<?= $sec->escape($ex_email) ?>" class="ex-bridge__link" title="E-Mail schreiben">E-Mail</a>
-          <?php else: ?>
-            <span class="ex-bridge__link ex-bridge__link--empty">E-Mail</span>
-          <?php endif; ?>
-          <?php if ($ex_phone !== ''): ?>
-            <a href="tel:<?= $sec->escape($ex_phone) ?>" class="ex-bridge__link" title="Anrufen">Telefon</a>
-          <?php else: ?>
-            <span class="ex-bridge__link ex-bridge__link--empty">Telefon</span>
-          <?php endif; ?>
-        </div>
-
-        <!-- Reihe 3: Social Media Icons -->
-        <div class="ex-bridge__row ex-bridge__socials">
-          <?php
-          $social_icons = [
-            'linkedin'      => ['label' => 'LinkedIn',     'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S.02 4.88.02 3.5C.02 2.12 1.13 1 2.5 1s2.48 1.12 2.48 2.5zM.02 8.5H5V24H.02V8.5zm7.97 0h4.8v2.1h.07C13.7 9 15.44 8 17.6 8c5.2 0 6.16 3.43 6.16 7.88V24H19v-7.2c0-1.72-.03-3.93-2.4-3.93-2.4 0-2.78 1.87-2.78 3.81V24H8z"/></svg>'],
-            'xing'          => ['label' => 'XING',         'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M18.188 0c-.517 0-.741.325-.927.66 0 0-7.455 13.224-7.702 13.657.015.024 4.919 9.023 4.919 9.023.17.308.436.66.967.66h3.454c.211 0 .375-.078.463-.22.089-.151.089-.346-.009-.536l-4.879-8.916c-.004-.006-.004-.016 0-.022L22.139.756c.095-.191.097-.387.006-.535C22.056.078 21.894 0 21.686 0h-3.498zM3.648 4.74c-.211 0-.385.074-.473.216-.09.149-.078.339.02.531l2.34 4.05c.004.01.004.016 0 .021L3.17 13.694c-.09.191-.097.383-.006.535.09.142.25.22.46.22h3.454c.521 0 .739-.322.928-.66l2.44-4.237c-.016-.025-2.395-4.14-2.395-4.14-.164-.308-.44-.672-.962-.672H3.648z"/></svg>'],
-            'twitter'       => ['label' => 'X',            'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'],
-            'youtube'       => ['label' => 'YouTube',      'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>'],
-            'stackoverflow' => ['label' => 'SO',           'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M15.725 0l-1.72 1.277 6.39 8.588 1.716-1.277L15.725 0zm-3.94 3.418l-1.369 1.644 8.225 6.85 1.369-1.644-8.225-6.85zm-3.15 4.465l-.905 1.94 9.702 4.517.904-1.94-9.701-4.517zm-1.85 4.86l-.44 2.093 10.473 2.201.44-2.092-10.473-2.203zM1.89 15.47V24h19.19v-8.53h-2.133v6.397H4.021v-6.396H1.89zm4.265 2.133v2.13h10.66v-2.13H6.154z"/></svg>'],
-            'github'        => ['label' => 'GitHub',       'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>'],
-            'gitlab'        => ['label' => 'GitLab',       'svg' => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><path d="M23.955 13.587l-1.342-4.135-2.664-8.189a.455.455 0 0 0-.867 0L16.418 9.45H7.582L4.918 1.263a.455.455 0 0 0-.867 0L1.386 9.452.044 13.587a.924.924 0 0 0 .331 1.023L12 23.054l11.625-8.443a.92.92 0 0 0 .33-1.024"/></svg>'],
-          ];
-          foreach ($social_icons as $sn => $icfg):
-            if (!empty($social[$sn])): ?>
-              <a href="<?= $sec->escape($social[$sn]) ?>" target="_blank" rel="noopener noreferrer" class="ex-si" title="<?= $sec->escape($icfg['label']) ?>" aria-label="<?= $sec->escape($icfg['label']) ?>"><?= $icfg['svg'] ?></a>
-            <?php else: ?>
-              <span class="ex-si ex-si--empty" title="<?= $sec->escape($icfg['label']) ?>"><?= $icfg['svg'] ?></span>
-            <?php endif;
-          endforeach; ?>
-        </div>
-
-      </div>
-    </div>
-  </div>
-
-  <div class="ex-body">
-    <main class="ex-main">
-
-
-
-
-      <?php
-      // [label, pill-cls, grid-cls]
-      $skill_section_cfg = [
-          'general' => ['Programmierung',       '',              'ex-skills-grid'],
-          'tech'    => ['Skills',               'ex-pill--tech', 'ex-skills-grid'],
-          'soft'    => ['Persönliche Stärken', 'ex-pill--soft', 'ex-skills-grid ex-skills-grid--soft'],
-      ];
-      // Alphabetisch sortieren innerhalb jedes Typs
-      foreach ($skills_by_type as &$_sg) {
-          usort($_sg, fn($a, $b) => strcasecmp($a->skill_name ?? '', $b->skill_name ?? ''));
-      }
-      unset($_sg);
-      $has_any_skill = !empty(array_filter($skills_by_type));
-      if ($has_any_skill):
-      ?>
-        <div class="ex-sec">
-          <h2 class="ex-sec__title">Skills & Kompetenzen</h2>
-          <?php foreach ($skill_section_cfg as $type => [$label, $cls, $gridCls]):
-            if (empty($skills_by_type[$type])) continue;
-          ?>
-            <h4 class="ex-sub-heading"><?= $label ?></h4>
-            <div class="<?= $gridCls ?>">
-              <?php foreach ($skills_by_type[$type] as $sk): ?>
-                <div class="ex-skill-item">
-                  <span class="ex-skill-item__name"><?= $sec->escape($sk->skill_name ?? '') ?></span>
-                </div>
-              <?php endforeach; ?>
-            </div>
-          <?php endforeach; ?>
-        </div>
-      <?php endif; ?>
-
-      <?php $has_tech = !empty($prog_languages) || !empty($expert_frameworks) || !empty($expert_databases) || !empty($cloud_platforms) || !empty($tools_preferred) || !empty($industry_experience); ?>
-      <?php if ($has_tech): ?>
-        <div class="ex-sec">
-          <h2 class="ex-sec__title">Technische Expertise</h2>
-          <?php
-          $tech_sections = [
-              ['Sprachen',      $prog_languages],
-              ['Frameworks',    $expert_frameworks],
-              ['Datenbanken',   $expert_databases],
-              ['Cloud',         $cloud_platforms],
-              ['Tools',         $tools_preferred],
-              ['Branchen',      $industry_experience],
-          ];
-          foreach ($tech_sections as [$lbl, $items]):
-            if (empty($items)) continue; ?>
-            <h4 class="ex-sub-heading"><?= $lbl ?></h4>
-            <div class="ex-pills ex-pills--mb">
-              <?php foreach ((array)$items as $it): ?><span class="ex-pill ex-pill--tech"><?= $sec->escape(is_string($it) ? $it : ($it->name ?? (string)$it)) ?></span><?php endforeach; ?>
-            </div>
-          <?php endforeach; ?>
-        </div>
-      <?php endif; ?>
-
-      <?php if (!empty($projects)): ?>
-        <div class="ex-sec">
-          <h2 class="ex-sec__title">Projekte <span class="ex-count-badge"><?= count($projects) ?></span></h2>
-          <?php foreach ($projects as $pj):
-            $p_start = (!empty($pj->project_start) && $pj->project_start !== '0000-00-00') ? date('m/Y', strtotime($pj->project_start)) : '';
-            $p_end   = (!empty($pj->project_end)   && $pj->project_end   !== '0000-00-00') ? date('m/Y', strtotime($pj->project_end))   : 'aktuell';
-            $p_techs = is_string($pj->technologies ?? '') ? array_filter(array_map('trim', explode(',', $pj->technologies ?? ''))) : [];
-          ?>
-            <div class="ex-proj-item">
-              <div class="ex-proj-item__name"><?= $sec->escape($pj->project_name ?? '') ?></div>
-              <div class="ex-proj-item__meta">
-                <?= $sec->escape($pj->project_role ?? '') ?><?= (!empty($pj->project_role) && ($p_start || $p_end)) ? ' · ' : '' ?><?= $p_start ? $p_start . ' – ' . $p_end : '' ?>
-                <?php $projectUrl = cms_experts_public_url((string) ($pj->project_url ?? '')); if ($projectUrl !== ''): ?> · <a href="<?= $sec->escape($projectUrl) ?>" target="_blank" rel="noopener noreferrer" aria-label="Projekt öffnen">Projekt</a><?php endif; ?>
-              </div>
-              <?php if (!empty($pj->project_description)): ?>
-                <div class="ex-proj-item__desc"><?= nl2br($sec->escape($pj->project_description)) ?></div>
-              <?php endif; ?>
-              <?php if ($p_techs): ?>
-                <div class="ex-proj-item__tags">
-                  <?php foreach ($p_techs as $t): ?><span class="ex-proj-item__tag"><?= $sec->escape($t) ?></span><?php endforeach; ?>
-                </div>
-              <?php endif; ?>
-            </div>
-          <?php endforeach; ?>
-        </div>
-      <?php endif; ?>
-
-      <?php if (!empty($education)): ?>
-        <div class="ex-sec">
-          <h2 class="ex-sec__title">Ausbildung</h2>
-          <?php foreach ($education as $edu):
-            $e_from = !empty($edu->start_year) ? (int)$edu->start_year : null;
-            $e_to   = !empty($edu->end_year)   ? (int)$edu->end_year   : null;
-          ?>
-            <div class="ex-edu-item">
-              <div class="ex-edu-item__deg"><?= $sec->escape($edu->degree ?? '') ?><?= !empty($edu->field_of_study) ? ' – ' . $sec->escape($edu->field_of_study) : '' ?></div>
-              <div class="ex-edu-item__inst"><?= $sec->escape($edu->institution ?? '') ?></div>
-              <?php if ($e_from || $e_to): ?><div class="ex-edu-item__meta"><?= $e_from ?? '?' ?> – <?= $e_to ?? 'heute' ?></div><?php endif; ?>
-              <?php if (!empty($edu->description)): ?><div class="ex-edu-desc"><?= $sec->escape($edu->description) ?></div><?php endif; ?>
-            </div>
-          <?php endforeach; ?>
-        </div>
-      <?php endif; ?>
-
-      <?php if (!empty($certifications)): ?>
-        <div class="ex-sec">
-          <h2 class="ex-sec__title">Zertifizierungen</h2>
-          <div class="ex-cert-grid">
-            <?php foreach ($certifications as $cert): ?>
-              <div class="ex-cert-item">
-                <div class="ex-cert-item__name"><?= $sec->escape($cert->cert_name ?? '') ?></div>
-                <?php if (!empty($cert->cert_issuer)): ?><div class="ex-cert-item__issuer"><?= $sec->escape($cert->cert_issuer) ?></div><?php endif; ?>
-                <?php if (!empty($cert->cert_date)): ?>
-                  <div class="ex-cert-item__meta"><?= date('Y', strtotime($cert->cert_date)) ?><?= (!empty($cert->cert_expiry) && $cert->cert_expiry !== '0000-00-00') ? ' – ' . date('Y', strtotime($cert->cert_expiry)) : '' ?></div>
-                <?php endif; ?>
-              </div>
-            <?php endforeach; ?>
-          </div>
-        </div>
-      <?php endif; ?>
-
-      <?php if (!empty($career_stations_data)): ?>
-        <div class="ex-sec">
-          <h2 class="ex-sec__title">Karrierestationen</h2>
-          <?php foreach ($career_stations_data as $cs):
-            $cs_from = !empty($cs['from']) ? $cs['from'] : null;
-            $cs_to   = !empty($cs['to'])   ? $cs['to']   : null;
-          ?>
-            <div class="ex-career-item">
-              <div class="ex-career-item__role"><?= $sec->escape($cs['role'] ?? '') ?></div>
-              <?php if (!empty($cs['company'])): ?><div class="ex-career-item__co"><?= $sec->escape($cs['company']) ?></div><?php endif; ?>
-              <?php if ($cs_from || $cs_to): ?><div class="ex-career-item__meta"><?= htmlspecialchars(trim(($cs_from ?? '').' – '.($cs_to ?? 'heute'))) ?><?= !empty($cs['location']) ? ' · '.htmlspecialchars($cs['location']) : '' ?></div><?php endif; ?>
-              <?php if (!empty($cs['description'])): ?><div class="ex-career-item__desc"><?= $sec->escape($cs['description']) ?></div><?php endif; ?>
-            </div>
-          <?php endforeach; ?>
-        </div>
-      <?php endif; ?>
-
-      <?php $has_refs = !empty($testimonials_data) || !empty($case_studies_data) || !empty($conference_talks); ?>
-      <?php if ($has_refs): ?>
-        <div class="ex-sec">
-          <h2 class="ex-sec__title">Referenzen & Auftritte</h2>
-          <?php if (!empty($testimonials_data)): ?>
-            <h4 class="ex-sub-heading">Testimonials</h4>
-            <?php foreach ($testimonials_data as $t): ?>
-              <div class="ex-testi-item">
-                <div class="ex-testi-item__text">"<?= $sec->escape($t['text'] ?? $t['quote'] ?? '') ?>"</div>
-                <div class="ex-testi-item__by">— <?= $sec->escape(trim(($t['name'] ?? '') . (!empty($t['company']) ? ', '.$t['company'] : ''))) ?></div>
-              </div>
-            <?php endforeach; ?>
-          <?php endif; ?>
-          <?php if (!empty($case_studies_data)): ?>
-            <h4 class="ex-sub-heading">Case Studies</h4>
-            <?php foreach ($case_studies_data as $cs): ?>
-              <div class="ex-proj-item">
-                <div class="ex-proj-item__name"><?= $sec->escape($cs['title'] ?? '') ?></div>
-                <?php if (!empty($cs['description'])): ?><div class="ex-proj-item__desc"><?= $sec->escape($cs['description']) ?></div><?php endif; ?>
-                <?php if (!empty($cs['result'])): ?><div class="ex-cs-result">✅ <?= $sec->escape($cs['result']) ?></div><?php endif; ?>
-              </div>
-            <?php endforeach; ?>
-          <?php endif; ?>
-          <?php if (!empty($conference_talks)): ?>
-            <h4 class="ex-sub-heading">Konferenz-Vorträge</h4>
-            <?php foreach ($conference_talks as $ct): ?>
-              <div class="ex-conf-item">
-                <div class="ex-conf-item__title"><?= $sec->escape($ct['title'] ?? $ct['talk'] ?? '') ?></div>
-                <div class="ex-conf-item__meta">
-                  <?= $sec->escape($ct['event'] ?? '') ?><?= (!empty($ct['event']) && !empty($ct['year'])) ? ' · ' : '' ?><?= $sec->escape($ct['year'] ?? '') ?><?= (!empty($ct['location'])) ? ' · '.htmlspecialchars($ct['location']) : '' ?>
-                </div>
-              </div>
-            <?php endforeach; ?>
-          <?php endif; ?>
-        </div>
-      <?php endif; ?>
-
-      <?php if (!empty($events)):
-        $ev_now    = time();
-        $ev_future = [];
-        $ev_past   = [];
-        foreach ((array)$events as $ev) {
-          if (!is_object($ev)) continue;
-          $ev_ts_cmp = !empty($ev->event_date) ? strtotime($ev->event_date) : 0;
-          if ($ev_ts_cmp >= $ev_now) { $ev_future[] = $ev; } else { $ev_past[] = $ev; }
+        $locale = cms_experts_detail_locale();
+        if (!array_key_exists($locale, $catalogs)) {
+            $catalogs[$locale] = cms_experts_detail_load_catalog($locale);
         }
-        usort($ev_future, fn($a, $b) => strtotime($a->event_date ?? '') <=> strtotime($b->event_date ?? ''));
-        usort($ev_past,   fn($a, $b) => strtotime($b->event_date ?? '') <=> strtotime($a->event_date ?? ''));
-      ?>
-        <div class="ex-sec">
-          <h2 class="ex-sec__title">Events & Auftritte <span class="ex-count-badge"><?= count($events) ?></span></h2>
 
-          <?php if (!empty($ev_future)): ?>
-            <h3 class="ex-ev-subhead">📅 Bevorstehende Events</h3>
-            <div class="ex-ev-grid-v2">
-              <?php foreach ($ev_future as $ev):
-                $ev_title    = $sec->escape($ev->event_title ?? '');
-                $ev_date_raw = $ev->event_date ?? '';
-                $ev_location = $sec->escape($ev->event_location ?? '');
-                $ev_type     = $sec->escape($ev->event_type ?? '');
-                $ev_presence = $ev->presence_type ?? 'presence';
-                $ev_ts       = $ev_date_raw ? strtotime($ev_date_raw) : 0;
-                $ev_date_fmt = $ev_ts ? date('d.m.Y', $ev_ts) : '';
-              ?>
-                <div class="ex-ev-v2 ex-ev-v2--future">
-                  <?php if ($ev_date_fmt): ?><div class="ex-ev-v2__date"><?= $ev_date_fmt ?></div><?php endif; ?>
-                  <div class="ex-ev-v2__title"><?= $ev_title ?: 'Event' ?></div>
-                  <div class="ex-ev-v2__meta">
-                    <?php if ($ev_location): ?><span>📍 <?= $ev_location ?></span><?php endif; ?>
-                    <?php if ($ev_type && $ev_location): ?><span>·</span><?php endif; ?>
-                    <?php if ($ev_type): ?><span><?= $ev_type ?></span><?php endif; ?>
-                  </div>
-                  <?php if ($ev_presence !== 'presence'): ?>
-                    <span class="ex-ev-v2__badge ex-ev-v2__badge--online"><?= $ev_presence === 'online' ? '💻 Online' : '🔀 Hybrid' ?></span>
-                  <?php endif; ?>
-                </div>
-              <?php endforeach; ?>
+        return $catalogs[$locale][$key] ?? null;
+    }
+}
+
+if (!function_exists('cms_experts_detail_load_catalog')) {
+    function cms_experts_detail_load_catalog(string $locale): array
+    {
+        $file = cms_experts_detail_lang_file($locale);
+        if ($file === '') {
+            return [];
+        }
+
+        $catalog = [];
+        $lines = @file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+            if ($trimmed === '' || str_starts_with($trimmed, '#') || $trimmed === 'default:') {
+                continue;
+            }
+
+            if (preg_match('/^\s*["\'](.+?)["\']\s*:\s*["\'](.*)["\']\s*$/', $line, $matches) === 1) {
+                $catalog[$matches[1]] = stripcslashes($matches[2]);
+            }
+        }
+
+        return $catalog;
+    }
+}
+
+if (!function_exists('cms_experts_detail_lang_file')) {
+    function cms_experts_detail_lang_file(string $locale): string
+    {
+        $locale = str_starts_with($locale, 'en') ? 'en' : 'de';
+        $candidates = [];
+
+        if (defined('ABSPATH')) {
+            $candidates[] = rtrim((string) ABSPATH, '/\\') . DIRECTORY_SEPARATOR . 'lang' . DIRECTORY_SEPARATOR . $locale . '.yaml';
+        }
+        if (defined('CMS_PATH')) {
+            $candidates[] = rtrim((string) CMS_PATH, '/\\') . DIRECTORY_SEPARATOR . 'lang' . DIRECTORY_SEPARATOR . $locale . '.yaml';
+        }
+
+        $dir = __DIR__;
+        for ($i = 0; $i < 8; $i++) {
+            $candidates[] = $dir . DIRECTORY_SEPARATOR . 'CMS' . DIRECTORY_SEPARATOR . 'lang' . DIRECTORY_SEPARATOR . $locale . '.yaml';
+            $parent = dirname($dir);
+            if ($parent === $dir) {
+                break;
+            }
+            $dir = $parent;
+        }
+
+        foreach (array_unique($candidates) as $candidate) {
+            if (is_file($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return '';
+    }
+}
+
+if (!function_exists('cms_experts_detail_locale')) {
+    function cms_experts_detail_locale(): string
+    {
+        if (class_exists('CMS\\Services\\TranslationService')) {
+            try {
+                $locale = \CMS\Services\TranslationService::getInstance()->getLocale();
+                return str_starts_with($locale, 'en') ? 'en' : 'de';
+            } catch (\Throwable) {
+                return 'de';
+            }
+        }
+
+        return 'de';
+    }
+}
+
+if (!function_exists('cms_experts_detail_e')) {
+    function cms_experts_detail_e(mixed $value): string
+    {
+        return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('cms_experts_detail_plain')) {
+    function cms_experts_detail_plain(mixed $value): string
+    {
+        $text = html_entity_decode((string) $value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = trim(strip_tags($text));
+        return preg_replace('/[ \t]+/', ' ', $text) ?? $text;
+    }
+}
+
+if (!function_exists('cms_experts_detail_public_url')) {
+    function cms_experts_detail_public_url(mixed $url): string
+    {
+        $url = str_replace('\\', '/', trim((string) $url));
+        if ($url === '' || strlen($url) > 2048 || preg_match('/[\x00-\x1F\x7F]/', $url) === 1) {
+            return '';
+        }
+
+        if (str_starts_with($url, '/') || preg_match('#^(uploads|ASSETS|assets|plugins)/#i', $url) === 1) {
+            $path = ltrim($url, '/');
+            if ($path === '' || str_contains($path, '..')) {
+                return '';
+            }
+
+            $baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
+            return $baseUrl . '/' . $path;
+        }
+
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts) || empty($parts['scheme']) || empty($parts['host']) || !empty($parts['user']) || !empty($parts['pass'])) {
+            return '';
+        }
+
+        $scheme = strtolower((string) $parts['scheme']);
+        if (!in_array($scheme, ['http', 'https'], true)) {
+            return '';
+        }
+
+        $host = strtolower(trim((string) $parts['host'], '[]'));
+        if ($host === '' || $host === 'localhost' || str_ends_with($host, '.localhost') || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
+            return '';
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP) && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return '';
+        }
+
+        return $url;
+    }
+}
+
+if (!function_exists('cms_experts_detail_social_url')) {
+    function cms_experts_detail_social_url(mixed $value, string $network): string
+    {
+        $raw = trim((string) $value);
+        if ($raw === '') {
+            return '';
+        }
+
+        $url = cms_experts_detail_public_url($raw);
+        if ($url !== '') {
+            return $url;
+        }
+
+        $handle = ltrim($raw, '@');
+        if (preg_match('/^[A-Za-z0-9_.-]{1,80}$/', $handle) !== 1) {
+            return '';
+        }
+
+        return match ($network) {
+            'x' => 'https://x.com/' . rawurlencode($handle),
+            'github' => 'https://github.com/' . rawurlencode($handle),
+            'gitlab' => 'https://gitlab.com/' . rawurlencode($handle),
+            default => '',
+        };
+    }
+}
+
+if (!function_exists('cms_experts_detail_value')) {
+    function cms_experts_detail_value(mixed $item, array $keys, mixed $default = ''): mixed
+    {
+        foreach ($keys as $key) {
+            if (is_array($item) && array_key_exists($key, $item)) {
+                return $item[$key];
+            }
+            if (is_object($item) && isset($item->{$key})) {
+                return $item->{$key};
+            }
+        }
+
+        return $default;
+    }
+}
+
+if (!function_exists('cms_experts_detail_list')) {
+    function cms_experts_detail_list(mixed $value): array
+    {
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $value = is_array($decoded) ? $decoded : preg_split('/\s*,\s*/', $value);
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter($value, static function ($item): bool {
+            if (is_array($item) || is_object($item)) {
+                return trim((string) cms_experts_detail_value($item, ['name', 'title', 'skill_name', 'label', 'value'], '')) !== '';
+            }
+
+            return trim((string) $item) !== '';
+        }));
+    }
+}
+
+if (!function_exists('cms_experts_detail_label_list')) {
+    function cms_experts_detail_label_list(mixed $value): array
+    {
+        $labels = [];
+        foreach (cms_experts_detail_list($value) as $item) {
+            $label = is_array($item) || is_object($item)
+                ? (string) cms_experts_detail_value($item, ['name', 'title', 'skill_name', 'label', 'value'], '')
+                : (string) $item;
+            $label = trim($label);
+            if ($label !== '') {
+                $labels[$label] = $label;
+            }
+        }
+
+        return array_values($labels);
+    }
+}
+
+if (!function_exists('cms_experts_detail_initials')) {
+    function cms_experts_detail_initials(string $firstName, string $lastName, string $fallbackName = ''): string
+    {
+        $letters = '';
+        foreach ([$firstName, $lastName] as $part) {
+            $part = trim($part);
+            if ($part !== '') {
+                $letters .= function_exists('mb_substr') ? mb_substr($part, 0, 1, 'UTF-8') : substr($part, 0, 1);
+            }
+        }
+
+        if ($letters === '' && $fallbackName !== '') {
+            $words = array_values(array_filter(preg_split('/\s+/', trim($fallbackName)) ?: []));
+            foreach (array_slice($words, 0, 2) as $word) {
+                $letters .= function_exists('mb_substr') ? mb_substr($word, 0, 1, 'UTF-8') : substr($word, 0, 1);
+            }
+        }
+
+        $letters = function_exists('mb_strtoupper') ? mb_strtoupper($letters, 'UTF-8') : strtoupper($letters);
+        return $letters !== '' ? $letters : 'EX';
+    }
+}
+
+if (!function_exists('cms_experts_detail_slug')) {
+    function cms_experts_detail_slug(object $expert): string
+    {
+        if (class_exists('CMS_Experts_Database')) {
+            return CMS_Experts_Database::generate_slug($expert);
+        }
+
+        $name = trim((string) (($expert->first_name ?? '') . ' ' . ($expert->last_name ?? '')));
+        $slug = strtolower((string) preg_replace('/[^a-z0-9]+/i', '-', strtr($name, ['ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'ß' => 'ss', 'Ä' => 'ae', 'Ö' => 'oe', 'Ü' => 'ue'])));
+        return (trim($slug, '-') ?: 'expert') . '-' . (int) ($expert->id ?? 0);
+    }
+}
+
+if (!function_exists('cms_experts_detail_level_percent')) {
+    function cms_experts_detail_level_percent(mixed $level): int
+    {
+        $raw = strtolower(trim((string) $level));
+        if ($raw === '') {
+            return 65;
+        }
+
+        if (is_numeric($raw)) {
+            $number = (int) $raw;
+            if ($number <= 5) {
+                return [1 => 35, 2 => 50, 3 => 65, 4 => 80, 5 => 95][$number] ?? 65;
+            }
+            return max(35, min(95, $number));
+        }
+
+        return match ($raw) {
+            'expert', 'senior', 'master', 'advanced expert', 'experte', 'expertin' => 95,
+            'advanced', 'fortgeschritten', 'proficient' => 82,
+            'intermediate', 'mittel', 'medium' => 65,
+            'beginner', 'junior', 'basic', 'einsteiger' => 42,
+            default => 72,
+        };
+    }
+}
+
+if (!function_exists('cms_experts_detail_level_class')) {
+    function cms_experts_detail_level_class(int $percent): string
+    {
+        if ($percent >= 90) {
+            return 'ex-detail-skill--level-95';
+        }
+        if ($percent >= 78) {
+            return 'ex-detail-skill--level-82';
+        }
+        if ($percent >= 65) {
+            return 'ex-detail-skill--level-72';
+        }
+        if ($percent >= 50) {
+            return 'ex-detail-skill--level-58';
+        }
+
+        return 'ex-detail-skill--level-42';
+    }
+}
+
+if (!function_exists('cms_experts_detail_level_label')) {
+    function cms_experts_detail_level_label(int $percent): string
+    {
+        if ($percent >= 90) {
+            return cms_experts_detail_t('cms_experts.detail.level.expert');
+        }
+        if ($percent >= 78) {
+            return cms_experts_detail_t('cms_experts.detail.level.advanced');
+        }
+        if ($percent >= 58) {
+            return cms_experts_detail_t('cms_experts.detail.level.intermediate');
+        }
+
+        return cms_experts_detail_t('cms_experts.detail.level.beginner');
+    }
+}
+
+if (!function_exists('cms_experts_detail_year')) {
+    function cms_experts_detail_year(mixed $date): string
+    {
+        $timestamp = strtotime((string) $date);
+        return $timestamp ? date('Y', $timestamp) : '';
+    }
+}
+
+if (!function_exists('cms_experts_detail_date')) {
+    function cms_experts_detail_date(mixed $date): string
+    {
+        $timestamp = strtotime((string) $date);
+        if (!$timestamp) {
+            return '';
+        }
+
+        return date(cms_experts_detail_locale() === 'en' ? 'M j, Y' : 'd.m.Y', $timestamp);
+    }
+}
+
+if (!function_exists('cms_experts_detail_icon')) {
+    function cms_experts_detail_icon(string $icon): string
+    {
+        $stroke = static fn(string $paths): string => '<svg class="ex-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' . $paths . '</svg>';
+        $fill = static fn(string $paths): string => '<svg class="ex-detail-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">' . $paths . '</svg>';
+
+        return match ($icon) {
+            'award' => $stroke('<circle cx="12" cy="9" r="6"/><path d="m9 14-1 8 4-2 4 2-1-8"/>'),
+            'book' => $stroke('<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5z"/>'),
+            'briefcase' => $stroke('<path d="M14 6V4a2 2 0 0 0-2-2h-1a2 2 0 0 0-2 2v2"/><path d="M3 6h18v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
+            'calendar' => $stroke('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/>'),
+            'check' => $stroke('<path d="m9 11 3 3 8-8"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'),
+            'external' => $stroke('<path d="M9 18l6-6-6-6"/>'),
+            'globe' => $stroke('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>'),
+            'info' => $stroke('<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>'),
+            'layers' => $stroke('<path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>'),
+            'list' => $stroke('<path d="M4 6h16M4 12h16M4 18h10"/>'),
+            'mail' => $stroke('<path d="m4 6 8 6 8-6"/><path d="M4 6v12h16V6Z"/>'),
+            'map' => $stroke('<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>'),
+            'message' => $stroke('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
+            'shield' => $stroke('<path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/>'),
+            'star' => $stroke('<path d="m12 2 2.4 6.9H22l-6 4.3 2.3 6.8-6.3-4.3-6.3 4.3L8 13.2 2 8.9h7.6z"/>'),
+            'users' => $stroke('<path d="M16 19v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M9 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M22 19v-2a4 4 0 0 0-3-3.87M16 3.13A4 4 0 0 1 16 11"/>'),
+            'linkedin' => $fill('<path d="M4.98 3.5A2.5 2.5 0 1 1 0 3.5a2.5 2.5 0 0 1 4.98 0ZM0 8h5v16H0V8Zm7.5 0h4.8v2.2h.07c.67-1.2 2.3-2.46 4.73-2.46 5.06 0 6 3.33 6 7.66V24h-5v-7.2c0-1.72-.03-3.93-2.4-3.93-2.4 0-2.77 1.87-2.77 3.8V24h-5V8Z"/>'),
+            'github' => $fill('<path d="M12 1a11 11 0 0 0-3.48 21.44c.55.1.75-.24.75-.53v-1.86c-3.06.67-3.7-1.47-3.7-1.47-.5-1.28-1.23-1.62-1.23-1.62-1-.69.08-.67.08-.67 1.1.08 1.69 1.14 1.69 1.14.98 1.69 2.58 1.2 3.21.92.1-.71.39-1.2.7-1.47-2.44-.28-5-1.22-5-5.44 0-1.2.43-2.18 1.13-2.95-.11-.28-.49-1.4.11-2.92 0 0 .93-.3 3.05 1.13a10.6 10.6 0 0 1 5.56 0c2.12-1.43 3.04-1.13 3.04-1.13.6 1.52.22 2.64.11 2.92.7.77 1.13 1.75 1.13 2.95 0 4.23-2.57 5.16-5.02 5.43.4.34.75 1.01.75 2.04v3.03c0 .29.2.64.76.53A11 11 0 0 0 12 1Z"/>'),
+            'rss' => $fill('<circle cx="5" cy="19" r="2.5"/><path d="M3 9.5a11 11 0 0 1 11 11h3A14 14 0 0 0 3 6.5v3Z"/><path d="M3 4a17 17 0 0 1 17 17h3A20 20 0 0 0 3 1v3Z"/>'),
+            'x', 'xing', 'gitlab', 'stackoverflow', 'youtube' => $stroke('<path d="M7 7h10v10H7z"/><path d="M9 15 15 9M9 9l6 6"/>'),
+            default => $stroke('<circle cx="12" cy="12" r="9"/>'),
+        };
+    }
+}
+
+$ex = is_object($expert) ? $expert : (object) $expert;
+$meta = is_array($meta ?? null) ? $meta : [];
+$baseUrl = defined('SITE_URL') ? rtrim((string) SITE_URL, '/') : '';
+$firstName = trim((string) ($ex->first_name ?? ''));
+$lastName = trim((string) ($ex->last_name ?? ''));
+$fullName = trim($firstName . ' ' . $lastName) ?: cms_experts_detail_t('cms_experts.detail.fallback_expert');
+$firstNameLabel = $firstName !== '' ? $firstName : $fullName;
+$initials = cms_experts_detail_initials($firstName, $lastName, $fullName);
+$photo = cms_experts_detail_public_url($ex->photo_url ?? '');
+$position = trim((string) ($ex->position ?? ''));
+$company = trim((string) ($ex->company ?? ''));
+$companyId = (int) ($meta['company_id'] ?? 0);
+$companyUrl = '';
+if ($companyId > 0 && $company !== '') {
+    $companySlug = strtolower(trim((string) preg_replace('/[^a-z0-9]+/i', '-', strtr($company, ['ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'ß' => 'ss', 'Ä' => 'ae', 'Ö' => 'oe', 'Ü' => 'ue'])), '-'));
+    $companyUrl = $baseUrl . '/company/' . ($companySlug ?: 'company') . '-' . $companyId;
+}
+$locationParts = array_filter([trim((string) ($ex->location_city ?? '')), trim((string) ($ex->location_country ?? ''))]);
+$location = implode(', ', $locationParts);
+$experienceYears = (int) ($ex->experience_years ?? 0);
+$biography = cms_experts_detail_plain($ex->biography ?? '');
+$motto = cms_experts_detail_plain($meta['motto'] ?? '');
+$email = filter_var(trim((string) ($ex->email ?? '')), FILTER_VALIDATE_EMAIL) ?: '';
+
+$availability = trim((string) ($ex->availability ?? 'available'));
+$availabilityClass = in_array($availability, ['available', 'limited', 'booked'], true) ? $availability : 'request';
+$availabilityLabel = cms_experts_detail_t('cms_experts.detail.availability.' . $availabilityClass);
+$remoteLabels = [
+    'yes' => cms_experts_detail_t('cms_experts.detail.remote.yes'),
+    'only' => cms_experts_detail_t('cms_experts.detail.remote.only'),
+    'no' => cms_experts_detail_t('cms_experts.detail.remote.no'),
+    'partial' => cms_experts_detail_t('cms_experts.detail.remote.partial'),
+    'full' => cms_experts_detail_t('cms_experts.detail.remote.full'),
+    'preferred' => cms_experts_detail_t('cms_experts.detail.remote.preferred'),
+];
+$workTypeLabels = [
+    'freelancer' => cms_experts_detail_t('cms_experts.detail.work_type.freelancer'),
+    'employed' => cms_experts_detail_t('cms_experts.detail.work_type.employed'),
+    'agency' => cms_experts_detail_t('cms_experts.detail.work_type.agency'),
+    'contractor' => cms_experts_detail_t('cms_experts.detail.work_type.contractor'),
+];
+
+$specializationNames = [];
+foreach ((array) ($specializations ?? []) as $specialization) {
+    $name = trim((string) cms_experts_detail_value($specialization, ['name'], ''));
+    if ($name !== '') {
+        $specializationNames[$name] = $name;
+    }
+}
+$specializationNames = array_values($specializationNames);
+
+$skillsByType = ['general' => [], 'tech' => [], 'soft' => []];
+foreach ((array) ($skills ?? []) as $skill) {
+    $type = (string) cms_experts_detail_value($skill, ['skill_type'], 'general');
+    if (!array_key_exists($type, $skillsByType)) {
+        $type = 'general';
+    }
+    $name = trim((string) cms_experts_detail_value($skill, ['skill_name', 'name'], ''));
+    if ($name !== '') {
+        $skillsByType[$type][] = [
+            'name' => $name,
+            'level' => cms_experts_detail_value($skill, ['skill_level', 'level'], 'intermediate'),
+        ];
+    }
+}
+
+$programmingLanguages = cms_experts_detail_list($meta['programming_languages'] ?? '');
+$frameworks = cms_experts_detail_list($meta['frameworks'] ?? '');
+$databases = cms_experts_detail_list($meta['databases'] ?? '');
+$cloudPlatforms = cms_experts_detail_list($meta['cloud_platforms'] ?? '');
+$industryExperience = cms_experts_detail_label_list($meta['industry_experience'] ?? '');
+$toolsPreferred = cms_experts_detail_label_list($meta['tools_preferred'] ?? '');
+
+$skillBars = [];
+$addSkillBar = static function (string $name, mixed $level) use (&$skillBars): void {
+    $name = trim($name);
+    if ($name === '' || isset($skillBars[$name])) {
+        return;
+    }
+    $percent = cms_experts_detail_level_percent($level);
+    $skillBars[$name] = [
+        'name' => $name,
+        'percent' => $percent,
+        'class' => cms_experts_detail_level_class($percent),
+        'label' => cms_experts_detail_level_label($percent),
+    ];
+};
+foreach (array_merge($programmingLanguages, $cloudPlatforms, $frameworks, $databases) as $item) {
+    $addSkillBar((string) cms_experts_detail_value($item, ['name', 'title', 'value'], ''), cms_experts_detail_value($item, ['level', 'skill_level'], 'advanced'));
+}
+foreach (array_merge($skillsByType['general'], $skillsByType['tech']) as $skill) {
+    $addSkillBar((string) $skill['name'], $skill['level']);
+}
+$skillBars = array_slice(array_values($skillBars), 0, 5);
+
+$technologyChips = [];
+foreach (array_merge($specializationNames, cms_experts_detail_label_list($programmingLanguages), cms_experts_detail_label_list($frameworks), cms_experts_detail_label_list($databases), cms_experts_detail_label_list($cloudPlatforms), $toolsPreferred) as $chip) {
+    $chip = trim((string) $chip);
+    if ($chip !== '') {
+        $technologyChips[$chip] = $chip;
+    }
+}
+$technologyChips = array_slice(array_values($technologyChips), 0, 16);
+
+$social = [
+    'website' => cms_experts_detail_public_url($meta['social_website'] ?? ''),
+    'linkedin' => cms_experts_detail_public_url($meta['social_linkedin'] ?? ''),
+    'xing' => cms_experts_detail_public_url($meta['social_xing'] ?? ''),
+    'github' => cms_experts_detail_social_url($meta['social_github'] ?? '', 'github'),
+    'gitlab' => cms_experts_detail_social_url($meta['social_gitlab'] ?? '', 'gitlab'),
+    'stackoverflow' => cms_experts_detail_public_url($meta['social_stackoverflow'] ?? ''),
+    'x' => cms_experts_detail_social_url($meta['social_twitter'] ?? '', 'x'),
+    'youtube' => cms_experts_detail_public_url($meta['social_youtube'] ?? ''),
+    'rss' => cms_experts_detail_public_url($meta['social_blog_rss'] ?? ''),
+];
+$socialLinks = [];
+foreach ([
+    ['key' => 'website', 'label' => cms_experts_detail_t('cms_experts.detail.social.website', ['{name}' => $fullName]), 'icon' => 'globe', 'class' => 'ex-detail-social__link--website'],
+    ['key' => 'linkedin', 'label' => 'LinkedIn', 'icon' => 'linkedin', 'class' => ''],
+    ['key' => 'github', 'label' => 'GitHub', 'icon' => 'github', 'class' => ''],
+    ['key' => 'xing', 'label' => 'XING', 'icon' => 'xing', 'class' => ''],
+    ['key' => 'gitlab', 'label' => 'GitLab', 'icon' => 'gitlab', 'class' => ''],
+    ['key' => 'stackoverflow', 'label' => 'Stack Overflow', 'icon' => 'stackoverflow', 'class' => ''],
+    ['key' => 'x', 'label' => 'X', 'icon' => 'x', 'class' => ''],
+    ['key' => 'youtube', 'label' => 'YouTube', 'icon' => 'youtube', 'class' => ''],
+    ['key' => 'rss', 'label' => cms_experts_detail_t('cms_experts.detail.social.rss', ['{name}' => $fullName]), 'icon' => 'rss', 'class' => ''],
+] as $socialConfig) {
+    $url = $social[$socialConfig['key']] ?? '';
+    if ($url !== '') {
+        $socialLinks[] = $socialConfig + ['url' => $url];
+    }
+}
+
+$partnerStatus = trim((string) ($meta['partner_status'] ?? ''));
+$heroBadges = [];
+if (!empty($meta['is_mvp'])) {
+    $heroBadges[] = cms_experts_detail_t('cms_experts.detail.badge.mvp');
+}
+if (!empty($meta['is_certified'])) {
+    $heroBadges[] = cms_experts_detail_t('cms_experts.detail.badge.certified');
+}
+if (!empty($meta['is_premium'])) {
+    $heroBadges[] = cms_experts_detail_t('cms_experts.detail.badge.premium');
+}
+if ($partnerStatus !== '') {
+    $partnerKey = in_array($partnerStatus, ['partner', 'top_partner', 'sponsor'], true) ? $partnerStatus : 'partner';
+    $heroBadges[] = cms_experts_detail_t('cms_experts.detail.badge.' . $partnerKey);
+}
+$customAward = trim((string) ($meta['custom_award'] ?? ''));
+if ($customAward !== '') {
+    $heroBadges[] = $customAward;
+}
+$heroBadges = array_slice(array_values(array_unique($heroBadges)), 0, 2);
+
+$certifications = array_values((array) ($certifications ?? []));
+$projects = array_values((array) ($projects ?? []));
+$education = array_values((array) ($education ?? []));
+$events = array_values((array) ($events ?? []));
+$caseStudies = cms_experts_detail_list($meta['case_studies'] ?? '');
+$conferenceTalks = cms_experts_detail_list($meta['conference_talks'] ?? '');
+$testimonials = cms_experts_detail_list($meta['testimonials'] ?? '');
+$careerStations = cms_experts_detail_list($meta['career_stations'] ?? '');
+
+$serviceCards = [];
+foreach ([
+    ['flag' => 'services_consulting', 'title' => 'cms_experts.detail.service.consulting', 'text' => 'cms_experts.detail.service_text.consulting', 'icon' => 'message'],
+    ['flag' => 'services_implementation', 'title' => 'cms_experts.detail.service.implementation', 'text' => 'cms_experts.detail.service_text.implementation', 'icon' => 'external'],
+    ['flag' => 'services_training', 'title' => 'cms_experts.detail.service.training', 'text' => 'cms_experts.detail.service_text.training', 'icon' => 'users'],
+    ['flag' => 'services_support', 'title' => 'cms_experts.detail.service.support', 'text' => 'cms_experts.detail.service_text.support', 'icon' => 'briefcase'],
+    ['flag' => 'services_audit', 'title' => 'cms_experts.detail.service.audit', 'text' => 'cms_experts.detail.service_text.audit', 'icon' => 'shield'],
+    ['flag' => 'emergency_support', 'title' => 'cms_experts.detail.service.emergency', 'text' => 'cms_experts.detail.service_text.emergency', 'icon' => 'calendar'],
+    ['flag' => 'workshop_offerings', 'title' => 'cms_experts.detail.service.workshops', 'text' => 'cms_experts.detail.service_text.workshops', 'icon' => 'layers'],
+] as $serviceConfig) {
+    if (!empty($meta[$serviceConfig['flag']])) {
+        $serviceCards[] = $serviceConfig;
+    }
+}
+
+$workItems = [];
+foreach ($projects as $project) {
+    $title = trim((string) cms_experts_detail_value($project, ['project_name'], ''));
+    if ($title === '') {
+        continue;
+    }
+    $start = cms_experts_detail_date(cms_experts_detail_value($project, ['project_start'], ''));
+    $end = cms_experts_detail_date(cms_experts_detail_value($project, ['project_end'], ''));
+    $workItems[] = [
+        'category' => cms_experts_detail_t('cms_experts.detail.item.project'),
+        'title' => $title,
+        'meta' => trim((string) cms_experts_detail_value($project, ['project_role'], '') . (($start || $end) ? ' · ' . trim($start . ' – ' . ($end ?: cms_experts_detail_t('cms_experts.detail.date_today'))) : '')),
+        'url' => cms_experts_detail_public_url(cms_experts_detail_value($project, ['project_url'], '')),
+    ];
+}
+foreach ($caseStudies as $caseStudy) {
+    $title = trim((string) cms_experts_detail_value($caseStudy, ['title', 'name'], ''));
+    if ($title === '') {
+        continue;
+    }
+    $workItems[] = [
+        'category' => cms_experts_detail_t('cms_experts.detail.item.case_study'),
+        'title' => $title,
+        'meta' => trim((string) cms_experts_detail_value($caseStudy, ['result', 'description'], '')),
+        'url' => cms_experts_detail_public_url(cms_experts_detail_value($caseStudy, ['link', 'url'], '')),
+    ];
+}
+foreach ($conferenceTalks as $talk) {
+    $title = trim((string) cms_experts_detail_value($talk, ['title', 'talk'], ''));
+    if ($title === '') {
+        continue;
+    }
+    $eventName = trim((string) cms_experts_detail_value($talk, ['event'], ''));
+    $year = trim((string) cms_experts_detail_value($talk, ['year'], ''));
+    $workItems[] = [
+        'category' => cms_experts_detail_t('cms_experts.detail.item.talk'),
+        'title' => $title,
+        'meta' => trim($eventName . ($eventName !== '' && $year !== '' ? ' · ' : '') . $year),
+        'url' => cms_experts_detail_public_url(cms_experts_detail_value($talk, ['video_link', 'video_url', 'link', 'url'], '')),
+    ];
+}
+foreach (array_slice($events, 0, 3) as $event) {
+    $title = trim((string) cms_experts_detail_value($event, ['event_title', 'title'], ''));
+    if ($title === '') {
+        continue;
+    }
+    $workItems[] = [
+        'category' => cms_experts_detail_t('cms_experts.detail.item.event'),
+        'title' => $title,
+        'meta' => trim(cms_experts_detail_date(cms_experts_detail_value($event, ['event_date'], '')) . ' · ' . (string) cms_experts_detail_value($event, ['event_location'], '')),
+        'url' => '',
+    ];
+}
+$workItems = array_slice($workItems, 0, 6);
+
+$detailRows = array_filter([
+    cms_experts_detail_t('cms_experts.detail.label.role') => $position,
+    cms_experts_detail_t('cms_experts.detail.label.company') => $company,
+    cms_experts_detail_t('cms_experts.detail.label.location') => $location,
+    cms_experts_detail_t('cms_experts.detail.label.experience') => $experienceYears > 0 ? cms_experts_detail_t('cms_experts.detail.years', ['{count}' => (string) $experienceYears]) : '',
+    cms_experts_detail_t('cms_experts.detail.label.languages') => trim((string) ($meta['languages'] ?? '')),
+    cms_experts_detail_t('cms_experts.detail.label.availability') => $availabilityLabel,
+    cms_experts_detail_t('cms_experts.detail.label.remote') => $remoteLabels[(string) ($meta['remote_work'] ?? '')] ?? '',
+    cms_experts_detail_t('cms_experts.detail.label.work_type') => $workTypeLabels[(string) ($meta['work_type'] ?? '')] ?? '',
+    cms_experts_detail_t('cms_experts.detail.label.travel') => trim((string) ($meta['travel_willingness'] ?? '')),
+    cms_experts_detail_t('cms_experts.detail.label.certifications') => count($certifications) > 0 ? (string) count($certifications) : '',
+], static fn($value): bool => trim((string) $value) !== '');
+
+$contactUrl = $email !== ''
+    ? 'mailto:' . $email . '?subject=' . rawurlencode(cms_experts_detail_t('cms_experts.detail.mail_subject', ['{name}' => $fullName]))
+    : $baseUrl . '/contact?expert=' . (int) ($ex->id ?? 0);
+$relatedExperts = array_slice((array) ($related_experts ?? []), 0, 3);
+$expertUrlBase = $baseUrl . '/experts/';
+?>
+<main class="phinit-plugin cms-expert-detail ex-detail">
+    <nav class="ex-detail-breadcrumb" aria-label="<?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.aria.breadcrumb')) ?>">
+        <a href="<?= cms_experts_detail_e($baseUrl . '/') ?>"><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.breadcrumb.home')) ?></a>
+        <span class="ex-detail-breadcrumb__sep" aria-hidden="true">›</span>
+        <a href="<?= cms_experts_detail_e($expertUrlBase) ?>"><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.breadcrumb.experts')) ?></a>
+        <span class="ex-detail-breadcrumb__sep" aria-hidden="true">›</span>
+        <span aria-current="page"><?= cms_experts_detail_e($fullName) ?></span>
+    </nav>
+
+    <section class="ex-detail-hero" aria-labelledby="expert-detail-title">
+        <span class="ex-detail-status ex-detail-status--<?= cms_experts_detail_e($availabilityClass) ?>"><span class="ex-detail-status__dot" aria-hidden="true"></span><?= cms_experts_detail_e($availabilityLabel) ?></span>
+        <div class="ex-detail-hero__body">
+            <div class="ex-detail-avatar<?= $photo === '' ? ' ex-detail-avatar--initials' : '' ?>">
+                <?php if ($photo !== ''): ?>
+                    <img src="<?= cms_experts_detail_e($photo) ?>" alt="<?= cms_experts_detail_e($fullName) ?>" width="116" height="116" loading="eager" decoding="async">
+                <?php else: ?>
+                    <span aria-hidden="true"><?= cms_experts_detail_e($initials) ?></span>
+                <?php endif; ?>
             </div>
-          <?php endif; ?>
 
-          <?php if (!empty($ev_past)): ?>
-            <h3 class="ex-ev-subhead<?= !empty($ev_future) ? ' ex-ev-subhead--gap' : '' ?>">🗓️ Vergangene Events</h3>
-            <div class="ex-ev-grid-v2">
-              <?php foreach ($ev_past as $ev):
-                $ev_title    = $sec->escape($ev->event_title ?? '');
-                $ev_date_raw = $ev->event_date ?? '';
-                $ev_location = $sec->escape($ev->event_location ?? '');
-                $ev_type     = $sec->escape($ev->event_type ?? '');
-                $ev_presence = $ev->presence_type ?? 'presence';
-                $ev_ts       = $ev_date_raw ? strtotime($ev_date_raw) : 0;
-                $ev_date_fmt = $ev_ts ? date('d.m.Y', $ev_ts) : '';
-              ?>
-                <div class="ex-ev-v2 ex-ev-v2--past">
-                  <?php if ($ev_date_fmt): ?><div class="ex-ev-v2__date"><?= $ev_date_fmt ?></div><?php endif; ?>
-                  <div class="ex-ev-v2__title"><?= $ev_title ?: 'Event' ?></div>
-                  <div class="ex-ev-v2__meta">
-                    <?php if ($ev_location): ?><span>📍 <?= $ev_location ?></span><?php endif; ?>
-                    <?php if ($ev_type && $ev_location): ?><span>·</span><?php endif; ?>
-                    <?php if ($ev_type): ?><span><?= $ev_type ?></span><?php endif; ?>
-                  </div>
-                  <?php if ($ev_presence !== 'presence'): ?>
-                    <span class="ex-ev-v2__badge ex-ev-v2__badge--online"><?= $ev_presence === 'online' ? '💻 Online' : '🔀 Hybrid' ?></span>
-                  <?php endif; ?>
+            <div class="ex-detail-hero__content">
+                <div class="ex-detail-hero__name-row">
+                    <h1 id="expert-detail-title"><?= cms_experts_detail_e($fullName) ?></h1>
+                    <?php foreach ($heroBadges as $badge): ?>
+                        <span class="ex-detail-pill"><?= cms_experts_detail_icon('star') ?><?= cms_experts_detail_e($badge) ?></span>
+                    <?php endforeach; ?>
                 </div>
-              <?php endforeach; ?>
+
+                <?php if ($position !== '' || $company !== '' || !empty($specializationNames)): ?>
+                    <p class="ex-detail-hero__role">
+                        <?php if ($position !== ''): ?><strong><?= cms_experts_detail_e($position) ?></strong><?php endif; ?>
+                        <?php if ($position !== '' && ($company !== '' || !empty($specializationNames))): ?><span aria-hidden="true"> · </span><?php endif; ?>
+                        <?php if ($company !== ''): ?><span><?= cms_experts_detail_e($company) ?></span><?php elseif (!empty($specializationNames)): ?><span><?= cms_experts_detail_e($specializationNames[0]) ?></span><?php endif; ?>
+                    </p>
+                <?php endif; ?>
+
+                <?php if (!empty($socialLinks)): ?>
+                    <div class="ex-detail-social ex-detail-social--hero" aria-label="<?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.aria.social_links')) ?>">
+                        <?php foreach ($socialLinks as $socialLink): ?>
+                            <a class="ex-detail-social__link <?= cms_experts_detail_e($socialLink['class']) ?>" href="<?= cms_experts_detail_e($socialLink['url']) ?>" target="_blank" rel="noopener noreferrer" aria-label="<?= cms_experts_detail_e($socialLink['label']) ?>"><?= cms_experts_detail_icon($socialLink['icon']) ?></a>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (!empty($specializationNames) || !empty($technologyChips)): ?>
+                    <div class="ex-detail-hero__tags" aria-label="<?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.aria.hero_tags')) ?>">
+                        <?php foreach (array_slice(array_unique(array_merge($specializationNames, $technologyChips)), 0, 6) as $tag): ?>
+                            <span class="ex-detail-tag-light"><?= cms_experts_detail_e($tag) ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </div>
-          <?php endif; ?>
-
         </div>
-      <?php endif; ?>
+    </section>
 
-    </main>
+    <div class="ex-detail-grid">
+        <div class="ex-detail-main">
+            <?php if ($biography !== '' || $motto !== ''): ?>
+                <section class="ex-detail-card" aria-labelledby="expert-profile-heading">
+                    <div class="ex-detail-card__pad">
+                        <h2 class="ex-detail-card__title" id="expert-profile-heading"><?= cms_experts_detail_icon('info') ?><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.heading_profile')) ?></h2>
+                        <?php if ($motto !== ''): ?><p class="ex-detail-lead ex-detail-lead--motto"><?= cms_experts_detail_e($motto) ?></p><?php endif; ?>
+                        <?php if ($biography !== ''): ?><div class="ex-detail-prose"><?= nl2br(cms_experts_detail_e($biography)) ?></div><?php endif; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
 
-    <aside class="ex-aside">
+            <?php if (!empty($skillBars) || !empty($technologyChips) || !empty($industryExperience) || !empty($skillsByType['soft'])): ?>
+                <section class="ex-detail-card" aria-labelledby="expert-expertise-heading">
+                    <div class="ex-detail-card__pad">
+                        <h2 class="ex-detail-card__title" id="expert-expertise-heading"><?= cms_experts_detail_icon('layers') ?><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.heading_expertise')) ?></h2>
+                        <?php if (!empty($skillBars)): ?>
+                            <p class="ex-detail-sub-label"><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.subheading_core_skills')) ?></p>
+                            <div class="ex-detail-skills">
+                                <?php foreach ($skillBars as $skillBar): ?>
+                                    <div class="ex-detail-skill <?= cms_experts_detail_e($skillBar['class']) ?>">
+                                        <div class="ex-detail-skill__top"><strong><?= cms_experts_detail_e($skillBar['name']) ?></strong><span><?= cms_experts_detail_e($skillBar['label']) ?></span></div>
+                                        <div class="ex-detail-skill__bar" aria-hidden="true"><span></span></div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
 
-      <?php
-      $ex_details = [];
-      if ($company):
-          if ($company_url):
-              $co_val = '<a href="'.$sec->escape($company_url).'">'.$sec->escape($company).'</a>';
-          elseif (!empty($social['website'])):
-              $co_val = '<a href="'.$sec->escape($social['website']).'" target="_blank" rel="noopener noreferrer">'.$sec->escape($company).'</a>';
-          else:
-              $co_val = $sec->escape($company);
-          endif;
-          $ex_details[] = ['Unternehmen', $co_val];
-      endif;
-      if (!empty($expert->location_city) || !empty($expert->location_country)):
-          $loc = trim(($expert->location_city ?? '') . (!empty($expert->location_city) && !empty($expert->location_country) ? ', ' : '') . ($expert->location_country ?? ''));
-          if ($loc) $ex_details[] = ['Standort', $sec->escape($loc)];
-      endif;
-      if (!empty($expert->experience_years)): $ex_details[] = ['Erfahrung', (int)$expert->experience_years.' Jahre']; endif;
-      if ($languages): $ex_details[] = ['Sprachen', $sec->escape($languages)]; endif;
+                        <?php if (!empty($technologyChips)): ?>
+                            <p class="ex-detail-sub-label"><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.subheading_technologies')) ?></p>
+                            <div class="ex-detail-chips">
+                                <?php foreach ($technologyChips as $chip): ?><span class="ex-detail-chip ex-detail-chip--plain"><?= cms_experts_detail_e($chip) ?></span><?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
 
-      if ($ex_details): ?>
-        <div class="ex-sc">
-          <h3 class="ex-sc__title">Details</h3>
-          <div class="ex-info-rows">
-            <?php foreach ($ex_details as [$lbl,$val]): ?>
-              <div class="ex-info-row">
-                <span class="ex-info-row__lbl"><?= $lbl ?></span>
-                <span class="ex-info-row__val"><?= $val ?></span>
-              </div>
-            <?php endforeach; ?>
-          </div>
+                        <?php if (!empty($industryExperience)): ?>
+                            <p class="ex-detail-sub-label"><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.subheading_industries')) ?></p>
+                            <div class="ex-detail-chips">
+                                <?php foreach ($industryExperience as $industry): ?><span class="ex-detail-chip"><span class="ex-detail-chip__dot" aria-hidden="true"></span><?= cms_experts_detail_e($industry) ?></span><?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($skillsByType['soft'])): ?>
+                            <p class="ex-detail-sub-label"><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.subheading_soft_skills')) ?></p>
+                            <div class="ex-detail-chips">
+                                <?php foreach (array_slice($skillsByType['soft'], 0, 10) as $skill): ?><span class="ex-detail-chip ex-detail-chip--plain"><?= cms_experts_detail_e($skill['name']) ?></span><?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <?php if (!empty($certifications)): ?>
+                <section class="ex-detail-card" aria-labelledby="expert-certifications-heading">
+                    <div class="ex-detail-card__pad">
+                        <h2 class="ex-detail-card__title" id="expert-certifications-heading"><?= cms_experts_detail_icon('award') ?><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.heading_certifications')) ?><span class="ex-detail-card__badge"><?= (int) count($certifications) ?></span></h2>
+                        <div class="ex-detail-cert-list">
+                            <?php foreach ($certifications as $certification): ?>
+                                <?php
+                                $certName = trim((string) cms_experts_detail_value($certification, ['cert_name'], ''));
+                                $certIssuer = trim((string) cms_experts_detail_value($certification, ['cert_issuer'], ''));
+                                $certYear = cms_experts_detail_year(cms_experts_detail_value($certification, ['cert_date'], ''));
+                                $certUrl = cms_experts_detail_public_url(cms_experts_detail_value($certification, ['cert_url'], ''));
+                                ?>
+                                <?php if ($certName !== ''): ?>
+                                    <article class="ex-detail-cert">
+                                        <span class="ex-detail-cert__icon"><?= cms_experts_detail_icon('check') ?></span>
+                                        <div class="ex-detail-cert__body">
+                                            <?php if ($certUrl !== ''): ?><a class="ex-detail-cert__name" href="<?= cms_experts_detail_e($certUrl) ?>" target="_blank" rel="noopener noreferrer"><?= cms_experts_detail_e($certName) ?></a><?php else: ?><h3 class="ex-detail-cert__name"><?= cms_experts_detail_e($certName) ?></h3><?php endif; ?>
+                                            <?php if ($certIssuer !== ''): ?><p><?= cms_experts_detail_e($certIssuer) ?></p><?php endif; ?>
+                                        </div>
+                                        <?php if ($certYear !== ''): ?><span class="ex-detail-cert__year"><?= cms_experts_detail_e($certYear) ?></span><?php endif; ?>
+                                    </article>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <?php if (!empty($serviceCards)): ?>
+                <section class="ex-detail-card" aria-labelledby="expert-services-heading">
+                    <div class="ex-detail-card__pad">
+                        <h2 class="ex-detail-card__title" id="expert-services-heading"><?= cms_experts_detail_icon('briefcase') ?><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.heading_services')) ?></h2>
+                        <div class="ex-detail-services">
+                            <?php foreach ($serviceCards as $serviceCard): ?>
+                                <article class="ex-detail-service">
+                                    <span class="ex-detail-service__icon"><?= cms_experts_detail_icon($serviceCard['icon']) ?></span>
+                                    <h3><?= cms_experts_detail_e(cms_experts_detail_t($serviceCard['title'])) ?></h3>
+                                    <p><?= cms_experts_detail_e(cms_experts_detail_t($serviceCard['text'])) ?></p>
+                                </article>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </section>
+            <?php endif; ?>
+
+            <?php if (!empty($workItems)): ?>
+                <section class="ex-detail-card" aria-labelledby="expert-work-heading">
+                    <div class="ex-detail-card__pad">
+                        <h2 class="ex-detail-card__title" id="expert-work-heading"><?= cms_experts_detail_icon('book') ?><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.heading_work_samples')) ?><span class="ex-detail-card__badge"><?= (int) count($workItems) ?></span></h2>
+                        <div class="ex-detail-articles">
+                            <?php foreach ($workItems as $workItem): ?>
+                                <?php $tag = $workItem['url'] !== '' ? 'a' : 'article'; ?>
+                                <<?= $tag ?> class="ex-detail-article"<?= $workItem['url'] !== '' ? ' href="' . cms_experts_detail_e($workItem['url']) . '" target="_blank" rel="noopener noreferrer"' : '' ?>>
+                                    <span class="ex-detail-article__body"><span class="ex-detail-article__cat"><?= cms_experts_detail_e($workItem['category']) ?></span><strong><?= cms_experts_detail_e($workItem['title']) ?></strong><?php if ($workItem['meta'] !== ''): ?><small><?= cms_experts_detail_e($workItem['meta']) ?></small><?php endif; ?></span>
+                                    <?php if ($workItem['url'] !== ''): ?><span class="ex-detail-article__go"><?= cms_experts_detail_icon('external') ?></span><?php endif; ?>
+                                </<?= $tag ?>>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </section>
+            <?php endif; ?>
         </div>
-      <?php endif; ?>
 
-      <?php
-      $ex_facts = [];
-      $rm_map = ['yes'=>'Ja','only'=>'Nur Remote','no'=>'Nein','partial'=>'Hybrid','full'=>'Vollständig','preferred'=>'Bevorzugt'];
-      $wt_map2 = ['freelancer'=>'Freelancer','employed'=>'Angestellt','agency'=>'Agentur','contractor'=>'Contractor'];
-      if ($avail):        $ex_facts[] = ['Status',        $sec->escape($avail_info['label'])]; endif;
-      if ($next_avail_date): $ex_facts[] = ['Verfügbar ab', date('d.m.Y', strtotime($next_avail_date))]; endif;
-      if ($work_type):    $ex_facts[] = ['Work-Typ',      $sec->escape($wt_map2[$work_type] ?? ucfirst($work_type))]; endif;
-      if ($remote_work):  $ex_facts[] = ['Remote',        $sec->escape($rm_map[$remote_work] ?? ucfirst($remote_work))]; endif;
-      if ($travel_willingness): $ex_facts[] = ['Reise',  $sec->escape($travel_willingness)]; endif;
-      if ($timezone):     $ex_facts[] = ['Zeitzone',      $sec->escape($timezone)]; endif;
-      if ($ex_facts): ?>
-        <div class="ex-sc">
-          <h3 class="ex-sc__title">Verfügbarkeit & Arbeitsweise</h3>
-          <div class="ex-info-rows">
-            <?php foreach ($ex_facts as [$lbl,$val]): ?>
-              <div class="ex-info-row">
-                <span class="ex-info-row__lbl"><?= $lbl ?></span>
-                <span class="ex-info-row__val"><?= $val ?></span>
-              </div>
-            <?php endforeach; ?>
-          </div>
-        </div>
-      <?php endif; ?>
+        <aside class="ex-detail-sidebar" aria-label="<?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.aria.sidebar')) ?>">
+            <section class="ex-detail-card ex-detail-card--cta" aria-labelledby="expert-contact-heading">
+                <div class="ex-detail-card__pad">
+                    <h2 class="ex-detail-card__title" id="expert-contact-heading"><?= cms_experts_detail_icon('mail') ?><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.heading_request')) ?></h2>
+                    <h3><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.request_title', ['{name}' => $fullName])) ?></h3>
+                    <p><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.request_text')) ?></p>
+                    <a class="ex-detail-btn ex-detail-btn--primary ex-detail-btn--block" href="<?= cms_experts_detail_e($contactUrl) ?>"><?= cms_experts_detail_icon('mail') ?><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.button_contact')) ?></a>
+                </div>
+            </section>
 
-      <?php if ($hourly_rate || $daily_rate): ?>
-        <div class="ex-sc">
-          <h3 class="ex-sc__title">Honorar</h3>
-          <div class="ex-info-rows">
-            <?php if ($hourly_rate): ?><div class="ex-info-row"><span class="ex-info-row__lbl">Stundensatz</span><span class="ex-info-row__val"><?= number_format($hourly_rate, 0, ',', '.') ?> €</span></div><?php endif; ?>
-            <?php if ($daily_rate):  ?><div class="ex-info-row"><span class="ex-info-row__lbl">Tagessatz</span><span class="ex-info-row__val"><?= number_format($daily_rate, 0, ',', '.') ?> €</span></div><?php endif; ?>
-            <?php if ($weekly_hours): ?><div class="ex-info-row"><span class="ex-info-row__lbl">Std/Woche</span><span class="ex-info-row__val"><?= (int)$weekly_hours ?> h</span></div><?php endif; ?>
-            <?php if ($min_proj_dur): ?><div class="ex-info-row"><span class="ex-info-row__lbl">Min. Dauer</span><span class="ex-info-row__val"><?= $sec->escape($min_proj_dur) ?></span></div><?php endif; ?>
-            <?php if ($payment_terms): ?><div class="ex-info-row"><span class="ex-info-row__lbl">Zahlung</span><span class="ex-info-row__val"><?= $sec->escape($payment_terms) ?></span></div><?php endif; ?>
-          </div>
-        </div>
-      <?php endif; ?>
+            <?php if (!empty($socialLinks)): ?>
+                <section class="ex-detail-card" aria-labelledby="expert-social-heading">
+                    <div class="ex-detail-card__pad">
+                        <h2 class="ex-detail-card__title" id="expert-social-heading"><?= cms_experts_detail_icon('globe') ?><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.heading_social')) ?></h2>
+                        <div class="ex-detail-social" aria-label="<?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.aria.social_links')) ?>">
+                            <?php foreach ($socialLinks as $socialLink): ?>
+                                <a class="ex-detail-social__link <?= cms_experts_detail_e($socialLink['class']) ?>" href="<?= cms_experts_detail_e($socialLink['url']) ?>" target="_blank" rel="noopener noreferrer" aria-label="<?= cms_experts_detail_e($socialLink['label']) ?>"><?= cms_experts_detail_icon($socialLink['icon']) ?></a>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </section>
+            <?php endif; ?>
 
-      <?php $has_svc = $svc_consulting||$svc_impl||$svc_training||$svc_support||$svc_audit; ?>
-      <?php if ($has_svc || $emergency_support || $workshop_offerings): ?>
-        <div class="ex-sc">
-          <h3 class="ex-sc__title">Services</h3>
+            <?php if (!empty($detailRows)): ?>
+                <section class="ex-detail-card" aria-labelledby="expert-details-heading">
+                    <div class="ex-detail-card__pad">
+                        <h2 class="ex-detail-card__title" id="expert-details-heading"><?= cms_experts_detail_icon('list') ?><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.heading_details')) ?></h2>
+                        <dl class="ex-detail-dl">
+                            <?php foreach ($detailRows as $label => $value): ?>
+                                <div class="ex-detail-dl__row"><dt><?= cms_experts_detail_e($label) ?></dt><dd><?php if ($label === cms_experts_detail_t('cms_experts.detail.label.company') && $companyUrl !== ''): ?><a href="<?= cms_experts_detail_e($companyUrl) ?>"><?= cms_experts_detail_e($value) ?></a><?php else: ?><?= cms_experts_detail_e($value) ?><?php endif; ?></dd></div>
+                            <?php endforeach; ?>
+                        </dl>
+                    </div>
+                </section>
+            <?php endif; ?>
 
-          <div class="ex-svc-check">
-            <?php if ($svc_consulting): ?><div class="ex-svc-row">Beratung</div><?php endif; ?>
-            <?php if ($svc_impl):       ?><div class="ex-svc-row">Implementierung</div><?php endif; ?>
-            <?php if ($svc_training):   ?><div class="ex-svc-row">Training</div><?php endif; ?>
-            <?php if ($svc_support):    ?><div class="ex-svc-row">Support</div><?php endif; ?>
-            <?php if ($svc_audit):      ?><div class="ex-svc-row">Audit</div><?php endif; ?>
-            <?php if ($emergency_support): ?><div class="ex-svc-row">24/7 Notfall-Support</div><?php endif; ?>
-            <?php if ($workshop_offerings): ?><div class="ex-svc-row">Workshops</div><?php endif; ?>
-            <?php if ($subcontractors): ?><div class="ex-svc-row">Subunternehmer möglich</div><?php endif; ?>
-            <?php if ($fixed_price):    ?><div class="ex-svc-row">Festpreisprojekte</div><?php endif; ?>
-          </div>
-        </div>
-      <?php endif; ?>
-
-      <?php if ($partner_networks || $team_expansion || $max_team_size || $team_size_led): ?>
-        <div class="ex-sc">
-          <h3 class="ex-sc__title">Netzwerk & Team</h3>
-          <div class="ex-info-rows">
-            <?php if ($team_expansion): ?><div class="ex-info-row"><span class="ex-info-row__lbl">Team-Ausbau</span><span class="ex-info-row__val">Möglich</span></div><?php endif; ?>
-            <?php if ($max_team_size):  ?><div class="ex-info-row"><span class="ex-info-row__lbl">Max. Team</span><span class="ex-info-row__val"><?= (int)$max_team_size ?> Pers.</span></div><?php endif; ?>
-            <?php if ($team_size_led):  ?><div class="ex-info-row"><span class="ex-info-row__lbl">Geführt</span><span class="ex-info-row__val"><?= (int)$team_size_led ?> Pers.</span></div><?php endif; ?>
-            <?php if ($partner_networks): ?><div class="ex-info-row"><span class="ex-info-row__lbl">Netzwerk</span><span class="ex-info-row__val"><?= $sec->escape($partner_networks) ?></span></div><?php endif; ?>
-          </div>
-        </div>
-      <?php endif; ?>
-
-    </aside>
-  </div>
-
-  <?php if (!(int)($expert->user_id ?? 0)): ?>
-  <div class="ex-claim-banner">
-    <div class="ex-claim-banner__text">
-      <strong>Dieses Profil wurde von der Redaktion angelegt.</strong>
-      Gehört es Ihnen? Registrieren Sie sich kostenlos und übernehmen Sie die Verwaltung Ihres Profils.
+            <?php if (!empty($relatedExperts)): ?>
+                <section class="ex-detail-card" aria-labelledby="expert-related-heading">
+                    <div class="ex-detail-card__pad">
+                        <h2 class="ex-detail-card__title" id="expert-related-heading"><?= cms_experts_detail_icon('users') ?><?= cms_experts_detail_e(cms_experts_detail_t('cms_experts.detail.heading_related')) ?></h2>
+                        <div class="ex-detail-related">
+                            <?php foreach ($relatedExperts as $relatedExpert): ?>
+                                <?php
+                                $relatedName = trim((string) (($relatedExpert->first_name ?? '') . ' ' . ($relatedExpert->last_name ?? ''))) ?: cms_experts_detail_t('cms_experts.detail.fallback_expert');
+                                $relatedUrl = $expertUrlBase . cms_experts_detail_slug($relatedExpert);
+                                $relatedInitials = cms_experts_detail_initials((string) ($relatedExpert->first_name ?? ''), (string) ($relatedExpert->last_name ?? ''), $relatedName);
+                                $relatedRole = trim((string) ($relatedExpert->position ?? ''));
+                                ?>
+                                <a class="ex-detail-related__item" href="<?= cms_experts_detail_e($relatedUrl) ?>">
+                                    <span class="ex-detail-related__avatar" aria-hidden="true"><?= cms_experts_detail_e($relatedInitials) ?></span>
+                                    <span class="ex-detail-related__body"><strong><?= cms_experts_detail_e($relatedName) ?></strong><?php if ($relatedRole !== ''): ?><small><?= cms_experts_detail_e($relatedRole) ?></small><?php endif; ?></span>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </section>
+            <?php endif; ?>
+        </aside>
     </div>
-    <a href="<?= $sec->escape(rtrim(SITE_URL, '/') . '/register') ?>" class="phinit-btn phinit-btn--primary ex-claim-banner__btn">Jetzt registrieren &amp; Profil beanspruchen →</a>
-  </div>
-  <?php endif; ?>
 </main>

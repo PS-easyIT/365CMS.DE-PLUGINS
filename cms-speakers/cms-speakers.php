@@ -3,7 +3,7 @@
  * Plugin Name: CMS Speakers
  * Plugin URI: https://365network.de/cms-speakers
  * Description: Verwaltung von Speaker-Profilen mit Card-Ansicht, Detailseiten, Topics und Presentations
- * Version: 3.0.16
+ * Version: 3.0.18
  * Author: 365 Network
  * Author URI: https://365network.de
  *
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin Constants
-defined('CMS_SPEAKERS_VERSION') || define('CMS_SPEAKERS_VERSION', '3.0.16');
+defined('CMS_SPEAKERS_VERSION') || define('CMS_SPEAKERS_VERSION', '3.0.18');
 defined('CMS_SPEAKERS_PLUGIN_DIR') || define('CMS_SPEAKERS_PLUGIN_DIR', dirname(__FILE__) . '/');
 defined('CMS_SPEAKERS_PLUGIN_URL') || define('CMS_SPEAKERS_PLUGIN_URL', '/plugins/cms-speakers/');
 defined('CMS_SPEAKERS_TEXT_DOMAIN') || define('CMS_SPEAKERS_TEXT_DOMAIN', 'cms-speakers');
@@ -33,7 +33,7 @@ final class CMS_Speakers
     private static ?self $instance = null;
     private bool $components_bootstrapped = false;
 
-    private string $version = '3.0.16';
+    private string $version = '3.0.18';
     private string $plugin_dir;
     private string $plugin_url;
     private string $text_domain = 'cms-speakers';
@@ -214,7 +214,9 @@ final class CMS_Speakers
 
         $this->enqueue_style_file('plugin-base.css');
         $this->enqueue_style_file('style.css');
-        $this->enqueue_style_file('single.css');
+        if ($this->is_speaker_detail_route()) {
+            $this->enqueue_style_file('single.css');
+        }
     }
 
     private function enqueue_style_file(string $file): void
@@ -247,6 +249,13 @@ final class CMS_Speakers
         $path = (string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
 
         return $path === '/speakers' || str_starts_with($path, '/speakers/');
+    }
+
+    private function is_speaker_detail_route(): bool
+    {
+        $path = rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/');
+
+        return preg_match('#^/speakers/[^/]+$#', $path) === 1;
     }
 
     public function get_version(): string

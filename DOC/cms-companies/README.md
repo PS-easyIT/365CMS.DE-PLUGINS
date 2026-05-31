@@ -1,10 +1,10 @@
 # CMS Companies – Dokumentation
 
 **Plugin:** `cms-companies`  
-**Version:** 3.0.9  
+**Version:** 3.0.10  
 **Namespace:** `CMS_Companies`  
 **Aktueller Laufzeitstand:** 365CMS 3.0+  
-**Audit-/Dokustand:** Publicsite-Overview- und Detail-Shell-Pass am 2026-05-31  
+**Audit-/Dokustand:** PHINIT-Preview-Detailseiten-Pass am 2026-05-31  
 **PHP:** 8.1+
 
 ---
@@ -22,6 +22,7 @@ Das **CMS Companies**-Plugin verwaltet Firmen-Profile innerhalb des 365CMS-Ökos
 - Version 3.0.6 begrenzt die Public-Übersicht intern auf `1160px` und legt den Hintergrund bündig bis Theme-Header/-Footer.
 - Version 3.0.8 finalisiert den einheitlichen Companies-basierten Public-Suchbereich.
 - Version 3.0.9 überträgt die bündige Full-Bleed-Hintergrund-Shell auf die Public-Detailseite; Breadcrumb und Detail-Grid bleiben auf maximal `1160px` begrenzt.
+- Version 3.0.10 baut die Public-Detailseite nach `company-detail-vorschau.html` um: Navy/Amber-Hero, Preview-Kartenlayout, übersetzte Labels, lokaler YAML-Fallback, verwandte Unternehmen und detail-only `single.css`.
 
 ### Kernfunktionen
 
@@ -34,7 +35,7 @@ Das **CMS Companies**-Plugin verwaltet Firmen-Profile innerhalb des 365CMS-Ökos
 | **Admin-Backend** | Vollständige CRUD-Oberfläche unter `/admin/companies` |
 | **Member-Dashboard** | Eigenes Firmenprofil im Member-Bereich verwalten |
 | **Shortcode** | `[cms_companies]` – Grid-Ansicht |
-| **Öffentliche Routen** | `/companies`, `/companies/{id}` |
+| **Öffentliche Routen** | `/companies`, `/companies/{id}` Legacy-Redirect, `/company/{slug-id}` |
 
 ---
 

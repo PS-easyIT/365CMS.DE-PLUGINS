@@ -179,6 +179,7 @@ final class CMS_Companies_Post_Type
     private function render_single_company(object $company): void
     {
         $experts  = CMS_Companies_Database::instance()->get_company_experts((int)$company->id);
+        $related_companies = $this->get_related_companies($company);
 
         $speakers = [];
         if (class_exists('CMS_Speakers_Database')) {
@@ -197,11 +198,54 @@ final class CMS_Companies_Post_Type
         $tm = \CMS\ThemeManager::instance();
         $tm->getHeader();
         CMS_Companies_Template_Loader::instance()->render_template('single-company', [
-            'company'  => $company,
-            'experts'  => $experts,
-            'speakers' => $speakers,
+            'company'           => $company,
+            'experts'           => $experts,
+            'speakers'          => $speakers,
+            'related_companies' => $related_companies,
         ]);
         $tm->getFooter();
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    private function get_related_companies(object $company): array
+    {
+        $company_id = (int) ($company->id ?? 0);
+        if ($company_id <= 0) {
+            return [];
+        }
+
+        $db = CMS\Database::instance();
+        $industry = trim((string) ($company->industry ?? ''));
+
+        try {
+            if ($industry !== '') {
+                $stmt = $db->prepare(
+                    "SELECT * FROM {$db->prefix()}companies
+                     WHERE status = 'active' AND id != ? AND industry = ?
+                     ORDER BY is_sponsor DESC, is_top_partner DESC, is_partner DESC, name ASC
+                     LIMIT 3"
+                );
+                $stmt->execute([$company_id, $industry]);
+                $rows = $stmt->fetchAll();
+                if (!empty($rows)) {
+                    return $rows;
+                }
+            }
+
+            $stmt = $db->prepare(
+                "SELECT * FROM {$db->prefix()}companies
+                 WHERE status = 'active' AND id != ?
+                 ORDER BY is_sponsor DESC, is_top_partner DESC, is_partner DESC, name ASC
+                 LIMIT 3"
+            );
+            $stmt->execute([$company_id]);
+            return $stmt->fetchAll();
+        } catch (\Throwable $e) {
+            error_log('CMS_Companies related companies failed: ' . $e->getMessage());
+            return [];
+        }
     }
 
     public function admin_list(): void
