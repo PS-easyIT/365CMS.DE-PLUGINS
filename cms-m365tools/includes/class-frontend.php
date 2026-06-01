@@ -188,8 +188,140 @@ final class CMS_M365CALCULATOR_Frontend
 
     private function register_public_route(object $router, string $method, string $route, callable $handler): void
     {
-        $router->addRoute($method, $route, $handler);
-        $router->addRoute($method, self::EN_PREFIX . $route, $handler);
+        $wrappedHandler = function () use ($handler, $method, $route): void {
+            $bufferLevel = null;
+            $injectHeaderActions = strtoupper($method) === 'GET'
+                && !in_array($route, [self::TOOLBOX_ROUTE, self::TOOLBOX_ROUTE_ALIAS], true);
+
+            if ($injectHeaderActions) {
+                ob_start(function (string $buffer): string {
+                    return $this->inject_tool_header_actions($buffer);
+                });
+                $bufferLevel = ob_get_level();
+            }
+
+            $handler();
+
+            if ($bufferLevel !== null && ob_get_level() >= $bufferLevel) {
+                ob_end_flush();
+            }
+        };
+
+        $router->addRoute($method, $route, $wrappedHandler);
+        $router->addRoute($method, self::EN_PREFIX . $route, $wrappedHandler);
+    }
+
+    private function inject_tool_header_actions(string $html): string
+    {
+        if ($html === '' || !str_contains($html, 'm365calc-hero')) {
+            return $html;
+        }
+
+        $html = $this->remove_tool_header_local_actions($html);
+
+        if (str_contains($html, 'm365calc-hero__global-actions')) {
+            return $html;
+        }
+
+        $actions = $this->render_tool_header_actions();
+        if ($actions === '') {
+            return $html;
+        }
+
+        $updated = preg_replace_callback(
+            '#(<header\b[^>]*class="[^"]*\bm365calc-hero\b[^"]*"[^>]*>.*?)(</header>)#is',
+            static fn(array $matches): string => (string) ($matches[1] ?? '') . $actions . (string) ($matches[2] ?? ''),
+            $html,
+            1
+        );
+
+        return is_string($updated) && $updated !== '' ? $updated : $html;
+    }
+
+    private function remove_tool_header_local_actions(string $html): string
+    {
+        $updated = preg_replace_callback(
+            '#<header\b[^>]*class="[^"]*\bm365calc-hero\b[^"]*"[^>]*>.*?</header>#is',
+            static function (array $matches): string {
+                $header = (string) ($matches[0] ?? '');
+                $cleaned = preg_replace(
+                    '#\s*<nav\b(?=[^>]*class="[^"]*\bm365calc-actions\b[^"]*")[^>]*>.*?</nav>#is',
+                    '',
+                    $header
+                );
+
+                return is_string($cleaned) && $cleaned !== '' ? $cleaned : $header;
+            },
+            $html,
+            1
+        );
+
+        return is_string($updated) && $updated !== '' ? $updated : $html;
+    }
+
+    private function render_tool_header_actions(): string
+    {
+        $toolOverviewUrl = $this->localized_public_path(self::TOOLBOX_ROUTE);
+        $contactUrl = $this->contact_request_url();
+
+        if ($toolOverviewUrl === '' && $contactUrl === '') {
+            return '';
+        }
+
+        require_once CMS_M365CALCULATOR_PLUGIN_DIR . 'templates/partials/tool-header-actions.php';
+        if (!function_exists('cms_m365tools_tool_header_actions_html')) {
+            return '';
+        }
+
+        return trim(cms_m365tools_tool_header_actions_html($toolOverviewUrl, $contactUrl));
+    }
+
+    private function contact_request_url(): string
+    {
+        $configuredUrl = '';
+        if (class_exists('CMS_M365CALCULATOR_Settings')) {
+            $settings = CMS_M365CALCULATOR_Settings::global_options('provider');
+            $configuredUrl = (string) ($settings['provider_contact_form_url'] ?? '');
+        }
+
+        $contactUrl = $this->safe_public_url($configuredUrl);
+
+        return $contactUrl !== '' ? $contactUrl : $this->localized_public_path('/kontakt');
+    }
+
+    private function localized_public_path(string $route): string
+    {
+        $route = '/' . ltrim(trim($route), '/');
+        $lang = $this->current_language();
+
+        if (function_exists('cms_plugin_public_localized_path')) {
+            return (string) cms_plugin_public_localized_path($route, $lang);
+        }
+
+        return $lang === 'en' ? self::EN_PREFIX . $route : $route;
+    }
+
+    private function safe_public_url(mixed $value): string
+    {
+        $url = trim((string) $value);
+        if ($url === '' || str_contains($url, "\0")) {
+            return '';
+        }
+
+        if (str_starts_with($url, '/') && !str_starts_with($url, '//')) {
+            return $url;
+        }
+
+        if (!str_contains($url, ':')) {
+            $path = $this->normalize_path($url);
+
+            return $path !== '' ? '/' . $path : '';
+        }
+
+        $parts = parse_url($url);
+        $scheme = is_array($parts) ? strtolower((string) ($parts['scheme'] ?? '')) : '';
+
+        return in_array($scheme, ['http', 'https'], true) && filter_var($url, FILTER_VALIDATE_URL) !== false ? $url : '';
     }
 
     public function enqueue_public_styles(): void

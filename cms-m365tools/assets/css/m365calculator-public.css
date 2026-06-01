@@ -191,6 +191,42 @@ body.m365calculator-theme-embed:not(.is-member) .breadcrumb-nav {
 .m365calc-hero {
     display: grid;
     gap: var(--phinit-space-4);
+    position: relative;
+}
+
+.m365calc-hero:has(> .m365calc-hero__global-actions) .m365calc-hero__content {
+    padding-right: clamp(16rem, 32vw, 24rem);
+}
+
+.m365calc-hero__global-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--phinit-space-2);
+    justify-content: flex-end;
+}
+
+.m365calc-hero > .m365calc-hero__global-actions {
+    max-width: min(100%, 24rem);
+    position: absolute;
+    right: var(--phinit-space-6);
+    top: var(--phinit-space-6);
+    z-index: 1;
+}
+
+.m365calc-hero-action {
+    min-height: 2.5rem;
+    padding-inline: var(--phinit-space-3);
+}
+
+.m365calc-hero-action__icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+}
+
+.m365calc-hero-action__icon svg {
+    height: 1rem;
+    width: 1rem;
 }
 
 .m365calc-hero__content,
@@ -680,6 +716,16 @@ body.m365tools-detail-buttons-full .m365calc-provider-cta .m365calc-actions :is(
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
 }
 
+.m365calc-column-picker {
+    display: grid;
+    gap: var(--phinit-space-3);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.m365calc-column-picker .phinit-field {
+    min-width: 0;
+}
+
 .m365calc-plan-select {
     align-items: flex-start;
     border: 1px solid var(--phinit-color-border);
@@ -714,10 +760,11 @@ body.m365tools-detail-buttons-full .m365calc-provider-cta .m365calc-actions :is(
 .m365calc-compare-wrap {
     border: 1px solid var(--phinit-color-border);
     border-radius: var(--m365tools-ui-radius, 2px);
+    overflow-x: auto;
 }
 
 .m365calc-compare-table {
-    min-width: 980px;
+    min-width: min(980px, 100%);
 }
 
 .m365calc-compare-table th:first-child,
@@ -930,6 +977,79 @@ body.m365tools-detail-buttons-full .m365calc-provider-cta .m365calc-actions :is(
 .m365calc-status-pill--blocked,
 .m365calc-status-pill--redundant {
     border-left-color: var(--phinit-color-danger);
+}
+
+.m365calc-price-history-section,
+.m365calc-personal-price-section {
+    gap: var(--phinit-space-5);
+}
+
+.m365calc-chart-panel {
+    background: color-mix(in srgb, var(--m365tools-surface-raised, #f8fafc) 92%, #ffffff 8%);
+    border: 1px solid var(--m365tools-border, var(--phinit-color-border));
+    border-radius: var(--m365tools-ui-radius, 2px);
+    min-height: 20rem;
+    padding: var(--phinit-space-4);
+}
+
+.m365calc-chart-panel canvas {
+    min-height: 17rem;
+    width: 100% !important;
+}
+
+.m365calc-chart-fallback {
+    color: var(--m365tools-muted, var(--phinit-color-ink-secondary));
+    margin: 0;
+}
+
+.m365calc-price-history-filter {
+    max-width: 28rem;
+}
+
+.m365calc-section-divider {
+    background: color-mix(in srgb, var(--m365tools-border, var(--phinit-color-border)) 72%, transparent 28%);
+    border: 0;
+    height: 1px;
+    margin: 0;
+}
+
+.m365calc-personal-rows {
+    display: grid;
+    gap: var(--phinit-space-3);
+}
+
+.m365calc-personal-row {
+    align-items: end;
+    border: 1px solid var(--m365tools-border, var(--phinit-color-border));
+    border-radius: var(--m365tools-ui-radius, 2px);
+    display: grid;
+    gap: var(--phinit-space-3);
+    grid-template-columns: minmax(14rem, 1.5fr) minmax(11rem, 1fr) minmax(8rem, .75fr) auto;
+    padding: var(--phinit-space-3);
+}
+
+.m365calc-personal-results {
+    display: grid;
+    gap: var(--phinit-space-5);
+}
+
+.m365calc-personal-empty[hidden],
+.m365calc-personal-results[hidden] {
+    display: none !important;
+}
+
+.m365calc-personal-table .m365calc-delta--positive td:nth-last-child(-n+2),
+.m365calc-personal-table .m365calc-delta--positive th {
+    border-left-color: var(--phinit-color-warning);
+}
+
+.m365calc-personal-table .m365calc-delta--negative td:nth-last-child(-n+2),
+.m365calc-personal-table .m365calc-delta--negative th {
+    border-left-color: var(--phinit-color-success);
+}
+
+.m365calc-row-remove {
+    white-space: nowrap;
 }
 
 .m365calc-addon-table-wrap {
@@ -1545,6 +1665,22 @@ body.m365tools-detail-buttons-full .m365calc-provider-cta .m365calc-actions :is(
 }
 
 @media (max-width: 768px) {
+    .m365calc-hero:has(> .m365calc-hero__global-actions) .m365calc-hero__content {
+        padding-right: 0;
+    }
+
+    .m365calc-hero > .m365calc-hero__global-actions {
+        justify-content: flex-start;
+        max-width: none;
+        position: static;
+        width: 100%;
+    }
+
+    .m365calc-hero__global-actions .phinit-btn {
+        flex: 1 1 13rem;
+        justify-content: center;
+    }
+
     .m365calc-hero__content,
     .m365calc-section__head,
     .m365calc-tool-card__head,
@@ -1557,6 +1693,40 @@ body.m365tools-detail-buttons-full .m365calc-provider-cta .m365calc-actions :is(
     .m365calc-provider-cta__card {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .m365calc-column-picker {
+        grid-template-columns: 1fr;
+    }
+
+    .m365calc-compare-wrap {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .m365calc-compare-table {
+        min-width: 760px;
+    }
+
+    .m365calc-chart-panel {
+        min-height: 16rem;
+        padding: var(--phinit-space-3);
+    }
+
+    .m365calc-chart-panel canvas {
+        min-height: 14rem;
+    }
+
+    .m365calc-price-history-filter {
+        max-width: none;
+    }
+
+    .m365calc-personal-row {
+        align-items: stretch;
+        grid-template-columns: 1fr;
+    }
+
+    .m365calc-personal-table {
+        min-width: 760px;
     }
 
     .m365calc-form-grid--3,

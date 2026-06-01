@@ -13,7 +13,7 @@
 - `/google-workspace-zu-m365-tco` – Google Workspace und Microsoft 365 inklusive Lizenzkosten, Migration, Schulung, Change-Aufwand, Parallelbetrieb und Break-even vergleichen
 - `/m365-storage-bedarfsrechner` – SharePoint-Pool, OneDrive-Quotas, Exchange-Postfächer, Archivbedarf, Wachstum und Zusatzspeicherbedarf berechnen
 - `/m365-backup-kostenrechner` – Microsoft-365-Backup-Baseline und Providervergleich nach Kosten, Workloads, Retention, Restore-Tiefe und Betriebsmodell berechnen
-- `/microsoft-preiserhoehung-tracker` – offizielle Microsoft-Preis-, Packaging-, SKU-, Renewal- und Forecast-Ereignisse mit Budgetchart auswerten
+- `/microsoft-preiserhoehung-tracker` – offizielle Microsoft-Preis-, Packaging-, SKU-, Renewal- und Forecast-Ereignisse mit Chart.js-Preisverlauf und lokalem persönlichen Kosten-Tracker auswerten
 - `/teams-phone-lizenzberater` – Teams Phone, Calling Plan, Operator Connect, Direct Routing, Mischmodell und Sonderpfade bewerten
 - `/exchange-online-roi` – Vollkosten-, Break-even- und Migrationspfad-Rechner für On-Prem Exchange zu Exchange Online
 - `/frontline-worker-lizenz-check` – F1-/F3-Eignung, Mischmodell, Enterprise-Bedarf und Sparpotenzial für Frontline Worker prüfen
@@ -22,7 +22,7 @@
 - `/m365-archive-mailbox-rechner` – Archive Mailbox Rechner für Archivgröße, Auto-expanding Archive, Shared-/Resource-Mailboxen und Hold-/Purview-Hinweise
 - `/m365-jahresvertrag-vs-monatsvertrag` – Annual vs. Monthly Commitment Rechner für Monatslaufzeit, Jahresbindung und Split-Strategien
 - `/m365-add-on-konfigurator` – Add-ons, Voraussetzungen, Redundanzen, Upgrades und Verbrauchsprodukte prüfen
-- `/m365-lizenzvergleich` – filterbare Lizenz-Vergleichstabelle mit Desktop-Apps, Zusatzdiensten und Feature-Status
+- `/m365-lizenzvergleich` – filterbare Lizenz-Vergleichstabelle mit Desktop-Apps, Zusatzdiensten und Feature-Status; die Vergleichsspalten sind reaktiv über bis zu vier Dropdowns wählbar
 - `/m365-lizenzberater` – M365-Lizenz-Berater mit Gruppen-, Add-on- und Kostenmodell
 - `/copilot-roi-rechner` – Copilot Business-Case-, Break-even- und Pilot-/Rollout-Rechner
 - `/shared-mailbox-vs-lizenz` – Shared-Mailbox-Entscheidungs- und Kostenrechner
@@ -215,7 +215,7 @@ Die Hub-Landingpage rendert daraus eine kompakte Übersicht, Modul-Fokuschips un
 
 Das Frontend nutzt die PHINIT-Plugin-Komponenten (`phinit-plugin`, `phinit-card`, `phinit-btn`, `phinit-field`, `phinit-table`, `phinit-note`, `phinit-result`) und ergänzt nur schlanke Layout-Klassen mit den Präfixen `m365calc-*` und `m365tools-*`. Ab `1.24.0` ist die Public-Oberfläche bewusst redaktioneller aufgebaut: keine Verlaufsflächen, keine Glassmorphism-Effekte, keine Icon-Kacheln in Signalfarben, reduzierte Schriftgewichte, dezente Statuskanten und bessere Scanbarkeit auf Landingpage, Formularen, Ergebnisbereichen, Tabellen, Auditlisten und Charts. Ab `1.29.5` sind Card- und Kompass-Beschreibungen mindestens 14px groß, Lauftexte großzügiger gesetzt, Metadaten kontrastreicher, Cards erhalten klare Hover-/Fokuszustände und die Landingpage nutzt 3/2/1-Spalten-Breakpoints plus Touch-Ziele ab 44px. Ab `1.29.12` gibt es keinen sichtbaren äußeren Abstand oder Saum zwischen Theme-Header, Theme-Wrappern und Plugin-Content; gewünschte Luft entsteht ausschließlich innerhalb der Plugin-Struktur mit 25px oberem Innenabstand. M365TOOLS markiert dafür generisch Zwischenknoten vor dem eigenen Content als `m365tools-header-interstitial`, ohne spezifische Abhängigkeit auf ein anderes Plugin. Die Modul-Publicseiten nutzen dieselben Hintergrund-, Surface-, Header-, Button- und Radius-Variablen wie die Landingpage; Boxen und Buttons bleiben maximal 2px gerundet. Ab `1.29.13` kann ein Modul diese Variablen über seinen Admin-Tab `Public-Design` routegenau überschreiben. Ab `1.29.14` liegt der statische Header-/Wrapper-Reset in `plugin-base.css`, sodass der Head nur noch dynamische Design-Tokens ausgibt.
 
-Ab `3.0.20` kann das Button-Layout der Tool-Publicsites außerhalb der Hub-Übersicht zentral unter `Zentrale Einstellungen > Allgemein` angepasst werden. Unterstützt werden Standard/inline, gestapelt, rechtsbündig und vollbreit; die Hub-Toolübersicht behält ihre eigenen Landingpage-Designer-Buttonregeln.
+Ab `3.0.20` kann das Button-Layout der Tool-Publicsites außerhalb der Hub-Übersicht zentral unter `Zentrale Einstellungen > Allgemein` angepasst werden. Unterstützt werden Standard/inline, gestapelt, rechtsbündig und vollbreit; die Hub-Toolübersicht behält ihre eigenen Landingpage-Designer-Buttonregeln. Ab `3.0.25` ergänzt der gemeinsame Tool-Header automatisch die dezenten Sekundäraktionen `Alle Tools anzeigen` (`/m365-tools`) und `Kontaktanfrage` (globale Provider-Kontaktformular-URL, Fallback `/kontakt`), ohne dass einzelne Tool-Templates eigene Header-Buttons pflegen müssen. Ab `3.0.29` entfernt der Frontend-Controller alte lokale Hero-Aktionsnavs der Toolseiten vor der Injection, damit nicht zusätzlich `Toolbox anzeigen`, `Lizenzberater öffnen` oder ähnliche Template-Buttons doppelt erscheinen.
 
 ## Fachliche Logik
 

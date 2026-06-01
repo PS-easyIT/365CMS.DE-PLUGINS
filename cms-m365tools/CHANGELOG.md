@@ -1,6 +1,41 @@
 
 # Changelog – CMS M365 Tools
 
+## 3.0.30 – 2026-06-01
+
+- Lizenzvergleich-Dropdowns grauen keine Lizenzen mehr aus; jede sichtbare Lizenz bleibt in jeder Vergleichsspalte auswählbar.
+- Wenn eine Lizenz bereits in einer anderen Spalte aktiv ist, gewinnt die neue Auswahl und die frühere Spalte wird automatisch auf `— auswählen —` zurückgesetzt.
+
+## 3.0.29 – 2026-06-01
+
+- Tool-Publicsites bereinigen lokale Hero-Aktionsnavigationen wie `Toolbox anzeigen`, `Lizenzberater öffnen` oder verwandte Querverlinkungen zentral im Frontend-Controller.
+- Die zwei einheitlichen Headeraktionen `Alle Tools anzeigen` und `Kontaktanfrage` bleiben als einzige Hero-Buttons auf Detailseiten erhalten; Formular-, Druck- und Ergebnisaktionen außerhalb des Heros werden nicht entfernt.
+
+## 3.0.28 – 2026-06-01
+
+- Die M365-Tools-Hub-Landingpage unterdrückt den selbstreferenziellen Header-Button `Alle Tools durchsuchen`, damit im Contentheader der Übersicht kein Sprungbutton auf dieselbe Seite erscheint.
+- Sekundäre bzw. nicht selbstreferenzielle Headeraktionen bleiben weiterhin renderbar, z. B. `Kontakt aufnehmen`.
+
+## 3.0.27 – 2026-06-01
+
+- `Microsoft-Preiserhöhung-Tracker` um zwei gestapelte Public-Sektionen erweitert: oben ein Chart.js-Linienchart für die kanonische SKU-Preiszeitreihe, darunter ein persönlicher Kosten-Tracker.
+- Preisverlauf nutzt weiterhin `CMS_M365CALCULATOR_Catalog::microsoft_price_skus()` bzw. `price_history`; es wird keine zweite Preisquelle gepflegt.
+- Chart-Auswahl ergänzt: `Alle anzeigen` bleibt Standard, einzelne Lizenzen lassen sich per Dropdown isolieren; Business Basic, Standard und Premium werden im Gesamtchart hervorgehoben.
+- Persönlicher Kosten-Tracker speichert Lizenz, Kaufdatum und Menge ausschließlich in `localStorage`, erlaubt Entfernen einzelner Zeilen und berechnet Mehr-/Minderkosten absolut sowie prozentual seit Kaufdatum.
+- Auswertung rendert zusätzlich einen Chart.js-Projektionschart der eigenen Jahreskosten und eine tabellarische Delta-Liste je Lizenz; Layout ist mobil unter 768px gestapelt.
+
+## 3.0.26 – 2026-06-01
+
+- `Microsoft 365 Lizenzvergleich` von festen Checkbox-Spalten auf bis zu vier frei wählbare Dropdown-Spalten umgestellt; leere Dropdowns erzeugen keine Tabellenspalten.
+- Die Vergleichsmatrix rendert Summary-Karten, Tabellenkopf und Feature-Zeilen per Vanilla JS reaktiv ohne Seiten-Reload und deaktiviert bereits gewählte Lizenzen in den anderen Dropdowns.
+- Gemeinsame Tool-Header-Aktionen ohne verschachteltes Output-Buffering gehärtet, damit Public-Toolseiten wie der Lizenzberater nicht leer ausgeben und `Alle Tools anzeigen` zuverlässig erscheint.
+
+## 3.0.25 – 2026-06-01
+
+- Tool-Detailseiten erhalten zentral über den Frontend-Controller eine gemeinsame Header-Aktionsleiste mit `Alle Tools anzeigen` und `Kontaktanfrage`.
+- Die Übersicht verweist auf die bestätigte Tools-Route `/m365-tools`; die Kontaktanfrage nutzt die globale Provider-Option `provider_contact_form_url` und fällt auf `/kontakt` zurück.
+- Header-Aktionen werden dezent als sekundäre Buttons gerendert, oben rechts positioniert und unter 768px unter dem Titelbereich gestapelt, damit lange Tooltitel nicht überlaufen.
+
 ## 3.0.24 – 2026-06-01
 
 - `data/package_price_catalog.json` strukturell bereinigt: der kanonische SKU-Katalog liegt wieder eindeutig auf Top-Level, während `billing_options` nur echte Abrechnungsoptionen enthält.

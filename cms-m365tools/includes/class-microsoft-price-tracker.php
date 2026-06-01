@@ -166,6 +166,70 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
     }
 
     /**
+     * @return array<string,mixed>
+     */
+    public static function price_history_dataset(): array
+    {
+        $skus = CMS_M365CALCULATOR_Catalog::microsoft_price_skus();
+        $licenses = [];
+        $dates = [];
+        $defaultSlugs = ['m365-business-standard', 'm365-business-premium', 'm365-e3', 'm365-e5'];
+
+        foreach ($skus as $sku) {
+            if (!is_array($sku) || (int) ($sku['is_active'] ?? 1) !== 1) {
+                continue;
+            }
+
+            $slug = (string) ($sku['slug'] ?? '');
+            $history = [];
+            foreach ((array) ($sku['price_history'] ?? []) as $entry) {
+                if (!is_array($entry)) {
+                    continue;
+                }
+
+                $date = (string) ($entry['effective_from'] ?? '');
+                $prices = is_array($entry['prices_eur_net'] ?? null) ? $entry['prices_eur_net'] : [];
+                $price = self::numeric_price($prices, 'annual_annual_permonth');
+                if ($date === '' || $price === null) {
+                    continue;
+                }
+
+                $dates[$date] = true;
+                $history[] = [
+                    'date' => $date,
+                    'price' => $price,
+                    'status' => (string) ($entry['verification_status'] ?? ''),
+                ];
+            }
+
+            if ($slug === '' || $history === []) {
+                continue;
+            }
+
+            $licenses[] = [
+                'slug' => $slug,
+                'name' => (string) ($sku['name'] ?? $slug),
+                'family' => (string) ($sku['family'] ?? $sku['product_family'] ?? 'Microsoft 365'),
+                'audience' => (string) ($sku['audience'] ?? 'Commercial'),
+                'default_visible' => in_array($slug, $defaultSlugs, true),
+                'history' => $history,
+            ];
+        }
+
+        $dates = array_keys($dates);
+        sort($dates);
+
+        return [
+            'licenses' => $licenses,
+            'dates' => $dates,
+            'default_slugs' => $defaultSlugs,
+            'currency' => 'EUR',
+            'price_field' => 'annual_annual_permonth',
+            'storage_key' => 'm365tools-price-tracker-entries-v1',
+        ];
+    }
+
+    /**
      * @return array<string,string>
      */
     public static function forecast_scenario_options(): array

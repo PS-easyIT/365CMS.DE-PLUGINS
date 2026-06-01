@@ -11,7 +11,7 @@
     }
 
     function initResultFocus() {
-        if (document.querySelector('.m365calc-readonly-page')) {
+        if (document.querySelector('.m365calc-readonly-page, .m365calc-price-tracker-page')) {
             return;
         }
 
@@ -266,6 +266,773 @@
         });
     }
 
+    function initLicenseComparisonColumns() {
+        var root = document.querySelector('[data-m365calc-license-comparison]');
+        if (!root) {
+            return;
+        }
+
+        var dataNode = root.querySelector('[data-m365calc-license-comparison-data]');
+        if (!dataNode) {
+            return;
+        }
+
+        var data;
+        try {
+            data = JSON.parse(dataNode.textContent || '{}');
+        } catch (error) {
+            return;
+        }
+
+        var selects = Array.prototype.slice.call(root.querySelectorAll('[data-m365calc-license-select]'));
+        var summary = root.querySelector('[data-m365calc-license-summary]');
+        var empty = root.querySelector('[data-m365calc-license-empty]');
+        var tableWrap = root.querySelector('[data-m365calc-license-table]');
+        var tableHead = root.querySelector('[data-m365calc-license-head]');
+        var tableBody = root.querySelector('[data-m365calc-license-body]');
+        var countNode = root.querySelector('[data-m365calc-license-count]');
+        var plans = Array.isArray(data.plans) ? data.plans : [];
+        var groups = Array.isArray(data.groups) ? data.groups : [];
+        var counts = data.counts || {};
+        var planMap = Object.create(null);
+
+        if (selects.length === 0 || plans.length === 0) {
+            return;
+        }
+
+        plans.forEach(function (plan) {
+            if (plan && plan.slug) {
+                planMap[String(plan.slug)] = plan;
+            }
+        });
+
+        function setHidden(node, hidden) {
+            if (!node) {
+                return;
+            }
+
+            node.hidden = hidden;
+        }
+
+        function textElement(tagName, className, text) {
+            var node = document.createElement(tagName);
+            if (className) {
+                node.className = className;
+            }
+            node.textContent = String(text || '');
+
+            return node;
+        }
+
+        function cleanStatusClass(status) {
+            return String(status || 'unknown').replace(/[^a-z0-9_-]+/gi, '-').toLowerCase();
+        }
+
+        function releaseDuplicateSelection(activeSelect) {
+            if (!activeSelect || !activeSelect.value) {
+                return;
+            }
+
+            selects.forEach(function (select) {
+                if (select !== activeSelect && select.value === activeSelect.value) {
+                    select.value = '';
+                }
+            });
+        }
+
+        function selectedValues(removeDuplicates) {
+            var seen = Object.create(null);
+            var values = [];
+
+            selects.forEach(function (select) {
+                var value = String(select.value || '');
+                if (!value) {
+                    return;
+                }
+
+                if (seen[value]) {
+                    if (removeDuplicates) {
+                        select.value = '';
+                    }
+                    return;
+                }
+
+                if (planMap[value]) {
+                    seen[value] = true;
+                    values.push(value);
+                }
+            });
+
+            return values;
+        }
+
+        function updateDisabledOptions(values) {
+            selects.forEach(function (select) {
+                Array.prototype.slice.call(select.options).forEach(function (option) {
+                    option.disabled = false;
+                });
+            });
+        }
+
+        function renderCount(selectedCount) {
+            if (!countNode) {
+                return;
+            }
+
+            countNode.textContent = String(counts.filtered || 0)
+                + ' von ' + String(counts.all || 0)
+                + ' Plänen passen zu den aktuellen Filtern. '
+                + String(selectedCount)
+                + (selectedCount === 1 ? ' Spalte ist ausgewählt.' : ' Spalten sind ausgewählt.');
+        }
+
+        function renderSummary(selectedPlans) {
+            if (!summary) {
+                return;
+            }
+
+            summary.replaceChildren();
+            if (selectedPlans.length === 0) {
+                return;
+            }
+
+            var cheapest = selectedPlans.reduce(function (current, plan) {
+                if (!current || Number(plan.price_month || 0) < Number(current.price_month || 0)) {
+                    return plan;
+                }
+
+                return current;
+            }, null);
+
+            selectedPlans.forEach(function (plan) {
+                var card = document.createElement('article');
+                card.className = 'phinit-card m365calc-mini-card' + (cheapest && plan.slug === cheapest.slug ? ' phinit-card--success' : '');
+                card.appendChild(textElement('span', '', cheapest && plan.slug === cheapest.slug ? 'Günstigster Einstieg' : plan.family));
+                card.appendChild(textElement('strong', '', plan.name));
+                card.appendChild(textElement('p', '', String(plan.price_text || '0,00 €') + ' / User / Monat'));
+                summary.appendChild(card);
+            });
+        }
+
+        function renderTable(selectedPlans) {
+            if (!tableHead || !tableBody) {
+                return;
+            }
+
+            var headRow = document.createElement('tr');
+            var featureHead = document.createElement('th');
+            featureHead.scope = 'col';
+            featureHead.textContent = 'Funktion';
+            headRow.appendChild(featureHead);
+
+            selectedPlans.forEach(function (plan) {
+                var headCell = document.createElement('th');
+                headCell.scope = 'col';
+                headCell.appendChild(textElement('span', 'm365calc-plan-heading', plan.name));
+                headCell.appendChild(textElement('span', '', plan.price_text));
+                headRow.appendChild(headCell);
+            });
+
+            tableHead.replaceChildren(headRow);
+            tableBody.replaceChildren();
+
+            groups.forEach(function (group) {
+                var groupRow = document.createElement('tr');
+                var groupHead = document.createElement('th');
+                groupRow.className = 'm365calc-compare-table__group';
+                groupHead.scope = 'row';
+                groupHead.colSpan = selectedPlans.length + 1;
+                groupHead.textContent = String(group.label || group.key || 'Features');
+                groupRow.appendChild(groupHead);
+                tableBody.appendChild(groupRow);
+
+                (Array.isArray(group.features) ? group.features : []).forEach(function (feature) {
+                    var row = document.createElement('tr');
+                    var statuses = Object.create(null);
+                    var rowHead = document.createElement('th');
+                    rowHead.scope = 'row';
+                    rowHead.appendChild(textElement('span', 'm365calc-feature-title', feature.label));
+                    rowHead.appendChild(textElement('small', '', feature.description));
+                    row.appendChild(rowHead);
+
+                    selectedPlans.forEach(function (plan) {
+                        var status = plan.statuses && plan.statuses[feature.key] ? plan.statuses[feature.key] : { status: 'unknown', label: '—', note: '' };
+                        statuses[String(status.status || 'unknown')] = true;
+
+                        var cell = document.createElement('td');
+                        var statusNode = document.createElement('span');
+                        statusNode.className = 'm365calc-status m365calc-status--' + cleanStatusClass(status.status);
+                        statusNode.appendChild(textElement('strong', '', status.label));
+                        statusNode.appendChild(textElement('small', '', status.note));
+                        cell.appendChild(statusNode);
+                        row.appendChild(cell);
+                    });
+
+                    if (Object.keys(statuses).length > 1) {
+                        row.className = 'm365calc-compare-table__diff';
+                    }
+
+                    tableBody.appendChild(row);
+                });
+            });
+        }
+
+        function render(removeDuplicates) {
+            var values = selectedValues(removeDuplicates);
+            var selectedPlans = values.map(function (value) {
+                return planMap[value];
+            }).filter(Boolean);
+            var hasSelection = selectedPlans.length > 0;
+
+            updateDisabledOptions(values);
+            renderCount(selectedPlans.length);
+            setHidden(empty, hasSelection);
+            setHidden(summary, !hasSelection);
+            setHidden(tableWrap, !hasSelection);
+
+            if (!hasSelection) {
+                if (summary) {
+                    summary.replaceChildren();
+                }
+                return;
+            }
+
+            renderSummary(selectedPlans);
+            renderTable(selectedPlans);
+        }
+
+        selects.forEach(function (select) {
+            select.addEventListener('change', function () {
+                releaseDuplicateSelection(select);
+                render(true);
+            });
+        });
+
+        render(true);
+    }
+
+    function initMicrosoftPriceTrackerCharts() {
+        var root = document.querySelector('[data-m365calc-price-tracker]');
+        if (!root) {
+            return;
+        }
+
+        var dataNode = root.querySelector('[data-m365calc-price-tracker-data]');
+        if (!dataNode) {
+            return;
+        }
+
+        var data;
+        try {
+            data = JSON.parse(dataNode.textContent || '{}');
+        } catch (error) {
+            return;
+        }
+
+        var licenses = Array.isArray(data.licenses) ? data.licenses : [];
+        var dates = Array.isArray(data.dates) ? data.dates : [];
+        var storageKey = String(data.storage_key || 'm365tools-price-tracker-entries-v1');
+        var licenseMap = Object.create(null);
+        var priceFilter = root.querySelector('[data-m365calc-price-history-filter]');
+        var historyCanvas = root.querySelector('[data-m365calc-price-history-chart]');
+        var statusNode = root.querySelector('[data-m365calc-price-chart-status]');
+        var personalRoot = root.querySelector('[data-m365calc-personal-price-tracker]');
+        var historyChart = null;
+        var personalChart = null;
+        var palette = ['#1f4e79', '#c07a1f', '#2f7d5a', '#7c3aed', '#b42318', '#2563eb', '#64748b', '#0f766e', '#9333ea', '#ea580c'];
+
+        licenses.forEach(function (license) {
+            if (license && license.slug) {
+                licenseMap[String(license.slug)] = license;
+            }
+        });
+
+        if (licenses.length === 0 || dates.length === 0) {
+            return;
+        }
+
+        function chartReady() {
+            if (window.Chart) {
+                return Promise.resolve(window.Chart);
+            }
+
+            var existing = document.querySelector('script[data-m365calc-chartjs]');
+            if (existing) {
+                return new Promise(function (resolve, reject) {
+                    existing.addEventListener('load', function () {
+                        resolve(window.Chart);
+                    }, { once: true });
+                    existing.addEventListener('error', reject, { once: true });
+                });
+            }
+
+            return new Promise(function (resolve, reject) {
+                var script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js';
+                script.async = true;
+                script.defer = true;
+                script.setAttribute('data-m365calc-chartjs', 'true');
+                script.addEventListener('load', function () {
+                    resolve(window.Chart);
+                }, { once: true });
+                script.addEventListener('error', reject, { once: true });
+                document.head.appendChild(script);
+            });
+        }
+
+        function formatMoney(value) {
+            return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(Number(value || 0));
+        }
+
+        function formatPercent(value) {
+            return new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(Number(value || 0)) + ' %';
+        }
+
+        function createText(tagName, className, text) {
+            var node = document.createElement(tagName);
+            if (className) {
+                node.className = className;
+            }
+            node.textContent = String(text || '');
+
+            return node;
+        }
+
+        function priceAtDate(history, date) {
+            var price = null;
+            var firstKnown = null;
+            (Array.isArray(history) ? history : []).forEach(function (entry) {
+                var entryDate = String(entry.date || '');
+                var entryPrice = Number(entry.price || 0);
+                if (!entryDate || entryPrice <= 0) {
+                    return;
+                }
+                if (firstKnown === null) {
+                    firstKnown = entryPrice;
+                }
+                if (entryDate <= date) {
+                    price = entryPrice;
+                }
+            });
+
+            return price === null ? firstKnown : price;
+        }
+
+        function latestPrice(history) {
+            var price = null;
+            (Array.isArray(history) ? history : []).forEach(function (entry) {
+                var value = Number(entry.price || 0);
+                if (value > 0) {
+                    price = value;
+                }
+            });
+
+            return price;
+        }
+
+        function datasetForLicense(license, index, labels) {
+            var isDefault = license.default_visible === true;
+            var color = palette[index % palette.length];
+
+            return {
+                label: String(license.name || license.slug || 'Lizenz'),
+                data: labels.map(function (date) {
+                    return priceAtDate(license.history, date);
+                }),
+                borderColor: color,
+                backgroundColor: color,
+                borderWidth: isDefault ? 3 : 1.5,
+                pointRadius: isDefault ? 3 : 2,
+                tension: 0.25,
+                spanGaps: true,
+                hidden: false
+            };
+        }
+
+        function renderHistoryChart() {
+            if (!historyCanvas || !window.Chart) {
+                return;
+            }
+
+            var selectedSlug = priceFilter ? String(priceFilter.value || '') : '';
+            var visibleLicenses = selectedSlug && licenseMap[selectedSlug] ? [licenseMap[selectedSlug]] : licenses;
+            var labels = selectedSlug && licenseMap[selectedSlug]
+                ? (licenseMap[selectedSlug].history || []).map(function (entry) { return String(entry.date || ''); }).filter(Boolean)
+                : dates;
+
+            if (historyChart) {
+                historyChart.destroy();
+            }
+
+            historyChart = new window.Chart(historyCanvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: visibleLicenses.map(function (license, index) {
+                        return datasetForLicense(license, index, labels);
+                    })
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'nearest' },
+                    plugins: {
+                        legend: { display: true, position: 'bottom', labels: { boxWidth: 12, usePointStyle: true } },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return context.dataset.label + ': ' + formatMoney(context.parsed.y) + ' / User / Monat';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (value) {
+                                    return formatMoney(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function readStoredRows() {
+            try {
+                var parsed = JSON.parse(window.localStorage.getItem(storageKey) || '[]');
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function writeStoredRows(rows) {
+            try {
+                window.localStorage.setItem(storageKey, JSON.stringify(rows));
+            } catch (error) {
+                return;
+            }
+        }
+
+        function buildLicenseSelect(value) {
+            var select = document.createElement('select');
+            select.className = 'phinit-select';
+            select.appendChild(new Option('Lizenz auswählen', ''));
+            licenses.forEach(function (license) {
+                select.appendChild(new Option(String(license.name || license.slug), String(license.slug || '')));
+            });
+            select.value = String(value || '');
+
+            return select;
+        }
+
+        function initPersonalTracker() {
+            if (!personalRoot) {
+                return;
+            }
+
+            var rowsNode = personalRoot.querySelector('[data-m365calc-personal-rows]');
+            var emptyNode = personalRoot.querySelector('[data-m365calc-personal-empty]');
+            var addButton = personalRoot.querySelector('[data-m365calc-personal-add]');
+            var evaluateButton = personalRoot.querySelector('[data-m365calc-personal-evaluate]');
+            var resultsNode = personalRoot.querySelector('[data-m365calc-personal-results]');
+            var summaryNode = personalRoot.querySelector('[data-m365calc-personal-summary]');
+            var listNode = personalRoot.querySelector('[data-m365calc-personal-list]');
+            var personalCanvas = personalRoot.querySelector('[data-m365calc-personal-chart]');
+            var rows = readStoredRows();
+
+            function saveRowsFromDom() {
+                rows = Array.prototype.slice.call(rowsNode.querySelectorAll('[data-m365calc-personal-row]')).map(function (row) {
+                    return {
+                        id: row.getAttribute('data-row-id') || String(Date.now()),
+                        slug: row.querySelector('[data-field="slug"]').value,
+                        purchaseDate: row.querySelector('[data-field="purchaseDate"]').value,
+                        quantity: Math.max(0, parseInt(row.querySelector('[data-field="quantity"]').value || '0', 10) || 0)
+                    };
+                });
+                writeStoredRows(rows);
+            }
+
+            function renderRows() {
+                rowsNode.replaceChildren();
+                rows.forEach(function (item) {
+                    var row = document.createElement('section');
+                    row.className = 'm365calc-personal-row';
+                    row.setAttribute('data-m365calc-personal-row', 'true');
+                    row.setAttribute('data-row-id', String(item.id || Date.now()));
+
+                    var licenseField = createText('label', 'phinit-field', 'Lizenz');
+                    var select = buildLicenseSelect(item.slug);
+                    select.setAttribute('data-field', 'slug');
+                    licenseField.appendChild(select);
+
+                    var dateField = createText('label', 'phinit-field', 'Kaufdatum');
+                    var dateInput = document.createElement('input');
+                    dateInput.className = 'phinit-input';
+                    dateInput.type = 'date';
+                    dateInput.value = String(item.purchaseDate || '');
+                    dateInput.setAttribute('data-field', 'purchaseDate');
+                    dateField.appendChild(dateInput);
+
+                    var quantityField = createText('label', 'phinit-field', 'Menge');
+                    var quantityInput = document.createElement('input');
+                    quantityInput.className = 'phinit-input';
+                    quantityInput.type = 'number';
+                    quantityInput.min = '0';
+                    quantityInput.step = '1';
+                    quantityInput.value = String(item.quantity || 0);
+                    quantityInput.setAttribute('data-field', 'quantity');
+                    quantityField.appendChild(quantityInput);
+
+                    var removeButton = document.createElement('button');
+                    removeButton.type = 'button';
+                    removeButton.className = 'phinit-btn phinit-btn--secondary m365calc-row-remove';
+                    removeButton.textContent = 'Entfernen';
+                    removeButton.addEventListener('click', function () {
+                        rows = rows.filter(function (rowItem) {
+                            return String(rowItem.id) !== String(item.id);
+                        });
+                        writeStoredRows(rows);
+                        renderRows();
+                    });
+
+                    [select, dateInput, quantityInput].forEach(function (field) {
+                        field.addEventListener('change', saveRowsFromDom);
+                        field.addEventListener('input', saveRowsFromDom);
+                    });
+
+                    row.appendChild(licenseField);
+                    row.appendChild(dateField);
+                    row.appendChild(quantityField);
+                    row.appendChild(removeButton);
+                    rowsNode.appendChild(row);
+                });
+
+                if (emptyNode) {
+                    emptyNode.hidden = rows.length > 0;
+                }
+            }
+
+            function addRow() {
+                saveRowsFromDom();
+                rows.push({ id: String(Date.now()) + '-' + String(Math.round(Math.random() * 100000)), slug: '', purchaseDate: '', quantity: 1 });
+                writeStoredRows(rows);
+                renderRows();
+            }
+
+            function validRows() {
+                saveRowsFromDom();
+                return rows.map(function (item) {
+                    var license = licenseMap[String(item.slug || '')];
+                    return {
+                        license: license,
+                        slug: String(item.slug || ''),
+                        purchaseDate: String(item.purchaseDate || ''),
+                        quantity: Math.max(0, Number(item.quantity || 0))
+                    };
+                }).filter(function (item) {
+                    return item.license && item.purchaseDate && item.quantity > 0;
+                });
+            }
+
+            function evaluateRows() {
+                var items = validRows();
+                var purchaseAnnual = 0;
+                var currentAnnual = 0;
+                var tableRows = [];
+
+                items.forEach(function (item) {
+                    var purchasePrice = priceAtDate(item.license.history, item.purchaseDate);
+                    var currentPrice = latestPrice(item.license.history);
+                    if (purchasePrice === null || currentPrice === null) {
+                        return;
+                    }
+
+                    var purchaseCost = purchasePrice * item.quantity * 12;
+                    var currentCost = currentPrice * item.quantity * 12;
+                    var delta = currentCost - purchaseCost;
+                    purchaseAnnual += purchaseCost;
+                    currentAnnual += currentCost;
+                    tableRows.push({
+                        license: item.license,
+                        purchaseDate: item.purchaseDate,
+                        quantity: item.quantity,
+                        purchasePrice: purchasePrice,
+                        currentPrice: currentPrice,
+                        delta: delta,
+                        percent: purchasePrice > 0 ? ((currentPrice - purchasePrice) / purchasePrice) * 100 : 0
+                    });
+                });
+
+                return { items: items, rows: tableRows, purchaseAnnual: purchaseAnnual, currentAnnual: currentAnnual, delta: currentAnnual - purchaseAnnual };
+            }
+
+            function renderSummary(evaluation) {
+                summaryNode.replaceChildren();
+                [
+                    ['Ausgangskosten / Jahr', evaluation.purchaseAnnual],
+                    ['Aktuelle Kosten / Jahr', evaluation.currentAnnual],
+                    ['Delta / Jahr', evaluation.delta],
+                    ['Ausgewertete Zeilen', evaluation.rows.length]
+                ].forEach(function (item) {
+                    var card = document.createElement('article');
+                    card.className = 'phinit-card m365calc-mini-card';
+                    if (item[0] === 'Delta / Jahr') {
+                        card.classList.add(evaluation.delta >= 0 ? 'phinit-card--warning' : 'phinit-card--success');
+                    }
+                    card.appendChild(createText('span', '', item[0]));
+                    card.appendChild(createText('strong', '', typeof item[1] === 'number' && item[0] !== 'Ausgewertete Zeilen' ? formatMoney(item[1]) : String(item[1])));
+                    summaryNode.appendChild(card);
+                });
+            }
+
+            function renderList(rowsToRender) {
+                listNode.replaceChildren();
+                if (rowsToRender.length === 0) {
+                    var emptyRow = document.createElement('tr');
+                    var cell = document.createElement('td');
+                    cell.colSpan = 7;
+                    cell.textContent = 'Keine auswertbaren Zeilen. Bitte Lizenz, Kaufdatum und Menge erfassen.';
+                    emptyRow.appendChild(cell);
+                    listNode.appendChild(emptyRow);
+                    return;
+                }
+
+                rowsToRender.forEach(function (item) {
+                    var row = document.createElement('tr');
+                    row.className = item.delta >= 0 ? 'm365calc-delta--positive' : 'm365calc-delta--negative';
+                    [
+                        item.license.name,
+                        item.purchaseDate,
+                        String(item.quantity),
+                        formatMoney(item.purchasePrice),
+                        formatMoney(item.currentPrice),
+                        formatMoney(item.delta),
+                        formatPercent(item.percent)
+                    ].forEach(function (value, index) {
+                        var cell = document.createElement(index === 0 ? 'th' : 'td');
+                        if (index === 0) {
+                            cell.scope = 'row';
+                        }
+                        cell.textContent = String(value || '');
+                        row.appendChild(cell);
+                    });
+                    listNode.appendChild(row);
+                });
+            }
+
+            function renderPersonalChart(evaluation) {
+                if (!personalCanvas || !window.Chart) {
+                    return;
+                }
+
+                var dateMap = Object.create(null);
+                evaluation.items.forEach(function (item) {
+                    dateMap[item.purchaseDate] = true;
+                    (item.license.history || []).forEach(function (entry) {
+                        if (String(entry.date || '') >= item.purchaseDate) {
+                            dateMap[String(entry.date)] = true;
+                        }
+                    });
+                });
+
+                var labels = Object.keys(dateMap).sort();
+                var amounts = labels.map(function (date) {
+                    return evaluation.items.reduce(function (sum, item) {
+                        if (date < item.purchaseDate) {
+                            return sum;
+                        }
+                        var price = priceAtDate(item.license.history, date);
+                        return sum + (price || 0) * item.quantity * 12;
+                    }, 0);
+                });
+
+                if (personalChart) {
+                    personalChart.destroy();
+                }
+
+                personalChart = new window.Chart(personalCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Eigene Jahreskosten',
+                            data: amounts,
+                            borderColor: '#1f4e79',
+                            backgroundColor: 'rgba(31, 78, 121, 0.12)',
+                            fill: true,
+                            borderWidth: 3,
+                            tension: 0.25
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        return formatMoney(context.parsed.y) + ' / Jahr';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function (value) {
+                                        return formatMoney(value);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function evaluateAndRender() {
+                var evaluation = evaluateRows();
+                if (resultsNode) {
+                    resultsNode.hidden = false;
+                }
+                renderSummary(evaluation);
+                renderList(evaluation.rows);
+                chartReady().then(function () {
+                    renderPersonalChart(evaluation);
+                }).catch(function () {
+                    return;
+                });
+            }
+
+            if (addButton) {
+                addButton.addEventListener('click', addRow);
+            }
+            if (evaluateButton) {
+                evaluateButton.addEventListener('click', evaluateAndRender);
+            }
+
+            renderRows();
+        }
+
+        chartReady().then(function () {
+            renderHistoryChart();
+            if (priceFilter) {
+                priceFilter.addEventListener('change', renderHistoryChart);
+            }
+        }).catch(function () {
+            if (statusNode) {
+                statusNode.hidden = false;
+            }
+        });
+
+        initPersonalTracker();
+    }
+
     function parsePercent(text) {
         var match = String(text || '').replace(',', '.').match(/(\d{1,3}(?:\.\d+)?)\s*%/);
         if (!match) {
@@ -374,6 +1141,8 @@
         initPrintButtons();
         initResetButtons();
         initLicenseAuditChecklist();
+        initLicenseComparisonColumns();
+        initMicrosoftPriceTrackerCharts();
         initDetailVisualEnhancements();
     });
 }());

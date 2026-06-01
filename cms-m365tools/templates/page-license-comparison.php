@@ -30,13 +30,88 @@ $statusLabels = is_array($result['status_short_labels'] ?? null) ? $result['stat
 $featureDifferences = is_array($result['highlights']['feature_differences'] ?? null) ? $result['highlights']['feature_differences'] : [];
 $planNotes = is_array($result['plan_notes'] ?? null) ? $result['plan_notes'] : [];
 $cheapestSlug = (string) ($result['highlights']['cheapest_slug'] ?? '');
+$selectedColumnSlugs = [];
+foreach ($selectedPlans as $plan) {
+    if (is_array($plan) && !empty($plan['slug'])) {
+        $selectedColumnSlugs[] = (string) $plan['slug'];
+    }
+}
+$selectedColumnSlugs = array_slice(array_values(array_unique($selectedColumnSlugs)), 0, 4);
+while (count($selectedColumnSlugs) < 4) {
+    $selectedColumnSlugs[] = '';
+}
+$comparisonPlans = [];
+foreach ($plans as $plan) {
+    if (!is_array($plan) || empty($plan['slug'])) {
+        continue;
+    }
+
+    $planStatuses = [];
+    foreach ($features as $featureKey => $feature) {
+        if (!is_array($feature)) {
+            continue;
+        }
+
+        $status = CMS_M365CALCULATOR_License_Comparison::feature_status($plan, (string) $featureKey, $feature);
+        $planStatuses[(string) $featureKey] = [
+            'status' => (string) ($status['status'] ?? 'unknown'),
+            'label' => $statusLabel((string) ($status['status'] ?? 'unknown'), $statusLabels),
+            'note' => (string) ($status['note'] ?? ''),
+        ];
+    }
+
+    $comparisonPlans[] = [
+        'slug' => (string) $plan['slug'],
+        'name' => (string) ($plan['name'] ?? ''),
+        'family' => (string) ($plan['family'] ?? ''),
+        'price_month' => (float) ($plan['price_month'] ?? 0),
+        'price_text' => $money($plan['price_month'] ?? 0),
+        'statuses' => $planStatuses,
+    ];
+}
+$comparisonGroups = [];
+foreach ($groups as $group) {
+    if (!is_array($group) || empty($group['features']) || !is_array($group['features'])) {
+        continue;
+    }
+
+    $groupFeatures = [];
+    foreach ($group['features'] as $featureKey => $feature) {
+        if (!is_array($feature)) {
+            continue;
+        }
+
+        $groupFeatures[] = [
+            'key' => (string) $featureKey,
+            'label' => (string) ($feature['label'] ?? $featureKey),
+            'description' => (string) ($feature['description'] ?? ''),
+        ];
+    }
+
+    $comparisonGroups[] = [
+        'key' => (string) ($group['key'] ?? ''),
+        'label' => (string) ($group['label'] ?? $group['key'] ?? 'Features'),
+        'features' => $groupFeatures,
+    ];
+}
+$comparisonDataJson = json_encode([
+    'plans' => $comparisonPlans,
+    'groups' => $comparisonGroups,
+    'initialSelected' => array_values(array_filter($selectedColumnSlugs)),
+    'counts' => [
+        'filtered' => (int) ($result['counts']['filtered'] ?? 0),
+        'all' => (int) ($result['counts']['all'] ?? 0),
+    ],
+], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+$comparisonDataJson = is_string($comparisonDataJson) ? $comparisonDataJson : '{}';
 
 if (class_exists('CMS\\ThemeManager')) {
     \CMS\ThemeManager::instance()->getHeader(['title' => 'M365 Lizenzvergleich']);
 }
 ?>
 
-<main class="phinit-plugin m365calc-page m365calc-comparison-page" id="m365-license-comparison">
+<main class="phinit-plugin m365calc-page m365calc-comparison-page" id="m365-license-comparison" data-m365calc-license-comparison>
+    <script type="application/json" data-m365calc-license-comparison-data><?php echo $comparisonDataJson; ?></script>
     <header class="m365calc-hero">
         <p class="phinit-overline">Lizenzvergleich</p>
         <section class="m365calc-hero__content" aria-labelledby="m365compare-title">
@@ -106,19 +181,22 @@ if (class_exists('CMS\\ThemeManager')) {
                     <p>Bitte Filter anpassen oder zurücksetzen.</p>
                 </section>
                 <?php else: ?>
-                <section class="m365calc-plan-select-grid" aria-label="Auswählbare Vergleichsspalten">
-                    <?php foreach ($plans as $plan): ?>
-                    <?php $slug = (string) ($plan['slug'] ?? ''); ?>
-                    <label class="m365calc-plan-select">
-                        <input type="checkbox" name="selected[]" value="<?php echo $esc($slug); ?>"<?php echo $isChecked($selectedSlugs, $slug); ?>>
-                        <span>
-                            <strong><?php echo $esc($plan['name'] ?? ''); ?></strong>
-                            <small><?php echo $money($plan['price_month'] ?? 0); ?> / User / Monat · <?php echo $esc($plan['family'] ?? ''); ?></small>
-                        </span>
+                <section class="m365calc-column-picker" aria-label="Auswählbare Vergleichsspalten">
+                    <?php for ($columnIndex = 0; $columnIndex < 4; $columnIndex++): ?>
+                    <?php $selectedColumnSlug = (string) ($selectedColumnSlugs[$columnIndex] ?? ''); ?>
+                    <label class="phinit-field" for="m365compare-column-<?php echo (int) $columnIndex + 1; ?>">
+                        Vergleichsspalte <?php echo (int) $columnIndex + 1; ?>
+                        <select class="phinit-select" id="m365compare-column-<?php echo (int) $columnIndex + 1; ?>" name="selected[]" data-m365calc-license-select>
+                            <option value="">— auswählen —</option>
+                            <?php foreach ($plans as $plan): ?>
+                            <?php $slug = (string) ($plan['slug'] ?? ''); ?>
+                            <option value="<?php echo $esc($slug); ?>"<?php echo $isSelected($selectedColumnSlug, $slug); ?>><?php echo $esc((string) ($plan['name'] ?? '') . ' · ' . $money($plan['price_month'] ?? 0) . ' · ' . (string) ($plan['family'] ?? '')); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </label>
-                    <?php endforeach; ?>
+                    <?php endfor; ?>
                 </section>
-                <p class="m365calc-help-text">Bis zu sechs Spalten werden in der Funktionsmatrix angezeigt. Wenn keine Spalte ausgewählt ist, nutzt das Modul die ersten passenden Pläne.</p>
+                <p class="m365calc-help-text">Bis zu vier Spalten werden in der Funktionsmatrix angezeigt. Leere Auswahlfelder erzeugen keine Tabellenspalte; bei doppelter Auswahl wird die frühere Spalte automatisch freigemacht.</p>
                 <?php endif; ?>
             </fieldset>
 
@@ -134,7 +212,7 @@ if (class_exists('CMS\\ThemeManager')) {
             <section>
                 <p class="phinit-overline">Auswertung</p>
                 <h2 id="m365compare-result-title">Vergleichsmatrix</h2>
-                <p><?php echo (int) ($result['counts']['filtered'] ?? 0); ?> von <?php echo (int) ($result['counts']['all'] ?? 0); ?> Plänen passen zu den aktuellen Filtern. <?php echo (int) ($result['counts']['selected'] ?? 0); ?> Spalten sind ausgewählt.</p>
+                <p data-m365calc-license-count><?php echo (int) ($result['counts']['filtered'] ?? 0); ?> von <?php echo (int) ($result['counts']['all'] ?? 0); ?> Plänen passen zu den aktuellen Filtern. <?php echo (int) ($result['counts']['selected'] ?? 0); ?> Spalten sind ausgewählt.</p>
             </section>
             <section class="m365calc-actions">
                 <button type="button" class="phinit-btn phinit-btn--secondary" data-m365calc-print>Drucken / PDF speichern</button>
@@ -142,13 +220,11 @@ if (class_exists('CMS\\ThemeManager')) {
             </section>
         </header>
 
-        <?php if (empty($selectedPlans)): ?>
-        <section class="phinit-empty-state" role="status" aria-live="polite">
+        <section class="phinit-empty-state" role="status" aria-live="polite" data-m365calc-license-empty<?php echo empty($selectedPlans) ? '' : ' hidden'; ?>>
             <h3>Keine Vergleichsspalten verfügbar</h3>
-            <p>Bitte wähle mindestens eine passende Lizenz aus oder setze die Filter zurück.</p>
+            <p>Bitte wähle mindestens eine Lizenz in den Vergleichsspalten aus.</p>
         </section>
-        <?php else: ?>
-        <section class="m365calc-summary-grid" aria-label="Schnelleinschätzung">
+        <section class="m365calc-summary-grid" aria-label="Schnelleinschätzung" data-m365calc-license-summary<?php echo empty($selectedPlans) ? ' hidden' : ''; ?>>
             <?php foreach ($selectedPlans as $plan): ?>
             <?php $slug = (string) ($plan['slug'] ?? ''); ?>
             <article class="phinit-card m365calc-mini-card<?php echo $slug === $cheapestSlug ? ' phinit-card--success' : ''; ?>">
@@ -159,9 +235,9 @@ if (class_exists('CMS\\ThemeManager')) {
             <?php endforeach; ?>
         </section>
 
-        <section class="phinit-table-wrap m365calc-compare-wrap" aria-label="Feature-Vergleichstabelle">
+        <section class="phinit-table-wrap m365calc-compare-wrap" aria-label="Feature-Vergleichstabelle" data-m365calc-license-table<?php echo empty($selectedPlans) ? ' hidden' : ''; ?>>
             <table class="phinit-table m365calc-compare-table">
-                <thead>
+                <thead data-m365calc-license-head>
                     <tr>
                         <th scope="col">Funktion</th>
                         <?php foreach ($selectedPlans as $plan): ?>
@@ -172,7 +248,7 @@ if (class_exists('CMS\\ThemeManager')) {
                         <?php endforeach; ?>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody data-m365calc-license-body>
                     <?php foreach ($groups as $group): ?>
                     <?php if (empty($group['features']) || !is_array($group['features'])) { continue; } ?>
                     <tr class="m365calc-compare-table__group">
@@ -200,7 +276,6 @@ if (class_exists('CMS\\ThemeManager')) {
                 </tbody>
             </table>
         </section>
-        <?php endif; ?>
     </section>
 
     <?php if (!empty($plans)): ?>

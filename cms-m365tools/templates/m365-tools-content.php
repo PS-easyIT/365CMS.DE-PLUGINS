@@ -122,6 +122,9 @@ $primaryButtonLabel = $textOption('landing_primary_button_label', 'Alle Tools du
 $primaryButtonUrl = $safeUrl($option('landing_primary_button_url', '#catalog'), '#catalog');
 $secondaryButtonLabel = $textOption('landing_secondary_button_label', 'Kontakt aufnehmen');
 $secondaryButtonUrl = $safeUrl($option('landing_secondary_button_url', '/kontakt'), '/kontakt');
+$isSelfSearchHeaderButton = preg_match('/\btools\s+durchsuchen\b/i', $primaryButtonLabel) === 1 || in_array($primaryButtonUrl, ['#catalog', '#direkteinstieg'], true);
+$showPrimaryHeaderButton = $primaryButtonLabel !== '' && $primaryButtonUrl !== '' && !$isSelfSearchHeaderButton;
+$showSecondaryHeaderButton = $secondaryButtonLabel !== '' && $secondaryButtonUrl !== '';
 $searchTitle = $textOption('landing_search_title', 'Tools suchen und filtern');
 $searchPlaceholder = $textOption('landing_search_placeholder', 'Nach Tool, Thema oder Kategorie suchen …');
 $searchHelp = $textOption('landing_search_help', 'Suche und Kategorie wirken gemeinsam.');
@@ -511,12 +514,12 @@ $sectionGap = $optionNumber('landing_section_gap', 32, 16, 96);
                     <?php if ($optionBool('landing_show_header_intro', '1') && $intro !== ''): ?>
                     <p class="lead"><?php echo $esc($intro); ?></p>
                     <?php endif; ?>
-                    <?php if ($optionBool('landing_show_header_buttons', '1') && (($primaryButtonLabel !== '' && $primaryButtonUrl !== '') || ($secondaryButtonLabel !== '' && $secondaryButtonUrl !== ''))): ?>
+                    <?php if ($optionBool('landing_show_header_buttons', '1') && ($showPrimaryHeaderButton || $showSecondaryHeaderButton)): ?>
                     <nav class="actions" aria-label="Landingpage Aktionen">
-                        <?php if ($primaryButtonLabel !== '' && $primaryButtonUrl !== ''): ?>
+                        <?php if ($showPrimaryHeaderButton): ?>
                         <a class="cta-btn" href="<?php echo $esc($primaryButtonUrl); ?>"><?php echo $esc($primaryButtonLabel); ?><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
                         <?php endif; ?>
-                        <?php if ($secondaryButtonLabel !== '' && $secondaryButtonUrl !== ''): ?>
+                        <?php if ($showSecondaryHeaderButton): ?>
                         <a class="cta-btn cta-btn--secondary" href="<?php echo $esc($secondaryButtonUrl); ?>"><?php echo $esc($secondaryButtonLabel); ?></a>
                         <?php endif; ?>
                     </nav>

@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) {
 
 final class CMS_M365CALCULATOR_License_Comparison
 {
-    private const MAX_SELECTED_PLANS = 6;
+    private const MAX_SELECTED_PLANS = 4;
 
     /**
      * @return array<string,mixed>
@@ -24,7 +24,7 @@ final class CMS_M365CALCULATOR_License_Comparison
             'q' => '',
             'family' => 'all',
             'features' => [],
-            'selected' => ['m365-business-basic', 'm365-business-standard', 'm365-business-premium', 'm365-e3', 'm365-e5'],
+            'selected' => ['m365-business-basic', 'm365-business-standard', 'm365-business-premium', 'm365-e3'],
             'sort' => 'price_asc',
         ];
     }
@@ -44,9 +44,10 @@ final class CMS_M365CALCULATOR_License_Comparison
         $allowedFeatures = ['desktop', 'copilot', 'security', 'phone', 'power', 'frontline'];
         $filters['features'] = array_values(array_intersect($allowedFeatures, array_map([self::class, 'clean_key'], $featureSource)));
 
+        $selectedProvided = array_key_exists('selected', $source);
         $selectedSource = is_array($source['selected'] ?? null) ? $source['selected'] : [];
         $selected = array_values(array_unique(array_filter(array_map([self::class, 'clean_key'], $selectedSource))));
-        if ($selected !== []) {
+        if ($selectedProvided) {
             $filters['selected'] = array_slice($selected, 0, self::MAX_SELECTED_PLANS);
         }
 
@@ -343,10 +344,6 @@ final class CMS_M365CALCULATOR_License_Comparison
             if (is_array($indexed[$slug] ?? null)) {
                 $selected[] = $indexed[$slug];
             }
-        }
-
-        if ($selected === []) {
-            $selected = array_slice($plans, 0, min(self::MAX_SELECTED_PLANS, max(1, count($plans))));
         }
 
         return array_slice($selected, 0, self::MAX_SELECTED_PLANS);

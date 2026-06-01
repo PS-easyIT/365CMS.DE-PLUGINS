@@ -31,13 +31,17 @@ $tone = in_array($tone, ['success', 'warning', 'danger', 'info'], true) ? $tone 
 $score = max(0, min(100, (int) ($recommendation['score'] ?? 0)));
 $money = static fn(mixed $value): string => number_format((float) $value, 2, ',', '.') . ' €';
 $isSelected = static fn(string $left, string $right): string => $left === $right ? ' selected' : '';
+$priceHistoryData = CMS_M365CALCULATOR_Microsoft_Price_Tracker::price_history_dataset();
+$priceHistoryJson = json_encode($priceHistoryData, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+$priceHistoryJson = is_string($priceHistoryJson) ? $priceHistoryJson : '{}';
 
 if (class_exists('CMS\\ThemeManager')) {
     \CMS\ThemeManager::instance()->getHeader(['title' => 'Microsoft-Preiserhöhung-Tracker']);
 }
 ?>
 
-<main class="phinit-plugin m365calc-page m365calc-price-tracker-page" id="microsoft-preiserhoehung-tracker">
+<main class="phinit-plugin m365calc-page m365calc-price-tracker-page" id="microsoft-preiserhoehung-tracker" data-m365calc-price-tracker>
+    <script type="application/json" data-m365calc-price-tracker-data><?php echo $priceHistoryJson; ?></script>
     <header class="m365calc-hero">
         <p class="phinit-overline">Microsoft Preis- und Renewal-Timeline</p>
         <section class="m365calc-hero__content" aria-labelledby="m365price-title">
@@ -51,6 +55,79 @@ if (class_exists('CMS\\ThemeManager')) {
             </nav>
         </section>
     </header>
+
+    <section class="phinit-result m365calc-result-card m365calc-price-history-section" aria-labelledby="m365price-history-title">
+        <header class="m365calc-result-heading">
+            <section>
+                <p class="phinit-overline">Preisverlauf</p>
+                <h2 id="m365price-history-title">Section A – Preisentwicklung nach Lizenz</h2>
+                <p>Der Linienchart nutzt den bestehenden kanonischen Preiszeitreihenkatalog. Alle anzeigen bleibt Standard; Business Standard, Business Premium, E3 und E5 starten sichtbar.</p>
+            </section>
+        </header>
+        <section class="m365calc-chart-panel" aria-label="Preisverlauf als Linienchart">
+            <canvas data-m365calc-price-history-chart></canvas>
+            <p class="m365calc-chart-fallback" data-m365calc-price-chart-status hidden>Chart.js konnte nicht geladen werden. Die Preiszeitreihen bleiben in den Tabellen unten verfügbar.</p>
+        </section>
+        <section class="m365calc-chart-legend" data-m365calc-price-history-legend aria-label="Sichtbare Lizenzlinien"></section>
+        <p class="m365calc-chart-hint" data-m365calc-price-history-hint hidden>max. 5 Lizenzen – bitte zuerst eine sichtbare Lizenz abwählen.</p>
+        <label class="phinit-field m365calc-price-history-filter" for="m365price-history-license">
+            Ansicht wechseln
+            <select class="phinit-select" id="m365price-history-license" data-m365calc-price-history-filter>
+                <option value="">Alle anzeigen</option>
+                <?php foreach ((array) ($priceHistoryData['licenses'] ?? []) as $license): ?>
+                <?php if (!is_array($license)) { continue; } ?>
+                <option value="<?php echo htmlspecialchars((string) ($license['slug'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($license['name'] ?? $license['slug'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+    </section>
+
+    <hr class="m365calc-section-divider" aria-hidden="true">
+
+    <section class="phinit-result m365calc-result-card m365calc-personal-price-section" aria-labelledby="m365price-personal-title" data-m365calc-personal-price-tracker>
+        <header class="m365calc-result-heading">
+            <section>
+                <p class="phinit-overline">Eigener Bestand</p>
+                <h2 id="m365price-personal-title">Section B – Persönlicher Kosten-Tracker</h2>
+                <p>Füge deine Lizenzen lokal im Browser hinzu. Kaufdatum und Menge werden nur in `localStorage` gespeichert, es gibt keine Backend-Schreibzugriffe.</p>
+            </section>
+            <section class="m365calc-actions">
+                <button type="button" class="phinit-btn phinit-btn--secondary m365calc-icon-btn" data-m365calc-personal-add aria-label="Lizenzzeile hinzufügen">+ Lizenz hinzufügen</button>
+            </section>
+        </header>
+
+        <section class="m365calc-personal-rows" data-m365calc-personal-rows aria-label="Eigene Lizenzpositionen"></section>
+        <section class="phinit-empty-state m365calc-personal-empty" data-m365calc-personal-empty>
+            <h3>Noch keine eigenen Lizenzen</h3>
+            <p>Nutze den Plus-Button, um Lizenz, Kaufdatum und Menge zu erfassen.</p>
+        </section>
+        <section class="m365calc-actions">
+            <button type="button" class="phinit-btn phinit-btn--primary" data-m365calc-personal-evaluate>Auswerten</button>
+        </section>
+
+        <section class="m365calc-personal-results" data-m365calc-personal-results hidden>
+            <section class="m365calc-chart-panel" aria-label="Eigene Kostenentwicklung als Linienchart">
+                <canvas data-m365calc-personal-chart></canvas>
+            </section>
+            <section class="m365calc-summary-grid" data-m365calc-personal-summary aria-label="Gesamtauswertung"></section>
+            <section class="phinit-table-wrap" aria-label="Kostenänderung je Lizenz">
+                <table class="phinit-table m365calc-personal-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Lizenz</th>
+                            <th scope="col">Kaufdatum</th>
+                            <th scope="col">Menge</th>
+                            <th scope="col">Preis damals</th>
+                            <th scope="col">Aktueller Preis</th>
+                            <th scope="col">Delta / Jahr</th>
+                            <th scope="col">Delta %</th>
+                        </tr>
+                    </thead>
+                    <tbody data-m365calc-personal-list></tbody>
+                </table>
+            </section>
+        </section>
+    </section>
 
     <section class="m365calc-layout" aria-label="Preis-Tracker Auswertung">
         <section class="phinit-card" aria-labelledby="m365price-form-title">
