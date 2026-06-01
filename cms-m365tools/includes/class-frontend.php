@@ -550,6 +550,7 @@ final class CMS_M365CALCULATOR_Frontend
         $classList[] = 'm365calculator-theme-embed';
         if (!$this->is_toolbox_request()) {
             $classList[] = 'm365tools-detail-buttons-' . $this->public_detail_button_layout();
+            $classList[] = 'm365tools-detail-compact';
         }
         $moduleKey = $this->current_module_key_from_request();
         if ($moduleKey !== null) {

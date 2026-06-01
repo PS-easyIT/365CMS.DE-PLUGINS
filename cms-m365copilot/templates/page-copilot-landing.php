@@ -198,20 +198,25 @@ $serviceCta = $publicHref((string) ($settings['service_cta_url'] ?? ''));
                 $infoTitle = trim((string) ($settings['service_info_' . $i . '_title'] ?? ''));
                 $infoText = trim((string) ($settings['service_info_' . $i . '_text'] ?? ''));
                 $infoUrl = $publicHref((string) ($settings['service_info_' . $i . '_url'] ?? ''));
+                $infoIcon = $i === 1
+                    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"></path><path d="M12 7v5l3 2"></path></svg>'
+                    : ($i === 2
+                        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5"></path><path d="M9 5h10v10"></path></svg>'
+                        : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v6c0 5 3.5 7.5 8 8 4.5-.5 8-3 8-8V7l-8-4Z"></path><path d="m9 12 2 2 4-4"></path></svg>');
                 if ($infoTitle === '' && $infoText === '') {
                     continue;
                 }
                 ?>
                 <?php if ($infoUrl !== ''): ?>
                 <a class="m365cp-service-info-card m365cp-service-info-card--link" role="listitem" href="<?php echo $esc($infoUrl); ?>">
-                    <span class="m365cp-service-info-card__icon" aria-hidden="true"><?php echo $i === 1 ? '🧭' : ($i === 2 ? '🚀' : '🛡️'); ?></span>
+                    <span class="m365cp-service-info-card__icon" aria-hidden="true"><?php echo $infoIcon; ?></span>
                     <?php if ($infoTitle !== ''): ?><h3><?php echo $esc($infoTitle); ?></h3><?php endif; ?>
                     <?php if ($infoText !== ''): ?><p><?php echo $esc($infoText); ?></p><?php endif; ?>
                     <span class="m365cp-service-info-card__more" aria-hidden="true">Mehr erfahren →</span>
                 </a>
                 <?php else: ?>
                 <article class="m365cp-service-info-card m365cp-service-info-card--static" role="listitem">
-                    <span class="m365cp-service-info-card__icon" aria-hidden="true"><?php echo $i === 1 ? '🧭' : ($i === 2 ? '🚀' : '🛡️'); ?></span>
+                    <span class="m365cp-service-info-card__icon" aria-hidden="true"><?php echo $infoIcon; ?></span>
                     <?php if ($infoTitle !== ''): ?><h3><?php echo $esc($infoTitle); ?></h3><?php endif; ?>
                     <?php if ($infoText !== ''): ?><p><?php echo $esc($infoText); ?></p><?php endif; ?>
                 </article>
@@ -230,7 +235,7 @@ $serviceCta = $publicHref((string) ($settings['service_cta_url'] ?? ''));
                 <h2><?php echo $esc((string) ($settings['posts_title'] ?? '')); ?></h2>
                 <p><?php echo $esc((string) ($settings['posts_intro'] ?? '')); ?></p>
             </div>
-            <div class="posts-grid m365cp-posts__grid" role="list">
+            <div class="n365-post-grid m365cp-posts__grid" role="list">
                 <?php foreach ($posts as $p): ?>
                 <?php
                 $postUrl = '/blog/' . rawurlencode((string) ($p['slug'] ?? ''));
@@ -273,47 +278,25 @@ $serviceCta = $publicHref((string) ($settings['service_cta_url'] ?? ''));
                 $categoryHref = $categorySlug !== '' ? $publicHref('/category/' . rawurlencode($categorySlug)) : '';
                 $imageRef = (string) ($p['featured_image'] ?? $postImage);
                 ?>
-                <article class="post-card" role="listitem">
-                    <?php if ($postImage !== ''): ?>
-                    <a class="post-card-thumb" href="<?php echo $esc($postHref); ?>" aria-hidden="true" tabindex="-1">
-                        <img src="<?php echo $esc($postImage); ?>"
-                             alt="<?php echo $esc((string) ($p['title'] ?? '')); ?>"
-                             loading="lazy"
-                             decoding="async"
-                             <?php echo function_exists('phinit_image_dimension_attributes') ? phinit_image_dimension_attributes($imageRef, 320, 180) : 'width="320" height="180"'; ?>>
-                        <?php if (!empty($p['category_name']) && $categoryHref !== ''): ?>
-                        <span class="post-card-badge badge-teal"><?php echo $esc((string) ($p['category_name'] ?? '')); ?></span>
-                        <?php endif; ?>
-                    </a>
-                    <?php else: ?>
-                    <a class="post-card-thumb post-card-thumb--placeholder" href="<?php echo $esc($postHref); ?>" aria-hidden="true" tabindex="-1">
-                        <span class="post-card-thumb__icon">📄</span>
-                        <?php if (!empty($p['category_name']) && $categoryHref !== ''): ?>
-                        <span class="post-card-badge badge-teal"><?php echo $esc((string) ($p['category_name'] ?? '')); ?></span>
-                        <?php endif; ?>
-                    </a>
-                    <?php endif; ?>
-
-                    <div class="post-card-body">
-                        <h3 class="post-card-title"><a href="<?php echo $esc($postHref); ?>"><?php echo $esc((string) ($p['title'] ?? '')); ?></a></h3>
+                <article class="n365-post-card" role="listitem">
+                    <div class="n365-post-card__body">
+                        <h3 class="n365-post-card__title"><a href="<?php echo $esc($postHref); ?>"><?php echo $esc((string) ($p['title'] ?? '')); ?></a></h3>
                         <?php if ($postDateText !== '' || $readTime > 0): ?>
-                        <div class="post-card-top-meta">
+                        <p class="n365-post-card__meta">
                             <?php if ($postDateText !== ''): ?>
                             <?php if ($postDateIso !== ''): ?><time datetime="<?php echo $esc($postDateIso); ?>"><?php echo $esc($postDateText); ?></time><?php else: ?><span><?php echo $esc($postDateText); ?></span><?php endif; ?>
                             <?php endif; ?>
-                            <?php if ($readTime > 0): ?><span class="post-card-top-meta__read"><?php echo $esc((string) $readTime . ' Min. Lesezeit'); ?></span><?php endif; ?>
-                        </div>
+                            <?php if ($readTime > 0): ?><span><?php echo $esc((string) $readTime . ' Min.'); ?></span><?php endif; ?>
+                        </p>
                         <?php endif; ?>
-                        <?php if ($postExcerpt !== ''): ?><p class="post-card-excerpt"><?php echo $esc($postExcerpt); ?></p><?php endif; ?>
-                        <div class="post-card-meta">
-                            <div class="post-card-meta__left">
-                                <?php if (!empty($p['category_name']) && $categoryHref !== ''): ?>
-                                <a class="cat" href="<?php echo $esc($categoryHref); ?>"><?php echo $esc((string) ($p['category_name'] ?? '')); ?></a>
-                                <?php elseif (!empty($p['category_name'])): ?>
-                                <span class="cat"><?php echo $esc((string) ($p['category_name'] ?? '')); ?></span>
-                                <?php endif; ?>
-                            </div>
-                            <a href="<?php echo $esc($postHref); ?>" class="post-card-meta__more" aria-label="<?php echo $esc(($postsReadAriaPrefix !== '' ? $postsReadAriaPrefix : 'Beitrag lesen:') . ' ' . (string) ($p['title'] ?? '')); ?>"><span class="post-card-meta__more-label post-card-meta__more-label--desktop"><?php echo $esc($postReadMoreLabel !== '' ? $postReadMoreLabel : 'Weiter lesen →'); ?></span><span class="post-card-meta__more-label post-card-meta__more-label--mobile"><?php echo $esc($postReadMoreLabel !== '' ? $postReadMoreLabel : 'Weiter lesen →'); ?></span></a>
+                        <?php if ($postExcerpt !== ''): ?><p class="n365-post-card__excerpt"><?php echo $esc($postExcerpt); ?></p><?php endif; ?>
+                        <div class="n365-post-card__foot">
+                            <?php if (!empty($p['category_name']) && $categoryHref !== ''): ?>
+                            <a class="n365-post-card__cat" href="<?php echo $esc($categoryHref); ?>"><?php echo $esc((string) ($p['category_name'] ?? '')); ?></a>
+                            <?php elseif (!empty($p['category_name'])): ?>
+                            <span class="n365-post-card__cat"><?php echo $esc((string) ($p['category_name'] ?? '')); ?></span>
+                            <?php endif; ?>
+                            <a class="n365-post-card__more" href="<?php echo $esc($postHref); ?>" aria-label="<?php echo $esc(($postsReadAriaPrefix !== '' ? $postsReadAriaPrefix : 'Beitrag lesen:') . ' ' . (string) ($p['title'] ?? '')); ?>"><?php echo $esc($postReadMoreLabel !== '' ? $postReadMoreLabel : 'Weiter lesen →'); ?></a>
                         </div>
                     </div>
                 </article>

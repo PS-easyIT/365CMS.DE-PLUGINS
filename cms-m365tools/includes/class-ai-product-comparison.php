@@ -491,24 +491,100 @@ final class CMS_M365CALCULATOR_AI_Product_Comparison
     /** @param array<string,string> $overrides */
     private static function resolve_matrix_override_value(array $overrides, string $vendorKey, string $tierKey): string
     {
-        $candidates = [
-            'ai-price-' . $vendorKey . '-' . $tierKey,
-            'ai-price-' . $vendorKey . '-' . $tierKey . '-eur',
-            'ai-price-' . $vendorKey . '-' . $tierKey . '-value',
-            'price-' . $vendorKey . '-' . $tierKey,
-            'price-' . $vendorKey . '-' . $tierKey . '-eur',
-            'pricing-matrix-' . $vendorKey . '-' . $tierKey,
-        ];
+        $vendorAliases = self::vendor_key_aliases($vendorKey);
+        $tierAliases = self::tier_key_aliases($tierKey);
+        $candidateNorms = [];
 
-        foreach ($candidates as $candidate) {
-            $key = self::clean_key($candidate);
-            $value = trim((string) ($overrides[$key] ?? ''));
-            if ($value !== '') {
+        foreach ($vendorAliases as $vendorAlias) {
+            foreach ($tierAliases as $tierAlias) {
+                foreach ([
+                    'ai-price-' . $vendorAlias . '-' . $tierAlias,
+                    'ai-price-' . $vendorAlias . '-' . $tierAlias . '-eur',
+                    'ai-price-' . $vendorAlias . '-' . $tierAlias . '-value',
+                    'price-' . $vendorAlias . '-' . $tierAlias,
+                    'price-' . $vendorAlias . '-' . $tierAlias . '-eur',
+                    'pricing-matrix-' . $vendorAlias . '-' . $tierAlias,
+                ] as $candidate) {
+                    $candidateNorm = self::clean_key($candidate);
+                    $candidateNorms[$candidateNorm] = true;
+                    $candidateNorms['pricing-' . $candidateNorm] = true;
+                }
+            }
+        }
+
+        if ($vendorKey === 'microsoft' && in_array(self::clean_key($tierKey), ['pro', 'team', 'enterprise'], true)) {
+            $candidateNorms[self::clean_key('copilot-license-monthly-eur')] = true;
+            $candidateNorms[self::clean_key('copilot_license_monthly_eur')] = true;
+            $candidateNorms[self::clean_key('copilot-price-monthly-eur')] = true;
+            $candidateNorms[self::clean_key('m365-copilot-license-monthly-eur')] = true;
+            $candidateNorms[self::clean_key('pricing-copilot-license-monthly-eur')] = true;
+            $candidateNorms[self::clean_key('pricing-copilot_license_monthly_eur')] = true;
+        }
+
+        foreach ($overrides as $overrideKey => $overrideValue) {
+            $value = trim((string) $overrideValue);
+            if ($value === '') {
+                continue;
+            }
+
+            $normalizedOverrideKey = self::clean_key(str_replace('.', '-', (string) $overrideKey));
+            if (isset($candidateNorms[$normalizedOverrideKey])) {
                 return $value;
             }
         }
 
         return '';
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private static function vendor_key_aliases(string $vendorKey): array
+    {
+        $base = self::clean_key($vendorKey);
+        $aliases = [$base];
+
+        if ($base === 'microsoft') {
+            $aliases[] = 'microsoft-copilot';
+            $aliases[] = 'copilot';
+            $aliases[] = 'msft';
+        }
+
+        return array_values(array_unique(array_filter($aliases, static fn(string $alias): bool => $alias !== '')));
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private static function tier_key_aliases(string $tierKey): array
+    {
+        $base = self::clean_key($tierKey);
+        $aliases = [$base];
+
+        if ($base === 'free-std' || $base === 'free_std' || $base === 'free') {
+            $aliases[] = 'free-std';
+            $aliases[] = 'free_std';
+            $aliases[] = 'free';
+            $aliases[] = 'std';
+        }
+
+        if ($base === 'pro-plus' || $base === 'pro_plus' || $base === 'proplus') {
+            $aliases[] = 'pro-plus';
+            $aliases[] = 'pro_plus';
+            $aliases[] = 'proplus';
+        }
+
+        if ($base === 'team' || $base === 'team-per-user') {
+            $aliases[] = 'team';
+            $aliases[] = 'team-per-user';
+        }
+
+        if ($base === 'enterprise' || $base === 'enterprise-custom') {
+            $aliases[] = 'enterprise';
+            $aliases[] = 'enterprise-custom';
+        }
+
+        return array_values(array_unique(array_filter($aliases, static fn(string $alias): bool => $alias !== '')));
     }
 
     /**
@@ -657,7 +733,11 @@ final class CMS_M365CALCULATOR_AI_Product_Comparison
         $displayValue = $value !== '' ? $value : 'k. A.';
 
         if (!$isVerified && ($amount === null || str_contains(strtolower($displayValue), 'k. a'))) {
-            $displayValue = 'k. A. (unbestätigt) // UNVERIFIED';
+            $displayValue = 'k. A.';
+        }
+
+        if (!$isVerified && $billingNote !== '') {
+            $billingNote = '';
         }
 
         $currencyNote = '';

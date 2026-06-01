@@ -10,8 +10,64 @@
         callback();
     }
 
+    function hasMeaningfulQueryParams() {
+        var params = new URLSearchParams(window.location.search || '');
+        if (!params || params.toString() === '') {
+            return false;
+        }
+
+        var ignored = {
+            utm_source: true,
+            utm_medium: true,
+            utm_campaign: true,
+            utm_term: true,
+            utm_content: true,
+            gclid: true,
+            fbclid: true,
+            msclkid: true,
+            ref: true
+        };
+
+        var meaningful = false;
+        params.forEach(function (value, key) {
+            if (meaningful) {
+                return;
+            }
+
+            var normalizedKey = String(key || '').trim().toLowerCase();
+            if (!normalizedKey || ignored[normalizedKey]) {
+                return;
+            }
+
+            meaningful = true;
+        });
+
+        return meaningful;
+    }
+
+    function initDetailInitialScrollPosition() {
+        var root = document.querySelector('.m365calc-page');
+        if (!root || window.location.hash || hasMeaningfulQueryParams()) {
+            return;
+        }
+
+        if ('scrollRestoration' in window.history) {
+            var originalScrollRestoration = window.history.scrollRestoration;
+            window.history.scrollRestoration = 'manual';
+            window.addEventListener('pagehide', function () {
+                window.history.scrollRestoration = originalScrollRestoration;
+            }, { once: true });
+        }
+
+        root.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+
     function initResultFocus() {
         if (document.querySelector('.m365calc-readonly-page, .m365calc-price-tracker-page')) {
+            return;
+        }
+
+        if (!hasMeaningfulQueryParams() && window.location.hash !== '#m365calc-result') {
             return;
         }
 
@@ -1340,6 +1396,10 @@
     }
 
     function initDetailVisualEnhancements() {
+        if (!document.body.classList.contains('m365tools-detail-enhanced')) {
+            return;
+        }
+
         var root = document.querySelector('.m365calc-page');
         if (!root) {
             return;
@@ -1353,6 +1413,7 @@
     ready(function () {
         initContentHost();
         initHiddenModuleActionLinks();
+        initDetailInitialScrollPosition();
         initReadonlyMatrixScrollPosition();
         initResultFocus();
         initPrintButtons();
