@@ -132,6 +132,21 @@
           "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/"
         },
         {
+          "effective_from": "2026-02-01",
+          "prices_eur_net": {
+            "monthly_monthly": 10.92,
+            "annual_monthly": 9.1,
+            "annual_annual_permonth": 9.1,
+            "annual_annual_total": 109.2,
+            "triennial_permonth": 8.65
+          },
+          "is_computed": false,
+          "is_approx": false,
+          "verification_status": "currency_harmonization_confirmed",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news",
+          "source_note": "EUR Commercial Cloud NCE SaaS currency harmonization 2026-02-01; exact user-confirmed pair 9.80→9.10; existing terms keep prior price until renewal."
+        },
+        {
           "effective_from": "2026-05-01",
           "prices_eur_net": {
             "monthly_monthly": 10.56,
@@ -188,6 +203,21 @@
           "verification_status": "historical_anchor",
           "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
           "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
+        },
+        {
+          "effective_from": "2026-02-01",
+          "prices_eur_net": {
+            "monthly_monthly": 15.89,
+            "annual_monthly": 13.24,
+            "annual_annual_permonth": 13.24,
+            "annual_annual_total": 158.9,
+            "triennial_permonth": 12.58
+          },
+          "is_computed": true,
+          "is_approx": true,
+          "verification_status": "currency_harmonization_computed",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news",
+          "source_note": "COMPUTED −7.4% currency harmonization 2026-02-01, exact EUR unverified; computed from prior point of same SKU variant only."
         },
         {
           "effective_from": "2026-05-01",
@@ -247,6 +277,21 @@
           "verification_status": "historical_anchor",
           "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
           "source_note": "Historischer DACH-Preisanker; nicht als aktuelle Baseline verwenden."
+        },
+        {
+          "effective_from": "2026-02-01",
+          "prices_eur_net": {
+            "monthly_monthly": 6.24,
+            "annual_monthly": 5.2,
+            "annual_annual_permonth": 5.2,
+            "annual_annual_total": 62.4,
+            "triennial_permonth": 4.94
+          },
+          "is_computed": false,
+          "is_approx": false,
+          "verification_status": "currency_harmonization_confirmed",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news",
+          "source_note": "EUR Commercial Cloud NCE SaaS currency harmonization 2026-02-01; exact user-confirmed pair 5.60→5.20; existing terms keep prior price until renewal."
         },
         {
           "effective_from": "2026-05-01",
@@ -349,6 +394,21 @@
           "is_approx": true,
           "verification_status": "historical_anchor",
           "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/"
+        },
+        {
+          "effective_from": "2026-02-01",
+          "prices_eur_net": {
+            "monthly_monthly": 12.96,
+            "annual_monthly": 10.8,
+            "annual_annual_permonth": 10.8,
+            "annual_annual_total": 129.6,
+            "triennial_permonth": 10.26
+          },
+          "is_computed": false,
+          "is_approx": false,
+          "verification_status": "currency_harmonization_confirmed",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news",
+          "source_note": "EUR Commercial Cloud NCE SaaS currency harmonization 2026-02-01; exact user-confirmed pair 11.70→10.80; existing terms keep prior price until renewal."
         },
         {
           "effective_from": "2026-05-01",
@@ -465,6 +525,21 @@
           "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/"
         },
         {
+          "effective_from": "2026-02-01",
+          "prices_eur_net": {
+            "monthly_monthly": 22.92,
+            "annual_monthly": 19.1,
+            "annual_annual_permonth": 19.1,
+            "annual_annual_total": 229.2,
+            "triennial_permonth": 18.15
+          },
+          "is_computed": false,
+          "is_approx": false,
+          "verification_status": "currency_harmonization_confirmed",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news",
+          "source_note": "EUR Commercial Cloud NCE SaaS currency harmonization 2026-02-01; exact user-confirmed pair 20.60→19.10; existing terms keep prior price until renewal."
+        },
+        {
           "effective_from": "2026-05-01",
           "prices_eur_net": {
             "monthly_monthly": 27.36,
@@ -539,6 +614,21 @@
           "verification_status": "current_baseline",
           "source_url": "https://www.software-express.de/hersteller/microsoft/teams/eea/",
           "source_note": "Software-Express DACH-NCE; Microsoft FAQ nennt Mindestpreis/Delta €8, Wechselkurse können variieren."
+        },
+        {
+          "effective_from": "2026-02-01",
+          "prices_eur_net": {
+            "monthly_monthly": 7.67,
+            "annual_monthly": 6.39,
+            "annual_annual_permonth": 6.39,
+            "annual_annual_total": 76.67,
+            "triennial_permonth": 6.07
+          },
+          "is_computed": true,
+          "is_approx": true,
+          "verification_status": "currency_harmonization_computed",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news",
+          "source_note": "COMPUTED −7.4% currency harmonization 2026-02-01, exact EUR unverified; computed from prior point of same SKU variant only."
         }
       ],
       "requires_base": null,
@@ -570,6 +660,21 @@
           "verification_status": "historical_anchor",
           "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
           "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
+        },
+        {
+          "effective_from": "2026-02-01",
+          "prices_eur_net": {
+            "monthly_monthly": 2.33,
+            "annual_monthly": 1.94,
+            "annual_annual_permonth": 1.94,
+            "annual_annual_total": 23.34,
+            "triennial_permonth": 1.84
+          },
+          "is_computed": true,
+          "is_approx": true,
+          "verification_status": "currency_harmonization_computed",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news",
+          "source_note": "COMPUTED −7.4% currency harmonization 2026-02-01, exact EUR unverified; computed from prior point of same SKU variant only."
         },
         {
           "effective_from": "2026-05-01",
@@ -628,6 +733,21 @@
           "verification_status": "historical_anchor",
           "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
           "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
+        },
+        {
+          "effective_from": "2026-02-01",
+          "prices_eur_net": {
+            "monthly_monthly": 8.33,
+            "annual_monthly": 6.95,
+            "annual_annual_permonth": 6.95,
+            "annual_annual_total": 83.34,
+            "triennial_permonth": 6.59
+          },
+          "is_computed": true,
+          "is_approx": true,
+          "verification_status": "currency_harmonization_computed",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news",
+          "source_note": "COMPUTED −7.4% currency harmonization 2026-02-01, exact EUR unverified; computed from prior point of same SKU variant only."
         },
         {
           "effective_from": "2026-05-01",
@@ -692,6 +812,21 @@
           "is_approx": true,
           "verification_status": "historical_anchor",
           "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/"
+        },
+        {
+          "effective_from": "2026-02-01",
+          "prices_eur_net": {
+            "monthly_monthly": 3.89,
+            "annual_monthly": 3.24,
+            "annual_annual_permonth": 3.24,
+            "annual_annual_total": 38.89,
+            "triennial_permonth": 3.07
+          },
+          "is_computed": true,
+          "is_approx": true,
+          "verification_status": "currency_harmonization_computed",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news",
+          "source_note": "COMPUTED −7.4% currency harmonization 2026-02-01, exact EUR unverified; computed from prior point of same SKU variant only."
         }
       ],
       "promo": null
@@ -751,6 +886,21 @@
           "verification_status": "historical_anchor",
           "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
           "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
+        },
+        {
+          "effective_from": "2026-02-01",
+          "prices_eur_net": {
+            "monthly_monthly": 8.22,
+            "annual_monthly": 6.85,
+            "annual_annual_permonth": 6.85,
+            "annual_annual_total": 82.23,
+            "triennial_permonth": 6.51
+          },
+          "is_computed": true,
+          "is_approx": true,
+          "verification_status": "currency_harmonization_computed",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news",
+          "source_note": "COMPUTED −7.4% currency harmonization 2026-02-01, exact EUR unverified; computed from prior point of same SKU variant only."
         },
         {
           "effective_from": "2026-05-01",
@@ -839,6 +989,21 @@
           "verification_status": "historical_anchor",
           "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
           "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
+        },
+        {
+          "effective_from": "2026-02-01",
+          "prices_eur_net": {
+            "monthly_monthly": 25.67,
+            "annual_monthly": 21.39,
+            "annual_annual_permonth": 21.39,
+            "annual_annual_total": 256.69,
+            "triennial_permonth": 20.33
+          },
+          "is_computed": true,
+          "is_approx": true,
+          "verification_status": "currency_harmonization_computed",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news",
+          "source_note": "COMPUTED −7.4% currency harmonization 2026-02-01, exact EUR unverified; computed from prior point of same SKU variant only."
         },
         {
           "effective_from": "2026-05-01",
@@ -943,6 +1108,21 @@
           "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
         },
         {
+          "effective_from": "2026-02-01",
+          "prices_eur_net": {
+            "monthly_monthly": 43.89,
+            "annual_monthly": 36.58,
+            "annual_annual_permonth": 36.58,
+            "annual_annual_total": 438.92,
+            "triennial_permonth": 34.74
+          },
+          "is_computed": true,
+          "is_approx": true,
+          "verification_status": "currency_harmonization_computed",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news",
+          "source_note": "COMPUTED −7.4% currency harmonization 2026-02-01, exact EUR unverified; computed from prior point of same SKU variant only."
+        },
+        {
           "effective_from": "2026-05-01",
           "prices_eur_net": {
             "monthly_monthly": 41.45,
@@ -1045,6 +1225,21 @@
           "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
         },
         {
+          "effective_from": "2026-02-01",
+          "prices_eur_net": {
+            "monthly_monthly": 39.67,
+            "annual_monthly": 33.06,
+            "annual_annual_permonth": 33.06,
+            "annual_annual_total": 396.7,
+            "triennial_permonth": 31.4
+          },
+          "is_computed": true,
+          "is_approx": true,
+          "verification_status": "currency_harmonization_computed",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news",
+          "source_note": "COMPUTED −7.4% currency harmonization 2026-02-01, exact EUR unverified; computed from prior point of same SKU variant only."
+        },
+        {
           "effective_from": "2026-05-01",
           "prices_eur_net": {
             "monthly_monthly": 36.74,
@@ -1145,6 +1340,21 @@
           "verification_status": "historical_anchor",
           "source_url": "https://www.buero-kaizen.de/office-365-plaene-und-preise/",
           "source_note": "Historical anchor for tracker; does not overwrite newer baseline."
+        },
+        {
+          "effective_from": "2026-02-01",
+          "prices_eur_net": {
+            "monthly_monthly": 64.12,
+            "annual_monthly": 53.43,
+            "annual_annual_permonth": 53.43,
+            "annual_annual_total": 641.16,
+            "triennial_permonth": 50.75
+          },
+          "is_computed": true,
+          "is_approx": true,
+          "verification_status": "currency_harmonization_computed",
+          "source_url": "https://www.microsoft.com/en-us/licensing/news",
+          "source_note": "COMPUTED −7.4% currency harmonization 2026-02-01, exact EUR unverified; computed from prior point of same SKU variant only."
         },
         {
           "effective_from": "2026-05-01",
