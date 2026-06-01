@@ -439,18 +439,6 @@ body:has(#m365calculator-landing) .site-content {
     padding-top: 0 !important;
 }
 
-body.m365tools-theme-embed,
-body.m365calculator-theme-embed,
-body.m365tools-theme-embed #page.site,
-body.m365calculator-theme-embed #page.site,
-body:has(#m365tools-landing),
-body:has(#m365calculator-landing),
-body:has(#m365tools-landing) #page.site,
-body:has(.m365calc-page) #page.site,
-body:has(#m365calculator-landing) #page.site {
-    background-color: var(--m365tools-bg, #ffffff) !important;
-}
-
 body.m365tools-theme-embed #content.site-content,
 body.m365calculator-theme-embed #content.site-content,
 #content.m365tools-content-host,
@@ -458,7 +446,6 @@ body.m365calculator-theme-embed #content.site-content,
 body:has(#m365tools-landing) #content.site-content,
 body:has(.m365calc-page) #content.site-content,
 body:has(#m365calculator-landing) #content.site-content {
-    background-color: var(--m365tools-bg, #ffffff) !important;
     border-block-start-width: 0 !important;
     border-top-width: 0 !important;
     box-shadow: none !important;

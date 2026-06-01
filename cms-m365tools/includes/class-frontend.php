@@ -246,7 +246,7 @@ final class CMS_M365CALCULATOR_Frontend
             '--m365tools-section-gap' => $number($options, 'landing_section_gap', 32, 16, 96) . 'px',
             '--m365tools-primary' => 'var(--phinit-color-accent)',
             '--m365tools-accent' => 'var(--phinit-color-accent)',
-            '--m365tools-bg' => 'var(--phinit-color-bg)',
+            '--m365tools-bg' => 'transparent',
             '--m365tools-surface' => 'var(--phinit-color-surface)',
             '--m365tools-surface-alt' => 'var(--phinit-color-surface)',
             '--m365tools-header-bg' => 'var(--phinit-color-surface)',

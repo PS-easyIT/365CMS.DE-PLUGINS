@@ -86,4 +86,64 @@ final class CMS_M365LINKCOLLECTION_Admin_Menu
             [$pages, 'render_dashboard']
         );
     }
+
+    /**
+     * @param array<int, array<string, mixed>> $menuItems
+     * @return array<int, array<string, mixed>>
+     */
+    public static function add_menu_items(array $menuItems): array
+    {
+        $parentSlug = CMS_M365LINKCOLLECTION_Admin_Pages::PLUGIN_SLUG;
+        $adminBase = '/admin/plugins/' . $parentSlug;
+        $currentPath = function_exists('cms_plugin_admin_request_path')
+            ? cms_plugin_admin_request_path()
+            : '/' . trim((string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? ''), '/');
+        $isPluginPath = str_starts_with($currentPath, $adminBase)
+            || str_starts_with($currentPath, '/admin/plugins/m365linkcollection-dashboard');
+        $activeSlug = function_exists('cms_plugin_admin_active_slug')
+            ? cms_plugin_admin_active_slug(CMS_M365LINKCOLLECTION_Admin_Pages::SLUG_DASHBOARD)
+            : CMS_M365LINKCOLLECTION_Admin_Pages::SLUG_DASHBOARD;
+
+        $submenus = [
+            CMS_M365LINKCOLLECTION_Admin_Pages::SLUG_DASHBOARD => 'Uebersicht',
+            CMS_M365LINKCOLLECTION_Admin_Pages::SLUG_ENTRIES => 'Eintraege',
+            CMS_M365LINKCOLLECTION_Admin_Pages::SLUG_CONTENT => 'Inhalte',
+            CMS_M365LINKCOLLECTION_Admin_Pages::SLUG_SETTINGS => 'Anzeige',
+            CMS_M365LINKCOLLECTION_Admin_Pages::SLUG_HELP => 'Hinweise',
+        ];
+
+        $menuItems[] = [
+            'type' => 'item',
+            'slug' => $parentSlug,
+            'label' => 'M365 Links',
+            'icon' => '🔗',
+            'url' => function_exists('cms_plugin_admin_page_path')
+                ? cms_plugin_admin_page_path($parentSlug, CMS_M365LINKCOLLECTION_Admin_Pages::SLUG_DASHBOARD)
+                : $adminBase . '/' . rawurlencode(CMS_M365LINKCOLLECTION_Admin_Pages::SLUG_DASHBOARD),
+            'active' => $isPluginPath && (
+                $activeSlug === CMS_M365LINKCOLLECTION_Admin_Pages::SLUG_DASHBOARD
+                || $activeSlug === 'm365linkcollection-dashboard'
+            ),
+        ];
+
+        foreach ($submenus as $slug => $label) {
+            if ($slug === CMS_M365LINKCOLLECTION_Admin_Pages::SLUG_DASHBOARD) {
+                continue;
+            }
+
+            $menuItems[] = [
+                'type' => 'item',
+                'slug' => $slug,
+                'parent' => $parentSlug,
+                'label' => '↳ ' . $label,
+                'icon' => '',
+                'url' => function_exists('cms_plugin_admin_page_path')
+                    ? cms_plugin_admin_page_path($parentSlug, $slug)
+                    : $adminBase . '/' . rawurlencode($slug),
+                'active' => $isPluginPath && $activeSlug === $slug,
+            ];
+        }
+
+        return $menuItems;
+    }
 }

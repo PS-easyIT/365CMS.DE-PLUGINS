@@ -21,14 +21,12 @@ final class CMS_Contact_Admin_Menu
             return;
         }
 
-        $dispatch = [CMS_Contact_Admin_Pages::class, 'render_dispatch'];
-
         add_menu_page(
             'Kontakt',
             '365CMS | Kontakt',
             'manage_options',
             CMS_Contact_Admin_Pages::MENU_SLUG,
-            $dispatch,
+            CMS_Contact_Admin_Pages::dispatch_callback_for_slug(CMS_Contact_Admin_Pages::DEFAULT_PAGE_SLUG),
             '📬',
             35
         );
@@ -44,9 +42,58 @@ final class CMS_Contact_Admin_Menu
                 $page['menu_title'],
                 'manage_options',
                 $page['slug'],
-                $dispatch
+                CMS_Contact_Admin_Pages::dispatch_callback_for_slug((string) $page['slug'])
             );
         }
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $menuItems
+     * @return array<int, array<string, mixed>>
+     */
+    public static function add_menu_items(array $menuItems): array
+    {
+        $parentSlug = CMS_Contact_Admin_Pages::MENU_SLUG;
+        $adminBase = '/admin/plugins/' . $parentSlug;
+        $currentPath = function_exists('cms_plugin_admin_request_path')
+            ? cms_plugin_admin_request_path()
+            : '/' . trim((string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? ''), '/');
+        $isPluginPath = str_starts_with($currentPath, $adminBase);
+        $activeSlug = function_exists('cms_plugin_admin_active_slug')
+            ? cms_plugin_admin_active_slug(CMS_Contact_Admin_Pages::DEFAULT_PAGE_SLUG)
+            : CMS_Contact_Admin_Pages::DEFAULT_PAGE_SLUG;
+
+        $menuItems[] = [
+            'type' => 'item',
+            'slug' => $parentSlug,
+            'label' => '365CMS | Kontakt',
+            'icon' => '📬',
+            'url' => function_exists('cms_plugin_admin_page_path')
+                ? cms_plugin_admin_page_path($parentSlug, CMS_Contact_Admin_Pages::DEFAULT_PAGE_SLUG)
+                : $adminBase . '/' . rawurlencode(CMS_Contact_Admin_Pages::DEFAULT_PAGE_SLUG),
+            'active' => $isPluginPath && $activeSlug === CMS_Contact_Admin_Pages::DEFAULT_PAGE_SLUG,
+        ];
+
+        foreach (CMS_Contact_Admin_Pages::get_menu_pages() as $page) {
+            $slug = (string) ($page['slug'] ?? '');
+            if ($slug === '' || $slug === CMS_Contact_Admin_Pages::DEFAULT_PAGE_SLUG) {
+                continue;
+            }
+
+            $menuItems[] = [
+                'type' => 'item',
+                'slug' => $slug,
+                'parent' => $parentSlug,
+                'label' => '↳ ' . (string) ($page['title'] ?? $slug),
+                'icon' => '',
+                'url' => function_exists('cms_plugin_admin_page_path')
+                    ? cms_plugin_admin_page_path($parentSlug, $slug)
+                    : $adminBase . '/' . rawurlencode($slug),
+                'active' => $isPluginPath && $activeSlug === $slug,
+            ];
+        }
+
+        return $menuItems;
     }
 
     private static function load_admin_menu_helpers(): void

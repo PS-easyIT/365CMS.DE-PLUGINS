@@ -440,6 +440,7 @@ final class CMS_Events_Admin
                         $timeLabel = !empty($ev->event_time) ? substr((string)$ev->event_time, 0, 5) . ' Uhr' : '';
                         $endLabel  = ($endTs && $dateTs && date('Y-m-d', $endTs) !== date('Y-m-d', $dateTs)) ? 'bis ' . date('d.m.Y', $endTs) : '';
                         $publicUrl = function_exists('cms_event_url') ? cms_event_url($ev) : SITE_URL . '/event/event-' . $id;
+                        $websiteUrl = $this->normalize_external_url($ev->organizer_website ?? '');
                     ?>
                         <tr<?= $isDraft ? ' class="ev-row-pending"' : ($isPast ? ' class="ev-row-muted"' : '') ?>>
                             <td>
@@ -488,7 +489,15 @@ final class CMS_Events_Admin
                                                     data-ev-submit-target="ev-approve-form-<?= $id ?>">✓</button>
                                         </form>
                                     <?php else: ?>
-                                        <a href="<?= htmlspecialchars((string)$publicUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary" title="Öffentlich ansehen">🌐</a>
+                                        <a href="<?= htmlspecialchars((string)$publicUrl, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-secondary" title="Öffentlich ansehen">👁️</a>
+                                    <?php endif; ?>
+                                    <?php if ($websiteUrl !== ''): ?>
+                                        <a href="<?= htmlspecialchars($websiteUrl, ENT_QUOTES, 'UTF-8') ?>"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           class="btn btn-sm btn-secondary"
+                                           title="Website öffnen"
+                                           aria-label="Website von <?= htmlspecialchars($titleRaw !== '' ? $titleRaw : 'Event', ENT_QUOTES, 'UTF-8') ?> öffnen">🌐</a>
                                     <?php endif; ?>
                                     <a href="<?= SITE_URL ?>/admin/events/edit/<?= $id ?>" class="btn btn-sm btn-secondary" title="Bearbeiten">✏️</a>
                                     <button type="button" class="btn btn-sm btn-danger"
@@ -972,6 +981,39 @@ final class CMS_Events_Admin
         </div>
         <?php
         $this->end_admin_layout();
+    }
+
+    private function normalize_external_url(mixed $value): string
+    {
+        $url = trim((string) $value);
+        if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]]/', $url) === 1) {
+            return '';
+        }
+
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts)) {
+            return '';
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || ($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
+            return '';
+        }
+
+        $host = strtolower(trim((string) ($parts['host'] ?? ''), '[]'));
+        if ($host === '' || in_array($host, ['localhost', 'localhost.localdomain'], true) || str_ends_with($host, '.localhost') || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
+            return '';
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP) && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return '';
+        }
+
+        return $url;
     }
 
     public static function admin_section_for_slug(string $slug): string

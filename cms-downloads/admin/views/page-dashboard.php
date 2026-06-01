@@ -74,6 +74,39 @@ $featuredCount = count(array_filter($downloads, static fn(array $item): bool => 
     <div class="admin-card">
         <div class="dl-panel-header">
             <div>
+                <h3>📊 Download-Analytics</h3>
+                <p>Top-Dateien, Typen und Kategorien nach Download-Zählern.</p>
+            </div>
+            <a href="?export=analytics_csv&amp;csrf_token=<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-secondary btn-sm">CSV exportieren</a>
+        </div>
+        <?php if (empty($analytics['top_downloads'])): ?>
+            <div class="empty-state">
+                <p class="dl-empty-icon">📈</p>
+                <p><strong>Noch keine Analytics-Daten</strong></p>
+                <p class="dl-empty-text">Sobald Downloads gezählt werden, erscheinen hier Auswertungen und der CSV-Export.</p>
+            </div>
+        <?php else: ?>
+            <div class="users-table-container">
+                <table class="users-table">
+                    <thead><tr><th>Top Downloads</th><th>Typ</th><th>Kategorie</th><th>Downloads</th></tr></thead>
+                    <tbody>
+                    <?php foreach ($analytics['top_downloads'] as $item): ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars((string) ($item['title'] ?? '')); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($item['download_type'] ?? '')); ?></td>
+                            <td><?php echo htmlspecialchars((string) ($item['category_name'] ?? '—')); ?></td>
+                            <td><?php echo number_format((int) ($item['download_count'] ?? 0)); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <div class="admin-card">
+        <div class="dl-panel-header">
+            <div>
                 <h3>🆕 Letzte Downloads</h3>
                 <p>Die jüngsten Einträge mit Typ, Kategorie und Nutzungsstand.</p>
             </div>

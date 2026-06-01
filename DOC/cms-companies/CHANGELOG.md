@@ -4,6 +4,15 @@ Alle Änderungen folgen dem Format [Keep a Changelog](https://keepachangelog.com
 
 ---
 
+## [3.0.12] – 2026-06-01
+
+### Geändert
+
+- **Admin-Übersicht:** Unternehmen mit hinterlegter Website zeigen nun einen eigenen Website-Schnelllink auf der Übersichtskarte.
+- **Sicherheit/UX:** Website-Links werden auf gültige `http`/`https`-URLs begrenzt und mit `target="_blank" rel="noopener noreferrer"` in einem neuen Tab geöffnet; die öffentliche Ansicht nutzt in den Aktionen jetzt ein Auge-Icon zur besseren Unterscheidung.
+
+---
+
 ## [3.0.11] – 2026-05-31
 
 ### Geändert

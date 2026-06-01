@@ -34,7 +34,7 @@ final class CMS_Contact_Admin_Pages
     use CMS_Contact_Page_Settings_Trait;
 
     public const MENU_SLUG = 'contact';
-    private const DEFAULT_PAGE_SLUG = 'contact';
+    public const DEFAULT_PAGE_SLUG = 'contact';
     private const PAGE_SLUG_FOR_SECTION = [
         'dashboard' => 'contact',
         'forms' => 'contact-forms',
@@ -63,6 +63,11 @@ final class CMS_Contact_Admin_Pages
     public static function render_dispatch(): void
     {
         self::ensure_shared_contract_loaded();
+
+        if (function_exists('cms_plugin_admin_sync_page_from_request')) {
+            cms_plugin_admin_sync_page_from_request(self::MENU_SLUG);
+        }
+
         self::sync_legacy_section_to_page();
 
         $callbacks = self::resolve_dispatch_callbacks();
@@ -84,6 +89,62 @@ final class CMS_Contact_Admin_Pages
         }
 
         call_user_func($callback);
+    }
+
+    /**
+     * @return array{0:class-string,1:string}
+     */
+    public static function dispatch_callback_for_slug(string $slug): array
+    {
+        $slug = self::normalize_slug($slug);
+        $map = [
+            'contact' => 'dispatch_dashboard',
+            'contact-forms' => 'dispatch_forms',
+            'contact-submissions' => 'dispatch_submissions',
+            'contact-settings' => 'dispatch_settings',
+        ];
+
+        $method = $map[$slug] ?? 'dispatch_dashboard';
+
+        return [self::class, $method];
+    }
+
+    public static function dispatch_dashboard(): void
+    {
+        $_GET['page'] = 'contact';
+        self::render_dispatch();
+    }
+
+    public static function dispatch_forms(): void
+    {
+        $_GET['page'] = 'contact-forms';
+        self::render_dispatch();
+    }
+
+    public static function dispatch_submissions(): void
+    {
+        $_GET['page'] = 'contact-submissions';
+        self::render_dispatch();
+    }
+
+    public static function dispatch_settings(): void
+    {
+        $_GET['page'] = 'contact-settings';
+        self::render_dispatch();
+    }
+
+    /**
+     * @param mixed $router
+     */
+    public static function register_admin_routes($router): void
+    {
+        self::ensure_shared_contract_loaded();
+
+        if (!function_exists('cms_plugin_admin_register_routes')) {
+            return;
+        }
+
+        cms_plugin_admin_register_routes($router, self::MENU_SLUG, self::resolve_dispatch_callbacks());
     }
 
     /**

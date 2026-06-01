@@ -230,12 +230,18 @@ foreach ($areas as $areaItem) {
 $areaCounts = ['events' => $countEvents, 'speakers' => $countSpeakers, 'companies' => $countCompanies, 'experts' => $countExperts];
 $areaOrderKeys = ['events', 'speakers', 'experts', 'companies'];
 $areaOrder = $normalizeOrder($hubValue('hub_area_card_order', implode(',', $areaOrderKeys)), $areaOrderKeys);
+$areasMaintenanceMode = $hubEnabled('hub_areas_maintenance_mode', false);
+$areaUnavailableLabel = $t('area.unavailable', 'Bald verfügbar', 'Coming soon');
+$eventsIntegrationActive = array_key_exists('events', $areaByKey) && is_array($areaByKey['events']) && array_key_exists('integration_active', $areaByKey['events']) ? (bool) $areaByKey['events']['integration_active'] : true;
+$eventsAvailable = $eventsIntegrationActive && !$areasMaintenanceMode;
 $hubAreas = [];
 foreach ($areaOrder as $key) {
     if (!$hubEnabled('hub_area_' . $key . '_visible')) {
         continue;
     }
     $fallback = $areaByKey[$key] ?? [];
+    $integrationActive = array_key_exists('integration_active', $fallback) ? (bool) $fallback['integration_active'] : true;
+    $isAvailable = $integrationActive && !$areasMaintenanceMode;
     $hubAreas[] = [
         'key' => $key,
         'label' => $hubValue('hub_area_' . $key . '_label', (string) ($fallback['label'] ?? ucfirst($key))),
@@ -243,6 +249,8 @@ foreach ($areaOrder as $key) {
         'href' => $safeUrl($hubValue('hub_area_' . $key . '_url', (string) ($fallback['url'] ?? '/' . $key))),
         'icon' => $areaIconName($hubValue('hub_area_' . $key . '_icon', (string) ($fallback['icon'] ?? '')), $key),
         'count' => (int) ($areaCounts[$key] ?? 0),
+        'available' => $isAvailable,
+        'cta' => $isAvailable ? ($hubValue('hub_area_' . $key . '_label', (string) ($fallback['label'] ?? ucfirst($key))) . ' entdecken') : $areaUnavailableLabel,
     ];
 }
 
@@ -442,12 +450,22 @@ $postsSectionStyle = '--n365-posts-bg: ' . $cssColor($hubSettings['hub_posts_bg_
                 <div class="n365-section-head"><div><h2 id="n365-areas-title"><?php echo $esc($hubValue('hub_areas_title', 'Vier Bereiche, ein Netzwerk')); ?></h2><p><?php echo $esc($hubValue('hub_areas_label', 'Direkter Einstieg in die Verzeichnisse.')); ?></p></div></div>
                 <div class="n365-areas-grid">
                     <?php foreach ($hubAreas as $area): ?>
+                    <?php $areaAvailable = !empty($area['available']) && $area['href'] !== '#'; ?>
+                    <?php if ($areaAvailable): ?>
                     <a class="n365-area-card n365-area-card--<?php echo $esc($area['key']); ?>" href="<?php echo $esc($area['href']); ?>">
                         <span class="n365-area-card__icon" aria-hidden="true"><?php echo $icon($area['icon']); ?></span>
                         <h3><?php echo $esc($area['label']); ?> <span><?php echo (int) $area['count']; ?></span></h3>
                         <?php if ($area['desc'] !== ''): ?><p><?php echo $esc($area['desc']); ?></p><?php endif; ?>
-                        <strong><?php echo $esc($area['label']); ?> entdecken <?php echo $icon('arrow'); ?></strong>
+                        <strong><?php echo $esc($area['cta']); ?> <?php echo $icon('arrow'); ?></strong>
                     </a>
+                    <?php else: ?>
+                    <article class="n365-area-card n365-area-card--<?php echo $esc($area['key']); ?> n365-area-card--unavailable" aria-disabled="true">
+                        <span class="n365-area-card__icon" aria-hidden="true"><?php echo $icon($area['icon']); ?></span>
+                        <h3><?php echo $esc($area['label']); ?> <span><?php echo (int) $area['count']; ?></span></h3>
+                        <?php if ($area['desc'] !== ''): ?><p><?php echo $esc($area['desc']); ?></p><?php endif; ?>
+                        <strong class="n365-area-card__soon"><?php echo $esc($area['cta']); ?></strong>
+                    </article>
+                    <?php endif; ?>
                     <?php endforeach; ?>
                 </div>
             </div>
@@ -455,14 +473,21 @@ $postsSectionStyle = '--n365-posts-bg: ' . $cssColor($hubSettings['hub_posts_bg_
         <?php elseif ($sectionKey === 'next-events' && $hubEnabled('hub_next_events_visible') && $nextEvents !== []): ?>
         <section class="n365-block n365-block--tight" aria-labelledby="n365-next-events-title">
             <div class="n365-wrap">
-                <div class="n365-section-head"><div><h2 id="n365-next-events-title"><?php echo $esc($hubValue('hub_next_events_title', 'Nächste Events')); ?></h2><p><?php echo $esc($hubValue('hub_next_events_sub', 'Die nächsten Termine im Netzwerk.')); ?></p></div><a class="n365-more" href="<?php echo $esc($safeUrl($hubValue('hub_next_events_all_url', '/events'))); ?>"><?php echo $esc($hubValue('hub_next_events_all_label', 'Alle Events')); ?> <?php echo $icon('arrow'); ?></a></div>
+                <div class="n365-section-head"><div><h2 id="n365-next-events-title"><?php echo $esc($hubValue('hub_next_events_title', 'Nächste Events')); ?></h2><p><?php echo $esc($hubValue('hub_next_events_sub', 'Die nächsten Termine im Netzwerk.')); ?></p></div><?php if ($eventsAvailable): ?><a class="n365-more" href="<?php echo $esc($safeUrl($hubValue('hub_next_events_all_url', '/events'))); ?>"><?php echo $esc($hubValue('hub_next_events_all_label', 'Alle Events')); ?> <?php echo $icon('arrow'); ?></a><?php else: ?><span class="n365-more n365-more--unavailable" aria-disabled="true"><?php echo $esc($areaUnavailableLabel); ?></span><?php endif; ?></div>
                 <div class="n365-next-grid">
                     <?php foreach ($nextEvents as $event): ?>
                     <?php $parts = $eventParts($event); $place = $eventLocation($event); ?>
+                    <?php if ($eventsAvailable): ?>
                     <a class="n365-next-event" href="<?php echo $esc($safeUrl($event['url'] ?? '/events')); ?>">
                         <time class="n365-datebox" datetime="<?php echo $esc($parts['iso']); ?>"><span><?php echo $esc($parts['month']); ?></span><strong><?php echo $esc($parts['day']); ?></strong><small><?php echo $esc($parts['year']); ?></small></time>
                         <span><strong><?php echo $esc(trim((string) ($event['title'] ?? 'Event')) ?: 'Event'); ?></strong><?php if ($place !== ''): ?><small><?php echo $icon('pin'); ?><?php echo $esc($place); ?></small><?php endif; ?><em><?php echo $esc(trim((string) ($event['category'] ?? 'Event')) ?: 'Event'); ?></em></span>
                     </a>
+                    <?php else: ?>
+                    <article class="n365-next-event n365-next-event--unavailable" aria-disabled="true">
+                        <time class="n365-datebox" datetime="<?php echo $esc($parts['iso']); ?>"><span><?php echo $esc($parts['month']); ?></span><strong><?php echo $esc($parts['day']); ?></strong><small><?php echo $esc($parts['year']); ?></small></time>
+                        <span><strong><?php echo $esc(trim((string) ($event['title'] ?? 'Event')) ?: 'Event'); ?></strong><?php if ($place !== ''): ?><small><?php echo $icon('pin'); ?><?php echo $esc($place); ?></small><?php endif; ?><em><?php echo $esc($areaUnavailableLabel); ?></em></span>
+                    </article>
+                    <?php endif; ?>
                     <?php endforeach; ?>
                 </div>
             </div>

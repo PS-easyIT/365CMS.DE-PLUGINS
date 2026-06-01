@@ -31,6 +31,7 @@ final class CMS_M365ADMINSITES_Admin_Pages
 
     public static function render_dispatcher(): void
     {
+        self::sync_page_from_request();
         self::check_access();
         self::load_admin_menu();
 
@@ -43,11 +44,91 @@ final class CMS_M365ADMINSITES_Admin_Pages
         ];
 
         if (function_exists('cms_plugin_admin_dispatch_page')) {
-            cms_plugin_admin_dispatch_page($callbackMap, $defaultSlug, self::PAGE_DASHBOARD);
+            cms_plugin_admin_dispatch_page($callbackMap, $defaultSlug, CMS_M365ADMINSITES_Admin_Menu::MENU_SLUG);
             return;
         }
 
         self::fallback_dispatch($callbackMap, $defaultSlug);
+    }
+
+    public static function dispatch_dashboard(): void
+    {
+        self::set_active_page(self::PAGE_DASHBOARD);
+        self::render_dispatcher();
+    }
+
+    public static function dispatch_content(): void
+    {
+        self::set_active_page(self::PAGE_CONTENT);
+        self::render_dispatcher();
+    }
+
+    public static function dispatch_settings(): void
+    {
+        self::set_active_page(self::PAGE_SETTINGS);
+        self::render_dispatcher();
+    }
+
+    public static function dispatch_help(): void
+    {
+        self::set_active_page(self::PAGE_HELP);
+        self::render_dispatcher();
+    }
+
+    public static function current_page_slug(): string
+    {
+        self::sync_page_from_request();
+
+        $fallback = self::PAGE_DASHBOARD;
+        if (function_exists('cms_plugin_admin_active_slug')) {
+            return cms_plugin_admin_active_slug($fallback);
+        }
+
+        $requested = preg_replace('/[^a-z0-9_-]+/i', '', (string) ($_GET['page'] ?? $fallback)) ?: $fallback;
+
+        return array_key_exists($requested, self::page_slugs()) ? $requested : $fallback;
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    private static function page_slugs(): array
+    {
+        return CMS_M365ADMINSITES_Admin_Menu::page_titles();
+    }
+
+    private static function set_active_page(string $slug): void
+    {
+        $slug = preg_replace('/[^a-z0-9_-]+/i', '', $slug) ?: self::PAGE_DASHBOARD;
+        if (!array_key_exists($slug, self::page_slugs())) {
+            $slug = self::PAGE_DASHBOARD;
+        }
+
+        $_GET['page'] = $slug;
+    }
+
+    private static function sync_page_from_request(): void
+    {
+        $current = preg_replace('/[^a-z0-9_-]+/i', '', (string) ($_GET['page'] ?? ''));
+        if ($current !== '' && array_key_exists($current, self::page_slugs())) {
+            return;
+        }
+
+        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? '');
+        $normalized = '/' . trim($path, '/');
+        $prefix = '/admin/plugins/' . CMS_M365ADMINSITES_Admin_Menu::MENU_SLUG . '/';
+
+        if (!str_starts_with($normalized, $prefix)) {
+            return;
+        }
+
+        $tail = substr($normalized, strlen($prefix));
+        $segment = trim((string) strtok($tail, '/'));
+        $segment = preg_replace('/[^a-z0-9_-]+/i', '', $segment) ?: '';
+
+        if ($segment !== '' && array_key_exists($segment, self::page_slugs())) {
+            $_GET['page'] = $segment;
+        }
     }
 
     public static function render_dashboard(): void
@@ -172,6 +253,35 @@ final class CMS_M365ADMINSITES_Admin_Pages
         self::render_with_layout('Hinweise', self::PAGE_HELP, static function (): void {
             self::instance()->render_help_page();
         });
+    }
+
+    /**
+     * @return array<string, callable>
+     */
+    public static function admin_callback_map(): array
+    {
+        return [
+            self::PAGE_DASHBOARD => [self::class, 'render_entries_screen'],
+            self::PAGE_CONTENT => [self::class, 'render_content_screen'],
+            self::PAGE_SETTINGS => [self::class, 'render_settings_screen'],
+            self::PAGE_HELP => [self::class, 'render_help_screen'],
+        ];
+    }
+
+    /**
+     * @param mixed $router
+     */
+    public static function register_admin_routes($router): void
+    {
+        if (!function_exists('cms_plugin_admin_register_routes')) {
+            return;
+        }
+
+        cms_plugin_admin_register_routes(
+            $router,
+            CMS_M365ADMINSITES_Admin_Menu::MENU_SLUG,
+            self::admin_callback_map()
+        );
     }
 
     private function render_entries_page(): void
@@ -817,16 +927,19 @@ final class CMS_M365ADMINSITES_Admin_Pages
      */
     private static function admin_page_url(string $slug, array $params = []): string
     {
-        $query = ['page' => preg_replace('/[^a-z0-9_-]+/i', '', $slug) ?: self::PAGE_DASHBOARD];
-        foreach ($params as $key => $value) {
-            $safeKey = preg_replace('/[^a-z0-9_-]+/i', '', (string) $key);
-            if ($safeKey === '') {
-                continue;
-            }
-            $query[$safeKey] = (string) ($value ?? '');
+        $slug = preg_replace('/[^a-z0-9_-]+/i', '', $slug) ?: self::PAGE_DASHBOARD;
+        if (!array_key_exists($slug, self::page_slugs())) {
+            $slug = self::PAGE_DASHBOARD;
         }
 
-        return '?' . http_build_query($query);
+        $url = rtrim((string) (defined('SITE_URL') ? SITE_URL : ''), '/')
+            . CMS_M365ADMINSITES_Admin_Menu::admin_page_path($slug);
+
+        if ($params !== []) {
+            $url .= '?' . http_build_query($params, '', '&', PHP_QUERY_RFC3986);
+        }
+
+        return $url;
     }
 
     private static function generate_nonce(string $action): string

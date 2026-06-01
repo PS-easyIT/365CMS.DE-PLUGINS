@@ -2060,6 +2060,13 @@ body:has(#cms-365network.n365-preview-layout) .content-area {
     transform: translateX(4px);
 }
 
+.n365-preview-layout .n365-more--unavailable {
+    color: var(--n365-ink-muted);
+    cursor: default;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
 .n365-preview-layout .n365-areas-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2155,6 +2162,16 @@ body:has(#cms-365network.n365-preview-layout) .content-area {
     transform: translateY(-2px);
 }
 
+.n365-preview-layout .n365-area-card--unavailable {
+    cursor: default;
+}
+
+.n365-preview-layout .n365-area-card--unavailable:hover {
+    border-color: var(--n365-area-border);
+    box-shadow: var(--n365-shadow-preview);
+    transform: none;
+}
+
 .n365-preview-layout .n365-next-event:hover,
 .n365-preview-layout .n365-partner-card:hover,
 .n365-preview-layout .n365-tool-card:hover {
@@ -2228,6 +2245,12 @@ body:has(#cms-365network.n365-preview-layout) .content-area {
     font-weight: 600;
 }
 
+.n365-preview-layout .n365-area-card__soon {
+    color: var(--n365-ink-muted);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
 .n365-preview-layout .n365-next-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -2240,6 +2263,15 @@ body:has(#cms-365network.n365-preview-layout) .content-area {
     padding: 18px;
     color: var(--n365-next-text, var(--n365-ink));
     transition: transform .15s ease, border-color .15s ease;
+}
+
+.n365-preview-layout .n365-next-event--unavailable {
+    cursor: default;
+}
+
+.n365-preview-layout .n365-next-event--unavailable:hover {
+    border-color: var(--n365-line);
+    transform: none;
 }
 
 .n365-preview-layout .n365-datebox {

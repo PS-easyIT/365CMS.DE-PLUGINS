@@ -1,11 +1,11 @@
 .m365calc-page {
     --m365tools-navy: var(--phinit-color-ink);
     --m365tools-focus: var(--phinit-color-accent);
-    --m365tools-content-top-gap: var(--phinit-space-5);
+    --m365tools-content-top-gap: min(var(--phinit-space-5, 25px), 25px);
     --m365tools-ui-radius: min(var(--m365tools-card-radius, 2px), 2px);
     --m365tools-surface-raised: var(--phinit-color-surface);
     --m365tools-shadow-hover: var(--phinit-shadow-raised);
-    background: var(--m365tools-bg, var(--phinit-color-surface));
+    background: transparent;
     color: var(--m365tools-text, var(--phinit-color-ink));
     display: grid;
     gap: var(--m365tools-section-gap, var(--phinit-space-6));
@@ -100,7 +100,7 @@
 }
 
 .m365calc-matrix-page {
-    background: var(--m365matrix-page-bg, var(--m365tools-bg, #ffffff));
+    background: transparent;
     color: var(--m365matrix-text, var(--m365tools-text, var(--phinit-color-ink)));
     gap: var(--m365matrix-section-gap, var(--m365tools-section-gap, var(--phinit-space-6)));
     max-width: var(--m365matrix-page-max-width, var(--phinit-content-wide, 1200px));

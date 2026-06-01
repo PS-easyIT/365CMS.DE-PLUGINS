@@ -21,12 +21,14 @@ final class CMS_M365CALCULATOR_Admin_Menu
             return;
         }
 
+        $callbacks = self::callback_map();
+
         add_menu_page(
             'M365 Tools',
             'M365 Tools',
             'manage_options',
             self::ROOT_PAGE_SLUG,
-            [self::class, 'dispatch_current_page'],
+            self::callback_for(self::ROOT_PAGE_SLUG, $callbacks),
             '🧮',
             57
         );
@@ -37,7 +39,7 @@ final class CMS_M365CALCULATOR_Admin_Menu
             '📊 Übersicht',
             'manage_options',
             self::ROOT_PAGE_SLUG,
-            [self::class, 'dispatch_current_page']
+            self::callback_for(self::ROOT_PAGE_SLUG, $callbacks)
         );
 
         add_submenu_page(
@@ -46,7 +48,7 @@ final class CMS_M365CALCULATOR_Admin_Menu
             '⚙️ Zentrale Einstellungen',
             'manage_options',
             'm365tools-settings',
-            [self::class, 'dispatch_current_page']
+            self::callback_for('m365tools-settings', $callbacks)
         );
 
         add_submenu_page(
@@ -55,7 +57,7 @@ final class CMS_M365CALCULATOR_Admin_Menu
             '🎨 Landingpage Designer',
             'manage_options',
             'm365tools-landing-designer',
-            [self::class, 'dispatch_current_page']
+            self::callback_for('m365tools-landing-designer', $callbacks)
         );
 
         add_submenu_page(
@@ -64,7 +66,7 @@ final class CMS_M365CALCULATOR_Admin_Menu
             '💶 Paketpreise',
             'manage_options',
             'm365tools-package-prices',
-            [self::class, 'dispatch_current_page']
+            self::callback_for('m365tools-package-prices', $callbacks)
         );
 
         add_submenu_page(
@@ -73,7 +75,7 @@ final class CMS_M365CALCULATOR_Admin_Menu
             '🔁 Abopreise & Laufzeiten',
             'manage_options',
             'm365tools-subscription-prices',
-            [self::class, 'dispatch_current_page']
+            self::callback_for('m365tools-subscription-prices', $callbacks)
         );
 
         foreach (self::ordered_admin_tools() as $tool) {
@@ -82,15 +84,25 @@ final class CMS_M365CALCULATOR_Admin_Menu
                 continue;
             }
             $title = (string) ($tool['title'] ?? $moduleKey);
+            $pageSlug = 'm365tools-module-' . $moduleKey;
             add_submenu_page(
                 self::ROOT_PAGE_SLUG,
                 $title . ' – Einstellungen',
                 '🧩 ' . self::module_menu_label($moduleKey, $tool),
                 'manage_options',
-                'm365tools-module-' . $moduleKey,
-                [self::class, 'dispatch_current_page']
+                $pageSlug,
+                self::callback_for($pageSlug, $callbacks)
             );
         }
+    }
+
+    public static function register_routes(mixed $router = null): void
+    {
+        if (!is_object($router) || !function_exists('cms_plugin_admin_register_routes')) {
+            return;
+        }
+
+        cms_plugin_admin_register_routes($router, self::ROOT_PAGE_SLUG, self::callback_map(), self::parent_aliases());
     }
 
     public static function dispatch_current_page(): void
@@ -99,6 +111,9 @@ final class CMS_M365CALCULATOR_Admin_Menu
         $defaultSlug = self::ROOT_PAGE_SLUG;
 
         if (function_exists('cms_plugin_admin_dispatch_page')) {
+            if (function_exists('cms_plugin_admin_sync_page_from_request')) {
+                cms_plugin_admin_sync_page_from_request(self::ROOT_PAGE_SLUG, self::parent_aliases());
+            }
             cms_plugin_admin_dispatch_page($callbacks, $defaultSlug, self::ROOT_PAGE_SLUG);
             return;
         }
@@ -199,6 +214,28 @@ final class CMS_M365CALCULATOR_Admin_Menu
         }
 
         return strlen($label) > $length ? rtrim(substr($label, 0, $length - 1)) . '…' : $label;
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    private static function parent_aliases(): array
+    {
+        return [
+            'cms-m365tools',
+            'cms-m365calculator',
+            'm365tools',
+        ];
+    }
+
+    /**
+     * @param array<string,callable|null> $callbacks
+     */
+    private static function callback_for(string $pageSlug, array $callbacks): callable
+    {
+        $callback = $callbacks[$pageSlug] ?? null;
+
+        return is_callable($callback) ? $callback : [self::class, 'dispatch_current_page'];
     }
 
     /**

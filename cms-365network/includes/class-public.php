@@ -392,37 +392,78 @@ final class CMS_365NETWORK_Public
         return [
             [
                 'key' => 'events',
+                'plugin_slug' => 'cms-events',
                 'icon' => 'calendar-event',
                 'label' => (string) ($settings['events_card_title'] ?? 'Events'),
                 'text' => (string) ($settings['events_card_text'] ?? ''),
                 'url' => $this->safe_url((string) ($settings['events_card_url'] ?? '/events')),
                 'stat' => 'events',
+                'integration_active' => $this->is_area_integration_active('cms-events', 'CMS_Events', 'events'),
             ],
             [
                 'key' => 'speakers',
+                'plugin_slug' => 'cms-speakers',
                 'icon' => 'microphone-2',
                 'label' => (string) ($settings['speakers_card_title'] ?? 'Speaker'),
                 'text' => (string) ($settings['speakers_card_text'] ?? ''),
                 'url' => $this->safe_url((string) ($settings['speakers_card_url'] ?? '/speakers')),
                 'stat' => 'speakers',
+                'integration_active' => $this->is_area_integration_active('cms-speakers', 'CMS_Speakers', 'speakers'),
             ],
             [
                 'key' => 'companies',
+                'plugin_slug' => 'cms-companies',
                 'icon' => 'building-community',
                 'label' => (string) ($settings['companies_card_title'] ?? 'Firmen'),
                 'text' => (string) ($settings['companies_card_text'] ?? ''),
                 'url' => $this->safe_url((string) ($settings['companies_card_url'] ?? '/companies')),
                 'stat' => 'companies',
+                'integration_active' => $this->is_area_integration_active('cms-companies', 'CMS_Companies', 'companies'),
             ],
             [
                 'key' => 'experts',
+                'plugin_slug' => 'cms-experts',
                 'icon' => 'user-star',
                 'label' => (string) ($settings['experts_card_title'] ?? 'Experten'),
                 'text' => (string) ($settings['experts_card_text'] ?? ''),
                 'url' => $this->safe_url((string) ($settings['experts_card_url'] ?? '/experts')),
                 'stat' => 'experts',
+                'integration_active' => $this->is_area_integration_active('cms-experts', 'CMS_Experts', 'experts'),
             ],
         ];
+    }
+
+    private function is_area_integration_active(string $slug, string $className, string $table): bool
+    {
+        $hasStatusSignal = false;
+
+        try {
+            if (function_exists('cms_plugin_active')) {
+                $hasStatusSignal = true;
+                if ((bool) cms_plugin_active($slug)) {
+                    return true;
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS 365NETWORK area plugin status via cms_plugin_active failed for ' . $slug . ': ' . $e->getMessage());
+        }
+
+        try {
+            if (class_exists('CMS\\PluginManager')) {
+                $hasStatusSignal = true;
+                if (CMS\PluginManager::instance()->isPluginActive($slug)) {
+                    return true;
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('CMS 365NETWORK area plugin status via PluginManager failed for ' . $slug . ': ' . $e->getMessage());
+        }
+
+        if ($hasStatusSignal) {
+            return false;
+        }
+
+        return class_exists($className, false) || $this->table_exists($table);
     }
 
     private function fetch_upcoming_events(int $limit): array
@@ -1521,6 +1562,16 @@ final class CMS_365NETWORK_Public
     private function is_plugin_active(string $slug): bool
     {
         try {
+            if (function_exists('cms_plugin_active')) {
+                if ((bool) cms_plugin_active($slug)) {
+                    return true;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fallback auf PluginManager unten.
+        }
+
+        try {
             return class_exists('CMS\\PluginManager') && CMS\PluginManager::instance()->isPluginActive($slug);
         } catch (\Throwable $e) {
             return false;
@@ -1800,6 +1851,8 @@ final class CMS_365NETWORK_Public
             'partner.label_en' => 'Partner',
             'partner.top' => 'Top-Partner',
             'partner.top_en' => 'Top Partner',
+            'area.unavailable' => 'Bald verfügbar',
+            'area.unavailable_en' => 'Coming soon',
             'spotlight.prev' => 'Zurück',
             'spotlight.prev_en' => 'Previous',
             'spotlight.next' => 'Weiter',

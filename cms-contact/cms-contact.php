@@ -82,6 +82,8 @@ final class CMS_Contact
         \CMS\Hooks::addAction('plugin_uninstalled',   [$this, 'on_uninstall'],               10);
         \CMS\Hooks::addAction('cms_admin_menu',       [$this, 'start_admin_output_buffer'], 1);
         \CMS\Hooks::addAction('cms_admin_menu',       [CMS_Contact_Admin_Menu::class, 'register'], 10);
+        \CMS\Hooks::addFilter('admin_menu_items',     [CMS_Contact_Admin_Menu::class, 'add_menu_items'], 10);
+        \CMS\Hooks::addAction('register_routes',      [CMS_Contact_Admin_Pages::class, 'register_admin_routes'], 10);
         \CMS\Hooks::addAction('register_routes',      [CMS_Contact_Frontend::class, 'instance'],   10);
         \CMS\Hooks::addAction('member_dashboard_init', [$this, 'register_member_section'],          20);
         \CMS\Hooks::addAction('head',                 [$this, 'enqueue_styles'],             20);

@@ -197,6 +197,7 @@ final class CMS_365NETWORK_Database
             ['hub_partnerband_text_color', '#dfe8f2', 'color', 'partnerband', 'Textfarbe', 50],
             ['hub_partnerband_accent_color', '#d6951a', 'color', 'partnerband', 'Akzentfarbe', 60],
             ['hub_areas_visible', '1', 'bool', 'areas', 'Direkteinstieg anzeigen', 10],
+            ['hub_areas_maintenance_mode', '0', 'bool', 'areas', 'Alle Bereichskarten im Wartungsmodus', 12],
             ['hub_area_card_order', 'events,speakers,experts,companies', 'text', 'areas', 'Reihenfolge der Bereichskarten', 15],
             ['hub_areas_label', 'Direkteinstieg', 'text', 'areas', 'Sektion-Label', 20],
             ['hub_areas_title', 'Vier Bereiche, ein Netzwerk', 'text', 'areas', 'Sektion-Überschrift', 30],

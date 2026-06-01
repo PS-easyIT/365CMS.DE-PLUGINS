@@ -26,8 +26,11 @@ final class CMS_Downloads_Public_Controller
         }
 
         $router->addRoute('GET', '/downloads', [$this, 'archive_page']);
+        $router->addRoute('GET', '/en/downloads', [$this, 'archive_page']);
         $router->addRoute('GET', '/downloads/category/:slug', [$this, 'archive_page']);
+        $router->addRoute('GET', '/en/downloads/category/:slug', [$this, 'archive_page']);
         $router->addRoute('GET', '/downloads/file/:slug', [$this, 'download_file']);
+        $router->addRoute('GET', '/en/downloads/file/:slug', [$this, 'download_file']);
     }
 
     public function render_nav_item(): void
@@ -37,15 +40,18 @@ final class CMS_Downloads_Public_Controller
             return;
         }
 
-        $label = trim((string) ($settings['nav_label'] ?? 'Downloads')) ?: 'Downloads';
+        $lang = $this->current_public_lang();
+        $label = $this->public_setting($settings, 'nav_label', $lang, 'Downloads');
         $currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
-        $active = strpos($currentPath, '/downloads') === 0 ? 'active' : '';
+        $active = str_contains((string) $currentPath, '/downloads') ? 'active' : '';
+        $href = rtrim((string) SITE_URL, '/') . $this->localized_path('downloads', $lang);
 
-        echo '<a href="' . htmlspecialchars(rtrim((string) SITE_URL, '/') . '/downloads', ENT_QUOTES, 'UTF-8') . '" class="nav-link ' . htmlspecialchars($active, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
+        echo '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '" class="nav-link ' . htmlspecialchars($active, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
     }
 
     public function archive_page(string $slug = ''): void
     {
+        $lang = $this->current_public_lang();
         $repository = CMS_Downloads_Repository::instance();
         $settings = $repository->get_settings();
         $categories = $repository->get_categories(true);
@@ -72,6 +78,9 @@ final class CMS_Downloads_Public_Controller
         ]);
 
         $typeTemplates = $repository->get_type_templates();
+        $archiveTitle = $this->public_setting($settings, 'archive_title', $lang, 'Downloads');
+        $archiveDescription = $this->public_setting($settings, 'archive_description', $lang, '');
+        $publicLang = $lang;
         $theme = class_exists('CMS\\ThemeManager') ? \CMS\ThemeManager::instance() : null;
 
         if ($theme !== null) {
@@ -87,19 +96,28 @@ final class CMS_Downloads_Public_Controller
 
     public function download_file(string $slug): void
     {
+        $lang = $this->current_public_lang();
         $slug = trim($slug);
         if ($slug === '' || preg_match('/^[\p{L}0-9-]{1,190}$/u', $slug) !== 1) {
             http_response_code(404);
-            echo '<h1>404 – Datei nicht verfügbar</h1>';
+            echo '<h1>' . htmlspecialchars($this->public_label('file_unavailable', $lang), ENT_QUOTES, 'UTF-8') . '</h1>';
             return;
         }
 
         $repository = CMS_Downloads_Repository::instance();
         $settings = $repository->get_settings();
+
+        if (CMS_Downloads_Security::is_rate_limited($settings)) {
+            http_response_code(429);
+            header('Retry-After: ' . (string) max(30, (int) ($settings['rate_limit_window'] ?? 60)));
+            echo '<h1>' . htmlspecialchars($this->public_label('rate_limited', $lang), ENT_QUOTES, 'UTF-8') . '</h1>';
+            return;
+        }
+
         $download = $repository->get_download_by_slug($slug);
         if ($download === null) {
             http_response_code(404);
-            echo '<h1>404 – Download nicht gefunden</h1>';
+            echo '<h1>' . htmlspecialchars($this->public_label('not_found', $lang), ENT_QUOTES, 'UTF-8') . '</h1>';
             return;
         }
 
@@ -119,8 +137,18 @@ final class CMS_Downloads_Public_Controller
 
             $confirmExternal = isset($_GET['external']) && (string) $_GET['external'] === 'continue';
             if (($settings['show_external_notice'] ?? '1') === '1' && !$confirmExternal) {
-                $this->render_external_redirect_notice($download, $externalUrl, $settings);
+                $this->render_external_redirect_notice($download, $externalUrl, $settings, $lang);
                 return;
+            }
+
+            if ($confirmExternal) {
+                $token = trim((string) ($_GET['token'] ?? ''));
+                $expires = (int) ($_GET['expires'] ?? 0);
+                if (!CMS_Downloads_Security::verify_external_continue_token((int) $download['id'], $slug, $token, $expires)) {
+                    http_response_code(403);
+                    echo '<h1>' . htmlspecialchars($this->public_label('external_token_invalid', $lang), ENT_QUOTES, 'UTF-8') . '</h1>';
+                    return;
+                }
             }
 
             $repository->increment_download_count((int) $download['id']);
@@ -327,12 +355,15 @@ final class CMS_Downloads_Public_Controller
         return preg_replace('/[\x00-\x1F\x7F]+/', ' ', $value) ?? '';
     }
 
-    private function render_external_redirect_notice(array $download, string $externalUrl, array $settings): void
+    private function render_external_redirect_notice(array $download, string $externalUrl, array $settings, string $lang = 'de'): void
     {
-        $continueUrl = SITE_URL . '/downloads/file/' . rawurlencode((string) ($download['slug'] ?? '')) . '?external=continue';
-        $backUrl = SITE_URL . '/downloads';
+        $continueUrl = CMS_Downloads_Security::build_external_continue_url($download);
+        if ($lang === 'en') {
+            $continueUrl = str_replace('/downloads/file/', '/en/downloads/file/', $continueUrl);
+        }
+        $backUrl = rtrim((string) SITE_URL, '/') . $this->localized_path('downloads', $lang);
         if (!empty($download['category_slug'])) {
-            $backUrl = SITE_URL . '/downloads/category/' . rawurlencode((string) $download['category_slug']);
+            $backUrl = rtrim((string) SITE_URL, '/') . $this->localized_path('downloads/category/' . rawurlencode((string) $download['category_slug']), $lang);
         }
 
         $theme = class_exists('CMS\\ThemeManager') ? \CMS\ThemeManager::instance() : null;
@@ -346,5 +377,60 @@ final class CMS_Downloads_Public_Controller
         if ($theme !== null) {
             $theme->getFooter();
         }
+    }
+
+    private function current_public_lang(): string
+    {
+        if (function_exists('cms_plugin_public_language')) {
+            return cms_plugin_public_language();
+        }
+
+        return 'de';
+    }
+
+    private function localized_path(string $path, string $lang): string
+    {
+        if (function_exists('cms_plugin_public_localized_path')) {
+            return cms_plugin_public_localized_path($path, $lang);
+        }
+
+        return '/' . trim($path, '/');
+    }
+
+    private function public_setting(array $settings, string $key, string $lang, string $fallback = ''): string
+    {
+        if (function_exists('cms_plugin_public_i18n_value')) {
+            return cms_plugin_public_i18n_value($settings, $key, $lang, $fallback);
+        }
+
+        return trim((string) ($settings[$key] ?? $fallback));
+    }
+
+    private function public_label(string $key, string $lang): string
+    {
+        $labels = [
+            'file_unavailable' => ['de' => '404 – Datei nicht verfügbar', 'en' => '404 – File unavailable'],
+            'not_found' => ['de' => '404 – Download nicht gefunden', 'en' => '404 – Download not found'],
+            'rate_limited' => ['de' => '429 – Zu viele Download-Anfragen. Bitte später erneut versuchen.', 'en' => '429 – Too many download requests. Please try again later.'],
+            'external_token_invalid' => ['de' => '403 – Der externe Download-Link ist abgelaufen oder ungültig.', 'en' => '403 – The external download link has expired or is invalid.'],
+            'external_title' => ['de' => 'Externer Download', 'en' => 'External download'],
+            'external_body_prefix' => ['de' => 'Der Download', 'en' => 'The download'],
+            'external_body_suffix' => ['de' => 'liegt auf einer externen Website.', 'en' => 'is hosted on an external website.'],
+            'external_target' => ['de' => 'Ziel', 'en' => 'Target'],
+            'external_continue' => ['de' => 'Externen Download öffnen', 'en' => 'Open external download'],
+            'back' => ['de' => 'Zurück', 'en' => 'Back'],
+            'external_note' => ['de' => 'Hinweis: Externe Downloads werden nicht direkt von 365CMS ausgeliefert. Bitte prüfe bei sensiblen Inhalten die Ziel-Domain und den Anbieter, bevor du fortfährst.', 'en' => 'Note: External downloads are not served directly by 365CMS. Please verify the target domain and provider before continuing.'],
+            'search_placeholder' => ['de' => 'Downloads durchsuchen', 'en' => 'Search downloads'],
+            'search_button' => ['de' => 'Suchen', 'en' => 'Search'],
+            'all_categories' => ['de' => 'Alle', 'en' => 'All'],
+            'category_label' => ['de' => 'Kategorie', 'en' => 'Category'],
+            'empty_title' => ['de' => 'Keine Downloads gefunden', 'en' => 'No downloads found'],
+            'empty_body' => ['de' => 'Für diese Auswahl sind aktuell noch keine öffentlichen Dateien hinterlegt.', 'en' => 'There are currently no public files available for this selection.'],
+            'download_now' => ['de' => 'Jetzt laden', 'en' => 'Download now'],
+            'version' => ['de' => 'Version', 'en' => 'Version'],
+            'downloads_count' => ['de' => 'Downloads', 'en' => 'Downloads'],
+        ];
+
+        return (string) ($labels[$key][$lang] ?? $labels[$key]['de'] ?? $key);
     }
 }

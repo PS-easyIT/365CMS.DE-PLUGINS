@@ -1,6 +1,11 @@
 
 # Changelog – CMS M365 Tools
 
+## 3.0.6 – 2026-06-01
+
+- Admin-Untermenüpunkte direkt auf ihre jeweiligen Seiten-Callbacks gelegt, damit Sidebar-Klicks nicht mehr vom Sammel-Dispatcher oder Request-Page-Sync abhängen.
+- Exakte Admin-Routen und Parent-Aliase bleiben als zusätzliche Absicherung für direkte `/admin/plugins/...`-Aufrufe erhalten.
+
 ## 3.0.5 – 2026-05-30
 
 - M365-Audit-Fix: Lokale JSON-Kataloge werden defensiver geladen.

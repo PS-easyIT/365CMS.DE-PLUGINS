@@ -1,6 +1,6 @@
 # CMS 365NETWORK
 
-**Version:** 1.0.38
+**Version:** 1.0.46
 **Status:** Domainbasierte HubSite/Landingpage für Netzwerk-Portale.
 
 CMS 365NETWORK stellt eine eigene Landingpage bereit, die auf einer konfigurierten Zusatzdomain direkt als Root-Seite erscheinen kann. Sie bündelt vier zentrale Bereiche des Netzwerks:
@@ -19,6 +19,9 @@ Zusätzlich gibt es eine interne Vorschau-Route, standardmäßig `/365network`.
 - Optionales Hero-Bild aus URL oder 365CMS-Mediathek mit konfigurierbarer Größe (`250 × 200px` Default), drei Layouts und wahlweise Ersatz der sichtbaren H1 oder zusätzlicher Anzeige neben Titel/Suche; Split-Layouts nutzen fest `33%` Bild und `67%` Text.
 - Eigene Admin-Tabs für Featured Card, Hero, Kennzahlen, Teaser-Band/Suche, Direkteinstieg, Partnerband, Events, Spotlight, Partner-Spalten und Toolbox.
 - Sortierbare Reihenfolge für Public-Bereiche sowie für die vier Direkteinstieg-Karten.
+- Wartungsmodus für die Direkteinstieg-Bereichskarten: Die Cards bleiben sichtbar, zeigen aber `Bald verfügbar` und verlinken nicht in die Bereiche.
+- Deaktivierte Integrations-Plugins (`cms-events`, `cms-speakers`, `cms-companies`, `cms-experts`) setzen ihre jeweilige Bereichskarte automatisch auf `Bald verfügbar`.
+- Ist der Events-Bereich nicht verfügbar, sind auch `Nächste Events` inklusive `Alle Events` nicht anklickbar.
 - Mediathek-Auswahl mit Vorschau für Bild-URL-Felder im Hub-Admin.
 - Jeder Hub-Bereich hat Aktivierung, Text-/Content-, Layout- und Design-Settings mit direkter Public-Wirkung.
 - Eigene Landingpage-Suche unter `/365network/search`, getrennt von der globalen 365CMS-Suche und begrenzt auf Events, Speaker, Firmen und Experten.
@@ -44,6 +47,14 @@ Zusätzlich gibt es eine interne Vorschau-Route, standardmäßig `/365network`.
 
 ## Aktueller Audit-Stand
 
+- **1.0.46:** Feature: Bereichskarten prüfen den aktiven Pluginstatus und können global in den Wartungsmodus gesetzt werden; nicht verfügbare Cards sind nicht mehr klickbar und zeigen `Bald verfügbar`. Die `Nächste Events`-Links übernehmen diese Events-Sperre ebenfalls.
+- **1.0.45:** UI-Fix: Beiträge-Stil `Dezent getrennt` nutzt eine feine, contentbreite Trennlinie oberhalb des Bereichs.
+- **1.0.44:** UI-Fix: Beiträge-Boxen bleiben strikt innerhalb der eingestellten Contentbreite; Grid und Titelgrößen passen sich containerbasiert an.
+- **1.0.43:** Admin-/UI-Fix: Optische Hervorhebungen der Beiträge-Sektion bleiben innerhalb der Contentbreite.
+- **1.0.42:** Admin-Feature: Bereich `Beiträge` im Admin konfigurierbar inklusive Sichtbarkeit, Texten, Links, Limit und Style.
+- **1.0.41:** UI-Fix: `Letzte Beiträge` erhält sichtbare Trennung mit Außenabstand und Trennlinie.
+- **1.0.40:** UI-Polish: `Letzte Beiträge` wird mit zusätzlichem Abstand sauber von vorherigen Bereichen getrennt.
+- **1.0.39:** Feature: Hero-Blogbutton und maximal sechs aktuelle Blogbeiträge am Ende der Landingpage ergänzt.
 - **1.0.38:** UI-Fix: Bei Bild-oben erscheint die Hero-Suche als eigenes helleres Band unter Logo/Untertext; der Untertext steht wieder direkt unter dem Logo.
 - **1.0.37:** UI-Fix: Bereichskarten-CTA (`… entdecken`) sitzt immer rechts unten in der Card.
 - **1.0.36:** Fix: Bei Bild-oben/Text-unten nutzt die Hero-Suche die volle Contentbreite; der Untertext steht unter dem Suchfeld statt unter dem Logo.
@@ -117,5 +128,5 @@ Das Plugin funktioniert eigenständig. Für dynamische Inhalte nutzt es optional
 - `cms-experts`
 - `m365toolbox`/`cms-m365tools` für den optionalen Tool-Link-Bereich
 
-Sind diese Plugins nicht aktiv oder fehlen Tabellen, werden die jeweiligen Vorschaukarten leer/fallbackend angezeigt.
+Sind diese Plugins nicht aktiv, zeigen die jeweiligen Direkteinstieg-Karten automatisch `Bald verfügbar` und werden nicht verlinkt. Fehlen Tabellen oder Datensätze, bleiben dynamische Vorschau-/Partnerbereiche defensiv leer bzw. fallbackend.
 Für Legacy-Toolbox-Installationen werden aktive Datensätze in `m365toolbox_links` mit `show_on_hub = 1` bevorzugt. Ist stattdessen die aktuelle `cms-m365tools`-Toolbox aktiv, nutzt 365NETWORK automatisch deren Tool-Registry.

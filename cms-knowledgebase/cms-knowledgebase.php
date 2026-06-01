@@ -77,6 +77,8 @@ final class CMS_Knowledgebase
         \CMS\Hooks::addAction('plugin_activated', [$this, 'on_activation'], 10);
         \CMS\Hooks::addAction('plugin_uninstalled', [$this, 'on_uninstall'], 10);
         \CMS\Hooks::addAction('cms_admin_menu', [\CmsKnowledgebase\Admin\Menu::class, 'register'], 10);
+        \CMS\Hooks::addFilter('admin_menu_items', [\CmsKnowledgebase\Admin\Menu::class, 'addMenuItems'], 10);
+        \CMS\Hooks::addAction('register_routes', [\CmsKnowledgebase\Admin\Menu::class, 'registerAdminRoutes'], 10);
         \CMS\Hooks::addAction('register_routes', [\CmsKnowledgebase\Http\PublicController::instance(), 'registerRoutes'], 10);
         \CMS\Hooks::addAction('head', [$this, 'output_public_style_variables'], 9);
         \CMS\Hooks::addAction('head', [$this, 'enqueue_public_styles'], 10);

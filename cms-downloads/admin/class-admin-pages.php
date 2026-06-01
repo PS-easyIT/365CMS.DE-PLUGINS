@@ -58,6 +58,7 @@ final class CMS_Downloads_Admin_Pages
         self::render_with_layout('Downloads', static function (): void {
             $repo = CMS_Downloads_Repository::instance();
             $stats = $repo->get_dashboard_stats();
+            $analytics = $repo->get_analytics_report();
             $downloads = array_slice($repo->get_downloads(), 0, 8);
             $categories = $repo->get_categories();
             $csrfToken = Security::instance()->generateToken('downloads_admin');
@@ -132,6 +133,11 @@ final class CMS_Downloads_Admin_Pages
 
     private static function handle_post(): void
     {
+        if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'GET') {
+            self::maybe_export_analytics();
+            return;
+        }
+
         if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'POST') {
             return;
         }
@@ -160,6 +166,25 @@ final class CMS_Downloads_Admin_Pages
 
         self::store_notice((bool) ($result['success'] ?? false), (string) ($result['message'] ?? $result['error'] ?? '')); 
         self::redirect_back(self::current_page_slug(), self::resolve_edit_id_from_request());
+    }
+
+    private static function maybe_export_analytics(): void
+    {
+        if ((string) ($_GET['export'] ?? '') !== 'analytics_csv') {
+            return;
+        }
+
+        if (!self::can_manage_plugin()) {
+            self::store_notice(false, 'Keine Berechtigung für diese Aktion.');
+            self::redirect_back(self::PAGE_DASHBOARD);
+        }
+
+        if (!Security::instance()->verifyToken((string) ($_GET['csrf_token'] ?? ''), 'downloads_admin')) {
+            self::store_notice(false, 'Sicherheitscheck fehlgeschlagen.');
+            self::redirect_back(self::PAGE_DASHBOARD);
+        }
+
+        CMS_Downloads_Repository::instance()->stream_analytics_csv();
     }
 
     private static function enqueue_admin_assets(): void

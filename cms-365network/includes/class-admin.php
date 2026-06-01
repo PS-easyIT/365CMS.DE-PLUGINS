@@ -1312,6 +1312,7 @@ final class CMS_365NETWORK_Admin
     private function hub_field_help(string $key): string
     {
         return match ($key) {
+            'hub_areas_maintenance_mode' => 'Wenn aktiv, bleiben alle Direkteinstieg-Karten sichtbar, zeigen aber „Bald verfügbar“ und verlinken nicht mehr in die Bereiche.',
             'hub_posts_style' => 'Steuert, wie stark die „Letzte Beiträge“-Sektion optisch hervorgehoben wird.',
             'hub_posts_limit' => 'Maximal sechs Beiträge bleiben bewusst als 2×3 Grid lesbar.',
             'hub_posts_all_url' => 'Externe Blog-URL oder interne Route. Standard ist https://phinit.de/blog.',

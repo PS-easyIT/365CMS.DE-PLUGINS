@@ -246,6 +246,7 @@ final class CMS_Experts_Admin
         $companies = $data['companies'] ?? [];
         $sectionLabel = self::ADMIN_SECTIONS[$section] ?? self::ADMIN_SECTIONS['overview'];
         $baseAdminUrl = htmlspecialchars(rtrim((string) SITE_URL, '/') . '/admin/experts', ENT_QUOTES, 'UTF-8');
+        $expertWebsiteUrls = $section === 'overview' ? $this->load_expert_website_urls($experts) : [];
 
         $s = array_merge([
             'archive_title'                => 'IT-Experten Netzwerk',
@@ -453,6 +454,7 @@ final class CMS_Experts_Admin
                             : (string)($ex->id ?? '');
                         $publicUrl = SITE_URL . '/experts/' . rawurlencode($slug);
                         $editUrl   = SITE_URL . '/admin/experts/edit/' . (int)$ex->id;
+                        $websiteUrl = $expertWebsiteUrls[(int)($ex->id ?? 0)] ?? '';
                     ?>
                         <tr<?= $isPending ? ' class="exp-list-row-pending"' : '' ?>>
                             <td>
@@ -530,8 +532,18 @@ final class CMS_Experts_Admin
                                        target="_blank"
                                        rel="noopener noreferrer"
                                        title="Öffentlich ansehen">
-                                        🌐
+                                        👁️
                                     </a>
+                                    <?php if ($websiteUrl !== ''): ?>
+                                        <a href="<?= htmlspecialchars($websiteUrl, ENT_QUOTES, 'UTF-8') ?>"
+                                           class="btn btn-sm btn-secondary"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           title="Website öffnen"
+                                           aria-label="Website von <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?> öffnen">
+                                            🌐
+                                        </a>
+                                    <?php endif; ?>
                                     <form method="POST"
                                           action="<?= SITE_URL ?>/admin/experts/delete/<?= (int)$ex->id ?>"
                                           style="display:inline;">
@@ -961,6 +973,76 @@ final class CMS_Experts_Admin
         </script>
         <?php
         $this->end_admin_layout();
+    }
+
+    private function load_expert_website_urls(array $experts): array
+    {
+        $ids = [];
+        foreach ($experts as $expert) {
+            $id = (int)($expert->id ?? 0);
+            if ($id > 0) {
+                $ids[$id] = $id;
+            }
+        }
+
+        if ($ids === []) {
+            return [];
+        }
+
+        try {
+            $db = CMS\Database::instance();
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $stmt = $db->prepare(
+                "SELECT expert_id, meta_value FROM {$db->prefix()}expert_meta WHERE meta_key = ? AND expert_id IN ({$placeholders})"
+            );
+            $stmt->execute(array_merge(['social_website'], array_values($ids)));
+
+            $urls = [];
+            foreach ($stmt->fetchAll() as $row) {
+                $url = $this->normalize_external_url($row->meta_value ?? '');
+                if ($url !== '') {
+                    $urls[(int)($row->expert_id ?? 0)] = $url;
+                }
+            }
+
+            return $urls;
+        } catch (\Throwable $e) {
+            error_log('CMS Experts Admin [load_expert_website_urls]: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function normalize_external_url(mixed $value): string
+    {
+        $url = trim((string) $value);
+        if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]]/', $url) === 1) {
+            return '';
+        }
+
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts)) {
+            return '';
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || ($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
+            return '';
+        }
+
+        $host = strtolower(trim((string) ($parts['host'] ?? ''), '[]'));
+        if ($host === '' || in_array($host, ['localhost', 'localhost.localdomain'], true) || str_ends_with($host, '.localhost') || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
+            return '';
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP) && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return '';
+        }
+
+        return $url;
     }
 
     // ─── FORM ────────────────────────────────────────────────

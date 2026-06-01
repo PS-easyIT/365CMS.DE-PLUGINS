@@ -371,10 +371,11 @@ final class CMS_Speakers_Admin
         <?php else: ?>
         <div class="spk-adm-grid">
             <?php foreach ($speakers as $sp):
-                $fn  = htmlspecialchars((string) ($sp->first_name ?? ''), ENT_QUOTES, 'UTF-8');
-                $ln  = htmlspecialchars((string) ($sp->last_name  ?? ''), ENT_QUOTES, 'UTF-8');
-                $name = trim("$fn $ln") ?: 'Unbekannt';
-                $parts = preg_split('/\s+/', $name);
+                $fnRaw = trim((string) ($sp->first_name ?? ''));
+                $lnRaw = trim((string) ($sp->last_name  ?? ''));
+                $nameRaw = trim($fnRaw . ' ' . $lnRaw) ?: 'Unbekannt';
+                $name = htmlspecialchars($nameRaw, ENT_QUOTES, 'UTF-8');
+                $parts = preg_split('/\s+/', $nameRaw);
                 $initials = mb_strtoupper(mb_substr($parts[0],0,1) . (isset($parts[1]) ? mb_substr($parts[1],0,1) : ''));
                 $spStatus  = $sp->status ?? 'active';
                 $isPending = $spStatus === 'pending';
@@ -388,6 +389,7 @@ final class CMS_Speakers_Admin
                 $fmtLabels = ['keynote'=>'Keynote','workshop'=>'Workshop','panel'=>'Panel','moderation'=>'Moderation','training'=>'Training','consulting'=>'Beratung','interview'=>'Interview','webinar'=>'Webinar'];
                 $company = htmlspecialchars((string) ($sp->company_linked_name ?? $sp->company ?? ''), ENT_QUOTES, 'UTF-8');
                 $slug = CMS_Speakers_Database::generate_slug($sp);
+                $websiteUrl = $this->normalize_external_url($sp->website ?? '');
             ?>
             <div class="spk-adm-card <?= $isPending ? 'spk-adm-card--pending' : '' ?>">
                 <?php if ($isPending): ?>
@@ -433,13 +435,21 @@ final class CMS_Speakers_Admin
                     <?php if ($isPending): ?>
                         <form method="POST" action="<?= htmlspecialchars(SITE_URL . '/admin/speakers/approve/' . (int)$sp->id, ENT_QUOTES, 'UTF-8') ?>" class="spk-contents-form">
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars((string) $approveCsrf, ENT_QUOTES, 'UTF-8') ?>">
-                            <button type="button" class="spk-adm-btn spk-adm-btn-primary spk-adm-btn-approve" data-speaker-approve-name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>">Genehmigen</button>
+                            <button type="button" class="spk-adm-btn spk-adm-btn-primary spk-adm-btn-approve" data-speaker-approve-name="<?= htmlspecialchars($nameRaw, ENT_QUOTES, 'UTF-8') ?>">Genehmigen</button>
                         </form>
                     <?php else: ?>
                         <a href="<?= htmlspecialchars(SITE_URL . '/speakers/' . $slug, ENT_QUOTES, 'UTF-8') ?>" class="spk-adm-btn spk-adm-btn-ghost" target="_blank" rel="noopener noreferrer">Ansehen</a>
                     <?php endif; ?>
+                    <?php if ($websiteUrl !== ''): ?>
+                        <a href="<?= htmlspecialchars($websiteUrl, ENT_QUOTES, 'UTF-8') ?>"
+                           class="spk-adm-btn spk-adm-btn-ghost"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           title="Website öffnen"
+                                    aria-label="Website von <?= htmlspecialchars($nameRaw, ENT_QUOTES, 'UTF-8') ?> öffnen">🌐</a>
+                    <?php endif; ?>
                     <a href="<?= htmlspecialchars(SITE_URL . '/admin/speakers/edit/' . (int)$sp->id, ENT_QUOTES, 'UTF-8') ?>" class="spk-adm-btn spk-adm-btn-primary">Bearbeiten</a>
-                        <button type="button" class="spk-adm-btn spk-adm-btn-danger" data-speaker-delete-id="<?= (int)$sp->id ?>" data-speaker-delete-name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>">Löschen</button>
+                                <button type="button" class="spk-adm-btn spk-adm-btn-danger" data-speaker-delete-id="<?= (int)$sp->id ?>" data-speaker-delete-name="<?= htmlspecialchars($nameRaw, ENT_QUOTES, 'UTF-8') ?>">Löschen</button>
                 </div>
             </div>
             <?php endforeach; ?>
@@ -765,6 +775,39 @@ final class CMS_Speakers_Admin
         </div>
         <?php
         $this->end_admin_layout();
+    }
+
+    private function normalize_external_url(mixed $value): string
+    {
+        $url = trim((string) $value);
+        if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]]/', $url) === 1) {
+            return '';
+        }
+
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts)) {
+            return '';
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || ($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
+            return '';
+        }
+
+        $host = strtolower(trim((string) ($parts['host'] ?? ''), '[]'));
+        if ($host === '' || in_array($host, ['localhost', 'localhost.localdomain'], true) || str_ends_with($host, '.localhost') || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
+            return '';
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP) && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return '';
+        }
+
+        return $url;
     }
 
     // ─── FORM ────────────────────────────────────────────────

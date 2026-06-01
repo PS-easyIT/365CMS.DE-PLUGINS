@@ -1,5 +1,12 @@
 # CMS Experts – Changelog
 
+## [3.0.12] – 2026-06-01
+
+### Geändert
+
+- **Admin-Übersicht:** Experten mit hinterlegter Website-Meta (`social_website`) zeigen nun einen eigenen Website-Schnelllink in der Aktionen-Spalte.
+- **Sicherheit/UX:** Die Website-Meta wird gesammelt geladen, auf gültige `http`/`https`-URLs begrenzt und mit `target="_blank" rel="noopener noreferrer"` in einem neuen Tab geöffnet.
+
 ## [3.0.11] – 2026-05-31
 
 ### Geändert

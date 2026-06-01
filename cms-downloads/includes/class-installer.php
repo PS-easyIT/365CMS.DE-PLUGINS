@@ -98,6 +98,12 @@ final class CMS_Downloads_Installer
             setting_value TEXT DEFAULT NULL,
             UNIQUE KEY idx_key (setting_key)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+        $pdo->exec("CREATE TABLE IF NOT EXISTS {$prefix}download_rate_limits (
+            ip_hash VARCHAR(64) NOT NULL PRIMARY KEY,
+            request_count INT UNSIGNED NOT NULL DEFAULT 0,
+            window_started_at INT UNSIGNED NOT NULL DEFAULT 0
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
     }
 
     private static function seed_defaults(): void

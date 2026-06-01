@@ -1,5 +1,10 @@
 # CMS Events – Changelog
 
+## [3.0.32] – 2026-06-01
+
+- **Admin-Übersicht:** Events mit hinterlegter Veranstalter-Website (`organizer_website`) zeigen nun einen eigenen Website-Schnelllink.
+- **Sicherheit/UX:** Der Link wird auf gültige `http`/`https`-URLs begrenzt und öffnet mit `target="_blank" rel="noopener noreferrer"` in einem neuen Tab.
+
 ## [3.0.31] – 2026-05-31
 
 - **Admin-Menü:** Der Events-Eintrag wird in der Sidebar mit `365NET | ` vorangestellt, damit 365-Network-Plugins gemeinsam sortiert werden.

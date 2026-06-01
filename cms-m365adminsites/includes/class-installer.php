@@ -28,10 +28,36 @@ final class CMS_M365ADMINSITES_Installer
         try {
             self::create_tables();
             self::seed_settings();
+            self::migrate_default_feature_visibility();
             self::seed_content($forceSeed);
         } catch (\Throwable $e) {
             error_log('CMS M365 Adminsites installer skipped: ' . $e->getMessage());
         }
+    }
+
+    private static function migrate_default_feature_visibility(): void
+    {
+        if (!class_exists('CMS\\Database')) {
+            return;
+        }
+
+        $db = \CMS\Database::instance();
+        $table = CMS_M365ADMINSITES_Settings::quote_identifier(CMS_M365ADMINSITES_Settings::table_name($db));
+        $migrationKey = 'feature_panels_hidden_by_default_v1';
+
+        $exists = $db->prepare("SELECT id FROM {$table} WHERE setting_key = ? LIMIT 1");
+        $exists->execute([$migrationKey]);
+        if ($exists->fetch()) {
+            return;
+        }
+
+        $update = $db->prepare("INSERT INTO {$table} (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP");
+        foreach (['feature_ca_shortcuts_enabled', 'feature_message_center_enabled'] as $featureKey) {
+            $update->execute([$featureKey, '0']);
+        }
+
+        $insert = $db->prepare("INSERT INTO {$table} (setting_key, setting_value) VALUES (?, ?)");
+        $insert->execute([$migrationKey, '1']);
     }
 
     private static function create_tables(): void

@@ -2,11 +2,11 @@
 #m365calculator-landing {
     --m365tools-navy: var(--phinit-color-ink);
     --m365tools-focus: var(--phinit-color-accent);
-    --m365tools-content-top-gap: var(--phinit-space-5);
+    --m365tools-content-top-gap: min(var(--phinit-space-5, 25px), 25px);
     --m365tools-ui-radius: min(var(--m365tools-card-radius, 2px), 2px);
     --m365tools-surface-raised: var(--phinit-color-surface);
     --m365tools-shadow-hover: var(--phinit-shadow-raised);
-    background: var(--m365tools-bg, transparent);
+    background: transparent;
     color: var(--m365tools-text, inherit);
     display: grid;
     gap: var(--m365tools-section-gap, var(--phinit-space-8));
@@ -148,21 +148,12 @@ body.m365calculator-theme-embed:not(.is-member) .entry-content {
     padding-top: 0 !important;
 }
 
-body.m365tools-theme-embed:not(.is-member),
-body.m365calculator-theme-embed:not(.is-member),
-body.m365tools-theme-embed:not(.is-member) #page.site,
-body.m365calculator-theme-embed:not(.is-member) #page.site,
-body:has(.m365calc-page) #page.site {
-    background-color: var(--m365tools-bg, #ffffff) !important;
-}
-
 body.m365tools-theme-embed:not(.is-member) #content.site-content,
 body.m365calculator-theme-embed:not(.is-member) #content.site-content,
 body.m365tools-theme-embed:not(.is-member) .site-content,
 body.m365calculator-theme-embed:not(.is-member) .site-content,
 body:has(.m365calc-page) #content.site-content,
 body:has(.m365calc-page) .site-content {
-    background-color: var(--m365tools-bg, #ffffff) !important;
     box-shadow: none !important;
     margin-block-start: -2px !important;
     margin-top: -2px !important;

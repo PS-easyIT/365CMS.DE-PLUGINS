@@ -81,6 +81,8 @@ final class CMS_M365LINKCOLLECTION
         \CMS\Hooks::addAction('cms_init', [$this, 'init_plugin'], 10);
         \CMS\Hooks::addAction('plugin_activated', [$this, 'on_activation'], 10);
         \CMS\Hooks::addAction('cms_admin_menu', [CMS_M365LINKCOLLECTION_Admin_Menu::class, 'register'], 10);
+        \CMS\Hooks::addFilter('admin_menu_items', [CMS_M365LINKCOLLECTION_Admin_Menu::class, 'add_menu_items'], 10);
+        \CMS\Hooks::addAction('register_routes', [CMS_M365LINKCOLLECTION_Admin_Pages::class, 'register_admin_routes'], 10);
         \CMS\Hooks::addAction('register_routes', [CMS_M365LINKCOLLECTION_Frontend::class, 'instance'], 10);
     }
 

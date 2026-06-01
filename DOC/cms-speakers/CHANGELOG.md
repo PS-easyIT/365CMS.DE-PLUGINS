@@ -1,5 +1,10 @@
 # CMS Speakers – Changelog
 
+## [3.0.20] – 2026-06-01
+
+- **Admin-Übersicht:** Speaker mit hinterlegter Website zeigen nun einen eigenen Website-Schnelllink auf der Übersichtskarte.
+- **Sicherheit/UX:** Der Link wird auf gültige `http`/`https`-URLs begrenzt und öffnet mit `target="_blank" rel="noopener noreferrer"` in einem neuen Tab.
+
 ## [3.0.19] – 2026-05-31
 
 - **Admin-Menü:** Der Speaker-Eintrag wird in der Sidebar mit `365NET | ` vorangestellt, damit 365-Network-Plugins gemeinsam sortiert werden.

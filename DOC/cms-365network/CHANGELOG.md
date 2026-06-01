@@ -1,5 +1,13 @@
 # Changelog – CMS 365NETWORK
 
+## 1.0.46 – 2026-06-01
+
+- Bereichskarten prüfen jetzt den aktiven Pluginstatus der Integrationen `cms-events`, `cms-speakers`, `cms-companies` und `cms-experts`.
+- Ist ein Integrations-Plugin deaktiviert, bleibt die passende Bereichskarte sichtbar, zeigt aber `Bald verfügbar` und wird nicht mehr als Link gerendert.
+- Im Admin-Tab `Bereiche` gibt es einen globalen Wartungsmodus für alle Bereichskarten; er verhindert direkte Navigation von der Landingpage in die vier Bereiche.
+- Nicht verfügbare Bereichskarten behalten das vorhandene Card-Design, verzichten aber auf Hover-Navigation und Pfeil-CTA.
+- Wenn der Events-Bereich wegen deaktiviertem Plugin oder Wartungsmodus auf `Bald verfügbar` steht, sind auch die `Nächste Events`-Karten und der `Alle Events`-Einstieg nicht anklickbar.
+
 ## 1.0.38 – 2026-05-31
 
 - Im Hero-Layout mit Bild oben wird die Suche jetzt als eigenes, leicht helleres Band unter Logo und Untertext angezeigt.

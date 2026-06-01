@@ -46,13 +46,23 @@
             <input type="hidden" name="action" value="save_settings">
 
             <div class="form-group">
-                <label class="form-label">Archiv-Titel</label>
+                <label class="form-label">Archiv-Titel (DE)</label>
                 <input type="text" name="archive_title" class="form-control" value="<?php echo htmlspecialchars((string) ($settings['archive_title'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
             </div>
 
             <div class="form-group">
-                <label class="form-label">Archiv-Beschreibung</label>
+                <label class="form-label">Archiv-Titel (EN)</label>
+                <input type="text" name="archive_title_en" class="form-control" value="<?php echo htmlspecialchars((string) ($settings['archive_title_en'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Archiv-Beschreibung (DE)</label>
                 <textarea name="archive_description" class="form-control" rows="4"><?php echo htmlspecialchars((string) ($settings['archive_description'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Archiv-Beschreibung (EN)</label>
+                <textarea name="archive_description_en" class="form-control" rows="4"><?php echo htmlspecialchars((string) ($settings['archive_description_en'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></textarea>
             </div>
 
             <div class="dl-admin-form-grid">
@@ -74,6 +84,22 @@
             </div>
 
             <div class="admin-card">
+                <h3>🛡️ Rate Limiting</h3>
+                <p style="color:#64748b;font-size:.875rem;margin-bottom:1rem;">Schützt Download-Endpunkte vor automatisiertem Massenabruf.</p>
+                <label class="checkbox-label dl-checkbox-stack"><input type="checkbox" name="rate_limit_enabled" value="1" <?php echo ($settings['rate_limit_enabled'] ?? '1') === '1' ? 'checked' : ''; ?>> Rate Limiting aktivieren</label>
+                <div class="dl-admin-form-grid" style="margin-top:.75rem;">
+                    <div class="form-group">
+                        <label class="form-label">Max. Anfragen pro Fenster</label>
+                        <input type="number" name="rate_limit_max" class="form-control" min="5" max="500" value="<?php echo (int) ($settings['rate_limit_max'] ?? 30); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Zeitfenster (Sekunden)</label>
+                        <input type="number" name="rate_limit_window" class="form-control" min="30" max="3600" value="<?php echo (int) ($settings['rate_limit_window'] ?? 60); ?>">
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-card">
                 <h3>🧭 Navigation</h3>
                 <p style="color:#64748b;font-size:.875rem;margin-bottom:1rem;">Standardmäßig wird kein Link in der öffentlichen Hauptnavigation ausgegeben.</p>
                 <div class="form-group" style="margin-top:.75rem;">
@@ -81,8 +107,12 @@
                     <small style="display:block;margin-top:.35rem;color:#64748b;">Wenn deaktiviert, bleibt die Seite erreichbar unter <code>/downloads</code>, wird aber nicht im Hauptmenü verlinkt.</small>
                 </div>
                 <div class="form-group" style="margin-top:.75rem;">
-                    <label class="form-label">Navigations-Label</label>
+                    <label class="form-label">Navigations-Label (DE)</label>
                     <input type="text" name="nav_label" class="form-control" value="<?php echo htmlspecialchars((string) ($settings['nav_label'] ?? 'Downloads'), ENT_QUOTES, 'UTF-8'); ?>" placeholder="Downloads">
+                </div>
+                <div class="form-group" style="margin-top:.75rem;">
+                    <label class="form-label">Navigations-Label (EN)</label>
+                    <input type="text" name="nav_label_en" class="form-control" value="<?php echo htmlspecialchars((string) ($settings['nav_label_en'] ?? 'Downloads'), ENT_QUOTES, 'UTF-8'); ?>" placeholder="Downloads">
                 </div>
             </div>
 

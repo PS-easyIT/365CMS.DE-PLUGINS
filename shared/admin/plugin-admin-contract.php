@@ -36,17 +36,180 @@ if (!function_exists('cms_plugin_admin_normalize_slug')) {
     }
 }
 
+if (!function_exists('cms_plugin_admin_request_path')) {
+    /**
+     * Returns normalized request path without query string.
+     */
+    function cms_plugin_admin_request_path(): string
+    {
+        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?? '');
+
+        return '/' . trim($path, '/');
+    }
+}
+
+if (!function_exists('cms_plugin_admin_parse_plugins_path')) {
+    /**
+     * Parses /admin/plugins/{parent}/{page} request paths.
+     *
+     * @return array{parent:string,page:string}|null
+     */
+    function cms_plugin_admin_parse_plugins_path(): ?array
+    {
+        $normalized = cms_plugin_admin_request_path();
+        $prefix = '/admin/plugins/';
+        if (!str_starts_with($normalized, $prefix)) {
+            return null;
+        }
+
+        $remainder = substr($normalized, strlen($prefix));
+        if ($remainder === false || $remainder === '') {
+            return null;
+        }
+
+        $segments = explode('/', $remainder, 2);
+        $parent = cms_plugin_admin_normalize_slug((string) ($segments[0] ?? ''));
+        if ($parent === '') {
+            return null;
+        }
+
+        $pageRaw = (string) ($segments[1] ?? '');
+        $page = cms_plugin_admin_normalize_slug(strtok($pageRaw, '/?') ?: '');
+
+        return [
+            'parent' => $parent,
+            'page' => $page,
+        ];
+    }
+}
+
+if (!function_exists('cms_plugin_admin_sync_page_from_request')) {
+    /**
+     * Sets $_GET['page'] from /admin/plugins/{parent}/{page} when missing.
+     *
+     * @param array<int,string> $parentAliases
+     */
+    function cms_plugin_admin_sync_page_from_request(?string $expectedParentSlug = null, array $parentAliases = []): void
+    {
+        $parsed = cms_plugin_admin_parse_plugins_path();
+        if ($parsed === null) {
+            return;
+        }
+
+        $parent = $parsed['parent'];
+        $page = $parsed['page'];
+
+        $allowedParents = [];
+        if ($expectedParentSlug !== null && $expectedParentSlug !== '') {
+            $allowedParents[] = cms_plugin_admin_normalize_slug($expectedParentSlug);
+        }
+        foreach ($parentAliases as $alias) {
+            $normalizedAlias = cms_plugin_admin_normalize_slug((string) $alias);
+            if ($normalizedAlias !== '') {
+                $allowedParents[] = $normalizedAlias;
+            }
+        }
+        $allowedParents = array_values(array_unique($allowedParents));
+
+        if ($allowedParents !== [] && !in_array($parent, $allowedParents, true)) {
+            return;
+        }
+
+        if ($page !== '') {
+            $_GET['page'] = $page;
+            return;
+        }
+
+        $_GET['page'] = $parent;
+    }
+}
+
+if (!function_exists('cms_plugin_admin_page_path')) {
+    /**
+     * Builds a plugin admin path for sidebar links.
+     */
+    function cms_plugin_admin_page_path(string $parentSlug, string $pageSlug): string
+    {
+        $parentSlug = cms_plugin_admin_normalize_slug($parentSlug);
+        $pageSlug = cms_plugin_admin_normalize_slug($pageSlug);
+        if ($parentSlug === '') {
+            $parentSlug = 'plugin-admin';
+        }
+        if ($pageSlug === '') {
+            $pageSlug = $parentSlug;
+        }
+
+        return '/admin/plugins/' . rawurlencode($parentSlug) . '/' . rawurlencode($pageSlug);
+    }
+}
+
 if (!function_exists('cms_plugin_admin_active_slug')) {
     /**
      * Returns active admin slug from request.
      */
     function cms_plugin_admin_active_slug(string $fallback): string
     {
-        $requested = (string) ($_GET['page'] ?? $fallback);
+        cms_plugin_admin_sync_page_from_request();
+
+        $requested = (string) ($_GET['page'] ?? '');
+        if ($requested === '') {
+            $requested = $fallback;
+        }
+
         $normalized = cms_plugin_admin_normalize_slug($requested);
         $fallback = cms_plugin_admin_normalize_slug($fallback);
 
         return $normalized !== '' ? $normalized : $fallback;
+    }
+}
+
+if (!function_exists('cms_plugin_admin_register_routes')) {
+    /**
+     * Registers explicit admin routes so the core plugin router can dispatch subpages.
+     *
+     * @param array<string, callable|null> $callbackMap
+     * @param array<int,string> $parentAliases
+     */
+    function cms_plugin_admin_register_routes($router, string $parentSlug, array $callbackMap, array $parentAliases = []): void
+    {
+        if (!is_object($router) || !method_exists($router, 'addRoute')) {
+            return;
+        }
+
+        $parentSlug = cms_plugin_admin_normalize_slug($parentSlug);
+        if ($parentSlug === '') {
+            return;
+        }
+
+        $parents = [$parentSlug];
+        foreach ($parentAliases as $alias) {
+            $normalizedAlias = cms_plugin_admin_normalize_slug((string) $alias);
+            if ($normalizedAlias !== '' && !in_array($normalizedAlias, $parents, true)) {
+                $parents[] = $normalizedAlias;
+            }
+        }
+
+        foreach ($parents as $parent) {
+            foreach ($callbackMap as $pageSlug => $callback) {
+                if (!is_callable($callback)) {
+                    continue;
+                }
+
+                $pageSlug = cms_plugin_admin_normalize_slug((string) $pageSlug);
+                if ($pageSlug === '') {
+                    continue;
+                }
+
+                $path = cms_plugin_admin_page_path($parent, $pageSlug);
+                $routeCallback = static function () use ($pageSlug, $callback): void {
+                    $_GET['page'] = $pageSlug;
+                    call_user_func($callback);
+                };
+
+                $router->addRoute('GET', $path, $routeCallback);
+                $router->addRoute('POST', $path, $routeCallback);
+            }
+        }
     }
 }
 
@@ -146,6 +309,8 @@ if (!function_exists('cms_plugin_admin_dispatch_page')) {
         if ($pluginSlug === '') {
             $pluginSlug = 'plugin-admin';
         }
+
+        cms_plugin_admin_sync_page_from_request($pluginSlug);
 
         $activeSlug = cms_plugin_admin_active_slug($defaultSlug);
 

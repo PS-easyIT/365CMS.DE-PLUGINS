@@ -31,7 +31,9 @@ final class CMS_Downloads_Repository
     /** @var array<string,string> */
     private const DEFAULT_SETTINGS = [
         'archive_title' => 'Downloads',
+        'archive_title_en' => 'Downloads',
         'archive_description' => 'Öffentliche Downloads, Vorlagen und Ressourcen.',
+        'archive_description_en' => 'Public downloads, templates, and resources.',
         'downloads_per_page' => '24',
         'show_search' => '1',
         'show_category_overview' => '1',
@@ -39,6 +41,11 @@ final class CMS_Downloads_Repository
         'external_allowed_domains' => '',
         'show_nav_link' => '0',
         'nav_label' => 'Downloads',
+        'nav_label_en' => 'Downloads',
+        'rate_limit_enabled' => '1',
+        'rate_limit_max' => '30',
+        'rate_limit_window' => '60',
+        'external_token_secret' => '',
     ];
 
     public static function instance(): self
@@ -134,7 +141,9 @@ final class CMS_Downloads_Repository
     {
         $settings = [
             'archive_title' => $this->clean_text($post['archive_title'] ?? 'Downloads'),
+            'archive_title_en' => $this->clean_text($post['archive_title_en'] ?? 'Downloads'),
             'archive_description' => $this->clean_textarea($post['archive_description'] ?? ''),
+            'archive_description_en' => $this->clean_textarea($post['archive_description_en'] ?? ''),
             'downloads_per_page' => (string) max(6, min(120, (int) ($post['downloads_per_page'] ?? 24))),
             'show_search' => !empty($post['show_search']) ? '1' : '0',
             'show_category_overview' => !empty($post['show_category_overview']) ? '1' : '0',
@@ -142,6 +151,10 @@ final class CMS_Downloads_Repository
             'external_allowed_domains' => $this->normalize_domain_allowlist($post['external_allowed_domains'] ?? ''),
             'show_nav_link' => !empty($post['show_nav_link']) ? '1' : '0',
             'nav_label' => $this->clean_text($post['nav_label'] ?? 'Downloads'),
+            'nav_label_en' => $this->clean_text($post['nav_label_en'] ?? 'Downloads'),
+            'rate_limit_enabled' => !empty($post['rate_limit_enabled']) ? '1' : '0',
+            'rate_limit_max' => (string) max(5, min(500, (int) ($post['rate_limit_max'] ?? 30))),
+            'rate_limit_window' => (string) max(30, min(3600, (int) ($post['rate_limit_window'] ?? 60))),
         ];
 
         $startedTransaction = false;
@@ -498,6 +511,130 @@ final class CMS_Downloads_Repository
         } catch (\Throwable $e) {
             $this->log_error('increment_download_count failed', $e);
         }
+    }
+
+    public function save_setting_value(string $key, string $value): void
+    {
+        $cleanKey = trim($key);
+        if ($cleanKey === '') {
+            return;
+        }
+
+        try {
+            $exists = $this->db->prepare("SELECT setting_key FROM {$this->prefix}download_settings WHERE setting_key = ? LIMIT 1");
+            $exists->execute([$cleanKey]);
+
+            if ($exists->fetchColumn() !== false) {
+                $update = $this->db->prepare("UPDATE {$this->prefix}download_settings SET setting_value = ? WHERE setting_key = ?");
+                $update->execute([$value, $cleanKey]);
+            } else {
+                $insert = $this->db->prepare("INSERT INTO {$this->prefix}download_settings (setting_key, setting_value) VALUES (?, ?)");
+                $insert->execute([$cleanKey, $value]);
+            }
+
+            $this->settingsCache = null;
+        } catch (\Throwable $e) {
+            $this->log_error('save_setting_value failed', $e);
+        }
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function get_analytics_report(): array
+    {
+        try {
+            $topDownloads = $this->db->prepare(
+                "SELECT d.id, d.title, d.slug, d.download_type, d.download_count, c.name AS category_name
+                 FROM {$this->prefix}downloads d
+                 LEFT JOIN {$this->prefix}download_categories c ON c.id = d.category_id
+                 WHERE d.status = 'active'
+                 ORDER BY d.download_count DESC, d.title ASC
+                 LIMIT 15"
+            );
+            $topDownloads->execute();
+
+            $byType = $this->db->prepare(
+                "SELECT download_type, COUNT(*) AS item_count, COALESCE(SUM(download_count), 0) AS total_downloads
+                 FROM {$this->prefix}downloads
+                 WHERE status = 'active'
+                 GROUP BY download_type
+                 ORDER BY total_downloads DESC"
+            );
+            $byType->execute();
+
+            $byCategory = $this->db->prepare(
+                "SELECT COALESCE(c.name, 'Uncategorized') AS category_name, COUNT(*) AS item_count, COALESCE(SUM(d.download_count), 0) AS total_downloads
+                 FROM {$this->prefix}downloads d
+                 LEFT JOIN {$this->prefix}download_categories c ON c.id = d.category_id
+                 WHERE d.status = 'active'
+                 GROUP BY c.name
+                 ORDER BY total_downloads DESC"
+            );
+            $byCategory->execute();
+
+            return [
+                'top_downloads' => $topDownloads->fetchAll(\PDO::FETCH_ASSOC) ?: [],
+                'by_type' => $byType->fetchAll(\PDO::FETCH_ASSOC) ?: [],
+                'by_category' => $byCategory->fetchAll(\PDO::FETCH_ASSOC) ?: [],
+                'generated_at' => gmdate('c'),
+            ];
+        } catch (\Throwable $e) {
+            $this->log_error('get_analytics_report failed', $e);
+            return [
+                'top_downloads' => [],
+                'by_type' => [],
+                'by_category' => [],
+                'generated_at' => gmdate('c'),
+            ];
+        }
+    }
+
+    public function stream_analytics_csv(): void
+    {
+        $report = $this->get_analytics_report();
+        $filename = 'downloads-analytics-' . gmdate('Y-m-d') . '.csv';
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-store');
+
+        $output = fopen('php://output', 'wb');
+        if ($output === false) {
+            return;
+        }
+
+        fputcsv($output, ['Section', 'Label', 'Items', 'Total Downloads']);
+
+        foreach ($report['top_downloads'] as $row) {
+            fputcsv($output, [
+                'top_download',
+                (string) ($row['title'] ?? ''),
+                1,
+                (int) ($row['download_count'] ?? 0),
+            ]);
+        }
+
+        foreach ($report['by_type'] as $row) {
+            fputcsv($output, [
+                'type',
+                (string) ($row['download_type'] ?? ''),
+                (int) ($row['item_count'] ?? 0),
+                (int) ($row['total_downloads'] ?? 0),
+            ]);
+        }
+
+        foreach ($report['by_category'] as $row) {
+            fputcsv($output, [
+                'category',
+                (string) ($row['category_name'] ?? ''),
+                (int) ($row['item_count'] ?? 0),
+                (int) ($row['total_downloads'] ?? 0),
+            ]);
+        }
+
+        fclose($output);
+        exit;
     }
 
     private function handle_upload(array $file): array

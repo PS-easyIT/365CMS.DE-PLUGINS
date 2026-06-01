@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
 }
 
 define('CMS_DOWNLOADS_VERSION', '3.0.3');
-define('CMS_DOWNLOADS_DB_VERSION', '1.0.0');
+define('CMS_DOWNLOADS_DB_VERSION', '1.1.0');
 define('CMS_DOWNLOADS_PLUGIN_DIR', dirname(__FILE__) . '/');
 define('CMS_DOWNLOADS_PLUGIN_URL', '/plugins/cms-downloads/');
 
@@ -40,8 +40,10 @@ final class CMS_Downloads
     {
         $files = [
             dirname(__DIR__) . '/shared/admin/plugin-admin-contract.php',
+            dirname(__DIR__) . '/shared/public/plugin-public-i18n.php',
             CMS_DOWNLOADS_PLUGIN_DIR . 'includes/class-installer.php',
             CMS_DOWNLOADS_PLUGIN_DIR . 'includes/class-repository.php',
+            CMS_DOWNLOADS_PLUGIN_DIR . 'includes/class-security.php',
             CMS_DOWNLOADS_PLUGIN_DIR . 'includes/class-public-controller.php',
             CMS_DOWNLOADS_PLUGIN_DIR . 'admin/class-admin-menu.php',
             CMS_DOWNLOADS_PLUGIN_DIR . 'admin/class-admin-pages.php',
@@ -115,14 +117,15 @@ final class CMS_Downloads
 
     private function is_downloads_public_route(): bool
     {
-        $path = (string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: '');
-        $path = '/' . trim($path, '/');
+        $path = function_exists('cms_plugin_public_path_without_lang')
+            ? cms_plugin_public_path_without_lang()
+            : trim((string) (parse_url((string) ($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH) ?: ''), '/');
 
-        if ($path === '/downloads' || str_starts_with($path, '/downloads/category/')) {
+        if ($path === 'downloads' || str_starts_with($path, 'downloads/category/')) {
             return true;
         }
 
-        if (!str_starts_with($path, '/downloads/file/')) {
+        if (!str_starts_with($path, 'downloads/file/')) {
             return false;
         }
 

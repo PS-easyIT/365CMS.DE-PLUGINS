@@ -111,6 +111,39 @@ final class CMS_Companies_Admin
         return rtrim((string) SITE_URL, '/') . $path;
     }
 
+    private function normalize_external_url(mixed $value): string
+    {
+        $url = trim((string) $value);
+        if ($url === '' || strlen($url) > 2048 || preg_match('/[[:cntrl:]]/', $url) === 1) {
+            return '';
+        }
+
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return '';
+        }
+
+        $parts = parse_url($url);
+        if (!is_array($parts)) {
+            return '';
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if (!in_array($scheme, ['http', 'https'], true) || ($parts['user'] ?? '') !== '' || ($parts['pass'] ?? '') !== '') {
+            return '';
+        }
+
+        $host = strtolower(trim((string) ($parts['host'] ?? ''), '[]'));
+        if ($host === '' || in_array($host, ['localhost', 'localhost.localdomain'], true) || str_ends_with($host, '.localhost') || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
+            return '';
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP) && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return '';
+        }
+
+        return $url;
+    }
+
     private function render_admin_styles(): void
     {
         $styles = [
@@ -344,6 +377,7 @@ final class CMS_Companies_Admin
             $showCity          = ($s['design_show_city']      ?? '1') !== '0';
             $showEmployees     = ($s['design_show_employees']  ?? '0') !== '0';
             $showWebsite       = ($s['design_show_website']    ?? '1') !== '0';
+            $websiteUrl        = $this->normalize_external_url($co->website ?? '');
         ?>
             <div class="co-adm-card <?= $cardCls ?><?= $isPending ? ' co-adm-card--pending' : '' ?>">
                 <?php if ($isPending): ?>
@@ -378,7 +412,7 @@ final class CMS_Companies_Admin
                 $pills = [];
                 if ($showCity      && !empty($co->location_city)) $pills[] = ['📍', $sec->escape($co->location_city), ''];
                 if ($showEmployees && !empty($co->employee_count)) $pills[] = ['👥', $co->employee_count . ' Mitarb.', ''];
-                if ($showWebsite   && !empty($co->website))        $pills[] = ['🌐', parse_url($co->website, PHP_URL_HOST) ?: $sec->escape($co->website), 'accent'];
+                if ($showWebsite   && $websiteUrl !== '')          $pills[] = ['🌐', htmlspecialchars((string)(parse_url($websiteUrl, PHP_URL_HOST) ?: $websiteUrl), ENT_QUOTES, 'UTF-8'), 'accent'];
                 if ($pills): ?>
                 <div class="co-adm-pills">
                     <?php foreach ($pills as [$ico, $txt, $cls]): ?>
@@ -394,8 +428,16 @@ final class CMS_Companies_Admin
                                     onclick="openCoApproveModal(<?= (int)$co->id ?>, '<?= $sec->escape(addslashes($co->name)) ?>', this.closest('form'))">✓ Genehmigen</button>
                         </form>
                     <?php else: ?>
-                        <a href="<?= cms_company_url($co) ?>" target="_blank"
-                           class="co-adm-btn co-adm-btn-ghost">🌐</a>
+                        <a href="<?= htmlspecialchars(cms_company_url($co), ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer"
+                           class="co-adm-btn co-adm-btn-ghost" title="Öffentlich ansehen">👁️</a>
+                    <?php endif; ?>
+                    <?php if ($websiteUrl !== ''): ?>
+                        <a href="<?= htmlspecialchars($websiteUrl, ENT_QUOTES, 'UTF-8') ?>"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="co-adm-btn co-adm-btn-ghost"
+                           title="Website öffnen"
+                           aria-label="Website von <?= htmlspecialchars((string)$co->name, ENT_QUOTES, 'UTF-8') ?> öffnen">🌐</a>
                     <?php endif; ?>
                     <a href="<?= SITE_URL ?>/admin/companies/edit/<?= (int)$co->id ?>"
                        class="co-adm-btn co-adm-btn-primary">✏️ Bearbeiten</a>

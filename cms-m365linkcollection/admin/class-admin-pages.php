@@ -37,14 +37,11 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
         self::check_access();
         self::load_admin_contract();
 
-        $callbackMap = [
-            self::SLUG_DASHBOARD => [self::class, 'render_dashboard'],
-            self::SLUG_ENTRIES => [self::class, 'render_entries_page'],
-            self::SLUG_CONTENT => [self::class, 'render_content_page'],
-            self::SLUG_SETTINGS => [self::class, 'render_settings_page'],
-            self::SLUG_HELP => [self::class, 'render_help_page'],
-            'm365linkcollection-dashboard' => [self::class, 'render_dashboard'], // legacy slug
-        ];
+        if (function_exists('cms_plugin_admin_sync_page_from_request')) {
+            cms_plugin_admin_sync_page_from_request(self::PLUGIN_SLUG, ['m365linkcollection-dashboard']);
+        }
+
+        $callbackMap = self::admin_callback_map();
 
         if (function_exists('cms_plugin_admin_dispatch_page')) {
             cms_plugin_admin_dispatch_page($callbackMap, self::SLUG_DASHBOARD, self::PLUGIN_SLUG);
@@ -52,6 +49,38 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
         }
 
         self::render_dashboard();
+    }
+
+    /**
+     * @return array<string, callable>
+     */
+    public static function admin_callback_map(): array
+    {
+        return [
+            self::SLUG_DASHBOARD => [self::class, 'render_dashboard'],
+            self::SLUG_ENTRIES => [self::class, 'render_entries_page'],
+            self::SLUG_CONTENT => [self::class, 'render_content_page'],
+            self::SLUG_SETTINGS => [self::class, 'render_settings_page'],
+            self::SLUG_HELP => [self::class, 'render_help_page'],
+            'm365linkcollection-dashboard' => [self::class, 'render_dashboard'],
+        ];
+    }
+
+    /**
+     * @param mixed $router
+     */
+    public static function register_admin_routes($router): void
+    {
+        if (!function_exists('cms_plugin_admin_register_routes')) {
+            return;
+        }
+
+        cms_plugin_admin_register_routes(
+            $router,
+            self::PLUGIN_SLUG,
+            self::admin_callback_map(),
+            ['m365linkcollection-dashboard']
+        );
     }
 
     public static function render_dashboard(): void
@@ -783,12 +812,11 @@ final class CMS_M365LINKCOLLECTION_Admin_Pages
 
     private static function menu_url(string $slug): string
     {
-        $query = 'page=' . rawurlencode($slug);
-        if (function_exists('admin_url')) {
-            return (string) admin_url('admin.php?' . $query);
+        if (function_exists('cms_plugin_admin_page_path')) {
+            return cms_plugin_admin_page_path(self::PLUGIN_SLUG, $slug);
         }
 
-        return '/wp-admin/admin.php?' . $query;
+        return '/admin/plugins/' . rawurlencode(self::PLUGIN_SLUG) . '/' . rawurlencode($slug);
     }
 
     private static function generate_nonce(string $action): string
