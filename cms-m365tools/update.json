@@ -1,6 +1,6 @@
 {
   "slug": "cms-m365tools",
-  "version": "3.0.35",
+  "version": "3.0.36",
   "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
   "requires": "3.0.0",
   "tested": "3.0.0",
@@ -9,6 +9,6 @@
   "last_updated": "2026-06-01",
   "sections": {
     "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme, zentraler Dienstleister- und Kontaktformular-CTA, eigenem Landingpage-Designer, UX-optimierter Live-Suche, Tag-Filtern, Sticky-Kategorie-Navigation, globalen Paketpreis- und Abopreisbereichen, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass und Public-Modulen. Reine Matrixseiten liegen im Plugin cms-m365matrices.",
-    "changelog": "3.0.35: Microsoft-Preiserhöhung-Tracker führt Währungsanpassungen als eigenen Ereignistyp und ergänzt einen Q1-2026-Kontext für Februar/März-Preislisten-/Währungsanpassungen getrennt von der Juli-2026-Suite-Erhöhung; unverified FX-Kontext wird nicht in price_history geschrieben. 3.0.34: Visueller Jahresvergleich klassifiziert Zeitreihen anhand des echten Vorperioden-Deltas statt pauschal ab Q3/Juli als Mehrkosten. 3.0.33: Alte Pill-Legend und sichtbare Chart.js-Fallback-Meldung entfernt."
+    "changelog": "3.0.36: Microsoft 365 Business Premium bleibt im Juli-2026-Update preislich stabil; der Mai/Juli-Baseline-Punkt nutzt weiter den bestätigten EUR-Harmonisierungspreis 19,10 statt eine fälschliche Erhöhung auf 22,80. 3.0.35: Feb-2026 EUR-Währungsanpassung als echte price_history ergänzt und als separater Ereignistyp geführt. 3.0.34: Visueller Jahresvergleich klassifiziert Zeitreihen anhand echter Deltas."
   }
 }

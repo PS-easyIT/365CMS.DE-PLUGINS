@@ -1,6 +1,12 @@
 
 # Changelog – CMS M365 Tools
 
+## 3.0.36 – 2026-06-01
+
+- `Microsoft-Preiserhöhung-Tracker`: Microsoft 365 Business Premium bleibt im Juli-2026-Update preislich stabil und zeigt nach der Feb-2026-Währungsanpassung keinen zusätzlichen Up-Step.
+- Der spätere Business-Premium-Baseline-Punkt wurde auf den bestätigten EUR-Harmonisierungspreis `19,10 €` korrigiert statt fälschlich `22,80 €` als Erhöhung zu verwenden.
+- `microsoft_price_changes.json` bleibt konsistent mit Microsofts USD-Paar `22.00→22.00` und `percent_change: 0.0`.
+
 ## 3.0.35 – 2026-06-01
 
 - `Microsoft-Preiserhöhung-Tracker`: Währungsanpassungen werden als eigener Ereignistyp `currency_adjustment` geführt und in der Public-Auswahl als `Währungsanpassung` angezeigt.

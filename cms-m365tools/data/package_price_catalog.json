@@ -542,16 +542,16 @@
         {
           "effective_from": "2026-05-01",
           "prices_eur_net": {
-            "monthly_monthly": 27.36,
-            "annual_monthly": 22.8,
-            "annual_annual_permonth": 22.8,
-            "annual_annual_total": 273.6,
-            "triennial_permonth": 21.66
+            "monthly_monthly": 22.92,
+            "annual_monthly": 19.1,
+            "annual_annual_permonth": 19.1,
+            "annual_annual_total": 229.2,
+            "triennial_permonth": 18.15
           },
-          "is_approx": true,
+          "is_approx": false,
           "verification_status": "current_baseline",
-          "source_url": "https://www.software-express.de/hersteller/microsoft/microsoft-365/business-premium/",
-          "source_note": "Seed-Baseline; Software-Express führt kanalabhängige niedrigere CSP-Nettoangebote."
+          "source_url": "https://www.microsoft.com/en-us/licensing/news/2026-M365-Packaging-Pricing-Updates",
+          "source_note": "Business Premium bleibt im Juli-2026-Update preislich stabil (USD 22→22); EUR Commercial NCE bleibt auf bestätigtem Harmonisierungspreis 19.10."
         }
       ],
       "requires_base": null,
