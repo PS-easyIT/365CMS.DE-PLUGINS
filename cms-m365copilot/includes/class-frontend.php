@@ -15,6 +15,12 @@ final class CMS_M365Copilot_Frontend
 {
     private static ?self $instance = null;
 
+    private bool $routesRegistered = false;
+
+    private ?string $requestPathCache = null;
+
+    private ?string $sitePathPrefixCache = null;
+
     public static function instance(?\CMS\Router $router = null): self
     {
         if (self::$instance === null) {
@@ -30,6 +36,7 @@ final class CMS_M365Copilot_Frontend
     {
         if (class_exists('CMS\\Hooks')) {
             \CMS\Hooks::addAction('head', [$this, 'enqueue_styles'], 20);
+            \CMS\Hooks::addAction('head', [$this, 'output_design_tokens'], 30);
             \CMS\Hooks::addFilter('body_class', [$this, 'filter_body_class'], 20);
         }
     }
@@ -64,12 +71,45 @@ final class CMS_M365Copilot_Frontend
         }
     }
 
+    public function output_design_tokens(): void
+    {
+        if (!$this->is_request()) {
+            return;
+        }
+
+        $settings = CMS_M365Copilot_Settings::all();
+        $int = static fn(string $key, int $fallback): int => max(0, (int) ($settings[$key] ?? (string) $fallback));
+        $vars = [
+            '--m365cp-max-width' => max(720, min(1800, $int('layout_content_max_width', 1200))) . 'px',
+            '--m365cp-pad-l' => min(96, $int('layout_padding_left', 24)) . 'px',
+            '--m365cp-pad-r' => min(96, $int('layout_padding_right', 24)) . 'px',
+            '--m365cp-pad-t' => min(160, $int('layout_padding_top', 32)) . 'px',
+            '--m365cp-pad-b' => min(160, $int('layout_padding_bottom', 48)) . 'px',
+            '--m365cp-gap' => min(160, $int('layout_section_gap', 36)) . 'px',
+            '--m365cp-header-offset' => min(160, $int('layout_header_offset', 0)) . 'px',
+            '--m365cp-footer-offset' => min(160, $int('layout_footer_offset', 0)) . 'px',
+        ];
+
+        echo '<style id="cms-m365copilot-public-design">' . "\n";
+        echo 'body.m365cp-page .m365cp {' . "\n";
+        foreach ($vars as $name => $value) {
+            echo '    ' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . ': ' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . ';' . "\n";
+        }
+        echo '}' . "\n";
+        echo '</style>' . "\n";
+    }
+
     private function register_routes(?\CMS\Router $router = null): void
     {
+        if ($this->routesRegistered) {
+            return;
+        }
+
         if (!class_exists('CMS\\Router')) {
             return;
         }
 
+        $this->routesRegistered = true;
         $router = $router instanceof \CMS\Router ? $router : \CMS\Router::instance();
         $slug = trim((string) (CMS_M365Copilot_Settings::all()['route_slug'] ?? 'microsoft-365-copilot'), '/');
         if ($slug === '') {
@@ -90,35 +130,81 @@ final class CMS_M365Copilot_Frontend
             $slug = 'microsoft-365-copilot';
         }
 
-        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
-        $path = parse_url($uri, PHP_URL_PATH);
-        $path = is_string($path) ? rtrim($path, '/') : '';
-        if ($path === '') {
-            $path = '/';
+        $path = $this->normalized_request_path();
+        foreach ($this->route_candidates($slug) as $candidate) {
+            if ($path === $candidate) {
+                return true;
+            }
         }
 
-        $candidates = [
-            '/' . $slug,
-            '/en/' . $slug,
-            '/de/' . $slug,
-        ];
-
-        if (in_array($path, $candidates, true)) {
+        if (preg_match('~^(?:[a-z]{2}(?:-[a-z]{2})?/)?' . preg_quote($slug, '~') . '$~i', $path) === 1) {
             return true;
         }
 
-        return preg_match('~^/[a-z]{2}(?:-[a-z]{2})?/' . preg_quote($slug, '~') . '$~i', $path) === 1;
+        $prefix = $this->site_path_prefix();
+        return $prefix !== '' && preg_match('~^' . preg_quote($prefix, '~') . '/[a-z]{2}(?:-[a-z]{2})?/' . preg_quote($slug, '~') . '$~i', $path) === 1;
+    }
+
+    /** @return array<int,string> */
+    private function route_candidates(string $slug): array
+    {
+        $slug = trim($slug, '/');
+        if ($slug === '') {
+            return [];
+        }
+
+        $candidates = [$slug, 'en/' . $slug, 'de/' . $slug];
+        $prefix = $this->site_path_prefix();
+        if ($prefix !== '') {
+            $candidates[] = $prefix . '/' . $slug;
+            $candidates[] = $prefix . '/en/' . $slug;
+            $candidates[] = $prefix . '/de/' . $slug;
+        }
+
+        return array_values(array_unique($candidates));
+    }
+
+    private function normalized_request_path(): string
+    {
+        if ($this->requestPathCache !== null) {
+            return $this->requestPathCache;
+        }
+
+        $path = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
+        $this->requestPathCache = $this->normalize_path(is_string($path) ? $path : '/');
+
+        return $this->requestPathCache;
+    }
+
+    private function site_path_prefix(): string
+    {
+        if ($this->sitePathPrefixCache !== null) {
+            return $this->sitePathPrefixCache;
+        }
+
+        $siteUrl = defined('SITE_URL') ? (string) SITE_URL : '';
+        $path = parse_url($siteUrl, PHP_URL_PATH);
+        $this->sitePathPrefixCache = $this->normalize_path(is_string($path) ? $path : '');
+
+        return $this->sitePathPrefixCache;
+    }
+
+    private function normalize_path(string $path): string
+    {
+        $path = trim($path);
+        if ($path === '') {
+            return '';
+        }
+
+        $normalized = (string) preg_replace('#/+#', '/', $path);
+
+        return strtolower(trim($normalized, '/'));
     }
 
     private function render_page(): void
     {
         $settings = CMS_M365Copilot_Settings::all();
         $posts = $this->load_posts($settings);
-        $publicCssUrl = '';
-        $publicCssPath = CMS_M365COPILOT_PLUGIN_DIR . 'assets/css/style.css';
-        if (is_file($publicCssPath)) {
-            $publicCssUrl = CMS_M365COPILOT_PLUGIN_URL . 'assets/css/style.css?v=' . (string) filemtime($publicCssPath);
-        }
 
         if (class_exists('CMS\\ThemeManager')) {
             \CMS\ThemeManager::instance()->getHeader(['title' => (string) ($settings['header_title'] ?? 'Microsoft 365 Copilot')]);

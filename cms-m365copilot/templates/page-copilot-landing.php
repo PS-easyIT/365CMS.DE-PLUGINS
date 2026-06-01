@@ -60,7 +60,6 @@ $imgUrl = static function (string $url) use ($siteUrl): string {
     $fallback = CMS_M365Copilot_Settings::public_image_url($url);
     return $fallback !== '' ? $fallback : '';
 };
-$int = static fn(string $key, int $fallback): int => max(0, (int) ($settings[$key] ?? (string) $fallback));
 $headerLayout = in_array((string) ($settings['header_layout'] ?? '1'), ['1', '2', '3'], true) ? (string) ($settings['header_layout'] ?? '1') : '1';
 $serviceLayout = in_array((string) ($settings['service_layout'] ?? '1'), ['1', '2', '3'], true) ? (string) ($settings['service_layout'] ?? '1') : '1';
 $serviceEnabled = (string) ($settings['service_enabled'] ?? '1') === '1';
@@ -78,18 +77,6 @@ $serviceCardsIntro = trim((string) ($settings['service_cards_intro'] ?? ''));
 $postsSectionLabel = trim((string) ($settings['posts_section_label'] ?? 'Aktuelle Beiträge'));
 $postsReadAriaPrefix = trim((string) ($settings['posts_read_aria_prefix'] ?? 'Beitrag lesen:'));
 
-$cssVars = sprintf(
-    '--m365cp-max-width:%dpx;--m365cp-pad-l:%dpx;--m365cp-pad-r:%dpx;--m365cp-pad-t:%dpx;--m365cp-pad-b:%dpx;--m365cp-gap:%dpx;--m365cp-header-offset:%dpx;--m365cp-footer-offset:%dpx;',
-    max(720, min(1800, $int('layout_content_max_width', 1200))),
-    min(96, $int('layout_padding_left', 24)),
-    min(96, $int('layout_padding_right', 24)),
-    min(160, $int('layout_padding_top', 32)),
-    min(160, $int('layout_padding_bottom', 48)),
-    min(160, $int('layout_section_gap', 36)),
-    min(160, $int('layout_header_offset', 0)),
-    min(160, $int('layout_footer_offset', 0))
-);
-
 $cardLinkLabel = trim((string) ($settings['cards_link_label'] ?? 'Mehr erfahren →'));
 $postReadMoreLabel = trim((string) ($settings['posts_readmore_label'] ?? 'Weiter lesen →'));
 $postsEmptyTitle = trim((string) ($settings['posts_empty_title'] ?? 'Keine Beiträge gefunden'));
@@ -99,16 +86,6 @@ $headerCta = $publicHref((string) ($settings['header_cta_url'] ?? ''));
 $serviceLogo = $imgUrl((string) ($settings['service_logo_url'] ?? ''));
 $serviceCta = $publicHref((string) ($settings['service_cta_url'] ?? ''));
 ?>
-
-<?php if (!empty($publicCssUrl)): ?>
-<link rel="stylesheet" href="<?php echo $esc((string) $publicCssUrl); ?>">
-<?php endif; ?>
-
-<style>
-.m365cp {
-    <?php echo $esc($cssVars); ?>
-}
-</style>
 
 <main class="m365cp phinit-plugin<?php echo $serviceEnabled ? ' m365cp--service-enabled' : ''; ?>">
     <div class="m365cp__container">

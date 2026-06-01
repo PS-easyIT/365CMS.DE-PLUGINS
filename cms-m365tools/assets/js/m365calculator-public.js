@@ -624,28 +624,7 @@
                 return Promise.resolve(window.Chart);
             }
 
-            var existing = document.querySelector('script[data-m365calc-chartjs]');
-            if (existing) {
-                return new Promise(function (resolve, reject) {
-                    existing.addEventListener('load', function () {
-                        resolve(window.Chart);
-                    }, { once: true });
-                    existing.addEventListener('error', reject, { once: true });
-                });
-            }
-
-            return new Promise(function (resolve, reject) {
-                var script = document.createElement('script');
-                script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js';
-                script.async = true;
-                script.defer = true;
-                script.setAttribute('data-m365calc-chartjs', 'true');
-                script.addEventListener('load', function () {
-                    resolve(window.Chart);
-                }, { once: true });
-                script.addEventListener('error', reject, { once: true });
-                document.head.appendChild(script);
-            });
+            return Promise.reject(new Error('Chart.js not available locally'));
         }
 
         function formatMoney(value) {
@@ -756,6 +735,54 @@
             node.textContent = String(text || '');
 
             return node;
+        }
+
+        function renderChartFallback(canvas, caption, headers, rows) {
+            if (!canvas) {
+                return;
+            }
+
+            var existing = canvas.parentNode ? canvas.parentNode.querySelector('[data-m365calc-chart-fallback]') : null;
+            if (existing) {
+                existing.remove();
+            }
+
+            canvas.hidden = true;
+
+            var wrap = document.createElement('section');
+            wrap.className = 'phinit-table-wrap m365calc-chart-fallback';
+            wrap.setAttribute('data-m365calc-chart-fallback', 'true');
+            wrap.setAttribute('aria-label', caption);
+
+            var table = document.createElement('table');
+            table.className = 'phinit-table';
+            var thead = document.createElement('thead');
+            var headRow = document.createElement('tr');
+            headers.forEach(function (label) {
+                var th = document.createElement('th');
+                th.scope = 'col';
+                th.textContent = String(label || '');
+                headRow.appendChild(th);
+            });
+            thead.appendChild(headRow);
+            table.appendChild(thead);
+
+            var tbody = document.createElement('tbody');
+            rows.forEach(function (rowValues) {
+                var tr = document.createElement('tr');
+                rowValues.forEach(function (value, index) {
+                    var cell = document.createElement(index === 0 ? 'th' : 'td');
+                    if (index === 0) {
+                        cell.scope = 'row';
+                    }
+                    cell.textContent = String(value || '');
+                    tr.appendChild(cell);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+            wrap.appendChild(table);
+            canvas.parentNode.appendChild(wrap);
         }
 
         function priceAtDate(history, date) {
@@ -897,8 +924,11 @@
 
         function renderHistoryChart() {
             if (!historyCanvas || !window.Chart) {
+                renderHistoryFallback();
                 return;
             }
+
+            historyCanvas.hidden = false;
 
             var labels = buildQuarterTimeline(dates);
             var datasets = licenses.map(function (license, index) {
@@ -953,6 +983,29 @@
                     }
                 }
             });
+            updatePriceFilterOptions();
+            setHistoryHint(visibleHistorySlugs.length >= maxVisibleLicenses);
+        }
+
+        function renderHistoryFallback() {
+            var selectedLicenses = visibleHistorySlugs.map(function (slug) {
+                return licenseMap[slug];
+            }).filter(Boolean);
+            var firstDate = dates[0] || '';
+            var rows = selectedLicenses.map(function (license) {
+                var firstPrice = priceAtDate(license.history, firstDate);
+                var currentPrice = latestPrice(license.history);
+                var delta = currentPrice !== null && firstPrice !== null ? currentPrice - firstPrice : 0;
+
+                return [
+                    String(license.name || license.slug || 'Lizenz'),
+                    firstPrice === null ? 'k. A.' : formatMoney(firstPrice),
+                    currentPrice === null ? 'k. A.' : formatMoney(currentPrice),
+                    formatMoney(delta)
+                ];
+            });
+
+            renderChartFallback(historyCanvas, 'Preisverlauf als kompakte Tabelle', ['Lizenz', 'Erster Wert', 'Aktuell', 'Delta'], rows);
             updatePriceFilterOptions();
             setHistoryHint(visibleHistorySlugs.length >= maxVisibleLicenses);
         }
@@ -1183,8 +1236,11 @@
 
             function renderPersonalChart(evaluation) {
                 if (!personalCanvas || !window.Chart) {
+                    renderPersonalFallback(evaluation);
                     return;
                 }
+
+                personalCanvas.hidden = false;
 
                 var dateMap = Object.create(null);
                 evaluation.items.forEach(function (item) {
@@ -1260,6 +1316,15 @@
                 });
             }
 
+            function renderPersonalFallback(evaluation) {
+                renderChartFallback(personalCanvas, 'Eigene Kostenentwicklung als kompakte Tabelle', ['Kennzahl', 'Wert'], [
+                    ['Ausgangskosten / Jahr', formatMoney(evaluation.purchaseAnnual)],
+                    ['Aktuelle Kosten / Jahr', formatMoney(evaluation.currentAnnual)],
+                    ['Delta / Jahr', formatMoney(evaluation.delta)],
+                    ['Ausgewertete Zeilen', String(evaluation.rows.length)]
+                ]);
+            }
+
             function evaluateAndRender() {
                 var evaluation = evaluateRows();
                 if (resultsNode) {
@@ -1270,7 +1335,7 @@
                 chartReady().then(function () {
                     renderPersonalChart(evaluation);
                 }).catch(function () {
-                    return;
+                    renderPersonalFallback(evaluation);
                 });
             }
 
@@ -1284,23 +1349,24 @@
             renderRows();
         }
 
+        if (priceFilter) {
+            priceFilter.addEventListener('change', function () {
+                var selectedSlugs = selectedHistorySlugsFromFilter();
+                if (selectedSlugs.length === 0) {
+                    resetHistoryLicenses();
+                    return;
+                }
+
+                visibleHistorySlugs = selectedSlugs.slice(0, maxVisibleLicenses);
+                setHistoryHint(selectedSlugs.length > maxVisibleLicenses || visibleHistorySlugs.length >= maxVisibleLicenses);
+                renderHistoryChart();
+            });
+        }
+
         chartReady().then(function () {
             renderHistoryChart();
-            if (priceFilter) {
-                priceFilter.addEventListener('change', function () {
-                    var selectedSlugs = selectedHistorySlugsFromFilter();
-                    if (selectedSlugs.length === 0) {
-                        resetHistoryLicenses();
-                        return;
-                    }
-
-                    visibleHistorySlugs = selectedSlugs.slice(0, maxVisibleLicenses);
-                    setHistoryHint(selectedSlugs.length > maxVisibleLicenses || visibleHistorySlugs.length >= maxVisibleLicenses);
-                    renderHistoryChart();
-                });
-            }
         }).catch(function () {
-            return;
+            renderHistoryFallback();
         });
 
         initPersonalTracker();

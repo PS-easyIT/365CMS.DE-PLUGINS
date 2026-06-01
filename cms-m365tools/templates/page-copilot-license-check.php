@@ -38,9 +38,12 @@ if (class_exists('CMS\\ThemeManager')) {
         <header class="m365calc-hero__content">
             <section>
                 <h1 id="m365calc-copilot-title">Copilot Lizenz-Pflicht-Checker</h1>
-                <p>Prüft, ob die aktuelle Basislizenz für Microsoft 365 Copilot geeignet ist, ob nur Copilot Chat realistisch ist und welche technischen Voraussetzungen vor der Zuweisung fehlen.</p>
+                <p>Prüft Basislizenz, Copilot-Variante und technische Mindestvoraussetzungen vor der Zuweisung.</p>
             </section>
-            <a class="phinit-btn phinit-btn--secondary" href="/m365-tools">Alle M365 Tools</a>
+            <nav class="m365calc-actions" aria-label="Weitere Copilot Tools">
+                <a class="phinit-btn phinit-btn--secondary" href="/copilot-roi-rechner">ROI berechnen</a>
+                <a class="phinit-btn phinit-btn--secondary" href="/m365-lizenzberater">Lizenzberater</a>
+            </nav>
         </header>
     </section>
 
@@ -56,7 +59,7 @@ if (class_exists('CMS\\ThemeManager')) {
             <header class="m365calc-section__head">
                 <section>
                     <h2 id="m365calc-copilot-form-title">Lizenzbasis und Readiness erfassen</h2>
-                    <p>Das Modul trennt Lizenz-Eignung, technische Mindestvoraussetzungen und Copilot Chat bewusst voneinander.</p>
+                    <p>Erfasst Tenant-Typ, Basislizenz, Zielgruppe und die wichtigsten Readiness-Punkte.</p>
                 </section>
             </header>
 
@@ -138,10 +141,9 @@ if (class_exists('CMS\\ThemeManager')) {
             <section class="phinit-card">
                 <h2>Quick-Regeln</h2>
                 <ul class="m365calc-note-list">
-                    <li>Microsoft 365 Copilot ist ein Add-on mit berechtigter Basislizenz.</li>
-                    <li>Copilot Chat ist nicht gleich volle Microsoft-365-Copilot-Lizenz.</li>
-                    <li>Ein primäres Exchange-Online-Postfach ist Pflicht.</li>
-                    <li>Shared, Group und Archive Mailboxes ersetzen das primäre Postfach nicht.</li>
+                    <li>Copilot Add-on braucht eine berechtigte Basislizenz.</li>
+                    <li>Copilot Chat ist nicht die volle M365-Copilot-Lizenz.</li>
+                    <li>Primäres Exchange-Online-Postfach bleibt Pflicht.</li>
                 </ul>
             </section>
 
@@ -267,8 +269,8 @@ if (class_exists('CMS\\ThemeManager')) {
                 <?php endforeach; ?>
             </ol>
             <footer class="m365calc-actions">
-                <button type="button" class="phinit-btn phinit-btn--primary" data-m365calc-print>Druck/PDF erzeugen</button>
-                <a class="phinit-btn phinit-btn--secondary" href="/kontakt">Beratung anfragen</a>
+                <a class="phinit-btn phinit-btn--primary" href="/kontakt">Beratung anfragen</a>
+                <button type="button" class="phinit-btn phinit-btn--secondary" data-m365calc-print>Druck/PDF erzeugen</button>
             </footer>
         </section>
     </section>

@@ -39,7 +39,7 @@ if (class_exists('CMS\\ThemeManager')) {
         <section class="m365calc-hero__content" aria-labelledby="m365lic-title">
             <section>
                 <h1 id="m365lic-title"><?php echo $esc($t('Microsoft 365 Lizenzberater', 'Microsoft 365 License Advisor')); ?></h1>
-                <p class="phinit-prose"><?php echo $esc($t('Erfasst mehrere Nutzergruppen, prueft Basislizenzen, Add-ons und harte Sonderfaelle wie Copilot, Teams Phone und Power Platform.', 'Capture multiple user groups and validate base licenses, add-ons and hard edge cases like Copilot, Teams Phone and Power Platform.')); ?></p>
+                <p class="phinit-prose"><?php echo $esc($t('Empfiehlt Basislizenzen, Add-ons und Mischmodelle je Nutzergruppe.', 'Recommends base licenses, add-ons and mixed models per user group.')); ?></p>
             </section>
             <nav class="m365calc-actions" aria-label="<?php echo $esc($t('Weitere Rechner', 'Related calculators')); ?>">
                 <a class="phinit-btn phinit-btn--secondary" href="<?php echo $esc($path('/copilot-lizenz-check')); ?>"><?php echo $esc($t('Copilot pruefen', 'Check Copilot')); ?></a>
@@ -60,13 +60,13 @@ if (class_exists('CMS\\ThemeManager')) {
             <header class="m365calc-section__head">
                 <section>
                     <h2 id="m365lic-form-title">Bedarf erfassen</h2>
-                    <p>Bis zu fünf Gruppen sind möglich. Leere Gruppen werden ignoriert.</p>
+                    <p>Rahmendaten und Nutzergruppen erfassen. Leere Gruppen werden ignoriert.</p>
                 </section>
             </header>
 
             <form method="GET" class="m365calc-form">
                 <fieldset class="m365calc-fieldset">
-                    <legend>Unternehmen &amp; Vertragslogik</legend>
+                    <legend>Rahmendaten</legend>
                     <section class="m365calc-form-grid m365calc-form-grid--3">
                         <label class="phinit-field">
                             Mitarbeitende gesamt
@@ -146,6 +146,8 @@ if (class_exists('CMS\\ThemeManager')) {
                         </label>
                     </section>
 
+                    <details class="m365calc-compact-details"<?php echo $index === 0 ? ' open' : ''; ?>>
+                        <summary>Zusatzbedarf auswählen</summary>
                     <section class="m365calc-choice-grid" aria-label="Zusätzliche Anforderungen für Gruppe <?php echo (int) $index + 1; ?>">
                         <?php foreach ($featureOptions as $featureKey => $featureLabel): ?>
                         <?php if (in_array($featureKey, ['mail', 'teams', 'office_web', 'onedrive', 'sharepoint', 'frontline'], true)) { continue; } ?>
@@ -158,6 +160,7 @@ if (class_exists('CMS\\ThemeManager')) {
                         </label>
                         <?php endforeach; ?>
                     </section>
+                    </details>
                 </fieldset>
                 <?php endforeach; ?>
 
@@ -170,12 +173,11 @@ if (class_exists('CMS\\ThemeManager')) {
 
         <aside class="m365calc-aside" aria-label="Leitplanken">
             <article class="phinit-note phinit-note--info">
-                <h2>Was geprüft wird</h2>
+                <h2>Prüfumfang</h2>
                 <ul class="m365calc-note-list">
                     <li>Basislizenz je Nutzergruppe</li>
-                    <li>Add-ons für Copilot, Phone, Power Platform und Security</li>
-                    <li>Business-300-Grenze und New-Commerce-Laufzeit</li>
-                    <li>SharePoint-Storage als tenantweite Kapazität</li>
+                    <li>Add-ons für Copilot, Phone, Power Platform, Security</li>
+                    <li>300er-Grenze, Laufzeit, Storage und Risikosignale</li>
                 </ul>
             </article>
             <article class="phinit-note phinit-note--warning">
@@ -285,9 +287,9 @@ if (class_exists('CMS\\ThemeManager')) {
 
             <?php if (!empty($row['alternatives'])): ?>
             <section aria-label="Alternativen">
-                <h3>Alternativen</h3>
+                <h3>Top-Alternativen</h3>
                 <section class="m365calc-result-grid">
-                    <?php foreach ($row['alternatives'] as $alternative): ?>
+                    <?php foreach (array_slice($row['alternatives'], 0, 2) as $alternative): ?>
                     <?php if (!is_array($alternative)) { continue; } ?>
                     <article class="phinit-card m365calc-mini-card">
                         <span><?php echo (int) ($alternative['fit_score'] ?? 0); ?>% Fit</span>

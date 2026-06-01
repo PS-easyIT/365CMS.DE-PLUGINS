@@ -47,7 +47,7 @@ if (class_exists('CMS\\ThemeManager')) {
         <section class="m365calc-hero__content" aria-labelledby="m365price-title">
             <section>
                 <h1 id="m365price-title">Microsoft-Preiserhöhung-Tracker</h1>
-                <p class="phinit-prose">Verfolge offizielle Microsoft-Preis-, Packaging-, SKU- und Renewal-Ereignisse, berechne Budgetwirkung für deinen Bestand und vergleiche einen historischen Betrag mit dem aktuellen Stand.</p>
+                <p class="phinit-prose">Bewertet Microsoft-Preisereignisse, Renewal-Fenster und Budgetwirkung für deinen Lizenzbestand.</p>
             </section>
             <nav class="m365calc-actions" aria-label="Weitere Microsoft 365 Tools">
                 <a class="phinit-btn phinit-btn--secondary" href="/m365-lizenzberater">Lizenzberater öffnen</a>
@@ -56,84 +56,12 @@ if (class_exists('CMS\\ThemeManager')) {
         </section>
     </header>
 
-    <section class="phinit-result m365calc-result-card m365calc-price-history-section" aria-labelledby="m365price-history-title">
-        <header class="m365calc-result-heading">
-            <section>
-                <p class="phinit-overline">Preisverlauf</p>
-                <h2 id="m365price-history-title">Section A – Preisentwicklung nach Lizenz</h2>
-                <p>Der Linienchart nutzt den bestehenden kanonischen Preiszeitreihenkatalog. Standardmäßig sind die Business-Kernlizenzen sichtbar; über die Auswahl kannst du bis zu fünf Linien gleichzeitig anzeigen.</p>
-            </section>
-        </header>
-        <section class="m365calc-chart-panel" aria-label="Preisverlauf als Linienchart">
-            <canvas data-m365calc-price-history-chart></canvas>
-        </section>
-        <label class="phinit-field m365calc-price-history-filter" for="m365price-history-license">
-            Anzuzeigende Lizenzen <span class="m365calc-filter-limit">max. 5</span>
-            <select class="phinit-select" id="m365price-history-license" data-m365calc-price-history-filter multiple size="8">
-                <?php foreach ((array) ($priceHistoryData['licenses'] ?? []) as $license): ?>
-                <?php if (!is_array($license)) { continue; } ?>
-                <?php $licenseSlug = (string) ($license['slug'] ?? ''); ?>
-                <option value="<?php echo htmlspecialchars($licenseSlug, ENT_QUOTES, 'UTF-8'); ?>"<?php echo in_array($licenseSlug, (array) ($priceHistoryData['default_slugs'] ?? []), true) ? ' selected' : ''; ?>><?php echo htmlspecialchars((string) ($license['name'] ?? $license['slug'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></option>
-                <?php endforeach; ?>
-            </select>
-            <span class="m365calc-chart-hint" data-m365calc-price-history-hint hidden>max. 5 Lizenzen – bitte zuerst eine sichtbare Lizenz abwählen.</span>
-            <span class="m365calc-select-hint">Mehrfachauswahl per Strg/Klick oder Touch-Auswahl. Ohne Auswahl werden die Business-Lizenzen wiederhergestellt.</span>
-        </label>
-    </section>
-
-    <hr class="m365calc-section-divider" aria-hidden="true">
-
-    <section class="phinit-result m365calc-result-card m365calc-personal-price-section" aria-labelledby="m365price-personal-title" data-m365calc-personal-price-tracker>
-        <header class="m365calc-result-heading">
-            <section>
-                <p class="phinit-overline">Eigener Bestand</p>
-                <h2 id="m365price-personal-title">Section B – Persönlicher Kosten-Tracker</h2>
-                <p>Füge deine Lizenzen lokal im Browser hinzu. Kaufdatum und Menge werden nur in `localStorage` gespeichert, es gibt keine Backend-Schreibzugriffe.</p>
-            </section>
-            <section class="m365calc-actions">
-                <button type="button" class="phinit-btn phinit-btn--secondary m365calc-icon-btn" data-m365calc-personal-add aria-label="Lizenzzeile hinzufügen">+ Lizenz hinzufügen</button>
-            </section>
-        </header>
-
-        <section class="m365calc-personal-rows" data-m365calc-personal-rows aria-label="Eigene Lizenzpositionen"></section>
-        <section class="phinit-empty-state m365calc-personal-empty" data-m365calc-personal-empty>
-            <h3>Noch keine eigenen Lizenzen</h3>
-            <p>Nutze den Plus-Button, um Lizenz, Kaufdatum und Menge zu erfassen.</p>
-        </section>
-        <section class="m365calc-actions">
-            <button type="button" class="phinit-btn phinit-btn--primary" data-m365calc-personal-evaluate>Auswerten</button>
-        </section>
-
-        <section class="m365calc-personal-results" data-m365calc-personal-results hidden>
-            <section class="m365calc-chart-panel" aria-label="Eigene Kostenentwicklung als Linienchart">
-                <canvas data-m365calc-personal-chart></canvas>
-            </section>
-            <section class="m365calc-summary-grid" data-m365calc-personal-summary aria-label="Gesamtauswertung"></section>
-            <section class="phinit-table-wrap" aria-label="Kostenänderung je Lizenz">
-                <table class="phinit-table m365calc-personal-table">
-                    <thead>
-                        <tr>
-                            <th scope="col">Lizenz</th>
-                            <th scope="col">Kaufdatum</th>
-                            <th scope="col">Menge</th>
-                            <th scope="col">Preis damals</th>
-                            <th scope="col">Aktueller Preis</th>
-                            <th scope="col">Delta / Jahr</th>
-                            <th scope="col">Delta %</th>
-                        </tr>
-                    </thead>
-                    <tbody data-m365calc-personal-list></tbody>
-                </table>
-            </section>
-        </section>
-    </section>
-
     <section class="m365calc-layout" aria-label="Preis-Tracker Auswertung">
         <section class="phinit-card" aria-labelledby="m365price-form-title">
             <header class="m365calc-section__head">
                 <section>
                     <h2 id="m365price-form-title">Filter, Renewal und Bestand erfassen</h2>
-                    <p>Wähle Produktfamilie, Zeitraum, Vertragssicht und bis zu drei Bestandspositionen. Die Auswertung trennt offizielle Ereignisse, direkte SKU-Treffer und Forecast.</p>
+                    <p>Produktfamilie, Zeitraum, Renewal und bis zu drei SKU-Positionen auswählen.</p>
                 </section>
             </header>
 
@@ -290,11 +218,81 @@ if (class_exists('CMS\\ThemeManager')) {
                     </div>
                 </dl>
                 <footer class="m365calc-actions">
-                    <button type="button" class="phinit-btn phinit-btn--secondary" data-m365calc-print>Drucken / PDF speichern</button>
                     <a class="phinit-btn phinit-btn--primary" href="/kontakt">Budget prüfen lassen</a>
+                    <button type="button" class="phinit-btn phinit-btn--secondary" data-m365calc-print>Drucken / PDF speichern</button>
                 </footer>
             </article>
         </aside>
+    </section>
+
+    <section class="phinit-result m365calc-result-card m365calc-price-history-section" aria-labelledby="m365price-history-title">
+        <header class="m365calc-result-heading">
+            <section>
+                <p class="phinit-overline">Preisverlauf</p>
+                <h2 id="m365price-history-title">Preisentwicklung nach Lizenz</h2>
+                <p>Bis zu fünf Preislinien aus dem gepflegten Zeitreihenkatalog vergleichen.</p>
+            </section>
+        </header>
+        <section class="m365calc-chart-panel" aria-label="Preisverlauf als Linienchart">
+            <canvas data-m365calc-price-history-chart></canvas>
+        </section>
+        <label class="phinit-field m365calc-price-history-filter" for="m365price-history-license">
+            Anzuzeigende Lizenzen <span class="m365calc-filter-limit">max. 5</span>
+            <select class="phinit-select" id="m365price-history-license" data-m365calc-price-history-filter multiple size="8">
+                <?php foreach ((array) ($priceHistoryData['licenses'] ?? []) as $license): ?>
+                <?php if (!is_array($license)) { continue; } ?>
+                <?php $licenseSlug = (string) ($license['slug'] ?? ''); ?>
+                <option value="<?php echo htmlspecialchars($licenseSlug, ENT_QUOTES, 'UTF-8'); ?>"<?php echo in_array($licenseSlug, (array) ($priceHistoryData['default_slugs'] ?? []), true) ? ' selected' : ''; ?>><?php echo htmlspecialchars((string) ($license['name'] ?? $license['slug'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <span class="m365calc-chart-hint" data-m365calc-price-history-hint hidden>max. 5 Lizenzen – bitte zuerst eine sichtbare Lizenz abwählen.</span>
+            <span class="m365calc-select-hint">Mehrfachauswahl per Strg/Klick oder Touch-Auswahl. Ohne Auswahl werden die Business-Lizenzen wiederhergestellt.</span>
+        </label>
+    </section>
+
+    <section class="phinit-result m365calc-result-card m365calc-personal-price-section" aria-labelledby="m365price-personal-title" data-m365calc-personal-price-tracker>
+        <header class="m365calc-result-heading">
+            <section>
+                <p class="phinit-overline">Eigener Bestand</p>
+                <h2 id="m365price-personal-title">Persönlicher Kosten-Tracker</h2>
+                <p>Lokale Lizenzpositionen im Browser erfassen; es gibt keine Backend-Schreibzugriffe.</p>
+            </section>
+            <section class="m365calc-actions">
+                <button type="button" class="phinit-btn phinit-btn--secondary m365calc-icon-btn" data-m365calc-personal-add aria-label="Lizenzzeile hinzufügen">+ Lizenz hinzufügen</button>
+            </section>
+        </header>
+
+        <section class="m365calc-personal-rows" data-m365calc-personal-rows aria-label="Eigene Lizenzpositionen"></section>
+        <section class="phinit-empty-state m365calc-personal-empty" data-m365calc-personal-empty>
+            <h3>Noch keine eigenen Lizenzen</h3>
+            <p>Nutze den Plus-Button, um Lizenz, Kaufdatum und Menge zu erfassen.</p>
+        </section>
+        <section class="m365calc-actions">
+            <button type="button" class="phinit-btn phinit-btn--primary" data-m365calc-personal-evaluate>Auswerten</button>
+        </section>
+
+        <section class="m365calc-personal-results" data-m365calc-personal-results hidden>
+            <section class="m365calc-chart-panel" aria-label="Eigene Kostenentwicklung als Linienchart">
+                <canvas data-m365calc-personal-chart></canvas>
+            </section>
+            <section class="m365calc-summary-grid" data-m365calc-personal-summary aria-label="Gesamtauswertung"></section>
+            <section class="phinit-table-wrap" aria-label="Kostenänderung je Lizenz">
+                <table class="phinit-table m365calc-personal-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Lizenz</th>
+                            <th scope="col">Kaufdatum</th>
+                            <th scope="col">Menge</th>
+                            <th scope="col">Preis damals</th>
+                            <th scope="col">Aktueller Preis</th>
+                            <th scope="col">Delta / Jahr</th>
+                            <th scope="col">Delta %</th>
+                        </tr>
+                    </thead>
+                    <tbody data-m365calc-personal-list></tbody>
+                </table>
+            </section>
+        </section>
     </section>
 
     <section class="m365calc-summary-grid" aria-label="Preis-Tracker Kennzahlen">
@@ -325,7 +323,7 @@ if (class_exists('CMS\\ThemeManager')) {
             <section>
                 <p class="phinit-overline">Visueller Jahresvergleich</p>
                 <h2 id="m365price-chart-title">Von Jahr <?php echo (int) ($input['chart_start_year'] ?? 2024); ?> bis heute</h2>
-                <p>Der Chart vergleicht den angegebenen Ausgangsbetrag mit dem aktuellen Jahreswert, der Renewal-Wirkung und optionalem Forecast.</p>
+                <p>Ausgangsbetrag, aktueller Jahreswert, Renewal-Wirkung und optionaler Forecast.</p>
             </section>
         </header>
         <section class="m365calc-chart" aria-label="Jahresbeträge im Vergleich">
@@ -383,7 +381,7 @@ if (class_exists('CMS\\ThemeManager')) {
             <section>
                 <p class="phinit-overline">SKU-Treffer</p>
                 <h2 id="m365price-impact-title">Kanonische Preiszeitreihe</h2>
-                <p>Diese Tabelle nutzt den zentralen Paketpreiskatalog mit Mai-2026-Baseline, historischen Ankern und bestätigten Future-Rows.</p>
+                <p>Direkte Treffer aus dem zentralen Paketpreiskatalog.</p>
             </section>
         </header>
         <section class="phinit-table-wrap" aria-label="Preisänderungen je SKU">
@@ -427,7 +425,7 @@ if (class_exists('CMS\\ThemeManager')) {
             <section>
                 <p class="phinit-overline">Offizielle Timeline</p>
                 <h2 id="m365price-events-title">Microsoft-Ereignisse im Zeitraum</h2>
-                <p>Pricing, Packaging, SKU-Split, Retirement und End-of-sale werden als unterschiedliche Ereignistypen geführt.</p>
+                <p>Pricing, Packaging, SKU-Split, Retirement und End-of-sale im gewählten Zeitraum.</p>
             </section>
         </header>
         <section class="phinit-table-wrap" aria-label="Offizielle Microsoft Ereignisse">

@@ -34,7 +34,7 @@ if (class_exists('CMS\\ThemeManager')) {
         <header class="m365calc-hero__content">
             <section>
                 <h1 id="m365calc-roi-title">Copilot ROI-Rechner</h1>
-                <p>Berechnet Wirtschaftlichkeit, Break-even-Minuten und Pilot- oder Rollout-Empfehlung. Lizenz- und Readiness-Gates werden getrennt vom ROI-Modell bewertet.</p>
+                <p>Berechnet ROI, Break-even und nächste Schritte für Pilot oder Rollout – getrennt nach Wirtschaftlichkeit und Readiness.</p>
             </section>
             <nav class="m365calc-actions" aria-label="Weitere Copilot Tools">
                 <a class="phinit-btn phinit-btn--secondary" href="/copilot-lizenz-check">Lizenz prüfen</a>
@@ -55,7 +55,7 @@ if (class_exists('CMS\\ThemeManager')) {
             <header class="m365calc-section__head">
                 <section>
                     <h2 id="m365calc-roi-form-title">Business Case erfassen</h2>
-                    <p>Die Berechnung zeigt konservative, realistische und optimistische Szenarien. Das ausgewählte Szenario steuert Status, Chart und Empfehlung.</p>
+                    <p>Wenige Annahmen reichen: Zielgruppe, Kosten, Zeitgewinn und technische Bereitschaft.</p>
                 </section>
             </header>
 
@@ -173,12 +173,11 @@ if (class_exists('CMS\\ThemeManager')) {
 
         <aside class="m365calc-aside" aria-label="ROI Leitplanken">
             <section class="phinit-card">
-                <h2>So liest du das Modell</h2>
+                <h2>Kurzguide</h2>
                 <ul class="m365calc-note-list">
-                    <li>ROI ist ein Annahmenmodell, keine Microsoft-Garantie.</li>
-                    <li>Break-even zeigt die nötigen Minuten Zeitgewinn pro Tag.</li>
-                    <li>Adoption reduziert den realisierten Nutzen.</li>
-                    <li>Ramp-up verteilt den Nutzen im ersten Jahr schrittweise.</li>
+                    <li>Break-even = nötiger Zeitgewinn pro Tag.</li>
+                    <li>Adoption und Ramp-up dämpfen den Nutzen.</li>
+                    <li>Readiness-Blocker zuerst lösen, dann skalieren.</li>
                 </ul>
             </section>
             <section class="phinit-note phinit-note--info">
@@ -305,12 +304,11 @@ if (class_exists('CMS\\ThemeManager')) {
 
         <section class="m365calc-result-grid">
             <section class="phinit-card">
-                <h3>So liest du das Ergebnis</h3>
+                <h3>Einordnung</h3>
                 <ul class="m365calc-note-list">
-                    <li>Ein positiver Jahres-ROI bedeutet: Produktivitätswert übersteigt Lizenz- und Enablement-Kosten im ersten Jahr.</li>
-                    <li>Break-even-Minuten zeigen, wie viel Zeit pro adoptiertem Nutzer täglich realistisch freiwerden muss.</li>
-                    <li>Payback bewertet, wann Einmalkosten aus dem monatlichen Netto-Lauf zurückverdient sind.</li>
-                    <li>Unrealistische Adoption ist der häufigste Grund für „Papier-ROI“.</li>
+                    <li>Positiver Jahres-ROI: Nutzen übersteigt Lizenz- und Enablement-Kosten.</li>
+                    <li>Payback zeigt, wann Einmalkosten zurückverdient sind.</li>
+                    <li>Unrealistische Adoption bleibt der häufigste ROI-Risikofaktor.</li>
                 </ul>
             </section>
 
@@ -322,8 +320,8 @@ if (class_exists('CMS\\ThemeManager')) {
                     <?php endforeach; ?>
                 </ol>
                 <footer class="m365calc-actions">
-                    <button type="button" class="phinit-btn phinit-btn--primary" data-m365calc-print>Druck/PDF erzeugen</button>
-                    <a class="phinit-btn phinit-btn--secondary" href="/kontakt">Copilot-Pilot anfragen</a>
+                    <a class="phinit-btn phinit-btn--primary" href="/kontakt">Copilot-Pilot anfragen</a>
+                    <button type="button" class="phinit-btn phinit-btn--secondary" data-m365calc-print>Druck/PDF erzeugen</button>
                 </footer>
             </section>
         </section>

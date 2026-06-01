@@ -40,7 +40,7 @@ if (class_exists('CMS\\ThemeManager')) {
         <section class="m365calc-hero__content" aria-labelledby="m365ai-title">
             <section>
                 <h1 id="m365ai-title">AI Pack vs. Copilot Pro vergleichen</h1>
-                <p class="phinit-prose">Ordnet Copilot Chat, Microsoft 365 Copilot, Copilot Studio, GitHub Copilot, Security Copilot und dynamische AI-Angebote nach Rolle, Datenquelle und Zielbild ein.</p>
+                <p class="phinit-prose">Ordnet Copilot- und AI-Angebote nach Rolle, Datenquelle, Zielbild und Governance-Bedarf ein.</p>
             </section>
             <nav class="m365calc-actions" aria-label="Weitere Copilot Tools">
                 <a class="phinit-btn phinit-btn--secondary" href="/copilot-lizenz-check">Copilot-Lizenz prüfen</a>
@@ -54,7 +54,7 @@ if (class_exists('CMS\\ThemeManager')) {
             <header class="m365calc-section__head">
                 <section>
                     <h2 id="m365ai-form-title">Szenario einordnen</h2>
-                    <p>Wähle Rolle, Datenquelle und Zielbild, um den passenden Copilot- oder AI-Produktpfad zu finden.</p>
+                    <p>Wähle Use Case und Leitplanken – die Empfehlung erscheint direkt daneben.</p>
                 </section>
             </header>
 
@@ -204,7 +204,7 @@ if (class_exists('CMS\\ThemeManager')) {
             <section>
                 <p class="phinit-overline">Vergleich</p>
                 <h2 id="m365ai-table-title">Produktpfade nebeneinander</h2>
-                <p>Die Tabelle zeigt den fachlichen Fit, Datenfokus, Kostenmodell und die wichtigsten Grenzen je Pfad.</p>
+                <p>Kompakter Blick auf Fit, Datenfokus, Kostenmodell und Grenzen je Pfad.</p>
             </section>
         </header>
         <section class="phinit-table-wrap" aria-label="AI Produktvergleich">
@@ -247,8 +247,8 @@ if (class_exists('CMS\\ThemeManager')) {
         <header class="m365calc-result-heading">
             <section>
                 <p class="phinit-overline">Pricing Matrix</p>
-                <h2 id="m365ai-pricing-title">Normalisierte Preis-Tiers im Direktvergleich</h2>
-                <p>Vergleich über vier Anbieter hinweg. Zeilen sind auf gemeinsame Tiers normiert, fehlende Tiers bleiben bewusst als <strong>k. A.</strong> markiert.</p>
+                <h2 id="m365ai-pricing-title">Preis-Tiers im Direktvergleich</h2>
+                <p>Gemeinsame Tiers über Anbieter hinweg; fehlende Werte bleiben als <strong>k. A.</strong> markiert.</p>
                 <p><?php echo $esc((string) ($pricingMatrix['alignment_note'] ?? 'Vergleich ist preis-/tierbasiert und nicht namensbasiert.')); ?></p>
             </section>
         </header>

@@ -667,6 +667,22 @@ body.m365tools-detail-buttons-full .m365calc-provider-cta .m365calc-actions :is(
     margin-top: var(--phinit-space-2);
 }
 
+.m365calc-compact-details {
+    border: 1px solid var(--phinit-color-border);
+    border-radius: var(--m365tools-ui-radius, 2px);
+    padding: var(--phinit-space-3);
+}
+
+.m365calc-compact-details summary {
+    color: var(--phinit-color-ink);
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.m365calc-compact-details > :not(summary) {
+    margin-top: var(--phinit-space-3);
+}
+
 .phinit-table-wrap {
     overflow-x: auto;
 }
@@ -1027,6 +1043,19 @@ body.m365tools-detail-buttons-full .m365calc-provider-cta .m365calc-actions :is(
     height: 100% !important;
     max-height: 100% !important;
     width: 100% !important;
+}
+
+.m365calc-chart-panel canvas[hidden] {
+    display: none !important;
+}
+
+.m365calc-chart-fallback {
+    height: 100%;
+    overflow: auto;
+}
+
+.m365calc-chart-fallback .phinit-table {
+    min-width: 0;
 }
 
 .m365calc-chart-hint {

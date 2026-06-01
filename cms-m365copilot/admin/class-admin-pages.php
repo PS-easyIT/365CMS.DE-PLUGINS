@@ -106,8 +106,13 @@ final class CMS_M365Copilot_Admin_Pages
             return true;
         }
 
-        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
-        return str_contains($uri, '/plugins/cms-m365copilot/') || str_contains($uri, self::PAGE_SLUG);
+        $uri = strtolower((string) ($_SERVER['REQUEST_URI'] ?? ''));
+        if (str_contains($uri, self::PAGE_SLUG)) {
+            return true;
+        }
+
+        return str_contains($uri, '/admin/')
+            && (str_contains($uri, 'cms-m365copilot') || str_contains($uri, 'm365copilot'));
     }
 
     private static function safe_redirect_url(string $url): string
