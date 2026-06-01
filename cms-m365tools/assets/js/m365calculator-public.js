@@ -535,10 +535,13 @@
         var licenseMap = Object.create(null);
         var priceFilter = root.querySelector('[data-m365calc-price-history-filter]');
         var historyCanvas = root.querySelector('[data-m365calc-price-history-chart]');
-        var statusNode = root.querySelector('[data-m365calc-price-chart-status]');
+        var historyHint = root.querySelector('[data-m365calc-price-history-hint]');
         var personalRoot = root.querySelector('[data-m365calc-personal-price-tracker]');
         var historyChart = null;
         var personalChart = null;
+        var maxVisibleLicenses = 5;
+        var defaultVisibleSlugs = Array.isArray(data.default_slugs) ? data.default_slugs.map(String) : [];
+        var visibleHistorySlugs = [];
         var palette = ['#1f4e79', '#c07a1f', '#2f7d5a', '#7c3aed', '#b42318', '#2563eb', '#64748b', '#0f766e', '#9333ea', '#ea580c'];
 
         licenses.forEach(function (license) {
@@ -549,6 +552,15 @@
 
         if (licenses.length === 0 || dates.length === 0) {
             return;
+        }
+
+        visibleHistorySlugs = defaultVisibleSlugs.filter(function (slug) {
+            return licenseMap[slug];
+        }).slice(0, maxVisibleLicenses);
+        if (visibleHistorySlugs.length === 0) {
+            visibleHistorySlugs = licenses.slice(0, Math.min(4, maxVisibleLicenses)).map(function (license) {
+                return String(license.slug || '');
+            }).filter(Boolean);
         }
 
         function chartReady() {
@@ -586,6 +598,98 @@
 
         function formatPercent(value) {
             return new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(Number(value || 0)) + ' %';
+        }
+
+        function pad2(value) {
+            return String(value).padStart(2, '0');
+        }
+
+        function dateParts(value) {
+            var match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (!match) {
+                return null;
+            }
+
+            return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
+        }
+
+        function quarterStartDate(value) {
+            var parts = dateParts(value);
+            if (!parts) {
+                return '';
+            }
+
+            var month = Math.floor((parts.month - 1) / 3) * 3 + 1;
+
+            return String(parts.year) + '-' + pad2(month) + '-01';
+        }
+
+        function addQuarter(value) {
+            var parts = dateParts(value);
+            if (!parts) {
+                return '';
+            }
+
+            var monthIndex = parts.month - 1 + 3;
+            var year = parts.year + Math.floor(monthIndex / 12);
+            var month = (monthIndex % 12) + 1;
+
+            return String(year) + '-' + pad2(month) + '-01';
+        }
+
+        function formatQuarter(value) {
+            var parts = dateParts(value);
+            if (!parts) {
+                return String(value || '');
+            }
+
+            return 'Q' + String(Math.floor((parts.month - 1) / 3) + 1) + ' ' + String(parts.year);
+        }
+
+        function buildQuarterTimeline(sourceDates) {
+            var normalized = (Array.isArray(sourceDates) ? sourceDates : []).map(quarterStartDate).filter(Boolean).sort();
+            if (normalized.length === 0) {
+                return [];
+            }
+
+            var start = normalized[0];
+            var end = normalized[normalized.length - 1];
+            var timeline = [];
+            var cursor = start;
+            var guard = 0;
+
+            while (cursor && cursor <= end && guard < 120) {
+                timeline.push(cursor);
+                cursor = addQuarter(cursor);
+                guard += 1;
+            }
+
+            return timeline;
+        }
+
+        function yScaleOptions(values) {
+            var numericValues = (Array.isArray(values) ? values : []).filter(function (value) {
+                return typeof value === 'number' && Number.isFinite(value);
+            });
+            if (numericValues.length === 0) {
+                numericValues = [0, 1];
+            }
+
+            var min = Math.min.apply(null, numericValues);
+            var max = Math.max.apply(null, numericValues);
+            var range = Math.max(0.01, max - min);
+            var padding = Math.max(0.5, range * 0.12);
+
+            return {
+                beginAtZero: false,
+                suggestedMin: Math.max(0, min - padding),
+                suggestedMax: max + padding,
+                ticks: {
+                    callback: function (value) {
+                        return formatMoney(value);
+                    }
+                }
+            };
         }
 
         function createText(tagName, className, text) {
@@ -633,8 +737,10 @@
         function datasetForLicense(license, index, labels) {
             var isDefault = license.default_visible === true;
             var color = palette[index % palette.length];
+            var slug = String(license.slug || '');
 
             return {
+                slug: slug,
                 label: String(license.name || license.slug || 'Lizenz'),
                 data: labels.map(function (date) {
                     return priceAtDate(license.history, date);
@@ -645,8 +751,92 @@
                 pointRadius: isDefault ? 3 : 2,
                 tension: 0.25,
                 spanGaps: true,
-                hidden: false
+                hidden: visibleHistorySlugs.indexOf(slug) === -1
             };
+        }
+
+        function selectedHistoryValues(datasets) {
+            var values = [];
+            datasets.forEach(function (dataset) {
+                if (dataset.hidden) {
+                    return;
+                }
+                values = values.concat(dataset.data.filter(function (value) {
+                    return typeof value === 'number' && Number.isFinite(value);
+                }));
+            });
+
+            return values;
+        }
+
+        function setHistoryHint(visible) {
+            if (historyHint) {
+                historyHint.hidden = !visible;
+            }
+        }
+
+        function updatePriceFilterOptions() {
+            if (!priceFilter) {
+                return;
+            }
+
+            var capReached = visibleHistorySlugs.length >= maxVisibleLicenses;
+            Array.prototype.slice.call(priceFilter.options).forEach(function (option) {
+                var value = String(option.value || '');
+                var selected = visibleHistorySlugs.indexOf(value) !== -1;
+                option.selected = selected;
+                option.disabled = value !== '' && capReached && !selected;
+            });
+        }
+
+        function selectedHistorySlugsFromFilter() {
+            if (!priceFilter) {
+                return [];
+            }
+
+            return Array.prototype.slice.call(priceFilter.selectedOptions).map(function (option) {
+                return String(option.value || '');
+            }).filter(function (slug) {
+                return Boolean(slug) && Boolean(licenseMap[slug]);
+            });
+        }
+
+        function toggleHistoryLicense(slug) {
+            slug = String(slug || '');
+            if (!licenseMap[slug]) {
+                return;
+            }
+
+            var index = visibleHistorySlugs.indexOf(slug);
+            if (index !== -1) {
+                visibleHistorySlugs.splice(index, 1);
+                setHistoryHint(false);
+                renderHistoryChart();
+                return;
+            }
+
+            if (visibleHistorySlugs.length >= maxVisibleLicenses) {
+                setHistoryHint(true);
+                updatePriceFilterOptions();
+                return;
+            }
+
+            visibleHistorySlugs.push(slug);
+            setHistoryHint(visibleHistorySlugs.length >= maxVisibleLicenses);
+            renderHistoryChart();
+        }
+
+        function resetHistoryLicenses() {
+            visibleHistorySlugs = defaultVisibleSlugs.filter(function (slug) {
+                return licenseMap[slug];
+            }).slice(0, maxVisibleLicenses);
+            if (visibleHistorySlugs.length === 0) {
+                visibleHistorySlugs = licenses.slice(0, Math.min(4, maxVisibleLicenses)).map(function (license) {
+                    return String(license.slug || '');
+                }).filter(Boolean);
+            }
+            setHistoryHint(false);
+            renderHistoryChart();
         }
 
         function renderHistoryChart() {
@@ -654,11 +844,11 @@
                 return;
             }
 
-            var selectedSlug = priceFilter ? String(priceFilter.value || '') : '';
-            var visibleLicenses = selectedSlug && licenseMap[selectedSlug] ? [licenseMap[selectedSlug]] : licenses;
-            var labels = selectedSlug && licenseMap[selectedSlug]
-                ? (licenseMap[selectedSlug].history || []).map(function (entry) { return String(entry.date || ''); }).filter(Boolean)
-                : dates;
+            var labels = buildQuarterTimeline(dates);
+            var datasets = licenses.map(function (license, index) {
+                return datasetForLicense(license, index, labels);
+            });
+            var historyScale = yScaleOptions(selectedHistoryValues(datasets));
 
             if (historyChart) {
                 historyChart.destroy();
@@ -668,18 +858,19 @@
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: visibleLicenses.map(function (license, index) {
-                        return datasetForLicense(license, index, labels);
-                    })
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     interaction: { intersect: false, mode: 'nearest' },
                     plugins: {
-                        legend: { display: true, position: 'bottom', labels: { boxWidth: 12, usePointStyle: true } },
+                        legend: { display: false },
                         tooltip: {
                             callbacks: {
+                                title: function (items) {
+                                    return items.length > 0 ? formatQuarter(items[0].label) : '';
+                                },
                                 label: function (context) {
                                     return context.dataset.label + ': ' + formatMoney(context.parsed.y) + ' / User / Monat';
                                 }
@@ -687,17 +878,27 @@
                         }
                     },
                     scales: {
-                        y: {
-                            beginAtZero: true,
+                        x: {
+                            offset: false,
                             ticks: {
+                                autoSkip: false,
+                                maxRotation: 0,
                                 callback: function (value) {
-                                    return formatMoney(value);
+                                    return formatQuarter(this.getLabelForValue(value));
                                 }
                             }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            suggestedMin: historyScale.suggestedMin,
+                            suggestedMax: historyScale.suggestedMax,
+                            ticks: historyScale.ticks
                         }
                     }
                 }
             });
+            updatePriceFilterOptions();
+            setHistoryHint(visibleHistorySlugs.length >= maxVisibleLicenses);
         }
 
         function readStoredRows() {
@@ -939,16 +1140,17 @@
                     });
                 });
 
-                var labels = Object.keys(dateMap).sort();
+                var labels = buildQuarterTimeline(Object.keys(dateMap));
                 var amounts = labels.map(function (date) {
                     return evaluation.items.reduce(function (sum, item) {
-                        if (date < item.purchaseDate) {
+                        if (date < quarterStartDate(item.purchaseDate)) {
                             return sum;
                         }
-                        var price = priceAtDate(item.license.history, date);
+                        var price = priceAtDate(item.license.history, date < item.purchaseDate ? item.purchaseDate : date);
                         return sum + (price || 0) * item.quantity * 12;
                     }, 0);
                 });
+                var personalScale = yScaleOptions(amounts);
 
                 if (personalChart) {
                     personalChart.destroy();
@@ -982,13 +1184,20 @@
                             }
                         },
                         scales: {
-                            y: {
-                                beginAtZero: true,
+                            x: {
                                 ticks: {
+                                    autoSkip: false,
+                                    maxRotation: 0,
                                     callback: function (value) {
-                                        return formatMoney(value);
+                                        return formatQuarter(this.getLabelForValue(value));
                                     }
                                 }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                suggestedMin: personalScale.suggestedMin,
+                                suggestedMax: personalScale.suggestedMax,
+                                ticks: personalScale.ticks
                             }
                         }
                     }
@@ -1022,12 +1231,20 @@
         chartReady().then(function () {
             renderHistoryChart();
             if (priceFilter) {
-                priceFilter.addEventListener('change', renderHistoryChart);
+                priceFilter.addEventListener('change', function () {
+                    var selectedSlugs = selectedHistorySlugsFromFilter();
+                    if (selectedSlugs.length === 0) {
+                        resetHistoryLicenses();
+                        return;
+                    }
+
+                    visibleHistorySlugs = selectedSlugs.slice(0, maxVisibleLicenses);
+                    setHistoryHint(selectedSlugs.length > maxVisibleLicenses || visibleHistorySlugs.length >= maxVisibleLicenses);
+                    renderHistoryChart();
+                });
             }
         }).catch(function () {
-            if (statusNode) {
-                statusNode.hidden = false;
-            }
+            return;
         });
 
         initPersonalTracker();

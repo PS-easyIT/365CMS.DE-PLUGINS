@@ -173,7 +173,7 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
         $skus = CMS_M365CALCULATOR_Catalog::microsoft_price_skus();
         $licenses = [];
         $dates = [];
-        $defaultSlugs = ['m365-business-standard', 'm365-business-premium', 'm365-e3', 'm365-e5'];
+        $defaultSlugs = ['m365-apps-business', 'm365-business-basic', 'm365-business-standard', 'm365-business-premium'];
 
         foreach ($skus as $sku) {
             if (!is_array($sku) || (int) ($sku['is_active'] ?? 1) !== 1) {
@@ -652,8 +652,19 @@ final class CMS_M365CALCULATOR_Microsoft_Price_Tracker
 
         $max = max(1.0, max($amounts));
         $rows = [];
+        $previousAmount = null;
         foreach ($amounts as $date => $amount) {
-            $rows[] = self::chart_row($date . ' Zeitreihe', $amount, $max, $date >= '2026-07-01' ? 'cost' : 'neutral');
+            $tone = 'neutral';
+            if ($previousAmount !== null) {
+                if ($amount > $previousAmount + 0.0001) {
+                    $tone = 'cost';
+                } elseif ($amount < $previousAmount - 0.0001) {
+                    $tone = 'gain';
+                }
+            }
+
+            $rows[] = self::chart_row($date . ' Zeitreihe', $amount, $max, $tone);
+            $previousAmount = $amount;
         }
 
         if (!empty($forecast['active'])) {

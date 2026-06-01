@@ -1,6 +1,6 @@
 {
   "slug": "cms-m365tools",
-  "version": "3.0.30",
+  "version": "3.0.34",
   "download_url": "https://365network.de/plugins/cms-m365tools/cms-m365tools.zip",
   "requires": "3.0.0",
   "tested": "3.0.0",
@@ -9,6 +9,6 @@
   "last_updated": "2026-06-01",
   "sections": {
     "description": "CMS M365 Tools ist eine modulare Microsoft-365-Toolbox mit M365LIC-Preisübernahme, zentraler Dienstleister- und Kontaktformular-CTA, eigenem Landingpage-Designer, UX-optimierter Live-Suche, Tag-Filtern, Sticky-Kategorie-Navigation, globalen Paketpreis- und Abopreisbereichen, ruhigem PHINIT-Public-Design, All-Module-Best-Practice-Kompass und Public-Modulen. Reine Matrixseiten liegen im Plugin cms-m365matrices.",
-    "changelog": "3.0.30: Lizenzvergleich-Dropdowns grauen keine bereits gewählten Lizenzen mehr aus; alle Lizenzen bleiben auswählbar, und bei doppelter Auswahl wird die frühere Spalte automatisch geleert. 3.0.29: Tool-Publicsites entfernen vorhandene lokale Hero-Aktionsnavs wie Toolbox anzeigen zentral im Frontend-Controller, bevor die einheitlichen Headeraktionen Alle Tools anzeigen und Kontaktanfrage injiziert werden. 3.0.28: Die M365-Tools-Hub-Landingpage blendet den selbstreferenziellen Header-CTA Alle Tools durchsuchen aus; Kontakt- oder andere externe Headeraktionen bleiben möglich."
+    "changelog": "3.0.34: Microsoft-Preiserhöhung-Tracker klassifiziert die Balken im visuellen Jahresvergleich jetzt anhand des echten Vorperioden-Deltas; Q3-/Juli-Zeitreihen mit sinkendem Jahresbetrag werden als Senkung statt pauschal als Mehrkosten markiert. 3.0.33: Alte Lizenz-Pill-Legend und sichtbare Chart.js-Fallback-Meldung unter dem Chart entfernt. 3.0.32: Chart-Lizenzen als Mehrfach-Auswahlfeld mit Business-Defaults und max. fünf sichtbaren Linien."
   }
 }

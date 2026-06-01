@@ -61,24 +61,23 @@ if (class_exists('CMS\\ThemeManager')) {
             <section>
                 <p class="phinit-overline">Preisverlauf</p>
                 <h2 id="m365price-history-title">Section A – Preisentwicklung nach Lizenz</h2>
-                <p>Der Linienchart nutzt den bestehenden kanonischen Preiszeitreihenkatalog. Alle anzeigen bleibt Standard; Business Standard, Business Premium, E3 und E5 starten sichtbar.</p>
+                <p>Der Linienchart nutzt den bestehenden kanonischen Preiszeitreihenkatalog. Standardmäßig sind die Business-Kernlizenzen sichtbar; über die Auswahl kannst du bis zu fünf Linien gleichzeitig anzeigen.</p>
             </section>
         </header>
         <section class="m365calc-chart-panel" aria-label="Preisverlauf als Linienchart">
             <canvas data-m365calc-price-history-chart></canvas>
-            <p class="m365calc-chart-fallback" data-m365calc-price-chart-status hidden>Chart.js konnte nicht geladen werden. Die Preiszeitreihen bleiben in den Tabellen unten verfügbar.</p>
         </section>
-        <section class="m365calc-chart-legend" data-m365calc-price-history-legend aria-label="Sichtbare Lizenzlinien"></section>
-        <p class="m365calc-chart-hint" data-m365calc-price-history-hint hidden>max. 5 Lizenzen – bitte zuerst eine sichtbare Lizenz abwählen.</p>
         <label class="phinit-field m365calc-price-history-filter" for="m365price-history-license">
-            Ansicht wechseln
-            <select class="phinit-select" id="m365price-history-license" data-m365calc-price-history-filter>
-                <option value="">Alle anzeigen</option>
+            Anzuzeigende Lizenzen <span class="m365calc-filter-limit">max. 5</span>
+            <select class="phinit-select" id="m365price-history-license" data-m365calc-price-history-filter multiple size="8">
                 <?php foreach ((array) ($priceHistoryData['licenses'] ?? []) as $license): ?>
                 <?php if (!is_array($license)) { continue; } ?>
-                <option value="<?php echo htmlspecialchars((string) ($license['slug'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars((string) ($license['name'] ?? $license['slug'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></option>
+                <?php $licenseSlug = (string) ($license['slug'] ?? ''); ?>
+                <option value="<?php echo htmlspecialchars($licenseSlug, ENT_QUOTES, 'UTF-8'); ?>"<?php echo in_array($licenseSlug, (array) ($priceHistoryData['default_slugs'] ?? []), true) ? ' selected' : ''; ?>><?php echo htmlspecialchars((string) ($license['name'] ?? $license['slug'] ?? ''), ENT_QUOTES, 'UTF-8'); ?></option>
                 <?php endforeach; ?>
             </select>
+            <span class="m365calc-chart-hint" data-m365calc-price-history-hint hidden>max. 5 Lizenzen – bitte zuerst eine sichtbare Lizenz abwählen.</span>
+            <span class="m365calc-select-hint">Mehrfachauswahl per Strg/Klick oder Touch-Auswahl. Ohne Auswahl werden die Business-Lizenzen wiederhergestellt.</span>
         </label>
     </section>
 

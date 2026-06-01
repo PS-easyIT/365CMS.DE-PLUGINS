@@ -988,22 +988,45 @@ body.m365tools-detail-buttons-full .m365calc-provider-cta .m365calc-actions :is(
     background: color-mix(in srgb, var(--m365tools-surface-raised, #f8fafc) 92%, #ffffff 8%);
     border: 1px solid var(--m365tools-border, var(--phinit-color-border));
     border-radius: var(--m365tools-ui-radius, 2px);
-    min-height: 20rem;
+    height: 300px;
+    max-height: 500px;
     padding: var(--phinit-space-4);
 }
 
 .m365calc-chart-panel canvas {
-    min-height: 17rem;
+    display: block;
+    height: 100% !important;
+    max-height: 100% !important;
     width: 100% !important;
 }
 
-.m365calc-chart-fallback {
+.m365calc-chart-hint {
     color: var(--m365tools-muted, var(--phinit-color-ink-secondary));
-    margin: 0;
+    display: block;
+    font-size: var(--phinit-text-sm);
+    margin-top: var(--phinit-space-1);
 }
 
 .m365calc-price-history-filter {
     max-width: 28rem;
+}
+
+.m365calc-price-history-filter select[multiple] {
+    min-height: 12rem;
+}
+
+.m365calc-filter-limit {
+    color: var(--m365tools-muted, var(--phinit-color-ink-secondary));
+    font-size: var(--phinit-text-xs);
+    font-weight: 500;
+}
+
+.m365calc-select-hint {
+    color: var(--m365tools-muted, var(--phinit-color-ink-secondary));
+    display: block;
+    font-size: var(--phinit-text-xs);
+    line-height: 1.4;
+    margin-top: var(--phinit-space-1);
 }
 
 .m365calc-section-divider {
@@ -1708,12 +1731,13 @@ body.m365tools-detail-buttons-full .m365calc-provider-cta .m365calc-actions :is(
     }
 
     .m365calc-chart-panel {
-        min-height: 16rem;
+        height: 260px;
+        max-height: 500px;
         padding: var(--phinit-space-3);
     }
 
     .m365calc-chart-panel canvas {
-        min-height: 14rem;
+        height: 100% !important;
     }
 
     .m365calc-price-history-filter {

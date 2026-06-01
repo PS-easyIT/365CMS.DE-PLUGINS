@@ -1,6 +1,33 @@
 
 # Changelog – CMS M365 Tools
 
+## 3.0.34 – 2026-06-01
+
+- `Microsoft-Preiserhöhung-Tracker`: Die Balken im visuellen Jahresvergleich werden nicht mehr pauschal ab Q3/Juli 2026 als Mehrkosten eingefärbt.
+- Stattdessen entscheidet jetzt der echte Vorperiodenvergleich: höhere Jahreskosten werden als Mehrkosten, niedrigere Jahreskosten als Senkung und unveränderte Werte neutral markiert.
+- Dadurch werden Q3-Zeitreihen mit tatsächlicher Preissenkung korrekt als Senkung dargestellt. Preiswerte, Promo-Preise und `price_history` bleiben unverändert.
+
+## 3.0.33 – 2026-06-01
+
+- `Microsoft-Preiserhöhung-Tracker`: Die alte Lizenz-Pill-Legend direkt unter dem Chart wurde entfernt; die sichtbaren Lizenzlinien werden ausschließlich über das neue Mehrfach-Auswahlfeld gesteuert.
+- Die sichtbare Chart.js-Fallback-Meldung unter bzw. im Chart wurde aus der Public-UI entfernt, damit zwischen Chart und Auswahl keine störenden Zusatzblöcke erscheinen.
+- Veraltete Legend-CSS- und JS-Renderlogik bereinigt; Preiswerte, Promo-Preise und `price_history` bleiben unverändert.
+
+## 3.0.32 – 2026-06-01
+
+- `Microsoft-Preiserhöhung-Tracker`: Die anzuzeigenden Lizenzlinien werden jetzt über ein echtes Mehrfach-Auswahlfeld gesteuert statt über einen Einzel-Toggle-Select.
+- Standardauswahl im Preisverlauf ist dauerhaft auf die Business-Kernlizenzen gesetzt: Apps for Business, Business Basic, Business Standard und Business Premium.
+- Auswahlfeld, kompakte Legend und Chart bleiben synchron; maximal fünf Lizenzlinien sind gleichzeitig sichtbar, zusätzliche Optionen werden bei erreichtem Limit deaktiviert.
+- Ohne aktive Auswahl wird automatisch wieder auf die Business-Standardauswahl zurückgesetzt. Preiswerte, Promo-Preise und `price_history` bleiben unverändert.
+
+## 3.0.31 – 2026-06-01
+
+- Chart.js-Rendering im `Microsoft-Preiserhöhung-Tracker` stabilisiert: Canvas-Elemente besitzen keine HTML-Height-Attribute mehr und laufen in festen 300px-Containern, mobil 260px, mit hartem 500px-Maximum.
+- Preisverlauf nutzt eine vollständige Quartalsachse über den bekannten Preiszeitraum statt nur Datenpunkt-Datumswerte; Linien bleiben über Zwischenquartale lesbar fortgeführt.
+- Y-Achsen skalieren dynamisch auf die sichtbaren Reihen mit EUR-Ticks und starten nicht mehr zwangsläufig bei 0, damit Lizenzpreise im Bereich weniger Euro bis Copilot-/Enterprise-Preise nicht flachgedrückt werden.
+- Preisverlauf startet mit Business Standard, Business Premium, E3 und E5; maximal fünf Lizenzen sind gleichzeitig sichtbar, weitere Legend-/Dropdown-Auswahl wird dann deaktiviert und mit `max. 5 Lizenzen` erklärt.
+- Persönlicher Kosten-Tracker nutzt dieselbe kompakte Chart-Höhe, vollständige Quartalsachse und dynamische Jahreskosten-Skalierung; Preiswerte und Datenquellen bleiben unverändert.
+
 ## 3.0.30 – 2026-06-01
 
 - Lizenzvergleich-Dropdowns grauen keine Lizenzen mehr aus; jede sichtbare Lizenz bleibt in jeder Vergleichsspalte auswählbar.
@@ -20,7 +47,7 @@
 
 - `Microsoft-Preiserhöhung-Tracker` um zwei gestapelte Public-Sektionen erweitert: oben ein Chart.js-Linienchart für die kanonische SKU-Preiszeitreihe, darunter ein persönlicher Kosten-Tracker.
 - Preisverlauf nutzt weiterhin `CMS_M365CALCULATOR_Catalog::microsoft_price_skus()` bzw. `price_history`; es wird keine zweite Preisquelle gepflegt.
-- Chart-Auswahl ergänzt: `Alle anzeigen` bleibt Standard, einzelne Lizenzen lassen sich per Dropdown isolieren; Business Basic, Standard und Premium werden im Gesamtchart hervorgehoben.
+- Chart-Auswahl ergänzt: Die erste Version erlaubte einzelne Lizenzen per Dropdown; spätere Versionen stellen die sichtbaren Linien über ein Mehrfach-Auswahlfeld mit Business-Standardauswahl zusammen.
 - Persönlicher Kosten-Tracker speichert Lizenz, Kaufdatum und Menge ausschließlich in `localStorage`, erlaubt Entfernen einzelner Zeilen und berechnet Mehr-/Minderkosten absolut sowie prozentual seit Kaufdatum.
 - Auswertung rendert zusätzlich einen Chart.js-Projektionschart der eigenen Jahreskosten und eine tabellarische Delta-Liste je Lizenz; Layout ist mobil unter 768px gestapelt.
 

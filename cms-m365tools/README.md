@@ -13,7 +13,7 @@
 - `/google-workspace-zu-m365-tco` – Google Workspace und Microsoft 365 inklusive Lizenzkosten, Migration, Schulung, Change-Aufwand, Parallelbetrieb und Break-even vergleichen
 - `/m365-storage-bedarfsrechner` – SharePoint-Pool, OneDrive-Quotas, Exchange-Postfächer, Archivbedarf, Wachstum und Zusatzspeicherbedarf berechnen
 - `/m365-backup-kostenrechner` – Microsoft-365-Backup-Baseline und Providervergleich nach Kosten, Workloads, Retention, Restore-Tiefe und Betriebsmodell berechnen
-- `/microsoft-preiserhoehung-tracker` – offizielle Microsoft-Preis-, Packaging-, SKU-, Renewal- und Forecast-Ereignisse mit Chart.js-Preisverlauf und lokalem persönlichen Kosten-Tracker auswerten
+- `/microsoft-preiserhoehung-tracker` – offizielle Microsoft-Preis-, Packaging-, SKU-, Renewal- und Forecast-Ereignisse mit kompaktem Chart.js-Preisverlauf, Business-Standardauswahl, 5er-Lizenz-Cap und lokalem persönlichen Kosten-Tracker auswerten
 - `/teams-phone-lizenzberater` – Teams Phone, Calling Plan, Operator Connect, Direct Routing, Mischmodell und Sonderpfade bewerten
 - `/exchange-online-roi` – Vollkosten-, Break-even- und Migrationspfad-Rechner für On-Prem Exchange zu Exchange Online
 - `/frontline-worker-lizenz-check` – F1-/F3-Eignung, Mischmodell, Enterprise-Bedarf und Sparpotenzial für Frontline Worker prüfen
