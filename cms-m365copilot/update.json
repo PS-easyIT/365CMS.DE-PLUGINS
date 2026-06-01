@@ -1,0 +1,14 @@
+{
+  "slug": "cms-m365copilot",
+  "version": "1.0.0",
+  "download_url": "https://365network.de/plugins/cms-m365copilot/cms-m365copilot.zip",
+  "requires": "3.0.0",
+  "tested": "3.0.0",
+  "min_php": "8.4",
+  "requires_php": "8.4",
+  "last_updated": "2026-06-01",
+  "sections": {
+    "description": "Admin-konfigurierbare Copilot-Landingpage im PHINIT-Stil mit Content Header, Dienstleistungsband, drei Bereichscards und Beitragssektion für Microsoft Copilot.",
+    "changelog": "1.0.0: Initiale Version mit gruppierter Admin-Einstellungsseite, persistenter Settings-Storage, Public-Renderer, PHINIT-nahem Layout und Beitragsabfrage über bestehende CMS-Post-Tabellen/Publication-Logik."
+  }
+}

@@ -108,6 +108,11 @@
       "manifest": "PLUGINS/cms-m365adminsites/update.json"
     },
     {
+      "slug": "cms-m365copilot",
+      "name": "CMS M365 Copilot",
+      "manifest": "PLUGINS/cms-m365copilot/update.json"
+    },
+    {
       "slug": "cms-knowledgebase",
       "name": "CMS Knowledgebase",
       "manifest": "PLUGINS/cms-knowledgebase/update.json"
